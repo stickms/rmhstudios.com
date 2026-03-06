@@ -33,7 +33,7 @@ export function MobileNav() {
   return (
     <>
       {/* Floating New Post button */}
-      {session && (
+      {session && isHome && (
         <button
           onClick={() => setComposeOpen(true)}
           className="md:hidden fixed right-4 bottom-18 z-50 w-14 h-14 rounded-full bg-site-accent hover:bg-site-accent-hover text-white shadow-lg flex items-center justify-center transition-colors active:scale-95"

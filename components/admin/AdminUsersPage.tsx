@@ -203,7 +203,7 @@ export default function AdminUsersPage() {
                 </div>
 
                 <div className="bg-site-surface border border-site-border rounded-xl overflow-hidden min-h-[400px]">
-                    <div className="p-4 border-b border-site-border bg-site-bg/50">
+                    <div className="hidden sm:block p-4 border-b border-site-border bg-site-bg/50">
                         <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 text-xs font-semibold text-site-text-dim uppercase tracking-wider">
                             <div>User</div>
                             <div className="w-20 text-center">Verified</div>
@@ -235,95 +235,185 @@ export default function AdminUsersPage() {
                                 <div
                                     key={user.id}
                                     ref={isLast ? lastUserElementRef : null}
-                                    className="p-4 flex items-center gap-4 hover:bg-site-surface-hover transition-colors"
+                                    className="p-4 hover:bg-site-surface-hover transition-colors"
                                 >
-                                <div className="flex-1 flex items-center gap-4 min-w-0">
-                                    <div className="w-10 h-10 rounded-full bg-site-bg overflow-hidden flex-shrink-0 border border-site-border">
-                                        {user.image ? (
-                                            <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
-                                        ) : (
-                                            <div className="w-full h-full bg-linear-to-br from-site-surface to-site-surface-hover flex items-center justify-center">
-                                                <span className="text-xs font-bold text-site-text-dim">{user.name?.charAt(0) || user.handle?.charAt(0) || 'U'}</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="min-w-0">
-                                        <div className="flex items-center gap-1.5">
-                                            <Link to={`/@${user.handle || user.id}`} className="font-semibold text-site-text hover:text-site-accent truncate">
-                                                {user.name || user.handle || user.username}
-                                            </Link>
-                                            {user.isVerified && <CheckCircle className="w-3.5 h-3.5 text-blue-400 shrink-0" />}
-                                            {user.isAdmin && <Shield className="w-3.5 h-3.5 text-red-400 shrink-0" />}
-                                        </div>
-                                        <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2 text-sm text-site-text-dim">
-                                            {isEditingThis ? (
-                                                <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                                                    <span className="text-site-text-dim">@</span>
-                                                    <input
-                                                        type="text"
-                                                        value={handleInput}
-                                                        onChange={(e) => setHandleInput(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
-                                                        className="bg-site-bg border border-site-border rounded px-1.5 py-0.5 text-sm text-site-text w-32 focus:outline-none focus:border-site-accent"
-                                                        autoFocus
-                                                        maxLength={20}
-                                                        onKeyDown={(e) => {
-                                                            if (e.key === 'Enter') saveHandle(user.id);
-                                                            if (e.key === 'Escape') cancelEditHandle();
-                                                        }}
-                                                    />
-                                                    <button onClick={() => saveHandle(user.id)} className="p-0.5 text-emerald-400 hover:text-emerald-300" disabled={updating === user.id}>
-                                                        <Check className="w-3.5 h-3.5" />
-                                                    </button>
-                                                    <button onClick={cancelEditHandle} className="p-0.5 text-site-text-dim hover:text-site-text">
-                                                        <X className="w-3.5 h-3.5" />
-                                                    </button>
-                                                    {handleError && <span className="text-xs text-red-400">{handleError}</span>}
-                                                </div>
+                                {/* Desktop row */}
+                                <div className="hidden sm:flex items-center gap-4">
+                                    <div className="flex-1 flex items-center gap-4 min-w-0">
+                                        <div className="w-10 h-10 rounded-full bg-site-bg overflow-hidden flex-shrink-0 border border-site-border">
+                                            {user.image ? (
+                                                <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
                                             ) : (
-                                                <span className="flex items-center gap-1 truncate">
-                                                    @{user.handle || '—'}
-                                                    {!user.isAdmin && (
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); startEditHandle(user); }}
-                                                            className="p-0.5 text-site-text-dim hover:text-site-accent transition-colors"
-                                                            title="Change handle"
-                                                        >
-                                                            <Pencil className="w-3 h-3" />
-                                                        </button>
-                                                    )}
-                                                </span>
+                                                <div className="w-full h-full bg-linear-to-br from-site-surface to-site-surface-hover flex items-center justify-center">
+                                                    <span className="text-xs font-bold text-site-text-dim">{user.name?.charAt(0) || user.handle?.charAt(0) || 'U'}</span>
+                                                </div>
                                             )}
-                                            <span className="hidden sm:inline">•</span>
-                                            <span className="truncate">{user.email}</span>
                                         </div>
+                                        <div className="min-w-0">
+                                            <div className="flex items-center gap-1.5">
+                                                <Link to={`/@${user.handle || user.id}`} className="font-semibold text-site-text hover:text-site-accent truncate">
+                                                    {user.name || user.handle || user.username}
+                                                </Link>
+                                                {user.isVerified && <CheckCircle className="w-3.5 h-3.5 text-blue-400 shrink-0" />}
+                                                {user.isAdmin && <Shield className="w-3.5 h-3.5 text-red-400 shrink-0" />}
+                                            </div>
+                                            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2 text-sm text-site-text-dim">
+                                                {isEditingThis ? (
+                                                    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                                        <span className="text-site-text-dim">@</span>
+                                                        <input
+                                                            type="text"
+                                                            value={handleInput}
+                                                            onChange={(e) => setHandleInput(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                                                            className="bg-site-bg border border-site-border rounded px-1.5 py-0.5 text-sm text-site-text w-32 focus:outline-none focus:border-site-accent"
+                                                            autoFocus
+                                                            maxLength={20}
+                                                            onKeyDown={(e) => {
+                                                                if (e.key === 'Enter') saveHandle(user.id);
+                                                                if (e.key === 'Escape') cancelEditHandle();
+                                                            }}
+                                                        />
+                                                        <button onClick={() => saveHandle(user.id)} className="p-0.5 text-emerald-400 hover:text-emerald-300" disabled={updating === user.id}>
+                                                            <Check className="w-3.5 h-3.5" />
+                                                        </button>
+                                                        <button onClick={cancelEditHandle} className="p-0.5 text-site-text-dim hover:text-site-text">
+                                                            <X className="w-3.5 h-3.5" />
+                                                        </button>
+                                                        {handleError && <span className="text-xs text-red-400">{handleError}</span>}
+                                                    </div>
+                                                ) : (
+                                                    <span className="flex items-center gap-1 truncate">
+                                                        @{user.handle || '—'}
+                                                        {!user.isAdmin && (
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); startEditHandle(user); }}
+                                                                className="p-0.5 text-site-text-dim hover:text-site-accent transition-colors"
+                                                                title="Change handle"
+                                                            >
+                                                                <Pencil className="w-3 h-3" />
+                                                            </button>
+                                                        )}
+                                                    </span>
+                                                )}
+                                                <span className="hidden sm:inline">•</span>
+                                                <span className="truncate">{user.email}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="w-20 flex-shrink-0 flex justify-center">
+                                        <button
+                                            onClick={() => toggleStatus(user.id, 'isVerified', user.isVerified)}
+                                            disabled={updating === user.id}
+                                            className={`p-1.5 rounded-lg transition-colors border ${user.isVerified ? 'bg-blue-500/10 text-blue-400 border-blue-500/20 hover:bg-blue-500/20' : 'bg-transparent text-site-text-dim border-site-border hover:border-site-text-muted'} ${updating === user.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                            title={user.isVerified ? "Remove Verification" : "Verify User"}
+                                        >
+                                            <CheckCircle className="w-4 h-4" />
+                                        </button>
+                                    </div>
+
+                                    <div className="w-20 flex-shrink-0 flex justify-center">
+                                        <button
+                                            onClick={() => toggleStatus(user.id, 'isAdmin', user.isAdmin)}
+                                            disabled={updating === user.id}
+                                            className={`p-1.5 rounded-lg transition-colors border ${user.isAdmin ? 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20' : 'bg-transparent text-site-text-dim border-site-border hover:border-site-text-muted'} ${updating === user.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                            title={user.isAdmin ? "Remove Admin" : "Make Admin"}
+                                        >
+                                            <Shield className="w-4 h-4" />
+                                        </button>
+                                    </div>
+
+                                    <div className="w-24 flex-shrink-0 flex flex-col items-end text-xs text-site-text-dim">
+                                        <span>{user._count.builds} builds</span>
+                                        <span>{user._count.rmharks} posts</span>
                                     </div>
                                 </div>
 
-                                <div className="w-20 flex-shrink-0 flex justify-center">
-                                    <button
-                                        onClick={() => toggleStatus(user.id, 'isVerified', user.isVerified)}
-                                        disabled={updating === user.id}
-                                        className={`p-1.5 rounded-lg transition-colors border ${user.isVerified ? 'bg-blue-500/10 text-blue-400 border-blue-500/20 hover:bg-blue-500/20' : 'bg-transparent text-site-text-dim border-site-border hover:border-site-text-muted'} ${updating === user.id ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                        title={user.isVerified ? "Remove Verification" : "Verify User"}
-                                    >
-                                        <CheckCircle className="w-4 h-4" />
-                                    </button>
-                                </div>
-
-                                <div className="w-20 flex-shrink-0 flex justify-center">
-                                    <button
-                                        onClick={() => toggleStatus(user.id, 'isAdmin', user.isAdmin)}
-                                        disabled={updating === user.id}
-                                        className={`p-1.5 rounded-lg transition-colors border ${user.isAdmin ? 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20' : 'bg-transparent text-site-text-dim border-site-border hover:border-site-text-muted'} ${updating === user.id ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                        title={user.isAdmin ? "Remove Admin" : "Make Admin"}
-                                    >
-                                        <Shield className="w-4 h-4" />
-                                    </button>
-                                </div>
-
-                                <div className="w-24 flex-shrink-0 flex flex-col items-end text-xs text-site-text-dim">
-                                    <span>{user._count.builds} builds</span>
-                                    <span>{user._count.rmharks} posts</span>
+                                {/* Mobile stacked layout */}
+                                <div className="flex sm:hidden flex-col gap-3">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className="w-10 h-10 rounded-full bg-site-bg overflow-hidden flex-shrink-0 border border-site-border">
+                                            {user.image ? (
+                                                <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <div className="w-full h-full bg-linear-to-br from-site-surface to-site-surface-hover flex items-center justify-center">
+                                                    <span className="text-xs font-bold text-site-text-dim">{user.name?.charAt(0) || user.handle?.charAt(0) || 'U'}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex items-center gap-1.5">
+                                                <Link to={`/@${user.handle || user.id}`} className="font-semibold text-site-text hover:text-site-accent truncate">
+                                                    {user.name || user.handle || user.username}
+                                                </Link>
+                                                {user.isVerified && <CheckCircle className="w-3.5 h-3.5 text-blue-400 shrink-0" />}
+                                                {user.isAdmin && <Shield className="w-3.5 h-3.5 text-red-400 shrink-0" />}
+                                            </div>
+                                            <div className="text-sm text-site-text-dim">
+                                                {isEditingThis ? (
+                                                    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                                        <span className="text-site-text-dim">@</span>
+                                                        <input
+                                                            type="text"
+                                                            value={handleInput}
+                                                            onChange={(e) => setHandleInput(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                                                            className="bg-site-bg border border-site-border rounded px-1.5 py-0.5 text-sm text-site-text w-28 focus:outline-none focus:border-site-accent"
+                                                            autoFocus
+                                                            maxLength={20}
+                                                            onKeyDown={(e) => {
+                                                                if (e.key === 'Enter') saveHandle(user.id);
+                                                                if (e.key === 'Escape') cancelEditHandle();
+                                                            }}
+                                                        />
+                                                        <button onClick={() => saveHandle(user.id)} className="p-0.5 text-emerald-400 hover:text-emerald-300" disabled={updating === user.id}>
+                                                            <Check className="w-3.5 h-3.5" />
+                                                        </button>
+                                                        <button onClick={cancelEditHandle} className="p-0.5 text-site-text-dim hover:text-site-text">
+                                                            <X className="w-3.5 h-3.5" />
+                                                        </button>
+                                                        {handleError && <span className="text-xs text-red-400 block mt-1">{handleError}</span>}
+                                                    </div>
+                                                ) : (
+                                                    <span className="flex items-center gap-1 truncate">
+                                                        @{user.handle || '—'}
+                                                        {!user.isAdmin && (
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); startEditHandle(user); }}
+                                                                className="p-0.5 text-site-text-dim hover:text-site-accent transition-colors"
+                                                                title="Change handle"
+                                                            >
+                                                                <Pencil className="w-3 h-3" />
+                                                            </button>
+                                                        )}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="text-xs text-site-text-dim truncate mt-0.5">{user.email}</div>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => toggleStatus(user.id, 'isVerified', user.isVerified)}
+                                                disabled={updating === user.id}
+                                                className={`p-1.5 rounded-lg transition-colors border text-xs flex items-center gap-1.5 ${user.isVerified ? 'bg-blue-500/10 text-blue-400 border-blue-500/20 hover:bg-blue-500/20' : 'bg-transparent text-site-text-dim border-site-border hover:border-site-text-muted'} ${updating === user.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                            >
+                                                <CheckCircle className="w-3.5 h-3.5" />
+                                                Verified
+                                            </button>
+                                            <button
+                                                onClick={() => toggleStatus(user.id, 'isAdmin', user.isAdmin)}
+                                                disabled={updating === user.id}
+                                                className={`p-1.5 rounded-lg transition-colors border text-xs flex items-center gap-1.5 ${user.isAdmin ? 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20' : 'bg-transparent text-site-text-dim border-site-border hover:border-site-text-muted'} ${updating === user.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                            >
+                                                <Shield className="w-3.5 h-3.5" />
+                                                Admin
+                                            </button>
+                                        </div>
+                                        <div className="text-xs text-site-text-dim">
+                                            {user._count.builds} builds · {user._count.rmharks} posts
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             );

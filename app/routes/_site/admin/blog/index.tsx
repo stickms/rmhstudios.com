@@ -35,9 +35,9 @@ function AdminBlogDashboard() {
   return (
     <PageLayout title="Manage Blog Posts" wide>
       <div className="p-4 md:p-8 w-full max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-4">
-            <Link to="/admin" className="text-site-text-dim hover:text-site-text transition-colors">
+            <Link to="/admin" className="text-site-text-dim hover:text-site-text transition-colors shrink-0">
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <div>
@@ -45,8 +45,8 @@ function AdminBlogDashboard() {
               <p className="text-site-text-muted mt-1 text-sm">Create, edit, and delete blog posts.</p>
             </div>
           </div>
-          
-          <Link to="/admin/blog/new" className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 gap-2 bg-site-accent hover:bg-site-accent-hover text-white">
+
+          <Link to="/admin/blog/new" className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors h-10 px-4 py-2 gap-2 bg-site-accent hover:bg-site-accent-hover text-white self-end sm:self-auto shrink-0">
             <Plus className="w-4 h-4" /> New Post
           </Link>
         </div>
@@ -58,12 +58,12 @@ function AdminBlogDashboard() {
             </div>
           ) : (
             posts.map((post) => (
-              <div key={post.slug as string} className="flex items-center justify-between p-4 hover:bg-site-bg/50 transition-colors">
-                <div>
-                  <h3 className="font-bold text-site-text">{post.title as string}</h3>
-                  <p className="text-sm text-site-text-dim">{post.date as string} · /{post.slug as string}</p>
+              <div key={post.slug as string} className="flex items-center justify-between gap-2 p-4 hover:bg-site-bg/50 transition-colors">
+                <div className="min-w-0">
+                  <h3 className="font-bold text-site-text truncate">{post.title as string}</h3>
+                  <p className="text-sm text-site-text-dim truncate">{post.date as string} · /{post.slug as string}</p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   <Link 
                     to={`/admin/blog/${post.slug as string}/edit`}
                     className="inline-flex items-center justify-center p-2 rounded-md hover:bg-site-border text-site-text-dim hover:text-site-text transition-colors"
