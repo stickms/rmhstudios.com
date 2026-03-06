@@ -27,6 +27,7 @@ export const Route = createRootRoute({
       { name: "description", content: "RMH - The Everything Platform. Games, apps, research, and more." },
     ],
     links: [
+      { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
       { rel: "stylesheet", href: appCss },
       {
         rel: "stylesheet",
