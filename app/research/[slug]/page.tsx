@@ -1,7 +1,7 @@
 import { getArticleBySlug, getAllArticles } from '@/lib/research';
 import { PaperViewer } from '@/components/research/PaperViewer';
-import { notFound } from 'next/navigation';
-import type { Metadata } from 'next';
+// TODO: Metadata removed — use TanStack Start route meta instead
+import { notFound } from '@tanstack/react-router';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -11,7 +11,7 @@ export async function generateStaticParams() {
   return getAllArticles().map((a) => ({ slug: a.slug }));
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params }: Props): Promise<any> {
   const { slug } = await params;
   const article = getArticleBySlug(slug);
   if (!article) return { title: 'Not Found' };
@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ResearchArticlePage({ params }: Props) {
   const { slug } = await params;
   const article = getArticleBySlug(slug);
-  if (!article) notFound();
+  if (!article) throw notFound();
 
   return <PaperViewer article={article} />;
 }

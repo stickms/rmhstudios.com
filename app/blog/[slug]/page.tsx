@@ -1,6 +1,5 @@
 import { getPostBySlug, getPostSlugs } from "@/lib/blog";
 import { MDXRemote } from "next-mdx-remote/rsc";
-import Link from "next/link";
 import { ArrowLeft, Calendar } from "lucide-react";
 import { ShareButton } from "@/components/blog/ShareButton";
 
@@ -27,6 +26,7 @@ const animatedComponents = {
 export const dynamic = 'force-dynamic';
 
 import type { Metadata } from "next";
+import { Link } from '@tanstack/react-router';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -49,7 +49,7 @@ export default async function BlogPost({ params }: Props) {
   return (
     <article className="min-h-screen pt-20 pb-20 px-4 bg-site-bg relative overflow-hidden">
         <div className="container mx-auto max-w-3xl relative z-10">
-            <Link href="/blog" className="inline-flex items-center gap-2 text-site-text-dim hover:text-site-text mb-8 transition-colors animate-in fade-in slide-in-from-left-4 duration-700">
+            <Link to="/blog" className="inline-flex items-center gap-2 text-site-text-dim hover:text-site-text mb-8 transition-colors animate-in fade-in slide-in-from-left-4 duration-700">
                 <ArrowLeft className="w-4 h-4" /> Back to Logs
             </Link>
 

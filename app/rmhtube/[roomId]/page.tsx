@@ -11,10 +11,7 @@
  * Phase 5: Onboarding tour, density classes
  */
 
-'use client';
-
 import { useEffect, useState, useCallback, useRef, use } from 'react';
-import { useRouter } from 'next/navigation';
 import { connectToRmhTube, getSocket, disconnectFromRmhTube, emit } from '@/lib/rmhtube/socket';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
 import { S2C, C2S } from '@/lib/rmhtube/events';
@@ -34,6 +31,7 @@ import ShortcutsOverlay from '@/components/rmhtube/ShortcutsOverlay';
 import BanListModal from '@/components/rmhtube/BanListModal';
 import InviteLinkModal from '@/components/rmhtube/InviteLinkModal';
 import OnboardingTour from '@/components/rmhtube/OnboardingTour';
+import { useRouter } from '@tanstack/react-router';
 
 type MobileTab = 'queue' | 'chat' | 'members';
 
@@ -79,15 +77,15 @@ export default function RmhTubeRoomPage({ params }: { params: Promise<{ roomId: 
 
         // Listen for kicked/disbanded to navigate away
         socket.on(S2C.ROOM_KICKED, () => {
-          if (mounted) router.push('/rmhtube');
+          if (mounted) router.navigate({ to: '/rmhtube' });
         });
         socket.on(S2C.ROOM_DISBANDED, () => {
-          if (mounted) router.push('/rmhtube');
+          if (mounted) router.navigate({ to: '/rmhtube' });
         });
       } catch (err) {
         if (mounted) {
           toast.error(err instanceof Error ? err.message : 'Connection failed');
-          router.push('/rmhtube');
+          router.navigate({ to: '/rmhtube' });
         }
       }
     }
@@ -213,7 +211,7 @@ export default function RmhTubeRoomPage({ params }: { params: Promise<{ roomId: 
   const handleLeave = useCallback(() => {
     emit(C2S.ROOM_LEAVE, {});
     useRmhTubeStore.getState().leaveRoom();
-    router.push('/rmhtube');
+    router.navigate({ to: '/rmhtube' });
   }, [router]);
 
   const handleCopyCode = useCallback(async () => {

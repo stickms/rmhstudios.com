@@ -1,18 +1,15 @@
-'use client';
-
 import { Suspense, useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import { ArrowLeft, Terminal, AlertCircle } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { BuildForm } from '@/components/user-builds';
 import { Button } from '@/components/ui/button';
 import type { Build } from '@/lib/user-builds-types';
+import { Link, useRouter, useSearch } from '@tanstack/react-router';
 
 function SubmitBuildContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const editId = searchParams.get('edit');
+  const searchParams = useSearch();
+  const editId = searchParams.edit;
   const { data: session, isPending } = useSession();
 
   const [build, setBuild] = useState<Build | null>(null);
@@ -58,7 +55,7 @@ function SubmitBuildContent() {
             <p className="text-site-text-muted mb-6">
               You need to sign in to submit a build.
             </p>
-            <Link href="/login?redirect=/user-builds/submit">
+            <Link to="/login?redirect=/user-builds/submit">
               <Button variant="accent" className="w-full bg-violet-600 hover:bg-violet-500">
                 Sign In
               </Button>
@@ -77,7 +74,7 @@ function SubmitBuildContent() {
             <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
             <h1 className="text-xl font-semibold text-site-text mb-2">Error Loading Build</h1>
             <p className="text-site-text-muted mb-6">{fetchError}</p>
-            <Link href="/user-builds/manage">
+            <Link to="/user-builds/manage">
               <Button variant="secondary">Back to My Builds</Button>
             </Link>
           </div>
@@ -92,8 +89,7 @@ function SubmitBuildContent() {
     <div className="min-h-screen bg-site-bg pt-20 pb-12">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Back link */}
-        <Link
-          href={isEditing ? '/user-builds/manage' : '/user-builds'}
+        <Link to={isEditing ? '/user-builds/manage' : '/user-builds'}
           className="inline-flex items-center gap-2 text-sm text-site-text-muted hover:text-site-text mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />

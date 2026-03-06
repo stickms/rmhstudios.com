@@ -7,14 +7,14 @@
 
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { getWebRequest } from '@tanstack/react-start/server';
+import { getRequest } from '@tanstack/react-start/server';
 import { auth } from '@/lib/auth';
 import { redirect } from '@tanstack/react-router';
 import RMHboxShell from '@/components/rmhbox/RMHboxShell';
-import './rmhbox/rmhbox.css';
+import '@/app/rmhbox/rmhbox.css';
 
 const checkAuth = createServerFn({ method: 'GET' }).handler(async () => {
-  const request = getWebRequest();
+  const request = getRequest();
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session?.user) throw redirect({ to: '/login', search: { callbackURL: '/rmhbox' } });
   return { user: session.user };

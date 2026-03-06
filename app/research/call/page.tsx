@@ -1,5 +1,4 @@
-import Link from 'next/link';
-
+import { Link } from '@tanstack/react-router';
 export const metadata = {
   title: 'Call for Papers — RMHSTRC 2026 | RMH Studios',
   description:
@@ -32,8 +31,7 @@ export default function CallForPapersPage() {
       <article className="container mx-auto max-w-4xl relative z-10">
 
         {/* Back link */}
-        <Link
-          href="/research"
+        <Link to="/research"
           className="inline-flex items-center gap-1 text-sm text-(--site-accent) hover:underline mb-8"
         >
           &larr; Back to Research
@@ -478,7 +476,7 @@ export default function CallForPapersPage() {
         </p>
         <p className="mb-2 text-(--site-text)">
           <strong>Conference website:</strong>{' '}
-          <Link href="/research" className="text-(--site-accent) hover:underline">
+          <Link to="/research" className="text-(--site-accent) hover:underline">
             rmhstudios.com/research
           </Link>
         </p>

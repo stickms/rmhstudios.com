@@ -1,12 +1,9 @@
-'use client';
-
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { PageLayout } from '@/components/feed/PageLayout';
-import Link from 'next/link';
 import { ArrowLeft, Loader2, Search, CheckCircle, Shield, AlertCircle, Edit, ExternalLink, Globe, Lock, Save, Ban } from 'lucide-react';
 import { useSession } from '@/components/Providers';
-import { useRouter } from 'next/navigation';
 import { AdminRightSidebar } from '@/components/feed/AdminRightSidebar';
+import { Link, useRouter } from '@tanstack/react-router';
 
 interface Build {
     id: string;
@@ -45,7 +42,7 @@ export default function AdminUserBuildsPage() {
 
     useEffect(() => {
         if (session && !(session.user as any).isAdmin) {
-            router.push('/');
+            router.navigate({ to: '/' });
         }
     }, [session, router]);
 
@@ -106,7 +103,7 @@ export default function AdminUserBuildsPage() {
         <PageLayout title="Manage User Builds" wide rightSidebar={<AdminRightSidebar />}>
             <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6">
                 <div className="flex items-center gap-4">
-                    <Link href="/admin" className="p-2 hover:bg-site-surface-hover rounded-full transition-colors">
+                    <Link to="/admin" className="p-2 hover:bg-site-surface-hover rounded-full transition-colors">
                         <ArrowLeft className="w-5 h-5 text-site-text-dim" />
                     </Link>
                     <div>
@@ -155,7 +152,7 @@ export default function AdminUserBuildsPage() {
                                 >
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-1">
-                                            <Link href={`/user-builds/${build.slug}`} className="font-semibold text-lg text-site-text hover:text-site-accent truncate">
+                                            <Link to={`/user-builds/${build.slug}`} className="font-semibold text-lg text-site-text hover:text-site-accent truncate">
                                                 {build.title}
                                             </Link>
                                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
@@ -168,7 +165,7 @@ export default function AdminUserBuildsPage() {
                                             )}
                                         </div>
                                         <div className="flex items-center gap-2 text-sm text-site-text-dim truncate">
-                                            <Link href={`/@${build.user.handle || build.user.username}`} className="hover:text-site-text transition-colors">
+                                            <Link to={`/@${build.user.handle || build.user.username}`} className="hover:text-site-text transition-colors">
                                                 @{build.user.handle || build.user.username}
                                             </Link>
                                             <span>•</span>
@@ -177,15 +174,13 @@ export default function AdminUserBuildsPage() {
                                     </div>
                                     
                                     <div className="flex items-center gap-2 mt-3 sm:mt-0">
-                                        <Link
-                                            href={`/user-builds/${build.slug}`}
+                                        <Link to={`/user-builds/${build.slug}`}
                                             className="p-2 rounded-lg text-site-text-dim hover:text-site-accent hover:bg-site-bg transition-colors border border-transparent hover:border-site-border"
                                             title="View Build"
                                         >
                                             <ExternalLink className="w-4 h-4" />
                                         </Link>
-                                        <Link
-                                            href={`/user-builds/submit?edit=${build.id}`}
+                                        <Link to={`/user-builds/submit?edit=${build.id}`}
                                             className="p-2 rounded-lg text-blue-400 hover:bg-blue-500/10 transition-colors border border-transparent hover:border-blue-500/20"
                                             title="Edit Build as Admin"
                                         >

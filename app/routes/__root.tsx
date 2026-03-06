@@ -1,12 +1,10 @@
+/// <reference types="vite/client" />
 import {
+  HeadContent,
   Outlet,
-  ScrollRestoration,
+  Scripts,
   createRootRoute,
 } from "@tanstack/react-router";
-import {
-  Meta,
-  Scripts,
-} from "@tanstack/react-start";
 import type { ReactNode } from "react";
 import { Providers } from "@/components/Providers";
 import { Shell } from "@/components/site/Shell";
@@ -41,13 +39,14 @@ export const Route = createRootRoute({
     ],
   }),
   component: RootComponent,
+  shellComponent: RootDocument,
 });
 
 function RootDocument({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <Meta />
+        <HeadContent />
       </head>
       <body
         className="font-nunito antialiased"
@@ -55,7 +54,6 @@ function RootDocument({ children }: { children: ReactNode }) {
       >
         <script dangerouslySetInnerHTML={{ __html: bodyThemeScript }} />
         {children}
-        <ScrollRestoration />
         <Scripts />
       </body>
     </html>
@@ -64,14 +62,12 @@ function RootDocument({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   return (
-    <RootDocument>
-      <Providers>
-        <TwemojiProvider tag="div">
-          <Shell>
-            <Outlet />
-          </Shell>
-        </TwemojiProvider>
-      </Providers>
-    </RootDocument>
+    <Providers>
+      <TwemojiProvider tag="div">
+        <Shell>
+          <Outlet />
+        </Shell>
+      </TwemojiProvider>
+    </Providers>
   );
 }

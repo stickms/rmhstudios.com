@@ -1,8 +1,6 @@
-'use client';
-
-import Link from 'next/link';
 import { Megaphone, Newspaper } from 'lucide-react';
 import type { NewsArticle } from '@/lib/news';
+import { Link } from '@tanstack/react-router';
 
 interface ResearchRightSidebarProps {
     newsArticles: Partial<NewsArticle>[];
@@ -30,8 +28,7 @@ export function ResearchRightSidebar({ newsArticles }: ResearchRightSidebarProps
                     <p className="text-xs text-site-text-muted mt-2">
                         Original contributions spanning AI, computational topology, statistical physics, cognitive science, and game design.
                     </p>
-                    <Link
-                        href="/research/call"
+                    <Link to="/research/call"
                         className="inline-block mt-2 rounded-lg bg-site-accent px-4 py-2 text-xs font-bold text-white transition hover:opacity-90"
                     >
                         View Call for Papers
@@ -49,7 +46,7 @@ export function ResearchRightSidebar({ newsArticles }: ResearchRightSidebarProps
                     {newsArticles.slice(0, 4).map((article) => (
                         <Link
                             key={article.slug}
-                            href={`/news/${article.slug}`}
+                            to={`/news/${article.slug}`}
                             className="block group"
                         >
                             <p className="text-xs text-site-text-dim">{article.category}</p>
@@ -59,8 +56,7 @@ export function ResearchRightSidebar({ newsArticles }: ResearchRightSidebarProps
                         </Link>
                     ))}
                 </div>
-                <Link
-                    href="/news"
+                <Link to="/news"
                     className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors"
                 >
                     Show more

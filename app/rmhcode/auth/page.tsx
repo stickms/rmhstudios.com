@@ -1,24 +1,20 @@
-'use client';
-
 import { useState, useEffect, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Terminal, Check, X, Loader2, Shield } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-
+import { Link, useRouter, useSearch } from '@tanstack/react-router';
 function AuthContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const searchParams = useSearch();
   const { data: session, isPending } = useSession();
 
   const [authorizing, setAuthorizing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const callback = searchParams.get('callback');
-  const sessionId = searchParams.get('session');
+  const callback = searchParams.callback;
+  const sessionId = searchParams.session;
 
   useEffect(() => {
     // Validate callback URL
@@ -88,7 +84,7 @@ function AuthContent() {
       callbackUrl.searchParams.set('session', sessionId);
       window.location.href = callbackUrl.toString();
     } else {
-      router.push('/rmhcode');
+      router.navigate({ to: '/rmhcode' });
     }
   }
 
@@ -128,7 +124,7 @@ function AuthContent() {
               You need to sign in to your RMH account to authorize the CLI.
             </p>
 
-            <Link href={loginUrl}>
+            <Link to={loginUrl}>
               <Button variant="accent" className="w-full bg-violet-600 hover:bg-violet-500">
                 Sign In to Continue
               </Button>
@@ -156,7 +152,7 @@ function AuthContent() {
             <p className="text-sm text-site-text-muted mb-6">
               This page should be opened from the rmhcode CLI. Missing required parameters.
             </p>
-            <Link href="/rmhcode">
+            <Link to="/rmhcode">
               <Button variant="secondary">Go to rmhcode</Button>
             </Link>
           </div>

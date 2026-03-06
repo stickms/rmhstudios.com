@@ -4,10 +4,7 @@
  * Create rooms, join with code, or browse public rooms.
  */
 
-'use client';
-
 import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { Globe, RefreshCw } from 'lucide-react';
 import { connectToRmhType, getSocket, disconnectFromRmhType, emit } from '@/lib/rmhtype/socket';
 import { useRmhTypeStore } from '@/lib/rmhtype/store';
@@ -15,6 +12,7 @@ import { C2S, S2C } from '@/lib/rmhtype/events';
 import { toast } from '@/lib/rmhtype/toast-store';
 import RmhTypeHeader from '@/components/rmhtype/RmhTypeHeader';
 import type { Difficulty, PassageLength, PublicRoomInfo } from '@/lib/rmhtype/types';
+import { useRouter } from '@tanstack/react-router';
 
 export default function RmhTypeMultiplayer() {
   const router = useRouter();
@@ -35,13 +33,13 @@ export default function RmhTypeMultiplayer() {
 
         const existingRoom = useRmhTypeStore.getState().room;
         if (existingRoom && mounted) {
-          router.push(`/rmhtype/${existingRoom.roomCode}`);
+          router.navigate({ to: `/rmhtype/${existingRoom.roomCode}` });
           return;
         }
 
         socket.on(S2C.ROOM_STATE, (data: { roomCode: string }) => {
           if (mounted && data.roomCode) {
-            router.push(`/rmhtype/${data.roomCode}`);
+            router.navigate({ to: `/rmhtype/${data.roomCode}` });
           }
         });
 

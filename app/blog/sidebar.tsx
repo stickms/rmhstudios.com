@@ -1,9 +1,7 @@
-'use client';
-
-import Link from 'next/link';
 import { Newspaper, FlaskConical, Tag } from 'lucide-react';
 import type { NewsArticle } from '@/lib/news';
 import type { ResearchArticle } from '@/lib/research';
+import { Link } from '@tanstack/react-router';
 
 interface BlogRightSidebarProps {
     newsArticles: Partial<NewsArticle>[];
@@ -25,7 +23,7 @@ export function BlogRightSidebar({ newsArticles, researchArticles, tags }: BlogR
                         {tags.map(tag => (
                             <Link
                                 key={tag}
-                                href={`/blog?tag=${encodeURIComponent(tag)}`}
+                                to={`/blog?tag=${encodeURIComponent(tag)}`}
                                 className="text-xs px-2.5 py-1 rounded-full bg-site-bg border border-site-border text-site-text-muted hover:text-site-accent hover:border-site-accent/50 transition-colors"
                             >
                                 {tag}
@@ -45,7 +43,7 @@ export function BlogRightSidebar({ newsArticles, researchArticles, tags }: BlogR
                     {newsArticles.slice(0, 4).map((article) => (
                         <Link
                             key={article.slug}
-                            href={`/news/${article.slug}`}
+                            to={`/news/${article.slug}`}
                             className="block group"
                         >
                             <p className="text-xs text-site-text-dim">{article.category}</p>
@@ -55,8 +53,7 @@ export function BlogRightSidebar({ newsArticles, researchArticles, tags }: BlogR
                         </Link>
                     ))}
                 </div>
-                <Link
-                    href="/news"
+                <Link to="/news"
                     className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors"
                 >
                     Show more
@@ -73,7 +70,7 @@ export function BlogRightSidebar({ newsArticles, researchArticles, tags }: BlogR
                     {researchArticles.slice(0, 3).map((article) => (
                         <Link
                             key={article.slug}
-                            href={`/research/${article.slug}`}
+                            to={`/research/${article.slug}`}
                             className="block group"
                         >
                             <p className="text-xs text-site-text-dim">{article.category}</p>
@@ -83,8 +80,7 @@ export function BlogRightSidebar({ newsArticles, researchArticles, tags }: BlogR
                         </Link>
                     ))}
                 </div>
-                <Link
-                    href="/research"
+                <Link to="/research"
                     className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors"
                 >
                     Show more

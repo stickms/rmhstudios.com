@@ -154,21 +154,21 @@ start_apps() {
         --name "$APP_SOCKET" \
         --restart-delay=3000 \
         --max-restarts=5 \
-        -- dist-server/server/socket-server/index.js
+        -- dist-server/server/socket-server/index.cjs
 
     log "Starting RMHbox WebSocket server on port $PORT_RMHBOX..."
     "$PM2_BIN" start "$NODE_BIN" \
         --name "$APP_RMHBOX" \
         --restart-delay=3000 \
         --max-restarts=5 \
-        -- dist-server/server/rmhbox/index.js
+        -- dist-server/server/rmhbox/index.cjs
 
     log "Starting RmhTube WebSocket server on port $PORT_RMHTUBE..."
     "$PM2_BIN" start "$NODE_BIN" \
         --name "$APP_RMHTUBE" \
         --restart-delay=3000 \
         --max-restarts=5 \
-        -- dist-server/server/rmhtube/index.js
+        -- dist-server/server/rmhtube/index.cjs
 
     "$PM2_BIN" save
 }
@@ -257,10 +257,10 @@ if ! "$PNPM_BIN" run build; then
 fi
 
 build_ok=true
-[ -f ".output/server/index.mjs" ]                    || { log "ERROR: .output/server/index.mjs missing after build."; build_ok=false; }
-[ -f "dist-server/server/socket-server/index.js" ]  || { log "ERROR: socket-server/index.js missing after build."; build_ok=false; }
-[ -f "dist-server/server/rmhbox/index.js" ]          || { log "ERROR: rmhbox/index.js missing after build.";       build_ok=false; }
-[ -f "dist-server/server/rmhtube/index.js" ]         || { log "ERROR: rmhtube/index.js missing after build.";      build_ok=false; }
+[ -f ".output/server/index.mjs" ]                            || { log "ERROR: .output/server/index.mjs missing after build."; build_ok=false; }
+[ -f "dist-server/server/socket-server/index.cjs" ]  || { log "ERROR: socket-server/index.cjs missing after build."; build_ok=false; }
+[ -f "dist-server/server/rmhbox/index.cjs" ]          || { log "ERROR: rmhbox/index.cjs missing after build.";       build_ok=false; }
+[ -f "dist-server/server/rmhtube/index.cjs" ]         || { log "ERROR: rmhtube/index.cjs missing after build.";      build_ok=false; }
 
 if [ "$build_ok" != "true" ]; then
     log "ERROR: Build artifacts incomplete."

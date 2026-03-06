@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+// TODO: Metadata removed — use TanStack Start route meta instead
 import { RightSidebar } from '@/components/feed/RightSidebar';
 import { ProfileColumn } from '@/components/feed/ProfileColumn';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
@@ -10,7 +10,7 @@ export async function generateMetadata({
   params,
 }: {
   params: Promise<{ id: string }>;
-}): Promise<Metadata> {
+}): Promise<any> {
   const { id } = await params;
 
   // Resolve by handle first, then by ID

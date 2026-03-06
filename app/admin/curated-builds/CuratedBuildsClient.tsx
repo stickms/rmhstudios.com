@@ -1,9 +1,4 @@
-'use client';
-
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-import Link from 'next/link';
 import {
   DndContext,
   closestCenter,
@@ -22,6 +17,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Edit, GripVertical, Ban, Star, StarOff } from 'lucide-react';
+import { Link, useRouter } from '@tanstack/react-router';
 
 interface Build {
     id: string;
@@ -72,10 +68,9 @@ function SortableBuildItem({ build, onUncurate, onToggleFeatured }: { build: Bui
             <div className="flex-1 flex items-center gap-4 min-w-0">
                 <div className="w-12 h-12 rounded-lg bg-site-bg overflow-hidden flex-shrink-0 relative border border-site-border">
                     {build.thumbnailUrl ? (
-                        <Image
+                        <img
                             src={build.thumbnailUrl}
                             alt={build.title}
-                            fill
                             className="object-cover"
                         />
                     ) : (
@@ -115,10 +110,9 @@ function SortableBuildItem({ build, onUncurate, onToggleFeatured }: { build: Bui
                     className={`p-2 transition-colors rounded-lg relative z-20 ${build.featured ? 'text-yellow-400 hover:text-yellow-300' : 'text-site-text-muted hover:text-yellow-400'} hover:bg-site-surface`}
                     title={build.featured ? 'Remove Featured' : 'Mark Featured'}
                 >
-                    {build.featured ? <Star className="w-4 h-4 fill-current" /> : <StarOff className="w-4 h-4" />}
+                    {build.featured ? <Star className="w-4 h-4-current" /> : <StarOff className="w-4 h-4" />}
                 </button>
-                <Link
-                    href={`/admin/curated-builds/${build.id}/edit`}
+                <Link to={`/admin/curated-builds/${build.id}/edit`}
                     className="p-2 text-site-text-muted hover:text-site-accent hover:bg-site-surface transition-colors rounded-lg relative z-20"
                     title="Edit Build"
                     onPointerDown={(e) => e.stopPropagation()}
@@ -190,7 +184,7 @@ export function CuratedBuildsClient({ initialBuilds }: CuratedBuildsClientProps)
                 throw new Error('Failed to update order');
             }
 
-            router.refresh();
+            window.location.reload();
         } catch (error) {
             console.error(error);
             alert('Failed to save the new order.');
@@ -211,7 +205,7 @@ export function CuratedBuildsClient({ initialBuilds }: CuratedBuildsClientProps)
             });
             if (!res.ok) throw new Error('Failed to uncurate');
             setBuilds(prev => prev.filter(b => b.id !== id));
-            router.refresh();
+            window.location.reload();
         } catch (error) {
             console.error(error);
             alert('Failed to remove curation.');
@@ -233,7 +227,7 @@ export function CuratedBuildsClient({ initialBuilds }: CuratedBuildsClientProps)
                 body: JSON.stringify({ featured: !build.featured }),
             });
             if (!res.ok) throw new Error('Failed to toggle featured');
-            router.refresh();
+            window.location.reload();
         } catch (error) {
             console.error(error);
             setBuilds(prev => prev.map(b => b.id === id ? { ...b, featured: build.featured } : b));

@@ -1,14 +1,14 @@
 import { Velum2099Game } from '@/components/velum2099/Velum2099Game';
-import type { Metadata, Viewport } from 'next';
+// TODO: Metadata/Viewport removed — use TanStack Start route meta instead
 
-export const viewport: Viewport = {
+export const viewport = {
     width: 'device-width',
     initialScale: 1,
     maximumScale: 1,
     userScalable: false,
 };
 
-export const metadata: Metadata = {
+export const metadata = {
     title: 'VELUM2099 — RMH Studios',
     description:
         'Cyberpunk driving simulator with procedural city generation, drift physics, and VHS post-processing.',

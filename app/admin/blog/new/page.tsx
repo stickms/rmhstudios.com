@@ -1,20 +1,21 @@
-import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
-import { headers } from 'next/headers';
+// TODO: Replace next/headers — use TanStack Start loader for server-side auth
+// import { headers } from 'next/headers';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { MDXEditor } from '@/components/admin/MDXEditor';
-import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { Link, redirect } from '@tanstack/react-router';
 
 export const metadata = {
     title: 'Create Blog Post | Admin | RMH Studios',
 };
 
 export default async function NewBlogPostPage() {
-    const session = await auth.api.getSession({ headers: await headers() });
+    // TODO: Move auth check to TanStack Start loader
+    const session = await auth.api.getSession({ headers: new Headers() });
 
     if (!session || !(session.user as any).isAdmin) {
-        redirect('/');
+        throw redirect({ to: '/' });
     }
 
     return <MDXEditor />;

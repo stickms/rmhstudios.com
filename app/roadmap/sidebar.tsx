@@ -1,11 +1,9 @@
-'use client';
-
-import Link from 'next/link';
 import { Newspaper, FlaskConical, Gamepad2, AppWindow } from 'lucide-react';
 import { games } from '@/lib/games';
 import { apps } from '@/lib/apps';
 import type { NewsArticle } from '@/lib/news';
 import type { ResearchArticle } from '@/lib/research';
+import { Link } from '@tanstack/react-router';
 
 interface RoadmapRightSidebarProps {
     newsArticles: Partial<NewsArticle>[];
@@ -27,7 +25,7 @@ export function RoadmapRightSidebar({ newsArticles, researchArticles }: RoadmapR
                     {games.slice(0, 4).map((game) => (
                         <Link
                             key={game.id}
-                            href={game.href}
+                            to={game.href}
                             className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-site-surface-hover transition-colors group"
                         >
                             <div className={`w-8 h-8 rounded-lg bg-linear-to-br ${game.gradient} flex items-center justify-center shrink-0`}>
@@ -44,7 +42,7 @@ export function RoadmapRightSidebar({ newsArticles, researchArticles }: RoadmapR
                     {visibleApps.slice(0, 2).map((app) => (
                         <Link
                             key={app.id}
-                            href={app.href}
+                            to={app.href}
                             className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-site-surface-hover transition-colors group"
                         >
                             <div className={`w-8 h-8 rounded-lg bg-linear-to-br ${app.gradient} flex items-center justify-center shrink-0`}>
@@ -71,7 +69,7 @@ export function RoadmapRightSidebar({ newsArticles, researchArticles }: RoadmapR
                     {newsArticles.slice(0, 3).map((article) => (
                         <Link
                             key={article.slug}
-                            href={`/news/${article.slug}`}
+                            to={`/news/${article.slug}`}
                             className="block group"
                         >
                             <p className="text-xs text-site-text-dim">{article.category}</p>
@@ -81,8 +79,7 @@ export function RoadmapRightSidebar({ newsArticles, researchArticles }: RoadmapR
                         </Link>
                     ))}
                 </div>
-                <Link
-                    href="/news"
+                <Link to="/news"
                     className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors"
                 >
                     Show more
@@ -99,7 +96,7 @@ export function RoadmapRightSidebar({ newsArticles, researchArticles }: RoadmapR
                     {researchArticles.slice(0, 3).map((article) => (
                         <Link
                             key={article.slug}
-                            href={`/research/${article.slug}`}
+                            to={`/research/${article.slug}`}
                             className="block group"
                         >
                             <p className="text-xs text-site-text-dim">{article.category}</p>
@@ -109,8 +106,7 @@ export function RoadmapRightSidebar({ newsArticles, researchArticles }: RoadmapR
                         </Link>
                     ))}
                 </div>
-                <Link
-                    href="/research"
+                <Link to="/research"
                     className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors"
                 >
                     Show more

@@ -1,15 +1,13 @@
-'use client';
-
 import { authClient } from "@/lib/auth-client";
 import { useState, useRef, Suspense, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
 import { FaDiscord, FaGoogle, FaGithub } from "react-icons/fa";
 import { MdEmail, MdLock, MdPerson, MdCameraAlt } from "react-icons/md";
 import { ImageCropModal } from "@/components/feed/ImageCropModal";
+import { useSearch } from '@tanstack/react-router';
 
 function LoginForm() {
-    const searchParams = useSearchParams();
-    const rawCallback = searchParams.get("callbackURL") || searchParams.get("callbackUrl") || searchParams.get("next");
+    const searchParams = useSearch();
+    const rawCallback = searchParams.callbackURL || searchParams.callbackUrl || searchParams.next;
 
     const [callbackURL, setCallbackURL] = useState(() =>
         rawCallback?.startsWith("/") && !rawCallback.startsWith("//") ? rawCallback : "/"

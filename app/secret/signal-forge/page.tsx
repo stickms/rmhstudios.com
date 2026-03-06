@@ -1,14 +1,14 @@
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { SignalForgeGame } from '@/components/signal-forge/SignalForgeGame';
+import { Link } from '@tanstack/react-router';
 
 export default function SignalForgePage() {
   return (
     <main className="fixed inset-0 bg-black flex flex-col overflow-hidden">
       {/* Top bar: back button | title | (pause button rendered by SignalForgeUI) */}
       <div className="flex items-center justify-between px-3 pt-3 pb-1 shrink-0 relative z-60">
-        <Link href="/secret">
+        <Link to="/secret">
           <Button
             variant="ghost"
             size="sm"

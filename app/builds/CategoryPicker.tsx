@@ -1,7 +1,5 @@
-'use client';
-
-import Link from 'next/link';
 import { Gamepad2, AppWindow, ArrowRight, Sparkles, Zap } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
 
 interface CategoryPickerProps {
     entertainmentCount?: number;
@@ -12,8 +10,7 @@ export function CategoryPicker({ entertainmentCount, appCount }: CategoryPickerP
     return (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {/* Apps & Tools */}
-            <Link
-                href="/builds/apps"
+            <Link to="/builds/apps"
                 className="group relative rounded-2xl border border-site-border bg-site-surface hover:border-cyan-500/50 transition-all overflow-hidden"
             >
                 {/* Gradient background overlay */}
@@ -45,8 +42,7 @@ export function CategoryPicker({ entertainmentCount, appCount }: CategoryPickerP
             </Link>
 
             {/* Entertainment */}
-            <Link
-                href="/builds/games"
+            <Link to="/builds/games"
                 className="group relative rounded-2xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-all overflow-hidden"
             >
                 {/* Gradient background overlay */}

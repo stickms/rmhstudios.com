@@ -6,10 +6,7 @@
  * Follows the /app/rmhbox/[lobbyId]/page.tsx pattern.
  */
 
-'use client';
-
 import { useEffect, useState, useCallback, use, lazy, Suspense } from 'react';
-import { useRouter } from 'next/navigation';
 import { connectToAltair, emit } from '@/lib/altair/multiplayer/socket';
 import { useAltairMultiplayerStore } from '@/lib/altair/multiplayer/store';
 import { C2S, S2C } from '@/lib/altair/multiplayer/events';
@@ -18,6 +15,7 @@ import AltairHeader from '@/components/altair/AltairHeader';
 import ClassSelectLobby from '@/components/altair/multiplayer/ClassSelectLobby';
 import LobbyWaiting from '@/components/altair/multiplayer/LobbyWaiting';
 import type { GameResultsData } from '@/lib/altair/multiplayer/types';
+import { useRouter } from '@tanstack/react-router';
 
 // Lazy import for the multiplayer game screen
 const MultiplayerGameScreen = lazy(
@@ -55,7 +53,7 @@ export default function AltairLobbyPage({ params }: { params: Promise<{ lobbyId:
           if (mounted) {
             useAltairMultiplayerStore.getState().leaveLobby();
             addToast('You were kicked from the lobby', 'warning');
-            router.push('/altair/multiplayer');
+            router.navigate({ to: '/altair/multiplayer' });
           }
         });
 
@@ -64,7 +62,7 @@ export default function AltairLobbyPage({ params }: { params: Promise<{ lobbyId:
           if (mounted) {
             useAltairMultiplayerStore.getState().leaveLobby();
             addToast('Lobby was disbanded', 'info');
-            router.push('/altair/multiplayer');
+            router.navigate({ to: '/altair/multiplayer' });
           }
         });
 
@@ -73,7 +71,7 @@ export default function AltairLobbyPage({ params }: { params: Promise<{ lobbyId:
           if (!mounted) return;
           if (data.code === 'LOBBY_NOT_FOUND' || data.code === 'NOT_IN_LOBBY') {
             useAltairMultiplayerStore.getState().leaveLobby();
-            router.push('/altair/multiplayer');
+            router.navigate({ to: '/altair/multiplayer' });
           }
         });
       } catch (err) {
@@ -88,14 +86,14 @@ export default function AltairLobbyPage({ params }: { params: Promise<{ lobbyId:
   const handleLeave = useCallback(() => {
     emit(C2S.LOBBY_LEAVE, { lobbyId });
     useAltairMultiplayerStore.getState().leaveLobby();
-    router.push('/altair/multiplayer');
+    router.navigate({ to: '/altair/multiplayer' });
   }, [lobbyId, router]);
 
   // Loading state
   if (connectionStatus === 'connecting' || connectionStatus === 'disconnected') {
     return (
       <div className="flex h-screen flex-col">
-        <AltairHeader context="menu" title="Multiplayer" onBack={() => router.push('/altair/multiplayer')} connectionStatus={connectionStatus} />
+        <AltairHeader context="menu" title="Multiplayer" onBack={() => router.navigate({ to: '/altair/multiplayer' })} connectionStatus={connectionStatus} />
         <div className="flex flex-1 items-center justify-center">
           <div className="text-center">
             <div className="text-2xl mb-4 text-(--altair-text)">Connecting...</div>
@@ -110,12 +108,12 @@ export default function AltairLobbyPage({ params }: { params: Promise<{ lobbyId:
   if (connectionStatus === 'error') {
     return (
       <div className="flex h-screen flex-col">
-        <AltairHeader context="menu" title="Multiplayer" onBack={() => router.push('/altair/multiplayer')} connectionStatus={connectionStatus} />
+        <AltairHeader context="menu" title="Multiplayer" onBack={() => router.navigate({ to: '/altair/multiplayer' })} connectionStatus={connectionStatus} />
         <div className="flex flex-1 items-center justify-center">
           <div className="text-center">
             <div className="text-2xl mb-4 text-(--altair-danger)">Connection error</div>
             <button
-              onClick={() => router.push('/altair/multiplayer')}
+              onClick={() => router.navigate({ to: '/altair/multiplayer' })}
               className="px-6 py-2 rounded-lg bg-(--altair-accent) text-white font-semibold hover:bg-(--altair-accent-hover) transition-colors"
             >
               Back to Lobby Browser
@@ -130,7 +128,7 @@ export default function AltairLobbyPage({ params }: { params: Promise<{ lobbyId:
   if (!lobby) {
     return (
       <div className="flex h-screen flex-col">
-        <AltairHeader context="menu" title="Multiplayer" onBack={() => router.push('/altair/multiplayer')} connectionStatus={connectionStatus} />
+        <AltairHeader context="menu" title="Multiplayer" onBack={() => router.navigate({ to: '/altair/multiplayer' })} connectionStatus={connectionStatus} />
         <div className="flex flex-1 items-center justify-center">
           <div className="text-center">
             <div className="text-2xl mb-4 text-(--altair-text)">Joining lobby {lobbyId}...</div>

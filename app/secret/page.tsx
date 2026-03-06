@@ -1,6 +1,3 @@
-'use client';
-
-import Link from 'next/link';
 import {
     Briefcase,
     BookOpen,
@@ -17,6 +14,7 @@ import {
     Zap,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
 
 interface SecretItem {
     id: string;
@@ -49,8 +47,7 @@ const secretApps: SecretItem[] = [
 function ItemCard({ item }: { item: SecretItem }) {
     const Icon = item.icon;
     return (
-        <Link
-            href={item.href}
+        <Link to={item.href}
             className="group relative overflow-hidden rounded-xl border border-white/6 bg-white/3 p-6 transition-all duration-300 hover:border-white/12 hover:bg-white/6"
         >
             <div
@@ -77,8 +74,7 @@ export default function SecretPage() {
     return (
         <div className="min-h-screen bg-[#0a0a0f] text-white">
             <div className="mx-auto max-w-5xl px-6 py-12">
-                <Link
-                    href="/"
+                <Link to="/"
                     className="mb-8 inline-flex items-center gap-2 text-sm text-white/40 transition-colors hover:text-white/70"
                 >
                     <ArrowLeft className="h-4 w-4" />

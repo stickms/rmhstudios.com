@@ -26,8 +26,11 @@
   "exclude": [
     "node_modules",
     "dist-server",
+    "server/api-routes",
     "scripts",
     ".output",
-    ".vinxi"
+    ".vinxi",
+    "next.config.ts",
+    "proxy.ts"
   ]
 }

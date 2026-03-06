@@ -1,7 +1,4 @@
-'use client';
-
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Music, Plus, ArrowRight, Headphones } from 'lucide-react';
 import { useRmhMusicStore } from '@/lib/rmhmusic/store';
@@ -9,6 +6,7 @@ import { connectToRmhMusic, emit } from '@/lib/rmhmusic/socket';
 import { C2S, S2C } from '@/lib/rmhmusic/events';
 import RoomBrowser from '@/components/rmhmusic/RoomBrowser';
 import Visualizer from '@/components/rmhmusic/Visualizer';
+import { useRouter } from '@tanstack/react-router';
 
 export default function RmhMusicPage() {
   const router = useRouter();
@@ -25,7 +23,7 @@ export default function RmhMusicPage() {
   useEffect(() => {
     const unsub = useRmhMusicStore.subscribe((state) => {
       if (state.room) {
-        router.push(`/rmhmusic/${state.room.roomId}`);
+        router.navigate({ to: `/rmhmusic/${state.room.roomId}` });
       }
     });
     return unsub;
@@ -72,7 +70,7 @@ export default function RmhMusicPage() {
           className="flex justify-center mb-8"
         >
           <button
-            onClick={() => router.push('/rmhmusic/player')}
+            onClick={() => router.navigate({ to: '/rmhmusic/player' })}
             className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all hover:scale-105"
             style={{ background: 'var(--site-accent)', color: '#fff' }}
           >

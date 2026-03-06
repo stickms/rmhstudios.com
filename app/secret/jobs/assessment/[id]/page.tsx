@@ -1,10 +1,8 @@
-'use client';
-
 import { use } from 'react';
-import { useRouter } from 'next/navigation';
 import { useJobsDataStore } from '@/lib/store/useJobsDataStore';
 import { OAEditor } from '@/components/rmh-jobs/OAEditor';
 import { problemBank } from '@/lib/rmh-jobs/problems';
+import { useRouter } from '@tanstack/react-router';
 
 export default function AssessmentPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -16,7 +14,7 @@ export default function AssessmentPage({ params }: { params: Promise<{ id: strin
             <div className="flex flex-col items-center justify-center min-h-screen gap-4">
                 <p className="text-lg" style={{ color: 'var(--jobs-danger)' }}>Assessment not found</p>
                 <button
-                    onClick={() => router.push('/secret/jobs/applications')}
+                    onClick={() => router.navigate({ to: '/secret/jobs/applications' })}
                     className="text-sm"
                     style={{ color: 'var(--jobs-accent)' }}
                 >

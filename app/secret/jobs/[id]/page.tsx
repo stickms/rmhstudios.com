@@ -1,5 +1,3 @@
-'use client';
-
 import { useState, use } from 'react';
 import {
     ArrowLeft,
@@ -11,8 +9,8 @@ import {
     Loader2,
     CheckCircle2,
 } from 'lucide-react';
-import Link from 'next/link';
 import { useJobsDataStore } from '@/lib/store/useJobsDataStore';
+import { Link } from '@tanstack/react-router';
 
 export default function JobDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -65,7 +63,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
         return (
             <div className="flex flex-col items-center justify-center min-h-screen gap-4">
                 <p className="text-lg" style={{ color: 'var(--jobs-text-muted)' }}>Job not found</p>
-                <Link href="/secret/jobs" className="text-sm" style={{ color: 'var(--jobs-accent)' }}>
+                <Link to="/secret/jobs" className="text-sm" style={{ color: 'var(--jobs-accent)' }}>
                     &larr; Back to job board
                 </Link>
             </div>
@@ -79,8 +77,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                 style={{ background: 'rgba(10, 10, 15, 0.85)', borderColor: 'var(--jobs-border)' }}
             >
                 <div className="max-w-3xl mx-auto px-4 py-3">
-                    <Link
-                        href="/secret/jobs"
+                    <Link to="/secret/jobs"
                         className="flex items-center gap-1.5 text-sm hover:text-(--jobs-accent) transition-colors"
                         style={{ color: 'var(--jobs-text-muted)' }}
                     >
@@ -119,8 +116,8 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
                                 You have successfully submitted your application for <strong>{job.title}</strong> at <strong>{job.company}</strong>. You will hear back soon!
                             </p>
                             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                                <Link href="/secret/jobs" className="jobs-btn-primary px-5 py-2.5 rounded-lg text-sm inline-block" style={{ borderRadius: 'var(--jobs-radius)' }}>Return to RMH Jobs Portal</Link>
-                                <Link href="/secret/jobs/applications" className="jobs-btn-secondary px-5 py-2.5 rounded-lg text-sm inline-block" style={{ borderRadius: 'var(--jobs-radius)' }}>View My Applications</Link>
+                                <Link to="/secret/jobs" className="jobs-btn-primary px-5 py-2.5 rounded-lg text-sm inline-block" style={{ borderRadius: 'var(--jobs-radius)' }}>Return to RMH Jobs Portal</Link>
+                                <Link to="/secret/jobs/applications" className="jobs-btn-secondary px-5 py-2.5 rounded-lg text-sm inline-block" style={{ borderRadius: 'var(--jobs-radius)' }}>View My Applications</Link>
                             </div>
                         </div>
                     ) : (

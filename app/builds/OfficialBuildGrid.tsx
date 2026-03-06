@@ -1,5 +1,3 @@
-'use client';
-
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { Search, X, ChevronDown, Filter, ArrowUpDown } from 'lucide-react';
 import { OfficialBuildCard } from './OfficialBuildCard';

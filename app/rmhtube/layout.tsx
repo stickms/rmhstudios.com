@@ -6,10 +6,11 @@
  */
 
 import { auth } from '@/lib/auth';
-import { headers } from 'next/headers';
-import { redirect } from 'next/navigation';
+// TODO: Replace next/headers — use TanStack Start loader for server-side auth
+// import { headers } from 'next/headers';
 import RmhTubeShell from '@/components/rmhtube/RmhTubeShell';
 import './rmhtube.css';
+import { redirect } from '@tanstack/react-router';
 
 export const metadata = {
   title: 'RmhTube — Watch Together',
@@ -17,9 +18,10 @@ export const metadata = {
 };
 
 export default async function RmhTubeLayout({ children }: { children: React.ReactNode }) {
-  const session = await auth.api.getSession({ headers: await headers() });
+  // TODO: Move auth check to TanStack Start loader
+  const session = await auth.api.getSession({ headers: new Headers() });
   if (!session?.user) {
-    redirect('/login?callbackURL=/rmhtube');
+    throw redirect({ to: '/login?callbackURL=/rmhtube' });
   }
   return <RmhTubeShell>{children}</RmhTubeShell>;
 }

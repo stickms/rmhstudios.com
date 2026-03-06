@@ -1,11 +1,7 @@
-'use client';
-
-import Link from 'next/link';
-import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { Heart, MessageCircle, Eye, ArrowRight } from 'lucide-react';
 import * as Popover from '@radix-ui/react-popover';
 import { useState, useRef } from 'react';
+import { Link, useRouter } from '@tanstack/react-router';
 export interface OfficialBuild {
     id: string;
     slug: string;
@@ -56,7 +52,7 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
             onView?.(build.id);
             window.open(cardUrl, '_blank');
         } else {
-            router.push(cardUrl);
+            router.navigate({ to: cardUrl });
         }
     };
 
@@ -83,12 +79,10 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
                 {/* Thumbnail */}
                 {build.thumbnailUrl ? (
                     <div className="absolute inset-0 w-full h-full overflow-hidden bg-site-bg">
-                        <Image
+                        <img
                             src={build.thumbnailUrl}
                             alt={build.title}
-                            fill
                             className="object-cover group-hover:scale-105 transition-transform duration-300"
-                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
                         />
                         <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/40 to-black/10 transition-opacity duration-300 group-hover:from-black/90 group-hover:via-black/60" />
                     </div>
@@ -122,7 +116,7 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
                                     <button 
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            router.push(detailUrl);
+                                            router.navigate({ to: detailUrl });
                                         }}
                                         className="flex items-center gap-1.5 hover:text-blue-400 transition-colors"
                                     >
@@ -135,8 +129,7 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
                                     </span>
                                 </div>
 
-                                <Link
-                                    href={detailUrl}
+                                <Link to={detailUrl}
                                     onClick={(e) => {
                                         e.stopPropagation();
                                     }}

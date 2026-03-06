@@ -4,7 +4,7 @@
 
 import { createFileRoute, Link, redirect } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { getWebRequest } from '@tanstack/react-start/server';
+import { getRequest } from '@tanstack/react-start/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { PageLayout } from '@/components/feed/PageLayout';
@@ -13,7 +13,7 @@ import { CuratedBuildsClient } from '@/app/admin/curated-builds/CuratedBuildsCli
 import { AdminRightSidebar } from '@/components/feed/AdminRightSidebar';
 
 const fetchCuratedBuilds = createServerFn({ method: 'GET' }).handler(async () => {
-  const request = getWebRequest();
+  const request = getRequest();
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session || !(session.user as any).isAdmin) {
     throw redirect({ to: '/' });

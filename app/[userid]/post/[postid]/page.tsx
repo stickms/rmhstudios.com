@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+// TODO: Metadata removed — use TanStack Start route meta instead
 import { RightSidebar } from '@/components/feed/RightSidebar';
 import { PostDetail } from '@/components/feed/PostDetail';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
@@ -10,7 +10,7 @@ export async function generateMetadata({
   params,
 }: {
   params: Promise<{ userid: string; postid: string }>;
-}): Promise<Metadata> {
+}): Promise<any> {
   const { postid } = await params;
 
   const rmhark = await prisma.rMHark.findUnique({

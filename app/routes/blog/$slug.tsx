@@ -5,7 +5,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getPostBySlug } from '@/lib/blog';
-import { MDXRemote } from 'next-mdx-remote/rsc';
+import ReactMarkdown from 'react-markdown';
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft, Calendar } from 'lucide-react';
 import { ShareButton } from '@/components/blog/ShareButton';
@@ -82,7 +82,7 @@ function BlogPost() {
         </header>
 
         <div className="prose prose-invert prose-lg max-w-none prose-headings:font-bold prose-headings:text-site-text prose-p:text-site-text-muted prose-a:text-site-accent hover:prose-a:text-site-accent-hover prose-img:rounded-xl prose-img:border prose-img:border-site-border">
-          <MDXRemote source={post.content as string} components={animatedComponents} />
+          <ReactMarkdown components={animatedComponents}>{post.content as string}</ReactMarkdown>
         </div>
 
         <hr className="my-12 border-site-border" />

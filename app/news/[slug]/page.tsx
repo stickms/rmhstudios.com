@@ -1,6 +1,5 @@
 import { getNewsArticleBySlug } from '@/lib/news';
 import { MDXRemote } from 'next-mdx-remote/rsc';
-import Link from 'next/link';
 import { ArrowLeft, Calendar, ExternalLink } from 'lucide-react';
 import { ShareButton } from '@/components/blog/ShareButton';
 import { getCategoryColor } from '@/lib/news-categories';
@@ -27,13 +26,14 @@ const animatedComponents = {
 
 export const dynamic = 'force-dynamic';
 
-import type { Metadata } from 'next';
+// TODO: Metadata removed — use TanStack Start route meta instead
+import { Link } from '@tanstack/react-router';
 
 interface Props {
     params: Promise<{ slug: string }>;
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params }: Props): Promise<any> {
     const { slug } = await params;
     const article = await getNewsArticleBySlug(slug);
     if (!article) return { title: 'Article Not Found | RMH Studios' };
@@ -53,7 +53,7 @@ export default async function NewsArticlePage({ params }: Props) {
             <main className="min-h-screen pt-20 pb-20 px-4 bg-(--site-bg)">
                 <div className="container mx-auto max-w-3xl text-center">
                     <h1 className="text-3xl font-bold text-(--site-text)">Article not found</h1>
-                    <Link href="/news" className="text-(--site-accent) mt-4 inline-block hover:underline">
+                    <Link to="/news" className="text-(--site-accent) mt-4 inline-block hover:underline">
                         ← Back to News
                     </Link>
                 </div>
@@ -66,8 +66,7 @@ export default async function NewsArticlePage({ params }: Props) {
     return (
         <article className="min-h-screen pt-20 pb-20 px-4 bg-(--site-bg) relative overflow-hidden">
             <div className="container mx-auto max-w-3xl relative z-10">
-                <Link
-                    href="/news"
+                <Link to="/news"
                     className="inline-flex items-center gap-2 text-(--site-text-dim) hover:text-(--site-text) mb-8 transition-colors animate-in fade-in slide-in-from-left-4 duration-700"
                 >
                     <ArrowLeft className="w-4 h-4" /> Back to News

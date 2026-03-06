@@ -1,16 +1,13 @@
-'use client';
-
 import { useState } from 'react';
-import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
   Terminal, Copy, Check, Key, ExternalLink, Boxes, Zap, Shield, GitBranch, ArrowLeft,
   Monitor, Download, ChevronDown, ChevronUp, Globe, Layers, Layout, FileText, Trash2, Package,
 } from 'lucide-react';
-import Image from 'next/image';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import TokenGenerator from './components/TokenGenerator';
+import { Link } from '@tanstack/react-router';
 
 const INSTALL_COMMAND_MAC = 'curl -fsSL https://raw.githubusercontent.com/ka1kqi/rmhcode/main/install.sh | bash';
 const INSTALL_COMMAND_PS = 'irm https://raw.githubusercontent.com/ka1kqi/rmhcode/main/install.ps1 | iex';
@@ -138,7 +135,7 @@ export default function RmhCodePage() {
     <div className="min-h-screen bg-site-bg relative">
       {/* Back Button */}
       <div className="absolute top-4 left-4 z-50">
-        <Link href="/builds">
+        <Link to="/builds">
           <Button
             variant="ghost"
             size="sm"
@@ -164,12 +161,10 @@ export default function RmhCodePage() {
             {/* Hero Image */}
             <div className="flex justify-center mb-8">
               <div className="relative w-64 h-80 md:w-80 md:h-[28rem] rounded-2xl overflow-hidden border border-violet-500/30 shadow-2xl shadow-violet-500/20">
-                <Image
+                <img
                   src="/images/games/rmhcode.png"
                   alt="rmhcode"
-                  fill
                   className="object-cover"
-                  priority
                 />
               </div>
             </div>
@@ -356,7 +351,7 @@ export default function RmhCodePage() {
             ) : (
               <div className="text-center py-8 border border-dashed border-site-border rounded-lg">
                 <p className="text-site-text-muted mb-4">Sign in to generate a CLI token</p>
-                <Link href="/login">
+                <Link to="/login">
                   <Button variant="accent">
                     Sign In
                   </Button>
@@ -459,7 +454,7 @@ rmhcode --provider gemini        # Use Gemini`}
             </h2>
             <p className="text-sm text-site-text-muted mb-6">
               Publish and manage projects on the{' '}
-              <Link href="/user-builds" className="text-violet-400 hover:text-violet-300">User Builds</Link>{' '}
+              <Link to="/user-builds" className="text-violet-400 hover:text-violet-300">User Builds</Link>{' '}
               showcase directly from the terminal.
             </p>
 
@@ -645,7 +640,7 @@ rmhcode --tmux --provider gemini  # all panes use Gemini`}
 
         {/* User Builds Link */}
         <motion.div {...inViewProps}>
-          <Link href="/user-builds">
+          <Link to="/user-builds">
             <div className="p-6 rounded-xl border border-site-border bg-gradient-to-r from-violet-500/10 to-fuchsia-600/10 hover:border-violet-500/50 transition-colors group">
               <div className="flex items-center justify-between">
                 <div>

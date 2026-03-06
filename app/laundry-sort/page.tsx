@@ -1,14 +1,14 @@
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { LaundryGame } from '@/components/laundry-sort/LaundryGame';
+import { Link } from '@tanstack/react-router';
 
 export default function LaundryPage() {
   return (
     <main className="fixed inset-0 bg-black flex flex-col overflow-hidden">
       {/* Back button */}
       <div className="absolute top-3 left-3 z-50">
-        <Link href="/builds">
+        <Link to="/builds">
           <Button
             variant="ghost"
             size="sm"

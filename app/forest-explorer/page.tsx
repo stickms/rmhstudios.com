@@ -1,12 +1,12 @@
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, TreePine, BookOpen } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
 
 export default function ForestExplorerPage() {
     return (
         <main className="fixed inset-0 bg-gradient-to-b from-[#0a1a0e] via-[#0d200f] to-[#071208] flex flex-col overflow-hidden">
             <div className="absolute top-3 left-3 z-50">
-                <Link href="/builds">
+                <Link to="/builds">
                     <Button
                         variant="ghost"
                         size="sm"
@@ -31,7 +31,7 @@ export default function ForestExplorerPage() {
 
                 <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 w-full max-w-xl">
                     {/* Explore Mode Card */}
-                    <Link href="/forest-explorer/explore" className="flex-1 group">
+                    <Link to="/forest-explorer/explore" className="flex-1 group">
                         <div className="relative p-6 rounded-2xl border border-green-700/30 bg-green-950/30 hover:bg-green-900/30 hover:border-green-600/50 transition-all duration-300 cursor-pointer h-full">
                             <div className="flex items-center gap-3 mb-3">
                                 <div className="w-10 h-10 rounded-xl bg-green-800/50 flex items-center justify-center group-hover:bg-green-700/50 transition-colors">
@@ -50,7 +50,7 @@ export default function ForestExplorerPage() {
                     </Link>
 
                     {/* Story Mode Card */}
-                    <Link href="/forest-explorer/story" className="flex-1 group">
+                    <Link to="/forest-explorer/story" className="flex-1 group">
                         <div className="relative p-6 rounded-2xl border border-amber-700/30 bg-amber-950/20 hover:bg-amber-900/20 hover:border-amber-600/50 transition-all duration-300 cursor-pointer h-full">
                             <div className="flex items-center gap-3 mb-3">
                                 <div className="w-10 h-10 rounded-xl bg-amber-800/40 flex items-center justify-center group-hover:bg-amber-700/40 transition-colors">

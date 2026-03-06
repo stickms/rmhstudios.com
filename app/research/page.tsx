@@ -13,8 +13,7 @@ export const metadata = {
 export const revalidate = 60;
 
 import { Megaphone } from 'lucide-react';
-import Link from 'next/link';
-
+import { Link } from '@tanstack/react-router';
 export default async function ResearchPage() {
   const articles = getAllArticles();
 
@@ -43,8 +42,7 @@ export default async function ResearchPage() {
                 <p className="text-xs text-site-text-muted mt-2">
                     Original contributions spanning AI, computational topology, statistical physics, cognitive science, and game design.
                 </p>
-                <Link
-                    href="/research/call"
+                <Link to="/research/call"
                     className="inline-block mt-2 rounded-lg bg-site-accent px-4 py-2 text-xs font-bold text-white transition hover:opacity-90"
                 >
                     View Call for Papers

@@ -6,10 +6,7 @@
  * Desktop: sidebar layout with Members + Chat on the right.
  */
 
-'use client';
-
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { useParams, useRouter } from 'next/navigation';
 import { Crown, Copy, Play, Pause, SkipForward, RotateCcw, Plus, Check, Trash2, Circle, UserX, Ban, Globe, GlobeLock, MessageCircle, Users, Timer, Settings, Info, X } from 'lucide-react';
 import { connectToRmhStudy, emit, getSocket } from '@/lib/rmhstudy/socket';
 import { useRmhStudyStore } from '@/lib/rmhstudy/store';
@@ -20,6 +17,7 @@ import BanListModal from '@/components/rmhstudy/BanListModal';
 import ChatPanel from '@/components/shared/ChatPanel';
 import type { ChatPanelMessage } from '@/components/shared/ChatPanel';
 import type { TimerPhase } from '@/lib/rmhstudy/types';
+import { useParams, useRouter } from '@tanstack/react-router';
 
 function formatTime(ms: number): string {
   const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
@@ -88,7 +86,7 @@ export default function RmhStudyRoom() {
   const prevRoomRef = useRef(room);
   useEffect(() => {
     if (prevRoomRef.current && !room) {
-      router.push('/rmhstudy');
+      router.navigate({ to: '/rmhstudy' });
     }
     prevRoomRef.current = room;
   }, [room, router]);
@@ -119,7 +117,7 @@ export default function RmhStudyRoom() {
   const handleLeave = useCallback(() => {
     emit(C2S.ROOM_LEAVE, { roomCode });
     useRmhStudyStore.getState().leaveRoom();
-    router.push('/rmhstudy');
+    router.navigate({ to: '/rmhstudy' });
   }, [roomCode, router]);
 
   const handleCopyCode = useCallback(() => {

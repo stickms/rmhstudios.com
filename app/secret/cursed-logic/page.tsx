@@ -1,13 +1,11 @@
-'use client';
-
 import { useState } from 'react';
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, HelpCircle, ShoppingBag } from 'lucide-react';
 import { CursedLogicGame } from '@/components/cursed-logic/CursedLogicGame';
 import { HowToPlayModal } from '@/components/cursed-logic/HowToPlayModal';
 import { ShopModal } from '@/components/cursed-logic/ShopModal';
 import { useShopStore } from '@/lib/cursed-logic/shopState';
+import { Link } from '@tanstack/react-router';
 
 export default function CursedLogicPage() {
   const [helpOpen, setHelpOpen] = useState(false);
@@ -17,7 +15,7 @@ export default function CursedLogicPage() {
   return (
     <main className="fixed inset-0 bg-[#0a0a0f] flex flex-col overflow-hidden">
       <div className="absolute top-3 left-3 z-50">
-        <Link href="/secret">
+        <Link to="/secret">
           <Button
             variant="ghost"
             size="sm"

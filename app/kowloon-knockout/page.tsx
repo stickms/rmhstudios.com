@@ -1,7 +1,7 @@
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import KowloonKnockout from '@/components/kowloon-knockout/KowloonKnockout';
+import { Link } from '@tanstack/react-router';
 
 export default function KowloonKnockoutPage() {
     return (
@@ -10,7 +10,7 @@ export default function KowloonKnockoutPage() {
             style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
         >
             <div className="absolute top-3 left-3 z-50">
-                <Link href="/builds">
+                <Link to="/builds">
                     <Button
                         variant="ghost"
                         size="sm"

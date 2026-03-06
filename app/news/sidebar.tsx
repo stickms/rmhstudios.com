@@ -1,9 +1,7 @@
-'use client';
-
-import Link from 'next/link';
 import { TrendingUp, FlaskConical } from 'lucide-react';
 import type { NewsArticle } from '@/lib/news';
 import type { ResearchArticle } from '@/lib/research';
+import { Link } from '@tanstack/react-router';
 
 interface NewsRightSidebarProps {
     featuredArticles: Partial<NewsArticle>[];
@@ -24,7 +22,7 @@ export function NewsRightSidebar({ featuredArticles, researchArticles }: NewsRig
                         {featuredArticles.slice(0, 5).map((article) => (
                             <Link
                                 key={article.slug}
-                                href={`/news/${article.slug}`}
+                                to={`/news/${article.slug}`}
                                 className="block group"
                             >
                                 <p className="text-xs text-site-text-dim">{article.category}</p>
@@ -52,7 +50,7 @@ export function NewsRightSidebar({ featuredArticles, researchArticles }: NewsRig
                     {researchArticles.slice(0, 3).map((article) => (
                         <Link
                             key={article.slug}
-                            href={`/research/${article.slug}`}
+                            to={`/research/${article.slug}`}
                             className="block group"
                         >
                             <p className="text-xs text-site-text-dim">{article.category}</p>
@@ -62,8 +60,7 @@ export function NewsRightSidebar({ featuredArticles, researchArticles }: NewsRig
                         </Link>
                     ))}
                 </div>
-                <Link
-                    href="/research"
+                <Link to="/research"
                     className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors"
                 >
                     Show more

@@ -6,10 +6,11 @@
  */
 
 import { auth } from '@/lib/auth';
-import { headers } from 'next/headers';
-import { redirect } from 'next/navigation';
+// TODO: Replace next/headers — use TanStack Start loader for server-side auth
+// import { headers } from 'next/headers';
 import AltairShell from '@/components/altair/AltairShell';
 import './altair.css';
+import { redirect } from '@tanstack/react-router';
 
 export const metadata = {
   title: 'Altair — Survivor Roguelite',
@@ -17,9 +18,10 @@ export const metadata = {
 };
 
 export default async function AltairLayout({ children }: { children: React.ReactNode }) {
-  const session = await auth.api.getSession({ headers: await headers() });
+  // TODO: Move auth check to TanStack Start loader
+  const session = await auth.api.getSession({ headers: new Headers() });
   if (!session?.user) {
-    redirect('/login?callbackURL=/altair');
+    throw redirect({ to: '/login?callbackURL=/altair' });
   }
   return <AltairShell>{children}</AltairShell>;
 }

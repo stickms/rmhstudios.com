@@ -1,6 +1,4 @@
-'use client';
-
-import { usePathname } from 'next/navigation';
+import { useLocation } from '@tanstack/react-router';
 import { PageLayout } from '@/components/feed/PageLayout';
 import type { ReactNode } from 'react';
 
@@ -13,7 +11,7 @@ export function BuildsLayoutClient({
   children: ReactNode;
   rightSidebar?: ReactNode;
 }) {
-  const pathname = usePathname();
+  const pathname = useLocation({ select: (loc) => loc.pathname });
 
   // For slug detail pages (e.g. /builds/altair), skip the PageLayout wrapper
   if (!KNOWN_SUBROUTES.includes(pathname)) {

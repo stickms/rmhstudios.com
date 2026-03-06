@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useCallback } from 'react';
 import { useRmhMusicStore } from '@/lib/rmhmusic/store';
 import { usePreviewPlayer } from '@/lib/rmhmusic/spotify-player';

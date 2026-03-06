@@ -3,10 +3,7 @@
  * Routes between menu, class select, game, game over, meta shop, and settings
  * based on the game store phase.
  */
-'use client';
-
 import { useCallback, useEffect, useRef, useState, lazy, Suspense } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAltairGameStore } from '@/lib/altair/stores/game-store';
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
 import { useAltairSettingsStore } from '@/lib/altair/stores/settings-store';
@@ -17,6 +14,7 @@ import GameOverScreen from '@/components/altair/screens/GameOverScreen';
 import MetaShopScreen from '@/components/altair/screens/MetaShopScreen';
 import SettingsScreen from '@/components/altair/screens/SettingsScreen';
 import BestiaryScreen from '@/components/altair/screens/BestiaryScreen';
+import { useRouter } from '@tanstack/react-router';
 
 // Lazy import for the game canvas
 const GameScreen = lazy(() => import('@/components/altair/screens/GameScreen'));
@@ -203,7 +201,7 @@ export default function AltairPage() {
           <AltairHeader context="menu" />
           <MenuScreen
             onPlay={goToClassSelect}
-            onMultiplayer={() => router.push('/altair/multiplayer')}
+            onMultiplayer={() => router.navigate({ to: '/altair/multiplayer' })}
             onMetaShop={() => setPhase('meta_shop')}
             onSettings={() => {
               setShowSettings(true);

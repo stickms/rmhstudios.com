@@ -4,10 +4,7 @@
  * Create or join a study room with synced Pomodoro timers.
  */
 
-'use client';
-
 import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { BookOpen, Clock, Users, Globe, RefreshCw } from 'lucide-react';
 import { connectToRmhStudy, getSocket, disconnectFromRmhStudy, emit } from '@/lib/rmhstudy/socket';
 import { useRmhStudyStore } from '@/lib/rmhstudy/store';
@@ -15,6 +12,7 @@ import { C2S, S2C } from '@/lib/rmhstudy/events';
 import { toast } from '@/lib/rmhstudy/toast-store';
 import RmhStudyHeader from '@/components/rmhstudy/RmhStudyHeader';
 import type { PublicStudyRoomInfo } from '@/lib/rmhstudy/types';
+import { useRouter } from '@tanstack/react-router';
 
 export default function RmhStudyLanding() {
   const router = useRouter();
@@ -31,7 +29,7 @@ export default function RmhStudyLanding() {
 
     function onRoomState(data: { roomCode: string }) {
       if (mounted && data.roomCode) {
-        router.push(`/rmhstudy/${data.roomCode}`);
+        router.navigate({ to: `/rmhstudy/${data.roomCode}` });
       }
     }
 
@@ -41,7 +39,7 @@ export default function RmhStudyLanding() {
 
         const existingRoom = useRmhStudyStore.getState().room;
         if (existingRoom && mounted) {
-          router.push(`/rmhstudy/${existingRoom.roomCode}`);
+          router.navigate({ to: `/rmhstudy/${existingRoom.roomCode}` });
           return;
         }
 

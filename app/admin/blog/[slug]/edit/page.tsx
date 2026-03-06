@@ -1,21 +1,22 @@
-import { redirect, notFound } from 'next/navigation';
 import { auth } from '@/lib/auth';
-import { headers } from 'next/headers';
+// TODO: Replace next/headers — use TanStack Start loader for server-side auth
+// import { headers } from 'next/headers';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { MDXEditor } from '@/components/admin/MDXEditor';
-import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { getPostBySlug } from '@/lib/blog';
+import { Link, notFound, redirect } from '@tanstack/react-router';
 
 export const metadata = {
     title: 'Edit Blog Post | Admin | RMH Studios',
 };
 
 export default async function EditBlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
-    const session = await auth.api.getSession({ headers: await headers() });
+    // TODO: Move auth check to TanStack Start loader
+    const session = await auth.api.getSession({ headers: new Headers() });
 
     if (!session || !(session.user as any).isAdmin) {
-        redirect('/');
+        throw redirect({ to: '/' });
     }
 
     const { slug } = await params;
@@ -24,7 +25,7 @@ export default async function EditBlogPostPage({ params }: { params: Promise<{ s
     try {
         post = await getPostBySlug(slug, ["title", "slug", "date", "description", "image", "tags", "content"]);
     } catch (e) {
-        notFound();
+        throw notFound();
     }
 
     return <MDXEditor initialData={post} isEdit={true} />;

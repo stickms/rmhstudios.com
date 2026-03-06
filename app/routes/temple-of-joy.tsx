@@ -1,16 +1,12 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router'
-import { Cormorant_Garamond } from 'next/font/google'
-
-const cormorant = Cormorant_Garamond({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
-  style: ['normal', 'italic'],
-  variable: '--font-cormorant',
-})
 
 function TempleOfJoyLayout() {
   return (
-    <div className={`${cormorant.variable} font-sans`}>
+    <div style={{ '--font-cormorant': '"Cormorant Garamond", serif' } as React.CSSProperties} className="font-sans">
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap"
+      />
       <Outlet />
     </div>
   )

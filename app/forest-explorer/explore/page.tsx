@@ -1,7 +1,7 @@
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { ExploreGame } from '@/components/forest-explorer/explore/ExploreGame';
+import { Link } from '@tanstack/react-router';
 
 export default function ForestExplorerExplorePage() {
     return (
@@ -10,7 +10,7 @@ export default function ForestExplorerExplorePage() {
             style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
         >
             <div className="absolute top-3 left-3 z-50">
-                <Link href="/forest-explorer">
+                <Link to="/forest-explorer">
                     <Button
                         variant="ghost"
                         size="sm"

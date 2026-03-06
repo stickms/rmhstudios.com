@@ -1,9 +1,7 @@
-'use client';
-
-import Link from 'next/link';
 import { Gamepad2, AppWindow, Newspaper, Star, ArrowLeft } from 'lucide-react';
 import type { NewsArticle } from '@/lib/news';
 import type { UserBuild, BuildCategory } from '@prisma/client';
+import { Link } from '@tanstack/react-router';
 
 type FullBuild = UserBuild & { category?: BuildCategory | null };
 
@@ -19,8 +17,7 @@ export function BuildsRightSidebar({ games, apps, newsArticles }: BuildsRightSid
     return (
         <div className="p-4 space-y-6">
             {/* Back to Categories */}
-            <Link
-                href="/builds"
+            <Link to="/builds"
                 className="flex items-center gap-1.5 text-sm text-site-accent hover:text-site-accent-hover transition-colors"
             >
                 <ArrowLeft className="w-3.5 h-3.5" />
@@ -37,7 +34,7 @@ export function BuildsRightSidebar({ games, apps, newsArticles }: BuildsRightSid
                     {featuredGames.map((game) => (
                         <Link
                             key={game.id}
-                            href={`/builds/${game.slug}`}
+                            to={`/builds/${game.slug}`}
                             className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-site-surface-hover transition-colors group"
                         >
                             <div className="w-8 h-8 rounded-lg bg-linear-to-br from-site-surface to-site-surface-hover flex items-center justify-center shrink-0">
@@ -64,7 +61,7 @@ export function BuildsRightSidebar({ games, apps, newsArticles }: BuildsRightSid
                     {apps.map((app) => (
                         <Link
                             key={app.id}
-                            href={`/builds/${app.slug}`}
+                            to={`/builds/${app.slug}`}
                             className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-site-surface-hover transition-colors group"
                         >
                             <div className="w-8 h-8 rounded-lg bg-linear-to-br from-site-surface to-site-surface-hover flex items-center justify-center shrink-0">
@@ -106,7 +103,7 @@ export function BuildsRightSidebar({ games, apps, newsArticles }: BuildsRightSid
                     {newsArticles.slice(0, 3).map((article) => (
                         <Link
                             key={article.slug}
-                            href={`/news/${article.slug}`}
+                            to={`/news/${article.slug}`}
                             className="block group"
                         >
                             <p className="text-xs text-site-text-dim">{article.category}</p>
@@ -116,8 +113,7 @@ export function BuildsRightSidebar({ games, apps, newsArticles }: BuildsRightSid
                         </Link>
                     ))}
                 </div>
-                <Link
-                    href="/news"
+                <Link to="/news"
                     className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors"
                 >
                     Show more

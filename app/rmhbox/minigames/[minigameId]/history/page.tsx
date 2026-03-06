@@ -8,10 +8,7 @@
  * Reference: docs/rmhbox/design-spec/core.md §14A.4
  */
 
-'use client';
-
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import { useParams } from 'next/navigation';
 import { ChevronDown, ChevronUp, Search, ArrowUpDown, Filter } from 'lucide-react';
 import RMHboxHeader from '@/components/rmhbox/RMHboxHeader';
 import { MINIGAME_REGISTRY } from '@/lib/rmhbox/minigame-registry';
@@ -20,6 +17,7 @@ import type { GameLog } from '@/lib/rmhbox/history-display-registry';
 
 // Ensure history display registrations are loaded
 import '@/lib/rmhbox/history-display-registrations';
+import { useParams } from '@tanstack/react-router';
 
 interface MatchEntry {
   id: string;

@@ -1,5 +1,5 @@
-import { notFound } from 'next/navigation';
 import { BuildDetail } from '@/components/user-builds';
+import { notFound } from '@tanstack/react-router';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -42,7 +42,7 @@ export default async function BuildPage({ params }: PageProps) {
   const build = await getBuild(slug);
 
   if (!build) {
-    notFound();
+    throw notFound();
   }
 
   return (

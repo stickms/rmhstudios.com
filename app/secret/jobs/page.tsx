@@ -1,13 +1,10 @@
-'use client';
-
 import { useEffect, useState, useCallback } from 'react';
 import { useJobSearchStore } from '@/lib/store/useJobSearchStore';
 import { useJobsDataStore } from '@/lib/store/useJobsDataStore';
 import { JobCard } from '@/components/rmh-jobs/JobCard';
 import { JobSearch } from '@/components/rmh-jobs/JobSearch';
 import { Briefcase, ChevronLeft, ChevronRight, Loader2, ClipboardList } from 'lucide-react';
-import Link from 'next/link';
-
+import { Link } from '@tanstack/react-router';
 export default function RMHJobsPage() {
     const { query, sort, page, setPage } = useJobSearchStore();
     const getJobs = useJobsDataStore((s) => s.getJobs);
@@ -31,8 +28,7 @@ export default function RMHJobsPage() {
                         <h1 className="text-base font-semibold">RMH Job Search</h1>
                     </div>
                     <div className="flex items-center gap-3">
-                        <Link
-                            href="/secret/jobs/applications"
+                        <Link to="/secret/jobs/applications"
                             className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg hover:bg-(--jobs-surface-2) transition-colors"
                             style={{ color: 'var(--jobs-text-muted)' }}
                         >

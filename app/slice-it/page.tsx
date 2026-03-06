@@ -1,9 +1,9 @@
 import { Suspense } from 'react';
 import { GameCanvas } from '@/components/game/GameCanvas';
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { DarkModeWrapper } from './DarkModeWrapper';
+import { Link } from '@tanstack/react-router';
 
 export default function SliceItPage() {
   return (
@@ -11,7 +11,7 @@ export default function SliceItPage() {
       <main className="fixed inset-0 slice-theme overflow-hidden flex flex-col bg-slice-bg transition-colors duration-300">
         {/* Header */}
         <div className="p-3 shrink-0 flex items-center gap-3 shadow-sm z-10 bg-slice-bg border-b border-slice-shadow-dark/30 transition-colors duration-300">
-          <Link href="/builds">
+          <Link to="/builds">
             <Button
               variant="ghost"
               size="sm"

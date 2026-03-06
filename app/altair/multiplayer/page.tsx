@@ -6,10 +6,7 @@
  * Follows the /app/rmhbox/page.tsx pattern.
  */
 
-'use client';
-
 import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { ArrowLeft, Users, Zap, UserPlus, RefreshCw, Globe, Lock, Eye } from 'lucide-react';
 import { connectToAltair, getSocket, disconnectFromAltair, emit } from '@/lib/altair/multiplayer/socket';
 import { useAltairMultiplayerStore } from '@/lib/altair/multiplayer/store';
@@ -17,6 +14,7 @@ import { S2C, C2S } from '@/lib/altair/multiplayer/events';
 import { useAltairToastStore } from '@/lib/altair/stores/toast-store';
 import AltairHeader from '@/components/altair/AltairHeader';
 import type { PublicLobbyInfo, AltairLobbySettings } from '@/lib/altair/multiplayer/types';
+import { useRouter } from '@tanstack/react-router';
 
 const VISIBILITY_LABELS: Record<AltairLobbySettings['visibility'], string> = {
   public: 'Public',
@@ -64,13 +62,13 @@ export default function AltairMultiplayerLanding() {
         // If already in a lobby, redirect immediately
         const existingLobby = useAltairMultiplayerStore.getState().lobby;
         if (existingLobby && mounted) {
-          router.push(`/altair/multiplayer/${existingLobby.lobbyId}`);
+          router.navigate({ to: `/altair/multiplayer/${existingLobby.lobbyId}` });
           return;
         }
 
         // Listen for lobby created event
         socket.on(S2C.LOBBY_CREATED, (data: { lobbyId: string }) => {
-          if (mounted) router.push(`/altair/multiplayer/${data.lobbyId}`);
+          if (mounted) router.navigate({ to: `/altair/multiplayer/${data.lobbyId}` });
         });
 
         // Listen for browse results
@@ -85,7 +83,7 @@ export default function AltairMultiplayerLanding() {
         socket.on(S2C.LOBBY_STATE_SNAPSHOT, (data: { lobbyId: string }) => {
           const currentLobby = useAltairMultiplayerStore.getState().lobby;
           if (mounted && data.lobbyId && currentLobby?.lobbyId === data.lobbyId) {
-            router.push(`/altair/multiplayer/${data.lobbyId}`);
+            router.navigate({ to: `/altair/multiplayer/${data.lobbyId}` });
           }
         });
 
@@ -144,7 +142,7 @@ export default function AltairMultiplayerLanding() {
 
   return (
     <div className="flex h-screen flex-col">
-      <AltairHeader context="menu" title="Multiplayer" onBack={() => router.push('/altair')} connectionStatus={connectionStatus} />
+      <AltairHeader context="menu" title="Multiplayer" onBack={() => router.navigate({ to: '/altair' })} connectionStatus={connectionStatus} />
 
       <div className="flex-1 overflow-y-auto p-4 md:p-8" style={{ scrollbarGutter: 'stable both-edges' }}>
         <div className="max-w-4xl mx-auto space-y-6">

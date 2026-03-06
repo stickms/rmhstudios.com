@@ -1,22 +1,13 @@
-import type { Metadata } from 'next';
-import { Cormorant_Garamond } from 'next/font/google';
-
-const cormorant = Cormorant_Garamond({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
-  style: ['normal', 'italic'],
-  variable: '--font-cormorant',
-});
-
-export const metadata: Metadata = {
-  title: 'Temple of Joy',
-  description: 'An idle clicker game about the pursuit of happiness. Build your temple, earn joy, transcend.',
-};
+// TODO: Metadata type removed — handle via TanStack Start route meta
 
 export default function TempleOfJoyLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className={`${cormorant.variable} font-sans`}>
-      {children}
-    </div>
+    <>
+      <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet" />
+      <style dangerouslySetInnerHTML={{ __html: `:root { --font-cormorant: 'Cormorant Garamond', serif; }` }} />
+      <div className="font-sans" style={{ fontFamily: "var(--font-cormorant), sans-serif" }}>
+        {children}
+      </div>
+    </>
   );
 }

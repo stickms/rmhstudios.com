@@ -4,10 +4,7 @@
  * Settings selection → countdown → typing → results.
  */
 
-'use client';
-
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
 import { RotateCcw, Trophy, User } from 'lucide-react';
 import { connectToRmhType, emit } from '@/lib/rmhtype/socket';
 import { useRmhTypeStore } from '@/lib/rmhtype/store';
@@ -15,6 +12,7 @@ import { C2S } from '@/lib/rmhtype/events';
 import { toast } from '@/lib/rmhtype/toast-store';
 import RmhTypeHeader from '@/components/rmhtype/RmhTypeHeader';
 import type { Difficulty, PassageLength } from '@/lib/rmhtype/types';
+import { useRouter } from '@tanstack/react-router';
 
 export default function RmhTypeSolo() {
   const router = useRouter();
@@ -143,7 +141,7 @@ export default function RmhTypeSolo() {
 
   const handleBack = useCallback(() => {
     useRmhTypeStore.getState().clearSolo();
-    router.push('/rmhtype');
+    router.navigate({ to: '/rmhtype' });
   }, [router]);
 
   // Settings screen (shown on fresh load / refresh)

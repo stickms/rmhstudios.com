@@ -6,10 +6,11 @@
  */
 
 import { auth } from '@/lib/auth';
-import { headers } from 'next/headers';
-import { redirect } from 'next/navigation';
+// TODO: Replace next/headers — use TanStack Start loader for server-side auth
+// import { headers } from 'next/headers';
 import RMHboxShell from '@/components/rmhbox/RMHboxShell';
 import './rmhbox.css';
+import { redirect } from '@tanstack/react-router';
 
 export const metadata = {
   title: 'RMHbox — Party Games',
@@ -17,9 +18,10 @@ export const metadata = {
 };
 
 export default async function RMHboxLayout({ children }: { children: React.ReactNode }) {
-  const session = await auth.api.getSession({ headers: await headers() });
+  // TODO: Move auth check to TanStack Start loader
+  const session = await auth.api.getSession({ headers: new Headers() });
   if (!session?.user) {
-    redirect('/login?callbackURL=/rmhbox');
+    throw redirect({ to: '/login?callbackURL=/rmhbox' });
   }
   return <RMHboxShell>{children}</RMHboxShell>;
 }

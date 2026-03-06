@@ -1,7 +1,7 @@
-import type { Metadata } from 'next';
+// TODO: Metadata removed — use TanStack Start route meta instead
 import './globals.css';
 
-export const metadata: Metadata = {
+export const metadata = {
     title: 'RMH Notes',
     description: 'Cozy notes & reminders app.',
 };

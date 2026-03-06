@@ -6,10 +6,7 @@
  * room history, and favorites.
  */
 
-'use client';
-
 import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { MonitorPlay, Lock, Star, StarOff, Clock, History } from 'lucide-react';
 import { connectToRmhTube, getSocket, disconnectFromRmhTube, emit } from '@/lib/rmhtube/socket';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
@@ -18,6 +15,7 @@ import { toast } from '@/lib/rmhtube/toast-store';
 import { formatRelativeTime } from '@/lib/rmhtube/utils';
 import RmhTubeHeader from '@/components/rmhtube/RmhTubeHeader';
 import type { PublicRoomInfo } from '@/lib/rmhtube/types';
+import { useRouter } from '@tanstack/react-router';
 
 export default function RmhTubeLanding() {
   const router = useRouter();
@@ -46,7 +44,7 @@ export default function RmhTubeLanding() {
 
         // Listen for room created event
         socket.on(S2C.ROOM_CREATED, (data: { roomId: string }) => {
-          if (mounted) router.push(`/rmhtube/${data.roomId}`);
+          if (mounted) router.navigate({ to: `/rmhtube/${data.roomId}` });
         });
 
         // Listen for browse results
@@ -58,7 +56,7 @@ export default function RmhTubeLanding() {
         socket.on(S2C.ROOM_STATE_SNAPSHOT, (data: { roomId: string }) => {
           const currentRoom = useRmhTubeStore.getState().room;
           if (mounted && data.roomId && currentRoom?.roomId === data.roomId) {
-            router.push(`/rmhtube/${data.roomId}`);
+            router.navigate({ to: `/rmhtube/${data.roomId}` });
           }
         });
 

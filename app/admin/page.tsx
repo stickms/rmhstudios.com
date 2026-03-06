@@ -1,19 +1,20 @@
-import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
-import { headers } from 'next/headers';
+// TODO: Replace next/headers — use TanStack Start loader for server-side auth
+// import { headers } from 'next/headers';
 import { PageLayout } from '@/components/feed/PageLayout';
-import Link from 'next/link';
 import { AdminRightSidebar } from '@/components/feed/AdminRightSidebar';
+import { Link, redirect } from '@tanstack/react-router';
 
 export const metadata = {
     title: 'Admin Dashboard | RMH Studios',
 };
 
 export default async function AdminDashboardPage() {
-    const session = await auth.api.getSession({ headers: await headers() });
+    // TODO: Move auth check to TanStack Start loader
+    const session = await auth.api.getSession({ headers: new Headers() });
 
     if (!session || !(session.user as any).isAdmin) {
-        redirect('/');
+        throw redirect({ to: '/' });
     }
 
     return (
@@ -25,8 +26,7 @@ export default async function AdminDashboardPage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Link
-                        href="/admin/users"
+                    <Link to="/admin/users"
                         className="block p-6 rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
                     >
                         <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">Users</h2>
@@ -35,8 +35,7 @@ export default async function AdminDashboardPage() {
                         </p>
                     </Link>
 
-                    <Link
-                        href="/admin/curated-builds"
+                    <Link to="/admin/curated-builds"
                         className="block p-6 rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
                     >
                         <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">Curated Builds</h2>
@@ -44,8 +43,7 @@ export default async function AdminDashboardPage() {
                             Manage official games and apps. Promote community builds, adjust sorting, and edit build details.
                         </p>
                     </Link>
-                    <Link
-                        href="/admin/user-builds"
+                    <Link to="/admin/user-builds"
                         className="block p-6 rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
                     >
                         <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">All User Builds</h2>
@@ -54,8 +52,7 @@ export default async function AdminDashboardPage() {
                         </p>
                     </Link>
 
-                    <Link
-                        href="/admin/blog"
+                    <Link to="/admin/blog"
                         className="block p-6 rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group md:col-span-2"
                     >
                         <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">Manage Blog Posts</h2>

@@ -1,5 +1,3 @@
-'use client';
-
 import { useState, Suspense } from 'react';
 import { SlidersHorizontal } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';

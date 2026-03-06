@@ -1,17 +1,17 @@
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { NeonDriftwayGame } from '@/components/neon-driftway/NeonDriftwayGame';
-import type { Metadata, Viewport } from 'next';
+// TODO: Metadata/Viewport removed — use TanStack Start route meta instead
+import { Link } from '@tanstack/react-router';
 
-export const viewport: Viewport = {
+export const viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
 };
 
-export const metadata: Metadata = {
+export const metadata = {
   title: 'Neon Driftway — RMH Studios',
 };
 
@@ -22,7 +22,7 @@ export default function NeonDriftwayPage() {
       style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
     >
       <div className="absolute top-3 left-3 z-50">
-        <Link href="/builds">
+        <Link to="/builds">
           <Button
             variant="ghost"
             size="sm"

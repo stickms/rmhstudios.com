@@ -11,10 +11,7 @@
  * Reference: docs/rmhbox/implementation/phase-4.md §6.2
  */
 
-'use client';
-
 import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { Gamepad2 } from 'lucide-react';
 import { connectToRMHbox, getSocket, disconnectFromRMHbox, emit } from '@/lib/rmhbox/socket';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
@@ -23,6 +20,7 @@ import { toast } from '@/lib/rmhbox/toast-store';
 import LeaderboardPanel from '@/components/rmhbox/LeaderboardPanel';
 import RMHboxHeader from '@/components/rmhbox/RMHboxHeader';
 import type { PublicLobbyInfo } from '@/lib/rmhbox/types';
+import { useRouter } from '@tanstack/react-router';
 
 export default function RMHboxLanding() {
   const router = useRouter();
@@ -42,13 +40,13 @@ export default function RMHboxLanding() {
         // If already in a lobby (e.g. navigated back while still connected), redirect immediately
         const existingLobby = useRMHboxStore.getState().lobby;
         if (existingLobby && mounted) {
-          router.push(`/rmhbox/${existingLobby.lobbyId}`);
+          router.navigate({ to: `/rmhbox/${existingLobby.lobbyId}` });
           return;
         }
 
         // Listen for lobby created event
         socket.on(S2C.LOBBY_CREATED, (data: { lobbyId: string }) => {
-          if (mounted) router.push(`/rmhbox/${data.lobbyId}`);
+          if (mounted) router.navigate({ to: `/rmhbox/${data.lobbyId}` });
         });
 
         // Listen for browse results
@@ -62,7 +60,7 @@ export default function RMHboxLanding() {
           // Only navigate if the store has a lobby (i.e. we're actively in one, not just received a stale snapshot)
           const currentLobby = useRMHboxStore.getState().lobby;
           if (mounted && data.lobbyId && currentLobby?.lobbyId === data.lobbyId) {
-            router.push(`/rmhbox/${data.lobbyId}`);
+            router.navigate({ to: `/rmhbox/${data.lobbyId}` });
           }
         });
 
@@ -221,7 +219,7 @@ export default function RMHboxLanding() {
 
         {/* View Minigames */}
         <button
-          onClick={() => router.push('/rmhbox/minigames')}
+          onClick={() => router.navigate({ to: '/rmhbox/minigames' })}
           className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) font-semibold transition-colors text-(--rmhbox-text) hover:bg-(--rmhbox-surface-hover) hover:text-(--rmhbox-accent)"
           data-testid="view-minigames-btn"
         >

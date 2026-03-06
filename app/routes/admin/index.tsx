@@ -4,13 +4,13 @@
 
 import { createFileRoute, Link, redirect } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { getWebRequest } from '@tanstack/react-start/server';
+import { getRequest } from '@tanstack/react-start/server';
 import { auth } from '@/lib/auth';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { AdminRightSidebar } from '@/components/feed/AdminRightSidebar';
 
 const getAdminSession = createServerFn({ method: 'GET' }).handler(async () => {
-  const request = getWebRequest();
+  const request = getRequest();
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session || !(session.user as any).isAdmin) {
     throw redirect({ to: '/' });

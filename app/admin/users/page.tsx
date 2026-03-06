@@ -1,12 +1,9 @@
-'use client';
-
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { PageLayout } from '@/components/feed/PageLayout';
-import Link from 'next/link';
 import { ArrowLeft, Loader2, Search, CheckCircle, Shield, AlertCircle, Pencil, Check, X } from 'lucide-react';
 import { useSession } from '@/components/Providers';
-import { useRouter } from 'next/navigation';
 import { AdminRightSidebar } from '@/components/feed/AdminRightSidebar';
+import { Link, useRouter } from '@tanstack/react-router';
 
 interface User {
     id: string;
@@ -54,7 +51,7 @@ export default function AdminUsersPage() {
 
     useEffect(() => {
         if (session && !(session.user as any).isAdmin) {
-            router.push('/');
+            router.navigate({ to: '/' });
         }
     }, [session, router]);
 
@@ -184,7 +181,7 @@ export default function AdminUsersPage() {
         <PageLayout title="Manage Users" wide rightSidebar={<AdminRightSidebar />}>
             <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6">
                 <div className="flex items-center gap-4">
-                    <Link href="/admin" className="p-2 hover:bg-site-surface-hover rounded-full transition-colors">
+                    <Link to="/admin" className="p-2 hover:bg-site-surface-hover rounded-full transition-colors">
                         <ArrowLeft className="w-5 h-5 text-site-text-dim" />
                     </Link>
                     <div>
@@ -253,7 +250,7 @@ export default function AdminUsersPage() {
                                     </div>
                                     <div className="min-w-0">
                                         <div className="flex items-center gap-1.5">
-                                            <Link href={`/@${user.handle || user.id}`} className="font-semibold text-site-text hover:text-site-accent truncate">
+                                            <Link to={`/@${user.handle || user.id}`} className="font-semibold text-site-text hover:text-site-accent truncate">
                                                 {user.name || user.handle || user.username}
                                             </Link>
                                             {user.isVerified && <CheckCircle className="w-3.5 h-3.5 text-blue-400 shrink-0" />}

@@ -1,23 +1,20 @@
-'use client';
-
 import { useState, useEffect, useCallback, Suspense } from 'react';
-import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { Boxes, Plus, Edit, Trash2, Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import type { Build } from '@/lib/user-builds-types';
+import { Link, useRouter, useSearch } from '@tanstack/react-router';
 
 function ManageContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const searchParams = useSearch();
   const { data: session, isPending } = useSession();
 
   const [builds, setBuilds] = useState<Build[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
 
-  const editId = searchParams.get('edit');
+  const editId = searchParams.edit;
 
   const fetchBuilds = useCallback(async () => {
     if (!session?.user?.id) return;
@@ -77,7 +74,7 @@ function ManageContent() {
             <p className="text-site-text-muted mb-6">
               You need to sign in to manage your builds.
             </p>
-            <Link href="/login?redirect=/user-builds/manage">
+            <Link to="/login?redirect=/user-builds/manage">
               <Button variant="accent" className="w-full bg-violet-600 hover:bg-violet-500">
                 Sign In
               </Button>
@@ -101,7 +98,7 @@ function ManageContent() {
             <p className="text-site-text-muted">Manage your published and draft builds</p>
           </div>
 
-          <Link href="/user-builds/submit">
+          <Link to="/user-builds/submit">
             <Button variant="accent" className="bg-violet-600 hover:bg-violet-500">
               <Plus className="w-4 h-4 mr-2" />
               New Build
@@ -119,7 +116,7 @@ function ManageContent() {
             <Boxes className="w-12 h-12 text-site-text-dim mx-auto mb-4" />
             <h2 className="text-lg font-semibold text-site-text mb-2">No builds yet</h2>
             <p className="text-site-text-muted mb-6">Create your first build and share it with the community.</p>
-            <Link href="/user-builds/submit">
+            <Link to="/user-builds/submit">
               <Button variant="accent" className="bg-violet-600 hover:bg-violet-500">
                 <Plus className="w-4 h-4 mr-2" />
                 Create Build
@@ -148,7 +145,7 @@ function ManageContent() {
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <Link href={`/user-builds/${build.slug}`}>
+                  <Link to={`/user-builds/${build.slug}`}>
                     <h3 className="font-semibold text-site-text hover:text-violet-400 transition-colors truncate">
                       {build.title}
                     </h3>
@@ -173,12 +170,12 @@ function ManageContent() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-2">
-                  <Link href={`/user-builds/${build.slug}`}>
+                  <Link to={`/user-builds/${build.slug}`}>
                     <Button variant="ghost" size="icon" title="View">
                       <Eye className="w-4 h-4" />
                     </Button>
                   </Link>
-                  <Link href={`/user-builds/submit?edit=${build.id}`}>
+                  <Link to={`/user-builds/submit?edit=${build.id}`}>
                     <Button variant="ghost" size="icon" title="Edit">
                       <Edit className="w-4 h-4" />
                     </Button>

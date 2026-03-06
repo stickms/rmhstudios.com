@@ -4,10 +4,7 @@
  * Handles the full game flow: lobby, countdown, typing, results.
  */
 
-'use client';
-
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { useParams, useRouter } from 'next/navigation';
 import { Crown, Check, Copy, UserX, Ban, Globe, GlobeLock } from 'lucide-react';
 import { connectToRmhType, emit, getSocket } from '@/lib/rmhtype/socket';
 import { useRmhTypeStore } from '@/lib/rmhtype/store';
@@ -18,6 +15,7 @@ import BanListModal from '@/components/rmhtype/BanListModal';
 import ChatPanel from '@/components/shared/ChatPanel';
 import type { ChatPanelMessage } from '@/components/shared/ChatPanel';
 import type { Difficulty, PassageLength } from '@/lib/rmhtype/types';
+import { useParams, useRouter } from '@tanstack/react-router';
 
 export default function RmhTypeRoom() {
   const params = useParams();
@@ -103,7 +101,7 @@ export default function RmhTypeRoom() {
   const prevRoomRef = useRef(room);
   useEffect(() => {
     if (prevRoomRef.current && !room) {
-      router.push('/rmhtype');
+      router.navigate({ to: '/rmhtype' });
     }
     prevRoomRef.current = room;
   }, [room, router]);
@@ -121,7 +119,7 @@ export default function RmhTypeRoom() {
   const handleLeave = useCallback(() => {
     emit(C2S.ROOM_LEAVE, { roomCode });
     useRmhTypeStore.getState().leaveRoom();
-    router.push('/rmhtype');
+    router.navigate({ to: '/rmhtype' });
   }, [roomCode, router]);
 
   const handleCopyCode = useCallback(() => {

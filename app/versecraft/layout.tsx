@@ -1,20 +1,13 @@
-import type { Metadata } from 'next';
-import { EB_Garamond } from 'next/font/google';
-
-const ebGaramond = EB_Garamond({
-  subsets: ['latin'],
-  variable: '--font-eb-garamond',
-});
-
-export const metadata: Metadata = {
-  title: 'Versecraft: Whispers of the Muse | RMH Studios',
-  description: 'A poetry puzzle visual novel. Join the Ivory Quill Society, compose poems, and romance six unique characters in this DDLC-inspired literary adventure.',
-};
+// TODO: Metadata type removed — handle via TanStack Start route meta
 
 export default function VersecraftLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className={`${ebGaramond.variable}`}>
-      {children}
-    </div>
+    <>
+      <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&display=swap" rel="stylesheet" />
+      <style dangerouslySetInnerHTML={{ __html: `:root { --font-eb-garamond: 'EB Garamond', serif; }` }} />
+      <div>
+        {children}
+      </div>
+    </>
   );
 }

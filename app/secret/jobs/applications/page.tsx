@@ -1,9 +1,7 @@
-'use client';
-
 import { ArrowLeft, ClipboardList } from 'lucide-react';
-import Link from 'next/link';
 import { useJobsDataStore } from '@/lib/store/useJobsDataStore';
 import { ApplicationTimeline } from '@/components/rmh-jobs/ApplicationTimeline';
+import { Link } from '@tanstack/react-router';
 
 export default function ApplicationsPage() {
     const getApplications = useJobsDataStore((s) => s.getApplications);
@@ -48,8 +46,7 @@ export default function ApplicationsPage() {
                 style={{ background: 'rgba(10, 10, 15, 0.85)', borderColor: 'var(--jobs-border)' }}
             >
                 <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-                    <Link
-                        href="/secret/jobs"
+                    <Link to="/secret/jobs"
                         className="flex items-center gap-1.5 text-sm hover:text-(--jobs-accent) transition-colors"
                         style={{ color: 'var(--jobs-text-muted)' }}
                     >

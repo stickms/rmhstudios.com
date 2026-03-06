@@ -1,6 +1,6 @@
-import type { Metadata } from 'next';
+// TODO: Metadata removed — use TanStack Start route meta instead
 
-export const metadata: Metadata = {
+export const metadata = {
   title: 'RMH Music | rmhstudios',
   description: 'Listen to Spotify with friends. Create rooms, share music, vibe together.',
 };

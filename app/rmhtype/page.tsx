@@ -4,11 +4,7 @@
  * Mode selection and leaderboards for all difficulties.
  */
 
-'use client';
-
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { Keyboard, Users, User, Trophy } from 'lucide-react';
 import { connectToRmhType, getSocket, disconnectFromRmhType, emit } from '@/lib/rmhtype/socket';
 import { useRmhTypeStore } from '@/lib/rmhtype/store';
@@ -16,6 +12,7 @@ import { C2S, S2C } from '@/lib/rmhtype/events';
 import { toast } from '@/lib/rmhtype/toast-store';
 import RmhTypeHeader from '@/components/rmhtype/RmhTypeHeader';
 import type { Difficulty } from '@/lib/rmhtype/types';
+import { Link, useRouter } from '@tanstack/react-router';
 
 interface LeaderboardEntry {
   rank: number;
@@ -113,7 +110,7 @@ export default function RmhTypeLanding() {
 
         const existingRoom = useRmhTypeStore.getState().room;
         if (existingRoom && mounted) {
-          router.push(`/rmhtype/${existingRoom.roomCode}`);
+          router.navigate({ to: `/rmhtype/${existingRoom.roomCode}` });
           return;
         }
 
@@ -173,8 +170,7 @@ export default function RmhTypeLanding() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
-            <Link
-              href="/rmhtype/solo"
+            <Link to="/rmhtype/solo"
               className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-8 text-left transition-all hover:border-(--rmhtype-accent) hover:bg-(--rmhtype-surface-hover)"
             >
               <User className="h-8 w-8 mb-4 text-(--rmhtype-accent)" />
@@ -184,8 +180,7 @@ export default function RmhTypeLanding() {
               </p>
             </Link>
 
-            <Link
-              href="/rmhtype/multiplayer"
+            <Link to="/rmhtype/multiplayer"
               className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-8 text-left transition-all hover:border-(--rmhtype-accent) hover:bg-(--rmhtype-surface-hover)"
             >
               <Users className="h-8 w-8 mb-4 text-(--rmhtype-accent)" />

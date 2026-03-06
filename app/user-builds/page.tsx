@@ -1,12 +1,10 @@
-'use client';
-
 import { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
 import { Terminal, ArrowRight } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { BuildGrid, BuildFilters } from '@/components/user-builds';
 import type { BuildCategory, BuildSortOption } from '@/lib/user-builds-types';
+import { Link } from '@tanstack/react-router';
 
 export default function UserBuildsPage() {
   const { data: session } = useSession();
@@ -52,8 +50,7 @@ export default function UserBuildsPage() {
       wide
     >
       <div className="px-4 pt-4 pb-12">
-        <Link
-          href="/rmhcode"
+        <Link to="/rmhcode"
           className="mb-5 flex items-center justify-between rounded-xl border border-violet-500/30 bg-gradient-to-r from-violet-500/10 to-site-surface px-5 py-4 transition-colors hover:border-violet-500/50 hover:from-violet-500/15"
         >
           <div className="flex items-center gap-3">

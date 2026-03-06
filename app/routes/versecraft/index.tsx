@@ -6,13 +6,13 @@
 
 import { createFileRoute } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
-import { getWebRequest } from '@tanstack/react-start/server'
+import { getRequest } from '@tanstack/react-start/server'
 import { auth } from '@/lib/auth'
 import { VersecraftClient } from '@/app/versecraft/client'
 
 const checkLoginStatus = createServerFn({ method: 'GET' }).handler(async () => {
   try {
-    const request = getWebRequest()
+    const request = getRequest()
     const session = await auth.api.getSession({ headers: request.headers })
     return { isLoggedIn: !!session?.user?.id }
   } catch {

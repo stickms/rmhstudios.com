@@ -3,10 +3,11 @@
  */
 
 import { auth } from '@/lib/auth';
-import { headers } from 'next/headers';
-import { redirect } from 'next/navigation';
+// TODO: Replace next/headers — use TanStack Start loader for server-side auth
+// import { headers } from 'next/headers';
 import RmhTypeShell from '@/components/rmhtype/RmhTypeShell';
 import './rmhtype.css';
+import { redirect } from '@tanstack/react-router';
 
 export const metadata = {
   title: 'RMH Type — Competitive Typing',
@@ -14,9 +15,10 @@ export const metadata = {
 };
 
 export default async function RmhTypeLayout({ children }: { children: React.ReactNode }) {
-  const session = await auth.api.getSession({ headers: await headers() });
+  // TODO: Move auth check to TanStack Start loader
+  const session = await auth.api.getSession({ headers: new Headers() });
   if (!session?.user) {
-    redirect('/login?callbackURL=/rmhtype');
+    throw redirect({ to: '/login?callbackURL=/rmhtype' });
   }
   return <RmhTypeShell>{children}</RmhTypeShell>;
 }

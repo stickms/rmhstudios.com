@@ -7,16 +7,14 @@
  * Reference: docs/rmhbox/design-spec/core.md §14A.2
  */
 
-'use client';
-
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Trophy, History } from 'lucide-react';
 import RMHboxHeader from '@/components/rmhbox/RMHboxHeader';
 import MinigameLeaderboardModal from '@/components/rmhbox/MinigameLeaderboardModal';
 import LucideAwardIcon from '@/components/rmhbox/LucideAwardIcon';
 import { getAllMinigames } from '@/lib/rmhbox/minigame-registry';
 import type { MinigameDefinition } from '@/lib/rmhbox/types';
+import { useRouter } from '@tanstack/react-router';
 
 const CATEGORY_COLORS: Record<string, string> = {
   word: 'bg-emerald-500/20 text-emerald-400',
@@ -77,7 +75,7 @@ export default function MinigamesPage() {
                     Leaderboard
                   </button>
                   <button
-                    onClick={() => router.push(`/rmhbox/minigames/${game.id}/history`)}
+                    onClick={() => router.navigate({ to: `/rmhbox/minigames/${game.id}/history` })}
                     className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium transition-colors bg-(--rmhbox-accent) text-white hover:bg-(--rmhbox-accent-hover)"
                     data-testid={`history-btn-${game.id}`}
                   >

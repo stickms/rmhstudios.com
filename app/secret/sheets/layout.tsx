@@ -1,13 +1,12 @@
-import type { Metadata } from 'next';
 import './globals.css';
-import { Inter } from 'next/font/google';
-const inter = Inter({ subsets: ['latin'] });
 
-export const metadata: Metadata = {
-    title: 'RMH Sheets',
-    description: 'Professional spreadsheet editor.',
-};
+// TODO: Metadata type removed — handle via TanStack Start route meta
 
 export default function SheetsLayout({ children }: { children: React.ReactNode }) {
-    return <div className={inter.className}>{children}</div>;
+    return (
+        <>
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet" />
+            <div style={{ fontFamily: "'Inter', sans-serif" }}>{children}</div>
+        </>
+    );
 }

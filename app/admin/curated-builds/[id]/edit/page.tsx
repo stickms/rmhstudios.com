@@ -1,13 +1,10 @@
-'use client';
-
 import { useState, useEffect, useRef, useCallback, use } from 'react';
-import { useRouter } from 'next/navigation';
 import { ArrowLeft, Loader2, Camera, AlertCircle, Save, Crop } from 'lucide-react';
-import Link from 'next/link';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
 import { ImageCropModal } from '@/components/feed/ImageCropModal';
 import { useSession } from '@/components/Providers';
+import { Link, useRouter } from '@tanstack/react-router';
 
 export default function CuratedBuildEditPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -40,7 +37,7 @@ export default function CuratedBuildEditPage({ params }: { params: Promise<{ id:
 
     useEffect(() => {
         if (!isPending && (!session || !(session.user as any).isAdmin)) {
-            router.push('/');
+            router.navigate({ to: '/' });
         }
     }, [session, isPending, router]);
 
@@ -201,7 +198,7 @@ export default function CuratedBuildEditPage({ params }: { params: Promise<{ id:
                 throw new Error(data.error || 'Failed to update build');
             }
 
-            router.push('/admin/curated-builds');
+            router.navigate({ to: '/admin/curated-builds' });
         } catch (err: any) {
             setError(err.message || 'Failed to update curated build');
             setSubmitting(false);
@@ -226,7 +223,7 @@ export default function CuratedBuildEditPage({ params }: { params: Promise<{ id:
                         <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
                         <h2 className="text-xl font-semibold text-red-500 mb-2">Error</h2>
                         <p className="text-site-text-muted mb-6">{error || 'Build not found'}</p>
-                        <Link href="/admin/curated-builds">
+                        <Link to="/admin/curated-builds">
                             <Button variant="secondary">Back to Curated Builds</Button>
                         </Link>
                     </div>
@@ -239,7 +236,7 @@ export default function CuratedBuildEditPage({ params }: { params: Promise<{ id:
         <PageLayout title="Edit Curated Build" wide>
             <div className="max-w-3xl mx-auto p-4 md:p-8">
                 <div className="flex items-center gap-4 mb-8">
-                    <Link href="/admin/curated-builds" className="p-2 hover:bg-site-surface-hover rounded-full transition-colors">
+                    <Link to="/admin/curated-builds" className="p-2 hover:bg-site-surface-hover rounded-full transition-colors">
                         <ArrowLeft className="w-5 h-5 text-site-text-dim" />
                     </Link>
                     <div>
@@ -425,7 +422,7 @@ export default function CuratedBuildEditPage({ params }: { params: Promise<{ id:
 
                     {/* Actions */}
                     <div className="pt-4 flex justify-end gap-3 border-t border-site-border">
-                        <Link href="/admin/curated-builds">
+                        <Link to="/admin/curated-builds">
                             <Button variant="ghost" disabled={submitting}>Cancel</Button>
                         </Link>
                         <Button

@@ -1,17 +1,17 @@
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { DreamRiftGame } from '@/components/dream-rift/DreamRiftGame';
-import type { Metadata, Viewport } from 'next';
+// TODO: Metadata/Viewport removed — use TanStack Start route meta instead
+import { Link } from '@tanstack/react-router';
 
-export const viewport: Viewport = {
+export const viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
 };
 
-export const metadata: Metadata = {
+export const metadata = {
   title: 'Dream Rift — RMH Studios',
   description: 'A bullet hell story. Dodge, graze, and fight through waves of beautiful danmaku patterns.',
 };
@@ -23,7 +23,7 @@ export default function DreamRiftPage() {
       style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
     >
       <div className="absolute top-3 left-3 z-50">
-        <Link href="/secret">
+        <Link to="/secret">
           <Button
             variant="ghost"
             size="sm"

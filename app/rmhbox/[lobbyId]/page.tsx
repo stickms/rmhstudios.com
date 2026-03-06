@@ -12,10 +12,7 @@
  * Reference: docs/rmhbox/implementation/phase-4.md §6.3
  */
 
-'use client';
-
 import { useEffect, useState, use } from 'react';
-import { useRouter } from 'next/navigation';
 import { connectToRMHbox, emit } from '@/lib/rmhbox/socket';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { C2S, S2C } from '@/lib/rmhbox/events';
@@ -32,6 +29,7 @@ import MinigameRenderer from '@/components/rmhbox/minigames/MinigameRenderer';
 import GameShell from '@/components/rmhbox/GameShell';
 import RMHboxHeader from '@/components/rmhbox/RMHboxHeader';
 import type { VoteCandidate, PlayerRanking, SessionStanding, Award, RoundResultsPayload, MatchSummary } from '@/lib/rmhbox/types';
+import { useRouter } from '@tanstack/react-router';
 
 export default function LobbyPage({ params }: { params: Promise<{ lobbyId: string }> }) {
   const { lobbyId } = use(params);
@@ -135,7 +133,7 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
         socket.on(S2C.LOBBY_KICKED, () => {
           if (mounted) {
             useRMHboxStore.getState().leaveLobby();
-            router.push('/rmhbox');
+            router.navigate({ to: '/rmhbox' });
           }
         });
 
@@ -143,7 +141,7 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
         socket.on(S2C.LOBBY_DISBANDED, () => {
           if (mounted) {
             useRMHboxStore.getState().leaveLobby();
-            router.push('/rmhbox');
+            router.navigate({ to: '/rmhbox' });
           }
         });
 
@@ -153,7 +151,7 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
           if (!mounted) return;
           if (data.code === 'LOBBY_NOT_FOUND') {
             useRMHboxStore.getState().leaveLobby();
-            router.push('/rmhbox');
+            router.navigate({ to: '/rmhbox' });
           }
         });
 
@@ -162,7 +160,7 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
         socket.on(S2C.NOT_IN_LOBBY, () => {
           if (!mounted) return;
           useRMHboxStore.getState().leaveLobby();
-          router.push('/rmhbox');
+          router.navigate({ to: '/rmhbox' });
         });
       } catch (err) {
         if (mounted) toast.error(err instanceof Error ? err.message : 'Failed to connect');
@@ -207,7 +205,7 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
               Connection error
             </div>
             <button
-              onClick={() => router.push('/rmhbox')}
+              onClick={() => router.navigate({ to: '/rmhbox' })}
               className="px-6 py-2 rounded-lg bg-(--rmhbox-accent) text-white font-semibold hover:bg-(--rmhbox-accent-hover) transition-colors"
             >
               Back to Lobby
@@ -385,7 +383,7 @@ export default function LobbyPage({ params }: { params: Promise<{ lobbyId: strin
           <button
             onClick={() => {
               useRMHboxStore.getState().leaveLobby();
-              router.push('/rmhbox');
+              router.navigate({ to: '/rmhbox' });
             }}
             className="px-8 py-3 rounded-lg font-semibold bg-(--rmhbox-accent) text-white hover:bg-(--rmhbox-accent-hover) transition-colors"
           >

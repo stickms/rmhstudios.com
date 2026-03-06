@@ -1,14 +1,7 @@
 import './globals.css';
 import { Toaster } from 'sonner';
-import type { Metadata } from 'next';
-import { Outfit } from 'next/font/google';
 
-const outfit = Outfit({ subsets: ['latin'] });
-
-export const metadata: Metadata = {
-  title: 'Slice It - RMH Studios',
-  description: 'Rhythm game with a soft touch.',
-};
+// TODO: Metadata type removed — handle via TanStack Start route meta
 
 export default function SliceItLayout({
   children,
@@ -16,9 +9,12 @@ export default function SliceItLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className={`${outfit.className} slice-theme min-h-screen text-slate-700 dark:text-slate-200 transition-colors duration-300`}>
-      {children}
-      <Toaster />
-    </div>
+    <>
+      <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet" />
+      <div style={{ fontFamily: "'Outfit', sans-serif" }} className="slice-theme min-h-screen text-slate-700 dark:text-slate-200 transition-colors duration-300">
+        {children}
+        <Toaster />
+      </div>
+    </>
   );
 }

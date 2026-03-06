@@ -1,11 +1,12 @@
-import { headers } from 'next/headers';
+import { getRequestHeaders } from '@tanstack/react-start/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 export async function getCuratedBuildsByCategory(categorySlug: string) {
     let currentUserId: string | null = null;
     try {
-        const session = await auth.api.getSession({ headers: await headers() });
+        const reqHeaders = getRequestHeaders();
+        const session = await auth.api.getSession({ headers: new Headers(reqHeaders as Record<string, string>) });
         currentUserId = session?.user?.id ?? null;
     } catch {
         // Not logged in

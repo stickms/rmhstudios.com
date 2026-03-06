@@ -1,14 +1,12 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router'
-import { EB_Garamond } from 'next/font/google'
-
-const ebGaramond = EB_Garamond({
-  subsets: ['latin'],
-  variable: '--font-eb-garamond',
-})
 
 function VersecraftLayout() {
   return (
-    <div className={`${ebGaramond.variable}`}>
+    <div style={{ '--font-eb-garamond': '"EB Garamond", serif' } as React.CSSProperties}>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400..800&display=swap"
+      />
       <Outlet />
     </div>
   )

@@ -1,7 +1,4 @@
-'use client';
-
 import { useEffect, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
 import { useRmhMusicStore } from '@/lib/rmhmusic/store';
 import { usePreviewPlayer } from '@/lib/rmhmusic/spotify-player';
 import { connectToRmhMusic, emit } from '@/lib/rmhmusic/socket';
@@ -10,6 +7,7 @@ import Visualizer from '@/components/rmhmusic/Visualizer';
 import PlayerBar from '@/components/rmhmusic/PlayerBar';
 import SearchPanel from '@/components/rmhmusic/SearchPanel';
 import ChatPanel from '@/components/rmhmusic/ChatPanel';
+import { useParams, useRouter } from '@tanstack/react-router';
 
 export default function RoomPage() {
   const params = useParams();
@@ -27,7 +25,7 @@ export default function RoomPage() {
         emit(C2S.ROOM_JOIN, { code: roomId });
         useRmhMusicStore.getState().setChatOpen(true);
       } catch {
-        router.push('/rmhmusic');
+        router.navigate({ to: '/rmhmusic' });
       }
     }
     joinRoom();

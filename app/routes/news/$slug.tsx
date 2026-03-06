@@ -5,7 +5,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getNewsArticleBySlug } from '@/lib/news';
-import { MDXRemote } from 'next-mdx-remote/rsc';
+import ReactMarkdown from 'react-markdown';
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft, Calendar, ExternalLink } from 'lucide-react';
 import { ShareButton } from '@/components/blog/ShareButton';
@@ -121,7 +121,7 @@ function NewsArticlePage() {
         )}
 
         <div className="prose prose-invert prose-lg max-w-none prose-headings:font-bold prose-headings:text-(--site-text) prose-p:text-(--site-text-muted) prose-a:text-(--site-accent) hover:prose-a:text-(--site-accent-hover) prose-img:rounded-xl prose-img:border prose-img:border-(--site-border) prose-li:text-(--site-text-muted) prose-strong:text-(--site-text) prose-blockquote:border-l-(--site-accent)">
-          <MDXRemote source={article.content} components={animatedComponents} />
+          <ReactMarkdown components={animatedComponents}>{article.content}</ReactMarkdown>
         </div>
 
         <hr className="my-12 border-(--site-border)" />

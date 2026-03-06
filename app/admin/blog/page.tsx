@@ -1,21 +1,22 @@
-import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
-import { headers } from 'next/headers';
+// TODO: Replace next/headers — use TanStack Start loader for server-side auth
+// import { headers } from 'next/headers';
 import { PageLayout } from '@/components/feed/PageLayout';
-import Link from 'next/link';
 import { getAllPosts } from '@/lib/blog';
 import { ArrowLeft, Plus, Edit, Trash2 } from 'lucide-react';
 import { DeleteBlogButton } from '@/components/admin/DeleteBlogButton';
+import { Link, redirect } from '@tanstack/react-router';
 
 export const metadata = {
     title: 'Manage Blog Posts | Admin | RMH Studios',
 };
 
 export default async function AdminBlogDashboard() {
-    const session = await auth.api.getSession({ headers: await headers() });
+    // TODO: Move auth check to TanStack Start loader
+    const session = await auth.api.getSession({ headers: new Headers() });
 
     if (!session || !(session.user as any).isAdmin) {
-        redirect('/');
+        throw redirect({ to: '/' });
     }
 
     const posts = await getAllPosts(["title", "slug", "date"]);
@@ -25,7 +26,7 @@ export default async function AdminBlogDashboard() {
             <div className="p-4 md:p-8 w-full max-w-4xl mx-auto space-y-6">
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-4">
-                        <Link href="/admin" className="text-site-text-dim hover:text-site-text transition-colors">
+                        <Link to="/admin" className="text-site-text-dim hover:text-site-text transition-colors">
                             <ArrowLeft className="w-5 h-5" />
                         </Link>
                         <div>
@@ -34,7 +35,7 @@ export default async function AdminBlogDashboard() {
                         </div>
                     </div>
                     
-                    <Link href="/admin/blog/new" className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 gap-2 bg-site-accent hover:bg-site-accent-hover text-white">
+                    <Link to="/admin/blog/new" className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 gap-2 bg-site-accent hover:bg-site-accent-hover text-white">
                         <Plus className="w-4 h-4" /> New Post
                     </Link>
                 </div>
@@ -52,8 +53,7 @@ export default async function AdminBlogDashboard() {
                                     <p className="text-sm text-site-text-dim">{post.date as string} · /{post.slug as string}</p>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <Link 
-                                        href={`/admin/blog/${post.slug as string}/edit`}
+                                    <Link to={`/admin/blog/${post.slug as string}/edit`}
                                         className="inline-flex items-center justify-center p-2 rounded-md hover:bg-site-border text-site-text-dim hover:text-site-text transition-colors"
                                         title="Edit Post"
                                     >

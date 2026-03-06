@@ -4,7 +4,7 @@
 
 import { createFileRoute, Link, redirect } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { getWebRequest } from '@tanstack/react-start/server';
+import { getRequest } from '@tanstack/react-start/server';
 import { auth } from '@/lib/auth';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { getAllPosts } from '@/lib/blog';
@@ -12,7 +12,7 @@ import { ArrowLeft, Plus, Edit } from 'lucide-react';
 import { DeleteBlogButton } from '@/components/admin/DeleteBlogButton';
 
 const fetchBlogData = createServerFn({ method: 'GET' }).handler(async () => {
-  const request = getWebRequest();
+  const request = getRequest();
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session || !(session.user as any).isAdmin) {
     throw redirect({ to: '/' });
