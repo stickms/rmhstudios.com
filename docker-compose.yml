@@ -12,6 +12,9 @@
 #
 # A single image (rmhstudios-app) is built once by the `web` service and
 # shared by all other services — no redundant rebuilds.
+#
+# All four application services start independently in parallel for faster
+# deployment. No artificial dependency ordering.
 # ─────────────────────────────────────────────────────────────────────────────
 
 x-common: &common
@@ -55,13 +58,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
-    depends_on:
-      socket:
-        condition: service_started
-      rmhbox:
-        condition: service_started
-      rmhtube:
-        condition: service_started
 
   # ─── Socket.IO Server (games, real-time apps) ──────────────────────────────
   socket:

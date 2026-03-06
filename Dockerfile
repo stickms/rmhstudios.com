@@ -1,53 +1,76 @@
 # syntax=docker/dockerfile:1
 # ─────────────────────────────────────────────────────────────────────────────
-# rmhstudios.com — Multi-stage Docker build
+# rmhstudios.com — Multi-stage Docker build (cache-optimized)
 #
 # Produces a single image used by all services (web, socket, rmhbox, rmhtube,
 # news-pipeline). Each service overrides the CMD via docker-compose.yml.
 #
 # Architecture: ARM64 (aarch64)
 #
-# Uses BuildKit cache mounts to persist:
-#   - pnpm store  → avoids re-downloading packages between builds
-#   - Next.js cache → enables incremental builds
+# Build graph (BuildKit executes independent stages in PARALLEL):
+#
+#   deps ──→ source ──┬──→ server-builder (esbuild, env-agnostic)
+#                     └──→ next-builder   (next build, env-specific)
+#
+#   All four stages feed into → runner
+#
+# Cache strategy:
+#   - pnpm store mount  → avoids re-downloading packages between builds
+#   - Next.js cache mount → incremental builds (shared across envs)
+#   - server-builder is env-agnostic → 100% cache hit between prod/staging
+#   - node_modules copied from deps (not builder) → stable layer even when
+#     source changes, since deps only rebuilds on lockfile changes
 # ─────────────────────────────────────────────────────────────────────────────
 
 # ── Stage 1: Install dependencies ────────────────────────────────────────────
+# Cached as long as package.json / lockfile / prisma schema don't change.
 FROM node:24-alpine AS deps
 
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 WORKDIR /app
 
-# Copy dependency manifests first (layer cache optimization)
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY prisma ./prisma/
 COPY prisma.config.ts ./
 
-# Install ALL dependencies (dev + prod) — needed for build stage.
-# postinstall runs `prisma generate` automatically.
-# BuildKit cache mount keeps the pnpm store between builds so only
-# new/changed packages need downloading.
+# postinstall runs `prisma generate` → creates @prisma/client
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store,sharing=locked \
     pnpm install --frozen-lockfile
 
-# ── Stage 2: Build application ───────────────────────────────────────────────
-FROM node:24-alpine AS builder
+# ── Stage 2: Source base ─────────────────────────────────────────────────────
+# Copies source code on top of deps. This is the shared parent for both
+# build stages — BuildKit builds it once and both children reference it.
+FROM deps AS source
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
-
-WORKDIR /app
-
-# Copy dependencies from previous stage (includes generated Prisma client in node_modules)
-COPY --from=deps /app/node_modules ./node_modules
-
-# Copy full source
 COPY . .
 
-# Build Next.js (standalone output) + esbuild server bundles
-# These env vars are needed at build time because Next.js static page
-# generation runs server-side code (Better Auth init, Prisma queries).
-# The actual runtime values come from .env files at container start.
+# ── Stage 3: Server bundles (env-agnostic → fully cached between envs) ──────
+# esbuild runs in <3s and produces CJS bundles for socket/rmhbox/rmhtube.
+# Because this stage has NO build args, it caches perfectly when deploying
+# staging right after production (or vice versa) with the same source code.
+# BuildKit runs this IN PARALLEL with the next-builder stage.
+FROM source AS server-builder
+
+RUN pnpm exec esbuild \
+    server/socket-server/index.ts \
+    server/rmhbox/index.ts \
+    server/rmhtube/index.ts \
+    --bundle --platform=node --target=node20 \
+    --outdir=dist-server --outbase=. \
+    --format=cjs --packages=external --tree-shaking=true \
+    --tsconfig=tsconfig.server.json
+
+RUN test -f dist-server/server/socket-server/index.js && \
+    test -f dist-server/server/rmhbox/index.js && \
+    test -f dist-server/server/rmhtube/index.js
+
+# ── Stage 4: Next.js build (env-specific) ────────────────────────────────────
+# BuildKit executes this IN PARALLEL with server-builder (stage 3).
+# Build args are needed because Next.js static page generation evaluates
+# server-side code. The actual runtime values come from .env files.
+FROM source AS next-builder
+
 ARG DATABASE_URL
 ARG BETTER_AUTH_SECRET
 ARG BETTER_AUTH_URL
@@ -56,26 +79,24 @@ ARG NEXT_PUBLIC_SOCKET_URL
 ARG NEXT_PUBLIC_RMHBOX_SOCKET_URL
 ARG NEXT_PUBLIC_RMHTUBE_SOCKET_URL
 
-ENV DATABASE_URL=${DATABASE_URL}
-ENV BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
-ENV BETTER_AUTH_URL=${BETTER_AUTH_URL}
-ENV NEXT_PUBLIC_BETTER_AUTH_URL=${NEXT_PUBLIC_BETTER_AUTH_URL}
-ENV NEXT_PUBLIC_SOCKET_URL=${NEXT_PUBLIC_SOCKET_URL}
-ENV NEXT_PUBLIC_RMHBOX_SOCKET_URL=${NEXT_PUBLIC_RMHBOX_SOCKET_URL}
-ENV NEXT_PUBLIC_RMHTUBE_SOCKET_URL=${NEXT_PUBLIC_RMHTUBE_SOCKET_URL}
+ENV DATABASE_URL=${DATABASE_URL} \
+    BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET} \
+    BETTER_AUTH_URL=${BETTER_AUTH_URL} \
+    NEXT_PUBLIC_BETTER_AUTH_URL=${NEXT_PUBLIC_BETTER_AUTH_URL} \
+    NEXT_PUBLIC_SOCKET_URL=${NEXT_PUBLIC_SOCKET_URL} \
+    NEXT_PUBLIC_RMHBOX_SOCKET_URL=${NEXT_PUBLIC_RMHBOX_SOCKET_URL} \
+    NEXT_PUBLIC_RMHTUBE_SOCKET_URL=${NEXT_PUBLIC_RMHTUBE_SOCKET_URL}
 
-# Cache .next/cache between builds for incremental compilation
+# .next/cache is shared across ALL builds (prod + staging) via a named
+# BuildKit cache mount. Next.js keys cache entries by content + env where
+# relevant, so cross-environment sharing is safe and dramatically speeds
+# up incremental rebuilds.
 RUN --mount=type=cache,id=nextjs-cache,target=/app/.next/cache,sharing=locked \
-    pnpm run build
+    pnpm exec next build
 
-# Verify build artifacts exist
-RUN test -d .next/standalone && \
-    test -d .next/static && \
-    test -f dist-server/server/socket-server/index.js && \
-    test -f dist-server/server/rmhbox/index.js && \
-    test -f dist-server/server/rmhtube/index.js
+RUN test -d .next/standalone && test -d .next/static
 
-# ── Stage 3: Production runner ───────────────────────────────────────────────
+# ── Stage 5: Production runner ───────────────────────────────────────────────
 FROM node:24-alpine AS runner
 
 RUN apk add --no-cache curl
@@ -85,40 +106,35 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV HOSTNAME=0.0.0.0
 
-# Create non-root user
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
+# ─── node_modules from deps stage (NOT from builder) ────────────────────────
+# This is the single largest layer (~1.2GB). By sourcing it from the deps
+# stage instead of the builder, this layer is cached independently of source
+# code or env-arg changes — it only rebuilds when the lockfile changes.
+# The standalone output's traced node_modules (next COPY) overlays on top.
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules ./node_modules
+
 # ─── Next.js standalone server ───────────────────────────────────────────────
-# The standalone output includes a minimal server.js + only the node_modules
-# it actually needs. We also need .next/static and public/ for assets.
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+# standalone/ includes server.js + .next/server + a traced node_modules
+# subset. The traced modules overlay the full deps above.
+COPY --from=next-builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=next-builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=next-builder --chown=nextjs:nodejs /app/public ./public
 
-# ─── Custom server bundles (socket-server, rmhbox, rmhtube) ─────────────────
-# esbuild bundles use --packages=external, so they need the full node_modules
-# at runtime (dotenv, socket.io, @prisma/client, ws, etc.).
-# Copy the full node_modules from builder — this overwrites/merges with the
-# standalone node_modules which only contains Next.js traced deps.
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=nextjs:nodejs /app/dist-server ./dist-server
+# ─── Custom server bundles (from env-agnostic stage) ────────────────────────
+COPY --from=server-builder --chown=nextjs:nodejs /app/dist-server ./dist-server
 
-# ─── News pipeline scripts ──────────────────────────────────────────────────
-COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
-
-# ─── Content (news MDX files etc.) ──────────────────────────────────────────
-COPY --from=builder --chown=nextjs:nodejs /app/content ./content
-
-# ─── Prisma schema + config (needed for `prisma db push` during deploy) ─────
-COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
-COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.ts ./prisma.config.ts
-COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
+# ─── Supporting files ───────────────────────────────────────────────────────
+COPY --from=source --chown=nextjs:nodejs /app/scripts ./scripts
+COPY --from=source --chown=nextjs:nodejs /app/content ./content
+COPY --from=source --chown=nextjs:nodejs /app/prisma ./prisma
+COPY --from=source --chown=nextjs:nodejs /app/prisma.config.ts ./prisma.config.ts
+COPY --from=source --chown=nextjs:nodejs /app/package.json ./package.json
 
 USER nextjs
 
 EXPOSE 7005 7001 7676 7003
 
-# Default: run the Next.js standalone server
-# Override via docker-compose `command` for socket/rmhbox/rmhtube services
 CMD ["node", "server.js"]

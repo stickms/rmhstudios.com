@@ -5,6 +5,16 @@
 # Usage:
 #   ./deploy.sh production   — deploy main branch to production containers
 #   ./deploy.sh staging      — deploy staging branch to staging containers
+#
+# Cache strategy:
+#   - BuildKit cache mounts (pnpm store, Next.js .next/cache) persist across
+#     builds and are shared between prod/staging.
+#   - Parallel Dockerfile stages: server-builder (env-agnostic, fully cached
+#     between envs) and next-builder (env-specific, incrementally cached).
+#   - node_modules layer in runner sourced from deps stage (lockfile-keyed),
+#     not from the env-specific builder, so it survives source/env changes.
+#   - Images are tagged with git SHA for instant rollback.
+#   - Dangling images are pruned, but build cache is preserved.
 # ─────────────────────────────────────────────────────────────────────────────
 
 set -euo pipefail
@@ -148,11 +158,21 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# ── Helper: time a step and log duration ─────────────────────────────────────
+step_start() {
+    STEP_START_TIME=$(date +%s)
+    log "$1"
+}
+
+step_done() {
+    local elapsed=$(( $(date +%s) - STEP_START_TIME ))
+    log "  └─ done in ${elapsed}s"
+}
+
 check_port() {
     local port=$1 max_retries=30 count=0
-    log "Waiting for port $port..."
     while [ $count -lt $max_retries ]; do
-        ss -tuln | grep -qE "[:.]$port\b" && { log "Port $port is up."; return 0; }
+        ss -tuln | grep -qE "[:.]$port\b" && return 0
         sleep 1; (( count++ ))
     done
     log "ERROR: Port $port did not come up after ${max_retries}s."
@@ -201,55 +221,80 @@ DEPLOY_START_TIME=$(date +%s)
 exec > >(tee -a "$DEPLOY_LOG") 2>&1
 
 # ── Step 1: Pull latest code ────────────────────────────────────────────────
-log "Fetching latest code..."
+step_start "Fetching latest code..."
 "$GIT_BIN" fetch "$REMOTE_REPO" "$BRANCH" || {
     log "ERROR: git fetch failed."
     update_deploy_status fail "git fetch failed"
     exit 1
 }
 
-log "Checking out $BRANCH..."
 "$GIT_BIN" checkout "$BRANCH" 2>/dev/null || "$GIT_BIN" checkout -b "$BRANCH" "$REMOTE_REPO/$BRANCH"
 "$GIT_BIN" reset --hard "$REMOTE_REPO/$BRANCH" || {
     log "ERROR: git reset failed."
     update_deploy_status fail "git reset failed"
     exit 1
 }
+step_done
+
+IMAGE_NAME="${PROJECT_NAME}-app"
+GIT_SHA=$("$GIT_BIN" rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
 send_deploy_started
 
 # ── Step 2: Build Docker image ──────────────────────────────────────────────
-# Only the `web` service carries the build config. It produces a single image
-# (e.g. rmhstudios-prod-app:latest) that ALL services share.
-log "Building Docker image (single shared image)..."
+# The Dockerfile uses parallel BuildKit stages:
+#   - server-builder (esbuild, env-agnostic → fully cached between envs)
+#   - next-builder   (next build, env-specific → incrementally cached)
+# node_modules layer in runner comes from deps stage (lockfile-keyed),
+# not from the builder, so it caches independently of source/env changes.
+step_start "Building Docker image..."
 if ! dc build web; then
     log "ERROR: Docker build failed."
     update_deploy_status fail "docker build failed"
     exit 1
 fi
 
+# Tag with git SHA for instant rollback (docker compose up with the old tag)
+"$DOCKER_BIN" tag "${IMAGE_NAME}:latest" "${IMAGE_NAME}:${GIT_SHA}" 2>/dev/null || true
+step_done
+
 # ── Step 3: Sync database schema ────────────────────────────────────────────
-log "Syncing database schema..."
+step_start "Syncing database schema..."
 if ! dc run --rm --no-deps web sh -c 'npx prisma db push --accept-data-loss'; then
     log "ERROR: Database schema sync failed."
     update_deploy_status fail "database sync failed"
     exit 1
 fi
+step_done
 
 # ── Step 4: Bring up containers ─────────────────────────────────────────────
-log "Starting containers..."
-if ! dc up -d --remove-orphans; then
+# --no-build: image is already built in step 2, skip the build check.
+# All 4 services start in parallel (no depends_on ordering).
+step_start "Starting containers..."
+if ! dc up -d --no-build --remove-orphans; then
     log "ERROR: docker compose up failed."
     update_deploy_status fail "docker compose up failed"
     exit 1
 fi
+step_done
 
-# ── Step 5: Health checks ───────────────────────────────────────────────────
+# ── Step 5: Health checks (parallel) ────────────────────────────────────────
+step_start "Running health checks..."
 ok=0
-check_port "$PORT_WEB"    || ok=1
-check_port "$PORT_SOCKET" || ok=1
-check_port "$PORT_RMHBOX" || ok=1
-check_port "$PORT_RMHTUBE" || ok=1
+pids=()
+
+check_port "$PORT_WEB" &
+pids+=($!)
+check_port "$PORT_SOCKET" &
+pids+=($!)
+check_port "$PORT_RMHBOX" &
+pids+=($!)
+check_port "$PORT_RMHTUBE" &
+pids+=($!)
+
+for pid in "${pids[@]}"; do
+    wait "$pid" || ok=1
+done
 
 if [ $ok -ne 0 ]; then
     log "--- Container logs ---"
@@ -257,11 +302,20 @@ if [ $ok -ne 0 ]; then
     update_deploy_status fail "port health check failed"
     exit 1
 fi
+step_done
 
-# ── Step 6: Prune old images & build cache ──────────────────────────────────
-log "Pruning dangling Docker images and stale build cache..."
+# ── Step 6: Prune stale images (preserve build cache) ───────────────────────
+# Only remove dangling images (untagged layers from previous builds).
+# Do NOT prune the builder cache — it contains the pnpm store mount and
+# Next.js incremental cache that make subsequent builds fast.
+log "Pruning dangling images..."
 "$DOCKER_BIN" image prune -f > /dev/null 2>&1 || true
-"$DOCKER_BIN" builder prune --keep-storage 2g -f > /dev/null 2>&1 || true
+
+# Keep at most 3 SHA-tagged images per environment for rollback.
+# List all SHA-tagged images for this project, skip the 3 newest, remove the rest.
+"$DOCKER_BIN" images "${IMAGE_NAME}" --format '{{.Tag}} {{.CreatedAt}}' 2>/dev/null | \
+    grep -v 'latest' | sort -k2 -r | tail -n +4 | awk '{print "'"${IMAGE_NAME}"':" $1}' | \
+    xargs -r "$DOCKER_BIN" rmi 2>/dev/null || true
 
 # ── Done ─────────────────────────────────────────────────────────────────────
 update_deploy_status success
