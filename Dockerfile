@@ -9,20 +9,24 @@
 #
 # Build graph (BuildKit executes independent stages in PARALLEL):
 #
-#   deps ──→ source ──┬──→ server-builder (esbuild, env-agnostic)
-#                     └──→ vite-builder   (vite build, env-specific)
+#   deps ──┬──→ server-builder (esbuild, only server/ + lib/ — env-agnostic)
+#          └──→ vite-builder   (vite build, full source — env-specific)
 #
-#   All four stages feed into → runner
+#   deps-prod (parallel — production-only node_modules for runner)
+#
+#   All three builder stages + deps-prod feed into → runner
 #
 # Cache strategy:
 #   - pnpm store mount  → avoids re-downloading packages between builds
-#   - Vinxi/TanStack cache mounts → incremental builds (shared across envs)
+#   - Vinxi/TanStack cache mounts → incremental Vite builds
+#   - server-builder is decoupled from app source → only rebuilds when
+#     server/ or lib/rmh* change, NOT on app/component changes
 #   - server-builder is env-agnostic → 100% cache hit between prod/staging
-#   - node_modules copied from deps (not builder) → stable layer even when
-#     source changes, since deps only rebuilds on lockfile changes
+#   - deps-prod provides production-only node_modules for runner →
+#     smaller image, no devDependencies shipped
 # ─────────────────────────────────────────────────────────────────────────────
 
-# ── Stage 1: Install dependencies ────────────────────────────────────────────
+# ── Stage 1: Install ALL dependencies (for build tooling) ─────────────────
 # Cached as long as package.json / lockfile / prisma schema don't change.
 FROM node:24-alpine AS deps
 
@@ -38,23 +42,36 @@ COPY prisma.config.ts ./
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store,sharing=locked \
     pnpm install --frozen-lockfile
 
-# ── Stage 2: Source base ─────────────────────────────────────────────────────
-# Copies source code on top of deps. This is the shared parent for both
-# build stages — BuildKit builds it once and both children reference it.
-#
-# Split into two COPY layers so that source-only changes don't recreate
-# the large public/ layer (~350 MB of images, sprites, music).
-FROM deps AS source
+# ── Stage 1b: Production-only dependencies (for runner) ───────────────────
+# Runs IN PARALLEL with the builder stages. Shares the pnpm store cache
+# mount so no re-downloading. Produces a smaller node_modules without
+# devDependencies (vite, esbuild, typescript, eslint, etc.).
+FROM node:24-alpine AS deps-prod
 
-COPY public ./public/
-COPY . .
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
-# ── Stage 3: Server bundles (env-agnostic → fully cached between envs) ──────
+WORKDIR /app
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY prisma ./prisma/
+COPY prisma.config.ts ./
+
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store,sharing=locked \
+    pnpm install --frozen-lockfile --prod
+
+# ── Stage 2: Server bundles (env-agnostic, decoupled from app source) ─────
 # esbuild runs in <3s and produces CJS bundles for socket/rmhbox/rmhtube.
+# Only copies server/ and the shared lib/ types it imports — so changes to
+# app/, components/, public/, etc. do NOT invalidate this stage.
 # Because this stage has NO build args, it caches perfectly when deploying
 # staging right after production (or vice versa) with the same source code.
-# BuildKit runs this IN PARALLEL with the vite-builder stage.
-FROM source AS server-builder
+FROM deps AS server-builder
+
+COPY tsconfig.json tsconfig.server.json ./
+COPY server ./server/
+COPY lib/rmhbox ./lib/rmhbox/
+COPY lib/rmhtube ./lib/rmhtube/
+COPY lib/rmhmusic ./lib/rmhmusic/
 
 RUN pnpm exec esbuild \
     server/socket-server/index.ts \
@@ -69,11 +86,17 @@ RUN test -f dist-server/server/socket-server/index.cjs && \
     test -f dist-server/server/rmhbox/index.cjs && \
     test -f dist-server/server/rmhtube/index.cjs
 
-# ── Stage 4: Vite/Nitro build (env-specific) ────────────────────────────────
-# BuildKit executes this IN PARALLEL with server-builder (stage 3).
+# ── Stage 3: Vite/Nitro build (env-specific) ─────────────────────────────
+# BuildKit executes this IN PARALLEL with server-builder (stage 2).
 # Build args are needed because Nitro/TanStack static generation may
 # evaluate server-side code. The actual runtime values come from .env files.
-FROM source AS vite-builder
+#
+# Two COPY layers: large, rarely-changing public/ first, then everything
+# else. Source-only changes don't recreate the ~350 MB public/ layer.
+FROM deps AS vite-builder
+
+COPY public ./public/
+COPY . .
 
 ARG DATABASE_URL
 ARG BETTER_AUTH_SECRET
@@ -104,7 +127,7 @@ RUN --mount=type=cache,id=vinxi-cache,target=/app/.vinxi,sharing=locked \
 
 RUN test -d /app/build-output && test -f /app/build-output/server/index.mjs
 
-# ── Stage 5: Production runner ───────────────────────────────────────────────
+# ── Stage 4: Production runner ────────────────────────────────────────────
 FROM node:24-alpine AS runner
 
 RUN apk add --no-cache curl
@@ -117,25 +140,24 @@ ENV HOSTNAME=0.0.0.0
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-# ─── node_modules from deps stage (NOT from builder) ────────────────────────
-# This is the single largest layer. By sourcing it from the deps stage
-# instead of the builder, this layer is cached independently of source
-# code or env-arg changes — it only rebuilds when the lockfile changes.
-COPY --from=deps --chown=nextjs:nodejs /app/node_modules ./node_modules
+# ─── node_modules from deps-prod (production-only, no devDependencies) ───
+# Significantly smaller than the full deps stage. Only rebuilds when the
+# lockfile changes.
+COPY --from=deps-prod --chown=nextjs:nodejs /app/node_modules ./node_modules
 
-# ─── Nitro server output ────────────────────────────────────────────────────
+# ─── Nitro server output ────────────────────────────────────────────────
 # .output/ contains the Nitro server bundle, static assets, and public files.
 COPY --from=vite-builder --chown=nextjs:nodejs /app/build-output ./.output
 
-# ─── Custom server bundles (from env-agnostic stage) ────────────────────────
+# ─── Custom server bundles (from env-agnostic stage) ────────────────────
 COPY --from=server-builder --chown=nextjs:nodejs /app/dist-server ./dist-server
 
-# ─── Supporting files ───────────────────────────────────────────────────────
-COPY --from=source --chown=nextjs:nodejs /app/scripts ./scripts
-COPY --from=source --chown=nextjs:nodejs /app/content ./content
-COPY --from=source --chown=nextjs:nodejs /app/prisma ./prisma
-COPY --from=source --chown=nextjs:nodejs /app/prisma.config.ts ./prisma.config.ts
-COPY --from=source --chown=nextjs:nodejs /app/package.json ./package.json
+# ─── Supporting files (from build context, not a builder stage) ─────────
+COPY --chown=nextjs:nodejs scripts ./scripts
+COPY --chown=nextjs:nodejs content ./content
+COPY --chown=nextjs:nodejs prisma ./prisma
+COPY --chown=nextjs:nodejs prisma.config.ts ./prisma.config.ts
+COPY --chown=nextjs:nodejs package.json ./package.json
 
 USER nextjs
 
