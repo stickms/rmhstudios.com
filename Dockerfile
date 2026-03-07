@@ -48,7 +48,7 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store,sharin
 # separate install and avoids the postinstall/prisma-not-found issue.
 FROM deps AS deps-prod
 
-RUN pnpm prune --prod
+RUN pnpm prune --prod --ignore-scripts
 
 # ── Stage 2: Server bundles (env-agnostic, decoupled from app source) ─────
 # esbuild runs in <3s and produces CJS bundles for socket/rmhbox/rmhtube.
