@@ -96,7 +96,7 @@ async function getAnnouncementItems(filter: FeedFilter): Promise<FeedItem[]> {
     }
   }
 
-  if (filter === "all" || filter === "news") {
+  if (filter === "all" || filter === "news" || filter === "other") {
     const newsArticles = await getAllNewsArticles();
     for (const n of newsArticles) {
       items.push({
@@ -129,7 +129,7 @@ async function getAnnouncementItems(filter: FeedFilter): Promise<FeedItem[]> {
     }
   }
 
-  if (filter === "all" || filter === "research") {
+  if (filter === "all" || filter === "research" || filter === "other") {
     const research = getAllArticles();
     for (const r of research) {
       items.push({

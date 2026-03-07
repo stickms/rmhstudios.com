@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import {
-  Home, Package, Hammer, Newspaper, Map, FlaskConical, BookOpen,
+  Home, Package, Hammer, BookOpen,
   Palette, ChevronDown, LogOut, PenSquare, User, MessageCircle, ShieldCheck, MoreHorizontal
 } from 'lucide-react';
 import { ComposeModal } from './ComposeModal';
@@ -17,10 +17,8 @@ const navLinks = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/builds', label: 'Curated Builds', icon: Package },
   { href: '/user-builds', label: 'User Builds', icon: Hammer },
-  { href: '/news', label: 'News', icon: Newspaper },
-  { href: '/research', label: 'Research', icon: FlaskConical },
   { href: '/blog', label: 'Blog', icon: BookOpen },
-  { href: '/roadmap', label: 'Roadmap', icon: Map },
+  { href: '/other', label: 'Other', icon: MoreHorizontal },
 ];
 
 export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
