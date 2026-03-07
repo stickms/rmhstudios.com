@@ -326,10 +326,7 @@ if [ $ok -ne 0 ]; then
 fi
 step_done
 
-# ── Step 6: Prune stale images (preserve build cache) ───────────────────────
-# Only remove dangling images (untagged layers from previous builds).
-# Do NOT prune the builder cache — it contains the pnpm store mount and
-# Vinxi/TanStack incremental cache that make subsequent builds fast.
+# ── Step 6: Prune stale images & cap build cache ─────────────────────────────
 log "Pruning dangling images..."
 "$DOCKER_BIN" image prune -f > /dev/null 2>&1 || true
 
@@ -338,6 +335,12 @@ log "Pruning dangling images..."
 "$DOCKER_BIN" images "${IMAGE_NAME}" --format '{{.Tag}} {{.CreatedAt}}' 2>/dev/null | \
     grep -v 'latest' | sort -k2 -r | tail -n +4 | awk '{print "'"${IMAGE_NAME}"':" $1}' | \
     xargs -r "$DOCKER_BIN" rmi 2>/dev/null || true
+
+# Cap BuildKit build cache at 5 GB. This keeps the pnpm store, Vinxi, and
+# TanStack cache mounts around for fast rebuilds while preventing unbounded
+# growth. BuildKit evicts least-recently-used entries first.
+log "Pruning build cache (keeping ≤5 GB)..."
+"$DOCKER_BIN" builder prune --keep-storage 5g -f > /dev/null 2>&1 || true
 
 # ── Done ─────────────────────────────────────────────────────────────────────
 update_deploy_status success

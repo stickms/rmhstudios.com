@@ -41,8 +41,12 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store,sharin
 # ── Stage 2: Source base ─────────────────────────────────────────────────────
 # Copies source code on top of deps. This is the shared parent for both
 # build stages — BuildKit builds it once and both children reference it.
+#
+# Split into two COPY layers so that source-only changes don't recreate
+# the large public/ layer (~350 MB of images, sprites, music).
 FROM deps AS source
 
+COPY public ./public/
 COPY . .
 
 # ── Stage 3: Server bundles (env-agnostic → fully cached between envs) ──────
