@@ -1,7 +1,7 @@
 import { createLogger, defineConfig } from "vite";
 import tsConfigPaths from "vite-tsconfig-paths";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
-import react from "@vitejs/plugin-react";
+import react from "@vitejs/plugin-react-swc";
 import { nitro } from "nitro/vite";
 
 const logger = createLogger();
@@ -80,11 +80,26 @@ export default defineConfig({
   },
   ssr: {
     external: [
+      // Audio libs (native/WASM — can't bundle)
       "audio-decode",
       "wasm-audio-decoders",
       "@wasm-audio-decoders/common",
       "@wasm-audio-decoders/ogg-vorbis",
       "@eshaz/web-worker",
+      // Heavy client-only libs — skip SSR bundling, resolve from node_modules at runtime
+      "three",
+      "@react-three/fiber",
+      "@react-three/drei",
+      "@react-three/rapier",
+      "monaco-editor",
+      "@monaco-editor/react",
+      "pixi.js",
+      "recharts",
+      "framer-motion",
+      "canvas-confetti",
+      "react-player",
+      "emoji-picker-react",
+      "react-easy-crop",
     ],
   },
 });
