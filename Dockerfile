@@ -12,9 +12,7 @@
 #   deps ──┬──→ server-builder (esbuild, only server/ + lib/ — env-agnostic)
 #          └──→ vite-builder   (vite build, full source — env-specific)
 #
-#   deps-prod (parallel — production-only node_modules for runner)
-#
-#   All three builder stages + deps-prod feed into → runner
+#   All stages feed into → runner
 #
 # Cache strategy:
 #   - pnpm store mount  → avoids re-downloading packages between builds
@@ -22,11 +20,11 @@
 #   - server-builder is decoupled from app source → only rebuilds when
 #     server/ or lib/rmh* change, NOT on app/component changes
 #   - server-builder is env-agnostic → 100% cache hit between prod/staging
-#   - deps-prod provides production-only node_modules for runner →
-#     smaller image, no devDependencies shipped
+#   - node_modules copied from deps (not builder) → stable layer even when
+#     source changes, since deps only rebuilds on lockfile changes
 # ─────────────────────────────────────────────────────────────────────────────
 
-# ── Stage 1: Install ALL dependencies (for build tooling) ─────────────────
+# ── Stage 1: Install dependencies ──────────────────────────────────────────
 # Cached as long as package.json / lockfile / prisma schema don't change.
 FROM node:24-alpine AS deps
 
@@ -41,14 +39,6 @@ COPY prisma.config.ts ./
 # postinstall runs `prisma generate` → creates @prisma/client
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store,sharing=locked \
     pnpm install --frozen-lockfile
-
-# ── Stage 1b: Production-only dependencies (for runner) ───────────────────
-# Built FROM deps so we can reuse the prisma CLI for generate.
-# pnpm prune removes devDependencies in-place, which is faster than a
-# separate install and avoids the postinstall/prisma-not-found issue.
-FROM deps AS deps-prod
-
-RUN pnpm prune --prod --ignore-scripts
 
 # ── Stage 2: Server bundles (env-agnostic, decoupled from app source) ─────
 # esbuild runs in <3s and produces CJS bundles for socket/rmhbox/rmhtube.
@@ -131,10 +121,11 @@ ENV HOSTNAME=0.0.0.0
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-# ─── node_modules from deps-prod (production-only, no devDependencies) ───
-# Significantly smaller than the full deps stage. Only rebuilds when the
-# lockfile changes.
-COPY --from=deps-prod --chown=nextjs:nodejs /app/node_modules ./node_modules
+# ─── node_modules from deps stage (NOT from builder) ────────────────────
+# This is the single largest layer. By sourcing it from the deps stage
+# instead of the builder, this layer is cached independently of source
+# code or env-arg changes — it only rebuilds when the lockfile changes.
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules ./node_modules
 
 # ─── Nitro server output ────────────────────────────────────────────────
 # .output/ contains the Nitro server bundle, static assets, and public files.
