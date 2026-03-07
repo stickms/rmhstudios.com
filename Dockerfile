@@ -43,28 +43,12 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store,sharin
     pnpm install --frozen-lockfile
 
 # ── Stage 1b: Production-only dependencies (for runner) ───────────────────
-# Runs IN PARALLEL with the builder stages. Shares the pnpm store cache
-# mount so no re-downloading. Produces a smaller node_modules without
-# devDependencies (vite, esbuild, typescript, eslint, etc.).
-FROM node:24-alpine AS deps-prod
+# Built FROM deps so we can reuse the prisma CLI for generate.
+# pnpm prune removes devDependencies in-place, which is faster than a
+# separate install and avoids the postinstall/prisma-not-found issue.
+FROM deps AS deps-prod
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
-
-WORKDIR /app
-
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY prisma ./prisma/
-COPY prisma.config.ts ./
-
-# --ignore-scripts: skip postinstall (prisma generate) since prisma CLI
-# is a devDependency. The generated client is copied from deps instead.
-RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store,sharing=locked \
-    pnpm install --frozen-lockfile --prod --ignore-scripts
-
-# Copy the generated Prisma client from the full deps stage (which ran
-# prisma generate via postinstall).
-COPY --from=deps /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=deps /app/node_modules/@prisma/client ./node_modules/@prisma/client
+RUN pnpm prune --prod
 
 # ── Stage 2: Server bundles (env-agnostic, decoupled from app source) ─────
 # esbuild runs in <3s and produces CJS bundles for socket/rmhbox/rmhtube.
