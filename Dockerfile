@@ -56,8 +56,15 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY prisma ./prisma/
 COPY prisma.config.ts ./
 
+# --ignore-scripts: skip postinstall (prisma generate) since prisma CLI
+# is a devDependency. The generated client is copied from deps instead.
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store,sharing=locked \
-    pnpm install --frozen-lockfile --prod
+    pnpm install --frozen-lockfile --prod --ignore-scripts
+
+# Copy the generated Prisma client from the full deps stage (which ran
+# prisma generate via postinstall).
+COPY --from=deps /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=deps /app/node_modules/@prisma/client ./node_modules/@prisma/client
 
 # ── Stage 2: Server bundles (env-agnostic, decoupled from app source) ─────
 # esbuild runs in <3s and produces CJS bundles for socket/rmhbox/rmhtube.
