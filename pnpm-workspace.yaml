@@ -4,4 +4,6 @@ ignoredBuiltDependencies:
   - sharp
   - unrs-resolver
 
-onlyBuiltDependencies: '["@swc/core"]'
+onlyBuiltDependencies:
+  - esbuild
+  - '@swc/core'
