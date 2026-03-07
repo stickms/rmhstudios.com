@@ -34,7 +34,13 @@ export default defineConfig({
       srcDirectory: "app",
     }),
     react(),
-    nitro(),
+    nitro({
+      // Externalize Prisma from Nitro's Rollup server bundle. Without this,
+      // Nitro inlines @prisma/client but leaves a dangling import for
+      // ".prisma/client/default" which is an invalid ESM specifier at runtime.
+      // traceDeps tells Nitro to externalize + trace these into .output/node_modules.
+      traceDeps: ["@prisma/client", ".prisma"],
+    }),
   ],
   build: {
     chunkSizeWarningLimit: 4000,
