@@ -3,6 +3,18 @@ import { readFile } from "fs/promises";
 import path from "path";
 import { resolvePathUnder } from "@/lib/slice-it/upload-validation";
 
+const DEFAULT_AVATAR = path.join(process.cwd(), "public", "images", "social", "default_avatar.png");
+
+async function serveDefaultAvatar() {
+  const buffer = await readFile(DEFAULT_AVATAR);
+  return new Response(buffer, {
+    headers: {
+      "Content-Type": "image/png",
+      "Cache-Control": "public, max-age=3600",
+    },
+  });
+}
+
 export const Route = createFileRoute('/api/profile/avatar/$filename')({
   server: {
     handlers: {
@@ -13,7 +25,7 @@ export const Route = createFileRoute('/api/profile/avatar/$filename')({
     const avatarDir = path.join(process.cwd(), "db", "avatars");
     const filePath = resolvePathUnder(avatarDir, safeName);
     if (!filePath) {
-      return new Response("Not Found", { status: 404 });
+      return serveDefaultAvatar();
     }
 
     const buffer = await readFile(filePath);
@@ -32,7 +44,7 @@ export const Route = createFileRoute('/api/profile/avatar/$filename')({
       },
     });
   } catch {
-    return new Response("Not Found", { status: 404 });
+    return serveDefaultAvatar();
   }
 },
     },

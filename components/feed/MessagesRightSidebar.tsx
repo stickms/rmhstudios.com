@@ -20,7 +20,7 @@ function UserRow({ user }: { user: SidebarUser }) {
     >
       <div className="w-8 h-8 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-xs shrink-0">
         {user.image ? (
-          <img src={user.image} alt={user.name || 'User'} className="w-full h-full rounded-full object-cover" />
+          <img src={user.image} alt={user.name || 'User'} className="w-full h-full rounded-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }} />
         ) : (
           (user.name?.[0] || 'U').toUpperCase()
         )}

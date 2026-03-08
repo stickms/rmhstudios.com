@@ -248,6 +248,7 @@ function LoginPage() {
                       src={avatarPreview || '/images/social/default_avatar.png'}
                       alt="Avatar preview"
                       className="w-full h-full rounded-full object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }}
                     />
                     <div className="absolute -bottom-0.5 -right-0.5 w-7 h-7 bg-site-accent rounded-full flex items-center justify-center border-2 border-site-surface">
                       <MdCameraAlt className="w-3.5 h-3.5 text-white" />

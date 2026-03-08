@@ -253,7 +253,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
             >
               <div className="w-8 h-8 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-xs ring-2 ring-site-bg shrink-0">
                 {(resolvedUser?.image || session.user.image) ? (
-                  <img src={resolvedUser?.image || session.user.image!} alt={resolvedUser?.name || session.user.name || 'User'} className="w-full h-full rounded-full object-cover" />
+                  <img src={resolvedUser?.image || session.user.image!} alt={resolvedUser?.name || session.user.name || 'User'} className="w-full h-full rounded-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }} />
                 ) : (
                   ((resolvedUser?.name || session.user.name)?.[0] || 'U').toUpperCase()
                 )}

@@ -5,6 +5,7 @@ import { ArrowLeft, Loader2, MoreHorizontal, Heart, Repeat, Trash2, Share2 } fro
 import { Button } from '@/components/ui/button';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser } from '@/components/Providers';
+import { useFreshUser, useUserDisplayStore } from '@/stores/userDisplayStore';
 import { RMHarkActions } from './RMHarkActions';
 import { CommentItem } from './CommentItem';
 import type { Comment } from './CommentItem';
@@ -16,6 +17,7 @@ import { PollDisplay } from './PollDisplay';
 import { GifEmbed } from './GifEmbed';
 import { LinkPreview } from './LinkPreview';
 import { EngagementListModal } from './EngagementListModal';
+import { UserAvatar } from './UserAvatar';
 import { ShareModal } from './ShareModal';
 
 interface PostDetailProps {
@@ -45,6 +47,8 @@ export function PostDetail({ postId }: PostDetailProps) {
   }, [post]);
 
   const isAuthor = session?.user?.id === post?.user?.id;
+  const freshPostUser = useFreshUser(post?.user);
+  const freshOriginalUser = useFreshUser(post?.original?.user);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -88,6 +92,12 @@ export function PostDetail({ postId }: PostDetailProps) {
       .then(async (res) => {
         if (res.status === 404) { setNotFound(true); return; }
         const data = await res.json();
+        // Update user display cache
+        const users = [];
+        if (data.user) users.push(data.user);
+        if (data.repostedBy) users.push(data.repostedBy);
+        if (data.original?.user) users.push(data.original.user);
+        if (users.length > 0) useUserDisplayStore.getState().setUsers(users);
         setPost(data);
       })
       .catch(console.error)
@@ -241,21 +251,13 @@ export function PostDetail({ postId }: PostDetailProps) {
 
         {/* User header */}
         <div className="flex items-center gap-3 mb-3 pr-8">
-          <Link to={`/@${post.user?.handle || post.user?.id}`}>
-            <div className="w-12 h-12 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-sm shrink-0">
-              {post.user?.image ? (
-                <img src={post.user.image} alt={post.user.name || 'User'} className="w-full h-full rounded-full object-cover" />
-              ) : (
-                (post.user?.name?.[0] || 'U').toUpperCase()
-              )}
-            </div>
-          </Link>
+          <UserAvatar user={freshPostUser} size="lg" />
           <div>
-            <Link to={`/@${post.user?.handle || post.user?.id}`} className="hover:underline">
-              <span className="font-bold text-site-text">{post.user?.name || 'Unknown'}</span>
+            <Link to={`/@${freshPostUser?.handle || freshPostUser?.id}`} className="hover:underline">
+              <span className="font-bold text-site-text">{freshPostUser?.name || 'Unknown'}</span>
             </Link>
-            {post.user?.handle && (
-              <p className="text-sm text-site-text-dim">@{post.user.handle}</p>
+            {freshPostUser?.handle && (
+              <p className="text-sm text-site-text-dim">@{freshPostUser.handle}</p>
             )}
           </div>
         </div>
@@ -286,11 +288,11 @@ export function PostDetail({ postId }: PostDetailProps) {
         {post.original && (
           <div className="mb-3 border border-site-border rounded-xl p-3 bg-site-surface/30">
             <div className="flex items-center gap-1.5 text-sm mb-1">
-              {post.original.user ? (
-                <Link to={`/@${post.original.user.handle || post.original.user.id}`} className="flex items-center gap-1.5 min-w-0 hover:underline">
-                  <span className="font-bold text-site-text truncate">{post.original.user.name || 'Unknown'}</span>
-                  {post.original.user.handle && (
-                    <span className="text-site-text-dim truncate">@{post.original.user.handle}</span>
+              {freshOriginalUser ? (
+                <Link to={`/@${freshOriginalUser.handle || freshOriginalUser.id}`} className="flex items-center gap-1.5 min-w-0 hover:underline">
+                  <span className="font-bold text-site-text truncate">{freshOriginalUser.name || 'Unknown'}</span>
+                  {freshOriginalUser.handle && (
+                    <span className="text-site-text-dim truncate">@{freshOriginalUser.handle}</span>
                   )}
                 </Link>
               ) : (
@@ -334,13 +336,15 @@ export function PostDetail({ postId }: PostDetailProps) {
         <div className="px-4 py-3 border-b border-site-border">
           <div className="flex gap-3">
             {/* User avatar */}
-            <div className="w-9 h-9 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-xs shrink-0">
-              {(resolvedUser?.image || session.user?.image) ? (
-                <img src={resolvedUser?.image || session.user!.image!} alt={resolvedUser?.name || session.user?.name || 'You'} className="w-full h-full rounded-full object-cover" />
-              ) : (
-                ((resolvedUser?.name || session.user?.name)?.[0] || 'U').toUpperCase()
-              )}
-            </div>
+            <UserAvatar
+              user={{
+                id: session.user!.id,
+                name: resolvedUser?.name || session.user?.name,
+                image: resolvedUser?.image || session.user?.image,
+              }}
+              size="sm"
+              linkToProfile={false}
+            />
             <div className="flex-1 min-w-0">
               <textarea
                 id="post-comment-input"

@@ -162,7 +162,7 @@ export function RightSidebar({
                 <Link to={profileHref} className="flex items-center gap-2.5 min-w-0 flex-1">
                   <div className="w-9 h-9 rounded-full bg-site-accent/20 overflow-hidden flex items-center justify-center text-site-text text-xs font-semibold shrink-0">
                     {user.image ? (
-                      <img src={user.image} alt={user.name || user.username || 'User'} className="w-full h-full object-cover" />
+                      <img src={user.image} alt={user.name || user.username || 'User'} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }} />
                     ) : initials}
                   </div>
                   <div className="min-w-0">

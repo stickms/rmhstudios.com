@@ -130,7 +130,7 @@ export function BuildDetail({ build: initialBuild, backHref = '/user-builds' }: 
         <div className="flex items-center gap-4 mb-4">
           <Link to={`/@${build.user.handle || build.user.id}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             {build.user.image ? (
-              <img src={build.user.image} alt={build.user.name || 'User'} className="w-10 h-10 rounded-full" />
+              <img src={build.user.image} alt={build.user.name || 'User'} className="w-10 h-10 rounded-full" onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }} />
             ) : (
               <div className="w-10 h-10 rounded-full bg-violet-500/20 flex items-center justify-center text-violet-400 font-bold">
                 {(build.user.name?.[0] || 'U').toUpperCase()}

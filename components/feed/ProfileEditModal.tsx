@@ -342,7 +342,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
                 className="relative group w-20 h-20 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-2xl ring-4 ring-site-bg shrink-0 overflow-hidden cursor-pointer"
               >
                 {avatarPreview ? (
-                  <img src={avatarPreview} alt="Avatar" className="w-full h-full rounded-full object-cover" />
+                  <img src={avatarPreview} alt="Avatar" className="w-full h-full rounded-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }} />
                 ) : (
                   (displayName?.[0] || initial.name?.[0] || 'U').toUpperCase()
                 )}

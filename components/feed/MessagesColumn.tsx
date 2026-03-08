@@ -248,6 +248,7 @@ export function MessagesColumn() {
                     src={conv.otherUser.image}
                     alt={conv.otherUser.name || 'User'}
                     className="w-full h-full rounded-full object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }}
                   />
                 ) : (
                   (conv.otherUser.name?.[0] || 'U').toUpperCase()

@@ -198,6 +198,7 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
                       src={user.image}
                       alt={user.name || 'User'}
                       className="w-full h-full rounded-full object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }}
                     />
                   ) : (
                     (user.name?.[0] || 'U').toUpperCase()

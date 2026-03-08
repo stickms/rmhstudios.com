@@ -101,6 +101,7 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
                   src={build.user.image}
                   alt={build.user.name || 'User'}
                   className="w-6 h-6 rounded-full"
+                  onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }}
                 />
               ) : (
                 <div className="w-6 h-6 rounded-full bg-violet-500/20 flex items-center justify-center text-violet-400 text-xs font-bold">

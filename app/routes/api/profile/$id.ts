@@ -110,7 +110,7 @@ export const Route = createFileRoute('/api/profile/$id')({
       name: resolved.name,
       username: user.username,
       handle: user.handle,
-      image: resolved.image,
+      image: resolved.image || "/images/social/default_avatar.png",
       isVerified: user.isVerified,
       isAdmin: user.isAdmin,
       createdAt: user.createdAt.toISOString(),

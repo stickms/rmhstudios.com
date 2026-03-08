@@ -230,6 +230,7 @@ export function FeedbackModal() {
                             src={fb.user.image}
                             alt=""
                             className="h-8 w-8 rounded-full shrink-0"
+                            onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }}
                           />
                         ) : (
                           <div className="h-8 w-8 rounded-full bg-site-accent/20 flex items-center justify-center text-xs font-bold text-site-accent shrink-0">

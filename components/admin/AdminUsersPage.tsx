@@ -242,7 +242,7 @@ export default function AdminUsersPage() {
                                     <div className="flex-1 flex items-center gap-4 min-w-0">
                                         <div className="w-10 h-10 rounded-full bg-site-bg overflow-hidden flex-shrink-0 border border-site-border">
                                             {user.image ? (
-                                                <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
+                                                <img src={user.image} alt={user.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }} />
                                             ) : (
                                                 <div className="w-full h-full bg-linear-to-br from-site-surface to-site-surface-hover flex items-center justify-center">
                                                     <span className="text-xs font-bold text-site-text-dim">{user.name?.charAt(0) || user.handle?.charAt(0) || 'U'}</span>
@@ -334,7 +334,7 @@ export default function AdminUsersPage() {
                                     <div className="flex items-center gap-3 min-w-0">
                                         <div className="w-10 h-10 rounded-full bg-site-bg overflow-hidden flex-shrink-0 border border-site-border">
                                             {user.image ? (
-                                                <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
+                                                <img src={user.image} alt={user.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }} />
                                             ) : (
                                                 <div className="w-full h-full bg-linear-to-br from-site-surface to-site-surface-hover flex items-center justify-center">
                                                     <span className="text-xs font-bold text-site-text-dim">{user.name?.charAt(0) || user.handle?.charAt(0) || 'U'}</span>

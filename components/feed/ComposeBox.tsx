@@ -134,6 +134,7 @@ export function ComposeBox() {
               src={resolvedUser?.image || session.user.image!}
               alt={resolvedUser?.name || session.user.name || 'User'}
               className="w-full h-full rounded-full object-cover"
+              onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }}
             />
           ) : (
             ((resolvedUser?.name || session.user.name)?.[0] || 'U').toUpperCase()

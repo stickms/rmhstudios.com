@@ -290,6 +290,7 @@ export default function MemberList() {
                   src={member.avatarUrl}
                   alt=""
                   className="shrink-0 w-8 h-8 rounded-full object-cover"
+                  onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }}
                 />
               ) : (
                 <div className="shrink-0 w-8 h-8 rounded-full bg-(--rmhtube-surface-active) flex items-center justify-center text-xs font-bold text-(--rmhtube-text-muted)">

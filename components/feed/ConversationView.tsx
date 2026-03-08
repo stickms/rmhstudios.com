@@ -321,7 +321,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
             >
               <div className="w-8 h-8 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-xs ring-2 ring-site-bg shrink-0">
                 {otherUser.image ? (
-                  <img src={otherUser.image} alt={otherUser.name || 'User'} className="w-full h-full rounded-full object-cover" />
+                  <img src={otherUser.image} alt={otherUser.name || 'User'} className="w-full h-full rounded-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }} />
                 ) : (
                   (otherUser.name?.[0] || 'U').toUpperCase()
                 )}
@@ -414,7 +414,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
                     {isLastInGroup ? (
                       <div className="w-7 h-7 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-[10px] shrink-0">
                         {avatarUser.image ? (
-                          <img src={avatarUser.image} alt={avatarUser.name || 'User'} className="w-full h-full rounded-full object-cover" />
+                          <img src={avatarUser.image} alt={avatarUser.name || 'User'} className="w-full h-full rounded-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }} />
                         ) : (
                           (avatarUser.name?.[0] || 'U').toUpperCase()
                         )}

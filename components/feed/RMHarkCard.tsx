@@ -10,9 +10,11 @@ import { RMHarkContent, extractFirstUrl } from './RMHarkContent';
 import { PollDisplay } from './PollDisplay';
 import { GifEmbed } from './GifEmbed';
 import { LinkPreview } from './LinkPreview';
+import { UserAvatar } from './UserAvatar';
 import { useFeedStore } from '@/stores/feedStore';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser } from '@/components/Providers';
+import { useFreshUser } from '@/stores/userDisplayStore';
 import { EngagementListModal } from './EngagementListModal';
 import { ShareModal } from './ShareModal';
 
@@ -47,19 +49,7 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(months / 12)}y`;
 }
 
-function UserAvatar({ user }: { user: FeedItem['user'] }) {
-  if (!user) return null;
-  const avatar = (
-    <div className="w-10 h-10 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-sm shrink-0">
-      {user.image ? (
-        <img src={user.image} alt={user.name || 'User'} className="w-full h-full rounded-full object-cover" />
-      ) : (
-        (user.name?.[0] || 'U').toUpperCase()
-      )}
-    </div>
-  );
-  return <Link to={userProfileHref(user)}>{avatar}</Link>;
-}
+// UserAvatar imported from shared component
 
 export function RMHarkCard({ item }: RMHarkCardProps) {
   const viewTracked = useRef(false);
@@ -70,14 +60,18 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
   const { removeItem, updateItem } = useFeedStore();
   const isAuthor = session?.user?.id === item.user?.id;
 
-  // Override avatar/name for the current user's posts with resolved profile data
+  // Use freshest user data from cache (covers all users, not just current)
+  // Use freshest user data from cache (covers all users, not just current)
+  const cachedUser = useFreshUser(item.user);
   const displayUser = useMemo(() => {
-    if (!item.user) return item.user;
+    if (!cachedUser) return item.user;
     if (isAuthor && resolvedUser) {
-      return { ...item.user, image: resolvedUser.image, name: resolvedUser.name ?? item.user.name };
+      return { ...cachedUser, image: resolvedUser.image, name: resolvedUser.name ?? cachedUser.name };
     }
-    return item.user;
-  }, [item.user, isAuthor, resolvedUser]);
+    return cachedUser;
+  }, [cachedUser, item.user, isAuthor, resolvedUser]);
+  const freshRepostedBy = useFreshUser(item.repostedBy);
+  const freshOriginalUser = useFreshUser(item.original?.user);
   const [menuOpen, setMenuOpen] = useState(false);
   const [engagementModal, setEngagementModal] = useState<'likes' | 'reposts' | null>(null);
   const [shareModalOpen, setShareModalOpen] = useState(false);
@@ -195,14 +189,14 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
       )}
 
       {/* reRMHark'd label */}
-      {item.repostedBy && (
+      {freshRepostedBy && (
         <div className="flex items-center gap-1.5 text-xs text-site-text-dim mb-2 ml-12">
           <Repeat2 className="w-3.5 h-3.5" />
           <Link
-            href={userProfileHref(item.repostedBy)}
+            href={userProfileHref(freshRepostedBy)}
             className="hover:underline"
           >
-            {item.repostedBy.name || item.repostedBy.handle || 'Someone'} reRMHark&apos;d
+            {freshRepostedBy.name || freshRepostedBy.handle || 'Someone'} reRMHark&apos;d
           </Link>
         </div>
       )}
@@ -266,22 +260,22 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
           {item.original && (
             <div className="mt-3 border border-site-border rounded-xl p-3 bg-site-surface/30">
               <div className="flex items-center gap-1.5 text-sm mb-1">
-                {item.original.user ? (
-                  <Link to={userProfileHref(item.original.user)} className="flex items-center gap-1.5 min-w-0 hover:underline">
+                {freshOriginalUser ? (
+                  <Link to={userProfileHref(freshOriginalUser)} className="flex items-center gap-1.5 min-w-0 hover:underline">
                     <span className="font-bold text-site-text truncate">
-                      {item.original.user.name || 'Unknown'}
+                      {freshOriginalUser.name || 'Unknown'}
                     </span>
-                    {item.original.user.isVerified && (
+                    {freshOriginalUser.isVerified && (
                       <BadgeCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                     )}
-                    {item.original.user.isAdmin && (
+                    {freshOriginalUser.isAdmin && (
                       <span title="Admin" className="inline-flex items-center shrink-0">
                         <ShieldCheck className="w-3.5 h-3.5 text-site-accent" />
                       </span>
                     )}
-                    {item.original.user.handle && (
+                    {freshOriginalUser.handle && (
                       <span className="text-site-text-dim truncate">
-                        @{item.original.user.handle}
+                        @{freshOriginalUser.handle}
                       </span>
                     )}
                   </Link>

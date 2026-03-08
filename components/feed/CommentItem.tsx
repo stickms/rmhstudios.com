@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { MAX_COMMENT_LENGTH } from '@/lib/rmhark-schema';
 import { RMHarkContent } from './RMHarkContent';
 import { EngagementListModal } from './EngagementListModal';
+import { UserAvatar } from './UserAvatar';
+import { useFreshUser } from '@/stores/userDisplayStore';
 
 export interface Comment {
   id: string;
@@ -63,6 +65,7 @@ interface CommentItemProps {
 }
 
 export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onCommentRemoved }: CommentItemProps) {
+  const freshCommentUser = useFreshUser(comment.user) ?? comment.user;
   const [replyOpen, setReplyOpen] = useState(false);
   const [replyContent, setReplyContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -178,34 +181,26 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
     <div className="py-3">
       <div className="flex gap-2.5">
         {/* Avatar */}
-        <Link to={`/@${comment.user.handle || comment.user.id}`} className="shrink-0">
-          <div className="w-8 h-8 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-xs">
-            {comment.user.image ? (
-              <img src={comment.user.image} alt={comment.user.name || 'User'} className="w-full h-full rounded-full object-cover" />
-            ) : (
-              (comment.user.name?.[0] || 'U').toUpperCase()
-            )}
-          </div>
-        </Link>
+        <UserAvatar user={freshCommentUser} size="sm" />
 
         <div className="flex-1 min-w-0">
           {/* Header */}
           <div className="flex items-center gap-1.5 text-sm">
-            <Link to={`/@${comment.user.handle || comment.user.id}`} className="flex items-center gap-1.5 min-w-0 hover:underline">
+            <Link to={`/@${freshCommentUser.handle || freshCommentUser.id}`} className="flex items-center gap-1.5 min-w-0 hover:underline">
               <span className="font-bold text-site-text truncate">
-                {comment.user.name || 'Unknown'}
+                {freshCommentUser.name || 'Unknown'}
               </span>
-              {comment.user.isVerified && (
+              {freshCommentUser.isVerified && (
                 <BadgeCheck className="w-4 h-4 text-emerald-500 shrink-0" />
               )}
-              {comment.user.isAdmin && (
+              {freshCommentUser.isAdmin && (
                 <span title="Admin" className="inline-flex items-center shrink-0">
                   <ShieldCheck className="w-4 h-4 text-site-accent" />
                 </span>
               )}
-              {comment.user.handle && (
+              {freshCommentUser.handle && (
                 <span className="text-site-text-dim truncate">
-                  @{comment.user.handle}
+                  @{freshCommentUser.handle}
                 </span>
               )}
             </Link>
@@ -314,19 +309,17 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
           {/* Inline reply box */}
           {replyOpen && sessionUser && (
             <div className="mt-2 flex gap-2">
-              <div className="w-7 h-7 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-[10px] shrink-0">
-                {sessionUser.image ? (
-                  <img src={sessionUser.image} alt={sessionUser.name || 'You'} className="w-full h-full rounded-full object-cover" />
-                ) : (
-                  (sessionUser.name?.[0] || 'U').toUpperCase()
-                )}
-              </div>
+              <UserAvatar
+                user={{ id: sessionUser.id || '', name: sessionUser.name || null, image: sessionUser.image || null }}
+                size="xs"
+                linkToProfile={false}
+              />
               <div className="flex-1 min-w-0">
                 <textarea
                   autoFocus
                   value={replyContent}
                   onChange={(e) => setReplyContent(e.target.value)}
-                  placeholder={`Reply to @${comment.user.handle || comment.user.name || 'Unknown'}...`}
+                  placeholder={`Reply to @${freshCommentUser.handle || freshCommentUser.name || 'Unknown'}...`}
                   rows={2}
                   maxLength={MAX_COMMENT_LENGTH}
                   className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-xs rounded-lg p-2 border border-site-border resize-none outline-none focus:border-site-accent transition-colors"
