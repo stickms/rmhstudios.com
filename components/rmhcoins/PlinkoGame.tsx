@@ -366,7 +366,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
   const isIdle = gameState === 'idle';
 
   return (
-    <div className="flex flex-col items-center gap-4 px-4 py-6">
+    <div className="flex flex-col items-center gap-3 sm:gap-4 px-3 sm:px-4 py-4 sm:py-6">
       <div className="w-full max-w-[390px] aspect-[390/420] relative">
         <canvas
           ref={canvasRef}
@@ -382,7 +382,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
             }`}
           >
             <div
-              className={`px-4 py-2 rounded-lg font-bold text-lg ${
+              className={`px-3 py-2 rounded-lg font-bold text-sm sm:text-lg ${
                 resultWon
                   ? 'bg-emerald-500/90 text-white'
                   : 'bg-red-500/90 text-white'
@@ -396,7 +396,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
 
       <div className="w-full max-w-[390px]">
         <p className="text-sm text-site-text-dim mb-2">Select a bin:</p>
-        <div className="flex gap-2">
+        <div className="flex gap-1.5 sm:gap-2">
           {Array.from({ length: NUM_BINS }, (_, i) => (
             <button
               key={i}
@@ -420,7 +420,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
 
       <div className="w-full max-w-[390px]">
         <p className="text-sm text-site-text-dim mb-2">Bet amount:</p>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
           <div className="relative flex-1">
             <input
               type="number"
@@ -434,13 +434,13 @@ export function PlinkoGame({ coins, setCoins }: Props) {
             />
             <CoinIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" />
           </div>
-          <div className="flex gap-1">
+          <div className="flex gap-1.5">
             {[1, 5, 10].map((amt) => (
               <button
                 key={amt}
                 onClick={() => isIdle && setQuickBet(amt)}
                 disabled={!isIdle}
-                className="px-2 py-2 text-xs font-bold bg-site-surface border border-site-border rounded-lg text-site-text-dim hover:text-site-text hover:bg-site-surface-hover disabled:opacity-50 transition-colors"
+                className="flex-1 sm:flex-none px-3 py-2 text-xs font-bold bg-site-surface border border-site-border rounded-lg text-site-text-dim hover:text-site-text hover:bg-site-surface-hover disabled:opacity-50 transition-colors"
               >
                 {amt}
               </button>
@@ -448,7 +448,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
             <button
               onClick={() => isIdle && setQuickBet(coins)}
               disabled={!isIdle}
-              className="px-2 py-2 text-xs font-bold bg-site-surface border border-site-border rounded-lg text-yellow-500 hover:bg-site-surface-hover disabled:opacity-50 transition-colors"
+              className="flex-1 sm:flex-none px-3 py-2 text-xs font-bold bg-site-surface border border-site-border rounded-lg text-yellow-500 hover:bg-site-surface-hover disabled:opacity-50 transition-colors"
             >
               All
             </button>
