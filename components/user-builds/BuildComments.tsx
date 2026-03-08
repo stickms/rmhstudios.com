@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Send, Loader2, MessageCircle, ChevronDown } from 'lucide-react';
+import { UserAvatar } from '@/components/ui/UserAvatar';
 import { authClient } from '@/lib/auth-client';
 import type { BuildComment } from '@/lib/user-builds-types';
 
@@ -39,18 +40,7 @@ function CommentItem({
     <div className={depth > 0 ? 'ml-8 border-l border-site-border pl-4' : ''}>
       <div className="py-3">
         <div className="flex items-start gap-3">
-          {comment.user.image ? (
-            <img
-              src={comment.user.image}
-              alt={comment.user.name || 'User'}
-              className="w-8 h-8 rounded-full shrink-0"
-              onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }}
-            />
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-violet-500/20 flex items-center justify-center text-violet-400 text-sm font-bold shrink-0">
-              {(comment.user.name?.[0] || 'U').toUpperCase()}
-            </div>
-          )}
+          <UserAvatar src={comment.user.image} alt={comment.user.name || 'User'} size={32} fallbackName={comment.user.name} />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <span className="font-medium text-sm text-site-text">

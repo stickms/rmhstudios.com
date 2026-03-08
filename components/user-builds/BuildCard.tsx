@@ -4,6 +4,8 @@ import { Link } from '@tanstack/react-router';
 import { Heart, MessageCircle, Eye, ExternalLink, Github } from 'lucide-react';
 import type { Build } from '@/lib/user-builds-types';
 import { TechBadges } from './TechBadges';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { UserAvatar } from '@/components/ui/UserAvatar';
 
 interface BuildCardProps {
   build: Build;
@@ -46,9 +48,12 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
         {/* Thumbnail */}
         {build.thumbnailUrl ? (
           <div className="aspect-video w-full overflow-hidden bg-site-bg">
-            <img
+            <OptimizedImage
               src={build.thumbnailUrl}
               alt={build.title}
+              width={640}
+              height={360}
+              quality={75}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
           </div>
@@ -96,18 +101,7 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
           {/* Author & Meta */}
           <div className="flex items-center justify-between mt-auto">
             <div className="flex items-center gap-2 min-w-0">
-              {build.user.image ? (
-                <img
-                  src={build.user.image}
-                  alt={build.user.name || 'User'}
-                  className="w-6 h-6 rounded-full"
-                  onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }}
-                />
-              ) : (
-                <div className="w-6 h-6 rounded-full bg-violet-500/20 flex items-center justify-center text-violet-400 text-xs font-bold">
-                  {(build.user.name?.[0] || 'U').toUpperCase()}
-                </div>
-              )}
+              <UserAvatar src={build.user.image} alt={build.user.name || 'User'} size={24} fallbackName={build.user.name} />
               <span className="text-sm text-site-text-muted truncate">
                 {build.user.name || 'Anonymous'}
               </span>

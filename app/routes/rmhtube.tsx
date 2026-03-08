@@ -10,6 +10,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { auth } from '@/lib/auth';
 import { getRequest } from '@tanstack/react-start/server';
 import RmhTubeShell from '@/components/rmhtube/RmhTubeShell';
+import rmhtubeCss from '@/components/rmhtube/rmhtube.css?url';
 
 const checkAuth = createServerFn({ method: 'GET' }).handler(async () => {
   const request = getRequest();
@@ -25,6 +26,7 @@ export const Route = createFileRoute('/rmhtube')({
       { title: 'RmhTube — Watch Together' },
       { name: 'description', content: 'Watch videos together in sync with friends' },
     ],
+    links: [{ rel: 'stylesheet', href: rmhtubeCss }],
   }),
   component: () => (
     <RmhTubeShell>

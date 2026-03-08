@@ -30,7 +30,6 @@
     "scripts",
     ".output",
     ".vinxi",
-    "next.config.ts",
     "proxy.ts"
   ]
 }

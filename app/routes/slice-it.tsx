@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router'
 import { Toaster } from 'sonner'
+import sliceItCss from '@/components/slice-it/slice-it.css?url'
 
 function SliceItLayout() {
   return (
@@ -15,5 +16,8 @@ function SliceItLayout() {
 }
 
 export const Route = createFileRoute('/slice-it')({
+  head: () => ({
+    links: [{ rel: 'stylesheet', href: sliceItCss }],
+  }),
   component: SliceItLayout,
 })

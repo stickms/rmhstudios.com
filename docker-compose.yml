@@ -22,6 +22,8 @@ x-common: &common
   restart: unless-stopped
   extra_hosts:
     - "host.docker.internal:host-gateway"
+  volumes:
+    - ${STORAGE_PATH:-./db}:/app/db
   logging:
     driver: json-file
     options:

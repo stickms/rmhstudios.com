@@ -44,6 +44,8 @@ export default defineConfig({
   ],
   build: {
     chunkSizeWarningLimit: 4000,
+    minify: "esbuild",
+    sourcemap: false,
     rollupOptions: { onwarn },
   },
   environments: {
@@ -106,6 +108,13 @@ export default defineConfig({
       "react-player",
       "emoji-picker-react",
       "react-easy-crop",
+      // Additional heavy libs — skip SSR bundling for faster builds
+      "lucide-react",
+      "katex",
+      "zod",
+      "@dnd-kit/core",
+      "@dnd-kit/sortable",
+      "@dnd-kit/utilities",
     ],
   },
 });

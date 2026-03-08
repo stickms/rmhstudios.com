@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { Loader2, ArrowLeft, MessageCircle } from 'lucide-react';
+import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Link } from '@tanstack/react-router';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
@@ -242,18 +243,7 @@ export function MessagesColumn() {
               className="flex items-center gap-3 px-4 py-3 hover:bg-site-surface/50 transition-colors border-b border-site-border"
             >
               {/* Avatar */}
-              <div className="w-12 h-12 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-sm ring-2 ring-site-bg shrink-0">
-                {conv.otherUser.image ? (
-                  <img
-                    src={conv.otherUser.image}
-                    alt={conv.otherUser.name || 'User'}
-                    className="w-full h-full rounded-full object-cover"
-                    onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }}
-                  />
-                ) : (
-                  (conv.otherUser.name?.[0] || 'U').toUpperCase()
-                )}
-              </div>
+              <UserAvatar src={conv.otherUser.image} alt={conv.otherUser.name || 'User'} size={48} fallbackName={conv.otherUser.name} className="ring-2 ring-site-bg" />
 
               {/* Content */}
               <div className="flex-1 min-w-0">

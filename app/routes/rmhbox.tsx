@@ -11,6 +11,7 @@ import { getRequest } from '@tanstack/react-start/server';
 import { auth } from '@/lib/auth';
 import { redirect } from '@tanstack/react-router';
 import RMHboxShell from '@/components/rmhbox/RMHboxShell';
+import rmhboxCss from '@/components/rmhbox/rmhbox.css?url';
 
 const checkAuth = createServerFn({ method: 'GET' }).handler(async () => {
   const request = getRequest();
@@ -29,5 +30,8 @@ function RMHboxLayout() {
 
 export const Route = createFileRoute('/rmhbox')({
   beforeLoad: () => checkAuth(),
+  head: () => ({
+    links: [{ rel: 'stylesheet', href: rmhboxCss }],
+  }),
   component: RMHboxLayout,
 });

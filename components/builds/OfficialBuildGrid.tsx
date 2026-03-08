@@ -158,6 +158,7 @@ export function OfficialBuildGrid({ builds, initialLikedIds = [] }: OfficialBuil
                     <input
                         type="text"
                         placeholder="Search builds..."
+                        aria-label="Search builds"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         className="w-full pl-10 pr-4 py-2 rounded-lg bg-site-surface border border-site-border text-site-text text-sm outline-none focus:border-site-accent/50 transition-colors"
@@ -165,6 +166,7 @@ export function OfficialBuildGrid({ builds, initialLikedIds = [] }: OfficialBuil
                     {search && (
                         <button
                             onClick={() => setSearch('')}
+                            aria-label="Clear search"
                             className="absolute right-3 top-1/2 -translate-y-1/2 text-site-text-dim hover:text-site-text"
                         >
                             <X className="w-4 h-4" />
@@ -176,6 +178,10 @@ export function OfficialBuildGrid({ builds, initialLikedIds = [] }: OfficialBuil
                 <div className="relative" ref={sortRef}>
                     <button
                         onClick={() => { setSortOpen(!sortOpen); }}
+                        aria-label="Sort builds"
+                        aria-expanded={sortOpen}
+                        aria-haspopup="listbox"
+                        aria-controls="sort-listbox"
                         className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-colors cursor-pointer whitespace-nowrap ${
                             sort !== 'default'
                                 ? 'bg-site-accent/10 border-site-accent/30 text-site-accent'
@@ -187,10 +193,12 @@ export function OfficialBuildGrid({ builds, initialLikedIds = [] }: OfficialBuil
                         <ChevronDown className={`w-3.5 h-3.5 transition-transform ${sortOpen ? 'rotate-180' : ''}`} />
                     </button>
                     {sortOpen && (
-                        <div className="absolute z-40 top-full right-0 mt-1.5 w-48 bg-site-surface border border-site-border rounded-xl shadow-lg overflow-hidden py-1">
+                        <div id="sort-listbox" role="listbox" aria-label="Sort options" className="absolute z-40 top-full right-0 mt-1.5 w-48 bg-site-surface border border-site-border rounded-xl shadow-lg overflow-hidden py-1">
                             {SORT_OPTIONS.map(opt => (
                                 <button
                                     key={opt.value}
+                                    role="option"
+                                    aria-selected={sort === opt.value}
                                     onClick={() => { setSort(opt.value); setSortOpen(false); }}
                                     className={`w-full px-3 py-2 text-left text-sm transition-colors ${
                                         sort === opt.value ? 'bg-site-accent/10 text-site-accent' : 'text-site-text hover:bg-site-surface-hover'

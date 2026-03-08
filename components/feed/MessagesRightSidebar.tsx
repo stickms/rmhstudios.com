@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { MessageCircle, UserPlus } from 'lucide-react';
+import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession } from '@/components/Providers';
 
 interface SidebarUser {
@@ -18,13 +19,7 @@ function UserRow({ user }: { user: SidebarUser }) {
       to={`/@${(user as any).handle || user.id}`}
       className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-site-surface-hover transition-colors group"
     >
-      <div className="w-8 h-8 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-xs shrink-0">
-        {user.image ? (
-          <img src={user.image} alt={user.name || 'User'} className="w-full h-full rounded-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }} />
-        ) : (
-          (user.name?.[0] || 'U').toUpperCase()
-        )}
-      </div>
+      <UserAvatar src={user.image} alt={user.name || 'User'} size={32} fallbackName={user.name} />
       <div className="min-w-0">
         <p className="text-sm font-medium text-site-text group-hover:text-site-accent transition-colors truncate">
           {user.name || 'Unknown'}

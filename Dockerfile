@@ -95,10 +95,13 @@ ENV DATABASE_URL=${DATABASE_URL} \
     VITE_RMHBOX_SOCKET_URL=${VITE_RMHBOX_SOCKET_URL} \
     VITE_RMHTUBE_SOCKET_URL=${VITE_RMHTUBE_SOCKET_URL}
 
-# Clean build every time to avoid stale .vinxi cache causing asset hash
-# mismatches between the SSR bundle and the actual CSS files on disk.
+# Build with cache mounts for faster incremental builds.
+# .vinxi cache is preserved between builds for Vite's module graph cache.
+# The fix-ssr-css-hash.mjs script corrects any SSR/client CSS hash mismatches
+# that may arise from the cache, so it's safe to keep .vinxi across builds.
 # NODE_OPTIONS prevents OOM on large bundles (three.js, monaco, tiptap, etc.)
-RUN rm -rf .vinxi .output \
+RUN --mount=type=cache,id=vinxi-cache,target=/app/.vinxi,sharing=locked \
+    rm -rf .output \
     && NODE_OPTIONS='--max-old-space-size=8192' pnpm exec vite build \
     && node scripts/fix-ssr-css-hash.mjs \
     && cp -a .output /app/build-output
@@ -116,29 +119,29 @@ ENV NODE_ENV=production
 ENV HOSTNAME=0.0.0.0
 
 RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs
+    adduser --system --uid 1001 app
 
 # ─── node_modules from deps stage (NOT from builder) ────────────────────
 # This is the single largest layer. By sourcing it from the deps stage
 # instead of the builder, this layer is cached independently of source
 # code or env-arg changes — it only rebuilds when the lockfile changes.
-COPY --from=deps --chown=nextjs:nodejs /app/node_modules ./node_modules
+COPY --from=deps --chown=app:nodejs /app/node_modules ./node_modules
 
 # ─── Nitro server output ────────────────────────────────────────────────
 # .output/ contains the Nitro server bundle, static assets, and public files.
-COPY --from=vite-builder --chown=nextjs:nodejs /app/build-output ./.output
+COPY --from=vite-builder --chown=app:nodejs /app/build-output ./.output
 
 # ─── Custom server bundles (from env-agnostic stage) ────────────────────
-COPY --from=server-builder --chown=nextjs:nodejs /app/dist-server ./dist-server
+COPY --from=server-builder --chown=app:nodejs /app/dist-server ./dist-server
 
 # ─── Supporting files (from build context, not a builder stage) ─────────
-COPY --chown=nextjs:nodejs scripts ./scripts
-COPY --chown=nextjs:nodejs content ./content
-COPY --chown=nextjs:nodejs prisma ./prisma
-COPY --chown=nextjs:nodejs prisma.config.ts ./prisma.config.ts
-COPY --chown=nextjs:nodejs package.json ./package.json
+COPY --chown=app:nodejs scripts ./scripts
+COPY --chown=app:nodejs content ./content
+COPY --chown=app:nodejs prisma ./prisma
+COPY --chown=app:nodejs prisma.config.ts ./prisma.config.ts
+COPY --chown=app:nodejs package.json ./package.json
 
-USER nextjs
+USER app
 
 EXPOSE 7005 7001 7676 7003
 

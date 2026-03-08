@@ -97,6 +97,7 @@
     "rhyming-part": "^2.1.0",
     "rss-parser": "^3.13.0",
     "sanitize-html": "^2.17.1",
+    "sharp": "^0.34.5",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
     "sonner": "^2.0.7",

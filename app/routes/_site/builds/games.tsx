@@ -6,6 +6,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { OfficialBuildGrid } from '@/components/builds/OfficialBuildGrid';
 import { getCuratedBuildsByCategory } from '@/components/builds/data';
+import { buildMeta, buildCanonical } from '@/lib/seo';
 
 const fetchGames = createServerFn({ method: 'GET' }).handler(async () => {
   return getCuratedBuildsByCategory('games');
@@ -13,9 +14,23 @@ const fetchGames = createServerFn({ method: 'GET' }).handler(async () => {
 
 export const Route = createFileRoute('/_site/builds/games')({
   head: () => ({
-    meta: [
-      { title: 'Entertainment | Curated Builds | RMH Studios' },
-      { name: 'description', content: 'Browse our collection of browser games and interactive experiences.' },
+    meta: buildMeta({
+      title: 'Entertainment | Curated Builds | RMH Studios',
+      description: 'Browse our collection of browser games and interactive experiences.',
+      path: '/builds/games',
+    }),
+    links: [buildCanonical('/builds/games')],
+    scripts: [
+      {
+        type: 'application/ld+json',
+        children: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'CollectionPage',
+          name: 'Entertainment | Curated Builds',
+          description: 'Browser games and interactive experiences built by RMH Studios.',
+          url: 'https://rmhstudios.com/builds/games',
+        }),
+      },
     ],
   }),
   loader: () => fetchGames(),

@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { Loader2, ArrowLeft, Send } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
+import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 
@@ -319,13 +320,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
               to={`/@${(otherUser as any).handle || otherUser.id}`}
               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
             >
-              <div className="w-8 h-8 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-xs ring-2 ring-site-bg shrink-0">
-                {otherUser.image ? (
-                  <img src={otherUser.image} alt={otherUser.name || 'User'} className="w-full h-full rounded-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }} />
-                ) : (
-                  (otherUser.name?.[0] || 'U').toUpperCase()
-                )}
-              </div>
+              <UserAvatar src={otherUser.image} alt={otherUser.name || 'User'} size={32} fallbackName={otherUser.name} className="ring-2 ring-site-bg" />
               <div>
                 <p className="font-(family-name:--site-font-display) font-bold text-sm text-site-text">
                   {otherUser.name || 'Unknown'}
@@ -412,13 +407,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
                   <div className={`flex items-end gap-2 ${isLastInGroup ? 'mb-3' : 'mb-0.5'} ${isSelf ? 'flex-row-reverse' : ''}`}>
                     {/* Avatar — visible only on last message in group */}
                     {isLastInGroup ? (
-                      <div className="w-7 h-7 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-[10px] shrink-0">
-                        {avatarUser.image ? (
-                          <img src={avatarUser.image} alt={avatarUser.name || 'User'} className="w-full h-full rounded-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }} />
-                        ) : (
-                          (avatarUser.name?.[0] || 'U').toUpperCase()
-                        )}
-                      </div>
+                      <UserAvatar src={avatarUser.image} alt={avatarUser.name || 'User'} size={28} fallbackName={avatarUser.name} />
                     ) : (
                       <div className="w-7 shrink-0" />
                     )}

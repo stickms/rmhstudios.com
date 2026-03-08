@@ -3,6 +3,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Heart, Eye, Github, ExternalLink, Calendar, ArrowLeft, Edit, Trash2, Loader2 } from 'lucide-react';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { UserAvatar } from '@/components/ui/UserAvatar';
 import ReactMarkdown from 'react-markdown';
 import { authClient } from '@/lib/auth-client';
 import type { Build } from '@/lib/user-builds-types';
@@ -129,13 +131,7 @@ export function BuildDetail({ build: initialBuild, backHref = '/user-builds' }: 
         {/* Author & Date */}
         <div className="flex items-center gap-4 mb-4">
           <Link to={`/@${build.user.handle || build.user.id}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            {build.user.image ? (
-              <img src={build.user.image} alt={build.user.name || 'User'} className="w-10 h-10 rounded-full" onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }} />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-violet-500/20 flex items-center justify-center text-violet-400 font-bold">
-                {(build.user.name?.[0] || 'U').toUpperCase()}
-              </div>
-            )}
+            <UserAvatar src={build.user.image} alt={build.user.name || 'User'} size={40} fallbackName={build.user.name} />
             <div>
               <p className="font-medium text-site-text">{build.user.name || 'Anonymous'}</p>
               {build.user.username && (
@@ -248,7 +244,7 @@ export function BuildDetail({ build: initialBuild, backHref = '/user-builds' }: 
       {/* Thumbnail */}
       {build.thumbnailUrl && (
         <div className="mb-8 rounded-xl overflow-hidden border border-site-border">
-          <img src={build.thumbnailUrl} alt={build.title} className="w-full" />
+          <OptimizedImage src={build.thumbnailUrl} alt={build.title} layout="fullWidth" quality={85} className="w-full" />
         </div>
       )}
 
