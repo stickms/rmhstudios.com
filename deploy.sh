@@ -378,7 +378,7 @@ done
 dc run --rm --no-deps web sh -c 'npx prisma migrate resolve --applied 0_baseline 2>/dev/null || true'
 
 # If there's a failed migration, mark it as rolled back so migrate deploy can retry it
-FAILED_MIGRATION=$(echo "$MIGRATE_OUTPUT" | grep -oP '(?<=resolve --rolled-back ")[^"]+')
+FAILED_MIGRATION=$(echo "$MIGRATE_OUTPUT" | grep -oP '(?<=resolve --rolled-back ")[^"]+' || true)
 if [ -n "$FAILED_MIGRATION" ]; then
     log "  Resolving failed migration '$FAILED_MIGRATION' as rolled back..."
     dc run --rm --no-deps web sh -c "npx prisma migrate resolve --rolled-back \"$FAILED_MIGRATION\"" || true
