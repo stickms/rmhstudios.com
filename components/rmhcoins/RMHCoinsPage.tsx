@@ -8,12 +8,17 @@ import { CoinIcon } from './CoinIcon';
 import { PlinkoGame } from './PlinkoGame';
 import { CoinShop } from './CoinShop';
 
-type Tab = 'play' | 'shop';
+type Tab = 'shop' | 'play';
 
-export function RMHCoinsPage() {
+const tabs: { label: string; value: Tab }[] = [
+  { label: 'Shop', value: 'shop' },
+  { label: 'Play', value: 'play' },
+];
+
+export function RMHCoinsPage({ defaultTab = 'shop' }: { defaultTab?: Tab }) {
   const { data: session, isPending } = authClient.useSession();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<Tab>('play');
+  const [tab, setTab] = useState<Tab>(defaultTab);
   const [coins, setCoins] = useState(0);
   const [hasProfilePet, setHasProfilePet] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -21,7 +26,7 @@ export function RMHCoinsPage() {
   // Redirect if not authenticated
   useEffect(() => {
     if (!isPending && !session?.user) {
-      navigate({ to: '/login', search: { callbackURL: '/rmhcoins' } });
+      navigate({ to: '/login', search: { callbackURL: '/wallet' } });
     }
   }, [isPending, session, navigate]);
 
@@ -49,56 +54,50 @@ export function RMHCoinsPage() {
   if (!session?.user) return null;
 
   return (
-    <div className="flex flex-col max-w-lg mx-auto w-full">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-site-bg/85 backdrop-blur-md border-b border-site-border">
-        <div className="flex items-center justify-between px-4 py-3">
-          <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text">
-            RMH Coins
-          </h1>
-          <div className="flex items-center gap-1.5">
-            <CoinIcon className="w-5 h-5" />
-            <span className="font-bold text-lg text-yellow-500">{coins}</span>
-          </div>
+    <div className="flex flex-col w-full">
+      {/* Balance bar */}
+      <div className="flex items-center justify-between px-4 py-4 border-b border-site-border">
+        <div className="flex items-center gap-2">
+          <CoinIcon className="w-6 h-6" />
+          <span className="font-bold text-2xl text-yellow-500">{coins}</span>
+          <span className="text-sm text-site-text-dim ml-1">RMH Coins</span>
         </div>
       </div>
 
       {/* Tab bar */}
       <div className="border-b border-site-border">
         <div className="flex">
-          <button
-            onClick={() => setTab('play')}
-            className={`flex-1 py-3 text-center text-sm font-bold transition-colors ${
-              tab === 'play'
-                ? 'text-yellow-500 border-b-2 border-yellow-500'
-                : 'text-site-text-dim hover:text-site-text hover:bg-site-surface/50'
-            }`}
-          >
-            Play
-          </button>
-          <button
-            onClick={() => setTab('shop')}
-            className={`flex-1 py-3 text-center text-sm font-bold transition-colors ${
-              tab === 'shop'
-                ? 'text-yellow-500 border-b-2 border-yellow-500'
-                : 'text-site-text-dim hover:text-site-text hover:bg-site-surface/50'
-            }`}
-          >
-            Shop
-          </button>
+          {tabs.map((t) => (
+            <button
+              key={t.value}
+              onClick={() => setTab(t.value)}
+              className={`flex-1 py-3 text-center text-sm font-bold transition-colors relative ${
+                tab === t.value
+                  ? 'text-yellow-500'
+                  : 'text-site-text-dim hover:text-site-text hover:bg-site-surface/50'
+              }`}
+            >
+              {t.label}
+              {tab === t.value && (
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-0.5 bg-yellow-500 rounded-full" />
+              )}
+            </button>
+          ))}
         </div>
       </div>
 
       {/* Tab content */}
-      {tab === 'play' && <PlinkoGame coins={coins} setCoins={setCoins} />}
-      {tab === 'shop' && (
-        <CoinShop
-          coins={coins}
-          setCoins={setCoins}
-          hasProfilePet={hasProfilePet}
-          setHasProfilePet={setHasProfilePet}
-        />
-      )}
+      <div className="flex-1">
+        {tab === 'shop' && (
+          <CoinShop
+            coins={coins}
+            setCoins={setCoins}
+            hasProfilePet={hasProfilePet}
+            setHasProfilePet={setHasProfilePet}
+          />
+        )}
+        {tab === 'play' && <PlinkoGame coins={coins} setCoins={setCoins} />}
+      </div>
     </div>
   );
 }

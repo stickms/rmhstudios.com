@@ -6,7 +6,7 @@ import { authClient } from '@/lib/auth-client';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import {
   Home, Package, Hammer, BookOpen,
-  Palette, ChevronDown, LogOut, PenSquare, User, MessageCircle, ShieldCheck, MoreHorizontal
+  Palette, ChevronDown, LogOut, PenSquare, User, MessageCircle, ShieldCheck, MoreHorizontal, Wallet
 } from 'lucide-react';
 import { ComposeModal } from './ComposeModal';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,7 @@ const navLinks = [
   { href: '/builds', label: 'Curated Builds', icon: Package },
   { href: '/user-builds', label: 'User Builds', icon: Hammer },
   { href: '/blog', label: 'Blog', icon: BookOpen },
-  { href: '/other', label: 'Other', icon: MoreHorizontal },
+  { href: '/wallet', label: 'Wallet', icon: Wallet },
 ];
 
 export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {

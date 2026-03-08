@@ -78,8 +78,8 @@ import { Route as ApiOembedRouteImport } from './routes/api/oembed'
 import { Route as ApiMessagesRouteImport } from './routes/api/messages'
 import { Route as ApiFeedbackRouteImport } from './routes/api/feedback'
 import { Route as AltairMultiplayerRouteImport } from './routes/altair/multiplayer'
+import { Route as SiteWalletRouteImport } from './routes/_site/wallet'
 import { Route as SiteRoadmapRouteImport } from './routes/_site/roadmap'
-import { Route as SiteRmhcoinsRouteImport } from './routes/_site/rmhcoins'
 import { Route as SiteBuildsRouteRouteImport } from './routes/_site/builds/route'
 import { Route as SiteAdminRouteRouteImport } from './routes/_site/admin/route'
 import { Route as SecretWeatherIndexRouteImport } from './routes/secret/weather/index'
@@ -95,7 +95,6 @@ import { Route as AltairMultiplayerIndexRouteImport } from './routes/altair/mult
 import { Route as SiteUserBuildsIndexRouteImport } from './routes/_site/user-builds/index'
 import { Route as SiteRmhcodeIndexRouteImport } from './routes/_site/rmhcode/index'
 import { Route as SiteResearchIndexRouteImport } from './routes/_site/research/index'
-import { Route as SiteOtherIndexRouteImport } from './routes/_site/other/index'
 import { Route as SiteNewsIndexRouteImport } from './routes/_site/news/index'
 import { Route as SiteMessagesIndexRouteImport } from './routes/_site/messages/index'
 import { Route as SiteBuildsIndexRouteImport } from './routes/_site/builds/index'
@@ -565,14 +564,14 @@ const AltairMultiplayerRoute = AltairMultiplayerRouteImport.update({
   path: '/multiplayer',
   getParentRoute: () => AltairRoute,
 } as any)
+const SiteWalletRoute = SiteWalletRouteImport.update({
+  id: '/wallet',
+  path: '/wallet',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteRoadmapRoute = SiteRoadmapRouteImport.update({
   id: '/roadmap',
   path: '/roadmap',
-  getParentRoute: () => SiteRoute,
-} as any)
-const SiteRmhcoinsRoute = SiteRmhcoinsRouteImport.update({
-  id: '/rmhcoins',
-  path: '/rmhcoins',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteBuildsRouteRoute = SiteBuildsRouteRouteImport.update({
@@ -648,11 +647,6 @@ const SiteRmhcodeIndexRoute = SiteRmhcodeIndexRouteImport.update({
 const SiteResearchIndexRoute = SiteResearchIndexRouteImport.update({
   id: '/research/',
   path: '/research/',
-  getParentRoute: () => SiteRoute,
-} as any)
-const SiteOtherIndexRoute = SiteOtherIndexRouteImport.update({
-  id: '/other/',
-  path: '/other/',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteNewsIndexRoute = SiteNewsIndexRouteImport.update({
@@ -1327,8 +1321,8 @@ export interface FileRoutesByFullPath {
   '/void-breaker': typeof VoidBreakerRoute
   '/admin': typeof SiteAdminRouteRouteWithChildren
   '/builds': typeof SiteBuildsRouteRouteWithChildren
-  '/rmhcoins': typeof SiteRmhcoinsRoute
   '/roadmap': typeof SiteRoadmapRoute
+  '/wallet': typeof SiteWalletRoute
   '/altair/multiplayer': typeof AltairMultiplayerRouteWithChildren
   '/api/feedback': typeof ApiFeedbackRoute
   '/api/messages': typeof ApiMessagesRouteWithChildren
@@ -1451,7 +1445,6 @@ export interface FileRoutesByFullPath {
   '/builds/': typeof SiteBuildsIndexRoute
   '/messages/': typeof SiteMessagesIndexRoute
   '/news/': typeof SiteNewsIndexRoute
-  '/other/': typeof SiteOtherIndexRoute
   '/research/': typeof SiteResearchIndexRoute
   '/rmhcode/': typeof SiteRmhcodeIndexRoute
   '/user-builds/': typeof SiteUserBuildsIndexRoute
@@ -1524,8 +1517,8 @@ export interface FileRoutesByTo {
   '/synapse-storm': typeof SynapseStormRoute
   '/velum2099': typeof Velum2099Route
   '/void-breaker': typeof VoidBreakerRoute
-  '/rmhcoins': typeof SiteRmhcoinsRoute
   '/roadmap': typeof SiteRoadmapRoute
+  '/wallet': typeof SiteWalletRoute
   '/api/feedback': typeof ApiFeedbackRoute
   '/api/messages': typeof ApiMessagesRouteWithChildren
   '/api/oembed': typeof ApiOembedRoute
@@ -1639,7 +1632,6 @@ export interface FileRoutesByTo {
   '/builds': typeof SiteBuildsIndexRoute
   '/messages': typeof SiteMessagesIndexRoute
   '/news': typeof SiteNewsIndexRoute
-  '/other': typeof SiteOtherIndexRoute
   '/research': typeof SiteResearchIndexRoute
   '/rmhcode': typeof SiteRmhcodeIndexRoute
   '/user-builds': typeof SiteUserBuildsIndexRoute
@@ -1728,8 +1720,8 @@ export interface FileRoutesById {
   '/void-breaker': typeof VoidBreakerRoute
   '/_site/admin': typeof SiteAdminRouteRouteWithChildren
   '/_site/builds': typeof SiteBuildsRouteRouteWithChildren
-  '/_site/rmhcoins': typeof SiteRmhcoinsRoute
   '/_site/roadmap': typeof SiteRoadmapRoute
+  '/_site/wallet': typeof SiteWalletRoute
   '/altair/multiplayer': typeof AltairMultiplayerRouteWithChildren
   '/api/feedback': typeof ApiFeedbackRoute
   '/api/messages': typeof ApiMessagesRouteWithChildren
@@ -1853,7 +1845,6 @@ export interface FileRoutesById {
   '/_site/builds/': typeof SiteBuildsIndexRoute
   '/_site/messages/': typeof SiteMessagesIndexRoute
   '/_site/news/': typeof SiteNewsIndexRoute
-  '/_site/other/': typeof SiteOtherIndexRoute
   '/_site/research/': typeof SiteResearchIndexRoute
   '/_site/rmhcode/': typeof SiteRmhcodeIndexRoute
   '/_site/user-builds/': typeof SiteUserBuildsIndexRoute
@@ -1943,8 +1934,8 @@ export interface FileRouteTypes {
     | '/void-breaker'
     | '/admin'
     | '/builds'
-    | '/rmhcoins'
     | '/roadmap'
+    | '/wallet'
     | '/altair/multiplayer'
     | '/api/feedback'
     | '/api/messages'
@@ -2067,7 +2058,6 @@ export interface FileRouteTypes {
     | '/builds/'
     | '/messages/'
     | '/news/'
-    | '/other/'
     | '/research/'
     | '/rmhcode/'
     | '/user-builds/'
@@ -2140,8 +2130,8 @@ export interface FileRouteTypes {
     | '/synapse-storm'
     | '/velum2099'
     | '/void-breaker'
-    | '/rmhcoins'
     | '/roadmap'
+    | '/wallet'
     | '/api/feedback'
     | '/api/messages'
     | '/api/oembed'
@@ -2255,7 +2245,6 @@ export interface FileRouteTypes {
     | '/builds'
     | '/messages'
     | '/news'
-    | '/other'
     | '/research'
     | '/rmhcode'
     | '/user-builds'
@@ -2343,8 +2332,8 @@ export interface FileRouteTypes {
     | '/void-breaker'
     | '/_site/admin'
     | '/_site/builds'
-    | '/_site/rmhcoins'
     | '/_site/roadmap'
+    | '/_site/wallet'
     | '/altair/multiplayer'
     | '/api/feedback'
     | '/api/messages'
@@ -2468,7 +2457,6 @@ export interface FileRouteTypes {
     | '/_site/builds/'
     | '/_site/messages/'
     | '/_site/news/'
-    | '/_site/other/'
     | '/_site/research/'
     | '/_site/rmhcode/'
     | '/_site/user-builds/'
@@ -3111,18 +3099,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AltairMultiplayerRouteImport
       parentRoute: typeof AltairRoute
     }
+    '/_site/wallet': {
+      id: '/_site/wallet'
+      path: '/wallet'
+      fullPath: '/wallet'
+      preLoaderRoute: typeof SiteWalletRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/roadmap': {
       id: '/_site/roadmap'
       path: '/roadmap'
       fullPath: '/roadmap'
       preLoaderRoute: typeof SiteRoadmapRouteImport
-      parentRoute: typeof SiteRoute
-    }
-    '/_site/rmhcoins': {
-      id: '/_site/rmhcoins'
-      path: '/rmhcoins'
-      fullPath: '/rmhcoins'
-      preLoaderRoute: typeof SiteRmhcoinsRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/builds': {
@@ -3228,13 +3216,6 @@ declare module '@tanstack/react-router' {
       path: '/research'
       fullPath: '/research/'
       preLoaderRoute: typeof SiteResearchIndexRouteImport
-      parentRoute: typeof SiteRoute
-    }
-    '/_site/other/': {
-      id: '/_site/other/'
-      path: '/other'
-      fullPath: '/other/'
-      preLoaderRoute: typeof SiteOtherIndexRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/news/': {
@@ -4176,8 +4157,8 @@ const SiteBuildsRouteRouteWithChildren = SiteBuildsRouteRoute._addFileChildren(
 interface SiteRouteChildren {
   SiteAdminRouteRoute: typeof SiteAdminRouteRouteWithChildren
   SiteBuildsRouteRoute: typeof SiteBuildsRouteRouteWithChildren
-  SiteRmhcoinsRoute: typeof SiteRmhcoinsRoute
   SiteRoadmapRoute: typeof SiteRoadmapRoute
+  SiteWalletRoute: typeof SiteWalletRoute
   SiteIndexRoute: typeof SiteIndexRoute
   SiteMessagesConversationIdRoute: typeof SiteMessagesConversationIdRoute
   SiteProfileIdRoute: typeof SiteProfileIdRoute
@@ -4189,7 +4170,6 @@ interface SiteRouteChildren {
   SiteBlogIndexRoute: typeof SiteBlogIndexRoute
   SiteMessagesIndexRoute: typeof SiteMessagesIndexRoute
   SiteNewsIndexRoute: typeof SiteNewsIndexRoute
-  SiteOtherIndexRoute: typeof SiteOtherIndexRoute
   SiteResearchIndexRoute: typeof SiteResearchIndexRoute
   SiteRmhcodeIndexRoute: typeof SiteRmhcodeIndexRoute
   SiteUserBuildsIndexRoute: typeof SiteUserBuildsIndexRoute
@@ -4199,8 +4179,8 @@ interface SiteRouteChildren {
 const SiteRouteChildren: SiteRouteChildren = {
   SiteAdminRouteRoute: SiteAdminRouteRouteWithChildren,
   SiteBuildsRouteRoute: SiteBuildsRouteRouteWithChildren,
-  SiteRmhcoinsRoute: SiteRmhcoinsRoute,
   SiteRoadmapRoute: SiteRoadmapRoute,
+  SiteWalletRoute: SiteWalletRoute,
   SiteIndexRoute: SiteIndexRoute,
   SiteMessagesConversationIdRoute: SiteMessagesConversationIdRoute,
   SiteProfileIdRoute: SiteProfileIdRoute,
@@ -4212,7 +4192,6 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteBlogIndexRoute: SiteBlogIndexRoute,
   SiteMessagesIndexRoute: SiteMessagesIndexRoute,
   SiteNewsIndexRoute: SiteNewsIndexRoute,
-  SiteOtherIndexRoute: SiteOtherIndexRoute,
   SiteResearchIndexRoute: SiteResearchIndexRoute,
   SiteRmhcodeIndexRoute: SiteRmhcodeIndexRoute,
   SiteUserBuildsIndexRoute: SiteUserBuildsIndexRoute,

@@ -17,6 +17,9 @@ import {
   Crown,
   Sparkles,
   Zap,
+  Newspaper,
+  FlaskConical,
+  Map,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -40,6 +43,12 @@ const secretGames: SecretItem[] = [
   { id: 'cursed-logic', name: 'Cursed Logic', desc: 'Psychological duel vs. rogue AI', icon: Swords, accent: '#ca8a04', href: '/secret/cursed-logic' },
   { id: 'signal-forge', name: 'Signal Forge', desc: 'Rhythmic roguelike deckbuilder', icon: Zap, accent: '#06b6d4', href: '/secret/signal-forge' },
   { id: 'dream-rift', name: 'Dream Rift', desc: 'Touhou-style bullet hell', icon: Sparkles, accent: '#8b5cf6', href: '/secret/dream-rift' },
+];
+
+const secretPages: SecretItem[] = [
+  { id: 'news', name: 'News', desc: 'Latest announcements & updates', icon: Newspaper, accent: '#3b82f6', href: '/news' },
+  { id: 'research', name: 'Research', desc: 'Peer-reviewed papers & studies', icon: FlaskConical, accent: '#8b5cf6', href: '/research' },
+  { id: 'roadmap', name: 'Roadmap', desc: "What's next for RMH Studios", icon: Map, accent: '#10b981', href: '/roadmap' },
 ];
 
 const secretApps: SecretItem[] = [
@@ -98,6 +107,15 @@ function SecretPage() {
           <h2 className="mb-4 text-lg font-semibold text-white/60">Games</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {secretGames.map((item) => (
+              <ItemCard key={item.id} item={item} />
+            ))}
+          </div>
+        </section>
+
+        <section className="mb-12">
+          <h2 className="mb-4 text-lg font-semibold text-white/60">Pages</h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {secretPages.map((item) => (
               <ItemCard key={item.id} item={item} />
             ))}
           </div>
