@@ -26,15 +26,19 @@ const WIDTHS = [320, 480, 640, 800, 1024, 1280, 1600];
  * - External images: route through /api/image-proxy
  */
 function buildOptimizedUrl(src: string, w?: number, q?: number, f?: string): string {
-  const isCuratedBuild = src.startsWith('/api/admin/curated-builds/image/');
-
-  if (isCuratedBuild) {
+  // Curated build images — append optimization query params
+  if (src.startsWith('/api/admin/curated-builds/image/')) {
     const params = new URLSearchParams();
     if (w) params.set('w', String(w));
     if (q) params.set('q', String(q));
     if (f) params.set('f', f);
     const qs = params.toString();
     return qs ? `${src}?${qs}` : src;
+  }
+
+  // Local/static paths (e.g. /images/...) — serve as-is, no optimization available
+  if (src.startsWith('/')) {
+    return src;
   }
 
   // External URL — proxy through our optimizer
@@ -70,7 +74,9 @@ export function OptimizedImage({
 }: OptimizedImageProps) {
   if (!src) return null;
 
-  const srcSet = generateSrcSet(src, quality, format);
+  // Static local paths can't be optimized — skip srcSet
+  const isLocalStatic = src.startsWith('/') && !src.startsWith('/api/admin/curated-builds/image/');
+  const srcSet = isLocalStatic ? undefined : generateSrcSet(src, quality, format);
 
   // Default sizes attribute based on layout
   const sizes =
