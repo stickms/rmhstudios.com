@@ -221,7 +221,10 @@ DEPLOY_START_TIME=$(date +%s)
 # IMPORTANT: close fd 200 (flock) inside the process substitution so the tee
 # subprocess does not inherit the deploy lock. Without this, a self-restart
 # via exec leaves the orphaned tee holding the flock, deadlocking the new process.
-exec > >(exec 200>&-; tee -a "$DEPLOY_LOG") 2>&1
+# Guard: only set up tee once — skip on self-restart to avoid doubled output.
+if [ -z "${DEPLOY_SELF_RESTARTED:-}" ]; then
+    exec > >(exec 200>&-; tee -a "$DEPLOY_LOG") 2>&1
+fi
 
 # ── Step 1: Pull latest code ────────────────────────────────────────────────
 step_start "Fetching latest code..."
@@ -262,6 +265,14 @@ IMAGE_NAME="${PROJECT_NAME}-app"
 GIT_SHA=$("$GIT_BIN" rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
 send_deploy_started
+
+# ── Step 1b: Pre-build cleanup ────────────────────────────────────────────────
+# Free disk space before building to avoid "no space left on device" errors.
+# Prune dangling images and cap build cache proactively.
+step_start "Pre-build disk cleanup..."
+"$DOCKER_BIN" image prune -f > /dev/null 2>&1 || true
+"$DOCKER_BIN" builder prune --keep-storage 5g -f > /dev/null 2>&1 || true
+step_done
 
 # ── Step 2: Build Docker image ──────────────────────────────────────────────
 # The Dockerfile uses parallel BuildKit stages:
