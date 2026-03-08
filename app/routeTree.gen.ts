@@ -79,6 +79,7 @@ import { Route as ApiRmharksRouteImport } from './routes/api/rmharks'
 import { Route as ApiProfileRouteImport } from './routes/api/profile'
 import { Route as ApiOembedRouteImport } from './routes/api/oembed'
 import { Route as ApiMessagesRouteImport } from './routes/api/messages'
+import { Route as ApiImageProxyRouteImport } from './routes/api/image-proxy'
 import { Route as ApiFeedbackRouteImport } from './routes/api/feedback'
 import { Route as AltairMultiplayerRouteImport } from './routes/altair/multiplayer'
 import { Route as SiteWalletRouteImport } from './routes/_site/wallet'
@@ -568,6 +569,11 @@ const ApiOembedRoute = ApiOembedRouteImport.update({
 const ApiMessagesRoute = ApiMessagesRouteImport.update({
   id: '/api/messages',
   path: '/api/messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiImageProxyRoute = ApiImageProxyRouteImport.update({
+  id: '/api/image-proxy',
+  path: '/api/image-proxy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiFeedbackRoute = ApiFeedbackRouteImport.update({
@@ -1332,6 +1338,7 @@ export interface FileRoutesByFullPath {
   '/wallet': typeof SiteWalletRoute
   '/altair/multiplayer': typeof AltairMultiplayerRouteWithChildren
   '/api/feedback': typeof ApiFeedbackRoute
+  '/api/image-proxy': typeof ApiImageProxyRoute
   '/api/messages': typeof ApiMessagesRouteWithChildren
   '/api/oembed': typeof ApiOembedRoute
   '/api/profile': typeof ApiProfileRouteWithChildren
@@ -1527,6 +1534,7 @@ export interface FileRoutesByTo {
   '/roadmap': typeof SiteRoadmapRoute
   '/wallet': typeof SiteWalletRoute
   '/api/feedback': typeof ApiFeedbackRoute
+  '/api/image-proxy': typeof ApiImageProxyRoute
   '/api/messages': typeof ApiMessagesRouteWithChildren
   '/api/oembed': typeof ApiOembedRoute
   '/api/profile': typeof ApiProfileRouteWithChildren
@@ -1732,6 +1740,7 @@ export interface FileRoutesById {
   '/_site/wallet': typeof SiteWalletRoute
   '/altair/multiplayer': typeof AltairMultiplayerRouteWithChildren
   '/api/feedback': typeof ApiFeedbackRoute
+  '/api/image-proxy': typeof ApiImageProxyRoute
   '/api/messages': typeof ApiMessagesRouteWithChildren
   '/api/oembed': typeof ApiOembedRoute
   '/api/profile': typeof ApiProfileRouteWithChildren
@@ -1947,6 +1956,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/altair/multiplayer'
     | '/api/feedback'
+    | '/api/image-proxy'
     | '/api/messages'
     | '/api/oembed'
     | '/api/profile'
@@ -2142,6 +2152,7 @@ export interface FileRouteTypes {
     | '/roadmap'
     | '/wallet'
     | '/api/feedback'
+    | '/api/image-proxy'
     | '/api/messages'
     | '/api/oembed'
     | '/api/profile'
@@ -2346,6 +2357,7 @@ export interface FileRouteTypes {
     | '/_site/wallet'
     | '/altair/multiplayer'
     | '/api/feedback'
+    | '/api/image-proxy'
     | '/api/messages'
     | '/api/oembed'
     | '/api/profile'
@@ -2555,6 +2567,7 @@ export interface RootRouteChildren {
   VersecraftRoute: typeof VersecraftRouteWithChildren
   VoidBreakerRoute: typeof VoidBreakerRoute
   ApiFeedbackRoute: typeof ApiFeedbackRoute
+  ApiImageProxyRoute: typeof ApiImageProxyRoute
   ApiMessagesRoute: typeof ApiMessagesRouteWithChildren
   ApiOembedRoute: typeof ApiOembedRoute
   ApiProfileRoute: typeof ApiProfileRouteWithChildren
@@ -3115,6 +3128,13 @@ declare module '@tanstack/react-router' {
       path: '/api/messages'
       fullPath: '/api/messages'
       preLoaderRoute: typeof ApiMessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/image-proxy': {
+      id: '/api/image-proxy'
+      path: '/api/image-proxy'
+      fullPath: '/api/image-proxy'
+      preLoaderRoute: typeof ApiImageProxyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/feedback': {
@@ -4768,6 +4788,7 @@ const rootRouteChildren: RootRouteChildren = {
   VersecraftRoute: VersecraftRouteWithChildren,
   VoidBreakerRoute: VoidBreakerRoute,
   ApiFeedbackRoute: ApiFeedbackRoute,
+  ApiImageProxyRoute: ApiImageProxyRoute,
   ApiMessagesRoute: ApiMessagesRouteWithChildren,
   ApiOembedRoute: ApiOembedRoute,
   ApiProfileRoute: ApiProfileRouteWithChildren,

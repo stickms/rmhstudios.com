@@ -1,6 +1,7 @@
 'use client';
 
 import { Link } from '@tanstack/react-router';
+import { UserAvatar } from '@/components/ui/UserAvatar';
 import {
   Newspaper,
   FlaskConical,
@@ -160,11 +161,7 @@ export function RightSidebar({
             return (
               <div key={user.id} className="-mx-2 px-2 flex items-center gap-2.5 rounded-lg py-1.5 hover:bg-site-surface-hover transition-colors">
                 <Link to={profileHref} className="flex items-center gap-2.5 min-w-0 flex-1">
-                  <div className="w-9 h-9 rounded-full bg-site-accent/20 overflow-hidden flex items-center justify-center text-site-text text-xs font-semibold shrink-0">
-                    {user.image ? (
-                      <img src={user.image} alt={user.name || user.username || 'User'} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }} />
-                    ) : initials}
-                  </div>
+                  <UserAvatar src={user.image} alt={user.name || user.username || 'User'} size={36} fallbackName={user.name || user.username} />
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-site-text truncate">{user.name || user.username || 'User'}</p>
                     <p className="text-xs text-site-text-dim">

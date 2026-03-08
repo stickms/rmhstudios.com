@@ -3,6 +3,7 @@
 import { Link, useLocation, useNavigate } from '@tanstack/react-router';
 import { useState, useEffect, useRef } from 'react';
 import { authClient } from '@/lib/auth-client';
+import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import {
   Home, Package, Hammer, BookOpen,
@@ -251,13 +252,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
               href={`/@${(session.user as any).handle || session.user.id}`}
               className={`flex items-center gap-2 px-2 hover:bg-site-surface rounded-xl transition-colors py-1 flex-1 min-w-0 ${itemJustifyClass}`}
             >
-              <div className="w-8 h-8 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-xs ring-2 ring-site-bg shrink-0">
-                {(resolvedUser?.image || session.user.image) ? (
-                  <img src={resolvedUser?.image || session.user.image!} alt={resolvedUser?.name || session.user.name || 'User'} className="w-full h-full rounded-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }} />
-                ) : (
-                  ((resolvedUser?.name || session.user.name)?.[0] || 'U').toUpperCase()
-                )}
-              </div>
+              <UserAvatar src={resolvedUser?.image || session.user.image} alt={resolvedUser?.name || session.user.name || 'User'} size={32} fallbackName={resolvedUser?.name || session.user.name} className="ring-2 ring-site-bg" />
               <span className={`${labelClass} text-sm text-site-text truncate max-w-30`}>
                 {resolvedUser?.name || session.user.name}
               </span>

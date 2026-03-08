@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { X, Loader2 } from 'lucide-react';
+import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Link } from '@tanstack/react-router';
 import { authClient } from '@/lib/auth-client';
 
@@ -192,18 +193,7 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
                 onClick={onClose}
                 className="flex items-center gap-3 flex-1 min-w-0"
               >
-                <div className="w-10 h-10 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-sm shrink-0">
-                  {user.image ? (
-                    <img
-                      src={user.image}
-                      alt={user.name || 'User'}
-                      className="w-full h-full rounded-full object-cover"
-                      onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }}
-                    />
-                  ) : (
-                    (user.name?.[0] || 'U').toUpperCase()
-                  )}
-                </div>
+                <UserAvatar src={user.image} alt={user.name || 'User'} size={40} fallbackName={user.name} />
                 <div className="min-w-0">
                   <p className="font-bold text-site-text text-sm truncate">
                     {user.name || user.username || 'Unknown'}
