@@ -96,13 +96,14 @@ ENV DATABASE_URL=${DATABASE_URL} \
     VITE_RMHTUBE_SOCKET_URL=${VITE_RMHTUBE_SOCKET_URL}
 
 # Cache mounts for incremental rebuilds (shared across prod + staging):
-#   - .vinxi / .tanstack: TanStack Start build cache (route manifests, etc.)
+#   - .vinxi: TanStack Start build cache (route manifests, etc.)
 #   - .output: Nitro server bundle output (reused across incremental builds)
+# NOTE: .tanstack is NOT cache-mounted because the router generator uses
+# rename() from .tanstack/tmp/ → app/, which fails across filesystems (EXDEV).
 # NODE_OPTIONS prevents OOM on large bundles (three.js, monaco, tiptap, etc.)
 # .output is produced by Nitro inside the cache mount, then copied to
 # /app/build-output so it persists after the RUN layer for COPY --from.
 RUN --mount=type=cache,id=vinxi-cache,target=/app/.vinxi,sharing=locked \
-    --mount=type=cache,id=tanstack-cache,target=/app/.tanstack,sharing=locked \
     NODE_OPTIONS='--max-old-space-size=8192' pnpm exec vite build \
     && cp -a .output /app/build-output
 

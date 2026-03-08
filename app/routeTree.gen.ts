@@ -95,6 +95,7 @@ import { Route as AltairMultiplayerIndexRouteImport } from './routes/altair/mult
 import { Route as SiteUserBuildsIndexRouteImport } from './routes/_site/user-builds/index'
 import { Route as SiteRmhcodeIndexRouteImport } from './routes/_site/rmhcode/index'
 import { Route as SiteResearchIndexRouteImport } from './routes/_site/research/index'
+import { Route as SiteOtherIndexRouteImport } from './routes/_site/other/index'
 import { Route as SiteNewsIndexRouteImport } from './routes/_site/news/index'
 import { Route as SiteMessagesIndexRouteImport } from './routes/_site/messages/index'
 import { Route as SiteBuildsIndexRouteImport } from './routes/_site/builds/index'
@@ -647,6 +648,11 @@ const SiteRmhcodeIndexRoute = SiteRmhcodeIndexRouteImport.update({
 const SiteResearchIndexRoute = SiteResearchIndexRouteImport.update({
   id: '/research/',
   path: '/research/',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteOtherIndexRoute = SiteOtherIndexRouteImport.update({
+  id: '/other/',
+  path: '/other/',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteNewsIndexRoute = SiteNewsIndexRouteImport.update({
@@ -1445,6 +1451,7 @@ export interface FileRoutesByFullPath {
   '/builds/': typeof SiteBuildsIndexRoute
   '/messages/': typeof SiteMessagesIndexRoute
   '/news/': typeof SiteNewsIndexRoute
+  '/other/': typeof SiteOtherIndexRoute
   '/research/': typeof SiteResearchIndexRoute
   '/rmhcode/': typeof SiteRmhcodeIndexRoute
   '/user-builds/': typeof SiteUserBuildsIndexRoute
@@ -1632,6 +1639,7 @@ export interface FileRoutesByTo {
   '/builds': typeof SiteBuildsIndexRoute
   '/messages': typeof SiteMessagesIndexRoute
   '/news': typeof SiteNewsIndexRoute
+  '/other': typeof SiteOtherIndexRoute
   '/research': typeof SiteResearchIndexRoute
   '/rmhcode': typeof SiteRmhcodeIndexRoute
   '/user-builds': typeof SiteUserBuildsIndexRoute
@@ -1845,6 +1853,7 @@ export interface FileRoutesById {
   '/_site/builds/': typeof SiteBuildsIndexRoute
   '/_site/messages/': typeof SiteMessagesIndexRoute
   '/_site/news/': typeof SiteNewsIndexRoute
+  '/_site/other/': typeof SiteOtherIndexRoute
   '/_site/research/': typeof SiteResearchIndexRoute
   '/_site/rmhcode/': typeof SiteRmhcodeIndexRoute
   '/_site/user-builds/': typeof SiteUserBuildsIndexRoute
@@ -2058,6 +2067,7 @@ export interface FileRouteTypes {
     | '/builds/'
     | '/messages/'
     | '/news/'
+    | '/other/'
     | '/research/'
     | '/rmhcode/'
     | '/user-builds/'
@@ -2245,6 +2255,7 @@ export interface FileRouteTypes {
     | '/builds'
     | '/messages'
     | '/news'
+    | '/other'
     | '/research'
     | '/rmhcode'
     | '/user-builds'
@@ -2457,6 +2468,7 @@ export interface FileRouteTypes {
     | '/_site/builds/'
     | '/_site/messages/'
     | '/_site/news/'
+    | '/_site/other/'
     | '/_site/research/'
     | '/_site/rmhcode/'
     | '/_site/user-builds/'
@@ -3216,6 +3228,13 @@ declare module '@tanstack/react-router' {
       path: '/research'
       fullPath: '/research/'
       preLoaderRoute: typeof SiteResearchIndexRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/other/': {
+      id: '/_site/other/'
+      path: '/other'
+      fullPath: '/other/'
+      preLoaderRoute: typeof SiteOtherIndexRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/news/': {
@@ -4170,6 +4189,7 @@ interface SiteRouteChildren {
   SiteBlogIndexRoute: typeof SiteBlogIndexRoute
   SiteMessagesIndexRoute: typeof SiteMessagesIndexRoute
   SiteNewsIndexRoute: typeof SiteNewsIndexRoute
+  SiteOtherIndexRoute: typeof SiteOtherIndexRoute
   SiteResearchIndexRoute: typeof SiteResearchIndexRoute
   SiteRmhcodeIndexRoute: typeof SiteRmhcodeIndexRoute
   SiteUserBuildsIndexRoute: typeof SiteUserBuildsIndexRoute
@@ -4192,6 +4212,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteBlogIndexRoute: SiteBlogIndexRoute,
   SiteMessagesIndexRoute: SiteMessagesIndexRoute,
   SiteNewsIndexRoute: SiteNewsIndexRoute,
+  SiteOtherIndexRoute: SiteOtherIndexRoute,
   SiteResearchIndexRoute: SiteResearchIndexRoute,
   SiteRmhcodeIndexRoute: SiteRmhcodeIndexRoute,
   SiteUserBuildsIndexRoute: SiteUserBuildsIndexRoute,
