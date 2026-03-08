@@ -95,10 +95,13 @@ ENV DATABASE_URL=${DATABASE_URL} \
     VITE_RMHBOX_SOCKET_URL=${VITE_RMHBOX_SOCKET_URL} \
     VITE_RMHTUBE_SOCKET_URL=${VITE_RMHTUBE_SOCKET_URL}
 
-# Clean build every time to avoid stale .vinxi cache causing asset hash
-# mismatches between the SSR bundle and the actual CSS files on disk.
+# Build with cache mounts for faster incremental builds.
+# .vinxi cache is preserved between builds for Vite's module graph cache.
+# The fix-ssr-css-hash.mjs script corrects any SSR/client CSS hash mismatches
+# that may arise from the cache, so it's safe to keep .vinxi across builds.
 # NODE_OPTIONS prevents OOM on large bundles (three.js, monaco, tiptap, etc.)
-RUN rm -rf .vinxi .output \
+RUN --mount=type=cache,id=vinxi-cache,target=/app/.vinxi,sharing=locked \
+    rm -rf .output \
     && NODE_OPTIONS='--max-old-space-size=8192' pnpm exec vite build \
     && node scripts/fix-ssr-css-hash.mjs \
     && cp -a .output /app/build-output
