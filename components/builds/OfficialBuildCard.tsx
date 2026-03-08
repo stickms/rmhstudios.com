@@ -1,7 +1,7 @@
 import { Heart, MessageCircle, Eye, ArrowRight } from 'lucide-react';
-import * as Popover from '@radix-ui/react-popover';
-import { useState, useRef } from 'react';
 import { Link, useRouter } from '@tanstack/react-router';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
+
 export interface OfficialBuild {
     id: string;
     slug: string;
@@ -43,7 +43,6 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
     };
 
     const handleCardClick = (e: React.MouseEvent) => {
-        // Don't navigate if clicking an interactive child (button, link)
         const target = e.target as HTMLElement;
         if (target.closest('button, a')) return;
 
@@ -56,32 +55,21 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
         }
     };
 
-    const [isHovered, setIsHovered] = useState(false);
-
-    const handleMouseEnter = () => {
-        setIsHovered(true);
-    };
-
-    const handleMouseLeave = () => {
-        setIsHovered(false);
-    };
-
     return (
-        <Popover.Root open={isHovered}>
-            <Popover.Trigger asChild>
-                <div 
-                    className="block w-full cursor-pointer aspect-[2/3]" 
-                    onClick={handleCardClick}
-                    onMouseEnter={handleMouseEnter}
-                    onMouseLeave={handleMouseLeave}
-                >
-                    <div className="group relative rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-all overflow-hidden h-full">
+        <div
+            className="block w-full cursor-pointer aspect-[2/3]"
+            onClick={handleCardClick}
+            title={build.description}
+        >
+            <div className="group relative rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-all overflow-hidden h-full">
                 {/* Thumbnail */}
                 {build.thumbnailUrl ? (
                     <div className="absolute inset-0 w-full h-full overflow-hidden bg-site-bg">
-                        <img
+                        <OptimizedImage
                             src={build.thumbnailUrl}
-                            alt={build.title}
+                            alt={`Screenshot of ${build.title}`}
+                            layout="fullWidth"
+                            height={400}
                             className="object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                         <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/40 to-black/10 transition-opacity duration-300 group-hover:from-black/90 group-hover:via-black/60" />
@@ -98,7 +86,7 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
                     <h3 className="font-semibold text-white line-clamp-1 drop-shadow-sm mb-1 group-hover:-translate-y-1 transition-transform duration-300">
                         {build.title}
                     </h3>
-                    
+
                     {/* Expandable Section on Hover */}
                     <div className="grid grid-rows-[0fr] group-hover:grid-rows-[1fr] transition-[grid-template-rows] duration-300 ease-out">
                         <div className="overflow-hidden">
@@ -106,6 +94,7 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
                                 <div className="flex items-center justify-between text-xs text-white/80">
                                     <button
                                         onClick={handleLike}
+                                        aria-label={build.liked ? 'Unlike this build' : 'Like this build'}
                                         className={`flex items-center gap-1.5 transition-colors ${
                                             build.liked ? 'text-red-400' : 'hover:text-red-400'
                                         }`}
@@ -113,11 +102,12 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
                                         <Heart className={`w-4 h-4 ${build.liked ? 'fill-current' : ''}`} />
                                         <span>{formatCount(build.likeCount)}</span>
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             router.navigate({ to: detailUrl });
                                         }}
+                                        aria-label="View comments"
                                         className="flex items-center gap-1.5 hover:text-blue-400 transition-colors"
                                     >
                                         <MessageCircle className="w-4 h-4" />
@@ -143,21 +133,6 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
                     </div>
                 </div>
             </div>
-                </div>
-            </Popover.Trigger>
-            <Popover.Portal>
-                <Popover.Content
-                    side="bottom"
-                    align="center"
-                    sideOffset={12}
-                    collisionPadding={16}
-                    avoidCollisions={true}
-                    className="z-50 pointer-events-none max-w-[320px] rounded-xl border border-site-border bg-site-surface/95 backdrop-blur-md p-4 shadow-xl focus:outline-none radix-popover-animate"
-                >
-                    <h4 className="font-semibold text-site-text mb-2 leading-tight">{build.title}</h4>
-                    <p className="text-sm text-site-text-muted leading-relaxed">{build.description}</p>
-                </Popover.Content>
-            </Popover.Portal>
-        </Popover.Root>
+        </div>
     );
 }

@@ -7,6 +7,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { auth } from '@/lib/auth';
 import { getRequest } from '@tanstack/react-start/server';
 import RmhTypeShell from '@/components/rmhtype/RmhTypeShell';
+import rmhtypeCss from '@/components/rmhtype/rmhtype.css?url';
 
 const checkAuth = createServerFn({ method: 'GET' }).handler(async () => {
   const request = getRequest();
@@ -22,6 +23,7 @@ export const Route = createFileRoute('/rmhtype')({
       { title: 'RMH Type — Competitive Typing' },
       { name: 'description', content: 'Test your typing speed solo or race against friends in real-time multiplayer.' },
     ],
+    links: [{ rel: 'stylesheet', href: rmhtypeCss }],
   }),
   component: () => (
     <RmhTypeShell>

@@ -7,6 +7,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { auth } from '@/lib/auth';
 import { getRequest } from '@tanstack/react-start/server';
 import RmhStudyShell from '@/components/rmhstudy/RmhStudyShell';
+import rmhstudyCss from '@/components/rmhstudy/rmhstudy.css?url';
 
 const checkAuth = createServerFn({ method: 'GET' }).handler(async () => {
   const request = getRequest();
@@ -22,6 +23,7 @@ export const Route = createFileRoute('/rmhstudy')({
       { title: 'RMH Study — Study Together' },
       { name: 'description', content: 'Study together with synced Pomodoro timers, focus tracking, and ambient sounds.' },
     ],
+    links: [{ rel: 'stylesheet', href: rmhstudyCss }],
   }),
   component: () => (
     <RmhStudyShell>

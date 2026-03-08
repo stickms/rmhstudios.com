@@ -49,6 +49,9 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
             <img
               src={build.thumbnailUrl}
               alt={build.title}
+              loading="lazy"
+              width={640}
+              height={360}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
           </div>
@@ -100,6 +103,9 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
                 <img
                   src={build.user.image}
                   alt={build.user.name || 'User'}
+                  loading="lazy"
+                  width={24}
+                  height={24}
                   className="w-6 h-6 rounded-full"
                   onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }}
                 />

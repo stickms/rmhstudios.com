@@ -10,6 +10,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { getRequest } from '@tanstack/react-start/server'
 import { auth } from '@/lib/auth'
 import AltairShell from '@/components/altair/AltairShell'
+import altairCss from '@/components/altair/altair.css?url'
 
 const checkAuth = createServerFn({ method: 'GET' }).handler(async () => {
   const request = getRequest()
@@ -28,5 +29,8 @@ function AltairLayout() {
 
 export const Route = createFileRoute('/altair')({
   beforeLoad: () => checkAuth(),
+  head: () => ({
+    links: [{ rel: 'stylesheet', href: altairCss }],
+  }),
   component: AltairLayout,
 })

@@ -1,12 +1,6 @@
 @import "tailwindcss";
 
-/* ── Theme stylesheets (class-scoped, safe to bundle globally) ── */
-@import "../components/altair/altair.css";
-@import "../components/rmhbox/rmhbox.css";
-@import "../components/rmhtype/rmhtype.css";
-@import "../components/rmhtube/rmhtube.css";
-@import "../components/rmhstudy/rmhstudy.css";
-@import "../components/slice-it/slice-it.css";
+/* Theme stylesheets moved to their respective route files for code splitting */
 
 /* Profile Pet sprite animations */
 @keyframes dog-walk-frames {

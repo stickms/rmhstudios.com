@@ -32,6 +32,7 @@ export default defineConfig({
     }),
     tanstackStart({
       srcDirectory: "app",
+      autoCodeSplitting: true,
     }),
     react(),
     nitro({

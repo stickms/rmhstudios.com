@@ -19,6 +19,8 @@ const sizeClasses = {
   lg: 'w-12 h-12 text-sm',
 };
 
+const sizePx = { xs: 28, sm: 32, md: 40, lg: 48 };
+
 function userProfileHref(user: FeedItemUser): string {
   return `/@${user.handle || user.id}`;
 }
@@ -37,6 +39,9 @@ export function UserAvatar({ user, size = 'md', linkToProfile = true }: UserAvat
         <img
           src={imgSrc}
           alt={user.name || 'User'}
+          loading="lazy"
+          width={sizePx[size]}
+          height={sizePx[size]}
           className="w-full h-full rounded-full object-cover"
           onError={() => setImgError(true)}
         />
