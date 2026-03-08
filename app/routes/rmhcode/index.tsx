@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { Link } from '@tanstack/react-router';
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Terminal, Copy, Check, Key, ExternalLink, Boxes, Zap, Shield, GitBranch, ArrowLeft,
@@ -8,7 +8,10 @@ import {
 } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
-import TokenGenerator from '@/components/rmhcode/TokenGenerator';
+import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
+import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
+
+const TokenGenerator = lazy(() => import('@/components/rmhcode/TokenGenerator'));
 
 const INSTALL_COMMAND_MAC = 'curl -fsSL https://raw.githubusercontent.com/ka1kqi/rmhcode/main/install.sh | bash';
 const INSTALL_COMMAND_PS = 'irm https://raw.githubusercontent.com/ka1kqi/rmhcode/main/install.ps1 | iex';
@@ -109,6 +112,7 @@ function RmhCodePage() {
   ];
 
   return (
+    <GameErrorBoundary gameName="RMH Code">
     <div className="min-h-screen bg-site-bg relative">
       {/* Back Button */}
       <div className="absolute top-4 left-4 z-50">
@@ -128,7 +132,7 @@ function RmhCodePage() {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center">
             <div className="flex justify-center mb-8">
               <div className="relative w-64 h-80 md:w-80 md:h-[28rem] rounded-2xl overflow-hidden border border-violet-500/30 shadow-2xl shadow-violet-500/20">
-                <img src="/images/games/rmhcode.png" alt="rmhcode" className="object-cover w-full h-full" />
+                <img src="/images/games/rmhcode.webp" alt="rmhcode" className="object-cover w-full h-full" loading="lazy" />
               </div>
             </div>
             <h1 className="text-4xl md:text-5xl font-bold text-site-text mb-4 font-(family-name:--site-font-display)">
@@ -227,7 +231,7 @@ function RmhCodePage() {
           <div className="rounded-xl border border-site-border bg-site-surface p-6">
             <h2 className="text-lg font-semibold text-site-text mb-2 flex items-center gap-2"><Key className="w-5 h-5 text-violet-400" />CLI Authentication</h2>
             <p className="text-sm text-site-text-muted mb-6">Generate a token to link rmhcode with your RMH account, or use the browser login flow.</p>
-            {isPending ? (<div className="h-12 w-full bg-site-surface-hover rounded-lg animate-pulse" />) : session ? (<TokenGenerator />) : (
+            {isPending ? (<div className="h-12 w-full bg-site-surface-hover rounded-lg animate-pulse" />) : session ? (<Suspense fallback={<GameLoadingFallback />}><TokenGenerator /></Suspense>) : (
               <div className="text-center py-8 border border-dashed border-site-border rounded-lg">
                 <p className="text-site-text-muted mb-4">Sign in to generate a CLI token</p>
                 <Link to="/login"><Button variant="accent">Sign In</Button></Link>
@@ -365,6 +369,7 @@ function RmhCodePage() {
         </motion.div>
       </div>
     </div>
+    </GameErrorBoundary>
   );
 }
 

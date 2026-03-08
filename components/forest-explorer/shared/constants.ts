@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { CatmullRomCurve3, Vector3 } from 'three';
 
 // ─── Deterministic RNG ──────────────────────────────────────────────────────
 // Computed once at module load — used everywhere for reproducible terrain.
@@ -33,8 +33,8 @@ export const RIVER_POINTS: [number, number, number][] = [
 export const RIVER_WIDTH = 8;
 export const RIVER_HALF_WIDTH = RIVER_WIDTH / 2;
 
-export const RIVER_CURVE = new THREE.CatmullRomCurve3(
-    RIVER_POINTS.map(([x, y, z]) => new THREE.Vector3(x, y, z)),
+export const RIVER_CURVE = new CatmullRomCurve3(
+    RIVER_POINTS.map(([x, y, z]) => new Vector3(x, y, z)),
     false,
     'catmullrom',
     0.5,
@@ -42,7 +42,7 @@ export const RIVER_CURVE = new THREE.CatmullRomCurve3(
 
 // Pre-sample curve for fast distance checks
 const RIVER_SAMPLES = 200;
-export const RIVER_SAMPLE_POINTS: THREE.Vector3[] = [];
+export const RIVER_SAMPLE_POINTS: Vector3[] = [];
 for (let i = 0; i <= RIVER_SAMPLES; i++) {
     RIVER_SAMPLE_POINTS.push(RIVER_CURVE.getPoint(i / RIVER_SAMPLES));
 }

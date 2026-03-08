@@ -1,7 +1,11 @@
+import { lazy, Suspense } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
-import { LaundryGame } from '@/components/laundry-sort/LaundryGame'
+import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary'
+import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback'
+
+const LaundryGame = lazy(() => import('@/components/laundry-sort/LaundryGame').then(m => ({ default: m.LaundryGame })))
 
 function LaundryPage() {
   return (
@@ -29,7 +33,11 @@ function LaundryPage() {
 
       {/* Game area — fills remaining space */}
       <div className="grow relative">
-        <LaundryGame />
+        <GameErrorBoundary gameName="Laundry Sort">
+          <Suspense fallback={<GameLoadingFallback />}>
+            <LaundryGame />
+          </Suspense>
+        </GameErrorBoundary>
       </div>
     </main>
   )

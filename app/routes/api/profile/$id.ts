@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { resolveUserDisplay } from "@/lib/user-display";
 import { handleCooldownRemaining } from "@/lib/handle";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 const profileSelect = {
   id: true,
@@ -46,6 +47,10 @@ export const Route = createFileRoute('/api/profile/$id')({
   server: {
     handlers: {
   GET: async ({ request, params }) => {
+  const ip = getClientIp(request);
+  const { allowed } = rateLimit(ip, { limit: 30, windowMs: 60_000, prefix: "profile" });
+  if (!allowed) return new Response(JSON.stringify({ error: "Rate limited" }), { status: 429 });
+
   try {
     const { id } = params;
 

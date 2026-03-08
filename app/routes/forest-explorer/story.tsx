@@ -1,5 +1,9 @@
+import { lazy, Suspense } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
-import { StoryGame } from '@/components/forest-explorer/story/StoryGame'
+import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary'
+import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback'
+
+const StoryGame = lazy(() => import('@/components/forest-explorer/story/StoryGame').then(m => ({ default: m.StoryGame })))
 
 function ForestExplorerStoryPage() {
   return (
@@ -8,7 +12,11 @@ function ForestExplorerStoryPage() {
       style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
     >
       <div className="grow relative overflow-hidden">
-        <StoryGame />
+        <GameErrorBoundary gameName="Forest Explorer">
+          <Suspense fallback={<GameLoadingFallback />}>
+            <StoryGame />
+          </Suspense>
+        </GameErrorBoundary>
       </div>
     </main>
   )

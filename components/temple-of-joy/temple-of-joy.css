@@ -1,0 +1,168 @@
+/* Temple of Joy — dark mode overrides */
+[data-theme="dark"] {
+  --temple-bg: #1a120b;
+  --temple-surface: #2c1d12;
+  --temple-border: #6b4c2a;
+  --temple-text: #e8d5b0;
+  --temple-text-muted: #a88b63;
+  --temple-accent: #d4a847;
+  --temple-accent-bright: #f0c84a;
+}
+
+/* ==================== TEMPLE OF JOY — IN-THEME CHROME ==================== */
+
+/* Noto Color Emoji — consistent cross-platform emoji rendering */
+[data-theme] {
+  font-family: inherit, 'Noto Color Emoji', sans-serif;
+}
+
+/* Scrollbars */
+[data-theme] ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+[data-theme] ::-webkit-scrollbar-track {
+  background: var(--temple-surface);
+}
+
+[data-theme] ::-webkit-scrollbar-thumb {
+  background: var(--temple-border);
+  border-radius: 3px;
+}
+
+[data-theme] ::-webkit-scrollbar-thumb:hover {
+  background: var(--temple-accent);
+}
+
+/* Text selection */
+[data-theme] ::selection {
+  background: rgba(212, 168, 71, 0.28);
+  color: var(--temple-text);
+}
+
+/* All buttons in the temple game should use pointer cursor */
+[data-theme] button {
+  cursor: pointer;
+}
+
+[data-theme] button:disabled {
+  cursor: not-allowed;
+}
+
+/* ==================== TEMPLE OF JOY ANIMATIONS ==================== */
+
+@keyframes templeCandle {
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scaleY(1) translateX(0);
+  }
+
+  15% {
+    opacity: 0.82;
+    transform: scaleY(0.95) translateX(-1px);
+  }
+
+  35% {
+    opacity: 0.95;
+    transform: scaleY(1.05) translateX(0.5px);
+  }
+
+  55% {
+    opacity: 0.87;
+    transform: scaleY(0.97) translateX(1px);
+  }
+
+  75% {
+    opacity: 0.93;
+    transform: scaleY(1.03) translateX(-0.5px);
+  }
+}
+
+@keyframes templeUnlockPulse {
+  0% {
+    box-shadow: 0 0 0 0px rgba(212, 168, 71, 0.75);
+  }
+
+  45% {
+    box-shadow: 0 0 0 12px rgba(212, 168, 71, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0px rgba(212, 168, 71, 0);
+  }
+}
+
+@keyframes templeDissolve {
+  0% {
+    opacity: 1;
+    filter: blur(0px) brightness(1);
+    transform: scale(1);
+  }
+
+  60% {
+    opacity: 0.3;
+    filter: blur(3px) brightness(1.4);
+    transform: scale(1.025);
+  }
+
+  100% {
+    opacity: 0;
+    filter: blur(8px) brightness(2);
+    transform: scale(1.06);
+  }
+}
+
+@keyframes templeAppear {
+  0% {
+    opacity: 0;
+    filter: blur(5px);
+    transform: scale(0.96);
+  }
+
+  100% {
+    opacity: 1;
+    filter: blur(0px);
+    transform: scale(1);
+  }
+}
+
+@keyframes templeToastFade {
+  0% {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+
+  10% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  72% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+}
+
+@keyframes templeNumberPop {
+  0% {
+    transform: scale(1);
+    color: var(--temple-accent-bright);
+  }
+
+  30% {
+    transform: scale(1.18);
+    color: var(--temple-accent-bright);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}

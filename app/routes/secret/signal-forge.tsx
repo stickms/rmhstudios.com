@@ -2,10 +2,14 @@
  * Signal Forge Route
  */
 
+import { lazy, Suspense } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-import { SignalForgeGame } from '@/components/signal-forge/SignalForgeGame';
+import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
+import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
+
+const SignalForgeGame = lazy(() => import('@/components/signal-forge/SignalForgeGame').then(m => ({ default: m.SignalForgeGame })));
 
 export const Route = createFileRoute('/secret/signal-forge')({
   component: SignalForgePage,
@@ -32,7 +36,11 @@ function SignalForgePage() {
       </div>
 
       <div className="grow relative min-h-0 overflow-hidden">
-        <SignalForgeGame />
+        <GameErrorBoundary gameName="Signal Forge">
+          <Suspense fallback={<GameLoadingFallback />}>
+            <SignalForgeGame />
+          </Suspense>
+        </GameErrorBoundary>
       </div>
     </main>
   );

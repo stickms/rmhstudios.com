@@ -5,7 +5,7 @@
    with graceful fallback to procedural materials
    ═══════════════════════════════════════════ */
 
-import * as THREE from 'three';
+import { TextureLoader, RepeatWrapping, LinearMipMapLinearFilter, LinearFilter, SRGBColorSpace, Vector2 } from 'three';
 
 const TEXTURE_BASE = '/textures/velum2099/';
 
@@ -33,7 +33,7 @@ const WINDOW_ROWS = 8;
 
 export class TextureManager {
     constructor() {
-        this.loader = new THREE.TextureLoader();
+        this.loader = new TextureLoader();
         this.textures = {
             facades: [],
             road: null,
@@ -115,28 +115,28 @@ export class TextureManager {
     /**
      * Get UV offset/repeat for a billboard atlas cell.
      * @param {number} cellIdx - Cell index (0-7)
-     * @returns {{ offset: THREE.Vector2, repeat: THREE.Vector2 }}
+     * @returns {{ offset: Vector2, repeat: Vector2 }}
      */
     getBillboardUVs(cellIdx) {
         const col = cellIdx % BILLBOARD_COLS;
         const row = Math.floor(cellIdx / BILLBOARD_COLS) % BILLBOARD_ROWS;
         return {
-            offset: new THREE.Vector2(col / BILLBOARD_COLS, 1 - (row + 1) / BILLBOARD_ROWS),
-            repeat: new THREE.Vector2(1 / BILLBOARD_COLS, 1 / BILLBOARD_ROWS),
+            offset: new Vector2(col / BILLBOARD_COLS, 1 - (row + 1) / BILLBOARD_ROWS),
+            repeat: new Vector2(1 / BILLBOARD_COLS, 1 / BILLBOARD_ROWS),
         };
     }
 
     /**
      * Get UV offset/repeat for a window atlas cell.
      * @param {number} cellIdx - Cell index (0-63)
-     * @returns {{ offset: THREE.Vector2, repeat: THREE.Vector2 }}
+     * @returns {{ offset: Vector2, repeat: Vector2 }}
      */
     getWindowUVs(cellIdx) {
         const col = cellIdx % WINDOW_COLS;
         const row = Math.floor(cellIdx / WINDOW_COLS) % WINDOW_ROWS;
         return {
-            offset: new THREE.Vector2(col / WINDOW_COLS, 1 - (row + 1) / WINDOW_ROWS),
-            repeat: new THREE.Vector2(1 / WINDOW_COLS, 1 / WINDOW_ROWS),
+            offset: new Vector2(col / WINDOW_COLS, 1 - (row + 1) / WINDOW_ROWS),
+            repeat: new Vector2(1 / WINDOW_COLS, 1 / WINDOW_ROWS),
         };
     }
 
@@ -148,15 +148,15 @@ export class TextureManager {
                 path,
                 (texture) => {
                     if (wrapS) {
-                        texture.wrapS = THREE.RepeatWrapping;
+                        texture.wrapS = RepeatWrapping;
                     }
                     if (wrapT) {
-                        texture.wrapT = THREE.RepeatWrapping;
+                        texture.wrapT = RepeatWrapping;
                     }
-                    texture.minFilter = THREE.LinearMipMapLinearFilter;
-                    texture.magFilter = THREE.LinearFilter;
+                    texture.minFilter = LinearMipMapLinearFilter;
+                    texture.magFilter = LinearFilter;
                     texture.generateMipmaps = true;
-                    texture.colorSpace = THREE.SRGBColorSpace;
+                    texture.colorSpace = SRGBColorSpace;
                     resolve(texture);
                 },
                 undefined,

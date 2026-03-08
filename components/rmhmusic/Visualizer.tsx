@@ -2,7 +2,7 @@
 
 import { useRef, useMemo, useEffect, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
+import { Object3D, Color, type InstancedMesh } from 'three';
 import { useRmhMusicStore } from '@/lib/rmhmusic/store';
 import { extractDominantColors } from '@/lib/rmhmusic/color-extract';
 
@@ -28,7 +28,7 @@ function curlNoise(x: number, y: number, z: number, time: number): [number, numb
 // ─── Particle Field ──────────────────────────────────────────────
 
 function ParticleField({ colors, isPlaying }: { colors: [number, number, number][]; isPlaying: boolean }) {
-  const meshRef = useRef<THREE.InstancedMesh>(null);
+  const meshRef = useRef<InstancedMesh>(null);
   const [count, setCount] = useState(PARTICLE_COUNT);
 
   useEffect(() => {
@@ -52,8 +52,8 @@ function ParticleField({ colors, isPlaying }: { colors: [number, number, number]
 
   const targetColors = useRef(colors);
   const currentColors = useRef(colors.map((c) => [...c] as [number, number, number]));
-  const dummy = useMemo(() => new THREE.Object3D(), []);
-  const colorObj = useMemo(() => new THREE.Color(), []);
+  const dummy = useMemo(() => new Object3D(), []);
+  const colorObj = useMemo(() => new Color(), []);
 
   useEffect(() => {
     targetColors.current = colors;

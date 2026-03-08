@@ -38,7 +38,7 @@ export const apps: AppInfo[] = [
         iconName: 'MonitorPlay',
         color: 'from-red-500/20 to-purple-600/20 hover:border-red-500/50',
         tags: ['Watch Party', 'Real-time', 'Beta'],
-        imagePath: '/images/games/rmhtube.png',
+        imagePath: '/images/games/rmhtube.webp',
         authGate: true,
     },
     {
@@ -55,7 +55,7 @@ export const apps: AppInfo[] = [
         iconName: 'Brain',
         color: 'from-indigo-500/20 to-blue-600/20 hover:border-indigo-500/50',
         tags: ['Discord', 'Word Game', 'Daily'],
-        imagePath: '/images/games/rmhdle.png',
+        imagePath: '/images/games/rmhdle.webp',
         authGate: false,
         hidden: true,
     },
@@ -73,7 +73,7 @@ export const apps: AppInfo[] = [
         iconName: 'Rocket',
         color: 'from-violet-500/20 to-purple-600/20 hover:border-violet-500/50',
         tags: ['Discord', 'Puzzle', 'Daily'],
-        imagePath: '/images/games/rmhconnections.png',
+        imagePath: '/images/games/rmhconnections.webp',
         authGate: false,
         hidden: true,
     },
@@ -91,7 +91,7 @@ export const apps: AppInfo[] = [
         iconName: 'Keyboard',
         color: 'from-emerald-500/20 to-cyan-600/20 hover:border-emerald-500/50',
         tags: ['Typing', 'Multiplayer', 'Competitive', 'Beta'],
-        imagePath: '/images/games/rmhtype.png',
+        imagePath: '/images/games/rmhtype.webp',
         authGate: true,
     },
     {
@@ -108,7 +108,7 @@ export const apps: AppInfo[] = [
         iconName: 'Music',
         color: 'from-purple-500/20 to-indigo-600/20 hover:border-purple-500/50',
         tags: ['Music', 'Spotify', 'Real-time', 'Beta'],
-        imagePath: '/images/games/rmhmusic.png',
+        imagePath: '/images/games/rmhmusic.webp',
         authGate: true,
     },
     {
@@ -125,7 +125,7 @@ export const apps: AppInfo[] = [
         iconName: 'BookOpen',
         color: 'from-amber-500/20 to-rose-500/20 hover:border-amber-500/50',
         tags: ['Pomodoro', 'Study', 'Productivity', 'Beta'],
-        imagePath: '/images/games/rmhstudy.png',
+        imagePath: '/images/games/rmhstudy.webp',
         authGate: true,
     },
     {
@@ -142,7 +142,7 @@ export const apps: AppInfo[] = [
         iconName: 'Terminal',
         color: 'from-violet-500/20 to-fuchsia-600/20 hover:border-violet-500/50',
         tags: ['AI', 'CLI', 'Developer Tools', 'Beta'],
-        imagePath: '/images/games/rmhcode.png',
+        imagePath: '/images/games/rmhcode.webp',
         authGate: true,
     },
 ];

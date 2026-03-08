@@ -1,9 +1,12 @@
+import { lazy, Suspense } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { Suspense } from 'react'
-import { GameCanvas } from '@/components/game/GameCanvas'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
 import { DarkModeWrapper } from '@/components/slice-it/DarkModeWrapper'
+import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary'
+import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback'
+
+const GameCanvas = lazy(() => import('@/components/game/GameCanvas').then(m => ({ default: m.GameCanvas })))
 
 function SliceItPage() {
   return (
@@ -27,9 +30,11 @@ function SliceItPage() {
 
         {/* Game Canvas — occupies remaining space */}
         <div className="flex-1 min-h-0 w-full relative">
-          <Suspense fallback={<div className="w-full h-full bg-slice-bg" />}>
-            <GameCanvas />
-          </Suspense>
+          <GameErrorBoundary gameName="Slice It">
+            <Suspense fallback={<GameLoadingFallback />}>
+              <GameCanvas />
+            </Suspense>
+          </GameErrorBoundary>
         </div>
       </main>
     </DarkModeWrapper>

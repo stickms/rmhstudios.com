@@ -2,10 +2,10 @@
 
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
+import { BufferGeometry, BufferAttribute, type Points, type PointsMaterial } from 'three';
 
 export function Fireflies({ night }: { night: boolean }) {
-    const pointsRef = useRef<THREE.Points>(null);
+    const pointsRef = useRef<Points>(null);
     const COUNT = 60;
 
     const { geometry, phases } = useMemo(() => {
@@ -17,8 +17,8 @@ export function Fireflies({ night }: { night: boolean }) {
             positions[i * 3 + 2] = (Math.random() - 0.5) * 70;
             ph.push(Math.random() * Math.PI * 2);
         }
-        const geo = new THREE.BufferGeometry();
-        geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        const geo = new BufferGeometry();
+        geo.setAttribute('position', new BufferAttribute(positions, 3));
         return { geometry: geo, phases: ph };
     }, []);
 
@@ -31,7 +31,7 @@ export function Fireflies({ night }: { night: boolean }) {
                 1.2 + Math.sin(t * 1.4 + phases[i]) * 0.6 + Math.sin(t * 0.6 + phases[i] * 2) * 0.3;
         }
         pointsRef.current.geometry.attributes.position.needsUpdate = true;
-        const mat = pointsRef.current.material as THREE.PointsMaterial;
+        const mat = pointsRef.current.material as PointsMaterial;
         const base = night ? 0.72 : 0.45;
         mat.opacity = base + Math.sin(t * 1.5) * 0.2;
         mat.size = night ? 0.09 : 0.065;

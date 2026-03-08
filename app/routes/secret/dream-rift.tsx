@@ -2,10 +2,14 @@
  * Dream Rift Route
  */
 
+import { lazy, Suspense } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-import { DreamRiftGame } from '@/components/dream-rift/DreamRiftGame';
+import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
+import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
+
+const DreamRiftGame = lazy(() => import('@/components/dream-rift/DreamRiftGame').then(m => ({ default: m.DreamRiftGame })));
 
 export const Route = createFileRoute('/secret/dream-rift')({
   head: () => ({
@@ -37,7 +41,11 @@ function DreamRiftPage() {
       </div>
 
       <div className="grow relative flex items-center justify-center overflow-hidden">
-        <DreamRiftGame />
+        <GameErrorBoundary gameName="Dream Rift">
+          <Suspense fallback={<GameLoadingFallback />}>
+            <DreamRiftGame />
+          </Suspense>
+        </GameErrorBoundary>
       </div>
     </main>
   );

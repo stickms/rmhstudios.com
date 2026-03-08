@@ -1,7 +1,11 @@
+import { lazy, Suspense } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
-import { NeonDriftwayGame } from '@/components/neon-driftway/NeonDriftwayGame'
+import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary'
+import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback'
+
+const NeonDriftwayGame = lazy(() => import('@/components/neon-driftway/NeonDriftwayGame').then(m => ({ default: m.NeonDriftwayGame })))
 
 function NeonDriftwayPage() {
   return (
@@ -23,7 +27,11 @@ function NeonDriftwayPage() {
       </div>
 
       <div className="grow relative flex items-center justify-center overflow-hidden">
-        <NeonDriftwayGame />
+        <GameErrorBoundary gameName="Neon Driftway">
+          <Suspense fallback={<GameLoadingFallback />}>
+            <NeonDriftwayGame />
+          </Suspense>
+        </GameErrorBoundary>
       </div>
     </main>
   )

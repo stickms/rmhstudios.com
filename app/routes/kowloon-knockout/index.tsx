@@ -1,7 +1,11 @@
+import { lazy, Suspense } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
-import KowloonKnockout from '@/components/kowloon-knockout/KowloonKnockout'
+import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary'
+import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback'
+
+const KowloonKnockout = lazy(() => import('@/components/kowloon-knockout/KowloonKnockout'))
 
 function KowloonKnockoutPage() {
   return (
@@ -22,7 +26,11 @@ function KowloonKnockoutPage() {
         </Link>
       </div>
       <div className="grow relative overflow-hidden">
-        <KowloonKnockout />
+        <GameErrorBoundary gameName="Kowloon Knockout">
+          <Suspense fallback={<GameLoadingFallback />}>
+            <KowloonKnockout />
+          </Suspense>
+        </GameErrorBoundary>
       </div>
     </main>
   )

@@ -1,7 +1,11 @@
+import { lazy, Suspense } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
-import { ExploreGame } from '@/components/forest-explorer/explore/ExploreGame'
+import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary'
+import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback'
+
+const ExploreGame = lazy(() => import('@/components/forest-explorer/explore/ExploreGame').then(m => ({ default: m.ExploreGame })))
 
 function ForestExplorerExplorePage() {
   return (
@@ -22,7 +26,11 @@ function ForestExplorerExplorePage() {
         </Link>
       </div>
       <div className="grow relative overflow-hidden">
-        <ExploreGame />
+        <GameErrorBoundary gameName="Forest Explorer">
+          <Suspense fallback={<GameLoadingFallback />}>
+            <ExploreGame />
+          </Suspense>
+        </GameErrorBoundary>
       </div>
     </main>
   )

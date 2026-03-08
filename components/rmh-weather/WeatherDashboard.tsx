@@ -1,4 +1,5 @@
 'use client';
+import './weather.css';
 
 import React, { useState, useEffect } from 'react';
 import { useWeatherStore } from '@/lib/store/useWeatherStore';

@@ -322,7 +322,6 @@ export function GameCanvas() {
         const mp = MultiplayerFactory.getInstance();
         
         const onStartCountdown = ({ countdownSeconds }: { countdownSeconds: number }) => {
-            console.log("Countdown starting...", countdownSeconds);
             let remaining = countdownSeconds;
             setCountdown(remaining);
             // Play beep for the first tick
@@ -347,7 +346,6 @@ export function GameCanvas() {
         mp.on('start_countdown', onStartCountdown);
 
         const onInitLoading = () => {
-            console.log("Game initialization signaled by server");
             // Reset per-player loading status when a new loading round starts
             setLoadingPlayers([]);
         };
@@ -366,13 +364,11 @@ export function GameCanvas() {
         mp.on('game_started', onGameStarted);
 
         const onMatchResults = (data: { players: any[] }) => {
-            console.log("Match results received", data);
             useGameStore.getState().setMultiplayerResults(data.players);
         };
         mp.on('match_results', onMatchResults);
 
         const onReturnToLobby = () => {
-            console.log("Return to lobby signaled");
             // Reset game state but keep multiplayer connection alive
             useGameStore.getState().setMultiplayerResults(null);
             useGameStore.getState().setStatus('MENU');
@@ -389,7 +385,6 @@ export function GameCanvas() {
         mp.on('lobby_update', onLobbyUpdate);
 
         const onPlayerFinished = (data: { id: string; finalScore: number }) => {
-            console.log("Player finished", data);
             // Update the player's score in the live results if we have them
             const store = useGameStore.getState();
             if (data.id !== mp.getSocketId()) {

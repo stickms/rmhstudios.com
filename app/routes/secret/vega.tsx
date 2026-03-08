@@ -2,9 +2,13 @@
  * Project Vega Route
  */
 
+import { lazy, Suspense } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import GameCanvas from '@/components/vega/GameCanvas';
 import { ArrowLeft } from 'lucide-react';
+import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary';
+import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback';
+
+const GameCanvas = lazy(() => import('@/components/vega/GameCanvas'));
 
 export const Route = createFileRoute('/secret/vega')({
   head: () => ({
@@ -27,7 +31,11 @@ function VegaPage() {
       </div>
 
       <div className="flex-1 flex items-center justify-center relative">
-        <GameCanvas />
+        <GameErrorBoundary gameName="Project Vega">
+          <Suspense fallback={<GameLoadingFallback />}>
+            <GameCanvas />
+          </Suspense>
+        </GameErrorBoundary>
       </div>
     </main>
   );

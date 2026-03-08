@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
+import { Color, DoubleSide, type Mesh, type MeshStandardMaterial } from 'three';
 import { useStoryStore } from '@/lib/forest-explorer/store';
 
 interface GatewayArchProps {
@@ -12,7 +12,7 @@ interface GatewayArchProps {
 }
 
 export function GatewayArch({ position, scale = 1, id }: GatewayArchProps) {
-    const portalRef = useRef<THREE.Mesh>(null);
+    const portalRef = useRef<Mesh>(null);
     const storyFlags = useStoryStore(s => s.storyFlags);
 
     // Portal appears when the gateway event is triggered
@@ -20,7 +20,7 @@ export function GatewayArch({ position, scale = 1, id }: GatewayArchProps) {
 
     useFrame((state) => {
         if (!portalRef.current) return;
-        const mat = portalRef.current.material as THREE.MeshStandardMaterial;
+        const mat = portalRef.current.material as MeshStandardMaterial;
         if (isOpen) {
             mat.opacity = 0.5 + Math.sin(state.clock.elapsedTime * 2) * 0.15;
             mat.emissiveIntensity = 1.2 + Math.sin(state.clock.elapsedTime * 1.5) * 0.4;
@@ -52,7 +52,7 @@ export function GatewayArch({ position, scale = 1, id }: GatewayArchProps) {
                 <dodecahedronGeometry args={[0.4, 0]} />
                 <meshStandardMaterial
                     color="#8a7a6a"
-                    emissive={new THREE.Color(isOpen ? '#ffaa44' : '#333333')}
+                    emissive={new Color(isOpen ? '#ffaa44' : '#333333')}
                     emissiveIntensity={isOpen ? 0.8 : 0.1}
                 />
             </mesh>
@@ -63,9 +63,9 @@ export function GatewayArch({ position, scale = 1, id }: GatewayArchProps) {
                     color="#88aaff"
                     transparent
                     opacity={0}
-                    emissive={new THREE.Color('#4466dd')}
+                    emissive={new Color('#4466dd')}
                     emissiveIntensity={0}
-                    side={THREE.DoubleSide}
+                    side={DoubleSide}
                 />
             </mesh>
         </group>

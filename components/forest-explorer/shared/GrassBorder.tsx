@@ -1,10 +1,10 @@
 'use client';
 
 import { useRef, useMemo, useEffect } from 'react';
-import * as THREE from 'three';
+import { PlaneGeometry, MeshLambertMaterial, DoubleSide, InstancedMesh, Object3D, Color, InstancedBufferAttribute, type Group } from 'three';
 
 export function GrassBorder() {
-    const groupRef = useRef<THREE.Group>(null);
+    const groupRef = useRef<Group>(null);
 
     const meshRef = useMemo(() => {
         const rng = (n: number) => { const x = Math.sin(n + 77) * 43758.5453; return x - Math.floor(x); };
@@ -45,12 +45,12 @@ export function GrassBorder() {
         }
 
         const count = blades.length;
-        const geo = new THREE.PlaneGeometry(1, 1);
-        const mat = new THREE.MeshLambertMaterial({ side: THREE.DoubleSide });
-        const im = new THREE.InstancedMesh(geo, mat, count);
+        const geo = new PlaneGeometry(1, 1);
+        const mat = new MeshLambertMaterial({ side: DoubleSide });
+        const im = new InstancedMesh(geo, mat, count);
 
-        const dummy = new THREE.Object3D();
-        const col = new THREE.Color();
+        const dummy = new Object3D();
+        const col = new Color();
         const colors = new Float32Array(count * 3);
 
         for (let i = 0; i < count; i++) {
@@ -65,7 +65,7 @@ export function GrassBorder() {
             colors.set([col.r, col.g, col.b], i * 3);
         }
 
-        im.instanceColor = new THREE.InstancedBufferAttribute(colors, 3);
+        im.instanceColor = new InstancedBufferAttribute(colors, 3);
         return im;
     }, []);
 

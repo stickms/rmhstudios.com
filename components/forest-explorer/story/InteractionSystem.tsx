@@ -2,7 +2,7 @@
 
 import { useFrame, useThree } from '@react-three/fiber';
 import { useRef, useMemo } from 'react';
-import * as THREE from 'three';
+import { Vector3 } from 'three';
 import { useStoryStore } from '@/lib/forest-explorer/store';
 import { getInteractablesByAct } from '@/lib/forest-explorer/interactables';
 
@@ -13,7 +13,7 @@ import { getInteractablesByAct } from '@/lib/forest-explorer/interactables';
  */
 export function InteractionSystem() {
     const { camera } = useThree();
-    const dir = useMemo(() => new THREE.Vector3(), []);
+    const dir = useMemo(() => new Vector3(), []);
 
     const currentAct = useStoryStore(s => s.currentAct);
     const flashlightOn = useStoryStore(s => s.flashlightOn);
@@ -28,7 +28,7 @@ export function InteractionSystem() {
     const frameCount = useRef(0);
 
     // Reusable flat direction vector for flashlight cone checks
-    const flatDir = useMemo(() => new THREE.Vector3(), []);
+    const flatDir = useMemo(() => new Vector3(), []);
 
     useFrame(() => {
         frameCount.current++;
@@ -62,7 +62,7 @@ export function InteractionSystem() {
             // Flashlight reveal check
             if (inter.revealMethod === 'flashlight_only' && !isPuzzleSolved) {
                 if (flashlightOn && dist < 40) {
-                    const toObj = new THREE.Vector3(dx, 0, dz).normalize();
+                    const toObj = new Vector3(dx, 0, dz).normalize();
                     const angle = flatDir.angleTo(toObj);
                     if (angle < 0.4) { // ~23 degrees — matches visual spotlight cone
                         revealedIds.push(inter.id);

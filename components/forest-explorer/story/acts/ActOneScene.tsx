@@ -2,7 +2,7 @@
 
 import { useRef, useMemo, useEffect } from 'react';
 import { Stars } from '@react-three/drei';
-import * as THREE from 'three';
+import { Color, type Group } from 'three';
 import type { TreeData } from '../../shared/types';
 import { buildTreeInstancedMeshes } from '../../shared/buildTreeInstancedMeshes';
 import { Ground } from '../../shared/Ground';
@@ -22,7 +22,7 @@ import { actMaps } from '@/lib/forest-explorer/actMaps';
 import { CONSTELLATION_PATTERNS } from '../puzzles/ConstellationPuzzle';
 
 export function ActOneScene() {
-    const groupRef = useRef<THREE.Group>(null);
+    const groupRef = useRef<Group>(null);
     const flashlightOn = useStoryStore(s => s.flashlightOn);
     const config = actMaps.act1;
 
@@ -133,7 +133,7 @@ export function ActOneScene() {
                     <boxGeometry args={[0.3, 0.04, 0.4]} />
                     <meshStandardMaterial
                         color="#8B7355"
-                        emissive={new THREE.Color('#44ffaa')}
+                        emissive={new Color('#44ffaa')}
                         emissiveIntensity={0.3}
                     />
                 </mesh>
@@ -163,7 +163,7 @@ export function ActOneScene() {
                             <sphereGeometry args={[0.035, 6, 6]} />
                             <meshStandardMaterial
                                 color="#44ddff"
-                                emissive={new THREE.Color('#44ddff')}
+                                emissive={new Color('#44ddff')}
                                 emissiveIntensity={0.9}
                             />
                         </mesh>
@@ -186,7 +186,7 @@ export function ActOneScene() {
                                 <boxGeometry args={[len, 0.015, 0.015]} />
                                 <meshStandardMaterial
                                     color="#44ddff"
-                                    emissive={new THREE.Color('#44ddff')}
+                                    emissive={new Color('#44ddff')}
                                     emissiveIntensity={0.6}
                                 />
                             </mesh>
@@ -217,7 +217,7 @@ export function ActOneScene() {
                         <coneGeometry args={[0.22, 0.26, 8]} />
                         <meshStandardMaterial
                             color="#44ffaa"
-                            emissive={new THREE.Color('#22ff88')}
+                            emissive={new Color('#22ff88')}
                             emissiveIntensity={0.8}
                             transparent
                             opacity={0.85}

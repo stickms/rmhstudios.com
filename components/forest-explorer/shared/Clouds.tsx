@@ -2,7 +2,7 @@
 
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
+import type { Group } from 'three';
 
 const CLOUD_PUFFS: [number, number, number, number][] = [
     [0,    0,   0,   2.2],
@@ -41,7 +41,7 @@ export function Clouds({ night }: { night: boolean }) {
         }));
     }, []);
 
-    const refs = useRef<(THREE.Group | null)[]>([]);
+    const refs = useRef<(Group | null)[]>([]);
 
     useFrame((_, delta) => {
         refs.current.forEach((ref, i) => {

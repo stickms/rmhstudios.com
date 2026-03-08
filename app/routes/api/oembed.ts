@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
 /**
  * /api/oembed — Resolve media URLs and extract OpenGraph metadata.
  *
@@ -31,6 +32,10 @@ export const Route = createFileRoute('/api/oembed')({
   server: {
     handlers: {
   GET: async ({ request }) => {
+  const ip = getClientIp(request);
+  const { allowed } = rateLimit(ip, { limit: 30, windowMs: 60_000, prefix: "oembed" });
+  if (!allowed) return new Response(JSON.stringify({ error: "Rate limited" }), { status: 429 });
+
   const url = new URL(request.url).searchParams.get('url');
   const type = new URL(request.url).searchParams.get('type') || 'tenor';
 

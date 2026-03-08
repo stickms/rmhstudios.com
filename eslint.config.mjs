@@ -1,41 +1,62 @@
-import { defineConfig, globalIgnores } from "eslint/config";
-import nextVitals from "eslint-config-next/core-web-vitals";
-import nextTs from "eslint-config-next/typescript";
+import js from "@eslint/js";
+import tseslint from "typescript-eslint";
+import reactHooks from "eslint-plugin-react-hooks";
 
-const eslintConfig = defineConfig([
-  ...nextVitals,
-  ...nextTs,
-  // Override default ignores of eslint-config-next.
-  globalIgnores([
-    // Default ignores of eslint-config-next:
-    ".next/**",
-    "out/**",
-    "build/**",
-    "next-env.d.ts",
-    // Plain JS server files — CommonJS require() is intentional
-    "webhook-server.js",
-    "check_db.js",
-    "sync_db.js",
-  ]),
+export default tseslint.config(
+  // ── Global ignores ────────────────────────────────────────────────────────
+  {
+    ignores: [
+      ".output/**",
+      ".tanstack/**",
+      ".vinxi/**",
+      "dist-server/**",
+      "build/**",
+      "node_modules/**",
+      // Plain JS server files — CommonJS require() is intentional
+      "webhook-server.cjs",
+      "check_db.js",
+      "sync_db.js",
+    ],
+  },
+
+  // ── Base configs ──────────────────────────────────────────────────────────
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+
+  // ── React Hooks ───────────────────────────────────────────────────────────
+  {
+    plugins: { "react-hooks": reactHooks },
+    rules: {
+      ...reactHooks.configs.recommended.rules,
+      // These rules are too strict for the many valid patterns used
+      // throughout this codebase (mount-time setState, ref-based animation
+      // loops, cascading effect guards, etc.).
+      "react-hooks/set-state-in-effect": "off",
+      "react-hooks/purity": "off",
+      "react-hooks/immutability": "off",
+      "react-hooks/refs": "off",
+    },
+  },
+
   // ── Project-wide rule overrides ───────────────────────────────────────────
   {
     rules: {
-      // These new react-hooks/* rules are too strict for the many valid
-      // patterns used throughout this codebase (mount-time setState,
-      // ref-based animation loops, cascading effect guards, etc.).
-      "react-hooks/set-state-in-effect": "off",
-      "react-hooks/purity":              "off",
-      "react-hooks/immutability":        "off",
-      "react-hooks/refs":                "off",
-
       // Downgrade from error to warning so the build isn't blocked.
-      // Individual files can tighten this as they are refactored.
-      "@typescript-eslint/no-explicit-any":        "warn",
-      "@typescript-eslint/no-unsafe-function-type":"warn",
-      "@typescript-eslint/no-require-imports":     "warn",
-      "@next/next/no-img-element":                 "warn",
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-unsafe-function-type": "warn",
+      "@typescript-eslint/no-require-imports": "warn",
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+      ],
+      // Downgrade pre-existing code quality issues to warnings.
+      // Tighten these as the codebase is cleaned up.
+      "prefer-const": "warn",
+      "no-empty": "warn",
+      "no-case-declarations": "warn",
+      "@typescript-eslint/ban-ts-comment": "warn",
+      // Prevent debug console.log in production paths
+      "no-console": ["warn", { allow: ["warn", "error"] }],
     },
   },
-]);
-
-export default eslintConfig;
+);

@@ -1,7 +1,11 @@
+import { lazy, Suspense } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
-import { VoidBreakerGame } from '@/components/void-breaker/VoidBreakerGame'
+import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary'
+import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback'
+
+const VoidBreakerGame = lazy(() => import('@/components/void-breaker/VoidBreakerGame').then(m => ({ default: m.VoidBreakerGame })))
 
 function VoidBreakerPage() {
   return (
@@ -22,7 +26,11 @@ function VoidBreakerPage() {
         </Link>
       </div>
       <div className="grow relative flex items-center justify-center overflow-hidden">
-        <VoidBreakerGame />
+        <GameErrorBoundary gameName="Void Breaker">
+          <Suspense fallback={<GameLoadingFallback />}>
+            <VoidBreakerGame />
+          </Suspense>
+        </GameErrorBoundary>
       </div>
     </main>
   )

@@ -7,7 +7,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { createHash } from 'crypto';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { getClientIp } from '@/lib/rate-limit';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -19,6 +19,10 @@ export const Route = createFileRoute('/api/user-builds/$id/view')({
   server: {
     handlers: {
   POST: async ({ request, params }) => {
+  const ip = getClientIp(request);
+  const { allowed } = rateLimit(ip, { limit: 30, windowMs: 60_000, prefix: "build-view" });
+  if (!allowed) return new Response(JSON.stringify({ error: "Rate limited" }), { status: 429 });
+
   try {
     const { id } = params;
 

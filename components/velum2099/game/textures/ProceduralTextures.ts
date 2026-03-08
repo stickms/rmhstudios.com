@@ -4,7 +4,7 @@
    Canvas-based textures for infinite variety
    ═══════════════════════════════════════════ */
 
-import * as THREE from 'three';
+import { CanvasTexture, RepeatWrapping, LinearMipMapLinearFilter, LinearFilter, Color } from 'three';
 
 const TEX_SIZE = 256;
 
@@ -16,13 +16,13 @@ function createCanvas(w = TEX_SIZE, h = TEX_SIZE) {
 }
 
 function canvasToTexture(canvas, repeat = true) {
-    const tex = new THREE.CanvasTexture(canvas);
+    const tex = new CanvasTexture(canvas);
     if (repeat) {
-        tex.wrapS = THREE.RepeatWrapping;
-        tex.wrapT = THREE.RepeatWrapping;
+        tex.wrapS = RepeatWrapping;
+        tex.wrapT = RepeatWrapping;
     }
-    tex.minFilter = THREE.LinearMipMapLinearFilter;
-    tex.magFilter = THREE.LinearFilter;
+    tex.minFilter = LinearMipMapLinearFilter;
+    tex.magFilter = LinearFilter;
     tex.generateMipmaps = true;
     return tex;
 }
@@ -208,7 +208,7 @@ function facadeNeonAccent(seed, palette) {
     // Horizontal neon strips
     const neonCount = 2 + Math.floor(rng() * 4);
     const neonColor = palette ? palette.neons[Math.floor(rng() * palette.neons.length)] : 0xff0080;
-    const nc = new THREE.Color(neonColor);
+    const nc = new Color(neonColor);
     const r2 = Math.floor(nc.r * 255);
     const g2 = Math.floor(nc.g * 255);
     const b2 = Math.floor(nc.b * 255);
@@ -307,7 +307,7 @@ function facadeLEDMatrix(seed, palette) {
     const rows = Math.floor(TEX_SIZE / gap);
 
     const neonColor = palette ? palette.neons[Math.floor(rng() * palette.neons.length)] : 0x00ffff;
-    const nc = new THREE.Color(neonColor);
+    const nc = new Color(neonColor);
     const r2 = Math.floor(nc.r * 255);
     const g2 = Math.floor(nc.g * 255);
     const b2 = Math.floor(nc.b * 255);
@@ -621,7 +621,7 @@ export class ProceduralTextures {
      * Get a procedural building facade texture.
      * @param {number} seed - Deterministic seed
      * @param {object} palette - Active color palette (optional)
-     * @returns {THREE.Texture}
+     * @returns {Texture}
      */
     getFacade(seed, palette) {
         const idx = Math.abs(Math.floor(seed * 10000)) % FACADE_GENERATORS.length;
@@ -636,7 +636,7 @@ export class ProceduralTextures {
     /**
      * Get a procedural ground texture.
      * @param {number} seed - Deterministic seed
-     * @returns {THREE.Texture}
+     * @returns {Texture}
      */
     getGround(seed) {
         const variant = Math.abs(Math.floor(seed * 10000)) % 2;
@@ -652,7 +652,7 @@ export class ProceduralTextures {
     /**
      * Get a procedural road texture.
      * @param {number} seed - Deterministic seed
-     * @returns {THREE.Texture}
+     * @returns {Texture}
      */
     getRoad(seed) {
         const cacheKey = `road_${Math.floor(seed * 100)}`;

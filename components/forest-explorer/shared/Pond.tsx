@@ -2,26 +2,26 @@
 
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
+import { Shape, Color, type Mesh, type MeshStandardMaterial } from 'three';
 
 export function Pond() {
-    const waterRef = useRef<THREE.Mesh>(null);
+    const waterRef = useRef<Mesh>(null);
 
     const pondShape = useMemo(() => {
-        const s = new THREE.Shape();
+        const s = new Shape();
         s.ellipse(0, 0, 7, 5, 0, Math.PI * 2, false, 0);
         return s;
     }, []);
 
     const highlightShape = useMemo(() => {
-        const s = new THREE.Shape();
+        const s = new Shape();
         s.ellipse(0, 0, 4, 2.8, 0, Math.PI * 2, false, 0);
         return s;
     }, []);
 
     useFrame((state) => {
         if (!waterRef.current) return;
-        const mat = waterRef.current.material as THREE.MeshStandardMaterial;
+        const mat = waterRef.current.material as MeshStandardMaterial;
         mat.opacity = 0.82 + Math.sin(state.clock.elapsedTime * 0.6) * 0.06;
         mat.emissiveIntensity = 0.04 + Math.sin(state.clock.elapsedTime * 0.4) * 0.02;
     });
@@ -64,7 +64,7 @@ export function Pond() {
                     metalness={0.15}
                     transparent
                     opacity={0.88}
-                    emissive={new THREE.Color('#0a2030')}
+                    emissive={new Color('#0a2030')}
                     emissiveIntensity={0.04}
                 />
             </mesh>

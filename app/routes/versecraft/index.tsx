@@ -4,11 +4,15 @@
  * Checks auth status server-side and passes it to the client component.
  */
 
+import { lazy, Suspense } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import { getRequest } from '@tanstack/react-start/server'
 import { auth } from '@/lib/auth'
-import { VersecraftClient } from '@/components/versecraft/VersecraftClient'
+import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary'
+import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback'
+
+const VersecraftClient = lazy(() => import('@/components/versecraft/VersecraftClient').then(m => ({ default: m.VersecraftClient })))
 
 const checkLoginStatus = createServerFn({ method: 'GET' }).handler(async () => {
   try {
@@ -25,7 +29,11 @@ function VersecraftPage() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#1a1520' }}>
-      <VersecraftClient isLoggedIn={isLoggedIn} />
+      <GameErrorBoundary gameName="Versecraft">
+        <Suspense fallback={<GameLoadingFallback />}>
+          <VersecraftClient isLoggedIn={isLoggedIn} />
+        </Suspense>
+      </GameErrorBoundary>
     </div>
   )
 }

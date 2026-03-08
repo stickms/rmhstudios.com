@@ -1,7 +1,6 @@
 'use client';
 
 import { PointerLockControls, Sky, Stars } from '@react-three/drei';
-import * as THREE from 'three';
 import { Ground } from '../shared/Ground';
 import { Pond } from '../shared/Pond';
 import { River, Bridges } from '../shared/River';

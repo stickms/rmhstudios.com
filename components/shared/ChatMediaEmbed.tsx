@@ -201,7 +201,6 @@ function EmbedItem({ embed, themePrefix }: { embed: MediaEmbedInfo; themePrefix:
       rel="noopener noreferrer"
       className="mt-1 block max-w-xs"
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={src}
         alt=""
