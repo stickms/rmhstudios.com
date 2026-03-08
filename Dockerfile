@@ -100,6 +100,7 @@ ENV DATABASE_URL=${DATABASE_URL} \
 # NODE_OPTIONS prevents OOM on large bundles (three.js, monaco, tiptap, etc.)
 RUN rm -rf .vinxi .output \
     && NODE_OPTIONS='--max-old-space-size=8192' pnpm exec vite build \
+    && node scripts/fix-ssr-css-hash.mjs \
     && cp -a .output /app/build-output
 
 RUN test -d /app/build-output && test -f /app/build-output/server/index.mjs
