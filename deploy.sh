@@ -294,6 +294,24 @@ fi
 
 # ── Step 3: Run database migrations ───────────────────────────────────────────
 step_start "Running database migrations..."
+
+# Wait for database to be reachable before running migrations
+MIGRATION_RETRIES=5
+MIGRATION_DELAY=5
+for i in $(seq 1 $MIGRATION_RETRIES); do
+    if dc run --rm --no-deps web sh -c 'npx prisma migrate status >/dev/null 2>&1'; then
+        log "Database is reachable."
+        break
+    fi
+    if [ "$i" -eq "$MIGRATION_RETRIES" ]; then
+        log "ERROR: Database not reachable after $MIGRATION_RETRIES attempts."
+        update_deploy_status fail "database not reachable"
+        exit 1
+    fi
+    log "Database not reachable yet, retrying in ${MIGRATION_DELAY}s... ($i/$MIGRATION_RETRIES)"
+    sleep "$MIGRATION_DELAY"
+done
+
 # On first run, the _prisma_migrations table may not exist or the baseline may
 # not be recorded. Resolve the baseline as applied before running migrate deploy
 # so Prisma doesn't try to re-create existing tables.
