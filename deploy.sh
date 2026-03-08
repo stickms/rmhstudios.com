@@ -333,7 +333,13 @@ fi
 # ── Step 3: Run database migrations ───────────────────────────────────────────
 step_start "Running database migrations..."
 
-# Wait for database to be reachable before running migrations
+# Extract DB host and port from DATABASE_URL for diagnostics
+DB_HOST=$(grep -oP '(?<=@)[^:/@]+(?=[:\/])' "$ENV_FILE" | head -1)
+DB_PORT=$(grep -oP '(?<=@)[^/]+' "$ENV_FILE" | head -1 | grep -oP ':\K[0-9]+')
+DB_PORT="${DB_PORT:-5432}"
+
+# Wait for database to be reachable before running migrations.
+# Each attempt spins up a short-lived container, so keep delay short.
 MIGRATION_RETRIES=10
 MIGRATION_DELAY=5
 for i in $(seq 1 $MIGRATION_RETRIES); do
@@ -342,8 +348,14 @@ for i in $(seq 1 $MIGRATION_RETRIES); do
         break
     }
     if [ "$i" -eq "$MIGRATION_RETRIES" ]; then
+        # Filter npm update notices to show the actual error
+        PRISMA_ERR=$(echo "$MIGRATE_OUTPUT" | grep -v '^npm notice' | grep -v '^$' | tail -5)
         log "ERROR: Database not reachable after $MIGRATION_RETRIES attempts."
-        log "  Last output: $(echo "$MIGRATE_OUTPUT" | tail -3)"
+        log "  Prisma output:"
+        echo "$PRISMA_ERR" | while IFS= read -r line; do log "    $line"; done
+        log "  Diagnostics:"
+        log "    DB target: ${DB_HOST}:${DB_PORT}"
+        log "    'staging' container networks: $("$DOCKER_BIN" inspect --format='{{range $k, $v := .NetworkSettings.Networks}}{{$k}} {{end}}' staging 2>/dev/null || echo 'container not found')"
         update_deploy_status fail "database not reachable"
         exit 1
     fi
