@@ -280,11 +280,15 @@ fi
 "$DOCKER_BIN" tag "${IMAGE_NAME}:latest" "${IMAGE_NAME}:${GIT_SHA}" 2>/dev/null || true
 step_done
 
-# ── Step 3: Sync database schema ────────────────────────────────────────────
-step_start "Syncing database schema..."
-if ! dc run --rm --no-deps web sh -c 'npx prisma db push --accept-data-loss'; then
-    log "ERROR: Database schema sync failed."
-    update_deploy_status fail "database sync failed"
+# ── Step 3: Run database migrations ───────────────────────────────────────────
+step_start "Running database migrations..."
+# On first run, the _prisma_migrations table may not exist or the baseline may
+# not be recorded. Resolve the baseline as applied before running migrate deploy
+# so Prisma doesn't try to re-create existing tables.
+dc run --rm --no-deps web sh -c 'npx prisma migrate resolve --applied 0_baseline 2>/dev/null || true'
+if ! dc run --rm --no-deps web sh -c 'npx prisma migrate deploy'; then
+    log "ERROR: Database migration failed."
+    update_deploy_status fail "database migration failed"
     exit 1
 fi
 step_done
