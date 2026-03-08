@@ -280,6 +280,18 @@ fi
 "$DOCKER_BIN" tag "${IMAGE_NAME}:latest" "${IMAGE_NAME}:${GIT_SHA}" 2>/dev/null || true
 step_done
 
+# ── Step 2b (staging only): Connect DBLab clone to compose network ───────────
+# The DBLab thin-clone container ("staging") runs on its own network. The
+# compose services live on ${PROJECT_NAME}_default. Bridge them so the app
+# can reach the DB by container name. Idempotent — a no-op if already connected.
+if [ "$ENVIRONMENT" = "staging" ]; then
+    step_start "Ensuring staging DB is on compose network..."
+    COMPOSE_NETWORK="${PROJECT_NAME}_default"
+    "$DOCKER_BIN" network create "$COMPOSE_NETWORK" 2>/dev/null || true
+    "$DOCKER_BIN" network connect "$COMPOSE_NETWORK" staging 2>/dev/null || true
+    step_done
+fi
+
 # ── Step 3: Run database migrations ───────────────────────────────────────────
 step_start "Running database migrations..."
 # On first run, the _prisma_migrations table may not exist or the baseline may
