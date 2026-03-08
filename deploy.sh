@@ -345,8 +345,13 @@ DB_PORT="${DB_PORT:-5432}"
 MIGRATION_RETRIES=10
 MIGRATION_DELAY=5
 for i in $(seq 1 $MIGRATION_RETRIES); do
+    # Disable set -e: prisma migrate status exits non-zero for both connection
+    # failures AND pending/failed migrations. We need to inspect the output to
+    # tell them apart, so we must capture the exit code manually.
+    set +e
     MIGRATE_OUTPUT=$(dc run --rm --no-deps web sh -c 'npx prisma migrate status 2>&1')
     MIGRATE_EXIT=$?
+    set -e
 
     # Success, or non-zero but Prisma DID reach the DB (it reports migration state)
     if [ $MIGRATE_EXIT -eq 0 ] || echo "$MIGRATE_OUTPUT" | grep -qE 'migration|Database schema'; then
