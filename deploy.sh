@@ -339,23 +339,27 @@ DB_PORT=$(grep -oP '(?<=@)[^/]+' "$ENV_FILE" | head -1 | grep -oP ':\K[0-9]+')
 DB_PORT="${DB_PORT:-5432}"
 
 # Wait for database to be reachable before running migrations.
-# Each attempt spins up a short-lived container, so keep delay short.
+# NOTE: `prisma migrate status` exits non-zero for BOTH connection failures AND
+# failed/pending migrations. We distinguish by checking the output — if Prisma
+# can talk to the DB (even to report a failed migration), connectivity is fine.
 MIGRATION_RETRIES=10
 MIGRATION_DELAY=5
 for i in $(seq 1 $MIGRATION_RETRIES); do
-    MIGRATE_OUTPUT=$(dc run --rm --no-deps web sh -c 'npx prisma migrate status 2>&1') && {
+    MIGRATE_OUTPUT=$(dc run --rm --no-deps web sh -c 'npx prisma migrate status 2>&1')
+    MIGRATE_EXIT=$?
+
+    # Success, or non-zero but Prisma DID reach the DB (it reports migration state)
+    if [ $MIGRATE_EXIT -eq 0 ] || echo "$MIGRATE_OUTPUT" | grep -qE 'migration|Database schema'; then
         log "Database is reachable."
         break
-    }
+    fi
+
     if [ "$i" -eq "$MIGRATION_RETRIES" ]; then
-        # Filter npm update notices to show the actual error
         PRISMA_ERR=$(echo "$MIGRATE_OUTPUT" | grep -v '^npm notice' | grep -v '^$' | tail -5)
         log "ERROR: Database not reachable after $MIGRATION_RETRIES attempts."
         log "  Prisma output:"
         echo "$PRISMA_ERR" | while IFS= read -r line; do log "    $line"; done
-        log "  Diagnostics:"
-        log "    DB target: ${DB_HOST}:${DB_PORT}"
-        log "    'staging' container networks: $("$DOCKER_BIN" inspect --format='{{range $k, $v := .NetworkSettings.Networks}}{{$k}} {{end}}' staging 2>/dev/null || echo 'container not found')"
+        log "  DB target: ${DB_HOST}:${DB_PORT}"
         update_deploy_status fail "database not reachable"
         exit 1
     fi
@@ -367,6 +371,13 @@ done
 # not be recorded. Resolve the baseline as applied before running migrate deploy
 # so Prisma doesn't try to re-create existing tables.
 dc run --rm --no-deps web sh -c 'npx prisma migrate resolve --applied 0_baseline 2>/dev/null || true'
+
+# If there's a failed migration, mark it as rolled back so migrate deploy can retry it
+FAILED_MIGRATION=$(echo "$MIGRATE_OUTPUT" | grep -oP '(?<=resolve --rolled-back ")[^"]+')
+if [ -n "$FAILED_MIGRATION" ]; then
+    log "  Resolving failed migration '$FAILED_MIGRATION' as rolled back..."
+    dc run --rm --no-deps web sh -c "npx prisma migrate resolve --rolled-back \"$FAILED_MIGRATION\"" || true
+fi
 if ! dc run --rm --no-deps web sh -c 'npx prisma migrate deploy'; then
     log "ERROR: Database migration failed."
     update_deploy_status fail "database migration failed"
