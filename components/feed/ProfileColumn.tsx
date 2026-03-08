@@ -408,7 +408,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
               )}
               {/* RMH Coins */}
               <Link
-                to="/rmhcoins"
+                to="/wallet"
                 className="inline-flex items-center gap-0.5 shrink-0 hover:opacity-80 transition-opacity"
                 title={`${profile.coins} RMH Coins`}
               >
