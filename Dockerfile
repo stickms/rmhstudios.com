@@ -37,7 +37,7 @@ COPY prisma ./prisma/
 COPY prisma.config.ts ./
 
 # postinstall runs `prisma generate` → creates @prisma/client
-RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store,sharing=locked,size=8G \
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store,sharing=locked \
     pnpm install --frozen-lockfile
 
 # ── Stage 2: Server bundles (env-agnostic, decoupled from app source) ─────
@@ -103,7 +103,7 @@ ENV DATABASE_URL=${DATABASE_URL} \
 # NODE_OPTIONS prevents OOM on large bundles (three.js, monaco, tiptap, etc.)
 # .output is produced by Nitro inside the cache mount, then copied to
 # /app/build-output so it persists after the RUN layer for COPY --from.
-RUN --mount=type=cache,id=vinxi-cache,target=/app/.vinxi,sharing=locked,size=8G \
+RUN --mount=type=cache,id=vinxi-cache,target=/app/.vinxi,sharing=locked \
     NODE_OPTIONS='--max-old-space-size=8192' pnpm exec vite build \
     && cp -a .output /app/build-output
 
