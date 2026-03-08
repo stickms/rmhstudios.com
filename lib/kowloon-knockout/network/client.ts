@@ -6,7 +6,7 @@ import { io, Socket } from 'socket.io-client';
 import type { FighterClass, GameState } from '@/lib/kowloon-knockout/game/fighters/types';
 import type { RemoteInputState, ServerMessage } from './types';
 
-const DEFAULT_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:7001/';
+const DEFAULT_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:7001/';
 const SOCKET_PATH = '/socket/';
 
 type MessageHandler = (msg: ServerMessage) => void;

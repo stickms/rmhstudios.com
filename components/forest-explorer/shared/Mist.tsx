@@ -2,10 +2,10 @@
 
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
+import { BufferGeometry, BufferAttribute, type Points } from 'three';
 
 export function Mist() {
-    const pointsRef = useRef<THREE.Points>(null);
+    const pointsRef = useRef<Points>(null);
     const COUNT = 350;
 
     const geometry = useMemo(() => {
@@ -15,8 +15,8 @@ export function Mist() {
             positions[i * 3 + 1] = Math.random() * 0.7;
             positions[i * 3 + 2] = (Math.random() - 0.5) * 160;
         }
-        const geo = new THREE.BufferGeometry();
-        geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        const geo = new BufferGeometry();
+        geo.setAttribute('position', new BufferAttribute(positions, 3));
         return geo;
     }, []);
 

@@ -2,7 +2,7 @@
 
 import { useRef, useEffect } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import * as THREE from 'three';
+import { Vector2, Vector3 } from 'three';
 import {
     distToRiver,
     RIVER_HALF_WIDTH,
@@ -18,7 +18,7 @@ import {
 export function Player() {
     const { camera } = useThree();
     const keys       = useRef<Record<string, boolean>>({});
-    const localVel   = useRef(new THREE.Vector2(0, 0));
+    const localVel   = useRef(new Vector2(0, 0));
     const verticalVel = useRef(0);
     const isGrounded  = useRef(true);
 
@@ -46,7 +46,7 @@ export function Player() {
     useFrame((_, delta) => {
         const k = keys.current;
 
-        const input = new THREE.Vector2(0, 0);
+        const input = new Vector2(0, 0);
         if (k['KeyW'] || k['ArrowUp'])    input.y += 1;
         if (k['KeyS'] || k['ArrowDown'])  input.y -= 1;
         if (k['KeyA'] || k['ArrowLeft'])  input.x -= 1;
@@ -56,15 +56,15 @@ export function Player() {
         if (input.lengthSq() > 0) input.normalize().multiplyScalar(speed);
         localVel.current.lerp(input, 0.15);
 
-        const camForward = new THREE.Vector3();
+        const camForward = new Vector3();
         camera.getWorldDirection(camForward);
         camForward.y = 0;
         camForward.normalize();
 
-        const camRight = new THREE.Vector3();
-        camRight.crossVectors(camForward, new THREE.Vector3(0, 1, 0));
+        const camRight = new Vector3();
+        camRight.crossVectors(camForward, new Vector3(0, 1, 0));
 
-        const move = new THREE.Vector3();
+        const move = new Vector3();
         move.addScaledVector(camForward, localVel.current.y * delta);
         move.addScaledVector(camRight,   localVel.current.x * delta);
 

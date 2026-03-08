@@ -1,12 +1,20 @@
-"use client";
-
 import { ReactNode, createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
-import { usePathname } from "next/navigation";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useLocation } from "@tanstack/react-router";
 import { Toaster } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { useThemeStore, SITE_STYLES, SiteStyle } from "@/stores/themeStore";
 import { games } from "@/lib/games";
 import { apps } from "@/lib/apps";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60_000, // 1 minute
+      retry: 1,
+    },
+  },
+});
 
 /* ------------------------------------------------------------------ */
 /*  Session context – single useSession() call shared across the app  */
@@ -99,7 +107,7 @@ const THEME_EXCLUDED_ROUTES = [
 export function Providers({ children }: ProvidersProps) {
   const session = authClient.useSession();
   const style = useThemeStore((s) => s.style);
-  const pathname = usePathname();
+  const { pathname } = useLocation();
   const isFirstRun = useRef(true);
 
   // Resolved user display data (custom image/name)
@@ -176,21 +184,23 @@ export function Providers({ children }: ProvidersProps) {
   }, [style, isAppRoute]);
 
   return (
-    <SessionCtx.Provider value={session}>
-      <ResolvedUserCtx.Provider value={{ resolved: resolvedUser, refresh: fetchResolvedUser }}>
-      {children}
-      </ResolvedUserCtx.Provider>
-      <Toaster
-        theme="dark"
-        position="bottom-left"
-        toastOptions={{
-          style: {
-            background: "var(--site-surface)",
-            border: "1px solid var(--site-border)",
-            color: "var(--site-text)",
-          },
-        }}
-      />
-    </SessionCtx.Provider>
+    <QueryClientProvider client={queryClient}>
+      <SessionCtx.Provider value={session}>
+        <ResolvedUserCtx.Provider value={{ resolved: resolvedUser, refresh: fetchResolvedUser }}>
+        {children}
+        </ResolvedUserCtx.Provider>
+        <Toaster
+          theme="dark"
+          position="bottom-left"
+          toastOptions={{
+            style: {
+              background: "var(--site-surface)",
+              border: "1px solid var(--site-border)",
+              color: "var(--site-text)",
+            },
+          }}
+        />
+      </SessionCtx.Provider>
+    </QueryClientProvider>
   );
 }

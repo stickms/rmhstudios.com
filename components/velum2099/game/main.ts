@@ -226,7 +226,6 @@ export class App {
         this._captureKeyHandler = (e) => {
             if (e.code === 'KeyC') {
                 this._captureRequested = true;
-                console.log(`[采集] 帧 #${this.collector.getFrameCount() + 1} 已捕获`);
             }
             // ESC returns to menu
             if (e.code === 'Escape') {
@@ -243,8 +242,7 @@ export class App {
             }
             // Toggle live StreamDiffusion mode with L
             if (e.code === 'KeyL' && this._liveClient) {
-                const active = this._liveClient.toggle();
-                console.log(`[LiveStream] ${active ? 'Connecting to server...' : 'Disconnected'}`);
+                this._liveClient.toggle();
             }
             // Open settings console overlay with /
             if (e.key === '/' || e.code === 'Slash') {
@@ -299,8 +297,6 @@ export class App {
 
         // Seatbelt chime
         this._playSeatbeltChime();
-
-        console.log('[系统] 模拟启动 — WASD/方向键驾驶 | C=采集帧 | T=切换连续采集 | E=调色板 | R=电台 | L=实时风格化 | /=设置 | ESC=返回菜单');
     }
 
     _gameLoop() {

@@ -29,7 +29,7 @@ x-common: &common
       max-file: "3"
 
 services:
-  # ─── Next.js Web App ────────────────────────────────────────────────────────
+  # ─── Vite/Nitro Web App ─────────────────────────────────────────────────────
   web:
     <<: *common
     build:
@@ -41,10 +41,10 @@ services:
         DATABASE_URL: ${DATABASE_URL}
         BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
         BETTER_AUTH_URL: ${BETTER_AUTH_URL}
-        NEXT_PUBLIC_BETTER_AUTH_URL: ${NEXT_PUBLIC_BETTER_AUTH_URL}
-        NEXT_PUBLIC_SOCKET_URL: ${NEXT_PUBLIC_SOCKET_URL}
-        NEXT_PUBLIC_RMHBOX_SOCKET_URL: ${NEXT_PUBLIC_RMHBOX_SOCKET_URL}
-        NEXT_PUBLIC_RMHTUBE_SOCKET_URL: ${NEXT_PUBLIC_RMHTUBE_SOCKET_URL}
+        VITE_BETTER_AUTH_URL: ${VITE_BETTER_AUTH_URL}
+        VITE_SOCKET_URL: ${VITE_SOCKET_URL}
+        VITE_RMHBOX_SOCKET_URL: ${VITE_RMHBOX_SOCKET_URL}
+        VITE_RMHTUBE_SOCKET_URL: ${VITE_RMHTUBE_SOCKET_URL}
     container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-web
     ports:
       - "127.0.0.1:${PORT_WEB:-7005}:${PORT_WEB:-7005}"
@@ -68,7 +68,7 @@ services:
     env_file: ${ENV_FILE:-.env.production}
     environment:
       - SOCKET_PORT=${PORT_SOCKET:-7001}
-    command: ["node", "dist-server/server/socket-server/index.js"]
+    command: ["node", "dist-server/server/socket-server/index.cjs"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${PORT_SOCKET:-7001}/"]
       interval: 30s
@@ -85,7 +85,7 @@ services:
     env_file: ${ENV_FILE:-.env.production}
     environment:
       - RMHBOX_PORT=${PORT_RMHBOX:-7676}
-    command: ["node", "dist-server/server/rmhbox/index.js"]
+    command: ["node", "dist-server/server/rmhbox/index.cjs"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${PORT_RMHBOX:-7676}/"]
       interval: 30s
@@ -102,7 +102,7 @@ services:
     env_file: ${ENV_FILE:-.env.production}
     environment:
       - RMHTUBE_PORT=${PORT_RMHTUBE:-7003}
-    command: ["node", "dist-server/server/rmhtube/index.js"]
+    command: ["node", "dist-server/server/rmhtube/index.cjs"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${PORT_RMHTUBE:-7003}/"]
       interval: 30s

@@ -13,7 +13,7 @@ import {
   MIN_POLL_OPTIONS,
   MAX_POLL_OPTIONS,
 } from '@/lib/rmhark-schema';
-import Link from 'next/link';
+import { Link } from '@tanstack/react-router';
 
 type Attachment = 'poll' | 'gif' | null;
 
@@ -117,7 +117,7 @@ export function ComposeBox() {
     return (
       <div className="px-4 py-6 border-b border-site-border text-center">
         <p className="text-sm text-site-text-muted mb-2">Sign in to post RMHarks</p>
-        <Link href="/login">
+        <Link to="/login">
           <Button variant="accent" size="sm">Sign In</Button>
         </Link>
       </div>
@@ -134,6 +134,7 @@ export function ComposeBox() {
               src={resolvedUser?.image || session.user.image!}
               alt={resolvedUser?.name || session.user.name || 'User'}
               className="w-full h-full rounded-full object-cover"
+              onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }}
             />
           ) : (
             ((resolvedUser?.name || session.user.name)?.[0] || 'U').toUpperCase()

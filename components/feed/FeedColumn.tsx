@@ -8,7 +8,7 @@ import { FeedList } from './FeedList';
 import { useFeedStore } from '@/stores/feedStore';
 import { useFeedSSE } from '@/hooks/useFeedSSE';
 import { authClient } from '@/lib/auth-client';
-import Link from 'next/link';
+import { Link } from '@tanstack/react-router';
 
 interface SearchUser {
   id: string;
@@ -165,12 +165,12 @@ export function FeedColumn() {
           {userResults.map((user) => (
             <Link
               key={user.id}
-              href={`/@${user.handle || user.id}`}
+              to={`/@${user.handle || user.id}`}
               className="flex items-center gap-3 px-4 py-2.5 hover:bg-site-surface transition-colors"
             >
               <div className="w-8 h-8 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-xs shrink-0">
                 {user.image ? (
-                  <img src={user.image} alt={user.name || 'User'} className="w-full h-full rounded-full object-cover" />
+                  <img src={user.image} alt={user.name || 'User'} className="w-full h-full rounded-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }} />
                 ) : (
                   (user.name?.[0] || 'U').toUpperCase()
                 )}
@@ -199,7 +199,7 @@ export function FeedColumn() {
           <p className="text-lg font-medium text-site-text mb-2">Sign in to see your friends&apos; feed</p>
           <p className="text-sm text-site-text-muted mb-6">Follow people and their posts will appear here.</p>
           <Link
-            href="/login"
+            to="/login"
             className="px-5 py-2 rounded-full bg-site-accent text-white text-sm font-bold hover:bg-site-accent-hover transition-colors"
           >
             Sign in

@@ -77,4 +77,5 @@ export type FeedFilter =
   | "news"
   | "blog"
   | "research"
+  | "other"
   | "friends";

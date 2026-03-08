@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
+import { Link } from '@tanstack/react-router';
 import { ArrowLeft, ZoomIn, ZoomOut, Printer } from 'lucide-react';
 import type { ResearchArticle } from '@/lib/research';
 import { PaperContent } from './PaperContent';
@@ -122,7 +122,7 @@ export function PaperViewer({ article }: { article: ResearchArticle }) {
           {/* Left: back + title */}
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <Link
-              href="/research"
+              to="/research"
               className="flex items-center gap-1.5 text-gray-300 hover:text-white transition-colors shrink-0"
             >
               <ArrowLeft className="w-4 h-4" />

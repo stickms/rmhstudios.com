@@ -3,7 +3,7 @@
 import { useRef, useMemo, useEffect } from 'react';
 import { Stars, Sky } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
+import { Color, type Group, type PointLight } from 'three';
 import type { TreeData } from '../../shared/types';
 import { buildTreeInstancedMeshes } from '../../shared/buildTreeInstancedMeshes';
 import { Ground } from '../../shared/Ground';
@@ -26,7 +26,7 @@ import { actMaps } from '@/lib/forest-explorer/actMaps';
  * Sparser forest, larger map, branching paths.
  */
 export function ActThreeScene() {
-    const groupRef = useRef<THREE.Group>(null);
+    const groupRef = useRef<Group>(null);
     const flashlightOn = useStoryStore(s => s.flashlightOn);
     const puzzleStates = useStoryStore(s => s.puzzleStates);
     const playtime = useStoryStore(s => s.playtime);
@@ -130,14 +130,14 @@ export function ActThreeScene() {
 
     // Interpolated atmosphere colors based on dawn progress
     const fogColor = useMemo(() => {
-        const start = new THREE.Color('#1a0a1a');
-        const end = new THREE.Color('#c4956a');
+        const start = new Color('#1a0a1a');
+        const end = new Color('#c4956a');
         return `#${start.lerp(end, dawnProgress).getHexString()}`;
     }, [dawnProgress]);
 
     const bgColor = useMemo(() => {
-        const start = new THREE.Color('#0a0510');
-        const end = new THREE.Color('#e8c4a0');
+        const start = new Color('#0a0510');
+        const end = new Color('#e8c4a0');
         return `#${start.lerp(end, dawnProgress).getHexString()}`;
     }, [dawnProgress]);
 
@@ -236,7 +236,7 @@ export function ActThreeScene() {
 
 /** The Heartwood — the ancient tree at the climax of Act 3 */
 function HeartwoodTree({ position, scale = 1, solved }: { position: [number, number, number]; scale?: number; solved: boolean }) {
-    const glowRef = useRef<THREE.PointLight>(null);
+    const glowRef = useRef<PointLight>(null);
 
     useFrame((state) => {
         if (!glowRef.current) return;
@@ -262,7 +262,7 @@ function HeartwoodTree({ position, scale = 1, solved }: { position: [number, num
                 <cylinderGeometry args={[1.0, 1.2, 3, 8]} />
                 <meshStandardMaterial
                     color={solved ? '#114422' : '#1a0a20'}
-                    emissive={new THREE.Color(solved ? '#22ff66' : '#440066')}
+                    emissive={new Color(solved ? '#22ff66' : '#440066')}
                     emissiveIntensity={solved ? 0.5 : 0.15}
                 />
             </mesh>
@@ -322,7 +322,7 @@ function CorruptionZones({ positions, intensity }: { positions: [number, number]
                         <cylinderGeometry args={[0.05, 0.15, 1.6, 4]} />
                         <meshStandardMaterial
                             color="#6622aa"
-                            emissive={new THREE.Color('#8833cc')}
+                            emissive={new Color('#8833cc')}
                             emissiveIntensity={intensity * 0.6}
                             transparent
                             opacity={intensity * 0.7}
@@ -332,7 +332,7 @@ function CorruptionZones({ positions, intensity }: { positions: [number, number]
                         <cylinderGeometry args={[0.03, 0.1, 1.0, 4]} />
                         <meshStandardMaterial
                             color="#5511aa"
-                            emissive={new THREE.Color('#7722bb')}
+                            emissive={new Color('#7722bb')}
                             emissiveIntensity={intensity * 0.5}
                             transparent
                             opacity={intensity * 0.6}

@@ -3,7 +3,7 @@
 import { useRef, useMemo, useEffect, useState } from 'react';
 import { Stars } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
+import type { Group, AmbientLight } from 'three';
 import type { TreeData } from '../../shared/types';
 import { buildTreeInstancedMeshes } from '../../shared/buildTreeInstancedMeshes';
 import { Ground } from '../../shared/Ground';
@@ -29,7 +29,7 @@ import { actMaps } from '@/lib/forest-explorer/actMaps';
  * trees rearrange (seed offset changes) via a brief darkness transition.
  */
 export function ActTwoScene() {
-    const groupRef = useRef<THREE.Group>(null);
+    const groupRef = useRef<Group>(null);
     const flashlightOn = useStoryStore(s => s.flashlightOn);
     const storyFlags = useStoryStore(s => s.storyFlags);
     const treesShiftCount = useStoryStore(s => s.treesShiftCount);
@@ -222,7 +222,7 @@ export function ActTwoScene() {
 
 /** Temporarily dims the scene during tree-shift transitions */
 function ShiftDarknessEffect({ active }: { active: boolean }) {
-    const lightRef = useRef<THREE.AmbientLight>(null);
+    const lightRef = useRef<AmbientLight>(null);
 
     useFrame(() => {
         if (!lightRef.current) return;

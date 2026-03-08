@@ -1,6 +1,6 @@
 'use client';
 
-import dynamic from 'next/dynamic';
+import { lazy, Suspense } from 'react';
 import { useGameStore } from '@/lib/kowloon-knockout/store';
 import MainMenu from '@/components/kowloon-knockout/MainMenu';
 import CharacterSelect from '@/components/kowloon-knockout/CharacterSelect';
@@ -9,14 +9,7 @@ import ResultScreen from '@/components/kowloon-knockout/ResultScreen';
 import { AnimatePresence, motion } from 'framer-motion';
 import './kowloon-knockout.css';
 
-const GameCanvas = dynamic(() => import('@/components/kowloon-knockout/GameCanvas'), {
-  ssr: false,
-  loading: () => (
-    <div style={{ color: '#ffcc00', fontSize: '12px' }}>
-      LOADING...
-    </div>
-  ),
-});
+const GameCanvas = lazy(() => import('@/components/kowloon-knockout/GameCanvas'));
 
 export default function KowloonKnockout() {
   const { phase } = useGameStore();
@@ -72,7 +65,13 @@ export default function KowloonKnockout() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
             >
-              <GameCanvas />
+              <Suspense fallback={
+                <div style={{ color: '#ffcc00', fontSize: '12px' }}>
+                  LOADING...
+                </div>
+              }>
+                <GameCanvas />
+              </Suspense>
             </motion.div>
           )}
 

@@ -1,56 +1,56 @@
 'use client';
 
-import dynamic from 'next/dynamic';
+import { lazy, Suspense } from 'react';
 import type { ResearchArticle } from '@/lib/research';
 
 /* ── Volume 1 ────────────────────────────────────────────────────── */
-const QuantumNashPaper = dynamic(() =>
-  import('./papers/quantum-nash').then((m) => m.QuantumNashPaper)
+const QuantumNashPaper = lazy(() =>
+  import('./papers/quantum-nash').then((m) => ({ default: m.QuantumNashPaper }))
 );
-const NeuromorphicNPCPaper = dynamic(() =>
-  import('./papers/neuromorphic-npc').then((m) => m.NeuromorphicNPCPaper)
+const NeuromorphicNPCPaper = lazy(() =>
+  import('./papers/neuromorphic-npc').then((m) => ({ default: m.NeuromorphicNPCPaper }))
 );
-const EmergentNarrativePaper = dynamic(() =>
-  import('./papers/emergent-narrative').then((m) => m.EmergentNarrativePaper)
+const EmergentNarrativePaper = lazy(() =>
+  import('./papers/emergent-narrative').then((m) => ({ default: m.EmergentNarrativePaper }))
 );
 
 /* ── Volume 2 ────────────────────────────────────────────────────── */
-const CoevolutionaryEcosystemsPaper = dynamic(() =>
+const CoevolutionaryEcosystemsPaper = lazy(() =>
   import('./papers/coevolutionary-ecosystems').then(
-    (m) => m.CoevolutionaryEcosystemsPaper
+    (m) => ({ default: m.CoevolutionaryEcosystemsPaper })
   )
 );
-const EntropyLevelGenerationPaper = dynamic(() =>
+const EntropyLevelGenerationPaper = lazy(() =>
   import('./papers/entropy-level-generation').then(
-    (m) => m.EntropyLevelGenerationPaper
+    (m) => ({ default: m.EntropyLevelGenerationPaper })
   )
 );
-const RiemannianMatchmakingPaper = dynamic(() =>
+const RiemannianMatchmakingPaper = lazy(() =>
   import('./papers/riemannian-matchmaking').then(
-    (m) => m.RiemannianMatchmakingPaper
+    (m) => ({ default: m.RiemannianMatchmakingPaper })
   )
 );
 
 /* ── Volume 3 ────────────────────────────────────────────────────── */
-const FlowStatesPaper = dynamic(() =>
-  import('./papers/flow-states').then((m) => m.FlowStatesPaper)
+const FlowStatesPaper = lazy(() =>
+  import('./papers/flow-states').then((m) => ({ default: m.FlowStatesPaper }))
 );
-const RLRoguelikePaper = dynamic(() =>
-  import('./papers/rl-roguelike').then((m) => m.RLRoguelikePaper)
+const RLRoguelikePaper = lazy(() =>
+  import('./papers/rl-roguelike').then((m) => ({ default: m.RLRoguelikePaper }))
 );
-const AdaptiveDifficultyPaper = dynamic(() =>
-  import('./papers/adaptive-difficulty').then((m) => m.AdaptiveDifficultyPaper)
+const AdaptiveDifficultyPaper = lazy(() =>
+  import('./papers/adaptive-difficulty').then((m) => ({ default: m.AdaptiveDifficultyPaper }))
 );
 
 /* ── Volume 4 ────────────────────────────────────────────────────── */
-const ErgodicMarkovPaper = dynamic(() =>
-  import('./papers/ergodic-markov').then((m) => m.ErgodicMarkovPaper)
+const ErgodicMarkovPaper = lazy(() =>
+  import('./papers/ergodic-markov').then((m) => ({ default: m.ErgodicMarkovPaper }))
 );
-const PersistentHomologyPaper = dynamic(() =>
-  import('./papers/persistent-homology').then((m) => m.PersistentHomologyPaper)
+const PersistentHomologyPaper = lazy(() =>
+  import('./papers/persistent-homology').then((m) => ({ default: m.PersistentHomologyPaper }))
 );
-const StatMechMARLPaper = dynamic(() =>
-  import('./papers/stat-mech-marl').then((m) => m.StatMechMARLPaper)
+const StatMechMARLPaper = lazy(() =>
+  import('./papers/stat-mech-marl').then((m) => ({ default: m.StatMechMARLPaper }))
 );
 
 const paperComponents: Record<string, React.ComponentType> = {
@@ -154,7 +154,7 @@ export function PaperContent({ article }: { article: ResearchArticle }) {
         className="text-justify"
         style={{ fontSize: '11pt' }}
       >
-        {Body ? <Body /> : <p>Paper content not found.</p>}
+        {Body ? <Suspense fallback={null}><Body /></Suspense> : <p>Paper content not found.</p>}
       </div>
     </div>
   );

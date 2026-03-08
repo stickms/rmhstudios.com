@@ -5,18 +5,19 @@ import { ArrowLeft, Loader2, MoreHorizontal, Heart, Repeat, Trash2, Share2 } fro
 import { Button } from '@/components/ui/button';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser } from '@/components/Providers';
+import { useFreshUser, useUserDisplayStore } from '@/stores/userDisplayStore';
 import { RMHarkActions } from './RMHarkActions';
 import { CommentItem } from './CommentItem';
 import type { Comment } from './CommentItem';
 import { MAX_COMMENT_LENGTH } from '@/lib/rmhark-schema';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { Link, useNavigate } from '@tanstack/react-router';
 import type { FeedItem } from '@/lib/feed-types';
 import { RMHarkContent, extractFirstUrl } from './RMHarkContent';
 import { PollDisplay } from './PollDisplay';
 import { GifEmbed } from './GifEmbed';
 import { LinkPreview } from './LinkPreview';
 import { EngagementListModal } from './EngagementListModal';
+import { UserAvatar } from './UserAvatar';
 import { ShareModal } from './ShareModal';
 
 interface PostDetailProps {
@@ -24,7 +25,7 @@ interface PostDetailProps {
 }
 
 export function PostDetail({ postId }: PostDetailProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [post, setPost] = useState<FeedItem | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,6 +47,8 @@ export function PostDetail({ postId }: PostDetailProps) {
   }, [post]);
 
   const isAuthor = session?.user?.id === post?.user?.id;
+  const freshPostUser = useFreshUser(post?.user);
+  const freshOriginalUser = useFreshUser(post?.original?.user);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -76,7 +79,7 @@ export function PostDetail({ postId }: PostDetailProps) {
     if (!confirm('Delete this RMHark?')) return;
     try {
       await fetch(`/api/rmharks/${postId}`, { method: 'DELETE' });
-      router.push('/');
+      navigate({ to: '/' });
     } catch {
       // ignore
     }
@@ -89,6 +92,12 @@ export function PostDetail({ postId }: PostDetailProps) {
       .then(async (res) => {
         if (res.status === 404) { setNotFound(true); return; }
         const data = await res.json();
+        // Update user display cache
+        const users = [];
+        if (data.user) users.push(data.user);
+        if (data.repostedBy) users.push(data.repostedBy);
+        if (data.original?.user) users.push(data.original.user);
+        if (users.length > 0) useUserDisplayStore.getState().setUsers(users);
         setPost(data);
       })
       .catch(console.error)
@@ -172,7 +181,7 @@ export function PostDetail({ postId }: PostDetailProps) {
       <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
         <p className="text-lg font-medium text-site-text mb-1">Post not found</p>
         <p className="text-sm text-site-text-muted mb-4">This post doesn&apos;t exist or was deleted.</p>
-        <Link href="/"><Button variant="accent" size="sm">Go Home</Button></Link>
+        <Link to="/"><Button variant="accent" size="sm">Go Home</Button></Link>
       </div>
     );
   }
@@ -183,7 +192,7 @@ export function PostDetail({ postId }: PostDetailProps) {
       <div className="sticky top-0 z-10 bg-site-bg/85 backdrop-blur-md border-b border-site-border">
         <div className="flex items-center gap-3 px-4 py-3">
           <button
-            onClick={() => router.back()}
+            onClick={() => window.history.back()}
             className="p-1.5 -ml-1.5 rounded-lg hover:bg-site-surface transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-site-text" />
@@ -242,21 +251,13 @@ export function PostDetail({ postId }: PostDetailProps) {
 
         {/* User header */}
         <div className="flex items-center gap-3 mb-3 pr-8">
-          <Link href={`/@${post.user?.handle || post.user?.id}`}>
-            <div className="w-12 h-12 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-sm shrink-0">
-              {post.user?.image ? (
-                <img src={post.user.image} alt={post.user.name || 'User'} className="w-full h-full rounded-full object-cover" />
-              ) : (
-                (post.user?.name?.[0] || 'U').toUpperCase()
-              )}
-            </div>
-          </Link>
+          <UserAvatar user={freshPostUser} size="lg" />
           <div>
-            <Link href={`/@${post.user?.handle || post.user?.id}`} className="hover:underline">
-              <span className="font-bold text-site-text">{post.user?.name || 'Unknown'}</span>
+            <Link to={`/@${freshPostUser?.handle || freshPostUser?.id}`} className="hover:underline">
+              <span className="font-bold text-site-text">{freshPostUser?.name || 'Unknown'}</span>
             </Link>
-            {post.user?.handle && (
-              <p className="text-sm text-site-text-dim">@{post.user.handle}</p>
+            {freshPostUser?.handle && (
+              <p className="text-sm text-site-text-dim">@{freshPostUser.handle}</p>
             )}
           </div>
         </div>
@@ -287,11 +288,11 @@ export function PostDetail({ postId }: PostDetailProps) {
         {post.original && (
           <div className="mb-3 border border-site-border rounded-xl p-3 bg-site-surface/30">
             <div className="flex items-center gap-1.5 text-sm mb-1">
-              {post.original.user ? (
-                <Link href={`/@${post.original.user.handle || post.original.user.id}`} className="flex items-center gap-1.5 min-w-0 hover:underline">
-                  <span className="font-bold text-site-text truncate">{post.original.user.name || 'Unknown'}</span>
-                  {post.original.user.handle && (
-                    <span className="text-site-text-dim truncate">@{post.original.user.handle}</span>
+              {freshOriginalUser ? (
+                <Link to={`/@${freshOriginalUser.handle || freshOriginalUser.id}`} className="flex items-center gap-1.5 min-w-0 hover:underline">
+                  <span className="font-bold text-site-text truncate">{freshOriginalUser.name || 'Unknown'}</span>
+                  {freshOriginalUser.handle && (
+                    <span className="text-site-text-dim truncate">@{freshOriginalUser.handle}</span>
                   )}
                 </Link>
               ) : (
@@ -335,13 +336,15 @@ export function PostDetail({ postId }: PostDetailProps) {
         <div className="px-4 py-3 border-b border-site-border">
           <div className="flex gap-3">
             {/* User avatar */}
-            <div className="w-9 h-9 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-xs shrink-0">
-              {(resolvedUser?.image || session.user?.image) ? (
-                <img src={resolvedUser?.image || session.user!.image!} alt={resolvedUser?.name || session.user?.name || 'You'} className="w-full h-full rounded-full object-cover" />
-              ) : (
-                ((resolvedUser?.name || session.user?.name)?.[0] || 'U').toUpperCase()
-              )}
-            </div>
+            <UserAvatar
+              user={{
+                id: session.user!.id,
+                name: resolvedUser?.name || session.user?.name,
+                image: resolvedUser?.image || session.user?.image,
+              }}
+              size="sm"
+              linkToProfile={false}
+            />
             <div className="flex-1 min-w-0">
               <textarea
                 id="post-comment-input"

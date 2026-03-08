@@ -5,16 +5,16 @@
    screen-space stylization
    ═══════════════════════════════════════════ */
 
-import * as THREE from 'three';
+import { Texture, LinearFilter, SRGBColorSpace } from 'three';
 
 const DEFAULT_SERVER = 'ws://localhost:8765/ws';
 const CAPTURE_SIZE = 512;
 
 export class LiveStreamClient {
     /**
-     * @param {THREE.WebGLRenderer} renderer
-     * @param {THREE.Scene} scene
-     * @param {THREE.Camera} camera
+     * @param {WebGLRenderer} renderer
+     * @param {Scene} scene
+     * @param {Camera} camera
      */
     constructor(renderer, scene, camera) {
         this.renderer = renderer;
@@ -33,10 +33,10 @@ export class LiveStreamClient {
         this._captureCtx = this._captureCanvas.getContext('2d');
 
         // Output texture (updated with stylized frames from server)
-        this.outputTexture = new THREE.Texture();
-        this.outputTexture.minFilter = THREE.LinearFilter;
-        this.outputTexture.magFilter = THREE.LinearFilter;
-        this.outputTexture.colorSpace = THREE.SRGBColorSpace;
+        this.outputTexture = new Texture();
+        this.outputTexture.minFilter = LinearFilter;
+        this.outputTexture.magFilter = LinearFilter;
+        this.outputTexture.colorSpace = SRGBColorSpace;
 
         // Blend factor: 0 = passthrough, 0.5-0.7 = stylized
         this.blendFactor = 0.0;

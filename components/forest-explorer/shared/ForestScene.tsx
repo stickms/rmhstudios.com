@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useMemo, useEffect } from 'react';
-import * as THREE from 'three';
+import type { Group } from 'three';
 import type { TreeData } from './types';
 import { SCENE_RNG, TREE_SCALE, distToRiver, RIVER_HALF_WIDTH } from './constants';
 import { buildTreeInstancedMeshes } from './buildTreeInstancedMeshes';
@@ -9,7 +9,7 @@ import { Rock } from './Rock';
 import { Mushroom } from './Mushroom';
 
 export function ForestScene() {
-    const groupRef = useRef<THREE.Group>(null);
+    const groupRef = useRef<Group>(null);
 
     const { treeMeshes, rocks, mushrooms } = useMemo(() => {
         const rng = (n: number) => {

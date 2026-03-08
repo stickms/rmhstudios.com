@@ -1,4 +1,5 @@
 'use client';
+import './weather.css';
 
 import React, { useState, useEffect } from 'react';
 import { useWeatherStore } from '@/lib/store/useWeatherStore';
@@ -18,7 +19,7 @@ import { HistoricalTemperatureTrend } from './HistoricalTemperatureTrend';
 import { PrecipitationTotals } from './PrecipitationTotals';
 import { Loader2, AlertCircle, Menu, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Link from 'next/link';
+import { Link } from '@tanstack/react-router';
 import { ExportWeatherData } from './ExportWeatherData';
 import { PressureTendencyGraph } from './PressureTendencyGraph';
 import { MeteogramView } from './MeteogramView';
@@ -109,7 +110,7 @@ export const WeatherDashboard = () => {
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-4 w-full flex-1">
             <Link
-              href="/secret"
+              to="/secret"
               className="p-4 bg-weather-glass border border-weather rounded-2xl hover:bg-weather-glass-hover transition-all backdrop-blur-md shrink-0"
               title="Back to homepage"
             >
@@ -328,7 +329,7 @@ export const WeatherDashboard = () => {
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-4 w-full flex-1">
             <Link
-              href="/secret"
+              to="/secret"
               className="p-4 bg-weather-glass border border-weather rounded-2xl hover:bg-weather-glass-hover transition-all backdrop-blur-md shrink-0"
               title="Back to homepage"
             >

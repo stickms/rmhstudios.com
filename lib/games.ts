@@ -41,7 +41,7 @@ export const games: GameInfo[] = [
         iconName: 'Gamepad2',
         color: 'from-purple-500/20 to-pink-500/20 hover:border-purple-500/50',
         tags: ['Multiplayer', 'Party', 'Minigames'],
-        imagePath: '/images/games/rmhbox.png',
+        imagePath: '/images/games/rmhbox.webp',
         authGate: true,
     },
     {
@@ -59,7 +59,7 @@ export const games: GameInfo[] = [
         iconName: 'Brain',
         color: 'from-cyan-500/20 to-blue-600/20 hover:border-cyan-500/50',
         tags: ['Deckbuilder', 'Roguelike', 'Strategy'],
-        imagePath: '/images/games/altair.png',
+        imagePath: '/images/games/altair.webp',
         authGate: true,
     },
     {
@@ -76,7 +76,7 @@ export const games: GameInfo[] = [
         iconName: 'Sparkles',
         color: 'from-amber-500/20 to-orange-600/20 hover:border-amber-500/50',
         tags: ['Puzzle', 'Daily', 'Logic'],
-        imagePath: '/images/games/lights_out.png',
+        imagePath: '/images/games/lights_out.webp',
         authGate: false,
     },
     {
@@ -93,7 +93,7 @@ export const games: GameInfo[] = [
         iconName: 'Feather',
         color: 'from-amber-700/20 to-purple-800/20 hover:border-amber-500/50',
         tags: ['Visual Novel', 'Puzzle', 'Poetry'],
-        imagePath: '/images/games/versecraft.png',
+        imagePath: '/images/games/versecraft.webp',
         authGate: false,
     },
     {
@@ -110,7 +110,7 @@ export const games: GameInfo[] = [
         iconName: 'Music',
         color: 'from-rose-500/20 to-purple-600/20 hover:border-rose-500/50',
         tags: ['Arcade', 'Rhythm', 'Action'],
-        imagePath: '/images/games/slice_it.png',
+        imagePath: '/images/games/slice_it.webp',
         authGate: true,
     },
     {
@@ -128,7 +128,7 @@ export const games: GameInfo[] = [
         iconName: 'Car',
         color: 'from-cyan-500/20 to-purple-600/20 hover:border-cyan-500/50',
         tags: ['Simulation', 'Driving', '3D', 'Cyberpunk'],
-        imagePath: '/images/games/velum2099.png',
+        imagePath: '/images/games/velum2099.webp',
         authGate: false,
     },
     {
@@ -144,7 +144,7 @@ export const games: GameInfo[] = [
         iconName: 'Zap',
         color: 'from-cyan-500/20 to-pink-500/20 hover:border-cyan-500/50',
         tags: ['Action', 'Puzzle', 'Fast-paced'],
-        imagePath: '/images/games/synapsestorm.png',
+        imagePath: '/images/games/synapsestorm.webp',
         authGate: true,
     },
     {
@@ -161,7 +161,7 @@ export const games: GameInfo[] = [
         iconName: 'Crown',
         color: 'from-amber-700/20 to-yellow-600/20 hover:border-amber-500/50',
         tags: ['Idle', 'Clicker', 'Prestige'],
-        imagePath: '/images/games/temple_of_joy.png',
+        imagePath: '/images/games/temple_of_joy.webp',
         authGate: true,
     },
     {
@@ -178,7 +178,7 @@ export const games: GameInfo[] = [
         iconName: 'Zap',
         color: 'from-red-500/20 to-cyan-600/20 hover:border-red-500/50',
         tags: ['Arcade', 'Racing', 'Endless'],
-        imagePath: '/images/games/neon_driftway.png',
+        imagePath: '/images/games/neon_driftway.webp',
         authGate: true,
     },
     {
@@ -195,7 +195,7 @@ export const games: GameInfo[] = [
         iconName: 'Zap',
         color: 'from-yellow-500/20 to-orange-600/20 hover:border-yellow-500/50',
         tags: ['Casual', 'Physics', 'Puzzle'],
-        imagePath: '/images/games/laundry_sort.png',
+        imagePath: '/images/games/laundry_sort.webp',
         authGate: true,
     },
     {
@@ -212,7 +212,7 @@ export const games: GameInfo[] = [
         iconName: 'TreePine',
         color: 'from-green-700/20 to-emerald-900/20 hover:border-green-500/50',
         tags: ['Exploration', '3D', 'Relaxing'],
-        imagePath: '/images/games/forest_explorer.jpg',
+        imagePath: '/images/games/forest_explorer.webp',
         authGate: false,
     },
     {
@@ -229,7 +229,7 @@ export const games: GameInfo[] = [
         iconName: 'Crosshair',
         color: 'from-orange-500/20 to-pink-600/20 hover:border-orange-500/50',
         tags: ['Arcade', 'Shooter', '3D', 'Survival'],
-        imagePath: '/images/games/voidbreaker.png',
+        imagePath: '/images/games/voidbreaker.webp',
         authGate: true,
     },
     {
@@ -246,7 +246,7 @@ export const games: GameInfo[] = [
         iconName: 'Swords',
         color: 'from-pink-500/20 to-purple-600/20 hover:border-pink-500/50',
         tags: ['Fighting', 'Multiplayer', 'Retro'],
-        imagePath: '/images/games/Kowloon-Knockout.png',
+        imagePath: '/images/games/Kowloon-Knockout.webp',
         authGate: false,
     },
 ];

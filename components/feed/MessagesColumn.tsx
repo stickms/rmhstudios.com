@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { Loader2, ArrowLeft, MessageCircle } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@tanstack/react-router';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 
@@ -199,7 +199,7 @@ export function MessagesColumn() {
         <p className="text-sm text-site-text-muted mb-4">
           You need to be logged in to send and receive messages.
         </p>
-        <Link href="/login">
+        <Link to="/login">
           <Button variant="accent" size="sm">Sign In</Button>
         </Link>
       </div>
@@ -211,7 +211,7 @@ export function MessagesColumn() {
       {/* Header */}
       <div className="sticky top-0 z-10 bg-site-bg/85 backdrop-blur-md border-b border-site-border">
         <div className="flex items-center gap-3 px-4 py-3">
-          <Link href="/" className="p-1.5 -ml-1.5 rounded-lg hover:bg-site-surface transition-colors">
+          <Link to="/" className="p-1.5 -ml-1.5 rounded-lg hover:bg-site-surface transition-colors">
             <ArrowLeft className="w-5 h-5 text-site-text" />
           </Link>
           <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text">
@@ -238,7 +238,7 @@ export function MessagesColumn() {
           {conversations.map((conv) => (
             <Link
               key={conv.id}
-              href={`/messages/${conv.id}`}
+              to={`/messages/${conv.id}`}
               className="flex items-center gap-3 px-4 py-3 hover:bg-site-surface/50 transition-colors border-b border-site-border"
             >
               {/* Avatar */}
@@ -248,6 +248,7 @@ export function MessagesColumn() {
                     src={conv.otherUser.image}
                     alt={conv.otherUser.name || 'User'}
                     className="w-full h-full rounded-full object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }}
                   />
                 ) : (
                   (conv.otherUser.name?.[0] || 'U').toUpperCase()

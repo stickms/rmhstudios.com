@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { Loader2, ArrowLeft, Send } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@tanstack/react-router';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 
@@ -288,7 +288,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
     return (
       <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
         <p className="text-lg font-medium text-site-text mb-1">Sign in to view messages</p>
-        <Link href="/login">
+        <Link to="/login">
           <Button variant="accent" size="sm">Sign In</Button>
         </Link>
       </div>
@@ -299,7 +299,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
     return (
       <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
         <p className="text-lg font-medium text-site-text mb-1">Conversation not found</p>
-        <Link href="/messages">
+        <Link to="/messages">
           <Button variant="accent" size="sm">Back to Messages</Button>
         </Link>
       </div>
@@ -311,17 +311,17 @@ export function ConversationView({ conversationId }: { conversationId: string })
       {/* Header */}
       <div className="sticky top-0 z-10 bg-site-bg/85 backdrop-blur-md border-b border-site-border shrink-0">
         <div className="flex items-center gap-3 px-4 py-3">
-          <Link href="/messages" className="p-1.5 -ml-1.5 rounded-lg hover:bg-site-surface transition-colors">
+          <Link to="/messages" className="p-1.5 -ml-1.5 rounded-lg hover:bg-site-surface transition-colors">
             <ArrowLeft className="w-5 h-5 text-site-text" />
           </Link>
           {otherUser && (
             <Link
-              href={`/@${(otherUser as any).handle || otherUser.id}`}
+              to={`/@${(otherUser as any).handle || otherUser.id}`}
               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
             >
               <div className="w-8 h-8 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-xs ring-2 ring-site-bg shrink-0">
                 {otherUser.image ? (
-                  <img src={otherUser.image} alt={otherUser.name || 'User'} className="w-full h-full rounded-full object-cover" />
+                  <img src={otherUser.image} alt={otherUser.name || 'User'} className="w-full h-full rounded-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }} />
                 ) : (
                   (otherUser.name?.[0] || 'U').toUpperCase()
                 )}
@@ -414,7 +414,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
                     {isLastInGroup ? (
                       <div className="w-7 h-7 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-[10px] shrink-0">
                         {avatarUser.image ? (
-                          <img src={avatarUser.image} alt={avatarUser.name || 'User'} className="w-full h-full rounded-full object-cover" />
+                          <img src={avatarUser.image} alt={avatarUser.name || 'User'} className="w-full h-full rounded-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }} />
                         ) : (
                           (avatarUser.name?.[0] || 'U').toUpperCase()
                         )}

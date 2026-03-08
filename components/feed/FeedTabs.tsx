@@ -8,9 +8,8 @@ const tabs: { label: string; value: FeedFilter }[] = [
   { label: 'RMHarks', value: 'rmhark' },
   { label: 'Games', value: 'game' },
   { label: 'Apps', value: 'app' },
-  { label: 'News', value: 'news' },
   { label: 'Blog', value: 'blog' },
-  { label: 'Research', value: 'research' },
+  { label: 'Other', value: 'other' },
 ];
 
 export function FeedTabs() {

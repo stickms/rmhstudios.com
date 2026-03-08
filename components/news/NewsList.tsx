@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Search, X, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { NewsCard } from './NewsCard';
 import { NewsHero } from './NewsHero';
@@ -27,19 +27,19 @@ interface NewsListProps {
 }
 
 export function NewsList({ initialArticles, featuredArticles, filtersOpen = false }: NewsListProps) {
-    const router = useRouter();
-    const searchParams = useSearchParams();
+    const navigate = useNavigate();
+    const searchParams = useSearch({ strict: false }) as Record<string, string | undefined>;
 
-    const [searchInput, setSearchInput] = useState(searchParams.get('q') || '');
+    const [searchInput, setSearchInput] = useState(searchParams.q || '');
     const debouncedSearch = useDebounce(searchInput, 250);
-    const [selectedCategory, setSelectedCategory] = useState<string | null>(searchParams.get('category') || null);
-    const [sortMode, setSortMode] = useState<'newest' | 'oldest'>((searchParams.get('sort') as 'newest' | 'oldest') || 'newest');
-    const [currentPage, setCurrentPage] = useState(Number(searchParams.get('page')) || 1);
+    const [selectedCategory, setSelectedCategory] = useState<string | null>(searchParams.category || null);
+    const [sortMode, setSortMode] = useState<'newest' | 'oldest'>((searchParams.sort as 'newest' | 'oldest') || 'newest');
+    const [currentPage, setCurrentPage] = useState(Number(searchParams.page) || 1);
     const gridRef = useRef<HTMLDivElement>(null);
 
     const updateURL = useCallback(
         (params: Record<string, string | null>) => {
-            const url = new URLSearchParams(searchParams.toString());
+            const url = new URLSearchParams(window.location.search);
             Object.entries(params).forEach(([key, value]) => {
                 if (value && value !== '' && !(key === 'page' && value === '1') && !(key === 'sort' && value === 'newest')) {
                     url.set(key, value);
@@ -48,9 +48,9 @@ export function NewsList({ initialArticles, featuredArticles, filtersOpen = fals
                 }
             });
             const qs = url.toString();
-            router.replace(`/news${qs ? `?${qs}` : ''}`, { scroll: false });
+            navigate({ to: `/news${qs ? `?${qs}` : ''}`, replace: true });
         },
-        [router, searchParams],
+        [navigate],
     );
 
     const availableCategories = useMemo(() => {

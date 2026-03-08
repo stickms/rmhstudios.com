@@ -7,7 +7,7 @@
  */
 'use client';
 
-import Link from 'next/link';
+import { Link } from '@tanstack/react-router';
 import { ArrowLeft, Circle } from 'lucide-react';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
 
@@ -41,7 +41,7 @@ export default function RmhTubeHeader({
       <div className="flex items-center gap-2 z-10">
         {backHref ? (
           <Link
-            href={backHref}
+            to={backHref}
             onClick={onBack}
             className="flex items-center gap-1.5 text-sm font-medium transition-colors text-(--rmhtube-text-muted) hover:text-(--rmhtube-text)"
           >

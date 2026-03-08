@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { Heart, Eye, Github, ExternalLink, Calendar, ArrowLeft, Edit, Trash2, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { authClient } from '@/lib/auth-client';
@@ -30,7 +29,7 @@ function formatCount(count: number): string {
 }
 
 export function BuildDetail({ build: initialBuild, backHref = '/user-builds' }: BuildDetailProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const { data: session } = authClient.useSession();
   const [build, setBuild] = useState(initialBuild);
   const [liking, setLiking] = useState(false);
@@ -47,7 +46,7 @@ export function BuildDetail({ build: initialBuild, backHref = '/user-builds' }: 
     try {
       const res = await fetch(`/api/user-builds/${build.id}`, { method: 'DELETE' });
       if (res.ok) {
-        router.push('/user-builds');
+        navigate({ to: '/user-builds' });
       }
     } catch (error) {
       console.error('Error deleting build:', error);
@@ -96,7 +95,7 @@ export function BuildDetail({ build: initialBuild, backHref = '/user-builds' }: 
     <div className="max-w-4xl mx-auto">
       {/* Back link */}
       <Link
-        href={backHref}
+        to={backHref}
         className="inline-flex items-center gap-2 text-sm text-site-text-muted hover:text-site-text mb-6 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
@@ -129,9 +128,9 @@ export function BuildDetail({ build: initialBuild, backHref = '/user-builds' }: 
 
         {/* Author & Date */}
         <div className="flex items-center gap-4 mb-4">
-          <Link href={`/@${build.user.handle || build.user.id}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+          <Link to={`/@${build.user.handle || build.user.id}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             {build.user.image ? (
-              <img src={build.user.image} alt={build.user.name || 'User'} className="w-10 h-10 rounded-full" />
+              <img src={build.user.image} alt={build.user.name || 'User'} className="w-10 h-10 rounded-full" onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }} />
             ) : (
               <div className="w-10 h-10 rounded-full bg-violet-500/20 flex items-center justify-center text-violet-400 font-bold">
                 {(build.user.name?.[0] || 'U').toUpperCase()}
@@ -155,7 +154,7 @@ export function BuildDetail({ build: initialBuild, backHref = '/user-builds' }: 
           {isOwner && (
             <div className="ml-auto flex items-center gap-2">
               <Link
-                href={`/user-builds/submit?edit=${build.id}`}
+                to={`/user-builds/submit?edit=${build.id}`}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-site-surface border border-site-border text-sm text-site-text-muted hover:text-site-text hover:border-violet-500/50 transition-colors"
               >
                 <Edit className="w-4 h-4" />

@@ -1,6 +1,6 @@
 'use client';
 
-import * as THREE from 'three';
+import { Color } from 'three';
 
 export function Moon() {
     return (
@@ -8,7 +8,7 @@ export function Moon() {
             <sphereGeometry args={[8, 16, 12]} />
             <meshStandardMaterial
                 color="#e8eef5"
-                emissive={new THREE.Color('#c8d8f0')}
+                emissive={new Color('#c8d8f0')}
                 emissiveIntensity={0.6}
                 roughness={0.9}
             />

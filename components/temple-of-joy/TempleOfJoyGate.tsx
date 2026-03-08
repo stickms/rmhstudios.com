@@ -1,4 +1,5 @@
 'use client';
+import './temple-of-joy.css';
 import { useEffect, useState } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { loadFromServer } from '@/lib/temple-of-joy/persistence';

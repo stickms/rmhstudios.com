@@ -7,10 +7,10 @@
 #   ./deploy.sh staging      — deploy staging branch to staging containers
 #
 # Cache strategy:
-#   - BuildKit cache mounts (pnpm store, Next.js .next/cache) persist across
+#   - BuildKit cache mounts (pnpm store, Vinxi/TanStack cache) persist across
 #     builds and are shared between prod/staging.
 #   - Parallel Dockerfile stages: server-builder (env-agnostic, fully cached
-#     between envs) and next-builder (env-specific, incrementally cached).
+#     between envs) and vite-builder (env-specific, incrementally cached).
 #   - node_modules layer in runner sourced from deps stage (lockfile-keyed),
 #     not from the env-specific builder, so it survives source/env changes.
 #   - Images are tagged with git SHA for instant rollback.
@@ -217,11 +217,22 @@ fi
 log "=== Deploy triggered ($ENVIRONMENT, branch=$BRANCH) ==="
 DEPLOY_START_TIME=$(date +%s)
 
-# Capture all deploy output to log file
-exec > >(tee -a "$DEPLOY_LOG") 2>&1
+# Capture all deploy output to log file.
+# IMPORTANT: close fd 200 (flock) inside the process substitution so the tee
+# subprocess does not inherit the deploy lock. Without this, a self-restart
+# via exec leaves the orphaned tee holding the flock, deadlocking the new process.
+# Guard: only set up tee once — skip on self-restart to avoid doubled output.
+if [ -z "${DEPLOY_SELF_RESTARTED:-}" ]; then
+    exec > >(exec 200>&-; tee -a "$DEPLOY_LOG") 2>&1
+fi
 
 # ── Step 1: Pull latest code ────────────────────────────────────────────────
 step_start "Fetching latest code..."
+
+# Snapshot deploy.sh hash before pulling so we can detect self-updates.
+DEPLOY_SCRIPT_PATH="${REPO_DIR}/deploy.sh"
+PRE_PULL_HASH=$(sha256sum "$DEPLOY_SCRIPT_PATH" | awk '{print $1}')
+
 "$GIT_BIN" fetch "$REMOTE_REPO" "$BRANCH" || {
     log "ERROR: git fetch failed."
     update_deploy_status fail "git fetch failed"
@@ -236,15 +247,37 @@ step_start "Fetching latest code..."
 }
 step_done
 
+# ── Self-restart if deploy.sh was updated ────────────────────────────────────
+# Compare the hash of deploy.sh after the pull. If it changed, exec the new
+# version so the rest of the deploy runs with the updated logic. The env var
+# DEPLOY_SELF_RESTARTED prevents infinite re-exec loops.
+POST_PULL_HASH=$(sha256sum "$DEPLOY_SCRIPT_PATH" | awk '{print $1}')
+if [ "$PRE_PULL_HASH" != "$POST_PULL_HASH" ] && [ -z "${DEPLOY_SELF_RESTARTED:-}" ]; then
+    log "deploy.sh was updated during pull — restarting with the new version."
+    # Release the deploy lock before re-exec so the new process can acquire it.
+    # (The tee fd 200 fix above handles normal runs, but this is belt-and-suspenders.)
+    exec 200>&-
+    export DEPLOY_SELF_RESTARTED=1
+    exec bash "$DEPLOY_SCRIPT_PATH" "$ENVIRONMENT"
+fi
+
 IMAGE_NAME="${PROJECT_NAME}-app"
 GIT_SHA=$("$GIT_BIN" rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
 send_deploy_started
 
+# ── Step 1b: Pre-build cleanup ────────────────────────────────────────────────
+# Free disk space before building to avoid "no space left on device" errors.
+# Prune dangling images and cap build cache proactively.
+step_start "Pre-build disk cleanup..."
+"$DOCKER_BIN" image prune -f > /dev/null 2>&1 || true
+"$DOCKER_BIN" builder prune --keep-storage 5g -f > /dev/null 2>&1 || true
+step_done
+
 # ── Step 2: Build Docker image ──────────────────────────────────────────────
 # The Dockerfile uses parallel BuildKit stages:
 #   - server-builder (esbuild, env-agnostic → fully cached between envs)
-#   - next-builder   (next build, env-specific → incrementally cached)
+#   - vite-builder   (vite build, env-specific → incrementally cached)
 # node_modules layer in runner comes from deps stage (lockfile-keyed),
 # not from the builder, so it caches independently of source/env changes.
 step_start "Building Docker image..."
@@ -258,11 +291,101 @@ fi
 "$DOCKER_BIN" tag "${IMAGE_NAME}:latest" "${IMAGE_NAME}:${GIT_SHA}" 2>/dev/null || true
 step_done
 
-# ── Step 3: Sync database schema ────────────────────────────────────────────
-step_start "Syncing database schema..."
-if ! dc run --rm --no-deps web sh -c 'npx prisma db push --accept-data-loss'; then
-    log "ERROR: Database schema sync failed."
-    update_deploy_status fail "database sync failed"
+# ── Step 2b (staging only): Connect DBLab clone to compose network ───────────
+# The DBLab thin-clone container ("staging") runs on its own network. The
+# compose services live on ${PROJECT_NAME}_default. Bridge them so the app
+# can reach the DB by container name. Idempotent — a no-op if already connected.
+if [ "$ENVIRONMENT" = "staging" ]; then
+    step_start "Ensuring staging DB is on compose network..."
+
+    # Verify the staging DB container exists and is running
+    if ! "$DOCKER_BIN" inspect --format='{{.State.Running}}' staging 2>/dev/null | grep -q true; then
+        log "ERROR: 'staging' container is not running."
+        log "  Current state: $("$DOCKER_BIN" inspect --format='{{.State.Status}}' staging 2>/dev/null || echo 'not found')"
+        update_deploy_status fail "staging DB container not running"
+        exit 1
+    fi
+
+    COMPOSE_NETWORK="${PROJECT_NAME}_default"
+    "$DOCKER_BIN" network create "$COMPOSE_NETWORK" 2>/dev/null || true
+
+    if ! "$DOCKER_BIN" network connect "$COMPOSE_NETWORK" staging 2>/dev/null; then
+        # Already connected is fine — verify it's actually on the network
+        if ! "$DOCKER_BIN" inspect --format='{{json .NetworkSettings.Networks}}' staging 2>/dev/null | grep -q "$COMPOSE_NETWORK"; then
+            log "ERROR: Failed to connect 'staging' container to network '$COMPOSE_NETWORK'."
+            update_deploy_status fail "DB network connect failed"
+            exit 1
+        fi
+    fi
+
+    # Verify DNS resolution: the web container must be able to resolve the DB hostname
+    DB_HOST=$(grep -oP '(?<=@)[^:/@]+(?=[:\/])' "$ENV_FILE" | head -1)
+    if [ -n "$DB_HOST" ] && [ "$DB_HOST" != "localhost" ] && [ "$DB_HOST" != "127.0.0.1" ]; then
+        log "  DB host from $ENV_FILE: $DB_HOST"
+    elif [ -n "$DB_HOST" ]; then
+        log "WARNING: DATABASE_URL uses '$DB_HOST' — this won't work between containers."
+        log "  Change it to the DB container name (e.g., 'staging') in $ENV_FILE."
+    fi
+
+    step_done
+fi
+
+# ── Step 3: Run database migrations ───────────────────────────────────────────
+step_start "Running database migrations..."
+
+# Extract DB host and port from DATABASE_URL for diagnostics
+DB_HOST=$(grep -oP '(?<=@)[^:/@]+(?=[:\/])' "$ENV_FILE" | head -1)
+DB_PORT=$(grep -oP '(?<=@)[^/]+' "$ENV_FILE" | head -1 | grep -oP ':\K[0-9]+')
+DB_PORT="${DB_PORT:-5432}"
+
+# Wait for database to be reachable before running migrations.
+# NOTE: `prisma migrate status` exits non-zero for BOTH connection failures AND
+# failed/pending migrations. We distinguish by checking the output — if Prisma
+# can talk to the DB (even to report a failed migration), connectivity is fine.
+MIGRATION_RETRIES=10
+MIGRATION_DELAY=5
+for i in $(seq 1 $MIGRATION_RETRIES); do
+    # Disable set -e: prisma migrate status exits non-zero for both connection
+    # failures AND pending/failed migrations. We need to inspect the output to
+    # tell them apart, so we must capture the exit code manually.
+    set +e
+    MIGRATE_OUTPUT=$(dc run --rm --no-deps web sh -c 'npx prisma migrate status 2>&1')
+    MIGRATE_EXIT=$?
+    set -e
+
+    # Success, or non-zero but Prisma DID reach the DB (it reports migration state)
+    if [ $MIGRATE_EXIT -eq 0 ] || echo "$MIGRATE_OUTPUT" | grep -qE 'migration|Database schema'; then
+        log "Database is reachable."
+        break
+    fi
+
+    if [ "$i" -eq "$MIGRATION_RETRIES" ]; then
+        PRISMA_ERR=$(echo "$MIGRATE_OUTPUT" | grep -v '^npm notice' | grep -v '^$' | tail -5)
+        log "ERROR: Database not reachable after $MIGRATION_RETRIES attempts."
+        log "  Prisma output:"
+        echo "$PRISMA_ERR" | while IFS= read -r line; do log "    $line"; done
+        log "  DB target: ${DB_HOST}:${DB_PORT}"
+        update_deploy_status fail "database not reachable"
+        exit 1
+    fi
+    log "Database not reachable yet, retrying in ${MIGRATION_DELAY}s... ($i/$MIGRATION_RETRIES)"
+    sleep "$MIGRATION_DELAY"
+done
+
+# On first run, the _prisma_migrations table may not exist or the baseline may
+# not be recorded. Resolve the baseline as applied before running migrate deploy
+# so Prisma doesn't try to re-create existing tables.
+dc run --rm --no-deps web sh -c 'npx prisma migrate resolve --applied 0_baseline 2>/dev/null || true'
+
+# If there's a failed migration, mark it as rolled back so migrate deploy can retry it
+FAILED_MIGRATION=$(echo "$MIGRATE_OUTPUT" | grep -oP '(?<=resolve --rolled-back ")[^"]+' || true)
+if [ -n "$FAILED_MIGRATION" ]; then
+    log "  Resolving failed migration '$FAILED_MIGRATION' as rolled back..."
+    dc run --rm --no-deps web sh -c "npx prisma migrate resolve --rolled-back \"$FAILED_MIGRATION\"" || true
+fi
+if ! dc run --rm --no-deps web sh -c 'npx prisma migrate deploy'; then
+    log "ERROR: Database migration failed."
+    update_deploy_status fail "database migration failed"
     exit 1
 fi
 step_done
@@ -304,10 +427,7 @@ if [ $ok -ne 0 ]; then
 fi
 step_done
 
-# ── Step 6: Prune stale images (preserve build cache) ───────────────────────
-# Only remove dangling images (untagged layers from previous builds).
-# Do NOT prune the builder cache — it contains the pnpm store mount and
-# Next.js incremental cache that make subsequent builds fast.
+# ── Step 6: Prune stale images & cap build cache ─────────────────────────────
 log "Pruning dangling images..."
 "$DOCKER_BIN" image prune -f > /dev/null 2>&1 || true
 
@@ -316,6 +436,12 @@ log "Pruning dangling images..."
 "$DOCKER_BIN" images "${IMAGE_NAME}" --format '{{.Tag}} {{.CreatedAt}}' 2>/dev/null | \
     grep -v 'latest' | sort -k2 -r | tail -n +4 | awk '{print "'"${IMAGE_NAME}"':" $1}' | \
     xargs -r "$DOCKER_BIN" rmi 2>/dev/null || true
+
+# Cap BuildKit build cache at 5 GB. This keeps the pnpm store, Vinxi, and
+# TanStack cache mounts around for fast rebuilds while preventing unbounded
+# growth. BuildKit evicts least-recently-used entries first.
+log "Pruning build cache (keeping ≤5 GB)..."
+"$DOCKER_BIN" builder prune --keep-storage 5g -f > /dev/null 2>&1 || true
 
 # ── Done ─────────────────────────────────────────────────────────────────────
 update_deploy_status success

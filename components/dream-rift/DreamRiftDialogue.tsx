@@ -103,7 +103,6 @@ export function DreamRiftDialogue({ line, onAdvance, onSkip }: DreamRiftDialogue
   const kanji = SPEAKER_KANJI[line.speaker.toLowerCase()] ?? '';
 
   return (
-    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
     <div
       className="absolute inset-x-0 bottom-0 z-40 select-none cursor-pointer"
       onClick={handleClick}

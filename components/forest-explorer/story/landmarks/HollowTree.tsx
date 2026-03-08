@@ -1,6 +1,5 @@
 'use client';
 
-import * as THREE from 'three';
 
 interface HollowTreeProps {
     position: [number, number, number];

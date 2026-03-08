@@ -54,7 +54,7 @@ export type SSEventHandler = {
     onReturnToLobby?: () => void;
 };
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:7001";
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:7001";
 
 const STORAGE_KEY_USER_ID = 'ss_mp_userId';
 const STORAGE_KEY_DISPLAY_NAME = 'ss_mp_displayName';

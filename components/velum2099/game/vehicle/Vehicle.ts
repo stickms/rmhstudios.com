@@ -5,7 +5,7 @@
    keyboard controls & drift physics
    ═══════════════════════════════════════════ */
 
-import * as THREE from 'three';
+import { Vector3, Euler, Box3, Group, Mesh, MeshStandardMaterial, MeshBasicMaterial, BoxGeometry, CylinderGeometry, PlaneGeometry, DoubleSide, BufferGeometry, BufferAttribute, ShaderMaterial, Color, AdditiveBlending, Line } from 'three';
 
 /* ── AE86 Panda Trueno colors ── */
 const AE86_WHITE = 0xf0f0f0;   // High-vis panda white
@@ -19,8 +19,8 @@ export class Vehicle {
         this.scene = scene;
 
         // Physics state
-        this.position = new THREE.Vector3(0, 0, 0);
-        this.rotation = new THREE.Euler(0, 0, 0);
+        this.position = new Vector3(0, 0, 0);
+        this.rotation = new Euler(0, 0, 0);
         this.velocity = 0;        // m/s forward
         this.lateralVelocity = 0; // m/s sideways (drift)
         this.steerAngle = 0;      // radians
@@ -48,14 +48,14 @@ export class Vehicle {
         this.driftGrip = 0.15;
 
         // Collision state
-        this.boundingBox = new THREE.Box3();
+        this.boundingBox = new Box3();
         this._collisionCooldowns = new Map();
         this._collisionCooldownTime = 0.3;
 
         // Reusable vectors (avoid per-frame allocation)
-        this._forward = new THREE.Vector3();
-        this._right = new THREE.Vector3();
-        this._fwd = new THREE.Vector3();
+        this._forward = new Vector3();
+        this._right = new Vector3();
+        this._fwd = new Vector3();
 
         // Input state
         this.keys = {
@@ -76,117 +76,117 @@ export class Vehicle {
        ═══════════════════════════════════════ */
 
     _buildMesh() {
-        this.group = new THREE.Group();
+        this.group = new Group();
 
         // ── Shared materials ──
-        const whiteMat = new THREE.MeshStandardMaterial({
+        const whiteMat = new MeshStandardMaterial({
             color: AE86_WHITE, roughness: 0.35, metalness: 0.15,
             emissive: AE86_WHITE, emissiveIntensity: 0.12, // subtle self-glow for visibility
         });
         this._bodyMat = whiteMat;
-        const blackMat = new THREE.MeshStandardMaterial({
+        const blackMat = new MeshStandardMaterial({
             color: AE86_BLACK, roughness: 0.5, metalness: 0.3,
         });
-        const glassMat = new THREE.MeshStandardMaterial({
+        const glassMat = new MeshStandardMaterial({
             color: GLASS_TINT, roughness: 0.1, metalness: 0.4,
             transparent: true, opacity: 0.55,
         });
 
         // ── Lower body (black) ─ AE86 proportions (4.18m × 1.63m × 1.33m) ──
-        const lowerGeo = new THREE.BoxGeometry(1.7, 0.35, 4.2);
-        const lower = new THREE.Mesh(lowerGeo, blackMat);
+        const lowerGeo = new BoxGeometry(1.7, 0.35, 4.2);
+        const lower = new Mesh(lowerGeo, blackMat);
         lower.position.y = 0.37;
         this.group.add(lower);
 
         // ── Upper body (white) ─ the iconic boxy shape ──
-        const upperGeo = new THREE.BoxGeometry(1.65, 0.3, 4.1);
-        const upper = new THREE.Mesh(upperGeo, whiteMat);
+        const upperGeo = new BoxGeometry(1.65, 0.3, 4.1);
+        const upper = new Mesh(upperGeo, whiteMat);
         upper.position.y = 0.7;
         this.group.add(upper);
 
         // ── Front bumper (black, slightly protruding) ──
-        const fBumperGeo = new THREE.BoxGeometry(1.72, 0.2, 0.25);
-        const fBumper = new THREE.Mesh(fBumperGeo, blackMat);
+        const fBumperGeo = new BoxGeometry(1.72, 0.2, 0.25);
+        const fBumper = new Mesh(fBumperGeo, blackMat);
         fBumper.position.set(0, 0.3, -2.2);
         this.group.add(fBumper);
 
         // ── Rear bumper ──
-        const rBumperGeo = new THREE.BoxGeometry(1.72, 0.2, 0.2);
-        const rBumper = new THREE.Mesh(rBumperGeo, blackMat);
+        const rBumperGeo = new BoxGeometry(1.72, 0.2, 0.2);
+        const rBumper = new Mesh(rBumperGeo, blackMat);
         rBumper.position.set(0, 0.3, 2.15);
         this.group.add(rBumper);
 
         // ── Cabin / greenhouse (glass) ──
-        const cabinGeo = new THREE.BoxGeometry(1.45, 0.45, 1.6);
-        const cabin = new THREE.Mesh(cabinGeo, glassMat);
+        const cabinGeo = new BoxGeometry(1.45, 0.45, 1.6);
+        const cabin = new Mesh(cabinGeo, glassMat);
         cabin.position.set(0, 1.08, -0.1);
         this.group.add(cabin);
 
         // ── Roof panel (white) ──
-        const roofGeo = new THREE.BoxGeometry(1.35, 0.06, 1.5);
-        const roof = new THREE.Mesh(roofGeo, whiteMat);
+        const roofGeo = new BoxGeometry(1.35, 0.06, 1.5);
+        const roof = new Mesh(roofGeo, whiteMat);
         roof.position.set(0, 1.33, -0.1);
         this.group.add(roof);
 
         // ── C-pillar / hatchback slope — distinctive AE86 rear ──
-        const hatchGeo = new THREE.BoxGeometry(1.45, 0.35, 0.8);
-        const hatch = new THREE.Mesh(hatchGeo, whiteMat);
+        const hatchGeo = new BoxGeometry(1.45, 0.35, 0.8);
+        const hatch = new Mesh(hatchGeo, whiteMat);
         hatch.position.set(0, 1.02, 1.1);
         hatch.rotation.x = 0.25; // slight tilt for hatchback look
         this.group.add(hatch);
 
         // ── Pop-up headlights (retracted — small bumps with bright lens) ──
-        const popupMat = new THREE.MeshStandardMaterial({
+        const popupMat = new MeshStandardMaterial({
             color: 0x333333, roughness: 0.3, metalness: 0.6,
         });
         for (const side of [-0.55, 0.55]) {
-            const housingGeo = new THREE.BoxGeometry(0.35, 0.18, 0.3);
-            const housing = new THREE.Mesh(housingGeo, popupMat);
+            const housingGeo = new BoxGeometry(0.35, 0.18, 0.3);
+            const housing = new Mesh(housingGeo, popupMat);
             housing.position.set(side, 0.95, -1.85);
             this.group.add(housing);
 
             // Exposed headlight lens (bright, always visible)
-            const lensGeo = new THREE.BoxGeometry(0.28, 0.12, 0.05);
-            const lensMat = new THREE.MeshBasicMaterial({ color: 0xffffee });
-            const lens = new THREE.Mesh(lensGeo, lensMat);
+            const lensGeo = new BoxGeometry(0.28, 0.12, 0.05);
+            const lensMat = new MeshBasicMaterial({ color: 0xffffee });
+            const lens = new Mesh(lensGeo, lensMat);
             lens.position.set(side, 0.94, -2.01);
             this.group.add(lens);
         }
 
         // ── Front turn signals (amber) ──
         for (const side of [-0.72, 0.72]) {
-            const sigGeo = new THREE.BoxGeometry(0.15, 0.1, 0.08);
-            const sigMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
-            const sig = new THREE.Mesh(sigGeo, sigMat);
+            const sigGeo = new BoxGeometry(0.15, 0.1, 0.08);
+            const sigMat = new MeshBasicMaterial({ color: 0xffaa00 });
+            const sig = new Mesh(sigGeo, sigMat);
             sig.position.set(side, 0.35, -2.18);
             this.group.add(sig);
         }
 
         // ── Tail lights (wide red band — iconic AE86 hatch) ──
         for (const side of [-0.6, 0.6]) {
-            const tlGeo = new THREE.BoxGeometry(0.35, 0.12, 0.06);
-            const tlMat = new THREE.MeshBasicMaterial({ color: 0xff1122 });
-            const tl = new THREE.Mesh(tlGeo, tlMat);
+            const tlGeo = new BoxGeometry(0.35, 0.12, 0.06);
+            const tlMat = new MeshBasicMaterial({ color: 0xff1122 });
+            const tl = new Mesh(tlGeo, tlMat);
             tl.position.set(side, 0.6, 2.13);
             this.group.add(tl);
         }
         // Center garnish between tail lights
-        const garnishGeo = new THREE.BoxGeometry(0.6, 0.06, 0.06);
-        const garnishMat = new THREE.MeshBasicMaterial({ color: 0xcc0000 });
-        const garnish = new THREE.Mesh(garnishGeo, garnishMat);
+        const garnishGeo = new BoxGeometry(0.6, 0.06, 0.06);
+        const garnishMat = new MeshBasicMaterial({ color: 0xcc0000 });
+        const garnish = new Mesh(garnishGeo, garnishMat);
         garnish.position.set(0, 0.6, 2.13);
         this.group.add(garnish);
 
         // ── Side mirrors ──
         for (const side of [-0.82, 0.82]) {
-            const mirGeo = new THREE.BoxGeometry(0.12, 0.08, 0.15);
-            const mir = new THREE.Mesh(mirGeo, blackMat);
+            const mirGeo = new BoxGeometry(0.12, 0.08, 0.15);
+            const mir = new Mesh(mirGeo, blackMat);
             mir.position.set(side, 0.95, -0.7);
             this.group.add(mir);
         }
 
         // ── Fender flares ──
-        const flareMat = new THREE.MeshStandardMaterial({
+        const flareMat = new MeshStandardMaterial({
             color: AE86_BLACK, roughness: 0.6, metalness: 0.2,
         });
         const flarePositions = [
@@ -194,37 +194,37 @@ export class Vehicle {
             { x: -0.88, z: 1.4 }, { x: 0.88, z: 1.4 },
         ];
         for (const fp of flarePositions) {
-            const flareGeo = new THREE.BoxGeometry(0.12, 0.22, 0.6);
-            const flare = new THREE.Mesh(flareGeo, flareMat);
+            const flareGeo = new BoxGeometry(0.12, 0.22, 0.6);
+            const flare = new Mesh(flareGeo, flareMat);
             flare.position.set(fp.x, 0.38, fp.z);
             this.group.add(flare);
         }
 
         // ── Neon trim lines (cyberpunk accent) ──
-        const trimMat = new THREE.MeshBasicMaterial({ color: NEON_TRIM });
+        const trimMat = new MeshBasicMaterial({ color: NEON_TRIM });
         for (const side of [-1, 1]) {
             // Lower body accent line
-            const stripGeo = new THREE.BoxGeometry(0.03, 0.04, 3.8);
-            const strip = new THREE.Mesh(stripGeo, trimMat);
+            const stripGeo = new BoxGeometry(0.03, 0.04, 3.8);
+            const strip = new Mesh(stripGeo, trimMat);
             strip.position.set(side * 0.86, 0.55, 0);
             this.group.add(strip);
 
             // Upper door line
-            const doorGeo = new THREE.BoxGeometry(0.03, 0.03, 1.4);
-            const doorLine = new THREE.Mesh(doorGeo, trimMat);
+            const doorGeo = new BoxGeometry(0.03, 0.03, 1.4);
+            const doorLine = new Mesh(doorGeo, trimMat);
             doorLine.position.set(side * 0.84, 0.85, -0.1);
             this.group.add(doorLine);
         }
 
         // ── Underglow (brighter, wider for visibility) ──
-        const glowGeo = new THREE.PlaneGeometry(2.2, 5.0);
-        const glowMat = new THREE.MeshBasicMaterial({
+        const glowGeo = new PlaneGeometry(2.2, 5.0);
+        const glowMat = new MeshBasicMaterial({
             color: NEON_UNDERGLOW,
             transparent: true,
             opacity: 0.5,
-            side: THREE.DoubleSide,
+            side: DoubleSide,
         });
-        const glow = new THREE.Mesh(glowGeo, glowMat);
+        const glow = new Mesh(glowGeo, glowMat);
         glow.rotation.x = -Math.PI / 2;
         glow.position.y = 0.06;
         this.group.add(glow);
@@ -232,22 +232,22 @@ export class Vehicle {
 
         // ── Headlight glow cones (forward light volume) ──
         for (const side of [-0.55, 0.55]) {
-            const coneGeo = new THREE.PlaneGeometry(0.6, 3.5);
-            const coneMat = new THREE.MeshBasicMaterial({
+            const coneGeo = new PlaneGeometry(0.6, 3.5);
+            const coneMat = new MeshBasicMaterial({
                 color: 0xffffdd, transparent: true, opacity: 0.08,
-                side: THREE.DoubleSide, depthWrite: false,
+                side: DoubleSide, depthWrite: false,
             });
-            const cone = new THREE.Mesh(coneGeo, coneMat);
+            const cone = new Mesh(coneGeo, coneMat);
             cone.rotation.x = -Math.PI / 2;
             cone.position.set(side, 0.15, -3.7);
             this.group.add(cone);
         }
 
         // ── Wheels (Watanabe-style, wider, lower profile) ──
-        const wheelGeo = new THREE.CylinderGeometry(0.28, 0.28, 0.18, 10);
-        const wheelMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.85 });
-        const hubGeo = new THREE.CylinderGeometry(0.15, 0.15, 0.19, 6);
-        const hubMat = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.7, roughness: 0.25 });
+        const wheelGeo = new CylinderGeometry(0.28, 0.28, 0.18, 10);
+        const wheelMat = new MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.85 });
+        const hubGeo = new CylinderGeometry(0.15, 0.15, 0.19, 6);
+        const hubMat = new MeshStandardMaterial({ color: 0x888888, metalness: 0.7, roughness: 0.25 });
 
         this.wheels = [];
         const wheelPositions = [
@@ -257,12 +257,12 @@ export class Vehicle {
             [0.82, 0.28, 1.4],     // RR
         ];
         for (const [x, y, z] of wheelPositions) {
-            const wheelGroup = new THREE.Group();
-            const wheel = new THREE.Mesh(wheelGeo, wheelMat);
+            const wheelGroup = new Group();
+            const wheel = new Mesh(wheelGeo, wheelMat);
             wheel.rotation.z = Math.PI / 2;
             wheelGroup.add(wheel);
 
-            const hub = new THREE.Mesh(hubGeo, hubMat);
+            const hub = new Mesh(hubGeo, hubMat);
             hub.rotation.z = Math.PI / 2;
             wheelGroup.add(hub);
 
@@ -278,7 +278,7 @@ export class Vehicle {
         this._trailSegments = 12;
         this._trails = [];
         for (const side of [-0.6, 0.6]) {
-            const geo = new THREE.BufferGeometry();
+            const geo = new BufferGeometry();
             const positions = new Float32Array(this._trailSegments * 3);
             const alphas = new Float32Array(this._trailSegments);
             // Initialize all trail points at the taillight position
@@ -288,11 +288,11 @@ export class Vehicle {
                 positions[i * 3 + 2] = 0;
                 alphas[i] = 1.0 - i / this._trailSegments;
             }
-            geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            geo.setAttribute('alpha', new THREE.BufferAttribute(alphas, 1));
+            geo.setAttribute('position', new BufferAttribute(positions, 3));
+            geo.setAttribute('alpha', new BufferAttribute(alphas, 1));
 
-            const mat = new THREE.ShaderMaterial({
-                uniforms: { color: { value: new THREE.Color(0xff1122) } },
+            const mat = new ShaderMaterial({
+                uniforms: { color: { value: new Color(0xff1122) } },
                 vertexShader: `
                     attribute float alpha;
                     varying float vAlpha;
@@ -310,10 +310,10 @@ export class Vehicle {
                 `,
                 transparent: true,
                 depthWrite: false,
-                blending: THREE.AdditiveBlending,
+                blending: AdditiveBlending,
             });
 
-            const line = new THREE.Line(geo, mat);
+            const line = new Line(geo, mat);
             line.frustumCulled = false;
             this.scene.add(line);
             this._trails.push({ line, side, localY: 0.6, localZ: 2.13 });

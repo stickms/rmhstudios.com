@@ -1,13 +1,12 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { Link, useLocation, useNavigate } from '@tanstack/react-router';
 import { useState, useEffect, useRef } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import {
-  Home, Package, Hammer, Newspaper, Map, FlaskConical, BookOpen,
-  Palette, ChevronDown, LogOut, PenSquare, User, MessageCircle, ShieldCheck, MoreHorizontal
+  Home, Package, Hammer, BookOpen,
+  Palette, ChevronDown, LogOut, PenSquare, User, MessageCircle, ShieldCheck, MoreHorizontal, Wallet
 } from 'lucide-react';
 import { ComposeModal } from './ComposeModal';
 import { Button } from '@/components/ui/button';
@@ -18,10 +17,8 @@ const navLinks = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/builds', label: 'Curated Builds', icon: Package },
   { href: '/user-builds', label: 'User Builds', icon: Hammer },
-  { href: '/news', label: 'News', icon: Newspaper },
-  { href: '/research', label: 'Research', icon: FlaskConical },
   { href: '/blog', label: 'Blog', icon: BookOpen },
-  { href: '/roadmap', label: 'Roadmap', icon: Map },
+  { href: '/wallet', label: 'Wallet', icon: Wallet },
 ];
 
 export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
@@ -35,8 +32,8 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   const logoAlignClass = expanded ? 'justify-start' : 'justify-center xl:justify-start';
   const iconMrClass = expanded ? 'mr-2' : 'xl:mr-2';
   const itemJustifyClass = expanded ? '' : 'md:justify-center xl:justify-start';
-  const pathname = usePathname();
-  const router = useRouter();
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
   const [showStyleMenu, setShowStyleMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
@@ -78,8 +75,8 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
     await authClient.signOut({
       fetchOptions: {
         onSuccess: () => {
-          router.push('/');
-          router.refresh();
+          navigate({ to: '/' });
+          window.location.reload();
         },
       },
     });
@@ -95,7 +92,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   return (
     <div className={`flex flex-col gap-1 h-full ${paddingClass}`}>
       {/* Logo */}
-      <Link href="/" className={`mb-6 flex items-center ${logoAlignClass}`}>
+      <Link to="/" className={`mb-6 flex items-center ${logoAlignClass}`}>
         <span className={`font-(family-name:--site-font-display) font-bold text-xl text-site-text ${logoFullClass}`}>
           RMH<span className="text-site-accent">Studios</span>
         </span>
@@ -112,7 +109,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
           return (
             <Link
               key={link.href}
-              href={link.href}
+              to={link.href}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${itemJustifyClass} ${
                 isActive
                   ? 'text-site-accent bg-site-accent-dim'
@@ -256,7 +253,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
             >
               <div className="w-8 h-8 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-xs ring-2 ring-site-bg shrink-0">
                 {(resolvedUser?.image || session.user.image) ? (
-                  <img src={resolvedUser?.image || session.user.image!} alt={resolvedUser?.name || session.user.name || 'User'} className="w-full h-full rounded-full object-cover" />
+                  <img src={resolvedUser?.image || session.user.image!} alt={resolvedUser?.name || session.user.name || 'User'} className="w-full h-full rounded-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }} />
                 ) : (
                   ((resolvedUser?.name || session.user.name)?.[0] || 'U').toUpperCase()
                 )}
@@ -301,7 +298,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
             )}
           </div>
         ) : (
-          <Link href="/login">
+          <Link to="/login">
             <Button variant="accent" size="sm" className="w-full">
               <User className={`w-4 h-4 ${iconMrClass}`} />
               <span className={labelClass}>Sign In</span>

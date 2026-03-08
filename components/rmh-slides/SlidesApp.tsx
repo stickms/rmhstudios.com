@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import dynamic from 'next/dynamic';
+import { useState, useCallback, lazy, Suspense } from 'react';
 import { useDocumentStore } from '@/lib/store/useDocumentStore';
 import type { StoredDocument } from '@/lib/store/useDocumentStore';
 import type { DocumentInfo } from '@/lib/rmh-utils/types';
 
-const SlidesHome = dynamic(() => import('./SlidesHome'), { ssr: false });
-const SlidesEditor = dynamic(() => import('./SlidesEditor'), { ssr: false });
+const SlidesHome = lazy(() => import('./SlidesHome'));
+const SlidesEditor = lazy(() => import('./SlidesEditor'));
 
 // Adapt StoredDocument to DocumentInfo shape
 function toDocumentInfo(doc: StoredDocument): DocumentInfo {
@@ -57,23 +56,27 @@ export default function SlidesApp() {
 
   if (activeDoc) {
     return (
-      <SlidesEditor
-        document={activeDoc}
-        onBack={() => setActiveDoc(null)}
-        onRename={(title) => handleRename(activeDoc.id, title)}
-        onToggleFavorite={() => handleFavorite(activeDoc.id, !activeDoc.isFavorite)}
-      />
+      <Suspense fallback={null}>
+        <SlidesEditor
+          document={activeDoc}
+          onBack={() => setActiveDoc(null)}
+          onRename={(title) => handleRename(activeDoc.id, title)}
+          onToggleFavorite={() => handleFavorite(activeDoc.id, !activeDoc.isFavorite)}
+        />
+      </Suspense>
     );
   }
 
   return (
-    <SlidesHome
-      documents={documents}
-      onOpen={setActiveDoc}
-      onCreate={handleCreate}
-      onDelete={handleDelete}
-      onFavorite={handleFavorite}
-      onRename={handleRename}
-    />
+    <Suspense fallback={null}>
+        <SlidesHome
+        documents={documents}
+        onOpen={setActiveDoc}
+        onCreate={handleCreate}
+        onDelete={handleDelete}
+        onFavorite={handleFavorite}
+        onRename={handleRename}
+      />
+    </Suspense>
   );
 }

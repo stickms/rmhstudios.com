@@ -63,17 +63,34 @@ function dispatch(e: MessageEvent) {
   }
 }
 
-function openConnection() {
+function closeConnection() {
   const s = getState();
-
-  // Close any stale connection first
+  if (s.reconnectTimer) {
+    clearTimeout(s.reconnectTimer);
+    s.reconnectTimer = null;
+  }
   if (s.es) {
     s.es.close();
     s.es = null;
   }
+}
+
+function handleBeforeUnload() {
+  closeConnection();
+}
+
+function openConnection() {
+  const s = getState();
+
+  // Close any stale connection first
+  closeConnection();
 
   const es = new EventSource(SSE_URL);
   s.es = es;
+
+  // Clean up on page unload to avoid "connection interrupted" errors
+  window.removeEventListener("beforeunload", handleBeforeUnload);
+  window.addEventListener("beforeunload", handleBeforeUnload);
 
   es.addEventListener("connected", () => {
     getState().retries = 0;
@@ -109,12 +126,8 @@ function unsubscribe() {
   const s = getState();
   s.refCount = Math.max(0, s.refCount - 1);
   if (s.refCount === 0) {
-    if (s.reconnectTimer) {
-      clearTimeout(s.reconnectTimer);
-      s.reconnectTimer = null;
-    }
-    s.es?.close();
-    s.es = null;
+    closeConnection();
+    window.removeEventListener("beforeunload", handleBeforeUnload);
     s.retries = 0;
   }
 }

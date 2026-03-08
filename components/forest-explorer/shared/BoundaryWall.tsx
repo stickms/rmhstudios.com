@@ -1,12 +1,12 @@
 'use client';
 
 import { useRef, useMemo, useEffect } from 'react';
-import * as THREE from 'three';
+import type { Group } from 'three';
 import type { TreeData } from './types';
 import { buildTreeInstancedMeshes } from './buildTreeInstancedMeshes';
 
 export function BoundaryWall() {
-    const groupRef = useRef<THREE.Group>(null);
+    const groupRef = useRef<Group>(null);
 
     const meshes = useMemo(() => {
         const rng = (n: number) => { const x = Math.sin(n + 99) * 43758.5453; return x - Math.floor(x); };

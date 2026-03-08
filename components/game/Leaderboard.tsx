@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { Bomb, Zap, Ghost, RefreshCw, Layers, Crosshair, Flame, RotateCcw } from 'lucide-react';
 import { Tooltip } from '@/components/ui/Tooltip';
 
@@ -26,7 +26,7 @@ interface LeaderboardProps {
     songId?: string | null;
 }
 
-export function Leaderboard({ songId }: LeaderboardProps) {
+export const Leaderboard = memo(function Leaderboard({ songId }: LeaderboardProps) {
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -145,4 +145,4 @@ export function Leaderboard({ songId }: LeaderboardProps) {
             </div>
         </div>
     );
-}
+});

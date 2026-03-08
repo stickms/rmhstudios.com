@@ -2,7 +2,7 @@
 
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
+import { BufferGeometry, Float32BufferAttribute, Color, DoubleSide, type Mesh, type MeshStandardMaterial } from 'three';
 import {
     RIVER_CURVE,
     RIVER_HALF_WIDTH,
@@ -12,7 +12,7 @@ import {
 } from './constants';
 
 export function River() {
-    const waterRef = useRef<THREE.Mesh>(null);
+    const waterRef = useRef<Mesh>(null);
 
     const { waterGeo, bankGeoLeft, bankGeoRight } = useMemo(() => {
         const segments = 120;
@@ -56,18 +56,18 @@ export function River() {
             }
         }
 
-        const wGeo = new THREE.BufferGeometry();
-        wGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+        const wGeo = new BufferGeometry();
+        wGeo.setAttribute('position', new Float32BufferAttribute(positions, 3));
         wGeo.setIndex(indices);
         wGeo.computeVertexNormals();
 
-        const blGeo = new THREE.BufferGeometry();
-        blGeo.setAttribute('position', new THREE.Float32BufferAttribute(bankLPositions, 3));
+        const blGeo = new BufferGeometry();
+        blGeo.setAttribute('position', new Float32BufferAttribute(bankLPositions, 3));
         blGeo.setIndex(bankLIndices);
         blGeo.computeVertexNormals();
 
-        const brGeo = new THREE.BufferGeometry();
-        brGeo.setAttribute('position', new THREE.Float32BufferAttribute(bankRPositions, 3));
+        const brGeo = new BufferGeometry();
+        brGeo.setAttribute('position', new Float32BufferAttribute(bankRPositions, 3));
         brGeo.setIndex(bankRIndices);
         brGeo.computeVertexNormals();
 
@@ -76,7 +76,7 @@ export function River() {
 
     useFrame((state) => {
         if (!waterRef.current) return;
-        const mat = waterRef.current.material as THREE.MeshStandardMaterial;
+        const mat = waterRef.current.material as MeshStandardMaterial;
         mat.opacity = 0.82 + Math.sin(state.clock.elapsedTime * 0.6) * 0.06;
         mat.emissiveIntensity = 0.04 + Math.sin(state.clock.elapsedTime * 0.4) * 0.02;
     });
@@ -90,16 +90,16 @@ export function River() {
                     metalness={0.15}
                     transparent
                     opacity={0.88}
-                    emissive={new THREE.Color('#0a2030')}
+                    emissive={new Color('#0a2030')}
                     emissiveIntensity={0.04}
-                    side={THREE.DoubleSide}
+                    side={DoubleSide}
                 />
             </mesh>
             <mesh geometry={bankGeoLeft}>
-                <meshLambertMaterial color="#1e3d28" side={THREE.DoubleSide} />
+                <meshLambertMaterial color="#1e3d28" side={DoubleSide} />
             </mesh>
             <mesh geometry={bankGeoRight}>
-                <meshLambertMaterial color="#1e3d28" side={THREE.DoubleSide} />
+                <meshLambertMaterial color="#1e3d28" side={DoubleSide} />
             </mesh>
         </group>
     );

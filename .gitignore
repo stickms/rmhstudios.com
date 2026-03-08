@@ -13,16 +13,23 @@
 # testing
 /coverage
 
-# next.js
+# next.js (legacy)
 /.next/
 /out/
 
+# tanstack start / vinxi
+.vinxi/
+.output/
+.tanstack/
+
 # production
 /build
+/dist/
 
 # misc
 .DS_Store
 *.pem
+.vscode
 
 # debug
 npm-debug.log*

@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@tanstack/react-router';
+import { UserAvatar } from './UserAvatar';
 
 interface EngagementUser {
   id: string;
@@ -84,21 +85,11 @@ export function EngagementListModal({ open, onClose, postId, commentId, type }: 
           {users.map((user) => (
             <Link
               key={user.id}
-              href={`/@${user.handle || user.id}`}
+              to={`/@${user.handle || user.id}`}
               onClick={onClose}
               className="flex items-center gap-3 px-5 py-3 hover:bg-site-surface/50 transition-colors border-b border-site-border/50"
             >
-              <div className="w-10 h-10 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-sm shrink-0">
-                {user.image ? (
-                  <img
-                    src={user.image}
-                    alt={user.name || 'User'}
-                    className="w-full h-full rounded-full object-cover"
-                  />
-                ) : (
-                  (user.name?.[0] || 'U').toUpperCase()
-                )}
-              </div>
+              <UserAvatar user={user} linkToProfile={false} />
               <div className="min-w-0">
                 <p className="font-bold text-site-text text-sm truncate">
                   {user.name || user.username || 'Unknown'}

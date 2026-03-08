@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { SectionHeading } from '@/components/ui/SectionHeading';
-import Link from 'next/link';
+import { Link } from '@tanstack/react-router';
 import { ArrowRight, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getCategoryColor } from '@/lib/news-categories';
@@ -108,7 +108,7 @@ export function NewsSection({ articles }: NewsSectionProps) {
                                                 : 'scale-[0.88] opacity-30 grayscale-50'
                                             }`}
                                     >
-                                        <Link href={`/news/${article.slug}`} className="block group/card h-full">
+                                        <Link to={`/news/${article.slug}`} className="block group/card h-full">
                                             <div
                                                 className="bg-(--site-surface) border border-(--site-border) rounded-2xl overflow-hidden hover:border-(--site-accent)/50 transition-all duration-300 h-full flex flex-col hover:shadow-(--site-shadow) relative backdrop-blur-sm"
                                             >
@@ -193,7 +193,7 @@ export function NewsSection({ articles }: NewsSectionProps) {
                         ))}
                     </div>
 
-                    <Link href="/news">
+                    <Link to="/news">
                         <Button variant="accent-outline">See All News</Button>
                     </Link>
                 </div>

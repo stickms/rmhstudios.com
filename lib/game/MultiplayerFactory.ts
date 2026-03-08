@@ -5,7 +5,7 @@ import { useGameStore } from "../store/useGameStore";
 // const SOCKET_URL = "http://localhost:7001";
 // In production, this might be the same as window.location.origin if served together,
 // or a specific env variable.
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:7001";
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:7001";
 
 export type GameEvent = 'lobby_update' | 'game_starting' | 'game_started' | 'player_update' | 'player_finished' | 'song_selected' | 'init_loading' | 'start_countdown' | 'loading_update' | 'match_results' | 'return_to_lobby';
 

@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import type { FeedItem, FeedFilter } from "@/lib/feed-types";
+import type { FeedItem, FeedFilter, FeedItemUser } from "@/lib/feed-types";
+import { useUserDisplayStore } from "./userDisplayStore";
 
 interface FeedState {
   items: FeedItem[];
@@ -51,6 +52,15 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       if (!res.ok) throw new Error("Failed to fetch feed");
 
       const data = await res.json();
+      // Update user display cache with all users from this response
+      const users: FeedItemUser[] = [];
+      for (const item of data.items as FeedItem[]) {
+        if (item.user) users.push(item.user);
+        if (item.repostedBy) users.push(item.repostedBy);
+        if (item.original?.user) users.push(item.original.user);
+      }
+      if (users.length > 0) useUserDisplayStore.getState().setUsers(users);
+
       set((state) => {
         const existingIds = new Set(state.items.map((i) => i.id));
         const newItems = (data.items as FeedItem[]).filter((i) => !existingIds.has(i.id));
@@ -63,7 +73,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       });
     } catch (error) {
       console.error("Feed fetch error:", error);
-      set({ loading: false });
+      set({ loading: false, hasMore: false });
     }
   },
 

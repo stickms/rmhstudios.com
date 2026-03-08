@@ -2,14 +2,14 @@
 
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
+import { Color, type Mesh, type MeshStandardMaterial, type PointLight } from 'three';
 import { distToRiver, RIVER_HALF_WIDTH, TREE_COLLIDERS, PLAYER_POS } from './constants';
 
 function TikiTorch({ position, phase }: { position: [number, number, number]; phase: number }) {
-    const innerFlameRef = useRef<THREE.Mesh>(null);
-    const midFlameRef   = useRef<THREE.Mesh>(null);
-    const glowRef       = useRef<THREE.Mesh>(null);
-    const lightRef      = useRef<THREE.PointLight>(null);
+    const innerFlameRef = useRef<Mesh>(null);
+    const midFlameRef   = useRef<Mesh>(null);
+    const glowRef       = useRef<Mesh>(null);
+    const lightRef      = useRef<PointLight>(null);
 
     useFrame((state) => {
         const t = state.clock.elapsedTime;
@@ -18,16 +18,16 @@ function TikiTorch({ position, phase }: { position: [number, number, number]; ph
         if (innerFlameRef.current) {
             innerFlameRef.current.scale.y = 0.85 + flicker * 0.18;
             innerFlameRef.current.position.y = 2.55 + flicker * 0.05;
-            const mat = innerFlameRef.current.material as THREE.MeshStandardMaterial;
+            const mat = innerFlameRef.current.material as MeshStandardMaterial;
             mat.emissiveIntensity = 2.0 + flicker * 2.5;
         }
         if (midFlameRef.current) {
             midFlameRef.current.scale.y = 0.9 + flicker * 0.12;
-            const mat = midFlameRef.current.material as THREE.MeshStandardMaterial;
+            const mat = midFlameRef.current.material as MeshStandardMaterial;
             mat.emissiveIntensity = 1.2 + flicker * 1.3;
         }
         if (glowRef.current) {
-            const mat = glowRef.current.material as THREE.MeshStandardMaterial;
+            const mat = glowRef.current.material as MeshStandardMaterial;
             mat.opacity = 0.18 + flicker * 0.10;
         }
         if (lightRef.current) {
@@ -63,7 +63,7 @@ function TikiTorch({ position, phase }: { position: [number, number, number]; ph
                 <coneGeometry args={[0.13, 0.22, 6]} />
                 <meshStandardMaterial
                     color="#ff6600"
-                    emissive={new THREE.Color('#ff4400')}
+                    emissive={new Color('#ff4400')}
                     emissiveIntensity={1.2}
                 />
             </mesh>
@@ -71,7 +71,7 @@ function TikiTorch({ position, phase }: { position: [number, number, number]; ph
                 <coneGeometry args={[0.06, 0.32, 6]} />
                 <meshStandardMaterial
                     color="#ff2200"
-                    emissive={new THREE.Color('#ff0000')}
+                    emissive={new Color('#ff0000')}
                     emissiveIntensity={2.0}
                 />
             </mesh>

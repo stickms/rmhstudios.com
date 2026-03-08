@@ -44,6 +44,7 @@ function CommentItem({
               src={comment.user.image}
               alt={comment.user.name || 'User'}
               className="w-8 h-8 rounded-full shrink-0"
+              onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }}
             />
           ) : (
             <div className="w-8 h-8 rounded-full bg-violet-500/20 flex items-center justify-center text-violet-400 text-sm font-bold shrink-0">

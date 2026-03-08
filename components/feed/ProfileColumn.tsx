@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { MapPin, Link as LinkIcon, Calendar, Loader2, ArrowLeft, MessageCircle, BadgeCheck, ShieldCheck } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser } from '@/components/Providers';
@@ -10,8 +10,9 @@ import { RMHarkCard } from './RMHarkCard';
 import { ProfileEditModal } from './ProfileEditModal';
 import { SocialListModal } from './SocialListModal';
 import { VinylRecord } from './VinylRecord';
-import Link from 'next/link';
-import type { FeedItem } from '@/lib/feed-types';
+import { Link } from '@tanstack/react-router';
+import type { FeedItem, FeedItemUser } from '@/lib/feed-types';
+import { useUserDisplayStore } from '@/stores/userDisplayStore';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { ProfilePet } from '@/components/rmhcoins/ProfilePet';
 
@@ -48,6 +49,23 @@ interface ProfileData {
 
 type ProfileTab = 'rmharks' | 'likes';
 
+const DEFAULT_AVATAR = '/images/social/default_avatar.png';
+
+function ProfileAvatar({ image, name }: { image: string | null; name: string | null }) {
+  const [imgError, setImgError] = useState(false);
+  const imgSrc = imgError ? DEFAULT_AVATAR : image;
+
+  return (
+    <div className="w-20 h-20 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-2xl ring-4 ring-site-bg shrink-0">
+      {imgSrc ? (
+        <img src={imgSrc} alt={name || 'User'} className="w-full h-full rounded-full object-cover" onError={() => setImgError(true)} />
+      ) : (
+        (name?.[0] || 'U').toUpperCase()
+      )}
+    </div>
+  );
+}
+
 export function ProfileColumn({ userId }: { userId: string }) {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -56,6 +74,11 @@ export function ProfileColumn({ userId }: { userId: string }) {
   const [tab, setTab] = useState<ProfileTab>('rmharks');
   const [socialModal, setSocialModal] = useState<'followers' | 'following' | null>(null);
   const { refresh: refreshResolvedUser } = useResolvedUser();
+
+  // Use freshest user data from cache (may have been updated by RMHark fetches)
+  const cachedUser = useUserDisplayStore((state) => profile ? state.cache[profile.id] : undefined);
+  const displayName = cachedUser?.name ?? profile?.name;
+  const displayImage = cachedUser?.image ?? profile?.image;
 
   // RMHark list state
   const [items, setItems] = useState<FeedItem[]>([]);
@@ -81,7 +104,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
   const scriptLoadedRef = useRef(false);
 
   const { data: session } = authClient.useSession();
-  const router = useRouter();
+  const navigate = useNavigate();
   const [messageSending, setMessageSending] = useState(false);
   const [messageError, setMessageError] = useState<string | null>(null);
 
@@ -96,6 +119,12 @@ export function ProfileColumn({ userId }: { userId: string }) {
           return;
         }
         const data = await res.json();
+        // Seed user display cache with profile data
+        useUserDisplayStore.getState().setUsers([{
+          id: data.id, name: data.name, image: data.image,
+          username: data.username, handle: data.handle,
+          isVerified: data.isVerified, isAdmin: data.isAdmin,
+        }]);
         setProfile(data);
       })
       .catch(console.error)
@@ -169,6 +198,14 @@ export function ProfileColumn({ userId }: { userId: string }) {
       const res = await fetch(`/api/profile/${encodeURIComponent(userId)}/rmharks?${params}`);
       if (!res.ok) return;
       const data = await res.json();
+      // Update user display cache
+      const users: FeedItemUser[] = [];
+      for (const item of data.items as FeedItem[]) {
+        if (item.user) users.push(item.user);
+        if (item.repostedBy) users.push(item.repostedBy);
+        if (item.original?.user) users.push(item.original.user);
+      }
+      if (users.length > 0) useUserDisplayStore.getState().setUsers(users);
       setItems((prev) => [...prev, ...data.items]);
       setCursor(data.nextCursor);
       setHasMore(data.hasMore);
@@ -189,6 +226,14 @@ export function ProfileColumn({ userId }: { userId: string }) {
       const res = await fetch(`/api/profile/${encodeURIComponent(userId)}/likes?${params}`);
       if (!res.ok) return;
       const data = await res.json();
+      // Update user display cache
+      const likeUsers: FeedItemUser[] = [];
+      for (const item of data.items as FeedItem[]) {
+        if (item.user) likeUsers.push(item.user);
+        if (item.repostedBy) likeUsers.push(item.repostedBy);
+        if (item.original?.user) likeUsers.push(item.original.user);
+      }
+      if (likeUsers.length > 0) useUserDisplayStore.getState().setUsers(likeUsers);
       setLikedItems((prev) => [...prev, ...data.items]);
       setLikedCursor(data.nextCursor);
       setLikedHasMore(data.hasMore);
@@ -293,7 +338,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
       }
 
       const data = await res.json();
-      router.push(`/messages/${data.conversationId}`);
+      navigate({ to: `/messages/${data.conversationId}` });
     } catch {
       setMessageError('Failed to start conversation');
     } finally {
@@ -329,7 +374,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
         <p className="text-sm text-site-text-muted mb-4">
           This user doesn&apos;t exist.
         </p>
-        <Link href="/">
+        <Link to="/">
           <Button variant="accent" size="sm">Go Home</Button>
         </Link>
       </div>
@@ -343,13 +388,13 @@ export function ProfileColumn({ userId }: { userId: string }) {
       {/* Header bar */}
       <div className="sticky top-0 z-10 bg-site-bg/85 backdrop-blur-md border-b border-site-border">
         <div className="flex items-center gap-3 px-4 py-3">
-          <Link href="/" className="p-1.5 -ml-1.5 rounded-lg hover:bg-site-surface transition-colors">
+          <Link to="/" className="p-1.5 -ml-1.5 rounded-lg hover:bg-site-surface transition-colors">
             <ArrowLeft className="w-5 h-5 text-site-text" />
           </Link>
           <div>
             <div className="flex items-center gap-1">
               <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text truncate">
-                {profile.name || profile.username || 'User'}
+                {displayName || profile.username || 'User'}
               </h1>
               {profile.isVerified && <BadgeCheck className="w-4 h-4 text-emerald-500 shrink-0" />}
               {profile.isAdmin && (
@@ -366,13 +411,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
       {/* Profile header */}
       <div className="px-4 pt-6 pb-4 border-b border-site-border">
         <div className="flex items-start justify-between mb-4">
-          <div className="w-20 h-20 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-2xl ring-4 ring-site-bg shrink-0">
-            {profile.image ? (
-              <img src={profile.image} alt={profile.name || 'User'} className="w-full h-full rounded-full object-cover" />
-            ) : (
-              (profile.name?.[0] || 'U').toUpperCase()
-            )}
-          </div>
+          <ProfileAvatar image={displayImage ?? null} name={displayName ?? null} />
 
           {/* Profile Pet banner between avatar and vinyl */}
           {profile.hasProfilePet && profile.showProfilePet && (
@@ -399,7 +438,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
         <div className="flex items-start justify-between mb-3">
           <div>
             <div className="flex items-center gap-1.5 align-middle">
-              <h2 className="font-bold text-xl text-site-text truncate">{profile.name || 'Unknown'}</h2>
+              <h2 className="font-bold text-xl text-site-text truncate">{displayName || 'Unknown'}</h2>
               {profile.isVerified && <BadgeCheck className="w-5 h-5 text-emerald-500 shrink-0" />}
               {profile.isAdmin && (
                 <span title="Admin" className="inline-flex items-center shrink-0">
@@ -408,7 +447,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
               )}
               {/* RMH Coins */}
               <Link
-                href="/rmhcoins"
+                to="/wallet"
                 className="inline-flex items-center gap-0.5 shrink-0 hover:opacity-80 transition-opacity"
                 title={`${profile.coins} RMH Coins`}
               >
@@ -616,8 +655,8 @@ export function ProfileColumn({ userId }: { userId: string }) {
           initial={{
             handle: profile.handle,
             handleCooldownMs: profile.handleCooldownMs ?? 0,
-            name: profile.name,
-            image: profile.image,
+            name: displayName ?? profile.name,
+            image: displayImage ?? profile.image,
             hasCustomAvatar: profile.hasCustomAvatar,
             bio: profile.bio,
             location: profile.location,
@@ -660,6 +699,18 @@ export function ProfileColumn({ userId }: { userId: string }) {
               authClient.updateUser({ name: data.displayName });
             }
             refreshResolvedUser();
+
+            // Force-update user display cache so all rendered RMHarks get fresh data
+            // (forceSetUser because reset avatar intentionally sets image to null/default)
+            useUserDisplayStore.getState().forceSetUser({
+              id: profile.id,
+              name: data.displayName !== undefined ? data.displayName : profile.name,
+              image: data.image !== undefined ? data.image : profile.image,
+              username: profile.username,
+              handle: data.handle !== undefined ? data.handle : profile.handle,
+              isVerified: profile.isVerified,
+              isAdmin: profile.isAdmin,
+            });
           }}
         />
       )}

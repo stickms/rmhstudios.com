@@ -18,7 +18,7 @@ export async function connectToRmhMusic(): Promise<Socket> {
   const token = session?.data?.session?.token;
   if (!token) { store.setConnectionStatus('error'); throw new Error('Not authenticated'); }
 
-  const serverUrl = process.env.NEXT_PUBLIC_SOCKET_URL;
+  const serverUrl = import.meta.env.VITE_SOCKET_URL;
 
   socket = io(serverUrl, {
     path: '/socket/',

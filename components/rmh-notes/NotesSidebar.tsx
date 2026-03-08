@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
+import { Link } from '@tanstack/react-router';
 import { useNotesStore, NoteView } from '@/lib/store/useNotesStore';
 import { useNotesDataStore } from '@/lib/store/useNotesDataStore';
 import { NoteFolder, NoteTag, NoteReminder } from './types';
@@ -96,7 +96,7 @@ export default function NotesSidebar({ folders, tags, reminders, overdueCount, o
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--notes-sidebar-border)' }}>
         <div className="flex items-center gap-2">
-          <Link href="/secret" className="text-base hover:opacity-70 transition-opacity" title="Back to home" style={{ color: 'var(--notes-text-muted)' }}>←</Link>
+          <Link to="/secret" className="text-base hover:opacity-70 transition-opacity" title="Back to home" style={{ color: 'var(--notes-text-muted)' }}>←</Link>
           <span className="text-xl">📓</span>
           <span className="font-bold text-sm tracking-wide" style={{ color: 'var(--notes-text)' }}>RMHNotes</span>
         </div>

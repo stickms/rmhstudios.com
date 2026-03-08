@@ -1,37 +1,35 @@
 /**
- * Shared utilities for Next.js API routes.
+ * Shared utilities for API routes.
  *
  * Centralizes repeated patterns (auth checks, error responses, rate limiting)
  * to reduce boilerplate and enforce consistent behaviour across all routes.
  */
 
-import { headers } from "next/headers";
-import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 /**
- * Get the current authenticated session. Returns null if not authenticated.
- * Wraps the repetitive `auth.api.getSession({ headers: await headers() })` pattern.
+ * Get the current authenticated session from a Request object.
+ * Returns null if not authenticated.
  */
-export async function getSession() {
-  return auth.api.getSession({ headers: await headers() });
+export async function getSessionFromRequest(request: Request) {
+  return auth.api.getSession({ headers: request.headers });
 }
 
 /**
  * Get session or return a 401 response. Use in routes that require auth:
  *
- *   const [session, errorResponse] = await requireSession();
+ *   const [session, errorResponse] = await requireSession(request);
  *   if (errorResponse) return errorResponse;
  *   // session is guaranteed non-null here
  */
-export async function requireSession(): Promise<
+export async function requireSession(request: Request): Promise<
   [NonNullable<Awaited<ReturnType<typeof auth.api.getSession>>>, null] |
-  [null, NextResponse]
+  [null, Response]
 > {
-  const session = await getSession();
+  const session = await getSessionFromRequest(request);
   if (!session?.user) {
-    return [null, NextResponse.json({ error: "Unauthorized" }, { status: 401 })];
+    return [null, Response.json({ error: "Unauthorized" }, { status: 401 })];
   }
   return [session, null];
 }
@@ -45,11 +43,11 @@ export async function requireSession(): Promise<
 export function applyRateLimit(
   request: Request,
   opts: { limit: number; windowMs: number; prefix?: string },
-): NextResponse | null {
+): Response | null {
   const ip = getClientIp(request);
   const { allowed, retryAfter } = rateLimit(ip, opts);
   if (!allowed) {
-    return NextResponse.json(
+    return Response.json(
       { error: "Too many requests" },
       {
         status: 429,
@@ -62,5 +60,5 @@ export function applyRateLimit(
 
 /** Standard JSON error response. */
 export function errorResponse(message: string, status: number) {
-  return NextResponse.json({ error: message }, { status });
+  return Response.json({ error: message }, { status });
 }

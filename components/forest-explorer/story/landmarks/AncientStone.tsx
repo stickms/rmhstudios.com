@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
+import { Color, type Mesh, type MeshStandardMaterial } from 'three';
 import { useStoryStore } from '@/lib/forest-explorer/store';
 
 interface AncientStoneProps {
@@ -12,7 +12,7 @@ interface AncientStoneProps {
 }
 
 export function AncientStone({ position, scale = 1, id }: AncientStoneProps) {
-    const glowRef = useRef<THREE.Mesh>(null);
+    const glowRef = useRef<Mesh>(null);
     const revealedIds = useStoryStore(s => s.flashlightRevealedIds);
     const puzzleStates = useStoryStore(s => s.puzzleStates);
 
@@ -23,7 +23,7 @@ export function AncientStone({ position, scale = 1, id }: AncientStoneProps) {
 
     useFrame((state) => {
         if (!glowRef.current) return;
-        const mat = glowRef.current.material as THREE.MeshStandardMaterial;
+        const mat = glowRef.current.material as MeshStandardMaterial;
         if (isSolved) {
             mat.emissiveIntensity = 0.8 + Math.sin(state.clock.elapsedTime * 2) * 0.2;
             mat.emissive.set('#00ff88');
@@ -65,7 +65,7 @@ export function AncientStone({ position, scale = 1, id }: AncientStoneProps) {
                     color="#4466aa"
                     transparent
                     opacity={0.3}
-                    emissive={new THREE.Color('#6688ff')}
+                    emissive={new Color('#6688ff')}
                     emissiveIntensity={0}
                 />
             </mesh>

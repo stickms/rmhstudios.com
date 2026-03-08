@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { Link } from '@tanstack/react-router';
 import {
   Newspaper,
   FlaskConical,
@@ -76,7 +76,7 @@ export function RightSidebar({
           {curatedBuilds.map((build) => (
             <Link
               key={build.id}
-              href={`/builds/${build.slug}`}
+              to={`/builds/${build.slug}`}
               className="-mx-2 px-2 flex items-center gap-2.5 rounded-lg py-1.5 hover:bg-site-surface-hover transition-colors group"
             >
               <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-site-bg shrink-0 border border-site-border">
@@ -99,7 +99,7 @@ export function RightSidebar({
             </Link>
           ))}
         </div>
-        <Link href="/builds" className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors">
+        <Link to="/builds" className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors">
           Show more
         </Link>
       </section>
@@ -114,7 +114,7 @@ export function RightSidebar({
           {userBuilds.map((build) => (
             <Link
               key={build.id}
-              href={`/builds/${build.slug}`}
+              to={`/builds/${build.slug}`}
               className="-mx-2 px-2 flex items-center gap-2.5 rounded-lg py-1.5 hover:bg-site-surface-hover transition-colors group"
             >
               <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-site-bg shrink-0 border border-site-border">
@@ -142,7 +142,7 @@ export function RightSidebar({
             </Link>
           ))}
         </div>
-        <Link href="/user-builds" className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors">
+        <Link to="/user-builds" className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors">
           Show more
         </Link>
       </section>
@@ -159,10 +159,10 @@ export function RightSidebar({
             const initials = (user.name || user.username || 'U').charAt(0).toUpperCase();
             return (
               <div key={user.id} className="-mx-2 px-2 flex items-center gap-2.5 rounded-lg py-1.5 hover:bg-site-surface-hover transition-colors">
-                <Link href={profileHref} className="flex items-center gap-2.5 min-w-0 flex-1">
+                <Link to={profileHref} className="flex items-center gap-2.5 min-w-0 flex-1">
                   <div className="w-9 h-9 rounded-full bg-site-accent/20 overflow-hidden flex items-center justify-center text-site-text text-xs font-semibold shrink-0">
                     {user.image ? (
-                      <img src={user.image} alt={user.name || user.username || 'User'} className="w-full h-full object-cover" />
+                      <img src={user.image} alt={user.name || user.username || 'User'} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }} />
                     ) : initials}
                   </div>
                   <div className="min-w-0">
@@ -172,7 +172,7 @@ export function RightSidebar({
                     </p>
                   </div>
                 </Link>
-                <Link href={profileHref} className="text-xs font-semibold text-site-accent hover:text-site-accent-hover transition-colors">
+                <Link to={profileHref} className="text-xs font-semibold text-site-accent hover:text-site-accent-hover transition-colors">
                   Follow
                 </Link>
               </div>
@@ -189,7 +189,7 @@ export function RightSidebar({
         </h2>
         <div className="space-y-3">
           {blogPosts.map((post) => (
-            <Link key={post.slug} href={`/blog/${post.slug}`} className="block group">
+            <Link key={post.slug} to={`/blog/${post.slug}`} className="block group">
               <p className="text-xs text-site-text-dim">{post.date}</p>
               <p className="text-sm font-medium text-site-text group-hover:text-site-accent transition-colors line-clamp-2">
                 {post.title}
@@ -197,7 +197,7 @@ export function RightSidebar({
             </Link>
           ))}
         </div>
-        <Link href="/blog" className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors">
+        <Link to="/blog" className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors">
           Show more
         </Link>
       </section>
@@ -212,7 +212,7 @@ export function RightSidebar({
           {newsArticles.slice(0, 5).map((article) => (
             <Link
               key={article.slug}
-              href={`/news/${article.slug}`}
+              to={`/news/${article.slug}`}
               className="block group"
             >
               <p className="text-xs text-site-text-dim">{article.category}</p>
@@ -228,7 +228,7 @@ export function RightSidebar({
           ))}
         </div>
         <Link
-          href="/news"
+          to="/news"
           className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors"
         >
           Show more
@@ -245,7 +245,7 @@ export function RightSidebar({
           {researchArticles.slice(0, 3).map((article) => (
             <Link
               key={article.slug}
-              href={`/research/${article.slug}`}
+              to={`/research/${article.slug}`}
               className="block group"
             >
               <p className="text-xs text-site-text-dim">{article.category}</p>
@@ -256,7 +256,7 @@ export function RightSidebar({
           ))}
         </div>
         <Link
-          href="/research"
+          to="/research"
           className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors"
         >
           Show more
@@ -267,9 +267,9 @@ export function RightSidebar({
       <div className="text-xs text-site-text-dim px-2 space-y-1">
         <p>RMH | The Everything Platform</p>
         <div className="flex flex-wrap gap-x-2 gap-y-0.5">
-          <Link href="/blog" className="hover:text-site-text transition-colors">Blog</Link>
-          <Link href="/roadmap" className="hover:text-site-text transition-colors">Roadmap</Link>
-          <Link href="/research" className="hover:text-site-text transition-colors">Research</Link>
+          <Link to="/blog" className="hover:text-site-text transition-colors">Blog</Link>
+          <Link to="/roadmap" className="hover:text-site-text transition-colors">Roadmap</Link>
+          <Link to="/research" className="hover:text-site-text transition-colors">Research</Link>
         </div>
       </div>
     </div>
