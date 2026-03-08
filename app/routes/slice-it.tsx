@@ -1,6 +1,5 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router'
 import { Toaster } from 'sonner'
-import '@/components/slice-it/slice-it.css'
 
 function SliceItLayout() {
   return (

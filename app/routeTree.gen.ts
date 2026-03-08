@@ -20,6 +20,7 @@ import { Route as RmhtypeRouteImport } from './routes/rmhtype'
 import { Route as RmhtubeRouteImport } from './routes/rmhtube'
 import { Route as RmhstudyRouteImport } from './routes/rmhstudy'
 import { Route as RmhmusicRouteImport } from './routes/rmhmusic'
+import { Route as RmhcodeRouteImport } from './routes/rmhcode'
 import { Route as RmhboxRouteImport } from './routes/rmhbox'
 import { Route as NeonDriftwayRouteImport } from './routes/neon-driftway'
 import { Route as LoginRouteImport } from './routes/login'
@@ -37,6 +38,7 @@ import { Route as RmhtypeIndexRouteImport } from './routes/rmhtype/index'
 import { Route as RmhtubeIndexRouteImport } from './routes/rmhtube/index'
 import { Route as RmhstudyIndexRouteImport } from './routes/rmhstudy/index'
 import { Route as RmhmusicIndexRouteImport } from './routes/rmhmusic/index'
+import { Route as RmhcodeIndexRouteImport } from './routes/rmhcode/index'
 import { Route as RmhboxIndexRouteImport } from './routes/rmhbox/index'
 import { Route as KowloonKnockoutIndexRouteImport } from './routes/kowloon-knockout/index'
 import { Route as ForestExplorerIndexRouteImport } from './routes/forest-explorer/index'
@@ -62,6 +64,7 @@ import { Route as RmhtubeRoomIdRouteImport } from './routes/rmhtube/$roomId'
 import { Route as RmhstudyRoomIdRouteImport } from './routes/rmhstudy/$roomId'
 import { Route as RmhmusicPlayerRouteImport } from './routes/rmhmusic/player'
 import { Route as RmhmusicRoomIdRouteImport } from './routes/rmhmusic/$roomId'
+import { Route as RmhcodeAuthRouteImport } from './routes/rmhcode/auth'
 import { Route as RmhboxLobbyIdRouteImport } from './routes/rmhbox/$lobbyId'
 import { Route as ResearchSlugRouteImport } from './routes/research.$slug'
 import { Route as NewsSlugRouteImport } from './routes/news.$slug'
@@ -93,7 +96,6 @@ import { Route as RmhboxMinigamesIndexRouteImport } from './routes/rmhbox/miniga
 import { Route as ApiCoinsIndexRouteImport } from './routes/api/coins/index'
 import { Route as AltairMultiplayerIndexRouteImport } from './routes/altair/multiplayer/index'
 import { Route as SiteUserBuildsIndexRouteImport } from './routes/_site/user-builds/index'
-import { Route as SiteRmhcodeIndexRouteImport } from './routes/_site/rmhcode/index'
 import { Route as SiteResearchIndexRouteImport } from './routes/_site/research/index'
 import { Route as SiteNewsIndexRouteImport } from './routes/_site/news/index'
 import { Route as SiteMessagesIndexRouteImport } from './routes/_site/messages/index'
@@ -161,7 +163,6 @@ import { Route as ApiAdminBlogRouteImport } from './routes/api/admin/blog'
 import { Route as AltairMultiplayerLobbyIdRouteImport } from './routes/altair/multiplayer/$lobbyId'
 import { Route as SiteUserBuildsSubmitRouteImport } from './routes/_site/user-builds/submit'
 import { Route as SiteUserBuildsManageRouteImport } from './routes/_site/user-builds/manage'
-import { Route as SiteRmhcodeAuthRouteImport } from './routes/_site/rmhcode/auth'
 import { Route as SiteResearchCallRouteImport } from './routes/_site/research/call'
 import { Route as SiteProfileIdRouteImport } from './routes/_site/profile/$id'
 import { Route as SiteMessagesConversationIdRouteImport } from './routes/_site/messages/$conversationId'
@@ -275,6 +276,11 @@ const RmhmusicRoute = RmhmusicRouteImport.update({
   path: '/rmhmusic',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RmhcodeRoute = RmhcodeRouteImport.update({
+  id: '/rmhcode',
+  path: '/rmhcode',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RmhboxRoute = RmhboxRouteImport.update({
   id: '/rmhbox',
   path: '/rmhbox',
@@ -358,6 +364,11 @@ const RmhmusicIndexRoute = RmhmusicIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => RmhmusicRoute,
+} as any)
+const RmhcodeIndexRoute = RmhcodeIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => RmhcodeRoute,
 } as any)
 const RmhboxIndexRoute = RmhboxIndexRouteImport.update({
   id: '/',
@@ -483,6 +494,11 @@ const RmhmusicRoomIdRoute = RmhmusicRoomIdRouteImport.update({
   id: '/$roomId',
   path: '/$roomId',
   getParentRoute: () => RmhmusicRoute,
+} as any)
+const RmhcodeAuthRoute = RmhcodeAuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => RmhcodeRoute,
 } as any)
 const RmhboxLobbyIdRoute = RmhboxLobbyIdRouteImport.update({
   id: '/$lobbyId',
@@ -637,11 +653,6 @@ const AltairMultiplayerIndexRoute = AltairMultiplayerIndexRouteImport.update({
 const SiteUserBuildsIndexRoute = SiteUserBuildsIndexRouteImport.update({
   id: '/user-builds/',
   path: '/user-builds/',
-  getParentRoute: () => SiteRoute,
-} as any)
-const SiteRmhcodeIndexRoute = SiteRmhcodeIndexRouteImport.update({
-  id: '/rmhcode/',
-  path: '/rmhcode/',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteResearchIndexRoute = SiteResearchIndexRouteImport.update({
@@ -985,11 +996,6 @@ const SiteUserBuildsManageRoute = SiteUserBuildsManageRouteImport.update({
   path: '/user-builds/manage',
   getParentRoute: () => SiteRoute,
 } as any)
-const SiteRmhcodeAuthRoute = SiteRmhcodeAuthRouteImport.update({
-  id: '/rmhcode/auth',
-  path: '/rmhcode/auth',
-  getParentRoute: () => SiteRoute,
-} as any)
 const SiteResearchCallRoute = SiteResearchCallRouteImport.update({
   id: '/research/call',
   path: '/research/call',
@@ -1308,6 +1314,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/neon-driftway': typeof NeonDriftwayRoute
   '/rmhbox': typeof RmhboxRouteWithChildren
+  '/rmhcode': typeof RmhcodeRouteWithChildren
   '/rmhmusic': typeof RmhmusicRouteWithChildren
   '/rmhstudy': typeof RmhstudyRouteWithChildren
   '/rmhtube': typeof RmhtubeRouteWithChildren
@@ -1339,6 +1346,7 @@ export interface FileRoutesByFullPath {
   '/news/$slug': typeof NewsSlugRoute
   '/research/$slug': typeof ResearchSlugRoute
   '/rmhbox/$lobbyId': typeof RmhboxLobbyIdRoute
+  '/rmhcode/auth': typeof RmhcodeAuthRoute
   '/rmhmusic/$roomId': typeof RmhmusicRoomIdRoute
   '/rmhmusic/player': typeof RmhmusicPlayerRoute
   '/rmhstudy/$roomId': typeof RmhstudyRoomIdRoute
@@ -1363,6 +1371,7 @@ export interface FileRoutesByFullPath {
   '/forest-explorer/': typeof ForestExplorerIndexRoute
   '/kowloon-knockout/': typeof KowloonKnockoutIndexRoute
   '/rmhbox/': typeof RmhboxIndexRoute
+  '/rmhcode/': typeof RmhcodeIndexRoute
   '/rmhmusic/': typeof RmhmusicIndexRoute
   '/rmhstudy/': typeof RmhstudyIndexRoute
   '/rmhtube/': typeof RmhtubeIndexRoute
@@ -1378,7 +1387,6 @@ export interface FileRoutesByFullPath {
   '/messages/$conversationId': typeof SiteMessagesConversationIdRoute
   '/profile/$id': typeof SiteProfileIdRoute
   '/research/call': typeof SiteResearchCallRoute
-  '/rmhcode/auth': typeof SiteRmhcodeAuthRoute
   '/user-builds/manage': typeof SiteUserBuildsManageRoute
   '/user-builds/submit': typeof SiteUserBuildsSubmitRoute
   '/altair/multiplayer/$lobbyId': typeof AltairMultiplayerLobbyIdRoute
@@ -1446,7 +1454,6 @@ export interface FileRoutesByFullPath {
   '/messages/': typeof SiteMessagesIndexRoute
   '/news/': typeof SiteNewsIndexRoute
   '/research/': typeof SiteResearchIndexRoute
-  '/rmhcode/': typeof SiteRmhcodeIndexRoute
   '/user-builds/': typeof SiteUserBuildsIndexRoute
   '/altair/multiplayer/': typeof AltairMultiplayerIndexRoute
   '/api/coins/': typeof ApiCoinsIndexRoute
@@ -1534,6 +1541,7 @@ export interface FileRoutesByTo {
   '/news/$slug': typeof NewsSlugRoute
   '/research/$slug': typeof ResearchSlugRoute
   '/rmhbox/$lobbyId': typeof RmhboxLobbyIdRoute
+  '/rmhcode/auth': typeof RmhcodeAuthRoute
   '/rmhmusic/$roomId': typeof RmhmusicRoomIdRoute
   '/rmhmusic/player': typeof RmhmusicPlayerRoute
   '/rmhstudy/$roomId': typeof RmhstudyRoomIdRoute
@@ -1552,6 +1560,7 @@ export interface FileRoutesByTo {
   '/forest-explorer': typeof ForestExplorerIndexRoute
   '/kowloon-knockout': typeof KowloonKnockoutIndexRoute
   '/rmhbox': typeof RmhboxIndexRoute
+  '/rmhcode': typeof RmhcodeIndexRoute
   '/rmhmusic': typeof RmhmusicIndexRoute
   '/rmhstudy': typeof RmhstudyIndexRoute
   '/rmhtube': typeof RmhtubeIndexRoute
@@ -1565,7 +1574,6 @@ export interface FileRoutesByTo {
   '/messages/$conversationId': typeof SiteMessagesConversationIdRoute
   '/profile/$id': typeof SiteProfileIdRoute
   '/research/call': typeof SiteResearchCallRoute
-  '/rmhcode/auth': typeof SiteRmhcodeAuthRoute
   '/user-builds/manage': typeof SiteUserBuildsManageRoute
   '/user-builds/submit': typeof SiteUserBuildsSubmitRoute
   '/altair/multiplayer/$lobbyId': typeof AltairMultiplayerLobbyIdRoute
@@ -1633,7 +1641,6 @@ export interface FileRoutesByTo {
   '/messages': typeof SiteMessagesIndexRoute
   '/news': typeof SiteNewsIndexRoute
   '/research': typeof SiteResearchIndexRoute
-  '/rmhcode': typeof SiteRmhcodeIndexRoute
   '/user-builds': typeof SiteUserBuildsIndexRoute
   '/altair/multiplayer': typeof AltairMultiplayerIndexRoute
   '/api/coins': typeof ApiCoinsIndexRoute
@@ -1707,6 +1714,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/neon-driftway': typeof NeonDriftwayRoute
   '/rmhbox': typeof RmhboxRouteWithChildren
+  '/rmhcode': typeof RmhcodeRouteWithChildren
   '/rmhmusic': typeof RmhmusicRouteWithChildren
   '/rmhstudy': typeof RmhstudyRouteWithChildren
   '/rmhtube': typeof RmhtubeRouteWithChildren
@@ -1738,6 +1746,7 @@ export interface FileRoutesById {
   '/news/$slug': typeof NewsSlugRoute
   '/research/$slug': typeof ResearchSlugRoute
   '/rmhbox/$lobbyId': typeof RmhboxLobbyIdRoute
+  '/rmhcode/auth': typeof RmhcodeAuthRoute
   '/rmhmusic/$roomId': typeof RmhmusicRoomIdRoute
   '/rmhmusic/player': typeof RmhmusicPlayerRoute
   '/rmhstudy/$roomId': typeof RmhstudyRoomIdRoute
@@ -1763,6 +1772,7 @@ export interface FileRoutesById {
   '/forest-explorer/': typeof ForestExplorerIndexRoute
   '/kowloon-knockout/': typeof KowloonKnockoutIndexRoute
   '/rmhbox/': typeof RmhboxIndexRoute
+  '/rmhcode/': typeof RmhcodeIndexRoute
   '/rmhmusic/': typeof RmhmusicIndexRoute
   '/rmhstudy/': typeof RmhstudyIndexRoute
   '/rmhtube/': typeof RmhtubeIndexRoute
@@ -1778,7 +1788,6 @@ export interface FileRoutesById {
   '/_site/messages/$conversationId': typeof SiteMessagesConversationIdRoute
   '/_site/profile/$id': typeof SiteProfileIdRoute
   '/_site/research/call': typeof SiteResearchCallRoute
-  '/_site/rmhcode/auth': typeof SiteRmhcodeAuthRoute
   '/_site/user-builds/manage': typeof SiteUserBuildsManageRoute
   '/_site/user-builds/submit': typeof SiteUserBuildsSubmitRoute
   '/altair/multiplayer/$lobbyId': typeof AltairMultiplayerLobbyIdRoute
@@ -1846,7 +1855,6 @@ export interface FileRoutesById {
   '/_site/messages/': typeof SiteMessagesIndexRoute
   '/_site/news/': typeof SiteNewsIndexRoute
   '/_site/research/': typeof SiteResearchIndexRoute
-  '/_site/rmhcode/': typeof SiteRmhcodeIndexRoute
   '/_site/user-builds/': typeof SiteUserBuildsIndexRoute
   '/altair/multiplayer/': typeof AltairMultiplayerIndexRoute
   '/api/coins/': typeof ApiCoinsIndexRoute
@@ -1921,6 +1929,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/neon-driftway'
     | '/rmhbox'
+    | '/rmhcode'
     | '/rmhmusic'
     | '/rmhstudy'
     | '/rmhtube'
@@ -1952,6 +1961,7 @@ export interface FileRouteTypes {
     | '/news/$slug'
     | '/research/$slug'
     | '/rmhbox/$lobbyId'
+    | '/rmhcode/auth'
     | '/rmhmusic/$roomId'
     | '/rmhmusic/player'
     | '/rmhstudy/$roomId'
@@ -1976,6 +1986,7 @@ export interface FileRouteTypes {
     | '/forest-explorer/'
     | '/kowloon-knockout/'
     | '/rmhbox/'
+    | '/rmhcode/'
     | '/rmhmusic/'
     | '/rmhstudy/'
     | '/rmhtube/'
@@ -1991,7 +2002,6 @@ export interface FileRouteTypes {
     | '/messages/$conversationId'
     | '/profile/$id'
     | '/research/call'
-    | '/rmhcode/auth'
     | '/user-builds/manage'
     | '/user-builds/submit'
     | '/altair/multiplayer/$lobbyId'
@@ -2059,7 +2069,6 @@ export interface FileRouteTypes {
     | '/messages/'
     | '/news/'
     | '/research/'
-    | '/rmhcode/'
     | '/user-builds/'
     | '/altair/multiplayer/'
     | '/api/coins/'
@@ -2147,6 +2156,7 @@ export interface FileRouteTypes {
     | '/news/$slug'
     | '/research/$slug'
     | '/rmhbox/$lobbyId'
+    | '/rmhcode/auth'
     | '/rmhmusic/$roomId'
     | '/rmhmusic/player'
     | '/rmhstudy/$roomId'
@@ -2165,6 +2175,7 @@ export interface FileRouteTypes {
     | '/forest-explorer'
     | '/kowloon-knockout'
     | '/rmhbox'
+    | '/rmhcode'
     | '/rmhmusic'
     | '/rmhstudy'
     | '/rmhtube'
@@ -2178,7 +2189,6 @@ export interface FileRouteTypes {
     | '/messages/$conversationId'
     | '/profile/$id'
     | '/research/call'
-    | '/rmhcode/auth'
     | '/user-builds/manage'
     | '/user-builds/submit'
     | '/altair/multiplayer/$lobbyId'
@@ -2246,7 +2256,6 @@ export interface FileRouteTypes {
     | '/messages'
     | '/news'
     | '/research'
-    | '/rmhcode'
     | '/user-builds'
     | '/altair/multiplayer'
     | '/api/coins'
@@ -2319,6 +2328,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/neon-driftway'
     | '/rmhbox'
+    | '/rmhcode'
     | '/rmhmusic'
     | '/rmhstudy'
     | '/rmhtube'
@@ -2350,6 +2360,7 @@ export interface FileRouteTypes {
     | '/news/$slug'
     | '/research/$slug'
     | '/rmhbox/$lobbyId'
+    | '/rmhcode/auth'
     | '/rmhmusic/$roomId'
     | '/rmhmusic/player'
     | '/rmhstudy/$roomId'
@@ -2375,6 +2386,7 @@ export interface FileRouteTypes {
     | '/forest-explorer/'
     | '/kowloon-knockout/'
     | '/rmhbox/'
+    | '/rmhcode/'
     | '/rmhmusic/'
     | '/rmhstudy/'
     | '/rmhtube/'
@@ -2390,7 +2402,6 @@ export interface FileRouteTypes {
     | '/_site/messages/$conversationId'
     | '/_site/profile/$id'
     | '/_site/research/call'
-    | '/_site/rmhcode/auth'
     | '/_site/user-builds/manage'
     | '/_site/user-builds/submit'
     | '/altair/multiplayer/$lobbyId'
@@ -2458,7 +2469,6 @@ export interface FileRouteTypes {
     | '/_site/messages/'
     | '/_site/news/'
     | '/_site/research/'
-    | '/_site/rmhcode/'
     | '/_site/user-builds/'
     | '/altair/multiplayer/'
     | '/api/coins/'
@@ -2532,6 +2542,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   NeonDriftwayRoute: typeof NeonDriftwayRoute
   RmhboxRoute: typeof RmhboxRouteWithChildren
+  RmhcodeRoute: typeof RmhcodeRouteWithChildren
   RmhmusicRoute: typeof RmhmusicRouteWithChildren
   RmhstudyRoute: typeof RmhstudyRouteWithChildren
   RmhtubeRoute: typeof RmhtubeRouteWithChildren
@@ -2693,6 +2704,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RmhmusicRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/rmhcode': {
+      id: '/rmhcode'
+      path: '/rmhcode'
+      fullPath: '/rmhcode'
+      preLoaderRoute: typeof RmhcodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/rmhbox': {
       id: '/rmhbox'
       path: '/rmhbox'
@@ -2811,6 +2829,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/rmhmusic/'
       preLoaderRoute: typeof RmhmusicIndexRouteImport
       parentRoute: typeof RmhmusicRoute
+    }
+    '/rmhcode/': {
+      id: '/rmhcode/'
+      path: '/'
+      fullPath: '/rmhcode/'
+      preLoaderRoute: typeof RmhcodeIndexRouteImport
+      parentRoute: typeof RmhcodeRoute
     }
     '/rmhbox/': {
       id: '/rmhbox/'
@@ -2986,6 +3011,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/rmhmusic/$roomId'
       preLoaderRoute: typeof RmhmusicRoomIdRouteImport
       parentRoute: typeof RmhmusicRoute
+    }
+    '/rmhcode/auth': {
+      id: '/rmhcode/auth'
+      path: '/auth'
+      fullPath: '/rmhcode/auth'
+      preLoaderRoute: typeof RmhcodeAuthRouteImport
+      parentRoute: typeof RmhcodeRoute
     }
     '/rmhbox/$lobbyId': {
       id: '/rmhbox/$lobbyId'
@@ -3202,13 +3234,6 @@ declare module '@tanstack/react-router' {
       path: '/user-builds'
       fullPath: '/user-builds/'
       preLoaderRoute: typeof SiteUserBuildsIndexRouteImport
-      parentRoute: typeof SiteRoute
-    }
-    '/_site/rmhcode/': {
-      id: '/_site/rmhcode/'
-      path: '/rmhcode'
-      fullPath: '/rmhcode/'
-      preLoaderRoute: typeof SiteRmhcodeIndexRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/research/': {
@@ -3678,13 +3703,6 @@ declare module '@tanstack/react-router' {
       path: '/user-builds/manage'
       fullPath: '/user-builds/manage'
       preLoaderRoute: typeof SiteUserBuildsManageRouteImport
-      parentRoute: typeof SiteRoute
-    }
-    '/_site/rmhcode/auth': {
-      id: '/_site/rmhcode/auth'
-      path: '/rmhcode/auth'
-      fullPath: '/rmhcode/auth'
-      preLoaderRoute: typeof SiteRmhcodeAuthRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/research/call': {
@@ -4163,7 +4181,6 @@ interface SiteRouteChildren {
   SiteMessagesConversationIdRoute: typeof SiteMessagesConversationIdRoute
   SiteProfileIdRoute: typeof SiteProfileIdRoute
   SiteResearchCallRoute: typeof SiteResearchCallRoute
-  SiteRmhcodeAuthRoute: typeof SiteRmhcodeAuthRoute
   SiteUserBuildsManageRoute: typeof SiteUserBuildsManageRoute
   SiteUserBuildsSubmitRoute: typeof SiteUserBuildsSubmitRoute
   SiteUseridIndexRoute: typeof SiteUseridIndexRoute
@@ -4171,7 +4188,6 @@ interface SiteRouteChildren {
   SiteMessagesIndexRoute: typeof SiteMessagesIndexRoute
   SiteNewsIndexRoute: typeof SiteNewsIndexRoute
   SiteResearchIndexRoute: typeof SiteResearchIndexRoute
-  SiteRmhcodeIndexRoute: typeof SiteRmhcodeIndexRoute
   SiteUserBuildsIndexRoute: typeof SiteUserBuildsIndexRoute
   SiteUseridPostPostidRoute: typeof SiteUseridPostPostidRoute
 }
@@ -4185,7 +4201,6 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteMessagesConversationIdRoute: SiteMessagesConversationIdRoute,
   SiteProfileIdRoute: SiteProfileIdRoute,
   SiteResearchCallRoute: SiteResearchCallRoute,
-  SiteRmhcodeAuthRoute: SiteRmhcodeAuthRoute,
   SiteUserBuildsManageRoute: SiteUserBuildsManageRoute,
   SiteUserBuildsSubmitRoute: SiteUserBuildsSubmitRoute,
   SiteUseridIndexRoute: SiteUseridIndexRoute,
@@ -4193,7 +4208,6 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteMessagesIndexRoute: SiteMessagesIndexRoute,
   SiteNewsIndexRoute: SiteNewsIndexRoute,
   SiteResearchIndexRoute: SiteResearchIndexRoute,
-  SiteRmhcodeIndexRoute: SiteRmhcodeIndexRoute,
   SiteUserBuildsIndexRoute: SiteUserBuildsIndexRoute,
   SiteUseridPostPostidRoute: SiteUseridPostPostidRoute,
 }
@@ -4270,6 +4284,19 @@ const RmhboxRouteChildren: RmhboxRouteChildren = {
 
 const RmhboxRouteWithChildren =
   RmhboxRoute._addFileChildren(RmhboxRouteChildren)
+
+interface RmhcodeRouteChildren {
+  RmhcodeAuthRoute: typeof RmhcodeAuthRoute
+  RmhcodeIndexRoute: typeof RmhcodeIndexRoute
+}
+
+const RmhcodeRouteChildren: RmhcodeRouteChildren = {
+  RmhcodeAuthRoute: RmhcodeAuthRoute,
+  RmhcodeIndexRoute: RmhcodeIndexRoute,
+}
+
+const RmhcodeRouteWithChildren =
+  RmhcodeRoute._addFileChildren(RmhcodeRouteChildren)
 
 interface RmhmusicRouteChildren {
   RmhmusicRoomIdRoute: typeof RmhmusicRoomIdRoute
@@ -4728,6 +4755,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   NeonDriftwayRoute: NeonDriftwayRoute,
   RmhboxRoute: RmhboxRouteWithChildren,
+  RmhcodeRoute: RmhcodeRouteWithChildren,
   RmhmusicRoute: RmhmusicRouteWithChildren,
   RmhstudyRoute: RmhstudyRouteWithChildren,
   RmhtubeRoute: RmhtubeRouteWithChildren,

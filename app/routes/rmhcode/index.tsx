@@ -368,6 +368,6 @@ function RmhCodePage() {
   );
 }
 
-export const Route = createFileRoute('/_site/rmhcode/')({
+export const Route = createFileRoute('/rmhcode/')({
   component: RmhCodePage,
 });

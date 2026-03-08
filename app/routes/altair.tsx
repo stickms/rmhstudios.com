@@ -10,7 +10,6 @@ import { createServerFn } from '@tanstack/react-start'
 import { getRequest } from '@tanstack/react-start/server'
 import { auth } from '@/lib/auth'
 import AltairShell from '@/components/altair/AltairShell'
-import '@/components/altair/altair.css'
 
 const checkAuth = createServerFn({ method: 'GET' }).handler(async () => {
   const request = getRequest()

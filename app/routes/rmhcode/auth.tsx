@@ -146,7 +146,7 @@ function RmhCodeAuthPage() {
   );
 }
 
-export const Route = createFileRoute('/_site/rmhcode/auth')({
+export const Route = createFileRoute('/rmhcode/auth')({
   validateSearch: (search: Record<string, unknown>) => ({
     callback: (search.callback as string) || '',
     session: (search.session as string) || '',
