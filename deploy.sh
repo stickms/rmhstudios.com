@@ -297,9 +297,36 @@ step_done
 # can reach the DB by container name. Idempotent — a no-op if already connected.
 if [ "$ENVIRONMENT" = "staging" ]; then
     step_start "Ensuring staging DB is on compose network..."
+
+    # Verify the staging DB container exists and is running
+    if ! "$DOCKER_BIN" inspect --format='{{.State.Running}}' staging 2>/dev/null | grep -q true; then
+        log "ERROR: 'staging' container is not running."
+        log "  Current state: $("$DOCKER_BIN" inspect --format='{{.State.Status}}' staging 2>/dev/null || echo 'not found')"
+        update_deploy_status fail "staging DB container not running"
+        exit 1
+    fi
+
     COMPOSE_NETWORK="${PROJECT_NAME}_default"
     "$DOCKER_BIN" network create "$COMPOSE_NETWORK" 2>/dev/null || true
-    "$DOCKER_BIN" network connect "$COMPOSE_NETWORK" staging 2>/dev/null || true
+
+    if ! "$DOCKER_BIN" network connect "$COMPOSE_NETWORK" staging 2>/dev/null; then
+        # Already connected is fine — verify it's actually on the network
+        if ! "$DOCKER_BIN" inspect --format='{{json .NetworkSettings.Networks}}' staging 2>/dev/null | grep -q "$COMPOSE_NETWORK"; then
+            log "ERROR: Failed to connect 'staging' container to network '$COMPOSE_NETWORK'."
+            update_deploy_status fail "DB network connect failed"
+            exit 1
+        fi
+    fi
+
+    # Verify DNS resolution: the web container must be able to resolve the DB hostname
+    DB_HOST=$(grep -oP '(?<=@)[^:/@]+(?=[:\/])' "$ENV_FILE" | head -1)
+    if [ -n "$DB_HOST" ] && [ "$DB_HOST" != "localhost" ] && [ "$DB_HOST" != "127.0.0.1" ]; then
+        log "  DB host from $ENV_FILE: $DB_HOST"
+    elif [ -n "$DB_HOST" ]; then
+        log "WARNING: DATABASE_URL uses '$DB_HOST' — this won't work between containers."
+        log "  Change it to the DB container name (e.g., 'staging') in $ENV_FILE."
+    fi
+
     step_done
 fi
 
@@ -307,15 +334,16 @@ fi
 step_start "Running database migrations..."
 
 # Wait for database to be reachable before running migrations
-MIGRATION_RETRIES=5
+MIGRATION_RETRIES=10
 MIGRATION_DELAY=5
 for i in $(seq 1 $MIGRATION_RETRIES); do
-    if dc run --rm --no-deps web sh -c 'npx prisma migrate status >/dev/null 2>&1'; then
+    MIGRATE_OUTPUT=$(dc run --rm --no-deps web sh -c 'npx prisma migrate status 2>&1') && {
         log "Database is reachable."
         break
-    fi
+    }
     if [ "$i" -eq "$MIGRATION_RETRIES" ]; then
         log "ERROR: Database not reachable after $MIGRATION_RETRIES attempts."
+        log "  Last output: $(echo "$MIGRATE_OUTPUT" | tail -3)"
         update_deploy_status fail "database not reachable"
         exit 1
     fi
