@@ -55,10 +55,18 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
         }
     };
 
+    const handleMouseEnter = () => {
+        const isInternal = cardUrl.startsWith('/');
+        if (isInternal) {
+            router.preloadRoute({ to: cardUrl }).catch(() => {});
+        }
+    };
+
     return (
         <div
             className="block w-full cursor-pointer aspect-[2/3]"
             onClick={handleCardClick}
+            onMouseEnter={handleMouseEnter}
             title={build.description}
         >
             <div className="group relative rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-all overflow-hidden h-full">

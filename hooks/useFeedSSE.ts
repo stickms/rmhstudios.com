@@ -137,7 +137,7 @@ function unsubscribe() {
 /* ------------------------------------------------------------------ */
 
 export function useFeedSSE() {
-  const { prependItem, updateItem } = useFeedStore();
+  const { prependItem, updateItem, removeItem } = useFeedStore();
 
   useEffect(() => {
     const handler = (event: FeedSSEEvent) => {
@@ -165,11 +165,7 @@ export function useFeedSSE() {
           break;
 
         case "rmhark.deleted":
-          updateItem(rmharkId, {
-            deletedAt: payload.deletedAt,
-            deletedByAdmin: payload.deletedByAdmin,
-            content: payload.content,
-          });
+          removeItem(rmharkId);
           break;
       }
     };

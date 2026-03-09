@@ -206,7 +206,7 @@ export function PostDetail({ postId }: PostDetailProps) {
       {/* Post content (expanded) */}
       <div className="relative px-4 pt-4 pb-3 border-b border-site-border">
         {/* More menu — top right */}
-        <div className="absolute top-4 right-4 z-10" ref={menuRef}>
+        {!post.deletedAt && <div className="absolute top-4 right-4 z-10" ref={menuRef}>
           <button
             onClick={() => setMenuOpen((v) => !v)}
             className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors"
@@ -247,7 +247,7 @@ export function PostDetail({ postId }: PostDetailProps) {
               )}
             </div>
           )}
-        </div>
+        </div>}
 
         {/* User header */}
         <div className="flex items-center gap-3 mb-3 pr-8">
@@ -307,7 +307,7 @@ export function PostDetail({ postId }: PostDetailProps) {
         <p className="text-sm text-site-text-dim mb-3">{formatFullDate(post.createdAt)}</p>
 
         {/* Engagement stats bar */}
-        <div className="flex items-center gap-4 py-3 border-t border-site-border text-sm">
+        {!post.deletedAt && <div className="flex items-center gap-4 py-3 border-t border-site-border text-sm">
           <span>
             <span className="font-bold text-site-text">{post.repostCount ?? 0}</span>{' '}
             <span className="text-site-text-dim">reRMHarks</span>
@@ -320,19 +320,32 @@ export function PostDetail({ postId }: PostDetailProps) {
             <span className="font-bold text-site-text">{post.viewCount ?? 0}</span>{' '}
             <span className="text-site-text-dim">Views</span>
           </span>
-        </div>
+        </div>}
 
         {/* Actions */}
-        <div className="border-t border-site-border pt-1">
-          <RMHarkActions
-            item={post}
-            onUpdate={(_, updates) => setPost((prev) => prev ? { ...prev, ...updates } : prev)}
-          />
-        </div>
+        {!post.deletedAt && (
+          <div className="border-t border-site-border pt-1">
+            <RMHarkActions
+              item={post}
+              onUpdate={(_, updates) => setPost((prev) => prev ? { ...prev, ...updates } : prev)}
+            />
+          </div>
+        )}
       </div>
 
+      {/* Deleted notice */}
+      {post.deletedAt && (
+        <div className="px-4 py-4 border-b border-site-border">
+          <p className="text-sm text-site-text-dim text-center">
+            {post.deletedByAdmin
+              ? 'This RMHark was deleted by an admin.'
+              : 'This RMHark was deleted by the user.'}
+          </p>
+        </div>
+      )}
+
       {/* Comment compose */}
-      {session ? (
+      {!post.deletedAt && session ? (
         <div className="px-4 py-3 border-b border-site-border">
           <div className="flex gap-3">
             {/* User avatar */}
@@ -376,14 +389,14 @@ export function PostDetail({ postId }: PostDetailProps) {
             </div>
           </div>
         </div>
-      ) : (
+      ) : !post.deletedAt ? (
         <div className="px-4 py-3 border-b border-site-border text-center text-sm text-site-text-dim">
           Sign in to reply
         </div>
-      )}
+      ) : null}
 
       {/* Comments list */}
-      <div className="px-4">
+      {!post.deletedAt && <div className="px-4">
         {loadingComments ? (
           <div className="flex justify-center py-8">
             <Loader2 className="w-6 h-6 text-site-accent animate-spin" />
@@ -406,7 +419,7 @@ export function PostDetail({ postId }: PostDetailProps) {
             ))}
           </div>
         )}
-      </div>
+      </div>}
 
       {engagementModal && (
         <EngagementListModal
