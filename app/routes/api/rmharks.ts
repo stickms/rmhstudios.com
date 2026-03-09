@@ -210,6 +210,7 @@ export const Route = createFileRoute('/api/rmharks')({
         prisma.rMHark.findMany({
           where: {
             userId: { in: followingIds },
+            deletedAt: null,
             ...contentWhere,
             ...(cursorDate ? { createdAt: { lt: cursorDate } } : {}),
           },
@@ -220,8 +221,8 @@ export const Route = createFileRoute('/api/rmharks')({
         prisma.rMHarkRepost.findMany({
           where: {
             userId: { in: followingIds },
+            rmhark: { deletedAt: null, ...contentWhere },
             ...(cursorDate ? { createdAt: { lt: cursorDate } } : {}),
-            ...(search ? { rmhark: contentWhere } : {}),
           },
           orderBy: { createdAt: "desc" },
           take: limit,
@@ -349,13 +350,14 @@ export const Route = createFileRoute('/api/rmharks')({
 
     if (shouldFetchRmheets) {
       const rmharkWhere = {
+        deletedAt: null,
         ...contentWhere,
         ...(cursorDate ? { createdAt: { lt: cursorDate } } : {}),
       };
 
       const [rmharks, repostRecords] = await Promise.all([
         prisma.rMHark.findMany({
-          where: Object.keys(rmharkWhere).length ? rmharkWhere : undefined,
+          where: rmharkWhere,
           orderBy: { createdAt: "desc" },
           take: limit,
           include: rmharkInclude,
@@ -363,7 +365,7 @@ export const Route = createFileRoute('/api/rmharks')({
         prisma.rMHarkRepost.findMany({
           where: {
             ...(cursorDate ? { createdAt: { lt: cursorDate } } : {}),
-            ...(search ? { rmhark: contentWhere } : {}),
+            rmhark: { deletedAt: null, ...contentWhere },
           } as Record<string, unknown>,
           orderBy: { createdAt: "desc" },
           take: limit,

@@ -98,11 +98,12 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
 
     const cursorDate = cursor ? new Date(cursor) : undefined;
 
-    // Fetch user's own RMHarks and their reposts in parallel
+    // Fetch user's own RMHarks and their reposts in parallel (exclude deleted)
     const [rmharks, reposts] = await Promise.all([
       prisma.rMHark.findMany({
         where: {
           userId,
+          deletedAt: null,
           ...(cursorDate ? { createdAt: { lt: cursorDate } } : {}),
         },
         orderBy: { createdAt: "desc" },
@@ -112,6 +113,7 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
       prisma.rMHarkRepost.findMany({
         where: {
           userId,
+          rmhark: { deletedAt: null },
           ...(cursorDate ? { createdAt: { lt: cursorDate } } : {}),
         },
         orderBy: { createdAt: "desc" },

@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { SlidersHorizontal, Search, X, BadgeCheck, ShieldCheck } from 'lucide-react';
+import { SlidersHorizontal, Search, X, BadgeCheck, ShieldCheck, Menu } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { FeedTabs } from './FeedTabs';
 import { ComposeBox } from './ComposeBox';
 import { FeedList } from './FeedList';
+import { MobileSidebarDrawer } from './MobileSidebarDrawer';
 import { useFeedStore } from '@/stores/feedStore';
 import { useFeedSSE } from '@/hooks/useFeedSSE';
 import { authClient } from '@/lib/auth-client';
@@ -24,6 +25,7 @@ interface SearchUser {
 export function FeedColumn() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [mode, setMode] = useState<'feed' | 'friends'>('feed');
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const { setFilter, search, setSearch } = useFeedStore();
   const { data: session } = authClient.useSession();
   const [searchInput, setSearchInput] = useState(search ?? '');
@@ -84,10 +86,17 @@ export function FeedColumn() {
       {/* Header */}
       <div className="sticky top-0 z-10 bg-site-bg/85 backdrop-blur-md border-b border-site-border">
         <div className="flex items-center justify-between px-4 py-3">
-          {/* Feed / Friends tabs */}
-          <div className="flex items-center gap-1">
-            <span className="md:hidden text-site-accent font-(family-name:--site-font-display) font-bold text-lg mr-2">RMH</span>
-            <span className="md:hidden w-px h-5 bg-site-border mr-2" aria-hidden="true" />
+          {/* Mobile: sandwich menu left, RMH center, filters right */}
+          <button
+            onClick={() => setDrawerOpen(true)}
+            className="md:hidden p-2 -ml-2 rounded-lg text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
+            aria-label="Open menu"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+
+          {/* Desktop: Feed/Friends tabs inline */}
+          <div className="hidden md:flex items-center gap-1">
             <button
               onClick={() => handleModeChange('feed')}
               className={`relative px-3 py-1.5 text-sm font-bold transition-colors rounded-sm ${
@@ -116,6 +125,11 @@ export function FeedColumn() {
             </button>
           </div>
 
+          {/* Mobile: centered RMH branding */}
+          <span className="md:hidden text-site-accent font-(family-name:--site-font-display) font-bold text-lg">
+            RMH
+          </span>
+
           <button
             onClick={() => setFiltersOpen(!filtersOpen)}
             className={`p-2 rounded-lg transition-colors ${
@@ -128,7 +142,7 @@ export function FeedColumn() {
             <SlidersHorizontal className="w-5 h-5" />
           </button>
         </div>
-        {filtersOpen && <FeedTabs />}
+        {filtersOpen && <FeedTabs mode={mode} onModeChange={handleModeChange} />}
 
         {/* Search bar */}
         <div className="px-4 py-2 border-t border-site-border">
@@ -203,6 +217,12 @@ export function FeedColumn() {
       ) : (
         <FeedList />
       )}
+
+      {/* Mobile sidebar drawer */}
+      <MobileSidebarDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+      />
     </div>
   );
 }

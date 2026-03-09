@@ -29,7 +29,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   const labelFlexClass = expanded ? 'flex items-center gap-1.5' : 'hidden xl:flex items-center gap-1.5';
   const logoFullClass = expanded ? '' : 'hidden xl:block';
   const logoShortClass = expanded ? 'hidden' : 'xl:hidden';
-  const paddingClass = expanded ? 'p-4 pb-8' : 'p-3 xl:p-4';
+  const paddingClass = expanded ? 'p-4' : 'p-3 xl:p-4';
   const logoAlignClass = expanded ? 'justify-start' : 'justify-center xl:justify-start';
   const iconMrClass = expanded ? 'mr-2' : 'xl:mr-2';
   const itemJustifyClass = expanded ? '' : 'md:justify-center xl:justify-start';
@@ -243,7 +243,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
       </div>
 
       {/* Auth Section */}
-      <div className="mt-3 border-t border-site-border pt-3">
+      <div className="mt-1 border-t border-site-border pt-3">
         {isPending ? (
           <div className="h-10 bg-site-surface rounded-xl animate-pulse" />
         ) : session ? (
