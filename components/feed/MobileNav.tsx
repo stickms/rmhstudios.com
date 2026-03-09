@@ -2,16 +2,14 @@
 
 import { useState } from 'react';
 import { Link, useLocation } from '@tanstack/react-router';
-import { Home, Package, Menu, Hammer, User, PenSquare, MessageCircle } from 'lucide-react';
+import { Home, Package, Hammer, MessageCircle, User, PenSquare } from 'lucide-react';
 import { useSession } from '@/components/Providers';
-import { MobileSidebarDrawer } from './MobileSidebarDrawer';
 import { ComposeModal } from './ComposeModal';
 import { useUnreadCount } from '@/lib/useUnreadCount';
 
 export function MobileNav() {
   const { pathname } = useLocation();
   const { data: session } = useSession();
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
   const unreadCount = useUnreadCount(!!session);
 
@@ -21,9 +19,9 @@ export function MobileNav() {
 
   const isHome = pathname === '/';
   const isBuilds = pathname?.startsWith('/builds');
-  const isMessages = pathname?.startsWith('/messages');
   const isUserBuilds = pathname?.startsWith('/user-builds');
-  const isProfile = pathname?.startsWith('/profile');
+  const isMessages = pathname?.startsWith('/messages');
+  const isProfile = pathname?.startsWith('/profile') || pathname?.startsWith('/@');
 
   const tabClass = (active: boolean) =>
     `flex items-center justify-center p-3 transition-colors ${
@@ -50,46 +48,30 @@ export function MobileNav() {
             <Home className="w-6 h-6" />
           </Link>
 
-          <Link to="/builds" className={tabClass(isBuilds)} aria-label="Official Builds">
+          <Link to="/builds" className={tabClass(isBuilds)} aria-label="Curated Builds">
             <Package className="w-6 h-6" />
           </Link>
 
-          <button
-            onClick={() => setDrawerOpen(true)}
-            className={tabClass(drawerOpen)}
-            aria-label="Menu"
-          >
-            <Menu className="w-6 h-6" />
-          </button>
+          <Link to="/user-builds" className={tabClass(isUserBuilds)} aria-label="User Builds">
+            <Hammer className="w-6 h-6" />
+          </Link>
 
-          {session ? (
-            <Link to="/messages" className={tabClass(isMessages)} aria-label="Messages">
-              <div className="relative">
-                <MessageCircle className="w-6 h-6" />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold px-1 leading-none">
-                    {unreadCount > 99 ? '99+' : unreadCount}
-                  </span>
-                )}
-              </div>
-            </Link>
-          ) : (
-            <Link to="/user-builds" className={tabClass(isUserBuilds)} aria-label="User Builds">
-              <Hammer className="w-6 h-6" />
-            </Link>
-          )}
+          <Link to="/messages" className={tabClass(isMessages)} aria-label="Messages">
+            <div className="relative">
+              <MessageCircle className="w-6 h-6" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold px-1 leading-none">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+            </div>
+          </Link>
 
           <Link to={profileHref} className={tabClass(isProfile)} aria-label="Profile">
             <User className="w-6 h-6" />
           </Link>
         </div>
       </nav>
-
-      {/* Menu drawer */}
-      <MobileSidebarDrawer
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-      />
 
       {/* Compose modal */}
       <ComposeModal
