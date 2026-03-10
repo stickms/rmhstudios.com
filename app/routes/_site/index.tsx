@@ -22,8 +22,6 @@ function Home() {
     userBuilds,
     recommendedUsers,
     blogPosts,
-    newsArticles,
-    researchArticles,
   } = Route.useLoaderData();
 
   return (
@@ -32,8 +30,6 @@ function Home() {
       userBuilds={userBuilds}
       recommendedUsers={recommendedUsers}
       blogPosts={blogPosts}
-      newsArticles={newsArticles}
-      researchArticles={researchArticles}
     />
   );
 }

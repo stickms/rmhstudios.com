@@ -1,5 +1,3 @@
-import { getAllNewsArticles } from '@/lib/news';
-import { getAllArticles } from '@/lib/research';
 import { prisma } from '@/lib/prisma';
 import { resolveUserDisplay } from '@/lib/user-display';
 
@@ -175,23 +173,18 @@ async function getBlogPosts(): Promise<SidebarPost[]> {
 }
 
 export async function getSidebarData() {
-  const [newsArticles, curatedBuilds, userBuilds, recommendedUsers, blogPosts] =
+  const [curatedBuilds, userBuilds, recommendedUsers, blogPosts] =
     await Promise.all([
-      getAllNewsArticles(),
       getCuratedBuilds(),
       getUserBuilds(),
       getRecommendedUsers(),
       getBlogPosts(),
     ]);
 
-  const researchArticles = getAllArticles().slice(0, 3);
-
   return {
     curatedBuilds,
     userBuilds,
     recommendedUsers,
     blogPosts,
-    newsArticles: newsArticles.slice(0, 5),
-    researchArticles,
   };
 }

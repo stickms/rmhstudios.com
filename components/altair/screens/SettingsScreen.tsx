@@ -26,7 +26,7 @@ function keyLabel(code: string): string {
 }
 
 export default function SettingsScreen({ onBack }: SettingsScreenProps) {
-  const { theme, keybinds, screenShake, doubleTime, joystickSide, masterVolume, musicVolume, sfxVolume, setTheme, setKeybind, resetKeybinds, setScreenShake, setDoubleTime, setJoystickSide, setMasterVolume, setMusicVolume, setSfxVolume } = useAltairSettingsStore();
+  const { theme, keybinds, screenShake, doubleTime, joystickSide, zoomTiles, masterVolume, musicVolume, sfxVolume, setTheme, setKeybind, resetKeybinds, setScreenShake, setDoubleTime, setJoystickSide, setZoomTiles, setMasterVolume, setMusicVolume, setSfxVolume } = useAltairSettingsStore();
   const doubleTimeUnlocked = useAltairMetaStore((s) => s.doubleTimeUnlocked);
   const [rebinding, setRebinding] = useState<keyof Keybinds | null>(null);
   const [isMobile, setIsMobile] = useState(false);
@@ -176,6 +176,21 @@ export default function SettingsScreen({ onBack }: SettingsScreenProps) {
               className="w-4 h-4 accent-(--altair-accent)"
             />
           </label>
+          <div className="flex items-center gap-3 py-2.5 px-4 rounded-lg bg-(--altair-surface) border border-(--altair-border)">
+            <span className="text-sm text-(--altair-text) w-14 shrink-0">Zoom</span>
+            <input
+              type="range"
+              min={4}
+              max={20}
+              step={1}
+              value={zoomTiles}
+              onInput={(e) => setZoomTiles(Number(e.currentTarget.value))}
+              onChange={(e) => setZoomTiles(Number(e.currentTarget.value))}
+              className="flex-1 h-1.5 accent-(--altair-accent) cursor-pointer"
+              style={{ touchAction: 'none' }}
+            />
+            <span className="text-xs text-(--altair-text-muted) w-8 text-right font-mono">{zoomTiles}</span>
+          </div>
           {doubleTimeUnlocked && (
             <label className="flex items-center justify-between py-2.5 px-4 rounded-lg bg-(--altair-surface) border border-(--altair-border) cursor-pointer">
               <span className="text-sm text-(--altair-text)">
