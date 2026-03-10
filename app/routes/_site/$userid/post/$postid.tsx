@@ -99,8 +99,6 @@ function PostPage() {
           userBuilds={sidebar.userBuilds}
           recommendedUsers={sidebar.recommendedUsers}
           blogPosts={sidebar.blogPosts}
-          newsArticles={sidebar.newsArticles}
-          researchArticles={sidebar.researchArticles}
         />
       </aside>
     </>

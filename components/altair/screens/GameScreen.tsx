@@ -166,20 +166,18 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
 
     // Resize canvas to fill screen (handles orientation changes on mobile)
     const resizeCanvas = () => {
-      const rect = root.getBoundingClientRect();
+      // Use window dimensions directly to include safe-area regions (viewport-fit=cover)
       const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 1;
       const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 1;
-      const rectWidth = rect.width > 0 ? rect.width : viewportWidth;
-      const rectHeight = rect.height > 0 ? rect.height : viewportHeight;
-      const isCoarsePointer = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
-      const minVisibleWorldSpan = 64 * 24; // 12 tiles in each direction from center
+      const zoomTiles = useAltairSettingsStore.getState().zoomTiles;
+      const minVisibleWorldSpan = 64 * zoomTiles * 2; // zoomTiles in each direction from center
 
-      const targetWidth = isCoarsePointer
-        ? Math.max(rectWidth, minVisibleWorldSpan)
-        : rectWidth;
-      const targetHeight = isCoarsePointer
-        ? Math.max(rectHeight, minVisibleWorldSpan)
-        : rectHeight;
+      // Scale uniformly so the smaller axis shows the desired tile count,
+      // preserving aspect ratio to prevent squishing
+      const minDim = Math.min(viewportWidth, viewportHeight);
+      const scale = Math.max(1, minVisibleWorldSpan / minDim);
+      const targetWidth = viewportWidth * scale;
+      const targetHeight = viewportHeight * scale;
 
       canvas.width = Math.max(1, Math.round(targetWidth));
       canvas.height = Math.max(1, Math.round(targetHeight));
@@ -196,6 +194,14 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
       : null;
     resizeObserver?.observe(root);
     window.addEventListener('resize', resizeCanvas);
+    // Re-apply zoom when the setting changes mid-game
+    let prevZoom = useAltairSettingsStore.getState().zoomTiles;
+    const unsubZoom = useAltairSettingsStore.subscribe((s) => {
+      if (s.zoomTiles !== prevZoom) {
+        prevZoom = s.zoomTiles;
+        resizeCanvas();
+      }
+    });
 
     const handleContextLost = (e: Event) => {
       e.preventDefault();
@@ -334,6 +340,7 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
       loop.destroy();
       cleanupInput();
       resizeObserver?.disconnect();
+      unsubZoom();
       window.removeEventListener('resize', resizeCanvas);
       canvas.removeEventListener('webglcontextlost', handleContextLost);
     };
@@ -436,11 +443,14 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
     <div
       ref={rootRef}
       className="fixed inset-0 bg-black overflow-hidden"
+      style={{ width: '100vw', height: '100dvh' }}
     >
       <canvas
         ref={canvasRef}
-        className="block w-full h-full"
+        className="block"
         style={{
+          width: '100vw',
+          height: '100dvh',
           imageRendering: 'pixelated',
           // @ts-expect-error -- vendor prefix for Safari/older browsers
           WebkitImageRendering: 'pixelated',

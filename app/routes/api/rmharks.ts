@@ -4,8 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { createRMHarkSchema } from "@/lib/rmhark-schema";
 import { getAllPosts } from "@/lib/blog";
-import { getAllNewsArticles } from "@/lib/news";
-import { getAllArticles } from "@/lib/research";
 import type { FeedItem, FeedPoll, FeedFilter } from "@/lib/feed-types";
 import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 import { feedEventBus } from "@/lib/feed-sse";
@@ -96,23 +94,6 @@ async function getAnnouncementItems(filter: FeedFilter): Promise<FeedItem[]> {
     }
   }
 
-  if (filter === "all" || filter === "news" || filter === "other") {
-    const newsArticles = await getAllNewsArticles();
-    for (const n of newsArticles) {
-      items.push({
-        id: `news:${n.slug}`,
-        type: "news",
-        createdAt: n.date ? new Date(n.date).toISOString() : "2025-01-01T00:00:00.000Z",
-        title: n.title,
-        description: n.description,
-        href: `/news/${n.slug}`,
-        imagePath: n.image ?? undefined,
-        category: n.category,
-        sourcePublisher: n.sourcePublisher,
-      });
-    }
-  }
-
   if (filter === "all" || filter === "blog") {
     const posts = await getAllPosts(["title", "date", "slug", "description", "image", "tags"]);
     for (const p of posts) {
@@ -125,24 +106,6 @@ async function getAnnouncementItems(filter: FeedFilter): Promise<FeedItem[]> {
         href: `/blog/${p.slug}`,
         imagePath: p.image,
         tags: p.tags as unknown as string[] | undefined,
-      });
-    }
-  }
-
-  if (filter === "all" || filter === "research" || filter === "other") {
-    const research = getAllArticles();
-    for (const r of research) {
-      items.push({
-        id: `research:${r.slug}`,
-        type: "research",
-        createdAt: new Date(r.date).toISOString(),
-        title: r.title,
-        description: r.abstract.slice(0, 200) + "...",
-        href: `/research/${r.slug}`,
-        tags: r.keywords.slice(0, 3),
-        gradient: r.heroColor,
-        iconName: r.iconName,
-        category: r.category,
       });
     }
   }

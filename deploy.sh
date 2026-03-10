@@ -55,7 +55,11 @@ REPO_DIR="/home/rmhstudios/rmhstudios.com"
 LOCKFILE="/tmp/autodeploy-${ENVIRONMENT}.lock"
 QUEUE_FILE="/tmp/autodeploy-${ENVIRONMENT}.queue"
 DEPLOY_LOG="/tmp/autodeploy-${ENVIRONMENT}-$$.log"
-DISCORD_WEBHOOK="https://discord.com/api/webhooks/1477609590005829844/njhHGfYop87DbaGR5o4hCLBnpf3B5ZevYS0BR3kQViEZJktXSjb_SEVtj53WOv0cNxs5"
+DISCORD_WEBHOOK="${DISCORD_WEBHOOK_URL:-}"
+
+# GitHub commit status API
+GITHUB_TOKEN="${GITHUB_TOKEN:-}"
+GITHUB_REPO="stickms/rmhstudios.com"
 
 DOCKER_BIN=$(which docker 2>/dev/null || echo "/usr/bin/docker")
 GIT_BIN=$(which git 2>/dev/null || echo "/usr/bin/git")
@@ -80,7 +84,33 @@ get_commit_info() {
         tr -d '\000-\011\013-\014\016-\037')
 }
 
+# ── GitHub commit status ────────────────────────────────────────────────────
+# Sets the commit status on GitHub so PRs / branch views show deploy state.
+# Usage: set_github_status <state> [description]
+#   state: pending | success | failure | error
+set_github_status() {
+    [ -z "$GITHUB_TOKEN" ] && return 0
+    local state="$1"
+    local description="${2:-Deploy $ENVIRONMENT}"
+    local full_sha
+    full_sha=$("$GIT_BIN" rev-parse HEAD 2>/dev/null) || return 0
+
+    local payload
+    payload=$(printf '{"state":"%s","description":"%s","context":"deploy/%s"}' \
+        "$state" "$description" "$ENVIRONMENT")
+
+    curl -s -X POST \
+        -H "Authorization: token $GITHUB_TOKEN" \
+        -H "Accept: application/vnd.github+json" \
+        -H "Content-Type: application/json" \
+        -d "$payload" \
+        "https://api.github.com/repos/${GITHUB_REPO}/statuses/${full_sha}" \
+        > /dev/null 2>&1 || \
+        log "WARNING: Failed to set GitHub commit status ($state)."
+}
+
 send_deploy_started() {
+    [ -z "$DISCORD_WEBHOOK" ] && { set_github_status "pending" "Deploy started"; return 0; }
     get_commit_info
     local env_label
     env_label=$(echo "$ENVIRONMENT" | tr '[:lower:]' '[:upper:]')
@@ -95,11 +125,23 @@ send_deploy_started() {
     if [ -z "$DEPLOY_MSG_ID" ]; then
         log "WARNING: Failed to send or parse Discord webhook notification."
     fi
+
+    set_github_status "pending" "Deploy started ($DEPLOY_SHORT_HASH)"
 }
 
 update_deploy_status() {
     local status="$1"  # "success" or "fail"
     local reason="${2:-}"  # optional failure reason
+
+    if [ -z "$DISCORD_WEBHOOK" ]; then
+        if [ "$status" = "success" ]; then
+            set_github_status "success" "Deploy succeeded"
+        else
+            set_github_status "failure" "Deploy failed: $reason"
+        fi
+        return 0
+    fi
+
     local color title env_label
 
     get_commit_info
@@ -112,9 +154,11 @@ update_deploy_status() {
         secs=$(( elapsed % 60 ))
         color=65280    # green
         title=$(printf '[%s] Commit %s - deploy succeeded in %02d:%02d' "$env_label" "$DEPLOY_SHORT_HASH" "$mins" "$secs")
+        set_github_status "success" "Deploy succeeded in ${mins}m${secs}s"
     else
         color=16711680 # red
         title="[$env_label] Commit $DEPLOY_SHORT_HASH - deploy failed: $reason"
+        set_github_status "failure" "Deploy failed: $reason"
     fi
 
     local payload

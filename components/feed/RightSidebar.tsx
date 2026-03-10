@@ -3,8 +3,6 @@
 import { Link } from '@tanstack/react-router';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import {
-  Newspaper,
-  FlaskConical,
   Hammer,
   Package,
   UserPlus,
@@ -13,8 +11,6 @@ import {
   Heart,
   MessageCircle,
 } from 'lucide-react';
-import type { NewsArticle } from '@/lib/news';
-import type { ResearchArticle } from '@/lib/research';
 
 interface SidebarBuild {
   id: string;
@@ -53,8 +49,6 @@ interface RightSidebarProps {
   userBuilds: SidebarBuild[];
   recommendedUsers: SidebarUser[];
   blogPosts: SidebarPost[];
-  newsArticles: Partial<NewsArticle>[];
-  researchArticles: ResearchArticle[];
 }
 
 export function RightSidebar({
@@ -62,8 +56,6 @@ export function RightSidebar({
   userBuilds,
   recommendedUsers,
   blogPosts,
-  newsArticles,
-  researchArticles,
 }: RightSidebarProps) {
   return (
     <div className="p-4 space-y-6">
@@ -199,74 +191,12 @@ export function RightSidebar({
         </Link>
       </section>
 
-      {/* News */}
-      <section className="bg-site-surface rounded-2xl p-4 border border-site-border">
-        <h2 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 mb-3">
-          <Newspaper className="w-5 h-5 text-site-accent" />
-          What&apos;s Happening
-        </h2>
-        <div className="space-y-3">
-          {newsArticles.slice(0, 5).map((article) => (
-            <Link
-              key={article.slug}
-              to={`/news/${article.slug}`}
-              className="block group"
-            >
-              <p className="text-xs text-site-text-dim">{article.category}</p>
-              <p className="text-sm font-medium text-site-text group-hover:text-site-accent transition-colors line-clamp-2">
-                {article.title}
-              </p>
-              {article.sourcePublisher && (
-                <p className="text-xs text-site-text-dim mt-0.5">
-                  {article.sourcePublisher}
-                </p>
-              )}
-            </Link>
-          ))}
-        </div>
-        <Link
-          to="/news"
-          className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors"
-        >
-          Show more
-        </Link>
-      </section>
-
-      {/* Research */}
-      <section className="bg-site-surface rounded-2xl p-4 border border-site-border">
-        <h2 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 mb-3">
-          <FlaskConical className="w-5 h-5 text-site-accent" />
-          From the Lab
-        </h2>
-        <div className="space-y-3">
-          {researchArticles.slice(0, 3).map((article) => (
-            <Link
-              key={article.slug}
-              to={`/research/${article.slug}`}
-              className="block group"
-            >
-              <p className="text-xs text-site-text-dim">{article.category}</p>
-              <p className="text-sm font-medium text-site-text group-hover:text-site-accent transition-colors line-clamp-2">
-                {article.title}
-              </p>
-            </Link>
-          ))}
-        </div>
-        <Link
-          to="/research"
-          className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors"
-        >
-          Show more
-        </Link>
-      </section>
-
       {/* Footer */}
       <div className="text-xs text-site-text-dim px-2 space-y-1">
         <p>RMH | The Everything Platform</p>
         <div className="flex flex-wrap gap-x-2 gap-y-0.5">
           <Link to="/blog" className="hover:text-site-text transition-colors">Blog</Link>
           <Link to="/roadmap" className="hover:text-site-text transition-colors">Roadmap</Link>
-          <Link to="/research" className="hover:text-site-text transition-colors">Research</Link>
         </div>
       </div>
     </div>

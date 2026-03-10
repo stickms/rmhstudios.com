@@ -9,7 +9,6 @@ const contentTabs: { label: string; value: FeedFilter }[] = [
   { label: 'Games', value: 'game' },
   { label: 'Apps', value: 'app' },
   { label: 'Blog', value: 'blog' },
-  { label: 'Other', value: 'other' },
 ];
 
 interface FeedTabsProps {

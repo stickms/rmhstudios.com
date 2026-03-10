@@ -3,8 +3,6 @@
 import { RightSidebar } from './RightSidebar';
 import { FeedColumn } from './FeedColumn';
 import { AnimatedMain } from './AnimatedMain';
-import type { NewsArticle } from '@/lib/news';
-import type { ResearchArticle } from '@/lib/research';
 
 interface FeedLayoutProps {
   curatedBuilds: {
@@ -45,8 +43,6 @@ interface FeedLayoutProps {
     title: string;
     date: string;
   }[];
-  newsArticles: Partial<NewsArticle>[];
-  researchArticles: ResearchArticle[];
 }
 
 export function FeedLayout({
@@ -54,8 +50,6 @@ export function FeedLayout({
   userBuilds,
   recommendedUsers,
   blogPosts,
-  newsArticles,
-  researchArticles,
 }: FeedLayoutProps) {
   return (
     <>
@@ -71,8 +65,6 @@ export function FeedLayout({
           userBuilds={userBuilds}
           recommendedUsers={recommendedUsers}
           blogPosts={blogPosts}
-          newsArticles={newsArticles}
-          researchArticles={researchArticles}
         />
       </aside>
     </>

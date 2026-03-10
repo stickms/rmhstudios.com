@@ -48,10 +48,13 @@ function playNext(): void {
     currentHowl = null;
   }
 
+  // Use WebAudio (html5: false) so volume control works on iOS/mobile.
+  // html5: true disables JavaScript volume control on iOS.
   currentHowl = new Howl({
     src: [TRACKS[trackIndex]],
     volume: getEffectiveVolume(),
-    html5: true,
+    html5: false,
+    preload: true,
     onend: () => {
       if (started) playNext();
     },
