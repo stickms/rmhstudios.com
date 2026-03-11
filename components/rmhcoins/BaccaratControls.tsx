@@ -93,7 +93,7 @@ export function BaccaratControls({ coins }: Props) {
     const amount = Math.min(chipAmount, coins - totalBet);
     if (amount <= 0) return;
     setLocalBets((prev) => ({ ...prev, [betType]: prev[betType] + amount }));
-    emit(C2S.PLACE_BET, { betType, amount });
+    emit(C2S.PLACE_BET, { type: betType, amount });
   };
 
   // Idle state

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { useRouletteStore } from '@/lib/roulette/store';
 import { getRouletteSocket } from '@/lib/roulette/socket';
 import { C2S } from '@/lib/roulette/events';
@@ -10,7 +10,6 @@ import { CoinIcon } from './CoinIcon';
 
 // ── Board Layout ─────────────────────────────────────────────────
 
-/** Row-by-row layout: each row has 3 numbers, left-to-right = col3, col2, col1 visually */
 const BOARD_ROWS: number[][] = [];
 for (let row = 0; row < 12; row++) {
   const base = row * 3 + 1;
@@ -28,6 +27,128 @@ const NUMBER_BG_WIN: Record<string, string> = {
   black: 'bg-gray-700 ring-2 ring-yellow-400',
   green: 'bg-emerald-600 ring-2 ring-yellow-400',
 };
+
+const CELL_W = 64;
+const REPEATS = 10;
+const STRIP = Array.from({ length: WHEEL_ORDER.length * REPEATS }, (_, i) => WHEEL_ORDER[i % WHEEL_ORDER.length]);
+
+function getCellBg(n: number) {
+  const c = getNumberColor(n);
+  return c === 'red' ? '#dc2626' : c === 'green' ? '#059669' : '#1f2937';
+}
+
+// ── Spinning Strip ──────────────────────────────────────────────
+
+function SpinningWheel({ result }: { result: number | null }) {
+  const stripRef = useRef<HTMLDivElement>(null);
+  const [landed, setLanded] = useState(false);
+  const [highlightIdx, setHighlightIdx] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (result === null || !stripRef.current) return;
+    setLanded(false);
+    setHighlightIdx(null);
+
+    // Find the target index: land somewhere in the middle repeats
+    const midStart = Math.floor(REPEATS / 2) * WHEEL_ORDER.length;
+    let targetIdx = midStart;
+    for (let i = midStart; i < midStart + WHEEL_ORDER.length; i++) {
+      if (STRIP[i] === result) { targetIdx = i; break; }
+    }
+
+    // Calculate offset to center the winning cell in the viewport
+    const viewportW = stripRef.current.parentElement?.clientWidth ?? 320;
+    const offset = targetIdx * CELL_W + CELL_W / 2 - viewportW / 2;
+
+    stripRef.current.style.transition = 'none';
+    stripRef.current.style.transform = 'translateX(0px)';
+
+    // Force reflow
+    void stripRef.current.offsetHeight;
+
+    stripRef.current.style.transition = 'transform 4s cubic-bezier(0.15, 0.9, 0.3, 1)';
+    stripRef.current.style.transform = `translateX(-${offset}px)`;
+
+    const timer = setTimeout(() => {
+      setLanded(true);
+      setHighlightIdx(targetIdx);
+    }, 4200);
+
+    return () => clearTimeout(timer);
+  }, [result]);
+
+  return (
+    <div className="flex flex-col items-center gap-1 w-full">
+      {/* Pointer triangle */}
+      <div className="w-0 h-0" style={{
+        borderLeft: '10px solid transparent',
+        borderRight: '10px solid transparent',
+        borderTop: '14px solid #8b5cf6',
+      }} />
+
+      {/* Strip viewport */}
+      <div
+        className="relative overflow-hidden rounded-xl border-2 border-violet-500/60"
+        style={{ width: '100%', maxWidth: 420, height: 72 }}
+      >
+        <div ref={stripRef} className="flex absolute top-0 left-0 h-full" style={{ willChange: 'transform' }}>
+          {STRIP.map((n, i) => {
+            const isHighlight = landed && highlightIdx === i;
+            return (
+              <div
+                key={i}
+                className="shrink-0 flex items-center justify-center font-bold text-white text-lg border-r border-white/10"
+                style={{
+                  width: CELL_W,
+                  height: '100%',
+                  backgroundColor: getCellBg(n),
+                  boxShadow: isHighlight ? 'inset 0 0 20px rgba(250, 204, 21, 0.6)' : undefined,
+                  outline: isHighlight ? '3px solid #facc15' : undefined,
+                  transition: isHighlight ? 'box-shadow 0.3s, outline 0.3s' : undefined,
+                }}
+              >
+                {n}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Bottom pointer */}
+      <div className="w-0 h-0" style={{
+        borderLeft: '10px solid transparent',
+        borderRight: '10px solid transparent',
+        borderBottom: '14px solid #8b5cf6',
+      }} />
+    </div>
+  );
+}
+
+// ── Winning Number Display (results phase) ──────────────────────
+
+function WinningNumberDisplay({ number }: { number: number }) {
+  const color = getNumberColor(number);
+  const bg = color === 'red' ? '#dc2626' : color === 'green' ? '#059669' : '#1f2937';
+
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <span className="text-xs text-site-text-dim uppercase tracking-wider font-bold">Winning Number</span>
+      <div
+        className="flex items-center justify-center rounded-full text-white font-black text-3xl shadow-2xl"
+        style={{
+          width: 80,
+          height: 80,
+          backgroundColor: bg,
+          boxShadow: `0 0 30px ${color === 'red' ? 'rgba(220,38,38,0.5)' : color === 'green' ? 'rgba(5,150,105,0.5)' : 'rgba(31,41,55,0.5)'}, 0 0 0 4px rgba(250,204,21,0.4)`,
+        }}
+      >
+        {number}
+      </div>
+    </div>
+  );
+}
+
+// ── Main Table ──────────────────────────────────────────────────
 
 interface Props {
   coins: number;
@@ -49,14 +170,12 @@ export function RouletteTable({ coins }: Props) {
   const isBetting = tablePhase === 'betting';
   const winningNumber = tablePhase === 'results' || tablePhase === 'spinning' ? spinResult : null;
 
-  // Calculate total chips placed on each bet area
   const chipMap = useMemo(() => {
     const map = new Map<string, number>();
     for (const bet of stagedBets) {
       const key = bet.type + ':' + bet.numbers.join(',');
       map.set(key, (map.get(key) ?? 0) + bet.amount);
     }
-    // Also include confirmed bets from server for my player
     const myPlayer = players.find((p) => p.userId === myUserId);
     if (myPlayer) {
       for (const bet of myPlayer.bets) {
@@ -74,21 +193,17 @@ export function RouletteTable({ coins }: Props) {
 
   const handlePlaceBet = (type: BetType, numbers: number[]) => {
     if (!isBetting) return;
-    // Get chip value from the store's staged bets context — use default 5 if nothing selected
-    // The chip value is managed by the controls component via a global approach
     const chipValue = getSelectedChipValue();
     if (chipValue > coins) return;
 
     addStagedBet({ type, numbers, amount: chipValue });
 
-    // Emit to server
     const sock = getRouletteSocket();
     if (sock) {
       sock.emit(C2S.PLACE_BET, { type, numbers, amount: chipValue });
     }
   };
 
-  // Chip overlay
   function ChipOverlay({ type, numbers }: { type: BetType; numbers: number[] }) {
     const amount = getChipAmount(type, numbers);
     if (amount <= 0) return null;
@@ -104,47 +219,12 @@ export function RouletteTable({ coins }: Props) {
     <div className="flex flex-col items-center gap-4">
       {/* Spinning animation */}
       {tablePhase === 'spinning' && (
-        <div className="flex flex-col items-center gap-2">
-          <div className="relative w-32 h-32">
-            {/* Wheel */}
-            <div className="absolute inset-0 rounded-full border-4 border-violet-500/50 animate-spin" style={{ animationDuration: '2s' }}>
-              {WHEEL_ORDER.map((n, i) => {
-                const angle = (i / WHEEL_ORDER.length) * 360;
-                const color = getNumberColor(n);
-                const dotColor = color === 'red' ? 'bg-red-500' : color === 'black' ? 'bg-gray-800' : 'bg-emerald-500';
-                return (
-                  <div
-                    key={n}
-                    className={`absolute w-2 h-2 rounded-full ${dotColor}`}
-                    style={{
-                      top: `${50 - 42 * Math.cos((angle * Math.PI) / 180)}%`,
-                      left: `${50 + 42 * Math.sin((angle * Math.PI) / 180)}%`,
-                      transform: 'translate(-50%, -50%)',
-                    }}
-                  />
-                );
-              })}
-            </div>
-            {/* Ball */}
-            <div
-              className="absolute w-3 h-3 bg-white rounded-full shadow-lg animate-bounce z-10"
-              style={{ top: '10%', left: '50%', transform: 'translate(-50%, -50%)' }}
-            />
-            {/* Center */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-xs font-bold text-violet-400 animate-pulse">Spinning...</span>
-            </div>
-          </div>
-          {spinResult !== null && (
-            <div className={`mt-2 text-2xl font-bold px-4 py-2 rounded-lg ${
-              getNumberColor(spinResult) === 'red' ? 'bg-red-600 text-white'
-              : getNumberColor(spinResult) === 'green' ? 'bg-emerald-600 text-white'
-              : 'bg-gray-800 text-white'
-            } animate-bounce`}>
-              {spinResult}
-            </div>
-          )}
-        </div>
+        <SpinningWheel result={spinResult} />
+      )}
+
+      {/* Results - show winning number prominently */}
+      {tablePhase === 'results' && spinResult !== null && (
+        <WinningNumberDisplay number={spinResult} />
       )}
 
       {/* Roulette Board */}
@@ -162,7 +242,7 @@ export function RouletteTable({ coins }: Props) {
             <ChipOverlay type="straight" numbers={[0]} />
           </button>
 
-          {/* Number grid: 12 rows x 3 columns */}
+          {/* Number grid */}
           <div className="grid grid-cols-3 gap-0.5">
             {BOARD_ROWS.map((row) =>
               row.map((n) => {
@@ -219,7 +299,7 @@ export function RouletteTable({ coins }: Props) {
             ))}
           </div>
 
-          {/* Outside bets: low/high, even/odd, red/black */}
+          {/* Outside bets */}
           <div className="grid grid-cols-6 gap-0.5">
             {([
               { type: 'low' as BetType, label: '1-18' },
