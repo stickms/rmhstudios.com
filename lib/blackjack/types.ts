@@ -3,6 +3,7 @@ import type { Card } from './logic';
 export type TablePhase =
   | 'idle'
   | 'betting'
+  | 'insurance'
   | 'dealing'
   | 'player_turns'
   | 'dealer_turn'
@@ -20,6 +21,23 @@ export type PlayerStatus =
 
 export type HandResult = 'win' | 'lose' | 'push' | 'blackjack' | null;
 
+export interface SessionStats {
+  totalBet: number;
+  totalWon: number;
+  handsPlayed: number;
+  handsWon: number;
+  blackjacks: number;
+}
+
+export interface SplitHandClient {
+  hand: Card[];
+  bet: number;
+  status: PlayerStatus;
+  handValue: number | null;
+  result: HandResult;
+  payout: number;
+}
+
 export interface PlayerSeatClient {
   userId: string;
   userName: string;
@@ -31,6 +49,12 @@ export interface PlayerSeatClient {
   handValue: number | null;
   result: HandResult;
   payout: number;
+  insuranceBet: number;
+  insuranceResult: 'won' | 'lost' | null;
+  sessionStats: SessionStats;
+  hasSplit: boolean;
+  activeSplitIndex: number;
+  splitHands: SplitHandClient[];
 }
 
 export interface TableStateSnapshot {
@@ -49,5 +73,27 @@ export interface RoundResultEntry {
   userId: string;
   result: HandResult;
   payout: number;
+  insurancePayout: number;
   newBalance: number;
+}
+
+// ── Room Types ────────────────────────────────────────────────────
+
+export interface RoomListEntry {
+  roomId: string;
+  name: string;
+  ownerName: string;
+  playerCount: number;
+  maxPlayers: number;
+  inProgress: boolean;
+}
+
+export interface RoomInfo {
+  roomId: string;
+  name: string;
+  ownerId: string;
+  ownerName: string;
+  maxPlayers: number;
+  privacy: 'public' | 'unlisted';
+  joinCode: string;
 }

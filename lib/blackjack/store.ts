@@ -1,13 +1,21 @@
 'use client';
 
 import { create } from 'zustand';
-import type { TablePhase, PlayerSeatClient, RoundResultEntry, HandResult } from './types';
+import type { TablePhase, PlayerSeatClient, RoundResultEntry, HandResult, RoomListEntry, RoomInfo } from './types';
 import type { Card } from './logic';
 
 type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
+type ViewMode = 'lobby' | 'room';
 
 interface BlackjackStore {
   connectionStatus: ConnectionStatus;
+  viewMode: ViewMode;
+
+  // Lobby
+  roomList: RoomListEntry[];
+
+  // Current room
+  roomInfo: RoomInfo | null;
   tablePhase: TablePhase;
   roundNumber: number;
   players: PlayerSeatClient[];
@@ -20,8 +28,23 @@ interface BlackjackStore {
   lastRoundResults: RoundResultEntry[] | null;
   error: string | null;
 
+  // Insurance
+  insuranceOffered: boolean;
+  insuranceTimeout: number | null;
+
   setConnectionStatus: (s: ConnectionStatus) => void;
   setMyUserId: (id: string | null) => void;
+  setViewMode: (mode: ViewMode) => void;
+
+  // Lobby actions
+  setRoomList: (rooms: RoomListEntry[]) => void;
+
+  // Room actions
+  setRoomJoined: (info: RoomInfo) => void;
+  setRoomLeft: () => void;
+  setRoomUpdated: (data: Partial<RoomInfo>) => void;
+
+  // Table state
   setTableState: (state: {
     phase: TablePhase;
     roundNumber: number;
@@ -39,13 +62,20 @@ interface BlackjackStore {
   handleCardDealt: (data: { target: string; userId?: string; card: Card; handValue: number }) => void;
   handleDealerReveal: (data: { dealerHand: Card[]; dealerValue: number }) => void;
   handleRoundResults: (data: { results: RoundResultEntry[]; dealerValue: number }) => void;
+  handleInsuranceOffer: (data: { timeoutSeconds: number }) => void;
+  handleInsuranceResolved: () => void;
   setError: (msg: string | null) => void;
   setBettingCountdown: (n: number | null) => void;
   reset: () => void;
 }
 
+const defaultSessionStats = { totalBet: 0, totalWon: 0, handsPlayed: 0, handsWon: 0, blackjacks: 0 };
+
 const initialState = {
   connectionStatus: 'disconnected' as ConnectionStatus,
+  viewMode: 'lobby' as ViewMode,
+  roomList: [] as RoomListEntry[],
+  roomInfo: null as RoomInfo | null,
   tablePhase: 'idle' as TablePhase,
   roundNumber: 0,
   players: [] as PlayerSeatClient[],
@@ -57,6 +87,8 @@ const initialState = {
   myUserId: null as string | null,
   lastRoundResults: null as RoundResultEntry[] | null,
   error: null as string | null,
+  insuranceOffered: false,
+  insuranceTimeout: null as number | null,
 };
 
 export const useBlackjackStore = create<BlackjackStore>((set) => ({
@@ -64,6 +96,30 @@ export const useBlackjackStore = create<BlackjackStore>((set) => ({
 
   setConnectionStatus: (connectionStatus) => set({ connectionStatus }),
   setMyUserId: (myUserId) => set({ myUserId }),
+  setViewMode: (viewMode) => set({ viewMode }),
+
+  // Lobby
+  setRoomList: (roomList) => set({ roomList }),
+
+  // Room
+  setRoomJoined: (roomInfo) => set({ roomInfo, viewMode: 'room' }),
+  setRoomLeft: () => set({
+    roomInfo: null,
+    viewMode: 'lobby',
+    tablePhase: 'idle',
+    players: [],
+    dealerHand: [],
+    dealerValue: null,
+    currentTurnUserId: null,
+    bettingCountdown: null,
+    turnTimeout: null,
+    lastRoundResults: null,
+    insuranceOffered: false,
+    insuranceTimeout: null,
+  }),
+  setRoomUpdated: (data) => set((s) => ({
+    roomInfo: s.roomInfo ? { ...s.roomInfo, ...data } : null,
+  })),
 
   setTableState: (state) =>
     set({
@@ -95,6 +151,12 @@ export const useBlackjackStore = create<BlackjackStore>((set) => ({
             handValue: null,
             result: null as HandResult,
             payout: 0,
+            insuranceBet: 0,
+            insuranceResult: null,
+            sessionStats: { ...defaultSessionStats },
+            hasSplit: false,
+            activeSplitIndex: -1,
+            splitHands: [],
           },
         ],
       };
@@ -114,6 +176,8 @@ export const useBlackjackStore = create<BlackjackStore>((set) => ({
       dealerHand: [],
       dealerValue: null,
       currentTurnUserId: null,
+      insuranceOffered: false,
+      insuranceTimeout: null,
     }),
 
   handleTurn: (data) =>
@@ -148,6 +212,19 @@ export const useBlackjackStore = create<BlackjackStore>((set) => ({
       tablePhase: 'results',
       lastRoundResults: data.results,
       dealerValue: data.dealerValue,
+    }),
+
+  handleInsuranceOffer: (data) =>
+    set({
+      tablePhase: 'insurance',
+      insuranceOffered: true,
+      insuranceTimeout: data.timeoutSeconds,
+    }),
+
+  handleInsuranceResolved: () =>
+    set({
+      insuranceOffered: false,
+      insuranceTimeout: null,
     }),
 
   setError: (error) => set({ error }),

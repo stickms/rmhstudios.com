@@ -18,16 +18,27 @@ export function BlackjackControls({ coins }: Props) {
     myUserId,
     players,
     bettingCountdown,
+    insuranceOffered,
+    insuranceTimeout,
     error,
   } = useBlackjackStore();
 
   const [betInput, setBetInput] = useState('5');
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [insCountdown, setInsCountdown] = useState<number | null>(null);
 
   const myPlayer = players.find((p) => p.userId === myUserId);
   const isMyTurn = currentTurnUserId === myUserId;
   const hasBet = myPlayer?.status === 'betting';
   const canDoubleDown = isMyTurn && myPlayer?.hand.length === 2 && coins >= (myPlayer?.bet ?? 0);
+
+  // Can split: 2 cards of same rank (10/J/Q/K all count as same), haven't split yet, can afford it
+  const rankVal = (r: string) => (['10', 'J', 'Q', 'K'].includes(r) ? '10' : r);
+  const canSplit = isMyTurn && myPlayer?.hand.length === 2
+    && !myPlayer?.hasSplit
+    && myPlayer?.hand[0] && myPlayer?.hand[1]
+    && rankVal(myPlayer.hand[0].rank) === rankVal(myPlayer.hand[1].rank)
+    && coins >= (myPlayer?.bet ?? 0);
 
   // Betting countdown timer
   useEffect(() => {
@@ -48,18 +59,37 @@ export function BlackjackControls({ coins }: Props) {
     }
   }, [tablePhase, bettingCountdown]);
 
+  // Insurance countdown timer
+  useEffect(() => {
+    if (tablePhase === 'insurance' && insuranceTimeout !== null) {
+      setInsCountdown(insuranceTimeout);
+      const interval = setInterval(() => {
+        setInsCountdown((prev) => {
+          if (prev === null || prev <= 0) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(interval);
+    } else {
+      setInsCountdown(null);
+    }
+  }, [tablePhase, insuranceTimeout]);
+
   const emit = useCallback((event: string, payload?: unknown) => {
     const sock = getBlackjackSocket();
     if (sock) sock.emit(event, payload);
   }, []);
 
   const handlePlaceBet = () => {
-    const amount = Math.max(1, Math.min(parseInt(betInput, 10) || 1, Math.min(coins, 100)));
+    const amount = Math.max(1, Math.min(parseInt(betInput, 10) || 1, coins));
     emit(C2S.PLACE_BET, { amount });
   };
 
   const setQuickBet = (amount: number) => {
-    const val = Math.min(amount, coins, 100);
+    const val = Math.min(amount, coins);
     setBetInput(String(val));
   };
 
@@ -97,7 +127,7 @@ export function BlackjackControls({ coins }: Props) {
                 <input
                   type="number"
                   min={1}
-                  max={Math.min(coins, 100)}
+                  max={coins}
                   value={betInput}
                   onChange={(e) => setBetInput(e.target.value)}
                   className="w-full bg-site-surface border border-site-border rounded-lg px-3 py-2 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500/50"
@@ -105,7 +135,7 @@ export function BlackjackControls({ coins }: Props) {
                 <CoinIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" />
               </div>
               <div className="flex gap-1.5">
-                {[1, 5, 10, 25].map((amt) => (
+                {[5, 25, 100, 500].map((amt) => (
                   <button
                     key={amt}
                     onClick={() => setQuickBet(amt)}
@@ -133,11 +163,72 @@ export function BlackjackControls({ coins }: Props) {
     );
   }
 
+  // Insurance phase
+  if (tablePhase === 'insurance') {
+    const myInsuranceDecision = myPlayer?.insuranceBet !== undefined
+      ? (myPlayer.insuranceBet > 0 ? 'taken' : undefined)
+      : undefined;
+    const insuranceCost = Math.floor((myPlayer?.bet ?? 0) / 2);
+    const alreadyDecided = myPlayer?.insuranceBet !== undefined && myPlayer.insuranceBet > 0;
+    const canAffordInsurance = coins >= insuranceCost;
+    // Check if player has a bet this round (status is not 'waiting')
+    const isInRound = myPlayer && myPlayer.status !== 'waiting' && myPlayer.bet > 0;
+    // Check if blackjack (auto-declined)
+    const hasBJ = myPlayer?.status === 'blackjack';
+
+    if (!isInRound || hasBJ) {
+      return (
+        <div className="text-center text-site-text-dim py-4">
+          <p className="text-sm">Dealer showing Ace — Insurance offered to other players...</p>
+          {insCountdown !== null && (
+            <span className="text-xs text-yellow-500">{insCountdown}s</span>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex flex-col gap-3">
+        <div className="text-center">
+          <p className="text-sm font-bold text-yellow-500">Insurance?</p>
+          <p className="text-xs text-site-text-dim mt-1">
+            Dealer showing Ace. Insurance costs {insuranceCost} coins (half your bet). Pays 2:1 if dealer has blackjack.
+          </p>
+          {insCountdown !== null && (
+            <span className="text-xs text-site-text-dim mt-1 block">{insCountdown}s remaining</span>
+          )}
+        </div>
+
+        {alreadyDecided ? (
+          <p className="text-sm text-emerald-400 text-center font-bold">Insurance taken!</p>
+        ) : (
+          <div className="flex gap-2">
+            <Button
+              onClick={() => emit(C2S.TAKE_INSURANCE)}
+              disabled={!canAffordInsurance}
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg"
+            >
+              Take Insurance ({insuranceCost})
+            </Button>
+            <Button
+              onClick={() => emit(C2S.DECLINE_INSURANCE)}
+              className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-lg"
+            >
+              No Thanks
+            </Button>
+          </div>
+        )}
+
+        {error && <p className="text-sm text-red-400 text-center">{error}</p>}
+      </div>
+    );
+  }
+
   // Player turns — my turn
   if (tablePhase === 'player_turns' && isMyTurn) {
     return (
       <div className="flex flex-col gap-3">
-        <p className="text-sm text-center text-yellow-500 font-bold">Your turn!</p>
+        <p className="text-sm text-center text-yellow-500 font-bold animate-pulse">Your turn!</p>
         <div className="flex gap-2">
           <Button
             onClick={() => emit(C2S.HIT)}
@@ -159,13 +250,21 @@ export function BlackjackControls({ coins }: Props) {
               Double
             </Button>
           )}
+          {canSplit && (
+            <Button
+              onClick={() => emit(C2S.SPLIT)}
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg"
+            >
+              Split
+            </Button>
+          )}
         </div>
         {error && <p className="text-sm text-red-400 text-center">{error}</p>}
       </div>
     );
   }
 
-  // Player turns — waiting for another player
+  // Player turns — waiting
   if (tablePhase === 'player_turns') {
     const currentPlayer = players.find((p) => p.userId === currentTurnUserId);
     return (
@@ -181,7 +280,7 @@ export function BlackjackControls({ coins }: Props) {
   if (tablePhase === 'dealer_turn') {
     return (
       <div className="text-center text-site-text-dim py-4">
-        <p className="text-sm">Dealer is drawing...</p>
+        <p className="text-sm animate-pulse">Dealer is drawing...</p>
       </div>
     );
   }
@@ -198,7 +297,7 @@ export function BlackjackControls({ coins }: Props) {
     }
 
     const resultText: Record<string, { label: string; color: string }> = {
-      blackjack: { label: 'Blackjack!', color: 'text-yellow-400' },
+      blackjack: { label: 'Blackjack! (3:2)', color: 'text-yellow-400' },
       win: { label: 'You win!', color: 'text-emerald-400' },
       push: { label: 'Push', color: 'text-blue-400' },
       lose: { label: 'You lose', color: 'text-red-400' },
@@ -214,15 +313,20 @@ export function BlackjackControls({ coins }: Props) {
             +{myResult.payout} coins
           </p>
         )}
+        {myResult.insuranceBet > 0 && myResult.insuranceResult && (
+          <p className={`text-xs mt-1 ${myResult.insuranceResult === 'won' ? 'text-blue-400' : 'text-site-text-dim'}`}>
+            Insurance {myResult.insuranceResult === 'won' ? 'paid out!' : 'lost'}
+          </p>
+        )}
         <p className="text-xs text-site-text-dim mt-2">Next round starting soon...</p>
       </div>
     );
   }
 
-  // Dealing / payout / other states
+  // Dealing / payout / other
   return (
     <div className="text-center text-site-text-dim py-4">
-      <p className="text-sm">Dealing...</p>
+      <p className="text-sm animate-pulse">Dealing...</p>
     </div>
   );
 }

@@ -3,17 +3,19 @@
 import { useState } from 'react';
 import { PlinkoGame } from './PlinkoGame';
 import { BlackjackGame } from './BlackjackGame';
+import { HoldemGame } from './HoldemGame';
 
 interface Props {
   coins: number;
   setCoins: (coins: number) => void;
 }
 
-type GameChoice = 'plinko' | 'blackjack';
+type GameChoice = 'plinko' | 'blackjack' | 'holdem';
 
 const games: { label: string; value: GameChoice; description: string }[] = [
   { label: 'Plinko', value: 'plinko', description: 'Drop the ball, pick a bin' },
   { label: 'Blackjack', value: 'blackjack', description: 'Multiplayer card game' },
+  { label: "Hold'em", value: 'holdem', description: 'No Limit Texas Poker' },
 ];
 
 export function PlayTab({ coins, setCoins }: Props) {
@@ -48,6 +50,7 @@ export function PlayTab({ coins, setCoins }: Props) {
       {/* Game content */}
       {selected === 'plinko' && <PlinkoGame coins={coins} setCoins={setCoins} />}
       {selected === 'blackjack' && <BlackjackGame coins={coins} setCoins={setCoins} />}
+      {selected === 'holdem' && <HoldemGame coins={coins} setCoins={setCoins} />}
     </div>
   );
 }
