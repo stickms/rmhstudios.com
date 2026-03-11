@@ -65,9 +65,7 @@ export function HoldemGame({ coins, setCoins }: Props) {
   }
 
   const statusColor =
-    connectionStatus === 'connected' ? 'text-emerald-500'
-    : connectionStatus === 'connecting' ? 'text-yellow-500'
-    : 'text-red-500';
+    connectionStatus === 'connected' ? 'text-emerald-500' : 'text-red-500';
 
   if (viewMode === 'lobby' || !roomInfo) {
     return (

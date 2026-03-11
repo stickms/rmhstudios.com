@@ -71,11 +71,7 @@ export function BlackjackGame({ coins, setCoins }: Props) {
 
   // Status indicator color
   const statusColor =
-    connectionStatus === 'connected'
-      ? 'text-emerald-500'
-      : connectionStatus === 'connecting'
-        ? 'text-yellow-500'
-        : 'text-red-500';
+    connectionStatus === 'connected' ? 'text-emerald-500' : 'text-red-500';
 
   // Lobby view
   if (viewMode === 'lobby' || !roomInfo) {
@@ -109,7 +105,7 @@ export function BlackjackGame({ coins, setCoins }: Props) {
           >
             &larr; Leave
           </button>
-          <h3 className="text-sm font-bold text-site-text truncate max-w-[180px]">
+          <h3 className="text-sm font-bold text-site-text truncate max-w-45">
             {roomInfo.name}
           </h3>
         </div>
