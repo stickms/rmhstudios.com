@@ -7,7 +7,7 @@
  */
 
 export type MediaType = 'youtube' | 'twitch' | 'direct';
-export type MemberRole = 'host' | 'moderator' | 'member';
+export type MemberRole = 'host' | 'member';
 export type UserPresenceStatus = 'watching' | 'afk' | 'brb';
 
 export interface RmhTubeMember {
@@ -76,6 +76,7 @@ export interface RmhTubeRoom {
   id: string;
   name: string | null;
   hostUserId: string;
+  leaderUserId: string;
   settings: RoomSettings;
   members: Map<string, RmhTubeMember>;
   queue: QueueItem[];

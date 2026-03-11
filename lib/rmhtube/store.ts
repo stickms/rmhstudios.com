@@ -247,6 +247,7 @@ export function applyRoomAction(
             avatarUrl: (data.avatarUrl as string | null) ?? null,
             isConnected: true,
             isHost: false,
+            isLeader: false,
             role: 'member' as const,
             status: 'watching' as const,
           },
@@ -267,17 +268,22 @@ export function applyRoomAction(
         members: room.members.filter((m) => m.userId !== data.userId),
       };
 
-    case 'HOST_TRANSFERRED':
+    case 'HOST_TRANSFERRED': {
+      const newHostId = data.newHostUserId as string;
+      const newLeaderId = (data.newLeaderUserId as string) ?? newHostId;
       store?.addSystemMessage('host_transfer', `${data.newHostUserName} is now the host`);
       return {
         ...room,
-        hostUserId: data.newHostUserId as string,
+        hostUserId: newHostId,
+        leaderUserId: newLeaderId,
         members: room.members.map((m) => ({
           ...m,
-          isHost: m.userId === data.newHostUserId,
-          role: m.userId === data.newHostUserId ? 'host' as const : (m.role === 'host' ? 'member' as const : m.role),
+          isHost: m.userId === newHostId,
+          isLeader: m.userId === newLeaderId,
+          role: m.userId === newHostId ? 'host' as const : (m.role === 'host' ? 'member' as const : m.role),
         })),
       };
+    }
 
     case 'SETTINGS_UPDATED':
       store?.addSystemMessage('settings_change', 'Room settings were updated');
@@ -437,22 +443,19 @@ export function applyRoomAction(
         playedItems: data.playedItems as ClientQueueItem[],
       };
 
-    // Phase 4: Moderator promotion/demotion
-    case 'MEMBER_PROMOTED':
+    // Leader changed
+    case 'LEADER_CHANGED': {
+      const newLeaderId = data.newLeaderUserId as string;
+      store?.addSystemMessage('leader_change', `${data.newLeaderUserName} is now the leader`);
       return {
         ...room,
-        members: room.members.map((m) =>
-          m.userId === data.userId ? { ...m, role: 'moderator' as const } : m,
-        ),
+        leaderUserId: newLeaderId,
+        members: room.members.map((m) => ({
+          ...m,
+          isLeader: m.userId === newLeaderId,
+        })),
       };
-
-    case 'MEMBER_DEMOTED':
-      return {
-        ...room,
-        members: room.members.map((m) =>
-          m.userId === data.userId ? { ...m, role: 'member' as const } : m,
-        ),
-      };
+    }
 
     // Phase 4: Ban list
     case 'MEMBER_BANNED':

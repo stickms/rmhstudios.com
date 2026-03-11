@@ -1,24 +1,23 @@
 /**
  * MemberList — User presence sidebar with role badges, presence status,
- * promote/demote, ban, kick, and transfer controls.
+ * leader transfer, ban, kick, and host transfer controls.
  *
- * Phase 4 features:
- *  4.1  Role badges (Host / Mod) & promote/demote controls
- *  4.2  Ban controls (host + mods)
- *  4.7  Presence status (watching / afk / brb) with self-selector
+ * Features:
+ *  - Role badges (Host / Leader)
+ *  - Leader transfer (host or current leader can set new leader)
+ *  - Ban/kick controls (host only)
+ *  - Presence status (watching / afk / brb) with self-selector
  */
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   Crown,
   Wifi,
   WifiOff,
   UserX,
   ArrowRightLeft,
-  ShieldCheck,
-  ShieldPlus,
-  ShieldMinus,
+  Star,
   Ban,
   Eye,
   Coffee,
@@ -27,7 +26,7 @@ import {
 import { emit } from '@/lib/rmhtube/socket';
 import { C2S } from '@/lib/rmhtube/events';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
-import type { ClientMemberInfo, MemberRole, UserPresenceStatus } from '@/lib/rmhtube/types';
+import type { ClientMemberInfo, UserPresenceStatus } from '@/lib/rmhtube/types';
 
 // ─── Presence helpers ──────────────────────────────────────────
 
@@ -60,16 +59,11 @@ function PresenceBadge({ status }: { status: UserPresenceStatus }) {
 
 // ─── Sorting ───────────────────────────────────────────────────
 
-function rolePriority(role: MemberRole, isHost: boolean): number {
-  if (isHost) return 0;
-  if (role === 'moderator') return 1;
-  return 2;
-}
-
 function sortMembers(members: ClientMemberInfo[]): ClientMemberInfo[] {
   return [...members].sort((a, b) => {
-    const pa = rolePriority(a.role, a.isHost);
-    const pb = rolePriority(b.role, b.isHost);
+    // Host first, then leader, then everyone else
+    const pa = a.isHost ? 0 : a.isLeader ? 1 : 2;
+    const pb = b.isHost ? 0 : b.isLeader ? 1 : 2;
     if (pa !== pb) return pa - pb;
     // Secondary: connected before disconnected
     if (a.isConnected !== b.isConnected) return a.isConnected ? -1 : 1;
@@ -82,6 +76,18 @@ function sortMembers(members: ClientMemberInfo[]): ClientMemberInfo[] {
 
 function StatusSelector({ currentStatus }: { currentStatus: UserPresenceStatus }) {
   const [open, setOpen] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [pos, setPos] = useState({ top: 0, right: 0 });
+
+  const handleOpen = useCallback(() => {
+    setOpen((o) => {
+      if (!o && btnRef.current) {
+        const rect = btnRef.current.getBoundingClientRect();
+        setPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+      }
+      return !o;
+    });
+  }, []);
 
   const handleChange = useCallback((status: UserPresenceStatus) => {
     emit(C2S.ROOM_SET_STATUS, { status });
@@ -93,9 +99,10 @@ function StatusSelector({ currentStatus }: { currentStatus: UserPresenceStatus }
     currentStatus === 'afk' ? Coffee : currentStatus === 'brb' ? Clock : Eye;
 
   return (
-    <div className="relative">
+    <>
       <button
-        onClick={() => setOpen((o) => !o)}
+        ref={btnRef}
+        onClick={handleOpen}
         className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium transition-colors
           text-(--rmhtube-text-dim) hover:text-(--rmhtube-text) hover:bg-(--rmhtube-surface-hover)"
         title="Change your status"
@@ -108,7 +115,10 @@ function StatusSelector({ currentStatus }: { currentStatus: UserPresenceStatus }
         <>
           {/* Invisible backdrop to close on outside click */}
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full z-50 mt-1 min-w-27.5 rounded-md border border-(--rmhtube-border) bg-(--rmhtube-surface) shadow-lg py-1">
+          <div
+            className="fixed z-50 min-w-27.5 rounded-md border border-(--rmhtube-border) bg-(--rmhtube-surface) shadow-lg py-1"
+            style={{ top: pos.top, right: pos.right }}
+          >
             {STATUS_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
@@ -128,30 +138,29 @@ function StatusSelector({ currentStatus }: { currentStatus: UserPresenceStatus }
           </div>
         </>
       )}
-    </div>
+    </>
   );
 }
 
 // ─── Role Badge ────────────────────────────────────────────────
 
-function RoleBadge({ role, isHost }: { role: MemberRole; isHost: boolean }) {
-  if (isHost) {
-    return (
-      <span className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-semibold leading-none bg-(--rmhtube-warning)/20 text-(--rmhtube-warning)">
-        <Crown className="h-2.5 w-2.5" />
-        Host
-      </span>
-    );
-  }
-  if (role === 'moderator') {
-    return (
-      <span className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-semibold leading-none bg-(--rmhtube-info)/20 text-(--rmhtube-info)">
-        <ShieldCheck className="h-2.5 w-2.5" />
-        Mod
-      </span>
-    );
-  }
-  return null;
+function RoleBadge({ isHost, isLeader }: { isHost: boolean; isLeader: boolean }) {
+  return (
+    <>
+      {isHost && (
+        <span className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-semibold leading-none bg-(--rmhtube-warning)/20 text-(--rmhtube-warning)">
+          <Crown className="h-2.5 w-2.5" />
+          Host
+        </span>
+      )}
+      {isLeader && (
+        <span className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-semibold leading-none bg-(--rmhtube-info)/20 text-(--rmhtube-info)">
+          <Star className="h-2.5 w-2.5" />
+          Leader
+        </span>
+      )}
+    </>
+  );
 }
 
 // ─── Ban Confirmation Dialog ───────────────────────────────────
@@ -225,8 +234,8 @@ export default function MemberList() {
     emit(C2S.ROOM_TRANSFER_HOST, { targetUserId });
   }, []);
 
-  const handleSetRole = useCallback((targetUserId: string, role: 'moderator' | 'member') => {
-    emit(C2S.ROOM_SET_ROLE, { targetUserId, role });
+  const handleSetLeader = useCallback((targetUserId: string) => {
+    emit(C2S.ROOM_SET_LEADER, { targetUserId });
   }, []);
 
   const handleBanConfirm = useCallback(
@@ -249,8 +258,8 @@ export default function MemberList() {
 
   const myMember = room.members.find((m) => m.userId === room.myUserId);
   const isHost = room.myUserId === room.hostUserId;
-  const isMod = myMember?.role === 'moderator';
-  const canModerate = isHost || isMod;
+  const isLeader = room.myUserId === room.leaderUserId;
+  const canSetLeader = isHost || isLeader;
 
   return (
     <div className="flex flex-col h-full">
@@ -268,13 +277,12 @@ export default function MemberList() {
         {sortedMembers.map((member) => {
           const isMe = member.userId === room.myUserId;
           const memberIsHost = member.isHost;
-          const memberIsMod = member.role === 'moderator';
+          const memberIsLeader = member.isLeader;
 
           // Determine which controls are available for this member
-          const showPromote = isHost && !memberIsHost && !memberIsMod && !isMe;
-          const showDemote = isHost && memberIsMod && !isMe;
-          const showKick = canModerate && !isMe && !memberIsHost && !(isMod && memberIsMod);
-          const showBan = canModerate && !isMe && !memberIsHost && !(isMod && memberIsMod);
+          const showMakeLeader = canSetLeader && !isMe && !memberIsLeader;
+          const showKick = isHost && !isMe;
+          const showBan = isHost && !isMe;
           const showTransfer = isHost && !isMe;
 
           return (
@@ -310,7 +318,7 @@ export default function MemberList() {
                   >
                     {member.userName}
                   </span>
-                  <RoleBadge role={member.role} isHost={member.isHost} />
+                  <RoleBadge isHost={memberIsHost} isLeader={memberIsLeader} />
                   {isMe && (
                     <span className="text-xs text-(--rmhtube-text-dim)">(you)</span>
                   )}
@@ -333,7 +341,7 @@ export default function MemberList() {
               </div>
 
               {/* Controls */}
-              {(showTransfer || showPromote || showDemote || showKick || showBan) && (
+              {(showTransfer || showMakeLeader || showKick || showBan) && (
                 <div className="shrink-0 flex gap-1">
                   {/* Transfer host (host only) */}
                   {showTransfer && (
@@ -346,29 +354,18 @@ export default function MemberList() {
                     </button>
                   )}
 
-                  {/* Promote to moderator (host only) */}
-                  {showPromote && (
+                  {/* Make leader (host or current leader can set) */}
+                  {showMakeLeader && (
                     <button
-                      onClick={() => handleSetRole(member.userId, 'moderator')}
+                      onClick={() => handleSetLeader(member.userId)}
                       className="rounded p-1 transition-colors text-(--rmhtube-text-dim) hover:text-(--rmhtube-info) hover:bg-(--rmhtube-info-dim)"
-                      title="Promote to moderator"
+                      title="Make leader"
                     >
-                      <ShieldPlus className="h-3 w-3" />
+                      <Star className="h-3 w-3" />
                     </button>
                   )}
 
-                  {/* Demote to member (host only) */}
-                  {showDemote && (
-                    <button
-                      onClick={() => handleSetRole(member.userId, 'member')}
-                      className="rounded p-1 transition-colors text-(--rmhtube-text-dim) hover:text-(--rmhtube-warning) hover:bg-(--rmhtube-warning-dim)"
-                      title="Demote to member"
-                    >
-                      <ShieldMinus className="h-3 w-3" />
-                    </button>
-                  )}
-
-                  {/* Kick (host + mods, mods can't kick host or other mods) */}
+                  {/* Kick (host only) */}
                   {showKick && (
                     <button
                       onClick={() => handleKick(member.userId)}
@@ -379,7 +376,7 @@ export default function MemberList() {
                     </button>
                   )}
 
-                  {/* Ban (host + mods, mods can't ban host or other mods) */}
+                  {/* Ban (host only) */}
                   {showBan && (
                     <button
                       onClick={() => setBanTarget(member)}

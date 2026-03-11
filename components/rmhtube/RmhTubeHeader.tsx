@@ -36,7 +36,7 @@ export default function RmhTubeHeader({
         : 'text-(--rmhtube-danger)';
 
   return (
-    <header className="relative flex h-16 shrink-0 items-center border-b border-(--rmhtube-border) px-4">
+    <header className="relative flex h-16 shrink-0 items-center px-4">
       {/* Left: Back link */}
       <div className="flex items-center gap-2 z-10">
         {backHref ? (

@@ -247,8 +247,7 @@ export default function ChatPanel() {
   const handleContextMenu = useCallback(
     (e: React.MouseEvent, msg: ChatMessage) => {
       if (!room) return;
-      const myRole = room.members.find((m) => m.userId === room.myUserId)?.role;
-      if (myRole !== 'host' && myRole !== 'moderator') return;
+      if (room.myUserId !== room.hostUserId) return;
       e.preventDefault();
       setContextMenuMessage(msg);
       setContextMenuPos({ x: e.clientX, y: e.clientY });
@@ -274,10 +273,7 @@ export default function ChatPanel() {
 
   if (!room) return null;
 
-  const isHostOrMod = (() => {
-    const myRole = room.members.find((m) => m.userId === room.myUserId)?.role;
-    return myRole === 'host' || myRole === 'moderator';
-  })();
+  const isHost = room.myUserId === room.hostUserId;
 
   return (
     <div className="flex flex-col h-full">
@@ -298,7 +294,7 @@ export default function ChatPanel() {
               {room.pinnedMessage.content}
             </p>
           </div>
-          {isHostOrMod && (
+          {isHost && (
             <button
               onClick={() => handlePin(room.pinnedMessage!.id, false)}
               className="shrink-0 p-0.5 rounded hover:bg-(--rmhtube-border) transition-colors"
@@ -311,7 +307,7 @@ export default function ChatPanel() {
       )}
 
       {/* Messages */}
-      <div ref={containerRef} className="flex-1 overflow-y-auto p-3 space-y-1.5">
+      <div ref={containerRef} className="flex-1 overflow-y-auto px-1.5 py-3 space-y-1.5">
         {entries.length === 0 ? (
           <p className="text-xs text-center py-4 text-(--rmhtube-text-dim)">
             No messages yet
@@ -548,7 +544,7 @@ export default function ChatPanel() {
       {/* Input */}
       <form
         onSubmit={handleSend}
-        className="flex gap-2 p-3 border-t border-(--rmhtube-border)"
+        className="flex gap-2 px-1.5 py-3 border-t border-(--rmhtube-border)"
       >
         <input
           ref={inputRef}

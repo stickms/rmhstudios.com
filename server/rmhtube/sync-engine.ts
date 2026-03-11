@@ -28,14 +28,11 @@ export class SyncEngine {
     private roomManager: RoomManager,
   ) {}
 
-  /** Check if user is host or moderator in their room */
-  private isHostOrMod(userId: string): { room: import('./types').RmhTubeRoom; allowed: boolean } | null {
+  /** Check if user is the current room leader */
+  private checkLeader(userId: string): { room: import('./types').RmhTubeRoom; allowed: boolean } | null {
     const room = this.roomManager.getRoomForUser(userId);
     if (!room) return null;
-    if (room.hostUserId === userId) return { room, allowed: true };
-    const member = room.members.get(userId);
-    if (member?.role === 'moderator') return { room, allowed: true };
-    return { room, allowed: false };
+    return { room, allowed: room.leaderUserId === userId };
   }
 
   handleConnection(socket: Socket): void {
@@ -69,7 +66,7 @@ export class SyncEngine {
   ): void {
     const userId = socket.data.userId as string;
     const room = this.roomManager.getRoomForUser(userId);
-    if (!room || room.hostUserId !== userId) return;
+    if (!room || room.leaderUserId !== userId) return;
 
     room.videoState = {
       playing: payload.playing,
@@ -83,7 +80,7 @@ export class SyncEngine {
 
   private onPlay(socket: Socket): void {
     const userId = socket.data.userId as string;
-    const result = this.isHostOrMod(userId);
+    const result = this.checkLeader(userId);
     if (!result?.allowed) return;
     const { room } = result;
 
@@ -97,7 +94,7 @@ export class SyncEngine {
 
   private onPause(socket: Socket): void {
     const userId = socket.data.userId as string;
-    const result = this.isHostOrMod(userId);
+    const result = this.checkLeader(userId);
     if (!result?.allowed) return;
     const { room } = result;
 
@@ -110,7 +107,7 @@ export class SyncEngine {
 
   private onSeek(socket: Socket, payload: { time: number }): void {
     const userId = socket.data.userId as string;
-    const result = this.isHostOrMod(userId);
+    const result = this.checkLeader(userId);
     if (!result?.allowed) return;
     const { room } = result;
 
@@ -123,7 +120,7 @@ export class SyncEngine {
 
   private onSetSpeed(socket: Socket, payload: { speed: number }): void {
     const userId = socket.data.userId as string;
-    const result = this.isHostOrMod(userId);
+    const result = this.checkLeader(userId);
     if (!result?.allowed) return;
     const { room } = result;
 

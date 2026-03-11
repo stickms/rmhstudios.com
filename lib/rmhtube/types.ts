@@ -59,7 +59,7 @@ export interface ChatMessage {
 export interface SystemMessage {
   id: string;
   type: 'system';
-  event: 'join' | 'leave' | 'kick' | 'host_transfer' | 'skip' | 'settings_change' | 'now_playing';
+  event: 'join' | 'leave' | 'kick' | 'host_transfer' | 'leader_change' | 'skip' | 'settings_change' | 'now_playing';
   content: string;
   createdAt: number;
 }
@@ -72,6 +72,7 @@ export interface ClientRoomState {
   roomId: string;
   name: string | null;
   hostUserId: string;
+  leaderUserId: string;
   settings: RoomSettings;
   members: ClientMemberInfo[];
   queue: ClientQueueItem[];
@@ -93,7 +94,7 @@ export interface ClientRoomState {
 }
 
 export type UserPresenceStatus = 'watching' | 'afk' | 'brb';
-export type MemberRole = 'host' | 'moderator' | 'member';
+export type MemberRole = 'host' | 'member';
 
 export interface ClientMemberInfo {
   userId: string;
@@ -101,7 +102,7 @@ export interface ClientMemberInfo {
   avatarUrl: string | null;
   isConnected: boolean;
   isHost: boolean;
-  // Phase 4: Co-Host / Moderator
+  isLeader: boolean;
   role: MemberRole;
   // Phase 4: User Presence Status
   status: UserPresenceStatus;
@@ -168,6 +169,15 @@ export interface RoomHistoryEntry {
   videoCount: number;
 }
 
+export interface RoomHistoryStatus {
+  roomId: string;
+  isOpen: boolean;
+  memberCount: number;
+  maxMembers: number;
+  hostName: string | null;
+  currentVideo: string | null;
+}
+
 // ─── User Watch Stats (Phase 4) ─────────────────────────────────
 
 export interface UserWatchStats {
@@ -217,6 +227,7 @@ export type RmhTubeErrorCode =
   | 'ROOM_FULL'
   | 'WRONG_PASSWORD'
   | 'NOT_HOST'
+  | 'NOT_LEADER'
   | 'NOT_IN_ROOM'
   | 'ALREADY_IN_ROOM'
   | 'INVALID_PAYLOAD'

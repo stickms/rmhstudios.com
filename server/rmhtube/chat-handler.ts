@@ -201,10 +201,9 @@ export class ChatHandler {
     const room = this.roomManager.getRoomForUser(userId);
     if (!room) return;
 
-    // Host or moderator only
-    const member = room.members.get(userId);
-    if (!member || (member.role !== 'host' && member.role !== 'moderator')) {
-      socket.emit(S2C.ERROR, { code: 'NOT_AUTHORIZED', message: 'Only the host or moderators can pin messages.' });
+    // Host-only
+    if (room.hostUserId !== userId) {
+      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host can pin messages.' });
       return;
     }
 
