@@ -54,6 +54,7 @@ COPY lib/rmhbox ./lib/rmhbox/
 COPY lib/rmhtube ./lib/rmhtube/
 COPY lib/rmhmusic ./lib/rmhmusic/
 COPY lib/blackjack ./lib/blackjack/
+COPY lib/holdem ./lib/holdem/
 
 RUN pnpm exec esbuild \
     server/socket-server/index.ts \
