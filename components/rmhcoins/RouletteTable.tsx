@@ -1,10 +1,10 @@
 'use client';
 
-import { useMemo, useState, useEffect, useRef } from 'react';
+import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { useRouletteStore } from '@/lib/roulette/store';
 import { getRouletteSocket } from '@/lib/roulette/socket';
 import { C2S } from '@/lib/roulette/events';
-import { getNumberColor, getOutsideBetNumbers, WHEEL_ORDER } from '@/lib/roulette/logic';
+import { getNumberColor, getOutsideBetNumbers, WHEEL_ORDER, DOUBLE_ZERO, numberLabel } from '@/lib/roulette/logic';
 import type { BetType } from '@/lib/roulette/logic';
 import { CoinIcon } from './CoinIcon';
 
@@ -49,21 +49,17 @@ function SpinningWheel({ result }: { result: number | null }) {
     setLanded(false);
     setHighlightIdx(null);
 
-    // Find the target index: land somewhere in the middle repeats
     const midStart = Math.floor(REPEATS / 2) * WHEEL_ORDER.length;
     let targetIdx = midStart;
     for (let i = midStart; i < midStart + WHEEL_ORDER.length; i++) {
       if (STRIP[i] === result) { targetIdx = i; break; }
     }
 
-    // Calculate offset to center the winning cell in the viewport
     const viewportW = stripRef.current.parentElement?.clientWidth ?? 320;
     const offset = targetIdx * CELL_W + CELL_W / 2 - viewportW / 2;
 
     stripRef.current.style.transition = 'none';
     stripRef.current.style.transform = 'translateX(0px)';
-
-    // Force reflow
     void stripRef.current.offsetHeight;
 
     stripRef.current.style.transition = 'transform 4s cubic-bezier(0.15, 0.9, 0.3, 1)';
@@ -79,14 +75,11 @@ function SpinningWheel({ result }: { result: number | null }) {
 
   return (
     <div className="flex flex-col items-center gap-1 w-full">
-      {/* Pointer triangle */}
       <div className="w-0 h-0" style={{
         borderLeft: '10px solid transparent',
         borderRight: '10px solid transparent',
         borderTop: '14px solid #8b5cf6',
       }} />
-
-      {/* Strip viewport */}
       <div
         className="relative overflow-hidden rounded-xl border-2 border-violet-500/60"
         style={{ width: '100%', maxWidth: 420, height: 72 }}
@@ -107,14 +100,12 @@ function SpinningWheel({ result }: { result: number | null }) {
                   transition: isHighlight ? 'box-shadow 0.3s, outline 0.3s' : undefined,
                 }}
               >
-                {n}
+                {numberLabel(n)}
               </div>
             );
           })}
         </div>
       </div>
-
-      {/* Bottom pointer */}
       <div className="w-0 h-0" style={{
         borderLeft: '10px solid transparent',
         borderRight: '10px solid transparent',
@@ -124,10 +115,10 @@ function SpinningWheel({ result }: { result: number | null }) {
   );
 }
 
-// ── Winning Number Display (results phase) ──────────────────────
+// ── Winning Number Display ──────────────────────────────────────
 
-function WinningNumberDisplay({ number }: { number: number }) {
-  const color = getNumberColor(number);
+function WinningNumberDisplay({ number: num }: { number: number }) {
+  const color = getNumberColor(num);
   const bg = color === 'red' ? '#dc2626' : color === 'green' ? '#059669' : '#1f2937';
 
   return (
@@ -142,11 +133,17 @@ function WinningNumberDisplay({ number }: { number: number }) {
           boxShadow: `0 0 30px ${color === 'red' ? 'rgba(220,38,38,0.5)' : color === 'green' ? 'rgba(5,150,105,0.5)' : 'rgba(31,41,55,0.5)'}, 0 0 0 4px rgba(250,204,21,0.4)`,
         }}
       >
-        {number}
+        {numberLabel(num)}
       </div>
     </div>
   );
 }
+
+// ── Bet dot styles ──────────────────────────────────────────────
+
+const DOT_BASE = 'absolute z-20 rounded-full transition-all opacity-0 hover:opacity-100 hover:scale-125';
+const DOT_IDLE = `${DOT_BASE} bg-yellow-400/70 border border-yellow-300/80 shadow-sm`;
+const DOT_SIZE = 'w-4 h-4';
 
 // ── Main Table ──────────────────────────────────────────────────
 
@@ -168,30 +165,35 @@ export function RouletteTable({ coins }: Props) {
   const addStagedBet = useRouletteStore((s) => s.addStagedBet);
 
   const isBetting = tablePhase === 'betting';
-  const winningNumber = tablePhase === 'results' || tablePhase === 'spinning' ? spinResult : null;
+  // Only highlight winner AFTER animation finishes (results phase), not during spinning
+  const winningNumber = tablePhase === 'results' ? spinResult : null;
 
+  // During betting use staged bets; during spinning/results use server bets so they persist
   const chipMap = useMemo(() => {
     const map = new Map<string, number>();
-    for (const bet of stagedBets) {
-      const key = bet.type + ':' + bet.numbers.join(',');
-      map.set(key, (map.get(key) ?? 0) + bet.amount);
-    }
-    const myPlayer = players.find((p) => p.userId === myUserId);
-    if (myPlayer) {
-      for (const bet of myPlayer.bets) {
-        const key = bet.type + ':' + bet.numbers.join(',');
+    if (isBetting) {
+      for (const bet of stagedBets) {
+        const key = bet.type + ':' + [...bet.numbers].sort((a, b) => a - b).join(',');
         map.set(key, (map.get(key) ?? 0) + bet.amount);
+      }
+    } else {
+      const myPlayer = players.find((p) => p.userId === myUserId);
+      if (myPlayer) {
+        for (const bet of myPlayer.bets) {
+          const key = bet.type + ':' + [...bet.numbers].sort((a, b) => a - b).join(',');
+          map.set(key, (map.get(key) ?? 0) + bet.amount);
+        }
       }
     }
     return map;
-  }, [stagedBets, players, myUserId]);
+  }, [stagedBets, isBetting, players, myUserId]);
 
-  const getChipAmount = (type: BetType, numbers: number[]) => {
-    const key = type + ':' + numbers.join(',');
+  const getChipAmount = useCallback((type: BetType, numbers: number[]) => {
+    const key = type + ':' + [...numbers].sort((a, b) => a - b).join(',');
     return chipMap.get(key) ?? 0;
-  };
+  }, [chipMap]);
 
-  const handlePlaceBet = (type: BetType, numbers: number[]) => {
+  const handlePlaceBet = useCallback((type: BetType, numbers: number[]) => {
     if (!isBetting) return;
     const chipValue = getSelectedChipValue();
     if (chipValue > coins) return;
@@ -202,21 +204,35 @@ export function RouletteTable({ coins }: Props) {
     if (sock) {
       sock.emit(C2S.PLACE_BET, { type, numbers, amount: chipValue });
     }
-  };
+  }, [isBetting, coins, addStagedBet]);
 
   function ChipOverlay({ type, numbers }: { type: BetType; numbers: number[] }) {
     const amount = getChipAmount(type, numbers);
     if (amount <= 0) return null;
     return (
-      <div className="absolute -top-1 -right-1 z-10 flex items-center gap-0.5 bg-violet-600 text-white text-[8px] font-bold rounded-full px-1 py-0.5 shadow-lg border border-violet-400">
+      <div className="absolute -top-1 -right-1 z-30 flex items-center gap-0.5 bg-violet-600 text-white text-[8px] font-bold rounded-full px-1 py-0.5 shadow-lg border border-violet-400">
         <CoinIcon className="w-2 h-2" />
         {amount}
       </div>
     );
   }
 
+  // Chip overlay positioned at a specific edge/corner (for split/corner bets on the board)
+  function EdgeChip({ type, numbers, style }: { type: BetType; numbers: number[]; style: React.CSSProperties }) {
+    const amount = getChipAmount(type, numbers);
+    if (amount <= 0) return null;
+    return (
+      <div
+        className="absolute z-30 flex items-center justify-center bg-violet-600 text-white text-[7px] font-bold rounded-full shadow-lg border border-violet-400"
+        style={{ width: 18, height: 18, ...style }}
+      >
+        {amount}
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="flex flex-col items-center gap-2">
       {/* Spinning animation */}
       {tablePhase === 'spinning' && (
         <SpinningWheel result={spinResult} />
@@ -230,36 +246,122 @@ export function RouletteTable({ coins }: Props) {
       {/* Roulette Board */}
       <div className="w-full overflow-x-auto">
         <div className="inline-flex flex-col gap-0.5 min-w-[320px] mx-auto">
-          {/* Zero */}
-          <button
-            onClick={() => handlePlaceBet('straight', [0])}
-            disabled={!isBetting}
-            className={`relative w-full h-10 rounded-t-lg text-white font-bold text-sm transition-all ${
-              winningNumber === 0 ? NUMBER_BG_WIN.green : NUMBER_BG.green
-            } ${isBetting ? 'cursor-pointer' : 'cursor-default'}`}
-          >
-            0
-            <ChipOverlay type="straight" numbers={[0]} />
-          </button>
+          {/* 0 and 00 row */}
+          <div className="grid grid-cols-2 gap-0.5">
+            {[0, DOUBLE_ZERO].map((n) => (
+              <button
+                key={n}
+                onClick={() => handlePlaceBet('straight', [n])}
+                disabled={!isBetting}
+                className={`relative h-10 rounded-t-lg text-white font-bold text-sm transition-all ${
+                  winningNumber === n ? NUMBER_BG_WIN.green : NUMBER_BG.green
+                } ${isBetting ? 'cursor-pointer' : 'cursor-default'}`}
+              >
+                {numberLabel(n)}
+                <ChipOverlay type="straight" numbers={[n]} />
+              </button>
+            ))}
+          </div>
 
-          {/* Number grid */}
-          <div className="grid grid-cols-3 gap-0.5">
-            {BOARD_ROWS.map((row) =>
-              row.map((n) => {
+          {/* Top line bet (0, 00, 1, 2, 3) */}
+          {isBetting && (
+            <button
+              onClick={() => handlePlaceBet('topline', [0, DOUBLE_ZERO, 1, 2, 3])}
+              className="w-full h-6 bg-site-surface border border-site-border text-site-text text-[9px] font-bold rounded transition-all hover:bg-site-surface-hover relative"
+            >
+              Top Line (0, 00, 1-3) 6:1
+              <ChipOverlay type="topline" numbers={[0, DOUBLE_ZERO, 1, 2, 3]} />
+            </button>
+          )}
+
+          {/* Number grid: 12 rows x 3 columns with interactive edge/corner bet dots */}
+          <div className="grid grid-cols-3" style={{ gap: 2 }}>
+            {BOARD_ROWS.map((row, rowIdx) =>
+              row.map((n, colIdx) => {
                 const color = getNumberColor(n);
                 const isWinner = winningNumber === n;
+                const hasRight = colIdx < 2;
+                const hasBelow = rowIdx < 11;
+
                 return (
-                  <button
-                    key={n}
-                    onClick={() => handlePlaceBet('straight', [n])}
-                    disabled={!isBetting}
-                    className={`relative h-9 text-white font-bold text-xs rounded transition-all ${
-                      isWinner ? NUMBER_BG_WIN[color] : NUMBER_BG[color]
-                    } ${isBetting ? 'cursor-pointer' : 'cursor-default'}`}
-                  >
-                    {n}
-                    <ChipOverlay type="straight" numbers={[n]} />
-                  </button>
+                  <div key={n} className="relative" style={{ overflow: 'visible' }}>
+                    {/* Main number — straight bet */}
+                    <button
+                      onClick={() => handlePlaceBet('straight', [n])}
+                      disabled={!isBetting}
+                      className={`relative w-full h-9 text-white font-bold text-xs rounded transition-all ${
+                        isWinner ? NUMBER_BG_WIN[color] : NUMBER_BG[color]
+                      } ${isBetting ? 'cursor-pointer' : 'cursor-default'}`}
+                    >
+                      {n}
+                      <ChipOverlay type="straight" numbers={[n]} />
+                    </button>
+
+                    {/* Right edge dot — vertical split (n, n+1) */}
+                    {isBetting && hasRight && (
+                      <>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handlePlaceBet('split', [n, n + 1]); }}
+                          className={`${DOT_IDLE} ${DOT_SIZE}`}
+                          style={{ top: '50%', right: -3, transform: 'translate(50%, -50%)' }}
+                          title={`Split ${n}/${n + 1}`}
+                        />
+                        <EdgeChip type="split" numbers={[n, n + 1]} style={{ top: '50%', right: -3, transform: 'translate(50%, -50%)' }} />
+                      </>
+                    )}
+
+                    {/* Bottom edge dot — horizontal split (n, n+3) */}
+                    {isBetting && hasBelow && (
+                      <>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handlePlaceBet('split', [n, n + 3]); }}
+                          className={`${DOT_IDLE} ${DOT_SIZE}`}
+                          style={{ bottom: -3, left: '50%', transform: 'translate(-50%, 50%)' }}
+                          title={`Split ${n}/${n + 3}`}
+                        />
+                        <EdgeChip type="split" numbers={[n, n + 3]} style={{ bottom: -3, left: '50%', transform: 'translate(-50%, 50%)' }} />
+                      </>
+                    )}
+
+                    {/* Bottom-right corner dot — corner bet (n, n+1, n+3, n+4) */}
+                    {isBetting && hasRight && hasBelow && (
+                      <>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handlePlaceBet('corner', [n, n + 1, n + 3, n + 4]); }}
+                          className={`${DOT_IDLE} ${DOT_SIZE}`}
+                          style={{ bottom: -3, right: -3, transform: 'translate(50%, 50%)' }}
+                          title={`Corner ${n}/${n + 1}/${n + 3}/${n + 4}`}
+                        />
+                        <EdgeChip type="corner" numbers={[n, n + 1, n + 3, n + 4]} style={{ bottom: -3, right: -3, transform: 'translate(50%, 50%)' }} />
+                      </>
+                    )}
+
+                    {/* Left edge dot — street bet (row of 3) */}
+                    {isBetting && colIdx === 0 && (
+                      <>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handlePlaceBet('street', [n, n + 1, n + 2]); }}
+                          className={`${DOT_IDLE} ${DOT_SIZE}`}
+                          style={{ top: '50%', left: -3, transform: 'translate(-50%, -50%)' }}
+                          title={`Street ${n}-${n + 2}`}
+                        />
+                        <EdgeChip type="street" numbers={[n, n + 1, n + 2]} style={{ top: '50%', left: -3, transform: 'translate(-50%, -50%)' }} />
+                      </>
+                    )}
+
+                    {/* Bottom-left dot — line bet (two streets: this row + next) */}
+                    {isBetting && colIdx === 0 && hasBelow && (
+                      <>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handlePlaceBet('line', [n, n + 1, n + 2, n + 3, n + 4, n + 5]); }}
+                          className={`${DOT_IDLE} ${DOT_SIZE}`}
+                          style={{ bottom: -3, left: -3, transform: 'translate(-50%, 50%)' }}
+                          title={`Line ${n}-${n + 5}`}
+                        />
+                        <EdgeChip type="line" numbers={[n, n + 1, n + 2, n + 3, n + 4, n + 5]} style={{ bottom: -3, left: -3, transform: 'translate(-50%, 50%)' }} />
+                      </>
+                    )}
+                  </div>
                 );
               })
             )}
@@ -347,7 +449,7 @@ export function RouletteTable({ coins }: Props) {
                     : 'bg-gray-800'
                   }`}
                 >
-                  {n}
+                  {numberLabel(n)}
                 </span>
               );
             })}

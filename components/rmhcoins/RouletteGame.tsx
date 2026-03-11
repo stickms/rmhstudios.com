@@ -120,7 +120,7 @@ export function RouletteGame({ coins, setCoins }: Props) {
         </div>
       </div>
 
-      <div className="max-w-175 mx-auto w-full flex flex-col gap-4">
+      <div className="max-w-175 mx-auto w-full flex flex-col gap-2">
         <RouletteTable coins={coins} />
         <RouletteControls coins={coins} />
       </div>

@@ -18,6 +18,7 @@ import {
   calculatePayout,
   getNumberColor,
   getOutsideBetNumbers,
+  DOUBLE_ZERO,
 } from '../../../lib/roulette/logic';
 import { C2S, S2C } from '../../../lib/roulette/events';
 import type {
@@ -85,6 +86,7 @@ const INSIDE_BET_COUNTS: Record<string, number> = {
   split: 2,
   street: 3,
   corner: 4,
+  topline: 5,
   line: 6,
 };
 
@@ -94,7 +96,7 @@ const OUTSIDE_BET_TYPES = new Set<BetType>([
 ]);
 
 const ALL_BET_TYPES = new Set<BetType>([
-  'straight', 'split', 'street', 'corner', 'line',
+  'straight', 'split', 'street', 'corner', 'line', 'topline',
   ...OUTSIDE_BET_TYPES,
 ]);
 
@@ -103,8 +105,8 @@ function isValidBetType(type: string): type is BetType {
 }
 
 function validateBetNumbers(type: BetType, numbers: number[]): boolean {
-  // All numbers must be 0-36
-  if (!numbers.every((n) => Number.isInteger(n) && n >= 0 && n <= 36)) return false;
+  // All numbers must be valid: -1 (00), 0-36
+  if (!numbers.every((n) => Number.isInteger(n) && n >= DOUBLE_ZERO && n <= 36)) return false;
 
   // Outside bets: numbers must match the predefined set
   if (OUTSIDE_BET_TYPES.has(type)) {
@@ -112,6 +114,12 @@ function validateBetNumbers(type: BetType, numbers: number[]): boolean {
     if (numbers.length !== expected.length) return false;
     const expectedSet = new Set(expected);
     return numbers.every((n) => expectedSet.has(n));
+  }
+
+  // Topline: must be exactly [0, -1, 1, 2, 3]
+  if (type === 'topline') {
+    const expected = new Set([0, DOUBLE_ZERO, 1, 2, 3]);
+    return numbers.length === 5 && numbers.every((n) => expected.has(n));
   }
 
   // Inside bets: must have correct count and unique numbers
@@ -264,6 +272,9 @@ function startSpinPhase(room: RouletteRoom) {
 
   // Determine result server-side
   const result = spin();
+
+  // Store result on room so broadcastTableState includes it
+  room.lastResult = result;
 
   // Send spin result immediately so client can start animation
   const spinPayload: SpinResultPayload = { result };

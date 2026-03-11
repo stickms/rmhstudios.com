@@ -1,12 +1,16 @@
 /**
  * Roulette game logic — shared by server and client.
  *
- * European/single-zero roulette (0-36).
- * Supports inside bets (straight, split, street, corner, line)
+ * American double-zero roulette (0, 00, 1-36).
+ * 00 is represented internally as -1.
+ * Supports inside bets (straight, split, street, corner, line, topline)
  * and outside bets (red/black, odd/even, high/low, dozens, columns).
  */
 
-export const NUMBERS = Array.from({ length: 37 }, (_, i) => i); // 0-36
+/** 00 is stored as -1 internally */
+export const DOUBLE_ZERO = -1;
+
+export const NUMBERS = [DOUBLE_ZERO, ...Array.from({ length: 37 }, (_, i) => i)]; // 00, 0-36
 
 export const RED_NUMBERS = new Set([
   1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36,
@@ -16,11 +20,11 @@ export const BLACK_NUMBERS = new Set([
   2, 4, 6, 8, 10, 11, 13, 15, 17, 20, 22, 24, 26, 28, 29, 31, 33, 35,
 ]);
 
-/** Wheel order for European roulette (for animation). */
+/** American roulette wheel order (for animation). */
 export const WHEEL_ORDER = [
-  0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36,
-  11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9,
-  22, 18, 29, 7, 28, 12, 35, 3, 26,
+  0, 28, 9, 26, 30, 11, 7, 20, 32, 17, 5, 22, 34, 15, 3, 24, 36, 13, 1,
+  DOUBLE_ZERO,
+  27, 10, 25, 29, 12, 8, 19, 31, 18, 6, 21, 33, 16, 4, 23, 35, 14, 2,
 ];
 
 export type BetType =
@@ -30,6 +34,7 @@ export type BetType =
   | 'street'       // 3 numbers in a row (11:1)
   | 'corner'       // 4 numbers (8:1)
   | 'line'         // 6 numbers / two streets (5:1)
+  | 'topline'      // 0, 00, 1, 2, 3 (6:1)
   // Outside bets
   | 'red'
   | 'black'
@@ -50,6 +55,11 @@ export interface Bet {
   amount: number;
 }
 
+/** Display label for a number (handles 00). */
+export function numberLabel(n: number): string {
+  return n === DOUBLE_ZERO ? '00' : String(n);
+}
+
 /** Get the payout multiplier for a bet type. */
 export function getPayoutMultiplier(type: BetType): number {
   switch (type) {
@@ -57,6 +67,7 @@ export function getPayoutMultiplier(type: BetType): number {
     case 'split': return 17;
     case 'street': return 11;
     case 'corner': return 8;
+    case 'topline': return 6;
     case 'line': return 5;
     case 'red': case 'black':
     case 'odd': case 'even':
@@ -84,6 +95,7 @@ export function getOutsideBetNumbers(type: BetType): number[] {
     case 'column1': return NUMBERS.filter((n) => n > 0 && n % 3 === 1);
     case 'column2': return NUMBERS.filter((n) => n > 0 && n % 3 === 2);
     case 'column3': return NUMBERS.filter((n) => n > 0 && n % 3 === 0);
+    case 'topline': return [0, DOUBLE_ZERO, 1, 2, 3];
     default: return [];
   }
 }
@@ -101,12 +113,51 @@ export function calculatePayout(bet: Bet, result: number): number {
 
 /** Get the color of a number. */
 export function getNumberColor(n: number): 'red' | 'black' | 'green' {
-  if (n === 0) return 'green';
+  if (n === 0 || n === DOUBLE_ZERO) return 'green';
   if (RED_NUMBERS.has(n)) return 'red';
   return 'black';
 }
 
-/** Generate a random result (server-side). */
+/** Generate a random result (server-side). 38 pockets: 0, 00(-1), 1-36 */
 export function spin(): number {
-  return Math.floor(Math.random() * 37); // 0-36
+  const idx = Math.floor(Math.random() * 38);
+  if (idx === 37) return DOUBLE_ZERO; // 00
+  return idx; // 0-36
+}
+
+/** All valid number values on the board */
+export const ALL_BOARD_NUMBERS = [DOUBLE_ZERO, ...Array.from({ length: 37 }, (_, i) => i)];
+
+/**
+ * Get adjacent numbers for split bets on a standard 3-column board.
+ * Returns pairs [n, neighbor] for all valid splits from number n.
+ */
+export function getSplitNeighbors(n: number): number[][] {
+  if (n <= 0) return []; // 0 and 00 splits handled separately
+  const col = ((n - 1) % 3) + 1; // 1, 2, or 3
+  const neighbors: number[][] = [];
+  // Right neighbor (same row, next column)
+  if (col < 3) neighbors.push([n, n + 1]);
+  // Below neighbor (next row)
+  if (n + 3 <= 36) neighbors.push([n, n + 3]);
+  return neighbors;
+}
+
+/**
+ * Get corner groups that include number n.
+ * A corner covers 4 numbers at the intersection of 2 rows and 2 columns.
+ */
+export function getCornerGroups(n: number): number[][] {
+  if (n <= 0) return [];
+  const col = ((n - 1) % 3) + 1;
+  const corners: number[][] = [];
+  // Top-left corner (n is bottom-right)
+  if (col > 1 && n - 3 > 0) corners.push([n - 4, n - 3, n - 1, n]);
+  // Top-right corner (n is bottom-left)
+  if (col < 3 && n - 3 > 0) corners.push([n - 3, n - 2, n, n + 1]);
+  // Bottom-left corner (n is top-right)
+  if (col > 1 && n + 3 <= 36) corners.push([n - 1, n, n + 2, n + 3]);
+  // Bottom-right corner (n is top-left)
+  if (col < 3 && n + 3 <= 36) corners.push([n, n + 1, n + 3, n + 4]);
+  return corners;
 }

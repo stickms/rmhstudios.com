@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useBaccaratStore } from '@/lib/baccarat/store';
 import { handValue, isNatural } from '@/lib/baccarat/logic';
 import type { Card, BaccaratResult } from '@/lib/baccarat/logic';
+import type { BetType } from '@/lib/baccarat/types';
+import { CoinIcon } from './CoinIcon';
 
 // ── Card Rendering with Flip Animation ─────────────────────────────
 
@@ -186,6 +188,16 @@ function HistoryScoreboard({ history }: { history: BaccaratResult[] }) {
 
 // ── Table Component ────────────────────────────────────────────────
 
+const BET_LABELS: Record<BetType, { short: string; color: string }> = {
+  player: { short: 'P', color: 'bg-red-500/20 text-red-400' },
+  banker: { short: 'B', color: 'bg-blue-500/20 text-blue-400' },
+  tie: { short: 'T', color: 'bg-emerald-500/20 text-emerald-400' },
+  playerPair: { short: 'PP', color: 'bg-red-500/10 text-red-300' },
+  bankerPair: { short: 'BP', color: 'bg-blue-500/10 text-blue-300' },
+  playerDragon: { short: 'PD', color: 'bg-red-500/10 text-red-300' },
+  bankerDragon: { short: 'BD', color: 'bg-blue-500/10 text-blue-300' },
+};
+
 export function BaccaratTable() {
   const {
     playerHand,
@@ -193,6 +205,8 @@ export function BaccaratTable() {
     tablePhase,
     lastResult,
     history,
+    players,
+    myUserId,
   } = useBaccaratStore();
 
   const showValues = tablePhase === 'dealing' || tablePhase === 'drawing' || tablePhase === 'results';
@@ -201,8 +215,13 @@ export function BaccaratTable() {
   const playerNatural = playerHand.length === 2 && isNatural(playerHand);
   const bankerNatural = bankerHand.length === 2 && isNatural(bankerHand);
 
+  // Collect active bets from all players
+  const activeBets = players
+    .filter((p) => p.totalBetThisRound > 0)
+    .sort((a, b) => a.seatIndex - b.seatIndex);
+
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="flex flex-col items-center gap-3">
       {/* Result announcement */}
       {tablePhase === 'results' && lastResult && (
         <ResultAnnouncement result={lastResult.result} />
@@ -243,6 +262,48 @@ export function BaccaratTable() {
           staggerOffset={200}
         />
       </div>
+
+      {/* Players & their bets */}
+      {activeBets.length > 0 && (
+        <div className="w-full flex flex-col gap-1.5">
+          <span className="text-[10px] text-site-text-dim uppercase tracking-wider font-bold text-center">Bets at Table</span>
+          <div className="flex flex-wrap justify-center gap-2">
+            {activeBets.map((p) => {
+              const isMe = p.userId === myUserId;
+              const betEntries = (Object.entries(p.bets) as [BetType, number][]).filter(([, v]) => v > 0);
+              return (
+                <div
+                  key={p.userId}
+                  className={`flex flex-col gap-1 p-2 rounded-lg border ${
+                    isMe ? 'bg-red-500/5 border-red-500/20' : 'bg-site-surface/50 border-site-border/50'
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5">
+                    {p.avatarUrl && <img src={p.avatarUrl} alt="" className="w-4 h-4 rounded-full" />}
+                    <span className={`text-xs font-bold truncate max-w-20 ${isMe ? 'text-red-400' : 'text-site-text'}`}>
+                      {isMe ? 'You' : p.userName}
+                    </span>
+                    <div className="flex items-center gap-0.5 ml-auto">
+                      <CoinIcon className="w-3 h-3" />
+                      <span className="text-[10px] font-bold text-red-400">{p.totalBetThisRound}</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {betEntries.map(([type, amount]) => {
+                      const cfg = BET_LABELS[type];
+                      return (
+                        <span key={type} className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${cfg.color}`}>
+                          {cfg.short} {amount}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <HistoryScoreboard history={history} />
     </div>

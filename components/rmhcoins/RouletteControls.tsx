@@ -6,7 +6,7 @@ import { CoinIcon } from './CoinIcon';
 import { useRouletteStore } from '@/lib/roulette/store';
 import { getRouletteSocket } from '@/lib/roulette/socket';
 import { C2S } from '@/lib/roulette/events';
-import { getNumberColor, getOutsideBetNumbers } from '@/lib/roulette/logic';
+import { getNumberColor, getOutsideBetNumbers, numberLabel, DOUBLE_ZERO } from '@/lib/roulette/logic';
 import type { BetType } from '@/lib/roulette/logic';
 import { setSelectedChipValue, getSelectedChipValue } from './RouletteTable';
 
@@ -67,10 +67,8 @@ export function RouletteControls({ coins }: Props) {
     }
   }, [tablePhase, bettingCountdown]);
 
-  const totalStagedBet = stagedBets.reduce((sum, b) => sum + b.amount, 0);
-  const myPlayer = players.find((p) => p.userId === myUserId);
-  const totalConfirmedBet = myPlayer?.totalBetThisRound ?? 0;
-  const totalBet = totalStagedBet + totalConfirmedBet;
+  // Only use staged bets for total — server bets are the same ones echoed back
+  const totalBet = stagedBets.reduce((sum, b) => sum + b.amount, 0);
 
   const handleClearBets = () => {
     clearStagedBets();
@@ -102,7 +100,7 @@ export function RouletteControls({ coins }: Props) {
   // Betting phase
   if (tablePhase === 'betting') {
     return (
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2">
         {countdown !== null && (
           <div className="text-center">
             <span className="text-sm text-site-text-dim">Betting closes in </span>
@@ -111,9 +109,9 @@ export function RouletteControls({ coins }: Props) {
         )}
 
         {/* Chip selector */}
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-0.5">
           <span className="text-xs text-site-text-dim text-center">Select chip value</span>
-          <div className="flex justify-center gap-2">
+          <div className="flex justify-center gap-2 py-1">
             {CHIP_VALUES.map((val) => (
               <button
                 key={val}
@@ -121,7 +119,7 @@ export function RouletteControls({ coins }: Props) {
                 disabled={val > coins}
                 className={`relative w-11 h-11 rounded-full font-bold text-xs transition-all ${
                   selectedChip === val
-                    ? 'bg-violet-600 text-white ring-2 ring-violet-400 ring-offset-2 ring-offset-site-bg scale-110'
+                    ? 'bg-violet-600 text-white ring-2 ring-violet-400 ring-offset-1 ring-offset-site-bg'
                     : 'bg-site-surface border-2 border-site-border text-site-text hover:border-violet-500/50'
                 } disabled:opacity-30 disabled:cursor-not-allowed`}
               >
@@ -129,9 +127,8 @@ export function RouletteControls({ coins }: Props) {
               </button>
             ))}
           </div>
+          <p className="text-xs text-site-text-dim text-center">Place your bets on the board above</p>
         </div>
-
-        <p className="text-xs text-site-text-dim text-center">Place your bets on the board above</p>
 
         {/* Quick bet buttons */}
         <div className="flex flex-col gap-1.5">
@@ -151,7 +148,7 @@ export function RouletteControls({ coins }: Props) {
         </div>
 
         {/* Current bets summary */}
-        {(stagedBets.length > 0 || totalConfirmedBet > 0) && (
+        {stagedBets.length > 0 && (
           <div className="flex flex-col gap-1.5 p-2 rounded-lg bg-site-surface border border-site-border">
             <div className="flex items-center justify-between">
               <span className="text-xs text-site-text-dim">Your bets</span>
@@ -167,7 +164,7 @@ export function RouletteControls({ coins }: Props) {
                     key={i}
                     className="inline-flex items-center gap-0.5 text-[10px] bg-violet-600/20 text-violet-300 rounded-full px-1.5 py-0.5"
                   >
-                    {bet.type === 'straight' ? `#${bet.numbers[0]}` : bet.type}: {bet.amount}
+                    {bet.type === 'straight' ? `#${numberLabel(bet.numbers[0])}` : bet.type}: {bet.amount}
                   </span>
                 ))}
               </div>
@@ -218,7 +215,7 @@ export function RouletteControls({ coins }: Props) {
                 : 'bg-gray-800'
               }`}
             >
-              {spinResult}
+              {numberLabel(spinResult)}
             </div>
           </div>
         )}
