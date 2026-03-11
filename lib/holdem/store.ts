@@ -28,6 +28,7 @@ interface HoldemStore {
   turnTimeout: number | null;
   myUserId: string | null;
   lastHandResults: HandResultEntry[] | null;
+  resultsCountdown: number | null;
   error: string | null;
 
   setConnectionStatus: (s: ConnectionStatus) => void;
@@ -65,6 +66,7 @@ const initialState = {
   turnTimeout: null as number | null,
   myUserId: null as string | null,
   lastHandResults: null as HandResultEntry[] | null,
+  resultsCountdown: null as number | null,
   error: null as string | null,
 };
 
@@ -104,6 +106,7 @@ export const useHoldemStore = create<HoldemStore>((set) => ({
       currentBet: state.currentBet,
       minRaise: state.minRaise,
       turnTimeout: state.turnTimeout,
+      resultsCountdown: state.resultsCountdown ?? null,
     }),
 
   handlePlayerJoined: (data) =>

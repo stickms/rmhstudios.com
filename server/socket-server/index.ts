@@ -26,6 +26,8 @@ import { registerKowloonKnockoutHandlers, handleKowloonKnockoutDisconnect } from
 import { registerRmhMusicHandlers, handleRmhMusicDisconnect } from './handlers/rmhmusic';
 import { registerBlackjackHandlers, handleBlackjackDisconnect, initializeBlackjackPublicTable } from './handlers/blackjack';
 import { registerHoldemHandlers, handleHoldemDisconnect, initializeHoldem } from './handlers/holdem';
+import { registerBaccaratHandlers, handleBaccaratDisconnect, initializeBaccarat } from './handlers/baccarat';
+import { registerRouletteHandlers, handleRouletteDisconnect, initializeRoulette } from './handlers/roulette';
 
 // ─── Startup validation ─────────────────────────────────────────
 
@@ -148,6 +150,8 @@ io.on('connection', (socket) => {
   registerRmhMusicHandlers(io, socket);
   registerBlackjackHandlers(io, socket);
   registerHoldemHandlers(io, socket);
+  registerBaccaratHandlers(io, socket);
+  registerRouletteHandlers(io, socket);
 
   // Disconnect cleanup
   socket.on('disconnect', (reason) => {
@@ -163,6 +167,8 @@ io.on('connection', (socket) => {
     handleRmhMusicDisconnect(io, socket);
     handleBlackjackDisconnect(io, socket);
     handleHoldemDisconnect(io, socket);
+    handleBaccaratDisconnect(io, socket);
+    handleRouletteDisconnect(io, socket);
 
     cleanupRateLimits(socket.id);
   });
@@ -201,4 +207,6 @@ httpServer.listen(config.PORT, () => {
   logger.info({ event: 'server_started', port: config.PORT, socketPath: config.SOCKET_PATH });
   initializeBlackjackPublicTable(io);
   initializeHoldem(io);
+  initializeBaccarat(io);
+  initializeRoulette(io);
 });

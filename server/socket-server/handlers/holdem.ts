@@ -26,6 +26,8 @@ const C2S = {
   ALL_IN:        'holdem:all_in',
   SIT_IN:        'holdem:sit_in',
   SIT_OUT:       'holdem:sit_out',
+  REBUY:         'holdem:rebuy',
+  SHOW_CARDS:    'holdem:show_cards',
 } as const;
 
 const S2C = {
@@ -65,6 +67,7 @@ interface PlayerSeat {
   allIn: boolean;
   lastAction: PlayerAction;
   sittingOut: boolean;
+  showCards: Set<number>; // indices of hole cards the player chose to reveal (0 and/or 1)
   sessionStats: {
     totalBuyIn: number;
     totalCashOut: number;
@@ -106,6 +109,7 @@ interface HoldemRoom {
   resultsTimer: ReturnType<typeof setTimeout> | null;
   handNumber: number;
   lastRaiseAmount: number;
+  resultsEndTime: number | null;
 }
 
 // ── Constants ──────────────────────────────────────────────────────
@@ -114,7 +118,7 @@ const DEFAULT_MAX_PLAYERS = 6;
 const MAX_PLAYERS_CAP = 6;
 const MIN_PLAYERS_TO_START = 2;
 const TURN_TIMEOUT_MS = 30_000;
-const RESULTS_DISPLAY_MS = 5_000;
+const RESULTS_DISPLAY_MS = 10_000;
 const DEFAULT_SMALL_BLIND = 5;
 const DEFAULT_BIG_BLIND = 10;
 const DEFAULT_BUY_IN = 200;
@@ -161,13 +165,27 @@ function getSeatedPlayers(room: HoldemRoom): PlayerSeat[] {
 
 // ── Serialization ──────────────────────────────────────────────────
 
+function getVisibleHoleCards(p: PlayerSeat, forUserId?: string, isShowdown?: boolean): (Card | null)[] | null {
+  // Always show your own cards
+  if (p.userId === forUserId && !p.sittingOut) return p.holeCards;
+  // During showdown/results, show cards the player opted to reveal
+  if (isShowdown && !p.folded && p.holeCards.length === 2) {
+    if (p.showCards.size === 2) return p.holeCards;
+    if (p.showCards.size === 0) return null;
+    // Partial reveal: show selected cards, null for hidden ones
+    return p.holeCards.map((card, i) => p.showCards.has(i) ? card : null);
+  }
+  return null;
+}
+
 function serializeTableState(room: HoldemRoom, forUserId?: string) {
+  const isShowdown = room.phase === 'showdown' || room.phase === 'results';
   const players = Array.from(room.players.values()).map((p) => ({
     userId: p.userId,
     userName: p.userName,
     avatarUrl: p.avatarUrl,
     seatIndex: p.seatIndex,
-    holeCards: p.userId === forUserId && !p.sittingOut ? p.holeCards : null,
+    holeCards: getVisibleHoleCards(p, forUserId, isShowdown),
     currentBet: p.currentBet,
     totalChips: p.totalChips,
     folded: p.folded,
@@ -209,6 +227,7 @@ function serializeTableState(room: HoldemRoom, forUserId?: string) {
     turnTimeout: room.currentTurnUserId ? Math.ceil(TURN_TIMEOUT_MS / 1000) : null,
     smallBlind: room.smallBlind,
     bigBlind: room.bigBlind,
+    resultsCountdown: room.resultsEndTime ? Math.max(0, Math.ceil((room.resultsEndTime - Date.now()) / 1000)) : null,
   };
 }
 
@@ -280,6 +299,7 @@ function startNewHand(room: HoldemRoom) {
     p.folded = p.sittingOut;
     p.allIn = false;
     p.lastAction = null;
+    p.showCards = new Set();
     if (!p.sittingOut) p.sessionStats.handsPlayed++;
   }
 
@@ -516,7 +536,7 @@ function endHand(room: HoldemRoom) {
       netGain: p.userId === winner.userId ? netGain : -p.totalBetThisHand,
       handRank: null as HandRank | null,
       bestHand: null as Card[] | null,
-      holeCards: p.userId === winner.userId ? p.holeCards : [],
+      holeCards: p.userId === winner.userId ? p.holeCards.map((card, i) => p.showCards.has(i) ? card : null) : [],
     }));
 
     ioRef.to(roomKey(room.roomId)).emit(S2C.HAND_RESULT, {
@@ -563,13 +583,15 @@ function endHand(room: HoldemRoom) {
       }
     }
 
-    // Apply payouts
+    // Apply payouts and force-reveal winners' cards
     const handRanks = new Map<string, HandRank>();
     for (const e of evaluations) {
       const payout = totalPayouts.get(e.player.userId) ?? 0;
       e.player.totalChips += payout;
       handRanks.set(e.player.userId, e.eval.rank);
       if (payout > 0) {
+        // Winners must show their cards
+        e.player.showCards = new Set([0, 1]);
         e.player.sessionStats.handsWon++;
         if (payout > e.player.sessionStats.biggestPot) {
           e.player.sessionStats.biggestPot = payout;
@@ -588,7 +610,7 @@ function endHand(room: HoldemRoom) {
           netGain: payout > 0 ? payout - p.totalBetThisHand : -p.totalBetThisHand,
           handRank: handRanks.get(p.userId) ?? null,
           bestHand: null as Card[] | null,
-          holeCards: p.folded ? [] : p.holeCards,
+          holeCards: p.folded ? [] : p.holeCards.map((card, i) => p.showCards.has(i) ? card : null),
         };
       });
 
@@ -601,12 +623,14 @@ function endHand(room: HoldemRoom) {
   room.phase = 'results';
   room.pot = 0;
   room.sidePots = [];
+  room.resultsEndTime = Date.now() + RESULTS_DISPLAY_MS;
 
-  // Reveal all cards at showdown
-  broadcastShowdownState(room);
+  // Broadcast state (cards revealed based on showCards preferences)
+  broadcastPersonalizedState(room);
 
-  // Cash out players with 0 chips, then start next hand
+  // Sit out busted players, then start next hand
   room.resultsTimer = setTimeout(async () => {
+    room.resultsEndTime = null;
     // Remove disconnected/busted players
     for (const [userId, p] of room.players) {
       const sock = ioRef.sockets.sockets.get(p.socketId);
@@ -617,12 +641,9 @@ function endHand(room: HoldemRoom) {
         continue;
       }
       if (p.totalChips === 0) {
-        await cashOutPlayer(room, p);
-        room.players.delete(userId);
-        userToRoom.delete(userId);
-        sock.leave(roomKey(room.roomId));
-        sock.emit(S2C.ROOM_LEFT, { roomId: room.roomId });
-        ioRef.to(roomKey(room.roomId)).emit(S2C.PLAYER_LEFT, { userId, seatIndex: p.seatIndex });
+        // Sit them out instead of kicking — they can rebuy
+        p.sittingOut = true;
+        p.folded = true;
       }
     }
 
@@ -634,56 +655,6 @@ function endHand(room: HoldemRoom) {
     broadcastRoomList();
     startNewHand(room);
   }, RESULTS_DISPLAY_MS);
-}
-
-function broadcastShowdownState(room: HoldemRoom) {
-  // At showdown, reveal everyone's cards
-  const players = Array.from(room.players.values()).map((p) => ({
-    userId: p.userId,
-    userName: p.userName,
-    avatarUrl: p.avatarUrl,
-    seatIndex: p.seatIndex,
-    holeCards: !p.folded ? p.holeCards : null,
-    currentBet: p.currentBet,
-    totalChips: p.totalChips,
-    folded: p.folded,
-    allIn: p.allIn,
-    lastAction: p.lastAction,
-    sittingOut: p.sittingOut,
-    isDealer: false,
-    isSmallBlind: false,
-    isBigBlind: false,
-    sessionStats: p.sessionStats,
-  }));
-
-  const seated = getSeatedPlayers(room);
-  if (seated.length >= 2) {
-    const dIdx = room.dealerIndex % seated.length;
-    const sbIdx = seated.length === 2 ? dIdx : (dIdx + 1) % seated.length;
-    const bbIdx = seated.length === 2 ? (dIdx + 1) % seated.length : (dIdx + 2) % seated.length;
-    const dp = players.find((p) => p.userId === seated[dIdx]?.userId);
-    const sp = players.find((p) => p.userId === seated[sbIdx]?.userId);
-    const bp = players.find((p) => p.userId === seated[bbIdx]?.userId);
-    if (dp) dp.isDealer = true;
-    if (sp) sp.isSmallBlind = true;
-    if (bp) bp.isBigBlind = true;
-  }
-
-  ioRef.to(roomKey(room.roomId)).emit(S2C.TABLE_STATE, {
-    roomId: room.roomId,
-    phase: room.phase,
-    handNumber: room.handNumber,
-    players,
-    communityCards: room.communityCards,
-    pot: room.pot,
-    sidePots: room.sidePots,
-    currentTurnUserId: null,
-    currentBet: 0,
-    minRaise: room.bigBlind,
-    turnTimeout: null,
-    smallBlind: room.smallBlind,
-    bigBlind: room.bigBlind,
-  });
 }
 
 function calculateSidePots(room: HoldemRoom) {
@@ -862,6 +833,7 @@ async function onCreateRoom(socket: Socket, payload: unknown) {
     resultsTimer: null,
     handNumber: 0,
     lastRaiseAmount: bigBlind,
+    resultsEndTime: null,
   };
 
   rooms.set(roomId, room);
@@ -994,6 +966,7 @@ async function joinRoom(room: HoldemRoom, socket: Socket) {
       allIn: false,
       lastAction: null,
       sittingOut: true, // always start sitting out — player opts in
+      showCards: new Set(),
       sessionStats: { totalBuyIn: room.buyIn, totalCashOut: 0, handsPlayed: 0, handsWon: 0, biggestPot: 0 },
     };
 
@@ -1387,6 +1360,11 @@ export function registerHoldemHandlers(io: Server, socket: Socket): void {
     if (!room) return;
     const player = room.players.get(userId);
     if (!player || !player.sittingOut) return;
+    // Must rebuy first if busted
+    if (player.totalChips === 0) {
+      socket.emit(S2C.ERROR, { message: `You need to rebuy first. Buy-in is ${room.buyIn} coins.` });
+      return;
+    }
     player.sittingOut = false;
     broadcastPersonalizedState(room);
     // If waiting and enough players, start the hand
@@ -1396,6 +1374,82 @@ export function registerHoldemHandlers(io: Server, socket: Socket): void {
         startNewHand(room);
       }
     }
+  });
+
+  socket.on(C2S.REBUY, async () => {
+    const userId = socketToUserId.get(socket.id);
+    if (!userId) return;
+    const roomId = userToRoom.get(userId);
+    if (!roomId) return;
+    const room = rooms.get(roomId);
+    if (!room) return;
+    const player = room.players.get(userId);
+    if (!player) return;
+    if (player.totalChips > 0) {
+      socket.emit(S2C.ERROR, { message: 'You still have chips.' });
+      return;
+    }
+
+    try {
+      const prisma = getPrismaClient();
+      const result = await prisma.$transaction(async (tx) => {
+        const profile = await tx.userProfile.findUnique({
+          where: { userId },
+          select: { coins: true },
+        });
+        if (!profile || profile.coins < room.buyIn) {
+          throw new Error('INSUFFICIENT_COINS');
+        }
+        const updated = await tx.userProfile.update({
+          where: { userId },
+          data: { coins: { decrement: room.buyIn } },
+          select: { coins: true },
+        });
+        return updated.coins;
+      });
+
+      player.totalChips = room.buyIn;
+      player.sessionStats.totalBuyIn += room.buyIn;
+      socket.emit(S2C.BALANCE_UPDATE, { coins: result });
+      logger.info({ event: 'holdem_rebuy', roomId: room.roomId, userId, buyIn: room.buyIn });
+
+      // Auto sit-in after rebuy
+      player.sittingOut = false;
+      broadcastPersonalizedState(room);
+
+      if (room.phase === 'waiting') {
+        const seated = getSeatedPlayers(room);
+        if (seated.length >= MIN_PLAYERS_TO_START) {
+          startNewHand(room);
+        }
+      }
+    } catch (err) {
+      if (err instanceof Error && err.message === 'INSUFFICIENT_COINS') {
+        socket.emit(S2C.ERROR, { message: `Not enough coins. Buy-in is ${room.buyIn}.` });
+      } else {
+        logger.error({ event: 'holdem_rebuy_error', userId, error: String(err) });
+        socket.emit(S2C.ERROR, { message: 'Failed to rebuy.' });
+      }
+    }
+  });
+
+  socket.on(C2S.SHOW_CARDS, (payload: unknown) => {
+    const userId = socketToUserId.get(socket.id);
+    if (!userId) return;
+    const roomId = userToRoom.get(userId);
+    if (!roomId) return;
+    const room = rooms.get(roomId);
+    if (!room) return;
+    const player = room.players.get(userId);
+    if (!player || player.holeCards.length < 2) return;
+    // Only allow during results phase
+    if (room.phase !== 'results' && room.phase !== 'showdown') return;
+
+    const data = payload as any;
+    const indices = Array.isArray(data?.indices) ? data.indices : [];
+    // Set showCards to the valid indices (0 and/or 1)
+    player.showCards = new Set(indices.filter((i: unknown) => i === 0 || i === 1));
+    broadcastPersonalizedState(room);
   });
 
   socket.on(C2S.SIT_OUT, () => {

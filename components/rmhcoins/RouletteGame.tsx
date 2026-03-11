@@ -2,52 +2,50 @@
 
 import { useEffect, useRef } from 'react';
 import { Circle, Loader2 } from 'lucide-react';
-import { connectToBlackjack, disconnectFromBlackjack, getBlackjackSocket, onBalanceUpdate } from '@/lib/blackjack/socket';
-import { useBlackjackStore } from '@/lib/blackjack/store';
-import { C2S } from '@/lib/blackjack/events';
-import { BlackjackLobby } from './BlackjackLobby';
-import { BlackjackTable } from './BlackjackTable';
-import { BlackjackControls } from './BlackjackControls';
-import { BlackjackSessionStats } from './BlackjackSessionStats';
+import { connectToRoulette, disconnectFromRoulette, getRouletteSocket, onRouletteBalanceUpdate } from '@/lib/roulette/socket';
+import { useRouletteStore } from '@/lib/roulette/store';
+import { C2S } from '@/lib/roulette/events';
+import { RouletteLobby } from './RouletteLobby';
+import { RouletteTable } from './RouletteTable';
+import { RouletteControls } from './RouletteControls';
 
 interface Props {
   coins: number;
   setCoins: (coins: number) => void;
 }
 
-export function BlackjackGame({ coins, setCoins }: Props) {
-  const connectionStatus = useBlackjackStore((s) => s.connectionStatus);
-  const viewMode = useBlackjackStore((s) => s.viewMode);
-  const roomInfo = useBlackjackStore((s) => s.roomInfo);
-  const players = useBlackjackStore((s) => s.players);
+export function RouletteGame({ coins, setCoins }: Props) {
+  const connectionStatus = useRouletteStore((s) => s.connectionStatus);
+  const viewMode = useRouletteStore((s) => s.viewMode);
+  const roomInfo = useRouletteStore((s) => s.roomInfo);
+  const players = useRouletteStore((s) => s.players);
   const connectedRef = useRef(false);
 
   useEffect(() => {
     let mounted = true;
 
-    connectToBlackjack()
+    connectToRoulette()
       .then((sock) => {
         if (mounted && !connectedRef.current) {
           connectedRef.current = true;
-          // Request room list on connect
           sock.emit(C2S.LIST_ROOMS);
         }
       })
       .catch((err) => {
-        console.error('Failed to connect to blackjack:', err);
+        console.error('Failed to connect to roulette:', err);
       });
 
     return () => {
       mounted = false;
       connectedRef.current = false;
-      const sock = getBlackjackSocket();
+      const sock = getRouletteSocket();
       if (sock) sock.emit(C2S.LEAVE_ROOM);
-      disconnectFromBlackjack();
+      disconnectFromRoulette();
     };
   }, []);
 
   useEffect(() => {
-    return onBalanceUpdate((newBalance) => {
+    return onRouletteBalanceUpdate((newBalance) => {
       setCoins(newBalance);
     });
   }, [setCoins]);
@@ -78,11 +76,11 @@ export function BlackjackGame({ coins, setCoins }: Props) {
     return (
       <div className="flex flex-col gap-4 px-3 sm:px-4 py-4 sm:py-6">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-bold text-site-text">Blackjack Rooms</h3>
+          <h3 className="text-sm font-bold text-site-text">Roulette Rooms</h3>
           <Circle className={`h-3 w-3 fill-current ${statusColor}`} />
         </div>
         <div className="max-w-125 mx-auto w-full">
-          <BlackjackLobby />
+          <RouletteLobby />
         </div>
       </div>
     );
@@ -90,7 +88,7 @@ export function BlackjackGame({ coins, setCoins }: Props) {
 
   // Room view
   const handleLeave = () => {
-    const sock = getBlackjackSocket();
+    const sock = getRouletteSocket();
     if (sock) sock.emit(C2S.LEAVE_ROOM);
   };
 
@@ -112,7 +110,7 @@ export function BlackjackGame({ coins, setCoins }: Props) {
         <div className="flex items-center gap-2">
           {roomInfo.joinCode && (
             <span className="text-xs text-site-text-dim">
-              Code: <span className="font-mono font-bold text-yellow-400">{roomInfo.joinCode}</span>
+              Code: <span className="font-mono font-bold text-violet-400">{roomInfo.joinCode}</span>
             </span>
           )}
           <span className="text-xs text-site-text-dim">
@@ -122,10 +120,9 @@ export function BlackjackGame({ coins, setCoins }: Props) {
         </div>
       </div>
 
-      <div className="max-w-125 mx-auto w-full flex flex-col gap-4">
-        <BlackjackTable />
-        <BlackjackControls coins={coins} />
-        <BlackjackSessionStats />
+      <div className="max-w-175 mx-auto w-full flex flex-col gap-2">
+        <RouletteTable coins={coins} />
+        <RouletteControls coins={coins} />
       </div>
     </div>
   );

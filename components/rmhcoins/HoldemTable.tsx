@@ -72,9 +72,13 @@ function PlayerSeatView({ player, isCurrentTurn, isMe }: {
       {/* Hole cards */}
       <div className="flex gap-0.5">
         {player.holeCards ? (
-          player.holeCards.map((card, i) => (
-            <CardFace key={`${card.rank}${card.suit}${i}`} card={card} small delay={i * 400} />
-          ))
+          player.holeCards.map((card, i) =>
+            card ? (
+              <CardFace key={`${card.rank}${card.suit}${i}`} card={card} small delay={i * 400} />
+            ) : (
+              <CardBack key={`hidden-${i}`} small />
+            )
+          )
         ) : !player.folded && !player.sittingOut ? (
           <>
             <CardBack small />

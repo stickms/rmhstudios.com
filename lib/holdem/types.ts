@@ -9,7 +9,7 @@ export interface PlayerSeatClient {
   userName: string;
   avatarUrl: string | null;
   seatIndex: number;
-  holeCards: Card[] | null; // null = hidden (other players' cards)
+  holeCards: (Card | null)[] | null; // null = hidden, partial array = some cards revealed
   currentBet: number;
   totalChips: number; // chips at table
   folded: boolean;
@@ -45,6 +45,7 @@ export interface TableStateSnapshot {
   turnTimeout: number | null;
   smallBlind: number;
   bigBlind: number;
+  resultsCountdown: number | null;
 }
 
 export interface HandResultEntry {
@@ -53,7 +54,7 @@ export interface HandResultEntry {
   netGain: number;
   handRank: HandRank | null;
   bestHand: Card[] | null;
-  holeCards: Card[];
+  holeCards: (Card | null)[];
 }
 
 export interface RoomListEntry {

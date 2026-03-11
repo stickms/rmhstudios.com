@@ -15,6 +15,8 @@ export const C2S = {
   ALL_IN:        'holdem:all_in',
   SIT_IN:        'holdem:sit_in',
   SIT_OUT:       'holdem:sit_out',
+  REBUY:         'holdem:rebuy',
+  SHOW_CARDS:    'holdem:show_cards',
 } as const;
 
 /** Server-to-Client events */
