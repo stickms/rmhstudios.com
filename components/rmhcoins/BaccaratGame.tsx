@@ -2,52 +2,50 @@
 
 import { useEffect, useRef } from 'react';
 import { Circle, Loader2 } from 'lucide-react';
-import { connectToBlackjack, disconnectFromBlackjack, getBlackjackSocket, onBalanceUpdate } from '@/lib/blackjack/socket';
-import { useBlackjackStore } from '@/lib/blackjack/store';
-import { C2S } from '@/lib/blackjack/events';
-import { BlackjackLobby } from './BlackjackLobby';
-import { BlackjackTable } from './BlackjackTable';
-import { BlackjackControls } from './BlackjackControls';
-import { BlackjackSessionStats } from './BlackjackSessionStats';
+import { connectToBaccarat, disconnectFromBaccarat, getBaccaratSocket, onBaccaratBalanceUpdate } from '@/lib/baccarat/socket';
+import { useBaccaratStore } from '@/lib/baccarat/store';
+import { C2S } from '@/lib/baccarat/events';
+import { BaccaratLobby } from './BaccaratLobby';
+import { BaccaratTable } from './BaccaratTable';
+import { BaccaratControls } from './BaccaratControls';
 
 interface Props {
   coins: number;
   setCoins: (coins: number) => void;
 }
 
-export function BlackjackGame({ coins, setCoins }: Props) {
-  const connectionStatus = useBlackjackStore((s) => s.connectionStatus);
-  const viewMode = useBlackjackStore((s) => s.viewMode);
-  const roomInfo = useBlackjackStore((s) => s.roomInfo);
-  const players = useBlackjackStore((s) => s.players);
+export function BaccaratGame({ coins, setCoins }: Props) {
+  const connectionStatus = useBaccaratStore((s) => s.connectionStatus);
+  const viewMode = useBaccaratStore((s) => s.viewMode);
+  const roomInfo = useBaccaratStore((s) => s.roomInfo);
+  const players = useBaccaratStore((s) => s.players);
   const connectedRef = useRef(false);
 
   useEffect(() => {
     let mounted = true;
 
-    connectToBlackjack()
+    connectToBaccarat()
       .then((sock) => {
         if (mounted && !connectedRef.current) {
           connectedRef.current = true;
-          // Request room list on connect
           sock.emit(C2S.LIST_ROOMS);
         }
       })
       .catch((err) => {
-        console.error('Failed to connect to blackjack:', err);
+        console.error('Failed to connect to baccarat:', err);
       });
 
     return () => {
       mounted = false;
       connectedRef.current = false;
-      const sock = getBlackjackSocket();
+      const sock = getBaccaratSocket();
       if (sock) sock.emit(C2S.LEAVE_ROOM);
-      disconnectFromBlackjack();
+      disconnectFromBaccarat();
     };
   }, []);
 
   useEffect(() => {
-    return onBalanceUpdate((newBalance) => {
+    return onBaccaratBalanceUpdate((newBalance) => {
       setCoins(newBalance);
     });
   }, [setCoins]);
@@ -78,11 +76,11 @@ export function BlackjackGame({ coins, setCoins }: Props) {
     return (
       <div className="flex flex-col gap-4 px-3 sm:px-4 py-4 sm:py-6">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-bold text-site-text">Blackjack Rooms</h3>
+          <h3 className="text-sm font-bold text-site-text">Baccarat Rooms</h3>
           <Circle className={`h-3 w-3 fill-current ${statusColor}`} />
         </div>
         <div className="max-w-125 mx-auto w-full">
-          <BlackjackLobby />
+          <BaccaratLobby />
         </div>
       </div>
     );
@@ -90,7 +88,7 @@ export function BlackjackGame({ coins, setCoins }: Props) {
 
   // Room view
   const handleLeave = () => {
-    const sock = getBlackjackSocket();
+    const sock = getBaccaratSocket();
     if (sock) sock.emit(C2S.LEAVE_ROOM);
   };
 
@@ -112,7 +110,7 @@ export function BlackjackGame({ coins, setCoins }: Props) {
         <div className="flex items-center gap-2">
           {roomInfo.joinCode && (
             <span className="text-xs text-site-text-dim">
-              Code: <span className="font-mono font-bold text-yellow-400">{roomInfo.joinCode}</span>
+              Code: <span className="font-mono font-bold text-red-400">{roomInfo.joinCode}</span>
             </span>
           )}
           <span className="text-xs text-site-text-dim">
@@ -123,9 +121,8 @@ export function BlackjackGame({ coins, setCoins }: Props) {
       </div>
 
       <div className="max-w-125 mx-auto w-full flex flex-col gap-4">
-        <BlackjackTable />
-        <BlackjackControls coins={coins} />
-        <BlackjackSessionStats />
+        <BaccaratTable />
+        <BaccaratControls coins={coins} />
       </div>
     </div>
   );

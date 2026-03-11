@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Users, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Select } from '@/components/ui/select';
 import { useHoldemStore } from '@/lib/holdem/store';
 import { getHoldemSocket } from '@/lib/holdem/socket';
 import { C2S } from '@/lib/holdem/events';
@@ -96,17 +97,15 @@ export function HoldemLobby({ coins }: Props) {
           <div className="grid grid-cols-2 gap-2">
             <div className="flex flex-col gap-1">
               <label className="text-xs text-site-text-dim">Max players</label>
-              <select value={maxPlayers} onChange={(e) => setMaxPlayers(Number(e.target.value))}
-                className="bg-site-bg border border-site-border rounded px-2 py-1 text-site-text text-sm">
+              <Select value={maxPlayers} onChange={(e) => setMaxPlayers(Number(e.target.value))}>
                 {[2, 3, 4, 5, 6].map((n) => <option key={n} value={n}>{n}</option>)}
-              </select>
+              </Select>
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-xs text-site-text-dim">Small blind</label>
-              <select value={smallBlind} onChange={(e) => setSmallBlind(Number(e.target.value))}
-                className="bg-site-bg border border-site-border rounded px-2 py-1 text-site-text text-sm">
+              <Select value={smallBlind} onChange={(e) => setSmallBlind(Number(e.target.value))}>
                 {[1, 5, 10, 25, 50].map((n) => <option key={n} value={n}>{n}/{n * 2}</option>)}
-              </select>
+              </Select>
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-xs text-site-text-dim">Buy-in</label>
@@ -115,11 +114,10 @@ export function HoldemLobby({ coins }: Props) {
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-xs text-site-text-dim">Privacy</label>
-              <select value={privacy} onChange={(e) => setPrivacy(e.target.value as 'public' | 'unlisted')}
-                className="bg-site-bg border border-site-border rounded px-2 py-1 text-site-text text-sm">
+              <Select value={privacy} onChange={(e) => setPrivacy(e.target.value as 'public' | 'unlisted')}>
                 <option value="public">Public</option>
                 <option value="unlisted">Unlisted</option>
-              </select>
+              </Select>
             </div>
           </div>
           {coins < buyIn && (

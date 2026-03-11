@@ -4,18 +4,22 @@ import { useState } from 'react';
 import { PlinkoGame } from './PlinkoGame';
 import { BlackjackGame } from './BlackjackGame';
 import { HoldemGame } from './HoldemGame';
+import { BaccaratGame } from './BaccaratGame';
+import { RouletteGame } from './RouletteGame';
 
 interface Props {
   coins: number;
   setCoins: (coins: number) => void;
 }
 
-type GameChoice = 'plinko' | 'blackjack' | 'holdem';
+type GameChoice = 'plinko' | 'blackjack' | 'holdem' | 'baccarat' | 'roulette';
 
 const games: { label: string; value: GameChoice; description: string }[] = [
   { label: 'Plinko', value: 'plinko', description: 'Drop the ball, pick a bin' },
   { label: 'Blackjack', value: 'blackjack', description: 'Multiplayer card game' },
   { label: "Hold'em", value: 'holdem', description: 'No Limit Texas Poker' },
+  { label: 'Baccarat', value: 'baccarat', description: 'Casino card game' },
+  { label: 'Roulette', value: 'roulette', description: 'Spin the wheel' },
 ];
 
 export function PlayTab({ coins, setCoins }: Props) {
@@ -51,6 +55,8 @@ export function PlayTab({ coins, setCoins }: Props) {
       {selected === 'plinko' && <PlinkoGame coins={coins} setCoins={setCoins} />}
       {selected === 'blackjack' && <BlackjackGame coins={coins} setCoins={setCoins} />}
       {selected === 'holdem' && <HoldemGame coins={coins} setCoins={setCoins} />}
+      {selected === 'baccarat' && <BaccaratGame coins={coins} setCoins={setCoins} />}
+      {selected === 'roulette' && <RouletteGame coins={coins} setCoins={setCoins} />}
     </div>
   );
 }

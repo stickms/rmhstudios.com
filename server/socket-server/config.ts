@@ -63,6 +63,13 @@ export const config = {
     'bj:hit':                 { max: 30,  windowMs: 60_000 },
     'bj:stand':               { max: 30,  windowMs: 60_000 },
     'bj:double_down':         { max: 10,  windowMs: 60_000 },
+    'bacc:create_room':       { max: 3,   windowMs: 60_000 },
+    'bacc:join_room':         { max: 5,   windowMs: 60_000 },
+    'bacc:place_bet':         { max: 20,  windowMs: 60_000 },
+    'rl:create_room':         { max: 3,   windowMs: 60_000 },
+    'rl:join_room':           { max: 5,   windowMs: 60_000 },
+    'rl:place_bet':           { max: 30,  windowMs: 60_000 },
+    'rl:clear_bets':          { max: 10,  windowMs: 60_000 },
   } as Record<string, { max: number; windowMs: number }>,
 
   // ─── Shutdown ───

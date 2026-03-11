@@ -55,6 +55,8 @@ COPY lib/rmhtube ./lib/rmhtube/
 COPY lib/rmhmusic ./lib/rmhmusic/
 COPY lib/blackjack ./lib/blackjack/
 COPY lib/holdem ./lib/holdem/
+COPY lib/baccarat ./lib/baccarat/
+COPY lib/roulette ./lib/roulette/
 
 RUN pnpm exec esbuild \
     server/socket-server/index.ts \
@@ -81,6 +83,7 @@ FROM deps AS vite-builder
 COPY public ./public/
 COPY . .
 
+ARG COMPOSE_PROJECT_NAME=rmhstudios
 ARG DATABASE_URL
 ARG BETTER_AUTH_SECRET
 ARG BETTER_AUTH_URL
@@ -102,7 +105,7 @@ ENV DATABASE_URL=${DATABASE_URL} \
 # The fix-ssr-css-hash.mjs script corrects any SSR/client CSS hash mismatches
 # that may arise from the cache, so it's safe to keep .vinxi across builds.
 # NODE_OPTIONS prevents OOM on large bundles (three.js, monaco, tiptap, etc.)
-RUN --mount=type=cache,id=vinxi-cache,target=/app/.vinxi,sharing=locked \
+RUN --mount=type=cache,id=vinxi-cache-${COMPOSE_PROJECT_NAME},target=/app/.vinxi,sharing=locked \
     rm -rf .output \
     && NODE_OPTIONS='--max-old-space-size=8192' pnpm exec vite build \
     && node scripts/fix-ssr-css-hash.mjs \

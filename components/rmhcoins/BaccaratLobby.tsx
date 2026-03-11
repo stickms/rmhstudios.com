@@ -4,12 +4,12 @@ import { useState, useEffect } from 'react';
 import { Plus, Users, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
-import { useBlackjackStore } from '@/lib/blackjack/store';
-import { getBlackjackSocket } from '@/lib/blackjack/socket';
-import { C2S } from '@/lib/blackjack/events';
+import { useBaccaratStore } from '@/lib/baccarat/store';
+import { getBaccaratSocket } from '@/lib/baccarat/socket';
+import { C2S } from '@/lib/baccarat/events';
 
-export function BlackjackLobby() {
-  const roomList = useBlackjackStore((s) => s.roomList);
+export function BaccaratLobby() {
+  const roomList = useBaccaratStore((s) => s.roomList);
   const [showCreate, setShowCreate] = useState(false);
   const [joinCodeInput, setJoinCodeInput] = useState('');
   const [roomName, setRoomName] = useState('');
@@ -18,7 +18,7 @@ export function BlackjackLobby() {
 
   // Poll room list
   useEffect(() => {
-    const sock = getBlackjackSocket();
+    const sock = getBaccaratSocket();
     if (!sock) return;
     sock.emit(C2S.LIST_ROOMS);
     const interval = setInterval(() => sock.emit(C2S.LIST_ROOMS), 5000);
@@ -26,7 +26,7 @@ export function BlackjackLobby() {
   }, []);
 
   const handleCreate = () => {
-    const sock = getBlackjackSocket();
+    const sock = getBaccaratSocket();
     if (!sock) return;
     sock.emit(C2S.CREATE_ROOM, {
       name: roomName.trim() || undefined,
@@ -38,21 +38,21 @@ export function BlackjackLobby() {
   };
 
   const handleJoin = (roomId: string) => {
-    const sock = getBlackjackSocket();
+    const sock = getBaccaratSocket();
     if (!sock) return;
     sock.emit(C2S.JOIN_ROOM, { roomId });
   };
 
   const handleJoinByCode = () => {
     if (!joinCodeInput.trim()) return;
-    const sock = getBlackjackSocket();
+    const sock = getBaccaratSocket();
     if (!sock) return;
     sock.emit(C2S.JOIN_ROOM, { joinCode: joinCodeInput.trim().toUpperCase() });
     setJoinCodeInput('');
   };
 
   const handleRefresh = () => {
-    const sock = getBlackjackSocket();
+    const sock = getBaccaratSocket();
     if (sock) sock.emit(C2S.LIST_ROOMS);
   };
 
@@ -66,12 +66,12 @@ export function BlackjackLobby() {
           value={joinCodeInput}
           onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
           maxLength={5}
-          className="flex-1 bg-site-surface border border-site-border rounded-lg px-3 py-2 text-site-text text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-yellow-500/50"
+          className="flex-1 bg-site-surface border border-site-border rounded-lg px-3 py-2 text-site-text text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-red-500/50"
         />
         <Button
           onClick={handleJoinByCode}
           disabled={!joinCodeInput.trim()}
-          className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-lg text-sm"
+          className="bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-sm"
         >
           Join
         </Button>
@@ -86,7 +86,7 @@ export function BlackjackLobby() {
             value={roomName}
             onChange={(e) => setRoomName(e.target.value)}
             maxLength={30}
-            className="w-full bg-site-bg border border-site-border rounded-lg px-3 py-2 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500/50"
+            className="w-full bg-site-bg border border-site-border rounded-lg px-3 py-2 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50"
           />
           <div className="grid grid-cols-2 gap-2">
             <div className="flex flex-col gap-1">
@@ -95,7 +95,7 @@ export function BlackjackLobby() {
                 value={maxPlayers}
                 onChange={(e) => setMaxPlayers(Number(e.target.value))}
               >
-                {[2, 3, 4, 5, 6].map((n) => (
+                {[2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
                   <option key={n} value={n}>{n}</option>
                 ))}
               </Select>
@@ -114,7 +114,7 @@ export function BlackjackLobby() {
           <div className="flex gap-2">
             <Button
               onClick={handleCreate}
-              className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-lg text-sm"
+              className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-sm"
             >
               Create
             </Button>
@@ -131,7 +131,7 @@ export function BlackjackLobby() {
         <div className="flex gap-2">
           <Button
             onClick={() => setShowCreate(true)}
-            className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-lg text-sm"
+            className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-sm"
           >
             <Plus className="w-4 h-4 mr-1" />
             Create Room
@@ -164,7 +164,7 @@ export function BlackjackLobby() {
                 <span className="text-xs text-site-text-dim">
                   hosted by {room.ownerName}
                   {room.inProgress && (
-                    <span className="ml-1.5 text-yellow-500">In progress</span>
+                    <span className="ml-1.5 text-red-500">In progress</span>
                   )}
                 </span>
               </div>

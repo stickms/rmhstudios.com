@@ -40,6 +40,7 @@ services:
       extra_hosts:
         - "host.docker.internal:host-gateway"
       args:
+        COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:-rmhstudios}
         DATABASE_URL: ${DATABASE_URL}
         BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
         BETTER_AUTH_URL: ${BETTER_AUTH_URL}
