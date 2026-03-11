@@ -6,7 +6,7 @@ export const Route = createFileRoute('/_site/wallet')({
   head: () => ({
     meta: [
       { title: 'Wallet | RMH Studios' },
-      { name: 'description', content: 'Your RMH Coins wallet — play Plinko and shop for profile items.' },
+      { name: 'description', content: 'Your RMH Coins wallet — play Plinko, Blackjack, and shop for profile items.' },
     ],
   }),
   component: WalletRoute,

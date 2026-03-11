@@ -57,6 +57,12 @@ export const config = {
     'altair:game:state_snapshot': { max: 1200, windowMs: 60_000 },
     'altair:game:ping':       { max: 30,  windowMs: 60_000 },
     'altair:game:quick_chat': { max: 20,  windowMs: 60_000 },
+    'bj:join_table':          { max: 5,   windowMs: 60_000 },
+    'bj:leave_table':         { max: 10,  windowMs: 60_000 },
+    'bj:place_bet':           { max: 10,  windowMs: 60_000 },
+    'bj:hit':                 { max: 30,  windowMs: 60_000 },
+    'bj:stand':               { max: 30,  windowMs: 60_000 },
+    'bj:double_down':         { max: 10,  windowMs: 60_000 },
   } as Record<string, { max: number; windowMs: number }>,
 
   // ─── Shutdown ───
