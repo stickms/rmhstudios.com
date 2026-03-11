@@ -8,6 +8,7 @@ import { C2S } from '@/lib/holdem/events';
 import { HoldemLobby } from './HoldemLobby';
 import { HoldemTable } from './HoldemTable';
 import { HoldemControls } from './HoldemControls';
+import { HoldemSessionStats } from './HoldemSessionStats';
 
 interface Props {
   coins: number;
@@ -106,9 +107,10 @@ export function HoldemGame({ coins, setCoins }: Props) {
         </div>
       </div>
 
-      <div className="max-w-125 mx-auto w-full">
+      <div className="max-w-125 mx-auto w-full flex flex-col gap-4">
         <HoldemTable />
         <HoldemControls />
+        <HoldemSessionStats />
       </div>
     </div>
   );

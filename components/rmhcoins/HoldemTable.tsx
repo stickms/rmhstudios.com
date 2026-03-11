@@ -23,10 +23,10 @@ function CardFace({ card, small, delay }: { card: Card; small?: boolean; delay?:
 
   return (
     <div className={`${w} perspective-500 shrink-0`}>
-      <div className={`relative w-full h-full transition-transform duration-500 ease-out transform-3d ${flipped ? 'rotate-y-180' : ''}`}>
+      <div className={`relative w-full h-full transition-transform duration-700 ease-out transform-3d ${flipped ? 'rotate-y-180' : ''}`}>
         <div className="absolute inset-0 backface-hidden rounded-md border border-blue-500/30 bg-linear-to-br from-blue-800 to-blue-950" />
-        <div className="absolute inset-0 backface-hidden rotate-y-180 rounded-md border border-white/20 flex flex-col items-center justify-center bg-white/10 backdrop-blur-sm">
-          <span className={`${textSize} font-bold text-white`}>{card.rank}</span>
+        <div className="absolute inset-0 backface-hidden rotate-y-180 rounded-md border border-gray-300 flex flex-col items-center justify-center bg-white">
+          <span className={`${textSize} font-bold text-black`}>{card.rank}</span>
           <span className={`${textSize} ${SUIT_COLORS[card.suit]}`}>{SUIT_SYMBOLS[card.suit]}</span>
         </div>
       </div>
@@ -57,7 +57,7 @@ function PlayerSeatView({ player, isCurrentTurn, isMe }: {
   return (
     <div className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
       isCurrentTurn ? 'ring-2 ring-emerald-500 bg-emerald-500/5 animate-pulse' : ''
-    } ${player.folded ? 'opacity-40' : ''} ${isMe ? 'bg-site-surface/50' : ''}`}>
+    } ${player.folded || player.sittingOut ? 'opacity-40' : ''} ${isMe ? 'bg-site-surface/50' : ''}`}>
       {/* Name + position badges */}
       <div className="flex items-center gap-1">
         {player.avatarUrl && <img src={player.avatarUrl} alt="" className="w-4 h-4 rounded-full" />}
@@ -73,9 +73,9 @@ function PlayerSeatView({ player, isCurrentTurn, isMe }: {
       <div className="flex gap-0.5">
         {player.holeCards ? (
           player.holeCards.map((card, i) => (
-            <CardFace key={`${card.rank}${card.suit}${i}`} card={card} small delay={i * 200} />
+            <CardFace key={`${card.rank}${card.suit}${i}`} card={card} small delay={i * 400} />
           ))
-        ) : !player.folded ? (
+        ) : !player.folded && !player.sittingOut ? (
           <>
             <CardBack small />
             <CardBack small />
@@ -101,7 +101,8 @@ function PlayerSeatView({ player, isCurrentTurn, isMe }: {
         </span>
       )}
 
-      {player.folded && <span className="text-[10px] text-gray-500 font-bold">Folded</span>}
+      {player.sittingOut && <span className="text-[10px] text-orange-400 font-bold">Sitting Out</span>}
+      {player.folded && !player.sittingOut && <span className="text-[10px] text-gray-500 font-bold">Folded</span>}
       {player.allIn && <span className="text-[10px] text-red-400 font-bold animate-pulse">ALL IN</span>}
     </div>
   );
@@ -132,7 +133,7 @@ export function HoldemTable() {
       <div className={`flex items-center gap-1.5 p-3 rounded-xl bg-emerald-900/30 border border-emerald-700/20 min-h-20`}>
         {communityCards.length > 0 ? (
           communityCards.map((card, i) => (
-            <CardFace key={`${card.rank}${card.suit}${i}`} card={card} delay={i * 300} />
+            <CardFace key={`${card.rank}${card.suit}${i}`} card={card} delay={i * 500} />
           ))
         ) : (
           <span className="text-xs text-site-text-dim px-4">
@@ -146,14 +147,21 @@ export function HoldemTable() {
         <div className="flex flex-col gap-1 text-center">
           {lastHandResults.map((r) => {
             const player = players.find((p) => p.userId === r.userId);
-            if (!r.payout) return null;
+            const name = player?.userId === myUserId ? 'You' : player?.userName;
+            const net = r.netGain ?? 0;
+            if (net === 0 && !r.payout) return null;
             return (
               <div key={r.userId} className="text-xs">
-                <span className="font-bold text-emerald-400">
-                  {player?.userId === myUserId ? 'You' : player?.userName}
+                <span className={`font-bold ${net > 0 ? 'text-emerald-400' : net < 0 ? 'text-red-400' : 'text-site-text'}`}>
+                  {name}
                 </span>
-                {' wins '}
-                <span className="font-bold text-yellow-400">{r.payout}</span>
+                {net > 0 ? (
+                  <span className="font-bold text-emerald-400"> +{net}</span>
+                ) : net < 0 ? (
+                  <span className="font-bold text-red-400"> {net}</span>
+                ) : (
+                  <span className="text-site-text-dim"> broke even</span>
+                )}
                 {r.handRank && (
                   <span className="text-site-text-dim"> — {HAND_RANK_LABELS[r.handRank]}</span>
                 )}
