@@ -121,6 +121,7 @@ export const useHoldemStore = create<HoldemStore>((set) => ({
           folded: false,
           allIn: false,
           lastAction: null,
+          sittingOut: true,
           isDealer: false,
           isSmallBlind: false,
           isBigBlind: false,

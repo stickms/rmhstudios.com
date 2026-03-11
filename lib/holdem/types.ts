@@ -15,6 +15,7 @@ export interface PlayerSeatClient {
   folded: boolean;
   allIn: boolean;
   lastAction: PlayerAction;
+  sittingOut: boolean;
   isDealer: boolean;
   isSmallBlind: boolean;
   isBigBlind: boolean;
@@ -49,6 +50,7 @@ export interface TableStateSnapshot {
 export interface HandResultEntry {
   userId: string;
   payout: number;
+  netGain: number;
   handRank: HandRank | null;
   bestHand: Card[] | null;
   holeCards: Card[];

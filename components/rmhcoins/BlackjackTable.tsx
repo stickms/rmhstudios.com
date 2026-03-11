@@ -33,8 +33,8 @@ function CardFace({ card, small, delay }: { card: Card; small?: boolean; delay?:
         {/* Back */}
         <div className="absolute inset-0 backface-hidden rounded-md border border-blue-500/30 bg-gradient-to-br from-blue-800 to-blue-950" />
         {/* Front */}
-        <div className="absolute inset-0 backface-hidden rotate-y-180 rounded-md border border-white/20 flex flex-col items-center justify-center bg-white/10 backdrop-blur-sm">
-          <span className={`${textSize} font-bold text-white`}>{card.rank}</span>
+        <div className="absolute inset-0 backface-hidden rotate-y-180 rounded-md border border-gray-300 flex flex-col items-center justify-center bg-white">
+          <span className={`${textSize} font-bold text-black`}>{card.rank}</span>
           <span className={`${textSize} ${SUIT_COLORS[card.suit]}`}>{SUIT_SYMBOLS[card.suit]}</span>
         </div>
       </div>

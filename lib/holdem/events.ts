@@ -13,6 +13,8 @@ export const C2S = {
   CALL:          'holdem:call',
   RAISE:         'holdem:raise',
   ALL_IN:        'holdem:all_in',
+  SIT_IN:        'holdem:sit_in',
+  SIT_OUT:       'holdem:sit_out',
 } as const;
 
 /** Server-to-Client events */

@@ -1,11 +1,25 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { CoinIcon } from './CoinIcon';
 import { useHoldemStore } from '@/lib/holdem/store';
 import { getHoldemSocket } from '@/lib/holdem/socket';
 import { C2S } from '@/lib/holdem/events';
+import { evaluateBestHand, HAND_RANK_LABELS } from '@/lib/holdem/logic';
+import type { Card } from '@/lib/holdem/logic';
+
+function MyHandRank({ holeCards, communityCards }: { holeCards: Card[] | null; communityCards: Card[] }) {
+  const handLabel = useMemo(() => {
+    if (!holeCards || holeCards.length < 2 || communityCards.length < 3) return null;
+    const allCards = [...holeCards, ...communityCards];
+    const result = evaluateBestHand(allCards);
+    return HAND_RANK_LABELS[result.rank];
+  }, [holeCards, communityCards]);
+
+  if (!handLabel) return null;
+  return <span className="text-xs text-site-text-dim">Your hand: <span className="font-bold text-site-text">{handLabel}</span></span>;
+}
 
 export function HoldemControls() {
   const {
@@ -13,6 +27,7 @@ export function HoldemControls() {
     currentTurnUserId,
     myUserId,
     players,
+    communityCards,
     currentBet,
     minRaise,
     error,
@@ -27,16 +42,35 @@ export function HoldemControls() {
   const canCheck = toCall <= 0;
   const myChips = myPlayer?.totalChips ?? 0;
   const minRaiseTotal = currentBet + minRaise;
+  const isSittingOut = myPlayer?.sittingOut ?? true;
 
   const emit = useCallback((event: string, payload?: unknown) => {
     const sock = getHoldemSocket();
     if (sock) sock.emit(event, payload);
   }, []);
 
+  // Sit in/out button shown when sitting out or during waiting/results
+  const sitButton = myPlayer && isSittingOut ? (
+    <Button onClick={() => emit(C2S.SIT_IN)}
+      className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-sm">
+      Sit In
+    </Button>
+  ) : myPlayer && !isSittingOut && (phase === 'waiting' || phase === 'results') ? (
+    <Button onClick={() => emit(C2S.SIT_OUT)} variant="outline"
+      className="rounded-lg text-sm">
+      Sit Out
+    </Button>
+  ) : null;
+
   if (phase === 'waiting') {
     return (
-      <div className="text-center text-site-text-dim py-4">
-        <p className="text-sm">Waiting for more players to join...</p>
+      <div className="text-center text-site-text-dim py-4 flex flex-col items-center gap-2">
+        {isSittingOut ? (
+          <p className="text-sm">Sit in to start playing!</p>
+        ) : (
+          <p className="text-sm">Waiting for more players to sit in...</p>
+        )}
+        {sitButton}
         {roomInfo && (
           <p className="text-xs mt-1">
             Buy-in: <span className="text-site-text font-bold">{roomInfo.buyIn}</span> coins
@@ -53,8 +87,18 @@ export function HoldemControls() {
 
   if (phase === 'results') {
     return (
-      <div className="text-center text-site-text-dim py-4">
+      <div className="text-center text-site-text-dim py-4 flex flex-col items-center gap-2">
         <p className="text-sm">Hand complete. Next hand starting soon...</p>
+        {sitButton}
+      </div>
+    );
+  }
+
+  if (isSittingOut) {
+    return (
+      <div className="text-center text-site-text-dim py-4 flex flex-col items-center gap-2">
+        <p className="text-sm">You are sitting out.</p>
+        {sitButton}
       </div>
     );
   }
@@ -62,7 +106,7 @@ export function HoldemControls() {
   if (!isMyTurn || !myPlayer || myPlayer.folded) {
     const currentPlayer = players.find((p) => p.userId === currentTurnUserId);
     return (
-      <div className="text-center text-site-text-dim py-4">
+      <div className="text-center text-site-text-dim py-4 flex flex-col items-center gap-1">
         {myPlayer?.folded ? (
           <p className="text-sm">You folded this hand.</p>
         ) : currentPlayer ? (
@@ -72,6 +116,7 @@ export function HoldemControls() {
         ) : (
           <p className="text-sm animate-pulse">Dealing...</p>
         )}
+        <MyHandRank holeCards={myPlayer?.holeCards ?? null} communityCards={communityCards} />
       </div>
     );
   }
@@ -133,6 +178,8 @@ export function HoldemControls() {
           </Button>
         </div>
       )}
+
+      <MyHandRank holeCards={myPlayer?.holeCards ?? null} communityCards={communityCards} />
 
       {error && <p className="text-sm text-red-400 text-center">{error}</p>}
     </div>
