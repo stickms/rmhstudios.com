@@ -22,11 +22,12 @@ import {
   TransferHostSchema,
   UpdateSettingsSchema,
   BrowseRoomsSchema,
-  SetRoleSchema,
+  SetLeaderSchema,
   BanSchema,
   UnbanSchema,
   CreateInviteSchema,
   SetStatusSchema,
+  CheckHistorySchema,
 } from '../../lib/rmhtube/schemas';
 import { generateRoomCode, sanitizeString } from '../../lib/rmhtube/utils';
 import type { RmhTubeRoom, RmhTubeMember, VideoState, RoomSettings, ChatMessage, QueueItem, BannedUser, InviteLink } from './types';
@@ -55,12 +56,13 @@ export class RoomManager {
     socket.on(C2S.ROOM_UPDATE_SETTINGS, validated(socket, C2S.ROOM_UPDATE_SETTINGS, UpdateSettingsSchema, (s, p) => this.updateSettings(s, p)));
     socket.on(C2S.ROOM_BROWSE, validated(socket, C2S.ROOM_BROWSE, BrowseRoomsSchema, (s, p) => this.browseRooms(s, p)));
 
-    // Phase 4: Role management, bans, invites, status
-    socket.on(C2S.ROOM_SET_ROLE, validated(socket, C2S.ROOM_SET_ROLE, SetRoleSchema, (s, p) => this.setRole(s, p)));
+    // Phase 4: Leader management, bans, invites, status
+    socket.on(C2S.ROOM_SET_LEADER, validated(socket, C2S.ROOM_SET_LEADER, SetLeaderSchema, (s, p) => this.setLeader(s, p)));
     socket.on(C2S.ROOM_BAN, validated(socket, C2S.ROOM_BAN, BanSchema, (s, p) => this.banMember(s, p)));
     socket.on(C2S.ROOM_UNBAN, validated(socket, C2S.ROOM_UNBAN, UnbanSchema, (s, p) => this.unbanMember(s, p)));
     socket.on(C2S.ROOM_CREATE_INVITE, validated(socket, C2S.ROOM_CREATE_INVITE, CreateInviteSchema, (s, p) => this.createInvite(s, p)));
     socket.on(C2S.ROOM_SET_STATUS, validated(socket, C2S.ROOM_SET_STATUS, SetStatusSchema, (s, p) => this.setStatus(s, p)));
+    socket.on(C2S.ROOM_CHECK_HISTORY, validated(socket, C2S.ROOM_CHECK_HISTORY, CheckHistorySchema, (s, p) => this.checkHistory(s, p)));
   }
 
   handleDisconnect(socket: Socket): void {
@@ -144,6 +146,7 @@ export class RoomManager {
       id: roomId,
       name: payload.name ? sanitizeString(payload.name, 64) : null,
       hostUserId: userId,
+      leaderUserId: userId,
       settings,
       members: new Map([[userId, host]]),
       queue: [],
@@ -339,15 +342,36 @@ export class RoomManager {
 
     // Transfer host if the host left
     if (userId === room.hostUserId) {
-      const nextHost = Array.from(room.members.values()).find((m) => m.isConnected) ?? room.members.values().next().value;
+      // Pick the longest-in-room connected member (or any remaining member)
+      const nextHost = this.getLongestConnectedMember(room);
       if (nextHost) {
         room.hostUserId = nextHost.userId;
         nextHost.role = 'host';
-        this.broadcastAction(room, 'HOST_TRANSFERRED', { newHostUserId: nextHost.userId, newHostUserName: nextHost.userName });
+
+        // Leader also transfers to the new host
+        room.leaderUserId = nextHost.userId;
+
+        this.broadcastAction(room, 'HOST_TRANSFERRED', {
+          newHostUserId: nextHost.userId,
+          newHostUserName: nextHost.userName,
+          newLeaderUserId: nextHost.userId,
+        });
 
         // Update DB
         this.persistHostTransfer(roomId, nextHost.userId).catch((err) => {
           logger.error({ event: 'db_host_transfer_failed', roomId, error: String(err) });
+        });
+      }
+    } else if (userId === room.leaderUserId) {
+      // Leader left but host is still here — give leader to host,
+      // or longest-in-room member if host is disconnected
+      const host = room.members.get(room.hostUserId);
+      const nextLeader = (host?.isConnected ? host : null) ?? this.getLongestConnectedMember(room);
+      if (nextLeader) {
+        room.leaderUserId = nextLeader.userId;
+        this.broadcastAction(room, 'LEADER_CHANGED', {
+          newLeaderUserId: nextLeader.userId,
+          newLeaderUserName: nextLeader.userName,
         });
       }
     }
@@ -363,23 +387,17 @@ export class RoomManager {
     const room = this.rooms.get(roomId);
     if (!room) return;
 
-    // Allow host or moderators to kick
-    if (!this.isHostOrMod(room, userId)) {
-      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host or moderators can kick members.' });
+    // Host-only
+    if (room.hostUserId !== userId) {
+      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host can kick members.' });
       return;
     }
 
     const target = room.members.get(payload.targetUserId);
     if (!target) return;
 
-    // Moderators cannot kick the host or other moderators
-    const kicker = room.members.get(userId);
-    if (kicker?.role === 'moderator') {
-      if (target.role === 'host' || target.role === 'moderator') {
-        socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Moderators cannot kick the host or other moderators.' });
-        return;
-      }
-    }
+    // Cannot kick yourself
+    if (payload.targetUserId === userId) return;
 
     // Notify the kicked user
     if (target.socketId) {
@@ -410,9 +428,13 @@ export class RoomManager {
     target.role = 'host';
     room.hostUserId = payload.targetUserId;
 
+    // Also transfer leader to the new host
+    room.leaderUserId = payload.targetUserId;
+
     this.broadcastAction(room, 'HOST_TRANSFERRED', {
       newHostUserId: payload.targetUserId,
       newHostUserName: target.userName,
+      newLeaderUserId: payload.targetUserId,
     });
 
     this.persistHostTransfer(roomId, payload.targetUserId).catch((err) => {
@@ -453,57 +475,37 @@ export class RoomManager {
     });
   }
 
-  // ─── Phase 4.1: Co-Host / Moderator Role ─────────────────────
+  // ─── Leader Management ───────────────────────────────────────
 
-  private setRole(
+  private setLeader(
     socket: Socket,
-    payload: { targetUserId: string; role: 'moderator' | 'member' },
+    payload: { targetUserId: string },
   ): void {
     const userId = socket.data.userId as string;
     const roomId = this.userRoomIndex.get(userId);
     if (!roomId) return;
 
     const room = this.rooms.get(roomId);
-    if (!room || room.hostUserId !== userId) {
-      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host can set roles.' });
+    if (!room) return;
+
+    // Only the current leader or host can set a new leader
+    if (room.leaderUserId !== userId && room.hostUserId !== userId) {
+      socket.emit(S2C.ERROR, { code: 'NOT_LEADER', message: 'Only the current leader or host can transfer leadership.' });
       return;
     }
 
     const target = room.members.get(payload.targetUserId);
     if (!target) return;
 
-    // Cannot change host's role via this handler
-    if (payload.targetUserId === room.hostUserId) {
-      socket.emit(S2C.ERROR, { code: 'INVALID_PAYLOAD', message: 'Cannot change the host\'s role.' });
-      return;
-    }
-
-    if (payload.role === 'moderator') {
-      // Max 5 moderators
-      const currentMods = Array.from(room.members.values()).filter((m) => m.role === 'moderator');
-      if (currentMods.length >= 5) {
-        socket.emit(S2C.ERROR, { code: 'INVALID_PAYLOAD', message: 'Maximum of 5 moderators reached.' });
-        return;
-      }
-
-      target.role = 'moderator';
-      this.broadcastAction(room, 'MEMBER_PROMOTED', {
-        userId: payload.targetUserId,
-        userName: target.userName,
-        role: 'moderator',
-      });
-    } else {
-      target.role = 'member';
-      this.broadcastAction(room, 'MEMBER_DEMOTED', {
-        userId: payload.targetUserId,
-        userName: target.userName,
-        role: 'member',
-      });
-    }
-
+    room.leaderUserId = payload.targetUserId;
     room.lastActivityAt = Date.now();
 
-    logger.info({ event: 'role_changed', roomId, targetUserId: payload.targetUserId, newRole: payload.role, byUserId: userId });
+    this.broadcastAction(room, 'LEADER_CHANGED', {
+      newLeaderUserId: payload.targetUserId,
+      newLeaderUserName: target.userName,
+    });
+
+    logger.info({ event: 'leader_changed', roomId, newLeaderUserId: payload.targetUserId, byUserId: userId });
   }
 
   // ─── Phase 4.2: Ban List ──────────────────────────────────────
@@ -519,24 +521,14 @@ export class RoomManager {
     const room = this.rooms.get(roomId);
     if (!room) return;
 
-    if (!this.isHostOrMod(room, userId)) {
-      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host or moderators can ban members.' });
+    // Host-only
+    if (room.hostUserId !== userId) {
+      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host can ban members.' });
       return;
     }
 
-    // Cannot ban the host
-    if (payload.targetUserId === room.hostUserId) {
-      socket.emit(S2C.ERROR, { code: 'INVALID_PAYLOAD', message: 'Cannot ban the host.' });
-      return;
-    }
-
-    // Moderators cannot ban other moderators
-    const banner = room.members.get(userId);
-    const target = room.members.get(payload.targetUserId);
-    if (banner?.role === 'moderator' && target?.role === 'moderator') {
-      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Moderators cannot ban other moderators.' });
-      return;
-    }
+    // Cannot ban yourself
+    if (payload.targetUserId === userId) return;
 
     // Check if already banned
     if (room.bannedUsers.some((b) => b.userId === payload.targetUserId)) {
@@ -588,8 +580,8 @@ export class RoomManager {
     const room = this.rooms.get(roomId);
     if (!room) return;
 
-    if (!this.isHostOrMod(room, userId)) {
-      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host or moderators can unban members.' });
+    if (room.hostUserId !== userId) {
+      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host can unban members.' });
       return;
     }
 
@@ -625,8 +617,8 @@ export class RoomManager {
     const room = this.rooms.get(roomId);
     if (!room) return;
 
-    if (!this.isHostOrMod(room, userId)) {
-      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host or moderators can create invites.' });
+    if (room.hostUserId !== userId) {
+      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host can create invites.' });
       return;
     }
 
@@ -720,6 +712,29 @@ export class RoomManager {
     socket.emit(S2C.ROOM_BROWSE_RESULT, { rooms: publicRooms });
   }
 
+  // ─── Room History Check ──────────────────────────────────────
+
+  private checkHistory(socket: Socket, payload: { roomIds: string[] }): void {
+    const results = payload.roomIds.map((roomId) => {
+      const room = this.rooms.get(roomId);
+      if (!room) {
+        return { roomId, isOpen: false, memberCount: 0, maxMembers: 0, hostName: null, currentVideo: null };
+      }
+      const activeCount = Array.from(room.members.values()).filter((m) => m.isConnected).length;
+      const host = room.members.get(room.hostUserId);
+      return {
+        roomId,
+        isOpen: true,
+        memberCount: activeCount,
+        maxMembers: room.settings.maxMembers,
+        hostName: host?.userName ?? 'Unknown',
+        currentVideo: room.currentItem?.title ?? null,
+      };
+    });
+
+    socket.emit(S2C.ROOM_HISTORY_STATUS, { rooms: results });
+  }
+
   // ─── Disband ─────────────────────────────────────────────────
 
   private disbandRoom(roomId: string, reason: string): void {
@@ -771,6 +786,7 @@ export class RoomManager {
       avatarUrl: m.avatarUrl,
       isConnected: m.isConnected,
       isHost: m.userId === room.hostUserId,
+      isLeader: m.userId === room.leaderUserId,
       role: m.role,
       status: m.status,
     }));
@@ -796,16 +812,14 @@ export class RoomManager {
       ? mapQueueItem(room.currentItem)
       : null;
 
-    // Only expose ban list to host or moderators
-    const requestingMember = room.members.get(forUserId);
-    const isHostOrMod = requestingMember
-      ? requestingMember.role === 'host' || requestingMember.role === 'moderator'
-      : false;
+    // Only expose ban list to the host
+    const isHost = room.hostUserId === forUserId;
 
     return {
       roomId: room.id,
       name: room.name,
       hostUserId: room.hostUserId,
+      leaderUserId: room.leaderUserId,
       settings: { ...room.settings },
       members,
       queue,
@@ -837,7 +851,7 @@ export class RoomManager {
         return { ...room.pinnedMessage!, reactions };
       })() : null,
       playedItems: room.playedItems.slice(-50).map(mapQueueItem),
-      bannedUsers: isHostOrMod ? room.bannedUsers : [],
+      bannedUsers: isHost ? room.bannedUsers : [],
     };
   }
 
@@ -877,11 +891,21 @@ export class RoomManager {
     return roomId ? this.rooms.get(roomId) ?? null : null;
   }
 
-  /** Returns true if user is the host or a moderator in the given room. */
-  isHostOrMod(room: RmhTubeRoom, userId: string): boolean {
-    if (room.hostUserId === userId) return true;
-    const member = room.members.get(userId);
-    return member?.role === 'moderator' || member?.role === 'host';
+  /** Returns true if the user is the current room leader. */
+  isLeader(room: RmhTubeRoom, userId: string): boolean {
+    return room.leaderUserId === userId;
+  }
+
+  /** Returns the longest-in-room connected member (for leader/host fallback). */
+  private getLongestConnectedMember(room: RmhTubeRoom): RmhTubeMember | undefined {
+    let oldest: RmhTubeMember | undefined;
+    for (const m of room.members.values()) {
+      if (!m.isConnected) continue;
+      if (!oldest || m.joinedAt < oldest.joinedAt) {
+        oldest = m;
+      }
+    }
+    return oldest ?? room.members.values().next().value;
   }
 
   // ─── Database Restoration ────────────────────────────────────
@@ -970,6 +994,7 @@ export class RoomManager {
         id: dbRoom.id,
         name: dbRoom.name,
         hostUserId: dbRoom.hostId,
+        leaderUserId: dbRoom.hostId,
         settings: {
           isPublic: dbRoom.isPublic,
           maxMembers: dbRoom.maxMembers,
@@ -1095,6 +1120,7 @@ export class RoomManager {
       id: dbRoom.id,
       name: dbRoom.name,
       hostUserId: dbRoom.hostId,
+      leaderUserId: dbRoom.hostId,
       settings: {
         isPublic: dbRoom.isPublic,
         maxMembers: dbRoom.maxMembers,

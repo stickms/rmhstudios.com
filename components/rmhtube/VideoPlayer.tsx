@@ -23,7 +23,7 @@ const ReactPlayer = lazy(() => import('react-player'));
 interface VideoPlayerProps {
   url: string | null;
   isHost: boolean;
-  isHostOrMod?: boolean;
+  isLeader?: boolean;
   onEnded?: () => void;
 }
 
@@ -33,7 +33,7 @@ export interface VideoPlayerHandle {
 }
 
 const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
-  function VideoPlayer({ url, isHost, isHostOrMod = isHost, onEnded }, ref) {
+  function VideoPlayer({ url, isHost, isLeader = isHost, onEnded }, ref) {
   const playerRef = useRef<ReactPlayerType>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const videoState = useRmhTubeStore((s) => s.room?.videoState);
@@ -107,11 +107,11 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     },
   }), []);
 
-  // ─── Host: Periodic state report ──────────────────────────────
+  // ─── Leader: Periodic state report ─────────────────────────────
 
   useEffect(() => {
-    // Only host reports periodic state (moderators control via explicit actions only)
-    if (!isHost || !url) return;
+    // Only the leader reports periodic state
+    if (!isLeader || !url) return;
 
     const interval = setInterval(() => {
       const player = playerRef.current;
@@ -135,12 +135,12 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     }, HOST_STATE_INTERVAL_MS);
 
     return () => clearInterval(interval);
-  }, [isHost, url]);
+  }, [isLeader, url]);
 
-  // ─── Non-host: Sync to server state ──────────────────────────
+  // ─── Non-leader: Sync to server state ──────────────────────────
 
   useEffect(() => {
-    if (isHost || !videoState || !ready) return;
+    if (isLeader || !videoState || !ready) return;
     const player = playerRef.current;
     if (!player) return;
 
@@ -157,12 +157,12 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     if (drift > SYNC_TOLERANCE_S) {
       player.seekTo(expectedTime, 'seconds');
     }
-  }, [isHost, videoState, ready]);
+  }, [isLeader, videoState, ready]);
 
   // ─── Host: Emit play/pause/seek ──────────────────────────────
 
   const handlePlay = useCallback(() => {
-    if (isHostOrMod) {
+    if (isLeader) {
       // Update local state immediately so the controlled `playing` prop
       // doesn't fight the user's click (server only broadcasts to others)
       const room = useRmhTubeStore.getState().room;
@@ -178,15 +178,15 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       // Snap non-privileged users back to the live state
       const vs = useRmhTubeStore.getState().room?.videoState;
       if (vs && !vs.playing) {
-        toast.info('Only the host or moderators can control playback');
+        toast.info('Only the leader can control playback');
         // Force the player back to paused by re-applying the store state
         useRmhTubeStore.getState().updateVideoState({ ...vs, updatedAt: Date.now() });
       }
     }
-  }, [isHostOrMod]);
+  }, [isLeader]);
 
   const handlePause = useCallback(() => {
-    if (isHostOrMod) {
+    if (isLeader) {
       const room = useRmhTubeStore.getState().room;
       if (room) {
         useRmhTubeStore.getState().updateVideoState({
@@ -200,25 +200,25 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       // Snap non-privileged users back to the live state
       const vs = useRmhTubeStore.getState().room?.videoState;
       if (vs && vs.playing) {
-        toast.info('Only the host or moderators can control playback');
+        toast.info('Only the leader can control playback');
         useRmhTubeStore.getState().updateVideoState({ ...vs, updatedAt: Date.now() });
       }
     }
-  }, [isHostOrMod]);
+  }, [isLeader]);
 
   const handleSeek = useCallback((seconds: number) => {
-    if (isHostOrMod) {
+    if (isLeader) {
       emit(C2S.SYNC_SEEK, { time: seconds });
     } else {
       // Snap non-privileged users back to the synced position
       const vs = useRmhTubeStore.getState().room?.videoState;
       if (vs) {
-        toast.info('Only the host or moderators can control playback');
+        toast.info('Only the leader can control playback');
         const player = playerRef.current;
         if (player) player.seekTo(vs.currentTime, 'seconds');
       }
     }
-  }, [isHostOrMod]);
+  }, [isLeader]);
 
   // ─── Captions: Toggle via YouTube internal player API ────────
   useEffect(() => {

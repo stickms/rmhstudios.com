@@ -10,6 +10,7 @@ export const auth = betterAuth({
     trustedOrigins: [
         "https://rmhstudios.com",
         "https://www.rmhstudios.com",
+        "https://staging.rmhstudios.com",
     ],
     socialProviders: {
         discord: {

@@ -6,15 +6,15 @@
  * room history, and favorites.
  */
 
-import { useEffect, useState, useCallback } from 'react';
-import { MonitorPlay, Lock, Star, StarOff, Clock, History } from 'lucide-react';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { MonitorPlay, Lock, Star, StarOff, Clock, History, Users } from 'lucide-react';
 import { connectToRmhTube, getSocket, disconnectFromRmhTube, emit } from '@/lib/rmhtube/socket';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
 import { S2C, C2S } from '@/lib/rmhtube/events';
 import { toast } from '@/lib/rmhtube/toast-store';
 import { formatRelativeTime } from '@/lib/rmhtube/utils';
 import RmhTubeHeader from '@/components/rmhtube/RmhTubeHeader';
-import type { PublicRoomInfo } from '@/lib/rmhtube/types';
+import type { PublicRoomInfo, RoomHistoryStatus } from '@/lib/rmhtube/types';
 import { useRouter } from '@tanstack/react-router';
 
 export default function RmhTubeLanding() {
@@ -23,8 +23,11 @@ export default function RmhTubeLanding() {
   const roomHistory = useRmhTubeStore((s) => s.settings.roomHistory);
   const favoriteRooms = useRmhTubeStore((s) => s.settings.favoriteRooms);
   const toggleFavoriteRoom = useRmhTubeStore((s) => s.toggleFavoriteRoom);
+  const removeRoomFromHistory = useRmhTubeStore((s) => s.removeRoomFromHistory);
   const [joinCode, setJoinCode] = useState('');
   const [publicRooms, setPublicRooms] = useState<PublicRoomInfo[]>([]);
+  const [historyStatus, setHistoryStatus] = useState<Map<string, RoomHistoryStatus>>(new Map());
+  const historyIdsRef = useRef<string[]>([]);
 
   // Connect to WebSocket on mount
   useEffect(() => {
@@ -52,6 +55,14 @@ export default function RmhTubeLanding() {
           if (mounted) setPublicRooms(data.rooms ?? []);
         });
 
+        // Listen for history status results
+        socket.on(S2C.ROOM_HISTORY_STATUS, (data: { rooms: RoomHistoryStatus[] }) => {
+          if (!mounted) return;
+          const map = new Map<string, RoomHistoryStatus>();
+          for (const r of data.rooms) map.set(r.roomId, r);
+          setHistoryStatus(map);
+        });
+
         // Listen for state snapshot (indicates successful join)
         socket.on(S2C.ROOM_STATE_SNAPSHOT, (data: { roomId: string }) => {
           const currentRoom = useRmhTubeStore.getState().room;
@@ -60,13 +71,22 @@ export default function RmhTubeLanding() {
           }
         });
 
-        // Browse public rooms on connect
+        // Browse public rooms + check history on connect
         socket.emit(C2S.ROOM_BROWSE, {});
+        const ids = useRmhTubeStore.getState().settings.roomHistory.map((r) => r.roomId).slice(0, 20);
+        historyIdsRef.current = ids;
+        if (ids.length > 0) {
+          socket.emit(C2S.ROOM_CHECK_HISTORY, { roomIds: ids });
+        }
 
         // Refresh every 10 seconds
         browseInterval = setInterval(() => {
           if (mounted && socket.connected) {
             socket.emit(C2S.ROOM_BROWSE, {});
+            const currentIds = useRmhTubeStore.getState().settings.roomHistory.map((r) => r.roomId).slice(0, 20);
+            if (currentIds.length > 0) {
+              socket.emit(C2S.ROOM_CHECK_HISTORY, { roomIds: currentIds });
+            }
           }
         }, 10_000);
       } catch (err) {
@@ -106,11 +126,23 @@ export default function RmhTubeLanding() {
 
   const handleBrowse = useCallback(() => {
     emit(C2S.ROOM_BROWSE, {});
-  }, []);
+    const ids = roomHistory.map((r) => r.roomId).slice(0, 20);
+    if (ids.length > 0) {
+      emit(C2S.ROOM_CHECK_HISTORY, { roomIds: ids });
+    }
+  }, [roomHistory]);
+
+  // Filter recent rooms to only show ones that are currently open
+  const openRecentRooms = roomHistory.filter((entry) => {
+    const status = historyStatus.get(entry.roomId);
+    return status?.isOpen;
+  });
 
   return (
     <div className="flex h-screen flex-col">
-      <RmhTubeHeader backLabel="Builds" backHref="/builds" />
+      <div className="border-b border-(--rmhtube-border)">
+        <RmhTubeHeader backLabel="Builds" backHref="/builds" />
+      </div>
 
       <div className="flex-1 overflow-y-auto p-4 md:p-8" style={{ scrollbarGutter: 'stable both-edges' }}>
         <div className="max-w-4xl mx-auto space-y-8">
@@ -211,53 +243,6 @@ export default function RmhTubeLanding() {
             </div>
           )}
 
-          {/* Room History (Phase 4) */}
-          {roomHistory.length > 0 && (
-            <div className="rounded-xl border border-(--rmhtube-border) bg-(--rmhtube-surface) p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <History className="h-5 w-5 text-(--rmhtube-info)" />
-                <h2 className="text-xl font-semibold">Recent Rooms</h2>
-              </div>
-              <div className="space-y-2">
-                {roomHistory.slice(0, 10).map((entry) => {
-                  const isFavorite = favoriteRooms.includes(entry.roomId);
-                  return (
-                    <div
-                      key={entry.roomId}
-                      className="flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors border border-(--rmhtube-border) bg-(--rmhtube-bg) hover:bg-(--rmhtube-surface-hover)"
-                      onClick={() => emit(C2S.ROOM_JOIN, { roomId: entry.roomId })}
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <span className="font-mono font-bold text-sm">{entry.roomId}</span>
-                        <span className="text-sm text-(--rmhtube-text-muted) truncate">
-                          {entry.roomName ?? `Host: ${entry.hostName}`}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-xs text-(--rmhtube-text-dim) flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {formatRelativeTime(entry.lastVisited)}
-                        </span>
-                        <span
-                          role="button"
-                          onClick={(e) => { e.stopPropagation(); toggleFavoriteRoom(entry.roomId); }}
-                          className={`rounded p-1 transition-colors ${
-                            isFavorite
-                              ? 'text-(--rmhtube-warning)'
-                              : 'text-(--rmhtube-text-dim) hover:text-(--rmhtube-warning)'
-                          }`}
-                          title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-                        >
-                          <Star className={`h-3.5 w-3.5 ${isFavorite ? 'fill-current' : ''}`} />
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
           {/* Public Rooms */}
           <div className="rounded-xl border border-(--rmhtube-border) bg-(--rmhtube-surface) p-6">
             <div className="flex items-center justify-between mb-4">
@@ -302,7 +287,8 @@ export default function RmhTubeLanding() {
                         </span>
                       )}
                     </div>
-                    <div className="text-sm text-(--rmhtube-text-muted) whitespace-nowrap">
+                    <div className="text-sm text-(--rmhtube-text-muted) whitespace-nowrap flex items-center gap-1">
+                      <Users className="h-3.5 w-3.5" />
                       {room.memberCount}/{room.maxMembers}
                     </div>
                   </div>
@@ -310,6 +296,63 @@ export default function RmhTubeLanding() {
               </div>
             )}
           </div>
+
+          {/* Recent Rooms — only shows rooms that are currently open */}
+          {openRecentRooms.length > 0 && (
+            <div className="rounded-xl border border-(--rmhtube-border) bg-(--rmhtube-surface) p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <History className="h-5 w-5 text-(--rmhtube-info)" />
+                <h2 className="text-xl font-semibold">Recent Rooms</h2>
+              </div>
+              <div className="space-y-2">
+                {openRecentRooms.slice(0, 10).map((entry) => {
+                  const status = historyStatus.get(entry.roomId)!;
+                  const isFavorite = favoriteRooms.includes(entry.roomId);
+                  return (
+                    <div
+                      key={entry.roomId}
+                      className="flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors border border-(--rmhtube-border) bg-(--rmhtube-bg) hover:bg-(--rmhtube-surface-hover)"
+                      onClick={() => emit(C2S.ROOM_JOIN, { roomId: entry.roomId })}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="font-mono font-bold text-sm">{entry.roomId}</span>
+                        <span className="text-sm text-(--rmhtube-text-muted) truncate">
+                          {entry.roomName ?? `Host: ${status.hostName ?? entry.hostName}`}
+                        </span>
+                        {status.currentVideo && (
+                          <span className="text-xs text-(--rmhtube-accent) truncate max-w-48">
+                            · {status.currentVideo}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-xs text-(--rmhtube-text-dim) flex items-center gap-1">
+                          <Users className="h-3 w-3" />
+                          {status.memberCount}/{status.maxMembers}
+                        </span>
+                        <span className="text-xs text-(--rmhtube-text-dim) flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {formatRelativeTime(entry.lastVisited)}
+                        </span>
+                        <span
+                          role="button"
+                          onClick={(e) => { e.stopPropagation(); toggleFavoriteRoom(entry.roomId); }}
+                          className={`rounded p-1 transition-colors ${
+                            isFavorite
+                              ? 'text-(--rmhtube-warning)'
+                              : 'text-(--rmhtube-text-dim) hover:text-(--rmhtube-warning)'
+                          }`}
+                          title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                        >
+                          <Star className={`h-3.5 w-3.5 ${isFavorite ? 'fill-current' : ''}`} />
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
         </div>
       </div>

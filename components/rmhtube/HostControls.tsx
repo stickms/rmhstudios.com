@@ -20,7 +20,7 @@ import type { VideoState, ClientQueueItem } from '@/lib/rmhtube/types';
 
 interface HostControlsProps {
   isHost: boolean;
-  isHostOrMod?: boolean;
+  isLeader?: boolean;
   videoState: VideoState | null;
   currentItem: ClientQueueItem | null;
   onSkip?: () => void;
@@ -28,7 +28,7 @@ interface HostControlsProps {
   onFullscreen?: () => void;
 }
 
-export default function HostControls({ isHost, isHostOrMod = isHost, videoState, currentItem, onSkip, onPiP, onFullscreen }: HostControlsProps) {
+export default function HostControls({ isHost, isLeader = isHost, videoState, currentItem, onSkip, onPiP, onFullscreen }: HostControlsProps) {
   const playing = videoState?.playing ?? false;
   const currentTime = videoState?.currentTime ?? 0;
   const duration = currentItem?.duration ?? null;
@@ -63,7 +63,7 @@ export default function HostControls({ isHost, isHostOrMod = isHost, videoState,
   }, [showSpeedMenu]);
 
   const handlePlayPause = useCallback(() => {
-    if (isHostOrMod) {
+    if (isLeader) {
       // Optimistically update local state so the UI responds immediately
       const room = useRmhTubeStore.getState().room;
       if (room) {
@@ -75,18 +75,18 @@ export default function HostControls({ isHost, isHostOrMod = isHost, videoState,
       }
       emit(playing ? C2S.SYNC_PAUSE : C2S.SYNC_PLAY, {});
     } else {
-      toast.info('Only the host or moderators can control playback');
+      toast.info('Only the leader can control playback');
     }
-  }, [isHostOrMod, playing]);
+  }, [isLeader, playing]);
 
   const handleSkip = useCallback(() => {
-    if (isHostOrMod) {
+    if (isLeader) {
       emit(C2S.QUEUE_SKIP, {});
       onSkip?.();
     } else {
-      toast.info('Only the host or moderators can skip');
+      toast.info('Only the leader can skip');
     }
-  }, [isHostOrMod, onSkip]);
+  }, [isLeader, onSkip]);
 
   const handleMuteToggle = useCallback(() => {
     updateSettings({ muted: !muted });
@@ -102,20 +102,20 @@ export default function HostControls({ isHost, isHostOrMod = isHost, videoState,
   }, [captionsEnabled, updateSettings]);
 
   const handleSpeedSelect = useCallback((speed: number) => {
-    if (!isHostOrMod) {
-      toast.info('Only the host or moderators can change speed');
+    if (!isLeader) {
+      toast.info('Only the leader can change speed');
       return;
     }
     emit(C2S.SYNC_SET_SPEED, { speed });
     setShowSpeedMenu(false);
-  }, [isHostOrMod]);
+  }, [isLeader]);
 
   const handleSpeedCycle = useCallback(() => {
-    if (!isHostOrMod) return;
+    if (!isLeader) return;
     const idx = PLAYBACK_SPEEDS.indexOf(currentSpeed as typeof PLAYBACK_SPEEDS[number]);
     const nextIdx = idx === -1 ? 2 : (idx + 1) % PLAYBACK_SPEEDS.length; // default to 1x then next
     emit(C2S.SYNC_SET_SPEED, { speed: PLAYBACK_SPEEDS[nextIdx] });
-  }, [isHostOrMod, currentSpeed]);
+  }, [isLeader, currentSpeed]);
 
   const handlePiP = useCallback(() => {
     onPiP?.();
@@ -199,13 +199,13 @@ export default function HostControls({ isHost, isHostOrMod = isHost, videoState,
       <div className="relative shrink-0" ref={speedMenuRef}>
         <button
           onClick={() => setShowSpeedMenu((v) => !v)}
-          onDoubleClick={isHostOrMod ? handleSpeedCycle : undefined}
+          onDoubleClick={isLeader ? handleSpeedCycle : undefined}
           className={`rounded-md p-2 transition-colors flex items-center gap-1 ${
             currentSpeed !== 1
               ? 'text-(--rmhtube-accent) bg-(--rmhtube-accent-dim)'
               : 'text-(--rmhtube-text-muted) hover:text-(--rmhtube-text) hover:bg-(--rmhtube-surface-hover)'
           }`}
-          title={isHostOrMod ? `Playback speed: ${currentSpeed}x (click to change)` : `Playback speed: ${currentSpeed}x`}
+          title={isLeader ? `Playback speed: ${currentSpeed}x (click to change)` : `Playback speed: ${currentSpeed}x`}
         >
           <Gauge className="h-4 w-4" />
           <span className="text-xs font-medium">{currentSpeed}x</span>

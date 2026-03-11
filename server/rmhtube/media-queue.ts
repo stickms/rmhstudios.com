@@ -50,12 +50,10 @@ export class MediaQueue {
     socket.on(C2S.QUEUE_SHUFFLE, validated(socket, C2S.QUEUE_SHUFFLE, EmptySchema, (s) => this.shuffleQueue(s)));
   }
 
-  // ─── Helper: Host or Moderator Check ────────────────────────
+  // ─── Helper: Leader Check ───────────────────────────────────
 
-  private isHostOrMod(room: RmhTubeRoom, userId: string): boolean {
-    if (room.hostUserId === userId) return true;
-    const member = room.members.get(userId);
-    return member?.role === 'moderator';
+  private isLeader(room: RmhTubeRoom, userId: string): boolean {
+    return room.leaderUserId === userId;
   }
 
   // ─── Add to Queue ────────────────────────────────────────────
@@ -168,8 +166,8 @@ export class MediaQueue {
   private reorderQueue(socket: Socket, payload: { itemId: string; newPosition: number }): void {
     const userId = socket.data.userId as string;
     const room = this.roomManager.getRoomForUser(userId);
-    if (!room || !this.isHostOrMod(room, userId)) {
-      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host or moderators can reorder the queue.' });
+    if (!room || !this.isLeader(room, userId)) {
+      socket.emit(S2C.ERROR, { code: 'NOT_LEADER', message: 'Only the leader can reorder the queue.' });
       return;
     }
 
@@ -208,8 +206,8 @@ export class MediaQueue {
   private playItem(socket: Socket, payload: { itemId: string }): void {
     const userId = socket.data.userId as string;
     const room = this.roomManager.getRoomForUser(userId);
-    if (!room || !this.isHostOrMod(room, userId)) {
-      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host or moderators can select a video.' });
+    if (!room || !this.isLeader(room, userId)) {
+      socket.emit(S2C.ERROR, { code: 'NOT_LEADER', message: 'Only the leader can select a video.' });
       return;
     }
 
@@ -224,8 +222,8 @@ export class MediaQueue {
   private skipCurrent(socket: Socket): void {
     const userId = socket.data.userId as string;
     const room = this.roomManager.getRoomForUser(userId);
-    if (!room || !this.isHostOrMod(room, userId)) {
-      socket.emit(S2C.ERROR, { code: 'NOT_HOST', message: 'Only the host or moderators can skip.' });
+    if (!room || !this.isLeader(room, userId)) {
+      socket.emit(S2C.ERROR, { code: 'NOT_LEADER', message: 'Only the leader can skip.' });
       return;
     }
 
@@ -367,8 +365,8 @@ export class MediaQueue {
     if (!room) return;
 
     // Host or moderator only
-    if (!this.isHostOrMod(room, userId)) {
-      socket.emit(S2C.ERROR, { code: 'NOT_AUTHORIZED', message: 'Only the host or a moderator can shuffle the queue.' });
+    if (!this.isLeader(room, userId)) {
+      socket.emit(S2C.ERROR, { code: 'NOT_LEADER', message: 'Only the leader can shuffle the queue.' });
       return;
     }
 

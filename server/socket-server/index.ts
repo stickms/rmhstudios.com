@@ -25,6 +25,7 @@ import { registerAltairHandlers, handleAltairDisconnect } from './handlers/altai
 import { registerKowloonKnockoutHandlers, handleKowloonKnockoutDisconnect } from './handlers/kowloon-knockout';
 import { registerRmhMusicHandlers, handleRmhMusicDisconnect } from './handlers/rmhmusic';
 import { registerBlackjackHandlers, handleBlackjackDisconnect, initializeBlackjackPublicTable } from './handlers/blackjack';
+import { registerHoldemHandlers, handleHoldemDisconnect, initializeHoldem } from './handlers/holdem';
 
 // ─── Startup validation ─────────────────────────────────────────
 
@@ -146,6 +147,7 @@ io.on('connection', (socket) => {
   registerKowloonKnockoutHandlers(io, socket);
   registerRmhMusicHandlers(io, socket);
   registerBlackjackHandlers(io, socket);
+  registerHoldemHandlers(io, socket);
 
   // Disconnect cleanup
   socket.on('disconnect', (reason) => {
@@ -160,6 +162,7 @@ io.on('connection', (socket) => {
     handleKowloonKnockoutDisconnect(io, socket);
     handleRmhMusicDisconnect(io, socket);
     handleBlackjackDisconnect(io, socket);
+    handleHoldemDisconnect(io, socket);
 
     cleanupRateLimits(socket.id);
   });
@@ -197,4 +200,5 @@ process.on('SIGTERM', () => shutdown('SIGTERM'));
 httpServer.listen(config.PORT, () => {
   logger.info({ event: 'server_started', port: config.PORT, socketPath: config.SOCKET_PATH });
   initializeBlackjackPublicTable(io);
+  initializeHoldem(io);
 });

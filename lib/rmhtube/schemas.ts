@@ -116,11 +116,10 @@ export const ChatPinSchema = z.object({
   messageId: z.string().nullable(),
 });
 
-// ─── Phase 4: Role Management ────────────────────────────────────
+// ─── Phase 4: Leader Management ──────────────────────────────────
 
-export const SetRoleSchema = z.object({
+export const SetLeaderSchema = z.object({
   targetUserId: z.string(),
-  role: z.enum(['moderator', 'member']),
 });
 
 // ─── Phase 4: Ban Management ─────────────────────────────────────
@@ -145,4 +144,10 @@ export const CreateInviteSchema = z.object({
 
 export const SetStatusSchema = z.object({
   status: z.enum(['watching', 'afk', 'brb']),
+});
+
+// ─── Phase 4: Room History Validation ──────────────────────────
+
+export const CheckHistorySchema = z.object({
+  roomIds: z.array(z.string().min(1).max(64)).max(20),
 });

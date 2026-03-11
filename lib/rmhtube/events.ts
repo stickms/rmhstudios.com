@@ -48,11 +48,12 @@ export const C2S = {
   QUEUE_SHUFFLE:        'rmhtube:queue:shuffle',
 
   // Phase 4: Room & Social features
-  ROOM_SET_ROLE:        'rmhtube:room:set_role',
+  ROOM_SET_LEADER:      'rmhtube:room:set_leader',
   ROOM_BAN:             'rmhtube:room:ban',
   ROOM_UNBAN:           'rmhtube:room:unban',
   ROOM_CREATE_INVITE:   'rmhtube:room:create_invite',
   ROOM_SET_STATUS:      'rmhtube:room:set_status',
+  ROOM_CHECK_HISTORY:   'rmhtube:room:check_history',
 } as const;
 
 // ─── Server → Client Events ─────────────────────────────────────
@@ -91,4 +92,5 @@ export const S2C = {
 
   // Phase 4: Invite Links
   ROOM_INVITE_CREATED:  'rmhtube:room:invite_created',
+  ROOM_HISTORY_STATUS:  'rmhtube:room:history_status',
 } as const;

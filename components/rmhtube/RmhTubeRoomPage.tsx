@@ -11,7 +11,7 @@
  * Phase 5: Onboarding tour, density classes
  */
 
-import { useEffect, useState, useCallback, useRef, use } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { connectToRmhTube, getSocket, disconnectFromRmhTube, emit } from '@/lib/rmhtube/socket';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
 import { S2C, C2S } from '@/lib/rmhtube/events';
@@ -31,12 +31,12 @@ import ShortcutsOverlay from '@/components/rmhtube/ShortcutsOverlay';
 import BanListModal from '@/components/rmhtube/BanListModal';
 import InviteLinkModal from '@/components/rmhtube/InviteLinkModal';
 import OnboardingTour from '@/components/rmhtube/OnboardingTour';
-import { useRouter } from '@tanstack/react-router';
+import { useRouter, useParams } from '@tanstack/react-router';
 
 type MobileTab = 'queue' | 'chat' | 'members';
 
-export default function RmhTubeRoomPage({ params }: { params: Promise<{ roomId: string }> }) {
-  const { roomId } = use(params);
+export default function RmhTubeRoomPage() {
+  const { roomId } = useParams({ from: '/rmhtube/$roomId' });
   const router = useRouter();
   const room = useRmhTubeStore((s) => s.room);
   const connectionStatus = useRmhTubeStore((s) => s.connectionStatus);
@@ -133,8 +133,7 @@ export default function RmhTubeRoomPage({ params }: { params: Promise<{ roomId: 
       }
 
       const store = useRmhTubeStore.getState();
-      const myRole = store.room?.members.find((m) => m.userId === store.room?.myUserId)?.role;
-      const canControl = myRole === 'host' || myRole === 'moderator';
+      const canControl = store.room?.leaderUserId === store.room?.myUserId;
 
       switch (e.code) {
         case SHORTCUTS.TOGGLE_PLAY:
@@ -249,7 +248,9 @@ export default function RmhTubeRoomPage({ params }: { params: Promise<{ roomId: 
   if (!room) {
     return (
       <div className={`flex h-screen flex-col ${densityClass}`}>
-        <RmhTubeHeader backLabel="Leave" onBack={handleLeave} roomCode={roomId} onCopyCode={handleCopyCode} />
+        <div className="border-b border-(--rmhtube-border)">
+          <RmhTubeHeader backLabel="Leave" onBack={handleLeave} roomCode={roomId} onCopyCode={handleCopyCode} />
+        </div>
         <div className="flex-1 flex items-center justify-center">
           <p className="text-(--rmhtube-text-muted)">
             {connectionStatus === 'connecting' ? 'Connecting...' : 'Joining room...'}
@@ -260,14 +261,13 @@ export default function RmhTubeRoomPage({ params }: { params: Promise<{ roomId: 
   }
 
   const isHost = room.myUserId === room.hostUserId;
-  const myRole = room.members.find((m) => m.userId === room.myUserId)?.role;
-  const isHostOrMod = myRole === 'host' || myRole === 'moderator';
+  const isLeader = room.myUserId === room.leaderUserId;
   const currentUrl = room.currentItem?.url ?? null;
 
   return (
     <div className={`flex h-screen flex-col ${densityClass} ${theaterMode ? 'rmhtube-theater-mode' : ''}`}>
       {/* Header */}
-      <div className="flex items-center">
+      <div className="flex items-center border-b border-(--rmhtube-border)">
         <div className="flex-1">
           <RmhTubeHeader
             backLabel="Leave"
@@ -277,7 +277,7 @@ export default function RmhTubeRoomPage({ params }: { params: Promise<{ roomId: 
           />
         </div>
         <div className="pr-3 flex items-center gap-1">
-          {isHostOrMod && (
+          {isHost && (
             <button
               onClick={() => setShowBanList(true)}
               className="rounded-md p-2 transition-colors text-(--rmhtube-text-muted) hover:text-(--rmhtube-text) hover:bg-(--rmhtube-surface-hover)"
@@ -286,7 +286,7 @@ export default function RmhTubeRoomPage({ params }: { params: Promise<{ roomId: 
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
             </button>
           )}
-          {isHostOrMod && (
+          {isHost && (
             <button
               onClick={() => setShowInviteModal(true)}
               className="rounded-md p-2 transition-colors text-(--rmhtube-text-muted) hover:text-(--rmhtube-text) hover:bg-(--rmhtube-surface-hover)"
@@ -308,14 +308,14 @@ export default function RmhTubeRoomPage({ params }: { params: Promise<{ roomId: 
             <div className={`flex flex-col min-h-0 overflow-hidden ${!theaterMode ? 'border-r border-(--rmhtube-border)' : ''}`}>
               {/* Video player */}
               <div className={`shrink-0 p-4 pb-2 *:max-h-full rmhtube-video-container ${theaterMode ? 'max-h-[85%]' : 'max-h-[70%]'}`}>
-                <VideoPlayer ref={videoPlayerRef} url={currentUrl} isHost={isHost} isHostOrMod={isHostOrMod} onEnded={handleVideoEnded} />
+                <VideoPlayer ref={videoPlayerRef} url={currentUrl} isHost={isHost} isLeader={isLeader} onEnded={handleVideoEnded} />
               </div>
 
               {/* Controls / Now playing bar */}
               <div className="shrink-0">
                 <HostControls
                   isHost={isHost}
-                  isHostOrMod={isHostOrMod}
+                  isLeader={isLeader}
                   videoState={room.videoState}
                   currentItem={room.currentItem}
                   onPiP={handlePiP}
@@ -376,13 +376,13 @@ export default function RmhTubeRoomPage({ params }: { params: Promise<{ roomId: 
           /* Mobile layout */
           <div className="flex flex-col h-full min-h-0">
             <div className="shrink-0 p-3 pb-0">
-              <VideoPlayer ref={videoPlayerRef} url={currentUrl} isHost={isHost} isHostOrMod={isHostOrMod} onEnded={handleVideoEnded} />
+              <VideoPlayer ref={videoPlayerRef} url={currentUrl} isHost={isHost} isLeader={isLeader} onEnded={handleVideoEnded} />
             </div>
 
             <div className="shrink-0">
               <HostControls
                 isHost={isHost}
-                isHostOrMod={isHostOrMod}
+                isLeader={isLeader}
                 videoState={room.videoState}
                 currentItem={room.currentItem}
                 onPiP={handlePiP}

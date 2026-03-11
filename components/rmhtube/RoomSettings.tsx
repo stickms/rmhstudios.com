@@ -16,8 +16,7 @@ export default function RoomSettings() {
 
   if (!room) return null;
 
-  const myRole = room.members.find((m) => m.userId === room.myUserId)?.role;
-  if (myRole !== 'host' && myRole !== 'moderator') return null;
+  if (room.myUserId !== room.hostUserId) return null;
 
   return (
     <>
