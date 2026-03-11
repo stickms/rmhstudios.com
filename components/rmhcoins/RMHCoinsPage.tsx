@@ -5,8 +5,8 @@ import { useNavigate } from '@tanstack/react-router';
 import { Loader2 } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
 import { CoinIcon } from './CoinIcon';
-import { PlinkoGame } from './PlinkoGame';
 import { CoinShop } from './CoinShop';
+import { PlayTab } from './PlayTab';
 
 type Tab = 'shop' | 'play';
 
@@ -96,7 +96,7 @@ export function RMHCoinsPage({ defaultTab = 'shop' }: { defaultTab?: Tab }) {
             setHasProfilePet={setHasProfilePet}
           />
         )}
-        {tab === 'play' && <PlinkoGame coins={coins} setCoins={setCoins} />}
+        {tab === 'play' && <PlayTab coins={coins} setCoins={setCoins} />}
       </div>
     </div>
   );

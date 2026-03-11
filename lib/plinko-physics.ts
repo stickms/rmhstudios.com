@@ -54,9 +54,11 @@ function computePegPositions(): PegPosition[] {
     pegs.push({ px: PEG_RADIUS, py: wallY });
     pegs.push({ px: CANVAS_W - PEG_RADIUS, py: wallY });
 
-    // Interior pegs
+    // Interior pegs — odd rows offset by half-spacing for proper stagger
     for (let i = 0; i < count; i++) {
-      const nx = (i + 1) / (count + 1);
+      const nx = row % 2 === 0
+        ? (i + 1) / 8        // even rows: 7 pegs at 1/8, 2/8, ..., 7/8
+        : (i + 0.5) / 8;     // odd rows: 8 pegs at midpoints of even-row gaps
       const [px, py] = toCanvas(nx, ny);
       pegs.push({ px, py });
     }
