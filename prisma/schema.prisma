@@ -44,6 +44,7 @@ model User {
   rmhstudyProfile     RmhStudyProfile?
   voidBreakerProfile  VoidBreakerPlayer?
   lightsOutScores     LightsOutScore[]
+  lightsOutMessages   LightsOutChat[]
   versecraftSave      VersecraftSave?
   versecraftProgress  VersecraftProgress?
   forestExplorerSave  ForestExplorerSave?
@@ -223,6 +224,19 @@ model LightsOutScore {
   @@index([dateKey, moves(sort: Asc)])
   @@index([dateKey, dnf(sort: Asc)])
   @@map("lights_out_score")
+}
+
+model LightsOutChat {
+  id        String   @id @default(cuid())
+  userId    String
+  dateKey   String
+  message   String   @db.VarChar(280)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([dateKey, createdAt])
+  @@map("lights_out_chat")
 }
 
 // Slice It Player Model
