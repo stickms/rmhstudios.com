@@ -1,7 +1,7 @@
 import { createLogger, defineConfig } from "vite";
-import tsConfigPaths from "vite-tsconfig-paths";
+import tailwindcss from "@tailwindcss/vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
-import react from "@vitejs/plugin-react-swc";
+import react from "@vitejs/plugin-react";
 import { nitro } from "nitro/vite";
 
 const logger = createLogger();
@@ -9,14 +9,12 @@ const originalWarn = logger.warn.bind(logger);
 logger.warn = (msg, options) => {
   if (msg.includes("has been externalized for browser compatibility")) return;
   if (msg.includes("Error when using sourcemap for reporting an error")) return;
-  if (msg.includes("Module level directives cause errors when bundled")) return;
   if (msg.includes(".prisma/client/default")) return;
   originalWarn(msg, options);
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function onwarn(warning: any, warn: any) {
-  if (warning.code === "MODULE_LEVEL_DIRECTIVE") return;
   if (warning.code === "UNRESOLVED_IMPORT" && warning.exporter?.includes(".prisma/client")) return;
   warn(warning);
 }
@@ -50,7 +48,7 @@ const heavyExternals = [
 ];
 
 // Additional packages for Vite SSR dev bundling only. These have complex
-// re-exports that break Rollup's externalization in Nitro's production build,
+// re-exports that break Rolldown's externalization in Nitro's production build,
 // but work fine with Vite's dev SSR resolver.
 const ssrOnlyExternals = [
   "framer-motion",
@@ -66,21 +64,66 @@ const ssrOnlyExternals = [
   "@anthropic-ai/sdk",
 ];
 
+const manualChunksMap: Record<string, string[]> = {
+  "vendor-three": ["three", "@react-three/fiber", "@react-three/drei", "@react-three/rapier"],
+  "vendor-editor": ["monaco-editor", "@monaco-editor/react"],
+  "vendor-tiptap": [
+    "@tiptap/react",
+    "@tiptap/starter-kit",
+    "@tiptap/extension-character-count",
+    "@tiptap/extension-code-block-lowlight",
+    "@tiptap/extension-color",
+    "@tiptap/extension-highlight",
+    "@tiptap/extension-image",
+    "@tiptap/extension-link",
+    "@tiptap/extension-placeholder",
+    "@tiptap/extension-table",
+    "@tiptap/extension-table-cell",
+    "@tiptap/extension-table-header",
+    "@tiptap/extension-table-row",
+    "@tiptap/extension-task-item",
+    "@tiptap/extension-task-list",
+    "@tiptap/extension-text-align",
+    "@tiptap/extension-text-style",
+    "@tiptap/extension-underline",
+  ],
+  "vendor-motion": ["framer-motion"],
+  "vendor-pixi": ["pixi.js"],
+  "vendor-recharts": ["recharts"],
+};
+
+// Build a reverse lookup: module id → chunk name
+const moduleToChunk = new Map<string, string>();
+for (const [chunk, modules] of Object.entries(manualChunksMap)) {
+  for (const mod of modules) {
+    moduleToChunk.set(mod, chunk);
+  }
+}
+
+function manualChunks(id: string) {
+  for (const [mod, chunk] of moduleToChunk) {
+    if (id.includes(`node_modules/${mod}/`) || id.includes(`node_modules\\${mod}\\`)) {
+      return chunk;
+    }
+  }
+}
+
 export default defineConfig({
   customLogger: logger,
+  resolve: {
+    tsconfigPaths: true,
+  },
   server: {
     port: 7005,
   },
   plugins: [
-    tsConfigPaths({
-      projects: ["./tsconfig.json"],
-    }),
+    tailwindcss(),
     tanstackStart({
       srcDirectory: "app",
     }),
     react(),
     nitro({
-      // traceDeps externalizes packages from Nitro's Rollup server bundle and
+      // traceDeps externalizes packages from Nitro's Rolldown server bundle and
       // traces them into .output/node_modules for runtime resolution.
       // NOTE: Vite's ssr.external is ignored by Nitro — this is the only way
       // to externalize from the production server bundle.
@@ -90,51 +133,33 @@ export default defineConfig({
       },
     }),
   ],
+  builder: {
+    sharedPlugins: true,
+  },
   build: {
     target: "esnext",
     chunkSizeWarningLimit: 4000,
-    minify: "esbuild",
     sourcemap: false,
     reportCompressedSize: false,
-    rollupOptions: { onwarn },
+    rolldownOptions: { onwarn },
   },
   environments: {
     client: {
+      dev: {
+        warmup: ["app/router.tsx", "app/routes/__root.tsx"],
+      },
       build: {
-        rollupOptions: {
+        rolldownOptions: {
           onwarn,
           output: {
-            manualChunks: {
-              "vendor-three": ["three", "@react-three/fiber", "@react-three/drei", "@react-three/rapier"],
-              "vendor-editor": ["monaco-editor", "@monaco-editor/react"],
-              "vendor-tiptap": [
-                "@tiptap/react",
-                "@tiptap/starter-kit",
-                "@tiptap/extension-character-count",
-                "@tiptap/extension-code-block-lowlight",
-                "@tiptap/extension-color",
-                "@tiptap/extension-highlight",
-                "@tiptap/extension-image",
-                "@tiptap/extension-link",
-                "@tiptap/extension-placeholder",
-                "@tiptap/extension-table",
-                "@tiptap/extension-table-cell",
-                "@tiptap/extension-table-header",
-                "@tiptap/extension-table-row",
-                "@tiptap/extension-task-item",
-                "@tiptap/extension-task-list",
-                "@tiptap/extension-text-align",
-                "@tiptap/extension-text-style",
-                "@tiptap/extension-underline",
-              ],
-              "vendor-motion": ["framer-motion"],
-              "vendor-pixi": ["pixi.js"],
-              "vendor-recharts": ["recharts"],
-            },
+            manualChunks,
           },
         },
       },
     },
+  },
+  experimental: {
+    hmrPartialAccept: true,
   },
   ssr: {
     // ssr.external only affects Vite's dev SSR bundling, NOT the Nitro production

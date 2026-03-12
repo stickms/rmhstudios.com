@@ -5,7 +5,7 @@
 import { prisma } from '@/lib/prisma';
 
 async function main() {
-    const result = await prisma.lightsOutScore.deleteMany({});
+    const result = await prisma.dailyPuzzleScore.deleteMany({ where: { gameMode: 'lights-out' } });
     console.log(`Deleted ${result.count} Lights Out leaderboard entries.`);
 }
 

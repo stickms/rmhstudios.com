@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently \"vite dev\" \"pnpm run socket-server\" \"pnpm run rmhbox-server\" \"pnpm run rmhtube-server\"",
-    "build": "NODE_OPTIONS='--max-old-space-size=8192' vite build && pnpm exec esbuild server/socket-server/index.ts server/rmhbox/index.ts server/rmhtube/index.ts --bundle --platform=node --target=node20 --outdir=dist-server --outbase=. --format=cjs --out-extension:.js=.cjs --packages=external --tree-shaking=true --tsconfig=tsconfig.server.json",
+    "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 vite build && pnpm exec esbuild server/socket-server/index.ts server/rmhbox/index.ts server/rmhtube/index.ts --bundle --platform=node --target=node20 --outdir=dist-server --outbase=. --format=cjs --out-extension:.js=.cjs --packages=external --tree-shaking=true --tsconfig=tsconfig.server.json",
     "start": "concurrently \"node .output/server/index.mjs\" \"node dist-server/server/socket-server/index.cjs\" \"node dist-server/server/rmhbox/index.cjs\" \"node dist-server/server/rmhtube/index.cjs\"",
     "socket-server": "pnpm exec tsx watch --include \"server/socket-server/**/*\" --include \"server/rmhmusic/**/*\" --include \"server/shared/**/*\" server/socket-server/index.ts",
     "rmhbox-server": "pnpm exec tsx watch --include \"server/rmhbox/**/*\" --include \"server/shared/**/*\" server/rmhbox/index.ts",
@@ -116,7 +116,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.3",
-    "@tailwindcss/postcss": "^4.2.1",
+    "@tailwindcss/vite": "^4.2.1",
     "@tanstack/router-devtools": "^1.92.0",
     "@tanstack/router-plugin": "^1.92.0",
     "@types/canvas-confetti": "^1.9.0",
@@ -129,8 +129,9 @@
     "@types/sanitize-html": "^2.16.0",
     "@types/three": "^0.183.1",
     "@types/turndown": "^5.0.6",
-    "@vitejs/plugin-react-swc": "^4.2.3",
+    "@vitejs/plugin-react": "^6.0.0",
     "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
     "dotenv": "^17.3.1",
     "esbuild": "^0.27.3",
     "eslint": "^9.39.3",
@@ -141,8 +142,7 @@
     "tsx": "^4.21.0",
     "typescript": "^5",
     "typescript-eslint": "^8.56.1",
-    "vite": "^7.3.1",
-    "vite-tsconfig-paths": "^6.1.1",
-    "vitest": "^4.0.18"
+    "vite": "^8.0.0",
+    "vitest": "^4.1.0"
   }
 }
