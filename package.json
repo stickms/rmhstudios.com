@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently \"vite dev\" \"pnpm run socket-server\" \"pnpm run rmhbox-server\" \"pnpm run rmhtube-server\"",
-    "build": "NODE_OPTIONS='--max-old-space-size=8192' vite build && pnpm exec esbuild server/socket-server/index.ts server/rmhbox/index.ts server/rmhtube/index.ts --bundle --platform=node --target=node20 --outdir=dist-server --outbase=. --format=cjs --out-extension:.js=.cjs --packages=external --tree-shaking=true --tsconfig=tsconfig.server.json",
+    "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 vite build && pnpm exec esbuild server/socket-server/index.ts server/rmhbox/index.ts server/rmhtube/index.ts --bundle --platform=node --target=node20 --outdir=dist-server --outbase=. --format=cjs --out-extension:.js=.cjs --packages=external --tree-shaking=true --tsconfig=tsconfig.server.json",
     "start": "concurrently \"node .output/server/index.mjs\" \"node dist-server/server/socket-server/index.cjs\" \"node dist-server/server/rmhbox/index.cjs\" \"node dist-server/server/rmhtube/index.cjs\"",
     "socket-server": "pnpm exec tsx watch --include \"server/socket-server/**/*\" --include \"server/rmhmusic/**/*\" --include \"server/shared/**/*\" server/socket-server/index.ts",
     "rmhbox-server": "pnpm exec tsx watch --include \"server/rmhbox/**/*\" --include \"server/shared/**/*\" server/rmhbox/index.ts",
@@ -131,6 +131,7 @@
     "@types/turndown": "^5.0.6",
     "@vitejs/plugin-react-swc": "^4.2.3",
     "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
     "dotenv": "^17.3.1",
     "esbuild": "^0.27.3",
     "eslint": "^9.39.3",

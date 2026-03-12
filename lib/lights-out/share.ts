@@ -47,7 +47,7 @@ export function generateShareText(
         `🔦 Lights Out · ${dateKey}`,
         `${shapeLabel} · ${rating.emoji} ${rating.label}${hintStr}`,
         '',
-        'https://rmhstudios.com/lights-out',
+        'https://rmhstudios.com/daily/lights-out',
     ];
 
     return lines.join('\n');

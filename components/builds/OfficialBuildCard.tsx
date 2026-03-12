@@ -76,7 +76,7 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
                             alt={`Screenshot of ${build.title}`}
                             layout="fullWidth"
                             height={400}
-                            className="object-cover group-hover:scale-105 transition-transform duration-300"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                         <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/40 to-black/10 transition-opacity duration-300 group-hover:from-black/90 group-hover:via-black/60" />
                     </div>
@@ -97,8 +97,8 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
                     </div>
                 )}
 
-                <div className="absolute left-0 right-0 bottom-0 z-10 p-4 pt-12 flex flex-col justify-end bg-gradient-to-t from-black/80 via-black/40 to-transparent">
-                    <h3 className="font-semibold text-white line-clamp-1 drop-shadow-sm mb-1 group-hover:-translate-y-1 transition-transform duration-300">
+                <div className="absolute left-0 right-0 bottom-0 z-10 p-4 pt-12 flex flex-col justify-end bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
+                    <h3 className="font-semibold text-white line-clamp-1 drop-shadow-sm mb-1">
                         {build.title}
                     </h3>
 
