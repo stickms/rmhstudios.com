@@ -70,6 +70,45 @@ log() {
 
 DEPLOY_MSG_ID=""
 
+# ── Discord/GitHub curl with retries ─────────────────────────────────────────
+# Wraps curl with retry logic + exponential backoff. Handles Discord 429
+# rate-limit responses by respecting the Retry-After header.
+# Usage: curl_retry [curl args...]
+curl_retry() {
+    local max_retries=4 attempt=0 delay=2 response http_code body retry_after
+    while [ $attempt -lt $max_retries ]; do
+        # -w outputs HTTP status code after body, separated by newline
+        response=$(curl -s -w '\n%{http_code}' "$@" 2>/dev/null) || {
+            attempt=$((attempt + 1))
+            [ $attempt -lt $max_retries ] && { log "  Curl failed, retrying in ${delay}s... ($attempt/$max_retries)"; sleep "$delay"; delay=$((delay * 2)); continue; }
+            return 1
+        }
+        http_code=$(printf '%s' "$response" | tail -1)
+        body=$(printf '%s' "$response" | sed '$d')
+
+        case "$http_code" in
+            2*) printf '%s' "$body"; return 0 ;;
+            429)
+                # Discord rate limit — respect Retry-After if present
+                retry_after=$(printf '%s' "$body" | grep -o '"retry_after" *: *[0-9.]*' | grep -o '[0-9.]*' | head -1)
+                retry_after=${retry_after:-$delay}
+                # ceil the float to int seconds + 1 for safety
+                retry_after=$(printf '%.0f' "$retry_after" 2>/dev/null || echo "$delay")
+                retry_after=$((retry_after + 1))
+                log "  Discord rate limited (429), waiting ${retry_after}s... ($((attempt+1))/$max_retries)"
+                sleep "$retry_after"
+                ;;
+            *)
+                log "  HTTP $http_code from webhook, retrying in ${delay}s... ($((attempt+1))/$max_retries)"
+                sleep "$delay"
+                delay=$((delay * 2))
+                ;;
+        esac
+        attempt=$((attempt + 1))
+    done
+    return 1
+}
+
 get_commit_info() {
     DEPLOY_SHORT_HASH=$("$GIT_BIN" rev-parse --short HEAD 2>/dev/null || echo "unknown")
     DEPLOY_COMMIT_MSG=$("$GIT_BIN" log -1 --pretty=%B 2>/dev/null || echo "(no commit message)")
@@ -99,14 +138,14 @@ set_github_status() {
     payload=$(printf '{"state":"%s","description":"%s","context":"deploy/%s"}' \
         "$state" "$description" "$ENVIRONMENT")
 
-    curl -s -X POST \
+    curl_retry -X POST \
         -H "Authorization: token $GITHUB_TOKEN" \
         -H "Accept: application/vnd.github+json" \
         -H "Content-Type: application/json" \
         -d "$payload" \
         "https://api.github.com/repos/${GITHUB_REPO}/statuses/${full_sha}" \
-        > /dev/null 2>&1 || \
-        log "WARNING: Failed to set GitHub commit status ($state)."
+        > /dev/null || \
+        log "WARNING: Failed to set GitHub commit status ($state) after retries."
 }
 
 send_deploy_started() {
@@ -119,11 +158,11 @@ send_deploy_started() {
         "[$env_label] Commit $DEPLOY_SHORT_HASH - deploy started" "$DEPLOY_COMMIT_MSG" 16776960 "$DEPLOY_AUTHOR")
 
     local response
-    response=$(curl -s -H "Content-Type: application/json" -d "$payload" "${DISCORD_WEBHOOK}?wait=true" 2>/dev/null)
+    response=$(curl_retry -H "Content-Type: application/json" -d "$payload" "${DISCORD_WEBHOOK}?wait=true")
     DEPLOY_MSG_ID=$(printf '%s' "$response" | grep -o '"id": *"[^"]*"' | head -1 | cut -d'"' -f4)
 
     if [ -z "$DEPLOY_MSG_ID" ]; then
-        log "WARNING: Failed to send or parse Discord webhook notification."
+        log "WARNING: Failed to send or parse Discord webhook notification after retries."
     fi
 
     set_github_status "pending" "Deploy started ($DEPLOY_SHORT_HASH)"
@@ -167,27 +206,27 @@ update_deploy_status() {
 
     if [ -n "$DEPLOY_MSG_ID" ]; then
         if [ -f "$DEPLOY_LOG" ]; then
-            curl -s -X PATCH \
+            curl_retry -X PATCH \
                 -F "payload_json=$payload" \
                 -F "file=@${DEPLOY_LOG};filename=deploy-${ENVIRONMENT}-${DEPLOY_SHORT_HASH}.txt" \
-                "${DISCORD_WEBHOOK}/messages/${DEPLOY_MSG_ID}" > /dev/null 2>&1 || \
-                log "WARNING: Failed to edit Discord webhook message."
+                "${DISCORD_WEBHOOK}/messages/${DEPLOY_MSG_ID}" > /dev/null || \
+                log "WARNING: Failed to edit Discord webhook message after retries."
         else
-            curl -s -X PATCH -H "Content-Type: application/json" \
-                -d "$payload" "${DISCORD_WEBHOOK}/messages/${DEPLOY_MSG_ID}" > /dev/null 2>&1 || \
-                log "WARNING: Failed to edit Discord webhook message."
+            curl_retry -X PATCH -H "Content-Type: application/json" \
+                -d "$payload" "${DISCORD_WEBHOOK}/messages/${DEPLOY_MSG_ID}" > /dev/null || \
+                log "WARNING: Failed to edit Discord webhook message after retries."
         fi
     else
         if [ -f "$DEPLOY_LOG" ]; then
-            curl -s \
+            curl_retry \
                 -F "payload_json=$payload" \
                 -F "file=@${DEPLOY_LOG};filename=deploy-${ENVIRONMENT}-${DEPLOY_SHORT_HASH}.txt" \
-                "$DISCORD_WEBHOOK" > /dev/null 2>&1 || \
-                log "WARNING: Failed to send Discord webhook notification."
+                "$DISCORD_WEBHOOK" > /dev/null || \
+                log "WARNING: Failed to send Discord webhook notification after retries."
         else
-            curl -s -H "Content-Type: application/json" \
-                -d "$payload" "$DISCORD_WEBHOOK" > /dev/null 2>&1 || \
-                log "WARNING: Failed to send Discord webhook notification."
+            curl_retry -H "Content-Type: application/json" \
+                -d "$payload" "$DISCORD_WEBHOOK" > /dev/null || \
+                log "WARNING: Failed to send Discord webhook notification after retries."
         fi
     fi
 }

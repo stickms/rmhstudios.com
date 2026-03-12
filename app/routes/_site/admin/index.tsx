@@ -46,15 +46,6 @@ function AdminDashboardPage() {
           </Link>
 
           <Link
-            to="/admin/curated-builds"
-            className="block p-6 rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
-          >
-            <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">Official Builds</h2>
-            <p className="text-site-text-muted text-sm mt-2">
-              View official games and apps. Edit build detail pages for engagement and comments.
-            </p>
-          </Link>
-          <Link
             to="/admin/user-builds"
             className="block p-6 rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
           >
