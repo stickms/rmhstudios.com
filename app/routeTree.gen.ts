@@ -171,8 +171,6 @@ import { Route as SiteBuildsGamesRouteImport } from './routes/_site/builds/games
 import { Route as SiteBuildsAppsRouteImport } from './routes/_site/builds/apps'
 import { Route as SiteAdminUsersRouteImport } from './routes/_site/admin/users'
 import { Route as SiteAdminUserBuildsRouteImport } from './routes/_site/admin/user-builds'
-import { Route as SiteAdminUsersIndexRouteImport } from './routes/_site/admin/users/index'
-import { Route as SiteAdminUserBuildsIndexRouteImport } from './routes/_site/admin/user-builds/index'
 import { Route as SiteAdminBlogIndexRouteImport } from './routes/_site/admin/blog/index'
 import { Route as SecretJobsAssessmentIdRouteImport } from './routes/secret/jobs/assessment/$id'
 import { Route as RmhboxMinigamesMinigameIdHistoryRouteImport } from './routes/rmhbox/minigames/$minigameId/history'
@@ -1035,17 +1033,6 @@ const SiteAdminUserBuildsRoute = SiteAdminUserBuildsRouteImport.update({
   path: '/user-builds',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
-const SiteAdminUsersIndexRoute = SiteAdminUsersIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => SiteAdminUsersRoute,
-} as any)
-const SiteAdminUserBuildsIndexRoute =
-  SiteAdminUserBuildsIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => SiteAdminUserBuildsRoute,
-  } as any)
 const SiteAdminBlogIndexRoute = SiteAdminBlogIndexRouteImport.update({
   id: '/blog/',
   path: '/blog/',
@@ -1366,8 +1353,8 @@ export interface FileRoutesByFullPath {
   '/slice-it/': typeof SliceItIndexRoute
   '/temple-of-joy/': typeof TempleOfJoyIndexRoute
   '/versecraft/': typeof VersecraftIndexRoute
-  '/admin/user-builds': typeof SiteAdminUserBuildsRouteWithChildren
-  '/admin/users': typeof SiteAdminUsersRouteWithChildren
+  '/admin/user-builds': typeof SiteAdminUserBuildsRoute
+  '/admin/users': typeof SiteAdminUsersRoute
   '/builds/apps': typeof SiteBuildsAppsRoute
   '/builds/games': typeof SiteBuildsGamesRoute
   '/messages/$conversationId': typeof SiteMessagesConversationIdRoute
@@ -1483,8 +1470,6 @@ export interface FileRoutesByFullPath {
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
   '/secret/jobs/assessment/$id': typeof SecretJobsAssessmentIdRoute
   '/admin/blog/': typeof SiteAdminBlogIndexRoute
-  '/admin/user-builds/': typeof SiteAdminUserBuildsIndexRoute
-  '/admin/users/': typeof SiteAdminUsersIndexRoute
   '/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
   '/api/admin/curated-builds/image/$filename': typeof ApiAdminCuratedBuildsImageFilenameRoute
   '/api/admin/curated-builds/image/proxy': typeof ApiAdminCuratedBuildsImageProxyRoute
@@ -1553,6 +1538,8 @@ export interface FileRoutesByTo {
   '/slice-it': typeof SliceItIndexRoute
   '/temple-of-joy': typeof TempleOfJoyIndexRoute
   '/versecraft': typeof VersecraftIndexRoute
+  '/admin/user-builds': typeof SiteAdminUserBuildsRoute
+  '/admin/users': typeof SiteAdminUsersRoute
   '/builds/apps': typeof SiteBuildsAppsRoute
   '/builds/games': typeof SiteBuildsGamesRoute
   '/messages/$conversationId': typeof SiteMessagesConversationIdRoute
@@ -1668,8 +1655,6 @@ export interface FileRoutesByTo {
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
   '/secret/jobs/assessment/$id': typeof SecretJobsAssessmentIdRoute
   '/admin/blog': typeof SiteAdminBlogIndexRoute
-  '/admin/user-builds': typeof SiteAdminUserBuildsIndexRoute
-  '/admin/users': typeof SiteAdminUsersIndexRoute
   '/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
   '/api/admin/curated-builds/image/$filename': typeof ApiAdminCuratedBuildsImageFilenameRoute
   '/api/admin/curated-builds/image/proxy': typeof ApiAdminCuratedBuildsImageProxyRoute
@@ -1763,8 +1748,8 @@ export interface FileRoutesById {
   '/slice-it/': typeof SliceItIndexRoute
   '/temple-of-joy/': typeof TempleOfJoyIndexRoute
   '/versecraft/': typeof VersecraftIndexRoute
-  '/_site/admin/user-builds': typeof SiteAdminUserBuildsRouteWithChildren
-  '/_site/admin/users': typeof SiteAdminUsersRouteWithChildren
+  '/_site/admin/user-builds': typeof SiteAdminUserBuildsRoute
+  '/_site/admin/users': typeof SiteAdminUsersRoute
   '/_site/builds/apps': typeof SiteBuildsAppsRoute
   '/_site/builds/games': typeof SiteBuildsGamesRoute
   '/_site/messages/$conversationId': typeof SiteMessagesConversationIdRoute
@@ -1880,8 +1865,6 @@ export interface FileRoutesById {
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
   '/secret/jobs/assessment/$id': typeof SecretJobsAssessmentIdRoute
   '/_site/admin/blog/': typeof SiteAdminBlogIndexRoute
-  '/_site/admin/user-builds/': typeof SiteAdminUserBuildsIndexRoute
-  '/_site/admin/users/': typeof SiteAdminUsersIndexRoute
   '/_site/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
   '/api/admin/curated-builds/image/$filename': typeof ApiAdminCuratedBuildsImageFilenameRoute
   '/api/admin/curated-builds/image/proxy': typeof ApiAdminCuratedBuildsImageProxyRoute
@@ -2092,8 +2075,6 @@ export interface FileRouteTypes {
     | '/rmhbox/minigames/$minigameId/history'
     | '/secret/jobs/assessment/$id'
     | '/admin/blog/'
-    | '/admin/user-builds/'
-    | '/admin/users/'
     | '/admin/blog/$slug/edit'
     | '/api/admin/curated-builds/image/$filename'
     | '/api/admin/curated-builds/image/proxy'
@@ -2162,6 +2143,8 @@ export interface FileRouteTypes {
     | '/slice-it'
     | '/temple-of-joy'
     | '/versecraft'
+    | '/admin/user-builds'
+    | '/admin/users'
     | '/builds/apps'
     | '/builds/games'
     | '/messages/$conversationId'
@@ -2277,8 +2260,6 @@ export interface FileRouteTypes {
     | '/rmhbox/minigames/$minigameId/history'
     | '/secret/jobs/assessment/$id'
     | '/admin/blog'
-    | '/admin/user-builds'
-    | '/admin/users'
     | '/admin/blog/$slug/edit'
     | '/api/admin/curated-builds/image/$filename'
     | '/api/admin/curated-builds/image/proxy'
@@ -2488,8 +2469,6 @@ export interface FileRouteTypes {
     | '/rmhbox/minigames/$minigameId/history'
     | '/secret/jobs/assessment/$id'
     | '/_site/admin/blog/'
-    | '/_site/admin/user-builds/'
-    | '/_site/admin/users/'
     | '/_site/admin/blog/$slug/edit'
     | '/api/admin/curated-builds/image/$filename'
     | '/api/admin/curated-builds/image/proxy'
@@ -3734,20 +3713,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteAdminUserBuildsRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
-    '/_site/admin/users/': {
-      id: '/_site/admin/users/'
-      path: '/'
-      fullPath: '/admin/users/'
-      preLoaderRoute: typeof SiteAdminUsersIndexRouteImport
-      parentRoute: typeof SiteAdminUsersRoute
-    }
-    '/_site/admin/user-builds/': {
-      id: '/_site/admin/user-builds/'
-      path: '/'
-      fullPath: '/admin/user-builds/'
-      preLoaderRoute: typeof SiteAdminUserBuildsIndexRouteImport
-      parentRoute: typeof SiteAdminUserBuildsRoute
-    }
     '/_site/admin/blog/': {
       id: '/_site/admin/blog/'
       path: '/blog'
@@ -4066,32 +4031,9 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface SiteAdminUserBuildsRouteChildren {
-  SiteAdminUserBuildsIndexRoute: typeof SiteAdminUserBuildsIndexRoute
-}
-
-const SiteAdminUserBuildsRouteChildren: SiteAdminUserBuildsRouteChildren = {
-  SiteAdminUserBuildsIndexRoute: SiteAdminUserBuildsIndexRoute,
-}
-
-const SiteAdminUserBuildsRouteWithChildren =
-  SiteAdminUserBuildsRoute._addFileChildren(SiteAdminUserBuildsRouteChildren)
-
-interface SiteAdminUsersRouteChildren {
-  SiteAdminUsersIndexRoute: typeof SiteAdminUsersIndexRoute
-}
-
-const SiteAdminUsersRouteChildren: SiteAdminUsersRouteChildren = {
-  SiteAdminUsersIndexRoute: SiteAdminUsersIndexRoute,
-}
-
-const SiteAdminUsersRouteWithChildren = SiteAdminUsersRoute._addFileChildren(
-  SiteAdminUsersRouteChildren,
-)
-
 interface SiteAdminRouteRouteChildren {
-  SiteAdminUserBuildsRoute: typeof SiteAdminUserBuildsRouteWithChildren
-  SiteAdminUsersRoute: typeof SiteAdminUsersRouteWithChildren
+  SiteAdminUserBuildsRoute: typeof SiteAdminUserBuildsRoute
+  SiteAdminUsersRoute: typeof SiteAdminUsersRoute
   SiteAdminIndexRoute: typeof SiteAdminIndexRoute
   SiteAdminBlogNewRoute: typeof SiteAdminBlogNewRoute
   SiteAdminBlogIndexRoute: typeof SiteAdminBlogIndexRoute
@@ -4099,8 +4041,8 @@ interface SiteAdminRouteRouteChildren {
 }
 
 const SiteAdminRouteRouteChildren: SiteAdminRouteRouteChildren = {
-  SiteAdminUserBuildsRoute: SiteAdminUserBuildsRouteWithChildren,
-  SiteAdminUsersRoute: SiteAdminUsersRouteWithChildren,
+  SiteAdminUserBuildsRoute: SiteAdminUserBuildsRoute,
+  SiteAdminUsersRoute: SiteAdminUsersRoute,
   SiteAdminIndexRoute: SiteAdminIndexRoute,
   SiteAdminBlogNewRoute: SiteAdminBlogNewRoute,
   SiteAdminBlogIndexRoute: SiteAdminBlogIndexRoute,

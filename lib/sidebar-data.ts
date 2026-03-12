@@ -45,8 +45,8 @@ type SidebarPost = {
 
 function getOfficialBuilds(): SidebarOfficialBuild[] {
   const allBuilds = [
-    ...games.slice(0, 2),
-    ...apps.filter(a => !a.hidden).slice(0, 2),
+    ...games.filter(g => !g.unlisted).slice(0, 2),
+    ...apps.filter(a => !a.hidden && !a.unlisted).slice(0, 2),
   ];
   return allBuilds.map(b => ({
     id: b.id,

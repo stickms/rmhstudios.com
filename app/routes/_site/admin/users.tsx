@@ -18,7 +18,7 @@ interface User {
   isAdmin: boolean;
   isVerified: boolean;
   createdAt: string;
-  _count: { builds: number; rmharks: number };
+  _count: { userBuilds: number; rmharks: number };
 }
 
 export const Route = createFileRoute('/_site/admin/users')({
@@ -103,7 +103,7 @@ function AdminUsersPage() {
 
   return (
     <PageLayout title="Manage Users" wide>
-      <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6">
+      <div className="p-4 md:p-6 space-y-6">
         <div className="flex items-center gap-4">
           <Link to="/admin" className="p-2 hover:bg-site-surface-hover rounded-full transition-colors">
             <ArrowLeft className="w-5 h-5 text-site-text-dim" />
@@ -202,7 +202,7 @@ function AdminUsersPage() {
                     </button>
                   </div>
                   <div className="w-24 flex-shrink-0 flex flex-col items-end text-xs text-site-text-dim">
-                    <span>{user._count.builds} builds</span>
+                    <span>{user._count.userBuilds} builds</span>
                     <span>{user._count.rmharks} posts</span>
                   </div>
                 </div>

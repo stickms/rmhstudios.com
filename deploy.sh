@@ -205,13 +205,18 @@ update_deploy_status() {
         "$title" "$DEPLOY_COMMIT_MSG" "$color" "$DEPLOY_AUTHOR")
 
     if [ -n "$DEPLOY_MSG_ID" ]; then
+        local edited=false
         if [ -f "$DEPLOY_LOG" ]; then
+            # Try multipart PATCH with log file attached.
+            # Use --form-string for payload_json to avoid curl interpreting
+            # special characters (;, @) in the JSON as form-field directives.
             curl_retry -X PATCH \
-                -F "payload_json=$payload" \
+                --form-string "payload_json=$payload" \
                 -F "file=@${DEPLOY_LOG};filename=deploy-${ENVIRONMENT}-${DEPLOY_SHORT_HASH}.txt" \
-                "${DISCORD_WEBHOOK}/messages/${DEPLOY_MSG_ID}" > /dev/null || \
-                log "WARNING: Failed to edit Discord webhook message after retries."
-        else
+                "${DISCORD_WEBHOOK}/messages/${DEPLOY_MSG_ID}" > /dev/null && edited=true
+        fi
+        # Fallback: JSON-only PATCH (no log attachment) so embed color always updates.
+        if [ "$edited" = false ]; then
             curl_retry -X PATCH -H "Content-Type: application/json" \
                 -d "$payload" "${DISCORD_WEBHOOK}/messages/${DEPLOY_MSG_ID}" > /dev/null || \
                 log "WARNING: Failed to edit Discord webhook message after retries."
@@ -219,7 +224,7 @@ update_deploy_status() {
     else
         if [ -f "$DEPLOY_LOG" ]; then
             curl_retry \
-                -F "payload_json=$payload" \
+                --form-string "payload_json=$payload" \
                 -F "file=@${DEPLOY_LOG};filename=deploy-${ENVIRONMENT}-${DEPLOY_SHORT_HASH}.txt" \
                 "$DISCORD_WEBHOOK" > /dev/null || \
                 log "WARNING: Failed to send Discord webhook notification after retries."

@@ -5,7 +5,7 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { ArrowLeft, Loader2, Search, AlertCircle, Edit, ExternalLink, Lock } from 'lucide-react';
+import { ArrowLeft, Loader2, Search, AlertCircle, Edit, ExternalLink, Lock, Award } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 
 interface Build {
@@ -14,6 +14,7 @@ interface Build {
   title: string;
   status: string;
   visibility: string;
+  featured: boolean;
   publishedAt: string | null;
   user: { name: string; username: string; handle?: string | null };
   category?: { name: string } | null;
@@ -70,9 +71,25 @@ function AdminUserBuildsPage() {
     } catch (error) { console.error("Failed to fetch more builds", error); } finally { setLoadingMore(false); }
   };
 
+  const handleToggleCurated = async (buildId: string) => {
+    const build = builds.find(b => b.id === buildId);
+    if (!build) return;
+    setBuilds(prev => prev.map(b => b.id === buildId ? { ...b, featured: !b.featured } : b));
+    try {
+      const res = await fetch(`/api/user-builds/${buildId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ featured: !build.featured }),
+      });
+      if (!res.ok) throw new Error('Failed to toggle curated badge');
+    } catch {
+      setBuilds(prev => prev.map(b => b.id === buildId ? { ...b, featured: build.featured } : b));
+    }
+  };
+
   return (
     <PageLayout title="Manage User Builds" wide>
-      <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6">
+      <div className="p-4 md:p-6 space-y-6">
         <div className="flex items-center gap-4">
           <Link to="/admin" className="p-2 hover:bg-site-surface-hover rounded-full transition-colors">
             <ArrowLeft className="w-5 h-5 text-site-text-dim" />
@@ -115,6 +132,9 @@ function AdminUserBuildsPage() {
                       <Link to={`/user-builds/${build.slug}` as string} className="font-semibold text-lg text-site-text hover:text-site-accent truncate">{build.title}</Link>
                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${build.visibility === 'PUBLIC' ? 'bg-green-500/10 text-green-400' : build.visibility === 'UNLISTED' ? 'bg-yellow-500/10 text-yellow-400' : 'bg-site-bg text-site-text-dim'}`}>{build.visibility}</span>
                       {build.visibility === 'PRIVATE' && <Lock className="w-3.5 h-3.5 text-site-text-dim ml-1" />}
+                      {build.featured && (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-400">Curated</span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 text-sm text-site-text-dim truncate">
                       <Link to={`/@${build.user.handle || build.user.username}` as string} className="hover:text-site-text transition-colors">@{build.user.handle || build.user.username}</Link>
@@ -123,6 +143,17 @@ function AdminUserBuildsPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 mt-3 sm:mt-0">
+                    <button
+                      onClick={() => handleToggleCurated(build.id)}
+                      className={`p-2 rounded-lg transition-colors border border-transparent ${
+                        build.featured
+                          ? 'text-amber-400 hover:bg-amber-500/10 hover:border-amber-500/20'
+                          : 'text-site-text-dim hover:text-amber-400 hover:bg-amber-500/10 hover:border-amber-500/20'
+                      }`}
+                      title={build.featured ? 'Remove Curated badge' : 'Add Curated badge'}
+                    >
+                      <Award className="w-4 h-4" />
+                    </button>
                     <Link to={`/user-builds/${build.slug}` as string} className="p-2 rounded-lg text-site-text-dim hover:text-site-accent hover:bg-site-bg transition-colors border border-transparent hover:border-site-border" title="View Build">
                       <ExternalLink className="w-4 h-4" />
                     </Link>

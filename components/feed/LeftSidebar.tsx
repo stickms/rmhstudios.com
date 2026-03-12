@@ -19,7 +19,6 @@ const navLinks = [
   { href: '/builds', label: 'Official Builds', icon: Package },
   { href: '/user-builds', label: 'User Builds', icon: Hammer },
   { href: '/blog', label: 'Blog', icon: BookOpen },
-  { href: '/wallet', label: 'Wallet', icon: Wallet },
 ];
 
 export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
@@ -158,6 +157,21 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
               )}
             </div>
             <span className={labelClass}>Messages</span>
+          </Link>
+        )}
+        {/* Wallet link (shown when logged in, below Messages) */}
+        {session && (
+          <Link
+            to="/wallet"
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${itemJustifyClass} ${
+              pathname?.startsWith('/wallet')
+                ? 'text-site-accent bg-site-accent-dim'
+                : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
+            }`}
+            title="Wallet"
+          >
+            <Wallet className="w-5 h-5 shrink-0" />
+            <span className={labelClass}>Wallet</span>
           </Link>
         )}
         {/* Admin Link (shown when user is admin) */}

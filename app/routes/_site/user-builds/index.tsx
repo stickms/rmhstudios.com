@@ -22,6 +22,7 @@ function UserBuildsPage() {
   const [selectedSort, setSelectedSort] = useState<BuildSortOption>('recent');
   const [searchQuery, setSearchQuery] = useState('');
   const [myBuilds, setMyBuilds] = useState(false);
+  const [curated, setCurated] = useState(false);
   const [key, setKey] = useState(0);
 
   // Fetch categories
@@ -52,12 +53,17 @@ function UserBuildsPage() {
     setKey((k) => k + 1);
   }, []);
 
+  const handleCuratedChange = useCallback((isCurated: boolean) => {
+    setCurated(isCurated);
+    setKey((k) => k + 1);
+  }, []);
+
   return (
     <PageLayout title="User Builds" wide>
       <div className="px-4 pt-4 pb-12">
         <Link
           to="/rmhcode"
-          className="mb-5 flex items-center justify-between rounded-xl border border-violet-500/30 bg-gradient-to-r from-violet-500/10 to-site-surface px-5 py-4 transition-colors hover:border-violet-500/50 hover:from-violet-500/15"
+          className="mb-3 flex items-center justify-between rounded-xl border border-violet-500/30 bg-gradient-to-r from-violet-500/10 to-site-surface px-5 py-4 transition-colors hover:border-violet-500/50 hover:from-violet-500/15"
         >
           <div className="flex items-center gap-3">
             <Terminal className="h-6 w-6 text-violet-400" />
@@ -76,10 +82,12 @@ function UserBuildsPage() {
           selectedSort={selectedSort}
           searchQuery={searchQuery}
           myBuilds={myBuilds}
+          curated={curated}
           onCategoryChange={handleCategoryChange}
           onSortChange={handleSortChange}
           onSearchChange={handleSearchChange}
           onMyBuildsChange={handleMyBuildsChange}
+          onCuratedChange={handleCuratedChange}
         />
 
         <BuildGrid
@@ -88,6 +96,7 @@ function UserBuildsPage() {
           search={searchQuery || undefined}
           sort={selectedSort}
           userId={myBuilds ? session?.user?.id : undefined}
+          curated={curated}
         />
       </div>
     </PageLayout>

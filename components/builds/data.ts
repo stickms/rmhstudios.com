@@ -42,7 +42,7 @@ async function mergeWithEngagement(codeBuilds: CodeBuild[]): Promise<{ builds: O
         : [];
 
     const builds: OfficialBuild[] = codeBuilds
-        .filter(b => !('hidden' in b && b.hidden))
+        .filter(b => !('hidden' in b && b.hidden) && !('unlisted' in b && b.unlisted))
         .map(b => {
             const db = engagementMap.get(b.id);
             return {

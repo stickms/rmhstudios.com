@@ -23,7 +23,7 @@ function BuildsPage() {
       <p className="text-site-text-muted text-sm mb-8">
         Our full collection of games, apps, and digital experiences — all built by the RMH team.
       </p>
-      <CategoryPicker entertainmentCount={games.length} appCount={apps.filter(a => !a.hidden).length} />
+      <CategoryPicker entertainmentCount={games.filter(g => !g.unlisted).length} appCount={apps.filter(a => !a.hidden && !a.unlisted).length} />
     </div>
   );
 }

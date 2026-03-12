@@ -17,6 +17,7 @@ export interface GameInfo {
     tags: string[];
     imagePath?: string;
     authGate: boolean;
+    unlisted?: boolean;
 }
 
 /**
@@ -91,6 +92,7 @@ export const games: GameInfo[] = [
         tags: ['Visual Novel', 'Puzzle', 'Poetry'],
         imagePath: '/images/games/versecraft.webp',
         authGate: false,
+        unlisted: true
     },
     {
         id: 'slice-it',
