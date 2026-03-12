@@ -8,7 +8,7 @@ import {
     formatDateKey,
     createSeededRng,
 } from '@/lib/lights-out/seed';
-import { getDailyShape, getShapeLabel, isActiveCell, type GridShape } from '@/lib/lights-out/shapes';
+import { getDailyShape, getShapeLabel, isActiveCell } from '@/lib/lights-out/shapes';
 import {
     generatePuzzle,
     toggleCellInGrid,
@@ -29,7 +29,7 @@ import { getPerformanceRating, generateShareText } from '@/lib/lights-out/share'
 import { authClient } from '@/lib/auth-client';
 import {
     Sparkles, RotateCcw, Trophy, Loader2, Undo2, Lightbulb, Flag,
-    ArrowLeft, Share2, Calendar, ChevronDown, ChevronUp, Check,
+    ArrowLeft, Share2, Calendar, ChevronDown, ChevronUp, Check, Play,
 } from 'lucide-react';
 
 type LeaderboardEntry = {
@@ -41,10 +41,20 @@ type LeaderboardEntry = {
 };
 
 export function LightsOutGame() {
-    const today = new Date();
-    const dateKey = formatDateKey(today);
-    const seed = getDateSeed(today);
+    const todayKey = formatDateKey(new Date());
+
+    // Selected date — defaults to today, can switch to past puzzles
+    const [selectedDateKey, setSelectedDateKey] = useState(todayKey);
+    const isToday = selectedDateKey === todayKey;
+
+    // Derive seed/shape from selected date
+    const selectedDate = useMemo(() => {
+        const [y, m, d] = selectedDateKey.split('-').map(Number);
+        return new Date(y, m - 1, d);
+    }, [selectedDateKey]);
+    const seed = getDateSeed(selectedDate);
     const shape = getDailyShape(seed);
+    const dateKey = selectedDateKey;
 
     const [grid, setGrid] = useState<Grid | null>(null);
     const [moveHistory, setMoveHistory] = useState<Grid[]>([]);
@@ -65,7 +75,6 @@ export function LightsOutGame() {
 
     const session = authClient.useSession();
 
-    // Compute optimal moves for the initial puzzle
     const computeOptimal = useCallback((puzzleGrid: Grid) => {
         const opt = getOptimalMoves(puzzleGrid, shape);
         setOptimalMoves(opt);
@@ -81,6 +90,7 @@ export function LightsOutGame() {
         setMoveHistory([]);
         setHintedCell(null);
         setHintsUsed(loadHintsUsed(dateKey));
+        setScoreSubmitted(false);
         computeOptimal(initialGrid);
 
         const save = loadSave(dateKey);
@@ -91,10 +101,10 @@ export function LightsOutGame() {
         }
     }, [dateKey, seed, shape, computeOptimal]);
 
+    // Load puzzle when date changes
     useEffect(() => {
         const save = loadSave(dateKey);
         if (save?.solved) {
-            // Regenerate the puzzle to compute optimal
             const puzzleGrid = generatePuzzle(createSeededRng(seed), shape);
             const opt = computeOptimal(puzzleGrid);
             setGrid(createEmptyGrid(shape));
@@ -103,6 +113,7 @@ export function LightsOutGame() {
             setGaveUp(save.dnf ?? false);
             setHintsUsed(loadHintsUsed(dateKey));
             setBestMoves(save.dnf ? null : save.moves);
+            setScoreSubmitted(true);
             if (save.optimalMoves != null) setOptimalMoves(save.optimalMoves);
             else if (opt != null) setOptimalMoves(opt);
         } else {
@@ -110,7 +121,7 @@ export function LightsOutGame() {
         }
     }, [dateKey, initPuzzle, shape, seed, computeOptimal]);
 
-    // Generate past puzzles list from date seeds (last 14 days, excluding today)
+    // Past puzzles list (last 14 days, excluding today)
     const pastPuzzles = useMemo(() => {
         const entries: { dateKey: string; shapeLabel: string; save: ReturnType<typeof loadSave> }[] = [];
         for (let i = 1; i <= 14; i++) {
@@ -122,10 +133,12 @@ export function LightsOutGame() {
             entries.push({ dateKey: dk, shapeLabel: getShapeLabel(sh), save: loadSave(dk) });
         }
         return entries;
-    }, []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedDateKey]); // re-compute when switching dates so saves refresh
 
-    // Fetch leaderboard (only when solved)
+    // Fetch leaderboard (only when solved, only for today)
     const fetchLeaderboard = useCallback(async () => {
+        if (!isToday) { setLeaderboard([]); return; }
         setLeaderboardLoading(true);
         try {
             const res = await fetch(`/api/lights-out/leaderboard?date=${dateKey}`);
@@ -137,7 +150,7 @@ export function LightsOutGame() {
         } finally {
             setLeaderboardLoading(false);
         }
-    }, [dateKey]);
+    }, [dateKey, isToday]);
 
     useEffect(() => {
         if (solved) fetchLeaderboard();
@@ -145,7 +158,7 @@ export function LightsOutGame() {
 
     const submitScore = useCallback(
         async (finalMoves: number, usedHints: boolean, dnfSubmission = false) => {
-            if (!session.data || scoreSubmitted) return;
+            if (!session.data || scoreSubmitted || !isToday) return;
             setScoreSubmitted(true);
             try {
                 await fetch('/api/lights-out/score', {
@@ -163,7 +176,7 @@ export function LightsOutGame() {
                 /* ignore */
             }
         },
-        [session.data, scoreSubmitted, dateKey, fetchLeaderboard]
+        [session.data, scoreSubmitted, dateKey, fetchLeaderboard, isToday]
     );
 
     const handleCellClick = (r: number, c: number) => {
@@ -191,7 +204,7 @@ export function LightsOutGame() {
                 shapeLabel: getShapeLabel(shape),
                 optimalMoves: optimalMoves ?? undefined,
             });
-            if (session.data) submitScore(newMoves, hintsUsed > 0);
+            if (isToday && session.data) submitScore(newMoves, hintsUsed > 0);
         } else {
             saveProgress(dateKey, newMoves, false);
         }
@@ -232,7 +245,7 @@ export function LightsOutGame() {
             shapeLabel: getShapeLabel(shape),
             optimalMoves: optimalMoves ?? undefined,
         });
-        if (session.data) submitScore(moves, true, true);
+        if (isToday && session.data) submitScore(moves, true, true);
     };
 
     const handleShare = async () => {
@@ -252,6 +265,12 @@ export function LightsOutGame() {
         } catch {
             /* ignore */
         }
+    };
+
+    const handleSelectDate = (dk: string) => {
+        if (dk === selectedDateKey) return;
+        setSelectedDateKey(dk);
+        setShowHistory(false);
     };
 
     if (!grid) {
@@ -289,8 +308,18 @@ export function LightsOutGame() {
                     Lights Out
                 </h1>
                 <p className="text-site-text-muted text-sm mb-2">
-                    Daily puzzle · {dateKey} · {getShapeLabel(shape)}
+                    {isToday ? 'Daily puzzle' : 'Past puzzle'} · {dateKey} · {getShapeLabel(shape)}
                 </p>
+                {!isToday && (
+                    <button
+                        type="button"
+                        onClick={() => handleSelectDate(todayKey)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 mb-2 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 hover:bg-amber-500/30 transition-colors text-xs font-medium"
+                    >
+                        <ArrowLeft className="w-3 h-3" />
+                        Back to today&apos;s puzzle
+                    </button>
+                )}
                 <div className="inline-block px-4 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30">
                     <p className="text-amber-400 font-semibold text-sm">Goal: Turn off every light</p>
                     <p className="text-site-text-muted text-xs mt-0.5">
@@ -426,7 +455,7 @@ export function LightsOutGame() {
                     onClick={initPuzzle}
                     disabled={solved}
                     className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-site-surface border border-site-border text-site-text hover:border-site-accent/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Restart today's puzzle"
+                    title="Restart this puzzle"
                 >
                     <RotateCcw className="w-4 h-4" />
                     Restart
@@ -516,7 +545,7 @@ export function LightsOutGame() {
                             </button>
                         </div>
 
-                        {!session.data && (
+                        {!session.data && isToday && (
                             <p className="text-site-text-dim text-xs mt-3">
                                 <Link to="/login" search={{ callbackURL: undefined }} className="text-site-accent hover:underline">
                                     Sign in
@@ -524,16 +553,23 @@ export function LightsOutGame() {
                                 to submit your score to the leaderboard.
                             </p>
                         )}
-                        <p className="text-site-text-dim text-xs mt-2">
-                            A new puzzle unlocks tomorrow — same for everyone worldwide.
-                        </p>
+                        {!isToday && (
+                            <p className="text-site-text-dim text-xs mt-3">
+                                Past puzzle — scores are saved locally but not to the leaderboard.
+                            </p>
+                        )}
+                        {isToday && (
+                            <p className="text-site-text-dim text-xs mt-2">
+                                A new puzzle unlocks tomorrow — same for everyone worldwide.
+                            </p>
+                        )}
                     </motion.div>
                 )}
             </AnimatePresence>
 
-            {/* Leaderboard — only visible after solving */}
+            {/* Leaderboard — only visible after solving today's puzzle */}
             <AnimatePresence>
-                {solved && (
+                {solved && isToday && (
                     <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -607,7 +643,11 @@ export function LightsOutGame() {
                                     {pastPuzzles.map((p) => (
                                         <div
                                             key={p.dateKey}
-                                            className="flex items-center justify-between py-2 px-3 rounded-lg bg-site-bg-subtle"
+                                            className={`flex items-center justify-between py-2 px-3 rounded-lg transition-colors ${
+                                                p.dateKey === selectedDateKey
+                                                    ? 'bg-amber-500/15 border border-amber-500/30'
+                                                    : 'bg-site-bg-subtle hover:bg-site-bg-subtle/80'
+                                            }`}
                                         >
                                             <div className="flex items-center gap-3">
                                                 <span className="text-site-text-muted text-sm font-mono">
@@ -617,26 +657,33 @@ export function LightsOutGame() {
                                                     {p.shapeLabel}
                                                 </span>
                                             </div>
-                                            {p.save?.solved ? (
-                                                <div className="flex items-center gap-2">
-                                                    {p.save.optimalMoves != null && (
-                                                        <span className="text-xs" title={getPerformanceRating(p.save.moves, p.save.optimalMoves, p.save.dnf ?? false).label}>
-                                                            {getPerformanceRating(p.save.moves, p.save.optimalMoves, p.save.dnf ?? false).emoji}
+                                            <div className="flex items-center gap-2">
+                                                {p.save?.solved ? (
+                                                    <>
+                                                        {p.save.optimalMoves != null && (
+                                                            <span className="text-xs" title={getPerformanceRating(p.save.moves, p.save.optimalMoves, p.save.dnf ?? false).label}>
+                                                                {getPerformanceRating(p.save.moves, p.save.optimalMoves, p.save.dnf ?? false).emoji}
+                                                            </span>
+                                                        )}
+                                                        <span
+                                                            className={`font-mono font-semibold text-sm ${
+                                                                p.save.dnf ? 'text-site-danger' : 'text-amber-400'
+                                                            }`}
+                                                        >
+                                                            {p.save.dnf ? 'DNF' : `${p.save.moves} moves`}
                                                         </span>
-                                                    )}
-                                                    <span
-                                                        className={`font-mono font-semibold text-sm ${
-                                                            p.save.dnf ? 'text-site-danger' : 'text-amber-400'
-                                                        }`}
+                                                    </>
+                                                ) : (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleSelectDate(p.dateKey)}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-site-surface border border-site-border text-site-text hover:border-amber-500/50 transition-colors text-xs font-medium"
                                                     >
-                                                        {p.save.dnf ? 'DNF' : `${p.save.moves} moves`}
-                                                    </span>
-                                                </div>
-                                            ) : (
-                                                <span className="text-site-text-dim text-xs">
-                                                    Not played
-                                                </span>
-                                            )}
+                                                        <Play className="w-3 h-3" />
+                                                        Play
+                                                    </button>
+                                                )}
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
