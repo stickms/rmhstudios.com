@@ -20,8 +20,8 @@ function CardFace({ card, small, delay }: { card: Card; small?: boolean; delay?:
     return () => clearTimeout(timer);
   }, [delay]);
 
-  const w = small ? 'w-8 h-11' : 'w-10 h-14';
-  const textSize = small ? 'text-[10px]' : 'text-xs';
+  const w = small ? 'w-7 h-10 sm:w-8 sm:h-11' : 'w-9 h-13 sm:w-10 sm:h-14';
+  const textSize = small ? 'text-[9px] sm:text-[10px]' : 'text-[11px] sm:text-xs';
 
   return (
     <div className={`${w} perspective-500 shrink-0`}>
@@ -43,7 +43,7 @@ function CardFace({ card, small, delay }: { card: Card; small?: boolean; delay?:
 }
 
 function CardBack({ small }: { small?: boolean }) {
-  const w = small ? 'w-8 h-11' : 'w-10 h-14';
+  const w = small ? 'w-7 h-10 sm:w-8 sm:h-11' : 'w-9 h-13 sm:w-10 sm:h-14';
   return (
     <div className={`${w} rounded-md border border-blue-500/30 bg-gradient-to-br from-blue-800 to-blue-950 shrink-0`} />
   );
@@ -51,7 +51,7 @@ function CardBack({ small }: { small?: boolean }) {
 
 function Hand({ cards, hidden }: { cards: Card[]; hidden?: boolean }) {
   return (
-    <div className="flex gap-1">
+    <div className="flex gap-0.5 sm:gap-1">
       {cards.map((card, i) => {
         if (hidden && i === 1) return <CardBack key={i} />;
         return <CardFace key={`${card.rank}${card.suit}${i}`} card={card} delay={i * 200} />;
@@ -88,16 +88,16 @@ function PlayerSeatView({ player, isCurrentTurn, isMe }: {
 
   return (
     <div
-      className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
+      className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all min-w-0 shrink-0 ${
         isCurrentTurn ? 'ring-2 ring-yellow-500 bg-yellow-500/5 animate-pulse' : ''
       } ${isMe ? 'bg-site-surface/50' : ''}`}
     >
       {/* Name */}
       <div className="flex items-center gap-1">
         {player.avatarUrl ? (
-          <img src={player.avatarUrl} alt="" className="w-4 h-4 rounded-full" />
+          <img src={player.avatarUrl} alt="" className="w-4 h-4 rounded-full shrink-0" />
         ) : null}
-        <span className={`text-xs font-bold truncate max-w-15 ${isMe ? 'text-yellow-400' : 'text-site-text'}`}>
+        <span className={`text-xs font-bold truncate max-w-16 sm:max-w-20 ${isMe ? 'text-yellow-400' : 'text-site-text'}`}>
           {isMe ? 'You' : player.userName}
         </span>
       </div>
@@ -198,12 +198,12 @@ export function BlackjackTable() {
   const showDealerHidden = tablePhase !== 'dealer_turn' && tablePhase !== 'results' && tablePhase !== 'payout';
 
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="flex flex-col items-center gap-3 sm:gap-4">
       {/* Dealer area */}
-      <div className={`flex flex-col items-center gap-1 p-3 rounded-xl bg-emerald-900/30 border border-emerald-700/20 min-h-20 transition-all ${
+      <div className={`flex flex-col items-center gap-1 p-2.5 sm:p-3 rounded-xl bg-emerald-900/30 border border-emerald-700/20 min-h-18 sm:min-h-20 w-full transition-all ${
         tablePhase === 'dealer_turn' ? 'ring-2 ring-emerald-500/50' : ''
       }`}>
-        <span className="text-xs text-site-text-dim font-bold uppercase tracking-wider">Dealer</span>
+        <span className="text-[10px] sm:text-xs text-site-text-dim font-bold uppercase tracking-wider">Dealer</span>
         {dealerHand.length > 0 ? (
           <div className="flex flex-col items-center gap-1">
             <Hand cards={dealerHand} hidden={showDealerHidden} />
@@ -221,19 +221,21 @@ export function BlackjackTable() {
         )}
       </div>
 
-      {/* Players */}
+      {/* Players — scrollable horizontally on mobile if many players */}
       {players.length > 0 ? (
-        <div className="flex flex-wrap justify-center gap-2 w-full">
-          {players
-            .sort((a, b) => a.seatIndex - b.seatIndex)
-            .map((player) => (
-              <PlayerSeatView
-                key={player.userId}
-                player={player}
-                isCurrentTurn={currentTurnUserId === player.userId}
-                isMe={player.userId === myUserId}
-              />
-            ))}
+        <div className="w-full overflow-x-auto -mx-1 px-1">
+          <div className="flex justify-center gap-2 min-w-0">
+            {players
+              .sort((a, b) => a.seatIndex - b.seatIndex)
+              .map((player) => (
+                <PlayerSeatView
+                  key={player.userId}
+                  player={player}
+                  isCurrentTurn={currentTurnUserId === player.userId}
+                  isMe={player.userId === myUserId}
+                />
+              ))}
+          </div>
         </div>
       ) : (
         <p className="text-sm text-site-text-dim">No players at the table yet.</p>

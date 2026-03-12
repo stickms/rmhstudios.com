@@ -367,7 +367,7 @@ export function LightsOutGame() {
                         )}
                         {!session.data && (
                             <p className="text-site-text-dim text-xs mt-2">
-                                <Link to="/login" className="text-site-accent hover:underline">
+                                <Link to="/login" search={{ callbackURL: undefined }} className="text-site-accent hover:underline">
                                     Sign in
                                 </Link>{' '}
                                 to submit your score to the daily leaderboard.

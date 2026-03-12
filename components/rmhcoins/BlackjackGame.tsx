@@ -97,28 +97,28 @@ export function BlackjackGame({ coins, setCoins }: Props) {
   return (
     <div className="flex flex-col gap-4 px-3 sm:px-4 py-4 sm:py-6">
       {/* Room header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-2 min-w-0">
+        <div className="flex items-center gap-2 min-w-0">
           <button
             onClick={handleLeave}
-            className="text-xs text-site-text-dim hover:text-site-text transition-colors"
+            className="shrink-0 min-h-8 px-2 text-xs text-site-text-dim hover:text-site-text transition-colors"
           >
             &larr; Leave
           </button>
-          <h3 className="text-sm font-bold text-site-text truncate max-w-45">
+          <h3 className="text-sm font-bold text-site-text truncate">
             {roomInfo.name}
           </h3>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {roomInfo.joinCode && (
-            <span className="text-xs text-site-text-dim">
+            <span className="text-[10px] sm:text-xs text-site-text-dim hidden sm:inline">
               Code: <span className="font-mono font-bold text-yellow-400">{roomInfo.joinCode}</span>
             </span>
           )}
-          <span className="text-xs text-site-text-dim">
+          <span className="text-[10px] sm:text-xs text-site-text-dim">
             {players.length}/{roomInfo.maxPlayers}
           </span>
-          <Circle className={`h-3 w-3 fill-current ${statusColor}`} />
+          <Circle className={`h-3 w-3 fill-current shrink-0 ${statusColor}`} />
         </div>
       </div>
 

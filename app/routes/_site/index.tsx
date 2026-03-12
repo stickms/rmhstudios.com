@@ -18,7 +18,7 @@ export const Route = createFileRoute('/_site/')({
 
 function Home() {
   const {
-    curatedBuilds,
+    officialBuilds,
     userBuilds,
     recommendedUsers,
     blogPosts,
@@ -26,7 +26,7 @@ function Home() {
 
   return (
     <FeedLayout
-      curatedBuilds={curatedBuilds}
+      officialBuilds={officialBuilds}
       userBuilds={userBuilds}
       recommendedUsers={recommendedUsers}
       blogPosts={blogPosts}

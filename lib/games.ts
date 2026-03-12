@@ -4,7 +4,7 @@ export interface GameInfo {
     description: string;
     longDescription: string;
     href: string;
-    status: string;
+    status?: string;
     cta: string;
     isSteam: boolean;
 
@@ -34,7 +34,6 @@ export const games: GameInfo[] = [
         longDescription:
             'Create or join a lobby, vote on minigames, and compete with friends in real-time. Features 16+ unique minigames across word, trivia, action, and creative categories with live leaderboards and match history.',
         href: '/rmhbox',
-        status: 'Playable',
         cta: 'Play Now',
         isSteam: false,
         gradient: 'from-purple-500 to-pink-500',
@@ -52,7 +51,6 @@ export const games: GameInfo[] = [
         longDescription:
             'Navigate Outpost 13, a reality-glitched mining station overrun by "Echoes." Use your neural link to piece together fragmented memories, manage cryo-sickness, and survive the shadows in this narrative-heavy survival experience.',
         href: '/altair',
-        status: 'Playable',
         cta: 'Play Now',
         isSteam: false,
         gradient: 'from-(--neon-purple) to-(--neon-pink)',
@@ -69,7 +67,6 @@ export const games: GameInfo[] = [
         longDescription:
             'Classic Lights Out: tap a cell to toggle it and its neighbors. Solve in as few moves as possible. A fresh puzzle appears each day. No account needed.',
         href: '/lights-out',
-        status: 'Playable',
         cta: 'Play',
         isSteam: false,
         gradient: 'from-amber-500 to-orange-600',
@@ -86,7 +83,6 @@ export const games: GameInfo[] = [
         longDescription:
             'Join the Ivory Quill Society and discover the power of words. Select words to compose poems, arrange lines for maximum impact, and watch as six unique characters react to your literary creations. A DDLC-inspired visual novel where every word matters.',
         href: '/versecraft',
-        status: 'Playable',
         cta: 'Play Now',
         isSteam: false,
         gradient: 'from-amber-700 to-purple-800',
@@ -103,7 +99,6 @@ export const games: GameInfo[] = [
         longDescription:
             'Test your reflexes as you slice through beat sequences and dodge obstacles in a vibrant, neon-soaked environment. Feature-rich with global leaderboards, multiplayer lobbies, and support for custom track uploads.',
         href: '/slice-it',
-        status: 'Playable Demo',
         cta: 'Play Now',
         isSteam: false,
         gradient: 'from-(--neon-cyan) to-(--neon-blue)',
@@ -121,7 +116,6 @@ export const games: GameInfo[] = [
         longDescription:
             'Navigate neon-lit streets of a procedurally generated cyberpunk city. Features realistic drift physics, rain effects, procedural lo-fi/jazz radio, engine sound synthesis, and a full VHS post-processing pipeline with semantic segmentation.',
         href: '/velum2099',
-        status: 'Playable',
         cta: 'Drive Now',
         isSteam: false,
         gradient: 'from-cyan-500 to-purple-600',
@@ -137,7 +131,6 @@ export const games: GameInfo[] = [
         description: 'Juggle a storm of micro-challenges. Stay sharp.',
         longDescription: 'Juggle a storm of micro-challenges. Stay sharp. See how long your mind can keep up before the load becomes too great.',
         href: '/synapse-storm',
-        status: 'Playable',
         cta: 'Enter the Storm',
         isSteam: false,
         gradient: 'from-cyan-500 to-pink-500',
@@ -154,7 +147,6 @@ export const games: GameInfo[] = [
         longDescription:
             'Accumulate Happiness to construct a sprawling temple of delights. Balance the Hedonic Treadmill, earn Karma through pilgrimages, and Transcend the Wheel of Samsara in a deep idle game featuring relics, rituals, and philosophical choices.',
         href: '/temple-of-joy',
-        status: 'Playable',
         cta: 'Enter the Temple',
         isSteam: false,
         gradient: 'from-amber-700 to-yellow-600',
@@ -205,7 +197,6 @@ export const games: GameInfo[] = [
         longDescription:
             'A first-person 3D forest experience with two modes. Free Explore lets you roam through a dense ancient forest with towering conifers, glowing fireflies, and dappled sunlight. Story Mode is a 3-act narrative adventure featuring logic puzzles, environmental storytelling, and a discoverable journal system.',
         href: '/forest-explorer',
-        status: 'Playable',
         cta: 'Explore',
         isSteam: false,
         gradient: 'from-green-700 to-emerald-900',
@@ -222,7 +213,6 @@ export const games: GameInfo[] = [
         longDescription:
             'Survive waves of enemies in a dark arena. Collect void shards that orbit you as a shield and score multiplier. Activate Focus for bullet-time. Dash to dodge. Detonate your shard ring for a devastating Void Burst. Boss fights every 5 waves.',
         href: '/void-breaker',
-        status: 'Playable',
         cta: 'Play',
         isSteam: false,
         gradient: 'from-orange-500 to-pink-600',
@@ -239,7 +229,6 @@ export const games: GameInfo[] = [
         longDescription:
             'Step into the neon-lit streets of Kowloon, 1997. Choose from three fighter classes — Power, Speed, or Resistance — master devastating combos, and battle AI opponents or challenge a friend in real-time versus mode over WebSocket.',
         href: '/kowloon-knockout',
-        status: 'Playable',
         cta: 'Fight Now',
         isSteam: false,
         gradient: 'from-pink-500 to-purple-600',

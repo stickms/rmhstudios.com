@@ -9,6 +9,7 @@ export const C2S = {
 
   // Gameplay
   PLACE_BET:     'bacc:place_bet',
+  CLEAR_BETS:    'bacc:clear_bets',
 } as const;
 
 /** Server-to-Client events */

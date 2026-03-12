@@ -173,7 +173,6 @@ import { Route as SiteAdminUsersRouteImport } from './routes/_site/admin/users'
 import { Route as SiteAdminUserBuildsRouteImport } from './routes/_site/admin/user-builds'
 import { Route as SiteAdminUsersIndexRouteImport } from './routes/_site/admin/users/index'
 import { Route as SiteAdminUserBuildsIndexRouteImport } from './routes/_site/admin/user-builds/index'
-import { Route as SiteAdminCuratedBuildsIndexRouteImport } from './routes/_site/admin/curated-builds/index'
 import { Route as SiteAdminBlogIndexRouteImport } from './routes/_site/admin/blog/index'
 import { Route as SecretJobsAssessmentIdRouteImport } from './routes/secret/jobs/assessment/$id'
 import { Route as RmhboxMinigamesMinigameIdHistoryRouteImport } from './routes/rmhbox/minigames/$minigameId/history'
@@ -203,7 +202,6 @@ import { Route as ApiMessagesConversationIdReadRouteImport } from './routes/api/
 import { Route as ApiGamesSynapseStormScoreRouteImport } from './routes/api/games/synapse-storm/score'
 import { Route as ApiGamesSynapseStormSaveRouteImport } from './routes/api/games/synapse-storm/save'
 import { Route as ApiGamesSynapseStormLeaderboardRouteImport } from './routes/api/games/synapse-storm/leaderboard'
-import { Route as ApiAdminCuratedBuildsReorderRouteImport } from './routes/api/admin/curated-builds/reorder'
 import { Route as ApiAdminCuratedBuildsImageRouteImport } from './routes/api/admin/curated-builds/image'
 import { Route as SiteAdminBlogNewRouteImport } from './routes/_site/admin/blog/new'
 import { Route as SiteUseridPostPostidRouteImport } from './routes/_site/$userid/post/$postid'
@@ -216,7 +214,6 @@ import { Route as ApiSliceItSongsIdCommentsRouteImport } from './routes/api/slic
 import { Route as ApiRmharksIdCommentCommentIdRouteImport } from './routes/api/rmharks/$id/comment/$commentId'
 import { Route as ApiAdminCuratedBuildsImageProxyRouteImport } from './routes/api/admin/curated-builds/image/proxy'
 import { Route as ApiAdminCuratedBuildsImageFilenameRouteImport } from './routes/api/admin/curated-builds/image/$filename'
-import { Route as SiteAdminCuratedBuildsIdEditRouteImport } from './routes/_site/admin/curated-builds/$id/edit'
 import { Route as SiteAdminBlogSlugEditRouteImport } from './routes/_site/admin/blog/$slug/edit'
 import { Route as ApiRmharksIdCommentCommentIdViewRouteImport } from './routes/api/rmharks/$id/comment/$commentId/view'
 import { Route as ApiRmharksIdCommentCommentIdRepostRouteImport } from './routes/api/rmharks/$id/comment/$commentId/repost'
@@ -1049,12 +1046,6 @@ const SiteAdminUserBuildsIndexRoute =
     path: '/',
     getParentRoute: () => SiteAdminUserBuildsRoute,
   } as any)
-const SiteAdminCuratedBuildsIndexRoute =
-  SiteAdminCuratedBuildsIndexRouteImport.update({
-    id: '/curated-builds/',
-    path: '/curated-builds/',
-    getParentRoute: () => SiteAdminRouteRoute,
-  } as any)
 const SiteAdminBlogIndexRoute = SiteAdminBlogIndexRouteImport.update({
   id: '/blog/',
   path: '/blog/',
@@ -1207,12 +1198,6 @@ const ApiGamesSynapseStormLeaderboardRoute =
     path: '/api/games/synapse-storm/leaderboard',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiAdminCuratedBuildsReorderRoute =
-  ApiAdminCuratedBuildsReorderRouteImport.update({
-    id: '/api/admin/curated-builds/reorder',
-    path: '/api/admin/curated-builds/reorder',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiAdminCuratedBuildsImageRoute =
   ApiAdminCuratedBuildsImageRouteImport.update({
     id: '/api/admin/curated-builds/image',
@@ -1279,12 +1264,6 @@ const ApiAdminCuratedBuildsImageFilenameRoute =
     id: '/$filename',
     path: '/$filename',
     getParentRoute: () => ApiAdminCuratedBuildsImageRoute,
-  } as any)
-const SiteAdminCuratedBuildsIdEditRoute =
-  SiteAdminCuratedBuildsIdEditRouteImport.update({
-    id: '/curated-builds/$id/edit',
-    path: '/curated-builds/$id/edit',
-    getParentRoute: () => SiteAdminRouteRoute,
   } as any)
 const SiteAdminBlogSlugEditRoute = SiteAdminBlogSlugEditRouteImport.update({
   id: '/blog/$slug/edit',
@@ -1475,7 +1454,6 @@ export interface FileRoutesByFullPath {
   '/$userid/post/$postid': typeof SiteUseridPostPostidRoute
   '/admin/blog/new': typeof SiteAdminBlogNewRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
-  '/api/admin/curated-builds/reorder': typeof ApiAdminCuratedBuildsReorderRoute
   '/api/games/synapse-storm/leaderboard': typeof ApiGamesSynapseStormLeaderboardRoute
   '/api/games/synapse-storm/save': typeof ApiGamesSynapseStormSaveRoute
   '/api/games/synapse-storm/score': typeof ApiGamesSynapseStormScoreRoute
@@ -1505,11 +1483,9 @@ export interface FileRoutesByFullPath {
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
   '/secret/jobs/assessment/$id': typeof SecretJobsAssessmentIdRoute
   '/admin/blog/': typeof SiteAdminBlogIndexRoute
-  '/admin/curated-builds/': typeof SiteAdminCuratedBuildsIndexRoute
   '/admin/user-builds/': typeof SiteAdminUserBuildsIndexRoute
   '/admin/users/': typeof SiteAdminUsersIndexRoute
   '/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
-  '/admin/curated-builds/$id/edit': typeof SiteAdminCuratedBuildsIdEditRoute
   '/api/admin/curated-builds/image/$filename': typeof ApiAdminCuratedBuildsImageFilenameRoute
   '/api/admin/curated-builds/image/proxy': typeof ApiAdminCuratedBuildsImageProxyRoute
   '/api/rmharks/$id/comment/$commentId': typeof ApiRmharksIdCommentCommentIdRouteWithChildren
@@ -1663,7 +1639,6 @@ export interface FileRoutesByTo {
   '/$userid/post/$postid': typeof SiteUseridPostPostidRoute
   '/admin/blog/new': typeof SiteAdminBlogNewRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
-  '/api/admin/curated-builds/reorder': typeof ApiAdminCuratedBuildsReorderRoute
   '/api/games/synapse-storm/leaderboard': typeof ApiGamesSynapseStormLeaderboardRoute
   '/api/games/synapse-storm/save': typeof ApiGamesSynapseStormSaveRoute
   '/api/games/synapse-storm/score': typeof ApiGamesSynapseStormScoreRoute
@@ -1693,11 +1668,9 @@ export interface FileRoutesByTo {
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
   '/secret/jobs/assessment/$id': typeof SecretJobsAssessmentIdRoute
   '/admin/blog': typeof SiteAdminBlogIndexRoute
-  '/admin/curated-builds': typeof SiteAdminCuratedBuildsIndexRoute
   '/admin/user-builds': typeof SiteAdminUserBuildsIndexRoute
   '/admin/users': typeof SiteAdminUsersIndexRoute
   '/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
-  '/admin/curated-builds/$id/edit': typeof SiteAdminCuratedBuildsIdEditRoute
   '/api/admin/curated-builds/image/$filename': typeof ApiAdminCuratedBuildsImageFilenameRoute
   '/api/admin/curated-builds/image/proxy': typeof ApiAdminCuratedBuildsImageProxyRoute
   '/api/rmharks/$id/comment/$commentId': typeof ApiRmharksIdCommentCommentIdRouteWithChildren
@@ -1878,7 +1851,6 @@ export interface FileRoutesById {
   '/_site/$userid/post/$postid': typeof SiteUseridPostPostidRoute
   '/_site/admin/blog/new': typeof SiteAdminBlogNewRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
-  '/api/admin/curated-builds/reorder': typeof ApiAdminCuratedBuildsReorderRoute
   '/api/games/synapse-storm/leaderboard': typeof ApiGamesSynapseStormLeaderboardRoute
   '/api/games/synapse-storm/save': typeof ApiGamesSynapseStormSaveRoute
   '/api/games/synapse-storm/score': typeof ApiGamesSynapseStormScoreRoute
@@ -1908,11 +1880,9 @@ export interface FileRoutesById {
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
   '/secret/jobs/assessment/$id': typeof SecretJobsAssessmentIdRoute
   '/_site/admin/blog/': typeof SiteAdminBlogIndexRoute
-  '/_site/admin/curated-builds/': typeof SiteAdminCuratedBuildsIndexRoute
   '/_site/admin/user-builds/': typeof SiteAdminUserBuildsIndexRoute
   '/_site/admin/users/': typeof SiteAdminUsersIndexRoute
   '/_site/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
-  '/_site/admin/curated-builds/$id/edit': typeof SiteAdminCuratedBuildsIdEditRoute
   '/api/admin/curated-builds/image/$filename': typeof ApiAdminCuratedBuildsImageFilenameRoute
   '/api/admin/curated-builds/image/proxy': typeof ApiAdminCuratedBuildsImageProxyRoute
   '/api/rmharks/$id/comment/$commentId': typeof ApiRmharksIdCommentCommentIdRouteWithChildren
@@ -2093,7 +2063,6 @@ export interface FileRouteTypes {
     | '/$userid/post/$postid'
     | '/admin/blog/new'
     | '/api/admin/curated-builds/image'
-    | '/api/admin/curated-builds/reorder'
     | '/api/games/synapse-storm/leaderboard'
     | '/api/games/synapse-storm/save'
     | '/api/games/synapse-storm/score'
@@ -2123,11 +2092,9 @@ export interface FileRouteTypes {
     | '/rmhbox/minigames/$minigameId/history'
     | '/secret/jobs/assessment/$id'
     | '/admin/blog/'
-    | '/admin/curated-builds/'
     | '/admin/user-builds/'
     | '/admin/users/'
     | '/admin/blog/$slug/edit'
-    | '/admin/curated-builds/$id/edit'
     | '/api/admin/curated-builds/image/$filename'
     | '/api/admin/curated-builds/image/proxy'
     | '/api/rmharks/$id/comment/$commentId'
@@ -2281,7 +2248,6 @@ export interface FileRouteTypes {
     | '/$userid/post/$postid'
     | '/admin/blog/new'
     | '/api/admin/curated-builds/image'
-    | '/api/admin/curated-builds/reorder'
     | '/api/games/synapse-storm/leaderboard'
     | '/api/games/synapse-storm/save'
     | '/api/games/synapse-storm/score'
@@ -2311,11 +2277,9 @@ export interface FileRouteTypes {
     | '/rmhbox/minigames/$minigameId/history'
     | '/secret/jobs/assessment/$id'
     | '/admin/blog'
-    | '/admin/curated-builds'
     | '/admin/user-builds'
     | '/admin/users'
     | '/admin/blog/$slug/edit'
-    | '/admin/curated-builds/$id/edit'
     | '/api/admin/curated-builds/image/$filename'
     | '/api/admin/curated-builds/image/proxy'
     | '/api/rmharks/$id/comment/$commentId'
@@ -2495,7 +2459,6 @@ export interface FileRouteTypes {
     | '/_site/$userid/post/$postid'
     | '/_site/admin/blog/new'
     | '/api/admin/curated-builds/image'
-    | '/api/admin/curated-builds/reorder'
     | '/api/games/synapse-storm/leaderboard'
     | '/api/games/synapse-storm/save'
     | '/api/games/synapse-storm/score'
@@ -2525,11 +2488,9 @@ export interface FileRouteTypes {
     | '/rmhbox/minigames/$minigameId/history'
     | '/secret/jobs/assessment/$id'
     | '/_site/admin/blog/'
-    | '/_site/admin/curated-builds/'
     | '/_site/admin/user-builds/'
     | '/_site/admin/users/'
     | '/_site/admin/blog/$slug/edit'
-    | '/_site/admin/curated-builds/$id/edit'
     | '/api/admin/curated-builds/image/$filename'
     | '/api/admin/curated-builds/image/proxy'
     | '/api/rmharks/$id/comment/$commentId'
@@ -2626,7 +2587,6 @@ export interface RootRouteChildren {
   ApiVoidBreakerScoreRoute: typeof ApiVoidBreakerScoreRoute
   ApiCoinsIndexRoute: typeof ApiCoinsIndexRoute
   ApiAdminCuratedBuildsImageRoute: typeof ApiAdminCuratedBuildsImageRouteWithChildren
-  ApiAdminCuratedBuildsReorderRoute: typeof ApiAdminCuratedBuildsReorderRoute
   ApiGamesSynapseStormLeaderboardRoute: typeof ApiGamesSynapseStormLeaderboardRoute
   ApiGamesSynapseStormSaveRoute: typeof ApiGamesSynapseStormSaveRoute
   ApiGamesSynapseStormScoreRoute: typeof ApiGamesSynapseStormScoreRoute
@@ -3788,13 +3748,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteAdminUserBuildsIndexRouteImport
       parentRoute: typeof SiteAdminUserBuildsRoute
     }
-    '/_site/admin/curated-builds/': {
-      id: '/_site/admin/curated-builds/'
-      path: '/curated-builds'
-      fullPath: '/admin/curated-builds/'
-      preLoaderRoute: typeof SiteAdminCuratedBuildsIndexRouteImport
-      parentRoute: typeof SiteAdminRouteRoute
-    }
     '/_site/admin/blog/': {
       id: '/_site/admin/blog/'
       path: '/blog'
@@ -3998,13 +3951,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGamesSynapseStormLeaderboardRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/curated-builds/reorder': {
-      id: '/api/admin/curated-builds/reorder'
-      path: '/api/admin/curated-builds/reorder'
-      fullPath: '/api/admin/curated-builds/reorder'
-      preLoaderRoute: typeof ApiAdminCuratedBuildsReorderRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/admin/curated-builds/image': {
       id: '/api/admin/curated-builds/image'
       path: '/api/admin/curated-builds/image'
@@ -4089,13 +4035,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminCuratedBuildsImageFilenameRouteImport
       parentRoute: typeof ApiAdminCuratedBuildsImageRoute
     }
-    '/_site/admin/curated-builds/$id/edit': {
-      id: '/_site/admin/curated-builds/$id/edit'
-      path: '/curated-builds/$id/edit'
-      fullPath: '/admin/curated-builds/$id/edit'
-      preLoaderRoute: typeof SiteAdminCuratedBuildsIdEditRouteImport
-      parentRoute: typeof SiteAdminRouteRoute
-    }
     '/_site/admin/blog/$slug/edit': {
       id: '/_site/admin/blog/$slug/edit'
       path: '/blog/$slug/edit'
@@ -4156,9 +4095,7 @@ interface SiteAdminRouteRouteChildren {
   SiteAdminIndexRoute: typeof SiteAdminIndexRoute
   SiteAdminBlogNewRoute: typeof SiteAdminBlogNewRoute
   SiteAdminBlogIndexRoute: typeof SiteAdminBlogIndexRoute
-  SiteAdminCuratedBuildsIndexRoute: typeof SiteAdminCuratedBuildsIndexRoute
   SiteAdminBlogSlugEditRoute: typeof SiteAdminBlogSlugEditRoute
-  SiteAdminCuratedBuildsIdEditRoute: typeof SiteAdminCuratedBuildsIdEditRoute
 }
 
 const SiteAdminRouteRouteChildren: SiteAdminRouteRouteChildren = {
@@ -4167,9 +4104,7 @@ const SiteAdminRouteRouteChildren: SiteAdminRouteRouteChildren = {
   SiteAdminIndexRoute: SiteAdminIndexRoute,
   SiteAdminBlogNewRoute: SiteAdminBlogNewRoute,
   SiteAdminBlogIndexRoute: SiteAdminBlogIndexRoute,
-  SiteAdminCuratedBuildsIndexRoute: SiteAdminCuratedBuildsIndexRoute,
   SiteAdminBlogSlugEditRoute: SiteAdminBlogSlugEditRoute,
-  SiteAdminCuratedBuildsIdEditRoute: SiteAdminCuratedBuildsIdEditRoute,
 }
 
 const SiteAdminRouteRouteWithChildren = SiteAdminRouteRoute._addFileChildren(
@@ -4847,7 +4782,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiVoidBreakerScoreRoute: ApiVoidBreakerScoreRoute,
   ApiCoinsIndexRoute: ApiCoinsIndexRoute,
   ApiAdminCuratedBuildsImageRoute: ApiAdminCuratedBuildsImageRouteWithChildren,
-  ApiAdminCuratedBuildsReorderRoute: ApiAdminCuratedBuildsReorderRoute,
   ApiGamesSynapseStormLeaderboardRoute: ApiGamesSynapseStormLeaderboardRoute,
   ApiGamesSynapseStormSaveRoute: ApiGamesSynapseStormSaveRoute,
   ApiGamesSynapseStormScoreRoute: ApiGamesSynapseStormScoreRoute,

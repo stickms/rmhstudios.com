@@ -289,7 +289,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
     return (
       <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
         <p className="text-lg font-medium text-site-text mb-1">Sign in to view messages</p>
-        <Link to="/login">
+        <Link to="/login" search={{ callbackURL: undefined }}>
           <Button variant="accent" size="sm">Sign In</Button>
         </Link>
       </div>
@@ -317,10 +317,10 @@ export function ConversationView({ conversationId }: { conversationId: string })
           </Link>
           {otherUser && (
             <Link
-              to={`/@${(otherUser as any).handle || otherUser.id}`}
+              to={`/@${(otherUser as any).handle || otherUser.id}` as string}
               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
             >
-              <UserAvatar src={otherUser.image} alt={otherUser.name || 'User'} size={32} fallbackName={otherUser.name} className="ring-2 ring-site-bg" />
+              <UserAvatar src={otherUser.image ?? undefined} alt={otherUser.name || 'User'} size={32} fallbackName={otherUser.name ?? undefined} className="ring-2 ring-site-bg" />
               <div>
                 <p className="font-(family-name:--site-font-display) font-bold text-sm text-site-text">
                   {otherUser.name || 'Unknown'}
@@ -407,7 +407,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
                   <div className={`flex items-end gap-2 ${isLastInGroup ? 'mb-3' : 'mb-0.5'} ${isSelf ? 'flex-row-reverse' : ''}`}>
                     {/* Avatar — visible only on last message in group */}
                     {isLastInGroup ? (
-                      <UserAvatar src={avatarUser.image} alt={avatarUser.name || 'User'} size={28} fallbackName={avatarUser.name} />
+                      <UserAvatar src={avatarUser.image ?? undefined} alt={avatarUser.name || 'User'} size={28} fallbackName={avatarUser.name ?? undefined} />
                     ) : (
                       <div className="w-7 shrink-0" />
                     )}

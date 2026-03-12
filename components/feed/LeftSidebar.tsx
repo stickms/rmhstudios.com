@@ -16,7 +16,7 @@ import { useUnreadCount } from '@/lib/useUnreadCount';
 
 const navLinks = [
   { href: '/', label: 'Home', icon: Home },
-  { href: '/builds', label: 'Curated Builds', icon: Package },
+  { href: '/builds', label: 'Official Builds', icon: Package },
   { href: '/user-builds', label: 'User Builds', icon: Hammer },
   { href: '/blog', label: 'Blog', icon: BookOpen },
   { href: '/wallet', label: 'Wallet', icon: Wallet },
@@ -126,7 +126,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         {/* Dynamic Profile link (shown when logged in) */}
         {session && (
           <Link
-            href={`/@${(session.user as any).handle || session.user.id}`}
+            to={`/@${(session.user as any).handle || session.user.id}` as string}
             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${itemJustifyClass} ${
               pathname?.startsWith('/profile') || pathname?.startsWith('/@')
                 ? 'text-site-accent bg-site-accent-dim'
@@ -141,7 +141,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         {/* Messages link (shown when logged in) */}
         {session && (
           <Link
-            href="/messages"
+            to="/messages"
             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${itemJustifyClass} ${
               pathname?.startsWith('/messages')
                 ? 'text-site-accent bg-site-accent-dim'
@@ -163,7 +163,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         {/* Admin Link (shown when user is admin) */}
         {session && (session.user as any).isAdmin && (
           <Link
-            href="/admin"
+            to="/admin"
             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${itemJustifyClass} ${
               pathname?.startsWith('/admin')
                 ? 'text-site-accent bg-site-accent-dim'
@@ -249,7 +249,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         ) : session ? (
           <div className="relative flex items-center gap-2" ref={userMenuRef}>
             <Link
-              href={`/@${(session.user as any).handle || session.user.id}`}
+              to={`/@${(session.user as any).handle || session.user.id}` as string}
               className={`flex items-center gap-2 px-2 hover:bg-site-surface rounded-xl transition-colors py-1 flex-1 min-w-0 ${itemJustifyClass}`}
             >
               <UserAvatar src={resolvedUser?.image || session.user.image} alt={resolvedUser?.name || session.user.name || 'User'} size={32} fallbackName={resolvedUser?.name || session.user.name} className="ring-2 ring-site-bg" />
@@ -293,7 +293,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
             )}
           </div>
         ) : (
-          <Link to="/login">
+          <Link to="/login" search={{ callbackURL: undefined }}>
             <Button variant="accent" size="sm" className="w-full">
               <User className={`w-4 h-4 ${iconMrClass}`} />
               <span className={labelClass}>Sign In</span>

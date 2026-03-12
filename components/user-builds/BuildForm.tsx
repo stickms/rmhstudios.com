@@ -222,11 +222,11 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
             {technologies.map((tech) => (
               <span
                 key={tech}
-                className="flex items-center gap-1 px-2 py-1 rounded bg-violet-500/20 text-violet-400 text-xs"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-violet-500/20 text-violet-400 text-xs"
               >
                 {tech}
-                <button type="button" onClick={() => toggleTechnology(tech)}>
-                  <X className="w-3 h-3" />
+                <button type="button" onClick={() => toggleTechnology(tech)} className="p-0.5 hover:bg-violet-500/30 rounded transition-colors" aria-label={`Remove ${tech}`}>
+                  <X className="w-3.5 h-3.5" />
                 </button>
               </span>
             ))}
@@ -259,8 +259,8 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
                 className="flex items-center gap-1 px-2 py-1 rounded bg-site-surface border border-site-border text-site-text-muted text-xs"
               >
                 #{tag}
-                <button type="button" onClick={() => removeTag(tag)}>
-                  <X className="w-3 h-3" />
+                <button type="button" onClick={() => removeTag(tag)} className="p-0.5 hover:bg-site-border rounded transition-colors" aria-label={`Remove ${tag}`}>
+                  <X className="w-3.5 h-3.5" />
                 </button>
               </span>
             ))}
@@ -325,16 +325,16 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
       {/* Visibility */}
       <div>
         <label className="block text-sm font-medium text-site-text mb-2">Visibility</label>
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
           {(['PUBLIC', 'UNLISTED', 'PRIVATE'] as const).map((v) => (
-            <label key={v} className="flex items-center gap-2 cursor-pointer">
+            <label key={v} className="flex items-center gap-2 cursor-pointer py-1">
               <input
                 type="radio"
                 name="visibility"
                 value={v}
                 checked={visibility === v}
                 onChange={() => setVisibility(v)}
-                className="w-4 h-4 text-violet-500"
+                className="w-5 h-5 text-violet-500"
               />
               <span className="text-sm text-site-text capitalize">{v.toLowerCase()}</span>
             </label>

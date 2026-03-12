@@ -4,7 +4,7 @@ export interface AppInfo {
     description: string;
     longDescription: string;
     href: string;
-    status: string;
+    status?: string;
     cta: string;
     isSteam: boolean;
 
@@ -31,7 +31,6 @@ export const apps: AppInfo[] = [
         longDescription:
             'RMHTube is a real-time watch party platform. Create a room, share the code, and watch YouTube, Twitch, or direct videos in perfect sync with friends. Queue up media, vote to skip, react live, and chat — all powered by WebSocket magic.',
         href: '/rmhtube',
-        status: 'Beta',
         cta: 'Watch Together',
         isSteam: false,
         gradient: 'from-red-500 via-pink-500 to-purple-600',
@@ -84,7 +83,6 @@ export const apps: AppInfo[] = [
         longDescription:
             'RMH Type is a competitive typing platform. Practice solo to improve your WPM, or create a room to race friends on the same passage simultaneously. Track your progress on the global leaderboard and climb the ranks.',
         href: '/rmhtype',
-        status: 'Beta',
         cta: 'Start Typing',
         isSteam: false,
         gradient: 'from-emerald-500 via-teal-500 to-cyan-600',
@@ -118,7 +116,6 @@ export const apps: AppInfo[] = [
         longDescription:
             'RMH Study brings the Pomodoro technique to a social setting. Create a study room, invite friends, and stay focused together with synced timers. Track your focus time, set session goals, and climb the study leaderboard.',
         href: '/rmhstudy',
-        status: 'Beta',
         cta: 'Start Studying',
         isSteam: false,
         gradient: 'from-amber-500 via-orange-500 to-rose-500',

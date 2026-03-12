@@ -136,7 +136,7 @@ export function LaundryUI({
                     <div className="mb-4">
                       <p className="text-xs text-red-300 mb-2">Sign in to save your score!</p>
                       <Button
-                        onClick={() => navigate({ to: '/login' })}
+                        onClick={() => navigate({ to: '/login', search: { callbackURL: undefined } })}
                         className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold"
                       >
                         Sign In to Submit
@@ -164,7 +164,7 @@ export function LaundryUI({
               {!gameOver && (
                 !session.data ? (
                   <Button
-                    onClick={() => navigate({ to: '/login' })}
+                    onClick={() => navigate({ to: '/login', search: { callbackURL: undefined } })}
                     className="bg-zinc-800 hover:bg-zinc-700 text-white font-bold px-8 py-3 rounded-lg flex items-center gap-2 text-lg mx-auto"
                   >
                     Sign In to Play

@@ -11,7 +11,7 @@ export function BuildsLayoutClient({
 }) {
   const pathname = useLocation({ select: (loc) => loc.pathname });
 
-  let title = 'Curated Builds';
+  let title = 'Official Builds';
   let backHref: string | undefined = undefined;
 
   if (pathname === '/builds/games') {

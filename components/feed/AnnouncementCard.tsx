@@ -107,7 +107,7 @@ export function AnnouncementCard({ item, variant }: AnnouncementCardProps) {
           {/* CTA */}
           {item.href && (
             <Link
-              href={item.href}
+              to={item.href}
               className="inline-flex items-center gap-1 text-sm text-site-accent hover:text-site-accent-hover mt-2 transition-colors"
             >
               {variant === 'product' ? 'Check it out' : 'Read more'}

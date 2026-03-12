@@ -27,9 +27,19 @@ vi.mock('../../../lib/auth', () => ({
   },
 }));
 
-// Mock next/headers
-vi.mock('next/headers', () => ({
-  headers: vi.fn().mockResolvedValue(new Headers()),
+// Mock user-display
+vi.mock('../../../lib/user-display', () => ({
+  resolveUserDisplay: vi.fn((user: any) => ({
+    name: user?.name ?? null,
+    image: user?.image ?? null,
+  })),
+}));
+
+// Mock @tanstack/react-router to stub createFileRoute
+vi.mock('@tanstack/react-router', () => ({
+  createFileRoute: (_path: string) => (opts: any) => ({
+    options: opts,
+  }),
 }));
 
 // Mock Prisma
@@ -58,6 +68,16 @@ vi.mock('../../../lib/prisma', () => ({
 import { rateLimit } from '../../../lib/rate-limit';
 const mockRateLimit = vi.mocked(rateLimit);
 
+// ─── Helper to extract GET handler from TanStack route ──────────
+
+async function getHandler(modulePath: string) {
+  const mod = await import(modulePath);
+  // createFileRoute returns a function that receives options and returns { options }
+  // The Route export is the result of calling that function
+  const route = mod.Route;
+  return route.options.server.handlers.GET as (ctx: { request: Request }) => Promise<Response>;
+}
+
 describe('REST API — Leaderboard (§3.1)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -66,18 +86,18 @@ describe('REST API — Leaderboard (§3.1)', () => {
 
   it('should return 429 when rate limited', async () => {
     mockRateLimit.mockReturnValue({ allowed: false, retryAfter: 30 });
-    const { GET } = await import('../../../app/api/rmhbox/leaderboard/route');
+    const GET = await getHandler('../../../app/routes/api/rmhbox/leaderboard');
     const req = new Request('http://localhost/api/rmhbox/leaderboard?period=all-time&metric=score');
-    const res = await GET(req as Parameters<typeof GET>[0]);
+    const res = await GET({ request: req });
     expect(res.status).toBe(429);
     const data = await res.json();
     expect(data.retryAfter).toBe(30);
   });
 
   it('should return empty entries when no profiles exist', async () => {
-    const { GET } = await import('../../../app/api/rmhbox/leaderboard/route');
+    const GET = await getHandler('../../../app/routes/api/rmhbox/leaderboard');
     const req = new Request('http://localhost/api/rmhbox/leaderboard?period=all-time&metric=score');
-    const res = await GET(req as Parameters<typeof GET>[0]);
+    const res = await GET({ request: req });
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.entries).toEqual([]);
@@ -92,9 +112,9 @@ describe('REST API — Leaderboard (§3.1)', () => {
     ]);
     mockPrisma.rMHboxProfile.count.mockResolvedValue(2);
 
-    const { GET } = await import('../../../app/api/rmhbox/leaderboard/route');
+    const GET = await getHandler('../../../app/routes/api/rmhbox/leaderboard');
     const req = new Request('http://localhost/api/rmhbox/leaderboard?period=all-time&metric=score');
-    const res = await GET(req as Parameters<typeof GET>[0]);
+    const res = await GET({ request: req });
     const data = await res.json();
 
     expect(data.entries).toHaveLength(2);
@@ -105,9 +125,9 @@ describe('REST API — Leaderboard (§3.1)', () => {
   });
 
   it('should clamp limit parameter to max 50', async () => {
-    const { GET } = await import('../../../app/api/rmhbox/leaderboard/route');
+    const GET = await getHandler('../../../app/routes/api/rmhbox/leaderboard');
     const req = new Request('http://localhost/api/rmhbox/leaderboard?limit=100');
-    await GET(req as Parameters<typeof GET>[0]);
+    await GET({ request: req });
 
     // findMany should be called with take: 50 (clamped)
     expect(mockPrisma.rMHboxProfile.findMany).toHaveBeenCalledWith(
@@ -116,9 +136,9 @@ describe('REST API — Leaderboard (§3.1)', () => {
   });
 
   it('should default metric to score', async () => {
-    const { GET } = await import('../../../app/api/rmhbox/leaderboard/route');
+    const GET = await getHandler('../../../app/routes/api/rmhbox/leaderboard');
     const req = new Request('http://localhost/api/rmhbox/leaderboard');
-    const res = await GET(req as Parameters<typeof GET>[0]);
+    const res = await GET({ request: req });
     const data = await res.json();
     expect(data.metric).toBe('score');
   });
@@ -131,16 +151,16 @@ describe('REST API — Stats (§3.2)', () => {
   });
 
   it('should return 400 when userId is missing', async () => {
-    const { GET } = await import('../../../app/api/rmhbox/stats/route');
+    const GET = await getHandler('../../../app/routes/api/rmhbox/stats');
     const req = new Request('http://localhost/api/rmhbox/stats');
-    const res = await GET(req as Parameters<typeof GET>[0]);
+    const res = await GET({ request: req });
     expect(res.status).toBe(400);
   });
 
   it('should return empty stats for unknown user', async () => {
-    const { GET } = await import('../../../app/api/rmhbox/stats/route');
+    const GET = await getHandler('../../../app/routes/api/rmhbox/stats');
     const req = new Request('http://localhost/api/rmhbox/stats?userId=unknown');
-    const res = await GET(req as Parameters<typeof GET>[0]);
+    const res = await GET({ request: req });
     const data = await res.json();
     expect(data.global).toBeNull();
     expect(data.recentMatches).toEqual([]);
@@ -161,10 +181,11 @@ describe('REST API — Stats (§3.2)', () => {
         'emoji-cinema': { gamesPlayed: 5, wins: 1, bestScore: 150, totalScore: 700 },
       },
     });
+    mockPrisma.rMHboxMatchPlayer.findMany.mockResolvedValue([]);
 
-    const { GET } = await import('../../../app/api/rmhbox/stats/route');
+    const GET = await getHandler('../../../app/routes/api/rmhbox/stats');
     const req = new Request('http://localhost/api/rmhbox/stats?userId=user-alice');
-    const res = await GET(req as Parameters<typeof GET>[0]);
+    const res = await GET({ request: req });
     const data = await res.json();
 
     expect(data.global.totalGamesPlayed).toBe(10);
@@ -176,9 +197,9 @@ describe('REST API — Stats (§3.2)', () => {
 
   it('should return 429 when rate limited', async () => {
     mockRateLimit.mockReturnValue({ allowed: false, retryAfter: 15 });
-    const { GET } = await import('../../../app/api/rmhbox/stats/route');
+    const GET = await getHandler('../../../app/routes/api/rmhbox/stats');
     const req = new Request('http://localhost/api/rmhbox/stats?userId=test');
-    const res = await GET(req as Parameters<typeof GET>[0]);
+    const res = await GET({ request: req });
     expect(res.status).toBe(429);
   });
 });
@@ -191,9 +212,9 @@ describe('REST API — History (§3.3)', () => {
 
   it('should return 404 for unknown matchId', async () => {
     mockPrisma.rMHboxMatch.findUnique.mockResolvedValue(null);
-    const { GET } = await import('../../../app/api/rmhbox/history/route');
+    const GET = await getHandler('../../../app/routes/api/rmhbox/history');
     const req = new Request('http://localhost/api/rmhbox/history?matchId=nonexistent');
-    const res = await GET(req as Parameters<typeof GET>[0]);
+    const res = await GET({ request: req });
     expect(res.status).toBe(404);
   });
 
@@ -215,9 +236,9 @@ describe('REST API — History (§3.3)', () => {
       ],
     });
 
-    const { GET } = await import('../../../app/api/rmhbox/history/route');
+    const GET = await getHandler('../../../app/routes/api/rmhbox/history');
     const req = new Request('http://localhost/api/rmhbox/history?matchId=match-1');
-    const res = await GET(req as Parameters<typeof GET>[0]);
+    const res = await GET({ request: req });
     const data = await res.json();
 
     expect(data.match.id).toBe('match-1');
@@ -231,15 +252,15 @@ describe('REST API — History (§3.3)', () => {
       {
         id: 'match-1', minigameId: 'rhyme-time', lobbyId: 'L1',
         startedAt: new Date(), endedAt: new Date(), durationMs: 5000,
-        winnerUserId: 'user-alice', playerCount: 2,
+        winnerUserId: 'user-alice', playerCount: 2, gameLog: null,
         players: [{ userId: 'user-alice', userName: 'Alice', rank: 1, score: 200, wasWinner: true }],
       },
     ]);
     mockPrisma.rMHboxMatch.count.mockResolvedValue(1);
 
-    const { GET } = await import('../../../app/api/rmhbox/history/route');
+    const GET = await getHandler('../../../app/routes/api/rmhbox/history');
     const req = new Request('http://localhost/api/rmhbox/history?userId=user-alice');
-    const res = await GET(req as Parameters<typeof GET>[0]);
+    const res = await GET({ request: req });
     const data = await res.json();
 
     expect(data.matches).toHaveLength(1);
@@ -248,9 +269,9 @@ describe('REST API — History (§3.3)', () => {
 
   it('should clamp limit parameter to max 50', async () => {
     mockPrisma.rMHboxMatch.count.mockResolvedValue(0);
-    const { GET } = await import('../../../app/api/rmhbox/history/route');
+    const GET = await getHandler('../../../app/routes/api/rmhbox/history');
     const req = new Request('http://localhost/api/rmhbox/history?limit=200');
-    await GET(req as Parameters<typeof GET>[0]);
+    await GET({ request: req });
 
     expect(mockPrisma.rMHboxMatch.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ take: 50 }),
@@ -259,9 +280,9 @@ describe('REST API — History (§3.3)', () => {
 
   it('should return 429 when rate limited', async () => {
     mockRateLimit.mockReturnValue({ allowed: false, retryAfter: 10 });
-    const { GET } = await import('../../../app/api/rmhbox/history/route');
+    const GET = await getHandler('../../../app/routes/api/rmhbox/history');
     const req = new Request('http://localhost/api/rmhbox/history');
-    const res = await GET(req as Parameters<typeof GET>[0]);
+    const res = await GET({ request: req });
     expect(res.status).toBe(429);
   });
 });

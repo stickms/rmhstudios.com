@@ -111,7 +111,7 @@ export function NewsHero({ articles }: NewsHeroProps) {
                                         </p>
 
                                         <Link
-                                            to={`/news/${article.slug}`}
+                                            to={`/news/${article.slug}` as string}
                                             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-(--site-accent) text-white text-sm font-bold hover:opacity-90 transition-opacity"
                                         >
                                             Read Our Take <ArrowRight className="w-4 h-4" />

@@ -63,34 +63,43 @@ function deduplicateReposts(items: FeedItem[], windowSize = 2): FeedItem[] {
 
 /** Build "virtual" announcement feed items from static data sources. */
 async function getAnnouncementItems(filter: FeedFilter): Promise<FeedItem[]> {
+  const { games } = await import("@/lib/games");
+  const { apps } = await import("@/lib/apps");
   const items: FeedItem[] = [];
 
   if (filter === "all" || filter === "app" || filter === "game") {
-    const curatedBuilds = await prisma.userBuild.findMany({
-      where: {
-        isCurated: true,
-        visibility: { not: "PRIVATE" }
-      },
-      include: { category: true }
-    });
-
-    for (const b of curatedBuilds) {
-      if ((filter !== "all" && filter !== "game") && b.category?.slug === "games") continue;
-      if ((filter !== "all" && filter !== "app") && b.category?.slug === "apps") continue;
-      
-      items.push({
-        id: `build:${b.id}`,
-        type: b.category?.slug === "games" ? "game_announcement" : "app_announcement",
-        createdAt: "2025-01-01T00:00:00.000Z",
-        title: b.title,
-        description: b.description,
-        href: b.demoUrl || b.repoUrl || `/builds/${b.slug}`,
-        imagePath: b.thumbnailUrl ?? undefined,
-        tags: Array.isArray(b.technologies) ? b.technologies as string[] : [],
-        // Gradient and iconName can stay as defaults or be derived from the DB later
-        gradient: 'from-site-surface to-site-surface-hover',
-        iconName: b.category?.slug === "games" ? "gamepad-2" : "app-window",
-      });
+    if (filter === "all" || filter === "game") {
+      for (const g of games) {
+        items.push({
+          id: `build:${g.id}`,
+          type: "game_announcement",
+          createdAt: "2025-01-01T00:00:00.000Z",
+          title: g.title,
+          description: g.description,
+          href: g.href,
+          imagePath: g.imagePath,
+          tags: g.tags,
+          gradient: g.gradient,
+          iconName: g.iconName,
+        });
+      }
+    }
+    if (filter === "all" || filter === "app") {
+      for (const a of apps) {
+        if (a.hidden) continue;
+        items.push({
+          id: `build:${a.id}`,
+          type: "app_announcement",
+          createdAt: "2025-01-01T00:00:00.000Z",
+          title: a.title,
+          description: a.description,
+          href: a.href,
+          imagePath: a.imagePath,
+          tags: a.tags,
+          gradient: a.gradient,
+          iconName: a.iconName,
+        });
+      }
     }
   }
 

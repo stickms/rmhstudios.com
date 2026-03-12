@@ -193,7 +193,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
         <div className="flex items-center gap-1.5 text-xs text-site-text-dim mb-2 ml-12">
           <Repeat2 className="w-3.5 h-3.5" />
           <Link
-            href={userProfileHref(freshRepostedBy)}
+            to={userProfileHref(freshRepostedBy)}
             className="hover:underline"
           >
             {freshRepostedBy.name || freshRepostedBy.handle || 'Someone'} reRMHark&apos;d

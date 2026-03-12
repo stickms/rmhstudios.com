@@ -114,8 +114,8 @@ export function BuildDetail({ build: initialBuild, backHref = '/user-builds' }: 
             </span>
           )}
           {build.featured && (
-            <span className="px-2 py-0.5 rounded-full text-xs bg-yellow-500/20 text-yellow-400">
-              Featured
+            <span className="px-2 py-0.5 rounded-full text-xs bg-amber-500/20 text-amber-400">
+              Curated
             </span>
           )}
           {build.visibility !== 'PUBLIC' && (
@@ -130,8 +130,8 @@ export function BuildDetail({ build: initialBuild, backHref = '/user-builds' }: 
 
         {/* Author & Date */}
         <div className="flex items-center gap-4 mb-4">
-          <Link to={`/@${build.user.handle || build.user.id}`} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <UserAvatar src={build.user.image} alt={build.user.name || 'User'} size={40} fallbackName={build.user.name} />
+          <Link to={`/@${build.user.handle || build.user.id}` as string} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+            <UserAvatar src={build.user.image ?? undefined} alt={build.user.name || 'User'} size={40} fallbackName={build.user.name ?? undefined} />
             <div>
               <p className="font-medium text-site-text">{build.user.name || 'Anonymous'}</p>
               {build.user.username && (
@@ -150,7 +150,7 @@ export function BuildDetail({ build: initialBuild, backHref = '/user-builds' }: 
           {isOwner && (
             <div className="ml-auto flex items-center gap-2">
               <Link
-                to={`/user-builds/submit?edit=${build.id}`}
+                to={`/user-builds/submit?edit=${build.id}` as string}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-site-surface border border-site-border text-sm text-site-text-muted hover:text-site-text hover:border-violet-500/50 transition-colors"
               >
                 <Edit className="w-4 h-4" />

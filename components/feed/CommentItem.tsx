@@ -186,7 +186,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
         <div className="flex-1 min-w-0">
           {/* Header */}
           <div className="flex items-center gap-1.5 text-sm">
-            <Link to={`/@${freshCommentUser.handle || freshCommentUser.id}`} className="flex items-center gap-1.5 min-w-0 hover:underline">
+            <Link to={`/@${freshCommentUser.handle || freshCommentUser.id}` as string} className="flex items-center gap-1.5 min-w-0 hover:underline">
               <span className="font-bold text-site-text truncate">
                 {freshCommentUser.name || 'Unknown'}
               </span>

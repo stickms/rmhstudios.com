@@ -5,14 +5,12 @@ import { FeedColumn } from './FeedColumn';
 import { AnimatedMain } from './AnimatedMain';
 
 interface FeedLayoutProps {
-  curatedBuilds: {
+  officialBuilds: {
     id: string;
-    slug: string;
     title: string;
     thumbnailUrl: string | null;
-    likeCount: number;
-    commentCount: number;
-    viewCount: number;
+    href: string;
+    status?: string;
   }[];
   userBuilds: {
     id: string;
@@ -46,7 +44,7 @@ interface FeedLayoutProps {
 }
 
 export function FeedLayout({
-  curatedBuilds,
+  officialBuilds,
   userBuilds,
   recommendedUsers,
   blogPosts,
@@ -61,7 +59,7 @@ export function FeedLayout({
       {/* Right Sidebar - hidden below lg, scrolls with page */}
       <aside className="hidden lg:block w-80 shrink-0 self-start">
         <RightSidebar
-          curatedBuilds={curatedBuilds}
+          officialBuilds={officialBuilds}
           userBuilds={userBuilds}
           recommendedUsers={recommendedUsers}
           blogPosts={blogPosts}

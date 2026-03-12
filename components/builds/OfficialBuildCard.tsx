@@ -8,14 +8,13 @@ export interface OfficialBuild {
     title: string;
     description: string;
     thumbnailUrl: string | null;
-    demoUrl: string | null;
-    repoUrl: string | null;
+    href: string;
     technologies: string[];
     likeCount: number;
     commentCount: number;
     viewCount: number;
     liked: boolean;
-    category?: { slug: string; name: string } | null;
+    status?: string;
 }
 
 interface OfficialBuildCardProps {
@@ -32,8 +31,7 @@ function formatCount(count: number): string {
 
 export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardProps) {
     const router = useRouter();
-    const gradient = 'from-site-surface to-site-surface-hover';
-    const cardUrl = build.demoUrl || build.repoUrl || `/builds/${build.slug}`;
+    const cardUrl = build.href;
     const detailUrl = `/builds/${build.slug}`;
 
     const handleLike = (e: React.MouseEvent) => {
@@ -46,9 +44,9 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
         const target = e.target as HTMLElement;
         if (target.closest('button, a')) return;
 
+        onView?.(build.id);
         const isInternal = cardUrl.startsWith('/');
         if (!isInternal) {
-            onView?.(build.id);
             window.open(cardUrl, '_blank');
         } else {
             router.navigate({ to: cardUrl });
@@ -83,9 +81,18 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
                         <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/40 to-black/10 transition-opacity duration-300 group-hover:from-black/90 group-hover:via-black/60" />
                     </div>
                 ) : (
-                    <div className={`absolute inset-0 w-full h-full bg-linear-to-br ${gradient} flex items-center justify-center`}>
+                    <div className="absolute inset-0 w-full h-full bg-linear-to-br from-site-surface to-site-surface-hover flex items-center justify-center">
                         <span className="text-4xl font-bold text-site-text/80">
                             {build.title}
+                        </span>
+                    </div>
+                )}
+
+                {/* Status badge — only show non-playable statuses */}
+                {build.status && (
+                    <div className="absolute top-3 right-3 z-10">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-black/50 text-white/90 backdrop-blur-sm">
+                            {build.status}
                         </span>
                     </div>
                 )}
