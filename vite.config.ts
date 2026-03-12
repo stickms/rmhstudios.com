@@ -21,6 +21,51 @@ function onwarn(warning: any, warn: any) {
   warn(warning);
 }
 
+// Packages externalized from BOTH Nitro's production server bundle (traceDeps)
+// and Vite's dev SSR bundling (ssr.external).
+const heavyExternals = [
+  // 3D / canvas — large, client-only
+  "three",
+  "@react-three/fiber",
+  "@react-three/drei",
+  "@react-three/rapier",
+  "pixi.js",
+  // Editor — monaco alone is 2.6MB in server bundle
+  "monaco-editor",
+  "@monaco-editor/react",
+  // Charting
+  "recharts",
+  // UI libs
+  "canvas-confetti",
+  "react-player",
+  "emoji-picker-react",
+  "react-easy-crop",
+  "katex",
+  // Audio (native/WASM — can't bundle)
+  "audio-decode",
+  "wasm-audio-decoders",
+  "@wasm-audio-decoders/common",
+  "@wasm-audio-decoders/ogg-vorbis",
+  "@eshaz/web-worker",
+];
+
+// Additional packages for Vite SSR dev bundling only. These have complex
+// re-exports that break Rollup's externalization in Nitro's production build,
+// but work fine with Vite's dev SSR resolver.
+const ssrOnlyExternals = [
+  "framer-motion",
+  "lucide-react",
+  "zod",
+  "@dnd-kit/core",
+  "@dnd-kit/sortable",
+  "@dnd-kit/utilities",
+  "@tiptap/react",
+  "@tiptap/starter-kit",
+  "@tiptap/core",
+  "@tiptap/pm",
+  "@anthropic-ai/sdk",
+];
+
 export default defineConfig({
   customLogger: logger,
   server: {
@@ -35,17 +80,22 @@ export default defineConfig({
     }),
     react(),
     nitro({
-      // Externalize Prisma from Nitro's Rollup server bundle. Without this,
-      // Nitro inlines @prisma/client but leaves a dangling import for
-      // ".prisma/client/default" which is an invalid ESM specifier at runtime.
-      // traceDeps tells Nitro to externalize + trace these into .output/node_modules.
+      // traceDeps externalizes packages from Nitro's Rollup server bundle and
+      // traces them into .output/node_modules for runtime resolution.
+      // NOTE: Vite's ssr.external is ignored by Nitro — this is the only way
+      // to externalize from the production server bundle.
       traceDeps: ["@prisma/client", ".prisma"],
+      rollupConfig: {
+        external: heavyExternals.map((pkg) => new RegExp(`^${pkg.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(/.+)?$`)),
+      },
     }),
   ],
   build: {
+    target: "esnext",
     chunkSizeWarningLimit: 4000,
     minify: "esbuild",
     sourcemap: false,
+    reportCompressedSize: false,
     rollupOptions: { onwarn },
   },
   environments: {
@@ -87,34 +137,8 @@ export default defineConfig({
     },
   },
   ssr: {
-    external: [
-      // Audio libs (native/WASM — can't bundle)
-      "audio-decode",
-      "wasm-audio-decoders",
-      "@wasm-audio-decoders/common",
-      "@wasm-audio-decoders/ogg-vorbis",
-      "@eshaz/web-worker",
-      // Heavy client-only libs — skip SSR bundling, resolve from node_modules at runtime
-      "three",
-      "@react-three/fiber",
-      "@react-three/drei",
-      "@react-three/rapier",
-      "monaco-editor",
-      "@monaco-editor/react",
-      "pixi.js",
-      "recharts",
-      "framer-motion",
-      "canvas-confetti",
-      "react-player",
-      "emoji-picker-react",
-      "react-easy-crop",
-      // Additional heavy libs — skip SSR bundling for faster builds
-      "lucide-react",
-      "katex",
-      "zod",
-      "@dnd-kit/core",
-      "@dnd-kit/sortable",
-      "@dnd-kit/utilities",
-    ],
+    // ssr.external only affects Vite's dev SSR bundling, NOT the Nitro production
+    // server build. For production, traceDeps in the nitro() plugin config is used.
+    external: [...heavyExternals, ...ssrOnlyExternals],
   },
 });
