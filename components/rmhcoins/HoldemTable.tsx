@@ -18,8 +18,8 @@ function CardFace({ card, small, delay }: { card: Card; small?: boolean; delay?:
     return () => clearTimeout(timer);
   }, [delay]);
 
-  const w = small ? 'w-8 h-11' : 'w-10 h-14';
-  const textSize = small ? 'text-[10px]' : 'text-xs';
+  const w = small ? 'w-7 h-10 sm:w-8 sm:h-11' : 'w-9 h-13 sm:w-10 sm:h-14';
+  const textSize = small ? 'text-[9px] sm:text-[10px]' : 'text-[11px] sm:text-xs';
 
   return (
     <div className={`${w} perspective-500 shrink-0`}>
@@ -35,7 +35,7 @@ function CardFace({ card, small, delay }: { card: Card; small?: boolean; delay?:
 }
 
 function CardBack({ small }: { small?: boolean }) {
-  const w = small ? 'w-8 h-11' : 'w-10 h-14';
+  const w = small ? 'w-7 h-10 sm:w-8 sm:h-11' : 'w-9 h-13 sm:w-10 sm:h-14';
   return (
     <div className={`${w} rounded-md border border-blue-500/30 bg-linear-to-br from-blue-800 to-blue-950 shrink-0`} />
   );
@@ -55,18 +55,18 @@ function PlayerSeatView({ player, isCurrentTurn, isMe }: {
   };
 
   return (
-    <div className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
+    <div className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all shrink-0 min-w-0 ${
       isCurrentTurn ? 'ring-2 ring-emerald-500 bg-emerald-500/5 animate-pulse' : ''
     } ${player.folded || player.sittingOut ? 'opacity-40' : ''} ${isMe ? 'bg-site-surface/50' : ''}`}>
       {/* Name + position badges */}
-      <div className="flex items-center gap-1">
-        {player.avatarUrl && <img src={player.avatarUrl} alt="" className="w-4 h-4 rounded-full" />}
-        <span className={`text-xs font-bold truncate max-w-15 ${isMe ? 'text-emerald-400' : 'text-site-text'}`}>
+      <div className="flex items-center gap-1 flex-wrap justify-center">
+        {player.avatarUrl && <img src={player.avatarUrl} alt="" className="w-4 h-4 rounded-full shrink-0" />}
+        <span className={`text-xs font-bold truncate max-w-14 sm:max-w-20 ${isMe ? 'text-emerald-400' : 'text-site-text'}`}>
           {isMe ? 'You' : player.userName}
         </span>
-        {player.isDealer && <span className="text-[9px] font-bold bg-yellow-500/30 text-yellow-400 px-1 rounded">D</span>}
-        {player.isSmallBlind && <span className="text-[9px] font-bold bg-blue-500/30 text-blue-400 px-1 rounded">SB</span>}
-        {player.isBigBlind && <span className="text-[9px] font-bold bg-purple-500/30 text-purple-400 px-1 rounded">BB</span>}
+        {player.isDealer && <span className="text-[8px] sm:text-[9px] font-bold bg-yellow-500/30 text-yellow-400 px-1 rounded">D</span>}
+        {player.isSmallBlind && <span className="text-[8px] sm:text-[9px] font-bold bg-blue-500/30 text-blue-400 px-1 rounded">SB</span>}
+        {player.isBigBlind && <span className="text-[8px] sm:text-[9px] font-bold bg-purple-500/30 text-purple-400 px-1 rounded">BB</span>}
       </div>
 
       {/* Hole cards */}
@@ -124,7 +124,7 @@ export function HoldemTable() {
   } = useHoldemStore();
 
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="flex flex-col items-center gap-3 sm:gap-4">
       {/* Pot */}
       {pot > 0 && (
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-900/40 border border-emerald-700/30">
@@ -133,8 +133,8 @@ export function HoldemTable() {
         </div>
       )}
 
-      {/* Community cards */}
-      <div className={`flex items-center gap-1.5 p-3 rounded-xl bg-emerald-900/30 border border-emerald-700/20 min-h-20`}>
+      {/* Community cards — responsive sizing */}
+      <div className={`flex items-center gap-1 sm:gap-1.5 p-2.5 sm:p-3 rounded-xl bg-emerald-900/30 border border-emerald-700/20 min-h-18 sm:min-h-20`}>
         {communityCards.length > 0 ? (
           communityCards.map((card, i) => (
             <CardFace key={`${card.rank}${card.suit}${i}`} card={card} delay={i * 500} />
@@ -175,19 +175,21 @@ export function HoldemTable() {
         </div>
       )}
 
-      {/* Players */}
+      {/* Players — scrollable horizontally on mobile */}
       {players.length > 0 ? (
-        <div className="flex flex-wrap justify-center gap-2 w-full">
-          {[...players]
-            .sort((a, b) => a.seatIndex - b.seatIndex)
-            .map((player) => (
-              <PlayerSeatView
-                key={player.userId}
-                player={player}
-                isCurrentTurn={currentTurnUserId === player.userId}
-                isMe={player.userId === myUserId}
-              />
-            ))}
+        <div className="w-full overflow-x-auto -mx-1 px-1">
+          <div className="flex justify-center gap-2 min-w-0">
+            {[...players]
+              .sort((a, b) => a.seatIndex - b.seatIndex)
+              .map((player) => (
+                <PlayerSeatView
+                  key={player.userId}
+                  player={player}
+                  isCurrentTurn={currentTurnUserId === player.userId}
+                  isMe={player.userId === myUserId}
+                />
+              ))}
+          </div>
         </div>
       ) : (
         <p className="text-sm text-site-text-dim">No players at the table yet.</p>

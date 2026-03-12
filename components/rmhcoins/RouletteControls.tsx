@@ -99,25 +99,29 @@ export function RouletteControls({ coins }: Props) {
 
   // Betting phase
   if (tablePhase === 'betting') {
+    const isLow = countdown !== null && countdown <= 5;
+
     return (
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2.5">
         {countdown !== null && (
           <div className="text-center">
             <span className="text-sm text-site-text-dim">Betting closes in </span>
-            <span className="font-bold text-violet-400">{countdown}s</span>
+            <span className={`font-bold text-lg tabular-nums ${isLow ? 'text-violet-300 animate-pulse' : 'text-violet-400'}`}>
+              {countdown}s
+            </span>
           </div>
         )}
 
-        {/* Chip selector */}
-        <div className="flex flex-col gap-0.5">
+        {/* Chip selector — circular chips, scrollable on tiny screens */}
+        <div className="flex flex-col gap-1">
           <span className="text-xs text-site-text-dim text-center">Select chip value</span>
-          <div className="flex justify-center gap-2 py-1">
+          <div className="flex justify-center gap-2 py-1 overflow-x-auto">
             {CHIP_VALUES.map((val) => (
               <button
                 key={val}
                 onClick={() => setSelectedChip(val)}
                 disabled={val > coins}
-                className={`relative w-11 h-11 rounded-full font-bold text-xs transition-all ${
+                className={`relative w-10 h-10 sm:w-11 sm:h-11 rounded-full font-bold text-xs shrink-0 transition-all active:scale-90 ${
                   selectedChip === val
                     ? 'bg-violet-600 text-white ring-2 ring-violet-400 ring-offset-1 ring-offset-site-bg'
                     : 'bg-site-surface border-2 border-site-border text-site-text hover:border-violet-500/50'
@@ -127,11 +131,11 @@ export function RouletteControls({ coins }: Props) {
               </button>
             ))}
           </div>
-          <p className="text-xs text-site-text-dim text-center">Place your bets on the board above</p>
+          <p className="text-[11px] text-site-text-dim text-center">Place your bets on the board above</p>
         </div>
 
-        {/* Quick bet buttons */}
-        <div className="flex flex-col gap-1.5">
+        {/* Quick bet buttons — 3 columns on mobile, 6 on desktop */}
+        <div className="flex flex-col gap-1">
           <span className="text-xs text-site-text-dim text-center">Quick bets</span>
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
             {QUICK_BETS.map(({ type, label, color }) => (
@@ -139,7 +143,7 @@ export function RouletteControls({ coins }: Props) {
                 key={type}
                 onClick={() => handleQuickBet(type)}
                 disabled={selectedChip > coins}
-                className={`px-2 py-1.5 text-xs font-bold rounded-lg transition-all ${color} disabled:opacity-50 disabled:cursor-not-allowed`}
+                className={`min-h-10 px-2 py-2 text-xs font-bold rounded-xl transition-all active:scale-95 ${color} disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 {label}
               </button>
@@ -149,7 +153,7 @@ export function RouletteControls({ coins }: Props) {
 
         {/* Current bets summary */}
         {stagedBets.length > 0 && (
-          <div className="flex flex-col gap-1.5 p-2 rounded-lg bg-site-surface border border-site-border">
+          <div className="flex flex-col gap-1.5 p-2.5 rounded-xl bg-site-surface border border-site-border">
             <div className="flex items-center justify-between">
               <span className="text-xs text-site-text-dim">Your bets</span>
               <div className="flex items-center gap-1">
@@ -158,7 +162,7 @@ export function RouletteControls({ coins }: Props) {
               </div>
             </div>
             {stagedBets.length > 0 && (
-              <div className="flex flex-wrap gap-1">
+              <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto">
                 {stagedBets.map((bet, i) => (
                   <span
                     key={i}
@@ -172,7 +176,7 @@ export function RouletteControls({ coins }: Props) {
             <Button
               onClick={handleClearBets}
               variant="outline"
-              className="w-full text-xs rounded-lg"
+              className="w-full min-h-10 text-xs rounded-xl"
             >
               Clear All Bets
             </Button>
@@ -209,7 +213,7 @@ export function RouletteControls({ coins }: Props) {
           <div className="flex flex-col items-center gap-1">
             <span className="text-xs text-site-text-dim uppercase tracking-wider">Winning Number</span>
             <div
-              className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-white shadow-lg ${
+              className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-xl sm:text-2xl font-bold text-white shadow-lg ${
                 resultColor === 'red' ? 'bg-red-600'
                 : resultColor === 'green' ? 'bg-emerald-600'
                 : 'bg-gray-800'

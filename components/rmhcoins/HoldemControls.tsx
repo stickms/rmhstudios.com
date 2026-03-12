@@ -12,7 +12,6 @@ import type { Card } from '@/lib/holdem/logic';
 function MyHandRank({ holeCards, communityCards }: { holeCards: (Card | null)[] | null; communityCards: Card[] }) {
   const handLabel = useMemo(() => {
     if (!holeCards || holeCards.length < 2 || communityCards.length < 3) return null;
-    // Filter out null cards (partial reveals)
     const validCards = holeCards.filter((c): c is Card => c !== null);
     if (validCards.length < 2) return null;
     const allCards = [...validCards, ...communityCards];
@@ -78,7 +77,7 @@ export function HoldemControls() {
   // Rebuy button for busted players
   const rebuyButton = isBusted ? (
     <Button onClick={() => emit(C2S.REBUY)}
-      className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-sm">
+      className="min-h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm">
       Rebuy ({roomInfo?.buyIn ?? 0} coins)
     </Button>
   ) : null;
@@ -86,12 +85,12 @@ export function HoldemControls() {
   // Sit in/out button shown when sitting out or during waiting/results
   const sitButton = myPlayer && isSittingOut && !isBusted ? (
     <Button onClick={() => emit(C2S.SIT_IN)}
-      className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-sm">
+      className="min-h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm">
       Sit In
     </Button>
   ) : myPlayer && !isSittingOut && (phase === 'waiting' || phase === 'results') ? (
     <Button onClick={() => emit(C2S.SIT_OUT)} variant="outline"
-      className="rounded-lg text-sm">
+      className="min-h-10 rounded-xl text-sm">
       Sit Out
     </Button>
   ) : null;
@@ -115,7 +114,7 @@ export function HoldemControls() {
             Buy-in: <span className="text-site-text font-bold">{roomInfo.buyIn}</span> coins
             {roomInfo.joinCode && (
               <span className="ml-2">
-                Join code: <span className="font-mono font-bold text-emerald-400">{roomInfo.joinCode}</span>
+                Code: <span className="font-mono font-bold text-emerald-400">{roomInfo.joinCode}</span>
               </span>
             )}
           </p>
@@ -160,15 +159,15 @@ export function HoldemControls() {
                 <p className="text-xs text-site-text-dim">Show your cards?</p>
                 <div className="flex gap-2">
                   <button onClick={() => toggleCard(0)}
-                    className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition-colors ${showingCards[0] ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-site-surface border-site-border text-site-text-dim hover:border-emerald-500'}`}>
+                    className={`min-h-10 px-3 py-1.5 text-xs font-semibold rounded-xl border transition-colors active:scale-95 ${showingCards[0] ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-site-surface border-site-border text-site-text-dim hover:border-emerald-500'}`}>
                     Card 1
                   </button>
                   <button onClick={() => toggleCard(1)}
-                    className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition-colors ${showingCards[1] ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-site-surface border-site-border text-site-text-dim hover:border-emerald-500'}`}>
+                    className={`min-h-10 px-3 py-1.5 text-xs font-semibold rounded-xl border transition-colors active:scale-95 ${showingCards[1] ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-site-surface border-site-border text-site-text-dim hover:border-emerald-500'}`}>
                     Card 2
                   </button>
                   <button onClick={toggleBoth}
-                    className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition-colors ${showingCards[0] && showingCards[1] ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-site-surface border-site-border text-site-text-dim hover:border-emerald-500'}`}>
+                    className={`min-h-10 px-3 py-1.5 text-xs font-semibold rounded-xl border transition-colors active:scale-95 ${showingCards[0] && showingCards[1] ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-site-surface border-site-border text-site-text-dim hover:border-emerald-500'}`}>
                     Both
                   </button>
                 </div>
@@ -234,26 +233,27 @@ export function HoldemControls() {
         </p>
       </div>
 
-      <div className="flex gap-2">
+      {/* Action buttons — grid for consistent sizing */}
+      <div className="grid grid-cols-3 gap-2">
         <Button onClick={() => emit(C2S.FOLD)}
-          className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-lg">
+          className="min-h-12 bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-xl text-sm">
           Fold
         </Button>
 
         {canCheck ? (
           <Button onClick={() => emit(C2S.CHECK)}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg">
+            className="min-h-12 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm">
             Check
           </Button>
         ) : (
           <Button onClick={() => emit(C2S.CALL)}
-            className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg">
+            className="min-h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm">
             Call {Math.min(toCall, myChips)}
           </Button>
         )}
 
         <Button onClick={() => emit(C2S.ALL_IN)}
-          className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg">
+          className="min-h-12 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-sm">
           All In
         </Button>
       </div>
@@ -261,24 +261,24 @@ export function HoldemControls() {
       {/* Raise controls */}
       {myChips > toCall && (
         <div className="flex flex-col gap-2">
-          {/* Quick-bet presets */}
+          {/* Quick-bet presets — scrollable on mobile */}
           <div className="flex gap-1.5 flex-wrap">
             {[
-              { label: '¼ Pot', value: Math.floor(pot * 0.25) },
-              { label: '½ Pot', value: Math.floor(pot * 0.5) },
-              { label: '¾ Pot', value: Math.floor(pot * 0.75) },
+              { label: '\u00BC Pot', value: Math.floor(pot * 0.25) },
+              { label: '\u00BD Pot', value: Math.floor(pot * 0.5) },
+              { label: '\u00BE Pot', value: Math.floor(pot * 0.75) },
               { label: 'Pot', value: pot },
-              { label: '2×', value: Math.floor(pot * 2) },
+              { label: '2\u00D7', value: Math.floor(pot * 2) },
             ]
               .filter((p) => p.value >= minRaiseTotal && p.value < myChips + (myPlayer?.currentBet ?? 0))
               .map((p) => (
                 <button key={p.label} onClick={() => setRaiseAmount(String(p.value))}
-                  className="px-2.5 py-1 text-xs font-semibold rounded-md bg-site-surface border border-site-border hover:border-emerald-500 hover:text-emerald-400 text-site-text-dim transition-colors">
+                  className="min-h-9 px-2.5 py-1 text-xs font-semibold rounded-xl bg-site-surface border border-site-border hover:border-emerald-500 hover:text-emerald-400 text-site-text-dim transition-colors active:scale-95">
                   {p.label}
                 </button>
               ))}
             <button onClick={() => setRaiseAmount(String(minRaiseTotal))}
-              className="px-2.5 py-1 text-xs font-semibold rounded-md bg-site-surface border border-site-border hover:border-yellow-500 hover:text-yellow-400 text-site-text-dim transition-colors">
+              className="min-h-9 px-2.5 py-1 text-xs font-semibold rounded-xl bg-site-surface border border-site-border hover:border-yellow-500 hover:text-yellow-400 text-site-text-dim transition-colors active:scale-95">
               Min
             </button>
           </div>
@@ -289,11 +289,11 @@ export function HoldemControls() {
                 placeholder={`Min ${minRaiseTotal}`}
                 value={raiseAmount}
                 onChange={(e) => setRaiseAmount(e.target.value)}
-                className="w-full bg-site-surface border border-site-border rounded-lg px-3 py-2 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50" />
+                className="w-full bg-site-surface border border-site-border rounded-xl px-3 py-2.5 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50" />
               <CoinIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" />
             </div>
             <Button onClick={handleRaise}
-              className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-lg">
+              className="min-h-11 bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-xl">
               Raise
             </Button>
           </div>

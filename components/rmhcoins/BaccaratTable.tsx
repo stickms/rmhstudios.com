@@ -21,7 +21,7 @@ function CardFace({ card, flipDelay }: { card: Card; flipDelay?: number }) {
   }, [flipDelay]);
 
   return (
-    <div className="shrink-0" style={{ width: 52, height: 72, perspective: '600px' }}>
+    <div className="shrink-0 w-11 h-15 sm:w-13 sm:h-18" style={{ perspective: '600px' }}>
       <div
         style={{
           position: 'relative',
@@ -52,8 +52,8 @@ function CardFace({ card, flipDelay }: { card: Card; flipDelay?: number }) {
             transform: 'rotateY(180deg)',
           }}
         >
-          <span className="text-base font-bold text-gray-900">{card.rank}</span>
-          <span className={`text-base ${SUIT_COLORS[card.suit]}`}>{SUIT_SYMBOLS[card.suit]}</span>
+          <span className="text-sm sm:text-base font-bold text-gray-900">{card.rank}</span>
+          <span className={`text-sm sm:text-base ${SUIT_COLORS[card.suit]}`}>{SUIT_SYMBOLS[card.suit]}</span>
         </div>
       </div>
     </div>
@@ -63,10 +63,8 @@ function CardFace({ card, flipDelay }: { card: Card; flipDelay?: number }) {
 function CardBack() {
   return (
     <div
-      className="shrink-0 rounded-lg border border-red-500/30"
+      className="shrink-0 w-11 h-15 sm:w-13 sm:h-18 rounded-lg border border-red-500/30"
       style={{
-        width: 52,
-        height: 72,
         background: 'linear-gradient(135deg, #7f1d1d, #450a0a)',
       }}
     />
@@ -83,9 +81,9 @@ function HandDisplay({ cards, label, value, natural, staggerOffset }: {
   staggerOffset?: number;
 }) {
   return (
-    <div className="flex flex-col items-center gap-2">
-      <span className="text-xs text-site-text-dim font-bold uppercase tracking-wider">{label}</span>
-      <div className="flex gap-1.5">
+    <div className="flex flex-col items-center gap-1.5 sm:gap-2 min-w-0">
+      <span className="text-[10px] sm:text-xs text-site-text-dim font-bold uppercase tracking-wider">{label}</span>
+      <div className="flex gap-1 sm:gap-1.5">
         {cards.length > 0 ? (
           cards.map((card, i) => (
             <CardFace
@@ -103,9 +101,9 @@ function HandDisplay({ cards, label, value, natural, staggerOffset }: {
       </div>
       {value !== null && (
         <div className="flex flex-col items-center gap-0.5">
-          <span className="text-2xl font-bold text-site-text font-mono">{value}</span>
+          <span className="text-xl sm:text-2xl font-bold text-site-text font-mono">{value}</span>
           {natural && (
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 uppercase tracking-wider">
+            <span className="text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 uppercase tracking-wider">
               Natural
             </span>
           )}
@@ -127,8 +125,8 @@ function ResultAnnouncement({ result }: { result: BaccaratResult }) {
   const c = cfg[result];
 
   return (
-    <div className={`text-center py-3 px-6 rounded-xl border ${c.bg} animate-pulse`}>
-      <span className={`text-xl font-bold ${c.color}`}>{c.label}</span>
+    <div className={`text-center py-2.5 sm:py-3 px-4 sm:px-6 rounded-xl border ${c.bg} animate-pulse`}>
+      <span className={`text-lg sm:text-xl font-bold ${c.color}`}>{c.label}</span>
     </div>
   );
 }
@@ -161,7 +159,7 @@ function HistoryScoreboard({ history }: { history: BaccaratResult[] }) {
         {lastResults.map((result, i) => (
           <div
             key={i}
-            className={`w-3.5 h-3.5 rounded-full ${dotColor[result]} ${
+            className={`w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full ${dotColor[result]} ${
               i === lastResults.length - 1 ? 'ring-2 ring-white/50 scale-110' : ''
             }`}
             title={result.charAt(0).toUpperCase() + result.slice(1)}
@@ -236,8 +234,8 @@ export function BaccaratTable() {
         </div>
       )}
 
-      {/* Hands */}
-      <div className={`flex items-start justify-center gap-6 sm:gap-10 p-5 rounded-xl bg-red-900/20 border border-red-700/20 min-h-32 w-full transition-all ${
+      {/* Hands — responsive gap and padding */}
+      <div className={`flex items-start justify-center gap-4 sm:gap-10 p-3 sm:p-5 rounded-xl bg-red-900/20 border border-red-700/20 min-h-28 sm:min-h-32 w-full transition-all ${
         tablePhase === 'dealing' || tablePhase === 'drawing' ? 'ring-1 ring-red-500/30' : ''
       }`}>
         <HandDisplay
@@ -248,10 +246,10 @@ export function BaccaratTable() {
           staggerOffset={0}
         />
 
-        <div className="flex flex-col items-center justify-center py-4">
-          <div className="w-px h-12 bg-red-700/30" />
-          <span className="text-[10px] text-site-text-dim font-bold my-1.5">VS</span>
-          <div className="w-px h-12 bg-red-700/30" />
+        <div className="flex flex-col items-center justify-center py-3 sm:py-4">
+          <div className="w-px h-8 sm:h-12 bg-red-700/30" />
+          <span className="text-[10px] text-site-text-dim font-bold my-1">VS</span>
+          <div className="w-px h-8 sm:h-12 bg-red-700/30" />
         </div>
 
         <HandDisplay
@@ -263,11 +261,11 @@ export function BaccaratTable() {
         />
       </div>
 
-      {/* Players & their bets */}
+      {/* Players & their bets — scrollable on mobile */}
       {activeBets.length > 0 && (
         <div className="w-full flex flex-col gap-1.5">
           <span className="text-[10px] text-site-text-dim uppercase tracking-wider font-bold text-center">Bets at Table</span>
-          <div className="flex flex-wrap justify-center gap-2">
+          <div className="flex flex-wrap justify-center gap-2 max-h-32 overflow-y-auto">
             {activeBets.map((p) => {
               const isMe = p.userId === myUserId;
               const betEntries = (Object.entries(p.bets) as [BetType, number][]).filter(([, v]) => v > 0);

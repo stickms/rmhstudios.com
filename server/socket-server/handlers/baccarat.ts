@@ -239,20 +239,7 @@ function startBettingPhase(room: BaccaratRoom) {
   room.bettingTimer = setTimeout(() => endBettingPhase(room), BETTING_DURATION_MS);
 }
 
-function checkAllBetsPlaced(room: BaccaratRoom) {
-  if (room.phase !== 'betting') return;
-
-  for (const p of room.players.values()) {
-    if (!hasBets(p.bets)) return; // At least one player hasn't bet
-  }
-
-  // All players have placed at least one bet — end early
-  if (room.bettingTimer) {
-    clearTimeout(room.bettingTimer);
-    room.bettingTimer = null;
-  }
-  endBettingPhase(room);
-}
+// checkAllBetsPlaced removed — let the timer run so players can adjust bets
 
 function endBettingPhase(room: BaccaratRoom) {
   if (room.phase !== 'betting') return;
@@ -781,9 +768,6 @@ function leaveRoom(userId: string, socketId: string) {
   broadcastTableState(room);
   broadcastRoomList();
 
-  if (room.phase === 'betting') {
-    checkAllBetsPlaced(room);
-  }
 }
 
 function onUpdateRoom(socket: Socket, payload: unknown) {
@@ -900,8 +884,6 @@ async function onPlaceBet(socket: Socket, payload: unknown) {
 
     socket.emit(S2C.BALANCE_UPDATE, { coins: result });
     broadcastTableState(room);
-
-    checkAllBetsPlaced(room);
   } catch (err) {
     if (err instanceof Error && err.message === 'INSUFFICIENT_COINS') {
       socket.emit(S2C.ERROR, { message: 'Not enough coins.' });
@@ -909,6 +891,55 @@ async function onPlaceBet(socket: Socket, payload: unknown) {
       logger.error({ event: 'bacc_bet_error', userId, error: String(err) });
       socket.emit(S2C.ERROR, { message: 'Failed to place bet.' });
     }
+  }
+}
+
+async function onClearBets(socket: Socket) {
+  const userId = socketToUserId.get(socket.id);
+  if (!userId) {
+    socket.emit(S2C.ERROR, { message: 'Not in a room.' });
+    return;
+  }
+
+  const roomId = userToRoom.get(userId);
+  if (!roomId) return;
+
+  const room = rooms.get(roomId);
+  if (!room || room.phase !== 'betting') {
+    socket.emit(S2C.ERROR, { message: 'Not in betting phase.' });
+    return;
+  }
+
+  if (!checkRateLimit(socket.id, C2S.CLEAR_BETS)) {
+    socket.emit(S2C.ERROR, { message: 'Too many requests.' });
+    return;
+  }
+
+  const player = room.players.get(userId);
+  if (!player) return;
+
+  const refundAmount = player.totalBetThisRound;
+  if (refundAmount <= 0) return;
+
+  try {
+    const prisma = getPrismaClient();
+    const result = await prisma.$transaction(async (tx: any) => {
+      const updated = await tx.userProfile.update({
+        where: { userId },
+        data: { coins: { increment: refundAmount } },
+        select: { coins: true },
+      });
+      return updated.coins;
+    });
+
+    player.bets = emptyBets();
+    player.totalBetThisRound = 0;
+
+    socket.emit(S2C.BALANCE_UPDATE, { coins: result });
+    broadcastTableState(room);
+  } catch (err) {
+    logger.error({ event: 'bacc_clear_bets_error', userId, error: String(err) });
+    socket.emit(S2C.ERROR, { message: 'Failed to clear bets.' });
   }
 }
 
@@ -929,6 +960,7 @@ export function registerBaccaratHandlers(io: Server, socket: Socket): void {
   socket.on(C2S.UPDATE_ROOM, (payload) => onUpdateRoom(socket, payload));
 
   socket.on(C2S.PLACE_BET, (payload) => onPlaceBet(socket, payload));
+  socket.on(C2S.CLEAR_BETS, () => onClearBets(socket));
 }
 
 export function handleBaccaratDisconnect(_io: Server, socket: Socket): void {

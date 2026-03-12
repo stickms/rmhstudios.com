@@ -104,12 +104,16 @@ export function BlackjackControls({ coins }: Props) {
 
   // Betting phase
   if (tablePhase === 'betting') {
+    const isLow = countdown !== null && countdown <= 5;
+
     return (
       <div className="flex flex-col gap-3">
         {countdown !== null && (
           <div className="text-center">
             <span className="text-sm text-site-text-dim">Betting closes in </span>
-            <span className="font-bold text-yellow-500">{countdown}s</span>
+            <span className={`font-bold text-lg tabular-nums ${isLow ? 'text-yellow-500 animate-pulse' : 'text-yellow-400'}`}>
+              {countdown}s
+            </span>
           </div>
         )}
 
@@ -122,24 +126,25 @@ export function BlackjackControls({ coins }: Props) {
           </div>
         ) : (
           <>
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-              <div className="relative flex-1">
+            {/* Bet input + quick amounts — stacked on mobile */}
+            <div className="flex flex-col gap-2">
+              <div className="relative">
                 <input
                   type="number"
                   min={1}
                   max={coins}
                   value={betInput}
                   onChange={(e) => setBetInput(e.target.value)}
-                  className="w-full bg-site-surface border border-site-border rounded-lg px-3 py-2 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500/50"
+                  className="w-full bg-site-surface border border-site-border rounded-xl px-3 py-2.5 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500/50"
                 />
                 <CoinIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" />
               </div>
-              <div className="flex gap-1.5">
+              <div className="grid grid-cols-4 gap-1.5">
                 {[5, 25, 100, 500].map((amt) => (
                   <button
                     key={amt}
                     onClick={() => setQuickBet(amt)}
-                    className="flex-1 sm:flex-none px-3 py-2 text-xs font-bold bg-site-surface border border-site-border rounded-lg text-site-text-dim hover:text-site-text hover:bg-site-surface-hover transition-colors"
+                    className="min-h-10 text-xs font-bold bg-site-surface border border-site-border rounded-xl text-site-text-dim hover:text-site-text hover:bg-site-surface-hover active:scale-95 transition-all"
                   >
                     {amt}
                   </button>
@@ -149,7 +154,7 @@ export function BlackjackControls({ coins }: Props) {
             <Button
               onClick={handlePlaceBet}
               disabled={coins < 1}
-              className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-lg"
+              className="w-full min-h-11 bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-xl"
             >
               Place Bet
             </Button>
@@ -165,15 +170,10 @@ export function BlackjackControls({ coins }: Props) {
 
   // Insurance phase
   if (tablePhase === 'insurance') {
-    const myInsuranceDecision = myPlayer?.insuranceBet !== undefined
-      ? (myPlayer.insuranceBet > 0 ? 'taken' : undefined)
-      : undefined;
     const insuranceCost = Math.floor((myPlayer?.bet ?? 0) / 2);
     const alreadyDecided = myPlayer?.insuranceBet !== undefined && myPlayer.insuranceBet > 0;
     const canAffordInsurance = coins >= insuranceCost;
-    // Check if player has a bet this round (status is not 'waiting')
     const isInRound = myPlayer && myPlayer.status !== 'waiting' && myPlayer.bet > 0;
-    // Check if blackjack (auto-declined)
     const hasBJ = myPlayer?.status === 'blackjack';
 
     if (!isInRound || hasBJ) {
@@ -202,17 +202,17 @@ export function BlackjackControls({ coins }: Props) {
         {alreadyDecided ? (
           <p className="text-sm text-emerald-400 text-center font-bold">Insurance taken!</p>
         ) : (
-          <div className="flex gap-2">
+          <div className="grid grid-cols-2 gap-2">
             <Button
               onClick={() => emit(C2S.TAKE_INSURANCE)}
               disabled={!canAffordInsurance}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg"
+              className="min-h-11 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl"
             >
-              Take Insurance ({insuranceCost})
+              Take ({insuranceCost})
             </Button>
             <Button
               onClick={() => emit(C2S.DECLINE_INSURANCE)}
-              className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-lg"
+              className="min-h-11 bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-xl"
             >
               No Thanks
             </Button>
@@ -224,28 +224,31 @@ export function BlackjackControls({ coins }: Props) {
     );
   }
 
-  // Player turns — my turn
+  // Player turns — my turn — grid layout for action buttons
   if (tablePhase === 'player_turns' && isMyTurn) {
+    const actionCount = 2 + (canDoubleDown ? 1 : 0) + (canSplit ? 1 : 0);
+    const gridCols = actionCount <= 2 ? 'grid-cols-2' : actionCount === 3 ? 'grid-cols-3' : 'grid-cols-2';
+
     return (
       <div className="flex flex-col gap-3">
         <p className="text-sm text-center text-yellow-500 font-bold animate-pulse">Your turn!</p>
-        <div className="flex gap-2">
+        <div className={`grid ${gridCols} gap-2`}>
           <Button
             onClick={() => emit(C2S.HIT)}
-            className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg"
+            className="min-h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm"
           >
             Hit
           </Button>
           <Button
             onClick={() => emit(C2S.STAND)}
-            className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg"
+            className="min-h-12 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-sm"
           >
             Stand
           </Button>
           {canDoubleDown && (
             <Button
               onClick={() => emit(C2S.DOUBLE_DOWN)}
-              className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg"
+              className="min-h-12 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-sm"
             >
               Double
             </Button>
@@ -253,7 +256,7 @@ export function BlackjackControls({ coins }: Props) {
           {canSplit && (
             <Button
               onClick={() => emit(C2S.SPLIT)}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg"
+              className="min-h-12 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm"
             >
               Split
             </Button>

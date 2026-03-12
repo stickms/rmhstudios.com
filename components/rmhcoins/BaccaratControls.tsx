@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
 import { CoinIcon } from './CoinIcon';
 import { useBaccaratStore } from '@/lib/baccarat/store';
 import { getBaccaratSocket } from '@/lib/baccarat/socket';
@@ -96,6 +95,20 @@ export function BaccaratControls({ coins }: Props) {
     emit(C2S.PLACE_BET, { type: betType, amount });
   };
 
+  const handleClearBets = () => {
+    if (totalBet <= 0) return;
+    setLocalBets({
+      player: 0,
+      banker: 0,
+      tie: 0,
+      playerPair: 0,
+      bankerPair: 0,
+      playerDragon: 0,
+      bankerDragon: 0,
+    });
+    emit(C2S.CLEAR_BETS);
+  };
+
   // Idle state
   if (tablePhase === 'idle') {
     return (
@@ -107,54 +120,58 @@ export function BaccaratControls({ coins }: Props) {
 
   // Betting phase
   if (tablePhase === 'betting') {
+    const isLow = countdown !== null && countdown <= 5;
+
     return (
       <div className="flex flex-col gap-3">
         {countdown !== null && (
           <div className="text-center">
             <span className="text-sm text-site-text-dim">Betting closes in </span>
-            <span className="font-bold text-red-500">{countdown}s</span>
+            <span className={`font-bold text-lg tabular-nums ${isLow ? 'text-red-500 animate-pulse' : 'text-red-400'}`}>
+              {countdown}s
+            </span>
           </div>
         )}
 
-        {/* Main bet buttons */}
-        <div className="flex gap-2">
+        {/* Main bet buttons — larger touch targets */}
+        <div className="grid grid-cols-3 gap-2">
           {BET_OPTIONS.map((opt) => (
             <button
               key={opt.type}
               onClick={() => handlePlaceBet(opt.type)}
               disabled={coins - totalBet < chipAmount}
-              className={`flex-1 flex flex-col items-center gap-0.5 p-3 rounded-lg ${opt.color} ${opt.hoverColor} text-white font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+              className={`flex flex-col items-center justify-center gap-1 min-h-13 p-3 rounded-xl ${opt.color} ${opt.hoverColor} text-white font-bold transition-colors active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed`}
             >
-              <span className="text-sm">{opt.label}</span>
-              <span className="text-[10px] opacity-75">{opt.payout}</span>
+              <span className="text-sm leading-tight">{opt.label}</span>
+              <span className="text-[10px] opacity-75 leading-tight">{opt.payout}</span>
             </button>
           ))}
         </div>
 
-        {/* Side bet buttons */}
-        <div className="grid grid-cols-4 gap-1.5">
+        {/* Side bet buttons — 2x2 on mobile, 4 across on larger */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {SIDE_BET_OPTIONS.map((opt) => (
             <button
               key={opt.type}
               onClick={() => handlePlaceBet(opt.type)}
               disabled={coins - totalBet < chipAmount}
-              className="flex flex-col items-center gap-0.5 p-2 rounded-lg bg-site-surface border border-site-border text-site-text hover:bg-site-surface-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex flex-col items-center justify-center gap-0.5 min-h-11 p-2.5 rounded-xl bg-site-surface border border-site-border text-site-text hover:bg-site-surface-hover active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <span className="text-[11px] font-bold">{opt.label}</span>
-              <span className="text-[9px] text-site-text-dim">{opt.payout}</span>
+              <span className="text-xs font-bold leading-tight">{opt.label}</span>
+              <span className="text-[10px] text-site-text-dim leading-tight">{opt.payout}</span>
             </button>
           ))}
         </div>
 
-        {/* Chip amount selector */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-          <span className="text-xs text-site-text-dim">Chip:</span>
-          <div className="flex gap-1.5">
+        {/* Chip amount selector — always horizontal, larger targets */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-site-text-dim shrink-0">Chip:</span>
+          <div className="flex gap-1.5 flex-1">
             {[5, 25, 100, 500].map((amt) => (
               <button
                 key={amt}
                 onClick={() => setChipAmount(amt)}
-                className={`flex-1 sm:flex-none px-3 py-2 text-xs font-bold rounded-lg border transition-colors ${
+                className={`flex-1 min-h-10 text-xs font-bold rounded-xl border transition-colors active:scale-95 ${
                   chipAmount === amt
                     ? 'bg-red-600 border-red-500 text-white'
                     : 'bg-site-surface border-site-border text-site-text-dim hover:text-site-text hover:bg-site-surface-hover'
@@ -166,14 +183,14 @@ export function BaccaratControls({ coins }: Props) {
           </div>
         </div>
 
-        {/* Current bets summary */}
+        {/* Current bets summary + clear button */}
         {totalBet > 0 && (
-          <div className="flex flex-col gap-1 p-2 rounded-lg bg-site-surface border border-site-border">
+          <div className="flex flex-col gap-2 p-3 rounded-xl bg-site-surface border border-site-border">
             <div className="flex items-center justify-between">
               <span className="text-xs text-site-text-dim">Your bets this round:</span>
               <div className="flex items-center gap-1">
-                <CoinIcon className="w-3 h-3" />
-                <span className="text-xs font-bold text-red-400">{totalBet}</span>
+                <CoinIcon className="w-3.5 h-3.5" />
+                <span className="text-sm font-bold text-red-400">{totalBet}</span>
               </div>
             </div>
             <div className="flex flex-wrap gap-1.5">
@@ -182,12 +199,18 @@ export function BaccaratControls({ coins }: Props) {
                 .map(([type, amount]) => (
                   <span
                     key={type}
-                    className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400"
+                    className="text-[11px] font-bold px-2 py-1 rounded-full bg-red-500/20 text-red-400"
                   >
                     {type}: {amount}
                   </span>
                 ))}
             </div>
+            <button
+              onClick={handleClearBets}
+              className="w-full min-h-10 text-xs font-bold rounded-xl border border-red-500/30 text-red-400 hover:bg-red-500/10 active:scale-[0.98] transition-all"
+            >
+              Clear All Bets
+            </button>
           </div>
         )}
 

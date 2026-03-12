@@ -402,7 +402,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
               key={i}
               onClick={() => isIdle && setSelectedBin(i)}
               disabled={!isIdle}
-              className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
+              className={`flex-1 min-h-10 py-2 rounded-xl text-sm font-bold transition-all active:scale-95 ${
                 selectedBin === i
                   ? 'ring-2 ring-yellow-500 text-white'
                   : 'text-site-text-dim hover:text-site-text'
@@ -420,8 +420,8 @@ export function PlinkoGame({ coins, setCoins }: Props) {
 
       <div className="w-full max-w-[390px]">
         <p className="text-sm text-site-text-dim mb-2">Bet amount:</p>
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-          <div className="relative flex-1">
+        <div className="flex flex-col gap-2">
+          <div className="relative">
             <input
               type="number"
               min={1}
@@ -430,17 +430,17 @@ export function PlinkoGame({ coins, setCoins }: Props) {
               onChange={(e) => setBetInput(e.target.value)}
               onBlur={handleBetBlur}
               disabled={!isIdle}
-              className="w-full bg-site-surface border border-site-border rounded-lg px-3 py-2 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500/50 disabled:opacity-50"
+              className="w-full bg-site-surface border border-site-border rounded-xl px-3 py-2.5 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500/50 disabled:opacity-50"
             />
             <CoinIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" />
           </div>
-          <div className="flex gap-1.5">
+          <div className="grid grid-cols-4 gap-1.5">
             {[1, 5, 10].map((amt) => (
               <button
                 key={amt}
                 onClick={() => isIdle && setQuickBet(amt)}
                 disabled={!isIdle}
-                className="flex-1 sm:flex-none px-3 py-2 text-xs font-bold bg-site-surface border border-site-border rounded-lg text-site-text-dim hover:text-site-text hover:bg-site-surface-hover disabled:opacity-50 transition-colors"
+                className="min-h-10 text-xs font-bold bg-site-surface border border-site-border rounded-xl text-site-text-dim hover:text-site-text hover:bg-site-surface-hover disabled:opacity-50 active:scale-95 transition-all"
               >
                 {amt}
               </button>
@@ -448,7 +448,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
             <button
               onClick={() => isIdle && setQuickBet(coins)}
               disabled={!isIdle}
-              className="flex-1 sm:flex-none px-3 py-2 text-xs font-bold bg-site-surface border border-site-border rounded-lg text-yellow-500 hover:bg-site-surface-hover disabled:opacity-50 transition-colors"
+              className="min-h-10 text-xs font-bold bg-site-surface border border-site-border rounded-xl text-yellow-500 hover:bg-site-surface-hover disabled:opacity-50 active:scale-95 transition-all"
             >
               All
             </button>
@@ -459,7 +459,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
       <Button
         onClick={handleSubmit}
         disabled={!isIdle || selectedBin === null || submitting}
-        className="w-full max-w-[390px] bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-lg"
+        className="w-full max-w-[390px] min-h-11 bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-xl"
       >
         {submitting ? (
           <Loader2 className="w-4 h-4 animate-spin" />
