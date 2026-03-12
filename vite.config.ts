@@ -9,14 +9,12 @@ const originalWarn = logger.warn.bind(logger);
 logger.warn = (msg, options) => {
   if (msg.includes("has been externalized for browser compatibility")) return;
   if (msg.includes("Error when using sourcemap for reporting an error")) return;
-  if (msg.includes("Module level directives cause errors when bundled")) return;
   if (msg.includes(".prisma/client/default")) return;
   originalWarn(msg, options);
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function onwarn(warning: any, warn: any) {
-  if (warning.code === "MODULE_LEVEL_DIRECTIVE") return;
   if (warning.code === "UNRESOLVED_IMPORT" && warning.exporter?.includes(".prisma/client")) return;
   warn(warning);
 }
@@ -135,6 +133,9 @@ export default defineConfig({
       },
     }),
   ],
+  builder: {
+    sharedPlugins: true,
+  },
   build: {
     target: "esnext",
     chunkSizeWarningLimit: 4000,
@@ -144,6 +145,9 @@ export default defineConfig({
   },
   environments: {
     client: {
+      dev: {
+        warmup: ["app/router.tsx", "app/routes/__root.tsx"],
+      },
       build: {
         rolldownOptions: {
           onwarn,
@@ -153,6 +157,9 @@ export default defineConfig({
         },
       },
     },
+  },
+  experimental: {
+    hmrPartialAccept: true,
   },
   ssr: {
     // ssr.external only affects Vite's dev SSR bundling, NOT the Nitro production
