@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { Search, X, ChevronDown, ArrowUpDown } from 'lucide-react';
+import { LayoutGroup, motion } from 'framer-motion';
 import { OfficialBuildCard } from './OfficialBuildCard';
 import type { OfficialBuild } from './OfficialBuildCard';
 
@@ -24,7 +25,6 @@ export function OfficialBuildGrid({ builds, initialLikedIds = [] }: OfficialBuil
     const [likedIds, setLikedIds] = useState<Set<string>>(new Set(initialLikedIds));
     const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
     const [viewCounts, setViewCounts] = useState<Record<string, number>>({});
-
     // Debounce search
     useEffect(() => {
         const timer = setTimeout(() => setDebouncedSearch(search), 200);
@@ -204,21 +204,28 @@ export function OfficialBuildGrid({ builds, initialLikedIds = [] }: OfficialBuil
                     )}
                 </div>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {filtered.map((item) => {
-                        const buildData = { ...item, liked: likedIds.has(item.id) };
-                        if (likeCounts[item.id] !== undefined) buildData.likeCount = likeCounts[item.id];
-                        if (viewCounts[item.id] !== undefined) buildData.viewCount = viewCounts[item.id];
-                        return (
-                            <OfficialBuildCard
-                                key={item.id}
-                                build={buildData}
-                                onLike={handleLike}
-                                onView={handleView}
-                            />
-                        );
-                    })}
-                </div>
+                <LayoutGroup>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            {filtered.map((item) => {
+                                const buildData = { ...item, liked: likedIds.has(item.id) };
+                                if (likeCounts[item.id] !== undefined) buildData.likeCount = likeCounts[item.id];
+                                if (viewCounts[item.id] !== undefined) buildData.viewCount = viewCounts[item.id];
+                                return (
+                                    <motion.div
+                                        key={item.id}
+                                        layout
+                                        transition={{ layout: { type: 'spring', stiffness: 300, damping: 30 } }}
+                                    >
+                                        <OfficialBuildCard
+                                            build={buildData}
+                                            onLike={handleLike}
+                                            onView={handleView}
+                                        />
+                                    </motion.div>
+                                );
+                            })}
+                    </div>
+                </LayoutGroup>
             )}
         </>
     );

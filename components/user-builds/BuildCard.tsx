@@ -6,6 +6,7 @@ import type { Build } from '@/lib/user-builds-types';
 import { TechBadges } from './TechBadges';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { UserAvatar } from '@/components/ui/UserAvatar';
+import { useCardSheen } from '@/hooks/useCardSheen';
 
 interface BuildCardProps {
   build: Build;
@@ -36,6 +37,8 @@ function timeAgo(dateStr: string): string {
 }
 
 export function BuildCard({ build, onLike }: BuildCardProps) {
+  const { cardRef, sheenStyle, handlers: sheenHandlers } = useCardSheen();
+
   const handleLike = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -43,8 +46,15 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
   };
 
   return (
-    <Link to={`/user-builds/${build.slug}` as string} className="block h-full">
-      <div className="group rounded-xl border border-site-border bg-site-surface hover:border-violet-500/50 transition-all overflow-hidden flex flex-col h-full">
+    <div
+      ref={cardRef}
+      className="h-full hover:scale-[1.03] transition-transform duration-300"
+      {...sheenHandlers}
+    >
+      <Link to={`/user-builds/${build.slug}` as string} className="block h-full">
+        <div className="group relative rounded-xl border border-site-border bg-site-surface hover:border-violet-500/50 transition-all overflow-hidden flex flex-col h-full">
+          {/* Mouse-tracking sheen */}
+          <div style={sheenStyle} className="rounded-xl" />
         {/* Thumbnail */}
         <div className="relative">
           {build.thumbnailUrl ? (
@@ -164,5 +174,6 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
         </div>
       </div>
     </Link>
+    </div>
   );
 }

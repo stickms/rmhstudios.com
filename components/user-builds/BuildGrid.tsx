@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import { LayoutGroup, motion } from 'framer-motion';
 import { BuildCard } from './BuildCard';
 import type { Build, BuildSortOption } from '@/lib/user-builds-types';
 
@@ -26,7 +27,9 @@ export function BuildGrid({
 }: BuildGridProps) {
   const [builds, setBuilds] = useState<Build[]>(initialBuilds);
   const [loading, setLoading] = useState(initialBuilds.length === 0);
+  const [resorting, setResorting] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const hasFetchedRef = useRef(false);
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const observerRef = useRef<IntersectionObserver | null>(null);
@@ -37,6 +40,8 @@ export function BuildGrid({
       const isLoadMore = !!cursorParam;
       if (isLoadMore) {
         setLoadingMore(true);
+      } else if (hasFetchedRef.current) {
+        setResorting(true);
       } else {
         setLoading(true);
       }
@@ -67,7 +72,9 @@ export function BuildGrid({
       } catch (error) {
         console.error('Error fetching builds:', error);
       } finally {
+        hasFetchedRef.current = true;
         setLoading(false);
+        setResorting(false);
         setLoadingMore(false);
       }
     },
@@ -154,11 +161,19 @@ export function BuildGrid({
 
   return (
     <div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {builds.map((build) => (
-          <BuildCard key={build.id} build={build} onLike={handleLike} />
-        ))}
-      </div>
+      <LayoutGroup>
+        <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 transition-opacity duration-200 ${resorting ? 'opacity-50 pointer-events-none' : ''}`}>
+            {builds.map((build) => (
+              <motion.div
+                key={build.id}
+                layout
+                transition={{ layout: { type: 'spring', stiffness: 300, damping: 30 } }}
+              >
+                <BuildCard build={build} onLike={handleLike} />
+              </motion.div>
+            ))}
+        </div>
+      </LayoutGroup>
 
       {/* Load more trigger */}
       <div ref={loadMoreRef} className="py-8 flex justify-center">
