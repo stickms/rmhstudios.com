@@ -58,6 +58,7 @@ export const Route = createFileRoute('/api/user-builds')({
     const search = searchParams.get('search');
     const sort = searchParams.get('sort') || 'recent';
     const userId = searchParams.get('userId');
+    const curated = searchParams.get('curated') === 'true';
 
     // Get current user — session OR CLI token
     let currentUserId: string | null = null;
@@ -78,6 +79,10 @@ export const Route = createFileRoute('/api/user-builds')({
       visibility: { in: ['PUBLIC', 'UNLISTED'] },
       isCurated: false,
     };
+
+    if (curated) {
+      where.featured = true;
+    }
 
     // If fetching user's own builds, show all visibilities, but still hide curated if needed
     if (userId && userId === currentUserId) {

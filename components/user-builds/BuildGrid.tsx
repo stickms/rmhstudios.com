@@ -12,6 +12,7 @@ interface BuildGridProps {
   search?: string;
   sort?: BuildSortOption;
   userId?: string;
+  curated?: boolean;
 }
 
 export function BuildGrid({
@@ -21,6 +22,7 @@ export function BuildGrid({
   search,
   sort = 'recent',
   userId,
+  curated,
 }: BuildGridProps) {
   const [builds, setBuilds] = useState<Build[]>(initialBuilds);
   const [loading, setLoading] = useState(initialBuilds.length === 0);
@@ -48,6 +50,7 @@ export function BuildGrid({
         if (technology) params.set('technology', technology);
         if (search) params.set('search', search);
         if (userId) params.set('userId', userId);
+        if (curated) params.set('curated', 'true');
 
         const res = await fetch(`/api/user-builds?${params.toString()}`);
         if (!res.ok) throw new Error('Failed to fetch builds');
@@ -68,7 +71,7 @@ export function BuildGrid({
         setLoadingMore(false);
       }
     },
-    [category, technology, search, sort, userId]
+    [category, technology, search, sort, userId, curated]
   );
 
   // Initial fetch and refetch on filter changes

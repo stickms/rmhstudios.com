@@ -1,7 +1,7 @@
 'use client';
 
 import { Link } from '@tanstack/react-router';
-import { Heart, MessageCircle, Eye, ExternalLink, Github } from 'lucide-react';
+import { Heart, MessageCircle, Eye, ExternalLink, Github, Award } from 'lucide-react';
 import type { Build } from '@/lib/user-builds-types';
 import { TechBadges } from './TechBadges';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
@@ -46,40 +46,42 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
     <Link to={`/user-builds/${build.slug}` as string} className="block h-full">
       <div className="group rounded-xl border border-site-border bg-site-surface hover:border-violet-500/50 transition-all overflow-hidden flex flex-col h-full">
         {/* Thumbnail */}
-        {build.thumbnailUrl ? (
-          <div className="aspect-video w-full overflow-hidden bg-site-bg">
-            <OptimizedImage
-              src={build.thumbnailUrl}
-              alt={build.title}
-              width={640}
-              height={360}
-              quality={75}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            />
-          </div>
-        ) : (
-          <div className="aspect-video w-full bg-gradient-to-br from-violet-500/20 to-fuchsia-600/20 flex items-center justify-center">
-            <div className="text-4xl font-bold text-violet-400/50">
-              {build.title[0]?.toUpperCase()}
+        <div className="relative">
+          {build.thumbnailUrl ? (
+            <div className="aspect-video w-full overflow-hidden bg-site-bg">
+              <OptimizedImage
+                src={build.thumbnailUrl}
+                alt={build.title}
+                width={640}
+                height={360}
+                quality={75}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="aspect-video w-full bg-gradient-to-br from-violet-500/20 to-fuchsia-600/20 flex items-center justify-center">
+              <div className="text-4xl font-bold text-violet-400/50">
+                {build.title[0]?.toUpperCase()}
+              </div>
+            </div>
+          )}
+          {build.featured && (
+            <div className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/60 backdrop-blur-sm" title="Curated">
+              <Award className="w-4 h-4 text-amber-400" />
+            </div>
+          )}
+        </div>
 
         {/* Content */}
         <div className="p-4 flex flex-col flex-1">
-          {/* Category & Featured */}
-          <div className="flex items-center gap-2 mb-2">
-            {build.category && (
+          {/* Category */}
+          {build.category && (
+            <div className="flex items-center gap-2 mb-2">
               <span className="px-2 py-0.5 rounded-full text-xs bg-site-accent-dim text-site-accent">
                 {build.category.name}
               </span>
-            )}
-            {build.featured && (
-              <span className="px-2 py-0.5 rounded-full text-xs bg-amber-500/20 text-amber-400">
-                Curated
-              </span>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Title */}
           <h3 className="font-semibold text-site-text group-hover:text-violet-400 transition-colors line-clamp-1 mb-1">
@@ -150,7 +152,7 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
               <Heart className={`w-4 h-4 ${build.liked ? 'fill-current' : ''}`} />
               {formatCount(build.likeCount)}
             </button>
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1 hover:text-blue-400 transition-colors">
               <MessageCircle className="w-4 h-4" />
               {formatCount(build.commentCount)}
             </span>

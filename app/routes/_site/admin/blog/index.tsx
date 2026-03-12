@@ -34,7 +34,7 @@ function AdminBlogDashboard() {
 
   return (
     <PageLayout title="Manage Blog Posts" wide>
-      <div className="p-4 md:p-8 w-full max-w-4xl mx-auto space-y-6">
+      <div className="p-4 md:p-6 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-4">
             <Link to="/admin" className="text-site-text-dim hover:text-site-text transition-colors shrink-0">

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
-import { Search, ChevronDown, X, User, Plus } from 'lucide-react';
+import { Search, ChevronDown, X, User, Plus, Award } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import type { BuildCategory, BuildSortOption } from '@/lib/user-builds-types';
 
@@ -12,10 +12,12 @@ interface BuildFiltersProps {
   selectedSort: BuildSortOption;
   searchQuery?: string;
   myBuilds?: boolean;
+  curated?: boolean;
   onCategoryChange: (category: string | undefined) => void;
   onSortChange: (sort: BuildSortOption) => void;
   onSearchChange: (query: string) => void;
   onMyBuildsChange: (myBuilds: boolean) => void;
+  onCuratedChange: (curated: boolean) => void;
 }
 
 const SORT_OPTIONS: { value: BuildSortOption; label: string }[] = [
@@ -30,10 +32,12 @@ export function BuildFilters({
   selectedSort,
   searchQuery = '',
   myBuilds = false,
+  curated = false,
   onCategoryChange,
   onSortChange,
   onSearchChange,
   onMyBuildsChange,
+  onCuratedChange,
 }: BuildFiltersProps) {
   const { data: session } = useSession();
   const [search, setSearch] = useState(searchQuery);
@@ -171,6 +175,19 @@ export function BuildFilters({
               </>
             )}
           </div>
+
+          {/* Curated Toggle */}
+          <button
+            onClick={() => onCuratedChange(!curated)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm transition-colors ${
+              curated
+                ? 'bg-amber-500/10 border-amber-500/40 text-amber-400'
+                : 'bg-site-surface border-site-border text-site-text hover:border-amber-500/50'
+            }`}
+          >
+            <Award className="w-4 h-4" />
+            <span>Curated</span>
+          </button>
 
           {/* My Builds Toggle */}
           {session?.user && (
