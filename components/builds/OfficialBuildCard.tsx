@@ -1,6 +1,7 @@
 import { Heart, MessageCircle, Eye, ArrowRight } from 'lucide-react';
 import { Link, useRouter } from '@tanstack/react-router';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { useCardSheen } from '@/hooks/useCardSheen';
 
 export interface OfficialBuild {
     id: string;
@@ -31,6 +32,7 @@ function formatCount(count: number): string {
 
 export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardProps) {
     const router = useRouter();
+    const { cardRef, sheenStyle, handlers: sheenHandlers } = useCardSheen();
     const cardUrl = build.href;
     const detailUrl = `/builds/${build.slug}`;
 
@@ -60,14 +62,24 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
         }
     };
 
+    const onMouseEnterCombined = (e: React.MouseEvent) => {
+        handleMouseEnter();
+        sheenHandlers.onMouseEnter();
+    };
+
     return (
         <div
-            className="block w-full cursor-pointer aspect-[2/3]"
+            ref={cardRef}
+            className="block w-full cursor-pointer aspect-[2/3] hover:scale-[1.03] transition-transform duration-300"
             onClick={handleCardClick}
-            onMouseEnter={handleMouseEnter}
+            onMouseEnter={onMouseEnterCombined}
+            onMouseLeave={sheenHandlers.onMouseLeave}
+            onMouseMove={sheenHandlers.onMouseMove}
             title={build.description}
         >
-            <div className="group relative rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-all overflow-hidden h-full">
+            <div className="group relative rounded-xl ring-1 ring-site-border bg-site-surface hover:ring-site-accent/50 transition-all overflow-hidden h-full">
+                {/* Mouse-tracking sheen */}
+                <div style={sheenStyle} className="rounded-xl" />
                 {/* Thumbnail */}
                 {build.thumbnailUrl ? (
                     <div className="absolute inset-0 w-full h-full overflow-hidden bg-site-bg">
@@ -78,7 +90,7 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
                             height={400}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
-                        <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/40 to-black/10 transition-opacity duration-300 group-hover:from-black/90 group-hover:via-black/60" />
+                        <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/40 to-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     </div>
                 ) : (
                     <div className="absolute inset-0 w-full h-full bg-linear-to-br from-site-surface to-site-surface-hover flex items-center justify-center">
@@ -120,6 +132,7 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
+                                            onView?.(build.id);
                                             router.navigate({ to: detailUrl });
                                         }}
                                         aria-label="View comments"
@@ -137,6 +150,7 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
                                 <Link to={detailUrl}
                                     onClick={(e) => {
                                         e.stopPropagation();
+                                        onView?.(build.id);
                                     }}
                                     className="flex items-center justify-center gap-1.5 text-xs text-blue-400 border border-blue-400/50 bg-transparent font-semibold w-full py-2 rounded-lg hover:bg-blue-400 hover:text-white hover:border-transparent transition-all"
                                 >
