@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from '@tanstack/react-router';
 import {
@@ -24,14 +24,12 @@ import {
     loadHintsUsed,
     saveHintsUsed,
     saveToHistory,
-    loadHistory,
-    type PuzzleHistoryEntry,
 } from '@/lib/lights-out/persistence';
 import { getPerformanceRating, generateShareText } from '@/lib/lights-out/share';
 import { authClient } from '@/lib/auth-client';
 import {
     Sparkles, RotateCcw, Trophy, Loader2, Undo2, Lightbulb, Flag,
-    ArrowLeft, Share2, MessageCircle, Send, Calendar, ChevronDown, ChevronUp, Check,
+    ArrowLeft, Share2, Calendar, ChevronDown, ChevronUp, Check,
 } from 'lucide-react';
 
 type LeaderboardEntry = {
@@ -40,14 +38,6 @@ type LeaderboardEntry = {
     dnf?: boolean;
     hintUsed?: boolean;
     displayName: string;
-};
-
-type ChatMessage = {
-    id: string;
-    message: string;
-    displayName: string;
-    avatar: string | null;
-    createdAt: string;
 };
 
 export function LightsOutGame() {
@@ -70,16 +60,8 @@ export function LightsOutGame() {
     const [scoreSubmitted, setScoreSubmitted] = useState(false);
     const [sharecopied, setShareCopied] = useState(false);
 
-    // Chat state
-    const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-    const [chatInput, setChatInput] = useState('');
-    const [chatLoading, setChatLoading] = useState(false);
-    const [chatSending, setChatSending] = useState(false);
-    const chatEndRef = useRef<HTMLDivElement>(null);
-
     // Past puzzles
     const [showHistory, setShowHistory] = useState(false);
-    const [history, setHistory] = useState<PuzzleHistoryEntry[]>([]);
 
     const session = authClient.useSession();
 
@@ -128,10 +110,19 @@ export function LightsOutGame() {
         }
     }, [dateKey, initPuzzle, shape, seed, computeOptimal]);
 
-    // Load history
-    useEffect(() => {
-        setHistory(loadHistory());
-    }, [solved]);
+    // Generate past puzzles list from date seeds (last 14 days, excluding today)
+    const pastPuzzles = useMemo(() => {
+        const entries: { dateKey: string; shapeLabel: string; save: ReturnType<typeof loadSave> }[] = [];
+        for (let i = 1; i <= 14; i++) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const dk = formatDateKey(d);
+            const s = getDateSeed(d);
+            const sh = getDailyShape(s);
+            entries.push({ dateKey: dk, shapeLabel: getShapeLabel(sh), save: loadSave(dk) });
+        }
+        return entries;
+    }, []);
 
     // Fetch leaderboard (only when solved)
     const fetchLeaderboard = useCallback(async () => {
@@ -151,30 +142,6 @@ export function LightsOutGame() {
     useEffect(() => {
         if (solved) fetchLeaderboard();
     }, [solved, fetchLeaderboard]);
-
-    // Fetch chat (only when solved)
-    const fetchChat = useCallback(async () => {
-        setChatLoading(true);
-        try {
-            const res = await fetch(`/api/lights-out/chat?date=${dateKey}`);
-            if (!res.ok) return;
-            const data = await res.json();
-            setChatMessages(data.chat || []);
-        } catch {
-            /* ignore */
-        } finally {
-            setChatLoading(false);
-        }
-    }, [dateKey]);
-
-    useEffect(() => {
-        if (solved) fetchChat();
-    }, [solved, fetchChat]);
-
-    // Auto-scroll chat
-    useEffect(() => {
-        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [chatMessages]);
 
     const submitScore = useCallback(
         async (finalMoves: number, usedHints: boolean, dnfSubmission = false) => {
@@ -284,26 +251,6 @@ export function LightsOutGame() {
             setTimeout(() => setShareCopied(false), 2000);
         } catch {
             /* ignore */
-        }
-    };
-
-    const handleSendChat = async () => {
-        if (!chatInput.trim() || chatSending || !session.data) return;
-        setChatSending(true);
-        try {
-            const res = await fetch('/api/lights-out/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: chatInput.trim(), date: dateKey }),
-            });
-            if (res.ok) {
-                setChatInput('');
-                fetchChat();
-            }
-        } catch {
-            /* ignore */
-        } finally {
-            setChatSending(false);
         }
     };
 
@@ -574,97 +521,12 @@ export function LightsOutGame() {
                                 <Link to="/login" search={{ callbackURL: undefined }} className="text-site-accent hover:underline">
                                     Sign in
                                 </Link>{' '}
-                                to submit your score and join the chat.
+                                to submit your score to the leaderboard.
                             </p>
                         )}
                         <p className="text-site-text-dim text-xs mt-2">
                             A new puzzle unlocks tomorrow — same for everyone worldwide.
                         </p>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* Chat — only visible after solving */}
-            <AnimatePresence>
-                {solved && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
-                        className="mt-6 p-5 rounded-2xl bg-site-surface border border-site-border"
-                    >
-                        <div className="flex items-center gap-2 mb-4">
-                            <MessageCircle className="w-5 h-5 text-amber-400" />
-                            <h2 className="text-lg font-semibold text-site-text">Puzzle Chat</h2>
-                            <span className="text-site-text-muted text-xs">Spoilers welcome!</span>
-                        </div>
-
-                        {chatLoading ? (
-                            <div className="flex items-center justify-center py-6 text-site-text-muted">
-                                <Loader2 className="w-5 h-5 animate-spin" />
-                            </div>
-                        ) : chatMessages.length === 0 ? (
-                            <p className="text-site-text-muted text-sm py-4 text-center">
-                                No messages yet. Be the first to chat!
-                            </p>
-                        ) : (
-                            <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
-                                {chatMessages.map((msg) => (
-                                    <div key={msg.id} className="flex gap-2">
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-baseline gap-2">
-                                                <span className="text-site-text font-medium text-sm truncate">
-                                                    {msg.displayName}
-                                                </span>
-                                                <span className="text-site-text-dim text-xs shrink-0">
-                                                    {new Date(msg.createdAt).toLocaleTimeString([], {
-                                                        hour: '2-digit',
-                                                        minute: '2-digit',
-                                                    })}
-                                                </span>
-                                            </div>
-                                            <p className="text-site-text-muted text-sm break-words">
-                                                {msg.message}
-                                            </p>
-                                        </div>
-                                    </div>
-                                ))}
-                                <div ref={chatEndRef} />
-                            </div>
-                        )}
-
-                        {session.data ? (
-                            <div className="flex gap-2 mt-4">
-                                <input
-                                    type="text"
-                                    value={chatInput}
-                                    onChange={(e) => setChatInput(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
-                                    placeholder="Say something..."
-                                    maxLength={280}
-                                    className="flex-1 px-3 py-2 rounded-lg bg-site-bg-subtle border border-site-border text-site-text text-sm placeholder:text-site-text-dim focus:outline-none focus:border-amber-500/50"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={handleSendChat}
-                                    disabled={chatSending || !chatInput.trim()}
-                                    className="px-3 py-2 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 hover:bg-amber-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {chatSending ? (
-                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                    ) : (
-                                        <Send className="w-4 h-4" />
-                                    )}
-                                </button>
-                            </div>
-                        ) : (
-                            <p className="text-site-text-dim text-xs mt-3 text-center">
-                                <Link to="/login" search={{ callbackURL: undefined }} className="text-site-accent hover:underline">
-                                    Sign in
-                                </Link>{' '}
-                                to join the chat.
-                            </p>
-                        )}
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -741,51 +603,43 @@ export function LightsOutGame() {
                             className="overflow-hidden"
                         >
                             <div className="mt-3 p-4 rounded-xl bg-site-surface border border-site-border">
-                                {history.length === 0 ? (
-                                    <p className="text-site-text-muted text-sm text-center py-4">
-                                        No puzzle history yet. Solve today&apos;s puzzle to start your streak!
-                                    </p>
-                                ) : (
-                                    <div className="space-y-2">
-                                        {history.map((h) => {
-                                            const hRating = h.optimalMoves != null
-                                                ? getPerformanceRating(h.moves, h.optimalMoves, h.dnf)
-                                                : null;
-                                            return (
-                                                <div
-                                                    key={h.dateKey}
-                                                    className="flex items-center justify-between py-2 px-3 rounded-lg bg-site-bg-subtle"
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        <span className="text-site-text-muted text-sm font-mono">
-                                                            {h.dateKey}
+                                <div className="space-y-2">
+                                    {pastPuzzles.map((p) => (
+                                        <div
+                                            key={p.dateKey}
+                                            className="flex items-center justify-between py-2 px-3 rounded-lg bg-site-bg-subtle"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-site-text-muted text-sm font-mono">
+                                                    {p.dateKey}
+                                                </span>
+                                                <span className="text-site-text-dim text-xs">
+                                                    {p.shapeLabel}
+                                                </span>
+                                            </div>
+                                            {p.save?.solved ? (
+                                                <div className="flex items-center gap-2">
+                                                    {p.save.optimalMoves != null && (
+                                                        <span className="text-xs" title={getPerformanceRating(p.save.moves, p.save.optimalMoves, p.save.dnf ?? false).label}>
+                                                            {getPerformanceRating(p.save.moves, p.save.optimalMoves, p.save.dnf ?? false).emoji}
                                                         </span>
-                                                        <span className="text-site-text-dim text-xs">
-                                                            {h.shapeLabel}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        {h.hintUsed && (
-                                                            <Lightbulb className="w-3.5 h-3.5 text-cyan-400" />
-                                                        )}
-                                                        {hRating && (
-                                                            <span className="text-xs" title={hRating.label}>
-                                                                {hRating.emoji}
-                                                            </span>
-                                                        )}
-                                                        <span
-                                                            className={`font-mono font-semibold text-sm ${
-                                                                h.dnf ? 'text-site-danger' : 'text-amber-400'
-                                                            }`}
-                                                        >
-                                                            {h.dnf ? 'DNF' : `${h.moves} moves`}
-                                                        </span>
-                                                    </div>
+                                                    )}
+                                                    <span
+                                                        className={`font-mono font-semibold text-sm ${
+                                                            p.save.dnf ? 'text-site-danger' : 'text-amber-400'
+                                                        }`}
+                                                    >
+                                                        {p.save.dnf ? 'DNF' : `${p.save.moves} moves`}
+                                                    </span>
                                                 </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
+                                            ) : (
+                                                <span className="text-site-text-dim text-xs">
+                                                    Not played
+                                                </span>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </motion.div>
                     )}

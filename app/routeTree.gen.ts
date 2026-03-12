@@ -144,7 +144,6 @@ import { Route as ApiMessagesSidebarRouteImport } from './routes/api/messages/si
 import { Route as ApiMessagesConversationIdRouteImport } from './routes/api/messages/$conversationId'
 import { Route as ApiLightsOutScoreRouteImport } from './routes/api/lights-out/score'
 import { Route as ApiLightsOutLeaderboardRouteImport } from './routes/api/lights-out/leaderboard'
-import { Route as ApiLightsOutChatRouteImport } from './routes/api/lights-out/chat'
 import { Route as ApiLaundrySortScoreRouteImport } from './routes/api/laundry-sort/score'
 import { Route as ApiLaundrySortLeaderboardRouteImport } from './routes/api/laundry-sort/leaderboard'
 import { Route as ApiHandleCheckRouteImport } from './routes/api/handle/check'
@@ -896,11 +895,6 @@ const ApiLightsOutLeaderboardRoute = ApiLightsOutLeaderboardRouteImport.update({
   path: '/api/lights-out/leaderboard',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiLightsOutChatRoute = ApiLightsOutChatRouteImport.update({
-  id: '/api/lights-out/chat',
-  path: '/api/lights-out/chat',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiLaundrySortScoreRoute = ApiLaundrySortScoreRouteImport.update({
   id: '/api/laundry-sort/score',
   path: '/api/laundry-sort/score',
@@ -1386,7 +1380,6 @@ export interface FileRoutesByFullPath {
   '/api/handle/check': typeof ApiHandleCheckRoute
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
   '/api/laundry-sort/score': typeof ApiLaundrySortScoreRoute
-  '/api/lights-out/chat': typeof ApiLightsOutChatRoute
   '/api/lights-out/leaderboard': typeof ApiLightsOutLeaderboardRoute
   '/api/lights-out/score': typeof ApiLightsOutScoreRoute
   '/api/messages/$conversationId': typeof ApiMessagesConversationIdRouteWithChildren
@@ -1572,7 +1565,6 @@ export interface FileRoutesByTo {
   '/api/handle/check': typeof ApiHandleCheckRoute
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
   '/api/laundry-sort/score': typeof ApiLaundrySortScoreRoute
-  '/api/lights-out/chat': typeof ApiLightsOutChatRoute
   '/api/lights-out/leaderboard': typeof ApiLightsOutLeaderboardRoute
   '/api/lights-out/score': typeof ApiLightsOutScoreRoute
   '/api/messages/$conversationId': typeof ApiMessagesConversationIdRouteWithChildren
@@ -1783,7 +1775,6 @@ export interface FileRoutesById {
   '/api/handle/check': typeof ApiHandleCheckRoute
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
   '/api/laundry-sort/score': typeof ApiLaundrySortScoreRoute
-  '/api/lights-out/chat': typeof ApiLightsOutChatRoute
   '/api/lights-out/leaderboard': typeof ApiLightsOutLeaderboardRoute
   '/api/lights-out/score': typeof ApiLightsOutScoreRoute
   '/api/messages/$conversationId': typeof ApiMessagesConversationIdRouteWithChildren
@@ -1994,7 +1985,6 @@ export interface FileRouteTypes {
     | '/api/handle/check'
     | '/api/laundry-sort/leaderboard'
     | '/api/laundry-sort/score'
-    | '/api/lights-out/chat'
     | '/api/lights-out/leaderboard'
     | '/api/lights-out/score'
     | '/api/messages/$conversationId'
@@ -2180,7 +2170,6 @@ export interface FileRouteTypes {
     | '/api/handle/check'
     | '/api/laundry-sort/leaderboard'
     | '/api/laundry-sort/score'
-    | '/api/lights-out/chat'
     | '/api/lights-out/leaderboard'
     | '/api/lights-out/score'
     | '/api/messages/$conversationId'
@@ -2390,7 +2379,6 @@ export interface FileRouteTypes {
     | '/api/handle/check'
     | '/api/laundry-sort/leaderboard'
     | '/api/laundry-sort/score'
-    | '/api/lights-out/chat'
     | '/api/lights-out/leaderboard'
     | '/api/lights-out/score'
     | '/api/messages/$conversationId'
@@ -2549,7 +2537,6 @@ export interface RootRouteChildren {
   ApiHandleCheckRoute: typeof ApiHandleCheckRoute
   ApiLaundrySortLeaderboardRoute: typeof ApiLaundrySortLeaderboardRoute
   ApiLaundrySortScoreRoute: typeof ApiLaundrySortScoreRoute
-  ApiLightsOutChatRoute: typeof ApiLightsOutChatRoute
   ApiLightsOutLeaderboardRoute: typeof ApiLightsOutLeaderboardRoute
   ApiLightsOutScoreRoute: typeof ApiLightsOutScoreRoute
   ApiNeonDriftwayLeaderboardRoute: typeof ApiNeonDriftwayLeaderboardRoute
@@ -3535,13 +3522,6 @@ declare module '@tanstack/react-router' {
       path: '/api/lights-out/leaderboard'
       fullPath: '/api/lights-out/leaderboard'
       preLoaderRoute: typeof ApiLightsOutLeaderboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/lights-out/chat': {
-      id: '/api/lights-out/chat'
-      path: '/api/lights-out/chat'
-      fullPath: '/api/lights-out/chat'
-      preLoaderRoute: typeof ApiLightsOutChatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/laundry-sort/score': {
@@ -4715,7 +4695,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHandleCheckRoute: ApiHandleCheckRoute,
   ApiLaundrySortLeaderboardRoute: ApiLaundrySortLeaderboardRoute,
   ApiLaundrySortScoreRoute: ApiLaundrySortScoreRoute,
-  ApiLightsOutChatRoute: ApiLightsOutChatRoute,
   ApiLightsOutLeaderboardRoute: ApiLightsOutLeaderboardRoute,
   ApiLightsOutScoreRoute: ApiLightsOutScoreRoute,
   ApiNeonDriftwayLeaderboardRoute: ApiNeonDriftwayLeaderboardRoute,
