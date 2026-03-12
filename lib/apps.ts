@@ -18,6 +18,7 @@ export interface AppInfo {
     imagePath?: string;
     authGate: boolean;
     hidden?: boolean;
+    unlisted?: boolean;
 }
 
 /**
