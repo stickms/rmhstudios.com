@@ -26,19 +26,13 @@ import {
     saveToHistory,
 } from '@/lib/lights-out/persistence';
 import { getPerformanceRating, generateShareText } from '@/lib/lights-out/share';
+import { DailyPuzzleLeaderboard } from '@/components/daily-puzzles/DailyPuzzleLeaderboard';
 import { authClient } from '@/lib/auth-client';
+import { fetchResultFromServer, saveResult as saveGenericResult } from '@/lib/daily-puzzles/persistence';
 import {
-    Sparkles, RotateCcw, Trophy, Loader2, Undo2, Lightbulb, Flag,
+    Sparkles, RotateCcw, Trophy, Undo2, Lightbulb, Flag,
     ArrowLeft, Share2, Calendar, ChevronDown, ChevronUp, Check, Play,
 } from 'lucide-react';
-
-type LeaderboardEntry = {
-    rank: number;
-    moves: number;
-    dnf?: boolean;
-    hintUsed?: boolean;
-    displayName: string;
-};
 
 export function LightsOutGame() {
     const todayKey = formatDateKey(new Date());
@@ -65,15 +59,10 @@ export function LightsOutGame() {
     const [solved, setSolved] = useState(false);
     const [bestMoves, setBestMoves] = useState<number | null>(null);
     const [optimalMoves, setOptimalMoves] = useState<number | null>(null);
-    const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-    const [leaderboardLoading, setLeaderboardLoading] = useState(false);
-    const [scoreSubmitted, setScoreSubmitted] = useState(false);
     const [sharecopied, setShareCopied] = useState(false);
 
     // Past puzzles
     const [showHistory, setShowHistory] = useState(false);
-
-    const session = authClient.useSession();
 
     const computeOptimal = useCallback((puzzleGrid: Grid) => {
         const opt = getOptimalMoves(puzzleGrid, shape);
@@ -90,7 +79,7 @@ export function LightsOutGame() {
         setMoveHistory([]);
         setHintedCell(null);
         setHintsUsed(loadHintsUsed(dateKey));
-        setScoreSubmitted(false);
+
         computeOptimal(initialGrid);
 
         const save = loadSave(dateKey);
@@ -113,13 +102,48 @@ export function LightsOutGame() {
             setGaveUp(save.dnf ?? false);
             setHintsUsed(loadHintsUsed(dateKey));
             setBestMoves(save.dnf ? null : save.moves);
-            setScoreSubmitted(true);
+
             if (save.optimalMoves != null) setOptimalMoves(save.optimalMoves);
             else if (opt != null) setOptimalMoves(opt);
         } else {
             initPuzzle();
         }
     }, [dateKey, initPuzzle, shape, seed, computeOptimal]);
+
+    // Sync from server for signed-in users
+    const session = authClient.useSession();
+
+    useEffect(() => {
+        if (!session.data || !isToday) return;
+        const localSave = loadSave(dateKey);
+        if (localSave?.solved) return; // Already have local result
+
+        fetchResultFromServer('lights-out', dateKey).then(serverResult => {
+            if (serverResult?.resultJson) {
+                const data = serverResult.resultJson;
+                const serverMoves = data.moves ?? serverResult.score;
+                const serverDnf = data.dnf ?? false;
+                const serverHintUsed = data.hintUsed ?? false;
+
+                // Save to lights-out localStorage
+                saveProgress(dateKey, serverMoves, true, serverDnf, data.optimalMoves);
+                if (serverHintUsed) saveHintsUsed(dateKey, 3);
+
+                // Also save to generic persistence for hub checks
+                saveGenericResult('lights-out', dateKey, serverResult);
+
+                // Update UI state
+                const puzzleGrid = generatePuzzle(createSeededRng(seed), shape);
+                computeOptimal(puzzleGrid);
+                setGrid(createEmptyGrid(shape));
+                setMoves(serverMoves);
+                setSolved(true);
+                setGaveUp(serverDnf);
+                setBestMoves(serverDnf ? null : serverMoves);
+                setHintsUsed(serverHintUsed ? 3 : 0);
+            }
+        });
+    }, [session.data, dateKey, isToday, seed, shape, computeOptimal]);
 
     // Past puzzles list (last 14 days, excluding today)
     const pastPuzzles = useMemo(() => {
@@ -135,49 +159,6 @@ export function LightsOutGame() {
         return entries;
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedDateKey]); // re-compute when switching dates so saves refresh
-
-    // Fetch leaderboard (only when solved, only for today)
-    const fetchLeaderboard = useCallback(async () => {
-        if (!isToday) { setLeaderboard([]); return; }
-        setLeaderboardLoading(true);
-        try {
-            const res = await fetch(`/api/lights-out/leaderboard?date=${dateKey}`);
-            if (!res.ok) return;
-            const data = await res.json();
-            setLeaderboard(data.leaderboard || []);
-        } catch {
-            /* ignore */
-        } finally {
-            setLeaderboardLoading(false);
-        }
-    }, [dateKey, isToday]);
-
-    useEffect(() => {
-        if (solved) fetchLeaderboard();
-    }, [solved, fetchLeaderboard]);
-
-    const submitScore = useCallback(
-        async (finalMoves: number, usedHints: boolean, dnfSubmission = false) => {
-            if (!session.data || scoreSubmitted || !isToday) return;
-            setScoreSubmitted(true);
-            try {
-                await fetch('/api/lights-out/score', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        moves: finalMoves,
-                        hintUsed: usedHints,
-                        dnf: dnfSubmission,
-                        date: dateKey,
-                    }),
-                });
-                fetchLeaderboard();
-            } catch {
-                /* ignore */
-            }
-        },
-        [session.data, scoreSubmitted, dateKey, fetchLeaderboard, isToday]
-    );
 
     const handleCellClick = (r: number, c: number) => {
         if (!grid || solved) return;
@@ -204,7 +185,6 @@ export function LightsOutGame() {
                 shapeLabel: getShapeLabel(shape),
                 optimalMoves: optimalMoves ?? undefined,
             });
-            if (isToday && session.data) submitScore(newMoves, hintsUsed > 0);
         } else {
             saveProgress(dateKey, newMoves, false);
         }
@@ -245,7 +225,6 @@ export function LightsOutGame() {
             shapeLabel: getShapeLabel(shape),
             optimalMoves: optimalMoves ?? undefined,
         });
-        if (isToday && session.data) submitScore(moves, true, true);
     };
 
     const handleShare = async () => {
@@ -292,13 +271,13 @@ export function LightsOutGame() {
 
     return (
         <div className="max-w-lg mx-auto px-4 py-8">
-            {/* Back to Builds */}
+            {/* Back to Daily Puzzles */}
             <Link
-                to="/builds"
+                to="/daily"
                 className="inline-flex items-center gap-1.5 text-site-text-muted hover:text-site-text text-sm mb-6 transition-colors"
             >
                 <ArrowLeft className="w-4 h-4" />
-                Back to Builds
+                Back to Daily Puzzles
             </Link>
 
             {/* Header */}
@@ -545,14 +524,6 @@ export function LightsOutGame() {
                             </button>
                         </div>
 
-                        {!session.data && isToday && (
-                            <p className="text-site-text-dim text-xs mt-3">
-                                <Link to="/login" search={{ callbackURL: undefined }} className="text-site-accent hover:underline">
-                                    Sign in
-                                </Link>{' '}
-                                to submit your score to the leaderboard.
-                            </p>
-                        )}
                         {!isToday && (
                             <p className="text-site-text-dim text-xs mt-3">
                                 Past puzzle — scores are saved locally but not to the leaderboard.
@@ -567,56 +538,18 @@ export function LightsOutGame() {
                 )}
             </AnimatePresence>
 
-            {/* Leaderboard — only visible after solving today's puzzle */}
-            <AnimatePresence>
-                {solved && isToday && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
-                        className="mt-6 p-6 rounded-2xl bg-site-surface border border-site-border"
-                    >
-                        <div className="flex items-center gap-2 mb-4">
-                            <Trophy className="w-5 h-5 text-amber-400" />
-                            <h2 className="text-lg font-semibold text-site-text">Today&apos;s Leaderboard</h2>
-                            <span className="text-site-text-muted text-xs">(least moves)</span>
-                        </div>
-                        {leaderboardLoading ? (
-                            <div className="flex items-center justify-center py-8 text-site-text-muted">
-                                <Loader2 className="w-6 h-6 animate-spin" />
-                            </div>
-                        ) : leaderboard.length === 0 ? (
-                            <p className="text-site-text-muted text-sm py-4 text-center">
-                                No scores yet. You&apos;re the first!
-                            </p>
-                        ) : (
-                            <div className="space-y-2">
-                                {leaderboard.map((e) => (
-                                    <div
-                                        key={e.rank}
-                                        className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-site-bg-subtle"
-                                    >
-                                        <span className="text-site-text-muted font-mono text-sm w-6">#{e.rank}</span>
-                                        <span className="text-site-text font-medium flex-1 truncate">{e.displayName}</span>
-                                        <span className="flex items-center gap-1.5">
-                                            {e.hintUsed && (
-                                                <span title="Used hint"><Lightbulb className="w-3.5 h-3.5 text-cyan-400 shrink-0" aria-hidden /></span>
-                                            )}
-                                            <span
-                                                className={`font-mono font-semibold ${
-                                                    e.dnf ? 'text-site-danger' : 'text-amber-400'
-                                                }`}
-                                            >
-                                                {e.dnf ? 'DNF' : e.moves}
-                                            </span>
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            {/* Leaderboard — generic component, only for today's puzzle */}
+            {isToday && (
+                <DailyPuzzleLeaderboard
+                    gameMode="lights-out"
+                    dateKey={dateKey}
+                    moves={moves}
+                    hintUsed={hintsUsed > 0}
+                    dnf={gaveUp}
+                    completed={solved}
+                    resultJson={{ moves, hintUsed: hintsUsed > 0, dnf: gaveUp, optimalMoves }}
+                />
+            )}
 
             {/* Past Puzzles */}
             <div className="mt-8">

@@ -43,7 +43,7 @@ model User {
   rmhtypeProfiles     RmhTypeProfile[]
   rmhstudyProfile     RmhStudyProfile?
   voidBreakerProfile  VoidBreakerPlayer?
-  lightsOutScores     LightsOutScore[]
+  dailyPuzzleScores   DailyPuzzleScore[]
   versecraftSave      VersecraftSave?
   versecraftProgress  VersecraftProgress?
   forestExplorerSave  ForestExplorerSave?
@@ -208,21 +208,26 @@ model LaundryPlayer {
   @@index([highScore(sort: Desc)], map: "idx_laundry_high_score")
 }
 
-model LightsOutScore {
+// Daily Puzzle Score — generic leaderboard for all daily puzzles including lights-out
+model DailyPuzzleScore {
   id        String   @id @default(cuid())
   userId    String
-  dateKey   String // YYYY-MM-DD
-  moves     Int      @default(0)
-  hintUsed  Boolean  @default(false)
-  dnf       Boolean  @default(false)
-  createdAt DateTime @default(now()) @updatedAt
+  gameMode  String   // lights-out | alibi | spectrum | outcast | chainlink | impostor
+  dateKey   String   // YYYY-MM-DD
+  score     Int      @default(0)   // points (higher = better) for most games
+  moves     Int?                    // lights-out: move count (lower = better)
+  hintUsed  Boolean? @default(false) // lights-out: whether hints were used
+  dnf         Boolean? @default(false) // lights-out: did not finish
+  resultJson  Json?                    // game-specific result data
+  timeSeconds Int?                     // time taken (for timed games)
+  createdAt   DateTime @default(now()) @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, dateKey])
-  @@index([dateKey, moves(sort: Asc)])
-  @@index([dateKey, dnf(sort: Asc)])
-  @@map("lights_out_score")
+  @@unique([userId, gameMode, dateKey])
+  @@index([gameMode, dateKey, score(sort: Desc)])
+  @@index([gameMode, dateKey, moves(sort: Asc)])
+  @@map("daily_puzzle_score")
 }
 
 // Slice It Player Model
