@@ -34,7 +34,7 @@ export function BuildsRightSidebar({ games, apps, newsArticles }: BuildsRightSid
                     {featuredGames.map((game) => (
                         <Link
                             key={game.id}
-                            to={`/builds/${game.slug}`}
+                            to={`/builds/${game.slug}` as string}
                             className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-site-surface-hover transition-colors group"
                         >
                             <div className="w-8 h-8 rounded-lg bg-linear-to-br from-site-surface to-site-surface-hover flex items-center justify-center shrink-0">
@@ -61,7 +61,7 @@ export function BuildsRightSidebar({ games, apps, newsArticles }: BuildsRightSid
                     {apps.map((app) => (
                         <Link
                             key={app.id}
-                            to={`/builds/${app.slug}`}
+                            to={`/builds/${app.slug}` as string}
                             className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-site-surface-hover transition-colors group"
                         >
                             <div className="w-8 h-8 rounded-lg bg-linear-to-br from-site-surface to-site-surface-hover flex items-center justify-center shrink-0">
@@ -103,7 +103,7 @@ export function BuildsRightSidebar({ games, apps, newsArticles }: BuildsRightSid
                     {newsArticles.slice(0, 3).map((article) => (
                         <Link
                             key={article.slug}
-                            to={`/news/${article.slug}`}
+                            to={`/news/${article.slug}` as string}
                             className="block group"
                         >
                             <p className="text-xs text-site-text-dim">{article.category}</p>

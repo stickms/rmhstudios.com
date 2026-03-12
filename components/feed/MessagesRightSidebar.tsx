@@ -16,10 +16,10 @@ interface SidebarUser {
 function UserRow({ user }: { user: SidebarUser }) {
   return (
     <Link
-      to={`/@${(user as any).handle || user.id}`}
+      to={`/@${(user as any).handle || user.id}` as string}
       className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-site-surface-hover transition-colors group"
     >
-      <UserAvatar src={user.image} alt={user.name || 'User'} size={32} fallbackName={user.name} />
+      <UserAvatar src={user.image ?? undefined} alt={user.name || 'User'} size={32} fallbackName={user.name ?? undefined} />
       <div className="min-w-0">
         <p className="text-sm font-medium text-site-text group-hover:text-site-accent transition-colors truncate">
           {user.name || 'Unknown'}

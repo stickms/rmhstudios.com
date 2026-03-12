@@ -40,7 +40,7 @@ function CommentItem({
     <div className={depth > 0 ? 'ml-8 border-l border-site-border pl-4' : ''}>
       <div className="py-3">
         <div className="flex items-start gap-3">
-          <UserAvatar src={comment.user.image} alt={comment.user.name || 'User'} size={32} fallbackName={comment.user.name} />
+          <UserAvatar src={comment.user.image ?? undefined} alt={comment.user.name || 'User'} size={32} fallbackName={comment.user.name ?? undefined} />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <span className="font-medium text-sm text-site-text">

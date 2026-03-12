@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 export const Route = createFileRoute('/api/rmharks/$id/comment/$commentId')({
   server: {
     handlers: {
-  DELETE: async ({ params }) => {
+  DELETE: async ({ params, request }) => {
   try {
     const session = await auth.api.getSession({ headers: request.headers });
     if (!session) {

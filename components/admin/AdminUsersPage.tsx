@@ -251,7 +251,7 @@ export default function AdminUsersPage() {
                                         </div>
                                         <div className="min-w-0">
                                             <div className="flex items-center gap-1.5">
-                                                <Link to={`/@${user.handle || user.id}`} className="font-semibold text-site-text hover:text-site-accent truncate">
+                                                <Link to={`/@${user.handle || user.id}` as string} className="font-semibold text-site-text hover:text-site-accent truncate">
                                                     {user.name || user.handle || user.username}
                                                 </Link>
                                                 {user.isVerified && <CheckCircle className="w-3.5 h-3.5 text-blue-400 shrink-0" />}
@@ -343,7 +343,7 @@ export default function AdminUsersPage() {
                                         </div>
                                         <div className="min-w-0 flex-1">
                                             <div className="flex items-center gap-1.5">
-                                                <Link to={`/@${user.handle || user.id}`} className="font-semibold text-site-text hover:text-site-accent truncate">
+                                                <Link to={`/@${user.handle || user.id}` as string} className="font-semibold text-site-text hover:text-site-accent truncate">
                                                     {user.name || user.handle || user.username}
                                                 </Link>
                                                 {user.isVerified && <CheckCircle className="w-3.5 h-3.5 text-blue-400 shrink-0" />}

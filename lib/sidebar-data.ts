@@ -1,5 +1,15 @@
 import { prisma } from '@/lib/prisma';
 import { resolveUserDisplay } from '@/lib/user-display';
+import { games } from './games';
+import { apps } from './apps';
+
+type SidebarOfficialBuild = {
+  id: string;
+  title: string;
+  thumbnailUrl: string | null;
+  href: string;
+  status?: string;
+};
 
 type SidebarBuild = {
   id: string;
@@ -33,28 +43,18 @@ type SidebarPost = {
   date: string;
 };
 
-async function getCuratedBuilds(): Promise<SidebarBuild[]> {
-  return prisma.userBuild.findMany({
-    where: {
-      isCurated: true,
-      visibility: 'PUBLIC',
-    },
-    orderBy: [
-      { position: 'asc' },
-      { likeCount: 'desc' },
-      { viewCount: 'desc' },
-    ],
-    take: 4,
-    select: {
-      id: true,
-      slug: true,
-      title: true,
-      thumbnailUrl: true,
-      likeCount: true,
-      commentCount: true,
-      viewCount: true,
-    },
-  });
+function getOfficialBuilds(): SidebarOfficialBuild[] {
+  const allBuilds = [
+    ...games.slice(0, 2),
+    ...apps.filter(a => !a.hidden).slice(0, 2),
+  ];
+  return allBuilds.map(b => ({
+    id: b.id,
+    title: b.title,
+    thumbnailUrl: b.imagePath || null,
+    href: b.href,
+    status: b.status,
+  }));
 }
 
 async function getUserBuilds(): Promise<SidebarBuild[]> {
@@ -173,16 +173,15 @@ async function getBlogPosts(): Promise<SidebarPost[]> {
 }
 
 export async function getSidebarData() {
-  const [curatedBuilds, userBuilds, recommendedUsers, blogPosts] =
+  const [userBuilds, recommendedUsers, blogPosts] =
     await Promise.all([
-      getCuratedBuilds(),
       getUserBuilds(),
       getRecommendedUsers(),
       getBlogPosts(),
     ]);
 
   return {
-    curatedBuilds,
+    officialBuilds: getOfficialBuilds(),
     userBuilds,
     recommendedUsers,
     blogPosts,

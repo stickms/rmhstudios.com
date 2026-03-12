@@ -53,7 +53,7 @@ export function HeroSection() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6, duration: 0.5 }}
           >
-            <Link to="#projects">
+            <Link to={"#projects" as string}>
               <Button variant="accent" size="lg" className="rounded-xl text-base px-8">
                 Explore Our Games
               </Button>

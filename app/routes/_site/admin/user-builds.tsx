@@ -112,18 +112,18 @@ function AdminUserBuildsPage() {
                 <div key={build.id} ref={isLast ? lastElementRef : null} className="p-4 flex flex-col sm:flex-row sm:items-center gap-4 hover:bg-site-surface-hover transition-colors">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <Link to={`/user-builds/${build.slug}`} className="font-semibold text-lg text-site-text hover:text-site-accent truncate">{build.title}</Link>
+                      <Link to={`/user-builds/${build.slug}` as string} className="font-semibold text-lg text-site-text hover:text-site-accent truncate">{build.title}</Link>
                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${build.visibility === 'PUBLIC' ? 'bg-green-500/10 text-green-400' : build.visibility === 'UNLISTED' ? 'bg-yellow-500/10 text-yellow-400' : 'bg-site-bg text-site-text-dim'}`}>{build.visibility}</span>
                       {build.visibility === 'PRIVATE' && <Lock className="w-3.5 h-3.5 text-site-text-dim ml-1" />}
                     </div>
                     <div className="flex items-center gap-2 text-sm text-site-text-dim truncate">
-                      <Link to={`/@${build.user.handle || build.user.username}`} className="hover:text-site-text transition-colors">@{build.user.handle || build.user.username}</Link>
+                      <Link to={`/@${build.user.handle || build.user.username}` as string} className="hover:text-site-text transition-colors">@{build.user.handle || build.user.username}</Link>
                       <span>&bull;</span>
                       <span>{build.category?.name || 'Uncategorized'}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 mt-3 sm:mt-0">
-                    <Link to={`/user-builds/${build.slug}`} className="p-2 rounded-lg text-site-text-dim hover:text-site-accent hover:bg-site-bg transition-colors border border-transparent hover:border-site-border" title="View Build">
+                    <Link to={`/user-builds/${build.slug}` as string} className="p-2 rounded-lg text-site-text-dim hover:text-site-accent hover:bg-site-bg transition-colors border border-transparent hover:border-site-border" title="View Build">
                       <ExternalLink className="w-4 h-4" />
                     </Link>
                     <Link to="/user-builds/submit" search={{ edit: build.id }} className="p-2 rounded-lg text-blue-400 hover:bg-blue-500/10 transition-colors border border-transparent hover:border-blue-500/20" title="Edit Build as Admin">

@@ -44,7 +44,7 @@ export function LandingScreen({ onStartGame, hasSavedRun, onLoadSavedRun }: Prop
           <div className="flex flex-col items-center gap-4">
             <p className="text-red-400 font-mono text-sm uppercase tracking-widest">Authentication Required</p>
             <Button
-              onClick={() => navigate({ to: '/login' })}
+              onClick={() => navigate({ to: '/login', search: { callbackURL: undefined } })}
               className="w-full bg-white text-black hover:bg-zinc-200 font-bold py-3 rounded-lg"
             >
               Sign In to Play

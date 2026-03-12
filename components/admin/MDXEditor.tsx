@@ -1,5 +1,6 @@
 import { useState, useCallback, lazy, Suspense } from 'react';
 import { useRouter } from '@tanstack/react-router';
+import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -110,8 +111,9 @@ export function MDXEditor({ initialData, isEdit = false }: { initialData?: any, 
     <div className="h-screen w-screen flex flex-col bg-site-bg overflow-hidden fixed inset-0 z-50">
         <div className="h-16 border-b border-site-border flex items-center justify-between px-4 lg:px-6 shrink-0 bg-site-surface w-full shadow-sm">
             <div className="flex items-center gap-4">
-                <Button variant="ghost" size="sm" onClick={() => navigate({ to: '/admin/blog' })} className="text-site-text-dim hover:text-site-text hidden md:flex">
-                    Back to Admin
+                <Button variant="ghost" size="sm" onClick={() => navigate({ to: '/admin/blog' })} className="text-site-text-dim hover:text-site-text" aria-label="Back to admin">
+                    <span className="hidden md:inline">Back to Admin</span>
+                    <ArrowLeft className="w-5 h-5 md:hidden" />
                 </Button>
                 <div className="h-4 w-px bg-site-border hidden md:block"></div>
                 <span className="text-sm font-bold text-site-text truncate max-w-[200px] md:max-w-xs">
@@ -172,7 +174,7 @@ export function MDXEditor({ initialData, isEdit = false }: { initialData?: any, 
 
                         <div className="flex-1 flex flex-col min-h-0 h-full">
                             <Label className="mb-2">Content <span className="text-red-500">*</span></Label>
-                            <div className="flex-1 border border-site-border rounded-md overflow-hidden relative min-h-0">
+                            <div className="flex-1 border border-site-border rounded-md overflow-hidden relative min-h-75 sm:min-h-0">
                               <Suspense fallback={<div className="flex-1 flex items-center justify-center bg-site-surface border border-site-border rounded-md text-site-text-muted">Loading Editor...</div>}>
                                 <Editor
                                   height="100%"

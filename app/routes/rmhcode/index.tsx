@@ -234,7 +234,7 @@ function RmhCodePage() {
             {isPending ? (<div className="h-12 w-full bg-site-surface-hover rounded-lg animate-pulse" />) : session ? (<Suspense fallback={<GameLoadingFallback />}><TokenGenerator /></Suspense>) : (
               <div className="text-center py-8 border border-dashed border-site-border rounded-lg">
                 <p className="text-site-text-muted mb-4">Sign in to generate a CLI token</p>
-                <Link to="/login"><Button variant="accent">Sign In</Button></Link>
+                <Link to="/login" search={{ callbackURL: undefined }}><Button variant="accent">Sign In</Button></Link>
               </div>
             )}
           </div>

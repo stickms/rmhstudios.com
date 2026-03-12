@@ -180,10 +180,10 @@ export function FeedColumn() {
           {userResults.map((user) => (
             <Link
               key={user.id}
-              to={`/@${user.handle || user.id}`}
+              to={`/@${user.handle || user.id}` as string}
               className="flex items-center gap-3 px-4 py-2.5 hover:bg-site-surface transition-colors"
             >
-              <UserAvatar src={user.image} alt={user.name || 'User'} size={32} fallbackName={user.name} />
+              <UserAvatar src={user.image ?? undefined} alt={user.name || 'User'} size={32} fallbackName={user.name ?? undefined} />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1">
                   <span className="font-semibold text-sm text-site-text truncate">{user.name || 'Unknown'}</span>
@@ -209,6 +209,7 @@ export function FeedColumn() {
           <p className="text-sm text-site-text-muted mb-6">Follow people and their posts will appear here.</p>
           <Link
             to="/login"
+            search={{ callbackURL: undefined }}
             className="px-5 py-2 rounded-full bg-site-accent text-white text-sm font-bold hover:bg-site-accent-hover transition-colors"
           >
             Sign in

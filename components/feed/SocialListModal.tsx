@@ -189,11 +189,11 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
               className="flex items-center gap-3 px-5 py-3 hover:bg-site-surface/50 transition-colors border-b border-site-border/50"
             >
               <Link
-                to={`/@${user.handle || user.id}`}
+                to={`/@${user.handle || user.id}` as string}
                 onClick={onClose}
                 className="flex items-center gap-3 flex-1 min-w-0"
               >
-                <UserAvatar src={user.image} alt={user.name || 'User'} size={40} fallbackName={user.name} />
+                <UserAvatar src={user.image ?? undefined} alt={user.name || 'User'} size={40} fallbackName={user.name ?? undefined} />
                 <div className="min-w-0">
                   <p className="font-bold text-site-text text-sm truncate">
                     {user.name || user.username || 'Unknown'}

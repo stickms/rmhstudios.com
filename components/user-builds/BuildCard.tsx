@@ -43,7 +43,7 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
   };
 
   return (
-    <Link to={`/user-builds/${build.slug}`} className="block h-full">
+    <Link to={`/user-builds/${build.slug}` as string} className="block h-full">
       <div className="group rounded-xl border border-site-border bg-site-surface hover:border-violet-500/50 transition-all overflow-hidden flex flex-col h-full">
         {/* Thumbnail */}
         {build.thumbnailUrl ? (
@@ -75,8 +75,8 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
               </span>
             )}
             {build.featured && (
-              <span className="px-2 py-0.5 rounded-full text-xs bg-yellow-500/20 text-yellow-400">
-                Featured
+              <span className="px-2 py-0.5 rounded-full text-xs bg-amber-500/20 text-amber-400">
+                Curated
               </span>
             )}
           </div>
@@ -101,7 +101,7 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
           {/* Author & Meta */}
           <div className="flex items-center justify-between mt-auto">
             <div className="flex items-center gap-2 min-w-0">
-              <UserAvatar src={build.user.image} alt={build.user.name || 'User'} size={24} fallbackName={build.user.name} />
+              <UserAvatar src={build.user.image ?? undefined} alt={build.user.name || 'User'} size={24} fallbackName={build.user.name ?? undefined} />
               <span className="text-sm text-site-text-muted truncate">
                 {build.user.name || 'Anonymous'}
               </span>

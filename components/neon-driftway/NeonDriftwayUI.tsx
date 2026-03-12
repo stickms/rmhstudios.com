@@ -99,7 +99,7 @@ export function NeonDriftwayUI({
           <div className="space-y-3">
             {!session.data ? (
               <Button
-                onClick={() => navigate({ to: '/login' })}
+                onClick={() => navigate({ to: '/login', search: { callbackURL: undefined } })}
                 className="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-3"
               >
                 Sign In to Play
@@ -256,7 +256,7 @@ export function NeonDriftwayUI({
 
           {!session.data ? (
             <Button
-              onClick={() => navigate({ to: '/login' })}
+              onClick={() => navigate({ to: '/login', search: { callbackURL: undefined } })}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold"
             >
               Sign In to Submit Score

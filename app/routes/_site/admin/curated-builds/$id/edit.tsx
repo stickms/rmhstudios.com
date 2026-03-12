@@ -1,5 +1,5 @@
 /**
- * Edit Curated Build Route
+ * Edit Official Build Route
  */
 
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
@@ -149,14 +149,14 @@ function CuratedBuildEditPage() {
       if (!res.ok) { const data = await res.json(); throw new Error(data.error || 'Failed to update build'); }
       navigate({ to: '/admin/curated-builds' });
     } catch (err: any) {
-      setError(err.message || 'Failed to update curated build');
+      setError(err.message || 'Failed to update official build');
       setSubmitting(false);
     }
   };
 
   if (isPending || loading) {
     return (
-      <PageLayout title="Edit Curated Build" wide>
+      <PageLayout title="Edit Official Build" wide>
         <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 text-site-accent animate-spin" /></div>
       </PageLayout>
     );
@@ -164,13 +164,13 @@ function CuratedBuildEditPage() {
 
   if (!build) {
     return (
-      <PageLayout title="Edit Curated Build" wide>
+      <PageLayout title="Edit Official Build" wide>
         <div className="max-w-3xl mx-auto p-4 md:p-8">
           <div className="p-8 rounded-xl border border-site-border bg-site-surface text-center">
             <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-red-500 mb-2">Error</h2>
             <p className="text-site-text-muted mb-6">{error || 'Build not found'}</p>
-            <Link to="/admin/curated-builds"><Button variant="secondary">Back to Curated Builds</Button></Link>
+            <Link to="/admin/curated-builds"><Button variant="secondary">Back to Official Builds</Button></Link>
           </div>
         </div>
       </PageLayout>
@@ -178,14 +178,14 @@ function CuratedBuildEditPage() {
   }
 
   return (
-    <PageLayout title="Edit Curated Build" wide>
+    <PageLayout title="Edit Official Build" wide>
       <div className="max-w-3xl mx-auto p-4 md:p-8">
         <div className="flex items-center gap-4 mb-8">
           <Link to="/admin/curated-builds" className="p-2 hover:bg-site-surface-hover rounded-full transition-colors">
             <ArrowLeft className="w-5 h-5 text-site-text-dim" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold font-display text-site-text">Edit Curated Build</h1>
+            <h1 className="text-2xl font-bold font-display text-site-text">Edit Official Build</h1>
             <p className="text-site-text-muted mt-1">Update official details, tags, and hero image.</p>
           </div>
         </div>
@@ -226,7 +226,7 @@ function CuratedBuildEditPage() {
                       const blob = await res.blob();
                       setCropSrc(URL.createObjectURL(blob));
                     } catch { setError('Failed to load image for cropping'); }
-                  }} className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-site-border text-site-text-muted hover:text-site-text hover:border-site-accent/50 transition-colors">
+                  }} className="flex items-center gap-1.5 px-4 py-2.5 text-sm rounded-lg border border-site-border text-site-text-muted hover:text-site-text hover:border-site-accent/50 transition-colors">
                     <Crop className="w-4 h-4" /> Re-crop
                   </button>
                 )}
@@ -287,10 +287,10 @@ function CuratedBuildEditPage() {
 
           {/* Curated Toggle */}
           <div className="flex items-center gap-3">
-            <button type="button" onClick={() => setIsCurated(!isCurated)} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isCurated ? 'bg-site-accent' : 'bg-site-border'}`}>
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isCurated ? 'translate-x-6' : 'translate-x-1'}`} />
+            <button type="button" onClick={() => setIsCurated(!isCurated)} className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${isCurated ? 'bg-site-accent' : 'bg-site-border'}`} aria-label="Toggle official build status">
+              <span className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${isCurated ? 'translate-x-7' : 'translate-x-1'}`} />
             </button>
-            <label className="text-sm font-medium text-site-text">Curated Build</label>
+            <label className="text-sm font-medium text-site-text">Official Build</label>
           </div>
 
           {error && (

@@ -95,7 +95,7 @@ function PostPage() {
       {/* Right Sidebar */}
       <aside className="hidden lg:block w-80 shrink-0 self-start">
         <RightSidebar
-          curatedBuilds={sidebar.curatedBuilds}
+          officialBuilds={sidebar.officialBuilds}
           userBuilds={sidebar.userBuilds}
           recommendedUsers={sidebar.recommendedUsers}
           blogPosts={sidebar.blogPosts}

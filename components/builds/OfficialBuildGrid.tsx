@@ -1,41 +1,20 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Search, X, ChevronDown, Filter, ArrowUpDown } from 'lucide-react';
+import { Search, X, ChevronDown, ArrowUpDown } from 'lucide-react';
 import { OfficialBuildCard } from './OfficialBuildCard';
 import type { OfficialBuild } from './OfficialBuildCard';
-import type { UserBuild, BuildCategory } from '@prisma/client';
-
-type FullBuild = UserBuild & { category?: BuildCategory | null };
 
 type SortOption = 'default' | 'popular' | 'views' | 'comments';
 
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
-    { value: 'default', label: 'Curated Order' },
+    { value: 'default', label: 'Default' },
     { value: 'popular', label: 'Most Liked' },
     { value: 'views', label: 'Most Viewed' },
     { value: 'comments', label: 'Most Discussed' },
 ];
 
 interface OfficialBuildGridProps {
-    builds: FullBuild[];
+    builds: OfficialBuild[];
     initialLikedIds?: string[];
-}
-
-function toBuildData(b: FullBuild, likedIds: Set<string>): OfficialBuild {
-    return {
-        id: b.id,
-        slug: b.slug,
-        title: b.title,
-        description: b.description,
-        thumbnailUrl: b.thumbnailUrl,
-        demoUrl: b.demoUrl,
-        repoUrl: b.repoUrl,
-        technologies: Array.isArray(b.technologies) ? b.technologies as string[] : [],
-        likeCount: b.likeCount,
-        commentCount: b.commentCount,
-        viewCount: b.viewCount,
-        liked: likedIds.has(b.id),
-        category: b.category ? { slug: b.category.slug, name: b.category.name } : null,
-    };
 }
 
 export function OfficialBuildGrid({ builds, initialLikedIds = [] }: OfficialBuildGridProps) {
@@ -58,12 +37,11 @@ export function OfficialBuildGrid({ builds, initialLikedIds = [] }: OfficialBuil
         // Filter by search
         if (debouncedSearch) {
             const q = debouncedSearch.toLowerCase();
-            result = result.filter(b => {
-                const tags = Array.isArray(b.technologies) ? b.technologies as string[] : [];
-                return b.title.toLowerCase().includes(q) ||
-                    b.description.toLowerCase().includes(q) ||
-                    tags.some(t => t.toLowerCase().includes(q));
-            });
+            result = result.filter(b =>
+                b.title.toLowerCase().includes(q) ||
+                b.description.toLowerCase().includes(q) ||
+                b.technologies.some(t => t.toLowerCase().includes(q))
+            );
         }
 
         // Sort
@@ -146,7 +124,7 @@ export function OfficialBuildGrid({ builds, initialLikedIds = [] }: OfficialBuil
 
     const hasFilters = !!debouncedSearch || sort !== 'default';
 
-    const selectedSortLabel = SORT_OPTIONS.find(o => o.value === sort)?.label || 'Curated Order';
+    const selectedSortLabel = SORT_OPTIONS.find(o => o.value === sort)?.label || 'Default';
 
     return (
         <>
@@ -228,8 +206,7 @@ export function OfficialBuildGrid({ builds, initialLikedIds = [] }: OfficialBuil
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {filtered.map((item) => {
-                        const buildData = toBuildData(item, likedIds);
-                        // Apply local overrides for like/view counts
+                        const buildData = { ...item, liked: likedIds.has(item.id) };
                         if (likeCounts[item.id] !== undefined) buildData.likeCount = likeCounts[item.id];
                         if (viewCounts[item.id] !== undefined) buildData.viewCount = viewCounts[item.id];
                         return (

@@ -287,7 +287,7 @@ export function VoidBreakerUI({
             )}
 
             {!session.data ? (
-              <Button onClick={() => navigate({ to: '/login' })}
+              <Button onClick={() => navigate({ to: '/login', search: { callbackURL: undefined } })}
                 className="w-full bg-[#0a0a18] hover:bg-[#14141f] text-[#00f5ff] font-bold py-3 border border-[#00f5ff]/30">
                 Sign In to Play
               </Button>
@@ -371,7 +371,7 @@ export function VoidBreakerUI({
           </div>
 
           {!session.data ? (
-            <Button onClick={() => navigate({ to: '/login' })}
+            <Button onClick={() => navigate({ to: '/login', search: { callbackURL: undefined } })}
               className="w-full bg-[#1a1a24] hover:bg-[#252530] text-[#d4af37] font-bold border border-[#c9a227]/40">
               Sign In to Submit
             </Button>

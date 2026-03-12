@@ -18,9 +18,9 @@ import type { Difficulty, PassageLength } from '@/lib/rmhtype/types';
 import { useParams, useRouter } from '@tanstack/react-router';
 
 export default function RmhTypeRoom() {
-  const params = useParams();
+  const { roomId } = useParams({ from: '/rmhtype/$roomId' });
   const router = useRouter();
-  const roomCode = (params.roomId as string)?.toUpperCase();
+  const roomCode = roomId?.toUpperCase();
   const room = useRmhTypeStore((s) => s.room);
   const connectionStatus = useRmhTypeStore((s) => s.connectionStatus);
 

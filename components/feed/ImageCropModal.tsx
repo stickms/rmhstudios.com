@@ -71,7 +71,8 @@ export function ImageCropModal({ imageSrc, onCropDone, onCancel, aspect = 1, cro
           <h2 className="font-bold text-site-text">Crop Image</h2>
           <button
             onClick={onCancel}
-            className="p-1.5 rounded-lg text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
+            className="p-2.5 rounded-lg text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
+            aria-label="Close crop modal"
           >
             <X className="w-5 h-5" />
           </button>
@@ -116,36 +117,40 @@ export function ImageCropModal({ imageSrc, onCropDone, onCancel, aspect = 1, cro
           </div>
 
           {/* Action buttons */}
-          <div className="flex items-center justify-center gap-1 sm:gap-2">
+          <div className="flex items-center justify-center gap-2">
             <button
               type="button"
               onClick={() => setRotation((r) => r - 90)}
-              className="p-2 rounded-lg text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
+              className="p-3 rounded-lg text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
               title="Rotate left"
+              aria-label="Rotate left"
             >
               <RotateCcw className="w-5 h-5" />
             </button>
             <button
               type="button"
               onClick={() => setRotation((r) => r + 90)}
-              className="p-2 rounded-lg text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
+              className="p-3 rounded-lg text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
               title="Rotate right"
+              aria-label="Rotate right"
             >
               <RotateCw className="w-5 h-5" />
             </button>
             <button
               type="button"
               onClick={() => setFlipH((f) => !f)}
-              className={`p-2 rounded-lg transition-colors ${flipH ? 'text-site-accent bg-site-accent/10' : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'}`}
+              className={`p-3 rounded-lg transition-colors ${flipH ? 'text-site-accent bg-site-accent/10' : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'}`}
               title="Flip horizontal"
+              aria-label="Flip horizontal"
             >
               <FlipHorizontal className="w-5 h-5" />
             </button>
             <button
               type="button"
               onClick={() => setFlipV((f) => !f)}
-              className={`p-2 rounded-lg transition-colors ${flipV ? 'text-site-accent bg-site-accent/10' : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'}`}
+              className={`p-3 rounded-lg transition-colors ${flipV ? 'text-site-accent bg-site-accent/10' : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'}`}
               title="Flip vertical"
+              aria-label="Flip vertical"
             >
               <FlipVertical className="w-5 h-5" />
             </button>
@@ -154,10 +159,10 @@ export function ImageCropModal({ imageSrc, onCropDone, onCancel, aspect = 1, cro
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-site-border shrink-0">
-          <Button variant="ghost" size="sm" onClick={onCancel}>
+          <Button variant="ghost" onClick={onCancel}>
             Cancel
           </Button>
-          <Button variant="accent" size="sm" disabled={saving} onClick={handleSave}>
+          <Button variant="accent" disabled={saving} onClick={handleSave}>
             {saving ? 'Applying...' : 'Apply'}
           </Button>
         </div>

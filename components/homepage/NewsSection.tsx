@@ -108,7 +108,7 @@ export function NewsSection({ articles }: NewsSectionProps) {
                                                 : 'scale-[0.88] opacity-30 grayscale-50'
                                             }`}
                                     >
-                                        <Link to={`/news/${article.slug}`} className="block group/card h-full">
+                                        <Link to={`/news/${article.slug}` as string} className="block group/card h-full">
                                             <div
                                                 className="bg-(--site-surface) border border-(--site-border) rounded-2xl overflow-hidden hover:border-(--site-accent)/50 transition-all duration-300 h-full flex flex-col hover:shadow-(--site-shadow) relative backdrop-blur-sm"
                                             >

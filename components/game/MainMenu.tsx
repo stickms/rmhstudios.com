@@ -492,7 +492,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                              <div className="space-y-6">
                                 <Button
                                     className="w-full py-6 sm:py-12 text-xl sm:text-3xl font-black tracking-widest bg-blue-500 hover:bg-blue-400 text-white shadow-[15px_15px_30px_rgba(59,130,246,0.4),-15px_-15px_30px_var(--slice-shadow-light)] rounded-[2.5rem] transition-all transform hover:scale-[1.03] active:scale-95 uppercase"
-                                    onClick={() => navigate({ to: '/login' })}
+                                    onClick={() => navigate({ to: '/login', search: { callbackURL: undefined } })}
                                 >
                                     Log In
                                 </Button>

@@ -112,7 +112,7 @@ function SortableBuildItem({ build, onUncurate, onToggleFeatured }: { build: Bui
                 >
                     {build.featured ? <Star className="w-4 h-4-current" /> : <StarOff className="w-4 h-4" />}
                 </button>
-                <Link to={`/admin/curated-builds/${build.id}/edit`}
+                <Link to={`/admin/curated-builds/${build.id}/edit` as string}
                     className="p-2 text-site-text-muted hover:text-site-accent hover:bg-site-surface transition-colors rounded-lg relative z-20"
                     title="Edit Build"
                     onPointerDown={(e) => e.stopPropagation()}
@@ -278,6 +278,7 @@ export function CuratedBuildsClient({ initialBuilds }: CuratedBuildsClientProps)
                     </div>
                 )}
             </div>
+            {/* @ts-expect-error styled-jsx */}
             <style jsx global>{`
                 @keyframes shimmer {
                     100% { transform: translateX(200%); }

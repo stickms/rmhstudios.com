@@ -23,7 +23,7 @@ export function BlogRightSidebar({ newsArticles, researchArticles, tags }: BlogR
                         {tags.map(tag => (
                             <Link
                                 key={tag}
-                                to={`/blog?tag=${encodeURIComponent(tag)}`}
+                                to={`/blog?tag=${encodeURIComponent(tag)}` as string}
                                 className="text-xs px-2.5 py-1 rounded-full bg-site-bg border border-site-border text-site-text-muted hover:text-site-accent hover:border-site-accent/50 transition-colors"
                             >
                                 {tag}
@@ -43,7 +43,7 @@ export function BlogRightSidebar({ newsArticles, researchArticles, tags }: BlogR
                     {newsArticles.slice(0, 4).map((article) => (
                         <Link
                             key={article.slug}
-                            to={`/news/${article.slug}`}
+                            to={`/news/${article.slug}` as string}
                             className="block group"
                         >
                             <p className="text-xs text-site-text-dim">{article.category}</p>
@@ -70,7 +70,7 @@ export function BlogRightSidebar({ newsArticles, researchArticles, tags }: BlogR
                     {researchArticles.slice(0, 3).map((article) => (
                         <Link
                             key={article.slug}
-                            to={`/research/${article.slug}`}
+                            to={`/research/${article.slug}` as string}
                             className="block group"
                         >
                             <p className="text-xs text-site-text-dim">{article.category}</p>

@@ -117,7 +117,7 @@ export function ComposeBox() {
     return (
       <div className="px-4 py-6 border-b border-site-border text-center">
         <p className="text-sm text-site-text-muted mb-2">Sign in to post RMHarks</p>
-        <Link to="/login">
+        <Link to="/login" search={{ callbackURL: undefined }}>
           <Button variant="accent" size="sm">Sign In</Button>
         </Link>
       </div>

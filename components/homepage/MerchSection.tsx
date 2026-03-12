@@ -85,7 +85,7 @@ export function MerchSection() {
           viewport={{ once: true }}
           className="flex justify-center"
         >
-          <Link to="#">
+          <Link to={"#" as string}>
             <Button variant="accent-outline">Visit Full Store</Button>
           </Link>
         </motion.div>

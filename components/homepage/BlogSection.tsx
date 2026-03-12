@@ -114,7 +114,7 @@ export function BlogSection({ posts }: BlogSectionProps) {
                       : "scale-[0.85] opacity-30 grayscale-50"
                   }`}
                 >
-                  <Link to={`/blog/${post.slug}`} className="block group/card h-full">
+                  <Link to={`/blog/${post.slug}` as string} className="block group/card h-full">
                     <div className="bg-site-surface border border-site-border rounded-2xl overflow-hidden hover:border-site-accent transition-all duration-300 h-full flex flex-col hover:shadow-(--site-shadow) relative backdrop-blur-sm">
                       {/* Image Placeholder */}
                       <div className="h-48 md:h-64 bg-site-surface-hover relative overflow-hidden group-hover/card:scale-105 transition-transform duration-700">

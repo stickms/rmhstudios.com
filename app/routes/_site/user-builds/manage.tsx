@@ -128,7 +128,7 @@ function ManageContent() {
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <Link to={`/user-builds/${build.slug}`}>
+                  <Link to={`/user-builds/${build.slug}` as string}>
                     <h3 className="font-semibold text-site-text hover:text-violet-400 transition-colors truncate">{build.title}</h3>
                   </Link>
                   <p className="text-sm text-site-text-muted truncate">{build.description}</p>
@@ -141,7 +141,7 @@ function ManageContent() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Link to={`/user-builds/${build.slug}`}>
+                  <Link to={`/user-builds/${build.slug}` as string}>
                     <Button variant="ghost" size="icon" title="View"><Eye className="w-4 h-4" /></Button>
                   </Link>
                   <Link to="/user-builds/submit" search={{ edit: build.id }}>

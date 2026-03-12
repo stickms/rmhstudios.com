@@ -65,7 +65,7 @@ function AdminBlogDashboard() {
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <Link 
-                    to={`/admin/blog/${post.slug as string}/edit`}
+                    to={`/admin/blog/${post.slug as string}/edit` as string}
                     className="inline-flex items-center justify-center p-2 rounded-md hover:bg-site-border text-site-text-dim hover:text-site-text transition-colors"
                     title="Edit Post"
                   >

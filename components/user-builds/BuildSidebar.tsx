@@ -11,7 +11,7 @@ interface BuildSidebarProps {
 
 function BuildMiniCard({ build }: { build: Build }) {
   return (
-    <Link to={`/user-builds/${build.slug}`}>
+    <Link to={`/user-builds/${build.slug}` as string}>
       <div className="flex gap-3 p-3 rounded-lg hover:bg-site-surface-hover transition-colors">
         {build.thumbnailUrl ? (
           <img

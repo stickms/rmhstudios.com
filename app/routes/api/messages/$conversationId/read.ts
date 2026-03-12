@@ -8,7 +8,7 @@ import { notifyUser } from "@/lib/message-events";
 export const Route = createFileRoute('/api/messages/$conversationId/read')({
   server: {
     handlers: {
-  POST: async ({ params }) => {
+  POST: async ({ params, request }) => {
   try {
     const session = await auth.api.getSession({ headers: request.headers });
     if (!session) {

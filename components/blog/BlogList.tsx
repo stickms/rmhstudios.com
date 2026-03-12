@@ -260,7 +260,7 @@ export function BlogList({ initialPosts, filtersOpen = false }: BlogListProps) {
               transition={{ duration: 0.3 }}
             >
                <div data-slot="card" className="bg-site-surface border border-site-border overflow-hidden hover:border-site-accent/50 transition-colors h-full flex flex-col group relative" style={{ borderRadius: "var(--site-radius)", borderWidth: "var(--site-border-width)", transitionDuration: "var(--site-transition-speed)" }}>
-                  <Link to={`/blog/${post.slug}`} className="absolute inset-0 z-0" />
+                  <Link to={`/blog/${post.slug}` as string} className="absolute inset-0 z-0" />
 
                   {/* Share Button */}
                   <ShareButton slug={post.slug!} className="absolute top-3 right-3 z-10" />

@@ -32,7 +32,7 @@ export function NewsCard({ article, index }: NewsCardProps) {
                     transitionDuration: 'var(--site-transition-speed)',
                 }}
             >
-                <Link to={`/news/${article.slug}`} className="absolute inset-0 z-0" />
+                <Link to={`/news/${article.slug}` as string} className="absolute inset-0 z-0" />
 
                 {/* Category */}
                 <div className="px-5 pt-5 pb-0 relative z-10 pointer-events-none">

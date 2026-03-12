@@ -48,7 +48,7 @@ export function MobileNav() {
             <Home className="w-6 h-6" />
           </Link>
 
-          <Link to="/builds" className={tabClass(isBuilds)} aria-label="Curated Builds">
+          <Link to="/builds" className={tabClass(isBuilds)} aria-label="Official Builds">
             <Package className="w-6 h-6" />
           </Link>
 

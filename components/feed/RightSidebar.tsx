@@ -12,6 +12,14 @@ import {
   MessageCircle,
 } from 'lucide-react';
 
+interface SidebarOfficialBuild {
+  id: string;
+  title: string;
+  thumbnailUrl: string | null;
+  href: string;
+  status?: string;
+}
+
 interface SidebarBuild {
   id: string;
   slug: string;
@@ -45,52 +53,77 @@ interface SidebarPost {
 }
 
 interface RightSidebarProps {
-  curatedBuilds: SidebarBuild[];
+  officialBuilds: SidebarOfficialBuild[];
   userBuilds: SidebarBuild[];
   recommendedUsers: SidebarUser[];
   blogPosts: SidebarPost[];
 }
 
 export function RightSidebar({
-  curatedBuilds,
+  officialBuilds,
   userBuilds,
   recommendedUsers,
   blogPosts,
 }: RightSidebarProps) {
   return (
     <div className="p-4 space-y-6">
-      {/* Curated Builds */}
+      {/* Official Builds */}
       <section className="bg-site-surface rounded-2xl p-4 border border-site-border">
         <h2 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 mb-3">
           <Package className="w-5 h-5 text-site-accent" />
-          Curated Builds
+          Official Builds
         </h2>
         <div className="space-y-2.5">
-          {curatedBuilds.map((build) => (
-            <Link
-              key={build.id}
-              to={`/builds/${build.slug}`}
-              className="-mx-2 px-2 flex items-center gap-2.5 rounded-lg py-1.5 hover:bg-site-surface-hover transition-colors group"
-            >
-              <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-site-bg shrink-0 border border-site-border">
-                {build.thumbnailUrl ? (
-                  <img src={build.thumbnailUrl} alt={build.title} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full bg-linear-to-br from-site-accent/30 to-site-surface" />
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-site-text group-hover:text-site-accent transition-colors truncate">
-                  {build.title}
-                </p>
-                <div className="flex items-center gap-2 text-[11px] text-site-text-dim">
-                  <span className="inline-flex items-center gap-1"><Heart className="w-3 h-3" />{build.likeCount}</span>
-                  <span className="inline-flex items-center gap-1"><MessageCircle className="w-3 h-3" />{build.commentCount}</span>
-                  <span className="inline-flex items-center gap-1"><Eye className="w-3 h-3" />{build.viewCount}</span>
+          {officialBuilds.map((build) => {
+            const isInternal = build.href.startsWith('/');
+            return isInternal ? (
+              <Link
+                key={build.id}
+                to={build.href}
+                className="-mx-2 px-2 flex items-center gap-2.5 rounded-lg py-1.5 hover:bg-site-surface-hover transition-colors group"
+              >
+                <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-site-bg shrink-0 border border-site-border">
+                  {build.thumbnailUrl ? (
+                    <img src={build.thumbnailUrl} alt={build.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-linear-to-br from-site-accent/30 to-site-surface" />
+                  )}
                 </div>
-              </div>
-            </Link>
-          ))}
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-site-text group-hover:text-site-accent transition-colors truncate">
+                    {build.title}
+                  </p>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-site-text-dim">
+                    {build.status}
+                  </span>
+                </div>
+              </Link>
+            ) : (
+              <a
+                key={build.id}
+                href={build.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="-mx-2 px-2 flex items-center gap-2.5 rounded-lg py-1.5 hover:bg-site-surface-hover transition-colors group"
+              >
+                <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-site-bg shrink-0 border border-site-border">
+                  {build.thumbnailUrl ? (
+                    <img src={build.thumbnailUrl} alt={build.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-linear-to-br from-site-accent/30 to-site-surface" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-site-text group-hover:text-site-accent transition-colors truncate">
+                    {build.title}
+                  </p>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-site-text-dim">
+                    {build.status}
+                  </span>
+                </div>
+              </a>
+            );
+          })}
         </div>
         <Link to="/builds" className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors">
           Show more
@@ -107,7 +140,7 @@ export function RightSidebar({
           {userBuilds.map((build) => (
             <Link
               key={build.id}
-              to={`/builds/${build.slug}`}
+              to={`/builds/${build.slug}` as string}
               className="-mx-2 px-2 flex items-center gap-2.5 rounded-lg py-1.5 hover:bg-site-surface-hover transition-colors group"
             >
               <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-site-bg shrink-0 border border-site-border">
@@ -149,11 +182,10 @@ export function RightSidebar({
         <div className="space-y-2.5">
           {recommendedUsers.map((user) => {
             const profileHref = user.handle ? `/@${user.handle}` : `/profile/${user.id}`;
-            const initials = (user.name || user.username || 'U').charAt(0).toUpperCase();
             return (
               <div key={user.id} className="-mx-2 px-2 flex items-center gap-2.5 rounded-lg py-1.5 hover:bg-site-surface-hover transition-colors">
-                <Link to={profileHref} className="flex items-center gap-2.5 min-w-0 flex-1">
-                  <UserAvatar src={user.image} alt={user.name || user.username || 'User'} size={36} fallbackName={user.name || user.username} />
+                <Link to={profileHref as string} className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <UserAvatar src={user.image ?? undefined} alt={user.name || user.username || 'User'} size={36} fallbackName={(user.name || user.username) ?? undefined} />
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-site-text truncate">{user.name || user.username || 'User'}</p>
                     <p className="text-xs text-site-text-dim">
@@ -161,7 +193,7 @@ export function RightSidebar({
                     </p>
                   </div>
                 </Link>
-                <Link to={profileHref} className="text-xs font-semibold text-site-accent hover:text-site-accent-hover transition-colors">
+                <Link to={profileHref as string} className="text-xs font-semibold text-site-accent hover:text-site-accent-hover transition-colors">
                   Follow
                 </Link>
               </div>
@@ -178,7 +210,7 @@ export function RightSidebar({
         </h2>
         <div className="space-y-3">
           {blogPosts.map((post) => (
-            <Link key={post.slug} to={`/blog/${post.slug}`} className="block group">
+            <Link key={post.slug} to={`/blog/${post.slug}` as string} className="block group">
               <p className="text-xs text-site-text-dim">{post.date}</p>
               <p className="text-sm font-medium text-site-text group-hover:text-site-accent transition-colors line-clamp-2">
                 {post.title}

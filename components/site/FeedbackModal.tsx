@@ -340,6 +340,7 @@ export function FeedbackModal() {
               <span className="text-sm text-site-text-muted">
                 <Link
                   to="/login"
+                  search={{ callbackURL: undefined }}
                   className="text-site-accent hover:underline font-medium"
                 >
                   Sign in

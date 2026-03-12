@@ -48,9 +48,9 @@ function phaseColor(phase: TimerPhase): string {
 type MobileTab = 'session' | 'members' | 'chat';
 
 export default function RmhStudyRoom() {
-  const params = useParams();
+  const { roomId } = useParams({ from: '/rmhstudy/$roomId' });
   const router = useRouter();
-  const roomCode = (params.roomId as string)?.toUpperCase();
+  const roomCode = roomId?.toUpperCase();
   const room = useRmhStudyStore((s) => s.room);
   const tasks = useRmhStudyStore((s) => s.tasks);
   const connectionStatus = useRmhStudyStore((s) => s.connectionStatus);

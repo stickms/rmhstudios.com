@@ -200,7 +200,7 @@ export function MessagesColumn() {
         <p className="text-sm text-site-text-muted mb-4">
           You need to be logged in to send and receive messages.
         </p>
-        <Link to="/login">
+        <Link to="/login" search={{ callbackURL: undefined }}>
           <Button variant="accent" size="sm">Sign In</Button>
         </Link>
       </div>
@@ -239,11 +239,11 @@ export function MessagesColumn() {
           {conversations.map((conv) => (
             <Link
               key={conv.id}
-              to={`/messages/${conv.id}`}
+              to={`/messages/${conv.id}` as string}
               className="flex items-center gap-3 px-4 py-3 hover:bg-site-surface/50 transition-colors border-b border-site-border"
             >
               {/* Avatar */}
-              <UserAvatar src={conv.otherUser.image} alt={conv.otherUser.name || 'User'} size={48} fallbackName={conv.otherUser.name} className="ring-2 ring-site-bg" />
+              <UserAvatar src={conv.otherUser.image ?? undefined} alt={conv.otherUser.name || 'User'} size={48} fallbackName={conv.otherUser.name ?? undefined} className="ring-2 ring-site-bg" />
 
               {/* Content */}
               <div className="flex-1 min-w-0">

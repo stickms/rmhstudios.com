@@ -22,7 +22,7 @@ export function NewsRightSidebar({ featuredArticles, researchArticles }: NewsRig
                         {featuredArticles.slice(0, 5).map((article) => (
                             <Link
                                 key={article.slug}
-                                to={`/news/${article.slug}`}
+                                to={`/news/${article.slug}` as string}
                                 className="block group"
                             >
                                 <p className="text-xs text-site-text-dim">{article.category}</p>
@@ -50,7 +50,7 @@ export function NewsRightSidebar({ featuredArticles, researchArticles }: NewsRig
                     {researchArticles.slice(0, 3).map((article) => (
                         <Link
                             key={article.slug}
-                            to={`/research/${article.slug}`}
+                            to={`/research/${article.slug}` as string}
                             className="block group"
                         >
                             <p className="text-xs text-site-text-dim">{article.category}</p>
