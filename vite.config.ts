@@ -40,6 +40,7 @@ const heavyExternals = [
   "react-easy-crop",
   "katex",
   // Audio (native/WASM — can't bundle)
+  "tone",
   "audio-decode",
   "wasm-audio-decoders",
   "@wasm-audio-decoders/common",
@@ -87,6 +88,7 @@ const manualChunksMap: Record<string, string[]> = {
     "@tiptap/extension-text-style",
     "@tiptap/extension-underline",
   ],
+  "vendor-tonejs": ["tone"],
   "vendor-motion": ["framer-motion"],
   "vendor-pixi": ["pixi.js"],
   "vendor-recharts": ["recharts"],

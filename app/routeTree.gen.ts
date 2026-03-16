@@ -14,6 +14,7 @@ import { Route as VersecraftRouteImport } from './routes/versecraft'
 import { Route as Velum2099RouteImport } from './routes/velum2099'
 import { Route as TempleOfJoyRouteImport } from './routes/temple-of-joy'
 import { Route as SynapseStormRouteImport } from './routes/synapse-storm'
+import { Route as StudioRouteImport } from './routes/studio'
 import { Route as SliceItRouteImport } from './routes/slice-it'
 import { Route as SecretRouteImport } from './routes/secret'
 import { Route as RmhtypeRouteImport } from './routes/rmhtype'
@@ -33,6 +34,7 @@ import { Route as AltairRouteImport } from './routes/altair'
 import { Route as SiteRouteImport } from './routes/_site'
 import { Route as VersecraftIndexRouteImport } from './routes/versecraft/index'
 import { Route as TempleOfJoyIndexRouteImport } from './routes/temple-of-joy/index'
+import { Route as StudioIndexRouteImport } from './routes/studio/index'
 import { Route as SliceItIndexRouteImport } from './routes/slice-it/index'
 import { Route as SecretIndexRouteImport } from './routes/secret/index'
 import { Route as RmhtypeIndexRouteImport } from './routes/rmhtype/index'
@@ -251,6 +253,11 @@ const SynapseStormRoute = SynapseStormRouteImport.update({
   path: '/synapse-storm',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StudioRoute = StudioRouteImport.update({
+  id: '/studio',
+  path: '/studio',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SliceItRoute = SliceItRouteImport.update({
   id: '/slice-it',
   path: '/slice-it',
@@ -344,6 +351,11 @@ const TempleOfJoyIndexRoute = TempleOfJoyIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => TempleOfJoyRoute,
+} as any)
+const StudioIndexRoute = StudioIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => StudioRoute,
 } as any)
 const SliceItIndexRoute = SliceItIndexRouteImport.update({
   id: '/',
@@ -1349,6 +1361,7 @@ export interface FileRoutesByFullPath {
   '/rmhtype': typeof RmhtypeRouteWithChildren
   '/secret': typeof SecretRouteWithChildren
   '/slice-it': typeof SliceItRouteWithChildren
+  '/studio': typeof StudioRouteWithChildren
   '/synapse-storm': typeof SynapseStormRoute
   '/temple-of-joy': typeof TempleOfJoyRouteWithChildren
   '/velum2099': typeof Velum2099Route
@@ -1414,6 +1427,7 @@ export interface FileRoutesByFullPath {
   '/rmhtype/': typeof RmhtypeIndexRoute
   '/secret/': typeof SecretIndexRoute
   '/slice-it/': typeof SliceItIndexRoute
+  '/studio/': typeof StudioIndexRoute
   '/temple-of-joy/': typeof TempleOfJoyIndexRoute
   '/versecraft/': typeof VersecraftIndexRoute
   '/admin/user-builds': typeof SiteAdminUserBuildsRoute
@@ -1607,6 +1621,7 @@ export interface FileRoutesByTo {
   '/rmhtype': typeof RmhtypeIndexRoute
   '/secret': typeof SecretIndexRoute
   '/slice-it': typeof SliceItIndexRoute
+  '/studio': typeof StudioIndexRoute
   '/temple-of-joy': typeof TempleOfJoyIndexRoute
   '/versecraft': typeof VersecraftIndexRoute
   '/admin/user-builds': typeof SiteAdminUserBuildsRoute
@@ -1760,6 +1775,7 @@ export interface FileRoutesById {
   '/rmhtype': typeof RmhtypeRouteWithChildren
   '/secret': typeof SecretRouteWithChildren
   '/slice-it': typeof SliceItRouteWithChildren
+  '/studio': typeof StudioRouteWithChildren
   '/synapse-storm': typeof SynapseStormRoute
   '/temple-of-joy': typeof TempleOfJoyRouteWithChildren
   '/velum2099': typeof Velum2099Route
@@ -1826,6 +1842,7 @@ export interface FileRoutesById {
   '/rmhtype/': typeof RmhtypeIndexRoute
   '/secret/': typeof SecretIndexRoute
   '/slice-it/': typeof SliceItIndexRoute
+  '/studio/': typeof StudioIndexRoute
   '/temple-of-joy/': typeof TempleOfJoyIndexRoute
   '/versecraft/': typeof VersecraftIndexRoute
   '/_site/admin/user-builds': typeof SiteAdminUserBuildsRoute
@@ -1980,6 +1997,7 @@ export interface FileRouteTypes {
     | '/rmhtype'
     | '/secret'
     | '/slice-it'
+    | '/studio'
     | '/synapse-storm'
     | '/temple-of-joy'
     | '/velum2099'
@@ -2045,6 +2063,7 @@ export interface FileRouteTypes {
     | '/rmhtype/'
     | '/secret/'
     | '/slice-it/'
+    | '/studio/'
     | '/temple-of-joy/'
     | '/versecraft/'
     | '/admin/user-builds'
@@ -2238,6 +2257,7 @@ export interface FileRouteTypes {
     | '/rmhtype'
     | '/secret'
     | '/slice-it'
+    | '/studio'
     | '/temple-of-joy'
     | '/versecraft'
     | '/admin/user-builds'
@@ -2390,6 +2410,7 @@ export interface FileRouteTypes {
     | '/rmhtype'
     | '/secret'
     | '/slice-it'
+    | '/studio'
     | '/synapse-storm'
     | '/temple-of-joy'
     | '/velum2099'
@@ -2456,6 +2477,7 @@ export interface FileRouteTypes {
     | '/rmhtype/'
     | '/secret/'
     | '/slice-it/'
+    | '/studio/'
     | '/temple-of-joy/'
     | '/versecraft/'
     | '/_site/admin/user-builds'
@@ -2609,6 +2631,7 @@ export interface RootRouteChildren {
   RmhtypeRoute: typeof RmhtypeRouteWithChildren
   SecretRoute: typeof SecretRouteWithChildren
   SliceItRoute: typeof SliceItRouteWithChildren
+  StudioRoute: typeof StudioRouteWithChildren
   SynapseStormRoute: typeof SynapseStormRoute
   TempleOfJoyRoute: typeof TempleOfJoyRouteWithChildren
   Velum2099Route: typeof Velum2099Route
@@ -2721,6 +2744,13 @@ declare module '@tanstack/react-router' {
       path: '/synapse-storm'
       fullPath: '/synapse-storm'
       preLoaderRoute: typeof SynapseStormRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/studio': {
+      id: '/studio'
+      path: '/studio'
+      fullPath: '/studio'
+      preLoaderRoute: typeof StudioRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/slice-it': {
@@ -2855,6 +2885,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/temple-of-joy/'
       preLoaderRoute: typeof TempleOfJoyIndexRouteImport
       parentRoute: typeof TempleOfJoyRoute
+    }
+    '/studio/': {
+      id: '/studio/'
+      path: '/'
+      fullPath: '/studio/'
+      preLoaderRoute: typeof StudioIndexRouteImport
+      parentRoute: typeof StudioRoute
     }
     '/slice-it/': {
       id: '/slice-it/'
@@ -4584,6 +4621,17 @@ const SliceItRouteChildren: SliceItRouteChildren = {
 const SliceItRouteWithChildren =
   SliceItRoute._addFileChildren(SliceItRouteChildren)
 
+interface StudioRouteChildren {
+  StudioIndexRoute: typeof StudioIndexRoute
+}
+
+const StudioRouteChildren: StudioRouteChildren = {
+  StudioIndexRoute: StudioIndexRoute,
+}
+
+const StudioRouteWithChildren =
+  StudioRoute._addFileChildren(StudioRouteChildren)
+
 interface TempleOfJoyRouteChildren {
   TempleOfJoyIndexRoute: typeof TempleOfJoyIndexRoute
 }
@@ -4854,6 +4902,7 @@ const rootRouteChildren: RootRouteChildren = {
   RmhtypeRoute: RmhtypeRouteWithChildren,
   SecretRoute: SecretRouteWithChildren,
   SliceItRoute: SliceItRouteWithChildren,
+  StudioRoute: StudioRouteWithChildren,
   SynapseStormRoute: SynapseStormRoute,
   TempleOfJoyRoute: TempleOfJoyRouteWithChildren,
   Velum2099Route: Velum2099Route,
