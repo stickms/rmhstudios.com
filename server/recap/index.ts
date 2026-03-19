@@ -153,6 +153,98 @@ async function processDueRecaps() {
     }
 }
 
+// ─── Discord Gateway (bot presence) ──────────────────────────────────
+
+let gatewayWs: import('ws').WebSocket | null = null;
+let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
+let gatewaySeq: number | null = null;
+
+async function connectGateway() {
+    if (!BOT_TOKEN) return;
+
+    try {
+        const { WebSocket } = await import('ws');
+
+        // Get gateway URL
+        const res = await fetch('https://discord.com/api/v10/gateway/bot', {
+            headers: { Authorization: `Bot ${BOT_TOKEN}` },
+        });
+        if (!res.ok) {
+            log(`Failed to get gateway URL: ${res.status}`);
+            return;
+        }
+        const { url } = await res.json();
+
+        const ws = new WebSocket(`${url}?v=10&encoding=json`);
+        gatewayWs = ws;
+
+        ws.on('message', (data: Buffer) => {
+            try {
+                const payload = JSON.parse(data.toString());
+                const { op, d, s } = payload;
+                if (s) gatewaySeq = s;
+
+                switch (op) {
+                    case 10: {
+                        // Hello — start heartbeat and identify
+                        const interval = d.heartbeat_interval;
+                        heartbeatInterval = setInterval(() => {
+                            ws.send(JSON.stringify({ op: 1, d: gatewaySeq }));
+                        }, interval);
+
+                        // Identify with presence
+                        ws.send(JSON.stringify({
+                            op: 2,
+                            d: {
+                                token: BOT_TOKEN,
+                                intents: 0, // no privileged intents needed
+                                properties: { os: 'linux', browser: 'lights-out', device: 'lights-out' },
+                                presence: {
+                                    activities: [{
+                                        name: 'Lights Out',
+                                        type: 0, // Playing
+                                    }],
+                                    status: 'online',
+                                },
+                            },
+                        }));
+                        break;
+                    }
+                    case 11:
+                        // Heartbeat ACK — all good
+                        break;
+                    case 7:
+                        // Reconnect requested
+                        log('Gateway reconnect requested.');
+                        ws.close();
+                        break;
+                    case 9:
+                        // Invalid session
+                        log('Gateway invalid session.');
+                        ws.close();
+                        break;
+                }
+            } catch {}
+        });
+
+        ws.on('open', () => log('Gateway connected — bot is online.'));
+
+        ws.on('close', () => {
+            log('Gateway disconnected. Reconnecting in 30s...');
+            if (heartbeatInterval) clearInterval(heartbeatInterval);
+            gatewayWs = null;
+            setTimeout(connectGateway, 30_000);
+        });
+
+        ws.on('error', (err) => {
+            log(`Gateway error: ${err.message}`);
+        });
+    } catch (e) {
+        log(`Gateway connection failed: ${e}. Retrying in 30s...`);
+        setTimeout(connectGateway, 30_000);
+    }
+}
+
 // ─── Main loop ───────────────────────────────────────────────────────
 
 async function main() {
@@ -163,7 +255,10 @@ async function main() {
 
     log(`Recap runner started. Checking every ${CHECK_INTERVAL_MS / 1000}s.`);
 
-    // Initial check
+    // Connect to Discord Gateway (shows bot as online)
+    connectGateway();
+
+    // Initial recap check
     await processDueRecaps().catch(e => log(`Error: ${e}`));
 
     // Recurring check
@@ -175,6 +270,8 @@ async function main() {
     const shutdown = async (signal: string) => {
         log(`${signal} received — shutting down.`);
         clearInterval(interval);
+        if (heartbeatInterval) clearInterval(heartbeatInterval);
+        if (gatewayWs) gatewayWs.close();
         await prisma.$disconnect();
         process.exit(0);
     };

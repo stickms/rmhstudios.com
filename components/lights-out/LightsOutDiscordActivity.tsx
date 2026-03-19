@@ -53,6 +53,7 @@ interface RaceState {
 // ─── Daily persistence (localStorage) ────────────────────────────────
 
 const DAILY_KEY_PREFIX = 'lightsout-discord-daily-';
+const INSTRUCTIONS_SEEN_KEY = 'lightsout-discord-instructions-seen';
 
 function getDailyCompletion(dateKey: string): DailyCompletion | null {
     try {
@@ -100,30 +101,43 @@ interface LightsOutDiscordActivityProps {
     discord: DiscordContext;
 }
 
-// ─── PIP Detection ───────────────────────────────────────────────────
+// ─── Layout Mode Detection (PIP / Grid / Focused) ───────────────────
 
-function usePipMode(): boolean {
-    const [isPip, setIsPip] = useState(false);
+type LayoutMode = 'focused' | 'pip' | 'grid';
+
+function useLayoutMode(sdk: DiscordContext['sdk']): LayoutMode {
+    const [mode, setMode] = useState<LayoutMode>('focused');
 
     useEffect(() => {
-        // Real PIP is very small (160-320px). Don't trigger on phones (typically 360+).
-        const check = () => setIsPip(window.innerWidth < 280 && window.innerHeight < 280);
-        check();
-        window.addEventListener('resize', check);
-        return () => window.removeEventListener('resize', check);
-    }, []);
+        // Subscribe to Discord's layout mode updates
+        const handleUpdate = (event: { layout_mode: number }) => {
+            switch (event.layout_mode) {
+                case 1: setMode('pip'); break;
+                case 2: setMode('grid'); break;
+                default: setMode('focused'); break;
+            }
+        };
 
-    return isPip;
+        sdk.subscribe('ACTIVITY_LAYOUT_MODE_UPDATE', handleUpdate).catch(() => {
+            // Subscription may fail on older clients — fall back to viewport check
+        });
+
+        return () => {
+            sdk.unsubscribe('ACTIVITY_LAYOUT_MODE_UPDATE', handleUpdate).catch(() => {});
+        };
+    }, [sdk]);
+
+    return mode;
 }
 
 // ─── Main Component ──────────────────────────────────────────────────
 
 export function LightsOutDiscordActivity({ discord }: LightsOutDiscordActivityProps) {
     const [mode, setMode] = useState<GameMode>('menu');
-    const isPip = usePipMode();
+    const layoutMode = useLayoutMode(discord.sdk);
 
-    // PIP mode — show logo
-    if (isPip) {
+    // PIP / Grid mode — show logo
+    if (layoutMode === 'pip' || layoutMode === 'grid') {
         return (
             <div className="min-h-dvh bg-[#313338] flex items-center justify-center p-4">
                 <img
@@ -185,7 +199,7 @@ function ModeMenu({ discord, onSelect }: { discord: DiscordContext; onSelect: (m
                             <div className="text-[#b5bac1] text-sm">
                                 {alreadyCompleted
                                     ? `Completed — ${alreadyCompleted.ratingEmoji} ${alreadyCompleted.moves} moves`
-                                    : "Today's challenge — no undos, no restarts"}
+                                    : "Today's puzzle — same for everyone worldwide"}
                             </div>
                         </div>
                         {alreadyCompleted && (
@@ -407,6 +421,62 @@ function CongratsModal({
     );
 }
 
+// ─── Instructions Modal ──────────────────────────────────────────────
+
+function InstructionsModal({ onClose }: { onClose: () => void }) {
+    return (
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto"
+        >
+            <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                className="w-full max-w-xs rounded-2xl bg-[#2b2d31] border border-[#3f4147] overflow-hidden my-auto"
+            >
+                <div className="px-6 pt-6 pb-4 text-center">
+                    <div className="text-4xl mb-3">{'\u{1F4A1}'}</div>
+                    <h2 className="text-xl font-bold text-white mb-1">How to Play</h2>
+                    <p className="text-[#b5bac1] text-sm">Turn off every light to win</p>
+                </div>
+
+                <div className="px-6 pb-4 space-y-3">
+                    <div className="flex gap-3 items-start">
+                        <div className="w-8 h-8 rounded-lg bg-amber-400 shrink-0 mt-0.5" />
+                        <p className="text-[#b5bac1] text-sm">
+                            <span className="text-white font-semibold">Tap a light</span> to toggle it and all its neighbors on or off.
+                        </p>
+                    </div>
+                    <div className="flex gap-3 items-start">
+                        <div className="w-8 h-8 rounded-lg bg-[#1e1f22] border border-[#3f4147] shrink-0 mt-0.5" />
+                        <p className="text-[#b5bac1] text-sm">
+                            <span className="text-white font-semibold">Goal:</span> turn all lights dark. Fewer moves = better rating.
+                        </p>
+                    </div>
+                    <div className="py-2 px-3 rounded-lg bg-[#1e1f22] text-center">
+                        <p className="text-[#949ba4] text-xs">
+                            The daily puzzle has no undos or restarts — every move counts!
+                        </p>
+                    </div>
+                </div>
+
+                <div className="px-6 pb-6">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-amber-950 font-bold text-sm transition-colors"
+                    >
+                        Let&apos;s Go
+                    </button>
+                </div>
+            </motion.div>
+        </motion.div>
+    );
+}
+
 // ─── Daily Game Mode ─────────────────────────────────────────────────
 
 function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () => void }) {
@@ -419,6 +489,16 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
     const existingCompletion = getDailyCompletion(todayKey);
     const [showModal, setShowModal] = useState(!!existingCompletion);
 
+    // Instructions modal — show once per user
+    const [showInstructions, setShowInstructions] = useState(() => {
+        try { return !localStorage.getItem(INSTRUCTIONS_SEEN_KEY); }
+        catch { return true; }
+    });
+    const dismissInstructions = () => {
+        setShowInstructions(false);
+        try { localStorage.setItem(INSTRUCTIONS_SEEN_KEY, '1'); } catch {}
+    };
+
     const [grid, setGrid] = useState<Grid | null>(null);
     const [moves, setMoves] = useState(existingCompletion?.moves ?? 0);
     const [solved, setSolved] = useState(!!existingCompletion);
@@ -427,6 +507,8 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
     const [ratingLabel, setRatingLabel] = useState(existingCompletion?.ratingLabel ?? '');
     const [ratingEmoji, setRatingEmoji] = useState(existingCompletion?.ratingEmoji ?? '');
     const notifiedStart = useRef(false);
+    const gameAreaRef = useRef<HTMLDivElement>(null);
+    const [gridSize, setGridSize] = useState<number | undefined>(undefined);
 
     // Init puzzle
     useEffect(() => {
@@ -480,6 +562,27 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
         setScoreSynced(true);
     }, [solved, scoreSynced, existingCompletion, discord, todayKey, moves, optimalMoves, ratingEmoji, ratingLabel]);
 
+    // Compute grid size to fit available space (with max cap for large screens)
+    useEffect(() => {
+        const el = gameAreaRef.current;
+        if (!el) return;
+
+        const compute = () => {
+            const rect = el.getBoundingClientRect();
+            // Leave room for the move counter (~32px) and padding
+            const availH = rect.height - 48;
+            const availW = rect.width;
+            // Use the smaller dimension, cap at 400px for large screens
+            const size = Math.min(availW, availH, 400);
+            setGridSize(Math.max(size, 160)); // minimum 160px
+        };
+
+        compute();
+        const observer = new ResizeObserver(compute);
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, []);
+
     const handleCellClick = (r: number, c: number) => {
         if (!grid || solved) return;
         if (!isActiveCell(shape, r, c)) return;
@@ -517,12 +620,12 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
     }
 
     return (
-        <div className="min-h-dvh bg-[#313338] p-4">
-            <div className="max-w-sm mx-auto">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-4">
-                    <button type="button" onClick={onBack} className="text-[#b5bac1] hover:text-white text-sm transition-colors">
-                        <ArrowLeft className="w-4 h-4" />
+        <div className="min-h-dvh bg-[#313338] flex flex-col">
+            {/* Header — fixed at top */}
+            <div className="shrink-0 px-4 pt-4 pb-2">
+                <div className="max-w-sm mx-auto flex items-center justify-between">
+                    <button type="button" onClick={onBack} className="text-[#b5bac1] hover:text-white text-sm transition-colors p-1">
+                        <ArrowLeft className="w-5 h-5" />
                     </button>
                     <div className="text-center">
                         <h2 className="text-lg font-bold text-white flex items-center gap-2">
@@ -531,19 +634,25 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
                         </h2>
                         <p className="text-[#b5bac1] text-xs">{todayKey} · {shapeLabel}</p>
                     </div>
-                    <div className="w-4" />
+                    <div className="w-7" />
                 </div>
+            </div>
 
-                {/* Stats — just move counter, no hints */}
-                <div className="flex justify-center items-center gap-4 mb-4 text-sm">
+            {/* Centered game area — grid sizes to fit available space */}
+            <div ref={gameAreaRef} className="flex-1 flex flex-col items-center justify-center px-4 pb-4 min-h-0">
+                {/* Move counter */}
+                <div className="flex justify-center items-center gap-4 mb-3 text-sm shrink-0">
                     <div className="flex items-center gap-1.5">
                         <span className="text-[#b5bac1]">Moves</span>
                         <span className="text-white font-mono font-semibold">{moves}</span>
                     </div>
                 </div>
 
-                {/* Grid */}
-                <div className="w-full max-w-[min(280px,80vw)] mx-auto p-3 rounded-xl bg-[#2b2d31] border border-[#3f4147]">
+                {/* Grid — constrained to fit within the available area */}
+                <div
+                    className="p-3 rounded-xl bg-[#2b2d31] border border-[#3f4147]"
+                    style={{ width: gridSize, maxWidth: '100%' }}
+                >
                     <GameGrid
                         grid={grid}
                         shape={shape}
@@ -551,9 +660,14 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
                         onCellClick={handleCellClick}
                     />
                 </div>
-
-                {/* No action buttons — daily is a pure challenge */}
             </div>
+
+            {/* Instructions Modal */}
+            <AnimatePresence>
+                {showInstructions && !existingCompletion && (
+                    <InstructionsModal onClose={dismissInstructions} />
+                )}
+            </AnimatePresence>
 
             {/* Congrats Modal */}
             <AnimatePresence>
@@ -598,6 +712,8 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
     const [raceState, setRaceState] = useState<RaceState | null>(null);
     const pollRef = useRef<ReturnType<typeof setInterval>>();
     const instanceId = discord.sdk.instanceId;
+    const raceAreaRef = useRef<HTMLDivElement>(null);
+    const [raceGridSize, setRaceGridSize] = useState<number | undefined>(undefined);
 
     useEffect(() => {
         const initialGrid = generatePuzzle(createSeededRng(raceSeed), shape);
@@ -657,6 +773,25 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
         }).catch(() => {});
     }, [instanceId, raceSeed, discord.user]);
 
+    // Compute grid size for race mode
+    useEffect(() => {
+        const el = raceAreaRef.current;
+        if (!el) return;
+
+        const compute = () => {
+            const rect = el.getBoundingClientRect();
+            const availH = rect.height - 48;
+            const availW = rect.width;
+            const size = Math.min(availW, availH, 400);
+            setRaceGridSize(Math.max(size, 160));
+        };
+
+        compute();
+        const observer = new ResizeObserver(compute);
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, []);
+
     const handleCellClick = (r: number, c: number) => {
         if (!grid || solved) return;
         if (!isActiveCell(shape, r, c)) return;
@@ -694,12 +829,12 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
         .sort((a, b) => (a.moves - b.moves) || ((a.finishedAt ?? 0) - (b.finishedAt ?? 0)))[0];
 
     return (
-        <div className="min-h-dvh bg-[#313338] p-4">
-            <div className="max-w-sm mx-auto">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-4">
-                    <button type="button" onClick={onBack} className="text-[#b5bac1] hover:text-white text-sm transition-colors">
-                        <ArrowLeft className="w-4 h-4" />
+        <div className="min-h-dvh bg-[#313338] flex flex-col">
+            {/* Header */}
+            <div className="shrink-0 px-4 pt-4 pb-2">
+                <div className="max-w-sm mx-auto flex items-center justify-between">
+                    <button type="button" onClick={onBack} className="text-[#b5bac1] hover:text-white text-sm transition-colors p-1">
+                        <ArrowLeft className="w-5 h-5" />
                     </button>
                     <div className="text-center">
                         <h2 className="text-lg font-bold text-white flex items-center gap-2">
@@ -708,12 +843,14 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
                         </h2>
                         <p className="text-[#b5bac1] text-xs">{getShapeLabel(shape)}</p>
                     </div>
-                    <div className="w-4" />
+                    <div className="w-7" />
                 </div>
+            </div>
 
-                {/* Participants bar */}
-                {raceState && raceState.participants.length > 0 && (
-                    <div className="mb-4 p-3 rounded-lg bg-[#2b2d31] border border-[#3f4147]">
+            {/* Participants bar */}
+            {raceState && raceState.participants.length > 0 && (
+                <div className="shrink-0 px-4 pb-2">
+                    <div className="max-w-sm mx-auto p-3 rounded-lg bg-[#2b2d31] border border-[#3f4147]">
                         <div className="text-[#b5bac1] text-xs font-medium mb-2 flex items-center gap-1.5">
                             <Users className="w-3.5 h-3.5" /> Racers
                         </div>
@@ -737,10 +874,13 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
                             ))}
                         </div>
                     </div>
-                )}
+                </div>
+            )}
 
+            {/* Centered game area */}
+            <div ref={raceAreaRef} className="flex-1 flex flex-col items-center justify-center px-4 pb-4 min-h-0">
                 {/* Stats */}
-                <div className="flex justify-center items-center gap-4 mb-4 text-sm">
+                <div className="flex justify-center items-center gap-4 mb-3 text-sm shrink-0">
                     <div className="flex items-center gap-1.5">
                         <span className="text-[#b5bac1]">Moves</span>
                         <span className="text-white font-mono font-semibold">{moves}</span>
@@ -749,13 +889,16 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
                 </div>
 
                 {/* Grid */}
-                <div className="w-full max-w-[min(280px,80vw)] mx-auto p-3 rounded-xl bg-[#2b2d31] border border-[#3f4147]">
+                <div
+                    className="p-3 rounded-xl bg-[#2b2d31] border border-[#3f4147]"
+                    style={{ width: raceGridSize, maxWidth: '100%' }}
+                >
                     <GameGrid grid={grid} shape={shape} solved={solved} onCellClick={handleCellClick} />
                 </div>
 
-                {/* Race keeps undo */}
+                {/* Undo */}
                 {!solved && (
-                    <div className="flex justify-center gap-2 mt-4">
+                    <div className="flex justify-center gap-2 mt-4 shrink-0">
                         <button
                             type="button"
                             onClick={handleUndo}
@@ -773,7 +916,7 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
                         <motion.div
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="mt-6 p-4 rounded-xl bg-purple-500/10 border border-purple-500/30 text-center"
+                            className="mt-4 p-4 rounded-xl bg-purple-500/10 border border-purple-500/30 text-center w-full max-w-xs shrink-0"
                         >
                             {winner?.discordId === discord.user.id ? (
                                 <>
