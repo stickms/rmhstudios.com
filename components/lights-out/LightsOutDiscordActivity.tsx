@@ -139,11 +139,11 @@ export function LightsOutDiscordActivity({ discord }: LightsOutDiscordActivityPr
     // PIP / Grid mode — show logo
     if (layoutMode === 'pip' || layoutMode === 'grid') {
         return (
-            <div className="min-h-dvh bg-[#1d1d20] flex items-center justify-center p-4">
+            <div className="h-dvh w-dvw bg-[#1d1d20] flex items-center justify-center overflow-hidden">
                 <img
                     src="/images/activities/lightsout.png"
                     alt="Lights Out"
-                    className="w-full h-full max-w-[80%] max-h-[80%] object-contain"
+                    className="max-w-[75%] max-h-[75%] object-contain"
                 />
             </div>
         );
@@ -562,25 +562,22 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
         setScoreSynced(true);
     }, [solved, scoreSynced, existingCompletion, discord, todayKey, moves, optimalMoves, ratingEmoji, ratingLabel]);
 
-    // Compute grid size to fit available space (with max cap for large screens)
+    // Compute grid size once on mount + on window resize only (not content changes)
     useEffect(() => {
-        const el = gameAreaRef.current;
-        if (!el) return;
-
         const compute = () => {
+            const el = gameAreaRef.current;
+            if (!el) return;
             const rect = el.getBoundingClientRect();
-            // Leave room for the move counter (~32px) and padding
             const availH = rect.height - 48;
             const availW = rect.width;
-            // Use the smaller dimension, cap at 400px for large screens
             const size = Math.min(availW, availH, 400);
-            setGridSize(Math.max(size, 160)); // minimum 160px
+            setGridSize(Math.max(size, 160));
         };
 
-        compute();
-        const observer = new ResizeObserver(compute);
-        observer.observe(el);
-        return () => observer.disconnect();
+        // Initial compute after layout settles
+        requestAnimationFrame(compute);
+        window.addEventListener('resize', compute);
+        return () => window.removeEventListener('resize', compute);
     }, []);
 
     const handleCellClick = (r: number, c: number) => {
@@ -650,8 +647,8 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
 
                 {/* Grid — constrained to fit within the available area */}
                 <div
-                    className="p-3 rounded-xl bg-[#2b2d31] border border-[#3f4147]"
-                    style={{ width: gridSize, maxWidth: '100%' }}
+                    className="p-3 rounded-xl bg-[#2b2d31] border border-[#3f4147] w-full"
+                    style={{ maxWidth: gridSize ?? 400 }}
                 >
                     <GameGrid
                         grid={grid}
@@ -773,25 +770,22 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
         }).catch(() => {});
     }, [instanceId, raceSeed, discord.user]);
 
-    // Compute grid size for race mode — fit within available space (both width and height)
+    // Compute grid size once on mount + on window resize only (not content changes)
     useEffect(() => {
-        const el = raceAreaRef.current;
-        if (!el) return;
-
         const compute = () => {
+            const el = raceAreaRef.current;
+            if (!el) return;
             const rect = el.getBoundingClientRect();
-            // Reserve space for stats row (~32px) + undo button (~48px) + margins (~24px)
             const reservedV = 104;
             const availH = rect.height - reservedV;
-            const availW = rect.width - 32; // px-4 padding
+            const availW = rect.width - 32;
             const size = Math.min(availW, availH, 400);
             setRaceGridSize(Math.max(size, 160));
         };
 
-        compute();
-        const observer = new ResizeObserver(compute);
-        observer.observe(el);
-        return () => observer.disconnect();
+        requestAnimationFrame(compute);
+        window.addEventListener('resize', compute);
+        return () => window.removeEventListener('resize', compute);
     }, []);
 
     const handleCellClick = (r: number, c: number) => {
@@ -892,8 +886,8 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
 
                 {/* Grid */}
                 <div
-                    className="p-3 rounded-xl bg-[#2b2d31] border border-[#3f4147]"
-                    style={{ width: raceGridSize, maxWidth: '100%' }}
+                    className="p-3 rounded-xl bg-[#2b2d31] border border-[#3f4147] w-full"
+                    style={{ maxWidth: raceGridSize ?? 400 }}
                 >
                     <GameGrid grid={grid} shape={shape} solved={solved} onCellClick={handleCellClick} />
                 </div>
