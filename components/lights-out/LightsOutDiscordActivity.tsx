@@ -760,12 +760,12 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
             // Connect through Discord's proxy (same origin, path /socket/)
             const socket = ioClient(window.location.origin, {
                 path: '/socket/',
-                transports: ['websocket'],
+                withCredentials: false,
                 reconnection: true,
                 reconnectionAttempts: Infinity,
                 reconnectionDelay: 1000,
                 reconnectionDelayMax: 10000,
-                timeout: 10000,
+                timeout: 15000,
             });
 
             socketRef.current = socket;
