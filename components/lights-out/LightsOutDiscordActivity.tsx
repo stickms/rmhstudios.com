@@ -35,19 +35,26 @@ interface DailyCompletion {
     ratingEmoji: string;
 }
 
-interface RaceParticipant {
+type LobbyPhase = 'empty' | 'waiting' | 'countdown' | 'racing' | 'results';
+
+interface LobbyParticipant {
     discordId: string;
     username: string;
     avatar: string | null;
-    status: 'solving' | 'solved' | 'dnf';
+    ready: boolean;
+    status: 'idle' | 'solving' | 'solved' | 'dnf';
     moves: number;
     finishedAt: number | null;
 }
 
-interface RaceState {
-    seed: number;
-    participants: RaceParticipant[];
-    startedAt: number;
+interface LobbyState {
+    phase: LobbyPhase;
+    hostId: string;
+    seed: number | null;
+    roundNumber: number;
+    countdownStartedAt: number | null;
+    raceStartedAt: number | null;
+    participants: LobbyParticipant[];
 }
 
 // ─── Daily persistence (localStorage) ────────────────────────────────
@@ -562,6 +569,10 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
         setScoreSynced(true);
     }, [solved, scoreSynced, existingCompletion, discord, todayKey, moves, optimalMoves, ratingEmoji, ratingLabel]);
 
+    // Grid dimensions for aspect-ratio-aware sizing
+    const gridCols = shape.type === 'rect' ? shape.cols : shape.type === 'custom' ? shape.cols : shape.size;
+    const gridRows = shape.type === 'rect' ? shape.rows : shape.type === 'custom' ? shape.rows : shape.size;
+
     // Compute grid size once on mount + on window resize only (not content changes)
     useEffect(() => {
         const compute = () => {
@@ -570,15 +581,18 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
             const rect = el.getBoundingClientRect();
             const availH = rect.height - 48;
             const availW = rect.width;
-            const size = Math.min(availW, availH, 400);
+            // For non-square grids, constrain width so height also fits
+            const maxWidthFromHeight = gridRows > gridCols
+                ? availH * (gridCols / gridRows)
+                : availH;
+            const size = Math.min(availW, maxWidthFromHeight, 400);
             setGridSize(Math.max(size, 160));
         };
 
-        // Initial compute after layout settles
         requestAnimationFrame(compute);
         window.addEventListener('resize', compute);
         return () => window.removeEventListener('resize', compute);
-    }, []);
+    }, [gridCols, gridRows]);
 
     const handleCellClick = (r: number, c: number) => {
         if (!grid || solved) return;
@@ -686,110 +700,270 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
     );
 }
 
-// ─── Race Mode ───────────────────────────────────────────────────────
+// ─── Race Mode (Lobby-based) ─────────────────────────────────────────
+
+function postLobbyAction(instanceId: string, action: string, data: Record<string, unknown>) {
+    return fetch('/api/discord/race', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ instanceId, action, ...data }),
+    }).catch(() => {});
+}
 
 function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => void }) {
-    const raceSeed = useMemo(() => {
-        const base = discord.channelId || discord.user.id;
-        let hash = 0;
-        for (let i = 0; i < base.length; i++) {
-            hash = ((hash << 5) - hash + base.charCodeAt(i)) | 0;
-        }
-        return Math.abs(hash);
-    }, [discord.channelId, discord.user.id]);
+    const instanceId = discord.sdk.instanceId;
+    const discordId = discord.user.id;
+    const username = discord.user.global_name || discord.user.username;
+    const [lobby, setLobby] = useState<LobbyState | null>(null);
 
-    const shape = getDailyShape(raceSeed);
+    // Join on mount, leave on unmount
+    useEffect(() => {
+        postLobbyAction(instanceId, 'join', {
+            discordId,
+            username,
+            avatar: discord.user.avatar,
+        });
+
+        return () => {
+            postLobbyAction(instanceId, 'leave', { discordId });
+        };
+    }, [instanceId, discordId, username, discord.user.avatar]);
+
+    // Poll every 2s
+    useEffect(() => {
+        const poll = async () => {
+            try {
+                const res = await fetch(`/api/discord/race?instanceId=${encodeURIComponent(instanceId)}&discordId=${encodeURIComponent(discordId)}`);
+                if (res.ok) setLobby(await res.json());
+            } catch {}
+        };
+
+        poll(); // immediate first poll
+        const interval = setInterval(poll, 2000);
+        return () => clearInterval(interval);
+    }, [instanceId, discordId]);
+
+    // Also fire leave on page unload (best-effort)
+    useEffect(() => {
+        const handleUnload = () => {
+            navigator.sendBeacon?.('/api/discord/race', JSON.stringify({
+                instanceId, action: 'leave', discordId,
+            }));
+        };
+        window.addEventListener('beforeunload', handleUnload);
+        return () => window.removeEventListener('beforeunload', handleUnload);
+    }, [instanceId, discordId]);
+
+    const handleBack = useCallback(() => {
+        postLobbyAction(instanceId, 'leave', { discordId });
+        onBack();
+    }, [instanceId, discordId, onBack]);
+
+    if (!lobby || lobby.phase === 'empty') {
+        return (
+            <div className="h-dvh bg-[#313338] flex items-center justify-center">
+                <div className="animate-pulse text-[#b5bac1]">Joining lobby...</div>
+            </div>
+        );
+    }
+
+    const isHost = lobby.hostId === discordId;
+
+    switch (lobby.phase) {
+        case 'waiting':
+            return (
+                <LobbyWaiting
+                    lobby={lobby}
+                    discordId={discordId}
+                    isHost={isHost}
+                    instanceId={instanceId}
+                    onBack={handleBack}
+                />
+            );
+        case 'countdown':
+        case 'racing':
+            return (
+                <RaceGameplay
+                    lobby={lobby}
+                    discord={discord}
+                    instanceId={instanceId}
+                    onBack={handleBack}
+                />
+            );
+        case 'results':
+            return (
+                <RaceResults
+                    lobby={lobby}
+                    discordId={discordId}
+                    isHost={isHost}
+                    instanceId={instanceId}
+                    onBack={handleBack}
+                />
+            );
+        default:
+            return null;
+    }
+}
+
+// ─── Lobby Waiting ──────────────────────────────────────────────────
+
+function LobbyWaiting({
+    lobby, discordId, isHost, instanceId, onBack,
+}: {
+    lobby: LobbyState; discordId: string; isHost: boolean; instanceId: string; onBack: () => void;
+}) {
+    const me = lobby.participants.find(p => p.discordId === discordId);
+    const canStart = isHost && !!me?.ready;
+
+    return (
+        <div className="h-dvh bg-[#313338] flex flex-col overflow-hidden">
+            <div className="shrink-0 px-4 pt-4 pb-2">
+                <div className="max-w-sm mx-auto flex items-center justify-between">
+                    <button type="button" onClick={onBack} className="text-[#b5bac1] hover:text-white text-sm transition-colors p-1">
+                        <ArrowLeft className="w-5 h-5" />
+                    </button>
+                    <div className="text-center">
+                        <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                            <Swords className="w-5 h-5 text-purple-400" />
+                            Race Lobby
+                        </h2>
+                        <p className="text-[#b5bac1] text-xs">
+                            {lobby.roundNumber > 0 ? `Round ${lobby.roundNumber + 1}` : 'Waiting for players'}
+                        </p>
+                    </div>
+                    <div className="w-7" />
+                </div>
+            </div>
+
+            <div className="flex-1 flex flex-col items-center justify-center px-4 pb-4 min-h-0">
+                {/* Participants */}
+                <div className="w-full max-w-sm space-y-2 mb-6">
+                    {lobby.participants.map(p => (
+                        <div
+                            key={p.discordId}
+                            className={`flex items-center justify-between p-3 rounded-lg border ${
+                                p.ready
+                                    ? 'bg-emerald-500/10 border-emerald-500/30'
+                                    : 'bg-[#2b2d31] border-[#3f4147]'
+                            }`}
+                        >
+                            <div className="flex items-center gap-2.5">
+                                {p.discordId === lobby.hostId && (
+                                    <Crown className="w-4 h-4 text-amber-400 shrink-0" />
+                                )}
+                                <span className={p.discordId === discordId ? 'text-white font-semibold' : 'text-[#b5bac1]'}>
+                                    {p.username}
+                                </span>
+                            </div>
+                            <span className={`text-xs font-medium ${p.ready ? 'text-emerald-400' : 'text-[#949ba4]'}`}>
+                                {p.ready ? 'Ready' : 'Not Ready'}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Actions */}
+                <div className="flex flex-col gap-3 w-full max-w-sm">
+                    <button
+                        type="button"
+                        onClick={() => postLobbyAction(instanceId, 'ready', { discordId, ready: !me?.ready })}
+                        className={`w-full py-3 rounded-xl font-bold text-sm transition-colors ${
+                            me?.ready
+                                ? 'bg-[#2b2d31] border border-[#3f4147] text-[#b5bac1] hover:text-white'
+                                : 'bg-emerald-500 hover:bg-emerald-400 text-white'
+                        }`}
+                    >
+                        {me?.ready ? 'Unready' : 'Ready Up'}
+                    </button>
+
+                    {isHost && (
+                        <button
+                            type="button"
+                            onClick={() => postLobbyAction(instanceId, 'start', { discordId })}
+                            disabled={!canStart}
+                            className="w-full py-3 rounded-xl bg-purple-500 hover:bg-purple-400 text-white font-bold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {lobby.participants.length === 1 ? 'Start Solo Practice' : 'Start Race'}
+                        </button>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ─── Race Gameplay ──────────────────────────────────────────────────
+
+function RaceGameplay({
+    lobby, discord, instanceId, onBack,
+}: {
+    lobby: LobbyState; discord: DiscordContext; instanceId: string; onBack: () => void;
+}) {
+    const discordId = discord.user.id;
+    const seed = lobby.seed!;
+    const shape = getDailyShape(seed);
+    const me = lobby.participants.find(p => p.discordId === discordId);
+    const isRacer = me?.status !== 'idle';
+
     const [grid, setGrid] = useState<Grid | null>(null);
     const [moveHistory, setMoveHistory] = useState<Grid[]>([]);
     const [moves, setMoves] = useState(0);
     const [solved, setSolved] = useState(false);
     const [optimalMoves, setOptimalMoves] = useState<number | null>(null);
-    const [startTime] = useState(() => Date.now());
-    const [solveTime, setSolveTime] = useState<number | null>(null);
-    const [raceState, setRaceState] = useState<RaceState | null>(null);
-    const pollRef = useRef<ReturnType<typeof setInterval>>(undefined);
-    const instanceId = discord.sdk.instanceId;
-    const raceAreaRef = useRef<HTMLDivElement>(null);
-    const [raceGridSize, setRaceGridSize] = useState<number | undefined>(undefined);
+    const gameAreaRef = useRef<HTMLDivElement>(null);
+    const [gridSize, setGridSize] = useState<number | undefined>(undefined);
+
+    // Countdown state
+    const isCountdown = lobby.phase === 'countdown';
+    const [countdownNum, setCountdownNum] = useState<number | null>(null);
 
     useEffect(() => {
-        const initialGrid = generatePuzzle(createSeededRng(raceSeed), shape);
+        if (!isCountdown || !lobby.countdownStartedAt) {
+            setCountdownNum(null);
+            return;
+        }
+        const tick = () => {
+            const remaining = Math.ceil((lobby.countdownStartedAt! + 3000 - Date.now()) / 1000);
+            setCountdownNum(remaining > 0 ? remaining : null);
+        };
+        tick();
+        const interval = setInterval(tick, 100);
+        return () => clearInterval(interval);
+    }, [isCountdown, lobby.countdownStartedAt]);
+
+    // Init puzzle from lobby seed
+    useEffect(() => {
+        const initialGrid = generatePuzzle(createSeededRng(seed), shape);
         setGrid(initialGrid);
         setOptimalMoves(getOptimalMoves(initialGrid, shape));
-    }, [raceSeed, shape]);
+    }, [seed, shape]);
 
-    // Register + poll
-    useEffect(() => {
-        const update = (status: 'solving' | 'solved' | 'dnf', moveCount: number) => {
-            fetch('/api/discord/race', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    instanceId,
-                    seed: raceSeed,
-                    participant: {
-                        discordId: discord.user.id,
-                        username: discord.user.global_name || discord.user.username,
-                        avatar: discord.user.avatar,
-                        status,
-                        moves: moveCount,
-                        finishedAt: status !== 'solving' ? Date.now() : null,
-                    },
-                }),
-            }).catch(() => {});
-        };
+    // Grid sizing
+    const gridCols = shape.type === 'rect' ? shape.cols : shape.type === 'custom' ? shape.cols : shape.size;
+    const gridRows = shape.type === 'rect' ? shape.rows : shape.type === 'custom' ? shape.rows : shape.size;
 
-        update('solving', 0);
-
-        pollRef.current = setInterval(async () => {
-            try {
-                const res = await fetch(`/api/discord/race?instanceId=${instanceId}`);
-                if (res.ok) setRaceState(await res.json());
-            } catch {}
-        }, 2000);
-
-        return () => { if (pollRef.current) clearInterval(pollRef.current); };
-    }, [instanceId, raceSeed, discord.user]);
-
-    const syncStatus = useCallback((status: 'solving' | 'solved' | 'dnf', moveCount: number) => {
-        fetch('/api/discord/race', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                instanceId,
-                seed: raceSeed,
-                participant: {
-                    discordId: discord.user.id,
-                    username: discord.user.global_name || discord.user.username,
-                    avatar: discord.user.avatar,
-                    status,
-                    moves: moveCount,
-                    finishedAt: status !== 'solving' ? Date.now() : null,
-                },
-            }),
-        }).catch(() => {});
-    }, [instanceId, raceSeed, discord.user]);
-
-    // Compute grid size once on mount + on window resize only (not content changes)
     useEffect(() => {
         const compute = () => {
-            const el = raceAreaRef.current;
+            const el = gameAreaRef.current;
             if (!el) return;
             const rect = el.getBoundingClientRect();
             const reservedV = 104;
             const availH = rect.height - reservedV;
             const availW = rect.width - 32;
-            const size = Math.min(availW, availH, 400);
-            setRaceGridSize(Math.max(size, 160));
+            const maxWidthFromHeight = gridRows > gridCols
+                ? availH * (gridCols / gridRows)
+                : availH;
+            const size = Math.min(availW, maxWidthFromHeight, 400);
+            setGridSize(Math.max(size, 160));
         };
 
         requestAnimationFrame(compute);
         window.addEventListener('resize', compute);
         return () => window.removeEventListener('resize', compute);
-    }, []);
+    }, [gridCols, gridRows]);
 
     const handleCellClick = (r: number, c: number) => {
-        if (!grid || solved) return;
+        if (!grid || solved || !isRacer || isCountdown) return;
         if (!isActiveCell(shape, r, c)) return;
 
         setMoveHistory(prev => [...prev, grid.map(row => [...row])]);
@@ -800,13 +974,17 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
 
         if (isSolved(next, shape)) {
             setSolved(true);
-            setSolveTime(Math.round((Date.now() - startTime) / 1000));
-            syncStatus('solved', newMoves);
+            postLobbyAction(instanceId, 'update', {
+                discordId: discord.user.id,
+                status: 'solved',
+                moves: newMoves,
+                finishedAt: Date.now(),
+            });
         }
     };
 
     const handleUndo = () => {
-        if (!grid || solved || moveHistory.length === 0) return;
+        if (!grid || solved || moveHistory.length === 0 || isCountdown) return;
         setGrid(moveHistory[moveHistory.length - 1]);
         setMoveHistory(h => h.slice(0, -1));
         setMoves(m => m - 1);
@@ -814,18 +992,39 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
 
     if (!grid) {
         return (
-            <div className="min-h-dvh bg-[#313338] flex items-center justify-center">
+            <div className="h-dvh bg-[#313338] flex items-center justify-center">
                 <div className="animate-pulse text-[#b5bac1]">Loading...</div>
             </div>
         );
     }
 
-    const winner = raceState?.participants
-        .filter(p => p.status === 'solved')
-        .sort((a, b) => (a.moves - b.moves) || ((a.finishedAt ?? 0) - (b.finishedAt ?? 0)))[0];
+    const racers = lobby.participants.filter(p => p.status !== 'idle');
 
     return (
-        <div className="h-dvh bg-[#313338] flex flex-col overflow-hidden">
+        <div className="h-dvh bg-[#313338] flex flex-col overflow-hidden relative">
+            {/* Countdown overlay */}
+            <AnimatePresence>
+                {countdownNum != null && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 z-40 bg-[#313338]/90 flex items-center justify-center"
+                    >
+                        <motion.div
+                            key={countdownNum}
+                            initial={{ scale: 2, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.5, opacity: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="text-7xl font-bold text-purple-400"
+                        >
+                            {countdownNum}
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Header */}
             <div className="shrink-0 px-4 pt-4 pb-2">
                 <div className="max-w-sm mx-auto flex items-center justify-between">
@@ -843,22 +1042,19 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
                 </div>
             </div>
 
-            {/* Participants bar */}
-            {raceState && raceState.participants.length > 0 && (
+            {/* Racers bar */}
+            {racers.length > 0 && (
                 <div className="shrink-0 px-4 pb-2">
                     <div className="max-w-sm mx-auto p-3 rounded-lg bg-[#2b2d31] border border-[#3f4147]">
                         <div className="text-[#b5bac1] text-xs font-medium mb-2 flex items-center gap-1.5">
                             <Users className="w-3.5 h-3.5" /> Racers
                         </div>
                         <div className="space-y-1.5">
-                            {raceState.participants.map(p => (
+                            {racers.map((p: LobbyParticipant) => (
                                 <div key={p.discordId} className="flex items-center justify-between text-sm">
-                                    <div className="flex items-center gap-2">
-                                        {winner?.discordId === p.discordId && <Crown className="w-3.5 h-3.5 text-amber-400" />}
-                                        <span className={p.discordId === discord.user.id ? 'text-white font-semibold' : 'text-[#b5bac1]'}>
-                                            {p.username}
-                                        </span>
-                                    </div>
+                                    <span className={p.discordId === discord.user.id ? 'text-white font-semibold' : 'text-[#b5bac1]'}>
+                                        {p.username}
+                                    </span>
                                     <span className={`text-xs font-mono ${
                                         p.status === 'solved' ? 'text-emerald-400' :
                                         p.status === 'dnf' ? 'text-red-400' : 'text-[#949ba4]'
@@ -873,27 +1069,28 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
                 </div>
             )}
 
-            {/* Centered game area — scrollable so grid isn't squeezed */}
-            <div ref={raceAreaRef} className="flex-1 flex flex-col items-center justify-center px-4 pb-4 min-h-0 overflow-y-auto">
-                {/* Stats */}
-                <div className="flex justify-center items-center gap-4 mb-3 text-sm shrink-0">
-                    <div className="flex items-center gap-1.5">
-                        <span className="text-[#b5bac1]">Moves</span>
-                        <span className="text-white font-mono font-semibold">{moves}</span>
+            {/* Game area */}
+            <div ref={gameAreaRef} className="flex-1 flex flex-col items-center justify-center px-4 pb-4 min-h-0">
+                {isRacer && (
+                    <div className="flex justify-center items-center gap-4 mb-3 text-sm shrink-0">
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-[#b5bac1]">Moves</span>
+                            <span className="text-white font-mono font-semibold">{moves}</span>
+                        </div>
+                        {lobby.raceStartedAt && (
+                            <Timer startTime={lobby.raceStartedAt} stopped={solved} />
+                        )}
                     </div>
-                    <Timer startTime={startTime} stopped={solved} />
-                </div>
+                )}
 
-                {/* Grid */}
                 <div
                     className="p-3 rounded-xl bg-[#2b2d31] border border-[#3f4147] w-full"
-                    style={{ maxWidth: raceGridSize ?? 400 }}
+                    style={{ maxWidth: gridSize ?? 400 }}
                 >
-                    <GameGrid grid={grid} shape={shape} solved={solved} onCellClick={handleCellClick} />
+                    <GameGrid grid={grid} shape={shape} solved={solved || !isRacer} onCellClick={handleCellClick} />
                 </div>
 
-                {/* Undo */}
-                {!solved && (
+                {isRacer && !solved && !isCountdown && (
                     <div className="flex justify-center gap-2 mt-4 shrink-0">
                         <button
                             type="button"
@@ -906,53 +1103,101 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
                     </div>
                 )}
 
-                {/* Result */}
-                <AnimatePresence>
-                    {solved && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="mt-4 p-4 rounded-xl bg-purple-500/10 border border-purple-500/30 text-center w-full max-w-xs shrink-0"
-                        >
-                            {winner?.discordId === discord.user.id ? (
-                                <>
-                                    <Crown className="w-8 h-8 text-amber-400 mx-auto mb-1" />
-                                    <div className="text-xl font-bold text-amber-400">You won!</div>
-                                </>
-                            ) : winner ? (
-                                <div className="text-xl font-bold text-purple-400">{winner.username} wins!</div>
-                            ) : (
-                                <div className="text-xl font-bold text-purple-400">Solved!</div>
-                            )}
+                {!isRacer && (
+                    <p className="text-[#949ba4] text-xs mt-4">Spectating — joined mid-race</p>
+                )}
+            </div>
+        </div>
+    );
+}
 
-                            <p className="text-[#b5bac1] text-sm mt-1">
-                                {moves} move{moves !== 1 ? 's' : ''} · {solveTime}s
-                            </p>
-                            {optimalMoves != null && (
-                                <p className="text-[#949ba4] text-xs mt-0.5">
-                                    Optimal: {optimalMoves} move{optimalMoves !== 1 ? 's' : ''}
-                                </p>
-                            )}
+// ─── Race Results ───────────────────────────────────────────────────
 
-                            <div className="flex justify-center gap-2 mt-3">
-                                <button
-                                    type="button"
-                                    onClick={() => window.location.reload()}
-                                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-purple-500/20 border border-purple-500/40 text-purple-400 hover:bg-purple-500/30 transition-colors text-sm font-medium"
-                                >
-                                    <Play className="w-3.5 h-3.5" /> New Race
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={onBack}
-                                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#2b2d31] border border-[#3f4147] text-white hover:border-[#5865f2]/50 transition-colors text-sm font-medium"
-                                >
-                                    <ArrowLeft className="w-3.5 h-3.5" /> Menu
-                                </button>
+function RaceResults({
+    lobby, discordId, isHost, instanceId, onBack,
+}: {
+    lobby: LobbyState; discordId: string; isHost: boolean; instanceId: string; onBack: () => void;
+}) {
+    const seed = lobby.seed!;
+    const shape = getDailyShape(seed);
+    const shapeLabel = getShapeLabel(shape);
+    const puzzleGrid = generatePuzzle(createSeededRng(seed), shape);
+    const optimal = getOptimalMoves(puzzleGrid, shape);
+
+    const solved = lobby.participants
+        .filter((p: LobbyParticipant) => p.status === 'solved')
+        .sort((a: LobbyParticipant, b: LobbyParticipant) => (a.moves - b.moves) || ((a.finishedAt ?? 0) - (b.finishedAt ?? 0)));
+    const dnf = lobby.participants.filter((p: LobbyParticipant) => p.status === 'dnf');
+    const idle = lobby.participants.filter((p: LobbyParticipant) => p.status === 'idle');
+    const ranked = [...solved, ...dnf, ...idle];
+    const medals = ['\u{1F947}', '\u{1F948}', '\u{1F949}'];
+
+    return (
+        <div className="h-dvh bg-[#313338] flex flex-col overflow-hidden">
+            <div className="shrink-0 px-4 pt-4 pb-2">
+                <div className="max-w-sm mx-auto text-center">
+                    <h2 className="text-lg font-bold text-white flex items-center justify-center gap-2">
+                        <Trophy className="w-5 h-5 text-amber-400" />
+                        Race Results
+                    </h2>
+                    <p className="text-[#b5bac1] text-xs">Round {lobby.roundNumber} · {shapeLabel}{optimal != null ? ` · Optimal: ${optimal}` : ''}</p>
+                </div>
+            </div>
+
+            <div className="flex-1 flex flex-col items-center px-4 pb-4 min-h-0 overflow-y-auto">
+                {/* Leaderboard */}
+                <div className="w-full max-w-sm space-y-2 mt-4">
+                    {ranked.map((p: LobbyParticipant, i: number) => {
+                        const isSolvedP = p.status === 'solved';
+                        const medal = isSolvedP ? (medals[solved.indexOf(p)] ?? '') : '';
+                        const isMe = p.discordId === discordId;
+
+                        return (
+                            <div
+                                key={p.discordId}
+                                className={`flex items-center justify-between p-3 rounded-lg border ${
+                                    isMe ? 'bg-purple-500/10 border-purple-500/30' : 'bg-[#2b2d31] border-[#3f4147]'
+                                }`}
+                            >
+                                <div className="flex items-center gap-2.5">
+                                    {medal && <span className="text-lg">{medal}</span>}
+                                    <span className={isMe ? 'text-white font-semibold' : 'text-[#b5bac1]'}>
+                                        {p.username}
+                                    </span>
+                                </div>
+                                <span className={`text-sm font-mono ${
+                                    isSolvedP ? 'text-emerald-400' :
+                                    p.status === 'dnf' ? 'text-red-400' : 'text-[#949ba4]'
+                                }`}>
+                                    {isSolvedP ? `${p.moves} move${p.moves !== 1 ? 's' : ''}` :
+                                     p.status === 'dnf' ? 'DNF' : 'Spectator'}
+                                </span>
                             </div>
-                        </motion.div>
+                        );
+                    })}
+                </div>
+
+                {/* Actions */}
+                <div className="flex flex-col gap-3 w-full max-w-sm mt-6">
+                    {isHost ? (
+                        <button
+                            type="button"
+                            onClick={() => postLobbyAction(instanceId, 'return_to_lobby', { discordId })}
+                            className="w-full py-3 rounded-xl bg-purple-500 hover:bg-purple-400 text-white font-bold text-sm transition-colors"
+                        >
+                            Return to Lobby
+                        </button>
+                    ) : (
+                        <p className="text-center text-[#949ba4] text-sm">Waiting for host to start next round...</p>
                     )}
-                </AnimatePresence>
+                    <button
+                        type="button"
+                        onClick={onBack}
+                        className="w-full py-3 rounded-xl bg-[#2b2d31] border border-[#3f4147] text-white font-bold text-sm transition-colors hover:border-[#5865f2]/50"
+                    >
+                        Exit
+                    </button>
+                </div>
             </div>
         </div>
     );
