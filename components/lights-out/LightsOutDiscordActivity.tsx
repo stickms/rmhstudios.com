@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     getDateSeed,
@@ -20,7 +20,7 @@ import { getPerformanceRating } from '@/lib/lights-out/share';
 import type { DiscordContext } from '@/lib/discord-sdk';
 import {
     Sparkles, Trophy, Undo2,
-    Share2, Check, Play, Users, Swords, Calendar, Crown, Clock,
+    Check, Users, Swords, Calendar, Crown, Clock,
     ArrowLeft,
 } from 'lucide-react';
 
@@ -627,7 +627,7 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
                 ? availH * (gridCols / gridRows)
                 : availH;
             const size = Math.min(availW, maxWidthFromHeight, 400);
-            setGridSize(Math.max(size, 160));
+            setGridSize(Math.max(size, 80));
         };
 
         requestAnimationFrame(compute);
@@ -760,7 +760,10 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
         import('socket.io-client').then(({ io: ioClient }) => {
             if (!mounted) return;
 
-            const socket = ioClient(window.location.origin, {
+            // Connect to actual server — patchUrlMappings (called during SDK init)
+            // rewrites this to go through Discord's proxy automatically
+            const socketUrl = import.meta.env.VITE_SOCKET_URL || window.location.origin;
+            const socket = ioClient(socketUrl, {
                 path: '/socket/',
                 withCredentials: false,
                 reconnection: true,
@@ -787,7 +790,7 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
                 console.warn('[lights-out] Socket connect error:', err.message);
             });
 
-            // If socket doesn't connect within 8s, fall back to HTTP polling
+            // If socket doesn't connect within 3s, fall back to HTTP polling
             fallbackTimer = setTimeout(() => {
                 if (!socket.connected && mounted) {
                     console.warn('[lights-out] Socket failed, falling back to HTTP polling');
@@ -795,7 +798,7 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
                     socketRef.current = null;
                     setUseHttp(true);
                 }
-            }, 8000);
+            }, 3000);
         });
 
         return () => {
@@ -1021,7 +1024,6 @@ function RaceGameplay({
     const [moveHistory, setMoveHistory] = useState<Grid[]>([]);
     const [moves, setMoves] = useState(0);
     const [solved, setSolved] = useState(false);
-    const [optimalMoves, setOptimalMoves] = useState<number | null>(null);
     const gameAreaRef = useRef<HTMLDivElement>(null);
     const [gridSize, setGridSize] = useState<number | undefined>(undefined);
 
@@ -1047,7 +1049,6 @@ function RaceGameplay({
     useEffect(() => {
         const initialGrid = generatePuzzle(createSeededRng(seed), shape);
         setGrid(initialGrid);
-        setOptimalMoves(getOptimalMoves(initialGrid, shape));
     }, [seed, shape]);
 
     // Grid sizing
@@ -1066,7 +1067,7 @@ function RaceGameplay({
                 ? availH * (gridCols / gridRows)
                 : availH;
             const size = Math.min(availW, maxWidthFromHeight, 400);
-            setGridSize(Math.max(size, 160));
+            setGridSize(Math.max(size, 80));
         };
 
         requestAnimationFrame(compute);
@@ -1258,7 +1259,7 @@ function RaceResults({
             <div className="flex-1 flex flex-col items-center px-4 pb-4 min-h-0 overflow-y-auto">
                 {/* Leaderboard */}
                 <div className="w-full max-w-sm space-y-2 mt-4">
-                    {ranked.map((p: LobbyParticipant, i: number) => {
+                    {ranked.map((p: LobbyParticipant) => {
                         const isSolvedP = p.status === 'solved';
                         const medal = isSolvedP ? (medals[solved.indexOf(p)] ?? '') : '';
                         const isMe = p.discordId === discordId;
