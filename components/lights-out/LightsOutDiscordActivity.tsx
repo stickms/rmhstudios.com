@@ -282,11 +282,13 @@ function GameGrid({
     shape,
     solved,
     onCellClick,
+    containerWidth,
 }: {
     grid: Grid;
     shape: ReturnType<typeof getDailyShape>;
     solved: boolean;
     onCellClick: (r: number, c: number) => void;
+    containerWidth?: number;
 }) {
     const isTriangle = shape.type === 'triangle';
     const isCustom = shape.type === 'custom';
@@ -294,8 +296,14 @@ function GameGrid({
     const gridRows = shape.type === 'rect' ? shape.rows : shape.type === 'custom' ? shape.rows : shape.size;
 
     if (isTriangle) {
+        const maxCells = shape.size;
+        const gap = 5; // conservative estimate for clamp(4px, 1.5vw, 6px)
+        const cellSize = containerWidth
+            ? Math.min(Math.floor((containerWidth - (maxCells - 1) * gap) / maxCells), 56)
+            : 40;
+
         return (
-            <div className="flex flex-col items-center gap-[clamp(4px,1.5vw,6px)] py-2">
+            <div className="flex flex-col items-center gap-[clamp(4px,1.5vw,6px)]">
                 {grid.map((row, r) => (
                     <div key={r} className="flex justify-center gap-[clamp(4px,1.5vw,6px)]">
                         {row.map((on, c) => (
@@ -304,8 +312,9 @@ function GameGrid({
                                 type="button"
                                 onClick={() => onCellClick(r, c)}
                                 disabled={solved}
+                                style={{ width: cellSize, height: cellSize }}
                                 className={`
-                                    aspect-square w-[clamp(36px,12vw,48px)] ${cellBase}
+                                    ${cellBase}
                                     ${on ? cellOn : cellOff}
                                     ${!solved && 'hover:opacity-90 active:scale-95 cursor-pointer'}
                                     ${solved && 'cursor-default'}
@@ -614,25 +623,27 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
     const gridCols = shape.type === 'rect' ? shape.cols : shape.type === 'custom' ? shape.cols : shape.size;
     const gridRows = shape.type === 'rect' ? shape.rows : shape.type === 'custom' ? shape.rows : shape.size;
 
-    // Compute grid size once on mount + on window resize only (not content changes)
+    // Compute grid size to always fit within the available game area
     useEffect(() => {
+        const el = gameAreaRef.current;
+        if (!el) return;
+
         const compute = () => {
-            const el = gameAreaRef.current;
-            if (!el) return;
-            const rect = el.getBoundingClientRect();
-            const availH = rect.height - 48;
-            const availW = rect.width;
-            // For non-square grids, constrain width so height also fits
-            const maxWidthFromHeight = gridRows > gridCols
-                ? availH * (gridCols / gridRows)
-                : availH;
-            const size = Math.min(availW, maxWidthFromHeight, 400);
-            setGridSize(Math.max(size, 80));
+            // Game area has p-2 (8px each side), grid wrapper has p-2 (8px each side)
+            const areaPad = 16;
+            const wrapPad = 16;
+            const maxGridH = el.clientHeight - areaPad - wrapPad;
+            const maxGridW = el.clientWidth - areaPad - wrapPad;
+            // Always constrain by both width and height
+            const fromH = maxGridH * (gridCols / gridRows);
+            const fitW = Math.min(maxGridW, fromH, 400);
+            setGridSize(Math.max(fitW + wrapPad, 80));
         };
 
+        const observer = new ResizeObserver(compute);
+        observer.observe(el);
         requestAnimationFrame(compute);
-        window.addEventListener('resize', compute);
-        return () => window.removeEventListener('resize', compute);
+        return () => observer.disconnect();
     }, [gridCols, gridRows]);
 
     const handleCellClick = (r: number, c: number) => {
@@ -673,43 +684,43 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
 
     return (
         <div className="h-dvh bg-[#313338] flex flex-col overflow-hidden pt-10 sm:pt-0">
-            {/* Header — fixed at top */}
-            <div className="shrink-0 px-4 pt-4 pb-2">
-                <div className="max-w-sm mx-auto flex items-center justify-between">
+            {/* Header */}
+            <div className="shrink-0 px-4 pt-3 pb-1">
+                <div className="max-w-md mx-auto flex items-center justify-between">
                     <button type="button" onClick={onBack} className="text-[#b5bac1] hover:text-white text-sm transition-colors p-1">
                         <ArrowLeft className="w-5 h-5" />
                     </button>
                     <div className="text-center">
-                        <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                            <Sparkles className="w-5 h-5 text-amber-400" />
+                        <h2 className="text-base font-bold text-white flex items-center gap-1.5">
+                            <Sparkles className="w-4 h-4 text-amber-400" />
                             Daily Puzzle
                         </h2>
-                        <p className="text-[#b5bac1] text-xs">{todayKey} · {shapeLabel}</p>
+                        <p className="text-[#b5bac1] text-[11px]">{todayKey} · {shapeLabel}</p>
                     </div>
                     <div className="w-7" />
                 </div>
             </div>
 
-            {/* Centered game area — grid sizes to fit available space */}
-            <div ref={gameAreaRef} className="flex-1 flex flex-col items-center justify-center px-4 pb-4 min-h-0">
-                {/* Move counter */}
-                <div className="flex justify-center items-center gap-4 mb-3 text-sm shrink-0">
-                    <div className="flex items-center gap-1.5">
-                        <span className="text-[#b5bac1]">Moves</span>
-                        <span className="text-white font-mono font-semibold">{moves}</span>
-                    </div>
+            {/* Move counter — outside grid area so sizing is accurate */}
+            <div className="shrink-0 flex justify-center items-center gap-4 py-1 text-sm">
+                <div className="flex items-center gap-1.5">
+                    <span className="text-[#b5bac1]">Moves</span>
+                    <span className="text-white font-mono font-semibold">{moves}</span>
                 </div>
+            </div>
 
-                {/* Grid — constrained to fit within the available area */}
+            {/* Grid area — fills remaining space, grid sizes to fit */}
+            <div ref={gameAreaRef} className="flex-1 min-h-0 flex items-center justify-center p-2 overflow-hidden">
                 <div
-                    className="p-3 rounded-xl bg-[#2b2d31] border border-[#3f4147] w-full"
-                    style={{ maxWidth: gridSize ?? 400 }}
+                    className="p-2 rounded-xl bg-[#2b2d31] border border-[#3f4147]"
+                    style={{ width: gridSize, maxWidth: '100%' }}
                 >
                     <GameGrid
                         grid={grid}
                         shape={shape}
                         solved={solved}
                         onCellClick={handleCellClick}
+                        containerWidth={gridSize ? gridSize - 16 : undefined}
                     />
                 </div>
             </div>
@@ -1056,23 +1067,23 @@ function RaceGameplay({
     const gridRows = shape.type === 'rect' ? shape.rows : shape.type === 'custom' ? shape.rows : shape.size;
 
     useEffect(() => {
+        const el = gameAreaRef.current;
+        if (!el) return;
+
         const compute = () => {
-            const el = gameAreaRef.current;
-            if (!el) return;
-            const rect = el.getBoundingClientRect();
-            const reservedV = 104;
-            const availH = rect.height - reservedV;
-            const availW = rect.width - 32;
-            const maxWidthFromHeight = gridRows > gridCols
-                ? availH * (gridCols / gridRows)
-                : availH;
-            const size = Math.min(availW, maxWidthFromHeight, 400);
-            setGridSize(Math.max(size, 80));
+            const areaPad = 16;
+            const wrapPad = 16;
+            const maxGridH = el.clientHeight - areaPad - wrapPad;
+            const maxGridW = el.clientWidth - areaPad - wrapPad;
+            const fromH = maxGridH * (gridCols / gridRows);
+            const fitW = Math.min(maxGridW, fromH, 400);
+            setGridSize(Math.max(fitW + wrapPad, 80));
         };
 
+        const observer = new ResizeObserver(compute);
+        observer.observe(el);
         requestAnimationFrame(compute);
-        window.addEventListener('resize', compute);
-        return () => window.removeEventListener('resize', compute);
+        return () => observer.disconnect();
     }, [gridCols, gridRows]);
 
     const handleCellClick = (r: number, c: number) => {
@@ -1138,86 +1149,101 @@ function RaceGameplay({
             </AnimatePresence>
 
             {/* Header */}
-            <div className="shrink-0 px-4 pt-4 pb-2">
-                <div className="max-w-sm mx-auto flex items-center justify-between">
+            <div className="shrink-0 px-4 pt-3 pb-1">
+                <div className="max-w-md mx-auto flex items-center justify-between">
                     <button type="button" onClick={onBack} className="text-[#b5bac1] hover:text-white text-sm transition-colors p-1">
                         <ArrowLeft className="w-5 h-5" />
                     </button>
                     <div className="text-center">
-                        <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                            <Swords className="w-5 h-5 text-purple-400" />
+                        <h2 className="text-base font-bold text-white flex items-center gap-1.5">
+                            <Swords className="w-4 h-4 text-purple-400" />
                             Race Mode
                         </h2>
-                        <p className="text-[#b5bac1] text-xs">{getShapeLabel(shape)}</p>
+                        <p className="text-[#b5bac1] text-[11px]">{getShapeLabel(shape)}</p>
                     </div>
                     <div className="w-7" />
                 </div>
             </div>
 
-            {/* Racers bar */}
-            {racers.length > 0 && (
-                <div className="shrink-0 px-4 pb-2">
-                    <div className="max-w-sm mx-auto p-3 rounded-lg bg-[#2b2d31] border border-[#3f4147]">
-                        <div className="text-[#b5bac1] text-xs font-medium mb-2 flex items-center gap-1.5">
-                            <Users className="w-3.5 h-3.5" /> Racers
+            {/* Main content — vertical on mobile, horizontal on desktop */}
+            <div className="flex-1 min-h-0 flex flex-col md:flex-row">
+                {/* Racers panel — top on mobile, right sidebar on desktop */}
+                {racers.length > 0 && (
+                    <div className="shrink-0 order-first md:order-last md:w-52 md:border-l md:border-[#3f4147] overflow-y-auto">
+                        <div className="px-3 py-2 md:p-3">
+                            <div className="text-[#b5bac1] text-xs font-medium mb-1 md:mb-2 flex items-center gap-1.5">
+                                <Users className="w-3.5 h-3.5" /> Racers
+                            </div>
+                            {/* Horizontal scroll on mobile, vertical list on desktop */}
+                            <div className="flex md:flex-col gap-3 md:gap-1.5 overflow-x-auto md:overflow-x-visible pb-1 md:pb-0">
+                                {racers.map((p: LobbyParticipant) => (
+                                    <div key={p.discordId} className="flex items-center justify-between gap-2 text-sm min-w-fit md:min-w-0 md:w-full">
+                                        <span className={`truncate ${p.discordId === discord.user.id ? 'text-white font-semibold' : 'text-[#b5bac1]'}`}>
+                                            {p.username}
+                                        </span>
+                                        <span className={`text-xs font-mono whitespace-nowrap ${
+                                            p.status === 'solved' ? 'text-emerald-400' :
+                                            p.status === 'dnf' ? 'text-red-400' : 'text-[#949ba4]'
+                                        }`}>
+                                            {p.status === 'solved' ? `\u2713 ${p.moves} moves` :
+                                             p.status === 'dnf' ? 'DNF' : 'solving...'}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                        <div className="space-y-1.5">
-                            {racers.map((p: LobbyParticipant) => (
-                                <div key={p.discordId} className="flex items-center justify-between text-sm">
-                                    <span className={p.discordId === discord.user.id ? 'text-white font-semibold' : 'text-[#b5bac1]'}>
-                                        {p.username}
-                                    </span>
-                                    <span className={`text-xs font-mono ${
-                                        p.status === 'solved' ? 'text-emerald-400' :
-                                        p.status === 'dnf' ? 'text-red-400' : 'text-[#949ba4]'
-                                    }`}>
-                                        {p.status === 'solved' ? `\u2713 ${p.moves} moves` :
-                                         p.status === 'dnf' ? 'DNF' : 'solving...'}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Game area */}
-            <div ref={gameAreaRef} className="flex-1 flex flex-col items-center justify-center px-4 pb-4 min-h-0">
-                {isRacer && (
-                    <div className="flex justify-center items-center gap-4 mb-3 text-sm shrink-0">
-                        <div className="flex items-center gap-1.5">
-                            <span className="text-[#b5bac1]">Moves</span>
-                            <span className="text-white font-mono font-semibold">{moves}</span>
-                        </div>
-                        {lobby.raceStartedAt && (
-                            <Timer startTime={lobby.raceStartedAt} stopped={solved} />
-                        )}
                     </div>
                 )}
 
-                <div
-                    className="p-3 rounded-xl bg-[#2b2d31] border border-[#3f4147] w-full"
-                    style={{ maxWidth: gridSize ?? 400 }}
-                >
-                    <GameGrid grid={grid} shape={shape} solved={solved || !isRacer} onCellClick={handleCellClick} />
-                </div>
+                {/* Game column */}
+                <div className="flex-1 min-h-0 flex flex-col">
+                    {/* Move counter + timer */}
+                    {isRacer && (
+                        <div className="shrink-0 flex justify-center items-center gap-4 py-1 text-sm">
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-[#b5bac1]">Moves</span>
+                                <span className="text-white font-mono font-semibold">{moves}</span>
+                            </div>
+                            {lobby.raceStartedAt && (
+                                <Timer startTime={lobby.raceStartedAt} stopped={solved} />
+                            )}
+                        </div>
+                    )}
 
-                {isRacer && !solved && !isCountdown && (
-                    <div className="flex justify-center gap-2 mt-4 shrink-0">
-                        <button
-                            type="button"
-                            onClick={handleUndo}
-                            disabled={moveHistory.length === 0}
-                            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-[#2b2d31] border border-[#3f4147] text-white hover:border-[#5865f2]/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    {/* Grid area */}
+                    <div ref={gameAreaRef} className="flex-1 min-h-0 flex items-center justify-center p-2 overflow-hidden">
+                        <div
+                            className="p-2 rounded-xl bg-[#2b2d31] border border-[#3f4147]"
+                            style={{ width: gridSize, maxWidth: '100%' }}
                         >
-                            <Undo2 className="w-4 h-4" /> Undo
-                        </button>
+                            <GameGrid
+                                grid={grid}
+                                shape={shape}
+                                solved={solved || !isRacer}
+                                onCellClick={handleCellClick}
+                                containerWidth={gridSize ? gridSize - 16 : undefined}
+                            />
+                        </div>
                     </div>
-                )}
 
-                {!isRacer && (
-                    <p className="text-[#949ba4] text-xs mt-4">Spectating — joined mid-race</p>
-                )}
+                    {/* Undo button */}
+                    {isRacer && !solved && !isCountdown && (
+                        <div className="shrink-0 flex justify-center gap-2 py-1.5">
+                            <button
+                                type="button"
+                                onClick={handleUndo}
+                                disabled={moveHistory.length === 0}
+                                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium bg-[#2b2d31] border border-[#3f4147] text-white hover:border-[#5865f2]/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <Undo2 className="w-4 h-4" /> Undo
+                            </button>
+                        </div>
+                    )}
+
+                    {!isRacer && (
+                        <p className="shrink-0 text-[#949ba4] text-xs text-center py-2">Spectating — joined mid-race</p>
+                    )}
+                </div>
             </div>
         </div>
     );
