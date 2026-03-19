@@ -111,6 +111,7 @@ async function discordApi(path: string, method: string, body?: object): Promise<
             // 404 = channel deleted
             // Don't log these as errors — they're expected when bot isn't installed everywhere
             if (status === 403 || status === 404) {
+                console.warn(`Discord API ${method} ${path}: ${status} (bot lacks access) — ${text.slice(0, 200)}`);
                 // Extract channelId from path for blocking
                 const channelMatch = path.match(/\/channels\/(\d+)/);
                 if (channelMatch) {
@@ -230,6 +231,8 @@ export const Route = createFileRoute('/api/discord/embed')({
                     const body = await request.json();
                     const { channelId, guildId, action, dateKey, user, result } = body;
 
+                    console.log(`[embed] action=${action} guild=${guildId} channel=${channelId} user=${user?.id} dateKey=${dateKey}`);
+
                     // Minimum required: dateKey and user ID (for any tracking)
                     if (!dateKey || !user?.id) {
                         return Response.json({ error: 'Missing dateKey or user' }, { status: 400 });
@@ -237,6 +240,7 @@ export const Route = createFileRoute('/api/discord/embed')({
 
                     // No guild context (DM or user-app without guild) — nothing to track or post
                     if (!guildId) {
+                        console.log('[embed] Skipped: no guildId');
                         return Response.json({ success: true, skipped: 'no-guild' });
                     }
 

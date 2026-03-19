@@ -749,33 +749,33 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
     const username = discord.user.global_name || discord.user.username;
     const [lobby, setLobby] = useState<LobbyState | null>(null);
     const socketRef = useRef<ReturnType<typeof import('socket.io-client').io> | null>(null);
+    const [useHttp, setUseHttp] = useState(false);
 
-    // Connect socket, join lobby, listen for state updates
+    // Try socket.io first; fall back to HTTP polling if it fails
     useEffect(() => {
+        if (useHttp) return;
         let mounted = true;
+        let fallbackTimer: ReturnType<typeof setTimeout>;
 
         import('socket.io-client').then(({ io: ioClient }) => {
             if (!mounted) return;
 
-            // Connect through Discord's proxy (same origin, path /socket/)
             const socket = ioClient(window.location.origin, {
                 path: '/socket/',
                 withCredentials: false,
                 reconnection: true,
-                reconnectionAttempts: Infinity,
-                reconnectionDelay: 1000,
-                reconnectionDelayMax: 10000,
-                timeout: 15000,
+                reconnectionAttempts: 3,
+                reconnectionDelay: 2000,
+                timeout: 10000,
             });
 
             socketRef.current = socket;
 
             socket.on('connect', () => {
+                clearTimeout(fallbackTimer);
+                console.log('[lights-out] Socket connected');
                 socket.emit('lights-out:join', {
-                    instanceId,
-                    discordId,
-                    username,
-                    avatar: discord.user.avatar,
+                    instanceId, discordId, username, avatar: discord.user.avatar,
                 });
             });
 
@@ -783,23 +783,84 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
                 setLobby(state);
             });
 
-            socket.on('lights-out:error', (err: { message: string }) => {
-                console.error('Lights Out socket error:', err.message);
+            socket.on('connect_error', (err: Error) => {
+                console.warn('[lights-out] Socket connect error:', err.message);
             });
+
+            // If socket doesn't connect within 8s, fall back to HTTP polling
+            fallbackTimer = setTimeout(() => {
+                if (!socket.connected && mounted) {
+                    console.warn('[lights-out] Socket failed, falling back to HTTP polling');
+                    socket.disconnect();
+                    socketRef.current = null;
+                    setUseHttp(true);
+                }
+            }, 8000);
         });
 
         return () => {
             mounted = false;
+            clearTimeout(fallbackTimer);
             if (socketRef.current) {
                 socketRef.current.emit('lights-out:leave', { instanceId, discordId });
                 socketRef.current.disconnect();
                 socketRef.current = null;
             }
         };
-    }, [instanceId, discordId, username, discord.user.avatar]);
+    }, [instanceId, discordId, username, discord.user.avatar, useHttp]);
+
+    // HTTP polling fallback (same as before — works reliably through Discord proxy)
+    useEffect(() => {
+        if (!useHttp) return;
+
+        // Join via HTTP
+        fetch('/api/discord/race', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ instanceId, action: 'join', discordId, username, avatar: discord.user.avatar }),
+        }).catch(() => {});
+
+        const poll = async () => {
+            try {
+                const res = await fetch(`/api/discord/race?instanceId=${encodeURIComponent(instanceId)}&discordId=${encodeURIComponent(discordId)}`);
+                if (res.ok) setLobby(await res.json());
+            } catch {}
+        };
+
+        poll();
+        const interval = setInterval(poll, 1500);
+
+        return () => {
+            clearInterval(interval);
+            fetch('/api/discord/race', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ instanceId, action: 'leave', discordId }),
+            }).catch(() => {});
+        };
+    }, [useHttp, instanceId, discordId, username, discord.user.avatar]);
 
     const emit = useCallback((event: string, data: Record<string, unknown>) => {
-        socketRef.current?.emit(event, { instanceId, discordId, ...data });
+        if (socketRef.current?.connected) {
+            socketRef.current.emit(event, { instanceId, discordId, ...data });
+        } else {
+            // HTTP fallback — map socket events to POST actions
+            const actionMap: Record<string, string> = {
+                'lights-out:ready': 'ready',
+                'lights-out:start': 'start',
+                'lights-out:update': 'update',
+                'lights-out:leave': 'leave',
+                'lights-out:return': 'return_to_lobby',
+            };
+            const action = actionMap[event];
+            if (action) {
+                fetch('/api/discord/race', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ instanceId, action, discordId, ...data }),
+                }).catch(() => {});
+            }
+        }
     }, [instanceId, discordId]);
 
     const handleBack = useCallback(() => {
