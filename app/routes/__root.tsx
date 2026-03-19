@@ -105,9 +105,14 @@ function RootComponent() {
   const navigate = useNavigate();
 
   // When loaded inside a Discord Activity iframe at "/", redirect to the game
+  // Preserve query params (frame_id, instance_id, etc.) that the Discord SDK needs
   useEffect(() => {
     if (pathname === '/' && isDiscordActivity()) {
-      navigate({ to: '/discord/lights-out', replace: true });
+      navigate({
+        to: '/discord/lights-out',
+        search: Object.fromEntries(new URLSearchParams(window.location.search)),
+        replace: true,
+      });
     }
   }, [pathname, navigate]);
 
