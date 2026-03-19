@@ -1510,3 +1510,41 @@ model DreamRiftPlayer {
   @@index([highScoreNormal(sort: Desc)], map: "idx_dream_rift_high_score")
   @@index([bestStage(sort: Desc)], map: "idx_dream_rift_best_stage")
 }
+
+// Tracks which Discord channel was last used for an activity per guild.
+// Used by the daily recap script to know where to post recaps.
+model DiscordActivityChannel {
+  id             String    @id @default(cuid())
+  guildId        String
+  channelId      String
+  activity       String    // e.g. "lights-out"
+  updatedAt      DateTime  @default(now()) @updatedAt
+  // Scheduled recap: set when the first player starts the daily puzzle
+  recapDateKey   String?   // YYYY-MM-DD of the puzzle day to recap
+  recapDueAt     DateTime? // when to send the recap (24h after first activity)
+
+  @@unique([guildId, activity])
+  @@index([recapDueAt], map: "idx_discord_activity_recap_due")
+  @@map("discord_activity_channel")
+}
+
+// Tracks per-user, per-guild daily puzzle participation.
+// A user completing in one guild propagates to all guilds they opened the activity in.
+model DiscordDailyParticipant {
+  id           String   @id @default(cuid())
+  discordId    String   // Discord user ID
+  guildId      String
+  dateKey      String   // YYYY-MM-DD
+  username     String
+  status       String   @default("playing") // "playing" | "completed"
+  moves        Int?
+  ratingEmoji  String?
+  ratingLabel  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+
+  @@unique([discordId, guildId, dateKey])
+  @@index([guildId, dateKey], map: "idx_discord_daily_participant_guild_date")
+  @@index([discordId, dateKey], map: "idx_discord_daily_participant_user_date")
+  @@map("discord_daily_participant")
+}

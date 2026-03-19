@@ -4,10 +4,13 @@ import {
   Outlet,
   Scripts,
   createRootRoute,
+  useRouterState,
+  useNavigate,
 } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect } from "react";
 import { Providers } from "@/components/Providers";
 import { TwemojiProvider } from "@/components/ui/TwemojiProvider";
+import { isDiscordActivity } from "@/lib/discord-sdk";
 import appCss from "@/app/globals.css?url";
 
 /**
@@ -24,31 +27,57 @@ const bodyThemeScript = `if(window.__themeBg)document.body.style.backgroundColor
  */
 const deferredFontsScript = `(function(){var u="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100..800&family=Playfair+Display:wght@400..900&family=Bangers&family=Bebas+Neue&family=Orbitron:wght@400..900&family=Cinzel:wght@400..900&family=Pacifico&family=Space+Grotesk:wght@300..700&family=Permanent+Marker&family=Caveat:wght@400..700&family=Dancing+Script:wght@400..700&family=Patrick+Hand&display=swap";function l(){var k=document.createElement("link");k.rel="stylesheet";k.href=u;document.head.appendChild(k)}if("requestIdleCallback"in window)requestIdleCallback(l);else setTimeout(l,200)})()`;
 
+/** Check if a URL path is a Discord Activity route (embedded iframe) */
+function isDiscordRoute(pathname: string): boolean {
+  return pathname.startsWith('/discord/') || pathname === '/discord';
+}
 
 export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { title: "RMH | The Everything Platform" },
-      { name: "description", content: "RMH - The Everything Platform. Games, apps, research, and more." },
-      { name: "robots", content: "index, follow" },
-    ],
-    links: [
-      { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: appCss },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Nunito:wght@200..1000&family=Inter:wght@100..900&display=swap",
-      },
-    ],
-    scripts: [
-      { children: themeScript },
-      { children: deferredFontsScript },
-    ],
-  }),
+  head: (ctx) => {
+    const discord = ctx.matches?.some(m =>
+      m.fullPath?.startsWith('/discord')
+    );
+
+    if (discord) {
+      // Minimal head for Discord Activity — no inline scripts or external fonts
+      // (Discord's CSP blocks them, causing hydration mismatch)
+      return {
+        meta: [
+          { charSet: "utf-8" },
+          { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+          { title: "Lights Out" },
+        ],
+        links: [
+          { rel: "stylesheet", href: appCss },
+        ],
+        scripts: [],
+      };
+    }
+
+    return {
+      meta: [
+        { charSet: "utf-8" },
+        { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+        { title: "RMH | The Everything Platform" },
+        { name: "description", content: "RMH - The Everything Platform. Games, apps, research, and more." },
+        { name: "robots", content: "index, follow" },
+      ],
+      links: [
+        { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+        { rel: "preconnect", href: "https://fonts.googleapis.com" },
+        { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+        { rel: "stylesheet", href: appCss },
+        {
+          rel: "stylesheet",
+          href: "https://fonts.googleapis.com/css2?family=Nunito:wght@200..1000&family=Inter:wght@100..900&display=swap",
+        },
+      ],
+      scripts: [
+        { children: themeScript },
+        { children: deferredFontsScript },
+      ],
+    };
+  },
   component: RootComponent,
   shellComponent: RootDocument,
 });
@@ -72,6 +101,27 @@ function RootDocument({ children }: { children: ReactNode }) {
 }
 
 function RootComponent() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
+
+  // When loaded inside a Discord Activity iframe at "/", redirect to the game
+  // Preserve query params (frame_id, instance_id, etc.) that the Discord SDK needs
+  useEffect(() => {
+    if (pathname === '/' && isDiscordActivity()) {
+      navigate({
+        to: '/discord/lights-out',
+        search: Object.fromEntries(new URLSearchParams(window.location.search)),
+        replace: true,
+      });
+    }
+  }, [pathname, navigate]);
+
+  // Discord Activity routes skip Providers (auth, themes, etc.)
+  // to avoid CSP-blocked requests and unnecessary overhead
+  if (isDiscordRoute(pathname)) {
+    return <Outlet />;
+  }
+
   return (
     <Providers>
       <TwemojiProvider tag="div">

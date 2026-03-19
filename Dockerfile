@@ -57,11 +57,13 @@ COPY lib/blackjack ./lib/blackjack/
 COPY lib/holdem ./lib/holdem/
 COPY lib/baccarat ./lib/baccarat/
 COPY lib/roulette ./lib/roulette/
+COPY lib/lights-out ./lib/lights-out/
 
 RUN pnpm exec esbuild \
     server/socket-server/index.ts \
     server/rmhbox/index.ts \
     server/rmhtube/index.ts \
+    server/recap/index.ts \
     --bundle --platform=node --target=node20 \
     --outdir=dist-server --outbase=. \
     --format=cjs --out-extension:.js=.cjs --packages=external --tree-shaking=true \
@@ -69,7 +71,8 @@ RUN pnpm exec esbuild \
 
 RUN test -f dist-server/server/socket-server/index.cjs && \
     test -f dist-server/server/rmhbox/index.cjs && \
-    test -f dist-server/server/rmhtube/index.cjs
+    test -f dist-server/server/rmhtube/index.cjs && \
+    test -f dist-server/server/recap/index.cjs
 
 # ── Stage 3: Vite/Nitro build (env-specific) ─────────────────────────────
 # BuildKit executes this IN PARALLEL with server-builder (stage 2).
@@ -91,6 +94,7 @@ ARG VITE_BETTER_AUTH_URL
 ARG VITE_SOCKET_URL
 ARG VITE_RMHBOX_SOCKET_URL
 ARG VITE_RMHTUBE_SOCKET_URL
+ARG VITE_DISCORD_ACTIVITY_CLIENT_ID
 
 ENV DATABASE_URL=${DATABASE_URL} \
     BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET} \
@@ -98,7 +102,8 @@ ENV DATABASE_URL=${DATABASE_URL} \
     VITE_BETTER_AUTH_URL=${VITE_BETTER_AUTH_URL} \
     VITE_SOCKET_URL=${VITE_SOCKET_URL} \
     VITE_RMHBOX_SOCKET_URL=${VITE_RMHBOX_SOCKET_URL} \
-    VITE_RMHTUBE_SOCKET_URL=${VITE_RMHTUBE_SOCKET_URL}
+    VITE_RMHTUBE_SOCKET_URL=${VITE_RMHTUBE_SOCKET_URL} \
+    VITE_DISCORD_ACTIVITY_CLIENT_ID=${VITE_DISCORD_ACTIVITY_CLIENT_ID}
 
 # Build with cache mounts for faster incremental builds.
 # .vinxi cache is preserved between builds for Vite's module graph cache.

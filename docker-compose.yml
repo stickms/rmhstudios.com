@@ -48,6 +48,7 @@ services:
         VITE_SOCKET_URL: ${VITE_SOCKET_URL}
         VITE_RMHBOX_SOCKET_URL: ${VITE_RMHBOX_SOCKET_URL}
         VITE_RMHTUBE_SOCKET_URL: ${VITE_RMHTUBE_SOCKET_URL}
+        VITE_DISCORD_ACTIVITY_CLIENT_ID: ${VITE_DISCORD_ACTIVITY_CLIENT_ID}
     container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-web
     ports:
       - "127.0.0.1:${PORT_WEB:-7005}:${PORT_WEB:-7005}"
@@ -112,6 +113,21 @@ services:
       timeout: 10s
       retries: 3
       start_period: 15s
+
+  # ─── Lights Out Recap Runner ───────────────────────────────────────────────
+  recap:
+    <<: *common
+    container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-recap
+    env_file: ${ENV_FILE:-.env.production}
+    environment:
+      - RECAP_PORT=${PORT_RECAP:-7004}
+    command: ["node", "dist-server/server/recap/index.cjs"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT_RECAP:-7004}/"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
   # ─── News Pipeline (production only — use `--profile news` to include) ─────
   news-pipeline:

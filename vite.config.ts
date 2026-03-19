@@ -16,6 +16,8 @@ logger.warn = (msg, options) => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function onwarn(warning: any, warn: any) {
   if (warning.code === "UNRESOLVED_IMPORT" && warning.exporter?.includes(".prisma/client")) return;
+  // file-type (transitive dep of music-metadata) uses eval('require')('stream') — safe, Node-only fallback
+  if (warning.code === "EVAL" && warning.id?.includes("file-type")) return;
   warn(warning);
 }
 
@@ -40,6 +42,7 @@ const heavyExternals = [
   "react-easy-crop",
   "katex",
   // Audio (native/WASM — can't bundle)
+  "tone",
   "audio-decode",
   "wasm-audio-decoders",
   "@wasm-audio-decoders/common",
@@ -66,7 +69,7 @@ const ssrOnlyExternals = [
 
 const manualChunksMap: Record<string, string[]> = {
   "vendor-three": ["three", "@react-three/fiber", "@react-three/drei", "@react-three/rapier"],
-  "vendor-editor": ["monaco-editor", "@monaco-editor/react"],
+  "vendor-monaco-react": ["@monaco-editor/react"],
   "vendor-tiptap": [
     "@tiptap/react",
     "@tiptap/starter-kit",
@@ -87,6 +90,7 @@ const manualChunksMap: Record<string, string[]> = {
     "@tiptap/extension-text-style",
     "@tiptap/extension-underline",
   ],
+  "vendor-tonejs": ["tone"],
   "vendor-motion": ["framer-motion"],
   "vendor-pixi": ["pixi.js"],
   "vendor-recharts": ["recharts"],
@@ -101,6 +105,16 @@ for (const [chunk, modules] of Object.entries(manualChunksMap)) {
 }
 
 function manualChunks(id: string) {
+  // Split monaco-editor into sub-chunks by area
+  if (id.includes("node_modules/monaco-editor/") || id.includes("node_modules\\monaco-editor\\")) {
+    if (id.includes("/esm/vs/language/")) return "vendor-monaco-languages";
+    if (id.includes("/esm/vs/basic-languages/")) return "vendor-monaco-basic-languages";
+    if (id.includes("/esm/vs/editor/")) return "vendor-monaco-editor";
+    if (id.includes("/esm/vs/base/")) return "vendor-monaco-base";
+    if (id.includes("/esm/vs/platform/")) return "vendor-monaco-platform";
+    if (id.includes("/esm/vs/common/")) return "vendor-monaco-common";
+    return "vendor-monaco-misc";
+  }
   for (const [mod, chunk] of moduleToChunk) {
     if (id.includes(`node_modules/${mod}/`) || id.includes(`node_modules\\${mod}\\`)) {
       return chunk;
