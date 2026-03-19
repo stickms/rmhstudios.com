@@ -625,10 +625,16 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
 
     // Compute grid size to always fit within the available game area
     useEffect(() => {
-        const el = gameAreaRef.current;
-        if (!el) return;
+        let observer: ResizeObserver | null = null;
 
         const compute = () => {
+            const el = gameAreaRef.current;
+            if (!el) return;
+            // Lazily attach ResizeObserver once ref is available
+            if (!observer) {
+                observer = new ResizeObserver(() => compute());
+                observer.observe(el);
+            }
             // Game area has p-2 (8px each side), grid wrapper has p-2 (8px each side)
             const areaPad = 16;
             const wrapPad = 16;
@@ -640,10 +646,12 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
             setGridSize(Math.max(fitW + wrapPad, 80));
         };
 
-        const observer = new ResizeObserver(compute);
-        observer.observe(el);
         requestAnimationFrame(compute);
-        return () => observer.disconnect();
+        window.addEventListener('resize', compute);
+        return () => {
+            window.removeEventListener('resize', compute);
+            observer?.disconnect();
+        };
     }, [gridCols, gridRows]);
 
     const handleCellClick = (r: number, c: number) => {
@@ -713,7 +721,7 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
             <div ref={gameAreaRef} className="flex-1 min-h-0 flex items-center justify-center p-2 overflow-hidden">
                 <div
                     className="p-2 rounded-xl bg-[#2b2d31] border border-[#3f4147]"
-                    style={{ width: gridSize, maxWidth: '100%' }}
+                    style={{ width: gridSize, maxWidth: '100%', visibility: gridSize ? 'visible' : 'hidden' }}
                 >
                     <GameGrid
                         grid={grid}
@@ -1067,10 +1075,15 @@ function RaceGameplay({
     const gridRows = shape.type === 'rect' ? shape.rows : shape.type === 'custom' ? shape.rows : shape.size;
 
     useEffect(() => {
-        const el = gameAreaRef.current;
-        if (!el) return;
+        let observer: ResizeObserver | null = null;
 
         const compute = () => {
+            const el = gameAreaRef.current;
+            if (!el) return;
+            if (!observer) {
+                observer = new ResizeObserver(() => compute());
+                observer.observe(el);
+            }
             const areaPad = 16;
             const wrapPad = 16;
             const maxGridH = el.clientHeight - areaPad - wrapPad;
@@ -1080,10 +1093,12 @@ function RaceGameplay({
             setGridSize(Math.max(fitW + wrapPad, 80));
         };
 
-        const observer = new ResizeObserver(compute);
-        observer.observe(el);
         requestAnimationFrame(compute);
-        return () => observer.disconnect();
+        window.addEventListener('resize', compute);
+        return () => {
+            window.removeEventListener('resize', compute);
+            observer?.disconnect();
+        };
     }, [gridCols, gridRows]);
 
     const handleCellClick = (r: number, c: number) => {
@@ -1214,7 +1229,7 @@ function RaceGameplay({
                     <div ref={gameAreaRef} className="flex-1 min-h-0 flex items-center justify-center p-2 overflow-hidden">
                         <div
                             className="p-2 rounded-xl bg-[#2b2d31] border border-[#3f4147]"
-                            style={{ width: gridSize, maxWidth: '100%' }}
+                            style={{ width: gridSize, maxWidth: '100%', visibility: gridSize ? 'visible' : 'hidden' }}
                         >
                             <GameGrid
                                 grid={grid}
