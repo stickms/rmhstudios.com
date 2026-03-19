@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { DiscordSDK, type Types } from '@discord/embedded-app-sdk';
+import { DiscordSDK, patchUrlMappings, type Types } from '@discord/embedded-app-sdk';
 
 export interface DiscordUser {
     id: string;
@@ -61,6 +61,19 @@ export function useDiscordSdk(): DiscordState {
             try {
                 // 1. Wait for SDK to be ready
                 await sdk.ready();
+
+                // 1b. Patch URL mappings so WebSocket/fetch/XHR route through Discord's proxy.
+                // This rewrites requests to the actual server → proxy (discordsays.com).
+                // Must match the URL mappings in Discord Developer Portal.
+                const socketUrl = import.meta.env.VITE_SOCKET_URL;
+                if (socketUrl) {
+                    try {
+                        const socketHost = new URL(socketUrl).host;
+                        patchUrlMappings([
+                            { prefix: '/socket/', target: socketHost },
+                        ]);
+                    } catch {}
+                }
 
                 // 2. Authorize — request an auth code
                 const { code } = await sdk.commands.authorize({
