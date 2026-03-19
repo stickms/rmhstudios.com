@@ -179,14 +179,36 @@ async function postOrEditEmbed(channelId: string, dateKey: string, participants:
 export const Route = createFileRoute('/api/discord/embed')({
     server: {
         handlers: {
-            // GET — check if a user completed today's daily puzzle
+            // GET — check completion or fetch guild leaderboard
             GET: async ({ request }) => {
                 const url = new URL(request.url);
-                const discordId = url.searchParams.get('discordId');
                 const dateKey = url.searchParams.get('dateKey');
+                const guildId = url.searchParams.get('guildId');
+                const leaderboard = url.searchParams.get('leaderboard');
+                const discordId = url.searchParams.get('discordId');
 
-                if (!discordId || !dateKey) {
-                    return Response.json({ error: 'Missing discordId or dateKey' }, { status: 400 });
+                if (!dateKey) {
+                    return Response.json({ error: 'Missing dateKey' }, { status: 400 });
+                }
+
+                // Leaderboard mode: return all participants for a guild+date
+                if (leaderboard && guildId) {
+                    try {
+                        const participants = await prisma.discordDailyParticipant.findMany({
+                            where: { guildId, dateKey },
+                            select: { username: true, status: true, moves: true, ratingEmoji: true },
+                            orderBy: [{ status: 'asc' }, { moves: 'asc' }],
+                        });
+                        return Response.json({ participants });
+                    } catch (e) {
+                        console.error('Discord leaderboard GET error:', e);
+                        return Response.json({ participants: [] });
+                    }
+                }
+
+                // Completion check mode
+                if (!discordId) {
+                    return Response.json({ error: 'Missing discordId' }, { status: 400 });
                 }
 
                 try {
