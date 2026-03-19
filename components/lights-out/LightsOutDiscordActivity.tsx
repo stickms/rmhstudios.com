@@ -369,24 +369,22 @@ function GameGrid({
 function CongratsModal({
     moves,
     optimalMoves,
-    ratingEmoji,
     ratingLabel,
     dateKey,
     shapeLabel,
-    scoreSynced,
-    linkedUserId,
+    guildId,
     onReturn,
 }: {
     moves: number;
     optimalMoves: number | null;
-    ratingEmoji: string;
     ratingLabel: string;
     dateKey: string;
     shapeLabel: string;
-    scoreSynced: boolean;
-    linkedUserId: string | null;
+    guildId: string | null;
     onReturn: () => void;
 }) {
+    const [showLeaderboard, setShowLeaderboard] = useState(false);
+
     return (
         <motion.div
             initial={{ opacity: 0 }}
@@ -399,15 +397,12 @@ function CongratsModal({
                 transition={{ type: 'spring', damping: 25, stiffness: 300 }}
                 className="w-full max-w-xs rounded-2xl bg-[#2b2d31] border border-[#3f4147] overflow-hidden my-auto"
             >
-                {/* Celebration header */}
-                <div className="bg-linear-to-b from-amber-500/20 to-transparent px-6 pt-8 pb-4 text-center">
-                    <div className="text-5xl mb-3">{ratingEmoji}</div>
+                <div className="px-6 pt-6 pb-4 text-center">
                     <h2 className="text-2xl font-bold text-white mb-1">{ratingLabel}</h2>
                     <p className="text-[#b5bac1] text-sm">{dateKey} · {shapeLabel}</p>
                 </div>
 
-                {/* Stats */}
-                <div className="px-6 py-4 space-y-3">
+                <div className="px-6 pb-4 space-y-2">
                     <div className="flex justify-between items-center py-2 px-3 rounded-lg bg-[#1e1f22]">
                         <span className="text-[#b5bac1] text-sm">Your moves</span>
                         <span className="text-white font-mono font-bold text-lg">{moves}</span>
@@ -418,42 +413,19 @@ function CongratsModal({
                             <span className="text-amber-400 font-mono font-bold text-lg">{optimalMoves}</span>
                         </div>
                     )}
-
-                    {/* Rating tiers */}
-                    {optimalMoves != null && (
-                        <div className="pt-1">
-                            {[
-                                { emoji: '\u{1F31F}', label: 'Perfect!', desc: 'Optimal' },
-                                { emoji: '\u2728', label: 'Excellent!', desc: '+1' },
-                                { emoji: '\u{1F525}', label: 'Great!', desc: '+2\u20133' },
-                                { emoji: '\u{1F44D}', label: 'Good!', desc: '+4\u20136' },
-                                { emoji: '\u{1F4A1}', label: 'Solved!', desc: '+7+' },
-                            ].map(tier => (
-                                <div
-                                    key={tier.label}
-                                    className={`flex items-center gap-2 py-1 px-2 rounded text-xs ${
-                                        ratingLabel === tier.label
-                                            ? 'bg-amber-500/15 text-amber-400 font-semibold'
-                                            : 'text-[#949ba4]'
-                                    }`}
-                                >
-                                    <span className="w-5 text-center">{tier.emoji}</span>
-                                    <span className="w-16">{tier.label}</span>
-                                    <span className="text-[#949ba4] font-normal">{tier.desc}</span>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    {linkedUserId && scoreSynced && (
-                        <p className="text-emerald-400 text-xs flex items-center justify-center gap-1 pt-1">
-                            <Check className="w-3 h-3" /> Score synced to your account
-                        </p>
-                    )}
                 </div>
 
-                {/* Return button */}
-                <div className="px-6 pb-6">
+                <div className="px-6 pb-6 flex flex-col gap-2">
+                    {guildId && (
+                        <button
+                            type="button"
+                            onClick={() => setShowLeaderboard(true)}
+                            className="w-full py-3 rounded-xl bg-[#1e1f22] border border-[#3f4147] hover:border-amber-500/50 text-white font-bold text-sm transition-colors flex items-center justify-center gap-2"
+                        >
+                            <Trophy className="w-4 h-4 text-amber-400" />
+                            Leaderboard
+                        </button>
+                    )}
                     <button
                         type="button"
                         onClick={onReturn}
@@ -461,6 +433,120 @@ function CongratsModal({
                     >
                         Return
                     </button>
+                </div>
+            </motion.div>
+
+            <AnimatePresence>
+                {showLeaderboard && guildId && (
+                    <LeaderboardModal
+                        guildId={guildId}
+                        dateKey={dateKey}
+                        onClose={() => setShowLeaderboard(false)}
+                    />
+                )}
+            </AnimatePresence>
+        </motion.div>
+    );
+}
+
+// ─── Leaderboard Modal ──────────────────────────────────────────────
+
+interface LeaderboardEntry {
+    username: string;
+    status: string;
+    moves: number | null;
+    ratingEmoji: string | null;
+}
+
+function LeaderboardModal({
+    guildId,
+    dateKey,
+    onClose,
+}: {
+    guildId: string;
+    dateKey: string;
+    onClose: () => void;
+}) {
+    const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetch(`/api/discord/embed?guildId=${encodeURIComponent(guildId)}&dateKey=${encodeURIComponent(dateKey)}&leaderboard=1`)
+            .then(r => r.json())
+            .then(data => {
+                if (Array.isArray(data.participants)) setEntries(data.participants);
+            })
+            .catch(() => {})
+            .finally(() => setLoading(false));
+    }, [guildId, dateKey]);
+
+    const completed = entries.filter(e => e.status === 'completed').sort((a, b) => (a.moves ?? 999) - (b.moves ?? 999));
+    const playing = entries.filter(e => e.status !== 'completed');
+    const ranked = [...completed, ...playing];
+    const medals = ['\u{1F947}', '\u{1F948}', '\u{1F949}'];
+
+    return (
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-60 bg-black/70 flex items-center justify-center p-4 overflow-y-auto"
+            onClick={onClose}
+        >
+            <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                className="w-full max-w-xs rounded-2xl bg-[#2b2d31] border border-[#3f4147] overflow-hidden my-auto"
+                onClick={e => e.stopPropagation()}
+            >
+                <div className="px-6 pt-5 pb-3 flex items-center justify-between">
+                    <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                        <Trophy className="w-5 h-5 text-amber-400" />
+                        Leaderboard
+                    </h2>
+                    <button type="button" onClick={onClose} className="text-[#b5bac1] hover:text-white transition-colors">
+                        <ArrowLeft className="w-5 h-5" />
+                    </button>
+                </div>
+
+                <div className="px-6 pb-6">
+                    {loading ? (
+                        <div className="text-center text-[#b5bac1] text-sm py-6 animate-pulse">Loading...</div>
+                    ) : ranked.length === 0 ? (
+                        <div className="text-center text-[#949ba4] text-sm py-6">No one has played yet today.</div>
+                    ) : (
+                        <div className="space-y-1.5">
+                            {ranked.map((entry, i) => {
+                                const isCompleted = entry.status === 'completed';
+                                const medal = isCompleted ? (medals[completed.indexOf(entry)] ?? '') : '';
+
+                                return (
+                                    <div
+                                        key={entry.username + i}
+                                        className="flex items-center justify-between p-2.5 rounded-lg bg-[#1e1f22]"
+                                    >
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            {medal ? (
+                                                <span className="text-base w-5 text-center shrink-0">{medal}</span>
+                                            ) : (
+                                                <span className="text-xs text-[#949ba4] w-5 text-center shrink-0">
+                                                    {isCompleted ? completed.indexOf(entry) + 1 : '\u2014'}
+                                                </span>
+                                            )}
+                                            <span className="text-sm text-white truncate">{entry.username}</span>
+                                        </div>
+                                        <span className={`text-sm font-mono shrink-0 ${
+                                            isCompleted ? 'text-emerald-400' : 'text-[#949ba4]'
+                                        }`}>
+                                            {isCompleted ? `${entry.moves} move${entry.moves !== 1 ? 's' : ''}` : 'playing...'}
+                                        </span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
             </motion.div>
         </motion.div>
@@ -531,20 +617,17 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
     const shape = getDailyShape(seed);
     const shapeLabel = getShapeLabel(shape);
 
-    // Check if already completed (localStorage first, then server for cross-platform)
-    const [existingCompletion, setExistingCompletion] = useState<DailyCompletion | null>(getDailyCompletion(todayKey));
-    const [showModal, setShowModal] = useState(!!existingCompletion);
-
-    useEffect(() => {
-        if (existingCompletion) return;
-        fetchDailyCompletion(discord.user.id, todayKey).then(result => {
-            if (result) {
-                setExistingCompletion(result);
-                setShowModal(true);
-                setSolved(true);
-            }
-        });
-    }, [discord.user.id, todayKey]); // eslint-disable-line react-hooks/exhaustive-deps
+    const [grid, setGrid] = useState<Grid | null>(null);
+    const [moves, setMoves] = useState(0);
+    const [solved, setSolved] = useState(false);
+    const [showModal, setShowModal] = useState(false);
+    const [optimalMoves, setOptimalMoves] = useState<number | null>(null);
+    const [scoreSynced, setScoreSynced] = useState(false);
+    const [ratingLabel, setRatingLabel] = useState('');
+    const [ratingEmoji, setRatingEmoji] = useState('');
+    const notifiedStart = useRef(false);
+    const [gameAreaEl, setGameAreaEl] = useState<HTMLDivElement | null>(null);
+    const [gridSize, setGridSize] = useState<number | undefined>(undefined);
 
     // Instructions modal — show once per user
     const [showInstructions, setShowInstructions] = useState(() => {
@@ -556,43 +639,95 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
         try { localStorage.setItem(INSTRUCTIONS_SEEN_KEY, '1'); } catch {}
     };
 
-    const [grid, setGrid] = useState<Grid | null>(null);
-    const [moves, setMoves] = useState(existingCompletion?.moves ?? 0);
-    const [solved, setSolved] = useState(!!existingCompletion);
-    const [optimalMoves, setOptimalMoves] = useState<number | null>(existingCompletion?.optimalMoves ?? null);
-    const [scoreSynced, setScoreSynced] = useState(false);
-    const [ratingLabel, setRatingLabel] = useState(existingCompletion?.ratingLabel ?? '');
-    const [ratingEmoji, setRatingEmoji] = useState(existingCompletion?.ratingEmoji ?? '');
-    const notifiedStart = useRef(false);
-    const gameAreaRef = useRef<HTMLDivElement>(null);
-    const [gridSize, setGridSize] = useState<number | undefined>(undefined);
-
-    // Init puzzle
+    // Load progress from server (authoritative) — restores grid + moves across guilds/devices
     useEffect(() => {
+        let cancelled = false;
         const initialGrid = generatePuzzle(createSeededRng(seed), shape);
-        if (existingCompletion) {
-            // Show empty grid behind the modal
-            setGrid(createEmptyGrid(shape));
-        } else {
-            setGrid(initialGrid);
-        }
         const opt = getOptimalMoves(initialGrid, shape);
-        setOptimalMoves(opt);
-    }, [seed, shape, existingCompletion]);
+
+        async function load() {
+            try {
+                const res = await fetch(
+                    `/api/discord/daily-progress?discordId=${encodeURIComponent(discord.user.id)}&dateKey=${encodeURIComponent(todayKey)}`,
+                );
+                if (!res.ok) throw new Error('fetch failed');
+                const data = await res.json();
+
+                if (cancelled) return;
+
+                setOptimalMoves(opt);
+
+                if (data.completed) {
+                    setGrid(createEmptyGrid(shape));
+                    setMoves(data.moves);
+                    setSolved(true);
+                    setRatingLabel(data.ratingLabel ?? 'Solved!');
+                    setRatingEmoji(data.ratingEmoji ?? '\u{1F4A1}');
+                    setShowModal(true);
+                    setScoreSynced(true);
+                } else if (data.gridJson) {
+                    // Resume in-progress game
+                    try {
+                        setGrid(JSON.parse(data.gridJson));
+                    } catch {
+                        setGrid(initialGrid);
+                    }
+                    setMoves(data.moves);
+                } else {
+                    // Fresh puzzle
+                    setGrid(initialGrid);
+                }
+            } catch {
+                if (cancelled) return;
+                // Network error — fall back to fresh puzzle (localStorage check for completion)
+                setOptimalMoves(opt);
+                const local = getDailyCompletion(todayKey);
+                if (local) {
+                    setGrid(createEmptyGrid(shape));
+                    setMoves(local.moves);
+                    setSolved(true);
+                    setRatingLabel(local.ratingLabel);
+                    setRatingEmoji(local.ratingEmoji);
+                    setShowModal(true);
+                    setScoreSynced(true);
+                } else {
+                    setGrid(initialGrid);
+                }
+            }
+        }
+
+        load();
+        return () => { cancelled = true; };
+    }, [discord.user.id, todayKey, seed, shape]);
 
     // Notify embed on start (once)
     useEffect(() => {
-        if (!notifiedStart.current && !existingCompletion) {
+        if (!notifiedStart.current && !solved && grid) {
             notifiedStart.current = true;
             notifyEmbed(discord, 'started', todayKey);
         }
-    }, [discord, todayKey, existingCompletion]);
+    }, [discord, todayKey, solved, grid]);
+
+    // Save progress to server (fire-and-forget)
+    const saveProgress = useCallback((newGrid: Grid, newMoves: number, completed: boolean, label?: string, emoji?: string) => {
+        fetch('/api/discord/daily-progress', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                discordId: discord.user.id,
+                dateKey: todayKey,
+                gridJson: JSON.stringify(newGrid),
+                moves: newMoves,
+                completed,
+                ...(completed ? { ratingLabel: label, ratingEmoji: emoji } : {}),
+            }),
+        }).catch(() => {});
+    }, [discord.user.id, todayKey]);
 
     // Sync score + notify embed on solve
     useEffect(() => {
-        if (!solved || scoreSynced || existingCompletion) return;
+        if (!solved || scoreSynced) return;
 
-        // Notify embed
         notifyEmbed(discord, 'completed', todayKey, {
             moves,
             optimalMoves,
@@ -600,7 +735,6 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
             ratingLabel,
         });
 
-        // Sync to rmhstudios account if linked
         if (discord.linkedUserId) {
             fetch('/api/discord/sync-score', {
                 method: 'POST',
@@ -617,7 +751,7 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
         }
 
         setScoreSynced(true);
-    }, [solved, scoreSynced, existingCompletion, discord, todayKey, moves, optimalMoves, ratingEmoji, ratingLabel]);
+    }, [solved, scoreSynced, discord, todayKey, moves, optimalMoves, ratingEmoji, ratingLabel]);
 
     // Grid dimensions for aspect-ratio-aware sizing
     const gridCols = shape.type === 'rect' ? shape.cols : shape.type === 'custom' ? shape.cols : shape.size;
@@ -625,34 +759,23 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
 
     // Compute grid size to always fit within the available game area
     useEffect(() => {
-        let observer: ResizeObserver | null = null;
+        if (!gameAreaEl) return;
 
         const compute = () => {
-            const el = gameAreaRef.current;
-            if (!el) return;
-            // Lazily attach ResizeObserver once ref is available
-            if (!observer) {
-                observer = new ResizeObserver(() => compute());
-                observer.observe(el);
-            }
-            // Game area has p-2 (8px each side), grid wrapper has p-2 (8px each side)
             const areaPad = 16;
             const wrapPad = 16;
-            const maxGridH = el.clientHeight - areaPad - wrapPad;
-            const maxGridW = el.clientWidth - areaPad - wrapPad;
-            // Always constrain by both width and height
+            const maxGridH = gameAreaEl.clientHeight - areaPad - wrapPad;
+            const maxGridW = gameAreaEl.clientWidth - areaPad - wrapPad;
             const fromH = maxGridH * (gridCols / gridRows);
             const fitW = Math.min(maxGridW, fromH, 400);
             setGridSize(Math.max(fitW + wrapPad, 80));
         };
 
-        requestAnimationFrame(compute);
-        window.addEventListener('resize', compute);
-        return () => {
-            window.removeEventListener('resize', compute);
-            observer?.disconnect();
-        };
-    }, [gridCols, gridRows]);
+        const observer = new ResizeObserver(compute);
+        observer.observe(gameAreaEl);
+        compute();
+        return () => observer.disconnect();
+    }, [gameAreaEl, gridCols, gridRows]);
 
     const handleCellClick = (r: number, c: number) => {
         if (!grid || solved) return;
@@ -672,13 +795,17 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
             setRatingEmoji(rating.emoji);
             setShowModal(true);
 
-            // Persist
+            // Persist to server + localStorage
+            saveProgress(next, newMoves, true, rating.label, rating.emoji);
             saveDailyCompletion(todayKey, {
                 moves: newMoves,
                 optimalMoves,
                 ratingLabel: rating.label,
                 ratingEmoji: rating.emoji,
             });
+        } else {
+            // Save in-progress state to server
+            saveProgress(next, newMoves, false);
         }
     };
 
@@ -718,10 +845,10 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
             </div>
 
             {/* Grid area — fills remaining space, grid sizes to fit */}
-            <div ref={gameAreaRef} className="flex-1 min-h-0 flex items-center justify-center p-2 overflow-hidden">
+            <div ref={setGameAreaEl} className="flex-1 min-h-0 flex items-center justify-center p-2 overflow-hidden">
                 <div
                     className="p-2 rounded-xl bg-[#2b2d31] border border-[#3f4147]"
-                    style={{ width: gridSize, maxWidth: '100%', visibility: gridSize ? 'visible' : 'hidden' }}
+                    style={{ width: gridSize, maxWidth: '100%' }}
                 >
                     <GameGrid
                         grid={grid}
@@ -735,7 +862,7 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
 
             {/* Instructions Modal */}
             <AnimatePresence>
-                {showInstructions && !existingCompletion && (
+                {showInstructions && !solved && (
                     <InstructionsModal onClose={dismissInstructions} />
                 )}
             </AnimatePresence>
@@ -744,14 +871,12 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
             <AnimatePresence>
                 {showModal && (
                     <CongratsModal
-                        moves={existingCompletion?.moves ?? moves}
-                        optimalMoves={existingCompletion?.optimalMoves ?? optimalMoves}
-                        ratingEmoji={existingCompletion?.ratingEmoji ?? ratingEmoji}
-                        ratingLabel={existingCompletion?.ratingLabel ?? ratingLabel}
+                        moves={moves}
+                        optimalMoves={optimalMoves}
+                        ratingLabel={ratingLabel}
                         dateKey={todayKey}
                         shapeLabel={shapeLabel}
-                        scoreSynced={scoreSynced}
-                        linkedUserId={discord.linkedUserId}
+                        guildId={discord.guildId}
                         onReturn={onBack}
                     />
                 )}
@@ -1043,7 +1168,7 @@ function RaceGameplay({
     const [moveHistory, setMoveHistory] = useState<Grid[]>([]);
     const [moves, setMoves] = useState(0);
     const [solved, setSolved] = useState(false);
-    const gameAreaRef = useRef<HTMLDivElement>(null);
+    const [gameAreaEl, setGameAreaEl] = useState<HTMLDivElement | null>(null);
     const [gridSize, setGridSize] = useState<number | undefined>(undefined);
 
     // Countdown state
@@ -1075,31 +1200,23 @@ function RaceGameplay({
     const gridRows = shape.type === 'rect' ? shape.rows : shape.type === 'custom' ? shape.rows : shape.size;
 
     useEffect(() => {
-        let observer: ResizeObserver | null = null;
+        if (!gameAreaEl) return;
 
         const compute = () => {
-            const el = gameAreaRef.current;
-            if (!el) return;
-            if (!observer) {
-                observer = new ResizeObserver(() => compute());
-                observer.observe(el);
-            }
             const areaPad = 16;
             const wrapPad = 16;
-            const maxGridH = el.clientHeight - areaPad - wrapPad;
-            const maxGridW = el.clientWidth - areaPad - wrapPad;
+            const maxGridH = gameAreaEl.clientHeight - areaPad - wrapPad;
+            const maxGridW = gameAreaEl.clientWidth - areaPad - wrapPad;
             const fromH = maxGridH * (gridCols / gridRows);
             const fitW = Math.min(maxGridW, fromH, 400);
             setGridSize(Math.max(fitW + wrapPad, 80));
         };
 
-        requestAnimationFrame(compute);
-        window.addEventListener('resize', compute);
-        return () => {
-            window.removeEventListener('resize', compute);
-            observer?.disconnect();
-        };
-    }, [gridCols, gridRows]);
+        const observer = new ResizeObserver(compute);
+        observer.observe(gameAreaEl);
+        compute();
+        return () => observer.disconnect();
+    }, [gameAreaEl, gridCols, gridRows]);
 
     const handleCellClick = (r: number, c: number) => {
         if (!grid || solved || !isRacer || isCountdown) return;
@@ -1226,10 +1343,10 @@ function RaceGameplay({
                     )}
 
                     {/* Grid area */}
-                    <div ref={gameAreaRef} className="flex-1 min-h-0 flex items-center justify-center p-2 overflow-hidden">
+                    <div ref={setGameAreaEl} className="flex-1 min-h-0 flex items-center justify-center p-2 overflow-hidden">
                         <div
                             className="p-2 rounded-xl bg-[#2b2d31] border border-[#3f4147]"
-                            style={{ width: gridSize, maxWidth: '100%', visibility: gridSize ? 'visible' : 'hidden' }}
+                            style={{ width: gridSize, maxWidth: '100%' }}
                         >
                             <GameGrid
                                 grid={grid}

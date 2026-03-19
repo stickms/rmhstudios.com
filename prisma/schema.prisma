@@ -1548,3 +1548,20 @@ model DiscordDailyParticipant {
   @@index([discordId, dateKey], map: "idx_discord_daily_participant_user_date")
   @@map("discord_daily_participant")
 }
+
+// Tracks per-user daily puzzle progress across guilds/devices (prevents move resets)
+model DiscordDailyProgress {
+  id          String   @id @default(cuid())
+  discordId   String
+  dateKey     String   // YYYY-MM-DD
+  gridJson    String   // JSON-encoded grid state
+  moves       Int      @default(0)
+  completed   Boolean  @default(false)
+  ratingLabel String?
+  ratingEmoji String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  @@unique([discordId, dateKey])
+  @@map("discord_daily_progress")
+}
