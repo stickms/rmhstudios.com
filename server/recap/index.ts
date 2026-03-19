@@ -97,13 +97,14 @@ async function processDueRecaps() {
             const puzzleGrid = generatePuzzle(createSeededRng(seed), shape);
             const optimal = getOptimalMoves(puzzleGrid, shape);
 
-            const completed = participants.filter(p => p.status === 'completed');
-            const playing = participants.filter(p => p.status === 'playing');
+            type Participant = typeof participants[number];
+            const completed = participants.filter((p: Participant) => p.status === 'completed');
+            const playing = participants.filter((p: Participant) => p.status === 'playing');
 
             const lines: string[] = [];
             const medals = ['\u{1F947}', '\u{1F948}', '\u{1F949}'];
 
-            completed.forEach((p, i) => {
+            completed.forEach((p: Participant, i: number) => {
                 const medal = medals[i] ?? '\u25AA\uFE0F';
                 const emoji = p.ratingEmoji ?? '\u{1F4A1}';
                 lines.push(`${medal} **${p.username}** \u2014 ${emoji} ${p.moves} move${p.moves !== 1 ? 's' : ''}${p.ratingLabel ? ` (${p.ratingLabel})` : ''}`);
@@ -155,7 +156,8 @@ async function processDueRecaps() {
 
 // ─── Discord Gateway (bot presence) ──────────────────────────────────
 
-let gatewayWs: import('ws').WebSocket | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let gatewayWs: any = null;
 let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
 let gatewaySeq: number | null = null;
 
@@ -163,6 +165,7 @@ async function connectGateway() {
     if (!BOT_TOKEN) return;
 
     try {
+        // @ts-expect-error — ws types not available in server build
         const { WebSocket } = await import('ws');
 
         // Get gateway URL
@@ -236,7 +239,7 @@ async function connectGateway() {
             setTimeout(connectGateway, 30_000);
         });
 
-        ws.on('error', (err) => {
+        ws.on('error', (err: Error) => {
             log(`Gateway error: ${err.message}`);
         });
     } catch (e) {
