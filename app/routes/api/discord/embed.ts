@@ -178,6 +178,39 @@ async function postOrEditEmbed(channelId: string, dateKey: string, participants:
 export const Route = createFileRoute('/api/discord/embed')({
     server: {
         handlers: {
+            // GET — check if a user completed today's daily puzzle
+            GET: async ({ request }) => {
+                const url = new URL(request.url);
+                const discordId = url.searchParams.get('discordId');
+                const dateKey = url.searchParams.get('dateKey');
+
+                if (!discordId || !dateKey) {
+                    return Response.json({ error: 'Missing discordId or dateKey' }, { status: 400 });
+                }
+
+                try {
+                    // Find completion across any guild (user may have completed in a different server)
+                    const participant = await prisma.discordDailyParticipant.findFirst({
+                        where: { discordId, dateKey, status: 'completed' },
+                        select: { moves: true, ratingEmoji: true, ratingLabel: true },
+                    });
+
+                    if (participant) {
+                        return Response.json({
+                            completed: true,
+                            moves: participant.moves,
+                            ratingEmoji: participant.ratingEmoji,
+                            ratingLabel: participant.ratingLabel,
+                        });
+                    }
+
+                    return Response.json({ completed: false });
+                } catch (e) {
+                    console.error('Discord embed GET error:', e);
+                    return Response.json({ completed: false });
+                }
+            },
+
             POST: async ({ request }) => {
                 const ip = getClientIp(request);
                 const { allowed, retryAfter } = rateLimit(ip, {
