@@ -114,6 +114,21 @@ services:
       retries: 3
       start_period: 15s
 
+  # ─── Lights Out Recap Runner ───────────────────────────────────────────────
+  recap:
+    <<: *common
+    container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-recap
+    env_file: ${ENV_FILE:-.env.production}
+    environment:
+      - RECAP_PORT=${PORT_RECAP:-7004}
+    command: ["node", "dist-server/server/recap/index.cjs"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT_RECAP:-7004}/"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
   # ─── News Pipeline (production only — use `--profile news` to include) ─────
   news-pipeline:
     <<: *common
