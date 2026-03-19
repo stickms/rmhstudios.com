@@ -74,6 +74,7 @@ import { Route as ResearchSlugRouteImport } from './routes/research.$slug'
 import { Route as NewsSlugRouteImport } from './routes/news.$slug'
 import { Route as ForestExplorerStoryRouteImport } from './routes/forest-explorer/story'
 import { Route as ForestExplorerExploreRouteImport } from './routes/forest-explorer/explore'
+import { Route as DiscordLightsOutRouteImport } from './routes/discord/lights-out'
 import { Route as DailySpectrumRouteImport } from './routes/daily/spectrum'
 import { Route as DailyOutcastRouteImport } from './routes/daily/outcast'
 import { Route as DailyLightsOutRouteImport } from './routes/daily/lights-out'
@@ -159,6 +160,9 @@ import { Route as ApiForestExplorerSaveRouteImport } from './routes/api/forest-e
 import { Route as ApiFeedStreamRouteImport } from './routes/api/feed/stream'
 import { Route as ApiDreamRiftScoreRouteImport } from './routes/api/dream-rift/score'
 import { Route as ApiDreamRiftLeaderboardRouteImport } from './routes/api/dream-rift/leaderboard'
+import { Route as ApiDiscordTokenRouteImport } from './routes/api/discord/token'
+import { Route as ApiDiscordSyncScoreRouteImport } from './routes/api/discord/sync-score'
+import { Route as ApiDiscordRaceRouteImport } from './routes/api/discord/race'
 import { Route as ApiDailyPuzzlesScoreRouteImport } from './routes/api/daily-puzzles/score'
 import { Route as ApiDailyPuzzlesResultsRouteImport } from './routes/api/daily-puzzles/results'
 import { Route as ApiDailyPuzzlesLeaderboardRouteImport } from './routes/api/daily-puzzles/leaderboard'
@@ -551,6 +555,11 @@ const ForestExplorerExploreRoute = ForestExplorerExploreRouteImport.update({
   id: '/explore',
   path: '/explore',
   getParentRoute: () => ForestExplorerRoute,
+} as any)
+const DiscordLightsOutRoute = DiscordLightsOutRouteImport.update({
+  id: '/discord/lights-out',
+  path: '/discord/lights-out',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const DailySpectrumRoute = DailySpectrumRouteImport.update({
   id: '/spectrum',
@@ -982,6 +991,21 @@ const ApiDreamRiftLeaderboardRoute = ApiDreamRiftLeaderboardRouteImport.update({
   path: '/api/dream-rift/leaderboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiDiscordTokenRoute = ApiDiscordTokenRouteImport.update({
+  id: '/api/discord/token',
+  path: '/api/discord/token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDiscordSyncScoreRoute = ApiDiscordSyncScoreRouteImport.update({
+  id: '/api/discord/sync-score',
+  path: '/api/discord/sync-score',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDiscordRaceRoute = ApiDiscordRaceRouteImport.update({
+  id: '/api/discord/race',
+  path: '/api/discord/race',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiDailyPuzzlesScoreRoute = ApiDailyPuzzlesScoreRouteImport.update({
   id: '/api/daily-puzzles/score',
   path: '/api/daily-puzzles/score',
@@ -1389,6 +1413,7 @@ export interface FileRoutesByFullPath {
   '/daily/lights-out': typeof DailyLightsOutRoute
   '/daily/outcast': typeof DailyOutcastRoute
   '/daily/spectrum': typeof DailySpectrumRoute
+  '/discord/lights-out': typeof DiscordLightsOutRoute
   '/forest-explorer/explore': typeof ForestExplorerExploreRoute
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
   '/news/$slug': typeof NewsSlugRoute
@@ -1453,6 +1478,9 @@ export interface FileRoutesByFullPath {
   '/api/daily-puzzles/leaderboard': typeof ApiDailyPuzzlesLeaderboardRoute
   '/api/daily-puzzles/results': typeof ApiDailyPuzzlesResultsRoute
   '/api/daily-puzzles/score': typeof ApiDailyPuzzlesScoreRoute
+  '/api/discord/race': typeof ApiDiscordRaceRoute
+  '/api/discord/sync-score': typeof ApiDiscordSyncScoreRoute
+  '/api/discord/token': typeof ApiDiscordTokenRoute
   '/api/dream-rift/leaderboard': typeof ApiDreamRiftLeaderboardRoute
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
@@ -1589,6 +1617,7 @@ export interface FileRoutesByTo {
   '/daily/lights-out': typeof DailyLightsOutRoute
   '/daily/outcast': typeof DailyOutcastRoute
   '/daily/spectrum': typeof DailySpectrumRoute
+  '/discord/lights-out': typeof DiscordLightsOutRoute
   '/forest-explorer/explore': typeof ForestExplorerExploreRoute
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
   '/news/$slug': typeof NewsSlugRoute
@@ -1647,6 +1676,9 @@ export interface FileRoutesByTo {
   '/api/daily-puzzles/leaderboard': typeof ApiDailyPuzzlesLeaderboardRoute
   '/api/daily-puzzles/results': typeof ApiDailyPuzzlesResultsRoute
   '/api/daily-puzzles/score': typeof ApiDailyPuzzlesScoreRoute
+  '/api/discord/race': typeof ApiDiscordRaceRoute
+  '/api/discord/sync-score': typeof ApiDiscordSyncScoreRoute
+  '/api/discord/token': typeof ApiDiscordTokenRoute
   '/api/dream-rift/leaderboard': typeof ApiDreamRiftLeaderboardRoute
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
@@ -1803,6 +1835,7 @@ export interface FileRoutesById {
   '/daily/lights-out': typeof DailyLightsOutRoute
   '/daily/outcast': typeof DailyOutcastRoute
   '/daily/spectrum': typeof DailySpectrumRoute
+  '/discord/lights-out': typeof DiscordLightsOutRoute
   '/forest-explorer/explore': typeof ForestExplorerExploreRoute
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
   '/news/$slug': typeof NewsSlugRoute
@@ -1868,6 +1901,9 @@ export interface FileRoutesById {
   '/api/daily-puzzles/leaderboard': typeof ApiDailyPuzzlesLeaderboardRoute
   '/api/daily-puzzles/results': typeof ApiDailyPuzzlesResultsRoute
   '/api/daily-puzzles/score': typeof ApiDailyPuzzlesScoreRoute
+  '/api/discord/race': typeof ApiDiscordRaceRoute
+  '/api/discord/sync-score': typeof ApiDiscordSyncScoreRoute
+  '/api/discord/token': typeof ApiDiscordTokenRoute
   '/api/dream-rift/leaderboard': typeof ApiDreamRiftLeaderboardRoute
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
@@ -2025,6 +2061,7 @@ export interface FileRouteTypes {
     | '/daily/lights-out'
     | '/daily/outcast'
     | '/daily/spectrum'
+    | '/discord/lights-out'
     | '/forest-explorer/explore'
     | '/forest-explorer/story'
     | '/news/$slug'
@@ -2089,6 +2126,9 @@ export interface FileRouteTypes {
     | '/api/daily-puzzles/leaderboard'
     | '/api/daily-puzzles/results'
     | '/api/daily-puzzles/score'
+    | '/api/discord/race'
+    | '/api/discord/sync-score'
+    | '/api/discord/token'
     | '/api/dream-rift/leaderboard'
     | '/api/dream-rift/score'
     | '/api/feed/stream'
@@ -2225,6 +2265,7 @@ export interface FileRouteTypes {
     | '/daily/lights-out'
     | '/daily/outcast'
     | '/daily/spectrum'
+    | '/discord/lights-out'
     | '/forest-explorer/explore'
     | '/forest-explorer/story'
     | '/news/$slug'
@@ -2283,6 +2324,9 @@ export interface FileRouteTypes {
     | '/api/daily-puzzles/leaderboard'
     | '/api/daily-puzzles/results'
     | '/api/daily-puzzles/score'
+    | '/api/discord/race'
+    | '/api/discord/sync-score'
+    | '/api/discord/token'
     | '/api/dream-rift/leaderboard'
     | '/api/dream-rift/score'
     | '/api/feed/stream'
@@ -2438,6 +2482,7 @@ export interface FileRouteTypes {
     | '/daily/lights-out'
     | '/daily/outcast'
     | '/daily/spectrum'
+    | '/discord/lights-out'
     | '/forest-explorer/explore'
     | '/forest-explorer/story'
     | '/news/$slug'
@@ -2503,6 +2548,9 @@ export interface FileRouteTypes {
     | '/api/daily-puzzles/leaderboard'
     | '/api/daily-puzzles/results'
     | '/api/daily-puzzles/score'
+    | '/api/discord/race'
+    | '/api/discord/sync-score'
+    | '/api/discord/token'
     | '/api/dream-rift/leaderboard'
     | '/api/dream-rift/score'
     | '/api/feed/stream'
@@ -2648,6 +2696,7 @@ export interface RootRouteChildren {
   ApiWeatherWebhookRoute: typeof ApiWeatherWebhookRoute
   BlogSlugRoute: typeof BlogSlugRoute
   BuildsSlugRoute: typeof BuildsSlugRoute
+  DiscordLightsOutRoute: typeof DiscordLightsOutRoute
   NewsSlugRoute: typeof NewsSlugRoute
   ResearchSlugRoute: typeof ResearchSlugRoute
   UserBuildsSlugRoute: typeof UserBuildsSlugRoute
@@ -2664,6 +2713,9 @@ export interface RootRouteChildren {
   ApiDailyPuzzlesLeaderboardRoute: typeof ApiDailyPuzzlesLeaderboardRoute
   ApiDailyPuzzlesResultsRoute: typeof ApiDailyPuzzlesResultsRoute
   ApiDailyPuzzlesScoreRoute: typeof ApiDailyPuzzlesScoreRoute
+  ApiDiscordRaceRoute: typeof ApiDiscordRaceRoute
+  ApiDiscordSyncScoreRoute: typeof ApiDiscordSyncScoreRoute
+  ApiDiscordTokenRoute: typeof ApiDiscordTokenRoute
   ApiDreamRiftLeaderboardRoute: typeof ApiDreamRiftLeaderboardRoute
   ApiDreamRiftScoreRoute: typeof ApiDreamRiftScoreRoute
   ApiFeedStreamRoute: typeof ApiFeedStreamRoute
@@ -3165,6 +3217,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/forest-explorer/explore'
       preLoaderRoute: typeof ForestExplorerExploreRouteImport
       parentRoute: typeof ForestExplorerRoute
+    }
+    '/discord/lights-out': {
+      id: '/discord/lights-out'
+      path: '/discord/lights-out'
+      fullPath: '/discord/lights-out'
+      preLoaderRoute: typeof DiscordLightsOutRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/daily/spectrum': {
       id: '/daily/spectrum'
@@ -3759,6 +3818,27 @@ declare module '@tanstack/react-router' {
       path: '/api/dream-rift/leaderboard'
       fullPath: '/api/dream-rift/leaderboard'
       preLoaderRoute: typeof ApiDreamRiftLeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/discord/token': {
+      id: '/api/discord/token'
+      path: '/api/discord/token'
+      fullPath: '/api/discord/token'
+      preLoaderRoute: typeof ApiDiscordTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/discord/sync-score': {
+      id: '/api/discord/sync-score'
+      path: '/api/discord/sync-score'
+      fullPath: '/api/discord/sync-score'
+      preLoaderRoute: typeof ApiDiscordSyncScoreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/discord/race': {
+      id: '/api/discord/race'
+      path: '/api/discord/race'
+      fullPath: '/api/discord/race'
+      preLoaderRoute: typeof ApiDiscordRaceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/daily-puzzles/score': {
@@ -4919,6 +4999,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiWeatherWebhookRoute: ApiWeatherWebhookRoute,
   BlogSlugRoute: BlogSlugRoute,
   BuildsSlugRoute: BuildsSlugRoute,
+  DiscordLightsOutRoute: DiscordLightsOutRoute,
   NewsSlugRoute: NewsSlugRoute,
   ResearchSlugRoute: ResearchSlugRoute,
   UserBuildsSlugRoute: UserBuildsSlugRoute,
@@ -4935,6 +5016,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDailyPuzzlesLeaderboardRoute: ApiDailyPuzzlesLeaderboardRoute,
   ApiDailyPuzzlesResultsRoute: ApiDailyPuzzlesResultsRoute,
   ApiDailyPuzzlesScoreRoute: ApiDailyPuzzlesScoreRoute,
+  ApiDiscordRaceRoute: ApiDiscordRaceRoute,
+  ApiDiscordSyncScoreRoute: ApiDiscordSyncScoreRoute,
+  ApiDiscordTokenRoute: ApiDiscordTokenRoute,
   ApiDreamRiftLeaderboardRoute: ApiDreamRiftLeaderboardRoute,
   ApiDreamRiftScoreRoute: ApiDreamRiftScoreRoute,
   ApiFeedStreamRoute: ApiFeedStreamRoute,
