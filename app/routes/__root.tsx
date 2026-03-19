@@ -5,10 +5,12 @@ import {
   Scripts,
   createRootRoute,
   useRouterState,
+  useNavigate,
 } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect } from "react";
 import { Providers } from "@/components/Providers";
 import { TwemojiProvider } from "@/components/ui/TwemojiProvider";
+import { isDiscordActivity } from "@/lib/discord-sdk";
 import appCss from "@/app/globals.css?url";
 
 /**
@@ -100,6 +102,14 @@ function RootDocument({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
+
+  // When loaded inside a Discord Activity iframe at "/", redirect to the game
+  useEffect(() => {
+    if (pathname === '/' && isDiscordActivity()) {
+      navigate({ to: '/discord/lights-out', replace: true });
+    }
+  }, [pathname, navigate]);
 
   // Discord Activity routes skip Providers (auth, themes, etc.)
   // to avoid CSP-blocked requests and unnecessary overhead
