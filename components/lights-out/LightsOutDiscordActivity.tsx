@@ -57,15 +57,37 @@ interface LobbyState {
     participants: LobbyParticipant[];
 }
 
-// ─── Daily persistence (localStorage) ────────────────────────────────
+// ─── Daily persistence (localStorage + server DB) ───────────────────
 
 const DAILY_KEY_PREFIX = 'lightsout-discord-daily-';
 const INSTRUCTIONS_SEEN_KEY = 'lightsout-discord-instructions-seen';
 
+/** Check localStorage first (fast), fall back to server DB (cross-platform). */
 function getDailyCompletion(dateKey: string): DailyCompletion | null {
     try {
         const raw = localStorage.getItem(DAILY_KEY_PREFIX + dateKey);
         return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+}
+
+/** Fetch completion from server DB (for cross-platform sync). */
+async function fetchDailyCompletion(discordId: string, dateKey: string): Promise<DailyCompletion | null> {
+    try {
+        const res = await fetch(`/api/discord/embed?discordId=${encodeURIComponent(discordId)}&dateKey=${encodeURIComponent(dateKey)}`);
+        if (!res.ok) return null;
+        const data = await res.json();
+        if (data.completed) {
+            const completion: DailyCompletion = {
+                moves: data.moves,
+                optimalMoves: null, // not stored in DB
+                ratingLabel: data.ratingLabel ?? 'Solved!',
+                ratingEmoji: data.ratingEmoji ?? '\u{1F4A1}',
+            };
+            // Cache locally so future checks are instant
+            try { localStorage.setItem(DAILY_KEY_PREFIX + dateKey, JSON.stringify(completion)); } catch {}
+            return completion;
+        }
+        return null;
     } catch { return null; }
 }
 
@@ -170,10 +192,18 @@ export function LightsOutDiscordActivity({ discord }: LightsOutDiscordActivityPr
 function ModeMenu({ discord, onSelect }: { discord: DiscordContext; onSelect: (mode: GameMode) => void }) {
     const displayName = discord.user.global_name || discord.user.username;
     const todayKey = formatDateKey(new Date());
-    const alreadyCompleted = getDailyCompletion(todayKey);
+    const [alreadyCompleted, setAlreadyCompleted] = useState<DailyCompletion | null>(getDailyCompletion(todayKey));
+
+    // Check server for cross-platform completion
+    useEffect(() => {
+        if (alreadyCompleted) return; // already know from localStorage
+        fetchDailyCompletion(discord.user.id, todayKey).then(result => {
+            if (result) setAlreadyCompleted(result);
+        });
+    }, [discord.user.id, todayKey, alreadyCompleted]);
 
     return (
-        <div className="min-h-dvh bg-[#313338] flex items-center justify-center p-4">
+        <div className="min-h-dvh bg-[#313338] flex items-center justify-center p-4 pt-16">
             <div className="max-w-sm w-full space-y-6">
                 {/* Header */}
                 <div className="text-center">
@@ -492,9 +522,20 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
     const shape = getDailyShape(seed);
     const shapeLabel = getShapeLabel(shape);
 
-    // Check if already completed
-    const existingCompletion = getDailyCompletion(todayKey);
+    // Check if already completed (localStorage first, then server for cross-platform)
+    const [existingCompletion, setExistingCompletion] = useState<DailyCompletion | null>(getDailyCompletion(todayKey));
     const [showModal, setShowModal] = useState(!!existingCompletion);
+
+    useEffect(() => {
+        if (existingCompletion) return;
+        fetchDailyCompletion(discord.user.id, todayKey).then(result => {
+            if (result) {
+                setExistingCompletion(result);
+                setShowModal(true);
+                setSolved(true);
+            }
+        });
+    }, [discord.user.id, todayKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Instructions modal — show once per user
     const [showInstructions, setShowInstructions] = useState(() => {
@@ -631,7 +672,7 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
     }
 
     return (
-        <div className="h-dvh bg-[#313338] flex flex-col overflow-hidden">
+        <div className="h-dvh bg-[#313338] flex flex-col overflow-hidden pt-12">
             {/* Header — fixed at top */}
             <div className="shrink-0 px-4 pt-4 pb-2">
                 <div className="max-w-sm mx-auto flex items-center justify-between">
@@ -700,64 +741,71 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
     );
 }
 
-// ─── Race Mode (Lobby-based) ─────────────────────────────────────────
-
-function postLobbyAction(instanceId: string, action: string, data: Record<string, unknown>) {
-    return fetch('/api/discord/race', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ instanceId, action, ...data }),
-    }).catch(() => {});
-}
+// ─── Race Mode (Lobby-based, WebSocket) ─────────────────────────────
 
 function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => void }) {
     const instanceId = discord.sdk.instanceId;
     const discordId = discord.user.id;
     const username = discord.user.global_name || discord.user.username;
     const [lobby, setLobby] = useState<LobbyState | null>(null);
+    const socketRef = useRef<ReturnType<typeof import('socket.io-client').io> | null>(null);
 
-    // Join on mount, leave on unmount
+    // Connect socket, join lobby, listen for state updates
     useEffect(() => {
-        postLobbyAction(instanceId, 'join', {
-            discordId,
-            username,
-            avatar: discord.user.avatar,
+        let mounted = true;
+
+        import('socket.io-client').then(({ io: ioClient }) => {
+            if (!mounted) return;
+
+            // Connect through Discord's proxy (same origin, path /socket/)
+            const socket = ioClient(window.location.origin, {
+                path: '/socket/',
+                reconnection: true,
+                reconnectionAttempts: Infinity,
+                reconnectionDelay: 1000,
+                reconnectionDelayMax: 10000,
+                timeout: 10000,
+            });
+
+            socketRef.current = socket;
+
+            socket.on('connect', () => {
+                socket.emit('lights-out:join', {
+                    instanceId,
+                    discordId,
+                    username,
+                    avatar: discord.user.avatar,
+                });
+            });
+
+            socket.on('lights-out:state', (state: LobbyState) => {
+                setLobby(state);
+            });
+
+            socket.on('lights-out:error', (err: { message: string }) => {
+                console.error('Lights Out socket error:', err.message);
+            });
         });
 
         return () => {
-            postLobbyAction(instanceId, 'leave', { discordId });
+            mounted = false;
+            if (socketRef.current) {
+                socketRef.current.emit('lights-out:leave', { instanceId, discordId });
+                socketRef.current.disconnect();
+                socketRef.current = null;
+            }
         };
     }, [instanceId, discordId, username, discord.user.avatar]);
 
-    // Poll every 2s
-    useEffect(() => {
-        const poll = async () => {
-            try {
-                const res = await fetch(`/api/discord/race?instanceId=${encodeURIComponent(instanceId)}&discordId=${encodeURIComponent(discordId)}`);
-                if (res.ok) setLobby(await res.json());
-            } catch {}
-        };
-
-        poll(); // immediate first poll
-        const interval = setInterval(poll, 2000);
-        return () => clearInterval(interval);
-    }, [instanceId, discordId]);
-
-    // Also fire leave on page unload (best-effort)
-    useEffect(() => {
-        const handleUnload = () => {
-            navigator.sendBeacon?.('/api/discord/race', JSON.stringify({
-                instanceId, action: 'leave', discordId,
-            }));
-        };
-        window.addEventListener('beforeunload', handleUnload);
-        return () => window.removeEventListener('beforeunload', handleUnload);
+    const emit = useCallback((event: string, data: Record<string, unknown>) => {
+        socketRef.current?.emit(event, { instanceId, discordId, ...data });
     }, [instanceId, discordId]);
 
     const handleBack = useCallback(() => {
-        postLobbyAction(instanceId, 'leave', { discordId });
+        emit('lights-out:leave', {});
+        socketRef.current?.disconnect();
         onBack();
-    }, [instanceId, discordId, onBack]);
+    }, [emit, onBack]);
 
     if (!lobby || lobby.phase === 'empty') {
         return (
@@ -776,7 +824,7 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
                     lobby={lobby}
                     discordId={discordId}
                     isHost={isHost}
-                    instanceId={instanceId}
+                    emit={emit}
                     onBack={handleBack}
                 />
             );
@@ -786,7 +834,7 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
                 <RaceGameplay
                     lobby={lobby}
                     discord={discord}
-                    instanceId={instanceId}
+                    emit={emit}
                     onBack={handleBack}
                 />
             );
@@ -796,7 +844,7 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
                     lobby={lobby}
                     discordId={discordId}
                     isHost={isHost}
-                    instanceId={instanceId}
+                    emit={emit}
                     onBack={handleBack}
                 />
             );
@@ -807,16 +855,18 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
 
 // ─── Lobby Waiting ──────────────────────────────────────────────────
 
+type EmitFn = (event: string, data: Record<string, unknown>) => void;
+
 function LobbyWaiting({
-    lobby, discordId, isHost, instanceId, onBack,
+    lobby, discordId, isHost, emit, onBack,
 }: {
-    lobby: LobbyState; discordId: string; isHost: boolean; instanceId: string; onBack: () => void;
+    lobby: LobbyState; discordId: string; isHost: boolean; emit: EmitFn; onBack: () => void;
 }) {
     const me = lobby.participants.find(p => p.discordId === discordId);
     const canStart = isHost && !!me?.ready;
 
     return (
-        <div className="h-dvh bg-[#313338] flex flex-col overflow-hidden">
+        <div className="h-dvh bg-[#313338] flex flex-col overflow-hidden pt-12">
             <div className="shrink-0 px-4 pt-4 pb-2">
                 <div className="max-w-sm mx-auto flex items-center justify-between">
                     <button type="button" onClick={onBack} className="text-[#b5bac1] hover:text-white text-sm transition-colors p-1">
@@ -866,7 +916,7 @@ function LobbyWaiting({
                 <div className="flex flex-col gap-3 w-full max-w-sm">
                     <button
                         type="button"
-                        onClick={() => postLobbyAction(instanceId, 'ready', { discordId, ready: !me?.ready })}
+                        onClick={() => emit('lights-out:ready', { ready: !me?.ready })}
                         className={`w-full py-3 rounded-xl font-bold text-sm transition-colors ${
                             me?.ready
                                 ? 'bg-[#2b2d31] border border-[#3f4147] text-[#b5bac1] hover:text-white'
@@ -879,7 +929,7 @@ function LobbyWaiting({
                     {isHost && (
                         <button
                             type="button"
-                            onClick={() => postLobbyAction(instanceId, 'start', { discordId })}
+                            onClick={() => emit('lights-out:start', {})}
                             disabled={!canStart}
                             className="w-full py-3 rounded-xl bg-purple-500 hover:bg-purple-400 text-white font-bold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
@@ -895,9 +945,9 @@ function LobbyWaiting({
 // ─── Race Gameplay ──────────────────────────────────────────────────
 
 function RaceGameplay({
-    lobby, discord, instanceId, onBack,
+    lobby, discord, emit, onBack,
 }: {
-    lobby: LobbyState; discord: DiscordContext; instanceId: string; onBack: () => void;
+    lobby: LobbyState; discord: DiscordContext; emit: EmitFn; onBack: () => void;
 }) {
     const discordId = discord.user.id;
     const seed = lobby.seed!;
@@ -974,8 +1024,7 @@ function RaceGameplay({
 
         if (isSolved(next, shape)) {
             setSolved(true);
-            postLobbyAction(instanceId, 'update', {
-                discordId: discord.user.id,
+            emit('lights-out:update', {
                 status: 'solved',
                 moves: newMoves,
                 finishedAt: Date.now(),
@@ -1001,7 +1050,7 @@ function RaceGameplay({
     const racers = lobby.participants.filter(p => p.status !== 'idle');
 
     return (
-        <div className="h-dvh bg-[#313338] flex flex-col overflow-hidden relative">
+        <div className="h-dvh bg-[#313338] flex flex-col overflow-hidden pt-12 relative">
             {/* Countdown overlay */}
             <AnimatePresence>
                 {countdownNum != null && (
@@ -1114,9 +1163,9 @@ function RaceGameplay({
 // ─── Race Results ───────────────────────────────────────────────────
 
 function RaceResults({
-    lobby, discordId, isHost, instanceId, onBack,
+    lobby, discordId, isHost, emit, onBack,
 }: {
-    lobby: LobbyState; discordId: string; isHost: boolean; instanceId: string; onBack: () => void;
+    lobby: LobbyState; discordId: string; isHost: boolean; emit: EmitFn; onBack: () => void;
 }) {
     const seed = lobby.seed!;
     const shape = getDailyShape(seed);
@@ -1133,7 +1182,7 @@ function RaceResults({
     const medals = ['\u{1F947}', '\u{1F948}', '\u{1F949}'];
 
     return (
-        <div className="h-dvh bg-[#313338] flex flex-col overflow-hidden">
+        <div className="h-dvh bg-[#313338] flex flex-col overflow-hidden pt-12">
             <div className="shrink-0 px-4 pt-4 pb-2">
                 <div className="max-w-sm mx-auto text-center">
                     <h2 className="text-lg font-bold text-white flex items-center justify-center gap-2">
@@ -1182,7 +1231,7 @@ function RaceResults({
                     {isHost ? (
                         <button
                             type="button"
-                            onClick={() => postLobbyAction(instanceId, 'return_to_lobby', { discordId })}
+                            onClick={() => emit('lights-out:return', {})}
                             className="w-full py-3 rounded-xl bg-purple-500 hover:bg-purple-400 text-white font-bold text-sm transition-colors"
                         >
                             Return to Lobby

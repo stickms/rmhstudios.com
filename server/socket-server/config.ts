@@ -70,6 +70,12 @@ export const config = {
     'rl:join_room':           { max: 5,   windowMs: 60_000 },
     'rl:place_bet':           { max: 30,  windowMs: 60_000 },
     'rl:clear_bets':          { max: 10,  windowMs: 60_000 },
+    'lights-out:join':        { max: 5,   windowMs: 60_000 },
+    'lights-out:ready':       { max: 30,  windowMs: 60_000 },
+    'lights-out:start':       { max: 10,  windowMs: 60_000 },
+    'lights-out:update':      { max: 120, windowMs: 60_000 },
+    'lights-out:leave':       { max: 10,  windowMs: 60_000 },
+    'lights-out:return':      { max: 10,  windowMs: 60_000 },
   } as Record<string, { max: number; windowMs: number }>,
 
   // ─── Shutdown ───
