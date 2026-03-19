@@ -139,11 +139,11 @@ export function LightsOutDiscordActivity({ discord }: LightsOutDiscordActivityPr
     // PIP / Grid mode — show logo
     if (layoutMode === 'pip' || layoutMode === 'grid') {
         return (
-            <div className="min-h-dvh bg-[#313338] flex items-center justify-center p-4">
+            <div className="min-h-dvh bg-[#1d1d20] flex items-center justify-center p-4">
                 <img
                     src="/images/activities/lightsout.png"
                     alt="Lights Out"
-                    className="w-32 h-32 object-contain"
+                    className="w-full h-full max-w-[80%] max-h-[80%] object-contain"
                 />
             </div>
         );
@@ -620,7 +620,7 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
     }
 
     return (
-        <div className="min-h-dvh bg-[#313338] flex flex-col">
+        <div className="h-dvh bg-[#313338] flex flex-col overflow-hidden">
             {/* Header — fixed at top */}
             <div className="shrink-0 px-4 pt-4 pb-2">
                 <div className="max-w-sm mx-auto flex items-center justify-between">
@@ -710,7 +710,7 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
     const [startTime] = useState(() => Date.now());
     const [solveTime, setSolveTime] = useState<number | null>(null);
     const [raceState, setRaceState] = useState<RaceState | null>(null);
-    const pollRef = useRef<ReturnType<typeof setInterval>>();
+    const pollRef = useRef<ReturnType<typeof setInterval>>(undefined);
     const instanceId = discord.sdk.instanceId;
     const raceAreaRef = useRef<HTMLDivElement>(null);
     const [raceGridSize, setRaceGridSize] = useState<number | undefined>(undefined);
@@ -773,15 +773,17 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
         }).catch(() => {});
     }, [instanceId, raceSeed, discord.user]);
 
-    // Compute grid size for race mode
+    // Compute grid size for race mode — fit within available space (both width and height)
     useEffect(() => {
         const el = raceAreaRef.current;
         if (!el) return;
 
         const compute = () => {
             const rect = el.getBoundingClientRect();
-            const availH = rect.height - 48;
-            const availW = rect.width;
+            // Reserve space for stats row (~32px) + undo button (~48px) + margins (~24px)
+            const reservedV = 104;
+            const availH = rect.height - reservedV;
+            const availW = rect.width - 32; // px-4 padding
             const size = Math.min(availW, availH, 400);
             setRaceGridSize(Math.max(size, 160));
         };
@@ -829,7 +831,7 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
         .sort((a, b) => (a.moves - b.moves) || ((a.finishedAt ?? 0) - (b.finishedAt ?? 0)))[0];
 
     return (
-        <div className="min-h-dvh bg-[#313338] flex flex-col">
+        <div className="h-dvh bg-[#313338] flex flex-col overflow-hidden">
             {/* Header */}
             <div className="shrink-0 px-4 pt-4 pb-2">
                 <div className="max-w-sm mx-auto flex items-center justify-between">
@@ -877,8 +879,8 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
                 </div>
             )}
 
-            {/* Centered game area */}
-            <div ref={raceAreaRef} className="flex-1 flex flex-col items-center justify-center px-4 pb-4 min-h-0">
+            {/* Centered game area — scrollable so grid isn't squeezed */}
+            <div ref={raceAreaRef} className="flex-1 flex flex-col items-center justify-center px-4 pb-4 min-h-0 overflow-y-auto">
                 {/* Stats */}
                 <div className="flex justify-center items-center gap-4 mb-3 text-sm shrink-0">
                     <div className="flex items-center gap-1.5">
