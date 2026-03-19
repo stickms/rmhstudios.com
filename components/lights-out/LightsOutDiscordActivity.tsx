@@ -203,7 +203,7 @@ function ModeMenu({ discord, onSelect }: { discord: DiscordContext; onSelect: (m
     }, [discord.user.id, todayKey, alreadyCompleted]);
 
     return (
-        <div className="min-h-dvh bg-[#313338] flex items-center justify-center p-4 pt-16">
+        <div className="min-h-dvh bg-[#313338] flex items-center justify-center p-4 pt-14 sm:pt-4">
             <div className="max-w-sm w-full space-y-6">
                 {/* Header */}
                 <div className="text-center">
@@ -672,7 +672,7 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
     }
 
     return (
-        <div className="h-dvh bg-[#313338] flex flex-col overflow-hidden pt-12">
+        <div className="h-dvh bg-[#313338] flex flex-col overflow-hidden pt-10 sm:pt-0">
             {/* Header — fixed at top */}
             <div className="shrink-0 px-4 pt-4 pb-2">
                 <div className="max-w-sm mx-auto flex items-center justify-between">
@@ -760,6 +760,7 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
             // Connect through Discord's proxy (same origin, path /socket/)
             const socket = ioClient(window.location.origin, {
                 path: '/socket/',
+                transports: ['websocket'],
                 reconnection: true,
                 reconnectionAttempts: Infinity,
                 reconnectionDelay: 1000,
@@ -866,7 +867,7 @@ function LobbyWaiting({
     const canStart = isHost && !!me?.ready;
 
     return (
-        <div className="h-dvh bg-[#313338] flex flex-col overflow-hidden pt-12">
+        <div className="h-dvh bg-[#313338] flex flex-col overflow-hidden pt-10 sm:pt-0">
             <div className="shrink-0 px-4 pt-4 pb-2">
                 <div className="max-w-sm mx-auto flex items-center justify-between">
                     <button type="button" onClick={onBack} className="text-[#b5bac1] hover:text-white text-sm transition-colors p-1">
@@ -1050,7 +1051,7 @@ function RaceGameplay({
     const racers = lobby.participants.filter(p => p.status !== 'idle');
 
     return (
-        <div className="h-dvh bg-[#313338] flex flex-col overflow-hidden pt-12 relative">
+        <div className="h-dvh bg-[#313338] flex flex-col overflow-hidden pt-10 sm:pt-0 relative">
             {/* Countdown overlay */}
             <AnimatePresence>
                 {countdownNum != null && (
@@ -1182,7 +1183,7 @@ function RaceResults({
     const medals = ['\u{1F947}', '\u{1F948}', '\u{1F949}'];
 
     return (
-        <div className="h-dvh bg-[#313338] flex flex-col overflow-hidden pt-12">
+        <div className="h-dvh bg-[#313338] flex flex-col overflow-hidden pt-10 sm:pt-0">
             <div className="shrink-0 px-4 pt-4 pb-2">
                 <div className="max-w-sm mx-auto text-center">
                     <h2 className="text-lg font-bold text-white flex items-center justify-center gap-2">
