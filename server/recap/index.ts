@@ -8,6 +8,7 @@
 
 import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 import {
     getDateSeed,
     formatDateKey,
@@ -16,7 +17,13 @@ import {
 import { getDailyShape, getShapeLabel } from '../../lib/lights-out/shapes';
 import { generatePuzzle, getOptimalMoves } from '../../lib/lights-out/lights-out';
 
-const prisma = new PrismaClient();
+const adapter = new PrismaPg({
+    connectionString: process.env.DATABASE_URL!,
+    max: 3,
+    idleTimeoutMillis: 30_000,
+    connectionTimeoutMillis: 10_000,
+});
+const prisma = new PrismaClient({ adapter });
 const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 const BOT_TOKEN = process.env.DISCORD_ACTIVITY_BOT_TOKEN;
 const APP_ID = process.env.VITE_DISCORD_ACTIVITY_CLIENT_ID ?? process.env.DISCORD_ACTIVITY_CLIENT_ID;
