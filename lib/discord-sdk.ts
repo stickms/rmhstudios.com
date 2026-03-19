@@ -49,9 +49,9 @@ export function useDiscordSdk(): DiscordState {
         if (initRef.current) return;
         initRef.current = true;
 
-        const clientId = import.meta.env.VITE_DISCORD_CLIENT_ID;
+        const clientId = import.meta.env.VITE_DISCORD_ACTIVITY_CLIENT_ID;
         if (!clientId) {
-            setState({ status: 'error', error: 'Missing VITE_DISCORD_CLIENT_ID' });
+            setState({ status: 'error', error: 'Missing VITE_DISCORD_ACTIVITY_CLIENT_ID' });
             return;
         }
 

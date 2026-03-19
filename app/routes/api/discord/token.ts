@@ -26,8 +26,8 @@ export const Route = createFileRoute('/api/discord/token')({
                         return Response.json({ error: 'Missing code' }, { status: 400 });
                     }
 
-                    const clientId = process.env.DISCORD_CLIENT_ID;
-                    const clientSecret = process.env.DISCORD_CLIENT_SECRET;
+                    const clientId = process.env.DISCORD_ACTIVITY_CLIENT_ID;
+                    const clientSecret = process.env.DISCORD_ACTIVITY_CLIENT_SECRET;
 
                     if (!clientId || !clientSecret) {
                         return Response.json({ error: 'Server misconfigured' }, { status: 500 });
