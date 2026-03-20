@@ -17,7 +17,7 @@ import {
     type Grid,
 } from '@/lib/lights-out/lights-out';
 import { getPerformanceRating } from '@/lib/lights-out/share';
-import type { DiscordContext } from '@/lib/discord-sdk';
+import { type DiscordContext, setActivityStatus } from '@/lib/discord-sdk';
 import {
     Sparkles, Trophy, Undo2,
     Check, Users, Swords, Calendar, Crown, Clock,
@@ -47,11 +47,14 @@ interface LobbyParticipant {
     finishedAt: number | null;
 }
 
+type RaceMode = 'time' | 'moves';
+
 interface LobbyState {
     phase: LobbyPhase;
     hostId: string;
     seed: number | null;
     roundNumber: number;
+    raceMode: RaceMode;
     countdownStartedAt: number | null;
     raceStartedAt: number | null;
     participants: LobbyParticipant[];
@@ -193,6 +196,10 @@ function ModeMenu({ discord, onSelect }: { discord: DiscordContext; onSelect: (m
     const displayName = discord.user.global_name || discord.user.username;
     const todayKey = formatDateKey(new Date());
     const [alreadyCompleted, setAlreadyCompleted] = useState<DailyCompletion | null>(getDailyCompletion(todayKey));
+
+    useEffect(() => {
+        setActivityStatus(discord.sdk, 'Choosing a game mode');
+    }, [discord.sdk]);
 
     // Check server for cross-platform completion
     useEffect(() => {
@@ -629,6 +636,21 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
     const [gameAreaEl, setGameAreaEl] = useState<HTMLDivElement | null>(null);
     const [gridSize, setGridSize] = useState<number | undefined>(undefined);
 
+    // Activity status
+    useEffect(() => {
+        const imgParams = new URLSearchParams({
+            type: 'daily',
+            userId: discord.user.id,
+            avatar: discord.user.avatar ?? '',
+            username: discord.user.global_name || discord.user.username,
+            status: solved ? 'completed' : 'solving',
+        });
+        setActivityStatus(discord.sdk, solved ? 'Completed today\'s puzzle' : 'Solving today\'s puzzle', {
+            details: shapeLabel,
+            imageUrl: `${window.location.origin}/api/discord/activity-image?${imgParams}`,
+        });
+    }, [discord.sdk, solved, shapeLabel]);
+
     // Instructions modal — show once per user
     const [showInstructions, setShowInstructions] = useState(() => {
         try { return !localStorage.getItem(INSTRUCTIONS_SEEN_KEY); }
@@ -1016,6 +1038,38 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
         onBack();
     }, [emit, onBack]);
 
+    // Activity status
+    const playerCount = lobby?.participants.length ?? 0;
+    useEffect(() => {
+        if (!lobby) return;
+        const status =
+            lobby.phase === 'waiting' ? 'In race lobby' :
+            lobby.phase === 'countdown' || lobby.phase === 'racing' ? 'Racing!' :
+            lobby.phase === 'results' ? 'Viewing race results' :
+            'Race Mode';
+        const playersData = lobby.participants.map(p => ({
+            username: p.username,
+            userId: p.discordId,
+            avatar: p.avatar,
+            status: p.status,
+            moves: p.moves,
+            finishedAt: p.finishedAt,
+        }));
+        const raceImgParams = new URLSearchParams({
+            type: 'race',
+            players: JSON.stringify(playersData),
+            phase: lobby.phase,
+            round: String(lobby.roundNumber),
+            raceMode: lobby.raceMode,
+            raceStartedAt: String(lobby.raceStartedAt ?? 0),
+        });
+        setActivityStatus(discord.sdk, status, {
+            details: `${playerCount} player${playerCount !== 1 ? 's' : ''}`,
+            partySize: [playerCount, 10],
+            imageUrl: `${window.location.origin}/api/discord/activity-image?${raceImgParams}`,
+        });
+    }, [discord.sdk, lobby?.phase, playerCount]); // eslint-disable-line react-hooks/exhaustive-deps
+
     if (!lobby || lobby.phase === 'empty') {
         return (
             <div className="h-dvh bg-[#313338] flex items-center justify-center">
@@ -1119,6 +1173,47 @@ function LobbyWaiting({
                             </span>
                         </div>
                     ))}
+                </div>
+
+                {/* Race mode setting */}
+                <div className="w-full max-w-sm mb-4">
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-[#2b2d31] border border-[#3f4147]">
+                        <span className="text-[#b5bac1] text-sm">Ranking</span>
+                        {isHost ? (
+                            <div className="flex rounded-lg overflow-hidden border border-[#3f4147]">
+                                <button
+                                    type="button"
+                                    onClick={() => emit('lights-out:set-mode', { raceMode: 'time' })}
+                                    className={`px-3 py-1 text-xs font-medium transition-colors flex items-center gap-1 ${
+                                        lobby.raceMode === 'time'
+                                            ? 'bg-purple-500 text-white'
+                                            : 'bg-[#1e1f22] text-[#949ba4] hover:text-white'
+                                    }`}
+                                >
+                                    <Clock className="w-3 h-3" /> Timed
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => emit('lights-out:set-mode', { raceMode: 'moves' })}
+                                    className={`px-3 py-1 text-xs font-medium transition-colors flex items-center gap-1 ${
+                                        lobby.raceMode === 'moves'
+                                            ? 'bg-purple-500 text-white'
+                                            : 'bg-[#1e1f22] text-[#949ba4] hover:text-white'
+                                    }`}
+                                >
+                                    <Sparkles className="w-3 h-3" /> Fewest Moves
+                                </button>
+                            </div>
+                        ) : (
+                            <span className="text-white text-sm font-medium flex items-center gap-1">
+                                {lobby.raceMode === 'time' ? (
+                                    <><Clock className="w-3.5 h-3.5 text-purple-400" /> Timed Race</>
+                                ) : (
+                                    <><Sparkles className="w-3.5 h-3.5 text-purple-400" /> Fewest Moves</>
+                                )}
+                            </span>
+                        )}
+                    </div>
                 </div>
 
                 {/* Actions */}
@@ -1394,9 +1489,14 @@ function RaceResults({
     const puzzleGrid = generatePuzzle(createSeededRng(seed), shape);
     const optimal = getOptimalMoves(puzzleGrid, shape);
 
+    const isTimed = lobby.raceMode !== 'moves';
     const solved = lobby.participants
         .filter((p: LobbyParticipant) => p.status === 'solved')
-        .sort((a: LobbyParticipant, b: LobbyParticipant) => (a.moves - b.moves) || ((a.finishedAt ?? 0) - (b.finishedAt ?? 0)));
+        .sort((a: LobbyParticipant, b: LobbyParticipant) =>
+            isTimed
+                ? ((a.finishedAt ?? 0) - (b.finishedAt ?? 0)) || (a.moves - b.moves)
+                : (a.moves - b.moves) || ((a.finishedAt ?? 0) - (b.finishedAt ?? 0))
+        );
     const dnf = lobby.participants.filter((p: LobbyParticipant) => p.status === 'dnf');
     const idle = lobby.participants.filter((p: LobbyParticipant) => p.status === 'idle');
     const ranked = [...solved, ...dnf, ...idle];
@@ -1410,7 +1510,7 @@ function RaceResults({
                         <Trophy className="w-5 h-5 text-amber-400" />
                         Race Results
                     </h2>
-                    <p className="text-[#b5bac1] text-xs">Round {lobby.roundNumber} · {shapeLabel}{optimal != null ? ` · Optimal: ${optimal}` : ''}</p>
+                    <p className="text-[#b5bac1] text-xs">Round {lobby.roundNumber} · {shapeLabel} · {isTimed ? 'Timed' : 'Fewest Moves'}{optimal != null ? ` · Optimal: ${optimal}` : ''}</p>
                 </div>
             </div>
 
@@ -1439,8 +1539,11 @@ function RaceResults({
                                     isSolvedP ? 'text-emerald-400' :
                                     p.status === 'dnf' ? 'text-red-400' : 'text-[#949ba4]'
                                 }`}>
-                                    {isSolvedP ? `${p.moves} move${p.moves !== 1 ? 's' : ''}` :
-                                     p.status === 'dnf' ? 'DNF' : 'Spectator'}
+                                    {isSolvedP ? (
+                                        isTimed && p.finishedAt && lobby.raceStartedAt
+                                            ? `${((p.finishedAt - lobby.raceStartedAt) / 1000).toFixed(1)}s · ${p.moves} move${p.moves !== 1 ? 's' : ''}`
+                                            : `${p.moves} move${p.moves !== 1 ? 's' : ''}${p.finishedAt && lobby.raceStartedAt ? ` · ${((p.finishedAt - lobby.raceStartedAt) / 1000).toFixed(1)}s` : ''}`
+                                    ) : p.status === 'dnf' ? 'DNF' : 'Spectator'}
                                 </span>
                             </div>
                         );

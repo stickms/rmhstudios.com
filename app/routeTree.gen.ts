@@ -165,6 +165,7 @@ import { Route as ApiDiscordSyncScoreRouteImport } from './routes/api/discord/sy
 import { Route as ApiDiscordRaceRouteImport } from './routes/api/discord/race'
 import { Route as ApiDiscordEmbedRouteImport } from './routes/api/discord/embed'
 import { Route as ApiDiscordDailyProgressRouteImport } from './routes/api/discord/daily-progress'
+import { Route as ApiDiscordActivityImageRouteImport } from './routes/api/discord/activity-image'
 import { Route as ApiDailyPuzzlesScoreRouteImport } from './routes/api/daily-puzzles/score'
 import { Route as ApiDailyPuzzlesResultsRouteImport } from './routes/api/daily-puzzles/results'
 import { Route as ApiDailyPuzzlesLeaderboardRouteImport } from './routes/api/daily-puzzles/leaderboard'
@@ -1018,6 +1019,11 @@ const ApiDiscordDailyProgressRoute = ApiDiscordDailyProgressRouteImport.update({
   path: '/api/discord/daily-progress',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiDiscordActivityImageRoute = ApiDiscordActivityImageRouteImport.update({
+  id: '/api/discord/activity-image',
+  path: '/api/discord/activity-image',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiDailyPuzzlesScoreRoute = ApiDailyPuzzlesScoreRouteImport.update({
   id: '/api/daily-puzzles/score',
   path: '/api/daily-puzzles/score',
@@ -1490,6 +1496,7 @@ export interface FileRoutesByFullPath {
   '/api/daily-puzzles/leaderboard': typeof ApiDailyPuzzlesLeaderboardRoute
   '/api/daily-puzzles/results': typeof ApiDailyPuzzlesResultsRoute
   '/api/daily-puzzles/score': typeof ApiDailyPuzzlesScoreRoute
+  '/api/discord/activity-image': typeof ApiDiscordActivityImageRoute
   '/api/discord/daily-progress': typeof ApiDiscordDailyProgressRoute
   '/api/discord/embed': typeof ApiDiscordEmbedRoute
   '/api/discord/race': typeof ApiDiscordRaceRoute
@@ -1690,6 +1697,7 @@ export interface FileRoutesByTo {
   '/api/daily-puzzles/leaderboard': typeof ApiDailyPuzzlesLeaderboardRoute
   '/api/daily-puzzles/results': typeof ApiDailyPuzzlesResultsRoute
   '/api/daily-puzzles/score': typeof ApiDailyPuzzlesScoreRoute
+  '/api/discord/activity-image': typeof ApiDiscordActivityImageRoute
   '/api/discord/daily-progress': typeof ApiDiscordDailyProgressRoute
   '/api/discord/embed': typeof ApiDiscordEmbedRoute
   '/api/discord/race': typeof ApiDiscordRaceRoute
@@ -1917,6 +1925,7 @@ export interface FileRoutesById {
   '/api/daily-puzzles/leaderboard': typeof ApiDailyPuzzlesLeaderboardRoute
   '/api/daily-puzzles/results': typeof ApiDailyPuzzlesResultsRoute
   '/api/daily-puzzles/score': typeof ApiDailyPuzzlesScoreRoute
+  '/api/discord/activity-image': typeof ApiDiscordActivityImageRoute
   '/api/discord/daily-progress': typeof ApiDiscordDailyProgressRoute
   '/api/discord/embed': typeof ApiDiscordEmbedRoute
   '/api/discord/race': typeof ApiDiscordRaceRoute
@@ -2144,6 +2153,7 @@ export interface FileRouteTypes {
     | '/api/daily-puzzles/leaderboard'
     | '/api/daily-puzzles/results'
     | '/api/daily-puzzles/score'
+    | '/api/discord/activity-image'
     | '/api/discord/daily-progress'
     | '/api/discord/embed'
     | '/api/discord/race'
@@ -2344,6 +2354,7 @@ export interface FileRouteTypes {
     | '/api/daily-puzzles/leaderboard'
     | '/api/daily-puzzles/results'
     | '/api/daily-puzzles/score'
+    | '/api/discord/activity-image'
     | '/api/discord/daily-progress'
     | '/api/discord/embed'
     | '/api/discord/race'
@@ -2570,6 +2581,7 @@ export interface FileRouteTypes {
     | '/api/daily-puzzles/leaderboard'
     | '/api/daily-puzzles/results'
     | '/api/daily-puzzles/score'
+    | '/api/discord/activity-image'
     | '/api/discord/daily-progress'
     | '/api/discord/embed'
     | '/api/discord/race'
@@ -2737,6 +2749,7 @@ export interface RootRouteChildren {
   ApiDailyPuzzlesLeaderboardRoute: typeof ApiDailyPuzzlesLeaderboardRoute
   ApiDailyPuzzlesResultsRoute: typeof ApiDailyPuzzlesResultsRoute
   ApiDailyPuzzlesScoreRoute: typeof ApiDailyPuzzlesScoreRoute
+  ApiDiscordActivityImageRoute: typeof ApiDiscordActivityImageRoute
   ApiDiscordDailyProgressRoute: typeof ApiDiscordDailyProgressRoute
   ApiDiscordEmbedRoute: typeof ApiDiscordEmbedRoute
   ApiDiscordRaceRoute: typeof ApiDiscordRaceRoute
@@ -3879,6 +3892,13 @@ declare module '@tanstack/react-router' {
       path: '/api/discord/daily-progress'
       fullPath: '/api/discord/daily-progress'
       preLoaderRoute: typeof ApiDiscordDailyProgressRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/discord/activity-image': {
+      id: '/api/discord/activity-image'
+      path: '/api/discord/activity-image'
+      fullPath: '/api/discord/activity-image'
+      preLoaderRoute: typeof ApiDiscordActivityImageRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/daily-puzzles/score': {
@@ -5056,6 +5076,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDailyPuzzlesLeaderboardRoute: ApiDailyPuzzlesLeaderboardRoute,
   ApiDailyPuzzlesResultsRoute: ApiDailyPuzzlesResultsRoute,
   ApiDailyPuzzlesScoreRoute: ApiDailyPuzzlesScoreRoute,
+  ApiDiscordActivityImageRoute: ApiDiscordActivityImageRoute,
   ApiDiscordDailyProgressRoute: ApiDiscordDailyProgressRoute,
   ApiDiscordEmbedRoute: ApiDiscordEmbedRoute,
   ApiDiscordRaceRoute: ApiDiscordRaceRoute,
