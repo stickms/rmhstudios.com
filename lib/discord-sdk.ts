@@ -22,6 +22,30 @@ export interface DiscordContext {
     linkedUserId: string | null;
 }
 
+/**
+ * Update the Discord Activity rich presence status text + image.
+ * Silently fails if the SDK doesn't support it.
+ */
+export function setActivityStatus(
+    sdk: DiscordSDK,
+    state: string,
+    opts?: {
+        details?: string;
+        partySize?: [current: number, max: number];
+        imageUrl?: string;
+    },
+) {
+    sdk.commands.setActivity({
+        activity: {
+            state,
+            details: opts?.details,
+            type: 0,
+            ...(opts?.partySize ? { party: { size: opts.partySize } } : {}),
+            ...(opts?.imageUrl ? { assets: { large_image: opts.imageUrl, large_text: 'Lights Out' } } : {}),
+        },
+    }).catch(() => {});
+}
+
 type DiscordState =
     | { status: 'loading' }
     | { status: 'error'; error: string }

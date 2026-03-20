@@ -141,7 +141,7 @@ export default defineConfig({
       // traces them into .output/node_modules for runtime resolution.
       // NOTE: Vite's ssr.external is ignored by Nitro — this is the only way
       // to externalize from the production server bundle.
-      traceDeps: ["@prisma/client", ".prisma"],
+      traceDeps: ["@prisma/client", ".prisma", "@resvg/resvg-js", "satori"],
       rollupConfig: {
         external: heavyExternals.map((pkg) => new RegExp(`^${pkg.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(/.+)?$`)),
       },
@@ -175,9 +175,12 @@ export default defineConfig({
   experimental: {
     hmrPartialAccept: true,
   },
+  optimizeDeps: {
+    exclude: ["@resvg/resvg-js", "satori"],
+  },
   ssr: {
     // ssr.external only affects Vite's dev SSR bundling, NOT the Nitro production
     // server build. For production, traceDeps in the nitro() plugin config is used.
-    external: [...heavyExternals, ...ssrOnlyExternals],
+    external: [...heavyExternals, ...ssrOnlyExternals, "@resvg/resvg-js", "satori"],
   },
 });

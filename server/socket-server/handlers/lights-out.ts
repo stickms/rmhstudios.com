@@ -24,12 +24,15 @@ interface LobbyParticipant {
     joinedAt: number;
 }
 
+type RaceMode = 'time' | 'moves';
+
 interface LobbyEntry {
     phase: LobbyPhase;
     hostId: string;
     participants: LobbyParticipant[];
     seed: number | null;
     roundNumber: number;
+    raceMode: RaceMode;
     countdownStartedAt: number | null;
     raceStartedAt: number | null;
     countdownTimer: ReturnType<typeof setTimeout> | null;
@@ -77,6 +80,7 @@ function serializeLobby(lobby: LobbyEntry) {
         hostId: lobby.hostId,
         seed: lobby.seed,
         roundNumber: lobby.roundNumber,
+        raceMode: lobby.raceMode,
         countdownStartedAt: lobby.countdownStartedAt,
         raceStartedAt: lobby.raceStartedAt,
         participants: lobby.participants.map(p => ({
@@ -151,6 +155,7 @@ export function registerLightsOutHandlers(io: Server, socket: Socket): void {
                 participants: [],
                 seed: null,
                 roundNumber: 0,
+                raceMode: 'time',
                 countdownStartedAt: null,
                 raceStartedAt: null,
                 countdownTimer: null,
@@ -207,6 +212,25 @@ export function registerLightsOutHandlers(io: Server, socket: Socket): void {
         if (!p) return;
 
         p.ready = !!ready;
+        lobby.lastUpdated = Date.now();
+        broadcast(io, instanceId, lobby);
+    });
+
+    // ── Set Race Mode (host only, waiting phase) ────────────────────────
+    socket.on('lights-out:set-mode', (payload: {
+        instanceId: string;
+        discordId: string;
+        raceMode: string;
+    }) => {
+        if (!checkRateLimit(socket.id, 'lights-out:set-mode')) return;
+
+        const { instanceId, discordId, raceMode } = payload;
+        const lobby = lobbies.get(instanceId);
+        if (!lobby || lobby.phase !== 'waiting') return;
+        if (lobby.hostId !== discordId) return;
+        if (raceMode !== 'time' && raceMode !== 'moves') return;
+
+        lobby.raceMode = raceMode;
         lobby.lastUpdated = Date.now();
         broadcast(io, instanceId, lobby);
     });

@@ -22,12 +22,15 @@ interface LobbyParticipant {
     lastSeen: number;
 }
 
+type RaceMode = 'time' | 'moves';
+
 interface LobbyEntry {
     phase: LobbyPhase;
     hostId: string;
     participants: LobbyParticipant[];
     seed: number | null;
     roundNumber: number;
+    raceMode: RaceMode;
     countdownStartedAt: number | null;
     raceStartedAt: number | null;
     countdownTimer: ReturnType<typeof setTimeout> | null;
@@ -87,6 +90,7 @@ function serializeLobby(lobby: LobbyEntry) {
         hostId: lobby.hostId,
         seed: lobby.seed,
         roundNumber: lobby.roundNumber,
+        raceMode: lobby.raceMode,
         countdownStartedAt: lobby.countdownStartedAt,
         raceStartedAt: lobby.raceStartedAt,
         participants: lobby.participants.map(p => ({
@@ -160,7 +164,7 @@ export const Route = createFileRoute('/api/discord/race')({
                                     const oldest = lobbies.keys().next().value;
                                     if (oldest !== undefined) lobbies.delete(oldest);
                                 }
-                                lobby = { phase: 'waiting', hostId: discordId, participants: [], seed: null, roundNumber: 0, countdownStartedAt: null, raceStartedAt: null, countdownTimer: null, lastUpdated: now };
+                                lobby = { phase: 'waiting', hostId: discordId, participants: [], seed: null, roundNumber: 0, raceMode: 'time' as RaceMode, countdownStartedAt: null, raceStartedAt: null, countdownTimer: null, lastUpdated: now };
                                 lobbies.set(instanceId, lobby);
                             }
                             const existing = lobby.participants.find(p => p.discordId === discordId);
@@ -224,6 +228,15 @@ export const Route = createFileRoute('/api/discord/race')({
                             if (lobby.participants.length === 0) { if (lobby.countdownTimer) clearTimeout(lobby.countdownTimer); lobbies.delete(instanceId); return Response.json({ success: true }); }
                             if (lobby.hostId === discordId) { const e = lobby.participants.reduce((a, b) => a.joinedAt < b.joinedAt ? a : b); lobby.hostId = e.discordId; }
                             checkRaceComplete(lobby);
+                            lobby.lastUpdated = now;
+                            return Response.json({ success: true });
+                        }
+                        case 'set_mode': {
+                            const { discordId, raceMode } = body;
+                            const lobby = lobbies.get(instanceId);
+                            if (!lobby || lobby.phase !== 'waiting' || lobby.hostId !== discordId) return Response.json({ error: 'Invalid' }, { status: 400 });
+                            if (raceMode !== 'time' && raceMode !== 'moves') return Response.json({ error: 'Invalid mode' }, { status: 400 });
+                            lobby.raceMode = raceMode;
                             lobby.lastUpdated = now;
                             return Response.json({ success: true });
                         }
