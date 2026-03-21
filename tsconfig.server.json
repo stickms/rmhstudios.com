@@ -19,7 +19,10 @@
         "server/socket-server/**/*.ts",
         "server/rmhbox/**/*.ts",
         "server/rmhtube/**/*.ts",
+        "server/discord-bot/**/*.ts",
+        "server/discord-bot/**/*.tsx",
         "lib/rmhbox/**/*.ts",
-        "lib/blackjack/logic.ts"
+        "lib/blackjack/logic.ts",
+        "lib/lights-out/**/*.ts"
     ]
 }

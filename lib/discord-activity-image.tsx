@@ -13,11 +13,21 @@ function loadFonts(): Promise<void> {
     if (fontsLoading) return fontsLoading;
 
     fontsLoading = Promise.all([
-        fetch('https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZg.ttf').then(r => r.arrayBuffer()),
-        fetch('https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuFuYMZg.ttf').then(r => r.arrayBuffer()),
+        fetch('https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZg.ttf').then(r => {
+            if (!r.ok) throw new Error(`Font fetch failed: ${r.status}`);
+            return r.arrayBuffer();
+        }),
+        fetch('https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuFuYMZg.ttf').then(r => {
+            if (!r.ok) throw new Error(`Font fetch failed: ${r.status}`);
+            return r.arrayBuffer();
+        }),
     ]).then(([reg, bold]) => {
         fontRegular = reg;
         fontBold = bold;
+    }).catch(err => {
+        // Clear the promise so the next call retries instead of returning a rejected promise forever
+        fontsLoading = null;
+        throw err;
     });
 
     return fontsLoading;
@@ -96,16 +106,21 @@ function setCachedPng(key: string, png: Buffer): void {
 async function renderToPng(element: React.ReactElement, width = 480, height = 240): Promise<Buffer> {
     await loadFonts();
 
+    if (!fontRegular || !fontBold) {
+        throw new Error('Fonts not loaded');
+    }
+
     const svg = await satori(element, {
         width,
         height,
         fonts: [
-            { name: 'Inter', data: fontRegular!, weight: 400, style: 'normal' as const },
-            { name: 'Inter', data: fontBold!, weight: 700, style: 'normal' as const },
+            { name: 'Inter', data: fontRegular, weight: 400, style: 'normal' as const },
+            { name: 'Inter', data: fontBold, weight: 700, style: 'normal' as const },
         ],
     });
 
-    const resvg = new Resvg(svg, { fitTo: { mode: 'width' as const, value: width } });
+    // Render at 2x resolution for crisp Discord embeds
+    const resvg = new Resvg(svg, { fitTo: { mode: 'width' as const, value: width * 2 } });
     return Buffer.from(resvg.render().asPng());
 }
 
@@ -384,7 +399,6 @@ export interface LeaderboardParticipant {
 export async function generateLeaderboardImage(
     dateKey: string,
     shapeLabel: string,
-    optimal: number | null,
     participants: LeaderboardParticipant[],
     isRecap?: boolean,
 ): Promise<Buffer> {
@@ -429,7 +443,7 @@ export async function generateLeaderboardImage(
                     <span style={{ fontSize: 13, color: MUTED }}>{dateKey}</span>
                 </div>
                 <span style={{ fontSize: 13, color: MUTED }}>
-                    {shapeLabel}{optimal != null ? ` · Optimal: ${optimal} moves` : ''}
+                    {shapeLabel}
                     {' · '}{participants.length} player{participants.length !== 1 ? 's' : ''}
                 </span>
             </div>

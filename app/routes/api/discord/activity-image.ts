@@ -1,9 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { generateDailyImage, generateRaceImage, generateLeaderboardImage } from '@/lib/discord-activity-image';
 import { prisma } from '@/lib/prisma';
-import { getDateSeed, createSeededRng } from '@/lib/lights-out/seed';
+import { getDateSeed } from '@/lib/lights-out/seed';
 import { getDailyShape, getShapeLabel } from '@/lib/lights-out/shapes';
-import { generatePuzzle, getOptimalMoves } from '@/lib/lights-out/lights-out';
 
 /**
  * Dynamic image generation for Discord Activity rich presence.
@@ -59,10 +58,7 @@ export const Route = createFileRoute('/api/discord/activity-image')({
                         const seed = getDateSeed(date);
                         const shape = getDailyShape(seed);
                         const shapeLabel = getShapeLabel(shape);
-                        const puzzleGrid = generatePuzzle(createSeededRng(seed), shape);
-                        const optimal = getOptimalMoves(puzzleGrid, shape);
-
-                        png = await generateLeaderboardImage(dateKey, shapeLabel, optimal, participants, recap);
+                        png = await generateLeaderboardImage(dateKey, shapeLabel, participants, recap);
                         maxAge = recap ? 3600 : 30; // recap is static, live updates frequently
                     } else if (type === 'race') {
                         const playersJson = url.searchParams.get('players');

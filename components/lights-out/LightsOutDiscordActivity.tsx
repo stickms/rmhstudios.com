@@ -918,6 +918,7 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
     const [lobby, setLobby] = useState<LobbyState | null>(null);
     const socketRef = useRef<ReturnType<typeof import('socket.io-client').io> | null>(null);
     const [useHttp, setUseHttp] = useState(false);
+    const notifiedRoundRef = useRef<number>(-1);
 
     // Try socket.io first; fall back to HTTP polling if it fails
     useEffect(() => {
@@ -1070,6 +1071,32 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
             partySize: [playerCount, 10],
             imageUrl: `${window.location.origin}/api/discord/activity-image?${raceImgParams}`,
         });
+
+        // Notify embed API when a race round completes (once per round)
+        if (lobby.phase === 'results' && lobby.roundNumber !== notifiedRoundRef.current) {
+            notifiedRoundRef.current = lobby.roundNumber;
+            fetch('/api/discord/embed', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    channelId: discord.channelId ?? null,
+                    guildId: discord.guildId ?? null,
+                    action: 'race_completed',
+                    dateKey: new Date().toISOString().slice(0, 10),
+                    user: {
+                        id: discord.user.id,
+                        username: discord.user.global_name || discord.user.username,
+                        avatar: discord.user.avatar,
+                    },
+                    raceResults: {
+                        roundNumber: lobby.roundNumber,
+                        raceMode: lobby.raceMode,
+                        raceStartedAt: lobby.raceStartedAt,
+                        participants: playersData,
+                    },
+                }),
+            }).catch(() => {});
+        }
     }, [discord.sdk, lobby?.phase, playerCount]); // eslint-disable-line react-hooks/exhaustive-deps
 
     if (!lobby || lobby.phase === 'empty') {
