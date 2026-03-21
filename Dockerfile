@@ -64,6 +64,7 @@ RUN pnpm exec esbuild \
     server/rmhbox/index.ts \
     server/rmhtube/index.ts \
     server/recap/index.ts \
+    server/discord-bot/index.ts \
     --bundle --platform=node --target=node20 \
     --outdir=dist-server --outbase=. \
     --format=cjs --out-extension:.js=.cjs --packages=external --tree-shaking=true \
@@ -72,7 +73,8 @@ RUN pnpm exec esbuild \
 RUN test -f dist-server/server/socket-server/index.cjs && \
     test -f dist-server/server/rmhbox/index.cjs && \
     test -f dist-server/server/rmhtube/index.cjs && \
-    test -f dist-server/server/recap/index.cjs
+    test -f dist-server/server/recap/index.cjs && \
+    test -f dist-server/server/discord-bot/index.cjs
 
 # ── Stage 3: Vite/Nitro build (env-specific) ─────────────────────────────
 # BuildKit executes this IN PARALLEL with server-builder (stage 2).

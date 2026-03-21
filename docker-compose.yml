@@ -114,6 +114,14 @@ services:
       retries: 3
       start_period: 15s
 
+  # ─── Discord Bot (slash commands for Lights Out + future activities) ───────
+  discord-bot:
+    <<: *common
+    container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-discord-bot
+    env_file: ${ENV_FILE:-.env.production}
+    command: ["node", "dist-server/server/discord-bot/index.cjs"]
+    restart: unless-stopped
+
   # ─── Lights Out Recap Runner ───────────────────────────────────────────────
   recap:
     <<: *common
