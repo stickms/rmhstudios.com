@@ -147,8 +147,11 @@ function buildRaceEmbed(
  * Marks channels as blocked on 403 (Missing Access) to avoid spamming Discord.
  */
 async function discordApi(path: string, method: string, body?: object): Promise<any> {
-    const token = process.env.DISCORD_ACTIVITY_BOT_TOKEN;
-    if (!token) return null;
+    const token = process.env.DISCORD_ACTIVITY_BOT_TOKEN ?? process.env.DISCORD_BOT_TOKEN;
+    if (!token) {
+        console.warn('[embed] No bot token set (DISCORD_ACTIVITY_BOT_TOKEN or DISCORD_BOT_TOKEN) — skipping Discord API call');
+        return null;
+    }
 
     try {
         const res = await fetch(`https://discord.com/api/v10${path}`, {
