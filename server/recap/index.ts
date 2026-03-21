@@ -27,6 +27,7 @@ const prisma = new PrismaClient({ adapter });
 const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 const BOT_TOKEN = process.env.DISCORD_ACTIVITY_BOT_TOKEN;
 const APP_ID = process.env.VITE_DISCORD_ACTIVITY_CLIENT_ID ?? process.env.DISCORD_ACTIVITY_CLIENT_ID;
+const SITE_URL = process.env.SITE_URL ?? process.env.VITE_BETTER_AUTH_URL?.replace(/\/$/, '') ?? 'https://rmhstudios.com';
 
 function log(msg: string) {
     console.log(`[${new Date().toISOString()}] [recap] ${msg}`);
@@ -123,6 +124,8 @@ async function processDueRecaps() {
 
             const launchUrl = APP_ID ? `https://discord.com/activities/${APP_ID}` : null;
 
+            const recapImgUrl = `${SITE_URL}/api/discord/activity-image?type=leaderboard&guildId=${channel.guildId}&dateKey=${dateKey}&recap=1`;
+
             const embed = {
                 embeds: [{
                     title: '\u{1F526} Lights Out \u2014 Daily Recap',
@@ -136,6 +139,7 @@ async function processDueRecaps() {
                         launchUrl ? `[\u25B6\uFE0F Play today\u2019s puzzle](${launchUrl})` : '',
                     ].filter(Boolean).join('\n'),
                     color: 0xf59e0b,
+                    image: { url: recapImgUrl },
                     footer: { text: 'Lights Out \u00b7 Daily Puzzle' },
                     timestamp: new Date().toISOString(),
                 }],
