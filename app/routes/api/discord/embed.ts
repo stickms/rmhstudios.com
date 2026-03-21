@@ -98,7 +98,6 @@ interface RaceParticipant {
 }
 
 function buildRaceEmbed(
-    channelId: string,
     raceResults: { roundNumber: number; raceMode: string; raceStartedAt: number | null; participants: RaceParticipant[] },
 ): object {
     const { roundNumber, raceMode, participants } = raceResults;
@@ -349,7 +348,10 @@ export const Route = createFileRoute('/api/discord/embed')({
 
                 try {
                     const body = await request.json();
-                    const { channelId, guildId, action, dateKey, user, result } = body;
+                    const { action, dateKey, user, result } = body;
+                    // Strip any stray quote characters from snowflake IDs (some SDK versions wrap them)
+                    const channelId = typeof body.channelId === 'string' ? body.channelId.replace(/"/g, '') : body.channelId;
+                    const guildId = typeof body.guildId === 'string' ? body.guildId.replace(/"/g, '') : body.guildId;
 
                     console.log(`[embed] action=${action} guild=${guildId} channel=${channelId} user=${user?.id} dateKey=${dateKey}`);
 
@@ -385,7 +387,7 @@ export const Route = createFileRoute('/api/discord/embed')({
                             return Response.json({ success: true, skipped: 'already-posted' });
                         }
 
-                        const raceEmbed = buildRaceEmbed(channelId, raceResults);
+                        const raceEmbed = buildRaceEmbed(raceResults);
                         if (!blockedChannels.has(channelId)) {
                             const msg = await discordApi(`/channels/${channelId}/messages`, 'POST', raceEmbed);
                             if (msg?.id) {
