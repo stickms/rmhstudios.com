@@ -2,7 +2,6 @@
  * Discord Bot — Image Generation
  *
  * Generates PNG images for Lights Out embeds:
- *   - Game board (current grid state)
  *   - Leaderboard (guild daily rankings)
  *   - Streak / personal stats
  *
@@ -12,11 +11,13 @@
 import React from 'react';
 import satori from 'satori';
 import { Resvg } from '@resvg/resvg-js';
-import type { Grid } from '../../lib/lights-out/lights-out';
-import type { GridShape } from '../../lib/lights-out/shapes';
-import { isActiveCell, getShapeLabel } from '../../lib/lights-out/shapes';
 
-// ─── Font cache ──────────────────────────────────────────────────
+// ─── Font loading (retry-capable) ───────────────────────────────
+
+const FONT_URLS = {
+  regular: 'https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZg.ttf',
+  bold: 'https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuFuYMZg.ttf',
+};
 
 let fontRegular: ArrayBuffer | null = null;
 let fontBold: ArrayBuffer | null = null;
@@ -27,37 +28,77 @@ function loadFonts(): Promise<void> {
   if (fontsLoading) return fontsLoading;
 
   fontsLoading = Promise.all([
-    fetch('https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZg.ttf').then(r => r.arrayBuffer()),
-    fetch('https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuFuYMZg.ttf').then(r => r.arrayBuffer()),
+    fetch(FONT_URLS.regular).then(r => {
+      if (!r.ok) throw new Error(`Font fetch failed: ${r.status}`);
+      return r.arrayBuffer();
+    }),
+    fetch(FONT_URLS.bold).then(r => {
+      if (!r.ok) throw new Error(`Font fetch failed: ${r.status}`);
+      return r.arrayBuffer();
+    }),
   ]).then(([reg, bold]) => {
     fontRegular = reg;
     fontBold = bold;
+  }).catch(err => {
+    // Clear the promise so the next call retries instead of returning a rejected promise forever
+    fontsLoading = null;
+    throw err;
   });
 
   return fontsLoading;
 }
 
+// Eagerly start — if it fails it'll retry on next render call
 loadFonts().catch(() => {});
 
-// ─── Render helper ───────────────────────────────────────────────
+// ─── PNG render cache ───────────────────────────────────────────
+
+const pngCache = new Map<string, { png: Buffer; ts: number }>();
+const PNG_CACHE_TTL = 60_000; // 1 min
+const PNG_CACHE_MAX = 50;
+
+function getCachedPng(key: string): Buffer | null {
+  const entry = pngCache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.ts > PNG_CACHE_TTL) {
+    pngCache.delete(key);
+    return null;
+  }
+  return entry.png;
+}
+
+function setCachedPng(key: string, png: Buffer): void {
+  if (pngCache.size >= PNG_CACHE_MAX) {
+    const oldest = pngCache.keys().next().value;
+    if (oldest !== undefined) pngCache.delete(oldest);
+  }
+  pngCache.set(key, { png, ts: Date.now() });
+}
+
+// ─── Render helper ──────────────────────────────────────────────
 
 async function renderToPng(element: React.ReactElement, width: number, height: number): Promise<Buffer> {
   await loadFonts();
+
+  if (!fontRegular || !fontBold) {
+    throw new Error('Fonts not loaded');
+  }
 
   const svg = await satori(element, {
     width,
     height,
     fonts: [
-      { name: 'Inter', data: fontRegular!, weight: 400, style: 'normal' as const },
-      { name: 'Inter', data: fontBold!, weight: 700, style: 'normal' as const },
+      { name: 'Inter', data: fontRegular, weight: 400, style: 'normal' as const },
+      { name: 'Inter', data: fontBold, weight: 700, style: 'normal' as const },
     ],
   });
 
-  const resvg = new Resvg(svg, { fitTo: { mode: 'width' as const, value: width } });
+  // Render at 2x resolution for crisp Discord embeds
+  const resvg = new Resvg(svg, { fitTo: { mode: 'width' as const, value: width * 2 } });
   return Buffer.from(resvg.render().asPng());
 }
 
-// ─── Colors ──────────────────────────────────────────────────────
+// ─── Colors ─────────────────────────────────────────────────────
 
 const BG = '#2b2d31';
 const SURFACE = '#1e1f22';
@@ -65,9 +106,6 @@ const TEXT = '#ffffff';
 const MUTED = '#949ba4';
 const AMBER = '#f59e0b';
 const GREEN = '#34d399';
-const CELL_ON = '#f59e0b';
-const CELL_OFF = '#3b3d44';
-const CELL_INACTIVE = '#1a1b1e';
 
 function Footer({ label }: { label: string }) {
   return (
@@ -83,104 +121,7 @@ function Footer({ label }: { label: string }) {
   );
 }
 
-// ─── Game Board Image ────────────────────────────────────────────
-
-function getGridDimensions(shape: GridShape): { rows: number; cols: number } {
-  if (shape.type === 'rect') return { rows: shape.rows, cols: shape.cols };
-  if (shape.type === 'triangle') return { rows: shape.size, cols: shape.size };
-  return { rows: shape.rows, cols: shape.cols };
-}
-
-export async function generateBoardImage(
-  grid: Grid,
-  shape: GridShape,
-  moves: number,
-  optimal: number | null,
-  dateKey: string,
-): Promise<Buffer> {
-  const { rows, cols } = getGridDimensions(shape);
-  const isTriangle = shape.type === 'triangle';
-
-  const cellSize = 48;
-  const gap = 4;
-  const gridWidth = cols * (cellSize + gap) - gap;
-  const gridHeight = rows * (cellSize + gap) - gap;
-
-  const padding = 32;
-  const headerHeight = 60;
-  const footerHeight = 36;
-  const imgWidth = Math.max(400, gridWidth + padding * 2);
-  const imgHeight = headerHeight + gridHeight + footerHeight + padding * 2;
-
-  const element = (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      width: '100%',
-      height: '100%',
-      backgroundColor: BG,
-      padding: `${padding}px`,
-      fontFamily: 'Inter',
-      color: TEXT,
-    }}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 18, fontWeight: 700 }}>Lights Out</span>
-          <span style={{ fontSize: 13, color: MUTED }}>{dateKey} · {getShapeLabel(shape)}</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 13, color: MUTED }}>Moves: <span style={{ color: TEXT, fontWeight: 600 }}>{moves}</span></span>
-          {optimal != null && (
-            <span style={{ fontSize: 13, color: MUTED }}>Optimal: <span style={{ color: GREEN, fontWeight: 600 }}>{optimal}</span></span>
-          )}
-        </div>
-      </div>
-
-      {/* Grid */}
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap,
-        flex: 1,
-      }}>
-        {Array.from({ length: rows }, (_, r) => {
-          const rowCols = isTriangle ? r + 1 : cols;
-          return (
-            <div key={r} style={{
-              display: 'flex',
-              gap,
-              justifyContent: 'center',
-            }}>
-              {Array.from({ length: rowCols }, (_, c) => {
-                const active = isActiveCell(shape, r, c);
-                const isOn = active && grid[r]?.[c];
-
-                return (
-                  <div key={`${r}-${c}`} style={{
-                    display: 'flex',
-                    width: cellSize,
-                    height: cellSize,
-                    borderRadius: 6,
-                    backgroundColor: !active ? CELL_INACTIVE : isOn ? CELL_ON : CELL_OFF,
-                    border: active ? '2px solid rgba(255,255,255,0.1)' : 'none',
-                  }} />
-                );
-              })}
-            </div>
-          );
-        })}
-      </div>
-
-      <Footer label="Lights Out · Daily Puzzle" />
-    </div>
-  );
-
-  return renderToPng(element, imgWidth, imgHeight);
-}
-
-// ─── Leaderboard Image ───────────────────────────────────────────
+// ─── Leaderboard Image ──────────────────────────────────────────
 
 export interface LeaderboardEntry {
   username: string;
@@ -195,9 +136,12 @@ export interface LeaderboardEntry {
 export async function generateLeaderboardImage(
   dateKey: string,
   shapeLabel: string,
-  optimal: number | null,
   entries: LeaderboardEntry[],
 ): Promise<Buffer> {
+  const cacheKey = `lb:${dateKey}:${entries.map(e => `${e.discordId}:${e.status}:${e.moves}`).join(',')}`;
+  const cached = getCachedPng(cacheKey);
+  if (cached) return cached;
+
   const completed = entries
     .filter(e => e.status === 'completed')
     .sort((a, b) => (a.moves ?? 999) - (b.moves ?? 999));
@@ -228,8 +172,8 @@ export async function generateLeaderboardImage(
           <span style={{ fontSize: 13, color: MUTED }}>{dateKey}</span>
         </div>
         <span style={{ fontSize: 13, color: MUTED }}>
-          {shapeLabel}{optimal != null ? ` · Optimal: ${optimal} moves` : ''}
-          {' · '}{entries.length} player{entries.length !== 1 ? 's' : ''}
+          {shapeLabel}
+          {' \u00b7 '}{entries.length} player{entries.length !== 1 ? 's' : ''}
         </span>
       </div>
 
@@ -257,7 +201,7 @@ export async function generateLeaderboardImage(
                 color: isCompleted ? GREEN : MUTED,
               }}>
                 {isCompleted
-                  ? `${p.moves} move${p.moves !== 1 ? 's' : ''}${p.ratingLabel ? ` · ${p.ratingLabel}` : ''}`
+                  ? `${p.moves} move${p.moves !== 1 ? 's' : ''}${p.ratingLabel ? ` \u00b7 ${p.ratingLabel}` : ''}`
                   : 'solving...'
                 }
               </span>
@@ -271,11 +215,13 @@ export async function generateLeaderboardImage(
         )}
       </div>
 
-      <Footer label="Lights Out · rmhstudios.com" />
+      <Footer label="Lights Out \u00b7 rmhstudios.com" />
     </div>
   );
 
-  return renderToPng(element, 520, imgHeight);
+  const png = await renderToPng(element, 520, imgHeight);
+  setCachedPng(cacheKey, png);
+  return png;
 }
 
 // ─── Streak / Personal Stats Image ──────────────────────────────
@@ -292,6 +238,10 @@ export interface StreakStats {
 }
 
 export async function generateStreakImage(stats: StreakStats): Promise<Buffer> {
+  const cacheKey = `streak:${stats.username}:${stats.currentStreak}:${stats.totalPlayed}:${stats.totalCompleted}:${stats.recentDays.map(d => `${d.dateKey}:${d.status}`).join(',')}`;
+  const cached = getCachedPng(cacheKey);
+  if (cached) return cached;
+
   const completionRate = stats.totalPlayed > 0
     ? Math.round((stats.totalCompleted / stats.totalPlayed) * 100)
     : 0;
@@ -314,7 +264,7 @@ export async function generateStreakImage(stats: StreakStats): Promise<Buffer> {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
         <span style={{ fontSize: 18, fontWeight: 700 }}>{stats.username}</span>
-        <span style={{ fontSize: 13, color: MUTED }}>· Lights Out Stats</span>
+        <span style={{ fontSize: 13, color: MUTED }}>{'\u00b7'} Lights Out Stats</span>
       </div>
 
       {/* Stats grid */}
@@ -371,9 +321,11 @@ export async function generateStreakImage(stats: StreakStats): Promise<Buffer> {
         </span>
       )}
 
-      <Footer label="Lights Out · rmhstudios.com" />
+      <Footer label="Lights Out \u00b7 rmhstudios.com" />
     </div>
   );
 
-  return renderToPng(element, 520, imgHeight);
+  const png = await renderToPng(element, 520, imgHeight);
+  setCachedPng(cacheKey, png);
+  return png;
 }

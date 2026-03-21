@@ -3,10 +3,9 @@ import { prisma } from '@/lib/prisma';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import {
     getDateSeed,
-    createSeededRng,
 } from '@/lib/lights-out/seed';
 import { getDailyShape, getShapeLabel } from '@/lib/lights-out/shapes';
-import { generatePuzzle, getOptimalMoves } from '@/lib/lights-out/lights-out';
+
 
 /**
  * Discord embed posting endpoint.
@@ -53,8 +52,6 @@ function buildEmbed(dateKey: string, guildId: string, participants: ParticipantR
     const seed = getDateSeed(date);
     const shape = getDailyShape(seed);
     const shapeLabel = getShapeLabel(shape);
-    const puzzleGrid = generatePuzzle(createSeededRng(seed), shape);
-    const optimal = getOptimalMoves(puzzleGrid, shape);
 
     const playing = participants.filter(p => p.status === 'playing');
     const completed = participants
@@ -79,13 +76,67 @@ function buildEmbed(dateKey: string, guildId: string, participants: ParticipantR
         embeds: [{
             title: `\u{1F526} Lights Out \u2014 ${dateKey}`,
             description: [
-                `**${shapeLabel}**${optimal != null ? ` \u00b7 Optimal: ${optimal} moves` : ''}`,
+                `**${shapeLabel}**`,
                 '',
                 ...lines,
             ].join('\n'),
             color: 0xf59e0b,
             image: { url: imgUrl },
             footer: { text: 'Lights Out \u00b7 Daily Puzzle' },
+            timestamp: new Date().toISOString(),
+        }],
+    };
+}
+
+interface RaceParticipant {
+    username: string;
+    userId: string;
+    avatar: string | null;
+    status: string;
+    moves: number;
+    finishedAt: number | null;
+}
+
+function buildRaceEmbed(
+    channelId: string,
+    raceResults: { roundNumber: number; raceMode: string; raceStartedAt: number | null; participants: RaceParticipant[] },
+): object {
+    const { roundNumber, raceMode, participants } = raceResults;
+
+    const sorted = [...participants]
+        .filter(p => p.status === 'solved')
+        .sort((a, b) => {
+            if (raceMode === 'moves') return a.moves - b.moves;
+            return (a.finishedAt ?? Infinity) - (b.finishedAt ?? Infinity);
+        });
+    const dnf = participants.filter(p => p.status === 'dnf');
+
+    const medals = ['\u{1F947}', '\u{1F948}', '\u{1F949}'];
+    const lines: string[] = [];
+
+    for (let i = 0; i < sorted.length; i++) {
+        const p = sorted[i];
+        const medal = i < 3 ? medals[i] : `**#${i + 1}**`;
+        lines.push(`${medal} **${p.username}** \u2014 ${p.moves} move${p.moves !== 1 ? 's' : ''}`);
+    }
+
+    for (const p of dnf) {
+        lines.push(`\u{274C} **${p.username}** \u2014 DNF`);
+    }
+
+    const imgUrl = `${SITE_URL}/api/discord/activity-image?type=race&players=${encodeURIComponent(JSON.stringify(participants))}&phase=results&round=${roundNumber}&raceMode=${raceMode}&raceStartedAt=${raceResults.raceStartedAt ?? 0}&_t=${Date.now()}`;
+
+    return {
+        embeds: [{
+            title: `\u{1F3C1} Race Results \u2014 Round ${roundNumber}`,
+            description: [
+                `**${raceMode === 'moves' ? 'Fewest Moves' : 'Timed Race'}** \u00b7 ${participants.length} racer${participants.length !== 1 ? 's' : ''}`,
+                '',
+                ...lines,
+            ].join('\n'),
+            color: 0xa855f7, // purple for race mode
+            image: { url: imgUrl },
+            footer: { text: 'Lights Out \u00b7 Race Mode' },
             timestamp: new Date().toISOString(),
         }],
     };
@@ -146,8 +197,16 @@ async function discordApi(path: string, method: string, body?: object): Promise<
     }
 }
 
+// If the cached message is older than this, reply to it instead of editing
+const EMBED_FRESHNESS_MS = 5 * 60 * 1000; // 5 minutes
+
 /**
- * Post or edit an embed in a channel.
+ * Post, edit, or reply to an embed in a channel.
+ *
+ * - If a cached message exists and is < 5 min old: EDIT it in place.
+ * - If a cached message exists but is > 5 min old: REPLY to it (thread-style).
+ * - Otherwise: POST a new standalone message.
+ *
  * Silently skips if the channel is blocked (bot lacks access).
  */
 async function postOrEditEmbed(channelId: string, guildId: string, dateKey: string, participants: ParticipantRow[]) {
@@ -161,18 +220,41 @@ async function postOrEditEmbed(channelId: string, guildId: string, dateKey: stri
     const embed = buildEmbed(dateKey, guildId, participants);
 
     if (cached) {
-        console.log(`[embed] Editing existing message ${cached.messageId} in channel ${channelId}`);
-        const result = await discordApi(
-            `/channels/${channelId}/messages/${cached.messageId}`,
-            'PATCH',
-            embed
-        );
-        if (result) {
-            cached.updatedAt = Date.now();
-            return;
+        const age = Date.now() - cached.updatedAt;
+
+        if (age < EMBED_FRESHNESS_MS) {
+            // Message is fresh — edit it
+            console.log(`[embed] Editing recent message ${cached.messageId} in channel ${channelId} (${Math.round(age / 1000)}s old)`);
+            const result = await discordApi(
+                `/channels/${channelId}/messages/${cached.messageId}`,
+                'PATCH',
+                embed
+            );
+            if (result) {
+                cached.updatedAt = Date.now();
+                return;
+            }
+            // PATCH failed — fall through to post new
+            messageCache.delete(cacheKey);
+            if (blockedChannels.has(channelId)) return;
+        } else {
+            // Message is stale — reply to it
+            console.log(`[embed] Replying to stale message ${cached.messageId} in channel ${channelId} (${Math.round(age / 1000)}s old)`);
+            const replyBody = {
+                ...embed,
+                message_reference: { message_id: cached.messageId },
+            };
+            const msg = await discordApi(`/channels/${channelId}/messages`, 'POST', replyBody);
+            if (msg?.id) {
+                console.log(`[embed] Replied with message ${msg.id} to channel ${channelId}`);
+                messageCache.set(cacheKey, { messageId: msg.id, updatedAt: Date.now() });
+                return;
+            }
+            // Reply failed (original deleted?) — clear cache, fall through to fresh POST
+            console.log(`[embed] Reply failed, posting fresh message instead`);
+            messageCache.delete(cacheKey);
+            if (blockedChannels.has(channelId)) return;
         }
-        messageCache.delete(cacheKey);
-        if (blockedChannels.has(channelId)) return;
     }
 
     console.log(`[embed] Posting new embed to channel ${channelId} (guild ${guildId}, ${participants.length} participants)`);
@@ -282,6 +364,34 @@ export const Route = createFileRoute('/api/discord/embed')({
 
                     if (!channelId) {
                         console.log('[embed] Warning: guildId present but channelId is null — will track in DB but cannot post embed');
+                    }
+
+                    // ─── Race results: post race leaderboard embed ───
+                    if (action === 'race_completed') {
+                        const { raceResults } = body;
+                        if (!raceResults || !channelId) {
+                            return Response.json({ success: true, skipped: 'no-race-data-or-channel' });
+                        }
+
+                        const roundNumber = raceResults.roundNumber ?? 0;
+                        const raceCacheKey = `${channelId}:race:${roundNumber}`;
+
+                        // Deduplicate: if we already posted for this round, skip
+                        if (messageCache.has(raceCacheKey)) {
+                            console.log(`[embed] Race round ${roundNumber} already posted, skipping`);
+                            return Response.json({ success: true, skipped: 'already-posted' });
+                        }
+
+                        const raceEmbed = buildRaceEmbed(channelId, raceResults);
+                        if (!blockedChannels.has(channelId)) {
+                            const msg = await discordApi(`/channels/${channelId}/messages`, 'POST', raceEmbed);
+                            if (msg?.id) {
+                                console.log(`[embed] Posted race results (round ${roundNumber}) as message ${msg.id}`);
+                                messageCache.set(raceCacheKey, { messageId: msg.id, updatedAt: Date.now() });
+                            }
+                        }
+
+                        return Response.json({ success: true });
                     }
 
                     const isCompleted = action === 'completed';

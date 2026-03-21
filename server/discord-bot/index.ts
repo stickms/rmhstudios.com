@@ -5,9 +5,9 @@
  * Runs alongside the socket server and web app.
  *
  * Commands:
- *   /lightsout play        — Launch the Lights Out activity
- *   /lightsout leaderboard — Show today's guild leaderboard
- *   /lightsout streak      — Show personal streak & stats
+ *   /lightsout             — Launch the Lights Out activity
+ *   /leaderboard [game]    — Show today's guild leaderboard
+ *   /streak [game] [user]  — Show personal streak & stats
  *
  * Designed for easy extension: add new command files in ./commands/
  * and register them in the commands map below.
@@ -29,6 +29,8 @@ import { disconnectPrisma } from './prisma-client';
 // ─── Command imports ─────────────────────────────────────────────
 
 import * as lightsoutCommand from './commands/lightsout';
+import * as leaderboardCommand from './commands/leaderboard';
+import * as streakCommand from './commands/streak';
 
 // ─── Types ───────────────────────────────────────────────────────
 
@@ -42,6 +44,8 @@ interface Command {
 
 const commands = new Collection<string, Command>();
 commands.set(lightsoutCommand.data.name, lightsoutCommand);
+commands.set(leaderboardCommand.data.name, leaderboardCommand);
+commands.set(streakCommand.data.name, streakCommand);
 
 // ─── Startup validation ──────────────────────────────────────────
 
@@ -71,19 +75,18 @@ async function registerCommands(): Promise<void> {
     // Use guild-specific registration in dev, global in production
     const guildId = process.env.DISCORD_DEV_GUILD_ID;
 
-    if (guildId) {
-      await rest.put(
-        Routes.applicationGuildCommands(CLIENT_ID!, guildId),
-        { body: commandData },
-      );
-      logger.info({ event: 'commands_registered', scope: 'guild', guildId });
-    } else {
-      await rest.put(
-        Routes.applicationCommands(CLIENT_ID!),
-        { body: commandData },
-      );
-      logger.info({ event: 'commands_registered', scope: 'global' });
-    }
+    const route = guildId
+      ? Routes.applicationGuildCommands(CLIENT_ID!, guildId)
+      : Routes.applicationCommands(CLIENT_ID!);
+
+    // Fetch existing commands so we can preserve the Entry Point command
+    // (type 4). Discord's bulk PUT removes commands not in the body, but
+    // the Entry Point command cannot be removed via bulk update (error 50240).
+    const existing = (await rest.get(route)) as Array<{ type?: number }>;
+    const entryPointCommands = existing.filter(cmd => cmd.type === 4);
+
+    await rest.put(route, { body: [...commandData, ...entryPointCommands] });
+    logger.info({ event: 'commands_registered', scope: guildId ? 'guild' : 'global', guildId });
   } catch (err) {
     logger.error({ event: 'command_registration_failed', error: String(err) });
     throw err;

@@ -391,6 +391,15 @@ importers:
         specifier: ^4.1.0
         version: 4.1.0(@types/node@20.19.37)(vite@8.0.0(@types/node@20.19.37)(esbuild@0.27.3)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))
 
+  cli:
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.37
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
 packages:
 
   '@anthropic-ai/sdk@0.78.0':
