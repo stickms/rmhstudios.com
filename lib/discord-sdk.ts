@@ -23,8 +23,18 @@ export interface DiscordContext {
 }
 
 /**
+ * Convert a full HTTPS URL into Discord's `mp:external/` proxy format
+ * so it can be used as a rich presence image.
+ */
+function toDiscordImageProxy(url: string): string {
+    // Discord expects: mp:external/https/domain.com/path?query
+    return url.replace(/^https:\/\//, 'mp:external/https/');
+}
+
+/**
  * Update the Discord Activity rich presence status text + image.
- * Silently fails if the SDK doesn't support it.
+ * The `state` text appears in the Game Invitation embed and user profile.
+ * The `imageUrl` appears only in the user's profile rich presence popup.
  */
 export function setActivityStatus(
     sdk: DiscordSDK,
@@ -35,15 +45,21 @@ export function setActivityStatus(
         imageUrl?: string;
     },
 ) {
+    const assets = opts?.imageUrl
+        ? { large_image: toDiscordImageProxy(opts.imageUrl), large_text: 'Lights Out' }
+        : undefined;
+
     sdk.commands.setActivity({
         activity: {
             state,
             details: opts?.details,
             type: 0,
             ...(opts?.partySize ? { party: { size: opts.partySize } } : {}),
-            ...(opts?.imageUrl ? { assets: { large_image: opts.imageUrl, large_text: 'Lights Out' } } : {}),
+            ...(assets ? { assets } : {}),
         },
-    }).catch(() => {});
+    }).catch((err) => {
+        console.warn('[Discord] setActivity failed:', err);
+    });
 }
 
 type DiscordState =

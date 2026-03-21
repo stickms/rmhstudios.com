@@ -910,7 +910,9 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
 // ─── Race Mode (Lobby-based, WebSocket) ─────────────────────────────
 
 function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => void }) {
-    const instanceId = discord.sdk.instanceId;
+    // Use channelId as lobby key so all players in the same channel share one lobby,
+    // regardless of how they launched the activity. Falls back to instanceId for DMs.
+    const instanceId = discord.channelId ?? discord.sdk.instanceId;
     const discordId = discord.user.id;
     const username = discord.user.global_name || discord.user.username;
     const [lobby, setLobby] = useState<LobbyState | null>(null);

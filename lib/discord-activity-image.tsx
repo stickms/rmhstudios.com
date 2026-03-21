@@ -369,3 +369,116 @@ export async function generateRaceImage(
     setCachedPng(cacheKey, png);
     return png;
 }
+
+// ─── Daily Leaderboard Image (for bot channel embeds) ────────────────
+
+export interface LeaderboardParticipant {
+    discordId: string;
+    username: string;
+    status: string;
+    moves: number | null;
+    ratingEmoji: string | null;
+    ratingLabel: string | null;
+}
+
+export async function generateLeaderboardImage(
+    dateKey: string,
+    shapeLabel: string,
+    optimal: number | null,
+    participants: LeaderboardParticipant[],
+    isRecap?: boolean,
+): Promise<Buffer> {
+    const cacheKey = `lb:${dateKey}:${isRecap ? 'r' : 'l'}:${participants.map(p => `${p.discordId}:${p.status}:${p.moves}`).join(',')}`;
+    const cached = getCachedPng(cacheKey);
+    if (cached) return cached;
+
+    const completed = participants
+        .filter(p => p.status === 'completed')
+        .sort((a, b) => (a.moves ?? 999) - (b.moves ?? 999));
+    const playing = participants.filter(p => p.status === 'playing');
+    const display = [...completed, ...playing].slice(0, 6);
+
+    // Pre-fetch all avatars in parallel
+    const avUrls = display.map(p => avatarUrl(p.discordId, null));
+    const avDataUris = await Promise.all(avUrls.map(fetchAvatarDataUri));
+
+    const medals = ['\u{1F947}', '\u{1F948}', '\u{1F949}'];
+    const rowHeight = 40;
+    const headerHeight = 80;
+    const footerHeight = 32;
+    const imgPadding = 48;
+    const imgHeight = Math.max(240, headerHeight + display.length * rowHeight + footerHeight + imgPadding);
+
+    const element = (
+        <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            width: '100%',
+            height: '100%',
+            backgroundColor: BG,
+            padding: '24px 32px',
+            fontFamily: 'Inter',
+            color: TEXT,
+        }}>
+            {/* Header */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 18, fontWeight: 700 }}>
+                        {isRecap ? 'Daily Recap' : 'Daily Puzzle'}
+                    </span>
+                    <span style={{ fontSize: 13, color: MUTED }}>{dateKey}</span>
+                </div>
+                <span style={{ fontSize: 13, color: MUTED }}>
+                    {shapeLabel}{optimal != null ? ` · Optimal: ${optimal} moves` : ''}
+                    {' · '}{participants.length} player{participants.length !== 1 ? 's' : ''}
+                </span>
+            </div>
+
+            {/* Participant rows */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
+                {display.map((p, i) => {
+                    const isCompleted = p.status === 'completed';
+                    const rank = isCompleted ? completed.indexOf(p) : -1;
+                    const medal = rank >= 0 && rank < 3 ? medals[rank] : (rank >= 0 ? `#${rank + 1}` : '');
+
+                    return (
+                        <div key={i} style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 10,
+                            padding: '6px 10px',
+                            borderRadius: 8,
+                            backgroundColor: SURFACE,
+                        }}>
+                            <span style={{ fontSize: 14, width: 24, textAlign: 'center' }}>
+                                {medal || '\u{1F3AE}'}
+                            </span>
+                            <Avatar src={avDataUris[i]} size={26} />
+                            <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>{p.username}</span>
+                            <span style={{
+                                fontSize: 12,
+                                color: isCompleted ? GREEN : MUTED,
+                            }}>
+                                {isCompleted
+                                    ? `${p.moves} move${p.moves !== 1 ? 's' : ''}${p.ratingLabel ? ` · ${p.ratingLabel}` : ''}`
+                                    : 'solving...'
+                                }
+                            </span>
+                        </div>
+                    );
+                })}
+                {participants.length > 6 && (
+                    <span style={{ fontSize: 11, color: MUTED, paddingLeft: 10, marginTop: 2 }}>
+                        +{participants.length - 6} more
+                    </span>
+                )}
+            </div>
+
+            <Footer label="Lights Out · rmhstudios.com" />
+        </div>
+    );
+
+    const png = await renderToPng(element, 520, imgHeight);
+    setCachedPng(cacheKey, png);
+    return png;
+}

@@ -45,7 +45,9 @@ interface ParticipantRow {
     ratingLabel: string | null;
 }
 
-function buildEmbed(dateKey: string, participants: ParticipantRow[]): object {
+const SITE_URL = process.env.SITE_URL ?? process.env.VITE_BETTER_AUTH_URL?.replace(/\/$/, '') ?? 'https://rmhstudios.com';
+
+function buildEmbed(dateKey: string, guildId: string, participants: ParticipantRow[]): object {
     const [y, m, d] = dateKey.split('-').map(Number);
     const date = new Date(y, m - 1, d);
     const seed = getDateSeed(date);
@@ -70,6 +72,9 @@ function buildEmbed(dateKey: string, participants: ParticipantRow[]): object {
         lines.push(`\u{1F3AE} ${names} ${playing.length === 1 ? 'is' : 'are'} playing...`);
     }
 
+    // Cache-bust the image so Discord re-fetches on updates
+    const imgUrl = `${SITE_URL}/api/discord/activity-image?type=leaderboard&guildId=${guildId}&dateKey=${dateKey}&_t=${Date.now()}`;
+
     return {
         embeds: [{
             title: `\u{1F526} Lights Out \u2014 ${dateKey}`,
@@ -79,6 +84,7 @@ function buildEmbed(dateKey: string, participants: ParticipantRow[]): object {
                 ...lines,
             ].join('\n'),
             color: 0xf59e0b,
+            image: { url: imgUrl },
             footer: { text: 'Lights Out \u00b7 Daily Puzzle' },
             timestamp: new Date().toISOString(),
         }],
@@ -144,14 +150,18 @@ async function discordApi(path: string, method: string, body?: object): Promise<
  * Post or edit an embed in a channel.
  * Silently skips if the channel is blocked (bot lacks access).
  */
-async function postOrEditEmbed(channelId: string, dateKey: string, participants: ParticipantRow[]) {
-    if (blockedChannels.has(channelId)) return;
+async function postOrEditEmbed(channelId: string, guildId: string, dateKey: string, participants: ParticipantRow[]) {
+    if (blockedChannels.has(channelId)) {
+        console.log(`[embed] Skipping channel ${channelId}: blocked (bot lacks access)`);
+        return;
+    }
 
     const cacheKey = `${channelId}:${dateKey}`;
     const cached = messageCache.get(cacheKey);
-    const embed = buildEmbed(dateKey, participants);
+    const embed = buildEmbed(dateKey, guildId, participants);
 
     if (cached) {
+        console.log(`[embed] Editing existing message ${cached.messageId} in channel ${channelId}`);
         const result = await discordApi(
             `/channels/${channelId}/messages/${cached.messageId}`,
             'PATCH',
@@ -162,17 +172,20 @@ async function postOrEditEmbed(channelId: string, dateKey: string, participants:
             return;
         }
         messageCache.delete(cacheKey);
-        // If channel is now blocked, don't try to create
         if (blockedChannels.has(channelId)) return;
     }
 
+    console.log(`[embed] Posting new embed to channel ${channelId} (guild ${guildId}, ${participants.length} participants)`);
     const msg = await discordApi(`/channels/${channelId}/messages`, 'POST', embed);
     if (msg?.id) {
+        console.log(`[embed] Posted message ${msg.id} to channel ${channelId}`);
         if (messageCache.size >= MAX_MSG_CACHE) {
             const oldest = messageCache.keys().next().value;
             if (oldest !== undefined) messageCache.delete(oldest);
         }
         messageCache.set(cacheKey, { messageId: msg.id, updatedAt: Date.now() });
+    } else {
+        console.log(`[embed] Failed to post to channel ${channelId} — discordApi returned null`);
     }
 }
 
@@ -257,13 +270,18 @@ export const Route = createFileRoute('/api/discord/embed')({
 
                     // Minimum required: dateKey and user ID (for any tracking)
                     if (!dateKey || !user?.id) {
+                        console.log('[embed] Skipped: missing dateKey or user');
                         return Response.json({ error: 'Missing dateKey or user' }, { status: 400 });
                     }
 
                     // No guild context (DM or user-app without guild) — nothing to track or post
                     if (!guildId) {
-                        console.log('[embed] Skipped: no guildId');
+                        console.log('[embed] Skipped: no guildId (DM context)');
                         return Response.json({ success: true, skipped: 'no-guild' });
+                    }
+
+                    if (!channelId) {
+                        console.log('[embed] Warning: guildId present but channelId is null — will track in DB but cannot post embed');
                     }
 
                     const isCompleted = action === 'completed';
@@ -336,7 +354,7 @@ export const Route = createFileRoute('/api/discord/embed')({
                                 const participants = await prisma.discordDailyParticipant.findMany({
                                     where: { guildId: g, dateKey },
                                 });
-                                postOrEditEmbed(ch.channelId, dateKey, participants).catch(() => {});
+                                postOrEditEmbed(ch.channelId, g, dateKey, participants).catch(e => console.error('[embed] postOrEditEmbed error:', e));
                             }
                         } catch (propErr) {
                             console.error('Failed to propagate completion:', propErr);
@@ -377,7 +395,7 @@ export const Route = createFileRoute('/api/discord/embed')({
                         });
 
                         // Fire-and-forget — don't let embed failure block the response
-                        postOrEditEmbed(channelId, dateKey, guildParticipants).catch(() => {});
+                        postOrEditEmbed(channelId, guildId, dateKey, guildParticipants).catch(e => console.error('[embed] postOrEditEmbed error:', e));
                     }
 
                     return Response.json({ success: true });
