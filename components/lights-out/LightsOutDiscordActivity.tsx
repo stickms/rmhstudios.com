@@ -687,6 +687,13 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
                     setRatingEmoji(data.ratingEmoji ?? '\u{1F4A1}');
                     setShowModal(true);
                     setScoreSynced(true);
+                    // Notify embed even when revisiting a completed puzzle
+                    notifyEmbed(discord, 'completed', todayKey, {
+                        moves: data.moves,
+                        optimalMoves: opt,
+                        ratingEmoji: data.ratingEmoji ?? '\u{1F4A1}',
+                        ratingLabel: data.ratingLabel ?? 'Solved!',
+                    });
                 } else if (data.gridJson) {
                     // Resume in-progress game
                     try {
