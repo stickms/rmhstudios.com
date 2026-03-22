@@ -161,7 +161,7 @@ function isSahurHour(timezone: string): boolean {
 async function checkSahurActivation() {
   // Get unique timezones from users
   const users = await prisma.user.findMany({
-    where: { doctrineTimezone: { not: null } },
+    where: { doctrineTimezone: { not: undefined } },
     select: { doctrineTimezone: true },
     distinct: ['doctrineTimezone'],
   });

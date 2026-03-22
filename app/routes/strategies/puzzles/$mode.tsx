@@ -18,7 +18,8 @@ export const Route = createFileRoute('/strategies/puzzles/$mode')({
 });
 
 function PuzzleModePage() {
-  const { mode } = Route.useParams();
+  const params = Route.useParams() as { mode: string };
+  const mode = params.mode;
 
   const { data: puzzles } = useQuery({
     queryKey: ['doctrine', 'puzzles', 'today'],
@@ -74,7 +75,7 @@ function PuzzlePlayer({ puzzle, mode }: { puzzle: { id: string; difficulty: numb
         {phase === 'playing' && selectedAnswer !== null && (
           <button
             onClick={handleSubmit}
-            className="w-full py-3 rounded-lg text-sm font-bold transition-all hover:brightness-110 active:scale-[0.98]"
+            className="w-full py-3 rounded-lg text-base md:text-sm font-bold transition-all hover:brightness-110 active:scale-[0.98] min-h-[44px]"
             style={{ background: 'var(--doctrine-accent, #F97316)', color: '#000' }}
           >
             SUBMIT
@@ -129,23 +130,23 @@ function AlibiPuzzle({ data, onAnswer }: { data: Record<string, unknown>; onAnsw
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-white/60 text-center">Who's lying? Tap the suspect with the contradicting alibi.</p>
+      <p className="text-base md:text-sm text-white/60 text-center">Who's lying? Tap the suspect with the contradicting alibi.</p>
       <div className="space-y-2">
         {suspects?.map(s => (
           <button
             key={s.name}
             onClick={() => { setSelected(s.name); onAnswer(s.name); }}
-            className={`w-full text-left p-3 rounded-lg transition-all ${
+            className={`w-full text-left p-4 md:p-3 rounded-lg transition-all min-h-[44px] ${
               selected === s.name ? 'ring-2' : 'hover:bg-white/5'
             }`}
             style={{
               background: selected === s.name ? 'var(--doctrine-accent-muted)' : 'var(--doctrine-bg-secondary)',
               border: '1px solid rgba(255,255,255,0.06)',
-              ringColor: 'var(--doctrine-accent)',
+              outlineColor: 'var(--doctrine-accent)',
             }}
           >
-            <span className="text-sm font-semibold text-white/90">{s.name}</span>
-            <p className="text-xs text-white/50 mt-0.5">"{s.claim}"</p>
+            <span className="text-base md:text-sm font-semibold text-white/90">{s.name}</span>
+            <p className="text-sm md:text-xs text-white/50 mt-0.5">"{s.claim}"</p>
           </button>
         ))}
       </div>
@@ -159,13 +160,13 @@ function OutcastPuzzle({ data, onAnswer }: { data: Record<string, unknown>; onAn
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-white/60 text-center">Which word doesn't belong?</p>
+      <p className="text-base md:text-sm text-white/60 text-center">Which word doesn't belong?</p>
       <div className="flex flex-wrap justify-center gap-2">
         {words?.map(w => (
           <button
             key={w}
             onClick={() => { setSelected(w); onAnswer(w); }}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            className={`px-4 py-3 md:py-2 rounded-lg text-base md:text-sm font-medium transition-all min-h-[44px] ${
               selected === w ? 'ring-2' : 'hover:bg-white/10'
             }`}
             style={{
@@ -187,13 +188,13 @@ function ImpostorPuzzle({ data, onAnswer }: { data: Record<string, unknown>; onA
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-white/60 text-center">Which word has the wrong definition?</p>
+      <p className="text-base md:text-sm text-white/60 text-center">Which word has the wrong definition?</p>
       <div className="space-y-2">
         {pairs?.map(p => (
           <button
             key={p.word}
             onClick={() => { setSelected(p.word); onAnswer(p.word); }}
-            className={`w-full text-left p-3 rounded-lg transition-all ${
+            className={`w-full text-left p-4 md:p-3 rounded-lg transition-all min-h-[44px] ${
               selected === p.word ? 'ring-2' : 'hover:bg-white/5'
             }`}
             style={{
@@ -201,8 +202,8 @@ function ImpostorPuzzle({ data, onAnswer }: { data: Record<string, unknown>; onA
               border: '1px solid rgba(255,255,255,0.06)',
             }}
           >
-            <span className="text-sm font-bold text-white/90">{p.word}</span>
-            <p className="text-xs text-white/50 mt-0.5">{p.definition}</p>
+            <span className="text-base md:text-sm font-bold text-white/90">{p.word}</span>
+            <p className="text-sm md:text-xs text-white/50 mt-0.5">{p.definition}</p>
           </button>
         ))}
       </div>

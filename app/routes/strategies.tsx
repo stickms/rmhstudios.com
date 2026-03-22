@@ -58,8 +58,8 @@ function StrategiesLayout() {
 
 function MobileDoctrineNav() {
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around h-14 border-t border-white/6"
-      style={{ background: 'var(--doctrine-bg-secondary, #141416)' }}>
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-white/6"
+      style={{ background: 'var(--doctrine-bg-secondary, #141416)', paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 8px)', paddingTop: '8px' }}>
       {[
         { to: '/strategies', label: '🏠' },
         { to: '/strategies/puzzles', label: '🧩' },
@@ -67,7 +67,7 @@ function MobileDoctrineNav() {
         { to: '/strategies/incidents', label: '⚠️' },
         { to: '/strategies/profile', label: '👤' },
       ].map(item => (
-        <a key={item.to} href={item.to} className="text-xl p-2">
+        <a key={item.to} href={item.to} className="text-xl min-w-[44px] min-h-[44px] flex items-center justify-center">
           {item.label}
         </a>
       ))}

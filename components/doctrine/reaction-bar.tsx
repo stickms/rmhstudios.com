@@ -47,7 +47,7 @@ export function ReactionBar({ reactions, userReaction, targetType, targetId, onR
   }, [submitting, targetType, targetId, onReact]);
 
   return (
-    <div className="flex items-center gap-1.5 flex-wrap">
+    <div className="flex items-center gap-1 md:gap-1.5 flex-wrap">
       {REACTIONS.map(r => {
         const count = reactions[r.key];
         const isSelected = userReaction === r.key;
@@ -58,16 +58,16 @@ export function ReactionBar({ reactions, userReaction, targetType, targetId, onR
             whileTap={{ scale: 0.9 }}
             onClick={() => handleReact(r.key)}
             disabled={submitting}
-            className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs transition-all ${
+            className={`inline-flex items-center gap-1 px-2.5 py-2 md:px-2 md:py-1 rounded-full text-xs transition-all min-h-[44px] md:min-h-0 ${
               isSelected
                 ? 'ring-1 ring-white/30 bg-white/10'
                 : 'bg-white/5 hover:bg-white/10'
             }`}
             title={r.label}
           >
-            <span className="text-sm">{r.emoji}</span>
+            <span className="text-base md:text-sm">{r.emoji}</span>
             {count > 0 && (
-              <span className="text-[11px] tabular-nums" style={{ color: r.color }}>
+              <span className="text-xs md:text-[11px] tabular-nums" style={{ color: r.color }}>
                 {count}
               </span>
             )}

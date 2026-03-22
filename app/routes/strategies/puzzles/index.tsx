@@ -55,10 +55,10 @@ function PuzzlesIndex() {
           const info = MODE_INFO[puzzle.mode] ?? { name: puzzle.mode, description: '', color: '#6B7280' };
 
           return (
-            <Link
+            <a
               key={puzzle.id}
-              to={`/strategies/puzzles/${puzzle.mode.toLowerCase()}`}
-              className="rounded-lg p-5 space-y-2 transition-all hover:scale-[1.01] active:scale-[0.99]"
+              href={`/strategies/puzzles/${puzzle.mode.toLowerCase()}`}
+              className="block rounded-lg p-5 space-y-2 transition-all hover:scale-[1.01] active:scale-[0.99]"
               style={{
                 background: 'var(--doctrine-bg-secondary)',
                 border: `1px solid ${info.color}20`,
@@ -82,7 +82,7 @@ function PuzzlesIndex() {
               {puzzle.isSahur && (
                 <span className="text-[10px] font-bold text-amber-400">SAHUR EXCLUSIVE</span>
               )}
-            </Link>
+            </a>
           );
         })}
       </div>

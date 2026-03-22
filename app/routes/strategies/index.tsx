@@ -66,7 +66,7 @@ function DashboardPage() {
           </div>
           <XpBar totalXp={rep.totalXp} />
           {rep.coalitionScore > 1 && (
-            <p className="text-[10px] text-white/30 font-mono">
+            <p className="text-sm md:text-xs text-white/30 font-mono">
               Coalition Multiplier: {rep.coalitionScore.toFixed(1)}x
             </p>
           )}
@@ -76,7 +76,7 @@ function DashboardPage() {
       {/* Active Incidents */}
       {activeIncidents.length > 0 && (
         <div className="space-y-2">
-          <h2 className="text-xs font-mono uppercase tracking-wider" style={{ color: 'var(--doctrine-error)' }}>
+          <h2 className="text-sm md:text-xs font-mono uppercase tracking-wider" style={{ color: 'var(--doctrine-error)' }}>
             Active Incidents
           </h2>
           {activeIncidents.map((incident: { id: string; codename: string; severity: string; title: string }) => (
@@ -92,7 +92,7 @@ function DashboardPage() {
       )}
 
       {/* Quick Actions Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
         <QuickAction to="/strategies/puzzles" icon={Puzzle} label="Puzzles" count={puzzles?.length ?? 0} countLabel="today" color="#F97316" />
         <QuickAction to="/strategies/safehouse" icon={Shield} label="Safehouse" color="#22D3EE" />
         <QuickAction to="/strategies/incidents" icon={AlertTriangle} label="Incidents" count={activeIncidents.length} countLabel="active" color="#EF4444" />
@@ -104,9 +104,9 @@ function DashboardPage() {
         <div className="rounded-lg p-4 flex items-center justify-between" style={{ background: 'var(--doctrine-bg-secondary)', border: '1px solid rgba(255,255,255,0.06)' }}>
           <div className="flex items-center gap-2">
             <Moon size={16} className="text-amber-400/40" />
-            <span className="text-xs text-white/40">Next Sahur Mode (3x XP)</span>
+            <span className="text-sm md:text-xs text-white/40">Next Sahur Mode (3x XP)</span>
           </div>
-          <span className="text-xs font-mono text-white/30">
+          <span className="text-sm md:text-xs font-mono text-white/30">
             {sahurCountdown > 0 ? `${Math.floor(sahurCountdown / 60)}h ${sahurCountdown % 60}m` : '—'}
           </span>
         </div>
@@ -114,7 +114,7 @@ function DashboardPage() {
 
       {/* Coalition Projects */}
       <div className="space-y-3">
-        <h2 className="text-xs font-mono uppercase tracking-wider" style={{ color: 'var(--doctrine-text-muted)' }}>
+        <h2 className="text-sm md:text-xs font-mono uppercase tracking-wider" style={{ color: 'var(--doctrine-text-muted)' }}>
           Coalition
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -130,7 +130,7 @@ function DashboardPage() {
 
 function QuickAction({ to, icon: Icon, label, count, countLabel, color, pulse }: {
   to: string;
-  icon: React.ElementType;
+  icon: React.ComponentType<{ size?: number; style?: React.CSSProperties; className?: string }>;
   label: string;
   count?: number;
   countLabel?: string;
@@ -138,16 +138,16 @@ function QuickAction({ to, icon: Icon, label, count, countLabel, color, pulse }:
   pulse?: boolean;
 }) {
   return (
-    <Link
-      to={to}
-      className={`rounded-lg p-4 flex flex-col items-center gap-2 text-center transition-all hover:bg-white/[0.02] ${pulse ? 'animate-pulse' : ''}`}
+    <a
+      href={to}
+      className={`rounded-lg p-3 md:p-4 flex flex-col items-center gap-2 text-center transition-all hover:bg-white/[0.02] min-h-[44px] ${pulse ? 'animate-pulse' : ''}`}
       style={{ background: 'var(--doctrine-bg-secondary)', border: '1px solid rgba(255,255,255,0.06)' }}
     >
       <Icon size={20} style={{ color }} />
-      <span className="text-xs font-medium text-white/80">{label}</span>
+      <span className="text-sm md:text-xs font-medium text-white/80">{label}</span>
       {count !== undefined && count > 0 && (
-        <span className="text-[10px] text-white/30">{count} {countLabel}</span>
+        <span className="text-xs md:text-[10px] text-white/30">{count} {countLabel}</span>
       )}
-    </Link>
+    </a>
   );
 }

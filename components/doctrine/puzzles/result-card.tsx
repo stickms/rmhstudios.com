@@ -43,7 +43,7 @@ export function ResultCard({ mode, correct, score, timeMs, attempts, difficulty,
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="w-full max-w-sm mx-auto p-6 rounded-xl space-y-4"
+      className="w-full max-w-none md:max-w-sm mx-auto p-4 md:p-6 rounded-xl space-y-4"
       style={{
         background: `linear-gradient(135deg, ${color}10, var(--doctrine-bg-secondary, #141416))`,
         border: `1px solid ${color}30`,
@@ -95,7 +95,7 @@ export function ResultCard({ mode, correct, score, timeMs, attempts, difficulty,
       {/* Share Button */}
       <button
         onClick={handleShare}
-        className="w-full py-2.5 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-all hover:brightness-110"
+        className="w-full py-3 md:py-2.5 rounded-lg text-base md:text-sm font-medium flex items-center justify-center gap-2 transition-all hover:brightness-110 min-h-[44px]"
         style={{ background: color, color: '#000' }}
       >
         <Share2 size={14} />

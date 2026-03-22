@@ -69,7 +69,7 @@ export async function awardXp(
       action,
       xpDelta,
       reason: `${action} +${xpDelta}XP`,
-      metadata: metadata ? metadata : undefined,
+      metadata: metadata ? (metadata as Record<string, string | number | boolean>) : undefined,
     },
   });
 

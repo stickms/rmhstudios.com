@@ -28,9 +28,9 @@ export function PuzzleShell({ mode, difficulty, resetsAt, children, attempts = 0
   return (
     <div className="min-h-dvh flex flex-col" style={{ background: 'var(--doctrine-bg-primary, #0A0A0B)' }}>
       {/* Minimal top bar — Tung Tung Tung: no chrome */}
-      <div className="flex items-center justify-between px-4 py-2 shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <div className="flex items-center gap-3">
-          <span className="text-xs font-mono font-bold uppercase" style={{ color }}>
+      <div className="flex items-center justify-between px-3 md:px-4 py-2.5 md:py-2 shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="flex items-center gap-2 md:gap-3">
+          <span className="text-sm md:text-xs font-mono font-bold uppercase" style={{ color }}>
             {mode}
           </span>
           <div className="flex gap-0.5">
@@ -44,14 +44,14 @@ export function PuzzleShell({ mode, difficulty, resetsAt, children, attempts = 0
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 md:gap-4">
           {sahurActive && (
-            <span className="flex items-center gap-1 text-[10px] font-bold text-amber-400 animate-pulse">
+            <span className="flex items-center gap-1 text-xs md:text-[10px] font-bold text-amber-400 animate-pulse">
               <Zap size={12} /> 3x XP
             </span>
           )}
           {attempts > 0 && (
-            <span className="text-[10px] text-white/30 font-mono">
+            <span className="text-xs md:text-[10px] text-white/30 font-mono">
               {attempts} attempt{attempts !== 1 ? 's' : ''}
             </span>
           )}
