@@ -4,7 +4,7 @@
  * Access control based on user subscription tier.
  */
 
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/prisma.server';
 import { apiCache } from '@/lib/cache';
 import { TIER_HIERARCHY, TIERS } from './constants';
 import type { TierId } from './types';

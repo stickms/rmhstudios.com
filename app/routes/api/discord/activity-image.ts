@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { generateDailyImage, generateRaceImage, generateLeaderboardImage } from '@/lib/discord-activity-image';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/prisma.server';
 import { getDateSeed } from '@/lib/lights-out/seed';
 import { getDailyShape, getShapeLabel } from '@/lib/lights-out/shapes';
 

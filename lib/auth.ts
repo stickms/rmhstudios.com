@@ -1,9 +1,10 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma.server";
 import { generateHandle } from "@/lib/handle";
 
 export const auth = betterAuth({
+    baseURL: process.env.BETTER_AUTH_URL,
     database: prismaAdapter(prisma, {
         provider: "postgresql",
     }),
@@ -12,6 +13,9 @@ export const auth = betterAuth({
         "https://www.rmhstudios.com",
         "https://staging.rmhstudios.com",
     ],
+    advanced: {
+        useSecureCookies: process.env.BETTER_AUTH_URL?.startsWith("https"),
+    },
     socialProviders: {
         discord: {
             clientId: process.env.DISCORD_CLIENT_ID!,

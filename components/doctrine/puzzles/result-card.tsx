@@ -11,6 +11,7 @@ interface ResultCardProps {
   difficulty: number;
   userXp?: number;
   date?: string;
+  isReplay?: boolean;
 }
 
 const MODE_COLORS: Record<string, string> = {
@@ -21,7 +22,7 @@ const MODE_COLORS: Record<string, string> = {
   impostor: '#F59E0B',
 };
 
-export function ResultCard({ mode, correct, score, timeMs, attempts, difficulty, userXp = 0, date }: ResultCardProps) {
+export function ResultCard({ mode, correct, score, timeMs, attempts, difficulty, userXp = 0, date, isReplay = false }: ResultCardProps) {
   const color = MODE_COLORS[mode] ?? '#F97316';
   const timeStr = (timeMs / 1000).toFixed(1);
 
@@ -52,8 +53,11 @@ export function ResultCard({ mode, correct, score, timeMs, attempts, difficulty,
       {/* Mode + Result */}
       <div className="text-center">
         <p className="text-xs font-mono uppercase tracking-widest mb-1" style={{ color }}>
-          {mode}
+          {mode}{isReplay ? ' — REPLAY' : ''}
         </p>
+        {isReplay && (
+          <p className="text-[10px] text-white/30 mb-1">+3 XP (replay)</p>
+        )}
         <p className="text-3xl font-black text-white">
           {correct ? score : 'FAILED'}
         </p>
@@ -95,7 +99,7 @@ export function ResultCard({ mode, correct, score, timeMs, attempts, difficulty,
       {/* Share Button */}
       <button
         onClick={handleShare}
-        className="w-full py-3 md:py-2.5 rounded-lg text-base md:text-sm font-medium flex items-center justify-center gap-2 transition-all hover:brightness-110 min-h-[44px]"
+        className="w-full py-3 md:py-2.5 rounded-lg text-base md:text-sm font-medium flex items-center justify-center gap-2 transition-all hover:brightness-110 min-h-11"
         style={{ background: color, color: '#000' }}
       >
         <Share2 size={14} />

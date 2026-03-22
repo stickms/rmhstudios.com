@@ -1,6 +1,6 @@
 import { getRequestHeaders } from '@tanstack/react-start/server';
 import { auth } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/prisma.server';
 import { games } from '@/lib/games';
 import { apps } from '@/lib/apps';
 import type { OfficialBuild } from './OfficialBuildCard';

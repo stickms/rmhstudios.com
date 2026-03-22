@@ -9,7 +9,7 @@ import { RightSidebar } from '@/components/feed/RightSidebar';
 import { ProfileColumn } from '@/components/feed/ProfileColumn';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { getSidebarData } from '@/lib/sidebar-data';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/prisma.server';
 import { resolveUserDisplay } from '@/lib/user-display';
 
 const fetchProfileData = createServerFn({ method: 'GET' })

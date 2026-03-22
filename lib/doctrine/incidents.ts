@@ -4,7 +4,7 @@
  * Crisis management as entertainment. Failures are content.
  */
 
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/prisma.server';
 import { apiCache } from '@/lib/cache';
 import { generateCodename } from './constants';
 import type { IncidentSeverity, IncidentStatus } from './types';

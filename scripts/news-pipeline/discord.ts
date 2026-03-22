@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { stripTrailingSlash } from "../../lib/url";
 
 export function generateToken(slug: string): string {
   const secret = process.env.NEWS_APPROVAL_SECRET ?? "";
@@ -10,7 +11,7 @@ function getWebhookUrl(): string | null {
 }
 
 function getSiteUrl(): string {
-  return (process.env.VITE_BETTER_AUTH_URL ?? "http://localhost:7005").replace(/\/$/, "");
+  return stripTrailingSlash(process.env.VITE_BETTER_AUTH_URL ?? "http://localhost:7005");
 }
 
 /** Discord embed color constants */

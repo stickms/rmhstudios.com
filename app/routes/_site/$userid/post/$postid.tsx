@@ -8,7 +8,7 @@ import { RightSidebar } from '@/components/feed/RightSidebar';
 import { PostDetail } from '@/components/feed/PostDetail';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { getSidebarData } from '@/lib/sidebar-data';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 
 const fetchPostMeta = createServerFn({ method: 'GET' })

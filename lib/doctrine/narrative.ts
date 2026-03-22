@@ -4,7 +4,7 @@
  * Feature flags as disclosures. Features are not released — they are disclosed.
  */
 
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/prisma.server';
 import { apiCache } from '@/lib/cache';
 import type { DisclosureStatus, TierId } from './types';
 import { TIER_HIERARCHY } from './constants';

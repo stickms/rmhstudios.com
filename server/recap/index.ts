@@ -16,6 +16,7 @@ import {
 } from '../../lib/lights-out/seed';
 import { getDailyShape, getShapeLabel } from '../../lib/lights-out/shapes';
 import { generatePuzzle, getOptimalMoves } from '../../lib/lights-out/lights-out';
+import { stripTrailingSlash } from '../../lib/url';
 
 const adapter = new PrismaPg({
     connectionString: process.env.DATABASE_URL!,
@@ -27,7 +28,7 @@ const prisma = new PrismaClient({ adapter });
 const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 const BOT_TOKEN = process.env.DISCORD_ACTIVITY_BOT_TOKEN;
 const APP_ID = process.env.VITE_DISCORD_ACTIVITY_CLIENT_ID ?? process.env.DISCORD_ACTIVITY_CLIENT_ID;
-const SITE_URL = process.env.SITE_URL ?? process.env.VITE_BETTER_AUTH_URL?.replace(/\/$/, '') ?? 'https://rmhstudios.com';
+const SITE_URL = stripTrailingSlash(process.env.SITE_URL ?? process.env.VITE_BETTER_AUTH_URL ?? 'https://rmhstudios.com');
 
 function log(msg: string) {
     console.log(`[${new Date().toISOString()}] [recap] ${msg}`);

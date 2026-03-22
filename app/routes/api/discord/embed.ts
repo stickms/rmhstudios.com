@@ -1,10 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import {
     getDateSeed,
 } from '@/lib/lights-out/seed';
 import { getDailyShape, getShapeLabel } from '@/lib/lights-out/shapes';
+import { stripTrailingSlash } from '@/lib/url';
 
 
 /**
@@ -44,7 +45,7 @@ interface ParticipantRow {
     ratingLabel: string | null;
 }
 
-const SITE_URL = process.env.SITE_URL ?? process.env.VITE_BETTER_AUTH_URL?.replace(/\/$/, '') ?? 'https://rmhstudios.com';
+const SITE_URL = stripTrailingSlash(process.env.SITE_URL ?? process.env.VITE_BETTER_AUTH_URL ?? 'https://rmhstudios.com');
 
 function buildEmbed(dateKey: string, guildId: string, participants: ParticipantRow[]): object {
     const [y, m, d] = dateKey.split('-').map(Number);
@@ -371,7 +372,11 @@ export const Route = createFileRoute('/api/discord/embed')({
                         console.log('[embed] Warning: guildId present but channelId is null — will track in DB but cannot post embed');
                     }
 
-                    // ─── Race results: post race leaderboard embed ───
+                    // ─── Race results: post or edit race leaderboard embed ───
+                    // In multiplayer, many rounds can be played in quick succession.
+                    // To prevent spam we always edit the original race message for
+                    // the session (ignoring the 5-min freshness limit) and deduplicate
+                    // so only the first player's request per round is processed.
                     if (action === 'race_completed') {
                         const { raceResults } = body;
                         if (!raceResults || !channelId) {
@@ -379,20 +384,52 @@ export const Route = createFileRoute('/api/discord/embed')({
                         }
 
                         const roundNumber = raceResults.roundNumber ?? 0;
-                        const raceCacheKey = `${channelId}:race:${roundNumber}`;
+                        const roundDedupKey = `${channelId}:race-round:${roundNumber}`;
 
-                        // Deduplicate: if we already posted for this round, skip
-                        if (messageCache.has(raceCacheKey)) {
+                        // Deduplicate: if we already processed this round, skip
+                        // (multiple players send race_completed for the same round)
+                        if (messageCache.has(roundDedupKey)) {
                             console.log(`[embed] Race round ${roundNumber} already posted, skipping`);
                             return Response.json({ success: true, skipped: 'already-posted' });
                         }
 
+                        // Mark this round as processed immediately to prevent races
+                        messageCache.set(roundDedupKey, { messageId: '', updatedAt: Date.now() });
+
                         const raceEmbed = buildRaceEmbed(raceResults);
                         if (!blockedChannels.has(channelId)) {
-                            const msg = await discordApi(`/channels/${channelId}/messages`, 'POST', raceEmbed);
-                            if (msg?.id) {
-                                console.log(`[embed] Posted race results (round ${roundNumber}) as message ${msg.id}`);
-                                messageCache.set(raceCacheKey, { messageId: msg.id, updatedAt: Date.now() });
+                            // Session-level cache key: one message per channel for all rounds
+                            const sessionCacheKey = `${channelId}:race`;
+                            const cached = messageCache.get(sessionCacheKey);
+
+                            if (cached?.messageId) {
+                                // Always edit the original race message (even if older than 5 min)
+                                console.log(`[embed] Editing race message ${cached.messageId} with round ${roundNumber} results`);
+                                const result = await discordApi(
+                                    `/channels/${channelId}/messages/${cached.messageId}`,
+                                    'PATCH',
+                                    raceEmbed
+                                );
+                                if (result) {
+                                    cached.updatedAt = Date.now();
+                                } else {
+                                    // Edit failed (message deleted?) — post fresh
+                                    messageCache.delete(sessionCacheKey);
+                                    if (!blockedChannels.has(channelId)) {
+                                        const msg = await discordApi(`/channels/${channelId}/messages`, 'POST', raceEmbed);
+                                        if (msg?.id) {
+                                            console.log(`[embed] Posted fresh race results (round ${roundNumber}) as message ${msg.id}`);
+                                            messageCache.set(sessionCacheKey, { messageId: msg.id, updatedAt: Date.now() });
+                                        }
+                                    }
+                                }
+                            } else {
+                                // First round in this session — post new message
+                                const msg = await discordApi(`/channels/${channelId}/messages`, 'POST', raceEmbed);
+                                if (msg?.id) {
+                                    console.log(`[embed] Posted race results (round ${roundNumber}) as message ${msg.id}`);
+                                    messageCache.set(sessionCacheKey, { messageId: msg.id, updatedAt: Date.now() });
+                                }
                             }
                         }
 

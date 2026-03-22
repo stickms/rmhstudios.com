@@ -9,23 +9,28 @@
 #
 # Build graph (BuildKit executes independent stages in PARALLEL):
 #
-#   deps ──┬──→ server-builder (esbuild, only server/ + lib/ — env-agnostic)
-#          └──→ vite-builder   (vite build, full source — env-specific)
+#   deps ──→ prisma-generate ──┬──→ server-builder (esbuild, env-agnostic)
+#                              └──→ vite-builder   (vite build, env-specific)
 #
 #   All stages feed into → runner
 #
 # Cache strategy:
 #   - pnpm store mount  → avoids re-downloading packages between builds
 #   - Vinxi/TanStack cache mounts → incremental Vite builds
+#   - deps only rebuilds on lockfile changes (not prisma schema changes)
+#   - prisma-generate is a thin layer on top of deps (~3s) — schema changes
+#     skip the expensive pnpm install and only re-run prisma generate
 #   - server-builder is decoupled from app source → only rebuilds when
 #     server/ or lib/rmh* change, NOT on app/component changes
 #   - server-builder is env-agnostic → 100% cache hit between prod/staging
-#   - node_modules copied from deps (not builder) → stable layer even when
-#     source changes, since deps only rebuilds on lockfile changes
+#   - node_modules copied from prisma-generate (not builder) → stable layer
+#     that includes @prisma/client and only rebuilds on lockfile/schema changes
 # ─────────────────────────────────────────────────────────────────────────────
 
 # ── Stage 1: Install dependencies ──────────────────────────────────────────
-# Cached as long as package.json / lockfile / prisma schema don't change.
+# Cached as long as package.json / lockfile don't change.
+# Prisma files are NOT copied here — schema changes should only trigger
+# a fast `prisma generate`, not a full 70s+ pnpm install.
 FROM node:24-alpine AS deps
 
 RUN corepack enable && corepack prepare pnpm@latest --activate
@@ -33,12 +38,21 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+
+# Skip postinstall (prisma generate) — prisma schema isn't here yet.
+# It runs in the prisma-generate stage below where the schema is available.
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store,sharing=locked \
+    pnpm install --frozen-lockfile --ignore-scripts
+
+# ── Stage 1b: Generate Prisma client ──────────────────────────────────────
+# Separated from deps so that schema changes only re-run `prisma generate`
+# (~3s) instead of invalidating the entire pnpm install layer (~70s).
+FROM deps AS prisma-generate
+
 COPY prisma ./prisma/
 COPY prisma.config.ts ./
 
-# postinstall runs `prisma generate` → creates @prisma/client
-RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store,sharing=locked \
-    pnpm install --frozen-lockfile
+RUN pnpm exec prisma generate
 
 # ── Stage 2: Server bundles (env-agnostic, decoupled from app source) ─────
 # esbuild runs in <3s and produces CJS bundles for socket/rmhbox/rmhtube.
@@ -46,7 +60,7 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store,sharin
 # app/, components/, public/, etc. do NOT invalidate this stage.
 # Because this stage has NO build args, it caches perfectly when deploying
 # staging right after production (or vice versa) with the same source code.
-FROM deps AS server-builder
+FROM prisma-generate AS server-builder
 
 COPY tsconfig.json tsconfig.server.json ./
 COPY server ./server/
@@ -59,6 +73,7 @@ COPY lib/baccarat ./lib/baccarat/
 COPY lib/roulette ./lib/roulette/
 COPY lib/lights-out ./lib/lights-out/
 COPY lib/doctrine ./lib/doctrine/
+COPY lib/url.ts ./lib/url.ts
 
 RUN pnpm exec esbuild \
     server/socket-server/index.ts \
@@ -86,7 +101,7 @@ RUN test -f dist-server/server/socket-server/index.cjs && \
 #
 # Two COPY layers: large, rarely-changing public/ first, then everything
 # else. Source-only changes don't recreate the ~350 MB public/ layer.
-FROM deps AS vite-builder
+FROM prisma-generate AS vite-builder
 
 COPY public ./public/
 COPY . .
@@ -136,11 +151,11 @@ ENV HOSTNAME=0.0.0.0
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 app
 
-# ─── node_modules from deps stage (NOT from builder) ────────────────────
-# This is the single largest layer. By sourcing it from the deps stage
-# instead of the builder, this layer is cached independently of source
-# code or env-arg changes — it only rebuilds when the lockfile changes.
-COPY --from=deps --chown=app:nodejs /app/node_modules ./node_modules
+# ─── node_modules from prisma-generate stage ────────────────────────────
+# Sourced from prisma-generate (not deps) so the generated @prisma/client
+# is included. This layer rebuilds only when lockfile OR prisma schema
+# changes — NOT on source code or env-arg changes.
+COPY --from=prisma-generate --chown=app:nodejs /app/node_modules ./node_modules
 
 # ─── Nitro server output ────────────────────────────────────────────────
 # .output/ contains the Nitro server bundle, static assets, and public files.

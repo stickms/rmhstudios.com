@@ -267,7 +267,7 @@ export async function generateRaceImage(
             );
         const dnf = players.filter(p => p.status === 'dnf');
         const ranked = [...solved, ...dnf].slice(0, 4);
-        const medals = ['🥇', '🥈', '🥉'];
+        const medalColors = ['#FFD700', '#C0C0C0', '#CD7F32']; // gold, silver, bronze
 
         element = (
             <div style={{
@@ -288,7 +288,7 @@ export async function generateRaceImage(
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
                     {ranked.map((p, i) => {
                         const isSolved = p.status === 'solved';
-                        const medal = isSolved ? (medals[solved.indexOf(p)] ?? `#${solved.indexOf(p) + 1}`) : '';
+                        const place = isSolved ? solved.indexOf(p) : -1;
                         const timeStr = isSolved && p.finishedAt && raceStartedAt
                             ? `${((p.finishedAt - raceStartedAt) / 1000).toFixed(1)}s`
                             : null;
@@ -302,7 +302,28 @@ export async function generateRaceImage(
                                 borderRadius: 8,
                                 backgroundColor: SURFACE,
                             }}>
-                                <span style={{ fontSize: 16, width: 24, textAlign: 'center' }}>{medal || '—'}</span>
+                                {isSolved ? (
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        width: 24,
+                                        height: 24,
+                                        borderRadius: '50%',
+                                        backgroundColor: place < 3 ? medalColors[place] : SURFACE,
+                                        border: place >= 3 ? `2px solid ${MUTED}` : 'none',
+                                    }}>
+                                        <span style={{
+                                            fontSize: 12,
+                                            fontWeight: 700,
+                                            color: place < 3 ? '#000' : MUTED,
+                                        }}>
+                                            {place + 1}
+                                        </span>
+                                    </div>
+                                ) : (
+                                    <span style={{ fontSize: 14, width: 24, textAlign: 'center', color: MUTED }}>—</span>
+                                )}
                                 <Avatar src={getAv(p.userId, p.avatar)} size={28} />
                                 <span style={{ fontSize: 14, fontWeight: 600, flex: 1 }}>{p.username}</span>
                                 <span style={{ fontSize: 13, color: isSolved ? GREEN : '#ef4444', fontFamily: 'Inter' }}>

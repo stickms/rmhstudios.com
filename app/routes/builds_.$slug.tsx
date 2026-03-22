@@ -13,6 +13,7 @@ import { BuildDetail } from '@/components/user-builds';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { games } from '@/lib/games';
 import { apps } from '@/lib/apps';
+import { stripTrailingSlash } from '@/lib/url';
 
 const allOfficial = [...games, ...apps];
 
@@ -26,7 +27,7 @@ const fetchBuild = createServerFn({ method: 'GET' })
     }
 
     // 2. Fall back to user-submitted build from the DB
-    const baseUrl = import.meta.env.VITE_BETTER_AUTH_URL || 'http://localhost:3000';
+    const baseUrl = stripTrailingSlash(import.meta.env.VITE_BETTER_AUTH_URL || 'http://localhost:3000');
     const res = await fetch(`${baseUrl}/api/user-builds/${slug}`, { cache: 'no-store' });
     if (res.ok) {
       const data = await res.json();

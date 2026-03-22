@@ -6,7 +6,7 @@ import { createFileRoute } from '@tanstack/react-router';
  * to persist match results and update co-op profiles.
  */
 
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/prisma.server';
 
 // Server-to-server auth via shared secret
 const ALTAIR_SERVER_SECRET = process.env.ALTAIR_SERVER_SECRET;

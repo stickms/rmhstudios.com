@@ -7,6 +7,7 @@
 'use client';
 
 import { io, Socket } from 'socket.io-client';
+import { ensureTrailingSlash } from '@/lib/url';
 import { authClient } from '@/lib/auth-client';
 import { useRmhTypeStore } from './store';
 import { S2C } from './events';
@@ -42,7 +43,7 @@ export async function connectToRmhType(roomCode?: string): Promise<Socket> {
     throw new Error('Not authenticated');
   }
 
-  const serverUrl = import.meta.env.VITE_SOCKET_URL;
+  const serverUrl = ensureTrailingSlash(import.meta.env.VITE_SOCKET_URL);
 
   socket = io(serverUrl, {
     path: '/socket/',

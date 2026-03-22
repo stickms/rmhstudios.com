@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma.server";
 import { readFile, stat } from "fs/promises";
 import { createReadStream } from "fs";
 import { resolvePathUnder } from "@/lib/slice-it/upload-validation";

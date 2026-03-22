@@ -8,7 +8,7 @@
  */
 
 import "dotenv/config";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma.server";
 
 import { pickRandomCategories, ARTICLES_PER_RUN, STAGING_MAX_AGE_HOURS } from "./config";
 import { fetchTopStory } from "./fetcher";

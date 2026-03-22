@@ -2,7 +2,7 @@
  * Authentication helpers for rmhcode CLI token validation
  */
 
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/prisma.server';
 
 /**
  * Validate an rmhcode CLI token and return the user

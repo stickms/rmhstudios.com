@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma.server";
 import { auth } from "@/lib/auth";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 

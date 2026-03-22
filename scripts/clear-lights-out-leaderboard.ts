@@ -2,7 +2,7 @@
  * Clears all Lights Out leaderboard entries.
  * Run: npx tsx scripts/clear-lights-out-leaderboard.ts
  */
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/prisma.server';
 
 async function main() {
     const result = await prisma.dailyPuzzleScore.deleteMany({ where: { gameMode: 'lights-out' } });

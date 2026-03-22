@@ -6,7 +6,7 @@ import { createFileRoute } from '@tanstack/react-router';
 
 import { createHash } from 'crypto';
 import { auth } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
 type RouteParams = { params: Promise<{ id: string }> };

@@ -17,7 +17,7 @@ import { createFileRoute } from '@tanstack/react-router';
  * Reference: docs/rmhbox/implementation/phase-4.md §3.1
  */
 
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { auth } from '@/lib/auth';
 import { resolveUserDisplay } from '@/lib/user-display';
