@@ -13,6 +13,9 @@ export const auth = betterAuth({
         "https://www.rmhstudios.com",
         "https://staging.rmhstudios.com",
     ],
+    advanced: {
+        useSecureCookies: process.env.BETTER_AUTH_URL?.startsWith("https"),
+    },
     socialProviders: {
         discord: {
             clientId: process.env.DISCORD_CLIENT_ID!,
