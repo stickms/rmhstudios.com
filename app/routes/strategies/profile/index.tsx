@@ -37,7 +37,7 @@ function ProfilePage() {
       ) : rep && (
         <>
           {/* Rank + XP */}
-          <div className="rounded-xl p-5 space-y-4" style={{ background: 'var(--doctrine-bg-secondary)', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="rounded-xl p-4 md:p-5 space-y-4" style={{ background: 'var(--doctrine-bg-secondary)', border: '1px solid rgba(255,255,255,0.06)' }}>
             <div className="flex items-center justify-between">
               <RankBadge xp={rep.totalXp} size="lg" />
               <StreakDisplay streak={rep.currentStreak} longestStreak={rep.longestStreak} />
@@ -53,14 +53,14 @@ function ProfilePage() {
           </div>
 
           {/* Activity Heatmap */}
-          <div className="rounded-lg p-4 space-y-3" style={{ background: 'var(--doctrine-bg-secondary)', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <h3 className="text-xs font-mono uppercase tracking-wider text-white/40">Activity</h3>
+          <div className="rounded-lg p-4 space-y-3 overflow-x-auto" style={{ background: 'var(--doctrine-bg-secondary)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <h3 className="text-sm md:text-xs font-mono uppercase tracking-wider text-white/40">Activity</h3>
             <ActivityHeatmap data={{}} weeks={16} />
           </div>
 
           {/* Links */}
           <div className="flex gap-3">
-            <Link to="/strategies/profile/reputation" className="text-xs text-white/30 hover:text-white/50 transition-colors">
+            <Link to="/strategies/profile/reputation" className="text-sm md:text-xs text-white/30 hover:text-white/50 transition-colors min-h-[44px] md:min-h-0 flex items-center">
               Full XP Breakdown →
             </Link>
           </div>

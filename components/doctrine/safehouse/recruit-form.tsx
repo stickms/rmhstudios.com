@@ -53,13 +53,13 @@ export function RecruitForm() {
           <code className="flex-1 text-xs font-mono text-white/60 bg-white/5 p-2 rounded truncate">
             {link}
           </code>
-          <button onClick={copyLink} className="p-2 rounded hover:bg-white/10 transition-colors">
+          <button onClick={copyLink} className="p-3 md:p-2 rounded hover:bg-white/10 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center">
             {copied ? <Check size={16} className="text-green-400" /> : <Copy size={16} className="text-white/40" />}
           </button>
         </div>
         <button
           onClick={() => { setCode(null); setMessage(''); }}
-          className="text-xs text-white/40 hover:text-white/60 transition-colors"
+          className="text-sm md:text-xs text-white/40 hover:text-white/60 transition-colors min-h-[44px] md:min-h-0 flex items-center"
         >
           Generate another
         </button>
@@ -77,19 +77,19 @@ export function RecruitForm() {
         value={message}
         onChange={e => setMessage(e.target.value)}
         placeholder="Write a personal recruitment message..."
-        className="w-full h-24 text-sm bg-white/5 border border-white/10 rounded-lg p-3 text-white/80 placeholder:text-white/20 resize-none focus:outline-none focus:border-white/20"
+        className="w-full h-28 md:h-24 text-base md:text-sm bg-white/5 border border-white/10 rounded-lg p-3 text-white/80 placeholder:text-white/20 resize-none focus:outline-none focus:border-white/20"
         maxLength={500}
       />
       <input
         value={skills}
         onChange={e => setSkills(e.target.value)}
         placeholder="Target skills (comma-separated): frontend, design, music"
-        className="w-full text-sm bg-white/5 border border-white/10 rounded-lg p-2.5 text-white/80 placeholder:text-white/20 focus:outline-none focus:border-white/20"
+        className="w-full text-base md:text-sm bg-white/5 border border-white/10 rounded-lg p-3 md:p-2.5 text-white/80 placeholder:text-white/20 focus:outline-none focus:border-white/20 min-h-[44px]"
       />
       <button
         onClick={handleGenerate}
         disabled={!message.trim() || loading}
-        className="w-full py-2 text-sm font-medium rounded-lg transition-all disabled:opacity-40"
+        className="w-full py-3 md:py-2 text-base md:text-sm font-medium rounded-lg transition-all disabled:opacity-40 min-h-[44px]"
         style={{ background: 'var(--doctrine-accent, #F97316)', color: '#000' }}
       >
         {loading ? 'Generating...' : 'Generate Recruitment Code'}
