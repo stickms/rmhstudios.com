@@ -35,14 +35,14 @@ export function ContentCard({ id, type, title, body, minTier, publishedAt, react
       {/* Header */}
       <div className="flex items-center gap-2 flex-wrap">
         <span
-          className="text-[10px] font-mono font-bold uppercase px-1.5 py-0.5 rounded"
+          className="text-xs md:text-[10px] font-mono font-bold uppercase px-1.5 py-0.5 rounded"
           style={{ color: typeInfo.color, backgroundColor: `${typeInfo.color}15` }}
         >
           {typeInfo.label}
         </span>
         {minTier !== 'PUBLIC' && (
           <span
-            className="text-[10px] font-mono px-1.5 py-0.5 rounded"
+            className="text-xs md:text-[10px] font-mono px-1.5 py-0.5 rounded"
             style={{ color: tier?.color ?? '#6B7280', backgroundColor: `${tier?.color ?? '#6B7280'}15` }}
           >
             {tier?.name ?? minTier}
@@ -50,7 +50,7 @@ export function ContentCard({ id, type, title, body, minTier, publishedAt, react
         )}
         <DivisivenessBadge reactions={reactions} />
         {publishedAt && (
-          <span className="ml-auto text-[10px] text-white/30">
+          <span className="ml-auto text-xs md:text-[10px] text-white/30">
             {new Date(publishedAt).toLocaleDateString()}
           </span>
         )}

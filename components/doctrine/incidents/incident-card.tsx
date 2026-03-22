@@ -43,26 +43,26 @@ export function IncidentCard({ id, codename, severity, title, narrative, status,
       }}
     >
       {/* Header */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-[10px] font-mono" style={{ color: sevColor }}>{codename}</span>
+      <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
+        <span className="text-xs md:text-[10px] font-mono" style={{ color: sevColor }}>{codename}</span>
         <span
-          className="text-[10px] font-mono uppercase px-1 rounded"
+          className="text-xs md:text-[10px] font-mono uppercase px-1.5 md:px-1 py-0.5 rounded"
           style={{ color: sevColor, background: `${sevColor}15` }}
         >
           {severity}
         </span>
         <span
-          className="text-[10px] font-mono uppercase px-1 rounded"
+          className="text-xs md:text-[10px] font-mono uppercase px-1.5 md:px-1 py-0.5 rounded"
           style={{ color: statusInfo.color, background: `${statusInfo.color}15` }}
         >
           {statusInfo.label}
         </span>
         <DivisivenessBadge reactions={reactions} />
-        <div className="ml-auto flex items-center gap-2 text-white/30">
-          <span className="flex items-center gap-1 text-[10px]">
+        <div className="basis-full md:basis-auto md:ml-auto flex items-center gap-2 text-white/30">
+          <span className="flex items-center gap-1 text-xs md:text-[10px]">
             <MessageSquare size={10} /> {reportCount}
           </span>
-          <span className="flex items-center gap-1 text-[10px]">
+          <span className="flex items-center gap-1 text-xs md:text-[10px]">
             <Clock size={10} /> {new Date(createdAt).toLocaleDateString()}
           </span>
         </div>

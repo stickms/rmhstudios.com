@@ -63,25 +63,25 @@ export function ResultCard({ mode, correct, score, timeMs, attempts, difficulty,
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2 md:gap-3">
         <div className="text-center">
           <Clock size={14} className="mx-auto text-white/30 mb-1" />
-          <p className="text-sm font-mono text-white/80">{timeStr}s</p>
-          <p className="text-[10px] text-white/30">time</p>
+          <p className="text-base md:text-sm font-mono text-white/80">{timeStr}s</p>
+          <p className="text-xs md:text-[10px] text-white/30">time</p>
         </div>
         <div className="text-center">
           <Target size={14} className="mx-auto text-white/30 mb-1" />
-          <p className="text-sm font-mono text-white/80">{attempts}</p>
-          <p className="text-[10px] text-white/30">attempts</p>
+          <p className="text-base md:text-sm font-mono text-white/80">{attempts}</p>
+          <p className="text-xs md:text-[10px] text-white/30">attempts</p>
         </div>
         <div className="text-center">
           <Trophy size={14} className="mx-auto text-white/30 mb-1" />
           <div className="flex justify-center">
             {'★'.repeat(difficulty).split('').map((_, i) => (
-              <span key={i} className="text-xs" style={{ color }}>★</span>
+              <span key={i} className="text-sm md:text-xs" style={{ color }}>★</span>
             ))}
           </div>
-          <p className="text-[10px] text-white/30">difficulty</p>
+          <p className="text-xs md:text-[10px] text-white/30">difficulty</p>
         </div>
       </div>
 
