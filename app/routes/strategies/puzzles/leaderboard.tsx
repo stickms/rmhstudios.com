@@ -64,14 +64,14 @@ function LeaderboardPage() {
             <tbody>
               {data?.map?.((entry: { rank: number; user: { name: string; handle: string }; score: number; timeMs: number }, i: number) => (
                 <tr key={i} className="border-t border-white/[0.04] hover:bg-white/[0.02]">
-                  <td className="px-4 py-2 font-mono text-white/40">{entry.rank}</td>
-                  <td className="px-4 py-2 text-white/80">
+                  <td className="px-2.5 md:px-4 py-2.5 md:py-2 font-mono text-white/40">{entry.rank}</td>
+                  <td className="px-2.5 md:px-4 py-2.5 md:py-2 text-white/80">
                     {entry.user?.name ?? entry.user?.handle ?? 'Anonymous'}
                   </td>
-                  <td className="px-4 py-2 text-right font-mono" style={{ color: 'var(--doctrine-accent)' }}>
+                  <td className="px-2.5 md:px-4 py-2.5 md:py-2 text-right font-mono" style={{ color: 'var(--doctrine-accent)' }}>
                     {entry.score}
                   </td>
-                  <td className="px-4 py-2 text-right font-mono text-white/40">
+                  <td className="px-2.5 md:px-4 py-2.5 md:py-2 text-right font-mono text-white/40">
                     {(entry.timeMs / 1000).toFixed(1)}s
                   </td>
                 </tr>
