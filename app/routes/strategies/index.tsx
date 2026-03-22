@@ -121,7 +121,6 @@ function DashboardPage() {
           <ProjectCard name="Daily Puzzles" description="Alibi, Spectrum, Outcast, Chainlink, Impostor" status="active" userActive={true} url="/strategies/puzzles" />
           <ProjectCard name="Safehouse" description="Insider content, dev logs, disclosures" status="active" userActive={false} url="/strategies/safehouse" />
           <ProjectCard name="Nightfall Onslaught" description="Tower defense action game" status="beta" userActive={false} />
-          <ProjectCard name="Stickbot.net" description="Creative tools and utilities" status="coming-soon" userActive={false} />
         </div>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import { type ReactNode } from 'react';
-import { Clock, Users, Zap } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
+import { ArrowLeft, Zap, RotateCcw } from 'lucide-react';
 import { CountdownTimer } from '../countdown-timer';
 import { useDoctrineStore } from '@/stores/doctrineStore';
 
@@ -11,6 +12,7 @@ interface PuzzleShellProps {
   onSubmit?: () => void;
   attempts?: number;
   phase?: string;
+  isReplay?: boolean;
 }
 
 const MODE_COLORS: Record<string, string> = {
@@ -21,18 +23,26 @@ const MODE_COLORS: Record<string, string> = {
   impostor: '#F59E0B',
 };
 
-export function PuzzleShell({ mode, difficulty, resetsAt, children, attempts = 0, phase }: PuzzleShellProps) {
+export function PuzzleShell({ mode, difficulty, resetsAt, children, attempts = 0, phase, isReplay = false }: PuzzleShellProps) {
   const sahurActive = useDoctrineStore(s => s.sahurActive);
   const color = MODE_COLORS[mode] ?? 'var(--doctrine-accent, #F97316)';
 
   return (
     <div className="min-h-dvh flex flex-col" style={{ background: 'var(--doctrine-bg-primary, #0A0A0B)' }}>
-      {/* Minimal top bar — Tung Tung Tung: no chrome */}
+      {/* Minimal top bar */}
       <div className="flex items-center justify-between px-3 md:px-4 py-2.5 md:py-2 shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div className="flex items-center gap-2 md:gap-3">
+          <Link to="/strategies/puzzles" className="text-white/30 hover:text-white/60 transition-colors p-1 -ml-1">
+            <ArrowLeft size={16} />
+          </Link>
           <span className="text-sm md:text-xs font-mono font-bold uppercase" style={{ color }}>
             {mode}
           </span>
+          {isReplay && (
+            <span className="flex items-center gap-1 text-[10px] font-mono text-white/30 bg-white/5 px-1.5 py-0.5 rounded">
+              <RotateCcw size={10} /> REPLAY
+            </span>
+          )}
           <div className="flex gap-0.5">
             {Array.from({ length: 5 }).map((_, i) => (
               <div

@@ -110,6 +110,7 @@ model User {
   doctrineRecruits      User[]                        @relation("DoctrineRecruitment")
   doctrineReputation          DoctrineReputation?
   doctrinePuzzleSubmissions   DoctrinePuzzleSubmission[]
+  doctrinePuzzleReplays       DoctrinePuzzleReplay[]
   doctrineSafehouseAccessLogs DoctrineAccessLog[]
   doctrineIncidentReports     DoctrineIncidentReport[]
   doctrineReactions           DoctrineReaction[]
@@ -1703,6 +1704,25 @@ model DoctrinePuzzleSubmission {
   @@index([puzzleId, score(sort: Desc)])
   @@index([userId, createdAt(sort: Desc)])
   @@map("doctrine_puzzle_submission")
+}
+
+model DoctrinePuzzleReplay {
+  id         String             @id @default(cuid())
+  userId     String
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mode       DoctrinePuzzleMode
+  seed       Int
+  data       Json
+  difficulty Int                @db.SmallInt
+  answer     Json?
+  timeMs     Int?
+  attempts   Int?
+  correct    Boolean?
+  score      Int?
+  createdAt  DateTime           @default(now())
+
+  @@index([userId, mode, createdAt(sort: Desc)])
+  @@map("doctrine_puzzle_replay")
 }
 
 // ─── SAFEHOUSE ──────────────────────────────────────────────────────────────

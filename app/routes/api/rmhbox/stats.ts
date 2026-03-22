@@ -13,7 +13,7 @@ import { createFileRoute } from '@tanstack/react-router';
  * Reference: docs/rmhbox/implementation/phase-4.md §3.2
  */
 
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
 export const Route = createFileRoute('/api/rmhbox/stats')({

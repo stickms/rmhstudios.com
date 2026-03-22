@@ -12,7 +12,7 @@
 import "dotenv/config";
 import { execSync } from "child_process";
 import matter from "gray-matter";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma.server";
 
 // The commit immediately before MDX files were deleted
 const GIT_REF = "c88a979^";

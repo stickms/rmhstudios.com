@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma.server";
 import type { NewsArticle as PrismaNewsArticle } from "@prisma/client";
 
 export type NewsArticle = PrismaNewsArticle;

@@ -1,8 +1,74 @@
-import { createLogger, defineConfig } from "vite";
+import { readFileSync } from "node:fs";
+import { createLogger, defineConfig, type Plugin } from "vite";
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import react from "@vitejs/plugin-react";
 import { nitro } from "nitro/vite";
+
+/**
+ * Vite plugin that replaces *.server.{ts,tsx,js,jsx} imports with empty
+ * stub modules on the client side. It reads the original file to discover
+ * its export names and generates matching `export const x = undefined`
+ * declarations so that named imports resolve without a browser ESM error,
+ * while the heavy Node-only dependency tree (pg, Buffer, etc.) is never loaded.
+ */
+function stubServerFiles(): Plugin {
+  const SERVER_RE = /\.server\.[jt]sx?$/;
+  const STUB_PREFIX = "\0server-stub:";
+
+  function extractExports(source: string) {
+    const names: string[] = [];
+    let hasDefault = false;
+    // export const/let/var/function/class/async function NAME
+    for (const m of source.matchAll(
+      /export\s+(?:const|let|var|function\*?|class|async\s+function\*?)\s+(\w+)/g,
+    )) {
+      names.push(m[1]);
+    }
+    // export { a, b as c }
+    for (const m of source.matchAll(/export\s*\{([^}]+)\}/g)) {
+      // skip re-exports that reference other .server files (already stubbed)
+      for (const token of m[1].split(",")) {
+        const alias = token.trim().split(/\s+as\s+/).pop()?.trim();
+        if (alias && alias !== "default") names.push(alias);
+        if (alias === "default") hasDefault = true;
+      }
+    }
+    if (/export\s+default\b/.test(source)) hasDefault = true;
+    return { names: [...new Set(names)], hasDefault };
+  }
+
+  return {
+    name: "stub-server-files",
+    enforce: "pre",
+    async resolveId(source, importer, options) {
+      if (options?.ssr) return null;
+
+      // Let Vite resolve the source first so we can check the real file path
+      const resolved = await this.resolve(source, importer, {
+        ...options,
+        skipSelf: true,
+      });
+      if (resolved && SERVER_RE.test(resolved.id)) {
+        return STUB_PREFIX + resolved.id;
+      }
+      return null;
+    },
+    load(id) {
+      if (!id.startsWith(STUB_PREFIX)) return null;
+      const realPath = id.slice(STUB_PREFIX.length);
+      try {
+        const source = readFileSync(realPath, "utf-8");
+        const { names, hasDefault } = extractExports(source);
+        const lines = names.map((n) => `export const ${n} = undefined;`);
+        if (hasDefault) lines.push("export default undefined;");
+        return lines.join("\n") || "export default undefined;";
+      } catch {
+        return "export default undefined;";
+      }
+    },
+  };
+}
 
 const logger = createLogger();
 const originalWarn = logger.warn.bind(logger);
@@ -131,6 +197,7 @@ export default defineConfig({
     port: 7005,
   },
   plugins: [
+    stubServerFiles(),
     tailwindcss(),
     tanstackStart({
       srcDirectory: "app",

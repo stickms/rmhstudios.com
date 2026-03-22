@@ -101,7 +101,7 @@ const client = new Client({
 
 // ─── Event handlers ──────────────────────────────────────────────
 
-client.once('ready', (c) => {
+client.once('clientReady', (c) => {
   logger.info({
     event: 'bot_ready',
     user: c.user.tag,

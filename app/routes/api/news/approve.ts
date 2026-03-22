@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import crypto from "crypto";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma.server";
 import { updateDiscordMessage } from "@/scripts/news-pipeline/discord";
 
 function verifyToken(slug: string, token: string): boolean {

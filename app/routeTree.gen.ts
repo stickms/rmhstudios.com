@@ -243,6 +243,7 @@ import { Route as ApiDoctrineRecruitmentRedeemRouteImport } from './routes/api/d
 import { Route as ApiDoctrineRecruitmentCreateRouteImport } from './routes/api/doctrine/recruitment/create'
 import { Route as ApiDoctrinePuzzlesTodayRouteImport } from './routes/api/doctrine/puzzles/today'
 import { Route as ApiDoctrinePuzzlesSubmitRouteImport } from './routes/api/doctrine/puzzles/submit'
+import { Route as ApiDoctrinePuzzlesReplayRouteImport } from './routes/api/doctrine/puzzles/replay'
 import { Route as ApiDoctrinePuzzlesLeaderboardRouteImport } from './routes/api/doctrine/puzzles/leaderboard'
 import { Route as ApiDoctrineIncidentsIdRouteImport } from './routes/api/doctrine/incidents/$id'
 import { Route as ApiDoctrineAdminTiersRouteImport } from './routes/api/doctrine/admin/tiers'
@@ -1464,6 +1465,12 @@ const ApiDoctrinePuzzlesSubmitRoute =
     path: '/api/doctrine/puzzles/submit',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiDoctrinePuzzlesReplayRoute =
+  ApiDoctrinePuzzlesReplayRouteImport.update({
+    id: '/api/doctrine/puzzles/replay',
+    path: '/api/doctrine/puzzles/replay',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiDoctrinePuzzlesLeaderboardRoute =
   ApiDoctrinePuzzlesLeaderboardRouteImport.update({
     id: '/api/doctrine/puzzles/leaderboard',
@@ -1786,6 +1793,7 @@ export interface FileRoutesByFullPath {
   '/api/doctrine/admin/tiers': typeof ApiDoctrineAdminTiersRoute
   '/api/doctrine/incidents/$id': typeof ApiDoctrineIncidentsIdRoute
   '/api/doctrine/puzzles/leaderboard': typeof ApiDoctrinePuzzlesLeaderboardRoute
+  '/api/doctrine/puzzles/replay': typeof ApiDoctrinePuzzlesReplayRoute
   '/api/doctrine/puzzles/submit': typeof ApiDoctrinePuzzlesSubmitRoute
   '/api/doctrine/puzzles/today': typeof ApiDoctrinePuzzlesTodayRoute
   '/api/doctrine/recruitment/create': typeof ApiDoctrineRecruitmentCreateRoute
@@ -2016,6 +2024,7 @@ export interface FileRoutesByTo {
   '/api/doctrine/admin/tiers': typeof ApiDoctrineAdminTiersRoute
   '/api/doctrine/incidents/$id': typeof ApiDoctrineIncidentsIdRoute
   '/api/doctrine/puzzles/leaderboard': typeof ApiDoctrinePuzzlesLeaderboardRoute
+  '/api/doctrine/puzzles/replay': typeof ApiDoctrinePuzzlesReplayRoute
   '/api/doctrine/puzzles/submit': typeof ApiDoctrinePuzzlesSubmitRoute
   '/api/doctrine/puzzles/today': typeof ApiDoctrinePuzzlesTodayRoute
   '/api/doctrine/recruitment/create': typeof ApiDoctrineRecruitmentCreateRoute
@@ -2274,6 +2283,7 @@ export interface FileRoutesById {
   '/api/doctrine/admin/tiers': typeof ApiDoctrineAdminTiersRoute
   '/api/doctrine/incidents/$id': typeof ApiDoctrineIncidentsIdRoute
   '/api/doctrine/puzzles/leaderboard': typeof ApiDoctrinePuzzlesLeaderboardRoute
+  '/api/doctrine/puzzles/replay': typeof ApiDoctrinePuzzlesReplayRoute
   '/api/doctrine/puzzles/submit': typeof ApiDoctrinePuzzlesSubmitRoute
   '/api/doctrine/puzzles/today': typeof ApiDoctrinePuzzlesTodayRoute
   '/api/doctrine/recruitment/create': typeof ApiDoctrineRecruitmentCreateRoute
@@ -2532,6 +2542,7 @@ export interface FileRouteTypes {
     | '/api/doctrine/admin/tiers'
     | '/api/doctrine/incidents/$id'
     | '/api/doctrine/puzzles/leaderboard'
+    | '/api/doctrine/puzzles/replay'
     | '/api/doctrine/puzzles/submit'
     | '/api/doctrine/puzzles/today'
     | '/api/doctrine/recruitment/create'
@@ -2762,6 +2773,7 @@ export interface FileRouteTypes {
     | '/api/doctrine/admin/tiers'
     | '/api/doctrine/incidents/$id'
     | '/api/doctrine/puzzles/leaderboard'
+    | '/api/doctrine/puzzles/replay'
     | '/api/doctrine/puzzles/submit'
     | '/api/doctrine/puzzles/today'
     | '/api/doctrine/recruitment/create'
@@ -3019,6 +3031,7 @@ export interface FileRouteTypes {
     | '/api/doctrine/admin/tiers'
     | '/api/doctrine/incidents/$id'
     | '/api/doctrine/puzzles/leaderboard'
+    | '/api/doctrine/puzzles/replay'
     | '/api/doctrine/puzzles/submit'
     | '/api/doctrine/puzzles/today'
     | '/api/doctrine/recruitment/create'
@@ -3172,6 +3185,7 @@ export interface RootRouteChildren {
   ApiDoctrineAdminTiersRoute: typeof ApiDoctrineAdminTiersRoute
   ApiDoctrineIncidentsIdRoute: typeof ApiDoctrineIncidentsIdRoute
   ApiDoctrinePuzzlesLeaderboardRoute: typeof ApiDoctrinePuzzlesLeaderboardRoute
+  ApiDoctrinePuzzlesReplayRoute: typeof ApiDoctrinePuzzlesReplayRoute
   ApiDoctrinePuzzlesSubmitRoute: typeof ApiDoctrinePuzzlesSubmitRoute
   ApiDoctrinePuzzlesTodayRoute: typeof ApiDoctrinePuzzlesTodayRoute
   ApiDoctrineRecruitmentCreateRoute: typeof ApiDoctrineRecruitmentCreateRoute
@@ -4833,6 +4847,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiDoctrinePuzzlesSubmitRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/doctrine/puzzles/replay': {
+      id: '/api/doctrine/puzzles/replay'
+      path: '/api/doctrine/puzzles/replay'
+      fullPath: '/api/doctrine/puzzles/replay'
+      preLoaderRoute: typeof ApiDoctrinePuzzlesReplayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/doctrine/puzzles/leaderboard': {
       id: '/api/doctrine/puzzles/leaderboard'
       path: '/api/doctrine/puzzles/leaderboard'
@@ -5762,6 +5783,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDoctrineAdminTiersRoute: ApiDoctrineAdminTiersRoute,
   ApiDoctrineIncidentsIdRoute: ApiDoctrineIncidentsIdRoute,
   ApiDoctrinePuzzlesLeaderboardRoute: ApiDoctrinePuzzlesLeaderboardRoute,
+  ApiDoctrinePuzzlesReplayRoute: ApiDoctrinePuzzlesReplayRoute,
   ApiDoctrinePuzzlesSubmitRoute: ApiDoctrinePuzzlesSubmitRoute,
   ApiDoctrinePuzzlesTodayRoute: ApiDoctrinePuzzlesTodayRoute,
   ApiDoctrineRecruitmentCreateRoute: ApiDoctrineRecruitmentCreateRoute,

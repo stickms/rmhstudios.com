@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/prisma.server';
 import { resolveUserDisplay } from '@/lib/user-display';
 import { games } from './games';
 import { apps } from './apps';

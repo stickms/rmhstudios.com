@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/prisma.server';
 import { resolveUserDisplay } from '@/lib/user-display';
 
 export const Route = createFileRoute('/api/games/synapse-storm/leaderboard')({

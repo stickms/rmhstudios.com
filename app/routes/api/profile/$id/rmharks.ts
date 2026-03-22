@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma.server";
 import type { FeedItem, FeedPoll } from "@/lib/feed-types";
 import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 

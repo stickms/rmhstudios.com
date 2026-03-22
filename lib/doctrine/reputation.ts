@@ -4,7 +4,7 @@
  * XP calculation, rank determination, streak tracking, and decay logic.
  */
 
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/prisma.server';
 import { apiCache } from '@/lib/cache';
 import { RANKS, WEEKLY_DECAY_RATE, XP_ACTIONS } from './constants';
 import type { RankDefinition } from './types';

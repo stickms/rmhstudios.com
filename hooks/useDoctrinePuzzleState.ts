@@ -1,6 +1,7 @@
 /**
  * Puzzle game state machine hook.
  * Manages the lifecycle: loading → playing → submitting → complete/failed.
+ * Supports both daily puzzles and replays (different submit endpoint).
  */
 
 import { useState, useCallback, useRef } from 'react';
@@ -13,7 +14,7 @@ interface PuzzleResult {
   xpMultiplier: number;
 }
 
-export function useDoctrinePuzzleState(puzzleId: string) {
+export function useDoctrinePuzzleState(puzzleId: string, isReplay = false) {
   const [phase, setPhase] = useState<PuzzlePhase>('loading');
   const [result, setResult] = useState<PuzzleResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -25,15 +26,17 @@ export function useDoctrinePuzzleState(puzzleId: string) {
     startTime.current = Date.now();
   }, []);
 
-  const submit = useCallback(async (answer: unknown) => {
-    if (phase !== 'playing') return;
+  const submit = useCallback(async (answer: unknown): Promise<PuzzleResult | null> => {
+    if (phase !== 'playing') return null;
 
     setPhase('submitting');
     setAttempts(prev => prev + 1);
     const timeMs = Date.now() - startTime.current;
 
+    const endpoint = isReplay ? '/api/doctrine/puzzles/replay' : '/api/doctrine/puzzles/submit';
+
     try {
-      const res = await fetch('/api/doctrine/puzzles/submit', {
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -49,30 +52,43 @@ export function useDoctrinePuzzleState(puzzleId: string) {
         if (res.status === 410) {
           setPhase('expired');
           setError(data.error);
-          return;
+          return null;
         }
         if (res.status === 409) {
-          setError(data.error);
+          // Already submitted daily — offer replay
+          setError('Already completed today. Try playing again for reduced XP!');
           setPhase('complete');
-          return;
+          return null;
         }
         throw new Error(data.error || 'Submission failed');
       }
 
       const data = await res.json();
-      setResult(data.submission);
+      const submission = data.submission as PuzzleResult;
+      setResult(submission);
 
-      if (data.submission.correct) {
+      if (submission.correct) {
         setPhase('complete');
       } else {
         // Allow retry
         setPhase('playing');
       }
+
+      return submission;
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unknown error');
       setPhase('failed');
+      return null;
     }
-  }, [phase, puzzleId, attempts]);
+  }, [phase, puzzleId, attempts, isReplay]);
+
+  const reset = useCallback(() => {
+    setPhase('loading');
+    setResult(null);
+    setError(null);
+    setAttempts(0);
+    startTime.current = Date.now();
+  }, []);
 
   return {
     phase,
@@ -81,6 +97,7 @@ export function useDoctrinePuzzleState(puzzleId: string) {
     attempts,
     startPlaying,
     submit,
+    reset,
     elapsedMs: Date.now() - startTime.current,
   };
 }

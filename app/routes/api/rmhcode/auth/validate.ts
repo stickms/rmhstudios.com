@@ -5,7 +5,7 @@ import { createFileRoute } from '@tanstack/react-router';
  * Called by the CLI to verify authentication.
  */
 
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { z } from 'zod';
 

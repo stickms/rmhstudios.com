@@ -72,6 +72,7 @@ export const XP_ACTIONS = {
   PUZZLE_SOLVE_STREAK_BONUS: (streak: number) => Math.floor(streak * 2.5),
   PUZZLE_TOP_10_PERCENT: 25,
   PUZZLE_FIRST_SOLVE: 50,
+  PUZZLE_REPLAY_SOLVE: 3,
 
   // Safehouse
   SAFEHOUSE_POST_REACTION: 2,
@@ -93,7 +94,6 @@ export const XP_ACTIONS = {
   // Cross-platform (future)
   NIGHTFALL_ACHIEVEMENT: 20,
   STOA_SPACE_CREATED: 15,
-  STICKBOT_TOOL_USED: 5,
 } as const;
 
 // ─── Ranks ──────────────────────────────────────────────────────────────────

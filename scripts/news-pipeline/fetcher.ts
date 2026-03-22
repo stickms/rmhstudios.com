@@ -1,5 +1,5 @@
 import Parser from "rss-parser";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma.server";
 import { CATEGORY_QUERIES, buildRssUrl } from "./config";
 
 const parser = new Parser();

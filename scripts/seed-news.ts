@@ -17,7 +17,7 @@ import "dotenv/config";
 import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma.server";
 
 interface MDXFrontmatter {
   title?: string;

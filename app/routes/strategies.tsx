@@ -7,6 +7,7 @@
  */
 
 import { createFileRoute, Outlet, useRouterState } from '@tanstack/react-router';
+import { Home, Puzzle, Shield, AlertTriangle, User } from 'lucide-react';
 import { DoctrineNav } from '@/components/doctrine/layout/nav';
 import { BetaBanner } from '@/components/doctrine/layout/beta-banner';
 import { SahurOverlay } from '@/components/doctrine/layout/sahur-overlay';
@@ -56,19 +57,21 @@ function StrategiesLayout() {
   );
 }
 
+const mobileNavItems = [
+  { to: '/strategies', icon: Home },
+  { to: '/strategies/puzzles', icon: Puzzle },
+  { to: '/strategies/safehouse', icon: Shield },
+  { to: '/strategies/incidents', icon: AlertTriangle },
+  { to: '/strategies/profile', icon: User },
+] as const;
+
 function MobileDoctrineNav() {
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-white/6"
       style={{ background: 'var(--doctrine-bg-secondary, #141416)', paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 8px)', paddingTop: '8px' }}>
-      {[
-        { to: '/strategies', label: '🏠' },
-        { to: '/strategies/puzzles', label: '🧩' },
-        { to: '/strategies/safehouse', label: '🛡️' },
-        { to: '/strategies/incidents', label: '⚠️' },
-        { to: '/strategies/profile', label: '👤' },
-      ].map(item => (
-        <a key={item.to} href={item.to} className="text-xl min-w-[44px] min-h-[44px] flex items-center justify-center">
-          {item.label}
+      {mobileNavItems.map(item => (
+        <a key={item.to} href={item.to} className="min-w-11 min-h-11 flex items-center justify-center text-white/60 hover:text-white/90 transition-colors">
+          <item.icon size={22} />
         </a>
       ))}
     </nav>

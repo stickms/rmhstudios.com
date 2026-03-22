@@ -96,34 +96,56 @@ const WORDS = [
   'raven', 'crypt', 'tower', 'field', 'ocean', 'chaos', 'order', 'night',
 ];
 
+/**
+ * Alibi puzzle — each suspect claims a UNIQUE location. One "witness" statement
+ * says they saw a specific person somewhere DIFFERENT from that person's claim.
+ * The player must find whose alibi is contradicted by the witness.
+ *
+ * Structure:
+ *   evidence: a fact the player uses to spot the lie
+ *   suspects: each has a name + claim (unique locations, no overlap)
+ *   solution: the suspect whose claim contradicts the evidence
+ */
 function generateAlibi(rng: ReturnType<typeof createRng>, difficulty: number) {
-  const suspectCount = 3 + difficulty;
-  const suspects = rng.shuffle([...SUSPECTS]).slice(0, suspectCount);
-  const guiltyIndex = rng.int(0, suspects.length - 1);
+  const suspectCount = Math.min(3 + difficulty, SUSPECTS.length, LOCATIONS.length);
+  const names = rng.shuffle([...SUSPECTS]).slice(0, suspectCount);
+  const locations = rng.shuffle([...LOCATIONS]).slice(0, suspectCount);
+  const activities = names.map(() => rng.pick(ACTIVITIES));
 
-  const alibis = suspects.map((name, i) => {
-    const location = rng.pick(LOCATIONS);
-    const activity = rng.pick(ACTIVITIES);
-    const hasContradiction = i === guiltyIndex;
+  // Pick the liar and a witness (a different suspect)
+  const liarIndex = rng.int(0, names.length - 1);
+  let witnessIndex: number;
+  do { witnessIndex = rng.int(0, names.length - 1); } while (witnessIndex === liarIndex);
 
+  // The witness saw the liar in the WITNESS'S location, but the liar claims
+  // to have been in their own (different) location.
+  const liarClaimedLocation = locations[liarIndex];
+  const witnessLocation = locations[witnessIndex];
+
+  // Build statements
+  const suspects = names.map((name, i) => {
+    const loc = locations[i];
+    const act = activities[i];
+    if (i === witnessIndex) {
+      // Witness adds that they saw the liar there
+      return {
+        name,
+        claim: `I was in the ${loc}, ${act}. I saw ${names[liarIndex]} there too.`,
+      };
+    }
     return {
       name,
-      claim: `I was in the ${location}, ${activity}.`,
-      location,
-      activity,
-      hasContradiction,
+      claim: `I was in the ${loc}, ${act}.`,
     };
   });
 
-  // Create contradiction: guilty suspect claims a location that conflicts
-  const guilty = alibis[guiltyIndex];
-  const witness = alibis[(guiltyIndex + 1) % alibis.length];
-  guilty.claim = `I was in the ${witness.location}, ${guilty.activity}.`;
+  // Build the evidence line shown above the suspect list
+  const evidence = `${names[witnessIndex]} claims they saw ${names[liarIndex]} in the ${witnessLocation} — but ${names[liarIndex]} says otherwise.`;
 
   return {
-    suspects: alibis.map(a => ({ name: a.name, claim: a.claim })),
-    solution: suspects[guiltyIndex],
-    hint: `Pay attention to who claims to be in the ${witness.location}.`,
+    evidence,
+    suspects: rng.shuffle(suspects),
+    solution: names[liarIndex],
   };
 }
 
@@ -317,4 +339,34 @@ export function calculateScore(
   const attemptPenalty = Math.max(0, (attempts - 1) * 50);
 
   return Math.max(0, baseScore + timeBonus - attemptPenalty);
+}
+
+/**
+ * Strip solution fields from puzzle data before sending to the client.
+ */
+export function stripSolution(mode: PuzzleMode, data: Record<string, unknown>): Record<string, unknown> {
+  const safe = { ...data };
+  switch (mode) {
+    case 'alibi':
+      delete safe.solution;
+      delete safe.hint;
+      break;
+    case 'spectrum':
+      delete safe.solution;
+      break;
+    case 'outcast':
+      delete safe.outcast;
+      delete safe.category;
+      delete safe.hint;
+      break;
+    case 'chainlink':
+      delete safe.chain;
+      delete safe.bridges;
+      break;
+    case 'impostor':
+      delete safe.impostor;
+      delete safe.realDefinition;
+      break;
+  }
+  return safe;
 }

@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma.server";
 import { unlink, writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { resolvePathUnder, validateImageBuffer } from "@/lib/slice-it/upload-validation";

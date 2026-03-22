@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma.server";
 import { randomBytes } from "crypto";
 
 /** Handle rules: 3-20 chars, lowercase alphanumeric + underscores, must start with a letter */

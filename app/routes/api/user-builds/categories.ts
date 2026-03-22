@@ -4,7 +4,7 @@ import { createFileRoute } from '@tanstack/react-router';
  * GET /api/user-builds/categories - List all categories
  */
 
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/prisma.server';
 
 export const Route = createFileRoute('/api/user-builds/categories')({
   server: {

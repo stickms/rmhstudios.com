@@ -1,8 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/prisma.server';
 import { apiCache } from '@/lib/cache';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
-import { generatePuzzle, getSeedForDate } from '@/lib/doctrine/puzzle-engine';
+import { generatePuzzle, getSeedForDate, stripSolution } from '@/lib/doctrine/puzzle-engine';
 import type { PuzzleMode } from '@/lib/doctrine/types';
 
 const MODES: PuzzleMode[] = ['alibi', 'spectrum', 'outcast', 'chainlink', 'impostor'];
@@ -31,7 +31,7 @@ export const Route = createFileRoute('/api/doctrine/puzzles/today')({
             difficulty: p.difficulty,
             resetsAt: p.resetsAt,
             isSahur: p.isSahur,
-            data: p.data,
+            data: stripSolution(p.mode.toLowerCase() as 'alibi' | 'spectrum' | 'outcast' | 'chainlink' | 'impostor', p.data as Record<string, unknown>),
           }));
 
           apiCache.set(cacheKey, result, 60_000); // 1 min cache
