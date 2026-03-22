@@ -15,6 +15,7 @@ import { Route as Velum2099RouteImport } from './routes/velum2099'
 import { Route as TempleOfJoyRouteImport } from './routes/temple-of-joy'
 import { Route as SynapseStormRouteImport } from './routes/synapse-storm'
 import { Route as StudioRouteImport } from './routes/studio'
+import { Route as StrategiesRouteImport } from './routes/strategies'
 import { Route as SliceItRouteImport } from './routes/slice-it'
 import { Route as SecretRouteImport } from './routes/secret'
 import { Route as RmhtypeRouteImport } from './routes/rmhtype'
@@ -35,6 +36,7 @@ import { Route as SiteRouteImport } from './routes/_site'
 import { Route as VersecraftIndexRouteImport } from './routes/versecraft/index'
 import { Route as TempleOfJoyIndexRouteImport } from './routes/temple-of-joy/index'
 import { Route as StudioIndexRouteImport } from './routes/studio/index'
+import { Route as StrategiesIndexRouteImport } from './routes/strategies/index'
 import { Route as SliceItIndexRouteImport } from './routes/slice-it/index'
 import { Route as SecretIndexRouteImport } from './routes/secret/index'
 import { Route as RmhtypeIndexRouteImport } from './routes/rmhtype/index'
@@ -49,6 +51,8 @@ import { Route as DailyIndexRouteImport } from './routes/daily/index'
 import { Route as AltairIndexRouteImport } from './routes/altair/index'
 import { Route as SiteIndexRouteImport } from './routes/_site/index'
 import { Route as UserBuildsSlugRouteImport } from './routes/user-builds.$slug'
+import { Route as StrategiesSahurRouteImport } from './routes/strategies/sahur'
+import { Route as StrategiesIncidentsRouteImport } from './routes/strategies/incidents'
 import { Route as SecretWeatherRouteImport } from './routes/secret/weather'
 import { Route as SecretVegaRouteImport } from './routes/secret/vega'
 import { Route as SecretSlidesRouteImport } from './routes/secret/slides'
@@ -97,6 +101,9 @@ import { Route as SiteWalletRouteImport } from './routes/_site/wallet'
 import { Route as SiteRoadmapRouteImport } from './routes/_site/roadmap'
 import { Route as SiteBuildsRouteRouteImport } from './routes/_site/builds/route'
 import { Route as SiteAdminRouteRouteImport } from './routes/_site/admin/route'
+import { Route as StrategiesSafehouseIndexRouteImport } from './routes/strategies/safehouse/index'
+import { Route as StrategiesPuzzlesIndexRouteImport } from './routes/strategies/puzzles/index'
+import { Route as StrategiesProfileIndexRouteImport } from './routes/strategies/profile/index'
 import { Route as SecretWeatherIndexRouteImport } from './routes/secret/weather/index'
 import { Route as SecretSlidesIndexRouteImport } from './routes/secret/slides/index'
 import { Route as SecretSheetsIndexRouteImport } from './routes/secret/sheets/index'
@@ -115,6 +122,13 @@ import { Route as SiteBuildsIndexRouteImport } from './routes/_site/builds/index
 import { Route as SiteBlogIndexRouteImport } from './routes/_site/blog/index'
 import { Route as SiteAdminIndexRouteImport } from './routes/_site/admin/index'
 import { Route as SiteUseridIndexRouteImport } from './routes/_site/$userid/index'
+import { Route as StrategiesSafehouseRecruitRouteImport } from './routes/strategies/safehouse/recruit'
+import { Route as StrategiesSafehouseDropsRouteImport } from './routes/strategies/safehouse/drops'
+import { Route as StrategiesPuzzlesLeaderboardRouteImport } from './routes/strategies/puzzles/leaderboard'
+import { Route as StrategiesPuzzlesArchiveRouteImport } from './routes/strategies/puzzles/archive'
+import { Route as StrategiesPuzzlesModeRouteImport } from './routes/strategies/puzzles/$mode'
+import { Route as StrategiesProfileSettingsRouteImport } from './routes/strategies/profile/settings'
+import { Route as StrategiesProfileReputationRouteImport } from './routes/strategies/profile/reputation'
 import { Route as SecretJobsApplicationsRouteImport } from './routes/secret/jobs/applications'
 import { Route as SecretJobsIdRouteImport } from './routes/secret/jobs/$id'
 import { Route as ApiVoidBreakerScoreRouteImport } from './routes/api/void-breaker/score'
@@ -160,6 +174,7 @@ import { Route as ApiForestExplorerSaveRouteImport } from './routes/api/forest-e
 import { Route as ApiFeedStreamRouteImport } from './routes/api/feed/stream'
 import { Route as ApiDreamRiftScoreRouteImport } from './routes/api/dream-rift/score'
 import { Route as ApiDreamRiftLeaderboardRouteImport } from './routes/api/dream-rift/leaderboard'
+import { Route as ApiDoctrineReactionsRouteImport } from './routes/api/doctrine/reactions'
 import { Route as ApiDiscordTokenRouteImport } from './routes/api/discord/token'
 import { Route as ApiDiscordSyncScoreRouteImport } from './routes/api/discord/sync-score'
 import { Route as ApiDiscordRaceRouteImport } from './routes/api/discord/race'
@@ -189,6 +204,8 @@ import { Route as SiteBuildsGamesRouteImport } from './routes/_site/builds/games
 import { Route as SiteBuildsAppsRouteImport } from './routes/_site/builds/apps'
 import { Route as SiteAdminUsersRouteImport } from './routes/_site/admin/users'
 import { Route as SiteAdminUserBuildsRouteImport } from './routes/_site/admin/user-builds'
+import { Route as ApiDoctrineReputationIndexRouteImport } from './routes/api/doctrine/reputation/index'
+import { Route as ApiDoctrineIncidentsIndexRouteImport } from './routes/api/doctrine/incidents/index'
 import { Route as SiteAdminBlogIndexRouteImport } from './routes/_site/admin/blog/index'
 import { Route as SecretJobsAssessmentIdRouteImport } from './routes/secret/jobs/assessment/$id'
 import { Route as RmhboxMinigamesMinigameIdHistoryRouteImport } from './routes/rmhbox/minigames/$minigameId/history'
@@ -218,6 +235,19 @@ import { Route as ApiMessagesConversationIdReadRouteImport } from './routes/api/
 import { Route as ApiGamesSynapseStormScoreRouteImport } from './routes/api/games/synapse-storm/score'
 import { Route as ApiGamesSynapseStormSaveRouteImport } from './routes/api/games/synapse-storm/save'
 import { Route as ApiGamesSynapseStormLeaderboardRouteImport } from './routes/api/games/synapse-storm/leaderboard'
+import { Route as ApiDoctrineSahurStatusRouteImport } from './routes/api/doctrine/sahur/status'
+import { Route as ApiDoctrineSafehouseDisclosuresRouteImport } from './routes/api/doctrine/safehouse/disclosures'
+import { Route as ApiDoctrineSafehouseContentRouteImport } from './routes/api/doctrine/safehouse/content'
+import { Route as ApiDoctrineReputationLeaderboardRouteImport } from './routes/api/doctrine/reputation/leaderboard'
+import { Route as ApiDoctrineRecruitmentRedeemRouteImport } from './routes/api/doctrine/recruitment/redeem'
+import { Route as ApiDoctrineRecruitmentCreateRouteImport } from './routes/api/doctrine/recruitment/create'
+import { Route as ApiDoctrinePuzzlesTodayRouteImport } from './routes/api/doctrine/puzzles/today'
+import { Route as ApiDoctrinePuzzlesSubmitRouteImport } from './routes/api/doctrine/puzzles/submit'
+import { Route as ApiDoctrinePuzzlesLeaderboardRouteImport } from './routes/api/doctrine/puzzles/leaderboard'
+import { Route as ApiDoctrineIncidentsIdRouteImport } from './routes/api/doctrine/incidents/$id'
+import { Route as ApiDoctrineAdminTiersRouteImport } from './routes/api/doctrine/admin/tiers'
+import { Route as ApiDoctrineAdminIncidentsRouteImport } from './routes/api/doctrine/admin/incidents'
+import { Route as ApiDoctrineAdminDisclosuresRouteImport } from './routes/api/doctrine/admin/disclosures'
 import { Route as ApiAdminCuratedBuildsImageRouteImport } from './routes/api/admin/curated-builds/image'
 import { Route as SiteAdminBlogNewRouteImport } from './routes/_site/admin/blog/new'
 import { Route as SiteUseridPostPostidRouteImport } from './routes/_site/$userid/post/$postid'
@@ -263,6 +293,11 @@ const SynapseStormRoute = SynapseStormRouteImport.update({
 const StudioRoute = StudioRouteImport.update({
   id: '/studio',
   path: '/studio',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StrategiesRoute = StrategiesRouteImport.update({
+  id: '/strategies',
+  path: '/strategies',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SliceItRoute = SliceItRouteImport.update({
@@ -364,6 +399,11 @@ const StudioIndexRoute = StudioIndexRouteImport.update({
   path: '/',
   getParentRoute: () => StudioRoute,
 } as any)
+const StrategiesIndexRoute = StrategiesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => StrategiesRoute,
+} as any)
 const SliceItIndexRoute = SliceItIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -433,6 +473,16 @@ const UserBuildsSlugRoute = UserBuildsSlugRouteImport.update({
   id: '/user-builds/$slug',
   path: '/user-builds/$slug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const StrategiesSahurRoute = StrategiesSahurRouteImport.update({
+  id: '/sahur',
+  path: '/sahur',
+  getParentRoute: () => StrategiesRoute,
+} as any)
+const StrategiesIncidentsRoute = StrategiesIncidentsRouteImport.update({
+  id: '/incidents',
+  path: '/incidents',
+  getParentRoute: () => StrategiesRoute,
 } as any)
 const SecretWeatherRoute = SecretWeatherRouteImport.update({
   id: '/weather',
@@ -674,6 +724,22 @@ const SiteAdminRouteRoute = SiteAdminRouteRouteImport.update({
   path: '/admin',
   getParentRoute: () => SiteRoute,
 } as any)
+const StrategiesSafehouseIndexRoute =
+  StrategiesSafehouseIndexRouteImport.update({
+    id: '/safehouse/',
+    path: '/safehouse/',
+    getParentRoute: () => StrategiesRoute,
+  } as any)
+const StrategiesPuzzlesIndexRoute = StrategiesPuzzlesIndexRouteImport.update({
+  id: '/puzzles/',
+  path: '/puzzles/',
+  getParentRoute: () => StrategiesRoute,
+} as any)
+const StrategiesProfileIndexRoute = StrategiesProfileIndexRouteImport.update({
+  id: '/profile/',
+  path: '/profile/',
+  getParentRoute: () => StrategiesRoute,
+} as any)
 const SecretWeatherIndexRoute = SecretWeatherIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -764,6 +830,47 @@ const SiteUseridIndexRoute = SiteUseridIndexRouteImport.update({
   path: '/$userid/',
   getParentRoute: () => SiteRoute,
 } as any)
+const StrategiesSafehouseRecruitRoute =
+  StrategiesSafehouseRecruitRouteImport.update({
+    id: '/safehouse/recruit',
+    path: '/safehouse/recruit',
+    getParentRoute: () => StrategiesRoute,
+  } as any)
+const StrategiesSafehouseDropsRoute =
+  StrategiesSafehouseDropsRouteImport.update({
+    id: '/safehouse/drops',
+    path: '/safehouse/drops',
+    getParentRoute: () => StrategiesRoute,
+  } as any)
+const StrategiesPuzzlesLeaderboardRoute =
+  StrategiesPuzzlesLeaderboardRouteImport.update({
+    id: '/puzzles/leaderboard',
+    path: '/puzzles/leaderboard',
+    getParentRoute: () => StrategiesRoute,
+  } as any)
+const StrategiesPuzzlesArchiveRoute =
+  StrategiesPuzzlesArchiveRouteImport.update({
+    id: '/puzzles/archive',
+    path: '/puzzles/archive',
+    getParentRoute: () => StrategiesRoute,
+  } as any)
+const StrategiesPuzzlesModeRoute = StrategiesPuzzlesModeRouteImport.update({
+  id: '/puzzles/$mode',
+  path: '/puzzles/$mode',
+  getParentRoute: () => StrategiesRoute,
+} as any)
+const StrategiesProfileSettingsRoute =
+  StrategiesProfileSettingsRouteImport.update({
+    id: '/profile/settings',
+    path: '/profile/settings',
+    getParentRoute: () => StrategiesRoute,
+  } as any)
+const StrategiesProfileReputationRoute =
+  StrategiesProfileReputationRouteImport.update({
+    id: '/profile/reputation',
+    path: '/profile/reputation',
+    getParentRoute: () => StrategiesRoute,
+  } as any)
 const SecretJobsApplicationsRoute = SecretJobsApplicationsRouteImport.update({
   id: '/applications',
   path: '/applications',
@@ -994,6 +1101,11 @@ const ApiDreamRiftLeaderboardRoute = ApiDreamRiftLeaderboardRouteImport.update({
   path: '/api/dream-rift/leaderboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiDoctrineReactionsRoute = ApiDoctrineReactionsRouteImport.update({
+  id: '/api/doctrine/reactions',
+  path: '/api/doctrine/reactions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiDiscordTokenRoute = ApiDiscordTokenRouteImport.update({
   id: '/api/discord/token',
   path: '/api/discord/token',
@@ -1142,6 +1254,18 @@ const SiteAdminUserBuildsRoute = SiteAdminUserBuildsRouteImport.update({
   path: '/user-builds',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
+const ApiDoctrineReputationIndexRoute =
+  ApiDoctrineReputationIndexRouteImport.update({
+    id: '/api/doctrine/reputation/',
+    path: '/api/doctrine/reputation/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiDoctrineIncidentsIndexRoute =
+  ApiDoctrineIncidentsIndexRouteImport.update({
+    id: '/api/doctrine/incidents/',
+    path: '/api/doctrine/incidents/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const SiteAdminBlogIndexRoute = SiteAdminBlogIndexRouteImport.update({
   id: '/blog/',
   path: '/blog/',
@@ -1294,6 +1418,80 @@ const ApiGamesSynapseStormLeaderboardRoute =
     path: '/api/games/synapse-storm/leaderboard',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiDoctrineSahurStatusRoute = ApiDoctrineSahurStatusRouteImport.update({
+  id: '/api/doctrine/sahur/status',
+  path: '/api/doctrine/sahur/status',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDoctrineSafehouseDisclosuresRoute =
+  ApiDoctrineSafehouseDisclosuresRouteImport.update({
+    id: '/api/doctrine/safehouse/disclosures',
+    path: '/api/doctrine/safehouse/disclosures',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiDoctrineSafehouseContentRoute =
+  ApiDoctrineSafehouseContentRouteImport.update({
+    id: '/api/doctrine/safehouse/content',
+    path: '/api/doctrine/safehouse/content',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiDoctrineReputationLeaderboardRoute =
+  ApiDoctrineReputationLeaderboardRouteImport.update({
+    id: '/api/doctrine/reputation/leaderboard',
+    path: '/api/doctrine/reputation/leaderboard',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiDoctrineRecruitmentRedeemRoute =
+  ApiDoctrineRecruitmentRedeemRouteImport.update({
+    id: '/api/doctrine/recruitment/redeem',
+    path: '/api/doctrine/recruitment/redeem',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiDoctrineRecruitmentCreateRoute =
+  ApiDoctrineRecruitmentCreateRouteImport.update({
+    id: '/api/doctrine/recruitment/create',
+    path: '/api/doctrine/recruitment/create',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiDoctrinePuzzlesTodayRoute = ApiDoctrinePuzzlesTodayRouteImport.update({
+  id: '/api/doctrine/puzzles/today',
+  path: '/api/doctrine/puzzles/today',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDoctrinePuzzlesSubmitRoute =
+  ApiDoctrinePuzzlesSubmitRouteImport.update({
+    id: '/api/doctrine/puzzles/submit',
+    path: '/api/doctrine/puzzles/submit',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiDoctrinePuzzlesLeaderboardRoute =
+  ApiDoctrinePuzzlesLeaderboardRouteImport.update({
+    id: '/api/doctrine/puzzles/leaderboard',
+    path: '/api/doctrine/puzzles/leaderboard',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiDoctrineIncidentsIdRoute = ApiDoctrineIncidentsIdRouteImport.update({
+  id: '/api/doctrine/incidents/$id',
+  path: '/api/doctrine/incidents/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDoctrineAdminTiersRoute = ApiDoctrineAdminTiersRouteImport.update({
+  id: '/api/doctrine/admin/tiers',
+  path: '/api/doctrine/admin/tiers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDoctrineAdminIncidentsRoute =
+  ApiDoctrineAdminIncidentsRouteImport.update({
+    id: '/api/doctrine/admin/incidents',
+    path: '/api/doctrine/admin/incidents',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiDoctrineAdminDisclosuresRoute =
+  ApiDoctrineAdminDisclosuresRouteImport.update({
+    id: '/api/doctrine/admin/disclosures',
+    path: '/api/doctrine/admin/disclosures',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminCuratedBuildsImageRoute =
   ApiAdminCuratedBuildsImageRouteImport.update({
     id: '/api/admin/curated-builds/image',
@@ -1403,6 +1601,7 @@ export interface FileRoutesByFullPath {
   '/rmhtype': typeof RmhtypeRouteWithChildren
   '/secret': typeof SecretRouteWithChildren
   '/slice-it': typeof SliceItRouteWithChildren
+  '/strategies': typeof StrategiesRouteWithChildren
   '/studio': typeof StudioRouteWithChildren
   '/synapse-storm': typeof SynapseStormRoute
   '/temple-of-joy': typeof TempleOfJoyRouteWithChildren
@@ -1457,6 +1656,8 @@ export interface FileRoutesByFullPath {
   '/secret/slides': typeof SecretSlidesRouteWithChildren
   '/secret/vega': typeof SecretVegaRoute
   '/secret/weather': typeof SecretWeatherRouteWithChildren
+  '/strategies/incidents': typeof StrategiesIncidentsRoute
+  '/strategies/sahur': typeof StrategiesSahurRoute
   '/user-builds/$slug': typeof UserBuildsSlugRoute
   '/altair/': typeof AltairIndexRoute
   '/daily/': typeof DailyIndexRoute
@@ -1470,6 +1671,7 @@ export interface FileRoutesByFullPath {
   '/rmhtype/': typeof RmhtypeIndexRoute
   '/secret/': typeof SecretIndexRoute
   '/slice-it/': typeof SliceItIndexRoute
+  '/strategies/': typeof StrategiesIndexRoute
   '/studio/': typeof StudioIndexRoute
   '/temple-of-joy/': typeof TempleOfJoyIndexRoute
   '/versecraft/': typeof VersecraftIndexRoute
@@ -1502,6 +1704,7 @@ export interface FileRoutesByFullPath {
   '/api/discord/race': typeof ApiDiscordRaceRoute
   '/api/discord/sync-score': typeof ApiDiscordSyncScoreRoute
   '/api/discord/token': typeof ApiDiscordTokenRoute
+  '/api/doctrine/reactions': typeof ApiDoctrineReactionsRoute
   '/api/dream-rift/leaderboard': typeof ApiDreamRiftLeaderboardRoute
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
@@ -1547,6 +1750,13 @@ export interface FileRoutesByFullPath {
   '/api/void-breaker/score': typeof ApiVoidBreakerScoreRoute
   '/secret/jobs/$id': typeof SecretJobsIdRoute
   '/secret/jobs/applications': typeof SecretJobsApplicationsRoute
+  '/strategies/profile/reputation': typeof StrategiesProfileReputationRoute
+  '/strategies/profile/settings': typeof StrategiesProfileSettingsRoute
+  '/strategies/puzzles/$mode': typeof StrategiesPuzzlesModeRoute
+  '/strategies/puzzles/archive': typeof StrategiesPuzzlesArchiveRoute
+  '/strategies/puzzles/leaderboard': typeof StrategiesPuzzlesLeaderboardRoute
+  '/strategies/safehouse/drops': typeof StrategiesSafehouseDropsRoute
+  '/strategies/safehouse/recruit': typeof StrategiesSafehouseRecruitRoute
   '/$userid/': typeof SiteUseridIndexRoute
   '/admin/': typeof SiteAdminIndexRoute
   '/blog/': typeof SiteBlogIndexRoute
@@ -1565,9 +1775,25 @@ export interface FileRoutesByFullPath {
   '/secret/sheets/': typeof SecretSheetsIndexRoute
   '/secret/slides/': typeof SecretSlidesIndexRoute
   '/secret/weather/': typeof SecretWeatherIndexRoute
+  '/strategies/profile/': typeof StrategiesProfileIndexRoute
+  '/strategies/puzzles/': typeof StrategiesPuzzlesIndexRoute
+  '/strategies/safehouse/': typeof StrategiesSafehouseIndexRoute
   '/$userid/post/$postid': typeof SiteUseridPostPostidRoute
   '/admin/blog/new': typeof SiteAdminBlogNewRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
+  '/api/doctrine/admin/disclosures': typeof ApiDoctrineAdminDisclosuresRoute
+  '/api/doctrine/admin/incidents': typeof ApiDoctrineAdminIncidentsRoute
+  '/api/doctrine/admin/tiers': typeof ApiDoctrineAdminTiersRoute
+  '/api/doctrine/incidents/$id': typeof ApiDoctrineIncidentsIdRoute
+  '/api/doctrine/puzzles/leaderboard': typeof ApiDoctrinePuzzlesLeaderboardRoute
+  '/api/doctrine/puzzles/submit': typeof ApiDoctrinePuzzlesSubmitRoute
+  '/api/doctrine/puzzles/today': typeof ApiDoctrinePuzzlesTodayRoute
+  '/api/doctrine/recruitment/create': typeof ApiDoctrineRecruitmentCreateRoute
+  '/api/doctrine/recruitment/redeem': typeof ApiDoctrineRecruitmentRedeemRoute
+  '/api/doctrine/reputation/leaderboard': typeof ApiDoctrineReputationLeaderboardRoute
+  '/api/doctrine/safehouse/content': typeof ApiDoctrineSafehouseContentRoute
+  '/api/doctrine/safehouse/disclosures': typeof ApiDoctrineSafehouseDisclosuresRoute
+  '/api/doctrine/sahur/status': typeof ApiDoctrineSahurStatusRoute
   '/api/games/synapse-storm/leaderboard': typeof ApiGamesSynapseStormLeaderboardRoute
   '/api/games/synapse-storm/save': typeof ApiGamesSynapseStormSaveRoute
   '/api/games/synapse-storm/score': typeof ApiGamesSynapseStormScoreRoute
@@ -1597,6 +1823,8 @@ export interface FileRoutesByFullPath {
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
   '/secret/jobs/assessment/$id': typeof SecretJobsAssessmentIdRoute
   '/admin/blog/': typeof SiteAdminBlogIndexRoute
+  '/api/doctrine/incidents/': typeof ApiDoctrineIncidentsIndexRoute
+  '/api/doctrine/reputation/': typeof ApiDoctrineReputationIndexRoute
   '/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
   '/api/admin/curated-builds/image/$filename': typeof ApiAdminCuratedBuildsImageFilenameRoute
   '/api/admin/curated-builds/image/proxy': typeof ApiAdminCuratedBuildsImageProxyRoute
@@ -1657,6 +1885,8 @@ export interface FileRoutesByTo {
   '/secret/house-always-wins': typeof SecretHouseAlwaysWinsRoute
   '/secret/signal-forge': typeof SecretSignalForgeRoute
   '/secret/vega': typeof SecretVegaRoute
+  '/strategies/incidents': typeof StrategiesIncidentsRoute
+  '/strategies/sahur': typeof StrategiesSahurRoute
   '/user-builds/$slug': typeof UserBuildsSlugRoute
   '/': typeof SiteIndexRoute
   '/altair': typeof AltairIndexRoute
@@ -1671,6 +1901,7 @@ export interface FileRoutesByTo {
   '/rmhtype': typeof RmhtypeIndexRoute
   '/secret': typeof SecretIndexRoute
   '/slice-it': typeof SliceItIndexRoute
+  '/strategies': typeof StrategiesIndexRoute
   '/studio': typeof StudioIndexRoute
   '/temple-of-joy': typeof TempleOfJoyIndexRoute
   '/versecraft': typeof VersecraftIndexRoute
@@ -1703,6 +1934,7 @@ export interface FileRoutesByTo {
   '/api/discord/race': typeof ApiDiscordRaceRoute
   '/api/discord/sync-score': typeof ApiDiscordSyncScoreRoute
   '/api/discord/token': typeof ApiDiscordTokenRoute
+  '/api/doctrine/reactions': typeof ApiDoctrineReactionsRoute
   '/api/dream-rift/leaderboard': typeof ApiDreamRiftLeaderboardRoute
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
@@ -1748,6 +1980,13 @@ export interface FileRoutesByTo {
   '/api/void-breaker/score': typeof ApiVoidBreakerScoreRoute
   '/secret/jobs/$id': typeof SecretJobsIdRoute
   '/secret/jobs/applications': typeof SecretJobsApplicationsRoute
+  '/strategies/profile/reputation': typeof StrategiesProfileReputationRoute
+  '/strategies/profile/settings': typeof StrategiesProfileSettingsRoute
+  '/strategies/puzzles/$mode': typeof StrategiesPuzzlesModeRoute
+  '/strategies/puzzles/archive': typeof StrategiesPuzzlesArchiveRoute
+  '/strategies/puzzles/leaderboard': typeof StrategiesPuzzlesLeaderboardRoute
+  '/strategies/safehouse/drops': typeof StrategiesSafehouseDropsRoute
+  '/strategies/safehouse/recruit': typeof StrategiesSafehouseRecruitRoute
   '/$userid': typeof SiteUseridIndexRoute
   '/admin': typeof SiteAdminIndexRoute
   '/blog': typeof SiteBlogIndexRoute
@@ -1766,9 +2005,25 @@ export interface FileRoutesByTo {
   '/secret/sheets': typeof SecretSheetsIndexRoute
   '/secret/slides': typeof SecretSlidesIndexRoute
   '/secret/weather': typeof SecretWeatherIndexRoute
+  '/strategies/profile': typeof StrategiesProfileIndexRoute
+  '/strategies/puzzles': typeof StrategiesPuzzlesIndexRoute
+  '/strategies/safehouse': typeof StrategiesSafehouseIndexRoute
   '/$userid/post/$postid': typeof SiteUseridPostPostidRoute
   '/admin/blog/new': typeof SiteAdminBlogNewRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
+  '/api/doctrine/admin/disclosures': typeof ApiDoctrineAdminDisclosuresRoute
+  '/api/doctrine/admin/incidents': typeof ApiDoctrineAdminIncidentsRoute
+  '/api/doctrine/admin/tiers': typeof ApiDoctrineAdminTiersRoute
+  '/api/doctrine/incidents/$id': typeof ApiDoctrineIncidentsIdRoute
+  '/api/doctrine/puzzles/leaderboard': typeof ApiDoctrinePuzzlesLeaderboardRoute
+  '/api/doctrine/puzzles/submit': typeof ApiDoctrinePuzzlesSubmitRoute
+  '/api/doctrine/puzzles/today': typeof ApiDoctrinePuzzlesTodayRoute
+  '/api/doctrine/recruitment/create': typeof ApiDoctrineRecruitmentCreateRoute
+  '/api/doctrine/recruitment/redeem': typeof ApiDoctrineRecruitmentRedeemRoute
+  '/api/doctrine/reputation/leaderboard': typeof ApiDoctrineReputationLeaderboardRoute
+  '/api/doctrine/safehouse/content': typeof ApiDoctrineSafehouseContentRoute
+  '/api/doctrine/safehouse/disclosures': typeof ApiDoctrineSafehouseDisclosuresRoute
+  '/api/doctrine/sahur/status': typeof ApiDoctrineSahurStatusRoute
   '/api/games/synapse-storm/leaderboard': typeof ApiGamesSynapseStormLeaderboardRoute
   '/api/games/synapse-storm/save': typeof ApiGamesSynapseStormSaveRoute
   '/api/games/synapse-storm/score': typeof ApiGamesSynapseStormScoreRoute
@@ -1798,6 +2053,8 @@ export interface FileRoutesByTo {
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
   '/secret/jobs/assessment/$id': typeof SecretJobsAssessmentIdRoute
   '/admin/blog': typeof SiteAdminBlogIndexRoute
+  '/api/doctrine/incidents': typeof ApiDoctrineIncidentsIndexRoute
+  '/api/doctrine/reputation': typeof ApiDoctrineReputationIndexRoute
   '/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
   '/api/admin/curated-builds/image/$filename': typeof ApiAdminCuratedBuildsImageFilenameRoute
   '/api/admin/curated-builds/image/proxy': typeof ApiAdminCuratedBuildsImageProxyRoute
@@ -1831,6 +2088,7 @@ export interface FileRoutesById {
   '/rmhtype': typeof RmhtypeRouteWithChildren
   '/secret': typeof SecretRouteWithChildren
   '/slice-it': typeof SliceItRouteWithChildren
+  '/strategies': typeof StrategiesRouteWithChildren
   '/studio': typeof StudioRouteWithChildren
   '/synapse-storm': typeof SynapseStormRoute
   '/temple-of-joy': typeof TempleOfJoyRouteWithChildren
@@ -1885,6 +2143,8 @@ export interface FileRoutesById {
   '/secret/slides': typeof SecretSlidesRouteWithChildren
   '/secret/vega': typeof SecretVegaRoute
   '/secret/weather': typeof SecretWeatherRouteWithChildren
+  '/strategies/incidents': typeof StrategiesIncidentsRoute
+  '/strategies/sahur': typeof StrategiesSahurRoute
   '/user-builds/$slug': typeof UserBuildsSlugRoute
   '/_site/': typeof SiteIndexRoute
   '/altair/': typeof AltairIndexRoute
@@ -1899,6 +2159,7 @@ export interface FileRoutesById {
   '/rmhtype/': typeof RmhtypeIndexRoute
   '/secret/': typeof SecretIndexRoute
   '/slice-it/': typeof SliceItIndexRoute
+  '/strategies/': typeof StrategiesIndexRoute
   '/studio/': typeof StudioIndexRoute
   '/temple-of-joy/': typeof TempleOfJoyIndexRoute
   '/versecraft/': typeof VersecraftIndexRoute
@@ -1931,6 +2192,7 @@ export interface FileRoutesById {
   '/api/discord/race': typeof ApiDiscordRaceRoute
   '/api/discord/sync-score': typeof ApiDiscordSyncScoreRoute
   '/api/discord/token': typeof ApiDiscordTokenRoute
+  '/api/doctrine/reactions': typeof ApiDoctrineReactionsRoute
   '/api/dream-rift/leaderboard': typeof ApiDreamRiftLeaderboardRoute
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
@@ -1976,6 +2238,13 @@ export interface FileRoutesById {
   '/api/void-breaker/score': typeof ApiVoidBreakerScoreRoute
   '/secret/jobs/$id': typeof SecretJobsIdRoute
   '/secret/jobs/applications': typeof SecretJobsApplicationsRoute
+  '/strategies/profile/reputation': typeof StrategiesProfileReputationRoute
+  '/strategies/profile/settings': typeof StrategiesProfileSettingsRoute
+  '/strategies/puzzles/$mode': typeof StrategiesPuzzlesModeRoute
+  '/strategies/puzzles/archive': typeof StrategiesPuzzlesArchiveRoute
+  '/strategies/puzzles/leaderboard': typeof StrategiesPuzzlesLeaderboardRoute
+  '/strategies/safehouse/drops': typeof StrategiesSafehouseDropsRoute
+  '/strategies/safehouse/recruit': typeof StrategiesSafehouseRecruitRoute
   '/_site/$userid/': typeof SiteUseridIndexRoute
   '/_site/admin/': typeof SiteAdminIndexRoute
   '/_site/blog/': typeof SiteBlogIndexRoute
@@ -1994,9 +2263,25 @@ export interface FileRoutesById {
   '/secret/sheets/': typeof SecretSheetsIndexRoute
   '/secret/slides/': typeof SecretSlidesIndexRoute
   '/secret/weather/': typeof SecretWeatherIndexRoute
+  '/strategies/profile/': typeof StrategiesProfileIndexRoute
+  '/strategies/puzzles/': typeof StrategiesPuzzlesIndexRoute
+  '/strategies/safehouse/': typeof StrategiesSafehouseIndexRoute
   '/_site/$userid/post/$postid': typeof SiteUseridPostPostidRoute
   '/_site/admin/blog/new': typeof SiteAdminBlogNewRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
+  '/api/doctrine/admin/disclosures': typeof ApiDoctrineAdminDisclosuresRoute
+  '/api/doctrine/admin/incidents': typeof ApiDoctrineAdminIncidentsRoute
+  '/api/doctrine/admin/tiers': typeof ApiDoctrineAdminTiersRoute
+  '/api/doctrine/incidents/$id': typeof ApiDoctrineIncidentsIdRoute
+  '/api/doctrine/puzzles/leaderboard': typeof ApiDoctrinePuzzlesLeaderboardRoute
+  '/api/doctrine/puzzles/submit': typeof ApiDoctrinePuzzlesSubmitRoute
+  '/api/doctrine/puzzles/today': typeof ApiDoctrinePuzzlesTodayRoute
+  '/api/doctrine/recruitment/create': typeof ApiDoctrineRecruitmentCreateRoute
+  '/api/doctrine/recruitment/redeem': typeof ApiDoctrineRecruitmentRedeemRoute
+  '/api/doctrine/reputation/leaderboard': typeof ApiDoctrineReputationLeaderboardRoute
+  '/api/doctrine/safehouse/content': typeof ApiDoctrineSafehouseContentRoute
+  '/api/doctrine/safehouse/disclosures': typeof ApiDoctrineSafehouseDisclosuresRoute
+  '/api/doctrine/sahur/status': typeof ApiDoctrineSahurStatusRoute
   '/api/games/synapse-storm/leaderboard': typeof ApiGamesSynapseStormLeaderboardRoute
   '/api/games/synapse-storm/save': typeof ApiGamesSynapseStormSaveRoute
   '/api/games/synapse-storm/score': typeof ApiGamesSynapseStormScoreRoute
@@ -2026,6 +2311,8 @@ export interface FileRoutesById {
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
   '/secret/jobs/assessment/$id': typeof SecretJobsAssessmentIdRoute
   '/_site/admin/blog/': typeof SiteAdminBlogIndexRoute
+  '/api/doctrine/incidents/': typeof ApiDoctrineIncidentsIndexRoute
+  '/api/doctrine/reputation/': typeof ApiDoctrineReputationIndexRoute
   '/_site/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
   '/api/admin/curated-builds/image/$filename': typeof ApiAdminCuratedBuildsImageFilenameRoute
   '/api/admin/curated-builds/image/proxy': typeof ApiAdminCuratedBuildsImageProxyRoute
@@ -2060,6 +2347,7 @@ export interface FileRouteTypes {
     | '/rmhtype'
     | '/secret'
     | '/slice-it'
+    | '/strategies'
     | '/studio'
     | '/synapse-storm'
     | '/temple-of-joy'
@@ -2114,6 +2402,8 @@ export interface FileRouteTypes {
     | '/secret/slides'
     | '/secret/vega'
     | '/secret/weather'
+    | '/strategies/incidents'
+    | '/strategies/sahur'
     | '/user-builds/$slug'
     | '/altair/'
     | '/daily/'
@@ -2127,6 +2417,7 @@ export interface FileRouteTypes {
     | '/rmhtype/'
     | '/secret/'
     | '/slice-it/'
+    | '/strategies/'
     | '/studio/'
     | '/temple-of-joy/'
     | '/versecraft/'
@@ -2159,6 +2450,7 @@ export interface FileRouteTypes {
     | '/api/discord/race'
     | '/api/discord/sync-score'
     | '/api/discord/token'
+    | '/api/doctrine/reactions'
     | '/api/dream-rift/leaderboard'
     | '/api/dream-rift/score'
     | '/api/feed/stream'
@@ -2204,6 +2496,13 @@ export interface FileRouteTypes {
     | '/api/void-breaker/score'
     | '/secret/jobs/$id'
     | '/secret/jobs/applications'
+    | '/strategies/profile/reputation'
+    | '/strategies/profile/settings'
+    | '/strategies/puzzles/$mode'
+    | '/strategies/puzzles/archive'
+    | '/strategies/puzzles/leaderboard'
+    | '/strategies/safehouse/drops'
+    | '/strategies/safehouse/recruit'
     | '/$userid/'
     | '/admin/'
     | '/blog/'
@@ -2222,9 +2521,25 @@ export interface FileRouteTypes {
     | '/secret/sheets/'
     | '/secret/slides/'
     | '/secret/weather/'
+    | '/strategies/profile/'
+    | '/strategies/puzzles/'
+    | '/strategies/safehouse/'
     | '/$userid/post/$postid'
     | '/admin/blog/new'
     | '/api/admin/curated-builds/image'
+    | '/api/doctrine/admin/disclosures'
+    | '/api/doctrine/admin/incidents'
+    | '/api/doctrine/admin/tiers'
+    | '/api/doctrine/incidents/$id'
+    | '/api/doctrine/puzzles/leaderboard'
+    | '/api/doctrine/puzzles/submit'
+    | '/api/doctrine/puzzles/today'
+    | '/api/doctrine/recruitment/create'
+    | '/api/doctrine/recruitment/redeem'
+    | '/api/doctrine/reputation/leaderboard'
+    | '/api/doctrine/safehouse/content'
+    | '/api/doctrine/safehouse/disclosures'
+    | '/api/doctrine/sahur/status'
     | '/api/games/synapse-storm/leaderboard'
     | '/api/games/synapse-storm/save'
     | '/api/games/synapse-storm/score'
@@ -2254,6 +2569,8 @@ export interface FileRouteTypes {
     | '/rmhbox/minigames/$minigameId/history'
     | '/secret/jobs/assessment/$id'
     | '/admin/blog/'
+    | '/api/doctrine/incidents/'
+    | '/api/doctrine/reputation/'
     | '/admin/blog/$slug/edit'
     | '/api/admin/curated-builds/image/$filename'
     | '/api/admin/curated-builds/image/proxy'
@@ -2314,6 +2631,8 @@ export interface FileRouteTypes {
     | '/secret/house-always-wins'
     | '/secret/signal-forge'
     | '/secret/vega'
+    | '/strategies/incidents'
+    | '/strategies/sahur'
     | '/user-builds/$slug'
     | '/'
     | '/altair'
@@ -2328,6 +2647,7 @@ export interface FileRouteTypes {
     | '/rmhtype'
     | '/secret'
     | '/slice-it'
+    | '/strategies'
     | '/studio'
     | '/temple-of-joy'
     | '/versecraft'
@@ -2360,6 +2680,7 @@ export interface FileRouteTypes {
     | '/api/discord/race'
     | '/api/discord/sync-score'
     | '/api/discord/token'
+    | '/api/doctrine/reactions'
     | '/api/dream-rift/leaderboard'
     | '/api/dream-rift/score'
     | '/api/feed/stream'
@@ -2405,6 +2726,13 @@ export interface FileRouteTypes {
     | '/api/void-breaker/score'
     | '/secret/jobs/$id'
     | '/secret/jobs/applications'
+    | '/strategies/profile/reputation'
+    | '/strategies/profile/settings'
+    | '/strategies/puzzles/$mode'
+    | '/strategies/puzzles/archive'
+    | '/strategies/puzzles/leaderboard'
+    | '/strategies/safehouse/drops'
+    | '/strategies/safehouse/recruit'
     | '/$userid'
     | '/admin'
     | '/blog'
@@ -2423,9 +2751,25 @@ export interface FileRouteTypes {
     | '/secret/sheets'
     | '/secret/slides'
     | '/secret/weather'
+    | '/strategies/profile'
+    | '/strategies/puzzles'
+    | '/strategies/safehouse'
     | '/$userid/post/$postid'
     | '/admin/blog/new'
     | '/api/admin/curated-builds/image'
+    | '/api/doctrine/admin/disclosures'
+    | '/api/doctrine/admin/incidents'
+    | '/api/doctrine/admin/tiers'
+    | '/api/doctrine/incidents/$id'
+    | '/api/doctrine/puzzles/leaderboard'
+    | '/api/doctrine/puzzles/submit'
+    | '/api/doctrine/puzzles/today'
+    | '/api/doctrine/recruitment/create'
+    | '/api/doctrine/recruitment/redeem'
+    | '/api/doctrine/reputation/leaderboard'
+    | '/api/doctrine/safehouse/content'
+    | '/api/doctrine/safehouse/disclosures'
+    | '/api/doctrine/sahur/status'
     | '/api/games/synapse-storm/leaderboard'
     | '/api/games/synapse-storm/save'
     | '/api/games/synapse-storm/score'
@@ -2455,6 +2799,8 @@ export interface FileRouteTypes {
     | '/rmhbox/minigames/$minigameId/history'
     | '/secret/jobs/assessment/$id'
     | '/admin/blog'
+    | '/api/doctrine/incidents'
+    | '/api/doctrine/reputation'
     | '/admin/blog/$slug/edit'
     | '/api/admin/curated-builds/image/$filename'
     | '/api/admin/curated-builds/image/proxy'
@@ -2487,6 +2833,7 @@ export interface FileRouteTypes {
     | '/rmhtype'
     | '/secret'
     | '/slice-it'
+    | '/strategies'
     | '/studio'
     | '/synapse-storm'
     | '/temple-of-joy'
@@ -2541,6 +2888,8 @@ export interface FileRouteTypes {
     | '/secret/slides'
     | '/secret/vega'
     | '/secret/weather'
+    | '/strategies/incidents'
+    | '/strategies/sahur'
     | '/user-builds/$slug'
     | '/_site/'
     | '/altair/'
@@ -2555,6 +2904,7 @@ export interface FileRouteTypes {
     | '/rmhtype/'
     | '/secret/'
     | '/slice-it/'
+    | '/strategies/'
     | '/studio/'
     | '/temple-of-joy/'
     | '/versecraft/'
@@ -2587,6 +2937,7 @@ export interface FileRouteTypes {
     | '/api/discord/race'
     | '/api/discord/sync-score'
     | '/api/discord/token'
+    | '/api/doctrine/reactions'
     | '/api/dream-rift/leaderboard'
     | '/api/dream-rift/score'
     | '/api/feed/stream'
@@ -2632,6 +2983,13 @@ export interface FileRouteTypes {
     | '/api/void-breaker/score'
     | '/secret/jobs/$id'
     | '/secret/jobs/applications'
+    | '/strategies/profile/reputation'
+    | '/strategies/profile/settings'
+    | '/strategies/puzzles/$mode'
+    | '/strategies/puzzles/archive'
+    | '/strategies/puzzles/leaderboard'
+    | '/strategies/safehouse/drops'
+    | '/strategies/safehouse/recruit'
     | '/_site/$userid/'
     | '/_site/admin/'
     | '/_site/blog/'
@@ -2650,9 +3008,25 @@ export interface FileRouteTypes {
     | '/secret/sheets/'
     | '/secret/slides/'
     | '/secret/weather/'
+    | '/strategies/profile/'
+    | '/strategies/puzzles/'
+    | '/strategies/safehouse/'
     | '/_site/$userid/post/$postid'
     | '/_site/admin/blog/new'
     | '/api/admin/curated-builds/image'
+    | '/api/doctrine/admin/disclosures'
+    | '/api/doctrine/admin/incidents'
+    | '/api/doctrine/admin/tiers'
+    | '/api/doctrine/incidents/$id'
+    | '/api/doctrine/puzzles/leaderboard'
+    | '/api/doctrine/puzzles/submit'
+    | '/api/doctrine/puzzles/today'
+    | '/api/doctrine/recruitment/create'
+    | '/api/doctrine/recruitment/redeem'
+    | '/api/doctrine/reputation/leaderboard'
+    | '/api/doctrine/safehouse/content'
+    | '/api/doctrine/safehouse/disclosures'
+    | '/api/doctrine/sahur/status'
     | '/api/games/synapse-storm/leaderboard'
     | '/api/games/synapse-storm/save'
     | '/api/games/synapse-storm/score'
@@ -2682,6 +3056,8 @@ export interface FileRouteTypes {
     | '/rmhbox/minigames/$minigameId/history'
     | '/secret/jobs/assessment/$id'
     | '/_site/admin/blog/'
+    | '/api/doctrine/incidents/'
+    | '/api/doctrine/reputation/'
     | '/_site/admin/blog/$slug/edit'
     | '/api/admin/curated-builds/image/$filename'
     | '/api/admin/curated-builds/image/proxy'
@@ -2715,6 +3091,7 @@ export interface RootRouteChildren {
   RmhtypeRoute: typeof RmhtypeRouteWithChildren
   SecretRoute: typeof SecretRouteWithChildren
   SliceItRoute: typeof SliceItRouteWithChildren
+  StrategiesRoute: typeof StrategiesRouteWithChildren
   StudioRoute: typeof StudioRouteWithChildren
   SynapseStormRoute: typeof SynapseStormRoute
   TempleOfJoyRoute: typeof TempleOfJoyRouteWithChildren
@@ -2755,6 +3132,7 @@ export interface RootRouteChildren {
   ApiDiscordRaceRoute: typeof ApiDiscordRaceRoute
   ApiDiscordSyncScoreRoute: typeof ApiDiscordSyncScoreRoute
   ApiDiscordTokenRoute: typeof ApiDiscordTokenRoute
+  ApiDoctrineReactionsRoute: typeof ApiDoctrineReactionsRoute
   ApiDreamRiftLeaderboardRoute: typeof ApiDreamRiftLeaderboardRoute
   ApiDreamRiftScoreRoute: typeof ApiDreamRiftScoreRoute
   ApiFeedStreamRoute: typeof ApiFeedStreamRoute
@@ -2789,6 +3167,19 @@ export interface RootRouteChildren {
   ApiVoidBreakerScoreRoute: typeof ApiVoidBreakerScoreRoute
   ApiCoinsIndexRoute: typeof ApiCoinsIndexRoute
   ApiAdminCuratedBuildsImageRoute: typeof ApiAdminCuratedBuildsImageRouteWithChildren
+  ApiDoctrineAdminDisclosuresRoute: typeof ApiDoctrineAdminDisclosuresRoute
+  ApiDoctrineAdminIncidentsRoute: typeof ApiDoctrineAdminIncidentsRoute
+  ApiDoctrineAdminTiersRoute: typeof ApiDoctrineAdminTiersRoute
+  ApiDoctrineIncidentsIdRoute: typeof ApiDoctrineIncidentsIdRoute
+  ApiDoctrinePuzzlesLeaderboardRoute: typeof ApiDoctrinePuzzlesLeaderboardRoute
+  ApiDoctrinePuzzlesSubmitRoute: typeof ApiDoctrinePuzzlesSubmitRoute
+  ApiDoctrinePuzzlesTodayRoute: typeof ApiDoctrinePuzzlesTodayRoute
+  ApiDoctrineRecruitmentCreateRoute: typeof ApiDoctrineRecruitmentCreateRoute
+  ApiDoctrineRecruitmentRedeemRoute: typeof ApiDoctrineRecruitmentRedeemRoute
+  ApiDoctrineReputationLeaderboardRoute: typeof ApiDoctrineReputationLeaderboardRoute
+  ApiDoctrineSafehouseContentRoute: typeof ApiDoctrineSafehouseContentRoute
+  ApiDoctrineSafehouseDisclosuresRoute: typeof ApiDoctrineSafehouseDisclosuresRoute
+  ApiDoctrineSahurStatusRoute: typeof ApiDoctrineSahurStatusRoute
   ApiGamesSynapseStormLeaderboardRoute: typeof ApiGamesSynapseStormLeaderboardRoute
   ApiGamesSynapseStormSaveRoute: typeof ApiGamesSynapseStormSaveRoute
   ApiGamesSynapseStormScoreRoute: typeof ApiGamesSynapseStormScoreRoute
@@ -2798,6 +3189,8 @@ export interface RootRouteChildren {
   ApiRmhcodeAuthRevokeRoute: typeof ApiRmhcodeAuthRevokeRoute
   ApiRmhcodeAuthValidateRoute: typeof ApiRmhcodeAuthValidateRoute
   ApiRmhmusicSpotifySearchRoute: typeof ApiRmhmusicSpotifySearchRoute
+  ApiDoctrineIncidentsIndexRoute: typeof ApiDoctrineIncidentsIndexRoute
+  ApiDoctrineReputationIndexRoute: typeof ApiDoctrineReputationIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -2842,6 +3235,13 @@ declare module '@tanstack/react-router' {
       path: '/studio'
       fullPath: '/studio'
       preLoaderRoute: typeof StudioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/strategies': {
+      id: '/strategies'
+      path: '/strategies'
+      fullPath: '/strategies'
+      preLoaderRoute: typeof StrategiesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/slice-it': {
@@ -2984,6 +3384,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudioIndexRouteImport
       parentRoute: typeof StudioRoute
     }
+    '/strategies/': {
+      id: '/strategies/'
+      path: '/'
+      fullPath: '/strategies/'
+      preLoaderRoute: typeof StrategiesIndexRouteImport
+      parentRoute: typeof StrategiesRoute
+    }
     '/slice-it/': {
       id: '/slice-it/'
       path: '/'
@@ -3081,6 +3488,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/user-builds/$slug'
       preLoaderRoute: typeof UserBuildsSlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/strategies/sahur': {
+      id: '/strategies/sahur'
+      path: '/sahur'
+      fullPath: '/strategies/sahur'
+      preLoaderRoute: typeof StrategiesSahurRouteImport
+      parentRoute: typeof StrategiesRoute
+    }
+    '/strategies/incidents': {
+      id: '/strategies/incidents'
+      path: '/incidents'
+      fullPath: '/strategies/incidents'
+      preLoaderRoute: typeof StrategiesIncidentsRouteImport
+      parentRoute: typeof StrategiesRoute
     }
     '/secret/weather': {
       id: '/secret/weather'
@@ -3418,6 +3839,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteAdminRouteRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/strategies/safehouse/': {
+      id: '/strategies/safehouse/'
+      path: '/safehouse'
+      fullPath: '/strategies/safehouse/'
+      preLoaderRoute: typeof StrategiesSafehouseIndexRouteImport
+      parentRoute: typeof StrategiesRoute
+    }
+    '/strategies/puzzles/': {
+      id: '/strategies/puzzles/'
+      path: '/puzzles'
+      fullPath: '/strategies/puzzles/'
+      preLoaderRoute: typeof StrategiesPuzzlesIndexRouteImport
+      parentRoute: typeof StrategiesRoute
+    }
+    '/strategies/profile/': {
+      id: '/strategies/profile/'
+      path: '/profile'
+      fullPath: '/strategies/profile/'
+      preLoaderRoute: typeof StrategiesProfileIndexRouteImport
+      parentRoute: typeof StrategiesRoute
+    }
     '/secret/weather/': {
       id: '/secret/weather/'
       path: '/'
@@ -3543,6 +3985,55 @@ declare module '@tanstack/react-router' {
       fullPath: '/$userid/'
       preLoaderRoute: typeof SiteUseridIndexRouteImport
       parentRoute: typeof SiteRoute
+    }
+    '/strategies/safehouse/recruit': {
+      id: '/strategies/safehouse/recruit'
+      path: '/safehouse/recruit'
+      fullPath: '/strategies/safehouse/recruit'
+      preLoaderRoute: typeof StrategiesSafehouseRecruitRouteImport
+      parentRoute: typeof StrategiesRoute
+    }
+    '/strategies/safehouse/drops': {
+      id: '/strategies/safehouse/drops'
+      path: '/safehouse/drops'
+      fullPath: '/strategies/safehouse/drops'
+      preLoaderRoute: typeof StrategiesSafehouseDropsRouteImport
+      parentRoute: typeof StrategiesRoute
+    }
+    '/strategies/puzzles/leaderboard': {
+      id: '/strategies/puzzles/leaderboard'
+      path: '/puzzles/leaderboard'
+      fullPath: '/strategies/puzzles/leaderboard'
+      preLoaderRoute: typeof StrategiesPuzzlesLeaderboardRouteImport
+      parentRoute: typeof StrategiesRoute
+    }
+    '/strategies/puzzles/archive': {
+      id: '/strategies/puzzles/archive'
+      path: '/puzzles/archive'
+      fullPath: '/strategies/puzzles/archive'
+      preLoaderRoute: typeof StrategiesPuzzlesArchiveRouteImport
+      parentRoute: typeof StrategiesRoute
+    }
+    '/strategies/puzzles/$mode': {
+      id: '/strategies/puzzles/$mode'
+      path: '/puzzles/$mode'
+      fullPath: '/strategies/puzzles/$mode'
+      preLoaderRoute: typeof StrategiesPuzzlesModeRouteImport
+      parentRoute: typeof StrategiesRoute
+    }
+    '/strategies/profile/settings': {
+      id: '/strategies/profile/settings'
+      path: '/profile/settings'
+      fullPath: '/strategies/profile/settings'
+      preLoaderRoute: typeof StrategiesProfileSettingsRouteImport
+      parentRoute: typeof StrategiesRoute
+    }
+    '/strategies/profile/reputation': {
+      id: '/strategies/profile/reputation'
+      path: '/profile/reputation'
+      fullPath: '/strategies/profile/reputation'
+      preLoaderRoute: typeof StrategiesProfileReputationRouteImport
+      parentRoute: typeof StrategiesRoute
     }
     '/secret/jobs/applications': {
       id: '/secret/jobs/applications'
@@ -3859,6 +4350,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiDreamRiftLeaderboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/doctrine/reactions': {
+      id: '/api/doctrine/reactions'
+      path: '/api/doctrine/reactions'
+      fullPath: '/api/doctrine/reactions'
+      preLoaderRoute: typeof ApiDoctrineReactionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/discord/token': {
       id: '/api/discord/token'
       path: '/api/discord/token'
@@ -4062,6 +4560,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteAdminUserBuildsRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
+    '/api/doctrine/reputation/': {
+      id: '/api/doctrine/reputation/'
+      path: '/api/doctrine/reputation'
+      fullPath: '/api/doctrine/reputation/'
+      preLoaderRoute: typeof ApiDoctrineReputationIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/doctrine/incidents/': {
+      id: '/api/doctrine/incidents/'
+      path: '/api/doctrine/incidents'
+      fullPath: '/api/doctrine/incidents/'
+      preLoaderRoute: typeof ApiDoctrineIncidentsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_site/admin/blog/': {
       id: '/_site/admin/blog/'
       path: '/blog'
@@ -4263,6 +4775,97 @@ declare module '@tanstack/react-router' {
       path: '/api/games/synapse-storm/leaderboard'
       fullPath: '/api/games/synapse-storm/leaderboard'
       preLoaderRoute: typeof ApiGamesSynapseStormLeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/doctrine/sahur/status': {
+      id: '/api/doctrine/sahur/status'
+      path: '/api/doctrine/sahur/status'
+      fullPath: '/api/doctrine/sahur/status'
+      preLoaderRoute: typeof ApiDoctrineSahurStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/doctrine/safehouse/disclosures': {
+      id: '/api/doctrine/safehouse/disclosures'
+      path: '/api/doctrine/safehouse/disclosures'
+      fullPath: '/api/doctrine/safehouse/disclosures'
+      preLoaderRoute: typeof ApiDoctrineSafehouseDisclosuresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/doctrine/safehouse/content': {
+      id: '/api/doctrine/safehouse/content'
+      path: '/api/doctrine/safehouse/content'
+      fullPath: '/api/doctrine/safehouse/content'
+      preLoaderRoute: typeof ApiDoctrineSafehouseContentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/doctrine/reputation/leaderboard': {
+      id: '/api/doctrine/reputation/leaderboard'
+      path: '/api/doctrine/reputation/leaderboard'
+      fullPath: '/api/doctrine/reputation/leaderboard'
+      preLoaderRoute: typeof ApiDoctrineReputationLeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/doctrine/recruitment/redeem': {
+      id: '/api/doctrine/recruitment/redeem'
+      path: '/api/doctrine/recruitment/redeem'
+      fullPath: '/api/doctrine/recruitment/redeem'
+      preLoaderRoute: typeof ApiDoctrineRecruitmentRedeemRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/doctrine/recruitment/create': {
+      id: '/api/doctrine/recruitment/create'
+      path: '/api/doctrine/recruitment/create'
+      fullPath: '/api/doctrine/recruitment/create'
+      preLoaderRoute: typeof ApiDoctrineRecruitmentCreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/doctrine/puzzles/today': {
+      id: '/api/doctrine/puzzles/today'
+      path: '/api/doctrine/puzzles/today'
+      fullPath: '/api/doctrine/puzzles/today'
+      preLoaderRoute: typeof ApiDoctrinePuzzlesTodayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/doctrine/puzzles/submit': {
+      id: '/api/doctrine/puzzles/submit'
+      path: '/api/doctrine/puzzles/submit'
+      fullPath: '/api/doctrine/puzzles/submit'
+      preLoaderRoute: typeof ApiDoctrinePuzzlesSubmitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/doctrine/puzzles/leaderboard': {
+      id: '/api/doctrine/puzzles/leaderboard'
+      path: '/api/doctrine/puzzles/leaderboard'
+      fullPath: '/api/doctrine/puzzles/leaderboard'
+      preLoaderRoute: typeof ApiDoctrinePuzzlesLeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/doctrine/incidents/$id': {
+      id: '/api/doctrine/incidents/$id'
+      path: '/api/doctrine/incidents/$id'
+      fullPath: '/api/doctrine/incidents/$id'
+      preLoaderRoute: typeof ApiDoctrineIncidentsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/doctrine/admin/tiers': {
+      id: '/api/doctrine/admin/tiers'
+      path: '/api/doctrine/admin/tiers'
+      fullPath: '/api/doctrine/admin/tiers'
+      preLoaderRoute: typeof ApiDoctrineAdminTiersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/doctrine/admin/incidents': {
+      id: '/api/doctrine/admin/incidents'
+      path: '/api/doctrine/admin/incidents'
+      fullPath: '/api/doctrine/admin/incidents'
+      preLoaderRoute: typeof ApiDoctrineAdminIncidentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/doctrine/admin/disclosures': {
+      id: '/api/doctrine/admin/disclosures'
+      path: '/api/doctrine/admin/disclosures'
+      fullPath: '/api/doctrine/admin/disclosures'
+      preLoaderRoute: typeof ApiDoctrineAdminDisclosuresRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/admin/curated-builds/image': {
@@ -4761,6 +5364,42 @@ const SliceItRouteChildren: SliceItRouteChildren = {
 const SliceItRouteWithChildren =
   SliceItRoute._addFileChildren(SliceItRouteChildren)
 
+interface StrategiesRouteChildren {
+  StrategiesIncidentsRoute: typeof StrategiesIncidentsRoute
+  StrategiesSahurRoute: typeof StrategiesSahurRoute
+  StrategiesIndexRoute: typeof StrategiesIndexRoute
+  StrategiesProfileReputationRoute: typeof StrategiesProfileReputationRoute
+  StrategiesProfileSettingsRoute: typeof StrategiesProfileSettingsRoute
+  StrategiesPuzzlesModeRoute: typeof StrategiesPuzzlesModeRoute
+  StrategiesPuzzlesArchiveRoute: typeof StrategiesPuzzlesArchiveRoute
+  StrategiesPuzzlesLeaderboardRoute: typeof StrategiesPuzzlesLeaderboardRoute
+  StrategiesSafehouseDropsRoute: typeof StrategiesSafehouseDropsRoute
+  StrategiesSafehouseRecruitRoute: typeof StrategiesSafehouseRecruitRoute
+  StrategiesProfileIndexRoute: typeof StrategiesProfileIndexRoute
+  StrategiesPuzzlesIndexRoute: typeof StrategiesPuzzlesIndexRoute
+  StrategiesSafehouseIndexRoute: typeof StrategiesSafehouseIndexRoute
+}
+
+const StrategiesRouteChildren: StrategiesRouteChildren = {
+  StrategiesIncidentsRoute: StrategiesIncidentsRoute,
+  StrategiesSahurRoute: StrategiesSahurRoute,
+  StrategiesIndexRoute: StrategiesIndexRoute,
+  StrategiesProfileReputationRoute: StrategiesProfileReputationRoute,
+  StrategiesProfileSettingsRoute: StrategiesProfileSettingsRoute,
+  StrategiesPuzzlesModeRoute: StrategiesPuzzlesModeRoute,
+  StrategiesPuzzlesArchiveRoute: StrategiesPuzzlesArchiveRoute,
+  StrategiesPuzzlesLeaderboardRoute: StrategiesPuzzlesLeaderboardRoute,
+  StrategiesSafehouseDropsRoute: StrategiesSafehouseDropsRoute,
+  StrategiesSafehouseRecruitRoute: StrategiesSafehouseRecruitRoute,
+  StrategiesProfileIndexRoute: StrategiesProfileIndexRoute,
+  StrategiesPuzzlesIndexRoute: StrategiesPuzzlesIndexRoute,
+  StrategiesSafehouseIndexRoute: StrategiesSafehouseIndexRoute,
+}
+
+const StrategiesRouteWithChildren = StrategiesRoute._addFileChildren(
+  StrategiesRouteChildren,
+)
+
 interface StudioRouteChildren {
   StudioIndexRoute: typeof StudioIndexRoute
 }
@@ -5042,6 +5681,7 @@ const rootRouteChildren: RootRouteChildren = {
   RmhtypeRoute: RmhtypeRouteWithChildren,
   SecretRoute: SecretRouteWithChildren,
   SliceItRoute: SliceItRouteWithChildren,
+  StrategiesRoute: StrategiesRouteWithChildren,
   StudioRoute: StudioRouteWithChildren,
   SynapseStormRoute: SynapseStormRoute,
   TempleOfJoyRoute: TempleOfJoyRouteWithChildren,
@@ -5082,6 +5722,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDiscordRaceRoute: ApiDiscordRaceRoute,
   ApiDiscordSyncScoreRoute: ApiDiscordSyncScoreRoute,
   ApiDiscordTokenRoute: ApiDiscordTokenRoute,
+  ApiDoctrineReactionsRoute: ApiDoctrineReactionsRoute,
   ApiDreamRiftLeaderboardRoute: ApiDreamRiftLeaderboardRoute,
   ApiDreamRiftScoreRoute: ApiDreamRiftScoreRoute,
   ApiFeedStreamRoute: ApiFeedStreamRoute,
@@ -5116,6 +5757,19 @@ const rootRouteChildren: RootRouteChildren = {
   ApiVoidBreakerScoreRoute: ApiVoidBreakerScoreRoute,
   ApiCoinsIndexRoute: ApiCoinsIndexRoute,
   ApiAdminCuratedBuildsImageRoute: ApiAdminCuratedBuildsImageRouteWithChildren,
+  ApiDoctrineAdminDisclosuresRoute: ApiDoctrineAdminDisclosuresRoute,
+  ApiDoctrineAdminIncidentsRoute: ApiDoctrineAdminIncidentsRoute,
+  ApiDoctrineAdminTiersRoute: ApiDoctrineAdminTiersRoute,
+  ApiDoctrineIncidentsIdRoute: ApiDoctrineIncidentsIdRoute,
+  ApiDoctrinePuzzlesLeaderboardRoute: ApiDoctrinePuzzlesLeaderboardRoute,
+  ApiDoctrinePuzzlesSubmitRoute: ApiDoctrinePuzzlesSubmitRoute,
+  ApiDoctrinePuzzlesTodayRoute: ApiDoctrinePuzzlesTodayRoute,
+  ApiDoctrineRecruitmentCreateRoute: ApiDoctrineRecruitmentCreateRoute,
+  ApiDoctrineRecruitmentRedeemRoute: ApiDoctrineRecruitmentRedeemRoute,
+  ApiDoctrineReputationLeaderboardRoute: ApiDoctrineReputationLeaderboardRoute,
+  ApiDoctrineSafehouseContentRoute: ApiDoctrineSafehouseContentRoute,
+  ApiDoctrineSafehouseDisclosuresRoute: ApiDoctrineSafehouseDisclosuresRoute,
+  ApiDoctrineSahurStatusRoute: ApiDoctrineSahurStatusRoute,
   ApiGamesSynapseStormLeaderboardRoute: ApiGamesSynapseStormLeaderboardRoute,
   ApiGamesSynapseStormSaveRoute: ApiGamesSynapseStormSaveRoute,
   ApiGamesSynapseStormScoreRoute: ApiGamesSynapseStormScoreRoute,
@@ -5125,6 +5779,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRmhcodeAuthRevokeRoute: ApiRmhcodeAuthRevokeRoute,
   ApiRmhcodeAuthValidateRoute: ApiRmhcodeAuthValidateRoute,
   ApiRmhmusicSpotifySearchRoute: ApiRmhmusicSpotifySearchRoute,
+  ApiDoctrineIncidentsIndexRoute: ApiDoctrineIncidentsIndexRoute,
+  ApiDoctrineReputationIndexRoute: ApiDoctrineReputationIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

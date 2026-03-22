@@ -58,6 +58,7 @@ COPY lib/holdem ./lib/holdem/
 COPY lib/baccarat ./lib/baccarat/
 COPY lib/roulette ./lib/roulette/
 COPY lib/lights-out ./lib/lights-out/
+COPY lib/doctrine ./lib/doctrine/
 
 RUN pnpm exec esbuild \
     server/socket-server/index.ts \
@@ -65,6 +66,7 @@ RUN pnpm exec esbuild \
     server/rmhtube/index.ts \
     server/recap/index.ts \
     server/discord-bot/index.ts \
+    server/doctrine-worker/index.ts \
     --bundle --platform=node --target=node20 \
     --outdir=dist-server --outbase=. \
     --format=cjs --out-extension:.js=.cjs --packages=external --tree-shaking=true \
@@ -74,7 +76,8 @@ RUN test -f dist-server/server/socket-server/index.cjs && \
     test -f dist-server/server/rmhbox/index.cjs && \
     test -f dist-server/server/rmhtube/index.cjs && \
     test -f dist-server/server/recap/index.cjs && \
-    test -f dist-server/server/discord-bot/index.cjs
+    test -f dist-server/server/discord-bot/index.cjs && \
+    test -f dist-server/server/doctrine-worker/index.cjs
 
 # ── Stage 3: Vite/Nitro build (env-specific) ─────────────────────────────
 # BuildKit executes this IN PARALLEL with server-builder (stage 2).
