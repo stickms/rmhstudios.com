@@ -46,7 +46,7 @@ function ProfilePage() {
           </div>
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-2 md:gap-3">
             <StatCard label="Total XP" value={rep.totalXp.toLocaleString()} />
             <StatCard label="Sahur Count" value={String(rep.sahurCount)} />
             <StatCard label="Coalition" value={`${rep.coalitionScore.toFixed(1)}x`} />
@@ -72,9 +72,9 @@ function ProfilePage() {
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg p-3 text-center" style={{ background: 'var(--doctrine-bg-secondary)', border: '1px solid rgba(255,255,255,0.06)' }}>
-      <p className="text-lg font-bold tabular-nums" style={{ color: 'var(--doctrine-accent)' }}>{value}</p>
-      <p className="text-[10px] text-white/30 mt-0.5">{label}</p>
+    <div className="rounded-lg p-2.5 md:p-3 text-center" style={{ background: 'var(--doctrine-bg-secondary)', border: '1px solid rgba(255,255,255,0.06)' }}>
+      <p className="text-base md:text-lg font-bold tabular-nums" style={{ color: 'var(--doctrine-accent)' }}>{value}</p>
+      <p className="text-xs md:text-[10px] text-white/30 mt-0.5">{label}</p>
     </div>
   );
 }
