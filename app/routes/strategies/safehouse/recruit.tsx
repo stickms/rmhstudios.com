@@ -15,7 +15,7 @@ function RecruitPage() {
           Asset Recruitment
         </h1>
       </div>
-      <p className="text-sm" style={{ color: 'var(--doctrine-text-muted)' }}>
+      <p className="text-base md:text-sm" style={{ color: 'var(--doctrine-text-muted)' }}>
         You don't sign up for this. You're recruited. Generate personalized invite links for targets
         whose skills would strengthen the coalition.
       </p>
@@ -23,8 +23,8 @@ function RecruitPage() {
       <RecruitForm />
 
       <div className="rounded-lg p-4 space-y-2" style={{ background: 'var(--doctrine-bg-secondary)', border: '1px solid rgba(255,255,255,0.06)' }}>
-        <h3 className="text-xs font-mono uppercase tracking-wider text-white/40">How Recruitment Works</h3>
-        <ul className="text-xs text-white/30 space-y-1">
+        <h3 className="text-sm md:text-xs font-mono uppercase tracking-wider text-white/40">How Recruitment Works</h3>
+        <ul className="text-sm md:text-xs text-white/30 space-y-1.5 md:space-y-1">
           <li>1. Generate a personalized invite link with a custom message</li>
           <li>2. Share the link with your target recruit</li>
           <li>3. When they join, you earn 50 XP per signup</li>

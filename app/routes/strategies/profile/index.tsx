@@ -37,7 +37,7 @@ function ProfilePage() {
       ) : rep && (
         <>
           {/* Rank + XP */}
-          <div className="rounded-xl p-5 space-y-4" style={{ background: 'var(--doctrine-bg-secondary)', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="rounded-xl p-4 md:p-5 space-y-4" style={{ background: 'var(--doctrine-bg-secondary)', border: '1px solid rgba(255,255,255,0.06)' }}>
             <div className="flex items-center justify-between">
               <RankBadge xp={rep.totalXp} size="lg" />
               <StreakDisplay streak={rep.currentStreak} longestStreak={rep.longestStreak} />
@@ -46,21 +46,21 @@ function ProfilePage() {
           </div>
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-2 md:gap-3">
             <StatCard label="Total XP" value={rep.totalXp.toLocaleString()} />
             <StatCard label="Sahur Count" value={String(rep.sahurCount)} />
             <StatCard label="Coalition" value={`${rep.coalitionScore.toFixed(1)}x`} />
           </div>
 
           {/* Activity Heatmap */}
-          <div className="rounded-lg p-4 space-y-3" style={{ background: 'var(--doctrine-bg-secondary)', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <h3 className="text-xs font-mono uppercase tracking-wider text-white/40">Activity</h3>
+          <div className="rounded-lg p-4 space-y-3 overflow-x-auto" style={{ background: 'var(--doctrine-bg-secondary)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <h3 className="text-sm md:text-xs font-mono uppercase tracking-wider text-white/40">Activity</h3>
             <ActivityHeatmap data={{}} weeks={16} />
           </div>
 
           {/* Links */}
           <div className="flex gap-3">
-            <Link to="/strategies/profile/reputation" className="text-xs text-white/30 hover:text-white/50 transition-colors">
+            <Link to="/strategies/profile/reputation" className="text-sm md:text-xs text-white/30 hover:text-white/50 transition-colors min-h-[44px] md:min-h-0 flex items-center">
               Full XP Breakdown →
             </Link>
           </div>
@@ -72,9 +72,9 @@ function ProfilePage() {
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg p-3 text-center" style={{ background: 'var(--doctrine-bg-secondary)', border: '1px solid rgba(255,255,255,0.06)' }}>
-      <p className="text-lg font-bold tabular-nums" style={{ color: 'var(--doctrine-accent)' }}>{value}</p>
-      <p className="text-[10px] text-white/30 mt-0.5">{label}</p>
+    <div className="rounded-lg p-2.5 md:p-3 text-center" style={{ background: 'var(--doctrine-bg-secondary)', border: '1px solid rgba(255,255,255,0.06)' }}>
+      <p className="text-base md:text-lg font-bold tabular-nums" style={{ color: 'var(--doctrine-accent)' }}>{value}</p>
+      <p className="text-xs md:text-[10px] text-white/30 mt-0.5">{label}</p>
     </div>
   );
 }
