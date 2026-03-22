@@ -38,7 +38,7 @@ function LeaderboardPage() {
           <button
             key={m}
             onClick={() => setMode(m)}
-            className={`px-3 py-1.5 text-xs font-mono rounded transition-colors ${
+            className={`px-3 py-2.5 md:py-1.5 text-sm md:text-xs font-mono rounded transition-colors shrink-0 min-h-[44px] md:min-h-0 ${
               mode === m ? 'text-white bg-white/10' : 'text-white/40 hover:text-white/60'
             }`}
           >
@@ -48,17 +48,17 @@ function LeaderboardPage() {
       </div>
 
       {/* Leaderboard table */}
-      <div className="rounded-lg overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
+      <div className="rounded-lg overflow-x-auto" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
         {isLoading ? (
           <div className="p-8 text-center text-sm text-white/30">Loading...</div>
         ) : (
           <table className="w-full text-sm">
             <thead>
               <tr style={{ background: 'var(--doctrine-bg-secondary)' }}>
-                <th className="text-left px-4 py-2 text-[10px] font-mono text-white/30">#</th>
-                <th className="text-left px-4 py-2 text-[10px] font-mono text-white/30">Player</th>
-                <th className="text-right px-4 py-2 text-[10px] font-mono text-white/30">Score</th>
-                <th className="text-right px-4 py-2 text-[10px] font-mono text-white/30">Time</th>
+                <th className="text-left px-2.5 md:px-4 py-2 text-xs md:text-[10px] font-mono text-white/30">#</th>
+                <th className="text-left px-2.5 md:px-4 py-2 text-xs md:text-[10px] font-mono text-white/30">Player</th>
+                <th className="text-right px-2.5 md:px-4 py-2 text-xs md:text-[10px] font-mono text-white/30">Score</th>
+                <th className="text-right px-2.5 md:px-4 py-2 text-xs md:text-[10px] font-mono text-white/30">Time</th>
               </tr>
             </thead>
             <tbody>
