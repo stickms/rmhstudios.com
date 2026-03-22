@@ -59,6 +59,7 @@ COPY lib/baccarat ./lib/baccarat/
 COPY lib/roulette ./lib/roulette/
 COPY lib/lights-out ./lib/lights-out/
 COPY lib/doctrine ./lib/doctrine/
+COPY lib/url.ts ./lib/url.ts
 
 RUN pnpm exec esbuild \
     server/socket-server/index.ts \
