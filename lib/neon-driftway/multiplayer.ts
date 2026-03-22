@@ -5,8 +5,9 @@
  */
 
 import { io, Socket } from 'socket.io-client';
+import { ensureTrailingSlash } from '@/lib/url';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:7001';
+const SOCKET_URL = ensureTrailingSlash(import.meta.env.VITE_SOCKET_URL || 'http://localhost:7001');
 
 export type NDWEvent =
     | 'ndw:lobbyState'

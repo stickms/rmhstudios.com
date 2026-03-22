@@ -5,6 +5,7 @@ import {
     getDateSeed,
 } from '@/lib/lights-out/seed';
 import { getDailyShape, getShapeLabel } from '@/lib/lights-out/shapes';
+import { stripTrailingSlash } from '@/lib/url';
 
 
 /**
@@ -44,7 +45,7 @@ interface ParticipantRow {
     ratingLabel: string | null;
 }
 
-const SITE_URL = process.env.SITE_URL ?? process.env.VITE_BETTER_AUTH_URL?.replace(/\/$/, '') ?? 'https://rmhstudios.com';
+const SITE_URL = stripTrailingSlash(process.env.SITE_URL ?? process.env.VITE_BETTER_AUTH_URL ?? 'https://rmhstudios.com');
 
 function buildEmbed(dateKey: string, guildId: string, participants: ParticipantRow[]): object {
     const [y, m, d] = dateKey.split('-').map(Number);

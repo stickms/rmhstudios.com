@@ -8,6 +8,7 @@ import {
     createSeededRng,
 } from '@/lib/lights-out/seed';
 import { getDailyShape, getShapeLabel, isActiveCell } from '@/lib/lights-out/shapes';
+import { ensureTrailingSlash } from '@/lib/url';
 import {
     generatePuzzle,
     toggleCellInGrid,
@@ -938,7 +939,7 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
 
             // Connect to actual server — patchUrlMappings (called during SDK init)
             // rewrites this to go through Discord's proxy automatically
-            const socketUrl = import.meta.env.VITE_SOCKET_URL || window.location.origin;
+            const socketUrl = ensureTrailingSlash(import.meta.env.VITE_SOCKET_URL || window.location.origin);
             const socket = ioClient(socketUrl, {
                 path: '/socket/',
                 withCredentials: false,

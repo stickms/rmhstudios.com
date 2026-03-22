@@ -1,6 +1,10 @@
 import type { ApiError } from '../types.js';
 
-const API_BASE = process.env.RMHCODE_API_URL || 'https://rmhstudios.com';
+function stripTrailingSlash(url: string): string {
+  return url.replace(/\/+$/, '');
+}
+
+const API_BASE = stripTrailingSlash(process.env.RMHCODE_API_URL || 'https://rmhstudios.com');
 
 interface RequestOptions {
   method?: string;
