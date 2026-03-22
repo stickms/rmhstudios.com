@@ -137,6 +137,14 @@ services:
       retries: 3
       start_period: 10s
 
+  # ─── Doctrine Engine Worker (puzzle gen, reputation decay, Sahur activation) ─
+  doctrine-worker:
+    <<: *common
+    container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-doctrine-worker
+    env_file: ${ENV_FILE:-.env.production}
+    command: ["node", "dist-server/server/doctrine-worker/index.cjs"]
+    restart: unless-stopped
+
   # ─── News Pipeline (production only — use `--profile news` to include) ─────
   news-pipeline:
     <<: *common
