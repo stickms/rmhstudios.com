@@ -40,7 +40,7 @@ export function SahurOverlay() {
             initial={{ scale: 0.5, rotate: -10 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: 'spring', damping: 10, stiffness: 100 }}
-            className="text-center"
+            className="text-center px-6"
           >
             <motion.p
               animate={{ scale: [1, 1.05, 1] }}
@@ -50,11 +50,11 @@ export function SahurOverlay() {
             >
               {SAHUR_WINDOW.greeting}
             </motion.p>
-            <p className="text-lg text-amber-300/60 mt-4 font-mono">
+            <p className="text-base md:text-lg text-amber-300/60 mt-3 md:mt-4 font-mono">
               {sahurCountdown} minutes remaining — {SAHUR_WINDOW.xpMultiplier}x XP
             </p>
-            <p className="text-sm text-amber-300/30 mt-6">
-              Click to enter
+            <p className="text-sm text-amber-300/30 mt-4 md:mt-6">
+              Tap to enter
             </p>
           </motion.div>
         </motion.div>
