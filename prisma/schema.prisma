@@ -101,6 +101,21 @@ model User {
   buildComments BuildComment[]
   buildViews    BuildView[]
 
+  // ─── Doctrine Engine (RMH Strategies) ─────────────────────────
+  doctrineTier          String    @default("PUBLIC") // PUBLIC | INSIDER | OPERATOR
+  doctrineTierChangedAt DateTime?
+  doctrineTimezone      String    @default("America/New_York")
+  doctrineRecruitedById String?
+  doctrineRecruitedBy   User?                         @relation("DoctrineRecruitment", fields: [doctrineRecruitedById], references: [id])
+  doctrineRecruits      User[]                        @relation("DoctrineRecruitment")
+  doctrineReputation          DoctrineReputation?
+  doctrinePuzzleSubmissions   DoctrinePuzzleSubmission[]
+  doctrineSafehouseAccessLogs DoctrineAccessLog[]
+  doctrineIncidentReports     DoctrineIncidentReport[]
+  doctrineReactions           DoctrineReaction[]
+  doctrineRecruitmentCodes    DoctrineRecruitmentCode[]
+  doctrineSahurParticipations DoctrineSahurParticipation[]
+
   @@map("user")
 }
 
@@ -1564,4 +1579,300 @@ model DiscordDailyProgress {
 
   @@unique([discordId, dateKey])
   @@map("discord_daily_progress")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DOCTRINE ENGINE (RMH Strategies)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+enum DoctrinePuzzleMode {
+  ALIBI
+  SPECTRUM
+  OUTCAST
+  CHAINLINK
+  IMPOSTOR
+  SAHUR_SPECIAL
+}
+
+enum DoctrineSafehouseType {
+  DEV_LOG
+  BUILD
+  POSTMORTEM
+  DECISION
+  RAW_FOOTAGE
+  FINANCIAL
+  VOTE
+}
+
+enum DoctrineDisclosureStatus {
+  CLASSIFIED
+  TEASED
+  DISCLOSED
+  ARCHIVED
+}
+
+enum DoctrineIncidentSeverity {
+  COSMETIC
+  DEGRADED
+  CRITICAL
+  CATASTROPHIC
+}
+
+enum DoctrineIncidentStatus {
+  ACTIVE
+  MITIGATED
+  RESOLVED
+  LEGENDARY
+}
+
+enum DoctrineReactionType {
+  FIRE
+  BASED
+  MID
+  CRINGE
+  TRASH
+  TUNG
+}
+
+// ─── REPUTATION ─────────────────────────────────────────────────────────────
+
+model DoctrineReputation {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalXp       Int      @default(0)
+  currentStreak Int      @default(0)
+  longestStreak Int      @default(0)
+  lastActiveAt  DateTime @default(now())
+  coalitionScore Float   @default(1.0)
+  sahurCount    Int      @default(0)
+  ledger        DoctrineReputationLedger[]
+
+  @@index([totalXp(sort: Desc)])
+  @@map("doctrine_reputation")
+}
+
+model DoctrineReputationLedger {
+  id           String             @id @default(cuid())
+  reputationId String
+  reputation   DoctrineReputation @relation(fields: [reputationId], references: [id], onDelete: Cascade)
+  action       String
+  xpDelta      Int
+  reason       String
+  metadata     Json?
+  createdAt    DateTime           @default(now())
+
+  @@index([reputationId, createdAt(sort: Desc)])
+  @@map("doctrine_reputation_ledger")
+}
+
+// ─── PUZZLES ────────────────────────────────────────────────────────────────
+
+model DoctrinePuzzle {
+  id          String                     @id @default(cuid())
+  mode        DoctrinePuzzleMode
+  date        DateTime                   @db.Date
+  seed        Int
+  data        Json
+  difficulty  Int                        @db.SmallInt
+  resetsAt    DateTime
+  isSahur     Boolean                    @default(false)
+  submissions DoctrinePuzzleSubmission[]
+  createdAt   DateTime                   @default(now())
+
+  @@unique([mode, date])
+  @@index([date(sort: Desc)])
+  @@index([mode, date])
+  @@map("doctrine_puzzle")
+}
+
+model DoctrinePuzzleSubmission {
+  id        String         @id @default(cuid())
+  puzzleId  String
+  puzzle    DoctrinePuzzle @relation(fields: [puzzleId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answer    Json
+  timeMs    Int
+  attempts  Int
+  correct   Boolean
+  score     Int
+  createdAt DateTime       @default(now())
+
+  @@unique([puzzleId, userId])
+  @@index([puzzleId, score(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("doctrine_puzzle_submission")
+}
+
+// ─── SAFEHOUSE ──────────────────────────────────────────────────────────────
+
+model DoctrineSafehouseContent {
+  id          String                @id @default(cuid())
+  type        DoctrineSafehouseType
+  title       String
+  body        String
+  minTier     String                @default("INSIDER") // PUBLIC | INSIDER | OPERATOR
+  authorId    String
+  mediaUrls   String[]
+  reactions   DoctrineReaction[]
+  accessLogs  DoctrineAccessLog[]
+  publishedAt DateTime?
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+
+  @@index([minTier, publishedAt(sort: Desc)])
+  @@map("doctrine_safehouse_content")
+}
+
+model DoctrineAccessLog {
+  id        String                   @id @default(cuid())
+  userId    String
+  user      User                     @relation(fields: [userId], references: [id])
+  contentId String
+  content   DoctrineSafehouseContent @relation(fields: [contentId], references: [id])
+  viewedAt  DateTime                 @default(now())
+
+  @@unique([userId, contentId])
+  @@index([contentId])
+  @@map("doctrine_access_log")
+}
+
+// ─── DISCLOSURES ────────────────────────────────────────────────────────────
+
+model DoctrineDisclosure {
+  id            String                    @id @default(cuid())
+  codename      String
+  publicTitle   String
+  content       String
+  narrative     String
+  minTierTeaser String                    @default("OPERATOR")
+  status        DoctrineDisclosureStatus  @default(CLASSIFIED)
+  scheduledAt   DateTime?
+  teasedAt      DateTime?
+  disclosedAt   DateTime?
+  mediaUrls     String[]
+  reactions     DoctrineReaction[]
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
+
+  @@index([status, scheduledAt])
+  @@map("doctrine_disclosure")
+}
+
+// ─── RECRUITMENT ────────────────────────────────────────────────────────────
+
+model DoctrineRecruitmentCode {
+  id              String   @id @default(cuid())
+  code            String   @unique
+  recruiterId     String
+  recruiter       User     @relation(fields: [recruiterId], references: [id])
+  personalMessage String
+  targetSkills    String[]
+  uses            Int      @default(0)
+  maxUses         Int      @default(5)
+  expiresAt       DateTime
+  convertedIds    String[]
+  createdAt       DateTime @default(now())
+
+  @@index([code])
+  @@index([recruiterId])
+  @@map("doctrine_recruitment_code")
+}
+
+// ─── INCIDENTS ──────────────────────────────────────────────────────────────
+
+model DoctrineIncident {
+  id              String                   @id @default(cuid())
+  codename        String
+  severity        DoctrineIncidentSeverity
+  title           String
+  narrative       String
+  status          DoctrineIncidentStatus   @default(ACTIVE)
+  firstReporterId String?
+  postmortemId    String?
+  timeline        DoctrineIncidentEvent[]
+  reports         DoctrineIncidentReport[]
+  reactions       DoctrineReaction[]
+  createdAt       DateTime                 @default(now())
+  resolvedAt      DateTime?
+
+  @@index([status, createdAt(sort: Desc)])
+  @@map("doctrine_incident")
+}
+
+model DoctrineIncidentEvent {
+  id         String           @id @default(cuid())
+  incidentId String
+  incident   DoctrineIncident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  type       String
+  message    String
+  createdAt  DateTime         @default(now())
+
+  @@index([incidentId, createdAt])
+  @@map("doctrine_incident_event")
+}
+
+model DoctrineIncidentReport {
+  id         String           @id @default(cuid())
+  incidentId String
+  incident   DoctrineIncident @relation(fields: [incidentId], references: [id])
+  userId     String
+  user       User             @relation(fields: [userId], references: [id])
+  message    String
+  createdAt  DateTime         @default(now())
+
+  @@index([incidentId])
+  @@map("doctrine_incident_report")
+}
+
+// ─── REACTIONS (polymorphic across doctrine content) ────────────────────────
+
+model DoctrineReaction {
+  id           String                    @id @default(cuid())
+  userId       String
+  user         User                      @relation(fields: [userId], references: [id])
+  reaction     DoctrineReactionType
+  safehouseId  String?
+  safehouse    DoctrineSafehouseContent?  @relation(fields: [safehouseId], references: [id])
+  disclosureId String?
+  disclosure   DoctrineDisclosure?        @relation(fields: [disclosureId], references: [id])
+  incidentId   String?
+  incident     DoctrineIncident?          @relation(fields: [incidentId], references: [id])
+  createdAt    DateTime                   @default(now())
+
+  @@unique([userId, safehouseId])
+  @@unique([userId, disclosureId])
+  @@unique([userId, incidentId])
+  @@map("doctrine_reaction")
+}
+
+// ─── SAHUR MODE ─────────────────────────────────────────────────────────────
+
+model DoctrineSahurSession {
+  id               String                       @id @default(cuid())
+  dateKey          String
+  timezone         String
+  activatedAt      DateTime                     @default(now())
+  deactivatedAt    DateTime?
+  participantCount Int                          @default(0)
+  participants     DoctrineSahurParticipation[]
+
+  @@unique([dateKey, timezone])
+  @@index([dateKey])
+  @@map("doctrine_sahur_session")
+}
+
+model DoctrineSahurParticipation {
+  id              String               @id @default(cuid())
+  sessionId       String
+  session         DoctrineSahurSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User                 @relation(fields: [userId], references: [id])
+  joinedAt        DateTime             @default(now())
+  puzzlesCompleted Int                 @default(0)
+  xpEarned        Int                  @default(0)
+
+  @@unique([sessionId, userId])
+  @@map("doctrine_sahur_participation")
 }

@@ -2061,3 +2061,113 @@ img.emoji {
 .radix-popover-animate[data-state="closed"] {
   animation: radix-popover-content-hide 150ms cubic-bezier(0.16, 1, 0.3, 1);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DOCTRINE ENGINE (RMH Strategies) — Theme Tokens & Overrides
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Doctrine Design Tokens */
+  --doctrine-bg-primary: #0A0A0B;
+  --doctrine-bg-secondary: #141416;
+  --doctrine-bg-tertiary: #1C1C20;
+  --doctrine-bg-elevated: #232328;
+  --doctrine-text-primary: #F5F5F5;
+  --doctrine-text-secondary: #A1A1AA;
+  --doctrine-text-muted: #52525B;
+  --doctrine-accent: #F97316;
+  --doctrine-accent-muted: rgba(249, 115, 22, 0.2);
+  --doctrine-success: #22C55E;
+  --doctrine-warning: #EAB308;
+  --doctrine-error: #EF4444;
+
+  /* Tier Colors */
+  --doctrine-tier-public: #6B7280;
+  --doctrine-tier-insider: #F59E0B;
+  --doctrine-tier-operator: #EF4444;
+
+  /* Reaction Colors */
+  --doctrine-reaction-fire: #F97316;
+  --doctrine-reaction-based: #22C55E;
+  --doctrine-reaction-mid: #6B7280;
+  --doctrine-reaction-cringe: #A855F7;
+  --doctrine-reaction-trash: #EF4444;
+  --doctrine-reaction-tung: #A16207;
+}
+
+/* ─── Safehouse Theme (Kiriakou) ─────────────────────────────────────────── */
+[data-theme="safehouse"] {
+  --doctrine-bg-primary: #030712;
+  --doctrine-bg-secondary: #0C1220;
+  --doctrine-bg-tertiary: #111827;
+  --doctrine-accent: #22D3EE;
+  --doctrine-accent-muted: rgba(34, 211, 238, 0.2);
+}
+
+/* ─── Sahur Theme (Tung Tung Tung) ───────────────────────────────────────── */
+[data-theme="sahur"] {
+  --doctrine-bg-primary: #1A0F00;
+  --doctrine-bg-secondary: #2D1A00;
+  --doctrine-bg-tertiary: #3D2400;
+  --doctrine-accent: #F59E0B;
+  --doctrine-accent-muted: rgba(245, 158, 11, 0.2);
+  --doctrine-text-primary: #FDE68A;
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ctext y='20' font-size='20'%3E🪵%3C/text%3E%3C/svg%3E"), auto;
+}
+
+[data-theme="sahur"] * {
+  cursor: inherit;
+}
+
+/* Sahur wood-grain background texture */
+[data-theme="sahur"]::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 2px,
+      rgba(139, 92, 42, 0.04) 2px,
+      rgba(139, 92, 42, 0.04) 4px
+    );
+  pointer-events: none;
+}
+
+/* Sahur screen shake on button clicks */
+@keyframes doctrine-shake {
+  0%, 100% { transform: translate(0); }
+  25% { transform: translate(-2px, 1px); }
+  50% { transform: translate(2px, -1px); }
+  75% { transform: translate(-1px, 2px); }
+}
+
+[data-theme="sahur"] button:active {
+  animation: doctrine-shake 0.15s ease-in-out;
+}
+
+/* ─── Doctrine layout base ───────────────────────────────────────────────── */
+.doctrine-layout {
+  background: var(--doctrine-bg-primary);
+  color: var(--doctrine-text-primary);
+  min-height: 100dvh;
+}
+
+.doctrine-sidebar {
+  background: var(--doctrine-bg-secondary);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ─── Streak loss animation ──────────────────────────────────────────────── */
+@keyframes doctrine-streak-loss {
+  0% { filter: none; }
+  15% { filter: brightness(2) saturate(0); }
+  30% { filter: brightness(0.5); }
+  100% { filter: none; }
+}
+
+.doctrine-streak-lost {
+  animation: doctrine-streak-loss 0.6s ease-out;
+}
