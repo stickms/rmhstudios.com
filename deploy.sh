@@ -358,8 +358,9 @@ send_deploy_started
 # Free disk space before building to avoid "no space left on device" errors.
 # Prune dangling images and cap build cache proactively.
 step_start "Pre-build disk cleanup..."
+"$DOCKER_BIN" container prune -f > /dev/null 2>&1 || true
 "$DOCKER_BIN" image prune -f > /dev/null 2>&1 || true
-"$DOCKER_BIN" builder prune --keep-storage 5g -f > /dev/null 2>&1 || true
+"$DOCKER_BIN" builder prune --keep-storage 2g -f > /dev/null 2>&1 || true
 step_done
 
 # ── Step 2: Build Docker image ──────────────────────────────────────────────

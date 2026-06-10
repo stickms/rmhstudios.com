@@ -272,6 +272,9 @@ importers:
       three:
         specifier: ^0.183.2
         version: 0.183.2
+      threejs-brain-animation:
+        specifier: ^1.4.9
+        version: 1.4.9(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       tone:
         specifier: ^15.1.22
         version: 15.1.22
@@ -390,6 +393,15 @@ importers:
       vitest:
         specifier: ^4.1.0
         version: 4.1.0(@types/node@20.19.37)(vite@8.0.0(@types/node@20.19.37)(esbuild@0.27.3)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))
+
+  cli:
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.37
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
 
 packages:
 
@@ -4041,6 +4053,9 @@ packages:
     resolution: {integrity: sha512-5v6yZd4JK3eMI3FqqCouswVqwugaA9r4dNZB1wwcmrD02QkV5H0y7XBQW8QwQqEaZY1pM9aqORSORhJRdNK44Q==}
     engines: {node: '>=6.0'}
 
+  gsap@3.15.0:
+    resolution: {integrity: sha512-dMW4CWBTUK1AEEDeZc1g4xpPGIrSf9fJF960qbTZmN/QwZIWY5wgliS6JWl9/25fpTGJrMRtSjGtOmPnfjZB+A==}
+
   h3@2.0.1-rc.14:
     resolution: {integrity: sha512-163qbGmTr/9rqQRNuqMqtgXnOUAkE4KTdauiC9y0E5iG1I65kte9NyfWvZw5RTDMt6eY+DtyoNzrQ9wA2BfvGQ==}
     engines: {node: '>=20.11.1'}
@@ -5579,6 +5594,11 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
+  three-instanced-uniforms-mesh@0.45.0:
+    resolution: {integrity: sha512-saSk8zct6uig4p9ejuZoLv18sHrxzFOt2OaBNbKXD2SplqlPCEbsNStjWVzXvOR4LVo38BTbfXUsRbupMW1MHw==}
+    peerDependencies:
+      three: '>=0.103.0'
+
   three-mesh-bvh@0.8.3:
     resolution: {integrity: sha512-4G5lBaF+g2auKX3P0yqx+MJC6oVt6sB5k+CchS6Ob0qvH0YIhuUk1eYr7ktsIpY+albCqE80/FVQGV190PmiAg==}
     peerDependencies:
@@ -5589,8 +5609,17 @@ packages:
     peerDependencies:
       three: '>=0.128.0'
 
+  three@0.136.0:
+    resolution: {integrity: sha512-+fEMX7nYLz2ZesVP/dyifli5Jf8gR3XPAnFJveQ80aMhibFduzrADnjMbARXh8+W9qLK7rshJCjAIL/6cDxC+A==}
+
   three@0.183.2:
     resolution: {integrity: sha512-di3BsL2FEQ1PA7Hcvn4fyJOlxRRgFYBpMTcyOgkwJIaDOdJMebEFPA+t98EvjuljDx4hNulAGwF6KIjtwI5jgQ==}
+
+  threejs-brain-animation@1.4.9:
+    resolution: {integrity: sha512-ouU1Hb5Lhwcv/7wVGpSry04Z8Jm7pb2lPNEhoGxAuA0eIHuLrjpH0KCyV3S+LArDyVvDfQ1g35GDjhzZQlHSmw==}
+    peerDependencies:
+      react: ^18.3.1
+      react-dom: ^18.3.1
 
   tiny-inflate@1.0.3:
     resolution: {integrity: sha512-pkY1fj1cKHb2seWDy0B16HeWyczlJA9/WW3u3c4z/NiWDsO3DOU5D7nhTLE9CF0yXv/QZFY7sEJmj24dK+Rrqw==}
@@ -5646,6 +5675,11 @@ packages:
     resolution: {integrity: sha512-V50EwcYGruV5rUZ9F4aNsrytGdKcXKALjEtQXIOBfhVoZU9VAqZNIoGQ3TMiooVqFAbR1w15T+f+8gkzoFzawg==}
     peerDependencies:
       three: '>=0.125.0'
+
+  troika-three-utils@0.45.0:
+    resolution: {integrity: sha512-VJqEx8aww2El/zSbbnmjdhaAOQ4LM0CVJmKh385Vi/CzruhMmWEaunMRI/J1vh4MbbGo+dREu73FkMkr/PXypA==}
+    peerDependencies:
+      three: '>=0.103.0'
 
   troika-three-utils@0.52.4:
     resolution: {integrity: sha512-NORAStSVa/BDiG52Mfudk4j1FG4jC4ILutB3foPnfGbOeIs9+G5vZLa0pnmnaftZUGm4UwSoqEpWdqvC7zms3A==}
@@ -9450,6 +9484,8 @@ snapshots:
       section-matter: 1.0.0
       strip-bom-string: 1.0.0
 
+  gsap@3.15.0: {}
+
   h3@2.0.1-rc.14(crossws@0.4.4(srvx@0.10.1)):
     dependencies:
       rou3: 0.7.12
@@ -11229,6 +11265,11 @@ snapshots:
       source-map-support: 0.5.21
     optional: true
 
+  three-instanced-uniforms-mesh@0.45.0(three@0.136.0):
+    dependencies:
+      three: 0.136.0
+      troika-three-utils: 0.45.0(three@0.136.0)
+
   three-mesh-bvh@0.8.3(three@0.183.2):
     dependencies:
       three: 0.183.2
@@ -11243,7 +11284,18 @@ snapshots:
       potpack: 1.0.2
       three: 0.183.2
 
+  three@0.136.0: {}
+
   three@0.183.2: {}
+
+  threejs-brain-animation@1.4.9(react-dom@19.2.4(react@19.2.4))(react@19.2.4):
+    dependencies:
+      gsap: 3.15.0
+      react: 19.2.4
+      react-dom: 19.2.4(react@19.2.4)
+      stats.js: 0.17.0
+      three: 0.136.0
+      three-instanced-uniforms-mesh: 0.45.0(three@0.136.0)
 
   tiny-inflate@1.0.3: {}
 
@@ -11293,6 +11345,10 @@ snapshots:
       troika-three-utils: 0.52.4(three@0.183.2)
       troika-worker-utils: 0.52.0
       webgl-sdf-generator: 1.1.1
+
+  troika-three-utils@0.45.0(three@0.136.0):
+    dependencies:
+      three: 0.136.0
 
   troika-three-utils@0.52.4(three@0.183.2):
     dependencies:
