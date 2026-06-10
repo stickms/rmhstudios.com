@@ -8,7 +8,7 @@ import {
   useNavigate,
 } from "@tanstack/react-router";
 import { type ReactNode, useEffect } from "react";
-import { ComingSoonGate } from "@/components/ComingSoonGate";
+import { LockdownPage } from "@/components/lockdown/LockdownPage";
 import { isDiscordActivity } from "@/lib/discord-sdk";
 import appCss from "@/app/globals.css?url";
 
@@ -121,5 +121,5 @@ function RootComponent() {
     return <Outlet />;
   }
 
-  return <ComingSoonGate />;
+  return <LockdownPage />;
 }
