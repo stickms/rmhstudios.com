@@ -1,9 +1,10 @@
-import { useEffect, useCallback } from 'react';
+import { lazy, Suspense, useEffect, useCallback } from 'react';
 import { useRmhMusicStore } from '@/lib/rmhmusic/store';
 import { usePreviewPlayer } from '@/lib/rmhmusic/spotify-player';
 import { emit } from '@/lib/rmhmusic/socket';
 import { C2S } from '@/lib/rmhmusic/events';
-import Visualizer from '@/components/rmhmusic/Visualizer';
+
+const Visualizer = lazy(() => import('@/components/rmhmusic/Visualizer'));
 import PlayerBar from '@/components/rmhmusic/PlayerBar';
 import SearchPanel from '@/components/rmhmusic/SearchPanel';
 import ChatPanel from '@/components/rmhmusic/ChatPanel';
@@ -62,7 +63,7 @@ export default function PlayerPage() {
 
   return (
     <div className="relative min-h-screen" style={{ background: 'var(--site-bg)' }}>
-      <Visualizer />
+      <Suspense fallback={null}><Visualizer /></Suspense>
 
       {/* Floating album art */}
       {currentTrack?.albumArt && (

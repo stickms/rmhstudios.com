@@ -1,35 +1,6 @@
-/**
- * Home / Feed Page Route
- */
-
 import { createFileRoute } from '@tanstack/react-router';
-import { createServerFn } from '@tanstack/react-start';
-import { FeedLayout } from '@/components/feed/FeedLayout';
-import { getSidebarData } from '@/lib/sidebar-data';
-
-const fetchSidebarData = createServerFn({ method: 'GET' }).handler(async () => {
-  return getSidebarData();
-});
+import { ComingSoonGate } from '@/components/ComingSoonGate';
 
 export const Route = createFileRoute('/_site/')({
-  loader: () => fetchSidebarData(),
-  component: Home,
+  component: ComingSoonGate,
 });
-
-function Home() {
-  const {
-    officialBuilds,
-    userBuilds,
-    recommendedUsers,
-    blogPosts,
-  } = Route.useLoaderData();
-
-  return (
-    <FeedLayout
-      officialBuilds={officialBuilds}
-      userBuilds={userBuilds}
-      recommendedUsers={recommendedUsers}
-      blogPosts={blogPosts}
-    />
-  );
-}
