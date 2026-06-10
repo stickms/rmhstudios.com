@@ -3,13 +3,14 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import { useEffect, useCallback } from 'react';
+import { lazy, Suspense, useEffect, useCallback } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useRmhMusicStore } from '@/lib/rmhmusic/store';
 import { usePreviewPlayer } from '@/lib/rmhmusic/spotify-player';
 import { connectToRmhMusic, emit } from '@/lib/rmhmusic/socket';
 import { C2S } from '@/lib/rmhmusic/events';
-import Visualizer from '@/components/rmhmusic/Visualizer';
+
+const Visualizer = lazy(() => import('@/components/rmhmusic/Visualizer'));
 import PlayerBar from '@/components/rmhmusic/PlayerBar';
 import SearchPanel from '@/components/rmhmusic/SearchPanel';
 import ChatPanel from '@/components/rmhmusic/ChatPanel';
@@ -82,7 +83,7 @@ function RoomPage() {
 
   return (
     <div className="relative min-h-screen" style={{ background: 'var(--site-bg)' }}>
-      <Visualizer />
+      <Suspense fallback={null}><Visualizer /></Suspense>
       {room && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-20">
           <div className="flex items-center gap-3 px-4 py-2 rounded-full backdrop-blur-xl" style={{ background: 'color-mix(in srgb, var(--site-bg) 70%, transparent)' }}>

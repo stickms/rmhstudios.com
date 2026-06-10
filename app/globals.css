@@ -2171,3 +2171,164 @@ img.emoji {
 .doctrine-streak-lost {
   animation: doctrine-streak-loss 0.6s ease-out;
 }
+/* ─── Coming Soon Gate ───────────────────────────────────────────────────── */
+.coming-soon-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #09090b;
+  overflow: hidden;
+}
+
+.coming-soon-noise {
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+.coming-soon-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.7) 100%);
+  pointer-events: none;
+}
+
+.coming-soon-shapes {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.coming-soon-shape {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.06;
+  animation: coming-soon-drift linear infinite;
+}
+
+.coming-soon-shape-a {
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, #6366f1, transparent 70%);
+  top: -100px; left: -100px;
+  animation-duration: 22s;
+}
+.coming-soon-shape-b {
+  width: 300px; height: 300px;
+  background: radial-gradient(circle, #8b5cf6, transparent 70%);
+  bottom: -80px; right: -80px;
+  animation-duration: 28s;
+  animation-direction: reverse;
+}
+.coming-soon-shape-c {
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, #a78bfa, transparent 70%);
+  top: 30%; left: 60%;
+  animation-duration: 18s;
+}
+.coming-soon-shape-d {
+  width: 250px; height: 250px;
+  background: radial-gradient(circle, #4f46e5, transparent 70%);
+  top: 60%; left: 20%;
+  animation-duration: 25s;
+  animation-direction: reverse;
+}
+.coming-soon-shape-e {
+  width: 180px; height: 180px;
+  background: radial-gradient(circle, #7c3aed, transparent 70%);
+  top: 10%; right: 25%;
+  animation-duration: 20s;
+}
+
+@keyframes coming-soon-drift {
+  0%   { transform: translate(0, 0) scale(1); }
+  33%  { transform: translate(40px, -30px) scale(1.1); }
+  66%  { transform: translate(-20px, 40px) scale(0.95); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+.coming-soon-center {
+  position: relative;
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.coming-soon-kicker {
+  font-size: 0.75rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: rgba(139, 92, 246, 0.8);
+  margin-bottom: 0.75rem;
+}
+
+.coming-soon-center h1 {
+  font-size: clamp(3rem, 10vw, 7rem);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #fff;
+  line-height: 1;
+}
+
+.coming-soon-form {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.coming-soon-input-shell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 1rem;
+  height: 2.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255,255,255,0.4);
+  transition: border-color 0.2s;
+}
+
+.coming-soon-input-shell:focus-within {
+  border-color: rgba(139, 92, 246, 0.5);
+  color: rgba(139, 92, 246, 0.8);
+}
+
+.coming-soon-input-shell input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-size: 0.875rem;
+  width: 16rem;
+}
+
+.coming-soon-input-shell input::placeholder {
+  color: rgba(255,255,255,0.25);
+}
+
+.coming-soon-input-shell button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.coming-soon-input-shell button:hover {
+  color: rgba(139, 92, 246, 1);
+}
+
+.coming-soon-message {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.4);
+  min-height: 1.2em;
+}
