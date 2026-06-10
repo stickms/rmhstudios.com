@@ -8,8 +8,7 @@ import {
   useNavigate,
 } from "@tanstack/react-router";
 import { type ReactNode, useEffect } from "react";
-import { Providers } from "@/components/Providers";
-import { TwemojiProvider } from "@/components/ui/TwemojiProvider";
+import { LockdownPage } from "@/components/lockdown/LockdownPage";
 import { isDiscordActivity } from "@/lib/discord-sdk";
 import appCss from "@/app/globals.css?url";
 
@@ -58,9 +57,9 @@ export const Route = createRootRoute({
       meta: [
         { charSet: "utf-8" },
         { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-        { title: "RMH | The Everything Platform" },
-        { name: "description", content: "RMH - The Everything Platform. Games, apps, research, and more." },
-        { name: "robots", content: "index, follow" },
+        { title: "RMHStudios | Coming Soon" },
+        { name: "description", content: "RMHStudios is recalibrating. RMHlink and the next RMH experience are coming soon." },
+        { name: "robots", content: "noindex, nofollow" },
       ],
       links: [
         { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
@@ -117,16 +116,10 @@ function RootComponent() {
   }, [pathname, navigate]);
 
   // Discord Activity routes skip Providers (auth, themes, etc.)
-  // to avoid CSP-blocked requests and unnecessary overhead
+  // to avoid CSP-blocked requests and unnecessary overhead.
   if (isDiscordRoute(pathname)) {
     return <Outlet />;
   }
 
-  return (
-    <Providers>
-      <TwemojiProvider tag="div">
-        <Outlet />
-      </TwemojiProvider>
-    </Providers>
-  );
+  return <LockdownPage />;
 }
