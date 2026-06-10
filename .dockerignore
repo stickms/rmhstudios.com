@@ -40,6 +40,15 @@ db/avatars
 db/builds
 db/music
 
+# ─── Dormant public media during lockdown ──────────────────────────
+# The live lockdown page only needs favicon.svg, public/models/, and bundled
+# Vite assets. These large legacy game/audio assets can push small Docker hosts
+# over their overlay storage limit during COPY public ./public/.
+public/music
+public/sprites
+public/**/*.psd
+public/**/generate_sprites.py
+
 # ─── Documentation ──────────────────────────────────────────────────
 docs
 *.md
