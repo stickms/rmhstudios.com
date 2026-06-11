@@ -97,7 +97,8 @@ const tourStops: TourStop[] = [
   { ...allRegions[6], label: 'The Architect',        azimuth: Math.PI - 0.38,   polar: 1.45 },  // marlon: front view
 ];
 
-const TOUR_STOPS = tourStops.length;         // 6
+const TOUR_STOPS     = tourStops.length;       // 6
+const tourRegionIds  = tourStops.map((s) => s.id);
 const TOUR_VH    = TOUR_STOPS * 90;          // 540vh total scroll height
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -111,10 +112,11 @@ function shortAngleDelta(from: number, to: number): number {
 export function LockdownPage() {
   const pageRef         = useRef<HTMLDivElement>(null);
   const tourRef         = useRef<HTMLElement>(null);
-  const cameraTargetRef = useRef<CameraTarget>({
+  const cameraTargetRef  = useRef<CameraTarget>({
     azimuth: tourStops[0].azimuth,
     polar:   tourStops[0].polar,
   });
+  const tourProgressRef  = useRef(0);
 
   const [activeTourIdx, setActiveTourIdx] = useState(0);
   const [password,      setPassword]      = useState('');
@@ -148,7 +150,8 @@ export function LockdownPage() {
 
       const azimuth = from.azimuth + shortAngleDelta(from.azimuth, to.azimuth) * t;
       const polar   = from.polar   + (to.polar   - from.polar) * t;
-      cameraTargetRef.current = { azimuth, polar };
+      cameraTargetRef.current  = { azimuth, polar };
+      tourProgressRef.current  = floatIdx;
 
       const snapIdx = Math.min(Math.round(floatIdx), TOUR_STOPS - 1);
       setActiveTourIdx((prev) => (prev !== snapIdx ? snapIdx : prev));
@@ -301,6 +304,8 @@ export function LockdownPage() {
                 onSelect={() => {}}
                 scrollDriven
                 cameraTargetRef={cameraTargetRef}
+                tourProgressRef={tourProgressRef}
+                tourRegionIds={tourRegionIds}
               />
             </Suspense>
           </div>

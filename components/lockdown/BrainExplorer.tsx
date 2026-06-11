@@ -8,7 +8,6 @@ import {
   Box3,
   BufferAttribute,
   BufferGeometry,
-  Color,
   Mesh,
   Object3D,
   Vector3,
@@ -39,16 +38,20 @@ const brainRegionTargets: BrainRegion[] = [
   { id: 'cerebellum',    name: 'Cerebellum',             shortName: 'Timing', summary: '', link: '' },
 ];
 
-const regionColors: Record<string, { idle: string; active: string }> = {
-  prefrontal:    { idle: '#c4a0e0', active: '#e8c8ff' },
-  motor:         { idle: '#e8a89c', active: '#ffd0c8' },
-  somatosensory: { idle: '#e0cc84', active: '#f8f0a8' },
-  visual:        { idle: '#8ab8e8', active: '#c0dcf8' },
-  temporal:      { idle: '#e0a4cc', active: '#f8c8e8' },
-  hippocampus:   { idle: '#e8bc88', active: '#ffd8a8' },
-  thalamus:      { idle: '#9cb4e0', active: '#c4d4f8' },
-  cerebellum:    { idle: '#84c8ac', active: '#b8e8d0' },
-};
+// Idle: very dark neutral gray. Active: cool platinum (Apple neutral on dark bg).
+const IDLE_R = 0.14, IDLE_G = 0.14, IDLE_B = 0.15;
+const ACT_R  = 0.82, ACT_G  = 0.82, ACT_B  = 0.87;
+
+function paintRegion(colors: Float32Array, indices: number[], activation: number) {
+  const r = IDLE_R + (ACT_R - IDLE_R) * activation;
+  const g = IDLE_G + (ACT_G - IDLE_G) * activation;
+  const b = IDLE_B + (ACT_B - IDLE_B) * activation;
+  for (const i of indices) {
+    colors[i * 3]     = r;
+    colors[i * 3 + 1] = g;
+    colors[i * 3 + 2] = b;
+  }
+}
 
 // front = −Z, back = +Z, top = +Y, left = −X
 function resolveRegionId(position: Vector3): string {
@@ -108,16 +111,22 @@ function buildBrainGeometry(scene: Object3D): BufferGeometry {
 function BrainMesh({
   selectedRegion,
   onSelect,
+  tourProgressRef,
+  tourRegionIds,
 }: {
   selectedRegion: BrainRegion;
   onSelect: (region: BrainRegion) => void;
+  tourProgressRef?: MutableRefObject<number>;
+  tourRegionIds?: string[];
 }) {
   const gltf = useGLTF('/models/brain.glb');
-  const pointerStart = useRef<{ x: number; y: number } | null>(null);
+  const pointerStart   = useRef<{ x: number; y: number } | null>(null);
   const pointerDragged = useRef(false);
-  const colorAttrRef = useRef<BufferAttribute | null>(null);
-  const pulseColorsRef = useRef({ r1: 0, g1: 0, b1: 0, r2: 0, g2: 0, b2: 0 });
-  const lastPulseRef = useRef(-1);
+  const colorAttrRef   = useRef<BufferAttribute | null>(null);
+  const lastPulseRef   = useRef(-1);
+  const prevSelectedId = useRef('');
+  const prevFromIdx    = useRef(-1);
+  const prevToIdx      = useRef(-1);
 
   const geometry = useMemo(() => buildBrainGeometry(gltf.scene), [gltf.scene]);
 
@@ -137,6 +146,8 @@ function BrainMesh({
     return map;
   }, [vertexRegions]);
 
+  // Initialise every vertex to idle color whenever the geometry changes.
+  // Per-frame animations (scroll blend / pulse) run in useFrame below.
   useEffect(() => {
     const count = vertexRegions.length;
     if (count === 0) return;
@@ -149,25 +160,19 @@ function BrainMesh({
     }
 
     const colors = attr.array as Float32Array;
-    const tempColor = new Color();
     for (let i = 0; i < count; i++) {
-      const rid = vertexRegions[i];
-      const isActive = rid === selectedRegion.id;
-      tempColor.set(isActive ? regionColors[rid]?.active ?? '#ccc' : regionColors[rid]?.idle ?? '#999');
-      if (!isActive) tempColor.multiplyScalar(0.65);
-      colors[i * 3] = tempColor.r;
-      colors[i * 3 + 1] = tempColor.g;
-      colors[i * 3 + 2] = tempColor.b;
+      colors[i * 3]     = IDLE_R;
+      colors[i * 3 + 1] = IDLE_G;
+      colors[i * 3 + 2] = IDLE_B;
     }
 
-    lastPulseRef.current = -1;
+    // Reset animation state so useFrame starts clean
+    lastPulseRef.current  = -1;
+    prevSelectedId.current = '';
+    prevFromIdx.current   = -1;
+    prevToIdx.current     = -1;
     attr.needsUpdate = true;
-
-    const c = regionColors[selectedRegion.id] ?? regionColors.temporal;
-    const idleC = new Color(c.idle);
-    const activeC = new Color(c.active);
-    pulseColorsRef.current = { r1: idleC.r, g1: idleC.g, b1: idleC.b, r2: activeC.r, g2: activeC.g, b2: activeC.b };
-  }, [geometry, vertexRegions, regionIndicesMap, selectedRegion.id]);
+  }, [geometry, vertexRegions]);
 
   useFrame(({ clock }) => {
     const attr = colorAttrRef.current;
@@ -176,16 +181,51 @@ function BrainMesh({
     const colors = attr.array as Float32Array;
     let dirty = false;
 
-    const pulse = 0.5 + 0.5 * Math.sin(clock.elapsedTime * 1.6);
-    if (Math.abs(pulse - lastPulseRef.current) >= 0.05) {
-      lastPulseRef.current = pulse;
-      const { r1, g1, b1, r2, g2, b2 } = pulseColorsRef.current;
-      const t = 0.55 + 0.45 * pulse;
-      const r = r1 + (r2 - r1) * t; const g = g1 + (g2 - g1) * t; const b = b1 + (b2 - b1) * t;
-      for (const i of (regionIndicesMap[selectedRegion.id] ?? [])) {
-        colors[i * 3] = r; colors[i * 3 + 1] = g; colors[i * 3 + 2] = b;
+    if (tourProgressRef && tourRegionIds && tourRegionIds.length > 1) {
+      // ── Scroll-driven: smoothly blend two neighbouring regions ──────────────
+      const n        = tourRegionIds.length;
+      const floatIdx = Math.max(0, Math.min(n - 1, tourProgressRef.current));
+      const fromIdx  = Math.min(Math.floor(floatIdx), n - 2);
+      const t        = floatIdx - fromIdx;
+      const toIdx    = fromIdx + 1;
+
+      const pf = prevFromIdx.current;
+      const pt = prevToIdx.current;
+
+      // Reset any region that just left the active pair back to idle
+      if (pf >= 0 && pf !== fromIdx && pf !== toIdx) {
+        paintRegion(colors, regionIndicesMap[tourRegionIds[pf]] ?? [], 0);
+        dirty = true;
       }
+      if (pt >= 0 && pt !== fromIdx && pt !== toIdx) {
+        paintRegion(colors, regionIndicesMap[tourRegionIds[pt]] ?? [], 0);
+        dirty = true;
+      }
+
+      paintRegion(colors, regionIndicesMap[tourRegionIds[fromIdx]] ?? [], 1 - t);
+      paintRegion(colors, regionIndicesMap[tourRegionIds[toIdx]]   ?? [], t);
       dirty = true;
+
+      prevFromIdx.current = fromIdx;
+      prevToIdx.current   = toIdx;
+    } else {
+      // ── Interactive mode: pulse the active region ────────────────────────────
+      if (prevSelectedId.current !== selectedRegion.id) {
+        if (prevSelectedId.current) {
+          paintRegion(colors, regionIndicesMap[prevSelectedId.current] ?? [], 0);
+          dirty = true;
+        }
+        prevSelectedId.current = selectedRegion.id;
+        lastPulseRef.current   = -1;
+      }
+
+      const pulse = 0.5 + 0.5 * Math.sin(clock.elapsedTime * 1.6);
+      if (Math.abs(pulse - lastPulseRef.current) >= 0.05) {
+        lastPulseRef.current = pulse;
+        // Oscillate between 0.6 and 1.0 activation
+        paintRegion(colors, regionIndicesMap[selectedRegion.id] ?? [], 0.6 + 0.4 * pulse);
+        dirty = true;
+      }
     }
 
     if (dirty) attr.needsUpdate = true;
@@ -288,11 +328,15 @@ export function BrainExplorer({
   onSelect,
   scrollDriven = false,
   cameraTargetRef,
+  tourProgressRef,
+  tourRegionIds,
 }: {
   selectedRegion: BrainRegion;
   onSelect: (region: BrainRegion) => void;
   scrollDriven?: boolean;
   cameraTargetRef?: MutableRefObject<CameraTarget>;
+  tourProgressRef?: MutableRefObject<number>;
+  tourRegionIds?: string[];
 }) {
   const shellRef = useRef<HTMLDivElement>(null);
   const [canvasKey, setCanvasKey] = useState(0);
@@ -328,7 +372,12 @@ export function BrainExplorer({
         {selectedRegion.id === 'marlon' ? (
           <MarlonModel />
         ) : (
-          <BrainMesh selectedRegion={selectedRegion} onSelect={onSelect} />
+          <BrainMesh
+            selectedRegion={selectedRegion}
+            onSelect={onSelect}
+            tourProgressRef={tourProgressRef}
+            tourRegionIds={tourRegionIds}
+          />
         )}
 
         {scrollDriven ? (
