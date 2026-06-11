@@ -121,7 +121,13 @@ export function LockdownPage() {
         <div className="brain-console" aria-label="Interactive RMHlink brain region explorer">
           <div className="brain-viewport">
             <Suspense fallback={<div className="brain-animation-shell" />}>
-              <BrainExplorer selectedRegion={selectedRegion} onSelect={setSelectedRegion} />
+              <BrainExplorer
+                selectedRegion={selectedRegion}
+                onSelect={(r) => {
+                  const full = brainRegions.find((b) => b.id === r.id);
+                  if (full) setSelectedRegion(full);
+                }}
+              />
             </Suspense>
           </div>
 
