@@ -34,14 +34,18 @@ case "$ENVIRONMENT" in
         COMPOSE_PROFILES=""
         ;;
     staging)
-        BRANCH="staging"
-        ENV_FILE=".env.staging"
-        PROJECT_NAME="rmhstudios-staging"
-        PORT_WEB=8005
-        PORT_SOCKET=8001
-        PORT_RMHBOX=8676
-        PORT_RMHTUBE=8003
-        COMPOSE_PROFILES=""
+        # DISABLED: staging environment is temporarily suspended.
+        # To re-enable, remove the two lines below and restore the original block.
+        echo "INFO: Staging environment is disabled. Deploy skipped."
+        exit 0
+        # BRANCH="staging"
+        # ENV_FILE=".env.staging"
+        # PROJECT_NAME="rmhstudios-staging"
+        # PORT_WEB=8005
+        # PORT_SOCKET=8001
+        # PORT_RMHBOX=8676
+        # PORT_RMHTUBE=8003
+        # COMPOSE_PROFILES=""
         ;;
     *)
         echo "FATAL: Unknown environment '$ENVIRONMENT'. Use 'production' or 'staging'."

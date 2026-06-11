@@ -1,8 +1,9 @@
 'use client';
 
 import { Canvas, ThreeEvent, useFrame, useLoader, useThree } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+import { OrbitControls, useGLTF } from '@react-three/drei';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { MutableRefObject } from 'react';
 import {
   Box3,
   BufferAttribute,
@@ -25,53 +26,50 @@ type BrainRegion = {
   link: string;
 };
 
+export type CameraTarget = { azimuth: number; polar: number };
+
 const brainRegionTargets: BrainRegion[] = [
-  { id: 'prefrontal', name: 'Prefrontal Cortex', shortName: 'PFC', summary: '', link: '' },
-  { id: 'motor', name: 'Motor Cortex', shortName: 'Motor', summary: '', link: '' },
-  { id: 'somatosensory', name: 'Somatosensory Cortex', shortName: 'Touch', summary: '', link: '' },
-  { id: 'visual', name: 'Visual Cortex', shortName: 'Vision', summary: '', link: '' },
-  { id: 'temporal', name: 'Temporal Lobe', shortName: 'Memory', summary: '', link: '' },
-  { id: 'hippocampus', name: 'Hippocampal System', shortName: 'Map', summary: '', link: '' },
-  { id: 'thalamus', name: 'Thalamic Relay', shortName: 'Relay', summary: '', link: '' },
-  { id: 'cerebellum', name: 'Cerebellum', shortName: 'Timing', summary: '', link: '' },
+  { id: 'prefrontal',    name: 'Prefrontal Cortex',    shortName: 'PFC',    summary: '', link: '' },
+  { id: 'motor',         name: 'Motor Cortex',          shortName: 'Motor',  summary: '', link: '' },
+  { id: 'somatosensory', name: 'Somatosensory Cortex',  shortName: 'Touch',  summary: '', link: '' },
+  { id: 'visual',        name: 'Visual Cortex',          shortName: 'Vision', summary: '', link: '' },
+  { id: 'temporal',      name: 'Temporal Lobe',          shortName: 'Memory', summary: '', link: '' },
+  { id: 'hippocampus',   name: 'Hippocampal System',    shortName: 'Map',    summary: '', link: '' },
+  { id: 'thalamus',      name: 'Thalamic Relay',         shortName: 'Relay',  summary: '', link: '' },
+  { id: 'cerebellum',    name: 'Cerebellum',             shortName: 'Timing', summary: '', link: '' },
 ];
 
 const regionColors: Record<string, { idle: string; active: string }> = {
-  prefrontal:    { idle: '#c4a0e0', active: '#e8c8ff' }, // lavender → pale violet
-  motor:         { idle: '#e8a89c', active: '#ffd0c8' }, // coral    → pale peach
-  somatosensory: { idle: '#e0cc84', active: '#f8f0a8' }, // gold     → pale cream
-  visual:        { idle: '#8ab8e8', active: '#c0dcf8' }, // blue     → pale sky
-  temporal:      { idle: '#e0a4cc', active: '#f8c8e8' }, // mauve    → pale rose
-  hippocampus:   { idle: '#e8bc88', active: '#ffd8a8' }, // apricot  → pale peach
-  thalamus:      { idle: '#9cb4e0', active: '#c4d4f8' }, // slate    → pale periwinkle
-  cerebellum:    { idle: '#84c8ac', active: '#b8e8d0' }, // mint     → pale seafoam
+  prefrontal:    { idle: '#c4a0e0', active: '#e8c8ff' },
+  motor:         { idle: '#e8a89c', active: '#ffd0c8' },
+  somatosensory: { idle: '#e0cc84', active: '#f8f0a8' },
+  visual:        { idle: '#8ab8e8', active: '#c0dcf8' },
+  temporal:      { idle: '#e0a4cc', active: '#f8c8e8' },
+  hippocampus:   { idle: '#e8bc88', active: '#ffd8a8' },
+  thalamus:      { idle: '#9cb4e0', active: '#c4d4f8' },
+  cerebellum:    { idle: '#84c8ac', active: '#b8e8d0' },
 };
 
-// Calibrated from click data: front = −Z, back = +Z, top = +Y, left = −X.
-// Z range ≈ −1.5 (forehead) to +1.5 (occiput), Y range ≈ −0.6 (base) to +1.2 (crown).
+// front = −Z, back = +Z, top = +Y, left = −X
 function resolveRegionId(position: Vector3): string {
   const { x, y, z } = position;
-  if (z > 0.52 && y < -0.05) return 'cerebellum';                           // posterior-inferior
-  if (z > 0.82) return 'visual';                                              // occipital pole
-  if (z < -0.88) return 'prefrontal';                                         // frontal pole
-  if (y > 0.6 && z < 0.08) return 'motor';                                   // precentral (crown, anterior)
-  if (y > 0.6) return 'somatosensory';                                        // postcentral (crown, posterior)
-  if (Math.abs(x) < 0.52 && y > -0.08 && y < 0.58 && Math.abs(z) < 0.42) return 'thalamus'; // central
-  if (y < -0.12 && Math.abs(x) < 0.72 && z > -0.55) return 'hippocampus';   // inferior-medial
+  if (z > 0.52 && y < -0.05) return 'cerebellum';
+  if (z > 0.82)               return 'visual';
+  if (z < -0.88)              return 'prefrontal';
+  if (y > 0.6 && z < 0.08)   return 'motor';
+  if (y > 0.6)                return 'somatosensory';
+  if (Math.abs(x) < 0.52 && y > -0.08 && y < 0.58 && Math.abs(z) < 0.42) return 'thalamus';
+  if (y < -0.12 && Math.abs(x) < 0.72 && z > -0.55) return 'hippocampus';
   return 'temporal';
 }
 
-// KTX2 transcoder hosted on jsDelivr — no local WASM files needed
 const KTX2_TRANSCODER_PATH = 'https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/libs/basis/';
 
 function buildBrainGeometry(scene: Object3D): BufferGeometry {
   const meshes: Mesh[] = [];
-  scene.traverse((child) => {
-    if ((child as Mesh).isMesh) meshes.push(child as Mesh);
-  });
+  scene.traverse((child) => { if ((child as Mesh).isMesh) meshes.push(child as Mesh); });
   if (meshes.length === 0) return new BufferGeometry();
 
-  // Apply world transforms and strip to position+normal so mergeGeometries succeeds
   const geos = meshes.map((m) => {
     const geo = m.geometry.clone();
     geo.applyMatrix4(m.matrixWorld);
@@ -106,7 +104,7 @@ function BrainMesh({
   selectedRegion: BrainRegion;
   onSelect: (region: BrainRegion) => void;
 }) {
-  const gltf = useLoader(GLTFLoader, '/models/brain.glb');
+  const gltf = useGLTF('/models/brain.glb');
   const pointerStart = useRef<{ x: number; y: number } | null>(null);
   const pointerDragged = useRef(false);
   const colorAttrRef = useRef<BufferAttribute | null>(null);
@@ -127,14 +125,12 @@ function BrainMesh({
     return arr;
   }, [geometry]);
 
-  // Vertex indices bucketed by region — computed once, used by both hover and pulse
   const regionIndicesMap = useMemo(() => {
     const map = Object.fromEntries(brainRegionTargets.map((r) => [r.id, [] as number[]]));
     for (let i = 0; i < vertexRegions.length; i++) map[vertexRegions[i]]?.push(i);
     return map;
   }, [vertexRegions]);
 
-  // Rebuild all vertex colors when selected region changes
   useEffect(() => {
     const count = vertexRegions.length;
     if (count === 0) return;
@@ -151,17 +147,16 @@ function BrainMesh({
     for (let i = 0; i < count; i++) {
       const rid = vertexRegions[i];
       const isActive = rid === selectedRegion.id;
-      tempColor.set(isActive ? regionColors[rid].active : regionColors[rid].idle);
+      tempColor.set(isActive ? regionColors[rid]?.active ?? '#ccc' : regionColors[rid]?.idle ?? '#999');
       if (!isActive) tempColor.multiplyScalar(0.65);
       colors[i * 3] = tempColor.r;
       colors[i * 3 + 1] = tempColor.g;
       colors[i * 3 + 2] = tempColor.b;
     }
 
-    // Re-apply hover immediately if cursor is still over a non-selected region
     const hoveredId = hoveredIdRef.current;
     if (hoveredId && hoveredId !== selectedRegion.id) {
-      tempColor.set(regionColors[hoveredId].idle);
+      tempColor.set(regionColors[hoveredId]?.idle ?? '#999');
       for (const i of (regionIndicesMap[hoveredId] ?? [])) {
         colors[i * 3] = tempColor.r;
         colors[i * 3 + 1] = tempColor.g;
@@ -186,21 +181,18 @@ function BrainMesh({
     const colors = attr.array as Float32Array;
     let dirty = false;
 
-    // Handle hover region change
     const hoveredId = hoveredIdRef.current;
     const prevHoveredId = prevHoveredIdRef.current;
     if (hoveredId !== prevHoveredId) {
-      // Restore previous hovered region to dim idle (unless it's the selected one)
       if (prevHoveredId && prevHoveredId !== selectedRegion.id) {
-        const c = new Color(regionColors[prevHoveredId].idle).multiplyScalar(0.65);
+        const c = new Color(regionColors[prevHoveredId]?.idle ?? '#999').multiplyScalar(0.65);
         for (const i of (regionIndicesMap[prevHoveredId] ?? [])) {
           colors[i * 3] = c.r; colors[i * 3 + 1] = c.g; colors[i * 3 + 2] = c.b;
         }
         dirty = true;
       }
-      // Brighten newly hovered region (unless it's the selected one)
       if (hoveredId && hoveredId !== selectedRegion.id) {
-        const c = new Color(regionColors[hoveredId].idle);
+        const c = new Color(regionColors[hoveredId]?.idle ?? '#999');
         for (const i of (regionIndicesMap[hoveredId] ?? [])) {
           colors[i * 3] = c.r; colors[i * 3 + 1] = c.g; colors[i * 3 + 2] = c.b;
         }
@@ -209,7 +201,6 @@ function BrainMesh({
       prevHoveredIdRef.current = hoveredId;
     }
 
-    // Pulse the selected region — threshold 0.05 caps writes to ~20/s instead of 60/s
     const pulse = 0.5 + 0.5 * Math.sin(clock.elapsedTime * 1.6);
     if (Math.abs(pulse - lastPulseRef.current) >= 0.05) {
       lastPulseRef.current = pulse;
@@ -294,23 +285,52 @@ function MarlonModel() {
   return <primitive object={scene} />;
 }
 
+// Drives the camera toward a target azimuth + polar in scroll-driven mode
+function CameraDriver({
+  scrollDriven,
+  cameraTargetRef,
+}: {
+  scrollDriven: boolean;
+  cameraTargetRef: MutableRefObject<CameraTarget> | undefined;
+}) {
+  useFrame(({ camera }) => {
+    if (!scrollDriven || !cameraTargetRef) return;
+    const { azimuth: az, polar: pol } = cameraTargetRef.current;
+    const dist = 6.2;
+    const tx = dist * Math.sin(pol) * Math.sin(az);
+    const ty = dist * Math.cos(pol);
+    const tz = dist * Math.sin(pol) * Math.cos(az);
+    // 0.18 lerp per frame ≈ 90% of the way in ~12 frames (200ms at 60fps)
+    // Fast enough to feel scroll-linked, gentle enough to avoid jitter
+    camera.position.x += (tx - camera.position.x) * 0.18;
+    camera.position.y += (ty - camera.position.y) * 0.18;
+    camera.position.z += (tz - camera.position.z) * 0.18;
+    camera.lookAt(0, 0.04, 0);
+  });
+  return null;
+}
+
 export function BrainExplorer({
   selectedRegion,
   onSelect,
+  scrollDriven = false,
+  cameraTargetRef,
 }: {
   selectedRegion: BrainRegion;
   onSelect: (region: BrainRegion) => void;
+  scrollDriven?: boolean;
+  cameraTargetRef?: MutableRefObject<CameraTarget>;
 }) {
   const shellRef = useRef<HTMLDivElement>(null);
   const [canvasKey, setCanvasKey] = useState(0);
 
   useEffect(() => {
     const shell = shellRef.current;
-    if (!shell) return undefined;
+    if (!shell || scrollDriven) return undefined;
     const containWheel = (e: WheelEvent) => e.preventDefault();
     shell.addEventListener('wheel', containWheel, { passive: false });
     return () => shell.removeEventListener('wheel', containWheel);
-  }, []);
+  }, [scrollDriven]);
 
   const handleContextLost = useCallback(() => setCanvasKey((k) => k + 1), []);
 
@@ -331,21 +351,27 @@ export function BrainExplorer({
         <directionalLight position={[2.5, 3, 4]} intensity={1.8} />
         <directionalLight position={[-3, 1, 2]} intensity={0.7} />
         <pointLight position={[0, 2, 1.5]} intensity={0.4} />
+
         {selectedRegion.id === 'marlon' ? (
           <MarlonModel />
         ) : (
           <BrainMesh selectedRegion={selectedRegion} onSelect={onSelect} />
         )}
-        <OrbitControls
-          enablePan={false}
-          enableDamping
-          dampingFactor={0.08}
-          minDistance={5.0}
-          maxDistance={7.5}
-          rotateSpeed={0.38}
-          autoRotate
-          autoRotateSpeed={0.5}
-        />
+
+        {scrollDriven ? (
+          <CameraDriver scrollDriven cameraTargetRef={cameraTargetRef} />
+        ) : (
+          <OrbitControls
+            enablePan={false}
+            enableDamping
+            dampingFactor={0.08}
+            minDistance={5.0}
+            maxDistance={7.5}
+            rotateSpeed={0.38}
+            autoRotate
+            autoRotateSpeed={0.5}
+          />
+        )}
       </Canvas>
     </div>
   );

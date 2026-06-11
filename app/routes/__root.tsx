@@ -99,6 +99,12 @@ function RootDocument({ children }: { children: ReactNode }) {
   );
 }
 
+const LEGAL_PATHS = ['/terms', '/privacy', '/cookies', '/copyright'];
+
+function isLegalRoute(pathname: string): boolean {
+  return LEGAL_PATHS.includes(pathname);
+}
+
 function RootComponent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
@@ -116,8 +122,12 @@ function RootComponent() {
   }, [pathname, navigate]);
 
   // Discord Activity routes skip Providers (auth, themes, etc.)
-  // to avoid CSP-blocked requests and unnecessary overhead.
   if (isDiscordRoute(pathname)) {
+    return <Outlet />;
+  }
+
+  // Legal pages are publicly accessible regardless of lockdown state
+  if (isLegalRoute(pathname)) {
     return <Outlet />;
   }
 

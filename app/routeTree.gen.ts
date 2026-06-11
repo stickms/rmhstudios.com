@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as VoidBreakerRouteImport } from './routes/void-breaker'
 import { Route as VersecraftRouteImport } from './routes/versecraft'
 import { Route as Velum2099RouteImport } from './routes/velum2099'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TempleOfJoyRouteImport } from './routes/temple-of-joy'
 import { Route as SynapseStormRouteImport } from './routes/synapse-storm'
 import { Route as StudioRouteImport } from './routes/studio'
@@ -24,6 +25,7 @@ import { Route as RmhstudyRouteImport } from './routes/rmhstudy'
 import { Route as RmhmusicRouteImport } from './routes/rmhmusic'
 import { Route as RmhcodeRouteImport } from './routes/rmhcode'
 import { Route as RmhboxRouteImport } from './routes/rmhbox'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as NeonDriftwayRouteImport } from './routes/neon-driftway'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LightsOutRouteImport } from './routes/lights-out'
@@ -31,6 +33,8 @@ import { Route as LaundrySortRouteImport } from './routes/laundry-sort'
 import { Route as KowloonKnockoutRouteImport } from './routes/kowloon-knockout'
 import { Route as ForestExplorerRouteImport } from './routes/forest-explorer'
 import { Route as DailyRouteImport } from './routes/daily'
+import { Route as CopyrightRouteImport } from './routes/copyright'
+import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as AltairRouteImport } from './routes/altair'
 import { Route as SiteRouteImport } from './routes/_site'
 import { Route as VersecraftIndexRouteImport } from './routes/versecraft/index'
@@ -281,6 +285,11 @@ const Velum2099Route = Velum2099RouteImport.update({
   path: '/velum2099',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TempleOfJoyRoute = TempleOfJoyRouteImport.update({
   id: '/temple-of-joy',
   path: '/temple-of-joy',
@@ -341,6 +350,11 @@ const RmhboxRoute = RmhboxRouteImport.update({
   path: '/rmhbox',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NeonDriftwayRoute = NeonDriftwayRouteImport.update({
   id: '/neon-driftway',
   path: '/neon-driftway',
@@ -374,6 +388,16 @@ const ForestExplorerRoute = ForestExplorerRouteImport.update({
 const DailyRoute = DailyRouteImport.update({
   id: '/daily',
   path: '/daily',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CopyrightRoute = CopyrightRouteImport.update({
+  id: '/copyright',
+  path: '/copyright',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CookiesRoute = CookiesRouteImport.update({
+  id: '/cookies',
+  path: '/cookies',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AltairRoute = AltairRouteImport.update({
@@ -1593,6 +1617,8 @@ const ApiRmharksIdCommentCommentIdLikeRoute =
 export interface FileRoutesByFullPath {
   '/': typeof SiteIndexRoute
   '/altair': typeof AltairRouteWithChildren
+  '/cookies': typeof CookiesRoute
+  '/copyright': typeof CopyrightRoute
   '/daily': typeof DailyRouteWithChildren
   '/forest-explorer': typeof ForestExplorerRouteWithChildren
   '/kowloon-knockout': typeof KowloonKnockoutRouteWithChildren
@@ -1600,6 +1626,7 @@ export interface FileRoutesByFullPath {
   '/lights-out': typeof LightsOutRoute
   '/login': typeof LoginRoute
   '/neon-driftway': typeof NeonDriftwayRoute
+  '/privacy': typeof PrivacyRoute
   '/rmhbox': typeof RmhboxRouteWithChildren
   '/rmhcode': typeof RmhcodeRouteWithChildren
   '/rmhmusic': typeof RmhmusicRouteWithChildren
@@ -1612,6 +1639,7 @@ export interface FileRoutesByFullPath {
   '/studio': typeof StudioRouteWithChildren
   '/synapse-storm': typeof SynapseStormRoute
   '/temple-of-joy': typeof TempleOfJoyRouteWithChildren
+  '/terms': typeof TermsRoute
   '/velum2099': typeof Velum2099Route
   '/versecraft': typeof VersecraftRouteWithChildren
   '/void-breaker': typeof VoidBreakerRoute
@@ -1848,11 +1876,15 @@ export interface FileRoutesByFullPath {
   '/api/rmharks/$id/comment/$commentId/view': typeof ApiRmharksIdCommentCommentIdViewRoute
 }
 export interface FileRoutesByTo {
+  '/cookies': typeof CookiesRoute
+  '/copyright': typeof CopyrightRoute
   '/laundry-sort': typeof LaundrySortRoute
   '/lights-out': typeof LightsOutRoute
   '/login': typeof LoginRoute
   '/neon-driftway': typeof NeonDriftwayRoute
+  '/privacy': typeof PrivacyRoute
   '/synapse-storm': typeof SynapseStormRoute
+  '/terms': typeof TermsRoute
   '/velum2099': typeof Velum2099Route
   '/void-breaker': typeof VoidBreakerRoute
   '/roadmap': typeof SiteRoadmapRoute
@@ -2082,6 +2114,8 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_site': typeof SiteRouteWithChildren
   '/altair': typeof AltairRouteWithChildren
+  '/cookies': typeof CookiesRoute
+  '/copyright': typeof CopyrightRoute
   '/daily': typeof DailyRouteWithChildren
   '/forest-explorer': typeof ForestExplorerRouteWithChildren
   '/kowloon-knockout': typeof KowloonKnockoutRouteWithChildren
@@ -2089,6 +2123,7 @@ export interface FileRoutesById {
   '/lights-out': typeof LightsOutRoute
   '/login': typeof LoginRoute
   '/neon-driftway': typeof NeonDriftwayRoute
+  '/privacy': typeof PrivacyRoute
   '/rmhbox': typeof RmhboxRouteWithChildren
   '/rmhcode': typeof RmhcodeRouteWithChildren
   '/rmhmusic': typeof RmhmusicRouteWithChildren
@@ -2101,6 +2136,7 @@ export interface FileRoutesById {
   '/studio': typeof StudioRouteWithChildren
   '/synapse-storm': typeof SynapseStormRoute
   '/temple-of-joy': typeof TempleOfJoyRouteWithChildren
+  '/terms': typeof TermsRoute
   '/velum2099': typeof Velum2099Route
   '/versecraft': typeof VersecraftRouteWithChildren
   '/void-breaker': typeof VoidBreakerRoute
@@ -2342,6 +2378,8 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/altair'
+    | '/cookies'
+    | '/copyright'
     | '/daily'
     | '/forest-explorer'
     | '/kowloon-knockout'
@@ -2349,6 +2387,7 @@ export interface FileRouteTypes {
     | '/lights-out'
     | '/login'
     | '/neon-driftway'
+    | '/privacy'
     | '/rmhbox'
     | '/rmhcode'
     | '/rmhmusic'
@@ -2361,6 +2400,7 @@ export interface FileRouteTypes {
     | '/studio'
     | '/synapse-storm'
     | '/temple-of-joy'
+    | '/terms'
     | '/velum2099'
     | '/versecraft'
     | '/void-breaker'
@@ -2597,11 +2637,15 @@ export interface FileRouteTypes {
     | '/api/rmharks/$id/comment/$commentId/view'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/cookies'
+    | '/copyright'
     | '/laundry-sort'
     | '/lights-out'
     | '/login'
     | '/neon-driftway'
+    | '/privacy'
     | '/synapse-storm'
+    | '/terms'
     | '/velum2099'
     | '/void-breaker'
     | '/roadmap'
@@ -2830,6 +2874,8 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_site'
     | '/altair'
+    | '/cookies'
+    | '/copyright'
     | '/daily'
     | '/forest-explorer'
     | '/kowloon-knockout'
@@ -2837,6 +2883,7 @@ export interface FileRouteTypes {
     | '/lights-out'
     | '/login'
     | '/neon-driftway'
+    | '/privacy'
     | '/rmhbox'
     | '/rmhcode'
     | '/rmhmusic'
@@ -2849,6 +2896,7 @@ export interface FileRouteTypes {
     | '/studio'
     | '/synapse-storm'
     | '/temple-of-joy'
+    | '/terms'
     | '/velum2099'
     | '/versecraft'
     | '/void-breaker'
@@ -3089,6 +3137,8 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   SiteRoute: typeof SiteRouteWithChildren
   AltairRoute: typeof AltairRouteWithChildren
+  CookiesRoute: typeof CookiesRoute
+  CopyrightRoute: typeof CopyrightRoute
   DailyRoute: typeof DailyRouteWithChildren
   ForestExplorerRoute: typeof ForestExplorerRouteWithChildren
   KowloonKnockoutRoute: typeof KowloonKnockoutRouteWithChildren
@@ -3096,6 +3146,7 @@ export interface RootRouteChildren {
   LightsOutRoute: typeof LightsOutRoute
   LoginRoute: typeof LoginRoute
   NeonDriftwayRoute: typeof NeonDriftwayRoute
+  PrivacyRoute: typeof PrivacyRoute
   RmhboxRoute: typeof RmhboxRouteWithChildren
   RmhcodeRoute: typeof RmhcodeRouteWithChildren
   RmhmusicRoute: typeof RmhmusicRouteWithChildren
@@ -3108,6 +3159,7 @@ export interface RootRouteChildren {
   StudioRoute: typeof StudioRouteWithChildren
   SynapseStormRoute: typeof SynapseStormRoute
   TempleOfJoyRoute: typeof TempleOfJoyRouteWithChildren
+  TermsRoute: typeof TermsRoute
   Velum2099Route: typeof Velum2099Route
   VersecraftRoute: typeof VersecraftRouteWithChildren
   VoidBreakerRoute: typeof VoidBreakerRoute
@@ -3230,6 +3282,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Velum2099RouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/temple-of-joy': {
       id: '/temple-of-joy'
       path: '/temple-of-joy'
@@ -3314,6 +3373,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RmhboxRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/neon-driftway': {
       id: '/neon-driftway'
       path: '/neon-driftway'
@@ -3361,6 +3427,20 @@ declare module '@tanstack/react-router' {
       path: '/daily'
       fullPath: '/daily'
       preLoaderRoute: typeof DailyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/copyright': {
+      id: '/copyright'
+      path: '/copyright'
+      fullPath: '/copyright'
+      preLoaderRoute: typeof CopyrightRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cookies': {
+      id: '/cookies'
+      path: '/cookies'
+      fullPath: '/cookies'
+      preLoaderRoute: typeof CookiesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/altair': {
@@ -5687,6 +5767,8 @@ const ApiAdminCuratedBuildsImageRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   SiteRoute: SiteRouteWithChildren,
   AltairRoute: AltairRouteWithChildren,
+  CookiesRoute: CookiesRoute,
+  CopyrightRoute: CopyrightRoute,
   DailyRoute: DailyRouteWithChildren,
   ForestExplorerRoute: ForestExplorerRouteWithChildren,
   KowloonKnockoutRoute: KowloonKnockoutRouteWithChildren,
@@ -5694,6 +5776,7 @@ const rootRouteChildren: RootRouteChildren = {
   LightsOutRoute: LightsOutRoute,
   LoginRoute: LoginRoute,
   NeonDriftwayRoute: NeonDriftwayRoute,
+  PrivacyRoute: PrivacyRoute,
   RmhboxRoute: RmhboxRouteWithChildren,
   RmhcodeRoute: RmhcodeRouteWithChildren,
   RmhmusicRoute: RmhmusicRouteWithChildren,
@@ -5706,6 +5789,7 @@ const rootRouteChildren: RootRouteChildren = {
   StudioRoute: StudioRouteWithChildren,
   SynapseStormRoute: SynapseStormRoute,
   TempleOfJoyRoute: TempleOfJoyRouteWithChildren,
+  TermsRoute: TermsRoute,
   Velum2099Route: Velum2099Route,
   VersecraftRoute: VersecraftRouteWithChildren,
   VoidBreakerRoute: VoidBreakerRoute,
