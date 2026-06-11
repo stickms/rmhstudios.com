@@ -65,6 +65,14 @@ function resolveRegionId(position: Vector3): string {
 
 const KTX2_TRANSCODER_PATH = 'https://cdn.jsdelivr.net/npm/three@0.183.0/examples/jsm/libs/basis/';
 
+// Kick off the brain model fetch as soon as this module loads so it's ready
+// before the Canvas mounts. marlonjack.glb needs KTX2 (WebGL-context-dependent),
+// so we only warm the HTTP cache for it here; the real parse happens in MarlonModel.
+useGLTF.preload('/models/brain.glb');
+if (typeof window !== 'undefined') {
+  void fetch('/models/marlonjack.glb');
+}
+
 function buildBrainGeometry(scene: Object3D): BufferGeometry {
   const meshes: Mesh[] = [];
   scene.traverse((child) => { if ((child as Mesh).isMesh) meshes.push(child as Mesh); });
@@ -108,8 +116,6 @@ function BrainMesh({
   const pointerStart = useRef<{ x: number; y: number } | null>(null);
   const pointerDragged = useRef(false);
   const colorAttrRef = useRef<BufferAttribute | null>(null);
-  const hoveredIdRef = useRef<string | null>(null);
-  const prevHoveredIdRef = useRef<string | null>(null);
   const pulseColorsRef = useRef({ r1: 0, g1: 0, b1: 0, r2: 0, g2: 0, b2: 0 });
   const lastPulseRef = useRef(-1);
 
@@ -154,17 +160,6 @@ function BrainMesh({
       colors[i * 3 + 2] = tempColor.b;
     }
 
-    const hoveredId = hoveredIdRef.current;
-    if (hoveredId && hoveredId !== selectedRegion.id) {
-      tempColor.set(regionColors[hoveredId]?.idle ?? '#999');
-      for (const i of (regionIndicesMap[hoveredId] ?? [])) {
-        colors[i * 3] = tempColor.r;
-        colors[i * 3 + 1] = tempColor.g;
-        colors[i * 3 + 2] = tempColor.b;
-      }
-    }
-
-    prevHoveredIdRef.current = hoveredId;
     lastPulseRef.current = -1;
     attr.needsUpdate = true;
 
@@ -180,26 +175,6 @@ function BrainMesh({
 
     const colors = attr.array as Float32Array;
     let dirty = false;
-
-    const hoveredId = hoveredIdRef.current;
-    const prevHoveredId = prevHoveredIdRef.current;
-    if (hoveredId !== prevHoveredId) {
-      if (prevHoveredId && prevHoveredId !== selectedRegion.id) {
-        const c = new Color(regionColors[prevHoveredId]?.idle ?? '#999').multiplyScalar(0.65);
-        for (const i of (regionIndicesMap[prevHoveredId] ?? [])) {
-          colors[i * 3] = c.r; colors[i * 3 + 1] = c.g; colors[i * 3 + 2] = c.b;
-        }
-        dirty = true;
-      }
-      if (hoveredId && hoveredId !== selectedRegion.id) {
-        const c = new Color(regionColors[hoveredId]?.idle ?? '#999');
-        for (const i of (regionIndicesMap[hoveredId] ?? [])) {
-          colors[i * 3] = c.r; colors[i * 3 + 1] = c.g; colors[i * 3 + 2] = c.b;
-        }
-        dirty = true;
-      }
-      prevHoveredIdRef.current = hoveredId;
-    }
 
     const pulse = 0.5 + 0.5 * Math.sin(clock.elapsedTime * 1.6);
     if (Math.abs(pulse - lastPulseRef.current) >= 0.05) {
@@ -223,7 +198,6 @@ function BrainMesh({
 
   const handlePointerMove = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
-    hoveredIdRef.current = resolveRegionId(e.object.worldToLocal(e.point.clone()));
     if (pointerStart.current && Math.hypot(e.clientX - pointerStart.current.x, e.clientY - pointerStart.current.y) > 6) {
       pointerDragged.current = true;
     }
@@ -251,7 +225,6 @@ function BrainMesh({
         onPointerEnter={() => { document.body.style.cursor = 'pointer'; }}
         onPointerOut={() => {
           document.body.style.cursor = '';
-          hoveredIdRef.current = null;
           pointerStart.current = null;
           pointerDragged.current = false;
         }}

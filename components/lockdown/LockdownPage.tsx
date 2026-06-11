@@ -5,8 +5,11 @@ import { CornerDownLeft, ChevronDown } from 'lucide-react';
 import type { CameraTarget } from './BrainExplorer';
 import './lockdown.css';
 
+// Import is stored so the module (and its useGLTF.preload side-effects) start
+// loading immediately at LockdownPage module-eval time, not deferred to first render.
+const brainExplorerModule = import('./BrainExplorer');
 const BrainExplorer = lazy(() =>
-  import('./BrainExplorer').then((m) => ({ default: m.BrainExplorer }))
+  brainExplorerModule.then((m) => ({ default: m.BrainExplorer }))
 );
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -80,16 +83,18 @@ const allRegions: BrainRegion[] = [
 ];
 
 // ─── Scroll tour stops ────────────────────────────────────────────────────────
-// Each stop pairs a brain region with a camera position (azimuth = Y rotation,
-// polar = angle from +Y axis). azimuth=0 → camera at +Z (front of brain).
+// Brain group has rotation.y = -0.38 rad, so world coords are offset from local.
+// azimuth=0 → camera at world +Z (brain's back, visual cortex).
+// To face a local region, camera azimuth = local_azimuth + (π - 0.38) for front-facing,
+// or -0.38 for back-facing, etc.  polar = angle from +Y axis.
 
 const tourStops: TourStop[] = [
-  { ...allRegions[0], label: 'Intent & Command',     azimuth: 0.12,              polar: 1.45 },
-  { ...allRegions[1], label: 'Movement & Control',   azimuth: 0.28,              polar: 1.05 },
-  { ...allRegions[3], label: 'Perception & Reality', azimuth: Math.PI,           polar: 1.42 },
-  { ...allRegions[4], label: 'Memory & Identity',    azimuth: 1.55,              polar: 1.42 },
-  { ...allRegions[5], label: 'Timing & Prediction',  azimuth: Math.PI - 0.22,    polar: 1.72 },
-  { ...allRegions[6], label: 'The Architect',         azimuth: 0.02,              polar: 1.45 },
+  { ...allRegions[0], label: 'Intent & Command',     azimuth: Math.PI - 0.38,   polar: 1.45 },  // prefrontal: world front
+  { ...allRegions[1], label: 'Movement & Control',   azimuth: Math.PI - 0.38,   polar: 0.95 },  // motor: top-front
+  { ...allRegions[3], label: 'Perception & Reality', azimuth: -0.38,            polar: 1.42 },  // visual: world back
+  { ...allRegions[4], label: 'Memory & Identity',    azimuth: 1.19,             polar: 1.42 },  // temporal: right side
+  { ...allRegions[5], label: 'Timing & Prediction',  azimuth: -0.38,            polar: 1.72 },  // cerebellum: back-bottom
+  { ...allRegions[6], label: 'The Architect',        azimuth: Math.PI - 0.38,   polar: 1.45 },  // marlon: front view
 ];
 
 const TOUR_STOPS = tourStops.length;         // 6
