@@ -191,253 +191,166 @@ export function LockdownPage() {
         </div>
       </nav>
 
-      {/* ── Hero ───────────────────────────────────────────────────────────── */}
-      <section className="ld-hero" aria-labelledby="ld-hero-title">
-        <img
-          src="/images/elon-main.webp"
-          alt="Elon Musk"
-          className="ld-hero__img"
-          loading="eager"
-          decoding="async"
-        />
-        <div className="ld-hero__overlay" aria-hidden="true" />
+      {/* ── Hero ────────────────────────────────────────────── */}
+      <header className="ld-hero">
+        <div className="ld-hero__bg">
+          <Suspense fallback={null}>
+            <BrainExplorer cameraTargetRef={cameraTargetRef} />
+          </Suspense>
+        </div>
 
         <div className="ld-hero__content">
-          <div className="ld-hero__inner">
-            <h1 id="ld-hero-title" className="ld-hero__title">
-              The future<br />is neural.
-            </h1>
-            <p className="ld-hero__body">
-              The boundary between mind and machine is dissolving. RMHLink builds
-              the high-bandwidth neural interface that decodes human intent
-              directly — enabling control of software, simulations, and digital
-              worlds at the speed of thought.
-            </p>
-            <p className="ld-hero__tag">Something rmharkable is coming.</p>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          className="ld-scroll-cue"
-          onClick={scrollToTour}
-          aria-label="Scroll to explore"
-        >
-          <span>Explore</span>
-          <ChevronDown size={13} strokeWidth={2.2} aria-hidden="true" />
-        </button>
-      </section>
-
-      {/* ── Statement ──────────────────────────────────────────────────────── */}
-      <section className="ld-statement" aria-label="Mission statement">
-        <motion.h2
-          className="ld-statement__title"
-          initial={{ opacity: 0, y: 32 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.4 }}
-          transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
-        >
-          One interface.<br />Every thought.<br />Infinite possibility.
-        </motion.h2>
-        <motion.p
-          className="ld-statement__sub"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.4 }}
-          transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1], delay: 0.18 }}
-        >
-          RMHLink maps the brain's own signals into a universal input layer —
-          collapsing the gap between what you think and what you can do.
-        </motion.p>
-      </section>
-
-      {/* ── Scroll Brain Tour ──────────────────────────────────────────────── */}
-      <section
-        ref={tourRef}
-        aria-label="Interactive brain region tour"
-        style={{ height: `${TOUR_VH}vh` }}
-      >
-        <div className="ld-tour__sticky">
-          {/* Progress bar */}
-          <div className="ld-tour__bar-wrap" aria-hidden="true">
-            <motion.div className="ld-tour__bar" style={{ scaleX: barScale }} />
-          </div>
-
-          {/* Left: text slides */}
-          <div className="ld-tour__text-pane">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeTourIdx}
-                initial={{ opacity: 0, y: 22 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -18 }}
-                transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
-              >
-                <p className="ld-tour__slide-index">
-                  {String(activeTourIdx + 1).padStart(2, '0')} / {String(TOUR_STOPS).padStart(2, '0')}
-                </p>
-                <p className="ld-tour__slide-label">{activeStop.label}</p>
-                <h3 className="ld-tour__slide-name">{activeStop.name}</h3>
-                <p className="ld-tour__slide-summary">{activeStop.summary}</p>
-                <p className="ld-tour__slide-detail">{activeStop.link}</p>
-              </motion.div>
-            </AnimatePresence>
-
-            {/* Dot progress */}
-            <div className="ld-tour__progress" aria-hidden="true">
-              {tourStops.map((_, i) => (
-                <span
-                  key={i}
-                  className={`ld-tour__dot${
-                    i === activeTourIdx ? ' is-active' : i < activeTourIdx ? ' is-past' : ''
-                  }`}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Right: sticky brain canvas */}
-          <div className="ld-tour__brain-pane">
-            <Suspense fallback={<div className="brain-animation-shell" />}>
-              <BrainExplorer
-                selectedRegion={activeStop}
-                onSelect={() => {}}
-                scrollDriven
-                cameraTargetRef={cameraTargetRef}
-                tourProgressRef={tourProgressRef}
-                tourRegionIds={tourRegionIds}
-              />
-            </Suspense>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Vision section ─────────────────────────────────────────────────── */}
-      <section className="ld-vision" aria-labelledby="ld-vision-title">
-        <div className="ld-vision__img-wrap" aria-hidden="true">
-          <img
-            src="/images/elon-right.webp"
-            alt=""
-            className="ld-vision__img"
-            loading="lazy"
-            decoding="async"
-          />
-          <div className="ld-vision__overlay" />
-        </div>
-
-        <div className="ld-vision__content">
-          <motion.div
-            className="ld-glass ld-vision__card"
-            initial={{ opacity: 0, x: -28 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+          <motion.p
+            className="ld-hero__subtitle"
+            initial={{ opacity: 0, y: 32 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
           >
-            <p className="ld-eyebrow">The Vision</p>
-            <h2 id="ld-vision-title" className="ld-vision__title">
-              Neural symbiosis<br />begins here.
-            </h2>
-            <p className="ld-vision__body">
-              Elon Musk has described a future where the digital layer of
-              civilisation and the biological layer of human intelligence merge
-              into one. RMHLink is the engineering work that turns that vision
-              into a real, operable system — built for the people who refuse to
-              wait.
-            </p>
+            The next generation of human-computer interaction
+          </motion.p>
+
+          <motion.h1
+            className="ld-hero__title"
+            initial={{ opacity: 0, y: 32 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <span className="ld-hero__title-line">RMHlink</span>
+            <span className="ld-hero__title-line ld-hero__title-line--alt">
+              Neural Interface
+            </span>
+          </motion.h1>
+
+          <motion.p
+            className="ld-hero__desc"
+            initial={{ opacity: 0, y: 32 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          >
+            A high-bandwidth brain-computer interface that translates neural
+            activity into digital action — seamlessly, intuitively, and in
+            real time.
+          </motion.p>
+
+          <motion.div
+            className="ld-hero__actions"
+            initial={{ opacity: 0, y: 32 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <button className="ld-btn ld-btn--primary" onClick={scrollToTour}>
+              Explore the interface
+            </button>
+            <a
+              href="https://rmhstudios.notion.site"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ld-btn ld-btn--secondary"
+            >
+              Read the research
+            </a>
           </motion.div>
         </div>
+
+        <motion.button
+          className="ld-hero__scroll-hint"
+          onClick={scrollToTour}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.4, duration: 0.6 }}
+          aria-label="Scroll to explore"
+        >
+          <span>Scroll to explore</span>
+          <ChevronDown size={18} />
+        </motion.button>
+      </header>
+
+      {/* ── Access gate ─────────────────────────────────────── */}
+      <section className="ld-gate" id="access">
+        <div className="ld-gate__inner">
+          <AnimatePresence mode="wait">
+            {submitted ? (
+              <motion.div
+                key="submitted"
+                className="ld-gate__submitted"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <span className="ld-gate__check">&#10003;</span>
+                <p>Access request submitted.</p>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="form"
+                className="ld-gate__form"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <h2 className="ld-gate__heading">Request Early Access</h2>
+                <p className="ld-gate__sub">
+                  Enter the access code to continue.
+                </p>
+                <form onSubmit={submitPassword}>
+                  <div className="ld-gate__input-row">
+                    <input
+                      className="ld-gate__input"
+                      type="password"
+                      placeholder="Access code"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      autoComplete="off"
+                      aria-label="Access code"
+                    />
+                    <button className="ld-gate__submit" type="submit" aria-label="Submit">
+                      <CornerDownLeft size={20} />
+                    </button>
+                  </div>
+                </form>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </section>
 
-      {/* ── Early access ────────────────────────────────────────────────────── */}
-      <section className="ld-access" aria-labelledby="ld-access-title">
-        <motion.h2
-          id="ld-access-title"
-          className="ld-access__title"
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.5 }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        >
-          Request early access.
-        </motion.h2>
-        <motion.p
-          className="ld-access__sub"
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.5 }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.12 }}
-        >
-          RMHLink is invitation-only at launch. Enter your access code below,
-          or check back when we open to the public.
-        </motion.p>
+      {/* ── Tour ────────────────────────────────────────────── */}
+      <section className="ld-tour" ref={tourRef} id="tour" style={{ height: `${TOUR_VH}vh` }}>
+        {/* Progress bar */}
+        <div className="ld-tour__progress">
+          <motion.div className="ld-tour__progress-bar" style={{ scaleX: barScale }} />
+        </div>
 
-        <motion.div
-          className="ld-access__form"
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.5 }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.22 }}
-        >
-          <form onSubmit={submitPassword} aria-label="Early access">
-            <div className="ld-dock__row" data-submitted={submitted}>
-              <input
-                id="ld-password"
-                type="text"
-                name="rmh-access-entry"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder={submitted ? 'Coming soon' : 'Enter access code'}
-                autoComplete="new-password"
-                autoCorrect="off"
-                autoCapitalize="off"
-                spellCheck={false}
-                data-1p-ignore="true"
-                data-lpignore="true"
-                data-form-type="other"
-                aria-label="Access password"
-                className="ld-dock__input"
-              />
-              <button type="submit" className="ld-dock__submit" aria-label="Submit">
-                <CornerDownLeft size={15} strokeWidth={2} aria-hidden="true" />
-              </button>
+        {tourStops.map((stop, idx) => (
+          <article
+            key={stop.id}
+            className="ld-tour__stop"
+            data-active={idx === activeTourIdx || undefined}
+            id={`stop-${stop.id}`}
+          >
+            <div className="ld-tour__stop-label">{stop.label}</div>
+            <div className="ld-tour__stop-inner">
+              <h2 className="ld-tour__stop-name">{stop.name}</h2>
+              <p className="ld-tour__stop-summary">{stop.summary}</p>
+              <p className="ld-tour__stop-link">{stop.link}</p>
             </div>
-          </form>
-        </motion.div>
+          </article>
+        ))}
       </section>
 
-      {/* ── Footer ──────────────────────────────────────────────────────────── */}
-      <footer className="ld-footer" role="contentinfo">
+      {/* ── Footer ────────────────────────────────────────────── */}
+      <footer className="ld-footer">
         <div className="ld-footer__inner">
-          <div className="ld-footer__top">
-            <div className="ld-footer__brand">
-              <div className="ld-footer__brand-row">
-                <img src="/favicon.svg" alt="" aria-hidden="true" />
-                <span>RMHStudios</span>
-              </div>
-              <p className="ld-footer__tagline">
-                Building the infrastructure for human-machine symbiosis.
-              </p>
-            </div>
-
-            <nav className="ld-footer__links" aria-label="Legal">
-              <a href="/terms" className="ld-footer__link">Terms of Use</a>
-              <a href="/privacy" className="ld-footer__link">Privacy Policy</a>
-              <a href="/cookies" className="ld-footer__link">Cookie Policy</a>
-              <a href="/copyright" className="ld-footer__link">Copyright</a>
-            </nav>
-          </div>
-
-          <div className="ld-footer__bottom">
-            <p className="ld-footer__copy">
-              Copyright &copy; {new Date().getFullYear()} RMHStudios. All rights reserved.
-            </p>
-            <p className="ld-footer__copy">
-              RMHLink and RMHStudios are trademarks of RMHStudios.
-            </p>
-          </div>
+          <p className="ld-footer__text">
+            Early access preview.
+          </p>
+          <p className="ld-footer__copy">
+            &copy; {new Date().getFullYear()} RMHStudios. All rights reserved.
+          </p>
         </div>
       </footer>
-
     </div>
   );
 }
