@@ -3,11 +3,9 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  MessageFlags,
   type ChatInputCommandInteraction,
   type ButtonInteraction,
   type ModalSubmitInteraction,
-  type Attachment,
 } from 'discord.js';
 import type OpenAI from 'openai';
 import { deepseek } from './deepseek';
@@ -43,10 +41,6 @@ const CONTINUATION_FIELD_NAME = '​'; // zero-width space
 const CHAT_TIMEOUT_MS = 20_000;
 const STREAM_EDIT_INTERVAL_MS = 2_000;
 
-// Image attachments accepted on /chat — sent to the model and shown as the embed thumbnail.
-const IMAGE_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif']);
-const MAX_IMAGE_BYTES = (Number(process.env.RMHBOT_MAX_FILE_SIZE_MB) || 10) * 1024 * 1024;
-
 /** Cut `text` to at most `max` chars, appending an ellipsis when it overflows. */
 function truncate(text: string, max: number): string {
   if (max <= 0) return '';
@@ -60,13 +54,7 @@ function truncate(text: string, max: number): string {
  * across as many fields as fit within Discord's embed limits. Used for both the
  * throttled streaming updates and the final message.
  */
-function buildChatEmbed(
-  message: string,
-  username: string,
-  replyText: string,
-  streaming: boolean,
-  thumbnailUrl?: string,
-): EmbedBuilder {
+function buildChatEmbed(message: string, username: string, replyText: string, streaming: boolean): EmbedBuilder {
   const title = (streaming ? EMBED_TITLE_TYPING : EMBED_TITLE).slice(0, TITLE_MAX);
   const footer = username.slice(0, FOOTER_MAX);
 
@@ -112,15 +100,11 @@ function buildChatEmbed(
     last.value = last.value.slice(0, Math.max(0, last.value.length - 1)) + '…';
   }
 
-  const embed = new EmbedBuilder()
+  return new EmbedBuilder()
     .setColor(0xa855f7)
     .setTitle(title)
     .addFields(fields)
     .setFooter({ text: footer });
-
-  if (thumbnailUrl) embed.setThumbnail(thumbnailUrl);
-
-  return embed;
 }
 
 const ALEX_SYSTEM_PROMPT = `You are Alex Wu, a 21-year-old CS student at the University of Minnesota Twin Cities (UMN-TC), spending your summer as a software engineer intern at Wells Fargo.
@@ -182,7 +166,6 @@ export async function handleChat(
   interaction: ReplierInteraction,
   message: string,
   isNew: boolean,
-  attachment: Attachment | null = null,
 ): Promise<void> {
   const userId = interaction.user.id;
   const username = interaction.user.username;
@@ -200,39 +183,9 @@ export async function handleChat(
     session = await loadSession(userId, username);
   }
 
+  session.history.push({ role: 'user', content: message });
+
   await interaction.deferReply();
-
-  // If an image is attached, send it to the model as vision input and keep its
-  // URL for the embed thumbnail so others in the channel can see it too.
-  let thumbnailUrl: string | undefined;
-  if (attachment) {
-    if (!IMAGE_TYPES.has(attachment.contentType ?? '')) {
-      await interaction
-        .followUp({ content: `\`${attachment.name}\` ain't an image I can read — dropping it 🙅`, flags: MessageFlags.Ephemeral })
-        .catch(() => {});
-    } else if (attachment.size > MAX_IMAGE_BYTES) {
-      await interaction
-        .followUp({ content: `\`${attachment.name}\` is too thicc (over the size limit) — dropping it 🙅`, flags: MessageFlags.Ephemeral })
-        .catch(() => {});
-    } else {
-      const buf = await fetch(attachment.url).then(r => r.arrayBuffer()).catch(() => null);
-      if (buf) {
-        const base64 = Buffer.from(buf).toString('base64');
-        session.history.push({
-          role: 'user',
-          content: [
-            { type: 'text', text: message },
-            { type: 'image_url', image_url: { url: `data:${attachment.contentType};base64,${base64}` } },
-          ],
-        });
-        thumbnailUrl = attachment.url;
-      }
-    }
-  }
-
-  if (!thumbnailUrl) {
-    session.history.push({ role: 'user', content: message });
-  }
 
   // Abort the model call if it runs past CHAT_TIMEOUT_MS so the command can't
   // hang indefinitely waiting on the API.
@@ -265,7 +218,7 @@ export async function handleChat(
         const now = Date.now();
         if (!pendingRender && now - lastRenderedAt >= STREAM_EDIT_INTERVAL_MS) {
           lastRenderedAt = now;
-          const embed = buildChatEmbed(message, username, reply, true, thumbnailUrl);
+          const embed = buildChatEmbed(message, username, reply, true);
           pendingRender = interaction
             .editReply({ embeds: [embed], components: [] })
             .catch(() => {})
@@ -297,7 +250,7 @@ export async function handleChat(
 
     session.history.push({ role: 'assistant', content: finalReply });
 
-    const embed = buildChatEmbed(message, username, finalReply, false, thumbnailUrl);
+    const embed = buildChatEmbed(message, username, finalReply, false);
 
     const continueBtn = new ButtonBuilder()
       .setCustomId(`chat_continue:${userId}`)

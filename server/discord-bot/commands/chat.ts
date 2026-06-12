@@ -10,19 +10,8 @@ export const data = new SlashCommandBuilder()
       .setName('message')
       .setDescription('What do you wanna say?')
       .setRequired(true),
-  )
-  .addAttachmentOption(option =>
-    option
-      .setName('image')
-      .setDescription('Optional image to show Alex')
-      .setRequired(false),
   );
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
-  await handleChat(
-    interaction,
-    interaction.options.getString('message', true),
-    true,
-    interaction.options.getAttachment('image'),
-  );
+  await handleChat(interaction, interaction.options.getString('message', true), true);
 }
