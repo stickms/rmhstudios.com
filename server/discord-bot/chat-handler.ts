@@ -147,24 +147,9 @@ export async function handleChat(
 
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(continueBtn);
 
-    // For continuations with a previous message: delete the deferred interaction
-    // response and send a proper channel reply chained to the last message.
-    const prevId = session.lastMessageId;
-    const channel = interaction.channel;
-    if (!isNew && prevId && channel && channel.isSendable()) {
-      await interaction.deleteReply().catch(() => {});
-      const sent = await channel.send({
-        reply: { messageReference: prevId },
-        embeds: [embed],
-        components: [row],
-      });
-      session.lastMessageId = sent.id;
-    } else {
-      await interaction.editReply({ embeds: [embed], components: [row] });
-      const sent = await interaction.fetchReply();
-      session.lastMessageId = sent.id;
-    }
-
+    await interaction.editReply({ embeds: [embed], components: [row] });
+    const sent = await interaction.fetchReply();
+    session.lastMessageId = sent.id;
     await saveSession(session);
   } catch (err: any) {
     const embed = new EmbedBuilder()
