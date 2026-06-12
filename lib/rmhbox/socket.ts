@@ -64,6 +64,7 @@ export async function connectToRMHbox(): Promise<Socket> {
     throw new Error('Not authenticated');
   }
 
+  // @ts-ignore — import.meta.env is Vite-only; this file is never executed server-side
   const serverUrl = ensureTrailingSlash(import.meta.env.VITE_RMHBOX_SOCKET_URL);
 
   socket = io(serverUrl, {
