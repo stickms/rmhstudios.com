@@ -1896,3 +1896,13 @@ model DoctrineSahurParticipation {
   @@unique([sessionId, userId])
   @@map("doctrine_sahur_participation")
 }
+
+model DiscordChatSession {
+  discordUserId   String   @id
+  username        String
+  history         Json
+  lastMessageId   String?
+  updatedAt       DateTime @updatedAt
+
+  @@map("discord_chat_session")
+}
