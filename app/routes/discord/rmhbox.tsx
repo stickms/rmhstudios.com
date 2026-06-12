@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useDiscordSdk } from '@/lib/discord-sdk';
+import rmhboxCss from '@/components/rmhbox/rmhbox.css?url';
 
 const RMHboxDiscordActivity = lazy(() =>
     import('@/components/rmhbox/RMHboxDiscordActivity').then(m => ({
@@ -51,5 +52,8 @@ function DiscordRMHboxPage() {
 }
 
 export const Route = createFileRoute('/discord/rmhbox')({
+    head: () => ({
+        links: [{ rel: 'stylesheet', href: rmhboxCss }],
+    }),
     component: DiscordRMHboxPage,
 });

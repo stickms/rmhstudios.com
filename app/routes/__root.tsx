@@ -44,7 +44,7 @@ export const Route = createRootRoute({
         meta: [
           { charSet: "utf-8" },
           { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-          { title: "Lights Out" },
+          { title: "RMHBox" },
         ],
         links: [
           { rel: "stylesheet", href: appCss },
@@ -116,10 +116,11 @@ function RootComponent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
 
-  // When loaded inside a Discord Activity iframe at "/", redirect to the game
-  // Preserve query params (frame_id, instance_id, etc.) that the Discord SDK needs
+  // Inside a Discord Activity iframe, all routes must stay within /discord/*.
+  // Redirect any non-discord path back to /discord/rmhbox, preserving the SDK
+  // query params (frame_id, instance_id, etc.) that the embedded app needs.
   useEffect(() => {
-    if (pathname === '/' && isDiscordActivity()) {
+    if (isDiscordActivity() && !isDiscordRoute(pathname)) {
       navigate({
         to: '/discord/rmhbox',
         search: Object.fromEntries(new URLSearchParams(window.location.search)),
