@@ -8,9 +8,6 @@ import {
   BookOpen,
   Cloud,
   UtensilsCrossed,
-  FileText,
-  Presentation,
-  Table2,
   ArrowLeft,
   Swords,
   BrainCircuit,
@@ -56,9 +53,6 @@ const secretApps: SecretItem[] = [
   { id: 'notes', name: 'RMH Notes', desc: 'Cozy notes & reminders', icon: BookOpen, accent: '#C17F3A', href: '/secret/notes' },
   { id: 'weather', name: 'RMH Weather', desc: 'Premium weather dashboard', icon: Cloud, accent: '#64748b', href: '/secret/weather' },
   { id: 'eats', name: 'RMH Eats', desc: 'Food delivery simulator', icon: UtensilsCrossed, accent: '#ef4444', href: '/secret/eats' },
-  { id: 'docs', name: 'RMH Docs', desc: 'Word processor', icon: FileText, accent: '#06b6d4', href: '/secret/docs' },
-  { id: 'slides', name: 'RMH Slides', desc: 'Presentation editor', icon: Presentation, accent: '#f97316', href: '/secret/slides' },
-  { id: 'sheets', name: 'RMH Sheets', desc: 'Spreadsheet editor', icon: Table2, accent: '#10b981', href: '/secret/sheets' },
 ];
 
 function ItemCard({ item }: { item: SecretItem }) {

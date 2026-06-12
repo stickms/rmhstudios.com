@@ -213,10 +213,10 @@ async function connectGateway() {
                             d: {
                                 token: BOT_TOKEN,
                                 intents: 0, // no privileged intents needed
-                                properties: { os: 'linux', browser: 'lights-out', device: 'lights-out' },
+                                properties: { os: 'linux', browser: 'rmhbox', device: 'rmhbox' },
                                 presence: {
                                     activities: [{
-                                        name: 'Lights Out',
+                                        name: 'RMHBox',
                                         type: 0, // Playing
                                     }],
                                     status: 'online',

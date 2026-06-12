@@ -180,6 +180,7 @@ COPY --from=server-builder --chown=app:nodejs /app/dist-server ./dist-server
 # ─── Supporting files (from build context, not a builder stage) ─────────
 COPY --chown=app:nodejs scripts ./scripts
 COPY --chown=app:nodejs content ./content
+COPY --chown=app:nodejs data ./data
 COPY --chown=app:nodejs prisma ./prisma
 COPY --chown=app:nodejs prisma.config.ts ./prisma.config.ts
 COPY --chown=app:nodejs package.json ./package.json

@@ -28,19 +28,19 @@ let socket: Socket | null = null;
 /**
  * Connect to the RMHbox WebSocket server.
  *
- * Gets the current auth session token, creates a Socket.io connection,
- * and sets up all global event listeners for state synchronization.
+ * Pass a `discordToken` (OAuth2 access token from the Discord Embedded App SDK)
+ * to authenticate via Discord Activity without requiring a site login.
+ * If the Discord account is linked to a site account, that account's identity
+ * is used automatically on the server. Without a discordToken, falls back to
+ * the Better Auth session token for users already logged in to the site.
  *
  * If an existing socket is alive but disconnected, it is torn down first
  * to prevent orphaned listeners from overwriting the connection status.
  *
- * The `auth` callback is dynamic so the session token is refreshed on
- * every reconnection attempt (handles token expiration during long AFK).
- *
  * @returns The connected Socket instance
- * @throws If no auth session is available
+ * @throws If no auth credential is available
  */
-export async function connectToRMHbox(): Promise<Socket> {
+export async function connectToRMHbox(discordToken?: string): Promise<Socket> {
   // If already connected, return existing socket
   if (socket?.connected) return socket;
 
@@ -56,12 +56,15 @@ export async function connectToRMHbox(): Promise<Socket> {
   const store = useRMHboxStore.getState();
   store.setConnectionStatus('connecting');
 
-  // Verify the user is authenticated before attempting to connect
-  const session = await authClient.getSession();
-  const token = session?.data?.session?.token;
-  if (!token) {
-    store.setConnectionStatus('error');
-    throw new Error('Not authenticated');
+  // Resolve credentials: Discord token takes priority over session token
+  let fallbackToken: string | undefined;
+  if (!discordToken) {
+    const session = await authClient.getSession();
+    fallbackToken = session?.data?.session?.token;
+    if (!fallbackToken) {
+      store.setConnectionStatus('error');
+      throw new Error('Not authenticated');
+    }
   }
 
   // @ts-ignore — import.meta.env is Vite-only; this file is never executed server-side
@@ -69,13 +72,17 @@ export async function connectToRMHbox(): Promise<Socket> {
 
   socket = io(serverUrl, {
     path: '/rmhbox-ws/',
-    // Dynamic auth: refreshes the session token on every (re)connection
-    // attempt so expired tokens are replaced automatically.
     auth: (cb) => {
-      authClient
-        .getSession()
-        .then((s) => cb({ token: s?.data?.session?.token ?? token }))
-        .catch(() => cb({ token }));
+      if (discordToken) {
+        // Discord Activity: token is stable for the session lifetime
+        cb({ discordToken });
+      } else {
+        // Site login: refresh the session token on every reconnection attempt
+        authClient
+          .getSession()
+          .then((s) => cb({ token: s?.data?.session?.token ?? fallbackToken }))
+          .catch(() => cb({ token: fallbackToken }));
+      }
     },
     reconnection: true,
     reconnectionAttempts: Infinity,

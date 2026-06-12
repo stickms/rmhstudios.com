@@ -27,6 +27,7 @@ export interface RMHboxPlayer {
   socketId: string | null;     // null when disconnected
   isConnected: boolean;
   isReady: boolean;
+  isAway: boolean;             // true when in PiP/minimized in Discord Activity
   score: number;               // cumulative session score across rounds
   roundScore: number;          // score for current round only
   joinedAt: number;

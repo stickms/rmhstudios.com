@@ -46,7 +46,7 @@ export function setActivityStatus(
     },
 ) {
     const assets = opts?.imageUrl
-        ? { large_image: toDiscordImageProxy(opts.imageUrl), large_text: 'Lights Out' }
+        ? { large_image: toDiscordImageProxy(opts.imageUrl), large_text: 'RMHBox' }
         : undefined;
 
     sdk.commands.setActivity({
@@ -105,15 +105,16 @@ export function useDiscordSdk(): DiscordState {
                 // 1b. Patch URL mappings so WebSocket/fetch/XHR route through Discord's proxy.
                 // This rewrites requests to the actual server → proxy (discordsays.com).
                 // Must match the URL mappings in Discord Developer Portal.
+                const mappings: { prefix: string; target: string }[] = [];
                 const socketUrl = import.meta.env.VITE_SOCKET_URL;
                 if (socketUrl) {
-                    try {
-                        const socketHost = new URL(socketUrl).host;
-                        patchUrlMappings([
-                            { prefix: '/socket/', target: socketHost },
-                        ]);
-                    } catch {}
+                    try { mappings.push({ prefix: '/socket/', target: new URL(socketUrl).host }); } catch {}
                 }
+                const rmhboxUrl = import.meta.env.VITE_RMHBOX_SOCKET_URL;
+                if (rmhboxUrl) {
+                    try { mappings.push({ prefix: '/rmhbox-ws/', target: new URL(rmhboxUrl).host }); } catch {}
+                }
+                if (mappings.length > 0) patchUrlMappings(mappings);
 
                 // 2. Authorize — request an auth code
                 const { code } = await sdk.commands.authorize({

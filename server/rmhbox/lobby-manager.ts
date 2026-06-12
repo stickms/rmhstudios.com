@@ -14,7 +14,7 @@ import { nanoid } from 'nanoid';
 import { config } from './config';
 import { logger } from './logger';
 import { generateRoomCode } from '../../lib/rmhbox/utils';
-import { S2C } from '../../lib/rmhbox/events';
+import { S2C, C2S } from '../../lib/rmhbox/events';
 import { MINIGAME_REGISTRY } from '../../lib/rmhbox/minigame-registry';
 import type { GameAction, ChatMessage, ClientLobbyState, ClientPlayerInfo, ClientSpectatorInfo, ClientGameInfo, PublicLobbyInfo, MatchSummary, JoinInProgressPolicy } from '../../lib/rmhbox/types';
 import type { RMHboxLobby, LobbySettings, RMHboxPlayer, RMHboxSpectator } from './types';
@@ -186,6 +186,24 @@ export class LobbyManager {
     socket.on('rmhbox:lobby:promote_spectator', validated(socket, 'rmhbox:lobby:promote_spectator', PromoteSpectatorSchema, (s, d) => this.promoteSpectator(s, d)));
     socket.on('rmhbox:lobby:browse', validated(socket, 'rmhbox:lobby:browse', BrowseLobbiesSchema, (s, d) => this.browseLobbies(s, d)));
     socket.on('rmhbox:game:pick', validated(socket, 'rmhbox:game:pick', PickGameSchema, (s, d) => this.pickGame(s, d)));
+    socket.on(C2S.PLAYER_AWAY, () => this.setPlayerAway(socket, true));
+    socket.on(C2S.PLAYER_ACTIVE, () => this.setPlayerAway(socket, false));
+  }
+
+  // ─── Away state (Discord Activity PiP) ─────────────────────
+
+  private setPlayerAway(socket: Socket, away: boolean): void {
+    const userId = socket.data.userId as string;
+    const lobby = this.getLobbyByUserId(userId);
+    if (!lobby) return;
+    const player = lobby.players.get(userId);
+    if (!player || player.isAway === away) return;
+    player.isAway = away;
+    this.broadcastAction(lobby.id, {
+      type: 'PLAYER_AWAY_CHANGED',
+      payload: { userId, isAway: away },
+    });
+    logger.info({ event: away ? 'player_away' : 'player_active', lobbyId: lobby.id, userId });
   }
 
   // ─── Disconnect handling (§4.2) ────────────────────────────
@@ -480,6 +498,7 @@ export class LobbyManager {
         socketId: socket.id,
         isConnected: true,
         isReady: false,
+        isAway: false,
         score: 0,
         roundScore: 0,
         joinedAt: now,
@@ -1227,6 +1246,7 @@ export class LobbyManager {
       avatarUrl: p.avatarUrl,
       isConnected: p.isConnected,
       isReady: p.isReady,
+      isAway: p.isAway,
       score: p.score,
       roundScore: p.roundScore,
       isHost: p.userId === lobby.hostUserId,

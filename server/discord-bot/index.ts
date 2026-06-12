@@ -5,9 +5,10 @@
  * Runs alongside the socket server and web app.
  *
  * Commands:
- *   /lightsout             — Launch the Lights Out activity
- *   /leaderboard [game]    — Show today's guild leaderboard
- *   /streak [game] [user]  — Show personal streak & stats
+ *   /chat                  — Chat with Alex Wu
+ *   /rmhbot                — Request a website change via AI
+ *   /rmhbot-push           — Open GitHub PR from active RMHBot branch
+ *   /rmhbot-continue       — Continue editing on active RMHBot branch
  *
  * Designed for easy extension: add new command files in ./commands/
  * and register them in the commands map below.
@@ -37,9 +38,6 @@ import { handleChat } from './chat-handler';
 
 // ─── Command imports ─────────────────────────────────────────────
 
-import * as lightsoutCommand from './commands/lightsout';
-import * as leaderboardCommand from './commands/leaderboard';
-import * as streakCommand from './commands/streak';
 import * as rmhbotCommand from './commands/rmhbot';
 import * as rmhbotContinueCommand from './commands/rmhbot-continue';
 import * as rmhbotPushCommand from './commands/rmhbot-push';
@@ -56,9 +54,6 @@ interface Command {
 // Add new commands here as you build more activities.
 
 const commands = new Collection<string, Command>();
-commands.set(lightsoutCommand.data.name, lightsoutCommand);
-commands.set(leaderboardCommand.data.name, leaderboardCommand);
-commands.set(streakCommand.data.name, streakCommand);
 commands.set(rmhbotCommand.data.name, rmhbotCommand);
 commands.set(rmhbotContinueCommand.data.name, rmhbotContinueCommand);
 commands.set(rmhbotPushCommand.data.name, rmhbotPushCommand);

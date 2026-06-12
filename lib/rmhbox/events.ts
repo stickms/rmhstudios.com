@@ -37,6 +37,8 @@ export const C2S = {
   GAME_RESET_SETTINGS:    'rmhbox:game:reset_settings',
   LEADERBOARD_FETCH:      'rmhbox:leaderboard:fetch',
   SPECTATOR_SELECT_PLAYER:'rmhbox:spectator:select_player',
+  PLAYER_AWAY:            'rmhbox:player:away',
+  PLAYER_ACTIVE:          'rmhbox:player:active',
 } as const;
 
 // ─── Server → Client Events ─────────────────────────────────────

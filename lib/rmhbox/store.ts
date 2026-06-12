@@ -429,6 +429,14 @@ export function applyLobbyAction(
         ),
       };
 
+    case 'PLAYER_AWAY_CHANGED':
+      return {
+        ...lobby,
+        players: lobby.players.map((p) =>
+          p.userId === data.userId ? { ...p, isAway: data.isAway as boolean } : p,
+        ),
+      };
+
     case 'VOTE_STARTED':
       return lobby; // Vote data comes via separate event
 

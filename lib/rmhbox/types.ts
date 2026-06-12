@@ -70,6 +70,7 @@ export interface ClientPlayerInfo {
   avatarUrl: string | null;
   isConnected: boolean;
   isReady: boolean;
+  isAway: boolean;
   score: number;
   roundScore: number;
   isHost: boolean;

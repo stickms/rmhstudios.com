@@ -121,7 +121,7 @@ function RootComponent() {
   useEffect(() => {
     if (pathname === '/' && isDiscordActivity()) {
       navigate({
-        to: '/discord/lights-out',
+        to: '/discord/rmhbox',
         search: Object.fromEntries(new URLSearchParams(window.location.search)),
         replace: true,
       });
