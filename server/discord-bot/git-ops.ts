@@ -131,9 +131,8 @@ export async function createPullRequest(
 // ─── Typecheck ───────────────────────────────────────────────────
 
 export async function runTypecheck(): Promise<{ success: boolean; output: string }> {
-  // In production the container WORKDIR is /app (has node_modules).
-  // In dev, process.cwd() is the repo root (also has node_modules).
-  const tscBin = path.join(process.cwd(), 'node_modules/.bin/tsc');
+  // Use the real TS JS file, not the .bin/ shell wrapper (which can't be run by Node directly).
+  const tscBin = path.join(process.cwd(), 'node_modules/typescript/bin/tsc');
   const configPath = path.join(REPO_PATH, 'tsconfig.server.json');
   try {
     const { stdout, stderr } = await execFile(
