@@ -14,14 +14,14 @@ export function MobileNav() {
   const unreadCount = useUnreadCount(!!session);
 
   const profileHref = session?.user?.id
-    ? `/@${(session.user as any).handle || session.user.id}`
+    ? `/u/${(session.user as any).handle || session.user.id}`
     : '/login';
 
   const isHome = pathname === '/';
   const isBuilds = pathname?.startsWith('/builds');
   const isUserBuilds = pathname?.startsWith('/user-builds');
   const isMessages = pathname?.startsWith('/messages');
-  const isProfile = pathname?.startsWith('/profile') || pathname?.startsWith('/@');
+  const isProfile = pathname?.startsWith('/profile') || pathname?.startsWith('/u/');
 
   const tabClass = (active: boolean) =>
     `flex items-center justify-center p-3 transition-colors ${

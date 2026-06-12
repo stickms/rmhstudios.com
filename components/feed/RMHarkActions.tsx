@@ -28,7 +28,7 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
 
   const handleCommentClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigate({ to: `/@${item.user?.handle || item.user?.id}/post/${actualId}` });
+    navigate({ to: `/u/${item.user?.handle || item.user?.id}/post/${actualId}` });
   };
 
   const toggleLike = async (e: React.MouseEvent) => {

@@ -137,7 +137,7 @@ function AdminUserBuildsPage() {
                       )}
                     </div>
                     <div className="flex items-center gap-2 text-sm text-site-text-dim truncate">
-                      <Link to={`/@${build.user.handle || build.user.username}` as string} className="hover:text-site-text transition-colors">@{build.user.handle || build.user.username}</Link>
+                      <Link to={`/u/${build.user.handle || build.user.username}` as string} className="hover:text-site-text transition-colors">@{build.user.handle || build.user.username}</Link>
                       <span>&bull;</span>
                       <span>{build.category?.name || 'Uncategorized'}</span>
                     </div>

@@ -244,6 +244,11 @@ export default defineConfig({
   },
   optimizeDeps: {
     exclude: ["@resvg/resvg-js", "satori"],
+    // Vite 8's optimizer otherwise waits for the full static-import crawl to end
+    // before committing optimized deps. With 130 eager routes the crawl never
+    // settles, so optimized-dep requests (react.js, etc.) are held forever and
+    // the page never hydrates. Commit after the first optimize run instead.
+    holdUntilCrawlEnd: false,
   },
   ssr: {
     // ssr.external only affects Vite's dev SSR bundling, NOT the Nitro production

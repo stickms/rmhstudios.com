@@ -24,12 +24,12 @@ interface RMHarkCardProps {
 
 function userProfileHref(user: FeedItemUser | undefined | null): string {
   if (!user) return '/';
-  return `/@${user.handle || user.id}`;
+  return `/u/${user.handle || user.id}`;
 }
 
 function postHref(user: FeedItemUser | undefined | null, postId: string): string {
   if (!user) return '/';
-  return `/@${user.handle || user.id}/post/${postId}`;
+  return `/u/${user.handle || user.id}/post/${postId}`;
 }
 
 function timeAgo(dateStr: string): string {

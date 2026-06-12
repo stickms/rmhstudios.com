@@ -37,6 +37,7 @@ import { Route as CopyrightRouteImport } from './routes/copyright'
 import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as AltairRouteImport } from './routes/altair'
 import { Route as SiteRouteImport } from './routes/_site'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as VersecraftIndexRouteImport } from './routes/versecraft/index'
 import { Route as TempleOfJoyIndexRouteImport } from './routes/temple-of-joy/index'
 import { Route as StudioIndexRouteImport } from './routes/studio/index'
@@ -53,21 +54,19 @@ import { Route as KowloonKnockoutIndexRouteImport } from './routes/kowloon-knock
 import { Route as ForestExplorerIndexRouteImport } from './routes/forest-explorer/index'
 import { Route as DailyIndexRouteImport } from './routes/daily/index'
 import { Route as AltairIndexRouteImport } from './routes/altair/index'
-import { Route as SiteIndexRouteImport } from './routes/_site/index'
+import { Route as VNewRouteImport } from './routes/v.new'
+import { Route as VSlugRouteImport } from './routes/v.$slug'
 import { Route as UserBuildsSlugRouteImport } from './routes/user-builds.$slug'
 import { Route as StrategiesSahurRouteImport } from './routes/strategies/sahur'
 import { Route as StrategiesIncidentsRouteImport } from './routes/strategies/incidents'
 import { Route as SecretWeatherRouteImport } from './routes/secret/weather'
 import { Route as SecretVegaRouteImport } from './routes/secret/vega'
-import { Route as SecretSlidesRouteImport } from './routes/secret/slides'
 import { Route as SecretSignalForgeRouteImport } from './routes/secret/signal-forge'
-import { Route as SecretSheetsRouteImport } from './routes/secret/sheets'
 import { Route as SecretNotesRouteImport } from './routes/secret/notes'
 import { Route as SecretJobsRouteImport } from './routes/secret/jobs'
 import { Route as SecretHouseAlwaysWinsRouteImport } from './routes/secret/house-always-wins'
 import { Route as SecretEatsRouteImport } from './routes/secret/eats'
 import { Route as SecretDreamRiftRouteImport } from './routes/secret/dream-rift'
-import { Route as SecretDocsRouteImport } from './routes/secret/docs'
 import { Route as SecretCursedLogicRouteImport } from './routes/secret/cursed-logic'
 import { Route as RmhtypeSoloRouteImport } from './routes/rmhtype/solo'
 import { Route as RmhtypeMultiplayerRouteImport } from './routes/rmhtype/multiplayer'
@@ -82,6 +81,7 @@ import { Route as ResearchSlugRouteImport } from './routes/research.$slug'
 import { Route as NewsSlugRouteImport } from './routes/news.$slug'
 import { Route as ForestExplorerStoryRouteImport } from './routes/forest-explorer/story'
 import { Route as ForestExplorerExploreRouteImport } from './routes/forest-explorer/explore'
+import { Route as DiscordRmhboxRouteImport } from './routes/discord/rmhbox'
 import { Route as DiscordLightsOutRouteImport } from './routes/discord/lights-out'
 import { Route as DailySpectrumRouteImport } from './routes/daily/spectrum'
 import { Route as DailyOutcastRouteImport } from './routes/daily/outcast'
@@ -103,17 +103,15 @@ import { Route as ApiFeedbackRouteImport } from './routes/api/feedback'
 import { Route as AltairMultiplayerRouteImport } from './routes/altair/multiplayer'
 import { Route as SiteWalletRouteImport } from './routes/_site/wallet'
 import { Route as SiteRoadmapRouteImport } from './routes/_site/roadmap'
+import { Route as SiteQuotesRouteImport } from './routes/_site/quotes'
 import { Route as SiteBuildsRouteRouteImport } from './routes/_site/builds/route'
 import { Route as SiteAdminRouteRouteImport } from './routes/_site/admin/route'
 import { Route as StrategiesSafehouseIndexRouteImport } from './routes/strategies/safehouse/index'
 import { Route as StrategiesPuzzlesIndexRouteImport } from './routes/strategies/puzzles/index'
 import { Route as StrategiesProfileIndexRouteImport } from './routes/strategies/profile/index'
 import { Route as SecretWeatherIndexRouteImport } from './routes/secret/weather/index'
-import { Route as SecretSlidesIndexRouteImport } from './routes/secret/slides/index'
-import { Route as SecretSheetsIndexRouteImport } from './routes/secret/sheets/index'
 import { Route as SecretNotesIndexRouteImport } from './routes/secret/notes/index'
 import { Route as SecretJobsIndexRouteImport } from './routes/secret/jobs/index'
-import { Route as SecretDocsIndexRouteImport } from './routes/secret/docs/index'
 import { Route as SecretCursedLogicIndexRouteImport } from './routes/secret/cursed-logic/index'
 import { Route as RmhboxMinigamesIndexRouteImport } from './routes/rmhbox/minigames/index'
 import { Route as ApiCoinsIndexRouteImport } from './routes/api/coins/index'
@@ -125,7 +123,6 @@ import { Route as SiteMessagesIndexRouteImport } from './routes/_site/messages/i
 import { Route as SiteBuildsIndexRouteImport } from './routes/_site/builds/index'
 import { Route as SiteBlogIndexRouteImport } from './routes/_site/blog/index'
 import { Route as SiteAdminIndexRouteImport } from './routes/_site/admin/index'
-import { Route as SiteUseridIndexRouteImport } from './routes/_site/$userid/index'
 import { Route as StrategiesSafehouseRecruitRouteImport } from './routes/strategies/safehouse/recruit'
 import { Route as StrategiesSafehouseDropsRouteImport } from './routes/strategies/safehouse/drops'
 import { Route as StrategiesPuzzlesLeaderboardRouteImport } from './routes/strategies/puzzles/leaderboard'
@@ -210,6 +207,7 @@ import { Route as SiteAdminUsersRouteImport } from './routes/_site/admin/users'
 import { Route as SiteAdminUserBuildsRouteImport } from './routes/_site/admin/user-builds'
 import { Route as ApiDoctrineReputationIndexRouteImport } from './routes/api/doctrine/reputation/index'
 import { Route as ApiDoctrineIncidentsIndexRouteImport } from './routes/api/doctrine/incidents/index'
+import { Route as SiteUUseridIndexRouteImport } from './routes/_site/u/$userid/index'
 import { Route as SiteAdminBlogIndexRouteImport } from './routes/_site/admin/blog/index'
 import { Route as SecretJobsAssessmentIdRouteImport } from './routes/secret/jobs/assessment/$id'
 import { Route as RmhboxMinigamesMinigameIdHistoryRouteImport } from './routes/rmhbox/minigames/$minigameId/history'
@@ -255,7 +253,6 @@ import { Route as ApiDoctrineAdminIncidentsRouteImport } from './routes/api/doct
 import { Route as ApiDoctrineAdminDisclosuresRouteImport } from './routes/api/doctrine/admin/disclosures'
 import { Route as ApiAdminCuratedBuildsImageRouteImport } from './routes/api/admin/curated-builds/image'
 import { Route as SiteAdminBlogNewRouteImport } from './routes/_site/admin/blog/new'
-import { Route as SiteUseridPostPostidRouteImport } from './routes/_site/$userid/post/$postid'
 import { Route as ApiSliceItSongsStreamIdRouteImport } from './routes/api/slice-it/songs/stream/$id'
 import { Route as ApiSliceItSongsCoverFilenameRouteImport } from './routes/api/slice-it/songs/cover/$filename'
 import { Route as ApiSliceItSongsIdPlayRouteImport } from './routes/api/slice-it/songs/$id/play'
@@ -265,6 +262,7 @@ import { Route as ApiSliceItSongsIdCommentsRouteImport } from './routes/api/slic
 import { Route as ApiRmharksIdCommentCommentIdRouteImport } from './routes/api/rmharks/$id/comment/$commentId'
 import { Route as ApiAdminCuratedBuildsImageProxyRouteImport } from './routes/api/admin/curated-builds/image/proxy'
 import { Route as ApiAdminCuratedBuildsImageFilenameRouteImport } from './routes/api/admin/curated-builds/image/$filename'
+import { Route as SiteUUseridPostPostidRouteImport } from './routes/_site/u/$userid/post/$postid'
 import { Route as SiteAdminBlogSlugEditRouteImport } from './routes/_site/admin/blog/$slug/edit'
 import { Route as ApiRmharksIdCommentCommentIdViewRouteImport } from './routes/api/rmharks/$id/comment/$commentId/view'
 import { Route as ApiRmharksIdCommentCommentIdRepostRouteImport } from './routes/api/rmharks/$id/comment/$commentId/repost'
@@ -409,6 +407,11 @@ const SiteRoute = SiteRouteImport.update({
   id: '/_site',
   getParentRoute: () => rootRouteImport,
 } as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VersecraftIndexRoute = VersecraftIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -489,10 +492,15 @@ const AltairIndexRoute = AltairIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AltairRoute,
 } as any)
-const SiteIndexRoute = SiteIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => SiteRoute,
+const VNewRoute = VNewRouteImport.update({
+  id: '/v/new',
+  path: '/v/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VSlugRoute = VSlugRouteImport.update({
+  id: '/v/$slug',
+  path: '/v/$slug',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const UserBuildsSlugRoute = UserBuildsSlugRouteImport.update({
   id: '/user-builds/$slug',
@@ -519,19 +527,9 @@ const SecretVegaRoute = SecretVegaRouteImport.update({
   path: '/vega',
   getParentRoute: () => SecretRoute,
 } as any)
-const SecretSlidesRoute = SecretSlidesRouteImport.update({
-  id: '/slides',
-  path: '/slides',
-  getParentRoute: () => SecretRoute,
-} as any)
 const SecretSignalForgeRoute = SecretSignalForgeRouteImport.update({
   id: '/signal-forge',
   path: '/signal-forge',
-  getParentRoute: () => SecretRoute,
-} as any)
-const SecretSheetsRoute = SecretSheetsRouteImport.update({
-  id: '/sheets',
-  path: '/sheets',
   getParentRoute: () => SecretRoute,
 } as any)
 const SecretNotesRoute = SecretNotesRouteImport.update({
@@ -557,11 +555,6 @@ const SecretEatsRoute = SecretEatsRouteImport.update({
 const SecretDreamRiftRoute = SecretDreamRiftRouteImport.update({
   id: '/dream-rift',
   path: '/dream-rift',
-  getParentRoute: () => SecretRoute,
-} as any)
-const SecretDocsRoute = SecretDocsRouteImport.update({
-  id: '/docs',
-  path: '/docs',
   getParentRoute: () => SecretRoute,
 } as any)
 const SecretCursedLogicRoute = SecretCursedLogicRouteImport.update({
@@ -633,6 +626,11 @@ const ForestExplorerExploreRoute = ForestExplorerExploreRouteImport.update({
   id: '/explore',
   path: '/explore',
   getParentRoute: () => ForestExplorerRoute,
+} as any)
+const DiscordRmhboxRoute = DiscordRmhboxRouteImport.update({
+  id: '/discord/rmhbox',
+  path: '/discord/rmhbox',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const DiscordLightsOutRoute = DiscordLightsOutRouteImport.update({
   id: '/discord/lights-out',
@@ -739,6 +737,11 @@ const SiteRoadmapRoute = SiteRoadmapRouteImport.update({
   path: '/roadmap',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteQuotesRoute = SiteQuotesRouteImport.update({
+  id: '/quotes',
+  path: '/quotes',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteBuildsRouteRoute = SiteBuildsRouteRouteImport.update({
   id: '/builds',
   path: '/builds',
@@ -770,16 +773,6 @@ const SecretWeatherIndexRoute = SecretWeatherIndexRouteImport.update({
   path: '/',
   getParentRoute: () => SecretWeatherRoute,
 } as any)
-const SecretSlidesIndexRoute = SecretSlidesIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => SecretSlidesRoute,
-} as any)
-const SecretSheetsIndexRoute = SecretSheetsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => SecretSheetsRoute,
-} as any)
 const SecretNotesIndexRoute = SecretNotesIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -789,11 +782,6 @@ const SecretJobsIndexRoute = SecretJobsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => SecretJobsRoute,
-} as any)
-const SecretDocsIndexRoute = SecretDocsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => SecretDocsRoute,
 } as any)
 const SecretCursedLogicIndexRoute = SecretCursedLogicIndexRouteImport.update({
   id: '/',
@@ -849,11 +837,6 @@ const SiteAdminIndexRoute = SiteAdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => SiteAdminRouteRoute,
-} as any)
-const SiteUseridIndexRoute = SiteUseridIndexRouteImport.update({
-  id: '/$userid/',
-  path: '/$userid/',
-  getParentRoute: () => SiteRoute,
 } as any)
 const StrategiesSafehouseRecruitRoute =
   StrategiesSafehouseRecruitRouteImport.update({
@@ -1291,6 +1274,11 @@ const ApiDoctrineIncidentsIndexRoute =
     path: '/api/doctrine/incidents/',
     getParentRoute: () => rootRouteImport,
   } as any)
+const SiteUUseridIndexRoute = SiteUUseridIndexRouteImport.update({
+  id: '/u/$userid/',
+  path: '/u/$userid/',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteAdminBlogIndexRoute = SiteAdminBlogIndexRouteImport.update({
   id: '/blog/',
   path: '/blog/',
@@ -1534,11 +1522,6 @@ const SiteAdminBlogNewRoute = SiteAdminBlogNewRouteImport.update({
   path: '/blog/new',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
-const SiteUseridPostPostidRoute = SiteUseridPostPostidRouteImport.update({
-  id: '/$userid/post/$postid',
-  path: '/$userid/post/$postid',
-  getParentRoute: () => SiteRoute,
-} as any)
 const ApiSliceItSongsStreamIdRoute = ApiSliceItSongsStreamIdRouteImport.update({
   id: '/stream/$id',
   path: '/stream/$id',
@@ -1590,6 +1573,11 @@ const ApiAdminCuratedBuildsImageFilenameRoute =
     path: '/$filename',
     getParentRoute: () => ApiAdminCuratedBuildsImageRoute,
   } as any)
+const SiteUUseridPostPostidRoute = SiteUUseridPostPostidRouteImport.update({
+  id: '/u/$userid/post/$postid',
+  path: '/u/$userid/post/$postid',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteAdminBlogSlugEditRoute = SiteAdminBlogSlugEditRouteImport.update({
   id: '/blog/$slug/edit',
   path: '/blog/$slug/edit',
@@ -1615,7 +1603,7 @@ const ApiRmharksIdCommentCommentIdLikeRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof SiteIndexRoute
+  '/': typeof IndexRoute
   '/altair': typeof AltairRouteWithChildren
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
@@ -1645,6 +1633,7 @@ export interface FileRoutesByFullPath {
   '/void-breaker': typeof VoidBreakerRoute
   '/admin': typeof SiteAdminRouteRouteWithChildren
   '/builds': typeof SiteBuildsRouteRouteWithChildren
+  '/quotes': typeof SiteQuotesRoute
   '/roadmap': typeof SiteRoadmapRoute
   '/wallet': typeof SiteWalletRoute
   '/altair/multiplayer': typeof AltairMultiplayerRouteWithChildren
@@ -1666,6 +1655,7 @@ export interface FileRoutesByFullPath {
   '/daily/outcast': typeof DailyOutcastRoute
   '/daily/spectrum': typeof DailySpectrumRoute
   '/discord/lights-out': typeof DiscordLightsOutRoute
+  '/discord/rmhbox': typeof DiscordRmhboxRoute
   '/forest-explorer/explore': typeof ForestExplorerExploreRoute
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
   '/news/$slug': typeof NewsSlugRoute
@@ -1680,20 +1670,19 @@ export interface FileRoutesByFullPath {
   '/rmhtype/multiplayer': typeof RmhtypeMultiplayerRoute
   '/rmhtype/solo': typeof RmhtypeSoloRoute
   '/secret/cursed-logic': typeof SecretCursedLogicRouteWithChildren
-  '/secret/docs': typeof SecretDocsRouteWithChildren
   '/secret/dream-rift': typeof SecretDreamRiftRoute
   '/secret/eats': typeof SecretEatsRoute
   '/secret/house-always-wins': typeof SecretHouseAlwaysWinsRoute
   '/secret/jobs': typeof SecretJobsRouteWithChildren
   '/secret/notes': typeof SecretNotesRouteWithChildren
-  '/secret/sheets': typeof SecretSheetsRouteWithChildren
   '/secret/signal-forge': typeof SecretSignalForgeRoute
-  '/secret/slides': typeof SecretSlidesRouteWithChildren
   '/secret/vega': typeof SecretVegaRoute
   '/secret/weather': typeof SecretWeatherRouteWithChildren
   '/strategies/incidents': typeof StrategiesIncidentsRoute
   '/strategies/sahur': typeof StrategiesSahurRoute
   '/user-builds/$slug': typeof UserBuildsSlugRoute
+  '/v/$slug': typeof VSlugRoute
+  '/v/new': typeof VNewRoute
   '/altair/': typeof AltairIndexRoute
   '/daily/': typeof DailyIndexRoute
   '/forest-explorer/': typeof ForestExplorerIndexRoute
@@ -1792,7 +1781,6 @@ export interface FileRoutesByFullPath {
   '/strategies/puzzles/leaderboard': typeof StrategiesPuzzlesLeaderboardRoute
   '/strategies/safehouse/drops': typeof StrategiesSafehouseDropsRoute
   '/strategies/safehouse/recruit': typeof StrategiesSafehouseRecruitRoute
-  '/$userid/': typeof SiteUseridIndexRoute
   '/admin/': typeof SiteAdminIndexRoute
   '/blog/': typeof SiteBlogIndexRoute
   '/builds/': typeof SiteBuildsIndexRoute
@@ -1804,16 +1792,12 @@ export interface FileRoutesByFullPath {
   '/api/coins/': typeof ApiCoinsIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic/': typeof SecretCursedLogicIndexRoute
-  '/secret/docs/': typeof SecretDocsIndexRoute
   '/secret/jobs/': typeof SecretJobsIndexRoute
   '/secret/notes/': typeof SecretNotesIndexRoute
-  '/secret/sheets/': typeof SecretSheetsIndexRoute
-  '/secret/slides/': typeof SecretSlidesIndexRoute
   '/secret/weather/': typeof SecretWeatherIndexRoute
   '/strategies/profile/': typeof StrategiesProfileIndexRoute
   '/strategies/puzzles/': typeof StrategiesPuzzlesIndexRoute
   '/strategies/safehouse/': typeof StrategiesSafehouseIndexRoute
-  '/$userid/post/$postid': typeof SiteUseridPostPostidRoute
   '/admin/blog/new': typeof SiteAdminBlogNewRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
   '/api/doctrine/admin/disclosures': typeof ApiDoctrineAdminDisclosuresRoute
@@ -1859,9 +1843,11 @@ export interface FileRoutesByFullPath {
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
   '/secret/jobs/assessment/$id': typeof SecretJobsAssessmentIdRoute
   '/admin/blog/': typeof SiteAdminBlogIndexRoute
+  '/u/$userid/': typeof SiteUUseridIndexRoute
   '/api/doctrine/incidents/': typeof ApiDoctrineIncidentsIndexRoute
   '/api/doctrine/reputation/': typeof ApiDoctrineReputationIndexRoute
   '/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
+  '/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
   '/api/admin/curated-builds/image/$filename': typeof ApiAdminCuratedBuildsImageFilenameRoute
   '/api/admin/curated-builds/image/proxy': typeof ApiAdminCuratedBuildsImageProxyRoute
   '/api/rmharks/$id/comment/$commentId': typeof ApiRmharksIdCommentCommentIdRouteWithChildren
@@ -1876,6 +1862,7 @@ export interface FileRoutesByFullPath {
   '/api/rmharks/$id/comment/$commentId/view': typeof ApiRmharksIdCommentCommentIdViewRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof IndexRoute
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
   '/laundry-sort': typeof LaundrySortRoute
@@ -1887,6 +1874,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/velum2099': typeof Velum2099Route
   '/void-breaker': typeof VoidBreakerRoute
+  '/quotes': typeof SiteQuotesRoute
   '/roadmap': typeof SiteRoadmapRoute
   '/wallet': typeof SiteWalletRoute
   '/api/feedback': typeof ApiFeedbackRoute
@@ -1907,6 +1895,7 @@ export interface FileRoutesByTo {
   '/daily/outcast': typeof DailyOutcastRoute
   '/daily/spectrum': typeof DailySpectrumRoute
   '/discord/lights-out': typeof DiscordLightsOutRoute
+  '/discord/rmhbox': typeof DiscordRmhboxRoute
   '/forest-explorer/explore': typeof ForestExplorerExploreRoute
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
   '/news/$slug': typeof NewsSlugRoute
@@ -1928,7 +1917,8 @@ export interface FileRoutesByTo {
   '/strategies/incidents': typeof StrategiesIncidentsRoute
   '/strategies/sahur': typeof StrategiesSahurRoute
   '/user-builds/$slug': typeof UserBuildsSlugRoute
-  '/': typeof SiteIndexRoute
+  '/v/$slug': typeof VSlugRoute
+  '/v/new': typeof VNewRoute
   '/altair': typeof AltairIndexRoute
   '/daily': typeof DailyIndexRoute
   '/forest-explorer': typeof ForestExplorerIndexRoute
@@ -2027,7 +2017,6 @@ export interface FileRoutesByTo {
   '/strategies/puzzles/leaderboard': typeof StrategiesPuzzlesLeaderboardRoute
   '/strategies/safehouse/drops': typeof StrategiesSafehouseDropsRoute
   '/strategies/safehouse/recruit': typeof StrategiesSafehouseRecruitRoute
-  '/$userid': typeof SiteUseridIndexRoute
   '/admin': typeof SiteAdminIndexRoute
   '/blog': typeof SiteBlogIndexRoute
   '/builds': typeof SiteBuildsIndexRoute
@@ -2039,16 +2028,12 @@ export interface FileRoutesByTo {
   '/api/coins': typeof ApiCoinsIndexRoute
   '/rmhbox/minigames': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic': typeof SecretCursedLogicIndexRoute
-  '/secret/docs': typeof SecretDocsIndexRoute
   '/secret/jobs': typeof SecretJobsIndexRoute
   '/secret/notes': typeof SecretNotesIndexRoute
-  '/secret/sheets': typeof SecretSheetsIndexRoute
-  '/secret/slides': typeof SecretSlidesIndexRoute
   '/secret/weather': typeof SecretWeatherIndexRoute
   '/strategies/profile': typeof StrategiesProfileIndexRoute
   '/strategies/puzzles': typeof StrategiesPuzzlesIndexRoute
   '/strategies/safehouse': typeof StrategiesSafehouseIndexRoute
-  '/$userid/post/$postid': typeof SiteUseridPostPostidRoute
   '/admin/blog/new': typeof SiteAdminBlogNewRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
   '/api/doctrine/admin/disclosures': typeof ApiDoctrineAdminDisclosuresRoute
@@ -2094,9 +2079,11 @@ export interface FileRoutesByTo {
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
   '/secret/jobs/assessment/$id': typeof SecretJobsAssessmentIdRoute
   '/admin/blog': typeof SiteAdminBlogIndexRoute
+  '/u/$userid': typeof SiteUUseridIndexRoute
   '/api/doctrine/incidents': typeof ApiDoctrineIncidentsIndexRoute
   '/api/doctrine/reputation': typeof ApiDoctrineReputationIndexRoute
   '/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
+  '/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
   '/api/admin/curated-builds/image/$filename': typeof ApiAdminCuratedBuildsImageFilenameRoute
   '/api/admin/curated-builds/image/proxy': typeof ApiAdminCuratedBuildsImageProxyRoute
   '/api/rmharks/$id/comment/$commentId': typeof ApiRmharksIdCommentCommentIdRouteWithChildren
@@ -2112,6 +2099,7 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
   '/_site': typeof SiteRouteWithChildren
   '/altair': typeof AltairRouteWithChildren
   '/cookies': typeof CookiesRoute
@@ -2142,6 +2130,7 @@ export interface FileRoutesById {
   '/void-breaker': typeof VoidBreakerRoute
   '/_site/admin': typeof SiteAdminRouteRouteWithChildren
   '/_site/builds': typeof SiteBuildsRouteRouteWithChildren
+  '/_site/quotes': typeof SiteQuotesRoute
   '/_site/roadmap': typeof SiteRoadmapRoute
   '/_site/wallet': typeof SiteWalletRoute
   '/altair/multiplayer': typeof AltairMultiplayerRouteWithChildren
@@ -2163,6 +2152,7 @@ export interface FileRoutesById {
   '/daily/outcast': typeof DailyOutcastRoute
   '/daily/spectrum': typeof DailySpectrumRoute
   '/discord/lights-out': typeof DiscordLightsOutRoute
+  '/discord/rmhbox': typeof DiscordRmhboxRoute
   '/forest-explorer/explore': typeof ForestExplorerExploreRoute
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
   '/news/$slug': typeof NewsSlugRoute
@@ -2177,21 +2167,19 @@ export interface FileRoutesById {
   '/rmhtype/multiplayer': typeof RmhtypeMultiplayerRoute
   '/rmhtype/solo': typeof RmhtypeSoloRoute
   '/secret/cursed-logic': typeof SecretCursedLogicRouteWithChildren
-  '/secret/docs': typeof SecretDocsRouteWithChildren
   '/secret/dream-rift': typeof SecretDreamRiftRoute
   '/secret/eats': typeof SecretEatsRoute
   '/secret/house-always-wins': typeof SecretHouseAlwaysWinsRoute
   '/secret/jobs': typeof SecretJobsRouteWithChildren
   '/secret/notes': typeof SecretNotesRouteWithChildren
-  '/secret/sheets': typeof SecretSheetsRouteWithChildren
   '/secret/signal-forge': typeof SecretSignalForgeRoute
-  '/secret/slides': typeof SecretSlidesRouteWithChildren
   '/secret/vega': typeof SecretVegaRoute
   '/secret/weather': typeof SecretWeatherRouteWithChildren
   '/strategies/incidents': typeof StrategiesIncidentsRoute
   '/strategies/sahur': typeof StrategiesSahurRoute
   '/user-builds/$slug': typeof UserBuildsSlugRoute
-  '/_site/': typeof SiteIndexRoute
+  '/v/$slug': typeof VSlugRoute
+  '/v/new': typeof VNewRoute
   '/altair/': typeof AltairIndexRoute
   '/daily/': typeof DailyIndexRoute
   '/forest-explorer/': typeof ForestExplorerIndexRoute
@@ -2290,7 +2278,6 @@ export interface FileRoutesById {
   '/strategies/puzzles/leaderboard': typeof StrategiesPuzzlesLeaderboardRoute
   '/strategies/safehouse/drops': typeof StrategiesSafehouseDropsRoute
   '/strategies/safehouse/recruit': typeof StrategiesSafehouseRecruitRoute
-  '/_site/$userid/': typeof SiteUseridIndexRoute
   '/_site/admin/': typeof SiteAdminIndexRoute
   '/_site/blog/': typeof SiteBlogIndexRoute
   '/_site/builds/': typeof SiteBuildsIndexRoute
@@ -2302,16 +2289,12 @@ export interface FileRoutesById {
   '/api/coins/': typeof ApiCoinsIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic/': typeof SecretCursedLogicIndexRoute
-  '/secret/docs/': typeof SecretDocsIndexRoute
   '/secret/jobs/': typeof SecretJobsIndexRoute
   '/secret/notes/': typeof SecretNotesIndexRoute
-  '/secret/sheets/': typeof SecretSheetsIndexRoute
-  '/secret/slides/': typeof SecretSlidesIndexRoute
   '/secret/weather/': typeof SecretWeatherIndexRoute
   '/strategies/profile/': typeof StrategiesProfileIndexRoute
   '/strategies/puzzles/': typeof StrategiesPuzzlesIndexRoute
   '/strategies/safehouse/': typeof StrategiesSafehouseIndexRoute
-  '/_site/$userid/post/$postid': typeof SiteUseridPostPostidRoute
   '/_site/admin/blog/new': typeof SiteAdminBlogNewRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
   '/api/doctrine/admin/disclosures': typeof ApiDoctrineAdminDisclosuresRoute
@@ -2357,9 +2340,11 @@ export interface FileRoutesById {
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
   '/secret/jobs/assessment/$id': typeof SecretJobsAssessmentIdRoute
   '/_site/admin/blog/': typeof SiteAdminBlogIndexRoute
+  '/_site/u/$userid/': typeof SiteUUseridIndexRoute
   '/api/doctrine/incidents/': typeof ApiDoctrineIncidentsIndexRoute
   '/api/doctrine/reputation/': typeof ApiDoctrineReputationIndexRoute
   '/_site/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
+  '/_site/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
   '/api/admin/curated-builds/image/$filename': typeof ApiAdminCuratedBuildsImageFilenameRoute
   '/api/admin/curated-builds/image/proxy': typeof ApiAdminCuratedBuildsImageProxyRoute
   '/api/rmharks/$id/comment/$commentId': typeof ApiRmharksIdCommentCommentIdRouteWithChildren
@@ -2406,6 +2391,7 @@ export interface FileRouteTypes {
     | '/void-breaker'
     | '/admin'
     | '/builds'
+    | '/quotes'
     | '/roadmap'
     | '/wallet'
     | '/altair/multiplayer'
@@ -2427,6 +2413,7 @@ export interface FileRouteTypes {
     | '/daily/outcast'
     | '/daily/spectrum'
     | '/discord/lights-out'
+    | '/discord/rmhbox'
     | '/forest-explorer/explore'
     | '/forest-explorer/story'
     | '/news/$slug'
@@ -2441,20 +2428,19 @@ export interface FileRouteTypes {
     | '/rmhtype/multiplayer'
     | '/rmhtype/solo'
     | '/secret/cursed-logic'
-    | '/secret/docs'
     | '/secret/dream-rift'
     | '/secret/eats'
     | '/secret/house-always-wins'
     | '/secret/jobs'
     | '/secret/notes'
-    | '/secret/sheets'
     | '/secret/signal-forge'
-    | '/secret/slides'
     | '/secret/vega'
     | '/secret/weather'
     | '/strategies/incidents'
     | '/strategies/sahur'
     | '/user-builds/$slug'
+    | '/v/$slug'
+    | '/v/new'
     | '/altair/'
     | '/daily/'
     | '/forest-explorer/'
@@ -2553,7 +2539,6 @@ export interface FileRouteTypes {
     | '/strategies/puzzles/leaderboard'
     | '/strategies/safehouse/drops'
     | '/strategies/safehouse/recruit'
-    | '/$userid/'
     | '/admin/'
     | '/blog/'
     | '/builds/'
@@ -2565,16 +2550,12 @@ export interface FileRouteTypes {
     | '/api/coins/'
     | '/rmhbox/minigames/'
     | '/secret/cursed-logic/'
-    | '/secret/docs/'
     | '/secret/jobs/'
     | '/secret/notes/'
-    | '/secret/sheets/'
-    | '/secret/slides/'
     | '/secret/weather/'
     | '/strategies/profile/'
     | '/strategies/puzzles/'
     | '/strategies/safehouse/'
-    | '/$userid/post/$postid'
     | '/admin/blog/new'
     | '/api/admin/curated-builds/image'
     | '/api/doctrine/admin/disclosures'
@@ -2620,9 +2601,11 @@ export interface FileRouteTypes {
     | '/rmhbox/minigames/$minigameId/history'
     | '/secret/jobs/assessment/$id'
     | '/admin/blog/'
+    | '/u/$userid/'
     | '/api/doctrine/incidents/'
     | '/api/doctrine/reputation/'
     | '/admin/blog/$slug/edit'
+    | '/u/$userid/post/$postid'
     | '/api/admin/curated-builds/image/$filename'
     | '/api/admin/curated-builds/image/proxy'
     | '/api/rmharks/$id/comment/$commentId'
@@ -2637,6 +2620,7 @@ export interface FileRouteTypes {
     | '/api/rmharks/$id/comment/$commentId/view'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
     | '/cookies'
     | '/copyright'
     | '/laundry-sort'
@@ -2648,6 +2632,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/velum2099'
     | '/void-breaker'
+    | '/quotes'
     | '/roadmap'
     | '/wallet'
     | '/api/feedback'
@@ -2668,6 +2653,7 @@ export interface FileRouteTypes {
     | '/daily/outcast'
     | '/daily/spectrum'
     | '/discord/lights-out'
+    | '/discord/rmhbox'
     | '/forest-explorer/explore'
     | '/forest-explorer/story'
     | '/news/$slug'
@@ -2689,7 +2675,8 @@ export interface FileRouteTypes {
     | '/strategies/incidents'
     | '/strategies/sahur'
     | '/user-builds/$slug'
-    | '/'
+    | '/v/$slug'
+    | '/v/new'
     | '/altair'
     | '/daily'
     | '/forest-explorer'
@@ -2788,7 +2775,6 @@ export interface FileRouteTypes {
     | '/strategies/puzzles/leaderboard'
     | '/strategies/safehouse/drops'
     | '/strategies/safehouse/recruit'
-    | '/$userid'
     | '/admin'
     | '/blog'
     | '/builds'
@@ -2800,16 +2786,12 @@ export interface FileRouteTypes {
     | '/api/coins'
     | '/rmhbox/minigames'
     | '/secret/cursed-logic'
-    | '/secret/docs'
     | '/secret/jobs'
     | '/secret/notes'
-    | '/secret/sheets'
-    | '/secret/slides'
     | '/secret/weather'
     | '/strategies/profile'
     | '/strategies/puzzles'
     | '/strategies/safehouse'
-    | '/$userid/post/$postid'
     | '/admin/blog/new'
     | '/api/admin/curated-builds/image'
     | '/api/doctrine/admin/disclosures'
@@ -2855,9 +2837,11 @@ export interface FileRouteTypes {
     | '/rmhbox/minigames/$minigameId/history'
     | '/secret/jobs/assessment/$id'
     | '/admin/blog'
+    | '/u/$userid'
     | '/api/doctrine/incidents'
     | '/api/doctrine/reputation'
     | '/admin/blog/$slug/edit'
+    | '/u/$userid/post/$postid'
     | '/api/admin/curated-builds/image/$filename'
     | '/api/admin/curated-builds/image/proxy'
     | '/api/rmharks/$id/comment/$commentId'
@@ -2872,6 +2856,7 @@ export interface FileRouteTypes {
     | '/api/rmharks/$id/comment/$commentId/view'
   id:
     | '__root__'
+    | '/'
     | '/_site'
     | '/altair'
     | '/cookies'
@@ -2902,6 +2887,7 @@ export interface FileRouteTypes {
     | '/void-breaker'
     | '/_site/admin'
     | '/_site/builds'
+    | '/_site/quotes'
     | '/_site/roadmap'
     | '/_site/wallet'
     | '/altair/multiplayer'
@@ -2923,6 +2909,7 @@ export interface FileRouteTypes {
     | '/daily/outcast'
     | '/daily/spectrum'
     | '/discord/lights-out'
+    | '/discord/rmhbox'
     | '/forest-explorer/explore'
     | '/forest-explorer/story'
     | '/news/$slug'
@@ -2937,21 +2924,19 @@ export interface FileRouteTypes {
     | '/rmhtype/multiplayer'
     | '/rmhtype/solo'
     | '/secret/cursed-logic'
-    | '/secret/docs'
     | '/secret/dream-rift'
     | '/secret/eats'
     | '/secret/house-always-wins'
     | '/secret/jobs'
     | '/secret/notes'
-    | '/secret/sheets'
     | '/secret/signal-forge'
-    | '/secret/slides'
     | '/secret/vega'
     | '/secret/weather'
     | '/strategies/incidents'
     | '/strategies/sahur'
     | '/user-builds/$slug'
-    | '/_site/'
+    | '/v/$slug'
+    | '/v/new'
     | '/altair/'
     | '/daily/'
     | '/forest-explorer/'
@@ -3050,7 +3035,6 @@ export interface FileRouteTypes {
     | '/strategies/puzzles/leaderboard'
     | '/strategies/safehouse/drops'
     | '/strategies/safehouse/recruit'
-    | '/_site/$userid/'
     | '/_site/admin/'
     | '/_site/blog/'
     | '/_site/builds/'
@@ -3062,16 +3046,12 @@ export interface FileRouteTypes {
     | '/api/coins/'
     | '/rmhbox/minigames/'
     | '/secret/cursed-logic/'
-    | '/secret/docs/'
     | '/secret/jobs/'
     | '/secret/notes/'
-    | '/secret/sheets/'
-    | '/secret/slides/'
     | '/secret/weather/'
     | '/strategies/profile/'
     | '/strategies/puzzles/'
     | '/strategies/safehouse/'
-    | '/_site/$userid/post/$postid'
     | '/_site/admin/blog/new'
     | '/api/admin/curated-builds/image'
     | '/api/doctrine/admin/disclosures'
@@ -3117,9 +3097,11 @@ export interface FileRouteTypes {
     | '/rmhbox/minigames/$minigameId/history'
     | '/secret/jobs/assessment/$id'
     | '/_site/admin/blog/'
+    | '/_site/u/$userid/'
     | '/api/doctrine/incidents/'
     | '/api/doctrine/reputation/'
     | '/_site/admin/blog/$slug/edit'
+    | '/_site/u/$userid/post/$postid'
     | '/api/admin/curated-builds/image/$filename'
     | '/api/admin/curated-builds/image/proxy'
     | '/api/rmharks/$id/comment/$commentId'
@@ -3135,6 +3117,7 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
   SiteRoute: typeof SiteRouteWithChildren
   AltairRoute: typeof AltairRouteWithChildren
   CookiesRoute: typeof CookiesRoute
@@ -3175,9 +3158,12 @@ export interface RootRouteChildren {
   BlogSlugRoute: typeof BlogSlugRoute
   BuildsSlugRoute: typeof BuildsSlugRoute
   DiscordLightsOutRoute: typeof DiscordLightsOutRoute
+  DiscordRmhboxRoute: typeof DiscordRmhboxRoute
   NewsSlugRoute: typeof NewsSlugRoute
   ResearchSlugRoute: typeof ResearchSlugRoute
   UserBuildsSlugRoute: typeof UserBuildsSlugRoute
+  VSlugRoute: typeof VSlugRoute
+  VNewRoute: typeof VNewRoute
   ApiAdminBlogRoute: typeof ApiAdminBlogRoute
   ApiAdminUsersRoute: typeof ApiAdminUsersRoute
   ApiAltairLeaderboardRoute: typeof ApiAltairLeaderboardRoute
@@ -3457,6 +3443,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/versecraft/': {
       id: '/versecraft/'
       path: '/'
@@ -3569,12 +3562,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AltairIndexRouteImport
       parentRoute: typeof AltairRoute
     }
-    '/_site/': {
-      id: '/_site/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof SiteIndexRouteImport
-      parentRoute: typeof SiteRoute
+    '/v/new': {
+      id: '/v/new'
+      path: '/v/new'
+      fullPath: '/v/new'
+      preLoaderRoute: typeof VNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/v/$slug': {
+      id: '/v/$slug'
+      path: '/v/$slug'
+      fullPath: '/v/$slug'
+      preLoaderRoute: typeof VSlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/user-builds/$slug': {
       id: '/user-builds/$slug'
@@ -3611,25 +3611,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SecretVegaRouteImport
       parentRoute: typeof SecretRoute
     }
-    '/secret/slides': {
-      id: '/secret/slides'
-      path: '/slides'
-      fullPath: '/secret/slides'
-      preLoaderRoute: typeof SecretSlidesRouteImport
-      parentRoute: typeof SecretRoute
-    }
     '/secret/signal-forge': {
       id: '/secret/signal-forge'
       path: '/signal-forge'
       fullPath: '/secret/signal-forge'
       preLoaderRoute: typeof SecretSignalForgeRouteImport
-      parentRoute: typeof SecretRoute
-    }
-    '/secret/sheets': {
-      id: '/secret/sheets'
-      path: '/sheets'
-      fullPath: '/secret/sheets'
-      preLoaderRoute: typeof SecretSheetsRouteImport
       parentRoute: typeof SecretRoute
     }
     '/secret/notes': {
@@ -3665,13 +3651,6 @@ declare module '@tanstack/react-router' {
       path: '/dream-rift'
       fullPath: '/secret/dream-rift'
       preLoaderRoute: typeof SecretDreamRiftRouteImport
-      parentRoute: typeof SecretRoute
-    }
-    '/secret/docs': {
-      id: '/secret/docs'
-      path: '/docs'
-      fullPath: '/secret/docs'
-      preLoaderRoute: typeof SecretDocsRouteImport
       parentRoute: typeof SecretRoute
     }
     '/secret/cursed-logic': {
@@ -3771,6 +3750,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/forest-explorer/explore'
       preLoaderRoute: typeof ForestExplorerExploreRouteImport
       parentRoute: typeof ForestExplorerRoute
+    }
+    '/discord/rmhbox': {
+      id: '/discord/rmhbox'
+      path: '/discord/rmhbox'
+      fullPath: '/discord/rmhbox'
+      preLoaderRoute: typeof DiscordRmhboxRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/discord/lights-out': {
       id: '/discord/lights-out'
@@ -3919,6 +3905,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteRoadmapRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/quotes': {
+      id: '/_site/quotes'
+      path: '/quotes'
+      fullPath: '/quotes'
+      preLoaderRoute: typeof SiteQuotesRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/builds': {
       id: '/_site/builds'
       path: '/builds'
@@ -3961,20 +3954,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SecretWeatherIndexRouteImport
       parentRoute: typeof SecretWeatherRoute
     }
-    '/secret/slides/': {
-      id: '/secret/slides/'
-      path: '/'
-      fullPath: '/secret/slides/'
-      preLoaderRoute: typeof SecretSlidesIndexRouteImport
-      parentRoute: typeof SecretSlidesRoute
-    }
-    '/secret/sheets/': {
-      id: '/secret/sheets/'
-      path: '/'
-      fullPath: '/secret/sheets/'
-      preLoaderRoute: typeof SecretSheetsIndexRouteImport
-      parentRoute: typeof SecretSheetsRoute
-    }
     '/secret/notes/': {
       id: '/secret/notes/'
       path: '/'
@@ -3988,13 +3967,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/secret/jobs/'
       preLoaderRoute: typeof SecretJobsIndexRouteImport
       parentRoute: typeof SecretJobsRoute
-    }
-    '/secret/docs/': {
-      id: '/secret/docs/'
-      path: '/'
-      fullPath: '/secret/docs/'
-      preLoaderRoute: typeof SecretDocsIndexRouteImport
-      parentRoute: typeof SecretDocsRoute
     }
     '/secret/cursed-logic/': {
       id: '/secret/cursed-logic/'
@@ -4072,13 +4044,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof SiteAdminIndexRouteImport
       parentRoute: typeof SiteAdminRouteRoute
-    }
-    '/_site/$userid/': {
-      id: '/_site/$userid/'
-      path: '/$userid'
-      fullPath: '/$userid/'
-      preLoaderRoute: typeof SiteUseridIndexRouteImport
-      parentRoute: typeof SiteRoute
     }
     '/strategies/safehouse/recruit': {
       id: '/strategies/safehouse/recruit'
@@ -4668,6 +4633,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiDoctrineIncidentsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_site/u/$userid/': {
+      id: '/_site/u/$userid/'
+      path: '/u/$userid'
+      fullPath: '/u/$userid/'
+      preLoaderRoute: typeof SiteUUseridIndexRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/admin/blog/': {
       id: '/_site/admin/blog/'
       path: '/blog'
@@ -4983,13 +4955,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteAdminBlogNewRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
-    '/_site/$userid/post/$postid': {
-      id: '/_site/$userid/post/$postid'
-      path: '/$userid/post/$postid'
-      fullPath: '/$userid/post/$postid'
-      preLoaderRoute: typeof SiteUseridPostPostidRouteImport
-      parentRoute: typeof SiteRoute
-    }
     '/api/slice-it/songs/stream/$id': {
       id: '/api/slice-it/songs/stream/$id'
       path: '/stream/$id'
@@ -5052,6 +5017,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/admin/curated-builds/image/$filename'
       preLoaderRoute: typeof ApiAdminCuratedBuildsImageFilenameRouteImport
       parentRoute: typeof ApiAdminCuratedBuildsImageRoute
+    }
+    '/_site/u/$userid/post/$postid': {
+      id: '/_site/u/$userid/post/$postid'
+      path: '/u/$userid/post/$postid'
+      fullPath: '/u/$userid/post/$postid'
+      preLoaderRoute: typeof SiteUUseridPostPostidRouteImport
+      parentRoute: typeof SiteRoute
     }
     '/_site/admin/blog/$slug/edit': {
       id: '/_site/admin/blog/$slug/edit'
@@ -5125,41 +5097,41 @@ const SiteBuildsRouteRouteWithChildren = SiteBuildsRouteRoute._addFileChildren(
 interface SiteRouteChildren {
   SiteAdminRouteRoute: typeof SiteAdminRouteRouteWithChildren
   SiteBuildsRouteRoute: typeof SiteBuildsRouteRouteWithChildren
+  SiteQuotesRoute: typeof SiteQuotesRoute
   SiteRoadmapRoute: typeof SiteRoadmapRoute
   SiteWalletRoute: typeof SiteWalletRoute
-  SiteIndexRoute: typeof SiteIndexRoute
   SiteMessagesConversationIdRoute: typeof SiteMessagesConversationIdRoute
   SiteProfileIdRoute: typeof SiteProfileIdRoute
   SiteResearchCallRoute: typeof SiteResearchCallRoute
   SiteUserBuildsManageRoute: typeof SiteUserBuildsManageRoute
   SiteUserBuildsSubmitRoute: typeof SiteUserBuildsSubmitRoute
-  SiteUseridIndexRoute: typeof SiteUseridIndexRoute
   SiteBlogIndexRoute: typeof SiteBlogIndexRoute
   SiteMessagesIndexRoute: typeof SiteMessagesIndexRoute
   SiteNewsIndexRoute: typeof SiteNewsIndexRoute
   SiteResearchIndexRoute: typeof SiteResearchIndexRoute
   SiteUserBuildsIndexRoute: typeof SiteUserBuildsIndexRoute
-  SiteUseridPostPostidRoute: typeof SiteUseridPostPostidRoute
+  SiteUUseridIndexRoute: typeof SiteUUseridIndexRoute
+  SiteUUseridPostPostidRoute: typeof SiteUUseridPostPostidRoute
 }
 
 const SiteRouteChildren: SiteRouteChildren = {
   SiteAdminRouteRoute: SiteAdminRouteRouteWithChildren,
   SiteBuildsRouteRoute: SiteBuildsRouteRouteWithChildren,
+  SiteQuotesRoute: SiteQuotesRoute,
   SiteRoadmapRoute: SiteRoadmapRoute,
   SiteWalletRoute: SiteWalletRoute,
-  SiteIndexRoute: SiteIndexRoute,
   SiteMessagesConversationIdRoute: SiteMessagesConversationIdRoute,
   SiteProfileIdRoute: SiteProfileIdRoute,
   SiteResearchCallRoute: SiteResearchCallRoute,
   SiteUserBuildsManageRoute: SiteUserBuildsManageRoute,
   SiteUserBuildsSubmitRoute: SiteUserBuildsSubmitRoute,
-  SiteUseridIndexRoute: SiteUseridIndexRoute,
   SiteBlogIndexRoute: SiteBlogIndexRoute,
   SiteMessagesIndexRoute: SiteMessagesIndexRoute,
   SiteNewsIndexRoute: SiteNewsIndexRoute,
   SiteResearchIndexRoute: SiteResearchIndexRoute,
   SiteUserBuildsIndexRoute: SiteUserBuildsIndexRoute,
-  SiteUseridPostPostidRoute: SiteUseridPostPostidRoute,
+  SiteUUseridIndexRoute: SiteUUseridIndexRoute,
+  SiteUUseridPostPostidRoute: SiteUUseridPostPostidRoute,
 }
 
 const SiteRouteWithChildren = SiteRoute._addFileChildren(SiteRouteChildren)
@@ -5341,18 +5313,6 @@ const SecretCursedLogicRouteChildren: SecretCursedLogicRouteChildren = {
 const SecretCursedLogicRouteWithChildren =
   SecretCursedLogicRoute._addFileChildren(SecretCursedLogicRouteChildren)
 
-interface SecretDocsRouteChildren {
-  SecretDocsIndexRoute: typeof SecretDocsIndexRoute
-}
-
-const SecretDocsRouteChildren: SecretDocsRouteChildren = {
-  SecretDocsIndexRoute: SecretDocsIndexRoute,
-}
-
-const SecretDocsRouteWithChildren = SecretDocsRoute._addFileChildren(
-  SecretDocsRouteChildren,
-)
-
 interface SecretJobsRouteChildren {
   SecretJobsIdRoute: typeof SecretJobsIdRoute
   SecretJobsApplicationsRoute: typeof SecretJobsApplicationsRoute
@@ -5383,30 +5343,6 @@ const SecretNotesRouteWithChildren = SecretNotesRoute._addFileChildren(
   SecretNotesRouteChildren,
 )
 
-interface SecretSheetsRouteChildren {
-  SecretSheetsIndexRoute: typeof SecretSheetsIndexRoute
-}
-
-const SecretSheetsRouteChildren: SecretSheetsRouteChildren = {
-  SecretSheetsIndexRoute: SecretSheetsIndexRoute,
-}
-
-const SecretSheetsRouteWithChildren = SecretSheetsRoute._addFileChildren(
-  SecretSheetsRouteChildren,
-)
-
-interface SecretSlidesRouteChildren {
-  SecretSlidesIndexRoute: typeof SecretSlidesIndexRoute
-}
-
-const SecretSlidesRouteChildren: SecretSlidesRouteChildren = {
-  SecretSlidesIndexRoute: SecretSlidesIndexRoute,
-}
-
-const SecretSlidesRouteWithChildren = SecretSlidesRoute._addFileChildren(
-  SecretSlidesRouteChildren,
-)
-
 interface SecretWeatherRouteChildren {
   SecretWeatherIndexRoute: typeof SecretWeatherIndexRoute
 }
@@ -5421,15 +5357,12 @@ const SecretWeatherRouteWithChildren = SecretWeatherRoute._addFileChildren(
 
 interface SecretRouteChildren {
   SecretCursedLogicRoute: typeof SecretCursedLogicRouteWithChildren
-  SecretDocsRoute: typeof SecretDocsRouteWithChildren
   SecretDreamRiftRoute: typeof SecretDreamRiftRoute
   SecretEatsRoute: typeof SecretEatsRoute
   SecretHouseAlwaysWinsRoute: typeof SecretHouseAlwaysWinsRoute
   SecretJobsRoute: typeof SecretJobsRouteWithChildren
   SecretNotesRoute: typeof SecretNotesRouteWithChildren
-  SecretSheetsRoute: typeof SecretSheetsRouteWithChildren
   SecretSignalForgeRoute: typeof SecretSignalForgeRoute
-  SecretSlidesRoute: typeof SecretSlidesRouteWithChildren
   SecretVegaRoute: typeof SecretVegaRoute
   SecretWeatherRoute: typeof SecretWeatherRouteWithChildren
   SecretIndexRoute: typeof SecretIndexRoute
@@ -5437,15 +5370,12 @@ interface SecretRouteChildren {
 
 const SecretRouteChildren: SecretRouteChildren = {
   SecretCursedLogicRoute: SecretCursedLogicRouteWithChildren,
-  SecretDocsRoute: SecretDocsRouteWithChildren,
   SecretDreamRiftRoute: SecretDreamRiftRoute,
   SecretEatsRoute: SecretEatsRoute,
   SecretHouseAlwaysWinsRoute: SecretHouseAlwaysWinsRoute,
   SecretJobsRoute: SecretJobsRouteWithChildren,
   SecretNotesRoute: SecretNotesRouteWithChildren,
-  SecretSheetsRoute: SecretSheetsRouteWithChildren,
   SecretSignalForgeRoute: SecretSignalForgeRoute,
-  SecretSlidesRoute: SecretSlidesRouteWithChildren,
   SecretVegaRoute: SecretVegaRoute,
   SecretWeatherRoute: SecretWeatherRouteWithChildren,
   SecretIndexRoute: SecretIndexRoute,
@@ -5765,6 +5695,7 @@ const ApiAdminCuratedBuildsImageRouteWithChildren =
   )
 
 const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
   SiteRoute: SiteRouteWithChildren,
   AltairRoute: AltairRouteWithChildren,
   CookiesRoute: CookiesRoute,
@@ -5805,9 +5736,12 @@ const rootRouteChildren: RootRouteChildren = {
   BlogSlugRoute: BlogSlugRoute,
   BuildsSlugRoute: BuildsSlugRoute,
   DiscordLightsOutRoute: DiscordLightsOutRoute,
+  DiscordRmhboxRoute: DiscordRmhboxRoute,
   NewsSlugRoute: NewsSlugRoute,
   ResearchSlugRoute: ResearchSlugRoute,
   UserBuildsSlugRoute: UserBuildsSlugRoute,
+  VSlugRoute: VSlugRoute,
+  VNewRoute: VNewRoute,
   ApiAdminBlogRoute: ApiAdminBlogRoute,
   ApiAdminUsersRoute: ApiAdminUsersRoute,
   ApiAltairLeaderboardRoute: ApiAltairLeaderboardRoute,

@@ -1906,3 +1906,16 @@ model DiscordChatSession {
 
   @@map("discord_chat_session")
 }
+
+model VibePage {
+  id                  String   @id @default(cuid())
+  slug                String   @unique // short URL-safe identifier, e.g. "neon-city-3k"
+  prompt              String            // original user prompt
+  html                String            // full generated HTML (self-contained, no external deps required)
+  conversationHistory Json              // array of { role, content } turns for "customize" follow-ups
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([slug])
+  @@map("vibe_page")
+}

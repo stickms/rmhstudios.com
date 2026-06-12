@@ -64,7 +64,7 @@ export function PostDetail({ postId }: PostDetailProps) {
 
   const handleShare = () => {
     setMenuOpen(false);
-    const shareUrl = `${window.location.origin}/@${post?.user?.handle || post?.user?.id}/post/${postId}`;
+    const shareUrl = `${window.location.origin}/u/${post?.user?.handle || post?.user?.id}/post/${postId}`;
     const userName = post?.user?.name || post?.user?.handle || 'someone';
     const shareText = `Check out what ${userName} RMHark'd on RMH Studios!`;
     if (navigator.share) {
@@ -253,7 +253,7 @@ export function PostDetail({ postId }: PostDetailProps) {
         <div className="flex items-center gap-3 mb-3 pr-8">
           <UserAvatar user={freshPostUser} size="lg" />
           <div>
-            <Link to={`/@${freshPostUser?.handle || freshPostUser?.id}` as string} className="hover:underline">
+            <Link to={`/u/${freshPostUser?.handle || freshPostUser?.id}` as string} className="hover:underline">
               <span className="font-bold text-site-text">{freshPostUser?.name || 'Unknown'}</span>
             </Link>
             {freshPostUser?.handle && (
@@ -289,7 +289,7 @@ export function PostDetail({ postId }: PostDetailProps) {
           <div className="mb-3 border border-site-border rounded-xl p-3 bg-site-surface/30">
             <div className="flex items-center gap-1.5 text-sm mb-1">
               {freshOriginalUser ? (
-                <Link to={`/@${freshOriginalUser.handle || freshOriginalUser.id}` as string} className="flex items-center gap-1.5 min-w-0 hover:underline">
+                <Link to={`/u/${freshOriginalUser.handle || freshOriginalUser.id}` as string} className="flex items-center gap-1.5 min-w-0 hover:underline">
                   <span className="font-bold text-site-text truncate">{freshOriginalUser.name || 'Unknown'}</span>
                   {freshOriginalUser.handle && (
                     <span className="text-site-text-dim truncate">@{freshOriginalUser.handle}</span>
@@ -433,7 +433,7 @@ export function PostDetail({ postId }: PostDetailProps) {
       <ShareModal
         open={shareModalOpen}
         onClose={() => setShareModalOpen(false)}
-        url={typeof window !== 'undefined' ? `${window.location.origin}/@${post?.user?.handle || post?.user?.id}/post/${postId}` : ''}
+        url={typeof window !== 'undefined' ? `${window.location.origin}/u/${post?.user?.handle || post?.user?.id}/post/${postId}` : ''}
         text={`Check out what ${post?.user?.name || post?.user?.handle || 'someone'} RMHark'd on RMH Studios!`}
       />
     </div>

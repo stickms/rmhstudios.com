@@ -181,7 +181,7 @@ export function RightSidebar({
         </h2>
         <div className="space-y-2.5">
           {recommendedUsers.map((user) => {
-            const profileHref = user.handle ? `/@${user.handle}` : `/profile/${user.id}`;
+            const profileHref = user.handle ? `/u/${user.handle}` : `/profile/${user.id}`;
             return (
               <div key={user.id} className="-mx-2 px-2 flex items-center gap-2.5 rounded-lg py-1.5 hover:bg-site-surface-hover transition-colors">
                 <Link to={profileHref as string} className="flex items-center gap-2.5 min-w-0 flex-1">

@@ -8,7 +8,7 @@ import { BuildDetail } from '@/components/user-builds';
 import { stripTrailingSlash } from '@/lib/url';
 
 const fetchBuild = createServerFn({ method: 'GET' })
-  .inputValidator((slug: string) => slug)
+  .validator((slug: string) => slug)
   .handler(async ({ data: slug }) => {
     const baseUrl = stripTrailingSlash(import.meta.env.VITE_BETTER_AUTH_URL || 'http://localhost:3000');
     const res = await fetch(`${baseUrl}/api/user-builds/${slug}`, { cache: 'no-store' });

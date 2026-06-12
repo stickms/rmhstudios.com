@@ -18,7 +18,7 @@ import { stripTrailingSlash } from '@/lib/url';
 const allOfficial = [...games, ...apps];
 
 const fetchBuild = createServerFn({ method: 'GET' })
-  .inputValidator((slug: string) => slug)
+  .validator((slug: string) => slug)
   .handler(async ({ data: slug }) => {
     // 1. Check official (code-defined) builds first — content lives in code
     const official = allOfficial.find((b) => b.id === slug);

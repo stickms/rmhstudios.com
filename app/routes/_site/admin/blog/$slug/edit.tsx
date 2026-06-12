@@ -10,7 +10,7 @@ import { MDXEditor } from '@/components/admin/MDXEditor';
 import { getPostBySlug } from '@/lib/blog';
 
 const fetchPostForEdit = createServerFn({ method: 'GET' })
-  .inputValidator((slug: string) => slug)
+  .validator((slug: string) => slug)
   .handler(async ({ data: slug }) => {
     const request = getRequest();
     const session = await auth.api.getSession({ headers: request.headers });

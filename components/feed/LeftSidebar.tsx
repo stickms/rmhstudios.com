@@ -125,9 +125,9 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         {/* Dynamic Profile link (shown when logged in) */}
         {session && (
           <Link
-            to={`/@${(session.user as any).handle || session.user.id}` as string}
+            to={`/u/${(session.user as any).handle || session.user.id}` as string}
             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${itemJustifyClass} ${
-              pathname?.startsWith('/profile') || pathname?.startsWith('/@')
+              pathname?.startsWith('/profile') || pathname?.startsWith('/u/')
                 ? 'text-site-accent bg-site-accent-dim'
                 : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
             }`}
@@ -263,7 +263,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         ) : session ? (
           <div className="relative flex items-center gap-2" ref={userMenuRef}>
             <Link
-              to={`/@${(session.user as any).handle || session.user.id}` as string}
+              to={`/u/${(session.user as any).handle || session.user.id}` as string}
               className={`flex items-center gap-2 px-2 hover:bg-site-surface rounded-xl transition-colors py-1 flex-1 min-w-0 ${itemJustifyClass}`}
             >
               <UserAvatar src={resolvedUser?.image || session.user.image} alt={resolvedUser?.name || session.user.name || 'User'} size={32} fallbackName={resolvedUser?.name || session.user.name} className="ring-2 ring-site-bg" />

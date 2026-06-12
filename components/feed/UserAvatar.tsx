@@ -22,7 +22,7 @@ const sizeClasses = {
 const sizePx = { xs: 28, sm: 32, md: 40, lg: 48 };
 
 function userProfileHref(user: FeedItemUser): string {
-  return `/@${user.handle || user.id}`;
+  return `/u/${user.handle || user.id}`;
 }
 
 export function UserAvatar({ user, size = 'md', linkToProfile = true }: UserAvatarProps) {

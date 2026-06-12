@@ -1,6 +1,6 @@
 /**
- * Profile Page Route (/@handle)
- * Strips the @ prefix and renders the profile page.
+ * Profile Page Route (/u/$userid)
+ * Accepts a handle or id (with optional legacy @ prefix) and renders the profile.
  */
 
 import { createFileRoute } from '@tanstack/react-router';
@@ -13,7 +13,7 @@ import { prisma } from '@/lib/prisma.server';
 import { resolveUserDisplay } from '@/lib/user-display';
 
 const fetchProfileData = createServerFn({ method: 'GET' })
-  .inputValidator((id: string) => id)
+  .validator((id: string) => id)
   .handler(async ({ data: rawId }) => {
     const id = rawId.replace(/^@/, '');
     const sidebar = await getSidebarData();
@@ -56,7 +56,7 @@ const fetchProfileData = createServerFn({ method: 'GET' })
         title,
         description,
         ogType: 'profile',
-        ogUrl: `https://rmhstudios.com/@${handle || id}`,
+        ogUrl: `https://rmhstudios.com/u/${handle || id}`,
         ogImage: resolved.image || '',
       };
     }
@@ -64,7 +64,7 @@ const fetchProfileData = createServerFn({ method: 'GET' })
     return { sidebar, meta };
   });
 
-export const Route = createFileRoute('/_site/$userid/')({
+export const Route = createFileRoute('/_site/u/$userid/')({
   loader: ({ params }) => fetchProfileData({ data: params.userid }),
   head: ({ loaderData }) => ({
     meta: [

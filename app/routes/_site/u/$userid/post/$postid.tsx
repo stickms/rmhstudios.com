@@ -12,7 +12,7 @@ import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 
 const fetchPostMeta = createServerFn({ method: 'GET' })
-  .inputValidator((postid: string) => postid)
+  .validator((postid: string) => postid)
   .handler(async ({ data: postid }) => {
     const rmhark = await prisma.rMHark.findUnique({
       where: { id: postid },
@@ -51,7 +51,7 @@ const fetchSidebarData = createServerFn({ method: 'GET' }).handler(async () => {
   return getSidebarData();
 });
 
-export const Route = createFileRoute('/_site/$userid/post/$postid')({
+export const Route = createFileRoute('/_site/u/$userid/post/$postid')({
   loader: async ({ params }) => {
     const [meta, sidebar] = await Promise.all([
       fetchPostMeta({ data: params.postid }),

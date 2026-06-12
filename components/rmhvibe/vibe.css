@@ -1,0 +1,406 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   RMHVibe — Apple-style black/white minimalist aesthetic, carried over from the
+   former lockdown landing.
+   Palette: pure black · #f5f5f7 primary · #a1a1a6 secondary · #6e6e73 tertiary
+   Font stack gives SF Pro on Apple devices, Helvetica Neue elsewhere.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.vibe-screen {
+  background: #000;
+  color: #f5f5f7;
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "SF Pro Display",
+    "SF Pro Text",
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Typography ────────────────────────────────────────────────────────────── */
+.vibe-eyebrow {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #6e6e73;
+}
+
+.vibe-title {
+  /* vw-driven so the line scales to fit the viewport — stays on one line
+     (nowrap) across phones → desktop. Falls back to wrapping only when truly
+     too narrow (see media query below). */
+  font-size: clamp(1.6rem, 8vw, 6.5rem);
+  font-weight: 700;
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+  color: #f5f5f7;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* Absolute last resort on very narrow screens: allow a balanced wrap. */
+@media (max-width: 340px) {
+  .vibe-title {
+    white-space: normal;
+    text-wrap: balance;
+  }
+}
+
+.vibe-tag {
+  font-size: clamp(0.95rem, 1.5vw, 1.15rem);
+  font-weight: 400;
+  line-height: 1.5;
+  color: rgba(245, 245, 247, 0.6);
+}
+
+/* thin "RMH Studios presents" lead-in above the title */
+.vibe-presents {
+  font-size: clamp(0.82rem, 1.6vw, 1.05rem);
+  font-weight: 300;
+  letter-spacing: 0.02em;
+  color: rgba(245, 245, 247, 0.5);
+}
+
+.vibe-hint {
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: #6e6e73;
+}
+
+/* ─── Input dock (pill) ─────────────────────────────────────────────────────── */
+.vibe-dock {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  min-height: 56px;
+  width: min(540px, calc(100vw - 48px));
+  padding: 7px 7px 7px 22px;
+  background: rgba(28, 28, 30, 0.9);
+  backdrop-filter: saturate(180%) blur(48px);
+  -webkit-backdrop-filter: saturate(180%) blur(48px);
+  border-radius: 28px;
+  border: 0.5px solid rgba(255, 255, 255, 0.13);
+  border-top-color: rgba(255, 255, 255, 0.22);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.07) inset,
+    0 24px 64px rgba(0, 0, 0, 0.55);
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+
+.vibe-dock:focus-within {
+  border-color: rgba(255, 255, 255, 0.24);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.1) inset,
+    0 24px 64px rgba(0, 0, 0, 0.65);
+}
+
+.vibe-dock__input {
+  width: 100%;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  color: #f5f5f7;
+  font: inherit;
+  font-size: 1rem;
+}
+
+.vibe-dock__input::placeholder {
+  color: #515154;
+}
+
+/* textarea variant — taller, lightly rounded, button anchored bottom-right */
+.vibe-dock--area {
+  align-items: end;
+  min-height: 0;
+  border-radius: 10px;
+  padding: 14px 14px 14px 20px;
+  width: min(620px, calc(100vw - 48px));
+}
+
+/* squared-off submit inside the textarea dock */
+.vibe-dock--area .vibe-dock__submit {
+  border-radius: 9px;
+}
+
+.vibe-dock__textarea {
+  width: 100%;
+  min-width: 0;
+  resize: none;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  color: #f5f5f7;
+  font: inherit;
+  font-size: 1.05rem;
+  line-height: 1.55;
+}
+
+.vibe-dock__textarea::placeholder {
+  color: #515154;
+}
+
+.vibe-dock__submit {
+  display: inline-grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 50%;
+  background: #f5f5f7;
+  color: #000;
+  cursor: pointer;
+  transition: background 160ms ease, transform 160ms ease;
+}
+
+.vibe-dock__submit:hover {
+  background: #fff;
+  transform: scale(1.06);
+}
+
+.vibe-dock__submit:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.vibe-dock__submit:disabled:hover {
+  transform: none;
+  background: #f5f5f7;
+}
+
+/* ─── Viewer toolbar ────────────────────────────────────────────────────────── */
+.vibe-toolbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 9999px;
+  background: rgba(28, 28, 30, 0.72);
+  backdrop-filter: saturate(180%) blur(24px);
+  -webkit-backdrop-filter: saturate(180%) blur(24px);
+  border: 0.5px solid rgba(255, 255, 255, 0.13);
+  border-top-color: rgba(255, 255, 255, 0.22);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  font-family:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+}
+
+.vibe-toolbar__icon {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: rgba(245, 245, 247, 0.78);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.vibe-toolbar__icon:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f5f5f7;
+}
+
+.vibe-toolbar__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 9999px;
+  background: #f5f5f7;
+  color: #000;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 160ms ease, transform 160ms ease;
+}
+
+.vibe-toolbar__cta:hover {
+  background: #fff;
+  transform: scale(1.03);
+}
+
+/* ─── Customize panel ───────────────────────────────────────────────────────── */
+.vibe-panel {
+  width: min(680px, calc(100vw - 24px));
+  padding: 16px;
+  border-radius: 24px;
+  background: rgba(28, 28, 30, 0.9);
+  backdrop-filter: saturate(180%) blur(48px);
+  -webkit-backdrop-filter: saturate(180%) blur(48px);
+  border: 0.5px solid rgba(255, 255, 255, 0.13);
+  border-top-color: rgba(255, 255, 255, 0.22);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.07) inset,
+    0 24px 64px rgba(0, 0, 0, 0.6);
+  color: #f5f5f7;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+}
+
+.vibe-panel__title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(245, 245, 247, 0.9);
+}
+
+.vibe-panel__close {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: rgba(245, 245, 247, 0.6);
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.vibe-panel__close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f5f5f7;
+}
+
+.vibe-panel__input {
+  width: 100%;
+  min-width: 0;
+  resize: none;
+  background: rgba(255, 255, 255, 0.05);
+  border: 0.5px solid rgba(255, 255, 255, 0.13);
+  border-radius: 14px;
+  padding: 11px 14px;
+  color: #f5f5f7;
+  font: inherit;
+  font-size: 0.92rem;
+  outline: 0;
+  transition: border-color 160ms ease;
+}
+
+.vibe-panel__input::placeholder {
+  color: #515154;
+}
+
+.vibe-panel__input:focus {
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.vibe-panel__input:disabled {
+  opacity: 0.6;
+}
+
+.vibe-panel__submit {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 14px;
+  background: #f5f5f7;
+  color: #000;
+  cursor: pointer;
+  transition: background 160ms ease, transform 160ms ease;
+}
+
+.vibe-panel__submit:hover {
+  background: #fff;
+  transform: scale(1.04);
+}
+
+.vibe-panel__submit:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.vibe-panel__submit:disabled:hover {
+  transform: none;
+  background: #f5f5f7;
+}
+
+.vibe-panel__hint {
+  font-size: 0.74rem;
+  color: #6e6e73;
+}
+
+.vibe-panel__error {
+  font-size: 0.74rem;
+  color: #ff6b6b;
+}
+
+/* ─── Loading spinner ───────────────────────────────────────────────────────── */
+.vibe-spinner {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, #f5f5f7, transparent 70%);
+  animation: vibe-spin 0.85s linear infinite;
+  -webkit-mask: radial-gradient(circle 17px at center, transparent 98%, #000 100%);
+  mask: radial-gradient(circle 17px at center, transparent 98%, #000 100%);
+}
+
+/* ─── Entrance animations ───────────────────────────────────────────────────── */
+.vibe-rise {
+  animation: vibe-rise 1100ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.vibe-rise-2 {
+  animation: vibe-rise 1100ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both;
+}
+.vibe-rise-3 {
+  animation: vibe-rise 1100ms cubic-bezier(0.16, 1, 0.3, 1) 240ms both;
+}
+
+@keyframes vibe-rise {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+/* Blur-free entrance for elements that use backdrop-filter (the input dock):
+   animating `filter` on these breaks their frosted-glass rendering, so we tween
+   only opacity + transform for a smooth slide-up. */
+.vibe-rise-soft {
+  animation: vibe-rise-soft 900ms cubic-bezier(0.16, 1, 0.3, 1) 240ms both;
+}
+
+@keyframes vibe-rise-soft {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes vibe-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vibe-rise,
+  .vibe-rise-2,
+  .vibe-rise-3 {
+    animation: none;
+  }
+}

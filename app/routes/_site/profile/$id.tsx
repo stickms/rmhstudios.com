@@ -12,7 +12,7 @@ import { prisma } from '@/lib/prisma.server';
 import { resolveUserDisplay } from '@/lib/user-display';
 
 const fetchProfileData = createServerFn({ method: 'GET' })
-  .inputValidator((id: string) => id)
+  .validator((id: string) => id)
   .handler(async ({ data: id }) => {
     const sidebar = await getSidebarData();
 
@@ -55,7 +55,7 @@ const fetchProfileData = createServerFn({ method: 'GET' })
         title,
         description,
         ogType: 'profile',
-        ogUrl: `https://rmhstudios.com/@${handle || id}`,
+        ogUrl: `https://rmhstudios.com/u/${handle || id}`,
         ogImage: resolved.image || '',
       };
     }

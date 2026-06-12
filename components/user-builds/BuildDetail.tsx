@@ -130,7 +130,7 @@ export function BuildDetail({ build: initialBuild, backHref = '/user-builds' }: 
 
         {/* Author & Date */}
         <div className="flex items-center gap-4 mb-4">
-          <Link to={`/@${build.user.handle || build.user.id}` as string} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+          <Link to={`/u/${build.user.handle || build.user.id}` as string} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <UserAvatar src={build.user.image ?? undefined} alt={build.user.name || 'User'} size={40} fallbackName={build.user.name ?? undefined} />
             <div>
               <p className="font-medium text-site-text">{build.user.name || 'Anonymous'}</p>

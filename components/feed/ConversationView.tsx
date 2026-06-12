@@ -317,7 +317,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
           </Link>
           {otherUser && (
             <Link
-              to={`/@${(otherUser as any).handle || otherUser.id}` as string}
+              to={`/u/${(otherUser as any).handle || otherUser.id}` as string}
               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
             >
               <UserAvatar src={otherUser.image ?? undefined} alt={otherUser.name || 'User'} size={32} fallbackName={otherUser.name ?? undefined} className="ring-2 ring-site-bg" />

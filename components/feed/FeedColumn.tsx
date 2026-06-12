@@ -180,7 +180,7 @@ export function FeedColumn() {
           {userResults.map((user) => (
             <Link
               key={user.id}
-              to={`/@${user.handle || user.id}` as string}
+              to={`/u/${user.handle || user.id}` as string}
               className="flex items-center gap-3 px-4 py-2.5 hover:bg-site-surface transition-colors"
             >
               <UserAvatar src={user.image ?? undefined} alt={user.name || 'User'} size={32} fallbackName={user.name ?? undefined} />

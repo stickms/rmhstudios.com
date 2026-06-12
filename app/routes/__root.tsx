@@ -8,7 +8,6 @@ import {
   useNavigate,
 } from "@tanstack/react-router";
 import { type ReactNode, useEffect } from "react";
-import { LockdownPage } from "@/components/lockdown/LockdownPage";
 import { isDiscordActivity } from "@/lib/discord-sdk";
 import appCss from "@/app/globals.css?url";
 
@@ -57,9 +56,8 @@ export const Route = createRootRoute({
       meta: [
         { charSet: "utf-8" },
         { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-        { title: "RMHStudios | Coming Soon" },
-        { name: "description", content: "RMHStudios is recalibrating. RMHlink and the next RMH experience are coming soon." },
-        { name: "robots", content: "noindex, nofollow" },
+        { title: "RMH Studios — The anything platform." },
+        { name: "description", content: "Type a prompt and get an instant, shareable, collaboratively-editable webpage." },
       ],
       links: [
         { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
@@ -99,19 +97,6 @@ function RootDocument({ children }: { children: ReactNode }) {
   );
 }
 
-// These paths are publicly accessible regardless of lockdown state
-const PUBLIC_PATHS = [
-  '/quotes',
-  '/terms',
-  '/privacy',
-  '/cookies',
-  '/copyright',
-];
-
-function isPublicRoute(pathname: string): boolean {
-  return PUBLIC_PATHS.includes(pathname);
-}
-
 function RootComponent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
@@ -129,15 +114,5 @@ function RootComponent() {
     }
   }, [pathname, navigate]);
 
-  // Discord Activity routes skip Providers (auth, themes, etc.)
-  if (isDiscordRoute(pathname)) {
-    return <Outlet />;
-  }
-
-  // Public pages are accessible regardless of lockdown state
-  if (isPublicRoute(pathname)) {
-    return <Outlet />;
-  }
-
-  return <LockdownPage />;
+  return <Outlet />;
 }

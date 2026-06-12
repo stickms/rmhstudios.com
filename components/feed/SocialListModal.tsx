@@ -189,7 +189,7 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
               className="flex items-center gap-3 px-5 py-3 hover:bg-site-surface/50 transition-colors border-b border-site-border/50"
             >
               <Link
-                to={`/@${user.handle || user.id}` as string}
+                to={`/u/${user.handle || user.id}` as string}
                 onClick={onClose}
                 className="flex items-center gap-3 flex-1 min-w-0"
               >

@@ -23,7 +23,7 @@ const animatedComponents = {
 };
 
 const fetchArticle = createServerFn({ method: 'GET' })
-  .inputValidator((slug: string) => slug)
+  .validator((slug: string) => slug)
   .handler(async ({ data: slug }) => {
     const article = await getNewsArticleBySlug(slug);
     return article;

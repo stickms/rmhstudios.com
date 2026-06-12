@@ -85,7 +85,7 @@ export function EngagementListModal({ open, onClose, postId, commentId, type }: 
           {users.map((user) => (
             <Link
               key={user.id}
-              to={`/@${user.handle || user.id}` as string}
+              to={`/u/${user.handle || user.id}` as string}
               onClick={onClose}
               className="flex items-center gap-3 px-5 py-3 hover:bg-site-surface/50 transition-colors border-b border-site-border/50"
             >

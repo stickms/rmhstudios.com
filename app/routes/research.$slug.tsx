@@ -9,7 +9,7 @@ import { PaperViewer } from '@/components/research/PaperViewer';
 import { notFound } from '@tanstack/react-router';
 
 const fetchArticle = createServerFn({ method: 'GET' })
-  .inputValidator((slug: string) => slug)
+  .validator((slug: string) => slug)
   .handler(async ({ data: slug }) => {
     const article = getArticleBySlug(slug);
     if (!article) throw notFound();

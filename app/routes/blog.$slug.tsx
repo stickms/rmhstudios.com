@@ -30,14 +30,14 @@ const animatedComponents = {
 };
 
 const fetchPost = createServerFn({ method: 'GET' })
-  .inputValidator((slug: string) => slug)
+  .validator((slug: string) => slug)
   .handler(async ({ data: slug }) => {
     const post = await getPostBySlug(slug, ['title', 'date', 'description', 'content']);
     return post;
   });
 
 const fetchPostMeta = createServerFn({ method: 'GET' })
-  .inputValidator((slug: string) => slug)
+  .validator((slug: string) => slug)
   .handler(async ({ data: slug }) => {
     const post = await getPostBySlug(slug, ['title', 'description']);
     return { title: post.title, description: post.description as string };

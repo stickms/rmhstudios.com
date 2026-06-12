@@ -16,7 +16,7 @@ interface SidebarUser {
 function UserRow({ user }: { user: SidebarUser }) {
   return (
     <Link
-      to={`/@${(user as any).handle || user.id}` as string}
+      to={`/u/${(user as any).handle || user.id}` as string}
       className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-site-surface-hover transition-colors group"
     >
       <UserAvatar src={user.image ?? undefined} alt={user.name || 'User'} size={32} fallbackName={user.name ?? undefined} />
