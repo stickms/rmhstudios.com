@@ -99,10 +99,17 @@ function RootDocument({ children }: { children: ReactNode }) {
   );
 }
 
-const LEGAL_PATHS = ['/terms', '/privacy', '/cookies', '/copyright'];
+// These paths are publicly accessible regardless of lockdown state
+const PUBLIC_PATHS = [
+  '/quotes',
+  '/terms',
+  '/privacy',
+  '/cookies',
+  '/copyright',
+];
 
-function isLegalRoute(pathname: string): boolean {
-  return LEGAL_PATHS.includes(pathname);
+function isPublicRoute(pathname: string): boolean {
+  return PUBLIC_PATHS.includes(pathname);
 }
 
 function RootComponent() {
@@ -126,8 +133,8 @@ function RootComponent() {
     return <Outlet />;
   }
 
-  // Legal pages are publicly accessible regardless of lockdown state
-  if (isLegalRoute(pathname)) {
+  // Public pages are accessible regardless of lockdown state
+  if (isPublicRoute(pathname)) {
     return <Outlet />;
   }
 
