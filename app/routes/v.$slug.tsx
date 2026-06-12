@@ -140,7 +140,7 @@ function VibeViewer() {
         ref={iframeRef}
         title="Vibe page"
         srcDoc={html}
-        sandbox="allow-scripts allow-popups allow-forms allow-modals allow-pointer-lock"
+        sandbox="allow-scripts allow-forms allow-modals allow-pointer-lock"
         className="h-full w-full border-0"
         onLoad={(e) => {
           // Move focus into the iframe so keyboard-driven pages (spacebar, arrow
