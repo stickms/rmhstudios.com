@@ -24,7 +24,7 @@ export function sanitizeUsername(username: string): string {
 }
 
 export function makeBranchName(discordUsername: string): string {
-  return `rmhbot/${sanitizeUsername(discordUsername)}-${Math.floor(Date.now() / 1000)}`;
+  return `rmhbot-${sanitizeUsername(discordUsername)}-${Math.floor(Date.now() / 1000)}`;
 }
 
 export function isSessionLocked(state: ConversationState): boolean {
