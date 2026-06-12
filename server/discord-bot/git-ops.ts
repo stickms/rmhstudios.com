@@ -34,34 +34,35 @@ async function git(args: string[], cwd: string = REPO_PATH): Promise<string> {
   return stdout.trim();
 }
 
-// ─── Worktree operations ─────────────────────────────────────────
+// ─── Session clone operations ─────────────────────────────────────
+// Using a fresh git init + fetch rather than git worktree, because worktrees
+// require writing to the main repo's .git/ (host-mounted, not writable by the
+// container's app user). A self-contained clone in /app/.rmhbot-worktrees/
+// keeps all git writes inside the container.
 
 export async function createWorktree(branchName: string): Promise<string> {
   await fs.mkdir(WORKTREES_DIR, { recursive: true });
-  const worktreePath = path.join(WORKTREES_DIR, branchName.replace(/\//g, '_'));
+  const clonePath = path.join(WORKTREES_DIR, branchName.replace(/[/\\]/g, '_'));
 
-  // Remove stale worktree left by a crashed previous session
-  try {
-    await git(['worktree', 'remove', '--force', worktreePath]);
-  } catch { /* doesn't exist, fine */ }
+  // Clean up any stale clone from a previous crashed session
+  await fs.rm(clonePath, { recursive: true, force: true }).catch(() => {});
+  await fs.mkdir(clonePath, { recursive: true });
 
-  // Also remove any orphaned local branch so the new `-b` doesn't conflict
-  try {
-    await git(['branch', '-D', branchName]);
-  } catch { /* doesn't exist, fine */ }
+  // Init a brand-new repo in a container-owned directory — no host .git writes
+  await git(['init'], clonePath);
+  await git(
+    ['remote', 'add', 'origin', `https://github.com/${REPO_OWNER}/${REPO_NAME}.git`],
+    clonePath,
+  );
+  // Shallow fetch of main from GitHub (fast; full history not needed for edits)
+  await git(['fetch', '--depth=1', 'origin', 'main'], clonePath);
+  await git(['checkout', '-b', branchName, 'FETCH_HEAD'], clonePath);
 
-  // Base the worktree on the current HEAD (deploy script already reset to
-  // origin/main, so fetching is unnecessary and would fail in containers
-  // where the app user doesn't own the host-mounted .git directory).
-  await git(['worktree', 'add', '-b', branchName, worktreePath, 'HEAD']);
-  return worktreePath;
+  return clonePath;
 }
 
-export async function removeWorktree(worktreePath: string): Promise<void> {
-  try {
-    await git(['worktree', 'remove', '--force', worktreePath]);
-    await git(['worktree', 'prune']);
-  } catch { /* best-effort */ }
+export async function removeWorktree(clonePath: string): Promise<void> {
+  await fs.rm(clonePath, { recursive: true, force: true }).catch(() => {});
 }
 
 // ─── Per-worktree git ops ────────────────────────────────────────
