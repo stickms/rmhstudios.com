@@ -152,6 +152,9 @@ importers:
       discord.js:
         specifier: ^14.26.4
         version: 14.26.4
+      dotenv:
+        specifier: ^17.4.2
+        version: 17.4.2
       embla-carousel-autoplay:
         specifier: ^8.6.0
         version: 8.6.0(embla-carousel@8.6.0)
@@ -363,9 +366,6 @@ importers:
       cross-env:
         specifier: ^10.1.0
         version: 10.1.0
-      dotenv:
-        specifier: ^17.4.2
-        version: 17.4.2
       esbuild:
         specifier: ^0.27.7
         version: 0.27.7
