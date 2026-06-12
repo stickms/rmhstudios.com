@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma.server";
-import { updateDiscordMessage } from "@/scripts/news-pipeline/discord";
 
 function verifyToken(slug: string, token: string): boolean {
   const secret = process.env.NEWS_APPROVAL_SECRET ?? "";
@@ -50,16 +49,6 @@ export const Route = createFileRoute('/api/news/approve')({
   });
 
   console.log(`[approve] Published article: ${slug}`);
-
-  if (article.discordMessageId) {
-    await updateDiscordMessage({
-      messageId: article.discordMessageId,
-      title: article.title,
-      category: article.category,
-      slug: article.slug,
-      action: "approved",
-    });
-  }
 
   return new Response(
     `Article "${slug}" is now published and live on the site.`,

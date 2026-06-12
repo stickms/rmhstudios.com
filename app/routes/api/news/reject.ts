@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma.server";
-import { updateDiscordMessage } from "@/scripts/news-pipeline/discord";
 
 function verifyToken(slug: string, token: string): boolean {
   const secret = process.env.NEWS_APPROVAL_SECRET ?? "";
@@ -40,16 +39,6 @@ export const Route = createFileRoute('/api/news/reject')({
   await prisma.newsArticle.delete({ where: { slug } });
 
   console.log(`[reject] Deleted article: ${slug}`);
-
-  if (article.discordMessageId) {
-    await updateDiscordMessage({
-      messageId: article.discordMessageId,
-      title: article.title,
-      category: article.category,
-      slug: article.slug,
-      action: "rejected",
-    });
-  }
 
   return new Response(
     `Article "${slug}" has been rejected and deleted.`,
