@@ -1,0 +1,1 @@
+wc -l components/lockdown/LockdownPage.tsx
