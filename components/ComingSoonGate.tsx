@@ -1,5 +1,6 @@
 import { type FormEvent, useState } from "react";
 import { ArrowRight, LockKeyhole } from "lucide-react";
+import { SteveJobsQuote } from "@/components/SteveJobsQuote";
 
 export function ComingSoonGate() {
   const [message, setMessage] = useState("");
@@ -26,6 +27,8 @@ export function ComingSoonGate() {
         <p className="coming-soon-kicker">RMH Studios</p>
         <h1 id="coming-soon-title">COMING SOON</h1>
       </section>
+
+      <SteveJobsQuote />
 
       <form className="coming-soon-form" onSubmit={handleSubmit}>
         <label className="sr-only" htmlFor="lockdown-password">
