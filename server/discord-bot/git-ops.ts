@@ -50,8 +50,10 @@ export async function createWorktree(branchName: string): Promise<string> {
     await git(['branch', '-D', branchName]);
   } catch { /* doesn't exist, fine */ }
 
-  await git(['fetch', 'origin', 'main', '--quiet']);
-  await git(['worktree', 'add', '-b', branchName, worktreePath, 'origin/main']);
+  // Base the worktree on the current HEAD (deploy script already reset to
+  // origin/main, so fetching is unnecessary and would fail in containers
+  // where the app user doesn't own the host-mounted .git directory).
+  await git(['worktree', 'add', '-b', branchName, worktreePath, 'HEAD']);
   return worktreePath;
 }
 
