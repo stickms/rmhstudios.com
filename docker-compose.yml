@@ -125,6 +125,8 @@ services:
       - ${RMHBOT_REPO_PATH:-/home/rmhstudios/rmhstudios.com}:${RMHBOT_REPO_PATH:-/home/rmhstudios/rmhstudios.com}
     command: ["node", "dist-server/server/discord-bot/index.cjs"]
     restart: unless-stopped
+    # Allow in-flight AI requests (up to 2 min) to finish before force-kill
+    stop_grace_period: 90s
 
   # ─── Lights Out Recap Runner ───────────────────────────────────────────────
   recap:

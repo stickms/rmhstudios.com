@@ -518,6 +518,20 @@ if [ $ok -ne 0 ]; then
     update_deploy_status fail "port health check failed"
     exit 1
 fi
+
+# Also wait for discord-bot to be running (it has no HTTP port to check)
+BOT_CONTAINER="${PROJECT_NAME}-discord-bot"
+BOT_OK=false
+for i in $(seq 1 15); do
+    STATUS=$("$DOCKER_BIN" inspect --format='{{.State.Status}}' "$BOT_CONTAINER" 2>/dev/null || echo "missing")
+    if [ "$STATUS" = "running" ]; then BOT_OK=true; break; fi
+    sleep 2
+done
+if [ "$BOT_OK" = false ]; then
+    log "WARNING: discord-bot container did not reach 'running' state."
+    dc logs --tail=20 discord-bot 2>&1 || true
+fi
+
 step_done
 
 # ── Step 6: Prune stale images & cap build cache ─────────────────────────────
