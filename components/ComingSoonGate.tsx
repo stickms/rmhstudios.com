@@ -1,8 +1,28 @@
-import { type FormEvent, useState } from "react";
-import { ArrowRight, LockKeyhole } from "lucide-react";
+import { type FormEvent, useEffect, useState } from "react";
+import { ArrowRight, LockKeyhole, Quote } from "lucide-react";
+import steveJobsQuotes from "@/data/steve-jobs-quotes.json";
+
+function getRandomQuote() {
+  const index = Math.floor(Math.random() * steveJobsQuotes.length);
+  return steveJobsQuotes[index];
+}
+
+function useRotatingQuote(intervalMs = 10000) {
+  const [quote, setQuote] = useState(getRandomQuote);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setQuote(getRandomQuote());
+    }, intervalMs);
+    return () => clearInterval(interval);
+  }, [intervalMs]);
+
+  return quote;
+}
 
 export function ComingSoonGate() {
   const [message, setMessage] = useState("");
+  const quote = useRotatingQuote(10000);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -25,6 +45,18 @@ export function ComingSoonGate() {
       <section className="coming-soon-center">
         <p className="coming-soon-kicker">RMH Studios</p>
         <h1 id="coming-soon-title">COMING SOON</h1>
+      </section>
+
+      {/* Steve Jobs Quote Display */}
+      <section className="coming-soon-quote" aria-label="Inspirational quote">
+        <Quote className="coming-soon-quote-icon" size={20} aria-hidden="true" />
+        <blockquote className="coming-soon-quote-text">
+          &ldquo;{quote.quote}&rdquo;
+        </blockquote>
+        <cite className="coming-soon-quote-attribution">
+          &mdash; Steve Jobs
+          {quote.context && <span className="coming-soon-quote-context">, {quote.context}</span>}
+        </cite>
       </section>
 
       <form className="coming-soon-form" onSubmit={handleSubmit}>
