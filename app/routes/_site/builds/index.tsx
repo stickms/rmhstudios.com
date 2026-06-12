@@ -4,6 +4,7 @@
 
 import { createFileRoute } from '@tanstack/react-router';
 import { CategoryPicker } from '@/components/builds/CategoryPicker';
+import { SteveJobsQuote } from '@/components/builds/SteveJobsQuote';
 import { games } from '@/lib/games';
 import { apps } from '@/lib/apps';
 
@@ -24,6 +25,8 @@ function BuildsPage() {
         Our full collection of games, apps, and digital experiences — all built by the RMH team.
       </p>
       <CategoryPicker entertainmentCount={games.filter(g => !g.unlisted).length} appCount={apps.filter(a => !a.hidden && !a.unlisted).length} />
+
+      <SteveJobsQuote />
     </div>
   );
 }

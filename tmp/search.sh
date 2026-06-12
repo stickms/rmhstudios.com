@@ -1,0 +1,1 @@
+find . -path ./node_modules -prune -o -path ./.git -prune -o -path ./dist-server -prune -o -path ./.output -prune -o -name "*.tsx" -print -o -name "*.ts" -print | xargs grep -l "quote" 2>/dev/null | head -30
