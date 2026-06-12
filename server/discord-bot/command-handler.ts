@@ -366,7 +366,7 @@ export async function handleCommand(
   const username = interaction.user.username;
 
   if (!isAllowedChannel(interaction.channelId ?? '')) {
-    await interaction.reply({ content: 'RMHBot is not available in this channel.', ephemeral: true });
+    await interaction.reply({ content: 'RMHBot is not available in this channel.', ephemeral: false });
     return;
   }
 
