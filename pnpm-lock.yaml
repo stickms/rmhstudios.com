@@ -215,6 +215,9 @@ importers:
       pixi.js:
         specifier: ^8.19.0
         version: 8.19.0
+      prisma:
+        specifier: ^7.8.0
+        version: 7.8.0(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
       react:
         specifier: 19.2.4
         version: 19.2.4
@@ -375,9 +378,6 @@ importers:
       nitro:
         specifier: 3.0.1-alpha.2
         version: 3.0.1-alpha.2(@electric-sql/pglite@0.4.1)(@emnapi/core@1.10.0)(@emnapi/runtime@1.11.0)(chokidar@5.0.0)(lru-cache@11.5.1)(mongodb@7.1.0)(mysql2@3.15.3)(rolldown@1.0.3)(rollup@4.59.0)(vite@8.0.16(@types/node@20.19.43)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.46.0)(tsx@4.22.4)(yaml@2.8.2))
-      prisma:
-        specifier: ^7.8.0
-        version: 7.8.0(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
       tailwindcss:
         specifier: ^4.3.0
         version: 4.3.0
