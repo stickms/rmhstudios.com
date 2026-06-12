@@ -42,7 +42,7 @@ export async function handlePush(
     .setDescription(`Running typecheck on \`${state.branchName}\`...`);
   await interaction.editReply({ embeds: [checkingEmbed], components: [] });
 
-  const tc = await runTypecheck();
+  const tc = await runTypecheck(state.worktreePath);
   if (!tc.success) {
     const errors = tc.output.slice(0, 3800);
     const embed = new EmbedBuilder()

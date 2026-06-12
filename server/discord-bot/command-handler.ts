@@ -127,7 +127,7 @@ async function executeTool(
     }
 
     case 'run_typecheck': {
-      const result = await runTypecheck();
+      const result = await runTypecheck(wt);
       const out = result.output.slice(0, MAX_TOOL_RESULT_LEN);
       return result.success ? `Typecheck passed ✓\n${out}`.trim() : `Typecheck failed:\n${out}`;
     }

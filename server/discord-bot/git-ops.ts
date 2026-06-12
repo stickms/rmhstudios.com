@@ -58,6 +58,12 @@ export async function createWorktree(branchName: string): Promise<string> {
   await git(['fetch', '--depth=1', 'origin', 'main'], clonePath);
   await git(['checkout', '-b', branchName, 'FETCH_HEAD'], clonePath);
 
+  // Symlink node_modules from the container's WORKDIR so typecheck works in the clone
+  await fs.symlink(
+    path.join(process.cwd(), 'node_modules'),
+    path.join(clonePath, 'node_modules'),
+  ).catch(() => {});
+
   return clonePath;
 }
 
@@ -130,18 +136,23 @@ export async function createPullRequest(
 
 // ─── Typecheck ───────────────────────────────────────────────────
 
-export async function runTypecheck(): Promise<{ success: boolean; output: string }> {
+export async function runTypecheck(worktreePath: string): Promise<{ success: boolean; output: string }> {
   // Use the real TS JS file, not the .bin/ shell wrapper (which can't be run by Node directly).
   const tscBin = path.join(process.cwd(), 'node_modules/typescript/bin/tsc');
-  const configPath = path.join(REPO_PATH, 'tsconfig.server.json');
+  const configPath = path.join(worktreePath, 'tsconfig.server.json');
+  // Redirect tsbuildinfo to /tmp so the incremental index is never written to
+  // the host-mounted repo (which the container user doesn't own).
+  const tsBuildInfoFile = path.join('/tmp', `rmhbot-tsbuildinfo-${Date.now()}.json`);
   try {
     const { stdout, stderr } = await execFile(
       process.execPath,
-      [tscBin, '--noEmit', '-p', configPath],
-      { cwd: REPO_PATH },
+      [tscBin, '--noEmit', '--tsBuildInfoFile', tsBuildInfoFile, '-p', configPath],
+      { cwd: worktreePath },
     );
     return { success: true, output: (stdout + stderr).trim() };
   } catch (err: any) {
     return { success: false, output: (String(err.stdout ?? '') + String(err.stderr ?? '')).trim() };
+  } finally {
+    fs.unlink(tsBuildInfoFile).catch(() => {});
   }
 }

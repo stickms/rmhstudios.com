@@ -20,6 +20,7 @@ export interface ActionEntry {
 }
 
 const FIELD_MAX = 1024;
+const EMBED_TOTAL_MAX = 6000;
 // Minimum seconds between thought-only updates (action changes bypass this)
 const THOUGHT_FLUSH_MS = 10_000;
 
@@ -100,18 +101,11 @@ export class ProgressReporter {
     if (!this.thoughts.trim()) {
       return [{ name: '💭 Thinking', value: '*Reasoning...*', inline: false }];
     }
-    // Show the most recent ~3000 chars of reasoning
-    const recent = this.thoughts.length > 3000 ? this.thoughts.slice(-3000) : this.thoughts;
-    // Split into FIELD_MAX chunks
-    const chunks: string[] = [];
-    for (let i = 0; i < recent.length; i += FIELD_MAX) {
-      chunks.push(recent.slice(i, i + FIELD_MAX));
-    }
-    return chunks.map((chunk, i) => ({
-      name: chunks.length === 1 ? '💭 Thinking' : `💭 Thinking (${i + 1}/${chunks.length})`,
-      value: chunk,
-      inline: false,
-    }));
+    // Always show only the most recent chunk so the embed stays current.
+    // Older thinking is silently dropped; [...] signals there's more above.
+    const tail = this.thoughts.slice(-FIELD_MAX);
+    const value = this.thoughts.length > FIELD_MAX ? '[...] ' + tail : tail;
+    return [{ name: '💭 Thinking', value: value.slice(0, FIELD_MAX), inline: false }];
   }
 
   private actionsValue(): string {
@@ -126,15 +120,31 @@ export class ProgressReporter {
   }
 
   private buildWorkingPayload() {
+    const thoughtFields = this.thoughtFields();
+    const fields = [
+      { name: '📝 Request', value: this.requestValue(), inline: false },
+      ...thoughtFields,
+      { name: '⚡ Actions', value: this.actionsValue(), inline: false },
+    ];
+
+    // Enforce 6000-char total by progressively trimming the last thought field
+    let total = fields.reduce((s, f) => s + f.name.length + f.value.length, 0)
+      + '⚙️ Working...'.length
+      + (`Branch: \`${this.branchName}\``).length
+      + this.interaction.user.username.length;
+    if (total > EMBED_TOTAL_MAX) {
+      const lastThought = fields.find(f => f.name.startsWith('💭'));
+      if (lastThought) {
+        const over = total - EMBED_TOTAL_MAX + 10;
+        lastThought.value = '[...]\n' + lastThought.value.slice(over + 6);
+      }
+    }
+
     const embed = new EmbedBuilder()
       .setColor(0xf59e0b)
       .setTitle('⚙️ Working...')
       .setDescription(`Branch: \`${this.branchName}\``)
-      .addFields(
-        { name: '📝 Request', value: this.requestValue(), inline: false },
-        ...this.thoughtFields(),
-        { name: '⚡ Actions', value: this.actionsValue(), inline: false },
-      )
+      .addFields(fields)
       .setFooter({ text: this.interaction.user.username });
     return { embeds: [embed], components: [] };
   }
