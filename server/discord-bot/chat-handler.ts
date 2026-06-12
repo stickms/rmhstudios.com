@@ -90,6 +90,7 @@ export async function handleChat(
         { name: '💬 You', value: promptValue, inline: false },
         ...replyFields,
       )
+      .setFooter({ text: username })
 
     const continueBtn = new ButtonBuilder()
       .setCustomId(`chat_continue:${userId}`)
@@ -104,7 +105,8 @@ export async function handleChat(
     const embed = new EmbedBuilder()
       .setColor(0xef4444)
       .setTitle('❌ bruh something broke no cap')
-      .setDescription(String(err).slice(0, 3900));
+      .setDescription(String(err).slice(0, 3900))
+      .setFooter({ text: username });
     await interaction.editReply({ embeds: [embed], components: [] }).catch(() => {});
   }
 }

@@ -134,7 +134,8 @@ export class ProgressReporter {
         { name: '📝 Request', value: this.requestValue(), inline: false },
         ...this.thoughtFields(),
         { name: '⚡ Actions', value: this.actionsValue(), inline: false },
-      );
+      )
+      .setFooter({ text: this.interaction.user.username });
     return { embeds: [embed], components: [] };
   }
 
@@ -187,7 +188,8 @@ export class ProgressReporter {
         { name: '📝 Request', value: this.requestValue(), inline: false },
         { name: '📝 Changes', value: fileList, inline: false },
         { name: '📋 Summary', value: summary.slice(0, FIELD_MAX) || 'Changes applied.', inline: false },
-      );
+      )
+      .setFooter({ text: this.interaction.user.username });
 
     await this.interaction
       .editReply({ embeds: [embed], components: [this.buildButtons()] })
@@ -205,7 +207,8 @@ export class ProgressReporter {
       .addFields(
         { name: '📝 Request', value: this.requestValue(), inline: false },
         { name: '📋 Summary', value: (summary || 'No file changes were made.').slice(0, FIELD_MAX), inline: false },
-      );
+      )
+      .setFooter({ text: this.interaction.user.username });
 
     const continueBtn = new ButtonBuilder()
       .setCustomId(`rmhbot_continue:${this.discordUserId}`)
@@ -225,7 +228,8 @@ export class ProgressReporter {
     const embed = new EmbedBuilder()
       .setColor(0xef4444)
       .setTitle('❌ Error')
-      .setDescription(`Branch: \`${this.branchName}\`\n\n${message.slice(0, 3900)}`);
+      .setDescription(`Branch: \`${this.branchName}\`\n\n${message.slice(0, 3900)}`)
+      .setFooter({ text: this.interaction.user.username });
 
     await this.interaction.editReply({ embeds: [embed], components: [] }).catch(() => {});
   }

@@ -151,7 +151,8 @@ ENV NODE_ENV=production
 ENV HOSTNAME=0.0.0.0
 
 RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 app
+    adduser --system --uid 1001 app && \
+    mkdir -p /app/.rmhbot-worktrees && chown app:nodejs /app/.rmhbot-worktrees
 
 # ─── node_modules from prisma-generate stage ────────────────────────────
 # Sourced from prisma-generate (not deps) so the generated @prisma/client
