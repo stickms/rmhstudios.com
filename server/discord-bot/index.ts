@@ -148,7 +148,7 @@ client.on('interactionCreate', async (interaction: Interaction) => {
     } catch (err) {
       logger.error({ event: 'command_error', command: interaction.commandName, error: String(err) });
 
-      const reply = { content: 'Something went wrong.', ephemeral: false };
+      const reply = { content: 'Something went wrong.' };
       if (interaction.replied || interaction.deferred) {
         await interaction.followUp(reply).catch(() => {});
       } else {
@@ -180,7 +180,7 @@ async function handleButtonInteraction(interaction: ButtonInteraction): Promise<
 
   if (action === 'rmhbot_continue') {
     if (interaction.user.id !== ownerId) {
-      await interaction.reply({ content: 'This session belongs to another user.', ephemeral: false });
+      await interaction.reply({ content: 'This session belongs to another user.' });
       return;
     }
 
@@ -202,7 +202,7 @@ async function handleButtonInteraction(interaction: ButtonInteraction): Promise<
 
   if (action === 'rmhbot_push') {
     if (interaction.user.id !== ownerId) {
-      await interaction.reply({ content: 'This session belongs to another user.', ephemeral: false });
+      await interaction.reply({ content: 'This session belongs to another user.' });
       return;
     }
     await handlePush(interaction, ownerId);
@@ -211,7 +211,7 @@ async function handleButtonInteraction(interaction: ButtonInteraction): Promise<
 
   if (action === 'chat_continue') {
     if (interaction.user.id !== ownerId) {
-      await interaction.reply({ content: 'This chat belongs to another user.', ephemeral: false });
+      await interaction.reply({ content: 'This chat belongs to another user.' });
       return;
     }
 
@@ -237,7 +237,7 @@ async function handleModalSubmit(interaction: ModalSubmitInteraction): Promise<v
 
   if (action === 'rmhbot_continue_modal') {
     if (interaction.user.id !== ownerId) {
-      await interaction.reply({ content: 'This session belongs to another user.', ephemeral: false });
+      await interaction.reply({ content: 'This session belongs to another user.' });
       return;
     }
 
@@ -248,7 +248,7 @@ async function handleModalSubmit(interaction: ModalSubmitInteraction): Promise<v
 
   if (action === 'chat_continue_modal') {
     if (interaction.user.id !== ownerId) {
-      await interaction.reply({ content: 'This chat belongs to another user.', ephemeral: false });
+      await interaction.reply({ content: 'This chat belongs to another user.' });
       return;
     }
 

@@ -55,7 +55,7 @@ export async function handleChat(
 
   session.history.push({ role: 'user', content: message });
 
-  await interaction.deferReply({ ephemeral: false });
+  await interaction.deferReply();
 
   try {
     const response = await deepseek.chat.completions.create({

@@ -25,16 +25,16 @@ export async function handlePush(
   const state = sessions.get(userId);
 
   if (!state) {
-    await interaction.reply({ content: 'No active session — use `/rmhbot` to start one.', ephemeral: false });
+    await interaction.reply({ content: 'No active session — use `/rmhbot` to start one.' });
     return;
   }
 
   if (isSessionLocked(state)) {
-    await interaction.reply({ content: 'Still working on your last request — please wait.', ephemeral: false });
+    await interaction.reply({ content: 'Still working on your last request — please wait.' });
     return;
   }
 
-  await interaction.deferReply({ ephemeral: false });
+  await interaction.deferReply();
 
   const checkingEmbed = new EmbedBuilder()
     .setColor(0xf59e0b)

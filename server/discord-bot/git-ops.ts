@@ -6,7 +6,9 @@ import { promisify } from 'util';
 const execFile = promisify(execFileCb);
 
 export const REPO_PATH = process.env.RMHBOT_REPO_PATH ?? process.cwd();
-const WORKTREES_DIR = path.join(REPO_PATH, '.rmhbot-worktrees');
+// Keep worktrees inside /app (container WORKDIR) rather than inside REPO_PATH,
+// which is a host-mounted volume the container user may not own.
+const WORKTREES_DIR = process.env.RMHBOT_WORKTREES_DIR ?? path.join(process.cwd(), '.rmhbot-worktrees');
 const REPO_OWNER = 'stickms';
 const REPO_NAME = 'rmhstudios.com';
 

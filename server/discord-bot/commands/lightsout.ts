@@ -31,7 +31,6 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
   if (!activityClientId) {
     await interaction.reply({
       content: 'Activity not configured. Please set `DISCORD_ACTIVITY_CLIENT_ID`.',
-      ephemeral: false,
     });
     return;
   }

@@ -309,7 +309,6 @@ async function buildUserContent(
       await interaction
         .followUp({
           content: `Attachment \`${attachment.name}\` exceeds the size limit and was ignored.`,
-          ephemeral: false,
         })
         .catch(() => {});
     } else if (IMAGE_TYPES.has(attachment.contentType ?? '')) {
@@ -330,7 +329,6 @@ async function buildUserContent(
       await interaction
         .followUp({
           content: `Attachment \`${attachment.name}\` is not a supported type and was ignored.`,
-          ephemeral: false,
         })
         .catch(() => {});
     }
@@ -366,29 +364,23 @@ export async function handleCommand(
   const username = interaction.user.username;
 
   if (!isAllowedChannel(interaction.channelId ?? '')) {
-    await interaction.reply({ content: 'RMHBot is not available in this channel.', ephemeral: false });
+    await interaction.reply({ content: 'RMHBot is not available in this channel.' });
     return;
   }
 
   let state = sessions.get(userId);
 
   if (!isNew && !state) {
-    await interaction.reply({
-      content: 'No active session — use `/rmhbot` to start one.',
-      ephemeral: false,
-    });
+    await interaction.reply({ content: 'No active session — use `/rmhbot` to start one.' });
     return;
   }
 
   if (state && isSessionLocked(state)) {
-    await interaction.reply({
-      content: 'Still working on your last request — please wait.',
-      ephemeral: false,
-    });
+    await interaction.reply({ content: 'Still working on your last request — please wait.' });
     return;
   }
 
-  await interaction.deferReply({ ephemeral: false });
+  await interaction.deferReply();
 
   if (isNew) {
     const branchName = makeBranchName(username);

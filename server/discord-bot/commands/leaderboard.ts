@@ -41,12 +41,12 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
   const game = interaction.options.getString('game') ?? 'lightsout';
 
   if (game !== 'lightsout') {
-    await interaction.reply({ content: `Unknown game: \`${game}\`. Available: \`lightsout\``, ephemeral: false });
+    await interaction.reply({ content: `Unknown game: \`${game}\`. Available: \`lightsout\`` });
     return;
   }
 
   if (!interaction.guildId) {
-    await interaction.reply({ content: 'This command can only be used in a server.', ephemeral: false });
+    await interaction.reply({ content: 'This command can only be used in a server.' });
     return;
   }
 
