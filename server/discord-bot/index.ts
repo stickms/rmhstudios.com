@@ -25,6 +25,7 @@ import {
   TextInputBuilder,
   TextInputStyle,
   ActionRowBuilder,
+  MessageFlags,
   type ChatInputCommandInteraction,
   type ButtonInteraction,
   type ModalSubmitInteraction,
@@ -206,7 +207,10 @@ async function handleButtonInteraction(interaction: ButtonInteraction): Promise<
 
   if (action === 'chat_continue') {
     if (interaction.user.id !== ownerId) {
-      await interaction.reply({ content: 'This chat belongs to another user.' });
+      await interaction.reply({
+        content: "This chat belongs to another user — run `/chat` to start your own 💬",
+        flags: MessageFlags.Ephemeral,
+      });
       return;
     }
 
@@ -243,7 +247,10 @@ async function handleModalSubmit(interaction: ModalSubmitInteraction): Promise<v
 
   if (action === 'chat_continue_modal') {
     if (interaction.user.id !== ownerId) {
-      await interaction.reply({ content: 'This chat belongs to another user.' });
+      await interaction.reply({
+        content: "This chat belongs to another user — run `/chat` to start your own 💬",
+        flags: MessageFlags.Ephemeral,
+      });
       return;
     }
 
