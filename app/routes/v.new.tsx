@@ -1,29 +1,19 @@
 /**
  * /v/new — Vibe generation route.
  *
- * Reads ?prompt from the URL, generates a page via DeepSeek, persists it, and
- * redirects to the permanent /v/$slug.
- *
- * The loading screen is the route's own component (not a loader pendingComponent):
- * generation is kicked off from a client effect so the "Creating your vibe…" UI is
- * guaranteed to render immediately. Doing the slow work in a redirecting loader
- * keeps the previous route mounted and never shows a loading state.
+ * Reads ?prompt from the URL, streams generation from /api/vibe/stream (DeepSeek's
+ * reasoning model), shows the model's live "thinking", and redirects to the
+ * permanent /v/$slug when done. Generation is kicked off from a client effect so
+ * the loading UI is guaranteed to render immediately.
  *
  * No auth required — anyone can generate a vibe page.
  */
 
 import { useEffect, useRef, useState } from 'react';
 import { createFileRoute, redirect, useNavigate, Link } from '@tanstack/react-router';
-import { createServerFn } from '@tanstack/react-start';
-import { createVibePage } from '@/lib/rmhvibe/vibe.server';
+import { streamVibe } from '@/lib/rmhvibe/vibe-stream';
+import { ThinkingStream } from '@/components/rmhvibe/ThinkingStream';
 import '@/components/rmhvibe/vibe.css';
-
-const generate = createServerFn({ method: 'POST' })
-  .validator((prompt: string) => prompt)
-  .handler(async ({ data: prompt }) => {
-    const slug = await createVibePage(prompt);
-    return { slug };
-  });
 
 export const Route = createFileRoute('/v/new')({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -39,6 +29,7 @@ function VibeNew() {
   const { prompt } = Route.useSearch();
   const navigate = useNavigate();
   const started = useRef(false);
+  const [thinking, setThinking] = useState('');
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
@@ -46,23 +37,37 @@ function VibeNew() {
     if (started.current) return;
     started.current = true;
 
-    generate({ data: prompt.trim() })
-      .then(({ slug }) => navigate({ to: '/v/$slug', params: { slug }, replace: true }))
-      .catch(() => setFailed(true));
+    let cancelled = false;
+    streamVibe({ prompt: prompt.trim() }, (event) => {
+      if (cancelled) return;
+      if (event.type === 'thinking') {
+        setThinking((t) => t + event.text);
+      } else if (event.type === 'done') {
+        navigate({ to: '/v/$slug', params: { slug: event.slug }, replace: true });
+      } else if (event.type === 'error') {
+        setFailed(true);
+      }
+    }).catch(() => {
+      if (!cancelled) setFailed(true);
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [prompt, navigate]);
 
   if (failed) return <VibeError />;
-  return <VibeLoading />;
-}
 
-function VibeLoading() {
   return (
-    <div className="vibe-screen fixed inset-0 z-50 flex flex-col items-center justify-center gap-7">
+    <div className="vibe-screen fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 px-6 py-12">
       <div className="vibe-spinner" aria-hidden="true" />
       <div className="text-center">
         <p className="vibe-rise text-lg font-semibold tracking-tight">Creating your vibe…</p>
-        <p className="vibe-rise-2 vibe-hint mt-2">Generating a one-of-a-kind page just for you.</p>
+        <p className="vibe-rise-2 vibe-hint mt-2">
+          {thinking ? 'Thinking it through.' : 'Warming up the model.'}
+        </p>
       </div>
+      <ThinkingStream text={thinking} className="vibe-think--lg" />
     </div>
   );
 }

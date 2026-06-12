@@ -3,14 +3,17 @@
  *
  * Renders a saved vibe page full-screen (outside the _site sidebar layout) inside
  * a sandboxed iframe, with a minimal floating toolbar to Customize, Share, or go
- * Back home. Anyone can customize — last write wins, no auth.
+ * Back home. Customizing streams the model's live "thinking" and updates the page
+ * in place. Anyone can customize — last write wins, no auth.
  */
 
 import { useEffect, useRef, useState } from 'react';
 import { createFileRoute, notFound, Link } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { ArrowLeft, Pencil, Share2, Check, Loader2, X, CornerDownLeft } from 'lucide-react';
-import { getVibePage, customizeVibePage } from '@/lib/rmhvibe/vibe.server';
+import { getVibePage } from '@/lib/rmhvibe/vibe.server';
+import { streamVibe } from '@/lib/rmhvibe/vibe-stream';
+import { ThinkingStream } from '@/components/rmhvibe/ThinkingStream';
 import '@/components/rmhvibe/vibe.css';
 
 const fetchVibe = createServerFn({ method: 'GET' })
@@ -18,24 +21,33 @@ const fetchVibe = createServerFn({ method: 'GET' })
   .handler(async ({ data: slug }) => {
     const page = await getVibePage(slug);
     if (!page) throw notFound();
-    return { slug: page.slug, prompt: page.prompt, html: page.html };
-  });
-
-const customize = createServerFn({ method: 'POST' })
-  .validator((data: { slug: string; prompt: string }) => data)
-  .handler(async ({ data }) => {
-    const html = await customizeVibePage(data.slug, data.prompt);
-    return { html };
+    return {
+      slug: page.slug,
+      html: page.html,
+      title: page.title || page.prompt,
+      description: page.description || `A vibe page about "${page.prompt}".`,
+    };
   });
 
 export const Route = createFileRoute('/v/$slug')({
   loader: ({ params }) => fetchVibe({ data: params.slug }),
-  head: ({ loaderData }) => ({
-    meta: [
-      { title: `${loaderData?.prompt ?? 'Vibe'} | RMH Studios` },
-      { name: 'description', content: loaderData?.prompt ?? 'A vibe page generated on RMH Studios.' },
-    ],
-  }),
+  head: ({ loaderData }) => {
+    const title = loaderData?.title ?? 'Vibe';
+    const description = loaderData?.description ?? 'A vibe page generated on RMH Studios.';
+    return {
+      meta: [
+        { title: `${title} | RMH Studios` },
+        { name: 'description', content: description },
+        { property: 'og:type', content: 'website' },
+        { property: 'og:title', content: title },
+        { property: 'og:description', content: description },
+        { property: 'og:site_name', content: 'RMH Studios' },
+        { name: 'twitter:card', content: 'summary_large_image' },
+        { name: 'twitter:title', content: title },
+        { name: 'twitter:description', content: description },
+      ],
+    };
+  },
   notFoundComponent: VibeNotFound,
   component: VibeViewer,
 });
@@ -44,9 +56,14 @@ function VibeViewer() {
   const { slug, html: initialHtml } = Route.useLoaderData();
 
   const [html, setHtml] = useState(initialHtml);
+  // Bumped on every html change so the iframe fully remounts — without this,
+  // backdrop-filter overlays (toolbar/panel) leave stale composite "ghosts"
+  // each time the iframe repaints, stacking up as the user customizes.
+  const [renderKey, setRenderKey] = useState(0);
   const [panelOpen, setPanelOpen] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [busy, setBusy] = useState(false);
+  const [thinking, setThinking] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -54,6 +71,7 @@ function VibeViewer() {
   // Loader data is per-slug; reset local HTML when navigating between pages.
   useEffect(() => {
     setHtml(initialHtml);
+    setRenderKey((k) => k + 1);
   }, [initialHtml]);
 
   useEffect(() => {
@@ -65,15 +83,37 @@ function VibeViewer() {
     if (!trimmed || busy) return;
     setBusy(true);
     setError(null);
+    setThinking('');
+
+    let finalHtml = '';
+    let finalTitle = '';
+    let hadError = false;
     try {
-      const { html: nextHtml } = await customize({ data: { slug, prompt: trimmed } });
-      setHtml(nextHtml);
-      setPrompt('');
-      setPanelOpen(false);
+      await streamVibe({ slug, prompt: trimmed }, (event) => {
+        if (event.type === 'thinking') {
+          setThinking((t) => t + event.text);
+        } else if (event.type === 'done') {
+          finalHtml = event.html;
+          finalTitle = event.title;
+        } else if (event.type === 'error') {
+          hadError = true;
+          setError(event.message);
+        }
+      });
     } catch {
+      hadError = true;
       setError('Something went wrong. Try again.');
     } finally {
       setBusy(false);
+    }
+
+    if (finalHtml && !hadError) {
+      setHtml(finalHtml);
+      setRenderKey((k) => k + 1);
+      if (finalTitle) document.title = `${finalTitle} | RMH Studios`;
+      setPrompt('');
+      setThinking('');
+      setPanelOpen(false);
     }
   }
 
@@ -90,6 +130,7 @@ function VibeViewer() {
   return (
     <div className="fixed inset-0 bg-black">
       <iframe
+        key={renderKey}
         title="Vibe page"
         srcDoc={html}
         sandbox="allow-scripts allow-popups allow-forms"
@@ -117,11 +158,11 @@ function VibeViewer() {
 
       {/* Slide-up customize panel */}
       <div
-        className={`fixed inset-x-0 bottom-0 z-40 transition-transform duration-300 ease-out ${
+        className={`vibe-panel-dock fixed inset-x-0 bottom-0 z-40 transition-transform duration-300 ease-out ${
           panelOpen ? 'translate-y-0' : 'pointer-events-none translate-y-full'
         }`}
       >
-        <div className="vibe-panel mx-auto mb-4">
+        <div className="vibe-panel mx-auto">
           <div className="mb-2 flex items-center justify-between">
             <p className="vibe-panel__title">Customize this page</p>
             <button
@@ -133,6 +174,8 @@ function VibeViewer() {
               <X size={16} />
             </button>
           </div>
+
+          {busy && <ThinkingStream text={thinking} className="vibe-think--sm mb-3" />}
 
           <div className="flex items-end gap-2">
             <textarea

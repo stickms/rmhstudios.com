@@ -134,6 +134,7 @@ import { Route as SecretJobsApplicationsRouteImport } from './routes/secret/jobs
 import { Route as SecretJobsIdRouteImport } from './routes/secret/jobs/$id'
 import { Route as ApiVoidBreakerScoreRouteImport } from './routes/api/void-breaker/score'
 import { Route as ApiVoidBreakerLeaderboardRouteImport } from './routes/api/void-breaker/leaderboard'
+import { Route as ApiVibeStreamRouteImport } from './routes/api/vibe/stream'
 import { Route as ApiVersecraftSaveRouteImport } from './routes/api/versecraft/save'
 import { Route as ApiVersecraftProgressRouteImport } from './routes/api/versecraft/progress'
 import { Route as ApiVegaScoreRouteImport } from './routes/api/vega/score'
@@ -900,6 +901,11 @@ const ApiVoidBreakerLeaderboardRoute =
     path: '/api/void-breaker/leaderboard',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiVibeStreamRoute = ApiVibeStreamRouteImport.update({
+  id: '/api/vibe/stream',
+  path: '/api/vibe/stream',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiVersecraftSaveRoute = ApiVersecraftSaveRouteImport.update({
   id: '/api/versecraft/save',
   path: '/api/versecraft/save',
@@ -1770,6 +1776,7 @@ export interface FileRoutesByFullPath {
   '/api/vega/score': typeof ApiVegaScoreRoute
   '/api/versecraft/progress': typeof ApiVersecraftProgressRoute
   '/api/versecraft/save': typeof ApiVersecraftSaveRoute
+  '/api/vibe/stream': typeof ApiVibeStreamRoute
   '/api/void-breaker/leaderboard': typeof ApiVoidBreakerLeaderboardRoute
   '/api/void-breaker/score': typeof ApiVoidBreakerScoreRoute
   '/secret/jobs/$id': typeof SecretJobsIdRoute
@@ -2006,6 +2013,7 @@ export interface FileRoutesByTo {
   '/api/vega/score': typeof ApiVegaScoreRoute
   '/api/versecraft/progress': typeof ApiVersecraftProgressRoute
   '/api/versecraft/save': typeof ApiVersecraftSaveRoute
+  '/api/vibe/stream': typeof ApiVibeStreamRoute
   '/api/void-breaker/leaderboard': typeof ApiVoidBreakerLeaderboardRoute
   '/api/void-breaker/score': typeof ApiVoidBreakerScoreRoute
   '/secret/jobs/$id': typeof SecretJobsIdRoute
@@ -2267,6 +2275,7 @@ export interface FileRoutesById {
   '/api/vega/score': typeof ApiVegaScoreRoute
   '/api/versecraft/progress': typeof ApiVersecraftProgressRoute
   '/api/versecraft/save': typeof ApiVersecraftSaveRoute
+  '/api/vibe/stream': typeof ApiVibeStreamRoute
   '/api/void-breaker/leaderboard': typeof ApiVoidBreakerLeaderboardRoute
   '/api/void-breaker/score': typeof ApiVoidBreakerScoreRoute
   '/secret/jobs/$id': typeof SecretJobsIdRoute
@@ -2528,6 +2537,7 @@ export interface FileRouteTypes {
     | '/api/vega/score'
     | '/api/versecraft/progress'
     | '/api/versecraft/save'
+    | '/api/vibe/stream'
     | '/api/void-breaker/leaderboard'
     | '/api/void-breaker/score'
     | '/secret/jobs/$id'
@@ -2764,6 +2774,7 @@ export interface FileRouteTypes {
     | '/api/vega/score'
     | '/api/versecraft/progress'
     | '/api/versecraft/save'
+    | '/api/vibe/stream'
     | '/api/void-breaker/leaderboard'
     | '/api/void-breaker/score'
     | '/secret/jobs/$id'
@@ -3024,6 +3035,7 @@ export interface FileRouteTypes {
     | '/api/vega/score'
     | '/api/versecraft/progress'
     | '/api/versecraft/save'
+    | '/api/vibe/stream'
     | '/api/void-breaker/leaderboard'
     | '/api/void-breaker/score'
     | '/secret/jobs/$id'
@@ -3214,6 +3226,7 @@ export interface RootRouteChildren {
   ApiVegaScoreRoute: typeof ApiVegaScoreRoute
   ApiVersecraftProgressRoute: typeof ApiVersecraftProgressRoute
   ApiVersecraftSaveRoute: typeof ApiVersecraftSaveRoute
+  ApiVibeStreamRoute: typeof ApiVibeStreamRoute
   ApiVoidBreakerLeaderboardRoute: typeof ApiVoidBreakerLeaderboardRoute
   ApiVoidBreakerScoreRoute: typeof ApiVoidBreakerScoreRoute
   ApiCoinsIndexRoute: typeof ApiCoinsIndexRoute
@@ -4120,6 +4133,13 @@ declare module '@tanstack/react-router' {
       path: '/api/void-breaker/leaderboard'
       fullPath: '/api/void-breaker/leaderboard'
       preLoaderRoute: typeof ApiVoidBreakerLeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/vibe/stream': {
+      id: '/api/vibe/stream'
+      path: '/api/vibe/stream'
+      fullPath: '/api/vibe/stream'
+      preLoaderRoute: typeof ApiVibeStreamRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/versecraft/save': {
@@ -5792,6 +5812,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiVegaScoreRoute: ApiVegaScoreRoute,
   ApiVersecraftProgressRoute: ApiVersecraftProgressRoute,
   ApiVersecraftSaveRoute: ApiVersecraftSaveRoute,
+  ApiVibeStreamRoute: ApiVibeStreamRoute,
   ApiVoidBreakerLeaderboardRoute: ApiVoidBreakerLeaderboardRoute,
   ApiVoidBreakerScoreRoute: ApiVoidBreakerScoreRoute,
   ApiCoinsIndexRoute: ApiCoinsIndexRoute,

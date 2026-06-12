@@ -1911,6 +1911,8 @@ model VibePage {
   id                  String   @id @default(cuid())
   slug                String   @unique // short URL-safe identifier, e.g. "neon-city-3k"
   prompt              String            // original user prompt
+  title               String?           // model-generated page title (tab + OG)
+  description         String?           // model-generated description (OG/social)
   html                String            // full generated HTML (self-contained, no external deps required)
   conversationHistory Json              // array of { role, content } turns for "customize" follow-ups
   createdAt           DateTime @default(now())
