@@ -151,17 +151,3 @@ services:
     command: ["node", "dist-server/server/doctrine-worker/index.cjs"]
     restart: unless-stopped
 
-  # ─── News Pipeline (production only — use `--profile news` to include) ─────
-  news-pipeline:
-    <<: *common
-    container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-news-pipeline
-    profiles: ["news"]
-    env_file: ${ENV_FILE:-.env.production}
-    command: >
-      sh -c 'while true; do
-        echo "[$(date -Iseconds)] News pipeline: starting run";
-        node --import tsx scripts/news-pipeline/index.ts || echo "[$(date -Iseconds)] News pipeline: failed";
-        echo "[$(date -Iseconds)] News pipeline: sleeping 8 hours";
-        sleep 28800;
-      done'
-    restart: unless-stopped

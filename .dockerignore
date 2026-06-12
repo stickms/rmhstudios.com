@@ -24,6 +24,7 @@ dist-server
 .claude
 .venv
 coverage
+.rmhbot-worktrees
 
 # ─── Docker files (no recursion) ────────────────────────────────────
 Dockerfile
@@ -48,6 +49,9 @@ public/music
 public/sprites
 public/**/*.psd
 public/**/generate_sprites.py
+
+# ─── Unused scripts ─────────────────────────────────────────────────
+scripts/news-pipeline
 
 # ─── Documentation ──────────────────────────────────────────────────
 docs

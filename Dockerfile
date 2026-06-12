@@ -2,8 +2,8 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # rmhstudios.com — Multi-stage Docker build (cache-optimized)
 #
-# Produces a single image used by all services (web, socket, rmhbox, rmhtube,
-# news-pipeline). Each service overrides the CMD via docker-compose.yml.
+# Produces a single image used by all services (web, socket, rmhbox, rmhtube).
+# Each service overrides the CMD via docker-compose.yml.
 #
 # Architecture: ARM64 (aarch64)
 #
@@ -33,7 +33,7 @@
 # a fast `prisma generate`, not a full 70s+ pnpm install.
 FROM node:24-alpine AS deps
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@10.29.1 --activate
 
 WORKDIR /app
 
@@ -48,6 +48,27 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store,sharin
 # Separated from deps so that schema changes only re-run `prisma generate`
 # (~3s) instead of invalidating the entire pnpm install layer (~70s).
 FROM deps AS prisma-generate
+
+COPY prisma ./prisma/
+COPY prisma.config.ts ./
+
+RUN pnpm exec prisma generate
+
+# ── Stage 1c: Production-only node_modules ────────────────────────────────
+# Installs only production deps (no devDependencies) and generates the Prisma
+# client. Copied into the runner to keep the final image small — devDeps
+# (vite, esbuild, typescript, eslint, etc.) are excluded.
+# Rebuilds only when lockfile or prisma schema changes.
+FROM node:24-alpine AS prod-deps
+
+RUN corepack enable && corepack prepare pnpm@10.29.1 --activate
+
+WORKDIR /app
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store,sharing=locked \
+    pnpm install --frozen-lockfile --prod --ignore-scripts
 
 COPY prisma ./prisma/
 COPY prisma.config.ts ./
@@ -74,7 +95,6 @@ COPY lib/roulette ./lib/roulette/
 COPY lib/lights-out ./lib/lights-out/
 COPY lib/doctrine ./lib/doctrine/
 COPY lib/url.ts ./lib/url.ts
-
 RUN pnpm exec esbuild \
     server/socket-server/index.ts \
     server/rmhbox/index.ts \
@@ -154,11 +174,12 @@ RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 app && \
     mkdir -p /app/.rmhbot-worktrees && chown app:nodejs /app/.rmhbot-worktrees
 
-# ─── node_modules from prisma-generate stage ────────────────────────────
-# Sourced from prisma-generate (not deps) so the generated @prisma/client
-# is included. This layer rebuilds only when lockfile OR prisma schema
-# changes — NOT on source code or env-arg changes.
-COPY --from=prisma-generate --chown=app:nodejs /app/node_modules ./node_modules
+# ─── Production-only node_modules ───────────────────────────────────────
+# Sourced from prod-deps (not prisma-generate) — excludes devDependencies
+# (vite, esbuild, typescript, eslint, etc.) for a significantly smaller image.
+# Includes @prisma/client from the prod prisma generate run.
+# Rebuilds only when lockfile OR prisma schema changes.
+COPY --from=prod-deps --chown=app:nodejs /app/node_modules ./node_modules
 
 # ─── Nitro server output ────────────────────────────────────────────────
 # .output/ contains the Nitro server bundle, static assets, and public files.
