@@ -55,25 +55,14 @@ COPY prisma.config.ts ./
 RUN pnpm exec prisma generate
 
 # ── Stage 1c: Production-only node_modules ────────────────────────────────
-# Installs only production deps (no devDependencies) and generates the Prisma
-# client. Copied into the runner to keep the final image small — devDeps
-# (vite, esbuild, typescript, eslint, etc.) are excluded.
+# Builds on prisma-generate so the Prisma client is already generated —
+# no need for the prisma CLI (a devDep) here. pnpm install --prod then
+# prunes devDependencies (vite, esbuild, typescript, eslint, etc.).
 # Rebuilds only when lockfile or prisma schema changes.
-FROM node:24-alpine AS prod-deps
-
-RUN corepack enable && corepack prepare pnpm@10.29.1 --activate
-
-WORKDIR /app
-
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+FROM prisma-generate AS prod-deps
 
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store,sharing=locked \
     pnpm install --frozen-lockfile --prod --ignore-scripts
-
-COPY prisma ./prisma/
-COPY prisma.config.ts ./
-
-RUN pnpm exec prisma generate
 
 # ── Stage 2: Server bundles (env-agnostic, decoupled from app source) ─────
 # esbuild runs in <3s and produces CJS bundles for socket/rmhbox/rmhtube.
