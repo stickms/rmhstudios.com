@@ -67,6 +67,7 @@ function VibeViewer() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   // Loader data is per-slug; reset local HTML when navigating between pages.
   useEffect(() => {
@@ -75,7 +76,12 @@ function VibeViewer() {
   }, [initialHtml]);
 
   useEffect(() => {
-    if (panelOpen) inputRef.current?.focus();
+    if (panelOpen) {
+      inputRef.current?.focus();
+    } else {
+      // Hand keyboard focus back to the page when the panel closes.
+      iframeRef.current?.contentWindow?.focus();
+    }
   }, [panelOpen]);
 
   async function handleCustomize() {
@@ -131,10 +137,20 @@ function VibeViewer() {
     <div className="fixed inset-0 bg-black">
       <iframe
         key={renderKey}
+        ref={iframeRef}
         title="Vibe page"
         srcDoc={html}
-        sandbox="allow-scripts allow-popups allow-forms"
+        sandbox="allow-scripts allow-popups allow-forms allow-modals allow-pointer-lock"
         className="h-full w-full border-0"
+        onLoad={(e) => {
+          // Move focus into the iframe so keyboard-driven pages (spacebar, arrow
+          // keys, WASD, etc.) receive input immediately without a manual click.
+          try {
+            e.currentTarget.contentWindow?.focus();
+          } catch {
+            /* cross-origin focus call — safe to ignore */
+          }
+        }}
       />
 
       {/* Floating toolbar — top-right */}
