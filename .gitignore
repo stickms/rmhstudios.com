@@ -63,3 +63,6 @@ content/news/staging/*.mdx
 # CLI build artifacts
 cli/dist/
 cli/node_modules/
+
+# RMHBot git worktrees
+.rmhbot-worktrees/

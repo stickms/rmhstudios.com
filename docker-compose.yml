@@ -114,11 +114,15 @@ services:
       retries: 3
       start_period: 15s
 
-  # ─── Discord Bot (slash commands for Lights Out + future activities) ───────
+  # ─── Discord Bot (slash commands + RMHBot AI editor) ──────────────────────
   discord-bot:
     <<: *common
     container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-discord-bot
     env_file: ${ENV_FILE:-.env.production}
+    # Override volumes to add repo mount for RMHBot git operations
+    volumes:
+      - ${STORAGE_PATH:-./db}:/app/db
+      - ${RMHBOT_REPO_PATH:-/home/rmhstudios/rmhstudios.com}:${RMHBOT_REPO_PATH:-/home/rmhstudios/rmhstudios.com}
     command: ["node", "dist-server/server/discord-bot/index.cjs"]
     restart: unless-stopped
 

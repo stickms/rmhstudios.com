@@ -143,7 +143,7 @@ RUN test -d /app/build-output && \
 # ── Stage 4: Production runner ────────────────────────────────────────────
 FROM node:24-alpine AS runner
 
-RUN apk add --no-cache curl
+RUN apk add --no-cache curl git
 
 WORKDIR /app
 

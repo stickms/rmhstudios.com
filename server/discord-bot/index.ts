@@ -20,17 +20,28 @@ import {
   REST,
   Routes,
   Collection,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+  ActionRowBuilder,
   type ChatInputCommandInteraction,
+  type ButtonInteraction,
+  type ModalSubmitInteraction,
   type Interaction,
 } from 'discord.js';
 import { logger } from './logger';
 import { disconnectPrisma } from './prisma-client';
+import { handleCommand } from './command-handler';
+import { handlePush } from './commands/rmhbot-push';
 
 // ─── Command imports ─────────────────────────────────────────────
 
 import * as lightsoutCommand from './commands/lightsout';
 import * as leaderboardCommand from './commands/leaderboard';
 import * as streakCommand from './commands/streak';
+import * as rmhbotCommand from './commands/rmhbot';
+import * as rmhbotContinueCommand from './commands/rmhbot-continue';
+import * as rmhbotPushCommand from './commands/rmhbot-push';
 
 // ─── Types ───────────────────────────────────────────────────────
 
@@ -46,6 +57,9 @@ const commands = new Collection<string, Command>();
 commands.set(lightsoutCommand.data.name, lightsoutCommand);
 commands.set(leaderboardCommand.data.name, leaderboardCommand);
 commands.set(streakCommand.data.name, streakCommand);
+commands.set(rmhbotCommand.data.name, rmhbotCommand);
+commands.set(rmhbotContinueCommand.data.name, rmhbotContinueCommand);
+commands.set(rmhbotPushCommand.data.name, rmhbotPushCommand);
 
 // ─── Startup validation ──────────────────────────────────────────
 
@@ -110,39 +124,103 @@ client.once('clientReady', (c) => {
 });
 
 client.on('interactionCreate', async (interaction: Interaction) => {
-  if (!interaction.isChatInputCommand()) return;
+  // ── Slash commands ────────────────────────────────────────────
+  if (interaction.isChatInputCommand()) {
+    const command = commands.get(interaction.commandName);
+    if (!command) {
+      logger.warn({ event: 'unknown_command', name: interaction.commandName });
+      return;
+    }
 
-  const command = commands.get(interaction.commandName);
-  if (!command) {
-    logger.warn({ event: 'unknown_command', name: interaction.commandName });
+    try {
+      logger.info({
+        event: 'command_received',
+        command: interaction.commandName,
+        subcommand: interaction.options.getSubcommand(false) ?? undefined,
+        userId: interaction.user.id,
+        guildId: interaction.guildId ?? undefined,
+      });
+
+      await command.execute(interaction);
+    } catch (err) {
+      logger.error({ event: 'command_error', command: interaction.commandName, error: String(err) });
+
+      const reply = { content: 'Something went wrong.', ephemeral: true };
+      if (interaction.replied || interaction.deferred) {
+        await interaction.followUp(reply).catch(() => {});
+      } else {
+        await interaction.reply(reply).catch(() => {});
+      }
+    }
     return;
   }
 
-  try {
-    logger.info({
-      event: 'command_received',
-      command: interaction.commandName,
-      subcommand: interaction.options.getSubcommand(false) ?? undefined,
-      userId: interaction.user.id,
-      guildId: interaction.guildId ?? undefined,
+  // ── Button interactions ───────────────────────────────────────
+  if (interaction.isButton()) {
+    await handleButtonInteraction(interaction).catch(err => {
+      logger.error({ event: 'button_error', customId: interaction.customId, error: String(err) });
     });
+    return;
+  }
 
-    await command.execute(interaction);
-  } catch (err) {
-    logger.error({
-      event: 'command_error',
-      command: interaction.commandName,
-      error: String(err),
+  // ── Modal submissions ─────────────────────────────────────────
+  if (interaction.isModalSubmit()) {
+    await handleModalSubmit(interaction).catch(err => {
+      logger.error({ event: 'modal_error', customId: interaction.customId, error: String(err) });
     });
-
-    const reply = { content: 'Something went wrong.', ephemeral: true };
-    if (interaction.replied || interaction.deferred) {
-      await interaction.followUp(reply).catch(() => {});
-    } else {
-      await interaction.reply(reply).catch(() => {});
-    }
+    return;
   }
 });
+
+async function handleButtonInteraction(interaction: ButtonInteraction): Promise<void> {
+  const [action, ownerId] = interaction.customId.split(':');
+
+  if (action === 'rmhbot_continue') {
+    if (interaction.user.id !== ownerId) {
+      await interaction.reply({ content: 'This session belongs to another user.', ephemeral: true });
+      return;
+    }
+
+    const modal = new ModalBuilder()
+      .setCustomId(`rmhbot_continue_modal:${ownerId}`)
+      .setTitle('Continue Editing');
+
+    const input = new TextInputBuilder()
+      .setCustomId('request')
+      .setLabel('What would you like to change next?')
+      .setStyle(TextInputStyle.Paragraph)
+      .setRequired(true)
+      .setMaxLength(1000);
+
+    modal.addComponents(new ActionRowBuilder<TextInputBuilder>().addComponents(input));
+    await interaction.showModal(modal);
+    return;
+  }
+
+  if (action === 'rmhbot_push') {
+    if (interaction.user.id !== ownerId) {
+      await interaction.reply({ content: 'This session belongs to another user.', ephemeral: true });
+      return;
+    }
+    await handlePush(interaction, ownerId);
+    return;
+  }
+}
+
+async function handleModalSubmit(interaction: ModalSubmitInteraction): Promise<void> {
+  const [action, ownerId] = interaction.customId.split(':');
+
+  if (action === 'rmhbot_continue_modal') {
+    if (interaction.user.id !== ownerId) {
+      await interaction.reply({ content: 'This session belongs to another user.', ephemeral: true });
+      return;
+    }
+
+    const request = interaction.fields.getTextInputValue('request');
+    await handleCommand(interaction, { isNew: false, request, attachment: null });
+    return;
+  }
+}
 
 // ─── Graceful shutdown ───────────────────────────────────────────
 
