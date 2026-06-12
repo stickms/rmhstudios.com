@@ -33,6 +33,7 @@ import { logger } from './logger';
 import { disconnectPrisma } from './prisma-client';
 import { handleCommand } from './command-handler';
 import { handlePush } from './commands/rmhbot-push';
+import { handleChat } from './chat-handler';
 
 // ─── Command imports ─────────────────────────────────────────────
 
@@ -42,6 +43,7 @@ import * as streakCommand from './commands/streak';
 import * as rmhbotCommand from './commands/rmhbot';
 import * as rmhbotContinueCommand from './commands/rmhbot-continue';
 import * as rmhbotPushCommand from './commands/rmhbot-push';
+import * as chatCommand from './commands/chat';
 
 // ─── Types ───────────────────────────────────────────────────────
 
@@ -60,6 +62,7 @@ commands.set(streakCommand.data.name, streakCommand);
 commands.set(rmhbotCommand.data.name, rmhbotCommand);
 commands.set(rmhbotContinueCommand.data.name, rmhbotContinueCommand);
 commands.set(rmhbotPushCommand.data.name, rmhbotPushCommand);
+commands.set(chatCommand.data.name, chatCommand);
 
 // ─── Startup validation ──────────────────────────────────────────
 
@@ -205,6 +208,28 @@ async function handleButtonInteraction(interaction: ButtonInteraction): Promise<
     await handlePush(interaction, ownerId);
     return;
   }
+
+  if (action === 'chat_continue') {
+    if (interaction.user.id !== ownerId) {
+      await interaction.reply({ content: 'This chat belongs to another user.', ephemeral: true });
+      return;
+    }
+
+    const modal = new ModalBuilder()
+      .setCustomId(`chat_continue_modal:${ownerId}`)
+      .setTitle('Keep talking with Alex 💬');
+
+    const input = new TextInputBuilder()
+      .setCustomId('message')
+      .setLabel('What do you wanna say?')
+      .setStyle(TextInputStyle.Paragraph)
+      .setRequired(true)
+      .setMaxLength(1000);
+
+    modal.addComponents(new ActionRowBuilder<TextInputBuilder>().addComponents(input));
+    await interaction.showModal(modal);
+    return;
+  }
 }
 
 async function handleModalSubmit(interaction: ModalSubmitInteraction): Promise<void> {
@@ -218,6 +243,17 @@ async function handleModalSubmit(interaction: ModalSubmitInteraction): Promise<v
 
     const request = interaction.fields.getTextInputValue('request');
     await handleCommand(interaction, { isNew: false, request, attachment: null });
+    return;
+  }
+
+  if (action === 'chat_continue_modal') {
+    if (interaction.user.id !== ownerId) {
+      await interaction.reply({ content: 'This chat belongs to another user.', ephemeral: true });
+      return;
+    }
+
+    const message = interaction.fields.getTextInputValue('message');
+    await handleChat(interaction, message, false);
     return;
   }
 }
