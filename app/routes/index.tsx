@@ -7,7 +7,7 @@
  */
 
 import { type KeyboardEvent, useEffect, useRef } from 'react';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { ArrowRight } from 'lucide-react';
 import '@/components/rmhvibe/vibe.css';
 
@@ -74,6 +74,10 @@ function Home() {
             </button>
           </div>
         </div>
+
+        <Link to="/v" className="vibe-ghost-link vibe-rise-soft mt-8">
+          Browse pages →
+        </Link>
       </div>
     </main>
   );

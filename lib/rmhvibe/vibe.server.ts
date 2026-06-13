@@ -13,6 +13,7 @@
 import OpenAI from 'openai';
 import { nanoid } from 'nanoid';
 import { prisma } from '@/lib/prisma.server';
+import { captureVibeThumbnail } from '@/lib/rmhvibe/vibe-screenshot.server';
 import type { VibeStreamEvent } from '@/lib/rmhvibe/vibe-types';
 
 export type VibeMessage = { role: 'system' | 'user' | 'assistant'; content: string };
@@ -201,6 +202,69 @@ export async function getVibePage(slug: string) {
   return prisma.vibePage.findUnique({ where: { slug } });
 }
 
+export type VibeCard = {
+  slug: string;
+  title: string | null;
+  description: string | null;
+  prompt: string;
+  thumbnailUrl: string | null;
+  createdAt: string; // ISO — serialised for the client
+};
+
+const GALLERY_PAGE_SIZE = 24;
+
+/**
+ * Paginated, searchable list of vibe pages for the gallery. Selects only the
+ * lightweight card fields — never `html`/`conversationHistory` — and uses cursor
+ * pagination (by id, newest first) for cheap infinite scroll.
+ */
+export async function listVibePages(opts: { q?: string; cursor?: string }): Promise<{
+  items: VibeCard[];
+  nextCursor: string | null;
+}> {
+  const q = opts.q?.trim();
+  const where = q
+    ? {
+        OR: [
+          { title: { contains: q, mode: 'insensitive' as const } },
+          { prompt: { contains: q, mode: 'insensitive' as const } },
+          { description: { contains: q, mode: 'insensitive' as const } },
+        ],
+      }
+    : undefined;
+
+  const rows = await prisma.vibePage.findMany({
+    where,
+    select: {
+      id: true,
+      slug: true,
+      title: true,
+      description: true,
+      prompt: true,
+      thumbnailUrl: true,
+      createdAt: true,
+    },
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    take: GALLERY_PAGE_SIZE + 1,
+    ...(opts.cursor ? { cursor: { id: opts.cursor }, skip: 1 } : {}),
+  });
+
+  const hasMore = rows.length > GALLERY_PAGE_SIZE;
+  const page = hasMore ? rows.slice(0, GALLERY_PAGE_SIZE) : rows;
+
+  return {
+    items: page.map((r) => ({
+      slug: r.slug,
+      title: r.title,
+      description: r.description,
+      prompt: r.prompt,
+      thumbnailUrl: r.thumbnailUrl,
+      createdAt: r.createdAt.toISOString(),
+    })),
+    nextCursor: hasMore ? page[page.length - 1].id : null,
+  };
+}
+
 /**
  * Stream generation of a vibe page. If `slug` is provided, this is a "customize"
  * follow-up against the existing page (replays its history); otherwise a brand-new
@@ -280,6 +344,8 @@ export async function* generateVibeStream(opts: {
         where: { slug: existingSlug },
         data: { html, title: cleanTitle, description: cleanDescription, conversationHistory },
       });
+      // Refresh the gallery thumbnail in the background — never blocks `done`.
+      void captureVibeThumbnail(existingSlug, html).catch(() => {});
       yield { type: 'done', slug: existingSlug, html, title: cleanTitle, description: cleanDescription };
     } else {
       const slug = await uniqueSlug(parsedSlug || opts.prompt);
@@ -297,6 +363,8 @@ export async function* generateVibeStream(opts: {
           conversationHistory,
         },
       });
+      // Render the gallery thumbnail in the background — never blocks `done`.
+      void captureVibeThumbnail(slug, html).catch(() => {});
       yield { type: 'done', slug, html, title: cleanTitle, description: cleanDescription };
     }
   } catch {

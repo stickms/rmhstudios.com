@@ -39,6 +39,7 @@ import { Route as AltairRouteImport } from './routes/altair'
 import { Route as SiteRouteImport } from './routes/_site'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as VersecraftIndexRouteImport } from './routes/versecraft/index'
+import { Route as VIndexRouteImport } from './routes/v.index'
 import { Route as TempleOfJoyIndexRouteImport } from './routes/temple-of-joy/index'
 import { Route as StudioIndexRouteImport } from './routes/studio/index'
 import { Route as StrategiesIndexRouteImport } from './routes/strategies/index'
@@ -212,6 +213,7 @@ import { Route as SiteUUseridIndexRouteImport } from './routes/_site/u/$userid/i
 import { Route as SiteAdminBlogIndexRouteImport } from './routes/_site/admin/blog/index'
 import { Route as SecretJobsAssessmentIdRouteImport } from './routes/secret/jobs/assessment/$id'
 import { Route as RmhboxMinigamesMinigameIdHistoryRouteImport } from './routes/rmhbox/minigames/$minigameId/history'
+import { Route as ApiVibeThumbSlugRouteImport } from './routes/api/vibe/thumb/$slug'
 import { Route as ApiUserBuildsIdViewRouteImport } from './routes/api/user-builds/$id/view'
 import { Route as ApiUserBuildsIdLikeRouteImport } from './routes/api/user-builds/$id/like'
 import { Route as ApiUserBuildsIdCommentsRouteImport } from './routes/api/user-builds/$id/comments'
@@ -417,6 +419,11 @@ const VersecraftIndexRoute = VersecraftIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => VersecraftRoute,
+} as any)
+const VIndexRoute = VIndexRouteImport.update({
+  id: '/v/',
+  path: '/v/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const TempleOfJoyIndexRoute = TempleOfJoyIndexRouteImport.update({
   id: '/',
@@ -1301,6 +1308,11 @@ const RmhboxMinigamesMinigameIdHistoryRoute =
     path: '/minigames/$minigameId/history',
     getParentRoute: () => RmhboxRoute,
   } as any)
+const ApiVibeThumbSlugRoute = ApiVibeThumbSlugRouteImport.update({
+  id: '/api/vibe/thumb/$slug',
+  path: '/api/vibe/thumb/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiUserBuildsIdViewRoute = ApiUserBuildsIdViewRouteImport.update({
   id: '/view',
   path: '/view',
@@ -1704,6 +1716,7 @@ export interface FileRoutesByFullPath {
   '/strategies/': typeof StrategiesIndexRoute
   '/studio/': typeof StudioIndexRoute
   '/temple-of-joy/': typeof TempleOfJoyIndexRoute
+  '/v/': typeof VIndexRoute
   '/versecraft/': typeof VersecraftIndexRoute
   '/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/admin/users': typeof SiteAdminUsersRoute
@@ -1847,6 +1860,7 @@ export interface FileRoutesByFullPath {
   '/api/user-builds/$id/comments': typeof ApiUserBuildsIdCommentsRoute
   '/api/user-builds/$id/like': typeof ApiUserBuildsIdLikeRoute
   '/api/user-builds/$id/view': typeof ApiUserBuildsIdViewRoute
+  '/api/vibe/thumb/$slug': typeof ApiVibeThumbSlugRoute
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
   '/secret/jobs/assessment/$id': typeof SecretJobsAssessmentIdRoute
   '/admin/blog/': typeof SiteAdminBlogIndexRoute
@@ -1941,6 +1955,7 @@ export interface FileRoutesByTo {
   '/strategies': typeof StrategiesIndexRoute
   '/studio': typeof StudioIndexRoute
   '/temple-of-joy': typeof TempleOfJoyIndexRoute
+  '/v': typeof VIndexRoute
   '/versecraft': typeof VersecraftIndexRoute
   '/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/admin/users': typeof SiteAdminUsersRoute
@@ -2084,6 +2099,7 @@ export interface FileRoutesByTo {
   '/api/user-builds/$id/comments': typeof ApiUserBuildsIdCommentsRoute
   '/api/user-builds/$id/like': typeof ApiUserBuildsIdLikeRoute
   '/api/user-builds/$id/view': typeof ApiUserBuildsIdViewRoute
+  '/api/vibe/thumb/$slug': typeof ApiVibeThumbSlugRoute
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
   '/secret/jobs/assessment/$id': typeof SecretJobsAssessmentIdRoute
   '/admin/blog': typeof SiteAdminBlogIndexRoute
@@ -2203,6 +2219,7 @@ export interface FileRoutesById {
   '/strategies/': typeof StrategiesIndexRoute
   '/studio/': typeof StudioIndexRoute
   '/temple-of-joy/': typeof TempleOfJoyIndexRoute
+  '/v/': typeof VIndexRoute
   '/versecraft/': typeof VersecraftIndexRoute
   '/_site/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/_site/admin/users': typeof SiteAdminUsersRoute
@@ -2346,6 +2363,7 @@ export interface FileRoutesById {
   '/api/user-builds/$id/comments': typeof ApiUserBuildsIdCommentsRoute
   '/api/user-builds/$id/like': typeof ApiUserBuildsIdLikeRoute
   '/api/user-builds/$id/view': typeof ApiUserBuildsIdViewRoute
+  '/api/vibe/thumb/$slug': typeof ApiVibeThumbSlugRoute
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
   '/secret/jobs/assessment/$id': typeof SecretJobsAssessmentIdRoute
   '/_site/admin/blog/': typeof SiteAdminBlogIndexRoute
@@ -2465,6 +2483,7 @@ export interface FileRouteTypes {
     | '/strategies/'
     | '/studio/'
     | '/temple-of-joy/'
+    | '/v/'
     | '/versecraft/'
     | '/admin/user-builds'
     | '/admin/users'
@@ -2608,6 +2627,7 @@ export interface FileRouteTypes {
     | '/api/user-builds/$id/comments'
     | '/api/user-builds/$id/like'
     | '/api/user-builds/$id/view'
+    | '/api/vibe/thumb/$slug'
     | '/rmhbox/minigames/$minigameId/history'
     | '/secret/jobs/assessment/$id'
     | '/admin/blog/'
@@ -2702,6 +2722,7 @@ export interface FileRouteTypes {
     | '/strategies'
     | '/studio'
     | '/temple-of-joy'
+    | '/v'
     | '/versecraft'
     | '/admin/user-builds'
     | '/admin/users'
@@ -2845,6 +2866,7 @@ export interface FileRouteTypes {
     | '/api/user-builds/$id/comments'
     | '/api/user-builds/$id/like'
     | '/api/user-builds/$id/view'
+    | '/api/vibe/thumb/$slug'
     | '/rmhbox/minigames/$minigameId/history'
     | '/secret/jobs/assessment/$id'
     | '/admin/blog'
@@ -2963,6 +2985,7 @@ export interface FileRouteTypes {
     | '/strategies/'
     | '/studio/'
     | '/temple-of-joy/'
+    | '/v/'
     | '/versecraft/'
     | '/_site/admin/user-builds'
     | '/_site/admin/users'
@@ -3106,6 +3129,7 @@ export interface FileRouteTypes {
     | '/api/user-builds/$id/comments'
     | '/api/user-builds/$id/like'
     | '/api/user-builds/$id/view'
+    | '/api/vibe/thumb/$slug'
     | '/rmhbox/minigames/$minigameId/history'
     | '/secret/jobs/assessment/$id'
     | '/_site/admin/blog/'
@@ -3176,6 +3200,7 @@ export interface RootRouteChildren {
   UserBuildsSlugRoute: typeof UserBuildsSlugRoute
   VSlugRoute: typeof VSlugRoute
   VNewRoute: typeof VNewRoute
+  VIndexRoute: typeof VIndexRoute
   ApiAdminBlogRoute: typeof ApiAdminBlogRoute
   ApiAdminUsersRoute: typeof ApiAdminUsersRoute
   ApiAltairLeaderboardRoute: typeof ApiAltairLeaderboardRoute
@@ -3254,6 +3279,7 @@ export interface RootRouteChildren {
   ApiRmhcodeAuthRevokeRoute: typeof ApiRmhcodeAuthRevokeRoute
   ApiRmhcodeAuthValidateRoute: typeof ApiRmhcodeAuthValidateRoute
   ApiRmhmusicSpotifySearchRoute: typeof ApiRmhmusicSpotifySearchRoute
+  ApiVibeThumbSlugRoute: typeof ApiVibeThumbSlugRoute
   ApiDoctrineIncidentsIndexRoute: typeof ApiDoctrineIncidentsIndexRoute
   ApiDoctrineReputationIndexRoute: typeof ApiDoctrineReputationIndexRoute
 }
@@ -3469,6 +3495,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/versecraft/'
       preLoaderRoute: typeof VersecraftIndexRouteImport
       parentRoute: typeof VersecraftRoute
+    }
+    '/v/': {
+      id: '/v/'
+      path: '/v'
+      fullPath: '/v/'
+      preLoaderRoute: typeof VIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/temple-of-joy/': {
       id: '/temple-of-joy/'
@@ -4681,6 +4714,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RmhboxMinigamesMinigameIdHistoryRouteImport
       parentRoute: typeof RmhboxRoute
     }
+    '/api/vibe/thumb/$slug': {
+      id: '/api/vibe/thumb/$slug'
+      path: '/api/vibe/thumb/$slug'
+      fullPath: '/api/vibe/thumb/$slug'
+      preLoaderRoute: typeof ApiVibeThumbSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/user-builds/$id/view': {
       id: '/api/user-builds/$id/view'
       path: '/view'
@@ -5762,6 +5802,7 @@ const rootRouteChildren: RootRouteChildren = {
   UserBuildsSlugRoute: UserBuildsSlugRoute,
   VSlugRoute: VSlugRoute,
   VNewRoute: VNewRoute,
+  VIndexRoute: VIndexRoute,
   ApiAdminBlogRoute: ApiAdminBlogRoute,
   ApiAdminUsersRoute: ApiAdminUsersRoute,
   ApiAltairLeaderboardRoute: ApiAltairLeaderboardRoute,
@@ -5840,6 +5881,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRmhcodeAuthRevokeRoute: ApiRmhcodeAuthRevokeRoute,
   ApiRmhcodeAuthValidateRoute: ApiRmhcodeAuthValidateRoute,
   ApiRmhmusicSpotifySearchRoute: ApiRmhmusicSpotifySearchRoute,
+  ApiVibeThumbSlugRoute: ApiVibeThumbSlugRoute,
   ApiDoctrineIncidentsIndexRoute: ApiDoctrineIncidentsIndexRoute,
   ApiDoctrineReputationIndexRoute: ApiDoctrineReputationIndexRoute,
 }
