@@ -6,9 +6,11 @@
  * (outside the _site sidebar layout) for a full-bleed black/white experience.
  */
 
-import { type KeyboardEvent, useEffect, useRef } from 'react';
+import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { ArrowRight } from 'lucide-react';
+import { ModelToggle } from '@/components/rmhvibe/ModelToggle';
+import { DEFAULT_VIBE_MODEL, type VibeModel } from '@/lib/rmhvibe/vibe-types';
 import '@/components/rmhvibe/vibe.css';
 
 export const Route = createFileRoute('/')({
@@ -27,6 +29,7 @@ export const Route = createFileRoute('/')({
 function Home() {
   const navigate = useNavigate();
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [model, setModel] = useState<VibeModel>(DEFAULT_VIBE_MODEL);
 
   // Auto-focus the prompt on mobile after mount.
   useEffect(() => {
@@ -38,7 +41,7 @@ function Home() {
   function submit() {
     const prompt = inputRef.current?.value.trim();
     if (!prompt) return;
-    navigate({ to: '/v/new', search: { prompt } });
+    navigate({ to: '/v/new', search: { prompt, model } });
   }
 
   // Enter submits; Shift+Enter inserts a newline.
@@ -69,9 +72,12 @@ function Home() {
               aria-label="Describe the page you want to create"
               className="vibe-dock__textarea"
             />
-            <button type="button" onClick={submit} aria-label="Generate" className="vibe-dock__submit">
-              <ArrowRight size={20} />
-            </button>
+            <div className="vibe-dock__footer">
+              <ModelToggle value={model} onChange={setModel} />
+              <button type="button" onClick={submit} aria-label="Generate" className="vibe-dock__submit">
+                <ArrowRight size={20} />
+              </button>
+            </div>
           </div>
         </div>
 

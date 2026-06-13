@@ -12,12 +12,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { createFileRoute, redirect, useNavigate, Link } from '@tanstack/react-router';
 import { streamVibe } from '@/lib/rmhvibe/vibe-stream';
+import { asVibeModel } from '@/lib/rmhvibe/vibe-types';
 import { ThinkingStream } from '@/components/rmhvibe/ThinkingStream';
 import '@/components/rmhvibe/vibe.css';
 
 export const Route = createFileRoute('/v/new')({
   validateSearch: (search: Record<string, unknown>) => ({
     prompt: typeof search.prompt === 'string' ? search.prompt : '',
+    model: asVibeModel(search.model),
   }),
   beforeLoad: ({ search }) => {
     if (!search.prompt.trim()) throw redirect({ to: '/' });
@@ -26,7 +28,7 @@ export const Route = createFileRoute('/v/new')({
 });
 
 function VibeNew() {
-  const { prompt } = Route.useSearch();
+  const { prompt, model } = Route.useSearch();
   const navigate = useNavigate();
   const started = useRef(false);
   const [thinking, setThinking] = useState('');
@@ -38,7 +40,7 @@ function VibeNew() {
     started.current = true;
 
     let cancelled = false;
-    streamVibe({ prompt: prompt.trim() }, (event) => {
+    streamVibe({ prompt: prompt.trim(), model }, (event) => {
       if (cancelled) return;
       if (event.type === 'thinking') {
         setThinking((t) => t + event.text);
@@ -54,7 +56,7 @@ function VibeNew() {
     return () => {
       cancelled = true;
     };
-  }, [prompt, navigate]);
+  }, [prompt, model, navigate]);
 
   if (failed) return <VibeError />;
 

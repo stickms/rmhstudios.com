@@ -9,6 +9,7 @@
 
 import { createFileRoute } from '@tanstack/react-router';
 import { generateVibeStream } from '@/lib/rmhvibe/vibe.server';
+import { asVibeModel } from '@/lib/rmhvibe/vibe-types';
 
 export const Route = createFileRoute('/api/vibe/stream')({
   server: {
@@ -17,9 +18,11 @@ export const Route = createFileRoute('/api/vibe/stream')({
         const body = (await request.json().catch(() => ({}))) as {
           prompt?: unknown;
           slug?: unknown;
+          model?: unknown;
         };
         const prompt = typeof body.prompt === 'string' ? body.prompt.trim() : '';
         const slug = typeof body.slug === 'string' ? body.slug : undefined;
+        const model = asVibeModel(body.model);
 
         if (!prompt) {
           return new Response('Missing prompt', { status: 400 });
@@ -31,7 +34,7 @@ export const Route = createFileRoute('/api/vibe/stream')({
             const send = (data: unknown) =>
               controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
             try {
-              for await (const event of generateVibeStream({ prompt, slug })) {
+              for await (const event of generateVibeStream({ prompt, slug, model })) {
                 send(event);
               }
             } catch {

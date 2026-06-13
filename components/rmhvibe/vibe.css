@@ -113,13 +113,25 @@
   color: #515154;
 }
 
-/* textarea variant — taller, lightly rounded, button anchored bottom-right */
+/* textarea variant — taller, lightly rounded, with a footer row (model toggle +
+ * submit) beneath the textarea */
 .vibe-dock--area {
-  align-items: end;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
   min-height: 0;
   border-radius: 10px;
-  padding: 14px 14px 14px 20px;
+  padding: 14px 14px 12px 20px;
   width: min(620px, calc(100vw - 48px));
+}
+
+/* footer row inside the textarea dock: toggle on the left, submit on the right */
+.vibe-dock__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 }
 
 /* squared-off submit inside the textarea dock */
@@ -678,4 +690,46 @@
 
 .vibe-gallery__loading {
   animation: vibe-pulse 1.4s ease-in-out infinite;
+}
+
+/* ─── Model toggle (Flash / Pro) ────────────────────────────────────────────── */
+.vibe-model-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 0.5px solid rgba(255, 255, 255, 0.13);
+}
+
+.vibe-model-toggle__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+  color: rgba(245, 245, 247, 0.55);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.vibe-model-toggle__btn:hover:not(.is-active):not(:disabled) {
+  color: rgba(245, 245, 247, 0.85);
+}
+
+.vibe-model-toggle__btn.is-active {
+  background: #f5f5f7;
+  color: #000;
+}
+
+.vibe-model-toggle__btn:disabled {
+  cursor: default;
+  opacity: 0.6;
 }

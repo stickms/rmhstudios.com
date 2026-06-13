@@ -13,6 +13,8 @@ import { createServerFn } from '@tanstack/react-start';
 import { ArrowLeft, Pencil, Share2, Check, Loader2, X, CornerDownLeft } from 'lucide-react';
 import { getVibePage } from '@/lib/rmhvibe/vibe.server';
 import { streamVibe } from '@/lib/rmhvibe/vibe-stream';
+import { DEFAULT_VIBE_MODEL, type VibeModel } from '@/lib/rmhvibe/vibe-types';
+import { ModelToggle } from '@/components/rmhvibe/ModelToggle';
 import { ThinkingStream } from '@/components/rmhvibe/ThinkingStream';
 import '@/components/rmhvibe/vibe.css';
 
@@ -62,6 +64,7 @@ function VibeViewer() {
   const [renderKey, setRenderKey] = useState(0);
   const [panelOpen, setPanelOpen] = useState(false);
   const [prompt, setPrompt] = useState('');
+  const [model, setModel] = useState<VibeModel>(DEFAULT_VIBE_MODEL);
   const [busy, setBusy] = useState(false);
   const [thinking, setThinking] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -95,7 +98,7 @@ function VibeViewer() {
     let finalTitle = '';
     let hadError = false;
     try {
-      await streamVibe({ slug, prompt: trimmed }, (event) => {
+      await streamVibe({ slug, prompt: trimmed, model }, (event) => {
         if (event.type === 'thinking') {
           setThinking((t) => t + event.text);
         } else if (event.type === 'done') {
@@ -179,16 +182,19 @@ function VibeViewer() {
         }`}
       >
         <div className="vibe-panel mx-auto">
-          <div className="mb-2 flex items-center justify-between">
+          <div className="mb-2 flex items-center justify-between gap-3">
             <p className="vibe-panel__title">Customize this page</p>
-            <button
-              type="button"
-              onClick={() => setPanelOpen(false)}
-              aria-label="Close"
-              className="vibe-panel__close"
-            >
-              <X size={16} />
-            </button>
+            <div className="flex items-center gap-2">
+              <ModelToggle value={model} onChange={setModel} disabled={busy} />
+              <button
+                type="button"
+                onClick={() => setPanelOpen(false)}
+                aria-label="Close"
+                className="vibe-panel__close"
+              >
+                <X size={16} />
+              </button>
+            </div>
           </div>
 
           {busy && <ThinkingStream text={thinking} className="vibe-think--sm mb-3" />}

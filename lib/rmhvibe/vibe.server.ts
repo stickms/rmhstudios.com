@@ -1,9 +1,10 @@
 /**
  * RMHVibe — server-side generation logic.
  *
- * Turns a user prompt into a self-contained, INTERACTIVE web app via DeepSeek's
- * reasoning model (deepseek-reasoner). The model emits a small multi-file
- * React/TypeScript project, which we bundle server-side with esbuild (see
+ * Turns a user prompt into a self-contained, INTERACTIVE web app via DeepSeek.
+ * The caller picks a model tier — `flash` (faster) or `pro` (higher quality) —
+ * which maps to a concrete model ID (see VIBE_MODEL_IDS). The model emits a small
+ * multi-file React/TypeScript project, which we bundle server-side with esbuild (see
  * vibe-bundle.server.ts) into one static HTML document — no in-browser Babel. We
  * stream the model's chain-of-thought ("thinking") back to the caller, persist the
  * built page as a VibePage, and support collaborative "customize" follow-ups that
@@ -18,7 +19,8 @@
 import OpenAI from 'openai';
 import { nanoid } from 'nanoid';
 import { prisma } from '@/lib/prisma.server';
-import type { VibeStreamEvent } from '@/lib/rmhvibe/vibe-types';
+import type { VibeStreamEvent, VibeModel } from '@/lib/rmhvibe/vibe-types';
+import { DEFAULT_VIBE_MODEL } from '@/lib/rmhvibe/vibe-types';
 import { parseVibeProject, buildVibeHtml, BundleError } from '@/lib/rmhvibe/vibe-bundle.server';
 
 export type VibeMessage = { role: 'system' | 'user' | 'assistant'; content: string };
@@ -28,12 +30,22 @@ const deepseek = new OpenAI({
   apiKey: process.env.DEEPSEEK_API_KEY!,
 });
 
-// deepseek-reasoner is the "thinking" model: it streams reasoning_content (the
-// chain-of-thought) alongside the final answer. It does not support
-// response_format/json mode, so we use a plain text protocol and parse it.
-const VIBE_MODEL = 'deepseek-reasoner';
+// The "flash"/"pro" toggle maps to two DeepSeek model IDs. Both stream
+// reasoning_content (the chain-of-thought) alongside the final answer when
+// available; neither supports response_format/json mode, so we use a plain text
+// protocol and parse it. `pro` is higher quality, `flash` is faster.
+const VIBE_MODEL_IDS: Record<VibeModel, string> = {
+  flash: 'deepseek-v4-flash',
+  pro: 'deepseek-v4-pro',
+};
 
-const VIBE_SYSTEM_PROMPT = `You are a world-class creative web developer and designer. Given a user's prompt, build a COMPLETE, polished, INTERACTIVE web app that captures the vibe of their request, written as a small multi-file React + TypeScript project. Take your reasoning time to plan architecture, layout, content, and interactions before writing — the result must look finished and shippable, never a rough draft.
+const VIBE_SYSTEM_PROMPT = `You are a world-class creative web developer and designer. Given a user's prompt, build a COMPLETE, polished, INTERACTIVE web app that captures the vibe of their request, written as a small multi-file React + TypeScript project. The result must look finished and shippable, never a rough draft.
+
+How to think before you write (follow this exactly — it keeps you fast and decisive):
+- FIRST, in your reasoning, write a brief, concrete implementation plan and COMMIT to it. The plan should lock in: the concept/vibe, the file list (e.g. index.tsx, App.tsx, components/X.tsx, styles.css), the key components and their responsibilities, the core interactions, the data/state shape, and any npm deps. Keep it tight — a page or so, not an essay.
+- Make decisions ONCE. Pick an approach and move on. Do NOT keep re-evaluating alternatives, second-guessing choices you already made, or restarting the design — that wastes your reasoning budget and risks running out before the code is done.
+- Once the plan is set, STOP planning and write the full code straight through, file by file, exactly as planned. If you discover a small necessary fix mid-way, make it inline and keep going forward — never loop back to redesign from scratch.
+- Your reasoning is for planning, not for drafting the code twice. Don't write the implementation in your reasoning and then again in the answer; plan in reasoning, implement in the answer.
 
 How your code is built and run (this is different from a single HTML file — read carefully):
 - You write a project of source files (.tsx / .ts / .css). On the server we bundle them with esbuild and serve the result inside a sandboxed iframe. There is NO in-browser Babel: you get full TypeScript, JSX, multiple files, and native ES modules.
@@ -75,7 +87,12 @@ Quality (strict):
 - FINISHED, not a skeleton: every section fully built with real, specific, readable copy. No "lorem ipsum", placeholders, "coming soon", TODOs, or cut-off sections.
 - The code MUST compile: valid TypeScript/JSX, every import resolvable (relative files you define, or packages listed in DEPS). The entry must call \`createRoot(document.getElementById('root')!).render(...)\`.
 
-Respond in EXACTLY this format, with no extra commentary before or after. Do not wrap files in markdown code fences.
+OUTPUT FORMAT — this response is parsed by a machine, not read by a human. Any deviation BREAKS the build and wastes the whole generation. Follow it EXACTLY:
+- The VERY FIRST characters of your answer MUST be \`SLUG:\`. No preamble, no greeting, no "Here's the…", no "Sure!", no explanation, no summary — not before the SLUG and not after the last file.
+- Do NOT wrap the response, or any individual file, in markdown code fences. Never emit \`\`\`html, \`\`\`tsx, \`\`\`, or similar. Write the raw file contents directly after each \`--- file: … ---\` header.
+- Do NOT output a single standalone HTML file or a \`<!doctype html>\` document. ALWAYS use the multi-file React/TypeScript project format below with an \`index.tsx\` entry point — even when the request feels like it could be "just one HTML file" (e.g. a Three.js scene). Put your code in .tsx/.ts/.css files, not in a raw HTML page.
+- Output the metadata lines, then \`===FILES===\`, then each file. Nothing else.
+
 SLUG: <2-4 word kebab-case slug, max 32 chars, relevant to the prompt>
 TITLE: <a catchy page title, max 60 chars>
 DESCRIPTION: <one enticing sentence describing the page for social sharing, max 160 chars>
@@ -115,14 +132,38 @@ function parseVibeOutput(raw: string): {
     html = raw.replace(/^\s*(SLUG|TITLE|DESCRIPTION):.*(\r?\n)/gi, '');
   }
 
-  // Strip any markdown code fences the model may have added.
-  html = html
-    .trim()
-    .replace(/^```[a-z]*\s*/i, '')
-    .replace(/```\s*$/, '')
-    .trim();
+  html = extractHtmlDoc(html);
 
   return { slug, title, description, html };
+}
+
+/**
+ * Pull a clean HTML document out of whatever the model emitted. It sometimes
+ * ignores the format and returns a single HTML file wrapped in a markdown fence
+ * and/or preceded by a conversational preamble ("Here's the complete HTML file:
+ * ```html …"). We extract the fenced code block (the largest, if several) and drop
+ * any prose before the document so the chatter never renders as the page.
+ */
+function extractHtmlDoc(raw: string): string {
+  let html = raw.trim();
+
+  // Prefer the contents of a fenced code block, discarding surrounding prose.
+  const fences = [...html.matchAll(/```[a-z0-9]*[^\S\r\n]*\r?\n?([\s\S]*?)```/gi)];
+  if (fences.length > 0) {
+    html = fences.map((m) => m[1]).sort((a, b) => b.length - a.length)[0];
+  }
+
+  // Drop any leading commentary before the actual document (handles both a
+  // preamble with no fence and an unclosed fence the regex above couldn't match).
+  const docStart = html.search(/<!doctype\s+html|<html[\s>]/i);
+  if (docStart > 0) html = html.slice(docStart);
+
+  // Strip any stray leading/trailing fence markers left over.
+  return html
+    .trim()
+    .replace(/^```[a-z0-9]*\s*/i, '')
+    .replace(/```\s*$/, '')
+    .trim();
 }
 
 // Strict CSP injected into every generated page. Combined with the viewer's
@@ -258,7 +299,9 @@ export async function listVibePages(opts: { q?: string; cursor?: string }): Prom
 export async function* generateVibeStream(opts: {
   prompt: string;
   slug?: string;
+  model?: VibeModel;
 }): AsyncGenerator<VibeStreamEvent> {
+  const modelId = VIBE_MODEL_IDS[opts.model ?? DEFAULT_VIBE_MODEL];
   let history: VibeMessage[] = [];
   let existingSlug: string | undefined;
 
@@ -281,7 +324,7 @@ export async function* generateVibeStream(opts: {
   let content = '';
   try {
     const stream = await deepseek.chat.completions.create({
-      model: VIBE_MODEL,
+      model: modelId,
       messages,
       // Generous budget so finished, polished pages don't get truncated.
       max_tokens: 16384,
