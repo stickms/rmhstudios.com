@@ -227,6 +227,56 @@ export async function getVibePage(slug: string) {
   return prisma.vibePage.findUnique({ where: { slug } });
 }
 
+export type VibeVersionSummary = {
+  id: string;
+  prompt: string;
+  title: string | null;
+  createdAt: string; // ISO — serialised for the client
+};
+
+/**
+ * Browsable, dated history for a page: one entry per generation step (the initial
+ * build and every "customize"), oldest → newest. Lightweight — omits `html` and
+ * `conversationHistory`; fetch a single version with getVibeVersion for the body.
+ */
+export async function listVibeVersions(slug: string): Promise<VibeVersionSummary[]> {
+  const page = await prisma.vibePage.findUnique({ where: { slug }, select: { id: true } });
+  if (!page) return [];
+
+  const versions = await prisma.vibePageVersion.findMany({
+    where: { pageId: page.id },
+    select: { id: true, prompt: true, title: true, createdAt: true },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  return versions.map((v) => ({
+    id: v.id,
+    prompt: v.prompt,
+    title: v.title,
+    createdAt: v.createdAt.toISOString(),
+  }));
+}
+
+/**
+ * Full body of a single version, scoped to its page's slug so a stale/forged id
+ * can't read another page's content. Used to preview an earlier variant.
+ */
+export async function getVibeVersion(slug: string, versionId: string) {
+  const version = await prisma.vibePageVersion.findFirst({
+    where: { id: versionId, page: { slug } },
+    select: { id: true, prompt: true, title: true, description: true, html: true, createdAt: true },
+  });
+  if (!version) return null;
+  return {
+    id: version.id,
+    prompt: version.prompt,
+    title: version.title,
+    description: version.description,
+    html: version.html,
+    createdAt: version.createdAt.toISOString(),
+  };
+}
+
 export type VibeCard = {
   slug: string;
   title: string | null;
@@ -292,18 +342,23 @@ export async function listVibePages(opts: { q?: string; cursor?: string }): Prom
 
 /**
  * Stream generation of a vibe page. If `slug` is provided, this is a "customize"
- * follow-up against the existing page (replays its history); otherwise a brand-new
- * page is created. Yields thinking/content deltas, then a final `done` event after
- * the page has been persisted.
+ * follow-up against the existing page; otherwise a brand-new page is created.
+ * Customization normally replays the page's latest history, but `fromVersionId`
+ * branches off an earlier version instead (replaying that version's history), so
+ * users can revisit and re-customize an earlier variant. Yields thinking/content
+ * deltas, then a final `done` event after the page (and a new version snapshot)
+ * have been persisted.
  */
 export async function* generateVibeStream(opts: {
   prompt: string;
   slug?: string;
+  fromVersionId?: string;
   model?: VibeModel;
 }): AsyncGenerator<VibeStreamEvent> {
   const modelId = VIBE_MODEL_IDS[opts.model ?? DEFAULT_VIBE_MODEL];
   let history: VibeMessage[] = [];
   let existingSlug: string | undefined;
+  let existingPageId: string | undefined;
 
   if (opts.slug) {
     const existing = await prisma.vibePage.findUnique({ where: { slug: opts.slug } });
@@ -312,7 +367,22 @@ export async function* generateVibeStream(opts: {
       return;
     }
     existingSlug = existing.slug;
-    history = (existing.conversationHistory as VibeMessage[]) ?? [];
+    existingPageId = existing.id;
+
+    if (opts.fromVersionId) {
+      // Branch off an earlier version: replay its history, not the page's latest.
+      const version = await prisma.vibePageVersion.findFirst({
+        where: { id: opts.fromVersionId, pageId: existing.id },
+        select: { conversationHistory: true },
+      });
+      if (!version) {
+        yield { type: 'error', message: 'That version no longer exists.' };
+        return;
+      }
+      history = (version.conversationHistory as VibeMessage[]) ?? [];
+    } else {
+      history = (existing.conversationHistory as VibeMessage[]) ?? [];
+    }
   }
 
   const messages: VibeMessage[] = [
@@ -385,25 +455,42 @@ export async function* generateVibeStream(opts: {
   const assistantTurn: VibeMessage = { role: 'assistant', content };
 
   try {
-    if (existingSlug) {
+    if (existingSlug && existingPageId) {
       const conversationHistory: VibeMessage[] = [
         ...history,
         { role: 'user', content: opts.prompt },
         assistantTurn,
       ];
-      await prisma.vibePage.update({
-        where: { slug: existingSlug },
-        // Mark the thumbnail stale so the vibe-worker re-renders it for the new content.
-        data: { html, title: cleanTitle, description: cleanDescription, conversationHistory, thumbnailStale: true },
-      });
-      yield { type: 'done', slug: existingSlug, html, title: cleanTitle, description: cleanDescription };
+      // Update the page (its `html`/etc. always mirror the latest version) and
+      // append an immutable version snapshot — atomically, so history stays in
+      // sync with the page.
+      const [, version] = await prisma.$transaction([
+        prisma.vibePage.update({
+          where: { id: existingPageId },
+          // Mark the thumbnail stale so the vibe-worker re-renders it for the new content.
+          data: { html, title: cleanTitle, description: cleanDescription, conversationHistory, thumbnailStale: true },
+        }),
+        prisma.vibePageVersion.create({
+          data: {
+            pageId: existingPageId,
+            prompt: opts.prompt,
+            title: cleanTitle,
+            description: cleanDescription,
+            html,
+            conversationHistory,
+          },
+          select: { id: true },
+        }),
+      ]);
+      yield { type: 'done', slug: existingSlug, versionId: version.id, html, title: cleanTitle, description: cleanDescription };
     } else {
       const slug = await uniqueSlug(parsedSlug || opts.prompt);
       const conversationHistory: VibeMessage[] = [
         { role: 'user', content: opts.prompt },
         assistantTurn,
       ];
-      await prisma.vibePage.create({
+      // Create the page and seed its first version snapshot from the same content.
+      const page = await prisma.vibePage.create({
         data: {
           slug,
           prompt: opts.prompt,
@@ -411,10 +498,20 @@ export async function* generateVibeStream(opts: {
           description: cleanDescription,
           html,
           conversationHistory,
+          versions: {
+            create: {
+              prompt: opts.prompt,
+              title: cleanTitle,
+              description: cleanDescription,
+              html,
+              conversationHistory,
+            },
+          },
         },
+        select: { versions: { select: { id: true } } },
       });
       // thumbnailStale defaults to true → the vibe-worker renders the screenshot.
-      yield { type: 'done', slug, html, title: cleanTitle, description: cleanDescription };
+      yield { type: 'done', slug, versionId: page.versions[0].id, html, title: cleanTitle, description: cleanDescription };
     }
   } catch {
     yield { type: 'error', message: 'Failed to save the page. Try again.' };

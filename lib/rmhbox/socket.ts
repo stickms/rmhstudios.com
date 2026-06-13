@@ -37,10 +37,16 @@ let socket: Socket | null = null;
  * If an existing socket is alive but disconnected, it is torn down first
  * to prevent orphaned listeners from overwriting the connection status.
  *
+ * Pass `discordContext` (voice channel + guild from the Discord SDK) to enable
+ * auto-connecting everyone in the same voice chat to the same lobby.
+ *
  * @returns The connected Socket instance
  * @throws If no auth credential is available
  */
-export async function connectToRMHbox(discordToken?: string): Promise<Socket> {
+export async function connectToRMHbox(
+  discordToken?: string,
+  discordContext?: { channelId: string | null; guildId: string | null },
+): Promise<Socket> {
   // If already connected, return existing socket
   if (socket?.connected) return socket;
 
@@ -74,8 +80,14 @@ export async function connectToRMHbox(discordToken?: string): Promise<Socket> {
     path: '/rmhbox-ws/',
     auth: (cb) => {
       if (discordToken) {
-        // Discord Activity: token is stable for the session lifetime
-        cb({ discordToken });
+        // Discord Activity: token is stable for the session lifetime.
+        // Include voice-channel context so the server can auto-connect
+        // everyone in the same voice chat to the same lobby.
+        cb({
+          discordToken,
+          channelId: discordContext?.channelId ?? undefined,
+          guildId: discordContext?.guildId ?? undefined,
+        });
       } else {
         // Site login: refresh the session token on every reconnection attempt
         authClient
@@ -134,6 +146,9 @@ export async function connectToRMHbox(discordToken?: string): Promise<Socket> {
     const code = error?.code ?? 'UNKNOWN';
     const message = error?.message ?? 'An unknown error occurred.';
     console.error(`[RMHbox] Server error [${code}]: ${message}`);
+    // NO_VOICE_CHANNEL is an expected, silent outcome of voice-channel auto-join
+    // (user opened the Activity without a voice channel) — don't toast it.
+    if (code === 'NO_VOICE_CHANNEL') return;
     toast.error(message);
   });
 

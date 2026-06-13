@@ -91,6 +91,12 @@ export interface RMHboxLobby {
   pendingGameSettings: GameSettingValues | null;
   /** Resolved game settings for the current/last game (§12A). Passed to handler. */
   resolvedGameSettings: GameSettingValues | null;
+  /**
+   * Discord voice-channel key this lobby is bound to, if it was auto-created
+   * for an Activity voice channel. Used to auto-connect everyone in the same
+   * voice chat to the same lobby. `null` for code-based lobbies.
+   */
+  discordChannelKey: string | null;
 }
 
 // ─── Minigame Context ────────────────────────────────────────────

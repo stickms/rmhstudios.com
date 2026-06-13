@@ -21,5 +21,5 @@ export function asVibeModel(value: unknown): VibeModel {
 export type VibeStreamEvent =
   | { type: 'thinking'; text: string } // reasoning_content delta from the model
   | { type: 'content'; text: string } // answer (HTML) delta — used for progress
-  | { type: 'done'; slug: string; html: string; title: string; description: string } // persisted result
+  | { type: 'done'; slug: string; versionId: string; html: string; title: string; description: string } // persisted result
   | { type: 'error'; message: string };

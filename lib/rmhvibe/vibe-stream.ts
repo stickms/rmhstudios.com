@@ -10,7 +10,7 @@ import type { VibeStreamEvent, VibeModel } from '@/lib/rmhvibe/vibe-types';
 export type { VibeStreamEvent };
 
 export async function streamVibe(
-  body: { prompt: string; slug?: string; model?: VibeModel },
+  body: { prompt: string; slug?: string; fromVersionId?: string; model?: VibeModel },
   onEvent: (event: VibeStreamEvent) => void,
   signal?: AbortSignal,
 ): Promise<void> {

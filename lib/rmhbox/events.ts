@@ -13,6 +13,7 @@
 export const C2S = {
   LOBBY_CREATE:           'rmhbox:lobby:create',
   LOBBY_JOIN:             'rmhbox:lobby:join',
+  LOBBY_AUTO_JOIN:        'rmhbox:lobby:auto_join',
   LOBBY_LEAVE:            'rmhbox:lobby:leave',
   LOBBY_KICK:             'rmhbox:lobby:kick',
   LOBBY_TRANSFER_HOST:    'rmhbox:lobby:transfer_host',

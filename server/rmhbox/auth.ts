@@ -103,7 +103,7 @@ export async function authMiddleware(
   socket: Socket,
   next: (err?: ExtendedError) => void,
 ): Promise<void> {
-  const { token, discordToken } = socket.handshake.auth ?? {};
+  const { token, discordToken, channelId, guildId } = socket.handshake.auth ?? {};
 
   try {
     // Discord Activity path: validate the OAuth2 access token from the Discord SDK
@@ -114,6 +114,9 @@ export async function authMiddleware(
       socket.data.userId = identity.userId;
       socket.data.userName = identity.userName;
       socket.data.avatarUrl = identity.avatarUrl;
+      // Voice-channel context for auto-connecting players in the same voice chat.
+      socket.data.discordChannelId = typeof channelId === 'string' ? channelId : null;
+      socket.data.discordGuildId = typeof guildId === 'string' ? guildId : null;
       return next();
     }
 

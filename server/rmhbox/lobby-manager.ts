@@ -46,6 +46,8 @@ export class LobbyManager {
   private readonly lobbies = new Map<string, RMHboxLobby>();
   /** Fast userId → lobbyId index for O(1) lookup */
   private readonly userToLobby = new Map<string, string>();
+  /** Discord voice-channel key → lobbyId, for auto-connecting players in the same voice chat */
+  private readonly channelToLobby = new Map<string, string>();
   /** Per-lobby incrementing sequence counter for game actions */
   private readonly seqCounters = new Map<string, number>();
   /** Grace period timers keyed by userId */
@@ -176,6 +178,7 @@ export class LobbyManager {
   handleConnection(socket: Socket): void {
     socket.on('rmhbox:lobby:create', validated(socket, 'rmhbox:lobby:create', CreateLobbySchema, (s, d) => this.createLobby(s, d)));
     socket.on('rmhbox:lobby:join', validated(socket, 'rmhbox:lobby:join', JoinLobbySchema, (s, d) => this.joinLobby(s, d)));
+    socket.on(C2S.LOBBY_AUTO_JOIN, () => this.autoJoinByChannel(socket));
     socket.on('rmhbox:lobby:leave', validated(socket, 'rmhbox:lobby:leave', LeaveLobbySchema, (s, d) => this.leaveLobby(s, d)));
     socket.on('rmhbox:lobby:kick', validated(socket, 'rmhbox:lobby:kick', KickPlayerSchema, (s, d) => this.kickPlayer(s, d)));
     socket.on('rmhbox:lobby:transfer_host', validated(socket, 'rmhbox:lobby:transfer_host', TransferHostSchema, (s, d) => this.transferHost(s, d)));
@@ -277,6 +280,27 @@ export class LobbyManager {
   // ─── Lobby creation (§2.1) ─────────────────────────────────
 
   private createLobby(socket: Socket, payload: { settings?: Partial<LobbySettings> }): void {
+    const lobbyId = this.createLobbyForSocket(socket, payload.settings, null);
+    if (!lobbyId) return; // error already emitted
+
+    const lobby = this.lobbies.get(lobbyId)!;
+    const clientState = this.buildClientState(lobby, socket.data.userId as string);
+    socket.emit(S2C.LOBBY_CREATED, { lobbyId, lobby: clientState });
+  }
+
+  /**
+   * Create a lobby for a socket and place the socket in it, without emitting a
+   * response (callers decide whether to send LOBBY_CREATED or a state snapshot).
+   * Returns the new lobby ID, or `null` if the user is already in a lobby
+   * (in which case an ALREADY_IN_LOBBY error is emitted).
+   *
+   * @param discordChannelKey - Voice-channel key to bind the lobby to (auto-join), or null.
+   */
+  private createLobbyForSocket(
+    socket: Socket,
+    partialSettings: Partial<LobbySettings> | undefined,
+    discordChannelKey: string | null,
+  ): string | null {
     const userId = socket.data.userId as string;
     const userName = socket.data.userName as string;
     const avatarUrl = (socket.data.avatarUrl as string | null) ?? null;
@@ -284,9 +308,10 @@ export class LobbyManager {
     // Check if user is already in a lobby
     if (this.userToLobby.has(userId)) {
       socket.emit(S2C.ERROR, { code: 'ALREADY_IN_LOBBY', message: 'You are already in a lobby.' });
-      return;
+      return null;
     }
 
+    const payload = { settings: partialSettings };
     const lobbyId = this.generateUniqueLobbyId();
 
     // Default settings, merged with any provided partial settings
@@ -336,21 +361,73 @@ export class LobbyManager {
       roundNumber: 0,
       pendingGameSettings: null,
       resolvedGameSettings: null,
+      discordChannelKey,
     };
 
     this.lobbies.set(lobbyId, lobby);
     this.userToLobby.set(userId, lobbyId);
     this.seqCounters.set(lobbyId, 0);
+    if (discordChannelKey) this.channelToLobby.set(discordChannelKey, lobbyId);
 
     // Join Socket.io rooms
     socket.join(`lobby:${lobbyId}`);
     socket.join(`lobby:${lobbyId}:players`);
     socket.join(`lobby:${lobbyId}:player:${userId}`);
 
-    const clientState = this.buildClientState(lobby, userId);
-    socket.emit(S2C.LOBBY_CREATED, { lobbyId, lobby: clientState });
+    logger.info({ event: 'lobby_created', lobbyId, userId, userName, discordChannelKey });
+    return lobbyId;
+  }
 
-    logger.info({ event: 'lobby_created', lobbyId, userId, userName });
+  // ─── Voice-channel auto-join (Discord Activity QoL) ────────
+  // Everyone who opens the Activity from the same Discord voice channel lands
+  // in the same lobby automatically — no room code needed. Users who open it
+  // outside a voice channel fall through to the manual code-entry browser.
+
+  private channelKey(guildId: string | null, channelId: string): string {
+    return `${guildId ?? 'dm'}:${channelId}`;
+  }
+
+  private autoJoinByChannel(socket: Socket): void {
+    const userId = socket.data.userId as string;
+
+    // Already in a lobby (e.g. created/joined earlier, or reconnected) — just
+    // re-send the current state so the client lands back where it belongs.
+    if (this.userToLobby.has(userId)) {
+      const lobby = this.getLobbyByUserId(userId);
+      if (lobby) socket.emit(S2C.LOBBY_STATE_SNAPSHOT, this.buildClientState(lobby, userId));
+      return;
+    }
+
+    const channelId = (socket.data.discordChannelId as string | null) ?? null;
+    if (!channelId) {
+      // No voice-channel context — nothing to auto-join. The client shows the
+      // lobby browser so the user can create or enter a code manually.
+      socket.emit(S2C.ERROR, { code: 'NO_VOICE_CHANNEL', message: 'No voice channel to auto-join.' });
+      return;
+    }
+
+    const key = this.channelKey((socket.data.discordGuildId as string | null) ?? null, channelId);
+
+    // Join the existing lobby for this voice channel, if one is live.
+    const existingLobbyId = this.channelToLobby.get(key);
+    if (existingLobbyId) {
+      const existing = this.lobbies.get(existingLobbyId);
+      if (existing && existing.state !== 'DISBANDED') {
+        logger.info({ event: 'lobby_auto_join', lobbyId: existingLobbyId, userId, channelKey: key });
+        this.joinLobby(socket, { lobbyId: existingLobbyId, asSpectator: false });
+        return;
+      }
+      // Stale mapping (lobby gone) — drop it and fall through to create.
+      this.channelToLobby.delete(key);
+    }
+
+    // First person in from this voice channel — create the lobby for everyone.
+    const lobbyId = this.createLobbyForSocket(socket, undefined, key);
+    if (!lobbyId) return; // error already emitted
+
+    const lobby = this.lobbies.get(lobbyId)!;
+    logger.info({ event: 'lobby_auto_created', lobbyId, userId, channelKey: key });
+    socket.emit(S2C.LOBBY_STATE_SNAPSHOT, this.buildClientState(lobby, userId));
   }
 
   // ─── Lobby join (§3.1) ─────────────────────────────────────
@@ -1418,6 +1495,12 @@ export class LobbyManager {
     }
     for (const userId of lobby.spectators.keys()) {
       this.userToLobby.delete(userId);
+    }
+
+    // Release the voice-channel mapping so the next person to open the Activity
+    // from this channel starts a fresh lobby instead of joining a dead one.
+    if (lobby.discordChannelKey && this.channelToLobby.get(lobby.discordChannelKey) === lobbyId) {
+      this.channelToLobby.delete(lobby.discordChannelKey);
     }
 
     // Clean up lobby data

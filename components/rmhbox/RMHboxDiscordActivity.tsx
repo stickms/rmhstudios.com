@@ -176,7 +176,10 @@ export function RMHboxDiscordActivity({ discord }: Props) {
 
         async function connect() {
             try {
-                const socket = await connectToRMHbox(discord.accessToken);
+                const socket = await connectToRMHbox(discord.accessToken, {
+                    channelId: discord.channelId,
+                    guildId: discord.guildId,
+                });
                 if (!mountedRef.current) return;
 
                 // If already in a lobby from a reconnect, stay there
@@ -243,6 +246,13 @@ export function RMHboxDiscordActivity({ discord }: Props) {
                         useRMHboxStore.getState().leaveLobby();
                     }
                 });
+
+                // QoL: everyone who opens the Activity from the same Discord voice
+                // channel is auto-connected to the same lobby — no room code needed.
+                // Users without a voice channel fall through to the manual browser.
+                if (discord.channelId) {
+                    emit(C2S.LOBBY_AUTO_JOIN);
+                }
 
             } catch (err) {
                 if (mountedRef.current) toast.error(err instanceof Error ? err.message : 'Connection failed');

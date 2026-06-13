@@ -1913,13 +1913,33 @@ model VibePage {
   prompt              String            // original user prompt
   title               String?           // model-generated page title (tab + OG)
   description         String?           // model-generated description (OG/social)
-  html                String            // full generated HTML (self-contained, no external deps required)
+  html                String            // full generated HTML — always mirrors the latest version
   thumbnailUrl        String?           // "/api/vibe/thumb/<slug>?v=<ts>" once the screenshot is captured
   thumbnailStale      Boolean  @default(true) // true → the vibe-worker (re)renders the screenshot
   conversationHistory Json              // array of { role, content } turns for "customize" follow-ups
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
+  versions VibePageVersion[]
+
   @@index([slug])
   @@map("vibe_page")
+}
+
+// One immutable snapshot per generation step (the initial build and every
+// "customize" follow-up). Lets people browse the page's history — each version is
+// dated/timestamped — and branch a new customization off any earlier variant.
+model VibePageVersion {
+  id                  String   @id @default(cuid())
+  pageId              String
+  page                VibePage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  prompt              String            // the prompt that produced this version
+  title               String?           // page title at this version
+  description         String?           // description at this version
+  html                String            // full generated HTML for this version
+  conversationHistory Json              // cumulative { role, content } history up to & including this version
+  createdAt           DateTime @default(now())
+
+  @@index([pageId, createdAt])
+  @@map("vibe_page_version")
 }
