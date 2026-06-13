@@ -135,8 +135,8 @@ function Gallery() {
         </p>
       ) : (
         <div className="vibe-grid">
-          {items.map((card) => (
-            <VibeGridCard key={card.slug} card={card} />
+          {items.map((card, i) => (
+            <VibeGridCard key={card.slug} card={card} index={i} />
           ))}
         </div>
       )}
@@ -147,15 +147,55 @@ function Gallery() {
   );
 }
 
-function VibeGridCard({ card }: { card: VibeCard }) {
+function VibeGridCard({ card, index }: { card: VibeCard; index: number }) {
   const title = card.title || card.prompt;
   const [loaded, setLoaded] = useState(false);
+  const [inView, setInView] = useState(false);
+  const ref = useRef<HTMLAnchorElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  // On a hard refresh the SSR'd <img> can finish loading before hydration
+  // attaches onLoad, so the event never fires. Catch that by checking
+  // `complete` on mount, otherwise the image stays hidden (opacity 0).
+  useEffect(() => {
+    if (imgRef.current?.complete) setLoaded(true);
+  }, []);
+
+  // Reveal each card once it scrolls into view (and immediately for the cards
+  // already on-screen). Falls back to visible if IntersectionObserver is absent.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (typeof IntersectionObserver === 'undefined') {
+      setInView(true);
+      return;
+    }
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setInView(true);
+          obs.disconnect();
+        }
+      },
+      { rootMargin: '0px 0px -8% 0px' },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
 
   return (
-    <Link to="/v/$slug" params={{ slug: card.slug }} className="vibe-card">
+    <Link
+      ref={ref}
+      to="/v/$slug"
+      params={{ slug: card.slug }}
+      className={`vibe-card ${inView ? 'is-in' : ''}`}
+      // Gentle cascade within each visible row; cycles so deep cards never wait long.
+      style={{ animationDelay: `${(index % 6) * 55}ms` }}
+    >
       <div className="vibe-card__thumb">
         {card.thumbnailUrl ? (
           <img
+            ref={imgRef}
             src={card.thumbnailUrl}
             alt={title}
             loading="lazy"

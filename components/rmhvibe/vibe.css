@@ -451,6 +451,24 @@
   .vibe-rise-3 {
     animation: none;
   }
+
+  /* Gallery: no reveal/zoom/pulse — show everything immediately. */
+  .vibe-card,
+  .vibe-card.is-in {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+  .vibe-card__img,
+  .vibe-card__img.is-loaded,
+  .vibe-card:hover .vibe-card__img.is-loaded {
+    transform: none;
+    transition: opacity 200ms ease;
+  }
+  .vibe-card__placeholder,
+  .vibe-gallery__loading {
+    animation: none;
+  }
 }
 
 /* ─── Ghost link (low-emphasis "Browse pages") ──────────────────────────────── */
@@ -550,13 +568,31 @@
   border: 0.5px solid rgba(255, 255, 255, 0.1);
   text-decoration: none;
   color: inherit;
-  transition: transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
+  /* Hidden until revealed by .is-in (scroll-into-view). Hover only animates
+     shadow/border here — the reveal owns transform, so they never conflict. */
+  opacity: 0;
+  transition: border-color 250ms ease, box-shadow 250ms ease;
+  will-change: transform, opacity;
+}
+
+.vibe-card.is-in {
+  animation: vibe-card-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes vibe-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .vibe-card:hover {
-  transform: translateY(-3px);
-  border-color: rgba(255, 255, 255, 0.22);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+  border-color: rgba(255, 255, 255, 0.24);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.55);
 }
 
 .vibe-card__thumb {
@@ -571,11 +607,18 @@
   height: 100%;
   object-fit: cover;
   opacity: 0;
-  transition: opacity 300ms ease;
+  transform: scale(1.06);
+  /* Soft fade + slow settle on load; doubles as a gentle zoom-in on hover. */
+  transition: opacity 450ms ease, transform 600ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .vibe-card__img.is-loaded {
   opacity: 1;
+  transform: scale(1);
+}
+
+.vibe-card:hover .vibe-card__img.is-loaded {
+  transform: scale(1.05);
 }
 
 .vibe-card__placeholder {
@@ -587,6 +630,13 @@
   color: rgba(245, 245, 247, 0.5);
   font-size: 2.4rem;
   font-weight: 700;
+  /* "still rendering" cue — gentle breathing while the worker makes the thumb. */
+  animation: vibe-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes vibe-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
 }
 
 .vibe-card__body {
@@ -624,4 +674,8 @@
 .vibe-gallery__loading {
   text-align: center;
   padding: 48px 16px;
+}
+
+.vibe-gallery__loading {
+  animation: vibe-pulse 1.4s ease-in-out infinite;
 }
