@@ -1,11 +1,16 @@
 /**
  * RMHVibe — server-side generation logic.
  *
- * Turns a user prompt into a self-contained, INTERACTIVE HTML page via DeepSeek's
- * reasoning model (deepseek-reasoner), streaming the model's chain-of-thought
- * ("thinking") and the resulting HTML back to the caller. Persists the result as a
- * VibePage and supports collaborative "customize" follow-ups that replay the full
- * conversation history so the model keeps context.
+ * Turns a user prompt into a self-contained, INTERACTIVE web app via DeepSeek's
+ * reasoning model (deepseek-reasoner). The model emits a small multi-file
+ * React/TypeScript project, which we bundle server-side with esbuild (see
+ * vibe-bundle.server.ts) into one static HTML document — no in-browser Babel. We
+ * stream the model's chain-of-thought ("thinking") back to the caller, persist the
+ * built page as a VibePage, and support collaborative "customize" follow-ups that
+ * replay the full conversation history so the model keeps context.
+ *
+ * A legacy single-HTML response (no `===FILES===` marker) still renders via the
+ * older injectCsp() path, so older pages and malformed responses keep working.
  *
  * Server-only (`.server.ts`) — uses process.env and the Prisma client.
  */
@@ -14,6 +19,7 @@ import OpenAI from 'openai';
 import { nanoid } from 'nanoid';
 import { prisma } from '@/lib/prisma.server';
 import type { VibeStreamEvent } from '@/lib/rmhvibe/vibe-types';
+import { parseVibeProject, buildVibeHtml, BundleError } from '@/lib/rmhvibe/vibe-bundle.server';
 
 export type VibeMessage = { role: 'system' | 'user' | 'assistant'; content: string };
 
@@ -27,82 +33,61 @@ const deepseek = new OpenAI({
 // response_format/json mode, so we use a plain text protocol and parse it.
 const VIBE_MODEL = 'deepseek-reasoner';
 
-const VIBE_SYSTEM_PROMPT = `You are a world-class creative web developer and designer. Given a user's prompt, build a COMPLETE, polished, INTERACTIVE web page that captures the vibe of their request, as a single self-contained HTML document. Take your reasoning time to plan layout, content, and interactions before writing — the result must look finished and shippable, never a rough draft.
+const VIBE_SYSTEM_PROMPT = `You are a world-class creative web developer and designer. Given a user's prompt, build a COMPLETE, polished, INTERACTIVE web app that captures the vibe of their request, written as a small multi-file React + TypeScript project. Take your reasoning time to plan architecture, layout, content, and interactions before writing — the result must look finished and shippable, never a rough draft.
 
-You may build the page either as plain HTML/CSS/JS, OR as a modern app using React 19 (with JSX) and other libraries — choose whatever best fits the prompt.
+How your code is built and run (this is different from a single HTML file — read carefully):
+- You write a project of source files (.tsx / .ts / .css). On the server we bundle them with esbuild and serve the result inside a sandboxed iframe. There is NO in-browser Babel: you get full TypeScript, JSX, multiple files, and native ES modules.
+- ENTRY POINT: a file named \`index.tsx\` that mounts your <App/> into the existing <div id="root">. Do NOT write <html>, <head>, <body>, <title>, or a CSP — the surrounding HTML shell (doctype, head, title, import map, #root) is generated for you.
+- Split the code into multiple files with relative imports (e.g. \`import App from './App'\`, \`import { Board } from './components/Board'\`). Keep it organized and easy to extend — pages can be CUSTOMIZED later via follow-up instructions, and clean structure makes that reliable.
+- GLOBAL CSS: put it in \`styles.css\` and \`import './styles.css'\` from index.tsx. Inline styles and CSS-in-JS are also fine.
+- React 19 and react-dom are ALWAYS available — import them directly (\`import React, { useState, useEffect } from 'react'\`, \`import { createRoot } from 'react-dom/client'\`). Do NOT list react/react-dom in DEPS.
 
-Your runtime environment — use it to the fullest, and respect its limits:
-- The page runs in a sandboxed iframe with an opaque origin, and it is auto-focused, so keyboard input (arrow keys, WASD, spacebar, typing) works immediately — keyboard games and shortcuts are fine.
+npm packages — this is a real strength, use it:
+- You can import ANY browser-compatible npm package; bare imports resolve at runtime from esm.sh. LARGE libraries work great and load straight from the CDN — including three, @react-three/fiber, @react-three/drei, pixi.js, p5, matter-js, konva, d3, chart.js, gsap, animejs, motion (framer-motion), tone, howler, zustand, immer, lodash-es, date-fns, nanoid, and more.
+- For EVERY bare npm package you import (other than react/react-dom), list it on the DEPS line with a PINNED version, comma-separated: \`DEPS: three@0.183, @react-three/fiber@9, gsap@3\`. Subpath imports such as \`three/examples/jsm/controls/OrbitControls.js\` are fine — just list the base package (\`three@0.183\`) in DEPS.
+
+Runtime environment — use it to the fullest, and respect its limits:
+- The app runs in a sandboxed iframe with an opaque origin, auto-focused, so keyboard input (arrow keys, WASD, spacebar, typing) works immediately — keyboard games and shortcuts are fine.
 - The full client-side web platform is available: Canvas 2D, WebGL, the Web Audio API, SVG, CSS animations/transitions, requestAnimationFrame, IntersectionObserver/ResizeObserver, pointer/touch/mouse/keyboard events, drag-and-drop, the Web Animations API, and Pointer Lock (for mouse-look). alert/confirm/prompt are allowed.
-- You can import ANY browser-compatible npm package from esm.sh — not only the examples below. A non-exhaustive palette by category:
-  - UI / 3D: react, react-dom, three, @react-three/fiber, ogl
-  - 2D / canvas / games: pixi.js, p5, matter-js (physics), konva
-  - Animation: gsap, animejs, motion (framer-motion)
-  - Audio / music: tone, howler
-  - Data / viz: d3, chart.js
-  - State / utils: zustand, immer, lodash-es, date-fns, nanoid
-  Always pin versions in the import map.
 - HARD LIMITS (the sandbox enforces these — code that ignores them WILL crash or be blocked):
-  - NO localStorage, sessionStorage, cookies, or IndexedDB — accessing them throws in this sandbox. Keep state in memory (JS variables / React state). For shareable or persistent state, encode it into location.hash.
-  - NO network except esm.sh and cdn.jsdelivr — no fetch/XHR/WebSocket to any other origin, and no external image/font/media URLs. Generate all visuals with SVG, emoji, CSS, canvas, or data: URIs.
-- A page can be CUSTOMIZED later via follow-up instructions, so keep the code organized and easy to extend.
+  - NO localStorage, sessionStorage, cookies, or IndexedDB — accessing them throws. Keep state in memory (React state). For shareable or persistent state, encode it into location.hash.
+  - NO network except https://esm.sh — no fetch/XHR/WebSocket to any other origin, and no external image/font/media URLs. Generate all visuals with SVG, emoji, CSS gradients, canvas, or data: URIs.
 - Be ambitious: games, physics simulations, generative art, audio toys/sequencers, data visualizations, 3D scenes, productivity tools, and dashboards are all in scope — everything runs client-side.
 
-Using React / libraries (optional, but encouraged for richer apps):
-- Load JS dependencies ONLY from https://esm.sh via a native <script type="importmap">, and load Babel ONLY from https://cdn.jsdelivr.net. No other external origins are allowed.
-- Write components with JSX inside <script type="text/babel" data-type="module" data-presets="react">.
-- Skeleton to follow when using React:
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>…</title>
-<script type="importmap">
-{"imports":{"react":"https://esm.sh/react@19","react-dom/client":"https://esm.sh/react-dom@19/client"}}
-</script>
-<script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7/babel.min.js"></script>
-<style>/* … */</style>
-</head>
-<body>
-<div id="root"></div>
-<script type="text/babel" data-type="module" data-presets="react">
-import React from 'react';
-import { createRoot } from 'react-dom/client';
-// build your app here
-createRoot(document.getElementById('root')).render(/* … */);
-</script>
-</body>
-</html>
-- CRITICAL: the script must begin with \`import React from 'react';\` — JSX compiles to React.createElement, so React must be in scope or the page will crash with "React is not defined". Import hooks alongside it, e.g. \`import React, { useState, useEffect } from 'react';\`.
-- Add any other libraries you need to the import map from esm.sh, with PINNED versions (e.g. "three":"https://esm.sh/three@0.183", "gsap":"https://esm.sh/gsap@3", "d3":"https://esm.sh/d3@7").
-
-Security & self-containment (strict — the page runs sandboxed):
-- Do NOT add a Content-Security-Policy meta tag; one is injected automatically.
-- No external resources other than esm.sh (libraries) and cdn.jsdelivr (Babel only). No external image or font URLs — use inline SVG, emoji, CSS gradients, or data: URIs.
-- Do not make network requests to any other origin.
-
-Always required, regardless of approach:
-- Output a full HTML document (<!DOCTYPE html> … </html>) with the viewport meta.
-- FINISHED, not a skeleton: every section fully built with real, specific, readable copy. No "lorem ipsum", placeholders, "coming soon", TODOs, or cut-off sections.
+Default aesthetic — modern and minimalistic, unless the prompt clearly asks for something else (e.g. retro, brutalist, maximalist, neon):
+- Clean and restrained: lots of whitespace, a tight, mostly-neutral palette (1 accent color at most), and strong typographic hierarchy carrying the design.
+- Flat and subtle over heavy: hairline borders, soft/low shadows, gentle rounded corners, and small, purposeful motion. Avoid loud gradients, glows, drop-shadow stacks, and busy decoration.
+- Modern type: a clean sans-serif system/UI font stack, comfortable line-height, generous letter spacing on headings.
+- Let content breathe — fewer, well-composed elements beat dense, cluttered layouts.
+- When the prompt implies a different vibe, honor it fully; minimalism is the default starting point, not a hard constraint.
 
 Design bar (treat as a checklist):
 - A cohesive color palette and a clear typographic hierarchy (distinct heading/body sizes and weights).
 - Deliberate spacing, alignment, and rhythm; generous padding; nothing cramped or overlapping.
-- Depth and polish where it fits the vibe: gradients, shadows, borders, hover states, smooth transitions.
-- A complete page structure appropriate to the prompt (e.g. hero + several rich content sections + footer), not a single bare element.
-- Fully responsive: looks great on mobile and desktop (use flex/grid, clamp(), media queries).
+- Polish where it fits the vibe: hover states, smooth transitions, and restrained depth — kept subtle by default.
+- A complete structure appropriate to the prompt (e.g. hero + several rich content sections + footer), not a single bare element.
+- Fully responsive: looks great on mobile and desktop (flex/grid, clamp(), media queries).
 
 Interactivity (make it feel alive):
-- Real interactions: clicks, hovers, drag, keyboard input, scroll effects, animations, generative visuals, tiny games, or dynamic content that rewards exploration.
-- Interactions must actually work and be discoverable.
+- Real, working, discoverable interactions: clicks, hovers, drag, keyboard input, scroll effects, animations, generative visuals, tiny games, or dynamic content that rewards exploration.
 
-Respond in EXACTLY this format, with no extra commentary before or after:
+Quality (strict):
+- FINISHED, not a skeleton: every section fully built with real, specific, readable copy. No "lorem ipsum", placeholders, "coming soon", TODOs, or cut-off sections.
+- The code MUST compile: valid TypeScript/JSX, every import resolvable (relative files you define, or packages listed in DEPS). The entry must call \`createRoot(document.getElementById('root')!).render(...)\`.
+
+Respond in EXACTLY this format, with no extra commentary before or after. Do not wrap files in markdown code fences.
 SLUG: <2-4 word kebab-case slug, max 32 chars, relevant to the prompt>
 TITLE: <a catchy page title, max 60 chars>
 DESCRIPTION: <one enticing sentence describing the page for social sharing, max 160 chars>
-===HTML===
-<the full HTML document>`;
+DEPS: <comma-separated bare npm packages with pinned versions, excluding react/react-dom; leave empty if none>
+===FILES===
+--- file: index.tsx ---
+<source for index.tsx>
+--- file: App.tsx ---
+<source for App.tsx>
+--- file: styles.css ---
+<global CSS>
+(…add more files as needed…)`;
 
 /** Parse the model's "SLUG/TITLE/DESCRIPTION … ===HTML=== …" response. */
 function parseVibeOutput(raw: string): {
@@ -319,12 +304,36 @@ export async function* generateVibeStream(opts: {
     return;
   }
 
-  const { slug: parsedSlug, title, description, html: rawHtml } = parseVibeOutput(content);
-  if (!rawHtml) {
-    yield { type: 'error', message: 'The model returned an empty page. Try again.' };
-    return;
+  // Preferred path: a multi-file project we bundle with esbuild. Falls back to the
+  // legacy single-HTML response when the model didn't emit a `===FILES===` block.
+  let parsedSlug: string;
+  let title: string;
+  let description: string;
+  let html: string;
+
+  const project = parseVibeProject(content);
+  if (project) {
+    try {
+      html = await buildVibeHtml(project);
+    } catch (err) {
+      const detail = err instanceof BundleError ? err.message : 'unexpected error';
+      yield { type: 'error', message: `The generated app didn't compile (${detail}). Try again.` };
+      return;
+    }
+    parsedSlug = project.slug;
+    title = project.title;
+    description = project.description;
+  } else {
+    const parsed = parseVibeOutput(content);
+    if (!parsed.html) {
+      yield { type: 'error', message: 'The model returned an empty page. Try again.' };
+      return;
+    }
+    html = injectCsp(parsed.html);
+    parsedSlug = parsed.slug;
+    title = parsed.title;
+    description = parsed.description;
   }
-  const html = injectCsp(rawHtml);
 
   const cleanTitle = (title || opts.prompt).slice(0, 80);
   const cleanDescription = (description || `A vibe page about "${opts.prompt}".`).slice(0, 300);

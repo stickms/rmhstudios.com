@@ -1,8 +1,8 @@
 /**
  * RMHVibe — headless thumbnail rendering.
  *
- * Generated vibe pages are arbitrary interactive HTML (React-via-Babel, canvas,
- * three.js from esm.sh) that the client renders in a locked-down sandboxed iframe.
+ * Generated vibe pages are arbitrary interactive HTML (esbuild-bundled React,
+ * canvas, three.js from esm.sh) that the client renders in a locked-down iframe.
  * To show them in the gallery we render the saved HTML once, server-side, in a
  * headless Chromium, screenshot it, downscale with sharp, and save a PNG to disk.
  *
@@ -111,7 +111,7 @@ export async function captureVibeThumbnail(slug: string, html: string): Promise<
       // networkidle can time out on animation-heavy pages; screenshot anyway.
     }
 
-    // Let Babel transform + first React paint + intro animations settle.
+    // Let esm.sh modules load + first React paint + intro animations settle.
     await page.waitForTimeout(1500);
 
     const raw = await page.screenshot({ type: 'png', clip: { x: 0, y: 0, ...VIEWPORT } });

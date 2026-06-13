@@ -131,6 +131,8 @@ const ssrOnlyExternals = [
   "@tiptap/core",
   "@tiptap/pm",
   "@anthropic-ai/sdk",
+  // Native binary — used server-side to bundle generated vibe projects.
+  "esbuild",
 ];
 
 const manualChunksMap: Record<string, string[]> = {
@@ -208,7 +210,7 @@ export default defineConfig({
       // traces them into .output/node_modules for runtime resolution.
       // NOTE: Vite's ssr.external is ignored by Nitro — this is the only way
       // to externalize from the production server bundle.
-      traceDeps: ["@prisma/client", ".prisma", "@resvg/resvg-js", "satori"],
+      traceDeps: ["@prisma/client", ".prisma", "@resvg/resvg-js", "satori", "esbuild"],
       rollupConfig: {
         external: heavyExternals.map((pkg) => new RegExp(`^${pkg.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(/.+)?$`)),
       },
