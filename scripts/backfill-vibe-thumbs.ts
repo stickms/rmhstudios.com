@@ -1,10 +1,9 @@
 /**
  * Backfill gallery thumbnails for vibe pages that don't have one yet.
  *
- * New pages and customizes render their thumbnail automatically; this catches
- * pages created before thumbnails existed (or any whose capture failed). Reuses
- * the same captureVibeThumbnail path (single shared Chromium, serialized), so
- * it's safe to run on prod and re-runnable anytime.
+ * Normally the vibe-worker handles this (it polls for stale pages). This script
+ * is a manual fallback that renders inline — useful locally, or to force a
+ * re-render without the worker. Safe to run on prod and re-runnable anytime.
  *
  * Run: npx tsx scripts/backfill-vibe-thumbs.ts
  */
@@ -30,14 +29,12 @@ async function main() {
 
   for (const [i, page] of pages.entries()) {
     process.stdout.write(`  [${i + 1}/${pages.length}] ${page.slug} … `);
-    await captureVibeThumbnail(page.slug, page.html);
-    // captureVibeThumbnail is best-effort and swallows errors; confirm by
-    // re-reading whether the row now has a thumbnail URL.
-    const row = await prisma.vibePage.findUnique({
-      where: { slug: page.slug },
-      select: { thumbnailUrl: true },
-    });
-    if (row?.thumbnailUrl) {
+    const url = await captureVibeThumbnail(page.slug, page.html);
+    if (url) {
+      await prisma.vibePage.update({
+        where: { slug: page.slug },
+        data: { thumbnailUrl: url, thumbnailStale: false },
+      });
       ok++;
       console.log('done');
     } else {

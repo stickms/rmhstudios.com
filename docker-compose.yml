@@ -151,3 +151,16 @@ services:
     command: ["node", "dist-server/server/doctrine-worker/index.cjs"]
     restart: unless-stopped
 
+  # ─── RMHVibe Thumbnail Worker (renders gallery screenshots via headless Chromium) ─
+  # Shares the db/ volume (via *common) so screenshots it writes to db/vibe-thumbs
+  # are served by the web service. Chromium + PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+  # come from the shared image (see Dockerfile runner stage).
+  vibe-worker:
+    <<: *common
+    container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-vibe-worker
+    env_file: ${ENV_FILE:-.env.production}
+    command: ["node", "dist-server/server/vibe-worker/index.cjs"]
+    restart: unless-stopped
+    # Chromium captures can outlive a quick SIGTERM; give them room to finish.
+    stop_grace_period: 30s
+

@@ -11,7 +11,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { readFile } from 'fs/promises';
 import path from 'path';
 import { resolvePathUnder } from '@/lib/slice-it/upload-validation';
-import { THUMB_DIR } from '@/lib/rmhvibe/vibe-screenshot.server';
+import { THUMB_DIR } from '@/lib/rmhvibe/vibe-thumbs';
 
 export const Route = createFileRoute('/api/vibe/thumb/$slug')({
   server: {

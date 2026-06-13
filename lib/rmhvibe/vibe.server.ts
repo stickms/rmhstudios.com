@@ -13,7 +13,6 @@
 import OpenAI from 'openai';
 import { nanoid } from 'nanoid';
 import { prisma } from '@/lib/prisma.server';
-import { captureVibeThumbnail } from '@/lib/rmhvibe/vibe-screenshot.server';
 import type { VibeStreamEvent } from '@/lib/rmhvibe/vibe-types';
 
 export type VibeMessage = { role: 'system' | 'user' | 'assistant'; content: string };
@@ -342,10 +341,9 @@ export async function* generateVibeStream(opts: {
       ];
       await prisma.vibePage.update({
         where: { slug: existingSlug },
-        data: { html, title: cleanTitle, description: cleanDescription, conversationHistory },
+        // Mark the thumbnail stale so the vibe-worker re-renders it for the new content.
+        data: { html, title: cleanTitle, description: cleanDescription, conversationHistory, thumbnailStale: true },
       });
-      // Refresh the gallery thumbnail in the background — never blocks `done`.
-      void captureVibeThumbnail(existingSlug, html).catch(() => {});
       yield { type: 'done', slug: existingSlug, html, title: cleanTitle, description: cleanDescription };
     } else {
       const slug = await uniqueSlug(parsedSlug || opts.prompt);
@@ -363,8 +361,7 @@ export async function* generateVibeStream(opts: {
           conversationHistory,
         },
       });
-      // Render the gallery thumbnail in the background — never blocks `done`.
-      void captureVibeThumbnail(slug, html).catch(() => {});
+      // thumbnailStale defaults to true → the vibe-worker renders the screenshot.
       yield { type: 'done', slug, html, title: cleanTitle, description: cleanDescription };
     }
   } catch {

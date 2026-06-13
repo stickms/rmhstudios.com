@@ -1915,6 +1915,7 @@ model VibePage {
   description         String?           // model-generated description (OG/social)
   html                String            // full generated HTML (self-contained, no external deps required)
   thumbnailUrl        String?           // "/api/vibe/thumb/<slug>?v=<ts>" once the screenshot is captured
+  thumbnailStale      Boolean  @default(true) // true → the vibe-worker (re)renders the screenshot
   conversationHistory Json              // array of { role, content } turns for "customize" follow-ups
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt

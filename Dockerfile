@@ -83,6 +83,8 @@ COPY lib/baccarat ./lib/baccarat/
 COPY lib/roulette ./lib/roulette/
 COPY lib/lights-out ./lib/lights-out/
 COPY lib/doctrine ./lib/doctrine/
+COPY lib/rmhvibe ./lib/rmhvibe/
+COPY lib/prisma.server.ts ./lib/prisma.server.ts
 COPY lib/url.ts ./lib/url.ts
 RUN pnpm exec esbuild \
     server/socket-server/index.ts \
@@ -91,6 +93,7 @@ RUN pnpm exec esbuild \
     server/recap/index.ts \
     server/discord-bot/index.ts \
     server/doctrine-worker/index.ts \
+    server/vibe-worker/index.ts \
     --bundle --platform=node --target=node20 \
     --outdir=dist-server --outbase=. \
     --format=cjs --out-extension:.js=.cjs --packages=external --tree-shaking=true \
@@ -101,7 +104,8 @@ RUN test -f dist-server/server/socket-server/index.cjs && \
     test -f dist-server/server/rmhtube/index.cjs && \
     test -f dist-server/server/recap/index.cjs && \
     test -f dist-server/server/discord-bot/index.cjs && \
-    test -f dist-server/server/doctrine-worker/index.cjs
+    test -f dist-server/server/doctrine-worker/index.cjs && \
+    test -f dist-server/server/vibe-worker/index.cjs
 
 # ── Stage 3: Vite/Nitro build (env-specific) ─────────────────────────────
 # BuildKit executes this IN PARALLEL with server-builder (stage 2).
@@ -152,12 +156,19 @@ RUN test -d /app/build-output && \
 # ── Stage 4: Production runner ────────────────────────────────────────────
 FROM node:24-alpine AS runner
 
-RUN apk add --no-cache curl git
+# chromium + fonts: used by the RMHVibe thumbnail capture (Playwright). Alpine
+# is musl, so Playwright's own download won't run — we use the OS Chromium and
+# point Playwright at it via PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH below.
+RUN apk add --no-cache curl git \
+    chromium nss freetype harfbuzz ca-certificates ttf-freefont font-noto-emoji
 
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV HOSTNAME=0.0.0.0
+# Reuse the system Chromium for Playwright instead of a (musl-incompatible) download.
+ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 app && \
