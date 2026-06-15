@@ -13,7 +13,7 @@ async function mergeWithEngagement(codeBuilds: CodeBuild[]): Promise<{ builds: O
     let currentUserId: string | null = null;
     try {
         const reqHeaders = getRequestHeaders();
-        const session = await auth.api.getSession({ headers: new Headers(reqHeaders as Record<string, string>) });
+        const session = await auth.api.getSession({ headers: new Headers(reqHeaders as unknown as Record<string, string>) });
         currentUserId = session?.user?.id ?? null;
     } catch {
         // Not logged in

@@ -130,10 +130,21 @@ function normalizePath(p: string): string {
 const ENTRY_CANDIDATES = ['index.tsx', 'index.ts', 'index.jsx', 'index.js', 'main.tsx', 'main.ts', 'App.tsx'];
 const RESOLVE_EXTS = ['', '.tsx', '.ts', '.jsx', '.js', '.mjs', '.css', '.json'];
 
+/** A file counts as a usable entry only if it has real (non-whitespace) source. */
+function hasSource(files: Record<string, string>, path: string): boolean {
+  return (files[path] ?? '').trim().length > 0;
+}
+
 function pickEntry(files: Record<string, string>): string {
-  for (const c of ENTRY_CANDIDATES) if (files[c]) return c;
-  const first = Object.keys(files).find((f) => /\.(tsx?|jsx?)$/.test(f));
-  if (!first) throw new BundleError('No entry file found (expected index.tsx).');
+  // Prefer a conventional entry name, but skip ones the model left empty — an
+  // empty `index.tsx` is a common miss (the real code lands under another header)
+  // and would otherwise bundle to nothing.
+  for (const c of ENTRY_CANDIDATES) if (hasSource(files, c)) return c;
+  const first = Object.keys(files).find((f) => /\.(tsx?|jsx?)$/.test(f) && hasSource(files, f));
+  if (!first) {
+    const names = Object.keys(files).join(', ') || 'none';
+    throw new BundleError(`No non-empty entry file found (expected index.tsx). Files: ${names}.`);
+  }
   return first;
 }
 
@@ -238,7 +249,18 @@ export async function buildVibeHtml(project: Pick<VibeProject, 'title' | 'deps' 
     if (out.path.endsWith('.css')) css += out.text;
     else if (out.path.endsWith('.js')) js += out.text;
   }
-  if (!js.trim()) throw new BundleError('Bundle produced no JavaScript output.');
+  if (!js.trim()) {
+    // The project parsed and compiled cleanly but emitted no JS — so the entry
+    // had no runnable code. Surface enough to tell the two usual causes apart:
+    // an entry that only imports CSS (css present), vs. a mis-parsed/empty entry.
+    const inventory = Object.entries(project.files)
+      .map(([p, src]) => `${p} (${src.trim().length}b)`)
+      .join(', ');
+    const hint = css.trim()
+      ? `entry "${entry}" produced only styles, no script — it must mount the app, e.g. createRoot(...).render(<App/>)`
+      : `entry "${entry}" was empty after parsing`;
+    throw new BundleError(`Bundle produced no JavaScript output: ${hint}. Files: ${inventory}.`);
+  }
 
   return assembleHtml({ title: project.title, js, css, deps: project.deps, externals });
 }

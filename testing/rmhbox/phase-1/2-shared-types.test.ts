@@ -91,6 +91,7 @@ describe('Shared Type Definitions (§2.1)', () => {
       avatarUrl: null,
       isConnected: true,
       isReady: false,
+      isAway: false,
       score: 0,
       roundScore: 0,
       isHost: true,

@@ -1334,6 +1334,7 @@ export class GameCoordinator {
           socketId: spectator.socketId,
           isConnected: spectator.isConnected,
           isReady: false,
+          isAway: false,
           score: 0,
           roundScore: 0,
           joinedAt: spectator.joinedAt,

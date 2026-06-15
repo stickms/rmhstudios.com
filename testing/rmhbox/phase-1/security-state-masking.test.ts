@@ -89,6 +89,7 @@ function createPlayers(): Map<string, RMHboxPlayer> {
       socketId: `socket-${p.userId}`,
       isConnected: true,
       isReady: true,
+      isAway: false,
       score: 0,
       roundScore: 0,
       joinedAt: Date.now(),
@@ -247,6 +248,7 @@ describe('Security: State-Masking Verification', () => {
       socketId: 'socket-123', // server has socket ID
       isConnected: true,
       isReady: false,
+      isAway: false,
       score: 0,
       roundScore: 0,
       joinedAt: Date.now(),

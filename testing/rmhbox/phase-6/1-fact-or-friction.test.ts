@@ -702,6 +702,7 @@ describe('Fact or Friction Server Handler (§6.1)', () => {
         socketId: `socket-${MOCK_USERS.eve.userId}`,
         isConnected: true,
         isReady: false,
+        isAway: false,
         score: 0,
         roundScore: 0,
         joinedAt: Date.now(),

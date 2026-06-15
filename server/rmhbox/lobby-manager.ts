@@ -338,6 +338,7 @@ export class LobbyManager {
       socketId: socket.id,
       isConnected: true,
       isReady: true, // Host is always ready
+      isAway: false,
       score: 0,
       roundScore: 0,
       joinedAt: now,
@@ -732,6 +733,7 @@ export class LobbyManager {
           socketId: spectator.socketId,
           isConnected: spectator.isConnected,
           isReady: true, // Host is always ready
+          isAway: false,
           score: 0,
           roundScore: 0,
           joinedAt: spectator.joinedAt,
@@ -1169,6 +1171,7 @@ export class LobbyManager {
       socketId: spectator.socketId,
       isConnected: spectator.isConnected,
       isReady: false,
+      isAway: false,
       score: 0,
       roundScore: 0,
       joinedAt: spectator.joinedAt,
@@ -1234,6 +1237,7 @@ export class LobbyManager {
       socketId: spectator.socketId,
       isConnected: spectator.isConnected,
       isReady: false,
+      isAway: false,
       score: 0,
       roundScore: 0,
       joinedAt: spectator.joinedAt,

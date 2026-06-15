@@ -225,6 +225,7 @@ export function createPlayer(
     socketId: `socket-${user.userId}`,
     isConnected: true,
     isReady: false,
+    isAway: false,
     score: 0,
     roundScore: 0,
     joinedAt: Date.now(),
@@ -273,6 +274,7 @@ export function createTestLobby(overrides: Partial<RMHboxLobby> = {}): RMHboxLob
     roundNumber: 0,
     pendingGameSettings: null,
     resolvedGameSettings: null,
+    discordChannelKey: null,
     ...overrides,
   };
 }
