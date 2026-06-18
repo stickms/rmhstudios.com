@@ -18,6 +18,12 @@ spec:
       labels:
         {{- include "rmhstudios.componentSelectorLabels" (dict "Chart" $root.Chart "Release" $root.Release "Values" $root.Values "component" $name) | nindent 8 }}
     spec:
+      {{- with $root.Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- range . }}
+        - name: {{ . }}
+        {{- end }}
+      {{- end }}
       {{- if $svc.stopGracePeriod }}
       terminationGracePeriodSeconds: {{ $svc.stopGracePeriod }}
       {{- end }}

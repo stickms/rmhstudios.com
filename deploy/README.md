@@ -63,9 +63,51 @@ curl -fsS -H "Host: <app_host>" http://127.0.0.1/    # via Traefik
 - Tail a service:  `kubectl -n rmhstudios logs -f deploy/rmhstudios-socket`
 - DNS changes:  see `deploy/terraform/README.md`
 
-## Multi-node later (the seams)
+## Multi-node scaling
 
-Search the chart for `MULTI-NODE SEAM`. Three changes are needed:
-1. A registry (in-cluster or GHCR) + `image.pullPolicy: IfNotPresent`.
-2. PVC `ReadWriteMany` (NFS/Longhorn) instead of local-path RWO.
-3. discord-bot repo `hostPath` → a shared volume or node affinity pin.
+The deploy is already **wired for a registry** — switching to multi-node is an
+env var on the deploy, plus two storage changes.
+
+### 1. Registry (wired)
+
+Set `REGISTRY` (and optionally `REGISTRY_PULL_SECRET`) before deploying. The
+script then pushes the image instead of importing it locally, and flips the
+chart to `pullPolicy: IfNotPresent` with the full registry path:
+
+```bash
+# Public/self-hosted registry, no auth:
+REGISTRY=registry.rmhstudios.com ./deploy/deploy-k8s.sh production
+
+# GHCR or any private registry (create the pull secret once):
+kubectl -n rmhstudios create secret docker-registry regcred \
+  --docker-server=ghcr.io --docker-username=<user> --docker-password=<token>
+REGISTRY=ghcr.io/<owner> REGISTRY_PULL_SECRET=regcred ./deploy/deploy-k8s.sh production
+```
+
+Unset `REGISTRY` → single-node behavior (local `k3s ctr` import, `pullPolicy: Never`).
+
+### 2. Shared storage (`MULTI-NODE SEAM` in pvc.yaml)
+
+`local-path` is node-local RWO. For pods to share `/app/db` across nodes, switch
+to a `ReadWriteMany` class (NFS / Longhorn / Rook) and set
+`data.storageClass` + the PVC `accessModes` accordingly.
+
+### 3. discord-bot repo mount (`MULTI-NODE SEAM` in deployment.yaml)
+
+The `hostPath` repo mount pins discord-bot to one node. Either keep it pinned
+with a `nodeSelector`/affinity, or move its git-worktree workdir onto the shared
+RWX volume.
+
+### Then scale
+
+```bash
+kubectl -n rmhstudios scale deploy/rmhstudios-web --replicas=4
+kubectl -n rmhstudios scale deploy/rmhstudios-socket --replicas=3
+```
+
+> Stateful realtime note: `socket`/`rmhbox`/`rmhtube` hold in-memory game/lobby
+> state. Scaling them past 1 replica needs sticky sessions at the ingress AND a
+> shared backplane (e.g. socket.io Redis adapter) — otherwise clients on
+> different replicas can't see each other. `web` and the workers scale freely;
+> the realtime tier needs that backplane first. See the scaling discussion in
+> the migration plan.

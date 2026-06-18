@@ -3,11 +3,18 @@ nameOverride: ""
 fullnameOverride: "rmhstudios"
 
 image:
+  # Single-node default: image is imported into k3s containerd locally, so
+  # `repository` is the bare name and pullPolicy is Never (no registry).
+  #
+  # MULTI-NODE: set `repository` to a registry path (e.g. registry.example.com/rmhstudios
+  # or ghcr.io/owner/rmhstudios), pullPolicy to IfNotPresent, and add any
+  # pullSecrets below. deploy-k8s.sh does this automatically when REGISTRY is set.
   repository: rmhstudios
   tag: latest
-  # Never: image is imported into k3s containerd locally; there is no registry.
-  # MULTI-NODE SEAM: switch to IfNotPresent + a real repository when adding a registry.
   pullPolicy: Never
+  # Names of pre-created docker-registry Secrets for pulling from a private registry.
+  pullSecrets: []
+  #  - regcred
 
 # Secret is created out-of-band from .env.production (see deploy-k8s.sh).
 # Templates reference it via envFrom; its contents never enter git or Helm history.

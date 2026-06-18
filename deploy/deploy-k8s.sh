@@ -18,7 +18,22 @@ RELEASE="rmhstudios"
 NAMESPACE="rmhstudios"
 CHART_DIR="deploy/helm/rmhstudios"
 SECRET_NAME="rmhstudios-secrets"
-IMAGE_REPO="rmhstudios"
+
+# ── Registry mode (multi-node) ───────────────────────────────────────────────
+# Single-node (default): REGISTRY unset → build, import into k3s containerd,
+#   deploy with the bare image name + pullPolicy=Never.
+# Multi-node: export REGISTRY=registry.example.com (or ghcr.io/owner) → build,
+#   push to the registry, deploy with the full path + pullPolicy=IfNotPresent so
+#   every node pulls the same image. Set REGISTRY_PULL_SECRET for a private one.
+REGISTRY="${REGISTRY:-}"
+REGISTRY_PULL_SECRET="${REGISTRY_PULL_SECRET:-}"
+if [ -n "$REGISTRY" ]; then
+    IMAGE_REPO="${REGISTRY%/}/rmhstudios"
+    PULL_POLICY="IfNotPresent"
+else
+    IMAGE_REPO="rmhstudios"
+    PULL_POLICY="Never"
+fi
 
 LOCKFILE="/tmp/autodeploy-k8s.lock"
 
@@ -51,11 +66,17 @@ BUILT_IMAGE="$(docker compose -p "$PROJECT_NAME" --env-file "$ENV_FILE" config -
 docker tag "$BUILT_IMAGE" "${IMAGE_REPO}:${GIT_SHA}"
 log "Tagged ${IMAGE_REPO}:${GIT_SHA} (from $BUILT_IMAGE)"
 
-# ── Step 3: Import image into k3s containerd ─────────────────────────────────
-# k3s uses its own containerd, not docker — the image must be imported.
-# Requires sudo for `k3s ctr` (document in runbook).
-log "Importing image into k3s..."
-docker save "${IMAGE_REPO}:${GIT_SHA}" | sudo k3s ctr images import -
+# ── Step 3: Make the image available to the cluster ──────────────────────────
+if [ -n "$REGISTRY" ]; then
+    # Multi-node: push to the registry so every node can pull it.
+    log "Pushing ${IMAGE_REPO}:${GIT_SHA} to registry..."
+    docker push "${IMAGE_REPO}:${GIT_SHA}"
+else
+    # Single-node: k3s uses its own containerd, not docker — import directly.
+    # Requires sudo for `k3s ctr` (document in runbook).
+    log "Importing image into k3s containerd..."
+    docker save "${IMAGE_REPO}:${GIT_SHA}" | sudo k3s ctr images import -
+fi
 
 # ── Step 4: Sync Secret from .env.production (server-side, never in git) ──────
 log "Syncing Secret ${SECRET_NAME}..."
@@ -66,11 +87,19 @@ kubectl create secret generic "$SECRET_NAME" \
   --dry-run=client -o yaml | kubectl apply -f -
 
 # ── Step 5: helm upgrade (atomic: auto-rollback on hook/probe failure) ───────
-log "helm upgrade --install (atomic)..."
+log "helm upgrade --install (atomic, repo=${IMAGE_REPO}, pullPolicy=${PULL_POLICY})..."
+HELM_SET_ARGS=(
+  --set image.repository="$IMAGE_REPO"
+  --set image.tag="$GIT_SHA"
+  --set image.pullPolicy="$PULL_POLICY"
+)
+if [ -n "$REGISTRY_PULL_SECRET" ]; then
+    HELM_SET_ARGS+=(--set "image.pullSecrets={${REGISTRY_PULL_SECRET}}")
+fi
 helm upgrade --install "$RELEASE" "$CHART_DIR" \
   --namespace "$NAMESPACE" \
   -f "${CHART_DIR}/values-prod.yaml" \
-  --set image.tag="$GIT_SHA" \
+  "${HELM_SET_ARGS[@]}" \
   --atomic --wait --timeout 10m
 
 # ── Step 6: Prune old local images (keep recent for manual rollback) ─────────
