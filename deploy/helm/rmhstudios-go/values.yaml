@@ -1,0 +1,87 @@
+# ── rmhstudios-go default values ─────────────────────────────────────────────
+# One image PER service (each is a distinct Go binary), named
+# <registry>/<repoPrefix>-<service>:<tag>. This is the one deliberate departure
+# from PR #121's single-image chart, noted in the chart description: Go services
+# are separate static binaries, so they are separate images.
+
+image:
+  registry: "" # e.g. registry.example.com (empty => single-node ctr-imported images)
+  repoPrefix: rmhstudios-go
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# Reuse the Secret created out-of-band by PR #121's deploy flow
+# (kubectl create secret --from-env-file .env.production). The Go fleet reads the
+# SAME env (DATABASE_URL, DISCORD_*, DEEPSEEK_*, BETTER_AUTH_*).
+env:
+  secretName: rmhstudios-secrets
+
+# Redis backplane (pkg/events) — enables >1 replica for the realtime services.
+redis:
+  enabled: true
+  image: redis:7-alpine
+  url: redis://rmhstudios-go-redis:6379
+
+# The React SSR/Nitro web tier (the rmhstudios chart from PR #121). The gateway
+# proxies everything that isn't a Go WS prefix here. Override to match that
+# chart's Service name in your cluster.
+webUpstream: http://rmhstudios-web:7005
+
+# Default probe/metrics port for worker services (no client port).
+metricsPort: 9090
+
+# The fleet. `port` = client-facing port (also where /health + /metrics live).
+# `worker: true` => no Service, probes hit /health on metricsPort.
+# `path` => the Ingress prefix routed to this service (gateway is the catch-all).
+services:
+  gateway:
+    port: 7005
+    replicas: 2
+    ingress: true
+    path: /
+  gamehub:
+    port: 7001
+    replicas: 2
+    path: /socket/
+  rmhmusic:
+    port: 7002
+    replicas: 1
+    path: /rmhmusic-ws/
+  rmhtube:
+    port: 7003
+    replicas: 1
+    path: /rmhtube-ws/
+  rmhbox:
+    port: 7676
+    replicas: 1
+    path: /rmhbox-ws/
+  recap:
+    port: 7004
+    replicas: 1
+  doctrine-worker:
+    worker: true
+    replicas: 1
+  vibe-worker:
+    worker: true
+    replicas: 1
+    storage: true # mounts the shared /app/db PVC for vibe-thumbs
+  discord-bot:
+    worker: true
+    replicas: 1
+    terminationGracePeriodSeconds: 90
+
+# Shared storage for vibe-worker thumbnails (same PVC contract as PR #121).
+data:
+  enabled: true
+  existingClaim: rmhstudios-data # reuse the chart-from-#121 PVC if present
+  mountPath: /app/db
+
+ingress:
+  enabled: false
+  className: traefik
+  host: REPLACE_ME.example.com
+  annotations: {}
+
+resources:
+  requests: { cpu: 25m, memory: 32Mi }
+  limits: { cpu: "1", memory: 256Mi }

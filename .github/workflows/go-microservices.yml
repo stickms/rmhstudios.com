@@ -1,0 +1,66 @@
+name: go-microservices
+
+on:
+  push:
+    paths:
+      - "go-services/**"
+      - "deploy/helm/rmhstudios-go/**"
+      - ".github/workflows/go-microservices.yml"
+  pull_request:
+    paths:
+      - "go-services/**"
+      - "deploy/helm/rmhstudios-go/**"
+
+defaults:
+  run:
+    working-directory: go-services
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+          cache-dependency-path: go-services/go.sum
+      - run: go build ./...
+      - run: go vet ./...
+      - run: go test -race ./...
+      - name: gofmt check
+        run: test -z "$(gofmt -l .)" || (gofmt -l . && exit 1)
+
+  e2e:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: rmh
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: "1.23", cache-dependency-path: go-services/go.sum }
+      - name: load e2e schema
+        env: { PGPASSWORD: postgres }
+        run: psql -h localhost -U postgres -d rmh -f scripts/e2e/schema.sql
+      - name: run e2e (binaries + ws clients)
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/rmh?sslmode=disable
+        run: bash scripts/e2e/run.sh --no-docker
+
+  helm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - run: helm lint deploy/helm/rmhstudios-go
+        working-directory: .
+      - run: helm template rmhstudios-go deploy/helm/rmhstudios-go > /dev/null
+        working-directory: .

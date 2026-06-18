@@ -1,0 +1,250 @@
+<p class="lead">The <code>gateway</code> service is the single edge / backend-for-frontend
+(BFF) that fronts the whole rmhstudios platform. It listens on <code>PORT_WEB</code>
+(default <code>7005</code>) and is the one ingress target the Helm chart from
+PR&nbsp;#121 routes to: it reverse-proxies the React SSR / Nitro app and the Go
+realtime services (WebSocket pass-through included), turns a Better&nbsp;Auth
+session into a trusted identity header set, optionally serves built static assets,
+and exposes <code>/health</code> + <code>/metrics</code>. It is implemented in
+<code>internal/gateway/proxy.go</code>, <code>internal/gateway/auth_middleware.go</code>,
+and wired in <code>cmd/gateway/main.go</code>.</p>
+
+<div class="stats">
+  <div class="stat"><div class="v">7005</div><div class="l">PORT_WEB edge</div></div>
+  <div class="stat"><div class="v">4</div><div class="l">WS prefix routes</div></div>
+  <div class="stat"><div class="v">1</div><div class="l">SSR catch-all</div></div>
+  <div class="stat"><div class="v">X-Rmh-*</div><div class="l">trust boundary</div></div>
+</div>
+
+<h2 id="gateway-role">Role: the single edge / BFF</h2>
+<p>In the Node deployment each browser request could fan out to several processes:
+the React SSR app, the unified Socket.IO games server, and the rmhbox / rmhtube /
+rmhmusic realtime services. The gateway collapses that fan-out into one
+<code>http.Handler</code>. Everything the platform exposes to the public network
+arrives here first, which makes the gateway the natural place to put two
+cross-cutting concerns the individual services should not each re-implement:
+upstream routing and the authentication trust boundary.</p>
+<p>The package doc comment states the contract directly: the gateway is
+&ldquo;the single ingress target the Helm chart (PR&nbsp;#121) routes to: it fronts
+the React SSR/Nitro app and reverse-proxies the WebSocket path prefixes to the Go
+realtime services.&rdquo; Because it is the only thing the chart needs to publish,
+the rest of the Go services can stay <code>ClusterIP</code>-internal and trust the
+identity headers the gateway asserts.</p>
+
+<p>The default upstream targets mirror the Compose / Helm service names and the
+<code>PORT_*</code> family the Node services already used, so the gateway drops in
+without renaming anything:</p>
+<pre><code>const (
+    defaultWebUpstream      = "http://web:3000"
+    defaultGamehubUpstream  = "http://gamehub:7001"
+    defaultRmhboxUpstream   = "http://rmhbox:7676"
+    defaultRmhtubeUpstream  = "http://rmhtube:7003"
+    defaultRmhmusicUpstream = "http://rmhmusic:7002"
+)</code></pre>
+
+<h2 id="gateway-routing">Longest-prefix reverse-proxy router</h2>
+<p>The router selects an upstream by <b>longest-matching path prefix</b>, falling
+back to the web (SSR) upstream for everything no Go service owns. Each upstream is
+a <code>prefix</code> string paired with a parsed <code>*url.URL</code> target and a
+<code>*httputil.ReverseProxy</code>. <code>NewRouter</code> builds the web catch-all
+first (prefix <code>""</code>), then the four Go realtime routes:</p>
+<pre><code>routes := []struct {
+    prefix string
+    target string
+}{
+    {"/socket/", cfg.GamehubUpstream},
+    {"/rmhbox-ws/", cfg.RmhboxUpstream},
+    {"/rmhtube-ws/", cfg.RmhtubeUpstream},
+    {"/rmhmusic-ws/", cfg.RmhmusicUpstream},
+}</code></pre>
+<p>Each upstream is configurable at runtime through its <code>*_UPSTREAM</code>
+environment variable (<code>WEB_UPSTREAM</code>, <code>GAMEHUB_UPSTREAM</code>,
+<code>RMHBOX_UPSTREAM</code>, <code>RMHTUBE_UPSTREAM</code>,
+<code>RMHMUSIC_UPSTREAM</code>), resolved by <code>LoadConfig</code> against the
+defaults above. The realtime hubs serve these <em>exact</em> prefixes (for example
+the rmhbox hub registers <code>ServeWS</code> on <code>/rmhbox-ws/</code>), so the
+gateway proxies the full path through unchanged &mdash; there is deliberately no
+prefix stripping.</p>
+
+<p>After registration the prefixed routes are sorted longest-first so selection is
+deterministic and &ldquo;most specific wins&rdquo;:</p>
+<pre><code>sort.Slice(r.prefixed, func(i, j int) bool {
+    return len(r.prefixed[i].prefix) &gt; len(r.prefixed[j].prefix)
+})</code></pre>
+
+<p>The hot path is <code>pick</code>, which walks the sorted prefixes and returns
+the first match, or the web catch-all when nothing matches:</p>
+<pre><code>func (r *Router) pick(path string) *upstream {
+    for _, u := range r.prefixed {
+        if hasPrefix(path, u.prefix) {
+            return u
+        }
+    }
+    return r.web
+}</code></pre>
+
+<table>
+  <thead><tr><th>Path prefix</th><th>Upstream (default)</th><th>Env override</th><th>Kind</th></tr></thead>
+  <tbody>
+    <tr><td><code>/socket/</code></td><td><code>http://gamehub:7001</code></td><td><code>GAMEHUB_UPSTREAM</code></td><td>WS</td></tr>
+    <tr><td><code>/rmhbox-ws/</code></td><td><code>http://rmhbox:7676</code></td><td><code>RMHBOX_UPSTREAM</code></td><td>WS</td></tr>
+    <tr><td><code>/rmhtube-ws/</code></td><td><code>http://rmhtube:7003</code></td><td><code>RMHTUBE_UPSTREAM</code></td><td>WS</td></tr>
+    <tr><td><code>/rmhmusic-ws/</code></td><td><code>http://rmhmusic:7002</code></td><td><code>RMHMUSIC_UPSTREAM</code></td><td>WS</td></tr>
+    <tr><td><code>/</code> (catch-all)</td><td><code>http://web:3000</code></td><td><code>WEB_UPSTREAM</code></td><td>SSR / HTTP</td></tr>
+  </tbody>
+</table>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart TD
+  C[Client request] --> P{pick longest prefix}
+  P -->|/socket/| GH[gamehub 7001]
+  P -->|/rmhbox-ws/| RB[rmhbox 7676]
+  P -->|/rmhtube-ws/| RT[rmhtube 7003]
+  P -->|/rmhmusic-ws/| RM[rmhmusic 7002]
+  P -->|no Go prefix| S{STATIC_DIR file exists?}
+  S -->|yes| FS[FileServer static asset]
+  S -->|no| WEB[web SSR 3000]
+  </div>
+  <figcaption>Figure 7.1: routing decision &mdash; Go prefixes win first, then static
+  files, then the SSR catch-all.</figcaption>
+</figure>
+
+<h2 id="gateway-websocket">WebSocket upgrade pass-through</h2>
+<p>The realtime routes all carry WebSocket traffic, and the gateway passes the
+upgrade through transparently. The key is <em>not</em> doing anything clever:
+<code>newProxy</code> builds a plain <code>httputil.NewSingleHostReverseProxy</code>
+and leaves the default Director in place. Go 1.23's
+<code>httputil.ReverseProxy</code> detects a WebSocket upgrade request, switches
+into bidirectional-copy mode on a <code>101&nbsp;Switching&nbsp;Protocols</code>
+response, and manages the hop-by-hop <code>Connection</code>/<code>Upgrade</code>
+headers itself.</p>
+<div class="note">The code comment is explicit that this is intentional: &ldquo;We
+deliberately do NOT install a Director that strips the Connection/Upgrade
+hop-by-hop headers&hellip; Leaving the default Director in place is exactly what
+makes WebSocket pass-through work.&rdquo; A custom Director that scrubbed those
+headers would silently break the upgrade.</div>
+<p>The only customization is an <code>ErrorHandler</code> that logs the upstream
+target and path and returns a <code>502 Bad Gateway</code> (&ldquo;upstream
+unavailable&rdquo;) rather than letting the proxy emit its default error.</p>
+
+<h2 id="gateway-auth">Auth trust boundary</h2>
+<p>Because the gateway is the only public ingress, it is also the trust boundary
+for identity. <code>AuthMiddleware</code> (in <code>auth_middleware.go</code>) wraps
+the proxy router so every proxied request carries a validated identity header set
+&mdash; or none, for anonymous traffic. It does two things, in order.</p>
+
+<h3>1. Strip every inbound <code>X-Rmh-*</code> header</h3>
+<p>Before any validation, the middleware deletes <em>all</em> client-supplied
+headers under the <code>X-Rmh-</code> prefix, canonicalizing each name first:</p>
+<pre><code>for name := range r.Header {
+    if strings.HasPrefix(http.CanonicalHeaderKey(name), trustedHeaderPrefix) {
+        r.Header.Del(name)
+    }
+}</code></pre>
+<div class="warn">This prefix-wide strip is a hardening step that came out of senior
+review. Deleting only the three headers the gateway injects would still let a
+client smuggle a future <code>X-Rmh-*</code> header that some later upstream learns
+to trust. Stripping the entire prefix means &ldquo;neither today's headers nor any
+future <code>X-Rmh-*</code> header can be forged by a client,&rdquo; as the constant's
+doc comment puts it.</div>
+
+<h3>2. Validate the session and inject trusted identity</h3>
+<p>If a session token is present (extracted by <code>httpx.SessionToken</code>) and
+it validates against the <code>SessionValidator</code>, the middleware injects three
+trusted headers toward the upstream:</p>
+<pre><code>if id, err := v.ValidateSession(r.Context(), token); err == nil {
+    r.Header.Set(HeaderUserID, id.UserID)   // X-Rmh-User-Id
+    r.Header.Set(HeaderName, id.Name)       // X-Rmh-User-Name
+    if id.IsAdmin {
+        r.Header.Set(HeaderIsAdmin, "true") // X-Rmh-Is-Admin
+    } else {
+        r.Header.Set(HeaderIsAdmin, "false")
+    }
+}</code></pre>
+<p>The middleware is <b>non-blocking</b>: an absent or invalid token simply passes
+through as anonymous (the headers stay stripped), because the SSR app renders its
+own auth pages and the realtime hubs run soft-auth. The <code>SessionValidator</code>
+is a narrow interface (<code>ValidateSession(ctx, token) (auth.Identity, error)</code>)
+&mdash; the real implementation is <code>*auth.Validator</code> backed by the DB
+pool, while tests supply a fake, so the middleware is exercisable with
+<code>httptest</code> alone.</p>
+<p>For routes that <em>must</em> be authenticated, the package offers the opt-in
+<code>RequireAuth</code> helper, which returns a <code>401</code> JSON error when no
+gateway-asserted <code>X-Rmh-User-Id</code> is present. It is an explicit seam for
+future Go API routes; the proxy catch-all does not use it today.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+sequenceDiagram
+  participant Cl as Client
+  participant GW as Gateway
+  participant V as SessionValidator
+  participant Up as Upstream
+  Cl->>GW: request (+ session cookie, maybe forged X-Rmh-*)
+  GW->>GW: strip ALL inbound X-Rmh-* headers
+  GW->>V: ValidateSession(token)
+  V-->>GW: Identity{UserID, Name, IsAdmin}
+  GW->>GW: inject X-Rmh-User-Id / Name / Is-Admin
+  GW->>GW: pick longest-prefix upstream
+  GW->>Up: proxy request with trusted identity headers
+  Up-->>Cl: response
+  </div>
+  <figcaption>Figure 7.2: an authenticated request through the gateway to an
+  upstream &mdash; strip, validate, inject, route.</figcaption>
+</figure>
+
+<h2 id="gateway-static">Static asset serving</h2>
+<p>The gateway can optionally serve built React assets directly. When
+<code>STATIC_DIR</code> is set and points at an existing directory,
+<code>NewRouter</code> installs an <code>http.FileServer</code> over it; otherwise it
+logs a warning and ignores the value. In <code>ServeHTTP</code> the static server is
+consulted <em>only after</em> the Go prefixes and <em>only for real files</em>:</p>
+<pre><code>func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+    if u := r.pick(req.URL.Path); u != r.web {
+        u.proxy.ServeHTTP(w, req)
+        return
+    }
+    if r.static != nil && r.staticAssetExists(req.URL.Path) {
+        r.static.ServeHTTP(w, req)
+        return
+    }
+    r.web.proxy.ServeHTTP(w, req)
+}</code></pre>
+<p><code>staticAssetExists</code> opens the path under the static dir and returns
+true only for a regular (non-directory) file. This short-circuit-only-for-real-files
+rule is deliberate: unknown routes &mdash; SSR pages and client-side routes &mdash;
+must still fall through to the web upstream instead of 404ing from the file server.</p>
+
+<h2 id="gateway-wiring">Service wiring (<code>cmd/gateway/main.go</code>)</h2>
+<p>The entrypoint loads common config, opens the DB pool that backs the auth
+validator, builds the router, and composes the auth middleware in front of it:</p>
+<pre><code>router, _ := gateway.NewRouter(gateway.LoadConfig(), logger)
+proxied := gateway.AuthMiddleware(v)(router)
+
+mux := http.NewServeMux()
+mux.HandleFunc("/health", httpx.Health("gateway", nil))
+mux.Handle("/metrics", metrics.Handler())
+mux.Handle("/", proxied) // catch-all -> auth-wrapped proxy router
+
+addr := ":" + config.GetString("PORT_WEB", "7005")</code></pre>
+<p>Only <code>/health</code> and <code>/metrics</code> are gateway-local; everything
+else is handed to the auth-wrapped proxy router, so every proxied request carries
+the trusted identity headers (or none). The server is run with a 30-second graceful
+shutdown via <code>httpx.NewServer</code>.</p>
+
+<h2 id="gateway-tests">Tests</h2>
+<p>The gateway is covered at the two seams that matter:</p>
+<ul>
+  <li><b>Prefix selection.</b> <code>pick</code> is unit-tested for correct
+  longest-prefix routing &mdash; each <code>/socket/</code>, <code>/rmhbox-ws/</code>,
+  <code>/rmhtube-ws/</code>, <code>/rmhmusic-ws/</code> path resolves to its own
+  upstream, and unmatched paths fall to the web catch-all.</li>
+  <li><b>Header inject / strip.</b> The auth middleware is exercised with a fake
+  <code>SessionValidator</code> over <code>httptest</code>: a valid token injects
+  <code>X-Rmh-User-Id</code>/<code>Name</code>/<code>Is-Admin</code>, while a forged
+  inbound <code>X-Rmh-*</code> header is stripped and never reaches the next handler
+  &mdash; the property the trust boundary exists to guarantee.</li>
+</ul>
+<div class="ok">The fake-validator design means these tests need neither a database
+nor a live websocket, so they run fast and under the race detector alongside the
+rest of the suite.</div>

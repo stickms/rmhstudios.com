@@ -1,0 +1,65 @@
+<p class="lead">This section is the deliberate counterweight to the rest of the
+document. A migration report that only lists accomplishments is untrustworthy.
+Here is a frank assessment of what is risky, what is incomplete, and whether this
+work should actually be adopted.</p>
+
+<h2 id="risk-socketio">The Socket.IO wire-protocol gap (largest risk)</h2>
+<div class="warn">The existing browser clients speak the Socket.IO v4 protocol.
+The Go realtime services speak a clean JSON-over-raw-WebSocket protocol with the
+same <i>semantics</i> but a different <i>wire format</i>. They are not
+interoperable. A production cutover of any websocket prefix requires a
+client-side adapter (mapping existing event names onto the new transport) that is
+<b>designed but not built</b>. Until then, the Go realtime services are validated
+by the new-protocol e2e clients, not by the live browser clients.</div>
+<p>This is the single most important limitation and is stated everywhere it is
+relevant. It does not affect the workers (doctrine, recap, vibe) or the
+discord-bot, which have no browser websocket clients.</p>
+
+<h2 id="risk-scaffold">Scaffolded surfaces</h2>
+<table>
+<thead><tr><th>Surface</th><th>State</th><th>Risk if adopted as-is</th></tr></thead>
+<tbody>
+<tr><td>rmhbox minigames</td><td>1 of 9 ported; 8 compiling stubs</td><td>Only Rhyme Time is playable; the others must be implemented before rmhbox replaces the Node service.</td></tr>
+<tr><td>RMHBot agentic editor</td><td>Structure + safety + git + chat real; several tools stubbed</td><td>Typecheck and PR-creation are stubs; <code>/rmhbot</code> can't complete a full edit-and-PR cycle yet.</td></tr>
+<tr><td>gamehub non-KK games</td><td>Generic relay framework + stub registry</td><td>Only Kowloon Knockout is wired; other games need registration.</td></tr>
+</tbody>
+</table>
+
+<h2 id="risk-substitutions">Behavioral substitutions</h2>
+<ul>
+  <li><b>vibe-worker downscaling:</b> Chromium device-scale replaces Node's
+  <code>sharp</code>. Visual parity of thumbnails should be eyeballed before relying on it.</li>
+  <li><b>recap presence:</b> discordgo's gateway replaces a hand-rolled opcode loop
+  — an improvement, but a behavioral change in how presence is maintained.</li>
+  <li><b>IDs:</b> Go generates UUID primary keys where Prisma used cuid; both are
+  opaque TEXT, but the format differs.</li>
+  <li><b>rmhbox rhyme check:</b> a phonetic-suffix heuristic substitutes for the
+  Node CMU-dictionary lookup; scoring may differ at the margins.</li>
+</ul>
+
+<h2 id="risk-unmeasured">What is unverified</h2>
+<ul>
+  <li><b>No load testing.</b> Performance claims are structural, not measured.</li>
+  <li><b>No live-traffic validation.</b> The services have never seen production clients (see the protocol gap).</li>
+  <li><b>chromedp under load.</b> Headless Chromium stability for the thumbnail worker at scale is untested in Go.</li>
+  <li><b>DeepSeek streaming.</b> The Go chat client is non-streaming where the Node version streamed; UX differs.</li>
+</ul>
+
+<h2 id="risk-should">Should this be adopted?</h2>
+<div class="scope"><b>Honest recommendation.</b> Not wholesale, and not now — for the
+same reasons PR&nbsp;#121 gave. The Node services work; the React/Better&nbsp;Auth/
+Prisma core must stay JavaScript regardless; and the biggest realtime scaling win
+(the Redis backplane + sticky sessions) is language-agnostic and could be applied
+to the existing Node services. This Go fleet is most valuable as: (1) a complete,
+tested reference for what a Go target looks like; (2) a source of genuinely good
+ideas already extracted here — the single auth-validation query, the
+events.Bus backplane abstraction, the atomic stat-merge fix; and (3) an
+incremental option, since the shared <code>session</code> table means one service
+could be migrated and measured in isolation. Adopting it should be metrics-driven
+and per-service — exactly the Stage-4 condition that was set.</div>
+
+<h2 id="risk-strengths">Where the risk is low</h2>
+<p>Conversely, several pieces are low-risk and could be adopted on their own
+merits: the <b>doctrine-worker</b> (bit-exact, fully ported, deterministic), the
+<b>recap</b> runner, and the <b>gateway</b> as an auth-enforcing edge in front of
+the existing stack. These have no Socket.IO dependency and clear, tested behavior.</p>

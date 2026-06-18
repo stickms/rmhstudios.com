@@ -1,0 +1,292 @@
+<p class="lead">The <b>doctrine-worker</b> is a headless background scheduler — a faithful
+port of <code>server/doctrine-worker/index.ts</code> — that drives the Doctrine
+Engine's daily content. It owns three independent jobs (puzzle generation, Sahur
+activation, weekly reputation decay) and exposes no client-facing HTTP at all,
+only <code>/health</code> and <code>/metrics</code>. Its defining property is
+<b>bit-exact determinism</b>: the PRNG and seeding logic are ported so that the
+puzzle the worker records for a date is the same puzzle the web app will
+regenerate from that seed on demand.</p>
+
+<div class="stats">
+  <div class="stat"><div class="v">3</div><div class="l">scheduled jobs</div></div>
+  <div class="stat"><div class="v">5+1</div><div class="l">puzzle modes / day</div></div>
+  <div class="stat"><div class="v">0</div><div class="l">client ports</div></div>
+  <div class="stat"><div class="v">bit-exact</div><div class="l">PRNG parity</div></div>
+</div>
+
+<h2 id="doctrine-shape">Service shape: a port with no client surface</h2>
+
+<p>The Node original was a Node process that ran three timers off
+<code>setTimeout</code>/<code>setInterval</code>. The Go port keeps exactly that
+structure but expresses each timer as a goroutine ticker draining into a shared
+stop channel. <code>cmd/doctrine-worker/main.go</code> wires the common
+foundation (config, DB wait-for-reachable, telemetry) and then launches the
+worker; the only HTTP it serves is the operational pair on
+<code>METRICS_ADDR</code>:</p>
+
+<pre><code>metrics := telemetry.New("doctrine-worker")
+go func() {
+    mux := http.NewServeMux()
+    mux.HandleFunc("/health", httpx.Health("doctrine-worker", nil))
+    mux.Handle("/metrics", metrics.Handler())
+    if err := http.ListenAndServe(cfg.MetricsAddr, mux); err != nil {
+        // A bind failure leaves the pod unprobeable (k8s liveness hits
+        // /health here), so fail loudly rather than run blind.
+        logger.Fatal("metrics server", "error", err)
+    }
+}()
+
+w := doctrine.New(database, logger, metrics)
+w.Start(ctx)        // launches goroutine tickers
+httpx.WaitForSignal() // block until SIGINT/SIGTERM
+cancel()
+w.Stop()</code></pre>
+
+<div class="note">There is no listener on a service port. The Doctrine Engine's
+read/write API lives in the web app; this worker only <i>produces</i> rows the
+app consumes. That keeps the worker trivially horizontally-isolated — it is a
+pure side-effecting scheduler.</div>
+
+<h2 id="doctrine-jobs">The three jobs</h2>
+
+<p><code>Worker.Start</code> runs <code>generateDailyPuzzles</code> once
+immediately (the startup catch-up run), then spawns three loop goroutines. Each
+has its own cadence and its own gating rule, faithful to the Node
+<code>startup()</code>:</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart TD
+  S[Start] --> G0[generateDailyPuzzles startup run]
+  S --> ML[runMidnightLoop]
+  S --> SL[runSahurLoop]
+  S --> DL[runDecayLoop]
+  ML -->|next midnight UTC| G1[generateDailyPuzzles]
+  G1 -->|reschedule| ML
+  SL -->|every 60s| C1[checkSahurActivation]
+  C1 -->|local hour eq 3| SL
+  DL -->|every hour| MON{Monday UTC}
+  MON -->|yes| D1[applyReputationDecay]
+  MON -->|no| DL
+  D1 --> DL
+  </div>
+  <figcaption>Figure 12.1: the three scheduled jobs and their gating.</figcaption>
+</figure>
+
+<table>
+  <thead><tr><th>Job</th><th>Cadence</th><th>Gate</th><th>Effect</th></tr></thead>
+  <tbody>
+    <tr><td><code>generateDailyPuzzles</code></td><td>startup + each midnight UTC (self-rescheduling)</td><td>skip modes whose row exists</td><td>insert 5 mode puzzles + SAHUR_SPECIAL for tomorrow</td></tr>
+    <tr><td><code>checkSahurActivation</code></td><td>every 60 s</td><td>per-timezone local hour == 3</td><td>insert one sahur_session per (today, tz)</td></tr>
+    <tr><td><code>applyReputationDecay</code></td><td>every hour</td><td>Mondays only (UTC)</td><td>-5% XP for users inactive &gt; 7 days, +ledger row</td></tr>
+  </tbody>
+</table>
+
+<h3>Self-rescheduling midnight loop</h3>
+
+<p>The Node code recursively re-armed a <code>setTimeout(schedulePuzzles, …)</code>
+at each midnight. The Go port computes the duration to the next UTC midnight,
+arms a one-shot timer, runs the job, then loops to recompute — the same recursive
+self-rescheduling, but leak-free under cancellation:</p>
+
+<pre><code>func (w *Worker) runMidnightLoop(ctx context.Context) {
+    defer w.wg.Done()
+    for {
+        d := millisUntilMidnightUTC(time.Now().UTC())
+        timer := time.NewTimer(d)
+        select {
+        case &lt;-ctx.Done():
+            timer.Stop(); return
+        case &lt;-w.stop:
+            timer.Stop(); return
+        case &lt;-timer.C:
+            w.runJob(ctx, "daily_puzzles", w.generateDailyPuzzles)
+        }
+    }
+}</code></pre>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+sequenceDiagram
+  participant L as runMidnightLoop
+  participant T as Timer
+  participant J as generateDailyPuzzles
+  participant DB as Postgres
+  L->>T: arm for next 00:00 UTC
+  T-->>L: fires at midnight
+  L->>J: run job
+  J->>DB: insert puzzles for tomorrow
+  J-->>L: done
+  L->>T: re-arm for following midnight
+  </div>
+  <figcaption>Figure 12.2: the midnight reschedule cycle.</figcaption>
+</figure>
+
+<p>The decay loop is the inverse: it ticks hourly but the Monday gate lives in
+the scheduler, not the job, matching the Node
+<code>setInterval(... if (isMonday()) ..., 3_600_000)</code>:</p>
+
+<pre><code>case &lt;-ticker.C:
+    if time.Now().UTC().Weekday() == time.Monday {
+        w.runJob(ctx, "reputation_decay", w.applyReputationDecay)
+    }</code></pre>
+
+<h2 id="doctrine-determinism">Determinism highlight: a bit-exact PRNG port</h2>
+
+<p>This is the heart of the worker and the reason the port had to be exact. The
+web app and the worker must agree on puzzle content: the worker stores a
+<code>seed</code>, and the app later regenerates the full puzzle (board layout,
+clue ordering, etc.) by feeding that same seed into the <i>same</i> PRNG. If the
+Go PRNG diverged from the original Node <code>mulberry32</code> by even one bit,
+the worker's stored seed would reconstruct a different puzzle in the browser.</p>
+
+<p>The challenge is that JavaScript's number semantics — <code>| 0</code>
+truncation, <code>Math.imul</code> signed 32-bit multiply, <code>&gt;&gt;&gt;</code>
+unsigned shift — must be reproduced in Go's typed integer world. The port does
+this with deliberate <code>int32</code>/<code>uint32</code> conversions:</p>
+
+<pre><code>func Mulberry32(seed int) func() float64 {
+    s := int32(seed) // `seed | 0` truncates to signed 32-bit.
+    return func() float64 {
+        s = s + int32(0x6D2B79F5)           // wrapping 32-bit add
+        us := uint32(s)
+        // t = Math.imul(s ^ (s >>> 15), 1 | s)
+        t := imul(int32(us^(us>>15)), int32(uint32(1)|us))
+        // t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+        ut := uint32(t)
+        t = (t + imul(int32(ut^(ut>>7)), int32(uint32(61)|ut))) ^ t
+        // return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+        ut = uint32(t)
+        return float64(ut^(ut>>14)) / 4294967296.0
+    }
+}
+
+func imul(a, b int32) int32 { return int32(uint32(a) * uint32(b)) }</code></pre>
+
+<p>The seed itself comes from a string hash over
+<code>"&lt;date&gt;:&lt;mode&gt;:doctrine"</code> using the classic
+<code>(hash &lt;&lt; 5) - hash + c</code> rolling hash with 32-bit wrap, then
+<code>Math.abs</code>. Mode names are lowercased at the call site to match the
+Node <code>mode.toLowerCase()</code>:</p>
+
+<pre><code>func GetSeedForDate(date, mode string) int {
+    var hash int32
+    input := date + ":" + mode + ":doctrine"
+    for i := 0; i &lt; len(input); i++ {
+        hash = (hash&lt;&lt;5 - hash + int32(input[i]))
+    }
+    if hash &lt; 0 {
+        return int(-int64(hash)) // guard against MinInt32
+    }
+    return int(hash)
+}</code></pre>
+
+<div class="ok"><b>Golden-vector tested.</b> <code>seed_test.go</code> locks both
+functions to reference values produced by running the actual Node code. For
+<code>2026-06-19</code> the seeds must be <code>alibi=489762987</code>,
+<code>spectrum=1864840003</code>, <code>outcast=1313135021</code>,
+<code>chainlink=49484481</code>, <code>impostor=1589193561</code>,
+<code>sahur_special=1827053367</code>; <code>Mulberry32(0)</code>'s first three
+draws must equal <code>0.26642920868471265, 0.00032974570058286,
+0.22327202744781971</code> (tolerance <code>1e-15</code>, i.e. float-literal
+rounding only). These are not approximate checks — the integer arithmetic is
+identical, so the outputs are identical.</div>
+
+<h3>Difficulty by weekday</h3>
+
+<p>Difficulty is a fixed map over the UTC weekday (0 = Sunday, matching JS
+<code>Date.getUTCDay</code>), with a <code>?? 3</code> default. SAHUR_SPECIAL
+derives from the base via <code>min(5, base+1)</code>:</p>
+
+<pre><code>func DifficultyForWeekday(weekday int) int {
+    switch weekday {
+    case 1: return 1   // Mon
+    case 2: return 2   // Tue
+    case 3: return 3   // Wed
+    case 4: return 3   // Thu
+    case 5: return 4   // Fri
+    case 6: return 4   // Sat
+    case 0: return 5   // Sun
+    default: return 3
+    }
+}
+
+func SahurDifficulty(base int) int { return int(math.Min(5, float64(base+1))) }</code></pre>
+
+<p>The five regular modes are an ordered set;
+<code>SAHUR_SPECIAL</code> is intentionally generated separately (it is not in
+the <code>Modes</code> slice), exactly as in the source:</p>
+
+<pre><code>var Modes = []string{"ALIBI", "SPECTRUM", "OUTCAST", "CHAINLINK", "IMPOSTOR"}
+const SahurSpecialMode = "SAHUR_SPECIAL"</code></pre>
+
+<p>Each generation run targets <i>tomorrow</i> (now + 1 day, sliced to
+<code>YYYY-MM-DD</code>), computes one difficulty for the day, and for each mode
+checks existence before inserting — so re-running (startup after a restart) is
+idempotent. The persisted JSONB mirrors the Node shape exactly:
+<code>{ "generated": true, "seed": &lt;seed&gt; }</code>.</p>
+
+<h2 id="doctrine-sahur">Per-timezone Sahur activation</h2>
+
+<p>Every 60 seconds, <code>checkSahurActivation</code> pulls the distinct
+non-null <code>doctrineTimezone</code> values from the <code>user</code> table
+and, for each timezone whose <i>local</i> hour is currently 3 AM, opens a
+<code>sahur_session</code> for that (today, timezone) pair if one does not exist.
+Unknown timezones return <code>false</code>, matching the Node try/catch
+fallback:</p>
+
+<pre><code>func isSahurHour(timezone string, t time.Time) bool {
+    loc, err := time.LoadLocation(timezone)
+    if err != nil {
+        return false
+    }
+    return t.In(loc).Hour() == 3
+}</code></pre>
+
+<h2 id="doctrine-decay">Weekly reputation decay</h2>
+
+<p>On Mondays, decay finds reputations with <code>lastActiveAt &lt; now-7d</code>
+and <code>totalXp &gt; 0</code>, multiplies XP by <code>1 - 0.05</code> (Go integer
+truncation equals <code>Math.floor</code> for non-negatives), updates the row,
+and writes a <code>WEEKLY_DECAY</code> ledger entry recording the (negative)
+delta:</p>
+
+<pre><code>newXp := int(float64(rep.totalXp) * (1 - weeklyDecayRate))
+delta := newXp - rep.totalXp
+// UPDATE doctrine_reputation SET totalXp ...
+// INSERT doctrine_reputation_ledger (action=WEEKLY_DECAY, xpDelta=delta, ...)</code></pre>
+
+<div class="scope"><b>Scope — UTC vs local cutoff.</b> The Node code computed
+<code>oneWeekAgo</code> with a local <code>Date</code>. The Go port deliberately
+uses UTC (<code>time.Now().UTC().AddDate(0,0,-7)</code>) so the whole worker is
+consistent with its UTC-based scheduling. In practice this only shifts the
+7-day boundary by the host's offset; for a worker that runs in a UTC container
+the behavior is identical.</div>
+
+<h2 id="doctrine-tables">Tables written</h2>
+
+<table>
+  <thead><tr><th>Table</th><th>Key columns</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td><code>doctrine_puzzle</code></td><td><code>id</code>, <code>mode</code>, <code>date</code>, <code>seed</code>, <code>data</code> (JSONB), <code>difficulty</code>, <code>resetsAt</code>, <code>isSahur</code>, <code>createdAt</code></td><td>uniqueness enforced on (mode, date) via existence check before insert</td></tr>
+    <tr><td><code>doctrine_sahur_session</code></td><td><code>id</code>, <code>dateKey</code>, <code>timezone</code>, <code>activatedAt</code>, <code>participantCount</code></td><td>one per (dateKey, timezone); count defaults to 0</td></tr>
+    <tr><td><code>doctrine_reputation</code></td><td><code>id</code>, <code>totalXp</code>, <code>lastActiveAt</code></td><td>read for decay candidates, XP updated in place</td></tr>
+    <tr><td><code>doctrine_reputation_ledger</code></td><td><code>id</code>, <code>reputationId</code>, <code>action</code>, <code>xpDelta</code>, <code>reason</code>, <code>metadata</code>, <code>createdAt</code></td><td><code>metadata</code> left NULL for decay rows</td></tr>
+  </tbody>
+</table>
+
+<div class="scope"><b>Scope — UUID primary keys vs cuid.</b> The Prisma schema
+issued <code>cuid()</code> IDs. The Go worker generates
+<code>uuid.NewString()</code> for every inserted row. Both are opaque,
+collision-resistant string PKs and the columns are plain text, so nothing in the
+schema or the consuming app depends on the format — but it is an honest
+substitution worth noting: rows created by the Go worker are visibly UUIDs,
+rows created by the legacy Node path are cuids.</div>
+
+<h2 id="doctrine-observability">Observability</h2>
+
+<p>Every job run increments <code>JobRuns{job, ok|error}</code> via the
+<code>runJob</code> wrapper (replacing the Node <code>.catch(console.error)</code>
+pattern), and every query increments <code>DBQueries{ok|error}</code>. Combined
+with <code>/health</code>, this gives k8s liveness and Prometheus enough to alert
+on a stalled scheduler even though the worker has no request traffic of its own.</p>

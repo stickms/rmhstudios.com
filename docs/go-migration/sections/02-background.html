@@ -1,0 +1,85 @@
+<p class="lead">To understand this migration you must understand what came immediately
+before it. PR&nbsp;#121 moved the platform's <i>run layer</i> from Docker Compose
+to single-node k3s + Helm, with Terraform for DNS — and, in the same breath,
+recorded a deliberate decision against the very thing this branch now does.</p>
+
+<h2 id="bg-before">The starting point: a process-split Node monolith</h2>
+<p>rmhstudios.com is a TanStack Start (React SSR) application backed by Prisma on
+PostgreSQL and Better&nbsp;Auth for identity. Beyond the web app, the system was
+already split into eight long-running Node processes, orchestrated by Docker
+Compose from a single shared image:</p>
+<table>
+<thead><tr><th>Process</th><th>Responsibility</th><th>Transport</th></tr></thead>
+<tbody>
+<tr><td><code>web</code></td><td>React SSR + ~130 API routes</td><td>HTTP</td></tr>
+<tr><td><code>socket</code></td><td>All mini-games &amp; realtime apps</td><td>Socket.IO</td></tr>
+<tr><td><code>rmhbox</code></td><td>Jackbox-style party games</td><td>Socket.IO</td></tr>
+<tr><td><code>rmhtube</code></td><td>Synchronized watch parties</td><td>Socket.IO</td></tr>
+<tr><td><code>recap</code></td><td>Lights Out daily recap → Discord</td><td>HTTP + Discord</td></tr>
+<tr><td><code>discord-bot</code></td><td>Slash commands, AI chat, RMHBot editor</td><td>Discord gateway</td></tr>
+<tr><td><code>doctrine-worker</code></td><td>Puzzle generation, decay, Sahur</td><td>cron-like worker</td></tr>
+<tr><td><code>vibe-worker</code></td><td>Headless-Chromium thumbnails</td><td>worker</td></tr>
+</tbody>
+</table>
+<p>(rmhmusic ran <i>inside</i> the socket process under an event-name prefix.) This
+process split is the single most important precondition for the migration: the
+services were already decoupled, communicated over well-defined transports, and —
+critically — already authenticated by querying the shared <code>session</code>
+table with raw SQL rather than going through the Better&nbsp;Auth library.</p>
+
+<h2 id="bg-pr121">What PR #121 did</h2>
+<p>PR&nbsp;#121 introduced a declarative run layer: a Helm chart rendering eight
+Deployments from one image, a Prisma migration <code>pre-upgrade</code> hook with
+atomic auto-rollback, a Terraform DNS module, and a registry switch wiring the
+path to multi-node. It kept the Compose path intact as a reversible fallback and
+was verified end-to-end on a real (kind) cluster. Its scaling roadmap named the
+genuinely hard next steps: a Redis backplane + sticky sessions for realtime
+horizontal scaling (Stage&nbsp;1), multi-node + autoscaling + observability
+(Stage&nbsp;2), and multi-region (Stage&nbsp;3).</p>
+
+<h2 id="bg-adr">The architecture decision this branch overrides</h2>
+<div class="warn"><b>From PR&nbsp;#121, verbatim in spirit:</b> "We explicitly chose
+<i>not</i> to rewrite the backend in Go microservices. The app is already
+process-split into 8 services; the web tier is React SSR (must stay JS) and the
+data/auth layers are Prisma + Better&nbsp;Auth (no Go equivalents). A wholesale
+rewrite is the largest possible source of tech debt." PR&nbsp;#121 placed any Go
+adoption at <b>Stage&nbsp;4</b> — "only if metrics demand," and only as
+incremental per-service extraction.</p>
+<p>This branch is that Stage&nbsp;4 — executed in full, at once, on request, and on
+an isolated branch where it can be evaluated without endangering production. The
+honest framing is maintained throughout: this is an exploration of the complete
+Go target, not a claim that the rewrite was necessary. The value it delivers is
+real regardless: a working, tested reference implementation of the Go fleet, a
+Helm chart that slots into PR&nbsp;#121's infrastructure, and — because the Go
+services share the Postgres <code>session</code> table — a design that could in
+principle be adopted one service at a time rather than big-bang.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart LR
+  subgraph S0["PR #121 (Stage 0)"]
+    A["Docker Compose to k3s + Helm"]
+  end
+  subgraph S123["Stages 1-3 (roadmap)"]
+    B["Redis backplane + sticky"]
+    C["multi-node + HPA + obs"]
+    D["multi-region + replicas"]
+  end
+  subgraph S4["Stage 4 (THIS branch)"]
+    E["Go microservices fleet"]
+  end
+  A --> B --> C --> D
+  A -. overridden here .-> E
+  E --- B
+  </div>
+  <figcaption>Figure 2.1 — Where this work sits relative to PR #121's recorded roadmap. The Go fleet adopts the Stage-1 Redis backplane directly as its scaling primitive.</figcaption>
+</figure>
+
+<h2 id="bg-reconcile">How the two reconcile</h2>
+<p>Rather than competing with PR&nbsp;#121, the Go fleet is designed to live beside
+it. The Go Helm chart (<code>rmhstudios-go</code>) reuses PR&nbsp;#121's
+<code>rmhstudios-secrets</code> Secret and <code>rmhstudios-data</code> PVC, reads
+the same <code>.env.production</code>, and routes all traffic through a single
+gateway that proxies anything it does not own back to the still-JavaScript
+React SSR <code>web</code> tier. The Redis backplane PR&nbsp;#121 deferred to
+Stage&nbsp;1 is implemented here as the realtime services' fan-out primitive.</p>

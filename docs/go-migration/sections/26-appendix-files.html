@@ -1,0 +1,221 @@
+<p class="lead">A complete file inventory of the <code>go-services/</code> module plus the
+deploy artifacts that ship it. Everything here is enumerated directly from the
+tree: 85 Go source files across 28 packages, organized as a small shared
+<code>pkg/</code> toolkit, nine <code>cmd/</code> entrypoints, one
+<code>internal/&lt;svc&gt;</code> implementation package per service, an
+end-to-end suite, and a Helm chart + deploy script that reuse PR #121's
+conventions. Line counts are approximate (from <code>wc -l</code>) and round to
+the source as committed.</p>
+
+<div class="stats">
+  <div class="stat"><div class="v">85</div><div class="l">.go files</div></div>
+  <div class="stat"><div class="v">~18.5k</div><div class="l">LOC (Go)</div></div>
+  <div class="stat"><div class="v">28</div><div class="l">packages</div></div>
+  <div class="stat"><div class="v">13</div><div class="l">_test.go files</div></div>
+  <div class="stat"><div class="v">9</div><div class="l">cmd entrypoints</div></div>
+</div>
+
+<h2 id="files-pkg">Shared toolkit — <code>go-services/pkg/</code></h2>
+<p>The cross-service library every binary links against: config, DB access,
+auth, the realtime WebSocket framework, the Redis backplane, HTTP plumbing,
+logging, rate limiting and metrics. This is where the "we don't need the JS
+libraries" decisions live (notably <code>pkg/auth</code> validating Better Auth
+sessions straight against Postgres, and <code>pkg/realtime</code> replacing
+Socket.IO).</p>
+<table>
+  <thead><tr><th>File</th><th>~LOC</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td>pkg/auth/auth.go</td><td>110</td><td>Validates Better Auth sessions directly against Postgres into trusted identity.</td></tr>
+    <tr><td>pkg/config/config.go</td><td>106</td><td>Env-driven config: <code>LoadCommon</code> plus typed <code>Get{String,Int,Bool,Duration,CSV}</code> helpers.</td></tr>
+    <tr><td>pkg/db/db.go</td><td>78</td><td>Shared pgxpool access layer; <code>Open</code> / <code>WaitForReachable</code> for workers.</td></tr>
+    <tr><td>pkg/db/models.go</td><td>163</td><td>Typed models for the subset of the Prisma schema the Go fleet reads/writes.</td></tr>
+    <tr><td>pkg/events/events.go</td><td>152</td><td>Cross-instance pub/sub backplane (Redis adapter equivalent) for horizontal scaling.</td></tr>
+    <tr><td>pkg/httpx/httpx.go</td><td>116</td><td>Shared HTTP building blocks: <code>/health</code> handler, graceful server, signal wait.</td></tr>
+    <tr><td>pkg/log/log.go</td><td>66</td><td>slog wrapper reproducing the Node logger's JSON shape (level/service/timestamp).</td></tr>
+    <tr><td>pkg/ratelimit/ratelimit.go</td><td>120</td><td>In-memory sliding-window limiter keyed by (connection, event), with GC.</td></tr>
+    <tr><td>pkg/ratelimit/ratelimit_test.go</td><td>56</td><td>Sliding-window limiter tests.</td></tr>
+    <tr><td>pkg/realtime/hub.go</td><td>272</td><td>WebSocket hub: connection accept, origin/auth gate, handler dispatch, rooms.</td></tr>
+    <tr><td>pkg/realtime/conn.go</td><td>190</td><td>Per-connection read/write pumps and lifecycle.</td></tr>
+    <tr><td>pkg/realtime/room.go</td><td>97</td><td>Room membership and sequence-numbered broadcast (<code>BroadcastSeq</code>).</td></tr>
+    <tr><td>pkg/realtime/grace.go</td><td>60</td><td>Disconnect grace period for transient drops / reconnects.</td></tr>
+    <tr><td>pkg/realtime/protocol.go</td><td>76</td><td>The JSON <code>Envelope{event,payload,seq,ts}</code> wire frame and codec.</td></tr>
+    <tr><td>pkg/realtime/realtime_test.go</td><td>93</td><td>Hub/envelope protocol tests.</td></tr>
+    <tr><td>pkg/telemetry/telemetry.go</td><td>55</td><td>Prometheus registry + standard instruments and <code>/metrics</code> handler.</td></tr>
+  </tbody>
+</table>
+
+<h2 id="files-cmd">Entrypoints — <code>go-services/cmd/</code></h2>
+<p>One <code>main.go</code> per binary. Realtime services wire a
+<code>realtime.Hub</code> and serve a WS path; workers expose only
+<code>/health</code> + <code>/metrics</code> on <code>METRICS_ADDR</code>.</p>
+<table>
+  <thead><tr><th>File</th><th>~LOC</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td>cmd/gateway/main.go</td><td>65</td><td>Edge/BFF on PORT_WEB (7005): auth middleware + reverse proxy + static.</td></tr>
+    <tr><td>cmd/gamehub/main.go</td><td>78</td><td>Unified games socket server, WS <code>/socket/</code> on SOCKET_PORT (7001), soft auth.</td></tr>
+    <tr><td>cmd/rmhmusic/main.go</td><td>79</td><td>Synced music rooms, WS <code>/rmhmusic-ws/</code> (7002), auth required, DB mandatory.</td></tr>
+    <tr><td>cmd/rmhtube/main.go</td><td>90</td><td>Watch-party server, WS <code>/rmhtube-ws/</code> (7003); restores rooms from DB on boot.</td></tr>
+    <tr><td>cmd/rmhbox/main.go</td><td>81</td><td>Jackbox-style party server, WS <code>/rmhbox-ws/</code> (7676); DB optional.</td></tr>
+    <tr><td>cmd/recap/main.go</td><td>95</td><td>Lights Out daily-recap scheduler + Discord presence on RECAP_PORT (7004).</td></tr>
+    <tr><td>cmd/doctrine-worker/main.go</td><td>55</td><td>Doctrine Engine scheduler worker (no client HTTP).</td></tr>
+    <tr><td>cmd/vibe-worker/main.go</td><td>76</td><td>Renders vibe-page thumbnails via headless Chromium (no client HTTP).</td></tr>
+    <tr><td>cmd/discord-bot/main.go</td><td>90</td><td>Standalone Discord gateway bot (/chat, /rmhbot); no client HTTP.</td></tr>
+  </tbody>
+</table>
+
+<h2 id="files-internal">Service implementations — <code>go-services/internal/</code></h2>
+
+<h3>internal/gateway/</h3>
+<table>
+  <thead><tr><th>File</th><th>~LOC</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td>gateway/proxy.go</td><td>196</td><td>Longest-prefix router + WS-passthrough reverse proxy; upstream config.</td></tr>
+    <tr><td>gateway/auth_middleware.go</td><td>75</td><td>Validates the session and injects trusted identity headers for upstreams.</td></tr>
+    <tr><td>gateway/gateway_test.go</td><td>160</td><td>Routing/prefix-selection tests.</td></tr>
+  </tbody>
+</table>
+
+<h3>internal/gamehub/</h3>
+<table>
+  <thead><tr><th>File</th><th>~LOC</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td>gamehub/manager.go</td><td>106</td><td>Hub registration and per-game wiring; RelayGroup TODO registrations.</td></tr>
+    <tr><td>gamehub/relay.go</td><td>247</td><td>Generic host-authoritative 1v1 relay framework + connRegistry.</td></tr>
+    <tr><td>gamehub/kk.go</td><td>334</td><td>Kowloon Knockout: faithful standalone port with rematch handshake.</td></tr>
+    <tr><td>gamehub/kk_test.go</td><td>232</td><td>Kowloon Knockout relay/handshake tests.</td></tr>
+  </tbody>
+</table>
+
+<h3>internal/rmhmusic/</h3>
+<table>
+  <thead><tr><th>File</th><th>~LOC</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td>rmhmusic/manager.go</td><td>166</td><td>Service manager: hub handler registration and lifecycle.</td></tr>
+    <tr><td>rmhmusic/room.go</td><td>540</td><td>Room model: membership, host control, snapshots, seq mutations.</td></tr>
+    <tr><td>rmhmusic/queue.go</td><td>133</td><td>Shared queue add/remove/reorder.</td></tr>
+    <tr><td>rmhmusic/sync.go</td><td>183</td><td>Playback sync (play/pause/seek) and heartbeat.</td></tr>
+    <tr><td>rmhmusic/chat.go</td><td>47</td><td>Room chat handling.</td></tr>
+    <tr><td>rmhmusic/events.go</td><td>67</td><td>Event-name constants (rmhmusic:*) + action types and tunables.</td></tr>
+    <tr><td>rmhmusic/repo.go</td><td>59</td><td>Postgres repo for the room row.</td></tr>
+    <tr><td>rmhmusic/types.go</td><td>104</td><td>Payload/state structs.</td></tr>
+    <tr><td>rmhmusic/util.go</td><td>55</td><td>Room-code generation and helpers.</td></tr>
+    <tr><td>rmhmusic/rmhmusic_test.go</td><td>150</td><td>Room/queue/sync tests.</td></tr>
+  </tbody>
+</table>
+
+<h3>internal/rmhtube/</h3>
+<table>
+  <thead><tr><th>File</th><th>~LOC</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td>rmhtube/manager.go</td><td>231</td><td>Manager: registration, lifecycle, DB room restore.</td></tr>
+    <tr><td>rmhtube/room.go</td><td>1038</td><td>Room core: membership, roles, bans, settings, invites, leadership.</td></tr>
+    <tr><td>rmhtube/queue.go</td><td>453</td><td>Media queue: add/remove/reorder/play/skip/vote/shuffle.</td></tr>
+    <tr><td>rmhtube/sync.go</td><td>189</td><td>Video sync: host state, play/pause/seek, speed.</td></tr>
+    <tr><td>rmhtube/snapshot.go</td><td>189</td><td>Room state snapshot assembly.</td></tr>
+    <tr><td>rmhtube/chat.go</td><td>223</td><td>Chat, typing indicators, reactions, pins.</td></tr>
+    <tr><td>rmhtube/events.go</td><td>93</td><td>Event-name constants (rmhtube:*) C2S/S2C maps.</td></tr>
+    <tr><td>rmhtube/repo.go</td><td>375</td><td>Postgres repo (pgx) + NopRepo for in-memory mode.</td></tr>
+    <tr><td>rmhtube/types.go</td><td>131</td><td>Payload/state structs.</td></tr>
+    <tr><td>rmhtube/utils.go</td><td>99</td><td>Helpers (codes, validation).</td></tr>
+    <tr><td>rmhtube/rmhtube_test.go</td><td>228</td><td>Room/queue/sync tests.</td></tr>
+  </tbody>
+</table>
+
+<h3>internal/rmhbox/</h3>
+<table>
+  <thead><tr><th>File</th><th>~LOC</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td>rmhbox/coordinator.go</td><td>980</td><td>Game coordinator: settings, preload, countdown, rounds, snapshots, results.</td></tr>
+    <tr><td>rmhbox/lobby.go</td><td>789</td><td>Lobby core: membership, host, snapshots, disband, game action relay.</td></tr>
+    <tr><td>rmhbox/minigames.go</td><td>735</td><td>Concrete minigame implementations.</td></tr>
+    <tr><td>rmhbox/lobby_ops.go</td><td>535</td><td>Lobby operations: kick, browse, session results.</td></tr>
+    <tr><td>rmhbox/manager.go</td><td>405</td><td>Manager: all rmhbox:* handler registration + leaderboard fetch.</td></tr>
+    <tr><td>rmhbox/minigame.go</td><td>348</td><td>Minigame interface and shared game-action plumbing.</td></tr>
+    <tr><td>rmhbox/repo.go</td><td>305</td><td>Postgres persistence (match results, leaderboard).</td></tr>
+    <tr><td>rmhbox/types.go</td><td>213</td><td>Lobby/player/spectator/game structs.</td></tr>
+    <tr><td>rmhbox/statesync.go</td><td>207</td><td>Lobby state snapshot synchronization.</td></tr>
+    <tr><td>rmhbox/registry.go</td><td>66</td><td>Static minigame metadata registry.</td></tr>
+    <tr><td>rmhbox/rmhbox_test.go</td><td>404</td><td>Lobby/coordinator/minigame tests.</td></tr>
+  </tbody>
+</table>
+
+<h3>internal/recap/, internal/doctrine/, internal/vibeworker/, internal/discordbot/</h3>
+<table>
+  <thead><tr><th>File</th><th>~LOC</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td>recap/runner.go</td><td>300</td><td>Scheduler loop: posts due daily recaps to Discord every 5 min.</td></tr>
+    <tr><td>recap/lightsout.go</td><td>430</td><td>Lights Out puzzle helpers (seed/shapes) for the recap embed.</td></tr>
+    <tr><td>recap/recap.go</td><td>176</td><td>Recap construction / Discord message assembly.</td></tr>
+    <tr><td>recap/recap_test.go</td><td>245</td><td>Recap/runner tests.</td></tr>
+    <tr><td>doctrine/worker.go</td><td>429</td><td>Doctrine scheduler: puzzle gen, Sahur activation, reputation decay.</td></tr>
+    <tr><td>doctrine/seed.go</td><td>115</td><td>Deterministic seeding for daily puzzle generation.</td></tr>
+    <tr><td>doctrine/schedule.go</td><td>40</td><td>Tick/schedule helpers.</td></tr>
+    <tr><td>doctrine/seed_test.go</td><td>103</td><td>Seed determinism tests.</td></tr>
+    <tr><td>vibeworker/worker.go</td><td>192</td><td>Poll loop for thumbnailStale vibe pages with optimistic concurrency.</td></tr>
+    <tr><td>vibeworker/capture.go</td><td>149</td><td>chromedp headless-Chromium HTML render + downscale to PNG.</td></tr>
+    <tr><td>vibeworker/repo.go</td><td>88</td><td>Postgres repo for vibe_page rows.</td></tr>
+    <tr><td>vibeworker/worker_test.go</td><td>165</td><td>Worker poll/concurrency tests.</td></tr>
+    <tr><td>discordbot/rmhbot.go</td><td>853</td><td>SCAFFOLDED /rmhbot agentic website editor (git-ops, PR creation).</td></tr>
+    <tr><td>discordbot/chat.go</td><td>367</td><td>/chat AI persona ("Alex Wu") with DB-backed session persistence.</td></tr>
+    <tr><td>discordbot/bot.go</td><td>288</td><td>Discord gateway session lifecycle and command registration.</td></tr>
+    <tr><td>discordbot/deepseek.go</td><td>192</td><td>DeepSeek chat-completions client.</td></tr>
+    <tr><td>discordbot/interactions.go</td><td>98</td><td>Slash-command interaction routing.</td></tr>
+    <tr><td>discordbot/discordbot_test.go</td><td>217</td><td>Bot/chat tests.</td></tr>
+  </tbody>
+</table>
+<div class="scope"><strong>Honest scope:</strong> <code>discordbot/rmhbot.go</code>
+is the acknowledged partial-scope piece — the agentic editor's git/JS-toolchain
+steps are stubbed and depend on a real <code>GITHUB_TOKEN</code>. In
+<code>gamehub</code>, only Kowloon Knockout is ported verbatim; the remaining
+games are left as compiling RelayGroup TODO registrations in
+<code>manager.go</code>.</div>
+
+<h2 id="files-e2e">End-to-end suite — <code>go-services/e2e/</code></h2>
+<p>Build-tagged (<code>//go:build e2e</code>) tests that dial the real service
+binaries over WebSockets and assert actual protocol flows.</p>
+<table>
+  <thead><tr><th>File</th><th>~LOC</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td>e2e/harness.go</td><td>173</td><td>Spawns binaries, manages a test Postgres, dials WS clients.</td></tr>
+    <tr><td>e2e/gamehub_e2e_test.go</td><td>103</td><td>Live Kowloon Knockout create/join/relay flow.</td></tr>
+    <tr><td>e2e/auth_rmhtube_e2e_test.go</td><td>158</td><td>Gateway auth + rmhtube room flow end to end.</td></tr>
+  </tbody>
+</table>
+
+<h2 id="files-build">Module &amp; build files — <code>go-services/</code> root</h2>
+<table>
+  <thead><tr><th>File</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td>go.mod / go.sum</td><td>Module <code>github.com/rmhstudios/rmh-go</code> and pinned dependencies.</td></tr>
+    <tr><td>Dockerfile</td><td>Multi-stage build; <code>--build-arg SERVICE</code> selects the binary, <code>EXTRA_PKGS</code> adds runtime deps.</td></tr>
+    <tr><td>.dockerignore</td><td>Build-context exclusions.</td></tr>
+    <tr><td>docker-compose.go.yml</td><td>Local fleet compose for the Go services.</td></tr>
+    <tr><td>Makefile</td><td>Build/test/lint targets.</td></tr>
+    <tr><td>README.md / FOUNDATION.md</td><td>Module overview and the foundational design/skeleton doc.</td></tr>
+    <tr><td>scripts/e2e/run.sh</td><td>Runs the build-tagged e2e suite.</td></tr>
+    <tr><td>scripts/e2e/schema.sql</td><td>Minimal schema for the e2e test database.</td></tr>
+  </tbody>
+</table>
+
+<h2 id="files-deploy">Deploy — <code>deploy/</code> (repo root)</h2>
+<p>The Helm chart <code>deploy/helm/rmhstudios-go</code> (Chart <code>0.1.0</code>,
+appVersion <code>1.0.0</code>) deliberately mirrors PR #121's rmhstudios chart:
+a generic Deployment over a services map, Traefik ingress, and the reused
+<code>rmhstudios-secrets</code> Secret. Its one departure is one image per
+service (each Go binary is a separate static image).</p>
+<table>
+  <thead><tr><th>File</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td>deploy/deploy-go.sh</td><td>Build one image per service, import to k3s or push to registry, then <code>helm upgrade --install --atomic --wait</code>.</td></tr>
+    <tr><td>deploy/helm/rmhstudios-go/Chart.yaml</td><td>Chart metadata (Stage-4 Go fleet alongside the SSR web app).</td></tr>
+    <tr><td>deploy/helm/rmhstudios-go/values.yaml</td><td>Defaults: per-service ports/paths/replicas, redis, secret name, PVC.</td></tr>
+    <tr><td>deploy/helm/rmhstudios-go/values-prod.yaml</td><td>Prod overrides: ingress on, scaled realtime replicas, image SHA placeholder.</td></tr>
+    <tr><td>deploy/helm/rmhstudios-go/templates/deployment.yaml</td><td>Generic Deployment rendered per service from the services map.</td></tr>
+    <tr><td>deploy/helm/rmhstudios-go/templates/service.yaml</td><td>ClusterIP Service per non-worker entry.</td></tr>
+    <tr><td>deploy/helm/rmhstudios-go/templates/ingress.yaml</td><td>Traefik ingress routing path prefixes to services.</td></tr>
+    <tr><td>deploy/helm/rmhstudios-go/templates/redis.yaml</td><td>Redis backplane Deployment + Service (pkg/events).</td></tr>
+    <tr><td>deploy/helm/rmhstudios-go/templates/_helpers.tpl</td><td>Template helpers (names, labels, image ref).</td></tr>
+    <tr><td>deploy/helm/rmhstudios-go/templates/NOTES.txt</td><td>Post-install notes.</td></tr>
+    <tr><td>deploy/helm/rmhstudios-go/.helmignore</td><td>Packaging exclusions.</td></tr>
+  </tbody>
+</table>

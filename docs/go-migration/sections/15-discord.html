@@ -1,0 +1,502 @@
+<p class="lead">The <code>discord-bot</code> service is the Go port of
+<code>server/discord-bot/*.ts</code>: a long-running Discord <em>gateway</em> bot
+(no client-facing HTTP) built on <code>bwmarrin/discordgo</code>. It powers two
+features — the <code>/chat</code> AI persona ("Alex Wu"), which is faithfully
+ported end-to-end, and the <code>/rmhbot</code> agentic website editor, which is
+ported as an honest <em>scaffold</em>. This section documents the gateway
+lifecycle, command registration, interaction routing, the DeepSeek client, the
+chat embed-packing logic, the rmhbot agentic tool loop, and the security
+guards — quoting the real code throughout.</p>
+
+<div class="stats">
+  <div class="stat"><div class="v">1</div><div class="l">gateway intent (Guilds)</div></div>
+  <div class="stat"><div class="v">4</div><div class="l">slash commands</div></div>
+  <div class="stat"><div class="v">6000</div><div class="l">char embed budget</div></div>
+  <div class="stat"><div class="v">40</div><div class="l">max tool rounds</div></div>
+  <div class="stat"><div class="v">5 min</div><div class="l">session auto-unlock</div></div>
+  <div class="stat"><div class="v">9</div><div class="l">unit tests</div></div>
+</div>
+
+<div class="scope">
+  <b>Scope at a glance.</b> <code>/chat</code> (persona, DeepSeek client, embed
+  packing, DB session persistence) is a <b>faithful 1:1 port</b>.
+  <code>/rmhbot</code> is <b>deliberately scaffolded</b>: its command/interaction
+  structure, session model, locking, path-traversal &amp; safety guards, git
+  operations and tool-loop skeleton are real and tested, but
+  <code>run_typecheck</code>, <code>createPullRequest</code>,
+  <code>search_code</code>, and attachment ingestion are explicit stubs. The
+  separation is called out inline below and never hidden.
+</div>
+
+<h2 id="discord-gateway">Gateway lifecycle &amp; bootstrap</h2>
+
+<p>Unlike every other service in this report, the bot exposes <em>no</em> client
+port. It connects outbound to Discord's gateway and serves only
+<code>/health</code> and <code>/metrics</code> on <code>MetricsAddr</code>. The
+<code>main()</code> entrypoint (<code>cmd/discord-bot/main.go</code>) follows the
+FOUNDATION worker skeleton: resolve config from env, wait for the database,
+start the metrics server, construct services, then block on
+<code>Run(ctx)</code> until a signal cancels the context.</p>
+
+<pre><code>// cmd/discord-bot/main.go — metrics-only HTTP; bind failure is fatal.
+go func() {
+    mux := http.NewServeMux()
+    mux.HandleFunc("/health", httpx.Health("discord-bot", nil))
+    mux.Handle("/metrics", metrics.Handler())
+    if err := http.ListenAndServe(cfg.MetricsAddr, mux); err != nil {
+        logger.Fatal("metrics server", "error", err) // unprobeable => k8s restart
+    }
+}()
+
+botCfg := discordbot.Config{
+    Token:       firstNonEmpty(config.GetString("DISCORD_BOT_TOKEN", ""),
+                               config.GetString("DISCORD_ACTIVITY_BOT_TOKEN", "")),
+    DevGuildID:  config.GetString("DISCORD_DEV_GUILD_ID", ""),
+    OwnerID:     config.GetString("OWNER_ID", ""),
+    DeepSeekKey: config.GetString("DEEPSEEK_API_KEY", ""),
+    DeepSeekMod: config.GetString("DEEPSEEK_MODEL", "deepseek-chat"),
+    WorktreesDir: config.GetString("RMHBOT_WORKTREES_DIR", ""),
+    GithubToken:  config.GetString("GITHUB_TOKEN", ""),
+}</code></pre>
+
+<p>The token resolution mirrors the TS code: <code>DISCORD_BOT_TOKEN</code> wins,
+falling back to <code>DISCORD_ACTIVITY_BOT_TOKEN</code>. The DB is used for
+<code>/chat</code> session persistence; the chat handler tolerates a nil DB but
+<code>main</code> still waits for reachability like the other workers.</p>
+
+<p>The session is created with the <b>Guilds intent only</b> — the bot reacts to
+interactions (slash commands, buttons, modals), which do not require message-content
+or member privileged intents:</p>
+
+<pre><code>// bot.go — New()
+session, err := discordgo.New("Bot " + cfg.Token)
+session.Identify.Intents = discordgo.IntentsGuilds
+b := &Bot{cfg: cfg, logger: logger, session: session, chat: chat, rmhbot: rmhbot}
+session.AddHandler(b.onReady)
+session.AddHandler(b.onInteraction)</code></pre>
+
+<p><code>Run</code> records the lifecycle context, opens the gateway, blocks on
+<code>ctx.Done()</code>, then closes the session cleanly — graceful shutdown:</p>
+
+<pre><code>func (b *Bot) Run(ctx context.Context) error {
+    b.ctxMu.Lock(); b.lifecycleCtx = ctx; b.ctxMu.Unlock()
+    if err := b.session.Open(); err != nil { return fmt.Errorf("open gateway: %w", err) }
+    b.logger.Info("discord gateway opened")
+    <-ctx.Done()
+    b.logger.Info("shutdown_start")
+    if err := b.session.Close(); err != nil { b.logger.Warn("session close", "error", err) }
+    b.logger.Info("shutdown_complete")
+    return nil
+}</code></pre>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+stateDiagram-v2
+  [*] --> Opening: Run(ctx)
+  Opening --> Ready: gateway opened
+  Ready --> Registered: onReady bulk overwrite
+  Registered --> Serving: handle interactions
+  Serving --> Serving: onInteraction
+  Serving --> Closing: ctx cancelled (signal)
+  Closing --> [*]: session.Close
+  </div>
+  <figcaption>Figure 15.1: the bot's worker lifecycle, driven by the discordgo session.</figcaption>
+</figure>
+
+<h2 id="discord-command-registration">Command registration on ready</h2>
+
+<p>On the <code>READY</code> event the bot bulk-overwrites its slash commands.
+Registration is <b>guild-scoped</b> when <code>DISCORD_DEV_GUILD_ID</code> is set
+(instant propagation for development) and <b>global</b> otherwise. A subtle but
+important detail is preserved from the TS: a bulk overwrite cannot delete
+Discord's <em>Entry Point</em> command (type 4, used by Activities) and will fail
+with error <code>50240</code> if you try. So the bot first fetches existing
+commands and re-appends any Entry Point command to the desired set:</p>
+
+<pre><code>// bot.go — onReady()
+guildID := b.cfg.DevGuildID // "" => global
+desired := slashCommands()
+
+existing, err := s.ApplicationCommands(s.State.User.ID, guildID)
+if err == nil {
+    for _, c := range existing {
+        if int(c.Type) == 4 { // PrimaryEntryPoint — bulk overwrite cannot remove it
+            desired = append(desired, c)
+        }
+    }
+}
+if _, err := s.ApplicationCommandBulkOverwrite(s.State.User.ID, guildID, desired); err != nil {
+    b.logger.Error("command_registration_failed", "error", err)
+    return
+}</code></pre>
+
+<p>The four commands declared by <code>slashCommands()</code>:</p>
+
+<table>
+  <thead><tr><th>Command</th><th>Option</th><th>Handler</th></tr></thead>
+  <tbody>
+    <tr><td><code>/chat</code></td><td><code>message</code> (required)</td><td><code>chat.HandleChat(…, isNew=true)</code></td></tr>
+    <tr><td><code>/rmhbot</code></td><td><code>request</code> (required)</td><td><code>rmhbot.HandleRmhbotCommand(…, isNew=true)</code></td></tr>
+    <tr><td><code>/rmhbot-continue</code></td><td><code>request</code> (required)</td><td><code>rmhbot.HandleRmhbotCommand(…, isNew=false)</code></td></tr>
+    <tr><td><code>/rmhbot-push</code></td><td><code>title</code> (optional)</td><td><code>rmhbot.HandlePush(…)</code></td></tr>
+  </tbody>
+</table>
+
+<div class="note">
+  The TS <code>/rmhbot</code> command also accepted an <code>attachment</code>
+  option. Attachment ingestion is not ported, so the option is intentionally
+  omitted rather than declared and ignored.
+</div>
+
+<h2 id="discord-routing">Interaction routing &amp; owner-gating</h2>
+
+<p>All interactions enter through <code>onInteraction</code>. A
+<b>review-fix</b> here is that each interaction runs under a context
+<em>derived from the bot's lifecycle context</em> with a per-interaction
+timeout, rather than being detached via <code>context.Background()</code>. This
+bounds in-flight agent loops and DeepSeek calls and cancels them on shutdown:</p>
+
+<pre><code>const interactionTimeout = 10 * time.Minute // generous: rmhbot loop runs many rounds
+
+func (b *Bot) onInteraction(s *discordgo.Session, i *discordgo.InteractionCreate) {
+    b.ctxMu.RLock(); parent := b.lifecycleCtx; b.ctxMu.RUnlock()
+    if parent == nil { parent = context.Background() } // handler may fire before Run records ctx
+    ctx, cancel := context.WithTimeout(parent, interactionTimeout)
+    defer cancel()
+    switch i.Type {
+    case discordgo.InteractionApplicationCommand: b.routeCommand(ctx, s, i)
+    case discordgo.InteractionMessageComponent:   b.routeComponent(ctx, s, i)
+    case discordgo.InteractionModalSubmit:        b.routeModal(ctx, s, i)
+    }
+}</code></pre>
+
+<p>Buttons and modals carry a custom ID of the form
+<code>action:ownerId</code>, split by <code>splitCustomID</code>. Every component
+and modal handler is <b>owner-gated</b>: the interacting user must equal the
+embedded owner id, or be the configured <code>OWNER_ID</code> admin override.
+Otherwise an ephemeral denial is sent:</p>
+
+<pre><code>func (b *Bot) ownerOK(s, i, userID, ownerID, denyMsg string) bool {
+    if userID == ownerID { return true }
+    if b.cfg.OwnerID != "" && userID == b.cfg.OwnerID { return true } // admin override
+    _ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+        Type: discordgo.InteractionResponseChannelMessageWithSource,
+        Data: &discordgo.InteractionResponseData{Content: denyMsg,
+            Flags: discordgo.MessageFlagsEphemeral},
+    })
+    return false
+}</code></pre>
+
+<p>The button/modal actions form two flows: <code>rmhbot_continue</code> /
+<code>chat_continue</code> buttons open a paragraph-input modal
+(<code>showModal</code>), whose submit (<code>rmhbot_continue_modal</code> /
+<code>chat_continue_modal</code>) re-enters the same handler with
+<code>isNew=false</code>; the <code>rmhbot_push</code> button calls
+<code>HandlePush</code> directly. The user id is read via
+<code>interactionUser</code>, which handles both guild (<code>i.Member.User</code>)
+and DM (<code>i.User</code>) shapes.</p>
+
+<h2 id="discord-deepseek">The DeepSeek client</h2>
+
+<p>The TS code used the <code>openai</code> SDK pointed at DeepSeek's
+OpenAI-compatible API. Per the migration's no-SDK rule, the Go port re-implements
+a minimal client over <code>net/http</code> against
+<code>https://api.deepseek.com</code>, model from <code>DEEPSEEK_MODEL</code>
+(default <code>deepseek-chat</code>). It is <b>non-streaming</b> — a single
+blocking POST to <code>/v1/chat/completions</code>, rendered once — a deliberate
+simplification of the TS live-streaming embed edits.</p>
+
+<pre><code>// deepseek.go — single non-streamed completion round.
+func (c *DeepSeekClient) complete(ctx, messages []ChatMessage, tools []Tool) (*completionResult, error) {
+    if c.apiKey == "" { return nil, fmt.Errorf("DEEPSEEK_API_KEY is not set") }
+    raw, _ := json.Marshal(chatCompletionRequest{
+        Model: c.model, Messages: messages, Stream: false, Tools: tools})
+    req, _ := http.NewRequestWithContext(ctx, http.MethodPost,
+        c.baseURL+"/v1/chat/completions", bytes.NewReader(raw))
+    req.Header.Set("Content-Type", "application/json")
+    req.Header.Set("Authorization", "Bearer "+c.apiKey)
+    resp, err := c.http.Do(req) // http.Client{Timeout: 60s}
+    ...
+    body, _ := io.ReadAll(io.LimitReader(resp.Body, 4&lt;&lt;20)) // 4 MiB cap
+    if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+        return nil, fmt.Errorf("deepseek HTTP %d: %s", resp.StatusCode, string(body))
+    }
+    ...
+}</code></pre>
+
+<p>The message and tool-call structs (<code>ChatMessage</code>,
+<code>ToolCall</code>, <code>ToolCallFunc</code>, <code>Tool</code>) mirror the
+OpenAI schema. Tool-call fields are <code>omitempty</code> so a plain
+<code>/chat</code> message serializes identically to the original TS payload,
+while the rmhbot loop can round-trip <code>tool_calls</code> /
+<code>tool_call_id</code>. <code>Chat()</code> is a thin wrapper for the persona
+(one round, no tools, returns the reply text).</p>
+
+<h2 id="discord-chat">/chat — the Alex Wu persona (faithful port)</h2>
+
+<p>The <code>/chat</code> handler is the faithful piece. The "Alex Wu" system
+persona is copied <b>verbatim</b> from <code>chat-handler.ts</code> (a 21-year-old
+UMN CS student / Wells Fargo intern, boba-obsessed, AAVE blaccent, vibe-coding
+tech bro). On a new <code>/chat</code> the history is reset to just the system
+prompt; the continue modal loads the existing session.</p>
+
+<h3>Session persistence</h3>
+
+<p>Sessions live in an in-memory cache keyed by Discord user id, backed by the
+<code>discord_chat_session</code> table via raw <code>pgx</code>.
+<code>loadSession</code> returns cache → DB → fresh persona-seeded session; on any
+DB error (including no rows) it keeps the fresh session, matching the TS
+<code>.catch(() => null)</code>. <code>saveSession</code> upserts by
+<code>discordUserId</code>:</p>
+
+<pre><code>// chat.go — saveSession upsert (best-effort, like the TS .catch(() => {})).
+_, err = s.db.Pool.Exec(ctx,
+  `INSERT INTO "discord_chat_session"
+     ("discordUserId","username","history","lastMessageId","updatedAt")
+   VALUES ($1,$2,$3,$4,$5)
+   ON CONFLICT ("discordUserId") DO UPDATE SET
+     "username"=EXCLUDED."username", "history"=EXCLUDED."history",
+     "lastMessageId"=EXCLUDED."lastMessageId", "updatedAt"=EXCLUDED."updatedAt"`,
+  session.userID, session.username, historyJSON, lastMessageID, time.Now().UTC())</code></pre>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+sequenceDiagram
+  participant U as User
+  participant D as Discord
+  participant B as Bot
+  participant DS as DeepSeek
+  participant DB as Postgres
+  U->>D: /chat message
+  D->>B: InteractionApplicationCommand
+  B->>B: load/seed session (cache or DB)
+  B->>D: defer reply
+  B->>DS: POST /v1/chat/completions (history)
+  DS-->>B: assistant reply
+  B->>B: buildChatEmbed (pack to 6000 chars)
+  B->>D: edit reply (embed + Keep talking button)
+  B->>DB: upsert discord_chat_session (best-effort)
+  </div>
+  <figcaption>Figure 15.2: the /chat request path. The handler defers first because model calls take seconds.</figcaption>
+</figure>
+
+<h3>The 6000-char embed packing (ported 1:1)</h3>
+
+<p>Discord caps an embed at 6000 characters total across title, footer, and field
+names+values, with ≤ 25 fields and ≤ 1024 chars per field value.
+<code>buildChatEmbed</code> ports the TS budget-packing logic exactly: it
+subtracts title+footer from the 6000 budget, gives the echoed user prompt first
+claim, then splits the reply across as many fields as fit, using
+<code>alexFieldName</code> ("🤙 Alex") for the first and a zero-width space for
+continuations. If it runs out of budget or fields, the last field is
+ellipsis-marked:</p>
+
+<pre><code>// chat.go — reply field-packing loop (runes, not bytes).
+remaining := []rune(replyText)
+if len(remaining) == 0 { remaining = []rune("(no response)") }
+for len(remaining) > 0 {
+    if len(fields) >= maxFields { truncated = true; break }
+    name := alexFieldName
+    if replyFieldCount > 0 { name = continuationFieldName } // zero-width space
+    valueBudget := min(fieldValueMax, budget-runeLen(name))
+    if valueBudget <= 0 { truncated = true; break }
+    take := valueBudget
+    if take > len(remaining) { take = len(remaining) }
+    value := string(remaining[:take])
+    fields = append(fields, embedField{Name: name, Value: value})
+    budget -= runeLen(name) + runeLen(value)
+    remaining = remaining[take:]
+    replyFieldCount++
+}</code></pre>
+
+<p>All arithmetic is done in <b>runes</b> rather than bytes, so the emoji-heavy
+persona never splits a multi-byte character mid-rune — a Go-specific correctness
+improvement over the JS <code>.length</code> semantics it emulates.</p>
+
+<h2 id="discord-rmhbot">/rmhbot — the agentic website editor (scaffold)</h2>
+
+<div class="scope">
+  <b>What is real:</b> command/interaction structure; the in-memory
+  <code>conversationState</code> (branch, worktree path, history,
+  <code>deletedFilesThisSession</code>, <code>lockedAt</code>); 5-minute
+  auto-unlock with an injectable clock; per-session locking that fixes a TOCTOU
+  race; the <code>safePath</code> traversal guard and safety guards; git ops via
+  <code>os/exec</code>; the <code>MAX_TOOL_ROUNDS = 40</code> loop; real
+  <code>read_file</code> / <code>list_directory</code> / <code>write_file</code> /
+  <code>delete_file</code> tools. <b>What is stubbed:</b>
+  <code>run_typecheck</code> (needs the JS toolchain), <code>createPullRequest</code>
+  (needs the GitHub REST call), <code>search_code</code> (needs grep wiring),
+  recursive listing, attachment ingestion, and the live progress reporter.
+</div>
+
+<p>A session is created on <code>/rmhbot</code> by cloning the target repo into a
+worktree and checking out a fresh branch. The repo is env-driven:
+<code>resolveRepo()</code> parses <code>GITHUB_REPO</code> ("owner/name"), falling
+back to <code>stickms/rmhstudios.com</code>. The branch name is deterministic
+under the injectable clock: <code>rmhbot-&lt;sanitized-username&gt;-&lt;unix&gt;</code>.</p>
+
+<h3>The agentic tool loop</h3>
+
+<p><code>runAgentLoop</code> drives up to <code>maxToolRounds = 40</code>
+non-streamed DeepSeek rounds. Each round, if the model returns tool calls, the
+bot records the assistant turn, dispatches each call through
+<code>executeTool</code>, truncates the result to
+<code>maxToolResultLen = 8000</code>, and round-trips it back as a
+<code>role:"tool"</code> message. A round with no tool calls is the final answer:</p>
+
+<pre><code>// rmhbot.go — runAgentLoop core.
+for round := 0; round < maxToolRounds; round++ {
+    res, callErr := s.deepseek.complete(ctx, state.history, rmhbotTools())
+    if callErr != nil { return "", changedFiles, callErr }
+    if len(res.ToolCalls) > 0 {
+        state.history = append(state.history, ChatMessage{
+            Role: roleAssistant, Content: res.Content, ToolCalls: res.ToolCalls})
+        for _, tc := range res.ToolCalls {
+            var parsed map[string]any
+            argsStr := tc.Function.Arguments; if argsStr == "" { argsStr = "{}" }
+            result := ""
+            if jErr := json.Unmarshal([]byte(argsStr), &parsed); jErr != nil {
+                result = "Error: " + jErr.Error()
+            } else {
+                result = s.executeTool(ctx, tc.Function.Name, parsed, state, &changedFiles)
+            }
+            if len(result) > maxToolResultLen { result = result[:maxToolResultLen] + "\n[truncated]" }
+            state.history = append(state.history, ChatMessage{
+                Role: roleTool, ToolCallID: tc.ID, Content: result})
+        }
+        continue
+    }
+    summary = res.Content // no tool calls => done
+    state.history = append(state.history, ChatMessage{Role: roleAssistant, Content: res.Content})
+    return summary, changedFiles, nil
+}</code></pre>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart TD
+  A[/rmhbot request/] --> B{session exists?}
+  B -- yes --> C[tryLock check-and-lock]
+  B -- no --> D[create worktree + branch]
+  C -- locked --> E[reply: still working]
+  C -- won --> F[defer + working embed]
+  D --> F
+  F --> G[runAgentLoop]
+  G --> H{round under 40?}
+  H -- model returns tool calls --> I[executeTool x N]
+  I --> J[append tool results to history]
+  J --> H
+  H -- no tool calls --> K[final summary]
+  K --> L{changed files?}
+  L -- yes --> M[stageAll + commit + push]
+  L -- no --> N[no-changes embed]
+  M --> O[finalize embed]
+  </div>
+  <figcaption>Figure 15.3: the /rmhbot agentic tool-loop and commit flow.</figcaption>
+</figure>
+
+<p>On a successful loop with changes, the bot stages all
+(<code>git add -A</code>), checks <code>status --porcelain</code>, commits with a
+<code>Co-Authored-By: RMHBot</code> trailer, and best-effort pushes the branch
+with <code>--force-with-lease</code> (mirroring the TS <code>.catch</code>).
+<code>/rmhbot-push</code> would then run typecheck and open a PR — both currently
+stubbed, so push fails closed on typecheck.</p>
+
+<h3>Per-session locking (TOCTOU review fix)</h3>
+
+<p>The original guard was an unsynchronized <code>exists &amp;&amp; isSessionLocked</code>
+check, which let two concurrent interactions from the same user both pass. The Go
+port closes this with a per-session mutex (<code>conversationState.mu</code>) and
+a single check-and-lock critical section, <code>tryLock</code>. The map-level
+<code>s.mu</code> only guards the sessions map, not per-session state:</p>
+
+<pre><code>// rmhbot.go — atomic check-and-lock (closes the TOCTOU window).
+func (s *RmhbotService) tryLock(state *conversationState) bool {
+    state.mu.Lock(); defer state.mu.Unlock()
+    if s.isSessionLockedLocked(state) { return false } // already locked
+    now := s.clock.Now(); state.lockedAt = &now
+    return true
+}</code></pre>
+
+<p>Auto-unlock assumes a crashed prior run: a lock older than
+<code>sessionLockTTL = 5 * time.Minute</code> is cleared. The comparison is strict
+(<code>&gt;</code>), so exactly 5 minutes is still locked — matching the TS:</p>
+
+<pre><code>func (s *RmhbotService) isSessionLockedLocked(state *conversationState) bool {
+    if state.lockedAt == nil { return false }
+    if s.clock.Now().Sub(*state.lockedAt) > sessionLockTTL { // auto-unlock
+        state.lockedAt = nil
+        return false
+    }
+    return true
+}</code></pre>
+
+<h2 id="discord-security">Security guards</h2>
+
+<p><b>Path-traversal guard.</b> Every filesystem tool resolves its path through
+<code>safePath</code>, ported 1:1 from <code>command-handler.ts</code>. It strips
+leading slashes, cleans/joins against the worktree base, and rejects any result
+that escapes the base. Crucially it uses a <em>separator-aware</em> prefix check,
+so a sibling like <code>/srv/clone-evil</code> (which shares the
+<code>/srv/clone</code> string prefix) is rejected:</p>
+
+<pre><code>func safePath(basePath, userPath string) (string, error) {
+    normalized := leadingSlashes.ReplaceAllString(userPath, "")
+    full := filepath.Clean(filepath.Join(basePath, normalized))
+    base := filepath.Clean(basePath)
+    if full != base && !strings.HasPrefix(full, base+string(filepath.Separator)) {
+        return "", fmt.Errorf("Path traversal detected: %s", userPath)
+    }
+    return full, nil
+}</code></pre>
+
+<p><b>Write/delete safety.</b> Beyond traversal, writes are blocked on protected
+paths (<code>.env</code>, <code>server/discord-bot</code>, and the
+<code>.env.</code> / <code>server/discord-bot/</code> prefixes) and on content
+matching secret patterns (<code>DEEPSEEK_API_KEY</code>,
+<code>DISCORD_*TOKEN</code>, <code>GITHUB_TOKEN</code>,
+<code>BETTER_AUTH_SECRET</code>, <code>TOKEN_ENCRYPTION_KEY</code>). Deletes are
+capped at 10 files per session. These mirror the persona's HARD LIMITS in the
+rmhbot system prompt, enforced in code rather than trusted to the model.</p>
+
+<div class="warn">
+  <b>Git token handling caveat.</b> <code>gitConfigArgs()</code> injects the
+  <code>GITHUB_TOKEN</code> via an inline
+  <code>url.https://x-access-token:&lt;token&gt;@github.com/.insteadOf</code>
+  rewrite passed on the <code>git -c</code> command line. This is functional and
+  scoped per-invocation (with <code>GIT_TERMINAL_PROMPT=0</code> to prevent
+  interactive prompts), but the token appears in the process argument list, so it
+  may be visible via <code>/proc</code> or process listings on the host while git
+  runs. A hardened version should pass the credential via an
+  <code>askpass</code> helper or a transient credential file instead.
+</div>
+
+<h2 id="discord-tests">Tests</h2>
+
+<p><code>discordbot_test.go</code> covers the three load-bearing, pure pieces — no
+Discord or DeepSeek mock needed:</p>
+
+<ul>
+  <li><b><code>safePath</code> traversal guard</b> — allows in-tree paths
+  (including leading-slash and <code>.</code>), rejects <code>../etc/passwd</code>,
+  <code>app/../../etc/passwd</code>, <code>..</code>, and the sibling-prefix
+  <code>../clone-evil/x</code>.</li>
+  <li><b>Embed packing</b> — a 20 000-char reply packs into multiple fields and
+  never exceeds the 6000 total or the 1024/field cap; a 30 000-char reply ends in
+  the ellipsis; a short reply yields exactly the You + Alex fields; an empty reply
+  yields the <code>(no response)</code> placeholder.</li>
+  <li><b>5-minute auto-unlock</b> — driven by a <code>fakeClock</code>: nil
+  <code>lockedAt</code> is unlocked; 2 min stays locked; 5 min + 1 s auto-unlocks
+  and clears <code>lockedAt</code>; exactly 5 min stays locked (strict
+  <code>&gt;</code>). <code>TestMakeBranchName</code> asserts the deterministic
+  sanitized branch <code>rmhbot-cool-user-1700000000</code>.</li>
+</ul>
+
+<div class="ok">
+  The faithfully-ported surface (gateway lifecycle, command registration,
+  interaction routing &amp; owner-gating, DeepSeek client, the full <code>/chat</code>
+  persona with DB persistence and 1:1 embed packing) is complete and tested. The
+  <code>/rmhbot</code> scaffold compiles, runs its real tools and git flow under
+  the locking/safety guards, and marks every stub (<code>run_typecheck</code>,
+  <code>createPullRequest</code>, <code>search_code</code>) with an explicit
+  <code>TODO(migration)</code> that fails closed rather than faking success.
+</div>

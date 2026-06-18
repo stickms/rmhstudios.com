@@ -1,0 +1,26 @@
+# Production overrides for rmhstudios-go. Apply with:
+#   helm upgrade --install rmhstudios-go deploy/helm/rmhstudios-go \
+#     -f deploy/helm/rmhstudios-go/values-prod.yaml --atomic --wait
+image:
+  registry: "" # set to your registry for multi-node; empty = single-node ctr import
+  tag: REPLACE_WITH_SHA
+  pullPolicy: IfNotPresent
+
+ingress:
+  enabled: true
+  className: traefik
+  host: REPLACE_ME.example.com
+
+redis:
+  enabled: true
+
+# Scale the connection-heavy realtime tiers in prod.
+services:
+  gateway:
+    replicas: 3
+  gamehub:
+    replicas: 3
+  rmhbox:
+    replicas: 2
+  rmhtube:
+    replicas: 2

@@ -1,0 +1,7 @@
+e2e/
+scripts/
+FOUNDATION.md
+*.md
+Makefile
+docker-compose.go.yml
+.git

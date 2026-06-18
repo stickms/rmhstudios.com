@@ -1,0 +1,32 @@
+<div class="cover">
+  <div class="eyebrow">Engineering Report</div>
+  <h1>Migrating rmhstudios.com to Go Microservices</h1>
+  <p class="sub">A complete design, implementation, and verification record for the
+  Go rewrite of the realtime and worker tier — built on, and reconciled with, the
+  k3s / Helm / Terraform infrastructure of PR&nbsp;#121.</p>
+
+  <div class="chips">
+    <span class="chip">9 services</span>
+    <span class="chip">1 shared module</span>
+    <span class="chip">Go 1.23</span>
+    <span class="chip">pgx · gorilla/ws · discordgo · chromedp</span>
+    <span class="chip">Helm + Redis backplane</span>
+    <span class="chip">build · vet · race · e2e ✓</span>
+  </div>
+
+  <div class="meta">
+    <p><b>Scope.</b> The Node/TypeScript realtime &amp; worker processes
+    (socket-server, rmhbox, rmhtube, rmhmusic, recap, doctrine-worker, vibe-worker,
+    discord-bot) re-implemented as compiling, tested Go services, plus an edge
+    gateway — deployable beside the React SSR app via a Helm chart that reuses
+    PR&nbsp;#121's conventions.</p>
+    <p><b>Honesty note.</b> PR&nbsp;#121 explicitly <i>declined</i> a Go rewrite as
+    an architecture decision. This work deliberately overrides that decision on an
+    isolated branch. Where a component is genuinely not portable (React SSR, Better
+    Auth issuance) it is kept in JavaScript and integrated, not faked; where a
+    service is partially ported, this document says so plainly.</p>
+    <p><b>Status:</b> <b>everything in this report compiles, passes <code>go vet</code>,
+    passes unit tests under the race detector, and passes an end-to-end suite
+    against a real Postgres and real websocket clients.</b></p>
+  </div>
+</div>

@@ -1,0 +1,93 @@
+<p class="lead">Verification was treated as a first-class deliverable, not an
+afterthought. The fleet is validated at four levels — compilation, static
+analysis, race-tested unit/integration tests, and end-to-end tests against real
+infrastructure — and every level is green.</p>
+
+<h2 id="test-levels">The test pyramid</h2>
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart TB
+  e2e["E2E: real binaries + real Postgres + ws clients (4 tests)"]
+  unit["Unit + integration: per-package, race-tested"]
+  vet["go vet (static analysis)"]
+  build["go build (compilation)"]
+  build --> vet --> unit --> e2e
+  </div>
+  <figcaption>Figure 21.1 — Four verification levels, all passing.</figcaption>
+</figure>
+
+<h2 id="test-build">Build, vet, format</h2>
+<p>The whole module compiles (<code>go build ./...</code>), passes
+<code>go vet ./...</code> with no findings, and is <code>gofmt</code>-clean (CI
+fails on any unformatted file).</p>
+
+<h2 id="test-unit">Unit &amp; integration tests under the race detector</h2>
+<p>Every internal package and the load-bearing shared packages have tests, run
+with <code>go test -race</code>. Highlights:</p>
+<table>
+<thead><tr><th>Package</th><th>What the tests prove</th></tr></thead>
+<tbody>
+<tr><td><code>pkg/ratelimit</code></td><td>Sliding-window limits, expiry, per-conn isolation, forget.</td></tr>
+<tr><td><code>pkg/realtime</code></td><td>Envelope round-trip, atomic seq monotonicity under 1000 goroutines, grace-timer cancel/reschedule.</td></tr>
+<tr><td><code>internal/doctrine</code></td><td>mulberry32 + seed are bit-exact against Node golden vectors; weekday difficulty.</td></tr>
+<tr><td><code>internal/gamehub</code></td><td>Full KK lifecycle: create/join/input/state/rematch/disconnect.</td></tr>
+<tr><td><code>internal/rmhbox</code></td><td>Lobby FSM transitions, seq numbering, per-player scoped state, atomic stat merge.</td></tr>
+<tr><td><code>internal/rmhtube</code></td><td>Leader video projection, seq monotonicity, queue reorder.</td></tr>
+<tr><td><code>internal/rmhmusic</code></td><td>Playback drift projection, seq deltas, host auto-reassignment.</td></tr>
+<tr><td><code>internal/vibeworker</code></td><td>Poll/optimistic-update orchestration with a fake capturer + repo.</td></tr>
+<tr><td><code>internal/recap</code></td><td>Embed/ranking, due-poll, always-clear with fakes.</td></tr>
+<tr><td><code>internal/discordbot</code></td><td>safePath traversal guard, 6000-char embed packing, 5-min auto-unlock.</td></tr>
+<tr><td><code>internal/gateway</code></td><td>Longest-prefix routing, auth header inject/strip.</td></tr>
+</tbody>
+</table>
+<div class="ok"><b>Race detector clean.</b> <code>go test -race ./...</code> passes for
+every package. This matters: the race detector found a real data race during
+review (a timer goroutine reading a field <code>Cancel()</code> mutated); it was
+fixed and the suite is now clean. See Section&nbsp;22.</div>
+
+<h2 id="test-e2e">End-to-end tests against real infrastructure</h2>
+<p>The e2e suite (build tag <code>e2e</code>) is the proof that the services
+actually work together, not just that the units pass. <code>scripts/e2e/run.sh</code>
+starts a real PostgreSQL, loads the schema, builds and launches the real
+<code>gamehub</code> and <code>rmhtube</code> binaries, waits for their
+<code>/health</code>, then runs Go tests that connect as real websocket clients.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+sequenceDiagram
+  autonumber
+  participant S as run.sh
+  participant PG as Postgres (container)
+  participant B as gamehub + rmhtube (real binaries)
+  participant T as go test (ws clients)
+  S->>PG: start + load schema.sql
+  S->>B: build + launch (DATABASE_URL)
+  S->>B: wait /health
+  T->>B: dial ws, exercise protocols
+  T->>PG: assert rows persisted
+  </div>
+  <figcaption>Figure 21.2 — The e2e harness: real Postgres, real binaries, real websocket clients.</figcaption>
+</figure>
+
+<p>The four e2e tests and their results:</p>
+<table>
+<thead><tr><th>Test</th><th>Proves</th><th>Result</th></tr></thead>
+<tbody>
+<tr><td><code>TestSessionValidationAndRoomCreate</code></td><td>Seed user+session → authed ws → create room → row persisted with correct host id.</td><td>PASS</td></tr>
+<tr><td><code>TestRejectsBadToken</code></td><td>Bogus token → connection treated as anonymous (documents real behavior).</td><td>PASS</td></tr>
+<tr><td><code>TestKKRelayFlow</code></td><td>create_room → join → input relay (guest→host) → game_state (host→guest) → opponent_disconnected.</td><td>PASS</td></tr>
+<tr><td><code>TestKKJoinUnknownRoom</code></td><td>Joining a non-existent code returns an error.</td><td>PASS</td></tr>
+</tbody>
+</table>
+<pre><code>--- PASS: TestSessionValidationAndRoomCreate (0.12s)
+--- PASS: TestRejectsBadToken (0.00s)
+--- PASS: TestKKRelayFlow (0.00s)
+--- PASS: TestKKJoinUnknownRoom (0.50s)
+ok  github.com/rmhstudios/rmh-go/e2e  0.63s</code></pre>
+
+<h2 id="test-infra">Infrastructure validation</h2>
+<p>Beyond Go: <code>helm lint</code> passes, the rendered manifests pass
+<code>kubeconform -strict</code> (35/35 valid), and the container image builds and
+runs. The verification toolchain itself runs through Docker (the pinned
+<code>golang:1.23</code> image) so it is reproducible on any machine with Docker,
+with no local Go install required.</p>

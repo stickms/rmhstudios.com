@@ -1,0 +1,12 @@
+rmhstudios-go {{ .Chart.AppVersion }} deployed as release "{{ .Release.Name }}".
+
+Services:
+{{- range $svc, $cfg := .Values.services }}
+  - {{ $svc }} ({{ if $cfg.worker }}worker{{ else }}server :{{ $cfg.port }}{{ end }}, replicas {{ $cfg.replicas | default 1 }})
+{{- end }}
+
+Backplane: {{ if .Values.redis.enabled }}Redis at {{ .Values.redis.url }} (realtime services may scale >1 replica){{ else }}DISABLED — realtime services are single-replica only{{ end }}.
+
+Check rollout:   kubectl get deploy -l app.kubernetes.io/part-of=rmhstudios-go
+Gateway health:  kubectl port-forward svc/{{ include "rmhgo.fullname" . }}-gateway {{ .Values.services.gateway.port }} && curl localhost:{{ .Values.services.gateway.port }}/health
+Scale realtime:  kubectl scale deploy/{{ include "rmhgo.fullname" . }}-gamehub --replicas=3

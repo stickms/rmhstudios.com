@@ -1,0 +1,40 @@
+<p class="lead">Terms and components referenced throughout this report.</p>
+
+<h2 id="gloss-terms">Glossary</h2>
+<table>
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><b>Better&nbsp;Auth</b></td><td>The JavaScript auth library that issues and signs rmhstudios sessions. Kept in JS; Go only validates its <code>session</code> table.</td></tr>
+<tr><td><b>backplane</b></td><td>The Redis pub/sub layer (<code>pkg/events</code>) that fans realtime broadcasts across service replicas.</td></tr>
+<tr><td><b>BFF</b></td><td>Backend-for-frontend; here, the gateway that fronts the fleet and the SSR app.</td></tr>
+<tr><td><b>chromedp</b></td><td>Go library driving headless Chromium via the DevTools protocol; used by vibe-worker.</td></tr>
+<tr><td><b>cuid / uuid</b></td><td>Opaque TEXT primary-key formats. Prisma used cuid; Go generates uuid.</td></tr>
+<tr><td><b>DeepSeek</b></td><td>The OpenAI-compatible LLM API powering the discord-bot's <code>/chat</code>.</td></tr>
+<tr><td><b>discordgo</b></td><td>Go Discord client used by recap (presence + REST) and discord-bot (gateway + commands).</td></tr>
+<tr><td><b>Envelope</b></td><td>The realtime frame: <code>{event, payload, seq, ts}</code>.</td></tr>
+<tr><td><b>FSM</b></td><td>Finite state machine; the rmhbox lobby/coordinator lifecycle.</td></tr>
+<tr><td><b>gateway</b></td><td>The edge service: reverse proxy + auth trust boundary + static serving.</td></tr>
+<tr><td><b>grace timer</b></td><td>A keyed, cancellable delayed action (e.g. disconnect grace, empty-room GC).</td></tr>
+<tr><td><b>Helm</b></td><td>Kubernetes package manager; the chart <code>rmhstudios-go</code> renders the fleet.</td></tr>
+<tr><td><b>Hub</b></td><td>The per-service websocket runtime in <code>pkg/realtime</code>.</td></tr>
+<tr><td><b>k3s</b></td><td>Lightweight Kubernetes; the cluster PR&nbsp;#121 introduced.</td></tr>
+<tr><td><b>Kowloon Knockout</b></td><td>A 1v1 fighting game; the fully-ported gamehub relay.</td></tr>
+<tr><td><b>kubeconform</b></td><td>A Kubernetes manifest schema validator; used to validate the rendered chart.</td></tr>
+<tr><td><b>leader-authoritative sync</b></td><td>rmhtube model where the room leader's reported video state is the source of truth.</td></tr>
+<tr><td><b>mulberry32</b></td><td>A small deterministic PRNG; ported bit-exact for doctrine puzzle seeding.</td></tr>
+<tr><td><b>optimistic concurrency</b></td><td>Write-if-unchanged (compare <code>updatedAt</code>); used by vibe-worker.</td></tr>
+<tr><td><b>pgx / pgxpool</b></td><td>The Go PostgreSQL driver and connection pool used fleet-wide.</td></tr>
+<tr><td><b>PR&nbsp;#121</b></td><td>The infrastructure PR (Compose→k3s/Helm/Terraform) this work builds on and reconciles with.</td></tr>
+<tr><td><b>RMHBot</b></td><td>The discord-bot's agentic website editor (<code>/rmhbot</code>); scaffolded.</td></tr>
+<tr><td><b>snapshot+delta</b></td><td>Protocol pattern: full state on join, then seq-numbered incremental mutations.</td></tr>
+<tr><td><b>soft auth</b></td><td>Anonymous connections allowed; identity attached if a valid token is present.</td></tr>
+<tr><td><b>SSR</b></td><td>Server-side rendering; the React/TanStack Start web tier, kept in JS.</td></tr>
+<tr><td><b>sticky sessions</b></td><td>Ingress pinning a client to one replica; required for multi-replica realtime.</td></tr>
+<tr><td><b>trust boundary</b></td><td>The single place (gateway) where identity headers are asserted for upstreams.</td></tr>
+<tr><td><b>Traefik</b></td><td>The ingress controller bundled with k3s.</td></tr>
+</tbody>
+</table>
+
+<div class="note">End of report. Every claim herein is backed by code under
+<code>go-services/</code> and the verification artifacts described in
+Sections&nbsp;21–22; the source is the authority where any detail differs.</div>

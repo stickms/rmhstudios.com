@@ -1,0 +1,231 @@
+<p class="lead">The <code>gamehub</code> service is the Go port of the unified Socket.IO
+games server (<code>server/socket-server</code>): one WebSocket runtime hosting every
+mini-game relay behind a single shared <code>realtime.Hub</code> on the path
+<code>/socket/</code>, listening on <code>SOCKET_PORT</code> (default <code>7001</code>).
+Auth is <b>soft</b> &mdash; anonymous connections are allowed, matching the legacy
+soft-auth middleware. Kowloon&nbsp;Knockout is ported faithfully and standalone
+(<code>kk.go</code>); the remaining games are represented by the generic
+<code>RelayGroup</code> framework (<code>relay.go</code>) plus a clearly-marked,
+compiling registry of stubs (<code>manager.go</code>).</p>
+
+<div class="stats">
+  <div class="stat"><div class="v">7001</div><div class="l">SOCKET_PORT</div></div>
+  <div class="stat"><div class="v">/socket/</div><div class="l">WS path</div></div>
+  <div class="stat"><div class="v">soft</div><div class="l">auth</div></div>
+  <div class="stat"><div class="v">KK</div><div class="l">faithful port</div></div>
+</div>
+
+<h2 id="gamehub-role">Role: one WebSocket runtime for every game</h2>
+<p>The Node deployment ran a single Socket.IO process
+(<code>server/socket-server</code>) whose <code>index.ts</code> registered every
+game's handlers on connect and called every game's disconnect handler on
+disconnect. <code>gamehub</code> reproduces that shape on top of the shared
+<code>realtime.Hub</code>. The entrypoint (<code>cmd/gamehub/main.go</code>) builds
+the hub with <code>RequireAuth: false</code> &mdash; soft-auth, anonymous allowed
+&mdash; and serves it on <code>/socket/</code> alongside <code>/health</code> and
+<code>/metrics</code>:</p>
+<pre><code>hub := realtime.NewHub(ctx, realtime.Options{
+    Origin:       host,
+    Validator:    validator,
+    AllowOrigins: config.GetCSV("SOCKET_CORS_ORIGIN"), // empty =&gt; allow all
+    RequireAuth:  false,                               // soft-auth: anonymous allowed
+})
+mgr := gamehub.NewManager(hub, logger)
+mgr.Register()
+mux.HandleFunc("/socket/", hub.ServeWS)
+addr := ":" + config.GetString("SOCKET_PORT", "7001")</code></pre>
+<div class="note">The session DB is treated as <em>optional</em>. The legacy server
+allowed connections even when auth was unavailable, so a failed DB open here
+degrades to fully-anonymous (<code>&ldquo;db unavailable, running anonymous-only&rdquo;</code>)
+rather than being fatal.</div>
+
+<h3>The connection registry</h3>
+<p>Host-authoritative relays must deliver a frame to a <em>specific</em> peer (the
+host, or the guest) rather than broadcast to a room. The hub dispatches handlers
+per-<code>Conn</code> but exposes no public &ldquo;send to a connection id&rdquo;
+lookup, so the package keeps its own <code>connRegistry</code> mapping
+<code>connID&nbsp;-&gt;&nbsp;send&nbsp;callback</code> (<code>relay.go</code>). The
+<code>Manager</code> owns one shared registry and feeds it from a single
+<code>OnConnect</code>/<code>OnDisconnect</code> pair, fanning disconnect cleanup out
+to every game (mirroring <code>index.ts</code>):</p>
+<pre><code>m.hub.OnConnect(func(c *realtime.Conn) {
+    conn := c
+    m.reg.add(conn.ID, func(e realtime.Envelope) { conn.Send(e) })
+})
+m.hub.OnDisconnect(func(c *realtime.Conn) {
+    m.kk.Cleanup(c.ID)
+    for _, g := range m.relays { g.Cleanup(c.ID) }
+    m.reg.remove(c.ID)
+})</code></pre>
+<p>Keeping the sender behind a <code>func(realtime.Envelope)</code> callback rather
+than a live <code>*realtime.Conn</code> is what makes the relay cores
+unit-testable: tests register plain string ids with an in-memory capture callback,
+no websocket required.</p>
+
+<h2 id="gamehub-kk">Kowloon Knockout: faithful 1v1 host-authoritative relay</h2>
+<p>Kowloon Knockout (<code>kk.go</code>) is a faithful Go port of
+<code>server/socket-server/handlers/kowloon-knockout.ts</code>. It is a simple
+1v1 host-authoritative relay: the host creates a room, a guest joins, then
+<code>input</code> frames (guest&nbsp;-&gt;&nbsp;host) and <code>game_state</code>
+frames (host&nbsp;-&gt;&nbsp;guest) are relayed; a rematch handshake re-arms the
+match. It is ported standalone rather than via <code>RelayGroup</code> because of
+the rematch handshake and fighter-class bookkeeping, which are kept verbatim
+against the source of truth.</p>
+
+<h3>State</h3>
+<p><code>KKManager</code> holds a <code>rooms</code> map (<code>code -&gt; *KKRoom</code>),
+a <code>connToRoom</code> reverse index (<code>connID -&gt; code</code>), and a
+<code>sync.Mutex</code> guarding both, plus the shared <code>connRegistry</code>.
+A <code>KKRoom</code> mirrors the TS interface: the host and (initially empty) guest
+connection ids, each side's fighter class, and the pending rematch-handshake state
+(<code>HostReady</code>/<code>GuestReady</code> and
+<code>PendingHostClass</code>/<code>PendingGuestClass</code>). The default fighter
+is <code>stone_tiger</code>.</p>
+
+<h3>The exact <code>kk:*</code> events</h3>
+<p>The event constants are kept 1:1 with the legacy C2S/S2C maps:</p>
+<table>
+  <thead><tr><th>Inbound (client&nbsp;-&gt;&nbsp;server)</th><th>Outbound (server&nbsp;-&gt;&nbsp;client)</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td><code>kk:create_room</code></td><td><code>kk:room_created</code> (to host, <code>{code}</code>)</td><td>host opens a room</td></tr>
+    <tr><td><code>kk:join_room</code></td><td><code>kk:room_joined</code> (to both, <code>{hostClass, guestClass, isHost}</code>)</td><td>guest seats; match armed</td></tr>
+    <tr><td><code>kk:input</code> (guest)</td><td><code>kk:input</code> (relayed to host)</td><td>guest input relay</td></tr>
+    <tr><td><code>kk:game_state</code> (host)</td><td><code>kk:game_state</code> (relayed to guest)</td><td>host authoritative state</td></tr>
+    <tr><td><code>kk:fighter_ready</code></td><td><code>kk:opponent_ready</code>, then <code>kk:room_joined</code> on both ready</td><td>rematch handshake</td></tr>
+    <tr><td><code>kk:leave</code></td><td><code>kk:opponent_disconnected</code> (to peer)</td><td>explicit leave</td></tr>
+    <tr><td>(hub disconnect)</td><td><code>kk:opponent_disconnected</code> (to peer)</td><td>implicit teardown</td></tr>
+    <tr><td>&mdash;</td><td><code>kk:error</code> (<code>{message}</code>)</td><td>&ldquo;Room not found&rdquo; / &ldquo;Room is full&rdquo;</td></tr>
+  </tbody>
+</table>
+
+<h3>Relay direction is enforced</h3>
+<p>The relays are strictly directional and seat-checked. <code>Input</code> only
+relays guest&nbsp;-&gt;&nbsp;host (it returns early unless
+<code>room.GuestConnID == connID</code>); <code>GameState</code> only relays
+host&nbsp;-&gt;&nbsp;guest (requires <code>room.HostConnID == connID</code> and a
+seated guest). Relayed frames reuse the inbound payload bytes verbatim
+(<code>realtime.Envelope{Event: kkInput, Payload: payload}</code>), so the gateway /
+hub never re-serializes game data.</p>
+
+<h3>Rematch handshake</h3>
+<p><code>FighterReady</code> records the caller's pending fighter selection, sets that
+seat's ready flag, and notifies the opponent with <code>kk:opponent_ready</code>.
+When <em>both</em> seats are ready it commits the pending classes onto the room,
+clears the ready/pending state, and re-arms the match by emitting a fresh
+<code>kk:room_joined</code> to both players. Resetting the flags is what prevents a
+later single-side ready from spuriously re-triggering a rematch.</p>
+
+<h3>Room codes</h3>
+<p>Codes are 6 characters from the alphabet
+<code>ABCDEFGHJKLMNPQRSTUVWXYZ23456789</code> (matching the socket-server config),
+generated with <code>crypto/rand</code> instead of <code>Math.random</code>.
+<code>uniqueCode</code> ports <code>generateUniqueCode</code>: up to 20 attempts,
+falling back to the last candidate rather than panicking &mdash; collisions in the
+32<sup>6</sup> space are astronomically unlikely, so it degrades gracefully where
+the legacy code threw.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+sequenceDiagram
+  participant H as Host
+  participant GH as gamehub (KKManager)
+  participant G as Guest
+  H->>GH: kk:create_room {fighterClass}
+  GH-->>H: kk:room_created {code}
+  G->>GH: kk:join_room {code, fighterClass}
+  GH-->>H: kk:room_joined {hostClass, guestClass, isHost:true}
+  GH-->>G: kk:room_joined {hostClass, guestClass, isHost:false}
+  G->>GH: kk:input {...}
+  GH-->>H: kk:input {...}
+  H->>GH: kk:game_state {...}
+  GH-->>G: kk:game_state {...}
+  G--xGH: disconnect
+  GH-->>H: kk:opponent_disconnected
+  </div>
+  <figcaption>Figure 8.1: a Kowloon Knockout match &mdash; create, join, directional
+  relay, teardown.</figcaption>
+</figure>
+
+<h2 id="gamehub-relay">The generic RelayGroup framework</h2>
+<p>The legacy Node server hand-rolled the same 1v1 &ldquo;host creates / guest
+joins / relay input+state&rdquo; shape across several handlers. Rather than copy
+that boilerplate per game, <code>RelayGroup</code> (<code>relay.go</code>) captures
+it once and lets each game register onto the hub with its own event names. A
+<code>RelayConfig</code> declares the full wire surface &mdash; the inbound
+<code>CreateRoom</code>/<code>JoinRoom</code>/<code>Input</code>/<code>State</code>/<code>Leave</code>
+events and the outbound
+<code>RoomCreated</code>/<code>RoomJoined</code>/<code>Disconnected</code>/<code>Errorf</code>
+events &mdash; with every name fully qualified so the mapping to the legacy
+Socket.IO constants stays explicit and greppable.</p>
+<p><code>RelayGroup</code> implements only the common
+create/join/input/state/leave flow over a two-seat <code>RelayRoom</code>
+(<code>Code</code>, <code>Host</code>, optional <code>Guest</code>), with the same
+mutex + <code>rooms</code>/<code>connToRoom</code> structure and the same directional
+relay and seat checks as KK. Multiple games can run as separate
+<code>RelayGroup</code> instances sharing one <code>connRegistry</code> and hub.
+Games that need extra semantics &mdash; like KK's rematch handshake &mdash; are
+ported standalone instead.</p>
+
+<div class="scope"><b>Scope &mdash; what is faithful vs framework+stub.</b>
+Kowloon&nbsp;Knockout is a <b>faithful, verbatim</b> port with full game semantics
+and a lifecycle test suite. The other games are <b>framework + stub</b>:
+<code>RelayGroup</code> is real, reusable, and tested-by-construction, but the
+per-game registrations are intentionally not wired with real event names or rules
+yet. <code>buildRelayRegistry</code> returns an empty slice today, so only KK is
+exposed on the wire; each remaining game is documented as a precise plug-in point.</div>
+
+<p><code>manager.go</code> enumerates the remaining games as a
+<code>TODO(migration)</code> registry &mdash; Slice&nbsp;It, Neon&nbsp;Driftway,
+Synapse&nbsp;Storm, Blackjack (noted as multi-seat, needing a richer model than the
+two-seat <code>RelayRoom</code>), plus Holdem, Baccarat, Roulette, Lights&nbsp;Out,
+Doctrine, RMH&nbsp;Type/Study, Altair, and RMH&nbsp;Music. A commented example shows
+exactly how a ported relay registers:</p>
+<pre><code>// sliceIt := NewRelayGroup(RelayConfig{
+//     Prefix:       "slice",
+//     CreateRoom:   "slice:create_room",
+//     JoinRoom:     "slice:join_room",
+//     Input:        "slice:input",
+//     State:        "slice:game_state",
+//     Leave:        "slice:leave",
+//     RoomCreated:  "slice:room_created",
+//     RoomJoined:   "slice:room_joined",
+//     Disconnected: "slice:opponent_disconnected",
+//     Errorf:       "slice:error",
+// }, reg, logger)
+// return []*RelayGroup{sliceIt}</code></pre>
+<div class="warn">The registry returns <code>nil</code> on purpose: this keeps the
+service compiling and behaving correctly (only KK live) so no half-ported game ships
+with real event names while its rules are still missing.</div>
+
+<h2 id="gamehub-tests">The Kowloon Knockout lifecycle test</h2>
+<p><code>kk_test.go</code> exercises the KK core directly on connection-id strings
+plus a <code>capture</code> sink that records the envelopes a fake connection
+receives &mdash; no live websocket. <code>newKKHarness</code> wires a
+<code>KKManager</code> around a registry with two fake conns (<code>host-conn</code>,
+<code>guest-conn</code>). The suite covers the full lifecycle:</p>
+<ul>
+  <li><code>TestKKCreateAndJoin</code> &mdash; create yields <code>kk:room_created</code>
+  with a non-empty code; join delivers <code>kk:room_joined</code> to both seats with
+  the right <code>isHost</code> flag and the committed
+  <code>hostClass</code>/<code>guestClass</code> (<code>iron_crane</code> /
+  <code>jade_fox</code>).</li>
+  <li><code>TestKKJoinErrors</code> &mdash; an unknown code returns &ldquo;Room not
+  found&rdquo;; a third connection joining an occupied room returns &ldquo;Room is
+  full&rdquo;.</li>
+  <li><code>TestKKRelay</code> &mdash; guest input relays to host and host
+  <code>game_state</code> relays to guest, while the reverse directions are asserted
+  to <em>not</em> relay (directionality enforced).</li>
+  <li><code>TestKKRematchHandshake</code> &mdash; one side ready notifies the
+  opponent but does not start a rematch; both ready commits the pending classes
+  (<code>new_host</code> / <code>new_guest</code>) and re-emits
+  <code>kk:room_joined</code>; and the handshake flags are confirmed reset so a later
+  single-side ready does not re-trigger.</li>
+  <li><code>TestKKDisconnectNotifiesOpponentAndCleansUp</code> &mdash; host cleanup
+  sends <code>kk:opponent_disconnected</code> to the guest, empties both the
+  <code>rooms</code> and <code>connToRoom</code> maps, and confirms a subsequent stale
+  input is a no-op.</li>
+</ul>
+<div class="ok">Because the relay cores resolve peers through the registry callback
+rather than a live <code>*realtime.Conn</code>, this entire lifecycle runs in-memory
+and under the race detector, giving high-confidence coverage of the one game that is
+fully ported.</div>

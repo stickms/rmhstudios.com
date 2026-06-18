@@ -1,0 +1,501 @@
+<p class="lead">The <code>rmhbox</code> service is the Go port of the Node
+<code>server/rmhbox</code> Jackbox-style party-game platform: short multiplayer
+minigames played from a phone or a Discord Activity, with a shared host-driven
+lobby. It serves the realtime hub at <code>/rmhbox-ws/</code> on port
+<code>7676</code>, built on the shared <code>realtime.Hub</code> (replacing
+Socket.IO) rather than on a bespoke transport. This section documents the lobby
+manager and its room model, the per-lobby lifecycle FSM and game coordinator, the
+pausable timer/state-sync layer, the minigame framework, the per-player scoped
+state that prevents info-leaks, persistence, and the concurrency model — and is
+honest about what is fully ported (one minigame) versus scaffolded (eight).</p>
+
+<div class="stats">
+  <div class="stat"><div class="v">7676</div><div class="l">WS port</div></div>
+  <div class="stat"><div class="v">10</div><div class="l">FSM states</div></div>
+  <div class="stat"><div class="v">9</div><div class="l">registered games</div></div>
+  <div class="stat"><div class="v">1 / 8</div><div class="l">ported / stubbed</div></div>
+  <div class="stat"><div class="v">10s</div><div class="l">heartbeat sync</div></div>
+  <div class="stat"><div class="v">120s</div><div class="l">disconnect grace</div></div>
+</div>
+
+<h2 id="rmhbox-overview">Purpose &amp; entrypoint</h2>
+
+<p>One <code>rmhbox.Manager</code> wires together five subsystems onto a single
+<code>realtime.Hub</code>: the <code>LobbyManager</code> (lobby CRUD, host controls,
+garbage collection), the <code>GameCoordinator</code> (the per-lobby minigame
+lifecycle FSM), the <code>StateSync</code> service (heartbeats and phase timers),
+the minigame framework + registry, and the persistence <code>Repo</code>. The
+<code>cmd/rmhbox/main.go</code> entrypoint is deliberately thin — it opens an
+<em>optional</em> database (a failed open degrades to in-memory play with
+persistence disabled), constructs the hub, then registers handlers and starts
+background goroutines.</p>
+
+<pre><code>hub := realtime.NewHub(ctx, realtime.Options{
+    Origin: host, Logger: logger, Metrics: metrics, Validator: validator,
+    Bus: bus, AllowOrigins: config.GetCSV("SOCKET_CORS_ORIGIN"), RequireAuth: false,
+})
+mgr := rmhbox.NewManager(hub, database, logger)
+mgr.Register()   // bind connect/disconnect + every inbound rmhbox:* handler
+mgr.Start()      // launch heartbeat + lobby GC goroutines
+defer mgr.Stop() // tear down goroutines and cancel all grace/disband timers
+
+mux.HandleFunc("/rmhbox-ws/", hub.ServeWS)   // addr := ":" + RMHBOX_PORT (7676)</code></pre>
+
+<p>Every participating action requires an identity. The Manager guards each handler
+with <code>requireUser</code>, which sends an <code>UNAUTHENTICATED</code> error and
+bails for anonymous connections, so the hub itself runs with
+<code>RequireAuth: false</code> but the application layer enforces identity per
+event. Inbound events are bound from the envelope into typed payload structs and
+delegated to the appropriate subsystem; small adapters (<code>lobbyOnly</code>,
+<code>hostTarget</code>, <code>away</code>) cut boilerplate for the common
+<code>{lobbyId}</code> / <code>{lobbyId, targetUserId}</code> shapes.</p>
+
+<div class="note"><b>Faithful-port note.</b> Socket.IO's sub-rooms
+(<code>lobby:{id}</code>, <code>:players</code>, <code>:spectators</code>,
+<code>:player:{userId}</code>) are modelled as logical member sets on the
+<code>Lobby</code> and broadcast through the hub's single <code>rmhbox:{id}</code>
+room, filtering per-recipient where the Node code targeted a sub-room. Sequenced
+<code>GAME_ACTION</code> mutations go through <code>hub.BroadcastSeq</code> so seq
+numbering matches the legacy delta protocol. Every minigame handler call is wrapped
+in <code>recover()</code> for fault isolation, porting the
+try/catch-around-every-handler discipline.</div>
+
+<h2 id="rmhbox-lobby-manager">LobbyManager &amp; the room model</h2>
+
+<p>The <code>LobbyManager</code> owns all lobbies plus the same indices the Node
+manager kept. It is the single source of truth for membership and the only thing
+that talks to the hub for broadcasts.</p>
+
+<table>
+<thead><tr><th>Index</th><th>Type</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><code>lobbies</code></td><td><code>map[string]*Lobby</code></td><td>room code &rarr; lobby</td></tr>
+<tr><td><code>userToLobby</code></td><td><code>map[string]string</code></td><td>resolve which lobby a user is in</td></tr>
+<tr><td><code>channelToLobby</code></td><td><code>map[string]string</code></td><td>Discord channel key &rarr; lobby</td></tr>
+<tr><td><code>userConn</code></td><td><code>map[string]*realtime.Conn</code></td><td>live conn per user (the <code>:player:{id}</code> target)</td></tr>
+<tr><td><code>connUser</code></td><td><code>map[string]string</code></td><td>connID &rarr; user, for disconnect mapping</td></tr>
+<tr><td><code>pendingJoin</code></td><td><code>map[string][]string</code></td><td>mid-game spectators awaiting <code>join_next_subround</code></td></tr>
+<tr><td><code>graceTimers</code></td><td><code>*realtime.GraceTimers</code></td><td>per-user disconnect grace + keyed preload/ingame timers</td></tr>
+<tr><td><code>disbandTimers</code></td><td><code>*realtime.GraceTimers</code></td><td>per-lobby post-session disband delay</td></tr>
+</tbody>
+</table>
+
+<p>Room codes are four characters from a 32-char ambiguity-free alphabet
+(<code>ABCDEFGHJKLMNPQRSTUVWXYZ23456789</code>), drawn from <code>rand.Intn</code>
+(unbiased rejection sampling) and retried up to <code>maxCodeAttempts</code> times
+for uniqueness. The lobby creator becomes host, joins as a ready player, and the
+lobby starts in <code>WAITING</code>.</p>
+
+<h3>Broadcast routing</h3>
+
+<p>Two distinct broadcast paths exist. <code>broadcastAction</code> emits a
+<em>sequenced</em> <code>rmhbox:game:action</code> envelope via
+<code>hub.BroadcastSeq</code> — the hub stamps a monotonic per-room <code>seq</code>
+so clients can detect gaps and reorder deltas. Non-mutating events
+(<code>settings_opened</code>, <code>countdown</code>, <code>round_results</code>,
+<code>disbanded</code>) go through the non-sequenced <code>broadcastRaw</code>.
+Targeted sends resolve the user's live conn through <code>userConn</code>;
+<code>broadcastToPlayers</code>/<code>broadcastToSpectators</code> iterate the
+logical member set and fan out individual sends.</p>
+
+<div class="note"><b>Test seam.</b> Every broadcast/send routes through an optional
+function field (<code>broadcastSeqFn</code>, <code>broadcastFn</code>,
+<code>sendFn</code>). When set (in tests) they capture envelopes without a live
+WebSocket; <code>testSeq</code> mirrors the hub's atomic per-room seq stamping so
+ordering behaviour is verifiable. In production these are nil and calls hit the
+hub directly.</div>
+
+<h3>The lobby:* event surface</h3>
+
+<table>
+<thead><tr><th>Inbound event</th><th>Handler</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td><code>rmhbox:lobby:create</code></td><td><code>CreateLobby</code></td><td>replies <code>lobby:created</code> with scoped state</td></tr>
+<tr><td><code>rmhbox:lobby:join</code></td><td><code>JoinLobby</code></td><td>player or <code>asSpectator</code>; honors JIP policy</td></tr>
+<tr><td><code>rmhbox:lobby:leave</code></td><td><code>LeaveLobby</code></td><td>cancels grace timer</td></tr>
+<tr><td><code>rmhbox:lobby:kick</code> / <code>transfer_host</code></td><td><code>KickPlayer</code> / <code>TransferHost</code></td><td>host-only</td></tr>
+<tr><td><code>rmhbox:lobby:update_settings</code></td><td><code>UpdateSettings</code></td><td>host-only, <code>WAITING</code> only</td></tr>
+<tr><td><code>rmhbox:lobby:toggle_ready</code></td><td><code>ToggleReady</code></td><td>non-host; can trigger <code>AUTO_START_TRIGGERED</code></td></tr>
+<tr><td><code>rmhbox:lobby:promote_spectator</code> / <code>request_promotion</code></td><td><code>PromoteSpectator</code></td><td>between rounds only</td></tr>
+<tr><td><code>rmhbox:lobby:browse</code></td><td><code>BrowseLobbies</code></td><td>public lobbies, cursor-paginated</td></tr>
+<tr><td><code>rmhbox:lobby:end_session</code></td><td><code>EndSession</code></td><td>&rarr; <code>SESSION_RESULTS</code> + disband timer</td></tr>
+<tr><td><code>rmhbox:lobby:chat</code></td><td><code>onChat</code></td><td>sanitized, ring-buffered (100 msgs)</td></tr>
+<tr><td><code>rmhbox:game:pick</code></td><td><code>PickGame</code></td><td>host pre-selects a game (or <code>__vote__</code>)</td></tr>
+</tbody>
+</table>
+
+<h3>Grace, succession, disband &amp; GC</h3>
+
+<p>On disconnect, a <em>player</em> is marked disconnected and unready and given a
+120-second grace timer; a <em>spectator</em> is removed immediately (spectators
+have no grace). Reconnecting cancels the grace timer. If a host leaves,
+<code>succeedHost</code> promotes the earliest-joined remaining player (or, failing
+that, promotes a spectator into a player slot); if nobody remains, the lobby
+disbands. A 60-second GC ticker disbands lobbies that are idle in <code>WAITING</code>
+past 15&nbsp;min, fully disconnected past 30&nbsp;min, or empty past 2&nbsp;min.</p>
+
+<div class="warn"><b>Review fix — grace closures re-resolve the live lobby.</b> A
+grace/preload/ingame timer closure captures a <code>*Lobby</code> that may be stale
+by the time it fires (the lobby could have been disbanded and replaced). Every such
+closure now re-resolves by id and bails if the live lobby differs:
+<code>cur := m.GetLobby(l.ID); if cur == nil || cur != l { return }</code>. Likewise
+<code>removePlayer</code> only clears <code>userToLobby[userID]</code> if it still
+points at <em>this</em> lobby, so a delayed grace expiry can't evict a user who has
+since rejoined a different lobby.</div>
+
+<h2 id="rmhbox-fsm">Lobby FSM</h2>
+
+<p>The coordinator drives a single forward path through the lobby's
+<code>LobbyState</code>. The happy path from a host pressing "Start" to results is
+<code>WAITING &rarr; (GAME_SETTINGS) &rarr; INSTRUCTIONS &rarr; PRELOADING &rarr;
+COUNTDOWN &rarr; PLAYING &rarr; ROUND_RESULTS &rarr; WAITING</code>.
+<code>GAME_SETTINGS</code> is entered only in post-vote mode (a direct host start
+skips straight to <code>INSTRUCTIONS</code>). <code>VOTING</code>,
+<code>SESSION_RESULTS</code> and <code>DISBANDED</code> are branch/terminal states.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+stateDiagram-v2
+  [*] --> WAITING
+  WAITING --> GAME_SETTINGS: post-vote
+  WAITING --> INSTRUCTIONS: direct start
+  GAME_SETTINGS --> INSTRUCTIONS: confirm / timeout
+  INSTRUCTIONS --> PRELOADING: timer / skip
+  PRELOADING --> COUNTDOWN: all ready / 30s timeout
+  COUNTDOWN --> PLAYING: 3s
+  PLAYING --> ROUND_RESULTS: OnComplete
+  PLAYING --> WAITING: force-end / error
+  ROUND_RESULTS --> WAITING: skip / return
+  WAITING --> SESSION_RESULTS: end_session
+  SESSION_RESULTS --> DISBANDED: 15s
+  WAITING --> DISBANDED: empty / GC
+  DISBANDED --> [*]
+  </div>
+  <figcaption>Figure 9.1: lobby lifecycle FSM. Each transition broadcasts a
+  sequenced <code>STATE_CHANGED</code> action plus a phase-specific raw event.</figcaption>
+</figure>
+
+<p>State changes are always paired: a sequenced <code>STATE_CHANGED</code> action
+carries the canonical state, and a per-phase raw event carries phase payload
+(<code>game:instructions</code>, <code>game:preload_start</code>,
+<code>game:countdown</code>, <code>game:started</code>,
+<code>game:round_results</code>). After each transition the coordinator calls
+<code>broadcastFullSync</code> so every member receives a fresh scoped snapshot at
+phase boundaries.</p>
+
+<p>Two phases are gated rather than purely time-driven. <code>PRELOADING</code> waits
+for every connected player to emit <code>rmhbox:game:ready_to_render</code>; the
+coordinator tracks readiness in <code>lifecycleState.readyPlayers</code> and
+advances to <code>COUNTDOWN</code> as soon as all are ready, with a 30-second
+<code>preload</code> grace timer as a force-proceed fallback. The host can also
+short-circuit any pre-play phase via <code>force_skip</code>, or abort entirely with
+<code>force_end</code>.</p>
+
+<h2 id="rmhbox-coordinator">GameCoordinator &amp; a game round</h2>
+
+<p>The <code>GameCoordinator</code> is the FSM engine. It holds a per-lobby
+<code>lifecycleState</code> (the active <code>TimerHandle</code>, the preload
+readiness set, and an optional phase-cancel func) plus a
+<code>spectatorTargets</code> map. When <code>startPlaying</code> runs it snapshots
+the player set, instantiates the minigame handler from the
+<code>serverRegistry</code>, and builds a <code>MinigameContext</code> — the handler's
+entire outward communication surface (broadcast/send closures, host-id getter,
+<code>OnComplete</code>/<code>OnError</code> callbacks).</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+sequenceDiagram
+  participant H as Host
+  participant GC as GameCoordinator
+  participant MG as Minigame
+  participant SS as StateSync
+  participant C as Clients
+  H->>GC: game:select (rhyme-time)
+  GC->>C: STATE_CHANGED INSTRUCTIONS + instructions
+  GC->>SS: startTimerBroadcast(15s)
+  SS-->>C: TIMER_TICK ...
+  GC->>C: STATE_CHANGED PRELOADING + preload_start
+  C->>GC: ready_to_render (all players)
+  GC->>C: STATE_CHANGED COUNTDOWN (3s)
+  GC->>MG: build handler then Start
+  GC->>C: STATE_CHANGED PLAYING + game:started
+  MG-->>C: scoped state_snapshot per player
+  C->>GC: game:input (SUBMIT_RHYME)
+  GC->>MG: HandleInput(uid, action, data)
+  MG->>GC: OnComplete(results)
+  GC->>C: round_results + session standings
+  GC->>GC: persistAsync (fire-and-forget)
+  </div>
+  <figcaption>Figure 9.2: one game round end-to-end. Input routing and the
+  <code>OnComplete</code> callback are both wrapped in <code>recover()</code>.</figcaption>
+</figure>
+
+<p>Player input is routed only while <code>PLAYING</code>, only from actual players
+(spectator input is silently dropped), and only into a non-nil handler — then
+dispatched under a panic recover so one bad handler can't crash the goroutine:</p>
+
+<pre><code>func (gc *GameCoordinator) OnInput(userID, lobbyID, action string, data map[string]any) {
+    // ... resolve lobby, verify PLAYING + handler present, verify isPlayer ...
+    func() {
+        defer func() {
+            if rec := recover(); rec != nil {
+                gc.logger.Error("game_input_error", "lobbyId", lobbyID,
+                    "userId", userID, "panic", rec)
+            }
+        }()
+        handler.HandleInput(userID, action, data)
+    }()
+}</code></pre>
+
+<p>Host controls map onto the FSM directly. <code>OnForceSkip</code> advances the
+current non-playing phase (instructions&rarr;preload, preload&rarr;countdown,
+countdown&rarr;playing, results&rarr;waiting). <code>OnForceEnd</code> tears down the
+handler with <code>safeCleanup</code> and returns to <code>WAITING</code>.
+<code>OnPauseTimer</code> toggles either the lifecycle <code>TimerHandle</code> (for
+instructions/countdown/results) or the handler's own phase timer (during play). On
+game completion the coordinator applies round scores cumulatively, records a
+<code>ServerMatchSummary</code> in the lobby's match history, builds live session
+standings, transitions to <code>ROUND_RESULTS</code> with an infinite (host-advanced)
+timer ring, and kicks off fire-and-forget persistence.</p>
+
+<h2 id="rmhbox-statesync">StateSync &amp; the TimerHandle data-race fix</h2>
+
+<p><code>StateSync</code> has two jobs. First, a 10-second heartbeat that walks every
+lobby and, for those in <code>PLAYING</code>, pushes a fresh
+<em>per-player scoped</em> full snapshot to every connected member — so a client that
+missed deltas self-heals every 10s. Second, the pausable 1-second
+<code>TIMER_TICK</code> broadcasts that drive the phase rings:
+<code>startTimerBroadcast</code> emits a <code>TIMER_START</code>, then ticks
+<code>TIMER_TICK</code> each second until the countdown crosses below zero, at which
+point it fires <code>onComplete</code>. <code>broadcastInfiniteTimer</code> shows a
+full ring with no ticking for host-advanced results.</p>
+
+<div class="warn"><b>Review fix — the TimerHandle stop-channel data race (found by
+<code>-race</code>).</b> The broadcast goroutine reads <code>h.stop</code> without the
+lock. <code>Cancel</code> originally nil'd <code>t.stop</code>, which raced against
+that lockless read. The fix: the goroutine <em>captures</em> the channel once before
+it starts (set before the goroutine, never reassigned — happens-before via goroutine
+creation, so reading it needs no lock), and <code>Cancel</code> closes it exactly
+once behind a <code>cancelled</code> guard and <em>never</em> nils it.</div>
+
+<pre><code>// Cancel stops the timer broadcast.
+func (t *TimerHandle) Cancel() {
+    t.mu.Lock()
+    if t.cancelled { t.mu.Unlock(); return }
+    t.cancelled = true
+    // Closing the channel is the signal; the `cancelled` guard makes this
+    // close-once. We deliberately do NOT nil t.stop — the broadcast goroutine
+    // reads it without the lock, so mutating it here would be a data race.
+    if t.stop != nil { close(t.stop) }
+    t.mu.Unlock()
+}
+
+// in startTimerBroadcast:
+stop := h.stop          // capture once; never reassigned -> lockless read is safe
+go func() {
+    for {
+        select {
+        case &lt;-stop:    return
+        case &lt;-t.C:      /* decrement under h.mu, broadcast TIMER_TICK */
+        }
+    }
+}()</code></pre>
+
+<h2 id="rmhbox-minigame">Minigame framework</h2>
+
+<p>The Node abstract <code>BaseMinigame</code> class becomes a Go interface
+(<code>Minigame</code>) plus an embeddable helper (<code>BaseGame</code>) supplying
+shared lifecycle plumbing: tracked pausable one-shot timers, the pausable
+phase-timer broadcast, default no-op hooks, and panic isolation. Every concrete game
+embeds <code>BaseGame</code> and overrides the gameplay methods.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+classDiagram
+  class Minigame {
+    &lt;&lt;interface&gt;&gt;
+    +Start()
+    +HandleInput(uid, action, data)
+    +Tick()
+    +GetStateForPlayer(uid) any
+    +GetStateForSpectator() any
+    +SpectatorMode() SpectatorMode
+    +ComputeResults() MinigameResults
+    +ForceEnd(reason)
+    +Cleanup()
+    +GetSpectatorSnapshot(target) any
+    +baseGame() BaseGame
+  }
+  class BaseGame {
+    -ctx MinigameContext
+    -pausable timers
+    -phaseTicker
+    +startPhaseTimer(sec)
+    +pausePhaseTimer()
+    +resumePhaseTimer()
+    +setTimeout(fn, ms)
+    +Cleanup()
+    +baseGame() BaseGame
+  }
+  class rhymeTimeGame
+  class stubGame
+  Minigame &lt;|.. rhymeTimeGame
+  Minigame &lt;|.. stubGame
+  BaseGame &lt;|-- rhymeTimeGame
+  BaseGame &lt;|-- stubGame
+  </div>
+  <figcaption>Figure 9.3: the minigame contract. <code>BaseGame</code> supplies
+  <code>baseGame()</code>, so the compiler guarantees every handler exposes its
+  embedded base for generic pause/resume.</figcaption>
+</figure>
+
+<div class="note"><b>Review fix — <code>baseGame()</code> replaces a concrete
+type-switch.</b> The coordinator needs the embedded <code>*BaseGame</code> to drive
+phase pause/resume generically. An earlier version used a type-switch over each
+concrete game, which had to be kept in sync as games were added. Now the
+<code>Minigame</code> interface declares an unexported <code>baseGame() *BaseGame</code>
+method that <code>BaseGame</code> itself implements, so <em>every</em> embedder
+satisfies it automatically and <code>asBaseGame(h)</code> is a single, total call —
+the compiler enforces coverage.</div>
+
+<p>The phase-timer pause is non-trivial because in-flight one-shot timers must also
+freeze. <code>pausePhaseTimer</code> snapshots each unfired pausable timer's
+remaining delay and stops it; <code>resumePhaseTimer</code> re-arms each with its
+saved remainder via <code>time.AfterFunc</code>. Every fired callback runs through
+<code>fire</code>, which dedupes (<code>pt.fired</code>) and recovers panics into
+<code>ctx.OnError</code>. <code>BaseGame</code> is concurrency-safe by design: the
+host may pause/resume from one goroutine while game timers fire on others, all
+guarded by <code>b.mu</code>.</p>
+
+<h3>Rhyme Time — the one fully-ported game</h3>
+
+<p><code>rhymeTimeGame</code> is the faithful port of
+<code>server/rmhbox/minigames/rhyme-time/handler.ts</code>. Players get a root word
+each round and submit rhymes within a time limit; scoring rewards rarity (fewer
+players found the word), multi-syllable rhymes, and speed (first to a non-unique
+word), with a penalty for known non-rhyming words. Each round runs a four-phase
+sub-FSM <code>ROUND_START &rarr; INPUT &rarr; SCORING &rarr; INTERMISSION</code>
+across three rounds, driven by <code>setTimeout</code> chains and
+<code>startPhaseTimer</code> broadcasts. End-of-game <code>computeAwards</code>
+produces superlatives (Wordsmith, Diamond in the Rough, Syllable Surfer, Quick Draw,
+Overachiever).</p>
+
+<div class="scope"><b>Scope: ported vs stubbed.</b>
+<ul>
+<li><b>Fully ported (1):</b> <code>rhyme-time</code> — full phase FSM, input
+validation, rarity/speed/multi-syllable scoring, per-player state masking, and
+awards. <em>Caveat:</em> the Node handler validated rhymes against the CMU
+pronouncing dictionary (the <code>rhyming-part</code> package). To stay
+dependency-free the Go port substitutes a deterministic phonetic-suffix heuristic
+(<code>rtRhymeKey</code>) over a small bundled word set; the <em>structure</em>,
+scoring, masking and awards are faithful, the phonetic accuracy is approximate.</li>
+<li><b>Compiling stubs (8):</b> <code>undercover-agent</code>,
+<code>category-crash</code>, <code>wiki-race</code>, <code>wit-war</code>,
+<code>fact-or-friction</code>, <code>undercover-editor</code>,
+<code>minimalist-masterpiece</code>, <code>emoji-cinema</code>. Each is a
+<code>stubGame</code> that auto-completes after 1s with all players ranked at zero,
+so the full lobby/coordinator lifecycle stays exercisable end-to-end against every
+registered game. Real handlers are tracked as
+<code>TODO(migration)</code> in <code>registry.go</code>.</li>
+</ul>
+The 9 games are registered with correct static metadata (min/max players,
+join-in-progress policy, spectator mode) in <code>minigameRegistry</code> and
+<code>serverRegistry</code>; only the gameplay handlers differ in fidelity.</div>
+
+<h2 id="rmhbox-scoped-state">Per-player scoped state (info-leak prevention)</h2>
+
+<p>The single exit point for all lobby state is
+<code>LobbyManager.buildClientState(l, userID)</code>. It strips internal fields and,
+critically, scopes the active minigame state by the recipient's role: a player gets
+<code>GetStateForPlayer(userID)</code> (which includes only <em>their own</em> private
+data), while a spectator gets <code>GetStateForSpectator()</code> (no private
+submissions). For Rhyme Time this means <code>mySubmissions</code> is populated only
+for the owning player and is empty for spectators during the <code>INPUT</code> phase
+— the load-bearing distinction that prevents one player seeing another's in-progress
+answers. Competitive spectators may follow a chosen player via
+<code>GetSpectatorSnapshot</code>, which for competitive-individual games returns the
+target player's scoped state.</p>
+
+<pre><code>if myRole == "player" {
+    gameState = safeStateForPlayer(l.CurrentGame.Handler, userID)
+} else {
+    gameState = safeStateForSpectator(l.CurrentGame.Handler)
+}</code></pre>
+
+<p>Both <code>safeStateForPlayer</code> and <code>safeStateForSpectator</code> wrap
+the handler call in <code>recover()</code>, defaulting to an empty map on panic.
+Host-only data (kick/transfer/settings, the ban/kick controls) is enforced at the
+handler layer — non-host callers receive a <code>NOT_HOST</code> error and the
+mutation is rejected before any broadcast.</p>
+
+<h2 id="rmhbox-persistence">Persistence &amp; leaderboard</h2>
+
+<p>Persistence is <strong>fire-and-forget</strong>: on game complete the coordinator
+spawns a goroutine (panic-recovered) that calls <code>repo.PersistMatch</code>; a DB
+error is logged but never blocks or fails the game flow. When the database is absent
+(<code>repo == nil</code>) the whole path is a no-op and leaderboard reads return
+empty. <code>PersistMatch</code> writes a <code>rmhbox_match</code> row and one
+<code>rmhbox_match_player</code> row per player inside a single transaction.</p>
+
+<div class="ok"><b>Atomic <code>minigameStats</code> merge — fixes a Node concurrency
+hazard.</b> The Node code read a player's profile, merged the new match into the
+<code>minigameStats</code> JSONB in application code, then wrote it back — a
+find-then-update with no lock, so two matches finishing for the same user could clobber
+each other. The Go port performs the read-modify-write <em>atomically</em> under a row
+lock inside the transaction:</p>
+
+<pre><code>SELECT "id","minigameStats","currentWinStreak","bestWinStreak"
+FROM "rmhbox_profile" WHERE "userId"=$1 FOR UPDATE   -- row locked for the tx
+-- then mergeMinigameStats(...) in Go, then UPDATE ... in place</code></pre>
+
+<p>The pure merge function <code>mergeMinigameStats</code> (games played, wins, best
+score, total score, total/average rank) is extracted so the math is unit-tested
+directly without a database. The leaderboard read maps the caller's
+<code>metric</code> onto a fixed whitelist of quoted column literals
+(<code>"totalScore"</code> / <code>"totalWins"</code> / <code>"totalGamesPlayed"</code>)
+before concatenation, so no user input ever reaches the <code>ORDER BY</code> — the
+query is injection-proof by construction.</p>
+
+<h2 id="rmhbox-concurrency">Concurrency model</h2>
+
+<ul>
+<li><b>Per-lobby mutex.</b> Each <code>Lobby</code> carries its own
+<code>sync.Mutex</code>; every read or write of lobby fields takes it. Many
+goroutines touch a lobby concurrently — timers, the GC ticker, the heartbeat, and
+every connection's read pump — so the lock is the lobby's single serialization point.
+The manager's own <code>RWMutex</code> guards the global indices.</li>
+<li><b>Snapshot-then-broadcast.</b> Handlers consistently take the lock, copy out the
+minimal data they need (ids, names, a settings value), release the lock, and only
+<em>then</em> broadcast — broadcast helpers re-take the lock themselves, so locks are
+never held across a fan-out.</li>
+<li><b>Grace closures re-resolve.</b> As noted, every deferred timer re-resolves its
+lobby by id and bails if it was disbanded/replaced (the review fix).</li>
+<li><b>Panic-recover fault isolation.</b> Every minigame handler entry point
+(<code>Start</code>, <code>HandleInput</code>, <code>HandlePlayerDisconnect</code>,
+<code>ForceEnd</code>, the state getters, <code>Cleanup</code>) and the async persist
+goroutine are wrapped in <code>recover()</code>, routing failures to
+<code>ctx.OnError</code>/<code>handleGameError</code> or a log line rather than
+crashing the service.</li>
+</ul>
+
+<h2 id="rmhbox-tests">Tests</h2>
+
+<p><code>rmhbox_test.go</code> drives the manager through a capturing test rig (no
+sockets) and covers the load-bearing behaviors:</p>
+
+<table>
+<thead><tr><th>Test</th><th>Verifies</th></tr></thead>
+<tbody>
+<tr><td><code>TestFSMTransitions</code></td><td>full forward path WAITING&rarr;INSTRUCTIONS&rarr;PRELOADING&rarr;COUNTDOWN&rarr;PLAYING&rarr;WAITING via select / skip / ready_to_render / force-end, plus the <code>STATE_CHANGED</code> sequence</td></tr>
+<tr><td><code>TestRoundResultsTransitionOnComplete</code></td><td><code>handleGameComplete</code> &rarr; ROUND_RESULTS, cumulative scoring, match-history recording</td></tr>
+<tr><td><code>TestSeqOrderedGameActions</code></td><td><code>GAME_ACTION</code> envelopes carry monotonic <code>seq</code> from 1</td></tr>
+<tr><td><code>TestSeqMonotonicUnderConcurrency</code></td><td>100 concurrent broadcasts yield 100 unique, non-duplicated seqs</td></tr>
+<tr><td><code>TestScopedStateFiltering</code></td><td>each player sees only their own submissions; spectator sees none; a follower sees the target's scoped state</td></tr>
+<tr><td><code>TestBuildClientStateScopesByRole</code></td><td><code>buildClientState</code> tags <code>myRole</code> and never leaks submissions into the spectator's <code>publicState</code></td></tr>
+<tr><td><code>TestMinigameStatsMerge</code></td><td>read-modify-write math for existing &amp; fresh entries, with the prior entry untouched</td></tr>
+<tr><td><code>TestGameCompleteFiresPersistence</code></td><td>the fire-and-forget goroutine reaches the (fake) repo with the correct match record</td></tr>
+</tbody>
+</table>
+
+<p>The suite compiles, passes <code>go vet</code>, and passes under the race detector
+— the latter being how the <code>TimerHandle</code> stop-channel race was caught.</p>

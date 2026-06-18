@@ -1,0 +1,72 @@
+<p class="lead">Before this document was written, the entire Go fleet went through a
+three-part senior engineering review — one reviewer per subsystem — exactly as a
+real pre-merge review would. The reviewers found genuine issues, including a
+blocking concurrency bug and a real data race. This section records the findings
+and the fixes honestly, because the remediation loop is part of the work.</p>
+
+<h2 id="rev-process">The review process</h2>
+<p>Three independent reviews ran in parallel: (1) the shared foundation + gateway,
+(2) the four realtime services, (3) the workers + discord-bot + the deploy layer.
+Each reviewer read the code directly and reported prioritized findings
+(blocking / high / medium / low) with concrete fixes. Findings were then fixed and
+the full verification suite re-run, including the race detector.</p>
+
+<h2 id="rev-blocking">Blocking findings (fixed)</h2>
+<table>
+<thead><tr><th>Finding</th><th>Fix</th></tr></thead>
+<tbody>
+<tr><td><b>Send-on-closed-channel panic.</b> <code>Conn.close()</code> closed the <code>send</code> channel while other goroutines (heartbeats, timers, broadcasts) could still write to it — a guaranteed crash under exactly the load realtime is built for.</td><td>Reworked the connection lifecycle: a dedicated <code>closed chan struct{}</code> (closed once) signals shutdown; <code>send</code> is <b>never</b> closed; all producers go through <code>trySend</code>, which selects on <code>closed</code>. The write pump exits on <code>closed</code>.</td></tr>
+<tr><td><b>Gateway upstreams unresolvable in k8s.</b> The Helm chart didn't set the gateway's <code>*_UPSTREAM</code> env, so its compose-style defaults (e.g. <code>http://gamehub:7001</code>) wouldn't resolve to the in-cluster Service names.</td><td>The chart now injects the correct in-cluster DNS (<code>http://rmhstudios-go-gamehub:7001</code>, etc.) plus <code>WEB_UPSTREAM</code> for the gateway Deployment.</td></tr>
+<tr><td><b>CI/script contract mismatch.</b> CI invoked <code>run.sh --no-docker</code>, which the script didn't support.</td><td>Added a real <code>--no-docker</code> mode that builds + launches the binaries on the runner against the CI-provided Postgres.</td></tr>
+</tbody>
+</table>
+
+<h2 id="rev-race">The data race the detector caught</h2>
+<p>The most instructive finding came not from a human read but from
+<code>go test -race</code>: in rmhbox's <code>StateSync</code>, the timer-broadcast
+goroutine read <code>h.stop</code> in its <code>select</code> while
+<code>TimerHandle.Cancel()</code> set <code>h.stop = nil</code> under the mutex —
+an unsynchronized read/write on the same field.</p>
+<pre><code>// before: Cancel niled the channel the goroutine was reading
+t.stop = nil                       // RACE vs the select below
+// goroutine:
+select { case &lt;-h.stop: return ... }
+
+// after: never nil it; capture once; close-once is the signal
+stop := h.stop                     // captured before goroutine starts
+go func(){ for { select { case &lt;-stop: return ... } } }()
+// Cancel(): close(t.stop) guarded by a cancelled flag; no nil</code></pre>
+<div class="ok"><b>Outcome:</b> after the fix, <code>go test -race ./...</code> is
+clean across every package. This is the value of running the detector in CI: a bug
+that is invisible to the eye and intermittent in production was caught
+deterministically.</div>
+
+<h2 id="rev-high">High-severity findings (fixed)</h2>
+<table>
+<thead><tr><th>Finding</th><th>Fix</th></tr></thead>
+<tbody>
+<tr><td>discord-bot <code>/rmhbot</code> session lock was a check-then-set TOCTOU race; two interactions could run two agent loops on one worktree.</td><td>Per-session mutex; atomic <code>tryLock</code>/<code>unlock</code>; history mutated only under the lock.</td></tr>
+<tr><td>vibe-worker built the <code>data:</code> URL by string concatenation; arbitrary HTML with <code>#</code>/<code>%</code> truncated or mis-decoded in Chromium.</td><td>Base64-encode the payload (<code>data:text/html;base64,…</code>).</td></tr>
+<tr><td>Gateway stripped only three known identity headers, leaving future <code>X-Rmh-*</code> headers forgeable.</td><td>Strip the entire <code>X-Rmh-</code> prefix namespace before injecting trusted values.</td></tr>
+</tbody>
+</table>
+
+<h2 id="rev-medium">Selected medium findings (fixed)</h2>
+<ul>
+  <li><b>rmhbox grace timers</b> captured a stale lobby pointer and didn't cancel preload/ingame keys on force-end → re-resolve the live lobby in each closure; cancel all grace keys in <code>clearLifecycleTimers</code>.</li>
+  <li><b>rmhbox</b> pause/resume used a concrete type-switch → replaced with a <code>baseGame()</code> interface method the compiler enforces.</li>
+  <li><b>rmhtube</b> didn't prune skip/queue votes on disconnect and disbanded outside the room lock → prune on member removal; disband under the lock with a join re-check.</li>
+  <li><b>rmhmusic</b> <code>onPlay</code> released and re-acquired the lock, allowing interleaved track changes → single critical section; seq stamping aligned with rmhtube.</li>
+  <li><b>workers</b> logged-and-continued on a metrics-port bind failure, leaving pods unprobeable → fail fast on bind error.</li>
+  <li><b>auth</b> treated DB errors as "anonymous" silently → log/meter non-authentication errors.</li>
+  <li><b>discord-bot</b> ran interactions on <code>context.Background()</code> → derive from the lifecycle context with a timeout; make the GitHub repo env-driven.</li>
+</ul>
+
+<h2 id="rev-clean">What the reviewers checked and found clean</h2>
+<p>Not everything needed fixing. The reviewers explicitly signed off on: the auth
+SQL (parameterized, correct expiry), the pgx pool configuration, graceful
+shutdown, the doctrine determinism (golden-tested), the rmhbox atomic
+<code>SELECT … FOR UPDATE</code> stat merge, per-player state scoping (no info
+leak), the safePath traversal guard, and the consistent room→manager lock ordering
+across the realtime services. The Dockerfile (static build, tzdata, non-root) and
+the Helm probe-port helper were also verified correct.</p>
