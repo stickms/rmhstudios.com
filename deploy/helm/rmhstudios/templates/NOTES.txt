@@ -1,0 +1,19 @@
+rmhstudios deployed (release {{ .Release.Name }}).
+
+Image:   {{ .Values.image.repository }}:{{ .Values.image.tag }}
+Secret:  {{ .Values.secretName }} (created out-of-band from .env.production)
+
+Check rollout:
+  kubectl get pods -l app.kubernetes.io/instance={{ .Release.Name }}
+  kubectl logs job/{{ include "rmhstudios.fullname" . }}-migrate
+
+{{- if .Values.ingress.enabled }}
+Ingress hosts:
+{{- range .Values.ingress.hosts }}
+  https://{{ .host }}  ->  {{ .service }}:{{ .port }}
+{{- end }}
+{{- else }}
+Ingress is disabled. Enable with -f values-prod.yaml (set real hosts first).
+{{- end }}
+
+Rollback:  helm rollback {{ .Release.Name }}

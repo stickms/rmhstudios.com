@@ -1,0 +1,99 @@
+{{- $root := . -}}
+{{- range $name, $svc := .Values.services }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "rmhstudios.fullname" $root }}-{{ $name }}
+  labels:
+    {{- include "rmhstudios.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: {{ $name }}
+spec:
+  replicas: {{ $svc.replicas | default 1 }}
+  selector:
+    matchLabels:
+      {{- include "rmhstudios.componentSelectorLabels" (dict "Chart" $root.Chart "Release" $root.Release "Values" $root.Values "component" $name) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "rmhstudios.componentSelectorLabels" (dict "Chart" $root.Chart "Release" $root.Release "Values" $root.Values "component" $name) | nindent 8 }}
+    spec:
+      {{- with $root.Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- range . }}
+        - name: {{ . }}
+        {{- end }}
+      {{- end }}
+      {{- if $svc.stopGracePeriod }}
+      terminationGracePeriodSeconds: {{ $svc.stopGracePeriod }}
+      {{- end }}
+      containers:
+        - name: {{ $name }}
+          image: "{{ $root.Values.image.repository }}:{{ $root.Values.image.tag }}"
+          imagePullPolicy: {{ $root.Values.image.pullPolicy }}
+          command: {{ toJson $svc.command }}
+          envFrom:
+            - secretRef:
+                name: {{ $root.Values.secretName }}
+          {{- if or $svc.portEnv $svc.extraEnv }}
+          env:
+            {{- if $svc.portEnv }}
+            - name: {{ $svc.portEnv }}
+              value: {{ $svc.port | quote }}
+            {{- end }}
+            {{- with $svc.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
+          {{- if $svc.port }}
+          ports:
+            - containerPort: {{ $svc.port }}
+              name: http
+          {{- end }}
+          {{- if and $svc.probePath $svc.port }}
+          readinessProbe:
+            httpGet:
+              path: {{ $svc.probePath }}
+              port: {{ $svc.port }}
+            initialDelaySeconds: 15
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: {{ $svc.probePath }}
+              port: {{ $svc.port }}
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          {{- end }}
+          resources:
+            {{- toYaml ($svc.resources | default $root.Values.defaultResources) | nindent 12 }}
+          {{- if or $svc.mountData $svc.mountRepo }}
+          volumeMounts:
+            {{- if $svc.mountData }}
+            - name: data
+              mountPath: {{ $root.Values.data.mountPath }}
+            {{- end }}
+            {{- if $svc.mountRepo }}
+            - name: repo
+              mountPath: {{ $root.Values.rmhbotRepoPath }}
+            {{- end }}
+          {{- end }}
+      {{- if or $svc.mountData $svc.mountRepo }}
+      volumes:
+        {{- if $svc.mountData }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "rmhstudios.fullname" $root }}-data
+        {{- end }}
+        {{- if $svc.mountRepo }}
+        # MULTI-NODE SEAM: hostPath pins discord-bot to this node.
+        - name: repo
+          hostPath:
+            path: {{ $root.Values.rmhbotRepoPath }}
+            type: Directory
+        {{- end }}
+      {{- end }}
+{{- end }}

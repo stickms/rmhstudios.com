@@ -1,0 +1,60 @@
+{{- if .Values.migrations.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "rmhstudios.fullname" . }}-migrate
+  labels:
+    {{- include "rmhstudios.labels" . | nindent 4 }}
+    app.kubernetes.io/component: migrate
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 600
+  template:
+    metadata:
+      labels:
+        {{- include "rmhstudios.labels" . | nindent 8 }}
+        app.kubernetes.io/component: migrate
+    spec:
+      restartPolicy: Never
+      {{- with .Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- range . }}
+        - name: {{ . }}
+        {{- end }}
+      {{- end }}
+      containers:
+        - name: migrate
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.secretName }}
+          command: ["sh", "-c"]
+          args:
+            - |
+              set -e
+              echo "[migrate] waiting for database..."
+              for i in $(seq 1 10); do
+                # Mirrors deploy.sh's reachability check; 'up to date' is an
+                # intentional addition for the already-migrated re-deploy case.
+                if npx prisma migrate status 2>&1 | grep -qE 'migration|Database schema|up to date'; then
+                  echo "[migrate] database reachable"; break
+                fi
+                if [ "$i" -eq 10 ]; then echo "[migrate] DB not reachable"; exit 1; fi
+                echo "[migrate] not reachable yet ($i/10), retrying in 5s"; sleep 5
+              done
+              echo "[migrate] resolving baseline {{ .Values.migrations.baseline }} (idempotent)"
+              npx prisma migrate resolve --applied {{ .Values.migrations.baseline }} 2>/dev/null || true
+              FAILED=$(npx prisma migrate status 2>&1 | grep -oE 'resolve --rolled-back "[^"]+"' | grep -oE '"[^"]+"' | tr -d '"' || true)
+              if [ -n "$FAILED" ]; then
+                echo "[migrate] rolling back failed migration $FAILED"
+                npx prisma migrate resolve --rolled-back "$FAILED" || true
+              fi
+              echo "[migrate] applying migrations"
+              npx prisma migrate deploy
+              echo "[migrate] done"
+{{- end }}

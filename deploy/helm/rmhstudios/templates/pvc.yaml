@@ -1,0 +1,15 @@
+{{- if .Values.data.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "rmhstudios.fullname" . }}-data
+  labels:
+    {{- include "rmhstudios.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    {{- toYaml .Values.data.accessModes | nindent 4 }}
+  storageClassName: {{ .Values.data.storageClass | quote }}
+  resources:
+    requests:
+      storage: {{ .Values.data.size | quote }}
+{{- end }}
