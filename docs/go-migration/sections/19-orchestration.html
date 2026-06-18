@@ -1,0 +1,77 @@
+<p class="lead">The fleet ships with two orchestration paths that mirror the existing
+project: a Docker Compose file for local/single-host parity with the Node stack,
+and a Helm chart that deliberately follows PR&nbsp;#121's conventions so it slots
+into the same k3s cluster.</p>
+
+<h2 id="orch-compose">Docker Compose</h2>
+<p><code>docker-compose.go.yml</code> is the Go analog of the project's root
+<code>docker-compose.yml</code>. It builds one image per service from the shared
+Dockerfile, runs a Redis instance as the realtime backplane, reads the same
+<code>.env.production</code>, and exposes the gateway as the single ingress. The
+gateway's upstreams are wired to the Compose service names; the catch-all points
+back at the host's Node web app via <code>host.docker.internal</code>.</p>
+<pre><code>docker compose -f go-services/docker-compose.go.yml \
+  --env-file .env.production up -d --build</code></pre>
+
+<h2 id="orch-chart">The Helm chart</h2>
+<p><code>deploy/helm/rmhstudios-go</code> renders the whole fleet. It reuses
+PR&nbsp;#121's patterns: a generic Deployment template that ranges over a
+<code>services</code> map, a Service template for the ported services, a Traefik
+Ingress, and — crucially — the <i>same</i> <code>rmhstudios-secrets</code> Secret
+(via <code>envFrom</code>) and <code>rmhstudios-data</code> PVC. The one deliberate
+departure from PR&nbsp;#121's single-image chart is noted in the chart description:
+because each Go service is a distinct static binary, each is a distinct image
+(<code>&lt;registry&gt;/&lt;prefix&gt;-&lt;svc&gt;:&lt;tag&gt;</code>).</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart TB
+  vals["values.yaml: services map + image + redis + ingress"]
+  vals --> dep["deployment.yaml (range over services)"]
+  vals --> svc["service.yaml (ported services only)"]
+  vals --> redis["redis.yaml (backplane)"]
+  vals --> ing["ingress.yaml (-> gateway)"]
+  dep --> sec["envFrom rmhstudios-secrets (reused from PR #121)"]
+  dep --> pvc["rmhstudios-data PVC (vibe-worker)"]
+  </div>
+  <figcaption>Figure 19.1 — Chart structure: one values map drives a generic Deployment, Services, Redis, and Ingress.</figcaption>
+</figure>
+
+<h2 id="orch-services-map">The services map</h2>
+<p>The chart is data-driven: each service is an entry in <code>values.services</code>
+declaring its client port (if any), replica count, ingress path, and whether it is
+a worker (no Service, probes hit <code>/health</code> on the metrics port) or needs
+the shared storage. Probes target the right port automatically via a helper.</p>
+<table>
+<thead><tr><th>Key</th><th>Effect</th></tr></thead>
+<tbody>
+<tr><td><code>port</code></td><td>Container port + ClusterIP Service + probe port.</td></tr>
+<tr><td><code>worker: true</code></td><td>No Service; probes hit <code>/health</code> on <code>metricsPort</code> (9090).</td></tr>
+<tr><td><code>replicas</code></td><td>Per-service replica count (prod scales gateway/gamehub).</td></tr>
+<tr><td><code>storage: true</code></td><td>Mounts the shared PVC (vibe-worker thumbnails).</td></tr>
+<tr><td><code>path</code></td><td>Documents the ingress prefix the gateway proxies.</td></tr>
+</tbody>
+</table>
+
+<h2 id="orch-gateway-wiring">Gateway upstream wiring</h2>
+<p>The gateway's reverse-proxy upstreams default to Compose-style hostnames, which
+do not resolve in Kubernetes. The chart therefore injects the correct in-cluster
+Service DNS names into the gateway's environment
+(<code>GAMEHUB_UPSTREAM=http://rmhstudios-go-gamehub:7001</code>, etc., and
+<code>WEB_UPSTREAM</code> for the Node SSR Service). This was a blocking deploy bug
+caught in senior review and fixed before this document was written.</p>
+
+<h2 id="orch-redis">The backplane in-cluster</h2>
+<p>When <code>redis.enabled</code> (default), the chart deploys a single in-memory
+Redis (no persistence, no PVC) and points every realtime service at it via
+<code>REDIS_URL</code>. With it, the realtime services can scale beyond one
+replica behind sticky-session ingress; without it, they run single-replica exactly
+as today.</p>
+
+<h2 id="orch-validation">Validated rendering</h2>
+<p>The chart was validated, not just written: <code>helm lint</code> passes for
+both default and production values, and the rendered manifests — 35 resources
+across the default and prod value sets — pass <code>kubeconform -strict</code> with
+zero invalid resources.</p>
+<pre><code>$ helm lint deploy/helm/rmhstudios-go         # 0 failed
+$ helm template ... | kubeconform -strict     # 35/35 valid, 0 invalid</code></pre>

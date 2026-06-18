@@ -1,0 +1,56 @@
+<p class="lead">Performance was not the stated motivation for this migration — correctness
+and faithful behavior were — but a Go rewrite of a realtime tier brings real
+efficiency characteristics worth recording, along with the specific optimizations
+baked into the implementation.</p>
+
+<h2 id="perf-model">The concurrency model</h2>
+<p>Each websocket connection runs exactly two goroutines (a read pump and a write
+pump) over a buffered send channel — the idiomatic gorilla pattern. Go's
+scheduler multiplexes thousands of such goroutines onto a handful of OS threads,
+so a single replica can hold a large number of idle connections cheaply, where the
+Node event loop served the same role single-threaded. Per-room state is guarded by
+fine-grained per-room mutexes rather than one global lock, so unrelated rooms never
+contend.</p>
+
+<h2 id="perf-opts">Optimizations in the implementation</h2>
+<table>
+<thead><tr><th>Optimization</th><th>Where</th><th>Effect</th></tr></thead>
+<tbody>
+<tr><td>Per-room mutexes + atomic seq</td><td>realtime, all services</td><td>No global lock; sequence numbers via <code>atomic.AddUint64</code>, no lock at all.</td></tr>
+<tr><td>Non-blocking broadcast</td><td>realtime hub/room</td><td>A slow consumer is evicted, never blocks a shared room fan-out.</td></tr>
+<tr><td>Snapshot-then-broadcast</td><td>realtime services</td><td>Member list copied under the lock, then sent outside it — lock held briefly.</td></tr>
+<tr><td>Connection pooling</td><td>pkg/db</td><td>One <code>pgxpool</code> per binary sized to <code>SERVER_DB_POOL_SIZE</code>; pgx's binary protocol is faster than text.</td></tr>
+<tr><td>Atomic stat merge</td><td>rmhbox</td><td><code>SELECT … FOR UPDATE</code> in a tx — correct under concurrency and one round-trip.</td></tr>
+<tr><td>Optimistic concurrency</td><td>vibe-worker</td><td>Lock-free flag clear; no row locks held during slow Chromium renders.</td></tr>
+<tr><td>Static binaries</td><td>build</td><td>Fast cold-start (no JIT/warmup); ~33&nbsp;MB images pull quickly.</td></tr>
+<tr><td>Bounded, GC'd rate limiter</td><td>pkg/ratelimit</td><td>Memory capped; stale entries swept every 30s.</td></tr>
+</tbody>
+</table>
+
+<h2 id="perf-footprint">Footprint</h2>
+<p>The runtime footprint is modest by construction: a static Go binary on Alpine,
+a few MB of RSS at idle, and image sizes in the tens of MB. The Helm defaults
+request 25m CPU / 32Mi memory per pod with 1 CPU / 256Mi limits — deliberately
+small, on the assumption that connection-bound realtime work is cheap per
+connection and scales by replica count rather than per-pod size.</p>
+
+<h2 id="perf-scaling">Scaling characteristics</h2>
+<p>The dominant scaling axis is concurrent websocket connections. With the Redis
+backplane enabled, a realtime service scales horizontally: add replicas behind
+sticky-session ingress and the bus keeps rooms coherent across them. Workers scale
+differently — they are singletons by nature (one scheduler, one poller), so they
+scale <i>up</i> (more DB pool, larger batches) rather than out, and the chart keeps
+them at one replica.</p>
+<div class="note">Honest caveat: no load testing was performed as part of this work.
+The performance claims here are structural (what the design enables), not measured
+benchmarks. Establishing connection-count and latency baselines is explicit future
+work (Section&nbsp;25).</div>
+
+<h2 id="perf-vs-node">Versus the Node services</h2>
+<p>The Go services should use less memory per connection and start faster than the
+Node equivalents, and the per-room locking gives true parallelism across rooms on
+multiple cores (where Node's single event loop did not). These are reasons a Go
+realtime tier is attractive <i>if</i> connection volume ever justifies it — which
+is precisely the metrics-driven condition PR&nbsp;#121 set for Stage&nbsp;4. This
+migration provides the implementation; the metrics to justify adopting it are the
+missing input.</p>

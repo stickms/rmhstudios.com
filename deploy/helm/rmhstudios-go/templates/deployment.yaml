@@ -1,0 +1,121 @@
+{{- $root := . -}}
+{{- range $svc, $cfg := .Values.services }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "rmhgo.fullname" $root }}-{{ $svc }}
+  labels:
+    {{- include "rmhgo.labels" $root | nindent 4 }}
+    app.kubernetes.io/name: {{ $svc }}
+    app.kubernetes.io/component: {{ if $cfg.worker }}worker{{ else }}server{{ end }}
+spec:
+  replicas: {{ $cfg.replicas | default 1 }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ $svc }}
+      app.kubernetes.io/instance: {{ $root.Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ $svc }}
+        app.kubernetes.io/instance: {{ $root.Release.Name }}
+        app.kubernetes.io/part-of: rmhstudios-go
+    spec:
+      {{- if $cfg.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ $cfg.terminationGracePeriodSeconds }}
+      {{- end }}
+      containers:
+        - name: {{ $svc }}
+          image: {{ include "rmhgo.image" (list $root $svc) }}
+          imagePullPolicy: {{ $root.Values.image.pullPolicy }}
+          envFrom:
+            - secretRef:
+                name: {{ $root.Values.env.secretName }}
+          env:
+            {{- if $root.Values.redis.enabled }}
+            - name: REDIS_URL
+              value: {{ $root.Values.redis.url | quote }}
+            {{- end }}
+            - name: METRICS_ADDR
+              value: ":{{ $root.Values.metricsPort }}"
+            {{- if $cfg.port }}
+            {{- if eq $svc "gamehub" }}
+            - name: SOCKET_PORT
+              value: {{ $cfg.port | quote }}
+            {{- else if eq $svc "rmhmusic" }}
+            - name: RMHMUSIC_PORT
+              value: {{ $cfg.port | quote }}
+            {{- else if eq $svc "rmhtube" }}
+            - name: RMHTUBE_PORT
+              value: {{ $cfg.port | quote }}
+            {{- else if eq $svc "rmhbox" }}
+            - name: RMHBOX_PORT
+              value: {{ $cfg.port | quote }}
+            {{- else if eq $svc "recap" }}
+            - name: RECAP_PORT
+              value: {{ $cfg.port | quote }}
+            {{- else if eq $svc "gateway" }}
+            - name: PORT_WEB
+              value: {{ $cfg.port | quote }}
+            # Wire the gateway's reverse-proxy upstreams to the in-cluster
+            # Service DNS names (otherwise the compose-style defaults like
+            # http://gamehub:7001 don't resolve in Kubernetes).
+            {{- $fn := include "rmhgo.fullname" $root }}
+            {{- with $root.Values.services.gamehub }}
+            - name: GAMEHUB_UPSTREAM
+              value: "http://{{ $fn }}-gamehub:{{ .port }}"
+            {{- end }}
+            {{- with $root.Values.services.rmhbox }}
+            - name: RMHBOX_UPSTREAM
+              value: "http://{{ $fn }}-rmhbox:{{ .port }}"
+            {{- end }}
+            {{- with $root.Values.services.rmhtube }}
+            - name: RMHTUBE_UPSTREAM
+              value: "http://{{ $fn }}-rmhtube:{{ .port }}"
+            {{- end }}
+            {{- with $root.Values.services.rmhmusic }}
+            - name: RMHMUSIC_UPSTREAM
+              value: "http://{{ $fn }}-rmhmusic:{{ .port }}"
+            {{- end }}
+            {{- if $root.Values.webUpstream }}
+            - name: WEB_UPSTREAM
+              value: {{ $root.Values.webUpstream | quote }}
+            {{- end }}
+            {{- end }}
+            {{- end }}
+          ports:
+            {{- if $cfg.port }}
+            - name: http
+              containerPort: {{ $cfg.port }}
+            {{- end }}
+            {{- if $cfg.worker }}
+            - name: metrics
+              containerPort: {{ $root.Values.metricsPort }}
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ include "rmhgo.probePort" (list $cfg $root.Values.metricsPort) }}
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ include "rmhgo.probePort" (list $cfg $root.Values.metricsPort) }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            {{- toYaml $root.Values.resources | nindent 12 }}
+          {{- if and $cfg.storage $root.Values.data.enabled }}
+          volumeMounts:
+            - name: data
+              mountPath: {{ $root.Values.data.mountPath }}
+          {{- end }}
+      {{- if and $cfg.storage $root.Values.data.enabled }}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ $root.Values.data.existingClaim }}
+      {{- end }}
+{{- end }}

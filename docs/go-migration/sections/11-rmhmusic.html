@@ -1,0 +1,287 @@
+<p class="lead">The <code>rmhmusic</code> service is the Go port of the Node rmhmusic
+feature: synchronized group music-listening rooms where the host controls playback
+and members share a queue and chat. In Node this lived <em>inside</em> the unified
+socket-server behind the <code>rmhmusic:</code> event prefix; in the Go world it is
+extracted into its own standalone service. It serves the realtime hub at
+<code>/rmhmusic-ws/</code> (default port <code>7002</code>,
+<code>RMHMUSIC_PORT</code>) plus <code>/health</code> and <code>/metrics</code>.
+Unlike rmhtube, it sets <code>RequireAuth: true</code> on the hub — only
+authenticated users may connect — which makes the database mandatory (it backs both
+session validation and the one persisted row). The package lives in
+<code>internal/rmhmusic/</code> (events, types, manager, room, sync, queue, chat,
+repo, util) and is wired in <code>cmd/rmhmusic/main.go</code>.</p>
+
+<div class="stats">
+  <div class="stat"><div class="v">7002</div><div class="l">RMHMUSIC_PORT</div></div>
+  <div class="stat"><div class="v">auth</div><div class="l">RequireAuth=true</div></div>
+  <div class="stat"><div class="v">5s</div><div class="l">sync heartbeat</div></div>
+  <div class="stat"><div class="v">30s</div><div class="l">disconnect grace</div></div>
+  <div class="stat"><div class="v">1</div><div class="l">DB row persisted</div></div>
+</div>
+
+<h2 id="rmhmusic-overview">Service shape and the auth requirement</h2>
+<p>The binary is a single authenticated WebSocket runtime. Because auth is
+mandatory, <code>main.go</code> opens the database with <code>db.Open</code> and
+<code>Fatal</code>s on failure (no in-memory degrade path, unlike rmhtube), then
+constructs the hub with <code>RequireAuth: true</code> and a session validator:</p>
+<pre><code>database, err := db.Open(ctx, cfg.DatabaseURL, cfg.DBPoolSize)
+if err != nil { logger.Fatal("db", "error", err) }
+
+v := auth.NewValidator(database.Pool)
+hub := realtime.NewHub(ctx, realtime.Options{
+    Validator:   v,
+    RequireAuth: true, // rmhmusic requires auth
+    // ...
+})
+mgr := rmhmusic.NewManager(hub, logger, rmhmusic.NewPgRepo(database))
+mgr.Register()
+mgr.Start(ctx) // GC reaper + 5s playback heartbeat</code></pre>
+<p>Because every connection is authenticated, <code>c.UserID()</code> is always a
+real account id — there is no guest fallback to reason about. The Go port composes
+the four Node managers (RoomManager, SyncEngine, QueueManager, ChatHandler), which
+in Node shared one <code>RoomManager</code> instance, onto a single
+<code>Manager</code> struct that holds the shared state directly.</p>
+
+<h2 id="rmhmusic-protocol">Snapshot + seq-delta protocol</h2>
+<p>Event names are ported verbatim from <code>lib/rmhmusic/events.ts</code>,
+carrying the <code>rmhmusic:</code> prefix so the existing client adapter speaks
+them byte-for-byte. As with rmhtube, the protocol is <b>full snapshot on join +
+seq-numbered deltas thereafter</b>. On join the server sends a
+<code>room:state_snapshot</code> from <code>toClientState</code>; every mutation
+then goes out as a <code>room:action</code> envelope with a per-room monotonic
+sequence. The delta types are a compact set:</p>
+<pre><code>actionMemberJoined       = "MEMBER_JOINED"
+actionMemberLeft         = "MEMBER_LEFT"
+actionMemberDisconnected = "MEMBER_DISCONNECTED"
+actionHostTransferred    = "HOST_TRANSFERRED"
+actionChatMessage        = "CHAT_MESSAGE"
+actionNowPlaying         = "NOW_PLAYING"
+actionQueueItemAdded     = "QUEUE_ITEM_ADDED"</code></pre>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+sequenceDiagram
+  participant N as New member
+  participant S as rmhmusic server
+  participant R as Existing members
+  N->>S: room:join {code,password}
+  Note over S: password + capacity checks under room.mu
+  S->>N: room:state_snapshot {members,queue,playback,seq}
+  Note over S: snapshot carries current seq (e.g. 7)
+  S->>R: room:action MEMBER_JOINED {seq:8}
+  S->>N: room:action MEMBER_JOINED {seq:8}
+  Note over R,N: members apply deltas in seq order,<br/>discard any seq at or below snapshot seq
+  </div>
+  <figcaption>Figure 11.1: snapshot + delta join. The joiner gets a full snapshot
+  stamped with the current seq, then everyone receives the MEMBER_JOINED delta at
+  the next seq.</figcaption>
+</figure>
+
+<p>The broadcast primitive <code>broadcastAction</code> increments
+<code>room.Seq</code> under <code>room.mu</code> and broadcasts the
+<code>{type,payload,seq,timestamp}</code> envelope:</p>
+<pre><code>func (m *Manager) broadcastAction(room *ServerRoom, typ string, payload any) {
+    room.Seq++
+    room.LastActivityAt = m.now()
+    m.hub.Broadcast(room.ID, realtime.MustEnvelope(s2cRoomAction, map[string]any{
+        "type":      typ,
+        "payload":   payload,
+        "seq":       room.Seq,
+        "timestamp": m.now(),
+    }))
+}</code></pre>
+<div class="note"><b>Seq-stamping consistency (per review).</b> The doc comment is
+explicit that the <em>inner</em> payload seq — the room's own counter, what the Node
+delta carried and what snapshots report — is the single authoritative sequence.
+This is why <code>broadcastAction</code> uses plain <code>hub.Broadcast</code> and
+<b>not</b> a <code>BroadcastSeq</code> helper: a second, envelope-level seq stamp
+would be redundant and could diverge from the inner one. This deliberately aligns
+rmhmusic with rmhtube. <code>TestSeqOrderedDeltaNumbering</code> drives three
+actions and asserts both the room counter and the snapshot's reported
+<code>seq</code> land at 3.</div>
+
+<h2 id="rmhmusic-sync">Host-only playback and drift correction</h2>
+<p>Playback control is a faithful port of <code>server/rmhmusic/sync-engine.ts</code>
+and is strictly <b>host-only</b>: a non-host <code>play</code> is rejected with
+<code>NOT_HOST</code>, while non-host <code>pause</code> / <code>seek</code> /
+<code>skip</code> are silently ignored, exactly as the Node SyncEngine behaved. The
+ephemeral playback head is a small struct — track URI, position in milliseconds, a
+playing flag, and the <code>updatedAt</code> stamp that anchors drift correction:</p>
+<pre><code>type Playback struct {
+    TrackURI   string `json:"trackUri"`
+    PositionMs int64  `json:"positionMs"`
+    IsPlaying  bool   `json:"isPlaying"`
+    UpdatedAt  int64  `json:"updatedAt"`
+}</code></pre>
+<p>A 5-second heartbeat (<code>runHeartbeat</code>) emits
+<code>sync:heartbeat</code> to each <em>playing</em> room carrying the
+drift-corrected position. The correction is the same idea as rmhtube's but in
+integer milliseconds and with an implicit 1&times; rate: while playing, the
+projected position is the stored position advanced by the wall-clock elapsed since
+<code>updatedAt</code>; while paused, the stored value is returned unchanged:</p>
+<pre><code>func projectedPositionMs(p Playback, nowMs int64) int64 {
+    if !p.IsPlaying {
+        return p.PositionMs
+    }
+    return p.PositionMs + (nowMs - p.UpdatedAt)
+}</code></pre>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+sequenceDiagram
+  participant H as Host
+  participant S as rmhmusic server
+  participant M as Members
+  H->>S: music:play {trackUri,positionMs,track}
+  Note over S: under room.mu: set CurrentTrack + Playback,<br/>broadcastAction NOW_PLAYING
+  S->>M: music:play {trackUri,positionMs,track}
+  loop every 5s while playing
+    Note over S: projected = positionMs + (now - updatedAt)
+    S->>M: sync:heartbeat {trackUri,positionMs:projected,isPlaying}
+  end
+  H->>S: music:skip
+  Note over S: shift queue head, reindex, reset Playback at 0
+  S->>M: music:play (next) + queue:updated
+  </div>
+  <figcaption>Figure 11.2: host-only playback and the drift-corrected heartbeat.</figcaption>
+</figure>
+
+<p>Three subcases of <code>TestProjectedPositionMs</code> pin the math: playing
+advances by elapsed (<code>1000&nbsp;+&nbsp;3500</code>), zero-elapsed returns the
+stored position, and paused returns the stored position regardless of how much time
+passed. The <code>onPlay</code> handler shows the locking discipline that prevents
+out-of-order track changes: the playback mutation and the <code>NOW_PLAYING</code>
+delta are stamped in one critical section (so a concurrent host control cannot
+interleave between the state change and the broadcast), and the plain
+<code>music:play</code> fan-out is emitted only after the unlock:</p>
+<pre><code>room.mu.Lock()
+track := p.Track
+room.CurrentTrack = &amp;track
+room.Playback = Playback{
+    TrackURI: p.TrackURI, PositionMs: p.PositionMs,
+    IsPlaying: true, UpdatedAt: m.now(),
+}
+m.broadcastAction(room, actionNowPlaying, map[string]any{"track": track})
+room.mu.Unlock()
+
+m.broadcast(room.ID, s2cMusicPlay, map[string]any{
+    "trackUri": p.TrackURI, "positionMs": p.PositionMs, "track": track,
+})</code></pre>
+<p><code>onSkip</code> pops the queue head, reindexes, resets the playback head to
+position 0 for the next track (or clears it and emits <code>track_changed: nil</code>
+when the queue is empty), then broadcasts <code>music:play</code> and
+<code>queue:updated</code>.</p>
+
+<h2 id="rmhmusic-queue-chat">Queue and chat</h2>
+<p>The queue (port of <code>queue-manager.ts</code>) is deliberately
+<em>not</em> host-gated — any member may add, remove, or reorder, matching the Node
+QueueManager. Items are Spotify tracks (URI, title, artist, album art, duration,
+preview URL). Add appends to a 50-item-capped queue, broadcasts
+<code>queue:updated</code> with the full queue, then a <code>QUEUE_ITEM_ADDED</code>
+delta. Remove and reorder splice the slice and <code>reindex</code> positions
+0..n-1. Chat (port of <code>chat-handler.ts</code>) sanitizes and truncates content
+to 300 chars, appends to a 100-message ring buffer, and broadcasts a
+<code>CHAT_MESSAGE</code> delta — a compact subset of rmhtube's chat (no replies,
+mentions, reactions, or pinning here, faithful to the simpler Node service).</p>
+
+<h2 id="rmhmusic-host-reassign">Host auto-reassignment and the memberOrder list</h2>
+<p>When the host leaves a non-empty room, the host role is auto-reassigned to the
+<em>first remaining member in insertion order</em>. In Node this fell out naturally
+from <code>room.members.values().next().value</code> over an insertion-ordered JS
+<code>Map</code>. Go maps randomize iteration order, so the port maintains an
+<em>explicit</em> <code>memberOrder []string</code> alongside the members map; every
+join appends to it and every removal filters the user out, and
+<code>firstMember</code> walks it:</p>
+<pre><code>// firstMember returns the first member in insertion order (host
+// reassignment target), matching room.members.values().next().value
+// over an insertion-ordered JS Map.
+func (r *ServerRoom) firstMember() *ServerMember {
+    for _, uid := range r.memberOrder {
+        if mm, ok := r.Members[uid]; ok {
+            return mm
+        }
+    }
+    return nil
+}</code></pre>
+<p>The reassignment happens inside <code>removeMember</code>: if the room is now
+empty it is deleted immediately; otherwise <code>MEMBER_LEFT</code> is broadcast,
+and when the departing user was the host the new host is set and
+<code>HOST_TRANSFERRED</code> announced:</p>
+<pre><code>if hostLeft {
+    if newHost := room.firstMember(); newHost != nil {
+        room.HostUserID = newHost.UserID
+        m.broadcastAction(room, actionHostTransferred, map[string]any{
+            "newHostUserId": newHost.UserID, "newHostUserName": newHost.UserName,
+        })
+    }
+}</code></pre>
+<p><code>TestHostAutoReassignOnHostLeave</code> builds a room ordered
+<code>[host, bob, amy]</code>, removes <code>host</code>, and asserts the new host
+is <code>bob</code> (the first remaining member) and the room survives with two
+members. A companion test confirms a solo room is reaped immediately on
+last-member leave.</p>
+
+<h2 id="rmhmusic-concurrency">Concurrency and lifecycle</h2>
+<p>The manager holds a top-level <code>sync.RWMutex</code> over its index maps
+(<code>rooms</code>, <code>connToRoom</code>, <code>userToConn</code>); each
+<code>ServerRoom</code> additionally carries its own <code>mu</code>, and all
+mutation of a room's fields happens under it — so events on different rooms never
+contend and events on the same room serialize. <code>broadcastAction</code> and
+<code>toClientState</code> both document that the caller must hold
+<code>room.mu</code>.</p>
+<p><b>Disconnect grace.</b> On disconnect the member is marked offline, a
+<code>MEMBER_DISCONNECTED</code> delta is broadcast, and a 30-second grace timer
+(shared <code>realtime.GraceTimers</code>) is armed; a reconnect within the window
+cancels it. The disconnect handler guards against a stale connection replacing a
+newer one by checking <code>member.ConnID == c.ID</code> before acting, and only
+clears <code>userToConn</code> if the disconnecting conn is still the user's active
+one. A 60-second GC ticker reaps rooms that have been empty for more than 300
+seconds — a safety net, since empty rooms are normally deleted immediately on
+last-member removal. The clock is injected (<code>now func() int64</code>) so tests
+can run deterministically.</p>
+
+<h2 id="rmhmusic-persistence">Persistence: one row, faithfully</h2>
+<p>This is the sharpest contrast with rmhtube. The <code>Repo</code> interface has a
+single method, <code>CreateRoom</code>, and that is the <em>only</em> database write
+the service ever makes. Members, queue, playback, and chat live entirely in memory
+and are intentionally never written — replicating the Node service exactly. The
+write is fire-and-forget: a failure is logged, never surfaced to the client.</p>
+<pre><code>// Repo persists the durable part of a room. NOTE (faithful to Node):
+// the original code only persists the room ROW on create -- members,
+// queue, playback and chat live entirely in memory.
+type Repo interface {
+    CreateRoom(ctx context.Context, r RoomRow) error
+}</code></pre>
+<p>The persisted row is the <code>rmh_music_room</code> table
+(<code>id, code, name, hostId, isPublic, password, maxMembers, createdAt,
+updatedAt</code>), inserted by <code>PgRepo</code> with quoted, camelCase column
+names matching the Prisma / better-auth schema convention. <code>NopRepo{}</code> is
+the no-op used in tests so the room logic — which is fully in-memory and works
+regardless — is exercisable without a database. Room ids use a 21-char nanoid-style
+alphabet (<code>crypto/rand</code>-backed); join codes use the 6-char unambiguous
+alphabet.</p>
+
+<table>
+<thead><tr><th>Aspect</th><th>rmhtube</th><th>rmhmusic</th></tr></thead>
+<tbody>
+<tr><td>WS path / port</td><td><code>/rmhtube-ws/</code> · 7003</td><td><code>/rmhmusic-ws/</code> · 7002</td></tr>
+<tr><td>Auth</td><td>optional (guests allowed)</td><td>required</td></tr>
+<tr><td>Authority model</td><td>leader-authoritative</td><td>host-only playback</td></tr>
+<tr><td>Heartbeat</td><td>2s (host reports ~1s)</td><td>5s</td></tr>
+<tr><td>Disconnect grace</td><td>120s</td><td>30s</td></tr>
+<tr><td>Persistence</td><td>room + members + queue (3 tables)</td><td>room row only (1 table)</td></tr>
+<tr><td>Restore on startup</td><td>yes</td><td>no</td></tr>
+</tbody>
+</table>
+
+<div class="scope"><b>Scope: faithful to the simpler Node service.</b> rmhmusic is
+a faithful port of a deliberately leaner feature than rmhtube. The full core —
+host-only playback with drift-corrected heartbeat, the open (non-host) queue, chat,
+the snapshot+seq-delta protocol, host auto-reassignment via the explicit
+<code>memberOrder</code>, and the grace + GC lifecycle — is ported behavior-for-
+behavior. The single-row persistence is not a shortcut but a faithful replication
+of the Node service, which also kept members / queue / playback / chat purely
+in-memory; consequently there is no startup room restore (a restart drops live
+rooms, as it did in Node). The only intentional cross-service alignment beyond the
+Node original is the seq-stamping consistency note above, which standardizes the
+inner-payload-seq convention with rmhtube. Nothing here is invented.</div>

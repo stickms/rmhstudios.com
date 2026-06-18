@@ -1,0 +1,600 @@
+<p class="lead">Every Go service in the fleet is one <code>cmd/</code> binary built from a single
+module, <code>github.com/rmhstudios/rmh-go</code>, and stands on a small set of shared
+packages under <code>pkg/</code>. These libraries reproduce the conventions the legacy
+Node services already relied on — the same <code>DATABASE_URL</code>, the same log field
+shape, the same one-query session check — so the Go fleet drops in beside the React
+SSR tier rather than forking the platform. This section walks the foundation package by
+package, with real excerpts. The realtime hub that builds on <code>pkg/events</code>
+gets its own section; here we only describe the backplane primitive it consumes.</p>
+
+<div class="stats">
+  <div class="stat"><div class="v">1</div><div class="l">Go module</div></div>
+  <div class="stat"><div class="v">9</div><div class="l">cmd binaries</div></div>
+  <div class="stat"><div class="v">9</div><div class="l">shared pkg/ libs</div></div>
+  <div class="stat"><div class="v">98</div><div class="l">Prisma models</div></div>
+  <div class="stat"><div class="v">12</div><div class="l">Go-owned tables</div></div>
+</div>
+
+<div class="scope">
+  <b>Scope of this layer.</b> Everything under <code>pkg/</code> described here is
+  production-quality shared library code, not scaffolding: it compiles, passes
+  <code>go vet</code>, and is covered by unit tests run under the race detector
+  (concurrency matters — <code>ratelimit</code>, <code>events</code> and
+  <code>db</code> are all touched by many goroutines at once). What is deliberately
+  <i>not</i> reimplemented in Go is called out honestly per package: Better Auth session
+  <i>issuance</i>, OAuth callbacks and cookie signing stay in the React tier; Go only
+  validates the shared <code>session</code> table. Likewise only the subset of the
+  Prisma schema the Go services own is modeled.
+</div>
+
+<h2 id="module-layout">Module &amp; package layout</h2>
+
+<p>The repository is a single Go module declared in <code>go-services/go.mod</code>:</p>
+
+<pre><code>module github.com/rmhstudios/rmh-go
+
+go 1.23
+
+require (
+    github.com/jackc/pgx/v5      v5.6.0   // Postgres pool
+    github.com/redis/go-redis/v9 v9.6.1   // pub/sub backplane
+    github.com/prometheus/client_golang v1.19.1
+    github.com/gorilla/websocket v1.5.3
+    github.com/bwmarrin/discordgo v0.28.1
+    github.com/chromedp/chromedp  v0.9.5   // vibe thumbnailing
+    github.com/google/uuid        v1.6.0
+)</code></pre>
+
+<p>One module, many binaries. Each service is a thin <code>main</code> in
+<code>cmd/&lt;service&gt;/</code> that wires together shared packages; there is no
+per-service module and no vendored duplication. The nine binaries are:</p>
+
+<table>
+  <thead><tr><th>cmd binary</th><th>Replaces (Node)</th><th>Shape</th></tr></thead>
+  <tbody>
+    <tr><td><code>gateway</code></td><td>edge / ingress</td><td>HTTP</td></tr>
+    <tr><td><code>gamehub</code></td><td>socket-server</td><td>HTTP + WS</td></tr>
+    <tr><td><code>rmhbox</code></td><td>rmhbox</td><td>HTTP + WS</td></tr>
+    <tr><td><code>rmhtube</code></td><td>rmhtube</td><td>HTTP + WS</td></tr>
+    <tr><td><code>rmhmusic</code></td><td>rmhmusic</td><td>HTTP + WS</td></tr>
+    <tr><td><code>discord-bot</code></td><td>discord-bot</td><td>worker</td></tr>
+    <tr><td><code>recap</code></td><td>recap</td><td>worker</td></tr>
+    <tr><td><code>doctrine-worker</code></td><td>doctrine-worker</td><td>worker</td></tr>
+    <tr><td><code>vibe-worker</code></td><td>vibe-worker</td><td>worker</td></tr>
+  </tbody>
+</table>
+
+<p>Underneath, <code>pkg/</code> holds nine focused libraries. The dependency direction
+is strictly one-way: <code>cmd</code> binaries depend on <code>pkg</code>, and within
+<code>pkg</code> the only internal edge is <code>httpx</code> importing
+<code>log</code>. Everything else is a leaf.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart TB
+  subgraph cmd[cmd binaries]
+    GW[gateway]
+    GH[gamehub]
+    WRK[workers]
+  end
+  subgraph pkg[pkg shared libraries]
+    CFG[config]
+    LOG[log]
+    DB[db + models]
+    AUTH[auth]
+    HX[httpx]
+    RL[ratelimit]
+    TEL[telemetry]
+    EV[events]
+  end
+  GW --> CFG
+  GW --> LOG
+  GW --> HX
+  GH --> CFG
+  GH --> DB
+  GH --> AUTH
+  GH --> RL
+  GH --> EV
+  GH --> TEL
+  WRK --> CFG
+  WRK --> DB
+  WRK --> HX
+  AUTH --> DB
+  HX --> LOG
+  </div>
+  <figcaption>Figure 5.1: services compose the shared packages; pkg edges point only
+  inward (httpx&rarr;log, auth&rarr;db pool).</figcaption>
+</figure>
+
+<table>
+  <thead><tr><th>Package</th><th>Responsibility</th><th>Ports from (Node)</th></tr></thead>
+  <tbody>
+    <tr><td><code>config</code></td><td>env-driven config + getters</td><td><code>.env.production</code> conventions</td></tr>
+    <tr><td><code>log</code></td><td>slog JSON logger</td><td><code>shared/logger.ts</code></td></tr>
+    <tr><td><code>db</code></td><td>pgxpool + typed models</td><td><code>shared/prisma-client.ts</code></td></tr>
+    <tr><td><code>auth</code></td><td>session validation via SQL</td><td><code>rmhbox/auth.ts</code></td></tr>
+    <tr><td><code>httpx</code></td><td>health, token extract, shutdown</td><td>Express helpers + SIGTERM hooks</td></tr>
+    <tr><td><code>ratelimit</code></td><td>sliding-window limiter</td><td><code>shared/rate-limit.ts</code></td></tr>
+    <tr><td><code>telemetry</code></td><td>Prometheus registry + instruments</td><td>new (PR #121 Stage 2)</td></tr>
+    <tr><td><code>events</code></td><td>pub/sub backplane (Local/Redis)</td><td>new (PR #121 Stage 1)</td></tr>
+  </tbody>
+</table>
+
+<h2 id="config">config — environment-driven configuration</h2>
+
+<p>The Helm chart from PR&nbsp;#121 already mounts <code>.env.production</code> as a
+Kubernetes Secret. Rather than invent new variable names, <code>config</code> reads the
+exact ones the Node fleet uses, so the same Secret feeds both tiers.
+<code>LoadCommon</code> assembles the shared struct and is the only required entry point;
+the <code>GetX</code> helpers handle service-specific extras.</p>
+
+<pre><code>// LoadCommon reads the shared configuration for a service.
+func LoadCommon(serviceName string) (Common, error) {
+    c := Common{
+        ServiceName: serviceName,
+        Env:         GetString("NODE_ENV", "production"),
+        DatabaseURL: os.Getenv("DATABASE_URL"),
+        DBPoolSize:  int32(GetInt("SERVER_DB_POOL_SIZE", 5)),
+        RedisURL:    os.Getenv("REDIS_URL"),
+        MetricsAddr: GetString("METRICS_ADDR", ":9090"),
+        LogLevel:    GetString("LOG_LEVEL", "info"),
+    }
+    if c.DatabaseURL == "" {
+        return c, fmt.Errorf("config: DATABASE_URL is required for service %q", serviceName)
+    }
+    return c, nil
+}</code></pre>
+
+<table>
+  <thead><tr><th>Env var</th><th>Field</th><th>Default</th><th>Note</th></tr></thead>
+  <tbody>
+    <tr><td><code>DATABASE_URL</code></td><td>DatabaseURL</td><td>(required)</td><td>same DSN as Node</td></tr>
+    <tr><td><code>SERVER_DB_POOL_SIZE</code></td><td>DBPoolSize</td><td>5</td><td>mirrors Node default</td></tr>
+    <tr><td><code>REDIS_URL</code></td><td>RedisURL</td><td>(empty)</td><td>empty &rarr; single-instance</td></tr>
+    <tr><td><code>NODE_ENV</code></td><td>Env</td><td>production</td><td></td></tr>
+    <tr><td><code>METRICS_ADDR</code></td><td>MetricsAddr</td><td>:9090</td><td>Prometheus bind</td></tr>
+    <tr><td><code>LOG_LEVEL</code></td><td>LogLevel</td><td>info</td><td></td></tr>
+  </tbody>
+</table>
+
+<p>The helpers — <code>GetString</code>, <code>GetInt</code>, <code>GetBool</code>,
+<code>GetDuration</code> (parses <code>"30s"</code>-style values), and
+<code>GetCSV</code> (splits and trims a comma list) — all treat an empty value as unset
+and fall back, so a blank env var never silently zeroes a setting. The Node
+<code>PORT_*</code> family is read the same way per-service with <code>GetInt</code>.</p>
+
+<div class="note">A missing <code>DATABASE_URL</code> is the one hard error in
+<code>LoadCommon</code> — services fail to boot rather than start half-configured,
+matching the Node clients' fail-fast posture.</div>
+
+<h2 id="log">log — slog JSON matching the Node logger</h2>
+
+<p><code>log</code> is a thin wrapper over the standard library's <code>log/slog</code>.
+The goal is byte-compatible-enough JSON so existing log dashboards and alerts keep
+working. Two details make that happen: every line carries a <code>service</code> field,
+and the standard <code>time</code> key is renamed to <code>timestamp</code> to match
+<code>server/shared/logger.ts</code>.</p>
+
+<pre><code>func New(service, level string) *Logger {
+    h := slog.NewJSONHandler(os.Stdout, &amp;slog.HandlerOptions{
+        Level: parseLevel(level),
+        ReplaceAttr: func(_ []string, a slog.Attr) slog.Attr {
+            // Match the Node logger's field name: "timestamp" not "time".
+            if a.Key == slog.TimeKey {
+                a.Key = "timestamp"
+            }
+            return a
+        },
+    })
+    l := slog.New(h).With(slog.String("service", service))
+    return &amp;Logger{Logger: l, service: service}
+}</code></pre>
+
+<p>The wrapper embeds <code>*slog.Logger</code>, so <code>Info/Warn/Error/Debug</code>
+pass straight through; <code>With(...)</code> returns a child that keeps the bound
+service name. <code>Fatal</code> logs at error level then <code>os.Exit(1)</code> — used
+only for unrecoverable startup failures, mirroring Node boot behavior. The logger is
+safe for concurrent use. A resulting line looks like:</p>
+
+<pre><code>{"timestamp":"2026-06-18T12:00:00Z","level":"INFO",
+ "msg":"http listening","service":"gamehub","addr":":8081"}</code></pre>
+
+<h2 id="db">db — pgxpool, fail-fast, and typed models</h2>
+
+<p><code>db</code> standardizes the whole fleet on <code>pgx/v5</code>'s
+<code>pgxpool</code>, replacing both <code>shared/prisma-client.ts</code> and the raw
+<code>pg.Pool</code> clients sprinkled through the Node services. Every query in every Go
+service runs through this one pool, so connection accounting is uniform.</p>
+
+<h3>Open: fail fast on an unreachable DB</h3>
+
+<pre><code>func Open(ctx context.Context, dsn string, poolSize int32) (*DB, error) {
+    cfg, err := pgxpool.ParseConfig(dsn)
+    if err != nil { return nil, fmt.Errorf("db: parse DSN: %w", err) }
+    if poolSize &gt; 0 { cfg.MaxConns = poolSize }
+    // Mirror the Node client's 30s idle / 10s connect timeouts.
+    cfg.MaxConnIdleTime = 30 * time.Second
+    cfg.ConnConfig.ConnectTimeout = 10 * time.Second
+
+    pool, err := pgxpool.NewWithConfig(ctx, cfg)
+    if err != nil { return nil, fmt.Errorf("db: create pool: %w", err) }
+    pingCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+    defer cancel()
+    if err := pool.Ping(pingCtx); err != nil {
+        pool.Close()
+        return nil, fmt.Errorf("db: ping: %w", err)
+    }
+    return &amp;DB{Pool: pool}, nil
+}</code></pre>
+
+<p>The pool is sized from <code>SERVER_DB_POOL_SIZE</code> (via the caller), idle
+connections recycle after 30s, and connects time out at 10s — the same numbers the Node
+client used. The constructor pings before returning, so a service that cannot reach
+Postgres dies during startup instead of failing on its first request.</p>
+
+<table>
+  <thead><tr><th>Setting</th><th>Value</th><th>Source</th></tr></thead>
+  <tbody>
+    <tr><td><code>MaxConns</code></td><td>poolSize (default 5)</td><td>SERVER_DB_POOL_SIZE</td></tr>
+    <tr><td><code>MaxConnIdleTime</code></td><td>30s</td><td>Node client parity</td></tr>
+    <tr><td><code>ConnectTimeout</code></td><td>10s</td><td>Node client parity</td></tr>
+    <tr><td>ping timeout</td><td>10s</td><td><code>Open</code></td></tr>
+  </tbody>
+</table>
+
+<h3>WaitForReachable: the 10&times;5s worker loop</h3>
+
+<p>Workers and the migrate job start before the DB is guaranteed up. The Node/deploy.sh
+"wait for DB reachability, 10&times;5s" loop becomes one reusable helper that polls
+<code>Open</code> with a single connection until it answers or attempts run out, and
+honors context cancellation between tries:</p>
+
+<pre><code>func WaitForReachable(ctx context.Context, dsn string, attempts int,
+    interval time.Duration) (*DB, error) {
+    var lastErr error
+    for i := 0; i &lt; attempts; i++ {
+        d, err := Open(ctx, dsn, 1)
+        if err == nil { return d, nil }
+        lastErr = err
+        select {
+        case &lt;-ctx.Done():
+            return nil, ctx.Err()
+        case &lt;-time.After(interval):
+        }
+    }
+    return nil, fmt.Errorf("db: not reachable after %d attempts: %w", attempts, lastErr)
+}</code></pre>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+sequenceDiagram
+  participant W as Worker
+  participant DB as Postgres
+  loop up to attempts
+    W->>DB: Open + Ping (1 conn)
+    alt reachable
+      DB-->>W: pong
+      W->>W: return pool
+    else not yet
+      DB-->>W: error
+      W->>W: wait interval (e.g. 5s)
+    end
+  end
+  </div>
+  <figcaption>Figure 5.2: WaitForReachable polls until the DB answers (typ. 10&times;5s).</figcaption>
+</figure>
+
+<h3>Typed models: only the Go-owned tables</h3>
+
+<p><code>models.go</code> defines plain structs for the subset of the schema the Go fleet
+reads or writes. The full Prisma schema has <b>98 models</b>; the Go services own only
+the tables backing the extracted services. Column names and casing are copied verbatim
+from <code>prisma/migrations</code> so the hand-written SQL binds correctly against the
+live database. The React SSR tier and Better Auth keep owning everything else through
+Prisma.</p>
+
+<table>
+  <thead><tr><th>Go struct</th><th>Table</th><th>Owned by</th></tr></thead>
+  <tbody>
+    <tr><td><code>User</code></td><td><code>user</code></td><td>auth / doctrine</td></tr>
+    <tr><td><code>Session</code></td><td><code>session</code></td><td>auth (validate only)</td></tr>
+    <tr><td><code>Account</code></td><td><code>account</code></td><td>auth (Discord map)</td></tr>
+    <tr><td><code>DoctrinePuzzle</code></td><td><code>doctrine_puzzle</code></td><td>doctrine-worker</td></tr>
+    <tr><td><code>DoctrineReputation</code></td><td><code>doctrine_reputation</code></td><td>doctrine-worker</td></tr>
+    <tr><td><code>DoctrineSahurSession</code></td><td><code>doctrine_sahur_session</code></td><td>doctrine-worker</td></tr>
+    <tr><td><code>VibePage</code></td><td><code>vibe_page</code></td><td>vibe-worker</td></tr>
+    <tr><td><code>DiscordActivityChannel</code></td><td><code>discord_activity_channel</code></td><td>recap / discord-bot</td></tr>
+    <tr><td><code>DiscordDailyParticipant</code></td><td><code>discord_daily_participant</code></td><td>recap / discord-bot</td></tr>
+    <tr><td><code>RMHboxProfile</code></td><td><code>rmhbox_profile</code></td><td>rmhbox</td></tr>
+    <tr><td><code>RmhTubeRoom</code></td><td><code>rmhtube_room</code></td><td>rmhtube</td></tr>
+    <tr><td><code>RmhMusicRoom</code></td><td><code>rmh_music_room</code></td><td>rmhmusic</td></tr>
+  </tbody>
+</table>
+
+<p>Nullable columns are modeled as pointers (<code>*string</code>,
+<code>*time.Time</code>); JSON columns such as <code>DoctrinePuzzle.Data</code> and
+<code>RMHboxProfile.MinigameStats</code> are <code>json.RawMessage</code> so they pass
+through untouched. Note the <code>User</code> struct carries the
+<code>DoctrineTier</code>/<code>DoctrineTimezone</code> columns added by migration
+<code>20260322200000_add_doctrine_engine</code> — proof the models track real
+migrations, not an idealized schema.</p>
+
+<h2 id="auth">auth — validating Better Auth sessions with one query</h2>
+
+<p>This is the single most important "we don't need the JS library" insight of the
+migration. The Node services already authenticate <i>without</i> the Better Auth SDK —
+they run one SQL lookup against the shared <code>session</code> table (see
+<code>server/rmhbox/auth.ts</code> and <code>server/socket-server/index.ts</code>). Go
+reproduces that lookup exactly. There is no Go port of Better Auth and none is needed:
+issuance, OAuth callbacks and cookie signing stay in the React tier; the Go fleet only
+<i>trusts and validates</i> the session table.</p>
+
+<pre><code>func (v *Validator) ValidateSession(ctx context.Context, token string) (Identity, error) {
+    if token == "" { return Identity{}, ErrUnauthenticated }
+    const q = `SELECT s."userId", s."expiresAt", u."name", u."image", u."isAdmin"
+        FROM "session" s JOIN "user" u ON u."id" = s."userId"
+        WHERE s."token" = $1 LIMIT 1`
+
+    var (userID string; expiresAt time.Time
+         name *string; image *string; isAdmin bool)
+    err := v.pool.QueryRow(ctx, q, token).Scan(
+        &amp;userID, &amp;expiresAt, &amp;name, &amp;image, &amp;isAdmin)
+    if err != nil {
+        if errors.Is(err, pgx.ErrNoRows) { return Identity{}, ErrUnauthenticated }
+        return Identity{}, err
+    }
+    if time.Now().After(expiresAt) { return Identity{}, ErrUnauthenticated }
+    // ... populate Identity{UserID, Name, Image, IsAdmin}
+}</code></pre>
+
+<p>One indexed lookup on <code>session.token</code>, joined to <code>user</code>, with an
+explicit application-side expiry check (<code>time.Now().After(expiresAt)</code>) so an
+expired-but-not-yet-purged row is rejected. An unknown token (<code>pgx.ErrNoRows</code>)
+and an expired token both collapse to the same <code>ErrUnauthenticated</code> sentinel —
+callers never learn <i>why</i>, which avoids leaking whether a token exists.</p>
+
+<p><code>ResolveDiscordAccount</code> covers the Discord Activity path: a Discord user id
+(already verified upstream against Discord's <code>/users/@me</code>) is mapped to a
+platform user via the <code>account</code> table where
+<code>providerId = 'discord'</code>:</p>
+
+<pre><code>SELECT u."id", u."name", u."image", u."isAdmin"
+FROM "account" a JOIN "user" u ON u."id" = a."userId"
+WHERE a."providerId" = 'discord' AND a."accountId" = $1 LIMIT 1</code></pre>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+sequenceDiagram
+  participant C as Client
+  participant S as Go service
+  participant PG as Postgres
+  C->>S: request (cookie / Bearer)
+  S->>S: httpx.SessionToken(r)
+  S->>PG: SELECT ... session JOIN user WHERE token=$1
+  alt row + not expired
+    PG-->>S: userId, isAdmin, name, image
+    S-->>C: authorized (Identity)
+  else no row / expired
+    PG-->>S: ErrNoRows / past expiry
+    S-->>C: 401 ErrUnauthenticated
+  end
+  </div>
+  <figcaption>Figure 5.3: session validation — token extraction then one SQL lookup.</figcaption>
+</figure>
+
+<div class="ok">No shared secret, no JWT verification, no duplicated cookie-signing
+logic. Because both tiers read the same table, a logout in the React app
+invalidates Go sessions instantly.</div>
+
+<h2 id="httpx">httpx — health, token extraction, graceful shutdown</h2>
+
+<p><code>httpx</code> is the small set of HTTP primitives every service shares. It is the
+only <code>pkg</code> that imports another (<code>log</code>).</p>
+
+<h3>Health</h3>
+
+<p><code>Health(service, ready)</code> returns the handler the Compose and Helm probes
+from PR&nbsp;#121 hit. With no readiness func it returns <code>200 {"status":"ok"}</code>;
+with one, it runs the check under a 2s timeout and returns <code>503
+{"status":"unavailable", ...}</code> on failure — e.g. wiring a DB ping into readiness
+while keeping liveness cheap.</p>
+
+<h3>SessionToken — Bearer or better-auth cookie, token-before-dot</h3>
+
+<pre><code>func SessionToken(r *http.Request) string {
+    if h := r.Header.Get("Authorization"); strings.HasPrefix(h, "Bearer ") {
+        return strings.TrimSpace(strings.TrimPrefix(h, "Bearer "))
+    }
+    for _, name := range []string{
+        "better-auth.session_token", "__Secure-better-auth.session_token"} {
+        if c, err := r.Cookie(name); err == nil &amp;&amp; c.Value != "" {
+            if i := strings.IndexByte(c.Value, '.'); i &gt; 0 {
+                return c.Value[:i]   // part before the signature dot
+            }
+            return c.Value
+        }
+    }
+    return ""
+}</code></pre>
+
+<p>Bearer header wins; otherwise it reads the Better Auth cookie (plain and
+<code>__Secure-</code> prefixed). The cookie value is <code>&lt;token&gt;.&lt;signature&gt;</code>,
+and Better Auth keys storage on the part before the dot — exactly what the
+<code>session.token</code> column holds — so <code>SessionToken</code> returns that prefix
+to feed straight into <code>auth.ValidateSession</code>.</p>
+
+<h3>Graceful shutdown</h3>
+
+<p><code>Server.Run(grace)</code> starts the listener in a goroutine, then blocks on
+<code>SIGINT</code>/<code>SIGTERM</code>; on signal it calls <code>Shutdown</code> with a
+deadline to drain in-flight connections — the Go analog of the Node SIGTERM hooks (e.g.
+the discord-bot's 90s grace). A listener error short-circuits the wait. Workers without
+an HTTP listener use <code>WaitForSignal()</code>, which blocks on the same signals and
+returns the one received.</p>
+
+<pre><code>stop := make(chan os.Signal, 1)
+signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+select {
+case err := &lt;-errc:               // ListenAndServe failed
+    return err
+case sig := &lt;-stop:               // SIGINT / SIGTERM
+    s.logger.Info("shutdown signal received", "signal", sig.String())
+}
+ctx, cancel := context.WithTimeout(context.Background(), grace)
+defer cancel()
+return s.Shutdown(ctx)</code></pre>
+
+<h2 id="ratelimit">ratelimit — concurrency-safe sliding window</h2>
+
+<p>This ports <code>server/shared/rate-limit.ts</code>: an in-memory sliding-window
+limiter keyed by <code>(connection, event)</code>, bounded in size, with periodic GC of
+stale entries. The Node version was single-threaded; Go handlers run on many goroutines,
+so the port adds a <code>sync.Mutex</code>. A <code>Rule</code> is simply
+<code>Max</code> events per <code>Window</code>.</p>
+
+<pre><code>func (l *Limiter) Allow(conn, event string) bool {
+    rule, ok := l.rules[event]
+    if !ok { return true }               // unknown events allowed (Node default)
+    now := time.Now().UnixNano()
+    cutoff := now - rule.Window.Nanoseconds()
+    key := conn + "|" + event
+
+    l.mu.Lock(); defer l.mu.Unlock()
+    b := l.buckets[key]
+    if b == nil {
+        if len(l.buckets) &gt;= l.maxItems { return false }  // shed load, don't grow
+        b = &amp;bucket{}; l.buckets[key] = b
+    }
+    kept := b.hits[:0]                    // drop timestamps outside the window
+    for _, t := range b.hits { if t &gt;= cutoff { kept = append(kept, t) } }
+    b.hits = kept; b.lastSeen = now
+    if len(b.hits) &gt;= rule.Max { return false }
+    b.hits = append(b.hits, now)
+    return true
+}</code></pre>
+
+<p>Three safety properties worth calling out:</p>
+<ul>
+  <li><b>Bounded.</b> When the bucket map hits <code>maxItems</code> (Node capped at 50k)
+  a new key is refused rather than letting memory grow without limit.</li>
+  <li><b>Self-cleaning.</b> A background <code>sweep()</code> ticks every 30s and evicts
+  buckets idle longer than <code>ttl</code>, so disconnected connections don't linger.</li>
+  <li><b>Window pruning is in-place.</b> <code>kept := b.hits[:0]</code> reuses the
+  backing array, so steady-state <code>Allow</code> does no per-call allocation.</li>
+</ul>
+
+<p><code>Forget(conn)</code> drops every bucket for a connection on disconnect;
+<code>Close()</code> stops the sweeper and is idempotent via <code>sync.Once</code>.</p>
+
+<h2 id="telemetry">telemetry — Prometheus per service</h2>
+
+<p>PR&nbsp;#121's roadmap lists observability as Stage&nbsp;2. <code>telemetry</code>
+gives every Go service a uniform <code>/metrics</code> endpoint and a handful of standard
+instruments out of the box, so that stage is about wiring dashboards, not adding
+instrumentation. Each service gets its own <code>prometheus.Registry</code> (not the
+global default), with the service name attached as a const label on every metric.</p>
+
+<pre><code>func New(service string) *Metrics {
+    reg := prometheus.NewRegistry()
+    factory := promauto.With(reg)
+    labels := prometheus.Labels{"service": service}
+    return &amp;Metrics{
+        reg: reg,
+        ActiveConnections: factory.NewGauge(prometheus.GaugeOpts{
+            Name: "rmh_active_connections", ConstLabels: labels, ...}),
+        MessagesTotal: factory.NewCounterVec(prometheus.CounterOpts{
+            Name: "rmh_messages_total", ConstLabels: labels, ...}, []string{"event"}),
+        DBQueries:  factory.NewCounterVec(..., []string{"outcome"}),
+        JobRuns:    factory.NewCounterVec(..., []string{"job", "outcome"}),
+    }
+}</code></pre>
+
+<table>
+  <thead><tr><th>Metric</th><th>Type</th><th>Labels</th><th>Used by</th></tr></thead>
+  <tbody>
+    <tr><td><code>rmh_active_connections</code></td><td>Gauge</td><td>service</td><td>realtime</td></tr>
+    <tr><td><code>rmh_messages_total</code></td><td>CounterVec</td><td>service, event</td><td>realtime</td></tr>
+    <tr><td><code>rmh_db_queries_total</code></td><td>CounterVec</td><td>service, outcome</td><td>all</td></tr>
+    <tr><td><code>rmh_job_runs_total</code></td><td>CounterVec</td><td>service, job, outcome</td><td>workers</td></tr>
+  </tbody>
+</table>
+
+<p><code>Handler()</code> returns <code>promhttp.HandlerFor</code> bound to this service's
+registry, mounted at <code>/metrics</code> on the address from
+<code>METRICS_ADDR</code>. Per-service registries keep one service's metrics isolated and
+avoid global-registry collisions when binaries share a process in tests.</p>
+
+<h2 id="events">events — the cross-instance backplane</h2>
+
+<p><code>events</code> is the pub/sub primitive that makes the realtime services
+horizontally scalable — the "socket.io Redis adapter + sticky sessions" work
+PR&nbsp;#121 flagged as Stage&nbsp;1 and "the real first scaling investment". It is the
+piece that lets a realtime service run more than one replica. The realtime hub that wraps
+this bus with websocket fan-out is documented in its own section; here we cover the
+primitive only.</p>
+
+<p>A single <code>Bus</code> interface has two implementations:</p>
+
+<pre><code>type Bus interface {
+    Publish(ctx context.Context, topic string, payload []byte) error
+    Subscribe(ctx context.Context, topic string) (&lt;-chan Message, func(), error)
+    Close() error
+}</code></pre>
+
+<ul>
+  <li><b>Local</b> — in-process fan-out over a <code>map[topic]&rarr;set of channels</code>
+  guarded by an <code>RWMutex</code>. Zero external deps; reproduces today's
+  single-process behavior. Slow consumers are dropped (<code>default:</code> in the send
+  select) because realtime favors freshness over buffering.</li>
+  <li><b>Redis</b> — Redis pub/sub keyed by channel-per-topic, so N replicas share room
+  broadcasts. Each <code>Message</code> carries an <code>Origin</code> (the publishing
+  replica) so a subscriber can skip re-delivering to local connections that already got
+  the message.</li>
+</ul>
+
+<p>One function decides which the fleet runs — the single point that flips between
+single-replica and horizontally scaled realtime:</p>
+
+<pre><code>// FromURL returns a Redis bus when url is non-empty, otherwise a Local bus.
+func FromURL(origin, url string) (Bus, error) {
+    if url == "" {
+        return NewLocal(origin), nil
+    }
+    return NewRedis(origin, url)
+}</code></pre>
+
+<p>Because the decision keys on whether <code>REDIS_URL</code> is set, the same binary
+runs single-instance in dev (no Redis) and multi-replica in production (Redis present)
+with no code change — just the env var the Helm chart injects.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart LR
+  subgraph local[Local bus — 1 replica]
+    P1[Publisher] --> B1[in-proc map]
+    B1 --> S1[sub A]
+    B1 --> S2[sub B]
+  end
+  subgraph redis[Redis bus — N replicas]
+    R1[replica 1] --> RX[(Redis pub/sub)]
+    R2[replica 2] --> RX
+    RX --> R1
+    RX --> R2
+  end
+  </div>
+  <figcaption>Figure 5.4: Local fans out within one process; Redis fans broadcasts across
+  every replica (Origin dedup prevents echo to the sender's own clients).</figcaption>
+</figure>
+
+<div class="note">The <code>Subscribe</code> contract is identical for both buses — a
+receive channel plus an unsubscribe func that releases resources (closes the local
+channel, or <code>Close()</code>s the Redis subscription). The hub never branches on bus
+type; <code>FromURL</code> is the only place the choice is made.</div>
+
+<h3>Foundation summary</h3>
+
+<p>These eight packages are the entire contract between a Go service binary and the
+platform: read config the Node way, log the Node way, talk to one shared pool, trust the
+shared session table, expose health and metrics, rate-limit safely, and fan out events
+locally or across replicas. Every later service section assumes this layer and builds
+business logic on top of it.</p>

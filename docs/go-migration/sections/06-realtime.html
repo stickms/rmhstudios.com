@@ -1,0 +1,716 @@
+<p class="lead">The <code>realtime</code> package is the heart of the migration: a single shared
+WebSocket framework that replaces the four Node Socket.IO deployments (socket-server,
+rmhbox, rmhtube, rmhmusic). It defines one frame shape — the <em>Envelope</em> — and a
+small runtime of three cooperating objects: a per-service <strong>Hub</strong>, a per-client
+<strong>Conn</strong>, and a per-broadcast-group <strong>Room</strong>. Around them sit two
+support pieces ported directly from Node idioms: <strong>GraceTimers</strong> (the
+<code>setTimeout</code> disconnect-grace / room-GC pattern) and a cross-replica
+<strong>Bus</strong> fan-out (the Redis adapter that Socket.IO used for horizontal scale).
+This section documents the protocol, the concurrency design, and the one explicit
+wire-compatibility gap honestly.</p>
+
+<div class="stats">
+  <div class="stat"><div class="v">4</div><div class="l">Envelope fields</div></div>
+  <div class="stat"><div class="v">256</div><div class="l">send buffer slots</div></div>
+  <div class="stat"><div class="v">60s</div><div class="l">pong wait</div></div>
+  <div class="stat"><div class="v">1 MiB</div><div class="l">max frame size</div></div>
+  <div class="stat"><div class="v">2</div><div class="l">goroutines / conn</div></div>
+</div>
+
+<h2 id="envelope-protocol">The Envelope protocol</h2>
+
+<p>Every frame in either direction is one JSON object — the <code>Envelope</code>. It is
+deliberately tiny: an event name, an opaque payload, an optional server-assigned sequence
+number, and a timestamp.</p>
+
+<pre><code>// Envelope is the single frame shape exchanged in both directions.
+//
+//   { "event": "room:join", "payload": {...}, "seq": 42, "ts": 1718700000000 }
+//
+// Seq is server-assigned and monotonic per room for mutation broadcasts,
+// reproducing the ordering guarantee the Node delta protocol relied on.
+type Envelope struct {
+    Event   string          `json:"event"`
+    Payload json.RawMessage `json:"payload,omitempty"`
+    Seq     uint64          `json:"seq,omitempty"`
+    TS      int64           `json:"ts,omitempty"`
+}</code></pre>
+
+<p>The payload is held as <code>json.RawMessage</code> so the framework never needs to know
+a service's concrete types: the hub routes on <code>Event</code>, and the handler lazily
+decodes with <code>Bind</code>. Construction goes through <code>NewEnvelope</code> (which
+stamps <code>TS</code> with <code>time.Now().UnixMilli()</code> and marshals the payload) or
+the panic-on-error <code>MustEnvelope</code> convenience used with statically-safe structs.</p>
+
+<pre><code>func NewEnvelope(event string, payload any) (Envelope, error) {
+    e := Envelope{Event: event, TS: time.Now().UnixMilli()}
+    if payload != nil {
+        b, err := json.Marshal(payload)
+        if err != nil {
+            return Envelope{}, err
+        }
+        e.Payload = b
+    }
+    return e, nil
+}
+
+func (e Envelope) Encode() []byte { b, _ := json.Marshal(e); return b }
+
+func Decode(b []byte) (Envelope, error) {
+    var e Envelope
+    err := json.Unmarshal(b, &e)
+    return e, err
+}
+
+func (e Envelope) Bind(v any) error {
+    if len(e.Payload) == 0 {
+        return nil
+    }
+    return json.Unmarshal(e.Payload, v)
+}</code></pre>
+
+<p>The round-trip is exercised directly in tests — <code>TestEnvelopeRoundTrip</code>
+marshals a payload struct, encodes, decodes, and re-binds it; <code>TestEnvelopeNilPayload</code>
+asserts that a nil payload (heartbeats, acks) produces no <code>payload</code> key yet still
+yields valid JSON because of the <code>omitempty</code> tag.</p>
+
+<h3>Mirroring the Node S2C mutation semantics</h3>
+
+<p>The Node servers exposed two delta-style server-to-client broadcasts —
+<code>S2C.ROOM_ACTION</code> and <code>S2C.GAME_ACTION</code> — each carrying a payload plus a
+monotonically increasing sequence number so that clients could detect gaps and apply
+mutations in order. The Envelope reproduces this exactly: <code>Seq</code> is assigned
+server-side, per room, and monotonic. Anything sent through <code>BroadcastSeq</code> gets a
+fresh sequence stamp; ordinary events (chat, presence, acks) leave <code>Seq</code> at zero and
+are omitted from the wire. The mapping is one-to-one:</p>
+
+<table>
+<thead><tr><th>Node Socket.IO concept</th><th>Go realtime equivalent</th></tr></thead>
+<tbody>
+<tr><td><code>socket.emit(eventName, data)</code></td><td><code>Envelope{Event, Payload}</code></td></tr>
+<tr><td><code>S2C.ROOM_ACTION / GAME_ACTION</code> <code>{type,payload,seq,timestamp}</code></td><td><code>Envelope{Event,Payload,Seq,TS}</code> via <code>BroadcastSeq</code></td></tr>
+<tr><td><code>io.to(room).emit(...)</code></td><td><code>Hub.Broadcast(roomID, env)</code></td></tr>
+<tr><td>seq counter per room state</td><td><code>Room.NextSeq()</code> (atomic)</td></tr>
+<tr><td>Redis adapter pub/sub</td><td><code>events.Bus</code> publish/subscribe</td></tr>
+</tbody>
+</table>
+
+<h2 id="socketio-gap">The Socket.IO compatibility gap</h2>
+
+<div class="scope">
+<strong>Scope — the one explicit known gap.</strong> Legacy browser clients speak the
+<strong>Socket.IO v4 wire protocol</strong> (Engine.IO framing, packet-type prefixes,
+namespace/ack envelopes, the HTTP long-poll handshake that upgrades to WebSocket). This
+package speaks a <strong>clean JSON object over a raw WebSocket</strong> — no Engine.IO, no
+packet prefixes, no long-poll fallback. <em>The two wire formats are not interoperable.</em>
+An unmodified Socket.IO client cannot connect to this server, and the Go server does not
+implement the Socket.IO handshake. This is the single deliberate break in the migration, and
+it is called out at the top of the package doc comment rather than hidden.</div>
+
+<p>The design choice is intentional. Re-implementing Engine.IO framing in Go would import all
+of Socket.IO's accidental complexity (polling transport, binary attachment splitting, ack
+callbacks) for a transport we control on both ends. Instead the package preserves the
+<em>semantics</em> the clients actually depend on — named events plus seq-numbered mutation
+broadcasts — and closes the wire gap with a thin TypeScript client adapter.</p>
+
+<h3>Migration path</h3>
+
+<p>The adapter presents the existing <code>socket.on(name, cb)</code> / <code>socket.emit(name,
+data)</code> surface to game code, but underneath it opens a raw <code>WebSocket</code> and
+translates:</p>
+
+<ul>
+<li><strong>Outbound:</strong> <code>emit(name, data)</code> &rarr; <code>JSON.stringify({event:
+name, payload: data})</code> over the socket.</li>
+<li><strong>Inbound:</strong> each message is <code>JSON.parse</code>d into an Envelope; the
+adapter dispatches to listeners registered for <code>env.event</code>, passing <code>env.payload</code>
+(and exposing <code>env.seq</code> for the mutation channels that already consume it).</li>
+<li><strong>Heartbeat:</strong> handled by the browser's native WebSocket ping/pong against the
+server's <code>writePump</code> ticker (below), replacing Engine.IO's heartbeat.</li>
+</ul>
+
+<p>Because the event <em>names</em> are unchanged, game logic and reducers are untouched; only
+the transport shim is swapped. The migration sequence is: ship the Go hub on a new path
+(<code>/rmhbox-ws/</code> etc.), point the adapter at it behind a feature flag, cut traffic
+over per service, then retire the Node Socket.IO processes.</p>
+
+<div class="warn"><strong>Not yet built:</strong> the TS adapter is the documented bridge, not
+shipped code in this package. The Go side is complete and tested; the client shim is the
+remaining migration deliverable and is the only thing standing between this transport and the
+existing clients.</div>
+
+<h2 id="hub">Hub — the per-service runtime</h2>
+
+<p>One <code>Hub</code> backs one service. It upgrades connections, performs soft auth, routes
+inbound events to registered handlers, and owns the room registry and cross-instance broadcast.</p>
+
+<pre><code>type Hub struct {
+    origin    string
+    logger    *log.Logger
+    metrics   *telemetry.Metrics
+    validator *auth.Validator
+    bus       events.Bus
+
+    upgrader websocket.Upgrader
+
+    mu       sync.RWMutex
+    conns    map[string]*Conn
+    rooms    map[string]*Room
+    handlers map[string]Handler
+
+    onConnect    func(*Conn)
+    onDisconnect func(*Conn)
+
+    // RequireAuth rejects anonymous connections at handshake when true
+    // (rmhmusic requires auth; the legacy games do not).
+    RequireAuth bool
+
+    ctx context.Context
+}</code></pre>
+
+<h3>ServeWS: upgrade and soft auth</h3>
+
+<p><code>ServeWS</code> is the <code>http.HandlerFunc</code> mounted at the service's WebSocket
+path. It resolves identity from a token (query <code>?token=</code>, the <code>Authorization</code>
+header, or a session cookie) but treats authentication as <em>soft</em>: an absent or expired
+token yields an anonymous connection rather than a rejection, because the legacy games allow
+anonymous play. Only when <code>RequireAuth</code> is set (rmhmusic) is an anonymous handshake
+refused.</p>
+
+<pre><code>token := r.URL.Query().Get("token")
+if token == "" {
+    token = httpx.SessionToken(r)
+}
+var (
+    id   auth.Identity
+    anon = true
+)
+if token != "" && h.validator != nil {
+    resolved, err := h.validator.ValidateSession(r.Context(), token)
+    switch {
+    case err == nil:
+        id, anon = resolved, false
+    case errors.Is(err, auth.ErrUnauthenticated):
+        // Expired/unknown token — legitimately anonymous, no log.
+    default:
+        // A real DB/transport error must be observable: otherwise an auth
+        // outage silently downgrades every user to anonymous.
+        h.logger.Warn("session validation error", "error", err.Error())
+    }
+}
+if h.RequireAuth && anon {
+    http.Error(w, "unauthorized", http.StatusUnauthorized)
+    return
+}</code></pre>
+
+<p>Note the deliberate three-way switch: a clean validation is authenticated, an
+<code>ErrUnauthenticated</code> is silently downgraded to anonymous (this is the common,
+expected case), but any <em>other</em> error — a database or transport fault — is logged at
+WARN so an auth outage cannot quietly demote every user to anonymous without anyone noticing.
+After the switch, the connection is upgraded, registered, counted in metrics, the
+<code>onConnect</code> hook fires, and the two pumps start:</p>
+
+<pre><code>ws, err := h.upgrader.Upgrade(w, r, nil)
+if err != nil {
+    return // upgrader already wrote the error
+}
+c := newConn(h, ws, id, anon)
+
+h.mu.Lock()
+h.conns[c.ID] = c
+h.mu.Unlock()
+if h.metrics != nil {
+    h.metrics.ActiveConnections.Inc()
+}
+if h.onConnect != nil {
+    h.onConnect(c)
+}
+go c.writePump()
+go c.readPump()</code></pre>
+
+<h3>Handler registration is setup-phase only</h3>
+
+<p><code>On</code>, <code>OnConnect</code>, and <code>OnDisconnect</code> mutate hub state with no
+lock. This is safe <em>only</em> because of a documented contract: they must all be called
+during service setup, before <code>ServeWS</code> is mounted and starts accepting connections.</p>
+
+<pre><code>// On/OnConnect/OnDisconnect MUST be called during service setup, before ServeWS
+// is mounted and starts accepting connections. The handler map is treated as
+// immutable once serving begins, so no lock guards dispatch reads — registering
+// after start would be a data race.
+func (h *Hub) On(event string, handler Handler) { h.handlers[event] = handler }</code></pre>
+
+<p>The pay-off is a lock-free read path in <code>dispatch</code>: once serving begins the
+handler map is effectively immutable, so the hot path never contends on a mutex to look up a
+handler.</p>
+
+<h3>Dispatch with panic-recover fault isolation</h3>
+
+<p>Every inbound frame from a connection's read pump lands in <code>dispatch</code>. It records
+a per-event metric, looks up the handler (silently dropping unknown events), and runs it inside
+a <code>recover</code> so a panic in one handler cannot crash the whole service — porting the
+"try/catch around every handler" discipline from the Node rmhbox server.</p>
+
+<pre><code>func (h *Hub) dispatch(c *Conn, e Envelope) {
+    if h.metrics != nil {
+        h.metrics.MessagesTotal.WithLabelValues(e.Event).Inc()
+    }
+    handler, ok := h.handlers[e.Event]
+    if !ok {
+        return
+    }
+    // Fault isolation: a panic in one handler must not take down the service
+    // (ports the try/catch-around-every-handler discipline from rmhbox).
+    defer func() {
+        if rec := recover(); rec != nil {
+            h.logger.Error("handler panic", "event", e.Event, "panic", rec)
+        }
+    }()
+    handler(c, e)
+}</code></pre>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart TB
+  subgraph Hub
+    H[ServeWS upgrade and soft auth]
+    D[dispatch event lookup and recover]
+    RR[rooms registry]
+    HM[handlers map immutable]
+  end
+  subgraph Conn
+    RP[readPump]
+    WP[writePump]
+    SC[send chan 256]
+  end
+  subgraph Room
+    M[members map]
+    SEQ[NextSeq atomic]
+    DL[deliverLocal]
+  end
+  H --> RP
+  H --> WP
+  RP --> D
+  D --> HM
+  D -. handler emits .-> RR
+  RR --> M
+  M --> DL
+  DL --> SC
+  SC --> WP
+  </div>
+  <figcaption>Figure: hub / room / conn structure. The read pump feeds dispatch; handlers act on
+  rooms; room delivery feeds each conn's send channel; the write pump drains it to the socket.</figcaption>
+</figure>
+
+<h2 id="conn">Conn — pumps, heartbeat, and the send channel</h2>
+
+<p>Each client is a <code>Conn</code> with exactly two goroutines: a read pump and a write pump.
+gorilla/websocket forbids concurrent writes to the socket, so <em>every</em> outbound frame
+funnels through a single buffered channel that only the write pump drains. No other goroutine
+ever touches the socket for writing.</p>
+
+<pre><code>const (
+    writeWait      = 10 * time.Second
+    pongWait       = 60 * time.Second
+    pingPeriod     = (pongWait * 9) / 10
+    maxMessageSize = 1 &lt;&lt; 20 // 1 MiB, matching the Socket.IO maxHttpBufferSize
+    sendBuffer     = 256
+)</code></pre>
+
+<h3>Read pump and the ping/pong heartbeat</h3>
+
+<p>The read pump sets a read limit and an initial read deadline, installs a pong handler that
+pushes the deadline forward on every pong, then loops decoding frames into the dispatcher.
+Malformed frames are skipped, not fatal. Any read error (including a missed pong deadline) exits
+the loop and triggers <code>close</code> via the deferred call.</p>
+
+<pre><code>func (c *Conn) readPump() {
+    defer c.close()
+    c.ws.SetReadLimit(maxMessageSize)
+    _ = c.ws.SetReadDeadline(time.Now().Add(pongWait))
+    c.ws.SetPongHandler(func(string) error {
+        return c.ws.SetReadDeadline(time.Now().Add(pongWait))
+    })
+    for {
+        _, raw, err := c.ws.ReadMessage()
+        if err != nil {
+            return
+        }
+        env, err := Decode(raw)
+        if err != nil {
+            continue // ignore malformed frames
+        }
+        c.hub.dispatch(c, env)
+    }
+}</code></pre>
+
+<p>The write pump owns the heartbeat: a <code>pingPeriod</code> ticker (54s, nine-tenths of the
+60s <code>pongWait</code>) emits WebSocket pings. The peer's pongs reset the read deadline; if
+pongs stop, the read pump's deadline lapses and the connection is reaped. This reproduces
+Socket.IO's heartbeat so dead peers are detected within a bounded window.</p>
+
+<pre><code>func (c *Conn) writePump() {
+    ticker := time.NewTicker(pingPeriod)
+    defer func() {
+        ticker.Stop()
+        _ = c.ws.Close()
+    }()
+    for {
+        select {
+        case &lt;-c.closed:
+            // Graceful teardown: tell the peer and stop. Buffered frames are
+            // dropped — realtime favors a clean disconnect over backlog flush.
+            _ = c.ws.SetWriteDeadline(time.Now().Add(writeWait))
+            _ = c.ws.WriteMessage(websocket.CloseMessage, nil)
+            return
+        case msg := &lt;-c.send:
+            _ = c.ws.SetWriteDeadline(time.Now().Add(writeWait))
+            if err := c.ws.WriteMessage(websocket.TextMessage, msg); err != nil {
+                return
+            }
+        case &lt;-ticker.C:
+            _ = c.ws.SetWriteDeadline(time.Now().Add(writeWait))
+            if err := c.ws.WriteMessage(websocket.PingMessage, nil); err != nil {
+                return
+            }
+        }
+    }
+}</code></pre>
+
+<h3>Slow-consumer eviction</h3>
+
+<p>The send channel is buffered at 256 frames. <code>Send</code> is non-blocking: if the buffer
+is full, the consumer is too slow and the connection is torn down rather than allowed to wedge a
+shared room broadcast. A single stuck client must never block delivery to everyone else in the
+room.</p>
+
+<h2 id="concurrency">The concurrency design (teaching highlight)</h2>
+
+<div class="warn"><strong>A real blocking bug, found in senior review.</strong> The naive design
+— "close the <code>send</code> channel to shut a connection down" — is a classic Go footgun.
+The <code>send</code> channel has <em>many</em> concurrent producers: <code>Send</code> called
+from heartbeat, grace timers, and room-broadcast goroutines all write to it. In Go, <em>closing
+a channel that still has concurrent senders panics</em> ("send on closed channel"), and selecting
+to write on a closed channel can also race. The first cut shipped this hazard; review caught it
+before it reached production.</div>
+
+<h3>The fix: a separate <code>closed</code> signal + <code>closeOnce</code></h3>
+
+<p>The rule is: the channel carrying data is <em>never</em> closed. Shutdown is signalled out of
+band by closing a dedicated, payload-free <code>closed chan struct{}</code>, exactly once, via
+<code>sync.Once</code>. Producers select on <code>closed</code> to know they must not send; the
+write pump selects on it to exit.</p>
+
+<pre><code>type Conn struct {
+    // ...
+    send chan []byte
+    // closed is closed exactly once when the connection is torn down. Producers
+    // (Send / Room.deliverLocal, called from heartbeat/timer/broadcast
+    // goroutines) select on it so they never write to a dead connection, and
+    // writePump selects on it to exit cleanly. We deliberately NEVER close the
+    // `send` channel — multiple goroutines write to it, and closing a channel
+    // with concurrent senders panics. Closing `closed` + closing the socket is
+    // the safe shutdown signal instead.
+    closed chan struct{}
+    // ...
+    closeOnce sync.Once
+}</code></pre>
+
+<p>The single safe send path is <code>trySend</code>. It checks <code>closed</code> first (cheap
+fast-fail), then does a three-way non-blocking select: deliver if there's room, abort if closed
+mid-send, or — if the buffer is full and the connection is still live — evict the slow consumer.
+Critically, <em>none</em> of these branches can panic, because no branch ever closes
+<code>send</code>.</p>
+
+<pre><code>func (c *Conn) Send(e Envelope) { c.trySend(e.Encode()) }
+
+func (c *Conn) trySend(raw []byte) {
+    select {
+    case &lt;-c.closed:
+        return
+    default:
+    }
+    select {
+    case c.send &lt;- raw:
+    case &lt;-c.closed:
+    default:
+        c.close()
+    }
+}</code></pre>
+
+<p>Teardown is idempotent and ordered. <code>closeOnce</code> guarantees the body runs once even
+if the read pump error and a slow-consumer eviction race to call it. It closes <code>closed</code>
+(unblocking every producer and the write pump), closes the socket (unblocking the read pump's
+blocking <code>ReadMessage</code>), and deregisters from the hub. The <code>send</code> channel
+is left for the garbage collector — never closed.</p>
+
+<pre><code>func (c *Conn) close() {
+    c.closeOnce.Do(func() {
+        close(c.closed)
+        _ = c.ws.Close()
+        c.hub.remove(c)
+    })
+}</code></pre>
+
+<div class="ok"><strong>Why this is correct.</strong> A <code>chan struct{}</code> can be safely
+<em>read</em> by any number of goroutines after it's closed (a closed channel always returns
+immediately), so it is the canonical Go broadcast-signal primitive. Closing it has exactly one
+writer (guarded by <code>sync.Once</code>), so there is no "close on closed" or "close with
+concurrent senders" hazard. The data channel keeps its many writers and is simply abandoned. This
+is the textbook "never close a channel from the receiver side / with multiple senders" pattern,
+applied precisely.</div>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+stateDiagram-v2
+  [*] --> Connecting
+  Connecting --> Open: upgrade ok and auth passes
+  Connecting --> [*]: RequireAuth and anonymous
+  Open --> Open: ReadMessage dispatch
+  Open --> Open: pong resets read deadline
+  Open --> Closing: read error
+  Open --> Closing: pong deadline lapsed
+  Open --> Closing: send buffer full
+  Closing --> Closed: close closed and close socket and hub.remove
+  Closed --> [*]
+  </div>
+  <figcaption>Figure: connection lifecycle. All teardown paths converge on the single idempotent
+  close() guarded by closeOnce.</figcaption>
+</figure>
+
+<h2 id="room">Room — members, sequencing, and local delivery</h2>
+
+<p>A <code>Room</code> is a broadcast group (a lobby, watch-party, music room, or game room). It
+holds the locally-connected members on this replica, a monotonic sequence counter, and — when a
+Bus is configured — one subscription so broadcasts from other replicas reach local members.</p>
+
+<pre><code>type Room struct {
+    ID string
+
+    mu      sync.RWMutex
+    members map[string]*Conn // connID -> conn (this replica only)
+
+    seq uint64
+
+    // busCancel tears down the room's bus subscription when it empties.
+    busCancel func()
+}
+
+// NextSeq returns the next monotonic sequence number for ordered mutation
+// broadcasts (the seq field of S2C.ROOM_ACTION / GAME_ACTION).
+func (r *Room) NextSeq() uint64 { return atomic.AddUint64(&r.seq, 1) }</code></pre>
+
+<p><code>NextSeq</code> uses <code>atomic.AddUint64</code>, not the room mutex, so sequence
+assignment never contends with membership operations. <code>TestRoomSeqMonotonic</code> fires
+1000 concurrent <code>NextSeq</code> calls and asserts all 1000 results are unique, verifying the
+ordering guarantee under contention.</p>
+
+<p>Local delivery snapshots the member set under a read lock, then sends outside the lock so a
+slow <code>trySend</code> (or its eviction path) cannot block membership changes:</p>
+
+<pre><code>func (r *Room) deliverLocal(raw []byte) {
+    r.mu.RLock()
+    members := make([]*Conn, 0, len(r.members))
+    for _, c := range r.members {
+        members = append(members, c)
+    }
+    r.mu.RUnlock()
+    for _, c := range members {
+        c.trySend(raw)
+    }
+}</code></pre>
+
+<h3>Room lifecycle: lazy create, teardown when empty</h3>
+
+<p>Rooms are created lazily on first <code>Join</code> and reaped on the <code>Leave</code> that
+empties them. The empty-check is re-validated under the write lock to avoid racing a concurrent
+<code>Join</code> that might re-populate the room between the read and the delete:</p>
+
+<pre><code>func (h *Hub) Leave(c *Conn, roomID string) {
+    h.mu.RLock()
+    room := h.rooms[roomID]
+    h.mu.RUnlock()
+    if room == nil {
+        return
+    }
+    empty := room.remove(c.ID)
+    c.removeRoom(roomID)
+    if empty {
+        h.mu.Lock()
+        // Re-check under the write lock to avoid racing a concurrent Join.
+        if r := h.rooms[roomID]; r != nil && r.Size() == 0 {
+            if r.busCancel != nil {
+                r.busCancel()
+            }
+            delete(h.rooms, roomID)
+        }
+        h.mu.Unlock()
+    }
+}</code></pre>
+
+<h2 id="grace-timers">GraceTimers — porting the setTimeout disconnect grace</h2>
+
+<p>The Node room managers leaned on <code>setTimeout</code> for two recurring behaviors: a
+<em>disconnect grace period</em> (don't remove a player the instant their socket drops — give
+them seconds to reconnect: rmhtube ~120s, rmhmusic ~30s) and an <em>empty-room GC</em> reap.
+<code>GraceTimers</code> is the faithful Go port: keyed, cancellable, delayed actions where
+re-scheduling a key cancels its prior timer so the most recent call always wins.</p>
+
+<pre><code>func (g *GraceTimers) Schedule(key string, d time.Duration, fn func()) {
+    g.mu.Lock()
+    defer g.mu.Unlock()
+    if t, ok := g.timers[key]; ok {
+        t.Stop()
+    }
+    g.timers[key] = time.AfterFunc(d, func() {
+        g.mu.Lock()
+        delete(g.timers, key)
+        g.mu.Unlock()
+        fn()
+    })
+}
+
+func (g *GraceTimers) Cancel(key string) bool {
+    g.mu.Lock()
+    defer g.mu.Unlock()
+    if t, ok := g.timers[key]; ok {
+        stopped := t.Stop()
+        delete(g.timers, key)
+        return stopped
+    }
+    return false
+}</code></pre>
+
+<p>The reconnect pattern reads naturally: on disconnect, <code>Schedule(userID, grace,
+removePlayer)</code>; on reconnect within the window, <code>Cancel(userID)</code> stops the
+pending removal. <code>TestGraceTimerCancel</code> confirms a cancelled timer never fires;
+<code>TestGraceTimerReschedule</code> confirms that scheduling the same key twice runs only the
+second action (reschedule cancels the prior). <code>CancelAll</code> drains every pending timer
+on shutdown.</p>
+
+<h2 id="cross-replica">Cross-replica broadcast via the bus</h2>
+
+<p>Because each replica only holds its own local members, a room spanning multiple pods needs a
+fan-out path — the role Socket.IO filled with its Redis adapter. Here it is the
+<code>events.Bus</code>. <code>Broadcast</code> does two things: deliver to local members
+immediately, and publish the same bytes to the room's bus topic for remote replicas.</p>
+
+<pre><code>func (h *Hub) Broadcast(roomID string, e Envelope) {
+    raw := e.Encode()
+    h.mu.RLock()
+    room := h.rooms[roomID]
+    h.mu.RUnlock()
+    if room != nil {
+        room.deliverLocal(raw)
+    }
+    _ = h.bus.Publish(h.ctx, busTopic(roomID), raw)
+}
+
+func (h *Hub) BroadcastSeq(roomID string, e Envelope) {
+    h.mu.RLock()
+    room := h.rooms[roomID]
+    h.mu.RUnlock()
+    if room != nil {
+        e.Seq = room.NextSeq()
+    }
+    h.Broadcast(roomID, e)
+}</code></pre>
+
+<p><code>BroadcastSeq</code> is the ordered mutation path: it stamps the envelope with the room's
+next sequence number <em>before</em> broadcasting, so the seq is assigned once (on the origin
+replica) and travels with the bytes to every replica — preserving the global ordering that
+<code>S2C.ROOM_ACTION</code> / <code>GAME_ACTION</code> clients depend on.</p>
+
+<h3>Origin echo-skip</h3>
+
+<p>The subtlety is avoiding double-delivery: the origin replica already delivered locally in
+<code>Broadcast</code>, so when its own publish loops back through the bus it must be ignored.
+Each room's subscription drops any message whose <code>Origin</code> matches this hub's origin:</p>
+
+<pre><code>func (r *Room) subscribeBus(ctx context.Context, h *Hub) {
+    ch, cancel, err := h.bus.Subscribe(ctx, busTopic(r.ID))
+    if err != nil {
+        h.logger.Warn("bus subscribe failed", "room", r.ID, "error", err.Error())
+        return
+    }
+    r.busCancel = cancel
+    go func() {
+        for msg := range ch {
+            if msg.Origin == h.origin {
+                continue // already delivered locally by Broadcast
+            }
+            r.deliverLocal(msg.Payload)
+        }
+    }()
+}
+
+func busTopic(roomID string) string { return "rt:room:" + roomID }</code></pre>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+sequenceDiagram
+  participant CA as Client A (Replica 1)
+  participant R1 as Hub Replica 1
+  participant BUS as Redis Bus
+  participant R2 as Hub Replica 2
+  participant CB as Client B (Replica 2)
+  CA->>R1: Envelope game:action
+  R1->>R1: BroadcastSeq stamps seq=N
+  R1->>CA: deliverLocal (immediate)
+  R1->>BUS: Publish rt:room:ID origin=R1
+  BUS-->>R1: echo origin=R1
+  R1->>R1: skip (own origin)
+  BUS-->>R2: deliver origin=R1
+  R2->>CB: deliverLocal
+  </div>
+  <figcaption>Figure: 2-replica fan-out. The origin delivers locally and publishes once; the
+  remote replica fans out to its members; the origin's own echo is skipped.</figcaption>
+</figure>
+
+<p>The room teardown path (above) calls <code>busCancel</code> when the last local member leaves,
+so an empty room on this replica stops consuming the bus topic — the subscription lifecycle is
+tied exactly to local membership.</p>
+
+<h2 id="connect-flow">End-to-end: connect and dispatch</h2>
+
+<p>Pulling the pieces together, the full path from handshake to a handler acting on a room:</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+sequenceDiagram
+  participant C as Client
+  participant H as Hub
+  participant V as Validator
+  participant RP as readPump
+  participant WP as writePump
+  C->>H: HTTP upgrade with token
+  H->>V: ValidateSession
+  V-->>H: identity or anonymous
+  H->>H: register conn, metrics Inc, onConnect
+  H->>RP: go readPump
+  H->>WP: go writePump
+  C->>RP: Envelope room:join
+  RP->>H: dispatch (lookup + recover)
+  H->>H: handler runs Hub.Join
+  C->>RP: Envelope game:action
+  RP->>H: dispatch
+  H->>H: handler runs BroadcastSeq
+  H->>WP: trySend to each member
+  WP->>C: TextMessage Envelope seq=N
+  </div>
+  <figcaption>Figure: connect, then a join and a seq-stamped mutation, through the read pump,
+  dispatch, and back out via the write pump.</figcaption>
+</figure>
+
+<p>On any disconnect, <code>Hub.remove</code> closes the loop: it leaves every room the
+connection joined (reaping now-empty rooms and their bus subscriptions), removes the connection
+from the registry, decrements the active-connection gauge, and fires <code>onDisconnect</code> —
+the hook where a service arms a <code>GraceTimers</code> entry to defer player removal until the
+reconnect window expires.</p>
+
+<div class="note"><strong>Status.</strong> The Go side of the realtime framework — protocol,
+hub, conn, room, grace timers, and cross-replica bus fan-out — is implemented and unit-tested
+(<code>realtime_test.go</code> covers envelope round-trip, seq monotonicity under 1000-way
+concurrency, and grace-timer cancel/reschedule). The corrected channel-shutdown design is in
+place. The one outstanding migration deliverable is the TypeScript client adapter that bridges
+the Socket.IO v4 wire format to this JSON-over-raw-WebSocket transport.</div>

@@ -1,0 +1,193 @@
+<p class="lead">The <b>recap</b> service ports <code>server/recap/index.ts</code> — the
+Lights Out daily-recap runner. Every five minutes it finds Discord channels
+whose recap is due, builds a rich embed summarising that guild's players for the
+recap date (medals, ratings, ranking), posts it, and clears the schedule. It
+also holds a Discord gateway connection so the bot shows as online. It serves
+<code>/health</code> and <code>/metrics</code> on <code>RECAP_PORT</code>
+(default <code>7004</code>).</p>
+
+<div class="stats">
+  <div class="stat"><div class="v">5 min</div><div class="l">poll interval</div></div>
+  <div class="stat"><div class="v">7004</div><div class="l">RECAP_PORT</div></div>
+  <div class="stat"><div class="v">2</div><div class="l">interfaces (Repo, Poster)</div></div>
+  <div class="stat"><div class="v">always</div><div class="l">clears on post</div></div>
+</div>
+
+<h2 id="recap-loop">The 5-minute due-recap loop</h2>
+
+<p><code>CHECK_INTERVAL_MS = 5 * 60 * 1000</code> becomes
+<code>checkInterval = 5 * time.Minute</code>. <code>Start</code> opens the gateway,
+runs one recap pass immediately (mirroring the Node
+<code>processDueRecaps()</code> kick before the interval), then ticks. Each tick
+calls <code>processDueRecaps</code>, which fetches every due channel and processes
+them one at a time, logging — but not aborting on — per-guild failures.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart TD
+  T[tick every 5 min] --> Q[DueChannels recapDueAt le now]
+  Q -->|none| T
+  Q -->|for each channel| P[Participants by guild and date]
+  P -->|empty| CL[ClearRecap]
+  P -->|some| E[buildRecapEmbed]
+  E -->|nil| CL
+  E -->|embed| POST[Poster.Post to channel]
+  POST -->|200| CL
+  POST -->|403 or 404| CL
+  POST -->|transport error| CL
+  CL --> T
+  </div>
+  <figcaption>Figure 13.1: the due-recap loop — the schedule is cleared on every
+  path, including access errors.</figcaption>
+</figure>
+
+<p>The "always clear" behavior is the subtle, faithful part. Whether the post
+succeeds, the bot is forbidden (403), the channel is gone (404), or the transport
+itself errors, the recap schedule for that channel is cleared so it never retries
+forever:</p>
+
+<pre><code>status, postErr := r.poster.Post(ctx, ch.ChannelID, msg)
+switch {
+case postErr != nil:
+    r.log.Warn("recap post error", "guildId", ch.GuildID, "error", postErr)
+case status == 403 || status == 404:
+    r.log.Info("bot lacks access — clearing recap", "guildId", ch.GuildID, "status", status)
+default:
+    r.log.Info("posted recap", "guildId", ch.GuildID, "channelId", ch.ChannelID)
+}
+// Always clear the recap schedule (faithful to the Node comment).
+return r.repo.ClearRecap(ctx, ch.ID)</code></pre>
+
+<p>The due-channel query is the literal port of the Node predicate
+(<code>activity='lights-out'</code> with a non-null, past <code>recapDueAt</code>
+and a non-null <code>recapDateKey</code>):</p>
+
+<pre><code>SELECT "id", "guildId", "channelId", "recapDateKey"
+  FROM "discord_activity_channel"
+ WHERE "activity" = 'lights-out'
+   AND "recapDueAt" IS NOT NULL
+   AND "recapDueAt" &lt;= $1
+   AND "recapDateKey" IS NOT NULL</code></pre>
+
+<h2 id="recap-embed">Building the embed: medals, ratings, ranking</h2>
+
+<p>Participants come from <code>discord_daily_participant</code> ordered by
+<code>moves ASC NULLS LAST</code> (completers with the fewest moves first;
+NULL-move players last), matching Prisma's <code>orderBy moves:'asc'</code> on
+Postgres. <code>buildRecapEmbed</code> then reproduces the Node embed exactly:
+the top three completers get 🥇🥈🥉, fourth onward get a plain bullet, each line
+shows the rating emoji (default 💡) and optional rating label, and a "did not
+finish" line counts the players still <code>playing</code>:</p>
+
+<pre><code>for i, p := range completed {
+    medal := "▪️" // plain bullet for 4th+
+    if i &lt; len(medals) {
+        medal = medals[i] // 🥇🥈🥉
+    }
+    emoji := "\U0001F4A1" // 💡 default
+    if p.RatingEmoji != nil &amp;&amp; *p.RatingEmoji != "" {
+        emoji = *p.RatingEmoji
+    }
+    line := fmt.Sprintf("%s **%s** — %s %d move%s", medal, p.Username, emoji, moves, plural(moves))
+    if p.RatingLabel != nil &amp;&amp; *p.RatingLabel != "" {
+        line += fmt.Sprintf(" (%s)", *p.RatingLabel)
+    }
+    lines = append(lines, line)
+}</code></pre>
+
+<p>The description is assembled with blank separators then run through
+<code>filterNonEmpty</code>, which removes <i>all</i> empty strings — the exact
+behavior of the Node <code>.filter(Boolean)</code> over the whole array. The
+embed color is the amber <code>0xf59e0b</code> from the source, and when an
+<code>APP_ID</code> is configured a "Play today's puzzle" link is appended
+pointing at <code>discord.com/activities/&lt;APP_ID&gt;</code>. The leaderboard
+image URL is rebuilt the same way the Node runner did, from <code>SITE_URL</code>
+plus the guild and date:</p>
+
+<pre><code>siteURL + "/api/discord/activity-image?type=leaderboard&amp;guildId=" +
+    guildID + "&amp;dateKey=" + dateKey + "&amp;recap=1"</code></pre>
+
+<p><code>buildRecapEmbed</code> returns <code>nil</code> for an empty participant
+list, so the caller just clears the schedule — the Node
+<code>if (participants.length === 0)</code> early-out. Pluralization is the
+faithful <code>n !== 1 ? 's' : ''</code> rule (the test asserts "1 move" but
+never "1 moves").</p>
+
+<h2 id="recap-lightsout">Porting the Lights Out puzzle math</h2>
+
+<p>The recap header shows the day's shape and the optimal move count, which means
+the runner must recompute the puzzle from the date. <code>lightsout.go</code>
+ports just the pieces needed for <code>(shapeLabel, optimalMoves)</code>: the
+Mulberry32 RNG, the <code>SHAPES</code> table (order matters — the seed indexes
+into it), <code>generatePuzzle</code> (difficulty scaling, the 100-attempt retry
+loop, deterministic fallback), and a brute-force <code>solvePuzzle</code> for the
+minimum solution:</p>
+
+<pre><code>func computePuzzleMeta(dateKey string) puzzleMeta {
+    y, m, d, ok := parseDateKey(dateKey)
+    if !ok {
+        return puzzleMeta{shapeLabel: dateKey, optimal: -1}
+    }
+    seed := getDateSeed(y, m, d) // y*10000 + m*100 + d
+    shape := getDailyShape(seed) // seed % len(shapes)
+    label := getShapeLabel(shape)
+    puzzle := generatePuzzle(createSeededRng(seed), shape)
+    optimal := getOptimalMoves(puzzle, shape) // -1 == omit "Optimal" line
+    return puzzleMeta{shapeLabel: label, optimal: optimal}
+}</code></pre>
+
+<div class="scope"><b>Scope — only the recap-facing helpers are ported.</b> The
+interactive play helpers (cell toggling for live play, share/persistence) are
+deliberately out of scope: the runner only needs to <i>describe</i> the day's
+puzzle, not let anyone play it. <code>recap_test.go</code> verifies
+<code>computePuzzleMeta</code> is deterministic and that the seeded RNG
+reproduces its sequence (same seed → identical draws in <code>[0,1)</code>).</div>
+
+<h2 id="recap-gateway">Gateway presence: discordgo replaces hand-rolled opcodes</h2>
+
+<p>This is the clearest improvement over the Node runner. The original
+hand-rolled the Discord gateway: op-10 hello, op-1 heartbeat on a
+<code>setInterval</code>, op-2 identify, op-7 reconnect, op-9 invalid-session, and
+a 30-second reconnect timer it had to maintain itself. The Go port hands all of
+that to <code>discordgo</code>:</p>
+
+<pre><code>session, err = discordgo.New("Bot " + botToken)
+session.Identify.Intents = discordgo.IntentsNone // index.ts uses intents: 0
+session.Identify.Presence = discordgo.GatewayStatusUpdate{
+    Status: "online",
+    Game:   discordgo.Activity{Name: "RMHBox", Type: discordgo.ActivityTypeGame},
+}
+// ... later, in Runner.Start:
+if err := r.session.Open(); err != nil { ... }</code></pre>
+
+<div class="ok"><b>Improvement.</b> <code>session.Open()</code> manages the
+handshake, heartbeats, reconnect, and RESUME. The op-10/op-1/op-7/op-9 logic, the
+heartbeat interval, and the manual reconnect timer that index.ts maintained are
+gone. Posting uses the same library's REST path
+(<code>ChannelMessageSendComplex</code>), and the production <code>Poster</code>
+recovers the HTTP status from a <code>*discordgo.RESTError</code> so 403/404 are
+treated as non-fatal skips — preserving the exact Node semantics with far less
+code. When no bot token is set, the runner still serves health/metrics and simply
+skips posting (the Node <code>if (!BOT_TOKEN)</code> guard, minus the exit).</div>
+
+<h2 id="recap-testing">Testing with fakes</h2>
+
+<p>The orchestration sits behind two small interfaces so it tests without a real
+DB or Discord. <code>Repo</code> covers <code>DueChannels</code>,
+<code>Participants</code>, and <code>ClearRecap</code>; <code>Poster</code> wraps
+the single send. The tests assert the three behaviors that matter:</p>
+
+<table>
+  <thead><tr><th>Test</th><th>Asserts</th></tr></thead>
+  <tbody>
+    <tr><td><code>RankingAndMedals</code></td><td>🥇🥈🥉 then plain bullet, default 💡 vs supplied emoji, rating-label suffix, "N did not finish", play link, image URL</td></tr>
+    <tr><td><code>PostsAndClears</code></td><td>one post to the channel, then the channel cleared</td></tr>
+    <tr><td><code>NoParticipants_ClearsWithoutPosting</code></td><td>no post, but schedule still cleared</td></tr>
+    <tr><td><code>ForbiddenStillClears</code></td><td>a 403 from the poster still clears the schedule</td></tr>
+  </tbody>
+</table>
+
+<div class="note">Per-job outcomes feed <code>JobRuns{recap, ok|error}</code>;
+DB calls feed <code>DBQueries{ok|error}</code>. With the gateway connection
+double-purposed as the bot's online presence, a single process covers both the
+scheduled posting and the always-online requirement the Node runner served.</div>

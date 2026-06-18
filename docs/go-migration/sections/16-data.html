@@ -1,0 +1,101 @@
+<p class="lead">The Go fleet shares one PostgreSQL database with the React SSR app —
+the same DSN, the same tables, the same Prisma-managed schema. Go does not own
+migrations and does not use an ORM; it reads and writes a well-defined subset of
+tables with hand-written, type-safe pgx queries. This section explains the data
+model boundary and how Go binds to it.</p>
+
+<h2 id="data-boundary">Who owns what</h2>
+<p>Prisma's schema has <b>98 models</b>. The Go services do not model all of them —
+they model only the tables backing the extracted services. Everything else (the
+social graph, feed, blog, the bulk of game tables, build galleries) remains the
+React app's territory, accessed through Prisma. The shared <code>session</code>,
+<code>user</code>, and <code>account</code> tables are the contact surface: Go
+reads them to authenticate; Better&nbsp;Auth (in JS) writes them.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart LR
+  subgraph pg["PostgreSQL (one database)"]
+    auth["user / session / account"]
+    rooms["rmhtube_* / rmh_music_room / rmhbox_*"]
+    doc["doctrine_*"]
+    vibe["vibe_page"]
+    disc["discord_activity_channel / _daily_participant / _chat_session"]
+    rest["~80 other models"]
+  end
+  js["React SSR + Better Auth + Prisma"] --> auth
+  js --> rest
+  js -. writes .-> rooms & doc & vibe & disc
+  go["Go fleet (pgx)"] -->|read| auth
+  go -->|read+write| rooms & doc & vibe & disc
+  </div>
+  <figcaption>Figure 16.1 — Shared database, partitioned ownership. Go validates against auth tables and owns the operational tables of the services it runs.</figcaption>
+</figure>
+
+<h2 id="data-access">The access layer: pgx, not an ORM</h2>
+<p>All database access goes through one <code>pgxpool.Pool</code> built by
+<code>pkg/db</code> from the same <code>DATABASE_URL</code> the Node services use,
+with the pool size mirroring <code>SERVER_DB_POOL_SIZE</code>. This replaces both
+the Prisma client (used by the Node socket/worker services via
+<code>server/shared/prisma-client.ts</code>) and the ad-hoc raw <code>pg.Pool</code>
+clients embedded in the Node auth code — one uniform pool for the whole binary.</p>
+<p>Each service keeps its SQL behind a small <code>Repo</code> interface so the
+business logic is unit-testable with a fake and the real implementation is a thin
+pgx layer. Column names and casing are taken verbatim from
+<code>prisma/migrations</code> so the quoted identifiers bind correctly.</p>
+
+<pre><code>// rmhtube: optimistic persistence behind a Repo interface
+const q = `UPDATE "vibe_page"
+           SET "thumbnailStale" = false, "thumbnailUrl" = $1
+           WHERE "id" = $2 AND "updatedAt" = $3`
+tag, err := pool.Exec(ctx, q, url, id, seenUpdatedAt) // 0 rows = lost the race</code></pre>
+
+<h2 id="data-types">Typed models</h2>
+<p><code>pkg/db/models.go</code> defines Go structs for the Go-owned tables, mapping
+Postgres types to Go: <code>TIMESTAMP(3)</code> → <code>time.Time</code>
+(<code>*time.Time</code> when nullable), <code>JSONB</code> →
+<code>json.RawMessage</code>, <code>DOUBLE PRECISION</code> → <code>float64</code>,
+<code>SMALLINT</code> → <code>int16</code>. Nullable scalars use pointers.</p>
+<table>
+<thead><tr><th>Domain</th><th>Tables (Go-owned)</th><th>Service</th></tr></thead>
+<tbody>
+<tr><td>Identity</td><td><code>user</code>, <code>session</code>, <code>account</code>, <code>verification</code></td><td>all (validate)</td></tr>
+<tr><td>Watch party</td><td><code>rmhtube_room</code>, <code>rmhtube_room_member</code>, <code>rmhtube_queue_item</code></td><td>rmhtube</td></tr>
+<tr><td>Music rooms</td><td><code>rmh_music_room</code></td><td>rmhmusic</td></tr>
+<tr><td>Party games</td><td><code>rmhbox_profile</code>, <code>rmhbox_match</code>, <code>rmhbox_match_player</code></td><td>rmhbox</td></tr>
+<tr><td>Doctrine</td><td><code>doctrine_puzzle</code>, <code>doctrine_reputation</code>, <code>doctrine_reputation_ledger</code>, <code>doctrine_sahur_session</code></td><td>doctrine-worker</td></tr>
+<tr><td>Vibe pages</td><td><code>vibe_page</code></td><td>vibe-worker</td></tr>
+<tr><td>Discord</td><td><code>discord_activity_channel</code>, <code>discord_daily_participant</code>, <code>discord_chat_session</code></td><td>recap, discord-bot</td></tr>
+</tbody>
+</table>
+
+<h2 id="data-auth">Authentication against the shared schema</h2>
+<p>The migration's keystone insight is that authentication needs no Better&nbsp;Auth
+library on the Go side — it needs one SQL query. Both the original Node socket
+services and the Go fleet validate a session identically:</p>
+<pre><code>SELECT s."userId", s."expiresAt", u."name", u."image", u."isAdmin"
+FROM "session" s JOIN "user" u ON u."id" = s."userId"
+WHERE s."token" = $1 LIMIT 1     -- then reject if expiresAt &lt; now()</code></pre>
+<p>The token arrives as a websocket query parameter, a Bearer header, or the
+<code>better-auth.session_token</code> cookie (the value before the dot).
+Discord-Activity clients present a Discord user id instead, mapped to a platform
+user through the <code>account</code> table (<code>providerId = 'discord'</code>).
+Issuance, refresh, and OAuth remain entirely in Better&nbsp;Auth.</p>
+
+<h2 id="data-migrations">Migrations stay with Prisma</h2>
+<div class="note">Go writes rows; it never alters the schema. PR&nbsp;#121's
+Helm <code>pre-upgrade</code> migration hook remains the single authority for
+schema evolution. The Go services assume the schema is already migrated — exactly
+as the Node workers did — and fail fast on a missing column rather than attempting
+DDL. This keeps one source of truth for the schema and avoids two systems racing
+to migrate the same database.</div>
+
+<h2 id="data-concurrency">Concurrency-safe writes</h2>
+<p>Two write patterns deserve note. First, <b>optimistic concurrency</b>
+(vibe-worker): clear a flag only if the row's <code>updatedAt</code> is unchanged
+since it was read, so a concurrent edit is never clobbered. Second,
+<b>atomic read-modify-write</b> (rmhbox profile stats): the Node code read a JSONB
+blob, merged in memory, and wrote it back — a lost-update hazard under concurrent
+games. The Go port performs the merge inside a transaction with
+<code>SELECT … FOR UPDATE</code>, closing the race. Both are detailed in their
+service sections.</p>

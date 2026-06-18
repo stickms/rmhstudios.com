@@ -1,0 +1,253 @@
+<p class="lead">The realtime event catalog for the four WebSocket services. Every name
+below is taken from the actual source — the <code>events.go</code> constant maps
+(<code>rmhmusic</code>, <code>rmhtube</code>), the <code>kk*</code> constants in
+<code>internal/gamehub/kk.go</code>, and the literal event strings in
+<code>internal/rmhbox/*.go</code>. The names carry their service prefix
+(<code>kk:</code>, <code>rmhmusic:</code>, <code>rmhtube:</code>,
+<code>rmhbox:</code>) and are kept byte-for-byte identical to the legacy
+TypeScript C2S/S2C maps so the existing client adapters map cleanly onto the new
+transport.</p>
+
+<h2 id="events-envelope">The common envelope</h2>
+<p>Every frame in both directions is one JSON object — the
+<code>realtime.Envelope</code> defined in <code>pkg/realtime/protocol.go</code>.
+This replaces the Socket.IO v4 wire protocol while preserving its
+semantics: named events plus the sequence-numbered mutation broadcasts the Node
+delta protocol relied on.</p>
+<pre><code>{ "event": "rmhtube:room:join", "payload": { ... }, "seq": 42, "ts": 1718700000000 }</code></pre>
+<table>
+  <thead><tr><th>Field</th><th>Type</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td>event</td><td>string</td><td>The prefixed event name (the rows below).</td></tr>
+    <tr><td>payload</td><td>JSON (omitempty)</td><td>Event-specific body; absent for e.g. heartbeats.</td></tr>
+    <tr><td>seq</td><td>uint64 (omitempty)</td><td>Server-assigned, monotonic per room for mutation broadcasts (ordering guarantee).</td></tr>
+    <tr><td>ts</td><td>int64 (omitempty)</td><td>Server send time in epoch milliseconds.</td></tr>
+  </tbody>
+</table>
+<div class="note">The <code>*:room:action</code> / <code>rmhbox:game:action</code>
+broadcasts are the seq-numbered "delta" frames: their payload carries a
+<code>type</code> discriminator (e.g. <code>MEMBER_JOINED</code>,
+<code>CHAT_MESSAGE</code>, <code>NOW_PLAYING</code>) plus the mutation data,
+reproducing the legacy delta protocol.</div>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+sequenceDiagram
+  participant C as Client
+  participant S as Service hub
+  C->>S: rmhtube:room:join {code}
+  S-->>C: rmhtube:room:state_snapshot {full state}
+  S-->>C: rmhtube:room:action {type:MEMBER_JOINED, seq:n}
+  C->>S: rmhtube:sync:play {t}
+  S-->>C: rmhtube:sync:play {t, seq:n+1}
+  </div>
+  <figcaption>Figure: typical join + sync exchange (snapshot then seq deltas).</figcaption>
+</figure>
+
+<h2 id="events-kk">gamehub — Kowloon Knockout (<code>kk:</code>)</h2>
+<p>A 1v1 host-authoritative relay: host creates a room, a guest joins, then
+input (guest→host) and game_state (host→guest) frames are relayed; a
+fighter_ready handshake from both seats re-arms a rematch. Defined in
+<code>internal/gamehub/kk.go</code>.</p>
+<h3>Client → Server</h3>
+<table>
+  <thead><tr><th>Event</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td>kk:create_room</td><td>Host creates a room with its chosen fighter class.</td></tr>
+    <tr><td>kk:join_room</td><td>Guest joins by room code with a fighter class.</td></tr>
+    <tr><td>kk:input</td><td>Guest input frame relayed to the host (authoritative sim).</td></tr>
+    <tr><td>kk:game_state</td><td>Host's authoritative game-state frame relayed to the guest.</td></tr>
+    <tr><td>kk:fighter_ready</td><td>Seat signals ready for the (re)match handshake.</td></tr>
+    <tr><td>kk:leave</td><td>Leave the room.</td></tr>
+  </tbody>
+</table>
+<h3>Server → Client</h3>
+<table>
+  <thead><tr><th>Event</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td>kk:room_created</td><td>Acknowledges room creation; carries the code.</td></tr>
+    <tr><td>kk:room_joined</td><td>Acknowledges a successful join.</td></tr>
+    <tr><td>kk:opponent_ready</td><td>The other seat is ready (rematch handshake progress).</td></tr>
+    <tr><td>kk:opponent_disconnected</td><td>The peer dropped.</td></tr>
+    <tr><td>kk:error</td><td>Error (bad code, room full, etc.).</td></tr>
+  </tbody>
+</table>
+<div class="scope">Only Kowloon Knockout is ported verbatim. The remaining games
+(Slice It, Neon Driftway, ...) are left as compiling RelayGroup TODO
+registrations and emit no events yet.</div>
+
+<h2 id="events-rmhmusic">rmhmusic (<code>rmhmusic:</code>)</h2>
+<p>Synchronized group music rooms: the host controls playback, members share a
+queue and chat. Names from <code>internal/rmhmusic/events.go</code>.</p>
+<h3>Client → Server</h3>
+<table>
+  <thead><tr><th>Event</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td>rmhmusic:room:create</td><td>Create a room.</td></tr>
+    <tr><td>rmhmusic:room:join</td><td>Join a room by code.</td></tr>
+    <tr><td>rmhmusic:room:leave</td><td>Leave the current room.</td></tr>
+    <tr><td>rmhmusic:room:browse</td><td>Browse/list public rooms.</td></tr>
+    <tr><td>rmhmusic:room:chat</td><td>Send a chat message.</td></tr>
+    <tr><td>rmhmusic:room:transfer_host</td><td>Hand host control to another member.</td></tr>
+    <tr><td>rmhmusic:music:play</td><td>Host: start/resume playback.</td></tr>
+    <tr><td>rmhmusic:music:pause</td><td>Host: pause playback.</td></tr>
+    <tr><td>rmhmusic:music:seek</td><td>Host: seek to a position.</td></tr>
+    <tr><td>rmhmusic:music:skip</td><td>Host: skip to the next track.</td></tr>
+    <tr><td>rmhmusic:queue:add</td><td>Add a track to the shared queue.</td></tr>
+    <tr><td>rmhmusic:queue:remove</td><td>Remove a queued track.</td></tr>
+    <tr><td>rmhmusic:queue:reorder</td><td>Reorder the queue.</td></tr>
+  </tbody>
+</table>
+<h3>Server → Client</h3>
+<table>
+  <thead><tr><th>Event</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td>rmhmusic:room:created</td><td>Room created; carries code/initial state.</td></tr>
+    <tr><td>rmhmusic:room:state_snapshot</td><td>Full room state on join/resync.</td></tr>
+    <tr><td>rmhmusic:room:action</td><td>Seq-numbered delta (MEMBER_JOINED, MEMBER_LEFT, MEMBER_DISCONNECTED, HOST_TRANSFERRED, CHAT_MESSAGE, NOW_PLAYING, QUEUE_ITEM_ADDED).</td></tr>
+    <tr><td>rmhmusic:room:browse_result</td><td>Result of a browse request.</td></tr>
+    <tr><td>rmhmusic:room:disbanded</td><td>Room closed.</td></tr>
+    <tr><td>rmhmusic:room:not_in_room</td><td>Action rejected: caller is not in a room.</td></tr>
+    <tr><td>rmhmusic:music:play</td><td>Broadcast play to members.</td></tr>
+    <tr><td>rmhmusic:music:pause</td><td>Broadcast pause.</td></tr>
+    <tr><td>rmhmusic:music:seek</td><td>Broadcast seek position.</td></tr>
+    <tr><td>rmhmusic:music:track_changed</td><td>The now-playing track changed.</td></tr>
+    <tr><td>rmhmusic:sync:heartbeat</td><td>Periodic playback-position heartbeat for drift correction.</td></tr>
+    <tr><td>rmhmusic:queue:updated</td><td>The shared queue changed.</td></tr>
+    <tr><td>rmhmusic:error</td><td>Error response.</td></tr>
+  </tbody>
+</table>
+
+<h2 id="events-rmhtube">rmhtube (<code>rmhtube:</code>)</h2>
+<p>Watch-party video rooms with roles, bans, invites, a shared queue, synced
+playback (incl. speed), reactions and chat. Names from
+<code>internal/rmhtube/events.go</code>; the maps are organized in phased
+feature groups.</p>
+<h3>Client → Server</h3>
+<table>
+  <thead><tr><th>Event</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td>rmhtube:room:create</td><td>Create a room.</td></tr>
+    <tr><td>rmhtube:room:join</td><td>Join a room.</td></tr>
+    <tr><td>rmhtube:room:leave</td><td>Leave the room.</td></tr>
+    <tr><td>rmhtube:room:kick</td><td>Host: kick a member.</td></tr>
+    <tr><td>rmhtube:room:transfer_host</td><td>Hand host to another member.</td></tr>
+    <tr><td>rmhtube:room:update_settings</td><td>Update room settings.</td></tr>
+    <tr><td>rmhtube:room:browse</td><td>Browse public rooms.</td></tr>
+    <tr><td>rmhtube:room:chat</td><td>Send a chat message.</td></tr>
+    <tr><td>rmhtube:room:set_leader</td><td>Assign a co-leader/leader role.</td></tr>
+    <tr><td>rmhtube:room:ban</td><td>Ban a user from the room.</td></tr>
+    <tr><td>rmhtube:room:unban</td><td>Lift a ban.</td></tr>
+    <tr><td>rmhtube:room:create_invite</td><td>Create an invite link.</td></tr>
+    <tr><td>rmhtube:room:set_status</td><td>Set the member's status/presence.</td></tr>
+    <tr><td>rmhtube:room:check_history</td><td>Query watch-history status.</td></tr>
+    <tr><td>rmhtube:sync:host_state</td><td>Host pushes authoritative playback state.</td></tr>
+    <tr><td>rmhtube:sync:play</td><td>Host: play.</td></tr>
+    <tr><td>rmhtube:sync:pause</td><td>Host: pause.</td></tr>
+    <tr><td>rmhtube:sync:seek</td><td>Host: seek.</td></tr>
+    <tr><td>rmhtube:sync:set_speed</td><td>Host: set playback speed.</td></tr>
+    <tr><td>rmhtube:queue:add</td><td>Add a media item to the queue.</td></tr>
+    <tr><td>rmhtube:queue:remove</td><td>Remove a queued item.</td></tr>
+    <tr><td>rmhtube:queue:reorder</td><td>Reorder the queue.</td></tr>
+    <tr><td>rmhtube:queue:play_item</td><td>Jump to and play a specific item.</td></tr>
+    <tr><td>rmhtube:queue:skip</td><td>Skip the current item.</td></tr>
+    <tr><td>rmhtube:queue:vote_skip</td><td>Cast a vote to skip.</td></tr>
+    <tr><td>rmhtube:queue:vote</td><td>Vote on a queued item.</td></tr>
+    <tr><td>rmhtube:queue:shuffle</td><td>Shuffle the queue.</td></tr>
+    <tr><td>rmhtube:reaction:send</td><td>Send an emoji reaction.</td></tr>
+    <tr><td>rmhtube:chat:typing</td><td>Signal typing.</td></tr>
+    <tr><td>rmhtube:chat:react</td><td>React to a chat message.</td></tr>
+    <tr><td>rmhtube:chat:pin</td><td>Pin a chat message.</td></tr>
+  </tbody>
+</table>
+<h3>Server → Client</h3>
+<table>
+  <thead><tr><th>Event</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td>rmhtube:room:created</td><td>Room created; carries code.</td></tr>
+    <tr><td>rmhtube:room:state_snapshot</td><td>Full room state on join/resync.</td></tr>
+    <tr><td>rmhtube:room:action</td><td>Seq-numbered room delta broadcast.</td></tr>
+    <tr><td>rmhtube:room:browse_result</td><td>Browse result.</td></tr>
+    <tr><td>rmhtube:room:kicked</td><td>You were kicked.</td></tr>
+    <tr><td>rmhtube:room:disbanded</td><td>Room closed.</td></tr>
+    <tr><td>rmhtube:room:not_in_room</td><td>Rejected: caller not in a room.</td></tr>
+    <tr><td>rmhtube:room:invite_created</td><td>An invite link was created.</td></tr>
+    <tr><td>rmhtube:room:history_status</td><td>Watch-history status response.</td></tr>
+    <tr><td>rmhtube:sync:state</td><td>Authoritative playback state broadcast.</td></tr>
+    <tr><td>rmhtube:sync:play</td><td>Broadcast play.</td></tr>
+    <tr><td>rmhtube:sync:pause</td><td>Broadcast pause.</td></tr>
+    <tr><td>rmhtube:sync:seek</td><td>Broadcast seek.</td></tr>
+    <tr><td>rmhtube:sync:media_changed</td><td>The active media item changed.</td></tr>
+    <tr><td>rmhtube:sync:speed_changed</td><td>Playback speed changed.</td></tr>
+    <tr><td>rmhtube:queue:updated</td><td>The queue changed.</td></tr>
+    <tr><td>rmhtube:reaction:broadcast</td><td>Broadcast a reaction to the room.</td></tr>
+    <tr><td>rmhtube:chat:typing_indicator</td><td>Someone is typing.</td></tr>
+    <tr><td>rmhtube:error</td><td>Error response.</td></tr>
+  </tbody>
+</table>
+
+<h2 id="events-rmhbox">rmhbox (<code>rmhbox:</code>)</h2>
+<p>Jackbox-style party lobbies with a host, players, spectators, a minigame
+coordinator and a leaderboard. These names are literal strings registered in
+<code>internal/rmhbox/manager.go</code> and emitted across
+<code>lobby.go</code>, <code>lobby_ops.go</code>, <code>coordinator.go</code>,
+<code>minigames.go</code> and <code>statesync.go</code>.</p>
+<h3>Client → Server</h3>
+<table>
+  <thead><tr><th>Event</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td>rmhbox:lobby:create</td><td>Create a lobby.</td></tr>
+    <tr><td>rmhbox:lobby:join</td><td>Join a lobby by code.</td></tr>
+    <tr><td>rmhbox:lobby:leave</td><td>Leave the lobby.</td></tr>
+    <tr><td>rmhbox:lobby:kick</td><td>Host: kick a participant.</td></tr>
+    <tr><td>rmhbox:lobby:transfer_host</td><td>Hand host to another participant.</td></tr>
+    <tr><td>rmhbox:lobby:update_settings</td><td>Update lobby settings.</td></tr>
+    <tr><td>rmhbox:lobby:end_session</td><td>Host: end the game session.</td></tr>
+    <tr><td>rmhbox:lobby:toggle_ready</td><td>Toggle the player's ready state.</td></tr>
+    <tr><td>rmhbox:lobby:request_promotion</td><td>Spectator requests promotion to player.</td></tr>
+    <tr><td>rmhbox:lobby:promote_spectator</td><td>Host promotes a spectator to player.</td></tr>
+    <tr><td>rmhbox:lobby:browse</td><td>Browse public lobbies.</td></tr>
+    <tr><td>rmhbox:lobby:chat</td><td>Send a lobby chat message.</td></tr>
+    <tr><td>rmhbox:game:pick</td><td>Pick a minigame.</td></tr>
+    <tr><td>rmhbox:game:select</td><td>Select/confirm a game choice.</td></tr>
+    <tr><td>rmhbox:game:force_skip</td><td>Host: force-skip the current game.</td></tr>
+    <tr><td>rmhbox:game:force_end</td><td>Host: force-end the current game.</td></tr>
+    <tr><td>rmhbox:game:pause_timer</td><td>Host: pause the game timer.</td></tr>
+    <tr><td>rmhbox:game:ready_to_render</td><td>Client signals it is ready to render.</td></tr>
+    <tr><td>rmhbox:game:confirm_settings</td><td>Confirm game settings.</td></tr>
+    <tr><td>rmhbox:game:update_settings</td><td>Update game settings.</td></tr>
+    <tr><td>rmhbox:game:input</td><td>In-game player input.</td></tr>
+    <tr><td>rmhbox:player:away</td><td>Mark the player away.</td></tr>
+    <tr><td>rmhbox:player:active</td><td>Mark the player active.</td></tr>
+    <tr><td>rmhbox:spectator:select_player</td><td>Spectator follows a specific player.</td></tr>
+    <tr><td>rmhbox:leaderboard:fetch</td><td>Request leaderboard data.</td></tr>
+  </tbody>
+</table>
+<h3>Server → Client</h3>
+<table>
+  <thead><tr><th>Event</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td>rmhbox:lobby:created</td><td>Lobby created; carries code.</td></tr>
+    <tr><td>rmhbox:lobby:state_snapshot</td><td>Full lobby state on join/resync.</td></tr>
+    <tr><td>rmhbox:lobby:browse_result</td><td>Browse result.</td></tr>
+    <tr><td>rmhbox:lobby:kicked</td><td>You were kicked.</td></tr>
+    <tr><td>rmhbox:lobby:disbanded</td><td>Lobby closed.</td></tr>
+    <tr><td>rmhbox:game:settings_opened</td><td>Game settings phase opened.</td></tr>
+    <tr><td>rmhbox:game:settings_updated</td><td>Game settings changed.</td></tr>
+    <tr><td>rmhbox:game:instructions</td><td>Per-game instructions for the round.</td></tr>
+    <tr><td>rmhbox:game:preload_start</td><td>Asset preload phase started.</td></tr>
+    <tr><td>rmhbox:game:preload_progress</td><td>Preload progress update.</td></tr>
+    <tr><td>rmhbox:game:countdown</td><td>Pre-round countdown.</td></tr>
+    <tr><td>rmhbox:game:started</td><td>The round started.</td></tr>
+    <tr><td>rmhbox:game:state_snapshot</td><td>Full in-game state snapshot.</td></tr>
+    <tr><td>rmhbox:game:action</td><td>Seq-numbered in-game delta broadcast.</td></tr>
+    <tr><td>rmhbox:game:round_results</td><td>Results for the completed round.</td></tr>
+    <tr><td>rmhbox:game:session_results</td><td>Final results for the whole session.</td></tr>
+    <tr><td>rmhbox:leaderboard:data</td><td>Leaderboard data response.</td></tr>
+    <tr><td>rmhbox:error</td><td>Error response.</td></tr>
+  </tbody>
+</table>
+<div class="note">As with the other services, <code>rmhbox:lobby:state_snapshot</code>
+/ <code>rmhbox:game:state_snapshot</code> deliver full state on join or resync,
+while <code>rmhbox:game:action</code> carries the seq-numbered incremental deltas
+during play.</div>

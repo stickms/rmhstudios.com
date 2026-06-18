@@ -1,0 +1,63 @@
+<p class="lead">This report documents the complete migration of rmhstudios.com's realtime
+and background-worker tier from Node.js/TypeScript to a fleet of Go microservices.
+It records what was built, the mechanisms behind each piece, how the work was
+verified, and — candidly — what is a faithful 1:1 port versus what is a
+scaffolded framework awaiting incremental completion.</p>
+
+<div class="stats">
+  <div class="stat"><div class="v">9</div><div class="l">Go services</div></div>
+  <div class="stat"><div class="v">10</div><div class="l">shared pkg libraries</div></div>
+  <div class="stat"><div class="v">11</div><div class="l">test packages green</div></div>
+  <div class="stat"><div class="v">4</div><div class="l">e2e tests vs real infra</div></div>
+  <div class="stat"><div class="v">33 MB</div><div class="l">gateway image</div></div>
+  <div class="stat"><div class="v">0</div><div class="l">data races (verified)</div></div>
+</div>
+
+<h2 id="exec-what">What was delivered</h2>
+<p>A new Go module, <code>github.com/rmhstudios/rmh-go</code>, containing a shared
+foundation (<code>pkg/</code>) and nine independently-deployable service binaries
+(<code>cmd/</code>): an edge <b>gateway</b>, four realtime websocket services
+(<b>gamehub</b>, <b>rmhbox</b>, <b>rmhtube</b>, <b>rmhmusic</b>), and four
+worker/utility services (<b>doctrine-worker</b>, <b>recap</b>, <b>vibe-worker</b>,
+<b>discord-bot</b>). Each builds into its own minimal container image and deploys
+through a Helm chart (<code>deploy/helm/rmhstudios-go</code>) that deliberately
+mirrors the conventions established in PR&nbsp;#121, reusing the same Kubernetes
+Secret and PVC and adding a Redis backplane for horizontal scaling.</p>
+
+<h2 id="exec-why">Why this is notable (and the honest caveat)</h2>
+<p>PR&nbsp;#121 — the k3s/Helm/Terraform infrastructure migration — recorded an
+explicit architecture decision <i>not</i> to rewrite the backend in Go, on the
+grounds that the app was already process-split, the web tier is React SSR (must
+stay JavaScript), and the auth/data layers are Better&nbsp;Auth + Prisma. This
+project deliberately overrides that decision on an isolated feature branch. The
+report does not pretend the decision was wrong; it documents an alternative
+universe in full engineering detail and reconciles it with PR&nbsp;#121's chart.</p>
+<div class="scope"><b>Faithful vs scaffolded.</b> Wherever a component is genuinely
+portable, it is ported faithfully and tested (auth validation, the realtime
+framework, doctrine determinism, watch-party/music sync, the Discord chat bot,
+thumbnail rendering). Wherever it is not — the React SSR renderer and
+Better&nbsp;Auth's OAuth/cookie issuance — it stays in JavaScript and the Go
+services integrate with it. A few large surfaces (the rmhbox minigame catalogue,
+the RMHBot agentic editor's tool set) ship as a working framework plus one real
+implementation and clearly-marked compiling stubs. Every such boundary is called
+out in its section with a purple <i>scope</i> note.</p>
+
+<h2 id="exec-verification">Verification at a glance</h2>
+<p>This is not a paper design. The entire module compiles
+(<code>go build ./...</code>), passes <code>go vet ./...</code>, passes every unit
+and integration test under the race detector (<code>go test -race ./...</code>),
+and passes an end-to-end suite that launches the real service binaries against a
+real PostgreSQL and drives them with real websocket clients. The Helm chart lints
+and validates under <code>kubeconform -strict</code>; the container image builds
+and runs. A three-part senior engineering review was run before this document was
+written; its findings — including a genuine data race the race detector caught —
+were fixed and re-verified. Section&nbsp;22 records that loop in full.</p>
+
+<h2 id="exec-reading">How to read this document</h2>
+<p>Sections 2–4 give context and the system architecture. Section 5 details the
+shared foundation and Section 6 the realtime framework — the two pieces every
+service is built on. Sections 7–15 document each service. Sections 16–20 cover the
+data layer, cross-cutting concerns, and the full build/deploy story. Sections
+21–25 cover testing, the review/remediation loop, performance, risks, and future
+work. The appendices catalogue every file, environment variable, port, and
+realtime event.</p>

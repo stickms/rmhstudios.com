@@ -1,0 +1,60 @@
+<p class="lead">If this branch were to move forward, the work breaks into a clear,
+ordered backlog. The architecture was built so that each item is additive — a stub
+implemented against an existing interface, or an operational step — rather than a
+structural change.</p>
+
+<h2 id="fut-protocol">1. Close the Socket.IO gap</h2>
+<p>Build the client-side adapter described in Section&nbsp;6: a thin TypeScript
+layer that presents the existing Socket.IO event API to the React components while
+speaking the new JSON-envelope protocol underneath. This unblocks cutting over any
+single websocket prefix and is the highest-leverage next step.</p>
+
+<h2 id="fut-stubs">2. Fill the scaffolded surfaces</h2>
+<ul>
+  <li>Port the remaining eight rmhbox minigames against the existing <code>Minigame</code> interface.</li>
+  <li>Register the other gamehub games onto the generic <code>RelayGroup</code>.</li>
+  <li>Complete the RMHBot tool set (typecheck, PR creation, code search) behind the existing tool-loop.</li>
+</ul>
+
+<h2 id="fut-scale">3. Realize the scaling path</h2>
+<p>Enable the Redis backplane in production, add sticky-session ingress, and load-
+test to establish connection-count and latency baselines per service. Then wire
+HorizontalPodAutoscalers — completing PR&nbsp;#121's Stage&nbsp;2 for the Go tier.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart LR
+  A["adapter (protocol)"] --> B["fill stubs"]
+  B --> C["enable backplane + sticky"]
+  C --> D["load test + HPA"]
+  D --> E["per-service cutover (metrics-driven)"]
+  E --> F["multi-region (PR #121 Stage 3)"]
+  </div>
+  <figcaption>Figure 25.1 — Ordered backlog from reference implementation to production adoption.</figcaption>
+</figure>
+
+<h2 id="fut-obs">4. Complete observability</h2>
+<p>The instrumentation exists (Section&nbsp;17); the remaining work is operational:
+Prometheus scrape config for the new <code>/metrics</code> endpoints, dashboards
+for connections/messages/job-runs, and alerts on the auth-error and bus-publish
+signals already emitted.</p>
+
+<h2 id="fut-quality">5. Quality hardening</h2>
+<ul>
+  <li>Restore DeepSeek streaming in the discord-bot for chat UX parity.</li>
+  <li>Visual-diff the vibe-worker thumbnails against the <code>sharp</code> output and tune if needed.</li>
+  <li>Add contract tests that assert the Go event payloads match what the React clients expect, byte for byte.</li>
+  <li>Add per-render and per-job tracing spans (OpenTelemetry) on top of the existing metrics.</li>
+</ul>
+
+<h2 id="fut-adopt">6. Decide, with data</h2>
+<p>Finally — and most importantly — the adoption decision should be made against
+real metrics, per service, exactly as the Stage-4 condition states. The
+low-risk services (doctrine-worker, recap, gateway) could be adopted first as a
+trial; the realtime services follow only if connection volume justifies the
+investment and after the protocol adapter exists.</p>
+
+<div class="ok"><b>The through-line:</b> nothing in this backlog requires
+re-architecting what was built. The interfaces, the backplane, the chart, and the
+verification harness are in place; the future work is to fill them in, measure, and
+decide.</div>

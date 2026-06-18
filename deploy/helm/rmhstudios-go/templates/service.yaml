@@ -1,0 +1,22 @@
+{{- $root := . -}}
+{{- range $svc, $cfg := .Values.services }}
+{{- if $cfg.port }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "rmhgo.fullname" $root }}-{{ $svc }}
+  labels:
+    {{- include "rmhgo.labels" $root | nindent 4 }}
+    app.kubernetes.io/name: {{ $svc }}
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: {{ $svc }}
+    app.kubernetes.io/instance: {{ $root.Release.Name }}
+  ports:
+    - name: http
+      port: {{ $cfg.port }}
+      targetPort: {{ $cfg.port }}
+{{- end }}
+{{- end }}

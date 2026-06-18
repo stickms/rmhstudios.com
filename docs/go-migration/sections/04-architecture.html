@@ -1,0 +1,136 @@
+<p class="lead">The Go fleet is a single module that compiles into nine independent
+binaries, fronted by one gateway, sharing one PostgreSQL database and one Redis
+backplane. This section gives the bird's-eye view: topology, the request and
+realtime data paths, the deployment shape, and the design principles that hold it
+together.</p>
+
+<h2 id="arch-topology">Service topology</h2>
+<p>Every service is a <code>cmd/&lt;name&gt;/main.go</code> binary built from the
+same module, packaged as its own container, and run as its own Kubernetes
+Deployment. The gateway is the only externally-reachable service; it reverse-
+proxies websocket prefixes to the realtime services and everything else to the
+React SSR app. Workers hold no client connections at all.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart TB
+  client["Browser / Discord client"]
+  ing["Traefik Ingress"]
+  client --> ing --> gw["gateway :7005"]
+  gw -->|"/socket/"| gh["gamehub :7001"]
+  gw -->|"/rmhbox-ws/"| rb["rmhbox :7676"]
+  gw -->|"/rmhtube-ws/"| rt["rmhtube :7003"]
+  gw -->|"/rmhmusic-ws/"| rm["rmhmusic :7002"]
+  gw -->|"/ (SSR + REST)"| web["Node web SSR (JS, kept)"]
+  subgraph workers["Workers (no ingress)"]
+    dw["doctrine-worker"]
+    rc["recap :7004"]
+    vw["vibe-worker"]
+    db_bot["discord-bot"]
+  end
+  gh & rb & rt & rm --> redis["Redis backplane"]
+  gh & rb & rt & rm & rc & vw & dw & db_bot --> pg[("PostgreSQL")]
+  rc & db_bot --> discord["Discord API"]
+  db_bot --> deepseek["DeepSeek API"]
+  vw --> chromium["headless Chromium"]
+  </div>
+  <figcaption>Figure 4.1 — Fleet topology. The gateway is the single ingress; realtime services share a Redis backplane; workers reach only Postgres and external APIs.</figcaption>
+</figure>
+
+<h2 id="arch-module">One module, many binaries</h2>
+<p>A common question is whether "microservices" implies many repositories or
+modules. It does not. The fleet is a single Go module
+(<code>github.com/rmhstudios/rmh-go</code>) with shared libraries under
+<code>pkg/</code> and one <code>main</code> package per service under
+<code>cmd/</code>. Each binary links only what it imports, ships as its own image,
+scales independently, and fails independently — the operational properties that
+define a microservice — while a single module keeps the shared contracts
+type-checked at compile time and refactors atomic.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart LR
+  subgraph mod["module github.com/rmhstudios/rmh-go"]
+    pkg["pkg/ (config, log, db, auth, httpx,\nratelimit, telemetry, events, realtime)"]
+    cmd["cmd/&lt;svc&gt;/main.go x9"]
+    internal["internal/&lt;svc&gt;/ (private impl)"]
+    cmd --> internal --> pkg
+    cmd --> pkg
+  end
+  cmd -->|"go build -> 1 binary each"| imgs["9 container images"]
+  </div>
+  <figcaption>Figure 4.2 — Compile-time sharing, runtime independence.</figcaption>
+</figure>
+
+<h2 id="arch-request">The HTTP request path</h2>
+<p>A normal page or API request enters the gateway, which establishes the auth
+trust boundary (strip forged identity headers, validate the session, inject
+trusted headers) and forwards to the appropriate upstream. The gateway never
+blocks anonymous traffic — the SSR app renders its own auth pages.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+sequenceDiagram
+  autonumber
+  participant C as Client
+  participant G as gateway
+  participant V as auth.Validator
+  participant U as Upstream (web or Go svc)
+  C->>G: request (+ better-auth cookie)
+  G->>G: strip all X-Rmh-* headers
+  G->>V: ValidateSession(token)
+  V-->>G: Identity{userId,isAdmin} or anon
+  G->>U: proxy + inject X-Rmh-User-Id/Name/Is-Admin
+  U-->>C: response
+  </div>
+  <figcaption>Figure 4.3 — Request path with the gateway as the single auth trust boundary.</figcaption>
+</figure>
+
+<h2 id="arch-realtime">The realtime data path</h2>
+<p>Realtime services upgrade the websocket at the gateway (HTTP 101 pass-through),
+then run on the shared <code>realtime.Hub</code>. Within a replica, a broadcast
+fans out to local room members directly; across replicas, it is published to the
+Redis backplane and re-delivered by every other replica's room subscription
+(skipping the origin to avoid duplicates). This is what lets a realtime service
+run more than one pod.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+sequenceDiagram
+  autonumber
+  participant A as Client A (replica 1)
+  participant R1 as gamehub replica 1
+  participant Bus as Redis
+  participant R2 as gamehub replica 2
+  participant B as Client B (replica 2)
+  A->>R1: kk:input
+  R1->>R1: deliver to local room members
+  R1->>Bus: publish(rt:room:CODE, origin=r1)
+  Bus->>R2: message(origin=r1)
+  R2->>R2: origin != self -> deliver locally
+  R2->>B: kk:input
+  </div>
+  <figcaption>Figure 4.4 — Cross-replica broadcast via the Redis backplane with origin echo-skip.</figcaption>
+</figure>
+
+<h2 id="arch-principles">Design principles</h2>
+<table>
+<thead><tr><th>Principle</th><th>How it shows up</th></tr></thead>
+<tbody>
+<tr><td>Shared foundation, not copy-paste</td><td>Nine services, one <code>pkg/</code>; auth/db/log/realtime written once.</td></tr>
+<tr><td>One trust boundary</td><td>The gateway is the only place identity headers are asserted.</td></tr>
+<tr><td>Validate, don't reimplement, auth</td><td>Go trusts the Better&nbsp;Auth <code>session</code> table via one SQL query.</td></tr>
+<tr><td>Scale-ready by construction</td><td>The <code>events.Bus</code> abstraction flips single-replica → N-replica with one env var.</td></tr>
+<tr><td>Fail independently</td><td>Per-handler <code>recover()</code>; one bad game handler can't crash a service.</td></tr>
+<tr><td>Compile-time honesty</td><td>Unfinished work is a compiling stub behind a real interface, never broken code.</td></tr>
+<tr><td>Reuse the existing infra</td><td>Helm chart reuses PR&nbsp;#121's Secret, PVC, and conventions.</td></tr>
+</tbody>
+</table>
+
+<h2 id="arch-deploy-shape">Deployment shape</h2>
+<p>In Kubernetes the fleet renders to nine Deployments, five ClusterIP Services
+(the ported services with client ports), a Redis Deployment+Service, and an
+optional Ingress — all from one Helm chart. Workers expose only
+<code>/health</code> and <code>/metrics</code> on a metrics port for probes and
+Prometheus. Section&nbsp;19 details the chart; Figure&nbsp;4.1 above shows the
+runtime wiring.</p>

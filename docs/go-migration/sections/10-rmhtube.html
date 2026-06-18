@@ -1,0 +1,330 @@
+<p class="lead">The <code>rmhtube</code> service is the Go port of the standalone
+RmhTube watch-party server (<code>server/rmhtube/*</code>). It hosts synchronized
+video rooms: a group of viewers share one playback head, a media queue, and a
+chat. One leader's player state is authoritative and the server fans the projected
+position out to everyone on a heartbeat. It serves the realtime hub at
+<code>/rmhtube-ws/</code> (default port <code>7003</code>, <code>RMHTUBE_PORT</code>)
+plus <code>/health</code> and <code>/metrics</code>, and restores its active rooms
+from the database before it starts listening so a restart does not vaporize a
+session. The package lives in <code>internal/rmhtube/</code> (events, types,
+manager, room, sync, queue, chat, snapshot, repo, utils) and is wired in
+<code>cmd/rmhtube/main.go</code>.</p>
+
+<div class="stats">
+  <div class="stat"><div class="v">7003</div><div class="l">RMHTUBE_PORT</div></div>
+  <div class="stat"><div class="v">~1s</div><div class="l">host-state report</div></div>
+  <div class="stat"><div class="v">2s</div><div class="l">sync heartbeat</div></div>
+  <div class="stat"><div class="v">120s</div><div class="l">disconnect grace</div></div>
+  <div class="stat"><div class="v">3</div><div class="l">DB tables</div></div>
+</div>
+
+<h2 id="rmhtube-overview">Service shape and startup</h2>
+<p>The binary is a single WebSocket runtime. <code>main.go</code> loads the common
+config, opens the database <em>optionally</em> (a failed open degrades to a fully
+in-memory service, exactly as the legacy server started anyway when DB restore
+failed), constructs the shared <code>realtime.Hub</code> with
+<code>RequireAuth: false</code> (anonymous viewers are allowed), registers the
+manager's handlers, and — critically — restores active rooms <em>before</em> the
+listener accepts connections:</p>
+<pre><code>mgr := rmhtube.NewManager(ctx, hub, repo, logger, metrics)
+mgr.Register()
+defer mgr.Stop()
+
+// Restore active rooms before listening
+// (mirrors restoreRoomsFromDb().then(listen)).
+if err := mgr.RestoreRoomsFromDB(); err != nil {
+    logger.Error("db_restore_failed", "error", err) // start anyway
+}
+
+mux.HandleFunc("/rmhtube-ws/", hub.ServeWS)
+addr := ":" + config.GetString("RMHTUBE_PORT", "7003")</code></pre>
+<p>Because auth is optional, identity falls back gracefully. <code>userOf</code>
+returns the authenticated account id when present and the per-connection id
+otherwise, so the room machinery functions for guests; <code>nameOf</code> defaults
+to <code>"Guest"</code>.</p>
+
+<h2 id="rmhtube-protocol">Wire protocol: events, snapshot, and seq deltas</h2>
+<p>The hub speaks a JSON envelope whose <code>Event</code> field carries the exact
+strings ported 1:1 from <code>lib/rmhtube/events.ts</code>, so the existing
+TypeScript client adapter maps cleanly onto the Go server. Events are grouped into
+room lifecycle, video sync, queue, reactions, and chat. A representative slice of
+the client&rarr;server (C2S) and server&rarr;client (S2C) constants:</p>
+<pre><code>// Client -> Server (excerpt)
+c2sRoomCreate    = "rmhtube:room:create"
+c2sRoomJoin      = "rmhtube:room:join"
+c2sSyncHostState = "rmhtube:sync:host_state"
+c2sSyncPlay      = "rmhtube:sync:play"
+c2sSyncSeek      = "rmhtube:sync:seek"
+c2sSyncSetSpeed  = "rmhtube:sync:set_speed"
+c2sQueueAdd      = "rmhtube:queue:add"
+c2sQueueVoteSkip = "rmhtube:queue:vote_skip"
+c2sQueueShuffle  = "rmhtube:queue:shuffle"
+
+// Server -> Client (excerpt)
+s2cRoomStateSnapshot = "rmhtube:room:state_snapshot"
+s2cRoomAction        = "rmhtube:room:action"
+s2cSyncState         = "rmhtube:sync:state"
+s2cSyncMediaChanged  = "rmhtube:sync:media_changed"</code></pre>
+<p>The protocol is <b>snapshot + seq-numbered delta</b>. On join the server sends a
+full <code>room:state_snapshot</code> built by <code>buildClientState</code>; every
+subsequent mutation goes out as a <code>room:action</code> envelope carrying a
+monotonically increasing per-room sequence number. The single broadcast primitive
+is <code>broadcastAction</code>, which bumps the room's <code>Seq</code> under the
+room lock and fans the envelope to the whole hub room:</p>
+<pre><code>// broadcastAction bumps the room seq and fans S2C.ROOM_ACTION
+// {type,payload,seq,timestamp} to the whole room. The caller MUST
+// hold the room lock (so seq stays consistent with snapshots).
+func (m *Manager) broadcastAction(r *room, actionType string, payload any) {
+    r.Seq++
+    m.hub.Broadcast(r.ID, realtime.MustEnvelope(s2cRoomAction, map[string]any{
+        "type":      actionType,
+        "payload":   payload,
+        "seq":       r.Seq,
+        "timestamp": nowMs(),
+    }))
+}</code></pre>
+<p>Holding the room lock while incrementing <code>Seq</code> is what keeps the seq
+on a snapshot consistent with the seqs on the deltas that follow it: a client can
+discard any delta whose seq it has already applied and detect gaps. A unit test
+(<code>TestBroadcastActionSeqMonotonic</code>) drives 200 actions and asserts the
+seq lands at exactly 200.</p>
+
+<h2 id="rmhtube-sync">Leader-authoritative video synchronization</h2>
+<p>This is the heart of the service and a faithful port of
+<code>server/rmhtube/sync-engine.ts</code>. The model: one member is the
+<em>leader</em> (initially the host). The leader's local player is the source of
+truth. The leader's client reports its player state roughly once a second via
+<code>SYNC_HOST_STATE</code>; the server stores it as the canonical
+<code>videoState</code> but does <b>not</b> rebroadcast it. Instead, a 2-second
+heartbeat broadcasts the <em>projected</em> state to every multi-member room that
+has something playing. Explicit leader actions (play / pause / seek / set-speed)
+broadcast immediately.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+sequenceDiagram
+  participant L as Leader client
+  participant S as rmhtube server
+  participant V as Viewer clients
+  L->>S: SYNC_HOST_STATE {playing,currentTime,rate} ~1s
+  Note over S: store as canonical videoState, no broadcast
+  loop every 2s (multi-member, playing)
+    Note over S: projectedState = stored + elapsed*rate
+    S->>V: SYNC_STATE {playing,currentTime,rate,updatedAt}
+  end
+  L->>S: SYNC_SEEK {time}
+  Note over S: store time, refresh updatedAt
+  S->>V: SYNC_SEEK {time} (broadcastExcept leader)
+  L->>S: SYNC_SET_SPEED {speed}
+  S->>V: SYNC_SPEED_CHANGED {speed} (whole room incl. leader)
+  </div>
+  <figcaption>Figure 10.1: leader-authoritative video sync. The leader reports
+  state; the server projects it forward and heartbeats it to viewers.</figcaption>
+</figure>
+
+<p>The projection is the key computation. When playing, the live position is the
+stored position plus the wall-clock seconds elapsed since <code>updatedAt</code>,
+scaled by playback rate — so a viewer receiving a heartbeat sees where the leader
+<em>actually is</em>, not where the leader was one report ago. Paused state is
+returned unchanged (the position is frozen), and a clock-skew report from the
+future is clamped so a viewer can never be rewound:</p>
+<pre><code>func projectedState(v videoState, now int64) videoState {
+    out := v
+    if v.Playing {
+        elapsed := float64(now-v.UpdatedAt) / 1000.0
+        if elapsed &lt; 0 {
+            elapsed = 0
+        }
+        out.CurrentTime = v.CurrentTime + elapsed*v.PlaybackRate
+        out.UpdatedAt = now
+    }
+    return out
+}</code></pre>
+<p>Three unit tests pin this behavior: a 1&times; projection 5s later yields
+<code>10&nbsp;+&nbsp;5&nbsp;=&nbsp;15</code>; a 2&times; projection 4s later yields
+<code>10&nbsp;+&nbsp;8&nbsp;=&nbsp;18</code>; a paused video stays at 42; and a
+negative elapsed does not rewind below 10. Authority is enforced by
+<code>leaderRoom</code>, which returns the user's room only if
+<code>r.LeaderUserID == userID</code> — every sync handler short-circuits for a
+non-leader. The handlers store under the lock, then release before any websocket
+send (websocket writes never happen under the lock):</p>
+<pre><code>func (m *Manager) onSeek(c *realtime.Conn, e realtime.Envelope) {
+    var p struct{ Time float64 `json:"time"` }
+    if err := e.Bind(&amp;p); err != nil { return }
+    ent, r, ok := m.leaderRoom(userOf(c))
+    if !ok { return }
+    r.VideoState.CurrentTime = p.Time
+    r.VideoState.UpdatedAt = nowMs()
+    r.LastActivity = nowMs()
+    roomID := r.ID
+    ent.mu.Unlock()
+    m.broadcastExcept(roomID, c.ID, s2cSyncSeek, map[string]any{"time": p.Time})
+}</code></pre>
+<p>Play / pause / seek use <code>broadcastExcept</code> (the leader applies them
+locally, so it is excluded), while <code>SET_SPEED</code> goes to the whole room —
+matching the TS <code>io.to</code> vs <code>socket.to</code> distinction. The 2s
+heartbeat tick (<code>tickHeartbeat</code>) snapshots the registry, then per room
+broadcasts <code>projectedState</code> only when <code>CurrentItem != nil</code>
+<em>and</em> there is more than one member (no point synchronizing an audience of
+one). When media changes, <code>onMediaChanged</code> resets the
+<code>videoState</code> to a clean paused state at <code>t=0, rate=1</code> and
+emits <code>SYNC_MEDIA_CHANGED</code>.</p>
+
+<h2 id="rmhtube-rooms">Rooms, queue, and chat</h2>
+<p>A room owns the full watch-party state: members, queue, current item, video
+state, chat ring buffer, skip votes, played history, bans, and invite links. Room
+creation generates a 6-character code from an unambiguous alphabet (retrying up to
+10 times on collision), installs the creator as host + leader + first member, joins
+the hub room, persists the row fire-and-forget, and sends the creator both
+<code>room:created</code> and a full snapshot.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart TD
+  J[room:join] --> P{password ok?}
+  P -- no --> E1[error WRONG_PASSWORD]
+  P -- yes --> B{banned?}
+  B -- yes --> E2[error BANNED]
+  B -- no --> F{room full?}
+  F -- yes --> E3[error ROOM_FULL]
+  F -- no --> M[add member, MEMBER_JOINED]
+  M --> SN[send snapshot]
+  QA[queue:add] --> AP{currentItem nil and autoPlay?}
+  AP -- yes --> PL[playAtIndex 0 - NOW_PLAYING]
+  AP -- no --> QE[QUEUE_ITEM_ADDED only]
+  SK[queue:skip / vote pass] --> AV[advanceQueue]
+  AV --> NX{next < len?}
+  NX -- yes --> PL2[play next]
+  NX -- no --> LP{loopQueue?}
+  LP -- yes --> PL3[play 0]
+  LP -- no --> END[PLAYBACK_ENDED]
+  </div>
+  <figcaption>Figure 10.2: room join gate and the queue / playback flow.</figcaption>
+</figure>
+
+<p>The queue (port of <code>media-queue.ts</code>) supports add, remove, reorder,
+play-item, skip, vote-skip, queue-voting, and shuffle. Permissions are
+role-gated: adding requires host or <code>AllowMemberQueue</code>; reorder /
+play-item / skip / shuffle require the leader; removing your own item is allowed.
+Adding the first item with <code>AutoPlay</code> on auto-starts playback.
+Vote-skip computes a ceiling-of-half threshold against the <em>active</em> member
+count and advances when met:</p>
+<pre><code>r.SkipVotes[userID] = struct{}{}
+active := r.activeCount()
+votesNeeded := (active + 1) / 2 // ceil(active/2)
+voters := setToSlice(r.SkipVotes)
+m.broadcastAction(r, "VOTE_SKIP_UPDATED", map[string]any{
+    "voters": voters, "votesNeeded": votesNeeded, "totalMembers": active,
+})
+if len(r.SkipVotes) >= votesNeeded {
+    m.broadcastAction(r, "VOTE_SKIP_PASSED", map[string]any{})
+    m.advanceQueue(r)
+}</code></pre>
+<p>Reorder uses <code>moveItem</code>, which clamps the target position into range
+and reindexes positions; tests cover the move, the high/low clamps, and the
+no-op-on-missing case. Shuffle is a Fisher&ndash;Yates over the items
+<em>after</em> the current index (so the now-playing item is never displaced).
+Chat (port of <code>chat-handler.ts</code>) sanitizes and truncates content to 300
+chars, resolves replies, validates mentions against current members, appends to a
+200-message ring buffer, and supports typing indicators (with a 3s auto-expiring
+timer), per-message emoji reactions (toggle add/remove), and host-only pinning.
+Reactions and typing fan out with <code>broadcastExcept</code> so the sender does
+not echo their own event.</p>
+
+<h2 id="rmhtube-concurrency">Concurrency model</h2>
+<p>The brief is &ldquo;per-room mutex; many goroutines,&rdquo; and the manager
+implements it precisely. A top-level <code>registryMu</code> guards the global maps
+(<code>rooms</code>, <code>userRoomIndex</code>, <code>userConns</code>); each
+<code>roomEntry</code> carries its own mutex, and every read/write of a room's
+state happens while holding it. The discipline is: <b>acquire the room lock,
+mutate, collect the data to send, release, then broadcast</b> — so websocket writes
+and DB calls never run under the lock. Grace and GC timers run on their own
+goroutines and re-acquire locks as needed.</p>
+<pre><code>type roomEntry struct {
+    mu sync.Mutex
+    r  *room
+}</code></pre>
+<p><b>Disconnect grace.</b> On disconnect the member is marked offline and a 120s
+grace timer (via the shared <code>realtime.GraceTimers</code>) is armed; if the
+member reconnects within the window, <code>rejoin</code> cancels the timer and
+sends a fresh snapshot. Otherwise the member is removed. Empty rooms are scheduled
+for disband after a 5-minute timeout, and a 60-second GC ticker sweeps for rooms
+that are empty-past-timeout or idle-past-30-minutes as a safety net.</p>
+
+<div class="ok"><b>Review fixes carried in the port.</b> Two correctness fixes
+from review are visible in the code. First, <code>removeMember</code> prunes the
+departing user's votes — it deletes them from <code>SkipVotes</code> and from every
+<code>QueueVotes</code> set — so vote thresholds (computed against
+<code>activeCount</code>) are never measured against ghosts:
+<pre><code>delete(r.SkipVotes, userID)
+for itemID, voters := range r.QueueVotes {
+    delete(voters, userID)
+    if len(voters) == 0 {
+        delete(r.QueueVotes, itemID)
+    }
+}</code></pre>
+Second, <code>disbandRoom</code> holds the room lock across the <em>entire</em>
+teardown (broadcast, index cleanup, and registry delete) so a concurrent
+<code>onRoomJoin</code> cannot add a member to a room being deleted. Correspondingly
+<code>onRoomJoin</code> re-verifies the room is still registered after it acquires
+<code>ent.mu</code>, because a concurrent disband may have removed it from the
+registry while the join was blocked on the lock — adding a member to a disbanded
+entry would strand it.</div>
+
+<h2 id="rmhtube-persistence">Persistence behind a Repo</h2>
+<p>Unlike the games hub (which keeps its core DB-free), rmhtube persists, so the
+room logic depends only on a <code>Repo</code> interface — the room / sync / queue
+/ chat handlers are exercisable in tests with the in-memory <code>NopRepo{}</code>.
+All Repo calls are made fire-and-forget through a <code>persist</code> helper that
+logs failures and counts a metric, so a slow or failing database never blocks a
+real-time mutation (faithful to the TS <code>.catch(...)</code> pattern around
+every Prisma call).</p>
+
+<table>
+<thead><tr><th>Concern</th><th>Repo method(s)</th><th>Table</th></tr></thead>
+<tbody>
+<tr><td>Create / close room</td><td><code>CreateRoom</code>, <code>CloseRoom</code></td><td><code>rmhtube_room</code></td></tr>
+<tr><td>Host / settings</td><td><code>UpdateHost</code>, <code>UpdateSettings</code></td><td><code>rmhtube_room</code></td></tr>
+<tr><td>Membership</td><td><code>MemberJoin</code>, <code>MemberLeave</code></td><td><code>rmhtube_room_member</code></td></tr>
+<tr><td>Queue</td><td><code>QueueAdd</code>, <code>QueueRemove</code>, <code>QueuePlayed</code>, <code>QueuePositions</code></td><td><code>rmhtube_queue_item</code></td></tr>
+<tr><td>Restore</td><td><code>RestoreActiveRooms</code>, <code>LoadRoom</code></td><td>all three (join)</td></tr>
+</tbody>
+</table>
+
+<p>The production <code>PgxRepo</code> runs raw pgx against the Prisma-managed,
+quoted-identifier schema (column names kept verbatim with the TS DDL). Startup
+restore selects every not-closed room, hydrates its live members (joined to
+<code>"user"</code> for name/image), its unplayed queue (ordered by position), and
+recent chat, and skips rooms with no live members — mirroring
+<code>restoreRoomsFromDb</code>. Restored members start <em>disconnected</em> and
+reconnect over the websocket. A join miss for a room not in memory triggers a
+single on-demand <code>LoadRoom</code>. Membership uses an upsert on
+<code>(roomId,userId)</code> that clears <code>leftAt</code> on re-join, and
+position rewrites run in a transaction.</p>
+
+<h3>YouTube URL parsing is pure string ops</h3>
+<p><code>utils.go</code> ports <code>lib/rmhtube/utils.ts</code> with no network
+access whatsoever. <code>detectMediaType</code> classifies a URL as
+<code>youtube</code> / <code>twitch</code> / <code>direct</code> (or <code>""</code>
+for unsupported) by host and a file-extension regex;
+<code>extractYouTubeID</code> pulls the id from <code>youtu.be/&lt;id&gt;</code> or
+the <code>?v=</code> query parameter; and the thumbnail URL is templated against
+<code>img.youtube.com</code>. There is no YouTube Data API call — title resolution
+that the TS version stubbed (<code>"YouTube Video (&lt;id&gt;)"</code>) is
+reproduced exactly. Room codes use <code>crypto/rand</code> over the unambiguous
+alphabet; opaque ids use a nanoid analog.</p>
+
+<div class="scope"><b>Scope: what is faithful vs simplified.</b> The
+load-bearing watch-party core — leader-authoritative sync and its projection,
+the queue (add/remove/reorder/play/skip/vote-skip/shuffle/loop), chat with
+replies/mentions/reactions/typing/pinning, the snapshot+seq-delta protocol, the
+disconnect-grace + GC lifecycle, and room/member/queue persistence and restore —
+is a faithful, behavior-for-behavior port. The niche Phase-4 social features are
+intentionally simplified: the <em>entry gate</em> for bans is kept real (a banned
+user is rejected at join with <code>BANNED</code>), but the surrounding ban / unban
+/ invite-link bookkeeping is in-memory only and not persisted, and the invite
+codes are generated but not enforced as a join path. Chat persistence is wired as
+an optional <code>chatWriter</code> extension a Repo may implement rather than part
+of the required interface — the in-memory ring buffer remains authoritative for
+live rooms either way. None of this is invented behavior; it is the deliberate
+faithful-core / simplified-periphery split called out in the source comments.</div>

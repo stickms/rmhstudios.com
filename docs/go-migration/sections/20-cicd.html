@@ -1,0 +1,73 @@
+<p class="lead">The fleet has a CI pipeline that gates every change on build, vet,
+race-tested units, formatting, end-to-end tests, and chart validation; a deploy
+script that mirrors PR&nbsp;#121's single-node-or-registry switch; and a documented,
+reversible cutover plan.</p>
+
+<h2 id="ci-pipeline">Continuous integration</h2>
+<p><code>.github/workflows/go-microservices.yml</code> runs three jobs on changes
+under <code>go-services/</code> or the chart:</p>
+<table>
+<thead><tr><th>Job</th><th>Steps</th></tr></thead>
+<tbody>
+<tr><td><code>build-test</code></td><td><code>go build</code> · <code>go vet</code> · <code>go test -race</code> · <code>gofmt</code> check</td></tr>
+<tr><td><code>e2e</code></td><td>Postgres service container → load <code>schema.sql</code> → <code>run.sh --no-docker</code> (build + launch binaries + ws-client tests)</td></tr>
+<tr><td><code>helm</code></td><td><code>helm lint</code> · <code>helm template</code> render</td></tr>
+</tbody>
+</table>
+<div class="note">The <code>--no-docker</code> mode of the e2e script exists
+specifically for CI: GitHub Actions already provides a Postgres service container
+and a Go toolchain, so the script builds and launches the binaries directly on the
+runner instead of nesting Docker. (This branch in <code>run.sh</code> was added
+during review when the CI/script contract didn't match.)</div>
+
+<h2 id="ci-deploy">The deploy script</h2>
+<p><code>deploy/deploy-go.sh</code> is the Go analog of PR&nbsp;#121's
+<code>deploy-k8s.sh</code>. It builds one image per service (with the right
+<code>EXTRA_PKGS</code> per service), then either imports them straight into k3s's
+containerd for single-node, or pushes to a registry for multi-node — the same
+switch PR&nbsp;#121 introduced — and finishes with an atomic Helm upgrade.</p>
+<pre><code># single-node k3s (imports into containerd):
+./deploy/deploy-go.sh production
+# multi-node (push to a registry):
+REGISTRY=registry.example.com ./deploy/deploy-go.sh production
+
+helm upgrade --install rmhstudios-go deploy/helm/rmhstudios-go \
+  -f values-prod.yaml --set image.tag=$SHA --atomic --wait</code></pre>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart LR
+  push["git push"] --> ci["CI: build/vet/race/e2e/helm"]
+  ci --> imgs["build 9 images @ SHA"]
+  imgs -->|single-node| ctr["k3s ctr import"]
+  imgs -->|REGISTRY set| reg["docker push"]
+  ctr & reg --> helm["helm upgrade --atomic --wait"]
+  helm --> live["fleet live (or auto-rollback)"]
+  </div>
+  <figcaption>Figure 20.1 — From commit to cluster, with atomic rollback on failure.</figcaption>
+</figure>
+
+<h2 id="ci-cutover">Cutover &amp; rollback</h2>
+<p>Because the gateway proxies anything it doesn't own back to the existing Node
+SSR app, cutover can be incremental and is fully reversible:</p>
+<ol>
+  <li>Deploy <code>rmhstudios-go</code> beside the existing stack; it shares the DB and Secret.</li>
+  <li>Smoke-test the gateway and each realtime service in-cluster.</li>
+  <li>Shift one websocket prefix at a time to the Go service at the ingress (e.g. start with <code>/socket/</code> → gamehub), leaving the rest on the Node services.</li>
+  <li>Watch metrics; if a service misbehaves, route that prefix back to the Node equivalent — both run against the same database.</li>
+  <li><b>Full rollback:</b> point the ingress back at the Node stack and
+  <code>helm uninstall rmhstudios-go</code>. No data migration is involved because
+  both stacks use the same tables.</li>
+</ol>
+<div class="warn">The realtime services do not yet speak the Socket.IO wire protocol
+(see Section&nbsp;6). A real cutover of a websocket prefix requires the client-side
+adapter described there. Until then, the Go realtime services are exercised by the
+Go e2e clients and the new-protocol path, not by the existing browser clients —
+this is the single most important cutover caveat and is stated plainly.</div>
+
+<h2 id="ci-runbook">Operational notes</h2>
+<ul>
+  <li><b>Migrations:</b> unchanged — PR&nbsp;#121's Prisma hook owns the schema; the Go deploy assumes it has already run.</li>
+  <li><b>Scaling:</b> <code>kubectl scale deploy/rmhstudios-go-gamehub --replicas=N</code> once Redis + sticky sessions are in place.</li>
+  <li><b>Secrets:</b> rotate via the existing <code>rmhstudios-secrets</code> flow; the Go fleet picks them up on next rollout.</li>
+</ul>

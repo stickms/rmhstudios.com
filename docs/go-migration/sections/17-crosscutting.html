@@ -1,0 +1,84 @@
+<p class="lead">Some concerns span every service: how identity flows, how the fleet
+scales, how it is observed, and how configuration and secrets are handled. These
+are solved once in the shared foundation and applied uniformly, which is the main
+payoff of the single-module design.</p>
+
+<h2 id="cc-auth">Authentication &amp; the trust boundary</h2>
+<p>There is exactly one place identity is asserted: the gateway. It strips every
+inbound <code>X-Rmh-*</code> header (by prefix, so future headers can't be forged),
+validates the Better&nbsp;Auth session, and injects trusted headers downstream.
+Realtime services additionally validate the token themselves at websocket
+handshake (defense in depth, since a client connects to a WS prefix the gateway
+proxies). Both paths use the same <code>auth.Validator</code> and the same SQL.</p>
+<div class="note">A real DB/transport error during validation is logged and metered
+rather than silently treated as "anonymous" — so an auth-database outage is
+observable instead of quietly downgrading every user. (This distinction was added
+during senior review.)</div>
+
+<h2 id="cc-scaling">Horizontal scaling &amp; the backplane</h2>
+<p>The realtime services hold per-room state in memory, so a naive second replica
+would split a room across processes that can't see each other. The
+<code>events.Bus</code> abstraction solves this: a broadcast is delivered to local
+room members <i>and</i> published to a topic; every other replica's room
+subscription re-delivers it locally, skipping its own origin to avoid duplicates.
+Flipping between single- and multi-replica is one environment variable.</p>
+<table>
+<thead><tr><th><code>REDIS_URL</code></th><th>Bus</th><th>Realtime replicas</th></tr></thead>
+<tbody>
+<tr><td>unset</td><td><code>events.Local</code> (in-process)</td><td>1 (today's behavior)</td></tr>
+<tr><td>set</td><td><code>events.Redis</code> (pub/sub)</td><td>N, with sticky sessions at ingress</td></tr>
+</tbody>
+</table>
+<p>This is precisely the "socket.io Redis adapter + sticky sessions" work
+PR&nbsp;#121 named as Stage&nbsp;1 and "the real first scaling investment." Here it
+is a first-class part of the foundation, language-agnostic in spirit and required
+by no service-specific code.</p>
+
+<h2 id="cc-observability">Observability</h2>
+<p>Every service constructs a per-service Prometheus registry via
+<code>pkg/telemetry</code> and exposes <code>/metrics</code> — on the client port
+for HTTP/WS services, on a dedicated metrics port for workers. Standard
+instruments ship out of the box: <code>rmh_active_connections</code> (gauge),
+<code>rmh_messages_total{event}</code>, <code>rmh_db_queries_total{outcome}</code>,
+and <code>rmh_job_runs_total{job,outcome}</code>. Structured JSON logs
+(<code>pkg/log</code>) match the Node logger's field shape so existing log tooling
+keeps working. This is the instrumentation half of PR&nbsp;#121's Stage&nbsp;2;
+wiring dashboards/alerts is the remaining operational step.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart LR
+  subgraph svc["each service"]
+    reg["telemetry.New(service)"]
+    m["/metrics"]
+    reg --> m
+  end
+  prom["Prometheus"] -->|scrape| m
+  svc -->|JSON logs to stdout| logs["log aggregation"]
+  </div>
+  <figcaption>Figure 17.1 — Uniform metrics + structured logs across the fleet.</figcaption>
+</figure>
+
+<h2 id="cc-config">Configuration &amp; secrets</h2>
+<p>All configuration is environment-driven through <code>pkg/config</code>, which
+reads the <i>same</i> variables the Node services used — <code>DATABASE_URL</code>,
+<code>SERVER_DB_POOL_SIZE</code>, the <code>PORT_*</code> family, the Discord and
+DeepSeek keys. In Kubernetes the values come from PR&nbsp;#121's
+<code>rmhstudios-secrets</code> Secret, mounted as <code>envFrom</code> on every
+Deployment; the Go chart adds no new secret and never puts secrets in git or Helm
+history. <code>REDIS_URL</code> and the gateway's <code>*_UPSTREAM</code> values are
+the only genuinely new variables, and both have sensible defaults.</p>
+
+<h2 id="cc-resilience">Resilience patterns</h2>
+<ul>
+  <li><b>Fault isolation:</b> every client-driven handler runs under
+  <code>recover()</code>; a panic in one game or one connection cannot crash a service.</li>
+  <li><b>Graceful shutdown:</b> HTTP/WS services drain on SIGTERM within a grace
+  period; workers stop their tickers and cancel their context; the discord-bot
+  honors a 90s grace for in-flight AI work.</li>
+  <li><b>Fail-fast startup:</b> services ping the database on boot (or wait for it,
+  for workers) and exit non-zero on misconfiguration, so a broken pod restarts
+  rather than serving errors.</li>
+  <li><b>Backpressure:</b> slow websocket consumers are evicted rather than allowed
+  to wedge a shared room broadcast.</li>
+</ul>

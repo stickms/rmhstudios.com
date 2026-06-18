@@ -1,0 +1,108 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# rmhstudios.com — Go microservices Compose (parallel to the Node stack)
+#
+#   docker compose -f go-services/docker-compose.go.yml --env-file .env.production up -d --build
+#
+# This is the Go analog of the root docker-compose.yml. Each service is its own
+# binary built from go-services/Dockerfile (one image per service). A Redis
+# instance provides the realtime backplane (pkg/events) so the WS services can
+# run >1 replica — the Stage-1 scaling step PR #121 identified. The gateway is
+# the single ingress; it reverse-proxies WS prefixes to the realtime services
+# and everything else to the existing Node `web` SSR app.
+# ─────────────────────────────────────────────────────────────────────────────
+
+x-go-common: &go-common
+  restart: unless-stopped
+  env_file: ${ENV_FILE:-../.env.production}
+  environment:
+    - REDIS_URL=redis://redis:6379
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+  depends_on:
+    redis:
+      condition: service_started
+  logging:
+    driver: json-file
+    options: { max-size: "10m", max-file: "3" }
+
+x-build: &build-base
+  context: .
+  dockerfile: Dockerfile
+
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  gateway:
+    <<: *go-common
+    build: { <<: *build-base, args: { SERVICE: gateway } }
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - WEB_UPSTREAM=http://host.docker.internal:7005
+      - GAMEHUB_UPSTREAM=http://gamehub:7001
+      - RMHBOX_UPSTREAM=http://rmhbox:7676
+      - RMHTUBE_UPSTREAM=http://rmhtube:7003
+      - RMHMUSIC_UPSTREAM=http://rmhmusic:7002
+    ports: ["127.0.0.1:${GO_PORT_GATEWAY:-7105}:7005"]
+
+  gamehub:
+    <<: *go-common
+    build: { <<: *build-base, args: { SERVICE: gamehub } }
+    environment: [ "REDIS_URL=redis://redis:6379", "SOCKET_PORT=7001" ]
+    ports: ["127.0.0.1:${GO_PORT_GAMEHUB:-7101}:7001"]
+
+  rmhmusic:
+    <<: *go-common
+    build: { <<: *build-base, args: { SERVICE: rmhmusic } }
+    environment: [ "REDIS_URL=redis://redis:6379", "RMHMUSIC_PORT=7002" ]
+    ports: ["127.0.0.1:${GO_PORT_RMHMUSIC:-7102}:7002"]
+
+  rmhtube:
+    <<: *go-common
+    build: { <<: *build-base, args: { SERVICE: rmhtube } }
+    environment: [ "REDIS_URL=redis://redis:6379", "RMHTUBE_PORT=7003" ]
+    ports: ["127.0.0.1:${GO_PORT_RMHTUBE:-7103}:7003"]
+
+  rmhbox:
+    <<: *go-common
+    build: { <<: *build-base, args: { SERVICE: rmhbox } }
+    environment: [ "REDIS_URL=redis://redis:6379", "RMHBOX_PORT=7676" ]
+    ports: ["127.0.0.1:${GO_PORT_RMHBOX:-7676}:7676"]
+
+  recap:
+    <<: *go-common
+    build: { <<: *build-base, args: { SERVICE: recap } }
+    environment: [ "REDIS_URL=redis://redis:6379", "RECAP_PORT=7004" ]
+
+  doctrine-worker:
+    <<: *go-common
+    build: { <<: *build-base, args: { SERVICE: doctrine-worker } }
+
+  vibe-worker:
+    <<: *go-common
+    build:
+      <<: *build-base
+      args:
+        SERVICE: vibe-worker
+        EXTRA_PKGS: "chromium nss freetype harfbuzz ttf-freefont"
+    # Shares the db/ volume with the Node web app so thumbnails it renders are
+    # served by /api/vibe/thumb/{slug} (identical to the Node vibe-worker).
+    volumes:
+      - ${STORAGE_PATH:-../db}:/app/db
+    working_dir: /app
+
+  discord-bot:
+    <<: *go-common
+    build:
+      <<: *build-base
+      args:
+        SERVICE: discord-bot
+        EXTRA_PKGS: "git openssh-client"
+    stop_grace_period: 90s

@@ -1,0 +1,160 @@
+<p class="lead">The complete configuration surface of the Go fleet: every environment
+variable any binary reads, the client/metrics ports each service binds, the
+WebSocket path prefixes the gateway routes, and a note on the single reused
+production Secret. All names and defaults are taken from
+<code>pkg/config/config.go</code>, each <code>cmd/*/main.go</code>, and
+<code>internal/gateway/proxy.go</code>. The fleet is intentionally a drop-in for
+the legacy Node services: it reads the SAME <code>.env.production</code> the Helm
+chart from PR #121 already mounts (DATABASE_URL, the PORT_* family, DISCORD_*,
+DEEPSEEK_*, BETTER_AUTH_*).</p>
+
+<h2 id="env-common">Shared / common variables</h2>
+<p>Read by <code>config.LoadCommon</code> for every service.
+<code>DATABASE_URL</code> is required (the call errors without it);
+<code>REDIS_URL</code> is optional and, when set, enables the
+<code>pkg/events</code> backplane so realtime services can run more than one
+replica.</p>
+<table>
+  <thead><tr><th>Variable</th><th>Services</th><th>Purpose</th><th>Default</th></tr></thead>
+  <tbody>
+    <tr><td>DATABASE_URL</td><td>all</td><td>Single Postgres DSN for the whole platform. Required (LoadCommon errors if empty).</td><td>— (required)</td></tr>
+    <tr><td>REDIS_URL</td><td>realtime (gamehub, rmhbox, rmhtube, rmhmusic)</td><td>Cross-instance pub/sub backplane; empty => single-instance in-memory.</td><td>"" (disabled)</td></tr>
+    <tr><td>NODE_ENV</td><td>all</td><td>Environment label (development/staging/production).</td><td>production</td></tr>
+    <tr><td>SERVER_DB_POOL_SIZE</td><td>all</td><td>pgx pool size (mirrors the Node default).</td><td>5</td></tr>
+    <tr><td>METRICS_ADDR</td><td>all (workers bind here)</td><td>host:port for the Prometheus <code>/metrics</code> + <code>/health</code> server.</td><td>:9090</td></tr>
+    <tr><td>LOG_LEVEL</td><td>all</td><td>slog level: debug / info / warn / error.</td><td>info</td></tr>
+  </tbody>
+</table>
+
+<h2 id="env-gateway">Gateway</h2>
+<p>The edge/BFF binds <code>PORT_WEB</code> and proxies to upstreams resolved
+from env (defaults mirror the Compose/Helm service names). When
+<code>STATIC_DIR</code> points at a real directory, built assets are served
+directly before falling through to the web upstream.</p>
+<table>
+  <thead><tr><th>Variable</th><th>Service</th><th>Purpose</th><th>Default</th></tr></thead>
+  <tbody>
+    <tr><td>PORT_WEB</td><td>gateway</td><td>Client-facing port for the edge.</td><td>7005</td></tr>
+    <tr><td>WEB_UPSTREAM</td><td>gateway</td><td>Catch-all upstream: the React SSR/Nitro app.</td><td>http://web:3000</td></tr>
+    <tr><td>GAMEHUB_UPSTREAM</td><td>gateway</td><td>Upstream for the <code>/socket/</code> prefix.</td><td>http://gamehub:7001</td></tr>
+    <tr><td>RMHBOX_UPSTREAM</td><td>gateway</td><td>Upstream for <code>/rmhbox-ws/</code>.</td><td>http://rmhbox:7676</td></tr>
+    <tr><td>RMHTUBE_UPSTREAM</td><td>gateway</td><td>Upstream for <code>/rmhtube-ws/</code>.</td><td>http://rmhtube:7003</td></tr>
+    <tr><td>RMHMUSIC_UPSTREAM</td><td>gateway</td><td>Upstream for <code>/rmhmusic-ws/</code>.</td><td>http://rmhmusic:7002</td></tr>
+    <tr><td>STATIC_DIR</td><td>gateway</td><td>Optional dir of built assets served locally before the web upstream.</td><td>"" (off)</td></tr>
+  </tbody>
+</table>
+
+<h2 id="env-realtime">Realtime services</h2>
+<p>Each realtime binary reads its own PORT_* and an optional CORS allow-list.
+<code>SOCKET_CORS_ORIGIN</code> is comma-separated; empty means allow all
+origins.</p>
+<table>
+  <thead><tr><th>Variable</th><th>Service(s)</th><th>Purpose</th><th>Default</th></tr></thead>
+  <tbody>
+    <tr><td>SOCKET_PORT</td><td>gamehub</td><td>WS port for the unified games server.</td><td>7001</td></tr>
+    <tr><td>RMHMUSIC_PORT</td><td>rmhmusic</td><td>WS port for synced music rooms.</td><td>7002</td></tr>
+    <tr><td>RMHTUBE_PORT</td><td>rmhtube</td><td>WS port for watch-party rooms.</td><td>7003</td></tr>
+    <tr><td>RMHBOX_PORT</td><td>rmhbox</td><td>WS port for party-game lobbies.</td><td>7676</td></tr>
+    <tr><td>SOCKET_CORS_ORIGIN</td><td>gamehub, rmhmusic, rmhtube, rmhbox</td><td>CSV allow-list of WS origins; empty => allow all.</td><td>"" (allow all)</td></tr>
+  </tbody>
+</table>
+<div class="note">rmhmusic sets <code>RequireAuth: true</code> and opens the DB
+unconditionally (session validation is mandatory). gamehub, rmhtube and rmhbox
+use soft auth (<code>RequireAuth: false</code>) and degrade to anonymous /
+in-memory operation when the DB is unavailable.</div>
+
+<h2 id="env-recap">Recap service</h2>
+<p>Ports the env contract of <code>server/recap/index.ts</code>, including the
+fallback chains for the app ID and site URL.</p>
+<table>
+  <thead><tr><th>Variable</th><th>Purpose</th><th>Default</th></tr></thead>
+  <tbody>
+    <tr><td>RECAP_PORT</td><td>Client-facing port for <code>/health</code> + <code>/metrics</code>.</td><td>7004</td></tr>
+    <tr><td>DISCORD_ACTIVITY_BOT_TOKEN</td><td>Bot token for the recap presence + posting; empty disables posting.</td><td>""</td></tr>
+    <tr><td>VITE_DISCORD_ACTIVITY_CLIENT_ID</td><td>Discord application ID.</td><td>(falls back below)</td></tr>
+    <tr><td>DISCORD_ACTIVITY_CLIENT_ID</td><td>Fallback application ID when the VITE_ form is unset.</td><td>""</td></tr>
+    <tr><td>SITE_URL</td><td>Public site URL used in recap embeds.</td><td>(falls back below)</td></tr>
+    <tr><td>VITE_BETTER_AUTH_URL</td><td>Fallback site URL when SITE_URL is unset.</td><td>https://rmhstudios.com</td></tr>
+  </tbody>
+</table>
+
+<h2 id="env-discord">Discord bot</h2>
+<p>No client HTTP — health/metrics bind <code>METRICS_ADDR</code>. The token
+falls back from <code>DISCORD_BOT_TOKEN</code> to
+<code>DISCORD_ACTIVITY_BOT_TOKEN</code>; one of them is required.</p>
+<table>
+  <thead><tr><th>Variable</th><th>Purpose</th><th>Default</th></tr></thead>
+  <tbody>
+    <tr><td>DISCORD_BOT_TOKEN</td><td>Primary gateway bot token (required, or the ACTIVITY token below).</td><td>""</td></tr>
+    <tr><td>DISCORD_ACTIVITY_BOT_TOKEN</td><td>Fallback bot token.</td><td>""</td></tr>
+    <tr><td>DISCORD_DEV_GUILD_ID</td><td>Guild for fast dev-command registration.</td><td>""</td></tr>
+    <tr><td>OWNER_ID</td><td>Owner Discord user id (gates owner-only commands).</td><td>""</td></tr>
+    <tr><td>DEEPSEEK_API_KEY</td><td>API key for the /chat persona's DeepSeek client.</td><td>""</td></tr>
+    <tr><td>DEEPSEEK_MODEL</td><td>DeepSeek model name.</td><td>deepseek-chat</td></tr>
+    <tr><td>RMHBOT_WORKTREES_DIR</td><td>Working dir for the /rmhbot agentic editor's git worktrees.</td><td>""</td></tr>
+    <tr><td>GITHUB_TOKEN</td><td>Token for /rmhbot PR creation (scaffolded path).</td><td>""</td></tr>
+    <tr><td>GITHUB_REPO</td><td>"owner/name" target repo for /rmhbot; falls back to a built-in default.</td><td>"" (built-in default)</td></tr>
+  </tbody>
+</table>
+
+<h2 id="env-vibe">Vibe worker</h2>
+<table>
+  <thead><tr><th>Variable</th><th>Purpose</th><th>Default</th></tr></thead>
+  <tbody>
+    <tr><td>PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH</td><td>Path to the Chromium/Chrome binary for chromedp; empty => chromedp auto-discovery.</td><td>""</td></tr>
+  </tbody>
+</table>
+<div class="note">The vibe worker writes thumbnails to
+<code>&lt;cwd&gt;/db/vibe-thumbs</code> (the shared volume the web app serves at
+<code>/api/vibe/thumb/{slug}</code>); the path is derived at runtime, not from an
+env var.</div>
+
+<h2 id="env-ports">Service ports &amp; WebSocket paths</h2>
+<p>Client ports double as the host for <code>/health</code> and
+<code>/metrics</code>. Workers expose no client port — their probes hit
+<code>/health</code> on the metrics port (default <code>:9090</code>). WS paths
+are served as-is by each hub and proxied through unchanged by the gateway (no
+prefix stripping).</p>
+<table>
+  <thead><tr><th>Service</th><th>Port</th><th>WS path</th><th>Helm replicas (default / prod)</th></tr></thead>
+  <tbody>
+    <tr><td>gateway</td><td>7005</td><td>— (edge; routes the prefixes below + catch-all <code>/</code>)</td><td>2 / 3</td></tr>
+    <tr><td>gamehub</td><td>7001</td><td>/socket/</td><td>2 / 3</td></tr>
+    <tr><td>rmhmusic</td><td>7002</td><td>/rmhmusic-ws/</td><td>1 / 1</td></tr>
+    <tr><td>rmhtube</td><td>7003</td><td>/rmhtube-ws/</td><td>1 / 2</td></tr>
+    <tr><td>recap</td><td>7004</td><td>— (scheduler; health/metrics only)</td><td>1 / 1</td></tr>
+    <tr><td>rmhbox</td><td>7676</td><td>/rmhbox-ws/</td><td>1 / 2</td></tr>
+    <tr><td>doctrine-worker</td><td>9090 (metrics)</td><td>— (worker, no client port)</td><td>1 / 1</td></tr>
+    <tr><td>vibe-worker</td><td>9090 (metrics)</td><td>— (worker, no client port)</td><td>1 / 1</td></tr>
+    <tr><td>discord-bot</td><td>9090 (metrics)</td><td>— (worker, no client port)</td><td>1 / 1</td></tr>
+  </tbody>
+</table>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart LR
+  C[Client] --> G[gateway 7005]
+  G -->|/socket/| GH[gamehub 7001]
+  G -->|/rmhmusic-ws/| MU[rmhmusic 7002]
+  G -->|/rmhtube-ws/| TU[rmhtube 7003]
+  G -->|/rmhbox-ws/| BX[rmhbox 7676]
+  G -->|catch-all| W[web SSR]
+  </div>
+  <figcaption>Figure: gateway path-prefix routing to the realtime services.</figcaption>
+</figure>
+
+<h2 id="env-secret">The reused <code>.env.production</code> Secret</h2>
+<p>The chart does not define its own credentials. The
+<code>env.secretName</code> value defaults to <code>rmhstudios-secrets</code> —
+the exact Kubernetes Secret PR #121's deploy flow already creates out-of-band
+with <code>kubectl create secret --from-env-file .env.production</code>. The Go
+fleet reads the SAME variables (DATABASE_URL, DISCORD_*, DEEPSEEK_*,
+BETTER_AUTH_*), so no new secret management is introduced.</p>
+<pre><code># deploy/helm/rmhstudios-go/values.yaml
+env:
+  secretName: rmhstudios-secrets   # created by PR #121 from .env.production
+</code></pre>
+<div class="note"><code>deploy/deploy-go.sh</code> is parallel to PR #121's
+<code>deploy-k8s.sh</code> and deliberately reuses the same Secret and the same
+single-node-vs-registry switch; it expects the rmhstudios (SSR web) chart to be
+up first.</div>

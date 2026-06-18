@@ -1,0 +1,54 @@
+<p class="lead">A migration of this magnitude only earns trust if it is precise about
+what it actually achieves. This section states the goals, the explicit non-goals,
+and a per-component honesty table separating faithful 1:1 ports from working
+frameworks with stubbed long tails.</p>
+
+<h2 id="scope-goals">Goals</h2>
+<ul>
+  <li>Re-implement every Node realtime/worker process as a <b>compiling, tested</b> Go service.</li>
+  <li>Preserve external behavior: same ports, same event names, same database tables, same auth model.</li>
+  <li>Provide a shared foundation so the services are consistent, not nine snowflakes.</li>
+  <li>Ship a deployment story that <b>builds on PR&nbsp;#121</b> (Helm conventions, reused Secret/PVC) rather than replacing it.</li>
+  <li>Implement the Stage-1 scaling primitive (Redis backplane) so realtime services can run more than one replica.</li>
+  <li>Verify rigorously: build, vet, race-detector unit tests, and end-to-end against real infrastructure.</li>
+</ul>
+
+<h2 id="scope-nongoals">Non-goals</h2>
+<ul>
+  <li><b>Rewriting the React SSR web app.</b> The TanStack Start renderer and its ~130 API routes stay in JavaScript. The Go gateway proxies to it.</li>
+  <li><b>Replacing Better&nbsp;Auth.</b> Session <i>issuance</i>, OAuth callbacks, and cookie signing remain in Better&nbsp;Auth. Go services only <i>validate</i> sessions.</li>
+  <li><b>Replacing Prisma migrations.</b> The schema and PR&nbsp;#121's migration hook remain authoritative; Go uses hand-written pgx queries against the same tables.</li>
+  <li><b>Porting every minigame and every RMHBot tool in one pass.</b> Those ship as frameworks + representative implementations (see below).</li>
+  <li><b>Production cutover.</b> This is a branch deliverable with a documented cutover/rollback plan, not a live switch.</li>
+</ul>
+
+<h2 id="scope-honesty">The honesty table: faithful vs scaffolded</h2>
+<table>
+<thead><tr><th>Area</th><th>Status</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>Shared foundation (config, log, db, auth, httpx, ratelimit, telemetry, events, realtime)</td><td><b>Faithful, fully tested</b></td><td>Production-quality; race-tested.</td></tr>
+<tr><td>Session validation (auth)</td><td><b>Faithful</b></td><td>Exact SQL port; the "no Better&nbsp;Auth lib needed" insight.</td></tr>
+<tr><td>gateway</td><td><b>Faithful + new</b></td><td>New edge component; reverse proxy + auth trust boundary.</td></tr>
+<tr><td>gamehub — Kowloon Knockout</td><td><b>Faithful</b></td><td>Full relay port + tests.</td></tr>
+<tr><td>gamehub — other games</td><td><span style="color:#7a3ff2">Framework + stubs</span></td><td>Generic RelayGroup + compiling registry; not all games ported.</td></tr>
+<tr><td>rmhtube (watch party)</td><td><b>Faithful core</b></td><td>Sync/queue/chat/persistence real; ban/invite simplified.</td></tr>
+<tr><td>rmhmusic (music rooms)</td><td><b>Faithful</b></td><td>snapshot+delta, drift sync, host reassignment.</td></tr>
+<tr><td>rmhbox — lobby/coordinator/state-sync</td><td><b>Faithful</b></td><td>Full FSM + per-player scoped state + atomic persistence.</td></tr>
+<tr><td>rmhbox — minigames</td><td><span style="color:#7a3ff2">1 ported + 8 stubs</span></td><td>Rhyme Time real; rest are compiling registry stubs.</td></tr>
+<tr><td>doctrine-worker</td><td><b>Faithful, bit-exact</b></td><td>mulberry32/seed golden-tested; all 3 jobs.</td></tr>
+<tr><td>recap</td><td><b>Faithful</b></td><td>Due-poll + embed + Discord post; gateway presence simplified via discordgo.</td></tr>
+<tr><td>vibe-worker</td><td><b>Faithful, w/ substitution</b></td><td>chromedp replaces Playwright; device-scale replaces <code>sharp</code>.</td></tr>
+<tr><td>discord-bot — /chat</td><td><b>Faithful</b></td><td>DeepSeek client + persona + embed packing + persistence.</td></tr>
+<tr><td>discord-bot — /rmhbot</td><td><span style="color:#7a3ff2">Scaffolded</span></td><td>Structure, session, locks, safety guards, git ops, tool loop real; several tools stubbed.</td></tr>
+<tr><td>React SSR web tier</td><td><span style="color:#c9821a">Kept in JS</span></td><td>Out of scope by design; proxied by the gateway.</td></tr>
+<tr><td>Better&nbsp;Auth issuance / OAuth</td><td><span style="color:#c9821a">Kept in JS</span></td><td>Out of scope by design; Go validates only.</td></tr>
+</tbody>
+</table>
+
+<h2 id="scope-why-honest">Why this matters</h2>
+<p>A migration document that claims total completion would be dishonest and
+dangerous: someone would deploy it expecting nine fully-equivalent services and be
+bitten by the gaps. By stating the boundaries explicitly — and by making every
+stub a <i>compiling</i> stub behind a real interface — the codebase stays
+trustworthy: it builds and runs today, and the remaining work is additive
+(implement a stub against an existing contract) rather than structural.</p>

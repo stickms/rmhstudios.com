@@ -1,0 +1,199 @@
+<p class="lead">The <b>vibe-worker</b> renders gallery thumbnails for AI-generated
+"vibe pages" — arbitrary interactive HTML (esbuild-bundled React, canvas,
+three.js from esm.sh). It ports <code>server/vibe-worker/index.ts</code> and
+<code>lib/rmhvibe/vibe-screenshot.server.ts</code>: every 10 seconds it picks up
+to five stale pages, renders each headlessly in Chromium, writes a downscaled PNG
+to the shared <code>db/vibe-thumbs/&lt;slug&gt;.png</code> volume, and clears the
+stale flag with optimistic concurrency. There is no client HTTP surface — only
+<code>/health</code> and <code>/metrics</code> on <code>METRICS_ADDR</code>.</p>
+
+<div class="stats">
+  <div class="stat"><div class="v">10 s</div><div class="l">poll interval</div></div>
+  <div class="stat"><div class="v">5</div><div class="l">pages per batch</div></div>
+  <div class="stat"><div class="v">10 s</div><div class="l">per-render timeout</div></div>
+  <div class="stat"><div class="v">640px</div><div class="l">thumbnail width</div></div>
+</div>
+
+<h2 id="vibe-loop">Poll → render → optimistic clear</h2>
+
+<p>The worker decouples headless Chromium from the web app's request path. Its
+loop runs one pass immediately on start (the Node <code>void processStale()</code>
+kick) then ticks every <code>pollInterval</code>. Each pass selects the oldest
+stale pages, renders each, and clears the flag only if the page hasn't changed
+underneath the render:</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart TD
+  T[tick every 10s] --> G{reentrancy guard running}
+  G -->|busy| T
+  G -->|free| SEL[SelectStale up to 5 oldest first]
+  SEL -->|for each page| CAP[Capture HTML to PNG in Chromium]
+  CAP -->|error| LEAVE[leave stale retry next tick]
+  CAP -->|ok| CLR[ClearStale WHERE updatedAt unchanged]
+  CLR -->|row updated| DONE[flag cleared]
+  CLR -->|no row updatedAt changed| SET[SetThumbnailURL keep stale]
+  LEAVE --> T
+  DONE --> T
+  SET --> T
+  </div>
+  <figcaption>Figure 14.1: poll → render → optimistic clear, with the mid-render
+  change fallback.</figcaption>
+</figure>
+
+<h3>Reentrancy guard</h3>
+
+<p>A batch of five Chromium renders can easily outlast the 10-second tick, so the
+worker carries a <code>running</code> flag (the Node <code>running</code> boolean)
+guarded by a mutex. A tick that fires while a batch is in flight is a no-op:</p>
+
+<pre><code>func (w *Worker) processStale(ctx context.Context) {
+    w.mu.Lock()
+    if w.running {
+        w.mu.Unlock()
+        return // overlapping tick — skip
+    }
+    w.running = true
+    w.mu.Unlock()
+    defer func() { w.mu.Lock(); w.running = false; w.mu.Unlock() }()
+    ...
+}</code></pre>
+
+<p>The select query is the literal port of the Prisma
+<code>findMany({ where: thumbnailStale, orderBy: updatedAt asc, take: 5 })</code>:</p>
+
+<pre><code>SELECT "id", "slug", "html", "updatedAt"
+  FROM "vibe_page"
+ WHERE "thumbnailStale" = true
+ ORDER BY "updatedAt" ASC
+ LIMIT $1</code></pre>
+
+<h2 id="vibe-optimistic">Optimistic concurrency clear</h2>
+
+<p>The page's HTML can be edited by a user <i>while</i> we are rendering the
+previous version. The worker reads <code>updatedAt</code> with the row and, after
+capturing, only clears the stale flag when <code>updatedAt</code> is still
+unchanged — a compare-and-set in SQL:</p>
+
+<pre><code>UPDATE "vibe_page"
+   SET "thumbnailStale" = false, "thumbnailUrl" = $1
+ WHERE "id" = $2 AND "updatedAt" = $3   -- expected updatedAt</code></pre>
+
+<p>If no row was affected, the content changed mid-render. The worker still
+records the freshly-captured URL (so the gallery shows <i>something</i>) via
+<code>SetThumbnailURL</code> but leaves the flag set so the newest content
+re-renders next tick:</p>
+
+<pre><code>cleared, err := w.repo.ClearStale(ctx, page.ID, url, page.UpdatedAt)
+if cleared {
+    return true // clean render
+}
+// Page changed mid-render: record URL, keep it stale.
+if err := w.repo.SetThumbnailURL(ctx, page.ID, url); err != nil {
+    return false
+}
+return true</code></pre>
+
+<p>Batch outcome is recorded honestly: <code>ok</code> when the batch was empty or
+every render succeeded, <code>error</code> when at least one was attempted and
+none succeeded, and <code>partial</code> when some succeeded and some failed —
+feeding <code>JobRuns{vibe_thumbnails, ok|partial|error}</code>.</p>
+
+<h2 id="vibe-capture">Headless capture with chromedp</h2>
+
+<p>The <code>Capturer</code> interface hides the rendering so the loop can be
+tested with a fake. The production implementation drives headless Chromium via
+chromedp with container-safe flags mirroring the Node launch args:</p>
+
+<pre><code>err := chromedp.Run(runCtx,
+    chromedp.EmulateViewport(viewportWidth, viewportHeight, chromedp.EmulateScale(thumbDeviceScale)),
+    chromedp.Navigate(dataURL),
+    chromedp.Sleep(settleDelay),       // modules + first paint + intro animations
+    chromedp.CaptureScreenshot(&amp;png),
+)</code></pre>
+
+<div class="scope"><b>Scope — chromedp replaces Playwright.</b> The Node worker
+drove Chromium through Playwright. The Go port uses chromedp (the CDP client) to
+the same end: navigate, settle, screenshot. The container-safe flags
+(<code>NoSandbox</code>, <code>DisableGPU</code>,
+<code>disable-dev-shm-usage</code>, <code>headless</code>) mirror the Playwright
+launch args; <code>execPath</code> honors
+<code>PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH</code> in production and is empty locally
+so chromedp discovers an installed Chrome.</div>
+
+<div class="warn"><b>Runtime requirement.</b> A Chromium/Chrome binary <i>must</i>
+be present at runtime — there is no fallback renderer. The production Dockerfile
+installs Chromium and points
+<code>PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH</code> at it; without a browser, every
+capture fails and pages stay stale.</div>
+
+<h3>Review fix: base64-encoded data URL</h3>
+
+<p>The page is rendered from a <code>data:</code> URL rather than a temp file, so
+the worker never touches the filesystem for input. The HTML is arbitrary and
+routinely contains <code>#</code> (a fragment delimiter) and <code>%</code> (a
+percent-escape introducer), both of which truncate or mis-decode in a plain
+data: URL. The payload is therefore base64-encoded so Chromium decodes the exact
+bytes:</p>
+
+<pre><code>dataURL := "data:text/html;charset=utf-8;base64," +
+    base64.StdEncoding.EncodeToString([]byte(html))</code></pre>
+
+<div class="ok"><b>Review fix.</b> Base64 makes the URL opaque, eliminating the
+<code>#</code>/<code>%</code> truncation class of bugs entirely — a correctness
+improvement over a naive inline data URL.</div>
+
+<h3>A real per-render timeout</h3>
+
+<p>Animation-heavy pages may never reach network-idle, and a sub-resource that
+never finishes could hang a render forever. Each capture runs under a real
+deadline (<code>captureTimeout = 10s</code>), comfortably above the
+<code>settleDelay</code> of 1.5s so a render is never cut off mid-settle. On
+timeout the run is cancelled and the page is left stale to retry — the batch is
+never blocked indefinitely:</p>
+
+<pre><code>runCtx, cancelRun := context.WithTimeout(taskCtx, captureTimeout)
+defer cancelRun()</code></pre>
+
+<h3>Downscaling: Chromium device scale instead of sharp</h3>
+
+<div class="scope"><b>Scope — substitution for sharp.</b> The Node code
+downscaled the raw screenshot with the <code>sharp</code> image library (resize
+to <code>thumbWidth</code>, PNG compression level 9). With no sharp-equivalent in
+the allowed dependency set, the Go port instead asks Chromium itself to rasterize
+smaller: it sets a fractional device scale factor
+(<code>thumbWidth/viewportWidth</code>) on the emulated viewport. The layout
+viewport stays 1200&times;750 so pages lay out identically, but the PNG comes out
+~640px wide. This achieves the faithful intent — a small gallery PNG — with
+chromedp's own scaling rather than a post-capture resize.</div>
+
+<pre><code>const thumbDeviceScale = float64(thumbWidth) / float64(viewportWidth)
+// EmulateViewport(1200, 750, EmulateScale(thumbDeviceScale))</code></pre>
+
+<p>On success the PNG is written to <code>&lt;thumbDir&gt;/&lt;slug&gt;.png</code>
+and the worker returns a cache-busted URL the web app serves at
+<code>/api/vibe/thumb/{slug}?v=&lt;unixMillis&gt;</code>.</p>
+
+<h2 id="vibe-testing">Repo behind an interface; tested with fakes</h2>
+
+<p>Both the renderer (<code>Capturer</code>) and the data layer (<code>Repo</code>)
+are interfaces; the production <code>PGRepo</code> and <code>ChromedpCapturer</code>
+are injected, and <code>worker_test.go</code> supplies fakes that model the
+optimistic-concurrency behavior:</p>
+
+<table>
+  <thead><tr><th>Test</th><th>Asserts</th></tr></thead>
+  <tbody>
+    <tr><td><code>HappyPath_ClearsFlagOptimistically</code></td><td>both pages captured and cleared with the right URLs; no mid-render fallback used</td></tr>
+    <tr><td><code>ChangedMidRender_KeepsStaleButRecordsURL</code></td><td>when <code>updatedAt</code> advanced, ClearStale misses and SetThumbnailURL records the URL</td></tr>
+    <tr><td><code>CaptureFailure_LeavesPageUntouched</code></td><td>a capture error touches neither the cleared nor the set path</td></tr>
+    <tr><td><code>ReentrancyGuard</code></td><td>with <code>running=true</code>, a tick performs no SelectStale at all</td></tr>
+  </tbody>
+</table>
+
+<div class="note">The fake <code>Capturer</code> can be told to fail per-slug, and
+the fake <code>Repo</code> tracks a current <code>updatedAt</code> per id so
+<code>ClearStale</code> only "succeeds" on an exact match — exercising the
+compare-and-set without a database. <code>Close()</code> on the production
+capturer is a no-op: a fresh browser is allocated per capture and torn down by
+deferred cancels, so there is no shared browser to release.</div>

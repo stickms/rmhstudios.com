@@ -1,0 +1,58 @@
+<p class="lead">Each service ships as its own minimal container, built from a single
+parameterized multi-stage Dockerfile. Static Go binaries on a bare Alpine base
+keep images small (the gateway is ~33&nbsp;MB) and the attack surface tiny.</p>
+
+<h2 id="ct-onefile">One Dockerfile, every service</h2>
+<p>Rather than nine near-identical Dockerfiles, there is one, parameterized by a
+<code>SERVICE</code> build arg (which <code>cmd/</code> to compile) and an optional
+<code>EXTRA_PKGS</code> arg for the few services that need OS packages at runtime.
+The build stage downloads modules with a cache mount, then compiles a fully static
+binary (<code>CGO_ENABLED=0</code>, <code>-trimpath -ldflags="-s -w"</code>). The
+runtime stage is Alpine with only what's required.</p>
+<pre><code>FROM golang:1.23-alpine AS build
+ARG SERVICE
+RUN --mount=type=cache,target=/go/pkg/mod go mod download
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" \
+    -o /out/app ./cmd/${SERVICE}
+
+FROM alpine:3.20 AS runtime
+ARG EXTRA_PKGS=""
+RUN apk add --no-cache ca-certificates tzdata ${EXTRA_PKGS} \
+    && adduser -S app -G app
+USER app
+ENTRYPOINT ["/usr/local/bin/app"]</code></pre>
+
+<h2 id="ct-runtime">Per-service runtime needs</h2>
+<table>
+<thead><tr><th>Service</th><th><code>EXTRA_PKGS</code></th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>most services</td><td>—</td><td><code>ca-certificates</code> + <code>tzdata</code> from the base.</td></tr>
+<tr><td><code>doctrine-worker</code></td><td>— (needs tzdata, in base)</td><td><code>time.LoadLocation</code> per-timezone Sahur checks require the zoneinfo DB.</td></tr>
+<tr><td><code>vibe-worker</code></td><td><code>chromium nss freetype harfbuzz ttf-freefont</code></td><td>Headless Chromium for thumbnail capture.</td></tr>
+<tr><td><code>discord-bot</code></td><td><code>git openssh-client</code></td><td>RMHBot performs git clone/commit/push.</td></tr>
+</tbody>
+</table>
+<div class="note">Two correctness details baked into the base image:
+<code>ca-certificates</code> (outbound TLS to Discord/DeepSeek) and
+<code>tzdata</code> (the doctrine-worker's timezone math). Both were easy to forget
+and would have produced subtle runtime failures; they're in the base for every
+service.</div>
+
+<h2 id="ct-security">Security posture</h2>
+<ul>
+  <li><b>Non-root:</b> images run as an unprivileged <code>app</code> user.</li>
+  <li><b>Static binary:</b> no libc surface, no shell needed at runtime (except where EXTRA_PKGS adds one for git).</li>
+  <li><b>Minimal layers:</b> a single <code>apk add</code>, then the binary — small and auditable.</li>
+  <li><b>Reproducible:</b> <code>-trimpath</code> strips local paths; module download is cache-mounted and verified against <code>go.sum</code>.</li>
+</ul>
+
+<h2 id="ct-verified">Verified build</h2>
+<p>The Dockerfile is not theoretical: the gateway image was built and run during
+verification. It produced a <b>33&nbsp;MB</b> image whose binary started, read its
+configuration, and exited cleanly with a structured error when
+<code>DATABASE_URL</code> was absent — confirming both stages work end to end.</p>
+<pre><code>$ docker build -f Dockerfile --build-arg SERVICE=gateway -t rmhstudios-go-gateway .
+$ docker images rmhstudios-go-gateway   # 33.1MB
+$ docker run --rm rmhstudios-go-gateway
+{"level":"ERROR","msg":"config","service":"gateway",
+ "error":"config: DATABASE_URL is required for service \"gateway\""}</code></pre>
