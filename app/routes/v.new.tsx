@@ -1,8 +1,8 @@
 /**
  * /v/new — Vibe generation route.
  *
- * Reads ?prompt from the URL, streams generation from /api/vibe/stream (DeepSeek's
- * reasoning model), shows the model's live "thinking", and redirects to the
+ * Reads ?prompt from the URL, streams generation from /api/vibe/stream (the
+ * selected Kimi/DeepSeek model), shows the model's live "thinking", and redirects to the
  * permanent /v/$slug when done. Generation is kicked off from a client effect so
  * the loading UI is guaranteed to render immediately.
  *

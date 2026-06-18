@@ -1,9 +1,10 @@
 /**
  * RMHVibe — server-side generation logic.
  *
- * Turns a user prompt into a self-contained, INTERACTIVE web app via DeepSeek.
- * The caller picks a model tier — `flash` (faster) or `pro` (higher quality) —
- * which maps to a concrete model ID (see VIBE_MODEL_IDS). The model emits a small
+ * Turns a user prompt into a self-contained, INTERACTIVE web app via an LLM.
+ * The caller picks a model (Kimi or DeepSeek, each in a faster / higher-quality
+ * tier), which maps to a concrete model ID and provider client (see
+ * VIBE_MODEL_IDS / PROVIDERS). The model emits a small
  * multi-file React/TypeScript project, which we bundle server-side with esbuild (see
  * vibe-bundle.server.ts) into one static HTML document — no in-browser Babel. We
  * stream the model's chain-of-thought ("thinking") back to the caller, persist the
@@ -19,24 +20,33 @@
 import OpenAI from 'openai';
 import { nanoid } from 'nanoid';
 import { prisma } from '@/lib/prisma.server';
-import type { VibeStreamEvent, VibeModel } from '@/lib/rmhvibe/vibe-types';
-import { DEFAULT_VIBE_MODEL } from '@/lib/rmhvibe/vibe-types';
+import type { VibeStreamEvent, VibeModel, VibeProvider } from '@/lib/rmhvibe/vibe-types';
+import { DEFAULT_VIBE_MODEL, VIBE_MODEL_META } from '@/lib/rmhvibe/vibe-types';
 import { parseVibeProject, buildVibeHtml, BundleError } from '@/lib/rmhvibe/vibe-bundle.server';
 
 export type VibeMessage = { role: 'system' | 'user' | 'assistant'; content: string };
 
-const deepseek = new OpenAI({
-  baseURL: 'https://api.deepseek.com',
-  apiKey: process.env.DEEPSEEK_API_KEY!,
-});
+// One OpenAI-compatible client per provider. Kimi (Moonshot) and DeepSeek both
+// expose OpenAI-compatible chat endpoints and stream reasoning_content (the
+// chain-of-thought) alongside the final answer when the model supports it.
+const PROVIDERS: Record<VibeProvider, OpenAI> = {
+  kimi: new OpenAI({
+    baseURL: 'https://api.moonshot.ai/v1',
+    apiKey: process.env.KIMI_API_KEY!,
+  }),
+  deepseek: new OpenAI({
+    baseURL: 'https://api.deepseek.com',
+    apiKey: process.env.DEEPSEEK_API_KEY!,
+  }),
+};
 
-// The "flash"/"pro" toggle maps to two DeepSeek model IDs. Both stream
-// reasoning_content (the chain-of-thought) alongside the final answer when
-// available; neither supports response_format/json mode, so we use a plain text
-// protocol and parse it. `pro` is higher quality, `flash` is faster.
+// Maps each selectable model to its concrete provider model ID. None of these
+// support response_format/json mode, so we use a plain text protocol and parse it.
 const VIBE_MODEL_IDS: Record<VibeModel, string> = {
-  flash: 'deepseek-v4-flash',
-  pro: 'deepseek-v4-pro',
+  'kimi-k2': 'kimi-k2-0905-preview',
+  'kimi-k2-turbo': 'kimi-k2-turbo-preview',
+  'deepseek-flash': 'deepseek-v4-flash',
+  'deepseek-pro': 'deepseek-v4-pro',
 };
 
 const VIBE_SYSTEM_PROMPT = `You are a world-class creative web developer and designer. Given a user's prompt, build a COMPLETE, polished, INTERACTIVE web app that captures the vibe of their request, written as a small multi-file React + TypeScript project. The result must look finished and shippable, never a rough draft.
@@ -355,7 +365,9 @@ export async function* generateVibeStream(opts: {
   fromVersionId?: string;
   model?: VibeModel;
 }): AsyncGenerator<VibeStreamEvent> {
-  const modelId = VIBE_MODEL_IDS[opts.model ?? DEFAULT_VIBE_MODEL];
+  const model = opts.model ?? DEFAULT_VIBE_MODEL;
+  const modelId = VIBE_MODEL_IDS[model];
+  const client = PROVIDERS[VIBE_MODEL_META[model].provider];
   let history: VibeMessage[] = [];
   let existingSlug: string | undefined;
   let existingPageId: string | undefined;
@@ -393,7 +405,7 @@ export async function* generateVibeStream(opts: {
 
   let content = '';
   try {
-    const stream = await deepseek.chat.completions.create({
+    const stream = await client.chat.completions.create({
       model: modelId,
       messages,
       // Generous budget so finished, polished pages don't get truncated.
@@ -402,7 +414,7 @@ export async function* generateVibeStream(opts: {
     });
 
     for await (const chunk of stream) {
-      // reasoning_content is deepseek-reasoner specific and not in the SDK types.
+      // reasoning_content is a provider extension (Kimi/DeepSeek) not in the SDK types.
       const delta = chunk.choices[0]?.delta as
         | { content?: string | null; reasoning_content?: string | null }
         | undefined;

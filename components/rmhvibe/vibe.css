@@ -692,46 +692,55 @@
   animation: vibe-pulse 1.4s ease-in-out infinite;
 }
 
-/* ─── Model toggle (Flash / Pro) ────────────────────────────────────────────── */
-.vibe-model-toggle {
+/* ─── Model dropdown (Kimi / DeepSeek) ──────────────────────────────────────── */
+.vibe-model-select {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  padding: 3px;
+}
+
+.vibe-model-select__input {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 28px;
+  padding: 0 30px 0 13px;
   border-radius: 9999px;
   background: rgba(255, 255, 255, 0.05);
   border: 0.5px solid rgba(255, 255, 255, 0.13);
-}
-
-.vibe-model-toggle__btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  height: 28px;
-  padding: 0 13px;
-  border: 0;
-  border-radius: 9999px;
-  background: transparent;
-  color: rgba(245, 245, 247, 0.55);
+  color: rgba(245, 245, 247, 0.85);
   font: inherit;
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 160ms ease, color 160ms ease;
+  transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
 }
 
-.vibe-model-toggle__btn:hover:not(.is-active):not(:disabled) {
-  color: rgba(245, 245, 247, 0.85);
+.vibe-model-select__input:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.09);
+  color: #f5f5f7;
 }
 
-.vibe-model-toggle__btn.is-active {
-  background: #f5f5f7;
+.vibe-model-select__input:focus-visible {
+  outline: none;
+  border-color: rgba(245, 245, 247, 0.4);
+}
+
+.vibe-model-select__input:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+/* Native option lists can't inherit the dark theme on every OS; keep them legible. */
+.vibe-model-select__input option,
+.vibe-model-select__input optgroup {
   color: #000;
 }
 
-.vibe-model-toggle__btn:disabled {
-  cursor: default;
-  opacity: 0.6;
+.vibe-model-select__chevron {
+  position: absolute;
+  right: 10px;
+  pointer-events: none;
+  color: rgba(245, 245, 247, 0.55);
 }
 
 /* ─── "Viewing an earlier version" banner ───────────────────────────────────── */

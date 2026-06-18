@@ -9,7 +9,7 @@
 import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { ArrowRight } from 'lucide-react';
-import { ModelToggle } from '@/components/rmhvibe/ModelToggle';
+import { ModelSelect } from '@/components/rmhvibe/ModelSelect';
 import { DEFAULT_VIBE_MODEL, type VibeModel } from '@/lib/rmhvibe/vibe-types';
 import '@/components/rmhvibe/vibe.css';
 
@@ -73,7 +73,7 @@ function Home() {
               className="vibe-dock__textarea"
             />
             <div className="vibe-dock__footer">
-              <ModelToggle value={model} onChange={setModel} />
+              <ModelSelect value={model} onChange={setModel} />
               <button type="button" onClick={submit} aria-label="Generate" className="vibe-dock__submit">
                 <ArrowRight size={20} />
               </button>

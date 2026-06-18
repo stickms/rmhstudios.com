@@ -29,7 +29,7 @@ import {
 } from '@/lib/rmhvibe/vibe.server';
 import { streamVibe } from '@/lib/rmhvibe/vibe-stream';
 import { DEFAULT_VIBE_MODEL, type VibeModel } from '@/lib/rmhvibe/vibe-types';
-import { ModelToggle } from '@/components/rmhvibe/ModelToggle';
+import { ModelSelect } from '@/components/rmhvibe/ModelSelect';
 import { ThinkingStream } from '@/components/rmhvibe/ThinkingStream';
 import '@/components/rmhvibe/vibe.css';
 
@@ -368,7 +368,7 @@ function VibeViewer() {
           <div className="mb-2 flex items-center justify-between gap-3">
             <p className="vibe-panel__title">Customize this page</p>
             <div className="flex items-center gap-2">
-              <ModelToggle value={model} onChange={setModel} disabled={busy} />
+              <ModelSelect value={model} onChange={setModel} disabled={busy} />
               <button
                 type="button"
                 onClick={() => setPanelOpen(false)}
