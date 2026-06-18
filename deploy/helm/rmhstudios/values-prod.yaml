@@ -1,0 +1,37 @@
+# Production overrides.
+#
+# NOTE: replace the four REPLACE_ME hostnames with the real domains from
+# .env.production (BETTER_AUTH_URL, VITE_SOCKET_URL, VITE_RMHBOX_SOCKET_URL,
+# VITE_RMHTUBE_SOCKET_URL). Traefik handles the websocket HTTP upgrade with no
+# special annotation needed.
+ingress:
+  enabled: true
+  className: traefik
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+  tls:
+    enabled: true
+    secretName: rmhstudios-tls
+  hosts:
+    - host: REPLACE_ME_app_host          # e.g. rmhstudios.com
+      service: web
+      port: 7005
+    - host: REPLACE_ME_socket_host       # e.g. socket.rmhstudios.com
+      service: socket
+      port: 7001
+    - host: REPLACE_ME_rmhbox_host       # e.g. box.rmhstudios.com
+      service: rmhbox
+      port: 7676
+    - host: REPLACE_ME_rmhtube_host      # e.g. tube.rmhstudios.com
+      service: rmhtube
+      port: 7003
+
+services:
+  web:
+    replicas: 1     # bump after multi-node + RWX; web is the scale target
+  socket:
+    replicas: 1
+  rmhbox:
+    replicas: 1
+  rmhtube:
+    replicas: 1

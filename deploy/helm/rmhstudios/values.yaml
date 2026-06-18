@@ -1,0 +1,106 @@
+# Default values — safe for `helm template`/CI. Prod overrides in values-prod.yaml.
+nameOverride: ""
+fullnameOverride: "rmhstudios"
+
+image:
+  repository: rmhstudios
+  tag: latest
+  # Never: image is imported into k3s containerd locally; there is no registry.
+  # MULTI-NODE SEAM: switch to IfNotPresent + a real repository when adding a registry.
+  pullPolicy: Never
+
+# Secret is created out-of-band from .env.production (see deploy-k8s.sh).
+# Templates reference it via envFrom; its contents never enter git or Helm history.
+secretName: rmhstudios-secrets
+
+# Shared /app/db volume (Compose: ${STORAGE_PATH:-./db}:/app/db).
+data:
+  enabled: true
+  size: 20Gi
+  storageClass: local-path   # k3s built-in provisioner
+  mountPath: /app/db
+  # MULTI-NODE SEAM: local-path is node-local (RWO). Multi-node needs RWX (NFS/Longhorn).
+
+# discord-bot bind-mounts the repo for git-worktree ops (Compose: RMHBOT_REPO_PATH).
+rmhbotRepoPath: /home/rmhstudios/rmhstudios.com
+
+# Common resource floor; override per service as needed.
+defaultResources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+
+services:
+  web:
+    command: ["node", ".output/server/index.mjs"]
+    port: 7005
+    portEnv: PORT
+    replicas: 1
+    probePath: /
+    mountData: true
+    extraEnv:
+      - name: HOSTNAME
+        value: "0.0.0.0"
+    resources:
+      requests: { cpu: 250m, memory: 512Mi }
+
+  socket:
+    command: ["node", "dist-server/server/socket-server/index.cjs"]
+    port: 7001
+    portEnv: SOCKET_PORT
+    replicas: 1
+    probePath: /
+
+  rmhbox:
+    command: ["node", "dist-server/server/rmhbox/index.cjs"]
+    port: 7676
+    portEnv: RMHBOX_PORT
+    replicas: 1
+    probePath: /
+
+  rmhtube:
+    command: ["node", "dist-server/server/rmhtube/index.cjs"]
+    port: 7003
+    portEnv: RMHTUBE_PORT
+    replicas: 1
+    probePath: /
+
+  recap:
+    command: ["node", "dist-server/server/recap/index.cjs"]
+    port: 7004
+    portEnv: RECAP_PORT
+    replicas: 1
+    probePath: /
+
+  discord-bot:
+    command: ["node", "dist-server/server/discord-bot/index.cjs"]
+    replicas: 1
+    mountData: true
+    mountRepo: true
+    stopGracePeriod: 90
+
+  doctrine-worker:
+    command: ["node", "dist-server/server/doctrine-worker/index.cjs"]
+    replicas: 1
+
+  vibe-worker:
+    command: ["node", "dist-server/server/vibe-worker/index.cjs"]
+    replicas: 1
+    mountData: true
+    stopGracePeriod: 30
+    resources:
+      requests: { cpu: 250m, memory: 768Mi }   # Chromium captures
+
+# Migration hook (pre-install/pre-upgrade). Mirrors deploy.sh step 3.
+migrations:
+  enabled: true
+  baseline: "0_baseline"
+
+ingress:
+  enabled: false
+  className: traefik
+  annotations: {}
+  tls:
+    enabled: false
+    secretName: rmhstudios-tls
+  hosts: []

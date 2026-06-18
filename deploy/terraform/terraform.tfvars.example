@@ -1,0 +1,8 @@
+cloudflare_api_token = "REPLACE_ME"
+cloudflare_zone_id   = "REPLACE_ME"
+vps_ip               = "203.0.113.10"
+app_host             = "rmhstudios.com"
+socket_host          = "socket.rmhstudios.com"
+rmhbox_host          = "box.rmhstudios.com"
+rmhtube_host         = "tube.rmhstudios.com"
+proxied              = false

@@ -1,0 +1,6 @@
+# Terraform — never commit state, lock, or filled-in vars
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/terraform.tfvars
+terraform/.terraform.lock.hcl
