@@ -692,18 +692,18 @@
   animation: vibe-pulse 1.4s ease-in-out infinite;
 }
 
-/* ─── Model dropdown (Kimi / DeepSeek) ──────────────────────────────────────── */
+/* ─── Model dropdown (Kimi / DeepSeek) — fully custom, themed ────────────────── */
 .vibe-model-select {
   position: relative;
   display: inline-flex;
-  align-items: center;
 }
 
-.vibe-model-select__input {
-  appearance: none;
-  -webkit-appearance: none;
+.vibe-model-select__button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   height: 28px;
-  padding: 0 30px 0 13px;
+  padding: 0 10px 0 13px;
   border-radius: 9999px;
   background: rgba(255, 255, 255, 0.05);
   border: 0.5px solid rgba(255, 255, 255, 0.13);
@@ -715,32 +715,113 @@
   transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
 }
 
-.vibe-model-select__input:hover:not(:disabled) {
+.vibe-model-select__button:hover:not(:disabled),
+.vibe-model-select__button[aria-expanded='true'] {
   background: rgba(255, 255, 255, 0.09);
   color: #f5f5f7;
 }
 
-.vibe-model-select__input:focus-visible {
+.vibe-model-select__button:focus-visible {
   outline: none;
   border-color: rgba(245, 245, 247, 0.4);
 }
 
-.vibe-model-select__input:disabled {
+.vibe-model-select__button:disabled {
   cursor: default;
   opacity: 0.6;
 }
 
-/* Native option lists can't inherit the dark theme on every OS; keep them legible. */
-.vibe-model-select__input option,
-.vibe-model-select__input optgroup {
-  color: #000;
+.vibe-model-select__chevron {
+  color: rgba(245, 245, 247, 0.55);
+  transition: transform 180ms ease;
 }
 
-.vibe-model-select__chevron {
+.vibe-model-select__chevron.is-open {
+  transform: rotate(180deg);
+}
+
+/* Popover opens upward — both usages sit near the bottom of the viewport. */
+.vibe-model-select__menu {
   position: absolute;
-  right: 10px;
-  pointer-events: none;
-  color: rgba(245, 245, 247, 0.55);
+  bottom: calc(100% + 8px);
+  left: 0;
+  z-index: 50;
+  min-width: 220px;
+  padding: 6px;
+  border-radius: 14px;
+  background: rgba(20, 20, 22, 0.92);
+  border: 0.5px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  animation: vibe-model-pop 140ms ease;
+}
+
+@keyframes vibe-model-pop {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.vibe-model-select__group + .vibe-model-select__group {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 0.5px solid rgba(255, 255, 255, 0.08);
+}
+
+.vibe-model-select__group-label {
+  padding: 6px 10px 4px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(245, 245, 247, 0.4);
+}
+
+.vibe-model-select__option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: rgba(245, 245, 247, 0.85);
+  font: inherit;
+  font-size: 0.82rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.vibe-model-select__option:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f5f5f7;
+}
+
+.vibe-model-select__option.is-active {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.vibe-model-select__option-label {
+  font-weight: 600;
+}
+
+.vibe-model-select__option-hint {
+  margin-left: auto;
+  font-size: 0.72rem;
+  color: rgba(245, 245, 247, 0.45);
+}
+
+.vibe-model-select__check {
+  flex: none;
+  color: #f5f5f7;
 }
 
 /* ─── "Viewing an earlier version" banner ───────────────────────────────────── */

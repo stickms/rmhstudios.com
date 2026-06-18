@@ -22,8 +22,8 @@ export type VibeModelMeta = {
 
 /** Display metadata for each model, used by the model dropdown. */
 export const VIBE_MODEL_META: Record<VibeModel, VibeModelMeta> = {
-  'kimi-k2': { label: 'Kimi K2', hint: 'Higher quality', provider: 'kimi' },
-  'kimi-k2-turbo': { label: 'Kimi K2 Turbo', hint: 'Faster', provider: 'kimi' },
+  'kimi-k2': { label: 'Kimi K2 Code', hint: 'Higher quality', provider: 'kimi' },
+  'kimi-k2-turbo': { label: 'Kimi K2 Code Turbo', hint: 'Faster', provider: 'kimi' },
   'deepseek-flash': { label: 'DeepSeek Flash', hint: 'Faster', provider: 'deepseek' },
   'deepseek-pro': { label: 'DeepSeek Pro', hint: 'Higher quality', provider: 'deepseek' },
 };

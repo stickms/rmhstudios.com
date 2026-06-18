@@ -33,18 +33,20 @@ const PROVIDERS: Record<VibeProvider, OpenAI> = {
   kimi: new OpenAI({
     baseURL: 'https://api.moonshot.ai/v1',
     apiKey: process.env.KIMI_API_KEY!,
+    maxRetries: 1, // streaming stalls are handled below; don't silently retry for minutes
   }),
   deepseek: new OpenAI({
     baseURL: 'https://api.deepseek.com',
     apiKey: process.env.DEEPSEEK_API_KEY!,
+    maxRetries: 1,
   }),
 };
 
 // Maps each selectable model to its concrete provider model ID. None of these
 // support response_format/json mode, so we use a plain text protocol and parse it.
 const VIBE_MODEL_IDS: Record<VibeModel, string> = {
-  'kimi-k2': 'kimi-k2-0905-preview',
-  'kimi-k2-turbo': 'kimi-k2-turbo-preview',
+  'kimi-k2': 'kimi-k2.7-code',
+  'kimi-k2-turbo': 'kimi-k2.7-code-highspeed',
   'deepseek-flash': 'deepseek-v4-flash',
   'deepseek-pro': 'deepseek-v4-pro',
 };
@@ -99,6 +101,7 @@ Quality (strict):
 
 OUTPUT FORMAT — this response is parsed by a machine, not read by a human. Any deviation BREAKS the build and wastes the whole generation. Follow it EXACTLY:
 - The VERY FIRST characters of your answer MUST be \`SLUG:\`. No preamble, no greeting, no "Here's the…", no "Sure!", no explanation, no summary — not before the SLUG and not after the last file.
+- There is NO acceptable non-project response. Even if the request is vague, impossible, unclear, or you'd normally ask a clarifying question, do NOT reply with prose, an apology, or a question — always make a reasonable assumption and output a COMPLETE, valid project in the format below. Plain text that isn't this format is treated as a failure and discarded.
 - Do NOT wrap the response, or any individual file, in markdown code fences. Never emit \`\`\`html, \`\`\`tsx, \`\`\`, or similar. Write the raw file contents directly after each \`--- file: … ---\` header.
 - Do NOT output a single standalone HTML file or a \`<!doctype html>\` document. ALWAYS use the multi-file React/TypeScript project format below with an \`index.tsx\` entry point — even when the request feels like it could be "just one HTML file" (e.g. a Three.js scene). Put your code in .tsx/.ts/.css files, not in a raw HTML page.
 - Output the metadata lines, then \`===FILES===\`, then each file. Nothing else.
@@ -351,6 +354,64 @@ export async function listVibePages(opts: { q?: string; cursor?: string }): Prom
 }
 
 /**
+ * Heuristic: does this string contain an actual HTML document, or is it just the
+ * model's prose/markdown? The legacy fallback used to render whatever it got, so a
+ * chatty "Sure! Here's how I'd approach this…" reply would display as the page.
+ * We require a real structural tag before accepting the legacy path.
+ */
+function looksLikeHtmlDoc(html: string): boolean {
+  return /<!doctype\s+html|<html[\s>]|<body[\s>]/i.test(html);
+}
+
+type Materialized =
+  | { ok: true; html: string; slug: string; title: string; description: string }
+  | { ok: false; reason: string };
+
+/**
+ * Turn raw model output into a renderable page, or report why it can't be. The
+ * preferred path is the multi-file project (parsed + bundled with esbuild); the
+ * legacy single-HTML path is accepted ONLY when the content really looks like an
+ * HTML document. Plain prose, apologies, or markdown are rejected so they never
+ * get served as a "page" — the caller retries instead.
+ */
+async function materialize(content: string): Promise<Materialized> {
+  const project = parseVibeProject(content);
+  if (project) {
+    try {
+      const html = await buildVibeHtml(project);
+      return { ok: true, html, slug: project.slug, title: project.title, description: project.description };
+    } catch (err) {
+      const detail = err instanceof BundleError ? err.message : 'unexpected error';
+      return { ok: false, reason: `the app didn't compile (${detail})` };
+    }
+  }
+
+  const parsed = parseVibeOutput(content);
+  if (parsed.html && looksLikeHtmlDoc(parsed.html)) {
+    return {
+      ok: true,
+      html: injectCsp(parsed.html),
+      slug: parsed.slug,
+      title: parsed.title,
+      description: parsed.description,
+    };
+  }
+
+  return { ok: false, reason: 'the response was not a renderable app (no project files or HTML)' };
+}
+
+// How many times to ask the model (initial try + corrective retries) before
+// giving up. Each retry feeds back the bad output and what was wrong with it.
+const MAX_GENERATION_ATTEMPTS = 3;
+
+// Streaming guards. A healthy stream emits tokens continuously, so the idle timer
+// (reset on every chunk) only trips on a real stall — the connection is open but
+// nothing is coming. The total cap bounds a runaway generation. Both abort the
+// request and surface a specific error instead of spinning forever.
+const STREAM_IDLE_MS = 60_000; // no token for 60s → treat as stalled
+const STREAM_TOTAL_MS = 300_000; // hard cap on a single attempt (5 min)
+
+/**
  * Stream generation of a vibe page. If `slug` is provided, this is a "customize"
  * follow-up against the existing page; otherwise a brand-new page is created.
  * Customization normally replays the page's latest history, but `fromVersionId`
@@ -358,6 +419,12 @@ export async function listVibePages(opts: { q?: string; cursor?: string }): Prom
  * users can revisit and re-customize an earlier variant. Yields thinking/content
  * deltas, then a final `done` event after the page (and a new version snapshot)
  * have been persisted.
+ *
+ * Robustness: the model occasionally ignores the output format and returns prose
+ * or uncompilable code. We validate every response (materialize); if it isn't a
+ * working app we feed the failure back and regenerate, up to
+ * MAX_GENERATION_ATTEMPTS, and surface an error rather than ever rendering raw
+ * model text as the page.
  */
 export async function* generateVibeStream(opts: {
   prompt: string;
@@ -403,62 +470,109 @@ export async function* generateVibeStream(opts: {
     { role: 'user', content: opts.prompt },
   ];
 
+  // Generate, validate, and retry until we have a real renderable app. `content`
+  // holds the latest successful output (persisted below); failed attempts and the
+  // corrective prompts live only in `messages` and are never saved to history.
   let content = '';
-  try {
-    const stream = await client.chat.completions.create({
-      model: modelId,
-      messages,
-      // Generous budget so finished, polished pages don't get truncated.
-      max_tokens: 16384,
-      stream: true,
-    });
+  let result: Extract<Materialized, { ok: true }> | undefined;
 
-    for await (const chunk of stream) {
-      // reasoning_content is a provider extension (Kimi/DeepSeek) not in the SDK types.
-      const delta = chunk.choices[0]?.delta as
-        | { content?: string | null; reasoning_content?: string | null }
-        | undefined;
-      if (delta?.reasoning_content) yield { type: 'thinking', text: delta.reasoning_content };
-      if (delta?.content) {
-        content += delta.content;
-        yield { type: 'content', text: delta.content };
+  for (let attempt = 1; attempt <= MAX_GENERATION_ATTEMPTS && !result; attempt++) {
+    content = '';
+
+    // Abort the request if it stalls (no tokens for STREAM_IDLE_MS) or runs past
+    // the total cap. The idle timer is re-armed on every chunk; `stalled`/`timedOut`
+    // record which guard fired so we can give a specific error.
+    const abort = new AbortController();
+    let stalled = false;
+    let timedOut = false;
+    let idleTimer: ReturnType<typeof setTimeout> | undefined;
+    const armIdle = () => {
+      if (idleTimer) clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        stalled = true;
+        abort.abort();
+      }, STREAM_IDLE_MS);
+    };
+    const totalTimer = setTimeout(() => {
+      timedOut = true;
+      abort.abort();
+    }, STREAM_TOTAL_MS);
+
+    try {
+      armIdle(); // also bounds time-to-first-token
+      const stream = await client.chat.completions.create(
+        {
+          model: modelId,
+          messages,
+          // Generous budget so finished, polished pages don't get truncated.
+          max_tokens: 16384,
+          stream: true,
+        },
+        { signal: abort.signal },
+      );
+
+      for await (const chunk of stream) {
+        armIdle();
+        // reasoning_content is a provider extension (Kimi/DeepSeek) not in the SDK types.
+        const delta = chunk.choices[0]?.delta as
+          | { content?: string | null; reasoning_content?: string | null }
+          | undefined;
+        if (delta?.reasoning_content) yield { type: 'thinking', text: delta.reasoning_content };
+        if (delta?.content) {
+          content += delta.content;
+          yield { type: 'content', text: delta.content };
+        }
       }
+    } catch {
+      yield {
+        type: 'error',
+        message: stalled
+          ? 'The model stopped responding partway through. Please try again.'
+          : timedOut
+            ? 'Generation took too long and was stopped. Try again, or simplify your prompt.'
+            : 'The model failed to respond. Try again.',
+      };
+      return;
+    } finally {
+      if (idleTimer) clearTimeout(idleTimer);
+      clearTimeout(totalTimer);
     }
-  } catch {
-    yield { type: 'error', message: 'The model failed to respond. Try again.' };
+
+    const materialized = await materialize(content);
+    if (materialized.ok) {
+      result = materialized;
+      break;
+    }
+
+    // Not a working app. If attempts remain, show the user we're recovering and
+    // feed the bad output + the reason back so the model fixes the format.
+    if (attempt < MAX_GENERATION_ATTEMPTS) {
+      yield {
+        type: 'thinking',
+        text: `\n\n↻ That attempt didn't produce a working app (${materialized.reason}). Regenerating…\n\n`,
+      };
+      messages.push(
+        { role: 'assistant', content },
+        {
+          role: 'user',
+          content: `Your previous response could not be rendered: ${materialized.reason}. Reply with ONLY the project in the required format — the VERY FIRST characters must be "SLUG:", followed by the TITLE/DESCRIPTION/DEPS lines, then "===FILES===", then each "--- file: … ---" with real, compiling code. No prose, no apology, no questions, no markdown code fences.`,
+        },
+      );
+    } else {
+      yield {
+        type: 'error',
+        message: `Couldn't generate a working app (${materialized.reason}). Try again or rephrase your prompt.`,
+      };
+      return;
+    }
+  }
+
+  if (!result) {
+    yield { type: 'error', message: "Couldn't generate a working app. Try again." };
     return;
   }
 
-  // Preferred path: a multi-file project we bundle with esbuild. Falls back to the
-  // legacy single-HTML response when the model didn't emit a `===FILES===` block.
-  let parsedSlug: string;
-  let title: string;
-  let description: string;
-  let html: string;
-
-  const project = parseVibeProject(content);
-  if (project) {
-    try {
-      html = await buildVibeHtml(project);
-    } catch (err) {
-      const detail = err instanceof BundleError ? err.message : 'unexpected error';
-      yield { type: 'error', message: `The generated app didn't compile (${detail}). Try again.` };
-      return;
-    }
-    parsedSlug = project.slug;
-    title = project.title;
-    description = project.description;
-  } else {
-    const parsed = parseVibeOutput(content);
-    if (!parsed.html) {
-      yield { type: 'error', message: 'The model returned an empty page. Try again.' };
-      return;
-    }
-    html = injectCsp(parsed.html);
-    parsedSlug = parsed.slug;
-    title = parsed.title;
-    description = parsed.description;
-  }
+  const { html, slug: parsedSlug, title, description } = result;
 
   const cleanTitle = (title || opts.prompt).slice(0, 80);
   const cleanDescription = (description || `A vibe page about "${opts.prompt}".`).slice(0, 300);
