@@ -39,6 +39,8 @@ spec:
               set -e
               echo "[migrate] waiting for database..."
               for i in $(seq 1 10); do
+                # Mirrors deploy.sh's reachability check; 'up to date' is an
+                # intentional addition for the already-migrated re-deploy case.
                 if npx prisma migrate status 2>&1 | grep -qE 'migration|Database schema|up to date'; then
                   echo "[migrate] database reachable"; break
                 fi

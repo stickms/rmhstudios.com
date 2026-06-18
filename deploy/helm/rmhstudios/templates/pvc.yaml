@@ -7,7 +7,7 @@ metadata:
     {{- include "rmhstudios.labels" . | nindent 4 }}
 spec:
   accessModes:
-    - ReadWriteOnce   # MULTI-NODE SEAM: ReadWriteMany for multi-node
+    {{- toYaml .Values.data.accessModes | nindent 4 }}
   storageClassName: {{ .Values.data.storageClass | quote }}
   resources:
     requests:

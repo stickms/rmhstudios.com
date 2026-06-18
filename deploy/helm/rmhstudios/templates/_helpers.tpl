@@ -2,6 +2,9 @@
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
+{{- /* By design: one fixed release per namespace, so fullname does not prefix
+       .Release.Name (values.yaml sets fullnameOverride: rmhstudios). Two releases
+       in one namespace would collide — deploy each env to its own namespace. */ -}}
 {{- define "rmhstudios.fullname" -}}
 {{- if .Values.fullnameOverride -}}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}

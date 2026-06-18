@@ -26,7 +26,10 @@ data:
   size: 20Gi
   storageClass: local-path   # k3s built-in provisioner
   mountPath: /app/db
-  # MULTI-NODE SEAM: local-path is node-local (RWO). Multi-node needs RWX (NFS/Longhorn).
+  # MULTI-NODE SEAM: local-path is node-local (RWO). For multi-node set a RWX
+  # class (NFS/Longhorn) here AND switch accessModes to [ReadWriteMany] below.
+  accessModes:
+    - ReadWriteOnce
 
 # discord-bot bind-mounts the repo for git-worktree ops (Compose: RMHBOT_REPO_PATH).
 rmhbotRepoPath: /home/rmhstudios/rmhstudios.com

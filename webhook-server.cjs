@@ -39,7 +39,9 @@ http.createServer((req, res) => {
           const expected = 'sha256=' + crypto.createHmac('sha256', SECRET).update(body).digest('hex');
 
           if (sig !== expected) {
-                  logMsg(`WARN: Invalid signature — rejected. received=${sig} expected=${expected} bodyLen=${body.length} secretLen=${SECRET.length}`);
+                  // Never log the server-computed `expected` HMAC or the secret length —
+                  // doing so would weaken the signature gate. Only log non-sensitive context.
+                  logMsg(`WARN: Invalid signature — rejected. bodyLen=${body.length} hasSig=${!!sig}`);
                   res.writeHead(401);
                   return res.end('Unauthorized');
                 }

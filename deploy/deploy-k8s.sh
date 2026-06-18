@@ -73,12 +73,20 @@ if [ -n "$REGISTRY" ]; then
     docker push "${IMAGE_REPO}:${GIT_SHA}"
 else
     # Single-node: k3s uses its own containerd, not docker — import directly.
-    # Requires sudo for `k3s ctr` (document in runbook).
+    # Requires passwordless sudo for `k3s ctr` (a documented one-time setup step).
+    # Preflight it so a webhook-triggered run fails legibly instead of hanging on
+    # a sudo password prompt or emitting a bare "sudo: a password is required".
+    sudo -n k3s ctr version >/dev/null 2>&1 || {
+        log "FATAL: passwordless sudo for 'k3s ctr' is not configured (see deploy/README.md)."
+        exit 1
+    }
     log "Importing image into k3s containerd..."
     docker save "${IMAGE_REPO}:${GIT_SHA}" | sudo k3s ctr images import -
 fi
 
 # ── Step 4: Sync Secret from .env.production (server-side, never in git) ──────
+# `kubectl apply` on a Secret replaces .data wholesale, so keys removed from
+# .env.production are also removed from the Secret (no stale-key drift).
 log "Syncing Secret ${SECRET_NAME}..."
 kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
 kubectl create secret generic "$SECRET_NAME" \
