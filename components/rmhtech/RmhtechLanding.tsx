@@ -187,13 +187,15 @@ export default function RmhtechLanding() {
         <main id="top">
           <section className="hero">
             <div className="wrap">
-              <img
-                className="ai-logo"
-                src="/brand/adaptive-intelligence-mark.svg"
-                alt="Adaptive Intelligence"
-                width={120}
-                height={120}
-              />
+              <span className="ai-logo-wrap">
+                <img
+                  className="ai-logo"
+                  src="/brand/adaptive-intelligence-mark.svg"
+                  alt="Adaptive Intelligence"
+                  width={120}
+                  height={120}
+                />
+              </span>
               <p className="eyebrow">Reproducible by construction</p>
               <h1>
                 An AI co-scientist you can <em>trust</em>.
