@@ -161,10 +161,10 @@ export const QUIRKS = [
  * has both prolific and occasional accounts.
  */
 export const POSTING_HABITS = [
-  { id: 'lurker', label: 'rare poster — only chimes in when something matters', postsPerDay: 1 },
-  { id: 'steady', label: 'posts a few times a day about their day and interests', postsPerDay: 3 },
-  { id: 'chatty', label: 'very online, posts frequently with quick thoughts', postsPerDay: 6 },
-  { id: 'bursty', label: 'goes quiet then posts a flurry when inspired', postsPerDay: 4 },
+  { id: 'lurker', label: 'rare poster — only chimes in when something matters', postsPerDay: 2 },
+  { id: 'steady', label: 'posts a few times a day about their day and interests', postsPerDay: 5 },
+  { id: 'chatty', label: 'very online, posts frequently with quick thoughts', postsPerDay: 9 },
+  { id: 'bursty', label: 'goes quiet then posts a flurry when inspired', postsPerDay: 6 },
 ] as const;
 
 export type PostingHabit = (typeof POSTING_HABITS)[number];

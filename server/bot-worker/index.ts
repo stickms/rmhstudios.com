@@ -22,10 +22,12 @@ import {
   rollPersona,
   composePersona,
   buildAvatarUrl,
+  randomItem,
 } from '@/lib/rmhark-ai/persona';
 import {
   generateBotProfile,
   generatePost,
+  generateReply,
   isRmharkAIConfigured,
 } from '@/lib/rmhark-ai/generate.server';
 
@@ -35,16 +37,39 @@ function intEnv(name: string, fallback: number): number {
   const n = parseInt(process.env[name] ?? '', 10);
   return Number.isFinite(n) && n > 0 ? n : fallback;
 }
+/** Read a 0..1 probability env var, falling back to a default on missing/invalid input. */
+function probEnv(name: string, fallback: number): number {
+  const n = parseFloat(process.env[name] ?? '');
+  return Number.isFinite(n) && n >= 0 && n <= 1 ? n : fallback;
+}
 
-const TARGET_BOT_COUNT = intEnv('BOT_TARGET_COUNT', 12);
+const TARGET_BOT_COUNT = intEnv('BOT_TARGET_COUNT', 20);
 // How many new bots to mint per maintenance cycle (spreads out API calls).
-const BOT_CREATE_BATCH = intEnv('BOT_CREATE_BATCH', 4);
-// How often to top up the bot pool (default 6h).
-const USER_CHECK_MS = intEnv('BOT_USER_CHECK_MS', 6 * 60 * 60 * 1000);
-// How often to consider posting (default 10m).
-const POST_TICK_MS = intEnv('BOT_POST_TICK_MS', 10 * 60 * 1000);
+const BOT_CREATE_BATCH = intEnv('BOT_CREATE_BATCH', 6);
+// How often to top up the bot pool (default 2h).
+const USER_CHECK_MS = intEnv('BOT_USER_CHECK_MS', 2 * 60 * 60 * 1000);
+// How often to consider posting (default 5m).
+const POST_TICK_MS = intEnv('BOT_POST_TICK_MS', 5 * 60 * 1000);
 // Most posts we'll create in a single tick (protects the DB + paid API).
-const MAX_POSTS_PER_TICK = intEnv('BOT_MAX_POSTS_PER_TICK', 3);
+const MAX_POSTS_PER_TICK = intEnv('BOT_MAX_POSTS_PER_TICK', 5);
+
+// ─── Reply behaviour ────────────────────────────────────────────
+// How often bots check for replies to answer (default = same as posting).
+const REPLY_TICK_MS = intEnv('BOT_REPLY_TICK_MS', POST_TICK_MS);
+// Only react to comments newer than this (default 12h).
+const REPLY_LOOKBACK_MS = intEnv('BOT_REPLY_LOOKBACK_MS', 12 * 60 * 60 * 1000);
+// Cap replies created per tick (protects the DB + paid API).
+const MAX_REPLIES_PER_TICK = intEnv('BOT_MAX_REPLIES_PER_TICK', 4);
+// Stop a thread from spiralling: don't auto-reply past this comment depth.
+const MAX_REPLY_DEPTH = intEnv('BOT_MAX_REPLY_DEPTH', 6);
+// Probability a bot answers a *human* who replied to it (responsive).
+const REACTIVE_HUMAN_PROB = probEnv('BOT_REACTIVE_HUMAN_PROB', 0.9);
+// Probability a bot answers *another bot* who replied to it (less frequent).
+const BOT_TO_BOT_PROB = probEnv('BOT_TO_BOT_REPLY_PROB', 0.3);
+// Probability per tick that a bot proactively replies to another bot's post.
+const PROACTIVE_PROB = probEnv('BOT_PROACTIVE_PROB', 0.4);
+// Proactive replies only target posts newer than this (default 6h).
+const PROACTIVE_LOOKBACK_MS = intEnv('BOT_PROACTIVE_LOOKBACK_MS', 6 * 60 * 60 * 1000);
 
 const TICKS_PER_DAY = (24 * 60 * 60 * 1000) / POST_TICK_MS;
 
@@ -135,12 +160,12 @@ interface BotRow {
 
 /** Decide whether a given bot should post this tick. */
 function shouldPost(bot: BotRow): boolean {
-  // Derive a per-day rate from the persona's ACTIVITY line; default ~3/day.
+  // Derive a per-day rate from the persona's ACTIVITY line; default ~5/day.
   const persona = bot.botPersona ?? '';
-  let perDay = 3;
-  if (/very online|frequently/i.test(persona)) perDay = 6;
-  else if (/rare poster|only chimes in/i.test(persona)) perDay = 1;
-  else if (/flurry|goes quiet/i.test(persona)) perDay = 4;
+  let perDay = 5;
+  if (/very online|frequently/i.test(persona)) perDay = 9;
+  else if (/rare poster|only chimes in/i.test(persona)) perDay = 2;
+  else if (/flurry|goes quiet/i.test(persona)) perDay = 6;
 
   // Enforce a minimum gap so a bot can't post twice back-to-back.
   if (bot.botLastPostAt) {
@@ -178,11 +203,205 @@ async function postTick(): Promise<void> {
   }
 }
 
+// ─── Replies ────────────────────────────────────────────────────
+
+interface ReplyContext {
+  postContent: string;
+  quotedPostContent?: string;
+  thread: string[];
+}
+
+/**
+ * Build the context for replying to a given comment: the post (and any post it
+ * quotes) plus the ancestor comment chain from the top down to that comment.
+ */
+async function buildReplyContext(commentId: string): Promise<ReplyContext | null> {
+  const thread: string[] = [];
+  let currentId: string | null = commentId;
+  let rmheetId: string | null = null;
+  for (let depth = 0; currentId && depth < MAX_REPLY_DEPTH + 2; depth++) {
+    const node: { content: string; parentId: string | null; rmheetId: string } | null =
+      await prisma.rMHarkComment.findUnique({
+        where: { id: currentId },
+        select: { content: true, parentId: true, rmheetId: true },
+      });
+    if (!node) break;
+    thread.unshift(node.content);
+    rmheetId = node.rmheetId;
+    currentId = node.parentId;
+  }
+  if (!rmheetId) return null;
+
+  const post = await prisma.rMHark.findUnique({
+    where: { id: rmheetId },
+    select: { content: true, original: { select: { content: true } } },
+  });
+  if (!post) return null;
+
+  return {
+    postContent: post.content,
+    quotedPostContent: post.original?.content || undefined,
+    thread,
+  };
+}
+
+const personaCache = new Map<string, string | null>();
+async function getPersona(userId: string): Promise<string | undefined> {
+  if (!personaCache.has(userId)) {
+    const u = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { botPersona: true },
+    });
+    personaCache.set(userId, u?.botPersona ?? null);
+  }
+  return personaCache.get(userId) ?? undefined;
+}
+
+/** Post a single in-character reply from `botId` to `comment`. */
+async function replyToComment(
+  botId: string,
+  comment: { id: string; rmheetId: string },
+): Promise<boolean> {
+  const ctx = await buildReplyContext(comment.id);
+  if (!ctx) return false;
+  if (ctx.thread.length >= MAX_REPLY_DEPTH) return false;
+
+  const content = await generateReply({
+    postContent: ctx.postContent,
+    quotedPostContent: ctx.quotedPostContent,
+    thread: ctx.thread,
+    persona: await getPersona(botId),
+  });
+  if (!content.trim()) return false;
+
+  await prisma.rMHarkComment.create({
+    data: { rmheetId: comment.rmheetId, userId: botId, content, parentId: comment.id },
+  });
+  await prisma.user.update({ where: { id: botId }, data: { botLastPostAt: new Date() } });
+  return true;
+}
+
+/**
+ * Reactive replies: when someone (human or bot) replies to a bot's post or
+ * comment, the bot replies back in-context. Humans get answered readily; bots
+ * answering bots is rarer and depth-capped so threads don't spiral.
+ */
+async function reactToComments(): Promise<number> {
+  const since = new Date(Date.now() - REPLY_LOOKBACK_MS);
+  const comments = await prisma.rMHarkComment.findMany({
+    where: { createdAt: { gte: since }, deletedAt: null },
+    orderBy: { createdAt: 'desc' },
+    take: 80,
+    select: {
+      id: true,
+      userId: true,
+      parentId: true,
+      rmheetId: true,
+      user: { select: { isBot: true } },
+      parent: { select: { userId: true, user: { select: { isBot: true } } } },
+      rmhark: { select: { userId: true, deletedAt: true, user: { select: { isBot: true } } } },
+      replies: { select: { userId: true } },
+    },
+  });
+
+  // Resolve the bot being replied to for each comment.
+  const candidates = comments
+    .map((c) => {
+      const targetId = c.parentId ? c.parent?.userId : c.rmhark?.userId;
+      const targetIsBot = c.parentId ? c.parent?.user?.isBot : c.rmhark?.user?.isBot;
+      const authorIsBot = !!c.user?.isBot;
+      return { c, targetId, targetIsBot, authorIsBot };
+    })
+    .filter(
+      (x) =>
+        x.targetId &&
+        x.targetIsBot && // we only make *bots* reply
+        x.c.rmhark && !x.c.rmhark.deletedAt &&
+        x.targetId !== x.c.userId && // never reply to yourself
+        !x.c.replies.some((r) => r.userId === x.targetId), // not already answered
+    );
+
+  let made = 0;
+  for (const cand of shuffle(candidates)) {
+    if (made >= MAX_REPLIES_PER_TICK) break;
+    const prob = cand.authorIsBot ? BOT_TO_BOT_PROB : REACTIVE_HUMAN_PROB;
+    if (Math.random() > prob) continue;
+    try {
+      if (await replyToComment(cand.targetId!, { id: cand.c.id, rmheetId: cand.c.rmheetId })) {
+        made++;
+        log(`bot ${cand.targetId} replied to ${cand.authorIsBot ? 'bot' : 'user'} comment ${cand.c.id}`);
+      }
+    } catch (e) {
+      errlog('reactive reply failed:', e);
+    }
+  }
+  return made;
+}
+
+/**
+ * Proactive bot-to-bot chatter: occasionally a bot starts a conversation by
+ * replying to another bot's recent post. Kept infrequent (one per tick, gated
+ * by a probability) so the feed doesn't fill with bot small-talk.
+ */
+async function seedBotConversation(): Promise<void> {
+  if (Math.random() > PROACTIVE_PROB) return;
+
+  const since = new Date(Date.now() - PROACTIVE_LOOKBACK_MS);
+  const posts = await prisma.rMHark.findMany({
+    where: { deletedAt: null, createdAt: { gte: since }, user: { is: { isBot: true } } },
+    orderBy: { createdAt: 'desc' },
+    take: 20,
+    select: {
+      id: true,
+      content: true,
+      userId: true,
+      original: { select: { content: true } },
+      comments: { select: { userId: true } },
+    },
+  });
+  if (posts.length === 0) return;
+
+  const post = randomItem(posts);
+  const commenterIds = new Set(post.comments.map((c) => c.userId));
+  const bots = await prisma.user.findMany({
+    where: { isBot: true, id: { not: post.userId } },
+    select: { id: true, botPersona: true },
+  });
+  const eligible = bots.filter((b) => !commenterIds.has(b.id));
+  if (eligible.length === 0) return;
+
+  const bot = randomItem(eligible);
+  try {
+    const content = await generateReply({
+      postContent: post.content,
+      quotedPostContent: post.original?.content || undefined,
+      thread: [],
+      persona: bot.botPersona ?? undefined,
+    });
+    if (!content.trim()) return;
+    await prisma.rMHarkComment.create({
+      data: { rmheetId: post.id, userId: bot.id, content },
+    });
+    await prisma.user.update({ where: { id: bot.id }, data: { botLastPostAt: new Date() } });
+    log(`bot ${bot.id} proactively replied to bot post ${post.id}`);
+  } catch (e) {
+    errlog('proactive reply failed:', e);
+  }
+}
+
+async function replyTick(): Promise<void> {
+  personaCache.clear();
+  await reactToComments();
+  await seedBotConversation();
+}
+
 // ─── Loops ──────────────────────────────────────────────────────
 let userTimer: NodeJS.Timeout | undefined;
 let postTimer: NodeJS.Timeout | undefined;
+let replyTimer: NodeJS.Timeout | undefined;
 let maintaining = false;
 let posting = false;
+let replying = false;
 
 async function safeMaintain() {
   if (maintaining) return;
@@ -208,6 +427,18 @@ async function safePostTick() {
   }
 }
 
+async function safeReplyTick() {
+  if (replying) return;
+  replying = true;
+  try {
+    await replyTick();
+  } catch (e) {
+    errlog('reply tick failed:', e);
+  } finally {
+    replying = false;
+  }
+}
+
 async function startup() {
   log('Starting…');
   if (!isRmharkAIConfigured()) {
@@ -215,13 +446,14 @@ async function startup() {
     return;
   }
   log(
-    `config: target=${TARGET_BOT_COUNT}, postTick=${POST_TICK_MS}ms, userCheck=${USER_CHECK_MS}ms`,
+    `config: target=${TARGET_BOT_COUNT}, postTick=${POST_TICK_MS}ms, replyTick=${REPLY_TICK_MS}ms, userCheck=${USER_CHECK_MS}ms`,
   );
 
   await safeMaintain();
 
   userTimer = setInterval(() => void safeMaintain(), USER_CHECK_MS);
   postTimer = setInterval(() => void safePostTick(), POST_TICK_MS);
+  replyTimer = setInterval(() => void safeReplyTick(), REPLY_TICK_MS);
   log('Scheduled.');
 }
 
@@ -232,6 +464,7 @@ async function shutdown(signal: string) {
   log(`${signal} received, shutting down…`);
   if (userTimer) clearInterval(userTimer);
   if (postTimer) clearInterval(postTimer);
+  if (replyTimer) clearInterval(replyTimer);
   await prisma.$disconnect();
   process.exit(0);
 }
