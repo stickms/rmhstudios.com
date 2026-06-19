@@ -36,11 +36,19 @@ export function xiuxiangPlate(opts: { nameZh: string; nameEn: string; W?: number
   const W = opts.W ?? 800, H = opts.H ?? 1100;
   const cx = W / 2;
   // a minimal robed standing figure built from vector strokes
-  const figure = `<g fill="none" stroke="${INK}" stroke-width="3" stroke-linejoin="round" transform="translate(${cx} ${H * 0.3})">
-    <circle cx="0" cy="0" r="48" fill="${PAPER}"/>
-    <path d="M-70 60 Q0 20 70 60 L95 380 Q0 410 -95 380 Z" fill="${PAPER}"/>
-    <path d="M-70 90 L-150 230 M70 90 L150 230"/>
-    <path d="M-40 380 L-40 470 M40 380 L40 470"/>
+  // a robed standing figure (绣像) with hands clasped (拱手), built from flowing strokes
+  const s = 1.6;
+  const u = (n: number) => (n * s).toFixed(1);
+  const figure = `<g fill="none" stroke="${INK}" stroke-width="${2.4 * s}" stroke-linejoin="round" stroke-linecap="round" transform="translate(${cx} ${H * 0.12})">
+    <path d="M ${-u(12)} ${u(2)} q ${u(12)} ${-u(18)} ${u(24)} 0"/>
+    <ellipse cx="0" cy="${u(28)}" rx="${u(26)}" ry="${u(30)}" fill="${PAPER}"/>
+    <path d="M ${-u(20)} ${u(56)} Q 0 ${u(70)} ${u(20)} ${u(56)}"/>
+    <path d="M ${-u(22)} ${u(58)} C ${-u(70)} ${u(72)} ${-u(96)} ${u(150)} ${-u(86)} ${u(300)} C ${-u(80)} ${u(360)} ${-u(70)} ${u(390)} ${-u(60)} ${u(404)} Q 0 ${u(420)} ${u(60)} ${u(404)} C ${u(70)} ${u(390)} ${u(80)} ${u(360)} ${u(86)} ${u(300)} C ${u(96)} ${u(150)} ${u(70)} ${u(72)} ${u(22)} ${u(58)} Z" fill="${PAPER}"/>
+    <path d="M ${-u(58)} ${u(120)} C ${-u(96)} ${u(150)} ${-u(96)} ${u(210)} ${-u(46)} ${u(214)} L ${u(46)} ${u(214)} C ${u(96)} ${u(210)} ${u(96)} ${u(150)} ${u(58)} ${u(120)}"/>
+    <path d="M 0 ${u(72)} L 0 ${u(214)}"/>
+    <path d="M ${-u(40)} ${u(214)} Q 0 ${u(228)} ${u(40)} ${u(214)}"/>
+    <path d="M ${-u(30)} ${u(240)} q ${-u(6)} ${u(90)} ${-u(2)} ${u(150)}"/>
+    <path d="M ${u(30)} ${u(240)} q ${u(6)} ${u(90)} ${u(2)} ${u(150)}"/>
   </g>`;
   return page(W, H, `
     ${blockFrame(W, H)}

@@ -3,7 +3,7 @@ import type { Chapter, Passage, CoupletPassage } from './types';
 function isStr(x: unknown): x is string { return typeof x === 'string'; }
 function strArr(x: unknown): x is string[] { return Array.isArray(x) && x.every(isStr); }
 
-function validatePassage(p: any, i: number): Passage {
+function validatePassage(p: any, i: number | string): Passage {
   if (!p || typeof p !== 'object') throw new Error(`passage[${i}] not an object`);
   switch (p.type) {
     case 'heading':
@@ -31,7 +31,7 @@ export function validateChapter(c: unknown): Chapter {
   if (typeof ch.n !== 'number') throw new Error('chapter.n must be a number');
   if (!ch.title || !isStr(ch.title.zh) || !isStr(ch.title.en)) throw new Error('chapter.title needs zh/en');
   if (!ch.couplet || ch.couplet.type !== 'couplet') throw new Error('chapter.couplet missing');
-  validatePassage(ch.couplet as CoupletPassage, -1);
+  validatePassage(ch.couplet as CoupletPassage, 'couplet');
   if (!Array.isArray(ch.passages)) throw new Error('chapter.passages must be an array');
   ch.passages.forEach((p: unknown, i: number) => validatePassage(p, i));
   return ch as Chapter;

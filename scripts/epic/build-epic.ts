@@ -9,7 +9,7 @@ import { paginate } from './paginate';
 import type { LeafPair } from './render/types';
 import { blockFrame, columnRules } from './ornaments/frame';
 import { centerStrip } from './ornaments/center-strip';
-import { frontispiece, colophon } from './ornaments/plates';
+import { frontispiece, xiuxiangPlate, colophon } from './ornaments/plates';
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 
@@ -50,12 +50,19 @@ export async function buildEpic(opts: { manuscriptDir: string; outPdf: string; o
     .join('');
 
   const frontPlate = `<section class="leaf plate">${frontispiece({ titleZh: title.zh, titleEn: title.en, W, H })}</section>`;
+  // 绣像 figure-portrait gallery of the principal characters (classic woodblock-novel front matter).
+  // An EVEN number of plates keeps the front-matter page count odd (frontispiece + gallery),
+  // so the first Chinese leaf lands on an even page and stays on the left of each facing spread.
+  const galleryChars = bible.characters.slice(0, 2);
+  const galleryPlates = galleryChars
+    .map((c) => `<section class="leaf plate">${xiuxiangPlate({ nameZh: c.zh, nameEn: c.en, W, H })}</section>`)
+    .join('');
   const backPlate = `<section class="leaf plate">${colophon({ lines: ['歲在丙午', '夢餘堂刊', '頒行於世'], W, H })}</section>`;
 
   const css = readFileSync(join(__dir, 'render', 'epic.css'), 'utf8');
   const html = `<!doctype html><html lang="zh"><head><meta charset="utf-8"><title>${title.zh}</title>
     <style>${css}.leaf.plate{padding:0}.leaf.plate svg{display:block}</style></head>
-    <body>${frontPlate}${leafSections}${backPlate}</body></html>`;
+    <body>${frontPlate}${galleryPlates}${leafSections}${backPlate}</body></html>`;
 
   const browser = await chromium.launch();
   try {
@@ -72,8 +79,8 @@ export async function buildEpic(opts: { manuscriptDir: string; outPdf: string; o
     await browser.close();
   }
 
-  // pages = 2 plates + 2 per leaf
-  return { pages: leaves.length * 2 + 2 };
+  // pages = frontispiece + gallery plates + colophon + 2 per leaf
+  return { pages: leaves.length * 2 + 2 + galleryChars.length };
 }
 
 // CLI

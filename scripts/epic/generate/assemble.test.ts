@@ -10,7 +10,11 @@ test.runIf(existsSync(join(MS, 'ch01.json')))('all chapters validate and number 
   const files = readdirSync(MS).filter((f) => /^ch\d+\.json$/.test(f)).sort();
   expect(files.length).toBeGreaterThanOrEqual(9);
   const chapters = files.map((f) => validateChapter(JSON.parse(readFileSync(join(MS, f), 'utf8'))));
-  chapters.forEach((c, i) => expect(c.n).toBe(i + 1));
+  chapters.forEach((c, i) => {
+    expect(c.n).toBe(i + 1);
+    // each 回 carries enough passages to read as a chapter (matches CHAPTER_SCHEMA minItems)
+    expect(c.passages.length).toBeGreaterThanOrEqual(12);
+  });
 
   // enough Chinese text across the book to reach ~100 pages once paginated
   const totalZh = chapters.reduce(

@@ -43,16 +43,6 @@ body { background: #efe7d4; color: #1a1410; }
 .verse-line { display: block; margin: 0.1em 0; }
 .leaf.recto .verse-line { padding-left: 1.4em; text-indent: -1.4em; }
 
-/* 圈点 red emphasis: a small vermilion dot beside an anchored char (verso uses right side) */
-.emph { position: relative; }
-.emph::after {
-  content: "○"; color: #b03a2e; font-size: 0.5em;
-  position: absolute; right: -0.55em; top: 0;
-}
-.leaf.recto .emph { text-decoration: underline; text-decoration-color: #b03a2e; }
-
-/* 天头 (head-margin) red commentary */
+/* 脂批-style red commentary, set inline beside the passage it annotates */
 .red-note { color: #b03a2e; font-family: "Kaiti SC", STKaiti, serif; font-size: 14px; }
 .leaf.verso .red-note { writing-mode: vertical-rl; }
-.head-margin { position: absolute; left: 64px; right: 64px; top: 28px; height: 60px; overflow: hidden; }
-.leaf.verso .head-margin { writing-mode: vertical-rl; }
