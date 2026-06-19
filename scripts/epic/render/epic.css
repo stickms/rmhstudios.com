@@ -1,0 +1,48 @@
+@page { size: 800px 1100px; margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { background: #efe7d4; color: #1a1410; }
+
+.leaf {
+  position: relative;
+  width: 800px;
+  height: 1100px;
+  background: #efe7d4;
+  overflow: hidden;
+  page-break-after: always;
+  break-after: page;
+}
+.leaf .ornaments { position: absolute; inset: 0; pointer-events: none; }
+.leaf .textbox { position: absolute; left: 64px; top: 96px; right: 64px; bottom: 80px; }
+
+/* Chinese verso: vertical, right→left */
+.leaf.verso .textbox {
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  font-family: "Songti SC", STSong, serif;
+  font-size: 26px;
+  line-height: 1.9;          /* column gap */
+  letter-spacing: 2px;
+  text-align: justify;
+}
+.leaf.verso .heading { font-family: "Kaiti SC", STKaiti, serif; font-weight: 700; font-size: 30px; }
+.leaf.verso .couplet { font-family: "Kaiti SC", STKaiti, serif; font-size: 28px; }
+
+/* English recto: horizontal */
+.leaf.recto .textbox {
+  writing-mode: horizontal-tb;
+  font-family: Baskerville, Georgia, serif;
+  font-size: 17px;
+  line-height: 1.6;
+  text-align: justify;
+  hyphens: auto;
+}
+.leaf.recto .heading { font-weight: 700; font-variant: small-caps; letter-spacing: 1px; }
+.leaf.recto .couplet { font-style: italic; }
+
+.verse-line { display: block; margin: 0.1em 0; }
+.leaf.recto .verse-line { padding-left: 1.4em; text-indent: -1.4em; }
+
+/* 脂批-style red commentary, set inline beside the passage it annotates */
+.red-note { color: #b03a2e; font-family: "Kaiti SC", STKaiti, serif; font-size: 14px; }
+.leaf.verso .red-note { writing-mode: vertical-rl; }

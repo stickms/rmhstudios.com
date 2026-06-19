@@ -1,0 +1,185 @@
+{
+  "n": 10,
+  "title": {
+    "zh": "第十回 朱華傾頹 輓歌一夢",
+    "en": "Chapter 10: The Vermilion Garden Falls; the Elegy, a Single Dream"
+  },
+  "couplet": {
+    "type": "couplet",
+    "zh": ["朱華傾頹人未盡", "天命輓歌夢難終"],
+    "en": ["The Vermilion Garden falls yet none are finished", "The Elegy of the Mandate — the dream will not end"]
+  },
+  "passages": [
+    {
+      "type": "prose",
+      "zh": "卻說吳烈辭卻不死之水，踏上歸途，此去非昔日旌旗出征之路，乃一人一劍，寂然徐行。初時山道荒僻，草木猶帶兵燹之氣，焦土殘垣，入目皆是。然行過三日，地勢漸低，水聲漸聞，路旁忽見一株野梅，斜生於岩縫之中，枝條細如女子手腕，花卻開得極盛，白若積雪，香氣撲人。吳烈駐足良久，不知何故，眼眶微熱。他去時不曾留意此樹，此刻回望，方知天下間原有此等物事，靜靜存在，不為英雄而開，亦不為英雄而謝。",
+      "en": "So Wu Lie refused the Water of Undying and turned toward home. This road was not the road of banners and drums on which he had departed; he walked it alone, sword at his side, in unhurried silence. In the first days the mountain path was desolate, the trees and grass still bearing the smell of war-fire, scorched earth and broken walls meeting the eye at every turn. Yet after three days the terrain gradually descended, the sound of water became audible, and suddenly by the roadside he saw a wild plum tree growing aslant from a crack in the rock. Its branches were fine as a woman's wrist, yet its flowers bloomed with extraordinary fullness — white as accumulated snow, the fragrance striking him as he passed. Wu Lie stood still for a long while. He did not know why, but his eyes grew faintly warm. He had not noticed this tree when he went out. Looking back at it now, he understood for the first time that the world contained such things: existing quietly, blooming not for heroes, and fading not for heroes."
+    },
+    {
+      "type": "verse",
+      "zh": [
+        "去時不見梅一株，歸來方識白花孤。",
+        "征途殺氣蔽天眼，此花開落無人知。",
+        "岸上漁童垂釣坐，暮煙一縷起茅廬。",
+        "英雄眼底多血色，幾曾識得尋常居。"
+      ],
+      "en": [
+        "Going out he did not see this single plum; returning, he at last perceives the solitary white bloom.",
+        "The killing air of the campaign road had sealed his eyes to heaven — this flower opened and fell with no one to know.",
+        "On the bank a fishing child sits with his line; a thread of dusk smoke rises from a thatched dwelling.",
+        "A hero's eyes are so long filled with blood-colour — how many times has he ever perceived the ordinary dwelling?"
+      ]
+    },
+    {
+      "type": "prose",
+      "zh": "又行數日，漸近永邑地界。路旁農舍炊煙嫋嫋，黃昏時分一婦人倚門而望，手中握著尚未縫完的布鞋，神情悵然，顯是在等人。吳烈擦肩而過，二人目光相交一瞬，婦人眼中有一種吳烈看不懂、卻忽然懂得的東西。他想起璟同，想起璟同在朱華苑中以指尖輕觸朱槿的那個傍晚。那雙粗礪的手，比眼前婦人手中的布鞋更不懂得柔軟，卻也是以同樣茫然的善意，試著去摸索這個世界中他所不識的溫柔。吳烈腳步一緩，然而他終於沒有停下，只是低了低頭，繼續往前走去。",
+      "en": "After several more days he drew near the territory of Yong. By the roadside a farmhouse trailed cooking smoke into the air; at dusk a woman leaned against the doorframe looking out, holding in her hands a cloth shoe not yet finished, her expression distant — clearly waiting for someone. Wu Lie passed close by her; their gazes crossed for one instant. In the woman's eyes there was something Wu Lie could not read, yet suddenly understood. He thought of Jing Tong — of the evening in the Vermilion Garden when Jing Tong touched a red hibiscus with his fingertip. Those rough, coarse hands knew even less of softness than the cloth shoe in this woman's hands, and yet they reached toward what was tender in the world with the same bewildered goodwill, trying to feel their way. Wu Lie's steps slowed. Yet in the end he did not stop; he only lowered his head slightly and walked on.",
+      "redComment": [
+        {
+          "anchor": "同樣茫然的善意",
+          "zh": "此「茫然」二字，批者以為全書璟同之寫照。璟同非不仁，乃不解仁為何物而仁者也。吳烈至此方悟，悟時人已不在，此世間最痛之遲。",
+          "en": "'Bewildered goodwill' — the commentator takes these words as the portrait of Jing Tong throughout the entire book. Jing Tong was not without humanity; he was humane without knowing what humanity was. Wu Lie only understands this now, when the person is already gone. This is the world's most agonising lateness."
+        }
+      ]
+    },
+    {
+      "type": "prose",
+      "zh": "永邑城門入目之時，吳烈立於官道之上，凝視良久。城牆較昔日低矮了——非城牆真有傾頹，乃他目光已改。昔日出征，城牆在他眼中乃天下之固，萬夫之障；今日歸來，不過是一堵舊石牆，縫隙間生著雜草，城頭旗幟褪色，守卒倚矛而立，神情疲憊。入城之後，所見更非昔日氣象：東市門可羅雀，幾家鋪面已然關門，牌匾積塵；舊日熱鬧的酒肆，如今窗紙破洞，隱隱飄出酸腐之味。有老者坐於階前，見吳烈過，拱手曰：「主公回矣。」語氣平淡，如道一句尋常天氣，並無驚喜，亦無怨怒。",
+      "en": "When the gates of Yong came into view, Wu Lie stood on the main road and gazed for a long while. The walls looked lower than before — not that the walls had truly fallen, but that his eyes had changed. When he set out on campaign, those walls had seemed to him the firmness of the world, the barrier of ten thousand men; returning now, they were merely an old stone wall with weeds growing in the cracks, banners faded at the battlements, guards leaning on their spears with exhausted faces. Once inside the city, what he saw was far from the sight of former days: the Eastern Market was all but deserted, several storefronts had already closed, their plaques thick with dust; the lively wine-house of old now had torn paper in its windows, giving off a faint smell of sourness and rot. An old man sat on a doorstep; seeing Wu Lie pass, he raised his hands in salute and said: 'My lord has returned.' His tone was flat — the way one remarks on ordinary weather — with neither surprise nor resentment."
+    },
+    {
+      "type": "prose",
+      "zh": "府中情形，昭明早已差人稟報過大略，然親眼所見，又是另一番滋味。長子陣亡於第三年之戰，次子失蹤於渡河之役，老父自吳烈出征後不久便卧病，輾轉兩載，於去冬辭世，入土時連送葬的族人都湊不齊。府中侍從散去大半，廊柱之漆已見龜裂，院中花草無人修剪，野蔓悄悄爬上了牆角。偏廳之中，吳烈昔日懸掛地圖的牆面如今只餘幾個釘孔，地圖早已不知去向。昭明獨自坐於廳中，見吳烈入，緩緩起身，二人相對，皆未言語，只是站了很長時間。",
+      "en": "Zhao Ming had long since sent word ahead of the general situation in the manor, yet seeing it with his own eyes was another flavour entirely. The eldest son had died in battle in the third year of the war; the second son had vanished in the river-crossing campaign; the old patriarch had fallen ill not long after Wu Lie's departure, lingered two difficult years, and passed away last winter — at his burial they could not even gather enough clan members for a proper funeral procession. More than half the household servants had dispersed; the lacquer on the corridor pillars had begun to crack and peel; the flowers and plants in the courtyard had no one to trim them, and wild vines had crept quietly up the corners of the walls. In the side hall where Wu Lie had once hung his campaign maps, nothing remained but a few nail-holes — the maps had long since disappeared, no one knew where. Zhao Ming sat alone in the hall. When he saw Wu Lie enter, he rose slowly. The two men faced each other, neither speaking, standing thus for a very long time."
+    },
+    {
+      "type": "verse",
+      "zh": [
+        "廊柱龜裂漆半脫，庭草無人委露華。",
+        "昔年地圖今何在，牆上唯餘幾釘疤。",
+        "昭明白鬢添三縷，吳烈鐵面現風沙。",
+        "二人相對無一語，秋風替道別離話。"
+      ],
+      "en": [
+        "The corridor pillars crack, their lacquer half-peeled away; the courtyard grass, untended, is weighed down with dew.",
+        "The campaign maps of former years — where are they now? On the wall nothing remains but the scars of nails.",
+        "Three more strands of white have appeared at Zhao Ming's temples; Wu Lie's iron face shows the wind and sand of years.",
+        "The two men face each other with not a single word; the autumn wind speaks in their stead the words of parting."
+      ]
+    },
+    {
+      "type": "prose",
+      "zh": "天命璽之事，昭明早有安排。霧胤竊璽之後，昭明暗中遣人追蹤，費時三載，輾轉尋回，彼時霧胤已死於亂軍之中，璽落於一廢棄宗廟的神龕之後，蒙塵已深。歸璽之典，設於府中正堂，昭明邀本地耆老數人觀禮，其餘並無鋪張。吳烈雙手接過玉璽，不如想象中之沉，亦不如想象中之輕，只是一塊玉，幽黑而冷，如同握著一個已經說完的故事。眾人皆肅然，然無人歡呼，無人落淚，唯昭明低頭看著玉璽良久，輕聲曰：「刻紋似乎淡了。」吳烈俯首細看，果見璽面山河之紋，昔年聽聞時說是清晰如刀刻，如今卻朦朧若霧中遠山，細辨之下，方能隱約識得。",
+      "en": "Regarding the Jade Seal of Heaven's Mandate, Zhao Ming had made arrangements long before. After Wu Yin stole the Seal, Zhao Ming had quietly dispatched men to track it; it had taken three years of circuitous pursuit to recover it. By then Wu Yin had died in the chaos of battle, and the Seal had come to rest behind the shrine niche of an abandoned ancestral temple, buried deep in dust. The ceremony of the Seal's return was held in the main hall of the manor; Zhao Ming invited a few of the local elders to observe, and there was no further ostentation. Wu Lie received the jade seal in both hands. It was not as heavy as he had imagined, nor as light. It was simply a piece of jade — dim black and cold — as though he were holding a story that had already been told to its conclusion. Everyone present fell into reverent silence, yet no one cheered and no one wept. Only Zhao Ming bowed his head and studied the Seal for a long while, then said softly: 'The inscribed pattern seems to have faded.' Wu Lie leaned close and looked carefully. Indeed — the mountain-and-river engraving on the Seal's face, which had once been described as clear as knife-cut lines, now appeared hazy as distant peaks in fog. Only by fine scrutiny could one make out the pattern at all.",
+      "redComment": [
+        {
+          "anchor": "天命，本是讀之之事",
+          "zh": "璽紋淡矣而天命猶在，是謂天命從來非物，乃讀物者所賦也。作者於此借昭明一語，藏全書之哲——璽存而紋滅，人在而義散，此非悲劇，乃天地之常。批者至此，不知哭笑。",
+          "en": "The seal's inscription fades yet the Mandate endures — meaning that the Mandate was never the object itself, but what those who read it chose to confer. The author hides the philosophy of the whole book in a single sentence of Zhao Ming's: the seal remains but the pattern is gone, the person survives but the meaning has dispersed. This is not tragedy — it is the ordinary condition of heaven and earth. The commentator, arriving here, cannot say whether to weep or laugh."
+        }
+      ]
+    },
+    {
+      "type": "prose",
+      "zh": "昭明沉默片刻，方曰：「天命，本是讀之之事。」吳烈將玉璽放回錦盒之中，錦盒蓋下，室中忽然安靜得像一口廢井。耆老們陸續告辭，腳步聲漸遠。昭明看著吳烈，臉上有一種吳烈從未在他臉上見過的神情——非悲，非喜，乃是一種已看透而仍然不語的默然，如同一棵在深秋中獨自落葉的老樹，知道春天或許還會來，卻不再為此振奮。二人又對坐了一個時辰，未曾燃燈，暮色漸深，堂中唯餘兩個輪廓，相對而坐，如兩座空山。",
+      "en": "Zhao Ming was silent for a moment, then said: 'The Mandate of Heaven has always been, in the end, a matter of reading.' Wu Lie set the jade seal back into its brocade box. When the lid came down, the room fell suddenly quiet as an abandoned well. The elders took their leave one by one, their footsteps growing distant. Zhao Ming looked at Wu Lie, and on his face was an expression Wu Lie had never seen there before — neither grief nor joy, but a kind of silent composure that had seen through everything and still declined to speak, like an old tree in deep autumn shedding its leaves alone, knowing that spring might come again yet no longer stirred by the thought. The two men sat facing each other for another hour without lighting a lamp. The dusk deepened. In the hall there remained only two silhouettes, seated facing each other, like two empty mountains."
+    },
+    {
+      "type": "prose",
+      "zh": "次日清晨，吳烈獨往朱華苑。苑門半開，推門而入，庭中景象令他立足：荷池尚在，然荷葉已殘，焦黃蜷縮，漂於水面，如舊日書信泡於墨中。竹徑兩側竹竿枯黃者居半，然仍有新篁幾竿，細而挺直，在晨霧中隱隱發青。菊圃中尚有殘菊三五朵，此時已是深秋，它們開得遲，卻也因此尚未謝盡，淡黃色的花瓣在寒露中微微顫動。最觸動吳烈的，是那株古梅。三百年的老樹，幹若虯龍，此刻樹葉盡脫，每一根枝條都清晰可見，枯褐交錯，然枝梢之上，分明已有花苞，細如芥子，緊緊閉合，蓄而待放。吳烈伸手，以指腹輕觸其中一粒，冰涼，堅實，尚未開放，卻已然在此。",
+      "en": "The next morning, Wu Lie went alone to the Vermilion Garden. The garden gate stood half-open; he pushed through and entered. The scene in the courtyard stopped his feet: the lotus pond remained, but the lotus leaves had withered, scorched yellow and curled, floating on the surface like old letters soaked in ink. Along the bamboo path, half the stalks had yellowed and died, yet a few new canes grew among them, slender and upright, showing a faint tinge of green in the morning mist. In the chrysanthemum beds three or four late blooms still persisted; it was deep autumn, and they had opened late, and so had not yet fully faded — pale-yellow petals trembling slightly in the cold dew. What moved Wu Lie most was the ancient plum tree. Three hundred years old, its trunk twisted like a coiling dragon: now every leaf had fallen, every branch stood clear and visible, a crossing of dry brown; yet at the tips of the branches, unmistakably, flower buds had already formed — fine as mustard seeds, tightly shut, gathering themselves, waiting to open. Wu Lie reached out and touched one with the pad of his finger. Cold. Solid. Not yet open — yet already here."
+    },
+    {
+      "type": "verse",
+      "zh": [
+        "荷池殘葉浮秋水，竹徑新篁映曉霧。",
+        "殘菊三朵寒露顫，古梅枝頭蓄未吐。",
+        "英雄以指觸花苞，冷而未開已在處。",
+        "此苑傾頹非傾頹，含苞之意尚如故。"
+      ],
+      "en": [
+        "Remnant lotus leaves float on the autumn pond; new bamboo along the path catches the morning mist.",
+        "Three late chrysanthemums tremble in the cold dew; at the ancient plum's branch-tips, buds gather and wait.",
+        "The hero touches a bud with one finger — cold, not yet open, and already here.",
+        "This garden falls yet does not fall; the intent of gathered buds remains as it always was."
+      ]
+    },
+    {
+      "type": "prose",
+      "zh": "苑深處有一閣，名曰「聽雨閣」，吳烈昔年甚少至此，今日循小徑而入，見閣門虛掩，輕叩，有聲自內應曰：「請進。」推門而見，雲素華端坐案前，案上鋪陳書冊，筆墨俱在，猶如往日一般，唯她面色較昔更為蒼白，眉間隱有憔悴之色，咳疾未愈，以帕掩口，咳罷，方起身行禮。吳烈見狀，攬她重坐，自己於對面坐下，兩人相對。屋外柿樹一株，秋深葉落，唯剩橘紅柿子掛於枝頭，燦若燈盞，透過窗欞投下暖色的光影。吳烈看著她案上那些厚厚的書冊，沉默了半晌，開口道：「告訴我，我不在時，都發生了什麼事。」",
+      "en": "Deep in the garden was a pavilion called the Rain-Listening Pavilion. Wu Lie had rarely come here in former years; today he followed the small path to it and found the door standing ajar. He knocked lightly; a voice answered from within: 'Please enter.' He pushed the door open and saw Yun Suhua seated upright at her writing desk, the desk spread with ledgers and books, brush and ink all in place — just as in former days — except that her complexion was paler than before, with a look of weariness in her brow. Her consumptive cough had not healed; she covered her mouth with a handkerchief, and when the coughing passed she rose to offer her greeting. Seeing this, Wu Lie ushered her back to her seat and sat down himself on the opposite side. The two of them faced each other. Outside the window stood a persimmon tree; deep autumn, its leaves fallen, leaving only orange-red persimmons hanging at the branch-tips, bright as lanterns, casting warm-coloured light and shadow through the lattice. Wu Lie looked at those thick ledgers stacked on her desk, was silent for a long moment, then opened his mouth and said: 'Tell me everything that happened while I was gone.'"
+    },
+    {
+      "type": "prose",
+      "zh": "雲素華聞言，以手撫書冊，低首片刻，抬眼望向吳烈。她說：「主公，這些書冊，所記皆是您離去之後苑中諸事，然而——」她頓了一頓，「其實不止苑中。我記下了璟同兄弟的死訊傳至苑中的那個下午，苑中如何忽然靜了。我記下了昭明先生每次入苑、於古梅樹下獨坐多久、何時起身、臉上是何神色。我記下了玉璽失蹤之夜，柿樹上的熟柿無故跌落了七枚，聲音悶響，一夜不停。我記下了每一場雨，每一次花開花謝，每一個沒有回來的人的名字，只要我知道的。」她說到此處，聲音細如蠶絲，又頓了很長一頓，方續道：「主公，我不知道這算不算一部書，也不知道有誰會讀它。我只是不願意讓這一切，死得太乾淨。」",
+      "en": "Hearing this, Yun Suhua laid her hand on the ledgers and bowed her head for a moment, then raised her eyes to look at Wu Lie. She said: 'My lord, these ledgers record the affairs of the garden after your departure — yet —' She paused. 'In truth, they record more than the garden. I wrote down the afternoon the news of sworn-brother Jing Tong's death reached the garden — how the garden suddenly fell quiet. I wrote down each time Zhao Ming entered the garden, how long he sat alone under the ancient plum, when he rose, what expression was on his face when he did. I wrote down the night the Jade Seal went missing — how seven ripe persimmons fell from the tree for no reason, making a muffled sound throughout the night without stopping. I wrote down every rain, every time a flower opened or fell, and the name of every person who did not come back — every name I knew.' Her voice by now was as fine as a silkworm's thread. After a very long pause, she continued: 'My lord, I do not know whether this counts as a book, nor whether anyone will ever read it. I only could not bear for all of this to die too cleanly.'",
+      "redComment": [
+        {
+          "anchor": "不願意讓這一切死得太乾淨",
+          "zh": "此一語，乃全書之鑰，亦批者之所以批書之緣也。英雄死而輓歌存，輓歌存而英雄未死，此素華之大志，非兒女私情，乃以一身之病軀，擔天下之記憶。讀者至此，可知全書實為素華所著，吾輩不過後來之讀者耳。謹此一拜，送諸君離書。",
+          "en": "This single utterance is the key to the entire book, and the reason the commentator has written these notes at all. Heroes die and the elegy survives; while the elegy survives, the heroes have not died. This is Suhua's great ambition — not a woman's private sentiment, but the bearing, in one ailing body, of the world's memory. Readers who arrive here may now understand that the whole book was written by Suhua, and we are nothing but the later readers. With this, I bow once — and bid you farewell from the book."
+        }
+      ]
+    },
+    {
+      "type": "prose",
+      "zh": "吳烈聽完，久久無言。窗外柿樹的光影移了又移，日色漸斜。他終於開口，聲音沙啞，非哭，然似哭：「那麼，璟同——在你書中，他是怎樣的？」雲素華略一沉吟，翻開一冊，找到某頁，輕輕唸道：「璟同兄弟，入苑凡十七次，每次必至古梅樹下，以手撫幹，停留少則片刻，多則半個時辰。問其何故，答曰：『此樹比我年長二百歲，它見過的事，我不懂；然它見過，即是見過了。』」她唸完，合上書，望著吳烈。吳烈低頭，以手背遮臉，許久，抬頭，眼眶微紅，笑了一笑，說：「是他說的話。」二人皆不再說什麼，唯聽柿樹的葉子在風中細細作聲，如竊竊私語，說著他們說不出口的話。",
+      "en": "Wu Lie listened until she finished, and then was silent for a long time. The light and shadow from the persimmon tree outside the window shifted and shifted; the sun's angle grew lower. At last he spoke, his voice rough — not weeping, yet resembling it: 'Then Jing Tong — in your book, what is he like?' Yun Suhua considered for a moment, opened a ledger, found a certain page, and read softly: 'Sworn-brother Jing Tong visited the garden on seventeen occasions; each time he invariably went to the ancient plum tree and placed his hand upon the trunk, remaining there anywhere from a brief moment to half an hour. When asked why, he answered: 「This tree is two hundred years my elder; the things it has seen, I do not understand — yet it has seen them, and that means they have been seen.」' She finished reading, closed the book, and looked at Wu Lie. Wu Lie bowed his head and covered his face with the back of his hand. After a long time, he raised his head; his eyes were faintly red. He smiled and said: 'Those are his words.' Neither of them spoke anything further. They only listened to the leaves of the persimmon tree making a fine sound in the wind — like whispered confidences, saying the things they could not say aloud."
+    },
+    {
+      "type": "verse",
+      "zh": [
+        "柿燈照窗光自暖，素華病骨執筆端。",
+        "天命璽紋朦朧矣，朱華苑草蔓生寒。",
+        "英雄去路無回頭，書冊留痕是別岸。",
+        "一樹古梅蓄未吐，春來或開或不還。"
+      ],
+      "en": [
+        "Persimmon lanterns warm the window from without; Suhua's ailing hand holds the brush upright.",
+        "The Mandate Seal's inscription has grown hazy; the Vermilion Garden's grass spreads cold and untended.",
+        "The hero's road out admits no turning back; the traces in the ledger are the other shore.",
+        "An ancient plum gathers its buds, not yet open — when spring comes, it may bloom, or may not return."
+      ]
+    },
+    {
+      "type": "prose",
+      "zh": "自此，吳烈不再問天下事，亦不再問兵戈之事，唯間或入朱華苑，與雲素華同坐，或聽她讀舊冊，或二人同在古梅樹下，各自無言。昭明仍在府中料理舊務，白髮漸多，然目光猶清，偶爾談及時局，語氣平靜如談天氣，似乎一切皆在意料之內，又似乎一切皆在意料之外。天命璽安置於庫中，無人議及再用，亦無人議及銷毀，唯任其靜靜存在，如一個已無人記得起源的習俗，因慣性而延續。永邑城漸漸在廢墟之上生長出某種新的秩序，緩慢，粗糙，然活著。雲素華的書冊日益增厚，咳疾卻也日益深重，她從不提及此事，吳烈亦從不問，二人皆知，書冊寫完之日，或許便是她的離去之時，然此事既非她所悲，亦非他所懼，乃天地間事，如古梅花開花落，自有其時。",
+      "en": "From that time forward, Wu Lie no longer asked about affairs under heaven, nor about matters of weapons and war. He would enter the Vermilion Garden from time to time, sit together with Yun Suhua, either listening to her read from the old ledgers or sitting together beneath the ancient plum tree, each in their own silence. Zhao Ming remained in the manor managing old affairs; his white hair continued to spread, yet his eyes remained clear. When he occasionally spoke of the current situation, his tone was as calm as if discussing the weather — as though everything had been within expectation, and as though nothing had been. The Jade Seal was placed in the treasury; no one discussed using it again, nor did anyone discuss destroying it; it was simply allowed to exist quietly, like a custom whose origin no one remembered any longer, continuing by force of habit. The city of Yong slowly grew a new kind of order from its ruins — slow, rough, yet alive. Yun Suhua's ledgers grew thicker by the day, and her consumptive illness grew deeper by the day; she never mentioned this, and Wu Lie never asked. Both knew: the day the ledgers were completed would perhaps be the day of her departure. Yet this was neither her sorrow nor his fear; it was a matter of heaven and earth — like the ancient plum tree blooming and shedding its blossoms, each at its appointed time."
+    },
+    {
+      "type": "verse",
+      "zh": [
+        "問曰：天命屬誰手？",
+        "答曰：璽紋已朦朧，天下難分曉。",
+        "問曰：璟同今何在？",
+        "答曰：書冊留其名，古梅記其好。",
+        "問曰：輓歌為誰唱？",
+        "答曰：素華執筆端，吳烈聽至老。",
+        "萬古大河東流去，英雄掩面各傷悼。",
+        "天命輓歌一夢醒，朱華苑中秋意早。",
+        "昭明白首問星河，璟同野魂入草道。",
+        "霧胤骸骨化黃塵，玉璽紋跡誰能考。",
+        "萬古大河東流去，英雄掩面各傷悼。",
+        "素華合卷燈漸滅，此書從此無後稿。",
+        "天命輓歌即此夢，夢中諸人皆草草。",
+        "萬古大河東流去，英雄掩面各傷悼。"
+      ],
+      "en": [
+        "One asks: in whose hand does Heaven's Mandate rest?",
+        "The answer: the seal's inscription has grown hazy; the realm is hard to read.",
+        "One asks: where is Jing Tong now?",
+        "The answer: the ledger preserves his name; the ancient plum remembers what he loved.",
+        "One asks: for whom is the elegy sung?",
+        "The answer: Suhua holds the brush upright; Wu Lie listens until he grows old.",
+        "Ten thousand ages the great river flows eastward; heroes cover their faces and grieve, each alone.",
+        "The Elegy of the Mandate — a single dream — one wakes; in the Vermilion Garden, autumn comes early.",
+        "Zhao Ming, white-haired, questions the river of stars; Jing Tong's wild soul enters the grass-path.",
+        "Wu Yin's bones have turned to yellow dust; who can now study the jade seal's traced pattern?",
+        "Ten thousand ages the great river flows eastward; heroes cover their faces and grieve, each alone.",
+        "Suhua closes the final ledger; the lamp grows dim; from this moment the book has no further draft.",
+        "The Elegy of the Mandate is this very dream; within the dream all persons pass like grass.",
+        "Ten thousand ages the great river flows eastward; heroes cover their faces and grieve, each alone."
+      ]
+    }
+  ]
+}
