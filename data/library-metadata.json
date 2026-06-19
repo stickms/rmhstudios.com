@@ -1,0 +1,110 @@
+{
+  "Wu Thirteen Minutes Thesis.pdf": {
+    "title": "The Impossibility of Alex Wu's Thirteen-Minute Reading Claim",
+    "description": "A rigorous multidisciplinary thesis debunking the claim that Alex Wu read a 2.5-million-word document in 13 minutes, using optics, neurophysiology, and information theory.",
+    "pages": 190,
+    "cover": "Wu Thirteen Minutes Thesis.jpg"
+  },
+  "everything-platform-1000.pdf": {
+    "title": "The Everything Platform Master Plan",
+    "description": "A 24-month master plan to build a unified workspace for code and creative work, operating on a disciplined $200 budget.",
+    "pages": 1023,
+    "cover": "everything-platform-1000.jpg"
+  },
+  "everything-platform-daily-bible.pdf": {
+    "title": "The Everything Platform: Daily Startup Bible",
+    "description": "An internal startup bible detailing mission, squad roles, and quarterly milestones to build a platform that becomes the default OS for its vertical by 2030.",
+    "pages": 1467,
+    "cover": "everything-platform-daily-bible.jpg"
+  },
+  "everything-platform-holy-scriptures.pdf": {
+    "title": "The Holy Scriptures of the Everything Platform",
+    "description": "A satirical scripture chronicling the founding, calling, rules, pilgrimage, and prophecy of the Everything Platform, written in biblical style for the faithful only.",
+    "pages": 17,
+    "cover": "everything-platform-holy-scriptures.jpg"
+  },
+  "everything-platform-startup-book.pdf": {
+    "title": "The Everything Platform: Company Overview",
+    "description": "An AI-native operating system that runs the work of a business and reshapes itself for any industry, detailed in this confidential company document.",
+    "pages": 14,
+    "cover": "everything-platform-startup-book.jpg"
+  },
+  "everything-platform.pdf": {
+    "title": "The Everything Platform: RMH Studios' Product Blueprint",
+    "description": "A single-source-of-truth product plan detailing why, what, how, and when for RMH Studios' first platform, built on a disciplined $200 budget.",
+    "pages": 154,
+    "cover": "everything-platform.jpg"
+  },
+  "everything_platform_build_plan-1.pdf": {
+    "title": "The Everything Platform: RMH Studios Vertical SaaS Build Plan",
+    "description": "A comprehensive 48-month day-by-day internal plan for building an opinionated, consolidated vertical SaaS platform for RMH Studios.",
+    "pages": 10896,
+    "cover": "everything_platform_build_plan-1.jpg"
+  },
+  "everything_platform_build_plan.pdf": {
+    "title": "Everything Platform Vertical SaaS Build Plan",
+    "description": "A comprehensive 48-month day-by-day internal build plan for RMH Studios' consolidated vertical SaaS platform, covering architecture, workstreams, and milestones.",
+    "pages": 10896,
+    "cover": "everything_platform_build_plan.jpg"
+  },
+  "everything_platform_minute_vol1.pdf": {
+    "title": "The Everything Platform: Minute-by-Minute Build Plan",
+    "description": "A confidential internal minute-by-minute plan for building a vertical SaaS platform over 48 months, detailing scheduled work and on-call automation.",
+    "pages": 175682,
+    "cover": "everything_platform_minute_vol1.jpg"
+  },
+  "everything_platform_minute_vol2.pdf": {
+    "title": "Everything Platform Minute Log: Volume 2",
+    "description": "A minute-by-minute operational log documenting system status, automated jobs, and monitoring activity during Phase 1 of the Everything Platform.",
+    "pages": 175680,
+    "cover": "everything_platform_minute_vol2.jpg"
+  },
+  "everything_platform_minute_vol3.pdf": {
+    "title": "Everything Platform Minute Log: Volume 3",
+    "description": "A minute-by-minute record of system status, automated jobs, and monitoring activities during Phase 2 operations on November 1, 2027.",
+    "pages": 175680,
+    "cover": "everything_platform_minute_vol3.jpg"
+  },
+  "everything_platform_minute_vol4.pdf": {
+    "title": "Everything Platform Minute: Phase 3 On-Call Log",
+    "description": "A minute-by-minute record of system monitoring during Phase 3, capturing nominal status, automated jobs, and action logs with timestamps.",
+    "pages": 175680,
+    "cover": "everything_platform_minute_vol4.jpg"
+  },
+  "everything_platform_minute_vol5.pdf": {
+    "title": "Everything Platform Minute, Vol. 5",
+    "description": "A minute-by-minute operational log from March 3, 2029, documenting system status and on-call actions for Phase 4 of the Everything Platform.",
+    "pages": 175680,
+    "cover": "everything_platform_minute_vol5.jpg"
+  },
+  "everything_platform_minute_vol6.pdf": {
+    "title": "Everything Platform Minute Vol. 6: On-Call Log",
+    "description": "A minute-by-minute operational log for the Everything Platform Phase 5, documenting system statuses and automated job runs.",
+    "pages": 173521,
+    "cover": "everything_platform_minute_vol6.jpg"
+  },
+  "kitab-al-alim-al-musaid.pdf": {
+    "title": "Kitab Al-'Alim Al-Musa'id: The Book of the Supporting Scholar",
+    "description": "A profound Arabic treatise on scientific reproducibility, data integrity, and the design of a trustworthy computational assistant for research.",
+    "pages": 8,
+    "cover": "kitab-al-alim-al-musaid.jpg"
+  },
+  "rmhstudios-go-migration.pdf": {
+    "title": "Migrating rmhstudios.com to Go Microservices",
+    "description": "A complete design, implementation, and verification record for the Go rewrite of the realtime and worker tier, with honest caveats and testing results.",
+    "pages": 128,
+    "cover": "rmhstudios-go-migration.jpg"
+  },
+  "rmhtech-the-co-scientist-thesis-1.pdf": {
+    "title": "The Co-Scientist Thesis: AI for Biology",
+    "description": "The complete strategic and technical master specification for an AI co-scientist built on a reproducibility substrate to solve the biomedical research crisis.",
+    "pages": 3365,
+    "cover": "rmhtech-the-co-scientist-thesis-1.jpg"
+  },
+  "rmhtech-the-co-scientist-thesis.pdf": {
+    "title": "The Co-Scientist Thesis",
+    "description": "A founding master specification for an AI co-scientist for biology, built on a reproducibility substrate to transform biomedical research.",
+    "pages": 3365,
+    "cover": "rmhtech-the-co-scientist-thesis.jpg"
+  }
+}

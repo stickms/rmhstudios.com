@@ -81,9 +81,14 @@ function Home() {
           </div>
         </div>
 
-        <Link to="/v" className="vibe-ghost-link vibe-rise-soft mt-8">
-          Browse pages →
-        </Link>
+        <div className="vibe-rise-soft mt-8 flex flex-col items-center gap-2">
+          <Link to="/v" className="vibe-ghost-link">
+            Browse pages →
+          </Link>
+          <Link to="/library" className="vibe-ghost-link">
+            Library →
+          </Link>
+        </div>
       </div>
     </main>
   );

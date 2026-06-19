@@ -51,6 +51,7 @@ import { Route as RmhstudyIndexRouteImport } from './routes/rmhstudy/index'
 import { Route as RmhmusicIndexRouteImport } from './routes/rmhmusic/index'
 import { Route as RmhcodeIndexRouteImport } from './routes/rmhcode/index'
 import { Route as RmhboxIndexRouteImport } from './routes/rmhbox/index'
+import { Route as LibraryIndexRouteImport } from './routes/library.index'
 import { Route as KowloonKnockoutIndexRouteImport } from './routes/kowloon-knockout/index'
 import { Route as ForestExplorerIndexRouteImport } from './routes/forest-explorer/index'
 import { Route as DailyIndexRouteImport } from './routes/daily/index'
@@ -80,6 +81,7 @@ import { Route as RmhcodeAuthRouteImport } from './routes/rmhcode/auth'
 import { Route as RmhboxLobbyIdRouteImport } from './routes/rmhbox/$lobbyId'
 import { Route as ResearchSlugRouteImport } from './routes/research.$slug'
 import { Route as NewsSlugRouteImport } from './routes/news.$slug'
+import { Route as LibrarySlugRouteImport } from './routes/library.$slug'
 import { Route as ForestExplorerStoryRouteImport } from './routes/forest-explorer/story'
 import { Route as ForestExplorerExploreRouteImport } from './routes/forest-explorer/explore'
 import { Route as DiscordRmhboxRouteImport } from './routes/discord/rmhbox'
@@ -136,6 +138,7 @@ import { Route as SecretJobsIdRouteImport } from './routes/secret/jobs/$id'
 import { Route as ApiVoidBreakerScoreRouteImport } from './routes/api/void-breaker/score'
 import { Route as ApiVoidBreakerLeaderboardRouteImport } from './routes/api/void-breaker/leaderboard'
 import { Route as ApiVibeStreamRouteImport } from './routes/api/vibe/stream'
+import { Route as ApiVibeAiRouteImport } from './routes/api/vibe/ai'
 import { Route as ApiVersecraftSaveRouteImport } from './routes/api/versecraft/save'
 import { Route as ApiVersecraftProgressRouteImport } from './routes/api/versecraft/progress'
 import { Route as ApiVegaScoreRouteImport } from './routes/api/vega/score'
@@ -480,6 +483,11 @@ const RmhboxIndexRoute = RmhboxIndexRouteImport.update({
   path: '/',
   getParentRoute: () => RmhboxRoute,
 } as any)
+const LibraryIndexRoute = LibraryIndexRouteImport.update({
+  id: '/library/',
+  path: '/library/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const KowloonKnockoutIndexRoute = KowloonKnockoutIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -623,6 +631,11 @@ const ResearchSlugRoute = ResearchSlugRouteImport.update({
 const NewsSlugRoute = NewsSlugRouteImport.update({
   id: '/news/$slug',
   path: '/news/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LibrarySlugRoute = LibrarySlugRouteImport.update({
+  id: '/library/$slug',
+  path: '/library/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForestExplorerStoryRoute = ForestExplorerStoryRouteImport.update({
@@ -911,6 +924,11 @@ const ApiVoidBreakerLeaderboardRoute =
 const ApiVibeStreamRoute = ApiVibeStreamRouteImport.update({
   id: '/api/vibe/stream',
   path: '/api/vibe/stream',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiVibeAiRoute = ApiVibeAiRouteImport.update({
+  id: '/api/vibe/ai',
+  path: '/api/vibe/ai',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiVersecraftSaveRoute = ApiVersecraftSaveRouteImport.update({
@@ -1676,6 +1694,7 @@ export interface FileRoutesByFullPath {
   '/discord/rmhbox': typeof DiscordRmhboxRoute
   '/forest-explorer/explore': typeof ForestExplorerExploreRoute
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
+  '/library/$slug': typeof LibrarySlugRoute
   '/news/$slug': typeof NewsSlugRoute
   '/research/$slug': typeof ResearchSlugRoute
   '/rmhbox/$lobbyId': typeof RmhboxLobbyIdRoute
@@ -1705,6 +1724,7 @@ export interface FileRoutesByFullPath {
   '/daily/': typeof DailyIndexRoute
   '/forest-explorer/': typeof ForestExplorerIndexRoute
   '/kowloon-knockout/': typeof KowloonKnockoutIndexRoute
+  '/library/': typeof LibraryIndexRoute
   '/rmhbox/': typeof RmhboxIndexRoute
   '/rmhcode/': typeof RmhcodeIndexRoute
   '/rmhmusic/': typeof RmhmusicIndexRoute
@@ -1789,6 +1809,7 @@ export interface FileRoutesByFullPath {
   '/api/vega/score': typeof ApiVegaScoreRoute
   '/api/versecraft/progress': typeof ApiVersecraftProgressRoute
   '/api/versecraft/save': typeof ApiVersecraftSaveRoute
+  '/api/vibe/ai': typeof ApiVibeAiRoute
   '/api/vibe/stream': typeof ApiVibeStreamRoute
   '/api/void-breaker/leaderboard': typeof ApiVoidBreakerLeaderboardRoute
   '/api/void-breaker/score': typeof ApiVoidBreakerScoreRoute
@@ -1919,6 +1940,7 @@ export interface FileRoutesByTo {
   '/discord/rmhbox': typeof DiscordRmhboxRoute
   '/forest-explorer/explore': typeof ForestExplorerExploreRoute
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
+  '/library/$slug': typeof LibrarySlugRoute
   '/news/$slug': typeof NewsSlugRoute
   '/research/$slug': typeof ResearchSlugRoute
   '/rmhbox/$lobbyId': typeof RmhboxLobbyIdRoute
@@ -1944,6 +1966,7 @@ export interface FileRoutesByTo {
   '/daily': typeof DailyIndexRoute
   '/forest-explorer': typeof ForestExplorerIndexRoute
   '/kowloon-knockout': typeof KowloonKnockoutIndexRoute
+  '/library': typeof LibraryIndexRoute
   '/rmhbox': typeof RmhboxIndexRoute
   '/rmhcode': typeof RmhcodeIndexRoute
   '/rmhmusic': typeof RmhmusicIndexRoute
@@ -2028,6 +2051,7 @@ export interface FileRoutesByTo {
   '/api/vega/score': typeof ApiVegaScoreRoute
   '/api/versecraft/progress': typeof ApiVersecraftProgressRoute
   '/api/versecraft/save': typeof ApiVersecraftSaveRoute
+  '/api/vibe/ai': typeof ApiVibeAiRoute
   '/api/vibe/stream': typeof ApiVibeStreamRoute
   '/api/void-breaker/leaderboard': typeof ApiVoidBreakerLeaderboardRoute
   '/api/void-breaker/score': typeof ApiVoidBreakerScoreRoute
@@ -2179,6 +2203,7 @@ export interface FileRoutesById {
   '/discord/rmhbox': typeof DiscordRmhboxRoute
   '/forest-explorer/explore': typeof ForestExplorerExploreRoute
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
+  '/library/$slug': typeof LibrarySlugRoute
   '/news/$slug': typeof NewsSlugRoute
   '/research/$slug': typeof ResearchSlugRoute
   '/rmhbox/$lobbyId': typeof RmhboxLobbyIdRoute
@@ -2208,6 +2233,7 @@ export interface FileRoutesById {
   '/daily/': typeof DailyIndexRoute
   '/forest-explorer/': typeof ForestExplorerIndexRoute
   '/kowloon-knockout/': typeof KowloonKnockoutIndexRoute
+  '/library/': typeof LibraryIndexRoute
   '/rmhbox/': typeof RmhboxIndexRoute
   '/rmhcode/': typeof RmhcodeIndexRoute
   '/rmhmusic/': typeof RmhmusicIndexRoute
@@ -2292,6 +2318,7 @@ export interface FileRoutesById {
   '/api/vega/score': typeof ApiVegaScoreRoute
   '/api/versecraft/progress': typeof ApiVersecraftProgressRoute
   '/api/versecraft/save': typeof ApiVersecraftSaveRoute
+  '/api/vibe/ai': typeof ApiVibeAiRoute
   '/api/vibe/stream': typeof ApiVibeStreamRoute
   '/api/void-breaker/leaderboard': typeof ApiVoidBreakerLeaderboardRoute
   '/api/void-breaker/score': typeof ApiVoidBreakerScoreRoute
@@ -2443,6 +2470,7 @@ export interface FileRouteTypes {
     | '/discord/rmhbox'
     | '/forest-explorer/explore'
     | '/forest-explorer/story'
+    | '/library/$slug'
     | '/news/$slug'
     | '/research/$slug'
     | '/rmhbox/$lobbyId'
@@ -2472,6 +2500,7 @@ export interface FileRouteTypes {
     | '/daily/'
     | '/forest-explorer/'
     | '/kowloon-knockout/'
+    | '/library/'
     | '/rmhbox/'
     | '/rmhcode/'
     | '/rmhmusic/'
@@ -2556,6 +2585,7 @@ export interface FileRouteTypes {
     | '/api/vega/score'
     | '/api/versecraft/progress'
     | '/api/versecraft/save'
+    | '/api/vibe/ai'
     | '/api/vibe/stream'
     | '/api/void-breaker/leaderboard'
     | '/api/void-breaker/score'
@@ -2686,6 +2716,7 @@ export interface FileRouteTypes {
     | '/discord/rmhbox'
     | '/forest-explorer/explore'
     | '/forest-explorer/story'
+    | '/library/$slug'
     | '/news/$slug'
     | '/research/$slug'
     | '/rmhbox/$lobbyId'
@@ -2711,6 +2742,7 @@ export interface FileRouteTypes {
     | '/daily'
     | '/forest-explorer'
     | '/kowloon-knockout'
+    | '/library'
     | '/rmhbox'
     | '/rmhcode'
     | '/rmhmusic'
@@ -2795,6 +2827,7 @@ export interface FileRouteTypes {
     | '/api/vega/score'
     | '/api/versecraft/progress'
     | '/api/versecraft/save'
+    | '/api/vibe/ai'
     | '/api/vibe/stream'
     | '/api/void-breaker/leaderboard'
     | '/api/void-breaker/score'
@@ -2945,6 +2978,7 @@ export interface FileRouteTypes {
     | '/discord/rmhbox'
     | '/forest-explorer/explore'
     | '/forest-explorer/story'
+    | '/library/$slug'
     | '/news/$slug'
     | '/research/$slug'
     | '/rmhbox/$lobbyId'
@@ -2974,6 +3008,7 @@ export interface FileRouteTypes {
     | '/daily/'
     | '/forest-explorer/'
     | '/kowloon-knockout/'
+    | '/library/'
     | '/rmhbox/'
     | '/rmhcode/'
     | '/rmhmusic/'
@@ -3058,6 +3093,7 @@ export interface FileRouteTypes {
     | '/api/vega/score'
     | '/api/versecraft/progress'
     | '/api/versecraft/save'
+    | '/api/vibe/ai'
     | '/api/vibe/stream'
     | '/api/void-breaker/leaderboard'
     | '/api/void-breaker/score'
@@ -3195,11 +3231,13 @@ export interface RootRouteChildren {
   BuildsSlugRoute: typeof BuildsSlugRoute
   DiscordLightsOutRoute: typeof DiscordLightsOutRoute
   DiscordRmhboxRoute: typeof DiscordRmhboxRoute
+  LibrarySlugRoute: typeof LibrarySlugRoute
   NewsSlugRoute: typeof NewsSlugRoute
   ResearchSlugRoute: typeof ResearchSlugRoute
   UserBuildsSlugRoute: typeof UserBuildsSlugRoute
   VSlugRoute: typeof VSlugRoute
   VNewRoute: typeof VNewRoute
+  LibraryIndexRoute: typeof LibraryIndexRoute
   VIndexRoute: typeof VIndexRoute
   ApiAdminBlogRoute: typeof ApiAdminBlogRoute
   ApiAdminUsersRoute: typeof ApiAdminUsersRoute
@@ -3251,6 +3289,7 @@ export interface RootRouteChildren {
   ApiVegaScoreRoute: typeof ApiVegaScoreRoute
   ApiVersecraftProgressRoute: typeof ApiVersecraftProgressRoute
   ApiVersecraftSaveRoute: typeof ApiVersecraftSaveRoute
+  ApiVibeAiRoute: typeof ApiVibeAiRoute
   ApiVibeStreamRoute: typeof ApiVibeStreamRoute
   ApiVoidBreakerLeaderboardRoute: typeof ApiVoidBreakerLeaderboardRoute
   ApiVoidBreakerScoreRoute: typeof ApiVoidBreakerScoreRoute
@@ -3580,6 +3619,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RmhboxIndexRouteImport
       parentRoute: typeof RmhboxRoute
     }
+    '/library/': {
+      id: '/library/'
+      path: '/library'
+      fullPath: '/library/'
+      preLoaderRoute: typeof LibraryIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/kowloon-knockout/': {
       id: '/kowloon-knockout/'
       path: '/'
@@ -3781,6 +3827,13 @@ declare module '@tanstack/react-router' {
       path: '/news/$slug'
       fullPath: '/news/$slug'
       preLoaderRoute: typeof NewsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/library/$slug': {
+      id: '/library/$slug'
+      path: '/library/$slug'
+      fullPath: '/library/$slug'
+      preLoaderRoute: typeof LibrarySlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forest-explorer/story': {
@@ -4173,6 +4226,13 @@ declare module '@tanstack/react-router' {
       path: '/api/vibe/stream'
       fullPath: '/api/vibe/stream'
       preLoaderRoute: typeof ApiVibeStreamRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/vibe/ai': {
+      id: '/api/vibe/ai'
+      path: '/api/vibe/ai'
+      fullPath: '/api/vibe/ai'
+      preLoaderRoute: typeof ApiVibeAiRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/versecraft/save': {
@@ -5797,11 +5857,13 @@ const rootRouteChildren: RootRouteChildren = {
   BuildsSlugRoute: BuildsSlugRoute,
   DiscordLightsOutRoute: DiscordLightsOutRoute,
   DiscordRmhboxRoute: DiscordRmhboxRoute,
+  LibrarySlugRoute: LibrarySlugRoute,
   NewsSlugRoute: NewsSlugRoute,
   ResearchSlugRoute: ResearchSlugRoute,
   UserBuildsSlugRoute: UserBuildsSlugRoute,
   VSlugRoute: VSlugRoute,
   VNewRoute: VNewRoute,
+  LibraryIndexRoute: LibraryIndexRoute,
   VIndexRoute: VIndexRoute,
   ApiAdminBlogRoute: ApiAdminBlogRoute,
   ApiAdminUsersRoute: ApiAdminUsersRoute,
@@ -5853,6 +5915,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiVegaScoreRoute: ApiVegaScoreRoute,
   ApiVersecraftProgressRoute: ApiVersecraftProgressRoute,
   ApiVersecraftSaveRoute: ApiVersecraftSaveRoute,
+  ApiVibeAiRoute: ApiVibeAiRoute,
   ApiVibeStreamRoute: ApiVibeStreamRoute,
   ApiVoidBreakerLeaderboardRoute: ApiVoidBreakerLeaderboardRoute,
   ApiVoidBreakerScoreRoute: ApiVoidBreakerScoreRoute,

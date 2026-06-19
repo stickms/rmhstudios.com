@@ -29,10 +29,19 @@ export type VibeProject = {
   files: Record<string, string>; // normalized path -> source
 };
 
+// Public base URL where the vibe AI proxy lives. Baked into generated pages, so
+// it must be the origin those pages are actually served from in production.
+// Override in non-prod via VIBE_AI_BASE_URL (e.g. http://localhost:7005).
+const VIBE_AI_BASE_URL = (process.env.VIBE_AI_BASE_URL || 'https://rmhstudios.com').replace(/\/$/, '');
+const VIBE_AI_ENDPOINT = `${VIBE_AI_BASE_URL}/api/vibe/ai`;
+const VIBE_AI_ORIGIN = new URL(VIBE_AI_BASE_URL).origin;
+
 // Strict CSP for bundled pages. No Babel/jsdelivr anymore — code, styles, and
-// fonts come only from esm.sh; images/media are inline (data:/blob:); nothing
-// can exfiltrate to other origins. Combined with the viewer's sandboxed iframe
-// (no allow-same-origin), pages are locked down.
+// fonts come only from esm.sh; images/media are inline (data:/blob:); the only
+// extra network destination is our own AI proxy (VIBE_AI_ORIGIN), used by the
+// injected window.RMHVibeAI helper — nothing else can exfiltrate to other
+// origins. Combined with the viewer's sandboxed iframe (no allow-same-origin),
+// pages are locked down.
 const VIBE_CSP = [
   "default-src 'none'",
   "base-uri 'none'",
@@ -42,8 +51,68 @@ const VIBE_CSP = [
   'img-src data: blob:',
   'font-src data: https://esm.sh',
   'media-src data: blob:',
-  'connect-src https://esm.sh',
+  `connect-src https://esm.sh ${VIBE_AI_ORIGIN}`,
 ].join('; ');
+
+/**
+ * Inline runtime helper injected into every generated page. Exposes a tiny,
+ * key-free `window.RMHVibeAI` API that proxies to our server (which holds the
+ * DeepSeek key). Generated code calls `RMHVibeAI.chat(...)` /
+ * `RMHVibeAI.stream(...)` — it never sees a URL, key, or SSE framing.
+ */
+function vibeAIHelperScript(): string {
+  const endpoint = JSON.stringify(VIBE_AI_ENDPOINT);
+  // Plain ES5-ish IIFE so it runs without the import map / module graph.
+  return `<script>
+(function(){
+  var ENDPOINT = ${endpoint};
+  function toMessages(input){
+    if (typeof input === 'string') return [{ role: 'user', content: input }];
+    if (Array.isArray(input)) return input;
+    return [];
+  }
+  function post(messages, opts, stream){
+    return fetch(ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: messages, system: opts && opts.system, stream: !!stream })
+    });
+  }
+  async function chat(input, opts){
+    var res = await post(toMessages(input), opts, false);
+    if (!res.ok) throw new Error('RMHVibeAI request failed (' + res.status + ')');
+    var data = await res.json();
+    return data.reply || '';
+  }
+  async function stream(input, onDelta, opts){
+    var res = await post(toMessages(input), opts, true);
+    if (!res.ok || !res.body) throw new Error('RMHVibeAI stream failed (' + res.status + ')');
+    var reader = res.body.getReader();
+    var dec = new TextDecoder();
+    var buf = '', full = '';
+    for (;;) {
+      var r = await reader.read();
+      if (r.done) break;
+      buf += dec.decode(r.value, { stream: true });
+      var frames = buf.split('\\n\\n');
+      buf = frames.pop() || '';
+      for (var i = 0; i < frames.length; i++) {
+        var line = frames[i].split('\\n').find(function(l){ return l.indexOf('data:') === 0; });
+        if (!line) continue;
+        var json = line.slice(5).trim();
+        if (!json) continue;
+        var evt;
+        try { evt = JSON.parse(json); } catch (e) { continue; }
+        if (evt.type === 'delta' && evt.text) { full += evt.text; if (onDelta) onDelta(evt.text, full); }
+        else if (evt.type === 'error') { throw new Error(evt.message || 'RMHVibeAI error'); }
+      }
+    }
+    return full;
+  }
+  window.RMHVibeAI = { chat: chat, stream: stream, endpoint: ENDPOINT };
+})();
+<\/script>`;
+}
 
 const FILES_MARKER = '===FILES===';
 const FILE_HEADER_RE = /^---\s*file:\s*(.+?)\s*---\s*$/;
@@ -325,6 +394,7 @@ function assembleHtml(opts: {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="${VIBE_CSP}">
 <title>${escapeHtml(opts.title || 'Vibe')}</title>
+${vibeAIHelperScript()}
 <style>
 *,*::before,*::after{box-sizing:border-box}
 html,body{margin:0;height:100%}
