@@ -1,0 +1,179 @@
+{
+  "n": 3,
+  "title": {
+    "zh": "第三回 朱華秋讌 詩讖先成",
+    "en": "Chapter 3: Autumn Feast in the Vermilion Garden; the Verse-Omens Are Written First"
+  },
+  "couplet": {
+    "type": "couplet",
+    "zh": ["金菊含秋淚未乾", "玉人對影問誰憐"],
+    "en": ["Golden chrysanthemums hold autumn tears not yet dried", "The jade lady faces a shadow and asks — who will pity her?"]
+  },
+  "passages": [
+    {
+      "type": "prose",
+      "zh": "卻説九鼎之亂既起，烽火連天，吳烈、昭明諸君子皆從徵於北疆，朱華苑中惟餘諸女眷相守。時值深秋，菊花盛放，黃白紫赤，遍佈廊階池畔。雲素華染疾已久，面色如紙，然目光澄澈，猶如秋水照天，獨居翠微閣，日夕臨窗望雁。",
+      "en": "Now it is told: since the turmoil of the Nine Furnaces had erupted and beacon-fires linked sky to sky, the lords Wu Lie and Zhao Ming and their companions had all followed the conscription northward to the frontier. Within the Vermilion Garden only the ladies of the household remained to keep one another company. Deep autumn had arrived; chrysanthemums bloomed in extravagance — yellow, white, purple, and crimson spreading across the corridors, the steps, and the lotus-pond banks. Yun Suhua had long been ill, her face pale as paper, yet her gaze remained pellucid as autumn water reflecting the sky. She dwelt alone in the Emerald-Mist Pavilion, morning and evening standing at the window to watch the wild geese pass."
+    },
+    {
+      "type": "prose",
+      "zh": "是日，諸姊妹共議，言菊花正盛，不可辜負，遂邀雲素華並眾人於芙蓉榭設秋讌，行菊花詩令。規矩既定：各擬一題，題中須有菊字，依韻填詞，詞成方可飲酒。雲素華應邀而來，著月白羅裙，披淡青薄氅，扶侍女之手，緩步而至，落座於池畔石凳，笑曰：「諸姊若以詩令相罰，素華本是重病之人，飲不得半盞，只怕輸得最慘。」眾人皆笑，秋風起處，菊香四溢。",
+      "en": "On this day the sisters consulted among themselves, saying that the chrysanthemums were at their peak and could not be wasted. They accordingly invited Yun Suhua and all the others to set an autumn banquet at the Hibiscus Waterside Pavilion and hold a chrysanthemum poetry competition. The rules were established: each person would compose a title containing the character for chrysanthemum, then fill in verse to a matching rhyme, and only when the verse was done might one drink. Yun Suhua accepted the invitation, wearing a robe of moon-white gauze and a thin pale-blue cloak over her shoulders. She came leaning upon a maidservant's arm, stepping slowly, and settled on a stone bench beside the pond. She smiled and said: 'If the sisters use the poetry rules to punish me, Suhua is a gravely ill person who cannot drink even half a cup — I fear I shall lose most miserably.' Everyone laughed, and where the autumn wind rose the fragrance of chrysanthemums spilled on all sides."
+    },
+    {
+      "type": "prose",
+      "zh": "首先填詞者乃是性情爽朗的綠蕪姑娘，題為《菊韻》，眾人聽她吟罷，皆拍掌稱妙。次者素月，題為《問菊》，言辭清麗，別有一番意趣。輪至雲素華，她沉吟半晌，目視池中殘荷，口中喃喃，似在與誰低語，久久方定，提筆立就，題為《菊葬》。眾姊妹見此題目，面面相覷，皆以為不吉，然素華微微一笑，言：「菊花亦有凋零時，何不為它作一葬辭？」遂高聲吟誦。",
+      "en": "The first to fill in her verse was the bright-natured young woman Lü Wu, whose title was 'Chrysanthemum Rhymes.' When the company heard her recite it they all clapped in admiration. The next was Su Yue, whose title was 'Questioning the Chrysanthemum,' the words delicate and fresh, conveying a mood all their own. When the turn came to Yun Suhua she fell into long contemplation, her gaze fixed on the withered lotus blossoms in the pond, murmuring to herself as though in low conversation with someone unseen, and only after some while did she settle on her words. She lifted her brush and composed at once, with the title 'Burying the Chrysanthemum.' The sisters, seeing this title, exchanged glances, all finding it inauspicious. But Suhua smiled faintly and said: 'Even the chrysanthemum has its time of fading — why not compose a burial ode for it?' And so she recited aloud.",
+      "redComment": [
+        {
+          "anchor": "題為《菊葬》",
+          "zh": "菊葬者，自葬也。通篇讖語，讀者慎勿以為詠菊。",
+          "en": "'Burying the Chrysanthemum' is a burial of the self. This entire poem is an omen-verse; readers must not take it as mere chrysanthemum praise."
+        }
+      ]
+    },
+    {
+      "type": "verse",
+      "zh": [
+        "半院秋風拂冷金，",
+        "無人憐取暗香沉。",
+        "霜刀裁斷千絲夢，",
+        "土掩猶存一縷心。",
+        "燕去不知樓閣冷，",
+        "雁來偏報塞垣深。",
+        "明朝若問花何在，",
+        "付與東流不復尋。"
+      ],
+      "en": [
+        "Half a courtyard of autumn wind brushes the cold gold blossoms —",
+        "No one shows pity; the dark fragrance sinks away unseen.",
+        "A frost-blade severs the thousand-thread dream,",
+        "Yet beneath the earth one last thread of heart still abides.",
+        "The swallows depart not knowing the towers have grown cold,",
+        "The wild geese arrive only to report the frontier ramparts lie deep.",
+        "If tomorrow someone asks where the flowers have gone —",
+        "Surrendered to the eastward flow, and never to be sought again."
+      ]
+    },
+    {
+      "type": "prose",
+      "zh": "眾人聽畢，靜默片刻，繼而強作歡顏，稱道其才情出眾。惟素月輕聲道：「素華姊姊，你這詞中滿是送別之意，叫人聽了好生難受。」雲素華斂笑，望向遠天，輕輕說道：「不過是詠菊應景罷了，妹妹多心了。」說罷，又舉杯淺啜，目光幽深，如一泓秋水藏著無量的天光。詩令繼續，笑語聲重又喧鬧，唯有那幾行字，已悄悄寫入了時光的帳冊。",
+      "en": "When the company finished listening they were silent for a moment, then forced cheerful expressions and praised her exceptional talent. Only Su Yue said quietly: 'Elder Sister Suhua, your lyric is full of parting sentiments — it makes one feel quite bereft on hearing it.' Yun Suhua put away her smile and gazed toward the distant sky, saying softly: 'It is merely chrysanthemum verses for the season — little sister, you are reading too much into it.' Having spoken, she lifted her cup and sipped lightly, her gaze deep and still as a pool of autumn water concealing within it the immeasurable light of heaven. The poetry competition continued, laughter and voices growing lively again — only those few lines had already quietly entered the ledger of time."
+    },
+    {
+      "type": "prose",
+      "zh": "又一輪詩令將畢，夕陽西斜，園中光影流轉，石徑上灑著金碎。忽聞牆外有輕微腳步聲，繼而停歇，似有人佇立於朱牆之外。侍女春綃正欲去探問，雲素華輕輕伸手攔住她，自己凝神聆聽。牆頭古藤垂落，秋光透過藤葉，在白粉牆上投下一道修長的人影。那影子靜立不動，寬肩窄腰，隱約是個青年男子的輪廓。",
+      "en": "When yet another round of the poetry competition was nearly concluded, the setting sun slanted westward and the play of light and shadow in the garden shifted, scattering shards of gold across the stone path. Suddenly from outside the wall came the faint sound of footsteps — then they stopped, as though someone were standing still just beyond the vermilion wall. The maidservant Chun Xiao was about to go and investigate, but Yun Suhua extended her hand lightly to hold her back and listened with concentrated stillness. Ancient wisteria hung down over the wall-top; the autumn light filtering through the vine-leaves cast a tall, slender human shadow onto the white plastered wall. That shadow stood without moving — broad-shouldered, narrow-waisted — the outline unmistakably that of a young man.",
+      "redComment": [
+        {
+          "anchor": "投下一道修長的人影",
+          "zh": "隔牆相見，不如不見。影中有人，人中無影。此後數回，讀者當記此牆。",
+          "en": "To meet through a wall is worse than not meeting. Within the shadow is a person; within the person, no shadow remains. In the chapters to come, readers should remember this wall."
+        }
+      ]
+    },
+    {
+      "type": "prose",
+      "zh": "雲素華心中倏然一緊，呼吸微促，面上卻仍是淡然。她目不轉睛地望著那道影子，只見它微微移動了一下，似是探身欲聆聽園中之聲，又似是有話欲言而終究無言。良久，影子緩緩抬起了手，似在輕撫牆磚，又放下了。素華唇角微動，終究沒有出聲。眾姊妹各自吟詩，無人注意這一幕，唯有春綃覷了覷自家姑娘的臉色，低下頭去，假裝整理茶具。",
+      "en": "Within Yun Suhua's heart something suddenly contracted; her breath came a little faster, though her face remained serene. She gazed without blinking at that shadow and saw it shift faintly, as though someone were leaning forward to listen to the sounds from inside the garden — or as though there were words to say that in the end went unsaid. After a long while the shadow slowly raised a hand, as though gently touching the wall-bricks, then let it fall again. The corners of Suhua's lips moved faintly; in the end she made no sound. The sisters were each composing their verses; no one noticed this scene. Only Chun Xiao glanced once at her young mistress's expression, then lowered her head and pretended to straighten the tea things."
+    },
+    {
+      "type": "verse",
+      "zh": [
+        "一影西牆靜不言，",
+        "隔花聞得舊時弦。",
+        "不須相見知心遠，",
+        "只恐相逢恨更綿。",
+        "秋草有情留雁跡，",
+        "寒窗無主鎖嬋娟。",
+        "他年若問今宵事，",
+        "夢裏燈花落半肩。"
+      ],
+      "en": [
+        "One shadow on the western wall — still, without words —",
+        "Through the flowers I hear the strings of former times.",
+        "Without meeting I know already our hearts are far apart;",
+        "I only fear that if we meet the grief will cling still longer.",
+        "Autumn grasses feel affection and keep the wild geese's tracks,",
+        "The cold window with no master locks away the bright moon.",
+        "If in years to come someone asks of this evening's affairs —",
+        "In a dream the lamp-flower fell across half a shoulder."
+      ]
+    },
+    {
+      "type": "prose",
+      "zh": "片刻之後，牆外傳來一個侍從壓低的聲音，言璟同將軍有軍書送至，請吳府管事接收。那道影子便輕輕一頓，隨即轉身，腳步聲漸次遠去。雲素華閉了閉眼，又睜開，眼底有什麼東西一閃而逝。牆上的影子已然消散，只餘秋藤在風中搖曳，葉影婆娑，如一篇未竟的手稿。",
+      "en": "After a moment from outside the wall came the lowered voice of an attendant, announcing that General Jing Tong had sent a military dispatch to be delivered, and asking the household steward to receive it. The shadow paused lightly — then turned, and the sound of footsteps gradually receded into the distance. Yun Suhua closed her eyes and opened them again; something in their depths flashed and was gone. The shadow on the wall had already dissipated, leaving only the autumn wisteria swaying in the wind, leaf-shadows wavering, like an unfinished manuscript."
+    },
+    {
+      "type": "prose",
+      "zh": "管事匆匆而來，接了軍書，呈報說：大將璟同傳信，言北疆戰事膠著，吳將軍命苑中諸人勿慌，諸事如常，待捷報至時，定當親迎歸來。眾人聽了，皆稱好，面露安慰之色，紛紛道：「璟同大哥向來謀略過人，有他在，必無大礙。」惟雲素華沉默，只是緩緩將手中那盞菊花茶端起，啜了一口，眼神落在水面上，不知在看什麼。",
+      "en": "The steward came hurrying, received the military dispatch, and reported: the great champion Jing Tong had sent word that the war situation at the northern frontier remained deadlocked, and that General Wu instructed the garden household not to panic — all matters should continue as usual, and when the news of victory arrived he would certainly come home in person to welcome them. Everyone who heard this called it good news and showed relieved expressions, saying in turn: 'Elder Brother Jing Tong has always possessed superior strategic wisdom — with him there, surely nothing serious will come of it.' Only Yun Suhua was silent. She slowly raised the cup of chrysanthemum tea in her hand, took a sip, and let her gaze rest on the water's surface — no one knew what she was seeing there."
+    },
+    {
+      "type": "prose",
+      "zh": "秋讌將近尾聲，素月提議按舊例請月下占辭，問問今歲的運途。園中素有一方詩讖石，立於荷塘之北，石面刻有百餘支籤辭，以古詩為體，各應一事。眾人依次拈籤，皆得平順之辭，笑聲不絕。輪至雲素華，她起身，緩步行至石前，伸出那截如玉的手指，在籤筒中輕輕一撥，抽出一支，舉至燈下細看。籤上四行，墨跡儼然。",
+      "en": "As the autumn banquet neared its end, Su Yue proposed that, following old custom, they draw oracle-verses beneath the moon to ask about the year's fortunes. In the garden there had long stood an Omen-Verse Stone, erected to the north of the lotus pond, its face carved with more than a hundred oracle texts in the form of ancient verse, each corresponding to a particular event. The company drew in turn; all received phrases of smooth passage, and laughter was unceasing. When the turn came to Yun Suhua she rose, walked slowly to the stone, extended those jade-like fingers of hers, gently stirred among the sticks, and drew one out. Holding it under the lamplight she read it carefully. On the stick were four lines, the brushwork severe and clear."
+    },
+    {
+      "type": "verse",
+      "zh": [
+        "朱華苑冷菊初殘，",
+        "玉璽歸塵劍化寒。",
+        "燈火闌珊人散後，",
+        "空庭秋色鎖重關。"
+      ],
+      "en": [
+        "The Vermilion Garden grows cold; the chrysanthemums first begin to wither —",
+        "The jade seal returns to dust; the sword becomes cold.",
+        "After the lantern-light fades and people have dispersed,",
+        "The empty courtyard's autumn colors seal the heavy gates."
+      ],
+      "redComment": [
+        {
+          "anchor": "玉璽歸塵劍化寒",
+          "zh": "一讖雙關：璽指天命玉璽，亦指璟同佩劍。塵與寒，此回之眼目也。讀者至末回方知此語之重。",
+          "en": "A double omen: the seal refers both to the Mandate jade seal and to Jing Tong's sword. 'Dust' and 'cold' are the crux of this chapter. Readers will only know the full weight of these words when they reach the final chapter."
+        }
+      ]
+    },
+    {
+      "type": "prose",
+      "zh": "雲素華看罷，沉默了一息，隨即展顏微笑，將那籤辭輕輕折疊，納入袖中，轉身道：「不過是說秋景蕭瑟，倒應了今晚的菊花讌，有趣有趣。」眾人不疑，各自說笑，又行了幾輪酒令，方才散去。燈火次第熄滅，回廊上只剩幾點殘燭搖曳。雲素華是最後離開芙蓉榭的，她佇立片刻，回望那方詩讖石，月光映在石面，那幾個字彷彿有了光澤，靜靜地立在秋夜裏，像一個已知答案的人。",
+      "en": "Yun Suhua finished reading, was silent for the space of a breath, then spread a faint smile across her face. She lightly folded the oracle stick, tucked it into her sleeve, and turned to say: 'It merely speaks of the desolate autumn scene — it nicely matches tonight's chrysanthemum banquet. How diverting.' The company had no suspicions; they traded jests and laughter, took a few more rounds of drinking games, and then dispersed. The lanterns went out one by one; along the covered corridor only a few guttering candle-stubs swayed. Yun Suhua was the last to leave the Hibiscus Waterside Pavilion. She stood still for a moment and looked back at the Omen-Verse Stone. Moonlight lay across the stone's face; those carved characters seemed to have acquired a luminescence, standing quietly in the autumn night — like a person who already knows the answer."
+    },
+    {
+      "type": "verse",
+      "zh": [
+        "散筵燈滅各西東，",
+        "獨立空廊聽晚風。",
+        "菊瓣墜階無人掃，",
+        "月痕移壁有誰同。",
+        "舊歡如夢難重問，",
+        "新恨無聲漸自濃。",
+        "袖底藏辭人不識，",
+        "一行秋字冷如冬。"
+      ],
+      "en": [
+        "The banquet breaks; lamps go out; each goes east or west —",
+        "Alone I stand in the empty corridor listening to the evening wind.",
+        "Chrysanthemum petals fall on the steps and no one sweeps them;",
+        "The moon's print moves along the wall — who shares it with me?",
+        "Old joys are like a dream, impossible to question again;",
+        "New griefs make no sound but gradually deepen on their own.",
+        "I hide verses in my sleeve that no one recognizes —",
+        "One line of autumn characters, cold as winter."
+      ]
+    },
+    {
+      "type": "prose",
+      "zh": "是夜，雲素華歸臥翠微閣，久久不能入眠。她將那支籤辭取出，在燈下又讀了一遍，然後就燈燃盡，看那紙片化為一縷灰煙，消散在秋夜的空氣裏。窗外荷塘無聲，殘荷的剪影沉在水中，偶有一片黃葉落下，漣漪一圈，復又平靜。她想起那道牆上的影子，想起那雙從未見過的眼睛，想起尚在遠方的烽火，想起那些說笑著寫下的詩句。她知道它們全都是真的，她只是笑著，不說。",
+      "en": "That night Yun Suhua returned to her bed in the Emerald-Mist Pavilion and for a long while could not sleep. She took out that oracle stick and read it once more under the lamp, then held it to the flame until it burned to completion, watching the paper become a thread of ash-smoke that dispersed into the air of the autumn night. Outside the window the lotus pond was silent; the silhouettes of withered lotus blossoms lay submerged in the water; occasionally a yellow leaf fell, sending out a ring of ripples that smoothed again into stillness. She thought of the shadow on the wall, thought of those eyes she had never seen, thought of the beacon-fires still burning far away, thought of those poem-lines written down amid laughter and banter. She knew they were all true. She simply smiled, and said nothing."
+    },
+    {
+      "type": "prose",
+      "zh": "欲知後事如何，且看下回分解。朱華苑中秋色未盡，而那些詩中的字，已各自找到了它們的歸宿，只是人尚未知。詩曰：金菊含秋淚未乾，玉人對影問誰憐。繁華一夢終須散，讖語無聲寫素笺。",
+      "en": "As for what happens next, read the following chapter for the unraveling. The autumn colors in the Vermilion Garden were not yet exhausted — yet the characters within those verses had each already found their appointed resting place, though their authors did not yet know it. A poem says: Golden chrysanthemums hold autumn tears not yet dried; the jade lady faces a shadow and asks — who will pity her? The splendor of a dream must in the end disperse; omen-words in silence are written on plain silk."
+    }
+  ]
+}

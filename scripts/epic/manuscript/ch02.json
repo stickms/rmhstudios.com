@@ -1,0 +1,193 @@
+{
+  "n": 2,
+  "title": {
+    "zh": "第二回 天樞失璽 九土鼎沸",
+    "en": "Chapter 2: The Pole-Star Loses Its Seal; the Nine Lands Boil Over"
+  },
+  "couplet": {
+    "type": "couplet",
+    "zh": ["一璽離天樞夜墮", "九爐沸四海朝驚"],
+    "en": ["One seal quits the Pole-Star shrine and falls through the night", "Nine furnaces boil; at dawn the four seas start awake"]
+  },
+  "passages": [
+    {
+      "type": "prose",
+      "zh": "卻説天樞祠立於九爐河心之洲，四水環抱，煙嵐不散，自開闢以來，天命璽藏於其中，諸侯歲貢香火，無敢窺者。祠中道士三十六人，晨鐘暮鼓，守之如命。是夜，月色如霜，河聲入夢，唯有一葉輕舟橫渡無聲。",
+      "en": "Now it is told: the Pole-Star Shrine stood upon an isle in the middle waters of the Nine Furnaces, girdled by four confluent streams, its mists unbroken since the world's making. Within it the Jade Seal of Heaven's Mandate had rested since the age of origins, and the lords of every polity sent incense-tribute by season; none had dared covet it with open eyes. Thirty-six Taoist priests kept the shrine, morning bell and evening drum, guarding it as they guarded their own lives. That night the moonlight lay white as hoarfrost, the river's voice stole into dreams, and one small boat crossed without a sound."
+    },
+    {
+      "type": "prose",
+      "zh": "霧胤者，其國舊稱輝澤，世傳天命璽本為輝澤先君所鑄，後因諸侯爭奪，暫付天樞祠公守。霧胤少負詩才，然胸藏大志，嘗獨坐江樓，撫琴而歌曰：「璽者，天之所屬，豈得長委草野祠官之手？」其師諫之，霧胤笑而不答，目中有星火之光。",
+      "en": "Wu Yin, prince of the old realm of Huize, had been taught since childhood that the Jade Seal was first cast by Huize's ancestral lord, and had been surrendered to the Shrine only as a provisional custody during an age of contention. Wu Yin bore a poet's gifts from youth yet harbored ambitions vast as the river-bends. He would sit alone in his riverside tower, plucking his zither, singing to himself: 'The seal is Heaven's own property — how long may it moulder in the hands of grass-court shrine-keepers?' When his advisors remonstrated, Wu Yin smiled and said nothing, and in his eyes there burned the small fierce light of a star.",
+      "redComment": [
+        {
+          "anchor": "目中有星火之光",
+          "zh": "此一筆寫霧胤，非惡人，乃錯執之人。星火者，可燎原，亦可自焚。",
+          "en": "This single stroke portraits Wu Yin: not a villain but a man who grasps wrongly. Starfire can sweep the plain or consume the hand that holds it."
+        }
+      ]
+    },
+    {
+      "type": "verse",
+      "zh": [
+        "輕舟入夜水無痕",
+        "袖裡乾坤藏萬鈞",
+        "我本天家舊血胤",
+        "奪還非盜是歸真",
+        "月冷不知人意熱",
+        "霧深偏讓膽氣伸",
+        "一握河山皆可問",
+        "誰言命數不由身"
+      ],
+      "en": [
+        "A light skiff enters night and leaves no mark upon the water",
+        "Within his sleeve a cosmos holds ten-thousand catties' weight",
+        "I am the true-born blood of Heaven's ancient household",
+        "To take back what is mine is not theft but a homecoming",
+        "The cold moon does not know how hot the purpose of men burns",
+        "Deep fog only gives bold breath more room to stretch and rise",
+        "With one grip all the mountains and rivers may be questioned",
+        "Who says the count of fate is not a thing the self may steer"
+      ]
+    },
+    {
+      "type": "prose",
+      "zh": "霧胤登岸，衣袂沾露，步入祠門，守門道士正伏案假寐。彼以袖拂燈，燈滅。黑暗中但聞自己心跳之聲，如戰鼓遠來。摸索至內殿，璽置玉几，光華隱隱，似有靈識。霧胤俯身，雙手捧璽，感其溫潤如活物，心中一震，默立良久，方納入懷，轉身出祠，重登輕舟，竟無一人覺醒。天色將明，霧散一半，彼遙望天樞洲漸遠，低聲吟道：「璽歸故主，天理昭然。」然其聲微顫，不似自信。",
+      "en": "Wu Yin stepped ashore, his sleeves damp with dew, and walked through the shrine gate. The keeper dozing at his post never stirred. Wu Yin brushed his sleeve past a lamp and the flame died. In the darkness he heard only his own heartbeat, like a battle-drum approaching from far away. He felt his way to the inner hall. The Seal sat upon its jade table, its luminescence a dim and breathing thing, as though it possessed awareness. Wu Yin bent low and cupped it in both hands; it was warm and smooth as a living creature, and at its touch something struck his chest like a mallet. He stood motionless a long moment, then tucked it into his robe, turned, left the shrine, stepped again into his small boat, and departed — and not one soul woke. Dawn was near. The mist had half withdrawn. He looked back at the Isle of the Pole-Star receding behind him and murmured: 'The seal returns to its rightful master; the principle of Heaven is made plain.' But his voice held the faintest tremor, and it did not sound like certainty."
+    },
+    {
+      "type": "prose",
+      "zh": "天光大亮，祠中道士醒來，見玉几空空，璽印不存，失聲大叫。主持道人面如死灰，顫手敲動洪鐘，鐘聲震盪九爐，鳴不止聲。頃刻，洲南烽火台燃起第一柱狼煙，高入雲霄；繼而東岸、西岸、北渚諸台相繼點燃，煙柱如林，直刺天際。沿河百里，信使縱馬疾馳，口中只一句話：「天命璽失！天命璽失！」",
+      "en": "When full daylight came and the priests of the shrine awoke, they found the jade table empty and the Seal gone. A shout of anguish broke from one throat, then all. The head priest's face turned the color of ash; with trembling hands he struck the great bronze bell, and its voice shook across the Nine Furnaces without ceasing. Within moments the signal tower at the isle's southern tip lit its first column of wolf-smoke, driving straight into the clouds; then the eastern bank towers, the western bank towers, the northern shallows towers — one after another they flared until smoke-pillars stood thick as a forest, stabbing the sky. For a hundred li along the river, couriers drove their horses to exhaustion, and from every mouth came a single sentence: 'The Seal of Heaven's Mandate is lost! The Seal of Heaven's Mandate is lost!'"
+    },
+    {
+      "type": "prose",
+      "zh": "訊息既傳，九爐震動。諸侯或驚或懼，或竊喜，或憤怒，人心各異，如沸鍋中諸物翻滾。霧胤返國，召百官，陳璽於廟堂，宣告天命歸輝澤，文武皆伏地叩首，歡呼聲震瓦礫。南鄰夔渚之主觀望三日，計利而降；西方平壑侯懼輝澤兵鋒，遣使納貢，口稱臣服。然餘下六邦，聞訊皆憤，以為霧胤此舉乃以竊盜代信義，以強力易公理，若任其坐實，則天下無公道可言。",
+      "en": "When the news spread, the Nine Furnaces shook. The lords of each polity reacted according to their natures — some in shock, some in dread, some in secret satisfaction, some in outrage — and the hearts of men churned like various things tumbling in a boiling pot. Wu Yin returned to his realm, summoned his hundred officials, displayed the Seal in the great hall, and proclaimed that Heaven's Mandate had come home to Huize. Civil and military officers all prostrated themselves; the shouts of acclamation rattled the roof-tiles. The lord of Kuizhu to the south watched and calculated for three days before submitting to the new legitimacy. The Marquis of Pinghe to the west, fearing the edge of Huize's armies, sent envoys bearing tribute and mouthing the words of submission. But the remaining six realms, on hearing the news, were furious to a man. They held that Wu Yin's act had replaced faith with theft and exchanged justice for brute force, and that if it were allowed to harden into fact, there would be no such thing as principle left under Heaven."
+    },
+    {
+      "type": "prose",
+      "zh": "六邦會盟於渾江津，歃血為誓，共推永邑之主吳烈為盟主戰拳。吳烈身長八尺，眉如墨弧，目若寒星，平日不多言而言必中要。聞璽失之訊，彼三日不食，第四日起身，披甲而立，語眾曰：「竊來之命，非命也，乃賊也。吾輩非為諸侯私利而戰，乃為天下之公義而戰。」眾皆服其言。昭明居其後，手持輿圖，默而不語，唯眼中光芒流動如計算之火。",
+      "en": "The six realms convened at Hunjian Ford, smeared their lips with blood, and took a common oath. They named Wu Lie, lord of Yong, as the alliance's war-fist. Wu Lie stood eight feet tall, his brows dark as brushed ink, his eyes cold as winter stars; in ordinary days he spoke rarely, but when he spoke he struck the center of things. When news of the Seal's theft reached him, he did not eat for three days. On the fourth morning he rose, buckled on his armor, and stood before his people. 'A mandate stolen is no mandate,' he said. 'It is only larceny. We do not fight for the private advantage of any lord; we fight for the public justice of All-under-Heaven.' Every man who heard him was persuaded. Zhao Ming stood behind him, map in hand, saying nothing, only his eyes moving with the bright restless motion of a flame performing calculations."
+    },
+    {
+      "type": "prose",
+      "zh": "昭明夜燃孤燈，俯案推演，以沙盤布陣，以竹籌計糧。天明時分，戰策已成，呈於吳烈。其略有三：一曰截糧，斷輝澤南路補給；二曰離間，使夔渚、平壑心生疑懼；三曰聲東，佯攻東渡而實取北渚要塞。吳烈覽畢，合圖而笑，曰：「昭明之算，如弈者觀枰，勝負已在未動之先。」璟同在旁，撫掌大笑，請為前鋒。",
+      "en": "Zhao Ming burned his solitary lamp through the night, bent over the table, laying out formations in the sand-tray, calculating provisions with bamboo tallies. By dawn the campaign design was finished and presented to Wu Lie. Its principles were three: first, to cut supply lines and sever Huize's southern provisioning routes; second, to sow suspicion between Kuizhu and Pinghe until their allegiance to Wu Yin curdled with doubt; third, a feint eastward at the river crossing while the true blow fell on the northern shallows fortress. Wu Lie read it through, closed the map, and smiled. 'Zhao Ming's reckoning,' he said, 'is like a chess-master reading the board — the outcome is already settled before a single piece has moved.' Jing Tong, standing nearby, clapped his hands with a great laugh and asked to lead the vanguard.",
+      "redComment": [
+        {
+          "anchor": "勝負已在未動之先",
+          "zh": "此語看似稱讚昭明，實則伏筆：未動之先已算定者，亦包括璟同之死。昭明算得準，故最可怖。",
+          "en": "This phrase praises Zhao Ming on its surface, yet it plants a hidden root: what is settled before a piece moves includes Jing Tong's death. Zhao Ming calculates correctly — and that is precisely what makes him terrible."
+        }
+      ]
+    },
+    {
+      "type": "verse",
+      "zh": [
+        "永邑鐵騎三萬整",
+        "旌旗蔽日動雷聲",
+        "淵沼之師持長戟",
+        "雲台舊部耀銀盔",
+        "瀧口弓手八千勁",
+        "善射者能穿楊枝",
+        "霜崖劍客輕生死",
+        "踏歌入陣血為詞"
+      ],
+      "en": [
+        "The iron cavalry of Yong comes thirty thousand strong and whole",
+        "Banners blot the sun; the sound of it moves like pealing thunder",
+        "The marsh-water army advances bearing long-hafted halberds",
+        "The old soldiers of Cloud-Terrace burnish their silver helmets bright",
+        "Eight thousand bowmen of the Cascade Gate — their draw is taut and fierce",
+        "The finest among them can split a willow-leaf at racing speed",
+        "The sword-wanderers of Frost Cliff hold their lives at less than nothing",
+        "They enter the formation singing, and blood becomes their lyric"
+      ]
+    },
+    {
+      "type": "verse",
+      "zh": [
+        "東路來者橫江騎",
+        "坐騎皆為河西馬",
+        "北師步卒如密林",
+        "矛尖映天寒如鏡",
+        "輜重車行壓道沉",
+        "糧秣萬石備三年",
+        "旗下謀士各懷算",
+        "無人問璽歸誰家"
+      ],
+      "en": [
+        "From the eastern road the river-crossing cavalry arrives",
+        "Every mount among them is bred from the horses west of the river",
+        "The northern infantry is dense as a forest in autumn",
+        "Their spearpoints catch the sky and give it back as cold as mirrors",
+        "Supply-carts press the road down deep with their laden passage",
+        "Ten thousand shi of grain and fodder — provisions for three years",
+        "Under every banner counselors nurse their private calculations",
+        "Not one of them thinks to ask which house the Seal belongs to"
+      ]
+    },
+    {
+      "type": "verse",
+      "zh": [
+        "中流鼓聲震九天",
+        "水師千舸齊解纜",
+        "槳聲咿呀入雲去",
+        "浪花濺甲白如練",
+        "璟同立艏持大旗",
+        "笑問東風可借否",
+        "吳烈背手望遠山",
+        "昭明閉目已知路"
+      ],
+      "en": [
+        "In midstream the war-drums shake the nine-layered sky",
+        "The water-army looses a thousand vessels from their moorings at once",
+        "The sound of oars rises creaking into cloud",
+        "Spray beats the armor white as lengths of silk",
+        "Jing Tong stands at the prow and holds the great flag upright",
+        "He laughs and asks: may we borrow the east wind today",
+        "Wu Lie stands with hands clasped behind him, watching the far mountains",
+        "Zhao Ming closes his eyes — he already knows the road"
+      ]
+    },
+    {
+      "type": "prose",
+      "zh": "是時，天下共言戰事，然於輝澤宮中，霧胤獨坐書房，展素紙，磨墨，提筆欲作詩，卻久久不落。窗外春風搖動桃花，花瓣如雪飄入硯中，染紅了一角。霧胤凝視良久，終書四字而止：「我非竊者。」復又凝視此四字，眉頭漸蹙，終以袖拭去，紙上留一片墨痕，模糊如未定之命。",
+      "en": "At this time all the world spoke of war; yet in the inner library of the Huize palace, Wu Yin sat alone. He unrolled clean paper, ground his ink, lifted his brush to write — and could not bring it down. Outside the window the spring wind shook the peach blossoms, and petals like snow drifted in and fell into his inkstone, staining one corner red. Wu Yin stared at this for a long time. At last he wrote four characters and stopped: 'I am not a thief.' Then he stared at those four characters, and the furrow between his brows deepened by degrees, until he wiped the line away with his sleeve. The paper kept the ghost of the ink, blurred and irresolute as a fate not yet decided."
+    },
+    {
+      "type": "prose",
+      "zh": "消息沿河傳至永邑深院，雲素華正倚欄觀魚，侍女來報諸事，素華靜聽，一語不發。待侍女退去，彼緩緩取出竹冊，以細筆記錄諸事：璽失之日，煙火之狀，各邦之應，吳烈之誓，昭明之謀，璟同之笑。記畢，輕輕合冊，望天色，低語：「開戰了。」其聲如水沉入河底，無漣漪，無回聲。",
+      "en": "The news traveled along the river and reached the deep courtyards of Yong. Yun Suhua was leaning on the balustrade watching the fish when a maidservant came and reported everything. Suhua listened without a word. When the maidservant withdrew, she reached slowly for her bamboo record-book and with a fine brush wrote down what had come to pass: the day the Seal was lost; the shape of the smoke-fires; how each realm responded; the oath Wu Lie had sworn; the design Zhao Ming had devised; the laugh Jing Tong had given. When it was recorded she closed the book gently, looked at the sky, and whispered: 'The war has begun.' Her voice was like water sinking to the bottom of a river — no ripple, no echo."
+    },
+    {
+      "type": "prose",
+      "zh": "吳烈臨行前，立於旗下，仰觀天色，見烏雲自西北來，隱隱有雷聲未發。左右問是否出師，吳烈答曰：「戰事一起，九爐之水皆變顏色。然我心中有一事未明——那璽，究竟是天之所命，還是人之所造？若為人造，則奪之者，何異於奪一塊頑玉？」昭明在旁，低聲答：「主公此問，待戰畢再答，今日只問勝負。」吳烈沉默，終點頭，出師。",
+      "en": "Before he departed, Wu Lie stood beneath the great banner and looked up at the sky. Dark clouds were moving down from the northwest, and somewhere in the distance thunder was forming but had not yet spoken. Those around him asked whether it was time to set out. Wu Lie answered: 'Once battle begins, the waters of the Nine Furnaces will all change color. Yet there is one thing in my heart that remains unclear — the Seal: is it something Heaven decreed, or something men made? If men made it, then whoever takes it by force — how is that different from seizing a worthless stone?' Zhao Ming, standing beside him, answered in a low voice: 'That question, my lord, can wait until the fighting is done. Today we ask only about victory and defeat.' Wu Lie was silent a moment. Then he nodded, and the army went forth."
+    },
+    {
+      "type": "verse",
+      "zh": [
+        "璽失天心搖九州",
+        "義旗所指血未收",
+        "昭明籌算秋毫密",
+        "璟同笑聲渡急流",
+        "吳烈誓言重如嶽",
+        "霧胤詩稿墨難留",
+        "素華默記春與戰",
+        "史筆無情兩鬢秋"
+      ],
+      "en": [
+        "The Seal is lost and the heart of Heaven rocks across the nine provinces",
+        "Where the banner of righteousness points the blood has not yet dried",
+        "Zhao Ming's calculations are as fine and dense as autumn down",
+        "Jing Tong's laughter carries him across the racing current",
+        "Wu Lie's oath weighs upon the world as mountains weigh upon the earth",
+        "Wu Yin's poem-drafts hold ink that will not stay",
+        "Suhua records in silence both the spring and the war",
+        "The historian's brush knows no mercy — on both temples, autumn"
+      ]
+    }
+  ]
+}

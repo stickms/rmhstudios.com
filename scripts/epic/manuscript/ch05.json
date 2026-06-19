@@ -1,0 +1,180 @@
+{
+  "n": 5,
+  "title": {
+    "zh": "第五回 義帥蒙讒 怒臥空帳",
+    "en": "Chapter 5: The Loyal Champion Is Slandered; In Wrath He Lies in an Empty Tent"
+  },
+  "couplet": {
+    "type": "couplet",
+    "zh": ["功高震主讒言起", "劍冷帳空天意孤"],
+    "en": ["When merit towers above the throne, slander finds its opening", "The sword grows cold, the tent grows empty, and Heaven's will stands alone"]
+  },
+  "passages": [
+    {
+      "type": "prose",
+      "zh": "卻說那日吳烈率本部鐵騎衝破墨隼右翼，斬將奪旗，聯軍危局一朝而定。捷報傳至中軍，諸侯皆默然相視，面有難色。蓋吳烈之功太盛，其部所獲首級、輜重，十倍於諸侯合力之所得，聯盟高座者心中已生芥蒂，雖面上賀語連連，私下卻各遣心腹，悄議裁抑之策。",
+      "en": "Now it came to pass that on that day Wu Lie led his iron cavalry to shatter Mo Sun's right flank, slaying commanders and seizing battle-standards, so that the alliance's desperate situation was resolved in a single morning. When the dispatch of victory reached the central command, the assembled lords glanced at one another in silence, unease written upon every face. For Wu Lie's merit had grown too luminous — his division's tally of heads taken and supply-wagons captured exceeded tenfold what all the other lords combined had won. Those who sat upon the alliance's high seats already nursed a thorn in the heart; though their lips poured forth congratulations, in private each sent his most trusted counselor to whisper quietly of schemes to curb and diminish him.",
+      "redComment": [
+        {
+          "anchor": "面有難色",
+          "zh": "難色二字，寫盡功臣末路之兆。讀者至此當知吳烈之禍不在沙場而在廟堂。",
+          "en": "The two characters 'unease upon the face' prefigure the fate of every meritorious minister. The reader who reaches this point should understand that Wu Lie's peril lies not on the battlefield but in the halls of deliberation."
+        }
+      ]
+    },
+    {
+      "type": "prose",
+      "zh": "昭明聞訊，星夜奔赴中軍帳中，見諸侯已設小會，首席坐者乃盟主之叔晉平王。晉平王徐徐言道：「吳烈此番，雖有微功，然擅自出擊，不候軍令，藐視軍規，若不懲戒，諸部將皆效尤，聯軍何以為令？」昭明欲辯，旁側諸侯附和之聲已如潮湧，或云吳烈侵吞戰利，或云其部私放俘虜索取賄贖，或云其帳下兵士欺凌友軍。諸讒羅列，無一有實據，然衆口鑠金，昭明唯有長嘆。",
+      "en": "Zhao Ming, hearing the news, rode through the night to the central command tent, where he found the lords had already assembled in a private council, the seat of honor occupied by the Alliance Overlord's uncle, the Prince of Jin. The Prince of Jin spoke at measured pace: 'Though Wu Lie has rendered some small service in this engagement, he moved his forces without orders, disregarding the chain of command. If he is not disciplined, every division commander will follow his example, and by what authority shall the alliance govern itself?' Zhao Ming moved to argue, but the voices of assent from the surrounding lords rose like a tide — one claimed Wu Lie had embezzled the spoils of battle, another that his troops had privately ransomed prisoners for bribes, a third that his soldiers had bullied and humiliated allied forces. The slanders multiplied without a shred of evidence to support them, yet the mouths of the many smelt gold into dross, and Zhao Ming could only breathe a long and bitter sigh.",
+      "redComment": [
+        {
+          "anchor": "雖有微功",
+          "zh": "「微功」二字，乃奸讒之慣技也。移山之業，一言輕之為微，讀至此處令人扼腕。",
+          "en": "The phrase 'some small service' is the habitual craft of slanderers. A mountain-moving achievement is dismissed in a single word as trivial — the reader who reaches this moment cannot but clench a fist in sorrow."
+        }
+      ]
+    },
+    {
+      "type": "verse",
+      "zh": [
+        "廟堂夜議燭光寒",
+        "讒舌如刀削骨寬",
+        "萬里沙場汗與血",
+        "不及一室巧言歡"
+      ],
+      "en": [
+        "In the council hall the candle-flame burns cold through the night",
+        "Slanderous tongues work like knives, stripping flesh from bone with ease",
+        "Ten thousand leagues of battlefield — the sweat, the blood, the cost",
+        "Weigh nothing against a chamber full of smooth and clever speech"
+      ]
+    },
+    {
+      "type": "prose",
+      "zh": "次日，盟主頒令：吳烈所部此次首功，改錄為昭明所部幕僚居中調度之勞；吳家軍旗降半級，改懸偏位；其部所獲輜重，充公平分諸侯。吳烈跪於帥帳之外，聽令官高聲宣讀，面色如鐵，一字未發。令畢，諸侯使者皆退，惟昭明留於原地，欲上前言語，吳烈已轉身而去，背影筆直如戟，腳步無聲如雪。",
+      "en": "The following day the Alliance Overlord issued his decree: the primary merit for Wu Lie's division in the recent engagement was reassigned, recorded instead as the coordinating labor of Zhao Ming's staff officers; the Wu family's battle-standard was demoted by half a rank and relocated to a peripheral position; the supply-wagons and materiel captured by his troops were confiscated and redistributed equally among the lords. Wu Lie knelt outside the command tent and listened as the herald read the proclamation aloud in a carrying voice. His complexion was as iron, and he did not speak a single word. When the reading concluded and the lords' emissaries withdrew, Zhao Ming alone remained in place, stepping forward as if to speak. But Wu Lie had already turned and walked away, his back straight as a halberd, his footsteps soundless as falling snow."
+    },
+    {
+      "type": "prose",
+      "zh": "吳烈歸至本營，召璟同入帳，沉默良久，方言道：「吾今日所受，汝已盡知。吾不為此怒，非不痛也，乃因此怒若發，必傷吾義，傷吾誓，傷汝我同袍之情。故吾收之於胸，化為冰霜。然吾刀，自今日起，不為此盟再飲血。」璟同聞言，面色驟變，欲言者再三，終只道：「兄長。」吳烈搖首，取出壁上懸弓，以掌輕撫弓身，復掛回，道：「帳門掩好。吾要靜一靜。」",
+      "en": "Wu Lie returned to his own encampment and summoned Jing Tong into the tent. He was silent for a long while before he spoke: 'What I have suffered today — you know it all. I am not unmoved by it; the pain is real. But if this rage were to break loose it would wound my righteousness, wound my oaths, wound the brotherhood between you and me. Therefore I seal it within my breast and let it turn to frost and ice. Yet my blade — from this day forward — shall drink no more blood for this alliance.' When Jing Tong heard these words his complexion changed abruptly. He made to speak three times and each time stopped himself. At last he said only: 'Elder brother.' Wu Lie shook his head. He reached up and took the bow from where it hung on the tent-wall, stroked its body once with his palm, and hung it back again. Then he said: 'Draw the tent-flap closed. I need stillness for a time.'"
+    },
+    {
+      "type": "verse",
+      "zh": [
+        "非鐵非石吾此心",
+        "寒意徹骨自深林",
+        "功名二字輕如霧",
+        "義字千鈞壓至今",
+        "刀鞘不啟非無力",
+        "爐火不燃非無薪",
+        "只因天命尚未問",
+        "故使英雄臥帳陰"
+      ],
+      "en": [
+        "My heart is neither iron nor stone, yet stone and iron cannot match it now",
+        "A cold has entered to the bone, born in some deep and lightless grove",
+        "The two words glory and renown are weightless as dispersing mist",
+        "The single word righteousness has pressed down on me with a thousand weight since the start",
+        "That the scabbard stays undrawn is not for want of strength",
+        "That the furnace holds no flame is not for want of fuel",
+        "Only because the Mandate of Heaven has not yet put its question",
+        "Does the hero lie in shadow in an empty tent"
+      ]
+    },
+    {
+      "type": "prose",
+      "zh": "此後三日，吳烈閉帳不出。使者絡繹而至，或奉盟主之命宣慰，或攜諸侯之書致歉，或持昭明親筆懇請復出。吳烈皆不拆觀，命親兵於帳前燃起一爐，使者去後，即投書信於爐中，頃刻成灰。火光映出帳前空地，橘紅色搖曳不定，如同聯軍此刻搖搖欲墜之軍心。",
+      "en": "For three days thereafter Wu Lie remained sealed within his tent and would not emerge. Emissaries came in an unbroken stream — some bearing the Alliance Overlord's command of consolation, some carrying letters of apology from the various lords, some holding in their hands a personal letter of entreaty written by Zhao Ming himself. Wu Lie opened none of them. He ordered his personal guard to kindle a brazier before the tent-entrance, and after each emissary departed the unread letters were fed to the flames and reduced to ash within moments. The firelight played across the empty ground before the tent, its orange-red glow flickering and unsteady — like the alliance's morale at that very hour, teetering on the edge of collapse."
+    },
+    {
+      "type": "prose",
+      "zh": "正此時，前線戰報如雪片飛至。墨隼見吳烈所部旌旗不動，料定聯軍內有異變，遂分兵三路，趁勢急攻。東路突破昭明所設之伏，昭明計謀雖精，然執行者非吳烈之師，號令未及行，敵已至，折損千餘人，退守山口。西路聯軍主力遭墨隼親率精騎衝陣，主將臨陣失措，棄旗先退，士卒大嘩，一潰三十里方止。中路尚存，然四面皆動搖，中路亦成孤懸。",
+      "en": "It was precisely at this time that dispatches from the front line began arriving like driven snow. Mo Sun observed that Wu Lie's battle-standards remained motionless and deduced that something had gone awry within the alliance; he accordingly divided his forces into three columns and launched an aggressive push to exploit the advantage. On the eastern flank he broke through the ambush Zhao Ming had carefully set — Zhao Ming's stratagem was exquisite in design, but those who executed it were not Wu Lie's soldiers; the command had not yet been fully relayed when the enemy arrived, and more than a thousand men were lost before the alliance retreated to hold the mountain pass. On the western flank the alliance's main force was struck by Mo Sun himself leading his finest cavalry in a frontal charge; the commanding general panicked in the moment of crisis and abandoned his standard to flee first, sending his soldiers into uproar, and the rout did not stabilize until they had fallen back thirty leagues. The center still held, but with all flanks wavering, even the center became an isolated and precarious position."
+    },
+    {
+      "type": "verse",
+      "zh": [
+        "東路旌旗埋草間",
+        "西路鼓聲散如煙",
+        "中軍獨撐危卵局",
+        "昭明一人對長天",
+        "計在胸中將在哪",
+        "劍有其鋒手已寒"
+      ],
+      "en": [
+        "On the eastern road the battle-standards have been buried in the grass",
+        "On the western road the war-drums' sound has scattered like smoke",
+        "The central army holds alone, balancing an egg upon a precipice",
+        "Zhao Ming stands by himself and faces the wide and heedless sky",
+        "The stratagem lives in the mind — but where is the hand to execute it",
+        "The sword retains its edge, yet the hand that would wield it has grown cold"
+      ]
+    },
+    {
+      "type": "prose",
+      "zh": "昭明立於山崗之上，望敵陣如黑潮席捲，心中默算：若吳烈在此，此刻當以左翼鐵騎橫插墨隼後背，使其首尾不顧，必可反敗為勝。然而左翼旌旗不動，空帳依然空帳。昭明閉目片刻，睜開時已是另一番神情，下令收縮陣線，保全實力，捨棄方才奪回之三座小城，退守主寨。此令一出，諸將雖從，皆面帶羞色，知今日之敗非戰之罪，乃廟堂讒言之禍延至沙場。",
+      "en": "Zhao Ming stood upon a hillock and watched the enemy formation sweep forward like a black tide. Within his mind he made his silent calculation: if Wu Lie were here, at this moment the iron cavalry on the left flank would drive diagonally into Mo Sun's rear, forcing the enemy to divide his attention between front and back, and defeat could certainly be reversed into victory. Yet the left-flank standards did not move. The empty tent remained an empty tent. Zhao Ming closed his eyes for a brief moment; when he opened them his expression had changed entirely. He issued the order to contract the defensive line, preserve what strength remained, abandon the three small towns that had just been retaken at such cost, and withdraw to hold the main encampment. When this command was given the generals obeyed, though every face wore the color of shame — each understood that today's defeat was not the fault of their fighting but rather the calamity born of courtly slander, which had now stretched its shadow all the way to the field of battle."
+    },
+    {
+      "type": "verse",
+      "zh": [
+        "三城得而復失去",
+        "千卒進而又倒退",
+        "非吾算術有差謬",
+        "乃人心各懷鬼胎睡",
+        "墨隼非神勝有因",
+        "因在聯軍失其臂"
+      ],
+      "en": [
+        "Three cities taken — and then given back",
+        "A thousand soldiers advanced — and then driven in retreat",
+        "The error does not lie in any fault of calculation",
+        "It lies in every man asleep with his own private ghost",
+        "Mo Sun is no god — his victory has its reason",
+        "The reason is that the alliance has lost the arm it relied upon"
+      ]
+    },
+    {
+      "type": "prose",
+      "zh": "戰報送入吳烈帳中，親兵不敢不報。吳烈坐於燈下，逐一看畢，面無表情，將竹簡整齊疊放於案上，以掌按平，道：「知道了。退下。」親兵退出，帳中唯餘燭火搖曳，映出吳烈側臉輪廓，下頷收緊，眉間一線深刻如刀痕。他既不嘆，亦不喜，只是將那疊戰報移至一旁，取出一方素帛，提筆，於上書一「忍」字，字大如拳，筆力入木，旋即又擱筆，將素帛折疊，壓於甲冑之下，不再看它。",
+      "en": "The battle reports were delivered into Wu Lie's tent; his personal guard did not dare withhold them. Wu Lie sat beneath the lamp and read through them one by one. His face showed no expression. He stacked the bamboo slips neatly upon the table, pressed them flat with his palm, and said: 'Understood. You may withdraw.' The guard stepped out. Within the tent only the candle-flame remained, swaying, casting the outline of Wu Lie's profile in light and shadow — the jawline drawn tight, a single crease between the brows cut deep as a knife-scar. He neither sighed nor smiled. He simply moved that stack of reports to one side, drew out a piece of plain white silk, lifted his brush, and wrote upon it a single character: Endure. The character was as large as a fist, and the force of the brushstroke bit into the silk like iron entering wood. Then he set the brush down again, folded the silk, pressed it beneath his armor, and did not look at it again."
+    },
+    {
+      "type": "prose",
+      "zh": "夜深，璟同立於帳外。他未曾叫門，亦未曾離去，只是立在那裏，背對帳門，面朝黑沉沉的軍營，聽遠處傷兵的呻吟聲與夜風共鳴。他知道帳內的兄長未睡，兄長從不在此時睡。他亦知道此刻任何言語皆是多餘，任何勸說皆是傷口上撒鹽。然他不能離去。義之所在，雖千萬人吾往矣；然此刻義之所在，乃是沉默地立於此地，以血肉之軀擋住夜風，陪著那空帳之中孤獨而清醒的靈魂，不讓它在黑暗中獨自燃燒殆盡。",
+      "en": "Deep in the night, Jing Tong stood outside the tent. He had not called out, nor had he departed. He simply stood there, his back to the tent-entrance, his face turned toward the dark and heavy silence of the encampment, listening as the groans of the wounded far off resonated with the night wind. He knew that the elder brother within the tent was not sleeping — his elder brother never slept at such an hour as this. He also knew that at this moment any words would be superfluous, any counsel would be salt rubbed into a wound. Yet he could not leave. Righteousness, the ancients say, draws one forward though ten thousand men stand in the way. But in this moment, righteousness drew him here: to stand in silence, to set his flesh and blood against the night wind, to keep company with that solitary and wakeful soul within the empty tent, so that it would not burn itself to nothing alone in the dark."
+    },
+    {
+      "type": "verse",
+      "zh": [
+        "帳外人立帳內人臥",
+        "一燈一影兩孤魂",
+        "不言是因言已盡",
+        "不去是因義難論",
+        "天明或有新戰報",
+        "此夜先讓兄弟存"
+      ],
+      "en": [
+        "Outside the tent one man stands; inside the tent one man lies still",
+        "One lamp, one shadow — two souls alone in the world",
+        "There is no speech because all speech has already been exhausted",
+        "There is no departure because righteousness cannot be argued into words",
+        "When dawn comes there will no doubt be new dispatches from the front",
+        "But first let this night allow two brothers simply to exist"
+      ],
+      "redComment": [
+        {
+          "anchor": "此夜先讓兄弟存",
+          "zh": "「存」字一收，意味深長。非存功業，非存聯盟，乃存兄弟之情與人之本心。讀者當知此乃全書最溫柔亦最悲涼之一筆。",
+          "en": "The word 'exist' closes the verse with layers of meaning. Not to preserve the great enterprise, not to preserve the alliance, but to preserve the bond between brothers and the original heart of men. The reader should recognize this as at once the tenderest and most sorrowful brushstroke in the entire work."
+        }
+      ]
+    },
+    {
+      "type": "prose",
+      "zh": "就這樣，璟同立了一夜。星移斗轉，晨光初白之時，他仍立於原地，甲上已沾了夜露，靴尖沾泥，然脊背挺直如初。帳內無聲，唯有呼吸之氣若有若無。天命輓歌，此章最沉。欲知後事如何，且看下回分解。",
+      "en": "And so Jing Tong stood through the whole of the night. The stars wheeled and the Dipper turned; when the first pale light of morning began to show, he was still standing in the same place, his armor beaded with night-dew, the toes of his boots darkened with mud, yet his spine as straight as it had been at the first hour. From within the tent there was no sound — only a breath, now present, now almost imperceptible. The Elegy of the Mandate: this chapter is its heaviest. As for what followed — that awaits the telling of the next."
+    }
+  ]
+}
