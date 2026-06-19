@@ -2,9 +2,9 @@ import { createFileRoute } from '@tanstack/react-router'
 import RmhtechLanding from '@/components/rmhtech/RmhtechLanding'
 import rmhtechCss from '@/components/rmhtech/rmhtech.css?url'
 
-const TITLE = 'rmhtech — the trustworthy substrate for AI-driven biology'
+const TITLE = 'Adaptive Intelligence — the trustworthy substrate for AI-driven biology'
 const DESC =
-  'An AI co-scientist for biology is only as trustworthy as the substrate it runs on. rmhtech builds the Co-Scientist and the reproducibility Ledger it runs on, together.'
+  'An AI co-scientist for biology is only as trustworthy as the substrate it runs on. Adaptive Intelligence builds the Co-Scientist and the reproducibility Ledger it runs on, together.'
 
 export const Route = createFileRoute('/rmhtech')({
   head: () => ({

@@ -179,7 +179,7 @@ function Home() {
             Library →
           </Link>
           <Link to="/rmhtech" className="vibe-ghost-link">
-            rmhtech →
+            Adaptive Intelligence →
           </Link>
         </div>
       </div>
