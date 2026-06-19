@@ -6,7 +6,7 @@
 
 **Architecture:** A deterministic build pipeline under `scripts/epic/` turns a structured *manuscript* (JSON) into a styled HTML document (vertical Chinese + horizontal English facing pages), paginates it into synchronized leaf-pairs using headless Chromium measurement, and renders a PDF + cover via Playwright + sharp. The manuscript itself is produced by a separate multi-agent generation workflow. The only artifacts that touch the app are the PDF, the cover JPG, and one `library-metadata.json` entry.
 
-**Tech Stack:** TypeScript (run via `pnpm exec tsx`), vitest, Playwright (Chromium, already installed), sharp, `@xmldom/xmldom` (SVG validation in tests). macOS system fonts: Songti SC, Kaiti SC (Chinese), Baskerville (English).
+**Tech Stack:** TypeScript (run via `pnpm exec tsx`), vitest, Playwright (Chromium, already installed), sharp. SVG validation in tests uses a small self-contained XML well-formedness checker (no new dependency — the repo's pnpm workspace lockfile must stay untouched). macOS system fonts: Songti SC, Kaiti SC (Chinese), Baskerville (English).
 
 ## Global Constraints
 
@@ -15,7 +15,8 @@
 - Chinese is set **vertical 竖排** (`writing-mode: vertical-rl`, columns right→left) on the verso; English horizontal on the recto. Facing pages are synced per passage.
 - PDF page order is `…, zh, en, zh, en, …` so two-up spreads show zh on the left leaf, its synced en on the right.
 - Ink color `#1a1410` (warm sumi black); accent `#b03a2e` (cinnabar vermilion). Paper `#efe7d4` ivory.
-- Run scripts with `pnpm exec tsx <path>`; run tests with `pnpm exec vitest run <path>`.
+- **Run binaries directly, never through pnpm's runner.** Use `node_modules/.bin/vitest run --config vitest.epic.config.ts [path]` for tests and `node_modules/.bin/tsx <path>` for scripts. Do **not** use `pnpm run …` or `pnpm exec …` for epic commands — pnpm v11's pre-run deps check rewrites `pnpm-lock.yaml` to match this repo's member-less workspace config (pruning real workspace members), and that churn must never be committed.
+- **Do not modify or stage `pnpm-lock.yaml` or `pnpm-workspace.yaml`.** Commit with explicit file paths (never `git add -A`/`git commit -am`). If pnpm dirties the lockfile anyway, leave it unstaged (or `git checkout HEAD -- pnpm-lock.yaml pnpm-workspace.yaml`). Add no new npm dependencies.
 - Commit after every task. Branch: `chinese-epic`.
 
 ---
@@ -23,7 +24,7 @@
 ### Task 1: Scaffold, dependencies, and a vitest smoke test
 
 **Files:**
-- Modify: `package.json` (add devDep + two scripts)
+- Modify: `package.json` (add two scripts only — no new deps)
 - Create: `scripts/epic/README.md`
 - Create: `scripts/epic/smoke.test.ts`
 - Create: `vitest.epic.config.ts`
@@ -31,14 +32,13 @@
 **Interfaces:**
 - Produces: the `scripts/epic/` workspace, `pnpm run epic:test`, `pnpm run epic:build` script names.
 
-- [ ] **Step 1: Install dependencies and add the SVG-validation devDep**
+- [ ] **Step 1: Install dependencies**
 
 Run:
 ```bash
 pnpm install
-pnpm add -D @xmldom/xmldom
 ```
-Expected: install completes; `node_modules/` now exists.
+Expected: install completes; `node_modules/` now exists. **If `pnpm install` modifies `pnpm-lock.yaml` or `pnpm-workspace.yaml`, restore them with `git checkout HEAD -- pnpm-lock.yaml pnpm-workspace.yaml`** — node_modules on disk is what we need; the committed lockfile must not change. Do **not** add any npm dependency (SVG validation in Task 3 is self-contained).
 
 - [ ] **Step 2: Add a dedicated vitest config (node env, scoped to scripts/epic)**
 
@@ -57,10 +57,10 @@ export default defineConfig({
 
 - [ ] **Step 3: Add scripts to package.json**
 
-In `package.json` `"scripts"`, add:
+In `package.json` `"scripts"`, add (these document intent; **invoke the binaries directly** rather than via `pnpm run`, which triggers the lockfile-mutating deps check):
 ```json
-"epic:test": "vitest run --config vitest.epic.config.ts",
-"epic:build": "pnpm exec tsx scripts/epic/build-epic.ts"
+"epic:test": "node_modules/.bin/vitest run --config vitest.epic.config.ts",
+"epic:build": "node_modules/.bin/tsx scripts/epic/build-epic.ts"
 ```
 
 - [ ] **Step 4: Write the smoke test**
@@ -88,20 +88,21 @@ Generates the bilingual Chinese epic PDF for the Library.
 - `paginate.ts` — Chromium-measured synchronized facing leaf-pairs
 - `build-epic.ts` — orchestrator → public/library/<slug>.pdf + cover
 
-Run: `pnpm run epic:test` and `pnpm run epic:build`.
+Run: `node_modules/.bin/vitest run --config vitest.epic.config.ts` and `pnpm run epic:build`.
 ```
 
 - [ ] **Step 6: Run the smoke test**
 
-Run: `pnpm run epic:test`
+Run: `node_modules/.bin/vitest run --config vitest.epic.config.ts`
 Expected: PASS, 1 test.
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add package.json pnpm-lock.yaml vitest.epic.config.ts scripts/epic/
-git commit -m "chore(epic): scaffold build workspace, deps, vitest config"
+git add package.json vitest.epic.config.ts scripts/epic/
+git commit -m "chore(epic): scaffold build workspace, vitest config"
 ```
+(Do not stage `pnpm-lock.yaml` or `pnpm-workspace.yaml`.)
 
 ---
 
@@ -151,7 +152,7 @@ test('rejects a verse passage whose zh/en line counts differ', () => {
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run: `pnpm exec vitest run --config vitest.epic.config.ts scripts/epic/manuscript/validate.test.ts`
+Run: `node_modules/.bin/vitest run --config vitest.epic.config.ts scripts/epic/manuscript/validate.test.ts`
 Expected: FAIL (modules not found).
 
 - [ ] **Step 3: Write the types**
@@ -258,7 +259,7 @@ export const SAMPLE_CHAPTER: Chapter = {
 
 - [ ] **Step 6: Run the tests to verify they pass**
 
-Run: `pnpm exec vitest run --config vitest.epic.config.ts scripts/epic/manuscript/validate.test.ts`
+Run: `node_modules/.bin/vitest run --config vitest.epic.config.ts scripts/epic/manuscript/validate.test.ts`
 Expected: PASS, 3 tests.
 
 - [ ] **Step 7: Commit**
@@ -278,7 +279,7 @@ git commit -m "feat(epic): manuscript data model, validator, sample fixture"
 - Create: `scripts/epic/ornaments/frame.test.ts`
 
 **Interfaces:**
-- Consumes: `@xmldom/xmldom`.
+- Consumes: nothing external (self-contained).
 - Produces:
   - `function assertValidSvg(svg: string): void` (throws if not well-formed XML / not an `<svg>` root)
   - `function blockFrame(w: number, h: number): string` — returns `<g>…</g>` woodblock 文武边栏 (double rule), drawn inset within a `w×h` box.
@@ -310,23 +311,71 @@ test('columnRules emits cols-1 separators', () => {
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run: `pnpm exec vitest run --config vitest.epic.config.ts scripts/epic/ornaments/frame.test.ts`
+Run: `node_modules/.bin/vitest run --config vitest.epic.config.ts scripts/epic/ornaments/frame.test.ts`
 Expected: FAIL (modules not found).
 
 - [ ] **Step 3: Write the SVG test helper**
 
-Create `scripts/epic/ornaments/svg-test-utils.ts`:
+Create `scripts/epic/ornaments/svg-test-utils.ts` (dependency-free XML well-formedness check — tokenizes tags respecting quoted attribute values, balances the tag stack, and verifies the root is `<svg>`):
 ```ts
-import { DOMParser } from '@xmldom/xmldom';
+type Tag = { name: string; selfClosing: boolean; closing: boolean };
+
+/** Yield element tags in document order, skipping comments and declarations. */
+function* tags(svg: string): Generator<Tag> {
+  const n = svg.length;
+  let i = 0;
+  while (i < n) {
+    const lt = svg.indexOf('<', i);
+    if (lt === -1) break;
+    if (svg.startsWith('<!--', lt)) {
+      const end = svg.indexOf('-->', lt + 4);
+      if (end === -1) throw new Error('unterminated comment');
+      i = end + 3;
+      continue;
+    }
+    if (svg[lt + 1] === '?' || svg[lt + 1] === '!') {
+      const end = svg.indexOf('>', lt);
+      if (end === -1) throw new Error('unterminated declaration');
+      i = end + 1;
+      continue;
+    }
+    // scan to the matching '>', ignoring '>' inside quoted attribute values
+    let j = lt + 1;
+    let quote = '';
+    for (; j < n; j++) {
+      const c = svg[j];
+      if (quote) { if (c === quote) quote = ''; }
+      else if (c === '"' || c === "'") quote = c;
+      else if (c === '>') break;
+    }
+    if (j >= n) throw new Error('unterminated tag');
+    const inner = svg.slice(lt + 1, j).trim();
+    i = j + 1;
+    const closing = inner.startsWith('/');
+    const selfClosing = inner.endsWith('/');
+    const name = inner.replace(/^\//, '').replace(/\/$/, '').trim().split(/[\s/]/)[0];
+    if (!name) throw new Error('empty tag name');
+    yield { name, selfClosing: selfClosing && !closing, closing };
+  }
+}
 
 export function assertValidSvg(svg: string): void {
-  const errors: string[] = [];
-  const doc = new DOMParser({
-    onError: (_level, msg) => errors.push(String(msg)),
-  }).parseFromString(svg, 'text/xml');
-  if (errors.length) throw new Error(`invalid SVG: ${errors.join('; ')}`);
-  const root = doc.documentElement;
-  if (!root || root.nodeName !== 'svg') throw new Error(`expected <svg> root, got ${root?.nodeName}`);
+  const stack: string[] = [];
+  let root = '';
+  let sawElement = false;
+  for (const t of tags(svg)) {
+    if (t.closing) {
+      const top = stack.pop();
+      if (top !== t.name) throw new Error(`mismatched </${t.name}> (expected </${top ?? 'nothing'}>)`);
+    } else {
+      sawElement = true;
+      if (stack.length === 0 && !root) root = t.name;
+      if (!t.selfClosing) stack.push(t.name);
+    }
+  }
+  if (!sawElement) throw new Error('no elements found');
+  if (stack.length) throw new Error(`unclosed tags: ${stack.join(', ')}`);
+  if (root !== 'svg') throw new Error(`expected <svg> root, got <${root}>`);
 }
 ```
 
@@ -361,7 +410,7 @@ export function columnRules(x: number, y: number, w: number, h: number, cols: nu
 
 - [ ] **Step 5: Run the tests to verify they pass**
 
-Run: `pnpm exec vitest run --config vitest.epic.config.ts scripts/epic/ornaments/frame.test.ts`
+Run: `node_modules/.bin/vitest run --config vitest.epic.config.ts scripts/epic/ornaments/frame.test.ts`
 Expected: PASS, 2 tests.
 
 - [ ] **Step 6: Commit**
@@ -406,7 +455,7 @@ test('centerStrip is valid svg containing the title, juan and page', () => {
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run: `pnpm exec vitest run --config vitest.epic.config.ts scripts/epic/ornaments/center-strip.test.ts`
+Run: `node_modules/.bin/vitest run --config vitest.epic.config.ts scripts/epic/ornaments/center-strip.test.ts`
 Expected: FAIL.
 
 - [ ] **Step 3: Implement**
@@ -450,7 +499,7 @@ export function centerStrip(opts: { x: number; y: number; w: number; h: number; 
 
 - [ ] **Step 4: Run the test to verify it passes**
 
-Run: `pnpm exec vitest run --config vitest.epic.config.ts scripts/epic/ornaments/center-strip.test.ts`
+Run: `node_modules/.bin/vitest run --config vitest.epic.config.ts scripts/epic/ornaments/center-strip.test.ts`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
@@ -499,7 +548,7 @@ test('relief seal renders red glyphs', () => {
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run: `pnpm exec vitest run --config vitest.epic.config.ts scripts/epic/ornaments/seal.test.ts`
+Run: `node_modules/.bin/vitest run --config vitest.epic.config.ts scripts/epic/ornaments/seal.test.ts`
 Expected: FAIL.
 
 - [ ] **Step 3: Implement**
@@ -545,7 +594,7 @@ export function seal(opts: { x: number; y: number; size: number; text: string; s
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Run: `pnpm exec vitest run --config vitest.epic.config.ts scripts/epic/ornaments/seal.test.ts`
+Run: `node_modules/.bin/vitest run --config vitest.epic.config.ts scripts/epic/ornaments/seal.test.ts`
 Expected: PASS, 2 tests.
 
 - [ ] **Step 5: Commit**
@@ -593,7 +642,7 @@ test('cloudMotif is valid svg', () => {
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run: `pnpm exec vitest run --config vitest.epic.config.ts scripts/epic/ornaments/borders.test.ts`
+Run: `node_modules/.bin/vitest run --config vitest.epic.config.ts scripts/epic/ornaments/borders.test.ts`
 Expected: FAIL.
 
 - [ ] **Step 3: Implement**
@@ -645,7 +694,7 @@ Note: delete the unused `fretCell` stub before committing (it is illustrative on
 - [ ] **Step 4: Remove the stub and run the tests**
 
 Edit `borders.ts` to delete the `fretCell` function. Run:
-`pnpm exec vitest run --config vitest.epic.config.ts scripts/epic/ornaments/borders.test.ts`
+`node_modules/.bin/vitest run --config vitest.epic.config.ts scripts/epic/ornaments/borders.test.ts`
 Expected: PASS, 2 tests.
 
 - [ ] **Step 5: Commit**
@@ -700,7 +749,7 @@ test('colophon lists publication lines', () => {
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run: `pnpm exec vitest run --config vitest.epic.config.ts scripts/epic/ornaments/plates.test.ts`
+Run: `node_modules/.bin/vitest run --config vitest.epic.config.ts scripts/epic/ornaments/plates.test.ts`
 Expected: FAIL.
 
 - [ ] **Step 3: Implement**
@@ -780,14 +829,14 @@ export function colophon(opts: { lines: string[]; W?: number; H?: number }): str
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Run: `pnpm exec vitest run --config vitest.epic.config.ts scripts/epic/ornaments/plates.test.ts`
+Run: `node_modules/.bin/vitest run --config vitest.epic.config.ts scripts/epic/ornaments/plates.test.ts`
 Expected: PASS, 3 tests.
 
 - [ ] **Step 5: Visual check (optional but recommended)**
 
 Run a quick throwaway to eyeball a plate:
 ```bash
-pnpm exec tsx -e "import('./scripts/epic/ornaments/plates.ts').then(m=>require('fs').writeFileSync('/tmp/front.svg', m.frontispiece({titleZh:'天命輓歌',titleEn:'Elegy of the Mandate'})))"
+node_modules/.bin/tsx -e "import('./scripts/epic/ornaments/plates.ts').then(m=>require('fs').writeFileSync('/tmp/front.svg', m.frontispiece({titleZh:'天命輓歌',titleEn:'Elegy of the Mandate'})))"
 open /tmp/front.svg
 ```
 
@@ -862,7 +911,7 @@ test('buildHtml embeds css and both writing modes', () => {
 
 - [ ] **Step 3: Run it to verify it fails**
 
-Run: `pnpm exec vitest run --config vitest.epic.config.ts scripts/epic/render/typeset.test.ts`
+Run: `node_modules/.bin/vitest run --config vitest.epic.config.ts scripts/epic/render/typeset.test.ts`
 Expected: FAIL.
 
 - [ ] **Step 4: Write the CSS**
@@ -987,7 +1036,7 @@ export function buildHtml(opts: { title: { zh: string; en: string }; leaves: Lea
 
 - [ ] **Step 6: Run the tests to verify they pass**
 
-Run: `pnpm exec vitest run --config vitest.epic.config.ts scripts/epic/render/typeset.test.ts`
+Run: `node_modules/.bin/vitest run --config vitest.epic.config.ts scripts/epic/render/typeset.test.ts`
 Expected: PASS, 3 tests.
 
 - [ ] **Step 7: Commit**
@@ -1054,7 +1103,7 @@ test('a new chapter starts a new leaf-pair', async () => {
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run: `pnpm exec vitest run --config vitest.epic.config.ts scripts/epic/paginate.test.ts`
+Run: `node_modules/.bin/vitest run --config vitest.epic.config.ts scripts/epic/paginate.test.ts`
 Expected: FAIL.
 
 - [ ] **Step 3: Implement the pagination engine**
@@ -1170,7 +1219,7 @@ export async function paginate(chapters: Chapter[], _opts?: { numberByJuan?: boo
 - [ ] **Step 4: Fix the test import and run**
 
 Ensure `paginate.test.ts` matches Step 1's corrected version (single import of `SAMPLE_CHAPTER` from `./manuscript/sample`). Run:
-`pnpm exec vitest run --config vitest.epic.config.ts scripts/epic/paginate.test.ts`
+`node_modules/.bin/vitest run --config vitest.epic.config.ts scripts/epic/paginate.test.ts`
 Expected: PASS, 2 tests.
 
 - [ ] **Step 5: Commit**
@@ -1230,7 +1279,7 @@ test('buildEpic produces a non-empty PDF and a cover image', async () => {
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run: `pnpm exec vitest run --config vitest.epic.config.ts scripts/epic/build-epic.test.ts`
+Run: `node_modules/.bin/vitest run --config vitest.epic.config.ts scripts/epic/build-epic.test.ts`
 Expected: FAIL.
 
 - [ ] **Step 3: Implement the orchestrator**
@@ -1330,7 +1379,7 @@ Note on `__dirname`: with `tsx`, `__dirname` is available in ESM via its shim; i
 
 - [ ] **Step 4: Run the test to verify it passes**
 
-Run: `pnpm exec vitest run --config vitest.epic.config.ts scripts/epic/build-epic.test.ts`
+Run: `node_modules/.bin/vitest run --config vitest.epic.config.ts scripts/epic/build-epic.test.ts`
 Expected: PASS. If a path error occurs, switch `__dirname` usages to the `fileURLToPath(import.meta.url)` + `dirname()` pattern and re-run.
 
 - [ ] **Step 5: Commit**
@@ -1494,7 +1543,7 @@ test.runIf(existsSync(join(MS, 'ch01.json')))('all chapters validate and number 
 - [ ] **Step 3: Run the chapter workflow, write outputs, run the guard**
 
 Operator action (Workflow tool): run `epic-chapters`, writing `manuscript/chNN.json` for each 回. Then:
-`pnpm exec vitest run --config vitest.epic.config.ts scripts/epic/generate/assemble.test.ts`
+`node_modules/.bin/vitest run --config vitest.epic.config.ts scripts/epic/generate/assemble.test.ts`
 Expected: PASS.
 
 - [ ] **Step 4: Commit**
@@ -1519,7 +1568,7 @@ git commit -m "feat(epic): all chapters generated, translated, edited, commented
 
 - [ ] **Step 1: Build the full book**
 
-Run: `pnpm run epic:build`
+Run: `node_modules/.bin/tsx scripts/epic/build-epic.ts`
 Expected: console prints `Built <N>-page epic …`; the PDF and cover exist:
 ```bash
 ls -la public/library/elegy-of-the-mandate.pdf public/library/covers/elegy-of-the-mandate.jpg
@@ -1542,17 +1591,17 @@ Edit `data/library-metadata.json`, adding (use the chosen slug/title; `pages` = 
 
 Run:
 ```bash
-pnpm exec tsx -e "import('./lib/library/library.ts').then(m=>{const b=m.getLibraryBook('elegy-of-the-mandate'); console.log(b?.title, b?.pages, b?.coverUrl);})"
+node_modules/.bin/tsx -e "import('./lib/library/library.ts').then(m=>{const b=m.getLibraryBook('elegy-of-the-mandate'); console.log(b?.title, b?.pages, b?.coverUrl);})"
 ```
 Expected: prints the title, page count, and `/library/covers/elegy-of-the-mandate.jpg`.
 
 - [ ] **Step 4: Visual spot-check in the reader**
 
-Run `pnpm run dev`, open the Library, confirm the cover appears and the 3D reader shows facing zh│en spreads (desktop two-up; mobile single). Note any layout issues for follow-up.
+Start the app dev server (this is a manual/human check — `pnpm run dev` will dirty `pnpm-lock.yaml`; do not commit that), open the Library, confirm the cover appears and the 3D reader shows facing zh│en spreads (desktop two-up; mobile single). Note any layout issues for follow-up.
 
 - [ ] **Step 5: Full test sweep**
 
-Run: `pnpm run epic:test`
+Run: `node_modules/.bin/vitest run --config vitest.epic.config.ts`
 Expected: all epic tests PASS.
 
 - [ ] **Step 6: Commit**

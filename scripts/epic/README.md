@@ -8,4 +8,8 @@ Generates the bilingual Chinese epic PDF for the Library.
 - `paginate.ts` — Chromium-measured synchronized facing leaf-pairs
 - `build-epic.ts` — orchestrator → public/library/<slug>.pdf + cover
 
-Run: `pnpm run epic:test` and `pnpm run epic:build`.
+Run the binaries directly (NOT via `pnpm run`/`pnpm exec`, which trigger
+pnpm v11's pre-run deps check and rewrite the repo lockfile):
+
+- Tests: `node_modules/.bin/vitest run --config vitest.epic.config.ts`
+- Build: `node_modules/.bin/tsx scripts/epic/build-epic.ts`
