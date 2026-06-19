@@ -21,6 +21,7 @@ import { Route as SliceItRouteImport } from './routes/slice-it'
 import { Route as SecretRouteImport } from './routes/secret'
 import { Route as RmhtypeRouteImport } from './routes/rmhtype'
 import { Route as RmhtubeRouteImport } from './routes/rmhtube'
+import { Route as RmhtechRouteImport } from './routes/rmhtech'
 import { Route as RmhstudyRouteImport } from './routes/rmhstudy'
 import { Route as RmhmusicRouteImport } from './routes/rmhmusic'
 import { Route as RmhcodeRouteImport } from './routes/rmhcode'
@@ -330,6 +331,11 @@ const RmhtypeRoute = RmhtypeRouteImport.update({
 const RmhtubeRoute = RmhtubeRouteImport.update({
   id: '/rmhtube',
   path: '/rmhtube',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RmhtechRoute = RmhtechRouteImport.update({
+  id: '/rmhtech',
+  path: '/rmhtech',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RmhstudyRoute = RmhstudyRouteImport.update({
@@ -1643,6 +1649,7 @@ export interface FileRoutesByFullPath {
   '/rmhcode': typeof RmhcodeRouteWithChildren
   '/rmhmusic': typeof RmhmusicRouteWithChildren
   '/rmhstudy': typeof RmhstudyRouteWithChildren
+  '/rmhtech': typeof RmhtechRoute
   '/rmhtube': typeof RmhtubeRouteWithChildren
   '/rmhtype': typeof RmhtypeRouteWithChildren
   '/secret': typeof SecretRouteWithChildren
@@ -1898,6 +1905,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/neon-driftway': typeof NeonDriftwayRoute
   '/privacy': typeof PrivacyRoute
+  '/rmhtech': typeof RmhtechRoute
   '/synapse-storm': typeof SynapseStormRoute
   '/terms': typeof TermsRoute
   '/velum2099': typeof Velum2099Route
@@ -2149,6 +2157,7 @@ export interface FileRoutesById {
   '/rmhcode': typeof RmhcodeRouteWithChildren
   '/rmhmusic': typeof RmhmusicRouteWithChildren
   '/rmhstudy': typeof RmhstudyRouteWithChildren
+  '/rmhtech': typeof RmhtechRoute
   '/rmhtube': typeof RmhtubeRouteWithChildren
   '/rmhtype': typeof RmhtypeRouteWithChildren
   '/secret': typeof SecretRouteWithChildren
@@ -2414,6 +2423,7 @@ export interface FileRouteTypes {
     | '/rmhcode'
     | '/rmhmusic'
     | '/rmhstudy'
+    | '/rmhtech'
     | '/rmhtube'
     | '/rmhtype'
     | '/secret'
@@ -2669,6 +2679,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/neon-driftway'
     | '/privacy'
+    | '/rmhtech'
     | '/synapse-storm'
     | '/terms'
     | '/velum2099'
@@ -2919,6 +2930,7 @@ export interface FileRouteTypes {
     | '/rmhcode'
     | '/rmhmusic'
     | '/rmhstudy'
+    | '/rmhtech'
     | '/rmhtube'
     | '/rmhtype'
     | '/secret'
@@ -3184,6 +3196,7 @@ export interface RootRouteChildren {
   RmhcodeRoute: typeof RmhcodeRouteWithChildren
   RmhmusicRoute: typeof RmhmusicRouteWithChildren
   RmhstudyRoute: typeof RmhstudyRouteWithChildren
+  RmhtechRoute: typeof RmhtechRoute
   RmhtubeRoute: typeof RmhtubeRouteWithChildren
   RmhtypeRoute: typeof RmhtypeRouteWithChildren
   SecretRoute: typeof SecretRouteWithChildren
@@ -3383,6 +3396,13 @@ declare module '@tanstack/react-router' {
       path: '/rmhtube'
       fullPath: '/rmhtube'
       preLoaderRoute: typeof RmhtubeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rmhtech': {
+      id: '/rmhtech'
+      path: '/rmhtech'
+      fullPath: '/rmhtech'
+      preLoaderRoute: typeof RmhtechRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rmhstudy': {
@@ -5784,6 +5804,7 @@ const rootRouteChildren: RootRouteChildren = {
   RmhcodeRoute: RmhcodeRouteWithChildren,
   RmhmusicRoute: RmhmusicRouteWithChildren,
   RmhstudyRoute: RmhstudyRouteWithChildren,
+  RmhtechRoute: RmhtechRoute,
   RmhtubeRoute: RmhtubeRouteWithChildren,
   RmhtypeRoute: RmhtypeRouteWithChildren,
   SecretRoute: SecretRouteWithChildren,
