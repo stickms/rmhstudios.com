@@ -91,6 +91,9 @@ function Home() {
           <Link to="/library" className="vibe-ghost-link">
             Library →
           </Link>
+          <Link to="/rmhtech" className="vibe-ghost-link">
+            rmhtech →
+          </Link>
         </div>
       </div>
     </main>
