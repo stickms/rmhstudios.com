@@ -41,13 +41,13 @@
 
 :root {
   /* Base colors — mapped to site design system */
-  --background: #1a1b1e;
+  --background: #000;
   --foreground: #e8e8ec;
 
   /* ==================== SITE DESIGN SYSTEM ==================== */
-  /* Dark theme (default) — inspired by rmhbox/rmhtube surfaces */
-  --site-bg: #1a1b1e;
-  --site-bg-subtle: #202124;
+  /* Dark theme (default) — black to match the vibe app shell */
+  --site-bg: #000;
+  --site-bg-subtle: #0b0b0c;
   --site-surface: #27282c;
   --site-surface-hover: #313238;
   --site-surface-active: #3a3b42;

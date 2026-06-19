@@ -388,7 +388,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
       {/* Header bar */}
       <div className="sticky top-0 z-10 bg-site-bg/85 backdrop-blur-md border-b border-site-border">
         <div className="flex items-center gap-3 px-4 py-3">
-          <Link to="/home" className="p-1.5 -ml-1.5 rounded-lg hover:bg-site-surface transition-colors">
+          <Link to="/" className="p-1.5 -ml-1.5 rounded-lg hover:bg-site-surface transition-colors">
             <ArrowLeft className="w-5 h-5 text-site-text" />
           </Link>
           <div>
@@ -465,7 +465,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
                 variant="outline"
                 size="sm"
                 onClick={() => setShowEdit(true)}
-                className="rounded-full border-site-border text-site-text hover:bg-site-surface"
+                className="rounded-lg border-site-border text-site-text hover:bg-site-surface"
               >
                 Edit Profile
               </Button>
@@ -476,7 +476,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
                   size="sm"
                   onClick={handleMessage}
                   disabled={messageSending}
-                  className="rounded-full border-site-border text-site-text hover:bg-site-surface"
+                  className="rounded-lg border-site-border text-site-text hover:bg-site-surface"
                   title="Message"
                 >
                   <MessageCircle className="w-4 h-4" />
@@ -485,7 +485,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
                   variant={profile.isFollowing ? 'outline' : 'accent'}
                   size="sm"
                   onClick={handleFollowToggle}
-                  className={`rounded-full ${profile.isFollowing ? 'border-site-border text-site-text hover:border-site-danger hover:text-site-danger hover:bg-site-danger/10' : ''}`}
+                  className={`rounded-lg ${profile.isFollowing ? 'border-site-border text-site-text hover:border-site-danger hover:text-site-danger hover:bg-site-danger/10' : ''}`}
                 >
                   {profile.isFollowing ? 'Following' : 'Follow'}
                 </Button>

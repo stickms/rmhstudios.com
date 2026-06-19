@@ -17,7 +17,7 @@ export function MobileNav() {
     ? `/u/${(session.user as any).handle || session.user.id}`
     : '/login';
 
-  const isHome = pathname === '/home';
+  const isHome = pathname === '/';
   const isBuilds = pathname?.startsWith('/builds') || pathname?.startsWith('/user-builds');
   const isMessages = pathname?.startsWith('/messages');
   const isProfile = pathname?.startsWith('/profile') || pathname?.startsWith('/u/');
@@ -43,7 +43,7 @@ export function MobileNav() {
       {/* Bottom navigation bar */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 vibe-glass border-t border-site-border">
         <div className="flex items-center justify-around h-12">
-          <Link to="/home" className={tabClass(isHome)} aria-label="Home">
+          <Link to="/" className={tabClass(isHome)} aria-label="Home">
             <Home className="w-6 h-6" />
           </Link>
 

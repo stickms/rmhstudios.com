@@ -1,8 +1,8 @@
 /**
- * Home / Feed Page Route (/home)
+ * Home / Feed Page Route (/)
  *
  * The social feed, rendered inside the site layout (left sidebar + feed +
- * right sidebar). Reached from the landing page's "Feed →" link.
+ * right sidebar). This is the site's root landing page.
  */
 
 import { createFileRoute } from '@tanstack/react-router';
@@ -14,11 +14,11 @@ const fetchSidebarData = createServerFn({ method: 'GET' }).handler(async () => {
   return getSidebarData();
 });
 
-export const Route = createFileRoute('/_site/home')({
+export const Route = createFileRoute('/_site/')({
   loader: () => fetchSidebarData(),
   head: () => ({
     meta: [
-      { title: 'Feed | RMH Studios' },
+      { title: 'RMH Studios' },
       { name: 'description', content: 'The RMH Studios community feed.' },
     ],
   }),

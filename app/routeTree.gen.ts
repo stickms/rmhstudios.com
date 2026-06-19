@@ -38,7 +38,6 @@ import { Route as CopyrightRouteImport } from './routes/copyright'
 import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as AltairRouteImport } from './routes/altair'
 import { Route as SiteRouteImport } from './routes/_site'
-import { Route as IndexRouteImport } from './routes/index'
 import { Route as VersecraftIndexRouteImport } from './routes/versecraft/index'
 import { Route as TempleOfJoyIndexRouteImport } from './routes/temple-of-joy/index'
 import { Route as StudioIndexRouteImport } from './routes/studio/index'
@@ -55,6 +54,7 @@ import { Route as KowloonKnockoutIndexRouteImport } from './routes/kowloon-knock
 import { Route as ForestExplorerIndexRouteImport } from './routes/forest-explorer/index'
 import { Route as DailyIndexRouteImport } from './routes/daily/index'
 import { Route as AltairIndexRouteImport } from './routes/altair/index'
+import { Route as SiteIndexRouteImport } from './routes/_site/index'
 import { Route as VNewRouteImport } from './routes/v.new'
 import { Route as VSlugRouteImport } from './routes/v.$slug'
 import { Route as UserBuildsSlugRouteImport } from './routes/user-builds.$slug'
@@ -106,7 +106,6 @@ import { Route as AltairMultiplayerRouteImport } from './routes/altair/multiplay
 import { Route as SiteWalletRouteImport } from './routes/_site/wallet'
 import { Route as SiteRoadmapRouteImport } from './routes/_site/roadmap'
 import { Route as SiteQuotesRouteImport } from './routes/_site/quotes'
-import { Route as SiteHomeRouteImport } from './routes/_site/home'
 import { Route as SiteAdminRouteRouteImport } from './routes/_site/admin/route'
 import { Route as StrategiesSafehouseIndexRouteImport } from './routes/strategies/safehouse/index'
 import { Route as StrategiesPuzzlesIndexRouteImport } from './routes/strategies/puzzles/index'
@@ -418,11 +417,6 @@ const SiteRoute = SiteRouteImport.update({
   id: '/_site',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const VersecraftIndexRoute = VersecraftIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -502,6 +496,11 @@ const AltairIndexRoute = AltairIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AltairRoute,
+} as any)
+const SiteIndexRoute = SiteIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => SiteRoute,
 } as any)
 const VNewRoute = VNewRouteImport.update({
   id: '/v/new',
@@ -756,11 +755,6 @@ const SiteRoadmapRoute = SiteRoadmapRouteImport.update({
 const SiteQuotesRoute = SiteQuotesRouteImport.update({
   id: '/quotes',
   path: '/quotes',
-  getParentRoute: () => SiteRoute,
-} as any)
-const SiteHomeRoute = SiteHomeRouteImport.update({
-  id: '/home',
-  path: '/home',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteAdminRouteRoute = SiteAdminRouteRouteImport.update({
@@ -1639,7 +1633,7 @@ const ApiRmharksIdCommentCommentIdLikeRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
+  '/': typeof SiteIndexRoute
   '/altair': typeof AltairRouteWithChildren
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
@@ -1669,7 +1663,6 @@ export interface FileRoutesByFullPath {
   '/versecraft': typeof VersecraftRouteWithChildren
   '/void-breaker': typeof VoidBreakerRoute
   '/admin': typeof SiteAdminRouteRouteWithChildren
-  '/home': typeof SiteHomeRoute
   '/quotes': typeof SiteQuotesRoute
   '/roadmap': typeof SiteRoadmapRoute
   '/wallet': typeof SiteWalletRoute
@@ -1904,7 +1897,6 @@ export interface FileRoutesByFullPath {
   '/api/rmharks/$id/comment/$commentId/view': typeof ApiRmharksIdCommentCommentIdViewRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
   '/laundry-sort': typeof LaundrySortRoute
@@ -1917,7 +1909,6 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/velum2099': typeof Velum2099Route
   '/void-breaker': typeof VoidBreakerRoute
-  '/home': typeof SiteHomeRoute
   '/quotes': typeof SiteQuotesRoute
   '/roadmap': typeof SiteRoadmapRoute
   '/wallet': typeof SiteWalletRoute
@@ -1964,6 +1955,7 @@ export interface FileRoutesByTo {
   '/user-builds/$slug': typeof UserBuildsSlugRoute
   '/v/$slug': typeof VSlugRoute
   '/v/new': typeof VNewRoute
+  '/': typeof SiteIndexRoute
   '/altair': typeof AltairIndexRoute
   '/daily': typeof DailyIndexRoute
   '/forest-explorer': typeof ForestExplorerIndexRoute
@@ -2148,7 +2140,6 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
   '/_site': typeof SiteRouteWithChildren
   '/altair': typeof AltairRouteWithChildren
   '/cookies': typeof CookiesRoute
@@ -2179,7 +2170,6 @@ export interface FileRoutesById {
   '/versecraft': typeof VersecraftRouteWithChildren
   '/void-breaker': typeof VoidBreakerRoute
   '/_site/admin': typeof SiteAdminRouteRouteWithChildren
-  '/_site/home': typeof SiteHomeRoute
   '/_site/quotes': typeof SiteQuotesRoute
   '/_site/roadmap': typeof SiteRoadmapRoute
   '/_site/wallet': typeof SiteWalletRoute
@@ -2231,6 +2221,7 @@ export interface FileRoutesById {
   '/user-builds/$slug': typeof UserBuildsSlugRoute
   '/v/$slug': typeof VSlugRoute
   '/v/new': typeof VNewRoute
+  '/_site/': typeof SiteIndexRoute
   '/altair/': typeof AltairIndexRoute
   '/daily/': typeof DailyIndexRoute
   '/forest-explorer/': typeof ForestExplorerIndexRoute
@@ -2446,7 +2437,6 @@ export interface FileRouteTypes {
     | '/versecraft'
     | '/void-breaker'
     | '/admin'
-    | '/home'
     | '/quotes'
     | '/roadmap'
     | '/wallet'
@@ -2681,7 +2671,6 @@ export interface FileRouteTypes {
     | '/api/rmharks/$id/comment/$commentId/view'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
     | '/cookies'
     | '/copyright'
     | '/laundry-sort'
@@ -2694,7 +2683,6 @@ export interface FileRouteTypes {
     | '/terms'
     | '/velum2099'
     | '/void-breaker'
-    | '/home'
     | '/quotes'
     | '/roadmap'
     | '/wallet'
@@ -2741,6 +2729,7 @@ export interface FileRouteTypes {
     | '/user-builds/$slug'
     | '/v/$slug'
     | '/v/new'
+    | '/'
     | '/altair'
     | '/daily'
     | '/forest-explorer'
@@ -2924,7 +2913,6 @@ export interface FileRouteTypes {
     | '/api/rmharks/$id/comment/$commentId/view'
   id:
     | '__root__'
-    | '/'
     | '/_site'
     | '/altair'
     | '/cookies'
@@ -2955,7 +2943,6 @@ export interface FileRouteTypes {
     | '/versecraft'
     | '/void-breaker'
     | '/_site/admin'
-    | '/_site/home'
     | '/_site/quotes'
     | '/_site/roadmap'
     | '/_site/wallet'
@@ -3007,6 +2994,7 @@ export interface FileRouteTypes {
     | '/user-builds/$slug'
     | '/v/$slug'
     | '/v/new'
+    | '/_site/'
     | '/altair/'
     | '/daily/'
     | '/forest-explorer/'
@@ -3191,7 +3179,6 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
   SiteRoute: typeof SiteRouteWithChildren
   AltairRoute: typeof AltairRouteWithChildren
   CookiesRoute: typeof CookiesRoute
@@ -3529,13 +3516,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/versecraft/': {
       id: '/versecraft/'
       path: '/'
@@ -3647,6 +3627,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/altair/'
       preLoaderRoute: typeof AltairIndexRouteImport
       parentRoute: typeof AltairRoute
+    }
+    '/_site/': {
+      id: '/_site/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof SiteIndexRouteImport
+      parentRoute: typeof SiteRoute
     }
     '/v/new': {
       id: '/v/new'
@@ -4003,13 +3990,6 @@ declare module '@tanstack/react-router' {
       path: '/quotes'
       fullPath: '/quotes'
       preLoaderRoute: typeof SiteQuotesRouteImport
-      parentRoute: typeof SiteRoute
-    }
-    '/_site/home': {
-      id: '/_site/home'
-      path: '/home'
-      fullPath: '/home'
-      preLoaderRoute: typeof SiteHomeRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/admin': {
@@ -5201,10 +5181,10 @@ const SiteAdminRouteRouteWithChildren = SiteAdminRouteRoute._addFileChildren(
 
 interface SiteRouteChildren {
   SiteAdminRouteRoute: typeof SiteAdminRouteRouteWithChildren
-  SiteHomeRoute: typeof SiteHomeRoute
   SiteQuotesRoute: typeof SiteQuotesRoute
   SiteRoadmapRoute: typeof SiteRoadmapRoute
   SiteWalletRoute: typeof SiteWalletRoute
+  SiteIndexRoute: typeof SiteIndexRoute
   SiteMessagesConversationIdRoute: typeof SiteMessagesConversationIdRoute
   SiteProfileIdRoute: typeof SiteProfileIdRoute
   SiteResearchCallRoute: typeof SiteResearchCallRoute
@@ -5224,10 +5204,10 @@ interface SiteRouteChildren {
 
 const SiteRouteChildren: SiteRouteChildren = {
   SiteAdminRouteRoute: SiteAdminRouteRouteWithChildren,
-  SiteHomeRoute: SiteHomeRoute,
   SiteQuotesRoute: SiteQuotesRoute,
   SiteRoadmapRoute: SiteRoadmapRoute,
   SiteWalletRoute: SiteWalletRoute,
+  SiteIndexRoute: SiteIndexRoute,
   SiteMessagesConversationIdRoute: SiteMessagesConversationIdRoute,
   SiteProfileIdRoute: SiteProfileIdRoute,
   SiteResearchCallRoute: SiteResearchCallRoute,
@@ -5808,7 +5788,6 @@ const ApiAdminCuratedBuildsImageRouteWithChildren =
   )
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
   SiteRoute: SiteRouteWithChildren,
   AltairRoute: AltairRouteWithChildren,
   CookiesRoute: CookiesRoute,

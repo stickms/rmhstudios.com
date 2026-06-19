@@ -339,7 +339,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="relative group w-20 h-20 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-2xl ring-4 ring-site-bg shrink-0 overflow-hidden cursor-pointer"
+                className="relative group w-20 h-20 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-site-bg font-bold text-2xl ring-4 ring-site-bg shrink-0 overflow-hidden cursor-pointer"
               >
                 {avatarPreview ? (
                   <img src={avatarPreview} alt="Avatar" className="w-full h-full rounded-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }} />

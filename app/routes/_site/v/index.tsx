@@ -1,16 +1,19 @@
 /**
- * /v — Vibe gallery.
+ * /v — RMHVibe.
  *
- * A public, searchable, lazy-loaded grid of every generated vibe page. Each card
- * shows the server-rendered screenshot, title, description, and when it was made,
- * and links to the full /v/$slug viewer. Rendered as a flat route (outside the
- * _site sidebar) for the same full-bleed look as the homepage and viewer.
+ * The page-generation entry point: a prompt dock at the top (type anything,
+ * get a shareable, collaboratively-editable webpage) followed by a public,
+ * searchable, lazy-loaded grid of every generated vibe page. Each card shows
+ * the server-rendered screenshot, title, description, and when it was made,
+ * and links to the full /v/$slug viewer. Rendered inside the _site sidebar.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { type KeyboardEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { ArrowLeft, Search } from 'lucide-react';
+import { ArrowRight, Search } from 'lucide-react';
+import { ModelSelect } from '@/components/rmhvibe/ModelSelect';
+import { DEFAULT_VIBE_MODEL, type VibeModel } from '@/lib/rmhvibe/vibe-types';
 import { listVibePages, type VibeCard } from '@/lib/rmhvibe/vibe.server';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
@@ -23,8 +26,11 @@ const fetchGallery = createServerFn({ method: 'GET' })
 export const Route = createFileRoute('/_site/v/')({
   head: () => ({
     meta: [
-      { title: 'Browse Pages | RMH Studios' },
-      { name: 'description', content: 'Browse every page generated on RMH Studios.' },
+      { title: 'RMHVibe — Make a page | RMH Studios' },
+      {
+        name: 'description',
+        content: 'Type a prompt and get an instant, shareable, collaboratively-editable webpage.',
+      },
     ],
   }),
   loader: () => fetchGallery({ data: {} }),
@@ -54,6 +60,25 @@ function timeAgo(iso: string): string {
 
 function Gallery() {
   const initial = Route.useLoaderData();
+  const navigate = useNavigate();
+
+  // Prompt dock: type a prompt and stream a new page at /v/new.
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [model, setModel] = useState<VibeModel>(DEFAULT_VIBE_MODEL);
+
+  function submit() {
+    const prompt = inputRef.current?.value.trim();
+    if (!prompt) return;
+    navigate({ to: '/v/new', search: { prompt, model } });
+  }
+
+  // Enter submits; Shift+Enter inserts a newline.
+  function handlePromptKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      submit();
+    }
+  }
 
   const [query, setQuery] = useState('');
   const [items, setItems] = useState<VibeCard[]>(initial.items);
@@ -117,11 +142,35 @@ function Gallery() {
       className="vibe-screen vibe-gallery min-h-screen w-full min-w-0 border-r border-site-border pb-16 md:pb-0"
       targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
     >
+      {/* Prompt hero: generate a new page. */}
+      <section className="vibe-gallery__hero">
+        <p className="vibe-rise vibe-presents mb-3">RMH Studios presents</p>
+        <h1 className="vibe-rise-2 vibe-title">The anything platform.</h1>
+        <div className="mt-8 flex w-full justify-center">
+          <div className="vibe-dock vibe-dock--area vibe-rise-soft">
+            <textarea
+              ref={inputRef}
+              name="prompt"
+              rows={3}
+              autoComplete="off"
+              onKeyDown={handlePromptKeyDown}
+              placeholder="Where do you want to go?"
+              aria-label="Describe the page you want to create"
+              className="vibe-dock__textarea"
+            />
+            <div className="vibe-dock__footer">
+              <ModelSelect value={model} onChange={setModel} />
+              <button type="button" onClick={submit} aria-label="Generate" className="vibe-dock__submit">
+                <ArrowRight size={20} />
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Pages section: searchable grid of everything generated so far. */}
       <header className="vibe-gallery__head">
-        <Link to="/" aria-label="Back to home" className="vibe-toolbar__icon">
-          <ArrowLeft size={17} />
-        </Link>
-        <h1 className="vibe-gallery__title">Pages</h1>
+        <h2 className="vibe-gallery__title">Pages</h2>
         <div className="vibe-search">
           <Search size={16} className="vibe-search__icon" aria-hidden="true" />
           <input

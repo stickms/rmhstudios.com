@@ -254,7 +254,7 @@ function VibeViewer() {
 
       {/* Floating toolbar — top-right */}
       <div className="vibe-toolbar fixed right-3 top-3 z-40">
-        <Link to="/" aria-label="Back to home" className="vibe-toolbar__icon">
+        <Link to="/v" aria-label="Back to pages" className="vibe-toolbar__icon">
           <ArrowLeft size={17} />
         </Link>
         <button
@@ -435,7 +435,7 @@ function VibeNotFound() {
     <div className="vibe-screen fixed inset-0 flex flex-col items-center justify-center gap-4">
       <p className="vibe-rise text-3xl font-bold tracking-tight">Vibe not found</p>
       <p className="vibe-rise-2 vibe-hint">This page doesn&apos;t exist (or never did).</p>
-      <Link to="/" className="vibe-rise-3 vibe-toolbar__cta mt-3">
+      <Link to="/v" className="vibe-rise-3 vibe-toolbar__cta mt-3">
         Make your own
       </Link>
     </div>

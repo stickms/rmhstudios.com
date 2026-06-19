@@ -375,25 +375,25 @@ export function PostDetail({ postId }: PostDetailProps) {
                 }}
               />
               <div className="flex items-center justify-between mt-2">
+                <span className={`text-xs font-mono ${remaining <= 20 ? 'text-site-warning' : 'text-site-text-dim'}`}>
+                  {remaining}
+                </span>
                 <div className="flex items-center gap-1.5">
-                  <span className={`text-xs font-mono ${remaining <= 20 ? 'text-site-warning' : 'text-site-text-dim'}`}>
-                    {remaining}
-                  </span>
                   <AIGenerateButton
                     request={{ mode: 'reply', rmharkId: postId, draft: commentContent }}
                     onGenerated={(text) => setCommentContent(text)}
                     size="sm"
                     title="Generate a reply with AI"
                   />
+                  <Button
+                    variant="accent"
+                    size="sm"
+                    disabled={!commentContent.trim() || remaining < 0 || submitting}
+                    onClick={handleSubmit}
+                  >
+                    {submitting ? 'Posting...' : 'Reply'}
+                  </Button>
                 </div>
-                <Button
-                  variant="accent"
-                  size="sm"
-                  disabled={!commentContent.trim() || remaining < 0 || submitting}
-                  onClick={handleSubmit}
-                >
-                  {submitting ? 'Posting...' : 'Reply'}
-                </Button>
               </div>
             </div>
           </div>

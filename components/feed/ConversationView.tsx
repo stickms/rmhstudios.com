@@ -419,7 +419,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
                       }`}
                     >
                       <p className="whitespace-pre-wrap">{msg.content}</p>
-                      <p className={`text-[10px] mt-1 ${isSelf ? 'text-white/60' : 'text-site-text-dim'}`}>
+                      <p className={`text-[10px] mt-1 ${isSelf ? 'text-site-bg/60' : 'text-site-text-dim'}`}>
                         {formatTime(msg.createdAt)}
                       </p>
                     </div>
