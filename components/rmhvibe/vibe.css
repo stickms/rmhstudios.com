@@ -29,10 +29,12 @@
 }
 
 .vibe-title {
-  /* vw-driven so the line scales to fit the viewport — stays on one line
-     (nowrap) across phones → desktop. Falls back to wrapping only when truly
-     too narrow (see media query below). */
+  /* Scales to its container's width (cqi), not the viewport — so the line fits
+     whether it's full-bleed or inside the narrower sidebar layout. Stays on one
+     line (nowrap) across phones → desktop; wraps only when truly too narrow
+     (see media query below). Falls back to vw where no container is present. */
   font-size: clamp(1.6rem, 8vw, 6.5rem);
+  font-size: clamp(1.6rem, 8.5cqi, 6.5rem);
   font-weight: 700;
   line-height: 1.02;
   letter-spacing: -0.04em;
@@ -616,6 +618,18 @@
 /* ─── Gallery ───────────────────────────────────────────────────────────────── */
 .vibe-gallery {
   width: 100%;
+}
+
+.vibe-gallery__hero {
+  /* Establish a container so the title (cqi) sizes against this column's width
+     rather than the full viewport, preventing horizontal overflow inside the
+     sidebar layout. */
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: clamp(48px, 12vh, 120px) clamp(16px, 4vw, 40px) clamp(40px, 8vh, 72px);
 }
 
 .vibe-gallery__head {

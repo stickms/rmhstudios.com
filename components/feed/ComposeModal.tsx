@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { X, Plus, BarChart3, Image } from 'lucide-react';
 import { GifEmbed } from './GifEmbed';
+import { AIGenerateButton } from './AIGenerateButton';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
@@ -140,6 +141,13 @@ export function ComposeModal({ open, onClose }: ComposeModalProps) {
             <X className="w-5 h-5" />
           </button>
           <div className="flex items-center gap-1.5">
+            {/* AI draft button */}
+            <AIGenerateButton
+              request={{ mode: 'post', draft: content }}
+              onGenerated={(text) => setContent(text)}
+              title="Generate a post with AI"
+            />
+
             {/* Plus button */}
             <div className="relative" ref={menuRef}>
               <button
@@ -192,7 +200,7 @@ export function ComposeModal({ open, onClose }: ComposeModalProps) {
         <div className="px-4 py-3">
           <div className="flex gap-3">
             {/* Avatar */}
-            <div className="w-10 h-10 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-sm ring-2 ring-site-bg shrink-0">
+            <div className="w-10 h-10 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-site-bg font-bold text-sm ring-2 ring-site-bg shrink-0">
               {(resolvedUser?.image || session.user.image) ? (
                 <img
                   src={resolvedUser?.image || session.user.image!}

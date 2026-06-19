@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { useUnreadCount } from '@/lib/useUnreadCount';
 
 const navLinks = [
-  { href: '/home', label: 'Home', icon: Home },
+  { href: '/', label: 'Home', icon: Home },
   { href: '/v', label: 'Pages', icon: LayoutGrid },
   { href: '/builds', label: 'Builds', icon: Package },
   { href: '/library', label: 'Library', icon: Library },
@@ -67,10 +67,10 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
     <div className={`flex flex-col gap-1 h-full ${paddingClass}`}>
       {/* Logo */}
       <Link to="/" className={`mb-6 flex items-center ${logoAlignClass}`}>
-        <span className={`font-(family-name:--site-font-display) font-bold text-xl text-site-text ${logoFullClass}`}>
+        <span className={`site-logo font-bold text-xl text-site-text ${logoFullClass}`}>
           RMH<span className="text-site-text-muted font-semibold">Studios</span>
         </span>
-        <span className={`font-(family-name:--site-font-display) font-bold text-xl text-site-text ${logoShortClass}`}>
+        <span className={`site-logo font-bold text-xl text-site-text ${logoShortClass}`}>
           RMH
         </span>
       </Link>

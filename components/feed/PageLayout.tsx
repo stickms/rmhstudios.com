@@ -100,6 +100,7 @@ export function PageLayout({
       <MobileSidebarDrawer
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
+        onOpen={() => setDrawerOpen(true)}
       />
     </>
   );

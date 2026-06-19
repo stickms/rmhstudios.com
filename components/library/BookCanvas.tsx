@@ -51,6 +51,14 @@ export function BookCanvas({ aspect, single, numPages, getImg, ensurePage, onPag
   const [k, setK] = useState(0);
   const [turn, setTurn] = useState<Turn | null>(null);
   const turnId = useRef(0);
+  // Live mirrors of the committed spread and the active turn, read synchronously by
+  // beginTurn so rapid clicks/keypresses chain correctly without waiting on a React
+  // re-render to update the `k`/`turn` state they close over.
+  const kRef = useRef(0);
+  const turnRef = useRef<Turn | null>(null);
+  useEffect(() => {
+    kRef.current = k;
+  }, [k]);
 
   // Animation/drag share one mutable progress value (0→1) read every frame, so
   // dragging and the settle animation never trigger React re-renders.
@@ -110,9 +118,12 @@ export function BookCanvas({ aspect, single, numPages, getImg, ensurePage, onPag
       const p = Math.max(1, Math.min(numPages, Math.round(page)));
       const target = single ? p - 1 : Math.floor(p / 2);
       setTurn(null);
+      turnRef.current = null;
       progress.current = 0;
       anim.current = { active: false, target: 0 };
-      setK(Math.max(0, Math.min(maxK, target)));
+      const tgt = Math.max(0, Math.min(maxK, target));
+      kRef.current = tgt;
+      setK(tgt);
     };
     return () => {
       if (seek) seek.current = null;
@@ -122,10 +133,19 @@ export function BookCanvas({ aspect, single, numPages, getImg, ensurePage, onPag
   // Build a turn descriptor and queue its bitmaps.
   const beginTurn = useCallback(
     (dir: Dir, viaDrag: boolean): boolean => {
-      if (turn || anim.current.active) return false;
-      const target = dir === 'next' ? k + 1 : k - 1;
+      // Interruptible turns are what let you rip through pages: if an animated turn is
+      // still settling, commit it instantly and start the next one from where it landed
+      // instead of dropping the input. The spread we turn FROM:
+      //  - mid-drag (turn set, anim not yet running): never interrupt — return false;
+      //  - settling toward completion (anim.target ≥ 0.5): treat it as done → its target;
+      //  - settling back to a cancel, or idle: the still-committed spread (kRef).
+      const inFlight = turnRef.current;
+      if (inFlight && !anim.current.active) return false;
+      const committing = !!inFlight && anim.current.target >= 0.5;
+      const fromK = committing ? inFlight!.target : kRef.current;
+      const target = dir === 'next' ? fromK + 1 : fromK - 1;
       if (target < 0 || target > maxK) return false;
-      const cur = view(k);
+      const cur = view(fromK);
       const dest = view(target);
       [cur.left, cur.right, dest.left, dest.right].forEach((n) => n && ensurePage(n));
 
@@ -168,21 +188,38 @@ export function BookCanvas({ aspect, single, numPages, getImg, ensurePage, onPag
         };
       }
 
+      // Finalise the interrupted turn so the committed spread underneath is correct
+      // before the fresh leaf flips off it.
+      if (committing && fromK !== kRef.current) {
+        kRef.current = fromK;
+        setK(fromK);
+      }
+      turnRef.current = t;
       progress.current = 0;
       anim.current = viaDrag ? { active: false, target: 0 } : { active: true, target: 1 };
       setTurn(t);
       return true;
     },
-    [turn, k, maxK, view, single, ensurePage],
+    [maxK, view, single, ensurePage],
   );
 
   // Called by the scene when progress settles at 0 (cancelled) or 1 (completed).
   const onSettle = useCallback((reached: number) => {
+    turnRef.current = null;
     setTurn((cur) => {
-      if (cur && reached >= 0.999) setK(cur.target);
+      if (cur && reached >= 0.999) {
+        kRef.current = cur.target;
+        setK(cur.target);
+      }
       return null;
     });
-    progress.current = 0;
+    // Pin progress at the value it settled on rather than snapping to 0. Clearing
+    // `turn` only takes effect on React's next commit, so the leaf stays mounted for
+    // a frame or two longer — and if we reset progress to 0 here, that lingering leaf
+    // rotates flat back onto its *original* side, flashing the page you just turned
+    // away from. Holding it at `reached` keeps it showing the completed (or snapped-
+    // back) spread until it unmounts. The next turn's beginTurn resets progress to 0.
+    progress.current = reached;
     anim.current = { active: false, target: 0 };
   }, []);
 
@@ -247,15 +284,23 @@ export function BookCanvas({ aspect, single, numPages, getImg, ensurePage, onPag
     return () => window.removeEventListener('keydown', onKey);
   }, [beginTurn]);
 
-  const canPrev = k > 0 && !turn && !anim.current.active;
-  const canNext = k < maxK && !turn && !anim.current.active;
+  // Gate the arrows on the page we'll be on once the current turn lands (its target,
+  // if one's in flight), not on whether an animation is running — turns are
+  // interruptible, so the only reason to hide an arrow is hitting the book's edge.
+  // This also stops the buttons from vanishing mid-flip.
+  const effK = turn ? turn.target : k;
+  const canPrev = effK > 0;
+  const canNext = effK < maxK;
 
   const base = turn ? { left: turn.staticLeft, right: turn.staticRight } : view(k);
   const contentW = single ? aspect : 2 * aspect;
-  // A little vertical headroom so a tilted page-turn can lift/curl past the page
-  // rectangle without clipping. Kept tight (vs. the page height of 1) so the book
-  // fills most of the stage's height rather than floating in a letterbox.
-  const contentH = 1.28;
+  // The fit box is sized to the page height (1) plus a hair of headroom. The leaf
+  // never actually exceeds the page rectangle — it rotates around the vertical spine
+  // (no height change), its ≤0.2rad vertical tilt only foreshortens it, and the
+  // z-curl is invisible under the orthographic camera — so the small margin is just
+  // breathing room. Kept tight on purpose so the book fills the stage's height
+  // rather than floating in a letterbox.
+  const contentH = 1.06;
 
   return (
     <div
@@ -363,10 +408,11 @@ function Fit({ width, height }: { width: number; height: number }) {
   const size = useThree((s) => s.size);
   const camera = useThree((s) => s.camera);
   useEffect(() => {
-    // `height` already includes curl/tilt headroom (see contentH), so we only need a
+    // `height` already includes a sliver of headroom (see contentH), so we only need a
     // hair of extra breathing room — keep the fill factor high so the book fills the
-    // stage rather than floating in a wide letterbox.
-    const zoom = Math.min(size.width / width, size.height / height) * 0.97;
+    // stage rather than floating in a wide letterbox. The stage's own padding keeps the
+    // book off the viewport edge regardless.
+    const zoom = Math.min(size.width / width, size.height / height) * 0.99;
     camera.zoom = zoom;
     camera.updateProjectionMatrix();
   }, [size.width, size.height, width, height, camera]);
@@ -444,7 +490,7 @@ function Leaf({
   useFrame((_, delta) => {
     const a = anim.current!;
     if (a.active) {
-      const next = THREE.MathUtils.damp(progress.current!, a.target, 11, delta);
+      const next = THREE.MathUtils.damp(progress.current!, a.target, 15, delta);
       progress.current = next;
       // Ease the vertical lean back to neutral as the turn settles.
       tilt.current = THREE.MathUtils.damp(tilt.current!, 0, 9, delta);

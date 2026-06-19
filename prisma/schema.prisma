@@ -21,6 +21,10 @@ model User {
   image           String?
   isAdmin         Boolean   @default(false)
   isVerified      Boolean   @default(false)
+  // ─── RMHark AI bot users (generated + driven by the bot-worker) ──
+  isBot           Boolean   @default(false) // synthetic account created by the bot-worker
+  botPersona      String?   @db.Text         // private prompt seed describing the bot's posting "theme"
+  botLastPostAt   DateTime?                   // last time the worker posted as this bot (pacing)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -117,6 +121,7 @@ model User {
   doctrineRecruitmentCodes    DoctrineRecruitmentCode[]
   doctrineSahurParticipations DoctrineSahurParticipation[]
 
+  @@index([isBot])
   @@map("user")
 }
 

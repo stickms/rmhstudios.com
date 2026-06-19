@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Plus, BarChart3, Image, X } from 'lucide-react';
 import { GifEmbed } from './GifEmbed';
+import { AIGenerateButton } from './AIGenerateButton';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { useFeedStore } from '@/stores/feedStore';
@@ -283,6 +284,13 @@ export function ComposeBox() {
             </span>
 
             <div className="flex items-center gap-1.5">
+              {/* AI draft button */}
+              <AIGenerateButton
+                request={{ mode: 'post', draft: content }}
+                onGenerated={(text) => setContent(text)}
+                title="Generate a post with AI"
+              />
+
               {/* Plus button */}
               <div className="relative" ref={menuRef}>
                 <button

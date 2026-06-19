@@ -8,6 +8,7 @@ import { MAX_COMMENT_LENGTH } from '@/lib/rmhark-schema';
 import { RMHarkContent } from './RMHarkContent';
 import { EngagementListModal } from './EngagementListModal';
 import { UserAvatar } from './UserAvatar';
+import { AIGenerateButton } from './AIGenerateButton';
 import { useFreshUser } from '@/stores/userDisplayStore';
 
 export interface Comment {
@@ -345,15 +346,23 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
                       Cancel
                     </button>
                   </div>
-                  <Button
-                    variant="accent"
-                    size="sm"
-                    disabled={!replyContent.trim() || remaining < 0 || submitting}
-                    onClick={handleSubmitReply}
-                    className="h-6 text-xs px-2.5"
-                  >
-                    {submitting ? 'Posting...' : 'Reply'}
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <AIGenerateButton
+                      request={{ mode: 'reply', rmharkId: postId, parentId: comment.id, draft: replyContent }}
+                      onGenerated={(text) => setReplyContent(text)}
+                      size="sm"
+                      title="Generate a reply with AI"
+                    />
+                    <Button
+                      variant="accent"
+                      size="sm"
+                      disabled={!replyContent.trim() || remaining < 0 || submitting}
+                      onClick={handleSubmitReply}
+                      className="h-6 text-xs px-2.5"
+                    >
+                      {submitting ? 'Posting...' : 'Reply'}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>

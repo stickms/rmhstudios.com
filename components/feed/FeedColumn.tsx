@@ -154,7 +154,7 @@ export function FeedColumn() {
               value={searchInput}
               onChange={(e) => handleSearchChange(e.target.value)}
               placeholder="Search..."
-              className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-full pl-9 pr-9 py-2 border border-site-border outline-none focus:border-site-accent transition-colors"
+              className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-lg pl-9 pr-9 py-2 border border-site-border outline-none focus:border-site-accent transition-colors"
               onKeyDown={(e) => {
                 if (e.key === 'Escape') clearSearch();
               }}
@@ -210,7 +210,7 @@ export function FeedColumn() {
           <Link
             to="/login"
             search={{ callbackURL: undefined }}
-            className="px-5 py-2 rounded-full bg-site-accent text-site-bg text-sm font-bold hover:bg-site-accent-hover transition-colors"
+            className="px-5 py-2 rounded-lg bg-site-accent text-site-bg text-sm font-bold hover:bg-site-accent-hover transition-colors"
           >
             Sign in
           </Link>
@@ -223,6 +223,7 @@ export function FeedColumn() {
       <MobileSidebarDrawer
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
+        onOpen={() => setDrawerOpen(true)}
       />
     </div>
   );
