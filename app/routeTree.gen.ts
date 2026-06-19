@@ -21,7 +21,7 @@ import { Route as SliceItRouteImport } from './routes/slice-it'
 import { Route as SecretRouteImport } from './routes/secret'
 import { Route as RmhtypeRouteImport } from './routes/rmhtype'
 import { Route as RmhtubeRouteImport } from './routes/rmhtube'
-import { Route as RmhtechRouteImport } from './routes/rmhtech'
+import { Route as AdaptiveIntelligenceRouteImport } from './routes/adaptive-intelligence'
 import { Route as RmhstudyRouteImport } from './routes/rmhstudy'
 import { Route as RmhmusicRouteImport } from './routes/rmhmusic'
 import { Route as RmhcodeRouteImport } from './routes/rmhcode'
@@ -333,9 +333,9 @@ const RmhtubeRoute = RmhtubeRouteImport.update({
   path: '/rmhtube',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RmhtechRoute = RmhtechRouteImport.update({
-  id: '/rmhtech',
-  path: '/rmhtech',
+const AdaptiveIntelligenceRoute = AdaptiveIntelligenceRouteImport.update({
+  id: '/adaptive-intelligence',
+  path: '/adaptive-intelligence',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RmhstudyRoute = RmhstudyRouteImport.update({
@@ -1649,7 +1649,7 @@ export interface FileRoutesByFullPath {
   '/rmhcode': typeof RmhcodeRouteWithChildren
   '/rmhmusic': typeof RmhmusicRouteWithChildren
   '/rmhstudy': typeof RmhstudyRouteWithChildren
-  '/rmhtech': typeof RmhtechRoute
+  '/adaptive-intelligence': typeof AdaptiveIntelligenceRoute
   '/rmhtube': typeof RmhtubeRouteWithChildren
   '/rmhtype': typeof RmhtypeRouteWithChildren
   '/secret': typeof SecretRouteWithChildren
@@ -1904,7 +1904,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/neon-driftway': typeof NeonDriftwayRoute
   '/privacy': typeof PrivacyRoute
-  '/rmhtech': typeof RmhtechRoute
+  '/adaptive-intelligence': typeof AdaptiveIntelligenceRoute
   '/synapse-storm': typeof SynapseStormRoute
   '/terms': typeof TermsRoute
   '/velum2099': typeof Velum2099Route
@@ -2156,7 +2156,7 @@ export interface FileRoutesById {
   '/rmhcode': typeof RmhcodeRouteWithChildren
   '/rmhmusic': typeof RmhmusicRouteWithChildren
   '/rmhstudy': typeof RmhstudyRouteWithChildren
-  '/rmhtech': typeof RmhtechRoute
+  '/adaptive-intelligence': typeof AdaptiveIntelligenceRoute
   '/rmhtube': typeof RmhtubeRouteWithChildren
   '/rmhtype': typeof RmhtypeRouteWithChildren
   '/secret': typeof SecretRouteWithChildren
@@ -2423,7 +2423,7 @@ export interface FileRouteTypes {
     | '/rmhcode'
     | '/rmhmusic'
     | '/rmhstudy'
-    | '/rmhtech'
+    | '/adaptive-intelligence'
     | '/rmhtube'
     | '/rmhtype'
     | '/secret'
@@ -2678,7 +2678,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/neon-driftway'
     | '/privacy'
-    | '/rmhtech'
+    | '/adaptive-intelligence'
     | '/synapse-storm'
     | '/terms'
     | '/velum2099'
@@ -2929,7 +2929,7 @@ export interface FileRouteTypes {
     | '/rmhcode'
     | '/rmhmusic'
     | '/rmhstudy'
-    | '/rmhtech'
+    | '/adaptive-intelligence'
     | '/rmhtube'
     | '/rmhtype'
     | '/secret'
@@ -3195,7 +3195,7 @@ export interface RootRouteChildren {
   RmhcodeRoute: typeof RmhcodeRouteWithChildren
   RmhmusicRoute: typeof RmhmusicRouteWithChildren
   RmhstudyRoute: typeof RmhstudyRouteWithChildren
-  RmhtechRoute: typeof RmhtechRoute
+  AdaptiveIntelligenceRoute: typeof AdaptiveIntelligenceRoute
   RmhtubeRoute: typeof RmhtubeRouteWithChildren
   RmhtypeRoute: typeof RmhtypeRouteWithChildren
   SecretRoute: typeof SecretRouteWithChildren
@@ -3397,11 +3397,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RmhtubeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/rmhtech': {
-      id: '/rmhtech'
-      path: '/rmhtech'
-      fullPath: '/rmhtech'
-      preLoaderRoute: typeof RmhtechRouteImport
+    '/adaptive-intelligence': {
+      id: '/adaptive-intelligence'
+      path: '/adaptive-intelligence'
+      fullPath: '/adaptive-intelligence'
+      preLoaderRoute: typeof AdaptiveIntelligenceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rmhstudy': {
@@ -5804,7 +5804,7 @@ const rootRouteChildren: RootRouteChildren = {
   RmhcodeRoute: RmhcodeRouteWithChildren,
   RmhmusicRoute: RmhmusicRouteWithChildren,
   RmhstudyRoute: RmhstudyRouteWithChildren,
-  RmhtechRoute: RmhtechRoute,
+  AdaptiveIntelligenceRoute: AdaptiveIntelligenceRoute,
   RmhtubeRoute: RmhtubeRouteWithChildren,
   RmhtypeRoute: RmhtypeRouteWithChildren,
   SecretRoute: SecretRouteWithChildren,

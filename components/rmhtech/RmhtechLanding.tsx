@@ -1,5 +1,5 @@
 /**
- * RMHTech — biotech-arm landing page.
+ * Adaptive Intelligence — biotech-arm landing page (RMH Studios).
  *
  * Monochrome, minimal, single-screen hero over an animated WebGL liquid-gradient
  * background (original fbm domain-warp shader), with a liquid-metal CTA.
@@ -10,7 +10,7 @@
 import { useEffect, useRef } from 'react'
 
 const ACCESS_MAILTO =
-  'mailto:info@rmhstudios.com?subject=Request%20access%20%E2%80%94%20rmhtech&body=Hi%20rmhtech%20team%2C%0D%0A%0D%0AI%27d%20like%20early%20access%20to%20the%20Co-Scientist.%0D%0A%0D%0AName%3A%0D%0AInstitution%20%2F%20company%3A%0D%0ARole%3A%0D%0AWhat%20I%27d%20use%20it%20for%3A%0D%0A'
+  'mailto:info@rmhstudios.com?subject=Request%20access%20%E2%80%94%20Adaptive%20Intelligence&body=Hi%20Adaptive%20Intelligence%20team%2C%0D%0A%0D%0AI%27d%20like%20early%20access%20to%20the%20Co-Scientist.%0D%0A%0D%0AName%3A%0D%0AInstitution%20%2F%20company%3A%0D%0ARole%3A%0D%0AWhat%20I%27d%20use%20it%20for%3A%0D%0A'
 
 export default function RmhtechLanding() {
   const rootRef = useRef<HTMLDivElement>(null)
@@ -167,16 +167,16 @@ export default function RmhtechLanding() {
   }, [])
 
   return (
-    <div className="rmht" ref={rootRef}>
+    <div className="rmht" ref={rootRef} style={{ background: '#080808', color: '#F4F4F4', minHeight: '100svh' }}>
       <canvas className="liquid" ref={canvasRef} aria-hidden="true" />
       <div className="grain" aria-hidden="true" />
 
       <div className="layer">
         <header>
           <div className="wrap bar">
-            <a className="mark" href="#top" aria-label="rmhtech home">
-              <span className="dot" aria-hidden="true" />
-              rmhtech
+            <a className="mark" href="#top" aria-label="Adaptive Intelligence home">
+              <img className="glyph" src="/brand/adaptive-intelligence-mark.svg" alt="" aria-hidden="true" />
+              Adaptive Intelligence
             </a>
             <a className="req" href={ACCESS_MAILTO}>
               Request access
@@ -187,6 +187,13 @@ export default function RmhtechLanding() {
         <main id="top">
           <section className="hero">
             <div className="wrap">
+              <img
+                className="ai-logo"
+                src="/brand/adaptive-intelligence-mark.svg"
+                alt="Adaptive Intelligence"
+                width={120}
+                height={120}
+              />
               <p className="eyebrow">Reproducible by construction</p>
               <h1>
                 An AI co-scientist you can <em>trust</em>.
@@ -251,9 +258,9 @@ export default function RmhtechLanding() {
         <footer>
           <div className="wrap foot-grid">
             <div className="foot-brand">
-              <a className="mark" href="#top" aria-label="rmhtech home">
-                <span className="dot" aria-hidden="true" />
-                rmhtech
+              <a className="mark" href="#top" aria-label="Adaptive Intelligence home">
+                <img className="glyph" src="/brand/adaptive-intelligence-mark.svg" alt="" aria-hidden="true" />
+                Adaptive Intelligence
               </a>
               <p className="tag">Building the trustworthy substrate for AI-driven biology.</p>
             </div>
@@ -263,7 +270,7 @@ export default function RmhtechLanding() {
             </nav>
             <nav className="col" aria-label="Careers">
               <h4>Careers</h4>
-              <a href="mailto:careers@rmhstudios.com?subject=Careers%20%E2%80%94%20rmhtech">
+              <a href="mailto:careers@rmhstudios.com?subject=Careers%20%E2%80%94%20Adaptive%20Intelligence">
                 careers@rmhstudios.com
               </a>
               <span className="hiring">We&rsquo;re hiring</span>
@@ -275,7 +282,7 @@ export default function RmhtechLanding() {
             </nav>
           </div>
           <div className="wrap foot-base">
-            <span>© 2026 rmhtech</span>
+            <span>© 2026 Adaptive Intelligence</span>
             <span>A deeptech venture from RMH Studios</span>
           </div>
         </footer>

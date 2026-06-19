@@ -38,7 +38,7 @@
 .rmht header{position:fixed;top:0;left:0;right:0;z-index:10;padding:26px 0}
 .rmht .bar{display:flex;align-items:center;justify-content:space-between}
 .rmht .mark{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:.92rem;letter-spacing:.02em;font-weight:500}
-.rmht .mark .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent);animation:rmht-pulse 2.8s ease-in-out infinite}
+.rmht .mark .glyph{width:26px;height:26px;flex:0 0 auto;display:block;opacity:.92}
 .rmht .req{font-family:var(--mono);font-size:.74rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);
   border:1px solid var(--line);border-radius:100px;padding:9px 18px;transition:.35s}
 .rmht .req:hover{color:var(--bg);background:var(--accent);border-color:var(--accent)}
@@ -46,6 +46,8 @@
 /* hero — one screen, centered, brutally sparse */
 .rmht .hero{min-height:100svh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;
   padding:140px 0 120px;position:relative}
+.rmht .ai-logo{display:block;width:clamp(84px,12vw,120px);height:auto;margin:0 auto 34px;
+  opacity:0;transform:translateY(18px);animation:rmht-rise .9s .05s cubic-bezier(.2,.7,.2,1) forwards}
 .rmht .eyebrow{font-family:var(--mono);font-size:.7rem;letter-spacing:.42em;text-transform:uppercase;color:var(--accent);
   margin-bottom:42px;opacity:0;transform:translateY(18px);animation:rmht-rise .9s .15s cubic-bezier(.2,.7,.2,1) forwards}
 .rmht h1{font-family:var(--serif);font-weight:300;letter-spacing:-.02em;line-height:1.02;
@@ -128,5 +130,5 @@
 @media(max-width:460px){.rmht .foot-grid{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){
   .rmht *,.rmht *::before,.rmht *::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
-  .rmht .eyebrow,.rmht h1,.rmht .sub,.rmht .metal{opacity:1;transform:none}
+  .rmht .ai-logo,.rmht .eyebrow,.rmht h1,.rmht .sub,.rmht .metal{opacity:1;transform:none}
 }
