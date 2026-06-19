@@ -6,7 +6,7 @@ const TITLE = 'Adaptive Intelligence — the trustworthy substrate for AI-driven
 const DESC =
   'An AI co-scientist for biology is only as trustworthy as the substrate it runs on. Adaptive Intelligence builds the Co-Scientist and the reproducibility Ledger it runs on, together.'
 
-export const Route = createFileRoute('/rmhtech')({
+export const Route = createFileRoute('/adaptive-intelligence')({
   head: () => ({
     meta: [
       { title: TITLE },
