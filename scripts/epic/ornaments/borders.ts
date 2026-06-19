@@ -22,11 +22,18 @@ export function fretBorder(x: number, y: number, w: number, h: number, unit = 10
   </g>`;
 }
 
-/** A scrolling-cloud flourish: two nested spirals. */
+/**
+ * A 卷云纹 scrolling-cloud flourish: an auspicious cloud with a head and a
+ * diminishing curling tail. `scale` sizes it; a negative `scale` mirrors it
+ * horizontally (so a left/right pair can flank a title).
+ */
 export function cloudMotif(cx: number, cy: number, scale: number): string {
-  const s = 18 * scale;
-  return `<g fill="none" stroke="${INK}" stroke-width="${1.4 * scale}" transform="translate(${cx} ${cy})">
-    <path d="M0 0 q ${s} ${-s} ${2 * s} 0 q ${s} ${s} 0 ${1.4 * s} q ${-s} ${s} ${-2 * s} 0"/>
-    <circle cx="${s}" cy="${0.2 * s}" r="${0.35 * s}"/>
+  const s = Math.abs(scale);
+  const dir = scale < 0 ? -1 : 1;
+  const u = 13 * s;
+  // three decreasing scroll loops joined by short links — reads as a rolling cloud
+  const d = `M ${2.8 * u} 0 a ${0.9 * u} ${0.9 * u} 0 1 0 ${-0.9 * u} ${0.9 * u} h ${-1.2 * u} a ${0.7 * u} ${0.7 * u} 0 1 0 ${-0.7 * u} ${0.7 * u} h ${-1.0 * u} a ${0.5 * u} ${0.5 * u} 0 1 0 ${-0.5 * u} ${0.5 * u}`;
+  return `<g fill="none" stroke="${INK}" stroke-width="${1.6 * s}" stroke-linecap="round" stroke-linejoin="round" transform="translate(${cx} ${cy}) scale(${dir} 1)">
+    <path d="${d}"/>
   </g>`;
 }

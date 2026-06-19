@@ -11,11 +11,11 @@ const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
 
 function noteMarkers(p: Extract<Passage, { redComment?: any }>): string {
   if (!('redComment' in p) || !p.redComment?.length) return '';
-  return p.redComment.map(n => `<span class="red-note">${esc(n.zh)}</span>`).join(' ');
+  return p.redComment.map(n => ` <span class="red-note">${esc(n.zh)}</span>`).join('');
 }
 function noteMarkersEn(p: Extract<Passage, { redComment?: any }>): string {
   if (!('redComment' in p) || !p.redComment?.length) return '';
-  return p.redComment.map(n => `<span class="red-note">${esc(n.en)}</span>`).join(' ');
+  return p.redComment.map(n => ` <span class="red-note">${esc(n.en)}</span>`).join('');
 }
 
 export function renderPassageZh(p: Passage): string {
