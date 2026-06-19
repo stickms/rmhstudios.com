@@ -143,11 +143,14 @@ const BASE_REPLY_RULES = [
  */
 export async function generateReply(opts: {
   postContent: string;
+  /** If the post is a quote-repost, the content of the original it quotes. */
+  quotedPostContent?: string;
   thread?: string[];
   persona?: string;
   draft?: string;
 }): Promise<string> {
   const draft = opts.draft?.trim();
+  const quoted = opts.quotedPostContent?.trim();
 
   const system = opts.persona
     ? [
@@ -170,6 +173,7 @@ export async function generateReply(opts: {
   const thread = (opts.thread ?? []).map((c) => c.trim()).filter(Boolean);
   const context = [
     `The original post says:\n"""${opts.postContent.trim()}"""`,
+    quoted ? `\nThat post is quoting this earlier post:\n"""${quoted}"""` : '',
     thread.length
       ? `\nThe reply thread so far (oldest first), and you are replying to the LAST one:\n${thread
           .map((c, i) => `${i + 1}. "${c}"`)
