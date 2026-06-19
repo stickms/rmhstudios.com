@@ -106,5 +106,11 @@
     "description": "A founding master specification for an AI co-scientist for biology, built on a reproducibility substrate to transform biomedical research.",
     "pages": 3365,
     "cover": "rmhtech-the-co-scientist-thesis.jpg"
+  },
+  "elegy-of-the-mandate.pdf": {
+    "title": "天命輓歌 · Elegy of the Mandate",
+    "description": "An original bilingual Chinese epic braiding the Iliad, the Three Kingdoms, Dream of the Red Chamber, and Gilgamesh — a fallen house, a war over a stolen jade Mandate-seal, sworn-brother oaths, a journey to wrest immortality from Heaven, and the garden-lady who records it all. Vertical 竖排 Chinese faces an English translation, set as a classical 古籍 woodblock edition with 脂批 commentary.",
+    "pages": 202,
+    "cover": "elegy-of-the-mandate.jpg"
   }
 }
