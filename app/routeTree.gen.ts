@@ -162,6 +162,7 @@ import { Route as ApiRmhtubeOembedRouteImport } from './routes/api/rmhtube/oembe
 import { Route as ApiRmhboxStatsRouteImport } from './routes/api/rmhbox/stats'
 import { Route as ApiRmhboxLeaderboardRouteImport } from './routes/api/rmhbox/leaderboard'
 import { Route as ApiRmhboxHistoryRouteImport } from './routes/api/rmhbox/history'
+import { Route as ApiRmharksAiGenerateRouteImport } from './routes/api/rmharks/ai-generate'
 import { Route as ApiRmharksIdRouteImport } from './routes/api/rmharks/$id'
 import { Route as ApiProfileMeRouteImport } from './routes/api/profile/me'
 import { Route as ApiProfileAvatarRouteImport } from './routes/api/profile/avatar'
@@ -1046,6 +1047,11 @@ const ApiRmhboxHistoryRoute = ApiRmhboxHistoryRouteImport.update({
   path: '/api/rmhbox/history',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRmharksAiGenerateRoute = ApiRmharksAiGenerateRouteImport.update({
+  id: '/ai-generate',
+  path: '/ai-generate',
+  getParentRoute: () => ApiRmharksRoute,
+} as any)
 const ApiRmharksIdRoute = ApiRmharksIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -1778,6 +1784,7 @@ export interface FileRoutesByFullPath {
   '/api/profile/avatar': typeof ApiProfileAvatarRouteWithChildren
   '/api/profile/me': typeof ApiProfileMeRoute
   '/api/rmharks/$id': typeof ApiRmharksIdRouteWithChildren
+  '/api/rmharks/ai-generate': typeof ApiRmharksAiGenerateRoute
   '/api/rmhbox/history': typeof ApiRmhboxHistoryRoute
   '/api/rmhbox/leaderboard': typeof ApiRmhboxLeaderboardRoute
   '/api/rmhbox/stats': typeof ApiRmhboxStatsRoute
@@ -2020,6 +2027,7 @@ export interface FileRoutesByTo {
   '/api/profile/avatar': typeof ApiProfileAvatarRouteWithChildren
   '/api/profile/me': typeof ApiProfileMeRoute
   '/api/rmharks/$id': typeof ApiRmharksIdRouteWithChildren
+  '/api/rmharks/ai-generate': typeof ApiRmharksAiGenerateRoute
   '/api/rmhbox/history': typeof ApiRmhboxHistoryRoute
   '/api/rmhbox/leaderboard': typeof ApiRmhboxLeaderboardRoute
   '/api/rmhbox/stats': typeof ApiRmhboxStatsRoute
@@ -2286,6 +2294,7 @@ export interface FileRoutesById {
   '/api/profile/avatar': typeof ApiProfileAvatarRouteWithChildren
   '/api/profile/me': typeof ApiProfileMeRoute
   '/api/rmharks/$id': typeof ApiRmharksIdRouteWithChildren
+  '/api/rmharks/ai-generate': typeof ApiRmharksAiGenerateRoute
   '/api/rmhbox/history': typeof ApiRmhboxHistoryRoute
   '/api/rmhbox/leaderboard': typeof ApiRmhboxLeaderboardRoute
   '/api/rmhbox/stats': typeof ApiRmhboxStatsRoute
@@ -2552,6 +2561,7 @@ export interface FileRouteTypes {
     | '/api/profile/avatar'
     | '/api/profile/me'
     | '/api/rmharks/$id'
+    | '/api/rmharks/ai-generate'
     | '/api/rmhbox/history'
     | '/api/rmhbox/leaderboard'
     | '/api/rmhbox/stats'
@@ -2794,6 +2804,7 @@ export interface FileRouteTypes {
     | '/api/profile/avatar'
     | '/api/profile/me'
     | '/api/rmharks/$id'
+    | '/api/rmharks/ai-generate'
     | '/api/rmhbox/history'
     | '/api/rmhbox/leaderboard'
     | '/api/rmhbox/stats'
@@ -3059,6 +3070,7 @@ export interface FileRouteTypes {
     | '/api/profile/avatar'
     | '/api/profile/me'
     | '/api/rmharks/$id'
+    | '/api/rmharks/ai-generate'
     | '/api/rmhbox/history'
     | '/api/rmhbox/leaderboard'
     | '/api/rmhbox/stats'
@@ -4385,6 +4397,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRmhboxHistoryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/rmharks/ai-generate': {
+      id: '/api/rmharks/ai-generate'
+      path: '/ai-generate'
+      fullPath: '/api/rmharks/ai-generate'
+      preLoaderRoute: typeof ApiRmharksAiGenerateRouteImport
+      parentRoute: typeof ApiRmharksRoute
+    }
     '/api/rmharks/$id': {
       id: '/api/rmharks/$id'
       path: '/$id'
@@ -5692,10 +5711,12 @@ const ApiRmharksIdRouteWithChildren = ApiRmharksIdRoute._addFileChildren(
 
 interface ApiRmharksRouteChildren {
   ApiRmharksIdRoute: typeof ApiRmharksIdRouteWithChildren
+  ApiRmharksAiGenerateRoute: typeof ApiRmharksAiGenerateRoute
 }
 
 const ApiRmharksRouteChildren: ApiRmharksRouteChildren = {
   ApiRmharksIdRoute: ApiRmharksIdRouteWithChildren,
+  ApiRmharksAiGenerateRoute: ApiRmharksAiGenerateRoute,
 }
 
 const ApiRmharksRouteWithChildren = ApiRmharksRoute._addFileChildren(

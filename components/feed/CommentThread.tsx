@@ -5,6 +5,7 @@ import { X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { authClient } from '@/lib/auth-client';
 import { CommentItem } from './CommentItem';
+import { AIGenerateButton } from './AIGenerateButton';
 import type { Comment } from './CommentItem';
 import { MAX_COMMENT_LENGTH } from '@/lib/rmhark-schema';
 
@@ -114,9 +115,17 @@ export function CommentThread({ rmharkId, open, onClose, onCommentAdded }: Comme
               className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-xl p-3 border border-site-border resize-none outline-none focus:border-site-accent transition-colors"
             />
             <div className="flex items-center justify-between mt-2">
-              <span className={`text-xs font-mono ${remaining <= 20 ? 'text-site-warning' : 'text-site-text-dim'}`}>
-                {remaining}
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className={`text-xs font-mono ${remaining <= 20 ? 'text-site-warning' : 'text-site-text-dim'}`}>
+                  {remaining}
+                </span>
+                <AIGenerateButton
+                  request={{ mode: 'reply', rmharkId, draft: content }}
+                  onGenerated={(text) => setContent(text)}
+                  size="sm"
+                  title="Generate a reply with AI"
+                />
+              </div>
               <Button
                 variant="accent"
                 size="sm"

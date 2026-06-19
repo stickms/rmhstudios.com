@@ -8,6 +8,7 @@ import { MAX_COMMENT_LENGTH } from '@/lib/rmhark-schema';
 import { RMHarkContent } from './RMHarkContent';
 import { EngagementListModal } from './EngagementListModal';
 import { UserAvatar } from './UserAvatar';
+import { AIGenerateButton } from './AIGenerateButton';
 import { useFreshUser } from '@/stores/userDisplayStore';
 
 export interface Comment {
@@ -338,6 +339,12 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
                     <span className={`text-[10px] font-mono ${remaining <= 20 ? 'text-site-warning' : 'text-site-text-dim'}`}>
                       {remaining}
                     </span>
+                    <AIGenerateButton
+                      request={{ mode: 'reply', rmharkId: postId, parentId: comment.id, draft: replyContent }}
+                      onGenerated={(text) => setReplyContent(text)}
+                      size="sm"
+                      title="Generate a reply with AI"
+                    />
                     <button
                       onClick={() => { setReplyOpen(false); setReplyContent(''); }}
                       className="text-[10px] text-site-text-dim hover:text-site-text transition-colors"

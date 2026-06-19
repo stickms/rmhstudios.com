@@ -164,3 +164,13 @@ services:
     # Chromium captures can outlive a quick SIGTERM; give them room to finish.
     stop_grace_period: 30s
 
+  # ─── RMHark Bot Worker (generates synthetic users + posts via DeepSeek) ─
+  # Invents bot accounts and posts from them throughout the day. Idles if no
+  # DEEPSEEK_API_KEY is set.
+  bot-worker:
+    <<: *common
+    container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-bot-worker
+    env_file: ${ENV_FILE:-.env.production}
+    command: ["node", "dist-server/server/bot-worker/index.cjs"]
+    restart: unless-stopped
+
