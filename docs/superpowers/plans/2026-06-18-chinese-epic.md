@@ -445,9 +445,10 @@ const wrap = (inner: string) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox
 test('centerStrip is valid svg containing the title, juan and page', () => {
   const svg = wrap(centerStrip({ x: 380, y: 40, w: 40, h: 1020, title: '天命輓歌', juan: '卷一', page: '三' }));
   assertValidSvg(svg);
-  expect(svg).toContain('天命輓歌');
-  expect(svg).toContain('卷一');
-  expect(svg).toContain('三');
+  // vlabel renders each character as its own <text> element (vertical run) — assert per char
+  for (const ch of '天命輓歌') expect(svg).toContain(`>${ch}</text>`);
+  for (const ch of '卷一') expect(svg).toContain(`>${ch}</text>`);
+  expect(svg).toContain('>三</text>');
   // the fishtail is a filled path
   expect(svg).toMatch(/<path[^>]+fill="#1a1410"/);
 });
@@ -727,23 +728,25 @@ import { test, expect } from 'vitest';
 import { assertValidSvg } from './svg-test-utils';
 import { frontispiece, xiuxiangPlate, colophon } from './plates';
 
+// vtitle renders each character as its own <text>; assert per character, not contiguous.
 test('frontispiece is a complete svg page containing the title', () => {
   const svg = frontispiece({ titleZh: '天命輓歌', titleEn: 'Elegy of the Mandate' });
   assertValidSvg(svg);
   expect(svg).toMatch(/^<svg/);
-  expect(svg).toContain('天命輓歌');
+  for (const ch of '天命輓歌') expect(svg).toContain(`>${ch}</text>`);
+  expect(svg).toContain('Elegy of the Mandate'); // English is a single <text>
 });
 
 test('xiuxiang plate names the figure', () => {
   const svg = xiuxiangPlate({ nameZh: '桑無咎', nameEn: 'Sang Wu-jiu' });
   assertValidSvg(svg);
-  expect(svg).toContain('桑無咎');
+  for (const ch of '桑無咎') expect(svg).toContain(`>${ch}</text>`);
 });
 
 test('colophon lists publication lines', () => {
   const svg = colophon({ lines: ['歲在丙午', '夢餘堂刊'] });
   assertValidSvg(svg);
-  expect(svg).toContain('夢餘堂刊');
+  for (const ch of '夢餘堂刊') expect(svg).toContain(`>${ch}</text>`);
 });
 ```
 
