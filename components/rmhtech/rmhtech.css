@@ -46,8 +46,10 @@
 /* hero — one screen, centered, brutally sparse */
 .rmht .hero{min-height:100svh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;
   padding:140px 0 120px;position:relative}
-.rmht .ai-logo{display:block;width:clamp(84px,12vw,120px);height:auto;margin:0 auto 34px;
+.rmht .ai-logo-wrap{display:block;width:clamp(84px,12vw,120px);margin:0 auto 34px;line-height:0;
   opacity:0;transform:translateY(18px);animation:rmht-rise .9s .05s cubic-bezier(.2,.7,.2,1) forwards}
+.rmht .ai-logo{display:block;width:100%;height:auto;transform-origin:50% 50%;will-change:transform,filter;
+  animation:rmht-spin 24s linear infinite,rmht-glow 6s ease-in-out infinite}
 .rmht .eyebrow{font-family:var(--mono);font-size:.7rem;letter-spacing:.42em;text-transform:uppercase;color:var(--accent);
   margin-bottom:42px;opacity:0;transform:translateY(18px);animation:rmht-rise .9s .15s cubic-bezier(.2,.7,.2,1) forwards}
 .rmht h1{font-family:var(--serif);font-weight:300;letter-spacing:-.02em;line-height:1.02;
@@ -119,6 +121,8 @@
 
 @keyframes rmht-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.78)}}
 @keyframes rmht-rise{to{opacity:1;transform:none}}
+@keyframes rmht-spin{to{transform:rotate(360deg)}}
+@keyframes rmht-glow{0%,100%{filter:drop-shadow(0 0 5px rgba(255,255,255,.12))}50%{filter:drop-shadow(0 0 22px rgba(255,255,255,.45))}}
 @keyframes rmht-fade{to{opacity:1}}
 @keyframes rmht-cue{0%,100%{transform:scaleY(.4);transform-origin:top;opacity:.5}50%{transform:scaleY(1);opacity:1}}
 @keyframes rmht-metalflow{0%{background-position:0% 50%}100%{background-position:300% 50%}}
@@ -130,5 +134,6 @@
 @media(max-width:460px){.rmht .foot-grid{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){
   .rmht *,.rmht *::before,.rmht *::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
-  .rmht .ai-logo,.rmht .eyebrow,.rmht h1,.rmht .sub,.rmht .metal{opacity:1;transform:none}
+  .rmht .ai-logo-wrap,.rmht .eyebrow,.rmht h1,.rmht .sub,.rmht .metal{opacity:1;transform:none}
+  .rmht .ai-logo{animation:none;filter:none}
 }
