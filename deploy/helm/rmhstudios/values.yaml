@@ -101,6 +101,10 @@ services:
     resources:
       requests: { cpu: 250m, memory: 768Mi }   # Chromium captures
 
+  bot-worker:
+    command: ["node", "dist-server/server/bot-worker/index.cjs"]
+    replicas: 1
+
 # Migration hook (pre-install/pre-upgrade). Mirrors deploy.sh step 3.
 migrations:
   enabled: true

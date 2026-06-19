@@ -1,0 +1,282 @@
+/**
+ * RMHark AI — server-side text generation via DeepSeek.
+ *
+ * Powers two things:
+ *  1. The "✨ generate" buttons real users tap in the composer / reply boxes
+ *     (app/routes/api/rmharks/ai-generate.ts).
+ *  2. The bot-worker, which invents synthetic users and posts as them
+ *     (server/bot-worker/index.ts).
+ *
+ * Reuses the same server-only DEEPSEEK_API_KEY already configured for RMHVibe
+ * and the Discord bot — the key never reaches the client. Server-only
+ * (`.server.ts`); reads process.env.
+ */
+
+import OpenAI from 'openai';
+import {
+  MAX_POST_CHARS,
+  MAX_REPLY_CHARS,
+  POST_SHAPES,
+  cleanGeneratedText,
+  randomItem,
+  type BotPersonaSpec,
+} from './persona';
+
+const deepseek = new OpenAI({
+  apiKey: process.env.DEEPSEEK_API_KEY!,
+  baseURL: 'https://api.deepseek.com/v1',
+  maxRetries: 2,
+});
+
+// Cheap, fast chat model. Override only if DeepSeek's id changes.
+const RMHARK_AI_MODEL = process.env.RMHARK_AI_MODEL || 'deepseek-chat';
+
+export class RmharkAIError extends Error {}
+
+/** True when a DeepSeek key is configured — callers can skip gracefully. */
+export function isRmharkAIConfigured(): boolean {
+  return Boolean(process.env.DEEPSEEK_API_KEY);
+}
+
+async function chat(
+  messages: { role: 'system' | 'user'; content: string }[],
+  opts: { maxTokens: number; temperature?: number },
+): Promise<string> {
+  if (!isRmharkAIConfigured()) {
+    throw new RmharkAIError('DEEPSEEK_API_KEY is not configured');
+  }
+  const res = await deepseek.chat.completions.create({
+    model: RMHARK_AI_MODEL,
+    messages,
+    max_tokens: opts.maxTokens,
+    temperature: opts.temperature ?? 1.0,
+    stream: false,
+  });
+  const text = res.choices[0]?.message?.content ?? '';
+  if (!text.trim()) throw new RmharkAIError('Empty response from model');
+  return text;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Posts                                                              */
+/* ------------------------------------------------------------------ */
+
+const FEED_NAME = 'RMHark';
+
+const BASE_POST_RULES = [
+  `This is a short social-media post for a feed called ${FEED_NAME} (like a tweet).`,
+  `Hard limit: ${MAX_POST_CHARS} characters. Aim for one or two sentences.`,
+  'Sound like a real person, not an ad or a corporation. No hashtags spam (one at most, only if natural).',
+  'Do NOT use markdown, do NOT wrap the post in quotes, do NOT add a label. Output ONLY the post text.',
+].join(' ');
+
+/**
+ * Generate a standalone post.
+ * - With `persona` (bot-worker): stays fully in character/voice.
+ * - Without (a logged-in human tapping the ✨ button): a fresh, engaging post.
+ *   If the user has already started typing, their `draft` is built upon rather
+ *   than ignored — same intent, specifics, and voice, just finished.
+ */
+export async function generatePost(opts: {
+  persona?: string;
+  draft?: string;
+} = {}): Promise<string> {
+  const shape = randomItem(POST_SHAPES);
+  const draft = opts.draft?.trim();
+
+  const system = opts.persona
+    ? [
+        'You are roleplaying as a specific person posting on social media. Stay completely in character.',
+        'Never reveal or hint that you are an AI, a bot, or generated. You are just a person.',
+        'Follow this persona exactly, including the VOICE rules (formality, quirks, and any typos):',
+        '',
+        opts.persona,
+        '',
+        BASE_POST_RULES,
+      ].join('\n')
+    : [
+        'You help a user draft a post for their social feed.',
+        draft
+          ? "The user has already started writing. Build on their draft: keep their intent, topic, specifics, and tone, and finish/refine it into a complete post. Do not change the subject."
+          : 'Write something authentic, specific, and a little interesting — the kind of thing that sparks replies.',
+        BASE_POST_RULES,
+      ].join('\n');
+
+  let userMsg: string;
+  if (opts.persona) {
+    userMsg = `Write your next post. Make it ${shape}. Keep it natural and in your voice.`;
+  } else if (draft) {
+    userMsg = `Here is what I have so far:\n"""${draft}"""\n\nFinish or improve it into a single post.`;
+  } else {
+    userMsg = `Draft an engaging post. Make it ${shape}.`;
+  }
+
+  const raw = await chat(
+    [
+      { role: 'system', content: system },
+      { role: 'user', content: userMsg },
+    ],
+    { maxTokens: 200, temperature: 1.05 },
+  );
+  return cleanGeneratedText(raw, MAX_POST_CHARS);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Replies                                                            */
+/* ------------------------------------------------------------------ */
+
+const BASE_REPLY_RULES = [
+  `This is a reply on a social feed called ${FEED_NAME}.`,
+  `Hard limit: ${MAX_REPLY_CHARS} characters, but most good replies are one or two sentences.`,
+  'Be relevant and add something — agree, riff, ask, or gently push back. Sound human.',
+  'Do NOT use markdown, do NOT wrap the reply in quotes, do NOT add a label. Output ONLY the reply text.',
+].join(' ');
+
+/**
+ * Generate a reply to a post (and optionally to a specific comment within it).
+ * - With `persona` (bot-worker): in character.
+ * - Without (human tapping ✨ on a reply box): a helpful, on-topic reply draft.
+ *
+ * `thread` is the chain of ancestor comments (top → the one being replied to)
+ * so the reply lands in the actual conversation. `draft` is the user's own
+ * in-progress text, which is refined rather than discarded.
+ */
+export async function generateReply(opts: {
+  postContent: string;
+  thread?: string[];
+  persona?: string;
+  draft?: string;
+}): Promise<string> {
+  const draft = opts.draft?.trim();
+
+  const system = opts.persona
+    ? [
+        'You are roleplaying as a specific person replying on social media. Stay completely in character.',
+        'Never reveal or hint that you are an AI, a bot, or generated. You are just a person.',
+        'Follow this persona exactly, including the VOICE rules (formality, quirks, and any typos):',
+        '',
+        opts.persona,
+        '',
+        BASE_REPLY_RULES,
+      ].join('\n')
+    : [
+        'You help a user draft a reply on their social feed.',
+        draft
+          ? 'The user has started writing a reply. Build on their draft: keep their point and tone, and finish/refine it into a natural response that fits the conversation.'
+          : 'Read the conversation and write a natural, relevant response that adds something.',
+        BASE_REPLY_RULES,
+      ].join('\n');
+
+  const thread = (opts.thread ?? []).map((c) => c.trim()).filter(Boolean);
+  const context = [
+    `The original post says:\n"""${opts.postContent.trim()}"""`,
+    thread.length
+      ? `\nThe reply thread so far (oldest first), and you are replying to the LAST one:\n${thread
+          .map((c, i) => `${i + 1}. "${c}"`)
+          .join('\n')}`
+      : '',
+    draft ? `\nThe reply I've started writing:\n"""${draft}"""` : '',
+    '\nWrite the reply.',
+  ]
+    .filter(Boolean)
+    .join('\n');
+
+  const raw = await chat(
+    [
+      { role: 'system', content: system },
+      { role: 'user', content: context },
+    ],
+    { maxTokens: 300, temperature: 1.0 },
+  );
+  return cleanGeneratedText(raw, MAX_REPLY_CHARS);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Bot profiles                                                       */
+/* ------------------------------------------------------------------ */
+
+export interface GeneratedBotProfile {
+  name: string;
+  handle: string;
+  bio: string;
+}
+
+const NAME_FALLBACKS = ['alex', 'sam', 'jordan', 'riley', 'casey', 'morgan', 'taylor', 'jamie'];
+
+function sanitizeHandle(raw: string): string {
+  const cleaned = (raw || '')
+    .toLowerCase()
+    .replace(/^@+/, '')
+    .replace(/[^a-z0-9_]/g, '')
+    .slice(0, 18);
+  return cleaned || randomItem(NAME_FALLBACKS);
+}
+
+/**
+ * Invent a believable display name, handle, and bio for a bot, consistent with
+ * its rolled persona. Returns sanitized fields; the worker still guarantees
+ * handle uniqueness against the DB.
+ */
+export async function generateBotProfile(spec: BotPersonaSpec): Promise<GeneratedBotProfile> {
+  const system = [
+    'You invent realistic social-media account identities. Output STRICT JSON only — no prose, no markdown fences.',
+    'The person must NOT look like a bot or brand. No "official", no "AI", no "bot" in any field.',
+    'Schema: {"name": string, "handle": string, "bio": string}',
+    '- name: a plausible human display name (1-3 words). May include a tasteful emoji at most once.',
+    '- handle: lowercase, letters/numbers/underscores only, 3-18 chars, no leading @.',
+    `- bio: <= 150 chars, reflects the theme + temperament, written in the persona's voice. This is what makes their "theme" obvious from their profile.`,
+  ].join('\n');
+
+  const user = [
+    'Create an identity for this persona:',
+    '',
+    composePersonaForProfile(spec),
+    '',
+    'Return only the JSON object.',
+  ].join('\n');
+
+  let parsed: Partial<GeneratedBotProfile> = {};
+  try {
+    const raw = await chat(
+      [
+        { role: 'system', content: system },
+        { role: 'user', content: user },
+      ],
+      { maxTokens: 200, temperature: 1.1 },
+    );
+    parsed = JSON.parse(stripJson(raw));
+  } catch {
+    // Fall through to deterministic fallbacks below.
+  }
+
+  const name =
+    typeof parsed.name === 'string' && parsed.name.trim()
+      ? parsed.name.trim().slice(0, 40)
+      : randomItem(NAME_FALLBACKS);
+  const handle = sanitizeHandle(typeof parsed.handle === 'string' ? parsed.handle : name);
+  const bio =
+    typeof parsed.bio === 'string' && parsed.bio.trim()
+      ? parsed.bio.trim().slice(0, 150)
+      : spec.theme;
+
+  return { name, handle, bio };
+}
+
+/** A compact persona brief for the profile generator (kept inline to avoid a circular import). */
+function composePersonaForProfile(spec: BotPersonaSpec): string {
+  return [
+    `THEME: ${spec.theme}.`,
+    `TEMPERAMENT: ${spec.temperament}.`,
+    `QUIRK: ${spec.quirk}.`,
+    `VOICE: ${spec.voice.label} — ${spec.voice.rules}`,
+  ].join('\n');
+}
+
+/** Pull a JSON object out of a possibly fenced/explained model response. */
+function stripJson(raw: string): string {
+  const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const body = fenced ? fenced[1] : raw;
+  const start = body.indexOf('{');
+  const end = body.lastIndexOf('}');
+  return start !== -1 && end !== -1 ? body.slice(start, end + 1) : body;
+}
