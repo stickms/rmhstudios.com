@@ -167,7 +167,7 @@ export default function RmhtechLanding() {
   }, [])
 
   return (
-    <div className="rmht" ref={rootRef}>
+    <div className="rmht" ref={rootRef} style={{ background: '#080808', color: '#F4F4F4', minHeight: '100svh' }}>
       <canvas className="liquid" ref={canvasRef} aria-hidden="true" />
       <div className="grain" aria-hidden="true" />
 
@@ -175,7 +175,7 @@ export default function RmhtechLanding() {
         <header>
           <div className="wrap bar">
             <a className="mark" href="#top" aria-label="Adaptive Intelligence home">
-              <span className="dot" aria-hidden="true" />
+              <img className="glyph" src="/brand/adaptive-intelligence-mark.svg" alt="" aria-hidden="true" />
               Adaptive Intelligence
             </a>
             <a className="req" href={ACCESS_MAILTO}>
@@ -187,6 +187,13 @@ export default function RmhtechLanding() {
         <main id="top">
           <section className="hero">
             <div className="wrap">
+              <img
+                className="ai-logo"
+                src="/brand/adaptive-intelligence-mark.svg"
+                alt="Adaptive Intelligence"
+                width={120}
+                height={120}
+              />
               <p className="eyebrow">Reproducible by construction</p>
               <h1>
                 An AI co-scientist you can <em>trust</em>.
@@ -252,7 +259,7 @@ export default function RmhtechLanding() {
           <div className="wrap foot-grid">
             <div className="foot-brand">
               <a className="mark" href="#top" aria-label="Adaptive Intelligence home">
-                <span className="dot" aria-hidden="true" />
+                <img className="glyph" src="/brand/adaptive-intelligence-mark.svg" alt="" aria-hidden="true" />
                 Adaptive Intelligence
               </a>
               <p className="tag">Building the trustworthy substrate for AI-driven biology.</p>
