@@ -8,6 +8,7 @@ import { useResolvedUser } from '@/components/Providers';
 import { useFreshUser, useUserDisplayStore } from '@/stores/userDisplayStore';
 import { RMHarkActions } from './RMHarkActions';
 import { CommentItem } from './CommentItem';
+import { AIGenerateButton } from './AIGenerateButton';
 import type { Comment } from './CommentItem';
 import { MAX_COMMENT_LENGTH } from '@/lib/rmhark-schema';
 import { Link, useNavigate } from '@tanstack/react-router';
@@ -374,9 +375,17 @@ export function PostDetail({ postId }: PostDetailProps) {
                 }}
               />
               <div className="flex items-center justify-between mt-2">
-                <span className={`text-xs font-mono ${remaining <= 20 ? 'text-site-warning' : 'text-site-text-dim'}`}>
-                  {remaining}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className={`text-xs font-mono ${remaining <= 20 ? 'text-site-warning' : 'text-site-text-dim'}`}>
+                    {remaining}
+                  </span>
+                  <AIGenerateButton
+                    request={{ mode: 'reply', rmharkId: postId, draft: commentContent }}
+                    onGenerated={(text) => setCommentContent(text)}
+                    size="sm"
+                    title="Generate a reply with AI"
+                  />
+                </div>
                 <Button
                   variant="accent"
                   size="sm"

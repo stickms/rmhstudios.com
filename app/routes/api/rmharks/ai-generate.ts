@@ -102,11 +102,16 @@ export const Route = createFileRoute('/api/rmharks/ai-generate')({
           if (data.mode === 'post') {
             content = await generatePost({ draft: data.draft });
           } else {
-            // Pull the post + ancestor comments server-side so we never trust
-            // client-supplied context.
+            // Pull the post (plus the original it quotes, if it's a repost) and
+            // the ancestor comments server-side so we never trust client-supplied
+            // context.
             const post = await prisma.rMHark.findUnique({
               where: { id: data.rmharkId },
-              select: { content: true, deletedAt: true },
+              select: {
+                content: true,
+                deletedAt: true,
+                original: { select: { content: true } },
+              },
             });
             if (!post || post.deletedAt) {
               return Response.json({ error: 'Post not found' }, { status: 404 });
@@ -114,6 +119,7 @@ export const Route = createFileRoute('/api/rmharks/ai-generate')({
             const thread = data.parentId ? await buildCommentChain(data.parentId) : [];
             content = await generateReply({
               postContent: post.content,
+              quotedPostContent: post.original?.content || undefined,
               thread,
               draft: data.draft,
             });
