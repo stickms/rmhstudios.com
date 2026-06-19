@@ -34,7 +34,7 @@ export function UserAvatar({ user, size = 'md', linkToProfile = true }: UserAvat
   const showImg = !!imgSrc;
 
   const avatar = (
-    <div className={`${sizeClasses[size]} rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold shrink-0`}>
+    <div className={`${sizeClasses[size]} rounded-full bg-white/10 flex items-center justify-center text-site-text font-bold shrink-0`}>
       {showImg ? (
         <img
           src={imgSrc}

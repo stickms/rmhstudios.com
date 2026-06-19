@@ -13,7 +13,7 @@
  * mounted by BookReader after the PDF has loaded in the browser.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import * as THREE from 'three';
@@ -41,10 +41,12 @@ export type BookCanvasProps = {
   numPages: number;
   getImg: (n: number) => string | undefined;
   ensurePage: (n: number) => void;
-  onPageChange?: (label: string, k: number) => void;
+  onPageChange?: (info: { label: string; page: number; k: number }) => void;
+  /** Parent stashes a `goToPage(n)` fn here so the toolbar can jump to any page. */
+  seek?: React.MutableRefObject<((page: number) => void) | null>;
 };
 
-export function BookCanvas({ aspect, single, numPages, getImg, ensurePage, onPageChange }: BookCanvasProps) {
+export function BookCanvas({ aspect, single, numPages, getImg, ensurePage, onPageChange, seek }: BookCanvasProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [k, setK] = useState(0);
   const [turn, setTurn] = useState<Turn | null>(null);
@@ -68,9 +70,20 @@ export function BookCanvas({ aspect, single, numPages, getImg, ensurePage, onPag
     [single],
   );
 
-  // Prefetch current + neighbouring page bitmaps.
+  // Prefetch a window of spreads around the current one so spam-clicking through the
+  // book stays ahead of the (∼100–200ms/page) rasteriser and never flashes a blank
+  // page. Forward-biased — reading advances forward — and ordered nearest-first so the
+  // pages you're about to see render before the ones further out. ensurePage skips
+  // anything already rendered/in-flight, so each step only rasterises the new frontier.
   useEffect(() => {
-    for (const idx of [k - 1, k, k + 1]) {
+    const AHEAD = 4;
+    const BEHIND = 2;
+    const order = [k];
+    for (let d = 1; d <= Math.max(AHEAD, BEHIND); d++) {
+      if (d <= AHEAD) order.push(k + d);
+      if (d <= BEHIND) order.push(k - d);
+    }
+    for (const idx of order) {
       if (idx < 0 || idx > maxK) continue;
       const s = view(idx);
       if (s.left) ensurePage(s.left);
@@ -78,14 +91,33 @@ export function BookCanvas({ aspect, single, numPages, getImg, ensurePage, onPag
     }
   }, [k, maxK, view, ensurePage]);
 
-  // Report the page label upward for the toolbar counter.
+  // Report the page label + leading page number upward for the toolbar.
   useEffect(() => {
     const cur = view(k);
+    const page = single ? cur.right : cur.left || cur.right;
     const label = single
       ? `${cur.right} / ${numPages}`
       : `${cur.left || cur.right}–${Math.min(cur.right, numPages)} / ${numPages}`;
-    onPageChange?.(label, k);
+    onPageChange?.({ label, page, k });
   }, [k, single, numPages, view, onPageChange]);
+
+  // Map a 1-based page number to its spread index and jump there instantly,
+  // cancelling any in-flight turn. Exposed to the parent via the `seek` ref so the
+  // page-jump input and chapter dropdown can navigate.
+  useEffect(() => {
+    if (!seek) return;
+    seek.current = (page: number) => {
+      const p = Math.max(1, Math.min(numPages, Math.round(page)));
+      const target = single ? p - 1 : Math.floor(p / 2);
+      setTurn(null);
+      progress.current = 0;
+      anim.current = { active: false, target: 0 };
+      setK(Math.max(0, Math.min(maxK, target)));
+    };
+    return () => {
+      if (seek) seek.current = null;
+    };
+  }, [seek, single, numPages, maxK]);
 
   // Build a turn descriptor and queue its bitmaps.
   const beginTurn = useCallback(
@@ -220,9 +252,10 @@ export function BookCanvas({ aspect, single, numPages, getImg, ensurePage, onPag
 
   const base = turn ? { left: turn.staticLeft, right: turn.staticRight } : view(k);
   const contentW = single ? aspect : 2 * aspect;
-  // Extra vertical headroom so the page can lift/curl past the page rectangle
-  // without being clipped at the canvas edge.
-  const contentH = 1.6;
+  // A little vertical headroom so a tilted page-turn can lift/curl past the page
+  // rectangle without clipping. Kept tight (vs. the page height of 1) so the book
+  // fills most of the stage's height rather than floating in a letterbox.
+  const contentH = 1.28;
 
   return (
     <div
@@ -311,6 +344,7 @@ function Scene({ aspect, single, contentW, contentH, base, turn, getImg, progres
             key={turn.id}
             turn={turn}
             w={aspect}
+            single={single}
             frontSrc={getImg(turn.front)}
             backSrc={turn.back ? getImg(turn.back) : undefined}
             progress={progress}
@@ -329,7 +363,10 @@ function Fit({ width, height }: { width: number; height: number }) {
   const size = useThree((s) => s.size);
   const camera = useThree((s) => s.camera);
   useEffect(() => {
-    const zoom = Math.min(size.width / width, size.height / height) * 0.86;
+    // `height` already includes curl/tilt headroom (see contentH), so we only need a
+    // hair of extra breathing room — keep the fill factor high so the book fills the
+    // stage rather than floating in a wide letterbox.
+    const zoom = Math.min(size.width / width, size.height / height) * 0.97;
     camera.zoom = zoom;
     camera.updateProjectionMatrix();
   }, [size.width, size.height, width, height, camera]);
@@ -339,10 +376,19 @@ function Fit({ width, height }: { width: number; height: number }) {
 /** A flat, unlit page plane. */
 function PageMesh({ src, cx, w }: { src?: string; cx: number; w: number }) {
   const tex = usePageTexture(src);
+  const matRef = useRef<THREE.MeshBasicMaterial>(null);
+  // The texture loads after the material first compiles (without a map). Adding a
+  // `map` to an already-compiled material doesn't enable the USE_MAP shader path on
+  // its own, so the page would stay blank — force a recompile when the texture
+  // arrives. (The turning Leaf doesn't need this: its material is rebuilt from
+  // scratch via useMemo whenever its texture changes.)
+  useEffect(() => {
+    if (matRef.current) matRef.current.needsUpdate = true;
+  }, [tex]);
   return (
     <mesh position={[cx, 0, 0]}>
       <planeGeometry args={[w, 1]} />
-      <meshBasicMaterial map={tex ?? undefined} color={tex ? '#ffffff' : '#f1f1ee'} toneMapped={false} />
+      <meshBasicMaterial ref={matRef} map={tex ?? undefined} color={tex ? '#ffffff' : '#f1f1ee'} toneMapped={false} />
     </mesh>
   );
 }
@@ -351,6 +397,7 @@ function PageMesh({ src, cx, w }: { src?: string; cx: number; w: number }) {
 function Leaf({
   turn,
   w,
+  single,
   frontSrc,
   backSrc,
   progress,
@@ -360,6 +407,7 @@ function Leaf({
 }: {
   turn: Turn;
   w: number;
+  single: boolean;
   frontSrc?: string;
   backSrc?: string;
   progress: React.RefObject<number>;
@@ -384,6 +432,10 @@ function Leaf({
     () => makeLeafMaterial(backTex, THREE.BackSide, w, uProgress, uTilt, '#f1efe9'),
     [backTex, w, uProgress, uTilt],
   );
+  // Only the single-page leaf's back face fades out (see useFrame); enabling
+  // transparency lets its opacity take effect without changing how the opaque
+  // two-page leaf — or the real page content on the front face — renders/sorts.
+  backMat.transparent = single;
   useEffect(() => () => {
     frontMat.dispose();
     backMat.dispose();
@@ -410,9 +462,15 @@ function Leaf({
     if (groupRef.current) {
       groupRef.current.rotation.y = turn.rotSign * p * PI;
       // Lean the whole leaf toward the cursor vertically; fade the lean out as the
-      // page reaches the closed/open extremes so it never looks broken.
-      groupRef.current.rotation.x = ty * 0.5 * Math.sin(p * PI);
+      // page reaches the closed/open extremes so it never looks broken. Kept modest
+      // so the lifted corner stays within the (now tighter) vertical headroom.
+      groupRef.current.rotation.x = ty * 0.2 * Math.sin(p * PI);
     }
+    // In single-page mode the leaf's back is blank paper (there's no facing page), so
+    // it would sit as a blank sheet beside the page and then pop out of existence when
+    // the turn commits. The back face only becomes visible past the halfway point, so
+    // fade it from there to fully gone — it dissolves away instead of snapping.
+    backMat.opacity = single ? THREE.MathUtils.clamp((1 - p) / 0.5, 0, 1) : 1;
   });
 
   return (
@@ -477,37 +535,87 @@ function makeLeafMaterial(
   return m;
 }
 
-/** Load a data-URL into a three texture (optionally mirrored for back faces). */
+// ─── Page-texture cache ──────────────────────────────────────────────────────--
+// Decoded GPU textures are cached and shared across meshes, keyed by image src (+
+// a flag for the mirrored back-face variant). This is what keeps a page turn from
+// "snapping": when the leaf settles and the spread swaps, the new static pages find
+// their textures already uploaded in the cache and render on the same frame, rather
+// than each mesh re-decoding its image asynchronously (which shows the old spread
+// for a beat, then pops). Bounded so a long read can't grow GPU memory without limit.
+const TEX_CACHE_CAP = 16;
+const texCache = new Map<string, THREE.Texture>();
+const texLoading = new Map<string, Promise<THREE.Texture>>();
+
+function texKey(src: string, mirror: boolean): string {
+  return mirror ? `${src}|m` : src;
+}
+
+function loadPageTexture(src: string, mirror: boolean): Promise<THREE.Texture> {
+  const key = texKey(src, mirror);
+  const hit = texCache.get(key);
+  if (hit) return Promise.resolve(hit);
+  let pending = texLoading.get(key);
+  if (!pending) {
+    pending = new Promise<THREE.Texture>((resolve, reject) => {
+      new THREE.TextureLoader().load(
+        src,
+        (t) => {
+          t.colorSpace = THREE.SRGBColorSpace;
+          t.anisotropy = 4;
+          // The rasterised pages are non-power-of-two; mipmap min-filters force a
+          // (costly, and on some drivers broken → blank) mipmap chain. Plain linear
+          // filtering needs no mipmaps and renders the page reliably.
+          t.minFilter = THREE.LinearFilter;
+          t.magFilter = THREE.LinearFilter;
+          t.generateMipmaps = false;
+          if (mirror) {
+            t.wrapS = THREE.RepeatWrapping;
+            t.repeat.x = -1;
+            t.offset.x = 1;
+          }
+          t.needsUpdate = true;
+          texLoading.delete(key);
+          texCache.set(key, t);
+          // Evict the oldest entries past the cap. The current spread + leaf use only
+          // a handful of textures, so anything this old is safely off-screen.
+          while (texCache.size > TEX_CACHE_CAP) {
+            const oldest = texCache.keys().next().value as string | undefined;
+            if (oldest === undefined) break;
+            texCache.get(oldest)?.dispose();
+            texCache.delete(oldest);
+          }
+          resolve(t);
+        },
+        undefined,
+        (err) => {
+          texLoading.delete(key);
+          reject(err instanceof Error ? err : new Error(String(err)));
+        },
+      );
+    });
+    texLoading.set(key, pending);
+  }
+  return pending;
+}
+
+/** Decode `src` into the shared cache ahead of time (best-effort, fire-and-forget). */
+export function warmPageTexture(src?: string, mirror = false): void {
+  if (src) void loadPageTexture(src, mirror).catch(() => {});
+}
+
+/** Resolve a page texture, returning a cached one synchronously when available. */
 function usePageTexture(src?: string, mirror = false): THREE.Texture | null {
-  const [tex, setTex] = useState<THREE.Texture | null>(null);
+  const [, bump] = useReducer((n: number) => n + 1, 0);
+  const key = src ? texKey(src, mirror) : '';
   useEffect(() => {
-    if (!src) {
-      setTex(null);
-      return;
-    }
+    if (!src || texCache.has(key)) return;
     let dead = false;
-    let loaded: THREE.Texture | null = null;
-    new THREE.TextureLoader().load(src, (t) => {
-      if (dead) {
-        t.dispose();
-        return;
-      }
-      t.colorSpace = THREE.SRGBColorSpace;
-      t.anisotropy = 4;
-      t.minFilter = THREE.LinearMipmapLinearFilter;
-      if (mirror) {
-        t.wrapS = THREE.RepeatWrapping;
-        t.repeat.x = -1;
-        t.offset.x = 1;
-      }
-      t.needsUpdate = true;
-      loaded = t;
-      setTex(t);
+    void loadPageTexture(src, mirror).then(() => {
+      if (!dead) bump();
     });
     return () => {
       dead = true;
-      loaded?.dispose();
     };
-  }, [src, mirror]);
-  return tex;
+  }, [src, key, mirror]);
+  return src && texCache.has(key) ? texCache.get(key)! : null;
 }

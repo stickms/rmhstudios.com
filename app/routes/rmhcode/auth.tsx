@@ -93,7 +93,7 @@ function AuthContent() {
       <div className="min-h-screen bg-site-bg flex items-center justify-center p-4">
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="max-w-md w-full">
           <div className="rounded-xl border border-green-500/30 bg-green-500/5 p-6 text-center">
-            <div className="flex justify-center mb-4"><div className="p-3 rounded-full bg-green-500/20"><Check className="w-8 h-8 text-green-400" /></div></div>
+            <div className="flex justify-center mb-4"><div className="p-3 rounded-xl bg-green-500/20 border border-green-500/30"><Check className="w-8 h-8 text-green-400" /></div></div>
             <h1 className="text-xl font-semibold text-site-text mb-2">Authorization Successful!</h1>
             <p className="text-sm text-site-text-muted">Redirecting back to rmhcode CLI...</p>
           </div>

@@ -499,6 +499,120 @@
   transform: translateY(-1px);
 }
 
+/* ─── Account (log in / welcome back) ──────────────────────────────────────── */
+/* Lift the whole row above the input dock, whose backdrop-filter creates a
+ * stacking context that would otherwise paint over the open menu. */
+.vibe-account-row {
+  position: relative;
+  z-index: 40;
+}
+
+.vibe-account {
+  position: relative;
+  display: inline-flex;
+  justify-content: center;
+}
+
+.vibe-account__trigger {
+  display: inline-block;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 160ms ease;
+}
+
+.vibe-account__trigger:hover {
+  color: rgba(245, 245, 247, 0.82);
+}
+
+.vibe-account__menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  min-width: 220px;
+  padding: 6px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(20, 20, 22, 0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.55);
+  animation: vibe-rise-soft 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  text-align: left;
+}
+
+.vibe-account__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px 10px;
+}
+
+.vibe-account__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  flex-shrink: 0;
+}
+
+.vibe-account__id {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.vibe-account__name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #f5f5f7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vibe-account__handle {
+  font-size: 0.74rem;
+  color: #6e6e73;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vibe-account__sep {
+  height: 1px;
+  margin: 2px 6px 4px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.vibe-account__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 12px;
+  border: none;
+  border-radius: 10px;
+  background: none;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: rgba(245, 245, 247, 0.7);
+  text-decoration: none;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.vibe-account__item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f5f5f7;
+}
+
 /* ─── Gallery ───────────────────────────────────────────────────────────────── */
 .vibe-gallery {
   width: 100%;

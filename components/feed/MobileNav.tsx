@@ -17,7 +17,7 @@ export function MobileNav() {
     ? `/u/${(session.user as any).handle || session.user.id}`
     : '/login';
 
-  const isHome = pathname === '/';
+  const isHome = pathname === '/home';
   const isBuilds = pathname?.startsWith('/builds') || pathname?.startsWith('/user-builds');
   const isMessages = pathname?.startsWith('/messages');
   const isProfile = pathname?.startsWith('/profile') || pathname?.startsWith('/u/');
@@ -33,7 +33,7 @@ export function MobileNav() {
       {session && isHome && (
         <button
           onClick={() => setComposeOpen(true)}
-          className="md:hidden fixed right-4 bottom-18 z-50 w-14 h-14 rounded-full bg-site-accent hover:bg-site-accent-hover text-white shadow-lg flex items-center justify-center transition-colors active:scale-95"
+          className="md:hidden fixed right-4 bottom-18 z-50 w-14 h-14 rounded-full bg-site-accent hover:bg-site-accent-hover text-site-bg shadow-lg flex items-center justify-center transition-colors active:scale-95"
           aria-label="New post"
         >
           <PenSquare className="w-6 h-6" />
@@ -41,9 +41,9 @@ export function MobileNav() {
       )}
 
       {/* Bottom navigation bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-site-bg/95 backdrop-blur-md border-t border-site-border">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 vibe-glass border-t border-site-border">
         <div className="flex items-center justify-around h-12">
-          <Link to="/" className={tabClass(isHome)} aria-label="Home">
+          <Link to="/home" className={tabClass(isHome)} aria-label="Home">
             <Home className="w-6 h-6" />
           </Link>
 

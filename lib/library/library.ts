@@ -15,7 +15,16 @@
 
 import metadata from '@/data/library-metadata.json';
 
-type RawMeta = { title: string; description: string; pages: number; cover?: string | null };
+/** A table-of-contents entry: a chapter/section title and the page it starts on. */
+export type TocEntry = { title: string; page: number; depth?: number };
+
+type RawMeta = {
+  title: string;
+  description: string;
+  pages: number;
+  cover?: string | null;
+  toc?: TocEntry[];
+};
 
 export type LibraryBook = {
   /** URL-safe identifier derived from the filename. */
@@ -34,6 +43,8 @@ export type LibraryBook = {
   coverUrl: string | null;
   /** Deterministic accent hue (0–360) used for the spine tint / cover fallback. */
   hue: number;
+  /** Pre-computed table of contents (chapter → page), when known. May be empty. */
+  toc: TocEntry[];
 };
 
 /** "everything_platform_minute_vol1.pdf" → "Everything Platform Minute Vol1". */
@@ -84,6 +95,7 @@ function buildBooks(): LibraryBook[] {
       pages: meta.pages || 0,
       coverUrl: meta.cover ? `/library/covers/${encodeURIComponent(meta.cover)}` : null,
       hue: hueFromString(filename),
+      toc: meta.toc ?? [],
     } satisfies LibraryBook;
   });
 

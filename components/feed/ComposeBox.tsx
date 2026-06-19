@@ -128,7 +128,7 @@ export function ComposeBox() {
     <div className="px-4 py-3 border-b border-site-border">
       <div className="flex gap-3">
         {/* Avatar */}
-        <div className="w-10 h-10 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-sm ring-2 ring-site-bg shrink-0">
+        <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-site-text font-bold text-sm ring-2 ring-site-bg shrink-0">
           {(resolvedUser?.image || session.user.image) ? (
             <img
               src={resolvedUser?.image || session.user.image!}

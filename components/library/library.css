@@ -103,26 +103,25 @@
   left: 50%;
   bottom: 0;
   width: min(100%, 150px);
+  max-height: var(--cover-h);
+  overflow-y: auto;
   transform: translateX(-50%) translateY(8px);
-  padding: 28px 12px 12px;
-  border-radius: 0 0 6px 3px;
+  padding: 36px 12px 12px;
+  border-radius: 6px;
   font-size: 0.72rem;
-  line-height: 1.42;
+  line-height: 1.46;
   color: #f5f5f7;
+  /* Jacket-blurb card: solid enough that the full description stays legible, with a
+     short fade at the very top so it reads as rising out of the cover. */
   background: linear-gradient(
     to top,
-    rgba(0, 0, 0, 0.92) 0%,
-    rgba(0, 0, 0, 0.82) 55%,
+    rgba(0, 0, 0, 0.94) 0%,
+    rgba(0, 0, 0, 0.94) 78%,
     rgba(0, 0, 0, 0) 100%
   );
   opacity: 0;
   pointer-events: none;
   z-index: 2;
-  display: -webkit-box;
-  -webkit-line-clamp: 6;
-  line-clamp: 6;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
   transition: opacity 240ms ease, transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -374,6 +373,107 @@
   color: #a1a1a6;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+/* Counter doubles as a "jump to page" trigger. */
+.lib-reader__count--btn {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 4px 8px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+}
+.lib-reader__count--btn:hover {
+  color: #f5f5f7;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Inline page-number editor (replaces the counter while jumping). */
+.lib-reader__jump {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: #a1a1a6;
+}
+.lib-reader__jump-input {
+  width: 56px;
+  padding: 4px 8px;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 0.5px solid rgba(255, 255, 255, 0.18);
+  color: #f5f5f7;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  outline: none;
+}
+.lib-reader__jump-input:focus {
+  border-color: rgba(255, 255, 255, 0.42);
+}
+.lib-reader__jump-total {
+  white-space: nowrap;
+}
+
+/* Chapter (TOC) dropdown. */
+.lib-reader__chapters {
+  position: relative;
+  display: flex;
+}
+.lib-reader__chapters-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  width: min(78vw, 320px);
+  max-height: min(60vh, 460px);
+  overflow-y: auto;
+  border-radius: 12px;
+  background: rgba(20, 20, 22, 0.96);
+  border: 0.5px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.6);
+  backdrop-filter: saturate(180%) blur(24px);
+  -webkit-backdrop-filter: saturate(180%) blur(24px);
+}
+.lib-reader__chapter {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: #d4d4d8;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  text-align: left;
+  cursor: pointer;
+  transition: background 130ms ease, color 130ms ease;
+}
+.lib-reader__chapter:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f5f5f7;
+}
+.lib-reader__chapter.is-active {
+  color: #f5f5f7;
+  background: rgba(255, 255, 255, 0.06);
+  font-weight: 600;
+}
+.lib-reader__chapter-title {
+  flex: 1;
+  min-width: 0;
+}
+.lib-reader__chapter-page {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  color: #8a8a8f;
+  font-variant-numeric: tabular-nums;
 }
 
 .lib-reader__stage {

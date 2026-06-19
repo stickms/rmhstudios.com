@@ -1,17 +1,21 @@
 /**
- * /builds — the unified builds bookshelf.
+ * /builds — the unified builds grid.
  *
- * A bookshelf (same look as /library) of either Curated/Official builds (the
- * RMH-made games + apps, code-defined) or community User builds (from the DB). A
- * switch toggles between them — defaulting to Curated — with sorting, search, and,
- * for user builds, lazy infinite-scroll pagination. Full-bleed black/white vibe
- * aesthetic, mobile-friendly. Each book links to its detail page at /builds/$slug.
+ * A grid of slightly-rounded cards (with the Library's staggered rise + a 3D
+ * tilt-on-hover) showing either Curated/Official builds (the RMH-made games +
+ * apps, code-defined) or community User builds (from the DB). A switch toggles
+ * between them — defaulting to Curated — with sorting, search, and, for user
+ * builds, lazy infinite-scroll pagination. Full-bleed black/white vibe aesthetic,
+ * mobile-friendly. Each card links to its detail page at /builds/$slug.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { ArrowLeft, Search, Plus, Heart, Info } from 'lucide-react';
 import { listCuratedBuilds, type CuratedBuild } from '@/lib/builds/curated';
+import { shelfRiseDelay } from '@/components/library/shelf';
+import { AnimatedMain } from '@/components/feed/AnimatedMain';
+import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import '@/components/library/library.css';
 import '@/components/builds/builds.css';
 
@@ -32,7 +36,7 @@ type UserBuildItem = {
   tags: string[];
 };
 
-export const Route = createFileRoute('/builds/')({
+export const Route = createFileRoute('/_site/builds/')({
   head: () => ({
     meta: [
       { title: 'Builds | RMH Studios' },
@@ -47,6 +51,123 @@ function hueFor(s: string): number {
   let h = 0;
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360;
   return h;
+}
+
+/**
+ * Pointer-driven 3D tilt + a shared cursor highlight across the build cards.
+ *
+ * Each animation frame (while the pointer is over the grid) we update, per card:
+ * a tilt (`--rx`/`--ry` + `--lift`, only for the card under the cursor) and a
+ * glare (`--mx`/`--my` position with a distance-based `--glow` intensity) so every
+ * card reflects the same moving light.
+ *
+ * To keep the per-frame work bounded, only cards currently on screen are touched:
+ * an IntersectionObserver maintains the visible set (lazy — off-screen cards cost
+ * nothing), and a MutationObserver observes infinite-scroll cards as they mount.
+ * Skipped entirely for touch / reduced-motion.
+ */
+function usePointerCards(gridRef: React.RefObject<HTMLDivElement | null>) {
+  useEffect(() => {
+    const grid = gridRef.current;
+    if (!grid) return;
+    if (
+      window.matchMedia('(hover: none)').matches ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    )
+      return;
+
+    const TILT = 16; // max tilt, degrees
+    const GLOW_RADIUS = 540; // px falloff for the shared highlight
+    let px = 0;
+    let py = 0;
+    let raf = 0;
+
+    const reset = (inner: HTMLElement) => {
+      inner.style.removeProperty('--rx');
+      inner.style.removeProperty('--ry');
+      inner.style.removeProperty('--lift');
+      inner.style.setProperty('--glow', '0');
+    };
+
+    // Only on-screen cards are updated each frame.
+    const visible = new Set<HTMLElement>();
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          const el = e.target as HTMLElement;
+          if (e.isIntersecting) {
+            visible.add(el);
+          } else {
+            visible.delete(el);
+            reset(el); // flatten as it leaves the viewport
+          }
+        }
+      },
+      { rootMargin: '120px' },
+    );
+
+    // Observe current + future (.builds-card__inner) cards exactly once each.
+    const observed = new WeakSet<Element>();
+    const observeAll = () => {
+      grid.querySelectorAll<HTMLElement>('.builds-card__inner').forEach((el) => {
+        if (!observed.has(el)) {
+          observed.add(el);
+          io.observe(el);
+        }
+      });
+    };
+    observeAll();
+    const mo = new MutationObserver(observeAll);
+    mo.observe(grid, { childList: true, subtree: true });
+
+    const frame = () => {
+      raf = 0;
+      visible.forEach((inner) => {
+        const r = inner.getBoundingClientRect();
+        inner.style.setProperty('--mx', `${((px - r.left) / r.width) * 100}%`);
+        inner.style.setProperty('--my', `${((py - r.top) / r.height) * 100}%`);
+
+        const cx = r.left + r.width / 2;
+        const cy = r.top + r.height / 2;
+        const glow = Math.max(0, 1 - Math.hypot(px - cx, py - cy) / GLOW_RADIUS);
+        inner.style.setProperty('--glow', glow.toFixed(3));
+
+        const inside = px >= r.left && px <= r.right && py >= r.top && py <= r.bottom;
+        if (inside) {
+          const dx = (px - r.left) / r.width - 0.5;
+          const dy = (py - r.top) / r.height - 0.5;
+          inner.style.setProperty('--ry', `${dx * TILT}deg`);
+          inner.style.setProperty('--rx', `${-dy * TILT}deg`);
+          inner.style.setProperty('--lift', '1');
+        } else {
+          inner.style.setProperty('--rx', '0deg');
+          inner.style.setProperty('--ry', '0deg');
+          inner.style.setProperty('--lift', '0');
+        }
+      });
+    };
+
+    const onMove = (e: PointerEvent) => {
+      px = e.clientX;
+      py = e.clientY;
+      if (!raf) raf = requestAnimationFrame(frame);
+    };
+    const onLeave = () => {
+      if (raf) cancelAnimationFrame(raf);
+      raf = 0;
+      visible.forEach(reset);
+    };
+
+    grid.addEventListener('pointermove', onMove, { passive: true });
+    grid.addEventListener('pointerleave', onLeave);
+    return () => {
+      grid.removeEventListener('pointermove', onMove);
+      grid.removeEventListener('pointerleave', onLeave);
+      if (raf) cancelAnimationFrame(raf);
+      io.disconnect();
+      mo.disconnect();
+    };
+  }, [gridRef]);
 }
 
 function Builds() {
@@ -117,6 +238,10 @@ function Builds() {
     }
   }, [loading, cursor, tab, userSort, query]);
 
+  // Pointer-driven tilt + shared cursor highlight across the cards.
+  const gridRef = useRef<HTMLDivElement>(null);
+  usePointerCards(gridRef);
+
   // Infinite scroll for the user tab.
   const sentinelRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -137,7 +262,11 @@ function Builds() {
   const isEmpty = showingCurated ? curatedView.length === 0 : loadedOnce && userItems.length === 0 && !loading;
 
   return (
-    <main className="vibe-screen lib min-h-screen">
+    <>
+    <AnimatedMain
+      className="vibe-screen lib min-h-screen w-full min-w-0 border-r border-site-border pb-16 md:pb-0"
+      targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
+    >
       <header className="vibe-gallery__head">
         <Link to="/" aria-label="Back to home" className="vibe-toolbar__icon">
           <ArrowLeft size={17} />
@@ -219,10 +348,10 @@ function Builds() {
           {showingCurated ? 'No builds match that search.' : query.trim() ? 'No user builds match that search.' : 'No user builds yet — be the first to submit one.'}
         </p>
       ) : (
-        <div className="lib__shelf" role="list">
+        <div ref={gridRef} className="builds-grid" role="list">
           {showingCurated
-            ? curatedView.map((b, i) => <CuratedBook key={b.id} build={b} index={i} />)
-            : userItems.map((b, i) => <UserBook key={b.id} build={b} index={i} />)}
+            ? curatedView.map((b, i) => <CuratedCard key={b.id} build={b} index={i} />)
+            : userItems.map((b, i) => <UserCard key={b.id} build={b} index={i} />)}
         </div>
       )}
 
@@ -232,12 +361,15 @@ function Builds() {
           {loading && <p className="vibe-hint vibe-gallery__loading">Loading…</p>}
         </>
       )}
-    </main>
+    </AnimatedMain>
+    {/* Trailing gutter to match the blog/feed layout */}
+    <div className="hidden lg:block w-4 shrink-0" />
+    </>
   );
 }
 
-/** The cover + caption (+ hover description) shared by both book kinds. */
-function BookFace({
+/** The card face — cover + caption (+ hover description) shared by both kinds. */
+function CardFace({
   title,
   description,
   coverUrl,
@@ -250,39 +382,40 @@ function BookFace({
 }) {
   return (
     <>
-      <div className="lib-book__3d">
-        <div className={`lib-book__cover ${coverUrl ? 'has-cover' : ''}`}>
-          <span className="lib-book__edge" aria-hidden="true" />
+      <div className="builds-card__media">
+        <div className={`builds-card__inner ${coverUrl ? 'has-cover' : ''}`}>
           {coverUrl ? (
-            <img className="lib-book__img" src={coverUrl} alt={title} loading="lazy" decoding="async" />
+            <img className="builds-card__img" src={coverUrl} alt={title} loading="lazy" decoding="async" />
           ) : (
-            <span className="lib-book__title">{title}</span>
+            <>
+              <span className="builds-card__placeholder">{title}</span>
+              <span className="builds-card__mark">RMH</span>
+            </>
           )}
-          {badge && <span className="lib-book__pages-badge">{badge}</span>}
-          {!coverUrl && <span className="lib-book__mark">RMH</span>}
+          {badge && <span className="builds-card__badge">{badge}</span>}
+          {description && <span className="builds-card__desc">{description}</span>}
         </div>
-        {description && <span className="lib-book__desc-pop">{description}</span>}
       </div>
-      <div className="lib-book__meta">
-        <p className="lib-book__name">{title}</p>
+      <div className="builds-card__meta">
+        <p className="builds-card__name">{title}</p>
       </div>
     </>
   );
 }
 
 /**
- * Curated build: the cover/icon opens the build itself (its page), and a small
- * Details button (top-right) opens the /builds/$slug detail page.
+ * Curated build: the card opens the build itself (its page), and a small Details
+ * button (top-right) opens the /builds/$slug detail page.
  */
-function CuratedBook({ build, index }: { build: CuratedBuild; index: number }) {
+function CuratedCard({ build, index }: { build: CuratedBuild; index: number }) {
   return (
     <div
-      className="lib-book"
+      className="builds-card"
       role="listitem"
-      style={{ '--book-hue': String(build.hue), animationDelay: `${(index % 8) * 45}ms` } as React.CSSProperties}
+      style={{ '--card-hue': String(build.hue), animationDelay: shelfRiseDelay(index) } as React.CSSProperties}
     >
-      <a className="lib-book__primary" href={build.href} aria-label={`Open ${build.title}`}>
-        <BookFace
+      <a className="builds-card__primary" href={build.href} aria-label={`Open ${build.title}`}>
+        <CardFace
           title={build.title}
           description={build.description}
           coverUrl={build.thumbnailUrl}
@@ -292,7 +425,7 @@ function CuratedBook({ build, index }: { build: CuratedBuild; index: number }) {
       <Link
         to="/builds/$slug"
         params={{ slug: build.slug }}
-        className="lib-book__details"
+        className="builds-card__details"
         aria-label={`Details for ${build.title}`}
         title="Build details"
       >
@@ -303,17 +436,17 @@ function CuratedBook({ build, index }: { build: CuratedBuild; index: number }) {
 }
 
 /** User build: opens its detail page. */
-function UserBook({ build, index }: { build: UserBuildItem; index: number }) {
+function UserCard({ build, index }: { build: UserBuildItem; index: number }) {
   return (
     <Link
       to="/builds/$slug"
       params={{ slug: build.slug }}
-      className="lib-book"
+      className="builds-card"
       role="listitem"
-      style={{ '--book-hue': String(hueFor(build.id)), animationDelay: `${(index % 8) * 45}ms` } as React.CSSProperties}
+      style={{ '--card-hue': String(hueFor(build.id)), animationDelay: shelfRiseDelay(index) } as React.CSSProperties}
       aria-label={`Open ${build.title}`}
     >
-      <BookFace
+      <CardFace
         title={build.title}
         description={build.description}
         coverUrl={build.thumbnailUrl}

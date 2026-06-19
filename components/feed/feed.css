@@ -1,0 +1,78 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   feed.css — hardcodes the black/white "vibe" aesthetic onto the signed-in app
+   shell (sidebar, feed, profile). Works by overriding the site-design-system
+   custom properties inside `.vibe-app`, so the existing `site-*` Tailwind
+   utilities resolve to the vibe palette regardless of the selected theme.
+   Mirrors the homepage palette in components/rmhvibe/vibe.css.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.vibe-app {
+  --site-bg: #000;
+  --site-bg-subtle: #0b0b0c;
+  --site-surface: rgba(255, 255, 255, 0.045);
+  --site-surface-hover: rgba(255, 255, 255, 0.08);
+  --site-surface-active: rgba(255, 255, 255, 0.12);
+  --site-border: rgba(255, 255, 255, 0.1);
+  --site-border-bright: rgba(255, 255, 255, 0.2);
+  --site-text: #f5f5f7;
+  --site-text-muted: #a1a1a6;
+  --site-text-dim: #6e6e73;
+  --site-accent: #f5f5f7;
+  --site-accent-hover: #ffffff;
+  --site-accent-dim: rgba(255, 255, 255, 0.1);
+  --site-success: #6ee7a8;
+  --site-danger: #ff6b6b;
+  --site-warning: #f5d76e;
+  --site-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
+  --site-radius: 10px;
+  --site-radius-sm: 7px;
+  --site-border-width: 1px;
+  --site-card-transform: translateY(-2px);
+  --site-heading-transform: none;
+  --site-glow: none;
+  --site-text-shadow: none;
+  --site-letter-spacing: -0.02em;
+  --site-font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+    "Helvetica Neue", Arial, sans-serif;
+  --site-font-body: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+    "Helvetica Neue", Arial, sans-serif;
+  /* Re-resolve the font here (not just via the variable): the <body> computes
+     its font-family with the theme's value and children inherit that, so the
+     override only takes effect when applied directly on this subtree root. */
+  font-family: var(--site-font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Tone down the bubbly corners to match the sharper homepage/builds aesthetic.
+   Avatars and small status pills keep their full rounding. */
+.vibe-app .rounded-3xl { border-radius: 16px; }
+.vibe-app .rounded-2xl { border-radius: 12px; }
+.vibe-app .rounded-xl { border-radius: 10px; }
+
+/* The accent colour is now near-white, so accent-filled buttons need dark text. */
+.vibe-app [data-variant="accent"] {
+  color: #0a0a0a;
+}
+
+/* Frosted-glass treatment for the app chrome + sticky headers, matching the
+   homepage's vibe-dock. Applied to elements tagged with .vibe-glass. */
+.vibe-glass {
+  background: rgba(12, 12, 13, 0.72);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+}
+
+/* Cards: subtle translucent surface with a hairline border that brightens on
+   hover, echoing the builds/library grid. */
+.vibe-card {
+  background: var(--site-surface);
+  border: 1px solid var(--site-border);
+  border-radius: var(--site-radius);
+  transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
+}
+
+.vibe-card:hover {
+  border-color: var(--site-border-bright);
+  background: var(--site-surface-hover);
+}

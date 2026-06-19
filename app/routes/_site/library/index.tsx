@@ -12,9 +12,12 @@ import { useMemo, useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { ArrowLeft, Search } from 'lucide-react';
 import { listLibraryBooks, type LibraryBook } from '@/lib/library/library';
+import { shelfRiseDelay } from '@/components/library/shelf';
+import { AnimatedMain } from '@/components/feed/AnimatedMain';
+import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import '@/components/library/library.css';
 
-export const Route = createFileRoute('/library/')({
+export const Route = createFileRoute('/_site/library/')({
   head: () => ({
     meta: [
       { title: 'Library | RMH Studios' },
@@ -38,7 +41,11 @@ function Library() {
   }, [books, query]);
 
   return (
-    <main className="vibe-screen lib min-h-screen">
+    <>
+    <AnimatedMain
+      className="vibe-screen lib min-h-screen w-full min-w-0 border-r border-site-border pb-16 md:pb-0"
+      targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
+    >
       <header className="vibe-gallery__head">
         <Link to="/" aria-label="Back to home" className="vibe-toolbar__icon">
           <ArrowLeft size={17} />
@@ -66,7 +73,10 @@ function Library() {
           ))}
         </div>
       )}
-    </main>
+    </AnimatedMain>
+    {/* Trailing gutter to match the blog/feed layout */}
+    <div className="hidden lg:block w-4 shrink-0" />
+    </>
   );
 }
 
@@ -74,7 +84,7 @@ function BookSpine({ book, index }: { book: LibraryBook; index: number }) {
   // Per-book accent, kept subtle so the shelf stays in the monochrome aesthetic.
   const style = {
     '--book-hue': String(book.hue),
-    animationDelay: `${(index % 8) * 45}ms`,
+    animationDelay: shelfRiseDelay(index),
   } as React.CSSProperties;
 
   return (

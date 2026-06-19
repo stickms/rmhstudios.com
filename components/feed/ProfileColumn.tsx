@@ -56,7 +56,7 @@ function ProfileAvatar({ image, name }: { image: string | null; name: string | n
   const imgSrc = imgError ? DEFAULT_AVATAR : image;
 
   return (
-    <div className="w-20 h-20 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-white font-bold text-2xl ring-4 ring-site-bg shrink-0">
+    <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center text-site-text font-bold text-2xl ring-4 ring-site-bg shrink-0">
       {imgSrc ? (
         <img src={imgSrc} alt={name || 'User'} className="w-full h-full rounded-full object-cover" onError={() => setImgError(true)} />
       ) : (
@@ -388,7 +388,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
       {/* Header bar */}
       <div className="sticky top-0 z-10 bg-site-bg/85 backdrop-blur-md border-b border-site-border">
         <div className="flex items-center gap-3 px-4 py-3">
-          <Link to="/" className="p-1.5 -ml-1.5 rounded-lg hover:bg-site-surface transition-colors">
+          <Link to="/home" className="p-1.5 -ml-1.5 rounded-lg hover:bg-site-surface transition-colors">
             <ArrowLeft className="w-5 h-5 text-site-text" />
           </Link>
           <div>

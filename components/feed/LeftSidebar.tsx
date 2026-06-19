@@ -6,17 +6,18 @@ import { authClient } from '@/lib/auth-client';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import {
-  Home, Package, BookOpen,
-  Palette, ChevronDown, LogOut, PenSquare, User, MessageCircle, ShieldCheck, MoreHorizontal, Wallet
+  Home, Package, BookOpen, Library, LayoutGrid,
+  LogOut, PenSquare, User, MessageCircle, ShieldCheck, MoreHorizontal, Wallet
 } from 'lucide-react';
 import { ComposeModal } from './ComposeModal';
 import { Button } from '@/components/ui/button';
-import { useThemeStore, SITE_STYLES } from '@/stores/themeStore';
 import { useUnreadCount } from '@/lib/useUnreadCount';
 
 const navLinks = [
-  { href: '/', label: 'Home', icon: Home },
+  { href: '/home', label: 'Home', icon: Home },
+  { href: '/v', label: 'Pages', icon: LayoutGrid },
   { href: '/builds', label: 'Builds', icon: Package },
+  { href: '/library', label: 'Library', icon: Library },
   { href: '/blog', label: 'Blog', icon: BookOpen },
 ];
 
@@ -24,7 +25,6 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   // When expanded=true (e.g. in mobile drawer), always show labels.
   // Otherwise, labels are hidden below xl breakpoint.
   const labelClass = expanded ? '' : 'hidden xl:block';
-  const labelFlexClass = expanded ? 'flex items-center gap-1.5' : 'hidden xl:flex items-center gap-1.5';
   const logoFullClass = expanded ? '' : 'hidden xl:block';
   const logoShortClass = expanded ? 'hidden' : 'xl:hidden';
   const paddingClass = expanded ? 'p-4' : 'p-3 xl:p-4';
@@ -33,33 +33,15 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   const itemJustifyClass = expanded ? '' : 'md:justify-center xl:justify-start';
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const [showStyleMenu, setShowStyleMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const { style, setStyle } = useThemeStore();
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-  const styleMenuRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const userMenuBtnRef = useRef<HTMLButtonElement>(null);
-  const [popoverPos, setPopoverPos] = useState({ bottom: 0, left: 0 });
   const [userMenuPos, setUserMenuPos] = useState({ bottom: 0, right: 0 });
 
   const { data: session, isPending } = useSession();
   const { resolved: resolvedUser } = useResolvedUser();
   const unreadCount = useUnreadCount(!!session);
-
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (styleMenuRef.current?.contains(e.target as Node)) return;
-      setShowStyleMenu(false);
-    }
-    if (showStyleMenu) document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [showStyleMenu]);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -81,19 +63,12 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
     });
   };
 
-  const currentStyle = SITE_STYLES.find((s) => s.id === style) ?? SITE_STYLES[0];
-  const groupOrder = ['Base', 'Vibes', 'Culture', 'Zodiac', 'Seasons', 'School'] as const;
-  const groups = groupOrder.map((label) => ({
-    label,
-    styles: SITE_STYLES.filter((s) => s.group === label),
-  }));
-
   return (
     <div className={`flex flex-col gap-1 h-full ${paddingClass}`}>
       {/* Logo */}
       <Link to="/" className={`mb-6 flex items-center ${logoAlignClass}`}>
         <span className={`font-(family-name:--site-font-display) font-bold text-xl text-site-text ${logoFullClass}`}>
-          RMH<span className="text-site-accent">Studios</span>
+          RMH<span className="text-site-text-muted font-semibold">Studios</span>
         </span>
         <span className={`font-(family-name:--site-font-display) font-bold text-xl text-site-text ${logoShortClass}`}>
           RMH
@@ -190,73 +165,8 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         )}
       </nav>
 
-      {/* Style Picker */}
-      <div className="relative mt-auto" ref={styleMenuRef}>
-        <button
-          onClick={() => {
-            if (!showStyleMenu && styleMenuRef.current) {
-              const rect = styleMenuRef.current.getBoundingClientRect();
-              setPopoverPos({
-                bottom: window.innerHeight - rect.top + 8,
-                left: rect.left,
-              });
-            }
-            setShowStyleMenu(!showStyleMenu);
-          }}
-          className={`flex items-center gap-2 w-full px-3 py-2.5 rounded-xl text-sm text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors ${itemJustifyClass}`}
-          title="Change site style"
-          suppressHydrationWarning
-        >
-          <Palette className="w-5 h-5 shrink-0" />
-          <span className={labelFlexClass} suppressHydrationWarning>
-            {mounted ? (
-              <>
-                <span className="text-xs">{currentStyle.icon}</span>
-                <span>{currentStyle.label}</span>
-              </>
-            ) : (
-              // Empty fallback that has the same DOM structure to prevent hydration mismatch
-              <>
-                <span className="text-xs"></span>
-                <span>Theme</span>
-              </>
-            )}
-            <ChevronDown className={`w-3 h-3 ml-auto transition-transform ${showStyleMenu ? 'rotate-180' : ''}`} />
-          </span>
-        </button>
-
-        {showStyleMenu && (
-          <div className="fixed w-52 bg-site-surface border border-site-border rounded-xl shadow-lg py-1 max-h-[60vh] overflow-y-auto z-50" style={{ bottom: `${popoverPos.bottom}px`, left: `${popoverPos.left}px` }}>
-            {groups.map((group) => (
-              <div key={group.label}>
-                <div className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-site-text-dim">
-                  {group.label}
-                </div>
-                {group.styles.map((s) => (
-                  <button
-                    key={s.id}
-                    onClick={() => {
-                      setStyle(s.id);
-                      setShowStyleMenu(false);
-                    }}
-                    className={`w-full text-left px-3 py-1.5 text-sm flex items-center gap-2 transition-colors ${
-                      style === s.id
-                        ? 'text-site-accent bg-site-accent-dim'
-                        : 'text-site-text-muted hover:text-site-text hover:bg-site-surface-hover'
-                    }`}
-                  >
-                    <span className="text-base w-5 text-center">{s.icon}</span>
-                    <span>{s.label}</span>
-                  </button>
-                ))}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
       {/* Auth Section */}
-      <div className="mt-1 border-t border-site-border pt-3">
+      <div className="mt-auto border-t border-site-border pt-3">
         {isPending ? (
           <div className="h-10 bg-site-surface rounded-xl animate-pulse" />
         ) : session ? (
@@ -289,7 +199,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
             </button>
             {showUserMenu && (
               <div
-                className="fixed w-40 bg-site-surface border border-site-border rounded-xl shadow-lg py-1 z-50"
+                className="vibe-glass fixed w-40 border border-site-border rounded-2xl shadow-lg py-1 z-50"
                 style={{ bottom: `${userMenuPos.bottom}px`, right: `${userMenuPos.right}px` }}
               >
                 <button

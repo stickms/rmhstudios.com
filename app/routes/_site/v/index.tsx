@@ -12,13 +12,15 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { ArrowLeft, Search } from 'lucide-react';
 import { listVibePages, type VibeCard } from '@/lib/rmhvibe/vibe.server';
+import { AnimatedMain } from '@/components/feed/AnimatedMain';
+import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import '@/components/rmhvibe/vibe.css';
 
 const fetchGallery = createServerFn({ method: 'GET' })
   .validator((data: { q?: string; cursor?: string }) => data)
   .handler(({ data }) => listVibePages(data));
 
-export const Route = createFileRoute('/v/')({
+export const Route = createFileRoute('/_site/v/')({
   head: () => ({
     meta: [
       { title: 'Browse Pages | RMH Studios' },
@@ -110,7 +112,11 @@ function Gallery() {
   }, [cursor, loadMore]);
 
   return (
-    <main className="vibe-screen vibe-gallery min-h-screen">
+    <>
+    <AnimatedMain
+      className="vibe-screen vibe-gallery min-h-screen w-full min-w-0 border-r border-site-border pb-16 md:pb-0"
+      targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
+    >
       <header className="vibe-gallery__head">
         <Link to="/" aria-label="Back to home" className="vibe-toolbar__icon">
           <ArrowLeft size={17} />
@@ -143,7 +149,10 @@ function Gallery() {
 
       <div ref={sentinelRef} aria-hidden="true" className="h-px w-full" />
       {loading && <p className="vibe-hint vibe-gallery__loading">Loading…</p>}
-    </main>
+    </AnimatedMain>
+    {/* Trailing gutter to match the blog/feed layout */}
+    <div className="hidden lg:block w-4 shrink-0" />
+    </>
   );
 }
 

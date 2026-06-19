@@ -129,6 +129,270 @@
   fill: currentColor;
 }
 
+/* ─── Build cards ───────────────────────────────────────────────────────────────
+   Builds are shown as slightly-rounded cards (not the Library's 3D "book"). They
+   keep the shelf's `lib-rise` staggered entrance and a 3D tilt-on-hover.
+   ───────────────────────────────────────────────────────────────────────────── */
+.builds-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: clamp(16px, 2.4vw, 26px);
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 22px clamp(16px, 4vw, 44px) 0;
+}
+
+@media (max-width: 560px) {
+  .builds-grid {
+    grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+    gap: 14px;
+  }
+}
+
+.builds-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: inherit;
+  opacity: 0;
+  animation: lib-rise 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Clickable region (used when the card also carries a separate "details" link). */
+.builds-card__primary {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Media area — holds the tilting card; perspective lives here so the tilt reads 3D. */
+.builds-card__media {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  perspective: 650px;
+}
+
+/* The rounded card itself. */
+.builds-card__inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 14px;
+  overflow: hidden;
+  border-radius: 14px;
+  background:
+    linear-gradient(150deg, hsl(var(--card-hue, 220) 16% 17%), hsl(var(--card-hue, 220) 14% 9%));
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 10px 22px rgba(0, 0, 0, 0.5),
+    0 2px 6px rgba(0, 0, 0, 0.4);
+  transform-origin: center center;
+  /* Tilt + lift are driven by the pointer (see usePointerCards); these vars
+     default to a flat, resting card. */
+  transform:
+    translateY(calc(var(--lift, 0) * -14px))
+    rotateX(var(--rx, 0deg))
+    rotateY(var(--ry, 0deg))
+    scale(calc(1 + var(--lift, 0) * 0.02));
+  transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 300ms ease;
+  will-change: transform;
+}
+
+/* Cursor-tracking glare — every card reflects the same moving light, positioned
+   per card (--mx/--my) with an intensity that falls off with distance (--glow). */
+.builds-card__inner::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at var(--mx, 50%) var(--my, 50%),
+    rgba(255, 255, 255, 0.3),
+    rgba(255, 255, 255, 0) 45%
+  );
+  opacity: var(--glow, 0);
+  mix-blend-mode: soft-light;
+  transition: opacity 240ms ease;
+}
+
+.builds-card:hover .builds-card__inner,
+.builds-card:focus-visible .builds-card__inner {
+  box-shadow:
+    0 32px 56px rgba(0, 0, 0, 0.6),
+    0 8px 16px rgba(0, 0, 0, 0.5);
+}
+
+/* Keyboard focus has no pointer position — give it a straight lift. */
+.builds-card:focus-visible .builds-card__inner {
+  --lift: 1;
+}
+
+/* Cover image fills the card. */
+.builds-card__inner.has-cover {
+  padding: 0;
+  background: #fff;
+}
+
+.builds-card__img {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+}
+
+.builds-card__placeholder {
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.28;
+  letter-spacing: -0.01em;
+  color: #f5f5f7;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.builds-card__mark {
+  margin-top: 8px;
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: rgba(245, 245, 247, 0.55);
+}
+
+.builds-card__badge {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  z-index: 2;
+  font-size: 0.56rem;
+  letter-spacing: 0.02em;
+  color: rgba(245, 245, 247, 0.95);
+  background: rgba(0, 0, 0, 0.55);
+  padding: 2px 7px;
+  border-radius: 9999px;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  white-space: nowrap;
+}
+
+/* Description shown on hover — fades + slides up over the lower card. */
+.builds-card__desc {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 30px 14px 14px;
+  border-radius: 0 0 14px 14px;
+  font-size: 0.72rem;
+  line-height: 1.42;
+  color: #f5f5f7;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.92) 0%,
+    rgba(0, 0, 0, 0.82) 55%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  opacity: 0;
+  pointer-events: none;
+  z-index: 3;
+  transform: translateY(8px);
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  transition: opacity 240ms ease, transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.builds-card:hover .builds-card__desc,
+.builds-card:focus-within .builds-card__desc {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* "Details" link (curated) — small circular button at the card's top-right. */
+.builds-card__details {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  color: #f5f5f7;
+  background: rgba(10, 10, 10, 0.55);
+  border: 0.5px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 200ms ease, transform 200ms ease, background 160ms ease;
+}
+
+.builds-card:hover .builds-card__details,
+.builds-card:focus-within .builds-card__details {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.builds-card__details:hover {
+  background: rgba(40, 40, 44, 0.92);
+}
+
+@media (hover: none) {
+  .builds-card__details {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Caption beneath the card. */
+.builds-card__meta {
+  padding: 12px 2px 0;
+}
+
+.builds-card__name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #f5f5f7;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .builds-card,
+  .builds-card__inner {
+    transition: none;
+    animation: none;
+  }
+  .builds-card__inner {
+    transform: none;
+  }
+  .builds-card__inner::after {
+    display: none;
+  }
+}
+
 /* ─── Build detail (vibe) ───────────────────────────────────────────────────── */
 .builds-detail__back {
   display: inline-flex;

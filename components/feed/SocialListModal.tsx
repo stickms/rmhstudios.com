@@ -211,7 +211,7 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
                   className={`shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-colors ${
                     user.isFollowing
                       ? 'border border-site-border text-site-text hover:border-site-danger hover:text-site-danger hover:bg-site-danger/10'
-                      : 'bg-site-accent text-white hover:bg-site-accent-hover'
+                      : 'bg-site-accent text-site-bg hover:bg-site-accent-hover'
                   }`}
                 >
                   {user.isFollowing ? 'Following' : 'Follow'}

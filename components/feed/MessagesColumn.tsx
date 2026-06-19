@@ -265,7 +265,7 @@ export function MessagesColumn() {
                       </span>
                     )}
                     {conv.unreadCount > 0 && (
-                      <span className="flex items-center justify-center min-w-5 h-5 rounded-full bg-site-accent text-white text-xs font-bold px-1.5">
+                      <span className="flex items-center justify-center min-w-5 h-5 rounded-full bg-site-accent text-site-bg text-xs font-bold px-1.5">
                         {conv.unreadCount > 99 ? '99+' : conv.unreadCount}
                       </span>
                     )}

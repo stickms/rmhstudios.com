@@ -9,6 +9,7 @@ import {
 } from "@tanstack/react-router";
 import { type ReactNode, useEffect } from "react";
 import { isDiscordActivity } from "@/lib/discord-sdk";
+import { Providers } from "@/components/Providers";
 import appCss from "@/app/globals.css?url";
 
 /**
@@ -114,5 +115,9 @@ function RootComponent() {
     }
   }, [pathname, navigate]);
 
-  return <Outlet />;
+  return (
+    <Providers>
+      <Outlet />
+    </Providers>
+  );
 }

@@ -414,7 +414,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
                     <div
                       className={`max-w-[75%] ${bubbleRounding} px-4 py-2.5 text-sm break-words ${
                         isSelf
-                          ? 'bg-site-accent text-white'
+                          ? 'bg-site-accent text-site-bg'
                           : 'bg-site-surface text-site-text'
                       }`}
                     >

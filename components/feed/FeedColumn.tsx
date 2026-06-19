@@ -210,7 +210,7 @@ export function FeedColumn() {
           <Link
             to="/login"
             search={{ callbackURL: undefined }}
-            className="px-5 py-2 rounded-full bg-site-accent text-white text-sm font-bold hover:bg-site-accent-hover transition-colors"
+            className="px-5 py-2 rounded-full bg-site-accent text-site-bg text-sm font-bold hover:bg-site-accent-hover transition-colors"
           >
             Sign in
           </Link>

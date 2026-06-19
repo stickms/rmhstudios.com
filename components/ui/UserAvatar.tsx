@@ -21,7 +21,7 @@ export function UserAvatar({ src, alt, size = 32, className = '', fallbackName }
     if (fallbackName) {
       return (
         <div
-          className={`rounded-full bg-violet-500/20 flex items-center justify-center text-violet-400 font-bold shrink-0 ${className}`}
+          className={`rounded-full bg-white/10 flex items-center justify-center text-site-text font-bold shrink-0 ${className}`}
           style={{ width: size, height: size, fontSize: size * 0.4 }}
         >
           {fallbackName[0]?.toUpperCase() || 'U'}

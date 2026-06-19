@@ -39,7 +39,6 @@ import { Route as AltairRouteImport } from './routes/altair'
 import { Route as SiteRouteImport } from './routes/_site'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as VersecraftIndexRouteImport } from './routes/versecraft/index'
-import { Route as VIndexRouteImport } from './routes/v.index'
 import { Route as TempleOfJoyIndexRouteImport } from './routes/temple-of-joy/index'
 import { Route as StudioIndexRouteImport } from './routes/studio/index'
 import { Route as StrategiesIndexRouteImport } from './routes/strategies/index'
@@ -51,11 +50,9 @@ import { Route as RmhstudyIndexRouteImport } from './routes/rmhstudy/index'
 import { Route as RmhmusicIndexRouteImport } from './routes/rmhmusic/index'
 import { Route as RmhcodeIndexRouteImport } from './routes/rmhcode/index'
 import { Route as RmhboxIndexRouteImport } from './routes/rmhbox/index'
-import { Route as LibraryIndexRouteImport } from './routes/library.index'
 import { Route as KowloonKnockoutIndexRouteImport } from './routes/kowloon-knockout/index'
 import { Route as ForestExplorerIndexRouteImport } from './routes/forest-explorer/index'
 import { Route as DailyIndexRouteImport } from './routes/daily/index'
-import { Route as BuildsIndexRouteImport } from './routes/builds.index'
 import { Route as AltairIndexRouteImport } from './routes/altair/index'
 import { Route as VNewRouteImport } from './routes/v.new'
 import { Route as VSlugRouteImport } from './routes/v.$slug'
@@ -108,6 +105,7 @@ import { Route as AltairMultiplayerRouteImport } from './routes/altair/multiplay
 import { Route as SiteWalletRouteImport } from './routes/_site/wallet'
 import { Route as SiteRoadmapRouteImport } from './routes/_site/roadmap'
 import { Route as SiteQuotesRouteImport } from './routes/_site/quotes'
+import { Route as SiteHomeRouteImport } from './routes/_site/home'
 import { Route as SiteAdminRouteRouteImport } from './routes/_site/admin/route'
 import { Route as StrategiesSafehouseIndexRouteImport } from './routes/strategies/safehouse/index'
 import { Route as StrategiesPuzzlesIndexRouteImport } from './routes/strategies/puzzles/index'
@@ -119,10 +117,13 @@ import { Route as SecretCursedLogicIndexRouteImport } from './routes/secret/curs
 import { Route as RmhboxMinigamesIndexRouteImport } from './routes/rmhbox/minigames/index'
 import { Route as ApiCoinsIndexRouteImport } from './routes/api/coins/index'
 import { Route as AltairMultiplayerIndexRouteImport } from './routes/altair/multiplayer/index'
+import { Route as SiteVIndexRouteImport } from './routes/_site/v/index'
 import { Route as SiteUserBuildsIndexRouteImport } from './routes/_site/user-builds/index'
 import { Route as SiteResearchIndexRouteImport } from './routes/_site/research/index'
 import { Route as SiteNewsIndexRouteImport } from './routes/_site/news/index'
 import { Route as SiteMessagesIndexRouteImport } from './routes/_site/messages/index'
+import { Route as SiteLibraryIndexRouteImport } from './routes/_site/library/index'
+import { Route as SiteBuildsIndexRouteImport } from './routes/_site/builds/index'
 import { Route as SiteBlogIndexRouteImport } from './routes/_site/blog/index'
 import { Route as SiteAdminIndexRouteImport } from './routes/_site/admin/index'
 import { Route as StrategiesSafehouseRecruitRouteImport } from './routes/strategies/safehouse/recruit'
@@ -420,11 +421,6 @@ const VersecraftIndexRoute = VersecraftIndexRouteImport.update({
   path: '/',
   getParentRoute: () => VersecraftRoute,
 } as any)
-const VIndexRoute = VIndexRouteImport.update({
-  id: '/v/',
-  path: '/v/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const TempleOfJoyIndexRoute = TempleOfJoyIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -480,11 +476,6 @@ const RmhboxIndexRoute = RmhboxIndexRouteImport.update({
   path: '/',
   getParentRoute: () => RmhboxRoute,
 } as any)
-const LibraryIndexRoute = LibraryIndexRouteImport.update({
-  id: '/library/',
-  path: '/library/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const KowloonKnockoutIndexRoute = KowloonKnockoutIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -499,11 +490,6 @@ const DailyIndexRoute = DailyIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => DailyRoute,
-} as any)
-const BuildsIndexRoute = BuildsIndexRouteImport.update({
-  id: '/builds/',
-  path: '/builds/',
-  getParentRoute: () => rootRouteImport,
 } as any)
 const AltairIndexRoute = AltairIndexRouteImport.update({
   id: '/',
@@ -765,6 +751,11 @@ const SiteQuotesRoute = SiteQuotesRouteImport.update({
   path: '/quotes',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteHomeRoute = SiteHomeRouteImport.update({
+  id: '/home',
+  path: '/home',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteAdminRouteRoute = SiteAdminRouteRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -821,6 +812,11 @@ const AltairMultiplayerIndexRoute = AltairMultiplayerIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AltairMultiplayerRoute,
 } as any)
+const SiteVIndexRoute = SiteVIndexRouteImport.update({
+  id: '/v/',
+  path: '/v/',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteUserBuildsIndexRoute = SiteUserBuildsIndexRouteImport.update({
   id: '/user-builds/',
   path: '/user-builds/',
@@ -839,6 +835,16 @@ const SiteNewsIndexRoute = SiteNewsIndexRouteImport.update({
 const SiteMessagesIndexRoute = SiteMessagesIndexRouteImport.update({
   id: '/messages/',
   path: '/messages/',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteLibraryIndexRoute = SiteLibraryIndexRouteImport.update({
+  id: '/library/',
+  path: '/library/',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteBuildsIndexRoute = SiteBuildsIndexRouteImport.update({
+  id: '/builds/',
+  path: '/builds/',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteBlogIndexRoute = SiteBlogIndexRouteImport.update({
@@ -1650,6 +1656,7 @@ export interface FileRoutesByFullPath {
   '/versecraft': typeof VersecraftRouteWithChildren
   '/void-breaker': typeof VoidBreakerRoute
   '/admin': typeof SiteAdminRouteRouteWithChildren
+  '/home': typeof SiteHomeRoute
   '/quotes': typeof SiteQuotesRoute
   '/roadmap': typeof SiteRoadmapRoute
   '/wallet': typeof SiteWalletRoute
@@ -1702,11 +1709,9 @@ export interface FileRoutesByFullPath {
   '/v/$slug': typeof VSlugRoute
   '/v/new': typeof VNewRoute
   '/altair/': typeof AltairIndexRoute
-  '/builds/': typeof BuildsIndexRoute
   '/daily/': typeof DailyIndexRoute
   '/forest-explorer/': typeof ForestExplorerIndexRoute
   '/kowloon-knockout/': typeof KowloonKnockoutIndexRoute
-  '/library/': typeof LibraryIndexRoute
   '/rmhbox/': typeof RmhboxIndexRoute
   '/rmhcode/': typeof RmhcodeIndexRoute
   '/rmhmusic/': typeof RmhmusicIndexRoute
@@ -1718,7 +1723,6 @@ export interface FileRoutesByFullPath {
   '/strategies/': typeof StrategiesIndexRoute
   '/studio/': typeof StudioIndexRoute
   '/temple-of-joy/': typeof TempleOfJoyIndexRoute
-  '/v/': typeof VIndexRoute
   '/versecraft/': typeof VersecraftIndexRoute
   '/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/admin/users': typeof SiteAdminUsersRoute
@@ -1804,10 +1808,13 @@ export interface FileRoutesByFullPath {
   '/strategies/safehouse/recruit': typeof StrategiesSafehouseRecruitRoute
   '/admin/': typeof SiteAdminIndexRoute
   '/blog/': typeof SiteBlogIndexRoute
+  '/builds/': typeof SiteBuildsIndexRoute
+  '/library/': typeof SiteLibraryIndexRoute
   '/messages/': typeof SiteMessagesIndexRoute
   '/news/': typeof SiteNewsIndexRoute
   '/research/': typeof SiteResearchIndexRoute
   '/user-builds/': typeof SiteUserBuildsIndexRoute
+  '/v/': typeof SiteVIndexRoute
   '/altair/multiplayer/': typeof AltairMultiplayerIndexRoute
   '/api/coins/': typeof ApiCoinsIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
@@ -1895,6 +1902,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/velum2099': typeof Velum2099Route
   '/void-breaker': typeof VoidBreakerRoute
+  '/home': typeof SiteHomeRoute
   '/quotes': typeof SiteQuotesRoute
   '/roadmap': typeof SiteRoadmapRoute
   '/wallet': typeof SiteWalletRoute
@@ -1942,11 +1950,9 @@ export interface FileRoutesByTo {
   '/v/$slug': typeof VSlugRoute
   '/v/new': typeof VNewRoute
   '/altair': typeof AltairIndexRoute
-  '/builds': typeof BuildsIndexRoute
   '/daily': typeof DailyIndexRoute
   '/forest-explorer': typeof ForestExplorerIndexRoute
   '/kowloon-knockout': typeof KowloonKnockoutIndexRoute
-  '/library': typeof LibraryIndexRoute
   '/rmhbox': typeof RmhboxIndexRoute
   '/rmhcode': typeof RmhcodeIndexRoute
   '/rmhmusic': typeof RmhmusicIndexRoute
@@ -1958,7 +1964,6 @@ export interface FileRoutesByTo {
   '/strategies': typeof StrategiesIndexRoute
   '/studio': typeof StudioIndexRoute
   '/temple-of-joy': typeof TempleOfJoyIndexRoute
-  '/v': typeof VIndexRoute
   '/versecraft': typeof VersecraftIndexRoute
   '/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/admin/users': typeof SiteAdminUsersRoute
@@ -2044,10 +2049,13 @@ export interface FileRoutesByTo {
   '/strategies/safehouse/recruit': typeof StrategiesSafehouseRecruitRoute
   '/admin': typeof SiteAdminIndexRoute
   '/blog': typeof SiteBlogIndexRoute
+  '/builds': typeof SiteBuildsIndexRoute
+  '/library': typeof SiteLibraryIndexRoute
   '/messages': typeof SiteMessagesIndexRoute
   '/news': typeof SiteNewsIndexRoute
   '/research': typeof SiteResearchIndexRoute
   '/user-builds': typeof SiteUserBuildsIndexRoute
+  '/v': typeof SiteVIndexRoute
   '/altair/multiplayer': typeof AltairMultiplayerIndexRoute
   '/api/coins': typeof ApiCoinsIndexRoute
   '/rmhbox/minigames': typeof RmhboxMinigamesIndexRoute
@@ -2154,6 +2162,7 @@ export interface FileRoutesById {
   '/versecraft': typeof VersecraftRouteWithChildren
   '/void-breaker': typeof VoidBreakerRoute
   '/_site/admin': typeof SiteAdminRouteRouteWithChildren
+  '/_site/home': typeof SiteHomeRoute
   '/_site/quotes': typeof SiteQuotesRoute
   '/_site/roadmap': typeof SiteRoadmapRoute
   '/_site/wallet': typeof SiteWalletRoute
@@ -2206,11 +2215,9 @@ export interface FileRoutesById {
   '/v/$slug': typeof VSlugRoute
   '/v/new': typeof VNewRoute
   '/altair/': typeof AltairIndexRoute
-  '/builds/': typeof BuildsIndexRoute
   '/daily/': typeof DailyIndexRoute
   '/forest-explorer/': typeof ForestExplorerIndexRoute
   '/kowloon-knockout/': typeof KowloonKnockoutIndexRoute
-  '/library/': typeof LibraryIndexRoute
   '/rmhbox/': typeof RmhboxIndexRoute
   '/rmhcode/': typeof RmhcodeIndexRoute
   '/rmhmusic/': typeof RmhmusicIndexRoute
@@ -2222,7 +2229,6 @@ export interface FileRoutesById {
   '/strategies/': typeof StrategiesIndexRoute
   '/studio/': typeof StudioIndexRoute
   '/temple-of-joy/': typeof TempleOfJoyIndexRoute
-  '/v/': typeof VIndexRoute
   '/versecraft/': typeof VersecraftIndexRoute
   '/_site/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/_site/admin/users': typeof SiteAdminUsersRoute
@@ -2308,10 +2314,13 @@ export interface FileRoutesById {
   '/strategies/safehouse/recruit': typeof StrategiesSafehouseRecruitRoute
   '/_site/admin/': typeof SiteAdminIndexRoute
   '/_site/blog/': typeof SiteBlogIndexRoute
+  '/_site/builds/': typeof SiteBuildsIndexRoute
+  '/_site/library/': typeof SiteLibraryIndexRoute
   '/_site/messages/': typeof SiteMessagesIndexRoute
   '/_site/news/': typeof SiteNewsIndexRoute
   '/_site/research/': typeof SiteResearchIndexRoute
   '/_site/user-builds/': typeof SiteUserBuildsIndexRoute
+  '/_site/v/': typeof SiteVIndexRoute
   '/altair/multiplayer/': typeof AltairMultiplayerIndexRoute
   '/api/coins/': typeof ApiCoinsIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
@@ -2418,6 +2427,7 @@ export interface FileRouteTypes {
     | '/versecraft'
     | '/void-breaker'
     | '/admin'
+    | '/home'
     | '/quotes'
     | '/roadmap'
     | '/wallet'
@@ -2470,11 +2480,9 @@ export interface FileRouteTypes {
     | '/v/$slug'
     | '/v/new'
     | '/altair/'
-    | '/builds/'
     | '/daily/'
     | '/forest-explorer/'
     | '/kowloon-knockout/'
-    | '/library/'
     | '/rmhbox/'
     | '/rmhcode/'
     | '/rmhmusic/'
@@ -2486,7 +2494,6 @@ export interface FileRouteTypes {
     | '/strategies/'
     | '/studio/'
     | '/temple-of-joy/'
-    | '/v/'
     | '/versecraft/'
     | '/admin/user-builds'
     | '/admin/users'
@@ -2572,10 +2579,13 @@ export interface FileRouteTypes {
     | '/strategies/safehouse/recruit'
     | '/admin/'
     | '/blog/'
+    | '/builds/'
+    | '/library/'
     | '/messages/'
     | '/news/'
     | '/research/'
     | '/user-builds/'
+    | '/v/'
     | '/altair/multiplayer/'
     | '/api/coins/'
     | '/rmhbox/minigames/'
@@ -2663,6 +2673,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/velum2099'
     | '/void-breaker'
+    | '/home'
     | '/quotes'
     | '/roadmap'
     | '/wallet'
@@ -2710,11 +2721,9 @@ export interface FileRouteTypes {
     | '/v/$slug'
     | '/v/new'
     | '/altair'
-    | '/builds'
     | '/daily'
     | '/forest-explorer'
     | '/kowloon-knockout'
-    | '/library'
     | '/rmhbox'
     | '/rmhcode'
     | '/rmhmusic'
@@ -2726,7 +2735,6 @@ export interface FileRouteTypes {
     | '/strategies'
     | '/studio'
     | '/temple-of-joy'
-    | '/v'
     | '/versecraft'
     | '/admin/user-builds'
     | '/admin/users'
@@ -2812,10 +2820,13 @@ export interface FileRouteTypes {
     | '/strategies/safehouse/recruit'
     | '/admin'
     | '/blog'
+    | '/builds'
+    | '/library'
     | '/messages'
     | '/news'
     | '/research'
     | '/user-builds'
+    | '/v'
     | '/altair/multiplayer'
     | '/api/coins'
     | '/rmhbox/minigames'
@@ -2921,6 +2932,7 @@ export interface FileRouteTypes {
     | '/versecraft'
     | '/void-breaker'
     | '/_site/admin'
+    | '/_site/home'
     | '/_site/quotes'
     | '/_site/roadmap'
     | '/_site/wallet'
@@ -2973,11 +2985,9 @@ export interface FileRouteTypes {
     | '/v/$slug'
     | '/v/new'
     | '/altair/'
-    | '/builds/'
     | '/daily/'
     | '/forest-explorer/'
     | '/kowloon-knockout/'
-    | '/library/'
     | '/rmhbox/'
     | '/rmhcode/'
     | '/rmhmusic/'
@@ -2989,7 +2999,6 @@ export interface FileRouteTypes {
     | '/strategies/'
     | '/studio/'
     | '/temple-of-joy/'
-    | '/v/'
     | '/versecraft/'
     | '/_site/admin/user-builds'
     | '/_site/admin/users'
@@ -3075,10 +3084,13 @@ export interface FileRouteTypes {
     | '/strategies/safehouse/recruit'
     | '/_site/admin/'
     | '/_site/blog/'
+    | '/_site/builds/'
+    | '/_site/library/'
     | '/_site/messages/'
     | '/_site/news/'
     | '/_site/research/'
     | '/_site/user-builds/'
+    | '/_site/v/'
     | '/altair/multiplayer/'
     | '/api/coins/'
     | '/rmhbox/minigames/'
@@ -3203,9 +3215,6 @@ export interface RootRouteChildren {
   UserBuildsSlugRoute: typeof UserBuildsSlugRoute
   VSlugRoute: typeof VSlugRoute
   VNewRoute: typeof VNewRoute
-  BuildsIndexRoute: typeof BuildsIndexRoute
-  LibraryIndexRoute: typeof LibraryIndexRoute
-  VIndexRoute: typeof VIndexRoute
   ApiAdminBlogRoute: typeof ApiAdminBlogRoute
   ApiAdminUsersRoute: typeof ApiAdminUsersRoute
   ApiAltairLeaderboardRoute: typeof ApiAltairLeaderboardRoute
@@ -3502,13 +3511,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VersecraftIndexRouteImport
       parentRoute: typeof VersecraftRoute
     }
-    '/v/': {
-      id: '/v/'
-      path: '/v'
-      fullPath: '/v/'
-      preLoaderRoute: typeof VIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/temple-of-joy/': {
       id: '/temple-of-joy/'
       path: '/'
@@ -3586,13 +3588,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RmhboxIndexRouteImport
       parentRoute: typeof RmhboxRoute
     }
-    '/library/': {
-      id: '/library/'
-      path: '/library'
-      fullPath: '/library/'
-      preLoaderRoute: typeof LibraryIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/kowloon-knockout/': {
       id: '/kowloon-knockout/'
       path: '/'
@@ -3613,13 +3608,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/daily/'
       preLoaderRoute: typeof DailyIndexRouteImport
       parentRoute: typeof DailyRoute
-    }
-    '/builds/': {
-      id: '/builds/'
-      path: '/builds'
-      fullPath: '/builds/'
-      preLoaderRoute: typeof BuildsIndexRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/altair/': {
       id: '/altair/'
@@ -3985,6 +3973,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteQuotesRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/home': {
+      id: '/_site/home'
+      path: '/home'
+      fullPath: '/home'
+      preLoaderRoute: typeof SiteHomeRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/admin': {
       id: '/_site/admin'
       path: '/admin'
@@ -4062,6 +4057,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AltairMultiplayerIndexRouteImport
       parentRoute: typeof AltairMultiplayerRoute
     }
+    '/_site/v/': {
+      id: '/_site/v/'
+      path: '/v'
+      fullPath: '/v/'
+      preLoaderRoute: typeof SiteVIndexRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/user-builds/': {
       id: '/_site/user-builds/'
       path: '/user-builds'
@@ -4088,6 +4090,20 @@ declare module '@tanstack/react-router' {
       path: '/messages'
       fullPath: '/messages/'
       preLoaderRoute: typeof SiteMessagesIndexRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/library/': {
+      id: '/_site/library/'
+      path: '/library'
+      fullPath: '/library/'
+      preLoaderRoute: typeof SiteLibraryIndexRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/builds/': {
+      id: '/_site/builds/'
+      path: '/builds'
+      fullPath: '/builds/'
+      preLoaderRoute: typeof SiteBuildsIndexRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/blog/': {
@@ -5146,6 +5162,7 @@ const SiteAdminRouteRouteWithChildren = SiteAdminRouteRoute._addFileChildren(
 
 interface SiteRouteChildren {
   SiteAdminRouteRoute: typeof SiteAdminRouteRouteWithChildren
+  SiteHomeRoute: typeof SiteHomeRoute
   SiteQuotesRoute: typeof SiteQuotesRoute
   SiteRoadmapRoute: typeof SiteRoadmapRoute
   SiteWalletRoute: typeof SiteWalletRoute
@@ -5155,16 +5172,20 @@ interface SiteRouteChildren {
   SiteUserBuildsManageRoute: typeof SiteUserBuildsManageRoute
   SiteUserBuildsSubmitRoute: typeof SiteUserBuildsSubmitRoute
   SiteBlogIndexRoute: typeof SiteBlogIndexRoute
+  SiteBuildsIndexRoute: typeof SiteBuildsIndexRoute
+  SiteLibraryIndexRoute: typeof SiteLibraryIndexRoute
   SiteMessagesIndexRoute: typeof SiteMessagesIndexRoute
   SiteNewsIndexRoute: typeof SiteNewsIndexRoute
   SiteResearchIndexRoute: typeof SiteResearchIndexRoute
   SiteUserBuildsIndexRoute: typeof SiteUserBuildsIndexRoute
+  SiteVIndexRoute: typeof SiteVIndexRoute
   SiteUUseridIndexRoute: typeof SiteUUseridIndexRoute
   SiteUUseridPostPostidRoute: typeof SiteUUseridPostPostidRoute
 }
 
 const SiteRouteChildren: SiteRouteChildren = {
   SiteAdminRouteRoute: SiteAdminRouteRouteWithChildren,
+  SiteHomeRoute: SiteHomeRoute,
   SiteQuotesRoute: SiteQuotesRoute,
   SiteRoadmapRoute: SiteRoadmapRoute,
   SiteWalletRoute: SiteWalletRoute,
@@ -5174,10 +5195,13 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteUserBuildsManageRoute: SiteUserBuildsManageRoute,
   SiteUserBuildsSubmitRoute: SiteUserBuildsSubmitRoute,
   SiteBlogIndexRoute: SiteBlogIndexRoute,
+  SiteBuildsIndexRoute: SiteBuildsIndexRoute,
+  SiteLibraryIndexRoute: SiteLibraryIndexRoute,
   SiteMessagesIndexRoute: SiteMessagesIndexRoute,
   SiteNewsIndexRoute: SiteNewsIndexRoute,
   SiteResearchIndexRoute: SiteResearchIndexRoute,
   SiteUserBuildsIndexRoute: SiteUserBuildsIndexRoute,
+  SiteVIndexRoute: SiteVIndexRoute,
   SiteUUseridIndexRoute: SiteUUseridIndexRoute,
   SiteUUseridPostPostidRoute: SiteUUseridPostPostidRoute,
 }
@@ -5791,9 +5815,6 @@ const rootRouteChildren: RootRouteChildren = {
   UserBuildsSlugRoute: UserBuildsSlugRoute,
   VSlugRoute: VSlugRoute,
   VNewRoute: VNewRoute,
-  BuildsIndexRoute: BuildsIndexRoute,
-  LibraryIndexRoute: LibraryIndexRoute,
-  VIndexRoute: VIndexRoute,
   ApiAdminBlogRoute: ApiAdminBlogRoute,
   ApiAdminUsersRoute: ApiAdminUsersRoute,
   ApiAltairLeaderboardRoute: ApiAltairLeaderboardRoute,
