@@ -56,6 +56,10 @@ export function BookCanvas({ aspect, single, numPages, getImg, ensurePage, onPag
   const anim = useRef<{ active: boolean; target: number }>({ active: false, target: 0 });
   const dragging = useRef(false);
   const dragStartX = useRef(0);
+  const dragStartY = useRef(0);
+  const moved = useRef(false);
+  // Vertical lean (-1..1) so the page follows the cursor up/down, not just across.
+  const tilt = useRef(0);
 
   const maxK = single ? Math.max(0, numPages - 1) : Math.max(0, Math.floor(numPages / 2));
   const view = useCallback(
@@ -157,6 +161,10 @@ export function BookCanvas({ aspect, single, numPages, getImg, ensurePage, onPag
   };
 
   const onPointerDown = (e: React.PointerEvent) => {
+    // Let the on-screen arrows (and any control) handle their own clicks — without
+    // this, the wrapper would start a drag-turn on pointerdown and cancel it on
+    // pointerup, swallowing the button click.
+    if ((e.target as HTMLElement).closest('button, a')) return;
     if (turn || anim.current.active) return;
     const rect = wrapRef.current?.getBoundingClientRect();
     if (!rect) return;
@@ -164,16 +172,24 @@ export function BookCanvas({ aspect, single, numPages, getImg, ensurePage, onPag
     const dir: Dir = rightHalf ? 'next' : 'prev';
     if (!beginTurn(dir, true)) return;
     dragging.current = true;
+    moved.current = false;
     dragStartX.current = e.clientX;
+    dragStartY.current = e.clientY;
+    tilt.current = 0;
     wrapRef.current?.setPointerCapture(e.pointerId);
   };
 
   const onPointerMove = (e: React.PointerEvent) => {
     if (!dragging.current || !turn) return;
     const dx = e.clientX - dragStartX.current;
+    const dy = e.clientY - dragStartY.current;
+    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) moved.current = true;
     // Forward turns advance as you drag left; backward turns as you drag right.
     const signed = turn.dir === 'next' ? -dx : dx;
     progress.current = Math.min(1, Math.max(0, signed / dragSpan()));
+    // Vertical follow: drag up/down leans the page the same way (clamped).
+    const h = wrapRef.current?.clientHeight ?? 600;
+    tilt.current = Math.max(-1, Math.min(1, dy / (h * 0.5)));
   };
 
   const endDrag = (e: React.PointerEvent) => {
@@ -184,7 +200,9 @@ export function BookCanvas({ aspect, single, numPages, getImg, ensurePage, onPag
     } catch {
       /* pointer may already be released */
     }
-    anim.current = { active: true, target: progress.current > 0.5 ? 1 : 0 };
+    // A tap (no real drag) completes the turn; a drag uses the halfway threshold.
+    const target = !moved.current ? 1 : progress.current > 0.5 ? 1 : 0;
+    anim.current = { active: true, target };
   };
 
   // ─── Keyboard ──────────────────────────────────────────────────────────────--
@@ -202,7 +220,9 @@ export function BookCanvas({ aspect, single, numPages, getImg, ensurePage, onPag
 
   const base = turn ? { left: turn.staticLeft, right: turn.staticRight } : view(k);
   const contentW = single ? aspect : 2 * aspect;
-  const contentH = 1.18;
+  // Extra vertical headroom so the page can lift/curl past the page rectangle
+  // without being clipped at the canvas edge.
+  const contentH = 1.6;
 
   return (
     <div
@@ -229,6 +249,7 @@ export function BookCanvas({ aspect, single, numPages, getImg, ensurePage, onPag
           turn={turn}
           getImg={getImg}
           progress={progress}
+          tilt={tilt}
           anim={anim}
           onSettle={onSettle}
         />
@@ -267,11 +288,12 @@ type SceneProps = {
   turn: Turn | null;
   getImg: (n: number) => string | undefined;
   progress: React.RefObject<number>;
+  tilt: React.RefObject<number>;
   anim: React.RefObject<{ active: boolean; target: number }>;
   onSettle: (reached: number) => void;
 };
 
-function Scene({ aspect, single, contentW, contentH, base, turn, getImg, progress, anim, onSettle }: SceneProps) {
+function Scene({ aspect, single, contentW, contentH, base, turn, getImg, progress, tilt, anim, onSettle }: SceneProps) {
   // Centre the content: a single page hinges at its left edge, so shift it so the
   // page (not the spine) is centred; a two-page spread is already centred at x=0.
   const groupX = single ? -aspect / 2 : 0;
@@ -292,6 +314,7 @@ function Scene({ aspect, single, contentW, contentH, base, turn, getImg, progres
             frontSrc={getImg(turn.front)}
             backSrc={turn.back ? getImg(turn.back) : undefined}
             progress={progress}
+            tilt={tilt}
             anim={anim}
             onSettle={onSettle}
           />
@@ -306,7 +329,7 @@ function Fit({ width, height }: { width: number; height: number }) {
   const size = useThree((s) => s.size);
   const camera = useThree((s) => s.camera);
   useEffect(() => {
-    const zoom = Math.min(size.width / width, size.height / height) * 0.92;
+    const zoom = Math.min(size.width / width, size.height / height) * 0.86;
     camera.zoom = zoom;
     camera.updateProjectionMatrix();
   }, [size.width, size.height, width, height, camera]);
@@ -331,6 +354,7 @@ function Leaf({
   frontSrc,
   backSrc,
   progress,
+  tilt,
   anim,
   onSettle,
 }: {
@@ -339,6 +363,7 @@ function Leaf({
   frontSrc?: string;
   backSrc?: string;
   progress: React.RefObject<number>;
+  tilt: React.RefObject<number>;
   anim: React.RefObject<{ active: boolean; target: number }>;
   onSettle: (reached: number) => void;
 }) {
@@ -346,17 +371,18 @@ function Leaf({
   const frontTex = usePageTexture(frontSrc);
   const backTex = usePageTexture(backSrc, true); // mirror back-face UVs
 
-  // Shared bend uniform, driven each frame.
+  // Shared bend uniforms, driven each frame.
   const uProgress = useMemo(() => ({ value: 0 }), []);
+  const uTilt = useMemo(() => ({ value: 0 }), []);
   const planeOffset = turn.side === 'right' ? w / 2 : -w / 2;
 
   const frontMat = useMemo(
-    () => makeLeafMaterial(frontTex, THREE.FrontSide, w, uProgress, '#fbfbf9'),
-    [frontTex, w, uProgress],
+    () => makeLeafMaterial(frontTex, THREE.FrontSide, w, uProgress, uTilt, '#fbfbf9'),
+    [frontTex, w, uProgress, uTilt],
   );
   const backMat = useMemo(
-    () => makeLeafMaterial(backTex, THREE.BackSide, w, uProgress, '#f1efe9'),
-    [backTex, w, uProgress],
+    () => makeLeafMaterial(backTex, THREE.BackSide, w, uProgress, uTilt, '#f1efe9'),
+    [backTex, w, uProgress, uTilt],
   );
   useEffect(() => () => {
     frontMat.dispose();
@@ -368,6 +394,8 @@ function Leaf({
     if (a.active) {
       const next = THREE.MathUtils.damp(progress.current!, a.target, 11, delta);
       progress.current = next;
+      // Ease the vertical lean back to neutral as the turn settles.
+      tilt.current = THREE.MathUtils.damp(tilt.current!, 0, 9, delta);
       if (Math.abs(next - a.target) < 0.004) {
         progress.current = a.target;
         const reached = a.target;
@@ -376,8 +404,15 @@ function Leaf({
       }
     }
     const p = progress.current!;
+    const ty = tilt.current!;
     uProgress.value = p;
-    if (groupRef.current) groupRef.current.rotation.y = turn.rotSign * p * PI;
+    uTilt.value = ty;
+    if (groupRef.current) {
+      groupRef.current.rotation.y = turn.rotSign * p * PI;
+      // Lean the whole leaf toward the cursor vertically; fade the lean out as the
+      // page reaches the closed/open extremes so it never looks broken.
+      groupRef.current.rotation.x = ty * 0.5 * Math.sin(p * PI);
+    }
   });
 
   return (
@@ -402,6 +437,7 @@ function makeLeafMaterial(
   side: THREE.Side,
   width: number,
   uProgress: { value: number },
+  uTilt: { value: number },
   blank: string,
 ): THREE.MeshBasicMaterial {
   const m = new THREE.MeshBasicMaterial({
@@ -412,10 +448,11 @@ function makeLeafMaterial(
   });
   m.onBeforeCompile = (sh) => {
     sh.uniforms.uProgress = uProgress;
+    sh.uniforms.uTilt = uTilt;
     sh.uniforms.uWidth = { value: width };
     sh.uniforms.uCurl = { value: 0.17 };
     sh.vertexShader =
-      'uniform float uProgress;\nuniform float uWidth;\nuniform float uCurl;\nvarying float vShade;\n' +
+      'uniform float uProgress;\nuniform float uTilt;\nuniform float uWidth;\nuniform float uCurl;\nvarying float vShade;\n' +
       sh.vertexShader.replace(
         '#include <begin_vertex>',
         `#include <begin_vertex>
@@ -423,7 +460,10 @@ function makeLeafMaterial(
          float _curl = sin(_t * 3.14159265);
          float _xN = (position.x / uWidth) + 0.5;
          float _bend = sin(_xN * 3.14159265);
-         transformed.z += uCurl * _curl * _bend;
+         // Diagonal corner curl: bias the bend toward the dragged corner (uTilt)
+         // so the fold follows the cursor in 2D rather than a flat horizontal hinge.
+         float _corner = 1.0 + uTilt * position.y * 2.2;
+         transformed.z += uCurl * _curl * _bend * _corner;
          vShade = 1.0 - 0.32 * _curl * _bend;`,
       );
     sh.fragmentShader =

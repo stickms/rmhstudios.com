@@ -1,0 +1,219 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   Builds — toolbar (Curated/User switch + sort + submit) for the /builds bookshelf.
+   Shelf + book styles are reused from library.css; this only adds the toolbar.
+   Black/white "vibe" aesthetic.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.builds-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 16px clamp(16px, 4vw, 44px) 4px;
+}
+
+.builds-toolbar__right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Segmented Curated / User switch. */
+.builds-switch {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 0.5px solid rgba(255, 255, 255, 0.13);
+}
+
+.builds-switch__btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: rgba(245, 245, 247, 0.6);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 6px 16px;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: color 160ms ease, background 200ms ease;
+}
+
+.builds-switch__btn:hover {
+  color: rgba(245, 245, 247, 0.9);
+}
+
+.builds-switch__btn.is-active {
+  color: #0a0a0a;
+  background: #f5f5f7;
+}
+
+/* Sort dropdown. */
+.builds-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.builds-sort__label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6e6e73;
+}
+
+.builds-sort__select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: rgba(255, 255, 255, 0.05)
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a1a1a6' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>")
+    no-repeat right 10px center;
+  border: 0.5px solid rgba(255, 255, 255, 0.13);
+  border-radius: 9999px;
+  color: rgba(245, 245, 247, 0.9);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 7px 30px 7px 14px;
+  cursor: pointer;
+  outline: 0;
+  transition: border-color 160ms ease;
+}
+
+.builds-sort__select:focus {
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.builds-sort__select option {
+  background: #1c1c1e;
+  color: #f5f5f7;
+}
+
+/* Submit (user builds) button. */
+.builds-submit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 0.5px solid rgba(255, 255, 255, 0.13);
+  color: rgba(245, 245, 247, 0.9);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: border-color 160ms ease, color 160ms ease;
+}
+
+.builds-submit:hover {
+  border-color: rgba(255, 255, 255, 0.28);
+  color: #f5f5f7;
+}
+
+/* Like count badge content. */
+.builds-likes {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.builds-likes__icon {
+  fill: currentColor;
+}
+
+/* ─── Build detail (vibe) ───────────────────────────────────────────────────── */
+.builds-detail__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: rgba(245, 245, 247, 0.55);
+  text-decoration: none;
+  transition: color 160ms ease;
+}
+.builds-detail__back:hover {
+  color: rgba(245, 245, 247, 0.9);
+}
+
+.builds-detail__badge {
+  display: inline-block;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(245, 245, 247, 0.7);
+  background: rgba(255, 255, 255, 0.07);
+  border: 0.5px solid rgba(255, 255, 255, 0.14);
+  padding: 4px 10px;
+  border-radius: 9999px;
+  margin-bottom: 14px;
+}
+
+.builds-detail__title {
+  font-size: clamp(1.9rem, 5vw, 3rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: #f5f5f7;
+}
+
+.builds-detail__lead {
+  margin-top: 16px;
+  font-size: 1.02rem;
+  line-height: 1.6;
+  color: #a1a1a6;
+  max-width: 62ch;
+}
+
+.builds-detail__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.builds-detail__tag {
+  font-size: 0.74rem;
+  color: rgba(245, 245, 247, 0.7);
+  background: rgba(255, 255, 255, 0.05);
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  padding: 4px 11px;
+  border-radius: 9999px;
+}
+
+.builds-detail__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 26px;
+  height: 44px;
+  padding: 0 22px;
+  border-radius: 9999px;
+  background: #f5f5f7;
+  color: #0a0a0a;
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 160ms ease, background 160ms ease;
+}
+.builds-detail__cta:hover {
+  background: #fff;
+  transform: translateY(-1px);
+}
+
+.builds-detail__thumb {
+  margin-top: 36px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+}

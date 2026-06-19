@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Link, useLocation } from '@tanstack/react-router';
-import { Home, Package, Hammer, MessageCircle, User, PenSquare } from 'lucide-react';
+import { Home, Package, MessageCircle, User, PenSquare } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { ComposeModal } from './ComposeModal';
 import { useUnreadCount } from '@/lib/useUnreadCount';
@@ -18,8 +18,7 @@ export function MobileNav() {
     : '/login';
 
   const isHome = pathname === '/';
-  const isBuilds = pathname?.startsWith('/builds');
-  const isUserBuilds = pathname?.startsWith('/user-builds');
+  const isBuilds = pathname?.startsWith('/builds') || pathname?.startsWith('/user-builds');
   const isMessages = pathname?.startsWith('/messages');
   const isProfile = pathname?.startsWith('/profile') || pathname?.startsWith('/u/');
 
@@ -48,12 +47,8 @@ export function MobileNav() {
             <Home className="w-6 h-6" />
           </Link>
 
-          <Link to="/builds" className={tabClass(isBuilds)} aria-label="Official Builds">
+          <Link to="/builds" className={tabClass(isBuilds)} aria-label="Builds">
             <Package className="w-6 h-6" />
-          </Link>
-
-          <Link to="/user-builds" className={tabClass(isUserBuilds)} aria-label="User Builds">
-            <Hammer className="w-6 h-6" />
           </Link>
 
           <Link to="/messages" className={tabClass(isMessages)} aria-label="Messages">

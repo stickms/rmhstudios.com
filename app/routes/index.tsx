@@ -85,6 +85,9 @@ function Home() {
           <Link to="/v" className="vibe-ghost-link">
             Browse pages →
           </Link>
+          <Link to="/builds" className="vibe-ghost-link">
+            Builds →
+          </Link>
           <Link to="/library" className="vibe-ghost-link">
             Library →
           </Link>

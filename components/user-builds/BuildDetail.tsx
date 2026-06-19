@@ -30,7 +30,7 @@ function formatCount(count: number): string {
   return String(count);
 }
 
-export function BuildDetail({ build: initialBuild, backHref = '/user-builds' }: BuildDetailProps) {
+export function BuildDetail({ build: initialBuild, backHref = '/builds' }: BuildDetailProps) {
   const navigate = useNavigate();
   const { data: session } = authClient.useSession();
   const [build, setBuild] = useState(initialBuild);
@@ -48,7 +48,7 @@ export function BuildDetail({ build: initialBuild, backHref = '/user-builds' }: 
     try {
       const res = await fetch(`/api/user-builds/${build.id}`, { method: 'DELETE' });
       if (res.ok) {
-        navigate({ to: '/user-builds' });
+        navigate({ to: '/builds' });
       }
     } catch (error) {
       console.error('Error deleting build:', error);
@@ -93,56 +93,53 @@ export function BuildDetail({ build: initialBuild, backHref = '/user-builds' }: 
     }
   };
 
+  const chip = 'px-2.5 py-1 rounded-full text-xs border border-white/12 bg-white/[0.05] text-[#a1a1a6]';
+  const card = 'rounded-2xl border border-white/10 bg-white/[0.03] p-6';
+
   return (
     <div className="max-w-4xl mx-auto">
       {/* Back link */}
-      <Link
-        to={backHref}
-        className="inline-flex items-center gap-2 text-sm text-site-text-muted hover:text-site-text mb-6 transition-colors"
-      >
+      <Link to={backHref} className="builds-detail__back">
         <ArrowLeft className="w-4 h-4" />
-        Back to Builds
+        Back to builds
       </Link>
 
       {/* Header */}
-      <div className="mb-8">
+      <div className="mt-7 mb-8">
         {/* Category & Status */}
-        <div className="flex items-center gap-2 mb-3">
-          {build.category && (
-            <span className="px-2 py-0.5 rounded-full text-xs bg-site-accent-dim text-site-accent">
-              {build.category.name}
-            </span>
-          )}
+        <div className="flex items-center gap-2 mb-4">
+          {build.category && <span className={chip}>{build.category.name}</span>}
           {build.featured && (
-            <span className="px-2 py-0.5 rounded-full text-xs bg-amber-500/20 text-amber-400">
+            <span className="px-2.5 py-1 rounded-full text-xs border border-amber-400/30 bg-amber-400/10 text-amber-300">
               Curated
             </span>
           )}
           {build.visibility !== 'PUBLIC' && (
-            <span className="px-2 py-0.5 rounded-full text-xs bg-gray-500/20 text-gray-400">
+            <span className="px-2.5 py-1 rounded-full text-xs border border-white/12 bg-white/[0.05] text-[#6e6e73]">
               {build.visibility}
             </span>
           )}
         </div>
 
         {/* Title */}
-        <h1 className="text-3xl font-bold text-site-text mb-4">{build.title}</h1>
+        <h1 className="builds-detail__title">{build.title}</h1>
 
         {/* Author & Date */}
-        <div className="flex items-center gap-4 mb-4">
-          <Link to={`/u/${build.user.handle || build.user.id}` as string} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+        <div className="flex items-center flex-wrap gap-4 mt-5 mb-5">
+          <Link
+            to={`/u/${build.user.handle || build.user.id}` as string}
+            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+          >
             <UserAvatar src={build.user.image ?? undefined} alt={build.user.name || 'User'} size={40} fallbackName={build.user.name ?? undefined} />
             <div>
-              <p className="font-medium text-site-text">{build.user.name || 'Anonymous'}</p>
-              {build.user.username && (
-                <p className="text-sm text-site-text-muted">@{build.user.username}</p>
-              )}
+              <p className="font-medium text-[#f5f5f7]">{build.user.name || 'Anonymous'}</p>
+              {build.user.username && <p className="text-sm text-[#6e6e73]">@{build.user.username}</p>}
             </div>
           </Link>
 
-          <span className="text-site-text-dim">|</span>
+          <span className="text-[#3a3a3d]">|</span>
 
-          <span className="flex items-center gap-2 text-sm text-site-text-muted">
+          <span className="flex items-center gap-2 text-sm text-[#a1a1a6]">
             <Calendar className="w-4 h-4" />
             {formatDate(build.publishedAt || build.createdAt)}
           </span>
@@ -151,7 +148,7 @@ export function BuildDetail({ build: initialBuild, backHref = '/user-builds' }: 
             <div className="ml-auto flex items-center gap-2">
               <Link
                 to={`/user-builds/submit?edit=${build.id}` as string}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-site-surface border border-site-border text-sm text-site-text-muted hover:text-site-text hover:border-violet-500/50 transition-colors"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.05] border border-white/12 text-sm text-[#a1a1a6] hover:text-[#f5f5f7] hover:border-white/25 transition-colors"
               >
                 <Edit className="w-4 h-4" />
                 Edit
@@ -159,7 +156,7 @@ export function BuildDetail({ build: initialBuild, backHref = '/user-builds' }: 
               <button
                 onClick={handleDelete}
                 disabled={deleting}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-site-surface border border-site-border text-sm text-red-400 hover:text-red-300 hover:border-red-500/50 transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.05] border border-white/12 text-sm text-red-400 hover:text-red-300 hover:border-red-500/40 transition-colors disabled:opacity-50"
               >
                 {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                 Delete
@@ -169,23 +166,20 @@ export function BuildDetail({ build: initialBuild, backHref = '/user-builds' }: 
         </div>
 
         {/* Description */}
-        <p className="text-site-text-muted mb-6">{build.description}</p>
+        <p className="builds-detail__lead">{build.description}</p>
 
         {/* Tech Stack */}
         {build.technologies.length > 0 && (
-          <div className="mb-6">
+          <div className="mt-6">
             <TechBadges technologies={build.technologies} />
           </div>
         )}
 
         {/* Tags */}
         {build.tags.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-6">
+          <div className="flex flex-wrap gap-2 mt-4">
             {build.tags.map((tag) => (
-              <span
-                key={tag}
-                className="px-2 py-1 rounded-full text-xs bg-site-surface border border-site-border text-site-text-muted"
-              >
+              <span key={tag} className={chip}>
                 #{tag}
               </span>
             ))}
@@ -193,13 +187,13 @@ export function BuildDetail({ build: initialBuild, backHref = '/user-builds' }: 
         )}
 
         {/* Actions */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center flex-wrap gap-3 mt-7">
           {build.repoUrl && (
             <a
               href={build.repoUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-site-surface border border-site-border text-site-text hover:border-violet-500/50 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.05] border border-white/12 text-[#f5f5f7] hover:border-white/25 transition-colors"
             >
               <Github className="w-4 h-4" />
               View Source
@@ -210,14 +204,14 @@ export function BuildDetail({ build: initialBuild, backHref = '/user-builds' }: 
               href={build.demoUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white transition-colors"
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#f5f5f7] text-[#0a0a0a] font-medium hover:bg-white transition-colors"
             >
               <ExternalLink className="w-4 h-4" />
               Live Demo
             </a>
           )}
 
-          <div className="flex items-center gap-4 ml-auto text-site-text-muted">
+          <div className="flex items-center gap-5 ml-auto text-[#a1a1a6]">
             <button
               onClick={handleLike}
               disabled={liking || !session}
@@ -243,16 +237,16 @@ export function BuildDetail({ build: initialBuild, backHref = '/user-builds' }: 
 
       {/* Thumbnail */}
       {build.thumbnailUrl && (
-        <div className="mb-8 rounded-xl overflow-hidden border border-site-border">
+        <div className="builds-detail__thumb mb-8">
           <OptimizedImage src={build.thumbnailUrl} alt={build.title} layout="fullWidth" quality={85} className="w-full" />
         </div>
       )}
 
       {/* README */}
       {build.readme && (
-        <div className="mb-8 p-6 rounded-xl border border-site-border bg-site-surface">
-          <h2 className="text-lg font-semibold text-site-text mb-4">README</h2>
-          <div className="prose prose-invert prose-violet max-w-none">
+        <div className={`${card} mb-6`}>
+          <h2 className="text-lg font-semibold text-[#f5f5f7] mb-4">README</h2>
+          <div className="prose prose-invert max-w-none">
             <ReactMarkdown>{build.readme}</ReactMarkdown>
           </div>
         </div>
@@ -260,23 +254,17 @@ export function BuildDetail({ build: initialBuild, backHref = '/user-builds' }: 
 
       {/* Version History */}
       {build.versions && build.versions.length > 0 && (
-        <div className="mb-8 p-6 rounded-xl border border-site-border bg-site-surface">
-          <h2 className="text-lg font-semibold text-site-text mb-4">Version History</h2>
+        <div className={`${card} mb-6`}>
+          <h2 className="text-lg font-semibold text-[#f5f5f7] mb-4">Version History</h2>
           <div className="space-y-3">
             {build.versions.map((version) => (
-              <div key={version.id} className="flex items-start gap-3 p-3 rounded-lg bg-site-bg">
-                <span className="px-2 py-0.5 rounded bg-violet-500/20 text-violet-400 text-sm font-mono">
-                  v{version.version}
-                </span>
+              <div key={version.id} className="flex items-start gap-3 p-3 rounded-xl bg-white/[0.04]">
+                <span className="px-2 py-0.5 rounded bg-white/10 text-[#f5f5f7] text-sm font-mono">v{version.version}</span>
                 <div className="flex-1 min-w-0">
-                  {version.changelog && (
-                    <p className="text-sm text-site-text-muted">{version.changelog}</p>
-                  )}
-                  <p className="text-xs text-site-text-dim mt-1">
+                  {version.changelog && <p className="text-sm text-[#a1a1a6]">{version.changelog}</p>}
+                  <p className="text-xs text-[#6e6e73] mt-1">
                     {formatDate(version.createdAt)}
-                    {version.commitHash && (
-                      <span className="ml-2 font-mono">{version.commitHash.slice(0, 7)}</span>
-                    )}
+                    {version.commitHash && <span className="ml-2 font-mono">{version.commitHash.slice(0, 7)}</span>}
                   </p>
                 </div>
               </div>
@@ -286,7 +274,7 @@ export function BuildDetail({ build: initialBuild, backHref = '/user-builds' }: 
       )}
 
       {/* Comments */}
-      <div className="p-6 rounded-xl border border-site-border bg-site-surface">
+      <div className={card}>
         <BuildComments buildId={build.id} />
       </div>
     </div>

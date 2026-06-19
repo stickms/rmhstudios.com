@@ -55,6 +55,7 @@ import { Route as LibraryIndexRouteImport } from './routes/library.index'
 import { Route as KowloonKnockoutIndexRouteImport } from './routes/kowloon-knockout/index'
 import { Route as ForestExplorerIndexRouteImport } from './routes/forest-explorer/index'
 import { Route as DailyIndexRouteImport } from './routes/daily/index'
+import { Route as BuildsIndexRouteImport } from './routes/builds.index'
 import { Route as AltairIndexRouteImport } from './routes/altair/index'
 import { Route as VNewRouteImport } from './routes/v.new'
 import { Route as VSlugRouteImport } from './routes/v.$slug'
@@ -107,7 +108,6 @@ import { Route as AltairMultiplayerRouteImport } from './routes/altair/multiplay
 import { Route as SiteWalletRouteImport } from './routes/_site/wallet'
 import { Route as SiteRoadmapRouteImport } from './routes/_site/roadmap'
 import { Route as SiteQuotesRouteImport } from './routes/_site/quotes'
-import { Route as SiteBuildsRouteRouteImport } from './routes/_site/builds/route'
 import { Route as SiteAdminRouteRouteImport } from './routes/_site/admin/route'
 import { Route as StrategiesSafehouseIndexRouteImport } from './routes/strategies/safehouse/index'
 import { Route as StrategiesPuzzlesIndexRouteImport } from './routes/strategies/puzzles/index'
@@ -123,7 +123,6 @@ import { Route as SiteUserBuildsIndexRouteImport } from './routes/_site/user-bui
 import { Route as SiteResearchIndexRouteImport } from './routes/_site/research/index'
 import { Route as SiteNewsIndexRouteImport } from './routes/_site/news/index'
 import { Route as SiteMessagesIndexRouteImport } from './routes/_site/messages/index'
-import { Route as SiteBuildsIndexRouteImport } from './routes/_site/builds/index'
 import { Route as SiteBlogIndexRouteImport } from './routes/_site/blog/index'
 import { Route as SiteAdminIndexRouteImport } from './routes/_site/admin/index'
 import { Route as StrategiesSafehouseRecruitRouteImport } from './routes/strategies/safehouse/recruit'
@@ -206,8 +205,6 @@ import { Route as SiteUserBuildsManageRouteImport } from './routes/_site/user-bu
 import { Route as SiteResearchCallRouteImport } from './routes/_site/research/call'
 import { Route as SiteProfileIdRouteImport } from './routes/_site/profile/$id'
 import { Route as SiteMessagesConversationIdRouteImport } from './routes/_site/messages/$conversationId'
-import { Route as SiteBuildsGamesRouteImport } from './routes/_site/builds/games'
-import { Route as SiteBuildsAppsRouteImport } from './routes/_site/builds/apps'
 import { Route as SiteAdminUsersRouteImport } from './routes/_site/admin/users'
 import { Route as SiteAdminUserBuildsRouteImport } from './routes/_site/admin/user-builds'
 import { Route as ApiDoctrineReputationIndexRouteImport } from './routes/api/doctrine/reputation/index'
@@ -503,6 +500,11 @@ const DailyIndexRoute = DailyIndexRouteImport.update({
   path: '/',
   getParentRoute: () => DailyRoute,
 } as any)
+const BuildsIndexRoute = BuildsIndexRouteImport.update({
+  id: '/builds/',
+  path: '/builds/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AltairIndexRoute = AltairIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -763,11 +765,6 @@ const SiteQuotesRoute = SiteQuotesRouteImport.update({
   path: '/quotes',
   getParentRoute: () => SiteRoute,
 } as any)
-const SiteBuildsRouteRoute = SiteBuildsRouteRouteImport.update({
-  id: '/builds',
-  path: '/builds',
-  getParentRoute: () => SiteRoute,
-} as any)
 const SiteAdminRouteRoute = SiteAdminRouteRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -843,11 +840,6 @@ const SiteMessagesIndexRoute = SiteMessagesIndexRouteImport.update({
   id: '/messages/',
   path: '/messages/',
   getParentRoute: () => SiteRoute,
-} as any)
-const SiteBuildsIndexRoute = SiteBuildsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => SiteBuildsRouteRoute,
 } as any)
 const SiteBlogIndexRoute = SiteBlogIndexRouteImport.update({
   id: '/blog/',
@@ -1273,16 +1265,6 @@ const SiteMessagesConversationIdRoute =
     path: '/messages/$conversationId',
     getParentRoute: () => SiteRoute,
   } as any)
-const SiteBuildsGamesRoute = SiteBuildsGamesRouteImport.update({
-  id: '/games',
-  path: '/games',
-  getParentRoute: () => SiteBuildsRouteRoute,
-} as any)
-const SiteBuildsAppsRoute = SiteBuildsAppsRouteImport.update({
-  id: '/apps',
-  path: '/apps',
-  getParentRoute: () => SiteBuildsRouteRoute,
-} as any)
 const SiteAdminUsersRoute = SiteAdminUsersRouteImport.update({
   id: '/users',
   path: '/users',
@@ -1668,7 +1650,6 @@ export interface FileRoutesByFullPath {
   '/versecraft': typeof VersecraftRouteWithChildren
   '/void-breaker': typeof VoidBreakerRoute
   '/admin': typeof SiteAdminRouteRouteWithChildren
-  '/builds': typeof SiteBuildsRouteRouteWithChildren
   '/quotes': typeof SiteQuotesRoute
   '/roadmap': typeof SiteRoadmapRoute
   '/wallet': typeof SiteWalletRoute
@@ -1721,6 +1702,7 @@ export interface FileRoutesByFullPath {
   '/v/$slug': typeof VSlugRoute
   '/v/new': typeof VNewRoute
   '/altair/': typeof AltairIndexRoute
+  '/builds/': typeof BuildsIndexRoute
   '/daily/': typeof DailyIndexRoute
   '/forest-explorer/': typeof ForestExplorerIndexRoute
   '/kowloon-knockout/': typeof KowloonKnockoutIndexRoute
@@ -1740,8 +1722,6 @@ export interface FileRoutesByFullPath {
   '/versecraft/': typeof VersecraftIndexRoute
   '/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/admin/users': typeof SiteAdminUsersRoute
-  '/builds/apps': typeof SiteBuildsAppsRoute
-  '/builds/games': typeof SiteBuildsGamesRoute
   '/messages/$conversationId': typeof SiteMessagesConversationIdRoute
   '/profile/$id': typeof SiteProfileIdRoute
   '/research/call': typeof SiteResearchCallRoute
@@ -1824,7 +1804,6 @@ export interface FileRoutesByFullPath {
   '/strategies/safehouse/recruit': typeof StrategiesSafehouseRecruitRoute
   '/admin/': typeof SiteAdminIndexRoute
   '/blog/': typeof SiteBlogIndexRoute
-  '/builds/': typeof SiteBuildsIndexRoute
   '/messages/': typeof SiteMessagesIndexRoute
   '/news/': typeof SiteNewsIndexRoute
   '/research/': typeof SiteResearchIndexRoute
@@ -1963,6 +1942,7 @@ export interface FileRoutesByTo {
   '/v/$slug': typeof VSlugRoute
   '/v/new': typeof VNewRoute
   '/altair': typeof AltairIndexRoute
+  '/builds': typeof BuildsIndexRoute
   '/daily': typeof DailyIndexRoute
   '/forest-explorer': typeof ForestExplorerIndexRoute
   '/kowloon-knockout': typeof KowloonKnockoutIndexRoute
@@ -1982,8 +1962,6 @@ export interface FileRoutesByTo {
   '/versecraft': typeof VersecraftIndexRoute
   '/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/admin/users': typeof SiteAdminUsersRoute
-  '/builds/apps': typeof SiteBuildsAppsRoute
-  '/builds/games': typeof SiteBuildsGamesRoute
   '/messages/$conversationId': typeof SiteMessagesConversationIdRoute
   '/profile/$id': typeof SiteProfileIdRoute
   '/research/call': typeof SiteResearchCallRoute
@@ -2066,7 +2044,6 @@ export interface FileRoutesByTo {
   '/strategies/safehouse/recruit': typeof StrategiesSafehouseRecruitRoute
   '/admin': typeof SiteAdminIndexRoute
   '/blog': typeof SiteBlogIndexRoute
-  '/builds': typeof SiteBuildsIndexRoute
   '/messages': typeof SiteMessagesIndexRoute
   '/news': typeof SiteNewsIndexRoute
   '/research': typeof SiteResearchIndexRoute
@@ -2177,7 +2154,6 @@ export interface FileRoutesById {
   '/versecraft': typeof VersecraftRouteWithChildren
   '/void-breaker': typeof VoidBreakerRoute
   '/_site/admin': typeof SiteAdminRouteRouteWithChildren
-  '/_site/builds': typeof SiteBuildsRouteRouteWithChildren
   '/_site/quotes': typeof SiteQuotesRoute
   '/_site/roadmap': typeof SiteRoadmapRoute
   '/_site/wallet': typeof SiteWalletRoute
@@ -2230,6 +2206,7 @@ export interface FileRoutesById {
   '/v/$slug': typeof VSlugRoute
   '/v/new': typeof VNewRoute
   '/altair/': typeof AltairIndexRoute
+  '/builds/': typeof BuildsIndexRoute
   '/daily/': typeof DailyIndexRoute
   '/forest-explorer/': typeof ForestExplorerIndexRoute
   '/kowloon-knockout/': typeof KowloonKnockoutIndexRoute
@@ -2249,8 +2226,6 @@ export interface FileRoutesById {
   '/versecraft/': typeof VersecraftIndexRoute
   '/_site/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/_site/admin/users': typeof SiteAdminUsersRoute
-  '/_site/builds/apps': typeof SiteBuildsAppsRoute
-  '/_site/builds/games': typeof SiteBuildsGamesRoute
   '/_site/messages/$conversationId': typeof SiteMessagesConversationIdRoute
   '/_site/profile/$id': typeof SiteProfileIdRoute
   '/_site/research/call': typeof SiteResearchCallRoute
@@ -2333,7 +2308,6 @@ export interface FileRoutesById {
   '/strategies/safehouse/recruit': typeof StrategiesSafehouseRecruitRoute
   '/_site/admin/': typeof SiteAdminIndexRoute
   '/_site/blog/': typeof SiteBlogIndexRoute
-  '/_site/builds/': typeof SiteBuildsIndexRoute
   '/_site/messages/': typeof SiteMessagesIndexRoute
   '/_site/news/': typeof SiteNewsIndexRoute
   '/_site/research/': typeof SiteResearchIndexRoute
@@ -2444,7 +2418,6 @@ export interface FileRouteTypes {
     | '/versecraft'
     | '/void-breaker'
     | '/admin'
-    | '/builds'
     | '/quotes'
     | '/roadmap'
     | '/wallet'
@@ -2497,6 +2470,7 @@ export interface FileRouteTypes {
     | '/v/$slug'
     | '/v/new'
     | '/altair/'
+    | '/builds/'
     | '/daily/'
     | '/forest-explorer/'
     | '/kowloon-knockout/'
@@ -2516,8 +2490,6 @@ export interface FileRouteTypes {
     | '/versecraft/'
     | '/admin/user-builds'
     | '/admin/users'
-    | '/builds/apps'
-    | '/builds/games'
     | '/messages/$conversationId'
     | '/profile/$id'
     | '/research/call'
@@ -2600,7 +2572,6 @@ export interface FileRouteTypes {
     | '/strategies/safehouse/recruit'
     | '/admin/'
     | '/blog/'
-    | '/builds/'
     | '/messages/'
     | '/news/'
     | '/research/'
@@ -2739,6 +2710,7 @@ export interface FileRouteTypes {
     | '/v/$slug'
     | '/v/new'
     | '/altair'
+    | '/builds'
     | '/daily'
     | '/forest-explorer'
     | '/kowloon-knockout'
@@ -2758,8 +2730,6 @@ export interface FileRouteTypes {
     | '/versecraft'
     | '/admin/user-builds'
     | '/admin/users'
-    | '/builds/apps'
-    | '/builds/games'
     | '/messages/$conversationId'
     | '/profile/$id'
     | '/research/call'
@@ -2842,7 +2812,6 @@ export interface FileRouteTypes {
     | '/strategies/safehouse/recruit'
     | '/admin'
     | '/blog'
-    | '/builds'
     | '/messages'
     | '/news'
     | '/research'
@@ -2952,7 +2921,6 @@ export interface FileRouteTypes {
     | '/versecraft'
     | '/void-breaker'
     | '/_site/admin'
-    | '/_site/builds'
     | '/_site/quotes'
     | '/_site/roadmap'
     | '/_site/wallet'
@@ -3005,6 +2973,7 @@ export interface FileRouteTypes {
     | '/v/$slug'
     | '/v/new'
     | '/altair/'
+    | '/builds/'
     | '/daily/'
     | '/forest-explorer/'
     | '/kowloon-knockout/'
@@ -3024,8 +2993,6 @@ export interface FileRouteTypes {
     | '/versecraft/'
     | '/_site/admin/user-builds'
     | '/_site/admin/users'
-    | '/_site/builds/apps'
-    | '/_site/builds/games'
     | '/_site/messages/$conversationId'
     | '/_site/profile/$id'
     | '/_site/research/call'
@@ -3108,7 +3075,6 @@ export interface FileRouteTypes {
     | '/strategies/safehouse/recruit'
     | '/_site/admin/'
     | '/_site/blog/'
-    | '/_site/builds/'
     | '/_site/messages/'
     | '/_site/news/'
     | '/_site/research/'
@@ -3237,6 +3203,7 @@ export interface RootRouteChildren {
   UserBuildsSlugRoute: typeof UserBuildsSlugRoute
   VSlugRoute: typeof VSlugRoute
   VNewRoute: typeof VNewRoute
+  BuildsIndexRoute: typeof BuildsIndexRoute
   LibraryIndexRoute: typeof LibraryIndexRoute
   VIndexRoute: typeof VIndexRoute
   ApiAdminBlogRoute: typeof ApiAdminBlogRoute
@@ -3647,6 +3614,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DailyIndexRouteImport
       parentRoute: typeof DailyRoute
     }
+    '/builds/': {
+      id: '/builds/'
+      path: '/builds'
+      fullPath: '/builds/'
+      preLoaderRoute: typeof BuildsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/altair/': {
       id: '/altair/'
       path: '/'
@@ -4011,13 +3985,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteQuotesRouteImport
       parentRoute: typeof SiteRoute
     }
-    '/_site/builds': {
-      id: '/_site/builds'
-      path: '/builds'
-      fullPath: '/builds'
-      preLoaderRoute: typeof SiteBuildsRouteRouteImport
-      parentRoute: typeof SiteRoute
-    }
     '/_site/admin': {
       id: '/_site/admin'
       path: '/admin'
@@ -4122,13 +4089,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/messages/'
       preLoaderRoute: typeof SiteMessagesIndexRouteImport
       parentRoute: typeof SiteRoute
-    }
-    '/_site/builds/': {
-      id: '/_site/builds/'
-      path: '/'
-      fullPath: '/builds/'
-      preLoaderRoute: typeof SiteBuildsIndexRouteImport
-      parentRoute: typeof SiteBuildsRouteRoute
     }
     '/_site/blog/': {
       id: '/_site/blog/'
@@ -4704,20 +4664,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteMessagesConversationIdRouteImport
       parentRoute: typeof SiteRoute
     }
-    '/_site/builds/games': {
-      id: '/_site/builds/games'
-      path: '/games'
-      fullPath: '/builds/games'
-      preLoaderRoute: typeof SiteBuildsGamesRouteImport
-      parentRoute: typeof SiteBuildsRouteRoute
-    }
-    '/_site/builds/apps': {
-      id: '/_site/builds/apps'
-      path: '/apps'
-      fullPath: '/builds/apps'
-      preLoaderRoute: typeof SiteBuildsAppsRouteImport
-      parentRoute: typeof SiteBuildsRouteRoute
-    }
     '/_site/admin/users': {
       id: '/_site/admin/users'
       path: '/users'
@@ -5198,25 +5144,8 @@ const SiteAdminRouteRouteWithChildren = SiteAdminRouteRoute._addFileChildren(
   SiteAdminRouteRouteChildren,
 )
 
-interface SiteBuildsRouteRouteChildren {
-  SiteBuildsAppsRoute: typeof SiteBuildsAppsRoute
-  SiteBuildsGamesRoute: typeof SiteBuildsGamesRoute
-  SiteBuildsIndexRoute: typeof SiteBuildsIndexRoute
-}
-
-const SiteBuildsRouteRouteChildren: SiteBuildsRouteRouteChildren = {
-  SiteBuildsAppsRoute: SiteBuildsAppsRoute,
-  SiteBuildsGamesRoute: SiteBuildsGamesRoute,
-  SiteBuildsIndexRoute: SiteBuildsIndexRoute,
-}
-
-const SiteBuildsRouteRouteWithChildren = SiteBuildsRouteRoute._addFileChildren(
-  SiteBuildsRouteRouteChildren,
-)
-
 interface SiteRouteChildren {
   SiteAdminRouteRoute: typeof SiteAdminRouteRouteWithChildren
-  SiteBuildsRouteRoute: typeof SiteBuildsRouteRouteWithChildren
   SiteQuotesRoute: typeof SiteQuotesRoute
   SiteRoadmapRoute: typeof SiteRoadmapRoute
   SiteWalletRoute: typeof SiteWalletRoute
@@ -5236,7 +5165,6 @@ interface SiteRouteChildren {
 
 const SiteRouteChildren: SiteRouteChildren = {
   SiteAdminRouteRoute: SiteAdminRouteRouteWithChildren,
-  SiteBuildsRouteRoute: SiteBuildsRouteRouteWithChildren,
   SiteQuotesRoute: SiteQuotesRoute,
   SiteRoadmapRoute: SiteRoadmapRoute,
   SiteWalletRoute: SiteWalletRoute,
@@ -5863,6 +5791,7 @@ const rootRouteChildren: RootRouteChildren = {
   UserBuildsSlugRoute: UserBuildsSlugRoute,
   VSlugRoute: VSlugRoute,
   VNewRoute: VNewRoute,
+  BuildsIndexRoute: BuildsIndexRoute,
   LibraryIndexRoute: LibraryIndexRoute,
   VIndexRoute: VIndexRoute,
   ApiAdminBlogRoute: ApiAdminBlogRoute,

@@ -97,10 +97,10 @@ function BookSpine({ book, index }: { book: LibraryBook; index: number }) {
           {book.pages > 0 && <span className="lib-book__pages-badge">{book.pages.toLocaleString()} pp</span>}
           {!book.coverUrl && <span className="lib-book__mark">RMH</span>}
         </div>
+        {book.description && <span className="lib-book__desc-pop">{book.description}</span>}
       </div>
       <div className="lib-book__meta">
         <p className="lib-book__name">{book.title}</p>
-        {book.description && <p className="lib-book__desc">{book.description}</p>}
       </div>
     </Link>
   );

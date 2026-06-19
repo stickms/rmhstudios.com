@@ -19,7 +19,7 @@
 .lib__shelf {
   --col: 168px;
   --cover-h: 224px;
-  --cap-h: 78px;
+  --cap-h: 64px;
   --row-h: calc(var(--cover-h) + var(--cap-h));
   --row-gap: 46px;
 
@@ -52,13 +52,14 @@
   .lib__shelf {
     --col: 132px;
     --cover-h: 184px;
-    --cap-h: 84px;
+    --cap-h: 68px;
     --row-gap: 38px;
   }
 }
 
 /* Each book: cover standing on the ledge + caption beneath it. */
 .lib-book {
+  position: relative;
   display: flex;
   flex-direction: column;
   text-decoration: none;
@@ -68,6 +69,18 @@
   animation: lib-rise 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* Clickable region inside a book (used when the book also carries a separate
+   "details" link, e.g. curated builds). Fills the book so cover + caption click
+   through to the build itself. */
+.lib-book__primary {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  text-decoration: none;
+  color: inherit;
+}
+
 @keyframes lib-rise {
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
@@ -75,11 +88,87 @@
 
 /* Cover area — fixed height so its base meets the shelf ledge. */
 .lib-book__3d {
+  position: relative;
   height: var(--cover-h);
   display: flex;
   align-items: flex-end;
   justify-content: center;
   perspective: 1100px;
+}
+
+/* Description shown on hover — a book-jacket blurb that fades + slides up over the
+   lower cover. Stays flat (outside the tilting cover) so it's always readable. */
+.lib-book__desc-pop {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: min(100%, 150px);
+  transform: translateX(-50%) translateY(8px);
+  padding: 28px 12px 12px;
+  border-radius: 0 0 6px 3px;
+  font-size: 0.72rem;
+  line-height: 1.42;
+  color: #f5f5f7;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.92) 0%,
+    rgba(0, 0, 0, 0.82) 55%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  opacity: 0;
+  pointer-events: none;
+  z-index: 2;
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  line-clamp: 6;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  transition: opacity 240ms ease, transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lib-book:hover .lib-book__desc-pop,
+.lib-book:focus-within .lib-book__desc-pop {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* "Details" link (curated builds) — small circular button at the cover's top-right. */
+.lib-book__details {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  color: #f5f5f7;
+  background: rgba(10, 10, 10, 0.55);
+  border: 0.5px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 200ms ease, transform 200ms ease, background 160ms ease;
+}
+
+.lib-book:hover .lib-book__details,
+.lib-book:focus-within .lib-book__details {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.lib-book__details:hover {
+  background: rgba(40, 40, 44, 0.92);
+}
+
+/* Always show the details affordance on touch devices (no hover). */
+@media (hover: none) {
+  .lib-book__details {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .lib-book__cover {
@@ -233,19 +322,10 @@
   font-weight: 600;
   color: #f5f5f7;
   line-height: 1.3;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.lib-book__desc {
-  margin-top: 3px;
-  font-size: 0.72rem;
-  line-height: 1.4;
-  color: #a1a1a6;
+  /* Up to three lines of the title before truncating. */
   display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

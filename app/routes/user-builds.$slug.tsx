@@ -6,6 +6,8 @@ import { createFileRoute, notFound } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { BuildDetail } from '@/components/user-builds';
 import { stripTrailingSlash } from '@/lib/url';
+import '@/components/rmhvibe/vibe.css';
+import '@/components/builds/builds.css';
 
 const fetchBuild = createServerFn({ method: 'GET' })
   .validator((slug: string) => slug)
@@ -36,10 +38,10 @@ function BuildPage() {
   const build = Route.useLoaderData();
 
   return (
-    <div className="min-h-screen bg-site-bg pt-20 pb-12">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <BuildDetail build={build} />
+    <main className="vibe-screen min-h-screen">
+      <div className="max-w-4xl mx-auto px-5 sm:px-8 pt-8 pb-16">
+        <BuildDetail build={build} backHref="/builds" />
       </div>
-    </div>
+    </main>
   );
 }

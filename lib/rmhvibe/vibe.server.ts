@@ -129,6 +129,46 @@ DEPS: <comma-separated bare npm packages with pinned versions, excluding react/r
 <global CSS>
 (…add more files as needed…)`;
 
+/**
+ * Frontend-design skill — extra, design-focused guidance appended to the base
+ * system prompt for Kimi only. Kimi is a strong coder but tends toward generic,
+ * templated UI without explicit art direction, so we give it a concentrated dose
+ * of design craft. DeepSeek keeps the base prompt unchanged.
+ *
+ * Adapted from the open-source "frontend-design" skill
+ * (https://github.com/Ilm-Alan/frontend-design): pick ONE aesthetic anchor per
+ * page and hold its locked CSS tokens, with disciplined on-screen content.
+ * Note the sandbox font limits below — webfonts only load via the @fontsource npm
+ * packages (through esm.sh) or system stacks; there are no Google-Fonts URLs.
+ */
+const VIBE_FRONTEND_DESIGN_SKILL = `
+
+FRONTEND DESIGN SKILL — Reach for the unexpected. Fidelity to the anchor. Discipline on the content. Nothing left to default.
+
+Eight anchors, each a distinct aesthetic territory locked to specific CSS tokens. Pick ONE per page and match its tokens. Before writing code, run this in your reasoning:
+1. Context — purpose, audience, domain, content density, in one sentence.
+2. Anchor — pick one, lean UNEXPECTED (a Swiss punk label, a Brutalist luxury watchmaker, an Organic trading terminal). Safe pairings produce generic work. Don't let "it's technical" route every brief to Industrial. State the choice and the reason in one line.
+3. Differentiator — one memorable anchor-internal move (a signature interaction, typographic gesture, layout motif, or material treatment), visible in the output.
+4. System — match the anchor's tokens EXACTLY. Swiss means white + sans + grid, not "some flavor of clean."
+5. Implementation — outline structure, then build.
+Commit fully to one anchor. Hybridising ("Swiss with Brutalist edge") is a category error — each signature excludes the others.
+
+CONTENT IS NOT DESIGN — token fidelity is no defence against content slop. Every string/number/label on screen must name real information or be authored content that knows what it is. FORBIDDEN: fabricated data posing as real (fake emails, fake telemetry/version strings — leave a slot empty rather than fabricate); filler labels (mono-caps subtitles, \`//\`-prefixed kickers); themed replacement of standard UI copy ("Authenticate Session" for "Next"); unicode glyphs as icon substitutes (▣ ◊ — use a real icon set or nothing); AI-slop register (twee subcopy on serious surfaces, synth-sci-fi status strips on mundane B2B, ornamental "seam/joinery" flourishes).
+
+THE EIGHT ANCHORS (pick one; if rendered output drifts outside its tokens, the anchor didn't hold):
+1. Swiss — Surface white #FFFFFF or #F7F7F8. Type: one sans family (Helvetica Neue / Söhne / Akzidenz-Grotesk), display+body. Accent: ONE of Swiss Red #E4002B, International Orange #FF4F00, Yves Klein Blue #002FA7. Structure: visible grid / 1px hairline rules, left-aligned, asymmetric balance, numerals as composition. Breaks if: warm paper, serif display, grain, or centered type.
+2. Industrial — Surface pitch black #000000 / warm-black #0B0C0A. Type: mono only (IBM Plex Mono / JetBrains Mono). Signal color: ONE semantic — green #00E676, red #FF3B30, amber #FFB800, acid lime #C6FF4A. Flat; 1px borders not shadows; tabular-nums. Breaks if: serif, proportional fonts, paper, grain, decorative shadows, or rounded corners.
+3. Brutalist — Surface pure primaries #FF0000/#0000FF/#FFFF00/#000000/#FFFFFF (pick 2–3, compete equally). Type: system fonts only (Times New Roman, Helvetica, Courier, Arial), mix faces. Shadows: hard offset no blur (8px 8px 0 #000). Native unstyled controls, blue underlined links. Margins crushed, type edge-to-edge. Breaks if: webfonts, tuned hex, soft shadows, rounded corners, or centered layout.
+4. Aurora Maximalism — Surface dark saturated gradient (violet #5D34D0 → magenta #FF006E → cyan #00F0FF). Type: Inter Variable / PP Neue Machina, oversized display (15–25vw). Mesh gradient surface; neon text-shadow glow (0 0 20px accent); spring/scroll-linked motion. Breaks if: flat backgrounds, paper, restraint, or hairlines as primary structure.
+5. Chaotic Maximalism — Clashing palette, pastels AND neons together (#FF71CE + #DFFF00 + #00FFFF + a third). Type: 3+ colliding faces from different registers. Patterns on every surface (squiggles/dots/zigzags via SVG or repeating-linear-gradient). Breaks if: coherent palette, single typeface, whitespace as structure, or 60/30/10 dominance.
+6. Retro-Futuristic — Surface pitch black #0A0014 / deep navy-black. Type: period-specific (VT323, Orbitron, Space Mono, Press Start 2P, IBM Plex Mono). Accent: neon pair — magenta #FF006E + cyan #00FFFF, or phosphor green #00FF41 + amber #FFB000. Texture: CRT scanlines via ::before repeating-linear-gradient, and/or chromatic aberration (text-shadow: 2px 0 #FF0000, -2px 0 #00FFFF). Glow committed. Breaks if: flatness, modern sans (Inter/Söhne), paper, or no texture.
+7. Organic — Surface earth tones (sage #8B9D83, clay #B08B6E, terracotta #C66B3D, ochre #C08E3A, moss #606C38); light surface sand #E8DCC7 / oat #D4B895, NEVER cream warm-paper. Type: humanist serif (Fraunces — this anchor only — Caslon) or warm geometric sans (Epilogue, Recoleta). Rounded corners 16–32px; grain 1–3% via SVG feTurbulence; gentle ease 300–500ms, breathing animations. Breaks if: cream backgrounds, cold greys, pure white/black, or hard rectangles.
+8. Lo-Fi — Surface paper-yellow #E8E0C0 / #EDE4CF (more saturated than cream). Type: mixed system fonts colliding (Times + Helvetica + Courier). Rotated elements 2–8° off-grid; halftone dot transitions; Risograph misregistration (text-shadow: 3px 0 #FF006E, -3px 0 #00FFCC); SVG staple/tape/torn-edge. Breaks if: precision, single typeface, smooth motion, grid-squared rectangles, or cream.
+
+FONTS IN THIS SANDBOX: no external font URLs. Use a strong system stack matching the anchor, OR import an @fontsource package and list it in DEPS (e.g. \`DEPS: @fontsource/fraunces@5\`) then \`import '@fontsource/fraunces'\`. If a named typeface can't be loaded, pick the closest in-spec system fallback rather than abandoning the anchor.
+
+BEFORE SHIPPING: unexpected pairing (not the safe default)? every rendered token inside the anchor's range? content discipline held (no fabrication/filler/themed-copy/glyph-icons/slop)? differentiator actually rendered? one anchor held (no drift into hybrids)?`;
+
 /** Parse the model's "SLUG/TITLE/DESCRIPTION … ===HTML=== …" response. */
 function parseVibeOutput(raw: string): {
   slug: string;
@@ -444,7 +484,12 @@ export async function* generateVibeStream(opts: {
 }): AsyncGenerator<VibeStreamEvent> {
   const model = opts.model ?? DEFAULT_VIBE_MODEL;
   const modelId = VIBE_MODEL_IDS[model];
-  const client = PROVIDERS[VIBE_MODEL_META[model].provider];
+  const provider = VIBE_MODEL_META[model].provider;
+  const client = PROVIDERS[provider];
+  // Kimi tends toward generic, templated UI — give it the frontend-design skill
+  // (art-direction guidance) on top of the base prompt. DeepSeek keeps the base.
+  const systemPrompt =
+    provider === 'kimi' ? VIBE_SYSTEM_PROMPT + VIBE_FRONTEND_DESIGN_SKILL : VIBE_SYSTEM_PROMPT;
   let history: VibeMessage[] = [];
   let existingSlug: string | undefined;
   let existingPageId: string | undefined;
@@ -475,7 +520,7 @@ export async function* generateVibeStream(opts: {
   }
 
   const messages: VibeMessage[] = [
-    { role: 'system', content: VIBE_SYSTEM_PROMPT },
+    { role: 'system', content: systemPrompt },
     ...history,
     { role: 'user', content: opts.prompt },
   ];

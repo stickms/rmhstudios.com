@@ -6,7 +6,7 @@ import { authClient } from '@/lib/auth-client';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import {
-  Home, Package, Hammer, BookOpen,
+  Home, Package, BookOpen,
   Palette, ChevronDown, LogOut, PenSquare, User, MessageCircle, ShieldCheck, MoreHorizontal, Wallet
 } from 'lucide-react';
 import { ComposeModal } from './ComposeModal';
@@ -16,8 +16,7 @@ import { useUnreadCount } from '@/lib/useUnreadCount';
 
 const navLinks = [
   { href: '/', label: 'Home', icon: Home },
-  { href: '/builds', label: 'Official Builds', icon: Package },
-  { href: '/user-builds', label: 'User Builds', icon: Hammer },
+  { href: '/builds', label: 'Builds', icon: Package },
   { href: '/blog', label: 'Blog', icon: BookOpen },
 ];
 

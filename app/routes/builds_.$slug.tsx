@@ -1,9 +1,9 @@
 /**
- * Build Detail Route
+ * Build Detail Route — /builds/$slug
  *
- * Official builds (code-defined in games.ts / apps.ts) are checked first.
- * User-submitted builds fall through to the DB.
- * Official build content always comes from code; DB only stores engagement.
+ * Official builds (code-defined in games.ts / apps.ts) are checked first; user-
+ * submitted builds fall through to the DB. Rendered full-bleed in the black/white
+ * "vibe" aesthetic to match /builds, /library, and the homepage.
  */
 
 import { createFileRoute, notFound, Link } from '@tanstack/react-router';
@@ -14,6 +14,8 @@ import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { games } from '@/lib/games';
 import { apps } from '@/lib/apps';
 import { stripTrailingSlash } from '@/lib/url';
+import '@/components/rmhvibe/vibe.css';
+import '@/components/builds/builds.css';
 
 const allOfficial = [...games, ...apps];
 
@@ -59,88 +61,57 @@ export const Route = createFileRoute('/builds_/$slug')({
   component: BuildPage,
 });
 
-/* ------------------------------------------------------------------ */
-/*  Component                                                          */
-/* ------------------------------------------------------------------ */
-
 function BuildPage() {
   const result = Route.useLoaderData();
 
   if (result.kind === 'user-build') {
-    const build = result.data;
-    const backHref = build.category?.slug ? `/builds/${build.category.slug}` : '/builds';
     return (
-      <div className="min-h-screen bg-site-bg pt-20 pb-12">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <BuildDetail build={build} backHref={backHref} />
+      <main className="vibe-screen min-h-screen">
+        <div className="mx-auto max-w-4xl px-5 sm:px-8 pt-8 pb-16">
+          <BuildDetail build={result.data} backHref="/builds" />
         </div>
-      </div>
+      </main>
     );
   }
 
   // Official build detail
   const build = result.data;
-  const isGame = games.some((g) => g.id === build.id);
 
   return (
-    <div className="min-h-screen bg-site-bg pt-20 pb-12">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Back link */}
-        <Link
-          to={isGame ? '/builds/games' : '/builds/apps'}
-          className="inline-flex items-center gap-2 text-sm text-site-text-muted hover:text-site-text mb-6 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to {isGame ? 'Games' : 'Apps'}
+    <main className="vibe-screen min-h-screen">
+      <div className="mx-auto max-w-4xl px-5 sm:px-8 pt-8 pb-16">
+        <Link to="/builds" className="builds-detail__back">
+          <ArrowLeft className="h-4 w-4" />
+          Back to builds
         </Link>
 
-        {/* Header */}
-        <div className="mb-8">
-          {build.status && (
-            <span className="inline-block px-2 py-0.5 rounded-full text-xs bg-site-accent-dim text-site-accent mb-3">
-              {build.status}
-            </span>
-          )}
-          <h1 className="text-3xl font-bold text-site-text mb-4">{build.title}</h1>
-          <p className="text-site-text-muted mb-6">{build.longDescription}</p>
+        <header className="mt-7">
+          {build.status && <span className="builds-detail__badge">{build.status}</span>}
+          <h1 className="builds-detail__title">{build.title}</h1>
+          <p className="builds-detail__lead">{build.longDescription}</p>
 
-          {/* Tags */}
           {build.tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-6">
+            <div className="builds-detail__tags">
               {build.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="px-2 py-1 rounded-full text-xs bg-site-surface border border-site-border text-site-text-muted"
-                >
+                <span key={tag} className="builds-detail__tag">
                   #{tag}
                 </span>
               ))}
             </div>
           )}
 
-          {/* CTA */}
-          <Link
-            to={build.href}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white font-medium transition-colors"
-          >
+          <Link to={build.href} className="builds-detail__cta">
             {build.cta}
-            <ExternalLink className="w-4 h-4" />
+            <ExternalLink className="h-4 w-4" />
           </Link>
-        </div>
+        </header>
 
-        {/* Thumbnail */}
         {build.imagePath && (
-          <div className="rounded-xl overflow-hidden border border-site-border">
-            <OptimizedImage
-              src={build.imagePath}
-              alt={build.title}
-              layout="fullWidth"
-              quality={85}
-              className="w-full"
-            />
+          <div className="builds-detail__thumb">
+            <OptimizedImage src={build.imagePath} alt={build.title} layout="fullWidth" quality={85} className="w-full" />
           </div>
         )}
       </div>
-    </div>
+    </main>
   );
 }
