@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Plus, BarChart3, Image, X } from 'lucide-react';
+import { Plus, BarChart3, Image, X, ImagePlus } from 'lucide-react';
 import { GifEmbed } from './GifEmbed';
 import { AIGenerateButton } from './AIGenerateButton';
 import { useSession, useResolvedUser } from '@/components/Providers';
@@ -15,6 +15,8 @@ import {
   MAX_POLL_OPTIONS,
 } from '@/lib/rmhark-schema';
 import { Link } from '@tanstack/react-router';
+
+const MAX_IMAGES = 4;
 
 type Attachment = 'poll' | 'gif' | null;
 
@@ -48,6 +50,9 @@ export function ComposeBox() {
     multiSelect: false,
   });
   const [gifUrl, setGifUrl] = useState('');
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const { prependItem } = useFeedStore();
 
@@ -70,8 +75,29 @@ export function ComposeBox() {
   const hasPoll = attachment === 'poll' && poll.question.trim() &&
     poll.options.filter((o) => o.trim()).length >= MIN_POLL_OPTIONS;
   const hasGif = attachment === 'gif' && gifUrl.trim() && isValidMediaUrl(gifUrl.trim());
+  const hasImages = imageUrls.length > 0;
   const hasContent = content.trim().length > 0;
-  const canSubmit = (hasContent || hasPoll || hasGif) && remaining >= 0 && !submitting;
+  const canSubmit = (hasContent || hasPoll || hasGif || hasImages) && remaining >= 0 && !submitting;
+
+  const handleImageFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setImageError(null);
+    const remaining = MAX_IMAGES - imageUrls.length;
+    const form = new FormData();
+    Array.from(files).slice(0, remaining).forEach((f) => form.append('images', f));
+    try {
+      const res = await fetch('/api/rmharks/image', { method: 'POST', body: form });
+      if (!res.ok) {
+        const { error } = await res.json().catch(() => ({ error: 'Upload failed' }));
+        setImageError(error ?? 'Upload failed');
+        return;
+      }
+      const { urls } = await res.json();
+      setImageUrls((prev) => [...prev, ...urls].slice(0, MAX_IMAGES));
+    } catch {
+      setImageError('Upload failed');
+    }
+  };
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
@@ -88,6 +114,7 @@ export function ComposeBox() {
         };
       }
       if (hasGif) body.gifUrl = gifUrl.trim();
+      if (hasImages) body.imageUrls = imageUrls;
 
       const res = await fetch('/api/rmharks', {
         method: 'POST',
@@ -107,6 +134,8 @@ export function ComposeBox() {
       setAttachment(null);
       setPoll({ question: '', options: ['', ''], multiSelect: false });
       setGifUrl('');
+      setImageUrls([]);
+      setImageError(null);
     } catch (error) {
       console.error('Post error:', error);
     } finally {
@@ -269,6 +298,42 @@ export function ComposeBox() {
             </div>
           )}
 
+          {/* Uploaded image preview strip */}
+          {imageUrls.length > 0 && (
+            <div className={`mt-2 grid gap-1 ${imageUrls.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+              {imageUrls.map((url) => (
+                <div key={url} className="relative group">
+                  <img
+                    src={url}
+                    alt=""
+                    loading="lazy"
+                    className="w-full rounded-lg object-cover max-h-48"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setImageUrls((prev) => prev.filter((u) => u !== url))}
+                    className="absolute top-1 right-1 p-0.5 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          {imageError && (
+            <p className="text-xs text-site-danger mt-1">{imageError}</p>
+          )}
+
+          {/* Hidden file input */}
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/gif,image/webp"
+            multiple
+            className="hidden"
+            onChange={(e) => handleImageFiles(e.target.files)}
+          />
+
           <div className="flex items-center justify-between mt-2">
             {/* Character counter */}
             <span
@@ -290,6 +355,17 @@ export function ComposeBox() {
                 onGenerated={(text) => setContent(text)}
                 title="Generate a post with AI"
               />
+
+              {/* Image upload button */}
+              <button
+                type="button"
+                disabled={imageUrls.length >= MAX_IMAGES}
+                onClick={() => imageInputRef.current?.click()}
+                title={imageUrls.length >= MAX_IMAGES ? 'Maximum 4 images' : 'Attach images'}
+                className="p-1.5 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <ImagePlus className="w-4.5 h-4.5" />
+              </button>
 
               {/* Plus button */}
               <div className="relative" ref={menuRef}>

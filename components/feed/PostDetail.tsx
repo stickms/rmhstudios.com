@@ -43,7 +43,7 @@ export function PostDetail({ postId }: PostDetailProps) {
   const menuRef = useRef<HTMLDivElement>(null);
 
   const linkPreviewUrl = useMemo(() => {
-    if (!post || post.poll || post.gifUrl || !post.content) return null;
+    if (!post || post.poll || post.gifUrl || (post.imageUrls && post.imageUrls.length > 0) || !post.content) return null;
     return extractFirstUrl(post.content);
   }, [post]);
 
@@ -281,6 +281,21 @@ export function PostDetail({ postId }: PostDetailProps) {
 
         {/* Image / GIF */}
         {post.gifUrl && <GifEmbed url={post.gifUrl} className="mb-3" />}
+
+        {/* Uploaded images grid */}
+        {post.imageUrls && post.imageUrls.length > 0 && (
+          <div className={`mb-3 grid gap-1 ${post.imageUrls.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+            {post.imageUrls.map((url) => (
+              <img
+                key={url}
+                src={url}
+                alt=""
+                loading="lazy"
+                className="w-full rounded-lg object-cover max-h-80"
+              />
+            ))}
+          </div>
+        )}
 
         {/* Link preview — only when no poll, gif, or image */}
         {linkPreviewUrl && <LinkPreview url={linkPreviewUrl} className="mb-3" />}

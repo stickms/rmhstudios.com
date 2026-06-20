@@ -62,9 +62,9 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
   const menuRef = useRef<HTMLDivElement>(null);
 
   const linkPreviewUrl = useMemo(() => {
-    if (item.poll || item.gifUrl || !item.content) return null;
+    if (item.poll || item.gifUrl || (item.imageUrls && item.imageUrls.length > 0) || !item.content) return null;
     return extractFirstUrl(item.content);
-  }, [item.poll, item.gifUrl, item.content]);
+  }, [item.poll, item.gifUrl, item.imageUrls, item.content]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -236,6 +236,21 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
 
           {/* Image / GIF */}
           {item.gifUrl && <GifEmbed url={item.gifUrl} className="mt-3" />}
+
+          {/* Uploaded images grid */}
+          {item.imageUrls && item.imageUrls.length > 0 && (
+            <div className={`mt-2 grid gap-1 ${item.imageUrls.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+              {item.imageUrls.map((url) => (
+                <img
+                  key={url}
+                  src={url}
+                  alt=""
+                  loading="lazy"
+                  className="w-full rounded-lg object-cover max-h-80"
+                />
+              ))}
+            </div>
+          )}
 
           {/* Link preview — only when no poll, gif, or image */}
           {linkPreviewUrl && <LinkPreview url={linkPreviewUrl} className="mt-3" />}
