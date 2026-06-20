@@ -141,7 +141,7 @@ function Pricing() {
   }
 
   return (
-    <div className="pricing-root relative isolate overflow-hidden">
+    <div className="pricing-root relative isolate w-full min-w-0 overflow-hidden">
       <PricingStyles />
 
       {/* ── Atmosphere ───────────────────────────────────────── */}
@@ -275,9 +275,11 @@ function Pricing() {
                       type="button"
                       onClick={() => subscribe(plan.tier as 'starter' | 'pro')}
                       disabled={isCurrent || owned || busy === plan.tier}
-                      className={`flex h-11 w-full items-center justify-center gap-2 rounded-full text-sm font-bold transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
-                        plan.featured ? 'pricing-btn--gold' : 'pricing-btn--accent'
-                      }`}
+                      className="pricing-btn flex h-11 w-full items-center justify-center gap-2 rounded-full text-sm font-bold transition-all disabled:cursor-not-allowed disabled:opacity-50"
+                      style={{
+                        background: plan.featured ? 'var(--site-warning)' : 'var(--site-accent)',
+                        color: plan.featured ? '#1a1505' : '#ffffff',
+                      }}
                     >
                       {busy === plan.tier ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -373,11 +375,10 @@ function PricingStyles() {
         box-shadow: 0 6px 20px -6px color-mix(in srgb, var(--site-warning) 60%, transparent);
       }
 
-      /* Buttons */
-      .pricing-btn--accent { background: var(--site-accent); color: #fff; }
-      .pricing-btn--accent:not(:disabled):hover { background: var(--site-accent-hover); transform: translateY(-1px); }
-      .pricing-btn--gold { background: var(--site-warning); color: #1a1505; }
-      .pricing-btn--gold:not(:disabled):hover { filter: brightness(1.08); transform: translateY(-1px); }
+      /* Buttons — base colors are set inline (guaranteed to paint across
+         themes / style blocks); hover only adjusts brightness + lift so it
+         doesn't fight the inline background. */
+      .pricing-btn:not(:disabled):hover { filter: brightness(1.08); transform: translateY(-1px); }
 
       /* Entrance */
       @keyframes pricing-rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
