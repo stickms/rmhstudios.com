@@ -69,10 +69,10 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
     <div className={`flex flex-col gap-1 h-full ${paddingClass}`}>
       {/* Logo */}
       <Link to="/" className={`mb-6 flex items-center ${logoAlignClass}`}>
-        <span className={`site-logo font-bold text-xl text-site-text ${logoFullClass}`}>
+        <span className={`site-logo font-playfair font-bold text-xl text-site-text ${logoFullClass}`}>
           RMH<span className="text-site-text-muted font-semibold">Studios</span>
         </span>
-        <span className={`site-logo font-bold text-xl text-site-text ${logoShortClass}`}>
+        <span className={`site-logo font-playfair font-bold text-xl text-site-text ${logoShortClass}`}>
           RMH
         </span>
       </Link>
