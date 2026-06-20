@@ -995,6 +995,15 @@ model RMHark {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // ─── Denormalized engagement counters (Phase 1: eventual consistency) ──
+  // Maintained transactionally by the like/comment/repost/view routes via
+  // atomic increment/decrement, so the feed read path never needs `_count`
+  // aggregation. Drift is reconciled by scripts/reconcile-feed-counts.ts.
+  likeCount    Int @default(0)
+  commentCount Int @default(0)
+  repostCount  Int @default(0)
+  viewCount    Int @default(0)
+
   user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   likes    RMHarkLike[]
   comments RMHarkComment[]
@@ -1012,6 +1021,8 @@ model RMHark {
 
   @@index([userId])
   @@index([createdAt(sort: Desc)])
+  // Composite index backing keyset pagination on (createdAt desc, id desc)
+  @@index([createdAt(sort: Desc), id(sort: Desc)])
   @@map("rmheet")
 }
 
@@ -1108,6 +1119,9 @@ model RMHarkRepost {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([rmheetId, userId])
+  @@index([userId])
+  // Composite index backing keyset pagination on (createdAt desc, id desc)
+  @@index([createdAt(sort: Desc), id(sort: Desc)])
   @@map("rmheet_repost")
 }
 

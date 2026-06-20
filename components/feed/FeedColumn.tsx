@@ -95,7 +95,7 @@ export function FeedColumn() {
             <Menu className="w-5 h-5" />
           </button>
 
-          {/* Desktop: Feed/Friends tabs inline */}
+          {/* Desktop: For You / Following tabs inline */}
           <div className="hidden md:flex items-center gap-1">
             <button
               onClick={() => handleModeChange('feed')}
@@ -105,7 +105,7 @@ export function FeedColumn() {
                   : 'text-site-text-muted hover:text-site-text'
               }`}
             >
-              Feed
+              For You
               {mode === 'feed' && (
                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-site-accent rounded-full" />
               )}
@@ -118,7 +118,7 @@ export function FeedColumn() {
                   : 'text-site-text-muted hover:text-site-text'
               }`}
             >
-              Friends
+              Following
               {mode === 'friends' && (
                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-site-accent rounded-full" />
               )}
@@ -205,7 +205,7 @@ export function FeedColumn() {
       {/* Feed */}
       {mode === 'friends' && !session ? (
         <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-          <p className="text-lg font-medium text-site-text mb-2">Sign in to see your friends&apos; feed</p>
+          <p className="text-lg font-medium text-site-text mb-2">Sign in to see who you follow</p>
           <p className="text-sm text-site-text-muted mb-6">Follow people and their posts will appear here.</p>
           <Link
             to="/login"
@@ -216,7 +216,10 @@ export function FeedColumn() {
           </Link>
         </div>
       ) : (
-        <FeedList />
+        <FeedList
+          following={mode === 'friends'}
+          onSwitchToForYou={() => handleModeChange('feed')}
+        />
       )}
 
       {/* Mobile sidebar drawer */}

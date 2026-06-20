@@ -554,9 +554,16 @@ async function replyToComment(
   });
   if (!content.trim()) return false;
 
-  await prisma.rMHarkComment.create({
-    data: { rmheetId: comment.rmheetId, userId: botId, content, parentId: comment.id },
-  });
+  await prisma.$transaction([
+    prisma.rMHarkComment.create({
+      data: { rmheetId: comment.rmheetId, userId: botId, content, parentId: comment.id },
+    }),
+    // Keep the denormalized counter in sync (Phase 1).
+    prisma.rMHark.update({
+      where: { id: comment.rmheetId },
+      data: { commentCount: { increment: 1 } },
+    }),
+  ]);
   await prisma.user.update({ where: { id: botId }, data: { botLastPostAt: new Date() } });
   return true;
 }
@@ -659,9 +666,16 @@ async function seedBotConversation(): Promise<void> {
       persona: bot.botPersona ?? undefined,
     });
     if (!content.trim()) return;
-    await prisma.rMHarkComment.create({
-      data: { rmheetId: post.id, userId: bot.id, content },
-    });
+    await prisma.$transaction([
+      prisma.rMHarkComment.create({
+        data: { rmheetId: post.id, userId: bot.id, content },
+      }),
+      // Keep the denormalized counter in sync (Phase 1).
+      prisma.rMHark.update({
+        where: { id: post.id },
+        data: { commentCount: { increment: 1 } },
+      }),
+    ]);
     await prisma.user.update({ where: { id: bot.id }, data: { botLastPostAt: new Date() } });
     log(`bot ${bot.id} proactively replied to bot post ${post.id}`);
   } catch (e) {

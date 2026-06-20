@@ -53,25 +53,37 @@ export const Route = createFileRoute('/api/rmharks/$id/repost')({
     });
 
     if (existingRepost) {
-      await prisma.rMHarkRepost.delete({ where: { id: existingRepost.id } });
+      const [, updated] = await prisma.$transaction([
+        prisma.rMHarkRepost.delete({ where: { id: existingRepost.id } }),
+        prisma.rMHark.update({
+          where: { id },
+          data: { repostCount: { decrement: 1 } },
+          select: { repostCount: true },
+        }),
+      ]);
 
-      const count = await prisma.rMHarkRepost.count({ where: { rmheetId: id } });
       feedEventBus.publish({
         type: "rmhark.unreposted",
         rmharkId: id,
-        payload: { id, repostCount: count },
+        payload: { id, repostCount: updated.repostCount },
         timestamp: new Date().toISOString(),
       });
 
       return Response.json({ success: true, reposted: false });
     } else {
-      await prisma.rMHarkRepost.create({ data: { rmheetId: id, userId } });
+      const [, updated] = await prisma.$transaction([
+        prisma.rMHarkRepost.create({ data: { rmheetId: id, userId } }),
+        prisma.rMHark.update({
+          where: { id },
+          data: { repostCount: { increment: 1 } },
+          select: { repostCount: true },
+        }),
+      ]);
 
-      const count = await prisma.rMHarkRepost.count({ where: { rmheetId: id } });
       feedEventBus.publish({
         type: "rmhark.reposted",
         rmharkId: id,
-        payload: { id, repostCount: count },
+        payload: { id, repostCount: updated.repostCount },
         timestamp: new Date().toISOString(),
       });
 

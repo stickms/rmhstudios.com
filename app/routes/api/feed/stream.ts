@@ -9,13 +9,39 @@ import { createFileRoute } from '@tanstack/react-router';
  * Sends a keepalive ping every 20 seconds to prevent proxy timeouts.
  */
 
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma.server";
 import { feedEventBus, type FeedSSEEvent } from "@/lib/feed-sse";
 
 export const Route = createFileRoute('/api/feed/stream')({
   server: {
     handlers: {
-  GET: async () => {
+  GET: async ({ request }) => {
   const encoder = new TextEncoder();
+
+  // Identify the viewer and load their follow graph once per connection so
+  // we can target `rmhark.created` events instead of broadcasting every
+  // stranger's post to everyone (Phase 3 of docs/feed/plan.md).
+  let viewerId: string | null = null;
+  try {
+    const session = await auth.api.getSession({ headers: request.headers });
+    viewerId = session?.user?.id ?? null;
+  } catch {
+    // Anonymous viewer — only engagement (idempotent) events apply.
+  }
+
+  let followingIds = new Set<string>();
+  if (viewerId) {
+    try {
+      const follows = await prisma.follow.findMany({
+        where: { followerId: viewerId },
+        select: { followingId: true },
+      });
+      followingIds = new Set(follows.map((f) => f.followingId));
+    } catch {
+      // Best-effort; fall back to no targeting boost.
+    }
+  }
 
   const stream = new ReadableStream({
     start(controller) {
@@ -30,7 +56,20 @@ export const Route = createFileRoute('/api/feed/stream')({
       // Subscribe to the feed event bus
       const unsubscribe = feedEventBus.subscribe((event: FeedSSEEvent) => {
         try {
-          send(event.type, JSON.stringify(event));
+          if (event.type === "rmhark.created") {
+            // Attach per-viewer delivery metadata so the client can route the
+            // post into Following (auto-prepend) vs For You ("N new" pill).
+            const authorId = event.authorId;
+            const delivery = {
+              followed: !!authorId && followingIds.has(authorId),
+              own: !!authorId && authorId === viewerId,
+            };
+            send(event.type, JSON.stringify({ ...event, delivery }));
+          } else {
+            // Engagement / delete events are idempotent patches keyed by post
+            // id — cheap to broadcast to everyone.
+            send(event.type, JSON.stringify(event));
+          }
         } catch {
           // Client disconnected — will be cleaned up by cancel()
         }

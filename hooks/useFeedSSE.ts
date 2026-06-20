@@ -11,7 +11,7 @@
 
 import { useEffect } from "react";
 import { useFeedStore } from "@/stores/feedStore";
-import type { FeedSSEEvent, FeedSSEEventType } from "@/lib/feed-sse";
+import type { FeedSSEEvent, FeedSSEEventType, FeedSSEDelivery } from "@/lib/feed-sse";
 
 const SSE_URL = "/api/feed/stream";
 const MAX_BACKOFF = 30_000;
@@ -137,16 +137,19 @@ function unsubscribe() {
 /* ------------------------------------------------------------------ */
 
 export function useFeedSSE() {
-  const { prependItem, updateItem, removeItem } = useFeedStore();
+  const { updateItem, removeItem, receiveCreated } = useFeedStore();
 
   useEffect(() => {
-    const handler = (event: FeedSSEEvent) => {
+    const handler = (event: FeedSSEEvent & { delivery?: FeedSSEDelivery }) => {
       const { type, rmharkId, payload } = event;
 
       switch (type) {
         case "rmhark.created":
           if (payload.content !== undefined || payload.type === "rmhark") {
-            prependItem(payload as any);
+            // Route via the store: Following auto-prepends followed/own posts;
+            // For You buffers strangers behind an "N new posts" pill.
+            const delivery = event.delivery ?? { followed: false, own: false };
+            receiveCreated(payload as any, delivery);
           }
           break;
 
@@ -177,5 +180,5 @@ export function useFeedSSE() {
       getState().listeners.delete(handler);
       unsubscribe();
     };
-  }, [prependItem, updateItem]);
+  }, [receiveCreated, updateItem, removeItem]);
 }

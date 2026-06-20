@@ -42,9 +42,10 @@ function mapPoll(poll: any): FeedPoll | undefined {
   };
 }
 
+// Counts come from the denormalized columns on RMHark (Phase 1) so they're
+// consistent with the main feed read path.
 const rmharkInclude = (viewerId: string | null) => ({
   user: { select: userDisplaySelect },
-  _count: { select: { likes: true, comments: true, reposts: true, views: true } },
   ...(viewerId
     ? {
         likes: { where: { userId: viewerId }, select: { id: true } },
@@ -55,12 +56,11 @@ const rmharkInclude = (viewerId: string | null) => ({
   original: {
     include: {
       user: { select: userDisplaySelect },
-      _count: { select: { likes: true, comments: true, reposts: true, views: true } },
     },
   },
 });
 
-function mapOriginal(original: { id: string; createdAt: Date; content: string; user: Parameters<typeof resolveUser>[0]; _count: { likes: number; comments: number; reposts: number; views: number } } | null): FeedItem | undefined {
+function mapOriginal(original: { id: string; createdAt: Date; content: string; user: Parameters<typeof resolveUser>[0]; likeCount: number; commentCount: number; repostCount: number; viewCount: number } | null): FeedItem | undefined {
   if (!original) return undefined;
   return {
     id: original.id,
@@ -68,10 +68,10 @@ function mapOriginal(original: { id: string; createdAt: Date; content: string; u
     createdAt: original.createdAt.toISOString(),
     content: original.content,
     user: resolveUser(original.user),
-    likeCount: original._count.likes,
-    commentCount: original._count.comments,
-    repostCount: original._count.reposts,
-    viewCount: original._count.views,
+    likeCount: original.likeCount,
+    commentCount: original.commentCount,
+    repostCount: original.repostCount,
+    viewCount: original.viewCount,
   };
 }
 
@@ -134,10 +134,10 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
       createdAt: r.createdAt.toISOString(),
       content: r.content,
       user: resolveUser(r.user),
-      likeCount: r._count.likes,
-      commentCount: r._count.comments,
-      repostCount: r._count.reposts,
-      viewCount: r._count.views,
+      likeCount: r.likeCount,
+      commentCount: r.commentCount,
+      repostCount: r.repostCount,
+      viewCount: r.viewCount,
       liked: viewerId ? r.likes.length > 0 : false,
       reposted: viewerId ? r.reposts.length > 0 : false,
       original: mapOriginal(r.original),
@@ -155,10 +155,10 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
         actualId: r.id,
         content: r.content,
         user: resolveUser(r.user),
-        likeCount: r._count.likes,
-        commentCount: r._count.comments,
-        repostCount: r._count.reposts,
-        viewCount: r._count.views,
+        likeCount: r.likeCount,
+        commentCount: r.commentCount,
+        repostCount: r.repostCount,
+        viewCount: r.viewCount,
         liked: viewerId ? r.likes.length > 0 : false,
         reposted: viewerId ? r.reposts.length > 0 : false,
         repostedBy: resolveUser(rp.user),
