@@ -148,17 +148,16 @@ async function processPdf(buf: Buffer, opts: { coverAbs: string; renderCover: bo
   return { text: text.slice(0, 6000).trim(), pages, coverOk };
 }
 
-const deepseek = new OpenAI({
-  apiKey: process.env.DEEPSEEK_API_KEY,
-  baseURL: 'https://api.deepseek.com/v1',
-});
-
 /** Ask DeepSeek for a title + description from the sampled text. */
 async function describe(filename: string, sample: string): Promise<{ title: string; description: string }> {
   const fallbackTitle = humanize(filename);
   if (!process.env.DEEPSEEK_API_KEY) {
     return { title: fallbackTitle, description: '' };
   }
+  const deepseek = new OpenAI({
+    apiKey: process.env.DEEPSEEK_API_KEY,
+    baseURL: 'https://api.deepseek.com/v1',
+  });
 
   const prompt = `You are cataloguing a digital library. Below is the filename and a text excerpt from a PDF document. Produce a clean, compelling catalogue entry.
 
