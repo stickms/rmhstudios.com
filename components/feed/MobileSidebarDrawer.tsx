@@ -24,7 +24,23 @@ export function MobileSidebarDrawer({ open, onClose, onOpen }: MobileSidebarDraw
   // While the user is dragging the open drawer closed, this holds the live
   // x-offset (0 → -DRAWER_WIDTH). null means "not dragging — use CSS classes".
   const [dragX, setDragX] = useState<number | null>(null);
-  const drag = useRef({ startX: 0, startY: 0, active: false, decided: false });
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const drag = useRef({
+    startX: 0,
+    startY: 0,
+    offset: 0,
+    active: false,
+    decided: false,
+    mode: 'none' as 'none' | 'drag' | 'scroll',
+    inPanel: false,
+    inScroll: false,
+  });
+  // Live ref to onClose so the once-attached native touch listeners never call
+  // a stale closure.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   // Mount the component when open becomes true
   useEffect(() => {
@@ -55,37 +71,17 @@ export function MobileSidebarDrawer({ open, onClose, onOpen }: MobileSidebarDraw
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [open, onClose]);
 
-  // Lock background scroll while the drawer is open. A plain `overflow:hidden`
-  // on <body> is unreliable on iOS Safari (touch scrolling still bleeds through,
-  // so horizontal drawer swipes end up scrolling the feed behind it). Pinning
-  // the body with `position:fixed` and restoring the scroll position on close is
-  // the robust cross-browser lock.
+  // Lock background scroll while the drawer is open. Touch scrolling is blocked
+  // by the overlay's non-passive handlers below; this `overflow:hidden` covers
+  // wheel/keyboard scroll on desktop. We deliberately avoid `position:fixed` —
+  // toggling it during an active touch occasionally left the body stuck
+  // (unscrollable) after the drawer closed.
   useEffect(() => {
     if (!open) return;
-    const scrollY = window.scrollY;
-    const body = document.body;
-    const prev = {
-      position: body.style.position,
-      top: body.style.top,
-      left: body.style.left,
-      right: body.style.right,
-      width: body.style.width,
-      overflow: body.style.overflow,
-    };
-    body.style.position = 'fixed';
-    body.style.top = `-${scrollY}px`;
-    body.style.left = '0';
-    body.style.right = '0';
-    body.style.width = '100%';
-    body.style.overflow = 'hidden';
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
     return () => {
-      body.style.position = prev.position;
-      body.style.top = prev.top;
-      body.style.left = prev.left;
-      body.style.right = prev.right;
-      body.style.width = prev.width;
-      body.style.overflow = prev.overflow;
-      window.scrollTo(0, scrollY);
+      document.body.style.overflow = prev;
     };
   }, [open]);
 
@@ -144,42 +140,93 @@ export function MobileSidebarDrawer({ open, onClose, onOpen }: MobileSidebarDraw
     };
   }, [open, onOpen]);
 
-  // ── Drag-to-close handlers (on the drawer panel) ──────────────────────────
-  function handleTouchStart(e: React.TouchEvent) {
-    const t = e.touches[0];
-    if (!t) return;
-    drag.current = { startX: t.clientX, startY: t.clientY, active: true, decided: false };
-  }
-  function handleTouchMove(e: React.TouchEvent) {
-    if (!drag.current.active) return;
-    const t = e.touches[0];
-    if (!t) return;
-    const dx = t.clientX - drag.current.startX;
-    const dy = t.clientY - drag.current.startY;
-    // Decide gesture direction once: vertical → let inner content scroll.
-    if (!drag.current.decided) {
-      if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
-      drag.current.decided = true;
-      if (Math.abs(dy) > Math.abs(dx)) {
-        drag.current.active = false;
+  // Drag-to-close + background scroll lock, via non-passive native listeners on
+  // the whole overlay. This means: (a) a horizontal swipe ANYWHERE — including
+  // the dimmed area to the right of the panel — drags the drawer closed, (b) a
+  // tap outside the panel closes it, and (c) the page can never scroll while the
+  // drawer is open or being dragged (only the inner nav list may scroll).
+  useEffect(() => {
+    const overlay = overlayRef.current;
+    if (!visible || !overlay) return;
+
+    function onTouchStart(e: TouchEvent) {
+      const t = e.touches[0];
+      if (!t) return;
+      const target = e.target as Node;
+      drag.current = {
+        startX: t.clientX,
+        startY: t.clientY,
+        offset: 0,
+        active: true,
+        decided: false,
+        mode: 'none',
+        inPanel: !!panelRef.current?.contains(target),
+        inScroll: !!scrollRef.current?.contains(target),
+      };
+    }
+
+    function onTouchMove(e: TouchEvent) {
+      const d = drag.current;
+      if (!d.active) return;
+      const t = e.touches[0];
+      if (!t) return;
+      const dx = t.clientX - d.startX;
+      const dy = t.clientY - d.startY;
+
+      // Decide gesture direction once it clears a small dead zone.
+      if (!d.decided) {
+        if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+        d.decided = true;
+        d.mode = Math.abs(dx) > Math.abs(dy) ? 'drag' : 'scroll';
+      }
+
+      if (d.mode === 'drag') {
+        // Horizontal drag-to-close from anywhere on the overlay.
+        if (e.cancelable) e.preventDefault();
+        d.offset = Math.max(-DRAWER_WIDTH, Math.min(0, dx));
+        setDragX(d.offset);
         return;
       }
+
+      // Vertical gesture: let the inner nav list scroll, but block anything that
+      // would bleed through to the page behind the drawer.
+      if (d.inScroll && scrollRef.current) {
+        const el = scrollRef.current;
+        const atTop = el.scrollTop <= 0;
+        const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight;
+        if ((atTop && dy > 0) || (atBottom && dy < 0)) {
+          if (e.cancelable) e.preventDefault();
+        }
+        return;
+      }
+      if (e.cancelable) e.preventDefault();
     }
-    // Only track leftward (closing) movement; clamp to the panel width.
-    setDragX(Math.max(-DRAWER_WIDTH, Math.min(0, dx)));
-  }
-  function handleTouchEnd() {
-    if (!drag.current.active) {
+
+    function onTouchEnd() {
+      const d = drag.current;
+      if (!d.active) return;
+      d.active = false;
+      if (d.mode === 'drag') {
+        if (d.offset <= -CLOSE_THRESHOLD) onCloseRef.current();
+        setDragX(null);
+        return;
+      }
+      // Tap outside the panel (no significant move) → close.
+      if (!d.decided && !d.inPanel) onCloseRef.current();
       setDragX(null);
-      return;
     }
-    drag.current.active = false;
-    const offset = dragX ?? 0;
-    if (offset <= -CLOSE_THRESHOLD) {
-      onClose();
-    }
-    setDragX(null);
-  }
+
+    overlay.addEventListener('touchstart', onTouchStart, { passive: true });
+    overlay.addEventListener('touchmove', onTouchMove, { passive: false });
+    overlay.addEventListener('touchend', onTouchEnd, { passive: true });
+    overlay.addEventListener('touchcancel', onTouchEnd, { passive: true });
+    return () => {
+      overlay.removeEventListener('touchstart', onTouchStart);
+      overlay.removeEventListener('touchmove', onTouchMove);
+      overlay.removeEventListener('touchend', onTouchEnd);
+      overlay.removeEventListener('touchcancel', onTouchEnd);
+    };
+  }, [visible]);
 
   if (!visible) return null;
 
@@ -188,10 +235,10 @@ export function MobileSidebarDrawer({ open, onClose, onOpen }: MobileSidebarDraw
   const dragProgress = dragging ? 1 + (dragX as number) / DRAWER_WIDTH : 1;
 
   return (
-    <div className="md:hidden fixed inset-0 z-100" role="dialog" aria-modal="true">
+    <div ref={overlayRef} className="md:hidden fixed inset-0 z-100" role="dialog" aria-modal="true">
       {/* Backdrop */}
       <div
-        className={`absolute inset-0 bg-black/50 backdrop-blur-sm ${
+        className={`absolute inset-0 bg-black/50 backdrop-blur-sm touch-none ${
           dragging ? '' : 'transition-opacity duration-150 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none'
         } ${animating ? 'opacity-100' : 'opacity-0'}`}
         style={dragging ? { opacity: dragProgress } : undefined}
@@ -200,11 +247,8 @@ export function MobileSidebarDrawer({ open, onClose, onOpen }: MobileSidebarDraw
       />
       {/* Drawer */}
       <div
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        onTouchCancel={handleTouchEnd}
-        className={`absolute left-0 top-0 bottom-0 w-64 bg-site-bg border-r border-site-border shadow-xl touch-pan-y ${
+        ref={panelRef}
+        className={`absolute left-0 top-0 bottom-0 w-64 bg-site-bg border-r border-site-border shadow-xl touch-none ${
           dragging ? '' : 'transition-transform duration-150 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none'
         } ${animating ? 'translate-x-0' : '-translate-x-full'}`}
         style={dragging ? { transform: `translateX(${dragX}px)` } : undefined}
@@ -221,7 +265,7 @@ export function MobileSidebarDrawer({ open, onClose, onOpen }: MobileSidebarDraw
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="overflow-y-auto h-[calc(100%-56px)]">
+        <div ref={scrollRef} className="overflow-y-auto h-[calc(100%-56px)] touch-pan-y">
           <LeftSidebar expanded />
           <div className="h-8 shrink-0" aria-hidden="true" />
         </div>
