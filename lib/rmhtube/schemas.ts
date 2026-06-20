@@ -69,6 +69,10 @@ export const SeekSchema = z.object({
   time: z.number().min(0),
 });
 
+export const PingSchema = z.object({
+  clientTime: z.number(),
+});
+
 export const SetSpeedSchema = z.object({
   speed: z.number().min(0.25).max(4),
 });
