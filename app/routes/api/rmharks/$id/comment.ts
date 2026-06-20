@@ -125,20 +125,27 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
       );
     }
 
-    const comment = await prisma.rMHarkComment.create({
-      data: {
-        content: parsed.data.content.trim(),
-        rmheetId: id,
-        userId: session.user.id,
-        parentId: parsed.data.parentId ?? null,
-      },
-      include: {
-        user: { select: userDisplaySelect },
-      },
-    });
+    const [comment, updated] = await prisma.$transaction([
+      prisma.rMHarkComment.create({
+        data: {
+          content: parsed.data.content.trim(),
+          rmheetId: id,
+          userId: session.user.id,
+          parentId: parsed.data.parentId ?? null,
+        },
+        include: {
+          user: { select: userDisplaySelect },
+        },
+      }),
+      prisma.rMHark.update({
+        where: { id },
+        data: { commentCount: { increment: 1 } },
+        select: { commentCount: true },
+      }),
+    ]);
 
-    // Broadcast comment count update via SSE
-    const commentCount = await prisma.rMHarkComment.count({ where: { rmheetId: id } });
+    // Broadcast comment count update via SSE (from the denormalized counter)
+    const commentCount = updated.commentCount;
     feedEventBus.publish({
       type: "rmhark.commented",
       rmharkId: id,

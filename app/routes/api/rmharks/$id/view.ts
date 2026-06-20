@@ -31,20 +31,23 @@ export const Route = createFileRoute('/api/rmharks/$id/view')({
 
     const ipHash = createHash("sha256").update(ip).digest("hex").slice(0, 16);
 
-    if (userId) {
-      // Dedupe by userId
-      await prisma.rMHarkView.upsert({
-        where: { rmheetId_userId: { rmheetId: id, userId } },
-        create: { rmheetId: id, userId },
-        update: {},
+    // Insert a view row, deduped by userId (or IP hash for anon). Only a
+    // genuinely new row bumps the denormalized viewCount — a unique-constraint
+    // violation means this viewer already counted, so we skip the increment.
+    try {
+      await prisma.rMHarkView.create({
+        data: userId ? { rmheetId: id, userId } : { rmheetId: id, ipHash },
       });
-    } else {
-      // Dedupe by IP hash
-      await prisma.rMHarkView.upsert({
-        where: { rmheetId_ipHash: { rmheetId: id, ipHash } },
-        create: { rmheetId: id, ipHash },
-        update: {},
+      await prisma.rMHark.update({
+        where: { id },
+        data: { viewCount: { increment: 1 } },
       });
+    } catch (e: any) {
+      // P2002 = unique violation (already viewed) → not an error. Anything
+      // else (e.g. the post was deleted) is swallowed below.
+      if (e?.code !== "P2002") {
+        throw e;
+      }
     }
 
     return Response.json({ success: true });

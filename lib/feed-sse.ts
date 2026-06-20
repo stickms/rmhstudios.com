@@ -2,7 +2,13 @@
  * Feed SSE — server-side event bus for real-time feed updates.
  *
  * Uses a simple in-process EventEmitter for single-instance deployments.
- * For multi-instance production, swap the emitter for a Redis pub/sub adapter.
+ * For multi-instance production, swap the emitter for a Redis pub/sub adapter
+ * (Phase 3 of docs/feed/plan.md). The `publish`/`subscribe` surface is the seam:
+ * a Redis adapter implements the same two methods and nothing else changes.
+ *
+ * Events now carry `authorId` so the stream endpoint can target
+ * `rmhark.created` events to the viewer's follow graph instead of
+ * broadcasting every stranger's post to everyone.
  */
 
 import { EventEmitter } from "events";
@@ -29,6 +35,22 @@ export interface FeedSSEEvent {
   payload: Partial<FeedItem> & { id: string };
   /** ISO timestamp */
   timestamp: string;
+  /**
+   * Author of the post (for "created" events). The stream endpoint uses this
+   * to decide whether the event belongs in a given viewer's Following feed.
+   */
+  authorId?: string;
+}
+
+/**
+ * Per-viewer delivery metadata the stream endpoint attaches to a forwarded
+ * `rmhark.created` event so the client can route it correctly:
+ *   - followed: viewer follows the author (belongs in Following)
+ *   - own:      viewer *is* the author (self-action consistency)
+ */
+export interface FeedSSEDelivery {
+  followed: boolean;
+  own: boolean;
 }
 
 /* ------------------------------------------------------------------ */

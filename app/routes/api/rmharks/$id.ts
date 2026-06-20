@@ -23,7 +23,6 @@ export const Route = createFileRoute('/api/rmharks/$id')({
       where: { id },
       include: {
         user: { select: userDisplaySelect },
-        _count: { select: { likes: true, comments: true, reposts: true, views: true } },
         ...(userId
           ? {
               likes: { where: { userId }, select: { id: true } },
@@ -46,7 +45,6 @@ export const Route = createFileRoute('/api/rmharks/$id')({
         original: {
           include: {
             user: { select: userDisplaySelect },
-            _count: { select: { likes: true, comments: true, reposts: true, views: true } },
           },
         },
       },
@@ -89,10 +87,10 @@ export const Route = createFileRoute('/api/rmharks/$id')({
       createdAt: rmhark.createdAt.toISOString(),
       content: isDeleted ? deletedMessage : rmhark.content,
       user: resolveUser(rmhark.user),
-      likeCount: rmhark._count.likes,
-      commentCount: rmhark._count.comments,
-      repostCount: rmhark._count.reposts,
-      viewCount: rmhark._count.views,
+      likeCount: rmhark.likeCount,
+      commentCount: rmhark.commentCount,
+      repostCount: rmhark.repostCount,
+      viewCount: rmhark.viewCount,
       liked: userId ? rmhark.likes.length > 0 : false,
       reposted: userId ? rmhark.reposts.length > 0 : false,
       poll: isDeleted ? undefined : pollData,
@@ -106,10 +104,10 @@ export const Route = createFileRoute('/api/rmharks/$id')({
             createdAt: rmhark.original.createdAt.toISOString(),
             content: rmhark.original.content,
             user: resolveUser(rmhark.original.user),
-            likeCount: rmhark.original._count.likes,
-            commentCount: rmhark.original._count.comments,
-            repostCount: rmhark.original._count.reposts,
-            viewCount: rmhark.original._count.views,
+            likeCount: rmhark.original.likeCount,
+            commentCount: rmhark.original.commentCount,
+            repostCount: rmhark.original.repostCount,
+            viewCount: rmhark.original.viewCount,
           }
         : undefined,
     });

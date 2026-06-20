@@ -31,7 +31,7 @@ export function FeedTabs({ mode, onModeChange }: FeedTabsProps) {
               : 'text-site-text-muted hover:text-site-text hover:bg-site-surface/50'
           }`}
         >
-          Feed
+          For You
           {mode === 'feed' && (
             <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-0.5 bg-site-accent rounded-full" />
           )}
@@ -44,7 +44,7 @@ export function FeedTabs({ mode, onModeChange }: FeedTabsProps) {
               : 'text-site-text-muted hover:text-site-text hover:bg-site-surface/50'
           }`}
         >
-          Friends
+          Following
           {mode === 'friends' && (
             <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-0.5 bg-site-accent rounded-full" />
           )}
