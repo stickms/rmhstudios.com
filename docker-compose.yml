@@ -49,6 +49,9 @@ services:
         VITE_RMHBOX_SOCKET_URL: ${VITE_RMHBOX_SOCKET_URL}
         VITE_RMHTUBE_SOCKET_URL: ${VITE_RMHTUBE_SOCKET_URL}
         VITE_DISCORD_ACTIVITY_CLIENT_ID: ${VITE_DISCORD_ACTIVITY_CLIENT_ID}
+        # Used at build time to auto-generate library covers/metadata for new
+        # PDFs. Optional — covers still render without it (titles fall back).
+        DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
     container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-web
     ports:
       - "127.0.0.1:${PORT_WEB:-7005}:${PORT_WEB:-7005}"

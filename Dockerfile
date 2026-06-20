@@ -131,6 +131,9 @@ ARG VITE_SOCKET_URL
 ARG VITE_RMHBOX_SOCKET_URL
 ARG VITE_RMHTUBE_SOCKET_URL
 ARG VITE_DISCORD_ACTIVITY_CLIENT_ID
+# Optional: only used to title/describe NEW library PDFs. Cover rendering itself
+# needs no key — titles fall back to the humanized filename when it's absent.
+ARG DEEPSEEK_API_KEY
 
 ENV DATABASE_URL=${DATABASE_URL} \
     BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET} \
@@ -139,7 +142,15 @@ ENV DATABASE_URL=${DATABASE_URL} \
     VITE_SOCKET_URL=${VITE_SOCKET_URL} \
     VITE_RMHBOX_SOCKET_URL=${VITE_RMHBOX_SOCKET_URL} \
     VITE_RMHTUBE_SOCKET_URL=${VITE_RMHTUBE_SOCKET_URL} \
-    VITE_DISCORD_ACTIVITY_CLIENT_ID=${VITE_DISCORD_ACTIVITY_CLIENT_ID}
+    VITE_DISCORD_ACTIVITY_CLIENT_ID=${VITE_DISCORD_ACTIVITY_CLIENT_ID} \
+    DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+
+# Auto-generate library book covers + metadata for any PDF in public/library that
+# doesn't already have them. Idempotent: existing covers (committed under
+# public/library/covers) and data/library-metadata.json are reused, so this only
+# renders what's new. Must run BEFORE `vite build` so the fresh metadata JSON is
+# bundled and the rendered covers are picked up into the public output.
+RUN pnpm run library:metadata
 
 # Build with cache mounts for faster incremental builds.
 # .vinxi cache is preserved between builds for Vite's module graph cache.
