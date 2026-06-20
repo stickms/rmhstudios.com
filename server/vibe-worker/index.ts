@@ -17,14 +17,36 @@ import { captureVibeThumbnail, closeVibeBrowser } from '@/lib/rmhvibe/vibe-scree
 
 const POLL_INTERVAL_MS = 10_000;
 const BATCH_SIZE = 5;
+// A page reserved as "generating" whose build never finished (e.g. the web process
+// restarted mid-generation, so the generator's error handler never ran) would
+// otherwise be stuck forever, and the viewer would poll it indefinitely. The web
+// app caps a build well under this, so anything still "generating" past it is dead.
+const STALE_GENERATING_MS = 20 * 60_000;
 
 let running = false;
+
+/** Fail builds that have been stuck "generating" longer than is ever legitimate. */
+async function sweepStaleGenerating(): Promise<void> {
+  try {
+    const cutoff = new Date(Date.now() - STALE_GENERATING_MS);
+    const result = await prisma.vibePage.updateMany({
+      where: { status: 'generating', updatedAt: { lt: cutoff } },
+      data: { status: 'error' },
+    });
+    if (result.count > 0) {
+      console.warn(`[vibe-worker] marked ${result.count} stuck "generating" page(s) as error`);
+    }
+  } catch (e) {
+    console.error('[vibe-worker] stale-generating sweep failed:', e);
+  }
+}
 
 async function processStale(): Promise<void> {
   // Guard against overlapping ticks — a batch of captures can outlast the interval.
   if (running) return;
   running = true;
   try {
+    await sweepStaleGenerating();
     const pages = await prisma.vibePage.findMany({
       // Only "ready" pages have real HTML; skip rows still generating (or errored),
       // whose `html` is an empty placeholder, so we never screenshot a blank page.
