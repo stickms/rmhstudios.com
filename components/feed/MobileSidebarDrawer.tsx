@@ -117,6 +117,12 @@ export function MobileSidebarDrawer({ open, onClose, onOpen }: MobileSidebarDraw
         tracking = false;
         return;
       }
+      // Horizontal drag inward from the left edge: cancel the browser's native
+      // edge-swipe (iOS Safari "go back") so the gesture opens the drawer
+      // instead of navigating away. Must be a non-passive listener for this.
+      if (dx > 0 && Math.abs(dx) >= Math.abs(dy) && e.cancelable) {
+        e.preventDefault();
+      }
       if (dx > OPEN_THRESHOLD) {
         tracking = false;
         onOpen?.();
@@ -127,7 +133,7 @@ export function MobileSidebarDrawer({ open, onClose, onOpen }: MobileSidebarDraw
     }
 
     document.addEventListener('touchstart', onStart, { passive: true });
-    document.addEventListener('touchmove', onMove, { passive: true });
+    document.addEventListener('touchmove', onMove, { passive: false });
     document.addEventListener('touchend', stop, { passive: true });
     document.addEventListener('touchcancel', stop, { passive: true });
     return () => {
