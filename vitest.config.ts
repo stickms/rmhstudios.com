@@ -6,7 +6,11 @@ import path from 'path';
 
 export default defineConfig({
   test: {
-    include: ['testing/**/*.test.ts', 'lib/dream-rift/__tests__/**/*.test.ts'],
+    include: [
+      'testing/**/*.test.ts',
+      'lib/dream-rift/__tests__/**/*.test.ts',
+      'lib/rmhark-ai/__tests__/**/*.test.ts',
+    ],
     environment: 'node',
     globals: true,
   },
