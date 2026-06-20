@@ -100,6 +100,12 @@ export function useResolvedUser() {
 
 interface ProvidersProps {
   children: ReactNode;
+  /**
+   * User resolved on the server from the session cookie during SSR. Seeds the
+   * shell so the very first painted HTML (and the first client render) is
+   * already signed-in — no "signed out" flash on refresh.
+   */
+  initialUser?: CachedSessionUser | null;
 }
 
 const STYLE_CLASSES = SITE_STYLES.map((s) => `style-${s.id}`);
@@ -145,19 +151,25 @@ const THEME_EXCLUDED_ROUTES = [
   ...apps.map((a) => a.href),
 ].filter((href) => href.startsWith("/"));
 
-export function Providers({ children }: ProvidersProps) {
+export function Providers({ children, initialUser = null }: ProvidersProps) {
   const session = authClient.useSession();
   const style = useThemeStore((s) => s.style);
   const { pathname } = useLocation();
   const isFirstRun = useRef(true);
 
-  // Persisted user — seeded from localStorage after hydration so the shell
-  // renders signed-in immediately instead of flashing signed-out. Starts null
-  // to match the server-rendered markup and avoid a hydration mismatch.
-  const [cachedUser, setCachedUser] = useState<CachedSessionUser | null>(null);
+  // Seed the known user from the server-resolved session so the shell renders
+  // signed-in on the first paint (SSR) and the first client render — matching
+  // markup, no hydration mismatch, no flash. `initialUser` is authoritative
+  // for that first frame because the server read the actual session cookie; we
+  // only fall back to the persisted localStorage copy when the server didn't
+  // provide one (e.g. a client-only render path).
+  const [cachedUser, setCachedUser] = useState<CachedSessionUser | null>(initialUser);
   useEffect(() => {
-    setCachedUser(readCachedUser());
-  }, []);
+    if (!initialUser) {
+      const stored = readCachedUser();
+      if (stored) setCachedUser(stored);
+    }
+  }, [initialUser]);
 
   // Persist the live session whenever it resolves (and clear it on sign-out).
   const liveUser = session.data?.user;
