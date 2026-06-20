@@ -7,6 +7,7 @@ import { getAllPosts } from "@/lib/blog";
 import type { FeedItem, FeedPoll, FeedFilter } from "@/lib/feed-types";
 import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 import { feedEventBus } from "@/lib/feed-sse";
+import { ownsFeedImageUrl } from "@/lib/storage/keys";
 
 /** Prisma include fragment for poll data on an RMHark */
 function pollInclude(userId: string | null) {
@@ -526,6 +527,10 @@ export const Route = createFileRoute('/api/rmharks')({
     }
 
     const { content, poll, gifUrl, imageUrls } = parsed.data;
+
+    if (imageUrls?.length && !imageUrls.every((u) => ownsFeedImageUrl(u, session.user.id))) {
+      return Response.json({ error: "Invalid image reference" }, { status: 400 });
+    }
 
     const rmhark = await prisma.$transaction(async (tx) => {
       const created = await tx.rMHark.create({

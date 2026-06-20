@@ -28,3 +28,11 @@ export function feedImageKey(filename: string): string {
 export function feedImageUrl(filename: string): string {
   return `/api/feed/image/${filename}`;
 }
+
+/** True if a feed image URL's filename belongs to the given user (filename is `<userId>-<ts>-<rand>.<ext>`). */
+export function ownsFeedImageUrl(url: string, userId: string): boolean {
+  const prefix = "/api/feed/image/";
+  if (!url.startsWith(prefix)) return false;
+  const filename = url.slice(prefix.length);
+  return filename.startsWith(`${userId}-`);
+}
