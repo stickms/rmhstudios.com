@@ -255,6 +255,15 @@ prune_rollback_images() {
         xargs -r "$DOCKER_BIN" rmi 2>/dev/null || true
 }
 
+# ── Helper: free space (whole GB) on the filesystem backing Docker's data dir ─
+# Falls back to / if the Docker root can't be determined.
+free_disk_gb() {
+    local root
+    root=$("$DOCKER_BIN" info --format '{{.DockerRootDir}}' 2>/dev/null)
+    [ -d "$root" ] || root="/"
+    df -BG --output=avail "$root" 2>/dev/null | tail -1 | tr -dc '0-9' || echo 0
+}
+
 cleanup() {
     rm -f "$DEPLOY_LOG"
 }
@@ -378,7 +387,22 @@ step_start "Pre-build disk cleanup..."
 # post-deploy, so a build that filled the disk left the old multi-GB images
 # behind and every retry failed identically with "no space left on device".
 prune_rollback_images
-"$DOCKER_BIN" builder prune --keep-storage 2g -f > /dev/null 2>&1 || true
+
+# Build cache is the main disk hog. A full rebuild needs ~8–10 GB of headroom
+# to materialize the new node_modules + .output layers into the runner image.
+# When free space is below that, the light "keep 2 GB cache" prune isn't enough
+# and the build dies mid-COPY — so escalate to a full cache + image wipe. The
+# only cost is a slower next build (re-downloads the pnpm/vinxi caches), which
+# beats a guaranteed "no space left on device" failure.
+DISK_FREE_GB=$(free_disk_gb)
+if [ "${DISK_FREE_GB:-0}" -lt 10 ]; then
+    log "Low disk: ${DISK_FREE_GB}G free — wiping all build cache and unused images."
+    "$DOCKER_BIN" builder prune -af > /dev/null 2>&1 || true
+    "$DOCKER_BIN" image prune -af > /dev/null 2>&1 || true
+    log "After aggressive prune: $(free_disk_gb)G free."
+else
+    "$DOCKER_BIN" builder prune --keep-storage 2g -f > /dev/null 2>&1 || true
+fi
 step_done
 
 # ── Step 2: Build Docker image ──────────────────────────────────────────────
