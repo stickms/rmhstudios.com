@@ -18,6 +18,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { emit } from '@/lib/rmhbox/socket';
 import { C2S } from '@/lib/rmhbox/events';
+import { isDiscordActivity } from '@/lib/discord-sdk';
 import { SlidersHorizontal } from 'lucide-react';
 import RoomCodeDisplay from './RoomCodeDisplay';
 import PlayerList from './PlayerList';
@@ -41,7 +42,13 @@ export default function LobbyView() {
     if (!lobby) return;
     emit(C2S.LOBBY_LEAVE, { lobbyId: lobby.lobbyId });
     useRMHboxStore.getState().leaveLobby();
-    navigate({ to: '/rmhbox' });
+    // Inside a Discord Activity there is no standalone /rmhbox route — the
+    // activity renders this view inline and returns to its lobby browser once
+    // the store's lobby clears. Navigating to /rmhbox would leave the activity
+    // iframe and bounce the user to the web login page (no Discord session).
+    if (!isDiscordActivity()) {
+      navigate({ to: '/rmhbox' });
+    }
   }, [lobby, navigate]);
 
   const handleSendChat = useCallback((content: string) => {

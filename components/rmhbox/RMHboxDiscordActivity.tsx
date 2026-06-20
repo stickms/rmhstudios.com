@@ -117,6 +117,7 @@ export function RMHboxDiscordActivity({ discord }: Props) {
     const lobby = useRMHboxStore((s) => s.lobby);
     const connectionStatus = useRMHboxStore((s) => s.connectionStatus);
     const spectatorTarget = useRMHboxStore((s) => s.spectatorTarget);
+    const timerInfo = useRMHboxStore((s) => s.timerInfo);
 
     const [layoutMode, setLayoutMode] = useState<number>(LAYOUT_FOCUSED);
     const [voteCandidates, setVoteCandidates] = useState<VoteCandidate[]>([]);
@@ -356,7 +357,11 @@ export function RMHboxDiscordActivity({ discord }: Props) {
                         {lobby.state === 'COUNTDOWN' && (
                             <div className="flex items-center justify-center h-full">
                                 <div className="text-9xl font-bold animate-pulse text-(--rmhbox-accent)" style={{ fontFamily: 'var(--rmhbox-font-display)' }}>
-                                    {lobby.currentGame?.timeRemaining ?? countdownValue}
+                                    {/* Read from the centralized timer (TIMER_START/TICK), not
+                                        currentGame.timeRemaining — the latter is reset to null by
+                                        every full sync, which would freeze the countdown on the
+                                        stale countdownValue fallback if a sync lands mid-countdown. */}
+                                    {timerInfo && !timerInfo.infinite ? Math.max(0, Math.ceil(timerInfo.remaining)) : countdownValue}
                                 </div>
                             </div>
                         )}
