@@ -64,7 +64,7 @@ prod: images ## build images, push (if REGISTRY), and deploy via Helm
 test: ## run Go tests (Bazel) + frontend tests (vitest)
 	@$(GUARD)
 	$(BAZEL) test --build_tests_only //go-services/...
-	pnpm test
+	pnpm exec vitest run
 
 test-e2e: ## run the Go end-to-end suite
 	cd go-services && bash scripts/e2e/run.sh
