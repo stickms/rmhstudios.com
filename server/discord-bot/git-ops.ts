@@ -71,6 +71,45 @@ export async function removeWorktree(clonePath: string): Promise<void> {
   await fs.rm(clonePath, { recursive: true, force: true }).catch(() => {});
 }
 
+// ─── Stale clone sweep ────────────────────────────────────────────
+// Each /rmhbot session leaves a full shallow clone (working tree + symlinked
+// node_modules) under WORKTREES_DIR. removeWorktree only runs on a successful
+// push, so abandoned sessions (started, never pushed) leak a clone that
+// accumulates in the container's writable layer until the next deploy recreates
+// it. Sweep clones older than maxAgeMs, skipping any that's still an active
+// session. Returns the number of clone directories removed.
+export async function sweepStaleWorktrees(
+  activePaths: Set<string>,
+  maxAgeMs: number = 6 * 60 * 60 * 1000,
+): Promise<number> {
+  let removed = 0;
+  let entries: import('fs').Dirent[];
+  try {
+    entries = await fs.readdir(WORKTREES_DIR, { withFileTypes: true });
+  } catch {
+    // Dir doesn't exist yet (no sessions since last container start) — nothing to do.
+    return 0;
+  }
+
+  const now = Date.now();
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    const clonePath = path.join(WORKTREES_DIR, entry.name);
+    if (activePaths.has(clonePath)) continue;
+
+    try {
+      const { mtimeMs } = await fs.stat(clonePath);
+      if (now - mtimeMs < maxAgeMs) continue;
+    } catch {
+      continue;
+    }
+
+    await fs.rm(clonePath, { recursive: true, force: true }).catch(() => {});
+    removed++;
+  }
+  return removed;
+}
+
 // ─── Per-worktree git ops ────────────────────────────────────────
 
 export async function stageAll(cwd: string): Promise<void> {

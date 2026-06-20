@@ -247,11 +247,13 @@ dc() {
 
 # ── Helper: prune stale SHA-tagged rollback images ──────────────────────────
 # Each deploy tags ${IMAGE_NAME}:${GIT_SHA} for instant rollback. These images
-# are large (full node_modules + .output + Chromium) and `docker image prune`
-# never touches them because they're tagged. Keep the 3 newest, remove the rest.
+# are large (full node_modules + .output + Chromium, multiple GB each) and
+# `docker image prune` never touches them because they're tagged. Keep the 2
+# newest (current + one rollback target), remove the rest — the older SHAs are
+# almost never used and are the single biggest avoidable disk cost.
 prune_rollback_images() {
     "$DOCKER_BIN" images "${IMAGE_NAME}" --format '{{.Tag}} {{.CreatedAt}}' 2>/dev/null | \
-        grep -v 'latest' | sort -k2 -r | tail -n +4 | awk '{print "'"${IMAGE_NAME}"':" $1}' | \
+        grep -v 'latest' | sort -k2 -r | tail -n +3 | awk '{print "'"${IMAGE_NAME}"':" $1}' | \
         xargs -r "$DOCKER_BIN" rmi 2>/dev/null || true
 }
 
@@ -262,6 +264,27 @@ free_disk_gb() {
     root=$("$DOCKER_BIN" info --format '{{.DockerRootDir}}' 2>/dev/null)
     [ -d "$root" ] || root="/"
     df -BG --output=avail "$root" 2>/dev/null | tail -1 | tr -dc '0-9' || echo 0
+}
+
+# ── Helper: total BuildKit build-cache size in whole GB ──────────────────────
+# Reads the real on-disk size from `docker system df` (includes the pnpm-store
+# and vinxi cache MOUNTS, which `builder prune --keep-storage` can't trim
+# internally and so let storage creep upward). Parses Docker's human size
+# string (e.g. "6.123GB", "812MB") into a floored integer GB. Echoes 0 on any
+# failure so callers can use it unguarded in arithmetic tests.
+build_cache_gb() {
+    "$DOCKER_BIN" system df --format '{{.Type}}\t{{.Size}}' 2>/dev/null | awk -F'\t' '
+        $1 == "Build Cache" {
+            n=$2; sub(/[A-Za-z]+$/,"",n)
+            u=$2; sub(/^[0-9.]+/,"",u)
+            if      (u ~ /^T/) g=n*1024
+            else if (u ~ /^G/) g=n
+            else if (u ~ /^M/) g=n/1024
+            else if (u ~ /^k/||u ~ /^K/) g=n/1048576
+            else g=n/1073741824
+            printf("%d", g); found=1
+        }
+        END { if (!found) print 0 }'
 }
 
 cleanup() {
@@ -390,10 +413,17 @@ prune_rollback_images
 
 # Build cache is the main disk hog. A full rebuild needs ~8–10 GB of headroom
 # to materialize the new node_modules + .output layers into the runner image.
-# When free space is below that, the light "keep 2 GB cache" prune isn't enough
-# and the build dies mid-COPY — so escalate to a full cache + image wipe. The
-# only cost is a slower next build (re-downloads the pnpm/vinxi caches), which
-# beats a guaranteed "no space left on device" failure.
+# When free space is below that, escalate to a full cache + image wipe so the
+# build doesn't die mid-COPY with "no space left on device". The only cost is a
+# slower next build (re-downloads the pnpm/vinxi caches), and it's a rare safety
+# valve, not the common path.
+#
+# When disk is healthy we deliberately do NOT trim the build cache here: the
+# pnpm store + Vinxi cache + layer cache (this project pulls three.js, monaco,
+# tiptap, playwright, etc.) is well over a few GB, and trimming it right before
+# `dc build` evicts the exact cache the build is about to reuse — turning every
+# deploy into a near-cold build. Growth is already bounded by the post-build cap
+# (≤5 GB, see step 6), so the cache enters each build warm and stays small.
 DISK_FREE_GB=$(free_disk_gb)
 if [ "${DISK_FREE_GB:-0}" -lt 10 ]; then
     log "Low disk: ${DISK_FREE_GB}G free — wiping all build cache and unused images."
@@ -401,7 +431,7 @@ if [ "${DISK_FREE_GB:-0}" -lt 10 ]; then
     "$DOCKER_BIN" image prune -af > /dev/null 2>&1 || true
     log "After aggressive prune: $(free_disk_gb)G free."
 else
-    "$DOCKER_BIN" builder prune --keep-storage 2g -f > /dev/null 2>&1 || true
+    log "Disk healthy: ${DISK_FREE_GB}G free — keeping build cache warm for a fast incremental build."
 fi
 step_done
 
@@ -503,18 +533,26 @@ for i in $(seq 1 $MIGRATION_RETRIES); do
     sleep "$MIGRATION_DELAY"
 done
 
-# On first run, the _prisma_migrations table may not exist or the baseline may
-# not be recorded. Resolve the baseline as applied before running migrate deploy
-# so Prisma doesn't try to re-create existing tables.
-dc run --rm --no-deps web sh -c 'npx prisma migrate resolve --applied 0_baseline 2>/dev/null || true'
+# Run baseline-resolve, any failed-migration rollback, and `migrate deploy` in a
+# SINGLE container instead of 2–3 separate `dc run --rm` invocations. Each run on
+# this image boots node + prisma (~5–10s of pure overhead), so collapsing them
+# shaves real time off every deploy.
+#
+#   - resolve --applied 0_baseline: on first run the _prisma_migrations table or
+#     baseline may not be recorded; mark it applied so Prisma doesn't try to
+#     re-create existing tables. Idempotent + ignored on later runs.
+#   - resolve --rolled-back <name>: if the prior `migrate status` reported a
+#     failed migration, mark it rolled back so `migrate deploy` can retry it.
+MIGRATE_CMD='npx prisma migrate resolve --applied 0_baseline 2>/dev/null || true'
 
-# If there's a failed migration, mark it as rolled back so migrate deploy can retry it
 FAILED_MIGRATION=$(echo "$MIGRATE_OUTPUT" | grep -oP '(?<=resolve --rolled-back ")[^"]+' || true)
 if [ -n "$FAILED_MIGRATION" ]; then
-    log "  Resolving failed migration '$FAILED_MIGRATION' as rolled back..."
-    dc run --rm --no-deps web sh -c "npx prisma migrate resolve --rolled-back \"$FAILED_MIGRATION\"" || true
+    log "  Will resolve failed migration '$FAILED_MIGRATION' as rolled back before deploy."
+    MIGRATE_CMD="$MIGRATE_CMD; npx prisma migrate resolve --rolled-back \"$FAILED_MIGRATION\" || true"
 fi
-if ! dc run --rm --no-deps web sh -c 'npx prisma migrate deploy'; then
+MIGRATE_CMD="$MIGRATE_CMD; npx prisma migrate deploy"
+
+if ! dc run --rm --no-deps web sh -c "$MIGRATE_CMD"; then
     log "ERROR: Database migration failed."
     update_deploy_status fail "database migration failed"
     exit 1
@@ -576,14 +614,27 @@ step_done
 log "Pruning dangling images..."
 "$DOCKER_BIN" image prune -f > /dev/null 2>&1 || true
 
-# Keep at most 3 SHA-tagged images per environment for rollback.
+# Keep at most 2 SHA-tagged images per environment for rollback.
 prune_rollback_images
 
-# Cap BuildKit build cache at 5 GB. This keeps the pnpm store, Vinxi, and
-# TanStack cache mounts around for fast rebuilds while preventing unbounded
-# growth. BuildKit evicts least-recently-used entries first.
-log "Pruning build cache (keeping ≤5 GB)..."
+# Cap BuildKit build cache. First do the cheap LRU trim toward 5 GB — this keeps
+# the pnpm store, Vinxi, and TanStack cache mounts around for fast rebuilds.
+log "Pruning build cache (LRU trim toward ≤5 GB)..."
 "$DOCKER_BIN" builder prune --keep-storage 5g -f > /dev/null 2>&1 || true
+
+# Hard ceiling to stop slow creep: `--keep-storage` can't trim WITHIN the
+# long-lived pnpm-store / vinxi cache mounts (old package versions and stale
+# module-graph entries pile up inside a single record it won't evict), so the
+# LRU trim above can report "done" while real usage keeps drifting up deploy
+# after deploy. Measure actual size and, if it's still over the ceiling, do a
+# full reset. Costs one cold rebuild next time but guarantees a fixed cap.
+BUILD_CACHE_CEILING_GB=8
+CACHE_GB=$(build_cache_gb)
+if [ "${CACHE_GB:-0}" -gt "$BUILD_CACHE_CEILING_GB" ]; then
+    log "Build cache ${CACHE_GB}G over ${BUILD_CACHE_CEILING_GB}G ceiling after LRU trim — full reset to stop creep."
+    "$DOCKER_BIN" builder prune -af > /dev/null 2>&1 || true
+    log "After full reset: $(build_cache_gb)G build cache, $(free_disk_gb)G disk free."
+fi
 
 # ── Done ─────────────────────────────────────────────────────────────────────
 update_deploy_status success

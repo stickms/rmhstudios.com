@@ -36,6 +36,8 @@ import { disconnectPrisma } from './prisma-client';
 import { handleCommand } from './command-handler';
 import { handlePush } from './commands/rmhbot-push';
 import { handleChat } from './chat-handler';
+import { sweepStaleWorktrees } from './git-ops';
+import { sessions } from './conversation';
 
 // ─── Command imports ─────────────────────────────────────────────
 
@@ -114,12 +116,36 @@ const client = new Client({
 
 // ─── Event handlers ──────────────────────────────────────────────
 
+// ─── Stale RMHBot clone sweep ────────────────────────────────────
+// Abandoned /rmhbot sessions leak shallow clones into the container layer
+// (removeWorktree only runs on push). Sweep clones with no active session that
+// are older than the TTL — on startup and hourly — so disk usage stays bounded
+// between deploys. Active sessions are protected by passing their live paths.
+const WORKTREE_SWEEP_INTERVAL_MS = 60 * 60 * 1000;
+let worktreeSweepTimer: NodeJS.Timeout | null = null;
+
+async function sweepWorktrees(): Promise<void> {
+  const activePaths = new Set(
+    [...sessions.values()].map(s => s.worktreePath).filter(Boolean),
+  );
+  try {
+    const removed = await sweepStaleWorktrees(activePaths);
+    if (removed > 0) logger.info({ event: 'worktree_sweep', removed });
+  } catch (err) {
+    logger.warn({ event: 'worktree_sweep_failed', error: String(err) });
+  }
+}
+
 client.once('clientReady', (c) => {
   logger.info({
     event: 'bot_ready',
     user: c.user.tag,
     guilds: c.guilds.cache.size,
   });
+
+  void sweepWorktrees();
+  worktreeSweepTimer = setInterval(() => void sweepWorktrees(), WORKTREE_SWEEP_INTERVAL_MS);
+  worktreeSweepTimer.unref();
 });
 
 client.on('interactionCreate', async (interaction: Interaction) => {
@@ -270,6 +296,7 @@ async function shutdown(signal: string): Promise<void> {
 
   logger.info({ event: 'shutdown_start', signal });
 
+  if (worktreeSweepTimer) clearInterval(worktreeSweepTimer);
   client.destroy();
   await disconnectPrisma();
 
