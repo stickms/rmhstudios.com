@@ -1,0 +1,11 @@
+common --enable_bzlmod
+build --disk_cache=~/.cache/bazel-disk
+build --incompatible_strict_action_env
+test --test_output=errors
+
+# Cross-compile Go services for Linux containers.
+build:linux_amd64 --platforms=@rules_go//go/toolchain:linux_amd64
+build:linux_arm64 --platforms=@rules_go//go/toolchain:linux_arm64
+
+# Frontend leaf reuses repo node_modules → must not sandbox.
+build --strategy=Genrule=local
