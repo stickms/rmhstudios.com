@@ -1948,3 +1948,65 @@ model VibePageVersion {
   @@index([pageId, createdAt])
   @@map("vibe_page_version")
 }
+
+// ─── LEDGER (Co-Scientist reproducibility substrate) ─────────────────────────
+
+model LedgerArtifact {
+  id          String   @id            // "sha256:<hex64>"
+  contentType String                  // "fastq" | "bam" | "count_matrix" | "umap_png" | ...
+  sizeBytes   BigInt                  // raw byte count
+  storagePath String                  // relative path inside artifact root: "<hex[:2]>/<hex64>"
+  createdAt   DateTime @default(now())
+
+  stepOutputs LedgerPlanStep[]  @relation("StepOutput")
+  stepInputs  LedgerStepInput[]
+
+  @@map("ledger_artifact")
+}
+
+model LedgerPlanRun {
+  id          String    @id @default(cuid())
+  bundleId    String    @unique     // "run-YYYYMMDD-HHMMSS-xxxxxx"
+  description String?
+  status      String    @default("pending")  // pending | running | completed | failed
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  steps LedgerPlanStep[]
+
+  @@map("ledger_plan_run")
+}
+
+model LedgerPlanStep {
+  id               String    @id @default(cuid())
+  runId            String
+  stepIndex        Int
+  tool             String    // "fastqc" | "star" | "deseq2" | ...
+  toolVersion      String    // "0.11.9" | "2.7.11b" | "1.44.0"
+  imageDigest      String?   // "sha256:<container digest>"
+  params           Json      // {"--runThreadN": 8, ...}
+  status           String    @default("pending")  // pending | running | completed | failed | cached
+  startedAt        DateTime?
+  completedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  outputArtifactId String?
+
+  run    LedgerPlanRun   @relation(fields: [runId], references: [id], onDelete: Cascade)
+  output LedgerArtifact? @relation("StepOutput", fields: [outputArtifactId], references: [id])
+  inputs LedgerStepInput[]
+
+  @@index([runId, stepIndex])
+  @@map("ledger_plan_step")
+}
+
+model LedgerStepInput {
+  stepId     String
+  artifactId String
+  role       String  // semantic label: "fastq" | "genome_index" | "count_matrix"
+
+  step     LedgerPlanStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  artifact LedgerArtifact @relation(fields: [artifactId], references: [id])
+
+  @@id([stepId, artifactId])
+  @@map("ledger_step_input")
+}
