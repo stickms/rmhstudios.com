@@ -1,0 +1,25 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "discordbot",
+    srcs = [
+        "bot.go",
+        "chat.go",
+        "deepseek.go",
+        "interactions.go",
+        "rmhbot.go",
+    ],
+    importpath = "github.com/rmhstudios/rmh-go/internal/discordbot",
+    visibility = ["//go-services:__subpackages__"],
+    deps = [
+        "//go-services/pkg/db",
+        "//go-services/pkg/log",
+        "@com_github_bwmarrin_discordgo//:discordgo",
+    ],
+)
+
+go_test(
+    name = "discordbot_test",
+    srcs = ["discordbot_test.go"],
+    embed = [":discordbot"],
+)

@@ -1,0 +1,37 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "rmhtube",
+    srcs = [
+        "chat.go",
+        "events.go",
+        "manager.go",
+        "queue.go",
+        "repo.go",
+        "room.go",
+        "snapshot.go",
+        "sync.go",
+        "types.go",
+        "utils.go",
+    ],
+    importpath = "github.com/rmhstudios/rmh-go/internal/rmhtube",
+    visibility = ["//go-services:__subpackages__"],
+    deps = [
+        "//go-services/pkg/log",
+        "//go-services/pkg/realtime",
+        "//go-services/pkg/telemetry",
+        "@com_github_jackc_pgx_v5//:pgx",
+        "@com_github_jackc_pgx_v5//pgxpool",
+    ],
+)
+
+go_test(
+    name = "rmhtube_test",
+    srcs = ["rmhtube_test.go"],
+    embed = [":rmhtube"],
+    deps = [
+        "//go-services/pkg/events",
+        "//go-services/pkg/log",
+        "//go-services/pkg/realtime",
+    ],
+)
