@@ -166,6 +166,7 @@ function mapOwn(r: any, userId: string | null): FeedItem {
     original: mapOriginal(r.original),
     poll: isDeleted ? undefined : mapPoll(r.poll),
     gifUrl: isDeleted ? undefined : (r.gifUrl ?? undefined),
+    imageUrls: isDeleted ? undefined : r.imageUrls,
     deletedAt: r.deletedAt?.toISOString() || null,
     deletedByAdmin: r.deletedByAdmin,
   };
@@ -191,6 +192,7 @@ function mapRepost(rp: any, userId: string | null): FeedItem {
     original: mapOriginal(r.original),
     poll: isDeleted ? undefined : mapPoll(r.poll),
     gifUrl: isDeleted ? undefined : (r.gifUrl ?? undefined),
+    imageUrls: isDeleted ? undefined : r.imageUrls,
     deletedAt: r.deletedAt?.toISOString() || null,
     deletedByAdmin: r.deletedByAdmin,
   };

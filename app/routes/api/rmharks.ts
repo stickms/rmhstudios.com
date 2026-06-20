@@ -8,6 +8,7 @@ import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 import { feedEventBus } from "@/lib/feed-sse";
 import { parseHandles } from "@/lib/feed/mentions";
 import { getTimeline, type FeedSurface } from "@/lib/feed/timeline";
+import { ownsFeedImageUrl } from "@/lib/storage/keys";
 
 export const Route = createFileRoute('/api/rmharks')({
   server: {
@@ -80,13 +81,18 @@ export const Route = createFileRoute('/api/rmharks')({
       );
     }
 
-    const { content, poll, gifUrl } = parsed.data;
+    const { content, poll, gifUrl, imageUrls } = parsed.data;
+
+    if (imageUrls?.length && !imageUrls.every((u) => ownsFeedImageUrl(u, session.user.id))) {
+      return Response.json({ error: "Invalid image reference" }, { status: 400 });
+    }
 
     const rmhark = await prisma.$transaction(async (tx) => {
       const created = await tx.rMHark.create({
         data: {
           content: content.trim(),
           gifUrl: gifUrl ?? null,
+          imageUrls: imageUrls ?? [],
           userId: session.user.id,
         },
         include: {
@@ -153,6 +159,7 @@ export const Route = createFileRoute('/api/rmharks')({
       reposted: false,
       poll: pollData,
       gifUrl: rmhark.gifUrl ?? undefined,
+      imageUrls: rmhark.imageUrls,
     };
 
     // Publish to the SSE bus. The stream endpoint targets this to each

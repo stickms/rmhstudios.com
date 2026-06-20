@@ -162,6 +162,7 @@ import { Route as ApiRmhtubeOembedRouteImport } from './routes/api/rmhtube/oembe
 import { Route as ApiRmhboxStatsRouteImport } from './routes/api/rmhbox/stats'
 import { Route as ApiRmhboxLeaderboardRouteImport } from './routes/api/rmhbox/leaderboard'
 import { Route as ApiRmhboxHistoryRouteImport } from './routes/api/rmhbox/history'
+import { Route as ApiRmharksImageRouteImport } from './routes/api/rmharks/image'
 import { Route as ApiRmharksAiGenerateRouteImport } from './routes/api/rmharks/ai-generate'
 import { Route as ApiRmharksIdRouteImport } from './routes/api/rmharks/$id'
 import { Route as ApiProfileMeRouteImport } from './routes/api/profile/me'
@@ -249,6 +250,7 @@ import { Route as ApiMessagesConversationIdReadRouteImport } from './routes/api/
 import { Route as ApiGamesSynapseStormScoreRouteImport } from './routes/api/games/synapse-storm/score'
 import { Route as ApiGamesSynapseStormSaveRouteImport } from './routes/api/games/synapse-storm/save'
 import { Route as ApiGamesSynapseStormLeaderboardRouteImport } from './routes/api/games/synapse-storm/leaderboard'
+import { Route as ApiFeedImageFilenameRouteImport } from './routes/api/feed/image/$filename'
 import { Route as ApiDoctrineSahurStatusRouteImport } from './routes/api/doctrine/sahur/status'
 import { Route as ApiDoctrineSafehouseDisclosuresRouteImport } from './routes/api/doctrine/safehouse/disclosures'
 import { Route as ApiDoctrineSafehouseContentRouteImport } from './routes/api/doctrine/safehouse/content'
@@ -1053,6 +1055,11 @@ const ApiRmhboxHistoryRoute = ApiRmhboxHistoryRouteImport.update({
   path: '/api/rmhbox/history',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRmharksImageRoute = ApiRmharksImageRouteImport.update({
+  id: '/image',
+  path: '/image',
+  getParentRoute: () => ApiRmharksRoute,
+} as any)
 const ApiRmharksAiGenerateRoute = ApiRmharksAiGenerateRouteImport.update({
   id: '/ai-generate',
   path: '/ai-generate',
@@ -1505,6 +1512,11 @@ const ApiGamesSynapseStormLeaderboardRoute =
     path: '/api/games/synapse-storm/leaderboard',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiFeedImageFilenameRoute = ApiFeedImageFilenameRouteImport.update({
+  id: '/api/feed/image/$filename',
+  path: '/api/feed/image/$filename',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiDoctrineSahurStatusRoute = ApiDoctrineSahurStatusRouteImport.update({
   id: '/api/doctrine/sahur/status',
   path: '/api/doctrine/sahur/status',
@@ -1828,6 +1840,7 @@ export interface FileRoutesByFullPath {
   '/api/profile/me': typeof ApiProfileMeRoute
   '/api/rmharks/$id': typeof ApiRmharksIdRouteWithChildren
   '/api/rmharks/ai-generate': typeof ApiRmharksAiGenerateRoute
+  '/api/rmharks/image': typeof ApiRmharksImageRoute
   '/api/rmhbox/history': typeof ApiRmhboxHistoryRoute
   '/api/rmhbox/leaderboard': typeof ApiRmhboxLeaderboardRoute
   '/api/rmhbox/stats': typeof ApiRmhboxStatsRoute
@@ -1898,6 +1911,7 @@ export interface FileRoutesByFullPath {
   '/api/doctrine/safehouse/content': typeof ApiDoctrineSafehouseContentRoute
   '/api/doctrine/safehouse/disclosures': typeof ApiDoctrineSafehouseDisclosuresRoute
   '/api/doctrine/sahur/status': typeof ApiDoctrineSahurStatusRoute
+  '/api/feed/image/$filename': typeof ApiFeedImageFilenameRoute
   '/api/games/synapse-storm/leaderboard': typeof ApiGamesSynapseStormLeaderboardRoute
   '/api/games/synapse-storm/save': typeof ApiGamesSynapseStormSaveRoute
   '/api/games/synapse-storm/score': typeof ApiGamesSynapseStormScoreRoute
@@ -2077,6 +2091,7 @@ export interface FileRoutesByTo {
   '/api/profile/me': typeof ApiProfileMeRoute
   '/api/rmharks/$id': typeof ApiRmharksIdRouteWithChildren
   '/api/rmharks/ai-generate': typeof ApiRmharksAiGenerateRoute
+  '/api/rmharks/image': typeof ApiRmharksImageRoute
   '/api/rmhbox/history': typeof ApiRmhboxHistoryRoute
   '/api/rmhbox/leaderboard': typeof ApiRmhboxLeaderboardRoute
   '/api/rmhbox/stats': typeof ApiRmhboxStatsRoute
@@ -2147,6 +2162,7 @@ export interface FileRoutesByTo {
   '/api/doctrine/safehouse/content': typeof ApiDoctrineSafehouseContentRoute
   '/api/doctrine/safehouse/disclosures': typeof ApiDoctrineSafehouseDisclosuresRoute
   '/api/doctrine/sahur/status': typeof ApiDoctrineSahurStatusRoute
+  '/api/feed/image/$filename': typeof ApiFeedImageFilenameRoute
   '/api/games/synapse-storm/leaderboard': typeof ApiGamesSynapseStormLeaderboardRoute
   '/api/games/synapse-storm/save': typeof ApiGamesSynapseStormSaveRoute
   '/api/games/synapse-storm/score': typeof ApiGamesSynapseStormScoreRoute
@@ -2350,6 +2366,7 @@ export interface FileRoutesById {
   '/api/profile/me': typeof ApiProfileMeRoute
   '/api/rmharks/$id': typeof ApiRmharksIdRouteWithChildren
   '/api/rmharks/ai-generate': typeof ApiRmharksAiGenerateRoute
+  '/api/rmharks/image': typeof ApiRmharksImageRoute
   '/api/rmhbox/history': typeof ApiRmhboxHistoryRoute
   '/api/rmhbox/leaderboard': typeof ApiRmhboxLeaderboardRoute
   '/api/rmhbox/stats': typeof ApiRmhboxStatsRoute
@@ -2420,6 +2437,7 @@ export interface FileRoutesById {
   '/api/doctrine/safehouse/content': typeof ApiDoctrineSafehouseContentRoute
   '/api/doctrine/safehouse/disclosures': typeof ApiDoctrineSafehouseDisclosuresRoute
   '/api/doctrine/sahur/status': typeof ApiDoctrineSahurStatusRoute
+  '/api/feed/image/$filename': typeof ApiFeedImageFilenameRoute
   '/api/games/synapse-storm/leaderboard': typeof ApiGamesSynapseStormLeaderboardRoute
   '/api/games/synapse-storm/save': typeof ApiGamesSynapseStormSaveRoute
   '/api/games/synapse-storm/score': typeof ApiGamesSynapseStormScoreRoute
@@ -2623,6 +2641,7 @@ export interface FileRouteTypes {
     | '/api/profile/me'
     | '/api/rmharks/$id'
     | '/api/rmharks/ai-generate'
+    | '/api/rmharks/image'
     | '/api/rmhbox/history'
     | '/api/rmhbox/leaderboard'
     | '/api/rmhbox/stats'
@@ -2693,6 +2712,7 @@ export interface FileRouteTypes {
     | '/api/doctrine/safehouse/content'
     | '/api/doctrine/safehouse/disclosures'
     | '/api/doctrine/sahur/status'
+    | '/api/feed/image/$filename'
     | '/api/games/synapse-storm/leaderboard'
     | '/api/games/synapse-storm/save'
     | '/api/games/synapse-storm/score'
@@ -2872,6 +2892,7 @@ export interface FileRouteTypes {
     | '/api/profile/me'
     | '/api/rmharks/$id'
     | '/api/rmharks/ai-generate'
+    | '/api/rmharks/image'
     | '/api/rmhbox/history'
     | '/api/rmhbox/leaderboard'
     | '/api/rmhbox/stats'
@@ -2942,6 +2963,7 @@ export interface FileRouteTypes {
     | '/api/doctrine/safehouse/content'
     | '/api/doctrine/safehouse/disclosures'
     | '/api/doctrine/sahur/status'
+    | '/api/feed/image/$filename'
     | '/api/games/synapse-storm/leaderboard'
     | '/api/games/synapse-storm/save'
     | '/api/games/synapse-storm/score'
@@ -3144,6 +3166,7 @@ export interface FileRouteTypes {
     | '/api/profile/me'
     | '/api/rmharks/$id'
     | '/api/rmharks/ai-generate'
+    | '/api/rmharks/image'
     | '/api/rmhbox/history'
     | '/api/rmhbox/leaderboard'
     | '/api/rmhbox/stats'
@@ -3214,6 +3237,7 @@ export interface FileRouteTypes {
     | '/api/doctrine/safehouse/content'
     | '/api/doctrine/safehouse/disclosures'
     | '/api/doctrine/sahur/status'
+    | '/api/feed/image/$filename'
     | '/api/games/synapse-storm/leaderboard'
     | '/api/games/synapse-storm/save'
     | '/api/games/synapse-storm/score'
@@ -3387,6 +3411,7 @@ export interface RootRouteChildren {
   ApiDoctrineSafehouseContentRoute: typeof ApiDoctrineSafehouseContentRoute
   ApiDoctrineSafehouseDisclosuresRoute: typeof ApiDoctrineSafehouseDisclosuresRoute
   ApiDoctrineSahurStatusRoute: typeof ApiDoctrineSahurStatusRoute
+  ApiFeedImageFilenameRoute: typeof ApiFeedImageFilenameRoute
   ApiGamesSynapseStormLeaderboardRoute: typeof ApiGamesSynapseStormLeaderboardRoute
   ApiGamesSynapseStormSaveRoute: typeof ApiGamesSynapseStormSaveRoute
   ApiGamesSynapseStormScoreRoute: typeof ApiGamesSynapseStormScoreRoute
@@ -4474,6 +4499,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRmhboxHistoryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/rmharks/image': {
+      id: '/api/rmharks/image'
+      path: '/image'
+      fullPath: '/api/rmharks/image'
+      preLoaderRoute: typeof ApiRmharksImageRouteImport
+      parentRoute: typeof ApiRmharksRoute
+    }
     '/api/rmharks/ai-generate': {
       id: '/api/rmharks/ai-generate'
       path: '/ai-generate'
@@ -5081,6 +5113,13 @@ declare module '@tanstack/react-router' {
       path: '/api/games/synapse-storm/leaderboard'
       fullPath: '/api/games/synapse-storm/leaderboard'
       preLoaderRoute: typeof ApiGamesSynapseStormLeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/feed/image/$filename': {
+      id: '/api/feed/image/$filename'
+      path: '/api/feed/image/$filename'
+      fullPath: '/api/feed/image/$filename'
+      preLoaderRoute: typeof ApiFeedImageFilenameRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/doctrine/sahur/status': {
@@ -5837,11 +5876,13 @@ const ApiRmharksIdRouteWithChildren = ApiRmharksIdRoute._addFileChildren(
 interface ApiRmharksRouteChildren {
   ApiRmharksIdRoute: typeof ApiRmharksIdRouteWithChildren
   ApiRmharksAiGenerateRoute: typeof ApiRmharksAiGenerateRoute
+  ApiRmharksImageRoute: typeof ApiRmharksImageRoute
 }
 
 const ApiRmharksRouteChildren: ApiRmharksRouteChildren = {
   ApiRmharksIdRoute: ApiRmharksIdRouteWithChildren,
   ApiRmharksAiGenerateRoute: ApiRmharksAiGenerateRoute,
+  ApiRmharksImageRoute: ApiRmharksImageRoute,
 }
 
 const ApiRmharksRouteWithChildren = ApiRmharksRoute._addFileChildren(
@@ -6055,6 +6096,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDoctrineSafehouseContentRoute: ApiDoctrineSafehouseContentRoute,
   ApiDoctrineSafehouseDisclosuresRoute: ApiDoctrineSafehouseDisclosuresRoute,
   ApiDoctrineSahurStatusRoute: ApiDoctrineSahurStatusRoute,
+  ApiFeedImageFilenameRoute: ApiFeedImageFilenameRoute,
   ApiGamesSynapseStormLeaderboardRoute: ApiGamesSynapseStormLeaderboardRoute,
   ApiGamesSynapseStormSaveRoute: ApiGamesSynapseStormSaveRoute,
   ApiGamesSynapseStormScoreRoute: ApiGamesSynapseStormScoreRoute,
