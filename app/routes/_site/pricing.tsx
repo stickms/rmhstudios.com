@@ -141,7 +141,7 @@ function Pricing() {
   }
 
   return (
-    <div className="pricing-root relative isolate w-full min-w-0 overflow-hidden">
+    <div className="pricing-root relative isolate min-h-screen w-full min-w-0 overflow-hidden">
       <PricingStyles />
 
       {/* ── Atmosphere ───────────────────────────────────────── */}
@@ -149,7 +149,10 @@ function Pricing() {
       <div aria-hidden className="pricing-grid" />
       <div aria-hidden className="pricing-grain" />
 
-      <div className="relative mx-auto max-w-6xl px-5 py-16 sm:py-24">
+      {/* Left-aligned + flush to the sidebar, matching the homepage and other
+          _site pages (no mx-auto centering). Capped width so the cards don't
+          stretch on ultrawide; the atmospheric background fills the rest. */}
+      <div className="relative max-w-5xl px-5 py-16 sm:px-8 sm:py-20">
         {/* ── Status banner ──────────────────────────────────── */}
         {status && (
           <div
