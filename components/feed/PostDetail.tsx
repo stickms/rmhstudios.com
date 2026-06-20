@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser } from '@/components/Providers';
 import { useFreshUser, useUserDisplayStore } from '@/stores/userDisplayStore';
+import { useFeedStore } from '@/stores/feedStore';
 import { RMHarkActions } from './RMHarkActions';
 import { CommentItem } from './CommentItem';
 import { AIGenerateButton } from './AIGenerateButton';
@@ -41,6 +42,25 @@ export function PostDetail({ postId }: PostDetailProps) {
   const [engagementModal, setEngagementModal] = useState<'likes' | 'reposts' | null>(null);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Keep the shared feed store in sync with engagement that happens here, so
+  // navigating back to the feed reflects the new counts instead of stale ones.
+  const syncToFeed = useCallback((updates: Partial<FeedItem>) => {
+    const store = useFeedStore.getState();
+    if (store.items.some((i) => i.id === postId)) {
+      store.updateItem(postId, updates);
+    }
+  }, [postId]);
+
+  const bumpFeedComment = useCallback((delta: number) => {
+    const store = useFeedStore.getState();
+    const current = store.items.find((i) => i.id === postId);
+    if (current) {
+      store.updateItem(postId, {
+        commentCount: Math.max(0, (current.commentCount ?? 0) + delta),
+      });
+    }
+  }, [postId]);
 
   const linkPreviewUrl = useMemo(() => {
     if (!post || post.poll || post.gifUrl || !post.content) return null;
@@ -129,6 +149,7 @@ export function PostDetail({ postId }: PostDetailProps) {
         setComments((prev) => [comment, ...prev]);
         setCommentContent('');
         setPost((prev) => prev ? { ...prev, commentCount: (prev.commentCount ?? 0) + 1 } : prev);
+        bumpFeedComment(1);
       }
     } catch (error) {
       console.error('Comment error:', error);
@@ -150,7 +171,8 @@ export function PostDetail({ postId }: PostDetailProps) {
       });
     setComments((prev) => addReplyDeep(prev));
     setPost((prev) => prev ? { ...prev, commentCount: (prev.commentCount ?? 0) + 1 } : prev);
-  }, []);
+    bumpFeedComment(1);
+  }, [bumpFeedComment]);
 
   const handleCommentRemoved = useCallback((commentId: string) => {
     const removeDeep = (comments: Comment[]): Comment[] =>
@@ -159,7 +181,8 @@ export function PostDetail({ postId }: PostDetailProps) {
         .map((c) => c.replies?.length ? { ...c, replies: removeDeep(c.replies) } : c);
     setComments((prev) => removeDeep(prev));
     setPost((prev) => prev ? { ...prev, commentCount: Math.max(0, (prev.commentCount ?? 0) - 1) } : prev);
-  }, []);
+    bumpFeedComment(-1);
+  }, [bumpFeedComment]);
 
   const formatFullDate = (dateStr: string) => {
     const d = new Date(dateStr);
@@ -328,7 +351,10 @@ export function PostDetail({ postId }: PostDetailProps) {
           <div className="border-t border-site-border pt-1">
             <RMHarkActions
               item={post}
-              onUpdate={(_, updates) => setPost((prev) => prev ? { ...prev, ...updates } : prev)}
+              onUpdate={(_, updates) => {
+                setPost((prev) => prev ? { ...prev, ...updates } : prev);
+                syncToFeed(updates);
+              }}
             />
           </div>
         )}
