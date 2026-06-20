@@ -22,11 +22,11 @@ use_repo(go_deps, "com_github_bwmarrin_discordgo", "com_github_chromedp_chromedp
 oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
 oci.pull(
     name = "distroless_base",
+    digest = "sha256:d093aa3e30dbadd3efe1310db061a14da60299baff8450a17fe0ccc514a16639",
     image = "gcr.io/distroless/static-debian12",
     platforms = [
         "linux/amd64",
-        "linux/arm64",
+        "linux/arm64/v8",
     ],
-    tag = "nonroot",
 )
-use_repo(oci, "distroless_base", "distroless_base_linux_amd64", "distroless_base_linux_arm64")
+use_repo(oci, "distroless_base", "distroless_base_linux_amd64", "distroless_base_linux_arm64_v8")
