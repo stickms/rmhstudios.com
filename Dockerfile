@@ -169,6 +169,22 @@ RUN test -d /app/build-output && \
     test -f /app/build-output/public/models/marlonjack.glb && \
     test -f /app/build-output/public/vibe-packages/react.js
 
+# ── Slim runtime image: drop assets that Apache serves off the host disk ──────
+# In production, Apache serves /library, /music, /models and /sprites directly
+# from the host's public/ checkout (see deploy/apache/rmhstudios.com.conf), so
+# these requests never reach the Node app — the container's own copy is dead
+# weight (~500 MB, mostly public/library). Prune them from the Nitro output
+# AFTER the validation above (which needs models/) and AFTER library cover
+# generation (which already ran in `library:metadata`). Everything still served
+# by Node — public/images (default avatar, read server-side), public/vibe-packages,
+# favicon, brand, etc. — is intentionally kept. (music/ and sprites/ are already
+# excluded from the build context via .dockerignore; the rm is a harmless no-op
+# for them.)
+RUN rm -rf /app/build-output/public/library \
+           /app/build-output/public/models \
+           /app/build-output/public/music \
+           /app/build-output/public/sprites
+
 # ── Stage 4: Production runner ────────────────────────────────────────────
 FROM node:24-alpine AS runner
 

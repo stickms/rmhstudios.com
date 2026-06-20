@@ -216,6 +216,16 @@ async function main() {
   const files = (await readdir(LIBRARY_DIR)).filter((f) => f.toLowerCase().endsWith('.pdf')).sort();
   console.log(`Found ${files.length} PDF(s) in public/library.`);
 
+  // No PDFs present? This happens by design inside the Docker build, where the
+  // library PDFs (~488 MB) are excluded from the build context via .dockerignore
+  // (the committed data/library-metadata.json + covers are all the image needs;
+  // the PDFs themselves are served by Apache off the host disk). Bail WITHOUT
+  // writing, so we never clobber the committed metadata with an empty object.
+  if (files.length === 0) {
+    console.log('No PDFs in public/library — keeping committed metadata as-is (nothing to generate).');
+    return;
+  }
+
   const out: Record<string, LibraryMeta> = {};
   for (const file of files) {
     const coverName = `${file.replace(/\.pdf$/i, '')}.jpg`;

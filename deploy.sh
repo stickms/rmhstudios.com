@@ -463,6 +463,36 @@ else
 fi
 step_done
 
+# ── Step 1e: Generate library covers + metadata (automatic) ──────────────────
+# New library PDFs need a rendered first-page cover + a catalogue entry in
+# data/library-metadata.json (which lib/library imports at build time). Cover
+# rendering needs the PDF bytes (host checkout) + the canvas/pdfjs toolchain
+# (in the app image), but the PDFs are deliberately kept out of the build
+# context (.dockerignore) to keep builds small/fast — so we generate HERE, on
+# the host, before the build:
+#   - Run the previous app image as a one-shot with the host's public/ and data/
+#     bind-mounted. The script (idempotent) renders only NEW covers into
+#     public/library/covers (Apache serves them off the host) and rewrites
+#     data/library-metadata.json, which `vite build` then bakes into the image.
+#   - --user maps to the host user so it can write the mounted dirs.
+#   - Best-effort: any failure (no prior image, no toolchain, render error)
+#     falls back to the committed metadata and NEVER blocks the deploy.
+if "$DOCKER_BIN" image inspect "${IMAGE_NAME}:latest" >/dev/null 2>&1; then
+    step_start "Generating library covers + metadata..."
+    "$DOCKER_BIN" run --rm \
+        --user "$(id -u):$(id -g)" \
+        --env-file "$ENV_FILE" \
+        -v "${REPO_DIR}/public:/app/public" \
+        -v "${REPO_DIR}/data:/app/data" \
+        --entrypoint node \
+        "${IMAGE_NAME}:latest" \
+        scripts/generate-library-metadata.ts \
+        || log "WARNING: library cover/metadata generation failed — using committed metadata."
+    step_done
+else
+    log "No prior ${IMAGE_NAME}:latest image — skipping library cover generation (first deploy; using committed metadata)."
+fi
+
 # ── Step 2: Build Docker image ──────────────────────────────────────────────
 # The Dockerfile uses parallel BuildKit stages:
 #   - server-builder (esbuild, env-agnostic → fully cached between envs)
