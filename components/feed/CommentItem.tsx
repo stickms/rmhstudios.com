@@ -57,15 +57,26 @@ function formatCount(n: number | undefined): string {
   return String(n);
 }
 
+// How many levels of replies to indent before collapsing the rest behind a
+// "Show more replies" button. Keeps deep chains from running off-screen.
+const MAX_NESTED_DEPTH = 4;
+
+function countDescendants(replies: Comment[] | undefined): number {
+  if (!replies?.length) return 0;
+  return replies.reduce((total, r) => total + 1 + countDescendants(r.replies), 0);
+}
+
 interface CommentItemProps {
   comment: Comment;
   postId: string;
   sessionUser?: SessionUser | null;
   onReplyAdded?: (parentId: string, reply: Comment) => void;
   onCommentRemoved?: (commentId: string) => void;
+  /** Nesting level — used to cap indentation on long reply chains. */
+  depth?: number;
 }
 
-export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onCommentRemoved }: CommentItemProps) {
+export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onCommentRemoved, depth = 0 }: CommentItemProps) {
   const freshCommentUser = useFreshUser(comment.user) ?? comment.user;
   const [replyOpen, setReplyOpen] = useState(false);
   const [replyContent, setReplyContent] = useState('');
@@ -80,7 +91,13 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
   const viewTracked = useRef(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [engagementModal, setEngagementModal] = useState<'likes' | 'reposts' | null>(null);
+  const [threadExpanded, setThreadExpanded] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const hasReplies = !!comment.replies?.length;
+  // At the depth cap, collapse the remaining chain behind a button instead of
+  // indenting further (which would push content out of bounds).
+  const collapseThread = depth >= MAX_NESTED_DEPTH && hasReplies && !threadExpanded;
 
   const isAuthor = sessionUser?.id === comment.userId;
 
@@ -369,19 +386,32 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
           )}
 
           {/* Threaded replies */}
-          {comment.replies && comment.replies.length > 0 && (
-            <div className="mt-2 ml-2 border-l-2 border-site-border pl-3 space-y-1">
-              {comment.replies.map((reply) => (
-                <CommentItem
-                  key={reply.id}
-                  comment={reply}
-                  postId={postId}
-                  sessionUser={sessionUser}
-                  onReplyAdded={onReplyAdded}
-                  onCommentRemoved={onCommentRemoved}
-                />
-              ))}
-            </div>
+          {hasReplies && (
+            collapseThread ? (
+              <button
+                onClick={() => setThreadExpanded(true)}
+                className="mt-2 ml-2 flex items-center gap-1.5 text-xs font-medium text-site-accent hover:underline"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                Show {countDescendants(comment.replies)} more {countDescendants(comment.replies) === 1 ? 'reply' : 'replies'}
+              </button>
+            ) : (
+              <div className="mt-2 ml-2 border-l-2 border-site-border pl-3 space-y-1">
+                {comment.replies!.map((reply) => (
+                  <CommentItem
+                    key={reply.id}
+                    comment={reply}
+                    postId={postId}
+                    sessionUser={sessionUser}
+                    onReplyAdded={onReplyAdded}
+                    onCommentRemoved={onCommentRemoved}
+                    // Reset depth after an expanded thread so indentation
+                    // restarts shallow instead of running off-screen.
+                    depth={threadExpanded ? 0 : depth + 1}
+                  />
+                ))}
+              </div>
+            )
           )}
         </div>
       </div>

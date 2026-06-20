@@ -21,7 +21,6 @@ import { Route as SliceItRouteImport } from './routes/slice-it'
 import { Route as SecretRouteImport } from './routes/secret'
 import { Route as RmhtypeRouteImport } from './routes/rmhtype'
 import { Route as RmhtubeRouteImport } from './routes/rmhtube'
-import { Route as AdaptiveIntelligenceRouteImport } from './routes/adaptive-intelligence'
 import { Route as RmhstudyRouteImport } from './routes/rmhstudy'
 import { Route as RmhmusicRouteImport } from './routes/rmhmusic'
 import { Route as RmhcodeRouteImport } from './routes/rmhcode'
@@ -37,6 +36,7 @@ import { Route as DailyRouteImport } from './routes/daily'
 import { Route as CopyrightRouteImport } from './routes/copyright'
 import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as AltairRouteImport } from './routes/altair'
+import { Route as AdaptiveIntelligenceRouteImport } from './routes/adaptive-intelligence'
 import { Route as SiteRouteImport } from './routes/_site'
 import { Route as VersecraftIndexRouteImport } from './routes/versecraft/index'
 import { Route as TempleOfJoyIndexRouteImport } from './routes/temple-of-joy/index'
@@ -333,11 +333,6 @@ const RmhtubeRoute = RmhtubeRouteImport.update({
   path: '/rmhtube',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdaptiveIntelligenceRoute = AdaptiveIntelligenceRouteImport.update({
-  id: '/adaptive-intelligence',
-  path: '/adaptive-intelligence',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const RmhstudyRoute = RmhstudyRouteImport.update({
   id: '/rmhstudy',
   path: '/rmhstudy',
@@ -411,6 +406,11 @@ const CookiesRoute = CookiesRouteImport.update({
 const AltairRoute = AltairRouteImport.update({
   id: '/altair',
   path: '/altair',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdaptiveIntelligenceRoute = AdaptiveIntelligenceRouteImport.update({
+  id: '/adaptive-intelligence',
+  path: '/adaptive-intelligence',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SiteRoute = SiteRouteImport.update({
@@ -1634,6 +1634,7 @@ const ApiRmharksIdCommentCommentIdLikeRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof SiteIndexRoute
+  '/adaptive-intelligence': typeof AdaptiveIntelligenceRoute
   '/altair': typeof AltairRouteWithChildren
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
@@ -1649,7 +1650,6 @@ export interface FileRoutesByFullPath {
   '/rmhcode': typeof RmhcodeRouteWithChildren
   '/rmhmusic': typeof RmhmusicRouteWithChildren
   '/rmhstudy': typeof RmhstudyRouteWithChildren
-  '/adaptive-intelligence': typeof AdaptiveIntelligenceRoute
   '/rmhtube': typeof RmhtubeRouteWithChildren
   '/rmhtype': typeof RmhtypeRouteWithChildren
   '/secret': typeof SecretRouteWithChildren
@@ -1897,6 +1897,7 @@ export interface FileRoutesByFullPath {
   '/api/rmharks/$id/comment/$commentId/view': typeof ApiRmharksIdCommentCommentIdViewRoute
 }
 export interface FileRoutesByTo {
+  '/adaptive-intelligence': typeof AdaptiveIntelligenceRoute
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
   '/laundry-sort': typeof LaundrySortRoute
@@ -1904,7 +1905,6 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/neon-driftway': typeof NeonDriftwayRoute
   '/privacy': typeof PrivacyRoute
-  '/adaptive-intelligence': typeof AdaptiveIntelligenceRoute
   '/synapse-storm': typeof SynapseStormRoute
   '/terms': typeof TermsRoute
   '/velum2099': typeof Velum2099Route
@@ -2141,6 +2141,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_site': typeof SiteRouteWithChildren
+  '/adaptive-intelligence': typeof AdaptiveIntelligenceRoute
   '/altair': typeof AltairRouteWithChildren
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
@@ -2156,7 +2157,6 @@ export interface FileRoutesById {
   '/rmhcode': typeof RmhcodeRouteWithChildren
   '/rmhmusic': typeof RmhmusicRouteWithChildren
   '/rmhstudy': typeof RmhstudyRouteWithChildren
-  '/adaptive-intelligence': typeof AdaptiveIntelligenceRoute
   '/rmhtube': typeof RmhtubeRouteWithChildren
   '/rmhtype': typeof RmhtypeRouteWithChildren
   '/secret': typeof SecretRouteWithChildren
@@ -2408,6 +2408,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/adaptive-intelligence'
     | '/altair'
     | '/cookies'
     | '/copyright'
@@ -2423,7 +2424,6 @@ export interface FileRouteTypes {
     | '/rmhcode'
     | '/rmhmusic'
     | '/rmhstudy'
-    | '/adaptive-intelligence'
     | '/rmhtube'
     | '/rmhtype'
     | '/secret'
@@ -2671,6 +2671,7 @@ export interface FileRouteTypes {
     | '/api/rmharks/$id/comment/$commentId/view'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/adaptive-intelligence'
     | '/cookies'
     | '/copyright'
     | '/laundry-sort'
@@ -2678,7 +2679,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/neon-driftway'
     | '/privacy'
-    | '/adaptive-intelligence'
     | '/synapse-storm'
     | '/terms'
     | '/velum2099'
@@ -2914,6 +2914,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_site'
+    | '/adaptive-intelligence'
     | '/altair'
     | '/cookies'
     | '/copyright'
@@ -2929,7 +2930,6 @@ export interface FileRouteTypes {
     | '/rmhcode'
     | '/rmhmusic'
     | '/rmhstudy'
-    | '/adaptive-intelligence'
     | '/rmhtube'
     | '/rmhtype'
     | '/secret'
@@ -3180,6 +3180,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   SiteRoute: typeof SiteRouteWithChildren
+  AdaptiveIntelligenceRoute: typeof AdaptiveIntelligenceRoute
   AltairRoute: typeof AltairRouteWithChildren
   CookiesRoute: typeof CookiesRoute
   CopyrightRoute: typeof CopyrightRoute
@@ -3195,7 +3196,6 @@ export interface RootRouteChildren {
   RmhcodeRoute: typeof RmhcodeRouteWithChildren
   RmhmusicRoute: typeof RmhmusicRouteWithChildren
   RmhstudyRoute: typeof RmhstudyRouteWithChildren
-  AdaptiveIntelligenceRoute: typeof AdaptiveIntelligenceRoute
   RmhtubeRoute: typeof RmhtubeRouteWithChildren
   RmhtypeRoute: typeof RmhtypeRouteWithChildren
   SecretRoute: typeof SecretRouteWithChildren
@@ -3397,13 +3397,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RmhtubeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/adaptive-intelligence': {
-      id: '/adaptive-intelligence'
-      path: '/adaptive-intelligence'
-      fullPath: '/adaptive-intelligence'
-      preLoaderRoute: typeof AdaptiveIntelligenceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/rmhstudy': {
       id: '/rmhstudy'
       path: '/rmhstudy'
@@ -3507,6 +3500,13 @@ declare module '@tanstack/react-router' {
       path: '/altair'
       fullPath: '/altair'
       preLoaderRoute: typeof AltairRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/adaptive-intelligence': {
+      id: '/adaptive-intelligence'
+      path: '/adaptive-intelligence'
+      fullPath: '/adaptive-intelligence'
+      preLoaderRoute: typeof AdaptiveIntelligenceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_site': {
@@ -5789,6 +5789,7 @@ const ApiAdminCuratedBuildsImageRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   SiteRoute: SiteRouteWithChildren,
+  AdaptiveIntelligenceRoute: AdaptiveIntelligenceRoute,
   AltairRoute: AltairRouteWithChildren,
   CookiesRoute: CookiesRoute,
   CopyrightRoute: CopyrightRoute,
@@ -5804,7 +5805,6 @@ const rootRouteChildren: RootRouteChildren = {
   RmhcodeRoute: RmhcodeRouteWithChildren,
   RmhmusicRoute: RmhmusicRouteWithChildren,
   RmhstudyRoute: RmhstudyRouteWithChildren,
-  AdaptiveIntelligenceRoute: AdaptiveIntelligenceRoute,
   RmhtubeRoute: RmhtubeRouteWithChildren,
   RmhtypeRoute: RmhtypeRouteWithChildren,
   SecretRoute: SecretRouteWithChildren,

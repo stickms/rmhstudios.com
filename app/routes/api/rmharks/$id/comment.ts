@@ -33,19 +33,17 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
         : {}),
     } as const;
 
+    // Fetch every comment for this post (flat), then build the full reply
+    // tree in memory. Prisma can only nest a fixed number of `replies`
+    // levels, so deep chains (reply-to-a-reply-to-a-reply…) must be
+    // assembled here or they'd never reach the client.
     const comments = await prisma.rMHarkComment.findMany({
-      where: { rmheetId: id, parentId: null },
-      orderBy: { createdAt: "desc" },
-      include: {
-        ...commentInclude,
-        replies: {
-          orderBy: { createdAt: "asc" },
-          include: commentInclude,
-        },
-      },
+      where: { rmheetId: id },
+      orderBy: { createdAt: "asc" },
+      include: commentInclude,
     });
 
-    const resolveComment = (c: typeof comments[number] | typeof comments[number]["replies"][number]) => {
+    const resolveComment = (c: typeof comments[number]) => {
       const isDeleted = !!c.deletedAt;
       const deletedMessage = c.deletedByAdmin 
         ? "[This reply was deleted by an admin]" 
@@ -70,12 +68,28 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
       };
     };
 
-    const resolved = comments.map((c) => ({
-      ...resolveComment(c),
-      replies: "replies" in c ? c.replies.map(resolveComment) : [],
-    }));
+    // Build the nested tree. Comments were fetched oldest-first, so each
+    // parent's `replies` ends up in ascending chronological order.
+    type ResolvedComment = ReturnType<typeof resolveComment> & { replies: ResolvedComment[] };
+    const byId = new Map<string, ResolvedComment>();
+    for (const c of comments) {
+      byId.set(c.id, { ...resolveComment(c), replies: [] });
+    }
 
-    return Response.json(resolved);
+    const roots: ResolvedComment[] = [];
+    for (const node of byId.values()) {
+      const parent = node.parentId ? byId.get(node.parentId) : null;
+      if (parent) {
+        parent.replies.push(node);
+      } else {
+        roots.push(node);
+      }
+    }
+
+    // Top-level comments are shown newest-first.
+    roots.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    return Response.json(roots);
   } catch (error) {
     console.error("Fetch comments error:", error);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
