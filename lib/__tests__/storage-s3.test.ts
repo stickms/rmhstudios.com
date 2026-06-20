@@ -10,12 +10,16 @@ vi.mock("@aws-sdk/client-s3", () => {
   class NoSuchKey extends Error {
     name = "NoSuchKey";
   }
+  class PutObjectCommand { __type = "Put"; input: any; constructor(input: any) { this.input = input; } }
+  class GetObjectCommand { __type = "Get"; input: any; constructor(input: any) { this.input = input; } }
+  class DeleteObjectCommand { __type = "Delete"; input: any; constructor(input: any) { this.input = input; } }
+  class HeadObjectCommand { __type = "Head"; input: any; constructor(input: any) { this.input = input; } }
   return {
     S3Client,
-    PutObjectCommand: vi.fn((input) => ({ __type: "Put", input })),
-    GetObjectCommand: vi.fn((input) => ({ __type: "Get", input })),
-    DeleteObjectCommand: vi.fn((input) => ({ __type: "Delete", input })),
-    HeadObjectCommand: vi.fn((input) => ({ __type: "Head", input })),
+    PutObjectCommand,
+    GetObjectCommand,
+    DeleteObjectCommand,
+    HeadObjectCommand,
     NoSuchKey,
   };
 });

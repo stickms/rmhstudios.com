@@ -32,25 +32,13 @@ function getClient(): S3Client {
   return client;
 }
 
-// Command factories — called as functions (not constructors) so that
-// vi.fn() arrow-function mocks in tests remain compatible.
-// In the real SDK these are classes, but calling them as functions works
-// identically because they return plain command objects.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type CmdFactory = (params: any) => any;
-
-const Put = PutObjectCommand as unknown as CmdFactory;
-const Get = GetObjectCommand as unknown as CmdFactory;
-const Del = DeleteObjectCommand as unknown as CmdFactory;
-const Head = HeadObjectCommand as unknown as CmdFactory;
-
 export async function putObject(
   key: string,
   body: Buffer,
   contentType: string
 ): Promise<void> {
   await getClient().send(
-    Put({
+    new PutObjectCommand({
       Bucket: getBucket(),
       Key: key,
       Body: body,
@@ -64,7 +52,7 @@ export async function getObject(
 ): Promise<{ body: Buffer; contentType: string } | null> {
   try {
     const res = await getClient().send(
-      Get({ Bucket: getBucket(), Key: key })
+      new GetObjectCommand({ Bucket: getBucket(), Key: key })
     );
     const bytes = await (res.Body as {
       transformToByteArray: () => Promise<Uint8Array>;
@@ -83,14 +71,14 @@ export async function getObject(
 
 export async function deleteObject(key: string): Promise<void> {
   await getClient().send(
-    Del({ Bucket: getBucket(), Key: key })
+    new DeleteObjectCommand({ Bucket: getBucket(), Key: key })
   );
 }
 
 export async function objectExists(key: string): Promise<boolean> {
   try {
     await getClient().send(
-      Head({ Bucket: getBucket(), Key: key })
+      new HeadObjectCommand({ Bucket: getBucket(), Key: key })
     );
     return true;
   } catch {
