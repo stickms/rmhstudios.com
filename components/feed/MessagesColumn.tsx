@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { Loader2, ArrowLeft, MessageCircle } from 'lucide-react';
+import { Loader2, ArrowLeft, MessageCircle, CheckCheck } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Link } from '@tanstack/react-router';
 import { useSession } from '@/components/Providers';
@@ -32,6 +32,7 @@ export function MessagesColumn() {
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [markingAll, setMarkingAll] = useState(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const initialFetched = useRef(false);
 
@@ -62,6 +63,27 @@ export function MessagesColumn() {
       setLoadingMore(false);
     }
   }, [cursor, loadingMore]);
+
+  const markAllAsRead = useCallback(async () => {
+    if (markingAll) return;
+    setMarkingAll(true);
+    // Optimistically clear unread badges.
+    setConversations((prev) =>
+      prev.map((c) => (c.unreadCount > 0 ? { ...c, unreadCount: 0 } : c))
+    );
+    try {
+      const res = await fetch('/api/messages/read-all', { method: 'POST' });
+      if (!res.ok) {
+        // Roll back by refetching the authoritative list.
+        fetchConversations(true);
+      }
+    } catch (error) {
+      console.error('Mark all as read error:', error);
+      fetchConversations(true);
+    } finally {
+      setMarkingAll(false);
+    }
+  }, [markingAll, fetchConversations]);
 
   useEffect(() => {
     if (!initialFetched.current && session) {
@@ -207,17 +229,31 @@ export function MessagesColumn() {
     );
   }
 
+  const hasUnread = conversations.some((c) => c.unreadCount > 0);
+
   return (
     <div className="flex flex-col">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-site-bg/85 backdrop-blur-md border-b border-site-border">
-        <div className="flex items-center gap-3 px-4 py-3">
-          <Link to="/" className="p-1.5 -ml-1.5 rounded-lg hover:bg-site-surface transition-colors">
-            <ArrowLeft className="w-5 h-5 text-site-text" />
-          </Link>
-          <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text">
-            Messages
-          </h1>
+        <div className="flex items-center justify-between gap-3 px-4 py-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <Link to="/" className="p-1.5 -ml-1.5 rounded-lg hover:bg-site-surface transition-colors">
+              <ArrowLeft className="w-5 h-5 text-site-text" />
+            </Link>
+            <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text">
+              Messages
+            </h1>
+          </div>
+          <button
+            type="button"
+            onClick={markAllAsRead}
+            disabled={!hasUnread || markingAll}
+            className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-site-accent transition-colors hover:bg-site-accent-dim disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+            title="Mark all conversations as read"
+          >
+            {markingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCheck className="w-4 h-4" />}
+            <span className="hidden sm:inline">Mark all as read</span>
+          </button>
         </div>
       </div>
 

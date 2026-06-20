@@ -174,6 +174,7 @@ import { Route as ApiNeonDriftwayLeaderboardRouteImport } from './routes/api/neo
 import { Route as ApiMessagesUnreadCountRouteImport } from './routes/api/messages/unread-count'
 import { Route as ApiMessagesStreamRouteImport } from './routes/api/messages/stream'
 import { Route as ApiMessagesSidebarRouteImport } from './routes/api/messages/sidebar'
+import { Route as ApiMessagesReadAllRouteImport } from './routes/api/messages/read-all'
 import { Route as ApiMessagesConversationIdRouteImport } from './routes/api/messages/$conversationId'
 import { Route as ApiLaundrySortScoreRouteImport } from './routes/api/laundry-sort/score'
 import { Route as ApiLaundrySortLeaderboardRouteImport } from './routes/api/laundry-sort/leaderboard'
@@ -1109,6 +1110,11 @@ const ApiMessagesSidebarRoute = ApiMessagesSidebarRouteImport.update({
   path: '/sidebar',
   getParentRoute: () => ApiMessagesRoute,
 } as any)
+const ApiMessagesReadAllRoute = ApiMessagesReadAllRouteImport.update({
+  id: '/read-all',
+  path: '/read-all',
+  getParentRoute: () => ApiMessagesRoute,
+} as any)
 const ApiMessagesConversationIdRoute =
   ApiMessagesConversationIdRouteImport.update({
     id: '/$conversationId',
@@ -1781,6 +1787,7 @@ export interface FileRoutesByFullPath {
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
   '/api/laundry-sort/score': typeof ApiLaundrySortScoreRoute
   '/api/messages/$conversationId': typeof ApiMessagesConversationIdRouteWithChildren
+  '/api/messages/read-all': typeof ApiMessagesReadAllRoute
   '/api/messages/sidebar': typeof ApiMessagesSidebarRoute
   '/api/messages/stream': typeof ApiMessagesStreamRoute
   '/api/messages/unread-count': typeof ApiMessagesUnreadCountRoute
@@ -2025,6 +2032,7 @@ export interface FileRoutesByTo {
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
   '/api/laundry-sort/score': typeof ApiLaundrySortScoreRoute
   '/api/messages/$conversationId': typeof ApiMessagesConversationIdRouteWithChildren
+  '/api/messages/read-all': typeof ApiMessagesReadAllRoute
   '/api/messages/sidebar': typeof ApiMessagesSidebarRoute
   '/api/messages/stream': typeof ApiMessagesStreamRoute
   '/api/messages/unread-count': typeof ApiMessagesUnreadCountRoute
@@ -2293,6 +2301,7 @@ export interface FileRoutesById {
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
   '/api/laundry-sort/score': typeof ApiLaundrySortScoreRoute
   '/api/messages/$conversationId': typeof ApiMessagesConversationIdRouteWithChildren
+  '/api/messages/read-all': typeof ApiMessagesReadAllRoute
   '/api/messages/sidebar': typeof ApiMessagesSidebarRoute
   '/api/messages/stream': typeof ApiMessagesStreamRoute
   '/api/messages/unread-count': typeof ApiMessagesUnreadCountRoute
@@ -2561,6 +2570,7 @@ export interface FileRouteTypes {
     | '/api/laundry-sort/leaderboard'
     | '/api/laundry-sort/score'
     | '/api/messages/$conversationId'
+    | '/api/messages/read-all'
     | '/api/messages/sidebar'
     | '/api/messages/stream'
     | '/api/messages/unread-count'
@@ -2805,6 +2815,7 @@ export interface FileRouteTypes {
     | '/api/laundry-sort/leaderboard'
     | '/api/laundry-sort/score'
     | '/api/messages/$conversationId'
+    | '/api/messages/read-all'
     | '/api/messages/sidebar'
     | '/api/messages/stream'
     | '/api/messages/unread-count'
@@ -3072,6 +3083,7 @@ export interface FileRouteTypes {
     | '/api/laundry-sort/leaderboard'
     | '/api/laundry-sort/score'
     | '/api/messages/$conversationId'
+    | '/api/messages/read-all'
     | '/api/messages/sidebar'
     | '/api/messages/stream'
     | '/api/messages/unread-count'
@@ -4494,6 +4506,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMessagesSidebarRouteImport
       parentRoute: typeof ApiMessagesRoute
     }
+    '/api/messages/read-all': {
+      id: '/api/messages/read-all'
+      path: '/read-all'
+      fullPath: '/api/messages/read-all'
+      preLoaderRoute: typeof ApiMessagesReadAllRouteImport
+      parentRoute: typeof ApiMessagesRoute
+    }
     '/api/messages/$conversationId': {
       id: '/api/messages/$conversationId'
       path: '/$conversationId'
@@ -5615,6 +5634,7 @@ const ApiMessagesConversationIdRouteWithChildren =
 
 interface ApiMessagesRouteChildren {
   ApiMessagesConversationIdRoute: typeof ApiMessagesConversationIdRouteWithChildren
+  ApiMessagesReadAllRoute: typeof ApiMessagesReadAllRoute
   ApiMessagesSidebarRoute: typeof ApiMessagesSidebarRoute
   ApiMessagesStreamRoute: typeof ApiMessagesStreamRoute
   ApiMessagesUnreadCountRoute: typeof ApiMessagesUnreadCountRoute
@@ -5622,6 +5642,7 @@ interface ApiMessagesRouteChildren {
 
 const ApiMessagesRouteChildren: ApiMessagesRouteChildren = {
   ApiMessagesConversationIdRoute: ApiMessagesConversationIdRouteWithChildren,
+  ApiMessagesReadAllRoute: ApiMessagesReadAllRoute,
   ApiMessagesSidebarRoute: ApiMessagesSidebarRoute,
   ApiMessagesStreamRoute: ApiMessagesStreamRoute,
   ApiMessagesUnreadCountRoute: ApiMessagesUnreadCountRoute,

@@ -126,6 +126,91 @@ function vibeAIHelperScript(): string {
 <\/script>`;
 }
 
+/**
+ * Self-contained runtime safety harness injected into every generated page.
+ *
+ * The server-side bundle only catches COMPILE errors — it never runs the code. So
+ * a vibe that compiles but throws at runtime (a bad render, an undefined access),
+ * or whose `esm.sh` fallback import fails to load, leaves `#root` empty and the
+ * page shows the model's (often dark) background with nothing on it — the classic
+ * "everything is black" failure. This harness turns those silent failures into a
+ * visible, readable error instead of a blank screen.
+ *
+ * It runs as a CLASSIC (non-module) script in <head>, so it's installed before the
+ * module bundle executes and survives the module throwing. It listens for:
+ *  - the window 'error' event — the ONLY thing that catches runtime throws inside a
+ *    `<script type="module">` (window.onerror does not), and also fires for failed
+ *    resource/import loads;
+ *  - 'unhandledrejection' — rejected promises from async render/effect code;
+ *  - a boot watchdog — if the module never finishes executing (a SyntaxError or a
+ *    failed import aborts the whole module silently), `window.__vibeBooted` is never
+ *    set and we surface it after a grace period.
+ *
+ * A boot-time failure (nothing rendered) gets a full-screen card; an error after
+ * the app already rendered gets a small dismissible toast, so a late error in a
+ * working page doesn't blank out everything the user can see.
+ */
+function vibeRuntimeHarnessScript(): string {
+  return `<script>
+(function(){
+  var shown = false;
+  function rootEmpty(){
+    var r = document.getElementById('root');
+    return !r || r.childElementCount === 0;
+  }
+  function esc(s){
+    return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  function show(title, detail){
+    var fatal = rootEmpty();
+    var prev = document.getElementById('__vibe_err__');
+    // A fatal (boot) failure supersedes a toast; don't stack two toasts.
+    if (prev && !fatal) return;
+    if (prev) prev.remove();
+    var box = document.createElement('div');
+    box.id = '__vibe_err__';
+    box.setAttribute('style', fatal
+      ? 'position:fixed;inset:0;z-index:2147483647;background:#0f1117;color:#e6e6e6;font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;padding:24px;overflow:auto;-webkit-font-smoothing:antialiased'
+      : 'position:fixed;left:12px;right:12px;bottom:12px;z-index:2147483647;background:#0f1117;color:#e6e6e6;font:12.5px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;padding:14px 16px;border-radius:10px;box-shadow:0 10px 34px rgba(0,0,0,.55);max-height:42vh;overflow:auto');
+    box.innerHTML =
+      '<div style="display:flex;align-items:center;gap:8px;margin:0 0 10px;font-weight:600;font-size:14px;color:#ff6b6b">'
+      + '<span aria-hidden="true">\\u26A0</span><span>' + esc(title) + '</span>'
+      + '<button type="button" id="__vibe_err_x__" aria-label="Dismiss" style="margin-left:auto;background:none;border:0;color:#8a92a6;cursor:pointer;font-size:16px;line-height:1;padding:2px 4px">\\u2715</button>'
+      + '</div>'
+      + '<pre style="margin:0;white-space:pre-wrap;word-break:break-word;color:#c7ccdb">' + esc(detail) + '</pre>';
+    (document.body || document.documentElement).appendChild(box);
+    var x = document.getElementById('__vibe_err_x__');
+    if (x) x.onclick = function(){ box.remove(); };
+    if (fatal) shown = true;
+  }
+  window.addEventListener('error', function(ev){
+    // A failed resource/import load: ev.error is null, the target is the element.
+    var t = ev && ev.target;
+    if (t && t !== window && (t.src || t.href)) {
+      show('Failed to load a dependency', 'Could not load:\\n' + (t.src || t.href) + '\\n\\nA package may be unavailable or blocked by the network.');
+      return;
+    }
+    var e = ev && ev.error;
+    show('This vibe hit a runtime error', e ? (e.stack || (e.name + ': ' + e.message)) : (ev && ev.message) || 'Unknown error');
+  }, true);
+  window.addEventListener('unhandledrejection', function(ev){
+    var r = ev && ev.reason;
+    show('Unhandled promise rejection', (r && (r.stack || r.message)) || String(r));
+  });
+  // Boot watchdog. A SyntaxError or a failed import aborts the module before
+  // window.__vibeBooted is set; a generous grace period covers slow esm.sh cold loads.
+  setTimeout(function(){
+    if (shown) return;
+    if (!window.__vibeBooted) {
+      show('This vibe failed to start', 'The app script did not finish loading \\u2014 usually a syntax error in the generated code, or a package that failed to load. Try \\u201CCustomize\\u201D to regenerate.');
+    } else if (rootEmpty()) {
+      show('This vibe rendered nothing', 'The app loaded but mounted no content into #root. Try \\u201CCustomize\\u201D to regenerate.');
+    }
+  }, 8000);
+})();
+<\/script>`;
+}
+
 const FILES_MARKER = '===FILES===';
 const FILE_HEADER_RE = /^---\s*file:\s*(.+?)\s*---\s*$/;
 
@@ -450,6 +535,7 @@ function assembleHtml(opts: {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="${VIBE_CSP}">
 <title>${escapeHtml(opts.title || 'Vibe')}</title>
+${vibeRuntimeHarnessScript()}
 ${vibeAIHelperScript()}
 <style>
 *,*::before,*::after{box-sizing:border-box}
@@ -463,6 +549,7 @@ ${css}
 <div id="root"></div>
 <script type="module">
 ${js}
+;window.__vibeBooted=true;
 </script>
 </body>
 </html>`;

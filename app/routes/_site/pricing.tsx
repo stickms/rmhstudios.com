@@ -14,6 +14,8 @@ import { Check, Loader2, ArrowUpRight, Sparkles, X } from 'lucide-react';
 import { auth } from '@/lib/auth';
 import { getUserTier, type Tier } from '@/lib/entitlements';
 import { authClient } from '@/lib/auth-client';
+import { AnimatedMain } from '@/components/feed/AnimatedMain';
+import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 
 const fetchCurrentTier = createServerFn({ method: 'GET' }).handler(async (): Promise<Tier> => {
   const request = getRequest();
@@ -141,7 +143,11 @@ function Pricing() {
   }
 
   return (
-    <div className="pricing-root relative isolate min-h-screen w-full min-w-0 overflow-hidden">
+    <>
+    <AnimatedMain
+      className="pricing-root relative isolate min-h-screen w-full min-w-0 overflow-hidden border-r border-site-border pb-16 md:pb-0"
+      targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
+    >
       <PricingStyles />
 
       {/* ── Atmosphere ───────────────────────────────────────── */}
@@ -149,10 +155,9 @@ function Pricing() {
       <div aria-hidden className="pricing-grid" />
       <div aria-hidden className="pricing-grain" />
 
-      {/* Left-aligned + flush to the sidebar, matching the homepage and other
-          _site pages (no mx-auto centering). Capped width so the cards don't
-          stretch on ultrawide; the atmospheric background fills the rest. */}
-      <div className="relative max-w-5xl px-5 py-16 sm:px-8 sm:py-20">
+      {/* Content padding only — the center-column width is governed by
+          AnimatedMain's targetWidth so the gutters match blog/library. */}
+      <div className="relative px-5 py-16 sm:px-8 sm:py-20">
         {/* ── Status banner ──────────────────────────────────── */}
         {status && (
           <div
@@ -281,7 +286,7 @@ function Pricing() {
                       className="pricing-btn flex h-11 w-full items-center justify-center gap-2 rounded-full text-sm font-bold transition-all disabled:cursor-not-allowed disabled:opacity-50"
                       style={{
                         background: plan.featured ? 'var(--site-warning)' : 'var(--site-accent)',
-                        color: plan.featured ? '#1a1505' : '#ffffff',
+                        color: plan.featured || plan.tier === 'starter' ? '#1a1505' : '#ffffff',
                       }}
                     >
                       {busy === plan.tier ? (
@@ -319,7 +324,10 @@ function Pricing() {
           Billed monthly · cancel anytime · secure checkout by Stripe
         </p>
       </div>
-    </div>
+    </AnimatedMain>
+    {/* Trailing gutter to match the blog/library layout */}
+    <div className="hidden lg:block w-4 shrink-0" />
+    </>
   );
 }
 
