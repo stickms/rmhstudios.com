@@ -1,6 +1,5 @@
 """Reusable container-image rules for the Go service fleet."""
 
-load("@aspect_bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_load", "oci_push")
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 
@@ -9,11 +8,16 @@ def go_service_image(
         binary,
         base = "@distroless_base",
         registry_repo = None,
-        platform = "@rules_go//go/toolchain:linux_arm64",
         env = None):
     """Build a per-service OCI image from a go_binary.
 
-    Generates `<name>_image`, `<name>_load`, and (if registry_repo) `<name>_push`.
+    Generates `<name>_image`, `<name>_load`, and `<name>_push`.
+
+    The target architecture is controlled at build time via `--platforms`
+    (use the `.bazelrc` `--config=linux_amd64` / `--config=linux_arm64` groups,
+    which the Makefile's `images`/`push` targets pass). Building the whole image
+    under one platform keeps the Go binary, the multi-arch base selection, and
+    the image's declared architecture consistent.
 
     Args:
       name: service name (e.g. "gateway"). Drives the local repo tag
@@ -23,21 +27,13 @@ def go_service_image(
       registry_repo: default push repository. Defaults to
         "ghcr.io/rmhstudios/rmhstudios-go-<name>"; override at run time with
         `bazel run //...:<name>_push -- --repository=<repo> --tag=<tag>`.
-      platform: target platform the binary is compiled for inside the image.
       env: optional dict of image environment variables.
     """
     bin_name = binary.rsplit(":", 1)[-1]
 
-    # Force the binary to the Linux container platform regardless of host.
-    platform_transition_filegroup(
-        name = name + "_linux_bin",
-        srcs = [binary],
-        target_platform = platform,
-    )
-
     pkg_tar(
         name = name + "_layer",
-        srcs = [":" + name + "_linux_bin"],
+        srcs = [binary],
         package_dir = "/usr/local/bin",
     )
 
@@ -48,6 +44,7 @@ def go_service_image(
         entrypoint = ["/usr/local/bin/" + bin_name],
         env = env or {},
     )
+
 
     oci_load(
         name = name + "_load",

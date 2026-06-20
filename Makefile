@@ -4,6 +4,7 @@
 # special base images, Helm deploy).
 
 BAZEL    ?= bazelisk
+PLATFORM ?= linux_amd64   # target arch for images; override with PLATFORM=linux_arm64
 SERVICES := gateway gamehub rmhmusic rmhtube rmhbox recap doctrine-worker vibe-worker discord-bot
 SHA      := $(shell git rev-parse --short HEAD 2>/dev/null || echo dev)
 REGISTRY ?=
@@ -40,22 +41,23 @@ base-images: ## build + push the special runtime bases (chromium/git)
 images: ## build + load every service image into Docker
 	@$(GUARD)
 	@for svc in $(SERVICES); do \
-		echo "==> loading rmhstudios-go-$$svc"; \
-		$(BAZEL) run //go-services/images:$${svc}_load || exit 1; \
+		echo "==> loading rmhstudios-go-$$svc ($(PLATFORM))"; \
+		$(BAZEL) run --config=$(PLATFORM) //go-services/images:$${svc}_load || exit 1; \
 	done
 
 push: ## push every service image to $REGISTRY (REGISTRY required)
 	@test -n "$(REGISTRY)" || { echo "REGISTRY is required for push"; exit 1; }
 	@$(GUARD)
 	@for svc in $(SERVICES); do \
-		echo "==> pushing $(REGISTRY)/rmhstudios-go-$$svc:$(SHA)"; \
-		$(BAZEL) run //go-services/images:$${svc}_push -- \
+		echo "==> pushing $(REGISTRY)/rmhstudios-go-$$svc:$(SHA) ($(PLATFORM))"; \
+		$(BAZEL) run --config=$(PLATFORM) //go-services/images:$${svc}_push -- \
 			--repository=$(REGISTRY)/rmhstudios-go-$$svc --tag=$(SHA) || exit 1; \
 	done
 
-prod: images ## build images, push (if REGISTRY), and deploy via Helm
+prod: ## build + push SHA-tagged images to $REGISTRY and deploy via Helm (multi-node)
+	@test -n "$(REGISTRY)" || { echo "REGISTRY is required for 'make prod' (multi-node). For single-node k3s use deploy/deploy-go.sh, which ctr-imports into containerd."; exit 1; }
 	@$(GUARD)
-	@if [ -n "$(REGISTRY)" ]; then $(MAKE) push REGISTRY=$(REGISTRY); fi
+	$(MAKE) push REGISTRY=$(REGISTRY)
 	helm upgrade --install $(RELEASE) $(CHART) \
 		-f $(CHART)/values-prod.yaml \
 		--set image.tag=$(SHA) --set image.registry=$(REGISTRY) \
