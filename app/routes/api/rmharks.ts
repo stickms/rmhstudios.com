@@ -246,6 +246,7 @@ export const Route = createFileRoute('/api/rmharks')({
           original: mapOriginal(r.original),
           poll: isDeleted ? undefined : mapPoll(r.poll),
           gifUrl: isDeleted ? undefined : (r.gifUrl ?? undefined),
+          imageUrls: isDeleted ? undefined : r.imageUrls,
           deletedAt: r.deletedAt?.toISOString() || null,
           deletedByAdmin: r.deletedByAdmin,
         };
@@ -254,8 +255,8 @@ export const Route = createFileRoute('/api/rmharks')({
       const repostItems: FeedItem[] = repostRecords.map((rp: any) => {
         const r = rp.rmhark;
         const isDeleted = !!r.deletedAt;
-        const deletedMessage = r.deletedByAdmin 
-          ? "[This RMHark was deleted by an admin]" 
+        const deletedMessage = r.deletedByAdmin
+          ? "[This RMHark was deleted by an admin]"
           : "[This RMHark was deleted by the user]";
         return {
           id: `repost:${rp.id}`,
@@ -274,6 +275,7 @@ export const Route = createFileRoute('/api/rmharks')({
           original: mapOriginal(r.original),
           poll: isDeleted ? undefined : mapPoll(r.poll),
           gifUrl: isDeleted ? undefined : (r.gifUrl ?? undefined),
+          imageUrls: isDeleted ? undefined : r.imageUrls,
           deletedAt: r.deletedAt?.toISOString() || null,
           deletedByAdmin: r.deletedByAdmin,
         };
@@ -389,6 +391,7 @@ export const Route = createFileRoute('/api/rmharks')({
           original: mapOriginal(r.original),
           poll: isDeleted ? undefined : mapPoll(r.poll),
           gifUrl: isDeleted ? undefined : (r.gifUrl ?? undefined),
+          imageUrls: isDeleted ? undefined : r.imageUrls,
           deletedAt: r.deletedAt?.toISOString() || null,
           deletedByAdmin: r.deletedByAdmin,
         };
@@ -397,8 +400,8 @@ export const Route = createFileRoute('/api/rmharks')({
       const repostItems: FeedItem[] = repostRecords.map((rp: any) => {
         const r = rp.rmhark;
         const isDeleted = !!r.deletedAt;
-        const deletedMessage = r.deletedByAdmin 
-          ? "[This RMHark was deleted by an admin]" 
+        const deletedMessage = r.deletedByAdmin
+          ? "[This RMHark was deleted by an admin]"
           : "[This RMHark was deleted by the user]";
         return {
           id: `repost:${rp.id}`,
@@ -417,6 +420,7 @@ export const Route = createFileRoute('/api/rmharks')({
           original: mapOriginal(r.original),
           poll: isDeleted ? undefined : mapPoll(r.poll),
           gifUrl: isDeleted ? undefined : (r.gifUrl ?? undefined),
+          imageUrls: isDeleted ? undefined : r.imageUrls,
           deletedAt: r.deletedAt?.toISOString() || null,
           deletedByAdmin: r.deletedByAdmin,
         };
@@ -521,13 +525,14 @@ export const Route = createFileRoute('/api/rmharks')({
       );
     }
 
-    const { content, poll, gifUrl } = parsed.data;
+    const { content, poll, gifUrl, imageUrls } = parsed.data;
 
     const rmhark = await prisma.$transaction(async (tx) => {
       const created = await tx.rMHark.create({
         data: {
           content: content.trim(),
           gifUrl: gifUrl ?? null,
+          imageUrls: imageUrls ?? [],
           userId: session.user.id,
         },
         include: {
@@ -594,6 +599,7 @@ export const Route = createFileRoute('/api/rmharks')({
       reposted: false,
       poll: pollData,
       gifUrl: rmhark.gifUrl ?? undefined,
+      imageUrls: rmhark.imageUrls,
     };
 
     // Broadcast to all SSE clients
