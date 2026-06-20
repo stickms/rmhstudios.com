@@ -106,6 +106,7 @@ import { Route as AltairMultiplayerRouteImport } from './routes/altair/multiplay
 import { Route as SiteWalletRouteImport } from './routes/_site/wallet'
 import { Route as SiteRoadmapRouteImport } from './routes/_site/roadmap'
 import { Route as SiteQuotesRouteImport } from './routes/_site/quotes'
+import { Route as SitePricingRouteImport } from './routes/_site/pricing'
 import { Route as SiteAdminRouteRouteImport } from './routes/_site/admin/route'
 import { Route as StrategiesSafehouseIndexRouteImport } from './routes/strategies/safehouse/index'
 import { Route as StrategiesPuzzlesIndexRouteImport } from './routes/strategies/puzzles/index'
@@ -756,6 +757,11 @@ const SiteRoadmapRoute = SiteRoadmapRouteImport.update({
 const SiteQuotesRoute = SiteQuotesRouteImport.update({
   id: '/quotes',
   path: '/quotes',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SitePricingRoute = SitePricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteAdminRouteRoute = SiteAdminRouteRouteImport.update({
@@ -1670,6 +1676,7 @@ export interface FileRoutesByFullPath {
   '/versecraft': typeof VersecraftRouteWithChildren
   '/void-breaker': typeof VoidBreakerRoute
   '/admin': typeof SiteAdminRouteRouteWithChildren
+  '/pricing': typeof SitePricingRoute
   '/quotes': typeof SiteQuotesRoute
   '/roadmap': typeof SiteRoadmapRoute
   '/wallet': typeof SiteWalletRoute
@@ -1917,6 +1924,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/velum2099': typeof Velum2099Route
   '/void-breaker': typeof VoidBreakerRoute
+  '/pricing': typeof SitePricingRoute
   '/quotes': typeof SiteQuotesRoute
   '/roadmap': typeof SiteRoadmapRoute
   '/wallet': typeof SiteWalletRoute
@@ -2179,6 +2187,7 @@ export interface FileRoutesById {
   '/versecraft': typeof VersecraftRouteWithChildren
   '/void-breaker': typeof VoidBreakerRoute
   '/_site/admin': typeof SiteAdminRouteRouteWithChildren
+  '/_site/pricing': typeof SitePricingRoute
   '/_site/quotes': typeof SiteQuotesRoute
   '/_site/roadmap': typeof SiteRoadmapRoute
   '/_site/wallet': typeof SiteWalletRoute
@@ -2447,6 +2456,7 @@ export interface FileRouteTypes {
     | '/versecraft'
     | '/void-breaker'
     | '/admin'
+    | '/pricing'
     | '/quotes'
     | '/roadmap'
     | '/wallet'
@@ -2694,6 +2704,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/velum2099'
     | '/void-breaker'
+    | '/pricing'
     | '/quotes'
     | '/roadmap'
     | '/wallet'
@@ -2955,6 +2966,7 @@ export interface FileRouteTypes {
     | '/versecraft'
     | '/void-breaker'
     | '/_site/admin'
+    | '/_site/pricing'
     | '/_site/quotes'
     | '/_site/roadmap'
     | '/_site/wallet'
@@ -4004,6 +4016,13 @@ declare module '@tanstack/react-router' {
       path: '/quotes'
       fullPath: '/quotes'
       preLoaderRoute: typeof SiteQuotesRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/pricing': {
+      id: '/_site/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof SitePricingRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/admin': {
@@ -5202,6 +5221,7 @@ const SiteAdminRouteRouteWithChildren = SiteAdminRouteRoute._addFileChildren(
 
 interface SiteRouteChildren {
   SiteAdminRouteRoute: typeof SiteAdminRouteRouteWithChildren
+  SitePricingRoute: typeof SitePricingRoute
   SiteQuotesRoute: typeof SiteQuotesRoute
   SiteRoadmapRoute: typeof SiteRoadmapRoute
   SiteWalletRoute: typeof SiteWalletRoute
@@ -5225,6 +5245,7 @@ interface SiteRouteChildren {
 
 const SiteRouteChildren: SiteRouteChildren = {
   SiteAdminRouteRoute: SiteAdminRouteRouteWithChildren,
+  SitePricingRoute: SitePricingRoute,
   SiteQuotesRoute: SiteQuotesRoute,
   SiteRoadmapRoute: SiteRoadmapRoute,
   SiteWalletRoute: SiteWalletRoute,
