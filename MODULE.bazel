@@ -30,3 +30,28 @@ oci.pull(
     ],
 )
 use_repo(oci, "distroless_base", "distroless_base_linux_amd64", "distroless_base_linux_arm64_v8")
+
+# Special runtime bases, built + pushed by `make base-images` (see
+# deploy/docker/*.Dockerfile). Referenced by tag; lazily fetched only when the
+# vibe-worker / discord-bot images are built.
+oci.pull(
+    name = "base_chromium",
+    image = "ghcr.io/rmhstudios/rmhstudios-go-base-chromium",
+    platforms = [
+        "linux/amd64",
+        "linux/arm64/v8",
+    ],
+    reproducible = False,
+    tag = "latest",
+)
+oci.pull(
+    name = "base_git",
+    image = "ghcr.io/rmhstudios/rmhstudios-go-base-git",
+    platforms = [
+        "linux/amd64",
+        "linux/arm64/v8",
+    ],
+    reproducible = False,
+    tag = "latest",
+)
+use_repo(oci, "base_chromium", "base_git")

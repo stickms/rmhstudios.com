@@ -18,3 +18,18 @@ go_service_image(name = "rmhbox", binary = "//go-services/cmd/rmhbox:rmhbox")
 go_service_image(name = "recap", binary = "//go-services/cmd/recap:recap")
 
 go_service_image(name = "doctrine-worker", binary = "//go-services/cmd/doctrine-worker:doctrine-worker")
+
+# ── Special bases ────────────────────────────────────────────────────────────
+# vibe-worker needs headless Chromium; discord-bot needs git/ssh.
+go_service_image(
+    name = "vibe-worker",
+    binary = "//go-services/cmd/vibe-worker:vibe-worker",
+    base = "@base_chromium",
+    env = {"PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH": "/usr/bin/chromium-browser"},
+)
+
+go_service_image(
+    name = "discord-bot",
+    binary = "//go-services/cmd/discord-bot:discord-bot",
+    base = "@base_git",
+)
