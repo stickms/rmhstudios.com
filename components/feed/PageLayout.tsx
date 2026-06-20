@@ -1,10 +1,9 @@
 'use client';
 
-import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Menu } from 'lucide-react';
 import { AnimatedMain } from './AnimatedMain';
-import { MobileSidebarDrawer } from './MobileSidebarDrawer';
+import { useSidebarStore } from '@/stores/sidebarStore';
 import { DEFAULT_WIDTH, WIDE_NO_RIGHT_SIDEBAR_WIDTH, WIDE_WIDTH } from '@/lib/layout-width';
 
 interface PageLayoutProps {
@@ -29,7 +28,7 @@ export function PageLayout({
   wide,
   backHref,
 }: PageLayoutProps) {
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const openSidebar = useSidebarStore((s) => s.setOpen);
   const hasRightSidebar = Boolean(rightSidebar);
   const targetWidth = wide
     ? (hasRightSidebar ? WIDE_WIDTH : WIDE_NO_RIGHT_SIDEBAR_WIDTH)
@@ -54,7 +53,7 @@ export function PageLayout({
                   </Link>
                 ) : (
                   <button
-                    onClick={() => setDrawerOpen(true)}
+                    onClick={() => openSidebar(true)}
                     className="md:hidden p-2 -ml-2 rounded-lg text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
                     aria-label="Open menu"
                   >
@@ -95,13 +94,6 @@ export function PageLayout({
         // Keep the same trailing gutter feel as the right sidebar layout.
         <div className="hidden lg:block w-4 shrink-0" />
       )}
-
-      {/* Mobile sidebar drawer */}
-      <MobileSidebarDrawer
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        onOpen={() => setDrawerOpen(true)}
-      />
     </>
   );
 }
