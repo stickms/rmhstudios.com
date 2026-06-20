@@ -29,7 +29,8 @@ if ! have bazelisk && ! have bazel; then
   say "installing bazelisk"
   case "$OS" in
     Darwin) pkg_install bazelisk ;;
-    Linux) pkg_install bazelisk || pkg_install bazel ;;
+    # apt/apk don't carry bazelisk; npm is the reliable cross-distro path.
+    Linux) have npm && npm install -g @bazel/bazelisk || pkg_install bazelisk ;;
   esac
 fi
 
