@@ -33,7 +33,6 @@ import {
   isRmharkAIConfigured,
 } from '@/lib/rmhark-ai/generate.server';
 import {
-  needsReactiveReply,
   canBotMessage,
   decideInitiation,
   formatDmHistory,
@@ -314,6 +313,7 @@ async function notifyMessageDelivered(userId: string, message: MessagePayload): 
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-internal-secret': secret },
       body: JSON.stringify({ userId, message }),
+      signal: AbortSignal.timeout(5000),
     });
   } catch (e) {
     errlog('notify bridge failed:', e);
