@@ -1919,6 +1919,11 @@ model VibePage {
   title               String?           // model-generated page title (tab + OG)
   description         String?           // model-generated description (OG/social)
   html                String            // full generated HTML — always mirrors the latest version
+  // Generation lifecycle: a brand-new page is created up front as "generating" (with
+  // a reserved slug) so the client can navigate to it immediately and the generation
+  // survives a dropped streaming connection; it flips to "ready" once the build is
+  // persisted, or "error" if generation failed. Existing/legacy rows default "ready".
+  status              String   @default("ready") // "generating" | "ready" | "error"
   thumbnailUrl        String?           // "/api/vibe/thumb/<slug>?v=<ts>" once the screenshot is captured
   thumbnailStale      Boolean  @default(true) // true → the vibe-worker (re)renders the screenshot
   conversationHistory Json              // array of { role, content } turns for "customize" follow-ups

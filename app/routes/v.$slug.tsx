@@ -43,6 +43,8 @@ const fetchVibe = createServerFn({ method: 'GET' })
       html: page.html,
       title: page.title || page.prompt,
       description: page.description || `A vibe page about "${page.prompt}".`,
+      // "generating" | "ready" | "error" — drives the still-building overlay below.
+      status: page.status,
     };
   });
 
@@ -78,8 +80,12 @@ export const Route = createFileRoute('/v/$slug')({
 });
 
 function VibeViewer() {
-  const { slug, html: initialHtml } = Route.useLoaderData();
+  const { slug, html: initialHtml, status: initialStatus, title: initialTitle } = Route.useLoaderData();
 
+  // Generation lifecycle for the page itself: a freshly-reserved page arrives here
+  // as "generating" (the user was navigated over before the build finished), so we
+  // show a building overlay and poll until it flips to "ready" (or "error").
+  const [status, setStatus] = useState(initialStatus);
   const [html, setHtml] = useState(initialHtml);
   // The page's current (latest) HTML — what "Back to latest" returns to. Diverges
   // from `html` while previewing an older version, and advances on each customize.
@@ -113,11 +119,42 @@ function VibeViewer() {
   useEffect(() => {
     setHtml(initialHtml);
     setLatestHtml(initialHtml);
+    setStatus(initialStatus);
     setRenderKey((k) => k + 1);
     setVersions(null);
     setActiveVersionId(null);
     setHistoryOpen(false);
-  }, [initialHtml]);
+  }, [slug, initialHtml, initialStatus]);
+
+  // While the page is still building in the background, poll until it's ready. The
+  // generation runs server-side independently of any stream connection, so this
+  // reliably resolves even though the original /v/new stream may be long gone.
+  useEffect(() => {
+    if (status !== 'generating') return;
+    let stop = false;
+    const poll = async () => {
+      try {
+        const data = await fetchVibe({ data: slug });
+        if (stop) return;
+        if (data.status === 'ready') {
+          setHtml(data.html);
+          setLatestHtml(data.html);
+          setRenderKey((k) => k + 1);
+          if (data.title) document.title = `${data.title} | RMH Studios`;
+          setStatus('ready');
+        } else if (data.status === 'error') {
+          setStatus('error');
+        }
+      } catch {
+        /* transient — keep polling */
+      }
+    };
+    const id = window.setInterval(() => void poll(), 1500);
+    return () => {
+      stop = true;
+      window.clearInterval(id);
+    };
+  }, [status, slug]);
 
   async function loadVersions() {
     setLoadingVersions(true);
@@ -231,6 +268,11 @@ function VibeViewer() {
       /* clipboard unavailable — no-op */
     }
   }
+
+  // Still building (or failed) — show a status screen instead of the empty iframe.
+  // Hooks above always run; these early returns only gate the rendered output.
+  if (status === 'generating') return <VibeGenerating title={initialTitle} />;
+  if (status === 'error') return <VibeGenerationFailed />;
 
   return (
     <div className="fixed inset-0 bg-black">
@@ -428,6 +470,35 @@ function formatVersionDate(iso: string): string {
     hour: 'numeric',
     minute: '2-digit',
   });
+}
+
+/** Shown when the page is still being generated in the background; the viewer polls
+ *  the loader until it flips to "ready", then swaps in the real page. */
+function VibeGenerating({ title }: { title: string }) {
+  return (
+    <div className="vibe-screen fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 px-6 py-12">
+      <div className="vibe-spinner" aria-hidden="true" />
+      <div className="text-center">
+        <p className="vibe-rise text-lg font-semibold tracking-tight">Building your vibe…</p>
+        <p className="vibe-rise-2 vibe-hint mt-2">
+          {title ? `“${title}” is coming together. This page will update on its own.` : 'This page will update on its own when it’s ready.'}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/** Shown when a background generation failed (the reserved page was marked errored). */
+function VibeGenerationFailed() {
+  return (
+    <div className="vibe-screen fixed inset-0 z-50 flex flex-col items-center justify-center gap-4">
+      <p className="vibe-rise text-2xl font-bold tracking-tight">Couldn&apos;t finish this vibe</p>
+      <p className="vibe-rise-2 vibe-hint">Generation didn&apos;t complete. Give it another go.</p>
+      <Link to="/v" className="vibe-rise-3 vibe-toolbar__cta mt-3">
+        Back to pages
+      </Link>
+    </div>
+  );
 }
 
 function VibeNotFound() {

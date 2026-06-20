@@ -40,18 +40,47 @@ function VibeNew() {
     started.current = true;
 
     let cancelled = false;
+    // The server reserves the page's slug up front (the `created` event) and persists
+    // it as "generating", so we don't depend on the long-lived stream surviving to the
+    // final `done` to know where to go. We navigate on `done` for the smooth case;
+    // if the stream is cut first (timeout / tab throttling / network), we still
+    // navigate to the reserved slug — the page exists and shows its own generating
+    // state until the background build finishes.
+    let reservedSlug: string | null = null;
+    let navigated = false;
+    let errored = false;
+    const goTo = (slug: string) => {
+      if (cancelled || navigated) return;
+      navigated = true;
+      navigate({ to: '/v/$slug', params: { slug }, replace: true });
+    };
+
     streamVibe({ prompt: prompt.trim(), model }, (event) => {
       if (cancelled) return;
-      if (event.type === 'thinking') {
+      if (event.type === 'created') {
+        reservedSlug = event.slug;
+      } else if (event.type === 'thinking') {
         setThinking((t) => t + event.text);
       } else if (event.type === 'done') {
-        navigate({ to: '/v/$slug', params: { slug: event.slug }, replace: true });
+        goTo(event.slug);
       } else if (event.type === 'error') {
+        errored = true;
         setFailed(true);
       }
-    }).catch(() => {
-      if (!cancelled) setFailed(true);
-    });
+    })
+      .then(() => {
+        // Stream ended. `done` already navigated; an explicit error stays here. But a
+        // silent cut (no terminal event) with a reserved slug means generation is
+        // still finishing server-side — head to the page anyway.
+        if (cancelled || navigated || errored) return;
+        if (reservedSlug) goTo(reservedSlug);
+        else setFailed(true);
+      })
+      .catch(() => {
+        if (cancelled || navigated || errored) return;
+        if (reservedSlug) goTo(reservedSlug);
+        else setFailed(true);
+      });
 
     return () => {
       cancelled = true;

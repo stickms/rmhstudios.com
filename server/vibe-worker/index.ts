@@ -26,7 +26,9 @@ async function processStale(): Promise<void> {
   running = true;
   try {
     const pages = await prisma.vibePage.findMany({
-      where: { thumbnailStale: true },
+      // Only "ready" pages have real HTML; skip rows still generating (or errored),
+      // whose `html` is an empty placeholder, so we never screenshot a blank page.
+      where: { thumbnailStale: true, status: 'ready' },
       select: { slug: true, html: true, updatedAt: true },
       orderBy: { updatedAt: 'asc' },
       take: BATCH_SIZE,
