@@ -23,9 +23,22 @@ import { THUMB_DIR } from '@/lib/rmhvibe/vibe-thumbs';
 const VIEWPORT = { width: 1200, height: 750 };
 const THUMB_WIDTH = 640;
 
+// Our own origin, where pages now load their pre-bundled "hosted" packages
+// (React + large libs) from — see vibe-bundle.server.ts. Must be reachable while
+// rendering or those pages screenshot blank. Kept in sync with VIBE_AI_BASE_URL.
+const VIBE_BASE_ORIGIN = (() => {
+  try {
+    return new URL(process.env.VIBE_AI_BASE_URL || 'https://rmhstudios.com').origin;
+  } catch {
+    return 'https://rmhstudios.com';
+  }
+})();
+
 // Only these origins are reachable while rendering a page (defense-in-depth on
 // top of the page's own injected CSP). Everything else is aborted, which also
-// speeds up captures by dropping stray requests.
+// speeds up captures by dropping stray requests. esm.sh/jsdelivr cover the
+// long-tail fallback packages (and legacy pages); VIBE_BASE_ORIGIN covers the
+// self-hosted ones.
 const ALLOWED_HOSTS = new Set(['esm.sh', 'cdn.jsdelivr.net']);
 
 // A single shared browser, launched lazily and reused across captures.
@@ -94,8 +107,11 @@ export async function captureVibeThumbnail(slug: string, html: string): Promise<
       const url = route.request().url();
       if (url.startsWith('data:') || url.startsWith('blob:')) return route.continue();
       try {
-        const { hostname, protocol } = new URL(url);
-        if (protocol === 'https:' && ALLOWED_HOSTS.has(hostname)) return route.continue();
+        const parsed = new URL(url);
+        // Our own origin (self-hosted packages) — exact origin match, any scheme
+        // (http in local dev, https in prod).
+        if (parsed.origin === VIBE_BASE_ORIGIN) return route.continue();
+        if (parsed.protocol === 'https:' && ALLOWED_HOSTS.has(parsed.hostname)) return route.continue();
       } catch {
         /* malformed URL — fall through to abort */
       }

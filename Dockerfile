@@ -148,13 +148,15 @@ ENV DATABASE_URL=${DATABASE_URL} \
 # NODE_OPTIONS prevents OOM on large bundles (three.js, monaco, tiptap, etc.)
 RUN --mount=type=cache,id=vinxi-cache-${COMPOSE_PROJECT_NAME},target=/app/.vinxi,sharing=locked \
     rm -rf .output \
+    && pnpm run build-vibe-packages \
     && NODE_OPTIONS='--max-old-space-size=8192' pnpm exec vite build \
     && node scripts/fix-ssr-css-hash.mjs \
     && cp -a .output /app/build-output
 
 RUN test -d /app/build-output && \
     test -f /app/build-output/server/index.mjs && \
-    test -f /app/build-output/public/models/marlonjack.glb
+    test -f /app/build-output/public/models/marlonjack.glb && \
+    test -f /app/build-output/public/vibe-packages/react.js
 
 # ── Stage 4: Production runner ────────────────────────────────────────────
 FROM node:24-alpine AS runner

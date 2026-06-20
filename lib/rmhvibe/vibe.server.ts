@@ -67,7 +67,8 @@ How your code is built and run (this is different from a single HTML file — re
 - React 19 and react-dom are ALWAYS available — import them directly (\`import React, { useState, useEffect } from 'react'\`, \`import { createRoot } from 'react-dom/client'\`). Do NOT list react/react-dom in DEPS.
 
 npm packages — this is a real strength, use it:
-- You can import ANY browser-compatible npm package; bare imports resolve at runtime from esm.sh. LARGE libraries work great and load straight from the CDN — including three, @react-three/fiber, @react-three/drei, pixi.js, p5, matter-js, konva, d3, chart.js, gsap, animejs, motion (framer-motion), tone, howler, zustand, immer, lodash-es, date-fns, nanoid, and more.
+- You can import ANY browser-compatible npm package. A curated set is PRE-INSTALLED and served from our own servers, so it loads instantly and reliably (no third-party CDN) — PREFER these whenever they fit: three, @react-three/fiber, @react-three/drei, pixi.js, p5, matter-js, konva, d3, chart.js, gsap, framer-motion, tone, zustand, immer, lodash-es, date-fns, nanoid, zod, clsx, tailwind-merge, uuid. (react and react-dom are always available — see above.)
+- Any other browser-compatible package still works too; it resolves at runtime from esm.sh as a fallback. Lean on the curated list first for speed and reliability, and reach for others when you genuinely need them.
 - For EVERY bare npm package you import (other than react/react-dom), list it on the DEPS line with a PINNED version, comma-separated: \`DEPS: three@0.183, @react-three/fiber@9, gsap@3\`. Subpath imports such as \`three/examples/jsm/controls/OrbitControls.js\` are fine — just list the base package (\`three@0.183\`) in DEPS.
 
 Runtime environment — use it to the fullest, and respect its limits:
