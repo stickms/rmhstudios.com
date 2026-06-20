@@ -87,9 +87,9 @@ export function ComposeModal({ open, onClose }: ComposeModalProps) {
   const handleImageFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     setImageError(null);
-    const remaining = MAX_IMAGES - imageUrls.length;
+    const remainingSlots = MAX_IMAGES - imageUrls.length;
     const form = new FormData();
-    Array.from(files).slice(0, remaining).forEach((f) => form.append('images', f));
+    Array.from(files).slice(0, remainingSlots).forEach((f) => form.append('images', f));
     try {
       const res = await fetch('/api/rmharks/image', { method: 'POST', body: form });
       if (!res.ok) {
@@ -392,6 +392,7 @@ export function ComposeModal({ open, onClose }: ComposeModalProps) {
                       />
                       <button
                         type="button"
+                        aria-label="Remove image"
                         onClick={() => setImageUrls((prev) => prev.filter((u) => u !== url))}
                         className="absolute top-1 right-1 p-0.5 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity"
                       >
