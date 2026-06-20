@@ -53,6 +53,9 @@ function Pricing() {
         console.error('subscribe failed:', result.error);
         return;
       }
+      if (result?.data?.url && !result.data.redirect) {
+        window.location.href = result.data.url;
+      }
     } catch (err) {
       console.error('subscribe failed:', err);
     } finally {
