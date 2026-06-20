@@ -245,6 +245,16 @@ dc() {
     "$DOCKER_BIN" compose -p "$PROJECT_NAME" --env-file "$ENV_FILE" "$@"
 }
 
+# ── Helper: prune stale SHA-tagged rollback images ──────────────────────────
+# Each deploy tags ${IMAGE_NAME}:${GIT_SHA} for instant rollback. These images
+# are large (full node_modules + .output + Chromium) and `docker image prune`
+# never touches them because they're tagged. Keep the 3 newest, remove the rest.
+prune_rollback_images() {
+    "$DOCKER_BIN" images "${IMAGE_NAME}" --format '{{.Tag}} {{.CreatedAt}}' 2>/dev/null | \
+        grep -v 'latest' | sort -k2 -r | tail -n +4 | awk '{print "'"${IMAGE_NAME}"':" $1}' | \
+        xargs -r "$DOCKER_BIN" rmi 2>/dev/null || true
+}
+
 cleanup() {
     rm -f "$DEPLOY_LOG"
 }
@@ -364,6 +374,10 @@ send_deploy_started
 step_start "Pre-build disk cleanup..."
 "$DOCKER_BIN" container prune -f > /dev/null 2>&1 || true
 "$DOCKER_BIN" image prune -f > /dev/null 2>&1 || true
+# Reclaim stale rollback images BEFORE building. Previously this only ran
+# post-deploy, so a build that filled the disk left the old multi-GB images
+# behind and every retry failed identically with "no space left on device".
+prune_rollback_images
 "$DOCKER_BIN" builder prune --keep-storage 2g -f > /dev/null 2>&1 || true
 step_done
 
@@ -539,10 +553,7 @@ log "Pruning dangling images..."
 "$DOCKER_BIN" image prune -f > /dev/null 2>&1 || true
 
 # Keep at most 3 SHA-tagged images per environment for rollback.
-# List all SHA-tagged images for this project, skip the 3 newest, remove the rest.
-"$DOCKER_BIN" images "${IMAGE_NAME}" --format '{{.Tag}} {{.CreatedAt}}' 2>/dev/null | \
-    grep -v 'latest' | sort -k2 -r | tail -n +4 | awk '{print "'"${IMAGE_NAME}"':" $1}' | \
-    xargs -r "$DOCKER_BIN" rmi 2>/dev/null || true
+prune_rollback_images
 
 # Cap BuildKit build cache at 5 GB. This keeps the pnpm store, Vinxi, and
 # TanStack cache mounts around for fast rebuilds while preventing unbounded
