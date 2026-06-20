@@ -176,6 +176,7 @@ import { Route as ApiMessagesSidebarRouteImport } from './routes/api/messages/si
 import { Route as ApiMessagesConversationIdRouteImport } from './routes/api/messages/$conversationId'
 import { Route as ApiLaundrySortScoreRouteImport } from './routes/api/laundry-sort/score'
 import { Route as ApiLaundrySortLeaderboardRouteImport } from './routes/api/laundry-sort/leaderboard'
+import { Route as ApiInternalNotifyMessageRouteImport } from './routes/api/internal/notify-message'
 import { Route as ApiHandleCheckRouteImport } from './routes/api/handle/check'
 import { Route as ApiForestExplorerSaveRouteImport } from './routes/api/forest-explorer/save'
 import { Route as ApiFeedStreamRouteImport } from './routes/api/feed/stream'
@@ -1119,6 +1120,12 @@ const ApiLaundrySortLeaderboardRoute =
     path: '/api/laundry-sort/leaderboard',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiInternalNotifyMessageRoute =
+  ApiInternalNotifyMessageRouteImport.update({
+    id: '/api/internal/notify-message',
+    path: '/api/internal/notify-message',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiHandleCheckRoute = ApiHandleCheckRouteImport.update({
   id: '/api/handle/check',
   path: '/api/handle/check',
@@ -1763,6 +1770,7 @@ export interface FileRoutesByFullPath {
   '/api/feed/stream': typeof ApiFeedStreamRoute
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
   '/api/handle/check': typeof ApiHandleCheckRoute
+  '/api/internal/notify-message': typeof ApiInternalNotifyMessageRoute
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
   '/api/laundry-sort/score': typeof ApiLaundrySortScoreRoute
   '/api/messages/$conversationId': typeof ApiMessagesConversationIdRouteWithChildren
@@ -2005,6 +2013,7 @@ export interface FileRoutesByTo {
   '/api/feed/stream': typeof ApiFeedStreamRoute
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
   '/api/handle/check': typeof ApiHandleCheckRoute
+  '/api/internal/notify-message': typeof ApiInternalNotifyMessageRoute
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
   '/api/laundry-sort/score': typeof ApiLaundrySortScoreRoute
   '/api/messages/$conversationId': typeof ApiMessagesConversationIdRouteWithChildren
@@ -2271,6 +2280,7 @@ export interface FileRoutesById {
   '/api/feed/stream': typeof ApiFeedStreamRoute
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
   '/api/handle/check': typeof ApiHandleCheckRoute
+  '/api/internal/notify-message': typeof ApiInternalNotifyMessageRoute
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
   '/api/laundry-sort/score': typeof ApiLaundrySortScoreRoute
   '/api/messages/$conversationId': typeof ApiMessagesConversationIdRouteWithChildren
@@ -2537,6 +2547,7 @@ export interface FileRouteTypes {
     | '/api/feed/stream'
     | '/api/forest-explorer/save'
     | '/api/handle/check'
+    | '/api/internal/notify-message'
     | '/api/laundry-sort/leaderboard'
     | '/api/laundry-sort/score'
     | '/api/messages/$conversationId'
@@ -2779,6 +2790,7 @@ export interface FileRouteTypes {
     | '/api/feed/stream'
     | '/api/forest-explorer/save'
     | '/api/handle/check'
+    | '/api/internal/notify-message'
     | '/api/laundry-sort/leaderboard'
     | '/api/laundry-sort/score'
     | '/api/messages/$conversationId'
@@ -3044,6 +3056,7 @@ export interface FileRouteTypes {
     | '/api/feed/stream'
     | '/api/forest-explorer/save'
     | '/api/handle/check'
+    | '/api/internal/notify-message'
     | '/api/laundry-sort/leaderboard'
     | '/api/laundry-sort/score'
     | '/api/messages/$conversationId'
@@ -3252,6 +3265,7 @@ export interface RootRouteChildren {
   ApiFeedStreamRoute: typeof ApiFeedStreamRoute
   ApiForestExplorerSaveRoute: typeof ApiForestExplorerSaveRoute
   ApiHandleCheckRoute: typeof ApiHandleCheckRoute
+  ApiInternalNotifyMessageRoute: typeof ApiInternalNotifyMessageRoute
   ApiLaundrySortLeaderboardRoute: typeof ApiLaundrySortLeaderboardRoute
   ApiLaundrySortScoreRoute: typeof ApiLaundrySortScoreRoute
   ApiNeonDriftwayLeaderboardRoute: typeof ApiNeonDriftwayLeaderboardRoute
@@ -4480,6 +4494,13 @@ declare module '@tanstack/react-router' {
       path: '/api/laundry-sort/leaderboard'
       fullPath: '/api/laundry-sort/leaderboard'
       preLoaderRoute: typeof ApiLaundrySortLeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/internal/notify-message': {
+      id: '/api/internal/notify-message'
+      path: '/api/internal/notify-message'
+      fullPath: '/api/internal/notify-message'
+      preLoaderRoute: typeof ApiInternalNotifyMessageRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/handle/check': {
@@ -5861,6 +5882,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiFeedStreamRoute: ApiFeedStreamRoute,
   ApiForestExplorerSaveRoute: ApiForestExplorerSaveRoute,
   ApiHandleCheckRoute: ApiHandleCheckRoute,
+  ApiInternalNotifyMessageRoute: ApiInternalNotifyMessageRoute,
   ApiLaundrySortLeaderboardRoute: ApiLaundrySortLeaderboardRoute,
   ApiLaundrySortScoreRoute: ApiLaundrySortScoreRoute,
   ApiNeonDriftwayLeaderboardRoute: ApiNeonDriftwayLeaderboardRoute,

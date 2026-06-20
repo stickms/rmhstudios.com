@@ -28,8 +28,17 @@ import {
   generateBotProfile,
   generatePost,
   generateReply,
+  generateDirectMessageReply,
+  generateDirectMessageOpener,
   isRmharkAIConfigured,
 } from '@/lib/rmhark-ai/generate.server';
+import {
+  canBotMessage,
+  decideInitiation,
+  formatDmHistory,
+  type DmPrivacy,
+} from '@/lib/rmhark-ai/dm-policy';
+import type { MessagePayload } from '@/lib/message-events';
 
 // ─── Config ─────────────────────────────────────────────────────
 /** Read a positive integer env var, falling back to a default on missing/invalid input. */
@@ -70,6 +79,24 @@ const BOT_TO_BOT_PROB = probEnv('BOT_TO_BOT_REPLY_PROB', 0.3);
 const PROACTIVE_PROB = probEnv('BOT_PROACTIVE_PROB', 0.4);
 // Proactive replies only target posts newer than this (default 6h).
 const PROACTIVE_LOOKBACK_MS = intEnv('BOT_PROACTIVE_LOOKBACK_MS', 6 * 60 * 60 * 1000);
+
+// ─── DM behaviour ───────────────────────────────────────────────
+// How often the worker services DMs (snappier than the feed tick).
+const DM_TICK_MS = intEnv('BOT_DM_TICK_MS', 60 * 1000);
+// Only react to human DMs whose conversation moved within this window (default 24h).
+const DM_LOOKBACK_MS = intEnv('BOT_DM_LOOKBACK_MS', 24 * 60 * 60 * 1000);
+// Cap reactive DM replies created per tick (protects the DB + paid API).
+const MAX_DM_REPLIES_PER_TICK = intEnv('BOT_MAX_DM_REPLIES_PER_TICK', 4);
+// Probability a bot answers a human's DM (a DM expects an answer).
+const REACTIVE_DM_PROB = probEnv('BOT_REACTIVE_DM_PROB', 1.0);
+// Probability per tick that any bot-initiated opener happens at all.
+const DM_INITIATE_PROB = probEnv('BOT_DM_INITIATE_PROB', 0.15);
+// Cap bot-initiated openers per tick.
+const MAX_DM_OPENERS_PER_TICK = intEnv('BOT_MAX_DM_OPENERS_PER_TICK', 1);
+// Silence after a lone opener before one gentle follow-up (default 3 days).
+const DM_FOLLOWUP_SILENCE_MS = intEnv('BOT_DM_FOLLOWUP_SILENCE_MS', 3 * 24 * 60 * 60 * 1000);
+// Window defining "recently-active" candidate humans for openers (default 7 days).
+const DM_ACTIVE_HUMAN_LOOKBACK_MS = intEnv('BOT_DM_ACTIVE_HUMAN_LOOKBACK_MS', 7 * 24 * 60 * 60 * 1000);
 
 const TICKS_PER_DAY = (24 * 60 * 60 * 1000) / POST_TICK_MS;
 
@@ -257,6 +284,229 @@ async function getPersona(userId: string): Promise<string | undefined> {
   return personaCache.get(userId) ?? undefined;
 }
 
+// ─── DMs ────────────────────────────────────────────────────────
+
+/** Resolve the web origin the worker calls for the SSE notify bridge. */
+function internalApiBase(): string {
+  if (process.env.INTERNAL_API_URL) return process.env.INTERNAL_API_URL.replace(/\/$/, '');
+  const auth = process.env.BETTER_AUTH_URL;
+  if (auth) {
+    try {
+      return new URL(auth).origin;
+    } catch {
+      /* fall through */
+    }
+  }
+  return 'http://127.0.0.1:7005';
+}
+
+/**
+ * Push a live SSE event for a bot DM into the web process. Best-effort: if the
+ * secret is unset or the call fails, the message is already persisted and the
+ * human will see it on their next stream reconnect.
+ */
+async function notifyMessageDelivered(userId: string, message: MessagePayload): Promise<void> {
+  const secret = process.env.INTERNAL_API_SECRET;
+  if (!secret) return; // bridge disabled — graceful degradation
+  try {
+    await fetch(`${internalApiBase()}/api/internal/notify-message`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-internal-secret': secret },
+      body: JSON.stringify({ userId, message }),
+      signal: AbortSignal.timeout(5000),
+    });
+  } catch (e) {
+    errlog('notify bridge failed:', e);
+  }
+}
+
+/** Create one DM from `botId`, bump the conversation, and push the live event. */
+async function sendBotDm(
+  conversationId: string,
+  botId: string,
+  humanId: string,
+  content: string,
+): Promise<void> {
+  const [message] = await prisma.$transaction([
+    prisma.directMessage.create({ data: { conversationId, senderId: botId, content } }),
+    prisma.conversation.update({ where: { id: conversationId }, data: { lastMessageAt: new Date() } }),
+  ]);
+  const payload: MessagePayload = {
+    id: message.id,
+    conversationId,
+    content: message.content,
+    senderId: message.senderId,
+    read: message.read,
+    createdAt: message.createdAt.toISOString(),
+  };
+  await notifyMessageDelivered(humanId, payload);
+}
+
+/**
+ * Reactive DM replies: when a human's message is the latest in a conversation
+ * with a bot, the bot replies in-character. No privacy check — the human opened
+ * the conversation by messaging the bot.
+ */
+async function answerDirectMessages(): Promise<number> {
+  const since = new Date(Date.now() - DM_LOOKBACK_MS);
+  const conversations = await prisma.conversation.findMany({
+    where: {
+      lastMessageAt: { gte: since },
+      OR: [
+        { participantOne: { is: { isBot: true } } },
+        { participantTwo: { is: { isBot: true } } },
+      ],
+    },
+    orderBy: { lastMessageAt: 'desc' },
+    take: 60,
+    select: {
+      id: true,
+      participantOneId: true,
+      participantTwoId: true,
+      participantOne: { select: { isBot: true } },
+      participantTwo: { select: { isBot: true } },
+      messages: { orderBy: { createdAt: 'desc' }, take: 1, select: { senderId: true } },
+    },
+  });
+
+  // Keep conversations where exactly one participant is a bot and the human spoke last.
+  const candidates = conversations
+    .map((c) => {
+      const oneBot = !!c.participantOne?.isBot;
+      const twoBot = !!c.participantTwo?.isBot;
+      if (oneBot === twoBot) return null; // both bots or neither — skip
+      const botId = oneBot ? c.participantOneId : c.participantTwoId;
+      const humanId = oneBot ? c.participantTwoId : c.participantOneId;
+      const last = c.messages[0];
+      if (!last || last.senderId === botId) return null; // nothing new from the human
+      return { conversationId: c.id, botId, humanId };
+    })
+    .filter((x): x is { conversationId: string; botId: string; humanId: string } => x !== null);
+
+  let made = 0;
+  for (const cand of shuffle(candidates)) {
+    if (made >= MAX_DM_REPLIES_PER_TICK) break;
+    if (Math.random() > REACTIVE_DM_PROB) continue;
+    try {
+      const persona = await getPersona(cand.botId);
+      if (!persona) continue;
+
+      const recent = await prisma.directMessage.findMany({
+        where: { conversationId: cand.conversationId },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+        select: { senderId: true, content: true },
+      });
+      const history = formatDmHistory(recent.reverse(), cand.botId);
+
+      const content = await generateDirectMessageReply({ persona, history });
+      if (!content.trim()) continue;
+
+      await sendBotDm(cand.conversationId, cand.botId, cand.humanId, content);
+      made++;
+      log(`bot ${cand.botId} answered DM from ${cand.humanId}`);
+    } catch (e) {
+      errlog('reactive DM failed:', e);
+    }
+  }
+  return made;
+}
+
+/** Canonical participant ordering for the Conversation unique constraint. */
+function orderPair(a: string, b: string): [string, string] {
+  return a < b ? [a, b] : [b, a];
+}
+
+/**
+ * Bot-initiated DMs: rarely, a bot opens (or gently follows up) a DM with a
+ * recently-active human, respecting DM privacy and the anti-pester rules.
+ */
+async function initiateDirectMessages(): Promise<void> {
+  if (Math.random() > DM_INITIATE_PROB) return;
+
+  const since = new Date(Date.now() - DM_ACTIVE_HUMAN_LOOKBACK_MS);
+  const [recentPosts, recentComments, bots] = await Promise.all([
+    prisma.rMHark.findMany({
+      where: { createdAt: { gte: since }, deletedAt: null, user: { is: { isBot: false } } },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+      select: { userId: true },
+    }),
+    prisma.rMHarkComment.findMany({
+      where: { createdAt: { gte: since }, deletedAt: null, user: { is: { isBot: false } } },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+      select: { userId: true },
+    }),
+    prisma.user.findMany({ where: { isBot: true }, select: { id: true, botPersona: true } }),
+  ]);
+  if (bots.length === 0) return;
+
+  const humanIds = shuffle([
+    ...new Set([...recentPosts, ...recentComments].map((r) => r.userId)),
+  ]);
+  if (humanIds.length === 0) return;
+
+  let opened = 0;
+  for (const humanId of humanIds) {
+    if (opened >= MAX_DM_OPENERS_PER_TICK) break;
+
+    const bot = randomItem(bots);
+    if (!bot.botPersona || bot.id === humanId) continue;
+
+    try {
+      // Privacy gate (mirrors app/routes/api/messages.ts).
+      const human = await prisma.user.findUnique({
+        where: { id: humanId },
+        select: { profile: { select: { dmPrivacy: true } } },
+      });
+      const dmPrivacy = (human?.profile?.dmPrivacy ?? 'EVERYONE') as DmPrivacy;
+      let humanFollowsBot = false;
+      if (dmPrivacy === 'FOLLOWERS') {
+        const follows = await prisma.follow.findUnique({
+          where: { followerId_followingId: { followerId: humanId, followingId: bot.id } },
+          select: { id: true },
+        });
+        humanFollowsBot = !!follows;
+      }
+      if (!canBotMessage({ dmPrivacy, humanFollowsBot })) continue;
+
+      // Anti-pester gate, from the existing conversation (if any).
+      const [pOne, pTwo] = orderPair(bot.id, humanId);
+      const existing = await prisma.conversation.findUnique({
+        where: { participantOneId_participantTwoId: { participantOneId: pOne, participantTwoId: pTwo } },
+        select: {
+          id: true,
+          messages: { orderBy: { createdAt: 'asc' }, take: 10, select: { senderId: true, createdAt: true } },
+        },
+      });
+      const decision = decideInitiation({
+        botId: bot.id,
+        now: Date.now(),
+        followupSilenceMs: DM_FOLLOWUP_SILENCE_MS,
+        messages: existing ? existing.messages : null,
+      });
+      if (decision === 'skip') continue;
+
+      const content = await generateDirectMessageOpener({ persona: bot.botPersona });
+      if (!content.trim()) continue;
+
+      const conversation = await prisma.conversation.upsert({
+        where: { participantOneId_participantTwoId: { participantOneId: pOne, participantTwoId: pTwo } },
+        create: { participantOneId: pOne, participantTwoId: pTwo },
+        update: {},
+        select: { id: true },
+      });
+
+      await sendBotDm(conversation.id, bot.id, humanId, content);
+      opened++;
+      log(`bot ${bot.id} ${decision === 'followup' ? 'followed up with' : 'opened DM to'} ${humanId}`);
+    } catch (e) {
+      errlog('DM initiation failed:', e);
+    }
+  }
+}
+
 /** Post a single in-character reply from `botId` to `comment`. */
 async function replyToComment(
   botId: string,
@@ -395,13 +645,21 @@ async function replyTick(): Promise<void> {
   await seedBotConversation();
 }
 
+async function dmTick(): Promise<void> {
+  personaCache.clear();
+  await answerDirectMessages();
+  await initiateDirectMessages();
+}
+
 // ─── Loops ──────────────────────────────────────────────────────
 let userTimer: NodeJS.Timeout | undefined;
 let postTimer: NodeJS.Timeout | undefined;
 let replyTimer: NodeJS.Timeout | undefined;
+let dmTimer: NodeJS.Timeout | undefined;
 let maintaining = false;
 let posting = false;
 let replying = false;
+let dmRunning = false;
 
 async function safeMaintain() {
   if (maintaining) return;
@@ -439,6 +697,18 @@ async function safeReplyTick() {
   }
 }
 
+async function safeDmTick() {
+  if (dmRunning) return;
+  dmRunning = true;
+  try {
+    await dmTick();
+  } catch (e) {
+    errlog('dm tick failed:', e);
+  } finally {
+    dmRunning = false;
+  }
+}
+
 async function startup() {
   log('Starting…');
   if (!isRmharkAIConfigured()) {
@@ -446,7 +716,7 @@ async function startup() {
     return;
   }
   log(
-    `config: target=${TARGET_BOT_COUNT}, postTick=${POST_TICK_MS}ms, replyTick=${REPLY_TICK_MS}ms, userCheck=${USER_CHECK_MS}ms`,
+    `config: target=${TARGET_BOT_COUNT}, postTick=${POST_TICK_MS}ms, replyTick=${REPLY_TICK_MS}ms, dmTick=${DM_TICK_MS}ms, userCheck=${USER_CHECK_MS}ms`,
   );
 
   await safeMaintain();
@@ -454,6 +724,7 @@ async function startup() {
   userTimer = setInterval(() => void safeMaintain(), USER_CHECK_MS);
   postTimer = setInterval(() => void safePostTick(), POST_TICK_MS);
   replyTimer = setInterval(() => void safeReplyTick(), REPLY_TICK_MS);
+  dmTimer = setInterval(() => void safeDmTick(), DM_TICK_MS);
   log('Scheduled.');
 }
 
@@ -465,6 +736,7 @@ async function shutdown(signal: string) {
   if (userTimer) clearInterval(userTimer);
   if (postTimer) clearInterval(postTimer);
   if (replyTimer) clearInterval(replyTimer);
+  if (dmTimer) clearInterval(dmTimer);
   await prisma.$disconnect();
   process.exit(0);
 }

@@ -284,3 +284,74 @@ function stripJson(raw: string): string {
   const end = body.lastIndexOf('}');
   return start !== -1 && end !== -1 ? body.slice(start, end + 1) : body;
 }
+
+/* ------------------------------------------------------------------ */
+/*  Direct messages                                                    */
+/* ------------------------------------------------------------------ */
+
+const BASE_DM_RULES = [
+  'This is a private one-to-one direct message (DM), not a public post.',
+  `Hard limit: ${MAX_REPLY_CHARS} characters; most DMs are a sentence or two.`,
+  'Write like a real person messaging privately: warm, specific, conversational. You may ask a question back.',
+  'Do NOT use markdown, do NOT wrap the message in quotes, do NOT add a label. Output ONLY the message text.',
+].join(' ');
+
+/** Shared in-character system prompt for DMs (persona + never-reveal + rules). */
+function dmPersonaSystem(persona: string): string {
+  return [
+    'You are roleplaying as a specific person chatting in private DMs. Stay completely in character.',
+    'Never reveal or hint that you are an AI, a bot, or generated. You are just a person.',
+    'Follow this persona exactly, including the VOICE rules (formality, quirks, and any typos):',
+    '',
+    persona,
+    '',
+    BASE_DM_RULES,
+  ].join('\n');
+}
+
+/**
+ * Generate an in-character reply to a private DM conversation. `history` is the
+ * recent message chain labeled from the bot's perspective (them = the other
+ * person, you = the bot), oldest first.
+ */
+export async function generateDirectMessageReply(opts: {
+  persona: string;
+  history: { from: 'them' | 'you'; text: string }[];
+}): Promise<string> {
+  const transcript = opts.history
+    .map((t) => `${t.from === 'you' ? 'You' : 'Them'}: ${t.text}`)
+    .join('\n');
+  const user = [
+    'Here is your DM conversation so far (oldest first):',
+    transcript || '(no messages yet)',
+    '',
+    'Write your next message as the most recent reply. Output only the message.',
+  ].join('\n');
+
+  const raw = await chat(
+    [
+      { role: 'system', content: dmPersonaSystem(opts.persona) },
+      { role: 'user', content: user },
+    ],
+    { maxTokens: 300, temperature: 1.0 },
+  );
+  return cleanGeneratedText(raw, MAX_REPLY_CHARS);
+}
+
+/** Generate a short, natural opening DM in the bot's voice (no prior context). */
+export async function generateDirectMessageOpener(opts: { persona: string }): Promise<string> {
+  const user = [
+    'Start a new private conversation with someone on the same social platform.',
+    'Open naturally and briefly — a friendly hello, a small question, or a light comment in your voice.',
+    'Output only the message.',
+  ].join('\n');
+
+  const raw = await chat(
+    [
+      { role: 'system', content: dmPersonaSystem(opts.persona) },
+      { role: 'user', content: user },
+    ],
+    { maxTokens: 200, temperature: 1.1 },
+  );
+  return cleanGeneratedText(raw, MAX_REPLY_CHARS);
+}
