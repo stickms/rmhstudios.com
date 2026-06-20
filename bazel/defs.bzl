@@ -20,8 +20,9 @@ def go_service_image(
         `rmhstudios-go-<name>:dev`.
       binary: label of the go_binary (e.g. "//go-services/cmd/gateway:gateway").
       base: base OCI image label.
-      registry_repo: full push repository (e.g.
-        "ghcr.io/rmhstudios/rmhstudios-go-gateway"). Omit to skip the push target.
+      registry_repo: default push repository. Defaults to
+        "ghcr.io/rmhstudios/rmhstudios-go-<name>"; override at run time with
+        `bazel run //...:<name>_push -- --repository=<repo> --tag=<tag>`.
       platform: target platform the binary is compiled for inside the image.
       env: optional dict of image environment variables.
     """
@@ -54,9 +55,8 @@ def go_service_image(
         repo_tags = ["rmhstudios-go-" + name + ":dev"],
     )
 
-    if registry_repo:
-        oci_push(
-            name = name + "_push",
-            image = ":" + name + "_image",
-            repository = registry_repo,
-        )
+    oci_push(
+        name = name + "_push",
+        image = ":" + name + "_image",
+        repository = registry_repo or ("ghcr.io/rmhstudios/rmhstudios-go-" + name),
+    )
