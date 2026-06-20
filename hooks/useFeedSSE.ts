@@ -10,7 +10,9 @@
 "use client";
 
 import { useEffect } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { useFeedStore } from "@/stores/feedStore";
+import { showMentionToast } from "@/components/feed/MentionToast";
 import type { FeedSSEEvent, FeedSSEEventType, FeedSSEDelivery } from "@/lib/feed-sse";
 
 const SSE_URL = "/api/feed/stream";
@@ -51,6 +53,7 @@ const EVENT_TYPES: FeedSSEEventType[] = [
   "rmhark.deleted",
   "rmhark.reposted",
   "rmhark.unreposted",
+  "notification.mention",
 ];
 
 function dispatch(e: MessageEvent) {
@@ -138,12 +141,17 @@ function unsubscribe() {
 
 export function useFeedSSE() {
   const { updateItem, removeItem, receiveCreated } = useFeedStore();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handler = (event: FeedSSEEvent & { delivery?: FeedSSEDelivery }) => {
       const { type, rmharkId, payload } = event;
 
       switch (type) {
+        case "notification.mention":
+          if (event.notification) showMentionToast(event.notification, navigate);
+          break;
+
         case "rmhark.created":
           if (payload.content !== undefined || payload.type === "rmhark") {
             // Route via the store: Following auto-prepends followed/own posts;
@@ -180,5 +188,5 @@ export function useFeedSSE() {
       getState().listeners.delete(handler);
       unsubscribe();
     };
-  }, [receiveCreated, updateItem, removeItem]);
+  }, [receiveCreated, updateItem, removeItem, navigate]);
 }

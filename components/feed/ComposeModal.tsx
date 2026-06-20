@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { X, Plus, BarChart3, Image } from 'lucide-react';
 import { GifEmbed } from './GifEmbed';
 import { AIGenerateButton } from './AIGenerateButton';
+import { MentionTextarea } from './MentionTextarea';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
@@ -214,10 +215,10 @@ export function ComposeModal({ open, onClose }: ComposeModalProps) {
             </div>
 
             <div className="flex-1 min-w-0">
-              <textarea
+              <MentionTextarea
                 autoFocus
                 value={content}
-                onChange={(e) => setContent(e.target.value)}
+                onChange={setContent}
                 placeholder="What's on your mind?"
                 rows={4}
                 maxLength={MAX_RMHARK_LENGTH}

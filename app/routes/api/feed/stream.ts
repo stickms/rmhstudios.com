@@ -56,6 +56,14 @@ export const Route = createFileRoute('/api/feed/stream')({
       // Subscribe to the feed event bus
       const unsubscribe = feedEventBus.subscribe((event: FeedSSEEvent) => {
         try {
+          if (event.targetUserIds) {
+            // Targeted event (e.g. a mention notification): deliver only to the
+            // named viewers, never broadcast to anyone else.
+            if (viewerId && event.targetUserIds.includes(viewerId)) {
+              send(event.type, JSON.stringify(event));
+            }
+            return;
+          }
           if (event.type === "rmhark.created") {
             // Attach per-viewer delivery metadata so the client can route the
             // post into Following (auto-prepend) vs For You ("N new" pill).

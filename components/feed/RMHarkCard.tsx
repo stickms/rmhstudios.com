@@ -128,7 +128,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
     >
       {/* More menu — top right of card */}
       {!item.deletedAt && (
-        <div className="absolute top-3 right-3 z-10" ref={menuRef}>
+        <div className={`absolute top-3 right-3 ${menuOpen ? 'z-40' : 'z-10'}`} ref={menuRef}>
           <button
             onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v); }}
             className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors"

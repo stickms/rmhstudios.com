@@ -6,6 +6,7 @@ import { createRMHarkSchema } from "@/lib/rmhark-schema";
 import type { FeedItem, FeedFilter } from "@/lib/feed-types";
 import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 import { feedEventBus } from "@/lib/feed-sse";
+import { parseHandles } from "@/lib/feed/mentions";
 import { getTimeline, type FeedSurface } from "@/lib/feed/timeline";
 
 export const Route = createFileRoute('/api/rmharks')({
@@ -164,6 +165,44 @@ export const Route = createFileRoute('/api/rmharks')({
       timestamp: item.createdAt,
       authorId: session.user.id,
     });
+
+    // Notify mentioned users in real time (targeted SSE → toast on the client).
+    // Best-effort: never let notification fan-out fail the post creation.
+    try {
+      const author = item.user;
+      const handles = parseHandles(rmhark.content);
+      if (author && handles.length > 0) {
+        const mentioned = await prisma.user.findMany({
+          where: {
+            id: { not: session.user.id }, // don't notify self-mentions
+            OR: handles.map((h) => ({ handle: { equals: h, mode: "insensitive" as const } })),
+          },
+          select: { id: true },
+        });
+        if (mentioned.length > 0) {
+          feedEventBus.publish({
+            type: "notification.mention",
+            rmharkId: item.id,
+            payload: { id: item.id },
+            timestamp: item.createdAt,
+            authorId: session.user.id,
+            targetUserIds: mentioned.map((m) => m.id),
+            notification: {
+              rmharkId: item.id,
+              preview: rmhark.content.slice(0, 120),
+              author: {
+                id: author.id,
+                name: author.name ?? null,
+                image: author.image ?? null,
+                handle: author.handle ?? null,
+              },
+            },
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Mention notification error:", err);
+    }
 
     return Response.json(item, { status: 201 });
   } catch (error) {

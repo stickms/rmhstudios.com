@@ -10,6 +10,7 @@ import { useFeedStore } from '@/stores/feedStore';
 import { RMHarkActions } from './RMHarkActions';
 import { CommentItem } from './CommentItem';
 import { AIGenerateButton } from './AIGenerateButton';
+import { MentionTextarea } from './MentionTextarea';
 import type { Comment } from './CommentItem';
 import { MAX_COMMENT_LENGTH } from '@/lib/rmhark-schema';
 import { Link, useNavigate } from '@tanstack/react-router';
@@ -386,10 +387,10 @@ export function PostDetail({ postId }: PostDetailProps) {
               linkToProfile={false}
             />
             <div className="flex-1 min-w-0">
-              <textarea
+              <MentionTextarea
                 id="post-comment-input"
                 value={commentContent}
-                onChange={(e) => setCommentContent(e.target.value)}
+                onChange={setCommentContent}
                 placeholder="Post your reply..."
                 rows={2}
                 maxLength={MAX_COMMENT_LENGTH}

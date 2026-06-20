@@ -183,6 +183,8 @@ import { Route as ApiInternalNotifyMessageRouteImport } from './routes/api/inter
 import { Route as ApiHandleCheckRouteImport } from './routes/api/handle/check'
 import { Route as ApiForestExplorerSaveRouteImport } from './routes/api/forest-explorer/save'
 import { Route as ApiFeedStreamRouteImport } from './routes/api/feed/stream'
+import { Route as ApiFeedMentionSearchRouteImport } from './routes/api/feed/mention-search'
+import { Route as ApiFeedHashtagSearchRouteImport } from './routes/api/feed/hashtag-search'
 import { Route as ApiDreamRiftScoreRouteImport } from './routes/api/dream-rift/score'
 import { Route as ApiDreamRiftLeaderboardRouteImport } from './routes/api/dream-rift/leaderboard'
 import { Route as ApiDoctrineReactionsRouteImport } from './routes/api/doctrine/reactions'
@@ -1160,6 +1162,16 @@ const ApiFeedStreamRoute = ApiFeedStreamRouteImport.update({
   path: '/api/feed/stream',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiFeedMentionSearchRoute = ApiFeedMentionSearchRouteImport.update({
+  id: '/api/feed/mention-search',
+  path: '/api/feed/mention-search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiFeedHashtagSearchRoute = ApiFeedHashtagSearchRouteImport.update({
+  id: '/api/feed/hashtag-search',
+  path: '/api/feed/hashtag-search',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiDreamRiftScoreRoute = ApiDreamRiftScoreRouteImport.update({
   id: '/api/dream-rift/score',
   path: '/api/dream-rift/score',
@@ -1793,6 +1805,8 @@ export interface FileRoutesByFullPath {
   '/api/doctrine/reactions': typeof ApiDoctrineReactionsRoute
   '/api/dream-rift/leaderboard': typeof ApiDreamRiftLeaderboardRoute
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
+  '/api/feed/hashtag-search': typeof ApiFeedHashtagSearchRoute
+  '/api/feed/mention-search': typeof ApiFeedMentionSearchRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
   '/api/handle/check': typeof ApiHandleCheckRoute
@@ -2040,6 +2054,8 @@ export interface FileRoutesByTo {
   '/api/doctrine/reactions': typeof ApiDoctrineReactionsRoute
   '/api/dream-rift/leaderboard': typeof ApiDreamRiftLeaderboardRoute
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
+  '/api/feed/hashtag-search': typeof ApiFeedHashtagSearchRoute
+  '/api/feed/mention-search': typeof ApiFeedMentionSearchRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
   '/api/handle/check': typeof ApiHandleCheckRoute
@@ -2311,6 +2327,8 @@ export interface FileRoutesById {
   '/api/doctrine/reactions': typeof ApiDoctrineReactionsRoute
   '/api/dream-rift/leaderboard': typeof ApiDreamRiftLeaderboardRoute
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
+  '/api/feed/hashtag-search': typeof ApiFeedHashtagSearchRoute
+  '/api/feed/mention-search': typeof ApiFeedMentionSearchRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
   '/api/handle/check': typeof ApiHandleCheckRoute
@@ -2582,6 +2600,8 @@ export interface FileRouteTypes {
     | '/api/doctrine/reactions'
     | '/api/dream-rift/leaderboard'
     | '/api/dream-rift/score'
+    | '/api/feed/hashtag-search'
+    | '/api/feed/mention-search'
     | '/api/feed/stream'
     | '/api/forest-explorer/save'
     | '/api/handle/check'
@@ -2829,6 +2849,8 @@ export interface FileRouteTypes {
     | '/api/doctrine/reactions'
     | '/api/dream-rift/leaderboard'
     | '/api/dream-rift/score'
+    | '/api/feed/hashtag-search'
+    | '/api/feed/mention-search'
     | '/api/feed/stream'
     | '/api/forest-explorer/save'
     | '/api/handle/check'
@@ -3099,6 +3121,8 @@ export interface FileRouteTypes {
     | '/api/doctrine/reactions'
     | '/api/dream-rift/leaderboard'
     | '/api/dream-rift/score'
+    | '/api/feed/hashtag-search'
+    | '/api/feed/mention-search'
     | '/api/feed/stream'
     | '/api/forest-explorer/save'
     | '/api/handle/check'
@@ -3311,6 +3335,8 @@ export interface RootRouteChildren {
   ApiDoctrineReactionsRoute: typeof ApiDoctrineReactionsRoute
   ApiDreamRiftLeaderboardRoute: typeof ApiDreamRiftLeaderboardRoute
   ApiDreamRiftScoreRoute: typeof ApiDreamRiftScoreRoute
+  ApiFeedHashtagSearchRoute: typeof ApiFeedHashtagSearchRoute
+  ApiFeedMentionSearchRoute: typeof ApiFeedMentionSearchRoute
   ApiFeedStreamRoute: typeof ApiFeedStreamRoute
   ApiForestExplorerSaveRoute: typeof ApiForestExplorerSaveRoute
   ApiHandleCheckRoute: typeof ApiHandleCheckRoute
@@ -4593,6 +4619,20 @@ declare module '@tanstack/react-router' {
       path: '/api/feed/stream'
       fullPath: '/api/feed/stream'
       preLoaderRoute: typeof ApiFeedStreamRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/feed/mention-search': {
+      id: '/api/feed/mention-search'
+      path: '/api/feed/mention-search'
+      fullPath: '/api/feed/mention-search'
+      preLoaderRoute: typeof ApiFeedMentionSearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/feed/hashtag-search': {
+      id: '/api/feed/hashtag-search'
+      path: '/api/feed/hashtag-search'
+      fullPath: '/api/feed/hashtag-search'
+      preLoaderRoute: typeof ApiFeedHashtagSearchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/dream-rift/score': {
@@ -5963,6 +6003,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDoctrineReactionsRoute: ApiDoctrineReactionsRoute,
   ApiDreamRiftLeaderboardRoute: ApiDreamRiftLeaderboardRoute,
   ApiDreamRiftScoreRoute: ApiDreamRiftScoreRoute,
+  ApiFeedHashtagSearchRoute: ApiFeedHashtagSearchRoute,
+  ApiFeedMentionSearchRoute: ApiFeedMentionSearchRoute,
   ApiFeedStreamRoute: ApiFeedStreamRoute,
   ApiForestExplorerSaveRoute: ApiForestExplorerSaveRoute,
   ApiHandleCheckRoute: ApiHandleCheckRoute,

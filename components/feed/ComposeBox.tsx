@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Plus, BarChart3, Image, X } from 'lucide-react';
 import { GifEmbed } from './GifEmbed';
 import { AIGenerateButton } from './AIGenerateButton';
+import { MentionTextarea } from './MentionTextarea';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { useFeedStore } from '@/stores/feedStore';
@@ -144,10 +145,10 @@ export function ComposeBox() {
 
         {/* Compose area */}
         <div className="flex-1 min-w-0">
-          <textarea
+          <MentionTextarea
             id="compose-box"
             value={content}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={setContent}
             placeholder="What's on your mind?"
             rows={3}
             maxLength={MAX_RMHARK_LENGTH}

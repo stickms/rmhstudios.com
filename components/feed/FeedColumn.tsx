@@ -10,7 +10,7 @@ import { MobileSidebarDrawer } from './MobileSidebarDrawer';
 import { useFeedStore } from '@/stores/feedStore';
 import { useFeedSSE } from '@/hooks/useFeedSSE';
 import { authClient } from '@/lib/auth-client';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 
 interface SearchUser {
   id: string;
@@ -28,7 +28,10 @@ export function FeedColumn() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { setFilter, search, setSearch } = useFeedStore();
   const { data: session } = authClient.useSession();
-  const [searchInput, setSearchInput] = useState(search ?? '');
+  const navigate = useNavigate();
+  // `?q=` is the shareable source of truth; the store search mirrors it.
+  const urlQuery = (useSearch({ strict: false }) as { q?: string }).q ?? null;
+  const [searchInput, setSearchInput] = useState(urlQuery ?? '');
   const [userResults, setUserResults] = useState<SearchUser[]>([]);
   const searchRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -41,7 +44,9 @@ export function FeedColumn() {
     setSearchInput(value);
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      setSearch(value.trim() || null);
+      const q = value.trim();
+      // Push the query into the URL; the effect below drives the actual search.
+      navigate({ to: '/', search: q ? { q } : {} });
     }, 300);
 
     clearTimeout(userDebounceRef.current);
@@ -60,20 +65,30 @@ export function FeedColumn() {
 
   const clearSearch = () => {
     setSearchInput('');
-    setSearch(null);
     setUserResults([]);
+    navigate({ to: '/', search: {} });
     searchRef.current?.focus();
   };
 
-  // Sync local input when store search changes (e.g. hashtag click)
+  // The URL `?q=` is authoritative: drive the feed store from it so a shared
+  // link (or a hashtag click that navigates here) performs the search, and
+  // back/forward navigation stays in sync.
   useEffect(() => {
-    setSearchInput(search ?? '');
-  }, [search]);
+    if (urlQuery !== search) setSearch(urlQuery);
+  }, [urlQuery, search, setSearch]);
+
+  // Keep the local input box mirroring the active query.
+  useEffect(() => {
+    setSearchInput(urlQuery ?? '');
+  }, [urlQuery]);
 
   const handleModeChange = (newMode: 'feed' | 'friends') => {
     setMode(newMode);
     setFiltersOpen(false);
     setSearchInput('');
+    // Switching tabs clears any active search — drop it from the URL too so the
+    // q-driven effect doesn't immediately re-apply it.
+    if (urlQuery) navigate({ to: '/', search: {} });
     if (newMode === 'friends') {
       setFilter('friends');
     } else {
