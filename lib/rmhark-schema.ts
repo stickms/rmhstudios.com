@@ -1,6 +1,10 @@
 import { z } from "zod";
 
 export const MAX_RMHARK_LENGTH = 280;
+export const MAX_RMHARK_IMAGES = 4;
+const feedImageUrlSchema = z
+  .string()
+  .regex(/^\/api\/feed\/image\/[A-Za-z0-9._-]+$/, "Invalid image reference");
 export const MAX_COMMENT_LENGTH = 500;
 export const MAX_POLL_QUESTION_LENGTH = 200;
 export const MAX_POLL_OPTION_LENGTH = 80;
@@ -53,9 +57,17 @@ export const createRMHarkSchema = z
       .default(""),
     poll: pollSchema.optional(),
     gifUrl: gifUrlSchema.optional(),
+    imageUrls: z
+      .array(feedImageUrlSchema)
+      .max(MAX_RMHARK_IMAGES, `At most ${MAX_RMHARK_IMAGES} images allowed`)
+      .optional(),
   })
   .refine(
-    (data) => data.content.trim().length > 0 || data.poll || data.gifUrl,
+    (data) =>
+      data.content.trim().length > 0 ||
+      data.poll ||
+      data.gifUrl ||
+      (data.imageUrls?.length ?? 0) > 0,
     { message: "Post must have text, a poll, or an image/GIF" }
   );
 

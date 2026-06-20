@@ -992,6 +992,7 @@ model RMHark {
   userId    String
   content   String   @db.Text
   gifUrl    String?  @db.Text
+  imageUrls String[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

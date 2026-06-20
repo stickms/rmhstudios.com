@@ -56,6 +56,7 @@ export interface FeedItem {
   // Poll & GIF attachments
   poll?: FeedPoll;
   gifUrl?: string;
+  imageUrls?: string[];
 
   // Announcement fields (games/apps/news/blog/research)
   title?: string;
