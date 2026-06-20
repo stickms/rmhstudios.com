@@ -11,12 +11,29 @@ import { io, Socket } from 'socket.io-client';
 import { ensureTrailingSlash } from '@/lib/url';
 import { authClient } from '@/lib/auth-client';
 import { useRmhTubeStore } from './store';
-import { S2C } from './events';
+import { C2S, S2C } from './events';
 import { toast } from './toast-store';
+import { getServerNow, recordPong, beginClockSyncBurst, resetClock } from './clock';
+import { CLOCK_SYNC_SAMPLES, CLOCK_SYNC_INTERVAL_MS } from './constants';
 
 // ─── Module-Level Socket Reference ──────────────────────────────
 
 let socket: Socket | null = null;
+let clockSyncTimer: ReturnType<typeof setInterval> | null = null;
+
+/**
+ * Fire a burst of clock-sync pings. The lowest-RTT pong wins (see clock.ts).
+ * Called on connect, periodically, and whenever the tab regains visibility.
+ */
+export function syncClock(): void {
+  if (!socket?.connected) return;
+  beginClockSyncBurst();
+  for (let i = 0; i < CLOCK_SYNC_SAMPLES; i++) {
+    setTimeout(() => {
+      if (socket?.connected) socket.emit(C2S.SYNC_PING, { clientTime: Date.now() });
+    }, i * 120);
+  }
+}
 
 // ─── Connection ─────────────────────────────────────────────────
 
@@ -60,14 +77,24 @@ export async function connectToRmhTube(): Promise<Socket> {
   // ─── Connection lifecycle ───────────────────────────────────
   socket.on('connect', () => {
     useRmhTubeStore.getState().setConnectionStatus('connected');
+    // Establish the client↔server clock offset right away, then keep it fresh.
+    syncClock();
+    if (clockSyncTimer) clearInterval(clockSyncTimer);
+    clockSyncTimer = setInterval(syncClock, CLOCK_SYNC_INTERVAL_MS);
   });
 
   socket.on('disconnect', (reason) => {
+    if (clockSyncTimer) { clearInterval(clockSyncTimer); clockSyncTimer = null; }
     if (reason === 'io server disconnect' || reason === 'io client disconnect') {
       useRmhTubeStore.getState().setConnectionStatus('disconnected');
     } else {
       useRmhTubeStore.getState().setConnectionStatus('connecting');
     }
+  });
+
+  // ─── Clock sync (NTP-lite) ──────────────────────────────────
+  socket.on(S2C.SYNC_PONG, (data: { clientTime: number; serverTime: number }) => {
+    recordPong(data.clientTime, data.serverTime);
   });
 
   socket.on('connect_error', (err) => {
@@ -98,7 +125,7 @@ export async function connectToRmhTube(): Promise<Socket> {
       useRmhTubeStore.getState().updateVideoState({
         ...room.videoState,
         playing: true,
-        updatedAt: Date.now(),
+        updatedAt: getServerNow(),
       });
     }
   });
@@ -109,7 +136,7 @@ export async function connectToRmhTube(): Promise<Socket> {
       useRmhTubeStore.getState().updateVideoState({
         ...room.videoState,
         playing: false,
-        updatedAt: Date.now(),
+        updatedAt: getServerNow(),
       });
     }
   });
@@ -120,7 +147,7 @@ export async function connectToRmhTube(): Promise<Socket> {
       useRmhTubeStore.getState().updateVideoState({
         ...room.videoState,
         currentTime: data.time,
-        updatedAt: Date.now(),
+        updatedAt: getServerNow(),
       });
     }
   });
@@ -132,7 +159,7 @@ export async function connectToRmhTube(): Promise<Socket> {
       playing: false,
       currentTime: 0,
       playbackRate: 1,
-      updatedAt: Date.now(),
+      updatedAt: getServerNow(),
     });
   });
 
@@ -144,7 +171,7 @@ export async function connectToRmhTube(): Promise<Socket> {
       useRmhTubeStore.getState().updateVideoState({
         ...room.videoState,
         playbackRate: data.speed,
-        updatedAt: Date.now(),
+        updatedAt: getServerNow(),
       });
     }
   });
@@ -235,6 +262,8 @@ export function getSocket(): Socket | null {
 // ─── Disconnect ──────────────────────────────────────────────────
 
 export function disconnectFromRmhTube(): void {
+  if (clockSyncTimer) { clearInterval(clockSyncTimer); clockSyncTimer = null; }
+  resetClock();
   if (socket) {
     socket.disconnect();
     socket = null;

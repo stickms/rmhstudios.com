@@ -12,6 +12,7 @@ import { useCallback, useState, useRef, useEffect } from 'react';
 import { Play, Pause, SkipForward, Volume2, VolumeX, Volume1, Subtitles, Gauge, PictureInPicture2, Maximize, Minimize } from 'lucide-react';
 import { emit } from '@/lib/rmhtube/socket';
 import { C2S } from '@/lib/rmhtube/events';
+import { getServerNow } from '@/lib/rmhtube/clock';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
 import { formatDuration } from '@/lib/rmhtube/utils';
 import { PLAYBACK_SPEEDS } from '@/lib/rmhtube/constants';
@@ -70,7 +71,7 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
         useRmhTubeStore.getState().updateVideoState({
           ...room.videoState,
           playing: !playing,
-          updatedAt: Date.now(),
+          updatedAt: getServerNow(),
         });
       }
       emit(playing ? C2S.SYNC_PAUSE : C2S.SYNC_PLAY, {});

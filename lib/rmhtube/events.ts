@@ -23,6 +23,9 @@ export const C2S = {
   SYNC_PLAY:            'rmhtube:sync:play',
   SYNC_PAUSE:           'rmhtube:sync:pause',
   SYNC_SEEK:            'rmhtube:sync:seek',
+  // Robustness: clock sync + on-demand resync
+  SYNC_PING:            'rmhtube:sync:ping',
+  SYNC_REQUEST:         'rmhtube:sync:request',
 
   // Media queue
   QUEUE_ADD:            'rmhtube:queue:add',
@@ -74,6 +77,8 @@ export const S2C = {
   SYNC_PAUSE:           'rmhtube:sync:pause',
   SYNC_SEEK:            'rmhtube:sync:seek',
   SYNC_MEDIA_CHANGED:   'rmhtube:sync:media_changed',
+  // Robustness: clock sync handshake reply
+  SYNC_PONG:            'rmhtube:sync:pong',
 
   // Queue updates
   QUEUE_UPDATED:        'rmhtube:queue:updated',
