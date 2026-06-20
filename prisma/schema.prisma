@@ -19,6 +19,7 @@ model User {
   emailVerified   Boolean?
   password        String?   // Added for password login
   image           String?
+  stripeCustomerId String?  // Stripe customer id (set by @better-auth/stripe on signup)
   isAdmin         Boolean   @default(false)
   isVerified      Boolean   @default(false)
   // ─── RMHark AI bot users (generated + driven by the bot-worker) ──
@@ -1947,4 +1948,23 @@ model VibePageVersion {
 
   @@index([pageId, createdAt])
   @@map("vibe_page_version")
+}
+
+// Stripe subscription state, synced by @better-auth/stripe via webhook.
+model Subscription {
+  id                   String    @id @default(cuid())
+  plan                 String    // "starter" | "pro" | "enterprise"
+  referenceId          String    // the owning User.id
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  status               String?   // active | trialing | past_due | canceled | incomplete | ...
+  periodStart          DateTime?
+  periodEnd            DateTime?
+  cancelAtPeriodEnd    Boolean?
+  seats                Int?
+  trialStart           DateTime?
+  trialEnd             DateTime?
+
+  @@index([referenceId])
+  @@index([stripeCustomerId])
 }
