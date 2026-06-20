@@ -10,6 +10,7 @@ import { EngagementListModal } from './EngagementListModal';
 import { UserAvatar } from './UserAvatar';
 import { AIGenerateButton } from './AIGenerateButton';
 import { useFreshUser } from '@/stores/userDisplayStore';
+import { timeAgoShort } from '@/lib/utils';
 
 export interface Comment {
   id: string;
@@ -31,23 +32,6 @@ interface SessionUser {
   id?: string;
   name?: string | null;
   image?: string | null;
-}
-
-function timeAgo(dateStr: string): string {
-  const now = Date.now();
-  const then = new Date(dateStr).getTime();
-  const seconds = Math.floor((now - then) / 1000);
-
-  if (seconds < 60) return `${seconds}s`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d`;
-  const months = Math.floor(days / 30);
-  if (months < 12) return `${months}mo`;
-  return `${Math.floor(months / 12)}y`;
 }
 
 function formatCount(n: number | undefined): string {
@@ -223,7 +207,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
               )}
             </Link>
             <span className="text-site-text-dim shrink-0">
-              · {timeAgo(comment.createdAt)}
+              · {timeAgoShort(comment.createdAt)}
             </span>
 
             {/* More menu */}

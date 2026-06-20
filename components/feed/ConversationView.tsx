@@ -33,11 +33,16 @@ export function ConversationView({ conversationId }: { conversationId: string })
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [otherTyping, setOtherTyping] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const initialFetched = useRef(false);
+  // Typing-indicator bookkeeping
+  const typingActiveRef = useRef(false);
+  const typingStopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const otherTypingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { data: session } = useSession();
   const { resolved: resolvedUser } = useResolvedUser();
@@ -103,6 +108,9 @@ export function ConversationView({ conversationId }: { conversationId: string })
 
   // Handle incoming SSE message
   const handleIncomingMessage = useCallback((msg: Message) => {
+    // A delivered message means the other side is no longer typing.
+    setOtherTyping(false);
+    if (otherTypingTimer.current) clearTimeout(otherTypingTimer.current);
     setMessages((prev) => {
       // Skip if we already have this message (e.g. optimistic send)
       if (prev.some((m) => m.id === msg.id)) return prev;
@@ -112,6 +120,46 @@ export function ConversationView({ conversationId }: { conversationId: string })
     // Mark as read since the conversation is open
     markAsRead();
   }, [scrollToBottom, markAsRead]);
+
+  // Show/hide the other participant's typing indicator (with a safety timeout
+  // in case the matching "stopped typing" event never arrives).
+  const handleTypingEvent = useCallback((isTyping: boolean) => {
+    if (otherTypingTimer.current) clearTimeout(otherTypingTimer.current);
+    setOtherTyping(isTyping);
+    if (isTyping) {
+      setTimeout(scrollToBottom, 100);
+      otherTypingTimer.current = setTimeout(() => setOtherTyping(false), 10000);
+    }
+  }, [scrollToBottom]);
+
+  // POST our own typing state to the other participant (debounced stop).
+  const sendTyping = useCallback((isTyping: boolean) => {
+    fetch(`/api/messages/${encodeURIComponent(conversationId)}/typing`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isTyping }),
+    }).catch(() => {});
+  }, [conversationId]);
+
+  const handleTyping = useCallback(() => {
+    if (!typingActiveRef.current) {
+      typingActiveRef.current = true;
+      sendTyping(true);
+    }
+    if (typingStopTimer.current) clearTimeout(typingStopTimer.current);
+    typingStopTimer.current = setTimeout(() => {
+      typingActiveRef.current = false;
+      sendTyping(false);
+    }, 3000);
+  }, [sendTyping]);
+
+  const stopTyping = useCallback(() => {
+    if (typingStopTimer.current) clearTimeout(typingStopTimer.current);
+    if (typingActiveRef.current) {
+      typingActiveRef.current = false;
+      sendTyping(false);
+    }
+  }, [sendTyping]);
 
   useEffect(() => {
     if (!initialFetched.current && session) {
@@ -173,6 +221,18 @@ export function ConversationView({ conversationId }: { conversationId: string })
         }
       });
 
+      eventSource.addEventListener('typing', (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          if (data.conversationId === conversationId && data.senderId !== session.user.id) {
+            handleTypingEvent(Boolean(data.isTyping));
+          }
+          retryCount = 0;
+        } catch {
+          // Ignore parse errors
+        }
+      });
+
       eventSource.onerror = () => {
         eventSource?.close();
         eventSource = null;
@@ -196,7 +256,17 @@ export function ConversationView({ conversationId }: { conversationId: string })
       eventSource?.close();
       window.removeEventListener('beforeunload', onBeforeUnload);
     };
-  }, [session, conversationId, handleIncomingMessage]);
+  }, [session, conversationId, handleIncomingMessage, handleTypingEvent]);
+
+  // Reset the typing indicator and tell the other side we stopped when the
+  // conversation changes or the component unmounts.
+  useEffect(() => {
+    return () => {
+      stopTyping();
+      if (otherTypingTimer.current) clearTimeout(otherTypingTimer.current);
+      setOtherTyping(false);
+    };
+  }, [conversationId, stopTyping]);
 
   const handleLoadOlder = () => {
     if (loadingOlder || !hasOlder) return;
@@ -222,6 +292,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
     };
     setMessages((prev) => [...prev, optimisticMsg]);
     setInput('');
+    stopTyping();
     setTimeout(scrollToBottom, 50);
 
     try {
@@ -428,6 +499,24 @@ export function ConversationView({ conversationId }: { conversationId: string })
               );
             })}
 
+            {otherTyping && (
+              <div className="flex items-end gap-2 mb-3">
+                <UserAvatar
+                  src={otherUser?.image ?? undefined}
+                  alt={otherUser?.name || 'User'}
+                  size={28}
+                  fallbackName={otherUser?.name ?? undefined}
+                />
+                <div className="bg-site-surface text-site-text rounded-tl-md rounded-tr-2xl rounded-br-2xl rounded-bl-md px-4 py-3">
+                  <div className="flex items-center gap-1" aria-label={`${otherUser?.name || 'User'} is typing`}>
+                    <span className="w-1.5 h-1.5 rounded-full bg-site-text-dim animate-bounce [animation-delay:-0.3s]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-site-text-dim animate-bounce [animation-delay:-0.15s]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-site-text-dim animate-bounce" />
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div ref={messagesEndRef} />
           </>
         )}
@@ -446,7 +535,12 @@ export function ConversationView({ conversationId }: { conversationId: string })
           <textarea
             ref={inputRef}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+              setInput(e.target.value);
+              if (e.target.value.trim()) handleTyping();
+              else stopTyping();
+            }}
+            onBlur={stopTyping}
             onKeyDown={handleKeyDown}
             placeholder="Type a message..."
             rows={1}

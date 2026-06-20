@@ -178,6 +178,7 @@ import { Route as ApiMessagesReadAllRouteImport } from './routes/api/messages/re
 import { Route as ApiMessagesConversationIdRouteImport } from './routes/api/messages/$conversationId'
 import { Route as ApiLaundrySortScoreRouteImport } from './routes/api/laundry-sort/score'
 import { Route as ApiLaundrySortLeaderboardRouteImport } from './routes/api/laundry-sort/leaderboard'
+import { Route as ApiInternalNotifyTypingRouteImport } from './routes/api/internal/notify-typing'
 import { Route as ApiInternalNotifyMessageRouteImport } from './routes/api/internal/notify-message'
 import { Route as ApiHandleCheckRouteImport } from './routes/api/handle/check'
 import { Route as ApiForestExplorerSaveRouteImport } from './routes/api/forest-explorer/save'
@@ -241,6 +242,7 @@ import { Route as ApiProfileIdLikesRouteImport } from './routes/api/profile/$id/
 import { Route as ApiProfileIdFollowingRouteImport } from './routes/api/profile/$id/following'
 import { Route as ApiProfileIdFollowersRouteImport } from './routes/api/profile/$id/followers'
 import { Route as ApiProfileIdFollowRouteImport } from './routes/api/profile/$id/follow'
+import { Route as ApiMessagesConversationIdTypingRouteImport } from './routes/api/messages/$conversationId/typing'
 import { Route as ApiMessagesConversationIdReadRouteImport } from './routes/api/messages/$conversationId/read'
 import { Route as ApiGamesSynapseStormScoreRouteImport } from './routes/api/games/synapse-storm/score'
 import { Route as ApiGamesSynapseStormSaveRouteImport } from './routes/api/games/synapse-storm/save'
@@ -1132,6 +1134,11 @@ const ApiLaundrySortLeaderboardRoute =
     path: '/api/laundry-sort/leaderboard',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiInternalNotifyTypingRoute = ApiInternalNotifyTypingRouteImport.update({
+  id: '/api/internal/notify-typing',
+  path: '/api/internal/notify-typing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiInternalNotifyMessageRoute =
   ApiInternalNotifyMessageRouteImport.update({
     id: '/api/internal/notify-message',
@@ -1456,6 +1463,12 @@ const ApiProfileIdFollowRoute = ApiProfileIdFollowRouteImport.update({
   path: '/follow',
   getParentRoute: () => ApiProfileIdRoute,
 } as any)
+const ApiMessagesConversationIdTypingRoute =
+  ApiMessagesConversationIdTypingRouteImport.update({
+    id: '/typing',
+    path: '/typing',
+    getParentRoute: () => ApiMessagesConversationIdRoute,
+  } as any)
 const ApiMessagesConversationIdReadRoute =
   ApiMessagesConversationIdReadRouteImport.update({
     id: '/read',
@@ -1784,6 +1797,7 @@ export interface FileRoutesByFullPath {
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
   '/api/handle/check': typeof ApiHandleCheckRoute
   '/api/internal/notify-message': typeof ApiInternalNotifyMessageRoute
+  '/api/internal/notify-typing': typeof ApiInternalNotifyTypingRoute
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
   '/api/laundry-sort/score': typeof ApiLaundrySortScoreRoute
   '/api/messages/$conversationId': typeof ApiMessagesConversationIdRouteWithChildren
@@ -1874,6 +1888,7 @@ export interface FileRoutesByFullPath {
   '/api/games/synapse-storm/save': typeof ApiGamesSynapseStormSaveRoute
   '/api/games/synapse-storm/score': typeof ApiGamesSynapseStormScoreRoute
   '/api/messages/$conversationId/read': typeof ApiMessagesConversationIdReadRoute
+  '/api/messages/$conversationId/typing': typeof ApiMessagesConversationIdTypingRoute
   '/api/profile/$id/follow': typeof ApiProfileIdFollowRoute
   '/api/profile/$id/followers': typeof ApiProfileIdFollowersRoute
   '/api/profile/$id/following': typeof ApiProfileIdFollowingRoute
@@ -2029,6 +2044,7 @@ export interface FileRoutesByTo {
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
   '/api/handle/check': typeof ApiHandleCheckRoute
   '/api/internal/notify-message': typeof ApiInternalNotifyMessageRoute
+  '/api/internal/notify-typing': typeof ApiInternalNotifyTypingRoute
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
   '/api/laundry-sort/score': typeof ApiLaundrySortScoreRoute
   '/api/messages/$conversationId': typeof ApiMessagesConversationIdRouteWithChildren
@@ -2119,6 +2135,7 @@ export interface FileRoutesByTo {
   '/api/games/synapse-storm/save': typeof ApiGamesSynapseStormSaveRoute
   '/api/games/synapse-storm/score': typeof ApiGamesSynapseStormScoreRoute
   '/api/messages/$conversationId/read': typeof ApiMessagesConversationIdReadRoute
+  '/api/messages/$conversationId/typing': typeof ApiMessagesConversationIdTypingRoute
   '/api/profile/$id/follow': typeof ApiProfileIdFollowRoute
   '/api/profile/$id/followers': typeof ApiProfileIdFollowersRoute
   '/api/profile/$id/following': typeof ApiProfileIdFollowingRoute
@@ -2298,6 +2315,7 @@ export interface FileRoutesById {
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
   '/api/handle/check': typeof ApiHandleCheckRoute
   '/api/internal/notify-message': typeof ApiInternalNotifyMessageRoute
+  '/api/internal/notify-typing': typeof ApiInternalNotifyTypingRoute
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
   '/api/laundry-sort/score': typeof ApiLaundrySortScoreRoute
   '/api/messages/$conversationId': typeof ApiMessagesConversationIdRouteWithChildren
@@ -2388,6 +2406,7 @@ export interface FileRoutesById {
   '/api/games/synapse-storm/save': typeof ApiGamesSynapseStormSaveRoute
   '/api/games/synapse-storm/score': typeof ApiGamesSynapseStormScoreRoute
   '/api/messages/$conversationId/read': typeof ApiMessagesConversationIdReadRoute
+  '/api/messages/$conversationId/typing': typeof ApiMessagesConversationIdTypingRoute
   '/api/profile/$id/follow': typeof ApiProfileIdFollowRoute
   '/api/profile/$id/followers': typeof ApiProfileIdFollowersRoute
   '/api/profile/$id/following': typeof ApiProfileIdFollowingRoute
@@ -2567,6 +2586,7 @@ export interface FileRouteTypes {
     | '/api/forest-explorer/save'
     | '/api/handle/check'
     | '/api/internal/notify-message'
+    | '/api/internal/notify-typing'
     | '/api/laundry-sort/leaderboard'
     | '/api/laundry-sort/score'
     | '/api/messages/$conversationId'
@@ -2657,6 +2677,7 @@ export interface FileRouteTypes {
     | '/api/games/synapse-storm/save'
     | '/api/games/synapse-storm/score'
     | '/api/messages/$conversationId/read'
+    | '/api/messages/$conversationId/typing'
     | '/api/profile/$id/follow'
     | '/api/profile/$id/followers'
     | '/api/profile/$id/following'
@@ -2812,6 +2833,7 @@ export interface FileRouteTypes {
     | '/api/forest-explorer/save'
     | '/api/handle/check'
     | '/api/internal/notify-message'
+    | '/api/internal/notify-typing'
     | '/api/laundry-sort/leaderboard'
     | '/api/laundry-sort/score'
     | '/api/messages/$conversationId'
@@ -2902,6 +2924,7 @@ export interface FileRouteTypes {
     | '/api/games/synapse-storm/save'
     | '/api/games/synapse-storm/score'
     | '/api/messages/$conversationId/read'
+    | '/api/messages/$conversationId/typing'
     | '/api/profile/$id/follow'
     | '/api/profile/$id/followers'
     | '/api/profile/$id/following'
@@ -3080,6 +3103,7 @@ export interface FileRouteTypes {
     | '/api/forest-explorer/save'
     | '/api/handle/check'
     | '/api/internal/notify-message'
+    | '/api/internal/notify-typing'
     | '/api/laundry-sort/leaderboard'
     | '/api/laundry-sort/score'
     | '/api/messages/$conversationId'
@@ -3170,6 +3194,7 @@ export interface FileRouteTypes {
     | '/api/games/synapse-storm/save'
     | '/api/games/synapse-storm/score'
     | '/api/messages/$conversationId/read'
+    | '/api/messages/$conversationId/typing'
     | '/api/profile/$id/follow'
     | '/api/profile/$id/followers'
     | '/api/profile/$id/following'
@@ -3290,6 +3315,7 @@ export interface RootRouteChildren {
   ApiForestExplorerSaveRoute: typeof ApiForestExplorerSaveRoute
   ApiHandleCheckRoute: typeof ApiHandleCheckRoute
   ApiInternalNotifyMessageRoute: typeof ApiInternalNotifyMessageRoute
+  ApiInternalNotifyTypingRoute: typeof ApiInternalNotifyTypingRoute
   ApiLaundrySortLeaderboardRoute: typeof ApiLaundrySortLeaderboardRoute
   ApiLaundrySortScoreRoute: typeof ApiLaundrySortScoreRoute
   ApiNeonDriftwayLeaderboardRoute: typeof ApiNeonDriftwayLeaderboardRoute
@@ -4534,6 +4560,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiLaundrySortLeaderboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/internal/notify-typing': {
+      id: '/api/internal/notify-typing'
+      path: '/api/internal/notify-typing'
+      fullPath: '/api/internal/notify-typing'
+      preLoaderRoute: typeof ApiInternalNotifyTypingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/internal/notify-message': {
       id: '/api/internal/notify-message'
       path: '/api/internal/notify-message'
@@ -4974,6 +5007,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/profile/$id/follow'
       preLoaderRoute: typeof ApiProfileIdFollowRouteImport
       parentRoute: typeof ApiProfileIdRoute
+    }
+    '/api/messages/$conversationId/typing': {
+      id: '/api/messages/$conversationId/typing'
+      path: '/typing'
+      fullPath: '/api/messages/$conversationId/typing'
+      preLoaderRoute: typeof ApiMessagesConversationIdTypingRouteImport
+      parentRoute: typeof ApiMessagesConversationIdRoute
     }
     '/api/messages/$conversationId/read': {
       id: '/api/messages/$conversationId/read'
@@ -5620,11 +5660,13 @@ const VersecraftRouteWithChildren = VersecraftRoute._addFileChildren(
 
 interface ApiMessagesConversationIdRouteChildren {
   ApiMessagesConversationIdReadRoute: typeof ApiMessagesConversationIdReadRoute
+  ApiMessagesConversationIdTypingRoute: typeof ApiMessagesConversationIdTypingRoute
 }
 
 const ApiMessagesConversationIdRouteChildren: ApiMessagesConversationIdRouteChildren =
   {
     ApiMessagesConversationIdReadRoute: ApiMessagesConversationIdReadRoute,
+    ApiMessagesConversationIdTypingRoute: ApiMessagesConversationIdTypingRoute,
   }
 
 const ApiMessagesConversationIdRouteWithChildren =
@@ -5925,6 +5967,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiForestExplorerSaveRoute: ApiForestExplorerSaveRoute,
   ApiHandleCheckRoute: ApiHandleCheckRoute,
   ApiInternalNotifyMessageRoute: ApiInternalNotifyMessageRoute,
+  ApiInternalNotifyTypingRoute: ApiInternalNotifyTypingRoute,
   ApiLaundrySortLeaderboardRoute: ApiLaundrySortLeaderboardRoute,
   ApiLaundrySortScoreRoute: ApiLaundrySortScoreRoute,
   ApiNeonDriftwayLeaderboardRoute: ApiNeonDriftwayLeaderboardRoute,

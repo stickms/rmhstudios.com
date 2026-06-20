@@ -16,9 +16,17 @@ export type MessagePayload = {
   createdAt: string;
 };
 
+export type TypingPayload = {
+  conversationId: string;
+  /** The participant who is (or stopped) typing. */
+  senderId: string;
+  isTyping: boolean;
+};
+
 export type MessageNotification =
   | { type: "unread" }
-  | { type: "new-message"; message: MessagePayload };
+  | { type: "new-message"; message: MessagePayload }
+  | { type: "typing"; typing: TypingPayload };
 
 type Listener = (event: MessageNotification) => void;
 

@@ -320,6 +320,28 @@ async function notifyMessageDelivered(userId: string, message: MessagePayload): 
   }
 }
 
+/**
+ * Push a live typing indicator for a bot into the web process. Best-effort:
+ * mirrors notifyMessageDelivered, but for the ephemeral "thinking" state.
+ */
+async function notifyTyping(
+  userId: string,
+  typing: { conversationId: string; senderId: string; isTyping: boolean },
+): Promise<void> {
+  const secret = process.env.INTERNAL_API_SECRET;
+  if (!secret) return; // bridge disabled — graceful degradation
+  try {
+    await fetch(`${internalApiBase()}/api/internal/notify-typing`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-internal-secret': secret },
+      body: JSON.stringify({ userId, typing }),
+      signal: AbortSignal.timeout(5000),
+    });
+  } catch (e) {
+    errlog('typing bridge failed:', e);
+  }
+}
+
 /** Create one DM from `botId`, bump the conversation, and push the live event. */
 async function sendBotDm(
   conversationId: string,
@@ -399,7 +421,15 @@ async function answerDirectMessages(): Promise<number> {
       });
       const history = formatDmHistory(recent.reverse(), cand.botId);
 
-      const content = await generateDirectMessageReply({ persona, history });
+      // Show the bot as "typing" while it generates a reply, then clear it.
+      const typingBase = { conversationId: cand.conversationId, senderId: cand.botId };
+      await notifyTyping(cand.humanId, { ...typingBase, isTyping: true });
+      let content: string;
+      try {
+        content = await generateDirectMessageReply({ persona, history });
+      } finally {
+        await notifyTyping(cand.humanId, { ...typingBase, isTyping: false });
+      }
       if (!content.trim()) continue;
 
       await sendBotDm(cand.conversationId, cand.botId, cand.humanId, content);

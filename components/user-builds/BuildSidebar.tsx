@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Star, TrendingUp, Clock, Loader2 } from 'lucide-react';
 import type { Build } from '@/lib/user-builds-types';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
 
 interface BuildSidebarProps {
   className?: string;
@@ -14,9 +15,11 @@ function BuildMiniCard({ build }: { build: Build }) {
     <Link to={`/user-builds/${build.slug}` as string}>
       <div className="flex gap-3 p-3 rounded-lg hover:bg-site-surface-hover transition-colors">
         {build.thumbnailUrl ? (
-          <img
+          <OptimizedImage
             src={build.thumbnailUrl}
             alt={build.title}
+            width={64}
+            height={48}
             className="w-16 h-12 rounded object-cover shrink-0"
           />
         ) : (

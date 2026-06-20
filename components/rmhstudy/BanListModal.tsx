@@ -11,18 +11,7 @@ import { X, UserX, Undo2 } from 'lucide-react';
 import { emit } from '@/lib/rmhstudy/socket';
 import { C2S } from '@/lib/rmhstudy/events';
 import { useRmhStudyStore } from '@/lib/rmhstudy/store';
-
-function formatRelativeTime(timestamp: number): string {
-  const diff = Date.now() - timestamp;
-  const seconds = Math.floor(diff / 1000);
-  if (seconds < 10) return 'just now';
-  if (seconds < 60) return `${seconds}s`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h`;
-  return new Date(timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-}
+import { formatRelativeTime } from '@/lib/utils';
 
 interface BanListModalProps {
   onClose: () => void;

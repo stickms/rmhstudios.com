@@ -2,6 +2,7 @@
 
 import { Link } from '@tanstack/react-router';
 import { UserAvatar } from '@/components/ui/UserAvatar';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import {
   Hammer,
   Package,
@@ -84,7 +85,7 @@ export function RightSidebar({
               >
                 <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-site-bg shrink-0 border border-site-border">
                   {build.thumbnailUrl ? (
-                    <img src={build.thumbnailUrl} alt={build.title} className="w-full h-full object-cover" />
+                    <OptimizedImage src={build.thumbnailUrl} alt={build.title} width={40} height={40} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full bg-linear-to-br from-site-accent/30 to-site-surface" />
                   )}
@@ -108,7 +109,7 @@ export function RightSidebar({
               >
                 <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-site-bg shrink-0 border border-site-border">
                   {build.thumbnailUrl ? (
-                    <img src={build.thumbnailUrl} alt={build.title} className="w-full h-full object-cover" />
+                    <OptimizedImage src={build.thumbnailUrl} alt={build.title} width={40} height={40} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full bg-linear-to-br from-site-accent/30 to-site-surface" />
                   )}
@@ -145,7 +146,7 @@ export function RightSidebar({
             >
               <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-site-bg shrink-0 border border-site-border">
                 {build.thumbnailUrl ? (
-                  <img src={build.thumbnailUrl} alt={build.title} className="w-full h-full object-cover" />
+                  <OptimizedImage src={build.thumbnailUrl} alt={build.title} width={40} height={40} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full bg-linear-to-br from-site-accent/30 to-site-surface" />
                 )}

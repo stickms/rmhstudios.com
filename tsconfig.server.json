@@ -14,11 +14,11 @@
         }
     },
     "include": [
-        "server/socket-server.ts",
         "server/shared/**/*.ts",
         "server/socket-server/**/*.ts",
         "server/rmhbox/**/*.ts",
         "server/rmhtube/**/*.ts",
+        "server/recap/**/*.ts",
         "server/discord-bot/**/*.ts",
         "server/discord-bot/**/*.tsx",
         "lib/rmhbox/**/*.ts",

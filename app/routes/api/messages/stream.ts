@@ -74,6 +74,11 @@ export const Route = createFileRoute('/api/messages/stream')({
       const unsubscribe = subscribeUser(
         userId,
         async (event: MessageNotification) => {
+          if (event.type === "typing") {
+            // Typing is ephemeral and does not affect unread counts.
+            send("typing", JSON.stringify(event.typing));
+            return;
+          }
           if (event.type === "new-message") {
             send("new-message", JSON.stringify(event.message));
           }

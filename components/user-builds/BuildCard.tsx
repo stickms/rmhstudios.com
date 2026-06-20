@@ -7,16 +7,11 @@ import { TechBadges } from './TechBadges';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useCardSheen } from '@/hooks/useCardSheen';
+import { formatCount } from '@/lib/utils';
 
 interface BuildCardProps {
   build: Build;
   onLike?: (id: string) => void;
-}
-
-function formatCount(count: number): string {
-  if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
-  if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
-  return String(count);
 }
 
 function timeAgo(dateStr: string): string {

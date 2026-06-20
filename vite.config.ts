@@ -219,6 +219,14 @@ export default defineConfig({
   builder: {
     sharedPlugins: true,
   },
+  // Drop noisy debug logging from production bundles. `pure` only removes calls
+  // whose return value is unused (all console.log/debug calls), and only during
+  // the minify pass — dev transforms keep them. console.warn/error/info are kept.
+  // The standalone server services are bundled by a separate esbuild command
+  // (see the `build` script), so this affects only the client + Nitro SSR output.
+  esbuild: {
+    pure: ["console.log", "console.debug"],
+  },
   build: {
     target: "esnext",
     chunkSizeWarningLimit: 4000,

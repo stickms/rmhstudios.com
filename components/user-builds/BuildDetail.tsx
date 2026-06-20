@@ -10,6 +10,7 @@ import { authClient } from '@/lib/auth-client';
 import type { Build } from '@/lib/user-builds-types';
 import { TechBadges } from './TechBadges';
 import { BuildComments } from './BuildComments';
+import { formatCount } from '@/lib/utils';
 
 interface BuildDetailProps {
   build: Build;
@@ -22,12 +23,6 @@ function formatDate(dateStr: string): string {
     month: 'long',
     day: 'numeric',
   });
-}
-
-function formatCount(count: number): string {
-  if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
-  if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
-  return String(count);
 }
 
 export function BuildDetail({ build: initialBuild, backHref = '/builds' }: BuildDetailProps) {

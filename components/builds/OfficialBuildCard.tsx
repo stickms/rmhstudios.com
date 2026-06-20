@@ -2,6 +2,7 @@ import { Heart, MessageCircle, Eye, ArrowRight } from 'lucide-react';
 import { Link, useRouter } from '@tanstack/react-router';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { useCardSheen } from '@/hooks/useCardSheen';
+import { formatCount } from '@/lib/utils';
 
 export interface OfficialBuild {
     id: string;
@@ -22,12 +23,6 @@ interface OfficialBuildCardProps {
     build: OfficialBuild;
     onLike?: (id: string) => void;
     onView?: (id: string) => void;
-}
-
-function formatCount(count: number): string {
-    if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
-    if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
-    return String(count);
 }
 
 export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardProps) {
