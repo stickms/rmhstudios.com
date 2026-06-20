@@ -17,7 +17,7 @@
 
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { ArrowLeft, Download, List, Loader2 } from 'lucide-react';
+import { ArrowLeft, Check, Download, List, Loader2, SlidersHorizontal } from 'lucide-react';
 import type { LibraryBook } from '@/lib/library/library';
 import { BookCanvas, warmPageTexture } from './BookCanvas';
 
@@ -40,12 +40,29 @@ type PdfPage = {
   };
 };
 
-// px width each page is rasterised at. Sized generously so a page stays sharp when
-// the book fills a tall screen AND when the user zooms in (browser/trackpad zoom
-// redraws the canvas larger from this same bitmap — too small a source and it softens).
-// Capped to keep the bounded GPU texture cache (see TEX_CACHE_CAP) within budget.
-const RENDER_WIDTH = 1600;
-const PENDING = '__pending__';
+// Page raster width (px) per quality level. A page is drawn from this bitmap, so a
+// wider raster keeps it sharp when the book fills a tall screen AND when the user
+// zooms in (browser/trackpad zoom redraws the canvas larger from the same bitmap —
+// too small a source and it softens). Higher levels cost more GPU/JS memory per page,
+// so the menu lets a user dial it down on a weak device. Default is the highest.
+export type PageQuality = 'low' | 'medium' | 'high';
+const QUALITY_WIDTH: Record<PageQuality, number> = {
+  low: 1000,
+  medium: 1600,
+  high: 2400,
+};
+const QUALITY_LABEL: Record<PageQuality, string> = {
+  low: 'Low',
+  medium: 'Medium',
+  high: 'High',
+};
+const QUALITY_ORDER: PageQuality[] = ['high', 'medium', 'low'];
+const DEFAULT_QUALITY: PageQuality = 'high';
+
+// First-pass width: a quick, cheap raster shown the instant a page is needed, then
+// upgraded in place to the selected quality once that finishes. This is what makes a
+// freshly opened spread appear immediately instead of waiting on the full render.
+const PREVIEW_WIDTH = 800;
 
 /**
  * Flatten a PDF's outline (bookmarks / table of contents) into chapter markers,
@@ -96,6 +113,7 @@ export function BookReader({ book }: { book: LibraryBook }) {
     book.toc.map((t) => ({ title: t.title, page: t.page, depth: t.depth ?? 0 })),
   );
   const [editingPage, setEditingPage] = useState(false);
+  const [quality, setQuality] = useState<PageQuality>(DEFAULT_QUALITY);
 
   const hasToc = book.toc.length > 0;
 
@@ -103,8 +121,12 @@ export function BookReader({ book }: { book: LibraryBook }) {
   const seek = useRef<((page: number) => void) | null>(null);
   const goToPage = useCallback((page: number) => seek.current?.(page), []);
 
-  // Rendered page images, keyed by page number. PENDING guards against double work.
-  const images = useRef<Map<number, string>>(new Map());
+  // Rendered page images, keyed by page number, each tagged with the raster width it
+  // was drawn at so we know whether a cached page already meets the wanted quality (or
+  // is still just the low-res preview). `inflight` keys a page+width so the preview and
+  // the full pass — and re-renders after a quality change — never double-schedule.
+  const images = useRef<Map<number, { url: string; width: number }>>(new Map());
+  const inflight = useRef<Set<string>>(new Set());
   const [, force] = useReducer((n: number) => n + 1, 0);
 
   // Single vs two-page: one page when the viewport is narrow (mobile) OR when a
@@ -179,42 +201,63 @@ export function BookReader({ book }: { book: LibraryBook }) {
     };
   }, [book.url, hasToc]);
 
-  // Render a page to an image (lazy + cached).
-  const ensurePage = useCallback(
-    (n: number) => {
-      if (!doc || n < 1 || n > numPages || images.current.has(n)) return;
-      images.current.set(n, PENDING);
-      void (async () => {
-        try {
-          const page = await doc.getPage(n);
-          const base = page.getViewport({ scale: 1 });
-          const scale = RENDER_WIDTH / base.width;
-          const viewport = page.getViewport({ scale });
-          const canvas = document.createElement('canvas');
-          canvas.width = Math.ceil(viewport.width);
-          canvas.height = Math.ceil(viewport.height);
-          const ctx = canvas.getContext('2d');
-          if (!ctx) throw new Error('no 2d context');
-          await page.render({ canvasContext: ctx, viewport, canvas }).promise;
-          const url = canvas.toDataURL('image/jpeg', 0.86);
-          images.current.set(n, url);
+  // Rasterise page `n` at a specific width and cache it (lazy, dedup'd). Only replaces
+  // the cached page when this raster is at least as sharp as what's already there, so a
+  // late-arriving preview can never clobber the full-quality page that finished first.
+  const renderPage = useCallback(
+    async (n: number, width: number) => {
+      if (!doc) return;
+      const key = `${n}@${width}`;
+      if (inflight.current.has(key)) return;
+      const have = images.current.get(n);
+      if (have && have.width >= width) return;
+      inflight.current.add(key);
+      try {
+        const page = await doc.getPage(n);
+        const base = page.getViewport({ scale: 1 });
+        const scale = width / base.width;
+        const viewport = page.getViewport({ scale });
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.ceil(viewport.width);
+        canvas.height = Math.ceil(viewport.height);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('no 2d context');
+        await page.render({ canvasContext: ctx, viewport, canvas }).promise;
+        const url = canvas.toDataURL('image/jpeg', 0.86);
+        const prev = images.current.get(n);
+        if (!prev || prev.width < width) {
+          images.current.set(n, { url, width });
           // Decode the GPU texture now, while the page is merely prefetched, so a turn
           // that later reveals it never flashes the blank fallback waiting on decode.
           warmPageTexture(url);
           force();
-        } catch (err) {
-          console.error(`Failed to render page ${n}`, err);
-          images.current.delete(n);
         }
-      })();
+      } catch (err) {
+        console.error(`Failed to render page ${n} @${width}`, err);
+      } finally {
+        inflight.current.delete(key);
+      }
     },
-    [doc, numPages],
+    [doc],
   );
 
-  const getImg = useCallback((n: number): string | undefined => {
-    const v = images.current.get(n);
-    return v && v !== PENDING ? v : undefined;
-  }, []);
+  // Ensure page `n` is available at the current quality. Shows a quick low-res preview
+  // the first time the page is touched, then upgrades it in place to the full target —
+  // so spam-turning stays responsive while pages sharpen a beat later. Re-running after
+  // a quality bump re-renders only pages that don't already meet the new width.
+  const ensurePage = useCallback(
+    (n: number) => {
+      if (!doc || n < 1 || n > numPages) return;
+      const target = QUALITY_WIDTH[quality];
+      const have = images.current.get(n);
+      if (have && have.width >= target) return;
+      if (!have && target > PREVIEW_WIDTH) void renderPage(n, PREVIEW_WIDTH);
+      void renderPage(n, target);
+    },
+    [doc, numPages, quality, renderPage],
+  );
+
+  const getImg = useCallback((n: number): string | undefined => images.current.get(n)?.url, []);
 
   return (
     <main className="vibe-screen lib-reader">
@@ -253,6 +296,7 @@ export function BookReader({ book }: { book: LibraryBook }) {
                 </button>
               )
             ))}
+          {status === 'ready' && <QualityMenu quality={quality} onChange={setQuality} />}
           <a href={book.url} download className="vibe-toolbar__icon" aria-label="Download PDF">
             <Download size={16} />
           </a>
@@ -350,6 +394,63 @@ function PageJump({
       />
       <span className="lib-reader__jump-total">/ {numPages}</span>
     </form>
+  );
+}
+
+/** Dropdown to pick the page raster quality (sharpness vs. memory). Defaults high. */
+function QualityMenu({ quality, onChange }: { quality: PageQuality; onChange: (q: PageQuality) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  return (
+    <div className="lib-reader__chapters" ref={ref}>
+      <button
+        type="button"
+        className="vibe-toolbar__icon"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label="Page quality"
+        title="Page quality"
+      >
+        <SlidersHorizontal size={16} />
+      </button>
+      {open && (
+        <ul className="lib-reader__chapters-menu lib-reader__quality-menu" role="listbox" aria-label="Page quality">
+          {QUALITY_ORDER.map((q) => (
+            <li key={q} role="option" aria-selected={q === quality}>
+              <button
+                type="button"
+                className={`lib-reader__chapter${q === quality ? ' is-active' : ''}`}
+                onClick={() => {
+                  onChange(q);
+                  setOpen(false);
+                }}
+              >
+                <span className="lib-reader__chapter-title">{QUALITY_LABEL[q]}</span>
+                {q === quality && <Check size={14} className="lib-reader__chapter-page" />}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 

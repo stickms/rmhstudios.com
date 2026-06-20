@@ -17,6 +17,12 @@
  */
 
 import type { Plugin } from 'esbuild';
+import {
+  classifyImport,
+  hostedStem,
+  VIBE_PACKAGES,
+  VIBE_PACKAGES_REVISION,
+} from '@/lib/rmhvibe/vibe-packages';
 
 /** Thrown when a model project fails to parse or compile; message is user-surfacable. */
 export class BundleError extends Error {}
@@ -36,18 +42,24 @@ const VIBE_AI_BASE_URL = (process.env.VIBE_AI_BASE_URL || 'https://rmhstudios.co
 const VIBE_AI_ENDPOINT = `${VIBE_AI_BASE_URL}/api/vibe/ai`;
 const VIBE_AI_ORIGIN = new URL(VIBE_AI_BASE_URL).origin;
 
-// Strict CSP for bundled pages. No Babel/jsdelivr anymore — code, styles, and
-// fonts come only from esm.sh; images/media are inline (data:/blob:); the only
-// extra network destination is our own AI proxy (VIBE_AI_ORIGIN), used by the
-// injected window.RMHVibeAI helper — nothing else can exfiltrate to other
-// origins. Combined with the viewer's sandboxed iframe (no allow-same-origin),
-// pages are locked down.
+// Where the curated, pre-bundled "hosted" packages are served from — our OWN
+// origin (see scripts/build-vibe-packages.ts + public/vibe-packages/). Generated
+// pages point their importmap here instead of esm.sh, so the common case (React +
+// large libs) never depends on a third-party CDN at view time.
+const VIBE_PACKAGES_BASE = `${VIBE_AI_BASE_URL}/vibe-packages`;
+
+// Strict CSP for bundled pages. Code/styles come from our own origin
+// (VIBE_AI_ORIGIN — the self-hosted packages) plus esm.sh (the long-tail
+// fallback); images/media are inline (data:/blob:); the only other network
+// destination is our AI proxy, used by the injected window.RMHVibeAI helper —
+// nothing else can exfiltrate to other origins. Combined with the viewer's
+// sandboxed iframe (no allow-same-origin), pages are locked down.
 const VIBE_CSP = [
   "default-src 'none'",
   "base-uri 'none'",
-  "script-src 'unsafe-inline' blob: https://esm.sh",
+  `script-src 'unsafe-inline' blob: https://esm.sh ${VIBE_AI_ORIGIN}`,
   'worker-src blob:',
-  "style-src 'unsafe-inline' https://esm.sh",
+  `style-src 'unsafe-inline' https://esm.sh ${VIBE_AI_ORIGIN}`,
   'img-src data: blob:',
   'font-src data: https://esm.sh',
   'media-src data: blob:',
@@ -237,15 +249,6 @@ function joinPath(base: string, rel: string): string {
   return out.join('/');
 }
 
-/** Bare package name from a specifier: `@react-three/fiber/x` -> `@react-three/fiber`. */
-function bareName(spec: string): string {
-  if (spec.startsWith('@')) {
-    const [scope, name] = spec.split('/');
-    return name ? `${scope}/${name}` : scope;
-  }
-  return spec.split('/')[0];
-}
-
 function loaderFor(p: string): 'ts' | 'tsx' | 'jsx' | 'js' | 'css' | 'json' {
   if (p.endsWith('.tsx')) return 'tsx';
   if (p.endsWith('.ts')) return 'ts';
@@ -255,8 +258,24 @@ function loaderFor(p: string): 'ts' | 'tsx' | 'jsx' | 'js' | 'css' | 'json' {
   return 'js';
 }
 
-/** esbuild plugin serving the model's files from memory; bare imports go external. */
-function virtualFilesPlugin(files: Record<string, string>, externals: Set<string>): Plugin {
+/**
+ * esbuild plugin serving the model's files from an in-memory VFS, with tiered
+ * resolution of bare npm imports (see vibe-packages.ts):
+ *  - 'inline' packages are left for esbuild's default resolver, which pulls them
+ *    from our real node_modules and bundles them straight into the page.
+ *  - 'hosted'/'fallback' packages stay EXTERNAL and resolve at runtime via the
+ *    page's importmap (our origin for hosted, esm.sh for fallback). Used hosted
+ *    base names and fallback names are recorded so the importmap lists only what
+ *    the page actually imports.
+ *
+ * Relative/absolute imports are resolved against the VFS only when they come from
+ * a VFS file; relative imports inside a bundled node_modules package fall through
+ * to esbuild's default file-system resolver.
+ */
+function virtualFilesPlugin(
+  files: Record<string, string>,
+  fallbackExternals: Set<string>,
+): Plugin {
   return {
     name: 'vibe-vfs',
     setup(build) {
@@ -265,10 +284,20 @@ function virtualFilesPlugin(files: Record<string, string>, externals: Set<string
           return { path: normalizePath(args.path), namespace: 'vfs' };
         }
         const spec = args.path;
-        if (!spec.startsWith('.') && !spec.startsWith('/')) {
-          externals.add(bareName(spec));
+        const isBare = !spec.startsWith('.') && !spec.startsWith('/');
+        if (isBare) {
+          const cls = classifyImport(spec);
+          if (cls.tier === 'inline') {
+            // Defer to esbuild's default resolver → bundle it from node_modules.
+            return undefined;
+          }
+          // hosted → importmap points at our origin; fallback → esm.sh (tracked).
+          if (cls.tier === 'fallback') fallbackExternals.add(cls.name);
           return { path: spec, external: true };
         }
+        // Relative/absolute import. Only the model's VFS files resolve against the
+        // VFS; a relative import from a real node_modules file is esbuild's job.
+        if (args.namespace !== 'vfs') return undefined;
         const resolved = resolveInVfs(spec, args.importer, files);
         if (!resolved) {
           return { errors: [{ text: `Cannot resolve '${spec}' from '${args.importer || 'entry'}'` }] };
@@ -279,7 +308,11 @@ function virtualFilesPlugin(files: Record<string, string>, externals: Set<string
       build.onLoad({ filter: /.*/, namespace: 'vfs' }, (args) => {
         const contents = files[args.path];
         if (contents === undefined) return { errors: [{ text: `Missing file '${args.path}'` }] };
-        return { contents, loader: loaderFor(args.path) };
+        // resolveDir lets esbuild resolve the model's bare 'inline' imports (clsx,
+        // zustand, …) from the app's node_modules — VFS files have no real
+        // directory of their own. process.cwd() is the app root in dev and the
+        // /app working dir in production, both of which hold the inline deps.
+        return { contents, loader: loaderFor(args.path), resolveDir: process.cwd() };
       });
     },
   };
@@ -292,7 +325,9 @@ function virtualFilesPlugin(files: Record<string, string>, externals: Set<string
 export async function buildVibeHtml(project: Pick<VibeProject, 'title' | 'deps' | 'files'>): Promise<string> {
   const esbuild = await import('esbuild');
   const entry = pickEntry(project.files);
-  const externals = new Set<string>();
+  // Long-tail packages the page imports that aren't in our curated registry —
+  // populated by the resolver plugin and mapped to esm.sh in the importmap.
+  const fallbackExternals = new Set<string>();
 
   let result;
   try {
@@ -305,8 +340,10 @@ export async function buildVibeHtml(project: Pick<VibeProject, 'title' | 'deps' 
       jsx: 'automatic',
       minify: true,
       logLevel: 'silent',
+      // Inline packages are resolved from node_modules; mirror their production builds.
+      define: { 'process.env.NODE_ENV': '"production"' },
       outdir: 'dist',
-      plugins: [virtualFilesPlugin(project.files, externals)],
+      plugins: [virtualFilesPlugin(project.files, fallbackExternals)],
     });
   } catch (err) {
     throw new BundleError(formatBuildError(err));
@@ -331,7 +368,7 @@ export async function buildVibeHtml(project: Pick<VibeProject, 'title' | 'deps' 
     throw new BundleError(`Bundle produced no JavaScript output: ${hint}. Files: ${inventory}.`);
   }
 
-  return assembleHtml({ title: project.title, js, css, deps: project.deps, externals });
+  return assembleHtml({ title: project.title, js, css, deps: project.deps, fallbackExternals });
 }
 
 function formatBuildError(err: unknown): string {
@@ -349,23 +386,40 @@ function formatBuildError(err: unknown): string {
 }
 
 /**
- * Build the runtime import map. react/react-dom are pinned; every other dep (and
- * any bare import esbuild left external) maps to esm.sh. `?external=react,react-dom`
- * forces react-consuming libs (r3f, framer-motion, …) to share the single React
- * instance from this map rather than bundling their own. Trailing-slash entries
- * enable subpath imports like `three/examples/jsm/...`.
+ * Build the runtime import map. EVERY hosted package (React + curated large libs)
+ * is listed and points at our OWN origin's pre-bundled ESM files — no third-party
+ * CDN. We list them all, not just the page's direct imports, because a hosted
+ * bundle pulls in its own hosted deps (e.g. @react-three/fiber imports three);
+ * importmap entries are lazy, so the browser only fetches the ones actually
+ * imported. Deep subpaths we don't pre-build (e.g. `three/examples/jsm/...`) and
+ * any package not in the registry fall back to esm.sh, with `?external=react,
+ * react-dom` forcing them onto our single hosted React instance.
  */
-function buildImportMap(deps: Record<string, string>, externals: Set<string>): Record<string, string> {
-  const imports: Record<string, string> = {
-    react: 'https://esm.sh/react@19',
-    'react/': 'https://esm.sh/react@19/',
-    'react-dom': 'https://esm.sh/react-dom@19?external=react',
-    'react-dom/': 'https://esm.sh/react-dom@19/',
-    'react-dom/client': 'https://esm.sh/react-dom@19/client?external=react',
-  };
+function buildImportMap(
+  deps: Record<string, string>,
+  fallbackExternals: Set<string>,
+): Record<string, string> {
+  const imports: Record<string, string> = {};
+  const hostedUrl = (stem: string) => `${VIBE_PACKAGES_BASE}/${stem}.js?r=${VIBE_PACKAGES_REVISION}`;
 
-  for (const name of new Set([...Object.keys(deps), ...externals])) {
+  for (const [name, entry] of Object.entries(VIBE_PACKAGES)) {
+    if (entry.tier !== 'hosted') continue;
+    imports[name] = hostedUrl(hostedStem(name));
+    for (const sub of entry.subpaths ?? []) {
+      imports[`${name}/${sub}`] = hostedUrl(hostedStem(name, sub));
+    }
+    // Deep subpaths beyond the pre-built ones → esm.sh. Skip for react/react-dom:
+    // an unknown React subpath must NOT load a second React copy from the CDN.
+    // Importmap requires a trailing-slash KEY to map to a trailing-slash VALUE, so
+    // these carry no query string (the base import already shares our React).
     if (name === 'react' || name === 'react-dom') continue;
+    const version = deps[name];
+    imports[`${name}/`] = version ? `https://esm.sh/${name}@${version}/` : `https://esm.sh/${name}/`;
+  }
+
+  // Long-tail packages not in the curated registry → esm.sh, sharing our React.
+  for (const name of fallbackExternals) {
+    if (imports[name]) continue;
     const version = deps[name] ?? 'latest';
     const spec = version === 'latest' ? name : `${name}@${version}`;
     imports[name] = `https://esm.sh/${spec}?external=react,react-dom`;
@@ -379,9 +433,11 @@ function assembleHtml(opts: {
   js: string;
   css: string;
   deps: Record<string, string>;
-  externals: Set<string>;
+  fallbackExternals: Set<string>;
 }): string {
-  const importMap = JSON.stringify({ imports: buildImportMap(opts.deps, opts.externals) });
+  const importMap = JSON.stringify({
+    imports: buildImportMap(opts.deps, opts.fallbackExternals),
+  });
   // Neutralise any literal "</script>" the bundle/styles might contain so it
   // can't terminate the inline tags early.
   const js = opts.js.replace(/<\/script/gi, '<\\/script');

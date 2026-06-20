@@ -5,6 +5,54 @@
     "pages": 190,
     "cover": "Wu Thirteen Minutes Thesis.jpg"
   },
+  "elegy-of-the-mandate.pdf": {
+    "title": "天命輓歌 · Elegy of the Mandate",
+    "description": "An original bilingual Chinese epic braiding the Iliad, the Three Kingdoms, Dream of the Red Chamber, and Gilgamesh — a fallen house, a war over a stolen jade Mandate-seal, sworn-brother oaths, a journey to wrest immortality from Heaven, and the garden-lady who records it all. Vertical 竖排 Chinese faces an English translation, set as a classical 古籍 woodblock edition with 脂批 commentary.",
+    "pages": 204,
+    "cover": "elegy-of-the-mandate.jpg",
+    "toc": [
+      {
+        "title": "第一回 桃林結義 玄圭出世",
+        "page": 4
+      },
+      {
+        "title": "第二回 天樞失璽 九土鼎沸",
+        "page": 26
+      },
+      {
+        "title": "第三回 朱華秋讌 詩讖先成",
+        "page": 46
+      },
+      {
+        "title": "第四回 璟同折旗 蠻山夜語",
+        "page": 64
+      },
+      {
+        "title": "第五回 義帥蒙讒 怒臥空帳",
+        "page": 86
+      },
+      {
+        "title": "第六回 代袍陷陣 萬靈坡折",
+        "page": 102
+      },
+      {
+        "title": "第七回 問罪燈前 昭明垂淚",
+        "page": 122
+      },
+      {
+        "title": "第八回 西行問鬼 忘川授路",
+        "page": 140
+      },
+      {
+        "title": "第九回 不死之淵 玄母示價",
+        "page": 162
+      },
+      {
+        "title": "第十回 朱華傾頹 輓歌一夢",
+        "page": 180
+      }
+    ]
+  },
   "everything-platform-1000.pdf": {
     "title": "The Everything Platform Master Plan",
     "description": "A 24-month master plan to build a unified workspace for code and creative work, operating on a disciplined $200 budget.",
@@ -106,53 +154,5 @@
     "description": "A founding master specification for an AI co-scientist for biology, built on a reproducibility substrate to transform biomedical research.",
     "pages": 3365,
     "cover": "rmhtech-the-co-scientist-thesis.jpg"
-  },
-  "elegy-of-the-mandate.pdf": {
-    "title": "天命輓歌 · Elegy of the Mandate",
-    "description": "An original bilingual Chinese epic braiding the Iliad, the Three Kingdoms, Dream of the Red Chamber, and Gilgamesh — a fallen house, a war over a stolen jade Mandate-seal, sworn-brother oaths, a journey to wrest immortality from Heaven, and the garden-lady who records it all. Vertical 竖排 Chinese faces an English translation, set as a classical 古籍 woodblock edition with 脂批 commentary.",
-    "pages": 204,
-    "cover": "elegy-of-the-mandate.jpg",
-    "toc": [
-      {
-        "title": "第一回 桃林結義 玄圭出世",
-        "page": 4
-      },
-      {
-        "title": "第二回 天樞失璽 九土鼎沸",
-        "page": 26
-      },
-      {
-        "title": "第三回 朱華秋讌 詩讖先成",
-        "page": 46
-      },
-      {
-        "title": "第四回 璟同折旗 蠻山夜語",
-        "page": 64
-      },
-      {
-        "title": "第五回 義帥蒙讒 怒臥空帳",
-        "page": 86
-      },
-      {
-        "title": "第六回 代袍陷陣 萬靈坡折",
-        "page": 102
-      },
-      {
-        "title": "第七回 問罪燈前 昭明垂淚",
-        "page": 122
-      },
-      {
-        "title": "第八回 西行問鬼 忘川授路",
-        "page": 140
-      },
-      {
-        "title": "第九回 不死之淵 玄母示價",
-        "page": 162
-      },
-      {
-        "title": "第十回 朱華傾頹 輓歌一夢",
-        "page": 180
-      }
-    ]
   }
 }

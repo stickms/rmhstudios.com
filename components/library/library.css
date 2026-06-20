@@ -476,6 +476,15 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Quality picker reuses the chapter dropdown styling but needs far less width. */
+.lib-reader__quality-menu {
+  width: max-content;
+  min-width: 132px;
+}
+.lib-reader__quality-menu .lib-reader__chapter-page {
+  color: #6cc070;
+}
+
 .lib-reader__stage {
   position: relative;
   flex: 1;

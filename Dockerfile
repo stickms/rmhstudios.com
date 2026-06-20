@@ -131,6 +131,9 @@ ARG VITE_SOCKET_URL
 ARG VITE_RMHBOX_SOCKET_URL
 ARG VITE_RMHTUBE_SOCKET_URL
 ARG VITE_DISCORD_ACTIVITY_CLIENT_ID
+# Optional: only used to title/describe NEW library PDFs. Cover rendering itself
+# needs no key — titles fall back to the humanized filename when it's absent.
+ARG DEEPSEEK_API_KEY
 
 ENV DATABASE_URL=${DATABASE_URL} \
     BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET} \
@@ -139,7 +142,15 @@ ENV DATABASE_URL=${DATABASE_URL} \
     VITE_SOCKET_URL=${VITE_SOCKET_URL} \
     VITE_RMHBOX_SOCKET_URL=${VITE_RMHBOX_SOCKET_URL} \
     VITE_RMHTUBE_SOCKET_URL=${VITE_RMHTUBE_SOCKET_URL} \
-    VITE_DISCORD_ACTIVITY_CLIENT_ID=${VITE_DISCORD_ACTIVITY_CLIENT_ID}
+    VITE_DISCORD_ACTIVITY_CLIENT_ID=${VITE_DISCORD_ACTIVITY_CLIENT_ID} \
+    DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+
+# Auto-generate library book covers + metadata for any PDF in public/library that
+# doesn't already have them. Idempotent: existing covers (committed under
+# public/library/covers) and data/library-metadata.json are reused, so this only
+# renders what's new. Must run BEFORE `vite build` so the fresh metadata JSON is
+# bundled and the rendered covers are picked up into the public output.
+RUN pnpm run library:metadata
 
 # Build with cache mounts for faster incremental builds.
 # .vinxi cache is preserved between builds for Vite's module graph cache.
@@ -148,13 +159,15 @@ ENV DATABASE_URL=${DATABASE_URL} \
 # NODE_OPTIONS prevents OOM on large bundles (three.js, monaco, tiptap, etc.)
 RUN --mount=type=cache,id=vinxi-cache-${COMPOSE_PROJECT_NAME},target=/app/.vinxi,sharing=locked \
     rm -rf .output \
+    && pnpm run build-vibe-packages \
     && NODE_OPTIONS='--max-old-space-size=8192' pnpm exec vite build \
     && node scripts/fix-ssr-css-hash.mjs \
     && cp -a .output /app/build-output
 
 RUN test -d /app/build-output && \
     test -f /app/build-output/server/index.mjs && \
-    test -f /app/build-output/public/models/marlonjack.glb
+    test -f /app/build-output/public/models/marlonjack.glb && \
+    test -f /app/build-output/public/vibe-packages/react.js
 
 # ── Stage 4: Production runner ────────────────────────────────────────────
 FROM node:24-alpine AS runner

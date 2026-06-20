@@ -67,7 +67,8 @@ How your code is built and run (this is different from a single HTML file — re
 - React 19 and react-dom are ALWAYS available — import them directly (\`import React, { useState, useEffect } from 'react'\`, \`import { createRoot } from 'react-dom/client'\`). Do NOT list react/react-dom in DEPS.
 
 npm packages — this is a real strength, use it:
-- You can import ANY browser-compatible npm package; bare imports resolve at runtime from esm.sh. LARGE libraries work great and load straight from the CDN — including three, @react-three/fiber, @react-three/drei, pixi.js, p5, matter-js, konva, d3, chart.js, gsap, animejs, motion (framer-motion), tone, howler, zustand, immer, lodash-es, date-fns, nanoid, and more.
+- You can import ANY browser-compatible npm package. A curated set is PRE-INSTALLED and served from our own servers, so it loads instantly and reliably (no third-party CDN) — PREFER these whenever they fit: three, @react-three/fiber, @react-three/drei, pixi.js, p5, matter-js, konva, d3, chart.js, gsap, framer-motion, tone, zustand, immer, lodash-es, date-fns, nanoid, zod, clsx, tailwind-merge, uuid. (react and react-dom are always available — see above.)
+- Any other browser-compatible package still works too; it resolves at runtime from esm.sh as a fallback. Lean on the curated list first for speed and reliability, and reach for others when you genuinely need them.
 - For EVERY bare npm package you import (other than react/react-dom), list it on the DEPS line with a PINNED version, comma-separated: \`DEPS: three@0.183, @react-three/fiber@9, gsap@3\`. Subpath imports such as \`three/examples/jsm/controls/OrbitControls.js\` are fine — just list the base package (\`three@0.183\`) in DEPS.
 
 Runtime environment — use it to the fullest, and respect its limits:
@@ -361,15 +362,20 @@ export async function listVibePages(opts: { q?: string; cursor?: string }): Prom
   nextCursor: string | null;
 }> {
   const q = opts.q?.trim();
-  const where = q
-    ? {
-        OR: [
-          { title: { contains: q, mode: 'insensitive' as const } },
-          { prompt: { contains: q, mode: 'insensitive' as const } },
-          { description: { contains: q, mode: 'insensitive' as const } },
-        ],
-      }
-    : undefined;
+  // Only surface finished pages — never the empty "generating" placeholders or
+  // failed rows that the up-front reservation can leave behind.
+  const where = {
+    status: 'ready',
+    ...(q
+      ? {
+          OR: [
+            { title: { contains: q, mode: 'insensitive' as const } },
+            { prompt: { contains: q, mode: 'insensitive' as const } },
+            { description: { contains: q, mode: 'insensitive' as const } },
+          ],
+        }
+      : {}),
+  };
 
   const rows = await prisma.vibePage.findMany({
     where,
@@ -519,6 +525,35 @@ export async function* generateVibeStream(opts: {
     }
   }
 
+  // For a BRAND-NEW page, reserve the slug and persist a "generating" placeholder
+  // row up front. This is what makes generation survive a dropped streaming
+  // connection: the client gets the slug immediately (the `created` event) and can
+  // navigate straight to /v/<slug>, and because the row already exists the page is
+  // never lost even if the SSE stream is cut before `done`. The row flips to "ready"
+  // (or "error") below once the build resolves. `newPageId`/`reservedSlug` are set
+  // only on this path; the customize path updates the existing row instead.
+  let newPageId: string | undefined;
+  let reservedSlug: string | undefined;
+  if (!opts.slug) {
+    reservedSlug = await uniqueSlug(opts.prompt);
+    const created = await prisma.vibePage.create({
+      data: {
+        slug: reservedSlug,
+        prompt: opts.prompt,
+        title: opts.prompt.slice(0, 80),
+        description: `A vibe page about "${opts.prompt}".`.slice(0, 300),
+        html: '',
+        status: 'generating',
+        conversationHistory: [],
+        // Don't screenshot a half-built page; the completion update re-flags it.
+        thumbnailStale: false,
+      },
+      select: { id: true },
+    });
+    newPageId = created.id;
+    yield { type: 'created', slug: reservedSlug };
+  }
+
   const messages: VibeMessage[] = [
     { role: 'system', content: systemPrompt },
     ...history,
@@ -530,6 +565,10 @@ export async function* generateVibeStream(opts: {
   // corrective prompts live only in `messages` and are never saved to history.
   let content = '';
   let result: Extract<Materialized, { ok: true }> | undefined;
+  // Track whether we reached a persisted result so the `finally` can mark a
+  // brand-new page's reserved row as failed on any early-return / throw.
+  let succeeded = false;
+  try {
 
   for (let attempt = 1; attempt <= MAX_GENERATION_ATTEMPTS && !result; attempt++) {
     content = '';
@@ -627,7 +666,7 @@ export async function* generateVibeStream(opts: {
     return;
   }
 
-  const { html, slug: parsedSlug, title, description } = result;
+  const { html, title, description } = result;
 
   const cleanTitle = (title || opts.prompt).slice(0, 80);
   const cleanDescription = (description || `A vibe page about "${opts.prompt}".`).slice(0, 300);
@@ -663,38 +702,58 @@ export async function* generateVibeStream(opts: {
           select: { id: true },
         }),
       ]);
+      succeeded = true;
       yield { type: 'done', slug: existingSlug, versionId: version.id, html, title: cleanTitle, description: cleanDescription };
-    } else {
-      const slug = await uniqueSlug(parsedSlug || opts.prompt);
+    } else if (newPageId && reservedSlug) {
       const conversationHistory: VibeMessage[] = [
         { role: 'user', content: opts.prompt },
         assistantTurn,
       ];
-      // Create the page and seed its first version snapshot from the same content.
-      const page = await prisma.vibePage.create({
-        data: {
-          slug,
-          prompt: opts.prompt,
-          title: cleanTitle,
-          description: cleanDescription,
-          html,
-          conversationHistory,
-          versions: {
-            create: {
-              prompt: opts.prompt,
-              title: cleanTitle,
-              description: cleanDescription,
-              html,
-              conversationHistory,
-            },
+      // Fill in the reserved "generating" row with the finished build, flip it to
+      // "ready", and seed its first version snapshot — atomically, so the page and
+      // its history land together. We keep the slug we reserved up front (the client
+      // may already be viewing /v/<slug>), ignoring the model's SLUG suggestion.
+      // thumbnailStale: true → the vibe-worker now renders the screenshot.
+      const [, version] = await prisma.$transaction([
+        prisma.vibePage.update({
+          where: { id: newPageId },
+          data: {
+            html,
+            title: cleanTitle,
+            description: cleanDescription,
+            conversationHistory,
+            status: 'ready',
+            thumbnailStale: true,
           },
-        },
-        select: { versions: { select: { id: true } } },
-      });
-      // thumbnailStale defaults to true → the vibe-worker renders the screenshot.
-      yield { type: 'done', slug, versionId: page.versions[0].id, html, title: cleanTitle, description: cleanDescription };
+        }),
+        prisma.vibePageVersion.create({
+          data: {
+            pageId: newPageId,
+            prompt: opts.prompt,
+            title: cleanTitle,
+            description: cleanDescription,
+            html,
+            conversationHistory,
+          },
+          select: { id: true },
+        }),
+      ]);
+      succeeded = true;
+      yield { type: 'done', slug: reservedSlug, versionId: version.id, html, title: cleanTitle, description: cleanDescription };
     }
   } catch {
     yield { type: 'error', message: 'Failed to save the page. Try again.' };
+  }
+
+  } finally {
+    // Any path that didn't reach a persisted result leaves a brand-new page's
+    // reserved row orphaned in "generating" — flip it to "error" so the viewer
+    // (which the client may have already navigated to) shows a failure instead of
+    // polling forever. Best-effort; the customize path has no reserved row.
+    if (newPageId && !succeeded) {
+      await prisma.vibePage
+        .update({ where: { id: newPageId }, data: { status: 'error' } })
+        .catch(() => {});
+    }
   }
 }
