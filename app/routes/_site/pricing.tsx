@@ -4,6 +4,7 @@
  * Four subscription tiers. Starter & Pro start Stripe-hosted checkout via the
  * better-auth stripe client; Enterprise is a sales-led "Contact team" flow.
  */
+import { useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
@@ -38,19 +39,42 @@ const PLANS = [
 
 function Pricing() {
   const currentTier = Route.useLoaderData();
+  const [busy, setBusy] = useState<string | null>(null);
 
   async function subscribe(plan: 'starter' | 'pro') {
-    await authClient.subscription.upgrade({
-      plan,
-      successUrl: '/pricing?status=success',
-      cancelUrl: '/pricing?status=cancelled',
-    });
+    setBusy(plan);
+    try {
+      const result = await authClient.subscription.upgrade({
+        plan,
+        successUrl: '/pricing?status=success',
+        cancelUrl: '/pricing?status=cancelled',
+      });
+      if (result?.error) {
+        console.error('subscribe failed:', result.error);
+        return;
+      }
+    } catch (err) {
+      console.error('subscribe failed:', err);
+    } finally {
+      setBusy(null);
+    }
   }
 
   async function manageBilling() {
-    const result = await authClient.subscription.billingPortal({ returnUrl: '/pricing' });
-    if (result?.data?.url && !result.data.redirect) {
-      window.location.href = result.data.url;
+    setBusy('portal');
+    try {
+      const result = await authClient.subscription.billingPortal({ returnUrl: '/pricing' });
+      if (result?.error) {
+        console.error('manageBilling failed:', result.error);
+        return;
+      }
+      if (result?.data?.url && !result.data.redirect) {
+        window.location.href = result.data.url;
+      }
+    } catch (err) {
+      console.error('manageBilling failed:', err);
+    } finally {
+      setBusy(null);
     }
   }
 
@@ -62,7 +86,8 @@ function Pricing() {
           <button
             type="button"
             onClick={manageBilling}
-            className="rounded-lg border border-white/20 px-4 py-2 text-sm font-semibold"
+            disabled={busy === 'portal'}
+            className="rounded-lg border border-white/20 px-4 py-2 text-sm font-semibold disabled:opacity-50"
           >
             Manage billing
           </button>
@@ -84,7 +109,7 @@ function Pricing() {
                 <button
                   type="button"
                   onClick={() => subscribe(p.tier as 'starter' | 'pro')}
-                  disabled={currentTier === p.tier}
+                  disabled={currentTier === p.tier || busy === p.tier}
                   className="w-full rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-black disabled:opacity-50"
                 >
                   {currentTier === p.tier ? 'Current plan' : 'Subscribe'}
