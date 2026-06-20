@@ -11,27 +11,26 @@ on:
       - "go-services/**"
       - "deploy/helm/rmhstudios-go/**"
 
-defaults:
-  run:
-    working-directory: go-services
-
 jobs:
   build-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/cache@v4
         with:
-          go-version: "1.23"
-          cache-dependency-path: go-services/go.sum
-      - run: go build ./...
-      - run: go vet ./...
-      - run: go test -race ./...
-      - name: gofmt check
-        run: test -z "$(gofmt -l .)" || (gofmt -l . && exit 1)
+          path: ~/.cache/bazel-disk
+          key: bazel-disk-${{ runner.os }}-${{ hashFiles('go-services/go.sum', 'MODULE.bazel') }}
+          restore-keys: bazel-disk-${{ runner.os }}-
+      - name: bootstrap toolchain (guard: installs bazelisk, no privileged installs)
+        run: ./scripts/preflight.sh --guard
+      - name: build + test (bazel)
+        run: bazelisk test --build_tests_only //go-services/...
 
   e2e:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: go-services
     services:
       postgres:
         image: postgres:16-alpine
