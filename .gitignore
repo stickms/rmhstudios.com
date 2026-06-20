@@ -72,3 +72,4 @@ cli/node_modules/
 
 # Bazel
 /bazel-*
+MODULE.bazel.lock
