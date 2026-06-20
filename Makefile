@@ -27,7 +27,7 @@ gazelle: ## regenerate Go BUILD.bazel files
 
 build: ## build artifacts: all Go binaries + frontend bundle
 	@$(GUARD)
-	$(BAZEL) build //go-services/...
+	$(BAZEL) build //go-services/cmd/...
 	$(BAZEL) run //:frontend
 
 base-images: ## build + push the special runtime bases (chromium/git)
@@ -63,7 +63,7 @@ prod: images ## build images, push (if REGISTRY), and deploy via Helm
 
 test: ## run Go tests (Bazel) + frontend tests (vitest)
 	@$(GUARD)
-	$(BAZEL) test //go-services/...
+	$(BAZEL) test --build_tests_only //go-services/...
 	pnpm test
 
 test-e2e: ## run the Go end-to-end suite

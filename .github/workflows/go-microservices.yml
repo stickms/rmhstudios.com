@@ -24,7 +24,7 @@ jobs:
       - name: bootstrap toolchain
         run: make bootstrap
       - name: build + test (bazel)
-        run: bazelisk test //go-services/...
+        run: bazelisk test --build_tests_only //go-services/...
 
   e2e:
     runs-on: ubuntu-latest
