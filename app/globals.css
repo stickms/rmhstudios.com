@@ -1977,6 +1977,9 @@ html {
   overflow-y: auto;
   min-height: 100%;
   background-color: var(--site-bg);
+  /* Suppress horizontal overscroll → reduces the browser's edge "go back"
+     gesture (Chrome Android) so a left-edge swipe can open the sidebar. */
+  overscroll-behavior-x: none;
 }
 
 /* Reserve scrollbar space on main UI pages to prevent layout shift */

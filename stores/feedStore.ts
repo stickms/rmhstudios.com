@@ -13,6 +13,9 @@ interface FeedState {
   cursor: string | null;
   hasMore: boolean;
   loading: boolean;
+  /** True once the first page fetch has completed — gates the empty state so
+   *  "Nothing here yet" never flashes before the initial load resolves. */
+  initialized: boolean;
   filter: FeedFilter;
   search: string | null;
   /** Buffered new posts for the "For You" surface — surfaced as an "N new" pill. */
@@ -47,6 +50,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
   cursor: null,
   hasMore: true,
   loading: false,
+  initialized: false,
   filter: "all",
   search: null,
   pendingItems: [],
@@ -88,11 +92,12 @@ export const useFeedStore = create<FeedState>((set, get) => ({
           cursor: data.nextCursor,
           hasMore: data.hasMore,
           loading: false,
+          initialized: true,
         };
       });
     } catch (error) {
       console.error("Feed fetch error:", error);
-      set({ loading: false, hasMore: false });
+      set({ loading: false, hasMore: false, initialized: true });
     }
   },
 
@@ -163,6 +168,6 @@ export const useFeedStore = create<FeedState>((set, get) => ({
   },
 
   reset: () => {
-    set({ items: [], cursor: null, hasMore: true, loading: false, pendingItems: [] });
+    set({ items: [], cursor: null, hasMore: true, loading: false, initialized: false, pendingItems: [] });
   },
 }));

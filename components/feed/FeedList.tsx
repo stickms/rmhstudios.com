@@ -13,7 +13,7 @@ interface FeedListProps {
 }
 
 export function FeedList({ following = false, onSwitchToForYou }: FeedListProps) {
-  const { items, loading, hasMore, fetchNextPage, pendingItems, flushPending } =
+  const { items, loading, initialized, hasMore, fetchNextPage, pendingItems, flushPending } =
     useFeedStore();
   const sentinelRef = useRef<HTMLDivElement>(null);
   const initialFetched = useRef(false);
@@ -72,15 +72,16 @@ export function FeedList({ following = false, onSwitchToForYou }: FeedListProps)
         <FeedItem key={item.id} item={item} />
       ))}
 
-      {/* Loading indicator */}
-      {loading && (
+      {/* Loading indicator — also covers the initial load so the empty state
+          never flashes before the first page resolves. */}
+      {(loading || !initialized) && (
         <div className="flex items-center justify-center py-8">
           <Loader2 className="w-6 h-6 text-site-accent animate-spin" />
         </div>
       )}
 
-      {/* Empty state */}
-      {!loading && items.length === 0 && (
+      {/* Empty state — only after the first fetch has actually completed */}
+      {initialized && !loading && items.length === 0 && (
         following ? (
           <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
             <p className="text-lg font-medium text-site-text mb-1">Your Following feed is quiet</p>
