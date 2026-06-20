@@ -294,13 +294,14 @@ export function BookCanvas({ aspect, single, numPages, getImg, ensurePage, onPag
 
   const base = turn ? { left: turn.staticLeft, right: turn.staticRight } : view(k);
   const contentW = single ? aspect : 2 * aspect;
-  // The fit box is sized to the page height (1) plus a hair of headroom. The leaf
-  // never actually exceeds the page rectangle — it rotates around the vertical spine
-  // (no height change), its ≤0.2rad vertical tilt only foreshortens it, and the
-  // z-curl is invisible under the orthographic camera — so the small margin is just
-  // breathing room. Kept tight on purpose so the book fills the stage's height
-  // rather than floating in a letterbox.
-  const contentH = 1.06;
+  // Fit box height = the page height exactly (1). The leaf can never exceed the page
+  // rectangle vertically — it rotates around the vertical spine (no height change),
+  // its ≤0.2rad vertical tilt is an x-rotation that only *foreshortens* the page
+  // (top edge y = 0.5·cosθ ≤ 0.5), and the z-curl is invisible under the orthographic
+  // camera. So no vertical headroom is needed: we size to the page itself so the book
+  // stands as tall as the stage allows (width follows from the uniform fit zoom).
+  // The stage's own padding keeps it off the viewport edge.
+  const contentH = 1.0;
 
   return (
     <div
@@ -408,11 +409,11 @@ function Fit({ width, height }: { width: number; height: number }) {
   const size = useThree((s) => s.size);
   const camera = useThree((s) => s.camera);
   useEffect(() => {
-    // `height` already includes a sliver of headroom (see contentH), so we only need a
-    // hair of extra breathing room — keep the fill factor high so the book fills the
-    // stage rather than floating in a wide letterbox. The stage's own padding keeps the
-    // book off the viewport edge regardless.
-    const zoom = Math.min(size.width / width, size.height / height) * 0.99;
+    // Fit to whichever axis binds (min), filling nearly all of it — the book never
+    // overflows because the chosen zoom guarantees both axes fit, and the leaf can't
+    // exceed the page rectangle (see contentH). The 0.5% trim leaves a sliver for
+    // antialiased edges; the stage's padding provides the actual visual margin.
+    const zoom = Math.min(size.width / width, size.height / height) * 0.995;
     camera.zoom = zoom;
     camera.updateProjectionMatrix();
   }, [size.width, size.height, width, height, camera]);
@@ -508,8 +509,9 @@ function Leaf({
     if (groupRef.current) {
       groupRef.current.rotation.y = turn.rotSign * p * PI;
       // Lean the whole leaf toward the cursor vertically; fade the lean out as the
-      // page reaches the closed/open extremes so it never looks broken. Kept modest
-      // so the lifted corner stays within the (now tighter) vertical headroom.
+      // page reaches the closed/open extremes so it never looks broken. This is an
+      // x-rotation, so it only foreshortens the page (never lifts a corner past the
+      // page's top/bottom edge) — safe even with the book sized flush to the stage.
       groupRef.current.rotation.x = ty * 0.2 * Math.sin(p * PI);
     }
     // In single-page mode the leaf's back is blank paper (there's no facing page), so

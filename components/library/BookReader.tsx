@@ -40,7 +40,11 @@ type PdfPage = {
   };
 };
 
-const RENDER_WIDTH = 1100; // px width each page is rasterised at (retina-friendly)
+// px width each page is rasterised at. Sized generously so a page stays sharp when
+// the book fills a tall screen AND when the user zooms in (browser/trackpad zoom
+// redraws the canvas larger from this same bitmap — too small a source and it softens).
+// Capped to keep the bounded GPU texture cache (see TEX_CACHE_CAP) within budget.
+const RENDER_WIDTH = 1600;
 const PENDING = '__pending__';
 
 /**
