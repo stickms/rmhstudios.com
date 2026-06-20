@@ -21,7 +21,7 @@ jobs:
           path: ~/.cache/bazel-disk
           key: bazel-disk-${{ runner.os }}-${{ hashFiles('go-services/go.sum', 'MODULE.bazel') }}
           restore-keys: bazel-disk-${{ runner.os }}-
-      - name: bootstrap toolchain (guard: installs bazelisk, no privileged installs)
+      - name: bootstrap toolchain (guard mode — installs bazelisk, no privileged installs)
         run: ./scripts/preflight.sh --guard
       - name: build + test (bazel)
         run: bazelisk test --build_tests_only //go-services/...
