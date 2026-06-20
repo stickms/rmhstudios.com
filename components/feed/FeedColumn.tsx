@@ -142,7 +142,17 @@ export function FeedColumn() {
             <SlidersHorizontal className="w-5 h-5" />
           </button>
         </div>
-        {filtersOpen && <FeedTabs mode={mode} onModeChange={handleModeChange} />}
+        {/* Animated open/close — grid-rows fr transition collapses height
+            smoothly without needing to measure the content. */}
+        <div
+          className={`grid transition-[grid-template-rows] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none ${
+            filtersOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+          }`}
+        >
+          <div className="overflow-hidden">
+            <FeedTabs mode={mode} onModeChange={handleModeChange} />
+          </div>
+        </div>
 
         {/* Search bar */}
         <div className="px-4 py-2 border-t border-site-border">
