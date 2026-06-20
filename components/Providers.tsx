@@ -1,4 +1,4 @@
-import { ReactNode, createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
+import { ReactNode, createContext, useContext, useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useLocation } from "@tanstack/react-router";
 import { Toaster } from "sonner";
@@ -22,6 +22,47 @@ const queryClient = new QueryClient({
 type SessionCtxValue = ReturnType<typeof authClient.useSession>;
 
 const SessionCtx = createContext<SessionCtxValue | null>(null);
+
+/* ------------------------------------------------------------------ */
+/*  Persisted session cache                                            */
+/*                                                                     */
+/*  better-auth's useSession() starts out { data: null, isPending:    */
+/*  true } on every fresh load and only resolves after a network      */
+/*  round-trip — which makes the shell flash "signed out" for a       */
+/*  moment. We persist the last-known user to localStorage and seed    */
+/*  the context with it so the signed-in UI shows immediately, then    */
+/*  let the live session take over (and self-heal if it's stale).     */
+/* ------------------------------------------------------------------ */
+const CACHED_USER_KEY = "rmh-auth-user";
+
+type CachedSessionUser = {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+  handle?: string | null;
+  username?: string | null;
+  isAdmin?: boolean;
+  isVerified?: boolean;
+};
+
+function readCachedUser(): CachedSessionUser | null {
+  try {
+    const raw = localStorage.getItem(CACHED_USER_KEY);
+    return raw ? (JSON.parse(raw) as CachedSessionUser) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedUser(user: CachedSessionUser | null) {
+  try {
+    if (user) localStorage.setItem(CACHED_USER_KEY, JSON.stringify(user));
+    else localStorage.removeItem(CACHED_USER_KEY);
+  } catch {
+    // ignore (private mode / storage disabled)
+  }
+}
 
 /** Use this instead of authClient.useSession() in navigation/shell components. */
 export function useSession() {
@@ -59,6 +100,12 @@ export function useResolvedUser() {
 
 interface ProvidersProps {
   children: ReactNode;
+  /**
+   * User resolved on the server from the session cookie during SSR. Seeds the
+   * shell so the very first painted HTML (and the first client render) is
+   * already signed-in — no "signed out" flash on refresh.
+   */
+  initialUser?: CachedSessionUser | null;
 }
 
 const STYLE_CLASSES = SITE_STYLES.map((s) => `style-${s.id}`);
@@ -104,11 +151,62 @@ const THEME_EXCLUDED_ROUTES = [
   ...apps.map((a) => a.href),
 ].filter((href) => href.startsWith("/"));
 
-export function Providers({ children }: ProvidersProps) {
+export function Providers({ children, initialUser = null }: ProvidersProps) {
   const session = authClient.useSession();
   const style = useThemeStore((s) => s.style);
   const { pathname } = useLocation();
   const isFirstRun = useRef(true);
+
+  // Seed the known user from the server-resolved session so the shell renders
+  // signed-in on the first paint (SSR) and the first client render — matching
+  // markup, no hydration mismatch, no flash. `initialUser` is authoritative
+  // for that first frame because the server read the actual session cookie; we
+  // only fall back to the persisted localStorage copy when the server didn't
+  // provide one (e.g. a client-only render path).
+  const [cachedUser, setCachedUser] = useState<CachedSessionUser | null>(initialUser);
+  useEffect(() => {
+    if (!initialUser) {
+      const stored = readCachedUser();
+      if (stored) setCachedUser(stored);
+    }
+  }, [initialUser]);
+
+  // Persist the live session whenever it resolves (and clear it on sign-out).
+  const liveUser = session.data?.user;
+  useEffect(() => {
+    if (session.isPending) return;
+    if (liveUser) {
+      const snapshot: CachedSessionUser = {
+        id: liveUser.id,
+        name: liveUser.name,
+        email: liveUser.email,
+        image: liveUser.image,
+        handle: (liveUser as { handle?: string | null }).handle,
+        username: (liveUser as { username?: string | null }).username,
+        isAdmin: (liveUser as { isAdmin?: boolean }).isAdmin,
+        isVerified: (liveUser as { isVerified?: boolean }).isVerified,
+      };
+      writeCachedUser(snapshot);
+      setCachedUser(snapshot);
+    } else {
+      writeCachedUser(null);
+      setCachedUser(null);
+    }
+  }, [session.isPending, liveUser]);
+
+  // Effective session handed to the rest of the app: while the live session is
+  // still loading, fall back to the persisted user so nothing flashes as
+  // signed-out. Once the real session resolves it always wins.
+  const effectiveSession = useMemo<SessionCtxValue>(() => {
+    if (session.isPending && cachedUser) {
+      return {
+        ...session,
+        isPending: false,
+        data: { user: cachedUser, session: null },
+      } as unknown as SessionCtxValue;
+    }
+    return session;
+  }, [session, cachedUser]);
 
   // Resolved user display data (custom image/name)
   const [resolvedUser, setResolvedUser] = useState<ResolvedUserDisplay | null>(null);
@@ -119,7 +217,7 @@ export function Providers({ children }: ProvidersProps) {
       .catch(() => {});
   }, []);
 
-  const userId = session.data?.user?.id;
+  const userId = effectiveSession.data?.user?.id;
   useEffect(() => {
     if (userId) {
       fetchResolvedUser();
@@ -185,7 +283,7 @@ export function Providers({ children }: ProvidersProps) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <SessionCtx.Provider value={session}>
+      <SessionCtx.Provider value={effectiveSession}>
         <ResolvedUserCtx.Provider value={{ resolved: resolvedUser, refresh: fetchResolvedUser }}>
         {children}
         </ResolvedUserCtx.Provider>

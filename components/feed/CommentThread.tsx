@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { authClient } from '@/lib/auth-client';
 import { CommentItem } from './CommentItem';
 import { AIGenerateButton } from './AIGenerateButton';
+import { MentionTextarea } from './MentionTextarea';
 import type { Comment } from './CommentItem';
 import { MAX_COMMENT_LENGTH } from '@/lib/rmhark-schema';
 
@@ -106,9 +107,9 @@ export function CommentThread({ rmharkId, open, onClose, onCommentAdded }: Comme
         {/* Compose */}
         {session ? (
           <div className="border-t border-site-border px-4 py-3">
-            <textarea
+            <MentionTextarea
               value={content}
-              onChange={(e) => setContent(e.target.value)}
+              onChange={setContent}
               placeholder="Write a comment..."
               rows={2}
               maxLength={MAX_COMMENT_LENGTH}

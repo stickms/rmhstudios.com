@@ -15,7 +15,7 @@ export const Route = createFileRoute('/api/feed/image/$filename')({
           if (!object) {
             return new Response("Not Found", { status: 404 });
           }
-          return new Response(object.body, {
+          return new Response(new Uint8Array(object.body), {
             headers: {
               "Content-Type": object.contentType || contentTypeForFilename(filename),
               "Cache-Control": "public, max-age=31536000, immutable",

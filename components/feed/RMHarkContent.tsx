@@ -1,13 +1,13 @@
 'use client';
 
-import { useFeedStore } from '@/stores/feedStore';
+import { Link } from '@tanstack/react-router';
 
 interface RMHarkContentProps {
   text: string;
   className?: string;
 }
 
-const TOKEN_REGEX = /(#\w+|https?:\/\/[^\s<>"']+)/gi;
+const TOKEN_REGEX = /(@\w+|#\w+|https?:\/\/[^\s<>"']+)/gi;
 const URL_REGEX = /^https?:\/\//i;
 
 export function extractFirstUrl(text: string): string | null {
@@ -25,18 +25,30 @@ export function RMHarkContent({ text, className }: RMHarkContentProps) {
   return (
     <p className={className}>
       {parts.map((part, i) => {
-        if (/^#\w+$/.test(part)) {
+        if (/^@\w+$/.test(part)) {
           return (
-            <button
+            <Link
               key={i}
-              onClick={(e) => {
-                e.stopPropagation();
-                useFeedStore.getState().setSearch(part);
-              }}
+              to="/u/$userid"
+              params={{ userid: part.slice(1) }}
+              onClick={(e) => e.stopPropagation()}
               className="text-site-accent hover:underline"
             >
               {part}
-            </button>
+            </Link>
+          );
+        }
+        if (/^#\w+$/.test(part)) {
+          return (
+            <Link
+              key={i}
+              to="/"
+              search={{ q: part }}
+              onClick={(e) => e.stopPropagation()}
+              className="text-sky-400 hover:text-sky-300 hover:underline font-medium"
+            >
+              {part}
+            </Link>
           );
         }
         if (URL_REGEX.test(part)) {

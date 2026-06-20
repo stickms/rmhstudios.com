@@ -1,0 +1,25 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "doctrine",
+    srcs = [
+        "schedule.go",
+        "seed.go",
+        "worker.go",
+    ],
+    importpath = "github.com/rmhstudios/rmh-go/internal/doctrine",
+    visibility = ["//go-services:__subpackages__"],
+    deps = [
+        "//go-services/pkg/db",
+        "//go-services/pkg/log",
+        "//go-services/pkg/telemetry",
+        "@com_github_google_uuid//:uuid",
+        "@com_github_jackc_pgx_v5//:pgx",
+    ],
+)
+
+go_test(
+    name = "doctrine_test",
+    srcs = ["seed_test.go"],
+    embed = [":doctrine"],
+)

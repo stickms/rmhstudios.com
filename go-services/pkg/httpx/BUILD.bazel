@@ -1,0 +1,9 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "httpx",
+    srcs = ["httpx.go"],
+    importpath = "github.com/rmhstudios/rmh-go/pkg/httpx",
+    visibility = ["//visibility:public"],
+    deps = ["//go-services/pkg/log"],
+)

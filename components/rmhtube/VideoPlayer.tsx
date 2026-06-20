@@ -12,11 +12,22 @@
 import { useRef, useEffect, useCallback, useState, useImperativeHandle, forwardRef, lazy, Suspense } from 'react';
 import type ReactPlayerType from 'react-player';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
-import { emit } from '@/lib/rmhtube/socket';
+import { emit, syncClock } from '@/lib/rmhtube/socket';
 import { C2S } from '@/lib/rmhtube/events';
-import { HOST_STATE_INTERVAL_MS, SYNC_TOLERANCE_S } from '@/lib/rmhtube/constants';
+import {
+  HOST_STATE_INTERVAL_MS,
+  SYNC_SOFT_TOLERANCE_S,
+  SYNC_HARD_TOLERANCE_S,
+  SYNC_NUDGE_RATE,
+} from '@/lib/rmhtube/constants';
+import { extrapolate } from '@/lib/rmhtube/sync-math';
+import { getServerNow } from '@/lib/rmhtube/clock';
 import { detectMediaType } from '@/lib/rmhtube/utils';
 import { toast } from '@/lib/rmhtube/toast-store';
+
+// How often a non-leader re-evaluates its position against the live anchor.
+// Decoupled from the server heartbeat: between server updates we extrapolate.
+const CORRECTION_INTERVAL_MS = 1_000;
 
 const ReactPlayer = lazy(() => import('react-player'));
 
@@ -43,6 +54,16 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
   const updateSettings = useRmhTubeStore((s) => s.updateSettings);
   const [ready, setReady] = useState(false);
   const lastSyncRef = useRef(0);
+
+  // ─── Robustness refs ────────────────────────────────────────────
+  const hiddenRef = useRef(false);          // page/tab hidden
+  const bufferingRef = useRef(false);       // player stalled buffering
+  const forceResyncRef = useRef(false);     // next correction must hard-seek
+  const nudgeActiveRef = useRef(false);     // playbackRate currently nudged off room speed
+  const lastControlToastRef = useRef(0);    // rate-limit "only leader" toast
+  // CTA shown when the environment (mobile background / autoplay block) pauses a
+  // viewer whose room is still playing — tapping it resyncs + resumes.
+  const [needsResync, setNeedsResync] = useState(false);
 
   // ─── Volume: local state to decouple native controls from store ──
   // Prevents feedback loop: native event → store → re-render → prop → native event
@@ -109,57 +130,155 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
 
   // ─── Leader: Periodic state report ─────────────────────────────
 
-  useEffect(() => {
-    // Only the leader reports periodic state
-    if (!isLeader || !url) return;
-
-    const interval = setInterval(() => {
-      const player = playerRef.current;
-      if (!player) return;
-
-      // Phase 2: Report actual playback rate from the internal player
-      const internal = player.getInternalPlayer();
-      let actualRate = 1;
-      if (internal instanceof HTMLMediaElement) {
-        actualRate = internal.playbackRate;
-      } else if (typeof internal?.getPlaybackRate === 'function') {
-        actualRate = internal.getPlaybackRate() ?? 1;
-      }
-
-      emit(C2S.SYNC_HOST_STATE, {
-        playing: !player.props.playing === false, // Check the internal state
-        currentTime: player.getCurrentTime() ?? 0,
-        playbackRate: actualRate,
-        timestamp: Date.now(),
-      });
-    }, HOST_STATE_INTERVAL_MS);
-
-    return () => clearInterval(interval);
-  }, [isLeader, url]);
-
-  // ─── Non-leader: Sync to server state ──────────────────────────
-
-  useEffect(() => {
-    if (isLeader || !videoState || !ready) return;
+  // Read the leader's *real* player state (not the controlled prop, which can
+  // claim "playing" while autoplay is blocked / buffering / ended).
+  const reportHostState = useCallback(() => {
     const player = playerRef.current;
     if (!player) return;
+    const internal = player.getInternalPlayer();
 
-    const now = Date.now();
-    // Debounce sync checks
-    if (now - lastSyncRef.current < 500) return;
-    lastSyncRef.current = now;
-
-    const latency = (now - videoState.updatedAt) / 2;
-    const expectedTime = videoState.currentTime + (videoState.playing ? latency / 1000 : 0);
-    const localTime = player.getCurrentTime() ?? 0;
-    const drift = Math.abs(localTime - expectedTime);
-
-    if (drift > SYNC_TOLERANCE_S) {
-      player.seekTo(expectedTime, 'seconds');
+    let actualRate = 1;
+    let playing = false;
+    if (internal instanceof HTMLMediaElement) {
+      actualRate = internal.playbackRate;
+      playing = !internal.paused && !internal.ended;
+    } else if (internal && typeof internal.getPlayerState === 'function') {
+      // YouTube: 1 = PLAYING, 3 = BUFFERING
+      actualRate = typeof internal.getPlaybackRate === 'function' ? (internal.getPlaybackRate() ?? 1) : 1;
+      playing = internal.getPlayerState() === 1;
+    } else {
+      playing = useRmhTubeStore.getState().room?.videoState.playing ?? false;
     }
-  }, [isLeader, videoState, ready]);
+
+    emit(C2S.SYNC_HOST_STATE, {
+      playing,
+      currentTime: player.getCurrentTime() ?? 0,
+      playbackRate: actualRate,
+      timestamp: getServerNow(),
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!isLeader || !url) return;
+    const interval = setInterval(reportHostState, HOST_STATE_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [isLeader, url, reportHostState]);
+
+  // ─── Non-leader: continuous drift correction ───────────────────
+  // Runs on a local interval (decoupled from the 2s heartbeat). Between server
+  // updates we extrapolate the anchor forward, so corrections stay smooth.
+
+  const correct = useCallback((force = false) => {
+    if (isLeader) return;
+    const player = playerRef.current;
+    if (!player || !ready) return;
+    const vs = useRmhTubeStore.getState().room?.videoState;
+    if (!vs) return;
+
+    const internal = player.getInternalPlayer();
+    const isMedia = internal instanceof HTMLMediaElement;
+    const roomSpeed = vs.playbackRate || 1;
+
+    // Don't fight a throttled/stalled element.
+    if ((hiddenRef.current || bufferingRef.current) && !force) return;
+
+    const target = extrapolate(vs, getServerNow());
+    const localTime = player.getCurrentTime() ?? 0;
+    const drift = target - localTime;
+    const absDrift = Math.abs(drift);
+
+    const hardSeek = force || forceResyncRef.current || absDrift > SYNC_HARD_TOLERANCE_S;
+
+    if (hardSeek) {
+      forceResyncRef.current = false;
+      // Restore the room speed (undo any nudge) and snap to the live position.
+      if (isMedia && nudgeActiveRef.current) {
+        internal.playbackRate = roomSpeed;
+        nudgeActiveRef.current = false;
+      }
+      if (absDrift > 0.25 || force) player.seekTo(Math.max(0, target), 'seconds');
+      return;
+    }
+
+    if (absDrift <= SYNC_SOFT_TOLERANCE_S) {
+      // In sync — make sure any nudge is reverted.
+      if (isMedia && nudgeActiveRef.current) {
+        internal.playbackRate = roomSpeed;
+        nudgeActiveRef.current = false;
+      }
+      return;
+    }
+
+    // Mid-band: gently nudge playback rate to close the gap without a jump.
+    // Only HTML5 media supports fine-grained rates; YouTube/Twitch use discrete
+    // rates, so for those we leave the small drift to the hard-seek threshold.
+    if (isMedia) {
+      const factor = drift > 0 ? 1 + SYNC_NUDGE_RATE : 1 - SYNC_NUDGE_RATE;
+      internal.playbackRate = roomSpeed * factor;
+      nudgeActiveRef.current = true;
+    }
+  }, [isLeader, ready]);
+
+  useEffect(() => {
+    if (isLeader) return;
+    const interval = setInterval(() => correct(false), CORRECTION_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [isLeader, correct]);
+
+  // React immediately to fresh anchors (edges, resync replies, heartbeat).
+  useEffect(() => {
+    if (isLeader || !videoState || !ready) return;
+    const now = Date.now();
+    if (now - lastSyncRef.current < 250) return;
+    lastSyncRef.current = now;
+    correct(false);
+  }, [isLeader, videoState, ready, correct]);
+
+  // ─── Visibility: resync on tab-return ──────────────────────────
+
+  useEffect(() => {
+    function onVisibility() {
+      const hidden = document.visibilityState === 'hidden';
+      hiddenRef.current = hidden;
+      if (hidden) return;
+
+      // Returning to the tab: re-measure the clock, then snap to live.
+      syncClock();
+      if (isLeader) {
+        // Correct the server's anchor the instant the leader is back.
+        reportHostState();
+      } else {
+        emit(C2S.SYNC_REQUEST, {});
+        forceResyncRef.current = true;
+        // Give the resync reply a moment, then hard-align. If the player is
+        // still paused while the room is playing (mobile won't auto-resume
+        // without a gesture), surface the tap-to-resync CTA.
+        setTimeout(() => {
+          correct(true);
+          const internal = playerRef.current?.getInternalPlayer();
+          const paused = internal instanceof HTMLMediaElement
+            ? internal.paused
+            : internal && typeof internal.getPlayerState === 'function'
+              ? internal.getPlayerState() !== 1
+              : false;
+          const roomPlaying = useRmhTubeStore.getState().room?.videoState.playing;
+          if (paused && roomPlaying) setNeedsResync(true);
+        }, 400);
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, [isLeader, correct, reportHostState]);
 
   // ─── Host: Emit play/pause/seek ──────────────────────────────
+
+  // Rate-limited "only the leader can control" notice (avoids mobile spam).
+  const controlToast = useCallback(() => {
+    const now = Date.now();
+    if (now - lastControlToastRef.current < 4_000) return;
+    lastControlToastRef.current = now;
+    toast.info('Only the leader can control playback');
+  }, []);
 
   const handlePlay = useCallback(() => {
     if (isLeader) {
@@ -170,20 +289,17 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         useRmhTubeStore.getState().updateVideoState({
           ...room.videoState,
           playing: true,
-          updatedAt: Date.now(),
+          updatedAt: getServerNow(),
         });
       }
       emit(C2S.SYNC_PLAY, {});
     } else {
-      // Snap non-privileged users back to the live state
-      const vs = useRmhTubeStore.getState().room?.videoState;
-      if (vs && !vs.playing) {
-        toast.info('Only the leader can control playback');
-        // Force the player back to paused by re-applying the store state
-        useRmhTubeStore.getState().updateVideoState({ ...vs, updatedAt: Date.now() });
-      }
+      // A viewer's player resumed — clear any "tap to resync" CTA and re-check
+      // drift (only seeks if meaningfully off, so an in-sync resume won't jump).
+      setNeedsResync(false);
+      correct(false);
     }
-  }, [isLeader]);
+  }, [isLeader, correct]);
 
   const handlePause = useCallback(() => {
     if (isLeader) {
@@ -192,16 +308,18 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         useRmhTubeStore.getState().updateVideoState({
           ...room.videoState,
           playing: false,
-          updatedAt: Date.now(),
+          updatedAt: getServerNow(),
         });
       }
       emit(C2S.SYNC_PAUSE, {});
     } else {
-      // Snap non-privileged users back to the live state
+      // The room is still playing but this viewer's player paused — almost
+      // always the environment (mobile background / autoplay policy), not a
+      // permitted control. Surface a one-tap resync instead of toast spam;
+      // we can't programmatically resume on mobile without a user gesture.
       const vs = useRmhTubeStore.getState().room?.videoState;
-      if (vs && vs.playing) {
-        toast.info('Only the leader can control playback');
-        useRmhTubeStore.getState().updateVideoState({ ...vs, updatedAt: Date.now() });
+      if (vs?.playing && !hiddenRef.current) {
+        setNeedsResync(true);
       }
     }
   }, [isLeader]);
@@ -210,15 +328,49 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     if (isLeader) {
       emit(C2S.SYNC_SEEK, { time: seconds });
     } else {
-      // Snap non-privileged users back to the synced position
-      const vs = useRmhTubeStore.getState().room?.videoState;
-      if (vs) {
-        toast.info('Only the leader can control playback');
-        const player = playerRef.current;
-        if (player) player.seekTo(vs.currentTime, 'seconds');
-      }
+      // Non-leaders can't scrub — snap back to the live position.
+      controlToast();
+      forceResyncRef.current = true;
+      correct(true);
     }
-  }, [isLeader]);
+  }, [isLeader, controlToast, correct]);
+
+  // ─── Buffering: pause correction while stalled, resync after ────
+
+  const handleBuffer = useCallback(() => {
+    bufferingRef.current = true;
+  }, []);
+
+  const handleBufferEnd = useCallback(() => {
+    bufferingRef.current = false;
+    if (!isLeader) {
+      // Snap back to the live position after a stall instead of being
+      // repeatedly seek-looped during it.
+      emit(C2S.SYNC_REQUEST, {});
+      forceResyncRef.current = true;
+      setTimeout(() => correct(true), 250);
+    }
+  }, [isLeader, correct]);
+
+  // ─── Mobile CTA: tap to resync + resume ────────────────────────
+
+  const handleResyncTap = useCallback(() => {
+    setNeedsResync(false);
+    emit(C2S.SYNC_REQUEST, {});
+    forceResyncRef.current = true;
+    const internal = playerRef.current?.getInternalPlayer();
+    // This runs inside a user gesture, so resuming is permitted on mobile.
+    try {
+      if (internal instanceof HTMLMediaElement) {
+        void internal.play();
+      } else if (internal && typeof internal.playVideo === 'function') {
+        internal.playVideo();
+      }
+    } catch {
+      // Resume may still be blocked; the hard-seek below keeps position correct.
+    }
+    setTimeout(() => correct(true), 200);
+  }, [correct]);
 
   // ─── Captions: Toggle via YouTube internal player API ────────
   useEffect(() => {
@@ -370,6 +522,8 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           onPlay={handlePlay}
           onPause={handlePause}
           onSeek={handleSeek}
+          onBuffer={handleBuffer}
+          onBufferEnd={handleBufferEnd}
           onReady={handleReady}
           onEnded={handleEnded}
           config={{
@@ -383,6 +537,20 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           }}
         />
       </Suspense>
+
+      {/* Mobile / autoplay resync CTA — only for viewers whose player was
+          paused by the environment while the room is still playing. */}
+      {needsResync && !isLeader && (
+        <button
+          onClick={handleResyncTap}
+          className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-black/60 text-white backdrop-blur-sm"
+        >
+          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-(--rmhtube-accent)">
+            <svg className="h-7 w-7" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+          </span>
+          <span className="text-sm font-medium">Paused — tap to resync</span>
+        </button>
+      )}
     </div>
   );
 });

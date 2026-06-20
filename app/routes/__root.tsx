@@ -8,9 +8,38 @@ import {
   useNavigate,
 } from "@tanstack/react-router";
 import { type ReactNode, useEffect } from "react";
+import { createServerFn } from "@tanstack/react-start";
+import { getRequest } from "@tanstack/react-start/server";
 import { isDiscordActivity } from "@/lib/discord-sdk";
 import { Providers } from "@/components/Providers";
+import { auth } from "@/lib/auth";
 import appCss from "@/app/globals.css?url";
+
+/**
+ * Resolve the signed-in user from the session cookie on the server. Runs in the
+ * root loader so the shell can render signed-in on the first paint instead of
+ * flashing "signed out" while better-auth's client session loads after hydration.
+ */
+const getInitialUser = createServerFn({ method: "GET" }).handler(async () => {
+  try {
+    const request = getRequest();
+    const session = await auth.api.getSession({ headers: request.headers });
+    const u = session?.user;
+    if (!u) return null;
+    return {
+      id: u.id,
+      name: u.name ?? null,
+      email: u.email ?? null,
+      image: u.image ?? null,
+      handle: (u as { handle?: string | null }).handle ?? null,
+      username: (u as { username?: string | null }).username ?? null,
+      isAdmin: (u as { isAdmin?: boolean }).isAdmin ?? false,
+      isVerified: (u as { isVerified?: boolean }).isVerified ?? false,
+    };
+  } catch {
+    return null;
+  }
+});
 
 /**
  * Inline script that applies the persisted theme class to <html> before
@@ -32,6 +61,7 @@ function isDiscordRoute(pathname: string): boolean {
 }
 
 export const Route = createRootRoute({
+  loader: () => getInitialUser(),
   head: (ctx) => {
     const discord = ctx.matches?.some(m =>
       m.fullPath?.startsWith('/discord')
@@ -101,6 +131,7 @@ function RootDocument({ children }: { children: ReactNode }) {
 function RootComponent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
+  const initialUser = Route.useLoaderData();
 
   // Inside a Discord Activity iframe, all routes must stay within /discord/*.
   // Redirect any non-discord path back to /discord/rmhbox, preserving the SDK
@@ -116,7 +147,7 @@ function RootComponent() {
   }, [pathname, navigate]);
 
   return (
-    <Providers>
+    <Providers initialUser={initialUser}>
       <Outlet />
     </Providers>
   );

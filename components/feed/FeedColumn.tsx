@@ -10,7 +10,7 @@ import { MobileSidebarDrawer } from './MobileSidebarDrawer';
 import { useFeedStore } from '@/stores/feedStore';
 import { useFeedSSE } from '@/hooks/useFeedSSE';
 import { authClient } from '@/lib/auth-client';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 
 interface SearchUser {
   id: string;
@@ -28,7 +28,10 @@ export function FeedColumn() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { setFilter, search, setSearch } = useFeedStore();
   const { data: session } = authClient.useSession();
-  const [searchInput, setSearchInput] = useState(search ?? '');
+  const navigate = useNavigate();
+  // `?q=` is the shareable source of truth; the store search mirrors it.
+  const urlQuery = (useSearch({ strict: false }) as { q?: string }).q ?? null;
+  const [searchInput, setSearchInput] = useState(urlQuery ?? '');
   const [userResults, setUserResults] = useState<SearchUser[]>([]);
   const searchRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -41,7 +44,9 @@ export function FeedColumn() {
     setSearchInput(value);
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      setSearch(value.trim() || null);
+      const q = value.trim();
+      // Push the query into the URL; the effect below drives the actual search.
+      navigate({ to: '/', search: q ? { q } : {} });
     }, 300);
 
     clearTimeout(userDebounceRef.current);
@@ -60,20 +65,30 @@ export function FeedColumn() {
 
   const clearSearch = () => {
     setSearchInput('');
-    setSearch(null);
     setUserResults([]);
+    navigate({ to: '/', search: {} });
     searchRef.current?.focus();
   };
 
-  // Sync local input when store search changes (e.g. hashtag click)
+  // The URL `?q=` is authoritative: drive the feed store from it so a shared
+  // link (or a hashtag click that navigates here) performs the search, and
+  // back/forward navigation stays in sync.
   useEffect(() => {
-    setSearchInput(search ?? '');
-  }, [search]);
+    if (urlQuery !== search) setSearch(urlQuery);
+  }, [urlQuery, search, setSearch]);
+
+  // Keep the local input box mirroring the active query.
+  useEffect(() => {
+    setSearchInput(urlQuery ?? '');
+  }, [urlQuery]);
 
   const handleModeChange = (newMode: 'feed' | 'friends') => {
     setMode(newMode);
     setFiltersOpen(false);
     setSearchInput('');
+    // Switching tabs clears any active search — drop it from the URL too so the
+    // q-driven effect doesn't immediately re-apply it.
+    if (urlQuery) navigate({ to: '/', search: {} });
     if (newMode === 'friends') {
       setFilter('friends');
     } else {
@@ -95,7 +110,7 @@ export function FeedColumn() {
             <Menu className="w-5 h-5" />
           </button>
 
-          {/* Desktop: Feed/Friends tabs inline */}
+          {/* Desktop: For You / Following tabs inline */}
           <div className="hidden md:flex items-center gap-1">
             <button
               onClick={() => handleModeChange('feed')}
@@ -105,7 +120,7 @@ export function FeedColumn() {
                   : 'text-site-text-muted hover:text-site-text'
               }`}
             >
-              Feed
+              For You
               {mode === 'feed' && (
                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-site-accent rounded-full" />
               )}
@@ -118,7 +133,7 @@ export function FeedColumn() {
                   : 'text-site-text-muted hover:text-site-text'
               }`}
             >
-              Friends
+              Following
               {mode === 'friends' && (
                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-site-accent rounded-full" />
               )}
@@ -142,7 +157,17 @@ export function FeedColumn() {
             <SlidersHorizontal className="w-5 h-5" />
           </button>
         </div>
-        {filtersOpen && <FeedTabs mode={mode} onModeChange={handleModeChange} />}
+        {/* Animated open/close — grid-rows fr transition collapses height
+            smoothly without needing to measure the content. */}
+        <div
+          className={`grid transition-[grid-template-rows] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none ${
+            filtersOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+          }`}
+        >
+          <div className="overflow-hidden">
+            <FeedTabs mode={mode} onModeChange={handleModeChange} />
+          </div>
+        </div>
 
         {/* Search bar */}
         <div className="px-4 py-2 border-t border-site-border">
@@ -205,7 +230,7 @@ export function FeedColumn() {
       {/* Feed */}
       {mode === 'friends' && !session ? (
         <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-          <p className="text-lg font-medium text-site-text mb-2">Sign in to see your friends&apos; feed</p>
+          <p className="text-lg font-medium text-site-text mb-2">Sign in to see who you follow</p>
           <p className="text-sm text-site-text-muted mb-6">Follow people and their posts will appear here.</p>
           <Link
             to="/login"
@@ -216,7 +241,10 @@ export function FeedColumn() {
           </Link>
         </div>
       ) : (
-        <FeedList />
+        <FeedList
+          following={mode === 'friends'}
+          onSwitchToForYou={() => handleModeChange('feed')}
+        />
       )}
 
       {/* Mobile sidebar drawer */}

@@ -1,0 +1,28 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "vibeworker",
+    srcs = [
+        "capture.go",
+        "repo.go",
+        "worker.go",
+    ],
+    importpath = "github.com/rmhstudios/rmh-go/internal/vibeworker",
+    visibility = ["//go-services:__subpackages__"],
+    deps = [
+        "//go-services/pkg/db",
+        "//go-services/pkg/log",
+        "//go-services/pkg/telemetry",
+        "@com_github_chromedp_chromedp//:chromedp",
+    ],
+)
+
+go_test(
+    name = "vibeworker_test",
+    srcs = ["worker_test.go"],
+    embed = [":vibeworker"],
+    deps = [
+        "//go-services/pkg/log",
+        "//go-services/pkg/telemetry",
+    ],
+)

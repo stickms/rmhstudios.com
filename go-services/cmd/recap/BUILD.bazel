@@ -1,0 +1,23 @@
+load("@rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "recap_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/rmhstudios/rmh-go/cmd/recap",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//go-services/internal/recap",
+        "//go-services/pkg/config",
+        "//go-services/pkg/db",
+        "//go-services/pkg/httpx",
+        "//go-services/pkg/log",
+        "//go-services/pkg/telemetry",
+        "@com_github_bwmarrin_discordgo//:discordgo",
+    ],
+)
+
+go_binary(
+    name = "recap",
+    embed = [":recap_lib"],
+    visibility = ["//visibility:public"],
+)

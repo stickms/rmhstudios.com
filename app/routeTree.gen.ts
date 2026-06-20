@@ -162,6 +162,7 @@ import { Route as ApiRmhtubeOembedRouteImport } from './routes/api/rmhtube/oembe
 import { Route as ApiRmhboxStatsRouteImport } from './routes/api/rmhbox/stats'
 import { Route as ApiRmhboxLeaderboardRouteImport } from './routes/api/rmhbox/leaderboard'
 import { Route as ApiRmhboxHistoryRouteImport } from './routes/api/rmhbox/history'
+import { Route as ApiRmharksImageRouteImport } from './routes/api/rmharks/image'
 import { Route as ApiRmharksAiGenerateRouteImport } from './routes/api/rmharks/ai-generate'
 import { Route as ApiRmharksIdRouteImport } from './routes/api/rmharks/$id'
 import { Route as ApiProfileMeRouteImport } from './routes/api/profile/me'
@@ -183,6 +184,8 @@ import { Route as ApiInternalNotifyMessageRouteImport } from './routes/api/inter
 import { Route as ApiHandleCheckRouteImport } from './routes/api/handle/check'
 import { Route as ApiForestExplorerSaveRouteImport } from './routes/api/forest-explorer/save'
 import { Route as ApiFeedStreamRouteImport } from './routes/api/feed/stream'
+import { Route as ApiFeedMentionSearchRouteImport } from './routes/api/feed/mention-search'
+import { Route as ApiFeedHashtagSearchRouteImport } from './routes/api/feed/hashtag-search'
 import { Route as ApiDreamRiftScoreRouteImport } from './routes/api/dream-rift/score'
 import { Route as ApiDreamRiftLeaderboardRouteImport } from './routes/api/dream-rift/leaderboard'
 import { Route as ApiDoctrineReactionsRouteImport } from './routes/api/doctrine/reactions'
@@ -247,6 +250,7 @@ import { Route as ApiMessagesConversationIdReadRouteImport } from './routes/api/
 import { Route as ApiGamesSynapseStormScoreRouteImport } from './routes/api/games/synapse-storm/score'
 import { Route as ApiGamesSynapseStormSaveRouteImport } from './routes/api/games/synapse-storm/save'
 import { Route as ApiGamesSynapseStormLeaderboardRouteImport } from './routes/api/games/synapse-storm/leaderboard'
+import { Route as ApiFeedImageFilenameRouteImport } from './routes/api/feed/image/$filename'
 import { Route as ApiDoctrineSahurStatusRouteImport } from './routes/api/doctrine/sahur/status'
 import { Route as ApiDoctrineSafehouseDisclosuresRouteImport } from './routes/api/doctrine/safehouse/disclosures'
 import { Route as ApiDoctrineSafehouseContentRouteImport } from './routes/api/doctrine/safehouse/content'
@@ -1051,6 +1055,11 @@ const ApiRmhboxHistoryRoute = ApiRmhboxHistoryRouteImport.update({
   path: '/api/rmhbox/history',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRmharksImageRoute = ApiRmharksImageRouteImport.update({
+  id: '/image',
+  path: '/image',
+  getParentRoute: () => ApiRmharksRoute,
+} as any)
 const ApiRmharksAiGenerateRoute = ApiRmharksAiGenerateRouteImport.update({
   id: '/ai-generate',
   path: '/ai-generate',
@@ -1158,6 +1167,16 @@ const ApiForestExplorerSaveRoute = ApiForestExplorerSaveRouteImport.update({
 const ApiFeedStreamRoute = ApiFeedStreamRouteImport.update({
   id: '/api/feed/stream',
   path: '/api/feed/stream',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiFeedMentionSearchRoute = ApiFeedMentionSearchRouteImport.update({
+  id: '/api/feed/mention-search',
+  path: '/api/feed/mention-search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiFeedHashtagSearchRoute = ApiFeedHashtagSearchRouteImport.update({
+  id: '/api/feed/hashtag-search',
+  path: '/api/feed/hashtag-search',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiDreamRiftScoreRoute = ApiDreamRiftScoreRouteImport.update({
@@ -1493,6 +1512,11 @@ const ApiGamesSynapseStormLeaderboardRoute =
     path: '/api/games/synapse-storm/leaderboard',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiFeedImageFilenameRoute = ApiFeedImageFilenameRouteImport.update({
+  id: '/api/feed/image/$filename',
+  path: '/api/feed/image/$filename',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiDoctrineSahurStatusRoute = ApiDoctrineSahurStatusRouteImport.update({
   id: '/api/doctrine/sahur/status',
   path: '/api/doctrine/sahur/status',
@@ -1793,6 +1817,8 @@ export interface FileRoutesByFullPath {
   '/api/doctrine/reactions': typeof ApiDoctrineReactionsRoute
   '/api/dream-rift/leaderboard': typeof ApiDreamRiftLeaderboardRoute
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
+  '/api/feed/hashtag-search': typeof ApiFeedHashtagSearchRoute
+  '/api/feed/mention-search': typeof ApiFeedMentionSearchRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
   '/api/handle/check': typeof ApiHandleCheckRoute
@@ -1814,6 +1840,7 @@ export interface FileRoutesByFullPath {
   '/api/profile/me': typeof ApiProfileMeRoute
   '/api/rmharks/$id': typeof ApiRmharksIdRouteWithChildren
   '/api/rmharks/ai-generate': typeof ApiRmharksAiGenerateRoute
+  '/api/rmharks/image': typeof ApiRmharksImageRoute
   '/api/rmhbox/history': typeof ApiRmhboxHistoryRoute
   '/api/rmhbox/leaderboard': typeof ApiRmhboxLeaderboardRoute
   '/api/rmhbox/stats': typeof ApiRmhboxStatsRoute
@@ -1884,6 +1911,7 @@ export interface FileRoutesByFullPath {
   '/api/doctrine/safehouse/content': typeof ApiDoctrineSafehouseContentRoute
   '/api/doctrine/safehouse/disclosures': typeof ApiDoctrineSafehouseDisclosuresRoute
   '/api/doctrine/sahur/status': typeof ApiDoctrineSahurStatusRoute
+  '/api/feed/image/$filename': typeof ApiFeedImageFilenameRoute
   '/api/games/synapse-storm/leaderboard': typeof ApiGamesSynapseStormLeaderboardRoute
   '/api/games/synapse-storm/save': typeof ApiGamesSynapseStormSaveRoute
   '/api/games/synapse-storm/score': typeof ApiGamesSynapseStormScoreRoute
@@ -2040,6 +2068,8 @@ export interface FileRoutesByTo {
   '/api/doctrine/reactions': typeof ApiDoctrineReactionsRoute
   '/api/dream-rift/leaderboard': typeof ApiDreamRiftLeaderboardRoute
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
+  '/api/feed/hashtag-search': typeof ApiFeedHashtagSearchRoute
+  '/api/feed/mention-search': typeof ApiFeedMentionSearchRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
   '/api/handle/check': typeof ApiHandleCheckRoute
@@ -2061,6 +2091,7 @@ export interface FileRoutesByTo {
   '/api/profile/me': typeof ApiProfileMeRoute
   '/api/rmharks/$id': typeof ApiRmharksIdRouteWithChildren
   '/api/rmharks/ai-generate': typeof ApiRmharksAiGenerateRoute
+  '/api/rmharks/image': typeof ApiRmharksImageRoute
   '/api/rmhbox/history': typeof ApiRmhboxHistoryRoute
   '/api/rmhbox/leaderboard': typeof ApiRmhboxLeaderboardRoute
   '/api/rmhbox/stats': typeof ApiRmhboxStatsRoute
@@ -2131,6 +2162,7 @@ export interface FileRoutesByTo {
   '/api/doctrine/safehouse/content': typeof ApiDoctrineSafehouseContentRoute
   '/api/doctrine/safehouse/disclosures': typeof ApiDoctrineSafehouseDisclosuresRoute
   '/api/doctrine/sahur/status': typeof ApiDoctrineSahurStatusRoute
+  '/api/feed/image/$filename': typeof ApiFeedImageFilenameRoute
   '/api/games/synapse-storm/leaderboard': typeof ApiGamesSynapseStormLeaderboardRoute
   '/api/games/synapse-storm/save': typeof ApiGamesSynapseStormSaveRoute
   '/api/games/synapse-storm/score': typeof ApiGamesSynapseStormScoreRoute
@@ -2311,6 +2343,8 @@ export interface FileRoutesById {
   '/api/doctrine/reactions': typeof ApiDoctrineReactionsRoute
   '/api/dream-rift/leaderboard': typeof ApiDreamRiftLeaderboardRoute
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
+  '/api/feed/hashtag-search': typeof ApiFeedHashtagSearchRoute
+  '/api/feed/mention-search': typeof ApiFeedMentionSearchRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
   '/api/handle/check': typeof ApiHandleCheckRoute
@@ -2332,6 +2366,7 @@ export interface FileRoutesById {
   '/api/profile/me': typeof ApiProfileMeRoute
   '/api/rmharks/$id': typeof ApiRmharksIdRouteWithChildren
   '/api/rmharks/ai-generate': typeof ApiRmharksAiGenerateRoute
+  '/api/rmharks/image': typeof ApiRmharksImageRoute
   '/api/rmhbox/history': typeof ApiRmhboxHistoryRoute
   '/api/rmhbox/leaderboard': typeof ApiRmhboxLeaderboardRoute
   '/api/rmhbox/stats': typeof ApiRmhboxStatsRoute
@@ -2402,6 +2437,7 @@ export interface FileRoutesById {
   '/api/doctrine/safehouse/content': typeof ApiDoctrineSafehouseContentRoute
   '/api/doctrine/safehouse/disclosures': typeof ApiDoctrineSafehouseDisclosuresRoute
   '/api/doctrine/sahur/status': typeof ApiDoctrineSahurStatusRoute
+  '/api/feed/image/$filename': typeof ApiFeedImageFilenameRoute
   '/api/games/synapse-storm/leaderboard': typeof ApiGamesSynapseStormLeaderboardRoute
   '/api/games/synapse-storm/save': typeof ApiGamesSynapseStormSaveRoute
   '/api/games/synapse-storm/score': typeof ApiGamesSynapseStormScoreRoute
@@ -2582,6 +2618,8 @@ export interface FileRouteTypes {
     | '/api/doctrine/reactions'
     | '/api/dream-rift/leaderboard'
     | '/api/dream-rift/score'
+    | '/api/feed/hashtag-search'
+    | '/api/feed/mention-search'
     | '/api/feed/stream'
     | '/api/forest-explorer/save'
     | '/api/handle/check'
@@ -2603,6 +2641,7 @@ export interface FileRouteTypes {
     | '/api/profile/me'
     | '/api/rmharks/$id'
     | '/api/rmharks/ai-generate'
+    | '/api/rmharks/image'
     | '/api/rmhbox/history'
     | '/api/rmhbox/leaderboard'
     | '/api/rmhbox/stats'
@@ -2673,6 +2712,7 @@ export interface FileRouteTypes {
     | '/api/doctrine/safehouse/content'
     | '/api/doctrine/safehouse/disclosures'
     | '/api/doctrine/sahur/status'
+    | '/api/feed/image/$filename'
     | '/api/games/synapse-storm/leaderboard'
     | '/api/games/synapse-storm/save'
     | '/api/games/synapse-storm/score'
@@ -2829,6 +2869,8 @@ export interface FileRouteTypes {
     | '/api/doctrine/reactions'
     | '/api/dream-rift/leaderboard'
     | '/api/dream-rift/score'
+    | '/api/feed/hashtag-search'
+    | '/api/feed/mention-search'
     | '/api/feed/stream'
     | '/api/forest-explorer/save'
     | '/api/handle/check'
@@ -2850,6 +2892,7 @@ export interface FileRouteTypes {
     | '/api/profile/me'
     | '/api/rmharks/$id'
     | '/api/rmharks/ai-generate'
+    | '/api/rmharks/image'
     | '/api/rmhbox/history'
     | '/api/rmhbox/leaderboard'
     | '/api/rmhbox/stats'
@@ -2920,6 +2963,7 @@ export interface FileRouteTypes {
     | '/api/doctrine/safehouse/content'
     | '/api/doctrine/safehouse/disclosures'
     | '/api/doctrine/sahur/status'
+    | '/api/feed/image/$filename'
     | '/api/games/synapse-storm/leaderboard'
     | '/api/games/synapse-storm/save'
     | '/api/games/synapse-storm/score'
@@ -3099,6 +3143,8 @@ export interface FileRouteTypes {
     | '/api/doctrine/reactions'
     | '/api/dream-rift/leaderboard'
     | '/api/dream-rift/score'
+    | '/api/feed/hashtag-search'
+    | '/api/feed/mention-search'
     | '/api/feed/stream'
     | '/api/forest-explorer/save'
     | '/api/handle/check'
@@ -3120,6 +3166,7 @@ export interface FileRouteTypes {
     | '/api/profile/me'
     | '/api/rmharks/$id'
     | '/api/rmharks/ai-generate'
+    | '/api/rmharks/image'
     | '/api/rmhbox/history'
     | '/api/rmhbox/leaderboard'
     | '/api/rmhbox/stats'
@@ -3190,6 +3237,7 @@ export interface FileRouteTypes {
     | '/api/doctrine/safehouse/content'
     | '/api/doctrine/safehouse/disclosures'
     | '/api/doctrine/sahur/status'
+    | '/api/feed/image/$filename'
     | '/api/games/synapse-storm/leaderboard'
     | '/api/games/synapse-storm/save'
     | '/api/games/synapse-storm/score'
@@ -3311,6 +3359,8 @@ export interface RootRouteChildren {
   ApiDoctrineReactionsRoute: typeof ApiDoctrineReactionsRoute
   ApiDreamRiftLeaderboardRoute: typeof ApiDreamRiftLeaderboardRoute
   ApiDreamRiftScoreRoute: typeof ApiDreamRiftScoreRoute
+  ApiFeedHashtagSearchRoute: typeof ApiFeedHashtagSearchRoute
+  ApiFeedMentionSearchRoute: typeof ApiFeedMentionSearchRoute
   ApiFeedStreamRoute: typeof ApiFeedStreamRoute
   ApiForestExplorerSaveRoute: typeof ApiForestExplorerSaveRoute
   ApiHandleCheckRoute: typeof ApiHandleCheckRoute
@@ -3361,6 +3411,7 @@ export interface RootRouteChildren {
   ApiDoctrineSafehouseContentRoute: typeof ApiDoctrineSafehouseContentRoute
   ApiDoctrineSafehouseDisclosuresRoute: typeof ApiDoctrineSafehouseDisclosuresRoute
   ApiDoctrineSahurStatusRoute: typeof ApiDoctrineSahurStatusRoute
+  ApiFeedImageFilenameRoute: typeof ApiFeedImageFilenameRoute
   ApiGamesSynapseStormLeaderboardRoute: typeof ApiGamesSynapseStormLeaderboardRoute
   ApiGamesSynapseStormSaveRoute: typeof ApiGamesSynapseStormSaveRoute
   ApiGamesSynapseStormScoreRoute: typeof ApiGamesSynapseStormScoreRoute
@@ -4448,6 +4499,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRmhboxHistoryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/rmharks/image': {
+      id: '/api/rmharks/image'
+      path: '/image'
+      fullPath: '/api/rmharks/image'
+      preLoaderRoute: typeof ApiRmharksImageRouteImport
+      parentRoute: typeof ApiRmharksRoute
+    }
     '/api/rmharks/ai-generate': {
       id: '/api/rmharks/ai-generate'
       path: '/ai-generate'
@@ -4593,6 +4651,20 @@ declare module '@tanstack/react-router' {
       path: '/api/feed/stream'
       fullPath: '/api/feed/stream'
       preLoaderRoute: typeof ApiFeedStreamRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/feed/mention-search': {
+      id: '/api/feed/mention-search'
+      path: '/api/feed/mention-search'
+      fullPath: '/api/feed/mention-search'
+      preLoaderRoute: typeof ApiFeedMentionSearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/feed/hashtag-search': {
+      id: '/api/feed/hashtag-search'
+      path: '/api/feed/hashtag-search'
+      fullPath: '/api/feed/hashtag-search'
+      preLoaderRoute: typeof ApiFeedHashtagSearchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/dream-rift/score': {
@@ -5041,6 +5113,13 @@ declare module '@tanstack/react-router' {
       path: '/api/games/synapse-storm/leaderboard'
       fullPath: '/api/games/synapse-storm/leaderboard'
       preLoaderRoute: typeof ApiGamesSynapseStormLeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/feed/image/$filename': {
+      id: '/api/feed/image/$filename'
+      path: '/api/feed/image/$filename'
+      fullPath: '/api/feed/image/$filename'
+      preLoaderRoute: typeof ApiFeedImageFilenameRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/doctrine/sahur/status': {
@@ -5797,11 +5876,13 @@ const ApiRmharksIdRouteWithChildren = ApiRmharksIdRoute._addFileChildren(
 interface ApiRmharksRouteChildren {
   ApiRmharksIdRoute: typeof ApiRmharksIdRouteWithChildren
   ApiRmharksAiGenerateRoute: typeof ApiRmharksAiGenerateRoute
+  ApiRmharksImageRoute: typeof ApiRmharksImageRoute
 }
 
 const ApiRmharksRouteChildren: ApiRmharksRouteChildren = {
   ApiRmharksIdRoute: ApiRmharksIdRouteWithChildren,
   ApiRmharksAiGenerateRoute: ApiRmharksAiGenerateRoute,
+  ApiRmharksImageRoute: ApiRmharksImageRoute,
 }
 
 const ApiRmharksRouteWithChildren = ApiRmharksRoute._addFileChildren(
@@ -5963,6 +6044,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDoctrineReactionsRoute: ApiDoctrineReactionsRoute,
   ApiDreamRiftLeaderboardRoute: ApiDreamRiftLeaderboardRoute,
   ApiDreamRiftScoreRoute: ApiDreamRiftScoreRoute,
+  ApiFeedHashtagSearchRoute: ApiFeedHashtagSearchRoute,
+  ApiFeedMentionSearchRoute: ApiFeedMentionSearchRoute,
   ApiFeedStreamRoute: ApiFeedStreamRoute,
   ApiForestExplorerSaveRoute: ApiForestExplorerSaveRoute,
   ApiHandleCheckRoute: ApiHandleCheckRoute,
@@ -6013,6 +6096,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDoctrineSafehouseContentRoute: ApiDoctrineSafehouseContentRoute,
   ApiDoctrineSafehouseDisclosuresRoute: ApiDoctrineSafehouseDisclosuresRoute,
   ApiDoctrineSahurStatusRoute: ApiDoctrineSahurStatusRoute,
+  ApiFeedImageFilenameRoute: ApiFeedImageFilenameRoute,
   ApiGamesSynapseStormLeaderboardRoute: ApiGamesSynapseStormLeaderboardRoute,
   ApiGamesSynapseStormSaveRoute: ApiGamesSynapseStormSaveRoute,
   ApiGamesSynapseStormScoreRoute: ApiGamesSynapseStormScoreRoute,

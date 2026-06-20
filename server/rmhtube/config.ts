@@ -50,6 +50,8 @@ export const config = {
     'rmhtube:room:join':       { max: 10,  windowMs: 60_000 },
     'rmhtube:room:chat':       { max: 30,  windowMs: 60_000 },
     'rmhtube:sync:host_state': { max: 60,  windowMs: 60_000 },
+    'rmhtube:sync:ping':       { max: 120, windowMs: 60_000 },
+    'rmhtube:sync:request':    { max: 60,  windowMs: 60_000 },
     'rmhtube:queue:add':       { max: 20,  windowMs: 60_000 },
     'rmhtube:queue:vote_skip': { max: 10,  windowMs: 60_000 },
     'rmhtube:reaction:send':   { max: 30,  windowMs: 60_000 },

@@ -2,7 +2,13 @@
  * Feed SSE — server-side event bus for real-time feed updates.
  *
  * Uses a simple in-process EventEmitter for single-instance deployments.
- * For multi-instance production, swap the emitter for a Redis pub/sub adapter.
+ * For multi-instance production, swap the emitter for a Redis pub/sub adapter
+ * (Phase 3 of docs/feed/plan.md). The `publish`/`subscribe` surface is the seam:
+ * a Redis adapter implements the same two methods and nothing else changes.
+ *
+ * Events now carry `authorId` so the stream endpoint can target
+ * `rmhark.created` events to the viewer's follow graph instead of
+ * broadcasting every stranger's post to everyone.
  */
 
 import { EventEmitter } from "events";
@@ -19,7 +25,25 @@ export type FeedSSEEventType =
   | "rmhark.commented"
   | "rmhark.deleted"
   | "rmhark.reposted"
-  | "rmhark.unreposted";
+  | "rmhark.unreposted"
+  | "notification.mention";
+
+/**
+ * Payload for a `notification.mention` event — pushed only to the viewers in
+ * the event's `targetUserIds` (the mentioned users), so the client can surface
+ * a toast that deep-links to the post.
+ */
+export interface MentionNotification {
+  rmharkId: string;
+  /** Short snippet of the post content for the toast body. */
+  preview: string;
+  author: {
+    id: string;
+    name: string | null;
+    image: string | null;
+    handle: string | null;
+  };
+}
 
 export interface FeedSSEEvent {
   type: FeedSSEEventType;
@@ -29,6 +53,29 @@ export interface FeedSSEEvent {
   payload: Partial<FeedItem> & { id: string };
   /** ISO timestamp */
   timestamp: string;
+  /**
+   * Author of the post (for "created" events). The stream endpoint uses this
+   * to decide whether the event belongs in a given viewer's Following feed.
+   */
+  authorId?: string;
+  /**
+   * When set, the event is delivered ONLY to these viewers (targeted events
+   * such as mention notifications) and is never broadcast to anyone else.
+   */
+  targetUserIds?: string[];
+  /** Present for `notification.mention` events. */
+  notification?: MentionNotification;
+}
+
+/**
+ * Per-viewer delivery metadata the stream endpoint attaches to a forwarded
+ * `rmhark.created` event so the client can route it correctly:
+ *   - followed: viewer follows the author (belongs in Following)
+ *   - own:      viewer *is* the author (self-action consistency)
+ */
+export interface FeedSSEDelivery {
+  followed: boolean;
+  own: boolean;
 }
 
 /* ------------------------------------------------------------------ */

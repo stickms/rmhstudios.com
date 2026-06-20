@@ -243,3 +243,50 @@ These are mostly orthogonal to scale and pay off immediately:
 The first three phases remove the real bugs (pagination, count cost,
 broadcast-to-everyone, single-process SSE) and give users the correct two-tab
 mental model. Everything after is scale headroom we add on evidence.
+
+---
+
+## 8. Implementation status
+
+What shipped (no new infrastructure required):
+
+- **Phase 0 — done.**
+  - Keyset pagination on `(createdAt, id)` — opaque cursor in
+    [lib/feed/cursor.ts](../../lib/feed/cursor.ts), applied to both the rmhark
+    and repost queries. Tolerates the legacy ISO cursor during deploys.
+  - Unified read path: [lib/feed/timeline.ts](../../lib/feed/timeline.ts)
+    exposes `getTimeline({ userId, surface, filter, cursor, limit, search })`;
+    [app/routes/api/rmharks.ts](../../app/routes/api/rmharks.ts) is now a thin
+    handler over it. The "following"/"foryou" branches share one mapper.
+  - Feed naming: `feed=following|foryou` query param (back-compat with the
+    legacy `filter=friends`). UI tabs renamed **For You** / **Following**.
+- **Phase 1 — done.** `likeCount`/`commentCount`/`repostCount`/`viewCount`
+  columns on `RMHark`, maintained transactionally with atomic
+  increment/decrement in the like/comment/repost/view routes (and the
+  bot-worker). Read paths dropped all `_count` joins. Reconciliation cron:
+  [scripts/reconcile-feed-counts.ts](../../scripts/reconcile-feed-counts.ts)
+  (`pnpm feed:reconcile-counts`). Migration:
+  `prisma/migrations/20260620120000_add_feed_counters_and_keyset` (includes the
+  counter backfill + composite keyset indexes).
+- **Phase 3 — targeted SSE done (Redis pub/sub deferred).** The stream endpoint
+  now loads the viewer's follow graph and tags each `rmhark.created` event with
+  per-viewer `{ followed, own }` delivery metadata; the client routes Following
+  posts to auto-prepend and For-You posts to an **"N new posts" pill**
+  (never yanks scroll). Engagement events still broadcast (idempotent patches).
+  The `feedEventBus` `publish`/`subscribe` surface is the documented swap point
+  for a Redis adapter once we run >1 instance.
+- **End-to-end UX — done.** Optimistic like/repost (already present, retained),
+  the "N new posts" pill, two clear tabs, self-action consistency (compose
+  prepends + `delivery.own`), and a Following cold-start that offers "Browse For
+  You". Views read the denormalized `viewCount`.
+- **Phase 5 — seam in place.** [lib/feed/ranking.ts](../../lib/feed/ranking.ts)
+  has the recency×velocity×affinity score wired into the For-You path behind
+  `RANKING_ENABLED` (off by default so chronological pagination stays stable).
+
+Deferred — explicitly gated on infrastructure / evidence (unchanged from §6/§7):
+
+- **Phase 2 (Redis read cache)** and the **Redis pub/sub** leg of Phase 3 need a
+  Redis dependency that isn't in the stack yet.
+- **Phase 4 (hybrid fan-out + FeedEntry)** stays gated behind the latency
+  triggers in §4. The unified `getTimeline()` is the seam where the whale-merge
+  will live.

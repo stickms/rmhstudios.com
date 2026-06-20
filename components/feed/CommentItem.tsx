@@ -9,6 +9,7 @@ import { RMHarkContent } from './RMHarkContent';
 import { EngagementListModal } from './EngagementListModal';
 import { UserAvatar } from './UserAvatar';
 import { AIGenerateButton } from './AIGenerateButton';
+import { MentionTextarea } from './MentionTextarea';
 import { useFreshUser } from '@/stores/userDisplayStore';
 import { timeAgoShort } from '@/lib/utils';
 
@@ -317,10 +318,10 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
                 linkToProfile={false}
               />
               <div className="flex-1 min-w-0">
-                <textarea
+                <MentionTextarea
                   autoFocus
                   value={replyContent}
-                  onChange={(e) => setReplyContent(e.target.value)}
+                  onChange={setReplyContent}
                   placeholder={`Reply to @${freshCommentUser.handle || freshCommentUser.name || 'Unknown'}...`}
                   rows={2}
                   maxLength={MAX_COMMENT_LENGTH}

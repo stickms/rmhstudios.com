@@ -53,25 +53,38 @@ export const Route = createFileRoute('/api/rmharks/$id/like')({
     });
 
     if (existingLike) {
-      await prisma.rMHarkLike.delete({ where: { id: existingLike.id } });
+      // Delete the like and decrement the denormalized counter atomically.
+      const [, updated] = await prisma.$transaction([
+        prisma.rMHarkLike.delete({ where: { id: existingLike.id } }),
+        prisma.rMHark.update({
+          where: { id },
+          data: { likeCount: { decrement: 1 } },
+          select: { likeCount: true },
+        }),
+      ]);
 
-      const count = await prisma.rMHarkLike.count({ where: { rmheetId: id } });
       feedEventBus.publish({
         type: "rmhark.unliked",
         rmharkId: id,
-        payload: { id, likeCount: count },
+        payload: { id, likeCount: updated.likeCount },
         timestamp: new Date().toISOString(),
       });
 
       return Response.json({ success: true, liked: false });
     } else {
-      await prisma.rMHarkLike.create({ data: { rmheetId: id, userId } });
+      const [, updated] = await prisma.$transaction([
+        prisma.rMHarkLike.create({ data: { rmheetId: id, userId } }),
+        prisma.rMHark.update({
+          where: { id },
+          data: { likeCount: { increment: 1 } },
+          select: { likeCount: true },
+        }),
+      ]);
 
-      const count = await prisma.rMHarkLike.count({ where: { rmheetId: id } });
       feedEventBus.publish({
         type: "rmhark.liked",
         rmharkId: id,
-        payload: { id, likeCount: count },
+        payload: { id, likeCount: updated.likeCount },
         timestamp: new Date().toISOString(),
       });
 

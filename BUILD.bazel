@@ -1,0 +1,13 @@
+load("@gazelle//:def.bzl", "gazelle")
+
+# The Go module lives under //go-services (prefix directive is in that package).
+# gazelle:exclude node_modules
+gazelle(name = "gazelle")
+
+# Coarse frontend leaf — `bazel run //:frontend` builds the Vite app via pnpm
+# from the workspace. Non-hermetic by design (reuses repo node_modules).
+sh_binary(
+    name = "frontend",
+    srcs = ["scripts/frontend-build.sh"],
+    visibility = ["//visibility:public"],
+)

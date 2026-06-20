@@ -62,8 +62,9 @@ describe("s3 wrapper", () => {
   });
 
   it("getObject returns null when the key is missing", async () => {
-    const { NoSuchKey } = await import("@aws-sdk/client-s3");
-    sendMock.mockRejectedValue(new NoSuchKey("missing"));
+    // getObject treats any error named "NoSuchKey" as a miss (dual instanceof/name check).
+    const notFound = Object.assign(new Error("missing"), { name: "NoSuchKey" });
+    sendMock.mockRejectedValue(notFound);
     const { getObject } = await import("@/lib/storage/s3.server");
     expect(await getObject("rmharks/missing.png")).toBeNull();
   });
