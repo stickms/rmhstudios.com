@@ -54,4 +54,4 @@ oci.pull(
     reproducible = False,
     tag = "latest",
 )
-use_repo(oci, "base_chromium", "base_git")
+use_repo(oci, "base_chromium", "base_chromium_linux_amd64", "base_chromium_linux_arm64_v8", "base_git", "base_git_linux_amd64", "base_git_linux_arm64_v8")
