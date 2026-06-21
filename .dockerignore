@@ -51,9 +51,11 @@ db/music
 #     metadata step can see them. data/library-metadata.json (committed) carries
 #     the catalogue. Adding a NEW library PDF requires running
 #     `pnpm run library:metadata` locally and committing its cover + the JSON.
+#   - models: excluded entirely (activated at Phase 4 of the Assets/CDN cutover).
+public/library
+public/models
 public/music
 public/sprites
-public/library/*.pdf
 public/**/*.psd
 public/**/generate_sprites.py
 
