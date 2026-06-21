@@ -42,8 +42,7 @@ export function RMHarkContent({ text, className }: RMHarkContentProps) {
           return (
             <Link
               key={i}
-              to="/"
-              search={{ q: part }}
+              to={`/tag/${part.slice(1)}` as string}
               onClick={(e) => e.stopPropagation()}
               className="text-sky-400 hover:text-sky-300 hover:underline font-medium"
             >
