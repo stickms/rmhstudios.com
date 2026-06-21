@@ -54,7 +54,9 @@ export const Route = createFileRoute('/api/rmharks/$id/like')({
       where: { id },
       select: { userId: true, content: true, user: { select: { handle: true } } },
     });
-    const postLink = post?.user?.handle ? `/u/${post.user.handle}/post/${id}` : undefined;
+    // Always link to the post; the route resolves by post id, so a handle-less
+    // author falls back to their user id in the (decorative) handle segment.
+    const postLink = post ? `/u/${post.user?.handle ?? post.userId}/post/${id}` : undefined;
 
     const existingLike = await prisma.rMHarkLike.findUnique({
       where: { rmheetId_userId: { rmheetId: id, userId } },

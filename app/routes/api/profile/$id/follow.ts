@@ -66,7 +66,7 @@ export const Route = createFileRoute('/api/profile/$id/follow')({
         type: "FOLLOW",
         entityType: "user",
         entityId: followerId,
-        link: followerHandle ? `/u/${followerHandle}` : undefined,
+        link: followerHandle ? `/u/${followerHandle}` : `/profile/${followerId}`,
         dedupeUnread: true,
       });
       return Response.json({ success: true, following: true });
