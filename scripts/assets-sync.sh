@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Mirror the heavy static media dirs into the S3-compatible bucket. Idempotent:
-# `mc mirror` only uploads new/changed files. Reads the S3_* env (same contract
-# as the app + the Go assets service). Run AFTER the frontend build so generated
-# library covers are included.
+# Mirror the heavy static media dirs into the S3-compatible bucket. Additive:
+# `mc mirror` only uploads new/changed files but does NOT delete bucket objects
+# when they're removed from the repo. Reads the S3_* env (same contract as the app +
+# the Go assets service). Run AFTER the frontend build so generated library covers
+# are included. Cleanup of stale/removed assets is separate, intentionally not automated.
 set -euo pipefail
 
 : "${S3_ENDPOINT:?S3_ENDPOINT required}"
@@ -24,6 +25,6 @@ for d in "${DIRS[@]}"; do
     continue
   fi
   echo "[assets-sync] mirroring public/$d -> $ALIAS/$S3_BUCKET/$d"
-  mc mirror --overwrite --remove "$src" "$ALIAS/$S3_BUCKET/$d"
+  mc mirror --overwrite "$src" "$ALIAS/$S3_BUCKET/$d"
 done
 echo "[assets-sync] done"
