@@ -1,6 +1,7 @@
 import { ReactNode, createContext, useContext, useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useLocation } from "@tanstack/react-router";
+import { MotionConfig } from "framer-motion";
 import { Toaster } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { useThemeStore, SITE_STYLES, SiteStyle } from "@/stores/themeStore";
@@ -283,6 +284,8 @@ export function Providers({ children, initialUser = null }: ProvidersProps) {
 
   return (
     <QueryClientProvider client={queryClient}>
+      {/* Honor the OS "reduce motion" setting across all framer-motion animations. */}
+      <MotionConfig reducedMotion="user">
       <SessionCtx.Provider value={effectiveSession}>
         <ResolvedUserCtx.Provider value={{ resolved: resolvedUser, refresh: fetchResolvedUser }}>
         {children}
@@ -299,6 +302,7 @@ export function Providers({ children, initialUser = null }: ProvidersProps) {
           }}
         />
       </SessionCtx.Provider>
+      </MotionConfig>
     </QueryClientProvider>
   );
 }
