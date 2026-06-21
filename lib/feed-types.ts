@@ -45,6 +45,7 @@ export interface FeedItem {
   viewCount?: number;
   liked?: boolean;
   reposted?: boolean;
+  bookmarked?: boolean;
   original?: FeedItem;
   repostedBy?: FeedItemUser;
   actualId?: string;

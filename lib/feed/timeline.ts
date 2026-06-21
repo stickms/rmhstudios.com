@@ -117,6 +117,7 @@ function rmharkInclude(userId: string | null) {
       ? {
           likes: { where: { userId }, select: { id: true } },
           reposts: { where: { userId }, select: { id: true } },
+          bookmarks: { where: { userId }, select: { id: true } },
         }
       : {}),
     poll: pollInclude(userId),
@@ -164,6 +165,7 @@ function mapOwn(r: any, userId: string | null): FeedItem {
     viewCount: r.viewCount,
     liked: userId ? r.likes?.length > 0 : false,
     reposted: userId ? r.reposts?.length > 0 : false,
+    bookmarked: userId ? r.bookmarks?.length > 0 : false,
     original: mapOriginal(r.original),
     poll: isDeleted ? undefined : mapPoll(r.poll),
     gifUrl: isDeleted ? undefined : (r.gifUrl ?? undefined),
@@ -189,6 +191,7 @@ function mapRepost(rp: any, userId: string | null): FeedItem {
     viewCount: r.viewCount,
     liked: userId ? r.likes?.length > 0 : false,
     reposted: userId ? r.reposts?.length > 0 : false,
+    bookmarked: userId ? r.bookmarks?.length > 0 : false,
     repostedBy: resolveUser(rp.user),
     original: mapOriginal(r.original),
     poll: isDeleted ? undefined : mapPoll(r.poll),

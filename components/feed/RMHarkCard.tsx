@@ -4,7 +4,7 @@ import type { FeedItem, FeedItemUser } from '@/lib/feed-types';
 import { RMHarkActions } from './RMHarkActions';
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { Repeat2, MoreHorizontal, Heart, Repeat, Trash2, Share2, BadgeCheck, ShieldCheck, Flag, Ban, VolumeX } from 'lucide-react';
+import { Repeat2, MoreHorizontal, Heart, Repeat, Trash2, Share2, BadgeCheck, ShieldCheck, Flag, Ban, VolumeX, Bookmark } from 'lucide-react';
 import { toast } from 'sonner';
 import { ReportDialog } from '@/components/moderation/ReportDialog';
 import { Link } from '@tanstack/react-router';
@@ -62,7 +62,30 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
   const [engagementModal, setEngagementModal] = useState<'likes' | 'reposts' | null>(null);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [bookmarked, setBookmarked] = useState(!!item.bookmarked);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const handleBookmark = async () => {
+    setMenuOpen(false);
+    const next = !bookmarked;
+    setBookmarked(next); // optimistic
+    try {
+      const res = await fetch(`/api/rmharks/${actualId}/bookmark`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setBookmarked(!!data.bookmarked);
+        toast.success(data.bookmarked ? 'Saved to bookmarks' : 'Removed from bookmarks');
+      } else {
+        setBookmarked(!next);
+        if (res.status === 401) toast.error('Please sign in to bookmark posts.');
+      }
+    } catch {
+      setBookmarked(!next);
+    }
+  };
 
   const targetUserId = item.user?.id;
   const handleBlock = async () => {
@@ -184,6 +207,15 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
           </button>
           {menuOpen && (
             <div className="absolute right-0 top-full mt-1 w-44 bg-site-bg border border-site-border rounded-xl shadow-xl py-1 z-30" onClick={(e) => e.stopPropagation()}>
+              {session && (
+                <button
+                  onClick={handleBookmark}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+                >
+                  <Bookmark className={`w-4 h-4 ${bookmarked ? 'fill-site-accent text-site-accent' : 'text-site-text-dim'}`} />
+                  {bookmarked ? 'Saved' : 'Bookmark'}
+                </button>
+              )}
               <button
                 onClick={() => { setMenuOpen(false); setEngagementModal('likes'); }}
                 className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"

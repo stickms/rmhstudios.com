@@ -104,6 +104,7 @@ import { Route as ApiOembedRouteImport } from './routes/api/oembed'
 import { Route as ApiMessagesRouteImport } from './routes/api/messages'
 import { Route as ApiImageProxyRouteImport } from './routes/api/image-proxy'
 import { Route as ApiFeedbackRouteImport } from './routes/api/feedback'
+import { Route as ApiBookmarksRouteImport } from './routes/api/bookmarks'
 import { Route as AltairMultiplayerRouteImport } from './routes/altair/multiplayer'
 import { Route as SiteWalletRouteImport } from './routes/_site/wallet'
 import { Route as SiteSearchRouteImport } from './routes/_site/search'
@@ -111,6 +112,7 @@ import { Route as SiteRoadmapRouteImport } from './routes/_site/roadmap'
 import { Route as SiteQuotesRouteImport } from './routes/_site/quotes'
 import { Route as SitePricingRouteImport } from './routes/_site/pricing'
 import { Route as SiteNotificationsRouteImport } from './routes/_site/notifications'
+import { Route as SiteBookmarksRouteImport } from './routes/_site/bookmarks'
 import { Route as SiteAdminRouteRouteImport } from './routes/_site/admin/route'
 import { Route as StrategiesSafehouseIndexRouteImport } from './routes/strategies/safehouse/index'
 import { Route as StrategiesPuzzlesIndexRouteImport } from './routes/strategies/puzzles/index'
@@ -251,6 +253,7 @@ import { Route as ApiRmharksIdViewRouteImport } from './routes/api/rmharks/$id/v
 import { Route as ApiRmharksIdRepostRouteImport } from './routes/api/rmharks/$id/repost'
 import { Route as ApiRmharksIdLikeRouteImport } from './routes/api/rmharks/$id/like'
 import { Route as ApiRmharksIdCommentRouteImport } from './routes/api/rmharks/$id/comment'
+import { Route as ApiRmharksIdBookmarkRouteImport } from './routes/api/rmharks/$id/bookmark'
 import { Route as ApiProfileAvatarFilenameRouteImport } from './routes/api/profile/avatar/$filename'
 import { Route as ApiProfileIdRmharksRouteImport } from './routes/api/profile/$id/rmharks'
 import { Route as ApiProfileIdLikesRouteImport } from './routes/api/profile/$id/likes'
@@ -769,6 +772,11 @@ const ApiFeedbackRoute = ApiFeedbackRouteImport.update({
   path: '/api/feedback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiBookmarksRoute = ApiBookmarksRouteImport.update({
+  id: '/api/bookmarks',
+  path: '/api/bookmarks',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AltairMultiplayerRoute = AltairMultiplayerRouteImport.update({
   id: '/multiplayer',
   path: '/multiplayer',
@@ -802,6 +810,11 @@ const SitePricingRoute = SitePricingRouteImport.update({
 const SiteNotificationsRoute = SiteNotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteBookmarksRoute = SiteBookmarksRouteImport.update({
+  id: '/bookmarks',
+  path: '/bookmarks',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteAdminRouteRoute = SiteAdminRouteRouteImport.update({
@@ -1525,6 +1538,11 @@ const ApiRmharksIdCommentRoute = ApiRmharksIdCommentRouteImport.update({
   path: '/comment',
   getParentRoute: () => ApiRmharksIdRoute,
 } as any)
+const ApiRmharksIdBookmarkRoute = ApiRmharksIdBookmarkRouteImport.update({
+  id: '/bookmark',
+  path: '/bookmark',
+  getParentRoute: () => ApiRmharksIdRoute,
+} as any)
 const ApiProfileAvatarFilenameRoute =
   ApiProfileAvatarFilenameRouteImport.update({
     id: '/$filename',
@@ -1799,6 +1817,7 @@ export interface FileRoutesByFullPath {
   '/versecraft': typeof VersecraftRouteWithChildren
   '/void-breaker': typeof VoidBreakerRoute
   '/admin': typeof SiteAdminRouteRouteWithChildren
+  '/bookmarks': typeof SiteBookmarksRoute
   '/notifications': typeof SiteNotificationsRoute
   '/pricing': typeof SitePricingRoute
   '/quotes': typeof SiteQuotesRoute
@@ -1806,6 +1825,7 @@ export interface FileRoutesByFullPath {
   '/search': typeof SiteSearchRoute
   '/wallet': typeof SiteWalletRoute
   '/altair/multiplayer': typeof AltairMultiplayerRouteWithChildren
+  '/api/bookmarks': typeof ApiBookmarksRoute
   '/api/feedback': typeof ApiFeedbackRoute
   '/api/image-proxy': typeof ApiImageProxyRoute
   '/api/messages': typeof ApiMessagesRouteWithChildren
@@ -2015,6 +2035,7 @@ export interface FileRoutesByFullPath {
   '/api/profile/$id/likes': typeof ApiProfileIdLikesRoute
   '/api/profile/$id/rmharks': typeof ApiProfileIdRmharksRoute
   '/api/profile/avatar/$filename': typeof ApiProfileAvatarFilenameRoute
+  '/api/rmharks/$id/bookmark': typeof ApiRmharksIdBookmarkRoute
   '/api/rmharks/$id/comment': typeof ApiRmharksIdCommentRouteWithChildren
   '/api/rmharks/$id/like': typeof ApiRmharksIdLikeRoute
   '/api/rmharks/$id/repost': typeof ApiRmharksIdRepostRoute
@@ -2067,12 +2088,14 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/velum2099': typeof Velum2099Route
   '/void-breaker': typeof VoidBreakerRoute
+  '/bookmarks': typeof SiteBookmarksRoute
   '/notifications': typeof SiteNotificationsRoute
   '/pricing': typeof SitePricingRoute
   '/quotes': typeof SiteQuotesRoute
   '/roadmap': typeof SiteRoadmapRoute
   '/search': typeof SiteSearchRoute
   '/wallet': typeof SiteWalletRoute
+  '/api/bookmarks': typeof ApiBookmarksRoute
   '/api/feedback': typeof ApiFeedbackRoute
   '/api/image-proxy': typeof ApiImageProxyRoute
   '/api/messages': typeof ApiMessagesRouteWithChildren
@@ -2279,6 +2302,7 @@ export interface FileRoutesByTo {
   '/api/profile/$id/likes': typeof ApiProfileIdLikesRoute
   '/api/profile/$id/rmharks': typeof ApiProfileIdRmharksRoute
   '/api/profile/avatar/$filename': typeof ApiProfileAvatarFilenameRoute
+  '/api/rmharks/$id/bookmark': typeof ApiRmharksIdBookmarkRoute
   '/api/rmharks/$id/comment': typeof ApiRmharksIdCommentRouteWithChildren
   '/api/rmharks/$id/like': typeof ApiRmharksIdLikeRoute
   '/api/rmharks/$id/repost': typeof ApiRmharksIdRepostRoute
@@ -2350,6 +2374,7 @@ export interface FileRoutesById {
   '/versecraft': typeof VersecraftRouteWithChildren
   '/void-breaker': typeof VoidBreakerRoute
   '/_site/admin': typeof SiteAdminRouteRouteWithChildren
+  '/_site/bookmarks': typeof SiteBookmarksRoute
   '/_site/notifications': typeof SiteNotificationsRoute
   '/_site/pricing': typeof SitePricingRoute
   '/_site/quotes': typeof SiteQuotesRoute
@@ -2357,6 +2382,7 @@ export interface FileRoutesById {
   '/_site/search': typeof SiteSearchRoute
   '/_site/wallet': typeof SiteWalletRoute
   '/altair/multiplayer': typeof AltairMultiplayerRouteWithChildren
+  '/api/bookmarks': typeof ApiBookmarksRoute
   '/api/feedback': typeof ApiFeedbackRoute
   '/api/image-proxy': typeof ApiImageProxyRoute
   '/api/messages': typeof ApiMessagesRouteWithChildren
@@ -2567,6 +2593,7 @@ export interface FileRoutesById {
   '/api/profile/$id/likes': typeof ApiProfileIdLikesRoute
   '/api/profile/$id/rmharks': typeof ApiProfileIdRmharksRoute
   '/api/profile/avatar/$filename': typeof ApiProfileAvatarFilenameRoute
+  '/api/rmharks/$id/bookmark': typeof ApiRmharksIdBookmarkRoute
   '/api/rmharks/$id/comment': typeof ApiRmharksIdCommentRouteWithChildren
   '/api/rmharks/$id/like': typeof ApiRmharksIdLikeRoute
   '/api/rmharks/$id/repost': typeof ApiRmharksIdRepostRoute
@@ -2639,6 +2666,7 @@ export interface FileRouteTypes {
     | '/versecraft'
     | '/void-breaker'
     | '/admin'
+    | '/bookmarks'
     | '/notifications'
     | '/pricing'
     | '/quotes'
@@ -2646,6 +2674,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/wallet'
     | '/altair/multiplayer'
+    | '/api/bookmarks'
     | '/api/feedback'
     | '/api/image-proxy'
     | '/api/messages'
@@ -2855,6 +2884,7 @@ export interface FileRouteTypes {
     | '/api/profile/$id/likes'
     | '/api/profile/$id/rmharks'
     | '/api/profile/avatar/$filename'
+    | '/api/rmharks/$id/bookmark'
     | '/api/rmharks/$id/comment'
     | '/api/rmharks/$id/like'
     | '/api/rmharks/$id/repost'
@@ -2907,12 +2937,14 @@ export interface FileRouteTypes {
     | '/terms'
     | '/velum2099'
     | '/void-breaker'
+    | '/bookmarks'
     | '/notifications'
     | '/pricing'
     | '/quotes'
     | '/roadmap'
     | '/search'
     | '/wallet'
+    | '/api/bookmarks'
     | '/api/feedback'
     | '/api/image-proxy'
     | '/api/messages'
@@ -3119,6 +3151,7 @@ export interface FileRouteTypes {
     | '/api/profile/$id/likes'
     | '/api/profile/$id/rmharks'
     | '/api/profile/avatar/$filename'
+    | '/api/rmharks/$id/bookmark'
     | '/api/rmharks/$id/comment'
     | '/api/rmharks/$id/like'
     | '/api/rmharks/$id/repost'
@@ -3189,6 +3222,7 @@ export interface FileRouteTypes {
     | '/versecraft'
     | '/void-breaker'
     | '/_site/admin'
+    | '/_site/bookmarks'
     | '/_site/notifications'
     | '/_site/pricing'
     | '/_site/quotes'
@@ -3196,6 +3230,7 @@ export interface FileRouteTypes {
     | '/_site/search'
     | '/_site/wallet'
     | '/altair/multiplayer'
+    | '/api/bookmarks'
     | '/api/feedback'
     | '/api/image-proxy'
     | '/api/messages'
@@ -3406,6 +3441,7 @@ export interface FileRouteTypes {
     | '/api/profile/$id/likes'
     | '/api/profile/$id/rmharks'
     | '/api/profile/avatar/$filename'
+    | '/api/rmharks/$id/bookmark'
     | '/api/rmharks/$id/comment'
     | '/api/rmharks/$id/like'
     | '/api/rmharks/$id/repost'
@@ -3476,6 +3512,7 @@ export interface RootRouteChildren {
   Velum2099Route: typeof Velum2099Route
   VersecraftRoute: typeof VersecraftRouteWithChildren
   VoidBreakerRoute: typeof VoidBreakerRoute
+  ApiBookmarksRoute: typeof ApiBookmarksRoute
   ApiFeedbackRoute: typeof ApiFeedbackRoute
   ApiImageProxyRoute: typeof ApiImageProxyRoute
   ApiMessagesRoute: typeof ApiMessagesRouteWithChildren
@@ -4259,6 +4296,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiFeedbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/bookmarks': {
+      id: '/api/bookmarks'
+      path: '/api/bookmarks'
+      fullPath: '/api/bookmarks'
+      preLoaderRoute: typeof ApiBookmarksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/altair/multiplayer': {
       id: '/altair/multiplayer'
       path: '/multiplayer'
@@ -4306,6 +4350,13 @@ declare module '@tanstack/react-router' {
       path: '/notifications'
       fullPath: '/notifications'
       preLoaderRoute: typeof SiteNotificationsRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/bookmarks': {
+      id: '/_site/bookmarks'
+      path: '/bookmarks'
+      fullPath: '/bookmarks'
+      preLoaderRoute: typeof SiteBookmarksRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/admin': {
@@ -5288,6 +5339,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRmharksIdCommentRouteImport
       parentRoute: typeof ApiRmharksIdRoute
     }
+    '/api/rmharks/$id/bookmark': {
+      id: '/api/rmharks/$id/bookmark'
+      path: '/bookmark'
+      fullPath: '/api/rmharks/$id/bookmark'
+      preLoaderRoute: typeof ApiRmharksIdBookmarkRouteImport
+      parentRoute: typeof ApiRmharksIdRoute
+    }
     '/api/profile/avatar/$filename': {
       id: '/api/profile/avatar/$filename'
       path: '/$filename'
@@ -5618,6 +5676,7 @@ const SiteAdminRouteRouteWithChildren = SiteAdminRouteRoute._addFileChildren(
 
 interface SiteRouteChildren {
   SiteAdminRouteRoute: typeof SiteAdminRouteRouteWithChildren
+  SiteBookmarksRoute: typeof SiteBookmarksRoute
   SiteNotificationsRoute: typeof SiteNotificationsRoute
   SitePricingRoute: typeof SitePricingRoute
   SiteQuotesRoute: typeof SiteQuotesRoute
@@ -5644,6 +5703,7 @@ interface SiteRouteChildren {
 
 const SiteRouteChildren: SiteRouteChildren = {
   SiteAdminRouteRoute: SiteAdminRouteRouteWithChildren,
+  SiteBookmarksRoute: SiteBookmarksRoute,
   SiteNotificationsRoute: SiteNotificationsRoute,
   SitePricingRoute: SitePricingRoute,
   SiteQuotesRoute: SiteQuotesRoute,
@@ -6117,6 +6177,7 @@ const ApiRmharksIdCommentRouteWithChildren =
   ApiRmharksIdCommentRoute._addFileChildren(ApiRmharksIdCommentRouteChildren)
 
 interface ApiRmharksIdRouteChildren {
+  ApiRmharksIdBookmarkRoute: typeof ApiRmharksIdBookmarkRoute
   ApiRmharksIdCommentRoute: typeof ApiRmharksIdCommentRouteWithChildren
   ApiRmharksIdLikeRoute: typeof ApiRmharksIdLikeRoute
   ApiRmharksIdRepostRoute: typeof ApiRmharksIdRepostRoute
@@ -6125,6 +6186,7 @@ interface ApiRmharksIdRouteChildren {
 }
 
 const ApiRmharksIdRouteChildren: ApiRmharksIdRouteChildren = {
+  ApiRmharksIdBookmarkRoute: ApiRmharksIdBookmarkRoute,
   ApiRmharksIdCommentRoute: ApiRmharksIdCommentRouteWithChildren,
   ApiRmharksIdLikeRoute: ApiRmharksIdLikeRoute,
   ApiRmharksIdRepostRoute: ApiRmharksIdRepostRoute,
@@ -6279,6 +6341,7 @@ const rootRouteChildren: RootRouteChildren = {
   Velum2099Route: Velum2099Route,
   VersecraftRoute: VersecraftRouteWithChildren,
   VoidBreakerRoute: VoidBreakerRoute,
+  ApiBookmarksRoute: ApiBookmarksRoute,
   ApiFeedbackRoute: ApiFeedbackRoute,
   ApiImageProxyRoute: ApiImageProxyRoute,
   ApiMessagesRoute: ApiMessagesRouteWithChildren,

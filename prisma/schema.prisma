@@ -98,6 +98,16 @@ model User {
   notifications      Notification[] @relation("UserNotifications")
   notificationsSent  Notification[] @relation("UserNotificationActor")
 
+  // Engagement: bookmarks, achievements, daily streak
+  bookmarks    RMHarkBookmark[]
+  achievements UserAchievement[]
+  dailyStreak  DailyStreak?
+
+  // Economy: shop inventory, coin ledger (tips/gifts)
+  inventory       UserInventory[]
+  coinsSent       CoinTransaction[] @relation("CoinSender")
+  coinsReceived   CoinTransaction[] @relation("CoinRecipient")
+
   // Moderation (reports filed / received, blocks & mutes)
   reportsFiled    ContentReport[] @relation("ReportReporter")
   reportsResolved ContentReport[] @relation("ReportResolver")
@@ -1021,11 +1031,12 @@ model RMHark {
   viewCount    Int @default(0)
 
   user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  likes    RMHarkLike[]
-  comments RMHarkComment[]
-  reposts  RMHarkRepost[]
-  views    RMHarkView[]
-  poll     RMHarkPoll?
+  likes     RMHarkLike[]
+  comments  RMHarkComment[]
+  reposts   RMHarkRepost[]
+  views     RMHarkView[]
+  poll      RMHarkPoll?
+  bookmarks RMHarkBookmark[]
 
   // Self-relation for reposts (quote-repost displays the original inline)
   originalId String?
@@ -2116,4 +2127,114 @@ model UserMute {
   @@unique([muterId, mutedId])
   @@index([muterId])
   @@map("user_mute")
+}
+
+// ─── Bookmarks ────────────────────────────────────────────────────────────
+model RMHarkBookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  rmheetId  String
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rmhark RMHark @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, rmheetId])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("rmheet_bookmark")
+}
+
+// ─── Achievements ─────────────────────────────────────────────────────────
+// Definitions live in code (lib/achievements/catalog.ts); only unlocks are
+// persisted. `progress` supports incremental achievements (e.g. "win 50 games").
+
+model UserAchievement {
+  id            String   @id @default(cuid())
+  userId        String
+  achievementId String   @db.VarChar(64) // matches a catalog key
+  progress      Int      @default(0)
+  unlockedAt    DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+  @@index([userId, unlockedAt])
+  @@map("user_achievement")
+}
+
+// ─── Daily Streak ─────────────────────────────────────────────────────────
+model DailyStreak {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  current       Int      @default(0)
+  longest       Int      @default(0)
+  lastCheckIn   DateTime?
+  lastDateKey   String?  @db.VarChar(10) // YYYY-MM-DD in the user's tz
+  totalCheckIns Int      @default(0)
+  freezeTokens  Int      @default(0) // optional "streak freeze" inventory
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("daily_streak")
+}
+
+// ─── Cosmetics Shop ───────────────────────────────────────────────────────
+// Catalog lives in code (lib/shop/catalog.ts). UserInventory records ownership
+// and which item is currently equipped per slot.
+
+enum ShopItemKind {
+  THEME // unlocks a premium site theme
+  PET // profile pet variant
+  NAME_COLOR // username color
+  BADGE // profile flair badge
+  BANNER // profile banner
+  POST_FLAIR // decoration shown on the user's posts
+  AVATAR_FRAME // ring around the avatar
+}
+
+model UserInventory {
+  id        String       @id @default(cuid())
+  userId    String
+  itemId    String       @db.VarChar(64) // catalog key
+  kind      ShopItemKind
+  equipped  Boolean      @default(false)
+  acquiredAt DateTime    @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemId])
+  @@index([userId, kind])
+  @@map("user_inventory")
+}
+
+// ─── Coin Ledger (tips & gifts) ───────────────────────────────────────────
+enum CoinTxnType {
+  TIP
+  GIFT
+  PURCHASE
+  REWARD
+  ADMIN
+}
+
+model CoinTransaction {
+  id          String      @id @default(cuid())
+  senderId    String?     // null for system rewards
+  recipientId String
+  amount      Int
+  type        CoinTxnType
+  note        String?     @db.VarChar(280)
+  entityType  String?     @db.VarChar(32) // e.g. "rmhark", "profile"
+  entityId    String?     @db.VarChar(64)
+  createdAt   DateTime    @default(now())
+
+  sender    User? @relation("CoinSender", fields: [senderId], references: [id], onDelete: SetNull)
+  recipient User  @relation("CoinRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([recipientId, createdAt(sort: Desc)])
+  @@index([senderId, createdAt(sort: Desc)])
+  @@map("coin_transaction")
 }
