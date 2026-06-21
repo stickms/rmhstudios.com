@@ -1,13 +1,19 @@
 import { Link } from '@tanstack/react-router';
+import { Decrypt } from './shared';
 
 export default function CapabilitiesPage() {
   return (
     <>
-      <section className="pagehead">
+      <section className="pagehead reveal">
         <div className="container pagehead-inner">
-          <span className="desig reveal">Lines of Operation</span>
-          <h1 className="reveal d1">Seven capabilities. One chain of command.</h1>
-          <p className="lede reveal d2">
+          <div className="brief-meta">
+            <span className="field"><b>File</b> ▸ <span className="v"><Decrypt text="CAPABILITIES" /></span></span>
+            <span className="field"><b>Class</b> ▸ <span className="v"><Decrypt text="RESTRICTED" /></span></span>
+            <span className="field"><b>Lines</b> ▸ <span className="v"><Decrypt text="07" /></span></span>
+          </div>
+          <span className="desig">Lines of Operation</span>
+          <h1>Seven capabilities. One chain of command.</h1>
+          <p className="lede">
             We are organized like a real staff — each line carries its section designator. Together they let a client
             protect people, hold ground, train a force, supply it, understand the threat, plan the response, and reshape
             the picture entirely — without ever leaving the command.
@@ -15,18 +21,18 @@ export default function CapabilitiesPage() {
         </div>
       </section>
 
-      <section className="section">
+      <section className="sec">
         <div className="container">
 
           {/* 01 — S-3 OPERATIONS */}
-          <article className="biz" id="protective">
-            <div className="reveal">
-              <div className="biz-stage">S-3 // OPERATIONS</div>
-              <h2>Protective Services</h2>
-              <div className="biz-brand">Close protection · secure movement · crisis response</div>
-              <span className="biz-num">01 / 07</span>
+          <section className="entry reveal" id="protective">
+            <div className="entry-key">
+              <div className="entry-desig">S-3 // OPERATIONS</div>
+              <div className="entry-idx">01</div>
             </div>
-            <div className="reveal d1">
+            <div>
+              <h2>Protective Services</h2>
+              <div className="entry-brand">Close protection · secure movement · crisis response</div>
               <p>
                 We keep principals alive and moving. Executive and diplomatic protection details, secure ground and air
                 movement, residential and venue security, and crisis and evacuation planning — delivered by operators who
@@ -41,31 +47,18 @@ export default function CapabilitiesPage() {
                 <li>Surveillance Detection</li><li>Medical Cover</li><li>Evacuation</li>
               </ul>
             </div>
-          </article>
+          </section>
 
           {/* 02 — S-3 GUARD FORCE */}
-          <article className="biz flip" id="guarding">
-            <div className="biz-media ticks reveal" aria-hidden="true">
-              {/* shield / posted perimeter */}
-              <svg viewBox="0 0 300 300" width="66%" fill="none">
-                <path d="M150 36 L246 76 V152 C246 212 204 250 150 268 C96 250 54 212 54 152 V76 Z"
-                  stroke="#E08A2B" strokeOpacity="0.4" strokeWidth="1.4" />
-                <path d="M150 70 L214 96 V150 C214 196 184 224 150 238 C116 224 86 196 86 150 V96 Z"
-                  stroke="#E08A2B" strokeOpacity="0.22" strokeWidth="1" />
-                <path d="M124 152 L144 174 L182 124" stroke="#F4A646" strokeWidth="3"
-                  strokeLinecap="square" strokeLinejoin="miter" fill="none" />
-                <g fill="#E08A2B">
-                  <circle cx="150" cy="36" r="3.2" /><circle cx="246" cy="76" r="3.2" />
-                  <circle cx="246" cy="152" r="3.2" /><circle cx="54" cy="152" r="3.2" /><circle cx="54" cy="76" r="3.2" />
-                </g>
-              </svg>
+          <section className="entry reveal" id="guarding">
+            <div className="entry-key">
+              <div className="entry-desig">S-3 // GUARD FORCE</div>
+              <div className="entry-idx">02</div>
             </div>
-            <div className="reveal d1">
-              <div className="biz-stage">S-3 // GUARD FORCE</div>
+            <div>
               <h2>Facility &amp; Static Guarding</h2>
-              <div className="biz-brand">Embassies · energy · ports · critical infrastructure</div>
-              <span className="biz-num">02 / 07</span>
-              <p style={{ marginTop: 20 }}>
+              <div className="entry-brand">Embassies · energy · ports · critical infrastructure</div>
+              <p>
                 Manned guarding and access control for the sites that cannot afford a lapse — embassies and missions,
                 energy installations, ports and terminals, and critical national infrastructure. Posts are manned,
                 trained, supervised, and audited to a written standard, with control rooms and K9 capability where the
@@ -80,17 +73,17 @@ export default function CapabilitiesPage() {
                 <li>Energy &amp; Ports</li><li>K9</li><li>Control Rooms</li>
               </ul>
             </div>
-          </article>
+          </section>
 
           {/* 03 — S-7 TRAINING */}
-          <article className="biz" id="training">
-            <div className="reveal">
-              <div className="biz-stage">S-7 // TRAINING</div>
-              <h2>Training &amp; Doctrine</h2>
-              <div className="biz-brand">Selection-grade instruction for militaries and police</div>
-              <span className="biz-num">03 / 07</span>
+          <section className="entry reveal" id="training">
+            <div className="entry-key">
+              <div className="entry-desig">S-7 // TRAINING</div>
+              <div className="entry-idx">03</div>
             </div>
-            <div className="reveal d1">
+            <div>
+              <h2>Training &amp; Doctrine</h2>
+              <div className="entry-brand">Selection-grade instruction for militaries and police</div>
               <p>
                 We train national militaries and police units to a selection standard, not a certificate standard.
                 Marksmanship and CQB, maritime interdiction and boarding, mobile force tactics, and command-staff
@@ -105,34 +98,18 @@ export default function CapabilitiesPage() {
                 <li>Mobile Force Training</li><li>Command Staff</li><li>Train-the-Trainer</li>
               </ul>
             </div>
-          </article>
+          </section>
 
           {/* 04 — S-4 LOGISTICS */}
-          <article className="biz flip" id="logistics">
-            <div className="biz-media ticks reveal" aria-hidden="true">
-              {/* route lines / movement legs */}
-              <svg viewBox="0 0 300 300" width="74%" fill="none">
-                <g stroke="#E08A2B" strokeOpacity="0.22" strokeWidth="1">
-                  <line x1="40" y1="220" x2="260" y2="220" /><line x1="40" y1="150" x2="260" y2="150" />
-                  <line x1="40" y1="80" x2="260" y2="80" />
-                </g>
-                <path d="M52 232 L120 168 L188 196 L252 96" stroke="#F4A646" strokeWidth="2"
-                  strokeDasharray="3 6" fill="none" />
-                <path d="M52 232 L96 110 L176 132 L252 60" stroke="#E08A2B" strokeOpacity="0.5"
-                  strokeWidth="1.4" fill="none" />
-                <g fill="#F4A646">
-                  <circle cx="52" cy="232" r="4" /><circle cx="120" cy="168" r="3.4" />
-                  <circle cx="188" cy="196" r="3.4" /><circle cx="252" cy="96" r="4" />
-                </g>
-                <g fill="#E08A2B"><circle cx="96" cy="110" r="3" /><circle cx="176" cy="132" r="3" /><circle cx="252" cy="60" r="3.4" /></g>
-              </svg>
+          <section className="entry reveal" id="logistics">
+            <div className="entry-key">
+              <div className="entry-desig">S-4 // LOGISTICS</div>
+              <div className="entry-idx">04</div>
             </div>
-            <div className="reveal d1">
-              <div className="biz-stage">S-4 // LOGISTICS</div>
+            <div>
               <h2>Expeditionary Logistics</h2>
-              <div className="biz-brand">Move · base · sustain — anywhere within days</div>
-              <span className="biz-num">04 / 07</span>
-              <p style={{ marginTop: 20 }}>
+              <div className="entry-brand">Move · base · sustain — anywhere within days</div>
+              <p>
                 Air, ground, and maritime movement, basing, and sustainment that put a self-supporting force on the
                 ground within days — and keep it supplied for as long as the mandate runs. Charter lift, hardened
                 convoys, camps and life support, fuel and ration chains, and an organic medevac capability.
@@ -146,17 +123,17 @@ export default function CapabilitiesPage() {
                 <li>Sustainment</li><li>Medevac</li><li>Customs &amp; Clearance</li>
               </ul>
             </div>
-          </article>
+          </section>
 
           {/* 05 — S-2 INTELLIGENCE */}
-          <article className="biz" id="intelligence">
-            <div className="reveal">
-              <div className="biz-stage">S-2 // INTELLIGENCE</div>
-              <h2>Intelligence &amp; ISR</h2>
-              <div className="biz-brand">All-source · cleared liaison architecture</div>
-              <span className="biz-num">05 / 07</span>
+          <section className="entry reveal" id="intelligence">
+            <div className="entry-key">
+              <div className="entry-desig">S-2 // INTELLIGENCE</div>
+              <div className="entry-idx">05</div>
             </div>
-            <div className="reveal d1">
+            <div>
+              <h2>Intelligence &amp; ISR</h2>
+              <div className="entry-brand">All-source · cleared liaison architecture</div>
               <p>
                 Our intelligence cell turns noise into decisions: all-source analysis, surveillance and reconnaissance,
                 threat warning, due diligence, and counter-surveillance — the product our deployed teams and our clients
@@ -175,34 +152,18 @@ export default function CapabilitiesPage() {
                 <li>Due Diligence</li><li>Partner Liaison</li><li>Counter-Surveillance</li>
               </ul>
             </div>
-          </article>
+          </section>
 
           {/* 06 — S-5 PLANS */}
-          <article className="biz flip" id="advisory">
-            <div className="biz-media ticks reveal" aria-hidden="true">
-              {/* node graph / planning lattice */}
-              <svg viewBox="0 0 300 300" width="72%" fill="none">
-                <g stroke="#E08A2B" strokeOpacity="0.4" strokeWidth="1.2">
-                  <line x1="150" y1="150" x2="78" y2="78" /><line x1="150" y1="150" x2="226" y2="92" />
-                  <line x1="150" y1="150" x2="92" y2="220" /><line x1="150" y1="150" x2="224" y2="212" />
-                  <line x1="78" y1="78" x2="226" y2="92" /><line x1="92" y1="220" x2="224" y2="212" />
-                </g>
-                <g stroke="#F4A646" strokeOpacity="0.7" strokeWidth="1.2" strokeDasharray="2 5">
-                  <line x1="78" y1="78" x2="92" y2="220" /><line x1="226" y1="92" x2="224" y2="212" />
-                </g>
-                <g fill="#E08A2B">
-                  <circle cx="78" cy="78" r="4" /><circle cx="226" cy="92" r="4" />
-                  <circle cx="92" cy="220" r="4" /><circle cx="224" cy="212" r="4" />
-                </g>
-                <circle cx="150" cy="150" r="7" fill="#F4A646" />
-              </svg>
+          <section className="entry reveal" id="advisory">
+            <div className="entry-key">
+              <div className="entry-desig">S-5 // PLANS</div>
+              <div className="entry-idx">06</div>
             </div>
-            <div className="reveal d1">
-              <div className="biz-stage">S-5 // PLANS</div>
+            <div>
               <h2>Strategic Advisory</h2>
-              <div className="biz-brand">Risk · architecture · contingency planning</div>
-              <span className="biz-num">06 / 07</span>
-              <p style={{ marginTop: 20 }}>
+              <div className="entry-brand">Risk · architecture · contingency planning</div>
+              <p>
                 For boards, ministries, and country teams operating in fragile environments, we design the security
                 architecture and the plan behind it: threat and risk assessment, contingency and crisis planning, red
                 teaming of existing posture, and the entry strategy for a new and difficult market.
@@ -216,17 +177,17 @@ export default function CapabilitiesPage() {
                 <li>Red Teaming</li><li>Board Advisory</li><li>Country Entry</li>
               </ul>
             </div>
-          </article>
+          </section>
 
           {/* 07 — S-9 CIMIC */}
-          <article className="biz" id="sovereign">
-            <div className="reveal">
-              <div className="biz-stage">S-9 // CIMIC</div>
-              <h2>Sovereign Solutions</h2>
-              <div className="biz-brand">Stabilization · governance advisory · political transition</div>
-              <span className="biz-num">07 / 07</span>
+          <section className="entry reveal" id="sovereign">
+            <div className="entry-key">
+              <div className="entry-desig">S-9 // CIMIC</div>
+              <div className="entry-idx">07</div>
             </div>
-            <div className="reveal d1">
+            <div>
+              <h2>Sovereign Solutions</h2>
+              <div className="entry-brand">Stabilization · governance advisory · political transition</div>
               <p>
                 A small number of clients are sovereign states reshaping their security posture from the ground up. For
                 them we offer discreet stabilization, governance advisory, security-sector reform, and political-transition
@@ -242,12 +203,12 @@ export default function CapabilitiesPage() {
                 <li>Transition Support</li><li>Strategic Communications</li><li>Sovereign Liaison</li>
               </ul>
             </div>
-          </article>
+          </section>
 
         </div>
       </section>
 
-      <section className="section tight">
+      <section className="sec tight">
         <div className="container">
           <div className="cta-band reveal">
             <span className="desig center">One Command</span>

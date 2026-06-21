@@ -1,9 +1,10 @@
 /**
  * RMH PMC layout shell — scopes the design system under `.rmhp-root`,
- * renders the shared nav + footer, and drives the scroll-reveal animation.
+ * renders the command bar, the document gutter, and the footer, and drives
+ * the scroll-reveal animation.
  */
 import { Outlet, useRouterState } from '@tanstack/react-router';
-import { TopNav, SiteFooter, FloatBack, useReveal } from './shared';
+import { CommandBar, Gutter, SiteFooter, FloatBack, useReveal } from './shared';
 
 export default function RmhPmcLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -11,7 +12,8 @@ export default function RmhPmcLayout() {
 
   return (
     <div className="rmhp-root">
-      <TopNav />
+      <CommandBar />
+      <Gutter />
       <main>
         <Outlet />
       </main>

@@ -1,37 +1,90 @@
 /**
- * RMH PMC — shared primitives. Mirrors the RMH Capital shell (nav, footer,
- * reveal-on-scroll, brand mark) but in the gunmetal/amber ops-room system.
+ * RMH PMC — shared primitives for the "Operations Dossier" system.
+ * Command bar, fixed document gutter, live Zulu clock, decrypt helper,
+ * transmission log, brand mark, footer, and the scroll-reveal hook.
  */
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useRouterState } from '@tanstack/react-router';
 
-/* Reticle-in-hex mark. The hex keeps lineage with the RMH holding mark;
+/* Reticle-in-hex mark — the hex keeps lineage with the RMH holding mark;
    the crosshair + chevron make it PMC. */
 export function BrandMark() {
   return (
     <svg viewBox="0 0 100 100" aria-hidden="true">
-      <polygon points="50,5 89,27 89,73 50,95 11,73 11,27" fill="none" stroke="#E08A2B" strokeWidth="3" />
-      <g stroke="#E08A2B" strokeWidth="1.6" opacity="0.55">
+      <polygon points="50,5 89,27 89,73 50,95 11,73 11,27" fill="none" stroke="#E89A3C" strokeWidth="3" />
+      <g stroke="#E89A3C" strokeWidth="1.6" opacity="0.55">
         <line x1="50" y1="14" x2="50" y2="26" /><line x1="50" y1="74" x2="50" y2="86" />
         <line x1="18" y1="50" x2="30" y2="50" /><line x1="70" y1="50" x2="82" y2="50" />
       </g>
-      <path d="M36 44 L50 58 L64 44" fill="none" stroke="#F4A646" strokeWidth="4" strokeLinecap="square" strokeLinejoin="miter" />
-      <circle cx="50" cy="50" r="3.4" fill="#E08A2B" />
+      <path d="M36 44 L50 58 L64 44" fill="none" stroke="#F6B45A" strokeWidth="4" strokeLinecap="square" strokeLinejoin="miter" />
+      <circle cx="50" cy="50" r="3.4" fill="#E89A3C" />
     </svg>
+  );
+}
+
+const prefersReduced = () =>
+  typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/**
+ * Decrypt — a string that scrambles through monospace glyphs on mount before
+ * settling into its real text. Renders the final text on the server and when
+ * reduced motion is requested, so it's accessible and SEO-safe. Use sparingly.
+ */
+const GLYPHS = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789/#%<>*·';
+export function Decrypt({ text, className }: { text: string; className?: string }) {
+  const [out, setOut] = useState(text);
+  useEffect(() => {
+    if (prefersReduced()) return;
+    let raf = 0;
+    const start = performance.now();
+    const dur = Math.min(180 + text.length * 34, 900);
+    const tick = (t: number) => {
+      const p = Math.min((t - start) / dur, 1);
+      const revealed = Math.floor(p * text.length);
+      let s = '';
+      for (let i = 0; i < text.length; i++) {
+        s += i < revealed || text[i] === ' ' ? text[i] : GLYPHS[(Math.random() * GLYPHS.length) | 0];
+      }
+      setOut(s);
+      if (p < 1) raf = requestAnimationFrame(tick);
+      else setOut(text);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [text]);
+  return <span className={className}>{out}</span>;
+}
+
+/** Live Zulu (UTC) clock for the command bar. */
+function ZuluClock() {
+  const [now, setNow] = useState<string>('--:--');
+  useEffect(() => {
+    const fmt = () => {
+      const d = new Date();
+      const p = (n: number) => String(n).padStart(2, '0');
+      setNow(`${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())}`);
+    };
+    fmt();
+    const id = setInterval(fmt, 1000);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <span className="clock">
+      OPS // <b>{now}</b>Z
+    </span>
   );
 }
 
 /**
  * Reveal-on-scroll. Adds `.in` to every `.reveal` element inside the scope as it
- * enters the viewport. Re-runs whenever `key` changes (i.e. on navigation) so
- * freshly-mounted page content animates in too. Falls back to showing everything
- * if IntersectionObserver is unavailable or the user prefers reduced motion.
+ * enters the viewport. Re-runs whenever `key` changes (navigation) so freshly
+ * mounted page content animates in too. Falls back to showing everything when
+ * IntersectionObserver is unavailable or reduced motion is requested.
  */
 export function useReveal(key: string) {
   useEffect(() => {
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduce = prefersReduced();
     let io: IntersectionObserver | null = null;
-
     const raf = requestAnimationFrame(() => {
       const nodes = Array.from(document.querySelectorAll<HTMLElement>('.rmhp-root .reveal'));
       if (reduce || !('IntersectionObserver' in window)) {
@@ -56,7 +109,6 @@ export function useReveal(key: string) {
         else io!.observe(n);
       });
     });
-
     return () => {
       cancelAnimationFrame(raf);
       io?.disconnect();
@@ -73,13 +125,13 @@ const NAV: NavItem[] = [
   { to: '/rmh-pmc/contact', label: 'Contact' },
 ];
 
-export function TopNav() {
+export function CommandBar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
-    const nav = document.querySelector('.rmhp-root .topnav');
-    if (!nav) return;
-    const onScroll = () => nav.classList.toggle('scrolled', window.scrollY > 12);
+    const bar = document.querySelector('.rmhp-root .cmdbar');
+    if (!bar) return;
+    const onScroll = () => bar.classList.toggle('scrolled', window.scrollY > 12);
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
@@ -87,21 +139,17 @@ export function TopNav() {
 
   const toggleMenu = (e: React.MouseEvent<HTMLButtonElement>) => {
     const btn = e.currentTarget;
-    const menu = btn.closest('.topnav')?.querySelector('.mobile-menu');
+    const menu = btn.closest('.cmdbar')?.querySelector('.mobile-menu');
     if (!menu) return;
     const open = menu.classList.toggle('open');
     btn.setAttribute('aria-expanded', open ? 'true' : 'false');
   };
-
-  const closeMenu = () => {
-    document.querySelector('.rmhp-root .mobile-menu')?.classList.remove('open');
-  };
-
+  const closeMenu = () => document.querySelector('.rmhp-root .mobile-menu')?.classList.remove('open');
   const current = (to: string) => (pathname === to ? 'page' : undefined);
 
   return (
-    <header className="topnav">
-      <div className="topnav-inner">
+    <header className="cmdbar">
+      <div className="cmdbar-inner">
         <Link className="brand" to="/rmh-pmc" aria-label="RMH PMC home">
           <BrandMark />
           <span className="brand-text">RMH&nbsp;PMC</span>
@@ -114,15 +162,14 @@ export function TopNav() {
           ))}
         </nav>
         <div className="nav-right">
+          <ZuluClock />
           <Link className="nav-cta" to="/rmh-pmc/contact">
             Request a briefing
           </Link>
         </div>
         <button className="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="m-menu" onClick={toggleMenu}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-            <line x1="3" y1="7" x2="21" y2="7" />
-            <line x1="3" y1="12" x2="21" y2="12" />
-            <line x1="3" y1="17" x2="21" y2="17" />
+            <line x1="3" y1="7" x2="21" y2="7" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="17" x2="21" y2="17" />
           </svg>
         </button>
       </div>
@@ -137,7 +184,33 @@ export function TopNav() {
   );
 }
 
-/* Floating back-to-parent arrow, fixed to the bottom-left of the viewport. */
+/** Fixed left document spine — classification, file code, scroll progress. Decorative. */
+export function Gutter() {
+  const fill = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = fill.current;
+    if (!el) return;
+    const onScroll = () => {
+      const h = document.documentElement.scrollHeight - window.innerHeight;
+      const p = h > 0 ? Math.min(window.scrollY / h, 1) : 0;
+      el.style.setProperty('--p', `${(p * 100).toFixed(1)}%`);
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+  return (
+    <aside className="gutter" aria-hidden="true">
+      <span className="g-class">Restricted</span>
+      <div className="g-tick" />
+      <div className="g-prog" ref={fill} />
+      <div className="g-tick" />
+      <span className="g-code">DOC·RMH-PMC·2026</span>
+    </aside>
+  );
+}
+
+/* Floating back-to-parent arrow, fixed to the bottom-right of the viewport. */
 export function FloatBack() {
   return (
     <a className="float-back" href="/" aria-label="Back to RMH Studios" title="Back to RMH Studios">
@@ -148,8 +221,8 @@ export function FloatBack() {
   );
 }
 
-/* Deployment-status strip — the PMC analogue of Capital's markets ticker. */
-export function StatusTicker() {
+/* Deployment-status transmission log — the marquee strip under the hero. */
+export function TransmissionLog() {
   const rows = [
     ['THEATER', 'SAHEL', 'ACTIVE', false],
     ['THEATER', 'LEVANT', 'STANDBY', false],
@@ -160,8 +233,11 @@ export function StatusTicker() {
     ['EXFIL', 'SECTOR 7', 'COMPLETE', false],
   ] as const;
   return (
-    <div className="statusbar" aria-hidden="true">
-      <div className="status-track">
+    <div className="transmit" aria-hidden="true">
+      <div className="transmit-tag">
+        <span className="led" style={{ background: 'currentColor', boxShadow: 'none' }} /> LIVE
+      </div>
+      <div className="transmit-track">
         {[...rows, ...rows].map(([k, label, val, hold], i) => (
           <span key={i}>
             <em className={hold ? 'led hold' : 'led'} style={{ fontStyle: 'normal' }} />
@@ -189,9 +265,9 @@ export function SiteFooter() {
           <div className="footer-col">
             <h4>Capabilities</h4>
             <Link to="/rmh-pmc/capabilities" hash="protective">Protective Services</Link>
-            <Link to="/rmh-pmc/capabilities" hash="guarding">Facility &amp; Static Guarding</Link>
+            <Link to="/rmh-pmc/capabilities" hash="guarding">Static Guarding</Link>
             <Link to="/rmh-pmc/capabilities" hash="intelligence">Intelligence &amp; ISR</Link>
-            <Link to="/rmh-pmc/capabilities" hash="logistics">Expeditionary Logistics</Link>
+            <Link to="/rmh-pmc/capabilities" hash="logistics">Logistics</Link>
             <Link to="/rmh-pmc/capabilities" hash="sovereign">Sovereign Solutions</Link>
           </div>
           <div className="footer-col">
@@ -210,7 +286,7 @@ export function SiteFooter() {
         </div>
 
         <div className="footer-bottom">
-          <span className="copy">© 2026 RMH PMC LLC. All rights reserved.</span>
+          <span className="copy">© 2026 RMH PMC LLC · An RMH Studios company</span>
           <div className="footer-legal">
             <a href="#">Vetting</a>
             <a href="#">Compliance</a>

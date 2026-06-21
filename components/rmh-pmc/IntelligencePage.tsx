@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
+import { Decrypt } from './shared';
 
 const CATEGORIES = [
   { id: 'all', label: 'All' },
@@ -95,6 +96,11 @@ export default function IntelligencePage() {
     <>
       <section className="pagehead">
         <div className="container pagehead-inner">
+          <div className="brief-meta reveal">
+            <span className="field"><b>File</b> ▸ <span className="v"><Decrypt text="RMH-INT / DISPATCHES" /></span></span>
+            <span className="field"><b>Class</b> ▸ <span className="v"><Decrypt text="CLEARED FOR RELEASE" /></span></span>
+            <span className="field"><b>Feed</b> ▸ <span className="v"><Decrypt text="PUBLIC" /></span></span>
+          </div>
           <span className="desig reveal">Intelligence // Dispatches</span>
           <h1 className="reveal d1">The product our clients act on.</h1>
           <p className="lede reveal d2">
@@ -105,11 +111,11 @@ export default function IntelligencePage() {
         </div>
       </section>
 
-      <section className="section tight">
+      <section className="sec tight">
         <div className="container">
-          {/* FEATURED */}
-          <div className="featured reveal">
-            <Link className="featured-main" to="/rmh-pmc/intelligence">
+          {/* LEAD CABLE */}
+          <div className="cable-lead reveal">
+            <Link className="lead-main" to="/rmh-pmc/intelligence">
               <span className="metaline">Threat <span className="dot" /> <span className="t">RMH-INT-0434 · 21 JUN 2026</span></span>
               <h3>The 2026 fragility map: where instability becomes a private problem</h3>
               <p>
@@ -118,18 +124,18 @@ export default function IntelligencePage() {
                 situation can move from headline to evacuation.
               </p>
             </Link>
-            <div className="featured-side">
-              <Link className="fside-item" to="/rmh-pmc/intelligence">
+            <div className="lead-side">
+              <Link className="side-item" to="/rmh-pmc/intelligence">
                 <span className="metaline">Maritime</span>
                 <h4>The next chokepoint, before it closes</h4>
                 <p>Red Sea and Gulf of Aden risk, week by week.</p>
               </Link>
-              <Link className="fside-item" to="/rmh-pmc/intelligence">
+              <Link className="side-item" to="/rmh-pmc/intelligence">
                 <span className="metaline">Stabilization</span>
                 <h4>Why some transitions hold and others don't</h4>
                 <p>Patterns from our sovereign engagements.</p>
               </Link>
-              <Link className="fside-item" to="/rmh-pmc/intelligence">
+              <Link className="side-item" to="/rmh-pmc/intelligence">
                 <span className="metaline">Cyber &amp; Signals</span>
                 <h4>Principals targeted before they land</h4>
                 <p>Pre-travel digital threat reduction.</p>
@@ -151,15 +157,18 @@ export default function IntelligencePage() {
             ))}
           </div>
 
-          {/* GRID */}
-          <div className="articlegrid reveal">
+          {/* CABLE MANIFEST */}
+          <div className="log reveal">
             {DISPATCHES.map((d, i) => {
               const hidden = active !== 'all' && d.cat !== active;
               return (
-                <Link key={i} className={`article${hidden ? ' hide' : ''}`} to="/rmh-pmc/intelligence">
-                  <span className="metaline">{d.meta} <span className="dot" /> <span className="t">{d.serial}</span></span>
-                  <h3>{d.title}</h3>
-                  <p>{d.blurb}</p>
+                <Link key={i} className={`logrow${hidden ? ' hide' : ''}`} to="/rmh-pmc/intelligence">
+                  <span className="serial">{d.serial}</span>
+                  <span className="cat">{d.meta}</span>
+                  <span className="ttl">
+                    {d.title}
+                    <span>{d.blurb}</span>
+                  </span>
                   <span className="rd">{d.rd}</span>
                 </Link>
               );
@@ -168,7 +177,7 @@ export default function IntelligencePage() {
         </div>
       </section>
 
-      <section className="section tight">
+      <section className="sec tight">
         <div className="container">
           <div className="cta-band reveal">
             <span className="desig center">Cleared Distribution</span>

@@ -11,7 +11,7 @@ export const Route = createFileRoute('/rmh-pmc')({
       { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossOrigin: 'anonymous' },
       {
         rel: 'stylesheet',
-        href: 'https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Barlow:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap',
+        href: 'https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100,400;100,500;100,600;125,700;125,800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap',
       },
     ],
   }),
