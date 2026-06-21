@@ -237,6 +237,7 @@ import { Route as ApiAiAskFeedRouteImport } from './routes/api/ai/ask-feed'
 import { Route as ApiAdminUsersRouteImport } from './routes/api/admin/users'
 import { Route as ApiAdminReportsRouteImport } from './routes/api/admin/reports'
 import { Route as ApiAdminBlogRouteImport } from './routes/api/admin/blog'
+import { Route as ApiAdminAuditLogRouteImport } from './routes/api/admin/audit-log'
 import { Route as ApiAdminAnnouncementsRouteImport } from './routes/api/admin/announcements'
 import { Route as ApiAdminAnalyticsRouteImport } from './routes/api/admin/analytics'
 import { Route as ApiAchievementsUserIdRouteImport } from './routes/api/achievements/$userId'
@@ -250,6 +251,7 @@ import { Route as SiteMessagesConversationIdRouteImport } from './routes/_site/m
 import { Route as SiteAdminUsersRouteImport } from './routes/_site/admin/users'
 import { Route as SiteAdminUserBuildsRouteImport } from './routes/_site/admin/user-builds'
 import { Route as SiteAdminReportsRouteImport } from './routes/_site/admin/reports'
+import { Route as SiteAdminAuditRouteImport } from './routes/_site/admin/audit'
 import { Route as SiteAdminAnnouncementsRouteImport } from './routes/_site/admin/announcements'
 import { Route as SiteAdminAnalyticsRouteImport } from './routes/_site/admin/analytics'
 import { Route as ApiDoctrineReputationIndexRouteImport } from './routes/api/doctrine/reputation/index'
@@ -316,6 +318,8 @@ import { Route as ApiSliceItSongsIdPatchAnalysisRouteImport } from './routes/api
 import { Route as ApiSliceItSongsIdLikeRouteImport } from './routes/api/slice-it/songs/$id/like'
 import { Route as ApiSliceItSongsIdCommentsRouteImport } from './routes/api/slice-it/songs/$id/comments'
 import { Route as ApiRmharksIdCommentCommentIdRouteImport } from './routes/api/rmharks/$id/comment/$commentId'
+import { Route as ApiAdminUsersIdStrikeRouteImport } from './routes/api/admin/users/$id/strike'
+import { Route as ApiAdminUsersIdBanRouteImport } from './routes/api/admin/users/$id/ban'
 import { Route as ApiAdminCuratedBuildsImageProxyRouteImport } from './routes/api/admin/curated-builds/image/proxy'
 import { Route as ApiAdminCuratedBuildsImageFilenameRouteImport } from './routes/api/admin/curated-builds/image/$filename'
 import { Route as SiteUUseridPostPostidRouteImport } from './routes/_site/u/$userid/post/$postid'
@@ -1478,6 +1482,11 @@ const ApiAdminBlogRoute = ApiAdminBlogRouteImport.update({
   path: '/api/admin/blog',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminAuditLogRoute = ApiAdminAuditLogRouteImport.update({
+  id: '/api/admin/audit-log',
+  path: '/api/admin/audit-log',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminAnnouncementsRoute = ApiAdminAnnouncementsRouteImport.update({
   id: '/api/admin/announcements',
   path: '/api/admin/announcements',
@@ -1543,6 +1552,11 @@ const SiteAdminUserBuildsRoute = SiteAdminUserBuildsRouteImport.update({
 const SiteAdminReportsRoute = SiteAdminReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
+  getParentRoute: () => SiteAdminRouteRoute,
+} as any)
+const SiteAdminAuditRoute = SiteAdminAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
 const SiteAdminAnnouncementsRoute = SiteAdminAnnouncementsRouteImport.update({
@@ -1900,6 +1914,16 @@ const ApiRmharksIdCommentCommentIdRoute =
     path: '/$commentId',
     getParentRoute: () => ApiRmharksIdCommentRoute,
   } as any)
+const ApiAdminUsersIdStrikeRoute = ApiAdminUsersIdStrikeRouteImport.update({
+  id: '/$id/strike',
+  path: '/$id/strike',
+  getParentRoute: () => ApiAdminUsersRoute,
+} as any)
+const ApiAdminUsersIdBanRoute = ApiAdminUsersIdBanRouteImport.update({
+  id: '/$id/ban',
+  path: '/$id/ban',
+  getParentRoute: () => ApiAdminUsersRoute,
+} as any)
 const ApiAdminCuratedBuildsImageProxyRoute =
   ApiAdminCuratedBuildsImageProxyRouteImport.update({
     id: '/proxy',
@@ -2056,6 +2080,7 @@ export interface FileRoutesByFullPath {
   '/versecraft/': typeof VersecraftIndexRoute
   '/admin/analytics': typeof SiteAdminAnalyticsRoute
   '/admin/announcements': typeof SiteAdminAnnouncementsRoute
+  '/admin/audit': typeof SiteAdminAuditRoute
   '/admin/reports': typeof SiteAdminReportsRoute
   '/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/admin/users': typeof SiteAdminUsersRoute
@@ -2069,9 +2094,10 @@ export interface FileRoutesByFullPath {
   '/api/achievements/$userId': typeof ApiAchievementsUserIdRoute
   '/api/admin/analytics': typeof ApiAdminAnalyticsRoute
   '/api/admin/announcements': typeof ApiAdminAnnouncementsRouteWithChildren
+  '/api/admin/audit-log': typeof ApiAdminAuditLogRoute
   '/api/admin/blog': typeof ApiAdminBlogRoute
   '/api/admin/reports': typeof ApiAdminReportsRouteWithChildren
-  '/api/admin/users': typeof ApiAdminUsersRoute
+  '/api/admin/users': typeof ApiAdminUsersRouteWithChildren
   '/api/ai/ask-feed': typeof ApiAiAskFeedRoute
   '/api/ai/transform': typeof ApiAiTransformRoute
   '/api/altair/leaderboard': typeof ApiAltairLeaderboardRoute
@@ -2245,6 +2271,8 @@ export interface FileRoutesByFullPath {
   '/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
   '/api/admin/curated-builds/image/$filename': typeof ApiAdminCuratedBuildsImageFilenameRoute
   '/api/admin/curated-builds/image/proxy': typeof ApiAdminCuratedBuildsImageProxyRoute
+  '/api/admin/users/$id/ban': typeof ApiAdminUsersIdBanRoute
+  '/api/admin/users/$id/strike': typeof ApiAdminUsersIdStrikeRoute
   '/api/rmharks/$id/comment/$commentId': typeof ApiRmharksIdCommentCommentIdRouteWithChildren
   '/api/slice-it/songs/$id/comments': typeof ApiSliceItSongsIdCommentsRoute
   '/api/slice-it/songs/$id/like': typeof ApiSliceItSongsIdLikeRoute
@@ -2349,6 +2377,7 @@ export interface FileRoutesByTo {
   '/versecraft': typeof VersecraftIndexRoute
   '/admin/analytics': typeof SiteAdminAnalyticsRoute
   '/admin/announcements': typeof SiteAdminAnnouncementsRoute
+  '/admin/audit': typeof SiteAdminAuditRoute
   '/admin/reports': typeof SiteAdminReportsRoute
   '/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/admin/users': typeof SiteAdminUsersRoute
@@ -2362,9 +2391,10 @@ export interface FileRoutesByTo {
   '/api/achievements/$userId': typeof ApiAchievementsUserIdRoute
   '/api/admin/analytics': typeof ApiAdminAnalyticsRoute
   '/api/admin/announcements': typeof ApiAdminAnnouncementsRouteWithChildren
+  '/api/admin/audit-log': typeof ApiAdminAuditLogRoute
   '/api/admin/blog': typeof ApiAdminBlogRoute
   '/api/admin/reports': typeof ApiAdminReportsRouteWithChildren
-  '/api/admin/users': typeof ApiAdminUsersRoute
+  '/api/admin/users': typeof ApiAdminUsersRouteWithChildren
   '/api/ai/ask-feed': typeof ApiAiAskFeedRoute
   '/api/ai/transform': typeof ApiAiTransformRoute
   '/api/altair/leaderboard': typeof ApiAltairLeaderboardRoute
@@ -2538,6 +2568,8 @@ export interface FileRoutesByTo {
   '/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
   '/api/admin/curated-builds/image/$filename': typeof ApiAdminCuratedBuildsImageFilenameRoute
   '/api/admin/curated-builds/image/proxy': typeof ApiAdminCuratedBuildsImageProxyRoute
+  '/api/admin/users/$id/ban': typeof ApiAdminUsersIdBanRoute
+  '/api/admin/users/$id/strike': typeof ApiAdminUsersIdStrikeRoute
   '/api/rmharks/$id/comment/$commentId': typeof ApiRmharksIdCommentCommentIdRouteWithChildren
   '/api/slice-it/songs/$id/comments': typeof ApiSliceItSongsIdCommentsRoute
   '/api/slice-it/songs/$id/like': typeof ApiSliceItSongsIdLikeRoute
@@ -2666,6 +2698,7 @@ export interface FileRoutesById {
   '/versecraft/': typeof VersecraftIndexRoute
   '/_site/admin/analytics': typeof SiteAdminAnalyticsRoute
   '/_site/admin/announcements': typeof SiteAdminAnnouncementsRoute
+  '/_site/admin/audit': typeof SiteAdminAuditRoute
   '/_site/admin/reports': typeof SiteAdminReportsRoute
   '/_site/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/_site/admin/users': typeof SiteAdminUsersRoute
@@ -2679,9 +2712,10 @@ export interface FileRoutesById {
   '/api/achievements/$userId': typeof ApiAchievementsUserIdRoute
   '/api/admin/analytics': typeof ApiAdminAnalyticsRoute
   '/api/admin/announcements': typeof ApiAdminAnnouncementsRouteWithChildren
+  '/api/admin/audit-log': typeof ApiAdminAuditLogRoute
   '/api/admin/blog': typeof ApiAdminBlogRoute
   '/api/admin/reports': typeof ApiAdminReportsRouteWithChildren
-  '/api/admin/users': typeof ApiAdminUsersRoute
+  '/api/admin/users': typeof ApiAdminUsersRouteWithChildren
   '/api/ai/ask-feed': typeof ApiAiAskFeedRoute
   '/api/ai/transform': typeof ApiAiTransformRoute
   '/api/altair/leaderboard': typeof ApiAltairLeaderboardRoute
@@ -2855,6 +2889,8 @@ export interface FileRoutesById {
   '/_site/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
   '/api/admin/curated-builds/image/$filename': typeof ApiAdminCuratedBuildsImageFilenameRoute
   '/api/admin/curated-builds/image/proxy': typeof ApiAdminCuratedBuildsImageProxyRoute
+  '/api/admin/users/$id/ban': typeof ApiAdminUsersIdBanRoute
+  '/api/admin/users/$id/strike': typeof ApiAdminUsersIdStrikeRoute
   '/api/rmharks/$id/comment/$commentId': typeof ApiRmharksIdCommentCommentIdRouteWithChildren
   '/api/slice-it/songs/$id/comments': typeof ApiSliceItSongsIdCommentsRoute
   '/api/slice-it/songs/$id/like': typeof ApiSliceItSongsIdLikeRoute
@@ -2983,6 +3019,7 @@ export interface FileRouteTypes {
     | '/versecraft/'
     | '/admin/analytics'
     | '/admin/announcements'
+    | '/admin/audit'
     | '/admin/reports'
     | '/admin/user-builds'
     | '/admin/users'
@@ -2996,6 +3033,7 @@ export interface FileRouteTypes {
     | '/api/achievements/$userId'
     | '/api/admin/analytics'
     | '/api/admin/announcements'
+    | '/api/admin/audit-log'
     | '/api/admin/blog'
     | '/api/admin/reports'
     | '/api/admin/users'
@@ -3172,6 +3210,8 @@ export interface FileRouteTypes {
     | '/u/$userid/post/$postid'
     | '/api/admin/curated-builds/image/$filename'
     | '/api/admin/curated-builds/image/proxy'
+    | '/api/admin/users/$id/ban'
+    | '/api/admin/users/$id/strike'
     | '/api/rmharks/$id/comment/$commentId'
     | '/api/slice-it/songs/$id/comments'
     | '/api/slice-it/songs/$id/like'
@@ -3276,6 +3316,7 @@ export interface FileRouteTypes {
     | '/versecraft'
     | '/admin/analytics'
     | '/admin/announcements'
+    | '/admin/audit'
     | '/admin/reports'
     | '/admin/user-builds'
     | '/admin/users'
@@ -3289,6 +3330,7 @@ export interface FileRouteTypes {
     | '/api/achievements/$userId'
     | '/api/admin/analytics'
     | '/api/admin/announcements'
+    | '/api/admin/audit-log'
     | '/api/admin/blog'
     | '/api/admin/reports'
     | '/api/admin/users'
@@ -3465,6 +3507,8 @@ export interface FileRouteTypes {
     | '/u/$userid/post/$postid'
     | '/api/admin/curated-builds/image/$filename'
     | '/api/admin/curated-builds/image/proxy'
+    | '/api/admin/users/$id/ban'
+    | '/api/admin/users/$id/strike'
     | '/api/rmharks/$id/comment/$commentId'
     | '/api/slice-it/songs/$id/comments'
     | '/api/slice-it/songs/$id/like'
@@ -3592,6 +3636,7 @@ export interface FileRouteTypes {
     | '/versecraft/'
     | '/_site/admin/analytics'
     | '/_site/admin/announcements'
+    | '/_site/admin/audit'
     | '/_site/admin/reports'
     | '/_site/admin/user-builds'
     | '/_site/admin/users'
@@ -3605,6 +3650,7 @@ export interface FileRouteTypes {
     | '/api/achievements/$userId'
     | '/api/admin/analytics'
     | '/api/admin/announcements'
+    | '/api/admin/audit-log'
     | '/api/admin/blog'
     | '/api/admin/reports'
     | '/api/admin/users'
@@ -3781,6 +3827,8 @@ export interface FileRouteTypes {
     | '/_site/u/$userid/post/$postid'
     | '/api/admin/curated-builds/image/$filename'
     | '/api/admin/curated-builds/image/proxy'
+    | '/api/admin/users/$id/ban'
+    | '/api/admin/users/$id/strike'
     | '/api/rmharks/$id/comment/$commentId'
     | '/api/slice-it/songs/$id/comments'
     | '/api/slice-it/songs/$id/like'
@@ -3852,9 +3900,10 @@ export interface RootRouteChildren {
   ApiAchievementsUserIdRoute: typeof ApiAchievementsUserIdRoute
   ApiAdminAnalyticsRoute: typeof ApiAdminAnalyticsRoute
   ApiAdminAnnouncementsRoute: typeof ApiAdminAnnouncementsRouteWithChildren
+  ApiAdminAuditLogRoute: typeof ApiAdminAuditLogRoute
   ApiAdminBlogRoute: typeof ApiAdminBlogRoute
   ApiAdminReportsRoute: typeof ApiAdminReportsRouteWithChildren
-  ApiAdminUsersRoute: typeof ApiAdminUsersRoute
+  ApiAdminUsersRoute: typeof ApiAdminUsersRouteWithChildren
   ApiAiAskFeedRoute: typeof ApiAiAskFeedRoute
   ApiAiTransformRoute: typeof ApiAiTransformRoute
   ApiAltairLeaderboardRoute: typeof ApiAltairLeaderboardRoute
@@ -5554,6 +5603,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminBlogRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/audit-log': {
+      id: '/api/admin/audit-log'
+      path: '/api/admin/audit-log'
+      fullPath: '/api/admin/audit-log'
+      preLoaderRoute: typeof ApiAdminAuditLogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/announcements': {
       id: '/api/admin/announcements'
       path: '/api/admin/announcements'
@@ -5643,6 +5699,13 @@ declare module '@tanstack/react-router' {
       path: '/reports'
       fullPath: '/admin/reports'
       preLoaderRoute: typeof SiteAdminReportsRouteImport
+      parentRoute: typeof SiteAdminRouteRoute
+    }
+    '/_site/admin/audit': {
+      id: '/_site/admin/audit'
+      path: '/audit'
+      fullPath: '/admin/audit'
+      preLoaderRoute: typeof SiteAdminAuditRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
     '/_site/admin/announcements': {
@@ -6107,6 +6170,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRmharksIdCommentCommentIdRouteImport
       parentRoute: typeof ApiRmharksIdCommentRoute
     }
+    '/api/admin/users/$id/strike': {
+      id: '/api/admin/users/$id/strike'
+      path: '/$id/strike'
+      fullPath: '/api/admin/users/$id/strike'
+      preLoaderRoute: typeof ApiAdminUsersIdStrikeRouteImport
+      parentRoute: typeof ApiAdminUsersRoute
+    }
+    '/api/admin/users/$id/ban': {
+      id: '/api/admin/users/$id/ban'
+      path: '/$id/ban'
+      fullPath: '/api/admin/users/$id/ban'
+      preLoaderRoute: typeof ApiAdminUsersIdBanRouteImport
+      parentRoute: typeof ApiAdminUsersRoute
+    }
     '/api/admin/curated-builds/image/proxy': {
       id: '/api/admin/curated-builds/image/proxy'
       path: '/proxy'
@@ -6162,6 +6239,7 @@ declare module '@tanstack/react-router' {
 interface SiteAdminRouteRouteChildren {
   SiteAdminAnalyticsRoute: typeof SiteAdminAnalyticsRoute
   SiteAdminAnnouncementsRoute: typeof SiteAdminAnnouncementsRoute
+  SiteAdminAuditRoute: typeof SiteAdminAuditRoute
   SiteAdminReportsRoute: typeof SiteAdminReportsRoute
   SiteAdminUserBuildsRoute: typeof SiteAdminUserBuildsRoute
   SiteAdminUsersRoute: typeof SiteAdminUsersRoute
@@ -6174,6 +6252,7 @@ interface SiteAdminRouteRouteChildren {
 const SiteAdminRouteRouteChildren: SiteAdminRouteRouteChildren = {
   SiteAdminAnalyticsRoute: SiteAdminAnalyticsRoute,
   SiteAdminAnnouncementsRoute: SiteAdminAnnouncementsRoute,
+  SiteAdminAuditRoute: SiteAdminAuditRoute,
   SiteAdminReportsRoute: SiteAdminReportsRoute,
   SiteAdminUserBuildsRoute: SiteAdminUserBuildsRoute,
   SiteAdminUsersRoute: SiteAdminUsersRoute,
@@ -6800,6 +6879,20 @@ const ApiAdminReportsRouteWithChildren = ApiAdminReportsRoute._addFileChildren(
   ApiAdminReportsRouteChildren,
 )
 
+interface ApiAdminUsersRouteChildren {
+  ApiAdminUsersIdBanRoute: typeof ApiAdminUsersIdBanRoute
+  ApiAdminUsersIdStrikeRoute: typeof ApiAdminUsersIdStrikeRoute
+}
+
+const ApiAdminUsersRouteChildren: ApiAdminUsersRouteChildren = {
+  ApiAdminUsersIdBanRoute: ApiAdminUsersIdBanRoute,
+  ApiAdminUsersIdStrikeRoute: ApiAdminUsersIdStrikeRoute,
+}
+
+const ApiAdminUsersRouteWithChildren = ApiAdminUsersRoute._addFileChildren(
+  ApiAdminUsersRouteChildren,
+)
+
 interface ApiSliceItSongsIdRouteChildren {
   ApiSliceItSongsIdCommentsRoute: typeof ApiSliceItSongsIdCommentsRoute
   ApiSliceItSongsIdLikeRoute: typeof ApiSliceItSongsIdLikeRoute
@@ -6911,9 +7004,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAchievementsUserIdRoute: ApiAchievementsUserIdRoute,
   ApiAdminAnalyticsRoute: ApiAdminAnalyticsRoute,
   ApiAdminAnnouncementsRoute: ApiAdminAnnouncementsRouteWithChildren,
+  ApiAdminAuditLogRoute: ApiAdminAuditLogRoute,
   ApiAdminBlogRoute: ApiAdminBlogRoute,
   ApiAdminReportsRoute: ApiAdminReportsRouteWithChildren,
-  ApiAdminUsersRoute: ApiAdminUsersRoute,
+  ApiAdminUsersRoute: ApiAdminUsersRouteWithChildren,
   ApiAiAskFeedRoute: ApiAiAskFeedRoute,
   ApiAiTransformRoute: ApiAiTransformRoute,
   ApiAltairLeaderboardRoute: ApiAltairLeaderboardRoute,

@@ -22,6 +22,9 @@ model User {
   stripeCustomerId String?  // Stripe customer id (set by @better-auth/stripe on signup)
   isAdmin         Boolean   @default(false)
   isVerified      Boolean   @default(false)
+  // Moderation: temporary/permanent ban (null = not banned)
+  bannedUntil     DateTime?
+  banReason       String?   @db.VarChar(500)
   // ─── RMHark AI bot users (generated + driven by the bot-worker) ──
   isBot           Boolean   @default(false) // synthetic account created by the bot-worker
   botPersona      String?   @db.Text         // private prompt seed describing the bot's posting "theme"
@@ -110,6 +113,11 @@ model User {
 
   // Admin-authored feed announcements
   feedAnnouncements FeedAnnouncement[]
+
+  // Admin moderation: audit log entries authored, strikes received/issued
+  auditLogs      AdminAuditLog[] @relation("AuditAdmin")
+  strikes        UserStrike[]    @relation("StrikeUser")
+  strikesIssued  UserStrike[]    @relation("StrikeAdmin")
 
   // Moderation (reports filed / received, blocks & mutes)
   reportsFiled    ContentReport[] @relation("ReportReporter")
@@ -2290,4 +2298,37 @@ model RMHarkEdit {
 
   @@index([rmheetId, createdAt(sort: Desc)])
   @@map("rmheet_edit")
+}
+
+// ─── Admin Audit Log ──────────────────────────────────────────────────────
+model AdminAuditLog {
+  id         String   @id @default(cuid())
+  adminId    String
+  action     String   @db.VarChar(64) // e.g. "report.resolve", "user.ban"
+  targetType String?  @db.VarChar(32)
+  targetId   String?  @db.VarChar(64)
+  detail     String?  @db.VarChar(500)
+  createdAt  DateTime @default(now())
+
+  admin User @relation("AuditAdmin", fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt(sort: Desc)])
+  @@index([targetType, targetId])
+  @@map("admin_audit_log")
+}
+
+// ─── User Strikes ─────────────────────────────────────────────────────────
+model UserStrike {
+  id        String    @id @default(cuid())
+  userId    String
+  adminId   String
+  reason    String    @db.VarChar(500)
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user  User @relation("StrikeUser", fields: [userId], references: [id], onDelete: Cascade)
+  admin User @relation("StrikeAdmin", fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("user_strike")
 }

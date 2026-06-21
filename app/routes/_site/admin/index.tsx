@@ -94,6 +94,16 @@ function AdminDashboardPage() {
               Platform stats: users, active users, posts, comments, reports, and coins in circulation.
             </p>
           </Link>
+
+          <Link
+            to="/admin/audit"
+            className="block p-6 rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
+          >
+            <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">Audit Log</h2>
+            <p className="text-site-text-muted text-sm mt-2">
+              A record of admin actions — report decisions, bans, strikes, and announcements.
+            </p>
+          </Link>
         </div>
       </div>
     </PageLayout>

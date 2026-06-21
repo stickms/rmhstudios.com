@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { z } from 'zod';
+import { logAdminAction } from '@/lib/admin-audit.server';
 
 /**
  * Admin feed announcements.
@@ -68,6 +69,7 @@ export const Route = createFileRoute('/api/admin/announcements')({
               createdById: session.user.id,
             },
           });
+          await logAdminAction(session.user.id, 'announcement.create', { targetType: 'announcement', targetId: created.id, detail: d.title });
           return Response.json({ success: true, id: created.id }, { status: 201 });
         } catch (error) {
           console.error('Create announcement error:', error);
