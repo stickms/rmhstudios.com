@@ -33,6 +33,7 @@ const NAV: NavItem[] = [
     icon: Landmark,
     children: [
       { href: '/rmh-capital', label: 'RMH Capital', icon: Landmark },
+      { href: '/rmh-pmc', label: 'RMH PMC', icon: Shield },
       { href: '/adaptive-intelligence', label: 'Adaptive Intelligence', icon: Atom },
     ],
   },
