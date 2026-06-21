@@ -66,6 +66,10 @@ a{color:inherit;text-decoration:none}
 .brand{display:flex;align-items:center;gap:13px;flex:0 0 auto}
 .brand svg{width:30px;height:30px}
 .brand-text{font-family:var(--sans);font-size:14px;font-weight:600;letter-spacing:0.3em;text-transform:uppercase;color:var(--ivory)}
+.brand-group{display:flex;align-items:center;gap:16px;flex:0 0 auto}
+.rmh-back{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:500;letter-spacing:0.04em;color:var(--gray);padding-right:16px;border-right:1px solid var(--line-soft);transition:color .22s}
+.rmh-back:hover{color:var(--gold-bright)}
+@media(max-width:560px){.rmh-back .rmh-back-label{display:none}.rmh-back{padding-right:12px}.brand-group{gap:12px}}
 .navlinks{display:flex;align-items:center;gap:36px}
 .navlinks a{font-size:13.5px;font-weight:500;letter-spacing:0.04em;color:var(--gray);transition:color .22s;position:relative;padding:6px 0}
 .navlinks a:hover{color:var(--ivory)}

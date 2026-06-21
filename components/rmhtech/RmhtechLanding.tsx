@@ -174,10 +174,16 @@ export default function RmhtechLanding() {
       <div className="layer">
         <header>
           <div className="wrap bar">
-            <a className="mark" href="#top" aria-label="Adaptive Intelligence home">
-              <img className="glyph" src="/brand/adaptive-intelligence-mark.svg" alt="" aria-hidden="true" />
-              Adaptive Intelligence
-            </a>
+            <div className="bar-left">
+              <a className="backlink" href="/" aria-label="Back to RMH Studios">
+                <span aria-hidden="true">←</span>
+                <span className="backlink-label">RMH Studios</span>
+              </a>
+              <a className="mark" href="#top" aria-label="Adaptive Intelligence home">
+                <img className="glyph" src="/brand/adaptive-intelligence-mark.svg" alt="" aria-hidden="true" />
+                Adaptive Intelligence
+              </a>
+            </div>
             <a className="req" href={ACCESS_MAILTO}>
               Request access
             </a>
