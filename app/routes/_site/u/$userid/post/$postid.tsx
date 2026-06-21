@@ -10,6 +10,7 @@ import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { getSidebarData } from '@/lib/sidebar-data';
 import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
+import { SITE_URL } from '@/lib/seo';
 
 const fetchPostMeta = createServerFn({ method: 'GET' })
   .validator((postid: string) => postid)
@@ -19,6 +20,8 @@ const fetchPostMeta = createServerFn({ method: 'GET' })
       select: {
         content: true,
         gifUrl: true,
+        audience: true,
+        unlockPrice: true,
         user: { select: userDisplaySelect },
         poll: { select: { question: true } },
       },
@@ -44,7 +47,12 @@ const fetchPostMeta = createServerFn({ method: 'GET' })
       ? `${userName} on RMH: "${rmhark.content.length > 80 ? rmhark.content.slice(0, 80) + '...' : rmhark.content}"`
       : `${userName} on RMH`;
 
-    return { title, description, userImage: user.image };
+    // Use the dynamic OG card only for public, free posts; otherwise fall back
+    // to the author avatar so private/paid content never leaks into previews.
+    const isPublicFree = rmhark.audience === 'PUBLIC' && (rmhark.unlockPrice ?? 0) === 0;
+    const ogImage = isPublicFree ? `/api/og/post/${postid}` : user.image;
+
+    return { title, description, userImage: user.image, ogImage, postId: postid };
   });
 
 const fetchSidebarData = createServerFn({ method: 'GET' }).handler(async () => {
@@ -62,6 +70,13 @@ export const Route = createFileRoute('/_site/u/$userid/post/$postid')({
   head: ({ loaderData }) => {
     const meta = loaderData?.meta;
     if (!meta) return { meta: [{ title: 'Post Not Found | RMH' }] };
+    const rawImage = meta.ogImage ?? meta.userImage;
+    const ogImage = rawImage
+      ? rawImage.startsWith('http')
+        ? rawImage
+        : `${SITE_URL}${rawImage}`
+      : undefined;
+    const isCard = !!meta.ogImage && meta.ogImage.startsWith('/api/og/');
     return {
       meta: [
         { title: meta.title },
@@ -70,11 +85,11 @@ export const Route = createFileRoute('/_site/u/$userid/post/$postid')({
         { property: 'og:title', content: meta.title },
         { property: 'og:description', content: meta.description },
         { property: 'og:site_name', content: 'RMH' },
-        ...(meta.userImage ? [{ property: 'og:image', content: meta.userImage }] : []),
-        { name: 'twitter:card', content: 'summary' },
+        ...(ogImage ? [{ property: 'og:image', content: ogImage }] : []),
+        { name: 'twitter:card', content: isCard ? 'summary_large_image' : 'summary' },
         { name: 'twitter:title', content: meta.title },
         { name: 'twitter:description', content: meta.description },
-        ...(meta.userImage ? [{ name: 'twitter:image', content: meta.userImage }] : []),
+        ...(ogImage ? [{ name: 'twitter:image', content: ogImage }] : []),
       ],
     };
   },

@@ -166,6 +166,7 @@ import { Route as StrategiesProfileSettingsRouteImport } from './routes/strategi
 import { Route as StrategiesProfileReputationRouteImport } from './routes/strategies/profile/reputation'
 import { Route as SecretJobsApplicationsRouteImport } from './routes/secret/jobs/applications'
 import { Route as SecretJobsIdRouteImport } from './routes/secret/jobs/$id'
+import { Route as EmbedPostIdRouteImport } from './routes/embed.post.$id'
 import { Route as ApiVoidBreakerScoreRouteImport } from './routes/api/void-breaker/score'
 import { Route as ApiVoidBreakerLeaderboardRouteImport } from './routes/api/void-breaker/leaderboard'
 import { Route as ApiVibeStreamRouteImport } from './routes/api/vibe/stream'
@@ -312,6 +313,7 @@ import { Route as ApiProfileIdLikesRouteImport } from './routes/api/profile/$id/
 import { Route as ApiProfileIdFollowingRouteImport } from './routes/api/profile/$id/following'
 import { Route as ApiProfileIdFollowersRouteImport } from './routes/api/profile/$id/followers'
 import { Route as ApiProfileIdFollowRouteImport } from './routes/api/profile/$id/follow'
+import { Route as ApiOgPostIdRouteImport } from './routes/api/og/post/$id'
 import { Route as ApiMessagesConversationIdTypingRouteImport } from './routes/api/messages/$conversationId/typing'
 import { Route as ApiMessagesConversationIdReadRouteImport } from './routes/api/messages/$conversationId/read'
 import { Route as ApiGamesSynapseStormScoreRouteImport } from './routes/api/games/synapse-storm/score'
@@ -1147,6 +1149,11 @@ const SecretJobsIdRoute = SecretJobsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => SecretJobsRoute,
 } as any)
+const EmbedPostIdRoute = EmbedPostIdRouteImport.update({
+  id: '/embed/post/$id',
+  path: '/embed/post/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiVoidBreakerScoreRoute = ApiVoidBreakerScoreRouteImport.update({
   id: '/api/void-breaker/score',
   path: '/api/void-breaker/score',
@@ -1892,6 +1899,11 @@ const ApiProfileIdFollowRoute = ApiProfileIdFollowRouteImport.update({
   path: '/follow',
   getParentRoute: () => ApiProfileIdRoute,
 } as any)
+const ApiOgPostIdRoute = ApiOgPostIdRouteImport.update({
+  id: '/api/og/post/$id',
+  path: '/api/og/post/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiMessagesConversationIdTypingRoute =
   ApiMessagesConversationIdTypingRouteImport.update({
     id: '/typing',
@@ -2365,6 +2377,7 @@ export interface FileRoutesByFullPath {
   '/api/vibe/stream': typeof ApiVibeStreamRoute
   '/api/void-breaker/leaderboard': typeof ApiVoidBreakerLeaderboardRoute
   '/api/void-breaker/score': typeof ApiVoidBreakerScoreRoute
+  '/embed/post/$id': typeof EmbedPostIdRoute
   '/secret/jobs/$id': typeof SecretJobsIdRoute
   '/secret/jobs/applications': typeof SecretJobsApplicationsRoute
   '/strategies/profile/reputation': typeof StrategiesProfileReputationRoute
@@ -2425,6 +2438,7 @@ export interface FileRoutesByFullPath {
   '/api/games/synapse-storm/score': typeof ApiGamesSynapseStormScoreRoute
   '/api/messages/$conversationId/read': typeof ApiMessagesConversationIdReadRoute
   '/api/messages/$conversationId/typing': typeof ApiMessagesConversationIdTypingRoute
+  '/api/og/post/$id': typeof ApiOgPostIdRoute
   '/api/profile/$id/follow': typeof ApiProfileIdFollowRoute
   '/api/profile/$id/followers': typeof ApiProfileIdFollowersRoute
   '/api/profile/$id/following': typeof ApiProfileIdFollowingRoute
@@ -2689,6 +2703,7 @@ export interface FileRoutesByTo {
   '/api/vibe/stream': typeof ApiVibeStreamRoute
   '/api/void-breaker/leaderboard': typeof ApiVoidBreakerLeaderboardRoute
   '/api/void-breaker/score': typeof ApiVoidBreakerScoreRoute
+  '/embed/post/$id': typeof EmbedPostIdRoute
   '/secret/jobs/$id': typeof SecretJobsIdRoute
   '/secret/jobs/applications': typeof SecretJobsApplicationsRoute
   '/strategies/profile/reputation': typeof StrategiesProfileReputationRoute
@@ -2749,6 +2764,7 @@ export interface FileRoutesByTo {
   '/api/games/synapse-storm/score': typeof ApiGamesSynapseStormScoreRoute
   '/api/messages/$conversationId/read': typeof ApiMessagesConversationIdReadRoute
   '/api/messages/$conversationId/typing': typeof ApiMessagesConversationIdTypingRoute
+  '/api/og/post/$id': typeof ApiOgPostIdRoute
   '/api/profile/$id/follow': typeof ApiProfileIdFollowRoute
   '/api/profile/$id/followers': typeof ApiProfileIdFollowersRoute
   '/api/profile/$id/following': typeof ApiProfileIdFollowingRoute
@@ -3038,6 +3054,7 @@ export interface FileRoutesById {
   '/api/vibe/stream': typeof ApiVibeStreamRoute
   '/api/void-breaker/leaderboard': typeof ApiVoidBreakerLeaderboardRoute
   '/api/void-breaker/score': typeof ApiVoidBreakerScoreRoute
+  '/embed/post/$id': typeof EmbedPostIdRoute
   '/secret/jobs/$id': typeof SecretJobsIdRoute
   '/secret/jobs/applications': typeof SecretJobsApplicationsRoute
   '/strategies/profile/reputation': typeof StrategiesProfileReputationRoute
@@ -3098,6 +3115,7 @@ export interface FileRoutesById {
   '/api/games/synapse-storm/score': typeof ApiGamesSynapseStormScoreRoute
   '/api/messages/$conversationId/read': typeof ApiMessagesConversationIdReadRoute
   '/api/messages/$conversationId/typing': typeof ApiMessagesConversationIdTypingRoute
+  '/api/og/post/$id': typeof ApiOgPostIdRoute
   '/api/profile/$id/follow': typeof ApiProfileIdFollowRoute
   '/api/profile/$id/followers': typeof ApiProfileIdFollowersRoute
   '/api/profile/$id/following': typeof ApiProfileIdFollowingRoute
@@ -3387,6 +3405,7 @@ export interface FileRouteTypes {
     | '/api/vibe/stream'
     | '/api/void-breaker/leaderboard'
     | '/api/void-breaker/score'
+    | '/embed/post/$id'
     | '/secret/jobs/$id'
     | '/secret/jobs/applications'
     | '/strategies/profile/reputation'
@@ -3447,6 +3466,7 @@ export interface FileRouteTypes {
     | '/api/games/synapse-storm/score'
     | '/api/messages/$conversationId/read'
     | '/api/messages/$conversationId/typing'
+    | '/api/og/post/$id'
     | '/api/profile/$id/follow'
     | '/api/profile/$id/followers'
     | '/api/profile/$id/following'
@@ -3711,6 +3731,7 @@ export interface FileRouteTypes {
     | '/api/vibe/stream'
     | '/api/void-breaker/leaderboard'
     | '/api/void-breaker/score'
+    | '/embed/post/$id'
     | '/secret/jobs/$id'
     | '/secret/jobs/applications'
     | '/strategies/profile/reputation'
@@ -3771,6 +3792,7 @@ export interface FileRouteTypes {
     | '/api/games/synapse-storm/score'
     | '/api/messages/$conversationId/read'
     | '/api/messages/$conversationId/typing'
+    | '/api/og/post/$id'
     | '/api/profile/$id/follow'
     | '/api/profile/$id/followers'
     | '/api/profile/$id/following'
@@ -4059,6 +4081,7 @@ export interface FileRouteTypes {
     | '/api/vibe/stream'
     | '/api/void-breaker/leaderboard'
     | '/api/void-breaker/score'
+    | '/embed/post/$id'
     | '/secret/jobs/$id'
     | '/secret/jobs/applications'
     | '/strategies/profile/reputation'
@@ -4119,6 +4142,7 @@ export interface FileRouteTypes {
     | '/api/games/synapse-storm/score'
     | '/api/messages/$conversationId/read'
     | '/api/messages/$conversationId/typing'
+    | '/api/og/post/$id'
     | '/api/profile/$id/follow'
     | '/api/profile/$id/followers'
     | '/api/profile/$id/following'
@@ -4313,6 +4337,7 @@ export interface RootRouteChildren {
   ApiVibeStreamRoute: typeof ApiVibeStreamRoute
   ApiVoidBreakerLeaderboardRoute: typeof ApiVoidBreakerLeaderboardRoute
   ApiVoidBreakerScoreRoute: typeof ApiVoidBreakerScoreRoute
+  EmbedPostIdRoute: typeof EmbedPostIdRoute
   ApiBattlepassIndexRoute: typeof ApiBattlepassIndexRoute
   ApiCoinsIndexRoute: typeof ApiCoinsIndexRoute
   ApiCommunitiesIndexRoute: typeof ApiCommunitiesIndexRoute
@@ -4341,6 +4366,7 @@ export interface RootRouteChildren {
   ApiGamesSynapseStormLeaderboardRoute: typeof ApiGamesSynapseStormLeaderboardRoute
   ApiGamesSynapseStormSaveRoute: typeof ApiGamesSynapseStormSaveRoute
   ApiGamesSynapseStormScoreRoute: typeof ApiGamesSynapseStormScoreRoute
+  ApiOgPostIdRoute: typeof ApiOgPostIdRoute
   ApiQuestsIdClaimRoute: typeof ApiQuestsIdClaimRoute
   ApiRmhcodeAuthGenerateRoute: typeof ApiRmhcodeAuthGenerateRoute
   ApiRmhcodeAuthInitiateRoute: typeof ApiRmhcodeAuthInitiateRoute
@@ -5455,6 +5481,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SecretJobsIdRouteImport
       parentRoute: typeof SecretJobsRoute
     }
+    '/embed/post/$id': {
+      id: '/embed/post/$id'
+      path: '/embed/post/$id'
+      fullPath: '/embed/post/$id'
+      preLoaderRoute: typeof EmbedPostIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/void-breaker/score': {
       id: '/api/void-breaker/score'
       path: '/api/void-breaker/score'
@@ -6476,6 +6509,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/profile/$id/follow'
       preLoaderRoute: typeof ApiProfileIdFollowRouteImport
       parentRoute: typeof ApiProfileIdRoute
+    }
+    '/api/og/post/$id': {
+      id: '/api/og/post/$id'
+      path: '/api/og/post/$id'
+      fullPath: '/api/og/post/$id'
+      preLoaderRoute: typeof ApiOgPostIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/messages/$conversationId/typing': {
       id: '/api/messages/$conversationId/typing'
@@ -7675,6 +7715,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiVibeStreamRoute: ApiVibeStreamRoute,
   ApiVoidBreakerLeaderboardRoute: ApiVoidBreakerLeaderboardRoute,
   ApiVoidBreakerScoreRoute: ApiVoidBreakerScoreRoute,
+  EmbedPostIdRoute: EmbedPostIdRoute,
   ApiBattlepassIndexRoute: ApiBattlepassIndexRoute,
   ApiCoinsIndexRoute: ApiCoinsIndexRoute,
   ApiCommunitiesIndexRoute: ApiCommunitiesIndexRoute,
@@ -7703,6 +7744,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGamesSynapseStormLeaderboardRoute: ApiGamesSynapseStormLeaderboardRoute,
   ApiGamesSynapseStormSaveRoute: ApiGamesSynapseStormSaveRoute,
   ApiGamesSynapseStormScoreRoute: ApiGamesSynapseStormScoreRoute,
+  ApiOgPostIdRoute: ApiOgPostIdRoute,
   ApiQuestsIdClaimRoute: ApiQuestsIdClaimRoute,
   ApiRmhcodeAuthGenerateRoute: ApiRmhcodeAuthGenerateRoute,
   ApiRmhcodeAuthInitiateRoute: ApiRmhcodeAuthInitiateRoute,

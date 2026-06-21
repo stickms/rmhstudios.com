@@ -540,6 +540,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
         open={shareModalOpen}
         onClose={() => setShareModalOpen(false)}
         url={shareUrl}
+        embedId={actualId}
         text={`Check out what ${item.user?.name || item.user?.handle || 'someone'} RMHark'd on RMH Studios!`}
       />
 
