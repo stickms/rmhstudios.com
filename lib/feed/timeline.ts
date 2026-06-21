@@ -20,6 +20,7 @@ import { userDisplaySelect, resolveUser } from "../user-display";
 import { getAllPosts } from "../blog";
 import { decodeCursor, encodeCursor, keysetWhere } from "./cursor";
 import { rankCandidates } from "./ranking";
+import { getHiddenAuthorIds } from "../moderation.server";
 
 export type FeedSurface = "following" | "foryou";
 
@@ -283,11 +284,18 @@ async function getFollowingTimeline(
     return { items: [], nextCursor: null, hasMore: false, empty: true };
   }
 
-  const followRecords = await prisma.follow.findMany({
-    where: { followerId: userId },
-    select: { followingId: true },
-  });
-  const followingIds = followRecords.map((f) => f.followingId);
+  const [followRecords, hiddenIds] = await Promise.all([
+    prisma.follow.findMany({
+      where: { followerId: userId },
+      select: { followingId: true },
+    }),
+    getHiddenAuthorIds(userId),
+  ]);
+  // Exclude muted/blocked authors even if still followed.
+  const hiddenSet = new Set(hiddenIds);
+  const followingIds = followRecords
+    .map((f) => f.followingId)
+    .filter((id) => !hiddenSet.has(id));
 
   if (followingIds.length === 0) {
     return { items: [], nextCursor: null, hasMore: false, empty: true };
@@ -315,7 +323,11 @@ async function getFollowingTimeline(
     prisma.rMHarkRepost.findMany({
       where: {
         userId: { in: followingIds },
-        rmhark: { deletedAt: null, ...contentWhere },
+        rmhark: {
+          deletedAt: null,
+          ...contentWhere,
+          ...(hiddenIds.length ? { userId: { notIn: hiddenIds } } : {}),
+        },
         ...keyset,
       },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
@@ -360,19 +372,27 @@ async function getForYouTimeline(
     : {};
   const include = rmharkInclude(userId);
 
+  // Hide blocked/muted authors (and authors who blocked the viewer).
+  const hiddenIds = await getHiddenAuthorIds(userId);
+  const authorWhere = hiddenIds.length ? { userId: { notIn: hiddenIds } } : {};
+
   const shouldFetchRmharks = filter === "all" || filter === "rmhark" || !!search;
   let dbItems: FeedItem[] = [];
 
   if (shouldFetchRmharks) {
     const [rmharks, repostRecords] = await Promise.all([
       prisma.rMHark.findMany({
-        where: { deletedAt: null, ...contentWhere, ...keyset },
+        where: { deletedAt: null, ...contentWhere, ...authorWhere, ...keyset },
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         take: limit,
         include,
       }),
       prisma.rMHarkRepost.findMany({
-        where: { rmhark: { deletedAt: null, ...contentWhere }, ...keyset },
+        where: {
+          rmhark: { deletedAt: null, ...contentWhere, ...authorWhere },
+          ...(hiddenIds.length ? { userId: { notIn: hiddenIds } } : {}),
+          ...keyset,
+        },
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         take: limit,
         include: {

@@ -4,7 +4,9 @@ import type { FeedItem, FeedItemUser } from '@/lib/feed-types';
 import { RMHarkActions } from './RMHarkActions';
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { Repeat2, MoreHorizontal, Heart, Repeat, Trash2, Share2, BadgeCheck, ShieldCheck } from 'lucide-react';
+import { Repeat2, MoreHorizontal, Heart, Repeat, Trash2, Share2, BadgeCheck, ShieldCheck, Flag, Ban, VolumeX } from 'lucide-react';
+import { toast } from 'sonner';
+import { ReportDialog } from '@/components/moderation/ReportDialog';
 import { Link } from '@tanstack/react-router';
 import { RMHarkContent, extractFirstUrl } from './RMHarkContent';
 import { PollDisplay } from './PollDisplay';
@@ -59,7 +61,52 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [engagementModal, setEngagementModal] = useState<'likes' | 'reposts' | null>(null);
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const targetUserId = item.user?.id;
+  const handleBlock = async () => {
+    setMenuOpen(false);
+    if (!targetUserId) return;
+    try {
+      const res = await fetch('/api/moderation/block', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ targetUserId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        toast.success(data.blocked ? 'User blocked' : 'User unblocked');
+        if (data.blocked) removeItem(item.id);
+      } else {
+        toast.error(data.error || 'Could not block user');
+      }
+    } catch {
+      toast.error('Could not block user');
+    }
+  };
+  const handleMute = async () => {
+    setMenuOpen(false);
+    if (!targetUserId) return;
+    try {
+      const res = await fetch('/api/moderation/mute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ targetUserId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        toast.success(data.muted ? 'User muted' : 'User unmuted');
+        if (data.muted) removeItem(item.id);
+      } else {
+        toast.error(data.error || 'Could not mute user');
+      }
+    } catch {
+      toast.error('Could not mute user');
+    }
+  };
 
   const linkPreviewUrl = useMemo(() => {
     if (item.poll || item.gifUrl || (item.imageUrls && item.imageUrls.length > 0) || !item.content) return null;
@@ -166,6 +213,31 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
                   <Trash2 className="w-4 h-4" />
                   Delete
                 </button>
+              )}
+              {!isAuthor && session && (
+                <>
+                  <button
+                    onClick={() => { setMenuOpen(false); setReportOpen(true); }}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+                  >
+                    <Flag className="w-4 h-4 text-site-text-dim" />
+                    Report
+                  </button>
+                  <button
+                    onClick={handleMute}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+                  >
+                    <VolumeX className="w-4 h-4 text-site-text-dim" />
+                    Mute
+                  </button>
+                  <button
+                    onClick={handleBlock}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-danger hover:bg-site-danger/10 transition-colors"
+                  >
+                    <Ban className="w-4 h-4" />
+                    Block
+                  </button>
+                </>
               )}
             </div>
           )}
@@ -307,6 +379,13 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
         onClose={() => setShareModalOpen(false)}
         url={shareUrl}
         text={`Check out what ${item.user?.name || item.user?.handle || 'someone'} RMHark'd on RMH Studios!`}
+      />
+
+      <ReportDialog
+        open={reportOpen}
+        onOpenChange={setReportOpen}
+        entityType="rmhark"
+        entityId={actualId}
       />
     </div>
   );

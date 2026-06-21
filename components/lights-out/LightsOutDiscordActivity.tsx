@@ -118,6 +118,9 @@ function notifyEmbed(
             guildId: discord.guildId ?? null,
             action,
             dateKey,
+            // Server verifies this token to derive the real Discord identity —
+            // the client-supplied user fields below are display-only hints.
+            accessToken: discord.accessToken,
             user: {
                 id: discord.user.id,
                 username: discord.user.global_name || discord.user.username,

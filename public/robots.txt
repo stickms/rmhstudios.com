@@ -1,0 +1,12 @@
+# rmhstudios.com
+User-agent: *
+Allow: /
+
+# Don't crawl server API routes, auth flows, or per-user account areas.
+Disallow: /api/
+Disallow: /login
+Disallow: /wallet
+Disallow: /settings
+Disallow: /rmhcode/auth
+
+Sitemap: https://rmhstudios.com/sitemap.xml

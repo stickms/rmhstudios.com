@@ -45,6 +45,33 @@ interface ParticipantRow {
     ratingLabel: string | null;
 }
 
+// Verify a Discord access token → real Discord identity. Cached briefly to
+// avoid hammering Discord's API on repeated embed pings within a session.
+const tokenVerifyCache = new Map<string, { id: string; username: string | null; at: number }>();
+const TOKEN_VERIFY_TTL_MS = 5 * 60 * 1000;
+
+async function verifyDiscordIdentity(accessToken: string): Promise<{ id: string; username: string | null } | null> {
+    const cached = tokenVerifyCache.get(accessToken);
+    if (cached && Date.now() - cached.at < TOKEN_VERIFY_TTL_MS) {
+        return { id: cached.id, username: cached.username };
+    }
+    try {
+        const res = await fetch('https://discord.com/api/v10/users/@me', {
+            headers: { Authorization: `Bearer ${accessToken}` },
+            signal: AbortSignal.timeout(5000),
+        });
+        if (!res.ok) return null;
+        const u = await res.json();
+        if (!u?.id) return null;
+        const identity = { id: u.id as string, username: (u.global_name ?? u.username ?? null) as string | null };
+        if (tokenVerifyCache.size > 1000) tokenVerifyCache.clear();
+        tokenVerifyCache.set(accessToken, { ...identity, at: Date.now() });
+        return identity;
+    } catch {
+        return null;
+    }
+}
+
 const SITE_URL = stripTrailingSlash(process.env.SITE_URL ?? process.env.VITE_BETTER_AUTH_URL ?? 'https://rmhstudios.com');
 
 function buildEmbed(dateKey: string, guildId: string, participants: ParticipantRow[]): object {
@@ -349,7 +376,7 @@ export const Route = createFileRoute('/api/discord/embed')({
 
                 try {
                     const body = await request.json();
-                    const { action, dateKey, user, result } = body;
+                    const { action, dateKey, user, result, accessToken } = body;
                     // Strip any stray quote characters from snowflake IDs (some SDK versions wrap them)
                     const channelId = typeof body.channelId === 'string' ? body.channelId.replace(/"/g, '') : body.channelId;
                     const guildId = typeof body.guildId === 'string' ? body.guildId.replace(/"/g, '') : body.guildId;
@@ -360,6 +387,23 @@ export const Route = createFileRoute('/api/discord/embed')({
                     if (!dateKey || !user?.id) {
                         console.log('[embed] Skipped: missing dateKey or user');
                         return Response.json({ error: 'Missing dateKey or user' }, { status: 400 });
+                    }
+
+                    // Verify the caller's Discord identity from their access token
+                    // rather than trusting the client-supplied `user` object, which
+                    // could otherwise forge participation records for any account.
+                    // (The race_completed path below is display-only and not gated.)
+                    if (action === 'started' || action === 'completed') {
+                        if (!accessToken || typeof accessToken !== 'string') {
+                            return Response.json({ error: 'Missing access token' }, { status: 401 });
+                        }
+                        const verified = await verifyDiscordIdentity(accessToken);
+                        if (!verified) {
+                            return Response.json({ error: 'Invalid Discord token' }, { status: 401 });
+                        }
+                        // Override any client-claimed identity with the verified one.
+                        user.id = verified.id;
+                        if (verified.username) user.username = verified.username;
                     }
 
                     // No guild context (DM or user-app without guild) — nothing to track or post

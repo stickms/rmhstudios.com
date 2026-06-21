@@ -5,6 +5,7 @@ import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { createCommentSchema } from "@/lib/rmhark-schema";
 import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 import { feedEventBus } from "@/lib/feed-sse";
+import { createNotification } from "@/lib/notifications.server";
 
 export const Route = createFileRoute('/api/rmharks/$id/comment')({
   server: {
@@ -152,6 +153,53 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
       payload: { id, commentCount },
       timestamp: new Date().toISOString(),
     });
+
+    // Notify the post owner (COMMENT) and, for a threaded reply, the parent
+    // comment's author (REPLY). Best-effort — never blocks the response.
+    try {
+      const post = await prisma.rMHark.findUnique({
+        where: { id },
+        select: { userId: true, user: { select: { handle: true } } },
+      });
+      const postLink = post?.user?.handle ? `/u/${post.user.handle}/post/${id}` : undefined;
+      const preview = parsed.data.content.trim();
+
+      let parentAuthorId: string | null = null;
+      if (parsed.data.parentId) {
+        const parent = await prisma.rMHarkComment.findUnique({
+          where: { id: parsed.data.parentId },
+          select: { userId: true },
+        });
+        if (parent) {
+          parentAuthorId = parent.userId;
+          await createNotification({
+            userId: parent.userId,
+            actorId: session.user.id,
+            type: "REPLY",
+            entityType: "comment",
+            entityId: comment.id,
+            preview,
+            link: postLink,
+          });
+        }
+      }
+
+      // Notify the post owner — unless they already got the REPLY notification
+      // above (i.e. they authored the parent comment).
+      if (post && post.userId !== parentAuthorId) {
+        await createNotification({
+          userId: post.userId,
+          actorId: session.user.id,
+          type: "COMMENT",
+          entityType: "rmhark",
+          entityId: id,
+          preview,
+          link: postLink,
+        });
+      }
+    } catch (e) {
+      console.error("comment notification error:", e);
+    }
 
     return Response.json({
       ...comment,

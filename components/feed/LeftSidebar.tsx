@@ -7,14 +7,16 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import {
   Home, Package, BookOpen, Library, LayoutGrid, Atom,
-  LogOut, PenSquare, User, MessageCircle, ShieldCheck, MoreHorizontal, Wallet, Sparkles, Landmark
+  LogOut, PenSquare, User, MessageCircle, ShieldCheck, MoreHorizontal, Wallet, Sparkles, Bell, Search, Landmark
 } from 'lucide-react';
 import { ComposeModal } from './ComposeModal';
 import { Button } from '@/components/ui/button';
 import { useUnreadCount } from '@/lib/useUnreadCount';
+import { useNotificationCount } from '@/lib/useNotificationCount';
 
 const navLinks = [
   { href: '/', label: 'Home', icon: Home },
+  { href: '/search', label: 'Search', icon: Search },
   { href: '/v', label: 'Pages', icon: LayoutGrid },
   { href: '/builds', label: 'Builds', icon: Package },
   { href: '/library', label: 'Library', icon: Library },
@@ -44,6 +46,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   const { data: session, isPending } = useSession();
   const { resolved: resolvedUser } = useResolvedUser();
   const unreadCount = useUnreadCount(!!session);
+  const { count: notificationCount } = useNotificationCount(!!session);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -120,6 +123,28 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
           >
             <User className="w-5 h-5 shrink-0" />
             <span className={labelClass}>Profile</span>
+          </Link>
+        )}
+        {/* Notifications link (shown when logged in) */}
+        {session && (
+          <Link
+            to="/notifications"
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${itemJustifyClass} ${
+              pathname?.startsWith('/notifications')
+                ? 'text-site-accent bg-site-accent-dim'
+                : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
+            }`}
+            title="Notifications"
+          >
+            <div className="relative shrink-0">
+              <Bell className="w-5 h-5" />
+              {notificationCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold px-1 leading-none">
+                  {notificationCount > 99 ? '99+' : notificationCount}
+                </span>
+              )}
+            </div>
+            <span className={labelClass}>Notifications</span>
           </Link>
         )}
         {/* Messages link (shown when logged in) */}

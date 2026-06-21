@@ -2,16 +2,18 @@
 
 import { useState } from 'react';
 import { Link, useLocation } from '@tanstack/react-router';
-import { Home, Package, MessageCircle, User, PenSquare } from 'lucide-react';
+import { Home, Package, MessageCircle, User, PenSquare, Bell } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { ComposeModal } from './ComposeModal';
 import { useUnreadCount } from '@/lib/useUnreadCount';
+import { useNotificationCount } from '@/lib/useNotificationCount';
 
 export function MobileNav() {
   const { pathname } = useLocation();
   const { data: session } = useSession();
   const [composeOpen, setComposeOpen] = useState(false);
   const unreadCount = useUnreadCount(!!session);
+  const { count: notificationCount } = useNotificationCount(!!session);
 
   const profileHref = session?.user?.id
     ? `/u/${(session.user as any).handle || session.user.id}`
@@ -20,6 +22,7 @@ export function MobileNav() {
   const isHome = pathname === '/';
   const isBuilds = pathname?.startsWith('/builds') || pathname?.startsWith('/user-builds');
   const isMessages = pathname?.startsWith('/messages');
+  const isNotifications = pathname?.startsWith('/notifications');
   const isProfile = pathname?.startsWith('/profile') || pathname?.startsWith('/u/');
 
   const tabClass = (active: boolean) =>
@@ -49,6 +52,17 @@ export function MobileNav() {
 
           <Link to="/builds" className={tabClass(isBuilds)} aria-label="Builds">
             <Package className="w-6 h-6" />
+          </Link>
+
+          <Link to="/notifications" className={tabClass(isNotifications)} aria-label="Notifications">
+            <div className="relative">
+              <Bell className="w-6 h-6" />
+              {notificationCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold px-1 leading-none">
+                  {notificationCount > 99 ? '99+' : notificationCount}
+                </span>
+              )}
+            </div>
           </Link>
 
           <Link to="/messages" className={tabClass(isMessages)} aria-label="Messages">

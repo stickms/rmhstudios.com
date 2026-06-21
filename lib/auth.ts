@@ -20,6 +20,22 @@ export const auth = betterAuth({
     advanced: {
         useSecureCookies: process.env.BETTER_AUTH_URL?.startsWith("https"),
     },
+    // Throttle auth endpoints to blunt credential stuffing / account enumeration.
+    // Defaults cover all auth routes; the stricter custom rules target the
+    // sign-in/sign-up/forgot-password paths. Storage is in-memory per process;
+    // set BETTER_AUTH_RATE_LIMIT_DB=1 to coordinate across processes via the DB.
+    rateLimit: {
+        enabled: true,
+        window: 60, // seconds
+        max: 100, // default per-window cap across auth routes
+        storage: process.env.BETTER_AUTH_RATE_LIMIT_DB === "1" ? "database" : "memory",
+        customRules: {
+            "/sign-in/email": { window: 60, max: 5 },
+            "/sign-up/email": { window: 60, max: 5 },
+            "/forget-password": { window: 60, max: 3 },
+            "/reset-password": { window: 60, max: 5 },
+        },
+    },
     socialProviders: {
         discord: {
             clientId: process.env.DISCORD_CLIENT_ID!,

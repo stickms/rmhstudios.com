@@ -64,6 +64,16 @@ function AdminDashboardPage() {
               Write new developer logs, or edit and delete existing blog posts.
             </p>
           </Link>
+
+          <Link
+            to="/admin/reports"
+            className="block p-6 rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
+          >
+            <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">Moderation Queue</h2>
+            <p className="text-site-text-muted text-sm mt-2">
+              Review user reports of posts, comments, profiles, and builds. Resolve, dismiss, or take content down.
+            </p>
+          </Link>
         </div>
       </div>
     </PageLayout>
