@@ -101,6 +101,7 @@ import { Route as DailyChainlinkRouteImport } from './routes/daily/chainlink'
 import { Route as DailyAlibiRouteImport } from './routes/daily/alibi'
 import { Route as BuildsSlugRouteImport } from './routes/builds_.$slug'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
+import { Route as ApiWrappedRouteImport } from './routes/api/wrapped'
 import { Route as ApiWeatherWebhookRouteImport } from './routes/api/weather-webhook'
 import { Route as ApiWeatherDataRouteImport } from './routes/api/weather-data'
 import { Route as ApiUserBuildsRouteImport } from './routes/api/user-builds'
@@ -118,6 +119,7 @@ import { Route as ApiExploreRouteImport } from './routes/api/explore'
 import { Route as ApiBookmarksRouteImport } from './routes/api/bookmarks'
 import { Route as ApiAnnouncementsRouteImport } from './routes/api/announcements'
 import { Route as AltairMultiplayerRouteImport } from './routes/altair/multiplayer'
+import { Route as SiteWrappedRouteImport } from './routes/_site/wrapped'
 import { Route as SiteWalletRouteImport } from './routes/_site/wallet'
 import { Route as SiteShopRouteImport } from './routes/_site/shop'
 import { Route as SiteSearchRouteImport } from './routes/_site/search'
@@ -819,6 +821,11 @@ const BlogSlugRoute = BlogSlugRouteImport.update({
   path: '/blog/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiWrappedRoute = ApiWrappedRouteImport.update({
+  id: '/api/wrapped',
+  path: '/api/wrapped',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiWeatherWebhookRoute = ApiWeatherWebhookRouteImport.update({
   id: '/api/weather-webhook',
   path: '/api/weather-webhook',
@@ -903,6 +910,11 @@ const AltairMultiplayerRoute = AltairMultiplayerRouteImport.update({
   id: '/multiplayer',
   path: '/multiplayer',
   getParentRoute: () => AltairRoute,
+} as any)
+const SiteWrappedRoute = SiteWrappedRouteImport.update({
+  id: '/wrapped',
+  path: '/wrapped',
+  getParentRoute: () => SiteRoute,
 } as any)
 const SiteWalletRoute = SiteWalletRouteImport.update({
   id: '/wallet',
@@ -2205,6 +2217,7 @@ export interface FileRoutesByFullPath {
   '/search': typeof SiteSearchRoute
   '/shop': typeof SiteShopRoute
   '/wallet': typeof SiteWalletRoute
+  '/wrapped': typeof SiteWrappedRoute
   '/altair/multiplayer': typeof AltairMultiplayerRouteWithChildren
   '/api/announcements': typeof ApiAnnouncementsRoute
   '/api/bookmarks': typeof ApiBookmarksRoute
@@ -2222,6 +2235,7 @@ export interface FileRoutesByFullPath {
   '/api/user-builds': typeof ApiUserBuildsRouteWithChildren
   '/api/weather-data': typeof ApiWeatherDataRoute
   '/api/weather-webhook': typeof ApiWeatherWebhookRoute
+  '/api/wrapped': typeof ApiWrappedRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/builds/$slug': typeof BuildsSlugRoute
   '/daily/alibi': typeof DailyAlibiRoute
@@ -2537,6 +2551,7 @@ export interface FileRoutesByTo {
   '/search': typeof SiteSearchRoute
   '/shop': typeof SiteShopRoute
   '/wallet': typeof SiteWalletRoute
+  '/wrapped': typeof SiteWrappedRoute
   '/api/announcements': typeof ApiAnnouncementsRoute
   '/api/bookmarks': typeof ApiBookmarksRoute
   '/api/explore': typeof ApiExploreRoute
@@ -2553,6 +2568,7 @@ export interface FileRoutesByTo {
   '/api/user-builds': typeof ApiUserBuildsRouteWithChildren
   '/api/weather-data': typeof ApiWeatherDataRoute
   '/api/weather-webhook': typeof ApiWeatherWebhookRoute
+  '/api/wrapped': typeof ApiWrappedRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/builds/$slug': typeof BuildsSlugRoute
   '/daily/alibi': typeof DailyAlibiRoute
@@ -2885,6 +2901,7 @@ export interface FileRoutesById {
   '/_site/search': typeof SiteSearchRoute
   '/_site/shop': typeof SiteShopRoute
   '/_site/wallet': typeof SiteWalletRoute
+  '/_site/wrapped': typeof SiteWrappedRoute
   '/altair/multiplayer': typeof AltairMultiplayerRouteWithChildren
   '/api/announcements': typeof ApiAnnouncementsRoute
   '/api/bookmarks': typeof ApiBookmarksRoute
@@ -2902,6 +2919,7 @@ export interface FileRoutesById {
   '/api/user-builds': typeof ApiUserBuildsRouteWithChildren
   '/api/weather-data': typeof ApiWeatherDataRoute
   '/api/weather-webhook': typeof ApiWeatherWebhookRoute
+  '/api/wrapped': typeof ApiWrappedRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/builds_/$slug': typeof BuildsSlugRoute
   '/daily/alibi': typeof DailyAlibiRoute
@@ -3239,6 +3257,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/shop'
     | '/wallet'
+    | '/wrapped'
     | '/altair/multiplayer'
     | '/api/announcements'
     | '/api/bookmarks'
@@ -3256,6 +3275,7 @@ export interface FileRouteTypes {
     | '/api/user-builds'
     | '/api/weather-data'
     | '/api/weather-webhook'
+    | '/api/wrapped'
     | '/blog/$slug'
     | '/builds/$slug'
     | '/daily/alibi'
@@ -3571,6 +3591,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/shop'
     | '/wallet'
+    | '/wrapped'
     | '/api/announcements'
     | '/api/bookmarks'
     | '/api/explore'
@@ -3587,6 +3608,7 @@ export interface FileRouteTypes {
     | '/api/user-builds'
     | '/api/weather-data'
     | '/api/weather-webhook'
+    | '/api/wrapped'
     | '/blog/$slug'
     | '/builds/$slug'
     | '/daily/alibi'
@@ -3918,6 +3940,7 @@ export interface FileRouteTypes {
     | '/_site/search'
     | '/_site/shop'
     | '/_site/wallet'
+    | '/_site/wrapped'
     | '/altair/multiplayer'
     | '/api/announcements'
     | '/api/bookmarks'
@@ -3935,6 +3958,7 @@ export interface FileRouteTypes {
     | '/api/user-builds'
     | '/api/weather-data'
     | '/api/weather-webhook'
+    | '/api/wrapped'
     | '/blog/$slug'
     | '/builds_/$slug'
     | '/daily/alibi'
@@ -4272,6 +4296,7 @@ export interface RootRouteChildren {
   ApiUserBuildsRoute: typeof ApiUserBuildsRouteWithChildren
   ApiWeatherDataRoute: typeof ApiWeatherDataRoute
   ApiWeatherWebhookRoute: typeof ApiWeatherWebhookRoute
+  ApiWrappedRoute: typeof ApiWrappedRoute
   BlogSlugRoute: typeof BlogSlugRoute
   BuildsSlugRoute: typeof BuildsSlugRoute
   DiscordLightsOutRoute: typeof DiscordLightsOutRoute
@@ -5052,6 +5077,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/wrapped': {
+      id: '/api/wrapped'
+      path: '/api/wrapped'
+      fullPath: '/api/wrapped'
+      preLoaderRoute: typeof ApiWrappedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/weather-webhook': {
       id: '/api/weather-webhook'
       path: '/api/weather-webhook'
@@ -5170,6 +5202,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/altair/multiplayer'
       preLoaderRoute: typeof AltairMultiplayerRouteImport
       parentRoute: typeof AltairRoute
+    }
+    '/_site/wrapped': {
+      id: '/_site/wrapped'
+      path: '/wrapped'
+      fullPath: '/wrapped'
+      preLoaderRoute: typeof SiteWrappedRouteImport
+      parentRoute: typeof SiteRoute
     }
     '/_site/wallet': {
       id: '/_site/wallet'
@@ -6907,6 +6946,7 @@ interface SiteRouteChildren {
   SiteSearchRoute: typeof SiteSearchRoute
   SiteShopRoute: typeof SiteShopRoute
   SiteWalletRoute: typeof SiteWalletRoute
+  SiteWrappedRoute: typeof SiteWrappedRoute
   SiteIndexRoute: typeof SiteIndexRoute
   SiteCSlugRoute: typeof SiteCSlugRoute
   SiteMessagesConversationIdRoute: typeof SiteMessagesConversationIdRoute
@@ -6943,6 +6983,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteSearchRoute: SiteSearchRoute,
   SiteShopRoute: SiteShopRoute,
   SiteWalletRoute: SiteWalletRoute,
+  SiteWrappedRoute: SiteWrappedRoute,
   SiteIndexRoute: SiteIndexRoute,
   SiteCSlugRoute: SiteCSlugRoute,
   SiteMessagesConversationIdRoute: SiteMessagesConversationIdRoute,
@@ -7666,6 +7707,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiUserBuildsRoute: ApiUserBuildsRouteWithChildren,
   ApiWeatherDataRoute: ApiWeatherDataRoute,
   ApiWeatherWebhookRoute: ApiWeatherWebhookRoute,
+  ApiWrappedRoute: ApiWrappedRoute,
   BlogSlugRoute: BlogSlugRoute,
   BuildsSlugRoute: BuildsSlugRoute,
   DiscordLightsOutRoute: DiscordLightsOutRoute,
