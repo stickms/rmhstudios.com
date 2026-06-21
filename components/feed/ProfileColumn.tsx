@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { MapPin, Link as LinkIcon, Calendar, Loader2, ArrowLeft, MessageCircle, BadgeCheck, ShieldCheck } from 'lucide-react';
+import { MapPin, Link as LinkIcon, Calendar, Loader2, MessageCircle, BadgeCheck, ShieldCheck } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
+import { MobileMenuButton } from './MobileMenuButton';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser } from '@/components/Providers';
 import { RMHarkCard } from './RMHarkCard';
@@ -388,9 +389,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
       {/* Header bar */}
       <div className="sticky top-0 z-10 bg-site-bg/85 backdrop-blur-md border-b border-site-border">
         <div className="flex items-center gap-3 px-4 py-3">
-          <Link to="/" className="p-1.5 -ml-1.5 rounded-lg hover:bg-site-surface transition-colors">
-            <ArrowLeft className="w-5 h-5 text-site-text" />
-          </Link>
+          <MobileMenuButton />
           <div>
             <div className="flex items-center gap-1">
               <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text truncate">

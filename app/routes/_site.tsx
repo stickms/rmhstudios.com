@@ -9,6 +9,7 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { LeftSidebar } from '@/components/feed/LeftSidebar';
 import { MobileNav } from '@/components/feed/MobileNav';
+import { MobileSidebarShell } from '@/components/feed/MobileSidebarShell';
 import '@/components/feed/feed.css';
 
 export const Route = createFileRoute('/_site')({
@@ -28,10 +29,10 @@ function SiteLayout() {
         <Outlet />
       </div>
 
-      {/* Mobile: scrollable container so sticky headers work */}
-      <div className="md:hidden min-w-0 w-full flex-1 overflow-y-auto">
+      {/* Mobile: page content slides right to reveal the left sidebar */}
+      <MobileSidebarShell>
         <Outlet />
-      </div>
+      </MobileSidebarShell>
 
       {/* Mobile bottom nav */}
       <MobileNav />

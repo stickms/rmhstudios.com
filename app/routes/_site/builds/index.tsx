@@ -11,7 +11,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { ArrowLeft, Search, Plus, Heart, Info } from 'lucide-react';
+import { Menu, Search, Plus, Heart, Info } from 'lucide-react';
+import { useMobileSidebar } from '@/components/feed/MobileSidebarShell';
+import { MobileBrandPrefix } from '@/components/feed/MobileHeader';
 import { listCuratedBuilds, type CuratedBuild } from '@/lib/builds/curated';
 import { shelfRiseDelay } from '@/components/library/shelf';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
@@ -172,6 +174,7 @@ function usePointerCards(gridRef: React.RefObject<HTMLDivElement | null>) {
 
 function Builds() {
   const { curated } = Route.useLoaderData();
+  const { open: openSidebar } = useMobileSidebar();
   const [tab, setTab] = useState<Tab>('curated');
   const [query, setQuery] = useState('');
   const [curatedSort, setCuratedSort] = useState<CuratedSort>('featured');
@@ -268,10 +271,17 @@ function Builds() {
       targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
     >
       <header className="vibe-gallery__head">
-        <Link to="/" aria-label="Back to home" className="vibe-toolbar__icon">
-          <ArrowLeft size={17} />
-        </Link>
-        <h1 className="vibe-gallery__title">Builds</h1>
+        {/* Wrapper carries md:hidden — `.vibe-toolbar__icon` sets its own
+            display, which would otherwise override the utility on desktop. */}
+        <span className="md:hidden">
+          <button type="button" onClick={openSidebar} aria-label="Open menu" className="vibe-toolbar__icon">
+            <Menu size={18} />
+          </button>
+        </span>
+        <div className="flex items-center gap-2 min-w-0">
+          <MobileBrandPrefix />
+          <h1 className="vibe-gallery__title">Builds</h1>
+        </div>
         <div className="vibe-search">
           <Search size={16} className="vibe-search__icon" aria-hidden="true" />
           <input

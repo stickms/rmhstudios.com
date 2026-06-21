@@ -15,6 +15,7 @@ import { auth } from '@/lib/auth';
 import { getUserTier, type Tier } from '@/lib/entitlements';
 import { authClient } from '@/lib/auth-client';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
+import { MobileTopBar } from '@/components/feed/MobileHeader';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 
 const fetchCurrentTier = createServerFn({ method: 'GET' }).handler(async (): Promise<Tier> => {
@@ -149,6 +150,9 @@ function Pricing() {
       targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
     >
       <PricingStyles />
+
+      {/* Mobile: hamburger + brand (this page leads with an editorial hero) */}
+      <MobileTopBar title="Membership" />
 
       {/* ── Atmosphere ───────────────────────────────────────── */}
       <div aria-hidden className="pricing-glow" />

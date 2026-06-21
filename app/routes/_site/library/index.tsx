@@ -10,7 +10,9 @@
 
 import { useMemo, useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { ArrowLeft, Search } from 'lucide-react';
+import { Menu, Search } from 'lucide-react';
+import { useMobileSidebar } from '@/components/feed/MobileSidebarShell';
+import { MobileBrandPrefix } from '@/components/feed/MobileHeader';
 import { listLibraryBooks, type LibraryBook } from '@/lib/library/library';
 import { shelfRiseDelay } from '@/components/library/shelf';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
@@ -29,6 +31,7 @@ export const Route = createFileRoute('/_site/library/')({
 });
 
 function Library() {
+  const { open: openSidebar } = useMobileSidebar();
   const { books } = Route.useLoaderData();
   const [query, setQuery] = useState('');
 
@@ -47,10 +50,17 @@ function Library() {
       targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
     >
       <header className="vibe-gallery__head">
-        <Link to="/" aria-label="Back to home" className="vibe-toolbar__icon">
-          <ArrowLeft size={17} />
-        </Link>
-        <h1 className="vibe-gallery__title">Library</h1>
+        {/* Wrapper carries md:hidden — `.vibe-toolbar__icon` sets its own
+            display, which would otherwise override the utility on desktop. */}
+        <span className="md:hidden">
+          <button type="button" onClick={openSidebar} aria-label="Open menu" className="vibe-toolbar__icon">
+            <Menu size={18} />
+          </button>
+        </span>
+        <div className="flex items-center gap-2 min-w-0">
+          <MobileBrandPrefix />
+          <h1 className="vibe-gallery__title">Library</h1>
+        </div>
         <div className="vibe-search">
           <Search size={16} className="vibe-search__icon" aria-hidden="true" />
           <input

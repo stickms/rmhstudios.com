@@ -6,7 +6,7 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { FeedTabs } from './FeedTabs';
 import { ComposeBox } from './ComposeBox';
 import { FeedList } from './FeedList';
-import { MobileSidebarDrawer } from './MobileSidebarDrawer';
+import { useMobileSidebar } from './MobileSidebarShell';
 import { useFeedStore } from '@/stores/feedStore';
 import { useFeedSSE } from '@/hooks/useFeedSSE';
 import { authClient } from '@/lib/auth-client';
@@ -25,7 +25,7 @@ interface SearchUser {
 export function FeedColumn() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [mode, setMode] = useState<'feed' | 'friends'>('feed');
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const { open: openSidebar } = useMobileSidebar();
   const { setFilter, search, setSearch } = useFeedStore();
   const { data: session } = authClient.useSession();
   const navigate = useNavigate();
@@ -103,7 +103,7 @@ export function FeedColumn() {
         <div className="flex items-center justify-between px-4 py-3">
           {/* Mobile: sandwich menu left, RMH center, filters right */}
           <button
-            onClick={() => setDrawerOpen(true)}
+            onClick={openSidebar}
             className="md:hidden p-2 -ml-2 rounded-lg text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
             aria-label="Open menu"
           >
@@ -246,13 +246,6 @@ export function FeedColumn() {
           onSwitchToForYou={() => handleModeChange('feed')}
         />
       )}
-
-      {/* Mobile sidebar drawer */}
-      <MobileSidebarDrawer
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        onOpen={() => setDrawerOpen(true)}
-      />
     </div>
   );
 }
