@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 
 import { prisma } from "@/lib/prisma.server";
+import { auth } from "@/lib/auth";
 import { readFile, stat } from "fs/promises";
 import { createReadStream } from "fs";
 import { resolvePathUnder } from "@/lib/slice-it/upload-validation";
@@ -15,11 +16,19 @@ export const Route = createFileRoute('/api/slice-it/songs/stream/$id')({
     
     const song = await prisma.song.findUnique({
       where: { id },
-      select: { audioUrl: true, title: true, artist: true }
+      select: { audioUrl: true, title: true, artist: true, isPublic: true, uploadedBy: true }
     });
 
     if (!song) {
       return Response.json({ error: "Song not found" }, { status: 404 });
+    }
+
+    // Private songs are only streamable by their uploader.
+    if (!song.isPublic) {
+      const session = await auth.api.getSession({ headers: request.headers });
+      if (!session || session.user.id !== song.uploadedBy) {
+        return Response.json({ error: "Not found" }, { status: 404 });
+      }
     }
 
     const musicDir = path.join(process.cwd(), "db", "music");

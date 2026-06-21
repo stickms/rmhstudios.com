@@ -1,5 +1,18 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { timingSafeEqual } from 'node:crypto';
+
+/** Constant-time string compare that doesn't leak length via early return. */
+function safeEqual(a: string, b: string): boolean {
+  const ab = Buffer.from(a);
+  const bb = Buffer.from(b);
+  if (ab.length !== bb.length) {
+    // Still run a comparison to keep timing uniform, then fail.
+    timingSafeEqual(ab, ab);
+    return false;
+  }
+  return timingSafeEqual(ab, bb);
+}
 
 export const Route = createFileRoute('/api/weather-webhook')({
   server: {
@@ -9,8 +22,9 @@ export const Route = createFileRoute('/api/weather-webhook')({
   const { allowed } = rateLimit(ip, { limit: 10, windowMs: 60_000, prefix: "weather-webhook" });
   if (!allowed) return new Response(JSON.stringify({ error: "Rate limited" }), { status: 429 });
 
-  const authHeader = request.headers.get('authorization');
-  if (authHeader !== `Bearer ${process.env.WEATHER_WEBHOOK_SECRET}`) {
+  const authHeader = request.headers.get('authorization') ?? '';
+  const expected = `Bearer ${process.env.WEATHER_WEBHOOK_SECRET ?? ''}`;
+  if (!process.env.WEATHER_WEBHOOK_SECRET || !safeEqual(authHeader, expected)) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
       headers: { 'Content-Type': 'application/json' },
