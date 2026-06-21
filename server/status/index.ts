@@ -488,6 +488,27 @@ function renderHtml(): string {
     footer { margin-top: 22px; color: var(--site-text-dim); font-size: .76rem; text-align: center; }
     footer a { color: var(--site-accent); text-decoration: none; }
     footer a:hover { text-decoration: underline; }
+
+    /* ── Mobile ── */
+    @media (max-width: 560px) {
+      body { padding: 28px 12px; }
+      header { gap: 12px; margin-bottom: 20px; }
+      h1 { font-size: 1.3rem; }
+      .service { padding: 14px; }
+      /* Stack name/description above the status badge so nothing gets squeezed. */
+      .service-head { flex-wrap: wrap; row-gap: 8px; }
+      .info { flex-basis: calc(100% - 24px); }
+      .meta { width: 100%; padding-left: 24px; justify-content: flex-start; }
+      .meta .latency { margin-left: auto; }
+      /* Tighten bars so all buckets fit without horizontal scroll on small phones. */
+      .bars { height: 34px; gap: 1px; }
+      .bar { min-width: 1px; border-radius: 1px; }
+      .bars-legend { font-size: .68rem; }
+    }
+    /* Wider tap/hover targets + no sticky :hover filter on touch devices. */
+    @media (hover: none) {
+      .bar:hover { filter: none; }
+    }
   </style>
 </head>
 <body>
