@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Plus, BarChart3, Image, X, ImagePlus, Globe, Users, Lock, Unlock } from 'lucide-react';
+import { Plus, BarChart3, Image, X, ImagePlus, Globe, Users, Lock, Unlock, EyeOff } from 'lucide-react';
 import { GifEmbed } from './GifEmbed';
 import { AIGenerateButton } from './AIGenerateButton';
 import { ComposeAssist } from './ComposeAssist';
@@ -59,7 +59,28 @@ export function ComposeBox({ communityId }: { communityId?: string } = {}) {
   const [imageError, setImageError] = useState<string | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { prependItem } = useFeedStore();
+
+  // Wrap the current selection (or insert a placeholder) in spoiler markers.
+  function insertSpoiler() {
+    const el = textareaRef.current;
+    if (!el) {
+      setContent((c) => `${c}||spoiler||`);
+      return;
+    }
+    const start = el.selectionStart ?? content.length;
+    const end = el.selectionEnd ?? content.length;
+    const selected = content.slice(start, end) || 'spoiler';
+    const next = `${content.slice(0, start)}||${selected}||${content.slice(end)}`;
+    setContent(next);
+    // Restore focus + place the cursor just inside the spoiler markers.
+    requestAnimationFrame(() => {
+      el.focus();
+      const pos = start + 2 + selected.length;
+      el.setSelectionRange(pos, pos);
+    });
+  }
 
   const { data: session } = useSession();
   const { resolved: resolvedUser } = useResolvedUser();
@@ -186,6 +207,7 @@ export function ComposeBox({ communityId }: { communityId?: string } = {}) {
         {/* Compose area */}
         <div className="flex-1 min-w-0">
           <MentionTextarea
+            ref={textareaRef}
             id="compose-box"
             value={content}
             onChange={setContent}
@@ -237,6 +259,15 @@ export function ComposeBox({ communityId }: { communityId?: string } = {}) {
                 className="w-16 bg-transparent text-xs text-site-text placeholder:text-site-text-dim focus:outline-none"
               />
             </div>
+            <button
+              type="button"
+              onClick={insertSpoiler}
+              title="Mark selection as a spoiler"
+              className="inline-flex items-center gap-1 rounded-full border border-site-border bg-site-surface px-3 py-1 text-xs font-medium text-site-text-muted transition-colors hover:text-site-text"
+            >
+              <EyeOff className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Spoiler</span>
+            </button>
           </div>
 
           {/* Poll creator */}
