@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Plus, BarChart3, Image, X, ImagePlus } from 'lucide-react';
 import { GifEmbed } from './GifEmbed';
 import { AIGenerateButton } from './AIGenerateButton';
+import { ComposeAssist } from './ComposeAssist';
 import { MentionTextarea } from './MentionTextarea';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
@@ -188,6 +189,8 @@ export function ComposeBox() {
               }
             }}
           />
+
+          <ComposeAssist value={content} onChange={setContent} />
 
           {/* Poll creator */}
           {attachment === 'poll' && (

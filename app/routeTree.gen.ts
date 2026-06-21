@@ -228,6 +228,7 @@ import { Route as ApiAltairScoreRouteImport } from './routes/api/altair/score'
 import { Route as ApiAltairMetaRouteImport } from './routes/api/altair/meta'
 import { Route as ApiAltairMatchRouteImport } from './routes/api/altair/match'
 import { Route as ApiAltairLeaderboardRouteImport } from './routes/api/altair/leaderboard'
+import { Route as ApiAiTransformRouteImport } from './routes/api/ai/transform'
 import { Route as ApiAdminUsersRouteImport } from './routes/api/admin/users'
 import { Route as ApiAdminReportsRouteImport } from './routes/api/admin/reports'
 import { Route as ApiAdminBlogRouteImport } from './routes/api/admin/blog'
@@ -1423,6 +1424,11 @@ const ApiAltairLeaderboardRoute = ApiAltairLeaderboardRouteImport.update({
   path: '/api/altair/leaderboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAiTransformRoute = ApiAiTransformRouteImport.update({
+  id: '/api/ai/transform',
+  path: '/api/ai/transform',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminUsersRoute = ApiAdminUsersRouteImport.update({
   id: '/api/admin/users',
   path: '/api/admin/users',
@@ -2007,6 +2013,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/blog': typeof ApiAdminBlogRoute
   '/api/admin/reports': typeof ApiAdminReportsRouteWithChildren
   '/api/admin/users': typeof ApiAdminUsersRoute
+  '/api/ai/transform': typeof ApiAiTransformRoute
   '/api/altair/leaderboard': typeof ApiAltairLeaderboardRoute
   '/api/altair/match': typeof ApiAltairMatchRoute
   '/api/altair/meta': typeof ApiAltairMetaRoute
@@ -2290,6 +2297,7 @@ export interface FileRoutesByTo {
   '/api/admin/blog': typeof ApiAdminBlogRoute
   '/api/admin/reports': typeof ApiAdminReportsRouteWithChildren
   '/api/admin/users': typeof ApiAdminUsersRoute
+  '/api/ai/transform': typeof ApiAiTransformRoute
   '/api/altair/leaderboard': typeof ApiAltairLeaderboardRoute
   '/api/altair/match': typeof ApiAltairMatchRoute
   '/api/altair/meta': typeof ApiAltairMetaRoute
@@ -2597,6 +2605,7 @@ export interface FileRoutesById {
   '/api/admin/blog': typeof ApiAdminBlogRoute
   '/api/admin/reports': typeof ApiAdminReportsRouteWithChildren
   '/api/admin/users': typeof ApiAdminUsersRoute
+  '/api/ai/transform': typeof ApiAiTransformRoute
   '/api/altair/leaderboard': typeof ApiAltairLeaderboardRoute
   '/api/altair/match': typeof ApiAltairMatchRoute
   '/api/altair/meta': typeof ApiAltairMetaRoute
@@ -2904,6 +2913,7 @@ export interface FileRouteTypes {
     | '/api/admin/blog'
     | '/api/admin/reports'
     | '/api/admin/users'
+    | '/api/ai/transform'
     | '/api/altair/leaderboard'
     | '/api/altair/match'
     | '/api/altair/meta'
@@ -3187,6 +3197,7 @@ export interface FileRouteTypes {
     | '/api/admin/blog'
     | '/api/admin/reports'
     | '/api/admin/users'
+    | '/api/ai/transform'
     | '/api/altair/leaderboard'
     | '/api/altair/match'
     | '/api/altair/meta'
@@ -3493,6 +3504,7 @@ export interface FileRouteTypes {
     | '/api/admin/blog'
     | '/api/admin/reports'
     | '/api/admin/users'
+    | '/api/ai/transform'
     | '/api/altair/leaderboard'
     | '/api/altair/match'
     | '/api/altair/meta'
@@ -3733,6 +3745,7 @@ export interface RootRouteChildren {
   ApiAdminBlogRoute: typeof ApiAdminBlogRoute
   ApiAdminReportsRoute: typeof ApiAdminReportsRouteWithChildren
   ApiAdminUsersRoute: typeof ApiAdminUsersRoute
+  ApiAiTransformRoute: typeof ApiAiTransformRoute
   ApiAltairLeaderboardRoute: typeof ApiAltairLeaderboardRoute
   ApiAltairMatchRoute: typeof ApiAltairMatchRoute
   ApiAltairMetaRoute: typeof ApiAltairMetaRoute
@@ -5365,6 +5378,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAltairLeaderboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/ai/transform': {
+      id: '/api/ai/transform'
+      path: '/api/ai/transform'
+      fullPath: '/api/ai/transform'
+      preLoaderRoute: typeof ApiAiTransformRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/users': {
       id: '/api/admin/users'
       path: '/api/admin/users'
@@ -6708,6 +6728,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminBlogRoute: ApiAdminBlogRoute,
   ApiAdminReportsRoute: ApiAdminReportsRouteWithChildren,
   ApiAdminUsersRoute: ApiAdminUsersRoute,
+  ApiAiTransformRoute: ApiAiTransformRoute,
   ApiAltairLeaderboardRoute: ApiAltairLeaderboardRoute,
   ApiAltairMatchRoute: ApiAltairMatchRoute,
   ApiAltairMetaRoute: ApiAltairMetaRoute,
