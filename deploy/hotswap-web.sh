@@ -45,6 +45,12 @@ DRAIN_SECONDS="${DRAIN_SECONDS:-8}"
 log() { echo "[hotswap] $*"; }
 die() { echo "[hotswap] ERROR: $*" >&2; exit 1; }
 
+# Run from the repo root so `docker compose` resolves docker-compose.yml (and its
+# relative paths) the same way deploy.sh does. deploy.sh already cds here; this
+# also makes manual standalone runs work from anywhere.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "${REPO_DIR:-$(dirname "$SCRIPT_DIR")}" || die "cannot cd to repo root"
+
 # ── Determine which color is currently live (from the Apache include) ────────
 current_port="$BLUE_PORT"
 if [ -f "$ACTIVE_CONF" ]; then
@@ -65,17 +71,28 @@ image="${IMAGE_NAME}:${IMAGE_TAG}"
 log "Live port: ${current_port}. Bringing up ${target_color} on ${target_port} from ${image}."
 
 # ── Start the new (target) container ────────────────────────────────────────
+# Launch via `docker compose run`, NOT a hand-rolled `docker run`, so the new
+# web container inherits the EXACT `web` service config from docker-compose.yml:
+#   - env_file: Compose's parser strips quotes and handles interpolation;
+#     docker's naive --env-file passes values (e.g. a quoted DATABASE_URL)
+#     through literally, which is why a raw `docker run` couldn't reach Postgres.
+#   - extra_hosts (host.docker.internal → the DB on the host), the db/ volume,
+#     and the project network — all applied automatically.
+# We override only PORT (the blue/green slot) and publish that port on loopback.
+#   --no-deps: web has no compose deps; don't touch other services.
+#   compose run forces `restart: no`; we promote it to `unless-stopped` once the
+#   container is healthy (below) so it matches the service and survives reboots.
+# NOTE: compose run containers carry com.docker.compose.oneoff=True, so a later
+# `dc up --scale web=0 --remove-orphans` leaves them alone — exactly what we want
+# for blue/green containers living outside the normal compose lifecycle.
 "$DOCKER_BIN" rm -f "$new_container" >/dev/null 2>&1 || true
-"$DOCKER_BIN" run -d \
+"$DOCKER_BIN" compose -p "$PROJECT_NAME" --env-file "$ENV_FILE" \
+    run -d --no-deps \
     --name "$new_container" \
-    --network "$NETWORK" \
-    --env-file "$ENV_FILE" \
+    -p "127.0.0.1:${target_port}:${target_port}" \
     -e "PORT=${target_port}" \
     -e "HOSTNAME=0.0.0.0" \
-    -p "127.0.0.1:${target_port}:${target_port}" \
-    --add-host "host.docker.internal:host-gateway" \
-    --restart unless-stopped \
-    "$image" >/dev/null || die "failed to start ${new_container}"
+    web >/dev/null || die "failed to start ${new_container}"
 
 # ── Wait until the new container actually serves traffic ────────────────────
 log "Waiting up to ${HEALTH_TIMEOUT}s for ${new_container} to become healthy..."
@@ -98,6 +115,10 @@ if [ "$healthy" != true ]; then
     die "${new_container} never became healthy — keeping ${old_color} live, no traffic moved."
 fi
 log "${new_container} is healthy."
+
+# Promote the restart policy to match the compose `web` service (compose run
+# defaults to `no`). Best-effort — a failure here shouldn't abort the flip.
+"$DOCKER_BIN" update --restart unless-stopped "$new_container" >/dev/null 2>&1 || true
 
 # ── Flip Apache to the new port with a graceful reload ──────────────────────
 printf 'Define WEB_UPSTREAM_PORT %s\n' "$target_port" > "$ACTIVE_CONF"
