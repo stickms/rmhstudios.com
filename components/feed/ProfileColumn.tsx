@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { MapPin, Link as LinkIcon, Calendar, Loader2, MessageCircle, BadgeCheck, ShieldCheck, Coins } from 'lucide-react';
+import { MapPin, Link as LinkIcon, Calendar, Loader2, MessageCircle, BadgeCheck, ShieldCheck, Coins, Store, Gift } from 'lucide-react';
 import { TipDialog } from '@/components/economy/TipDialog';
+import { GiftSubDialog } from '@/components/economy/GiftSubDialog';
 import { useNavigate } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { MobileMenuButton } from './MobileMenuButton';
@@ -85,6 +86,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
   const [notFound, setNotFound] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [tipOpen, setTipOpen] = useState(false);
+  const [giftOpen, setGiftOpen] = useState(false);
   const [tab, setTab] = useState<ProfileTab>('rmharks');
   const [socialModal, setSocialModal] = useState<'followers' | 'following' | null>(null);
   const { refresh: refreshResolvedUser } = useResolvedUser();
@@ -509,6 +511,15 @@ export function ProfileColumn({ userId }: { userId: string }) {
             )}
           </div>
           <div className="flex items-center gap-2">
+            <Link to={`/store/${profile.handle || profile.id}` as string} title="Storefront">
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-lg border-site-border text-site-text hover:bg-site-surface"
+              >
+                <Store className="w-4 h-4" />
+              </Button>
+            </Link>
             {profile.isOwnProfile ? (
               <Button
                 variant="outline"
@@ -528,6 +539,15 @@ export function ProfileColumn({ userId }: { userId: string }) {
                   title="Send a tip"
                 >
                   <Coins className="w-4 h-4 text-amber-400" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setGiftOpen(true)}
+                  className="rounded-lg border-site-border text-site-text hover:bg-site-surface"
+                  title="Gift a membership"
+                >
+                  <Gift className="w-4 h-4 text-site-accent" />
                 </Button>
                 <Button
                   variant="outline"
@@ -562,8 +582,8 @@ export function ProfileColumn({ userId }: { userId: string }) {
         {profile.tipGoal && profile.tipGoal > 0 && (
           <div className="mb-3 rounded-xl border border-site-border bg-site-surface p-3">
             <div className="mb-1 flex items-center justify-between text-sm">
-              <span className="font-medium text-site-text">
-                🪙 {profile.tipGoalLabel || 'Tip goal'}
+              <span className="inline-flex items-center gap-1.5 font-medium text-site-text">
+                <CoinIcon className="h-4 w-4" /> {profile.tipGoalLabel || 'Tip goal'}
               </span>
               <span className="text-site-text-muted">
                 {(profile.tipsThisMonth ?? 0).toLocaleString()} / {profile.tipGoal.toLocaleString()}
@@ -734,6 +754,16 @@ export function ProfileColumn({ userId }: { userId: string }) {
           recipientName={displayName ?? profile.name}
           entityType="profile"
           entityId={profile.id}
+        />
+      )}
+
+      {/* Gift membership dialog (non-owner) */}
+      {profile && !profile.isOwnProfile && (
+        <GiftSubDialog
+          open={giftOpen}
+          onOpenChange={setGiftOpen}
+          recipientId={profile.id}
+          recipientName={displayName ?? profile.name}
         />
       )}
 

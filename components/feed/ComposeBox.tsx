@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Plus, BarChart3, Image, X, ImagePlus } from 'lucide-react';
+import { Plus, BarChart3, Image, X, ImagePlus, Globe, Users, Lock, Unlock, EyeOff, FileText, CalendarClock, Check } from 'lucide-react';
 import { GifEmbed } from './GifEmbed';
 import { AIGenerateButton } from './AIGenerateButton';
 import { ComposeAssist } from './ComposeAssist';
@@ -57,9 +57,33 @@ export function ComposeBox({ communityId }: { communityId?: string } = {}) {
   const [gifUrl, setGifUrl] = useState('');
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [showSchedule, setShowSchedule] = useState(false);
+  const [scheduleAt, setScheduleAt] = useState(''); // datetime-local value
+  const [savedMsg, setSavedMsg] = useState<string | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { prependItem } = useFeedStore();
+
+  // Wrap the current selection (or insert a placeholder) in spoiler markers.
+  function insertSpoiler() {
+    const el = textareaRef.current;
+    if (!el) {
+      setContent((c) => `${c}||spoiler||`);
+      return;
+    }
+    const start = el.selectionStart ?? content.length;
+    const end = el.selectionEnd ?? content.length;
+    const selected = content.slice(start, end) || 'spoiler';
+    const next = `${content.slice(0, start)}||${selected}||${content.slice(end)}`;
+    setContent(next);
+    // Restore focus + place the cursor just inside the spoiler markers.
+    requestAnimationFrame(() => {
+      el.focus();
+      const pos = start + 2 + selected.length;
+      el.setSelectionRange(pos, pos);
+    });
+  }
 
   const { data: session } = useSession();
   const { resolved: resolvedUser } = useResolvedUser();
@@ -104,32 +128,48 @@ export function ComposeBox({ communityId }: { communityId?: string } = {}) {
     }
   };
 
+  const buildBody = (): Record<string, unknown> => {
+    const body: Record<string, unknown> = {};
+    if (content.trim()) body.content = content.trim();
+    if (hasPoll) {
+      body.poll = {
+        question: poll.question.trim(),
+        options: poll.options.filter((o) => o.trim()).map((o) => o.trim()),
+        multiSelect: poll.multiSelect,
+        ...(pollDuration > 0 ? { durationHours: pollDuration } : {}),
+      };
+    }
+    if (hasGif) body.gifUrl = gifUrl.trim();
+    if (hasImages) body.imageUrls = imageUrls;
+    if (audience !== 'PUBLIC') body.audience = audience;
+    const price = parseInt(unlockPrice, 10);
+    if (price > 0) body.unlockPrice = price;
+    if (communityId) body.communityId = communityId;
+    return body;
+  };
+
+  const resetForm = () => {
+    setContent('');
+    setAudience('PUBLIC');
+    setUnlockPrice('');
+    setAttachment(null);
+    setPoll({ question: '', options: ['', ''], multiSelect: false });
+    setGifUrl('');
+    setImageUrls([]);
+    setImageError(null);
+    setShowSchedule(false);
+    setScheduleAt('');
+  };
+
   const handleSubmit = async () => {
     if (!canSubmit) return;
 
     setSubmitting(true);
     try {
-      const body: Record<string, unknown> = {};
-      if (content.trim()) body.content = content.trim();
-      if (hasPoll) {
-        body.poll = {
-          question: poll.question.trim(),
-          options: poll.options.filter((o) => o.trim()).map((o) => o.trim()),
-          multiSelect: poll.multiSelect,
-          ...(pollDuration > 0 ? { durationHours: pollDuration } : {}),
-        };
-      }
-      if (hasGif) body.gifUrl = gifUrl.trim();
-      if (hasImages) body.imageUrls = imageUrls;
-      if (audience !== 'PUBLIC') body.audience = audience;
-      const price = parseInt(unlockPrice, 10);
-      if (price > 0) body.unlockPrice = price;
-      if (communityId) body.communityId = communityId;
-
       const res = await fetch('/api/rmharks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify(buildBody()),
       });
 
       if (!res.ok) {
@@ -140,16 +180,38 @@ export function ComposeBox({ communityId }: { communityId?: string } = {}) {
 
       const item = await res.json();
       prependItem(item);
-      setContent('');
-      setAudience('PUBLIC');
-      setUnlockPrice('');
-      setAttachment(null);
-      setPoll({ question: '', options: ['', ''], multiSelect: false });
-      setGifUrl('');
-      setImageUrls([]);
-      setImageError(null);
+      resetForm();
     } catch (error) {
       console.error('Post error:', error);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Save the composer contents as a draft (scheduledAt = null) or, when a time
+  // is given, as a scheduled post.
+  const handleSaveScheduled = async (scheduledAtIso: string | null) => {
+    if (!canSubmit) return;
+    setSubmitting(true);
+    setSavedMsg(null);
+    try {
+      const body = { ...buildBody(), scheduledAt: scheduledAtIso };
+      const res = await fetch('/api/scheduled', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setSavedMsg(data.error ?? 'Could not save');
+        return;
+      }
+      resetForm();
+      setSavedMsg(scheduledAtIso ? 'Scheduled' : 'Saved to drafts');
+      setTimeout(() => setSavedMsg(null), 3000);
+    } catch (error) {
+      console.error('Save draft error:', error);
+      setSavedMsg('Could not save');
     } finally {
       setSubmitting(false);
     }
@@ -186,6 +248,7 @@ export function ComposeBox({ communityId }: { communityId?: string } = {}) {
         {/* Compose area */}
         <div className="flex-1 min-w-0">
           <MentionTextarea
+            ref={textareaRef}
             id="compose-box"
             value={content}
             onChange={setContent}
@@ -203,18 +266,30 @@ export function ComposeBox({ communityId }: { communityId?: string } = {}) {
           <ComposeAssist value={content} onChange={setContent} />
 
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <select
-              aria-label="Who can see this post"
-              value={audience}
-              onChange={(e) => setAudience(e.target.value as 'PUBLIC' | 'FOLLOWERS' | 'PRIVATE')}
-              className="rounded-full border border-site-border bg-site-surface px-3 py-1 text-xs font-medium text-site-text-muted focus:border-site-accent focus:outline-none"
-            >
-              <option value="PUBLIC">🌐 Everyone</option>
-              <option value="FOLLOWERS">👥 Followers</option>
-              <option value="PRIVATE">🔒 Only me</option>
-            </select>
+            <div className="inline-flex items-center gap-1 rounded-full border border-site-border bg-site-surface p-0.5" role="group" aria-label="Who can see this post">
+              {([
+                { value: 'PUBLIC', label: 'Everyone', icon: Globe },
+                { value: 'FOLLOWERS', label: 'Followers', icon: Users },
+                { value: 'PRIVATE', label: 'Only me', icon: Lock },
+              ] as const).map(({ value, label, icon: Icon }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setAudience(value)}
+                  aria-pressed={audience === value}
+                  title={label}
+                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                    audience === value ? 'bg-site-accent text-white' : 'text-site-text-muted hover:text-site-text'
+                  }`}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">{label}</span>
+                </button>
+              ))}
+            </div>
             <div className="inline-flex items-center gap-1 rounded-full border border-site-border bg-site-surface px-3 py-1">
-              <span className="text-xs text-site-text-muted">🔓 Unlock price</span>
+              <Unlock className="h-3.5 w-3.5 text-site-text-muted" />
+              <span className="text-xs text-site-text-muted">Unlock price</span>
               <input
                 type="number"
                 min={0}
@@ -225,6 +300,15 @@ export function ComposeBox({ communityId }: { communityId?: string } = {}) {
                 className="w-16 bg-transparent text-xs text-site-text placeholder:text-site-text-dim focus:outline-none"
               />
             </div>
+            <button
+              type="button"
+              onClick={insertSpoiler}
+              title="Mark selection as a spoiler"
+              className="inline-flex items-center gap-1 rounded-full border border-site-border bg-site-surface px-3 py-1 text-xs font-medium text-site-text-muted transition-colors hover:text-site-text"
+            >
+              <EyeOff className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Spoiler</span>
+            </button>
           </div>
 
           {/* Poll creator */}
@@ -390,6 +474,48 @@ export function ComposeBox({ communityId }: { communityId?: string } = {}) {
             onChange={(e) => handleImageFiles(e.target.files)}
           />
 
+          {/* Schedule panel */}
+          {showSchedule && (
+            <div className="mt-2 flex flex-wrap items-center gap-2 rounded-xl border border-site-border bg-site-surface/20 p-3">
+              <CalendarClock className="h-4 w-4 text-site-text-dim" />
+              <span className="text-xs text-site-text-dim">Publish at</span>
+              <input
+                type="datetime-local"
+                value={scheduleAt}
+                onChange={(e) => setScheduleAt(e.target.value)}
+                className="rounded-lg border border-site-border bg-site-surface px-2 py-1 text-xs text-site-text outline-none focus:border-site-accent"
+              />
+              <Button
+                size="sm"
+                variant="accent"
+                disabled={!canSubmit || !scheduleAt}
+                onClick={() => {
+                  const iso = scheduleAt ? new Date(scheduleAt).toISOString() : null;
+                  if (iso) handleSaveScheduled(iso);
+                }}
+              >
+                Schedule
+              </Button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSchedule(false);
+                  setScheduleAt('');
+                }}
+                className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors"
+                aria-label="Cancel scheduling"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
+
+          {savedMsg && (
+            <p className="mt-2 inline-flex items-center gap-1 text-xs text-site-accent">
+              <Check className="h-3.5 w-3.5" /> {savedMsg}
+            </p>
+          )}
+
           <div className="flex items-center justify-between mt-2">
             {/* Character counter */}
             <span
@@ -456,6 +582,37 @@ export function ComposeBox({ communityId }: { communityId?: string } = {}) {
                       <Image className="w-4 h-4 text-site-text-dim" />
                       Add Image
                     </button>
+                    <div className="my-1 border-t border-site-border" />
+                    <button
+                      onClick={() => {
+                        handleSaveScheduled(null);
+                        setMenuOpen(false);
+                      }}
+                      disabled={!canSubmit}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      <FileText className="w-4 h-4 text-site-text-dim" />
+                      Save as draft
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowSchedule(true);
+                        setMenuOpen(false);
+                      }}
+                      disabled={!canSubmit}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      <CalendarClock className="w-4 h-4 text-site-text-dim" />
+                      Schedule…
+                    </button>
+                    <Link
+                      to="/drafts"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text-muted hover:bg-site-surface hover:text-site-text transition-colors"
+                    >
+                      <FileText className="w-4 h-4 text-site-text-dim" />
+                      View drafts
+                    </Link>
                   </div>
                 )}
               </div>

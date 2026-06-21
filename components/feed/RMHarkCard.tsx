@@ -4,12 +4,11 @@ import type { FeedItem, FeedItemUser } from '@/lib/feed-types';
 import { RMHarkActions } from './RMHarkActions';
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { Repeat2, MoreHorizontal, Heart, Repeat, Trash2, Share2, BadgeCheck, ShieldCheck, Flag, Ban, VolumeX, Bookmark, Coins, Pin, Pencil } from 'lucide-react';
+import { Repeat2, MoreHorizontal, Heart, Repeat, Trash2, Share2, BadgeCheck, ShieldCheck, Flag, Ban, VolumeX, Bookmark, Coins, Pin, Pencil, Languages, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { ReportDialog } from '@/components/moderation/ReportDialog';
 import { TipDialog } from '@/components/economy/TipDialog';
 import { EditPostModal } from './EditPostModal';
-import { PostTranslate } from './PostTranslate';
 import { PostLockedCard } from './PostLockedCard';
 import { Link } from '@tanstack/react-router';
 import { RMHarkContent, extractFirstUrl } from './RMHarkContent';
@@ -22,6 +21,7 @@ import { authClient } from '@/lib/auth-client';
 import { useResolvedUser } from '@/components/Providers';
 import { useFreshUser } from '@/stores/userDisplayStore';
 import { EngagementListModal } from './EngagementListModal';
+import { InsightsModal } from './InsightsModal';
 import { ShareModal } from './ShareModal';
 import { timeAgoShort } from '@/lib/utils';
 
@@ -68,9 +68,46 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
   const [reportOpen, setReportOpen] = useState(false);
   const [tipOpen, setTipOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [insightsOpen, setInsightsOpen] = useState(false);
   const [pinned, setPinned] = useState(!!item.pinned);
   const [bookmarked, setBookmarked] = useState(!!item.bookmarked);
+  const [translatedText, setTranslatedText] = useState<string | null>(null);
+  const [showTranslated, setShowTranslated] = useState(false);
+  const [translating, setTranslating] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const browserLang = () => {
+    const map: Record<string, string> = {
+      en: 'English', es: 'Spanish', fr: 'French', de: 'German', pt: 'Portuguese', it: 'Italian',
+      nl: 'Dutch', ja: 'Japanese', ko: 'Korean', zh: 'Chinese', ru: 'Russian', ar: 'Arabic',
+      hi: 'Hindi', tr: 'Turkish', pl: 'Polish',
+    };
+    if (typeof navigator === 'undefined') return 'English';
+    return map[(navigator.language || 'en').slice(0, 2).toLowerCase()] ?? 'English';
+  };
+
+  const handleTranslate = async () => {
+    setMenuOpen(false);
+    if (translatedText) {
+      setShowTranslated((s) => !s);
+      return;
+    }
+    setTranslating(true);
+    try {
+      const res = await fetch(`/api/rmharks/${actualId}/translate?to=${encodeURIComponent(browserLang())}`, { credentials: 'include' });
+      if (!res.ok) {
+        toast.error('Could not translate this post.');
+        return;
+      }
+      const data = await res.json();
+      if (data.text) {
+        setTranslatedText(data.text);
+        setShowTranslated(true);
+      }
+    } finally {
+      setTranslating(false);
+    }
+  };
 
   const handlePin = async () => {
     setMenuOpen(false);
@@ -260,8 +297,25 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
                 <Share2 className="w-4 h-4 text-site-text-dim" />
                 Share
               </button>
+              {item.content && !item.deletedAt && item.content.length > 8 && (
+                <button
+                  onClick={handleTranslate}
+                  disabled={translating}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors disabled:opacity-60"
+                >
+                  <Languages className="w-4 h-4 text-site-text-dim" />
+                  {translating ? 'Translating…' : translatedText ? (showTranslated ? 'Show original' : 'Show translation') : 'Translate'}
+                </button>
+              )}
               {isAuthor && (
                 <>
+                  <button
+                    onClick={() => { setMenuOpen(false); setInsightsOpen(true); }}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+                  >
+                    <TrendingUp className="w-4 h-4 text-site-text-dim" />
+                    View insights
+                  </button>
                   <button
                     onClick={() => { setMenuOpen(false); setEditOpen(true); }}
                     className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
@@ -396,8 +450,11 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
           {item.content && (
             <RMHarkContent text={item.content} className="text-site-text text-[15px] mt-1 whitespace-pre-wrap break-words" />
           )}
-          {item.content && !item.deletedAt && item.content.length > 8 && (
-            <PostTranslate postId={actualId} />
+          {/* AI translation (toggled from the ⋯ menu) */}
+          {showTranslated && translatedText && (
+            <p className="mt-1 whitespace-pre-wrap break-words rounded-lg bg-site-surface/50 p-2 text-[15px] text-site-text">
+              {translatedText}
+            </p>
           )}
 
           {/* Poll */}
@@ -483,6 +540,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
         open={shareModalOpen}
         onClose={() => setShareModalOpen(false)}
         url={shareUrl}
+        embedId={actualId}
         text={`Check out what ${item.user?.name || item.user?.handle || 'someone'} RMHark'd on RMH Studios!`}
       />
 
@@ -512,6 +570,10 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
           initialContent={item.content ?? ''}
           onSaved={(content) => updateItem(item.id, { content, edited: true })}
         />
+      )}
+
+      {isAuthor && insightsOpen && (
+        <InsightsModal open={insightsOpen} onClose={() => setInsightsOpen(false)} postId={actualId} />
       )}
     </div>
   );

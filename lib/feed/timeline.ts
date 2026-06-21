@@ -19,7 +19,8 @@ import type { FeedItem, FeedFilter, FeedPoll } from "../feed-types";
 import { userDisplaySelect, resolveUser } from "../user-display";
 import { getAllPosts } from "../blog";
 import { decodeCursor, encodeCursor, keysetWhere } from "./cursor";
-import { rankCandidates } from "./ranking";
+import { rankCandidates, type RankContext } from "./ranking";
+import { buildInterestProfile } from "./personalize.server";
 import { getHiddenAuthorIds } from "../moderation.server";
 import { audienceWhere } from "./audience.server";
 import { applyLock } from "./map-feed-item.server";
@@ -394,6 +395,16 @@ async function getForYouTimeline(
     : [];
   const audWhere = audienceWhere(userId, viewerFollowingIds);
 
+  // Personalized ranking context (#11): the viewer's follow graph plus an
+  // interest profile from their recent engagement. Only built on the first
+  // page, since ranking reorders within a page window.
+  const interest = userId && !cursor ? await buildInterestProfile(userId) : null;
+  const rankCtx: RankContext = {
+    followingIds: new Set(viewerFollowingIds),
+    authorAffinity: interest?.authorAffinity,
+    topicInterest: interest?.topicInterest,
+  };
+
   const shouldFetchRmharks = filter === "all" || filter === "rmhark" || !!search;
   let dbItems: FeedItem[] = [];
 
@@ -427,8 +438,8 @@ async function getForYouTimeline(
       ].sort(compareKeysetDesc)
     ).slice(0, limit);
 
-    // Ranking seam (Phase 5) — no-op unless RANKING_ENABLED.
-    dbItems = rankCandidates(dbItems);
+    // Ranking seam (Phase 5) — personalized For-You ordering (#11).
+    dbItems = rankCandidates(dbItems, rankCtx);
   }
 
   // Announcements (skip when searching — only RMHarks have content).

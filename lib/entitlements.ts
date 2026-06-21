@@ -44,15 +44,28 @@ export function hasBadge(tier: Tier): boolean {
   return TIER_RANK[tier] >= TIER_RANK.pro;
 }
 
-/** Highest currently-active tier for a user, read from synced Subscription rows. */
+/**
+ * Highest currently-active tier for a user, from synced Subscription rows plus
+ * any active coin-funded gift memberships (#18).
+ */
 export async function getUserTier(userId: string): Promise<Tier> {
-  const subs = await prisma.subscription.findMany({
-    where: { referenceId: userId },
-    select: { plan: true, status: true },
-  });
+  const [subs, giftGrants] = await Promise.all([
+    prisma.subscription.findMany({
+      where: { referenceId: userId },
+      select: { plan: true, status: true },
+    }),
+    prisma.giftMembership.findMany({
+      where: { userId, expiresAt: { gt: new Date() } },
+      select: { tier: true },
+    }),
+  ]);
   let best: Tier = 'free';
   for (const sub of subs) {
     const tier = tierFromSubscription(sub);
+    if (TIER_RANK[tier] > TIER_RANK[best]) best = tier;
+  }
+  for (const g of giftGrants) {
+    const tier = mapPlanToTier(g.tier);
     if (TIER_RANK[tier] > TIER_RANK[best]) best = tier;
   }
   return best;

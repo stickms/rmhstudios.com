@@ -113,6 +113,61 @@ model User {
   communitiesCreated Community[]       @relation("CommunityCreator")
   communityMembers   CommunityMember[]
 
+  // Progression: quests + battle-pass season progress
+  quests         UserQuest[]
+  seasonProgress UserSeasonProgress[]
+
+  // Composer: saved drafts + scheduled posts
+  scheduledPosts ScheduledPost[]
+
+  // Daily coin wheel spins
+  wheelSpins DailyWheelSpin[]
+
+  // Coin staking (interest-bearing vault)
+  coinStake CoinStake?
+
+  // Clans / teams
+  clansOwned     Clan[]      @relation("ClanOwner")
+  clanMembership ClanMember?
+
+  // Creator storefront
+  storefrontProducts  StorefrontProduct[]  @relation("StorefrontCreator")
+  storefrontPurchases StorefrontPurchase[] @relation("StorefrontBuyer")
+
+  // AI persona chatbots
+  aiPersonas        AiPersona[]        @relation("PersonaOwner")
+  aiPersonaMessages AiPersonaMessage[]
+
+  // Build marketplace unlocks
+  buildUnlocks BuildUnlock[]
+
+  // Ranked play: ELO ratings + challenges
+  eloRatings            EloRating[]
+  challengesIssued      RankedChallenge[] @relation("ChallengeChallenger")
+  challengesReceived    RankedChallenge[] @relation("ChallengeOpponent")
+
+  // Gifted (coin-funded) memberships
+  giftMembershipsReceived GiftMembership[] @relation("GiftRecipient")
+  giftMembershipsSent     GiftMembership[] @relation("GiftGifter")
+
+  // Group DMs
+  groupChatsOwned   GroupChat[]       @relation("GroupOwner")
+  groupMemberships  GroupChatMember[]
+  groupMessages     GroupMessage[]
+
+  // RMHStudy flashcards
+  flashcardDecks   FlashcardDeck[]
+  flashcardReviews FlashcardReview[]
+
+  // RMHTube clips + channel subscriptions
+  rmhtubeClips         RmhTubeClip[]
+  rmhtubeSubscriptions RmhTubeSubscription[] @relation("TubeSubscriber")
+  rmhtubeSubscribers   RmhTubeSubscription[] @relation("TubeChannel")
+
+  // RMHMusic "guess the song" game
+  musicPuzzles       MusicGuessPuzzle[]
+  musicGuessAttempts MusicGuessAttempt[]
+
   // Economy: shop inventory, coin ledger (tips/gifts)
   inventory       UserInventory[]
   coinsSent       CoinTransaction[] @relation("CoinSender")
@@ -759,6 +814,43 @@ model RmhTubePlaylistItem {
   @@map("rmhtube_playlist_item")
 }
 
+/// A saved timestamped segment ("clip") of a video (#32). No external API —
+/// just the URL plus a start/end the user marks, with optional chapter notes.
+model RmhTubeClip {
+  id           String   @id @default(cuid())
+  userId       String
+  url          String
+  mediaType    String   @default("youtube")
+  title        String   @db.VarChar(120)
+  startSeconds Int
+  endSeconds   Int
+  thumbnailUrl String?
+  note         String?  @db.VarChar(300)
+  isPublic     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([isPublic, createdAt(sort: Desc)])
+  @@map("rmhtube_clip")
+}
+
+/// Channel subscription — subscribe to another user's RMHTube activity (#32).
+model RmhTubeSubscription {
+  id           String   @id @default(cuid())
+  subscriberId String
+  channelId    String
+  createdAt    DateTime @default(now())
+
+  subscriber User @relation("TubeSubscriber", fields: [subscriberId], references: [id], onDelete: Cascade)
+  channel    User @relation("TubeChannel", fields: [channelId], references: [id], onDelete: Cascade)
+
+  @@unique([subscriberId, channelId])
+  @@index([channelId])
+  @@map("rmhtube_subscription")
+}
+
 model RmhTubeUserStats {
   userId                String   @id
   totalWatchTimeMinutes Int      @default(0)
@@ -1273,6 +1365,9 @@ model UserProfile {
   hasProfilePet         Boolean   @default(false)
   showProfilePet        Boolean   @default(true)
 
+  // Progression: lifetime platform XP (level is derived from this)
+  xp                    Int       @default(0)
+
   // Creator tip goal (monthly coins target shown on the profile)
   tipGoal               Int?
   tipGoalLabel          String?   @db.VarChar(80)
@@ -1402,6 +1497,43 @@ model RmhMusicChatMessage {
   @@map("rmh_music_chat_message")
 }
 
+/// "Guess the song" puzzle (#33). Players reveal progressive text hints and
+/// guess the title; needs no external audio. Answers are matched leniently
+/// against `acceptedAnswers`.
+model MusicGuessPuzzle {
+  id              String   @id @default(cuid())
+  authorId        String
+  title           String   @db.VarChar(160) // canonical answer (song title)
+  artist          String   @db.VarChar(160)
+  hints           Json // ordered array of hint strings
+  acceptedAnswers Json // lowercased acceptable answers
+  plays           Int      @default(0)
+  solves          Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  author   User                @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  attempts MusicGuessAttempt[]
+
+  @@index([createdAt(sort: Desc)])
+  @@map("music_guess_puzzle")
+}
+
+model MusicGuessAttempt {
+  id        String   @id @default(cuid())
+  puzzleId  String
+  userId    String
+  solved    Boolean  @default(false)
+  hintsUsed Int      @default(0)
+  createdAt DateTime @default(now())
+
+  puzzle MusicGuessPuzzle @relation(fields: [puzzleId], references: [id], onDelete: Cascade)
+  user   User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([puzzleId, userId])
+  @@index([userId])
+  @@map("music_guess_attempt")
+}
+
 // ─── DM Privacy ───────────────────────────────────────────────────
 
 enum DmPrivacy {
@@ -1487,6 +1619,8 @@ model UserBuild {
   isCurated    Boolean         @default(false) // Added for "Official Build" status
   position     Int             @default(0) // Added for manual sorting by admins
   technologies Json            @default("[]")
+  // Marketplace: coins to unlock the readme/repo/demo (null/0 = free).
+  price        Int?
   likeCount    Int             @default(0)
   commentCount Int             @default(0)
   viewCount    Int             @default(0)
@@ -1502,11 +1636,181 @@ model UserBuild {
   likes      BuildLike[]
   comments   BuildComment[]
   views      BuildView[]
+  unlocks    BuildUnlock[]
 
   @@index([userId])
   @@index([visibility, publishedAt(sort: Desc)])
   @@index([slug])
   @@map("user_build")
+}
+
+/// A paid unlock of a build's gated content (#16). Mirrors PostUnlock.
+model BuildUnlock {
+  id        String   @id @default(cuid())
+  userId    String
+  buildId   String
+  pricePaid Int
+  createdAt DateTime @default(now())
+
+  user  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  build UserBuild @relation(fields: [buildId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, buildId])
+  @@index([buildId])
+  @@map("build_unlock")
+}
+
+/// Per-game ELO rating for ranked play (#5). Updated when a challenge resolves.
+model EloRating {
+  id        String   @id @default(cuid())
+  userId    String
+  game      String   @db.VarChar(40)
+  rating    Int      @default(1000)
+  wins      Int      @default(0)
+  losses    Int      @default(0)
+  draws     Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, game])
+  @@index([game, rating(sort: Desc)])
+  @@map("elo_rating")
+}
+
+/// An async ranked challenge between two players. The result is trust-reported
+/// by either participant; resolving it updates both ELO ratings.
+model RankedChallenge {
+  id           String    @id @default(cuid())
+  game         String    @db.VarChar(40)
+  challengerId String
+  opponentId   String
+  status       String    @db.VarChar(12) @default("pending") // pending|accepted|declined|done
+  winnerId     String? // null winner on a done challenge = draw
+  createdAt    DateTime  @default(now())
+  resolvedAt   DateTime?
+
+  challenger User @relation("ChallengeChallenger", fields: [challengerId], references: [id], onDelete: Cascade)
+  opponent   User @relation("ChallengeOpponent", fields: [opponentId], references: [id], onDelete: Cascade)
+
+  @@index([opponentId, status])
+  @@index([challengerId, status])
+  @@map("ranked_challenge")
+}
+
+/// A coin-funded gift membership (#18). Grants a tier for a time window,
+/// independent of Stripe billing. getUserTier folds active grants in.
+model GiftMembership {
+  id        String   @id @default(cuid())
+  userId    String // recipient
+  gifterId  String? // null = system grant
+  tier      String   @db.VarChar(16) // 'starter' | 'pro'
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user   User  @relation("GiftRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  gifter User? @relation("GiftGifter", fields: [gifterId], references: [id], onDelete: SetNull)
+
+  @@index([userId, expiresAt])
+  @@map("gift_membership")
+}
+
+/// A group direct-message thread (#15). Distinct from 1-on-1 Conversations.
+model GroupChat {
+  id            String   @id @default(cuid())
+  name          String   @db.VarChar(60)
+  ownerId       String
+  lastMessageAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  owner    User              @relation("GroupOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members  GroupChatMember[]
+  messages GroupMessage[]
+
+  @@map("group_chat")
+}
+
+model GroupChatMember {
+  id         String   @id @default(cuid())
+  groupId    String
+  userId     String
+  lastReadAt DateTime @default(now())
+  joinedAt   DateTime @default(now())
+
+  group GroupChat @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@index([userId])
+  @@map("group_chat_member")
+}
+
+model GroupMessage {
+  id        String   @id @default(cuid())
+  groupId   String
+  senderId  String
+  content   String   @db.VarChar(2000)
+  createdAt DateTime @default(now())
+
+  group  GroupChat @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  sender User      @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([groupId, createdAt])
+  @@map("group_message")
+}
+
+/// RMHStudy flashcard deck (#31). Decks are personal but can be shared publicly.
+model FlashcardDeck {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String   @db.VarChar(100)
+  description String?  @db.VarChar(500)
+  isPublic    Boolean  @default(false)
+  cardCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cards Flashcard[]
+
+  @@index([userId])
+  @@index([isPublic, updatedAt(sort: Desc)])
+  @@map("flashcard_deck")
+}
+
+model Flashcard {
+  id        String   @id @default(cuid())
+  deckId    String
+  front     String   @db.Text
+  back      String   @db.Text
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  deck    FlashcardDeck     @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  reviews FlashcardReview[]
+
+  @@index([deckId])
+  @@map("flashcard")
+}
+
+/// Per-user spaced-repetition state for a card (SM-2). Lets several users study
+/// the same (public) deck with independent schedules.
+model FlashcardReview {
+  id           String   @id @default(cuid())
+  userId       String
+  cardId       String
+  easeFactor   Float    @default(2.5)
+  intervalDays Int      @default(0)
+  repetitions  Int      @default(0)
+  dueAt        DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card Flashcard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, cardId])
+  @@index([userId, dueAt])
+  @@map("flashcard_review")
 }
 
 model BuildVersion {
@@ -2414,4 +2718,221 @@ model CommunityMember {
   @@unique([communityId, userId])
   @@index([userId])
   @@map("community_member")
+}
+
+// ─── Progression: Quests ──────────────────────────────────────────────────
+// Quest definitions live in code (lib/quests/catalog.ts). One row per user per
+// quest per period (daily/weekly), tracking progress + claim state.
+model UserQuest {
+  id        String   @id @default(cuid())
+  userId    String
+  questId   String   @db.VarChar(64)
+  periodKey String   @db.VarChar(16) // e.g. "2026-06-21" (daily) or "2026-W25" (weekly)
+  progress  Int      @default(0)
+  completed Boolean  @default(false)
+  claimed   Boolean  @default(false)
+  updatedAt DateTime @default(now()) @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questId, periodKey])
+  @@index([userId, periodKey])
+  @@map("user_quest")
+}
+
+// ─── Progression: Battle Pass ─────────────────────────────────────────────
+// Season + tier rewards defined in code (lib/battlepass/season.ts). Premium
+// track is unlocked by spending RMH coins. Claimed tiers stored as a Json array.
+model UserSeasonProgress {
+  id           String   @id @default(cuid())
+  userId       String
+  seasonId     String   @db.VarChar(32)
+  seasonXp     Int      @default(0)
+  premium      Boolean  @default(false)
+  claimedFree  Json     @default("[]") // tier numbers claimed on the free track
+  claimedPaid  Json     @default("[]") // tier numbers claimed on the premium track
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, seasonId])
+  @@map("user_season_progress")
+}
+
+/// A saved draft (scheduledAt = null) or a scheduled post (scheduledAt set).
+/// Scheduled posts are materialized into real RMHarks lazily by the publisher
+/// once their time is due. `publishedId` links to the created post afterwards.
+model ScheduledPost {
+  id          String         @id @default(cuid())
+  userId      String
+  content     String         @db.Text
+  gifUrl      String?        @db.Text
+  imageUrls   String[]       @default([])
+  audience    RMHarkAudience @default(PUBLIC)
+  unlockPrice Int?
+  communityId String?
+  poll        Json? // { question, options[], multiSelect, durationHours }
+  scheduledAt DateTime? // null = plain draft
+  publishedId String? // set once published → the created RMHark id
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([scheduledAt])
+  @@map("scheduled_post")
+}
+
+/// One row per user per UTC day: the daily coin-wheel spin and its reward.
+/// The unique [userId, dateKey] enforces once-per-day server-side.
+model DailyWheelSpin {
+  id        String   @id @default(cuid())
+  userId    String
+  dateKey   String   @db.VarChar(16) // YYYY-MM-DD (UTC)
+  reward    Int
+  segment   Int // winning segment index (for animation replay)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dateKey])
+  @@index([userId])
+  @@map("daily_wheel_spin")
+}
+
+/// An interest-bearing coin vault (#18). One per user. Interest accrues lazily:
+/// each deposit/withdraw first rolls elapsed time into `accrued` so we never
+/// need a background job. `lastAccrued` marks the last roll-up time.
+model CoinStake {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  principal   Int      @default(0)
+  accrued     Int      @default(0)
+  lastAccrued DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("coin_stake")
+}
+
+/// A competitive team (#4). Unlike communities (topic groups, many memberships),
+/// a user belongs to at most one clan. Member XP gains are aggregated into the
+/// clan's totalXp for a cross-clan leaderboard.
+model Clan {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String   @db.VarChar(40)
+  tag         String   @db.VarChar(6) // short uppercase team tag, e.g. RMH
+  description String?  @db.VarChar(300)
+  color       String?  @db.VarChar(16)
+  ownerId     String
+  memberCount Int      @default(1)
+  totalXp     Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  owner   User         @relation("ClanOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members ClanMember[]
+
+  @@index([totalXp(sort: Desc)])
+  @@map("clan")
+}
+
+enum ClanRole {
+  OWNER
+  OFFICER
+  MEMBER
+}
+
+model ClanMember {
+  id            String   @id @default(cuid())
+  clanId        String
+  userId        String   @unique // one clan per user
+  role          ClanRole @default(MEMBER)
+  contributedXp Int      @default(0)
+  joinedAt      DateTime @default(now())
+
+  clan Clan @relation(fields: [clanId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([clanId])
+  @@map("clan_member")
+}
+
+/// A digital product a creator sells for coins (#19). The `deliverable` (a link,
+/// code, or message) is revealed only to the creator and to buyers. A 10%
+/// platform fee is burned on each sale as a coin sink.
+model StorefrontProduct {
+  id          String   @id @default(cuid())
+  creatorId   String
+  title       String   @db.VarChar(80)
+  description String?  @db.VarChar(500)
+  price       Int // coins
+  deliverable String?  @db.Text
+  active      Boolean  @default(true)
+  salesCount  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  creator   User                 @relation("StorefrontCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  purchases StorefrontPurchase[]
+
+  @@index([creatorId])
+  @@map("storefront_product")
+}
+
+model StorefrontPurchase {
+  id        String   @id @default(cuid())
+  productId String
+  buyerId   String
+  pricePaid Int
+  createdAt DateTime @default(now())
+
+  product StorefrontProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  buyer   User              @relation("StorefrontBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, buyerId])
+  @@index([buyerId])
+  @@map("storefront_purchase")
+}
+
+/// A user-authored AI persona chatbot (#8). Its `systemPrompt` shapes replies;
+/// conversations are per (persona, user) and stored in AiPersonaMessage.
+model AiPersona {
+  id           String   @id @default(cuid())
+  ownerId      String
+  name         String   @db.VarChar(40)
+  tagline      String?  @db.VarChar(120)
+  systemPrompt String   @db.VarChar(2000)
+  greeting     String?  @db.VarChar(500)
+  emoji        String?  @db.VarChar(8)
+  isPublic     Boolean  @default(true)
+  chatCount    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  owner    User               @relation("PersonaOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  messages AiPersonaMessage[]
+
+  @@index([ownerId])
+  @@index([isPublic, chatCount(sort: Desc)])
+  @@map("ai_persona")
+}
+
+model AiPersonaMessage {
+  id        String   @id @default(cuid())
+  personaId String
+  userId    String
+  role      String   @db.VarChar(12) // 'user' | 'assistant'
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  persona AiPersona @relation(fields: [personaId], references: [id], onDelete: Cascade)
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([personaId, userId, createdAt])
+  @@map("ai_persona_message")
 }

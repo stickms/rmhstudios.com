@@ -36,6 +36,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
   const [categoryId, setCategoryId] = useState(build?.category?.id || '');
   const [technologies, setTechnologies] = useState<string[]>(build?.technologies || []);
   const [tags, setTags] = useState<string[]>(build?.tags || []);
+  const [price, setPrice] = useState<string>(build?.price ? String(build.price) : '');
   const [visibility, setVisibility] = useState<'PUBLIC' | 'UNLISTED' | 'PRIVATE'>(
     build?.visibility || 'PUBLIC'
   );
@@ -67,6 +68,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
         technologies,
         tags,
         visibility,
+        price: price ? Math.max(0, parseInt(price, 10) || 0) : 0,
       };
 
       const res = await fetch(
@@ -320,6 +322,22 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
           className="w-full px-4 py-2 rounded-lg bg-site-surface border border-site-border text-site-text font-mono text-sm outline-none focus:border-violet-500/50 transition-colors resize-none"
           rows={10}
         />
+      </div>
+
+      {/* Marketplace price */}
+      <div>
+        <label className="block text-sm font-medium text-site-text mb-2">Price (coins)</label>
+        <input
+          type="number"
+          min={0}
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          placeholder="0 (free)"
+          className="w-full rounded-lg border border-site-border bg-site-surface px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+        />
+        <p className="mt-1 text-xs text-site-text-dim">
+          Charge coins to unlock the README, source, and demo. Leave 0 to keep it free. A 10% platform fee applies to sales.
+        </p>
       </div>
 
       {/* Visibility */}

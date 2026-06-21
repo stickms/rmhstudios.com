@@ -84,15 +84,30 @@ export const Route = createFileRoute('/api/user-builds/$id')({
       liked = !!like;
     }
 
+    // Marketplace gating: paid builds hide readme/repo/demo until unlocked.
+    const price = build.price ?? 0;
+    let unlocked = isOwner || price <= 0;
+    if (!unlocked && currentUserId) {
+      const u = await prisma.buildUnlock.findUnique({
+        where: { userId_buildId: { userId: currentUserId, buildId: build.id } },
+        select: { id: true },
+      });
+      unlocked = !!u;
+    }
+    const locked = price > 0 && !unlocked;
+
     return Response.json({
       id: build.id,
       slug: build.slug,
       title: build.title,
       description: build.description,
-      readme: build.readme,
+      readme: locked ? null : build.readme,
       thumbnailUrl: build.thumbnailUrl,
-      repoUrl: build.repoUrl,
-      demoUrl: build.demoUrl,
+      repoUrl: locked ? null : build.repoUrl,
+      demoUrl: locked ? null : build.demoUrl,
+      price,
+      locked,
+      unlocked,
       visibility: build.visibility,
       featured: build.featured,
       isCurated: build.isCurated,
@@ -195,6 +210,8 @@ export const Route = createFileRoute('/api/user-builds/$id')({
     if (data.repoUrl === '') data.repoUrl = null;
     if (data.demoUrl === '') data.demoUrl = null;
     if (data.thumbnailUrl === '') data.thumbnailUrl = null;
+    // Normalize marketplace price: 0/undefined → free (null).
+    if (data.price !== undefined) data.price = (data.price as number) > 0 ? data.price : null;
 
     // Update build and tags
     const updated = await prisma.$transaction(async (tx) => {

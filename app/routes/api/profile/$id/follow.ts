@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma.server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { createNotification, removeNotification } from "@/lib/notifications.server";
 import { progressAchievement } from "@/lib/achievements/engine.server";
+import { awardXp } from "@/lib/xp/engine.server";
+import { progressQuests } from "@/lib/quests/engine.server";
 
 export const Route = createFileRoute('/api/profile/$id/follow')({
   server: {
@@ -80,6 +82,10 @@ export const Route = createFileRoute('/api/profile/$id/follow')({
       } catch (e) {
         console.error("follow achievement error:", e);
       }
+
+      // Progression: XP + quests for the follower taking the action.
+      await awardXp(followerId, 5);
+      await progressQuests(followerId, "follow");
 
       return Response.json({ success: true, following: true });
     }

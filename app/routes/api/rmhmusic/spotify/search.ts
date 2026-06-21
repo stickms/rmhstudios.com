@@ -69,6 +69,12 @@ export const Route = createFileRoute('/api/rmhmusic/spotify/search')({
   const type = new URL(request.url).searchParams.get('type') || 'track';
   if (!q) return Response.json({ results: [] });
 
+  // Degrade gracefully when Spotify isn't configured so the UI can show a
+  // helpful message instead of a generic 500.
+  if (!process.env.SPOTIFY_CLIENT_ID || !process.env.SPOTIFY_CLIENT_SECRET) {
+    return Response.json({ tracks: [], configured: false });
+  }
+
   try {
     const accessToken = await getClientCredentialsToken();
 

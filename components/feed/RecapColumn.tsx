@@ -44,6 +44,12 @@ export function RecapColumn() {
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-site-border bg-site-bg/80 px-4 py-3 backdrop-blur">
         <Sparkles className="h-5 w-5 text-site-accent" />
         <h1 className="text-lg font-bold text-site-text">Your week on RMH</h1>
+        <Link
+          to="/wrapped"
+          className="ml-auto inline-flex items-center gap-1 rounded-full border border-site-border px-3 py-1 text-xs font-semibold text-site-accent transition-colors hover:bg-site-surface"
+        >
+          <Sparkles className="h-3.5 w-3.5" /> Year Wrapped
+        </Link>
       </header>
 
       {loading ? (

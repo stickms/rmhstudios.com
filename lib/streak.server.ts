@@ -8,6 +8,8 @@
 
 import { prisma } from '@/lib/prisma.server';
 import { grantAchievement } from '@/lib/achievements/engine.server';
+import { awardXp } from '@/lib/xp/engine.server';
+import { progressQuests } from '@/lib/quests/engine.server';
 
 export function todayKey(d = new Date()): string {
   return d.toISOString().slice(0, 10); // YYYY-MM-DD (UTC)
@@ -96,6 +98,10 @@ export async function checkIn(userId: string): Promise<StreakState> {
   // Streak milestone achievements (best-effort).
   if (current >= 7) await grantAchievement(userId, 'special.streak_7');
   if (current >= 30) await grantAchievement(userId, 'special.streak_30');
+
+  // Progression: XP + daily check-in quest.
+  await awardXp(userId, 20);
+  await progressQuests(userId, 'checkin');
 
   return {
     current,

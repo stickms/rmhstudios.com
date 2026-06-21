@@ -153,7 +153,9 @@ export function ExploreColumn() {
                     <span className="w-5 text-center text-sm font-bold text-site-text-dim">{i + 1}</span>
                     <UserAvatar src={l.user.image} alt={l.user.name || 'User'} size={28} fallbackName={l.user.name || 'U'} />
                     <span className="min-w-0 flex-1 truncate text-sm font-medium text-site-text">{l.user.name || l.user.handle}</span>
-                    <span className="text-sm font-semibold text-amber-500">🪙 {l.total.toLocaleString()}</span>
+                    <span className="inline-flex items-center gap-1 text-sm font-semibold text-amber-500">
+                      <Coins className="h-3.5 w-3.5" /> {l.total.toLocaleString()}
+                    </span>
                   </Link>
                 ))}
               </div>

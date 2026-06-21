@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Lock, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { toast } from 'sonner';
 
 /** Paywall card shown in place of a locked post's content. */
@@ -50,7 +51,11 @@ export function PostLockedCard({
           unlock();
         }}
       >
-        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : `Unlock for 🪙 ${price.toLocaleString()}`}
+        {loading ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <span className="inline-flex items-center gap-1">Unlock for <CoinIcon className="h-4 w-4" /> {price.toLocaleString()}</span>
+        )}
       </Button>
     </div>
   );

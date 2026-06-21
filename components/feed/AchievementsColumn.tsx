@@ -1,8 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Loader2, Trophy } from 'lucide-react';
+import { Loader2, Trophy, Users, Gamepad2, Coins, Hammer, Sparkles, Lock } from 'lucide-react';
 import { TIER_COLORS, CATEGORY_LABELS, type AchievementCategory, type AchievementTier } from '@/lib/achievements/catalog';
+
+// Library icons per achievement category (replaces emoji badges).
+const CATEGORY_ICON: Record<AchievementCategory, typeof Users> = {
+  social: Users,
+  games: Gamepad2,
+  economy: Coins,
+  creator: Hammer,
+  special: Sparkles,
+};
 
 interface AchievementView {
   id: string;
@@ -70,7 +79,7 @@ export function AchievementsColumn({ userId }: { userId: string }) {
             <strong className="text-site-text">{data.stats.unlocked}</strong> / {data.stats.total} unlocked
           </span>
           <span aria-hidden>·</span>
-          <span>🪙 {data.stats.coinsEarned} earned</span>
+          <span className="inline-flex items-center gap-1"><Coins className="h-3.5 w-3.5 text-amber-400" /> {data.stats.coinsEarned} earned</span>
         </div>
         <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-site-surface">
           <div className="h-full rounded-full bg-site-accent transition-all" style={{ width: `${pct}%` }} />
@@ -98,15 +107,20 @@ export function AchievementsColumn({ userId }: { userId: string }) {
                           : 'border-site-border/60 bg-site-bg opacity-70'
                       }`}
                     >
-                      <div
-                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-xl"
-                        style={{
-                          background: a.unlocked ? `${TIER_COLORS[a.tier]}22` : 'var(--site-surface)',
-                          filter: a.unlocked ? 'none' : 'grayscale(1)',
-                        }}
-                      >
-                        {a.icon}
-                      </div>
+                      {(() => {
+                        const Icon = a.secret && !a.unlocked ? Lock : CATEGORY_ICON[a.category];
+                        return (
+                          <div
+                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+                            style={{ background: a.unlocked ? `${TIER_COLORS[a.tier]}22` : 'var(--site-surface)' }}
+                          >
+                            <Icon
+                              className="h-5 w-5"
+                              style={{ color: a.unlocked ? TIER_COLORS[a.tier] : 'var(--site-text-dim)' }}
+                            />
+                          </div>
+                        );
+                      })()}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <p className="truncate text-sm font-semibold text-site-text">{a.name}</p>
@@ -132,7 +146,9 @@ export function AchievementsColumn({ userId }: { userId: string }) {
                           </div>
                         )}
                         {a.unlocked && a.coinReward > 0 && (
-                          <p className="mt-0.5 text-[10px] text-site-text-dim">🪙 +{a.coinReward}</p>
+                          <p className="mt-0.5 inline-flex items-center gap-0.5 text-[10px] text-site-text-dim">
+                            <Coins className="h-3 w-3 text-amber-400" /> +{a.coinReward}
+                          </p>
                         )}
                       </div>
                     </div>

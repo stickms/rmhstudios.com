@@ -7,7 +7,7 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import {
   Home, Package, BookOpen, Library, LayoutGrid, Atom,
-  LogOut, PenSquare, User, MessageCircle, ShieldCheck, MoreHorizontal, Wallet, Sparkles, Bell, Search, Landmark, Bookmark, Trophy, Flame, ShoppingBag, Compass, Users
+  LogOut, PenSquare, User, MessageCircle, ShieldCheck, MoreHorizontal, Wallet, Sparkles, Bell, Search, Landmark, Bookmark, Trophy, Flame, ShoppingBag, Compass, Users, Zap, Shield, Bot, Swords, Clapperboard, Music
 } from 'lucide-react';
 import { ComposeModal } from './ComposeModal';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,12 @@ const navLinks = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/explore', label: 'Explore', icon: Compass },
   { href: '/communities', label: 'Communities', icon: Users },
+  { href: '/clans', label: 'Clans', icon: Shield },
+  { href: '/ranked', label: 'Ranked', icon: Swords },
+  { href: '/study', label: 'Flashcards', icon: BookOpen },
+  { href: '/clips', label: 'Clips', icon: Clapperboard },
+  { href: '/music-trivia', label: 'Guess the Song', icon: Music },
+  { href: '/personas', label: 'AI Personas', icon: Bot },
   { href: '/search', label: 'Search', icon: Search },
   { href: '/v', label: 'Pages', icon: LayoutGrid },
   { href: '/builds', label: 'Builds', icon: Package },
@@ -165,6 +171,21 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
             <span className={labelClass}>{streak.current}-day streak</span>
           </Link>
         )}
+        {/* Progress link (XP, quests, battle pass — shown when logged in) */}
+        {session && (
+          <Link
+            to="/progress"
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${itemJustifyClass} ${
+              pathname?.startsWith('/progress')
+                ? 'text-site-accent bg-site-accent-dim'
+                : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
+            }`}
+            title="Progress"
+          >
+            <Zap className="w-5 h-5 shrink-0" />
+            <span className={labelClass}>Progress</span>
+          </Link>
+        )}
         {/* Achievements link (shown when logged in) */}
         {session && (
           <Link
@@ -215,6 +236,21 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
               )}
             </div>
             <span className={labelClass}>Messages</span>
+          </Link>
+        )}
+        {/* Group chats link (shown when logged in) */}
+        {session && (
+          <Link
+            to="/groups"
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${itemJustifyClass} ${
+              pathname?.startsWith('/groups')
+                ? 'text-site-accent bg-site-accent-dim'
+                : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
+            }`}
+            title="Group chats"
+          >
+            <Users className="w-5 h-5 shrink-0" />
+            <span className={labelClass}>Groups</span>
           </Link>
         )}
         {/* Wallet link (shown when logged in, below Messages) */}

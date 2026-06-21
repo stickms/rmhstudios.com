@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Loader2, ShoppingBag, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { toast } from 'sonner';
 import { KIND_LABELS, KIND_ORDER, RARITY_COLORS, type ShopItemKind, type Rarity } from '@/lib/shop/catalog';
 
@@ -123,7 +124,11 @@ export function ShopColumn() {
           <ShoppingBag className="h-5 w-5 text-site-accent" />
           <h1 className="text-lg font-bold text-site-text">Shop</h1>
         </div>
-        {signedIn && <span className="rounded-full bg-site-surface px-3 py-1 text-sm font-semibold text-site-text">🪙 {coins.toLocaleString()}</span>}
+        {signedIn && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-site-surface px-3 py-1 text-sm font-semibold text-site-text">
+            <CoinIcon className="h-4 w-4" /> {coins.toLocaleString()}
+          </span>
+        )}
       </header>
 
       <div className="flex gap-1 overflow-x-auto border-b border-site-border px-3 py-2" role="tablist" aria-label="Shop categories">
@@ -169,7 +174,7 @@ export function ShopColumn() {
               </div>
               <div className="shrink-0">
                 {!signedIn ? (
-                  <span className="text-xs text-site-text-dim">🪙 {item.price}</span>
+                  <span className="inline-flex items-center gap-1 text-xs text-site-text-dim"><CoinIcon className="h-3.5 w-3.5" /> {item.price}</span>
                 ) : item.owned ? (
                   <Button
                     size="sm"
@@ -181,7 +186,7 @@ export function ShopColumn() {
                   </Button>
                 ) : (
                   <Button size="sm" variant="accent-outline" disabled={busy === item.id} onClick={() => buy(item)}>
-                    🪙 {item.price}
+                    <CoinIcon className="h-4 w-4" /> {item.price}
                   </Button>
                 )}
               </div>
