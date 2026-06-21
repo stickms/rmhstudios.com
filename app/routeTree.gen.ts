@@ -134,6 +134,7 @@ import { Route as SiteNotificationsRouteImport } from './routes/_site/notificati
 import { Route as SiteMusicTriviaRouteImport } from './routes/_site/music-trivia'
 import { Route as SiteExploreRouteImport } from './routes/_site/explore'
 import { Route as SiteDraftsRouteImport } from './routes/_site/drafts'
+import { Route as SiteDeveloperRouteImport } from './routes/_site/developer'
 import { Route as SiteCommunitiesRouteImport } from './routes/_site/communities'
 import { Route as SiteClipsRouteImport } from './routes/_site/clips'
 import { Route as SiteBookmarksRouteImport } from './routes/_site/bookmarks'
@@ -192,6 +193,9 @@ import { Route as ApiVersecraftSaveRouteImport } from './routes/api/versecraft/s
 import { Route as ApiVersecraftProgressRouteImport } from './routes/api/versecraft/progress'
 import { Route as ApiVegaScoreRouteImport } from './routes/api/vega/score'
 import { Route as ApiVegaLeaderboardRouteImport } from './routes/api/vega/leaderboard'
+import { Route as ApiV1PostsRouteImport } from './routes/api/v1/posts'
+import { Route as ApiV1MeRouteImport } from './routes/api/v1/me'
+import { Route as ApiV1FeedRouteImport } from './routes/api/v1/feed'
 import { Route as ApiUsersSearchRouteImport } from './routes/api/users/search'
 import { Route as ApiUserBuildsFeaturedRouteImport } from './routes/api/user-builds/featured'
 import { Route as ApiUserBuildsCategoriesRouteImport } from './routes/api/user-builds/categories'
@@ -221,6 +225,7 @@ import { Route as ApiRmhboxHistoryRouteImport } from './routes/api/rmhbox/histor
 import { Route as ApiRmharksImageRouteImport } from './routes/api/rmharks/image'
 import { Route as ApiRmharksAiGenerateRouteImport } from './routes/api/rmharks/ai-generate'
 import { Route as ApiRmharksIdRouteImport } from './routes/api/rmharks/$id'
+import { Route as ApiPromoFreeMonthRouteImport } from './routes/api/promo/free-month'
 import { Route as ApiProfileMeRouteImport } from './routes/api/profile/me'
 import { Route as ApiProfileAvatarRouteImport } from './routes/api/profile/avatar'
 import { Route as ApiProfileIdRouteImport } from './routes/api/profile/$id'
@@ -307,6 +312,7 @@ import { Route as ApiPersonasIdIndexRouteImport } from './routes/api/personas/$i
 import { Route as ApiGroupChatsIdIndexRouteImport } from './routes/api/group-chats/$id/index'
 import { Route as ApiDoctrineReputationIndexRouteImport } from './routes/api/doctrine/reputation/index'
 import { Route as ApiDoctrineIncidentsIndexRouteImport } from './routes/api/doctrine/incidents/index'
+import { Route as ApiDeveloperKeysIndexRouteImport } from './routes/api/developer/keys/index'
 import { Route as ApiCommunitiesSlugIndexRouteImport } from './routes/api/communities/$slug/index'
 import { Route as ApiClansSlugIndexRouteImport } from './routes/api/clans/$slug/index'
 import { Route as SiteUUseridIndexRouteImport } from './routes/_site/u/$userid/index'
@@ -376,6 +382,7 @@ import { Route as ApiDoctrineIncidentsIdRouteImport } from './routes/api/doctrin
 import { Route as ApiDoctrineAdminTiersRouteImport } from './routes/api/doctrine/admin/tiers'
 import { Route as ApiDoctrineAdminIncidentsRouteImport } from './routes/api/doctrine/admin/incidents'
 import { Route as ApiDoctrineAdminDisclosuresRouteImport } from './routes/api/doctrine/admin/disclosures'
+import { Route as ApiDeveloperKeysIdRouteImport } from './routes/api/developer/keys/$id'
 import { Route as ApiCommunitiesSlugJoinRouteImport } from './routes/api/communities/$slug/join'
 import { Route as ApiCommunitiesSlugFeedRouteImport } from './routes/api/communities/$slug/feed'
 import { Route as ApiCommentsCommentIdTranslateRouteImport } from './routes/api/comments/$commentId/translate'
@@ -400,6 +407,7 @@ import { Route as ApiSliceItSongsIdCommentsRouteImport } from './routes/api/slic
 import { Route as ApiRmhmusicGuessIdAttemptRouteImport } from './routes/api/rmhmusic/guess/$id/attempt'
 import { Route as ApiRmharksIdCommentCommentIdRouteImport } from './routes/api/rmharks/$id/comment/$commentId'
 import { Route as ApiAdminUsersIdStrikeRouteImport } from './routes/api/admin/users/$id/strike'
+import { Route as ApiAdminUsersIdGrantMembershipRouteImport } from './routes/api/admin/users/$id/grant-membership'
 import { Route as ApiAdminUsersIdBanRouteImport } from './routes/api/admin/users/$id/ban'
 import { Route as ApiAdminCuratedBuildsImageProxyRouteImport } from './routes/api/admin/curated-builds/image/proxy'
 import { Route as ApiAdminCuratedBuildsImageFilenameRouteImport } from './routes/api/admin/curated-builds/image/$filename'
@@ -1033,6 +1041,11 @@ const SiteDraftsRoute = SiteDraftsRouteImport.update({
   path: '/drafts',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteDeveloperRoute = SiteDeveloperRouteImport.update({
+  id: '/developer',
+  path: '/developer',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteCommunitiesRoute = SiteCommunitiesRouteImport.update({
   id: '/communities',
   path: '/communities',
@@ -1331,6 +1344,21 @@ const ApiVegaLeaderboardRoute = ApiVegaLeaderboardRouteImport.update({
   path: '/api/vega/leaderboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1PostsRoute = ApiV1PostsRouteImport.update({
+  id: '/api/v1/posts',
+  path: '/api/v1/posts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1MeRoute = ApiV1MeRouteImport.update({
+  id: '/api/v1/me',
+  path: '/api/v1/me',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1FeedRoute = ApiV1FeedRouteImport.update({
+  id: '/api/v1/feed',
+  path: '/api/v1/feed',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiUsersSearchRoute = ApiUsersSearchRouteImport.update({
   id: '/api/users/search',
   path: '/api/users/search',
@@ -1476,6 +1504,11 @@ const ApiRmharksIdRoute = ApiRmharksIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => ApiRmharksRoute,
+} as any)
+const ApiPromoFreeMonthRoute = ApiPromoFreeMonthRouteImport.update({
+  id: '/api/promo/free-month',
+  path: '/api/promo/free-month',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiProfileMeRoute = ApiProfileMeRouteImport.update({
   id: '/me',
@@ -1918,6 +1951,11 @@ const ApiDoctrineIncidentsIndexRoute =
     path: '/api/doctrine/incidents/',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiDeveloperKeysIndexRoute = ApiDeveloperKeysIndexRouteImport.update({
+  id: '/api/developer/keys/',
+  path: '/api/developer/keys/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCommunitiesSlugIndexRoute = ApiCommunitiesSlugIndexRouteImport.update({
   id: '/api/communities/$slug/',
   path: '/api/communities/$slug/',
@@ -2284,6 +2322,11 @@ const ApiDoctrineAdminDisclosuresRoute =
     path: '/api/doctrine/admin/disclosures',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiDeveloperKeysIdRoute = ApiDeveloperKeysIdRouteImport.update({
+  id: '/api/developer/keys/$id',
+  path: '/api/developer/keys/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCommunitiesSlugJoinRoute = ApiCommunitiesSlugJoinRouteImport.update({
   id: '/api/communities/$slug/join',
   path: '/api/communities/$slug/join',
@@ -2413,6 +2456,12 @@ const ApiAdminUsersIdStrikeRoute = ApiAdminUsersIdStrikeRouteImport.update({
   path: '/$id/strike',
   getParentRoute: () => ApiAdminUsersRoute,
 } as any)
+const ApiAdminUsersIdGrantMembershipRoute =
+  ApiAdminUsersIdGrantMembershipRouteImport.update({
+    id: '/$id/grant-membership',
+    path: '/$id/grant-membership',
+    getParentRoute: () => ApiAdminUsersRoute,
+  } as any)
 const ApiAdminUsersIdBanRoute = ApiAdminUsersIdBanRouteImport.update({
   id: '/$id/ban',
   path: '/$id/ban',
@@ -2496,6 +2545,7 @@ export interface FileRoutesByFullPath {
   '/bookmarks': typeof SiteBookmarksRoute
   '/clips': typeof SiteClipsRoute
   '/communities': typeof SiteCommunitiesRoute
+  '/developer': typeof SiteDeveloperRoute
   '/drafts': typeof SiteDraftsRoute
   '/explore': typeof SiteExploreRoute
   '/music-trivia': typeof SiteMusicTriviaRoute
@@ -2667,6 +2717,7 @@ export interface FileRoutesByFullPath {
   '/api/profile/$id': typeof ApiProfileIdRouteWithChildren
   '/api/profile/avatar': typeof ApiProfileAvatarRouteWithChildren
   '/api/profile/me': typeof ApiProfileMeRoute
+  '/api/promo/free-month': typeof ApiPromoFreeMonthRoute
   '/api/rmharks/$id': typeof ApiRmharksIdRouteWithChildren
   '/api/rmharks/ai-generate': typeof ApiRmharksAiGenerateRoute
   '/api/rmharks/image': typeof ApiRmharksImageRoute
@@ -2696,6 +2747,9 @@ export interface FileRoutesByFullPath {
   '/api/user-builds/categories': typeof ApiUserBuildsCategoriesRoute
   '/api/user-builds/featured': typeof ApiUserBuildsFeaturedRoute
   '/api/users/search': typeof ApiUsersSearchRoute
+  '/api/v1/feed': typeof ApiV1FeedRoute
+  '/api/v1/me': typeof ApiV1MeRoute
+  '/api/v1/posts': typeof ApiV1PostsRoute
   '/api/vega/leaderboard': typeof ApiVegaLeaderboardRoute
   '/api/vega/score': typeof ApiVegaScoreRoute
   '/api/versecraft/progress': typeof ApiVersecraftProgressRoute
@@ -2758,6 +2812,7 @@ export interface FileRoutesByFullPath {
   '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
   '/api/communities/$slug/feed': typeof ApiCommunitiesSlugFeedRoute
   '/api/communities/$slug/join': typeof ApiCommunitiesSlugJoinRoute
+  '/api/developer/keys/$id': typeof ApiDeveloperKeysIdRoute
   '/api/doctrine/admin/disclosures': typeof ApiDoctrineAdminDisclosuresRoute
   '/api/doctrine/admin/incidents': typeof ApiDoctrineAdminIncidentsRoute
   '/api/doctrine/admin/tiers': typeof ApiDoctrineAdminTiersRoute
@@ -2827,6 +2882,7 @@ export interface FileRoutesByFullPath {
   '/u/$userid/': typeof SiteUUseridIndexRoute
   '/api/clans/$slug/': typeof ApiClansSlugIndexRoute
   '/api/communities/$slug/': typeof ApiCommunitiesSlugIndexRoute
+  '/api/developer/keys/': typeof ApiDeveloperKeysIndexRoute
   '/api/doctrine/incidents/': typeof ApiDoctrineIncidentsIndexRoute
   '/api/doctrine/reputation/': typeof ApiDoctrineReputationIndexRoute
   '/api/group-chats/$id/': typeof ApiGroupChatsIdIndexRoute
@@ -2840,6 +2896,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/curated-builds/image/$filename': typeof ApiAdminCuratedBuildsImageFilenameRoute
   '/api/admin/curated-builds/image/proxy': typeof ApiAdminCuratedBuildsImageProxyRoute
   '/api/admin/users/$id/ban': typeof ApiAdminUsersIdBanRoute
+  '/api/admin/users/$id/grant-membership': typeof ApiAdminUsersIdGrantMembershipRoute
   '/api/admin/users/$id/strike': typeof ApiAdminUsersIdStrikeRoute
   '/api/rmharks/$id/comment/$commentId': typeof ApiRmharksIdCommentCommentIdRouteWithChildren
   '/api/rmhmusic/guess/$id/attempt': typeof ApiRmhmusicGuessIdAttemptRoute
@@ -2877,6 +2934,7 @@ export interface FileRoutesByTo {
   '/bookmarks': typeof SiteBookmarksRoute
   '/clips': typeof SiteClipsRoute
   '/communities': typeof SiteCommunitiesRoute
+  '/developer': typeof SiteDeveloperRoute
   '/drafts': typeof SiteDraftsRoute
   '/explore': typeof SiteExploreRoute
   '/music-trivia': typeof SiteMusicTriviaRoute
@@ -3044,6 +3102,7 @@ export interface FileRoutesByTo {
   '/api/profile/$id': typeof ApiProfileIdRouteWithChildren
   '/api/profile/avatar': typeof ApiProfileAvatarRouteWithChildren
   '/api/profile/me': typeof ApiProfileMeRoute
+  '/api/promo/free-month': typeof ApiPromoFreeMonthRoute
   '/api/rmharks/$id': typeof ApiRmharksIdRouteWithChildren
   '/api/rmharks/ai-generate': typeof ApiRmharksAiGenerateRoute
   '/api/rmharks/image': typeof ApiRmharksImageRoute
@@ -3073,6 +3132,9 @@ export interface FileRoutesByTo {
   '/api/user-builds/categories': typeof ApiUserBuildsCategoriesRoute
   '/api/user-builds/featured': typeof ApiUserBuildsFeaturedRoute
   '/api/users/search': typeof ApiUsersSearchRoute
+  '/api/v1/feed': typeof ApiV1FeedRoute
+  '/api/v1/me': typeof ApiV1MeRoute
+  '/api/v1/posts': typeof ApiV1PostsRoute
   '/api/vega/leaderboard': typeof ApiVegaLeaderboardRoute
   '/api/vega/score': typeof ApiVegaScoreRoute
   '/api/versecraft/progress': typeof ApiVersecraftProgressRoute
@@ -3135,6 +3197,7 @@ export interface FileRoutesByTo {
   '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
   '/api/communities/$slug/feed': typeof ApiCommunitiesSlugFeedRoute
   '/api/communities/$slug/join': typeof ApiCommunitiesSlugJoinRoute
+  '/api/developer/keys/$id': typeof ApiDeveloperKeysIdRoute
   '/api/doctrine/admin/disclosures': typeof ApiDoctrineAdminDisclosuresRoute
   '/api/doctrine/admin/incidents': typeof ApiDoctrineAdminIncidentsRoute
   '/api/doctrine/admin/tiers': typeof ApiDoctrineAdminTiersRoute
@@ -3204,6 +3267,7 @@ export interface FileRoutesByTo {
   '/u/$userid': typeof SiteUUseridIndexRoute
   '/api/clans/$slug': typeof ApiClansSlugIndexRoute
   '/api/communities/$slug': typeof ApiCommunitiesSlugIndexRoute
+  '/api/developer/keys': typeof ApiDeveloperKeysIndexRoute
   '/api/doctrine/incidents': typeof ApiDoctrineIncidentsIndexRoute
   '/api/doctrine/reputation': typeof ApiDoctrineReputationIndexRoute
   '/api/group-chats/$id': typeof ApiGroupChatsIdIndexRoute
@@ -3217,6 +3281,7 @@ export interface FileRoutesByTo {
   '/api/admin/curated-builds/image/$filename': typeof ApiAdminCuratedBuildsImageFilenameRoute
   '/api/admin/curated-builds/image/proxy': typeof ApiAdminCuratedBuildsImageProxyRoute
   '/api/admin/users/$id/ban': typeof ApiAdminUsersIdBanRoute
+  '/api/admin/users/$id/grant-membership': typeof ApiAdminUsersIdGrantMembershipRoute
   '/api/admin/users/$id/strike': typeof ApiAdminUsersIdStrikeRoute
   '/api/rmharks/$id/comment/$commentId': typeof ApiRmharksIdCommentCommentIdRouteWithChildren
   '/api/rmhmusic/guess/$id/attempt': typeof ApiRmhmusicGuessIdAttemptRoute
@@ -3274,6 +3339,7 @@ export interface FileRoutesById {
   '/_site/bookmarks': typeof SiteBookmarksRoute
   '/_site/clips': typeof SiteClipsRoute
   '/_site/communities': typeof SiteCommunitiesRoute
+  '/_site/developer': typeof SiteDeveloperRoute
   '/_site/drafts': typeof SiteDraftsRoute
   '/_site/explore': typeof SiteExploreRoute
   '/_site/music-trivia': typeof SiteMusicTriviaRoute
@@ -3446,6 +3512,7 @@ export interface FileRoutesById {
   '/api/profile/$id': typeof ApiProfileIdRouteWithChildren
   '/api/profile/avatar': typeof ApiProfileAvatarRouteWithChildren
   '/api/profile/me': typeof ApiProfileMeRoute
+  '/api/promo/free-month': typeof ApiPromoFreeMonthRoute
   '/api/rmharks/$id': typeof ApiRmharksIdRouteWithChildren
   '/api/rmharks/ai-generate': typeof ApiRmharksAiGenerateRoute
   '/api/rmharks/image': typeof ApiRmharksImageRoute
@@ -3475,6 +3542,9 @@ export interface FileRoutesById {
   '/api/user-builds/categories': typeof ApiUserBuildsCategoriesRoute
   '/api/user-builds/featured': typeof ApiUserBuildsFeaturedRoute
   '/api/users/search': typeof ApiUsersSearchRoute
+  '/api/v1/feed': typeof ApiV1FeedRoute
+  '/api/v1/me': typeof ApiV1MeRoute
+  '/api/v1/posts': typeof ApiV1PostsRoute
   '/api/vega/leaderboard': typeof ApiVegaLeaderboardRoute
   '/api/vega/score': typeof ApiVegaScoreRoute
   '/api/versecraft/progress': typeof ApiVersecraftProgressRoute
@@ -3537,6 +3607,7 @@ export interface FileRoutesById {
   '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
   '/api/communities/$slug/feed': typeof ApiCommunitiesSlugFeedRoute
   '/api/communities/$slug/join': typeof ApiCommunitiesSlugJoinRoute
+  '/api/developer/keys/$id': typeof ApiDeveloperKeysIdRoute
   '/api/doctrine/admin/disclosures': typeof ApiDoctrineAdminDisclosuresRoute
   '/api/doctrine/admin/incidents': typeof ApiDoctrineAdminIncidentsRoute
   '/api/doctrine/admin/tiers': typeof ApiDoctrineAdminTiersRoute
@@ -3606,6 +3677,7 @@ export interface FileRoutesById {
   '/_site/u/$userid/': typeof SiteUUseridIndexRoute
   '/api/clans/$slug/': typeof ApiClansSlugIndexRoute
   '/api/communities/$slug/': typeof ApiCommunitiesSlugIndexRoute
+  '/api/developer/keys/': typeof ApiDeveloperKeysIndexRoute
   '/api/doctrine/incidents/': typeof ApiDoctrineIncidentsIndexRoute
   '/api/doctrine/reputation/': typeof ApiDoctrineReputationIndexRoute
   '/api/group-chats/$id/': typeof ApiGroupChatsIdIndexRoute
@@ -3619,6 +3691,7 @@ export interface FileRoutesById {
   '/api/admin/curated-builds/image/$filename': typeof ApiAdminCuratedBuildsImageFilenameRoute
   '/api/admin/curated-builds/image/proxy': typeof ApiAdminCuratedBuildsImageProxyRoute
   '/api/admin/users/$id/ban': typeof ApiAdminUsersIdBanRoute
+  '/api/admin/users/$id/grant-membership': typeof ApiAdminUsersIdGrantMembershipRoute
   '/api/admin/users/$id/strike': typeof ApiAdminUsersIdStrikeRoute
   '/api/rmharks/$id/comment/$commentId': typeof ApiRmharksIdCommentCommentIdRouteWithChildren
   '/api/rmhmusic/guess/$id/attempt': typeof ApiRmhmusicGuessIdAttemptRoute
@@ -3677,6 +3750,7 @@ export interface FileRouteTypes {
     | '/bookmarks'
     | '/clips'
     | '/communities'
+    | '/developer'
     | '/drafts'
     | '/explore'
     | '/music-trivia'
@@ -3848,6 +3922,7 @@ export interface FileRouteTypes {
     | '/api/profile/$id'
     | '/api/profile/avatar'
     | '/api/profile/me'
+    | '/api/promo/free-month'
     | '/api/rmharks/$id'
     | '/api/rmharks/ai-generate'
     | '/api/rmharks/image'
@@ -3877,6 +3952,9 @@ export interface FileRouteTypes {
     | '/api/user-builds/categories'
     | '/api/user-builds/featured'
     | '/api/users/search'
+    | '/api/v1/feed'
+    | '/api/v1/me'
+    | '/api/v1/posts'
     | '/api/vega/leaderboard'
     | '/api/vega/score'
     | '/api/versecraft/progress'
@@ -3939,6 +4017,7 @@ export interface FileRouteTypes {
     | '/api/comments/$commentId/translate'
     | '/api/communities/$slug/feed'
     | '/api/communities/$slug/join'
+    | '/api/developer/keys/$id'
     | '/api/doctrine/admin/disclosures'
     | '/api/doctrine/admin/incidents'
     | '/api/doctrine/admin/tiers'
@@ -4008,6 +4087,7 @@ export interface FileRouteTypes {
     | '/u/$userid/'
     | '/api/clans/$slug/'
     | '/api/communities/$slug/'
+    | '/api/developer/keys/'
     | '/api/doctrine/incidents/'
     | '/api/doctrine/reputation/'
     | '/api/group-chats/$id/'
@@ -4021,6 +4101,7 @@ export interface FileRouteTypes {
     | '/api/admin/curated-builds/image/$filename'
     | '/api/admin/curated-builds/image/proxy'
     | '/api/admin/users/$id/ban'
+    | '/api/admin/users/$id/grant-membership'
     | '/api/admin/users/$id/strike'
     | '/api/rmharks/$id/comment/$commentId'
     | '/api/rmhmusic/guess/$id/attempt'
@@ -4058,6 +4139,7 @@ export interface FileRouteTypes {
     | '/bookmarks'
     | '/clips'
     | '/communities'
+    | '/developer'
     | '/drafts'
     | '/explore'
     | '/music-trivia'
@@ -4225,6 +4307,7 @@ export interface FileRouteTypes {
     | '/api/profile/$id'
     | '/api/profile/avatar'
     | '/api/profile/me'
+    | '/api/promo/free-month'
     | '/api/rmharks/$id'
     | '/api/rmharks/ai-generate'
     | '/api/rmharks/image'
@@ -4254,6 +4337,9 @@ export interface FileRouteTypes {
     | '/api/user-builds/categories'
     | '/api/user-builds/featured'
     | '/api/users/search'
+    | '/api/v1/feed'
+    | '/api/v1/me'
+    | '/api/v1/posts'
     | '/api/vega/leaderboard'
     | '/api/vega/score'
     | '/api/versecraft/progress'
@@ -4316,6 +4402,7 @@ export interface FileRouteTypes {
     | '/api/comments/$commentId/translate'
     | '/api/communities/$slug/feed'
     | '/api/communities/$slug/join'
+    | '/api/developer/keys/$id'
     | '/api/doctrine/admin/disclosures'
     | '/api/doctrine/admin/incidents'
     | '/api/doctrine/admin/tiers'
@@ -4385,6 +4472,7 @@ export interface FileRouteTypes {
     | '/u/$userid'
     | '/api/clans/$slug'
     | '/api/communities/$slug'
+    | '/api/developer/keys'
     | '/api/doctrine/incidents'
     | '/api/doctrine/reputation'
     | '/api/group-chats/$id'
@@ -4398,6 +4486,7 @@ export interface FileRouteTypes {
     | '/api/admin/curated-builds/image/$filename'
     | '/api/admin/curated-builds/image/proxy'
     | '/api/admin/users/$id/ban'
+    | '/api/admin/users/$id/grant-membership'
     | '/api/admin/users/$id/strike'
     | '/api/rmharks/$id/comment/$commentId'
     | '/api/rmhmusic/guess/$id/attempt'
@@ -4454,6 +4543,7 @@ export interface FileRouteTypes {
     | '/_site/bookmarks'
     | '/_site/clips'
     | '/_site/communities'
+    | '/_site/developer'
     | '/_site/drafts'
     | '/_site/explore'
     | '/_site/music-trivia'
@@ -4626,6 +4716,7 @@ export interface FileRouteTypes {
     | '/api/profile/$id'
     | '/api/profile/avatar'
     | '/api/profile/me'
+    | '/api/promo/free-month'
     | '/api/rmharks/$id'
     | '/api/rmharks/ai-generate'
     | '/api/rmharks/image'
@@ -4655,6 +4746,9 @@ export interface FileRouteTypes {
     | '/api/user-builds/categories'
     | '/api/user-builds/featured'
     | '/api/users/search'
+    | '/api/v1/feed'
+    | '/api/v1/me'
+    | '/api/v1/posts'
     | '/api/vega/leaderboard'
     | '/api/vega/score'
     | '/api/versecraft/progress'
@@ -4717,6 +4811,7 @@ export interface FileRouteTypes {
     | '/api/comments/$commentId/translate'
     | '/api/communities/$slug/feed'
     | '/api/communities/$slug/join'
+    | '/api/developer/keys/$id'
     | '/api/doctrine/admin/disclosures'
     | '/api/doctrine/admin/incidents'
     | '/api/doctrine/admin/tiers'
@@ -4786,6 +4881,7 @@ export interface FileRouteTypes {
     | '/_site/u/$userid/'
     | '/api/clans/$slug/'
     | '/api/communities/$slug/'
+    | '/api/developer/keys/'
     | '/api/doctrine/incidents/'
     | '/api/doctrine/reputation/'
     | '/api/group-chats/$id/'
@@ -4799,6 +4895,7 @@ export interface FileRouteTypes {
     | '/api/admin/curated-builds/image/$filename'
     | '/api/admin/curated-builds/image/proxy'
     | '/api/admin/users/$id/ban'
+    | '/api/admin/users/$id/grant-membership'
     | '/api/admin/users/$id/strike'
     | '/api/rmharks/$id/comment/$commentId'
     | '/api/rmhmusic/guess/$id/attempt'
@@ -4930,6 +5027,7 @@ export interface RootRouteChildren {
   ApiNotificationsReadRoute: typeof ApiNotificationsReadRoute
   ApiNotificationsUnreadCountRoute: typeof ApiNotificationsUnreadCountRoute
   ApiPresenceHeartbeatRoute: typeof ApiPresenceHeartbeatRoute
+  ApiPromoFreeMonthRoute: typeof ApiPromoFreeMonthRoute
   ApiRmhboxHistoryRoute: typeof ApiRmhboxHistoryRoute
   ApiRmhboxLeaderboardRoute: typeof ApiRmhboxLeaderboardRoute
   ApiRmhboxStatsRoute: typeof ApiRmhboxStatsRoute
@@ -4953,6 +5051,9 @@ export interface RootRouteChildren {
   ApiTempleOfJoySaveRoute: typeof ApiTempleOfJoySaveRoute
   ApiTipsLeaderboardRoute: typeof ApiTipsLeaderboardRoute
   ApiUsersSearchRoute: typeof ApiUsersSearchRoute
+  ApiV1FeedRoute: typeof ApiV1FeedRoute
+  ApiV1MeRoute: typeof ApiV1MeRoute
+  ApiV1PostsRoute: typeof ApiV1PostsRoute
   ApiVegaLeaderboardRoute: typeof ApiVegaLeaderboardRoute
   ApiVegaScoreRoute: typeof ApiVegaScoreRoute
   ApiVersecraftProgressRoute: typeof ApiVersecraftProgressRoute
@@ -4981,6 +5082,7 @@ export interface RootRouteChildren {
   ApiCommentsCommentIdTranslateRoute: typeof ApiCommentsCommentIdTranslateRoute
   ApiCommunitiesSlugFeedRoute: typeof ApiCommunitiesSlugFeedRoute
   ApiCommunitiesSlugJoinRoute: typeof ApiCommunitiesSlugJoinRoute
+  ApiDeveloperKeysIdRoute: typeof ApiDeveloperKeysIdRoute
   ApiDoctrineAdminDisclosuresRoute: typeof ApiDoctrineAdminDisclosuresRoute
   ApiDoctrineAdminIncidentsRoute: typeof ApiDoctrineAdminIncidentsRoute
   ApiDoctrineAdminTiersRoute: typeof ApiDoctrineAdminTiersRoute
@@ -5019,6 +5121,7 @@ export interface RootRouteChildren {
   ApiVibeThumbSlugRoute: typeof ApiVibeThumbSlugRoute
   ApiClansSlugIndexRoute: typeof ApiClansSlugIndexRoute
   ApiCommunitiesSlugIndexRoute: typeof ApiCommunitiesSlugIndexRoute
+  ApiDeveloperKeysIndexRoute: typeof ApiDeveloperKeysIndexRoute
   ApiDoctrineIncidentsIndexRoute: typeof ApiDoctrineIncidentsIndexRoute
   ApiDoctrineReputationIndexRoute: typeof ApiDoctrineReputationIndexRoute
   ApiGroupChatsIdIndexRoute: typeof ApiGroupChatsIdIndexRoute
@@ -5913,6 +6016,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteDraftsRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/developer': {
+      id: '/_site/developer'
+      path: '/developer'
+      fullPath: '/developer'
+      preLoaderRoute: typeof SiteDeveloperRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/communities': {
       id: '/_site/communities'
       path: '/communities'
@@ -6319,6 +6429,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiVegaLeaderboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/posts': {
+      id: '/api/v1/posts'
+      path: '/api/v1/posts'
+      fullPath: '/api/v1/posts'
+      preLoaderRoute: typeof ApiV1PostsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/me': {
+      id: '/api/v1/me'
+      path: '/api/v1/me'
+      fullPath: '/api/v1/me'
+      preLoaderRoute: typeof ApiV1MeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/feed': {
+      id: '/api/v1/feed'
+      path: '/api/v1/feed'
+      fullPath: '/api/v1/feed'
+      preLoaderRoute: typeof ApiV1FeedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/users/search': {
       id: '/api/users/search'
       path: '/api/users/search'
@@ -6521,6 +6652,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/rmharks/$id'
       preLoaderRoute: typeof ApiRmharksIdRouteImport
       parentRoute: typeof ApiRmharksRoute
+    }
+    '/api/promo/free-month': {
+      id: '/api/promo/free-month'
+      path: '/api/promo/free-month'
+      fullPath: '/api/promo/free-month'
+      preLoaderRoute: typeof ApiPromoFreeMonthRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/profile/me': {
       id: '/api/profile/me'
@@ -7124,6 +7262,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiDoctrineIncidentsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/developer/keys/': {
+      id: '/api/developer/keys/'
+      path: '/api/developer/keys'
+      fullPath: '/api/developer/keys/'
+      preLoaderRoute: typeof ApiDeveloperKeysIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/communities/$slug/': {
       id: '/api/communities/$slug/'
       path: '/api/communities/$slug'
@@ -7607,6 +7752,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiDoctrineAdminDisclosuresRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/developer/keys/$id': {
+      id: '/api/developer/keys/$id'
+      path: '/api/developer/keys/$id'
+      fullPath: '/api/developer/keys/$id'
+      preLoaderRoute: typeof ApiDeveloperKeysIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/communities/$slug/join': {
       id: '/api/communities/$slug/join'
       path: '/api/communities/$slug/join'
@@ -7775,6 +7927,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminUsersIdStrikeRouteImport
       parentRoute: typeof ApiAdminUsersRoute
     }
+    '/api/admin/users/$id/grant-membership': {
+      id: '/api/admin/users/$id/grant-membership'
+      path: '/$id/grant-membership'
+      fullPath: '/api/admin/users/$id/grant-membership'
+      preLoaderRoute: typeof ApiAdminUsersIdGrantMembershipRouteImport
+      parentRoute: typeof ApiAdminUsersRoute
+    }
     '/api/admin/users/$id/ban': {
       id: '/api/admin/users/$id/ban'
       path: '/$id/ban'
@@ -7870,6 +8029,7 @@ interface SiteRouteChildren {
   SiteBookmarksRoute: typeof SiteBookmarksRoute
   SiteClipsRoute: typeof SiteClipsRoute
   SiteCommunitiesRoute: typeof SiteCommunitiesRoute
+  SiteDeveloperRoute: typeof SiteDeveloperRoute
   SiteDraftsRoute: typeof SiteDraftsRoute
   SiteExploreRoute: typeof SiteExploreRoute
   SiteMusicTriviaRoute: typeof SiteMusicTriviaRoute
@@ -7919,6 +8079,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteBookmarksRoute: SiteBookmarksRoute,
   SiteClipsRoute: SiteClipsRoute,
   SiteCommunitiesRoute: SiteCommunitiesRoute,
+  SiteDeveloperRoute: SiteDeveloperRoute,
   SiteDraftsRoute: SiteDraftsRoute,
   SiteExploreRoute: SiteExploreRoute,
   SiteMusicTriviaRoute: SiteMusicTriviaRoute,
@@ -8543,11 +8704,13 @@ const ApiAdminReportsRouteWithChildren = ApiAdminReportsRoute._addFileChildren(
 
 interface ApiAdminUsersRouteChildren {
   ApiAdminUsersIdBanRoute: typeof ApiAdminUsersIdBanRoute
+  ApiAdminUsersIdGrantMembershipRoute: typeof ApiAdminUsersIdGrantMembershipRoute
   ApiAdminUsersIdStrikeRoute: typeof ApiAdminUsersIdStrikeRoute
 }
 
 const ApiAdminUsersRouteChildren: ApiAdminUsersRouteChildren = {
   ApiAdminUsersIdBanRoute: ApiAdminUsersIdBanRoute,
+  ApiAdminUsersIdGrantMembershipRoute: ApiAdminUsersIdGrantMembershipRoute,
   ApiAdminUsersIdStrikeRoute: ApiAdminUsersIdStrikeRoute,
 }
 
@@ -8730,6 +8893,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiNotificationsReadRoute: ApiNotificationsReadRoute,
   ApiNotificationsUnreadCountRoute: ApiNotificationsUnreadCountRoute,
   ApiPresenceHeartbeatRoute: ApiPresenceHeartbeatRoute,
+  ApiPromoFreeMonthRoute: ApiPromoFreeMonthRoute,
   ApiRmhboxHistoryRoute: ApiRmhboxHistoryRoute,
   ApiRmhboxLeaderboardRoute: ApiRmhboxLeaderboardRoute,
   ApiRmhboxStatsRoute: ApiRmhboxStatsRoute,
@@ -8753,6 +8917,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTempleOfJoySaveRoute: ApiTempleOfJoySaveRoute,
   ApiTipsLeaderboardRoute: ApiTipsLeaderboardRoute,
   ApiUsersSearchRoute: ApiUsersSearchRoute,
+  ApiV1FeedRoute: ApiV1FeedRoute,
+  ApiV1MeRoute: ApiV1MeRoute,
+  ApiV1PostsRoute: ApiV1PostsRoute,
   ApiVegaLeaderboardRoute: ApiVegaLeaderboardRoute,
   ApiVegaScoreRoute: ApiVegaScoreRoute,
   ApiVersecraftProgressRoute: ApiVersecraftProgressRoute,
@@ -8781,6 +8948,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCommentsCommentIdTranslateRoute: ApiCommentsCommentIdTranslateRoute,
   ApiCommunitiesSlugFeedRoute: ApiCommunitiesSlugFeedRoute,
   ApiCommunitiesSlugJoinRoute: ApiCommunitiesSlugJoinRoute,
+  ApiDeveloperKeysIdRoute: ApiDeveloperKeysIdRoute,
   ApiDoctrineAdminDisclosuresRoute: ApiDoctrineAdminDisclosuresRoute,
   ApiDoctrineAdminIncidentsRoute: ApiDoctrineAdminIncidentsRoute,
   ApiDoctrineAdminTiersRoute: ApiDoctrineAdminTiersRoute,
@@ -8819,6 +8987,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiVibeThumbSlugRoute: ApiVibeThumbSlugRoute,
   ApiClansSlugIndexRoute: ApiClansSlugIndexRoute,
   ApiCommunitiesSlugIndexRoute: ApiCommunitiesSlugIndexRoute,
+  ApiDeveloperKeysIndexRoute: ApiDeveloperKeysIndexRoute,
   ApiDoctrineIncidentsIndexRoute: ApiDoctrineIncidentsIndexRoute,
   ApiDoctrineReputationIndexRoute: ApiDoctrineReputationIndexRoute,
   ApiGroupChatsIdIndexRoute: ApiGroupChatsIdIndexRoute,

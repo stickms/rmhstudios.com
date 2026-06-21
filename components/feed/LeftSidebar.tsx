@@ -7,7 +7,7 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import {
   Home, Package, BookOpen, Library, LayoutGrid, Atom,
-  LogOut, PenSquare, User, MessageCircle, ShieldCheck, MoreHorizontal, Wallet, Sparkles, Bell, Search, Landmark, Bookmark, Trophy, Flame, ShoppingBag, Compass, Users, Zap, Shield, Bot, Swords, Clapperboard, Music
+  LogOut, PenSquare, User, MessageCircle, ShieldCheck, MoreHorizontal, Wallet, Sparkles, Bell, Search, Landmark, Bookmark, Trophy, Flame, ShoppingBag, Compass, Users, Zap, Shield, Bot, Swords, Clapperboard, Music, Terminal
 } from 'lucide-react';
 import { ComposeModal } from './ComposeModal';
 import { Button } from '@/components/ui/button';
@@ -34,6 +34,7 @@ const navLinks = [
   { href: '/blog', label: 'Blog', icon: BookOpen },
   { href: '/adaptive-intelligence', label: 'Adaptive Intelligence', icon: Atom },
   { href: '/pricing', label: 'Membership', icon: Sparkles },
+  { href: '/developer', label: 'Developer', icon: Terminal },
 ];
 
 export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
