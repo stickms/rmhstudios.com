@@ -25,6 +25,7 @@ function mapPoll(poll: any): FeedPoll | undefined {
     id: poll.id,
     question: poll.question,
     multiSelect: poll.multiSelect,
+    closesAt: poll.closesAt ? poll.closesAt.toISOString() : null,
     totalVotes,
     options: poll.options.map((o: any) => ({ id: o.id, text: o.text, voteCount: o._count?.votes ?? 0 })),
     myVotes: poll.options.filter((o: any) => o.votes?.length > 0).map((o: any) => o.id),

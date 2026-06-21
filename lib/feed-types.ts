@@ -29,6 +29,7 @@ export interface FeedPoll {
   totalVotes: number;
   options: FeedPollOption[];
   myVotes?: string[]; // option IDs the current user voted for
+  closesAt?: string | null; // scheduled close time, if any
 }
 
 export interface FeedItem {

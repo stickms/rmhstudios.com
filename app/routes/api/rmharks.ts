@@ -139,6 +139,9 @@ export const Route = createFileRoute('/api/rmharks')({
             rmheetId: created.id,
             question: poll.question.trim(),
             multiSelect: poll.multiSelect,
+            closesAt: poll.durationHours
+              ? new Date(Date.now() + poll.durationHours * 60 * 60 * 1000)
+              : null,
             options: {
               create: poll.options.map((text, i) => ({
                 text: text.trim(),

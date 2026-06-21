@@ -1193,11 +1193,12 @@ model RMHarkView {
 }
 
 model RMHarkPoll {
-  id          String   @id @default(cuid())
-  rmheetId    String   @unique
-  question    String   @db.VarChar(200)
-  multiSelect Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  id          String    @id @default(cuid())
+  rmheetId    String    @unique
+  question    String    @db.VarChar(200)
+  multiSelect Boolean   @default(false)
+  closesAt    DateTime? // optional scheduled close; null = never closes
+  createdAt   DateTime  @default(now())
 
   rmhark  RMHark             @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
   options RMHarkPollOption[]

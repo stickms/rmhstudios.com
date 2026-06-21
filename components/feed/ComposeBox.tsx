@@ -44,6 +44,7 @@ function isValidMediaUrl(url: string): boolean {
 export function ComposeBox() {
   const [content, setContent] = useState('');
   const [audience, setAudience] = useState<'PUBLIC' | 'FOLLOWERS' | 'PRIVATE'>('PUBLIC');
+  const [pollDuration, setPollDuration] = useState(0); // hours; 0 = no limit
   const [submitting, setSubmitting] = useState(false);
   const [attachment, setAttachment] = useState<Attachment>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -114,6 +115,7 @@ export function ComposeBox() {
           question: poll.question.trim(),
           options: poll.options.filter((o) => o.trim()).map((o) => o.trim()),
           multiSelect: poll.multiSelect,
+          ...(pollDuration > 0 ? { durationHours: pollDuration } : {}),
         };
       }
       if (hasGif) body.gifUrl = gifUrl.trim();
@@ -280,6 +282,22 @@ export function ComposeBox() {
                   className="rounded border-site-border text-site-accent focus:ring-site-accent"
                 />
                 <span className="text-xs text-site-text-dim">Allow multiple selections</span>
+              </label>
+
+              <label className="mt-3 flex items-center gap-2">
+                <span className="text-xs text-site-text-dim">Poll length</span>
+                <select
+                  value={pollDuration}
+                  onChange={(e) => setPollDuration(Number(e.target.value))}
+                  className="rounded-lg border border-site-border bg-site-surface px-2 py-1 text-xs text-site-text focus:outline-none"
+                >
+                  <option value={0}>No limit</option>
+                  <option value={1}>1 hour</option>
+                  <option value={6}>6 hours</option>
+                  <option value={24}>1 day</option>
+                  <option value={72}>3 days</option>
+                  <option value={168}>1 week</option>
+                </select>
               </label>
             </div>
           )}

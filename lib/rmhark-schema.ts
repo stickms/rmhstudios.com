@@ -46,6 +46,8 @@ const pollSchema = z.object({
     .min(MIN_POLL_OPTIONS, `Poll must have at least ${MIN_POLL_OPTIONS} options`)
     .max(MAX_POLL_OPTIONS, `Poll can have at most ${MAX_POLL_OPTIONS} options`),
   multiSelect: z.boolean().default(false),
+  // Optional scheduled close, in hours from now (max 30 days).
+  durationHours: z.number().int().min(1).max(720).optional(),
 });
 
 export const createRMHarkSchema = z
