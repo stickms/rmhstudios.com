@@ -18,6 +18,7 @@ import { Route as SynapseStormRouteImport } from './routes/synapse-storm'
 import { Route as StudioRouteImport } from './routes/studio'
 import { Route as StrategiesRouteImport } from './routes/strategies'
 import { Route as SliceItRouteImport } from './routes/slice-it'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SecretRouteImport } from './routes/secret'
 import { Route as RmhtypeRouteImport } from './routes/rmhtype'
 import { Route as RmhtubeRouteImport } from './routes/rmhtube'
@@ -325,6 +326,11 @@ const StrategiesRoute = StrategiesRouteImport.update({
 const SliceItRoute = SliceItRouteImport.update({
   id: '/slice-it',
   path: '/slice-it',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SecretRoute = SecretRouteImport.update({
@@ -1709,6 +1715,7 @@ export interface FileRoutesByFullPath {
   '/rmhtube': typeof RmhtubeRouteWithChildren
   '/rmhtype': typeof RmhtypeRouteWithChildren
   '/secret': typeof SecretRouteWithChildren
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/slice-it': typeof SliceItRouteWithChildren
   '/strategies': typeof StrategiesRouteWithChildren
   '/studio': typeof StudioRouteWithChildren
@@ -1970,6 +1977,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/neon-driftway': typeof NeonDriftwayRoute
   '/privacy': typeof PrivacyRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/synapse-storm': typeof SynapseStormRoute
   '/terms': typeof TermsRoute
   '/velum2099': typeof Velum2099Route
@@ -2234,6 +2242,7 @@ export interface FileRoutesById {
   '/rmhtube': typeof RmhtubeRouteWithChildren
   '/rmhtype': typeof RmhtypeRouteWithChildren
   '/secret': typeof SecretRouteWithChildren
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/slice-it': typeof SliceItRouteWithChildren
   '/strategies': typeof StrategiesRouteWithChildren
   '/studio': typeof StudioRouteWithChildren
@@ -2510,6 +2519,7 @@ export interface FileRouteTypes {
     | '/rmhtube'
     | '/rmhtype'
     | '/secret'
+    | '/sitemap.xml'
     | '/slice-it'
     | '/strategies'
     | '/studio'
@@ -2771,6 +2781,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/neon-driftway'
     | '/privacy'
+    | '/sitemap.xml'
     | '/synapse-storm'
     | '/terms'
     | '/velum2099'
@@ -3034,6 +3045,7 @@ export interface FileRouteTypes {
     | '/rmhtube'
     | '/rmhtype'
     | '/secret'
+    | '/sitemap.xml'
     | '/slice-it'
     | '/strategies'
     | '/studio'
@@ -3309,6 +3321,7 @@ export interface RootRouteChildren {
   RmhtubeRoute: typeof RmhtubeRouteWithChildren
   RmhtypeRoute: typeof RmhtypeRouteWithChildren
   SecretRoute: typeof SecretRouteWithChildren
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SliceItRoute: typeof SliceItRouteWithChildren
   StrategiesRoute: typeof StrategiesRouteWithChildren
   StudioRoute: typeof StudioRouteWithChildren
@@ -3489,6 +3502,13 @@ declare module '@tanstack/react-router' {
       path: '/slice-it'
       fullPath: '/slice-it'
       preLoaderRoute: typeof SliceItRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/secret': {
@@ -5994,6 +6014,7 @@ const rootRouteChildren: RootRouteChildren = {
   RmhtubeRoute: RmhtubeRouteWithChildren,
   RmhtypeRoute: RmhtypeRouteWithChildren,
   SecretRoute: SecretRouteWithChildren,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   SliceItRoute: SliceItRouteWithChildren,
   StrategiesRoute: StrategiesRouteWithChildren,
   StudioRoute: StudioRouteWithChildren,
