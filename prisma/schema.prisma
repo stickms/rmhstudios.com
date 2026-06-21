@@ -155,6 +155,10 @@ model User {
   groupMemberships  GroupChatMember[]
   groupMessages     GroupMessage[]
 
+  // RMHStudy flashcards
+  flashcardDecks   FlashcardDeck[]
+  flashcardReviews FlashcardReview[]
+
   // Economy: shop inventory, coin ledger (tips/gifts)
   inventory       UserInventory[]
   coinsSent       CoinTransaction[] @relation("CoinSender")
@@ -1670,6 +1674,60 @@ model GroupMessage {
 
   @@index([groupId, createdAt])
   @@map("group_message")
+}
+
+/// RMHStudy flashcard deck (#31). Decks are personal but can be shared publicly.
+model FlashcardDeck {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String   @db.VarChar(100)
+  description String?  @db.VarChar(500)
+  isPublic    Boolean  @default(false)
+  cardCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cards Flashcard[]
+
+  @@index([userId])
+  @@index([isPublic, updatedAt(sort: Desc)])
+  @@map("flashcard_deck")
+}
+
+model Flashcard {
+  id        String   @id @default(cuid())
+  deckId    String
+  front     String   @db.Text
+  back      String   @db.Text
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  deck    FlashcardDeck     @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  reviews FlashcardReview[]
+
+  @@index([deckId])
+  @@map("flashcard")
+}
+
+/// Per-user spaced-repetition state for a card (SM-2). Lets several users study
+/// the same (public) deck with independent schedules.
+model FlashcardReview {
+  id           String   @id @default(cuid())
+  userId       String
+  cardId       String
+  easeFactor   Float    @default(2.5)
+  intervalDays Int      @default(0)
+  repetitions  Int      @default(0)
+  dueAt        DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card Flashcard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, cardId])
+  @@index([userId, dueAt])
+  @@map("flashcard_review")
 }
 
 model BuildVersion {

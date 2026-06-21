@@ -160,6 +160,7 @@ import { Route as ApiBattlepassIndexRouteImport } from './routes/api/battlepass/
 import { Route as AltairMultiplayerIndexRouteImport } from './routes/altair/multiplayer/index'
 import { Route as SiteVIndexRouteImport } from './routes/_site/v/index'
 import { Route as SiteUserBuildsIndexRouteImport } from './routes/_site/user-builds/index'
+import { Route as SiteStudyIndexRouteImport } from './routes/_site/study/index'
 import { Route as SiteResearchIndexRouteImport } from './routes/_site/research/index'
 import { Route as SitePersonasIndexRouteImport } from './routes/_site/personas/index'
 import { Route as SiteNewsIndexRouteImport } from './routes/_site/news/index'
@@ -196,6 +197,7 @@ import { Route as ApiUserBuildsIdRouteImport } from './routes/api/user-builds/$i
 import { Route as ApiTipsLeaderboardRouteImport } from './routes/api/tips/leaderboard'
 import { Route as ApiTempleOfJoySaveRouteImport } from './routes/api/temple-of-joy/save'
 import { Route as ApiTagsTagRouteImport } from './routes/api/tags/$tag'
+import { Route as ApiStudyTutorRouteImport } from './routes/api/study/tutor'
 import { Route as ApiStakingWithdrawRouteImport } from './routes/api/staking/withdraw'
 import { Route as ApiStakingDepositRouteImport } from './routes/api/staking/deposit'
 import { Route as ApiSpotifySearchRouteImport } from './routes/api/spotify/search'
@@ -280,6 +282,7 @@ import { Route as AltairMultiplayerLobbyIdRouteImport } from './routes/altair/mu
 import { Route as SiteUserBuildsSubmitRouteImport } from './routes/_site/user-builds/submit'
 import { Route as SiteUserBuildsManageRouteImport } from './routes/_site/user-builds/manage'
 import { Route as SiteTagTagRouteImport } from './routes/_site/tag.$tag'
+import { Route as SiteStudyDeckIdRouteImport } from './routes/_site/study/$deckId'
 import { Route as SiteStoreUseridRouteImport } from './routes/_site/store/$userid'
 import { Route as SiteResearchCallRouteImport } from './routes/_site/research/call'
 import { Route as SiteProfileIdRouteImport } from './routes/_site/profile/$id'
@@ -294,6 +297,7 @@ import { Route as SiteAdminReportsRouteImport } from './routes/_site/admin/repor
 import { Route as SiteAdminAuditRouteImport } from './routes/_site/admin/audit'
 import { Route as SiteAdminAnnouncementsRouteImport } from './routes/_site/admin/announcements'
 import { Route as SiteAdminAnalyticsRouteImport } from './routes/_site/admin/analytics'
+import { Route as ApiStudyDecksIndexRouteImport } from './routes/api/study/decks/index'
 import { Route as ApiStorefrontProductsIndexRouteImport } from './routes/api/storefront/products/index'
 import { Route as ApiPersonasIdIndexRouteImport } from './routes/api/personas/$id/index'
 import { Route as ApiGroupChatsIdIndexRouteImport } from './routes/api/group-chats/$id/index'
@@ -374,7 +378,10 @@ import { Route as ApiAdminReportsIdRouteImport } from './routes/api/admin/report
 import { Route as ApiAdminCuratedBuildsImageRouteImport } from './routes/api/admin/curated-builds/image'
 import { Route as ApiAdminAnnouncementsIdRouteImport } from './routes/api/admin/announcements/$id'
 import { Route as SiteAdminBlogNewRouteImport } from './routes/_site/admin/blog/new'
+import { Route as ApiStudyDecksIdIndexRouteImport } from './routes/api/study/decks/$id/index'
 import { Route as ApiStorefrontProductsIdIndexRouteImport } from './routes/api/storefront/products/$id/index'
+import { Route as ApiStudyDecksIdReviewRouteImport } from './routes/api/study/decks/$id/review'
+import { Route as ApiStudyCardsIdReviewRouteImport } from './routes/api/study/cards/$id/review'
 import { Route as ApiStorefrontProductsIdBuyRouteImport } from './routes/api/storefront/products/$id/buy'
 import { Route as ApiSliceItSongsStreamIdRouteImport } from './routes/api/slice-it/songs/stream/$id'
 import { Route as ApiSliceItSongsCoverFilenameRouteImport } from './routes/api/slice-it/songs/cover/$filename'
@@ -1148,6 +1155,11 @@ const SiteUserBuildsIndexRoute = SiteUserBuildsIndexRouteImport.update({
   path: '/user-builds/',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteStudyIndexRoute = SiteStudyIndexRouteImport.update({
+  id: '/study/',
+  path: '/study/',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteResearchIndexRoute = SiteResearchIndexRouteImport.update({
   id: '/research/',
   path: '/research/',
@@ -1333,6 +1345,11 @@ const ApiTempleOfJoySaveRoute = ApiTempleOfJoySaveRouteImport.update({
 const ApiTagsTagRoute = ApiTagsTagRouteImport.update({
   id: '/api/tags/$tag',
   path: '/api/tags/$tag',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiStudyTutorRoute = ApiStudyTutorRouteImport.update({
+  id: '/api/study/tutor',
+  path: '/api/study/tutor',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiStakingWithdrawRoute = ApiStakingWithdrawRouteImport.update({
@@ -1763,6 +1780,11 @@ const SiteTagTagRoute = SiteTagTagRouteImport.update({
   path: '/tag/$tag',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteStudyDeckIdRoute = SiteStudyDeckIdRouteImport.update({
+  id: '/study/$deckId',
+  path: '/study/$deckId',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteStoreUseridRoute = SiteStoreUseridRouteImport.update({
   id: '/store/$userid',
   path: '/store/$userid',
@@ -1833,6 +1855,11 @@ const SiteAdminAnalyticsRoute = SiteAdminAnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
   getParentRoute: () => SiteAdminRouteRoute,
+} as any)
+const ApiStudyDecksIndexRoute = ApiStudyDecksIndexRouteImport.update({
+  id: '/api/study/decks/',
+  path: '/api/study/decks/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiStorefrontProductsIndexRoute =
   ApiStorefrontProductsIndexRouteImport.update({
@@ -2259,12 +2286,27 @@ const SiteAdminBlogNewRoute = SiteAdminBlogNewRouteImport.update({
   path: '/blog/new',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
+const ApiStudyDecksIdIndexRoute = ApiStudyDecksIdIndexRouteImport.update({
+  id: '/api/study/decks/$id/',
+  path: '/api/study/decks/$id/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiStorefrontProductsIdIndexRoute =
   ApiStorefrontProductsIdIndexRouteImport.update({
     id: '/api/storefront/products/$id/',
     path: '/api/storefront/products/$id/',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiStudyDecksIdReviewRoute = ApiStudyDecksIdReviewRouteImport.update({
+  id: '/api/study/decks/$id/review',
+  path: '/api/study/decks/$id/review',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiStudyCardsIdReviewRoute = ApiStudyCardsIdReviewRouteImport.update({
+  id: '/api/study/cards/$id/review',
+  path: '/api/study/cards/$id/review',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiStorefrontProductsIdBuyRoute =
   ApiStorefrontProductsIdBuyRouteImport.update({
     id: '/api/storefront/products/$id/buy',
@@ -2503,6 +2545,7 @@ export interface FileRoutesByFullPath {
   '/profile/$id': typeof SiteProfileIdRoute
   '/research/call': typeof SiteResearchCallRoute
   '/store/$userid': typeof SiteStoreUseridRoute
+  '/study/$deckId': typeof SiteStudyDeckIdRoute
   '/tag/$tag': typeof SiteTagTagRoute
   '/user-builds/manage': typeof SiteUserBuildsManageRoute
   '/user-builds/submit': typeof SiteUserBuildsSubmitRoute
@@ -2587,6 +2630,7 @@ export interface FileRoutesByFullPath {
   '/api/spotify/search': typeof ApiSpotifySearchRoute
   '/api/staking/deposit': typeof ApiStakingDepositRoute
   '/api/staking/withdraw': typeof ApiStakingWithdrawRoute
+  '/api/study/tutor': typeof ApiStudyTutorRoute
   '/api/tags/$tag': typeof ApiTagsTagRoute
   '/api/temple-of-joy/save': typeof ApiTempleOfJoySaveRoute
   '/api/tips/leaderboard': typeof ApiTipsLeaderboardRoute
@@ -2623,6 +2667,7 @@ export interface FileRoutesByFullPath {
   '/news/': typeof SiteNewsIndexRoute
   '/personas/': typeof SitePersonasIndexRoute
   '/research/': typeof SiteResearchIndexRoute
+  '/study/': typeof SiteStudyIndexRoute
   '/user-builds/': typeof SiteUserBuildsIndexRoute
   '/v/': typeof SiteVIndexRoute
   '/altair/multiplayer/': typeof AltairMultiplayerIndexRoute
@@ -2726,6 +2771,7 @@ export interface FileRoutesByFullPath {
   '/api/group-chats/$id/': typeof ApiGroupChatsIdIndexRoute
   '/api/personas/$id/': typeof ApiPersonasIdIndexRoute
   '/api/storefront/products/': typeof ApiStorefrontProductsIndexRoute
+  '/api/study/decks/': typeof ApiStudyDecksIndexRoute
   '/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
   '/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
   '/api/admin/curated-builds/image/$filename': typeof ApiAdminCuratedBuildsImageFilenameRoute
@@ -2740,7 +2786,10 @@ export interface FileRoutesByFullPath {
   '/api/slice-it/songs/cover/$filename': typeof ApiSliceItSongsCoverFilenameRoute
   '/api/slice-it/songs/stream/$id': typeof ApiSliceItSongsStreamIdRoute
   '/api/storefront/products/$id/buy': typeof ApiStorefrontProductsIdBuyRoute
+  '/api/study/cards/$id/review': typeof ApiStudyCardsIdReviewRoute
+  '/api/study/decks/$id/review': typeof ApiStudyDecksIdReviewRoute
   '/api/storefront/products/$id/': typeof ApiStorefrontProductsIdIndexRoute
+  '/api/study/decks/$id/': typeof ApiStudyDecksIdIndexRoute
   '/api/rmharks/$id/comment/$commentId/like': typeof ApiRmharksIdCommentCommentIdLikeRoute
   '/api/rmharks/$id/comment/$commentId/repost': typeof ApiRmharksIdCommentCommentIdRepostRoute
   '/api/rmharks/$id/comment/$commentId/view': typeof ApiRmharksIdCommentCommentIdViewRoute
@@ -2864,6 +2913,7 @@ export interface FileRoutesByTo {
   '/profile/$id': typeof SiteProfileIdRoute
   '/research/call': typeof SiteResearchCallRoute
   '/store/$userid': typeof SiteStoreUseridRoute
+  '/study/$deckId': typeof SiteStudyDeckIdRoute
   '/tag/$tag': typeof SiteTagTagRoute
   '/user-builds/manage': typeof SiteUserBuildsManageRoute
   '/user-builds/submit': typeof SiteUserBuildsSubmitRoute
@@ -2948,6 +2998,7 @@ export interface FileRoutesByTo {
   '/api/spotify/search': typeof ApiSpotifySearchRoute
   '/api/staking/deposit': typeof ApiStakingDepositRoute
   '/api/staking/withdraw': typeof ApiStakingWithdrawRoute
+  '/api/study/tutor': typeof ApiStudyTutorRoute
   '/api/tags/$tag': typeof ApiTagsTagRoute
   '/api/temple-of-joy/save': typeof ApiTempleOfJoySaveRoute
   '/api/tips/leaderboard': typeof ApiTipsLeaderboardRoute
@@ -2984,6 +3035,7 @@ export interface FileRoutesByTo {
   '/news': typeof SiteNewsIndexRoute
   '/personas': typeof SitePersonasIndexRoute
   '/research': typeof SiteResearchIndexRoute
+  '/study': typeof SiteStudyIndexRoute
   '/user-builds': typeof SiteUserBuildsIndexRoute
   '/v': typeof SiteVIndexRoute
   '/altair/multiplayer': typeof AltairMultiplayerIndexRoute
@@ -3087,6 +3139,7 @@ export interface FileRoutesByTo {
   '/api/group-chats/$id': typeof ApiGroupChatsIdIndexRoute
   '/api/personas/$id': typeof ApiPersonasIdIndexRoute
   '/api/storefront/products': typeof ApiStorefrontProductsIndexRoute
+  '/api/study/decks': typeof ApiStudyDecksIndexRoute
   '/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
   '/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
   '/api/admin/curated-builds/image/$filename': typeof ApiAdminCuratedBuildsImageFilenameRoute
@@ -3101,7 +3154,10 @@ export interface FileRoutesByTo {
   '/api/slice-it/songs/cover/$filename': typeof ApiSliceItSongsCoverFilenameRoute
   '/api/slice-it/songs/stream/$id': typeof ApiSliceItSongsStreamIdRoute
   '/api/storefront/products/$id/buy': typeof ApiStorefrontProductsIdBuyRoute
+  '/api/study/cards/$id/review': typeof ApiStudyCardsIdReviewRoute
+  '/api/study/decks/$id/review': typeof ApiStudyDecksIdReviewRoute
   '/api/storefront/products/$id': typeof ApiStorefrontProductsIdIndexRoute
+  '/api/study/decks/$id': typeof ApiStudyDecksIdIndexRoute
   '/api/rmharks/$id/comment/$commentId/like': typeof ApiRmharksIdCommentCommentIdLikeRoute
   '/api/rmharks/$id/comment/$commentId/repost': typeof ApiRmharksIdCommentCommentIdRepostRoute
   '/api/rmharks/$id/comment/$commentId/view': typeof ApiRmharksIdCommentCommentIdViewRoute
@@ -3250,6 +3306,7 @@ export interface FileRoutesById {
   '/_site/profile/$id': typeof SiteProfileIdRoute
   '/_site/research/call': typeof SiteResearchCallRoute
   '/_site/store/$userid': typeof SiteStoreUseridRoute
+  '/_site/study/$deckId': typeof SiteStudyDeckIdRoute
   '/_site/tag/$tag': typeof SiteTagTagRoute
   '/_site/user-builds/manage': typeof SiteUserBuildsManageRoute
   '/_site/user-builds/submit': typeof SiteUserBuildsSubmitRoute
@@ -3334,6 +3391,7 @@ export interface FileRoutesById {
   '/api/spotify/search': typeof ApiSpotifySearchRoute
   '/api/staking/deposit': typeof ApiStakingDepositRoute
   '/api/staking/withdraw': typeof ApiStakingWithdrawRoute
+  '/api/study/tutor': typeof ApiStudyTutorRoute
   '/api/tags/$tag': typeof ApiTagsTagRoute
   '/api/temple-of-joy/save': typeof ApiTempleOfJoySaveRoute
   '/api/tips/leaderboard': typeof ApiTipsLeaderboardRoute
@@ -3370,6 +3428,7 @@ export interface FileRoutesById {
   '/_site/news/': typeof SiteNewsIndexRoute
   '/_site/personas/': typeof SitePersonasIndexRoute
   '/_site/research/': typeof SiteResearchIndexRoute
+  '/_site/study/': typeof SiteStudyIndexRoute
   '/_site/user-builds/': typeof SiteUserBuildsIndexRoute
   '/_site/v/': typeof SiteVIndexRoute
   '/altair/multiplayer/': typeof AltairMultiplayerIndexRoute
@@ -3473,6 +3532,7 @@ export interface FileRoutesById {
   '/api/group-chats/$id/': typeof ApiGroupChatsIdIndexRoute
   '/api/personas/$id/': typeof ApiPersonasIdIndexRoute
   '/api/storefront/products/': typeof ApiStorefrontProductsIndexRoute
+  '/api/study/decks/': typeof ApiStudyDecksIndexRoute
   '/_site/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
   '/_site/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
   '/api/admin/curated-builds/image/$filename': typeof ApiAdminCuratedBuildsImageFilenameRoute
@@ -3487,7 +3547,10 @@ export interface FileRoutesById {
   '/api/slice-it/songs/cover/$filename': typeof ApiSliceItSongsCoverFilenameRoute
   '/api/slice-it/songs/stream/$id': typeof ApiSliceItSongsStreamIdRoute
   '/api/storefront/products/$id/buy': typeof ApiStorefrontProductsIdBuyRoute
+  '/api/study/cards/$id/review': typeof ApiStudyCardsIdReviewRoute
+  '/api/study/decks/$id/review': typeof ApiStudyDecksIdReviewRoute
   '/api/storefront/products/$id/': typeof ApiStorefrontProductsIdIndexRoute
+  '/api/study/decks/$id/': typeof ApiStudyDecksIdIndexRoute
   '/api/rmharks/$id/comment/$commentId/like': typeof ApiRmharksIdCommentCommentIdLikeRoute
   '/api/rmharks/$id/comment/$commentId/repost': typeof ApiRmharksIdCommentCommentIdRepostRoute
   '/api/rmharks/$id/comment/$commentId/view': typeof ApiRmharksIdCommentCommentIdViewRoute
@@ -3636,6 +3699,7 @@ export interface FileRouteTypes {
     | '/profile/$id'
     | '/research/call'
     | '/store/$userid'
+    | '/study/$deckId'
     | '/tag/$tag'
     | '/user-builds/manage'
     | '/user-builds/submit'
@@ -3720,6 +3784,7 @@ export interface FileRouteTypes {
     | '/api/spotify/search'
     | '/api/staking/deposit'
     | '/api/staking/withdraw'
+    | '/api/study/tutor'
     | '/api/tags/$tag'
     | '/api/temple-of-joy/save'
     | '/api/tips/leaderboard'
@@ -3756,6 +3821,7 @@ export interface FileRouteTypes {
     | '/news/'
     | '/personas/'
     | '/research/'
+    | '/study/'
     | '/user-builds/'
     | '/v/'
     | '/altair/multiplayer/'
@@ -3859,6 +3925,7 @@ export interface FileRouteTypes {
     | '/api/group-chats/$id/'
     | '/api/personas/$id/'
     | '/api/storefront/products/'
+    | '/api/study/decks/'
     | '/admin/blog/$slug/edit'
     | '/u/$userid/post/$postid'
     | '/api/admin/curated-builds/image/$filename'
@@ -3873,7 +3940,10 @@ export interface FileRouteTypes {
     | '/api/slice-it/songs/cover/$filename'
     | '/api/slice-it/songs/stream/$id'
     | '/api/storefront/products/$id/buy'
+    | '/api/study/cards/$id/review'
+    | '/api/study/decks/$id/review'
     | '/api/storefront/products/$id/'
+    | '/api/study/decks/$id/'
     | '/api/rmharks/$id/comment/$commentId/like'
     | '/api/rmharks/$id/comment/$commentId/repost'
     | '/api/rmharks/$id/comment/$commentId/view'
@@ -3997,6 +4067,7 @@ export interface FileRouteTypes {
     | '/profile/$id'
     | '/research/call'
     | '/store/$userid'
+    | '/study/$deckId'
     | '/tag/$tag'
     | '/user-builds/manage'
     | '/user-builds/submit'
@@ -4081,6 +4152,7 @@ export interface FileRouteTypes {
     | '/api/spotify/search'
     | '/api/staking/deposit'
     | '/api/staking/withdraw'
+    | '/api/study/tutor'
     | '/api/tags/$tag'
     | '/api/temple-of-joy/save'
     | '/api/tips/leaderboard'
@@ -4117,6 +4189,7 @@ export interface FileRouteTypes {
     | '/news'
     | '/personas'
     | '/research'
+    | '/study'
     | '/user-builds'
     | '/v'
     | '/altair/multiplayer'
@@ -4220,6 +4293,7 @@ export interface FileRouteTypes {
     | '/api/group-chats/$id'
     | '/api/personas/$id'
     | '/api/storefront/products'
+    | '/api/study/decks'
     | '/admin/blog/$slug/edit'
     | '/u/$userid/post/$postid'
     | '/api/admin/curated-builds/image/$filename'
@@ -4234,7 +4308,10 @@ export interface FileRouteTypes {
     | '/api/slice-it/songs/cover/$filename'
     | '/api/slice-it/songs/stream/$id'
     | '/api/storefront/products/$id/buy'
+    | '/api/study/cards/$id/review'
+    | '/api/study/decks/$id/review'
     | '/api/storefront/products/$id'
+    | '/api/study/decks/$id'
     | '/api/rmharks/$id/comment/$commentId/like'
     | '/api/rmharks/$id/comment/$commentId/repost'
     | '/api/rmharks/$id/comment/$commentId/view'
@@ -4382,6 +4459,7 @@ export interface FileRouteTypes {
     | '/_site/profile/$id'
     | '/_site/research/call'
     | '/_site/store/$userid'
+    | '/_site/study/$deckId'
     | '/_site/tag/$tag'
     | '/_site/user-builds/manage'
     | '/_site/user-builds/submit'
@@ -4466,6 +4544,7 @@ export interface FileRouteTypes {
     | '/api/spotify/search'
     | '/api/staking/deposit'
     | '/api/staking/withdraw'
+    | '/api/study/tutor'
     | '/api/tags/$tag'
     | '/api/temple-of-joy/save'
     | '/api/tips/leaderboard'
@@ -4502,6 +4581,7 @@ export interface FileRouteTypes {
     | '/_site/news/'
     | '/_site/personas/'
     | '/_site/research/'
+    | '/_site/study/'
     | '/_site/user-builds/'
     | '/_site/v/'
     | '/altair/multiplayer/'
@@ -4605,6 +4685,7 @@ export interface FileRouteTypes {
     | '/api/group-chats/$id/'
     | '/api/personas/$id/'
     | '/api/storefront/products/'
+    | '/api/study/decks/'
     | '/_site/admin/blog/$slug/edit'
     | '/_site/u/$userid/post/$postid'
     | '/api/admin/curated-builds/image/$filename'
@@ -4619,7 +4700,10 @@ export interface FileRouteTypes {
     | '/api/slice-it/songs/cover/$filename'
     | '/api/slice-it/songs/stream/$id'
     | '/api/storefront/products/$id/buy'
+    | '/api/study/cards/$id/review'
+    | '/api/study/decks/$id/review'
     | '/api/storefront/products/$id/'
+    | '/api/study/decks/$id/'
     | '/api/rmharks/$id/comment/$commentId/like'
     | '/api/rmharks/$id/comment/$commentId/repost'
     | '/api/rmharks/$id/comment/$commentId/view'
@@ -4754,6 +4838,7 @@ export interface RootRouteChildren {
   ApiSpotifySearchRoute: typeof ApiSpotifySearchRoute
   ApiStakingDepositRoute: typeof ApiStakingDepositRoute
   ApiStakingWithdrawRoute: typeof ApiStakingWithdrawRoute
+  ApiStudyTutorRoute: typeof ApiStudyTutorRoute
   ApiTagsTagRoute: typeof ApiTagsTagRoute
   ApiTempleOfJoySaveRoute: typeof ApiTempleOfJoySaveRoute
   ApiTipsLeaderboardRoute: typeof ApiTipsLeaderboardRoute
@@ -4826,8 +4911,12 @@ export interface RootRouteChildren {
   ApiGroupChatsIdIndexRoute: typeof ApiGroupChatsIdIndexRoute
   ApiPersonasIdIndexRoute: typeof ApiPersonasIdIndexRoute
   ApiStorefrontProductsIndexRoute: typeof ApiStorefrontProductsIndexRoute
+  ApiStudyDecksIndexRoute: typeof ApiStudyDecksIndexRoute
   ApiStorefrontProductsIdBuyRoute: typeof ApiStorefrontProductsIdBuyRoute
+  ApiStudyCardsIdReviewRoute: typeof ApiStudyCardsIdReviewRoute
+  ApiStudyDecksIdReviewRoute: typeof ApiStudyDecksIdReviewRoute
   ApiStorefrontProductsIdIndexRoute: typeof ApiStorefrontProductsIdIndexRoute
+  ApiStudyDecksIdIndexRoute: typeof ApiStudyDecksIdIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -5889,6 +5978,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteUserBuildsIndexRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/study/': {
+      id: '/_site/study/'
+      path: '/study'
+      fullPath: '/study/'
+      preLoaderRoute: typeof SiteStudyIndexRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/research/': {
       id: '/_site/research/'
       path: '/research'
@@ -6139,6 +6235,13 @@ declare module '@tanstack/react-router' {
       path: '/api/tags/$tag'
       fullPath: '/api/tags/$tag'
       preLoaderRoute: typeof ApiTagsTagRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/study/tutor': {
+      id: '/api/study/tutor'
+      path: '/api/study/tutor'
+      fullPath: '/api/study/tutor'
+      preLoaderRoute: typeof ApiStudyTutorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/staking/withdraw': {
@@ -6729,6 +6832,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteTagTagRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/study/$deckId': {
+      id: '/_site/study/$deckId'
+      path: '/study/$deckId'
+      fullPath: '/study/$deckId'
+      preLoaderRoute: typeof SiteStudyDeckIdRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/store/$userid': {
       id: '/_site/store/$userid'
       path: '/store/$userid'
@@ -6826,6 +6936,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/analytics'
       preLoaderRoute: typeof SiteAdminAnalyticsRouteImport
       parentRoute: typeof SiteAdminRouteRoute
+    }
+    '/api/study/decks/': {
+      id: '/api/study/decks/'
+      path: '/api/study/decks'
+      fullPath: '/api/study/decks/'
+      preLoaderRoute: typeof ApiStudyDecksIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/storefront/products/': {
       id: '/api/storefront/products/'
@@ -7387,11 +7504,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteAdminBlogNewRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
+    '/api/study/decks/$id/': {
+      id: '/api/study/decks/$id/'
+      path: '/api/study/decks/$id'
+      fullPath: '/api/study/decks/$id/'
+      preLoaderRoute: typeof ApiStudyDecksIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/storefront/products/$id/': {
       id: '/api/storefront/products/$id/'
       path: '/api/storefront/products/$id'
       fullPath: '/api/storefront/products/$id/'
       preLoaderRoute: typeof ApiStorefrontProductsIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/study/decks/$id/review': {
+      id: '/api/study/decks/$id/review'
+      path: '/api/study/decks/$id/review'
+      fullPath: '/api/study/decks/$id/review'
+      preLoaderRoute: typeof ApiStudyDecksIdReviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/study/cards/$id/review': {
+      id: '/api/study/cards/$id/review'
+      path: '/api/study/cards/$id/review'
+      fullPath: '/api/study/cards/$id/review'
+      preLoaderRoute: typeof ApiStudyCardsIdReviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/storefront/products/$id/buy': {
@@ -7573,6 +7711,7 @@ interface SiteRouteChildren {
   SiteProfileIdRoute: typeof SiteProfileIdRoute
   SiteResearchCallRoute: typeof SiteResearchCallRoute
   SiteStoreUseridRoute: typeof SiteStoreUseridRoute
+  SiteStudyDeckIdRoute: typeof SiteStudyDeckIdRoute
   SiteTagTagRoute: typeof SiteTagTagRoute
   SiteUserBuildsManageRoute: typeof SiteUserBuildsManageRoute
   SiteUserBuildsSubmitRoute: typeof SiteUserBuildsSubmitRoute
@@ -7585,6 +7724,7 @@ interface SiteRouteChildren {
   SiteNewsIndexRoute: typeof SiteNewsIndexRoute
   SitePersonasIndexRoute: typeof SitePersonasIndexRoute
   SiteResearchIndexRoute: typeof SiteResearchIndexRoute
+  SiteStudyIndexRoute: typeof SiteStudyIndexRoute
   SiteUserBuildsIndexRoute: typeof SiteUserBuildsIndexRoute
   SiteVIndexRoute: typeof SiteVIndexRoute
   SiteUUseridIndexRoute: typeof SiteUUseridIndexRoute
@@ -7618,6 +7758,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteProfileIdRoute: SiteProfileIdRoute,
   SiteResearchCallRoute: SiteResearchCallRoute,
   SiteStoreUseridRoute: SiteStoreUseridRoute,
+  SiteStudyDeckIdRoute: SiteStudyDeckIdRoute,
   SiteTagTagRoute: SiteTagTagRoute,
   SiteUserBuildsManageRoute: SiteUserBuildsManageRoute,
   SiteUserBuildsSubmitRoute: SiteUserBuildsSubmitRoute,
@@ -7630,6 +7771,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteNewsIndexRoute: SiteNewsIndexRoute,
   SitePersonasIndexRoute: SitePersonasIndexRoute,
   SiteResearchIndexRoute: SiteResearchIndexRoute,
+  SiteStudyIndexRoute: SiteStudyIndexRoute,
   SiteUserBuildsIndexRoute: SiteUserBuildsIndexRoute,
   SiteVIndexRoute: SiteVIndexRoute,
   SiteUUseridIndexRoute: SiteUUseridIndexRoute,
@@ -8422,6 +8564,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSpotifySearchRoute: ApiSpotifySearchRoute,
   ApiStakingDepositRoute: ApiStakingDepositRoute,
   ApiStakingWithdrawRoute: ApiStakingWithdrawRoute,
+  ApiStudyTutorRoute: ApiStudyTutorRoute,
   ApiTagsTagRoute: ApiTagsTagRoute,
   ApiTempleOfJoySaveRoute: ApiTempleOfJoySaveRoute,
   ApiTipsLeaderboardRoute: ApiTipsLeaderboardRoute,
@@ -8494,8 +8637,12 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGroupChatsIdIndexRoute: ApiGroupChatsIdIndexRoute,
   ApiPersonasIdIndexRoute: ApiPersonasIdIndexRoute,
   ApiStorefrontProductsIndexRoute: ApiStorefrontProductsIndexRoute,
+  ApiStudyDecksIndexRoute: ApiStudyDecksIndexRoute,
   ApiStorefrontProductsIdBuyRoute: ApiStorefrontProductsIdBuyRoute,
+  ApiStudyCardsIdReviewRoute: ApiStudyCardsIdReviewRoute,
+  ApiStudyDecksIdReviewRoute: ApiStudyDecksIdReviewRoute,
   ApiStorefrontProductsIdIndexRoute: ApiStorefrontProductsIdIndexRoute,
+  ApiStudyDecksIdIndexRoute: ApiStudyDecksIdIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

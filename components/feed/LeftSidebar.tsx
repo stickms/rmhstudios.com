@@ -22,6 +22,7 @@ const navLinks = [
   { href: '/communities', label: 'Communities', icon: Users },
   { href: '/clans', label: 'Clans', icon: Shield },
   { href: '/ranked', label: 'Ranked', icon: Swords },
+  { href: '/study', label: 'Flashcards', icon: BookOpen },
   { href: '/personas', label: 'AI Personas', icon: Bot },
   { href: '/search', label: 'Search', icon: Search },
   { href: '/v', label: 'Pages', icon: LayoutGrid },
