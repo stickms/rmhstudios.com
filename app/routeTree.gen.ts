@@ -141,6 +141,7 @@ import { Route as SecretNotesIndexRouteImport } from './routes/secret/notes/inde
 import { Route as SecretJobsIndexRouteImport } from './routes/secret/jobs/index'
 import { Route as SecretCursedLogicIndexRouteImport } from './routes/secret/cursed-logic/index'
 import { Route as RmhboxMinigamesIndexRouteImport } from './routes/rmhbox/minigames/index'
+import { Route as ApiWheelIndexRouteImport } from './routes/api/wheel/index'
 import { Route as ApiShopIndexRouteImport } from './routes/api/shop/index'
 import { Route as ApiScheduledIndexRouteImport } from './routes/api/scheduled/index'
 import { Route as ApiNotificationsIndexRouteImport } from './routes/api/notifications/index'
@@ -167,6 +168,7 @@ import { Route as StrategiesProfileReputationRouteImport } from './routes/strate
 import { Route as SecretJobsApplicationsRouteImport } from './routes/secret/jobs/applications'
 import { Route as SecretJobsIdRouteImport } from './routes/secret/jobs/$id'
 import { Route as EmbedPostIdRouteImport } from './routes/embed.post.$id'
+import { Route as ApiWheelSpinRouteImport } from './routes/api/wheel/spin'
 import { Route as ApiVoidBreakerScoreRouteImport } from './routes/api/void-breaker/score'
 import { Route as ApiVoidBreakerLeaderboardRouteImport } from './routes/api/void-breaker/leaderboard'
 import { Route as ApiVibeStreamRouteImport } from './routes/api/vibe/stream'
@@ -1018,6 +1020,11 @@ const RmhboxMinigamesIndexRoute = RmhboxMinigamesIndexRouteImport.update({
   path: '/minigames/',
   getParentRoute: () => RmhboxRoute,
 } as any)
+const ApiWheelIndexRoute = ApiWheelIndexRouteImport.update({
+  id: '/api/wheel/',
+  path: '/api/wheel/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiShopIndexRoute = ApiShopIndexRouteImport.update({
   id: '/api/shop/',
   path: '/api/shop/',
@@ -1152,6 +1159,11 @@ const SecretJobsIdRoute = SecretJobsIdRouteImport.update({
 const EmbedPostIdRoute = EmbedPostIdRouteImport.update({
   id: '/embed/post/$id',
   path: '/embed/post/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWheelSpinRoute = ApiWheelSpinRouteImport.update({
+  id: '/api/wheel/spin',
+  path: '/api/wheel/spin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiVoidBreakerScoreRoute = ApiVoidBreakerScoreRouteImport.update({
@@ -2377,6 +2389,7 @@ export interface FileRoutesByFullPath {
   '/api/vibe/stream': typeof ApiVibeStreamRoute
   '/api/void-breaker/leaderboard': typeof ApiVoidBreakerLeaderboardRoute
   '/api/void-breaker/score': typeof ApiVoidBreakerScoreRoute
+  '/api/wheel/spin': typeof ApiWheelSpinRoute
   '/embed/post/$id': typeof EmbedPostIdRoute
   '/secret/jobs/$id': typeof SecretJobsIdRoute
   '/secret/jobs/applications': typeof SecretJobsApplicationsRoute
@@ -2403,6 +2416,7 @@ export interface FileRoutesByFullPath {
   '/api/notifications/': typeof ApiNotificationsIndexRoute
   '/api/scheduled/': typeof ApiScheduledIndexRoute
   '/api/shop/': typeof ApiShopIndexRoute
+  '/api/wheel/': typeof ApiWheelIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic/': typeof SecretCursedLogicIndexRoute
   '/secret/jobs/': typeof SecretJobsIndexRoute
@@ -2703,6 +2717,7 @@ export interface FileRoutesByTo {
   '/api/vibe/stream': typeof ApiVibeStreamRoute
   '/api/void-breaker/leaderboard': typeof ApiVoidBreakerLeaderboardRoute
   '/api/void-breaker/score': typeof ApiVoidBreakerScoreRoute
+  '/api/wheel/spin': typeof ApiWheelSpinRoute
   '/embed/post/$id': typeof EmbedPostIdRoute
   '/secret/jobs/$id': typeof SecretJobsIdRoute
   '/secret/jobs/applications': typeof SecretJobsApplicationsRoute
@@ -2729,6 +2744,7 @@ export interface FileRoutesByTo {
   '/api/notifications': typeof ApiNotificationsIndexRoute
   '/api/scheduled': typeof ApiScheduledIndexRoute
   '/api/shop': typeof ApiShopIndexRoute
+  '/api/wheel': typeof ApiWheelIndexRoute
   '/rmhbox/minigames': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic': typeof SecretCursedLogicIndexRoute
   '/secret/jobs': typeof SecretJobsIndexRoute
@@ -3054,6 +3070,7 @@ export interface FileRoutesById {
   '/api/vibe/stream': typeof ApiVibeStreamRoute
   '/api/void-breaker/leaderboard': typeof ApiVoidBreakerLeaderboardRoute
   '/api/void-breaker/score': typeof ApiVoidBreakerScoreRoute
+  '/api/wheel/spin': typeof ApiWheelSpinRoute
   '/embed/post/$id': typeof EmbedPostIdRoute
   '/secret/jobs/$id': typeof SecretJobsIdRoute
   '/secret/jobs/applications': typeof SecretJobsApplicationsRoute
@@ -3080,6 +3097,7 @@ export interface FileRoutesById {
   '/api/notifications/': typeof ApiNotificationsIndexRoute
   '/api/scheduled/': typeof ApiScheduledIndexRoute
   '/api/shop/': typeof ApiShopIndexRoute
+  '/api/wheel/': typeof ApiWheelIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic/': typeof SecretCursedLogicIndexRoute
   '/secret/jobs/': typeof SecretJobsIndexRoute
@@ -3405,6 +3423,7 @@ export interface FileRouteTypes {
     | '/api/vibe/stream'
     | '/api/void-breaker/leaderboard'
     | '/api/void-breaker/score'
+    | '/api/wheel/spin'
     | '/embed/post/$id'
     | '/secret/jobs/$id'
     | '/secret/jobs/applications'
@@ -3431,6 +3450,7 @@ export interface FileRouteTypes {
     | '/api/notifications/'
     | '/api/scheduled/'
     | '/api/shop/'
+    | '/api/wheel/'
     | '/rmhbox/minigames/'
     | '/secret/cursed-logic/'
     | '/secret/jobs/'
@@ -3731,6 +3751,7 @@ export interface FileRouteTypes {
     | '/api/vibe/stream'
     | '/api/void-breaker/leaderboard'
     | '/api/void-breaker/score'
+    | '/api/wheel/spin'
     | '/embed/post/$id'
     | '/secret/jobs/$id'
     | '/secret/jobs/applications'
@@ -3757,6 +3778,7 @@ export interface FileRouteTypes {
     | '/api/notifications'
     | '/api/scheduled'
     | '/api/shop'
+    | '/api/wheel'
     | '/rmhbox/minigames'
     | '/secret/cursed-logic'
     | '/secret/jobs'
@@ -4081,6 +4103,7 @@ export interface FileRouteTypes {
     | '/api/vibe/stream'
     | '/api/void-breaker/leaderboard'
     | '/api/void-breaker/score'
+    | '/api/wheel/spin'
     | '/embed/post/$id'
     | '/secret/jobs/$id'
     | '/secret/jobs/applications'
@@ -4107,6 +4130,7 @@ export interface FileRouteTypes {
     | '/api/notifications/'
     | '/api/scheduled/'
     | '/api/shop/'
+    | '/api/wheel/'
     | '/rmhbox/minigames/'
     | '/secret/cursed-logic/'
     | '/secret/jobs/'
@@ -4337,6 +4361,7 @@ export interface RootRouteChildren {
   ApiVibeStreamRoute: typeof ApiVibeStreamRoute
   ApiVoidBreakerLeaderboardRoute: typeof ApiVoidBreakerLeaderboardRoute
   ApiVoidBreakerScoreRoute: typeof ApiVoidBreakerScoreRoute
+  ApiWheelSpinRoute: typeof ApiWheelSpinRoute
   EmbedPostIdRoute: typeof EmbedPostIdRoute
   ApiBattlepassIndexRoute: typeof ApiBattlepassIndexRoute
   ApiCoinsIndexRoute: typeof ApiCoinsIndexRoute
@@ -4344,6 +4369,7 @@ export interface RootRouteChildren {
   ApiNotificationsIndexRoute: typeof ApiNotificationsIndexRoute
   ApiScheduledIndexRoute: typeof ApiScheduledIndexRoute
   ApiShopIndexRoute: typeof ApiShopIndexRoute
+  ApiWheelIndexRoute: typeof ApiWheelIndexRoute
   ApiAdminCuratedBuildsImageRoute: typeof ApiAdminCuratedBuildsImageRouteWithChildren
   ApiCommentsCommentIdTranslateRoute: typeof ApiCommentsCommentIdTranslateRoute
   ApiCommunitiesSlugFeedRoute: typeof ApiCommunitiesSlugFeedRoute
@@ -5306,6 +5332,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RmhboxMinigamesIndexRouteImport
       parentRoute: typeof RmhboxRoute
     }
+    '/api/wheel/': {
+      id: '/api/wheel/'
+      path: '/api/wheel'
+      fullPath: '/api/wheel/'
+      preLoaderRoute: typeof ApiWheelIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/shop/': {
       id: '/api/shop/'
       path: '/api/shop'
@@ -5486,6 +5519,13 @@ declare module '@tanstack/react-router' {
       path: '/embed/post/$id'
       fullPath: '/embed/post/$id'
       preLoaderRoute: typeof EmbedPostIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/wheel/spin': {
+      id: '/api/wheel/spin'
+      path: '/api/wheel/spin'
+      fullPath: '/api/wheel/spin'
+      preLoaderRoute: typeof ApiWheelSpinRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/void-breaker/score': {
@@ -7715,6 +7755,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiVibeStreamRoute: ApiVibeStreamRoute,
   ApiVoidBreakerLeaderboardRoute: ApiVoidBreakerLeaderboardRoute,
   ApiVoidBreakerScoreRoute: ApiVoidBreakerScoreRoute,
+  ApiWheelSpinRoute: ApiWheelSpinRoute,
   EmbedPostIdRoute: EmbedPostIdRoute,
   ApiBattlepassIndexRoute: ApiBattlepassIndexRoute,
   ApiCoinsIndexRoute: ApiCoinsIndexRoute,
@@ -7722,6 +7763,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiNotificationsIndexRoute: ApiNotificationsIndexRoute,
   ApiScheduledIndexRoute: ApiScheduledIndexRoute,
   ApiShopIndexRoute: ApiShopIndexRoute,
+  ApiWheelIndexRoute: ApiWheelIndexRoute,
   ApiAdminCuratedBuildsImageRoute: ApiAdminCuratedBuildsImageRouteWithChildren,
   ApiCommentsCommentIdTranslateRoute: ApiCommentsCommentIdTranslateRoute,
   ApiCommunitiesSlugFeedRoute: ApiCommunitiesSlugFeedRoute,

@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { Button } from '@/components/ui/button';
+import { DailyWheel } from './DailyWheel';
 
 interface QuestView {
   id: string;
@@ -199,6 +200,9 @@ export function ProgressColumn() {
             </p>
           </div>
         </section>
+
+        {/* Daily wheel */}
+        <DailyWheel />
 
         {/* Quests */}
         <QuestSection
