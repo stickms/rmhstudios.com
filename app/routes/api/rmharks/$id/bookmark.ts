@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { grantAchievement } from '@/lib/achievements/engine.server';
 
 /** POST /api/rmharks/$id/bookmark — toggle a bookmark on a post. */
 export const Route = createFileRoute('/api/rmharks/$id/bookmark')({
@@ -33,6 +34,7 @@ export const Route = createFileRoute('/api/rmharks/$id/bookmark')({
           if (!post) return Response.json({ error: 'Post not found' }, { status: 404 });
 
           await prisma.rMHarkBookmark.create({ data: { userId, rmheetId: id } });
+          await grantAchievement(userId, 'social.first_bookmark');
           return Response.json({ success: true, bookmarked: true });
         } catch (error) {
           console.error('Toggle bookmark error:', error);

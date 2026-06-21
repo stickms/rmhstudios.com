@@ -8,6 +8,7 @@ import { createFileRoute } from '@tanstack/react-router';
 
 import { prisma } from '@/lib/prisma.server';
 import { z } from 'zod';
+import { grantAchievement, progressAchievement } from '@/lib/achievements/engine.server';
 
 // Server-to-server auth via shared secret
 const ALTAIR_SERVER_SECRET = process.env.ALTAIR_SERVER_SECRET;
@@ -150,6 +151,20 @@ export const Route = createFileRoute('/api/altair/match')({
 
       return matchRecord;
     });
+
+    // Achievements for real co-op players (best-effort).
+    try {
+      for (const p of players) {
+        if (!realUserIds.has(p.userId)) continue;
+        await grantAchievement(p.userId, 'game.altair.first_run');
+        if (victory) await grantAchievement(p.userId, 'game.altair.first_victory');
+        if (p.revivesGiven && p.revivesGiven > 0) {
+          await progressAchievement(p.userId, 'game.altair.coop_revives_10', { by: p.revivesGiven });
+        }
+      }
+    } catch (e) {
+      console.error('altair achievement error:', e);
+    }
 
     return Response.json({ success: true, matchId: match.id });
   } catch (e) {

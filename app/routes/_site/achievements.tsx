@@ -1,0 +1,34 @@
+import { createFileRoute, Link } from '@tanstack/react-router';
+import { AnimatedMain } from '@/components/feed/AnimatedMain';
+import { AchievementsColumn } from '@/components/feed/AchievementsColumn';
+import { useSession } from '@/components/Providers';
+import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
+
+export const Route = createFileRoute('/_site/achievements')({
+  head: () => ({ meta: [{ title: 'Achievements | RMH Studios' }] }),
+  component: AchievementsPage,
+});
+
+function AchievementsPage() {
+  const { data: session, isPending } = useSession();
+
+  return (
+    <AnimatedMain className="w-full min-w-0 border-r border-site-border pb-16 md:pb-0">
+      {isPending ? (
+        <div className="flex justify-center py-20">
+          <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+        </div>
+      ) : !session ? (
+        <div className="flex flex-col items-center gap-3 px-6 py-24 text-center">
+          <p className="font-medium text-site-text">Sign in to track achievements</p>
+          <Link to="/login" search={{ callbackURL: '/achievements' }}>
+            <Button variant="accent">Sign in</Button>
+          </Link>
+        </div>
+      ) : (
+        <AchievementsColumn userId={session.user.id} />
+      )}
+    </AnimatedMain>
+  );
+}

@@ -113,6 +113,7 @@ import { Route as SiteQuotesRouteImport } from './routes/_site/quotes'
 import { Route as SitePricingRouteImport } from './routes/_site/pricing'
 import { Route as SiteNotificationsRouteImport } from './routes/_site/notifications'
 import { Route as SiteBookmarksRouteImport } from './routes/_site/bookmarks'
+import { Route as SiteAchievementsRouteImport } from './routes/_site/achievements'
 import { Route as SiteAdminRouteRouteImport } from './routes/_site/admin/route'
 import { Route as StrategiesSafehouseIndexRouteImport } from './routes/strategies/safehouse/index'
 import { Route as StrategiesPuzzlesIndexRouteImport } from './routes/strategies/puzzles/index'
@@ -221,6 +222,7 @@ import { Route as ApiAltairLeaderboardRouteImport } from './routes/api/altair/le
 import { Route as ApiAdminUsersRouteImport } from './routes/api/admin/users'
 import { Route as ApiAdminReportsRouteImport } from './routes/api/admin/reports'
 import { Route as ApiAdminBlogRouteImport } from './routes/api/admin/blog'
+import { Route as ApiAchievementsUserIdRouteImport } from './routes/api/achievements/$userId'
 import { Route as AltairMultiplayerLobbyIdRouteImport } from './routes/altair/multiplayer/$lobbyId'
 import { Route as SiteUserBuildsSubmitRouteImport } from './routes/_site/user-builds/submit'
 import { Route as SiteUserBuildsManageRouteImport } from './routes/_site/user-builds/manage'
@@ -817,6 +819,11 @@ const SiteBookmarksRoute = SiteBookmarksRouteImport.update({
   path: '/bookmarks',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteAchievementsRoute = SiteAchievementsRouteImport.update({
+  id: '/achievements',
+  path: '/achievements',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteAdminRouteRoute = SiteAdminRouteRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -1372,6 +1379,11 @@ const ApiAdminBlogRoute = ApiAdminBlogRouteImport.update({
   path: '/api/admin/blog',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAchievementsUserIdRoute = ApiAchievementsUserIdRouteImport.update({
+  id: '/api/achievements/$userId',
+  path: '/api/achievements/$userId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AltairMultiplayerLobbyIdRoute =
   AltairMultiplayerLobbyIdRouteImport.update({
     id: '/$lobbyId',
@@ -1817,6 +1829,7 @@ export interface FileRoutesByFullPath {
   '/versecraft': typeof VersecraftRouteWithChildren
   '/void-breaker': typeof VoidBreakerRoute
   '/admin': typeof SiteAdminRouteRouteWithChildren
+  '/achievements': typeof SiteAchievementsRoute
   '/bookmarks': typeof SiteBookmarksRoute
   '/notifications': typeof SiteNotificationsRoute
   '/pricing': typeof SitePricingRoute
@@ -1899,6 +1912,7 @@ export interface FileRoutesByFullPath {
   '/user-builds/manage': typeof SiteUserBuildsManageRoute
   '/user-builds/submit': typeof SiteUserBuildsSubmitRoute
   '/altair/multiplayer/$lobbyId': typeof AltairMultiplayerLobbyIdRoute
+  '/api/achievements/$userId': typeof ApiAchievementsUserIdRoute
   '/api/admin/blog': typeof ApiAdminBlogRoute
   '/api/admin/reports': typeof ApiAdminReportsRouteWithChildren
   '/api/admin/users': typeof ApiAdminUsersRoute
@@ -2088,6 +2102,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/velum2099': typeof Velum2099Route
   '/void-breaker': typeof VoidBreakerRoute
+  '/achievements': typeof SiteAchievementsRoute
   '/bookmarks': typeof SiteBookmarksRoute
   '/notifications': typeof SiteNotificationsRoute
   '/pricing': typeof SitePricingRoute
@@ -2166,6 +2181,7 @@ export interface FileRoutesByTo {
   '/user-builds/manage': typeof SiteUserBuildsManageRoute
   '/user-builds/submit': typeof SiteUserBuildsSubmitRoute
   '/altair/multiplayer/$lobbyId': typeof AltairMultiplayerLobbyIdRoute
+  '/api/achievements/$userId': typeof ApiAchievementsUserIdRoute
   '/api/admin/blog': typeof ApiAdminBlogRoute
   '/api/admin/reports': typeof ApiAdminReportsRouteWithChildren
   '/api/admin/users': typeof ApiAdminUsersRoute
@@ -2374,6 +2390,7 @@ export interface FileRoutesById {
   '/versecraft': typeof VersecraftRouteWithChildren
   '/void-breaker': typeof VoidBreakerRoute
   '/_site/admin': typeof SiteAdminRouteRouteWithChildren
+  '/_site/achievements': typeof SiteAchievementsRoute
   '/_site/bookmarks': typeof SiteBookmarksRoute
   '/_site/notifications': typeof SiteNotificationsRoute
   '/_site/pricing': typeof SitePricingRoute
@@ -2457,6 +2474,7 @@ export interface FileRoutesById {
   '/_site/user-builds/manage': typeof SiteUserBuildsManageRoute
   '/_site/user-builds/submit': typeof SiteUserBuildsSubmitRoute
   '/altair/multiplayer/$lobbyId': typeof AltairMultiplayerLobbyIdRoute
+  '/api/achievements/$userId': typeof ApiAchievementsUserIdRoute
   '/api/admin/blog': typeof ApiAdminBlogRoute
   '/api/admin/reports': typeof ApiAdminReportsRouteWithChildren
   '/api/admin/users': typeof ApiAdminUsersRoute
@@ -2666,6 +2684,7 @@ export interface FileRouteTypes {
     | '/versecraft'
     | '/void-breaker'
     | '/admin'
+    | '/achievements'
     | '/bookmarks'
     | '/notifications'
     | '/pricing'
@@ -2748,6 +2767,7 @@ export interface FileRouteTypes {
     | '/user-builds/manage'
     | '/user-builds/submit'
     | '/altair/multiplayer/$lobbyId'
+    | '/api/achievements/$userId'
     | '/api/admin/blog'
     | '/api/admin/reports'
     | '/api/admin/users'
@@ -2937,6 +2957,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/velum2099'
     | '/void-breaker'
+    | '/achievements'
     | '/bookmarks'
     | '/notifications'
     | '/pricing'
@@ -3015,6 +3036,7 @@ export interface FileRouteTypes {
     | '/user-builds/manage'
     | '/user-builds/submit'
     | '/altair/multiplayer/$lobbyId'
+    | '/api/achievements/$userId'
     | '/api/admin/blog'
     | '/api/admin/reports'
     | '/api/admin/users'
@@ -3222,6 +3244,7 @@ export interface FileRouteTypes {
     | '/versecraft'
     | '/void-breaker'
     | '/_site/admin'
+    | '/_site/achievements'
     | '/_site/bookmarks'
     | '/_site/notifications'
     | '/_site/pricing'
@@ -3305,6 +3328,7 @@ export interface FileRouteTypes {
     | '/_site/user-builds/manage'
     | '/_site/user-builds/submit'
     | '/altair/multiplayer/$lobbyId'
+    | '/api/achievements/$userId'
     | '/api/admin/blog'
     | '/api/admin/reports'
     | '/api/admin/users'
@@ -3533,6 +3557,7 @@ export interface RootRouteChildren {
   UserBuildsSlugRoute: typeof UserBuildsSlugRoute
   VSlugRoute: typeof VSlugRoute
   VNewRoute: typeof VNewRoute
+  ApiAchievementsUserIdRoute: typeof ApiAchievementsUserIdRoute
   ApiAdminBlogRoute: typeof ApiAdminBlogRoute
   ApiAdminReportsRoute: typeof ApiAdminReportsRouteWithChildren
   ApiAdminUsersRoute: typeof ApiAdminUsersRoute
@@ -4359,6 +4384,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteBookmarksRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/achievements': {
+      id: '/_site/achievements'
+      path: '/achievements'
+      fullPath: '/achievements'
+      preLoaderRoute: typeof SiteAchievementsRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/admin': {
       id: '/_site/admin'
       path: '/admin'
@@ -5115,6 +5147,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminBlogRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/achievements/$userId': {
+      id: '/api/achievements/$userId'
+      path: '/api/achievements/$userId'
+      fullPath: '/api/achievements/$userId'
+      preLoaderRoute: typeof ApiAchievementsUserIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/altair/multiplayer/$lobbyId': {
       id: '/altair/multiplayer/$lobbyId'
       path: '/$lobbyId'
@@ -5676,6 +5715,7 @@ const SiteAdminRouteRouteWithChildren = SiteAdminRouteRoute._addFileChildren(
 
 interface SiteRouteChildren {
   SiteAdminRouteRoute: typeof SiteAdminRouteRouteWithChildren
+  SiteAchievementsRoute: typeof SiteAchievementsRoute
   SiteBookmarksRoute: typeof SiteBookmarksRoute
   SiteNotificationsRoute: typeof SiteNotificationsRoute
   SitePricingRoute: typeof SitePricingRoute
@@ -5703,6 +5743,7 @@ interface SiteRouteChildren {
 
 const SiteRouteChildren: SiteRouteChildren = {
   SiteAdminRouteRoute: SiteAdminRouteRouteWithChildren,
+  SiteAchievementsRoute: SiteAchievementsRoute,
   SiteBookmarksRoute: SiteBookmarksRoute,
   SiteNotificationsRoute: SiteNotificationsRoute,
   SitePricingRoute: SitePricingRoute,
@@ -6362,6 +6403,7 @@ const rootRouteChildren: RootRouteChildren = {
   UserBuildsSlugRoute: UserBuildsSlugRoute,
   VSlugRoute: VSlugRoute,
   VNewRoute: VNewRoute,
+  ApiAchievementsUserIdRoute: ApiAchievementsUserIdRoute,
   ApiAdminBlogRoute: ApiAdminBlogRoute,
   ApiAdminReportsRoute: ApiAdminReportsRouteWithChildren,
   ApiAdminUsersRoute: ApiAdminUsersRoute,

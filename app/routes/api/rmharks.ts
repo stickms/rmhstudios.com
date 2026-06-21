@@ -8,6 +8,7 @@ import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 import { feedEventBus } from "@/lib/feed-sse";
 import { parseHandles } from "@/lib/feed/mentions";
 import { createNotification } from "@/lib/notifications.server";
+import { grantAchievement, progressAchievement } from "@/lib/achievements/engine.server";
 import { getTimeline, type FeedSurface } from "@/lib/feed/timeline";
 import { ownsFeedImageUrl } from "@/lib/storage/keys";
 
@@ -228,6 +229,20 @@ export const Route = createFileRoute('/api/rmharks')({
       }
     } catch (err) {
       console.error("Mention notification error:", err);
+    }
+
+    // Achievements: posting milestones + night-owl easter egg (best-effort).
+    try {
+      const count = await prisma.rMHark.count({
+        where: { userId: session.user.id, deletedAt: null },
+      });
+      await progressAchievement(session.user.id, "social.first_post", { setProgress: count });
+      await progressAchievement(session.user.id, "social.posts_10", { setProgress: count });
+      await progressAchievement(session.user.id, "social.posts_100", { setProgress: count });
+      const hour = new Date().getHours();
+      if (hour >= 2 && hour < 5) await grantAchievement(session.user.id, "special.night_owl");
+    } catch (e) {
+      console.error("post achievement error:", e);
     }
 
     return Response.json(item, { status: 201 });

@@ -6,6 +6,7 @@ import { createCommentSchema } from "@/lib/rmhark-schema";
 import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 import { feedEventBus } from "@/lib/feed-sse";
 import { createNotification } from "@/lib/notifications.server";
+import { grantAchievement } from "@/lib/achievements/engine.server";
 
 export const Route = createFileRoute('/api/rmharks/$id/comment')({
   server: {
@@ -200,6 +201,8 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
     } catch (e) {
       console.error("comment notification error:", e);
     }
+
+    await grantAchievement(session.user.id, "social.first_comment");
 
     return Response.json({
       ...comment,
