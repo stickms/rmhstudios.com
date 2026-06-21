@@ -147,6 +147,24 @@ export function ProfileColumn({ userId }: { userId: string }) {
       .finally(() => setLoading(false));
   }, [userId]);
 
+  // Reset per-profile post state when navigating to a different profile. The
+  // ProfileColumn instance is reused across /u/$userid routes, so without this
+  // the previous user's RMHarks/likes (and the "already fetched" refs) linger
+  // until a full page refresh.
+  useEffect(() => {
+    setItems([]);
+    setCursor(null);
+    setHasMore(true);
+    setLoadingItems(false);
+    initialFetched.current = false;
+    setLikedItems([]);
+    setLikedCursor(null);
+    setLikedHasMore(true);
+    setLoadingLiked(false);
+    likedInitialFetched.current = false;
+    setTab('rmharks');
+  }, [userId]);
+
   // Spotify IFrame API — load script & create controller for profile song
   useEffect(() => {
     const spotifyId = profile?.profileSongSpotifyId;
