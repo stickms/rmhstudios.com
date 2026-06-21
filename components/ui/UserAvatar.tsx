@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import { OptimizedImage } from './OptimizedImage';
 
 interface UserAvatarProps {
@@ -17,17 +20,11 @@ const DEFAULT_AVATAR = '/images/social/default_avatar.png';
  * and proper sizing. Falls back to initials or default avatar.
  */
 export function UserAvatar({ src, alt, size = 32, className = '', fallbackName }: UserAvatarProps) {
-  if (!src) {
-    if (fallbackName) {
-      return (
-        <div
-          className={`rounded-full bg-white/10 flex items-center justify-center text-site-text font-bold shrink-0 ${className}`}
-          style={{ width: size, height: size, fontSize: size * 0.4 }}
-        >
-          {fallbackName[0]?.toUpperCase() || 'U'}
-        </div>
-      );
-    }
+  // When the (possibly proxied) avatar fails to load — e.g. a 502 from the
+  // image proxy or a dead remote avatar — fall back to the default avatar.
+  const [imgError, setImgError] = useState(false);
+
+  if (!src || imgError) {
     return (
       <img
         src={DEFAULT_AVATAR}
@@ -48,6 +45,7 @@ export function UserAvatar({ src, alt, size = 32, className = '', fallbackName }
         width={size}
         height={size}
         className={`rounded-full shrink-0 ${className}`}
+        onError={() => setImgError(true)}
       />
     );
   }
@@ -61,6 +59,7 @@ export function UserAvatar({ src, alt, size = 32, className = '', fallbackName }
       quality={75}
       className={`rounded-full shrink-0 object-cover ${className}`}
       style={{ width: size, height: size }}
+      onError={() => setImgError(true)}
     />
   );
 }
