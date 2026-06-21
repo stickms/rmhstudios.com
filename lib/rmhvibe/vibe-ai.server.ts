@@ -29,8 +29,10 @@ const deepseek = new OpenAI({
 });
 
 // Fixed, cheap, fast chat model. Locked server-side so a page can't pin an
-// expensive model. Override via env only if DeepSeek's model id changes.
-const VIBE_AI_MODEL = process.env.VIBE_AI_MODEL || 'deepseek-chat';
+// expensive model. `deepseek-v4-flash` is DeepSeek's current GA fast model; the
+// older `deepseek-chat` alias is retiring (2026-07-24), so we default to V4 Flash.
+// Override via env if DeepSeek's model id changes again.
+const VIBE_AI_MODEL = process.env.VIBE_AI_MODEL || 'deepseek-v4-flash';
 
 // Hard limits — the proxy is public-facing (any page visitor can hit it), so a
 // single request can never run away. Tune conservatively.
