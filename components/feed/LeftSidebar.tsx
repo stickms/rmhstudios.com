@@ -7,7 +7,7 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import {
   Home, Package, BookOpen, Library, LayoutGrid, Atom,
-  LogOut, PenSquare, User, MessageCircle, ShieldCheck, MoreHorizontal, Wallet, Sparkles, Bell, Search, Landmark, Bookmark, Trophy, Flame, ShoppingBag, Compass, Users, Zap, Shield, Bot, Swords, Clapperboard, Music, Terminal
+  LogOut, PenSquare, User, MessageCircle, ShieldCheck, MoreHorizontal, Wallet, Sparkles, Bell, Search, Landmark, Bookmark, Trophy, Flame, ShoppingBag, Compass, Users, Zap, Shield, Bot, Swords, Clapperboard, Music, Terminal, ChevronDown
 } from 'lucide-react';
 import { ComposeModal } from './ComposeModal';
 import { Button } from '@/components/ui/button';
@@ -32,9 +32,14 @@ const navLinks = [
   { href: '/library', label: 'Library', icon: Library },
   { href: '/shop', label: 'Shop', icon: ShoppingBag },
   { href: '/blog', label: 'Blog', icon: BookOpen },
-  { href: '/adaptive-intelligence', label: 'Adaptive Intelligence', icon: Atom },
   { href: '/pricing', label: 'Membership', icon: Sparkles },
   { href: '/developer', label: 'Developer', icon: Terminal },
+];
+
+// Nested under the "Explore" group in the sidebar.
+const exploreLinks = [
+  { href: '/rmh-capital', label: 'RMH Capital', icon: Landmark },
+  { href: '/adaptive-intelligence', label: 'Adaptive Intelligence', icon: Atom },
 ];
 
 export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
@@ -49,6 +54,9 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   const itemJustifyClass = expanded ? '' : 'md:justify-center xl:justify-start';
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  const [exploreOpen, setExploreOpen] = useState(
+    () => exploreLinks.some((l) => pathname?.startsWith(l.href)) || pathname === '/explore'
+  );
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -98,6 +106,56 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
       <nav className="flex flex-col gap-1 flex-1 min-h-0 overflow-y-auto pr-1.5">
         {navLinks.map((link) => {
           const Icon = link.icon;
+
+          // The "Explore" item is a collapsible group holding RMH Capital and
+          // Adaptive Intelligence rather than a plain link.
+          if (link.href === '/explore') {
+            const groupActive = exploreLinks.some((l) => pathname?.startsWith(l.href));
+            return (
+              <div key="explore" className="flex flex-col gap-1">
+                <button
+                  type="button"
+                  onClick={() => setExploreOpen((o) => !o)}
+                  aria-expanded={exploreOpen}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors w-full ${itemJustifyClass} ${
+                    groupActive
+                      ? 'text-site-accent bg-site-accent-dim'
+                      : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
+                  }`}
+                  title="Explore"
+                >
+                  <Compass className="w-5 h-5 shrink-0" />
+                  <span className={labelClass}>Explore</span>
+                  <ChevronDown
+                    className={`w-4 h-4 shrink-0 ml-auto transition-transform ${exploreOpen ? 'rotate-180' : ''} ${labelClass}`}
+                  />
+                </button>
+                {exploreOpen &&
+                  exploreLinks.map((sub) => {
+                    const SubIcon = sub.icon;
+                    const subActive = pathname?.startsWith(sub.href);
+                    return (
+                      <Link
+                        key={sub.href}
+                        to={sub.href}
+                        className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
+                          expanded ? 'pl-10' : 'md:justify-center xl:justify-start xl:pl-10'
+                        } ${
+                          subActive
+                            ? 'text-site-accent bg-site-accent-dim'
+                            : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
+                        }`}
+                        title={sub.label}
+                      >
+                        <SubIcon className="w-5 h-5 shrink-0" />
+                        <span className={labelClass}>{sub.label}</span>
+                      </Link>
+                    );
+                  })}
+              </div>
+            );
+          }
+
           const isActive = pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href + '/'));
           return (
             <Link
@@ -115,15 +173,6 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
             </Link>
           );
         })}
-        {/* RMH Capital — integrated institutional site */}
-        <Link
-          to="/rmh-capital"
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-site-text-muted hover:text-site-text hover:bg-site-surface ${itemJustifyClass}`}
-          title="RMH Capital"
-        >
-          <Landmark className="w-5 h-5 shrink-0" />
-          <span className={labelClass}>RMH Capital</span>
-        </Link>
         {/* Dynamic Profile link (shown when logged in) */}
         {session && (
           <Link
