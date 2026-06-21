@@ -7,12 +7,13 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import {
   Home, Package, BookOpen, Library, LayoutGrid, Atom,
-  LogOut, PenSquare, User, MessageCircle, ShieldCheck, MoreHorizontal, Wallet, Sparkles, Bell, Search, Landmark, Bookmark, Trophy
+  LogOut, PenSquare, User, MessageCircle, ShieldCheck, MoreHorizontal, Wallet, Sparkles, Bell, Search, Landmark, Bookmark, Trophy, Flame
 } from 'lucide-react';
 import { ComposeModal } from './ComposeModal';
 import { Button } from '@/components/ui/button';
 import { useUnreadCount } from '@/lib/useUnreadCount';
 import { useNotificationCount } from '@/lib/useNotificationCount';
+import { useStreak } from '@/lib/useStreak';
 
 const navLinks = [
   { href: '/', label: 'Home', icon: Home },
@@ -47,6 +48,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   const { resolved: resolvedUser } = useResolvedUser();
   const unreadCount = useUnreadCount(!!session);
   const { count: notificationCount } = useNotificationCount(!!session);
+  const streak = useStreak(!!session);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -145,6 +147,17 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
               )}
             </div>
             <span className={labelClass}>Notifications</span>
+          </Link>
+        )}
+        {/* Daily streak chip (shown when logged in with an active streak) */}
+        {session && streak && streak.current > 0 && (
+          <Link
+            to="/achievements"
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-orange-400 hover:bg-site-surface transition-colors ${itemJustifyClass}`}
+            title={`${streak.current}-day streak`}
+          >
+            <Flame className="w-5 h-5 shrink-0 fill-orange-500/30" />
+            <span className={labelClass}>{streak.current}-day streak</span>
           </Link>
         )}
         {/* Achievements link (shown when logged in) */}

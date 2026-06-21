@@ -97,6 +97,7 @@ import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as ApiWeatherWebhookRouteImport } from './routes/api/weather-webhook'
 import { Route as ApiWeatherDataRouteImport } from './routes/api/weather-data'
 import { Route as ApiUserBuildsRouteImport } from './routes/api/user-builds'
+import { Route as ApiStreakRouteImport } from './routes/api/streak'
 import { Route as ApiSearchRouteImport } from './routes/api/search'
 import { Route as ApiRmharksRouteImport } from './routes/api/rmharks'
 import { Route as ApiProfileRouteImport } from './routes/api/profile'
@@ -741,6 +742,11 @@ const ApiWeatherDataRoute = ApiWeatherDataRouteImport.update({
 const ApiUserBuildsRoute = ApiUserBuildsRouteImport.update({
   id: '/api/user-builds',
   path: '/api/user-builds',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiStreakRoute = ApiStreakRouteImport.update({
+  id: '/api/streak',
+  path: '/api/streak',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSearchRoute = ApiSearchRouteImport.update({
@@ -1871,6 +1877,7 @@ export interface FileRoutesByFullPath {
   '/api/profile': typeof ApiProfileRouteWithChildren
   '/api/rmharks': typeof ApiRmharksRouteWithChildren
   '/api/search': typeof ApiSearchRoute
+  '/api/streak': typeof ApiStreakRoute
   '/api/user-builds': typeof ApiUserBuildsRouteWithChildren
   '/api/weather-data': typeof ApiWeatherDataRoute
   '/api/weather-webhook': typeof ApiWeatherWebhookRoute
@@ -2147,6 +2154,7 @@ export interface FileRoutesByTo {
   '/api/profile': typeof ApiProfileRouteWithChildren
   '/api/rmharks': typeof ApiRmharksRouteWithChildren
   '/api/search': typeof ApiSearchRoute
+  '/api/streak': typeof ApiStreakRoute
   '/api/user-builds': typeof ApiUserBuildsRouteWithChildren
   '/api/weather-data': typeof ApiWeatherDataRoute
   '/api/weather-webhook': typeof ApiWeatherWebhookRoute
@@ -2440,6 +2448,7 @@ export interface FileRoutesById {
   '/api/profile': typeof ApiProfileRouteWithChildren
   '/api/rmharks': typeof ApiRmharksRouteWithChildren
   '/api/search': typeof ApiSearchRoute
+  '/api/streak': typeof ApiStreakRoute
   '/api/user-builds': typeof ApiUserBuildsRouteWithChildren
   '/api/weather-data': typeof ApiWeatherDataRoute
   '/api/weather-webhook': typeof ApiWeatherWebhookRoute
@@ -2738,6 +2747,7 @@ export interface FileRouteTypes {
     | '/api/profile'
     | '/api/rmharks'
     | '/api/search'
+    | '/api/streak'
     | '/api/user-builds'
     | '/api/weather-data'
     | '/api/weather-webhook'
@@ -3014,6 +3024,7 @@ export interface FileRouteTypes {
     | '/api/profile'
     | '/api/rmharks'
     | '/api/search'
+    | '/api/streak'
     | '/api/user-builds'
     | '/api/weather-data'
     | '/api/weather-webhook'
@@ -3306,6 +3317,7 @@ export interface FileRouteTypes {
     | '/api/profile'
     | '/api/rmharks'
     | '/api/search'
+    | '/api/streak'
     | '/api/user-builds'
     | '/api/weather-data'
     | '/api/weather-webhook'
@@ -3593,6 +3605,7 @@ export interface RootRouteChildren {
   ApiProfileRoute: typeof ApiProfileRouteWithChildren
   ApiRmharksRoute: typeof ApiRmharksRouteWithChildren
   ApiSearchRoute: typeof ApiSearchRoute
+  ApiStreakRoute: typeof ApiStreakRoute
   ApiUserBuildsRoute: typeof ApiUserBuildsRouteWithChildren
   ApiWeatherDataRoute: typeof ApiWeatherDataRoute
   ApiWeatherWebhookRoute: typeof ApiWeatherWebhookRoute
@@ -4320,6 +4333,13 @@ declare module '@tanstack/react-router' {
       path: '/api/user-builds'
       fullPath: '/api/user-builds'
       preLoaderRoute: typeof ApiUserBuildsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/streak': {
+      id: '/api/streak'
+      path: '/api/streak'
+      fullPath: '/api/streak'
+      preLoaderRoute: typeof ApiStreakRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/search': {
@@ -6484,6 +6504,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiProfileRoute: ApiProfileRouteWithChildren,
   ApiRmharksRoute: ApiRmharksRouteWithChildren,
   ApiSearchRoute: ApiSearchRoute,
+  ApiStreakRoute: ApiStreakRoute,
   ApiUserBuildsRoute: ApiUserBuildsRouteWithChildren,
   ApiWeatherDataRoute: ApiWeatherDataRoute,
   ApiWeatherWebhookRoute: ApiWeatherWebhookRoute,
