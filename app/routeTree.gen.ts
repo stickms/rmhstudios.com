@@ -125,6 +125,7 @@ import { Route as SiteShopRouteImport } from './routes/_site/shop'
 import { Route as SiteSearchRouteImport } from './routes/_site/search'
 import { Route as SiteRoadmapRouteImport } from './routes/_site/roadmap'
 import { Route as SiteRecapRouteImport } from './routes/_site/recap'
+import { Route as SiteRankedRouteImport } from './routes/_site/ranked'
 import { Route as SiteQuotesRouteImport } from './routes/_site/quotes'
 import { Route as SiteProgressRouteImport } from './routes/_site/progress'
 import { Route as SitePricingRouteImport } from './routes/_site/pricing'
@@ -147,6 +148,7 @@ import { Route as ApiWheelIndexRouteImport } from './routes/api/wheel/index'
 import { Route as ApiStakingIndexRouteImport } from './routes/api/staking/index'
 import { Route as ApiShopIndexRouteImport } from './routes/api/shop/index'
 import { Route as ApiScheduledIndexRouteImport } from './routes/api/scheduled/index'
+import { Route as ApiRankedIndexRouteImport } from './routes/api/ranked/index'
 import { Route as ApiPersonasIndexRouteImport } from './routes/api/personas/index'
 import { Route as ApiNotificationsIndexRouteImport } from './routes/api/notifications/index'
 import { Route as ApiCommunitiesIndexRouteImport } from './routes/api/communities/index'
@@ -325,6 +327,8 @@ import { Route as ApiRmharksIdLikeRouteImport } from './routes/api/rmharks/$id/l
 import { Route as ApiRmharksIdInsightsRouteImport } from './routes/api/rmharks/$id/insights'
 import { Route as ApiRmharksIdCommentRouteImport } from './routes/api/rmharks/$id/comment'
 import { Route as ApiRmharksIdBookmarkRouteImport } from './routes/api/rmharks/$id/bookmark'
+import { Route as ApiRankedChallengeIdRouteImport } from './routes/api/ranked/challenge/$id'
+import { Route as ApiRankedGameLeaderboardRouteImport } from './routes/api/ranked/$game/leaderboard'
 import { Route as ApiQuestsIdClaimRouteImport } from './routes/api/quests/$id/claim'
 import { Route as ApiProfileAvatarFilenameRouteImport } from './routes/api/profile/avatar/$filename'
 import { Route as ApiProfileIdRmharksRouteImport } from './routes/api/profile/$id/rmharks'
@@ -961,6 +965,11 @@ const SiteRecapRoute = SiteRecapRouteImport.update({
   path: '/recap',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteRankedRoute = SiteRankedRouteImport.update({
+  id: '/ranked',
+  path: '/ranked',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteQuotesRoute = SiteQuotesRouteImport.update({
   id: '/quotes',
   path: '/quotes',
@@ -1070,6 +1079,11 @@ const ApiShopIndexRoute = ApiShopIndexRouteImport.update({
 const ApiScheduledIndexRoute = ApiScheduledIndexRouteImport.update({
   id: '/api/scheduled/',
   path: '/api/scheduled/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRankedIndexRoute = ApiRankedIndexRouteImport.update({
+  id: '/api/ranked/',
+  path: '/api/ranked/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPersonasIndexRoute = ApiPersonasIndexRouteImport.update({
@@ -1984,6 +1998,17 @@ const ApiRmharksIdBookmarkRoute = ApiRmharksIdBookmarkRouteImport.update({
   path: '/bookmark',
   getParentRoute: () => ApiRmharksIdRoute,
 } as any)
+const ApiRankedChallengeIdRoute = ApiRankedChallengeIdRouteImport.update({
+  id: '/api/ranked/challenge/$id',
+  path: '/api/ranked/challenge/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRankedGameLeaderboardRoute =
+  ApiRankedGameLeaderboardRouteImport.update({
+    id: '/api/ranked/$game/leaderboard',
+    path: '/api/ranked/$game/leaderboard',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiQuestsIdClaimRoute = ApiQuestsIdClaimRouteImport.update({
   id: '/api/quests/$id/claim',
   path: '/api/quests/$id/claim',
@@ -2336,6 +2361,7 @@ export interface FileRoutesByFullPath {
   '/pricing': typeof SitePricingRoute
   '/progress': typeof SiteProgressRoute
   '/quotes': typeof SiteQuotesRoute
+  '/ranked': typeof SiteRankedRoute
   '/recap': typeof SiteRecapRoute
   '/roadmap': typeof SiteRoadmapRoute
   '/search': typeof SiteSearchRoute
@@ -2561,6 +2587,7 @@ export interface FileRoutesByFullPath {
   '/api/communities/': typeof ApiCommunitiesIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
   '/api/personas/': typeof ApiPersonasIndexRoute
+  '/api/ranked/': typeof ApiRankedIndexRoute
   '/api/scheduled/': typeof ApiScheduledIndexRoute
   '/api/shop/': typeof ApiShopIndexRoute
   '/api/staking/': typeof ApiStakingIndexRoute
@@ -2611,6 +2638,8 @@ export interface FileRoutesByFullPath {
   '/api/profile/$id/rmharks': typeof ApiProfileIdRmharksRoute
   '/api/profile/avatar/$filename': typeof ApiProfileAvatarFilenameRoute
   '/api/quests/$id/claim': typeof ApiQuestsIdClaimRoute
+  '/api/ranked/$game/leaderboard': typeof ApiRankedGameLeaderboardRoute
+  '/api/ranked/challenge/$id': typeof ApiRankedChallengeIdRoute
   '/api/rmharks/$id/bookmark': typeof ApiRmharksIdBookmarkRoute
   '/api/rmharks/$id/comment': typeof ApiRmharksIdCommentRouteWithChildren
   '/api/rmharks/$id/insights': typeof ApiRmharksIdInsightsRoute
@@ -2690,6 +2719,7 @@ export interface FileRoutesByTo {
   '/pricing': typeof SitePricingRoute
   '/progress': typeof SiteProgressRoute
   '/quotes': typeof SiteQuotesRoute
+  '/ranked': typeof SiteRankedRoute
   '/recap': typeof SiteRecapRoute
   '/roadmap': typeof SiteRoadmapRoute
   '/search': typeof SiteSearchRoute
@@ -2911,6 +2941,7 @@ export interface FileRoutesByTo {
   '/api/communities': typeof ApiCommunitiesIndexRoute
   '/api/notifications': typeof ApiNotificationsIndexRoute
   '/api/personas': typeof ApiPersonasIndexRoute
+  '/api/ranked': typeof ApiRankedIndexRoute
   '/api/scheduled': typeof ApiScheduledIndexRoute
   '/api/shop': typeof ApiShopIndexRoute
   '/api/staking': typeof ApiStakingIndexRoute
@@ -2961,6 +2992,8 @@ export interface FileRoutesByTo {
   '/api/profile/$id/rmharks': typeof ApiProfileIdRmharksRoute
   '/api/profile/avatar/$filename': typeof ApiProfileAvatarFilenameRoute
   '/api/quests/$id/claim': typeof ApiQuestsIdClaimRoute
+  '/api/ranked/$game/leaderboard': typeof ApiRankedGameLeaderboardRoute
+  '/api/ranked/challenge/$id': typeof ApiRankedChallengeIdRoute
   '/api/rmharks/$id/bookmark': typeof ApiRmharksIdBookmarkRoute
   '/api/rmharks/$id/comment': typeof ApiRmharksIdCommentRouteWithChildren
   '/api/rmharks/$id/insights': typeof ApiRmharksIdInsightsRoute
@@ -3060,6 +3093,7 @@ export interface FileRoutesById {
   '/_site/pricing': typeof SitePricingRoute
   '/_site/progress': typeof SiteProgressRoute
   '/_site/quotes': typeof SiteQuotesRoute
+  '/_site/ranked': typeof SiteRankedRoute
   '/_site/recap': typeof SiteRecapRoute
   '/_site/roadmap': typeof SiteRoadmapRoute
   '/_site/search': typeof SiteSearchRoute
@@ -3286,6 +3320,7 @@ export interface FileRoutesById {
   '/api/communities/': typeof ApiCommunitiesIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
   '/api/personas/': typeof ApiPersonasIndexRoute
+  '/api/ranked/': typeof ApiRankedIndexRoute
   '/api/scheduled/': typeof ApiScheduledIndexRoute
   '/api/shop/': typeof ApiShopIndexRoute
   '/api/staking/': typeof ApiStakingIndexRoute
@@ -3336,6 +3371,8 @@ export interface FileRoutesById {
   '/api/profile/$id/rmharks': typeof ApiProfileIdRmharksRoute
   '/api/profile/avatar/$filename': typeof ApiProfileAvatarFilenameRoute
   '/api/quests/$id/claim': typeof ApiQuestsIdClaimRoute
+  '/api/ranked/$game/leaderboard': typeof ApiRankedGameLeaderboardRoute
+  '/api/ranked/challenge/$id': typeof ApiRankedChallengeIdRoute
   '/api/rmharks/$id/bookmark': typeof ApiRmharksIdBookmarkRoute
   '/api/rmharks/$id/comment': typeof ApiRmharksIdCommentRouteWithChildren
   '/api/rmharks/$id/insights': typeof ApiRmharksIdInsightsRoute
@@ -3436,6 +3473,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/progress'
     | '/quotes'
+    | '/ranked'
     | '/recap'
     | '/roadmap'
     | '/search'
@@ -3661,6 +3699,7 @@ export interface FileRouteTypes {
     | '/api/communities/'
     | '/api/notifications/'
     | '/api/personas/'
+    | '/api/ranked/'
     | '/api/scheduled/'
     | '/api/shop/'
     | '/api/staking/'
@@ -3711,6 +3750,8 @@ export interface FileRouteTypes {
     | '/api/profile/$id/rmharks'
     | '/api/profile/avatar/$filename'
     | '/api/quests/$id/claim'
+    | '/api/ranked/$game/leaderboard'
+    | '/api/ranked/challenge/$id'
     | '/api/rmharks/$id/bookmark'
     | '/api/rmharks/$id/comment'
     | '/api/rmharks/$id/insights'
@@ -3790,6 +3831,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/progress'
     | '/quotes'
+    | '/ranked'
     | '/recap'
     | '/roadmap'
     | '/search'
@@ -4011,6 +4053,7 @@ export interface FileRouteTypes {
     | '/api/communities'
     | '/api/notifications'
     | '/api/personas'
+    | '/api/ranked'
     | '/api/scheduled'
     | '/api/shop'
     | '/api/staking'
@@ -4061,6 +4104,8 @@ export interface FileRouteTypes {
     | '/api/profile/$id/rmharks'
     | '/api/profile/avatar/$filename'
     | '/api/quests/$id/claim'
+    | '/api/ranked/$game/leaderboard'
+    | '/api/ranked/challenge/$id'
     | '/api/rmharks/$id/bookmark'
     | '/api/rmharks/$id/comment'
     | '/api/rmharks/$id/insights'
@@ -4159,6 +4204,7 @@ export interface FileRouteTypes {
     | '/_site/pricing'
     | '/_site/progress'
     | '/_site/quotes'
+    | '/_site/ranked'
     | '/_site/recap'
     | '/_site/roadmap'
     | '/_site/search'
@@ -4385,6 +4431,7 @@ export interface FileRouteTypes {
     | '/api/communities/'
     | '/api/notifications/'
     | '/api/personas/'
+    | '/api/ranked/'
     | '/api/scheduled/'
     | '/api/shop/'
     | '/api/staking/'
@@ -4435,6 +4482,8 @@ export interface FileRouteTypes {
     | '/api/profile/$id/rmharks'
     | '/api/profile/avatar/$filename'
     | '/api/quests/$id/claim'
+    | '/api/ranked/$game/leaderboard'
+    | '/api/ranked/challenge/$id'
     | '/api/rmharks/$id/bookmark'
     | '/api/rmharks/$id/comment'
     | '/api/rmharks/$id/insights'
@@ -4640,6 +4689,7 @@ export interface RootRouteChildren {
   ApiCommunitiesIndexRoute: typeof ApiCommunitiesIndexRoute
   ApiNotificationsIndexRoute: typeof ApiNotificationsIndexRoute
   ApiPersonasIndexRoute: typeof ApiPersonasIndexRoute
+  ApiRankedIndexRoute: typeof ApiRankedIndexRoute
   ApiScheduledIndexRoute: typeof ApiScheduledIndexRoute
   ApiShopIndexRoute: typeof ApiShopIndexRoute
   ApiStakingIndexRoute: typeof ApiStakingIndexRoute
@@ -4671,6 +4721,8 @@ export interface RootRouteChildren {
   ApiOgPostIdRoute: typeof ApiOgPostIdRoute
   ApiPersonasIdChatRoute: typeof ApiPersonasIdChatRoute
   ApiQuestsIdClaimRoute: typeof ApiQuestsIdClaimRoute
+  ApiRankedGameLeaderboardRoute: typeof ApiRankedGameLeaderboardRoute
+  ApiRankedChallengeIdRoute: typeof ApiRankedChallengeIdRoute
   ApiRmhcodeAuthGenerateRoute: typeof ApiRmhcodeAuthGenerateRoute
   ApiRmhcodeAuthInitiateRoute: typeof ApiRmhcodeAuthInitiateRoute
   ApiRmhcodeAuthListRoute: typeof ApiRmhcodeAuthListRoute
@@ -5503,6 +5555,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteRecapRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/ranked': {
+      id: '/_site/ranked'
+      path: '/ranked'
+      fullPath: '/ranked'
+      preLoaderRoute: typeof SiteRankedRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/quotes': {
       id: '/_site/quotes'
       path: '/quotes'
@@ -5655,6 +5714,13 @@ declare module '@tanstack/react-router' {
       path: '/api/scheduled'
       fullPath: '/api/scheduled/'
       preLoaderRoute: typeof ApiScheduledIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ranked/': {
+      id: '/api/ranked/'
+      path: '/api/ranked'
+      fullPath: '/api/ranked/'
+      preLoaderRoute: typeof ApiRankedIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/personas/': {
@@ -6903,6 +6969,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRmharksIdBookmarkRouteImport
       parentRoute: typeof ApiRmharksIdRoute
     }
+    '/api/ranked/challenge/$id': {
+      id: '/api/ranked/challenge/$id'
+      path: '/api/ranked/challenge/$id'
+      fullPath: '/api/ranked/challenge/$id'
+      preLoaderRoute: typeof ApiRankedChallengeIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ranked/$game/leaderboard': {
+      id: '/api/ranked/$game/leaderboard'
+      path: '/api/ranked/$game/leaderboard'
+      fullPath: '/api/ranked/$game/leaderboard'
+      preLoaderRoute: typeof ApiRankedGameLeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/quests/$id/claim': {
       id: '/api/quests/$id/claim'
       path: '/api/quests/$id/claim'
@@ -7339,6 +7419,7 @@ interface SiteRouteChildren {
   SitePricingRoute: typeof SitePricingRoute
   SiteProgressRoute: typeof SiteProgressRoute
   SiteQuotesRoute: typeof SiteQuotesRoute
+  SiteRankedRoute: typeof SiteRankedRoute
   SiteRecapRoute: typeof SiteRecapRoute
   SiteRoadmapRoute: typeof SiteRoadmapRoute
   SiteSearchRoute: typeof SiteSearchRoute
@@ -7381,6 +7462,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SitePricingRoute: SitePricingRoute,
   SiteProgressRoute: SiteProgressRoute,
   SiteQuotesRoute: SiteQuotesRoute,
+  SiteRankedRoute: SiteRankedRoute,
   SiteRecapRoute: SiteRecapRoute,
   SiteRoadmapRoute: SiteRoadmapRoute,
   SiteSearchRoute: SiteSearchRoute,
@@ -8217,6 +8299,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCommunitiesIndexRoute: ApiCommunitiesIndexRoute,
   ApiNotificationsIndexRoute: ApiNotificationsIndexRoute,
   ApiPersonasIndexRoute: ApiPersonasIndexRoute,
+  ApiRankedIndexRoute: ApiRankedIndexRoute,
   ApiScheduledIndexRoute: ApiScheduledIndexRoute,
   ApiShopIndexRoute: ApiShopIndexRoute,
   ApiStakingIndexRoute: ApiStakingIndexRoute,
@@ -8248,6 +8331,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiOgPostIdRoute: ApiOgPostIdRoute,
   ApiPersonasIdChatRoute: ApiPersonasIdChatRoute,
   ApiQuestsIdClaimRoute: ApiQuestsIdClaimRoute,
+  ApiRankedGameLeaderboardRoute: ApiRankedGameLeaderboardRoute,
+  ApiRankedChallengeIdRoute: ApiRankedChallengeIdRoute,
   ApiRmhcodeAuthGenerateRoute: ApiRmhcodeAuthGenerateRoute,
   ApiRmhcodeAuthInitiateRoute: ApiRmhcodeAuthInitiateRoute,
   ApiRmhcodeAuthListRoute: ApiRmhcodeAuthListRoute,

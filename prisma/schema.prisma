@@ -141,6 +141,11 @@ model User {
   // Build marketplace unlocks
   buildUnlocks BuildUnlock[]
 
+  // Ranked play: ELO ratings + challenges
+  eloRatings            EloRating[]
+  challengesIssued      RankedChallenge[] @relation("ChallengeChallenger")
+  challengesReceived    RankedChallenge[] @relation("ChallengeOpponent")
+
   // Economy: shop inventory, coin ledger (tips/gifts)
   inventory       UserInventory[]
   coinsSent       CoinTransaction[] @relation("CoinSender")
@@ -1557,6 +1562,44 @@ model BuildUnlock {
   @@unique([userId, buildId])
   @@index([buildId])
   @@map("build_unlock")
+}
+
+/// Per-game ELO rating for ranked play (#5). Updated when a challenge resolves.
+model EloRating {
+  id        String   @id @default(cuid())
+  userId    String
+  game      String   @db.VarChar(40)
+  rating    Int      @default(1000)
+  wins      Int      @default(0)
+  losses    Int      @default(0)
+  draws     Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, game])
+  @@index([game, rating(sort: Desc)])
+  @@map("elo_rating")
+}
+
+/// An async ranked challenge between two players. The result is trust-reported
+/// by either participant; resolving it updates both ELO ratings.
+model RankedChallenge {
+  id           String    @id @default(cuid())
+  game         String    @db.VarChar(40)
+  challengerId String
+  opponentId   String
+  status       String    @db.VarChar(12) @default("pending") // pending|accepted|declined|done
+  winnerId     String? // null winner on a done challenge = draw
+  createdAt    DateTime  @default(now())
+  resolvedAt   DateTime?
+
+  challenger User @relation("ChallengeChallenger", fields: [challengerId], references: [id], onDelete: Cascade)
+  opponent   User @relation("ChallengeOpponent", fields: [opponentId], references: [id], onDelete: Cascade)
+
+  @@index([opponentId, status])
+  @@index([challengerId, status])
+  @@map("ranked_challenge")
 }
 
 model BuildVersion {

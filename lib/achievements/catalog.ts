@@ -59,6 +59,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
 
   // ─── Games ───────────────────────────────────────────────────────────────
   // RMHBox
+  { id: 'game.first_ranked', name: 'Challenger', description: 'Finish your first ranked match.', icon: '⚔️', category: 'games', tier: 'silver', coinReward: 25, target: 1 },
   { id: 'game.rmhbox.first_game', name: 'Party Starter', description: 'Play your first RMHBox game.', icon: '🎉', category: 'games', tier: 'bronze', coinReward: 10, target: 1, group: 'RMHBox' },
   { id: 'game.rmhbox.first_win', name: 'Winner Winner', description: 'Win an RMHBox game.', icon: '🥇', category: 'games', tier: 'silver', coinReward: 25, target: 1, group: 'RMHBox' },
   { id: 'game.rmhbox.wins_25', name: 'Box Champion', description: 'Win 25 RMHBox games.', icon: '👑', category: 'games', tier: 'gold', coinReward: 100, target: 25, group: 'RMHBox' },
