@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { ReportDialog } from '@/components/moderation/ReportDialog';
 import { TipDialog } from '@/components/economy/TipDialog';
 import { EditPostModal } from './EditPostModal';
+import { PostTranslate } from './PostTranslate';
 import { Link } from '@tanstack/react-router';
 import { RMHarkContent, extractFirstUrl } from './RMHarkContent';
 import { PollDisplay } from './PollDisplay';
@@ -384,6 +385,9 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
           {/* Content */}
           {item.content && (
             <RMHarkContent text={item.content} className="text-site-text text-[15px] mt-1 whitespace-pre-wrap break-words" />
+          )}
+          {item.content && !item.deletedAt && item.content.length > 8 && (
+            <PostTranslate postId={actualId} />
           )}
 
           {/* Poll */}
