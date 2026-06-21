@@ -172,5 +172,11 @@
     "description": "A founding master specification for an AI co-scientist for biology, built on a reproducibility substrate to transform biomedical research.",
     "pages": 3365,
     "cover": "rmhtech-the-co-scientist-thesis.jpg"
+  },
+  "rmh-cfo-outage-correction.pdf": {
+    "title": "Office of the CFO — Statement of Correction",
+    "description": "The RMHStudios Office of the CFO sets the record straight on the 21 June 2026 outage — a forged apology, the partner who caused it, and the firing of Enterprise Risk Management.",
+    "pages": 3,
+    "cover": "rmh-cfo-outage-correction.jpg"
   }
 }

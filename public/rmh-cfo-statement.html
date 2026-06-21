@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Office of the Chief Financial Officer — Statement of Correction · RMHStudios</title>
+<style>
+  :root{
+    --ink:#1b2231;
+    --navy:#16233f;
+    --gray:#5b6472;
+    --rule:#e4e7ec;
+    --mono:'SF Mono', ui-monospace, 'JetBrains Mono', Menlo, monospace;
+    --serif:'Iowan Old Style','Palatino Linotype', Palatino, Georgia, 'Times New Roman', serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:#f3f4f6;color:var(--ink)}
+  body{
+    font-family:var(--serif);
+    -webkit-font-smoothing:antialiased;
+    padding:40px 20px;
+    line-height:1.55;
+  }
+  .doc{
+    max-width:1000px;
+    margin:0 auto;
+    background:#fff;
+    border:1px solid #d7dbe0;
+    border-radius:10px;
+    padding:clamp(34px,5vw,64px);
+    box-shadow:0 1px 2px rgba(20,30,60,.04);
+  }
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+    margin:0 0 26px;padding-bottom:18px;border-bottom:1px solid var(--rule);
+  }
+  .release{
+    font-family:var(--mono);font-size:12px;font-weight:600;
+    letter-spacing:.2em;text-transform:uppercase;color:#8b929e;
+  }
+  .logo{display:inline-flex;align-items:center;gap:10px;flex:0 0 auto}
+  .logo svg{width:30px;height:30px;display:block}
+  .logo .lw{
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-size:12.5px;font-weight:700;letter-spacing:.24em;
+    text-transform:uppercase;color:var(--navy);
+  }
+  .head h1{
+    font-size:clamp(20px,2.6vw,25px);
+    font-weight:700;
+    color:var(--navy);
+    margin:0 0 4px;
+    letter-spacing:-0.01em;
+  }
+  .head .meta{
+    font-size:14.5px;
+    color:var(--gray);
+    margin:0 0 30px;
+  }
+  @media(max-width:520px){.logo .lw{display:none}}
+  .salutation{
+    font-style:italic;
+    font-size:17.5px;
+    margin:0 0 22px;
+    color:var(--ink);
+  }
+  p{
+    font-size:17.5px;
+    text-align:justify;
+    hyphens:auto;
+    margin:0 0 20px;
+  }
+  .mono{font-family:var(--mono);font-size:0.9em}
+  strong{font-weight:700;color:var(--navy)}
+  em{font-style:italic}
+  .sign{margin-top:34px}
+  .sign .scribe{
+    font-style:italic;
+    font-size:25px;
+    color:var(--navy);
+    margin:0 0 6px;
+  }
+  .sign .name{font-weight:700;color:var(--navy);font-size:17px}
+  .sign .title{color:var(--gray);font-size:16px;margin-top:2px}
+  .conf{
+    margin-top:30px;padding-top:16px;border-top:1px solid var(--rule);
+    font-family:var(--mono);font-size:11px;letter-spacing:.08em;
+    text-transform:uppercase;color:#9aa1ad;
+  }
+  @media print{body{background:#fff;padding:0}.doc{border:0;box-shadow:none;max-width:none}}
+</style>
+</head>
+<body>
+<article class="doc">
+  <header class="head">
+    <div class="topbar">
+      <span class="release">For Immediate Release</span>
+      <span class="logo" aria-label="RMH Capital">
+        <svg viewBox="0 0 100 100" aria-hidden="true"><polygon points="50,5 89,27 89,73 50,95 11,73 11,27" fill="none" stroke="#C8A24A" stroke-width="3"/><polygon points="50,25 72,38 72,62 50,75 28,62 28,38" fill="none" stroke="#C8A24A" stroke-width="2" opacity="0.55"/><circle cx="50" cy="50" r="5" fill="#C8A24A"/></svg>
+        <span class="lw">RMH&nbsp;Capital</span>
+      </span>
+    </div>
+    <h1>Office of the Chief Financial Officer</h1>
+    <p class="meta">RMHStudios&nbsp;&nbsp;|&nbsp;&nbsp;22 June 2026</p>
+  </header>
+
+  <p class="salutation">To our clients, our partners, our investors, and the team who builds <span class="mono">RMHStudios.com</span> every day,</p>
+
+  <p>Over the weekend a letter circulated under the letterhead of this office, written in my name, accepting full personal responsibility for the eleven-hour outage of <span class="mono">RMHStudios.com</span>. I did not write it. I did not authorize it. And I do not accept the responsibility it claims on my behalf, because that responsibility is not mine to carry. I am writing now — in my own name, under a signature you can verify — to correct the record completely. A correction of this weight cannot wait, and it cannot be quiet.</p>
+
+  <p>It has since been established — to the exact account, the exact distribution list, and the exact header — that the letter was not authored by me or by anyone acting for this office. It was written by <strong>Mahmoud Said</strong>, General Managing Partner of <strong>RMHCombinator</strong> and Co-Chief Technical Officer of the firm, who assumed the identity of the Chief Financial Officer for a single purpose: to attach to me a failure that was, start to finish, his own. I will not soften that sentence. An officer of this firm impersonated another officer of this firm and used the credibility of this office to move the blame off himself — the person who caused the outage — and onto me. An apology that is forged is not an apology; it is a cover story.</p>
+
+  <p>Let me be precise about cause, because precision is the whole point. The outage was not the product of a diffuse &ldquo;system,&rdquo; a shared failure of leadership, or whoever happened to be on call. It originated in one deployment change — the new &ldquo;blue/green&rdquo; release that tore down the running web server before its replacement could stand up, and left that replacement unable to reach the database. That change was written, approved, and shipped by <strong>Mr. Said</strong>. The decision was his, the code was his, and the eleven hours are his. I will not accept, and I will not permit this firm to record, any account that spreads that cost onto people who did not incur it — and I will least of all sign my name to one.</p>
+
+  <p>This raises a governance question larger than any one weekend. We maintain a control function — <strong>Enterprise Risk Management</strong> — whose entire mandate is to detect exactly this: the failed release that took the site down, and the unauthorized communication that impersonated a named officer in its aftermath. Both happened in the same forty-eight hours. Neither was caught. A control that does not control is not a cost we can carry while asking you to believe in the ones we keep.</p>
+
+  <p>Accordingly, and effective immediately, the firm is parting ways with the <strong>Head of Enterprise Risk Management, Elon Musk</strong>. This decision is mine, it is made with the full knowledge of the Board, and it is not a comment on any single person so much as on a standard that was not met. I have thanked him for his service. I have also told him, as I am telling you, that the bar for this function is absolute, and on the two occasions that mattered most this quarter it was not cleared.</p>
+
+  <p>We will not refill the role as it was. We are reconstituting Enterprise Risk Management as an <strong>autonomous, AI-driven control system</strong> — continuous monitoring of every deployment, real-time verification of the provenance and authorship of every communication that leaves the firm under an officer's name, and automated escalation that does not sleep, does not take the weekend, and cannot be persuaded to look the other way. The detailed design, its controls, and its independent audit trail will be published alongside the incident report. A function whose failures this quarter were a missed deployment fault and an unverified identity is precisely the function that should be held to machine-checked, cryptographically verifiable standards rather than to a memo and a promise.</p>
+
+  <p>Here is what I can commit to in return. First, every communication issued under the title of an officer of this firm will, from today, carry a verifiable signature, and any that does not is to be treated as illegitimate on its face. Second, the impersonation and the conduct behind the outage have been referred for the appropriate internal review, with the same seriousness we would apply to any misrepresentation made to the people who depend on us. Third, the corrective actions required after the outage will proceed under the direct review of this office, each with a named owner and a date. And fourth, this letter exists at all because I would rather show you the truth in full than let a forged account of it stand in my name.</p>
+
+  <p>To our clients: the letter that asked you to accept an apology in my name was not mine, and the failure it tried to make me own was not mine either — you were owed the truth from the office whose name was taken. To our team: the failure was one colleague's, in full — it was not yours, and it was not the engineer who restored the site. To everyone who has extended us patience through a difficult week: thank you. We will be worth it.</p>
+
+  <p>With the record corrected, and accountability placed where it belongs,</p>
+
+  <div class="sign">
+    <p class="scribe">Alex Wu</p>
+    <p class="name">Alex Wu</p>
+    <p class="title">Chief Financial Officer, RMHStudios</p>
+  </div>
+
+  <p class="conf">Office of the Chief Financial Officer · For public release</p>
+</article>
+</body>
+</html>
