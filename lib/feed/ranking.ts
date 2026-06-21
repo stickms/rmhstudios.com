@@ -88,7 +88,14 @@ export function scoreCandidate(item: FeedItem, ctx: RankContext = {}): number {
   }
   const personalBoost = 1 + Math.min(1.5, personalAffinity * 0.6 + topic * 0.4);
 
-  return (recency * 3 + Math.log1p(velocity)) * affinity * personalBoost;
+  // Freshness pin: brand-new posts (last ~15 min) are guaranteed to sort above
+  // ranked-but-older content, so just-posted content (e.g. a paid post you
+  // just published) is always visible at the top after a refresh instead of
+  // being buried — or cut from the first page — by engagement ranking.
+  const FRESH_PIN = 1_000_000;
+  const freshness = ageHours < 0.25 ? FRESH_PIN - ageHours : 0;
+
+  return freshness + (recency * 3 + Math.log1p(velocity)) * affinity * personalBoost;
 }
 
 /**

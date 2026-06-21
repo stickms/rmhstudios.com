@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Loader2, Users, Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { HandleInput } from './HandleInput';
 
 interface GroupRow {
   id: string;
@@ -118,9 +119,10 @@ export function GroupChatsColumn() {
               maxLength={60}
               className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
-            <input
+            <HandleInput
               value={members}
-              onChange={(e) => setMembers(e.target.value)}
+              onChange={setMembers}
+              multiple
               placeholder="Members by @handle, comma-separated"
               className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />

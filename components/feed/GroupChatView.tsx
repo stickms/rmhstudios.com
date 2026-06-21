@@ -224,7 +224,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
               {!mine && <UserAvatar user={m.sender} />}
               <div className="max-w-[78%]">
                 {!mine && <p className="mb-0.5 px-1 text-[11px] text-site-text-dim">{m.sender.name || m.sender.handle || 'Member'}</p>}
-                <div className={`whitespace-pre-wrap break-words rounded-2xl px-3 py-2 text-sm ${mine ? 'bg-site-accent text-white' : 'bg-site-surface text-site-text'}`}>
+                <div className={`whitespace-pre-wrap break-words rounded-2xl px-3 py-2 text-sm ${mine ? 'bg-site-accent text-(--site-accent-fg)' : 'bg-site-surface text-site-text'}`}>
                   {m.content}
                 </div>
               </div>

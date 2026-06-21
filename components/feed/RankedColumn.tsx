@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Loader2, Swords, Trophy, Check, X, Flag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from './UserAvatar';
+import { HandleInput } from './HandleInput';
 
 interface Rating {
   game: string;
@@ -177,12 +178,14 @@ export function RankedColumn() {
                     </option>
                   ))}
                 </select>
-                <input
-                  value={opponent}
-                  onChange={(e) => setOpponent(e.target.value)}
-                  placeholder="@handle"
-                  className="flex-1 rounded-lg border border-site-border bg-site-bg px-3 py-1.5 text-sm text-site-text outline-none focus:border-site-accent"
-                />
+                <div className="flex-1">
+                  <HandleInput
+                    value={opponent}
+                    onChange={setOpponent}
+                    placeholder="@handle"
+                    className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-1.5 text-sm text-site-text outline-none focus:border-site-accent"
+                  />
+                </div>
                 <Button size="sm" variant="accent" disabled={busy === 'send' || !opponent.trim()} onClick={sendChallenge}>
                   {busy === 'send' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Challenge'}
                 </Button>

@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { formatDistanceToNow } from 'date-fns';
-import { Heart, MessageCircle, UserPlus, AtSign, Repeat2, Bell, CheckCheck, Loader2 } from 'lucide-react';
+import { Heart, MessageCircle, UserPlus, AtSign, Repeat2, Bell, CheckCheck, Loader2, Trophy, Sparkles, Zap, Gift } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Button } from '@/components/ui/button';
 
@@ -38,6 +38,21 @@ const TYPE_META: Record<NotificationType, { icon: typeof Heart; color: string; v
   SYSTEM: { icon: Bell, color: 'text-site-text-muted', verb: '' },
 };
 
+// Branded identity for system notifications (no human actor), keyed by the
+// entity the notification refers to.
+function systemIdentity(entityType: string | null): { label: string; Icon: typeof Heart; tint: string; bg: string } {
+  switch (entityType) {
+    case 'achievement':
+      return { label: 'Achievement', Icon: Trophy, tint: 'text-amber-400', bg: 'bg-amber-400/15' };
+    case 'level':
+      return { label: 'Level up', Icon: Zap, tint: 'text-site-accent', bg: 'bg-site-accent/15' };
+    case 'membership':
+      return { label: 'Membership', Icon: Gift, tint: 'text-site-accent', bg: 'bg-site-accent/15' };
+    default:
+      return { label: 'RMH Studios', Icon: Sparkles, tint: 'text-site-accent', bg: 'bg-site-accent/15' };
+  }
+}
+
 export function NotificationsColumn() {
   const navigate = useNavigate();
   const [items, setItems] = useState<NotificationItem[]>([]);
@@ -66,12 +81,18 @@ export function NotificationsColumn() {
       await load();
       if (!active) return;
       setLoading(false);
+      // Mark everything read server-side, and reflect it locally so rows don't
+      // stay visually unread (system notifications can't be "clicked" read).
       fetch('/api/notifications/read', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ all: true }),
-      }).catch(() => {});
+      })
+        .then(() => {
+          if (active) setItems((prev) => prev.map((n) => ({ ...n, read: true })));
+        })
+        .catch(() => {});
     })();
     return () => {
       active = false;
@@ -93,14 +114,22 @@ export function NotificationsColumn() {
   // (or link-less) notifications still navigate somewhere useful.
   const resolveLink = (n: NotificationItem): string | null => {
     if (n.link) return n.link;
-    if (!n.entityId) return null;
     switch (n.entityType) {
       case 'rmhark':
+        if (!n.entityId) return null;
         // The post detail route resolves by post id; the handle segment is
         // decorative, so a placeholder is fine when the actor has no handle.
         return `/u/${n.actor?.handle ?? '_'}/post/${n.entityId}`;
       case 'user':
+        if (!n.entityId) return null;
         return n.actor?.handle ? `/u/${n.actor.handle}` : `/profile/${n.entityId}`;
+      // System notifications route to the relevant hub.
+      case 'achievement':
+        return '/achievements';
+      case 'level':
+        return '/progress';
+      case 'membership':
+        return '/pricing';
       default:
         return null;
     }
@@ -147,8 +176,12 @@ export function NotificationsColumn() {
           {items.map((n) => {
             const meta = TYPE_META[n.type];
             const Icon = meta.icon;
-            const actorName = n.actor?.name || n.actor?.handle || 'Someone';
             const clickable = resolveLink(n) !== null;
+            // System notifications have no human actor — render a branded badge
+            // and lead with the message instead of a "Someone" line.
+            const isSystem = n.type === 'SYSTEM' || !n.actor;
+            const sys = isSystem ? systemIdentity(n.entityType) : null;
+            const actorName = n.actor?.name || n.actor?.handle || 'Someone';
             return (
               <li key={n.id}>
                 <button
@@ -159,19 +192,31 @@ export function NotificationsColumn() {
                     clickable ? 'cursor-pointer hover:bg-site-surface-hover' : 'cursor-default'
                   } ${n.read ? '' : 'bg-site-accent-dim/40'}`}
                 >
-                  <div className="relative shrink-0">
-                    <UserAvatar src={n.actor?.image} alt={actorName} size={40} fallbackName={actorName} />
-                    <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border border-site-border bg-site-bg">
-                      <Icon className={`h-3 w-3 ${meta.color}`} />
+                  {sys ? (
+                    <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${sys.bg}`}>
+                      <sys.Icon className={`h-5 w-5 ${sys.tint}`} />
                     </span>
-                  </div>
+                  ) : (
+                    <div className="relative shrink-0">
+                      <UserAvatar src={n.actor?.image} alt={actorName} size={40} fallbackName={actorName} />
+                      <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border border-site-border bg-site-bg">
+                        <Icon className={`h-3 w-3 ${meta.color}`} />
+                      </span>
+                    </div>
+                  )}
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm text-site-text">
-                      <span className="font-semibold">{actorName}</span>{' '}
-                      <span className="text-site-text-muted">{meta.verb}</span>
-                    </p>
-                    {n.preview && (
-                      <p className="mt-0.5 line-clamp-2 text-sm text-site-text-muted">{n.preview}</p>
+                    {sys ? (
+                      <p className="text-sm font-semibold text-site-text">{n.preview || sys.label}</p>
+                    ) : (
+                      <>
+                        <p className="text-sm text-site-text">
+                          <span className="font-semibold">{actorName}</span>{' '}
+                          <span className="text-site-text-muted">{meta.verb}</span>
+                        </p>
+                        {n.preview && (
+                          <p className="mt-0.5 line-clamp-2 text-sm text-site-text-muted">{n.preview}</p>
+                        )}
+                      </>
                     )}
                     <p className="mt-1 text-xs text-site-text-dim">
                       {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}

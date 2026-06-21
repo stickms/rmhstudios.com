@@ -201,7 +201,7 @@ function Bubble({ role, emoji, children }: { role: string; emoji: string | null;
       )}
       <div
         className={`max-w-[80%] whitespace-pre-wrap break-words rounded-2xl px-3 py-2 text-sm ${
-          isUser ? 'bg-site-accent text-white' : 'bg-site-surface text-site-text'
+          isUser ? 'bg-site-accent text-(--site-accent-fg)' : 'bg-site-surface text-site-text'
         }`}
       >
         {children}

@@ -2366,3 +2366,18 @@ img.emoji {
   color: rgba(255,255,255,0.4);
   min-height: 1.2em;
 }
+
+/* ─── Number inputs ──────────────────────────────────────────────────────
+ * The native up/down spinners render with the OS theme and clash with the
+ * site's dark UI. Hide them globally so number fields match every other
+ * themed input; users still type values (and themed stepper controls can be
+ * added per-field where needed). */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}

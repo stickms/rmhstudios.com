@@ -151,7 +151,7 @@ export function ClipsColumn() {
             key={f}
             onClick={() => setFilter(f)}
             className={`rounded-full px-3 py-1 text-xs font-medium capitalize transition-colors ${
-              filter === f ? 'bg-site-accent text-white' : 'text-site-text-muted hover:text-site-text'
+              filter === f ? 'bg-site-accent text-(--site-accent-fg)' : 'text-site-text-muted hover:text-site-text'
             }`}
           >
             {f}
