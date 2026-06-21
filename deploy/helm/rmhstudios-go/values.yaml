@@ -58,6 +58,10 @@ services:
   recap:
     port: 7004
     replicas: 1
+  assets:
+    port: 7007
+    replicas: 2
+    path: /library/
   doctrine-worker:
     worker: true
     replicas: 1

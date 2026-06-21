@@ -55,6 +55,9 @@ spec:
             {{- else if eq $svc "recap" }}
             - name: RECAP_PORT
               value: {{ $cfg.port | quote }}
+            {{- else if eq $svc "assets" }}
+            - name: ASSETS_PORT
+              value: {{ $cfg.port | quote }}
             {{- else if eq $svc "gateway" }}
             - name: PORT_WEB
               value: {{ $cfg.port | quote }}
@@ -77,6 +80,10 @@ spec:
             {{- with $root.Values.services.rmhmusic }}
             - name: RMHMUSIC_UPSTREAM
               value: "http://{{ $fn }}-rmhmusic:{{ .port }}"
+            {{- end }}
+            {{- with $root.Values.services.assets }}
+            - name: ASSETS_UPSTREAM
+              value: "http://{{ $fn }}-assets:{{ .port }}"
             {{- end }}
             {{- if $root.Values.webUpstream }}
             - name: WEB_UPSTREAM
