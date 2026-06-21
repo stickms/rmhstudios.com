@@ -162,12 +162,17 @@ services:
     env_file: ${ENV_FILE:-.env.production}
     environment:
       - STATUS_PORT=${PORT_STATUS:-7008}
+      # Needed to address the blue/green web containers by name on the compose
+      # network (${COMPOSE_PROJECT_NAME}-web-blue / -web-green).
+      - COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME:-rmhstudios}
       - PORT_WEB=${PORT_WEB:-7005}
       - PORT_WEB_GREEN=${PORT_WEB_GREEN:-7015}
       - PORT_SOCKET=${PORT_SOCKET:-7001}
       - PORT_RMHBOX=${PORT_RMHBOX:-7676}
       - PORT_RMHTUBE=${PORT_RMHTUBE:-7003}
       - PORT_RECAP=${PORT_RECAP:-7004}
+      # Uptime history persists to the shared db/ volume (mounted at /app/db).
+      - STATUS_DATA_DIR=/app/db
     command: ["node", "dist-server/server/status/index.cjs"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${PORT_STATUS:-7008}/health"]
