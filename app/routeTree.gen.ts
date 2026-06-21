@@ -144,6 +144,7 @@ import { Route as SecretJobsIndexRouteImport } from './routes/secret/jobs/index'
 import { Route as SecretCursedLogicIndexRouteImport } from './routes/secret/cursed-logic/index'
 import { Route as RmhboxMinigamesIndexRouteImport } from './routes/rmhbox/minigames/index'
 import { Route as ApiWheelIndexRouteImport } from './routes/api/wheel/index'
+import { Route as ApiStakingIndexRouteImport } from './routes/api/staking/index'
 import { Route as ApiShopIndexRouteImport } from './routes/api/shop/index'
 import { Route as ApiScheduledIndexRouteImport } from './routes/api/scheduled/index'
 import { Route as ApiNotificationsIndexRouteImport } from './routes/api/notifications/index'
@@ -186,6 +187,8 @@ import { Route as ApiUserBuildsIdRouteImport } from './routes/api/user-builds/$i
 import { Route as ApiTipsLeaderboardRouteImport } from './routes/api/tips/leaderboard'
 import { Route as ApiTempleOfJoySaveRouteImport } from './routes/api/temple-of-joy/save'
 import { Route as ApiTagsTagRouteImport } from './routes/api/tags/$tag'
+import { Route as ApiStakingWithdrawRouteImport } from './routes/api/staking/withdraw'
+import { Route as ApiStakingDepositRouteImport } from './routes/api/staking/deposit'
 import { Route as ApiSpotifySearchRouteImport } from './routes/api/spotify/search'
 import { Route as ApiSliceItSongsRouteImport } from './routes/api/slice-it/songs'
 import { Route as ApiSliceItScoreRouteImport } from './routes/api/slice-it/score'
@@ -1037,6 +1040,11 @@ const ApiWheelIndexRoute = ApiWheelIndexRouteImport.update({
   path: '/api/wheel/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiStakingIndexRoute = ApiStakingIndexRouteImport.update({
+  id: '/api/staking/',
+  path: '/api/staking/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiShopIndexRoute = ApiShopIndexRouteImport.update({
   id: '/api/shop/',
   path: '/api/shop/',
@@ -1252,6 +1260,16 @@ const ApiTempleOfJoySaveRoute = ApiTempleOfJoySaveRouteImport.update({
 const ApiTagsTagRoute = ApiTagsTagRouteImport.update({
   id: '/api/tags/$tag',
   path: '/api/tags/$tag',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiStakingWithdrawRoute = ApiStakingWithdrawRouteImport.update({
+  id: '/api/staking/withdraw',
+  path: '/api/staking/withdraw',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiStakingDepositRoute = ApiStakingDepositRouteImport.update({
+  id: '/api/staking/deposit',
+  path: '/api/staking/deposit',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSpotifySearchRoute = ApiSpotifySearchRouteImport.update({
@@ -2388,6 +2406,8 @@ export interface FileRoutesByFullPath {
   '/api/slice-it/score': typeof ApiSliceItScoreRoute
   '/api/slice-it/songs': typeof ApiSliceItSongsRouteWithChildren
   '/api/spotify/search': typeof ApiSpotifySearchRoute
+  '/api/staking/deposit': typeof ApiStakingDepositRoute
+  '/api/staking/withdraw': typeof ApiStakingWithdrawRoute
   '/api/tags/$tag': typeof ApiTagsTagRoute
   '/api/temple-of-joy/save': typeof ApiTempleOfJoySaveRoute
   '/api/tips/leaderboard': typeof ApiTipsLeaderboardRoute
@@ -2430,6 +2450,7 @@ export interface FileRoutesByFullPath {
   '/api/notifications/': typeof ApiNotificationsIndexRoute
   '/api/scheduled/': typeof ApiScheduledIndexRoute
   '/api/shop/': typeof ApiShopIndexRoute
+  '/api/staking/': typeof ApiStakingIndexRoute
   '/api/wheel/': typeof ApiWheelIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic/': typeof SecretCursedLogicIndexRoute
@@ -2718,6 +2739,8 @@ export interface FileRoutesByTo {
   '/api/slice-it/score': typeof ApiSliceItScoreRoute
   '/api/slice-it/songs': typeof ApiSliceItSongsRouteWithChildren
   '/api/spotify/search': typeof ApiSpotifySearchRoute
+  '/api/staking/deposit': typeof ApiStakingDepositRoute
+  '/api/staking/withdraw': typeof ApiStakingWithdrawRoute
   '/api/tags/$tag': typeof ApiTagsTagRoute
   '/api/temple-of-joy/save': typeof ApiTempleOfJoySaveRoute
   '/api/tips/leaderboard': typeof ApiTipsLeaderboardRoute
@@ -2760,6 +2783,7 @@ export interface FileRoutesByTo {
   '/api/notifications': typeof ApiNotificationsIndexRoute
   '/api/scheduled': typeof ApiScheduledIndexRoute
   '/api/shop': typeof ApiShopIndexRoute
+  '/api/staking': typeof ApiStakingIndexRoute
   '/api/wheel': typeof ApiWheelIndexRoute
   '/rmhbox/minigames': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic': typeof SecretCursedLogicIndexRoute
@@ -3073,6 +3097,8 @@ export interface FileRoutesById {
   '/api/slice-it/score': typeof ApiSliceItScoreRoute
   '/api/slice-it/songs': typeof ApiSliceItSongsRouteWithChildren
   '/api/spotify/search': typeof ApiSpotifySearchRoute
+  '/api/staking/deposit': typeof ApiStakingDepositRoute
+  '/api/staking/withdraw': typeof ApiStakingWithdrawRoute
   '/api/tags/$tag': typeof ApiTagsTagRoute
   '/api/temple-of-joy/save': typeof ApiTempleOfJoySaveRoute
   '/api/tips/leaderboard': typeof ApiTipsLeaderboardRoute
@@ -3115,6 +3141,7 @@ export interface FileRoutesById {
   '/api/notifications/': typeof ApiNotificationsIndexRoute
   '/api/scheduled/': typeof ApiScheduledIndexRoute
   '/api/shop/': typeof ApiShopIndexRoute
+  '/api/staking/': typeof ApiStakingIndexRoute
   '/api/wheel/': typeof ApiWheelIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic/': typeof SecretCursedLogicIndexRoute
@@ -3428,6 +3455,8 @@ export interface FileRouteTypes {
     | '/api/slice-it/score'
     | '/api/slice-it/songs'
     | '/api/spotify/search'
+    | '/api/staking/deposit'
+    | '/api/staking/withdraw'
     | '/api/tags/$tag'
     | '/api/temple-of-joy/save'
     | '/api/tips/leaderboard'
@@ -3470,6 +3499,7 @@ export interface FileRouteTypes {
     | '/api/notifications/'
     | '/api/scheduled/'
     | '/api/shop/'
+    | '/api/staking/'
     | '/api/wheel/'
     | '/rmhbox/minigames/'
     | '/secret/cursed-logic/'
@@ -3758,6 +3788,8 @@ export interface FileRouteTypes {
     | '/api/slice-it/score'
     | '/api/slice-it/songs'
     | '/api/spotify/search'
+    | '/api/staking/deposit'
+    | '/api/staking/withdraw'
     | '/api/tags/$tag'
     | '/api/temple-of-joy/save'
     | '/api/tips/leaderboard'
@@ -3800,6 +3832,7 @@ export interface FileRouteTypes {
     | '/api/notifications'
     | '/api/scheduled'
     | '/api/shop'
+    | '/api/staking'
     | '/api/wheel'
     | '/rmhbox/minigames'
     | '/secret/cursed-logic'
@@ -4112,6 +4145,8 @@ export interface FileRouteTypes {
     | '/api/slice-it/score'
     | '/api/slice-it/songs'
     | '/api/spotify/search'
+    | '/api/staking/deposit'
+    | '/api/staking/withdraw'
     | '/api/tags/$tag'
     | '/api/temple-of-joy/save'
     | '/api/tips/leaderboard'
@@ -4154,6 +4189,7 @@ export interface FileRouteTypes {
     | '/api/notifications/'
     | '/api/scheduled/'
     | '/api/shop/'
+    | '/api/staking/'
     | '/api/wheel/'
     | '/rmhbox/minigames/'
     | '/secret/cursed-logic/'
@@ -4374,6 +4410,8 @@ export interface RootRouteChildren {
   ApiSliceItScoreRoute: typeof ApiSliceItScoreRoute
   ApiSliceItSongsRoute: typeof ApiSliceItSongsRouteWithChildren
   ApiSpotifySearchRoute: typeof ApiSpotifySearchRoute
+  ApiStakingDepositRoute: typeof ApiStakingDepositRoute
+  ApiStakingWithdrawRoute: typeof ApiStakingWithdrawRoute
   ApiTagsTagRoute: typeof ApiTagsTagRoute
   ApiTempleOfJoySaveRoute: typeof ApiTempleOfJoySaveRoute
   ApiTipsLeaderboardRoute: typeof ApiTipsLeaderboardRoute
@@ -4394,6 +4432,7 @@ export interface RootRouteChildren {
   ApiNotificationsIndexRoute: typeof ApiNotificationsIndexRoute
   ApiScheduledIndexRoute: typeof ApiScheduledIndexRoute
   ApiShopIndexRoute: typeof ApiShopIndexRoute
+  ApiStakingIndexRoute: typeof ApiStakingIndexRoute
   ApiWheelIndexRoute: typeof ApiWheelIndexRoute
   ApiAdminCuratedBuildsImageRoute: typeof ApiAdminCuratedBuildsImageRouteWithChildren
   ApiCommentsCommentIdTranslateRoute: typeof ApiCommentsCommentIdTranslateRoute
@@ -5378,6 +5417,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWheelIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/staking/': {
+      id: '/api/staking/'
+      path: '/api/staking'
+      fullPath: '/api/staking/'
+      preLoaderRoute: typeof ApiStakingIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/shop/': {
       id: '/api/shop/'
       path: '/api/shop'
@@ -5670,6 +5716,20 @@ declare module '@tanstack/react-router' {
       path: '/api/tags/$tag'
       fullPath: '/api/tags/$tag'
       preLoaderRoute: typeof ApiTagsTagRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/staking/withdraw': {
+      id: '/api/staking/withdraw'
+      path: '/api/staking/withdraw'
+      fullPath: '/api/staking/withdraw'
+      preLoaderRoute: typeof ApiStakingWithdrawRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/staking/deposit': {
+      id: '/api/staking/deposit'
+      path: '/api/staking/deposit'
+      fullPath: '/api/staking/deposit'
+      preLoaderRoute: typeof ApiStakingDepositRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/spotify/search': {
@@ -7785,6 +7845,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSliceItScoreRoute: ApiSliceItScoreRoute,
   ApiSliceItSongsRoute: ApiSliceItSongsRouteWithChildren,
   ApiSpotifySearchRoute: ApiSpotifySearchRoute,
+  ApiStakingDepositRoute: ApiStakingDepositRoute,
+  ApiStakingWithdrawRoute: ApiStakingWithdrawRoute,
   ApiTagsTagRoute: ApiTagsTagRoute,
   ApiTempleOfJoySaveRoute: ApiTempleOfJoySaveRoute,
   ApiTipsLeaderboardRoute: ApiTipsLeaderboardRoute,
@@ -7805,6 +7867,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiNotificationsIndexRoute: ApiNotificationsIndexRoute,
   ApiScheduledIndexRoute: ApiScheduledIndexRoute,
   ApiShopIndexRoute: ApiShopIndexRoute,
+  ApiStakingIndexRoute: ApiStakingIndexRoute,
   ApiWheelIndexRoute: ApiWheelIndexRoute,
   ApiAdminCuratedBuildsImageRoute: ApiAdminCuratedBuildsImageRouteWithChildren,
   ApiCommentsCommentIdTranslateRoute: ApiCommentsCommentIdTranslateRoute,

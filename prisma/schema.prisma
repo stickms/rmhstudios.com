@@ -123,6 +123,9 @@ model User {
   // Daily coin wheel spins
   wheelSpins DailyWheelSpin[]
 
+  // Coin staking (interest-bearing vault)
+  coinStake CoinStake?
+
   // Economy: shop inventory, coin ledger (tips/gifts)
   inventory       UserInventory[]
   coinsSent       CoinTransaction[] @relation("CoinSender")
@@ -2509,4 +2512,21 @@ model DailyWheelSpin {
   @@unique([userId, dateKey])
   @@index([userId])
   @@map("daily_wheel_spin")
+}
+
+/// An interest-bearing coin vault (#18). One per user. Interest accrues lazily:
+/// each deposit/withdraw first rolls elapsed time into `accrued` so we never
+/// need a background job. `lastAccrued` marks the last roll-up time.
+model CoinStake {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  principal   Int      @default(0)
+  accrued     Int      @default(0)
+  lastAccrued DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("coin_stake")
 }

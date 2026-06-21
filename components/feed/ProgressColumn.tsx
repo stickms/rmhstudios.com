@@ -17,6 +17,7 @@ import {
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { Button } from '@/components/ui/button';
 import { DailyWheel } from './DailyWheel';
+import { StakingCard } from './StakingCard';
 
 interface QuestView {
   id: string;
@@ -203,6 +204,9 @@ export function ProgressColumn() {
 
         {/* Daily wheel */}
         <DailyWheel />
+
+        {/* Coin vault (staking) */}
+        <StakingCard />
 
         {/* Quests */}
         <QuestSection
