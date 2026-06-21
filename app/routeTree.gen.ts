@@ -97,6 +97,7 @@ import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as ApiWeatherWebhookRouteImport } from './routes/api/weather-webhook'
 import { Route as ApiWeatherDataRouteImport } from './routes/api/weather-data'
 import { Route as ApiUserBuildsRouteImport } from './routes/api/user-builds'
+import { Route as ApiSearchRouteImport } from './routes/api/search'
 import { Route as ApiRmharksRouteImport } from './routes/api/rmharks'
 import { Route as ApiProfileRouteImport } from './routes/api/profile'
 import { Route as ApiOembedRouteImport } from './routes/api/oembed'
@@ -105,6 +106,7 @@ import { Route as ApiImageProxyRouteImport } from './routes/api/image-proxy'
 import { Route as ApiFeedbackRouteImport } from './routes/api/feedback'
 import { Route as AltairMultiplayerRouteImport } from './routes/altair/multiplayer'
 import { Route as SiteWalletRouteImport } from './routes/_site/wallet'
+import { Route as SiteSearchRouteImport } from './routes/_site/search'
 import { Route as SiteRoadmapRouteImport } from './routes/_site/roadmap'
 import { Route as SiteQuotesRouteImport } from './routes/_site/quotes'
 import { Route as SitePricingRouteImport } from './routes/_site/pricing'
@@ -732,6 +734,11 @@ const ApiUserBuildsRoute = ApiUserBuildsRouteImport.update({
   path: '/api/user-builds',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSearchRoute = ApiSearchRouteImport.update({
+  id: '/api/search',
+  path: '/api/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiRmharksRoute = ApiRmharksRouteImport.update({
   id: '/api/rmharks',
   path: '/api/rmharks',
@@ -770,6 +777,11 @@ const AltairMultiplayerRoute = AltairMultiplayerRouteImport.update({
 const SiteWalletRoute = SiteWalletRouteImport.update({
   id: '/wallet',
   path: '/wallet',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteSearchRoute = SiteSearchRouteImport.update({
+  id: '/search',
+  path: '/search',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteRoadmapRoute = SiteRoadmapRouteImport.update({
@@ -1791,6 +1803,7 @@ export interface FileRoutesByFullPath {
   '/pricing': typeof SitePricingRoute
   '/quotes': typeof SiteQuotesRoute
   '/roadmap': typeof SiteRoadmapRoute
+  '/search': typeof SiteSearchRoute
   '/wallet': typeof SiteWalletRoute
   '/altair/multiplayer': typeof AltairMultiplayerRouteWithChildren
   '/api/feedback': typeof ApiFeedbackRoute
@@ -1799,6 +1812,7 @@ export interface FileRoutesByFullPath {
   '/api/oembed': typeof ApiOembedRoute
   '/api/profile': typeof ApiProfileRouteWithChildren
   '/api/rmharks': typeof ApiRmharksRouteWithChildren
+  '/api/search': typeof ApiSearchRoute
   '/api/user-builds': typeof ApiUserBuildsRouteWithChildren
   '/api/weather-data': typeof ApiWeatherDataRoute
   '/api/weather-webhook': typeof ApiWeatherWebhookRoute
@@ -2057,6 +2071,7 @@ export interface FileRoutesByTo {
   '/pricing': typeof SitePricingRoute
   '/quotes': typeof SiteQuotesRoute
   '/roadmap': typeof SiteRoadmapRoute
+  '/search': typeof SiteSearchRoute
   '/wallet': typeof SiteWalletRoute
   '/api/feedback': typeof ApiFeedbackRoute
   '/api/image-proxy': typeof ApiImageProxyRoute
@@ -2064,6 +2079,7 @@ export interface FileRoutesByTo {
   '/api/oembed': typeof ApiOembedRoute
   '/api/profile': typeof ApiProfileRouteWithChildren
   '/api/rmharks': typeof ApiRmharksRouteWithChildren
+  '/api/search': typeof ApiSearchRoute
   '/api/user-builds': typeof ApiUserBuildsRouteWithChildren
   '/api/weather-data': typeof ApiWeatherDataRoute
   '/api/weather-webhook': typeof ApiWeatherWebhookRoute
@@ -2338,6 +2354,7 @@ export interface FileRoutesById {
   '/_site/pricing': typeof SitePricingRoute
   '/_site/quotes': typeof SiteQuotesRoute
   '/_site/roadmap': typeof SiteRoadmapRoute
+  '/_site/search': typeof SiteSearchRoute
   '/_site/wallet': typeof SiteWalletRoute
   '/altair/multiplayer': typeof AltairMultiplayerRouteWithChildren
   '/api/feedback': typeof ApiFeedbackRoute
@@ -2346,6 +2363,7 @@ export interface FileRoutesById {
   '/api/oembed': typeof ApiOembedRoute
   '/api/profile': typeof ApiProfileRouteWithChildren
   '/api/rmharks': typeof ApiRmharksRouteWithChildren
+  '/api/search': typeof ApiSearchRoute
   '/api/user-builds': typeof ApiUserBuildsRouteWithChildren
   '/api/weather-data': typeof ApiWeatherDataRoute
   '/api/weather-webhook': typeof ApiWeatherWebhookRoute
@@ -2625,6 +2643,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/quotes'
     | '/roadmap'
+    | '/search'
     | '/wallet'
     | '/altair/multiplayer'
     | '/api/feedback'
@@ -2633,6 +2652,7 @@ export interface FileRouteTypes {
     | '/api/oembed'
     | '/api/profile'
     | '/api/rmharks'
+    | '/api/search'
     | '/api/user-builds'
     | '/api/weather-data'
     | '/api/weather-webhook'
@@ -2891,6 +2911,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/quotes'
     | '/roadmap'
+    | '/search'
     | '/wallet'
     | '/api/feedback'
     | '/api/image-proxy'
@@ -2898,6 +2919,7 @@ export interface FileRouteTypes {
     | '/api/oembed'
     | '/api/profile'
     | '/api/rmharks'
+    | '/api/search'
     | '/api/user-builds'
     | '/api/weather-data'
     | '/api/weather-webhook'
@@ -3171,6 +3193,7 @@ export interface FileRouteTypes {
     | '/_site/pricing'
     | '/_site/quotes'
     | '/_site/roadmap'
+    | '/_site/search'
     | '/_site/wallet'
     | '/altair/multiplayer'
     | '/api/feedback'
@@ -3179,6 +3202,7 @@ export interface FileRouteTypes {
     | '/api/oembed'
     | '/api/profile'
     | '/api/rmharks'
+    | '/api/search'
     | '/api/user-builds'
     | '/api/weather-data'
     | '/api/weather-webhook'
@@ -3458,6 +3482,7 @@ export interface RootRouteChildren {
   ApiOembedRoute: typeof ApiOembedRoute
   ApiProfileRoute: typeof ApiProfileRouteWithChildren
   ApiRmharksRoute: typeof ApiRmharksRouteWithChildren
+  ApiSearchRoute: typeof ApiSearchRoute
   ApiUserBuildsRoute: typeof ApiUserBuildsRouteWithChildren
   ApiWeatherDataRoute: typeof ApiWeatherDataRoute
   ApiWeatherWebhookRoute: typeof ApiWeatherWebhookRoute
@@ -4185,6 +4210,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiUserBuildsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/search': {
+      id: '/api/search'
+      path: '/api/search'
+      fullPath: '/api/search'
+      preLoaderRoute: typeof ApiSearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/rmharks': {
       id: '/api/rmharks'
       path: '/api/rmharks'
@@ -4239,6 +4271,13 @@ declare module '@tanstack/react-router' {
       path: '/wallet'
       fullPath: '/wallet'
       preLoaderRoute: typeof SiteWalletRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/search': {
+      id: '/_site/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof SiteSearchRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/roadmap': {
@@ -5583,6 +5622,7 @@ interface SiteRouteChildren {
   SitePricingRoute: typeof SitePricingRoute
   SiteQuotesRoute: typeof SiteQuotesRoute
   SiteRoadmapRoute: typeof SiteRoadmapRoute
+  SiteSearchRoute: typeof SiteSearchRoute
   SiteWalletRoute: typeof SiteWalletRoute
   SiteIndexRoute: typeof SiteIndexRoute
   SiteMessagesConversationIdRoute: typeof SiteMessagesConversationIdRoute
@@ -5608,6 +5648,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SitePricingRoute: SitePricingRoute,
   SiteQuotesRoute: SiteQuotesRoute,
   SiteRoadmapRoute: SiteRoadmapRoute,
+  SiteSearchRoute: SiteSearchRoute,
   SiteWalletRoute: SiteWalletRoute,
   SiteIndexRoute: SiteIndexRoute,
   SiteMessagesConversationIdRoute: SiteMessagesConversationIdRoute,
@@ -6244,6 +6285,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiOembedRoute: ApiOembedRoute,
   ApiProfileRoute: ApiProfileRouteWithChildren,
   ApiRmharksRoute: ApiRmharksRouteWithChildren,
+  ApiSearchRoute: ApiSearchRoute,
   ApiUserBuildsRoute: ApiUserBuildsRouteWithChildren,
   ApiWeatherDataRoute: ApiWeatherDataRoute,
   ApiWeatherWebhookRoute: ApiWeatherWebhookRoute,
