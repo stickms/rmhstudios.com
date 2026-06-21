@@ -389,7 +389,7 @@ function renderHtml(): string {
             const m = STATUS_META[r.status];
             const latency = r.latencyMs != null ? `${r.latencyMs} ms` : '—';
             const pct = uptimePct(r.name);
-            const pctLabel = pct != null ? `${pct.toFixed(pct >= 99.995 ? 2 : pct >= 99 ? 2 : 1)}%` : '—';
+            const pctLabel = pct != null ? `${pct.toFixed(2)}%` : '—';
             return `
         <li class="service">
           <div class="service-head">
@@ -422,7 +422,7 @@ function renderHtml(): string {
   <title>RMH Studios — System Status</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet" />
   <style>
     :root {
       --site-bg: #000;
@@ -440,7 +440,7 @@ function renderHtml(): string {
       --site-danger: #d98a8a;
       --site-radius: 12px;
       --site-radius-sm: 8px;
-      --font-display: "Nunito", "Segoe UI", system-ui, sans-serif;
+      --font-title: "Playfair Display", Georgia, "Times New Roman", serif;
       --font-body: "Inter", "Segoe UI", system-ui, sans-serif;
     }
     * { box-sizing: border-box; }
@@ -456,8 +456,8 @@ function renderHtml(): string {
     .wrap { width: 100%; max-width: 760px; }
     header { display: flex; align-items: center; gap: 16px; margin-bottom: 28px; }
     .banner { width: 16px; height: 16px; border-radius: 50%; flex: none; box-shadow: 0 0 0 5px rgba(255,255,255,.05); }
-    h1 { font-family: var(--font-display); font-size: 1.6rem; margin: 0; font-weight: 800; letter-spacing: -0.02em; }
-    .sub { color: var(--site-text-muted); font-size: .9rem; margin-top: 2px; }
+    h1 { font-family: var(--font-title); font-size: 1.95rem; margin: 0; font-weight: 700; letter-spacing: 0; line-height: 1.15; }
+    .sub { color: var(--site-text-muted); font-size: .9rem; margin-top: 4px; }
     ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
     .service {
       background: var(--site-surface); border: 1px solid var(--site-border);
@@ -468,7 +468,7 @@ function renderHtml(): string {
     .service-head { display: flex; align-items: center; gap: 14px; }
     .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
     .info { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; }
-    .name { font-family: var(--font-display); font-weight: 700; }
+    .name { font-weight: 600; }
     .desc { color: var(--site-text-muted); font-size: .82rem; }
     .meta { display: flex; align-items: center; gap: 12px; flex: none; }
     .latency { color: var(--site-text-dim); font-size: .8rem; font-variant-numeric: tabular-nums; }
@@ -493,7 +493,7 @@ function renderHtml(): string {
     @media (max-width: 560px) {
       body { padding: 28px 12px; }
       header { gap: 12px; margin-bottom: 20px; }
-      h1 { font-size: 1.3rem; }
+      h1 { font-size: 1.55rem; }
       .service { padding: 14px; }
       /* Stack name/description above the status badge so nothing gets squeezed. */
       .service-head { flex-wrap: wrap; row-gap: 8px; }
