@@ -37,7 +37,13 @@ IMAGE_TAG="${IMAGE_TAG:-latest}"
 BLUE_PORT="${BLUE_PORT:-7005}"
 GREEN_PORT="${GREEN_PORT:-7015}"
 DOCKER_BIN="${DOCKER_BIN:-$(command -v docker || echo /usr/bin/docker)}"
-ACTIVE_CONF="${ACTIVE_CONF:-/etc/apache2/conf-available/rmhstudios-web-active.conf}"
+# The active-port include lives under the deploy user's home (which is in the
+# webhook unit's ReadWritePaths), NOT under /etc — the webhook is sandboxed with
+# ProtectSystem=strict + NoNewPrivileges, so it can neither write /etc nor sudo.
+# Apache includes this path; a root-owned systemd path-unit watches it and runs
+# `apachectl graceful` on change (see deploy/apache/README). The deploy only
+# writes the file — no privilege needed.
+ACTIVE_CONF="${ACTIVE_CONF:-/home/rmhstudios/rmhstudios-web-active.conf}"
 NETWORK="${NETWORK:-${PROJECT_NAME}_default}"
 HEALTH_TIMEOUT="${HEALTH_TIMEOUT:-60}"
 DRAIN_SECONDS="${DRAIN_SECONDS:-8}"
@@ -51,16 +57,25 @@ die() { echo "[hotswap] ERROR: $*" >&2; exit 1; }
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "${REPO_DIR:-$(dirname "$SCRIPT_DIR")}" || die "cannot cd to repo root"
 
-# Writing the Apache include and reloading Apache need root. The deploy often
-# runs as a non-root user (the webhook runs as `rmhstudios`), so shell out via
-# `sudo -n` when we're not already root. Requires a sudoers grant for apachectl
-# (see deploy/apache/README or the one-time setup notes).
-if [ "$(id -u)" -eq 0 ]; then SUDO=""; else SUDO="sudo -n"; fi
+# How Apache gets reloaded after we rewrite the port file. Reloading needs root,
+# which the sandboxed webhook can't get. We pick the best available method:
+#   root     — we ARE root: run apachectl directly.
+#   sudo     — `sudo -n` works (passwordless apachectl): use it.
+#   external — neither: just write the file and let the root-owned systemd
+#              path-unit (rmhstudios-apache-reload.path) detect the change and
+#              reload. This is the expected mode under the webhook sandbox.
+if [ "$(id -u)" -eq 0 ]; then
+    RELOADER="root"
+elif sudo -n true 2>/dev/null; then
+    RELOADER="sudo"; SUDO="sudo -n"
+else
+    RELOADER="external"
+fi
+SUDO="${SUDO:-}"
 
-# Write the active-port include. Prefer a direct write (works when the file is
-# chowned to the deploy user); fall back to `sudo tee` for the root-owned case.
-# Captures and logs the real error from each attempt so failures are diagnosable
-# from the deploy log (read-only FS, perms, sudo blocked, etc.).
+# Write the active-port include. With ACTIVE_CONF under the deploy user's home
+# (writable), the direct write succeeds; the sudo-tee fallback only matters for
+# a root-owned path. Errors are captured + logged so failures stay diagnosable.
 write_active_conf() {
     local port="$1" err
     err=$(printf 'Define WEB_UPSTREAM_PORT %s\n' "$port" 2>&1 > "$ACTIVE_CONF") && return 0
@@ -169,33 +184,39 @@ log "${new_container} is healthy."
 # defaults to `no`). Best-effort — a failure here shouldn't abort the flip.
 "$DOCKER_BIN" update --restart unless-stopped "$new_container" >/dev/null 2>&1 || true
 
-# ── Flip Apache to the new port with a graceful reload ──────────────────────
-log "Flipping Apache: writing ${ACTIVE_CONF} → port ${target_port}..."
+# ── Flip Apache to the new port ─────────────────────────────────────────────
+log "Flipping Apache (reload mode: ${RELOADER}): writing ${ACTIVE_CONF} → port ${target_port}..."
 if ! write_active_conf "$target_port"; then
     diagnose_apache_perms
     "$DOCKER_BIN" rm -f "$new_container" >/dev/null 2>&1 || true
-    die "cannot write $ACTIVE_CONF — see diagnostics above (chown the file + ReadWritePaths, or grant sudo)."
+    die "cannot write $ACTIVE_CONF — see diagnostics above."
 fi
 
-# configtest validates the whole vhost; capture its output so a bad config is
-# visible in the log rather than a bare exit code.
-configtest_out=$($SUDO apachectl configtest 2>&1) || {
-    log "  apachectl configtest failed:"
-    printf '%s\n' "$configtest_out" | while IFS= read -r line; do log "    $line"; done
-    diagnose_apache_perms
-    # Roll back the include so we never leave Apache in a broken state.
-    write_active_conf "$current_port" || true
-    "$DOCKER_BIN" rm -f "$new_container" >/dev/null 2>&1 || true
-    die "apachectl configtest failed — reverted, ${old_color} still live."
-}
-
-# `graceful` finishes in-flight requests on the old worker set, then swaps.
-reload_out=$($SUDO apachectl graceful 2>&1) || reload_out=$($SUDO systemctl reload apache2 2>&1) || {
-    log "  apache reload failed:"
-    printf '%s\n' "$reload_out" | while IFS= read -r line; do log "    $line"; done
-    diagnose_apache_perms
-    die "apache reload failed — ${old_color} still live on ${current_port}."
-}
+if [ "$RELOADER" = "external" ]; then
+    # Reload is handled out-of-band by the root-owned systemd path-unit watching
+    # ACTIVE_CONF. We can't run apachectl from the sandbox, so just give the
+    # watcher a moment to fire its graceful reload before we drain the old one.
+    log "  reload delegated to systemd path-unit (rmhstudios-apache-reload.path); waiting for it to apply..."
+    sleep 3
+else
+    # We can drive Apache ourselves. configtest first so a bad vhost is visible
+    # in the log (and we roll the include back instead of breaking Apache).
+    configtest_out=$($SUDO apachectl configtest 2>&1) || {
+        log "  apachectl configtest failed:"
+        printf '%s\n' "$configtest_out" | while IFS= read -r line; do log "    $line"; done
+        diagnose_apache_perms
+        write_active_conf "$current_port" || true
+        "$DOCKER_BIN" rm -f "$new_container" >/dev/null 2>&1 || true
+        die "apachectl configtest failed — reverted, ${old_color} still live."
+    }
+    # `graceful` finishes in-flight requests on the old worker set, then swaps.
+    reload_out=$($SUDO apachectl graceful 2>&1) || reload_out=$($SUDO systemctl reload apache2 2>&1) || {
+        log "  apache reload failed:"
+        printf '%s\n' "$reload_out" | while IFS= read -r line; do log "    $line"; done
+        diagnose_apache_perms
+        die "apache reload failed — ${old_color} still live on ${current_port}."
+    }
+fi
 log "Apache now routing to ${target_color} (port ${target_port})."
 
 # ── Drain in-flight requests, then retire the old container ─────────────────
