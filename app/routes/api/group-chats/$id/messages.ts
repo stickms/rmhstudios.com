@@ -5,6 +5,7 @@ import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { z } from 'zod';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { getActiveBan } from '@/lib/admin-audit.server';
+import { publishGroupMessage } from '@/lib/group-events';
 
 const schema = z.object({ content: z.string().min(1).max(2000) });
 
@@ -84,7 +85,11 @@ export const Route = createFileRoute('/api/group-chats/$id/messages')({
             }),
           ]);
 
-          return Response.json({ message: { id: message.id, content: message.content, createdAt: message.createdAt, sender: resolveUser(message.sender) } }, { status: 201 });
+          const payload = { id: message.id, content: message.content, createdAt: message.createdAt.toISOString(), sender: resolveUser(message.sender) };
+          // Push to connected members over SSE (best-effort).
+          publishGroupMessage(params.id, payload);
+
+          return Response.json({ message: payload }, { status: 201 });
         } catch (error) {
           console.error('Group message send error:', error);
           return Response.json({ error: 'Internal Server Error' }, { status: 500 });

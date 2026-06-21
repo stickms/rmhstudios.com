@@ -42,6 +42,20 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
     if (msgs.length) lastAtRef.current = msgs[msgs.length - 1].createdAt;
   }, []);
 
+  // Append new messages, de-duping by id (SSE and the optimistic send/poll
+  // fallback can both deliver the same message) and advancing the cursor.
+  const appendMessages = useCallback((incoming: Msg[]) => {
+    if (!incoming.length) return;
+    setMessages((prev) => {
+      const have = new Set(prev.map((m) => m.id));
+      const fresh = incoming.filter((m) => !have.has(m.id));
+      if (!fresh.length) return prev;
+      const next = [...prev, ...fresh];
+      lastAtRef.current = next[next.length - 1].createdAt;
+      return next;
+    });
+  }, []);
+
   useEffect(() => {
     let active = true;
     (async () => {
@@ -64,29 +78,76 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
     };
   }, [id, setMsgs]);
 
-  // Poll for new messages while open.
+  // Live updates: prefer SSE for instant delivery, fall back to `?after=`
+  // polling when EventSource is unavailable or the stream can't connect.
   useEffect(() => {
-    if (notFound) return;
-    const interval = setInterval(async () => {
+    if (notFound || loading) return;
+
+    let es: EventSource | null = null;
+    let connected = false;
+    let pollTimer: ReturnType<typeof setInterval> | null = null;
+    let connectTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const poll = async () => {
       if (!lastAtRef.current) return;
-      const res = await fetch(
-        `/api/group-chats/${encodeURIComponent(id)}/messages?after=${encodeURIComponent(lastAtRef.current)}`,
-        { credentials: 'include' }
-      );
-      if (res.ok) {
-        const data = await res.json();
-        if (data.messages?.length) {
-          setMessages((prev) => {
-            const have = new Set(prev.map((m) => m.id));
-            const next = [...prev, ...data.messages.filter((m: Msg) => !have.has(m.id))];
-            if (next.length) lastAtRef.current = next[next.length - 1].createdAt;
-            return next;
-          });
+      try {
+        const res = await fetch(
+          `/api/group-chats/${encodeURIComponent(id)}/messages?after=${encodeURIComponent(lastAtRef.current)}`,
+          { credentials: 'include' }
+        );
+        if (res.ok) {
+          const data = await res.json();
+          appendMessages(data.messages ?? []);
         }
+      } catch {
+        /* ignore transient poll errors */
       }
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [id, notFound]);
+    };
+
+    const startPolling = () => {
+      if (!pollTimer) pollTimer = setInterval(poll, 5000);
+    };
+    const stopPolling = () => {
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+    };
+
+    if (typeof EventSource !== 'undefined') {
+      es = new EventSource(`/api/group-chats/${encodeURIComponent(id)}/stream`, { withCredentials: true });
+      es.addEventListener('open', () => {
+        connected = true;
+        stopPolling();
+      });
+      es.addEventListener('message', (e) => {
+        try {
+          appendMessages([JSON.parse((e as MessageEvent).data) as Msg]);
+        } catch {
+          /* ignore malformed event */
+        }
+      });
+      es.onerror = () => {
+        // EventSource auto-reconnects; meanwhile fall back to polling and
+        // reconcile anything missed during the gap.
+        connected = false;
+        startPolling();
+        poll();
+      };
+      // If the stream hasn't opened shortly (e.g. a buffering proxy), poll.
+      connectTimer = setTimeout(() => {
+        if (!connected) startPolling();
+      }, 3000);
+    } else {
+      startPolling();
+    }
+
+    return () => {
+      es?.close();
+      stopPolling();
+      if (connectTimer) clearTimeout(connectTimer);
+    };
+  }, [id, notFound, loading, appendMessages]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
@@ -106,11 +167,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
       });
       if (res.ok) {
         const data = await res.json();
-        setMessages((prev) => {
-          const next = [...prev, data.message];
-          lastAtRef.current = data.message.createdAt;
-          return next;
-        });
+        appendMessages([data.message]);
       }
     } finally {
       setSending(false);

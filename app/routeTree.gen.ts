@@ -355,6 +355,7 @@ import { Route as ApiPersonasIdChatRouteImport } from './routes/api/personas/$id
 import { Route as ApiOgPostIdRouteImport } from './routes/api/og/post/$id'
 import { Route as ApiMessagesConversationIdTypingRouteImport } from './routes/api/messages/$conversationId/typing'
 import { Route as ApiMessagesConversationIdReadRouteImport } from './routes/api/messages/$conversationId/read'
+import { Route as ApiGroupChatsIdStreamRouteImport } from './routes/api/group-chats/$id/stream'
 import { Route as ApiGroupChatsIdMessagesRouteImport } from './routes/api/group-chats/$id/messages'
 import { Route as ApiGroupChatsIdLeaveRouteImport } from './routes/api/group-chats/$id/leave'
 import { Route as ApiGamesSynapseStormScoreRouteImport } from './routes/api/games/synapse-storm/score'
@@ -2165,6 +2166,11 @@ const ApiMessagesConversationIdReadRoute =
     path: '/read',
     getParentRoute: () => ApiMessagesConversationIdRoute,
   } as any)
+const ApiGroupChatsIdStreamRoute = ApiGroupChatsIdStreamRouteImport.update({
+  id: '/api/group-chats/$id/stream',
+  path: '/api/group-chats/$id/stream',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiGroupChatsIdMessagesRoute = ApiGroupChatsIdMessagesRouteImport.update({
   id: '/api/group-chats/$id/messages',
   path: '/api/group-chats/$id/messages',
@@ -2772,6 +2778,7 @@ export interface FileRoutesByFullPath {
   '/api/games/synapse-storm/score': typeof ApiGamesSynapseStormScoreRoute
   '/api/group-chats/$id/leave': typeof ApiGroupChatsIdLeaveRoute
   '/api/group-chats/$id/messages': typeof ApiGroupChatsIdMessagesRoute
+  '/api/group-chats/$id/stream': typeof ApiGroupChatsIdStreamRoute
   '/api/messages/$conversationId/read': typeof ApiMessagesConversationIdReadRoute
   '/api/messages/$conversationId/typing': typeof ApiMessagesConversationIdTypingRoute
   '/api/og/post/$id': typeof ApiOgPostIdRoute
@@ -3148,6 +3155,7 @@ export interface FileRoutesByTo {
   '/api/games/synapse-storm/score': typeof ApiGamesSynapseStormScoreRoute
   '/api/group-chats/$id/leave': typeof ApiGroupChatsIdLeaveRoute
   '/api/group-chats/$id/messages': typeof ApiGroupChatsIdMessagesRoute
+  '/api/group-chats/$id/stream': typeof ApiGroupChatsIdStreamRoute
   '/api/messages/$conversationId/read': typeof ApiMessagesConversationIdReadRoute
   '/api/messages/$conversationId/typing': typeof ApiMessagesConversationIdTypingRoute
   '/api/og/post/$id': typeof ApiOgPostIdRoute
@@ -3549,6 +3557,7 @@ export interface FileRoutesById {
   '/api/games/synapse-storm/score': typeof ApiGamesSynapseStormScoreRoute
   '/api/group-chats/$id/leave': typeof ApiGroupChatsIdLeaveRoute
   '/api/group-chats/$id/messages': typeof ApiGroupChatsIdMessagesRoute
+  '/api/group-chats/$id/stream': typeof ApiGroupChatsIdStreamRoute
   '/api/messages/$conversationId/read': typeof ApiMessagesConversationIdReadRoute
   '/api/messages/$conversationId/typing': typeof ApiMessagesConversationIdTypingRoute
   '/api/og/post/$id': typeof ApiOgPostIdRoute
@@ -3950,6 +3959,7 @@ export interface FileRouteTypes {
     | '/api/games/synapse-storm/score'
     | '/api/group-chats/$id/leave'
     | '/api/group-chats/$id/messages'
+    | '/api/group-chats/$id/stream'
     | '/api/messages/$conversationId/read'
     | '/api/messages/$conversationId/typing'
     | '/api/og/post/$id'
@@ -4326,6 +4336,7 @@ export interface FileRouteTypes {
     | '/api/games/synapse-storm/score'
     | '/api/group-chats/$id/leave'
     | '/api/group-chats/$id/messages'
+    | '/api/group-chats/$id/stream'
     | '/api/messages/$conversationId/read'
     | '/api/messages/$conversationId/typing'
     | '/api/og/post/$id'
@@ -4726,6 +4737,7 @@ export interface FileRouteTypes {
     | '/api/games/synapse-storm/score'
     | '/api/group-chats/$id/leave'
     | '/api/group-chats/$id/messages'
+    | '/api/group-chats/$id/stream'
     | '/api/messages/$conversationId/read'
     | '/api/messages/$conversationId/typing'
     | '/api/og/post/$id'
@@ -4989,6 +5001,7 @@ export interface RootRouteChildren {
   ApiGamesSynapseStormScoreRoute: typeof ApiGamesSynapseStormScoreRoute
   ApiGroupChatsIdLeaveRoute: typeof ApiGroupChatsIdLeaveRoute
   ApiGroupChatsIdMessagesRoute: typeof ApiGroupChatsIdMessagesRoute
+  ApiGroupChatsIdStreamRoute: typeof ApiGroupChatsIdStreamRoute
   ApiOgPostIdRoute: typeof ApiOgPostIdRoute
   ApiPersonasIdChatRoute: typeof ApiPersonasIdChatRoute
   ApiQuestsIdClaimRoute: typeof ApiQuestsIdClaimRoute
@@ -7447,6 +7460,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMessagesConversationIdReadRouteImport
       parentRoute: typeof ApiMessagesConversationIdRoute
     }
+    '/api/group-chats/$id/stream': {
+      id: '/api/group-chats/$id/stream'
+      path: '/api/group-chats/$id/stream'
+      fullPath: '/api/group-chats/$id/stream'
+      preLoaderRoute: typeof ApiGroupChatsIdStreamRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/group-chats/$id/messages': {
       id: '/api/group-chats/$id/messages'
       path: '/api/group-chats/$id/messages'
@@ -8781,6 +8801,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGamesSynapseStormScoreRoute: ApiGamesSynapseStormScoreRoute,
   ApiGroupChatsIdLeaveRoute: ApiGroupChatsIdLeaveRoute,
   ApiGroupChatsIdMessagesRoute: ApiGroupChatsIdMessagesRoute,
+  ApiGroupChatsIdStreamRoute: ApiGroupChatsIdStreamRoute,
   ApiOgPostIdRoute: ApiOgPostIdRoute,
   ApiPersonasIdChatRoute: ApiPersonasIdChatRoute,
   ApiQuestsIdClaimRoute: ApiQuestsIdClaimRoute,
