@@ -25,6 +25,8 @@ model User {
   // Moderation: temporary/permanent ban (null = not banned)
   bannedUntil     DateTime?
   banReason       String?   @db.VarChar(500)
+  // Presence: last heartbeat from an active client (for "online now")
+  lastSeenAt      DateTime?
   // ─── RMHark AI bot users (generated + driven by the bot-worker) ──
   isBot           Boolean   @default(false) // synthetic account created by the bot-worker
   botPersona      String?   @db.Text         // private prompt seed describing the bot's posting "theme"

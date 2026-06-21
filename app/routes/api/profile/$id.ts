@@ -16,6 +16,7 @@ const profileSelect = {
   isVerified: true,
   isAdmin: true,
   createdAt: true,
+  lastSeenAt: true,
   profile: {
     select: {
       displayName: true,
@@ -122,8 +123,11 @@ export const Route = createFileRoute('/api/profile/$id')({
       tipsThisMonth = agg._sum.amount ?? 0;
     }
 
+    const isOnline = !!user.lastSeenAt && Date.now() - user.lastSeenAt.getTime() < 2 * 60 * 1000;
+
     return Response.json({
       cosmetics,
+      isOnline,
       tipGoal: user.profile?.tipGoal ?? null,
       tipGoalLabel: user.profile?.tipGoalLabel ?? null,
       tipsThisMonth,

@@ -47,6 +47,7 @@ interface ProfileData {
   coins: number;
   hasProfilePet: boolean;
   showProfilePet: boolean;
+  isOnline?: boolean;
   tipGoal?: number | null;
   tipGoalLabel?: string | null;
   tipsThisMonth?: number;
@@ -427,16 +428,25 @@ export function ProfileColumn({ userId }: { userId: string }) {
       {/* Profile header */}
       <div className="px-4 pt-6 pb-4 border-b border-site-border">
         <div className="flex items-start justify-between mb-4">
-          {profile.cosmetics?.avatarFrame ? (
-            <div
-              className="rounded-full p-[3px] shrink-0"
-              style={{ background: profile.cosmetics.avatarFrame.gradient ?? profile.cosmetics.avatarFrame.color }}
-            >
+          <div className="relative shrink-0">
+            {profile.cosmetics?.avatarFrame ? (
+              <div
+                className="rounded-full p-[3px]"
+                style={{ background: profile.cosmetics.avatarFrame.gradient ?? profile.cosmetics.avatarFrame.color }}
+              >
+                <ProfileAvatar image={displayImage ?? null} name={displayName ?? null} />
+              </div>
+            ) : (
               <ProfileAvatar image={displayImage ?? null} name={displayName ?? null} />
-            </div>
-          ) : (
-            <ProfileAvatar image={displayImage ?? null} name={displayName ?? null} />
-          )}
+            )}
+            {profile.isOnline && (
+              <span
+                className="absolute bottom-1 right-1 h-4 w-4 rounded-full border-2 border-site-bg bg-emerald-500"
+                title="Online now"
+                aria-label="Online now"
+              />
+            )}
+          </div>
 
           {/* Profile Pet banner between avatar and vinyl */}
           {profile.hasProfilePet && profile.showProfilePet && (

@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { useUnreadCount } from '@/lib/useUnreadCount';
 import { useNotificationCount } from '@/lib/useNotificationCount';
 import { useStreak } from '@/lib/useStreak';
+import { usePresenceHeartbeat } from '@/lib/usePresenceHeartbeat';
 
 const navLinks = [
   { href: '/', label: 'Home', icon: Home },
@@ -52,6 +53,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   const unreadCount = useUnreadCount(!!session);
   const { count: notificationCount } = useNotificationCount(!!session);
   const streak = useStreak(!!session);
+  usePresenceHeartbeat(!!session);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {

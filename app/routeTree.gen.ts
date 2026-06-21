@@ -190,6 +190,7 @@ import { Route as ApiRmharksIdRouteImport } from './routes/api/rmharks/$id'
 import { Route as ApiProfileMeRouteImport } from './routes/api/profile/me'
 import { Route as ApiProfileAvatarRouteImport } from './routes/api/profile/avatar'
 import { Route as ApiProfileIdRouteImport } from './routes/api/profile/$id'
+import { Route as ApiPresenceHeartbeatRouteImport } from './routes/api/presence/heartbeat'
 import { Route as ApiNotificationsUnreadCountRouteImport } from './routes/api/notifications/unread-count'
 import { Route as ApiNotificationsReadRouteImport } from './routes/api/notifications/read'
 import { Route as ApiNewsRejectRouteImport } from './routes/api/news/reject'
@@ -1248,6 +1249,11 @@ const ApiProfileIdRoute = ApiProfileIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ApiProfileRoute,
 } as any)
+const ApiPresenceHeartbeatRoute = ApiPresenceHeartbeatRouteImport.update({
+  id: '/api/presence/heartbeat',
+  path: '/api/presence/heartbeat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiNotificationsUnreadCountRoute =
   ApiNotificationsUnreadCountRouteImport.update({
     id: '/api/notifications/unread-count',
@@ -2188,6 +2194,7 @@ export interface FileRoutesByFullPath {
   '/api/news/reject': typeof ApiNewsRejectRoute
   '/api/notifications/read': typeof ApiNotificationsReadRoute
   '/api/notifications/unread-count': typeof ApiNotificationsUnreadCountRoute
+  '/api/presence/heartbeat': typeof ApiPresenceHeartbeatRoute
   '/api/profile/$id': typeof ApiProfileIdRouteWithChildren
   '/api/profile/avatar': typeof ApiProfileAvatarRouteWithChildren
   '/api/profile/me': typeof ApiProfileMeRoute
@@ -2492,6 +2499,7 @@ export interface FileRoutesByTo {
   '/api/news/reject': typeof ApiNewsRejectRoute
   '/api/notifications/read': typeof ApiNotificationsReadRoute
   '/api/notifications/unread-count': typeof ApiNotificationsUnreadCountRoute
+  '/api/presence/heartbeat': typeof ApiPresenceHeartbeatRoute
   '/api/profile/$id': typeof ApiProfileIdRouteWithChildren
   '/api/profile/avatar': typeof ApiProfileAvatarRouteWithChildren
   '/api/profile/me': typeof ApiProfileMeRoute
@@ -2820,6 +2828,7 @@ export interface FileRoutesById {
   '/api/news/reject': typeof ApiNewsRejectRoute
   '/api/notifications/read': typeof ApiNotificationsReadRoute
   '/api/notifications/unread-count': typeof ApiNotificationsUnreadCountRoute
+  '/api/presence/heartbeat': typeof ApiPresenceHeartbeatRoute
   '/api/profile/$id': typeof ApiProfileIdRouteWithChildren
   '/api/profile/avatar': typeof ApiProfileAvatarRouteWithChildren
   '/api/profile/me': typeof ApiProfileMeRoute
@@ -3148,6 +3157,7 @@ export interface FileRouteTypes {
     | '/api/news/reject'
     | '/api/notifications/read'
     | '/api/notifications/unread-count'
+    | '/api/presence/heartbeat'
     | '/api/profile/$id'
     | '/api/profile/avatar'
     | '/api/profile/me'
@@ -3452,6 +3462,7 @@ export interface FileRouteTypes {
     | '/api/news/reject'
     | '/api/notifications/read'
     | '/api/notifications/unread-count'
+    | '/api/presence/heartbeat'
     | '/api/profile/$id'
     | '/api/profile/avatar'
     | '/api/profile/me'
@@ -3779,6 +3790,7 @@ export interface FileRouteTypes {
     | '/api/news/reject'
     | '/api/notifications/read'
     | '/api/notifications/unread-count'
+    | '/api/presence/heartbeat'
     | '/api/profile/$id'
     | '/api/profile/avatar'
     | '/api/profile/me'
@@ -4029,6 +4041,7 @@ export interface RootRouteChildren {
   ApiNewsRejectRoute: typeof ApiNewsRejectRoute
   ApiNotificationsReadRoute: typeof ApiNotificationsReadRoute
   ApiNotificationsUnreadCountRoute: typeof ApiNotificationsUnreadCountRoute
+  ApiPresenceHeartbeatRoute: typeof ApiPresenceHeartbeatRoute
   ApiRmhboxHistoryRoute: typeof ApiRmhboxHistoryRoute
   ApiRmhboxLeaderboardRoute: typeof ApiRmhboxLeaderboardRoute
   ApiRmhboxStatsRoute: typeof ApiRmhboxStatsRoute
@@ -5361,6 +5374,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/profile/$id'
       preLoaderRoute: typeof ApiProfileIdRouteImport
       parentRoute: typeof ApiProfileRoute
+    }
+    '/api/presence/heartbeat': {
+      id: '/api/presence/heartbeat'
+      path: '/api/presence/heartbeat'
+      fullPath: '/api/presence/heartbeat'
+      preLoaderRoute: typeof ApiPresenceHeartbeatRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/notifications/unread-count': {
       id: '/api/notifications/unread-count'
@@ -7192,6 +7212,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiNewsRejectRoute: ApiNewsRejectRoute,
   ApiNotificationsReadRoute: ApiNotificationsReadRoute,
   ApiNotificationsUnreadCountRoute: ApiNotificationsUnreadCountRoute,
+  ApiPresenceHeartbeatRoute: ApiPresenceHeartbeatRoute,
   ApiRmhboxHistoryRoute: ApiRmhboxHistoryRoute,
   ApiRmhboxLeaderboardRoute: ApiRmhboxLeaderboardRoute,
   ApiRmhboxStatsRoute: ApiRmhboxStatsRoute,
