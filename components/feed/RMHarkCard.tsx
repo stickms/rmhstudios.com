@@ -4,7 +4,7 @@ import type { FeedItem, FeedItemUser } from '@/lib/feed-types';
 import { RMHarkActions } from './RMHarkActions';
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { Repeat2, MoreHorizontal, Heart, Repeat, Trash2, Share2, BadgeCheck, ShieldCheck, Flag, Ban, VolumeX, Bookmark, Coins, Pin, Pencil, Languages } from 'lucide-react';
+import { Repeat2, MoreHorizontal, Heart, Repeat, Trash2, Share2, BadgeCheck, ShieldCheck, Flag, Ban, VolumeX, Bookmark, Coins, Pin, Pencil, Languages, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { ReportDialog } from '@/components/moderation/ReportDialog';
 import { TipDialog } from '@/components/economy/TipDialog';
@@ -21,6 +21,7 @@ import { authClient } from '@/lib/auth-client';
 import { useResolvedUser } from '@/components/Providers';
 import { useFreshUser } from '@/stores/userDisplayStore';
 import { EngagementListModal } from './EngagementListModal';
+import { InsightsModal } from './InsightsModal';
 import { ShareModal } from './ShareModal';
 import { timeAgoShort } from '@/lib/utils';
 
@@ -67,6 +68,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
   const [reportOpen, setReportOpen] = useState(false);
   const [tipOpen, setTipOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [insightsOpen, setInsightsOpen] = useState(false);
   const [pinned, setPinned] = useState(!!item.pinned);
   const [bookmarked, setBookmarked] = useState(!!item.bookmarked);
   const [translatedText, setTranslatedText] = useState<string | null>(null);
@@ -307,6 +309,13 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
               )}
               {isAuthor && (
                 <>
+                  <button
+                    onClick={() => { setMenuOpen(false); setInsightsOpen(true); }}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+                  >
+                    <TrendingUp className="w-4 h-4 text-site-text-dim" />
+                    View insights
+                  </button>
                   <button
                     onClick={() => { setMenuOpen(false); setEditOpen(true); }}
                     className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
@@ -560,6 +569,10 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
           initialContent={item.content ?? ''}
           onSaved={(content) => updateItem(item.id, { content, edited: true })}
         />
+      )}
+
+      {isAuthor && insightsOpen && (
+        <InsightsModal open={insightsOpen} onClose={() => setInsightsOpen(false)} postId={actualId} />
       )}
     </div>
   );
