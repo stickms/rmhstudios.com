@@ -86,16 +86,10 @@ export function TopNav() {
   return (
     <header className="topnav">
       <div className="topnav-inner">
-        <div className="brand-group">
-          <a className="nav-back" href="/" aria-label="Back to RMH Studios">
-            <span aria-hidden="true">&larr;</span>
-            <span className="nav-back-label">RMH&nbsp;Studios</span>
-          </a>
-          <Link className="brand" to="/rmh-capital" aria-label="RMH Capital home">
-            <BrandMark />
-            <span className="brand-text">RMH&nbsp;Capital</span>
-          </Link>
-        </div>
+        <Link className="brand" to="/rmh-capital" aria-label="RMH Capital home">
+          <BrandMark />
+          <span className="brand-text">RMH&nbsp;Capital</span>
+        </Link>
         <nav className="navlinks" aria-label="Primary">
           {NAV.map((item) => (
             <Link key={item.to} to={item.to} aria-current={current(item.to)}>
@@ -124,6 +118,17 @@ export function TopNav() {
         ))}
       </nav>
     </header>
+  );
+}
+
+/* Floating back-to-parent arrow, fixed to the bottom-left of the viewport. */
+export function FloatBack() {
+  return (
+    <a className="float-back" href="/" aria-label="Back to RMH Studios" title="Back to RMH Studios">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M12 4 L6 10 L12 16" />
+      </svg>
+    </a>
   );
 }
 
