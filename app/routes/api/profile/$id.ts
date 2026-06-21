@@ -30,6 +30,8 @@ const profileSelect = {
       profileSongArtist: true,
       profileSongPreviewUrl: true,
       profileSongAlbumArt: true,
+      tipGoal: true,
+      tipGoalLabel: true,
       coins: true,
       hasProfilePet: true,
       showProfilePet: true,
@@ -107,8 +109,24 @@ export const Route = createFileRoute('/api/profile/$id')({
     const isOwnProfile = viewerId === user.id;
     const cosmetics = await getEquippedCosmetics(user.id);
 
+    // Tip-goal progress: tips received so far this calendar month.
+    let tipsThisMonth = 0;
+    if (user.profile?.tipGoal && user.profile.tipGoal > 0) {
+      const monthStart = new Date();
+      monthStart.setUTCDate(1);
+      monthStart.setUTCHours(0, 0, 0, 0);
+      const agg = await prisma.coinTransaction.aggregate({
+        where: { recipientId: user.id, type: 'TIP', amount: { gt: 0 }, createdAt: { gte: monthStart } },
+        _sum: { amount: true },
+      });
+      tipsThisMonth = agg._sum.amount ?? 0;
+    }
+
     return Response.json({
       cosmetics,
+      tipGoal: user.profile?.tipGoal ?? null,
+      tipGoalLabel: user.profile?.tipGoalLabel ?? null,
+      tipsThisMonth,
       id: user.id,
       name: resolved.name,
       username: user.username,

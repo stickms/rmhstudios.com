@@ -164,6 +164,7 @@ import { Route as ApiUsersSearchRouteImport } from './routes/api/users/search'
 import { Route as ApiUserBuildsFeaturedRouteImport } from './routes/api/user-builds/featured'
 import { Route as ApiUserBuildsCategoriesRouteImport } from './routes/api/user-builds/categories'
 import { Route as ApiUserBuildsIdRouteImport } from './routes/api/user-builds/$id'
+import { Route as ApiTipsLeaderboardRouteImport } from './routes/api/tips/leaderboard'
 import { Route as ApiTempleOfJoySaveRouteImport } from './routes/api/temple-of-joy/save'
 import { Route as ApiTagsTagRouteImport } from './routes/api/tags/$tag'
 import { Route as ApiSpotifySearchRouteImport } from './routes/api/spotify/search'
@@ -1102,6 +1103,11 @@ const ApiUserBuildsIdRoute = ApiUserBuildsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => ApiUserBuildsRoute,
+} as any)
+const ApiTipsLeaderboardRoute = ApiTipsLeaderboardRouteImport.update({
+  id: '/api/tips/leaderboard',
+  path: '/api/tips/leaderboard',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiTempleOfJoySaveRoute = ApiTempleOfJoySaveRouteImport.update({
   id: '/api/temple-of-joy/save',
@@ -2121,6 +2127,7 @@ export interface FileRoutesByFullPath {
   '/api/spotify/search': typeof ApiSpotifySearchRoute
   '/api/tags/$tag': typeof ApiTagsTagRoute
   '/api/temple-of-joy/save': typeof ApiTempleOfJoySaveRoute
+  '/api/tips/leaderboard': typeof ApiTipsLeaderboardRoute
   '/api/user-builds/$id': typeof ApiUserBuildsIdRouteWithChildren
   '/api/user-builds/categories': typeof ApiUserBuildsCategoriesRoute
   '/api/user-builds/featured': typeof ApiUserBuildsFeaturedRoute
@@ -2411,6 +2418,7 @@ export interface FileRoutesByTo {
   '/api/spotify/search': typeof ApiSpotifySearchRoute
   '/api/tags/$tag': typeof ApiTagsTagRoute
   '/api/temple-of-joy/save': typeof ApiTempleOfJoySaveRoute
+  '/api/tips/leaderboard': typeof ApiTipsLeaderboardRoute
   '/api/user-builds/$id': typeof ApiUserBuildsIdRouteWithChildren
   '/api/user-builds/categories': typeof ApiUserBuildsCategoriesRoute
   '/api/user-builds/featured': typeof ApiUserBuildsFeaturedRoute
@@ -2725,6 +2733,7 @@ export interface FileRoutesById {
   '/api/spotify/search': typeof ApiSpotifySearchRoute
   '/api/tags/$tag': typeof ApiTagsTagRoute
   '/api/temple-of-joy/save': typeof ApiTempleOfJoySaveRoute
+  '/api/tips/leaderboard': typeof ApiTipsLeaderboardRoute
   '/api/user-builds/$id': typeof ApiUserBuildsIdRouteWithChildren
   '/api/user-builds/categories': typeof ApiUserBuildsCategoriesRoute
   '/api/user-builds/featured': typeof ApiUserBuildsFeaturedRoute
@@ -3039,6 +3048,7 @@ export interface FileRouteTypes {
     | '/api/spotify/search'
     | '/api/tags/$tag'
     | '/api/temple-of-joy/save'
+    | '/api/tips/leaderboard'
     | '/api/user-builds/$id'
     | '/api/user-builds/categories'
     | '/api/user-builds/featured'
@@ -3329,6 +3339,7 @@ export interface FileRouteTypes {
     | '/api/spotify/search'
     | '/api/tags/$tag'
     | '/api/temple-of-joy/save'
+    | '/api/tips/leaderboard'
     | '/api/user-builds/$id'
     | '/api/user-builds/categories'
     | '/api/user-builds/featured'
@@ -3642,6 +3653,7 @@ export interface FileRouteTypes {
     | '/api/spotify/search'
     | '/api/tags/$tag'
     | '/api/temple-of-joy/save'
+    | '/api/tips/leaderboard'
     | '/api/user-builds/$id'
     | '/api/user-builds/categories'
     | '/api/user-builds/featured'
@@ -3876,6 +3888,7 @@ export interface RootRouteChildren {
   ApiSpotifySearchRoute: typeof ApiSpotifySearchRoute
   ApiTagsTagRoute: typeof ApiTagsTagRoute
   ApiTempleOfJoySaveRoute: typeof ApiTempleOfJoySaveRoute
+  ApiTipsLeaderboardRoute: typeof ApiTipsLeaderboardRoute
   ApiUsersSearchRoute: typeof ApiUsersSearchRoute
   ApiVegaLeaderboardRoute: typeof ApiVegaLeaderboardRoute
   ApiVegaScoreRoute: typeof ApiVegaScoreRoute
@@ -5004,6 +5017,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/user-builds/$id'
       preLoaderRoute: typeof ApiUserBuildsIdRouteImport
       parentRoute: typeof ApiUserBuildsRoute
+    }
+    '/api/tips/leaderboard': {
+      id: '/api/tips/leaderboard'
+      path: '/api/tips/leaderboard'
+      fullPath: '/api/tips/leaderboard'
+      preLoaderRoute: typeof ApiTipsLeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/temple-of-joy/save': {
       id: '/api/temple-of-joy/save'
@@ -6910,6 +6930,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSpotifySearchRoute: ApiSpotifySearchRoute,
   ApiTagsTagRoute: ApiTagsTagRoute,
   ApiTempleOfJoySaveRoute: ApiTempleOfJoySaveRoute,
+  ApiTipsLeaderboardRoute: ApiTipsLeaderboardRoute,
   ApiUsersSearchRoute: ApiUsersSearchRoute,
   ApiVegaLeaderboardRoute: ApiVegaLeaderboardRoute,
   ApiVegaScoreRoute: ApiVegaScoreRoute,

@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { MapPin, Link as LinkIcon, Calendar, Loader2, MessageCircle, BadgeCheck, ShieldCheck } from 'lucide-react';
+import { MapPin, Link as LinkIcon, Calendar, Loader2, MessageCircle, BadgeCheck, ShieldCheck, Coins } from 'lucide-react';
+import { TipDialog } from '@/components/economy/TipDialog';
 import { useNavigate } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { MobileMenuButton } from './MobileMenuButton';
@@ -46,6 +47,9 @@ interface ProfileData {
   coins: number;
   hasProfilePet: boolean;
   showProfilePet: boolean;
+  tipGoal?: number | null;
+  tipGoalLabel?: string | null;
+  tipsThisMonth?: number;
   cosmetics?: {
     nameColor?: { color?: string; gradient?: string };
     avatarFrame?: { color?: string; gradient?: string };
@@ -79,6 +83,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const [tipOpen, setTipOpen] = useState(false);
   const [tab, setTab] = useState<ProfileTab>('rmharks');
   const [socialModal, setSocialModal] = useState<'followers' | 'following' | null>(null);
   const { refresh: refreshResolvedUser } = useResolvedUser();
@@ -508,6 +513,15 @@ export function ProfileColumn({ userId }: { userId: string }) {
                 <Button
                   variant="outline"
                   size="sm"
+                  onClick={() => setTipOpen(true)}
+                  className="rounded-lg border-site-border text-site-text hover:bg-site-surface"
+                  title="Send a tip"
+                >
+                  <Coins className="w-4 h-4 text-amber-400" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={handleMessage}
                   disabled={messageSending}
                   className="rounded-lg border-site-border text-site-text hover:bg-site-surface"
@@ -532,6 +546,26 @@ export function ProfileColumn({ userId }: { userId: string }) {
           <p className="text-site-text text-[15px] whitespace-pre-wrap break-words mb-3">
             {profile.bio}
           </p>
+        )}
+
+        {/* Creator tip goal */}
+        {profile.tipGoal && profile.tipGoal > 0 && (
+          <div className="mb-3 rounded-xl border border-site-border bg-site-surface p-3">
+            <div className="mb-1 flex items-center justify-between text-sm">
+              <span className="font-medium text-site-text">
+                🪙 {profile.tipGoalLabel || 'Tip goal'}
+              </span>
+              <span className="text-site-text-muted">
+                {(profile.tipsThisMonth ?? 0).toLocaleString()} / {profile.tipGoal.toLocaleString()}
+              </span>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-site-bg">
+              <div
+                className="h-full rounded-full bg-amber-400 transition-all"
+                style={{ width: `${Math.min(100, ((profile.tipsThisMonth ?? 0) / profile.tipGoal) * 100)}%` }}
+              />
+            </div>
+          </div>
         )}
 
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-site-text-dim mb-3">
@@ -681,6 +715,18 @@ export function ProfileColumn({ userId }: { userId: string }) {
         </div>
       )}
 
+      {/* Tip dialog (non-owner) */}
+      {profile && !profile.isOwnProfile && (
+        <TipDialog
+          open={tipOpen}
+          onOpenChange={setTipOpen}
+          recipientId={profile.id}
+          recipientName={displayName ?? profile.name}
+          entityType="profile"
+          entityId={profile.id}
+        />
+      )}
+
       {/* Edit modal */}
       {showEdit && (
         <ProfileEditModal
@@ -699,6 +745,8 @@ export function ProfileColumn({ userId }: { userId: string }) {
             dmPrivacy: profile.dmPrivacy,
             hasProfilePet: profile.hasProfilePet,
             showProfilePet: profile.showProfilePet,
+            tipGoal: profile.tipGoal,
+            tipGoalLabel: profile.tipGoalLabel,
             profileSongSpotifyId: profile.profileSongSpotifyId,
             profileSongTitle: profile.profileSongTitle,
             profileSongArtist: profile.profileSongArtist,

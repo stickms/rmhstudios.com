@@ -42,6 +42,8 @@ interface ProfileEditModalProps {
     dmPrivacy: string;
     hasProfilePet: boolean;
     showProfilePet: boolean;
+    tipGoal?: number | null;
+    tipGoalLabel?: string | null;
   } & ProfileSongData;
 }
 
@@ -69,6 +71,8 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
   const [showLikes, setShowLikes] = useState(initial.showLikes);
   const [showProfilePet, setShowProfilePet] = useState(initial.showProfilePet);
   const [dmPrivacy, setDmPrivacy] = useState(initial.dmPrivacy ?? 'EVERYONE');
+  const [tipGoal, setTipGoal] = useState<string>(initial.tipGoal ? String(initial.tipGoal) : '');
+  const [tipGoalLabel, setTipGoalLabel] = useState(initial.tipGoalLabel ?? '');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(initial.image);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
@@ -275,6 +279,8 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
           bio: bio.trim() || null,
           location: location.trim() || null,
           website: website.trim() || null,
+          tipGoal: tipGoal.trim() ? Math.max(0, parseInt(tipGoal, 10) || 0) : null,
+          tipGoalLabel: tipGoalLabel.trim() || null,
           showLikes,
           dmPrivacy,
           showProfilePet,
@@ -476,6 +482,29 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
                 maxLength={MAX_WEBSITE}
                 className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-xl p-3 border border-site-border outline-none focus:border-site-accent transition-colors"
               />
+            </div>
+
+            {/* Tip goal (creator) */}
+            <div>
+              <label className="block text-xs font-medium text-site-text-dim mb-1.5">Monthly tip goal (coins) — optional</label>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  min={0}
+                  value={tipGoal}
+                  onChange={(e) => setTipGoal(e.target.value)}
+                  placeholder="e.g. 1000"
+                  className="w-32 bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-xl p-3 border border-site-border outline-none focus:border-site-accent transition-colors"
+                />
+                <input
+                  type="text"
+                  value={tipGoalLabel}
+                  onChange={(e) => setTipGoalLabel(e.target.value)}
+                  placeholder="Goal label (e.g. New mic fund)"
+                  maxLength={80}
+                  className="flex-1 bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-xl p-3 border border-site-border outline-none focus:border-site-accent transition-colors"
+                />
+              </div>
             </div>
 
             {/* Show Likes toggle */}

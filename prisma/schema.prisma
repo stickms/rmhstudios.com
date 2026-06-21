@@ -1246,6 +1246,10 @@ model UserProfile {
   hasProfilePet         Boolean   @default(false)
   showProfilePet        Boolean   @default(true)
 
+  // Creator tip goal (monthly coins target shown on the profile)
+  tipGoal               Int?
+  tipGoalLabel          String?   @db.VarChar(80)
+
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 

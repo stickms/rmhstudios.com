@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { Compass, Hash, Loader2, Sparkles, TrendingUp } from 'lucide-react';
+import { Compass, Hash, Loader2, Sparkles, TrendingUp, Coins } from 'lucide-react';
 import { RMHarkCard } from './RMHarkCard';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ interface ExploreData {
 export function ExploreColumn() {
   const [data, setData] = useState<ExploreData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [tipLeaders, setTipLeaders] = useState<{ user: { id: string; name: string | null; image: string | null; handle: string | null }; total: number }[]>([]);
 
   // Ask-the-feed widget state
   const [question, setQuestion] = useState('');
@@ -29,6 +30,10 @@ export function ExploreColumn() {
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => active && setData(d))
       .finally(() => active && setLoading(false));
+    fetch('/api/tips/leaderboard?range=week')
+      .then((r) => (r.ok ? r.json() : { leaders: [] }))
+      .then((d) => active && setTipLeaders(d.leaders ?? []))
+      .catch(() => {});
     return () => {
       active = false;
     };
@@ -126,6 +131,29 @@ export function ExploreColumn() {
                       <p className="truncate text-sm font-semibold text-site-text">{u.name || u.handle}</p>
                       <p className="truncate text-xs text-site-text-muted">{u.followerCount} followers</p>
                     </div>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Top supported creators */}
+          {tipLeaders.length > 0 && (
+            <section className="border-b border-site-border p-4">
+              <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+                <Coins className="h-3.5 w-3.5 text-amber-400" /> Top supported this week
+              </h2>
+              <div className="space-y-1.5">
+                {tipLeaders.slice(0, 5).map((l, i) => (
+                  <Link
+                    key={l.user.id}
+                    to={`/u/${l.user.handle || l.user.id}` as string}
+                    className="flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-site-surface"
+                  >
+                    <span className="w-5 text-center text-sm font-bold text-site-text-dim">{i + 1}</span>
+                    <UserAvatar src={l.user.image} alt={l.user.name || 'User'} size={28} fallbackName={l.user.name || 'U'} />
+                    <span className="min-w-0 flex-1 truncate text-sm font-medium text-site-text">{l.user.name || l.user.handle}</span>
+                    <span className="text-sm font-semibold text-amber-500">🪙 {l.total.toLocaleString()}</span>
                   </Link>
                 ))}
               </div>
