@@ -6,7 +6,18 @@
 
 import { authenticateApiKey, apiError, apiJson, CORS_HEADERS } from '@/lib/api/developer-auth.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { redisRateLimit } from '@/lib/redis.server';
 import type { Tier } from '@/lib/entitlements';
+
+/**
+ * Cross-instance rate limit when Redis is configured, else the per-instance
+ * in-process limiter. Both share the same { allowed, retryAfter } shape.
+ */
+async function limit(key: string, max: number, windowMs: number): Promise<{ allowed: boolean; retryAfter: number }> {
+  const viaRedis = await redisRateLimit(key, max, windowMs);
+  if (viaRedis) return viaRedis;
+  return rateLimit(key, { limit: max, windowMs });
+}
 
 export interface ApiContext {
   userId: string;
@@ -28,7 +39,7 @@ export async function withDeveloperApi(
 ): Promise<Response> {
   // Coarse IP gate *before* auth, so invalid-key floods / credential stuffing
   // can't hammer the DB. Valid traffic is governed by the per-key limit below.
-  const ipGate = rateLimit(getClientIp(request), { limit: 300, windowMs: 60_000, prefix: 'dev-api-ip' });
+  const ipGate = await limit(`dev-api-ip:${getClientIp(request)}`, 300, 60_000);
   if (!ipGate.allowed) {
     return apiError('rate_limited', 'Too many requests from this address.', 429, {
       'Retry-After': String(ipGate.retryAfter),
@@ -38,16 +49,12 @@ export async function withDeveloperApi(
   const auth = await authenticateApiKey(request);
   if (!auth.ok) return apiError(auth.code, auth.message, auth.status);
 
-  const limit = LIMITS[auth.tier] ?? 120;
-  const { allowed, retryAfter } = rateLimit(`apikey:${auth.keyId}`, {
-    limit,
-    windowMs: 60_000,
-    prefix: 'dev-api',
-  });
+  const max = LIMITS[auth.tier] ?? 120;
+  const { allowed, retryAfter } = await limit(`dev-api:apikey:${auth.keyId}`, max, 60_000);
   if (!allowed) {
     return apiError('rate_limited', 'Too many requests. Slow down.', 429, {
       'Retry-After': String(retryAfter),
-      'X-RateLimit-Limit': String(limit),
+      'X-RateLimit-Limit': String(max),
     });
   }
 

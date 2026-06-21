@@ -1,11 +1,11 @@
 /**
- * In-memory pub/sub for message notifications.
- * When a message is sent, call notifyUser(recipientId, event) to push
- * an SSE event to any connected client for that user.
- *
- * Uses globalThis to ensure a single shared Map across all Next.js
- * module instances (dev mode can create separate instances per route).
+ * Pub/sub for DM notifications. When a message is sent, call
+ * notifyUser(recipientId, event) to push an SSE event to any connected client
+ * for that user — on any instance via the Redis backplane when configured,
+ * falling back to in-process delivery otherwise.
  */
+
+import { createBus, type RealtimeBus } from '@/lib/realtime-bus.server';
 
 export type MessagePayload = {
   id: string;
@@ -30,47 +30,21 @@ export type MessageNotification =
 
 type Listener = (event: MessageNotification) => void;
 
-const globalKey = "__message_listeners__" as const;
-
-function getListeners(): Map<string, Set<Listener>> {
-  if (!(globalThis as Record<string, unknown>)[globalKey]) {
-    (globalThis as Record<string, unknown>)[globalKey] = new Map<
-      string,
-      Set<Listener>
-    >();
-  }
-  return (globalThis as Record<string, unknown>)[globalKey] as Map<
-    string,
-    Set<Listener>
-  >;
+// Shared across module instances (HMR/dev) via globalThis.
+const globalKey = "__message_bus__" as const;
+function bus(): RealtimeBus<MessageNotification> {
+  const g = globalThis as Record<string, unknown>;
+  if (!g[globalKey]) g[globalKey] = createBus<MessageNotification>("msg");
+  return g[globalKey] as RealtimeBus<MessageNotification>;
 }
 
 export function subscribeUser(userId: string, listener: Listener): () => void {
-  const listeners = getListeners();
-  if (!listeners.has(userId)) {
-    listeners.set(userId, new Set());
-  }
-  listeners.get(userId)!.add(listener);
-
-  return () => {
-    const listeners = getListeners();
-    const set = listeners.get(userId);
-    if (set) {
-      set.delete(listener);
-      if (set.size === 0) listeners.delete(userId);
-    }
-  };
+  return bus().subscribe(userId, listener);
 }
 
 export function notifyUser(
   userId: string,
   event: MessageNotification = { type: "unread" }
 ) {
-  const listeners = getListeners();
-  const set = listeners.get(userId);
-  if (set) {
-    for (const listener of set) {
-      listener(event);
-    }
-  }
+  bus().publish(userId, event);
 }

@@ -11,8 +11,8 @@
  * broadcasting every stranger's post to everyone.
  */
 
-import { EventEmitter } from "events";
 import type { FeedItem } from "./feed-types";
+import { createBus } from "./realtime-bus.server";
 
 /* ------------------------------------------------------------------ */
 /*  Event types                                                        */
@@ -83,27 +83,21 @@ export interface FeedSSEDelivery {
 /*  In-process pub/sub bus (singleton)                                 */
 /* ------------------------------------------------------------------ */
 
-const FEED_EVENT = "feed-event";
+// The feed is a single firehose, so it rides one logical key on the shared
+// realtime bus (Redis-backed when configured, in-process otherwise).
+const FEED_KEY = "all";
 
 class FeedEventBus {
-  private emitter = new EventEmitter();
+  private bus = createBus<FeedSSEEvent>("feed");
 
-  constructor() {
-    // Allow many SSE connections without warning
-    this.emitter.setMaxListeners(500);
-  }
-
-  /** Publish an event to all connected SSE clients */
+  /** Publish an event to all connected SSE clients (any instance) */
   publish(event: FeedSSEEvent) {
-    this.emitter.emit(FEED_EVENT, event);
+    this.bus.publish(FEED_KEY, event);
   }
 
   /** Subscribe to feed events — returns an unsubscribe function */
   subscribe(handler: (event: FeedSSEEvent) => void): () => void {
-    this.emitter.on(FEED_EVENT, handler);
-    return () => {
-      this.emitter.off(FEED_EVENT, handler);
-    };
+    return this.bus.subscribe(FEED_KEY, handler);
   }
 }
 
