@@ -149,6 +149,33 @@ services:
       retries: 3
       start_period: 10s
 
+  # ─── Status Page (status.rmhstudios.com) ───────────────────────────────────
+  # Standalone health dashboard. Probes every other service (web via the host
+  # gateway since it is blue/green outside compose; the rest by compose DNS name)
+  # and serves an HTML + JSON status page. Apache proxies status.rmhstudios.com
+  # to the loopback port published below.
+  status:
+    <<: *common
+    container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-status
+    ports:
+      - "127.0.0.1:${PORT_STATUS:-7008}:${PORT_STATUS:-7008}"
+    env_file: ${ENV_FILE:-.env.production}
+    environment:
+      - STATUS_PORT=${PORT_STATUS:-7008}
+      - PORT_WEB=${PORT_WEB:-7005}
+      - PORT_WEB_GREEN=${PORT_WEB_GREEN:-7015}
+      - PORT_SOCKET=${PORT_SOCKET:-7001}
+      - PORT_RMHBOX=${PORT_RMHBOX:-7676}
+      - PORT_RMHTUBE=${PORT_RMHTUBE:-7003}
+      - PORT_RECAP=${PORT_RECAP:-7004}
+    command: ["node", "dist-server/server/status/index.cjs"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT_STATUS:-7008}/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
   # ─── Doctrine Engine Worker (puzzle gen, reputation decay, Sahur activation) ─
   doctrine-worker:
     <<: *common

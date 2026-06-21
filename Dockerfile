@@ -92,6 +92,7 @@ RUN pnpm exec esbuild \
     server/rmhbox/index.ts \
     server/rmhtube/index.ts \
     server/recap/index.ts \
+    server/status/index.ts \
     server/discord-bot/index.ts \
     server/doctrine-worker/index.ts \
     server/vibe-worker/index.ts \
@@ -105,6 +106,7 @@ RUN test -f dist-server/server/socket-server/index.cjs && \
     test -f dist-server/server/rmhbox/index.cjs && \
     test -f dist-server/server/rmhtube/index.cjs && \
     test -f dist-server/server/recap/index.cjs && \
+    test -f dist-server/server/status/index.cjs && \
     test -f dist-server/server/discord-bot/index.cjs && \
     test -f dist-server/server/doctrine-worker/index.cjs && \
     test -f dist-server/server/vibe-worker/index.cjs && \

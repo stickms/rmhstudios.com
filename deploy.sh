@@ -33,6 +33,7 @@ case "$ENVIRONMENT" in
         PORT_SOCKET=7001
         PORT_RMHBOX=7676
         PORT_RMHTUBE=7003
+        PORT_STATUS=7008
         COMPOSE_PROFILES=""
         ;;
     staging)
@@ -673,6 +674,8 @@ check_port "$PORT_RMHBOX" &
 pids+=($!)
 check_port "$PORT_RMHTUBE" &
 pids+=($!)
+check_port "$PORT_STATUS" &
+pids+=($!)
 
 for pid in "${pids[@]}"; do
     wait "$pid" || ok=1
@@ -728,4 +731,4 @@ fi
 
 # ── Done ─────────────────────────────────────────────────────────────────────
 update_deploy_status success
-log "=== Deployment complete ($ENVIRONMENT: web=$PORT_WEB, socket=$PORT_SOCKET, rmhbox=$PORT_RMHBOX, rmhtube=$PORT_RMHTUBE) ==="
+log "=== Deployment complete ($ENVIRONMENT: web=$PORT_WEB, socket=$PORT_SOCKET, rmhbox=$PORT_RMHBOX, rmhtube=$PORT_RMHTUBE, status=$PORT_STATUS) ==="
