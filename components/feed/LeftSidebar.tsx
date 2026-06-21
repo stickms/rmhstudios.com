@@ -7,7 +7,7 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import {
   Home, Package, BookOpen, Library, LayoutGrid, Atom,
-  LogOut, PenSquare, User, MessageCircle, ShieldCheck, MoreHorizontal, Wallet, Sparkles
+  LogOut, PenSquare, User, MessageCircle, ShieldCheck, MoreHorizontal, Wallet, Sparkles, Landmark
 } from 'lucide-react';
 import { ComposeModal } from './ComposeModal';
 import { Button } from '@/components/ui/button';
@@ -98,6 +98,15 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
             </Link>
           );
         })}
+        {/* RMH Capital — static landing page (served from /public) */}
+        <a
+          href="/rmh-capital.html"
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-site-text-muted hover:text-site-text hover:bg-site-surface ${itemJustifyClass}`}
+          title="RMH Capital"
+        >
+          <Landmark className="w-5 h-5 shrink-0" />
+          <span className={labelClass}>RMH Capital</span>
+        </a>
         {/* Dynamic Profile link (shown when logged in) */}
         {session && (
           <Link
