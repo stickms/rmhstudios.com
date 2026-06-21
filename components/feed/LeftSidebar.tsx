@@ -31,7 +31,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   const labelClass = expanded ? '' : 'hidden xl:block';
   const logoFullClass = expanded ? '' : 'hidden xl:block';
   const logoShortClass = expanded ? 'hidden' : 'xl:hidden';
-  const paddingClass = expanded ? 'p-4' : 'p-3 xl:p-4';
+  const paddingClass = expanded ? 'px-4 pt-4 pb-6' : 'px-3 pt-3 pb-6 xl:px-4 xl:pt-4';
   const logoAlignClass = expanded ? 'justify-start' : 'justify-center xl:justify-start';
   const iconMrClass = expanded ? 'mr-2' : 'xl:mr-2';
   const itemJustifyClass = expanded ? '' : 'md:justify-center xl:justify-start';
@@ -69,7 +69,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   };
 
   return (
-    <div className={`flex flex-col gap-1 h-full ${paddingClass}`}>
+    <div className={`flex flex-col gap-1 min-h-full ${paddingClass}`}>
       {/* Logo */}
       <Link to="/" className={`mb-6 flex items-center ${logoAlignClass}`}>
         <span className={`site-logo font-playfair font-bold text-xl text-site-text ${logoFullClass}`}>
