@@ -28,6 +28,8 @@ case "$ENVIRONMENT" in
         ENV_FILE=".env.production"
         PROJECT_NAME="rmhstudios-prod"
         PORT_WEB=7005
+        # Blue/green spare port for zero-downtime web hotswaps (deploy/hotswap-web.sh).
+        PORT_WEB_GREEN=7015
         PORT_SOCKET=7001
         PORT_RMHBOX=7676
         PORT_RMHTUBE=7003
@@ -617,24 +619,54 @@ if ! dc run --rm --no-deps web sh -c "$MIGRATE_CMD"; then
 fi
 step_done
 
-# ── Step 4: Bring up containers ─────────────────────────────────────────────
+# ── Step 4: Bring up containers (everything EXCEPT web) ─────────────────────
 # --no-build: image is already built in step 2, skip the build check.
-# All 4 services start in parallel (no depends_on ordering).
-step_start "Starting containers..."
-if ! dc up -d --no-build --remove-orphans; then
+# --scale web=0: the web service is NOT managed by compose anymore — compose
+#   recreates containers IN PLACE (stop-old-then-start-new), which is exactly
+#   the multi-second gap that produced the Cloudflare 520. The web container is
+#   instead deployed blue/green by deploy/hotswap-web.sh below, which keeps the
+#   old container serving until the new one is healthy and Apache has flipped.
+#   All the OTHER services (socket, rmhbox, rmhtube, workers, minio, bot) start
+#   here in parallel as before — a brief blip on a websocket/worker reconnect is
+#   invisible, the user-facing 520 only ever came from the web port.
+step_start "Starting containers (all services except web)..."
+if ! dc up -d --no-build --remove-orphans --scale web=0; then
     log "ERROR: docker compose up failed."
     update_deploy_status fail "docker compose up failed"
     exit 1
 fi
 step_done
 
+# ── Step 4b: Zero-downtime hotswap of the web container ─────────────────────
+# Runs the freshly built image as a second web container on the spare port,
+# waits until it actually serves traffic, then flips Apache to it with a
+# graceful reload and retires the old one. If the new container never becomes
+# healthy, traffic is never moved and the old container keeps serving — so a
+# bad build degrades to "old version stays up", never to an outage.
+step_start "Hotswapping web container (blue/green)..."
+if ! PROJECT_NAME="$PROJECT_NAME" \
+     ENV_FILE="$ENV_FILE" \
+     IMAGE_NAME="$IMAGE_NAME" \
+     IMAGE_TAG="latest" \
+     BLUE_PORT="$PORT_WEB" \
+     GREEN_PORT="${PORT_WEB_GREEN:-$((PORT_WEB + 10))}" \
+     NETWORK="${PROJECT_NAME}_default" \
+     DOCKER_BIN="$DOCKER_BIN" \
+     bash "${REPO_DIR}/deploy/hotswap-web.sh"; then
+    log "ERROR: web hotswap failed."
+    update_deploy_status fail "web hotswap failed"
+    exit 1
+fi
+step_done
+
 # ── Step 5: Health checks (parallel) ────────────────────────────────────────
+# NOTE: web is intentionally NOT checked here — the hotswap in Step 4b already
+# proved the new web container serves traffic before flipping Apache to it, and
+# web now listens on the blue/green port, not the fixed $PORT_WEB.
 step_start "Running health checks..."
 ok=0
 pids=()
 
-check_port "$PORT_WEB" &
-pids+=($!)
 check_port "$PORT_SOCKET" &
 pids+=($!)
 check_port "$PORT_RMHBOX" &
