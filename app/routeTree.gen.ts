@@ -282,6 +282,7 @@ import { Route as ApiRmharksIdViewRouteImport } from './routes/api/rmharks/$id/v
 import { Route as ApiRmharksIdUnlockRouteImport } from './routes/api/rmharks/$id/unlock'
 import { Route as ApiRmharksIdTranslateRouteImport } from './routes/api/rmharks/$id/translate'
 import { Route as ApiRmharksIdSummaryRouteImport } from './routes/api/rmharks/$id/summary'
+import { Route as ApiRmharksIdSimilarRouteImport } from './routes/api/rmharks/$id/similar'
 import { Route as ApiRmharksIdRepostRouteImport } from './routes/api/rmharks/$id/repost'
 import { Route as ApiRmharksIdPinRouteImport } from './routes/api/rmharks/$id/pin'
 import { Route as ApiRmharksIdLikeRouteImport } from './routes/api/rmharks/$id/like'
@@ -1721,6 +1722,11 @@ const ApiRmharksIdSummaryRoute = ApiRmharksIdSummaryRouteImport.update({
   path: '/summary',
   getParentRoute: () => ApiRmharksIdRoute,
 } as any)
+const ApiRmharksIdSimilarRoute = ApiRmharksIdSimilarRouteImport.update({
+  id: '/similar',
+  path: '/similar',
+  getParentRoute: () => ApiRmharksIdRoute,
+} as any)
 const ApiRmharksIdRepostRoute = ApiRmharksIdRepostRouteImport.update({
   id: '/repost',
   path: '/repost',
@@ -2299,6 +2305,7 @@ export interface FileRoutesByFullPath {
   '/api/rmharks/$id/like': typeof ApiRmharksIdLikeRoute
   '/api/rmharks/$id/pin': typeof ApiRmharksIdPinRoute
   '/api/rmharks/$id/repost': typeof ApiRmharksIdRepostRoute
+  '/api/rmharks/$id/similar': typeof ApiRmharksIdSimilarRoute
   '/api/rmharks/$id/summary': typeof ApiRmharksIdSummaryRoute
   '/api/rmharks/$id/translate': typeof ApiRmharksIdTranslateRoute
   '/api/rmharks/$id/unlock': typeof ApiRmharksIdUnlockRoute
@@ -2604,6 +2611,7 @@ export interface FileRoutesByTo {
   '/api/rmharks/$id/like': typeof ApiRmharksIdLikeRoute
   '/api/rmharks/$id/pin': typeof ApiRmharksIdPinRoute
   '/api/rmharks/$id/repost': typeof ApiRmharksIdRepostRoute
+  '/api/rmharks/$id/similar': typeof ApiRmharksIdSimilarRoute
   '/api/rmharks/$id/summary': typeof ApiRmharksIdSummaryRoute
   '/api/rmharks/$id/translate': typeof ApiRmharksIdTranslateRoute
   '/api/rmharks/$id/unlock': typeof ApiRmharksIdUnlockRoute
@@ -2933,6 +2941,7 @@ export interface FileRoutesById {
   '/api/rmharks/$id/like': typeof ApiRmharksIdLikeRoute
   '/api/rmharks/$id/pin': typeof ApiRmharksIdPinRoute
   '/api/rmharks/$id/repost': typeof ApiRmharksIdRepostRoute
+  '/api/rmharks/$id/similar': typeof ApiRmharksIdSimilarRoute
   '/api/rmharks/$id/summary': typeof ApiRmharksIdSummaryRoute
   '/api/rmharks/$id/translate': typeof ApiRmharksIdTranslateRoute
   '/api/rmharks/$id/unlock': typeof ApiRmharksIdUnlockRoute
@@ -3262,6 +3271,7 @@ export interface FileRouteTypes {
     | '/api/rmharks/$id/like'
     | '/api/rmharks/$id/pin'
     | '/api/rmharks/$id/repost'
+    | '/api/rmharks/$id/similar'
     | '/api/rmharks/$id/summary'
     | '/api/rmharks/$id/translate'
     | '/api/rmharks/$id/unlock'
@@ -3567,6 +3577,7 @@ export interface FileRouteTypes {
     | '/api/rmharks/$id/like'
     | '/api/rmharks/$id/pin'
     | '/api/rmharks/$id/repost'
+    | '/api/rmharks/$id/similar'
     | '/api/rmharks/$id/summary'
     | '/api/rmharks/$id/translate'
     | '/api/rmharks/$id/unlock'
@@ -3895,6 +3906,7 @@ export interface FileRouteTypes {
     | '/api/rmharks/$id/like'
     | '/api/rmharks/$id/pin'
     | '/api/rmharks/$id/repost'
+    | '/api/rmharks/$id/similar'
     | '/api/rmharks/$id/summary'
     | '/api/rmharks/$id/translate'
     | '/api/rmharks/$id/unlock'
@@ -6019,6 +6031,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRmharksIdSummaryRouteImport
       parentRoute: typeof ApiRmharksIdRoute
     }
+    '/api/rmharks/$id/similar': {
+      id: '/api/rmharks/$id/similar'
+      path: '/similar'
+      fullPath: '/api/rmharks/$id/similar'
+      preLoaderRoute: typeof ApiRmharksIdSimilarRouteImport
+      parentRoute: typeof ApiRmharksIdRoute
+    }
     '/api/rmharks/$id/repost': {
       id: '/api/rmharks/$id/repost'
       path: '/repost'
@@ -6945,6 +6964,7 @@ interface ApiRmharksIdRouteChildren {
   ApiRmharksIdLikeRoute: typeof ApiRmharksIdLikeRoute
   ApiRmharksIdPinRoute: typeof ApiRmharksIdPinRoute
   ApiRmharksIdRepostRoute: typeof ApiRmharksIdRepostRoute
+  ApiRmharksIdSimilarRoute: typeof ApiRmharksIdSimilarRoute
   ApiRmharksIdSummaryRoute: typeof ApiRmharksIdSummaryRoute
   ApiRmharksIdTranslateRoute: typeof ApiRmharksIdTranslateRoute
   ApiRmharksIdUnlockRoute: typeof ApiRmharksIdUnlockRoute
@@ -6958,6 +6978,7 @@ const ApiRmharksIdRouteChildren: ApiRmharksIdRouteChildren = {
   ApiRmharksIdLikeRoute: ApiRmharksIdLikeRoute,
   ApiRmharksIdPinRoute: ApiRmharksIdPinRoute,
   ApiRmharksIdRepostRoute: ApiRmharksIdRepostRoute,
+  ApiRmharksIdSimilarRoute: ApiRmharksIdSimilarRoute,
   ApiRmharksIdSummaryRoute: ApiRmharksIdSummaryRoute,
   ApiRmharksIdTranslateRoute: ApiRmharksIdTranslateRoute,
   ApiRmharksIdUnlockRoute: ApiRmharksIdUnlockRoute,

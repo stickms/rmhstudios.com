@@ -23,6 +23,7 @@ import { EngagementListModal } from './EngagementListModal';
 import { UserAvatar } from './UserAvatar';
 import { ShareModal } from './ShareModal';
 import { ThreadSummary } from './ThreadSummary';
+import { RelatedPosts } from './RelatedPosts';
 
 interface PostDetailProps {
   postId: string;
@@ -475,6 +476,8 @@ export function PostDetail({ postId }: PostDetailProps) {
           </div>
         )}
       </div>}
+
+      {!post.deletedAt && <RelatedPosts postId={postId} />}
 
       {engagementModal && (
         <EngagementListModal
