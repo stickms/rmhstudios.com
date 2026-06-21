@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Plus, BarChart3, Image, X, ImagePlus } from 'lucide-react';
+import { Plus, BarChart3, Image, X, ImagePlus, Globe, Users, Lock, Unlock } from 'lucide-react';
 import { GifEmbed } from './GifEmbed';
 import { AIGenerateButton } from './AIGenerateButton';
 import { ComposeAssist } from './ComposeAssist';
@@ -203,18 +203,30 @@ export function ComposeBox({ communityId }: { communityId?: string } = {}) {
           <ComposeAssist value={content} onChange={setContent} />
 
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <select
-              aria-label="Who can see this post"
-              value={audience}
-              onChange={(e) => setAudience(e.target.value as 'PUBLIC' | 'FOLLOWERS' | 'PRIVATE')}
-              className="rounded-full border border-site-border bg-site-surface px-3 py-1 text-xs font-medium text-site-text-muted focus:border-site-accent focus:outline-none"
-            >
-              <option value="PUBLIC">🌐 Everyone</option>
-              <option value="FOLLOWERS">👥 Followers</option>
-              <option value="PRIVATE">🔒 Only me</option>
-            </select>
+            <div className="inline-flex items-center gap-1 rounded-full border border-site-border bg-site-surface p-0.5" role="group" aria-label="Who can see this post">
+              {([
+                { value: 'PUBLIC', label: 'Everyone', icon: Globe },
+                { value: 'FOLLOWERS', label: 'Followers', icon: Users },
+                { value: 'PRIVATE', label: 'Only me', icon: Lock },
+              ] as const).map(({ value, label, icon: Icon }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setAudience(value)}
+                  aria-pressed={audience === value}
+                  title={label}
+                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                    audience === value ? 'bg-site-accent text-white' : 'text-site-text-muted hover:text-site-text'
+                  }`}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">{label}</span>
+                </button>
+              ))}
+            </div>
             <div className="inline-flex items-center gap-1 rounded-full border border-site-border bg-site-surface px-3 py-1">
-              <span className="text-xs text-site-text-muted">🔓 Unlock price</span>
+              <Unlock className="h-3.5 w-3.5 text-site-text-muted" />
+              <span className="text-xs text-site-text-muted">Unlock price</span>
               <input
                 type="number"
                 min={0}

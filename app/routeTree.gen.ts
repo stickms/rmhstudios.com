@@ -323,6 +323,7 @@ import { Route as ApiDoctrineAdminIncidentsRouteImport } from './routes/api/doct
 import { Route as ApiDoctrineAdminDisclosuresRouteImport } from './routes/api/doctrine/admin/disclosures'
 import { Route as ApiCommunitiesSlugJoinRouteImport } from './routes/api/communities/$slug/join'
 import { Route as ApiCommunitiesSlugFeedRouteImport } from './routes/api/communities/$slug/feed'
+import { Route as ApiCommentsCommentIdTranslateRouteImport } from './routes/api/comments/$commentId/translate'
 import { Route as ApiAdminReportsIdRouteImport } from './routes/api/admin/reports/$id'
 import { Route as ApiAdminCuratedBuildsImageRouteImport } from './routes/api/admin/curated-builds/image'
 import { Route as ApiAdminAnnouncementsIdRouteImport } from './routes/api/admin/announcements/$id'
@@ -1950,6 +1951,12 @@ const ApiCommunitiesSlugFeedRoute = ApiCommunitiesSlugFeedRouteImport.update({
   path: '/api/communities/$slug/feed',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCommentsCommentIdTranslateRoute =
+  ApiCommentsCommentIdTranslateRouteImport.update({
+    id: '/api/comments/$commentId/translate',
+    path: '/api/comments/$commentId/translate',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminReportsIdRoute = ApiAdminReportsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -2321,6 +2328,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/announcements/$id': typeof ApiAdminAnnouncementsIdRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
+  '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
   '/api/communities/$slug/feed': typeof ApiCommunitiesSlugFeedRoute
   '/api/communities/$slug/join': typeof ApiCommunitiesSlugJoinRoute
   '/api/doctrine/admin/disclosures': typeof ApiDoctrineAdminDisclosuresRoute
@@ -2633,6 +2641,7 @@ export interface FileRoutesByTo {
   '/api/admin/announcements/$id': typeof ApiAdminAnnouncementsIdRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
+  '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
   '/api/communities/$slug/feed': typeof ApiCommunitiesSlugFeedRoute
   '/api/communities/$slug/join': typeof ApiCommunitiesSlugJoinRoute
   '/api/doctrine/admin/disclosures': typeof ApiDoctrineAdminDisclosuresRoute
@@ -2970,6 +2979,7 @@ export interface FileRoutesById {
   '/api/admin/announcements/$id': typeof ApiAdminAnnouncementsIdRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
+  '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
   '/api/communities/$slug/feed': typeof ApiCommunitiesSlugFeedRoute
   '/api/communities/$slug/join': typeof ApiCommunitiesSlugJoinRoute
   '/api/doctrine/admin/disclosures': typeof ApiDoctrineAdminDisclosuresRoute
@@ -3307,6 +3317,7 @@ export interface FileRouteTypes {
     | '/api/admin/announcements/$id'
     | '/api/admin/curated-builds/image'
     | '/api/admin/reports/$id'
+    | '/api/comments/$commentId/translate'
     | '/api/communities/$slug/feed'
     | '/api/communities/$slug/join'
     | '/api/doctrine/admin/disclosures'
@@ -3619,6 +3630,7 @@ export interface FileRouteTypes {
     | '/api/admin/announcements/$id'
     | '/api/admin/curated-builds/image'
     | '/api/admin/reports/$id'
+    | '/api/comments/$commentId/translate'
     | '/api/communities/$slug/feed'
     | '/api/communities/$slug/join'
     | '/api/doctrine/admin/disclosures'
@@ -3955,6 +3967,7 @@ export interface FileRouteTypes {
     | '/api/admin/announcements/$id'
     | '/api/admin/curated-builds/image'
     | '/api/admin/reports/$id'
+    | '/api/comments/$commentId/translate'
     | '/api/communities/$slug/feed'
     | '/api/communities/$slug/join'
     | '/api/doctrine/admin/disclosures'
@@ -4169,6 +4182,7 @@ export interface RootRouteChildren {
   ApiNotificationsIndexRoute: typeof ApiNotificationsIndexRoute
   ApiShopIndexRoute: typeof ApiShopIndexRoute
   ApiAdminCuratedBuildsImageRoute: typeof ApiAdminCuratedBuildsImageRouteWithChildren
+  ApiCommentsCommentIdTranslateRoute: typeof ApiCommentsCommentIdTranslateRoute
   ApiCommunitiesSlugFeedRoute: typeof ApiCommunitiesSlugFeedRoute
   ApiCommunitiesSlugJoinRoute: typeof ApiCommunitiesSlugJoinRoute
   ApiDoctrineAdminDisclosuresRoute: typeof ApiDoctrineAdminDisclosuresRoute
@@ -6401,6 +6415,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCommunitiesSlugFeedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/comments/$commentId/translate': {
+      id: '/api/comments/$commentId/translate'
+      path: '/api/comments/$commentId/translate'
+      fullPath: '/api/comments/$commentId/translate'
+      preLoaderRoute: typeof ApiCommentsCommentIdTranslateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/reports/$id': {
       id: '/api/admin/reports/$id'
       path: '/$id'
@@ -7421,6 +7442,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiNotificationsIndexRoute: ApiNotificationsIndexRoute,
   ApiShopIndexRoute: ApiShopIndexRoute,
   ApiAdminCuratedBuildsImageRoute: ApiAdminCuratedBuildsImageRouteWithChildren,
+  ApiCommentsCommentIdTranslateRoute: ApiCommentsCommentIdTranslateRoute,
   ApiCommunitiesSlugFeedRoute: ApiCommunitiesSlugFeedRoute,
   ApiCommunitiesSlugJoinRoute: ApiCommunitiesSlugJoinRoute,
   ApiDoctrineAdminDisclosuresRoute: ApiDoctrineAdminDisclosuresRoute,

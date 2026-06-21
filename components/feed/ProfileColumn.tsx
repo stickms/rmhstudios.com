@@ -562,8 +562,8 @@ export function ProfileColumn({ userId }: { userId: string }) {
         {profile.tipGoal && profile.tipGoal > 0 && (
           <div className="mb-3 rounded-xl border border-site-border bg-site-surface p-3">
             <div className="mb-1 flex items-center justify-between text-sm">
-              <span className="font-medium text-site-text">
-                🪙 {profile.tipGoalLabel || 'Tip goal'}
+              <span className="inline-flex items-center gap-1.5 font-medium text-site-text">
+                <CoinIcon className="h-4 w-4" /> {profile.tipGoalLabel || 'Tip goal'}
               </span>
               <span className="text-site-text-muted">
                 {(profile.tipsThisMonth ?? 0).toLocaleString()} / {profile.tipGoal.toLocaleString()}

@@ -113,6 +113,10 @@ model User {
   communitiesCreated Community[]       @relation("CommunityCreator")
   communityMembers   CommunityMember[]
 
+  // Progression: quests + battle-pass season progress
+  quests         UserQuest[]
+  seasonProgress UserSeasonProgress[]
+
   // Economy: shop inventory, coin ledger (tips/gifts)
   inventory       UserInventory[]
   coinsSent       CoinTransaction[] @relation("CoinSender")
@@ -1273,6 +1277,9 @@ model UserProfile {
   hasProfilePet         Boolean   @default(false)
   showProfilePet        Boolean   @default(true)
 
+  // Progression: lifetime platform XP (level is derived from this)
+  xp                    Int       @default(0)
+
   // Creator tip goal (monthly coins target shown on the profile)
   tipGoal               Int?
   tipGoalLabel          String?   @db.VarChar(80)
@@ -2414,4 +2421,44 @@ model CommunityMember {
   @@unique([communityId, userId])
   @@index([userId])
   @@map("community_member")
+}
+
+// ─── Progression: Quests ──────────────────────────────────────────────────
+// Quest definitions live in code (lib/quests/catalog.ts). One row per user per
+// quest per period (daily/weekly), tracking progress + claim state.
+model UserQuest {
+  id        String   @id @default(cuid())
+  userId    String
+  questId   String   @db.VarChar(64)
+  periodKey String   @db.VarChar(16) // e.g. "2026-06-21" (daily) or "2026-W25" (weekly)
+  progress  Int      @default(0)
+  completed Boolean  @default(false)
+  claimed   Boolean  @default(false)
+  updatedAt DateTime @default(now()) @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questId, periodKey])
+  @@index([userId, periodKey])
+  @@map("user_quest")
+}
+
+// ─── Progression: Battle Pass ─────────────────────────────────────────────
+// Season + tier rewards defined in code (lib/battlepass/season.ts). Premium
+// track is unlocked by spending RMH coins. Claimed tiers stored as a Json array.
+model UserSeasonProgress {
+  id           String   @id @default(cuid())
+  userId       String
+  seasonId     String   @db.VarChar(32)
+  seasonXp     Int      @default(0)
+  premium      Boolean  @default(false)
+  claimedFree  Json     @default("[]") // tier numbers claimed on the free track
+  claimedPaid  Json     @default("[]") // tier numbers claimed on the premium track
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, seasonId])
+  @@map("user_season_progress")
 }

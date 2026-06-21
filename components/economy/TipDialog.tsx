@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { toast } from 'sonner';
 
 interface TipDialogProps {
@@ -34,7 +35,7 @@ export function TipDialog({ open, onOpenChange, recipientId, recipientName, enti
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        toast.success(`Tipped 🪙 ${amount}${recipientName ? ` to ${recipientName}` : ''}!`);
+        toast.success(`Tipped ${amount} coins${recipientName ? ` to ${recipientName}` : ''}!`);
         onOpenChange(false);
         setNote('');
       } else if (res.status === 401) {
@@ -67,7 +68,7 @@ export function TipDialog({ open, onOpenChange, recipientId, recipientName, enti
                 amount === a ? 'border-site-accent bg-site-accent-dim text-site-text' : 'border-site-border text-site-text-muted hover:bg-site-surface'
               }`}
             >
-              🪙 {a}
+              <CoinIcon className="inline h-3.5 w-3.5" /> {a}
             </button>
           ))}
         </div>
@@ -95,7 +96,7 @@ export function TipDialog({ open, onOpenChange, recipientId, recipientName, enti
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={submitting}>Cancel</Button>
           <Button variant="accent" onClick={submit} disabled={submitting || amount < 1}>
-            {submitting ? 'Sending…' : `Tip 🪙 ${amount}`}
+            {submitting ? 'Sending…' : (<span className="inline-flex items-center gap-1">Tip <CoinIcon className="h-4 w-4" /> {amount}</span>)}
           </Button>
         </DialogFooter>
       </DialogContent>
