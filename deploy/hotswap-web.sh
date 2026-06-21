@@ -59,12 +59,45 @@ if [ "$(id -u)" -eq 0 ]; then SUDO=""; else SUDO="sudo -n"; fi
 
 # Write the active-port include. Prefer a direct write (works when the file is
 # chowned to the deploy user); fall back to `sudo tee` for the root-owned case.
+# Captures and logs the real error from each attempt so failures are diagnosable
+# from the deploy log (read-only FS, perms, sudo blocked, etc.).
 write_active_conf() {
-    local port="$1"
-    if printf 'Define WEB_UPSTREAM_PORT %s\n' "$port" > "$ACTIVE_CONF" 2>/dev/null; then
-        return 0
+    local port="$1" err
+    err=$(printf 'Define WEB_UPSTREAM_PORT %s\n' "$port" 2>&1 > "$ACTIVE_CONF") && return 0
+    log "  direct write to $ACTIVE_CONF failed: ${err:-permission denied}; trying sudo tee..."
+    err=$(printf 'Define WEB_UPSTREAM_PORT %s\n' "$port" | $SUDO tee "$ACTIVE_CONF" 2>&1 >/dev/null) && return 0
+    log "  sudo tee to $ACTIVE_CONF failed: ${err:-unknown error}"
+    return 1
+}
+
+# Dump the permission/sandbox state behind an Apache-step failure so the deploy
+# log explains *why* (read-only mount, wrong owner, sudo blocked) without a
+# second round-trip. Best-effort; never fails the deploy itself.
+diagnose_apache_perms() {
+    log "  --- Apache permission diagnostics ---"
+    log "    user:           $(id -un 2>/dev/null) (uid=$(id -u 2>/dev/null))"
+    log "    active conf:     $ACTIVE_CONF"
+    log "    conf exists:     $([ -e "$ACTIVE_CONF" ] && echo yes || echo no)"
+    log "    conf writable:   $([ -w "$ACTIVE_CONF" ] && echo yes || echo no)"
+    log "    conf details:    $(ls -ld "$ACTIVE_CONF" 2>&1 | head -1)"
+    log "    dir writable:    $([ -w "$(dirname "$ACTIVE_CONF")" ] && echo yes || echo no) ($(dirname "$ACTIVE_CONF"))"
+    if [ -n "$SUDO" ]; then
+        if $SUDO true 2>/dev/null; then
+            log "    sudo -n:         OK"
+            log "    sudo apachectl:  $($SUDO -l /usr/sbin/apachectl 2>&1 | tail -1)"
+        else
+            log "    sudo -n:         BLOCKED ($($SUDO true 2>&1 | head -1))"
+            log "      → webhook is likely sandboxed (NoNewPrivileges) or lacks a sudoers grant."
+        fi
+    else
+        log "    sudo:            not needed (running as root)"
     fi
-    printf 'Define WEB_UPSTREAM_PORT %s\n' "$port" | $SUDO tee "$ACTIVE_CONF" >/dev/null
+    # Surface read-only-mount / ProtectSystem situations explicitly.
+    if [ -e "$ACTIVE_CONF" ] && ! [ -w "$ACTIVE_CONF" ]; then
+        log "      → $ACTIVE_CONF not writable: chown it to $(id -un), or the mount is read-only"
+        log "        (systemd ProtectSystem) — add ReadWritePaths=$(dirname "$ACTIVE_CONF")."
+    fi
+    log "  -------------------------------------"
 }
 
 # ── Determine which color is currently live (from the Apache include) ────────
@@ -137,17 +170,32 @@ log "${new_container} is healthy."
 "$DOCKER_BIN" update --restart unless-stopped "$new_container" >/dev/null 2>&1 || true
 
 # ── Flip Apache to the new port with a graceful reload ──────────────────────
-write_active_conf "$target_port" \
-    || { "$DOCKER_BIN" rm -f "$new_container" >/dev/null 2>&1 || true; \
-         die "cannot write $ACTIVE_CONF — chown it to the deploy user or grant sudo (see setup notes)."; }
-if ! $SUDO apachectl configtest 2>/dev/null; then
+log "Flipping Apache: writing ${ACTIVE_CONF} → port ${target_port}..."
+if ! write_active_conf "$target_port"; then
+    diagnose_apache_perms
+    "$DOCKER_BIN" rm -f "$new_container" >/dev/null 2>&1 || true
+    die "cannot write $ACTIVE_CONF — see diagnostics above (chown the file + ReadWritePaths, or grant sudo)."
+fi
+
+# configtest validates the whole vhost; capture its output so a bad config is
+# visible in the log rather than a bare exit code.
+configtest_out=$($SUDO apachectl configtest 2>&1) || {
+    log "  apachectl configtest failed:"
+    printf '%s\n' "$configtest_out" | while IFS= read -r line; do log "    $line"; done
+    diagnose_apache_perms
     # Roll back the include so we never leave Apache in a broken state.
     write_active_conf "$current_port" || true
     "$DOCKER_BIN" rm -f "$new_container" >/dev/null 2>&1 || true
     die "apachectl configtest failed — reverted, ${old_color} still live."
-fi
+}
+
 # `graceful` finishes in-flight requests on the old worker set, then swaps.
-$SUDO apachectl graceful || $SUDO systemctl reload apache2 || die "apache reload failed"
+reload_out=$($SUDO apachectl graceful 2>&1) || reload_out=$($SUDO systemctl reload apache2 2>&1) || {
+    log "  apache reload failed:"
+    printf '%s\n' "$reload_out" | while IFS= read -r line; do log "    $line"; done
+    diagnose_apache_perms
+    die "apache reload failed — ${old_color} still live on ${current_port}."
+}
 log "Apache now routing to ${target_color} (port ${target_port})."
 
 # ── Drain in-flight requests, then retire the old container ─────────────────
