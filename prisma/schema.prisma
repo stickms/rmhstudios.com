@@ -146,6 +146,10 @@ model User {
   challengesIssued      RankedChallenge[] @relation("ChallengeChallenger")
   challengesReceived    RankedChallenge[] @relation("ChallengeOpponent")
 
+  // Gifted (coin-funded) memberships
+  giftMembershipsReceived GiftMembership[] @relation("GiftRecipient")
+  giftMembershipsSent     GiftMembership[] @relation("GiftGifter")
+
   // Economy: shop inventory, coin ledger (tips/gifts)
   inventory       UserInventory[]
   coinsSent       CoinTransaction[] @relation("CoinSender")
@@ -1600,6 +1604,23 @@ model RankedChallenge {
   @@index([opponentId, status])
   @@index([challengerId, status])
   @@map("ranked_challenge")
+}
+
+/// A coin-funded gift membership (#18). Grants a tier for a time window,
+/// independent of Stripe billing. getUserTier folds active grants in.
+model GiftMembership {
+  id        String   @id @default(cuid())
+  userId    String // recipient
+  gifterId  String? // null = system grant
+  tier      String   @db.VarChar(16) // 'starter' | 'pro'
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user   User  @relation("GiftRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  gifter User? @relation("GiftGifter", fields: [gifterId], references: [id], onDelete: SetNull)
+
+  @@index([userId, expiresAt])
+  @@map("gift_membership")
 }
 
 model BuildVersion {

@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { MapPin, Link as LinkIcon, Calendar, Loader2, MessageCircle, BadgeCheck, ShieldCheck, Coins, Store } from 'lucide-react';
+import { MapPin, Link as LinkIcon, Calendar, Loader2, MessageCircle, BadgeCheck, ShieldCheck, Coins, Store, Gift } from 'lucide-react';
 import { TipDialog } from '@/components/economy/TipDialog';
+import { GiftSubDialog } from '@/components/economy/GiftSubDialog';
 import { useNavigate } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { MobileMenuButton } from './MobileMenuButton';
@@ -85,6 +86,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
   const [notFound, setNotFound] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [tipOpen, setTipOpen] = useState(false);
+  const [giftOpen, setGiftOpen] = useState(false);
   const [tab, setTab] = useState<ProfileTab>('rmharks');
   const [socialModal, setSocialModal] = useState<'followers' | 'following' | null>(null);
   const { refresh: refreshResolvedUser } = useResolvedUser();
@@ -541,6 +543,15 @@ export function ProfileColumn({ userId }: { userId: string }) {
                 <Button
                   variant="outline"
                   size="sm"
+                  onClick={() => setGiftOpen(true)}
+                  className="rounded-lg border-site-border text-site-text hover:bg-site-surface"
+                  title="Gift a membership"
+                >
+                  <Gift className="w-4 h-4 text-site-accent" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={handleMessage}
                   disabled={messageSending}
                   className="rounded-lg border-site-border text-site-text hover:bg-site-surface"
@@ -743,6 +754,16 @@ export function ProfileColumn({ userId }: { userId: string }) {
           recipientName={displayName ?? profile.name}
           entityType="profile"
           entityId={profile.id}
+        />
+      )}
+
+      {/* Gift membership dialog (non-owner) */}
+      {profile && !profile.isOwnProfile && (
+        <GiftSubDialog
+          open={giftOpen}
+          onOpenChange={setGiftOpen}
+          recipientId={profile.id}
+          recipientName={displayName ?? profile.name}
         />
       )}
 

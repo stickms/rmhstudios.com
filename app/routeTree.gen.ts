@@ -114,6 +114,7 @@ import { Route as ApiProfileRouteImport } from './routes/api/profile'
 import { Route as ApiOembedRouteImport } from './routes/api/oembed'
 import { Route as ApiMessagesRouteImport } from './routes/api/messages'
 import { Route as ApiImageProxyRouteImport } from './routes/api/image-proxy'
+import { Route as ApiGiftSubRouteImport } from './routes/api/gift-sub'
 import { Route as ApiFeedbackRouteImport } from './routes/api/feedback'
 import { Route as ApiExploreRouteImport } from './routes/api/explore'
 import { Route as ApiBookmarksRouteImport } from './routes/api/bookmarks'
@@ -908,6 +909,11 @@ const ApiMessagesRoute = ApiMessagesRouteImport.update({
 const ApiImageProxyRoute = ApiImageProxyRouteImport.update({
   id: '/api/image-proxy',
   path: '/api/image-proxy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGiftSubRoute = ApiGiftSubRouteImport.update({
+  id: '/api/gift-sub',
+  path: '/api/gift-sub',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiFeedbackRoute = ApiFeedbackRouteImport.update({
@@ -2373,6 +2379,7 @@ export interface FileRoutesByFullPath {
   '/api/bookmarks': typeof ApiBookmarksRoute
   '/api/explore': typeof ApiExploreRoute
   '/api/feedback': typeof ApiFeedbackRoute
+  '/api/gift-sub': typeof ApiGiftSubRoute
   '/api/image-proxy': typeof ApiImageProxyRoute
   '/api/messages': typeof ApiMessagesRouteWithChildren
   '/api/oembed': typeof ApiOembedRoute
@@ -2730,6 +2737,7 @@ export interface FileRoutesByTo {
   '/api/bookmarks': typeof ApiBookmarksRoute
   '/api/explore': typeof ApiExploreRoute
   '/api/feedback': typeof ApiFeedbackRoute
+  '/api/gift-sub': typeof ApiGiftSubRoute
   '/api/image-proxy': typeof ApiImageProxyRoute
   '/api/messages': typeof ApiMessagesRouteWithChildren
   '/api/oembed': typeof ApiOembedRoute
@@ -3105,6 +3113,7 @@ export interface FileRoutesById {
   '/api/bookmarks': typeof ApiBookmarksRoute
   '/api/explore': typeof ApiExploreRoute
   '/api/feedback': typeof ApiFeedbackRoute
+  '/api/gift-sub': typeof ApiGiftSubRoute
   '/api/image-proxy': typeof ApiImageProxyRoute
   '/api/messages': typeof ApiMessagesRouteWithChildren
   '/api/oembed': typeof ApiOembedRoute
@@ -3485,6 +3494,7 @@ export interface FileRouteTypes {
     | '/api/bookmarks'
     | '/api/explore'
     | '/api/feedback'
+    | '/api/gift-sub'
     | '/api/image-proxy'
     | '/api/messages'
     | '/api/oembed'
@@ -3842,6 +3852,7 @@ export interface FileRouteTypes {
     | '/api/bookmarks'
     | '/api/explore'
     | '/api/feedback'
+    | '/api/gift-sub'
     | '/api/image-proxy'
     | '/api/messages'
     | '/api/oembed'
@@ -4216,6 +4227,7 @@ export interface FileRouteTypes {
     | '/api/bookmarks'
     | '/api/explore'
     | '/api/feedback'
+    | '/api/gift-sub'
     | '/api/image-proxy'
     | '/api/messages'
     | '/api/oembed'
@@ -4577,6 +4589,7 @@ export interface RootRouteChildren {
   ApiBookmarksRoute: typeof ApiBookmarksRoute
   ApiExploreRoute: typeof ApiExploreRoute
   ApiFeedbackRoute: typeof ApiFeedbackRoute
+  ApiGiftSubRoute: typeof ApiGiftSubRoute
   ApiImageProxyRoute: typeof ApiImageProxyRoute
   ApiMessagesRoute: typeof ApiMessagesRouteWithChildren
   ApiOembedRoute: typeof ApiOembedRoute
@@ -5476,6 +5489,13 @@ declare module '@tanstack/react-router' {
       path: '/api/image-proxy'
       fullPath: '/api/image-proxy'
       preLoaderRoute: typeof ApiImageProxyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/gift-sub': {
+      id: '/api/gift-sub'
+      path: '/api/gift-sub'
+      fullPath: '/api/gift-sub'
+      preLoaderRoute: typeof ApiGiftSubRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/feedback': {
@@ -8187,6 +8207,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiBookmarksRoute: ApiBookmarksRoute,
   ApiExploreRoute: ApiExploreRoute,
   ApiFeedbackRoute: ApiFeedbackRoute,
+  ApiGiftSubRoute: ApiGiftSubRoute,
   ApiImageProxyRoute: ApiImageProxyRoute,
   ApiMessagesRoute: ApiMessagesRouteWithChildren,
   ApiOembedRoute: ApiOembedRoute,

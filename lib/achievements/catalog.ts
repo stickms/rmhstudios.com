@@ -111,6 +111,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'economy.coins_10000', name: 'Whale', description: 'Hold 10,000 coins at once.', icon: '🐳', category: 'economy', tier: 'gold', coinReward: 0, target: 1 },
   { id: 'economy.tips_sent_10', name: 'Philanthropist', description: 'Send 10 tips.', icon: '🎁', category: 'economy', tier: 'silver', coinReward: 0, target: 10 },
   { id: 'economy.first_unlock', name: 'Curious', description: 'Unlock a paid post.', icon: '🗝️', category: 'economy', tier: 'bronze', coinReward: 0, target: 1 },
+  { id: 'economy.first_gift_sub', name: 'Secret Santa', description: 'Gift a membership to someone.', icon: '🎁', category: 'economy', tier: 'gold', coinReward: 50, target: 1 },
   { id: 'economy.first_wheel', name: 'Spin to Win', description: 'Spin the daily coin wheel.', icon: '🎡', category: 'economy', tier: 'bronze', coinReward: 0, target: 1 },
   { id: 'economy.shop_collector', name: 'Fashionista', description: 'Own 10 shop items.', icon: '👗', category: 'economy', tier: 'gold', coinReward: 0, target: 10 },
 
