@@ -150,6 +150,11 @@ model User {
   giftMembershipsReceived GiftMembership[] @relation("GiftRecipient")
   giftMembershipsSent     GiftMembership[] @relation("GiftGifter")
 
+  // Group DMs
+  groupChatsOwned   GroupChat[]       @relation("GroupOwner")
+  groupMemberships  GroupChatMember[]
+  groupMessages     GroupMessage[]
+
   // Economy: shop inventory, coin ledger (tips/gifts)
   inventory       UserInventory[]
   coinsSent       CoinTransaction[] @relation("CoinSender")
@@ -1621,6 +1626,50 @@ model GiftMembership {
 
   @@index([userId, expiresAt])
   @@map("gift_membership")
+}
+
+/// A group direct-message thread (#15). Distinct from 1-on-1 Conversations.
+model GroupChat {
+  id            String   @id @default(cuid())
+  name          String   @db.VarChar(60)
+  ownerId       String
+  lastMessageAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  owner    User              @relation("GroupOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members  GroupChatMember[]
+  messages GroupMessage[]
+
+  @@map("group_chat")
+}
+
+model GroupChatMember {
+  id         String   @id @default(cuid())
+  groupId    String
+  userId     String
+  lastReadAt DateTime @default(now())
+  joinedAt   DateTime @default(now())
+
+  group GroupChat @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@index([userId])
+  @@map("group_chat_member")
+}
+
+model GroupMessage {
+  id        String   @id @default(cuid())
+  groupId   String
+  senderId  String
+  content   String   @db.VarChar(2000)
+  createdAt DateTime @default(now())
+
+  group  GroupChat @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  sender User      @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([groupId, createdAt])
+  @@map("group_message")
 }
 
 model BuildVersion {

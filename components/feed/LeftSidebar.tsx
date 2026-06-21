@@ -235,6 +235,21 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
             <span className={labelClass}>Messages</span>
           </Link>
         )}
+        {/* Group chats link (shown when logged in) */}
+        {session && (
+          <Link
+            to="/groups"
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${itemJustifyClass} ${
+              pathname?.startsWith('/groups')
+                ? 'text-site-accent bg-site-accent-dim'
+                : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
+            }`}
+            title="Group chats"
+          >
+            <Users className="w-5 h-5 shrink-0" />
+            <span className={labelClass}>Groups</span>
+          </Link>
+        )}
         {/* Wallet link (shown when logged in, below Messages) */}
         {session && (
           <Link
