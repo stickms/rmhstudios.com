@@ -164,6 +164,10 @@ model User {
   rmhtubeSubscriptions RmhTubeSubscription[] @relation("TubeSubscriber")
   rmhtubeSubscribers   RmhTubeSubscription[] @relation("TubeChannel")
 
+  // RMHMusic "guess the song" game
+  musicPuzzles       MusicGuessPuzzle[]
+  musicGuessAttempts MusicGuessAttempt[]
+
   // Economy: shop inventory, coin ledger (tips/gifts)
   inventory       UserInventory[]
   coinsSent       CoinTransaction[] @relation("CoinSender")
@@ -1491,6 +1495,43 @@ model RmhMusicChatMessage {
 
   @@index([roomId, createdAt(sort: Desc)])
   @@map("rmh_music_chat_message")
+}
+
+/// "Guess the song" puzzle (#33). Players reveal progressive text hints and
+/// guess the title; needs no external audio. Answers are matched leniently
+/// against `acceptedAnswers`.
+model MusicGuessPuzzle {
+  id              String   @id @default(cuid())
+  authorId        String
+  title           String   @db.VarChar(160) // canonical answer (song title)
+  artist          String   @db.VarChar(160)
+  hints           Json // ordered array of hint strings
+  acceptedAnswers Json // lowercased acceptable answers
+  plays           Int      @default(0)
+  solves          Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  author   User                @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  attempts MusicGuessAttempt[]
+
+  @@index([createdAt(sort: Desc)])
+  @@map("music_guess_puzzle")
+}
+
+model MusicGuessAttempt {
+  id        String   @id @default(cuid())
+  puzzleId  String
+  userId    String
+  solved    Boolean  @default(false)
+  hintsUsed Int      @default(0)
+  createdAt DateTime @default(now())
+
+  puzzle MusicGuessPuzzle @relation(fields: [puzzleId], references: [id], onDelete: Cascade)
+  user   User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([puzzleId, userId])
+  @@index([userId])
+  @@map("music_guess_attempt")
 }
 
 // ─── DM Privacy ───────────────────────────────────────────────────

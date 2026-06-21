@@ -131,6 +131,7 @@ import { Route as SiteQuotesRouteImport } from './routes/_site/quotes'
 import { Route as SiteProgressRouteImport } from './routes/_site/progress'
 import { Route as SitePricingRouteImport } from './routes/_site/pricing'
 import { Route as SiteNotificationsRouteImport } from './routes/_site/notifications'
+import { Route as SiteMusicTriviaRouteImport } from './routes/_site/music-trivia'
 import { Route as SiteExploreRouteImport } from './routes/_site/explore'
 import { Route as SiteDraftsRouteImport } from './routes/_site/drafts'
 import { Route as SiteCommunitiesRouteImport } from './routes/_site/communities'
@@ -301,6 +302,7 @@ import { Route as SiteAdminAnalyticsRouteImport } from './routes/_site/admin/ana
 import { Route as ApiStudyDecksIndexRouteImport } from './routes/api/study/decks/index'
 import { Route as ApiStorefrontProductsIndexRouteImport } from './routes/api/storefront/products/index'
 import { Route as ApiRmhtubeClipsIndexRouteImport } from './routes/api/rmhtube/clips/index'
+import { Route as ApiRmhmusicGuessIndexRouteImport } from './routes/api/rmhmusic/guess/index'
 import { Route as ApiPersonasIdIndexRouteImport } from './routes/api/personas/$id/index'
 import { Route as ApiGroupChatsIdIndexRouteImport } from './routes/api/group-chats/$id/index'
 import { Route as ApiDoctrineReputationIndexRouteImport } from './routes/api/doctrine/reputation/index'
@@ -384,6 +386,7 @@ import { Route as ApiAdminAnnouncementsIdRouteImport } from './routes/api/admin/
 import { Route as SiteAdminBlogNewRouteImport } from './routes/_site/admin/blog/new'
 import { Route as ApiStudyDecksIdIndexRouteImport } from './routes/api/study/decks/$id/index'
 import { Route as ApiStorefrontProductsIdIndexRouteImport } from './routes/api/storefront/products/$id/index'
+import { Route as ApiRmhmusicGuessIdIndexRouteImport } from './routes/api/rmhmusic/guess/$id/index'
 import { Route as ApiStudyDecksIdReviewRouteImport } from './routes/api/study/decks/$id/review'
 import { Route as ApiStudyCardsIdReviewRouteImport } from './routes/api/study/cards/$id/review'
 import { Route as ApiStorefrontProductsIdBuyRouteImport } from './routes/api/storefront/products/$id/buy'
@@ -393,6 +396,7 @@ import { Route as ApiSliceItSongsIdPlayRouteImport } from './routes/api/slice-it
 import { Route as ApiSliceItSongsIdPatchAnalysisRouteImport } from './routes/api/slice-it/songs/$id/patch-analysis'
 import { Route as ApiSliceItSongsIdLikeRouteImport } from './routes/api/slice-it/songs/$id/like'
 import { Route as ApiSliceItSongsIdCommentsRouteImport } from './routes/api/slice-it/songs/$id/comments'
+import { Route as ApiRmhmusicGuessIdAttemptRouteImport } from './routes/api/rmhmusic/guess/$id/attempt'
 import { Route as ApiRmharksIdCommentCommentIdRouteImport } from './routes/api/rmharks/$id/comment/$commentId'
 import { Route as ApiAdminUsersIdStrikeRouteImport } from './routes/api/admin/users/$id/strike'
 import { Route as ApiAdminUsersIdBanRouteImport } from './routes/api/admin/users/$id/ban'
@@ -1011,6 +1015,11 @@ const SitePricingRoute = SitePricingRouteImport.update({
 const SiteNotificationsRoute = SiteNotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteMusicTriviaRoute = SiteMusicTriviaRouteImport.update({
+  id: '/music-trivia',
+  path: '/music-trivia',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteExploreRoute = SiteExploreRouteImport.update({
@@ -1881,6 +1890,11 @@ const ApiRmhtubeClipsIndexRoute = ApiRmhtubeClipsIndexRouteImport.update({
   path: '/api/rmhtube/clips/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRmhmusicGuessIndexRoute = ApiRmhmusicGuessIndexRouteImport.update({
+  id: '/api/rmhmusic/guess/',
+  path: '/api/rmhmusic/guess/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPersonasIdIndexRoute = ApiPersonasIdIndexRouteImport.update({
   id: '/api/personas/$id/',
   path: '/api/personas/$id/',
@@ -2322,6 +2336,11 @@ const ApiStorefrontProductsIdIndexRoute =
     path: '/api/storefront/products/$id/',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiRmhmusicGuessIdIndexRoute = ApiRmhmusicGuessIdIndexRouteImport.update({
+  id: '/api/rmhmusic/guess/$id/',
+  path: '/api/rmhmusic/guess/$id/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiStudyDecksIdReviewRoute = ApiStudyDecksIdReviewRouteImport.update({
   id: '/api/study/decks/$id/review',
   path: '/api/study/decks/$id/review',
@@ -2370,6 +2389,12 @@ const ApiSliceItSongsIdCommentsRoute =
     id: '/comments',
     path: '/comments',
     getParentRoute: () => ApiSliceItSongsIdRoute,
+  } as any)
+const ApiRmhmusicGuessIdAttemptRoute =
+  ApiRmhmusicGuessIdAttemptRouteImport.update({
+    id: '/api/rmhmusic/guess/$id/attempt',
+    path: '/api/rmhmusic/guess/$id/attempt',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const ApiRmharksIdCommentCommentIdRoute =
   ApiRmharksIdCommentCommentIdRouteImport.update({
@@ -2467,6 +2492,7 @@ export interface FileRoutesByFullPath {
   '/communities': typeof SiteCommunitiesRoute
   '/drafts': typeof SiteDraftsRoute
   '/explore': typeof SiteExploreRoute
+  '/music-trivia': typeof SiteMusicTriviaRoute
   '/notifications': typeof SiteNotificationsRoute
   '/pricing': typeof SitePricingRoute
   '/progress': typeof SiteProgressRoute
@@ -2798,6 +2824,7 @@ export interface FileRoutesByFullPath {
   '/api/doctrine/reputation/': typeof ApiDoctrineReputationIndexRoute
   '/api/group-chats/$id/': typeof ApiGroupChatsIdIndexRoute
   '/api/personas/$id/': typeof ApiPersonasIdIndexRoute
+  '/api/rmhmusic/guess/': typeof ApiRmhmusicGuessIndexRoute
   '/api/rmhtube/clips/': typeof ApiRmhtubeClipsIndexRoute
   '/api/storefront/products/': typeof ApiStorefrontProductsIndexRoute
   '/api/study/decks/': typeof ApiStudyDecksIndexRoute
@@ -2808,6 +2835,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/users/$id/ban': typeof ApiAdminUsersIdBanRoute
   '/api/admin/users/$id/strike': typeof ApiAdminUsersIdStrikeRoute
   '/api/rmharks/$id/comment/$commentId': typeof ApiRmharksIdCommentCommentIdRouteWithChildren
+  '/api/rmhmusic/guess/$id/attempt': typeof ApiRmhmusicGuessIdAttemptRoute
   '/api/slice-it/songs/$id/comments': typeof ApiSliceItSongsIdCommentsRoute
   '/api/slice-it/songs/$id/like': typeof ApiSliceItSongsIdLikeRoute
   '/api/slice-it/songs/$id/patch-analysis': typeof ApiSliceItSongsIdPatchAnalysisRoute
@@ -2817,6 +2845,7 @@ export interface FileRoutesByFullPath {
   '/api/storefront/products/$id/buy': typeof ApiStorefrontProductsIdBuyRoute
   '/api/study/cards/$id/review': typeof ApiStudyCardsIdReviewRoute
   '/api/study/decks/$id/review': typeof ApiStudyDecksIdReviewRoute
+  '/api/rmhmusic/guess/$id/': typeof ApiRmhmusicGuessIdIndexRoute
   '/api/storefront/products/$id/': typeof ApiStorefrontProductsIdIndexRoute
   '/api/study/decks/$id/': typeof ApiStudyDecksIdIndexRoute
   '/api/rmharks/$id/comment/$commentId/like': typeof ApiRmharksIdCommentCommentIdLikeRoute
@@ -2843,6 +2872,7 @@ export interface FileRoutesByTo {
   '/communities': typeof SiteCommunitiesRoute
   '/drafts': typeof SiteDraftsRoute
   '/explore': typeof SiteExploreRoute
+  '/music-trivia': typeof SiteMusicTriviaRoute
   '/notifications': typeof SiteNotificationsRoute
   '/pricing': typeof SitePricingRoute
   '/progress': typeof SiteProgressRoute
@@ -3170,6 +3200,7 @@ export interface FileRoutesByTo {
   '/api/doctrine/reputation': typeof ApiDoctrineReputationIndexRoute
   '/api/group-chats/$id': typeof ApiGroupChatsIdIndexRoute
   '/api/personas/$id': typeof ApiPersonasIdIndexRoute
+  '/api/rmhmusic/guess': typeof ApiRmhmusicGuessIndexRoute
   '/api/rmhtube/clips': typeof ApiRmhtubeClipsIndexRoute
   '/api/storefront/products': typeof ApiStorefrontProductsIndexRoute
   '/api/study/decks': typeof ApiStudyDecksIndexRoute
@@ -3180,6 +3211,7 @@ export interface FileRoutesByTo {
   '/api/admin/users/$id/ban': typeof ApiAdminUsersIdBanRoute
   '/api/admin/users/$id/strike': typeof ApiAdminUsersIdStrikeRoute
   '/api/rmharks/$id/comment/$commentId': typeof ApiRmharksIdCommentCommentIdRouteWithChildren
+  '/api/rmhmusic/guess/$id/attempt': typeof ApiRmhmusicGuessIdAttemptRoute
   '/api/slice-it/songs/$id/comments': typeof ApiSliceItSongsIdCommentsRoute
   '/api/slice-it/songs/$id/like': typeof ApiSliceItSongsIdLikeRoute
   '/api/slice-it/songs/$id/patch-analysis': typeof ApiSliceItSongsIdPatchAnalysisRoute
@@ -3189,6 +3221,7 @@ export interface FileRoutesByTo {
   '/api/storefront/products/$id/buy': typeof ApiStorefrontProductsIdBuyRoute
   '/api/study/cards/$id/review': typeof ApiStudyCardsIdReviewRoute
   '/api/study/decks/$id/review': typeof ApiStudyDecksIdReviewRoute
+  '/api/rmhmusic/guess/$id': typeof ApiRmhmusicGuessIdIndexRoute
   '/api/storefront/products/$id': typeof ApiStorefrontProductsIdIndexRoute
   '/api/study/decks/$id': typeof ApiStudyDecksIdIndexRoute
   '/api/rmharks/$id/comment/$commentId/like': typeof ApiRmharksIdCommentCommentIdLikeRoute
@@ -3235,6 +3268,7 @@ export interface FileRoutesById {
   '/_site/communities': typeof SiteCommunitiesRoute
   '/_site/drafts': typeof SiteDraftsRoute
   '/_site/explore': typeof SiteExploreRoute
+  '/_site/music-trivia': typeof SiteMusicTriviaRoute
   '/_site/notifications': typeof SiteNotificationsRoute
   '/_site/pricing': typeof SitePricingRoute
   '/_site/progress': typeof SiteProgressRoute
@@ -3567,6 +3601,7 @@ export interface FileRoutesById {
   '/api/doctrine/reputation/': typeof ApiDoctrineReputationIndexRoute
   '/api/group-chats/$id/': typeof ApiGroupChatsIdIndexRoute
   '/api/personas/$id/': typeof ApiPersonasIdIndexRoute
+  '/api/rmhmusic/guess/': typeof ApiRmhmusicGuessIndexRoute
   '/api/rmhtube/clips/': typeof ApiRmhtubeClipsIndexRoute
   '/api/storefront/products/': typeof ApiStorefrontProductsIndexRoute
   '/api/study/decks/': typeof ApiStudyDecksIndexRoute
@@ -3577,6 +3612,7 @@ export interface FileRoutesById {
   '/api/admin/users/$id/ban': typeof ApiAdminUsersIdBanRoute
   '/api/admin/users/$id/strike': typeof ApiAdminUsersIdStrikeRoute
   '/api/rmharks/$id/comment/$commentId': typeof ApiRmharksIdCommentCommentIdRouteWithChildren
+  '/api/rmhmusic/guess/$id/attempt': typeof ApiRmhmusicGuessIdAttemptRoute
   '/api/slice-it/songs/$id/comments': typeof ApiSliceItSongsIdCommentsRoute
   '/api/slice-it/songs/$id/like': typeof ApiSliceItSongsIdLikeRoute
   '/api/slice-it/songs/$id/patch-analysis': typeof ApiSliceItSongsIdPatchAnalysisRoute
@@ -3586,6 +3622,7 @@ export interface FileRoutesById {
   '/api/storefront/products/$id/buy': typeof ApiStorefrontProductsIdBuyRoute
   '/api/study/cards/$id/review': typeof ApiStudyCardsIdReviewRoute
   '/api/study/decks/$id/review': typeof ApiStudyDecksIdReviewRoute
+  '/api/rmhmusic/guess/$id/': typeof ApiRmhmusicGuessIdIndexRoute
   '/api/storefront/products/$id/': typeof ApiStorefrontProductsIdIndexRoute
   '/api/study/decks/$id/': typeof ApiStudyDecksIdIndexRoute
   '/api/rmharks/$id/comment/$commentId/like': typeof ApiRmharksIdCommentCommentIdLikeRoute
@@ -3633,6 +3670,7 @@ export interface FileRouteTypes {
     | '/communities'
     | '/drafts'
     | '/explore'
+    | '/music-trivia'
     | '/notifications'
     | '/pricing'
     | '/progress'
@@ -3964,6 +4002,7 @@ export interface FileRouteTypes {
     | '/api/doctrine/reputation/'
     | '/api/group-chats/$id/'
     | '/api/personas/$id/'
+    | '/api/rmhmusic/guess/'
     | '/api/rmhtube/clips/'
     | '/api/storefront/products/'
     | '/api/study/decks/'
@@ -3974,6 +4013,7 @@ export interface FileRouteTypes {
     | '/api/admin/users/$id/ban'
     | '/api/admin/users/$id/strike'
     | '/api/rmharks/$id/comment/$commentId'
+    | '/api/rmhmusic/guess/$id/attempt'
     | '/api/slice-it/songs/$id/comments'
     | '/api/slice-it/songs/$id/like'
     | '/api/slice-it/songs/$id/patch-analysis'
@@ -3983,6 +4023,7 @@ export interface FileRouteTypes {
     | '/api/storefront/products/$id/buy'
     | '/api/study/cards/$id/review'
     | '/api/study/decks/$id/review'
+    | '/api/rmhmusic/guess/$id/'
     | '/api/storefront/products/$id/'
     | '/api/study/decks/$id/'
     | '/api/rmharks/$id/comment/$commentId/like'
@@ -4009,6 +4050,7 @@ export interface FileRouteTypes {
     | '/communities'
     | '/drafts'
     | '/explore'
+    | '/music-trivia'
     | '/notifications'
     | '/pricing'
     | '/progress'
@@ -4336,6 +4378,7 @@ export interface FileRouteTypes {
     | '/api/doctrine/reputation'
     | '/api/group-chats/$id'
     | '/api/personas/$id'
+    | '/api/rmhmusic/guess'
     | '/api/rmhtube/clips'
     | '/api/storefront/products'
     | '/api/study/decks'
@@ -4346,6 +4389,7 @@ export interface FileRouteTypes {
     | '/api/admin/users/$id/ban'
     | '/api/admin/users/$id/strike'
     | '/api/rmharks/$id/comment/$commentId'
+    | '/api/rmhmusic/guess/$id/attempt'
     | '/api/slice-it/songs/$id/comments'
     | '/api/slice-it/songs/$id/like'
     | '/api/slice-it/songs/$id/patch-analysis'
@@ -4355,6 +4399,7 @@ export interface FileRouteTypes {
     | '/api/storefront/products/$id/buy'
     | '/api/study/cards/$id/review'
     | '/api/study/decks/$id/review'
+    | '/api/rmhmusic/guess/$id'
     | '/api/storefront/products/$id'
     | '/api/study/decks/$id'
     | '/api/rmharks/$id/comment/$commentId/like'
@@ -4400,6 +4445,7 @@ export interface FileRouteTypes {
     | '/_site/communities'
     | '/_site/drafts'
     | '/_site/explore'
+    | '/_site/music-trivia'
     | '/_site/notifications'
     | '/_site/pricing'
     | '/_site/progress'
@@ -4732,6 +4778,7 @@ export interface FileRouteTypes {
     | '/api/doctrine/reputation/'
     | '/api/group-chats/$id/'
     | '/api/personas/$id/'
+    | '/api/rmhmusic/guess/'
     | '/api/rmhtube/clips/'
     | '/api/storefront/products/'
     | '/api/study/decks/'
@@ -4742,6 +4789,7 @@ export interface FileRouteTypes {
     | '/api/admin/users/$id/ban'
     | '/api/admin/users/$id/strike'
     | '/api/rmharks/$id/comment/$commentId'
+    | '/api/rmhmusic/guess/$id/attempt'
     | '/api/slice-it/songs/$id/comments'
     | '/api/slice-it/songs/$id/like'
     | '/api/slice-it/songs/$id/patch-analysis'
@@ -4751,6 +4799,7 @@ export interface FileRouteTypes {
     | '/api/storefront/products/$id/buy'
     | '/api/study/cards/$id/review'
     | '/api/study/decks/$id/review'
+    | '/api/rmhmusic/guess/$id/'
     | '/api/storefront/products/$id/'
     | '/api/study/decks/$id/'
     | '/api/rmharks/$id/comment/$commentId/like'
@@ -4961,12 +5010,15 @@ export interface RootRouteChildren {
   ApiDoctrineReputationIndexRoute: typeof ApiDoctrineReputationIndexRoute
   ApiGroupChatsIdIndexRoute: typeof ApiGroupChatsIdIndexRoute
   ApiPersonasIdIndexRoute: typeof ApiPersonasIdIndexRoute
+  ApiRmhmusicGuessIndexRoute: typeof ApiRmhmusicGuessIndexRoute
   ApiRmhtubeClipsIndexRoute: typeof ApiRmhtubeClipsIndexRoute
   ApiStorefrontProductsIndexRoute: typeof ApiStorefrontProductsIndexRoute
   ApiStudyDecksIndexRoute: typeof ApiStudyDecksIndexRoute
+  ApiRmhmusicGuessIdAttemptRoute: typeof ApiRmhmusicGuessIdAttemptRoute
   ApiStorefrontProductsIdBuyRoute: typeof ApiStorefrontProductsIdBuyRoute
   ApiStudyCardsIdReviewRoute: typeof ApiStudyCardsIdReviewRoute
   ApiStudyDecksIdReviewRoute: typeof ApiStudyDecksIdReviewRoute
+  ApiRmhmusicGuessIdIndexRoute: typeof ApiRmhmusicGuessIdIndexRoute
   ApiStorefrontProductsIdIndexRoute: typeof ApiStorefrontProductsIdIndexRoute
   ApiStudyDecksIdIndexRoute: typeof ApiStudyDecksIdIndexRoute
 }
@@ -5825,6 +5877,13 @@ declare module '@tanstack/react-router' {
       path: '/notifications'
       fullPath: '/notifications'
       preLoaderRoute: typeof SiteNotificationsRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/music-trivia': {
+      id: '/_site/music-trivia'
+      path: '/music-trivia'
+      fullPath: '/music-trivia'
+      preLoaderRoute: typeof SiteMusicTriviaRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/explore': {
@@ -7017,6 +7076,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRmhtubeClipsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/rmhmusic/guess/': {
+      id: '/api/rmhmusic/guess/'
+      path: '/api/rmhmusic/guess'
+      fullPath: '/api/rmhmusic/guess/'
+      preLoaderRoute: typeof ApiRmhmusicGuessIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/personas/$id/': {
       id: '/api/personas/$id/'
       path: '/api/personas/$id'
@@ -7598,6 +7664,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiStorefrontProductsIdIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/rmhmusic/guess/$id/': {
+      id: '/api/rmhmusic/guess/$id/'
+      path: '/api/rmhmusic/guess/$id'
+      fullPath: '/api/rmhmusic/guess/$id/'
+      preLoaderRoute: typeof ApiRmhmusicGuessIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/study/decks/$id/review': {
       id: '/api/study/decks/$id/review'
       path: '/api/study/decks/$id/review'
@@ -7660,6 +7733,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/slice-it/songs/$id/comments'
       preLoaderRoute: typeof ApiSliceItSongsIdCommentsRouteImport
       parentRoute: typeof ApiSliceItSongsIdRoute
+    }
+    '/api/rmhmusic/guess/$id/attempt': {
+      id: '/api/rmhmusic/guess/$id/attempt'
+      path: '/api/rmhmusic/guess/$id/attempt'
+      fullPath: '/api/rmhmusic/guess/$id/attempt'
+      preLoaderRoute: typeof ApiRmhmusicGuessIdAttemptRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/rmharks/$id/comment/$commentId': {
       id: '/api/rmharks/$id/comment/$commentId'
@@ -7772,6 +7852,7 @@ interface SiteRouteChildren {
   SiteCommunitiesRoute: typeof SiteCommunitiesRoute
   SiteDraftsRoute: typeof SiteDraftsRoute
   SiteExploreRoute: typeof SiteExploreRoute
+  SiteMusicTriviaRoute: typeof SiteMusicTriviaRoute
   SiteNotificationsRoute: typeof SiteNotificationsRoute
   SitePricingRoute: typeof SitePricingRoute
   SiteProgressRoute: typeof SiteProgressRoute
@@ -7820,6 +7901,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteCommunitiesRoute: SiteCommunitiesRoute,
   SiteDraftsRoute: SiteDraftsRoute,
   SiteExploreRoute: SiteExploreRoute,
+  SiteMusicTriviaRoute: SiteMusicTriviaRoute,
   SiteNotificationsRoute: SiteNotificationsRoute,
   SitePricingRoute: SitePricingRoute,
   SiteProgressRoute: SiteProgressRoute,
@@ -8720,12 +8802,15 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDoctrineReputationIndexRoute: ApiDoctrineReputationIndexRoute,
   ApiGroupChatsIdIndexRoute: ApiGroupChatsIdIndexRoute,
   ApiPersonasIdIndexRoute: ApiPersonasIdIndexRoute,
+  ApiRmhmusicGuessIndexRoute: ApiRmhmusicGuessIndexRoute,
   ApiRmhtubeClipsIndexRoute: ApiRmhtubeClipsIndexRoute,
   ApiStorefrontProductsIndexRoute: ApiStorefrontProductsIndexRoute,
   ApiStudyDecksIndexRoute: ApiStudyDecksIndexRoute,
+  ApiRmhmusicGuessIdAttemptRoute: ApiRmhmusicGuessIdAttemptRoute,
   ApiStorefrontProductsIdBuyRoute: ApiStorefrontProductsIdBuyRoute,
   ApiStudyCardsIdReviewRoute: ApiStudyCardsIdReviewRoute,
   ApiStudyDecksIdReviewRoute: ApiStudyDecksIdReviewRoute,
+  ApiRmhmusicGuessIdIndexRoute: ApiRmhmusicGuessIdIndexRoute,
   ApiStorefrontProductsIdIndexRoute: ApiStorefrontProductsIdIndexRoute,
   ApiStudyDecksIdIndexRoute: ApiStudyDecksIdIndexRoute,
 }
