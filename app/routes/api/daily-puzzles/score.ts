@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { prisma } from '@/lib/prisma.server';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { recordGamePlay } from '@/lib/quests/engine.server';
 
 const VALID_MODES = ['lights-out', 'alibi', 'spectrum', 'outcast', 'chainlink', 'impostor'];
 
@@ -58,6 +59,8 @@ export const Route = createFileRoute('/api/daily-puzzles/score')({
                         if (!dnf && (Number.isNaN(moves) || moves < 1 || moves > 999)) {
                             return Response.json({ error: 'Invalid moves' }, { status: 400 });
                         }
+
+                        await recordGamePlay(session.user.id);
 
                         const existing = await prisma.dailyPuzzleScore.findUnique({
                             where: {
@@ -119,6 +122,8 @@ export const Route = createFileRoute('/api/daily-puzzles/score')({
                     if (typeof score !== 'number' || score < 0 || score > 999) {
                         return Response.json({ error: 'Invalid score' }, { status: 400 });
                     }
+
+                    await recordGamePlay(session.user.id);
 
                     const existing = await prisma.dailyPuzzleScore.findUnique({
                         where: {

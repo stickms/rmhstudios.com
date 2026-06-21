@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { prisma } from '@/lib/prisma.server';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { recordGamePlay } from '@/lib/quests/engine.server';
 
 const DIFFICULTY_FIELDS = {
   easy: 'highScoreEasy',
@@ -75,6 +76,7 @@ export const Route = createFileRoute('/api/dream-rift/score')({
           username: cleanUsername,
         },
       });
+      await recordGamePlay(userId);
       return Response.json({ success: true, linked: true });
     }
 
@@ -97,6 +99,7 @@ export const Route = createFileRoute('/api/dream-rift/score')({
         spellsCaptured: safeSpells,
       },
     });
+    await recordGamePlay(userId);
     return Response.json({ success: true, created: true });
   } catch (e) {
     console.error('Failed to submit dream-rift score:', e);

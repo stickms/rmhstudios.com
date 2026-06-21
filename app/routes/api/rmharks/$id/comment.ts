@@ -8,6 +8,8 @@ import { feedEventBus } from "@/lib/feed-sse";
 import { createNotification } from "@/lib/notifications.server";
 import { grantAchievement } from "@/lib/achievements/engine.server";
 import { getActiveBan } from "@/lib/admin-audit.server";
+import { awardXp } from "@/lib/xp/engine.server";
+import { progressQuests } from "@/lib/quests/engine.server";
 
 export const Route = createFileRoute('/api/rmharks/$id/comment')({
   server: {
@@ -214,6 +216,8 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
     }
 
     await grantAchievement(session.user.id, "social.first_comment");
+    await awardXp(session.user.id, 10);
+    await progressQuests(session.user.id, "comment");
 
     return Response.json({
       ...comment,

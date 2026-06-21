@@ -10,6 +10,8 @@ import { parseHandles } from "@/lib/feed/mentions";
 import { createNotification } from "@/lib/notifications.server";
 import { grantAchievement, progressAchievement } from "@/lib/achievements/engine.server";
 import { getActiveBan } from "@/lib/admin-audit.server";
+import { awardXp } from "@/lib/xp/engine.server";
+import { progressQuests } from "@/lib/quests/engine.server";
 import { getTimeline, type FeedSurface } from "@/lib/feed/timeline";
 import { ownsFeedImageUrl } from "@/lib/storage/keys";
 
@@ -319,6 +321,12 @@ export const Route = createFileRoute('/api/rmharks')({
       await progressAchievement(session.user.id, "social.posts_100", { setProgress: count });
       const hour = new Date().getHours();
       if (hour >= 2 && hour < 5) await grantAchievement(session.user.id, "special.night_owl");
+      if (poll) await grantAchievement(session.user.id, "social.first_poll");
+      if (originalId) await grantAchievement(session.user.id, "social.first_quote");
+      if (unlockPrice && unlockPrice > 0) await grantAchievement(session.user.id, "creator.first_paid_post");
+      // Progression: XP + quests for posting.
+      await awardXp(session.user.id, 25);
+      await progressQuests(session.user.id, "post");
     } catch (e) {
       console.error("post achievement error:", e);
     }

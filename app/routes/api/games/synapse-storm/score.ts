@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { prisma } from '@/lib/prisma.server';
 import { auth } from '@/lib/auth';
+import { recordGamePlay } from '@/lib/quests/engine.server';
 
 export const Route = createFileRoute('/api/games/synapse-storm/score')({
   server: {
@@ -45,6 +46,7 @@ export const Route = createFileRoute('/api/games/synapse-storm/score')({
             },
         });
 
+        await recordGamePlay(session.user.id);
         return Response.json(player);
     } catch (error) {
         console.error('Error saving Synapse Storm score:', error);

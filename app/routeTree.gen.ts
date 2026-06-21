@@ -108,6 +108,7 @@ import { Route as ApiStreakRouteImport } from './routes/api/streak'
 import { Route as ApiSearchRouteImport } from './routes/api/search'
 import { Route as ApiRmharksRouteImport } from './routes/api/rmharks'
 import { Route as ApiRecapRouteImport } from './routes/api/recap'
+import { Route as ApiProgressRouteImport } from './routes/api/progress'
 import { Route as ApiProfileRouteImport } from './routes/api/profile'
 import { Route as ApiOembedRouteImport } from './routes/api/oembed'
 import { Route as ApiMessagesRouteImport } from './routes/api/messages'
@@ -123,6 +124,7 @@ import { Route as SiteSearchRouteImport } from './routes/_site/search'
 import { Route as SiteRoadmapRouteImport } from './routes/_site/roadmap'
 import { Route as SiteRecapRouteImport } from './routes/_site/recap'
 import { Route as SiteQuotesRouteImport } from './routes/_site/quotes'
+import { Route as SiteProgressRouteImport } from './routes/_site/progress'
 import { Route as SitePricingRouteImport } from './routes/_site/pricing'
 import { Route as SiteNotificationsRouteImport } from './routes/_site/notifications'
 import { Route as SiteExploreRouteImport } from './routes/_site/explore'
@@ -142,6 +144,7 @@ import { Route as ApiShopIndexRouteImport } from './routes/api/shop/index'
 import { Route as ApiNotificationsIndexRouteImport } from './routes/api/notifications/index'
 import { Route as ApiCommunitiesIndexRouteImport } from './routes/api/communities/index'
 import { Route as ApiCoinsIndexRouteImport } from './routes/api/coins/index'
+import { Route as ApiBattlepassIndexRouteImport } from './routes/api/battlepass/index'
 import { Route as AltairMultiplayerIndexRouteImport } from './routes/altair/multiplayer/index'
 import { Route as SiteVIndexRouteImport } from './routes/_site/v/index'
 import { Route as SiteUserBuildsIndexRouteImport } from './routes/_site/user-builds/index'
@@ -237,6 +240,8 @@ import { Route as ApiCoinsTipRouteImport } from './routes/api/coins/tip'
 import { Route as ApiCoinsPurchaseRouteImport } from './routes/api/coins/purchase'
 import { Route as ApiCoinsClaimRouteImport } from './routes/api/coins/claim'
 import { Route as ApiCoinsBetRouteImport } from './routes/api/coins/bet'
+import { Route as ApiBattlepassUnlockRouteImport } from './routes/api/battlepass/unlock'
+import { Route as ApiBattlepassClaimRouteImport } from './routes/api/battlepass/claim'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiAltairScoreRouteImport } from './routes/api/altair/score'
 import { Route as ApiAltairMetaRouteImport } from './routes/api/altair/meta'
@@ -295,6 +300,7 @@ import { Route as ApiRmharksIdPinRouteImport } from './routes/api/rmharks/$id/pi
 import { Route as ApiRmharksIdLikeRouteImport } from './routes/api/rmharks/$id/like'
 import { Route as ApiRmharksIdCommentRouteImport } from './routes/api/rmharks/$id/comment'
 import { Route as ApiRmharksIdBookmarkRouteImport } from './routes/api/rmharks/$id/bookmark'
+import { Route as ApiQuestsIdClaimRouteImport } from './routes/api/quests/$id/claim'
 import { Route as ApiProfileAvatarFilenameRouteImport } from './routes/api/profile/avatar/$filename'
 import { Route as ApiProfileIdRmharksRouteImport } from './routes/api/profile/$id/rmharks'
 import { Route as ApiProfileIdLikesRouteImport } from './routes/api/profile/$id/likes'
@@ -839,6 +845,11 @@ const ApiRecapRoute = ApiRecapRouteImport.update({
   path: '/api/recap',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiProgressRoute = ApiProgressRouteImport.update({
+  id: '/api/progress',
+  path: '/api/progress',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiProfileRoute = ApiProfileRouteImport.update({
   id: '/api/profile',
   path: '/api/profile',
@@ -912,6 +923,11 @@ const SiteRecapRoute = SiteRecapRouteImport.update({
 const SiteQuotesRoute = SiteQuotesRouteImport.update({
   id: '/quotes',
   path: '/quotes',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteProgressRoute = SiteProgressRouteImport.update({
+  id: '/progress',
+  path: '/progress',
   getParentRoute: () => SiteRoute,
 } as any)
 const SitePricingRoute = SitePricingRouteImport.update({
@@ -1008,6 +1024,11 @@ const ApiCommunitiesIndexRoute = ApiCommunitiesIndexRouteImport.update({
 const ApiCoinsIndexRoute = ApiCoinsIndexRouteImport.update({
   id: '/api/coins/',
   path: '/api/coins/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiBattlepassIndexRoute = ApiBattlepassIndexRouteImport.update({
+  id: '/api/battlepass/',
+  path: '/api/battlepass/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AltairMultiplayerIndexRoute = AltairMultiplayerIndexRouteImport.update({
@@ -1499,6 +1520,16 @@ const ApiCoinsBetRoute = ApiCoinsBetRouteImport.update({
   path: '/api/coins/bet',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiBattlepassUnlockRoute = ApiBattlepassUnlockRouteImport.update({
+  id: '/api/battlepass/unlock',
+  path: '/api/battlepass/unlock',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiBattlepassClaimRoute = ApiBattlepassClaimRouteImport.update({
+  id: '/api/battlepass/claim',
+  path: '/api/battlepass/claim',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -1794,6 +1825,11 @@ const ApiRmharksIdBookmarkRoute = ApiRmharksIdBookmarkRouteImport.update({
   id: '/bookmark',
   path: '/bookmark',
   getParentRoute: () => ApiRmharksIdRoute,
+} as any)
+const ApiQuestsIdClaimRoute = ApiQuestsIdClaimRouteImport.update({
+  id: '/api/quests/$id/claim',
+  path: '/api/quests/$id/claim',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiProfileAvatarFilenameRoute =
   ApiProfileAvatarFilenameRouteImport.update({
@@ -2107,6 +2143,7 @@ export interface FileRoutesByFullPath {
   '/explore': typeof SiteExploreRoute
   '/notifications': typeof SiteNotificationsRoute
   '/pricing': typeof SitePricingRoute
+  '/progress': typeof SiteProgressRoute
   '/quotes': typeof SiteQuotesRoute
   '/recap': typeof SiteRecapRoute
   '/roadmap': typeof SiteRoadmapRoute
@@ -2122,6 +2159,7 @@ export interface FileRoutesByFullPath {
   '/api/messages': typeof ApiMessagesRouteWithChildren
   '/api/oembed': typeof ApiOembedRoute
   '/api/profile': typeof ApiProfileRouteWithChildren
+  '/api/progress': typeof ApiProgressRoute
   '/api/recap': typeof ApiRecapRoute
   '/api/rmharks': typeof ApiRmharksRouteWithChildren
   '/api/search': typeof ApiSearchRoute
@@ -2217,6 +2255,8 @@ export interface FileRoutesByFullPath {
   '/api/altair/meta': typeof ApiAltairMetaRoute
   '/api/altair/score': typeof ApiAltairScoreRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/battlepass/claim': typeof ApiBattlepassClaimRoute
+  '/api/battlepass/unlock': typeof ApiBattlepassUnlockRoute
   '/api/coins/bet': typeof ApiCoinsBetRoute
   '/api/coins/claim': typeof ApiCoinsClaimRoute
   '/api/coins/purchase': typeof ApiCoinsPurchaseRoute
@@ -2312,6 +2352,7 @@ export interface FileRoutesByFullPath {
   '/user-builds/': typeof SiteUserBuildsIndexRoute
   '/v/': typeof SiteVIndexRoute
   '/altair/multiplayer/': typeof AltairMultiplayerIndexRoute
+  '/api/battlepass/': typeof ApiBattlepassIndexRoute
   '/api/coins/': typeof ApiCoinsIndexRoute
   '/api/communities/': typeof ApiCommunitiesIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
@@ -2357,6 +2398,7 @@ export interface FileRoutesByFullPath {
   '/api/profile/$id/likes': typeof ApiProfileIdLikesRoute
   '/api/profile/$id/rmharks': typeof ApiProfileIdRmharksRoute
   '/api/profile/avatar/$filename': typeof ApiProfileAvatarFilenameRoute
+  '/api/quests/$id/claim': typeof ApiQuestsIdClaimRoute
   '/api/rmharks/$id/bookmark': typeof ApiRmharksIdBookmarkRoute
   '/api/rmharks/$id/comment': typeof ApiRmharksIdCommentRouteWithChildren
   '/api/rmharks/$id/like': typeof ApiRmharksIdLikeRoute
@@ -2424,6 +2466,7 @@ export interface FileRoutesByTo {
   '/explore': typeof SiteExploreRoute
   '/notifications': typeof SiteNotificationsRoute
   '/pricing': typeof SitePricingRoute
+  '/progress': typeof SiteProgressRoute
   '/quotes': typeof SiteQuotesRoute
   '/recap': typeof SiteRecapRoute
   '/roadmap': typeof SiteRoadmapRoute
@@ -2438,6 +2481,7 @@ export interface FileRoutesByTo {
   '/api/messages': typeof ApiMessagesRouteWithChildren
   '/api/oembed': typeof ApiOembedRoute
   '/api/profile': typeof ApiProfileRouteWithChildren
+  '/api/progress': typeof ApiProgressRoute
   '/api/recap': typeof ApiRecapRoute
   '/api/rmharks': typeof ApiRmharksRouteWithChildren
   '/api/search': typeof ApiSearchRoute
@@ -2530,6 +2574,8 @@ export interface FileRoutesByTo {
   '/api/altair/meta': typeof ApiAltairMetaRoute
   '/api/altair/score': typeof ApiAltairScoreRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/battlepass/claim': typeof ApiBattlepassClaimRoute
+  '/api/battlepass/unlock': typeof ApiBattlepassUnlockRoute
   '/api/coins/bet': typeof ApiCoinsBetRoute
   '/api/coins/claim': typeof ApiCoinsClaimRoute
   '/api/coins/purchase': typeof ApiCoinsPurchaseRoute
@@ -2625,6 +2671,7 @@ export interface FileRoutesByTo {
   '/user-builds': typeof SiteUserBuildsIndexRoute
   '/v': typeof SiteVIndexRoute
   '/altair/multiplayer': typeof AltairMultiplayerIndexRoute
+  '/api/battlepass': typeof ApiBattlepassIndexRoute
   '/api/coins': typeof ApiCoinsIndexRoute
   '/api/communities': typeof ApiCommunitiesIndexRoute
   '/api/notifications': typeof ApiNotificationsIndexRoute
@@ -2670,6 +2717,7 @@ export interface FileRoutesByTo {
   '/api/profile/$id/likes': typeof ApiProfileIdLikesRoute
   '/api/profile/$id/rmharks': typeof ApiProfileIdRmharksRoute
   '/api/profile/avatar/$filename': typeof ApiProfileAvatarFilenameRoute
+  '/api/quests/$id/claim': typeof ApiQuestsIdClaimRoute
   '/api/rmharks/$id/bookmark': typeof ApiRmharksIdBookmarkRoute
   '/api/rmharks/$id/comment': typeof ApiRmharksIdCommentRouteWithChildren
   '/api/rmharks/$id/like': typeof ApiRmharksIdLikeRoute
@@ -2757,6 +2805,7 @@ export interface FileRoutesById {
   '/_site/explore': typeof SiteExploreRoute
   '/_site/notifications': typeof SiteNotificationsRoute
   '/_site/pricing': typeof SitePricingRoute
+  '/_site/progress': typeof SiteProgressRoute
   '/_site/quotes': typeof SiteQuotesRoute
   '/_site/recap': typeof SiteRecapRoute
   '/_site/roadmap': typeof SiteRoadmapRoute
@@ -2772,6 +2821,7 @@ export interface FileRoutesById {
   '/api/messages': typeof ApiMessagesRouteWithChildren
   '/api/oembed': typeof ApiOembedRoute
   '/api/profile': typeof ApiProfileRouteWithChildren
+  '/api/progress': typeof ApiProgressRoute
   '/api/recap': typeof ApiRecapRoute
   '/api/rmharks': typeof ApiRmharksRouteWithChildren
   '/api/search': typeof ApiSearchRoute
@@ -2868,6 +2918,8 @@ export interface FileRoutesById {
   '/api/altair/meta': typeof ApiAltairMetaRoute
   '/api/altair/score': typeof ApiAltairScoreRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/battlepass/claim': typeof ApiBattlepassClaimRoute
+  '/api/battlepass/unlock': typeof ApiBattlepassUnlockRoute
   '/api/coins/bet': typeof ApiCoinsBetRoute
   '/api/coins/claim': typeof ApiCoinsClaimRoute
   '/api/coins/purchase': typeof ApiCoinsPurchaseRoute
@@ -2963,6 +3015,7 @@ export interface FileRoutesById {
   '/_site/user-builds/': typeof SiteUserBuildsIndexRoute
   '/_site/v/': typeof SiteVIndexRoute
   '/altair/multiplayer/': typeof AltairMultiplayerIndexRoute
+  '/api/battlepass/': typeof ApiBattlepassIndexRoute
   '/api/coins/': typeof ApiCoinsIndexRoute
   '/api/communities/': typeof ApiCommunitiesIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
@@ -3008,6 +3061,7 @@ export interface FileRoutesById {
   '/api/profile/$id/likes': typeof ApiProfileIdLikesRoute
   '/api/profile/$id/rmharks': typeof ApiProfileIdRmharksRoute
   '/api/profile/avatar/$filename': typeof ApiProfileAvatarFilenameRoute
+  '/api/quests/$id/claim': typeof ApiQuestsIdClaimRoute
   '/api/rmharks/$id/bookmark': typeof ApiRmharksIdBookmarkRoute
   '/api/rmharks/$id/comment': typeof ApiRmharksIdCommentRouteWithChildren
   '/api/rmharks/$id/like': typeof ApiRmharksIdLikeRoute
@@ -3096,6 +3150,7 @@ export interface FileRouteTypes {
     | '/explore'
     | '/notifications'
     | '/pricing'
+    | '/progress'
     | '/quotes'
     | '/recap'
     | '/roadmap'
@@ -3111,6 +3166,7 @@ export interface FileRouteTypes {
     | '/api/messages'
     | '/api/oembed'
     | '/api/profile'
+    | '/api/progress'
     | '/api/recap'
     | '/api/rmharks'
     | '/api/search'
@@ -3206,6 +3262,8 @@ export interface FileRouteTypes {
     | '/api/altair/meta'
     | '/api/altair/score'
     | '/api/auth/$'
+    | '/api/battlepass/claim'
+    | '/api/battlepass/unlock'
     | '/api/coins/bet'
     | '/api/coins/claim'
     | '/api/coins/purchase'
@@ -3301,6 +3359,7 @@ export interface FileRouteTypes {
     | '/user-builds/'
     | '/v/'
     | '/altair/multiplayer/'
+    | '/api/battlepass/'
     | '/api/coins/'
     | '/api/communities/'
     | '/api/notifications/'
@@ -3346,6 +3405,7 @@ export interface FileRouteTypes {
     | '/api/profile/$id/likes'
     | '/api/profile/$id/rmharks'
     | '/api/profile/avatar/$filename'
+    | '/api/quests/$id/claim'
     | '/api/rmharks/$id/bookmark'
     | '/api/rmharks/$id/comment'
     | '/api/rmharks/$id/like'
@@ -3413,6 +3473,7 @@ export interface FileRouteTypes {
     | '/explore'
     | '/notifications'
     | '/pricing'
+    | '/progress'
     | '/quotes'
     | '/recap'
     | '/roadmap'
@@ -3427,6 +3488,7 @@ export interface FileRouteTypes {
     | '/api/messages'
     | '/api/oembed'
     | '/api/profile'
+    | '/api/progress'
     | '/api/recap'
     | '/api/rmharks'
     | '/api/search'
@@ -3519,6 +3581,8 @@ export interface FileRouteTypes {
     | '/api/altair/meta'
     | '/api/altair/score'
     | '/api/auth/$'
+    | '/api/battlepass/claim'
+    | '/api/battlepass/unlock'
     | '/api/coins/bet'
     | '/api/coins/claim'
     | '/api/coins/purchase'
@@ -3614,6 +3678,7 @@ export interface FileRouteTypes {
     | '/user-builds'
     | '/v'
     | '/altair/multiplayer'
+    | '/api/battlepass'
     | '/api/coins'
     | '/api/communities'
     | '/api/notifications'
@@ -3659,6 +3724,7 @@ export interface FileRouteTypes {
     | '/api/profile/$id/likes'
     | '/api/profile/$id/rmharks'
     | '/api/profile/avatar/$filename'
+    | '/api/quests/$id/claim'
     | '/api/rmharks/$id/bookmark'
     | '/api/rmharks/$id/comment'
     | '/api/rmharks/$id/like'
@@ -3745,6 +3811,7 @@ export interface FileRouteTypes {
     | '/_site/explore'
     | '/_site/notifications'
     | '/_site/pricing'
+    | '/_site/progress'
     | '/_site/quotes'
     | '/_site/recap'
     | '/_site/roadmap'
@@ -3760,6 +3827,7 @@ export interface FileRouteTypes {
     | '/api/messages'
     | '/api/oembed'
     | '/api/profile'
+    | '/api/progress'
     | '/api/recap'
     | '/api/rmharks'
     | '/api/search'
@@ -3856,6 +3924,8 @@ export interface FileRouteTypes {
     | '/api/altair/meta'
     | '/api/altair/score'
     | '/api/auth/$'
+    | '/api/battlepass/claim'
+    | '/api/battlepass/unlock'
     | '/api/coins/bet'
     | '/api/coins/claim'
     | '/api/coins/purchase'
@@ -3951,6 +4021,7 @@ export interface FileRouteTypes {
     | '/_site/user-builds/'
     | '/_site/v/'
     | '/altair/multiplayer/'
+    | '/api/battlepass/'
     | '/api/coins/'
     | '/api/communities/'
     | '/api/notifications/'
@@ -3996,6 +4067,7 @@ export interface FileRouteTypes {
     | '/api/profile/$id/likes'
     | '/api/profile/$id/rmharks'
     | '/api/profile/avatar/$filename'
+    | '/api/quests/$id/claim'
     | '/api/rmharks/$id/bookmark'
     | '/api/rmharks/$id/comment'
     | '/api/rmharks/$id/like'
@@ -4084,6 +4156,7 @@ export interface RootRouteChildren {
   ApiMessagesRoute: typeof ApiMessagesRouteWithChildren
   ApiOembedRoute: typeof ApiOembedRoute
   ApiProfileRoute: typeof ApiProfileRouteWithChildren
+  ApiProgressRoute: typeof ApiProgressRoute
   ApiRecapRoute: typeof ApiRecapRoute
   ApiRmharksRoute: typeof ApiRmharksRouteWithChildren
   ApiSearchRoute: typeof ApiSearchRoute
@@ -4115,6 +4188,8 @@ export interface RootRouteChildren {
   ApiAltairMetaRoute: typeof ApiAltairMetaRoute
   ApiAltairScoreRoute: typeof ApiAltairScoreRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiBattlepassClaimRoute: typeof ApiBattlepassClaimRoute
+  ApiBattlepassUnlockRoute: typeof ApiBattlepassUnlockRoute
   ApiCoinsBetRoute: typeof ApiCoinsBetRoute
   ApiCoinsClaimRoute: typeof ApiCoinsClaimRoute
   ApiCoinsPurchaseRoute: typeof ApiCoinsPurchaseRoute
@@ -4177,6 +4252,7 @@ export interface RootRouteChildren {
   ApiVibeStreamRoute: typeof ApiVibeStreamRoute
   ApiVoidBreakerLeaderboardRoute: typeof ApiVoidBreakerLeaderboardRoute
   ApiVoidBreakerScoreRoute: typeof ApiVoidBreakerScoreRoute
+  ApiBattlepassIndexRoute: typeof ApiBattlepassIndexRoute
   ApiCoinsIndexRoute: typeof ApiCoinsIndexRoute
   ApiCommunitiesIndexRoute: typeof ApiCommunitiesIndexRoute
   ApiNotificationsIndexRoute: typeof ApiNotificationsIndexRoute
@@ -4203,6 +4279,7 @@ export interface RootRouteChildren {
   ApiGamesSynapseStormLeaderboardRoute: typeof ApiGamesSynapseStormLeaderboardRoute
   ApiGamesSynapseStormSaveRoute: typeof ApiGamesSynapseStormSaveRoute
   ApiGamesSynapseStormScoreRoute: typeof ApiGamesSynapseStormScoreRoute
+  ApiQuestsIdClaimRoute: typeof ApiQuestsIdClaimRoute
   ApiRmhcodeAuthGenerateRoute: typeof ApiRmhcodeAuthGenerateRoute
   ApiRmhcodeAuthInitiateRoute: typeof ApiRmhcodeAuthInitiateRoute
   ApiRmhcodeAuthListRoute: typeof ApiRmhcodeAuthListRoute
@@ -4910,6 +4987,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRecapRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/progress': {
+      id: '/api/progress'
+      path: '/api/progress'
+      fullPath: '/api/progress'
+      preLoaderRoute: typeof ApiProgressRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/profile': {
       id: '/api/profile'
       path: '/api/profile'
@@ -5013,6 +5097,13 @@ declare module '@tanstack/react-router' {
       path: '/quotes'
       fullPath: '/quotes'
       preLoaderRoute: typeof SiteQuotesRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/progress': {
+      id: '/_site/progress'
+      path: '/progress'
+      fullPath: '/progress'
+      preLoaderRoute: typeof SiteProgressRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/pricing': {
@@ -5146,6 +5237,13 @@ declare module '@tanstack/react-router' {
       path: '/api/coins'
       fullPath: '/api/coins/'
       preLoaderRoute: typeof ApiCoinsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/battlepass/': {
+      id: '/api/battlepass/'
+      path: '/api/battlepass'
+      fullPath: '/api/battlepass/'
+      preLoaderRoute: typeof ApiBattlepassIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/altair/multiplayer/': {
@@ -5813,6 +5911,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCoinsBetRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/battlepass/unlock': {
+      id: '/api/battlepass/unlock'
+      path: '/api/battlepass/unlock'
+      fullPath: '/api/battlepass/unlock'
+      preLoaderRoute: typeof ApiBattlepassUnlockRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/battlepass/claim': {
+      id: '/api/battlepass/claim'
+      path: '/api/battlepass/claim'
+      fullPath: '/api/battlepass/claim'
+      preLoaderRoute: typeof ApiBattlepassClaimRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -6219,6 +6331,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRmharksIdBookmarkRouteImport
       parentRoute: typeof ApiRmharksIdRoute
     }
+    '/api/quests/$id/claim': {
+      id: '/api/quests/$id/claim'
+      path: '/api/quests/$id/claim'
+      fullPath: '/api/quests/$id/claim'
+      preLoaderRoute: typeof ApiQuestsIdClaimRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/profile/avatar/$filename': {
       id: '/api/profile/avatar/$filename'
       path: '/$filename'
@@ -6603,6 +6722,7 @@ interface SiteRouteChildren {
   SiteExploreRoute: typeof SiteExploreRoute
   SiteNotificationsRoute: typeof SiteNotificationsRoute
   SitePricingRoute: typeof SitePricingRoute
+  SiteProgressRoute: typeof SiteProgressRoute
   SiteQuotesRoute: typeof SiteQuotesRoute
   SiteRecapRoute: typeof SiteRecapRoute
   SiteRoadmapRoute: typeof SiteRoadmapRoute
@@ -6637,6 +6757,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteExploreRoute: SiteExploreRoute,
   SiteNotificationsRoute: SiteNotificationsRoute,
   SitePricingRoute: SitePricingRoute,
+  SiteProgressRoute: SiteProgressRoute,
   SiteQuotesRoute: SiteQuotesRoute,
   SiteRecapRoute: SiteRecapRoute,
   SiteRoadmapRoute: SiteRoadmapRoute,
@@ -7344,6 +7465,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiMessagesRoute: ApiMessagesRouteWithChildren,
   ApiOembedRoute: ApiOembedRoute,
   ApiProfileRoute: ApiProfileRouteWithChildren,
+  ApiProgressRoute: ApiProgressRoute,
   ApiRecapRoute: ApiRecapRoute,
   ApiRmharksRoute: ApiRmharksRouteWithChildren,
   ApiSearchRoute: ApiSearchRoute,
@@ -7375,6 +7497,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAltairMetaRoute: ApiAltairMetaRoute,
   ApiAltairScoreRoute: ApiAltairScoreRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiBattlepassClaimRoute: ApiBattlepassClaimRoute,
+  ApiBattlepassUnlockRoute: ApiBattlepassUnlockRoute,
   ApiCoinsBetRoute: ApiCoinsBetRoute,
   ApiCoinsClaimRoute: ApiCoinsClaimRoute,
   ApiCoinsPurchaseRoute: ApiCoinsPurchaseRoute,
@@ -7437,6 +7561,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiVibeStreamRoute: ApiVibeStreamRoute,
   ApiVoidBreakerLeaderboardRoute: ApiVoidBreakerLeaderboardRoute,
   ApiVoidBreakerScoreRoute: ApiVoidBreakerScoreRoute,
+  ApiBattlepassIndexRoute: ApiBattlepassIndexRoute,
   ApiCoinsIndexRoute: ApiCoinsIndexRoute,
   ApiCommunitiesIndexRoute: ApiCommunitiesIndexRoute,
   ApiNotificationsIndexRoute: ApiNotificationsIndexRoute,
@@ -7463,6 +7588,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGamesSynapseStormLeaderboardRoute: ApiGamesSynapseStormLeaderboardRoute,
   ApiGamesSynapseStormSaveRoute: ApiGamesSynapseStormSaveRoute,
   ApiGamesSynapseStormScoreRoute: ApiGamesSynapseStormScoreRoute,
+  ApiQuestsIdClaimRoute: ApiQuestsIdClaimRoute,
   ApiRmhcodeAuthGenerateRoute: ApiRmhcodeAuthGenerateRoute,
   ApiRmhcodeAuthInitiateRoute: ApiRmhcodeAuthInitiateRoute,
   ApiRmhcodeAuthListRoute: ApiRmhcodeAuthListRoute,

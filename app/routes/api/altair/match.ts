@@ -9,6 +9,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { prisma } from '@/lib/prisma.server';
 import { z } from 'zod';
 import { grantAchievement, progressAchievement } from '@/lib/achievements/engine.server';
+import { recordGamePlay } from '@/lib/quests/engine.server';
 
 // Server-to-server auth via shared secret
 const ALTAIR_SERVER_SECRET = process.env.ALTAIR_SERVER_SECRET;
@@ -161,6 +162,7 @@ export const Route = createFileRoute('/api/altair/match')({
         if (p.revivesGiven && p.revivesGiven > 0) {
           await progressAchievement(p.userId, 'game.altair.coop_revives_10', { by: p.revivesGiven });
         }
+        await recordGamePlay(p.userId);
       }
     } catch (e) {
       console.error('altair achievement error:', e);
