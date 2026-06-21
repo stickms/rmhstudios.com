@@ -51,6 +51,22 @@ die() { echo "[hotswap] ERROR: $*" >&2; exit 1; }
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "${REPO_DIR:-$(dirname "$SCRIPT_DIR")}" || die "cannot cd to repo root"
 
+# Writing the Apache include and reloading Apache need root. The deploy often
+# runs as a non-root user (the webhook runs as `rmhstudios`), so shell out via
+# `sudo -n` when we're not already root. Requires a sudoers grant for apachectl
+# (see deploy/apache/README or the one-time setup notes).
+if [ "$(id -u)" -eq 0 ]; then SUDO=""; else SUDO="sudo -n"; fi
+
+# Write the active-port include. Prefer a direct write (works when the file is
+# chowned to the deploy user); fall back to `sudo tee` for the root-owned case.
+write_active_conf() {
+    local port="$1"
+    if printf 'Define WEB_UPSTREAM_PORT %s\n' "$port" > "$ACTIVE_CONF" 2>/dev/null; then
+        return 0
+    fi
+    printf 'Define WEB_UPSTREAM_PORT %s\n' "$port" | $SUDO tee "$ACTIVE_CONF" >/dev/null
+}
+
 # ── Determine which color is currently live (from the Apache include) ────────
 current_port="$BLUE_PORT"
 if [ -f "$ACTIVE_CONF" ]; then
@@ -121,15 +137,17 @@ log "${new_container} is healthy."
 "$DOCKER_BIN" update --restart unless-stopped "$new_container" >/dev/null 2>&1 || true
 
 # ── Flip Apache to the new port with a graceful reload ──────────────────────
-printf 'Define WEB_UPSTREAM_PORT %s\n' "$target_port" > "$ACTIVE_CONF"
-if ! apachectl configtest 2>/dev/null; then
+write_active_conf "$target_port" \
+    || { "$DOCKER_BIN" rm -f "$new_container" >/dev/null 2>&1 || true; \
+         die "cannot write $ACTIVE_CONF — chown it to the deploy user or grant sudo (see setup notes)."; }
+if ! $SUDO apachectl configtest 2>/dev/null; then
     # Roll back the include so we never leave Apache in a broken state.
-    printf 'Define WEB_UPSTREAM_PORT %s\n' "$current_port" > "$ACTIVE_CONF"
+    write_active_conf "$current_port" || true
     "$DOCKER_BIN" rm -f "$new_container" >/dev/null 2>&1 || true
     die "apachectl configtest failed — reverted, ${old_color} still live."
 fi
 # `graceful` finishes in-flight requests on the old worker set, then swaps.
-apachectl graceful || systemctl reload apache2 || die "apache reload failed"
+$SUDO apachectl graceful || $SUDO systemctl reload apache2 || die "apache reload failed"
 log "Apache now routing to ${target_color} (port ${target_port})."
 
 # ── Drain in-flight requests, then retire the old container ─────────────────
