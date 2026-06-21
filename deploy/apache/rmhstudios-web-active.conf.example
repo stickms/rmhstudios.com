@@ -1,0 +1,9 @@
+# Active web upstream port for zero-downtime blue-green deploys.
+#
+# Install to /etc/apache2/conf-available/rmhstudios-web-active.conf on the VPS.
+# deploy/hotswap-web.sh overwrites this file and runs `apachectl graceful` to
+# flip traffic between the blue (7005) and green (7015) web containers.
+#
+# If this file is absent, the vhost falls back to its default (7005), so the
+# standard non-hotswap deploy keeps working unchanged.
+Define WEB_UPSTREAM_PORT 7005
