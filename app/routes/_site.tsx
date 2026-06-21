@@ -31,7 +31,7 @@ function SiteLayout() {
       {/* Desktop/tablet: fixed left sidebar + centered content */}
       <div className="hidden md:flex min-w-0 w-full justify-center">
         <div className="md:w-16 xl:w-64 shrink-0 relative">
-          <aside className="fixed top-0 md:w-16 xl:w-64 h-screen border-r border-site-border bg-site-bg overflow-y-auto z-30 flex flex-col">
+          <aside className="fixed top-0 md:w-16 xl:w-64 h-screen border-r border-site-border bg-site-bg overflow-hidden z-30 flex flex-col">
             <LeftSidebar />
           </aside>
         </div>

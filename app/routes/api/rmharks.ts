@@ -287,9 +287,9 @@ export const Route = createFileRoute('/api/rmharks')({
           });
 
           // Persist the mentions so they appear in the notification center.
-          const mentionLink = author.handle
-            ? `/u/${author.handle}/post/${item.id}`
-            : undefined;
+          // The post route resolves by post id, so a handle-less author falls
+          // back to their user id in the (decorative) handle segment.
+          const mentionLink = `/u/${author.handle ?? author.id}/post/${item.id}`;
           await Promise.all(
             mentioned.map((m) =>
               createNotification({

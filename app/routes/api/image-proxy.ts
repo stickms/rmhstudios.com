@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { optimizeImage, parseFormat, negotiateFormat } from '@/lib/image-optimize';
 import { safeFetch, SsrfError } from '@/lib/ssrf-guard.server';
+import { isDiscordAvatarUrl, refreshDiscordAvatarFromBrokenUrl } from '@/lib/discord-avatar-refresh.server';
 
 const MAX_UPSTREAM_BYTES = 10 * 1024 * 1024; // 10 MB
 
@@ -36,6 +37,11 @@ export const Route = createFileRoute('/api/image-proxy')({
       }
 
       if (!upstream.ok) {
+        // A stale Discord avatar (the hash changed after the user updated it).
+        // Lazily refresh it from Discord in the background — guarded + rate-limited.
+        if (isDiscordAvatarUrl(src)) {
+          void refreshDiscordAvatarFromBrokenUrl(src);
+        }
         return Response.json({ error: 'Failed to fetch upstream image' }, { status: 502 });
       }
 

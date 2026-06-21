@@ -26,6 +26,7 @@ import { Route as RmhstudyRouteImport } from './routes/rmhstudy'
 import { Route as RmhmusicRouteImport } from './routes/rmhmusic'
 import { Route as RmhcodeRouteImport } from './routes/rmhcode'
 import { Route as RmhboxRouteImport } from './routes/rmhbox'
+import { Route as RmhCapitalRouteImport } from './routes/rmh-capital'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as NeonDriftwayRouteImport } from './routes/neon-driftway'
 import { Route as LoginRouteImport } from './routes/login'
@@ -51,6 +52,7 @@ import { Route as RmhstudyIndexRouteImport } from './routes/rmhstudy/index'
 import { Route as RmhmusicIndexRouteImport } from './routes/rmhmusic/index'
 import { Route as RmhcodeIndexRouteImport } from './routes/rmhcode/index'
 import { Route as RmhboxIndexRouteImport } from './routes/rmhbox/index'
+import { Route as RmhCapitalIndexRouteImport } from './routes/rmh-capital/index'
 import { Route as KowloonKnockoutIndexRouteImport } from './routes/kowloon-knockout/index'
 import { Route as ForestExplorerIndexRouteImport } from './routes/forest-explorer/index'
 import { Route as DailyIndexRouteImport } from './routes/daily/index'
@@ -79,6 +81,11 @@ import { Route as RmhmusicPlayerRouteImport } from './routes/rmhmusic/player'
 import { Route as RmhmusicRoomIdRouteImport } from './routes/rmhmusic/$roomId'
 import { Route as RmhcodeAuthRouteImport } from './routes/rmhcode/auth'
 import { Route as RmhboxLobbyIdRouteImport } from './routes/rmhbox/$lobbyId'
+import { Route as RmhCapitalInsightsRouteImport } from './routes/rmh-capital/insights'
+import { Route as RmhCapitalFirmRouteImport } from './routes/rmh-capital/firm'
+import { Route as RmhCapitalContactRouteImport } from './routes/rmh-capital/contact'
+import { Route as RmhCapitalCareersRouteImport } from './routes/rmh-capital/careers'
+import { Route as RmhCapitalBusinessesRouteImport } from './routes/rmh-capital/businesses'
 import { Route as ResearchSlugRouteImport } from './routes/research.$slug'
 import { Route as NewsSlugRouteImport } from './routes/news.$slug'
 import { Route as LibrarySlugRouteImport } from './routes/library.$slug'
@@ -422,6 +429,11 @@ const RmhboxRoute = RmhboxRouteImport.update({
   path: '/rmhbox',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RmhCapitalRoute = RmhCapitalRouteImport.update({
+  id: '/rmh-capital',
+  path: '/rmh-capital',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
@@ -545,6 +557,11 @@ const RmhboxIndexRoute = RmhboxIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => RmhboxRoute,
+} as any)
+const RmhCapitalIndexRoute = RmhCapitalIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => RmhCapitalRoute,
 } as any)
 const KowloonKnockoutIndexRoute = KowloonKnockoutIndexRouteImport.update({
   id: '/',
@@ -685,6 +702,31 @@ const RmhboxLobbyIdRoute = RmhboxLobbyIdRouteImport.update({
   id: '/$lobbyId',
   path: '/$lobbyId',
   getParentRoute: () => RmhboxRoute,
+} as any)
+const RmhCapitalInsightsRoute = RmhCapitalInsightsRouteImport.update({
+  id: '/insights',
+  path: '/insights',
+  getParentRoute: () => RmhCapitalRoute,
+} as any)
+const RmhCapitalFirmRoute = RmhCapitalFirmRouteImport.update({
+  id: '/firm',
+  path: '/firm',
+  getParentRoute: () => RmhCapitalRoute,
+} as any)
+const RmhCapitalContactRoute = RmhCapitalContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => RmhCapitalRoute,
+} as any)
+const RmhCapitalCareersRoute = RmhCapitalCareersRouteImport.update({
+  id: '/careers',
+  path: '/careers',
+  getParentRoute: () => RmhCapitalRoute,
+} as any)
+const RmhCapitalBusinessesRoute = RmhCapitalBusinessesRouteImport.update({
+  id: '/businesses',
+  path: '/businesses',
+  getParentRoute: () => RmhCapitalRoute,
 } as any)
 const ResearchSlugRoute = ResearchSlugRouteImport.update({
   id: '/research/$slug',
@@ -2033,6 +2075,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/neon-driftway': typeof NeonDriftwayRoute
   '/privacy': typeof PrivacyRoute
+  '/rmh-capital': typeof RmhCapitalRouteWithChildren
   '/rmhbox': typeof RmhboxRouteWithChildren
   '/rmhcode': typeof RmhcodeRouteWithChildren
   '/rmhmusic': typeof RmhmusicRouteWithChildren
@@ -2094,6 +2137,11 @@ export interface FileRoutesByFullPath {
   '/library/$slug': typeof LibrarySlugRoute
   '/news/$slug': typeof NewsSlugRoute
   '/research/$slug': typeof ResearchSlugRoute
+  '/rmh-capital/businesses': typeof RmhCapitalBusinessesRoute
+  '/rmh-capital/careers': typeof RmhCapitalCareersRoute
+  '/rmh-capital/contact': typeof RmhCapitalContactRoute
+  '/rmh-capital/firm': typeof RmhCapitalFirmRoute
+  '/rmh-capital/insights': typeof RmhCapitalInsightsRoute
   '/rmhbox/$lobbyId': typeof RmhboxLobbyIdRoute
   '/rmhcode/auth': typeof RmhcodeAuthRoute
   '/rmhmusic/$roomId': typeof RmhmusicRoomIdRoute
@@ -2121,6 +2169,7 @@ export interface FileRoutesByFullPath {
   '/daily/': typeof DailyIndexRoute
   '/forest-explorer/': typeof ForestExplorerIndexRoute
   '/kowloon-knockout/': typeof KowloonKnockoutIndexRoute
+  '/rmh-capital/': typeof RmhCapitalIndexRoute
   '/rmhbox/': typeof RmhboxIndexRoute
   '/rmhcode/': typeof RmhcodeIndexRoute
   '/rmhmusic/': typeof RmhmusicIndexRoute
@@ -2403,6 +2452,11 @@ export interface FileRoutesByTo {
   '/library/$slug': typeof LibrarySlugRoute
   '/news/$slug': typeof NewsSlugRoute
   '/research/$slug': typeof ResearchSlugRoute
+  '/rmh-capital/businesses': typeof RmhCapitalBusinessesRoute
+  '/rmh-capital/careers': typeof RmhCapitalCareersRoute
+  '/rmh-capital/contact': typeof RmhCapitalContactRoute
+  '/rmh-capital/firm': typeof RmhCapitalFirmRoute
+  '/rmh-capital/insights': typeof RmhCapitalInsightsRoute
   '/rmhbox/$lobbyId': typeof RmhboxLobbyIdRoute
   '/rmhcode/auth': typeof RmhcodeAuthRoute
   '/rmhmusic/$roomId': typeof RmhmusicRoomIdRoute
@@ -2427,6 +2481,7 @@ export interface FileRoutesByTo {
   '/daily': typeof DailyIndexRoute
   '/forest-explorer': typeof ForestExplorerIndexRoute
   '/kowloon-knockout': typeof KowloonKnockoutIndexRoute
+  '/rmh-capital': typeof RmhCapitalIndexRoute
   '/rmhbox': typeof RmhboxIndexRoute
   '/rmhcode': typeof RmhcodeIndexRoute
   '/rmhmusic': typeof RmhmusicIndexRoute
@@ -2668,6 +2723,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/neon-driftway': typeof NeonDriftwayRoute
   '/privacy': typeof PrivacyRoute
+  '/rmh-capital': typeof RmhCapitalRouteWithChildren
   '/rmhbox': typeof RmhboxRouteWithChildren
   '/rmhcode': typeof RmhcodeRouteWithChildren
   '/rmhmusic': typeof RmhmusicRouteWithChildren
@@ -2729,6 +2785,11 @@ export interface FileRoutesById {
   '/library/$slug': typeof LibrarySlugRoute
   '/news/$slug': typeof NewsSlugRoute
   '/research/$slug': typeof ResearchSlugRoute
+  '/rmh-capital/businesses': typeof RmhCapitalBusinessesRoute
+  '/rmh-capital/careers': typeof RmhCapitalCareersRoute
+  '/rmh-capital/contact': typeof RmhCapitalContactRoute
+  '/rmh-capital/firm': typeof RmhCapitalFirmRoute
+  '/rmh-capital/insights': typeof RmhCapitalInsightsRoute
   '/rmhbox/$lobbyId': typeof RmhboxLobbyIdRoute
   '/rmhcode/auth': typeof RmhcodeAuthRoute
   '/rmhmusic/$roomId': typeof RmhmusicRoomIdRoute
@@ -2757,6 +2818,7 @@ export interface FileRoutesById {
   '/daily/': typeof DailyIndexRoute
   '/forest-explorer/': typeof ForestExplorerIndexRoute
   '/kowloon-knockout/': typeof KowloonKnockoutIndexRoute
+  '/rmh-capital/': typeof RmhCapitalIndexRoute
   '/rmhbox/': typeof RmhboxIndexRoute
   '/rmhcode/': typeof RmhcodeIndexRoute
   '/rmhmusic/': typeof RmhmusicIndexRoute
@@ -2999,6 +3061,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/neon-driftway'
     | '/privacy'
+    | '/rmh-capital'
     | '/rmhbox'
     | '/rmhcode'
     | '/rmhmusic'
@@ -3060,6 +3123,11 @@ export interface FileRouteTypes {
     | '/library/$slug'
     | '/news/$slug'
     | '/research/$slug'
+    | '/rmh-capital/businesses'
+    | '/rmh-capital/careers'
+    | '/rmh-capital/contact'
+    | '/rmh-capital/firm'
+    | '/rmh-capital/insights'
     | '/rmhbox/$lobbyId'
     | '/rmhcode/auth'
     | '/rmhmusic/$roomId'
@@ -3087,6 +3155,7 @@ export interface FileRouteTypes {
     | '/daily/'
     | '/forest-explorer/'
     | '/kowloon-knockout/'
+    | '/rmh-capital/'
     | '/rmhbox/'
     | '/rmhcode/'
     | '/rmhmusic/'
@@ -3369,6 +3438,11 @@ export interface FileRouteTypes {
     | '/library/$slug'
     | '/news/$slug'
     | '/research/$slug'
+    | '/rmh-capital/businesses'
+    | '/rmh-capital/careers'
+    | '/rmh-capital/contact'
+    | '/rmh-capital/firm'
+    | '/rmh-capital/insights'
     | '/rmhbox/$lobbyId'
     | '/rmhcode/auth'
     | '/rmhmusic/$roomId'
@@ -3393,6 +3467,7 @@ export interface FileRouteTypes {
     | '/daily'
     | '/forest-explorer'
     | '/kowloon-knockout'
+    | '/rmh-capital'
     | '/rmhbox'
     | '/rmhcode'
     | '/rmhmusic'
@@ -3633,6 +3708,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/neon-driftway'
     | '/privacy'
+    | '/rmh-capital'
     | '/rmhbox'
     | '/rmhcode'
     | '/rmhmusic'
@@ -3694,6 +3770,11 @@ export interface FileRouteTypes {
     | '/library/$slug'
     | '/news/$slug'
     | '/research/$slug'
+    | '/rmh-capital/businesses'
+    | '/rmh-capital/careers'
+    | '/rmh-capital/contact'
+    | '/rmh-capital/firm'
+    | '/rmh-capital/insights'
     | '/rmhbox/$lobbyId'
     | '/rmhcode/auth'
     | '/rmhmusic/$roomId'
@@ -3722,6 +3803,7 @@ export interface FileRouteTypes {
     | '/daily/'
     | '/forest-explorer/'
     | '/kowloon-knockout/'
+    | '/rmh-capital/'
     | '/rmhbox/'
     | '/rmhcode/'
     | '/rmhmusic/'
@@ -3963,6 +4045,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   NeonDriftwayRoute: typeof NeonDriftwayRoute
   PrivacyRoute: typeof PrivacyRoute
+  RmhCapitalRoute: typeof RmhCapitalRouteWithChildren
   RmhboxRoute: typeof RmhboxRouteWithChildren
   RmhcodeRoute: typeof RmhcodeRouteWithChildren
   RmhmusicRoute: typeof RmhmusicRouteWithChildren
@@ -4239,6 +4322,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RmhboxRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/rmh-capital': {
+      id: '/rmh-capital'
+      path: '/rmh-capital'
+      fullPath: '/rmh-capital'
+      preLoaderRoute: typeof RmhCapitalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/privacy': {
       id: '/privacy'
       path: '/privacy'
@@ -4413,6 +4503,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/rmhbox/'
       preLoaderRoute: typeof RmhboxIndexRouteImport
       parentRoute: typeof RmhboxRoute
+    }
+    '/rmh-capital/': {
+      id: '/rmh-capital/'
+      path: '/'
+      fullPath: '/rmh-capital/'
+      preLoaderRoute: typeof RmhCapitalIndexRouteImport
+      parentRoute: typeof RmhCapitalRoute
     }
     '/kowloon-knockout/': {
       id: '/kowloon-knockout/'
@@ -4609,6 +4706,41 @@ declare module '@tanstack/react-router' {
       fullPath: '/rmhbox/$lobbyId'
       preLoaderRoute: typeof RmhboxLobbyIdRouteImport
       parentRoute: typeof RmhboxRoute
+    }
+    '/rmh-capital/insights': {
+      id: '/rmh-capital/insights'
+      path: '/insights'
+      fullPath: '/rmh-capital/insights'
+      preLoaderRoute: typeof RmhCapitalInsightsRouteImport
+      parentRoute: typeof RmhCapitalRoute
+    }
+    '/rmh-capital/firm': {
+      id: '/rmh-capital/firm'
+      path: '/firm'
+      fullPath: '/rmh-capital/firm'
+      preLoaderRoute: typeof RmhCapitalFirmRouteImport
+      parentRoute: typeof RmhCapitalRoute
+    }
+    '/rmh-capital/contact': {
+      id: '/rmh-capital/contact'
+      path: '/contact'
+      fullPath: '/rmh-capital/contact'
+      preLoaderRoute: typeof RmhCapitalContactRouteImport
+      parentRoute: typeof RmhCapitalRoute
+    }
+    '/rmh-capital/careers': {
+      id: '/rmh-capital/careers'
+      path: '/careers'
+      fullPath: '/rmh-capital/careers'
+      preLoaderRoute: typeof RmhCapitalCareersRouteImport
+      parentRoute: typeof RmhCapitalRoute
+    }
+    '/rmh-capital/businesses': {
+      id: '/rmh-capital/businesses'
+      path: '/businesses'
+      fullPath: '/rmh-capital/businesses'
+      preLoaderRoute: typeof RmhCapitalBusinessesRouteImport
+      parentRoute: typeof RmhCapitalRoute
     }
     '/research/$slug': {
       id: '/research/$slug'
@@ -6588,6 +6720,28 @@ const KowloonKnockoutRouteWithChildren = KowloonKnockoutRoute._addFileChildren(
   KowloonKnockoutRouteChildren,
 )
 
+interface RmhCapitalRouteChildren {
+  RmhCapitalBusinessesRoute: typeof RmhCapitalBusinessesRoute
+  RmhCapitalCareersRoute: typeof RmhCapitalCareersRoute
+  RmhCapitalContactRoute: typeof RmhCapitalContactRoute
+  RmhCapitalFirmRoute: typeof RmhCapitalFirmRoute
+  RmhCapitalInsightsRoute: typeof RmhCapitalInsightsRoute
+  RmhCapitalIndexRoute: typeof RmhCapitalIndexRoute
+}
+
+const RmhCapitalRouteChildren: RmhCapitalRouteChildren = {
+  RmhCapitalBusinessesRoute: RmhCapitalBusinessesRoute,
+  RmhCapitalCareersRoute: RmhCapitalCareersRoute,
+  RmhCapitalContactRoute: RmhCapitalContactRoute,
+  RmhCapitalFirmRoute: RmhCapitalFirmRoute,
+  RmhCapitalInsightsRoute: RmhCapitalInsightsRoute,
+  RmhCapitalIndexRoute: RmhCapitalIndexRoute,
+}
+
+const RmhCapitalRouteWithChildren = RmhCapitalRoute._addFileChildren(
+  RmhCapitalRouteChildren,
+)
+
 interface RmhboxRouteChildren {
   RmhboxLobbyIdRoute: typeof RmhboxLobbyIdRoute
   RmhboxIndexRoute: typeof RmhboxIndexRoute
@@ -7143,6 +7297,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   NeonDriftwayRoute: NeonDriftwayRoute,
   PrivacyRoute: PrivacyRoute,
+  RmhCapitalRoute: RmhCapitalRouteWithChildren,
   RmhboxRoute: RmhboxRouteWithChildren,
   RmhcodeRoute: RmhcodeRouteWithChildren,
   RmhmusicRoute: RmhmusicRouteWithChildren,

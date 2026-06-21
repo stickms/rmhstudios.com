@@ -76,9 +76,9 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   };
 
   return (
-    <div className={`flex flex-col gap-1 min-h-full ${paddingClass}`}>
+    <div className={`flex flex-col gap-1 h-full min-h-0 ${paddingClass}`}>
       {/* Logo */}
-      <Link to="/" className={`mb-6 flex items-center ${logoAlignClass}`}>
+      <Link to="/" className={`mb-6 flex items-center shrink-0 ${logoAlignClass}`}>
         <span className={`site-logo font-playfair font-bold text-xl text-site-text ${logoFullClass}`}>
           RMH<span className="text-site-text-muted font-semibold">Studios</span>
         </span>
@@ -87,8 +87,8 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         </span>
       </Link>
 
-      {/* Nav Links */}
-      <nav className="flex flex-col gap-1 flex-1">
+      {/* Nav Links — scrollable region */}
+      <nav className="flex flex-col gap-1 flex-1 min-h-0 overflow-y-auto">
         {navLinks.map((link) => {
           const Icon = link.icon;
           const isActive = pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href + '/'));
@@ -108,15 +108,15 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
             </Link>
           );
         })}
-        {/* RMH Capital — static institutional site (served from /public) */}
-        <a
-          href="/rmh-capital/"
+        {/* RMH Capital — integrated institutional site */}
+        <Link
+          to="/rmh-capital"
           className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-site-text-muted hover:text-site-text hover:bg-site-surface ${itemJustifyClass}`}
           title="RMH Capital"
         >
           <Landmark className="w-5 h-5 shrink-0" />
           <span className={labelClass}>RMH Capital</span>
-        </a>
+        </Link>
         {/* Dynamic Profile link (shown when logged in) */}
         {session && (
           <Link
@@ -249,8 +249,8 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         )}
       </nav>
 
-      {/* Auth Section */}
-      <div className="mt-auto border-t border-site-border pt-3">
+      {/* Auth Section — pinned to bottom */}
+      <div className="mt-auto border-t border-site-border pt-3 shrink-0">
         {isPending ? (
           <div className="h-10 bg-site-surface rounded-xl animate-pulse" />
         ) : session ? (
@@ -269,10 +269,18 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
               onClick={() => {
                 if (!showUserMenu && userMenuBtnRef.current) {
                   const rect = userMenuBtnRef.current.getBoundingClientRect();
-                  setUserMenuPos({
-                    bottom: window.innerHeight - rect.top + 8,
-                    right: window.innerWidth - rect.right,
-                  });
+                  const margin = 8;
+                  const menuWidth = 160; // w-40
+                  const menuHeight = 56; // single item + padding
+                  const right = Math.min(
+                    Math.max(window.innerWidth - rect.right, margin),
+                    window.innerWidth - menuWidth - margin
+                  );
+                  const bottom = Math.min(
+                    Math.max(window.innerHeight - rect.top + 8, margin),
+                    window.innerHeight - menuHeight - margin
+                  );
+                  setUserMenuPos({ bottom, right });
                 }
                 setShowUserMenu(!showUserMenu);
               }}
@@ -314,7 +322,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         <>
           <Button
             variant="accent"
-            className="mt-3 w-full"
+            className="mt-3 w-full shrink-0"
             onClick={() => {
               const el = document.getElementById('compose-box');
               if (el && el.getBoundingClientRect().top < window.innerHeight) {

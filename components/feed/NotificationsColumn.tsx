@@ -88,8 +88,27 @@ export function NotificationsColumn() {
     }).catch(() => {});
   };
 
+  // Where a notification should take you when tapped. Prefer the link stored at
+  // creation time; otherwise derive one from the entity it refers to so older
+  // (or link-less) notifications still navigate somewhere useful.
+  const resolveLink = (n: NotificationItem): string | null => {
+    if (n.link) return n.link;
+    if (!n.entityId) return null;
+    switch (n.entityType) {
+      case 'rmhark':
+        // The post detail route resolves by post id; the handle segment is
+        // decorative, so a placeholder is fine when the actor has no handle.
+        return `/u/${n.actor?.handle ?? '_'}/post/${n.entityId}`;
+      case 'user':
+        return n.actor?.handle ? `/u/${n.actor.handle}` : `/profile/${n.entityId}`;
+      default:
+        return null;
+    }
+  };
+
   const handleClick = (n: NotificationItem) => {
-    if (n.link) navigate({ to: n.link });
+    const link = resolveLink(n);
+    if (link) navigate({ to: link });
   };
 
   const loadMore = async () => {
@@ -129,14 +148,16 @@ export function NotificationsColumn() {
             const meta = TYPE_META[n.type];
             const Icon = meta.icon;
             const actorName = n.actor?.name || n.actor?.handle || 'Someone';
+            const clickable = resolveLink(n) !== null;
             return (
               <li key={n.id}>
                 <button
                   type="button"
                   onClick={() => handleClick(n)}
-                  className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-site-surface-hover ${
-                    n.read ? '' : 'bg-site-accent-dim/40'
-                  }`}
+                  disabled={!clickable}
+                  className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors ${
+                    clickable ? 'cursor-pointer hover:bg-site-surface-hover' : 'cursor-default'
+                  } ${n.read ? '' : 'bg-site-accent-dim/40'}`}
                 >
                   <div className="relative shrink-0">
                     <UserAvatar src={n.actor?.image} alt={actorName} size={40} fallbackName={actorName} />

@@ -53,8 +53,11 @@ services:
         # PDFs. Optional — covers still render without it (titles fall back).
         DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
     container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-web
-    ports:
-      - "127.0.0.1:${PORT_WEB:-7005}:${PORT_WEB:-7005}"
+    # NOTE: web does NOT publish a fixed host port. It is deployed blue/green by
+    # deploy/hotswap-web.sh (zero-downtime), which publishes the active port
+    # (7005 blue / 7015 green) itself and flips Apache between them. deploy.sh
+    # brings the rest of the stack up with `--scale web=0` so compose never
+    # recreates web in place (the old cause of the Cloudflare 520 during deploy).
     env_file: ${ENV_FILE:-.env.production}
     environment:
       - PORT=${PORT_WEB:-7005}

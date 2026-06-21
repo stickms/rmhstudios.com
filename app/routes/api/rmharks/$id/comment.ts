@@ -171,7 +171,9 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
         where: { id },
         select: { userId: true, user: { select: { handle: true } } },
       });
-      const postLink = post?.user?.handle ? `/u/${post.user.handle}/post/${id}` : undefined;
+      // Always link to the post; the route resolves by post id, so a handle-less
+      // author falls back to their user id in the (decorative) handle segment.
+      const postLink = post ? `/u/${post.user?.handle ?? post.userId}/post/${id}` : undefined;
       const preview = parsed.data.content.trim();
 
       let parentAuthorId: string | null = null;
