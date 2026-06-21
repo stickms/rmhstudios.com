@@ -191,9 +191,11 @@ export default function HomePage() {
             </div>
           </div>
           <div className="lineage reveal d1">
-            {['SAS', 'SBS', 'DELTA', 'DEVGRU', 'SAYERET MATKAL', 'SHAYETET 13', 'GIGN', 'KSK', 'JTF2', 'GROM', 'SASR', 'JW KOMANDOSÓW', 'SOG', 'RECON'].map((u) => (
-              <span key={u}>{u}</span>
-            ))}
+            <div className="lineage-track">
+              {[...['SAS', 'SBS', 'DELTA', 'DEVGRU', 'SAYERET MATKAL', 'SHAYETET 13', 'GIGN', 'KSK', 'JTF2', 'GROM', 'SASR', 'JW KOMANDOSÓW', 'SOG', 'RECON'], ...['SAS', 'SBS', 'DELTA', 'DEVGRU', 'SAYERET MATKAL', 'SHAYETET 13', 'GIGN', 'KSK', 'JTF2', 'GROM', 'SASR', 'JW KOMANDOSÓW', 'SOG', 'RECON']].map((u, i) => (
+                <span key={i}>{u}</span>
+              ))}
+            </div>
           </div>
         </div>
       </section>

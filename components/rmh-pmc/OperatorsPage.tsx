@@ -196,10 +196,12 @@ export default function OperatorsPage() {
               </p>
             </div>
           </div>
-          <div className="lineage reveal d1" style={{ justifyContent: 'center' }}>
-            {units.map((u) => (
-              <span key={u}>{u}</span>
-            ))}
+          <div className="lineage reveal d1">
+            <div className="lineage-track">
+              {[...units, ...units].map((u, i) => (
+                <span key={i}>{u}</span>
+              ))}
+            </div>
           </div>
         </div>
       </section>
