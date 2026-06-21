@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact — RMH Capital</title>
+<meta name="description" content="Contact RMH Capital. Route your inquiry to investment banking, markets, corporate banking, venture capital, careers, media, or general inquiries.">
+<meta name="theme-color" content="#06090F">
+<meta property="og:title" content="Contact — RMH Capital">
+<meta property="og:description" content="Reach the right team at RMH Capital.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/rmh-capital/styles.css">
+</head>
+<body>
+
+<header class="topnav">
+  <div class="topnav-inner">
+    <div class="brand-group">
+      <a class="nav-back" href="/" aria-label="Back to RMH Studios" title="Back to RMH Studios"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 L6 10 L12 16"/></svg></a>
+      <a class="brand" href="/rmh-capital/" aria-label="RMH Capital home">
+        <svg viewBox="0 0 100 100" aria-hidden="true"><polygon points="50,5 89,27 89,73 50,95 11,73 11,27" fill="none" stroke="#C8A24A" stroke-width="3"/><polygon points="50,25 72,38 72,62 50,75 28,62 28,38" fill="none" stroke="#C8A24A" stroke-width="2" opacity="0.55"/><circle cx="50" cy="50" r="5" fill="#C8A24A"/></svg>
+        <span class="brand-text">RMH&nbsp;Capital</span>
+      </a>
+    </div>
+    <nav class="navlinks" aria-label="Primary">
+      <a href="/rmh-capital/firm.html">Our Firm</a>
+      <a href="/rmh-capital/businesses.html">Businesses</a>
+      <a href="/rmh-capital/insights.html">Insights</a>
+      <a href="/rmh-capital/careers.html">Careers</a>
+      <a href="/rmh-capital/contact.html" aria-current="page">Contact</a>
+    </nav>
+    <div class="nav-right"><a class="nav-cta" href="#inquiry-form">Send a message</a></div>
+    <button class="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="m-menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><line x1="3" y1="7" x2="21" y2="7"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="17" x2="21" y2="17"/></svg>
+    </button>
+  </div>
+  <nav class="mobile-menu" id="m-menu" aria-label="Mobile">
+    <a href="/rmh-capital/firm.html">Our Firm</a>
+    <a href="/rmh-capital/businesses.html">Businesses</a>
+    <a href="/rmh-capital/insights.html">Insights</a>
+    <a href="/rmh-capital/careers.html">Careers</a>
+    <a href="/rmh-capital/contact.html" aria-current="page">Contact</a>
+  </nav>
+</header>
+
+<main>
+<section class="pagehead">
+  <div class="container pagehead-inner">
+    <span class="eyebrow reveal">Contact</span>
+    <h1 class="serif reveal d1">Reach the right team.</h1>
+    <p class="lede reveal d2">Tell us what you're working on and we'll route your message to the people who can help. For anything time-sensitive, choose the matching inquiry type below.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="contact-grid">
+      <!-- left: offices + routing -->
+      <div class="reveal">
+        <span class="eyebrow">Offices</span>
+        <div style="margin-top:24px">
+          <div class="office"><h3>New York</h3><p>Global headquarters<br>One Platform Plaza, New York, NY</p></div>
+          <div class="office"><h3>London</h3><p>EMEA<br>Threadneedle Court, London EC2</p></div>
+          <div class="office"><h3>Singapore</h3><p>APAC<br>Marina Financial Centre, Singapore</p></div>
+        </div>
+        <div style="margin-top:32px">
+          <span class="eyebrow">General</span>
+          <p style="margin-top:16px;font-size:15px">General inquiries<br><a class="gold-text" href="mailto:hello@rmhcapital.example">hello@rmhcapital.example</a></p>
+          <p style="margin-top:12px;font-size:15px">Media<br><a class="gold-text" href="mailto:press@rmhcapital.example">press@rmhcapital.example</a></p>
+        </div>
+      </div>
+
+      <!-- right: form -->
+      <div class="reveal d1">
+        <span class="eyebrow">Send a message</span>
+        <div class="form-success" id="form-success" role="status">
+          Thank you — your message is on its way. The right team will be in touch shortly.
+        </div>
+        <form id="inquiry-form" style="margin-top:24px" novalidate>
+          <div class="form-field">
+            <label for="inquiry-type">Inquiry type</label>
+            <select id="inquiry-type" name="inquiry-type" required>
+              <option value="Investment Banking">Investment Banking</option>
+              <option value="Markets">Markets</option>
+              <option value="Corporate Banking">Corporate Banking</option>
+              <option value="Venture Capital">Venture Capital</option>
+              <option value="Careers">Careers</option>
+              <option value="Media">Media</option>
+              <option value="General Inquiry">General Inquiry</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-field">
+              <label for="name">Full name</label>
+              <input id="name" name="name" type="text" autocomplete="name" required>
+            </div>
+            <div class="form-field">
+              <label for="org">Company / organization</label>
+              <input id="org" name="org" type="text" autocomplete="organization">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-field">
+              <label for="email">Email</label>
+              <input id="email" name="email" type="email" autocomplete="email" required>
+            </div>
+            <div class="form-field">
+              <label for="phone">Phone <span style="text-transform:none;color:var(--gray-dim);letter-spacing:0">(optional)</span></label>
+              <input id="phone" name="phone" type="tel" autocomplete="tel">
+            </div>
+          </div>
+          <div class="form-field">
+            <label for="message">How can we help?</label>
+            <textarea id="message" name="message" required placeholder="Share a few details about what you're working on."></textarea>
+          </div>
+          <button class="btn btn-gold" type="submit">Send message <span class="arw">→</span></button>
+          <p class="form-note">By submitting, you agree that RMH Capital may contact you about your inquiry. We never share your information. This form is for general contact and does not transmit confidential or material non-public information.</p>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <a class="brand" href="/rmh-capital/" aria-label="RMH Capital home">
+          <svg viewBox="0 0 100 100" aria-hidden="true"><polygon points="50,5 89,27 89,73 50,95 11,73 11,27" fill="none" stroke="#C8A24A" stroke-width="3"/><polygon points="50,25 72,38 72,62 50,75 28,62 28,38" fill="none" stroke="#C8A24A" stroke-width="2" opacity="0.55"/><circle cx="50" cy="50" r="5" fill="#C8A24A"/></svg>
+          <span class="brand-text">RMH&nbsp;Capital</span>
+        </a>
+        <p>An integrated investment bank and financial platform, partnering with clients across the full company arc.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Businesses</h4>
+        <a href="/rmh-capital/businesses.html#investment-banking">Investment Banking</a>
+        <a href="/rmh-capital/businesses.html#markets">Markets</a>
+        <a href="/rmh-capital/businesses.html#corporate-banking">Corporate Banking</a>
+        <a href="/rmh-capital/businesses.html#venture-capital">Venture Capital</a>
+        <a href="/rmh-capital/businesses.html#private-equity">Private Equity</a>
+      </div>
+      <div class="footer-col">
+        <h4>Firm</h4>
+        <a href="/rmh-capital/firm.html">Our Firm</a>
+        <a href="/rmh-capital/insights.html">Insights</a>
+        <a href="/rmh-capital/careers.html">Careers</a>
+        <a href="/rmh-capital/contact.html">Contact</a>
+        <a href="/rmh-capital-board-book.html">Operating Atlas</a>
+      </div>
+      <div class="footer-col">
+        <h4>Connect</h4>
+        <a href="/rmh-capital/contact.html?type=Media">Media inquiries</a>
+        <a href="/rmh-capital/contact.html?type=Investment Banking">Banking inquiries</a>
+        <a href="/rmh-capital/careers.html">Open roles</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span class="copy">© 2026 RMH Capital LLC. All rights reserved.</span>
+      <div class="footer-legal"><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Disclosures</a><a href="#">Accessibility</a></div>
+      <div class="footer-social">
+        <a href="#" aria-label="LinkedIn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9h4v12H3zM9 9h3.8v1.7h.05c.53-1 1.83-2.05 3.77-2.05 4.03 0 4.78 2.65 4.78 6.1V21H21.4v-5.3c0-1.27-.02-2.9-1.77-2.9s-2.04 1.38-2.04 2.8V21H13.8z"/></svg></a>
+        <a href="#" aria-label="X"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 2H22l-7.5 8.6L23 22h-6.8l-5-6.6L5.3 22H2l8-9.2L1.5 2h7l4.5 6zM17 20h1.7L7.1 3.8H5.3z"/></svg></a>
+        <a href="#" aria-label="YouTube"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.4-.4-5c-.2-.9-.9-1.6-1.8-1.8C19.2 5 12 5 12 5s-7.2 0-8.8.4c-.9.2-1.6.9-1.8 1.8C1 8.6 1 12 1 12s0 3.4.4 5c.2.9.9 1.6 1.8 1.8 1.6.4 8.8.4 8.8.4s7.2 0 8.8-.4c.9-.2 1.6-.9 1.8-1.8.4-1.6.4-5 .4-5zM9.8 15.2V8.8l6 3.2z"/></svg></a>
+      </div>
+    </div>
+    <p class="disclaimer">This website is for informational purposes only and does not constitute an offer to sell or a solicitation to buy securities. RMH Capital and its businesses provide services subject to applicable law and regulation; nothing herein is investment, legal, or tax advice. Certain content is illustrative. RMH Capital, RMHCombinator, and the RMH geometric mark are trademarks of RMH Capital LLC.</p>
+  </div>
+</footer>
+
+<script src="/rmh-capital/site.js"></script>
+</body>
+</html>
