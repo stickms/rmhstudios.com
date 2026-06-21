@@ -139,7 +139,7 @@ export function ShopColumn() {
             aria-selected={tab === k}
             onClick={() => setTab(k)}
             className={`whitespace-nowrap rounded-full px-3 py-1 text-sm font-medium transition-colors ${
-              tab === k ? 'bg-site-accent text-white' : 'text-site-text-muted hover:bg-site-surface hover:text-site-text'
+              tab === k ? 'bg-site-accent text-(--site-accent-fg)' : 'text-site-text-muted hover:bg-site-surface hover:text-site-text'
             }`}
           >
             {KIND_LABELS[k]}

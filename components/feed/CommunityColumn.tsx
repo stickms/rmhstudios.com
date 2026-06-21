@@ -108,7 +108,12 @@ export function CommunityColumn({ slug }: { slug: string }) {
       </div>
 
       {/* Composer for members */}
-      {community.joined && <ComposeBox communityId={community.id} />}
+      {community.joined && (
+        <ComposeBox
+          communityId={community.id}
+          onPosted={(item) => setItems((prev) => [item, ...prev])}
+        />
+      )}
 
       {items.length === 0 ? (
         <p className="px-4 py-16 text-center text-sm text-site-text-muted">No posts yet. Be the first!</p>

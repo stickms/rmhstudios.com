@@ -41,7 +41,10 @@ function isValidMediaUrl(url: string): boolean {
   }
 }
 
-export function ComposeBox({ communityId }: { communityId?: string } = {}) {
+export function ComposeBox({
+  communityId,
+  onPosted,
+}: { communityId?: string; onPosted?: (item: any) => void } = {}) {
   const [content, setContent] = useState('');
   const [audience, setAudience] = useState<'PUBLIC' | 'FOLLOWERS' | 'PRIVATE'>('PUBLIC');
   const [pollDuration, setPollDuration] = useState(0); // hours; 0 = no limit
@@ -179,7 +182,10 @@ export function ComposeBox({ communityId }: { communityId?: string } = {}) {
       }
 
       const item = await res.json();
-      prependItem(item);
+      // In a scoped surface (e.g. a community) the parent owns the list, so
+      // hand it the new post; otherwise prepend to the global home feed.
+      if (onPosted) onPosted(item);
+      else prependItem(item);
       resetForm();
     } catch (error) {
       console.error('Post error:', error);
@@ -279,7 +285,7 @@ export function ComposeBox({ communityId }: { communityId?: string } = {}) {
                   aria-pressed={audience === value}
                   title={label}
                   className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
-                    audience === value ? 'bg-site-accent text-white' : 'text-site-text-muted hover:text-site-text'
+                    audience === value ? 'bg-site-accent text-(--site-accent-fg)' : 'text-site-text-muted hover:text-site-text'
                   }`}
                 >
                   <Icon className="h-3.5 w-3.5" />

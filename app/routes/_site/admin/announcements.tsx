@@ -139,7 +139,7 @@ function AdminAnnouncementsPage() {
                   key={v}
                   onClick={() => setVariant(v)}
                   className={`rounded-full px-3 py-1 text-xs font-medium capitalize transition-colors ${
-                    variant === v ? 'bg-site-accent text-white' : 'border border-site-border bg-site-bg text-site-text-muted'
+                    variant === v ? 'bg-site-accent text-(--site-accent-fg)' : 'border border-site-border bg-site-bg text-site-text-muted'
                   }`}
                 >
                   {v}
