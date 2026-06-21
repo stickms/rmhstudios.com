@@ -168,6 +168,10 @@ model User {
   musicPuzzles       MusicGuessPuzzle[]
   musicGuessAttempts MusicGuessAttempt[]
 
+  // Developer API keys + one-time promo claims
+  developerApiKeys DeveloperApiKey[]
+  promoClaims      PromoClaim[]
+
   // Economy: shop inventory, coin ledger (tips/gifts)
   inventory       UserInventory[]
   coinsSent       CoinTransaction[] @relation("CoinSender")
@@ -1532,6 +1536,39 @@ model MusicGuessAttempt {
   @@unique([puzzleId, userId])
   @@index([userId])
   @@map("music_guess_attempt")
+}
+
+/// A developer API key for the subscriber-gated REST API. Only a SHA-256 hash
+/// of the key is stored — the plaintext is shown to the user exactly once at
+/// creation. `prefix` is a short, non-secret label for the UI.
+model DeveloperApiKey {
+  id         String    @id @default(cuid())
+  userId     String
+  name       String    @db.VarChar(100)
+  prefix     String    @db.VarChar(16)
+  hashedKey  String    @unique
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("developer_api_key")
+}
+
+/// Records a one-time promotional claim (e.g. the free-month offer) so the
+/// server can enforce once-ever redemption regardless of client state.
+model PromoClaim {
+  id        String   @id @default(cuid())
+  userId    String
+  promo     String   @db.VarChar(64)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, promo])
+  @@map("promo_claim")
 }
 
 // ─── DM Privacy ───────────────────────────────────────────────────

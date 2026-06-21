@@ -12,6 +12,7 @@
 
 import { prisma } from '@/lib/prisma.server';
 import { extractTags } from './ranking';
+import { redisEnabled, redisGetJSON, redisSetJSON } from '@/lib/redis.server';
 
 export interface InterestProfile {
   authorAffinity: Map<string, number>;
@@ -34,11 +35,31 @@ function normalize(counts: Map<string, number>): Map<string, number> {
   return out;
 }
 
+// Maps don't survive JSON, so (de)serialize to entry arrays for the cache.
+type SerializedProfile = { a: [string, number][]; t: [string, number][] };
+const serialize = (p: InterestProfile): SerializedProfile => ({ a: [...p.authorAffinity], t: [...p.topicInterest] });
+const deserialize = (s: SerializedProfile): InterestProfile => ({
+  authorAffinity: new Map(s.a),
+  topicInterest: new Map(s.t),
+});
+const redisKey = (userId: string) => `interest:${userId}`;
+
 export async function buildInterestProfile(userId: string | null): Promise<InterestProfile> {
   if (!userId) return EMPTY;
 
+  // L1: per-instance cache.
   const cached = cache.get(userId);
   if (cached && cached.expires > Date.now()) return cached.profile;
+
+  // L2: shared Redis cache (cross-instance) when configured.
+  if (redisEnabled()) {
+    const hit = await redisGetJSON<SerializedProfile>(redisKey(userId));
+    if (hit) {
+      const profile = deserialize(hit);
+      cache.set(userId, { profile, expires: Date.now() + TTL_MS });
+      return profile;
+    }
+  }
 
   try {
     const likes = await prisma.rMHarkLike.findMany({
@@ -70,6 +91,7 @@ export async function buildInterestProfile(userId: string | null): Promise<Inter
       topicInterest: normalize(topicCounts),
     };
     cache.set(userId, { profile, expires: Date.now() + TTL_MS });
+    if (redisEnabled()) await redisSetJSON(redisKey(userId), serialize(profile), TTL_MS);
     return profile;
   } catch (err) {
     console.error('[personalize] buildInterestProfile failed:', err);

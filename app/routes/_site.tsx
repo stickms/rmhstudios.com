@@ -12,6 +12,7 @@ import { MobileNav } from '@/components/feed/MobileNav';
 import { MobileSidebarShell } from '@/components/feed/MobileSidebarShell';
 import { WelcomeModal } from '@/components/feed/WelcomeModal';
 import { WhatsNewModal } from '@/components/feed/WhatsNewModal';
+import { FreeMonthModal } from '@/components/feed/FreeMonthModal';
 import '@/components/feed/feed.css';
 
 export const Route = createFileRoute('/_site')({
@@ -30,6 +31,7 @@ function SiteLayout() {
       </a>
       <WelcomeModal />
       <WhatsNewModal />
+      <FreeMonthModal />
       {/* Desktop/tablet: fixed left sidebar + centered content */}
       <div className="hidden md:flex min-w-0 w-full justify-center">
         <div className="md:w-16 xl:w-64 shrink-0 relative">

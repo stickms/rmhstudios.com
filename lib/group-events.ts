@@ -1,16 +1,12 @@
 /**
- * In-memory pub/sub for group-chat messages (#15 SSE).
- *
- * Mirrors lib/message-events.ts but keyed by groupId. When a member sends a
- * message, call `publishGroupMessage(groupId, message)` to push it to every
- * connected member's SSE stream. Uses globalThis so a single Map is shared
- * across module instances.
- *
- * NOTE: this is an in-process EventEmitter-style bus — correct for a single
- * instance. For multi-instance/serverless deployments, back it with Redis
- * pub/sub (the same `publish`/`subscribe` surface). The `?after=` poll endpoint
- * remains as a topology-independent fallback.
+ * Pub/sub for group-chat messages (#15 SSE), keyed by groupId. When a member
+ * sends a message, call `publishGroupMessage(groupId, message)` to push it to
+ * every connected member's SSE stream — across instances via the Redis
+ * backplane when configured, falling back to in-process delivery otherwise.
+ * The `?after=` poll endpoint remains as a topology-independent fallback.
  */
+
+import { createBus, type RealtimeBus } from '@/lib/realtime-bus.server';
 
 export interface GroupMessagePayload {
   id: string;
@@ -21,31 +17,17 @@ export interface GroupMessagePayload {
 
 type Listener = (message: GroupMessagePayload) => void;
 
-const globalKey = '__group_chat_listeners__' as const;
-
-function getListeners(): Map<string, Set<Listener>> {
+const globalKey = '__group_chat_bus__' as const;
+function bus(): RealtimeBus<GroupMessagePayload> {
   const g = globalThis as Record<string, unknown>;
-  if (!g[globalKey]) g[globalKey] = new Map<string, Set<Listener>>();
-  return g[globalKey] as Map<string, Set<Listener>>;
+  if (!g[globalKey]) g[globalKey] = createBus<GroupMessagePayload>('group');
+  return g[globalKey] as RealtimeBus<GroupMessagePayload>;
 }
 
 export function subscribeGroup(groupId: string, listener: Listener): () => void {
-  const listeners = getListeners();
-  if (!listeners.has(groupId)) listeners.set(groupId, new Set());
-  listeners.get(groupId)!.add(listener);
-
-  return () => {
-    const set = getListeners().get(groupId);
-    if (set) {
-      set.delete(listener);
-      if (set.size === 0) getListeners().delete(groupId);
-    }
-  };
+  return bus().subscribe(groupId, listener);
 }
 
 export function publishGroupMessage(groupId: string, message: GroupMessagePayload): void {
-  const set = getListeners().get(groupId);
-  if (set) {
-    for (const listener of set) listener(message);
-  }
+  bus().publish(groupId, message);
 }
