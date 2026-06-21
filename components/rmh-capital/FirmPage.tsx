@@ -3,9 +3,8 @@ import { Link } from '@tanstack/react-router';
 export default function FirmPage() {
   return (
     <>
-      {/* PAGE HEADER — over portrait */}
-      <section className="pagehead has-photo">
-        <img className="pagehead-photo" src="/images/elon-right.webp" alt="" aria-hidden="true" fetchPriority="high" />
+      {/* PAGE HEADER */}
+      <section className="pagehead">
         <div className="container pagehead-inner">
           <span className="eyebrow reveal">Our Firm</span>
           <h1 className="serif reveal d1">A firm built around the client, not the product.</h1>
@@ -81,12 +80,13 @@ export default function FirmPage() {
       <section className="section">
         <div className="container">
           <div className="feature flip">
-            <div className="feature-media media-photo reveal">
-              <img className="media-img pos-right" src="/images/elon-right.webp" alt="Senior leadership at RMH Capital" loading="lazy" />
-              <div className="media-cap">
-                <div className="rl">Leadership</div>
-                <div className="nm">"Ownership close to the client; accountability across the firm."</div>
-              </div>
+            <div className="feature-media reveal" aria-hidden="true">
+              <svg viewBox="0 0 400 320" width="84%" fill="none">
+                <g stroke="#C8A24A" strokeOpacity="0.35" strokeWidth="1"><circle cx="200" cy="160" r="130" /><circle cx="200" cy="160" r="78" /><circle cx="200" cy="160" r="30" /></g>
+                <path d="M 110 240 A 130 130 0 0 1 300 70" stroke="#E3C277" strokeWidth="2" fill="none" strokeLinecap="round" />
+                <g fill="#C8A24A"><circle cx="200" cy="30" r="3" /><circle cx="330" cy="160" r="3" /><circle cx="200" cy="290" r="3" /><circle cx="70" cy="160" r="3" /></g>
+                <circle cx="200" cy="160" r="5" fill="#E3C277" />
+              </svg>
             </div>
             <div className="reveal d1">
               <span className="eyebrow">Leadership Philosophy</span>

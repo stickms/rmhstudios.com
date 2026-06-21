@@ -49,8 +49,7 @@ export default function InsightsPage() {
         <div className="container">
           {/* FEATURED */}
           <div className="featured reveal">
-            <a className="featured-main has-photo" href="#">
-              <img className="fm-bg" src="/images/elon-main.webp" alt="" aria-hidden="true" loading="lazy" />
+            <a className="featured-main" href="#">
               <span className="metaline">Markets <span className="dot" /> <span className="t">8 min read</span></span>
               <h3>The 2026 capital cycle: where conviction meets discipline</h3>
               <p>

@@ -9,7 +9,7 @@ const DESC =
 
 export const Route = createFileRoute('/rmh-capital/')({
   head: () => ({
-    meta: buildMeta({ title: TITLE, description: DESC, path: PATH, image: '/images/elon-main.webp' }),
+    meta: buildMeta({ title: TITLE, description: DESC, path: PATH }),
     links: [buildCanonical(PATH)],
   }),
   component: HomePage,

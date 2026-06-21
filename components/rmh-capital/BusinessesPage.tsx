@@ -39,8 +39,8 @@ export default function BusinessesPage() {
 
           {/* 02 Markets */}
           <article className="biz flip" id="markets">
-            <div className="biz-media media-photo reveal">
-              <img className="biz-img" src="/images/elon-main.webp" alt="RMH Street markets desk" loading="lazy" />
+            <div className="biz-media reveal" aria-hidden="true">
+              <svg viewBox="0 0 300 300" width="70%" fill="none"><g stroke="#C8A24A" strokeOpacity=".4"><path d="M30 220 L80 160 L120 190 L170 110 L220 150 L270 70" stroke="#E3C277" strokeWidth="2" fill="none" /><line x1="30" y1="250" x2="270" y2="250" strokeOpacity=".25" /></g><g fill="#C8A24A"><circle cx="80" cy="160" r="3" /><circle cx="170" cy="110" r="3" /><circle cx="270" cy="70" r="3" /></g></svg>
             </div>
             <div className="reveal d1">
               <div className="biz-stage">Execute &amp; access</div>
@@ -93,8 +93,8 @@ export default function BusinessesPage() {
 
           {/* 05 Consulting */}
           <article className="biz flip" id="management-consulting">
-            <div className="biz-media media-photo reveal">
-              <img className="biz-img" src="/images/elon-right.webp" alt="RMHcKinsey advisory" loading="lazy" />
+            <div className="biz-media reveal" aria-hidden="true">
+              <svg viewBox="0 0 300 300" width="68%" fill="none"><g stroke="#C8A24A" strokeOpacity=".4"><circle cx="110" cy="120" r="46" /><circle cx="190" cy="180" r="46" /></g><circle cx="150" cy="150" r="14" fill="none" stroke="#E3C277" strokeWidth="2" /></svg>
             </div>
             <div className="reveal d1">
               <div className="biz-stage">Strategize &amp; transform</div>

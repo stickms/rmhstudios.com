@@ -176,7 +176,7 @@
   .rmhc-root .feature.flip .feature-media{order:0}
 }
 
-/* ════ PORTRAIT BAND (full-width elon image with quote) ════ */
+/* ════ PORTRAIT BAND (legacy, unused) ════ */
 .rmhc-root .portrait-band{position:relative;min-height:clamp(420px,60vh,640px);display:flex;align-items:flex-end;overflow:hidden;border-block:1px solid var(--line-soft);isolation:isolate}
 .rmhc-root .portrait-band-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 22%;z-index:0;filter:saturate(.95) contrast(1.04)}
 .rmhc-root .portrait-band::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(90deg,rgba(6,9,15,.92) 0%,rgba(6,9,15,.55) 40%,rgba(6,9,15,.1) 75%),linear-gradient(0deg,rgba(6,9,15,.9),transparent 55%)}

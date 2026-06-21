@@ -9,7 +9,7 @@ const DESC =
 
 export const Route = createFileRoute('/rmh-capital/careers')({
   head: () => ({
-    meta: buildMeta({ title: TITLE, description: DESC, path: PATH, image: '/images/elon-right.webp' }),
+    meta: buildMeta({ title: TITLE, description: DESC, path: PATH }),
     links: [buildCanonical(PATH)],
   }),
   component: CareersPage,

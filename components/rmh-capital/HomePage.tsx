@@ -4,9 +4,26 @@ import { MarketsTicker } from './shared';
 export default function HomePage() {
   return (
     <>
-      {/* ══ HERO — giant portrait with overlaid text ══ */}
-      <section className="hero-photo">
-        <img className="hero-photo-img" src="/images/elon-main.webp" alt="" aria-hidden="true" fetchPriority="high" />
+      {/* ══ HERO — gold great-circle arc signature ══ */}
+      <section className="hero">
+        <div className="hero-bg" aria-hidden="true">
+          <svg className="hero-arc" viewBox="0 0 600 600" fill="none" preserveAspectRatio="xMidYMid meet">
+            <g className="spin-slow" stroke="#C8A24A">
+              <circle cx="300" cy="300" r="268" strokeOpacity="0.16" />
+              <ellipse cx="300" cy="300" rx="268" ry="96" strokeOpacity="0.13" />
+              <ellipse cx="300" cy="300" rx="268" ry="184" strokeOpacity="0.10" />
+              <ellipse cx="300" cy="300" rx="120" ry="268" strokeOpacity="0.10" />
+              <ellipse cx="300" cy="300" rx="210" ry="268" strokeOpacity="0.08" />
+              <g strokeOpacity="0.45">
+                <line x1="300" y1="32" x2="300" y2="52" /><line x1="300" y1="548" x2="300" y2="568" />
+                <line x1="32" y1="300" x2="52" y2="300" /><line x1="548" y1="300" x2="568" y2="300" />
+              </g>
+            </g>
+            <path className="arc-draw" d="M 96 470 A 268 268 0 0 1 470 96" stroke="#E3C277" strokeWidth="2.4" strokeLinecap="round" />
+            <circle cx="96" cy="470" r="6" fill="#E3C277" />
+            <circle cx="470" cy="96" r="6" fill="#E3C277" />
+          </svg>
+        </div>
         <div className="container hero-content">
           <span className="eyebrow reveal">An integrated financial platform</span>
           <h1 className="serif reveal d1">Capital, advisory, and intelligence across the full company arc</h1>
@@ -24,7 +41,6 @@ export default function HomePage() {
             </Link>
           </div>
         </div>
-        <span className="hero-credit">RMH Capital · Office of the Chairman</span>
       </section>
 
       <MarketsTicker />
@@ -57,26 +73,16 @@ export default function HomePage() {
                 Read about our firm <span className="arw">→</span>
               </Link>
             </div>
-            <div className="feature-media media-photo reveal d1">
-              <img className="media-img pos-right" src="/images/elon-right.webp" alt="RMH Capital leadership" loading="lazy" />
-              <div className="media-cap">
-                <div className="rl">One firm</div>
-                <div className="nm">"We bring the whole platform to a single relationship."</div>
-              </div>
+            <div className="feature-media reveal d1" aria-hidden="true">
+              <svg viewBox="0 0 400 300" width="78%" fill="none" stroke="#C8A24A" strokeOpacity="0.6" strokeWidth="1.2">
+                <circle cx="200" cy="150" r="22" stroke="#E3C277" strokeOpacity="1" />
+                <g strokeOpacity="0.4"><circle cx="200" cy="150" r="70" /><circle cx="200" cy="150" r="118" /></g>
+                <g fill="#C8A24A" stroke="none">
+                  <circle cx="200" cy="32" r="3.5" /><circle cx="302" cy="91" r="3.5" /><circle cx="302" cy="209" r="3.5" /><circle cx="200" cy="268" r="3.5" /><circle cx="98" cy="209" r="3.5" /><circle cx="98" cy="91" r="3.5" />
+                </g>
+              </svg>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* ══ PORTRAIT BAND — chairman quote over photo ══ */}
-      <section className="portrait-band">
-        <img className="portrait-band-img" src="/images/elon-main.webp" alt="" aria-hidden="true" loading="lazy" />
-        <div className="container">
-          <blockquote className="reveal">
-            <span className="lc">Conviction</span> compounds when one platform stays with a company across every stage it
-            grows through.
-          </blockquote>
-          <p className="attrib reveal d1">— Office of the Chairman, RMH Capital</p>
         </div>
       </section>
 
@@ -150,8 +156,7 @@ export default function HomePage() {
           </div>
 
           <div className="featured reveal">
-            <Link className="featured-main has-photo" to="/rmh-capital/insights">
-              <img className="fm-bg" src="/images/elon-main.webp" alt="" aria-hidden="true" loading="lazy" />
+            <Link className="featured-main" to="/rmh-capital/insights">
               <span className="metaline">Markets <span className="dot" /> <span className="t">Outlook</span></span>
               <h3>The 2026 capital cycle: where conviction meets discipline</h3>
               <p>
