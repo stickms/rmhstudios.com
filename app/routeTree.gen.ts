@@ -150,6 +150,7 @@ import { Route as ApiScheduledIndexRouteImport } from './routes/api/scheduled/in
 import { Route as ApiNotificationsIndexRouteImport } from './routes/api/notifications/index'
 import { Route as ApiCommunitiesIndexRouteImport } from './routes/api/communities/index'
 import { Route as ApiCoinsIndexRouteImport } from './routes/api/coins/index'
+import { Route as ApiClansIndexRouteImport } from './routes/api/clans/index'
 import { Route as ApiBattlepassIndexRouteImport } from './routes/api/battlepass/index'
 import { Route as AltairMultiplayerIndexRouteImport } from './routes/altair/multiplayer/index'
 import { Route as SiteVIndexRouteImport } from './routes/_site/v/index'
@@ -158,6 +159,7 @@ import { Route as SiteResearchIndexRouteImport } from './routes/_site/research/i
 import { Route as SiteNewsIndexRouteImport } from './routes/_site/news/index'
 import { Route as SiteMessagesIndexRouteImport } from './routes/_site/messages/index'
 import { Route as SiteLibraryIndexRouteImport } from './routes/_site/library/index'
+import { Route as SiteClansIndexRouteImport } from './routes/_site/clans/index'
 import { Route as SiteBuildsIndexRouteImport } from './routes/_site/builds/index'
 import { Route as SiteBlogIndexRouteImport } from './routes/_site/blog/index'
 import { Route as SiteAdminIndexRouteImport } from './routes/_site/admin/index'
@@ -274,6 +276,7 @@ import { Route as SiteTagTagRouteImport } from './routes/_site/tag.$tag'
 import { Route as SiteResearchCallRouteImport } from './routes/_site/research/call'
 import { Route as SiteProfileIdRouteImport } from './routes/_site/profile/$id'
 import { Route as SiteMessagesConversationIdRouteImport } from './routes/_site/messages/$conversationId'
+import { Route as SiteClansSlugRouteImport } from './routes/_site/clans/$slug'
 import { Route as SiteCSlugRouteImport } from './routes/_site/c.$slug'
 import { Route as SiteAdminUsersRouteImport } from './routes/_site/admin/users'
 import { Route as SiteAdminUserBuildsRouteImport } from './routes/_site/admin/user-builds'
@@ -284,6 +287,7 @@ import { Route as SiteAdminAnalyticsRouteImport } from './routes/_site/admin/ana
 import { Route as ApiDoctrineReputationIndexRouteImport } from './routes/api/doctrine/reputation/index'
 import { Route as ApiDoctrineIncidentsIndexRouteImport } from './routes/api/doctrine/incidents/index'
 import { Route as ApiCommunitiesSlugIndexRouteImport } from './routes/api/communities/$slug/index'
+import { Route as ApiClansSlugIndexRouteImport } from './routes/api/clans/$slug/index'
 import { Route as SiteUUseridIndexRouteImport } from './routes/_site/u/$userid/index'
 import { Route as SiteAdminBlogIndexRouteImport } from './routes/_site/admin/blog/index'
 import { Route as SecretJobsAssessmentIdRouteImport } from './routes/secret/jobs/assessment/$id'
@@ -344,6 +348,8 @@ import { Route as ApiDoctrineAdminDisclosuresRouteImport } from './routes/api/do
 import { Route as ApiCommunitiesSlugJoinRouteImport } from './routes/api/communities/$slug/join'
 import { Route as ApiCommunitiesSlugFeedRouteImport } from './routes/api/communities/$slug/feed'
 import { Route as ApiCommentsCommentIdTranslateRouteImport } from './routes/api/comments/$commentId/translate'
+import { Route as ApiClansSlugLeaveRouteImport } from './routes/api/clans/$slug/leave'
+import { Route as ApiClansSlugJoinRouteImport } from './routes/api/clans/$slug/join'
 import { Route as ApiAdminReportsIdRouteImport } from './routes/api/admin/reports/$id'
 import { Route as ApiAdminCuratedBuildsImageRouteImport } from './routes/api/admin/curated-builds/image'
 import { Route as ApiAdminAnnouncementsIdRouteImport } from './routes/api/admin/announcements/$id'
@@ -1070,6 +1076,11 @@ const ApiCoinsIndexRoute = ApiCoinsIndexRouteImport.update({
   path: '/api/coins/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiClansIndexRoute = ApiClansIndexRouteImport.update({
+  id: '/api/clans/',
+  path: '/api/clans/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiBattlepassIndexRoute = ApiBattlepassIndexRouteImport.update({
   id: '/api/battlepass/',
   path: '/api/battlepass/',
@@ -1108,6 +1119,11 @@ const SiteMessagesIndexRoute = SiteMessagesIndexRouteImport.update({
 const SiteLibraryIndexRoute = SiteLibraryIndexRouteImport.update({
   id: '/library/',
   path: '/library/',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteClansIndexRoute = SiteClansIndexRouteImport.update({
+  id: '/clans/',
+  path: '/clans/',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteBuildsIndexRoute = SiteBuildsIndexRouteImport.update({
@@ -1706,6 +1722,11 @@ const SiteMessagesConversationIdRoute =
     path: '/messages/$conversationId',
     getParentRoute: () => SiteRoute,
   } as any)
+const SiteClansSlugRoute = SiteClansSlugRouteImport.update({
+  id: '/clans/$slug',
+  path: '/clans/$slug',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteCSlugRoute = SiteCSlugRouteImport.update({
   id: '/c/$slug',
   path: '/c/$slug',
@@ -1756,6 +1777,11 @@ const ApiDoctrineIncidentsIndexRoute =
 const ApiCommunitiesSlugIndexRoute = ApiCommunitiesSlugIndexRouteImport.update({
   id: '/api/communities/$slug/',
   path: '/api/communities/$slug/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiClansSlugIndexRoute = ApiClansSlugIndexRouteImport.update({
+  id: '/api/clans/$slug/',
+  path: '/api/clans/$slug/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SiteUUseridIndexRoute = SiteUUseridIndexRouteImport.update({
@@ -2077,6 +2103,16 @@ const ApiCommentsCommentIdTranslateRoute =
     path: '/api/comments/$commentId/translate',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiClansSlugLeaveRoute = ApiClansSlugLeaveRouteImport.update({
+  id: '/api/clans/$slug/leave',
+  path: '/api/clans/$slug/leave',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiClansSlugJoinRoute = ApiClansSlugJoinRouteImport.update({
+  id: '/api/clans/$slug/join',
+  path: '/api/clans/$slug/join',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminReportsIdRoute = ApiAdminReportsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -2321,6 +2357,7 @@ export interface FileRoutesByFullPath {
   '/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/admin/users': typeof SiteAdminUsersRoute
   '/c/$slug': typeof SiteCSlugRoute
+  '/clans/$slug': typeof SiteClansSlugRoute
   '/messages/$conversationId': typeof SiteMessagesConversationIdRoute
   '/profile/$id': typeof SiteProfileIdRoute
   '/research/call': typeof SiteResearchCallRoute
@@ -2437,6 +2474,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof SiteAdminIndexRoute
   '/blog/': typeof SiteBlogIndexRoute
   '/builds/': typeof SiteBuildsIndexRoute
+  '/clans/': typeof SiteClansIndexRoute
   '/library/': typeof SiteLibraryIndexRoute
   '/messages/': typeof SiteMessagesIndexRoute
   '/news/': typeof SiteNewsIndexRoute
@@ -2445,6 +2483,7 @@ export interface FileRoutesByFullPath {
   '/v/': typeof SiteVIndexRoute
   '/altair/multiplayer/': typeof AltairMultiplayerIndexRoute
   '/api/battlepass/': typeof ApiBattlepassIndexRoute
+  '/api/clans/': typeof ApiClansIndexRoute
   '/api/coins/': typeof ApiCoinsIndexRoute
   '/api/communities/': typeof ApiCommunitiesIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
@@ -2464,6 +2503,8 @@ export interface FileRoutesByFullPath {
   '/api/admin/announcements/$id': typeof ApiAdminAnnouncementsIdRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
+  '/api/clans/$slug/join': typeof ApiClansSlugJoinRoute
+  '/api/clans/$slug/leave': typeof ApiClansSlugLeaveRoute
   '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
   '/api/communities/$slug/feed': typeof ApiCommunitiesSlugFeedRoute
   '/api/communities/$slug/join': typeof ApiCommunitiesSlugJoinRoute
@@ -2524,6 +2565,7 @@ export interface FileRoutesByFullPath {
   '/secret/jobs/assessment/$id': typeof SecretJobsAssessmentIdRoute
   '/admin/blog/': typeof SiteAdminBlogIndexRoute
   '/u/$userid/': typeof SiteUUseridIndexRoute
+  '/api/clans/$slug/': typeof ApiClansSlugIndexRoute
   '/api/communities/$slug/': typeof ApiCommunitiesSlugIndexRoute
   '/api/doctrine/incidents/': typeof ApiDoctrineIncidentsIndexRoute
   '/api/doctrine/reputation/': typeof ApiDoctrineReputationIndexRoute
@@ -2654,6 +2696,7 @@ export interface FileRoutesByTo {
   '/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/admin/users': typeof SiteAdminUsersRoute
   '/c/$slug': typeof SiteCSlugRoute
+  '/clans/$slug': typeof SiteClansSlugRoute
   '/messages/$conversationId': typeof SiteMessagesConversationIdRoute
   '/profile/$id': typeof SiteProfileIdRoute
   '/research/call': typeof SiteResearchCallRoute
@@ -2770,6 +2813,7 @@ export interface FileRoutesByTo {
   '/admin': typeof SiteAdminIndexRoute
   '/blog': typeof SiteBlogIndexRoute
   '/builds': typeof SiteBuildsIndexRoute
+  '/clans': typeof SiteClansIndexRoute
   '/library': typeof SiteLibraryIndexRoute
   '/messages': typeof SiteMessagesIndexRoute
   '/news': typeof SiteNewsIndexRoute
@@ -2778,6 +2822,7 @@ export interface FileRoutesByTo {
   '/v': typeof SiteVIndexRoute
   '/altair/multiplayer': typeof AltairMultiplayerIndexRoute
   '/api/battlepass': typeof ApiBattlepassIndexRoute
+  '/api/clans': typeof ApiClansIndexRoute
   '/api/coins': typeof ApiCoinsIndexRoute
   '/api/communities': typeof ApiCommunitiesIndexRoute
   '/api/notifications': typeof ApiNotificationsIndexRoute
@@ -2797,6 +2842,8 @@ export interface FileRoutesByTo {
   '/api/admin/announcements/$id': typeof ApiAdminAnnouncementsIdRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
+  '/api/clans/$slug/join': typeof ApiClansSlugJoinRoute
+  '/api/clans/$slug/leave': typeof ApiClansSlugLeaveRoute
   '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
   '/api/communities/$slug/feed': typeof ApiCommunitiesSlugFeedRoute
   '/api/communities/$slug/join': typeof ApiCommunitiesSlugJoinRoute
@@ -2857,6 +2904,7 @@ export interface FileRoutesByTo {
   '/secret/jobs/assessment/$id': typeof SecretJobsAssessmentIdRoute
   '/admin/blog': typeof SiteAdminBlogIndexRoute
   '/u/$userid': typeof SiteUUseridIndexRoute
+  '/api/clans/$slug': typeof ApiClansSlugIndexRoute
   '/api/communities/$slug': typeof ApiCommunitiesSlugIndexRoute
   '/api/doctrine/incidents': typeof ApiDoctrineIncidentsIndexRoute
   '/api/doctrine/reputation': typeof ApiDoctrineReputationIndexRoute
@@ -3012,6 +3060,7 @@ export interface FileRoutesById {
   '/_site/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/_site/admin/users': typeof SiteAdminUsersRoute
   '/_site/c/$slug': typeof SiteCSlugRoute
+  '/_site/clans/$slug': typeof SiteClansSlugRoute
   '/_site/messages/$conversationId': typeof SiteMessagesConversationIdRoute
   '/_site/profile/$id': typeof SiteProfileIdRoute
   '/_site/research/call': typeof SiteResearchCallRoute
@@ -3128,6 +3177,7 @@ export interface FileRoutesById {
   '/_site/admin/': typeof SiteAdminIndexRoute
   '/_site/blog/': typeof SiteBlogIndexRoute
   '/_site/builds/': typeof SiteBuildsIndexRoute
+  '/_site/clans/': typeof SiteClansIndexRoute
   '/_site/library/': typeof SiteLibraryIndexRoute
   '/_site/messages/': typeof SiteMessagesIndexRoute
   '/_site/news/': typeof SiteNewsIndexRoute
@@ -3136,6 +3186,7 @@ export interface FileRoutesById {
   '/_site/v/': typeof SiteVIndexRoute
   '/altair/multiplayer/': typeof AltairMultiplayerIndexRoute
   '/api/battlepass/': typeof ApiBattlepassIndexRoute
+  '/api/clans/': typeof ApiClansIndexRoute
   '/api/coins/': typeof ApiCoinsIndexRoute
   '/api/communities/': typeof ApiCommunitiesIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
@@ -3155,6 +3206,8 @@ export interface FileRoutesById {
   '/api/admin/announcements/$id': typeof ApiAdminAnnouncementsIdRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
+  '/api/clans/$slug/join': typeof ApiClansSlugJoinRoute
+  '/api/clans/$slug/leave': typeof ApiClansSlugLeaveRoute
   '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
   '/api/communities/$slug/feed': typeof ApiCommunitiesSlugFeedRoute
   '/api/communities/$slug/join': typeof ApiCommunitiesSlugJoinRoute
@@ -3215,6 +3268,7 @@ export interface FileRoutesById {
   '/secret/jobs/assessment/$id': typeof SecretJobsAssessmentIdRoute
   '/_site/admin/blog/': typeof SiteAdminBlogIndexRoute
   '/_site/u/$userid/': typeof SiteUUseridIndexRoute
+  '/api/clans/$slug/': typeof ApiClansSlugIndexRoute
   '/api/communities/$slug/': typeof ApiCommunitiesSlugIndexRoute
   '/api/doctrine/incidents/': typeof ApiDoctrineIncidentsIndexRoute
   '/api/doctrine/reputation/': typeof ApiDoctrineReputationIndexRoute
@@ -3370,6 +3424,7 @@ export interface FileRouteTypes {
     | '/admin/user-builds'
     | '/admin/users'
     | '/c/$slug'
+    | '/clans/$slug'
     | '/messages/$conversationId'
     | '/profile/$id'
     | '/research/call'
@@ -3486,6 +3541,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/blog/'
     | '/builds/'
+    | '/clans/'
     | '/library/'
     | '/messages/'
     | '/news/'
@@ -3494,6 +3550,7 @@ export interface FileRouteTypes {
     | '/v/'
     | '/altair/multiplayer/'
     | '/api/battlepass/'
+    | '/api/clans/'
     | '/api/coins/'
     | '/api/communities/'
     | '/api/notifications/'
@@ -3513,6 +3570,8 @@ export interface FileRouteTypes {
     | '/api/admin/announcements/$id'
     | '/api/admin/curated-builds/image'
     | '/api/admin/reports/$id'
+    | '/api/clans/$slug/join'
+    | '/api/clans/$slug/leave'
     | '/api/comments/$commentId/translate'
     | '/api/communities/$slug/feed'
     | '/api/communities/$slug/join'
@@ -3573,6 +3632,7 @@ export interface FileRouteTypes {
     | '/secret/jobs/assessment/$id'
     | '/admin/blog/'
     | '/u/$userid/'
+    | '/api/clans/$slug/'
     | '/api/communities/$slug/'
     | '/api/doctrine/incidents/'
     | '/api/doctrine/reputation/'
@@ -3703,6 +3763,7 @@ export interface FileRouteTypes {
     | '/admin/user-builds'
     | '/admin/users'
     | '/c/$slug'
+    | '/clans/$slug'
     | '/messages/$conversationId'
     | '/profile/$id'
     | '/research/call'
@@ -3819,6 +3880,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/blog'
     | '/builds'
+    | '/clans'
     | '/library'
     | '/messages'
     | '/news'
@@ -3827,6 +3889,7 @@ export interface FileRouteTypes {
     | '/v'
     | '/altair/multiplayer'
     | '/api/battlepass'
+    | '/api/clans'
     | '/api/coins'
     | '/api/communities'
     | '/api/notifications'
@@ -3846,6 +3909,8 @@ export interface FileRouteTypes {
     | '/api/admin/announcements/$id'
     | '/api/admin/curated-builds/image'
     | '/api/admin/reports/$id'
+    | '/api/clans/$slug/join'
+    | '/api/clans/$slug/leave'
     | '/api/comments/$commentId/translate'
     | '/api/communities/$slug/feed'
     | '/api/communities/$slug/join'
@@ -3906,6 +3971,7 @@ export interface FileRouteTypes {
     | '/secret/jobs/assessment/$id'
     | '/admin/blog'
     | '/u/$userid'
+    | '/api/clans/$slug'
     | '/api/communities/$slug'
     | '/api/doctrine/incidents'
     | '/api/doctrine/reputation'
@@ -4060,6 +4126,7 @@ export interface FileRouteTypes {
     | '/_site/admin/user-builds'
     | '/_site/admin/users'
     | '/_site/c/$slug'
+    | '/_site/clans/$slug'
     | '/_site/messages/$conversationId'
     | '/_site/profile/$id'
     | '/_site/research/call'
@@ -4176,6 +4243,7 @@ export interface FileRouteTypes {
     | '/_site/admin/'
     | '/_site/blog/'
     | '/_site/builds/'
+    | '/_site/clans/'
     | '/_site/library/'
     | '/_site/messages/'
     | '/_site/news/'
@@ -4184,6 +4252,7 @@ export interface FileRouteTypes {
     | '/_site/v/'
     | '/altair/multiplayer/'
     | '/api/battlepass/'
+    | '/api/clans/'
     | '/api/coins/'
     | '/api/communities/'
     | '/api/notifications/'
@@ -4203,6 +4272,8 @@ export interface FileRouteTypes {
     | '/api/admin/announcements/$id'
     | '/api/admin/curated-builds/image'
     | '/api/admin/reports/$id'
+    | '/api/clans/$slug/join'
+    | '/api/clans/$slug/leave'
     | '/api/comments/$commentId/translate'
     | '/api/communities/$slug/feed'
     | '/api/communities/$slug/join'
@@ -4263,6 +4334,7 @@ export interface FileRouteTypes {
     | '/secret/jobs/assessment/$id'
     | '/_site/admin/blog/'
     | '/_site/u/$userid/'
+    | '/api/clans/$slug/'
     | '/api/communities/$slug/'
     | '/api/doctrine/incidents/'
     | '/api/doctrine/reputation/'
@@ -4427,6 +4499,7 @@ export interface RootRouteChildren {
   ApiWheelSpinRoute: typeof ApiWheelSpinRoute
   EmbedPostIdRoute: typeof EmbedPostIdRoute
   ApiBattlepassIndexRoute: typeof ApiBattlepassIndexRoute
+  ApiClansIndexRoute: typeof ApiClansIndexRoute
   ApiCoinsIndexRoute: typeof ApiCoinsIndexRoute
   ApiCommunitiesIndexRoute: typeof ApiCommunitiesIndexRoute
   ApiNotificationsIndexRoute: typeof ApiNotificationsIndexRoute
@@ -4435,6 +4508,8 @@ export interface RootRouteChildren {
   ApiStakingIndexRoute: typeof ApiStakingIndexRoute
   ApiWheelIndexRoute: typeof ApiWheelIndexRoute
   ApiAdminCuratedBuildsImageRoute: typeof ApiAdminCuratedBuildsImageRouteWithChildren
+  ApiClansSlugJoinRoute: typeof ApiClansSlugJoinRoute
+  ApiClansSlugLeaveRoute: typeof ApiClansSlugLeaveRoute
   ApiCommentsCommentIdTranslateRoute: typeof ApiCommentsCommentIdTranslateRoute
   ApiCommunitiesSlugFeedRoute: typeof ApiCommunitiesSlugFeedRoute
   ApiCommunitiesSlugJoinRoute: typeof ApiCommunitiesSlugJoinRoute
@@ -4465,6 +4540,7 @@ export interface RootRouteChildren {
   ApiRmhcodeAuthValidateRoute: typeof ApiRmhcodeAuthValidateRoute
   ApiRmhmusicSpotifySearchRoute: typeof ApiRmhmusicSpotifySearchRoute
   ApiVibeThumbSlugRoute: typeof ApiVibeThumbSlugRoute
+  ApiClansSlugIndexRoute: typeof ApiClansSlugIndexRoute
   ApiCommunitiesSlugIndexRoute: typeof ApiCommunitiesSlugIndexRoute
   ApiDoctrineIncidentsIndexRoute: typeof ApiDoctrineIncidentsIndexRoute
   ApiDoctrineReputationIndexRoute: typeof ApiDoctrineReputationIndexRoute
@@ -5459,6 +5535,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCoinsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/clans/': {
+      id: '/api/clans/'
+      path: '/api/clans'
+      fullPath: '/api/clans/'
+      preLoaderRoute: typeof ApiClansIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/battlepass/': {
       id: '/api/battlepass/'
       path: '/api/battlepass'
@@ -5513,6 +5596,13 @@ declare module '@tanstack/react-router' {
       path: '/library'
       fullPath: '/library/'
       preLoaderRoute: typeof SiteLibraryIndexRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/clans/': {
+      id: '/_site/clans/'
+      path: '/clans'
+      fullPath: '/clans/'
+      preLoaderRoute: typeof SiteClansIndexRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/builds/': {
@@ -6327,6 +6417,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteMessagesConversationIdRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/clans/$slug': {
+      id: '/_site/clans/$slug'
+      path: '/clans/$slug'
+      fullPath: '/clans/$slug'
+      preLoaderRoute: typeof SiteClansSlugRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/c/$slug': {
       id: '/_site/c/$slug'
       path: '/c/$slug'
@@ -6395,6 +6492,13 @@ declare module '@tanstack/react-router' {
       path: '/api/communities/$slug'
       fullPath: '/api/communities/$slug/'
       preLoaderRoute: typeof ApiCommunitiesSlugIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/clans/$slug/': {
+      id: '/api/clans/$slug/'
+      path: '/api/clans/$slug'
+      fullPath: '/api/clans/$slug/'
+      preLoaderRoute: typeof ApiClansSlugIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_site/u/$userid/': {
@@ -6817,6 +6921,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCommentsCommentIdTranslateRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/clans/$slug/leave': {
+      id: '/api/clans/$slug/leave'
+      path: '/api/clans/$slug/leave'
+      fullPath: '/api/clans/$slug/leave'
+      preLoaderRoute: typeof ApiClansSlugLeaveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/clans/$slug/join': {
+      id: '/api/clans/$slug/join'
+      path: '/api/clans/$slug/join'
+      fullPath: '/api/clans/$slug/join'
+      preLoaderRoute: typeof ApiClansSlugJoinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/reports/$id': {
       id: '/api/admin/reports/$id'
       path: '/$id'
@@ -7009,6 +7127,7 @@ interface SiteRouteChildren {
   SiteWrappedRoute: typeof SiteWrappedRoute
   SiteIndexRoute: typeof SiteIndexRoute
   SiteCSlugRoute: typeof SiteCSlugRoute
+  SiteClansSlugRoute: typeof SiteClansSlugRoute
   SiteMessagesConversationIdRoute: typeof SiteMessagesConversationIdRoute
   SiteProfileIdRoute: typeof SiteProfileIdRoute
   SiteResearchCallRoute: typeof SiteResearchCallRoute
@@ -7017,6 +7136,7 @@ interface SiteRouteChildren {
   SiteUserBuildsSubmitRoute: typeof SiteUserBuildsSubmitRoute
   SiteBlogIndexRoute: typeof SiteBlogIndexRoute
   SiteBuildsIndexRoute: typeof SiteBuildsIndexRoute
+  SiteClansIndexRoute: typeof SiteClansIndexRoute
   SiteLibraryIndexRoute: typeof SiteLibraryIndexRoute
   SiteMessagesIndexRoute: typeof SiteMessagesIndexRoute
   SiteNewsIndexRoute: typeof SiteNewsIndexRoute
@@ -7046,6 +7166,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteWrappedRoute: SiteWrappedRoute,
   SiteIndexRoute: SiteIndexRoute,
   SiteCSlugRoute: SiteCSlugRoute,
+  SiteClansSlugRoute: SiteClansSlugRoute,
   SiteMessagesConversationIdRoute: SiteMessagesConversationIdRoute,
   SiteProfileIdRoute: SiteProfileIdRoute,
   SiteResearchCallRoute: SiteResearchCallRoute,
@@ -7054,6 +7175,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteUserBuildsSubmitRoute: SiteUserBuildsSubmitRoute,
   SiteBlogIndexRoute: SiteBlogIndexRoute,
   SiteBuildsIndexRoute: SiteBuildsIndexRoute,
+  SiteClansIndexRoute: SiteClansIndexRoute,
   SiteLibraryIndexRoute: SiteLibraryIndexRoute,
   SiteMessagesIndexRoute: SiteMessagesIndexRoute,
   SiteNewsIndexRoute: SiteNewsIndexRoute,
@@ -7862,6 +7984,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiWheelSpinRoute: ApiWheelSpinRoute,
   EmbedPostIdRoute: EmbedPostIdRoute,
   ApiBattlepassIndexRoute: ApiBattlepassIndexRoute,
+  ApiClansIndexRoute: ApiClansIndexRoute,
   ApiCoinsIndexRoute: ApiCoinsIndexRoute,
   ApiCommunitiesIndexRoute: ApiCommunitiesIndexRoute,
   ApiNotificationsIndexRoute: ApiNotificationsIndexRoute,
@@ -7870,6 +7993,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiStakingIndexRoute: ApiStakingIndexRoute,
   ApiWheelIndexRoute: ApiWheelIndexRoute,
   ApiAdminCuratedBuildsImageRoute: ApiAdminCuratedBuildsImageRouteWithChildren,
+  ApiClansSlugJoinRoute: ApiClansSlugJoinRoute,
+  ApiClansSlugLeaveRoute: ApiClansSlugLeaveRoute,
   ApiCommentsCommentIdTranslateRoute: ApiCommentsCommentIdTranslateRoute,
   ApiCommunitiesSlugFeedRoute: ApiCommunitiesSlugFeedRoute,
   ApiCommunitiesSlugJoinRoute: ApiCommunitiesSlugJoinRoute,
@@ -7900,6 +8025,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRmhcodeAuthValidateRoute: ApiRmhcodeAuthValidateRoute,
   ApiRmhmusicSpotifySearchRoute: ApiRmhmusicSpotifySearchRoute,
   ApiVibeThumbSlugRoute: ApiVibeThumbSlugRoute,
+  ApiClansSlugIndexRoute: ApiClansSlugIndexRoute,
   ApiCommunitiesSlugIndexRoute: ApiCommunitiesSlugIndexRoute,
   ApiDoctrineIncidentsIndexRoute: ApiDoctrineIncidentsIndexRoute,
   ApiDoctrineReputationIndexRoute: ApiDoctrineReputationIndexRoute,
