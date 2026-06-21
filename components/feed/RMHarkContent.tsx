@@ -32,7 +32,7 @@ export function RMHarkContent({ text, className }: RMHarkContentProps) {
               to="/u/$userid"
               params={{ userid: part.slice(1) }}
               onClick={(e) => e.stopPropagation()}
-              className="text-site-accent hover:underline"
+              className="text-sky-400 hover:text-sky-300 hover:underline"
             >
               {part}
             </Link>
