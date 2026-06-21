@@ -84,6 +84,16 @@ function AdminDashboardPage() {
               Publish pinned banners shown at the top of everyone&apos;s feed. Activate, deactivate, or remove them.
             </p>
           </Link>
+
+          <Link
+            to="/admin/analytics"
+            className="block p-6 rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
+          >
+            <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">Analytics</h2>
+            <p className="text-site-text-muted text-sm mt-2">
+              Platform stats: users, active users, posts, comments, reports, and coins in circulation.
+            </p>
+          </Link>
         </div>
       </div>
     </PageLayout>

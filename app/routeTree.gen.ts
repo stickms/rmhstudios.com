@@ -238,6 +238,7 @@ import { Route as ApiAdminUsersRouteImport } from './routes/api/admin/users'
 import { Route as ApiAdminReportsRouteImport } from './routes/api/admin/reports'
 import { Route as ApiAdminBlogRouteImport } from './routes/api/admin/blog'
 import { Route as ApiAdminAnnouncementsRouteImport } from './routes/api/admin/announcements'
+import { Route as ApiAdminAnalyticsRouteImport } from './routes/api/admin/analytics'
 import { Route as ApiAchievementsUserIdRouteImport } from './routes/api/achievements/$userId'
 import { Route as AltairMultiplayerLobbyIdRouteImport } from './routes/altair/multiplayer/$lobbyId'
 import { Route as SiteUserBuildsSubmitRouteImport } from './routes/_site/user-builds/submit'
@@ -250,6 +251,7 @@ import { Route as SiteAdminUsersRouteImport } from './routes/_site/admin/users'
 import { Route as SiteAdminUserBuildsRouteImport } from './routes/_site/admin/user-builds'
 import { Route as SiteAdminReportsRouteImport } from './routes/_site/admin/reports'
 import { Route as SiteAdminAnnouncementsRouteImport } from './routes/_site/admin/announcements'
+import { Route as SiteAdminAnalyticsRouteImport } from './routes/_site/admin/analytics'
 import { Route as ApiDoctrineReputationIndexRouteImport } from './routes/api/doctrine/reputation/index'
 import { Route as ApiDoctrineIncidentsIndexRouteImport } from './routes/api/doctrine/incidents/index'
 import { Route as SiteUUseridIndexRouteImport } from './routes/_site/u/$userid/index'
@@ -1481,6 +1483,11 @@ const ApiAdminAnnouncementsRoute = ApiAdminAnnouncementsRouteImport.update({
   path: '/api/admin/announcements',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminAnalyticsRoute = ApiAdminAnalyticsRouteImport.update({
+  id: '/api/admin/analytics',
+  path: '/api/admin/analytics',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAchievementsUserIdRoute = ApiAchievementsUserIdRouteImport.update({
   id: '/api/achievements/$userId',
   path: '/api/achievements/$userId',
@@ -1541,6 +1548,11 @@ const SiteAdminReportsRoute = SiteAdminReportsRouteImport.update({
 const SiteAdminAnnouncementsRoute = SiteAdminAnnouncementsRouteImport.update({
   id: '/announcements',
   path: '/announcements',
+  getParentRoute: () => SiteAdminRouteRoute,
+} as any)
+const SiteAdminAnalyticsRoute = SiteAdminAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
 const ApiDoctrineReputationIndexRoute =
@@ -2042,6 +2054,7 @@ export interface FileRoutesByFullPath {
   '/studio/': typeof StudioIndexRoute
   '/temple-of-joy/': typeof TempleOfJoyIndexRoute
   '/versecraft/': typeof VersecraftIndexRoute
+  '/admin/analytics': typeof SiteAdminAnalyticsRoute
   '/admin/announcements': typeof SiteAdminAnnouncementsRoute
   '/admin/reports': typeof SiteAdminReportsRoute
   '/admin/user-builds': typeof SiteAdminUserBuildsRoute
@@ -2054,6 +2067,7 @@ export interface FileRoutesByFullPath {
   '/user-builds/submit': typeof SiteUserBuildsSubmitRoute
   '/altair/multiplayer/$lobbyId': typeof AltairMultiplayerLobbyIdRoute
   '/api/achievements/$userId': typeof ApiAchievementsUserIdRoute
+  '/api/admin/analytics': typeof ApiAdminAnalyticsRoute
   '/api/admin/announcements': typeof ApiAdminAnnouncementsRouteWithChildren
   '/api/admin/blog': typeof ApiAdminBlogRoute
   '/api/admin/reports': typeof ApiAdminReportsRouteWithChildren
@@ -2333,6 +2347,7 @@ export interface FileRoutesByTo {
   '/studio': typeof StudioIndexRoute
   '/temple-of-joy': typeof TempleOfJoyIndexRoute
   '/versecraft': typeof VersecraftIndexRoute
+  '/admin/analytics': typeof SiteAdminAnalyticsRoute
   '/admin/announcements': typeof SiteAdminAnnouncementsRoute
   '/admin/reports': typeof SiteAdminReportsRoute
   '/admin/user-builds': typeof SiteAdminUserBuildsRoute
@@ -2345,6 +2360,7 @@ export interface FileRoutesByTo {
   '/user-builds/submit': typeof SiteUserBuildsSubmitRoute
   '/altair/multiplayer/$lobbyId': typeof AltairMultiplayerLobbyIdRoute
   '/api/achievements/$userId': typeof ApiAchievementsUserIdRoute
+  '/api/admin/analytics': typeof ApiAdminAnalyticsRoute
   '/api/admin/announcements': typeof ApiAdminAnnouncementsRouteWithChildren
   '/api/admin/blog': typeof ApiAdminBlogRoute
   '/api/admin/reports': typeof ApiAdminReportsRouteWithChildren
@@ -2648,6 +2664,7 @@ export interface FileRoutesById {
   '/studio/': typeof StudioIndexRoute
   '/temple-of-joy/': typeof TempleOfJoyIndexRoute
   '/versecraft/': typeof VersecraftIndexRoute
+  '/_site/admin/analytics': typeof SiteAdminAnalyticsRoute
   '/_site/admin/announcements': typeof SiteAdminAnnouncementsRoute
   '/_site/admin/reports': typeof SiteAdminReportsRoute
   '/_site/admin/user-builds': typeof SiteAdminUserBuildsRoute
@@ -2660,6 +2677,7 @@ export interface FileRoutesById {
   '/_site/user-builds/submit': typeof SiteUserBuildsSubmitRoute
   '/altair/multiplayer/$lobbyId': typeof AltairMultiplayerLobbyIdRoute
   '/api/achievements/$userId': typeof ApiAchievementsUserIdRoute
+  '/api/admin/analytics': typeof ApiAdminAnalyticsRoute
   '/api/admin/announcements': typeof ApiAdminAnnouncementsRouteWithChildren
   '/api/admin/blog': typeof ApiAdminBlogRoute
   '/api/admin/reports': typeof ApiAdminReportsRouteWithChildren
@@ -2963,6 +2981,7 @@ export interface FileRouteTypes {
     | '/studio/'
     | '/temple-of-joy/'
     | '/versecraft/'
+    | '/admin/analytics'
     | '/admin/announcements'
     | '/admin/reports'
     | '/admin/user-builds'
@@ -2975,6 +2994,7 @@ export interface FileRouteTypes {
     | '/user-builds/submit'
     | '/altair/multiplayer/$lobbyId'
     | '/api/achievements/$userId'
+    | '/api/admin/analytics'
     | '/api/admin/announcements'
     | '/api/admin/blog'
     | '/api/admin/reports'
@@ -3254,6 +3274,7 @@ export interface FileRouteTypes {
     | '/studio'
     | '/temple-of-joy'
     | '/versecraft'
+    | '/admin/analytics'
     | '/admin/announcements'
     | '/admin/reports'
     | '/admin/user-builds'
@@ -3266,6 +3287,7 @@ export interface FileRouteTypes {
     | '/user-builds/submit'
     | '/altair/multiplayer/$lobbyId'
     | '/api/achievements/$userId'
+    | '/api/admin/analytics'
     | '/api/admin/announcements'
     | '/api/admin/blog'
     | '/api/admin/reports'
@@ -3568,6 +3590,7 @@ export interface FileRouteTypes {
     | '/studio/'
     | '/temple-of-joy/'
     | '/versecraft/'
+    | '/_site/admin/analytics'
     | '/_site/admin/announcements'
     | '/_site/admin/reports'
     | '/_site/admin/user-builds'
@@ -3580,6 +3603,7 @@ export interface FileRouteTypes {
     | '/_site/user-builds/submit'
     | '/altair/multiplayer/$lobbyId'
     | '/api/achievements/$userId'
+    | '/api/admin/analytics'
     | '/api/admin/announcements'
     | '/api/admin/blog'
     | '/api/admin/reports'
@@ -3826,6 +3850,7 @@ export interface RootRouteChildren {
   VSlugRoute: typeof VSlugRoute
   VNewRoute: typeof VNewRoute
   ApiAchievementsUserIdRoute: typeof ApiAchievementsUserIdRoute
+  ApiAdminAnalyticsRoute: typeof ApiAdminAnalyticsRoute
   ApiAdminAnnouncementsRoute: typeof ApiAdminAnnouncementsRouteWithChildren
   ApiAdminBlogRoute: typeof ApiAdminBlogRoute
   ApiAdminReportsRoute: typeof ApiAdminReportsRouteWithChildren
@@ -5536,6 +5561,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminAnnouncementsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/analytics': {
+      id: '/api/admin/analytics'
+      path: '/api/admin/analytics'
+      fullPath: '/api/admin/analytics'
+      preLoaderRoute: typeof ApiAdminAnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/achievements/$userId': {
       id: '/api/achievements/$userId'
       path: '/api/achievements/$userId'
@@ -5618,6 +5650,13 @@ declare module '@tanstack/react-router' {
       path: '/announcements'
       fullPath: '/admin/announcements'
       preLoaderRoute: typeof SiteAdminAnnouncementsRouteImport
+      parentRoute: typeof SiteAdminRouteRoute
+    }
+    '/_site/admin/analytics': {
+      id: '/_site/admin/analytics'
+      path: '/analytics'
+      fullPath: '/admin/analytics'
+      preLoaderRoute: typeof SiteAdminAnalyticsRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
     '/api/doctrine/reputation/': {
@@ -6121,6 +6160,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface SiteAdminRouteRouteChildren {
+  SiteAdminAnalyticsRoute: typeof SiteAdminAnalyticsRoute
   SiteAdminAnnouncementsRoute: typeof SiteAdminAnnouncementsRoute
   SiteAdminReportsRoute: typeof SiteAdminReportsRoute
   SiteAdminUserBuildsRoute: typeof SiteAdminUserBuildsRoute
@@ -6132,6 +6172,7 @@ interface SiteAdminRouteRouteChildren {
 }
 
 const SiteAdminRouteRouteChildren: SiteAdminRouteRouteChildren = {
+  SiteAdminAnalyticsRoute: SiteAdminAnalyticsRoute,
   SiteAdminAnnouncementsRoute: SiteAdminAnnouncementsRoute,
   SiteAdminReportsRoute: SiteAdminReportsRoute,
   SiteAdminUserBuildsRoute: SiteAdminUserBuildsRoute,
@@ -6868,6 +6909,7 @@ const rootRouteChildren: RootRouteChildren = {
   VSlugRoute: VSlugRoute,
   VNewRoute: VNewRoute,
   ApiAchievementsUserIdRoute: ApiAchievementsUserIdRoute,
+  ApiAdminAnalyticsRoute: ApiAdminAnalyticsRoute,
   ApiAdminAnnouncementsRoute: ApiAdminAnnouncementsRouteWithChildren,
   ApiAdminBlogRoute: ApiAdminBlogRoute,
   ApiAdminReportsRoute: ApiAdminReportsRouteWithChildren,
