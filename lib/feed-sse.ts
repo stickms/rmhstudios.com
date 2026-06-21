@@ -24,6 +24,7 @@ export type FeedSSEEventType =
   | "rmhark.unliked"
   | "rmhark.commented"
   | "rmhark.deleted"
+  | "rmhark.edited"
   | "rmhark.reposted"
   | "rmhark.unreposted"
   | "notification.mention";

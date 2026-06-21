@@ -7,19 +7,24 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import {
   Home, Package, BookOpen, Library, LayoutGrid, Atom,
-  LogOut, PenSquare, User, MessageCircle, ShieldCheck, MoreHorizontal, Wallet, Sparkles, Bell, Search, Landmark
+  LogOut, PenSquare, User, MessageCircle, ShieldCheck, MoreHorizontal, Wallet, Sparkles, Bell, Search, Landmark, Bookmark, Trophy, Flame, ShoppingBag, Compass, Users
 } from 'lucide-react';
 import { ComposeModal } from './ComposeModal';
 import { Button } from '@/components/ui/button';
 import { useUnreadCount } from '@/lib/useUnreadCount';
 import { useNotificationCount } from '@/lib/useNotificationCount';
+import { useStreak } from '@/lib/useStreak';
+import { usePresenceHeartbeat } from '@/lib/usePresenceHeartbeat';
 
 const navLinks = [
   { href: '/', label: 'Home', icon: Home },
+  { href: '/explore', label: 'Explore', icon: Compass },
+  { href: '/communities', label: 'Communities', icon: Users },
   { href: '/search', label: 'Search', icon: Search },
   { href: '/v', label: 'Pages', icon: LayoutGrid },
   { href: '/builds', label: 'Builds', icon: Package },
   { href: '/library', label: 'Library', icon: Library },
+  { href: '/shop', label: 'Shop', icon: ShoppingBag },
   { href: '/blog', label: 'Blog', icon: BookOpen },
   { href: '/adaptive-intelligence', label: 'Adaptive Intelligence', icon: Atom },
   { href: '/pricing', label: 'Membership', icon: Sparkles },
@@ -47,6 +52,8 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   const { resolved: resolvedUser } = useResolvedUser();
   const unreadCount = useUnreadCount(!!session);
   const { count: notificationCount } = useNotificationCount(!!session);
+  const streak = useStreak(!!session);
+  usePresenceHeartbeat(!!session);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -145,6 +152,47 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
               )}
             </div>
             <span className={labelClass}>Notifications</span>
+          </Link>
+        )}
+        {/* Daily streak chip (shown when logged in with an active streak) */}
+        {session && streak && streak.current > 0 && (
+          <Link
+            to="/achievements"
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-orange-400 hover:bg-site-surface transition-colors ${itemJustifyClass}`}
+            title={`${streak.current}-day streak`}
+          >
+            <Flame className="w-5 h-5 shrink-0 fill-orange-500/30" />
+            <span className={labelClass}>{streak.current}-day streak</span>
+          </Link>
+        )}
+        {/* Achievements link (shown when logged in) */}
+        {session && (
+          <Link
+            to="/achievements"
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${itemJustifyClass} ${
+              pathname?.startsWith('/achievements')
+                ? 'text-site-accent bg-site-accent-dim'
+                : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
+            }`}
+            title="Achievements"
+          >
+            <Trophy className="w-5 h-5 shrink-0" />
+            <span className={labelClass}>Achievements</span>
+          </Link>
+        )}
+        {/* Bookmarks link (shown when logged in) */}
+        {session && (
+          <Link
+            to="/bookmarks"
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${itemJustifyClass} ${
+              pathname?.startsWith('/bookmarks')
+                ? 'text-site-accent bg-site-accent-dim'
+                : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
+            }`}
+            title="Bookmarks"
+          >
+            <Bookmark className="w-5 h-5 shrink-0" />
+            <span className={labelClass}>Bookmarks</span>
           </Link>
         )}
         {/* Messages link (shown when logged in) */}

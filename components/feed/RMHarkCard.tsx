@@ -4,9 +4,13 @@ import type { FeedItem, FeedItemUser } from '@/lib/feed-types';
 import { RMHarkActions } from './RMHarkActions';
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { Repeat2, MoreHorizontal, Heart, Repeat, Trash2, Share2, BadgeCheck, ShieldCheck, Flag, Ban, VolumeX } from 'lucide-react';
+import { Repeat2, MoreHorizontal, Heart, Repeat, Trash2, Share2, BadgeCheck, ShieldCheck, Flag, Ban, VolumeX, Bookmark, Coins, Pin, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { ReportDialog } from '@/components/moderation/ReportDialog';
+import { TipDialog } from '@/components/economy/TipDialog';
+import { EditPostModal } from './EditPostModal';
+import { PostTranslate } from './PostTranslate';
+import { PostLockedCard } from './PostLockedCard';
 import { Link } from '@tanstack/react-router';
 import { RMHarkContent, extractFirstUrl } from './RMHarkContent';
 import { PollDisplay } from './PollDisplay';
@@ -62,7 +66,49 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
   const [engagementModal, setEngagementModal] = useState<'likes' | 'reposts' | null>(null);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [tipOpen, setTipOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [pinned, setPinned] = useState(!!item.pinned);
+  const [bookmarked, setBookmarked] = useState(!!item.bookmarked);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const handlePin = async () => {
+    setMenuOpen(false);
+    try {
+      const res = await fetch(`/api/rmharks/${actualId}/pin`, { method: 'POST', credentials: 'include' });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setPinned(!!data.pinned);
+        toast.success(data.pinned ? 'Pinned to your profile' : 'Unpinned');
+      } else {
+        toast.error(data.error || 'Could not pin post');
+      }
+    } catch {
+      toast.error('Could not pin post');
+    }
+  };
+
+  const handleBookmark = async () => {
+    setMenuOpen(false);
+    const next = !bookmarked;
+    setBookmarked(next); // optimistic
+    try {
+      const res = await fetch(`/api/rmharks/${actualId}/bookmark`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setBookmarked(!!data.bookmarked);
+        toast.success(data.bookmarked ? 'Saved to bookmarks' : 'Removed from bookmarks');
+      } else {
+        setBookmarked(!next);
+        if (res.status === 401) toast.error('Please sign in to bookmark posts.');
+      }
+    } catch {
+      setBookmarked(!next);
+    }
+  };
 
   const targetUserId = item.user?.id;
   const handleBlock = async () => {
@@ -184,6 +230,15 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
           </button>
           {menuOpen && (
             <div className="absolute right-0 top-full mt-1 w-44 bg-site-bg border border-site-border rounded-xl shadow-xl py-1 z-30" onClick={(e) => e.stopPropagation()}>
+              {session && (
+                <button
+                  onClick={handleBookmark}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+                >
+                  <Bookmark className={`w-4 h-4 ${bookmarked ? 'fill-site-accent text-site-accent' : 'text-site-text-dim'}`} />
+                  {bookmarked ? 'Saved' : 'Bookmark'}
+                </button>
+              )}
               <button
                 onClick={() => { setMenuOpen(false); setEngagementModal('likes'); }}
                 className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
@@ -206,16 +261,41 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
                 Share
               </button>
               {isAuthor && (
-                <button
-                  onClick={handleDelete}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-danger hover:bg-site-danger/10 transition-colors"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Delete
-                </button>
+                <>
+                  <button
+                    onClick={() => { setMenuOpen(false); setEditOpen(true); }}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+                  >
+                    <Pencil className="w-4 h-4 text-site-text-dim" />
+                    Edit
+                  </button>
+                  <button
+                    onClick={handlePin}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+                  >
+                    <Pin className={`w-4 h-4 ${pinned ? 'fill-site-accent text-site-accent' : 'text-site-text-dim'}`} />
+                    {pinned ? 'Unpin from profile' : 'Pin to profile'}
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-danger hover:bg-site-danger/10 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete
+                  </button>
+                </>
               )}
               {!isAuthor && session && (
                 <>
+                  {targetUserId && (
+                    <button
+                      onClick={() => { setMenuOpen(false); setTipOpen(true); }}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+                    >
+                      <Coins className="w-4 h-4 text-amber-400" />
+                      Send tip
+                    </button>
+                  )}
                   <button
                     onClick={() => { setMenuOpen(false); setReportOpen(true); }}
                     className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
@@ -241,6 +321,14 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Pinned label */}
+      {pinned && (
+        <div className="flex items-center gap-1.5 text-xs text-site-text-dim mb-2 ml-12">
+          <Pin className="w-3.5 h-3.5 fill-site-accent text-site-accent" />
+          <span>Pinned</span>
         </div>
       )}
 
@@ -290,11 +378,26 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
             <span className="text-site-text-dim shrink-0">
               · {timeAgoShort(item.createdAt)}
             </span>
+            {item.edited && (
+              <span className="text-site-text-dim shrink-0" title="Edited">· edited</span>
+            )}
           </div>
 
+          {/* Locked (paid) post — show paywall instead of content/media */}
+          {item.locked ? (
+            <PostLockedCard
+              postId={actualId}
+              price={item.unlockPrice ?? 0}
+              onUnlocked={(content) => updateItem(item.id, { content, locked: false, unlockPrice: undefined })}
+            />
+          ) : (
+          <>
           {/* Content */}
           {item.content && (
             <RMHarkContent text={item.content} className="text-site-text text-[15px] mt-1 whitespace-pre-wrap break-words" />
+          )}
+          {item.content && !item.deletedAt && item.content.length > 8 && (
+            <PostTranslate postId={actualId} />
           )}
 
           {/* Poll */}
@@ -326,6 +429,8 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
 
           {/* Link preview — only when no poll, gif, or image */}
           {linkPreviewUrl && <LinkPreview url={linkPreviewUrl} className="mt-3" />}
+          </>
+          )}
 
           {/* Quoted original (if repost) */}
           {item.original && (
@@ -387,6 +492,27 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
         entityType="rmhark"
         entityId={actualId}
       />
+
+      {targetUserId && (
+        <TipDialog
+          open={tipOpen}
+          onOpenChange={setTipOpen}
+          recipientId={targetUserId}
+          recipientName={item.user?.name ?? item.user?.handle}
+          entityType="rmhark"
+          entityId={actualId}
+        />
+      )}
+
+      {isAuthor && (
+        <EditPostModal
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          postId={actualId}
+          initialContent={item.content ?? ''}
+          onSaved={(content) => updateItem(item.id, { content, edited: true })}
+        />
+      )}
     </div>
   );
 }

@@ -1,0 +1,148 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { Loader2, Trophy } from 'lucide-react';
+import { TIER_COLORS, CATEGORY_LABELS, type AchievementCategory, type AchievementTier } from '@/lib/achievements/catalog';
+
+interface AchievementView {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  category: AchievementCategory;
+  tier: AchievementTier;
+  group: string | null;
+  target: number;
+  coinReward: number;
+  secret: boolean;
+  unlocked: boolean;
+  unlockedAt: string | null;
+  progress: number;
+}
+interface Payload {
+  stats: { unlocked: number; total: number; coinsEarned: number };
+  achievements: AchievementView[];
+}
+
+const CATEGORY_ORDER: AchievementCategory[] = ['social', 'games', 'creator', 'economy', 'special'];
+
+export function AchievementsColumn({ userId }: { userId: string }) {
+  const [data, setData] = useState<Payload | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const res = await fetch(`/api/achievements/${encodeURIComponent(userId)}`, { credentials: 'include' });
+        if (res.ok && active) setData(await res.json());
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [userId]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-20">
+        <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+      </div>
+    );
+  }
+  if (!data) {
+    return <p className="px-4 py-16 text-center text-sm text-site-text-muted">Could not load achievements.</p>;
+  }
+
+  const pct = data.stats.total ? Math.round((data.stats.unlocked / data.stats.total) * 100) : 0;
+
+  return (
+    <div className="min-h-screen">
+      <header className="sticky top-0 z-10 border-b border-site-border bg-site-bg/80 px-4 py-3 backdrop-blur">
+        <div className="flex items-center gap-2">
+          <Trophy className="h-5 w-5 text-site-accent" />
+          <h1 className="text-lg font-bold text-site-text">Achievements</h1>
+        </div>
+        <div className="mt-2 flex items-center gap-3 text-sm text-site-text-muted">
+          <span>
+            <strong className="text-site-text">{data.stats.unlocked}</strong> / {data.stats.total} unlocked
+          </span>
+          <span aria-hidden>·</span>
+          <span>🪙 {data.stats.coinsEarned} earned</span>
+        </div>
+        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-site-surface">
+          <div className="h-full rounded-full bg-site-accent transition-all" style={{ width: `${pct}%` }} />
+        </div>
+      </header>
+
+      <div className="space-y-6 p-4">
+        {CATEGORY_ORDER.map((cat) => {
+          const list = data.achievements.filter((a) => a.category === cat);
+          if (list.length === 0) return null;
+          return (
+            <section key={cat}>
+              <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+                {CATEGORY_LABELS[cat]}
+              </h2>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {list.map((a) => {
+                  const incremental = a.target > 1 && !a.unlocked;
+                  return (
+                    <div
+                      key={a.id}
+                      className={`flex items-start gap-3 rounded-xl border p-3 transition-colors ${
+                        a.unlocked
+                          ? 'border-site-border bg-site-surface'
+                          : 'border-site-border/60 bg-site-bg opacity-70'
+                      }`}
+                    >
+                      <div
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-xl"
+                        style={{
+                          background: a.unlocked ? `${TIER_COLORS[a.tier]}22` : 'var(--site-surface)',
+                          filter: a.unlocked ? 'none' : 'grayscale(1)',
+                        }}
+                      >
+                        {a.icon}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="truncate text-sm font-semibold text-site-text">{a.name}</p>
+                          <span
+                            className="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase"
+                            style={{ background: `${TIER_COLORS[a.tier]}22`, color: TIER_COLORS[a.tier] }}
+                          >
+                            {a.tier}
+                          </span>
+                        </div>
+                        <p className="mt-0.5 text-xs text-site-text-muted">{a.description}</p>
+                        {incremental && (
+                          <div className="mt-1.5">
+                            <div className="h-1.5 w-full overflow-hidden rounded-full bg-site-surface">
+                              <div
+                                className="h-full rounded-full bg-site-accent"
+                                style={{ width: `${Math.min(100, (a.progress / a.target) * 100)}%` }}
+                              />
+                            </div>
+                            <p className="mt-0.5 text-[10px] text-site-text-dim">
+                              {a.progress} / {a.target}
+                            </p>
+                          </div>
+                        )}
+                        {a.unlocked && a.coinReward > 0 && (
+                          <p className="mt-0.5 text-[10px] text-site-text-dim">🪙 +{a.coinReward}</p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

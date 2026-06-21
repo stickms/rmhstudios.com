@@ -6,6 +6,8 @@ import { createCommentSchema } from "@/lib/rmhark-schema";
 import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 import { feedEventBus } from "@/lib/feed-sse";
 import { createNotification } from "@/lib/notifications.server";
+import { grantAchievement } from "@/lib/achievements/engine.server";
+import { getActiveBan } from "@/lib/admin-audit.server";
 
 export const Route = createFileRoute('/api/rmharks/$id/comment')({
   server: {
@@ -101,6 +103,14 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
     const session = await auth.api.getSession({ headers: request.headers });
     if (!session) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const ban = await getActiveBan(session.user.id);
+    if (ban) {
+      return Response.json(
+        { error: `Your account is suspended${ban.reason ? `: ${ban.reason}` : ''}` },
+        { status: 403 }
+      );
     }
 
     const ip = getClientIp(request);
@@ -202,6 +212,8 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
     } catch (e) {
       console.error("comment notification error:", e);
     }
+
+    await grantAchievement(session.user.id, "social.first_comment");
 
     return Response.json({
       ...comment,

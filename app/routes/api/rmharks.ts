@@ -8,6 +8,8 @@ import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 import { feedEventBus } from "@/lib/feed-sse";
 import { parseHandles } from "@/lib/feed/mentions";
 import { createNotification } from "@/lib/notifications.server";
+import { grantAchievement, progressAchievement } from "@/lib/achievements/engine.server";
+import { getActiveBan } from "@/lib/admin-audit.server";
 import { getTimeline, type FeedSurface } from "@/lib/feed/timeline";
 import { ownsFeedImageUrl } from "@/lib/storage/keys";
 
@@ -60,6 +62,14 @@ export const Route = createFileRoute('/api/rmharks')({
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const ban = await getActiveBan(session.user.id);
+    if (ban) {
+      return Response.json(
+        { error: `Your account is suspended${ban.reason ? `: ${ban.reason}` : ''}` },
+        { status: 403 }
+      );
+    }
+
     const ip = getClientIp(request);
     const { allowed, retryAfter } = rateLimit(ip, {
       limit: 10,
@@ -82,10 +92,34 @@ export const Route = createFileRoute('/api/rmharks')({
       );
     }
 
-    const { content, poll, gifUrl, imageUrls } = parsed.data;
+    const { content, poll, gifUrl, imageUrls, originalId, audience, unlockPrice, communityId } = parsed.data;
 
     if (imageUrls?.length && !imageUrls.every((u) => ownsFeedImageUrl(u, session.user.id))) {
       return Response.json({ error: "Invalid image reference" }, { status: 400 });
+    }
+
+    // Posting into a community requires membership.
+    if (communityId) {
+      const member = await prisma.communityMember.findUnique({
+        where: { communityId_userId: { communityId, userId: session.user.id } },
+        select: { id: true },
+      });
+      if (!member) {
+        return Response.json({ error: "Join the community to post in it" }, { status: 403 });
+      }
+    }
+
+    // Validate the quoted post exists (and isn't itself a quote, to avoid chains).
+    let quotedOriginalId: string | null = null;
+    if (originalId) {
+      const orig = await prisma.rMHark.findUnique({
+        where: { id: originalId },
+        select: { id: true, deletedAt: true, originalId: true },
+      });
+      if (!orig || orig.deletedAt) {
+        return Response.json({ error: "Quoted post not found" }, { status: 400 });
+      }
+      quotedOriginalId = orig.originalId ?? orig.id; // quote the root, not a quote
     }
 
     const rmhark = await prisma.$transaction(async (tx) => {
@@ -95,11 +129,22 @@ export const Route = createFileRoute('/api/rmharks')({
           gifUrl: gifUrl ?? null,
           imageUrls: imageUrls ?? [],
           userId: session.user.id,
+          originalId: quotedOriginalId,
+          audience: audience ?? "PUBLIC",
+          unlockPrice: unlockPrice && unlockPrice > 0 ? unlockPrice : null,
+          communityId: communityId ?? null,
         },
         include: {
           user: { select: userDisplaySelect },
         },
       });
+
+      if (quotedOriginalId) {
+        await tx.rMHark.update({
+          where: { id: quotedOriginalId },
+          data: { repostCount: { increment: 1 } },
+        });
+      }
 
       if (poll) {
         await tx.rMHarkPoll.create({
@@ -107,6 +152,9 @@ export const Route = createFileRoute('/api/rmharks')({
             rmheetId: created.id,
             question: poll.question.trim(),
             multiSelect: poll.multiSelect,
+            closesAt: poll.durationHours
+              ? new Date(Date.now() + poll.durationHours * 60 * 60 * 1000)
+              : null,
             options: {
               create: poll.options.map((text, i) => ({
                 text: text.trim(),
@@ -163,13 +211,44 @@ export const Route = createFileRoute('/api/rmharks')({
       imageUrls: rmhark.imageUrls,
     };
 
+    // Attach the quoted original so the card renders it inline immediately.
+    if (quotedOriginalId) {
+      const orig = await prisma.rMHark.findUnique({
+        where: { id: quotedOriginalId },
+        select: {
+          id: true, content: true, createdAt: true, likeCount: true,
+          commentCount: true, repostCount: true, viewCount: true,
+          user: { select: userDisplaySelect },
+        },
+      });
+      if (orig) {
+        item.original = {
+          id: orig.id,
+          type: "rmhark",
+          createdAt: orig.createdAt.toISOString(),
+          content: orig.content,
+          user: resolveUser(orig.user),
+          likeCount: orig.likeCount,
+          commentCount: orig.commentCount,
+          repostCount: orig.repostCount,
+          viewCount: orig.viewCount,
+        };
+      }
+    }
+
     // Publish to the SSE bus. The stream endpoint targets this to each
     // viewer's follow graph using `authorId` (Phase 3) instead of blindly
     // prepending onto every open client.
+    // Paid posts must broadcast a locked teaser — never the unlocked content,
+    // since the SSE payload reaches the author's followers.
+    const broadcastItem =
+      unlockPrice && unlockPrice > 0
+        ? { ...item, content: "", imageUrls: undefined, gifUrl: undefined, poll: undefined, locked: true, unlockPrice }
+        : item;
     feedEventBus.publish({
       type: "rmhark.created",
       rmharkId: item.id,
-      payload: item,
+      payload: broadcastItem,
       timestamp: item.createdAt,
       authorId: session.user.id,
     });
@@ -228,6 +307,20 @@ export const Route = createFileRoute('/api/rmharks')({
       }
     } catch (err) {
       console.error("Mention notification error:", err);
+    }
+
+    // Achievements: posting milestones + night-owl easter egg (best-effort).
+    try {
+      const count = await prisma.rMHark.count({
+        where: { userId: session.user.id, deletedAt: null },
+      });
+      await progressAchievement(session.user.id, "social.first_post", { setProgress: count });
+      await progressAchievement(session.user.id, "social.posts_10", { setProgress: count });
+      await progressAchievement(session.user.id, "social.posts_100", { setProgress: count });
+      const hour = new Date().getHours();
+      if (hour >= 2 && hour < 5) await grantAchievement(session.user.id, "special.night_owl");
+    } catch (e) {
+      console.error("post achievement error:", e);
     }
 
     return Response.json(item, { status: 201 });

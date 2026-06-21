@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { z } from 'zod';
+import { logAdminAction } from '@/lib/admin-audit.server';
 
 /**
  * POST /api/admin/reports/$id — act on a report. Admin only.
@@ -70,6 +71,12 @@ export const Route = createFileRoute('/api/admin/reports/$id')({
               resolvedById: terminal ? session.user.id : report.resolvedById,
               resolvedAt: terminal ? new Date() : report.resolvedAt,
             },
+          });
+
+          await logAdminAction(session.user.id, `report.${parsed.data.action}`, {
+            targetType: report.entityType,
+            targetId: report.entityId,
+            detail: parsed.data.deleteContent ? 'content removed' : undefined,
           });
 
           return Response.json({ success: true, status: newStatus });

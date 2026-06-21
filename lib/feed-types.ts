@@ -29,6 +29,7 @@ export interface FeedPoll {
   totalVotes: number;
   options: FeedPollOption[];
   myVotes?: string[]; // option IDs the current user voted for
+  closesAt?: string | null; // scheduled close time, if any
 }
 
 export interface FeedItem {
@@ -45,6 +46,12 @@ export interface FeedItem {
   viewCount?: number;
   liked?: boolean;
   reposted?: boolean;
+  bookmarked?: boolean;
+  pinned?: boolean;
+  edited?: boolean;
+  // Paid post: locked = content hidden until unlocked with coins.
+  locked?: boolean;
+  unlockPrice?: number;
   original?: FeedItem;
   repostedBy?: FeedItemUser;
   actualId?: string;

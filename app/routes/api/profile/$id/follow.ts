@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma.server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { createNotification, removeNotification } from "@/lib/notifications.server";
+import { progressAchievement } from "@/lib/achievements/engine.server";
 
 export const Route = createFileRoute('/api/profile/$id/follow')({
   server: {
@@ -69,6 +70,17 @@ export const Route = createFileRoute('/api/profile/$id/follow')({
         link: followerHandle ? `/u/${followerHandle}` : `/profile/${followerId}`,
         dedupeUnread: true,
       });
+
+      // Follower-count milestones for the user who was followed.
+      try {
+        const followerCount = await prisma.follow.count({ where: { followingId } });
+        await progressAchievement(followingId, "social.first_follower", { setProgress: followerCount });
+        await progressAchievement(followingId, "social.followers_50", { setProgress: followerCount });
+        await progressAchievement(followingId, "social.followers_500", { setProgress: followerCount });
+      } catch (e) {
+        console.error("follow achievement error:", e);
+      }
+
       return Response.json({ success: true, following: true });
     }
   } catch (error) {

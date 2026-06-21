@@ -8,6 +8,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { Loader2, Flag, ExternalLink, ArrowLeft } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 const getAdminSession = createServerFn({ method: 'GET' }).handler(async () => {
   const request = getRequest();
@@ -95,6 +96,24 @@ function AdminReportsPage() {
     } finally {
       setBusyId(null);
     }
+  };
+
+  const moderateUser = async (userId: string, kind: 'strike' | 'ban') => {
+    const reason = prompt(kind === 'ban' ? 'Ban reason:' : 'Strike reason:');
+    if (!reason) return;
+    const url = `/api/admin/users/${userId}/${kind}`;
+    const body =
+      kind === 'ban'
+        ? { reason, durationDays: parseInt(prompt('Ban length in days (blank = permanent):') || '', 10) || null }
+        : { reason };
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(body),
+    });
+    if (res.ok) toast.success(kind === 'ban' ? 'User banned' : 'Strike issued');
+    else toast.error('Action failed');
   };
 
   return (
@@ -198,6 +217,16 @@ function AdminReportsPage() {
                       <Button size="sm" variant="ghost" disabled={busyId === r.id} onClick={() => act(r.id, 'dismiss')}>
                         Dismiss
                       </Button>
+                      {r.targetUser && (
+                        <>
+                          <Button size="sm" variant="ghost" onClick={() => moderateUser(r.targetUser!.id, 'strike')}>
+                            Strike author
+                          </Button>
+                          <Button size="sm" variant="ghost" className="text-site-danger" onClick={() => moderateUser(r.targetUser!.id, 'ban')}>
+                            Ban author
+                          </Button>
+                        </>
+                      )}
                     </div>
                   )}
                 </li>

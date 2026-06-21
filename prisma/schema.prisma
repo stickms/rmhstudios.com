@@ -22,6 +22,11 @@ model User {
   stripeCustomerId String?  // Stripe customer id (set by @better-auth/stripe on signup)
   isAdmin         Boolean   @default(false)
   isVerified      Boolean   @default(false)
+  // Moderation: temporary/permanent ban (null = not banned)
+  bannedUntil     DateTime?
+  banReason       String?   @db.VarChar(500)
+  // Presence: last heartbeat from an active client (for "online now")
+  lastSeenAt      DateTime?
   // ─── RMHark AI bot users (generated + driven by the bot-worker) ──
   isBot           Boolean   @default(false) // synthetic account created by the bot-worker
   botPersona      String?   @db.Text         // private prompt seed describing the bot's posting "theme"
@@ -97,6 +102,29 @@ model User {
   // Notifications
   notifications      Notification[] @relation("UserNotifications")
   notificationsSent  Notification[] @relation("UserNotificationActor")
+
+  // Engagement: bookmarks, achievements, daily streak
+  bookmarks    RMHarkBookmark[]
+  achievements UserAchievement[]
+  dailyStreak  DailyStreak?
+  postUnlocks  PostUnlock[]
+
+  // Communities created + memberships
+  communitiesCreated Community[]       @relation("CommunityCreator")
+  communityMembers   CommunityMember[]
+
+  // Economy: shop inventory, coin ledger (tips/gifts)
+  inventory       UserInventory[]
+  coinsSent       CoinTransaction[] @relation("CoinSender")
+  coinsReceived   CoinTransaction[] @relation("CoinRecipient")
+
+  // Admin-authored feed announcements
+  feedAnnouncements FeedAnnouncement[]
+
+  // Admin moderation: audit log entries authored, strikes received/issued
+  auditLogs      AdminAuditLog[] @relation("AuditAdmin")
+  strikes        UserStrike[]    @relation("StrikeUser")
+  strikesIssued  UserStrike[]    @relation("StrikeAdmin")
 
   // Moderation (reports filed / received, blocks & mutes)
   reportsFiled    ContentReport[] @relation("ReportReporter")
@@ -1021,11 +1049,20 @@ model RMHark {
   viewCount    Int @default(0)
 
   user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  likes    RMHarkLike[]
-  comments RMHarkComment[]
-  reposts  RMHarkRepost[]
-  views    RMHarkView[]
-  poll     RMHarkPoll?
+  likes     RMHarkLike[]
+  comments  RMHarkComment[]
+  reposts   RMHarkRepost[]
+  views     RMHarkView[]
+  poll      RMHarkPoll?
+  bookmarks RMHarkBookmark[]
+
+  // Paid unlock: coins required to view content (null/0 = free)
+  unlockPrice Int?
+  unlocks     PostUnlock[]
+
+  // Optional community this post belongs to
+  communityId String?
+  community   Community? @relation(fields: [communityId], references: [id], onDelete: SetNull)
 
   // Self-relation for reposts (quote-repost displays the original inline)
   originalId String?
@@ -1035,10 +1072,21 @@ model RMHark {
   deletedAt      DateTime?
   deletedByAdmin Boolean   @default(false)
 
+  // Audience: who can see this post.
+  audience RMHarkAudience @default(PUBLIC)
+
+  // Author-pinned to the top of their profile (one per user, enforced in code).
+  pinnedAt DateTime?
+
+  // Edit history: editedAt set on first edit; prior versions stored separately.
+  editedAt DateTime?
+  edits    RMHarkEdit[]
+
   @@index([userId])
   @@index([createdAt(sort: Desc)])
   // Composite index backing keyset pagination on (createdAt desc, id desc)
   @@index([createdAt(sort: Desc), id(sort: Desc)])
+  @@index([userId, pinnedAt])
   @@map("rmheet")
 }
 
@@ -1160,11 +1208,12 @@ model RMHarkView {
 }
 
 model RMHarkPoll {
-  id          String   @id @default(cuid())
-  rmheetId    String   @unique
-  question    String   @db.VarChar(200)
-  multiSelect Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  id          String    @id @default(cuid())
+  rmheetId    String    @unique
+  question    String    @db.VarChar(200)
+  multiSelect Boolean   @default(false)
+  closesAt    DateTime? // optional scheduled close; null = never closes
+  createdAt   DateTime  @default(now())
 
   rmhark  RMHark             @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
   options RMHarkPollOption[]
@@ -1223,6 +1272,10 @@ model UserProfile {
   coins                 Int       @default(10)
   hasProfilePet         Boolean   @default(false)
   showProfilePet        Boolean   @default(true)
+
+  // Creator tip goal (monthly coins target shown on the profile)
+  tipGoal               Int?
+  tipGoalLabel          String?   @db.VarChar(80)
 
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
@@ -2116,4 +2169,249 @@ model UserMute {
   @@unique([muterId, mutedId])
   @@index([muterId])
   @@map("user_mute")
+}
+
+// ─── Bookmarks ────────────────────────────────────────────────────────────
+model RMHarkBookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  rmheetId  String
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rmhark RMHark @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, rmheetId])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("rmheet_bookmark")
+}
+
+// ─── Achievements ─────────────────────────────────────────────────────────
+// Definitions live in code (lib/achievements/catalog.ts); only unlocks are
+// persisted. `progress` supports incremental achievements (e.g. "win 50 games").
+
+model UserAchievement {
+  id            String   @id @default(cuid())
+  userId        String
+  achievementId String   @db.VarChar(64) // matches a catalog key
+  progress      Int      @default(0)
+  unlockedAt    DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+  @@index([userId, unlockedAt])
+  @@map("user_achievement")
+}
+
+// ─── Daily Streak ─────────────────────────────────────────────────────────
+model DailyStreak {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  current       Int      @default(0)
+  longest       Int      @default(0)
+  lastCheckIn   DateTime?
+  lastDateKey   String?  @db.VarChar(10) // YYYY-MM-DD in the user's tz
+  totalCheckIns Int      @default(0)
+  freezeTokens  Int      @default(0) // optional "streak freeze" inventory
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("daily_streak")
+}
+
+// ─── Cosmetics Shop ───────────────────────────────────────────────────────
+// Catalog lives in code (lib/shop/catalog.ts). UserInventory records ownership
+// and which item is currently equipped per slot.
+
+enum ShopItemKind {
+  THEME // unlocks a premium site theme
+  PET // profile pet variant
+  NAME_COLOR // username color
+  BADGE // profile flair badge
+  BANNER // profile banner
+  POST_FLAIR // decoration shown on the user's posts
+  AVATAR_FRAME // ring around the avatar
+}
+
+model UserInventory {
+  id        String       @id @default(cuid())
+  userId    String
+  itemId    String       @db.VarChar(64) // catalog key
+  kind      ShopItemKind
+  equipped  Boolean      @default(false)
+  acquiredAt DateTime    @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemId])
+  @@index([userId, kind])
+  @@map("user_inventory")
+}
+
+// ─── Coin Ledger (tips & gifts) ───────────────────────────────────────────
+enum CoinTxnType {
+  TIP
+  GIFT
+  PURCHASE
+  REWARD
+  ADMIN
+}
+
+model CoinTransaction {
+  id          String      @id @default(cuid())
+  senderId    String?     // null for system rewards
+  recipientId String
+  amount      Int
+  type        CoinTxnType
+  note        String?     @db.VarChar(280)
+  entityType  String?     @db.VarChar(32) // e.g. "rmhark", "profile"
+  entityId    String?     @db.VarChar(64)
+  createdAt   DateTime    @default(now())
+
+  sender    User? @relation("CoinSender", fields: [senderId], references: [id], onDelete: SetNull)
+  recipient User  @relation("CoinRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([recipientId, createdAt(sort: Desc)])
+  @@index([senderId, createdAt(sort: Desc)])
+  @@map("coin_transaction")
+}
+
+// ─── Admin Feed Announcements ─────────────────────────────────────────────
+// Pinned banners admins publish from the admin panel; rendered at the top of
+// the home feed for everyone until deactivated or expired.
+
+model FeedAnnouncement {
+  id          String    @id @default(cuid())
+  title       String    @db.VarChar(120)
+  body        String    @db.VarChar(1000)
+  linkUrl     String?   @db.VarChar(500)
+  linkLabel   String?   @db.VarChar(60)
+  variant     String    @default("info") @db.VarChar(16) // info | success | warning | event
+  active      Boolean   @default(true)
+  pinned      Boolean   @default(true)
+  createdById String
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  createdBy User @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([active, createdAt(sort: Desc)])
+  @@map("feed_announcement")
+}
+
+// ─── RMHark Edit History ──────────────────────────────────────────────────
+// One row per prior version, captured the moment before an edit is applied.
+model RMHarkEdit {
+  id        String   @id @default(cuid())
+  rmheetId  String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  rmhark RMHark @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+
+  @@index([rmheetId, createdAt(sort: Desc)])
+  @@map("rmheet_edit")
+}
+
+// ─── Admin Audit Log ──────────────────────────────────────────────────────
+model AdminAuditLog {
+  id         String   @id @default(cuid())
+  adminId    String
+  action     String   @db.VarChar(64) // e.g. "report.resolve", "user.ban"
+  targetType String?  @db.VarChar(32)
+  targetId   String?  @db.VarChar(64)
+  detail     String?  @db.VarChar(500)
+  createdAt  DateTime @default(now())
+
+  admin User @relation("AuditAdmin", fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt(sort: Desc)])
+  @@index([targetType, targetId])
+  @@map("admin_audit_log")
+}
+
+// ─── User Strikes ─────────────────────────────────────────────────────────
+model UserStrike {
+  id        String    @id @default(cuid())
+  userId    String
+  adminId   String
+  reason    String    @db.VarChar(500)
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user  User @relation("StrikeUser", fields: [userId], references: [id], onDelete: Cascade)
+  admin User @relation("StrikeAdmin", fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("user_strike")
+}
+
+enum RMHarkAudience {
+  PUBLIC // anyone
+  FOLLOWERS // the author's followers only
+  PRIVATE // only the author
+}
+
+// ─── Paid post unlocks ────────────────────────────────────────────────────
+model PostUnlock {
+  id        String   @id @default(cuid())
+  userId    String
+  rmheetId  String
+  pricePaid Int
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rmhark RMHark @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, rmheetId])
+  @@index([rmheetId])
+  @@map("post_unlock")
+}
+
+// ─── Communities ──────────────────────────────────────────────────────────
+enum CommunityRole {
+  MEMBER
+  MOD
+  ADMIN
+}
+
+model Community {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String   @db.VarChar(60)
+  description String?  @db.VarChar(500)
+  color       String?  @db.VarChar(16) // accent color for the header
+  icon        String?  @db.VarChar(8)  // emoji
+  isPrivate   Boolean  @default(false)
+  memberCount Int      @default(1)
+  createdById String
+  createdAt   DateTime @default(now())
+
+  createdBy User              @relation("CommunityCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  members   CommunityMember[]
+  posts     RMHark[]
+
+  @@index([memberCount(sort: Desc)])
+  @@map("community")
+}
+
+model CommunityMember {
+  id          String        @id @default(cuid())
+  communityId String
+  userId      String
+  role        CommunityRole @default(MEMBER)
+  joinedAt    DateTime      @default(now())
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([communityId, userId])
+  @@index([userId])
+  @@map("community_member")
 }

@@ -5,6 +5,7 @@ import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 import { feedEventBus } from "@/lib/feed-sse";
 import { createNotification, removeNotification } from "@/lib/notifications.server";
+import { grantAchievement } from "@/lib/achievements/engine.server";
 
 export const Route = createFileRoute('/api/rmharks/$id/like')({
   server: {
@@ -120,6 +121,8 @@ export const Route = createFileRoute('/api/rmharks/$id/like')({
           dedupeUnread: true,
         });
       }
+
+      await grantAchievement(userId, "social.first_like_given");
 
       return Response.json({ success: true, liked: true });
     }

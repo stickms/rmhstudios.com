@@ -6,6 +6,7 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { FeedTabs } from './FeedTabs';
 import { ComposeBox } from './ComposeBox';
 import { FeedList } from './FeedList';
+import { FeedAnnouncements } from './FeedAnnouncements';
 import { useMobileSidebar } from './MobileSidebarShell';
 import { useFeedStore } from '@/stores/feedStore';
 import { useFeedSSE } from '@/hooks/useFeedSSE';
@@ -223,6 +224,9 @@ export function FeedColumn() {
           ))}
         </div>
       )}
+
+      {/* Admin announcements, pinned above the composer */}
+      {!search && <FeedAnnouncements />}
 
       {/* Compose */}
       {!search && <ComposeBox />}

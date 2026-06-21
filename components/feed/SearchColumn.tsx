@@ -74,6 +74,8 @@ export function SearchColumn({ initialQuery = '' }: { initialQuery?: string }) {
           <Search className="h-4 w-4 text-site-text-muted" />
           <input
             autoFocus
+            type="search"
+            aria-label="Search people, posts, builds, and blog"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search people, posts, builds…"
@@ -81,10 +83,12 @@ export function SearchColumn({ initialQuery = '' }: { initialQuery?: string }) {
           />
           {loading && <Loader2 className="h-4 w-4 animate-spin text-site-text-muted" />}
         </div>
-        <div className="mt-3 flex gap-1 overflow-x-auto">
+        <div className="mt-3 flex gap-1 overflow-x-auto" role="tablist" aria-label="Search categories">
           {TABS.map((t) => (
             <button
               key={t.id}
+              role="tab"
+              aria-selected={tab === t.id}
               onClick={() => setTab(t.id)}
               className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
                 tab === t.id

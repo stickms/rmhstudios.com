@@ -21,6 +21,8 @@ import { getAllPosts } from "../blog";
 import { decodeCursor, encodeCursor, keysetWhere } from "./cursor";
 import { rankCandidates } from "./ranking";
 import { getHiddenAuthorIds } from "../moderation.server";
+import { audienceWhere } from "./audience.server";
+import { applyLock } from "./map-feed-item.server";
 
 export type FeedSurface = "following" | "foryou";
 
@@ -77,6 +79,7 @@ function mapPoll(poll: any): FeedPoll | undefined {
     id: poll.id,
     question: poll.question,
     multiSelect: poll.multiSelect,
+    closesAt: poll.closesAt ? poll.closesAt.toISOString() : null,
     totalVotes,
     options: poll.options.map((o: any) => ({
       id: o.id,
@@ -117,6 +120,8 @@ function rmharkInclude(userId: string | null) {
       ? {
           likes: { where: { userId }, select: { id: true } },
           reposts: { where: { userId }, select: { id: true } },
+          bookmarks: { where: { userId }, select: { id: true } },
+          unlocks: { where: { userId }, select: { id: true } },
         }
       : {}),
     poll: pollInclude(userId),
@@ -152,7 +157,7 @@ function mapOriginal(o: any): FeedItem | undefined {
 
 function mapOwn(r: any, userId: string | null): FeedItem {
   const isDeleted = !!r.deletedAt;
-  return {
+  const item: FeedItem = {
     id: r.id,
     type: "rmhark",
     createdAt: r.createdAt.toISOString(),
@@ -164,6 +169,8 @@ function mapOwn(r: any, userId: string | null): FeedItem {
     viewCount: r.viewCount,
     liked: userId ? r.likes?.length > 0 : false,
     reposted: userId ? r.reposts?.length > 0 : false,
+    bookmarked: userId ? r.bookmarks?.length > 0 : false,
+    edited: !!r.editedAt,
     original: mapOriginal(r.original),
     poll: isDeleted ? undefined : mapPoll(r.poll),
     gifUrl: isDeleted ? undefined : (r.gifUrl ?? undefined),
@@ -171,12 +178,13 @@ function mapOwn(r: any, userId: string | null): FeedItem {
     deletedAt: r.deletedAt?.toISOString() || null,
     deletedByAdmin: r.deletedByAdmin,
   };
+  return isDeleted ? item : applyLock(item, r, userId);
 }
 
 function mapRepost(rp: any, userId: string | null): FeedItem {
   const r = rp.rmhark;
   const isDeleted = !!r.deletedAt;
-  return {
+  const item: FeedItem = {
     id: `repost:${rp.id}`,
     type: "rmhark",
     createdAt: rp.createdAt.toISOString(),
@@ -189,6 +197,7 @@ function mapRepost(rp: any, userId: string | null): FeedItem {
     viewCount: r.viewCount,
     liked: userId ? r.likes?.length > 0 : false,
     reposted: userId ? r.reposts?.length > 0 : false,
+    bookmarked: userId ? r.bookmarks?.length > 0 : false,
     repostedBy: resolveUser(rp.user),
     original: mapOriginal(r.original),
     poll: isDeleted ? undefined : mapPoll(r.poll),
@@ -197,6 +206,7 @@ function mapRepost(rp: any, userId: string | null): FeedItem {
     deletedAt: r.deletedAt?.toISOString() || null,
     deletedByAdmin: r.deletedByAdmin,
   };
+  return isDeleted ? item : applyLock(item, r, userId);
 }
 
 /**
@@ -313,6 +323,8 @@ async function getFollowingTimeline(
       where: {
         userId: { in: followingIds },
         deletedAt: null,
+        audience: { not: "PRIVATE" },
+        communityId: null,
         ...contentWhere,
         ...keyset,
       },
@@ -376,20 +388,26 @@ async function getForYouTimeline(
   const hiddenIds = await getHiddenAuthorIds(userId);
   const authorWhere = hiddenIds.length ? { userId: { notIn: hiddenIds } } : {};
 
+  // Audience visibility (PUBLIC, own, or FOLLOWERS-of-followed).
+  const viewerFollowingIds = userId
+    ? (await prisma.follow.findMany({ where: { followerId: userId }, select: { followingId: true } })).map((f) => f.followingId)
+    : [];
+  const audWhere = audienceWhere(userId, viewerFollowingIds);
+
   const shouldFetchRmharks = filter === "all" || filter === "rmhark" || !!search;
   let dbItems: FeedItem[] = [];
 
   if (shouldFetchRmharks) {
     const [rmharks, repostRecords] = await Promise.all([
       prisma.rMHark.findMany({
-        where: { deletedAt: null, ...contentWhere, ...authorWhere, ...keyset },
+        where: { deletedAt: null, communityId: null, ...contentWhere, ...authorWhere, ...audWhere, ...keyset },
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         take: limit,
         include,
       }),
       prisma.rMHarkRepost.findMany({
         where: {
-          rmhark: { deletedAt: null, ...contentWhere, ...authorWhere },
+          rmhark: { deletedAt: null, ...contentWhere, ...authorWhere, ...audWhere },
           ...(hiddenIds.length ? { userId: { notIn: hiddenIds } } : {}),
           ...keyset,
         },

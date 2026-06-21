@@ -37,11 +37,15 @@ export const Route = createFileRoute('/api/rmharks/$id/vote')({
     // Verify the option belongs to a poll on this rmhark
     const option = await prisma.rMHarkPollOption.findUnique({
       where: { id: optionId },
-      include: { poll: { select: { rmheetId: true, multiSelect: true, id: true } } },
+      include: { poll: { select: { rmheetId: true, multiSelect: true, id: true, closesAt: true } } },
     });
 
     if (!option || option.poll.rmheetId !== id) {
       return Response.json({ error: "Invalid option" }, { status: 400 });
+    }
+
+    if (option.poll.closesAt && option.poll.closesAt.getTime() <= Date.now()) {
+      return Response.json({ error: "This poll has closed" }, { status: 403 });
     }
 
     const userId = session.user.id;

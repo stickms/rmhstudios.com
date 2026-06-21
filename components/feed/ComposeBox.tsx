@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Plus, BarChart3, Image, X, ImagePlus } from 'lucide-react';
 import { GifEmbed } from './GifEmbed';
 import { AIGenerateButton } from './AIGenerateButton';
+import { ComposeAssist } from './ComposeAssist';
 import { MentionTextarea } from './MentionTextarea';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
@@ -40,8 +41,11 @@ function isValidMediaUrl(url: string): boolean {
   }
 }
 
-export function ComposeBox() {
+export function ComposeBox({ communityId }: { communityId?: string } = {}) {
   const [content, setContent] = useState('');
+  const [audience, setAudience] = useState<'PUBLIC' | 'FOLLOWERS' | 'PRIVATE'>('PUBLIC');
+  const [pollDuration, setPollDuration] = useState(0); // hours; 0 = no limit
+  const [unlockPrice, setUnlockPrice] = useState(''); // coins to unlock; '' = free
   const [submitting, setSubmitting] = useState(false);
   const [attachment, setAttachment] = useState<Attachment>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -112,10 +116,15 @@ export function ComposeBox() {
           question: poll.question.trim(),
           options: poll.options.filter((o) => o.trim()).map((o) => o.trim()),
           multiSelect: poll.multiSelect,
+          ...(pollDuration > 0 ? { durationHours: pollDuration } : {}),
         };
       }
       if (hasGif) body.gifUrl = gifUrl.trim();
       if (hasImages) body.imageUrls = imageUrls;
+      if (audience !== 'PUBLIC') body.audience = audience;
+      const price = parseInt(unlockPrice, 10);
+      if (price > 0) body.unlockPrice = price;
+      if (communityId) body.communityId = communityId;
 
       const res = await fetch('/api/rmharks', {
         method: 'POST',
@@ -132,6 +141,8 @@ export function ComposeBox() {
       const item = await res.json();
       prependItem(item);
       setContent('');
+      setAudience('PUBLIC');
+      setUnlockPrice('');
       setAttachment(null);
       setPoll({ question: '', options: ['', ''], multiSelect: false });
       setGifUrl('');
@@ -188,6 +199,33 @@ export function ComposeBox() {
               }
             }}
           />
+
+          <ComposeAssist value={content} onChange={setContent} />
+
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <select
+              aria-label="Who can see this post"
+              value={audience}
+              onChange={(e) => setAudience(e.target.value as 'PUBLIC' | 'FOLLOWERS' | 'PRIVATE')}
+              className="rounded-full border border-site-border bg-site-surface px-3 py-1 text-xs font-medium text-site-text-muted focus:border-site-accent focus:outline-none"
+            >
+              <option value="PUBLIC">🌐 Everyone</option>
+              <option value="FOLLOWERS">👥 Followers</option>
+              <option value="PRIVATE">🔒 Only me</option>
+            </select>
+            <div className="inline-flex items-center gap-1 rounded-full border border-site-border bg-site-surface px-3 py-1">
+              <span className="text-xs text-site-text-muted">🔓 Unlock price</span>
+              <input
+                type="number"
+                min={0}
+                value={unlockPrice}
+                onChange={(e) => setUnlockPrice(e.target.value)}
+                placeholder="free"
+                aria-label="Coins required to unlock this post"
+                className="w-16 bg-transparent text-xs text-site-text placeholder:text-site-text-dim focus:outline-none"
+              />
+            </div>
+          </div>
 
           {/* Poll creator */}
           {attachment === 'poll' && (
@@ -261,6 +299,22 @@ export function ComposeBox() {
                   className="rounded border-site-border text-site-accent focus:ring-site-accent"
                 />
                 <span className="text-xs text-site-text-dim">Allow multiple selections</span>
+              </label>
+
+              <label className="mt-3 flex items-center gap-2">
+                <span className="text-xs text-site-text-dim">Poll length</span>
+                <select
+                  value={pollDuration}
+                  onChange={(e) => setPollDuration(Number(e.target.value))}
+                  className="rounded-lg border border-site-border bg-site-surface px-2 py-1 text-xs text-site-text focus:outline-none"
+                >
+                  <option value={0}>No limit</option>
+                  <option value={1}>1 hour</option>
+                  <option value={6}>6 hours</option>
+                  <option value={24}>1 day</option>
+                  <option value={72}>3 days</option>
+                  <option value={168}>1 week</option>
+                </select>
               </label>
             </div>
           )}

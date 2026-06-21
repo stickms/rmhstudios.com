@@ -108,6 +108,27 @@ export function DailyPuzzleHub() {
                 </p>
             </div>
 
+            {/* Today's combined progress + streak */}
+            {(() => {
+                const done = GAME_MODES.filter((g) => getCompleted(g.id)).length;
+                const total = GAME_MODES.length;
+                const pct = total ? Math.round((done / total) * 100) : 0;
+                return (
+                    <div className="mb-8 rounded-2xl border border-site-border bg-site-surface p-4">
+                        <div className="mb-2 flex items-center justify-between text-sm">
+                            <span className="font-semibold text-site-text">Today&apos;s progress</span>
+                            <span className="text-site-text-muted">{done}/{total} completed</span>
+                        </div>
+                        <div className="h-2 w-full overflow-hidden rounded-full bg-site-bg">
+                            <div className="h-full rounded-full bg-site-accent transition-all" style={{ width: `${pct}%` }} />
+                        </div>
+                        {done === total && (
+                            <p className="mt-2 text-center text-sm font-medium text-site-accent">🎉 All puzzles cleared today — nice!</p>
+                        )}
+                    </div>
+                );
+            })()}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {GAME_MODES.map((game, i) => {
                     const completed = getCompleted(game.id);

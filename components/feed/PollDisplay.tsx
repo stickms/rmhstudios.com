@@ -17,10 +17,11 @@ export function PollDisplay({ poll, postId, onUpdate }: PollDisplayProps) {
   const [voting, setVoting] = useState(false);
 
   const hasVoted = (localPoll.myVotes?.length ?? 0) > 0;
-  const showResults = hasVoted;
+  const isClosed = !!localPoll.closesAt && new Date(localPoll.closesAt).getTime() <= Date.now();
+  const showResults = hasVoted || isClosed;
 
   const handleVote = async (optionId: string) => {
-    if (!session || voting) return;
+    if (!session || voting || isClosed) return;
 
     setVoting(true);
 
@@ -115,7 +116,7 @@ export function PollDisplay({ poll, postId, onUpdate }: PollDisplayProps) {
               <button
                 key={option.id}
                 onClick={() => handleVote(option.id)}
-                disabled={!session || voting}
+                disabled={!session || voting || isClosed}
                 className="w-full text-left relative overflow-hidden rounded-lg border border-site-border transition-colors hover:border-site-accent/50 disabled:opacity-70"
               >
                 {/* Progress bar background */}
@@ -144,7 +145,7 @@ export function PollDisplay({ poll, postId, onUpdate }: PollDisplayProps) {
             <button
               key={option.id}
               onClick={() => handleVote(option.id)}
-              disabled={!session || voting}
+              disabled={!session || voting || isClosed}
               className="w-full text-left px-3 py-2 rounded-lg border border-site-border text-sm text-site-text hover:border-site-accent hover:bg-site-accent/5 transition-colors disabled:opacity-50"
             >
               {option.text}
@@ -156,6 +157,9 @@ export function PollDisplay({ poll, postId, onUpdate }: PollDisplayProps) {
       <p className="text-xs text-site-text-dim mt-2">
         {localPoll.totalVotes} vote{localPoll.totalVotes !== 1 ? 's' : ''}
         {localPoll.multiSelect && ' · Multiple choice'}
+        {localPoll.closesAt && (
+          <> · {isClosed ? 'Final results' : `Closes ${new Date(localPoll.closesAt).toLocaleString()}`}</>
+        )}
       </p>
     </div>
   );
