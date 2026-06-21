@@ -31,7 +31,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   const labelClass = expanded ? '' : 'hidden xl:block';
   const logoFullClass = expanded ? '' : 'hidden xl:block';
   const logoShortClass = expanded ? 'hidden' : 'xl:hidden';
-  const paddingClass = expanded ? 'px-4 pt-4 pb-6' : 'px-3 pt-3 pb-6 xl:px-4 xl:pt-4';
+  const paddingClass = expanded ? 'p-4' : 'p-3 xl:p-4';
   const logoAlignClass = expanded ? 'justify-start' : 'justify-center xl:justify-start';
   const iconMrClass = expanded ? 'mr-2' : 'xl:mr-2';
   const itemJustifyClass = expanded ? '' : 'md:justify-center xl:justify-start';
@@ -283,6 +283,10 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
           <ComposeModal open={composeOpen} onClose={() => setComposeOpen(false)} />
         </>
       )}
+
+      {/* Breathing room below the last item (Post / Sign In) so it isn't flush
+          against the bottom of the scroll area. */}
+      <div className="h-4 shrink-0" aria-hidden="true" />
     </div>
   );
 }
