@@ -128,6 +128,7 @@ import { Route as SiteProgressRouteImport } from './routes/_site/progress'
 import { Route as SitePricingRouteImport } from './routes/_site/pricing'
 import { Route as SiteNotificationsRouteImport } from './routes/_site/notifications'
 import { Route as SiteExploreRouteImport } from './routes/_site/explore'
+import { Route as SiteDraftsRouteImport } from './routes/_site/drafts'
 import { Route as SiteCommunitiesRouteImport } from './routes/_site/communities'
 import { Route as SiteBookmarksRouteImport } from './routes/_site/bookmarks'
 import { Route as SiteAchievementsRouteImport } from './routes/_site/achievements'
@@ -141,6 +142,7 @@ import { Route as SecretJobsIndexRouteImport } from './routes/secret/jobs/index'
 import { Route as SecretCursedLogicIndexRouteImport } from './routes/secret/cursed-logic/index'
 import { Route as RmhboxMinigamesIndexRouteImport } from './routes/rmhbox/minigames/index'
 import { Route as ApiShopIndexRouteImport } from './routes/api/shop/index'
+import { Route as ApiScheduledIndexRouteImport } from './routes/api/scheduled/index'
 import { Route as ApiNotificationsIndexRouteImport } from './routes/api/notifications/index'
 import { Route as ApiCommunitiesIndexRouteImport } from './routes/api/communities/index'
 import { Route as ApiCoinsIndexRouteImport } from './routes/api/coins/index'
@@ -190,6 +192,7 @@ import { Route as ApiSignalForgeLeaderboardRouteImport } from './routes/api/sign
 import { Route as ApiSignalForgeAbandonRouteImport } from './routes/api/signal-forge/abandon'
 import { Route as ApiShopPurchaseRouteImport } from './routes/api/shop/purchase'
 import { Route as ApiShopEquipRouteImport } from './routes/api/shop/equip'
+import { Route as ApiScheduledIdRouteImport } from './routes/api/scheduled/$id'
 import { Route as ApiRmhtubeOembedRouteImport } from './routes/api/rmhtube/oembed'
 import { Route as ApiRmhboxStatsRouteImport } from './routes/api/rmhbox/stats'
 import { Route as ApiRmhboxLeaderboardRouteImport } from './routes/api/rmhbox/leaderboard'
@@ -283,6 +286,7 @@ import { Route as ApiUserBuildsIdLikeRouteImport } from './routes/api/user-build
 import { Route as ApiUserBuildsIdCommentsRouteImport } from './routes/api/user-builds/$id/comments'
 import { Route as ApiSliceItSongsUploadRouteImport } from './routes/api/slice-it/songs/upload'
 import { Route as ApiSliceItSongsIdRouteImport } from './routes/api/slice-it/songs/$id'
+import { Route as ApiScheduledIdPublishRouteImport } from './routes/api/scheduled/$id/publish'
 import { Route as ApiRmhmusicSpotifySearchRouteImport } from './routes/api/rmhmusic/spotify/search'
 import { Route as ApiRmhcodeAuthValidateRouteImport } from './routes/api/rmhcode/auth/validate'
 import { Route as ApiRmhcodeAuthRevokeRouteImport } from './routes/api/rmhcode/auth/revoke'
@@ -945,6 +949,11 @@ const SiteExploreRoute = SiteExploreRouteImport.update({
   path: '/explore',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteDraftsRoute = SiteDraftsRouteImport.update({
+  id: '/drafts',
+  path: '/drafts',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteCommunitiesRoute = SiteCommunitiesRouteImport.update({
   id: '/communities',
   path: '/communities',
@@ -1009,6 +1018,11 @@ const RmhboxMinigamesIndexRoute = RmhboxMinigamesIndexRouteImport.update({
 const ApiShopIndexRoute = ApiShopIndexRouteImport.update({
   id: '/api/shop/',
   path: '/api/shop/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiScheduledIndexRoute = ApiScheduledIndexRouteImport.update({
+  id: '/api/scheduled/',
+  path: '/api/scheduled/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiNotificationsIndexRoute = ApiNotificationsIndexRouteImport.update({
@@ -1262,6 +1276,11 @@ const ApiShopPurchaseRoute = ApiShopPurchaseRouteImport.update({
 const ApiShopEquipRoute = ApiShopEquipRouteImport.update({
   id: '/api/shop/equip',
   path: '/api/shop/equip',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiScheduledIdRoute = ApiScheduledIdRouteImport.update({
+  id: '/api/scheduled/$id',
+  path: '/api/scheduled/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiRmhtubeOembedRoute = ApiRmhtubeOembedRouteImport.update({
@@ -1740,6 +1759,11 @@ const ApiSliceItSongsIdRoute = ApiSliceItSongsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ApiSliceItSongsRoute,
 } as any)
+const ApiScheduledIdPublishRoute = ApiScheduledIdPublishRouteImport.update({
+  id: '/publish',
+  path: '/publish',
+  getParentRoute: () => ApiScheduledIdRoute,
+} as any)
 const ApiRmhmusicSpotifySearchRoute =
   ApiRmhmusicSpotifySearchRouteImport.update({
     id: '/api/rmhmusic/spotify/search',
@@ -2140,6 +2164,7 @@ export interface FileRoutesByFullPath {
   '/achievements': typeof SiteAchievementsRoute
   '/bookmarks': typeof SiteBookmarksRoute
   '/communities': typeof SiteCommunitiesRoute
+  '/drafts': typeof SiteDraftsRoute
   '/explore': typeof SiteExploreRoute
   '/notifications': typeof SiteNotificationsRoute
   '/pricing': typeof SitePricingRoute
@@ -2307,6 +2332,7 @@ export interface FileRoutesByFullPath {
   '/api/rmhbox/leaderboard': typeof ApiRmhboxLeaderboardRoute
   '/api/rmhbox/stats': typeof ApiRmhboxStatsRoute
   '/api/rmhtube/oembed': typeof ApiRmhtubeOembedRoute
+  '/api/scheduled/$id': typeof ApiScheduledIdRouteWithChildren
   '/api/shop/equip': typeof ApiShopEquipRoute
   '/api/shop/purchase': typeof ApiShopPurchaseRoute
   '/api/signal-forge/abandon': typeof ApiSignalForgeAbandonRoute
@@ -2356,6 +2382,7 @@ export interface FileRoutesByFullPath {
   '/api/coins/': typeof ApiCoinsIndexRoute
   '/api/communities/': typeof ApiCommunitiesIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
+  '/api/scheduled/': typeof ApiScheduledIndexRoute
   '/api/shop/': typeof ApiShopIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic/': typeof SecretCursedLogicIndexRoute
@@ -2416,6 +2443,7 @@ export interface FileRoutesByFullPath {
   '/api/rmhcode/auth/revoke': typeof ApiRmhcodeAuthRevokeRoute
   '/api/rmhcode/auth/validate': typeof ApiRmhcodeAuthValidateRoute
   '/api/rmhmusic/spotify/search': typeof ApiRmhmusicSpotifySearchRoute
+  '/api/scheduled/$id/publish': typeof ApiScheduledIdPublishRoute
   '/api/slice-it/songs/$id': typeof ApiSliceItSongsIdRouteWithChildren
   '/api/slice-it/songs/upload': typeof ApiSliceItSongsUploadRoute
   '/api/user-builds/$id/comments': typeof ApiUserBuildsIdCommentsRoute
@@ -2463,6 +2491,7 @@ export interface FileRoutesByTo {
   '/achievements': typeof SiteAchievementsRoute
   '/bookmarks': typeof SiteBookmarksRoute
   '/communities': typeof SiteCommunitiesRoute
+  '/drafts': typeof SiteDraftsRoute
   '/explore': typeof SiteExploreRoute
   '/notifications': typeof SiteNotificationsRoute
   '/pricing': typeof SitePricingRoute
@@ -2626,6 +2655,7 @@ export interface FileRoutesByTo {
   '/api/rmhbox/leaderboard': typeof ApiRmhboxLeaderboardRoute
   '/api/rmhbox/stats': typeof ApiRmhboxStatsRoute
   '/api/rmhtube/oembed': typeof ApiRmhtubeOembedRoute
+  '/api/scheduled/$id': typeof ApiScheduledIdRouteWithChildren
   '/api/shop/equip': typeof ApiShopEquipRoute
   '/api/shop/purchase': typeof ApiShopPurchaseRoute
   '/api/signal-forge/abandon': typeof ApiSignalForgeAbandonRoute
@@ -2675,6 +2705,7 @@ export interface FileRoutesByTo {
   '/api/coins': typeof ApiCoinsIndexRoute
   '/api/communities': typeof ApiCommunitiesIndexRoute
   '/api/notifications': typeof ApiNotificationsIndexRoute
+  '/api/scheduled': typeof ApiScheduledIndexRoute
   '/api/shop': typeof ApiShopIndexRoute
   '/rmhbox/minigames': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic': typeof SecretCursedLogicIndexRoute
@@ -2735,6 +2766,7 @@ export interface FileRoutesByTo {
   '/api/rmhcode/auth/revoke': typeof ApiRmhcodeAuthRevokeRoute
   '/api/rmhcode/auth/validate': typeof ApiRmhcodeAuthValidateRoute
   '/api/rmhmusic/spotify/search': typeof ApiRmhmusicSpotifySearchRoute
+  '/api/scheduled/$id/publish': typeof ApiScheduledIdPublishRoute
   '/api/slice-it/songs/$id': typeof ApiSliceItSongsIdRouteWithChildren
   '/api/slice-it/songs/upload': typeof ApiSliceItSongsUploadRoute
   '/api/user-builds/$id/comments': typeof ApiUserBuildsIdCommentsRoute
@@ -2802,6 +2834,7 @@ export interface FileRoutesById {
   '/_site/achievements': typeof SiteAchievementsRoute
   '/_site/bookmarks': typeof SiteBookmarksRoute
   '/_site/communities': typeof SiteCommunitiesRoute
+  '/_site/drafts': typeof SiteDraftsRoute
   '/_site/explore': typeof SiteExploreRoute
   '/_site/notifications': typeof SiteNotificationsRoute
   '/_site/pricing': typeof SitePricingRoute
@@ -2970,6 +3003,7 @@ export interface FileRoutesById {
   '/api/rmhbox/leaderboard': typeof ApiRmhboxLeaderboardRoute
   '/api/rmhbox/stats': typeof ApiRmhboxStatsRoute
   '/api/rmhtube/oembed': typeof ApiRmhtubeOembedRoute
+  '/api/scheduled/$id': typeof ApiScheduledIdRouteWithChildren
   '/api/shop/equip': typeof ApiShopEquipRoute
   '/api/shop/purchase': typeof ApiShopPurchaseRoute
   '/api/signal-forge/abandon': typeof ApiSignalForgeAbandonRoute
@@ -3019,6 +3053,7 @@ export interface FileRoutesById {
   '/api/coins/': typeof ApiCoinsIndexRoute
   '/api/communities/': typeof ApiCommunitiesIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
+  '/api/scheduled/': typeof ApiScheduledIndexRoute
   '/api/shop/': typeof ApiShopIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic/': typeof SecretCursedLogicIndexRoute
@@ -3079,6 +3114,7 @@ export interface FileRoutesById {
   '/api/rmhcode/auth/revoke': typeof ApiRmhcodeAuthRevokeRoute
   '/api/rmhcode/auth/validate': typeof ApiRmhcodeAuthValidateRoute
   '/api/rmhmusic/spotify/search': typeof ApiRmhmusicSpotifySearchRoute
+  '/api/scheduled/$id/publish': typeof ApiScheduledIdPublishRoute
   '/api/slice-it/songs/$id': typeof ApiSliceItSongsIdRouteWithChildren
   '/api/slice-it/songs/upload': typeof ApiSliceItSongsUploadRoute
   '/api/user-builds/$id/comments': typeof ApiUserBuildsIdCommentsRoute
@@ -3147,6 +3183,7 @@ export interface FileRouteTypes {
     | '/achievements'
     | '/bookmarks'
     | '/communities'
+    | '/drafts'
     | '/explore'
     | '/notifications'
     | '/pricing'
@@ -3314,6 +3351,7 @@ export interface FileRouteTypes {
     | '/api/rmhbox/leaderboard'
     | '/api/rmhbox/stats'
     | '/api/rmhtube/oembed'
+    | '/api/scheduled/$id'
     | '/api/shop/equip'
     | '/api/shop/purchase'
     | '/api/signal-forge/abandon'
@@ -3363,6 +3401,7 @@ export interface FileRouteTypes {
     | '/api/coins/'
     | '/api/communities/'
     | '/api/notifications/'
+    | '/api/scheduled/'
     | '/api/shop/'
     | '/rmhbox/minigames/'
     | '/secret/cursed-logic/'
@@ -3423,6 +3462,7 @@ export interface FileRouteTypes {
     | '/api/rmhcode/auth/revoke'
     | '/api/rmhcode/auth/validate'
     | '/api/rmhmusic/spotify/search'
+    | '/api/scheduled/$id/publish'
     | '/api/slice-it/songs/$id'
     | '/api/slice-it/songs/upload'
     | '/api/user-builds/$id/comments'
@@ -3470,6 +3510,7 @@ export interface FileRouteTypes {
     | '/achievements'
     | '/bookmarks'
     | '/communities'
+    | '/drafts'
     | '/explore'
     | '/notifications'
     | '/pricing'
@@ -3633,6 +3674,7 @@ export interface FileRouteTypes {
     | '/api/rmhbox/leaderboard'
     | '/api/rmhbox/stats'
     | '/api/rmhtube/oembed'
+    | '/api/scheduled/$id'
     | '/api/shop/equip'
     | '/api/shop/purchase'
     | '/api/signal-forge/abandon'
@@ -3682,6 +3724,7 @@ export interface FileRouteTypes {
     | '/api/coins'
     | '/api/communities'
     | '/api/notifications'
+    | '/api/scheduled'
     | '/api/shop'
     | '/rmhbox/minigames'
     | '/secret/cursed-logic'
@@ -3742,6 +3785,7 @@ export interface FileRouteTypes {
     | '/api/rmhcode/auth/revoke'
     | '/api/rmhcode/auth/validate'
     | '/api/rmhmusic/spotify/search'
+    | '/api/scheduled/$id/publish'
     | '/api/slice-it/songs/$id'
     | '/api/slice-it/songs/upload'
     | '/api/user-builds/$id/comments'
@@ -3808,6 +3852,7 @@ export interface FileRouteTypes {
     | '/_site/achievements'
     | '/_site/bookmarks'
     | '/_site/communities'
+    | '/_site/drafts'
     | '/_site/explore'
     | '/_site/notifications'
     | '/_site/pricing'
@@ -3976,6 +4021,7 @@ export interface FileRouteTypes {
     | '/api/rmhbox/leaderboard'
     | '/api/rmhbox/stats'
     | '/api/rmhtube/oembed'
+    | '/api/scheduled/$id'
     | '/api/shop/equip'
     | '/api/shop/purchase'
     | '/api/signal-forge/abandon'
@@ -4025,6 +4071,7 @@ export interface FileRouteTypes {
     | '/api/coins/'
     | '/api/communities/'
     | '/api/notifications/'
+    | '/api/scheduled/'
     | '/api/shop/'
     | '/rmhbox/minigames/'
     | '/secret/cursed-logic/'
@@ -4085,6 +4132,7 @@ export interface FileRouteTypes {
     | '/api/rmhcode/auth/revoke'
     | '/api/rmhcode/auth/validate'
     | '/api/rmhmusic/spotify/search'
+    | '/api/scheduled/$id/publish'
     | '/api/slice-it/songs/$id'
     | '/api/slice-it/songs/upload'
     | '/api/user-builds/$id/comments'
@@ -4229,6 +4277,7 @@ export interface RootRouteChildren {
   ApiRmhboxLeaderboardRoute: typeof ApiRmhboxLeaderboardRoute
   ApiRmhboxStatsRoute: typeof ApiRmhboxStatsRoute
   ApiRmhtubeOembedRoute: typeof ApiRmhtubeOembedRoute
+  ApiScheduledIdRoute: typeof ApiScheduledIdRouteWithChildren
   ApiShopEquipRoute: typeof ApiShopEquipRoute
   ApiShopPurchaseRoute: typeof ApiShopPurchaseRoute
   ApiSignalForgeAbandonRoute: typeof ApiSignalForgeAbandonRoute
@@ -4256,6 +4305,7 @@ export interface RootRouteChildren {
   ApiCoinsIndexRoute: typeof ApiCoinsIndexRoute
   ApiCommunitiesIndexRoute: typeof ApiCommunitiesIndexRoute
   ApiNotificationsIndexRoute: typeof ApiNotificationsIndexRoute
+  ApiScheduledIndexRoute: typeof ApiScheduledIndexRoute
   ApiShopIndexRoute: typeof ApiShopIndexRoute
   ApiAdminCuratedBuildsImageRoute: typeof ApiAdminCuratedBuildsImageRouteWithChildren
   ApiCommentsCommentIdTranslateRoute: typeof ApiCommentsCommentIdTranslateRoute
@@ -5127,6 +5177,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteExploreRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/drafts': {
+      id: '/_site/drafts'
+      path: '/drafts'
+      fullPath: '/drafts'
+      preLoaderRoute: typeof SiteDraftsRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/communities': {
       id: '/_site/communities'
       path: '/communities'
@@ -5216,6 +5273,13 @@ declare module '@tanstack/react-router' {
       path: '/api/shop'
       fullPath: '/api/shop/'
       preLoaderRoute: typeof ApiShopIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/scheduled/': {
+      id: '/api/scheduled/'
+      path: '/api/scheduled'
+      fullPath: '/api/scheduled/'
+      preLoaderRoute: typeof ApiScheduledIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/notifications/': {
@@ -5559,6 +5623,13 @@ declare module '@tanstack/react-router' {
       path: '/api/shop/equip'
       fullPath: '/api/shop/equip'
       preLoaderRoute: typeof ApiShopEquipRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/scheduled/$id': {
+      id: '/api/scheduled/$id'
+      path: '/api/scheduled/$id'
+      fullPath: '/api/scheduled/$id'
+      preLoaderRoute: typeof ApiScheduledIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/rmhtube/oembed': {
@@ -6212,6 +6283,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSliceItSongsIdRouteImport
       parentRoute: typeof ApiSliceItSongsRoute
     }
+    '/api/scheduled/$id/publish': {
+      id: '/api/scheduled/$id/publish'
+      path: '/publish'
+      fullPath: '/api/scheduled/$id/publish'
+      preLoaderRoute: typeof ApiScheduledIdPublishRouteImport
+      parentRoute: typeof ApiScheduledIdRoute
+    }
     '/api/rmhmusic/spotify/search': {
       id: '/api/rmhmusic/spotify/search'
       path: '/api/rmhmusic/spotify/search'
@@ -6719,6 +6797,7 @@ interface SiteRouteChildren {
   SiteAchievementsRoute: typeof SiteAchievementsRoute
   SiteBookmarksRoute: typeof SiteBookmarksRoute
   SiteCommunitiesRoute: typeof SiteCommunitiesRoute
+  SiteDraftsRoute: typeof SiteDraftsRoute
   SiteExploreRoute: typeof SiteExploreRoute
   SiteNotificationsRoute: typeof SiteNotificationsRoute
   SitePricingRoute: typeof SitePricingRoute
@@ -6754,6 +6833,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteAchievementsRoute: SiteAchievementsRoute,
   SiteBookmarksRoute: SiteBookmarksRoute,
   SiteCommunitiesRoute: SiteCommunitiesRoute,
+  SiteDraftsRoute: SiteDraftsRoute,
   SiteExploreRoute: SiteExploreRoute,
   SiteNotificationsRoute: SiteNotificationsRoute,
   SitePricingRoute: SitePricingRoute,
@@ -7373,6 +7453,18 @@ const ApiAdminUsersRouteWithChildren = ApiAdminUsersRoute._addFileChildren(
   ApiAdminUsersRouteChildren,
 )
 
+interface ApiScheduledIdRouteChildren {
+  ApiScheduledIdPublishRoute: typeof ApiScheduledIdPublishRoute
+}
+
+const ApiScheduledIdRouteChildren: ApiScheduledIdRouteChildren = {
+  ApiScheduledIdPublishRoute: ApiScheduledIdPublishRoute,
+}
+
+const ApiScheduledIdRouteWithChildren = ApiScheduledIdRoute._addFileChildren(
+  ApiScheduledIdRouteChildren,
+)
+
 interface ApiSliceItSongsIdRouteChildren {
   ApiSliceItSongsIdCommentsRoute: typeof ApiSliceItSongsIdCommentsRoute
   ApiSliceItSongsIdLikeRoute: typeof ApiSliceItSongsIdLikeRoute
@@ -7538,6 +7630,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRmhboxLeaderboardRoute: ApiRmhboxLeaderboardRoute,
   ApiRmhboxStatsRoute: ApiRmhboxStatsRoute,
   ApiRmhtubeOembedRoute: ApiRmhtubeOembedRoute,
+  ApiScheduledIdRoute: ApiScheduledIdRouteWithChildren,
   ApiShopEquipRoute: ApiShopEquipRoute,
   ApiShopPurchaseRoute: ApiShopPurchaseRoute,
   ApiSignalForgeAbandonRoute: ApiSignalForgeAbandonRoute,
@@ -7565,6 +7658,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCoinsIndexRoute: ApiCoinsIndexRoute,
   ApiCommunitiesIndexRoute: ApiCommunitiesIndexRoute,
   ApiNotificationsIndexRoute: ApiNotificationsIndexRoute,
+  ApiScheduledIndexRoute: ApiScheduledIndexRoute,
   ApiShopIndexRoute: ApiShopIndexRoute,
   ApiAdminCuratedBuildsImageRoute: ApiAdminCuratedBuildsImageRouteWithChildren,
   ApiCommentsCommentIdTranslateRoute: ApiCommentsCommentIdTranslateRoute,

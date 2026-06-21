@@ -117,6 +117,9 @@ model User {
   quests         UserQuest[]
   seasonProgress UserSeasonProgress[]
 
+  // Composer: saved drafts + scheduled posts
+  scheduledPosts ScheduledPost[]
+
   // Economy: shop inventory, coin ledger (tips/gifts)
   inventory       UserInventory[]
   coinsSent       CoinTransaction[] @relation("CoinSender")
@@ -2461,4 +2464,29 @@ model UserSeasonProgress {
 
   @@unique([userId, seasonId])
   @@map("user_season_progress")
+}
+
+/// A saved draft (scheduledAt = null) or a scheduled post (scheduledAt set).
+/// Scheduled posts are materialized into real RMHarks lazily by the publisher
+/// once their time is due. `publishedId` links to the created post afterwards.
+model ScheduledPost {
+  id          String         @id @default(cuid())
+  userId      String
+  content     String         @db.Text
+  gifUrl      String?        @db.Text
+  imageUrls   String[]       @default([])
+  audience    RMHarkAudience @default(PUBLIC)
+  unlockPrice Int?
+  communityId String?
+  poll        Json? // { question, options[], multiSelect, durationHours }
+  scheduledAt DateTime? // null = plain draft
+  publishedId String? // set once published → the created RMHark id
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([scheduledAt])
+  @@map("scheduled_post")
 }
