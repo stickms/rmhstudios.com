@@ -45,6 +45,7 @@ export function ComposeBox() {
   const [content, setContent] = useState('');
   const [audience, setAudience] = useState<'PUBLIC' | 'FOLLOWERS' | 'PRIVATE'>('PUBLIC');
   const [pollDuration, setPollDuration] = useState(0); // hours; 0 = no limit
+  const [unlockPrice, setUnlockPrice] = useState(''); // coins to unlock; '' = free
   const [submitting, setSubmitting] = useState(false);
   const [attachment, setAttachment] = useState<Attachment>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -121,6 +122,8 @@ export function ComposeBox() {
       if (hasGif) body.gifUrl = gifUrl.trim();
       if (hasImages) body.imageUrls = imageUrls;
       if (audience !== 'PUBLIC') body.audience = audience;
+      const price = parseInt(unlockPrice, 10);
+      if (price > 0) body.unlockPrice = price;
 
       const res = await fetch('/api/rmharks', {
         method: 'POST',
@@ -138,6 +141,7 @@ export function ComposeBox() {
       prependItem(item);
       setContent('');
       setAudience('PUBLIC');
+      setUnlockPrice('');
       setAttachment(null);
       setPoll({ question: '', options: ['', ''], multiSelect: false });
       setGifUrl('');
@@ -197,7 +201,7 @@ export function ComposeBox() {
 
           <ComposeAssist value={content} onChange={setContent} />
 
-          <div className="mt-2">
+          <div className="mt-2 flex flex-wrap items-center gap-2">
             <select
               aria-label="Who can see this post"
               value={audience}
@@ -208,6 +212,18 @@ export function ComposeBox() {
               <option value="FOLLOWERS">👥 Followers</option>
               <option value="PRIVATE">🔒 Only me</option>
             </select>
+            <div className="inline-flex items-center gap-1 rounded-full border border-site-border bg-site-surface px-3 py-1">
+              <span className="text-xs text-site-text-muted">🔓 Unlock price</span>
+              <input
+                type="number"
+                min={0}
+                value={unlockPrice}
+                onChange={(e) => setUnlockPrice(e.target.value)}
+                placeholder="free"
+                aria-label="Coins required to unlock this post"
+                className="w-16 bg-transparent text-xs text-site-text placeholder:text-site-text-dim focus:outline-none"
+              />
+            </div>
           </div>
 
           {/* Poll creator */}

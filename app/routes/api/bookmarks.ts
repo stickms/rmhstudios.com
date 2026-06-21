@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import type { FeedItem, FeedPoll } from '@/lib/feed-types';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
+import { applyLock } from '@/lib/feed/map-feed-item.server';
 
 function pollInclude(userId: string | null) {
   return {
@@ -38,6 +39,7 @@ const rmharkInclude = (viewerId: string | null) => ({
     ? {
         likes: { where: { userId: viewerId }, select: { id: true } },
         reposts: { where: { userId: viewerId }, select: { id: true } },
+        unlocks: { where: { userId: viewerId }, select: { id: true } },
       }
     : {}),
   poll: pollInclude(viewerId),
@@ -71,7 +73,7 @@ export const Route = createFileRoute('/api/bookmarks')({
 
           const items: FeedItem[] = page.map((bm) => {
             const r: any = bm.rmhark;
-            return {
+            return applyLock({
               id: r.id,
               type: 'rmhark' as const,
               createdAt: r.createdAt.toISOString(),
@@ -87,7 +89,7 @@ export const Route = createFileRoute('/api/bookmarks')({
               poll: mapPoll(r.poll),
               gifUrl: r.gifUrl ?? undefined,
               imageUrls: r.imageUrls ?? undefined,
-            };
+            }, r, viewerId);
           });
 
           return Response.json({

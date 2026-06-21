@@ -10,6 +10,7 @@ import { ReportDialog } from '@/components/moderation/ReportDialog';
 import { TipDialog } from '@/components/economy/TipDialog';
 import { EditPostModal } from './EditPostModal';
 import { PostTranslate } from './PostTranslate';
+import { PostLockedCard } from './PostLockedCard';
 import { Link } from '@tanstack/react-router';
 import { RMHarkContent, extractFirstUrl } from './RMHarkContent';
 import { PollDisplay } from './PollDisplay';
@@ -382,6 +383,15 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
             )}
           </div>
 
+          {/* Locked (paid) post — show paywall instead of content/media */}
+          {item.locked ? (
+            <PostLockedCard
+              postId={actualId}
+              price={item.unlockPrice ?? 0}
+              onUnlocked={(content) => updateItem(item.id, { content, locked: false, unlockPrice: undefined })}
+            />
+          ) : (
+          <>
           {/* Content */}
           {item.content && (
             <RMHarkContent text={item.content} className="text-site-text text-[15px] mt-1 whitespace-pre-wrap break-words" />
@@ -419,6 +429,8 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
 
           {/* Link preview — only when no poll, gif, or image */}
           {linkPreviewUrl && <LinkPreview url={linkPreviewUrl} className="mt-3" />}
+          </>
+          )}
 
           {/* Quoted original (if repost) */}
           {item.original && (

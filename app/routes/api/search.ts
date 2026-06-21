@@ -53,6 +53,8 @@ export const Route = createFileRoute('/api/search')({
                   where: {
                     deletedAt: null,
                     content: contains,
+                    audience: 'PUBLIC',
+                    unlockPrice: null, // don't surface paid/locked posts in search
                     ...(hiddenIds.length ? { userId: { notIn: hiddenIds } } : {}),
                   },
                   orderBy: [{ likeCount: 'desc' }, { createdAt: 'desc' }],

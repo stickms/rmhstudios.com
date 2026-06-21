@@ -6,6 +6,38 @@
 import type { FeedItem, FeedPoll } from '@/lib/feed-types';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 
+/**
+ * Whether a post is locked for a viewer: it has a price, the viewer isn't the
+ * author, and the viewer hasn't unlocked it. `raw.unlocks` must be included
+ * scoped to the viewer (`where: { userId: viewerId }`).
+ */
+export function isLocked(raw: any, viewerId: string | null): boolean {
+  return (
+    !!raw.unlockPrice &&
+    raw.unlockPrice > 0 &&
+    raw.userId !== viewerId &&
+    !(raw.unlocks && raw.unlocks.length > 0)
+  );
+}
+
+/**
+ * Strip content/media from a FeedItem when it's locked, leaving only the
+ * teaser fields. The single source of truth for paywall blanking — every read
+ * path routes through here so locked content can never leak.
+ */
+export function applyLock(item: FeedItem, raw: any, viewerId: string | null): FeedItem {
+  if (!isLocked(raw, viewerId)) return item;
+  return {
+    ...item,
+    content: '',
+    imageUrls: undefined,
+    gifUrl: undefined,
+    poll: undefined,
+    locked: true,
+    unlockPrice: raw.unlockPrice ?? undefined,
+  };
+}
+
 export function rmharkInclude(viewerId: string | null) {
   return {
     user: { select: userDisplaySelect },
@@ -14,6 +46,7 @@ export function rmharkInclude(viewerId: string | null) {
           likes: { where: { userId: viewerId }, select: { id: true } },
           reposts: { where: { userId: viewerId }, select: { id: true } },
           bookmarks: { where: { userId: viewerId }, select: { id: true } },
+          unlocks: { where: { userId: viewerId }, select: { id: true } },
         }
       : {}),
     poll: {
@@ -46,7 +79,7 @@ function mapPoll(poll: any): FeedPoll | undefined {
 }
 
 export function mapRmharkToFeedItem(r: any, viewerId: string | null): FeedItem {
-  return {
+  const item: FeedItem = {
     id: r.id,
     type: 'rmhark',
     createdAt: r.createdAt.toISOString(),
@@ -77,4 +110,5 @@ export function mapRmharkToFeedItem(r: any, viewerId: string | null): FeedItem {
     gifUrl: r.gifUrl ?? undefined,
     imageUrls: r.imageUrls ?? undefined,
   };
+  return applyLock(item, r, viewerId);
 }

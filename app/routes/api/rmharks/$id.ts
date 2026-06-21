@@ -5,6 +5,7 @@ import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 import { feedEventBus } from "@/lib/feed-sse";
 import { MAX_RMHARK_LENGTH } from "@/lib/rmhark-schema";
 import { canViewPost } from "@/lib/feed/audience.server";
+import { isLocked } from "@/lib/feed/map-feed-item.server";
 
 export const Route = createFileRoute('/api/rmharks/$id')({
   server: {
@@ -29,6 +30,7 @@ export const Route = createFileRoute('/api/rmharks/$id')({
           ? {
               likes: { where: { userId }, select: { id: true } },
               reposts: { where: { userId }, select: { id: true } },
+              unlocks: { where: { userId }, select: { id: true } },
             }
           : {}),
         poll: {
@@ -84,15 +86,17 @@ export const Route = createFileRoute('/api/rmharks/$id')({
     }
 
     const isDeleted = !!rmhark.deletedAt;
-    const deletedMessage = rmhark.deletedByAdmin 
-      ? "[This RMHark was deleted by an admin]" 
+    const deletedMessage = rmhark.deletedByAdmin
+      ? "[This RMHark was deleted by an admin]"
       : "[This RMHark was deleted by the user]";
+
+    const locked = !isDeleted && isLocked(rmhark, userId);
 
     return Response.json({
       id: rmhark.id,
       type: "rmhark",
       createdAt: rmhark.createdAt.toISOString(),
-      content: isDeleted ? deletedMessage : rmhark.content,
+      content: isDeleted ? deletedMessage : locked ? "" : rmhark.content,
       user: resolveUser(rmhark.user),
       likeCount: rmhark.likeCount,
       commentCount: rmhark.commentCount,
@@ -100,8 +104,11 @@ export const Route = createFileRoute('/api/rmharks/$id')({
       viewCount: rmhark.viewCount,
       liked: userId ? rmhark.likes.length > 0 : false,
       reposted: userId ? rmhark.reposts.length > 0 : false,
-      poll: isDeleted ? undefined : pollData,
-      gifUrl: isDeleted ? undefined : (rmhark.gifUrl ?? undefined),
+      poll: isDeleted || locked ? undefined : pollData,
+      gifUrl: isDeleted || locked ? undefined : (rmhark.gifUrl ?? undefined),
+      imageUrls: isDeleted || locked ? undefined : rmhark.imageUrls,
+      locked,
+      unlockPrice: rmhark.unlockPrice ?? undefined,
       deletedAt: rmhark.deletedAt?.toISOString() || null,
       deletedByAdmin: rmhark.deletedByAdmin,
       original: rmhark.original
@@ -195,7 +202,7 @@ export const Route = createFileRoute('/api/rmharks/$id')({
 
     const existing = await prisma.rMHark.findUnique({
       where: { id },
-      select: { userId: true, content: true, deletedAt: true },
+      select: { userId: true, content: true, deletedAt: true, unlockPrice: true },
     });
     if (!existing || existing.deletedAt) {
       return Response.json({ error: "Not found" }, { status: 404 });
@@ -217,7 +224,11 @@ export const Route = createFileRoute('/api/rmharks/$id')({
     feedEventBus.publish({
       type: "rmhark.edited",
       rmharkId: id,
-      payload: { id, content, edited: true },
+      // For paid posts, broadcast the locked teaser (no content) to followers.
+      payload:
+        existing.unlockPrice && existing.unlockPrice > 0
+          ? { id, content: "", locked: true, unlockPrice: existing.unlockPrice, edited: true }
+          : { id, content, edited: true },
       timestamp: editedAt.toISOString(),
     });
 

@@ -274,6 +274,7 @@ import { Route as ApiRmhcodeAuthInitiateRouteImport } from './routes/api/rmhcode
 import { Route as ApiRmhcodeAuthGenerateRouteImport } from './routes/api/rmhcode/auth/generate'
 import { Route as ApiRmharksIdVoteRouteImport } from './routes/api/rmharks/$id/vote'
 import { Route as ApiRmharksIdViewRouteImport } from './routes/api/rmharks/$id/view'
+import { Route as ApiRmharksIdUnlockRouteImport } from './routes/api/rmharks/$id/unlock'
 import { Route as ApiRmharksIdTranslateRouteImport } from './routes/api/rmharks/$id/translate'
 import { Route as ApiRmharksIdSummaryRouteImport } from './routes/api/rmharks/$id/summary'
 import { Route as ApiRmharksIdRepostRouteImport } from './routes/api/rmharks/$id/repost'
@@ -1673,6 +1674,11 @@ const ApiRmharksIdViewRoute = ApiRmharksIdViewRouteImport.update({
   path: '/view',
   getParentRoute: () => ApiRmharksIdRoute,
 } as any)
+const ApiRmharksIdUnlockRoute = ApiRmharksIdUnlockRouteImport.update({
+  id: '/unlock',
+  path: '/unlock',
+  getParentRoute: () => ApiRmharksIdRoute,
+} as any)
 const ApiRmharksIdTranslateRoute = ApiRmharksIdTranslateRouteImport.update({
   id: '/translate',
   path: '/translate',
@@ -2247,6 +2253,7 @@ export interface FileRoutesByFullPath {
   '/api/rmharks/$id/repost': typeof ApiRmharksIdRepostRoute
   '/api/rmharks/$id/summary': typeof ApiRmharksIdSummaryRoute
   '/api/rmharks/$id/translate': typeof ApiRmharksIdTranslateRoute
+  '/api/rmharks/$id/unlock': typeof ApiRmharksIdUnlockRoute
   '/api/rmharks/$id/view': typeof ApiRmharksIdViewRoute
   '/api/rmharks/$id/vote': typeof ApiRmharksIdVoteRoute
   '/api/rmhcode/auth/generate': typeof ApiRmhcodeAuthGenerateRoute
@@ -2544,6 +2551,7 @@ export interface FileRoutesByTo {
   '/api/rmharks/$id/repost': typeof ApiRmharksIdRepostRoute
   '/api/rmharks/$id/summary': typeof ApiRmharksIdSummaryRoute
   '/api/rmharks/$id/translate': typeof ApiRmharksIdTranslateRoute
+  '/api/rmharks/$id/unlock': typeof ApiRmharksIdUnlockRoute
   '/api/rmharks/$id/view': typeof ApiRmharksIdViewRoute
   '/api/rmharks/$id/vote': typeof ApiRmharksIdVoteRoute
   '/api/rmhcode/auth/generate': typeof ApiRmhcodeAuthGenerateRoute
@@ -2865,6 +2873,7 @@ export interface FileRoutesById {
   '/api/rmharks/$id/repost': typeof ApiRmharksIdRepostRoute
   '/api/rmharks/$id/summary': typeof ApiRmharksIdSummaryRoute
   '/api/rmharks/$id/translate': typeof ApiRmharksIdTranslateRoute
+  '/api/rmharks/$id/unlock': typeof ApiRmharksIdUnlockRoute
   '/api/rmharks/$id/view': typeof ApiRmharksIdViewRoute
   '/api/rmharks/$id/vote': typeof ApiRmharksIdVoteRoute
   '/api/rmhcode/auth/generate': typeof ApiRmhcodeAuthGenerateRoute
@@ -3186,6 +3195,7 @@ export interface FileRouteTypes {
     | '/api/rmharks/$id/repost'
     | '/api/rmharks/$id/summary'
     | '/api/rmharks/$id/translate'
+    | '/api/rmharks/$id/unlock'
     | '/api/rmharks/$id/view'
     | '/api/rmharks/$id/vote'
     | '/api/rmhcode/auth/generate'
@@ -3483,6 +3493,7 @@ export interface FileRouteTypes {
     | '/api/rmharks/$id/repost'
     | '/api/rmharks/$id/summary'
     | '/api/rmharks/$id/translate'
+    | '/api/rmharks/$id/unlock'
     | '/api/rmharks/$id/view'
     | '/api/rmharks/$id/vote'
     | '/api/rmhcode/auth/generate'
@@ -3803,6 +3814,7 @@ export interface FileRouteTypes {
     | '/api/rmharks/$id/repost'
     | '/api/rmharks/$id/summary'
     | '/api/rmharks/$id/translate'
+    | '/api/rmharks/$id/unlock'
     | '/api/rmharks/$id/view'
     | '/api/rmharks/$id/vote'
     | '/api/rmhcode/auth/generate'
@@ -5862,6 +5874,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRmharksIdViewRouteImport
       parentRoute: typeof ApiRmharksIdRoute
     }
+    '/api/rmharks/$id/unlock': {
+      id: '/api/rmharks/$id/unlock'
+      path: '/unlock'
+      fullPath: '/api/rmharks/$id/unlock'
+      preLoaderRoute: typeof ApiRmharksIdUnlockRouteImport
+      parentRoute: typeof ApiRmharksIdRoute
+    }
     '/api/rmharks/$id/translate': {
       id: '/api/rmharks/$id/translate'
       path: '/translate'
@@ -6786,6 +6805,7 @@ interface ApiRmharksIdRouteChildren {
   ApiRmharksIdRepostRoute: typeof ApiRmharksIdRepostRoute
   ApiRmharksIdSummaryRoute: typeof ApiRmharksIdSummaryRoute
   ApiRmharksIdTranslateRoute: typeof ApiRmharksIdTranslateRoute
+  ApiRmharksIdUnlockRoute: typeof ApiRmharksIdUnlockRoute
   ApiRmharksIdViewRoute: typeof ApiRmharksIdViewRoute
   ApiRmharksIdVoteRoute: typeof ApiRmharksIdVoteRoute
 }
@@ -6798,6 +6818,7 @@ const ApiRmharksIdRouteChildren: ApiRmharksIdRouteChildren = {
   ApiRmharksIdRepostRoute: ApiRmharksIdRepostRoute,
   ApiRmharksIdSummaryRoute: ApiRmharksIdSummaryRoute,
   ApiRmharksIdTranslateRoute: ApiRmharksIdTranslateRoute,
+  ApiRmharksIdUnlockRoute: ApiRmharksIdUnlockRoute,
   ApiRmharksIdViewRoute: ApiRmharksIdViewRoute,
   ApiRmharksIdVoteRoute: ApiRmharksIdVoteRoute,
 }

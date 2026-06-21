@@ -49,6 +49,9 @@ export interface FeedItem {
   bookmarked?: boolean;
   pinned?: boolean;
   edited?: boolean;
+  // Paid post: locked = content hidden until unlocked with coins.
+  locked?: boolean;
+  unlockPrice?: number;
   original?: FeedItem;
   repostedBy?: FeedItemUser;
   actualId?: string;

@@ -105,6 +105,7 @@ model User {
   bookmarks    RMHarkBookmark[]
   achievements UserAchievement[]
   dailyStreak  DailyStreak?
+  postUnlocks  PostUnlock[]
 
   // Economy: shop inventory, coin ledger (tips/gifts)
   inventory       UserInventory[]
@@ -1048,6 +1049,10 @@ model RMHark {
   views     RMHarkView[]
   poll      RMHarkPoll?
   bookmarks RMHarkBookmark[]
+
+  // Paid unlock: coins required to view content (null/0 = free)
+  unlockPrice Int?
+  unlocks     PostUnlock[]
 
   // Self-relation for reposts (quote-repost displays the original inline)
   originalId String?
@@ -2341,4 +2346,20 @@ enum RMHarkAudience {
   PUBLIC // anyone
   FOLLOWERS // the author's followers only
   PRIVATE // only the author
+}
+
+// ─── Paid post unlocks ────────────────────────────────────────────────────
+model PostUnlock {
+  id        String   @id @default(cuid())
+  userId    String
+  rmheetId  String
+  pricePaid Int
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rmhark RMHark @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, rmheetId])
+  @@index([rmheetId])
+  @@map("post_unlock")
 }

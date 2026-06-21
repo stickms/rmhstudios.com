@@ -92,7 +92,7 @@ export const Route = createFileRoute('/api/rmharks')({
       );
     }
 
-    const { content, poll, gifUrl, imageUrls, originalId, audience } = parsed.data;
+    const { content, poll, gifUrl, imageUrls, originalId, audience, unlockPrice } = parsed.data;
 
     if (imageUrls?.length && !imageUrls.every((u) => ownsFeedImageUrl(u, session.user.id))) {
       return Response.json({ error: "Invalid image reference" }, { status: 400 });
@@ -120,6 +120,7 @@ export const Route = createFileRoute('/api/rmharks')({
           userId: session.user.id,
           originalId: quotedOriginalId,
           audience: audience ?? "PUBLIC",
+          unlockPrice: unlockPrice && unlockPrice > 0 ? unlockPrice : null,
         },
         include: {
           user: { select: userDisplaySelect },
@@ -226,10 +227,16 @@ export const Route = createFileRoute('/api/rmharks')({
     // Publish to the SSE bus. The stream endpoint targets this to each
     // viewer's follow graph using `authorId` (Phase 3) instead of blindly
     // prepending onto every open client.
+    // Paid posts must broadcast a locked teaser — never the unlocked content,
+    // since the SSE payload reaches the author's followers.
+    const broadcastItem =
+      unlockPrice && unlockPrice > 0
+        ? { ...item, content: "", imageUrls: undefined, gifUrl: undefined, poll: undefined, locked: true, unlockPrice }
+        : item;
     feedEventBus.publish({
       type: "rmhark.created",
       rmharkId: item.id,
-      payload: item,
+      payload: broadcastItem,
       timestamp: item.createdAt,
       authorId: session.user.id,
     });

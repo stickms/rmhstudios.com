@@ -22,6 +22,7 @@ import { decodeCursor, encodeCursor, keysetWhere } from "./cursor";
 import { rankCandidates } from "./ranking";
 import { getHiddenAuthorIds } from "../moderation.server";
 import { audienceWhere } from "./audience.server";
+import { applyLock } from "./map-feed-item.server";
 
 export type FeedSurface = "following" | "foryou";
 
@@ -120,6 +121,7 @@ function rmharkInclude(userId: string | null) {
           likes: { where: { userId }, select: { id: true } },
           reposts: { where: { userId }, select: { id: true } },
           bookmarks: { where: { userId }, select: { id: true } },
+          unlocks: { where: { userId }, select: { id: true } },
         }
       : {}),
     poll: pollInclude(userId),
@@ -155,7 +157,7 @@ function mapOriginal(o: any): FeedItem | undefined {
 
 function mapOwn(r: any, userId: string | null): FeedItem {
   const isDeleted = !!r.deletedAt;
-  return {
+  const item: FeedItem = {
     id: r.id,
     type: "rmhark",
     createdAt: r.createdAt.toISOString(),
@@ -176,12 +178,13 @@ function mapOwn(r: any, userId: string | null): FeedItem {
     deletedAt: r.deletedAt?.toISOString() || null,
     deletedByAdmin: r.deletedByAdmin,
   };
+  return isDeleted ? item : applyLock(item, r, userId);
 }
 
 function mapRepost(rp: any, userId: string | null): FeedItem {
   const r = rp.rmhark;
   const isDeleted = !!r.deletedAt;
-  return {
+  const item: FeedItem = {
     id: `repost:${rp.id}`,
     type: "rmhark",
     createdAt: rp.createdAt.toISOString(),
@@ -203,6 +206,7 @@ function mapRepost(rp: any, userId: string | null): FeedItem {
     deletedAt: r.deletedAt?.toISOString() || null,
     deletedByAdmin: r.deletedByAdmin,
   };
+  return isDeleted ? item : applyLock(item, r, userId);
 }
 
 /**

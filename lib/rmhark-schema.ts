@@ -67,6 +67,8 @@ export const createRMHarkSchema = z
     originalId: z.string().max(64).optional(),
     // Audience visibility.
     audience: z.enum(["PUBLIC", "FOLLOWERS", "PRIVATE"]).optional(),
+    // Paid post: coins required to unlock (0/undefined = free).
+    unlockPrice: z.number().int().min(0).max(1_000_000).optional(),
   })
   .refine(
     (data) =>
