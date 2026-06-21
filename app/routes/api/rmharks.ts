@@ -7,6 +7,7 @@ import type { FeedItem, FeedFilter } from "@/lib/feed-types";
 import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 import { feedEventBus } from "@/lib/feed-sse";
 import { parseHandles } from "@/lib/feed/mentions";
+import { createNotification } from "@/lib/notifications.server";
 import { getTimeline, type FeedSurface } from "@/lib/feed/timeline";
 import { ownsFeedImageUrl } from "@/lib/storage/keys";
 
@@ -205,6 +206,24 @@ export const Route = createFileRoute('/api/rmharks')({
               },
             },
           });
+
+          // Persist the mentions so they appear in the notification center.
+          const mentionLink = author.handle
+            ? `/u/${author.handle}/post/${item.id}`
+            : undefined;
+          await Promise.all(
+            mentioned.map((m) =>
+              createNotification({
+                userId: m.id,
+                actorId: session.user.id,
+                type: "MENTION",
+                entityType: "rmhark",
+                entityId: item.id,
+                preview: rmhark.content,
+                link: mentionLink,
+              })
+            )
+          );
         }
       }
     } catch (err) {

@@ -94,6 +94,18 @@ model User {
   followers Follow[]     @relation("UserFollowing")
   following Follow[]     @relation("UserFollowers")
 
+  // Notifications
+  notifications      Notification[] @relation("UserNotifications")
+  notificationsSent  Notification[] @relation("UserNotificationActor")
+
+  // Moderation (reports filed / received, blocks & mutes)
+  reportsFiled    ContentReport[] @relation("ReportReporter")
+  reportsResolved ContentReport[] @relation("ReportResolver")
+  blocksMade      UserBlock[]     @relation("BlockBlocker")
+  blocksReceived  UserBlock[]     @relation("BlockBlocked")
+  mutesMade       UserMute[]      @relation("MuteMuter")
+  mutesReceived   UserMute[]      @relation("MuteMuted")
+
   // Direct Messages
   conversationsAsOne Conversation[]  @relation("ConversationParticipantOne")
   conversationsAsTwo Conversation[]  @relation("ConversationParticipantTwo")
@@ -1992,4 +2004,116 @@ model Subscription {
 
   @@index([referenceId])
   @@index([stripeCustomerId])
+}
+
+// ─── Notifications ────────────────────────────────────────────────────────
+// In-app notifications for social events (likes, comments, replies, follows,
+// mentions, reposts). Recipient is `userId`; `actorId` is who triggered it.
+
+enum NotificationType {
+  LIKE
+  COMMENT
+  REPLY
+  FOLLOW
+  MENTION
+  REPOST
+  SYSTEM
+}
+
+model Notification {
+  id         String           @id @default(cuid())
+  userId     String // recipient
+  actorId    String? // who triggered it (null for system notifications)
+  type       NotificationType
+  entityType String?          @db.VarChar(32) // e.g. "rmhark", "comment", "user"
+  entityId   String?          @db.VarChar(64)
+  preview    String?          @db.VarChar(280) // short snapshot of the content
+  link       String?          @db.VarChar(500) // where clicking should take the user
+  read       Boolean          @default(false)
+  createdAt  DateTime         @default(now())
+
+  user  User  @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  actor User? @relation("UserNotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([userId, read, createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("notification")
+}
+
+// ─── Moderation ───────────────────────────────────────────────────────────
+// User-facing reporting plus block/mute. Admins review reports via the queue.
+
+enum ReportStatus {
+  PENDING
+  REVIEWING
+  RESOLVED
+  DISMISSED
+}
+
+enum ReportReason {
+  SPAM
+  HARASSMENT
+  HATE
+  VIOLENCE
+  SEXUAL
+  SELF_HARM
+  MISINFORMATION
+  ILLEGAL
+  OTHER
+}
+
+model ContentReport {
+  id          String       @id @default(cuid())
+  reporterId  String
+  reason      ReportReason
+  details     String?      @db.VarChar(1000)
+  // What is being reported. entityType is "rmhark" | "comment" | "user" | "build" | "dm".
+  entityType  String       @db.VarChar(32)
+  entityId    String       @db.VarChar(64)
+  // Convenience: the user who owns the reported content (for quick triage).
+  targetUserId String?
+
+  status      ReportStatus @default(PENDING)
+  resolvedById String?
+  resolvedAt  DateTime?
+  moderatorNote String?    @db.VarChar(1000)
+
+  createdAt   DateTime     @default(now())
+
+  reporter   User  @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  resolvedBy User? @relation("ReportResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([entityType, entityId])
+  @@index([reporterId])
+  @@map("content_report")
+}
+
+model UserBlock {
+  id        String   @id @default(cuid())
+  blockerId String
+  blockedId String
+  createdAt DateTime @default(now())
+
+  blocker User @relation("BlockBlocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("BlockBlocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
+  @@index([blockerId])
+  @@index([blockedId])
+  @@map("user_block")
+}
+
+model UserMute {
+  id        String   @id @default(cuid())
+  muterId   String
+  mutedId   String
+  createdAt DateTime @default(now())
+
+  muter User @relation("MuteMuter", fields: [muterId], references: [id], onDelete: Cascade)
+  muted User @relation("MuteMuted", fields: [mutedId], references: [id], onDelete: Cascade)
+
+  @@unique([muterId, mutedId])
+  @@index([muterId])
+  @@map("user_mute")
 }

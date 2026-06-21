@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma.server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { createNotification, removeNotification } from "@/lib/notifications.server";
 
 export const Route = createFileRoute('/api/profile/$id/follow')({
   server: {
@@ -46,10 +47,27 @@ export const Route = createFileRoute('/api/profile/$id/follow')({
 
     if (existingFollow) {
       await prisma.follow.delete({ where: { id: existingFollow.id } });
+      await removeNotification({
+        userId: followingId,
+        actorId: followerId,
+        type: "FOLLOW",
+        entityType: "user",
+        entityId: followerId,
+      });
       return Response.json({ success: true, following: false });
     } else {
       await prisma.follow.create({
         data: { followerId, followingId },
+      });
+      const followerHandle = (session.user as { handle?: string }).handle;
+      await createNotification({
+        userId: followingId,
+        actorId: followerId,
+        type: "FOLLOW",
+        entityType: "user",
+        entityId: followerId,
+        link: followerHandle ? `/u/${followerHandle}` : undefined,
+        dedupeUnread: true,
       });
       return Response.json({ success: true, following: true });
     }

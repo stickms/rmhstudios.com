@@ -108,6 +108,7 @@ import { Route as SiteWalletRouteImport } from './routes/_site/wallet'
 import { Route as SiteRoadmapRouteImport } from './routes/_site/roadmap'
 import { Route as SiteQuotesRouteImport } from './routes/_site/quotes'
 import { Route as SitePricingRouteImport } from './routes/_site/pricing'
+import { Route as SiteNotificationsRouteImport } from './routes/_site/notifications'
 import { Route as SiteAdminRouteRouteImport } from './routes/_site/admin/route'
 import { Route as StrategiesSafehouseIndexRouteImport } from './routes/strategies/safehouse/index'
 import { Route as StrategiesPuzzlesIndexRouteImport } from './routes/strategies/puzzles/index'
@@ -117,6 +118,7 @@ import { Route as SecretNotesIndexRouteImport } from './routes/secret/notes/inde
 import { Route as SecretJobsIndexRouteImport } from './routes/secret/jobs/index'
 import { Route as SecretCursedLogicIndexRouteImport } from './routes/secret/cursed-logic/index'
 import { Route as RmhboxMinigamesIndexRouteImport } from './routes/rmhbox/minigames/index'
+import { Route as ApiNotificationsIndexRouteImport } from './routes/api/notifications/index'
 import { Route as ApiCoinsIndexRouteImport } from './routes/api/coins/index'
 import { Route as AltairMultiplayerIndexRouteImport } from './routes/altair/multiplayer/index'
 import { Route as SiteVIndexRouteImport } from './routes/_site/v/index'
@@ -169,6 +171,8 @@ import { Route as ApiRmharksIdRouteImport } from './routes/api/rmharks/$id'
 import { Route as ApiProfileMeRouteImport } from './routes/api/profile/me'
 import { Route as ApiProfileAvatarRouteImport } from './routes/api/profile/avatar'
 import { Route as ApiProfileIdRouteImport } from './routes/api/profile/$id'
+import { Route as ApiNotificationsUnreadCountRouteImport } from './routes/api/notifications/unread-count'
+import { Route as ApiNotificationsReadRouteImport } from './routes/api/notifications/read'
 import { Route as ApiNewsRejectRouteImport } from './routes/api/news/reject'
 import { Route as ApiNewsApproveRouteImport } from './routes/api/news/approve'
 import { Route as ApiNeonDriftwayScoreRouteImport } from './routes/api/neon-driftway/score'
@@ -777,6 +781,11 @@ const SitePricingRoute = SitePricingRouteImport.update({
   path: '/pricing',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteNotificationsRoute = SiteNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteAdminRouteRoute = SiteAdminRouteRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -822,6 +831,11 @@ const RmhboxMinigamesIndexRoute = RmhboxMinigamesIndexRouteImport.update({
   id: '/minigames/',
   path: '/minigames/',
   getParentRoute: () => RmhboxRoute,
+} as any)
+const ApiNotificationsIndexRoute = ApiNotificationsIndexRouteImport.update({
+  id: '/api/notifications/',
+  path: '/api/notifications/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiCoinsIndexRoute = ApiCoinsIndexRouteImport.update({
   id: '/api/coins/',
@@ -1090,6 +1104,17 @@ const ApiProfileIdRoute = ApiProfileIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => ApiProfileRoute,
+} as any)
+const ApiNotificationsUnreadCountRoute =
+  ApiNotificationsUnreadCountRouteImport.update({
+    id: '/api/notifications/unread-count',
+    path: '/api/notifications/unread-count',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiNotificationsReadRoute = ApiNotificationsReadRouteImport.update({
+  id: '/api/notifications/read',
+  path: '/api/notifications/read',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiNewsRejectRoute = ApiNewsRejectRouteImport.update({
   id: '/api/news/reject',
@@ -1726,6 +1751,7 @@ export interface FileRoutesByFullPath {
   '/versecraft': typeof VersecraftRouteWithChildren
   '/void-breaker': typeof VoidBreakerRoute
   '/admin': typeof SiteAdminRouteRouteWithChildren
+  '/notifications': typeof SiteNotificationsRoute
   '/pricing': typeof SitePricingRoute
   '/quotes': typeof SiteQuotesRoute
   '/roadmap': typeof SiteRoadmapRoute
@@ -1842,6 +1868,8 @@ export interface FileRoutesByFullPath {
   '/api/neon-driftway/score': typeof ApiNeonDriftwayScoreRoute
   '/api/news/approve': typeof ApiNewsApproveRoute
   '/api/news/reject': typeof ApiNewsRejectRoute
+  '/api/notifications/read': typeof ApiNotificationsReadRoute
+  '/api/notifications/unread-count': typeof ApiNotificationsUnreadCountRoute
   '/api/profile/$id': typeof ApiProfileIdRouteWithChildren
   '/api/profile/avatar': typeof ApiProfileAvatarRouteWithChildren
   '/api/profile/me': typeof ApiProfileMeRoute
@@ -1894,6 +1922,7 @@ export interface FileRoutesByFullPath {
   '/v/': typeof SiteVIndexRoute
   '/altair/multiplayer/': typeof AltairMultiplayerIndexRoute
   '/api/coins/': typeof ApiCoinsIndexRoute
+  '/api/notifications/': typeof ApiNotificationsIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic/': typeof SecretCursedLogicIndexRoute
   '/secret/jobs/': typeof SecretJobsIndexRoute
@@ -1982,6 +2011,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/velum2099': typeof Velum2099Route
   '/void-breaker': typeof VoidBreakerRoute
+  '/notifications': typeof SiteNotificationsRoute
   '/pricing': typeof SitePricingRoute
   '/quotes': typeof SiteQuotesRoute
   '/roadmap': typeof SiteRoadmapRoute
@@ -2094,6 +2124,8 @@ export interface FileRoutesByTo {
   '/api/neon-driftway/score': typeof ApiNeonDriftwayScoreRoute
   '/api/news/approve': typeof ApiNewsApproveRoute
   '/api/news/reject': typeof ApiNewsRejectRoute
+  '/api/notifications/read': typeof ApiNotificationsReadRoute
+  '/api/notifications/unread-count': typeof ApiNotificationsUnreadCountRoute
   '/api/profile/$id': typeof ApiProfileIdRouteWithChildren
   '/api/profile/avatar': typeof ApiProfileAvatarRouteWithChildren
   '/api/profile/me': typeof ApiProfileMeRoute
@@ -2146,6 +2178,7 @@ export interface FileRoutesByTo {
   '/v': typeof SiteVIndexRoute
   '/altair/multiplayer': typeof AltairMultiplayerIndexRoute
   '/api/coins': typeof ApiCoinsIndexRoute
+  '/api/notifications': typeof ApiNotificationsIndexRoute
   '/rmhbox/minigames': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic': typeof SecretCursedLogicIndexRoute
   '/secret/jobs': typeof SecretJobsIndexRoute
@@ -2253,6 +2286,7 @@ export interface FileRoutesById {
   '/versecraft': typeof VersecraftRouteWithChildren
   '/void-breaker': typeof VoidBreakerRoute
   '/_site/admin': typeof SiteAdminRouteRouteWithChildren
+  '/_site/notifications': typeof SiteNotificationsRoute
   '/_site/pricing': typeof SitePricingRoute
   '/_site/quotes': typeof SiteQuotesRoute
   '/_site/roadmap': typeof SiteRoadmapRoute
@@ -2370,6 +2404,8 @@ export interface FileRoutesById {
   '/api/neon-driftway/score': typeof ApiNeonDriftwayScoreRoute
   '/api/news/approve': typeof ApiNewsApproveRoute
   '/api/news/reject': typeof ApiNewsRejectRoute
+  '/api/notifications/read': typeof ApiNotificationsReadRoute
+  '/api/notifications/unread-count': typeof ApiNotificationsUnreadCountRoute
   '/api/profile/$id': typeof ApiProfileIdRouteWithChildren
   '/api/profile/avatar': typeof ApiProfileAvatarRouteWithChildren
   '/api/profile/me': typeof ApiProfileMeRoute
@@ -2422,6 +2458,7 @@ export interface FileRoutesById {
   '/_site/v/': typeof SiteVIndexRoute
   '/altair/multiplayer/': typeof AltairMultiplayerIndexRoute
   '/api/coins/': typeof ApiCoinsIndexRoute
+  '/api/notifications/': typeof ApiNotificationsIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic/': typeof SecretCursedLogicIndexRoute
   '/secret/jobs/': typeof SecretJobsIndexRoute
@@ -2530,6 +2567,7 @@ export interface FileRouteTypes {
     | '/versecraft'
     | '/void-breaker'
     | '/admin'
+    | '/notifications'
     | '/pricing'
     | '/quotes'
     | '/roadmap'
@@ -2646,6 +2684,8 @@ export interface FileRouteTypes {
     | '/api/neon-driftway/score'
     | '/api/news/approve'
     | '/api/news/reject'
+    | '/api/notifications/read'
+    | '/api/notifications/unread-count'
     | '/api/profile/$id'
     | '/api/profile/avatar'
     | '/api/profile/me'
@@ -2698,6 +2738,7 @@ export interface FileRouteTypes {
     | '/v/'
     | '/altair/multiplayer/'
     | '/api/coins/'
+    | '/api/notifications/'
     | '/rmhbox/minigames/'
     | '/secret/cursed-logic/'
     | '/secret/jobs/'
@@ -2786,6 +2827,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/velum2099'
     | '/void-breaker'
+    | '/notifications'
     | '/pricing'
     | '/quotes'
     | '/roadmap'
@@ -2898,6 +2940,8 @@ export interface FileRouteTypes {
     | '/api/neon-driftway/score'
     | '/api/news/approve'
     | '/api/news/reject'
+    | '/api/notifications/read'
+    | '/api/notifications/unread-count'
     | '/api/profile/$id'
     | '/api/profile/avatar'
     | '/api/profile/me'
@@ -2950,6 +2994,7 @@ export interface FileRouteTypes {
     | '/v'
     | '/altair/multiplayer'
     | '/api/coins'
+    | '/api/notifications'
     | '/rmhbox/minigames'
     | '/secret/cursed-logic'
     | '/secret/jobs'
@@ -3056,6 +3101,7 @@ export interface FileRouteTypes {
     | '/versecraft'
     | '/void-breaker'
     | '/_site/admin'
+    | '/_site/notifications'
     | '/_site/pricing'
     | '/_site/quotes'
     | '/_site/roadmap'
@@ -3173,6 +3219,8 @@ export interface FileRouteTypes {
     | '/api/neon-driftway/score'
     | '/api/news/approve'
     | '/api/news/reject'
+    | '/api/notifications/read'
+    | '/api/notifications/unread-count'
     | '/api/profile/$id'
     | '/api/profile/avatar'
     | '/api/profile/me'
@@ -3225,6 +3273,7 @@ export interface FileRouteTypes {
     | '/_site/v/'
     | '/altair/multiplayer/'
     | '/api/coins/'
+    | '/api/notifications/'
     | '/rmhbox/minigames/'
     | '/secret/cursed-logic/'
     | '/secret/jobs/'
@@ -3385,6 +3434,8 @@ export interface RootRouteChildren {
   ApiNeonDriftwayScoreRoute: typeof ApiNeonDriftwayScoreRoute
   ApiNewsApproveRoute: typeof ApiNewsApproveRoute
   ApiNewsRejectRoute: typeof ApiNewsRejectRoute
+  ApiNotificationsReadRoute: typeof ApiNotificationsReadRoute
+  ApiNotificationsUnreadCountRoute: typeof ApiNotificationsUnreadCountRoute
   ApiRmhboxHistoryRoute: typeof ApiRmhboxHistoryRoute
   ApiRmhboxLeaderboardRoute: typeof ApiRmhboxLeaderboardRoute
   ApiRmhboxStatsRoute: typeof ApiRmhboxStatsRoute
@@ -3409,6 +3460,7 @@ export interface RootRouteChildren {
   ApiVoidBreakerLeaderboardRoute: typeof ApiVoidBreakerLeaderboardRoute
   ApiVoidBreakerScoreRoute: typeof ApiVoidBreakerScoreRoute
   ApiCoinsIndexRoute: typeof ApiCoinsIndexRoute
+  ApiNotificationsIndexRoute: typeof ApiNotificationsIndexRoute
   ApiAdminCuratedBuildsImageRoute: typeof ApiAdminCuratedBuildsImageRouteWithChildren
   ApiDoctrineAdminDisclosuresRoute: typeof ApiDoctrineAdminDisclosuresRoute
   ApiDoctrineAdminIncidentsRoute: typeof ApiDoctrineAdminIncidentsRoute
@@ -4134,6 +4186,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitePricingRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/notifications': {
+      id: '/_site/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof SiteNotificationsRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/admin': {
       id: '/_site/admin'
       path: '/admin'
@@ -4196,6 +4255,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/rmhbox/minigames/'
       preLoaderRoute: typeof RmhboxMinigamesIndexRouteImport
       parentRoute: typeof RmhboxRoute
+    }
+    '/api/notifications/': {
+      id: '/api/notifications/'
+      path: '/api/notifications'
+      fullPath: '/api/notifications/'
+      preLoaderRoute: typeof ApiNotificationsIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/coins/': {
       id: '/api/coins/'
@@ -4560,6 +4626,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/profile/$id'
       preLoaderRoute: typeof ApiProfileIdRouteImport
       parentRoute: typeof ApiProfileRoute
+    }
+    '/api/notifications/unread-count': {
+      id: '/api/notifications/unread-count'
+      path: '/api/notifications/unread-count'
+      fullPath: '/api/notifications/unread-count'
+      preLoaderRoute: typeof ApiNotificationsUnreadCountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/notifications/read': {
+      id: '/api/notifications/read'
+      path: '/api/notifications/read'
+      fullPath: '/api/notifications/read'
+      preLoaderRoute: typeof ApiNotificationsReadRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/news/reject': {
       id: '/api/news/reject'
@@ -5379,6 +5459,7 @@ const SiteAdminRouteRouteWithChildren = SiteAdminRouteRoute._addFileChildren(
 
 interface SiteRouteChildren {
   SiteAdminRouteRoute: typeof SiteAdminRouteRouteWithChildren
+  SiteNotificationsRoute: typeof SiteNotificationsRoute
   SitePricingRoute: typeof SitePricingRoute
   SiteQuotesRoute: typeof SiteQuotesRoute
   SiteRoadmapRoute: typeof SiteRoadmapRoute
@@ -5403,6 +5484,7 @@ interface SiteRouteChildren {
 
 const SiteRouteChildren: SiteRouteChildren = {
   SiteAdminRouteRoute: SiteAdminRouteRouteWithChildren,
+  SiteNotificationsRoute: SiteNotificationsRoute,
   SitePricingRoute: SitePricingRoute,
   SiteQuotesRoute: SiteQuotesRoute,
   SiteRoadmapRoute: SiteRoadmapRoute,
@@ -6078,6 +6160,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiNeonDriftwayScoreRoute: ApiNeonDriftwayScoreRoute,
   ApiNewsApproveRoute: ApiNewsApproveRoute,
   ApiNewsRejectRoute: ApiNewsRejectRoute,
+  ApiNotificationsReadRoute: ApiNotificationsReadRoute,
+  ApiNotificationsUnreadCountRoute: ApiNotificationsUnreadCountRoute,
   ApiRmhboxHistoryRoute: ApiRmhboxHistoryRoute,
   ApiRmhboxLeaderboardRoute: ApiRmhboxLeaderboardRoute,
   ApiRmhboxStatsRoute: ApiRmhboxStatsRoute,
@@ -6102,6 +6186,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiVoidBreakerLeaderboardRoute: ApiVoidBreakerLeaderboardRoute,
   ApiVoidBreakerScoreRoute: ApiVoidBreakerScoreRoute,
   ApiCoinsIndexRoute: ApiCoinsIndexRoute,
+  ApiNotificationsIndexRoute: ApiNotificationsIndexRoute,
   ApiAdminCuratedBuildsImageRoute: ApiAdminCuratedBuildsImageRouteWithChildren,
   ApiDoctrineAdminDisclosuresRoute: ApiDoctrineAdminDisclosuresRoute,
   ApiDoctrineAdminIncidentsRoute: ApiDoctrineAdminIncidentsRoute,
