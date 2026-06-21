@@ -123,7 +123,71 @@ function vibeAIHelperScript(): string {
   }
   window.RMHVibeAI = { chat: chat, stream: stream, endpoint: ENDPOINT };
 })();
-<\/script>`;
+</script>`;
+}
+
+/**
+ * In-memory Web Storage shim, injected as the FIRST script in every generated
+ * page (before the harness and the app module).
+ *
+ * Generated pages render inside a sandboxed iframe with an OPAQUE origin (no
+ * `allow-same-origin`). In that context the platform makes `window.localStorage`
+ * and `window.sessionStorage` *throw a SecurityError on access* — so any generated
+ * app that so much as reads `localStorage.getItem(...)` during render crashes the
+ * whole React tree and leaves the user a blank/black screen. Models reach for
+ * storage constantly regardless of instructions, so this was the single biggest
+ * source of "it just renders black".
+ *
+ * We shadow both Storage objects with a spec-shaped in-memory implementation, so
+ * the access never throws. State is per-session and wiped on reload (there's no
+ * real origin to persist to) — which is exactly what the system prompt now tells
+ * the model to expect. Runs as a CLASSIC script so it's installed before the
+ * module graph executes.
+ */
+function vibeStorageShimScript(): string {
+  return `<script>
+(function(){
+  function makeStorage(){
+    var store = Object.create(null);
+    function key(k){ return '' + k; }
+    var api = {
+      getItem: function(k){ var s = key(k); return Object.prototype.hasOwnProperty.call(store, s) ? store[s] : null; },
+      setItem: function(k, v){ store[key(k)] = '' + v; },
+      removeItem: function(k){ delete store[key(k)]; },
+      clear: function(){ store = Object.create(null); },
+      key: function(i){ var ks = Object.keys(store); return (i >= 0 && i < ks.length) ? ks[i] : null; }
+    };
+    Object.defineProperty(api, 'length', { get: function(){ return Object.keys(store).length; } });
+    return api;
+  }
+  function install(name){
+    try {
+      // localStorage/sessionStorage are accessors on the Window prototype; defining
+      // an OWN data property on the instance shadows them, so reads return our shim
+      // instead of throwing. The fallback covers any engine that disallows that.
+      Object.defineProperty(window, name, { value: makeStorage(), configurable: true });
+    } catch (e) {
+      try { window[name] = makeStorage(); } catch (e2) { /* give up silently */ }
+    }
+  }
+  install('localStorage');
+  install('sessionStorage');
+})();
+</script>`;
+}
+
+/**
+ * Inject ONLY the storage shim into a raw HTML document's <head>. Used by the
+ * legacy single-HTML path (vibe.server.ts) so those pages get the same
+ * storage-crash resistance as bundled ones. The runtime harness is deliberately
+ * NOT injected here — it watches for the bundled module's `__vibeBooted` flag,
+ * which a hand-written legacy page never sets, so it would false-positive.
+ */
+export function injectVibeStorageShim(html: string): string {
+  const shim = vibeStorageShimScript();
+  if (/<head[^>]*>/i.test(html)) return html.replace(/(<head[^>]*>)/i, `$1\n${shim}`);
+  if (/<html[^>]*>/i.test(html)) return html.replace(/(<html[^>]*>)/i, `$1<head>${shim}</head>`);
+  return `${shim}\n${html}`;
 }
 
 /**
@@ -208,7 +272,7 @@ function vibeRuntimeHarnessScript(): string {
     }
   }, 8000);
 })();
-<\/script>`;
+</script>`;
 }
 
 const FILES_MARKER = '===FILES===';
@@ -535,6 +599,7 @@ function assembleHtml(opts: {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="${VIBE_CSP}">
 <title>${escapeHtml(opts.title || 'Vibe')}</title>
+${vibeStorageShimScript()}
 ${vibeRuntimeHarnessScript()}
 ${vibeAIHelperScript()}
 <style>

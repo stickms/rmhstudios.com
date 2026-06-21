@@ -4,7 +4,8 @@
  * Turns a user prompt into a self-contained, INTERACTIVE web app via an LLM.
  * The caller picks a model (Kimi or DeepSeek, each in a faster / higher-quality
  * tier), which maps to a concrete model ID and provider client (see
- * VIBE_MODEL_IDS / PROVIDERS). The model emits a small
+ * VIBE_MODEL_IDS / PROVIDER_CONFIG), with automatic fallback to a broadly-available
+ * model when the chosen tier isn't enabled on the account. The model emits a small
  * multi-file React/TypeScript project, which we bundle server-side with esbuild (see
  * vibe-bundle.server.ts) into one static HTML document — no in-browser Babel. We
  * stream the model's chain-of-thought ("thinking") back to the caller, persist the
@@ -21,26 +22,49 @@ import OpenAI from 'openai';
 import { nanoid } from 'nanoid';
 import { prisma } from '@/lib/prisma.server';
 import type { VibeStreamEvent, VibeModel, VibeProvider } from '@/lib/rmhvibe/vibe-types';
-import { DEFAULT_VIBE_MODEL, VIBE_MODEL_META } from '@/lib/rmhvibe/vibe-types';
-import { parseVibeProject, buildVibeHtml, BundleError } from '@/lib/rmhvibe/vibe-bundle.server';
+import { DEFAULT_VIBE_MODEL, VIBE_MODEL_META, VIBE_PROVIDER_LABELS } from '@/lib/rmhvibe/vibe-types';
+import {
+  parseVibeProject,
+  buildVibeHtml,
+  BundleError,
+  injectVibeStorageShim,
+} from '@/lib/rmhvibe/vibe-bundle.server';
 
 export type VibeMessage = { role: 'system' | 'user' | 'assistant'; content: string };
 
-// One OpenAI-compatible client per provider. Kimi (Moonshot) and DeepSeek both
-// expose OpenAI-compatible chat endpoints and stream reasoning_content (the
+// Per-provider connection config. Kimi (Moonshot) and DeepSeek both expose
+// OpenAI-compatible chat endpoints and stream `reasoning_content` (the
 // chain-of-thought) alongside the final answer when the model supports it.
-const PROVIDERS: Record<VibeProvider, OpenAI> = {
-  kimi: new OpenAI({
-    baseURL: 'https://api.moonshot.ai/v1',
-    apiKey: process.env.KIMI_API_KEY!,
-    maxRetries: 1, // streaming stalls are handled below; don't silently retry for minutes
-  }),
-  deepseek: new OpenAI({
-    baseURL: 'https://api.deepseek.com',
-    apiKey: process.env.DEEPSEEK_API_KEY!,
-    maxRetries: 1,
-  }),
+const PROVIDER_CONFIG: Record<VibeProvider, { baseURL: string; keyEnv: string }> = {
+  kimi: { baseURL: 'https://api.moonshot.ai/v1', keyEnv: 'KIMI_API_KEY' },
+  deepseek: { baseURL: 'https://api.deepseek.com', keyEnv: 'DEEPSEEK_API_KEY' },
 };
+
+/** Thrown when a provider's API key isn't configured — surfaced as a clean error. */
+class MissingKeyError extends Error {
+  constructor(readonly provider: VibeProvider) {
+    super(`${VIBE_PROVIDER_LABELS[provider]} is not configured`);
+  }
+}
+
+// Clients are built LAZILY and cached, not at module load. The OpenAI constructor
+// throws when its apiKey is empty, and this module is imported by the read-only
+// viewer paths too (getVibePage etc. in v.$slug.tsx) — so eager construction with
+// a `!` non-null assertion would crash the whole viewer if one key were unset.
+// Lazy creation contains a missing key to the one request that actually needs it.
+const clients: Partial<Record<VibeProvider, OpenAI>> = {};
+function getClient(provider: VibeProvider): OpenAI {
+  const cached = clients[provider];
+  if (cached) return cached;
+  const cfg = PROVIDER_CONFIG[provider];
+  const apiKey = process.env[cfg.keyEnv];
+  if (!apiKey) throw new MissingKeyError(provider);
+  // maxRetries: 1 — streaming stalls are handled by the timers below; we don't want
+  // the SDK silently retrying a long generation for minutes behind the scenes.
+  const client = new OpenAI({ baseURL: cfg.baseURL, apiKey, maxRetries: 1 });
+  clients[provider] = client;
+  return client;
+}
 
 // Maps each selectable model to its concrete provider model ID. None of these
 // support response_format/json mode, so we use a plain text protocol and parse it.
@@ -49,6 +73,16 @@ const VIBE_MODEL_IDS: Record<VibeModel, string> = {
   'kimi-k2-turbo': 'kimi-k2.7-code-highspeed',
   'deepseek-flash': 'deepseek-v4-flash',
   'deepseek-pro': 'deepseek-v4-pro',
+};
+
+// When a selected model isn't available on the configured account (e.g. Kimi's
+// HighSpeed tier, which rolls out gradually, or a not-yet-enabled DeepSeek tier),
+// the provider rejects the request. Rather than fail the whole generation, fall
+// back to a broadly-available model from the SAME provider. Models with no entry
+// here have no fallback (they're already the safe, GA option).
+const MODEL_FALLBACK_IDS: Partial<Record<VibeModel, string>> = {
+  'kimi-k2-turbo': 'kimi-k2.7-code', // HighSpeed → base K2.7 Code
+  'deepseek-pro': 'deepseek-v4-flash', // Pro → Flash
 };
 
 const VIBE_SYSTEM_PROMPT = `You are a world-class creative web developer and designer. Given a user's prompt, build a COMPLETE, polished, INTERACTIVE web app that captures the vibe of their request, written as a small multi-file React + TypeScript project. The result must look finished and shippable, never a rough draft.
@@ -75,7 +109,7 @@ Runtime environment — use it to the fullest, and respect its limits:
 - The app runs in a sandboxed iframe with an opaque origin, auto-focused, so keyboard input (arrow keys, WASD, spacebar, typing) works immediately — keyboard games and shortcuts are fine.
 - The full client-side web platform is available: Canvas 2D, WebGL, the Web Audio API, SVG, CSS animations/transitions, requestAnimationFrame, IntersectionObserver/ResizeObserver, pointer/touch/mouse/keyboard events, drag-and-drop, the Web Animations API, and Pointer Lock (for mouse-look). alert/confirm/prompt are allowed.
 - HARD LIMITS (the sandbox enforces these — code that ignores them WILL crash or be blocked):
-  - NO localStorage, sessionStorage, cookies, or IndexedDB — accessing them throws. Keep state in memory (React state). For shareable or persistent state, encode it into location.hash.
+  - Storage is EPHEMERAL, not persistent. localStorage and sessionStorage ARE available (backed by an in-memory shim, so reading/writing them is safe and won't throw), but their contents are wiped on every reload and are never shared between visitors. cookies and IndexedDB are unavailable. Never rely on any of them for real persistence — treat them as session-only scratch space. Keep primary state in React state; for state that must survive a reload or be shareable via the URL, encode it into location.hash.
   - NO arbitrary network: no fetch/XHR/WebSocket to other origins, and no external image/font/media URLs. Generate all visuals with SVG, emoji, CSS gradients, canvas, or data: URIs. The ONE exception is the built-in AI helper below — do not hand-roll fetch() to any AI/LLM API or hardcode an API key (it will be blocked and is a security risk).
 - Be ambitious: games, physics simulations, generative art, audio toys/sequencers, data visualizations, 3D scenes, productivity tools, and dashboards are all in scope — everything runs client-side.
 
@@ -453,7 +487,9 @@ async function materialize(content: string): Promise<Materialized> {
   if (parsed.html && looksLikeHtmlDoc(parsed.html)) {
     return {
       ok: true,
-      html: injectCsp(parsed.html),
+      // Storage shim first (so legacy pages can't crash on localStorage either),
+      // then our strict CSP — same crash-resistance as the bundled path.
+      html: injectCsp(injectVibeStorageShim(parsed.html)),
       slug: parsed.slug,
       title: parsed.title,
       description: parsed.description,
@@ -473,6 +509,125 @@ const MAX_GENERATION_ATTEMPTS = 3;
 // request and surface a specific error instead of spinning forever.
 const STREAM_IDLE_MS = 60_000; // no token for 60s → treat as stalled
 const STREAM_TOTAL_MS = 300_000; // hard cap on a single attempt (5 min)
+
+/** Why a single model streaming attempt failed — drives both fallback and messaging. */
+type StreamFailReason = 'stalled' | 'timeout' | 'unavailable' | 'failed';
+
+class ModelStreamError extends Error {
+  constructor(readonly reason: StreamFailReason) {
+    super(reason);
+  }
+}
+
+/**
+ * Does this provider error mean "that model can't be used on this account" (so we
+ * should fall back to another model) rather than a transient failure (retry the
+ * same model)? Covers a 404 model-not-found, and 400/403 responses whose message
+ * names the model / a permission or availability problem. Kept liberal: a wrong
+ * guess only changes which model we try next, never correctness.
+ */
+function isModelUnavailableError(err: unknown): boolean {
+  const e = err as {
+    status?: number;
+    code?: string;
+    message?: string;
+    error?: { message?: string; code?: string };
+  };
+  const status = e?.status;
+  const msg = (e?.message || e?.error?.message || '').toLowerCase();
+  const code = (e?.code || e?.error?.code || '').toLowerCase();
+  if (status === 404) return true;
+  if (code.includes('model')) return true;
+  if (
+    (status === 400 || status === 403) &&
+    /(model|not found|does not exist|no permission|not available|unavailable|access)/.test(msg)
+  ) {
+    return true;
+  }
+  return false;
+}
+
+/** User-facing message for a stream failure that exhausted its options. */
+function messageForStreamFail(reason: StreamFailReason | undefined): string {
+  switch (reason) {
+    case 'stalled':
+      return 'The model stopped responding partway through. Please try again.';
+    case 'timeout':
+      return 'Generation took too long and was stopped. Try again, or simplify your prompt.';
+    case 'unavailable':
+      return 'The selected model isn’t available right now. Try a different model.';
+    default:
+      return 'The model failed to respond. Try again.';
+  }
+}
+
+/**
+ * Run ONE streaming completion against a concrete model id. Yields `thinking`
+ * (reasoning_content) and `content` (answer) deltas as they arrive and RETURNS the
+ * full accumulated answer text. Throws a `ModelStreamError` (classified) on any
+ * failure: a stall (no token for STREAM_IDLE_MS), the total-time cap, an
+ * unavailable model, or a generic provider/network error. The caller drives it via
+ * the iterator protocol so it can read the returned content and forward the deltas.
+ */
+async function* streamModel(
+  client: OpenAI,
+  modelId: string,
+  messages: VibeMessage[],
+): AsyncGenerator<VibeStreamEvent, string> {
+  const abort = new AbortController();
+  let stalled = false;
+  let timedOut = false;
+  let idleTimer: ReturnType<typeof setTimeout> | undefined;
+  const armIdle = () => {
+    if (idleTimer) clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => {
+      stalled = true;
+      abort.abort();
+    }, STREAM_IDLE_MS);
+  };
+  const totalTimer = setTimeout(() => {
+    timedOut = true;
+    abort.abort();
+  }, STREAM_TOTAL_MS);
+
+  let content = '';
+  try {
+    armIdle(); // also bounds time-to-first-token
+    const stream = await client.chat.completions.create(
+      {
+        model: modelId,
+        messages,
+        // Generous budget so finished, polished pages don't get truncated.
+        max_tokens: 16384,
+        stream: true,
+      },
+      { signal: abort.signal },
+    );
+
+    for await (const chunk of stream) {
+      armIdle();
+      // reasoning_content is a provider extension (Kimi/DeepSeek) not in the SDK types.
+      const delta = chunk.choices[0]?.delta as
+        | { content?: string | null; reasoning_content?: string | null }
+        | undefined;
+      if (delta?.reasoning_content) yield { type: 'thinking', text: delta.reasoning_content };
+      if (delta?.content) {
+        content += delta.content;
+        yield { type: 'content', text: delta.content };
+      }
+    }
+  } catch (err) {
+    // A fired timer takes precedence over the abort error it caused.
+    if (stalled) throw new ModelStreamError('stalled');
+    if (timedOut) throw new ModelStreamError('timeout');
+    if (isModelUnavailableError(err)) throw new ModelStreamError('unavailable');
+    throw new ModelStreamError('failed');
+  } finally {
+    if (idleTimer) clearTimeout(idleTimer);
+    clearTimeout(totalTimer);
+  }
+  return content;
+}
 
 /**
  * Stream generation of a vibe page. If `slug` is provided, this is a "customize"
@@ -496,9 +651,33 @@ export async function* generateVibeStream(opts: {
   model?: VibeModel;
 }): AsyncGenerator<VibeStreamEvent> {
   const model = opts.model ?? DEFAULT_VIBE_MODEL;
-  const modelId = VIBE_MODEL_IDS[model];
   const provider = VIBE_MODEL_META[model].provider;
-  const client = PROVIDERS[provider];
+
+  // Resolve the provider client up front (before reserving any DB row) so a missing
+  // API key fails cleanly instead of orphaning a "generating" page.
+  let client: OpenAI;
+  try {
+    client = getClient(provider);
+  } catch (err) {
+    if (err instanceof MissingKeyError) {
+      yield {
+        type: 'error',
+        message: `The ${VIBE_PROVIDER_LABELS[provider]} model isn’t configured on this server. Pick another model or try again later.`,
+      };
+      return;
+    }
+    yield { type: 'error', message: 'Could not start generation. Try again.' };
+    return;
+  }
+
+  // Models to try, in order: the selected one, then its fallback if the selected
+  // tier isn't available on this account. Deduped so a model with no real fallback
+  // (or one pointing at itself) is tried exactly once.
+  const primaryId = VIBE_MODEL_IDS[model];
+  const fallbackId = MODEL_FALLBACK_IDS[model];
+  const modelCandidates =
+    fallbackId && fallbackId !== primaryId ? [primaryId, fallbackId] : [primaryId];
+
   // Kimi tends toward generic, templated UI — give it the frontend-design skill
   // (art-direction guidance) on top of the base prompt. DeepSeek keeps the base.
   const systemPrompt =
@@ -577,66 +756,49 @@ export async function* generateVibeStream(opts: {
   let succeeded = false;
   try {
 
+  // Index into `modelCandidates`. Once a candidate proves unavailable we advance
+  // past it permanently, so corrective retries don't keep re-hitting a dead model.
+  let candidateIdx = 0;
+
   for (let attempt = 1; attempt <= MAX_GENERATION_ATTEMPTS && !result; attempt++) {
     content = '';
 
-    // Abort the request if it stalls (no tokens for STREAM_IDLE_MS) or runs past
-    // the total cap. The idle timer is re-armed on every chunk; `stalled`/`timedOut`
-    // record which guard fired so we can give a specific error.
-    const abort = new AbortController();
-    let stalled = false;
-    let timedOut = false;
-    let idleTimer: ReturnType<typeof setTimeout> | undefined;
-    const armIdle = () => {
-      if (idleTimer) clearTimeout(idleTimer);
-      idleTimer = setTimeout(() => {
-        stalled = true;
-        abort.abort();
-      }, STREAM_IDLE_MS);
-    };
-    const totalTimer = setTimeout(() => {
-      timedOut = true;
-      abort.abort();
-    }, STREAM_TOTAL_MS);
-
-    try {
-      armIdle(); // also bounds time-to-first-token
-      const stream = await client.chat.completions.create(
-        {
-          model: modelId,
-          messages,
-          // Generous budget so finished, polished pages don't get truncated.
-          max_tokens: 16384,
-          stream: true,
-        },
-        { signal: abort.signal },
-      );
-
-      for await (const chunk of stream) {
-        armIdle();
-        // reasoning_content is a provider extension (Kimi/DeepSeek) not in the SDK types.
-        const delta = chunk.choices[0]?.delta as
-          | { content?: string | null; reasoning_content?: string | null }
-          | undefined;
-        if (delta?.reasoning_content) yield { type: 'thinking', text: delta.reasoning_content };
-        if (delta?.content) {
-          content += delta.content;
-          yield { type: 'content', text: delta.content };
+    // Run one streaming attempt, falling back through the model candidates if the
+    // chosen tier is unavailable on this account. `produced` flips true once a model
+    // actually streamed an answer; otherwise `lastFail` says why we're giving up.
+    let produced = false;
+    let lastFail: StreamFailReason | undefined;
+    while (candidateIdx < modelCandidates.length && !produced) {
+      const modelId = modelCandidates[candidateIdx];
+      try {
+        const inner = streamModel(client, modelId, messages);
+        let step = await inner.next();
+        while (!step.done) {
+          yield step.value; // forward thinking / content deltas
+          step = await inner.next();
         }
+        content = step.value; // generator's return = full answer text
+        produced = true;
+      } catch (err) {
+        const reason = err instanceof ModelStreamError ? err.reason : 'failed';
+        lastFail = reason;
+        // Only an availability problem is worth switching models for, and only while
+        // a later candidate remains. Everything else fails this attempt outright.
+        if (reason === 'unavailable' && candidateIdx < modelCandidates.length - 1) {
+          candidateIdx++;
+          yield {
+            type: 'thinking',
+            text: `\n\n↻ The selected model is unavailable — switching to a fallback model…\n\n`,
+          };
+          continue;
+        }
+        break;
       }
-    } catch {
-      yield {
-        type: 'error',
-        message: stalled
-          ? 'The model stopped responding partway through. Please try again.'
-          : timedOut
-            ? 'Generation took too long and was stopped. Try again, or simplify your prompt.'
-            : 'The model failed to respond. Try again.',
-      };
+    }
+
+    if (!produced) {
+      yield { type: 'error', message: messageForStreamFail(lastFail) };
       return;
-    } finally {
-      if (idleTimer) clearTimeout(idleTimer);
-      clearTimeout(totalTimer);
     }
 
     const materialized = await materialize(content);
