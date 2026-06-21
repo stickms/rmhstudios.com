@@ -138,6 +138,7 @@ model Session {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
   @@map("session")
 }
 
@@ -159,6 +160,8 @@ model Account {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
+  @@index([providerId, accountId])
   @@map("account")
 }
 
@@ -1065,6 +1068,8 @@ model RMHarkComment {
   deletedByAdmin Boolean   @default(false)
 
   @@index([rmheetId, createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([parentId])
   @@map("rmheet_comment")
 }
 
