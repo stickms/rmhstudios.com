@@ -21,6 +21,7 @@ import { getAllPosts } from "../blog";
 import { decodeCursor, encodeCursor, keysetWhere } from "./cursor";
 import { rankCandidates } from "./ranking";
 import { getHiddenAuthorIds } from "../moderation.server";
+import { audienceWhere } from "./audience.server";
 
 export type FeedSurface = "following" | "foryou";
 
@@ -317,6 +318,7 @@ async function getFollowingTimeline(
       where: {
         userId: { in: followingIds },
         deletedAt: null,
+        audience: { not: "PRIVATE" },
         ...contentWhere,
         ...keyset,
       },
@@ -380,20 +382,26 @@ async function getForYouTimeline(
   const hiddenIds = await getHiddenAuthorIds(userId);
   const authorWhere = hiddenIds.length ? { userId: { notIn: hiddenIds } } : {};
 
+  // Audience visibility (PUBLIC, own, or FOLLOWERS-of-followed).
+  const viewerFollowingIds = userId
+    ? (await prisma.follow.findMany({ where: { followerId: userId }, select: { followingId: true } })).map((f) => f.followingId)
+    : [];
+  const audWhere = audienceWhere(userId, viewerFollowingIds);
+
   const shouldFetchRmharks = filter === "all" || filter === "rmhark" || !!search;
   let dbItems: FeedItem[] = [];
 
   if (shouldFetchRmharks) {
     const [rmharks, repostRecords] = await Promise.all([
       prisma.rMHark.findMany({
-        where: { deletedAt: null, ...contentWhere, ...authorWhere, ...keyset },
+        where: { deletedAt: null, ...contentWhere, ...authorWhere, ...audWhere, ...keyset },
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         take: limit,
         include,
       }),
       prisma.rMHarkRepost.findMany({
         where: {
-          rmhark: { deletedAt: null, ...contentWhere, ...authorWhere },
+          rmhark: { deletedAt: null, ...contentWhere, ...authorWhere, ...audWhere },
           ...(hiddenIds.length ? { userId: { notIn: hiddenIds } } : {}),
           ...keyset,
         },

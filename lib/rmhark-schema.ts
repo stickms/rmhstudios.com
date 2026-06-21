@@ -63,6 +63,8 @@ export const createRMHarkSchema = z
       .optional(),
     // Quote-repost: id of the post being quoted.
     originalId: z.string().max(64).optional(),
+    // Audience visibility.
+    audience: z.enum(["PUBLIC", "FOLLOWERS", "PRIVATE"]).optional(),
   })
   .refine(
     (data) =>

@@ -92,7 +92,7 @@ export const Route = createFileRoute('/api/rmharks')({
       );
     }
 
-    const { content, poll, gifUrl, imageUrls, originalId } = parsed.data;
+    const { content, poll, gifUrl, imageUrls, originalId, audience } = parsed.data;
 
     if (imageUrls?.length && !imageUrls.every((u) => ownsFeedImageUrl(u, session.user.id))) {
       return Response.json({ error: "Invalid image reference" }, { status: 400 });
@@ -119,6 +119,7 @@ export const Route = createFileRoute('/api/rmharks')({
           imageUrls: imageUrls ?? [],
           userId: session.user.id,
           originalId: quotedOriginalId,
+          audience: audience ?? "PUBLIC",
         },
         include: {
           user: { select: userDisplaySelect },

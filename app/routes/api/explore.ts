@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma.server';
 import { rmharkInclude, mapRmharkToFeedItem } from '@/lib/feed/map-feed-item.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
+import { audienceWhere } from '@/lib/feed/audience.server';
 
 const HASHTAG_REGEX = /#(\w{1,64})/g;
 const SCAN_LIMIT = 400;
@@ -20,22 +21,24 @@ export const Route = createFileRoute('/api/explore')({
           const notHidden = hidden.length ? { userId: { notIn: hidden } } : {};
           const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-          const [recent, hotRows, following] = await Promise.all([
+          const following = viewerId
+            ? await prisma.follow.findMany({ where: { followerId: viewerId }, select: { followingId: true } })
+            : [];
+          const aud = audienceWhere(viewerId, following.map((f) => f.followingId));
+
+          const [recent, hotRows] = await Promise.all([
             prisma.rMHark.findMany({
-              where: { deletedAt: null, content: { contains: '#' }, ...notHidden },
+              where: { deletedAt: null, content: { contains: '#' }, ...notHidden, ...aud },
               select: { content: true },
               orderBy: { createdAt: 'desc' },
               take: SCAN_LIMIT,
             }),
             prisma.rMHark.findMany({
-              where: { deletedAt: null, createdAt: { gte: since }, ...notHidden },
+              where: { deletedAt: null, createdAt: { gte: since }, ...notHidden, ...aud },
               orderBy: [{ likeCount: 'desc' }, { createdAt: 'desc' }],
               take: 15,
               include: rmharkInclude(viewerId),
             }),
-            viewerId
-              ? prisma.follow.findMany({ where: { followerId: viewerId }, select: { followingId: true } })
-              : Promise.resolve([]),
           ]);
 
           // Trending tags.

@@ -1057,6 +1057,9 @@ model RMHark {
   deletedAt      DateTime?
   deletedByAdmin Boolean   @default(false)
 
+  // Audience: who can see this post.
+  audience RMHarkAudience @default(PUBLIC)
+
   // Author-pinned to the top of their profile (one per user, enforced in code).
   pinnedAt DateTime?
 
@@ -2331,4 +2334,10 @@ model UserStrike {
 
   @@index([userId, createdAt(sort: Desc)])
   @@map("user_strike")
+}
+
+enum RMHarkAudience {
+  PUBLIC // anyone
+  FOLLOWERS // the author's followers only
+  PRIVATE // only the author
 }

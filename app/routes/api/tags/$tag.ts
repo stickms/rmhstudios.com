@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { rmharkInclude, mapRmharkToFeedItem } from '@/lib/feed/map-feed-item.server';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
+import { audienceWhere } from '@/lib/feed/audience.server';
 
 /** GET /api/tags/$tag — posts containing #tag, newest first (cursor paginated). */
 export const Route = createFileRoute('/api/tags/$tag')({
@@ -20,12 +21,16 @@ export const Route = createFileRoute('/api/tags/$tag')({
           const cursor = url.searchParams.get('cursor');
           const limit = Math.min(parseInt(url.searchParams.get('limit') || '20'), 50);
           const hidden = await getHiddenAuthorIds(viewerId);
+          const followingIds = viewerId
+            ? (await prisma.follow.findMany({ where: { followerId: viewerId }, select: { followingId: true } })).map((f) => f.followingId)
+            : [];
 
           const rows = await prisma.rMHark.findMany({
             where: {
               deletedAt: null,
               content: { contains: `#${tag}`, mode: 'insensitive' },
               ...(hidden.length ? { userId: { notIn: hidden } } : {}),
+              ...audienceWhere(viewerId, followingIds),
             },
             orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
             take: limit + 1,

@@ -38,6 +38,7 @@ export const Route = createFileRoute('/api/ai/ask-feed')({
 
           const where = {
             deletedAt: null,
+            audience: 'PUBLIC' as const,
             ...(hidden.length ? { userId: { notIn: hidden } } : {}),
             ...(terms.length ? { OR: terms.map((t) => ({ content: { contains: t, mode: 'insensitive' as const } })) } : {}),
           };
@@ -51,7 +52,7 @@ export const Route = createFileRoute('/api/ai/ask-feed')({
           // Fall back to recent posts if the keyword search found nothing.
           if (posts.length === 0) {
             posts = await prisma.rMHark.findMany({
-              where: { deletedAt: null, ...(hidden.length ? { userId: { notIn: hidden } } : {}) },
+              where: { deletedAt: null, audience: 'PUBLIC', ...(hidden.length ? { userId: { notIn: hidden } } : {}) },
               orderBy: { createdAt: 'desc' },
               take: 60,
               select: { content: true, user: { select: { name: true, handle: true } } },

@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma.server";
 import type { FeedItem, FeedPoll } from "@/lib/feed-types";
 import { userDisplaySelect, resolveUser } from "@/lib/user-display";
+import { audienceWhere } from "@/lib/feed/audience.server";
 
 function pollInclude(userId: string | null) {
   return {
@@ -98,12 +99,23 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
 
     const cursorDate = cursor ? new Date(cursor) : undefined;
 
+    // Audience: owner sees all; a follower also sees FOLLOWERS posts; others PUBLIC.
+    let viewerFollowsOwner = false;
+    if (viewerId && viewerId !== userId) {
+      viewerFollowsOwner = !!(await prisma.follow.findUnique({
+        where: { followerId_followingId: { followerId: viewerId, followingId: userId } },
+        select: { id: true },
+      }));
+    }
+    const aud = audienceWhere(viewerId, viewerFollowsOwner ? [userId] : []);
+
     // Fetch user's own RMHarks and their reposts in parallel (exclude deleted)
     const [rmharks, reposts] = await Promise.all([
       prisma.rMHark.findMany({
         where: {
           userId,
           deletedAt: null,
+          ...aud,
           ...(cursorDate ? { createdAt: { lt: cursorDate } } : {}),
         },
         orderBy: { createdAt: "desc" },
@@ -184,7 +196,7 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
     let items = merged;
     if (!cursorDate) {
       const pinned = await prisma.rMHark.findFirst({
-        where: { userId, deletedAt: null, pinnedAt: { not: null } },
+        where: { userId, deletedAt: null, pinnedAt: { not: null }, ...aud },
         include: rmharkInclude(viewerId),
       });
       if (pinned) {

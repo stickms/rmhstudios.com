@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma.server";
 import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 import { feedEventBus } from "@/lib/feed-sse";
 import { MAX_RMHARK_LENGTH } from "@/lib/rmhark-schema";
+import { canViewPost } from "@/lib/feed/audience.server";
 
 export const Route = createFileRoute('/api/rmharks/$id')({
   server: {
@@ -52,6 +53,11 @@ export const Route = createFileRoute('/api/rmharks/$id')({
     });
 
     if (!rmhark) {
+      return Response.json({ error: "Not found" }, { status: 404 });
+    }
+
+    // Audience visibility — non-public posts 404 for viewers who can't see them.
+    if (!(await canViewPost({ userId: rmhark.userId, audience: rmhark.audience }, userId))) {
       return Response.json({ error: "Not found" }, { status: 404 });
     }
 
