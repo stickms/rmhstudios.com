@@ -175,7 +175,7 @@ export function FeedbackModal() {
       {/* Floating trigger button */}
       <motion.button
         onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-(--site-accent) text-white shadow-lg shadow-(--site-accent)/25 hover:bg-(--site-accent-hover) transition-colors md:bottom-8 md:right-8 md:h-14 md:w-14"
+        className="fixed bottom-6 right-6 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-(--site-accent) text-site-accent-fg shadow-lg shadow-(--site-accent)/25 hover:bg-(--site-accent-hover) transition-colors md:bottom-8 md:right-8 md:h-14 md:w-14"
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 1, type: "spring", stiffness: 260, damping: 20 }}

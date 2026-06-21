@@ -91,7 +91,7 @@ export function GameCarousel({ games }: GameCarouselProps) {
 
             {/* Navigation Buttons */}
             <button
-                className="absolute left-4 md:left-12 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-(--site-surface)/80 border border-site-border text-site-text flex items-center justify-center transition-all hover:bg-site-accent hover:border-site-accent hover:text-white z-10 backdrop-blur-sm"
+                className="absolute left-4 md:left-12 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-(--site-surface)/80 border border-site-border text-site-text flex items-center justify-center transition-all hover:bg-site-accent hover:border-site-accent hover:text-site-accent-fg z-10 backdrop-blur-sm"
                 onClick={scrollPrev}
                 aria-label="Previous slide"
             >
@@ -99,7 +99,7 @@ export function GameCarousel({ games }: GameCarouselProps) {
             </button>
 
             <button
-                className="absolute right-4 md:right-12 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-(--site-surface)/80 border border-site-border text-site-text flex items-center justify-center transition-all hover:bg-site-accent hover:border-site-accent hover:text-white z-10 backdrop-blur-sm"
+                className="absolute right-4 md:right-12 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-(--site-surface)/80 border border-site-border text-site-text flex items-center justify-center transition-all hover:bg-site-accent hover:border-site-accent hover:text-site-accent-fg z-10 backdrop-blur-sm"
                 onClick={scrollNext}
                 aria-label="Next slide"
             >

@@ -248,7 +248,7 @@ export function NewsList({ initialArticles, featuredArticles, filtersOpen = fals
                                 <button
                                     key={page}
                                     onClick={() => goToPage(page as number)}
-                                    className={`w-9 h-9 rounded-lg text-sm font-bold transition-all ${safePage === page ? 'bg-(--site-accent) text-white' : 'text-(--site-text-dim) hover:text-(--site-text) hover:bg-(--site-surface)'}`}
+                                    className={`w-9 h-9 rounded-lg text-sm font-bold transition-all ${safePage === page ? 'bg-(--site-accent) text-site-accent-fg' : 'text-(--site-text-dim) hover:text-(--site-text) hover:bg-(--site-surface)'}`}
                                 >
                                     {page}
                                 </button>

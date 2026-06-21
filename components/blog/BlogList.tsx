@@ -179,7 +179,7 @@ export function BlogList({ initialPosts, filtersOpen = false }: BlogListProps) {
             </div>
             <button
               onClick={() => setSelectedTag(null)}
-              className={`px-2.5 py-1 rounded-full text-xs font-bold transition-all ${!selectedTag ? "bg-site-accent text-white" : "bg-site-bg text-site-text-muted hover:bg-site-surface-hover"}`}
+              className={`px-2.5 py-1 rounded-full text-xs font-bold transition-all ${!selectedTag ? "bg-site-accent text-site-accent-fg" : "bg-site-bg text-site-text-muted hover:bg-site-surface-hover"}`}
             >
               All
             </button>
@@ -187,7 +187,7 @@ export function BlogList({ initialPosts, filtersOpen = false }: BlogListProps) {
               <button
                 key={tag}
                 onClick={() => setSelectedTag(tag === selectedTag ? null : tag)}
-                className={`px-2.5 py-1 rounded-full text-xs font-bold transition-all ${selectedTag === tag ? "bg-site-accent text-white" : "bg-site-bg text-site-text-muted hover:bg-site-surface-hover"}`}
+                className={`px-2.5 py-1 rounded-full text-xs font-bold transition-all ${selectedTag === tag ? "bg-site-accent text-site-accent-fg" : "bg-site-bg text-site-text-muted hover:bg-site-surface-hover"}`}
               >
                 {tag}
               </button>
@@ -359,7 +359,7 @@ export function BlogList({ initialPosts, filtersOpen = false }: BlogListProps) {
                   onClick={() => goToPage(page as number)}
                   className={`w-9 h-9 rounded-lg text-sm font-bold transition-all ${
                     safePage === page
-                      ? "bg-site-accent text-white"
+                      ? "bg-site-accent text-site-accent-fg"
                       : "text-site-text-dim hover:text-site-text hover:bg-site-surface"
                   }`}
                 >

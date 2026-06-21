@@ -92,7 +92,7 @@ export function SearchColumn({ initialQuery = '' }: { initialQuery?: string }) {
               onClick={() => setTab(t.id)}
               className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
                 tab === t.id
-                  ? 'bg-site-accent text-white'
+                  ? 'bg-site-accent text-site-accent-fg'
                   : 'text-site-text-muted hover:bg-site-surface hover:text-site-text'
               }`}
             >
