@@ -7,7 +7,7 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import {
   Home, Package, BookOpen, Library, LayoutGrid, Atom,
-  LogOut, PenSquare, User, MessageCircle, ShieldCheck, MoreHorizontal, Wallet, Sparkles, Bell, Search, Landmark, Bookmark, Trophy, Flame, ShoppingBag, Compass, Users, Zap, Shield, Bot, Swords, Clapperboard, Music, Terminal, ChevronDown
+  LogOut, PenSquare, User, MessageCircle, ShieldCheck, MoreHorizontal, Wallet, Sparkles, Bell, Landmark, Bookmark, Trophy, Flame, ShoppingBag, Compass, Users, Zap, Shield, Bot, Swords, Clapperboard, Music, Terminal, ChevronDown, type LucideIcon
 } from 'lucide-react';
 import { ComposeModal } from './ComposeModal';
 import { Button } from '@/components/ui/button';
@@ -16,30 +16,67 @@ import { useNotificationCount } from '@/lib/useNotificationCount';
 import { useStreak } from '@/lib/useStreak';
 import { usePresenceHeartbeat } from '@/lib/usePresenceHeartbeat';
 
-const navLinks = [
-  { href: '/', label: 'Home', icon: Home },
-  { href: '/explore', label: 'Explore', icon: Compass },
-  { href: '/communities', label: 'Communities', icon: Users },
-  { href: '/clans', label: 'Clans', icon: Shield },
-  { href: '/ranked', label: 'Ranked', icon: Swords },
-  { href: '/study', label: 'Flashcards', icon: BookOpen },
-  { href: '/clips', label: 'Clips', icon: Clapperboard },
-  { href: '/music-trivia', label: 'Guess the Song', icon: Music },
-  { href: '/personas', label: 'AI Personas', icon: Bot },
-  { href: '/search', label: 'Search', icon: Search },
-  { href: '/v', label: 'Pages', icon: LayoutGrid },
-  { href: '/builds', label: 'Builds', icon: Package },
-  { href: '/library', label: 'Library', icon: Library },
-  { href: '/shop', label: 'Shop', icon: ShoppingBag },
-  { href: '/blog', label: 'Blog', icon: BookOpen },
-  { href: '/pricing', label: 'Membership', icon: Sparkles },
-  { href: '/developer', label: 'Developer', icon: Terminal },
-];
+type NavLeaf = { href: string; label: string; icon: LucideIcon };
+type NavGroup = { group: string; label: string; icon: LucideIcon; children: NavLeaf[] };
+type NavItem = NavLeaf | NavGroup;
+const isGroup = (item: NavItem): item is NavGroup => 'group' in item;
 
-// Nested under the "Explore" group in the sidebar.
-const exploreLinks = [
-  { href: '/rmh-capital', label: 'RMH Capital', icon: Landmark },
-  { href: '/adaptive-intelligence', label: 'Adaptive Intelligence', icon: Atom },
+// Top-level nav. Singles stay flat; related destinations are merged into
+// collapsible groups to keep the rail short.
+const NAV: NavItem[] = [
+  { href: '/', label: 'Home', icon: Home },
+  { href: '/search', label: 'Explore', icon: Compass },
+  { href: '/library', label: 'Library', icon: Library },
+  {
+    group: 'lob',
+    label: 'Lines of Business',
+    icon: Landmark,
+    children: [
+      { href: '/rmh-capital', label: 'RMH Capital', icon: Landmark },
+      { href: '/adaptive-intelligence', label: 'Adaptive Intelligence', icon: Atom },
+    ],
+  },
+  {
+    group: 'play',
+    label: 'Play',
+    icon: Swords,
+    children: [
+      { href: '/ranked', label: 'Ranked', icon: Swords },
+      { href: '/clans', label: 'Clans', icon: Shield },
+      { href: '/music-trivia', label: 'Guess the Song', icon: Music },
+    ],
+  },
+  {
+    group: 'community',
+    label: 'Community',
+    icon: Users,
+    children: [
+      { href: '/communities', label: 'Communities', icon: Users },
+      { href: '/clips', label: 'Clips', icon: Clapperboard },
+    ],
+  },
+  {
+    group: 'learn',
+    label: 'Learn',
+    icon: BookOpen,
+    children: [
+      { href: '/study', label: 'Flashcards', icon: BookOpen },
+      { href: '/personas', label: 'AI Personas', icon: Bot },
+      { href: '/blog', label: 'Blog', icon: BookOpen },
+    ],
+  },
+  {
+    group: 'create',
+    label: 'Create',
+    icon: Package,
+    children: [
+      { href: '/v', label: 'Pages', icon: LayoutGrid },
+      { href: '/builds', label: 'Builds', icon: Package },
+      { href: '/developer', label: 'Developer', icon: Terminal },
+    ],
+  },
+  { href: '/shop', label: 'Shop', icon: ShoppingBag },
+  { href: '/pricing', label: 'Membership', icon: Sparkles },
 ];
 
 export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
@@ -54,9 +91,14 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   const itemJustifyClass = expanded ? '' : 'md:justify-center xl:justify-start';
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const [exploreOpen, setExploreOpen] = useState(
-    () => exploreLinks.some((l) => pathname?.startsWith(l.href)) || pathname === '/explore'
-  );
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
+    const init: Record<string, boolean> = {};
+    for (const item of NAV) {
+      if (isGroup(item)) init[item.group] = item.children.some((c) => pathname?.startsWith(c.href));
+    }
+    return init;
+  });
+  const toggleGroup = (g: string) => setOpenGroups((s) => ({ ...s, [g]: !s[g] }));
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -90,6 +132,29 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
     });
   };
 
+  const renderLeaf = (link: NavLeaf, nested = false) => {
+    const Icon = link.icon;
+    const isActive = pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href + '/'));
+    const indent = nested
+      ? expanded
+        ? 'pl-10'
+        : 'md:justify-center xl:justify-start xl:pl-10'
+      : itemJustifyClass;
+    return (
+      <Link
+        key={link.href}
+        to={link.href}
+        className={`flex items-center gap-3 px-3 ${nested ? 'py-2' : 'py-2.5'} rounded-xl text-sm font-medium transition-colors ${indent} ${
+          isActive ? 'text-site-accent bg-site-accent-dim' : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
+        }`}
+        title={link.label}
+      >
+        <Icon className="w-5 h-5 shrink-0" />
+        <span className={labelClass}>{link.label}</span>
+      </Link>
+    );
+  };
+
   return (
     <div className={`flex flex-col gap-1 h-full min-h-0 ${paddingClass}`}>
       {/* Logo */}
@@ -104,73 +169,32 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
 
       {/* Nav Links — scrollable region */}
       <nav className="flex flex-col gap-1 flex-1 min-h-0 overflow-y-auto pr-1.5">
-        {navLinks.map((link) => {
-          const Icon = link.icon;
-
-          // The "Explore" item is a collapsible group holding RMH Capital and
-          // Adaptive Intelligence rather than a plain link.
-          if (link.href === '/explore') {
-            const groupActive = exploreLinks.some((l) => pathname?.startsWith(l.href));
-            return (
-              <div key="explore" className="flex flex-col gap-1">
-                <button
-                  type="button"
-                  onClick={() => setExploreOpen((o) => !o)}
-                  aria-expanded={exploreOpen}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors w-full ${itemJustifyClass} ${
-                    groupActive
-                      ? 'text-site-accent bg-site-accent-dim'
-                      : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
-                  }`}
-                  title="Explore"
-                >
-                  <Compass className="w-5 h-5 shrink-0" />
-                  <span className={labelClass}>Explore</span>
-                  <ChevronDown
-                    className={`w-4 h-4 shrink-0 ml-auto transition-transform ${exploreOpen ? 'rotate-180' : ''} ${labelClass}`}
-                  />
-                </button>
-                {exploreOpen &&
-                  exploreLinks.map((sub) => {
-                    const SubIcon = sub.icon;
-                    const subActive = pathname?.startsWith(sub.href);
-                    return (
-                      <Link
-                        key={sub.href}
-                        to={sub.href}
-                        className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
-                          expanded ? 'pl-10' : 'md:justify-center xl:justify-start xl:pl-10'
-                        } ${
-                          subActive
-                            ? 'text-site-accent bg-site-accent-dim'
-                            : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
-                        }`}
-                        title={sub.label}
-                      >
-                        <SubIcon className="w-5 h-5 shrink-0" />
-                        <span className={labelClass}>{sub.label}</span>
-                      </Link>
-                    );
-                  })}
-              </div>
-            );
-          }
-
-          const isActive = pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href + '/'));
+        {NAV.map((item) => {
+          if (!isGroup(item)) return renderLeaf(item);
+          const Icon = item.icon;
+          const isOpen = !!openGroups[item.group];
+          const groupActive = item.children.some((c) => pathname?.startsWith(c.href));
           return (
-            <Link
-              key={link.href}
-              to={link.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${itemJustifyClass} ${
-                isActive
-                  ? 'text-site-accent bg-site-accent-dim'
-                  : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
-              }`}
-              title={link.label}
-            >
-              <Icon className="w-5 h-5 shrink-0" />
-              <span className={labelClass}>{link.label}</span>
-            </Link>
+            <div key={item.group} className="flex flex-col gap-1">
+              <button
+                type="button"
+                onClick={() => toggleGroup(item.group)}
+                aria-expanded={isOpen}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors w-full ${itemJustifyClass} ${
+                  groupActive
+                    ? 'text-site-accent bg-site-accent-dim'
+                    : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
+                }`}
+                title={item.label}
+              >
+                <Icon className="w-5 h-5 shrink-0" />
+                <span className={labelClass}>{item.label}</span>
+                <ChevronDown
+                  className={`w-4 h-4 shrink-0 ml-auto transition-transform ${isOpen ? 'rotate-180' : ''} ${labelClass}`}
+                />
+              </button>
+              {isOpen && item.children.map((c) => renderLeaf(c, true))}
+            </div>
           );
         })}
         {/* Dynamic Profile link (shown when logged in) */}
