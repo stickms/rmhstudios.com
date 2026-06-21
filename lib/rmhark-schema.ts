@@ -61,14 +61,17 @@ export const createRMHarkSchema = z
       .array(feedImageUrlSchema)
       .max(MAX_RMHARK_IMAGES, `At most ${MAX_RMHARK_IMAGES} images allowed`)
       .optional(),
+    // Quote-repost: id of the post being quoted.
+    originalId: z.string().max(64).optional(),
   })
   .refine(
     (data) =>
       data.content.trim().length > 0 ||
       data.poll ||
       data.gifUrl ||
-      (data.imageUrls?.length ?? 0) > 0,
-    { message: "Post must have text, a poll, or an image/GIF" }
+      (data.imageUrls?.length ?? 0) > 0 ||
+      !!data.originalId,
+    { message: "Post must have text, a poll, an image/GIF, or be a quote" }
   );
 
 export const createCommentSchema = z.object({

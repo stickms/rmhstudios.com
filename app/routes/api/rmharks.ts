@@ -92,10 +92,23 @@ export const Route = createFileRoute('/api/rmharks')({
       );
     }
 
-    const { content, poll, gifUrl, imageUrls } = parsed.data;
+    const { content, poll, gifUrl, imageUrls, originalId } = parsed.data;
 
     if (imageUrls?.length && !imageUrls.every((u) => ownsFeedImageUrl(u, session.user.id))) {
       return Response.json({ error: "Invalid image reference" }, { status: 400 });
+    }
+
+    // Validate the quoted post exists (and isn't itself a quote, to avoid chains).
+    let quotedOriginalId: string | null = null;
+    if (originalId) {
+      const orig = await prisma.rMHark.findUnique({
+        where: { id: originalId },
+        select: { id: true, deletedAt: true, originalId: true },
+      });
+      if (!orig || orig.deletedAt) {
+        return Response.json({ error: "Quoted post not found" }, { status: 400 });
+      }
+      quotedOriginalId = orig.originalId ?? orig.id; // quote the root, not a quote
     }
 
     const rmhark = await prisma.$transaction(async (tx) => {
@@ -105,11 +118,19 @@ export const Route = createFileRoute('/api/rmharks')({
           gifUrl: gifUrl ?? null,
           imageUrls: imageUrls ?? [],
           userId: session.user.id,
+          originalId: quotedOriginalId,
         },
         include: {
           user: { select: userDisplaySelect },
         },
       });
+
+      if (quotedOriginalId) {
+        await tx.rMHark.update({
+          where: { id: quotedOriginalId },
+          data: { repostCount: { increment: 1 } },
+        });
+      }
 
       if (poll) {
         await tx.rMHarkPoll.create({
@@ -172,6 +193,31 @@ export const Route = createFileRoute('/api/rmharks')({
       gifUrl: rmhark.gifUrl ?? undefined,
       imageUrls: rmhark.imageUrls,
     };
+
+    // Attach the quoted original so the card renders it inline immediately.
+    if (quotedOriginalId) {
+      const orig = await prisma.rMHark.findUnique({
+        where: { id: quotedOriginalId },
+        select: {
+          id: true, content: true, createdAt: true, likeCount: true,
+          commentCount: true, repostCount: true, viewCount: true,
+          user: { select: userDisplaySelect },
+        },
+      });
+      if (orig) {
+        item.original = {
+          id: orig.id,
+          type: "rmhark",
+          createdAt: orig.createdAt.toISOString(),
+          content: orig.content,
+          user: resolveUser(orig.user),
+          likeCount: orig.likeCount,
+          commentCount: orig.commentCount,
+          repostCount: orig.repostCount,
+          viewCount: orig.viewCount,
+        };
+      }
+    }
 
     // Publish to the SSE bus. The stream endpoint targets this to each
     // viewer's follow graph using `authorId` (Phase 3) instead of blindly
