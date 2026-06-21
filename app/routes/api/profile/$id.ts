@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma.server";
 import { resolveUserDisplay } from "@/lib/user-display";
 import { handleCooldownRemaining } from "@/lib/handle";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { getEquippedCosmetics } from "@/lib/shop/equipped.server";
 
 const profileSelect = {
   id: true,
@@ -104,8 +105,10 @@ export const Route = createFileRoute('/api/profile/$id')({
 
     const resolved = resolveUserDisplay(user);
     const isOwnProfile = viewerId === user.id;
+    const cosmetics = await getEquippedCosmetics(user.id);
 
     return Response.json({
+      cosmetics,
       id: user.id,
       name: resolved.name,
       username: user.username,

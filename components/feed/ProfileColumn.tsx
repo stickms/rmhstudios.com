@@ -46,6 +46,13 @@ interface ProfileData {
   coins: number;
   hasProfilePet: boolean;
   showProfilePet: boolean;
+  cosmetics?: {
+    nameColor?: { color?: string; gradient?: string };
+    avatarFrame?: { color?: string; gradient?: string };
+    badge?: { emoji?: string };
+    banner?: { gradient?: string };
+    pet?: { emoji?: string };
+  };
 }
 
 type ProfileTab = 'rmharks' | 'likes';
@@ -407,10 +414,24 @@ export function ProfileColumn({ userId }: { userId: string }) {
         </div>
       </div>
 
+      {/* Equipped profile banner (cosmetic) */}
+      {profile.cosmetics?.banner?.gradient && (
+        <div className="h-24 w-full" style={{ background: profile.cosmetics.banner.gradient }} aria-hidden />
+      )}
+
       {/* Profile header */}
       <div className="px-4 pt-6 pb-4 border-b border-site-border">
         <div className="flex items-start justify-between mb-4">
-          <ProfileAvatar image={displayImage ?? null} name={displayName ?? null} />
+          {profile.cosmetics?.avatarFrame ? (
+            <div
+              className="rounded-full p-[3px] shrink-0"
+              style={{ background: profile.cosmetics.avatarFrame.gradient ?? profile.cosmetics.avatarFrame.color }}
+            >
+              <ProfileAvatar image={displayImage ?? null} name={displayName ?? null} />
+            </div>
+          ) : (
+            <ProfileAvatar image={displayImage ?? null} name={displayName ?? null} />
+          )}
 
           {/* Profile Pet banner between avatar and vinyl */}
           {profile.hasProfilePet && profile.showProfilePet && (
@@ -437,7 +458,21 @@ export function ProfileColumn({ userId }: { userId: string }) {
         <div className="flex items-start justify-between mb-3">
           <div>
             <div className="flex items-center gap-1.5 align-middle">
-              <h2 className="font-bold text-xl text-site-text truncate">{displayName || 'Unknown'}</h2>
+              <h2
+                className="font-bold text-xl text-site-text truncate"
+                style={
+                  profile.cosmetics?.nameColor?.gradient
+                    ? { background: profile.cosmetics.nameColor.gradient, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }
+                    : profile.cosmetics?.nameColor?.color
+                    ? { color: profile.cosmetics.nameColor.color }
+                    : undefined
+                }
+              >
+                {displayName || 'Unknown'}
+              </h2>
+              {profile.cosmetics?.badge?.emoji && (
+                <span className="shrink-0 text-lg" title="Equipped badge">{profile.cosmetics.badge.emoji}</span>
+              )}
               {profile.isVerified && <BadgeCheck className="w-5 h-5 text-emerald-500 shrink-0" />}
               {profile.isAdmin && (
                 <span title="Admin" className="inline-flex items-center shrink-0">
