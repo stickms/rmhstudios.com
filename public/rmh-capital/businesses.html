@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Our Businesses — RMH Capital</title>
+<meta name="description" content="Seven integrated businesses — investment banking, markets, corporate banking, corporate finance, venture capital, management consulting, and private equity — on one platform.">
+<meta name="theme-color" content="#06090F">
+<meta property="og:title" content="Our Businesses — RMH Capital">
+<meta property="og:description" content="Seven businesses, one continuous relationship across the full company arc.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/rmh-capital/styles.css">
+<style>
+  .biz{display:grid;grid-template-columns:0.9fr 1.1fr;gap:clamp(36px,6vw,80px);align-items:start;padding:clamp(56px,8vw,104px) 0;border-bottom:1px solid var(--line-soft)}
+  .biz:last-of-type{border-bottom:0}
+  .biz.flip .biz-media{order:2}
+  .biz-stage{font-family:var(--mono);font-size:12px;letter-spacing:0.1em;color:var(--gold);text-transform:uppercase;margin-bottom:16px}
+  .biz h2{font-family:var(--serif);font-size:clamp(26px,3.4vw,40px);color:var(--ivory);font-weight:500;line-height:1.1;margin-bottom:20px}
+  .biz .biz-num{font-family:var(--mono);font-size:13px;color:var(--gray-dim)}
+  .biz p{margin-bottom:24px;max-width:60ch}
+  .caps{list-style:none;display:flex;flex-wrap:wrap;gap:10px}
+  .caps li{font-size:13px;color:var(--gray);border:1px solid var(--line-soft);padding:8px 14px;border-radius:100px}
+  .biz-media{position:sticky;top:104px;border:1px solid var(--line);background:linear-gradient(150deg,var(--ink),var(--void));aspect-ratio:1/1;display:flex;align-items:center;justify-content:center}
+  @media(max-width:860px){
+    .biz{grid-template-columns:1fr;gap:26px}
+    .biz.flip .biz-media{order:0}
+    .biz-media{position:static;aspect-ratio:16/9}
+  }
+</style>
+</head>
+<body>
+
+<header class="topnav">
+  <div class="topnav-inner">
+    <a class="brand" href="/rmh-capital/" aria-label="RMH Capital home">
+      <svg viewBox="0 0 100 100" aria-hidden="true"><polygon points="50,5 89,27 89,73 50,95 11,73 11,27" fill="none" stroke="#C8A24A" stroke-width="3"/><polygon points="50,25 72,38 72,62 50,75 28,62 28,38" fill="none" stroke="#C8A24A" stroke-width="2" opacity="0.55"/><circle cx="50" cy="50" r="5" fill="#C8A24A"/></svg>
+      <span class="brand-text">RMH&nbsp;Capital</span>
+    </a>
+    <nav class="navlinks" aria-label="Primary">
+      <a href="/rmh-capital/firm.html">Our Firm</a>
+      <a href="/rmh-capital/businesses.html" aria-current="page">Businesses</a>
+      <a href="/rmh-capital/insights.html">Insights</a>
+      <a href="/rmh-capital/careers.html">Careers</a>
+      <a href="/rmh-capital/contact.html">Contact</a>
+    </nav>
+    <div class="nav-right"><a class="nav-cta" href="/rmh-capital/contact.html">Contact us</a></div>
+    <button class="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="m-menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><line x1="3" y1="7" x2="21" y2="7"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="17" x2="21" y2="17"/></svg>
+    </button>
+  </div>
+  <nav class="mobile-menu" id="m-menu" aria-label="Mobile">
+    <a href="/rmh-capital/firm.html">Our Firm</a>
+    <a href="/rmh-capital/businesses.html" aria-current="page">Businesses</a>
+    <a href="/rmh-capital/insights.html">Insights</a>
+    <a href="/rmh-capital/careers.html">Careers</a>
+    <a href="/rmh-capital/contact.html">Contact</a>
+  </nav>
+</header>
+
+<main>
+<section class="pagehead">
+  <div class="container pagehead-inner">
+    <span class="eyebrow reveal">Our Businesses</span>
+    <h1 class="serif reveal d1">Seven businesses. One continuous relationship.</h1>
+    <p class="lede reveal d2">Each business leads in its discipline. Together, they let a client raise, grow, advise, transact, and own — every step ordered along the arc a company travels, from first round to public markets and beyond.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+
+    <!-- 01 IB -->
+    <article class="biz" id="investment-banking">
+      <div class="reveal">
+        <div class="biz-stage">Advise &amp; raise</div>
+        <h2>Investment Banking</h2>
+        <span class="biz-num">01 / 07</span>
+      </div>
+      <div class="reveal d1">
+        <p>We advise companies on the decisions that define them — mergers and acquisitions, public offerings, and complex financings. Sector teams pair deep industry knowledge with the full reach of the platform, so a single mandate can draw on markets, lending, and capital across the firm.</p>
+        <ul class="caps">
+          <li>Mergers &amp; acquisitions</li><li>Equity capital markets</li><li>Debt capital markets</li><li>Leveraged finance</li><li>Industry coverage</li>
+        </ul>
+      </div>
+    </article>
+
+    <!-- 02 Markets -->
+    <article class="biz flip" id="markets">
+      <div class="biz-media reveal" aria-hidden="true">
+        <svg viewBox="0 0 300 300" width="70%" fill="none"><g stroke="#C8A24A" stroke-opacity=".4"><path d="M30 220 L80 160 L120 190 L170 110 L220 150 L270 70" stroke="#E3C277" stroke-width="2" fill="none"/><line x1="30" y1="250" x2="270" y2="250" stroke-opacity=".25"/></g><g fill="#C8A24A"><circle cx="80" cy="160" r="3"/><circle cx="170" cy="110" r="3"/><circle cx="270" cy="70" r="3"/></g></svg>
+      </div>
+      <div class="reveal d1">
+        <div class="biz-stage">Execute &amp; access</div>
+        <h2>Markets</h2>
+        <span class="biz-num">02 / 07</span>
+        <p style="margin-top:20px">Our markets business connects institutional clients to liquidity across equities, credit, and rates. Sales, trading, and research work as one team, delivering execution, market intelligence, and a clear read on conditions — built to serve the mid-market clients larger banks overlook.</p>
+        <ul class="caps"><li>Equities</li><li>Credit &amp; rates</li><li>Electronic execution</li><li>Research</li><li>Market-making</li></ul>
+      </div>
+    </article>
+
+    <!-- 03 Corp Banking -->
+    <article class="biz" id="corporate-banking">
+      <div class="reveal">
+        <div class="biz-stage">Fund &amp; grow</div>
+        <h2>Corporate Banking</h2>
+        <span class="biz-num">03 / 07</span>
+      </div>
+      <div class="reveal d1">
+        <p>As companies scale, they need credit that scales with them. We provide revolving facilities, term loans, and structured lending alongside treasury and cash-management solutions — a banking relationship designed to grow into capital markets and advisory as the company matures.</p>
+        <ul class="caps"><li>Revolving credit</li><li>Term lending</li><li>Structured finance</li><li>Treasury services</li><li>Relationship banking</li></ul>
+      </div>
+    </article>
+
+    <!-- 04 Corp Finance -->
+    <article class="biz flip" id="corporate-finance">
+      <div class="biz-media reveal" aria-hidden="true">
+        <svg viewBox="0 0 300 300" width="64%" fill="none"><g stroke="#C8A24A" stroke-opacity=".4" stroke-width="1.2"><rect x="60" y="60" width="180" height="180"/><line x1="60" y1="150" x2="240" y2="150"/><line x1="150" y1="60" x2="150" y2="240"/></g><circle cx="150" cy="150" r="34" fill="none" stroke="#E3C277" stroke-width="2"/><circle cx="150" cy="150" r="5" fill="#E3C277"/></svg>
+      </div>
+      <div class="reveal d1">
+        <div class="biz-stage">Plan &amp; allocate</div>
+        <h2>Corporate Finance</h2>
+        <span class="biz-num">04 / 07</span>
+        <p style="margin-top:20px">The discipline behind the platform. Our corporate finance teams bring capital strategy, balance-sheet design, and rigorous financial planning to every client decision — the analytical backbone that helps companies allocate capital with confidence and clarity.</p>
+        <ul class="caps"><li>Capital strategy</li><li>Balance-sheet design</li><li>Financial planning</li><li>Treasury &amp; capital management</li></ul>
+      </div>
+    </article>
+
+    <!-- 05 VC -->
+    <article class="biz" id="venture-capital">
+      <div class="reveal">
+        <div class="biz-stage">Back &amp; build</div>
+        <h2>Venture Capital</h2>
+        <span class="biz-num">05 / 07</span>
+      </div>
+      <div class="reveal d1">
+        <p>We meet founders at the very beginning. Through an accelerator, an early-stage fund, and a venture studio, we provide first capital, hands-on support, and a network — the start of a relationship that can carry a company all the way to the public markets, with the whole firm behind it.</p>
+        <ul class="caps"><li>Accelerator</li><li>Seed &amp; early-stage fund</li><li>Venture studio</li><li>Founder services</li></ul>
+      </div>
+    </article>
+
+    <!-- 06 Consulting -->
+    <article class="biz flip" id="management-consulting">
+      <div class="biz-media reveal" aria-hidden="true">
+        <svg viewBox="0 0 300 300" width="68%" fill="none"><g stroke="#C8A24A" stroke-opacity=".4"><circle cx="110" cy="120" r="46"/><circle cx="190" cy="180" r="46"/></g><circle cx="150" cy="150" r="14" fill="none" stroke="#E3C277" stroke-width="2"/></svg>
+      </div>
+      <div class="reveal d1">
+        <div class="biz-stage">Strategize &amp; transform</div>
+        <h2>Management Consulting</h2>
+        <span class="biz-num">06 / 07</span>
+        <p style="margin-top:20px">Strategy and execution advisory, delivered with the firm's capital and markets reach at hand. Our consultants work on the questions that change a company's trajectory — strategy, operations, organization, and digital transformation — and stay accountable for results, not slideware.</p>
+        <ul class="caps"><li>Corporate strategy</li><li>Operations</li><li>Organization design</li><li>Digital transformation</li></ul>
+      </div>
+    </article>
+
+    <!-- 07 PE -->
+    <article class="biz" id="private-equity">
+      <div class="reveal">
+        <div class="biz-stage">Own &amp; compound</div>
+        <h2>Private Equity</h2>
+        <span class="biz-num">07 / 07</span>
+      </div>
+      <div class="reveal d1">
+        <p>At the far end of the arc, we invest our own conviction. Through growth-equity and impact-housing strategies, RMH Capital takes ownership positions alongside the companies and communities we know best — closing the loop between advising a client and building value with them.</p>
+        <ul class="caps"><li>Growth equity</li><li>Impact housing</li><li>Co-investment</li><li>Long-term ownership</li></ul>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<section class="section tight">
+  <div class="container">
+    <div class="cta-band reveal">
+      <span class="eyebrow center">One Platform</span>
+      <h2 style="margin-top:18px">The advantage is in the connections.</h2>
+      <p>A founder we back through venture can become a banking client, an advisory client, and a co-investment partner over a decade. Talk to us about where you are on the arc.</p>
+      <a class="btn btn-gold" href="/rmh-capital/contact.html">Start a conversation <span class="arw">→</span></a>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <a class="brand" href="/rmh-capital/" aria-label="RMH Capital home">
+          <svg viewBox="0 0 100 100" aria-hidden="true"><polygon points="50,5 89,27 89,73 50,95 11,73 11,27" fill="none" stroke="#C8A24A" stroke-width="3"/><polygon points="50,25 72,38 72,62 50,75 28,62 28,38" fill="none" stroke="#C8A24A" stroke-width="2" opacity="0.55"/><circle cx="50" cy="50" r="5" fill="#C8A24A"/></svg>
+          <span class="brand-text">RMH&nbsp;Capital</span>
+        </a>
+        <p>An integrated investment bank and financial platform, partnering with clients across the full company arc.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Businesses</h4>
+        <a href="/rmh-capital/businesses.html#investment-banking">Investment Banking</a>
+        <a href="/rmh-capital/businesses.html#markets">Markets</a>
+        <a href="/rmh-capital/businesses.html#corporate-banking">Corporate Banking</a>
+        <a href="/rmh-capital/businesses.html#venture-capital">Venture Capital</a>
+        <a href="/rmh-capital/businesses.html#private-equity">Private Equity</a>
+      </div>
+      <div class="footer-col">
+        <h4>Firm</h4>
+        <a href="/rmh-capital/firm.html">Our Firm</a>
+        <a href="/rmh-capital/insights.html">Insights</a>
+        <a href="/rmh-capital/careers.html">Careers</a>
+        <a href="/rmh-capital/contact.html">Contact</a>
+        <a href="/rmh-capital-board-book.html">Operating Atlas</a>
+      </div>
+      <div class="footer-col">
+        <h4>Connect</h4>
+        <a href="/rmh-capital/contact.html?type=Media">Media inquiries</a>
+        <a href="/rmh-capital/contact.html?type=Investment Banking">Banking inquiries</a>
+        <a href="/rmh-capital/careers.html">Open roles</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span class="copy">© 2026 RMH Capital LLC. All rights reserved.</span>
+      <div class="footer-legal"><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Disclosures</a><a href="#">Accessibility</a></div>
+      <div class="footer-social">
+        <a href="#" aria-label="LinkedIn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9h4v12H3zM9 9h3.8v1.7h.05c.53-1 1.83-2.05 3.77-2.05 4.03 0 4.78 2.65 4.78 6.1V21H21.4v-5.3c0-1.27-.02-2.9-1.77-2.9s-2.04 1.38-2.04 2.8V21H13.8z"/></svg></a>
+        <a href="#" aria-label="X"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 2H22l-7.5 8.6L23 22h-6.8l-5-6.6L5.3 22H2l8-9.2L1.5 2h7l4.5 6zM17 20h1.7L7.1 3.8H5.3z"/></svg></a>
+        <a href="#" aria-label="YouTube"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.4-.4-5c-.2-.9-.9-1.6-1.8-1.8C19.2 5 12 5 12 5s-7.2 0-8.8.4c-.9.2-1.6.9-1.8 1.8C1 8.6 1 12 1 12s0 3.4.4 5c.2.9.9 1.6 1.8 1.8 1.6.4 8.8.4 8.8.4s7.2 0 8.8-.4c.9-.2 1.6-.9 1.8-1.8.4-1.6.4-5 .4-5zM9.8 15.2V8.8l6 3.2z"/></svg></a>
+      </div>
+    </div>
+    <p class="disclaimer">This website is for informational purposes only and does not constitute an offer to sell or a solicitation to buy securities. RMH Capital and its businesses provide services subject to applicable law and regulation; nothing herein is investment, legal, or tax advice. Certain content is illustrative. RMH Capital, RMHCombinator, and the RMH geometric mark are trademarks of RMH Capital LLC.</p>
+  </div>
+</footer>
+
+<script src="/rmh-capital/site.js"></script>
+</body>
+</html>

@@ -101,9 +101,9 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
             </Link>
           );
         })}
-        {/* RMH Capital — static landing page (served from /public) */}
+        {/* RMH Capital — static institutional site (served from /public) */}
         <a
-          href="/rmh-capital.html"
+          href="/rmh-capital/"
           className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-site-text-muted hover:text-site-text hover:bg-site-surface ${itemJustifyClass}`}
           title="RMH Capital"
         >
