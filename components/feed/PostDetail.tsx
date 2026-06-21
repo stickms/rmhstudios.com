@@ -22,6 +22,7 @@ import { LinkPreview } from './LinkPreview';
 import { EngagementListModal } from './EngagementListModal';
 import { UserAvatar } from './UserAvatar';
 import { ShareModal } from './ShareModal';
+import { ThreadSummary } from './ThreadSummary';
 
 interface PostDetailProps {
   postId: string;
@@ -448,6 +449,9 @@ export function PostDetail({ postId }: PostDetailProps) {
 
       {/* Comments list */}
       {!post.deletedAt && <div className="px-4">
+        {!loadingComments && comments.length > 0 && (
+          <ThreadSummary postId={postId} commentCount={comments.length} />
+        )}
         {loadingComments ? (
           <div className="flex justify-center py-8">
             <Loader2 className="w-6 h-6 text-site-accent animate-spin" />

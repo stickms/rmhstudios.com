@@ -261,6 +261,7 @@ import { Route as ApiRmhcodeAuthInitiateRouteImport } from './routes/api/rmhcode
 import { Route as ApiRmhcodeAuthGenerateRouteImport } from './routes/api/rmhcode/auth/generate'
 import { Route as ApiRmharksIdVoteRouteImport } from './routes/api/rmharks/$id/vote'
 import { Route as ApiRmharksIdViewRouteImport } from './routes/api/rmharks/$id/view'
+import { Route as ApiRmharksIdSummaryRouteImport } from './routes/api/rmharks/$id/summary'
 import { Route as ApiRmharksIdRepostRouteImport } from './routes/api/rmharks/$id/repost'
 import { Route as ApiRmharksIdLikeRouteImport } from './routes/api/rmharks/$id/like'
 import { Route as ApiRmharksIdCommentRouteImport } from './routes/api/rmharks/$id/comment'
@@ -1590,6 +1591,11 @@ const ApiRmharksIdViewRoute = ApiRmharksIdViewRouteImport.update({
   path: '/view',
   getParentRoute: () => ApiRmharksIdRoute,
 } as any)
+const ApiRmharksIdSummaryRoute = ApiRmharksIdSummaryRouteImport.update({
+  id: '/summary',
+  path: '/summary',
+  getParentRoute: () => ApiRmharksIdRoute,
+} as any)
 const ApiRmharksIdRepostRoute = ApiRmharksIdRepostRouteImport.update({
   id: '/repost',
   path: '/repost',
@@ -2123,6 +2129,7 @@ export interface FileRoutesByFullPath {
   '/api/rmharks/$id/comment': typeof ApiRmharksIdCommentRouteWithChildren
   '/api/rmharks/$id/like': typeof ApiRmharksIdLikeRoute
   '/api/rmharks/$id/repost': typeof ApiRmharksIdRepostRoute
+  '/api/rmharks/$id/summary': typeof ApiRmharksIdSummaryRoute
   '/api/rmharks/$id/view': typeof ApiRmharksIdViewRoute
   '/api/rmharks/$id/vote': typeof ApiRmharksIdVoteRoute
   '/api/rmhcode/auth/generate': typeof ApiRmhcodeAuthGenerateRoute
@@ -2402,6 +2409,7 @@ export interface FileRoutesByTo {
   '/api/rmharks/$id/comment': typeof ApiRmharksIdCommentRouteWithChildren
   '/api/rmharks/$id/like': typeof ApiRmharksIdLikeRoute
   '/api/rmharks/$id/repost': typeof ApiRmharksIdRepostRoute
+  '/api/rmharks/$id/summary': typeof ApiRmharksIdSummaryRoute
   '/api/rmharks/$id/view': typeof ApiRmharksIdViewRoute
   '/api/rmharks/$id/vote': typeof ApiRmharksIdVoteRoute
   '/api/rmhcode/auth/generate': typeof ApiRmhcodeAuthGenerateRoute
@@ -2705,6 +2713,7 @@ export interface FileRoutesById {
   '/api/rmharks/$id/comment': typeof ApiRmharksIdCommentRouteWithChildren
   '/api/rmharks/$id/like': typeof ApiRmharksIdLikeRoute
   '/api/rmharks/$id/repost': typeof ApiRmharksIdRepostRoute
+  '/api/rmharks/$id/summary': typeof ApiRmharksIdSummaryRoute
   '/api/rmharks/$id/view': typeof ApiRmharksIdViewRoute
   '/api/rmharks/$id/vote': typeof ApiRmharksIdVoteRoute
   '/api/rmhcode/auth/generate': typeof ApiRmhcodeAuthGenerateRoute
@@ -3008,6 +3017,7 @@ export interface FileRouteTypes {
     | '/api/rmharks/$id/comment'
     | '/api/rmharks/$id/like'
     | '/api/rmharks/$id/repost'
+    | '/api/rmharks/$id/summary'
     | '/api/rmharks/$id/view'
     | '/api/rmharks/$id/vote'
     | '/api/rmhcode/auth/generate'
@@ -3287,6 +3297,7 @@ export interface FileRouteTypes {
     | '/api/rmharks/$id/comment'
     | '/api/rmharks/$id/like'
     | '/api/rmharks/$id/repost'
+    | '/api/rmharks/$id/summary'
     | '/api/rmharks/$id/view'
     | '/api/rmharks/$id/vote'
     | '/api/rmhcode/auth/generate'
@@ -3589,6 +3600,7 @@ export interface FileRouteTypes {
     | '/api/rmharks/$id/comment'
     | '/api/rmharks/$id/like'
     | '/api/rmharks/$id/repost'
+    | '/api/rmharks/$id/summary'
     | '/api/rmharks/$id/view'
     | '/api/rmharks/$id/vote'
     | '/api/rmhcode/auth/generate'
@@ -5547,6 +5559,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRmharksIdViewRouteImport
       parentRoute: typeof ApiRmharksIdRoute
     }
+    '/api/rmharks/$id/summary': {
+      id: '/api/rmharks/$id/summary'
+      path: '/summary'
+      fullPath: '/api/rmharks/$id/summary'
+      preLoaderRoute: typeof ApiRmharksIdSummaryRouteImport
+      parentRoute: typeof ApiRmharksIdRoute
+    }
     '/api/rmharks/$id/repost': {
       id: '/api/rmharks/$id/repost'
       path: '/repost'
@@ -6423,6 +6442,7 @@ interface ApiRmharksIdRouteChildren {
   ApiRmharksIdCommentRoute: typeof ApiRmharksIdCommentRouteWithChildren
   ApiRmharksIdLikeRoute: typeof ApiRmharksIdLikeRoute
   ApiRmharksIdRepostRoute: typeof ApiRmharksIdRepostRoute
+  ApiRmharksIdSummaryRoute: typeof ApiRmharksIdSummaryRoute
   ApiRmharksIdViewRoute: typeof ApiRmharksIdViewRoute
   ApiRmharksIdVoteRoute: typeof ApiRmharksIdVoteRoute
 }
@@ -6432,6 +6452,7 @@ const ApiRmharksIdRouteChildren: ApiRmharksIdRouteChildren = {
   ApiRmharksIdCommentRoute: ApiRmharksIdCommentRouteWithChildren,
   ApiRmharksIdLikeRoute: ApiRmharksIdLikeRoute,
   ApiRmharksIdRepostRoute: ApiRmharksIdRepostRoute,
+  ApiRmharksIdSummaryRoute: ApiRmharksIdSummaryRoute,
   ApiRmharksIdViewRoute: ApiRmharksIdViewRoute,
   ApiRmharksIdVoteRoute: ApiRmharksIdVoteRoute,
 }
