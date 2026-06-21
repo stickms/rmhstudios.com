@@ -109,6 +109,7 @@ import { Route as ApiBookmarksRouteImport } from './routes/api/bookmarks'
 import { Route as ApiAnnouncementsRouteImport } from './routes/api/announcements'
 import { Route as AltairMultiplayerRouteImport } from './routes/altair/multiplayer'
 import { Route as SiteWalletRouteImport } from './routes/_site/wallet'
+import { Route as SiteShopRouteImport } from './routes/_site/shop'
 import { Route as SiteSearchRouteImport } from './routes/_site/search'
 import { Route as SiteRoadmapRouteImport } from './routes/_site/roadmap'
 import { Route as SiteQuotesRouteImport } from './routes/_site/quotes'
@@ -125,6 +126,7 @@ import { Route as SecretNotesIndexRouteImport } from './routes/secret/notes/inde
 import { Route as SecretJobsIndexRouteImport } from './routes/secret/jobs/index'
 import { Route as SecretCursedLogicIndexRouteImport } from './routes/secret/cursed-logic/index'
 import { Route as RmhboxMinigamesIndexRouteImport } from './routes/rmhbox/minigames/index'
+import { Route as ApiShopIndexRouteImport } from './routes/api/shop/index'
 import { Route as ApiNotificationsIndexRouteImport } from './routes/api/notifications/index'
 import { Route as ApiCoinsIndexRouteImport } from './routes/api/coins/index'
 import { Route as AltairMultiplayerIndexRouteImport } from './routes/altair/multiplayer/index'
@@ -168,6 +170,8 @@ import { Route as ApiSignalForgeSaveRouteImport } from './routes/api/signal-forg
 import { Route as ApiSignalForgeLoadRouteImport } from './routes/api/signal-forge/load'
 import { Route as ApiSignalForgeLeaderboardRouteImport } from './routes/api/signal-forge/leaderboard'
 import { Route as ApiSignalForgeAbandonRouteImport } from './routes/api/signal-forge/abandon'
+import { Route as ApiShopPurchaseRouteImport } from './routes/api/shop/purchase'
+import { Route as ApiShopEquipRouteImport } from './routes/api/shop/equip'
 import { Route as ApiRmhtubeOembedRouteImport } from './routes/api/rmhtube/oembed'
 import { Route as ApiRmhboxStatsRouteImport } from './routes/api/rmhbox/stats'
 import { Route as ApiRmhboxLeaderboardRouteImport } from './routes/api/rmhbox/leaderboard'
@@ -804,6 +808,11 @@ const SiteWalletRoute = SiteWalletRouteImport.update({
   path: '/wallet',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteShopRoute = SiteShopRouteImport.update({
+  id: '/shop',
+  path: '/shop',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteSearchRoute = SiteSearchRouteImport.update({
   id: '/search',
   path: '/search',
@@ -884,6 +893,11 @@ const RmhboxMinigamesIndexRoute = RmhboxMinigamesIndexRouteImport.update({
   id: '/minigames/',
   path: '/minigames/',
   getParentRoute: () => RmhboxRoute,
+} as any)
+const ApiShopIndexRoute = ApiShopIndexRouteImport.update({
+  id: '/api/shop/',
+  path: '/api/shop/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiNotificationsIndexRoute = ApiNotificationsIndexRouteImport.update({
   id: '/api/notifications/',
@@ -1106,6 +1120,16 @@ const ApiSignalForgeLeaderboardRoute =
 const ApiSignalForgeAbandonRoute = ApiSignalForgeAbandonRouteImport.update({
   id: '/api/signal-forge/abandon',
   path: '/api/signal-forge/abandon',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiShopPurchaseRoute = ApiShopPurchaseRouteImport.update({
+  id: '/api/shop/purchase',
+  path: '/api/shop/purchase',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiShopEquipRoute = ApiShopEquipRouteImport.update({
+  id: '/api/shop/equip',
+  path: '/api/shop/equip',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiRmhtubeOembedRoute = ApiRmhtubeOembedRouteImport.update({
@@ -1866,6 +1890,7 @@ export interface FileRoutesByFullPath {
   '/quotes': typeof SiteQuotesRoute
   '/roadmap': typeof SiteRoadmapRoute
   '/search': typeof SiteSearchRoute
+  '/shop': typeof SiteShopRoute
   '/wallet': typeof SiteWalletRoute
   '/altair/multiplayer': typeof AltairMultiplayerRouteWithChildren
   '/api/announcements': typeof ApiAnnouncementsRoute
@@ -2003,6 +2028,8 @@ export interface FileRoutesByFullPath {
   '/api/rmhbox/leaderboard': typeof ApiRmhboxLeaderboardRoute
   '/api/rmhbox/stats': typeof ApiRmhboxStatsRoute
   '/api/rmhtube/oembed': typeof ApiRmhtubeOembedRoute
+  '/api/shop/equip': typeof ApiShopEquipRoute
+  '/api/shop/purchase': typeof ApiShopPurchaseRoute
   '/api/signal-forge/abandon': typeof ApiSignalForgeAbandonRoute
   '/api/signal-forge/leaderboard': typeof ApiSignalForgeLeaderboardRoute
   '/api/signal-forge/load': typeof ApiSignalForgeLoadRoute
@@ -2046,6 +2073,7 @@ export interface FileRoutesByFullPath {
   '/altair/multiplayer/': typeof AltairMultiplayerIndexRoute
   '/api/coins/': typeof ApiCoinsIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
+  '/api/shop/': typeof ApiShopIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic/': typeof SecretCursedLogicIndexRoute
   '/secret/jobs/': typeof SecretJobsIndexRoute
@@ -2144,6 +2172,7 @@ export interface FileRoutesByTo {
   '/quotes': typeof SiteQuotesRoute
   '/roadmap': typeof SiteRoadmapRoute
   '/search': typeof SiteSearchRoute
+  '/shop': typeof SiteShopRoute
   '/wallet': typeof SiteWalletRoute
   '/api/announcements': typeof ApiAnnouncementsRoute
   '/api/bookmarks': typeof ApiBookmarksRoute
@@ -2277,6 +2306,8 @@ export interface FileRoutesByTo {
   '/api/rmhbox/leaderboard': typeof ApiRmhboxLeaderboardRoute
   '/api/rmhbox/stats': typeof ApiRmhboxStatsRoute
   '/api/rmhtube/oembed': typeof ApiRmhtubeOembedRoute
+  '/api/shop/equip': typeof ApiShopEquipRoute
+  '/api/shop/purchase': typeof ApiShopPurchaseRoute
   '/api/signal-forge/abandon': typeof ApiSignalForgeAbandonRoute
   '/api/signal-forge/leaderboard': typeof ApiSignalForgeLeaderboardRoute
   '/api/signal-forge/load': typeof ApiSignalForgeLoadRoute
@@ -2320,6 +2351,7 @@ export interface FileRoutesByTo {
   '/altair/multiplayer': typeof AltairMultiplayerIndexRoute
   '/api/coins': typeof ApiCoinsIndexRoute
   '/api/notifications': typeof ApiNotificationsIndexRoute
+  '/api/shop': typeof ApiShopIndexRoute
   '/rmhbox/minigames': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic': typeof SecretCursedLogicIndexRoute
   '/secret/jobs': typeof SecretJobsIndexRoute
@@ -2437,6 +2469,7 @@ export interface FileRoutesById {
   '/_site/quotes': typeof SiteQuotesRoute
   '/_site/roadmap': typeof SiteRoadmapRoute
   '/_site/search': typeof SiteSearchRoute
+  '/_site/shop': typeof SiteShopRoute
   '/_site/wallet': typeof SiteWalletRoute
   '/altair/multiplayer': typeof AltairMultiplayerRouteWithChildren
   '/api/announcements': typeof ApiAnnouncementsRoute
@@ -2575,6 +2608,8 @@ export interface FileRoutesById {
   '/api/rmhbox/leaderboard': typeof ApiRmhboxLeaderboardRoute
   '/api/rmhbox/stats': typeof ApiRmhboxStatsRoute
   '/api/rmhtube/oembed': typeof ApiRmhtubeOembedRoute
+  '/api/shop/equip': typeof ApiShopEquipRoute
+  '/api/shop/purchase': typeof ApiShopPurchaseRoute
   '/api/signal-forge/abandon': typeof ApiSignalForgeAbandonRoute
   '/api/signal-forge/leaderboard': typeof ApiSignalForgeLeaderboardRoute
   '/api/signal-forge/load': typeof ApiSignalForgeLoadRoute
@@ -2618,6 +2653,7 @@ export interface FileRoutesById {
   '/altair/multiplayer/': typeof AltairMultiplayerIndexRoute
   '/api/coins/': typeof ApiCoinsIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
+  '/api/shop/': typeof ApiShopIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic/': typeof SecretCursedLogicIndexRoute
   '/secret/jobs/': typeof SecretJobsIndexRoute
@@ -2736,6 +2772,7 @@ export interface FileRouteTypes {
     | '/quotes'
     | '/roadmap'
     | '/search'
+    | '/shop'
     | '/wallet'
     | '/altair/multiplayer'
     | '/api/announcements'
@@ -2873,6 +2910,8 @@ export interface FileRouteTypes {
     | '/api/rmhbox/leaderboard'
     | '/api/rmhbox/stats'
     | '/api/rmhtube/oembed'
+    | '/api/shop/equip'
+    | '/api/shop/purchase'
     | '/api/signal-forge/abandon'
     | '/api/signal-forge/leaderboard'
     | '/api/signal-forge/load'
@@ -2916,6 +2955,7 @@ export interface FileRouteTypes {
     | '/altair/multiplayer/'
     | '/api/coins/'
     | '/api/notifications/'
+    | '/api/shop/'
     | '/rmhbox/minigames/'
     | '/secret/cursed-logic/'
     | '/secret/jobs/'
@@ -3014,6 +3054,7 @@ export interface FileRouteTypes {
     | '/quotes'
     | '/roadmap'
     | '/search'
+    | '/shop'
     | '/wallet'
     | '/api/announcements'
     | '/api/bookmarks'
@@ -3147,6 +3188,8 @@ export interface FileRouteTypes {
     | '/api/rmhbox/leaderboard'
     | '/api/rmhbox/stats'
     | '/api/rmhtube/oembed'
+    | '/api/shop/equip'
+    | '/api/shop/purchase'
     | '/api/signal-forge/abandon'
     | '/api/signal-forge/leaderboard'
     | '/api/signal-forge/load'
@@ -3190,6 +3233,7 @@ export interface FileRouteTypes {
     | '/altair/multiplayer'
     | '/api/coins'
     | '/api/notifications'
+    | '/api/shop'
     | '/rmhbox/minigames'
     | '/secret/cursed-logic'
     | '/secret/jobs'
@@ -3306,6 +3350,7 @@ export interface FileRouteTypes {
     | '/_site/quotes'
     | '/_site/roadmap'
     | '/_site/search'
+    | '/_site/shop'
     | '/_site/wallet'
     | '/altair/multiplayer'
     | '/api/announcements'
@@ -3444,6 +3489,8 @@ export interface FileRouteTypes {
     | '/api/rmhbox/leaderboard'
     | '/api/rmhbox/stats'
     | '/api/rmhtube/oembed'
+    | '/api/shop/equip'
+    | '/api/shop/purchase'
     | '/api/signal-forge/abandon'
     | '/api/signal-forge/leaderboard'
     | '/api/signal-forge/load'
@@ -3487,6 +3534,7 @@ export interface FileRouteTypes {
     | '/altair/multiplayer/'
     | '/api/coins/'
     | '/api/notifications/'
+    | '/api/shop/'
     | '/rmhbox/minigames/'
     | '/secret/cursed-logic/'
     | '/secret/jobs/'
@@ -3666,6 +3714,8 @@ export interface RootRouteChildren {
   ApiRmhboxLeaderboardRoute: typeof ApiRmhboxLeaderboardRoute
   ApiRmhboxStatsRoute: typeof ApiRmhboxStatsRoute
   ApiRmhtubeOembedRoute: typeof ApiRmhtubeOembedRoute
+  ApiShopEquipRoute: typeof ApiShopEquipRoute
+  ApiShopPurchaseRoute: typeof ApiShopPurchaseRoute
   ApiSignalForgeAbandonRoute: typeof ApiSignalForgeAbandonRoute
   ApiSignalForgeLeaderboardRoute: typeof ApiSignalForgeLeaderboardRoute
   ApiSignalForgeLoadRoute: typeof ApiSignalForgeLoadRoute
@@ -3687,6 +3737,7 @@ export interface RootRouteChildren {
   ApiVoidBreakerScoreRoute: typeof ApiVoidBreakerScoreRoute
   ApiCoinsIndexRoute: typeof ApiCoinsIndexRoute
   ApiNotificationsIndexRoute: typeof ApiNotificationsIndexRoute
+  ApiShopIndexRoute: typeof ApiShopIndexRoute
   ApiAdminCuratedBuildsImageRoute: typeof ApiAdminCuratedBuildsImageRouteWithChildren
   ApiDoctrineAdminDisclosuresRoute: typeof ApiDoctrineAdminDisclosuresRoute
   ApiDoctrineAdminIncidentsRoute: typeof ApiDoctrineAdminIncidentsRoute
@@ -4419,6 +4470,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteWalletRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/shop': {
+      id: '/_site/shop'
+      path: '/shop'
+      fullPath: '/shop'
+      preLoaderRoute: typeof SiteShopRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/search': {
       id: '/_site/search'
       path: '/search'
@@ -4530,6 +4588,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/rmhbox/minigames/'
       preLoaderRoute: typeof RmhboxMinigamesIndexRouteImport
       parentRoute: typeof RmhboxRoute
+    }
+    '/api/shop/': {
+      id: '/api/shop/'
+      path: '/api/shop'
+      fullPath: '/api/shop/'
+      preLoaderRoute: typeof ApiShopIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/notifications/': {
       id: '/api/notifications/'
@@ -4830,6 +4895,20 @@ declare module '@tanstack/react-router' {
       path: '/api/signal-forge/abandon'
       fullPath: '/api/signal-forge/abandon'
       preLoaderRoute: typeof ApiSignalForgeAbandonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/shop/purchase': {
+      id: '/api/shop/purchase'
+      path: '/api/shop/purchase'
+      fullPath: '/api/shop/purchase'
+      preLoaderRoute: typeof ApiShopPurchaseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/shop/equip': {
+      id: '/api/shop/equip'
+      path: '/api/shop/equip'
+      fullPath: '/api/shop/equip'
+      preLoaderRoute: typeof ApiShopEquipRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/rmhtube/oembed': {
@@ -5822,6 +5901,7 @@ interface SiteRouteChildren {
   SiteQuotesRoute: typeof SiteQuotesRoute
   SiteRoadmapRoute: typeof SiteRoadmapRoute
   SiteSearchRoute: typeof SiteSearchRoute
+  SiteShopRoute: typeof SiteShopRoute
   SiteWalletRoute: typeof SiteWalletRoute
   SiteIndexRoute: typeof SiteIndexRoute
   SiteMessagesConversationIdRoute: typeof SiteMessagesConversationIdRoute
@@ -5850,6 +5930,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteQuotesRoute: SiteQuotesRoute,
   SiteRoadmapRoute: SiteRoadmapRoute,
   SiteSearchRoute: SiteSearchRoute,
+  SiteShopRoute: SiteShopRoute,
   SiteWalletRoute: SiteWalletRoute,
   SiteIndexRoute: SiteIndexRoute,
   SiteMessagesConversationIdRoute: SiteMessagesConversationIdRoute,
@@ -6565,6 +6646,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRmhboxLeaderboardRoute: ApiRmhboxLeaderboardRoute,
   ApiRmhboxStatsRoute: ApiRmhboxStatsRoute,
   ApiRmhtubeOembedRoute: ApiRmhtubeOembedRoute,
+  ApiShopEquipRoute: ApiShopEquipRoute,
+  ApiShopPurchaseRoute: ApiShopPurchaseRoute,
   ApiSignalForgeAbandonRoute: ApiSignalForgeAbandonRoute,
   ApiSignalForgeLeaderboardRoute: ApiSignalForgeLeaderboardRoute,
   ApiSignalForgeLoadRoute: ApiSignalForgeLoadRoute,
@@ -6586,6 +6669,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiVoidBreakerScoreRoute: ApiVoidBreakerScoreRoute,
   ApiCoinsIndexRoute: ApiCoinsIndexRoute,
   ApiNotificationsIndexRoute: ApiNotificationsIndexRoute,
+  ApiShopIndexRoute: ApiShopIndexRoute,
   ApiAdminCuratedBuildsImageRoute: ApiAdminCuratedBuildsImageRouteWithChildren,
   ApiDoctrineAdminDisclosuresRoute: ApiDoctrineAdminDisclosuresRoute,
   ApiDoctrineAdminIncidentsRoute: ApiDoctrineAdminIncidentsRoute,
