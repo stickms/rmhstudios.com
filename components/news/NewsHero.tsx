@@ -112,7 +112,7 @@ export function NewsHero({ articles }: NewsHeroProps) {
 
                                         <Link
                                             to={`/news/${article.slug}` as string}
-                                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-(--site-accent) text-white text-sm font-bold hover:opacity-90 transition-opacity"
+                                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-(--site-accent) text-site-accent-fg text-sm font-bold hover:opacity-90 transition-opacity"
                                         >
                                             Read Our Take <ArrowRight className="w-4 h-4" />
                                         </Link>
@@ -131,7 +131,7 @@ export function NewsHero({ articles }: NewsHeroProps) {
                     <div className="flex justify-center items-center gap-3 mt-4">
                         <button
                             onClick={scrollPrev}
-                            className="p-1.5 rounded-full bg-(--site-surface)/80 border border-(--site-border) text-(--site-text) hover:bg-(--site-accent) hover:border-(--site-accent) hover:text-white transition-all backdrop-blur-md"
+                            className="p-1.5 rounded-full bg-(--site-surface)/80 border border-(--site-border) text-(--site-text) hover:bg-(--site-accent) hover:border-(--site-accent) hover:text-site-accent-fg transition-all backdrop-blur-md"
                             aria-label="Previous featured article"
                         >
                             <ChevronLeft className="w-4 h-4" />
@@ -163,7 +163,7 @@ export function NewsHero({ articles }: NewsHeroProps) {
 
                         <button
                             onClick={scrollNext}
-                            className="p-1.5 rounded-full bg-(--site-surface)/80 border border-(--site-border) text-(--site-text) hover:bg-(--site-accent) hover:border-(--site-accent) hover:text-white transition-all backdrop-blur-md"
+                            className="p-1.5 rounded-full bg-(--site-surface)/80 border border-(--site-border) text-(--site-text) hover:bg-(--site-accent) hover:border-(--site-accent) hover:text-site-accent-fg transition-all backdrop-blur-md"
                             aria-label="Next featured article"
                         >
                             <ChevronRight className="w-4 h-4" />

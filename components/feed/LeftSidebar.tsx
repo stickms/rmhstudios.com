@@ -81,7 +81,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
       </Link>
 
       {/* Nav Links — scrollable region */}
-      <nav className="flex flex-col gap-1 flex-1 min-h-0 overflow-y-auto">
+      <nav className="flex flex-col gap-1 flex-1 min-h-0 overflow-y-auto pr-1.5">
         {navLinks.map((link) => {
           const Icon = link.icon;
           const isActive = pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href + '/'));

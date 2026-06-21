@@ -1,11 +1,11 @@
-import { createFileRoute, redirect } from '@tanstack/react-router';
+import { createFileRoute, redirect, Link } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { auth } from '@/lib/auth';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useEffect, useState, useCallback } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { Loader2, Flag, ExternalLink } from 'lucide-react';
+import { Loader2, Flag, ExternalLink, ArrowLeft } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Button } from '@/components/ui/button';
 
@@ -101,6 +101,9 @@ function AdminReportsPage() {
     <PageLayout title="Moderation Queue" wide>
       <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
         <div className="flex items-center gap-3">
+          <Link to="/admin" className="text-site-text-dim hover:text-site-text transition-colors shrink-0" aria-label="Back to admin">
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
           <Flag className="h-6 w-6 text-site-accent" />
           <div>
             <h1 className="text-2xl font-bold font-display text-site-text">Moderation Queue</h1>
@@ -116,7 +119,7 @@ function AdminReportsPage() {
               onClick={() => setStatus(s)}
               className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
                 status === s
-                  ? 'bg-site-accent text-white'
+                  ? 'bg-site-accent text-site-accent-fg'
                   : 'bg-site-surface text-site-text-muted hover:text-site-text border border-site-border'
               }`}
             >

@@ -40,7 +40,7 @@ export function ResearchList({ articles }: { articles: ResearchArticle[] }) {
               onClick={() => setPage(n)}
               className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
                 n === page
-                  ? 'bg-(--site-accent) text-white'
+                  ? 'bg-(--site-accent) text-site-accent-fg'
                   : 'text-(--site-text-muted) hover:text-(--site-text) hover:bg-(--site-surface)'
               }`}
             >

@@ -125,7 +125,7 @@ export function MDXEditor({ initialData, isEdit = false }: { initialData?: any, 
                  <Button type="button" onClick={togglePreview} variant="outline" size="sm" className="lg:hidden">
                      {isPreviewMode ? 'Hide Preview' : 'Show Preview'}
                  </Button>
-                 <Button type="submit" form="blog-form" disabled={isSubmitting || !content.trim()} size="sm" className="bg-site-accent hover:bg-site-accent-hover text-white">
+                 <Button type="submit" form="blog-form" disabled={isSubmitting || !content.trim()} size="sm" className="bg-site-accent hover:bg-site-accent-hover text-site-accent-fg">
                      {isSubmitting ? 'Saving...' : (isEdit ? 'Update Post' : 'Save Post')}
                  </Button>
             </div>

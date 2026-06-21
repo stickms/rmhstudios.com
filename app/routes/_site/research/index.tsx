@@ -45,7 +45,7 @@ function ResearchPage() {
             </p>
             <Link
               to="/research/call"
-              className="inline-block mt-2 rounded-lg bg-site-accent px-4 py-2 text-xs font-bold text-white transition hover:opacity-90"
+              className="inline-block mt-2 rounded-lg bg-site-accent px-4 py-2 text-xs font-bold text-site-accent-fg transition hover:opacity-90"
             >
               View Call for Papers
             </Link>
