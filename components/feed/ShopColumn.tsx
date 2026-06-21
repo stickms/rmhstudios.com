@@ -126,10 +126,12 @@ export function ShopColumn() {
         {signedIn && <span className="rounded-full bg-site-surface px-3 py-1 text-sm font-semibold text-site-text">🪙 {coins.toLocaleString()}</span>}
       </header>
 
-      <div className="flex gap-1 overflow-x-auto border-b border-site-border px-3 py-2">
+      <div className="flex gap-1 overflow-x-auto border-b border-site-border px-3 py-2" role="tablist" aria-label="Shop categories">
         {KIND_ORDER.map((k) => (
           <button
             key={k}
+            role="tab"
+            aria-selected={tab === k}
             onClick={() => setTab(k)}
             className={`whitespace-nowrap rounded-full px-3 py-1 text-sm font-medium transition-colors ${
               tab === k ? 'bg-site-accent text-white' : 'text-site-text-muted hover:bg-site-surface hover:text-site-text'
