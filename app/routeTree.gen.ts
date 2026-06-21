@@ -147,6 +147,7 @@ import { Route as ApiWheelIndexRouteImport } from './routes/api/wheel/index'
 import { Route as ApiStakingIndexRouteImport } from './routes/api/staking/index'
 import { Route as ApiShopIndexRouteImport } from './routes/api/shop/index'
 import { Route as ApiScheduledIndexRouteImport } from './routes/api/scheduled/index'
+import { Route as ApiPersonasIndexRouteImport } from './routes/api/personas/index'
 import { Route as ApiNotificationsIndexRouteImport } from './routes/api/notifications/index'
 import { Route as ApiCommunitiesIndexRouteImport } from './routes/api/communities/index'
 import { Route as ApiCoinsIndexRouteImport } from './routes/api/coins/index'
@@ -156,6 +157,7 @@ import { Route as AltairMultiplayerIndexRouteImport } from './routes/altair/mult
 import { Route as SiteVIndexRouteImport } from './routes/_site/v/index'
 import { Route as SiteUserBuildsIndexRouteImport } from './routes/_site/user-builds/index'
 import { Route as SiteResearchIndexRouteImport } from './routes/_site/research/index'
+import { Route as SitePersonasIndexRouteImport } from './routes/_site/personas/index'
 import { Route as SiteNewsIndexRouteImport } from './routes/_site/news/index'
 import { Route as SiteMessagesIndexRouteImport } from './routes/_site/messages/index'
 import { Route as SiteLibraryIndexRouteImport } from './routes/_site/library/index'
@@ -276,6 +278,7 @@ import { Route as SiteTagTagRouteImport } from './routes/_site/tag.$tag'
 import { Route as SiteStoreUseridRouteImport } from './routes/_site/store/$userid'
 import { Route as SiteResearchCallRouteImport } from './routes/_site/research/call'
 import { Route as SiteProfileIdRouteImport } from './routes/_site/profile/$id'
+import { Route as SitePersonasIdRouteImport } from './routes/_site/personas/$id'
 import { Route as SiteMessagesConversationIdRouteImport } from './routes/_site/messages/$conversationId'
 import { Route as SiteClansSlugRouteImport } from './routes/_site/clans/$slug'
 import { Route as SiteCSlugRouteImport } from './routes/_site/c.$slug'
@@ -286,6 +289,7 @@ import { Route as SiteAdminAuditRouteImport } from './routes/_site/admin/audit'
 import { Route as SiteAdminAnnouncementsRouteImport } from './routes/_site/admin/announcements'
 import { Route as SiteAdminAnalyticsRouteImport } from './routes/_site/admin/analytics'
 import { Route as ApiStorefrontProductsIndexRouteImport } from './routes/api/storefront/products/index'
+import { Route as ApiPersonasIdIndexRouteImport } from './routes/api/personas/$id/index'
 import { Route as ApiDoctrineReputationIndexRouteImport } from './routes/api/doctrine/reputation/index'
 import { Route as ApiDoctrineIncidentsIndexRouteImport } from './routes/api/doctrine/incidents/index'
 import { Route as ApiCommunitiesSlugIndexRouteImport } from './routes/api/communities/$slug/index'
@@ -327,6 +331,7 @@ import { Route as ApiProfileIdLikesRouteImport } from './routes/api/profile/$id/
 import { Route as ApiProfileIdFollowingRouteImport } from './routes/api/profile/$id/following'
 import { Route as ApiProfileIdFollowersRouteImport } from './routes/api/profile/$id/followers'
 import { Route as ApiProfileIdFollowRouteImport } from './routes/api/profile/$id/follow'
+import { Route as ApiPersonasIdChatRouteImport } from './routes/api/personas/$id/chat'
 import { Route as ApiOgPostIdRouteImport } from './routes/api/og/post/$id'
 import { Route as ApiMessagesConversationIdTypingRouteImport } from './routes/api/messages/$conversationId/typing'
 import { Route as ApiMessagesConversationIdReadRouteImport } from './routes/api/messages/$conversationId/read'
@@ -1066,6 +1071,11 @@ const ApiScheduledIndexRoute = ApiScheduledIndexRouteImport.update({
   path: '/api/scheduled/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPersonasIndexRoute = ApiPersonasIndexRouteImport.update({
+  id: '/api/personas/',
+  path: '/api/personas/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiNotificationsIndexRoute = ApiNotificationsIndexRouteImport.update({
   id: '/api/notifications/',
   path: '/api/notifications/',
@@ -1109,6 +1119,11 @@ const SiteUserBuildsIndexRoute = SiteUserBuildsIndexRouteImport.update({
 const SiteResearchIndexRoute = SiteResearchIndexRouteImport.update({
   id: '/research/',
   path: '/research/',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SitePersonasIndexRoute = SitePersonasIndexRouteImport.update({
+  id: '/personas/',
+  path: '/personas/',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteNewsIndexRoute = SiteNewsIndexRouteImport.update({
@@ -1726,6 +1741,11 @@ const SiteProfileIdRoute = SiteProfileIdRouteImport.update({
   path: '/profile/$id',
   getParentRoute: () => SiteRoute,
 } as any)
+const SitePersonasIdRoute = SitePersonasIdRouteImport.update({
+  id: '/personas/$id',
+  path: '/personas/$id',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteMessagesConversationIdRoute =
   SiteMessagesConversationIdRouteImport.update({
     id: '/messages/$conversationId',
@@ -1778,6 +1798,11 @@ const ApiStorefrontProductsIndexRoute =
     path: '/api/storefront/products/',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPersonasIdIndexRoute = ApiPersonasIdIndexRouteImport.update({
+  id: '/api/personas/$id/',
+  path: '/api/personas/$id/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiDoctrineReputationIndexRoute =
   ApiDoctrineReputationIndexRouteImport.update({
     id: '/api/doctrine/reputation/',
@@ -1988,6 +2013,11 @@ const ApiProfileIdFollowRoute = ApiProfileIdFollowRouteImport.update({
   id: '/follow',
   path: '/follow',
   getParentRoute: () => ApiProfileIdRoute,
+} as any)
+const ApiPersonasIdChatRoute = ApiPersonasIdChatRouteImport.update({
+  id: '/api/personas/$id/chat',
+  path: '/api/personas/$id/chat',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiOgPostIdRoute = ApiOgPostIdRouteImport.update({
   id: '/api/og/post/$id',
@@ -2393,6 +2423,7 @@ export interface FileRoutesByFullPath {
   '/c/$slug': typeof SiteCSlugRoute
   '/clans/$slug': typeof SiteClansSlugRoute
   '/messages/$conversationId': typeof SiteMessagesConversationIdRoute
+  '/personas/$id': typeof SitePersonasIdRoute
   '/profile/$id': typeof SiteProfileIdRoute
   '/research/call': typeof SiteResearchCallRoute
   '/store/$userid': typeof SiteStoreUseridRoute
@@ -2513,6 +2544,7 @@ export interface FileRoutesByFullPath {
   '/library/': typeof SiteLibraryIndexRoute
   '/messages/': typeof SiteMessagesIndexRoute
   '/news/': typeof SiteNewsIndexRoute
+  '/personas/': typeof SitePersonasIndexRoute
   '/research/': typeof SiteResearchIndexRoute
   '/user-builds/': typeof SiteUserBuildsIndexRoute
   '/v/': typeof SiteVIndexRoute
@@ -2522,6 +2554,7 @@ export interface FileRoutesByFullPath {
   '/api/coins/': typeof ApiCoinsIndexRoute
   '/api/communities/': typeof ApiCommunitiesIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
+  '/api/personas/': typeof ApiPersonasIndexRoute
   '/api/scheduled/': typeof ApiScheduledIndexRoute
   '/api/shop/': typeof ApiShopIndexRoute
   '/api/staking/': typeof ApiStakingIndexRoute
@@ -2564,6 +2597,7 @@ export interface FileRoutesByFullPath {
   '/api/messages/$conversationId/read': typeof ApiMessagesConversationIdReadRoute
   '/api/messages/$conversationId/typing': typeof ApiMessagesConversationIdTypingRoute
   '/api/og/post/$id': typeof ApiOgPostIdRoute
+  '/api/personas/$id/chat': typeof ApiPersonasIdChatRoute
   '/api/profile/$id/follow': typeof ApiProfileIdFollowRoute
   '/api/profile/$id/followers': typeof ApiProfileIdFollowersRoute
   '/api/profile/$id/following': typeof ApiProfileIdFollowingRoute
@@ -2605,6 +2639,7 @@ export interface FileRoutesByFullPath {
   '/api/communities/$slug/': typeof ApiCommunitiesSlugIndexRoute
   '/api/doctrine/incidents/': typeof ApiDoctrineIncidentsIndexRoute
   '/api/doctrine/reputation/': typeof ApiDoctrineReputationIndexRoute
+  '/api/personas/$id/': typeof ApiPersonasIdIndexRoute
   '/api/storefront/products/': typeof ApiStorefrontProductsIndexRoute
   '/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
   '/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
@@ -2737,6 +2772,7 @@ export interface FileRoutesByTo {
   '/c/$slug': typeof SiteCSlugRoute
   '/clans/$slug': typeof SiteClansSlugRoute
   '/messages/$conversationId': typeof SiteMessagesConversationIdRoute
+  '/personas/$id': typeof SitePersonasIdRoute
   '/profile/$id': typeof SiteProfileIdRoute
   '/research/call': typeof SiteResearchCallRoute
   '/store/$userid': typeof SiteStoreUseridRoute
@@ -2857,6 +2893,7 @@ export interface FileRoutesByTo {
   '/library': typeof SiteLibraryIndexRoute
   '/messages': typeof SiteMessagesIndexRoute
   '/news': typeof SiteNewsIndexRoute
+  '/personas': typeof SitePersonasIndexRoute
   '/research': typeof SiteResearchIndexRoute
   '/user-builds': typeof SiteUserBuildsIndexRoute
   '/v': typeof SiteVIndexRoute
@@ -2866,6 +2903,7 @@ export interface FileRoutesByTo {
   '/api/coins': typeof ApiCoinsIndexRoute
   '/api/communities': typeof ApiCommunitiesIndexRoute
   '/api/notifications': typeof ApiNotificationsIndexRoute
+  '/api/personas': typeof ApiPersonasIndexRoute
   '/api/scheduled': typeof ApiScheduledIndexRoute
   '/api/shop': typeof ApiShopIndexRoute
   '/api/staking': typeof ApiStakingIndexRoute
@@ -2908,6 +2946,7 @@ export interface FileRoutesByTo {
   '/api/messages/$conversationId/read': typeof ApiMessagesConversationIdReadRoute
   '/api/messages/$conversationId/typing': typeof ApiMessagesConversationIdTypingRoute
   '/api/og/post/$id': typeof ApiOgPostIdRoute
+  '/api/personas/$id/chat': typeof ApiPersonasIdChatRoute
   '/api/profile/$id/follow': typeof ApiProfileIdFollowRoute
   '/api/profile/$id/followers': typeof ApiProfileIdFollowersRoute
   '/api/profile/$id/following': typeof ApiProfileIdFollowingRoute
@@ -2949,6 +2988,7 @@ export interface FileRoutesByTo {
   '/api/communities/$slug': typeof ApiCommunitiesSlugIndexRoute
   '/api/doctrine/incidents': typeof ApiDoctrineIncidentsIndexRoute
   '/api/doctrine/reputation': typeof ApiDoctrineReputationIndexRoute
+  '/api/personas/$id': typeof ApiPersonasIdIndexRoute
   '/api/storefront/products': typeof ApiStorefrontProductsIndexRoute
   '/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
   '/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
@@ -3106,6 +3146,7 @@ export interface FileRoutesById {
   '/_site/c/$slug': typeof SiteCSlugRoute
   '/_site/clans/$slug': typeof SiteClansSlugRoute
   '/_site/messages/$conversationId': typeof SiteMessagesConversationIdRoute
+  '/_site/personas/$id': typeof SitePersonasIdRoute
   '/_site/profile/$id': typeof SiteProfileIdRoute
   '/_site/research/call': typeof SiteResearchCallRoute
   '/_site/store/$userid': typeof SiteStoreUseridRoute
@@ -3226,6 +3267,7 @@ export interface FileRoutesById {
   '/_site/library/': typeof SiteLibraryIndexRoute
   '/_site/messages/': typeof SiteMessagesIndexRoute
   '/_site/news/': typeof SiteNewsIndexRoute
+  '/_site/personas/': typeof SitePersonasIndexRoute
   '/_site/research/': typeof SiteResearchIndexRoute
   '/_site/user-builds/': typeof SiteUserBuildsIndexRoute
   '/_site/v/': typeof SiteVIndexRoute
@@ -3235,6 +3277,7 @@ export interface FileRoutesById {
   '/api/coins/': typeof ApiCoinsIndexRoute
   '/api/communities/': typeof ApiCommunitiesIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
+  '/api/personas/': typeof ApiPersonasIndexRoute
   '/api/scheduled/': typeof ApiScheduledIndexRoute
   '/api/shop/': typeof ApiShopIndexRoute
   '/api/staking/': typeof ApiStakingIndexRoute
@@ -3277,6 +3320,7 @@ export interface FileRoutesById {
   '/api/messages/$conversationId/read': typeof ApiMessagesConversationIdReadRoute
   '/api/messages/$conversationId/typing': typeof ApiMessagesConversationIdTypingRoute
   '/api/og/post/$id': typeof ApiOgPostIdRoute
+  '/api/personas/$id/chat': typeof ApiPersonasIdChatRoute
   '/api/profile/$id/follow': typeof ApiProfileIdFollowRoute
   '/api/profile/$id/followers': typeof ApiProfileIdFollowersRoute
   '/api/profile/$id/following': typeof ApiProfileIdFollowingRoute
@@ -3318,6 +3362,7 @@ export interface FileRoutesById {
   '/api/communities/$slug/': typeof ApiCommunitiesSlugIndexRoute
   '/api/doctrine/incidents/': typeof ApiDoctrineIncidentsIndexRoute
   '/api/doctrine/reputation/': typeof ApiDoctrineReputationIndexRoute
+  '/api/personas/$id/': typeof ApiPersonasIdIndexRoute
   '/api/storefront/products/': typeof ApiStorefrontProductsIndexRoute
   '/_site/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
   '/_site/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
@@ -3475,6 +3520,7 @@ export interface FileRouteTypes {
     | '/c/$slug'
     | '/clans/$slug'
     | '/messages/$conversationId'
+    | '/personas/$id'
     | '/profile/$id'
     | '/research/call'
     | '/store/$userid'
@@ -3595,6 +3641,7 @@ export interface FileRouteTypes {
     | '/library/'
     | '/messages/'
     | '/news/'
+    | '/personas/'
     | '/research/'
     | '/user-builds/'
     | '/v/'
@@ -3604,6 +3651,7 @@ export interface FileRouteTypes {
     | '/api/coins/'
     | '/api/communities/'
     | '/api/notifications/'
+    | '/api/personas/'
     | '/api/scheduled/'
     | '/api/shop/'
     | '/api/staking/'
@@ -3646,6 +3694,7 @@ export interface FileRouteTypes {
     | '/api/messages/$conversationId/read'
     | '/api/messages/$conversationId/typing'
     | '/api/og/post/$id'
+    | '/api/personas/$id/chat'
     | '/api/profile/$id/follow'
     | '/api/profile/$id/followers'
     | '/api/profile/$id/following'
@@ -3687,6 +3736,7 @@ export interface FileRouteTypes {
     | '/api/communities/$slug/'
     | '/api/doctrine/incidents/'
     | '/api/doctrine/reputation/'
+    | '/api/personas/$id/'
     | '/api/storefront/products/'
     | '/admin/blog/$slug/edit'
     | '/u/$userid/post/$postid'
@@ -3819,6 +3869,7 @@ export interface FileRouteTypes {
     | '/c/$slug'
     | '/clans/$slug'
     | '/messages/$conversationId'
+    | '/personas/$id'
     | '/profile/$id'
     | '/research/call'
     | '/store/$userid'
@@ -3939,6 +3990,7 @@ export interface FileRouteTypes {
     | '/library'
     | '/messages'
     | '/news'
+    | '/personas'
     | '/research'
     | '/user-builds'
     | '/v'
@@ -3948,6 +4000,7 @@ export interface FileRouteTypes {
     | '/api/coins'
     | '/api/communities'
     | '/api/notifications'
+    | '/api/personas'
     | '/api/scheduled'
     | '/api/shop'
     | '/api/staking'
@@ -3990,6 +4043,7 @@ export interface FileRouteTypes {
     | '/api/messages/$conversationId/read'
     | '/api/messages/$conversationId/typing'
     | '/api/og/post/$id'
+    | '/api/personas/$id/chat'
     | '/api/profile/$id/follow'
     | '/api/profile/$id/followers'
     | '/api/profile/$id/following'
@@ -4031,6 +4085,7 @@ export interface FileRouteTypes {
     | '/api/communities/$slug'
     | '/api/doctrine/incidents'
     | '/api/doctrine/reputation'
+    | '/api/personas/$id'
     | '/api/storefront/products'
     | '/admin/blog/$slug/edit'
     | '/u/$userid/post/$postid'
@@ -4187,6 +4242,7 @@ export interface FileRouteTypes {
     | '/_site/c/$slug'
     | '/_site/clans/$slug'
     | '/_site/messages/$conversationId'
+    | '/_site/personas/$id'
     | '/_site/profile/$id'
     | '/_site/research/call'
     | '/_site/store/$userid'
@@ -4307,6 +4363,7 @@ export interface FileRouteTypes {
     | '/_site/library/'
     | '/_site/messages/'
     | '/_site/news/'
+    | '/_site/personas/'
     | '/_site/research/'
     | '/_site/user-builds/'
     | '/_site/v/'
@@ -4316,6 +4373,7 @@ export interface FileRouteTypes {
     | '/api/coins/'
     | '/api/communities/'
     | '/api/notifications/'
+    | '/api/personas/'
     | '/api/scheduled/'
     | '/api/shop/'
     | '/api/staking/'
@@ -4358,6 +4416,7 @@ export interface FileRouteTypes {
     | '/api/messages/$conversationId/read'
     | '/api/messages/$conversationId/typing'
     | '/api/og/post/$id'
+    | '/api/personas/$id/chat'
     | '/api/profile/$id/follow'
     | '/api/profile/$id/followers'
     | '/api/profile/$id/following'
@@ -4399,6 +4458,7 @@ export interface FileRouteTypes {
     | '/api/communities/$slug/'
     | '/api/doctrine/incidents/'
     | '/api/doctrine/reputation/'
+    | '/api/personas/$id/'
     | '/api/storefront/products/'
     | '/_site/admin/blog/$slug/edit'
     | '/_site/u/$userid/post/$postid'
@@ -4567,6 +4627,7 @@ export interface RootRouteChildren {
   ApiCoinsIndexRoute: typeof ApiCoinsIndexRoute
   ApiCommunitiesIndexRoute: typeof ApiCommunitiesIndexRoute
   ApiNotificationsIndexRoute: typeof ApiNotificationsIndexRoute
+  ApiPersonasIndexRoute: typeof ApiPersonasIndexRoute
   ApiScheduledIndexRoute: typeof ApiScheduledIndexRoute
   ApiShopIndexRoute: typeof ApiShopIndexRoute
   ApiStakingIndexRoute: typeof ApiStakingIndexRoute
@@ -4596,6 +4657,7 @@ export interface RootRouteChildren {
   ApiGamesSynapseStormSaveRoute: typeof ApiGamesSynapseStormSaveRoute
   ApiGamesSynapseStormScoreRoute: typeof ApiGamesSynapseStormScoreRoute
   ApiOgPostIdRoute: typeof ApiOgPostIdRoute
+  ApiPersonasIdChatRoute: typeof ApiPersonasIdChatRoute
   ApiQuestsIdClaimRoute: typeof ApiQuestsIdClaimRoute
   ApiRmhcodeAuthGenerateRoute: typeof ApiRmhcodeAuthGenerateRoute
   ApiRmhcodeAuthInitiateRoute: typeof ApiRmhcodeAuthInitiateRoute
@@ -4609,6 +4671,7 @@ export interface RootRouteChildren {
   ApiCommunitiesSlugIndexRoute: typeof ApiCommunitiesSlugIndexRoute
   ApiDoctrineIncidentsIndexRoute: typeof ApiDoctrineIncidentsIndexRoute
   ApiDoctrineReputationIndexRoute: typeof ApiDoctrineReputationIndexRoute
+  ApiPersonasIdIndexRoute: typeof ApiPersonasIdIndexRoute
   ApiStorefrontProductsIndexRoute: typeof ApiStorefrontProductsIndexRoute
   ApiStorefrontProductsIdBuyRoute: typeof ApiStorefrontProductsIdBuyRoute
   ApiStorefrontProductsIdIndexRoute: typeof ApiStorefrontProductsIdIndexRoute
@@ -5582,6 +5645,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiScheduledIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/personas/': {
+      id: '/api/personas/'
+      path: '/api/personas'
+      fullPath: '/api/personas/'
+      preLoaderRoute: typeof ApiPersonasIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/notifications/': {
       id: '/api/notifications/'
       path: '/api/notifications'
@@ -5643,6 +5713,13 @@ declare module '@tanstack/react-router' {
       path: '/research'
       fullPath: '/research/'
       preLoaderRoute: typeof SiteResearchIndexRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/personas/': {
+      id: '/_site/personas/'
+      path: '/personas'
+      fullPath: '/personas/'
+      preLoaderRoute: typeof SitePersonasIndexRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/news/': {
@@ -6485,6 +6562,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteProfileIdRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/personas/$id': {
+      id: '/_site/personas/$id'
+      path: '/personas/$id'
+      fullPath: '/personas/$id'
+      preLoaderRoute: typeof SitePersonasIdRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/messages/$conversationId': {
       id: '/_site/messages/$conversationId'
       path: '/messages/$conversationId'
@@ -6553,6 +6637,13 @@ declare module '@tanstack/react-router' {
       path: '/api/storefront/products'
       fullPath: '/api/storefront/products/'
       preLoaderRoute: typeof ApiStorefrontProductsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/personas/$id/': {
+      id: '/api/personas/$id/'
+      path: '/api/personas/$id'
+      fullPath: '/api/personas/$id/'
+      preLoaderRoute: typeof ApiPersonasIdIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/doctrine/reputation/': {
@@ -6841,6 +6932,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/profile/$id/follow'
       preLoaderRoute: typeof ApiProfileIdFollowRouteImport
       parentRoute: typeof ApiProfileIdRoute
+    }
+    '/api/personas/$id/chat': {
+      id: '/api/personas/$id/chat'
+      path: '/api/personas/$id/chat'
+      fullPath: '/api/personas/$id/chat'
+      preLoaderRoute: typeof ApiPersonasIdChatRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/og/post/$id': {
       id: '/api/og/post/$id'
@@ -7232,6 +7330,7 @@ interface SiteRouteChildren {
   SiteCSlugRoute: typeof SiteCSlugRoute
   SiteClansSlugRoute: typeof SiteClansSlugRoute
   SiteMessagesConversationIdRoute: typeof SiteMessagesConversationIdRoute
+  SitePersonasIdRoute: typeof SitePersonasIdRoute
   SiteProfileIdRoute: typeof SiteProfileIdRoute
   SiteResearchCallRoute: typeof SiteResearchCallRoute
   SiteStoreUseridRoute: typeof SiteStoreUseridRoute
@@ -7244,6 +7343,7 @@ interface SiteRouteChildren {
   SiteLibraryIndexRoute: typeof SiteLibraryIndexRoute
   SiteMessagesIndexRoute: typeof SiteMessagesIndexRoute
   SiteNewsIndexRoute: typeof SiteNewsIndexRoute
+  SitePersonasIndexRoute: typeof SitePersonasIndexRoute
   SiteResearchIndexRoute: typeof SiteResearchIndexRoute
   SiteUserBuildsIndexRoute: typeof SiteUserBuildsIndexRoute
   SiteVIndexRoute: typeof SiteVIndexRoute
@@ -7272,6 +7372,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteCSlugRoute: SiteCSlugRoute,
   SiteClansSlugRoute: SiteClansSlugRoute,
   SiteMessagesConversationIdRoute: SiteMessagesConversationIdRoute,
+  SitePersonasIdRoute: SitePersonasIdRoute,
   SiteProfileIdRoute: SiteProfileIdRoute,
   SiteResearchCallRoute: SiteResearchCallRoute,
   SiteStoreUseridRoute: SiteStoreUseridRoute,
@@ -7284,6 +7385,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteLibraryIndexRoute: SiteLibraryIndexRoute,
   SiteMessagesIndexRoute: SiteMessagesIndexRoute,
   SiteNewsIndexRoute: SiteNewsIndexRoute,
+  SitePersonasIndexRoute: SitePersonasIndexRoute,
   SiteResearchIndexRoute: SiteResearchIndexRoute,
   SiteUserBuildsIndexRoute: SiteUserBuildsIndexRoute,
   SiteVIndexRoute: SiteVIndexRoute,
@@ -8093,6 +8195,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCoinsIndexRoute: ApiCoinsIndexRoute,
   ApiCommunitiesIndexRoute: ApiCommunitiesIndexRoute,
   ApiNotificationsIndexRoute: ApiNotificationsIndexRoute,
+  ApiPersonasIndexRoute: ApiPersonasIndexRoute,
   ApiScheduledIndexRoute: ApiScheduledIndexRoute,
   ApiShopIndexRoute: ApiShopIndexRoute,
   ApiStakingIndexRoute: ApiStakingIndexRoute,
@@ -8122,6 +8225,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGamesSynapseStormSaveRoute: ApiGamesSynapseStormSaveRoute,
   ApiGamesSynapseStormScoreRoute: ApiGamesSynapseStormScoreRoute,
   ApiOgPostIdRoute: ApiOgPostIdRoute,
+  ApiPersonasIdChatRoute: ApiPersonasIdChatRoute,
   ApiQuestsIdClaimRoute: ApiQuestsIdClaimRoute,
   ApiRmhcodeAuthGenerateRoute: ApiRmhcodeAuthGenerateRoute,
   ApiRmhcodeAuthInitiateRoute: ApiRmhcodeAuthInitiateRoute,
@@ -8135,6 +8239,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCommunitiesSlugIndexRoute: ApiCommunitiesSlugIndexRoute,
   ApiDoctrineIncidentsIndexRoute: ApiDoctrineIncidentsIndexRoute,
   ApiDoctrineReputationIndexRoute: ApiDoctrineReputationIndexRoute,
+  ApiPersonasIdIndexRoute: ApiPersonasIdIndexRoute,
   ApiStorefrontProductsIndexRoute: ApiStorefrontProductsIndexRoute,
   ApiStorefrontProductsIdBuyRoute: ApiStorefrontProductsIdBuyRoute,
   ApiStorefrontProductsIdIndexRoute: ApiStorefrontProductsIdIndexRoute,

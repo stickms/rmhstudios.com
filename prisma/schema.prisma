@@ -134,6 +134,10 @@ model User {
   storefrontProducts  StorefrontProduct[]  @relation("StorefrontCreator")
   storefrontPurchases StorefrontPurchase[] @relation("StorefrontBuyer")
 
+  // AI persona chatbots
+  aiPersonas        AiPersona[]        @relation("PersonaOwner")
+  aiPersonaMessages AiPersonaMessage[]
+
   // Economy: shop inventory, coin ledger (tips/gifts)
   inventory       UserInventory[]
   coinsSent       CoinTransaction[] @relation("CoinSender")
@@ -2617,4 +2621,42 @@ model StorefrontPurchase {
   @@unique([productId, buyerId])
   @@index([buyerId])
   @@map("storefront_purchase")
+}
+
+/// A user-authored AI persona chatbot (#8). Its `systemPrompt` shapes replies;
+/// conversations are per (persona, user) and stored in AiPersonaMessage.
+model AiPersona {
+  id           String   @id @default(cuid())
+  ownerId      String
+  name         String   @db.VarChar(40)
+  tagline      String?  @db.VarChar(120)
+  systemPrompt String   @db.VarChar(2000)
+  greeting     String?  @db.VarChar(500)
+  emoji        String?  @db.VarChar(8)
+  isPublic     Boolean  @default(true)
+  chatCount    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  owner    User               @relation("PersonaOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  messages AiPersonaMessage[]
+
+  @@index([ownerId])
+  @@index([isPublic, chatCount(sort: Desc)])
+  @@map("ai_persona")
+}
+
+model AiPersonaMessage {
+  id        String   @id @default(cuid())
+  personaId String
+  userId    String
+  role      String   @db.VarChar(12) // 'user' | 'assistant'
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  persona AiPersona @relation(fields: [personaId], references: [id], onDelete: Cascade)
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([personaId, userId, createdAt])
+  @@map("ai_persona_message")
 }
