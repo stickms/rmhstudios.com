@@ -300,6 +300,7 @@ import { Route as SecretJobsAssessmentIdRouteImport } from './routes/secret/jobs
 import { Route as RmhboxMinigamesMinigameIdHistoryRouteImport } from './routes/rmhbox/minigames/$minigameId/history'
 import { Route as ApiVibeThumbSlugRouteImport } from './routes/api/vibe/thumb/$slug'
 import { Route as ApiUserBuildsIdViewRouteImport } from './routes/api/user-builds/$id/view'
+import { Route as ApiUserBuildsIdUnlockRouteImport } from './routes/api/user-builds/$id/unlock'
 import { Route as ApiUserBuildsIdLikeRouteImport } from './routes/api/user-builds/$id/like'
 import { Route as ApiUserBuildsIdCommentsRouteImport } from './routes/api/user-builds/$id/comments'
 import { Route as ApiStorefrontCreatorUseridRouteImport } from './routes/api/storefront/creator/$userid'
@@ -1856,6 +1857,11 @@ const ApiUserBuildsIdViewRoute = ApiUserBuildsIdViewRouteImport.update({
   path: '/view',
   getParentRoute: () => ApiUserBuildsIdRoute,
 } as any)
+const ApiUserBuildsIdUnlockRoute = ApiUserBuildsIdUnlockRouteImport.update({
+  id: '/unlock',
+  path: '/unlock',
+  getParentRoute: () => ApiUserBuildsIdRoute,
+} as any)
 const ApiUserBuildsIdLikeRoute = ApiUserBuildsIdLikeRouteImport.update({
   id: '/like',
   path: '/like',
@@ -2629,6 +2635,7 @@ export interface FileRoutesByFullPath {
   '/api/storefront/creator/$userid': typeof ApiStorefrontCreatorUseridRoute
   '/api/user-builds/$id/comments': typeof ApiUserBuildsIdCommentsRoute
   '/api/user-builds/$id/like': typeof ApiUserBuildsIdLikeRoute
+  '/api/user-builds/$id/unlock': typeof ApiUserBuildsIdUnlockRoute
   '/api/user-builds/$id/view': typeof ApiUserBuildsIdViewRoute
   '/api/vibe/thumb/$slug': typeof ApiVibeThumbSlugRoute
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
@@ -2978,6 +2985,7 @@ export interface FileRoutesByTo {
   '/api/storefront/creator/$userid': typeof ApiStorefrontCreatorUseridRoute
   '/api/user-builds/$id/comments': typeof ApiUserBuildsIdCommentsRoute
   '/api/user-builds/$id/like': typeof ApiUserBuildsIdLikeRoute
+  '/api/user-builds/$id/unlock': typeof ApiUserBuildsIdUnlockRoute
   '/api/user-builds/$id/view': typeof ApiUserBuildsIdViewRoute
   '/api/vibe/thumb/$slug': typeof ApiVibeThumbSlugRoute
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
@@ -3352,6 +3360,7 @@ export interface FileRoutesById {
   '/api/storefront/creator/$userid': typeof ApiStorefrontCreatorUseridRoute
   '/api/user-builds/$id/comments': typeof ApiUserBuildsIdCommentsRoute
   '/api/user-builds/$id/like': typeof ApiUserBuildsIdLikeRoute
+  '/api/user-builds/$id/unlock': typeof ApiUserBuildsIdUnlockRoute
   '/api/user-builds/$id/view': typeof ApiUserBuildsIdViewRoute
   '/api/vibe/thumb/$slug': typeof ApiVibeThumbSlugRoute
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
@@ -3726,6 +3735,7 @@ export interface FileRouteTypes {
     | '/api/storefront/creator/$userid'
     | '/api/user-builds/$id/comments'
     | '/api/user-builds/$id/like'
+    | '/api/user-builds/$id/unlock'
     | '/api/user-builds/$id/view'
     | '/api/vibe/thumb/$slug'
     | '/rmhbox/minigames/$minigameId/history'
@@ -4075,6 +4085,7 @@ export interface FileRouteTypes {
     | '/api/storefront/creator/$userid'
     | '/api/user-builds/$id/comments'
     | '/api/user-builds/$id/like'
+    | '/api/user-builds/$id/unlock'
     | '/api/user-builds/$id/view'
     | '/api/vibe/thumb/$slug'
     | '/rmhbox/minigames/$minigameId/history'
@@ -4448,6 +4459,7 @@ export interface FileRouteTypes {
     | '/api/storefront/creator/$userid'
     | '/api/user-builds/$id/comments'
     | '/api/user-builds/$id/like'
+    | '/api/user-builds/$id/unlock'
     | '/api/user-builds/$id/view'
     | '/api/vibe/thumb/$slug'
     | '/rmhbox/minigames/$minigameId/history'
@@ -6716,6 +6728,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiUserBuildsIdViewRouteImport
       parentRoute: typeof ApiUserBuildsIdRoute
     }
+    '/api/user-builds/$id/unlock': {
+      id: '/api/user-builds/$id/unlock'
+      path: '/unlock'
+      fullPath: '/api/user-builds/$id/unlock'
+      preLoaderRoute: typeof ApiUserBuildsIdUnlockRouteImport
+      parentRoute: typeof ApiUserBuildsIdRoute
+    }
     '/api/user-builds/$id/like': {
       id: '/api/user-builds/$id/like'
       path: '/like'
@@ -7916,12 +7935,14 @@ const ApiRmharksRouteWithChildren = ApiRmharksRoute._addFileChildren(
 interface ApiUserBuildsIdRouteChildren {
   ApiUserBuildsIdCommentsRoute: typeof ApiUserBuildsIdCommentsRoute
   ApiUserBuildsIdLikeRoute: typeof ApiUserBuildsIdLikeRoute
+  ApiUserBuildsIdUnlockRoute: typeof ApiUserBuildsIdUnlockRoute
   ApiUserBuildsIdViewRoute: typeof ApiUserBuildsIdViewRoute
 }
 
 const ApiUserBuildsIdRouteChildren: ApiUserBuildsIdRouteChildren = {
   ApiUserBuildsIdCommentsRoute: ApiUserBuildsIdCommentsRoute,
   ApiUserBuildsIdLikeRoute: ApiUserBuildsIdLikeRoute,
+  ApiUserBuildsIdUnlockRoute: ApiUserBuildsIdUnlockRoute,
   ApiUserBuildsIdViewRoute: ApiUserBuildsIdViewRoute,
 }
 

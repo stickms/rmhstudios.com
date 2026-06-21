@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { Heart, Eye, Github, ExternalLink, Calendar, ArrowLeft, Edit, Trash2, Loader2 } from 'lucide-react';
+import { Heart, Eye, Github, ExternalLink, Calendar, ArrowLeft, Edit, Trash2, Loader2, Lock } from 'lucide-react';
+import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import ReactMarkdown from 'react-markdown';
@@ -31,10 +32,55 @@ export function BuildDetail({ build: initialBuild, backHref = '/builds' }: Build
   const [build, setBuild] = useState(initialBuild);
   const [liking, setLiking] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [unlocking, setUnlocking] = useState(false);
 
   const isOwner = session?.user?.id === build.user.id || !!(session?.user as any)?.isAdmin;
 
   const viewTrackedRef = useRef(false);
+
+  // The SSR loader fetches anonymously, so a paid build always arrives locked.
+  // Once signed in, re-fetch with credentials to reveal it for the owner or a
+  // prior buyer.
+  useEffect(() => {
+    if (!build.locked || !session) return;
+    let active = true;
+    fetch(`/api/user-builds/${build.id}`, { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (active && data && !data.locked) setBuild((prev) => ({ ...prev, ...data }));
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, build.id]);
+
+  const handleUnlock = async () => {
+    if (unlocking) return;
+    setUnlocking(true);
+    try {
+      const res = await fetch(`/api/user-builds/${build.id}/unlock`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setBuild((prev) => ({
+          ...prev,
+          locked: false,
+          unlocked: true,
+          readme: data.readme ?? prev.readme,
+          repoUrl: data.repoUrl ?? prev.repoUrl,
+          demoUrl: data.demoUrl ?? prev.demoUrl,
+        }));
+      } else if (data?.error) {
+        alert(data.error);
+      }
+    } finally {
+      setUnlocking(false);
+    }
+  };
 
   const handleDelete = async () => {
     if (!confirm(`Delete "${build.title}"? This cannot be undone.`)) return;
@@ -237,8 +283,35 @@ export function BuildDetail({ build: initialBuild, backHref = '/builds' }: Build
         </div>
       )}
 
+      {/* Paywall — paid build whose content the viewer hasn't unlocked */}
+      {build.locked && (
+        <div className={`${card} mb-6 text-center`}>
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-white/[0.06]">
+            <Lock className="h-6 w-6 text-[#f5a623]" />
+          </div>
+          <h2 className="text-lg font-semibold text-[#f5f5f7]">Premium build</h2>
+          <p className="mx-auto mt-1 max-w-md text-sm text-[#a1a1a6]">
+            Unlock the README, source, and live demo for this build.
+          </p>
+          <button
+            onClick={handleUnlock}
+            disabled={unlocking || !session}
+            className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#f5a623] px-5 py-2.5 font-semibold text-[#0a0a0a] transition-colors hover:bg-[#ffb733] disabled:opacity-50"
+          >
+            {unlocking ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <>
+                <CoinIcon className="h-4 w-4" />
+                {session ? `Unlock for ${(build.price ?? 0).toLocaleString()}` : 'Sign in to unlock'}
+              </>
+            )}
+          </button>
+        </div>
+      )}
+
       {/* README */}
-      {build.readme && (
+      {!build.locked && build.readme && (
         <div className={`${card} mb-6`}>
           <h2 className="text-lg font-semibold text-[#f5f5f7] mb-4">README</h2>
           <div className="prose prose-invert max-w-none">

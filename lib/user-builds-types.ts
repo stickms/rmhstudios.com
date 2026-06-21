@@ -52,6 +52,10 @@ export interface Build {
   versions?: BuildVersion[];
   liked?: boolean;
   isOwner?: boolean;
+  // Marketplace: coin price to unlock readme/repo/demo (0 = free).
+  price?: number;
+  locked?: boolean;
+  unlocked?: boolean;
 }
 
 export interface BuildComment {

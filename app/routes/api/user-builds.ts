@@ -243,6 +243,7 @@ export const Route = createFileRoute('/api/user-builds')({
       technologies,
       tags,
       visibility,
+      price,
     } = parsed.data;
 
     // Generate unique slug
@@ -264,6 +265,7 @@ export const Route = createFileRoute('/api/user-builds')({
           categoryId: categoryId || null,
           technologies: technologies || [],
           visibility,
+          price: price && price > 0 ? price : null,
           publishedAt: new Date(),
         },
         include: {
