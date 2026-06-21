@@ -217,6 +217,7 @@ import { Route as ApiDiscordActivityImageRouteImport } from './routes/api/discor
 import { Route as ApiDailyPuzzlesScoreRouteImport } from './routes/api/daily-puzzles/score'
 import { Route as ApiDailyPuzzlesResultsRouteImport } from './routes/api/daily-puzzles/results'
 import { Route as ApiDailyPuzzlesLeaderboardRouteImport } from './routes/api/daily-puzzles/leaderboard'
+import { Route as ApiCoinsTipRouteImport } from './routes/api/coins/tip'
 import { Route as ApiCoinsPurchaseRouteImport } from './routes/api/coins/purchase'
 import { Route as ApiCoinsClaimRouteImport } from './routes/api/coins/claim'
 import { Route as ApiCoinsBetRouteImport } from './routes/api/coins/bet'
@@ -1363,6 +1364,11 @@ const ApiDailyPuzzlesLeaderboardRoute =
     path: '/api/daily-puzzles/leaderboard',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiCoinsTipRoute = ApiCoinsTipRouteImport.update({
+  id: '/api/coins/tip',
+  path: '/api/coins/tip',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCoinsPurchaseRoute = ApiCoinsPurchaseRouteImport.update({
   id: '/api/coins/purchase',
   path: '/api/coins/purchase',
@@ -1983,6 +1989,7 @@ export interface FileRoutesByFullPath {
   '/api/coins/bet': typeof ApiCoinsBetRoute
   '/api/coins/claim': typeof ApiCoinsClaimRoute
   '/api/coins/purchase': typeof ApiCoinsPurchaseRoute
+  '/api/coins/tip': typeof ApiCoinsTipRoute
   '/api/daily-puzzles/leaderboard': typeof ApiDailyPuzzlesLeaderboardRoute
   '/api/daily-puzzles/results': typeof ApiDailyPuzzlesResultsRoute
   '/api/daily-puzzles/score': typeof ApiDailyPuzzlesScoreRoute
@@ -2261,6 +2268,7 @@ export interface FileRoutesByTo {
   '/api/coins/bet': typeof ApiCoinsBetRoute
   '/api/coins/claim': typeof ApiCoinsClaimRoute
   '/api/coins/purchase': typeof ApiCoinsPurchaseRoute
+  '/api/coins/tip': typeof ApiCoinsTipRoute
   '/api/daily-puzzles/leaderboard': typeof ApiDailyPuzzlesLeaderboardRoute
   '/api/daily-puzzles/results': typeof ApiDailyPuzzlesResultsRoute
   '/api/daily-puzzles/score': typeof ApiDailyPuzzlesScoreRoute
@@ -2563,6 +2571,7 @@ export interface FileRoutesById {
   '/api/coins/bet': typeof ApiCoinsBetRoute
   '/api/coins/claim': typeof ApiCoinsClaimRoute
   '/api/coins/purchase': typeof ApiCoinsPurchaseRoute
+  '/api/coins/tip': typeof ApiCoinsTipRoute
   '/api/daily-puzzles/leaderboard': typeof ApiDailyPuzzlesLeaderboardRoute
   '/api/daily-puzzles/results': typeof ApiDailyPuzzlesResultsRoute
   '/api/daily-puzzles/score': typeof ApiDailyPuzzlesScoreRoute
@@ -2865,6 +2874,7 @@ export interface FileRouteTypes {
     | '/api/coins/bet'
     | '/api/coins/claim'
     | '/api/coins/purchase'
+    | '/api/coins/tip'
     | '/api/daily-puzzles/leaderboard'
     | '/api/daily-puzzles/results'
     | '/api/daily-puzzles/score'
@@ -3143,6 +3153,7 @@ export interface FileRouteTypes {
     | '/api/coins/bet'
     | '/api/coins/claim'
     | '/api/coins/purchase'
+    | '/api/coins/tip'
     | '/api/daily-puzzles/leaderboard'
     | '/api/daily-puzzles/results'
     | '/api/daily-puzzles/score'
@@ -3444,6 +3455,7 @@ export interface FileRouteTypes {
     | '/api/coins/bet'
     | '/api/coins/claim'
     | '/api/coins/purchase'
+    | '/api/coins/tip'
     | '/api/daily-puzzles/leaderboard'
     | '/api/daily-puzzles/results'
     | '/api/daily-puzzles/score'
@@ -3680,6 +3692,7 @@ export interface RootRouteChildren {
   ApiCoinsBetRoute: typeof ApiCoinsBetRoute
   ApiCoinsClaimRoute: typeof ApiCoinsClaimRoute
   ApiCoinsPurchaseRoute: typeof ApiCoinsPurchaseRoute
+  ApiCoinsTipRoute: typeof ApiCoinsTipRoute
   ApiDailyPuzzlesLeaderboardRoute: typeof ApiDailyPuzzlesLeaderboardRoute
   ApiDailyPuzzlesResultsRoute: typeof ApiDailyPuzzlesResultsRoute
   ApiDailyPuzzlesScoreRoute: typeof ApiDailyPuzzlesScoreRoute
@@ -5226,6 +5239,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiDailyPuzzlesLeaderboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/coins/tip': {
+      id: '/api/coins/tip'
+      path: '/api/coins/tip'
+      fullPath: '/api/coins/tip'
+      preLoaderRoute: typeof ApiCoinsTipRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/coins/purchase': {
       id: '/api/coins/purchase'
       path: '/api/coins/purchase'
@@ -6612,6 +6632,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCoinsBetRoute: ApiCoinsBetRoute,
   ApiCoinsClaimRoute: ApiCoinsClaimRoute,
   ApiCoinsPurchaseRoute: ApiCoinsPurchaseRoute,
+  ApiCoinsTipRoute: ApiCoinsTipRoute,
   ApiDailyPuzzlesLeaderboardRoute: ApiDailyPuzzlesLeaderboardRoute,
   ApiDailyPuzzlesResultsRoute: ApiDailyPuzzlesResultsRoute,
   ApiDailyPuzzlesScoreRoute: ApiDailyPuzzlesScoreRoute,

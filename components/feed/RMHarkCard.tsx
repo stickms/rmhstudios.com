@@ -4,9 +4,10 @@ import type { FeedItem, FeedItemUser } from '@/lib/feed-types';
 import { RMHarkActions } from './RMHarkActions';
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { Repeat2, MoreHorizontal, Heart, Repeat, Trash2, Share2, BadgeCheck, ShieldCheck, Flag, Ban, VolumeX, Bookmark } from 'lucide-react';
+import { Repeat2, MoreHorizontal, Heart, Repeat, Trash2, Share2, BadgeCheck, ShieldCheck, Flag, Ban, VolumeX, Bookmark, Coins } from 'lucide-react';
 import { toast } from 'sonner';
 import { ReportDialog } from '@/components/moderation/ReportDialog';
+import { TipDialog } from '@/components/economy/TipDialog';
 import { Link } from '@tanstack/react-router';
 import { RMHarkContent, extractFirstUrl } from './RMHarkContent';
 import { PollDisplay } from './PollDisplay';
@@ -62,6 +63,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
   const [engagementModal, setEngagementModal] = useState<'likes' | 'reposts' | null>(null);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [tipOpen, setTipOpen] = useState(false);
   const [bookmarked, setBookmarked] = useState(!!item.bookmarked);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -248,6 +250,15 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
               )}
               {!isAuthor && session && (
                 <>
+                  {targetUserId && (
+                    <button
+                      onClick={() => { setMenuOpen(false); setTipOpen(true); }}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+                    >
+                      <Coins className="w-4 h-4 text-amber-400" />
+                      Send tip
+                    </button>
+                  )}
                   <button
                     onClick={() => { setMenuOpen(false); setReportOpen(true); }}
                     className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
@@ -419,6 +430,17 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
         entityType="rmhark"
         entityId={actualId}
       />
+
+      {targetUserId && (
+        <TipDialog
+          open={tipOpen}
+          onOpenChange={setTipOpen}
+          recipientId={targetUserId}
+          recipientName={item.user?.name ?? item.user?.handle}
+          entityType="rmhark"
+          entityId={actualId}
+        />
+      )}
     </div>
   );
 }
