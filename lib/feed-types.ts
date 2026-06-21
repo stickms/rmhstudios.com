@@ -46,6 +46,8 @@ export interface FeedItem {
   liked?: boolean;
   reposted?: boolean;
   bookmarked?: boolean;
+  pinned?: boolean;
+  edited?: boolean;
   original?: FeedItem;
   repostedBy?: FeedItemUser;
   actualId?: string;

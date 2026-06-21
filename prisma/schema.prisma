@@ -1049,10 +1049,18 @@ model RMHark {
   deletedAt      DateTime?
   deletedByAdmin Boolean   @default(false)
 
+  // Author-pinned to the top of their profile (one per user, enforced in code).
+  pinnedAt DateTime?
+
+  // Edit history: editedAt set on first edit; prior versions stored separately.
+  editedAt DateTime?
+  edits    RMHarkEdit[]
+
   @@index([userId])
   @@index([createdAt(sort: Desc)])
   // Composite index backing keyset pagination on (createdAt desc, id desc)
   @@index([createdAt(sort: Desc), id(sort: Desc)])
+  @@index([userId, pinnedAt])
   @@map("rmheet")
 }
 
@@ -2264,4 +2272,18 @@ model FeedAnnouncement {
 
   @@index([active, createdAt(sort: Desc)])
   @@map("feed_announcement")
+}
+
+// ─── RMHark Edit History ──────────────────────────────────────────────────
+// One row per prior version, captured the moment before an edit is applied.
+model RMHarkEdit {
+  id        String   @id @default(cuid())
+  rmheetId  String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  rmhark RMHark @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+
+  @@index([rmheetId, createdAt(sort: Desc)])
+  @@map("rmheet_edit")
 }

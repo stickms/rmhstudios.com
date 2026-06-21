@@ -166,6 +166,7 @@ function mapOwn(r: any, userId: string | null): FeedItem {
     liked: userId ? r.likes?.length > 0 : false,
     reposted: userId ? r.reposts?.length > 0 : false,
     bookmarked: userId ? r.bookmarks?.length > 0 : false,
+    edited: !!r.editedAt,
     original: mapOriginal(r.original),
     poll: isDeleted ? undefined : mapPoll(r.poll),
     gifUrl: isDeleted ? undefined : (r.gifUrl ?? undefined),

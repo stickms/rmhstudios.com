@@ -140,6 +140,7 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
       viewCount: r.viewCount,
       liked: viewerId ? r.likes.length > 0 : false,
       reposted: viewerId ? r.reposts.length > 0 : false,
+      edited: !!r.editedAt,
       original: mapOriginal(r.original),
       poll: mapPoll(r.poll),
       gifUrl: r.gifUrl ?? undefined,
@@ -178,8 +179,40 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
         ? merged[merged.length - 1].createdAt
         : null;
 
+    // On the first page, surface the user's pinned post at the very top
+    // (deduped from the regular list below it).
+    let items = merged;
+    if (!cursorDate) {
+      const pinned = await prisma.rMHark.findFirst({
+        where: { userId, deletedAt: null, pinnedAt: { not: null } },
+        include: rmharkInclude(viewerId),
+      });
+      if (pinned) {
+        const p: any = pinned;
+        const pinnedItem: FeedItem = {
+          id: p.id,
+          type: "rmhark",
+          createdAt: p.createdAt.toISOString(),
+          content: p.content,
+          user: resolveUser(p.user),
+          likeCount: p.likeCount,
+          commentCount: p.commentCount,
+          repostCount: p.repostCount,
+          viewCount: p.viewCount,
+          liked: viewerId ? p.likes.length > 0 : false,
+          reposted: viewerId ? p.reposts.length > 0 : false,
+          edited: !!p.editedAt,
+          pinned: true,
+          original: mapOriginal(p.original),
+          poll: mapPoll(p.poll),
+          gifUrl: p.gifUrl ?? undefined,
+        };
+        items = [pinnedItem, ...merged.filter((it) => (it.actualId ?? it.id) !== p.id)];
+      }
+    }
+
     return Response.json({
-      items: merged,
+      items,
       nextCursor,
       hasMore: merged.length === limit,
     });

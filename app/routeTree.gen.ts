@@ -263,6 +263,7 @@ import { Route as ApiRmharksIdVoteRouteImport } from './routes/api/rmharks/$id/v
 import { Route as ApiRmharksIdViewRouteImport } from './routes/api/rmharks/$id/view'
 import { Route as ApiRmharksIdSummaryRouteImport } from './routes/api/rmharks/$id/summary'
 import { Route as ApiRmharksIdRepostRouteImport } from './routes/api/rmharks/$id/repost'
+import { Route as ApiRmharksIdPinRouteImport } from './routes/api/rmharks/$id/pin'
 import { Route as ApiRmharksIdLikeRouteImport } from './routes/api/rmharks/$id/like'
 import { Route as ApiRmharksIdCommentRouteImport } from './routes/api/rmharks/$id/comment'
 import { Route as ApiRmharksIdBookmarkRouteImport } from './routes/api/rmharks/$id/bookmark'
@@ -1601,6 +1602,11 @@ const ApiRmharksIdRepostRoute = ApiRmharksIdRepostRouteImport.update({
   path: '/repost',
   getParentRoute: () => ApiRmharksIdRoute,
 } as any)
+const ApiRmharksIdPinRoute = ApiRmharksIdPinRouteImport.update({
+  id: '/pin',
+  path: '/pin',
+  getParentRoute: () => ApiRmharksIdRoute,
+} as any)
 const ApiRmharksIdLikeRoute = ApiRmharksIdLikeRouteImport.update({
   id: '/like',
   path: '/like',
@@ -2128,6 +2134,7 @@ export interface FileRoutesByFullPath {
   '/api/rmharks/$id/bookmark': typeof ApiRmharksIdBookmarkRoute
   '/api/rmharks/$id/comment': typeof ApiRmharksIdCommentRouteWithChildren
   '/api/rmharks/$id/like': typeof ApiRmharksIdLikeRoute
+  '/api/rmharks/$id/pin': typeof ApiRmharksIdPinRoute
   '/api/rmharks/$id/repost': typeof ApiRmharksIdRepostRoute
   '/api/rmharks/$id/summary': typeof ApiRmharksIdSummaryRoute
   '/api/rmharks/$id/view': typeof ApiRmharksIdViewRoute
@@ -2408,6 +2415,7 @@ export interface FileRoutesByTo {
   '/api/rmharks/$id/bookmark': typeof ApiRmharksIdBookmarkRoute
   '/api/rmharks/$id/comment': typeof ApiRmharksIdCommentRouteWithChildren
   '/api/rmharks/$id/like': typeof ApiRmharksIdLikeRoute
+  '/api/rmharks/$id/pin': typeof ApiRmharksIdPinRoute
   '/api/rmharks/$id/repost': typeof ApiRmharksIdRepostRoute
   '/api/rmharks/$id/summary': typeof ApiRmharksIdSummaryRoute
   '/api/rmharks/$id/view': typeof ApiRmharksIdViewRoute
@@ -2712,6 +2720,7 @@ export interface FileRoutesById {
   '/api/rmharks/$id/bookmark': typeof ApiRmharksIdBookmarkRoute
   '/api/rmharks/$id/comment': typeof ApiRmharksIdCommentRouteWithChildren
   '/api/rmharks/$id/like': typeof ApiRmharksIdLikeRoute
+  '/api/rmharks/$id/pin': typeof ApiRmharksIdPinRoute
   '/api/rmharks/$id/repost': typeof ApiRmharksIdRepostRoute
   '/api/rmharks/$id/summary': typeof ApiRmharksIdSummaryRoute
   '/api/rmharks/$id/view': typeof ApiRmharksIdViewRoute
@@ -3016,6 +3025,7 @@ export interface FileRouteTypes {
     | '/api/rmharks/$id/bookmark'
     | '/api/rmharks/$id/comment'
     | '/api/rmharks/$id/like'
+    | '/api/rmharks/$id/pin'
     | '/api/rmharks/$id/repost'
     | '/api/rmharks/$id/summary'
     | '/api/rmharks/$id/view'
@@ -3296,6 +3306,7 @@ export interface FileRouteTypes {
     | '/api/rmharks/$id/bookmark'
     | '/api/rmharks/$id/comment'
     | '/api/rmharks/$id/like'
+    | '/api/rmharks/$id/pin'
     | '/api/rmharks/$id/repost'
     | '/api/rmharks/$id/summary'
     | '/api/rmharks/$id/view'
@@ -3599,6 +3610,7 @@ export interface FileRouteTypes {
     | '/api/rmharks/$id/bookmark'
     | '/api/rmharks/$id/comment'
     | '/api/rmharks/$id/like'
+    | '/api/rmharks/$id/pin'
     | '/api/rmharks/$id/repost'
     | '/api/rmharks/$id/summary'
     | '/api/rmharks/$id/view'
@@ -5573,6 +5585,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRmharksIdRepostRouteImport
       parentRoute: typeof ApiRmharksIdRoute
     }
+    '/api/rmharks/$id/pin': {
+      id: '/api/rmharks/$id/pin'
+      path: '/pin'
+      fullPath: '/api/rmharks/$id/pin'
+      preLoaderRoute: typeof ApiRmharksIdPinRouteImport
+      parentRoute: typeof ApiRmharksIdRoute
+    }
     '/api/rmharks/$id/like': {
       id: '/api/rmharks/$id/like'
       path: '/like'
@@ -6441,6 +6460,7 @@ interface ApiRmharksIdRouteChildren {
   ApiRmharksIdBookmarkRoute: typeof ApiRmharksIdBookmarkRoute
   ApiRmharksIdCommentRoute: typeof ApiRmharksIdCommentRouteWithChildren
   ApiRmharksIdLikeRoute: typeof ApiRmharksIdLikeRoute
+  ApiRmharksIdPinRoute: typeof ApiRmharksIdPinRoute
   ApiRmharksIdRepostRoute: typeof ApiRmharksIdRepostRoute
   ApiRmharksIdSummaryRoute: typeof ApiRmharksIdSummaryRoute
   ApiRmharksIdViewRoute: typeof ApiRmharksIdViewRoute
@@ -6451,6 +6471,7 @@ const ApiRmharksIdRouteChildren: ApiRmharksIdRouteChildren = {
   ApiRmharksIdBookmarkRoute: ApiRmharksIdBookmarkRoute,
   ApiRmharksIdCommentRoute: ApiRmharksIdCommentRouteWithChildren,
   ApiRmharksIdLikeRoute: ApiRmharksIdLikeRoute,
+  ApiRmharksIdPinRoute: ApiRmharksIdPinRoute,
   ApiRmharksIdRepostRoute: ApiRmharksIdRepostRoute,
   ApiRmharksIdSummaryRoute: ApiRmharksIdSummaryRoute,
   ApiRmharksIdViewRoute: ApiRmharksIdViewRoute,

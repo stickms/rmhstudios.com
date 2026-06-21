@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma.server";
 import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 import { feedEventBus } from "@/lib/feed-sse";
+import { MAX_RMHARK_LENGTH } from "@/lib/rmhark-schema";
 
 export const Route = createFileRoute('/api/rmharks/$id')({
   server: {
@@ -166,6 +167,57 @@ export const Route = createFileRoute('/api/rmharks/$id')({
     return Response.json({ success: true });
   } catch (error) {
     console.error("Delete RMHark error:", error);
+    return Response.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+},
+  PATCH: async ({ request, params }) => {
+  try {
+    const session = await auth.api.getSession({ headers: request.headers });
+    if (!session) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = params;
+    const body = await request.json().catch(() => ({}));
+    const content = typeof body.content === "string" ? body.content.trim() : "";
+    if (!content) {
+      return Response.json({ error: "Content is required" }, { status: 400 });
+    }
+    if (content.length > MAX_RMHARK_LENGTH) {
+      return Response.json({ error: `Posts must be at most ${MAX_RMHARK_LENGTH} characters` }, { status: 400 });
+    }
+
+    const existing = await prisma.rMHark.findUnique({
+      where: { id },
+      select: { userId: true, content: true, deletedAt: true },
+    });
+    if (!existing || existing.deletedAt) {
+      return Response.json({ error: "Not found" }, { status: 404 });
+    }
+    if (existing.userId !== session.user.id) {
+      return Response.json({ error: "Forbidden" }, { status: 403 });
+    }
+    if (existing.content === content) {
+      return Response.json({ success: true, unchanged: true });
+    }
+
+    // Snapshot the previous version, then apply the edit.
+    const editedAt = new Date();
+    await prisma.$transaction([
+      prisma.rMHarkEdit.create({ data: { rmheetId: id, content: existing.content } }),
+      prisma.rMHark.update({ where: { id }, data: { content, editedAt } }),
+    ]);
+
+    feedEventBus.publish({
+      type: "rmhark.edited",
+      rmharkId: id,
+      payload: { id, content, edited: true },
+      timestamp: editedAt.toISOString(),
+    });
+
+    return Response.json({ success: true, content, editedAt: editedAt.toISOString() });
+  } catch (error) {
+    console.error("Edit RMHark error:", error);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 },

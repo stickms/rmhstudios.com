@@ -51,6 +51,7 @@ const EVENT_TYPES: FeedSSEEventType[] = [
   "rmhark.unliked",
   "rmhark.commented",
   "rmhark.deleted",
+  "rmhark.edited",
   "rmhark.reposted",
   "rmhark.unreposted",
   "notification.mention",
@@ -177,6 +178,10 @@ export function useFeedSSE() {
 
         case "rmhark.deleted":
           removeItem(rmharkId);
+          break;
+
+        case "rmhark.edited":
+          updateItem(rmharkId, { content: payload.content, edited: true });
           break;
       }
     };
