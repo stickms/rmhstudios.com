@@ -108,6 +108,9 @@ model User {
   coinsSent       CoinTransaction[] @relation("CoinSender")
   coinsReceived   CoinTransaction[] @relation("CoinRecipient")
 
+  // Admin-authored feed announcements
+  feedAnnouncements FeedAnnouncement[]
+
   // Moderation (reports filed / received, blocks & mutes)
   reportsFiled    ContentReport[] @relation("ReportReporter")
   reportsResolved ContentReport[] @relation("ReportResolver")
@@ -2237,4 +2240,28 @@ model CoinTransaction {
   @@index([recipientId, createdAt(sort: Desc)])
   @@index([senderId, createdAt(sort: Desc)])
   @@map("coin_transaction")
+}
+
+// ─── Admin Feed Announcements ─────────────────────────────────────────────
+// Pinned banners admins publish from the admin panel; rendered at the top of
+// the home feed for everyone until deactivated or expired.
+
+model FeedAnnouncement {
+  id          String    @id @default(cuid())
+  title       String    @db.VarChar(120)
+  body        String    @db.VarChar(1000)
+  linkUrl     String?   @db.VarChar(500)
+  linkLabel   String?   @db.VarChar(60)
+  variant     String    @default("info") @db.VarChar(16) // info | success | warning | event
+  active      Boolean   @default(true)
+  pinned      Boolean   @default(true)
+  createdById String
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  createdBy User @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([active, createdAt(sort: Desc)])
+  @@map("feed_announcement")
 }

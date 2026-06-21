@@ -105,6 +105,7 @@ import { Route as ApiMessagesRouteImport } from './routes/api/messages'
 import { Route as ApiImageProxyRouteImport } from './routes/api/image-proxy'
 import { Route as ApiFeedbackRouteImport } from './routes/api/feedback'
 import { Route as ApiBookmarksRouteImport } from './routes/api/bookmarks'
+import { Route as ApiAnnouncementsRouteImport } from './routes/api/announcements'
 import { Route as AltairMultiplayerRouteImport } from './routes/altair/multiplayer'
 import { Route as SiteWalletRouteImport } from './routes/_site/wallet'
 import { Route as SiteSearchRouteImport } from './routes/_site/search'
@@ -222,6 +223,7 @@ import { Route as ApiAltairLeaderboardRouteImport } from './routes/api/altair/le
 import { Route as ApiAdminUsersRouteImport } from './routes/api/admin/users'
 import { Route as ApiAdminReportsRouteImport } from './routes/api/admin/reports'
 import { Route as ApiAdminBlogRouteImport } from './routes/api/admin/blog'
+import { Route as ApiAdminAnnouncementsRouteImport } from './routes/api/admin/announcements'
 import { Route as ApiAchievementsUserIdRouteImport } from './routes/api/achievements/$userId'
 import { Route as AltairMultiplayerLobbyIdRouteImport } from './routes/altair/multiplayer/$lobbyId'
 import { Route as SiteUserBuildsSubmitRouteImport } from './routes/_site/user-builds/submit'
@@ -232,6 +234,7 @@ import { Route as SiteMessagesConversationIdRouteImport } from './routes/_site/m
 import { Route as SiteAdminUsersRouteImport } from './routes/_site/admin/users'
 import { Route as SiteAdminUserBuildsRouteImport } from './routes/_site/admin/user-builds'
 import { Route as SiteAdminReportsRouteImport } from './routes/_site/admin/reports'
+import { Route as SiteAdminAnnouncementsRouteImport } from './routes/_site/admin/announcements'
 import { Route as ApiDoctrineReputationIndexRouteImport } from './routes/api/doctrine/reputation/index'
 import { Route as ApiDoctrineIncidentsIndexRouteImport } from './routes/api/doctrine/incidents/index'
 import { Route as SiteUUseridIndexRouteImport } from './routes/_site/u/$userid/index'
@@ -284,6 +287,7 @@ import { Route as ApiDoctrineAdminIncidentsRouteImport } from './routes/api/doct
 import { Route as ApiDoctrineAdminDisclosuresRouteImport } from './routes/api/doctrine/admin/disclosures'
 import { Route as ApiAdminReportsIdRouteImport } from './routes/api/admin/reports/$id'
 import { Route as ApiAdminCuratedBuildsImageRouteImport } from './routes/api/admin/curated-builds/image'
+import { Route as ApiAdminAnnouncementsIdRouteImport } from './routes/api/admin/announcements/$id'
 import { Route as SiteAdminBlogNewRouteImport } from './routes/_site/admin/blog/new'
 import { Route as ApiSliceItSongsStreamIdRouteImport } from './routes/api/slice-it/songs/stream/$id'
 import { Route as ApiSliceItSongsCoverFilenameRouteImport } from './routes/api/slice-it/songs/cover/$filename'
@@ -777,6 +781,11 @@ const ApiFeedbackRoute = ApiFeedbackRouteImport.update({
 const ApiBookmarksRoute = ApiBookmarksRouteImport.update({
   id: '/api/bookmarks',
   path: '/api/bookmarks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAnnouncementsRoute = ApiAnnouncementsRouteImport.update({
+  id: '/api/announcements',
+  path: '/api/announcements',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AltairMultiplayerRoute = AltairMultiplayerRouteImport.update({
@@ -1379,6 +1388,11 @@ const ApiAdminBlogRoute = ApiAdminBlogRouteImport.update({
   path: '/api/admin/blog',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminAnnouncementsRoute = ApiAdminAnnouncementsRouteImport.update({
+  id: '/api/admin/announcements',
+  path: '/api/admin/announcements',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAchievementsUserIdRoute = ApiAchievementsUserIdRouteImport.update({
   id: '/api/achievements/$userId',
   path: '/api/achievements/$userId',
@@ -1429,6 +1443,11 @@ const SiteAdminUserBuildsRoute = SiteAdminUserBuildsRouteImport.update({
 const SiteAdminReportsRoute = SiteAdminReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
+  getParentRoute: () => SiteAdminRouteRoute,
+} as any)
+const SiteAdminAnnouncementsRoute = SiteAdminAnnouncementsRouteImport.update({
+  id: '/announcements',
+  path: '/announcements',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
 const ApiDoctrineReputationIndexRoute =
@@ -1712,6 +1731,11 @@ const ApiAdminCuratedBuildsImageRoute =
     path: '/api/admin/curated-builds/image',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiAdminAnnouncementsIdRoute = ApiAdminAnnouncementsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiAdminAnnouncementsRoute,
+} as any)
 const SiteAdminBlogNewRoute = SiteAdminBlogNewRouteImport.update({
   id: '/blog/new',
   path: '/blog/new',
@@ -1838,6 +1862,7 @@ export interface FileRoutesByFullPath {
   '/search': typeof SiteSearchRoute
   '/wallet': typeof SiteWalletRoute
   '/altair/multiplayer': typeof AltairMultiplayerRouteWithChildren
+  '/api/announcements': typeof ApiAnnouncementsRoute
   '/api/bookmarks': typeof ApiBookmarksRoute
   '/api/feedback': typeof ApiFeedbackRoute
   '/api/image-proxy': typeof ApiImageProxyRoute
@@ -1903,6 +1928,7 @@ export interface FileRoutesByFullPath {
   '/studio/': typeof StudioIndexRoute
   '/temple-of-joy/': typeof TempleOfJoyIndexRoute
   '/versecraft/': typeof VersecraftIndexRoute
+  '/admin/announcements': typeof SiteAdminAnnouncementsRoute
   '/admin/reports': typeof SiteAdminReportsRoute
   '/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/admin/users': typeof SiteAdminUsersRoute
@@ -1913,6 +1939,7 @@ export interface FileRoutesByFullPath {
   '/user-builds/submit': typeof SiteUserBuildsSubmitRoute
   '/altair/multiplayer/$lobbyId': typeof AltairMultiplayerLobbyIdRoute
   '/api/achievements/$userId': typeof ApiAchievementsUserIdRoute
+  '/api/admin/announcements': typeof ApiAdminAnnouncementsRouteWithChildren
   '/api/admin/blog': typeof ApiAdminBlogRoute
   '/api/admin/reports': typeof ApiAdminReportsRouteWithChildren
   '/api/admin/users': typeof ApiAdminUsersRoute
@@ -2021,6 +2048,7 @@ export interface FileRoutesByFullPath {
   '/strategies/puzzles/': typeof StrategiesPuzzlesIndexRoute
   '/strategies/safehouse/': typeof StrategiesSafehouseIndexRoute
   '/admin/blog/new': typeof SiteAdminBlogNewRoute
+  '/api/admin/announcements/$id': typeof ApiAdminAnnouncementsIdRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
   '/api/doctrine/admin/disclosures': typeof ApiDoctrineAdminDisclosuresRoute
@@ -2110,6 +2138,7 @@ export interface FileRoutesByTo {
   '/roadmap': typeof SiteRoadmapRoute
   '/search': typeof SiteSearchRoute
   '/wallet': typeof SiteWalletRoute
+  '/api/announcements': typeof ApiAnnouncementsRoute
   '/api/bookmarks': typeof ApiBookmarksRoute
   '/api/feedback': typeof ApiFeedbackRoute
   '/api/image-proxy': typeof ApiImageProxyRoute
@@ -2172,6 +2201,7 @@ export interface FileRoutesByTo {
   '/studio': typeof StudioIndexRoute
   '/temple-of-joy': typeof TempleOfJoyIndexRoute
   '/versecraft': typeof VersecraftIndexRoute
+  '/admin/announcements': typeof SiteAdminAnnouncementsRoute
   '/admin/reports': typeof SiteAdminReportsRoute
   '/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/admin/users': typeof SiteAdminUsersRoute
@@ -2182,6 +2212,7 @@ export interface FileRoutesByTo {
   '/user-builds/submit': typeof SiteUserBuildsSubmitRoute
   '/altair/multiplayer/$lobbyId': typeof AltairMultiplayerLobbyIdRoute
   '/api/achievements/$userId': typeof ApiAchievementsUserIdRoute
+  '/api/admin/announcements': typeof ApiAdminAnnouncementsRouteWithChildren
   '/api/admin/blog': typeof ApiAdminBlogRoute
   '/api/admin/reports': typeof ApiAdminReportsRouteWithChildren
   '/api/admin/users': typeof ApiAdminUsersRoute
@@ -2290,6 +2321,7 @@ export interface FileRoutesByTo {
   '/strategies/puzzles': typeof StrategiesPuzzlesIndexRoute
   '/strategies/safehouse': typeof StrategiesSafehouseIndexRoute
   '/admin/blog/new': typeof SiteAdminBlogNewRoute
+  '/api/admin/announcements/$id': typeof ApiAdminAnnouncementsIdRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
   '/api/doctrine/admin/disclosures': typeof ApiDoctrineAdminDisclosuresRoute
@@ -2399,6 +2431,7 @@ export interface FileRoutesById {
   '/_site/search': typeof SiteSearchRoute
   '/_site/wallet': typeof SiteWalletRoute
   '/altair/multiplayer': typeof AltairMultiplayerRouteWithChildren
+  '/api/announcements': typeof ApiAnnouncementsRoute
   '/api/bookmarks': typeof ApiBookmarksRoute
   '/api/feedback': typeof ApiFeedbackRoute
   '/api/image-proxy': typeof ApiImageProxyRoute
@@ -2465,6 +2498,7 @@ export interface FileRoutesById {
   '/studio/': typeof StudioIndexRoute
   '/temple-of-joy/': typeof TempleOfJoyIndexRoute
   '/versecraft/': typeof VersecraftIndexRoute
+  '/_site/admin/announcements': typeof SiteAdminAnnouncementsRoute
   '/_site/admin/reports': typeof SiteAdminReportsRoute
   '/_site/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/_site/admin/users': typeof SiteAdminUsersRoute
@@ -2475,6 +2509,7 @@ export interface FileRoutesById {
   '/_site/user-builds/submit': typeof SiteUserBuildsSubmitRoute
   '/altair/multiplayer/$lobbyId': typeof AltairMultiplayerLobbyIdRoute
   '/api/achievements/$userId': typeof ApiAchievementsUserIdRoute
+  '/api/admin/announcements': typeof ApiAdminAnnouncementsRouteWithChildren
   '/api/admin/blog': typeof ApiAdminBlogRoute
   '/api/admin/reports': typeof ApiAdminReportsRouteWithChildren
   '/api/admin/users': typeof ApiAdminUsersRoute
@@ -2583,6 +2618,7 @@ export interface FileRoutesById {
   '/strategies/puzzles/': typeof StrategiesPuzzlesIndexRoute
   '/strategies/safehouse/': typeof StrategiesSafehouseIndexRoute
   '/_site/admin/blog/new': typeof SiteAdminBlogNewRoute
+  '/api/admin/announcements/$id': typeof ApiAdminAnnouncementsIdRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
   '/api/doctrine/admin/disclosures': typeof ApiDoctrineAdminDisclosuresRoute
@@ -2693,6 +2729,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/wallet'
     | '/altair/multiplayer'
+    | '/api/announcements'
     | '/api/bookmarks'
     | '/api/feedback'
     | '/api/image-proxy'
@@ -2758,6 +2795,7 @@ export interface FileRouteTypes {
     | '/studio/'
     | '/temple-of-joy/'
     | '/versecraft/'
+    | '/admin/announcements'
     | '/admin/reports'
     | '/admin/user-builds'
     | '/admin/users'
@@ -2768,6 +2806,7 @@ export interface FileRouteTypes {
     | '/user-builds/submit'
     | '/altair/multiplayer/$lobbyId'
     | '/api/achievements/$userId'
+    | '/api/admin/announcements'
     | '/api/admin/blog'
     | '/api/admin/reports'
     | '/api/admin/users'
@@ -2876,6 +2915,7 @@ export interface FileRouteTypes {
     | '/strategies/puzzles/'
     | '/strategies/safehouse/'
     | '/admin/blog/new'
+    | '/api/admin/announcements/$id'
     | '/api/admin/curated-builds/image'
     | '/api/admin/reports/$id'
     | '/api/doctrine/admin/disclosures'
@@ -2965,6 +3005,7 @@ export interface FileRouteTypes {
     | '/roadmap'
     | '/search'
     | '/wallet'
+    | '/api/announcements'
     | '/api/bookmarks'
     | '/api/feedback'
     | '/api/image-proxy'
@@ -3027,6 +3068,7 @@ export interface FileRouteTypes {
     | '/studio'
     | '/temple-of-joy'
     | '/versecraft'
+    | '/admin/announcements'
     | '/admin/reports'
     | '/admin/user-builds'
     | '/admin/users'
@@ -3037,6 +3079,7 @@ export interface FileRouteTypes {
     | '/user-builds/submit'
     | '/altair/multiplayer/$lobbyId'
     | '/api/achievements/$userId'
+    | '/api/admin/announcements'
     | '/api/admin/blog'
     | '/api/admin/reports'
     | '/api/admin/users'
@@ -3145,6 +3188,7 @@ export interface FileRouteTypes {
     | '/strategies/puzzles'
     | '/strategies/safehouse'
     | '/admin/blog/new'
+    | '/api/admin/announcements/$id'
     | '/api/admin/curated-builds/image'
     | '/api/admin/reports/$id'
     | '/api/doctrine/admin/disclosures'
@@ -3253,6 +3297,7 @@ export interface FileRouteTypes {
     | '/_site/search'
     | '/_site/wallet'
     | '/altair/multiplayer'
+    | '/api/announcements'
     | '/api/bookmarks'
     | '/api/feedback'
     | '/api/image-proxy'
@@ -3319,6 +3364,7 @@ export interface FileRouteTypes {
     | '/studio/'
     | '/temple-of-joy/'
     | '/versecraft/'
+    | '/_site/admin/announcements'
     | '/_site/admin/reports'
     | '/_site/admin/user-builds'
     | '/_site/admin/users'
@@ -3329,6 +3375,7 @@ export interface FileRouteTypes {
     | '/_site/user-builds/submit'
     | '/altair/multiplayer/$lobbyId'
     | '/api/achievements/$userId'
+    | '/api/admin/announcements'
     | '/api/admin/blog'
     | '/api/admin/reports'
     | '/api/admin/users'
@@ -3437,6 +3484,7 @@ export interface FileRouteTypes {
     | '/strategies/puzzles/'
     | '/strategies/safehouse/'
     | '/_site/admin/blog/new'
+    | '/api/admin/announcements/$id'
     | '/api/admin/curated-builds/image'
     | '/api/admin/reports/$id'
     | '/api/doctrine/admin/disclosures'
@@ -3536,6 +3584,7 @@ export interface RootRouteChildren {
   Velum2099Route: typeof Velum2099Route
   VersecraftRoute: typeof VersecraftRouteWithChildren
   VoidBreakerRoute: typeof VoidBreakerRoute
+  ApiAnnouncementsRoute: typeof ApiAnnouncementsRoute
   ApiBookmarksRoute: typeof ApiBookmarksRoute
   ApiFeedbackRoute: typeof ApiFeedbackRoute
   ApiImageProxyRoute: typeof ApiImageProxyRoute
@@ -3558,6 +3607,7 @@ export interface RootRouteChildren {
   VSlugRoute: typeof VSlugRoute
   VNewRoute: typeof VNewRoute
   ApiAchievementsUserIdRoute: typeof ApiAchievementsUserIdRoute
+  ApiAdminAnnouncementsRoute: typeof ApiAdminAnnouncementsRouteWithChildren
   ApiAdminBlogRoute: typeof ApiAdminBlogRoute
   ApiAdminReportsRoute: typeof ApiAdminReportsRouteWithChildren
   ApiAdminUsersRoute: typeof ApiAdminUsersRoute
@@ -4326,6 +4376,13 @@ declare module '@tanstack/react-router' {
       path: '/api/bookmarks'
       fullPath: '/api/bookmarks'
       preLoaderRoute: typeof ApiBookmarksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/announcements': {
+      id: '/api/announcements'
+      path: '/api/announcements'
+      fullPath: '/api/announcements'
+      preLoaderRoute: typeof ApiAnnouncementsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/altair/multiplayer': {
@@ -5147,6 +5204,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminBlogRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/announcements': {
+      id: '/api/admin/announcements'
+      path: '/api/admin/announcements'
+      fullPath: '/api/admin/announcements'
+      preLoaderRoute: typeof ApiAdminAnnouncementsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/achievements/$userId': {
       id: '/api/achievements/$userId'
       path: '/api/achievements/$userId'
@@ -5215,6 +5279,13 @@ declare module '@tanstack/react-router' {
       path: '/reports'
       fullPath: '/admin/reports'
       preLoaderRoute: typeof SiteAdminReportsRouteImport
+      parentRoute: typeof SiteAdminRouteRoute
+    }
+    '/_site/admin/announcements': {
+      id: '/_site/admin/announcements'
+      path: '/announcements'
+      fullPath: '/admin/announcements'
+      preLoaderRoute: typeof SiteAdminAnnouncementsRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
     '/api/doctrine/reputation/': {
@@ -5581,6 +5652,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminCuratedBuildsImageRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/announcements/$id': {
+      id: '/api/admin/announcements/$id'
+      path: '/$id'
+      fullPath: '/api/admin/announcements/$id'
+      preLoaderRoute: typeof ApiAdminAnnouncementsIdRouteImport
+      parentRoute: typeof ApiAdminAnnouncementsRoute
+    }
     '/_site/admin/blog/new': {
       id: '/_site/admin/blog/new'
       path: '/blog/new'
@@ -5690,6 +5768,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface SiteAdminRouteRouteChildren {
+  SiteAdminAnnouncementsRoute: typeof SiteAdminAnnouncementsRoute
   SiteAdminReportsRoute: typeof SiteAdminReportsRoute
   SiteAdminUserBuildsRoute: typeof SiteAdminUserBuildsRoute
   SiteAdminUsersRoute: typeof SiteAdminUsersRoute
@@ -5700,6 +5779,7 @@ interface SiteAdminRouteRouteChildren {
 }
 
 const SiteAdminRouteRouteChildren: SiteAdminRouteRouteChildren = {
+  SiteAdminAnnouncementsRoute: SiteAdminAnnouncementsRoute,
   SiteAdminReportsRoute: SiteAdminReportsRoute,
   SiteAdminUserBuildsRoute: SiteAdminUserBuildsRoute,
   SiteAdminUsersRoute: SiteAdminUsersRoute,
@@ -6287,6 +6367,19 @@ const ApiUserBuildsRouteWithChildren = ApiUserBuildsRoute._addFileChildren(
   ApiUserBuildsRouteChildren,
 )
 
+interface ApiAdminAnnouncementsRouteChildren {
+  ApiAdminAnnouncementsIdRoute: typeof ApiAdminAnnouncementsIdRoute
+}
+
+const ApiAdminAnnouncementsRouteChildren: ApiAdminAnnouncementsRouteChildren = {
+  ApiAdminAnnouncementsIdRoute: ApiAdminAnnouncementsIdRoute,
+}
+
+const ApiAdminAnnouncementsRouteWithChildren =
+  ApiAdminAnnouncementsRoute._addFileChildren(
+    ApiAdminAnnouncementsRouteChildren,
+  )
+
 interface ApiAdminReportsRouteChildren {
   ApiAdminReportsIdRoute: typeof ApiAdminReportsIdRoute
 }
@@ -6382,6 +6475,7 @@ const rootRouteChildren: RootRouteChildren = {
   Velum2099Route: Velum2099Route,
   VersecraftRoute: VersecraftRouteWithChildren,
   VoidBreakerRoute: VoidBreakerRoute,
+  ApiAnnouncementsRoute: ApiAnnouncementsRoute,
   ApiBookmarksRoute: ApiBookmarksRoute,
   ApiFeedbackRoute: ApiFeedbackRoute,
   ApiImageProxyRoute: ApiImageProxyRoute,
@@ -6404,6 +6498,7 @@ const rootRouteChildren: RootRouteChildren = {
   VSlugRoute: VSlugRoute,
   VNewRoute: VNewRoute,
   ApiAchievementsUserIdRoute: ApiAchievementsUserIdRoute,
+  ApiAdminAnnouncementsRoute: ApiAdminAnnouncementsRouteWithChildren,
   ApiAdminBlogRoute: ApiAdminBlogRoute,
   ApiAdminReportsRoute: ApiAdminReportsRouteWithChildren,
   ApiAdminUsersRoute: ApiAdminUsersRoute,
