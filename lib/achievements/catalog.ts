@@ -103,6 +103,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'creator.community_100', name: 'Movement', description: 'Grow a community to 100 members.', icon: '📣', category: 'creator', tier: 'gold', coinReward: 200, target: 100 },
   { id: 'creator.first_paid_post', name: 'Going Pro', description: 'Publish a paid post.', icon: '🔐', category: 'creator', tier: 'silver', coinReward: 25, target: 1 },
   { id: 'creator.first_sale', name: 'Ka-ching', description: 'Sell a paid post or build.', icon: '🤑', category: 'creator', tier: 'silver', coinReward: 50, target: 1 },
+  { id: 'creator.first_product', name: 'Open for Business', description: 'List a product on your storefront.', icon: '🏪', category: 'creator', tier: 'bronze', coinReward: 10, target: 1 },
   { id: 'creator.build_likes_50', name: 'Crowd Favorite', description: 'Get 50 likes on your builds.', icon: '⭐', category: 'creator', tier: 'gold', coinReward: 100, target: 50 },
 
   // ─── More economy ────────────────────────────────────────────────────────

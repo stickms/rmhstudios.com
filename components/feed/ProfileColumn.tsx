@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { MapPin, Link as LinkIcon, Calendar, Loader2, MessageCircle, BadgeCheck, ShieldCheck, Coins } from 'lucide-react';
+import { MapPin, Link as LinkIcon, Calendar, Loader2, MessageCircle, BadgeCheck, ShieldCheck, Coins, Store } from 'lucide-react';
 import { TipDialog } from '@/components/economy/TipDialog';
 import { useNavigate } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
@@ -509,6 +509,15 @@ export function ProfileColumn({ userId }: { userId: string }) {
             )}
           </div>
           <div className="flex items-center gap-2">
+            <Link to={`/store/${profile.handle || profile.id}` as string} title="Storefront">
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-lg border-site-border text-site-text hover:bg-site-surface"
+              >
+                <Store className="w-4 h-4" />
+              </Button>
+            </Link>
             {profile.isOwnProfile ? (
               <Button
                 variant="outline"

@@ -273,6 +273,7 @@ import { Route as AltairMultiplayerLobbyIdRouteImport } from './routes/altair/mu
 import { Route as SiteUserBuildsSubmitRouteImport } from './routes/_site/user-builds/submit'
 import { Route as SiteUserBuildsManageRouteImport } from './routes/_site/user-builds/manage'
 import { Route as SiteTagTagRouteImport } from './routes/_site/tag.$tag'
+import { Route as SiteStoreUseridRouteImport } from './routes/_site/store/$userid'
 import { Route as SiteResearchCallRouteImport } from './routes/_site/research/call'
 import { Route as SiteProfileIdRouteImport } from './routes/_site/profile/$id'
 import { Route as SiteMessagesConversationIdRouteImport } from './routes/_site/messages/$conversationId'
@@ -284,6 +285,7 @@ import { Route as SiteAdminReportsRouteImport } from './routes/_site/admin/repor
 import { Route as SiteAdminAuditRouteImport } from './routes/_site/admin/audit'
 import { Route as SiteAdminAnnouncementsRouteImport } from './routes/_site/admin/announcements'
 import { Route as SiteAdminAnalyticsRouteImport } from './routes/_site/admin/analytics'
+import { Route as ApiStorefrontProductsIndexRouteImport } from './routes/api/storefront/products/index'
 import { Route as ApiDoctrineReputationIndexRouteImport } from './routes/api/doctrine/reputation/index'
 import { Route as ApiDoctrineIncidentsIndexRouteImport } from './routes/api/doctrine/incidents/index'
 import { Route as ApiCommunitiesSlugIndexRouteImport } from './routes/api/communities/$slug/index'
@@ -296,6 +298,7 @@ import { Route as ApiVibeThumbSlugRouteImport } from './routes/api/vibe/thumb/$s
 import { Route as ApiUserBuildsIdViewRouteImport } from './routes/api/user-builds/$id/view'
 import { Route as ApiUserBuildsIdLikeRouteImport } from './routes/api/user-builds/$id/like'
 import { Route as ApiUserBuildsIdCommentsRouteImport } from './routes/api/user-builds/$id/comments'
+import { Route as ApiStorefrontCreatorUseridRouteImport } from './routes/api/storefront/creator/$userid'
 import { Route as ApiSliceItSongsUploadRouteImport } from './routes/api/slice-it/songs/upload'
 import { Route as ApiSliceItSongsIdRouteImport } from './routes/api/slice-it/songs/$id'
 import { Route as ApiScheduledIdPublishRouteImport } from './routes/api/scheduled/$id/publish'
@@ -354,6 +357,8 @@ import { Route as ApiAdminReportsIdRouteImport } from './routes/api/admin/report
 import { Route as ApiAdminCuratedBuildsImageRouteImport } from './routes/api/admin/curated-builds/image'
 import { Route as ApiAdminAnnouncementsIdRouteImport } from './routes/api/admin/announcements/$id'
 import { Route as SiteAdminBlogNewRouteImport } from './routes/_site/admin/blog/new'
+import { Route as ApiStorefrontProductsIdIndexRouteImport } from './routes/api/storefront/products/$id/index'
+import { Route as ApiStorefrontProductsIdBuyRouteImport } from './routes/api/storefront/products/$id/buy'
 import { Route as ApiSliceItSongsStreamIdRouteImport } from './routes/api/slice-it/songs/stream/$id'
 import { Route as ApiSliceItSongsCoverFilenameRouteImport } from './routes/api/slice-it/songs/cover/$filename'
 import { Route as ApiSliceItSongsIdPlayRouteImport } from './routes/api/slice-it/songs/$id/play'
@@ -1706,6 +1711,11 @@ const SiteTagTagRoute = SiteTagTagRouteImport.update({
   path: '/tag/$tag',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteStoreUseridRoute = SiteStoreUseridRouteImport.update({
+  id: '/store/$userid',
+  path: '/store/$userid',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteResearchCallRoute = SiteResearchCallRouteImport.update({
   id: '/research/call',
   path: '/research/call',
@@ -1762,6 +1772,12 @@ const SiteAdminAnalyticsRoute = SiteAdminAnalyticsRouteImport.update({
   path: '/analytics',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
+const ApiStorefrontProductsIndexRoute =
+  ApiStorefrontProductsIndexRouteImport.update({
+    id: '/api/storefront/products/',
+    path: '/api/storefront/products/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiDoctrineReputationIndexRoute =
   ApiDoctrineReputationIndexRouteImport.update({
     id: '/api/doctrine/reputation/',
@@ -1825,6 +1841,12 @@ const ApiUserBuildsIdCommentsRoute = ApiUserBuildsIdCommentsRouteImport.update({
   path: '/comments',
   getParentRoute: () => ApiUserBuildsIdRoute,
 } as any)
+const ApiStorefrontCreatorUseridRoute =
+  ApiStorefrontCreatorUseridRouteImport.update({
+    id: '/api/storefront/creator/$userid',
+    path: '/api/storefront/creator/$userid',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiSliceItSongsUploadRoute = ApiSliceItSongsUploadRouteImport.update({
   id: '/upload',
   path: '/upload',
@@ -2134,6 +2156,18 @@ const SiteAdminBlogNewRoute = SiteAdminBlogNewRouteImport.update({
   path: '/blog/new',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
+const ApiStorefrontProductsIdIndexRoute =
+  ApiStorefrontProductsIdIndexRouteImport.update({
+    id: '/api/storefront/products/$id/',
+    path: '/api/storefront/products/$id/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiStorefrontProductsIdBuyRoute =
+  ApiStorefrontProductsIdBuyRouteImport.update({
+    id: '/api/storefront/products/$id/buy',
+    path: '/api/storefront/products/$id/buy',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiSliceItSongsStreamIdRoute = ApiSliceItSongsStreamIdRouteImport.update({
   id: '/stream/$id',
   path: '/stream/$id',
@@ -2361,6 +2395,7 @@ export interface FileRoutesByFullPath {
   '/messages/$conversationId': typeof SiteMessagesConversationIdRoute
   '/profile/$id': typeof SiteProfileIdRoute
   '/research/call': typeof SiteResearchCallRoute
+  '/store/$userid': typeof SiteStoreUseridRoute
   '/tag/$tag': typeof SiteTagTagRoute
   '/user-builds/manage': typeof SiteUserBuildsManageRoute
   '/user-builds/submit': typeof SiteUserBuildsSubmitRoute
@@ -2557,6 +2592,7 @@ export interface FileRoutesByFullPath {
   '/api/scheduled/$id/publish': typeof ApiScheduledIdPublishRoute
   '/api/slice-it/songs/$id': typeof ApiSliceItSongsIdRouteWithChildren
   '/api/slice-it/songs/upload': typeof ApiSliceItSongsUploadRoute
+  '/api/storefront/creator/$userid': typeof ApiStorefrontCreatorUseridRoute
   '/api/user-builds/$id/comments': typeof ApiUserBuildsIdCommentsRoute
   '/api/user-builds/$id/like': typeof ApiUserBuildsIdLikeRoute
   '/api/user-builds/$id/view': typeof ApiUserBuildsIdViewRoute
@@ -2569,6 +2605,7 @@ export interface FileRoutesByFullPath {
   '/api/communities/$slug/': typeof ApiCommunitiesSlugIndexRoute
   '/api/doctrine/incidents/': typeof ApiDoctrineIncidentsIndexRoute
   '/api/doctrine/reputation/': typeof ApiDoctrineReputationIndexRoute
+  '/api/storefront/products/': typeof ApiStorefrontProductsIndexRoute
   '/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
   '/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
   '/api/admin/curated-builds/image/$filename': typeof ApiAdminCuratedBuildsImageFilenameRoute
@@ -2582,6 +2619,8 @@ export interface FileRoutesByFullPath {
   '/api/slice-it/songs/$id/play': typeof ApiSliceItSongsIdPlayRoute
   '/api/slice-it/songs/cover/$filename': typeof ApiSliceItSongsCoverFilenameRoute
   '/api/slice-it/songs/stream/$id': typeof ApiSliceItSongsStreamIdRoute
+  '/api/storefront/products/$id/buy': typeof ApiStorefrontProductsIdBuyRoute
+  '/api/storefront/products/$id/': typeof ApiStorefrontProductsIdIndexRoute
   '/api/rmharks/$id/comment/$commentId/like': typeof ApiRmharksIdCommentCommentIdLikeRoute
   '/api/rmharks/$id/comment/$commentId/repost': typeof ApiRmharksIdCommentCommentIdRepostRoute
   '/api/rmharks/$id/comment/$commentId/view': typeof ApiRmharksIdCommentCommentIdViewRoute
@@ -2700,6 +2739,7 @@ export interface FileRoutesByTo {
   '/messages/$conversationId': typeof SiteMessagesConversationIdRoute
   '/profile/$id': typeof SiteProfileIdRoute
   '/research/call': typeof SiteResearchCallRoute
+  '/store/$userid': typeof SiteStoreUseridRoute
   '/tag/$tag': typeof SiteTagTagRoute
   '/user-builds/manage': typeof SiteUserBuildsManageRoute
   '/user-builds/submit': typeof SiteUserBuildsSubmitRoute
@@ -2896,6 +2936,7 @@ export interface FileRoutesByTo {
   '/api/scheduled/$id/publish': typeof ApiScheduledIdPublishRoute
   '/api/slice-it/songs/$id': typeof ApiSliceItSongsIdRouteWithChildren
   '/api/slice-it/songs/upload': typeof ApiSliceItSongsUploadRoute
+  '/api/storefront/creator/$userid': typeof ApiStorefrontCreatorUseridRoute
   '/api/user-builds/$id/comments': typeof ApiUserBuildsIdCommentsRoute
   '/api/user-builds/$id/like': typeof ApiUserBuildsIdLikeRoute
   '/api/user-builds/$id/view': typeof ApiUserBuildsIdViewRoute
@@ -2908,6 +2949,7 @@ export interface FileRoutesByTo {
   '/api/communities/$slug': typeof ApiCommunitiesSlugIndexRoute
   '/api/doctrine/incidents': typeof ApiDoctrineIncidentsIndexRoute
   '/api/doctrine/reputation': typeof ApiDoctrineReputationIndexRoute
+  '/api/storefront/products': typeof ApiStorefrontProductsIndexRoute
   '/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
   '/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
   '/api/admin/curated-builds/image/$filename': typeof ApiAdminCuratedBuildsImageFilenameRoute
@@ -2921,6 +2963,8 @@ export interface FileRoutesByTo {
   '/api/slice-it/songs/$id/play': typeof ApiSliceItSongsIdPlayRoute
   '/api/slice-it/songs/cover/$filename': typeof ApiSliceItSongsCoverFilenameRoute
   '/api/slice-it/songs/stream/$id': typeof ApiSliceItSongsStreamIdRoute
+  '/api/storefront/products/$id/buy': typeof ApiStorefrontProductsIdBuyRoute
+  '/api/storefront/products/$id': typeof ApiStorefrontProductsIdIndexRoute
   '/api/rmharks/$id/comment/$commentId/like': typeof ApiRmharksIdCommentCommentIdLikeRoute
   '/api/rmharks/$id/comment/$commentId/repost': typeof ApiRmharksIdCommentCommentIdRepostRoute
   '/api/rmharks/$id/comment/$commentId/view': typeof ApiRmharksIdCommentCommentIdViewRoute
@@ -3064,6 +3108,7 @@ export interface FileRoutesById {
   '/_site/messages/$conversationId': typeof SiteMessagesConversationIdRoute
   '/_site/profile/$id': typeof SiteProfileIdRoute
   '/_site/research/call': typeof SiteResearchCallRoute
+  '/_site/store/$userid': typeof SiteStoreUseridRoute
   '/_site/tag/$tag': typeof SiteTagTagRoute
   '/_site/user-builds/manage': typeof SiteUserBuildsManageRoute
   '/_site/user-builds/submit': typeof SiteUserBuildsSubmitRoute
@@ -3260,6 +3305,7 @@ export interface FileRoutesById {
   '/api/scheduled/$id/publish': typeof ApiScheduledIdPublishRoute
   '/api/slice-it/songs/$id': typeof ApiSliceItSongsIdRouteWithChildren
   '/api/slice-it/songs/upload': typeof ApiSliceItSongsUploadRoute
+  '/api/storefront/creator/$userid': typeof ApiStorefrontCreatorUseridRoute
   '/api/user-builds/$id/comments': typeof ApiUserBuildsIdCommentsRoute
   '/api/user-builds/$id/like': typeof ApiUserBuildsIdLikeRoute
   '/api/user-builds/$id/view': typeof ApiUserBuildsIdViewRoute
@@ -3272,6 +3318,7 @@ export interface FileRoutesById {
   '/api/communities/$slug/': typeof ApiCommunitiesSlugIndexRoute
   '/api/doctrine/incidents/': typeof ApiDoctrineIncidentsIndexRoute
   '/api/doctrine/reputation/': typeof ApiDoctrineReputationIndexRoute
+  '/api/storefront/products/': typeof ApiStorefrontProductsIndexRoute
   '/_site/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
   '/_site/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
   '/api/admin/curated-builds/image/$filename': typeof ApiAdminCuratedBuildsImageFilenameRoute
@@ -3285,6 +3332,8 @@ export interface FileRoutesById {
   '/api/slice-it/songs/$id/play': typeof ApiSliceItSongsIdPlayRoute
   '/api/slice-it/songs/cover/$filename': typeof ApiSliceItSongsCoverFilenameRoute
   '/api/slice-it/songs/stream/$id': typeof ApiSliceItSongsStreamIdRoute
+  '/api/storefront/products/$id/buy': typeof ApiStorefrontProductsIdBuyRoute
+  '/api/storefront/products/$id/': typeof ApiStorefrontProductsIdIndexRoute
   '/api/rmharks/$id/comment/$commentId/like': typeof ApiRmharksIdCommentCommentIdLikeRoute
   '/api/rmharks/$id/comment/$commentId/repost': typeof ApiRmharksIdCommentCommentIdRepostRoute
   '/api/rmharks/$id/comment/$commentId/view': typeof ApiRmharksIdCommentCommentIdViewRoute
@@ -3428,6 +3477,7 @@ export interface FileRouteTypes {
     | '/messages/$conversationId'
     | '/profile/$id'
     | '/research/call'
+    | '/store/$userid'
     | '/tag/$tag'
     | '/user-builds/manage'
     | '/user-builds/submit'
@@ -3624,6 +3674,7 @@ export interface FileRouteTypes {
     | '/api/scheduled/$id/publish'
     | '/api/slice-it/songs/$id'
     | '/api/slice-it/songs/upload'
+    | '/api/storefront/creator/$userid'
     | '/api/user-builds/$id/comments'
     | '/api/user-builds/$id/like'
     | '/api/user-builds/$id/view'
@@ -3636,6 +3687,7 @@ export interface FileRouteTypes {
     | '/api/communities/$slug/'
     | '/api/doctrine/incidents/'
     | '/api/doctrine/reputation/'
+    | '/api/storefront/products/'
     | '/admin/blog/$slug/edit'
     | '/u/$userid/post/$postid'
     | '/api/admin/curated-builds/image/$filename'
@@ -3649,6 +3701,8 @@ export interface FileRouteTypes {
     | '/api/slice-it/songs/$id/play'
     | '/api/slice-it/songs/cover/$filename'
     | '/api/slice-it/songs/stream/$id'
+    | '/api/storefront/products/$id/buy'
+    | '/api/storefront/products/$id/'
     | '/api/rmharks/$id/comment/$commentId/like'
     | '/api/rmharks/$id/comment/$commentId/repost'
     | '/api/rmharks/$id/comment/$commentId/view'
@@ -3767,6 +3821,7 @@ export interface FileRouteTypes {
     | '/messages/$conversationId'
     | '/profile/$id'
     | '/research/call'
+    | '/store/$userid'
     | '/tag/$tag'
     | '/user-builds/manage'
     | '/user-builds/submit'
@@ -3963,6 +4018,7 @@ export interface FileRouteTypes {
     | '/api/scheduled/$id/publish'
     | '/api/slice-it/songs/$id'
     | '/api/slice-it/songs/upload'
+    | '/api/storefront/creator/$userid'
     | '/api/user-builds/$id/comments'
     | '/api/user-builds/$id/like'
     | '/api/user-builds/$id/view'
@@ -3975,6 +4031,7 @@ export interface FileRouteTypes {
     | '/api/communities/$slug'
     | '/api/doctrine/incidents'
     | '/api/doctrine/reputation'
+    | '/api/storefront/products'
     | '/admin/blog/$slug/edit'
     | '/u/$userid/post/$postid'
     | '/api/admin/curated-builds/image/$filename'
@@ -3988,6 +4045,8 @@ export interface FileRouteTypes {
     | '/api/slice-it/songs/$id/play'
     | '/api/slice-it/songs/cover/$filename'
     | '/api/slice-it/songs/stream/$id'
+    | '/api/storefront/products/$id/buy'
+    | '/api/storefront/products/$id'
     | '/api/rmharks/$id/comment/$commentId/like'
     | '/api/rmharks/$id/comment/$commentId/repost'
     | '/api/rmharks/$id/comment/$commentId/view'
@@ -4130,6 +4189,7 @@ export interface FileRouteTypes {
     | '/_site/messages/$conversationId'
     | '/_site/profile/$id'
     | '/_site/research/call'
+    | '/_site/store/$userid'
     | '/_site/tag/$tag'
     | '/_site/user-builds/manage'
     | '/_site/user-builds/submit'
@@ -4326,6 +4386,7 @@ export interface FileRouteTypes {
     | '/api/scheduled/$id/publish'
     | '/api/slice-it/songs/$id'
     | '/api/slice-it/songs/upload'
+    | '/api/storefront/creator/$userid'
     | '/api/user-builds/$id/comments'
     | '/api/user-builds/$id/like'
     | '/api/user-builds/$id/view'
@@ -4338,6 +4399,7 @@ export interface FileRouteTypes {
     | '/api/communities/$slug/'
     | '/api/doctrine/incidents/'
     | '/api/doctrine/reputation/'
+    | '/api/storefront/products/'
     | '/_site/admin/blog/$slug/edit'
     | '/_site/u/$userid/post/$postid'
     | '/api/admin/curated-builds/image/$filename'
@@ -4351,6 +4413,8 @@ export interface FileRouteTypes {
     | '/api/slice-it/songs/$id/play'
     | '/api/slice-it/songs/cover/$filename'
     | '/api/slice-it/songs/stream/$id'
+    | '/api/storefront/products/$id/buy'
+    | '/api/storefront/products/$id/'
     | '/api/rmharks/$id/comment/$commentId/like'
     | '/api/rmharks/$id/comment/$commentId/repost'
     | '/api/rmharks/$id/comment/$commentId/view'
@@ -4539,11 +4603,15 @@ export interface RootRouteChildren {
   ApiRmhcodeAuthRevokeRoute: typeof ApiRmhcodeAuthRevokeRoute
   ApiRmhcodeAuthValidateRoute: typeof ApiRmhcodeAuthValidateRoute
   ApiRmhmusicSpotifySearchRoute: typeof ApiRmhmusicSpotifySearchRoute
+  ApiStorefrontCreatorUseridRoute: typeof ApiStorefrontCreatorUseridRoute
   ApiVibeThumbSlugRoute: typeof ApiVibeThumbSlugRoute
   ApiClansSlugIndexRoute: typeof ApiClansSlugIndexRoute
   ApiCommunitiesSlugIndexRoute: typeof ApiCommunitiesSlugIndexRoute
   ApiDoctrineIncidentsIndexRoute: typeof ApiDoctrineIncidentsIndexRoute
   ApiDoctrineReputationIndexRoute: typeof ApiDoctrineReputationIndexRoute
+  ApiStorefrontProductsIndexRoute: typeof ApiStorefrontProductsIndexRoute
+  ApiStorefrontProductsIdBuyRoute: typeof ApiStorefrontProductsIdBuyRoute
+  ApiStorefrontProductsIdIndexRoute: typeof ApiStorefrontProductsIdIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -6396,6 +6464,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteTagTagRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/store/$userid': {
+      id: '/_site/store/$userid'
+      path: '/store/$userid'
+      fullPath: '/store/$userid'
+      preLoaderRoute: typeof SiteStoreUseridRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/research/call': {
       id: '/_site/research/call'
       path: '/research/call'
@@ -6472,6 +6547,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/analytics'
       preLoaderRoute: typeof SiteAdminAnalyticsRouteImport
       parentRoute: typeof SiteAdminRouteRoute
+    }
+    '/api/storefront/products/': {
+      id: '/api/storefront/products/'
+      path: '/api/storefront/products'
+      fullPath: '/api/storefront/products/'
+      preLoaderRoute: typeof ApiStorefrontProductsIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/doctrine/reputation/': {
       id: '/api/doctrine/reputation/'
@@ -6556,6 +6638,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/user-builds/$id/comments'
       preLoaderRoute: typeof ApiUserBuildsIdCommentsRouteImport
       parentRoute: typeof ApiUserBuildsIdRoute
+    }
+    '/api/storefront/creator/$userid': {
+      id: '/api/storefront/creator/$userid'
+      path: '/api/storefront/creator/$userid'
+      fullPath: '/api/storefront/creator/$userid'
+      preLoaderRoute: typeof ApiStorefrontCreatorUseridRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/slice-it/songs/upload': {
       id: '/api/slice-it/songs/upload'
@@ -6963,6 +7052,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteAdminBlogNewRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
+    '/api/storefront/products/$id/': {
+      id: '/api/storefront/products/$id/'
+      path: '/api/storefront/products/$id'
+      fullPath: '/api/storefront/products/$id/'
+      preLoaderRoute: typeof ApiStorefrontProductsIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/storefront/products/$id/buy': {
+      id: '/api/storefront/products/$id/buy'
+      path: '/api/storefront/products/$id/buy'
+      fullPath: '/api/storefront/products/$id/buy'
+      preLoaderRoute: typeof ApiStorefrontProductsIdBuyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/slice-it/songs/stream/$id': {
       id: '/api/slice-it/songs/stream/$id'
       path: '/stream/$id'
@@ -7131,6 +7234,7 @@ interface SiteRouteChildren {
   SiteMessagesConversationIdRoute: typeof SiteMessagesConversationIdRoute
   SiteProfileIdRoute: typeof SiteProfileIdRoute
   SiteResearchCallRoute: typeof SiteResearchCallRoute
+  SiteStoreUseridRoute: typeof SiteStoreUseridRoute
   SiteTagTagRoute: typeof SiteTagTagRoute
   SiteUserBuildsManageRoute: typeof SiteUserBuildsManageRoute
   SiteUserBuildsSubmitRoute: typeof SiteUserBuildsSubmitRoute
@@ -7170,6 +7274,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteMessagesConversationIdRoute: SiteMessagesConversationIdRoute,
   SiteProfileIdRoute: SiteProfileIdRoute,
   SiteResearchCallRoute: SiteResearchCallRoute,
+  SiteStoreUseridRoute: SiteStoreUseridRoute,
   SiteTagTagRoute: SiteTagTagRoute,
   SiteUserBuildsManageRoute: SiteUserBuildsManageRoute,
   SiteUserBuildsSubmitRoute: SiteUserBuildsSubmitRoute,
@@ -8024,11 +8129,15 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRmhcodeAuthRevokeRoute: ApiRmhcodeAuthRevokeRoute,
   ApiRmhcodeAuthValidateRoute: ApiRmhcodeAuthValidateRoute,
   ApiRmhmusicSpotifySearchRoute: ApiRmhmusicSpotifySearchRoute,
+  ApiStorefrontCreatorUseridRoute: ApiStorefrontCreatorUseridRoute,
   ApiVibeThumbSlugRoute: ApiVibeThumbSlugRoute,
   ApiClansSlugIndexRoute: ApiClansSlugIndexRoute,
   ApiCommunitiesSlugIndexRoute: ApiCommunitiesSlugIndexRoute,
   ApiDoctrineIncidentsIndexRoute: ApiDoctrineIncidentsIndexRoute,
   ApiDoctrineReputationIndexRoute: ApiDoctrineReputationIndexRoute,
+  ApiStorefrontProductsIndexRoute: ApiStorefrontProductsIndexRoute,
+  ApiStorefrontProductsIdBuyRoute: ApiStorefrontProductsIdBuyRoute,
+  ApiStorefrontProductsIdIndexRoute: ApiStorefrontProductsIdIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

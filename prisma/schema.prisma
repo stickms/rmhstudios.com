@@ -130,6 +130,10 @@ model User {
   clansOwned     Clan[]      @relation("ClanOwner")
   clanMembership ClanMember?
 
+  // Creator storefront
+  storefrontProducts  StorefrontProduct[]  @relation("StorefrontCreator")
+  storefrontPurchases StorefrontPurchase[] @relation("StorefrontBuyer")
+
   // Economy: shop inventory, coin ledger (tips/gifts)
   inventory       UserInventory[]
   coinsSent       CoinTransaction[] @relation("CoinSender")
@@ -2576,4 +2580,41 @@ model ClanMember {
 
   @@index([clanId])
   @@map("clan_member")
+}
+
+/// A digital product a creator sells for coins (#19). The `deliverable` (a link,
+/// code, or message) is revealed only to the creator and to buyers. A 10%
+/// platform fee is burned on each sale as a coin sink.
+model StorefrontProduct {
+  id          String   @id @default(cuid())
+  creatorId   String
+  title       String   @db.VarChar(80)
+  description String?  @db.VarChar(500)
+  price       Int // coins
+  deliverable String?  @db.Text
+  active      Boolean  @default(true)
+  salesCount  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  creator   User                 @relation("StorefrontCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  purchases StorefrontPurchase[]
+
+  @@index([creatorId])
+  @@map("storefront_product")
+}
+
+model StorefrontPurchase {
+  id        String   @id @default(cuid())
+  productId String
+  buyerId   String
+  pricePaid Int
+  createdAt DateTime @default(now())
+
+  product StorefrontProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  buyer   User              @relation("StorefrontBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, buyerId])
+  @@index([buyerId])
+  @@map("storefront_purchase")
 }
