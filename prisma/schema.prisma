@@ -159,6 +159,11 @@ model User {
   flashcardDecks   FlashcardDeck[]
   flashcardReviews FlashcardReview[]
 
+  // RMHTube clips + channel subscriptions
+  rmhtubeClips         RmhTubeClip[]
+  rmhtubeSubscriptions RmhTubeSubscription[] @relation("TubeSubscriber")
+  rmhtubeSubscribers   RmhTubeSubscription[] @relation("TubeChannel")
+
   // Economy: shop inventory, coin ledger (tips/gifts)
   inventory       UserInventory[]
   coinsSent       CoinTransaction[] @relation("CoinSender")
@@ -803,6 +808,43 @@ model RmhTubePlaylistItem {
 
   @@index([playlistId, position])
   @@map("rmhtube_playlist_item")
+}
+
+/// A saved timestamped segment ("clip") of a video (#32). No external API —
+/// just the URL plus a start/end the user marks, with optional chapter notes.
+model RmhTubeClip {
+  id           String   @id @default(cuid())
+  userId       String
+  url          String
+  mediaType    String   @default("youtube")
+  title        String   @db.VarChar(120)
+  startSeconds Int
+  endSeconds   Int
+  thumbnailUrl String?
+  note         String?  @db.VarChar(300)
+  isPublic     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([isPublic, createdAt(sort: Desc)])
+  @@map("rmhtube_clip")
+}
+
+/// Channel subscription — subscribe to another user's RMHTube activity (#32).
+model RmhTubeSubscription {
+  id           String   @id @default(cuid())
+  subscriberId String
+  channelId    String
+  createdAt    DateTime @default(now())
+
+  subscriber User @relation("TubeSubscriber", fields: [subscriberId], references: [id], onDelete: Cascade)
+  channel    User @relation("TubeChannel", fields: [channelId], references: [id], onDelete: Cascade)
+
+  @@unique([subscriberId, channelId])
+  @@index([channelId])
+  @@map("rmhtube_subscription")
 }
 
 model RmhTubeUserStats {

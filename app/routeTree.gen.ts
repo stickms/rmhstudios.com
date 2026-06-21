@@ -134,6 +134,7 @@ import { Route as SiteNotificationsRouteImport } from './routes/_site/notificati
 import { Route as SiteExploreRouteImport } from './routes/_site/explore'
 import { Route as SiteDraftsRouteImport } from './routes/_site/drafts'
 import { Route as SiteCommunitiesRouteImport } from './routes/_site/communities'
+import { Route as SiteClipsRouteImport } from './routes/_site/clips'
 import { Route as SiteBookmarksRouteImport } from './routes/_site/bookmarks'
 import { Route as SiteAchievementsRouteImport } from './routes/_site/achievements'
 import { Route as SiteAdminRouteRouteImport } from './routes/_site/admin/route'
@@ -299,6 +300,7 @@ import { Route as SiteAdminAnnouncementsRouteImport } from './routes/_site/admin
 import { Route as SiteAdminAnalyticsRouteImport } from './routes/_site/admin/analytics'
 import { Route as ApiStudyDecksIndexRouteImport } from './routes/api/study/decks/index'
 import { Route as ApiStorefrontProductsIndexRouteImport } from './routes/api/storefront/products/index'
+import { Route as ApiRmhtubeClipsIndexRouteImport } from './routes/api/rmhtube/clips/index'
 import { Route as ApiPersonasIdIndexRouteImport } from './routes/api/personas/$id/index'
 import { Route as ApiGroupChatsIdIndexRouteImport } from './routes/api/group-chats/$id/index'
 import { Route as ApiDoctrineReputationIndexRouteImport } from './routes/api/doctrine/reputation/index'
@@ -318,6 +320,8 @@ import { Route as ApiStorefrontCreatorUseridRouteImport } from './routes/api/sto
 import { Route as ApiSliceItSongsUploadRouteImport } from './routes/api/slice-it/songs/upload'
 import { Route as ApiSliceItSongsIdRouteImport } from './routes/api/slice-it/songs/$id'
 import { Route as ApiScheduledIdPublishRouteImport } from './routes/api/scheduled/$id/publish'
+import { Route as ApiRmhtubeSubscribeChannelIdRouteImport } from './routes/api/rmhtube/subscribe/$channelId'
+import { Route as ApiRmhtubeClipsIdRouteImport } from './routes/api/rmhtube/clips/$id'
 import { Route as ApiRmhmusicSpotifySearchRouteImport } from './routes/api/rmhmusic/spotify/search'
 import { Route as ApiRmhcodeAuthValidateRouteImport } from './routes/api/rmhcode/auth/validate'
 import { Route as ApiRmhcodeAuthRevokeRouteImport } from './routes/api/rmhcode/auth/revoke'
@@ -1022,6 +1026,11 @@ const SiteDraftsRoute = SiteDraftsRouteImport.update({
 const SiteCommunitiesRoute = SiteCommunitiesRouteImport.update({
   id: '/communities',
   path: '/communities',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteClipsRoute = SiteClipsRouteImport.update({
+  id: '/clips',
+  path: '/clips',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteBookmarksRoute = SiteBookmarksRouteImport.update({
@@ -1867,6 +1876,11 @@ const ApiStorefrontProductsIndexRoute =
     path: '/api/storefront/products/',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiRmhtubeClipsIndexRoute = ApiRmhtubeClipsIndexRouteImport.update({
+  id: '/api/rmhtube/clips/',
+  path: '/api/rmhtube/clips/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPersonasIdIndexRoute = ApiPersonasIdIndexRouteImport.update({
   id: '/api/personas/$id/',
   path: '/api/personas/$id/',
@@ -1965,6 +1979,17 @@ const ApiScheduledIdPublishRoute = ApiScheduledIdPublishRouteImport.update({
   id: '/publish',
   path: '/publish',
   getParentRoute: () => ApiScheduledIdRoute,
+} as any)
+const ApiRmhtubeSubscribeChannelIdRoute =
+  ApiRmhtubeSubscribeChannelIdRouteImport.update({
+    id: '/api/rmhtube/subscribe/$channelId',
+    path: '/api/rmhtube/subscribe/$channelId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiRmhtubeClipsIdRoute = ApiRmhtubeClipsIdRouteImport.update({
+  id: '/api/rmhtube/clips/$id',
+  path: '/api/rmhtube/clips/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiRmhmusicSpotifySearchRoute =
   ApiRmhmusicSpotifySearchRouteImport.update({
@@ -2438,6 +2463,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof SiteAdminRouteRouteWithChildren
   '/achievements': typeof SiteAchievementsRoute
   '/bookmarks': typeof SiteBookmarksRoute
+  '/clips': typeof SiteClipsRoute
   '/communities': typeof SiteCommunitiesRoute
   '/drafts': typeof SiteDraftsRoute
   '/explore': typeof SiteExploreRoute
@@ -2751,6 +2777,8 @@ export interface FileRoutesByFullPath {
   '/api/rmhcode/auth/revoke': typeof ApiRmhcodeAuthRevokeRoute
   '/api/rmhcode/auth/validate': typeof ApiRmhcodeAuthValidateRoute
   '/api/rmhmusic/spotify/search': typeof ApiRmhmusicSpotifySearchRoute
+  '/api/rmhtube/clips/$id': typeof ApiRmhtubeClipsIdRoute
+  '/api/rmhtube/subscribe/$channelId': typeof ApiRmhtubeSubscribeChannelIdRoute
   '/api/scheduled/$id/publish': typeof ApiScheduledIdPublishRoute
   '/api/slice-it/songs/$id': typeof ApiSliceItSongsIdRouteWithChildren
   '/api/slice-it/songs/upload': typeof ApiSliceItSongsUploadRoute
@@ -2770,6 +2798,7 @@ export interface FileRoutesByFullPath {
   '/api/doctrine/reputation/': typeof ApiDoctrineReputationIndexRoute
   '/api/group-chats/$id/': typeof ApiGroupChatsIdIndexRoute
   '/api/personas/$id/': typeof ApiPersonasIdIndexRoute
+  '/api/rmhtube/clips/': typeof ApiRmhtubeClipsIndexRoute
   '/api/storefront/products/': typeof ApiStorefrontProductsIndexRoute
   '/api/study/decks/': typeof ApiStudyDecksIndexRoute
   '/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
@@ -2810,6 +2839,7 @@ export interface FileRoutesByTo {
   '/void-breaker': typeof VoidBreakerRoute
   '/achievements': typeof SiteAchievementsRoute
   '/bookmarks': typeof SiteBookmarksRoute
+  '/clips': typeof SiteClipsRoute
   '/communities': typeof SiteCommunitiesRoute
   '/drafts': typeof SiteDraftsRoute
   '/explore': typeof SiteExploreRoute
@@ -3119,6 +3149,8 @@ export interface FileRoutesByTo {
   '/api/rmhcode/auth/revoke': typeof ApiRmhcodeAuthRevokeRoute
   '/api/rmhcode/auth/validate': typeof ApiRmhcodeAuthValidateRoute
   '/api/rmhmusic/spotify/search': typeof ApiRmhmusicSpotifySearchRoute
+  '/api/rmhtube/clips/$id': typeof ApiRmhtubeClipsIdRoute
+  '/api/rmhtube/subscribe/$channelId': typeof ApiRmhtubeSubscribeChannelIdRoute
   '/api/scheduled/$id/publish': typeof ApiScheduledIdPublishRoute
   '/api/slice-it/songs/$id': typeof ApiSliceItSongsIdRouteWithChildren
   '/api/slice-it/songs/upload': typeof ApiSliceItSongsUploadRoute
@@ -3138,6 +3170,7 @@ export interface FileRoutesByTo {
   '/api/doctrine/reputation': typeof ApiDoctrineReputationIndexRoute
   '/api/group-chats/$id': typeof ApiGroupChatsIdIndexRoute
   '/api/personas/$id': typeof ApiPersonasIdIndexRoute
+  '/api/rmhtube/clips': typeof ApiRmhtubeClipsIndexRoute
   '/api/storefront/products': typeof ApiStorefrontProductsIndexRoute
   '/api/study/decks': typeof ApiStudyDecksIndexRoute
   '/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
@@ -3198,6 +3231,7 @@ export interface FileRoutesById {
   '/_site/admin': typeof SiteAdminRouteRouteWithChildren
   '/_site/achievements': typeof SiteAchievementsRoute
   '/_site/bookmarks': typeof SiteBookmarksRoute
+  '/_site/clips': typeof SiteClipsRoute
   '/_site/communities': typeof SiteCommunitiesRoute
   '/_site/drafts': typeof SiteDraftsRoute
   '/_site/explore': typeof SiteExploreRoute
@@ -3512,6 +3546,8 @@ export interface FileRoutesById {
   '/api/rmhcode/auth/revoke': typeof ApiRmhcodeAuthRevokeRoute
   '/api/rmhcode/auth/validate': typeof ApiRmhcodeAuthValidateRoute
   '/api/rmhmusic/spotify/search': typeof ApiRmhmusicSpotifySearchRoute
+  '/api/rmhtube/clips/$id': typeof ApiRmhtubeClipsIdRoute
+  '/api/rmhtube/subscribe/$channelId': typeof ApiRmhtubeSubscribeChannelIdRoute
   '/api/scheduled/$id/publish': typeof ApiScheduledIdPublishRoute
   '/api/slice-it/songs/$id': typeof ApiSliceItSongsIdRouteWithChildren
   '/api/slice-it/songs/upload': typeof ApiSliceItSongsUploadRoute
@@ -3531,6 +3567,7 @@ export interface FileRoutesById {
   '/api/doctrine/reputation/': typeof ApiDoctrineReputationIndexRoute
   '/api/group-chats/$id/': typeof ApiGroupChatsIdIndexRoute
   '/api/personas/$id/': typeof ApiPersonasIdIndexRoute
+  '/api/rmhtube/clips/': typeof ApiRmhtubeClipsIndexRoute
   '/api/storefront/products/': typeof ApiStorefrontProductsIndexRoute
   '/api/study/decks/': typeof ApiStudyDecksIndexRoute
   '/_site/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
@@ -3592,6 +3629,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/achievements'
     | '/bookmarks'
+    | '/clips'
     | '/communities'
     | '/drafts'
     | '/explore'
@@ -3905,6 +3943,8 @@ export interface FileRouteTypes {
     | '/api/rmhcode/auth/revoke'
     | '/api/rmhcode/auth/validate'
     | '/api/rmhmusic/spotify/search'
+    | '/api/rmhtube/clips/$id'
+    | '/api/rmhtube/subscribe/$channelId'
     | '/api/scheduled/$id/publish'
     | '/api/slice-it/songs/$id'
     | '/api/slice-it/songs/upload'
@@ -3924,6 +3964,7 @@ export interface FileRouteTypes {
     | '/api/doctrine/reputation/'
     | '/api/group-chats/$id/'
     | '/api/personas/$id/'
+    | '/api/rmhtube/clips/'
     | '/api/storefront/products/'
     | '/api/study/decks/'
     | '/admin/blog/$slug/edit'
@@ -3964,6 +4005,7 @@ export interface FileRouteTypes {
     | '/void-breaker'
     | '/achievements'
     | '/bookmarks'
+    | '/clips'
     | '/communities'
     | '/drafts'
     | '/explore'
@@ -4273,6 +4315,8 @@ export interface FileRouteTypes {
     | '/api/rmhcode/auth/revoke'
     | '/api/rmhcode/auth/validate'
     | '/api/rmhmusic/spotify/search'
+    | '/api/rmhtube/clips/$id'
+    | '/api/rmhtube/subscribe/$channelId'
     | '/api/scheduled/$id/publish'
     | '/api/slice-it/songs/$id'
     | '/api/slice-it/songs/upload'
@@ -4292,6 +4336,7 @@ export interface FileRouteTypes {
     | '/api/doctrine/reputation'
     | '/api/group-chats/$id'
     | '/api/personas/$id'
+    | '/api/rmhtube/clips'
     | '/api/storefront/products'
     | '/api/study/decks'
     | '/admin/blog/$slug/edit'
@@ -4351,6 +4396,7 @@ export interface FileRouteTypes {
     | '/_site/admin'
     | '/_site/achievements'
     | '/_site/bookmarks'
+    | '/_site/clips'
     | '/_site/communities'
     | '/_site/drafts'
     | '/_site/explore'
@@ -4665,6 +4711,8 @@ export interface FileRouteTypes {
     | '/api/rmhcode/auth/revoke'
     | '/api/rmhcode/auth/validate'
     | '/api/rmhmusic/spotify/search'
+    | '/api/rmhtube/clips/$id'
+    | '/api/rmhtube/subscribe/$channelId'
     | '/api/scheduled/$id/publish'
     | '/api/slice-it/songs/$id'
     | '/api/slice-it/songs/upload'
@@ -4684,6 +4732,7 @@ export interface FileRouteTypes {
     | '/api/doctrine/reputation/'
     | '/api/group-chats/$id/'
     | '/api/personas/$id/'
+    | '/api/rmhtube/clips/'
     | '/api/storefront/products/'
     | '/api/study/decks/'
     | '/_site/admin/blog/$slug/edit'
@@ -4902,6 +4951,8 @@ export interface RootRouteChildren {
   ApiRmhcodeAuthRevokeRoute: typeof ApiRmhcodeAuthRevokeRoute
   ApiRmhcodeAuthValidateRoute: typeof ApiRmhcodeAuthValidateRoute
   ApiRmhmusicSpotifySearchRoute: typeof ApiRmhmusicSpotifySearchRoute
+  ApiRmhtubeClipsIdRoute: typeof ApiRmhtubeClipsIdRoute
+  ApiRmhtubeSubscribeChannelIdRoute: typeof ApiRmhtubeSubscribeChannelIdRoute
   ApiStorefrontCreatorUseridRoute: typeof ApiStorefrontCreatorUseridRoute
   ApiVibeThumbSlugRoute: typeof ApiVibeThumbSlugRoute
   ApiClansSlugIndexRoute: typeof ApiClansSlugIndexRoute
@@ -4910,6 +4961,7 @@ export interface RootRouteChildren {
   ApiDoctrineReputationIndexRoute: typeof ApiDoctrineReputationIndexRoute
   ApiGroupChatsIdIndexRoute: typeof ApiGroupChatsIdIndexRoute
   ApiPersonasIdIndexRoute: typeof ApiPersonasIdIndexRoute
+  ApiRmhtubeClipsIndexRoute: typeof ApiRmhtubeClipsIndexRoute
   ApiStorefrontProductsIndexRoute: typeof ApiStorefrontProductsIndexRoute
   ApiStudyDecksIndexRoute: typeof ApiStudyDecksIndexRoute
   ApiStorefrontProductsIdBuyRoute: typeof ApiStorefrontProductsIdBuyRoute
@@ -5794,6 +5846,13 @@ declare module '@tanstack/react-router' {
       path: '/communities'
       fullPath: '/communities'
       preLoaderRoute: typeof SiteCommunitiesRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/clips': {
+      id: '/_site/clips'
+      path: '/clips'
+      fullPath: '/clips'
+      preLoaderRoute: typeof SiteClipsRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/bookmarks': {
@@ -6951,6 +7010,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiStorefrontProductsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/rmhtube/clips/': {
+      id: '/api/rmhtube/clips/'
+      path: '/api/rmhtube/clips'
+      fullPath: '/api/rmhtube/clips/'
+      preLoaderRoute: typeof ApiRmhtubeClipsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/personas/$id/': {
       id: '/api/personas/$id/'
       path: '/api/personas/$id'
@@ -7083,6 +7149,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/scheduled/$id/publish'
       preLoaderRoute: typeof ApiScheduledIdPublishRouteImport
       parentRoute: typeof ApiScheduledIdRoute
+    }
+    '/api/rmhtube/subscribe/$channelId': {
+      id: '/api/rmhtube/subscribe/$channelId'
+      path: '/api/rmhtube/subscribe/$channelId'
+      fullPath: '/api/rmhtube/subscribe/$channelId'
+      preLoaderRoute: typeof ApiRmhtubeSubscribeChannelIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/rmhtube/clips/$id': {
+      id: '/api/rmhtube/clips/$id'
+      path: '/api/rmhtube/clips/$id'
+      fullPath: '/api/rmhtube/clips/$id'
+      preLoaderRoute: typeof ApiRmhtubeClipsIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/rmhmusic/spotify/search': {
       id: '/api/rmhmusic/spotify/search'
@@ -7688,6 +7768,7 @@ interface SiteRouteChildren {
   SiteAdminRouteRoute: typeof SiteAdminRouteRouteWithChildren
   SiteAchievementsRoute: typeof SiteAchievementsRoute
   SiteBookmarksRoute: typeof SiteBookmarksRoute
+  SiteClipsRoute: typeof SiteClipsRoute
   SiteCommunitiesRoute: typeof SiteCommunitiesRoute
   SiteDraftsRoute: typeof SiteDraftsRoute
   SiteExploreRoute: typeof SiteExploreRoute
@@ -7735,6 +7816,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteAdminRouteRoute: SiteAdminRouteRouteWithChildren,
   SiteAchievementsRoute: SiteAchievementsRoute,
   SiteBookmarksRoute: SiteBookmarksRoute,
+  SiteClipsRoute: SiteClipsRoute,
   SiteCommunitiesRoute: SiteCommunitiesRoute,
   SiteDraftsRoute: SiteDraftsRoute,
   SiteExploreRoute: SiteExploreRoute,
@@ -8628,6 +8710,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRmhcodeAuthRevokeRoute: ApiRmhcodeAuthRevokeRoute,
   ApiRmhcodeAuthValidateRoute: ApiRmhcodeAuthValidateRoute,
   ApiRmhmusicSpotifySearchRoute: ApiRmhmusicSpotifySearchRoute,
+  ApiRmhtubeClipsIdRoute: ApiRmhtubeClipsIdRoute,
+  ApiRmhtubeSubscribeChannelIdRoute: ApiRmhtubeSubscribeChannelIdRoute,
   ApiStorefrontCreatorUseridRoute: ApiStorefrontCreatorUseridRoute,
   ApiVibeThumbSlugRoute: ApiVibeThumbSlugRoute,
   ApiClansSlugIndexRoute: ApiClansSlugIndexRoute,
@@ -8636,6 +8720,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDoctrineReputationIndexRoute: ApiDoctrineReputationIndexRoute,
   ApiGroupChatsIdIndexRoute: ApiGroupChatsIdIndexRoute,
   ApiPersonasIdIndexRoute: ApiPersonasIdIndexRoute,
+  ApiRmhtubeClipsIndexRoute: ApiRmhtubeClipsIndexRoute,
   ApiStorefrontProductsIndexRoute: ApiStorefrontProductsIndexRoute,
   ApiStudyDecksIndexRoute: ApiStudyDecksIndexRoute,
   ApiStorefrontProductsIdBuyRoute: ApiStorefrontProductsIdBuyRoute,

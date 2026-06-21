@@ -7,7 +7,7 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import {
   Home, Package, BookOpen, Library, LayoutGrid, Atom,
-  LogOut, PenSquare, User, MessageCircle, ShieldCheck, MoreHorizontal, Wallet, Sparkles, Bell, Search, Landmark, Bookmark, Trophy, Flame, ShoppingBag, Compass, Users, Zap, Shield, Bot, Swords
+  LogOut, PenSquare, User, MessageCircle, ShieldCheck, MoreHorizontal, Wallet, Sparkles, Bell, Search, Landmark, Bookmark, Trophy, Flame, ShoppingBag, Compass, Users, Zap, Shield, Bot, Swords, Clapperboard
 } from 'lucide-react';
 import { ComposeModal } from './ComposeModal';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,7 @@ const navLinks = [
   { href: '/clans', label: 'Clans', icon: Shield },
   { href: '/ranked', label: 'Ranked', icon: Swords },
   { href: '/study', label: 'Flashcards', icon: BookOpen },
+  { href: '/clips', label: 'Clips', icon: Clapperboard },
   { href: '/personas', label: 'AI Personas', icon: Bot },
   { href: '/search', label: 'Search', icon: Search },
   { href: '/v', label: 'Pages', icon: LayoutGrid },
