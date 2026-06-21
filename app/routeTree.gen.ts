@@ -100,6 +100,7 @@ import { Route as ApiUserBuildsRouteImport } from './routes/api/user-builds'
 import { Route as ApiStreakRouteImport } from './routes/api/streak'
 import { Route as ApiSearchRouteImport } from './routes/api/search'
 import { Route as ApiRmharksRouteImport } from './routes/api/rmharks'
+import { Route as ApiRecapRouteImport } from './routes/api/recap'
 import { Route as ApiProfileRouteImport } from './routes/api/profile'
 import { Route as ApiOembedRouteImport } from './routes/api/oembed'
 import { Route as ApiMessagesRouteImport } from './routes/api/messages'
@@ -112,6 +113,7 @@ import { Route as SiteWalletRouteImport } from './routes/_site/wallet'
 import { Route as SiteShopRouteImport } from './routes/_site/shop'
 import { Route as SiteSearchRouteImport } from './routes/_site/search'
 import { Route as SiteRoadmapRouteImport } from './routes/_site/roadmap'
+import { Route as SiteRecapRouteImport } from './routes/_site/recap'
 import { Route as SiteQuotesRouteImport } from './routes/_site/quotes'
 import { Route as SitePricingRouteImport } from './routes/_site/pricing'
 import { Route as SiteNotificationsRouteImport } from './routes/_site/notifications'
@@ -766,6 +768,11 @@ const ApiRmharksRoute = ApiRmharksRouteImport.update({
   path: '/api/rmharks',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRecapRoute = ApiRecapRouteImport.update({
+  id: '/api/recap',
+  path: '/api/recap',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiProfileRoute = ApiProfileRouteImport.update({
   id: '/api/profile',
   path: '/api/profile',
@@ -824,6 +831,11 @@ const SiteSearchRoute = SiteSearchRouteImport.update({
 const SiteRoadmapRoute = SiteRoadmapRouteImport.update({
   id: '/roadmap',
   path: '/roadmap',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteRecapRoute = SiteRecapRouteImport.update({
+  id: '/recap',
+  path: '/recap',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteQuotesRoute = SiteQuotesRouteImport.update({
@@ -1906,6 +1918,7 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof SiteNotificationsRoute
   '/pricing': typeof SitePricingRoute
   '/quotes': typeof SiteQuotesRoute
+  '/recap': typeof SiteRecapRoute
   '/roadmap': typeof SiteRoadmapRoute
   '/search': typeof SiteSearchRoute
   '/shop': typeof SiteShopRoute
@@ -1918,6 +1931,7 @@ export interface FileRoutesByFullPath {
   '/api/messages': typeof ApiMessagesRouteWithChildren
   '/api/oembed': typeof ApiOembedRoute
   '/api/profile': typeof ApiProfileRouteWithChildren
+  '/api/recap': typeof ApiRecapRoute
   '/api/rmharks': typeof ApiRmharksRouteWithChildren
   '/api/search': typeof ApiSearchRoute
   '/api/streak': typeof ApiStreakRoute
@@ -2191,6 +2205,7 @@ export interface FileRoutesByTo {
   '/notifications': typeof SiteNotificationsRoute
   '/pricing': typeof SitePricingRoute
   '/quotes': typeof SiteQuotesRoute
+  '/recap': typeof SiteRecapRoute
   '/roadmap': typeof SiteRoadmapRoute
   '/search': typeof SiteSearchRoute
   '/shop': typeof SiteShopRoute
@@ -2202,6 +2217,7 @@ export interface FileRoutesByTo {
   '/api/messages': typeof ApiMessagesRouteWithChildren
   '/api/oembed': typeof ApiOembedRoute
   '/api/profile': typeof ApiProfileRouteWithChildren
+  '/api/recap': typeof ApiRecapRoute
   '/api/rmharks': typeof ApiRmharksRouteWithChildren
   '/api/search': typeof ApiSearchRoute
   '/api/streak': typeof ApiStreakRoute
@@ -2491,6 +2507,7 @@ export interface FileRoutesById {
   '/_site/notifications': typeof SiteNotificationsRoute
   '/_site/pricing': typeof SitePricingRoute
   '/_site/quotes': typeof SiteQuotesRoute
+  '/_site/recap': typeof SiteRecapRoute
   '/_site/roadmap': typeof SiteRoadmapRoute
   '/_site/search': typeof SiteSearchRoute
   '/_site/shop': typeof SiteShopRoute
@@ -2503,6 +2520,7 @@ export interface FileRoutesById {
   '/api/messages': typeof ApiMessagesRouteWithChildren
   '/api/oembed': typeof ApiOembedRoute
   '/api/profile': typeof ApiProfileRouteWithChildren
+  '/api/recap': typeof ApiRecapRoute
   '/api/rmharks': typeof ApiRmharksRouteWithChildren
   '/api/search': typeof ApiSearchRoute
   '/api/streak': typeof ApiStreakRoute
@@ -2797,6 +2815,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/pricing'
     | '/quotes'
+    | '/recap'
     | '/roadmap'
     | '/search'
     | '/shop'
@@ -2809,6 +2828,7 @@ export interface FileRouteTypes {
     | '/api/messages'
     | '/api/oembed'
     | '/api/profile'
+    | '/api/recap'
     | '/api/rmharks'
     | '/api/search'
     | '/api/streak'
@@ -3082,6 +3102,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/pricing'
     | '/quotes'
+    | '/recap'
     | '/roadmap'
     | '/search'
     | '/shop'
@@ -3093,6 +3114,7 @@ export interface FileRouteTypes {
     | '/api/messages'
     | '/api/oembed'
     | '/api/profile'
+    | '/api/recap'
     | '/api/rmharks'
     | '/api/search'
     | '/api/streak'
@@ -3381,6 +3403,7 @@ export interface FileRouteTypes {
     | '/_site/notifications'
     | '/_site/pricing'
     | '/_site/quotes'
+    | '/_site/recap'
     | '/_site/roadmap'
     | '/_site/search'
     | '/_site/shop'
@@ -3393,6 +3416,7 @@ export interface FileRouteTypes {
     | '/api/messages'
     | '/api/oembed'
     | '/api/profile'
+    | '/api/recap'
     | '/api/rmharks'
     | '/api/search'
     | '/api/streak'
@@ -3687,6 +3711,7 @@ export interface RootRouteChildren {
   ApiMessagesRoute: typeof ApiMessagesRouteWithChildren
   ApiOembedRoute: typeof ApiOembedRoute
   ApiProfileRoute: typeof ApiProfileRouteWithChildren
+  ApiRecapRoute: typeof ApiRecapRoute
   ApiRmharksRoute: typeof ApiRmharksRouteWithChildren
   ApiSearchRoute: typeof ApiSearchRoute
   ApiStreakRoute: typeof ApiStreakRoute
@@ -4444,6 +4469,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRmharksRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/recap': {
+      id: '/api/recap'
+      path: '/api/recap'
+      fullPath: '/api/recap'
+      preLoaderRoute: typeof ApiRecapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/profile': {
       id: '/api/profile'
       path: '/api/profile'
@@ -4526,6 +4558,13 @@ declare module '@tanstack/react-router' {
       path: '/roadmap'
       fullPath: '/roadmap'
       preLoaderRoute: typeof SiteRoadmapRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/recap': {
+      id: '/_site/recap'
+      path: '/recap'
+      fullPath: '/recap'
+      preLoaderRoute: typeof SiteRecapRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/quotes': {
@@ -5957,6 +5996,7 @@ interface SiteRouteChildren {
   SiteNotificationsRoute: typeof SiteNotificationsRoute
   SitePricingRoute: typeof SitePricingRoute
   SiteQuotesRoute: typeof SiteQuotesRoute
+  SiteRecapRoute: typeof SiteRecapRoute
   SiteRoadmapRoute: typeof SiteRoadmapRoute
   SiteSearchRoute: typeof SiteSearchRoute
   SiteShopRoute: typeof SiteShopRoute
@@ -5986,6 +6026,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteNotificationsRoute: SiteNotificationsRoute,
   SitePricingRoute: SitePricingRoute,
   SiteQuotesRoute: SiteQuotesRoute,
+  SiteRecapRoute: SiteRecapRoute,
   SiteRoadmapRoute: SiteRoadmapRoute,
   SiteSearchRoute: SiteSearchRoute,
   SiteShopRoute: SiteShopRoute,
@@ -6645,6 +6686,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiMessagesRoute: ApiMessagesRouteWithChildren,
   ApiOembedRoute: ApiOembedRoute,
   ApiProfileRoute: ApiProfileRouteWithChildren,
+  ApiRecapRoute: ApiRecapRoute,
   ApiRmharksRoute: ApiRmharksRouteWithChildren,
   ApiSearchRoute: ApiSearchRoute,
   ApiStreakRoute: ApiStreakRoute,
