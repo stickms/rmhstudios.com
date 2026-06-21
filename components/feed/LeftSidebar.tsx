@@ -101,15 +101,15 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
             </Link>
           );
         })}
-        {/* RMH Capital — static institutional site (served from /public) */}
-        <a
-          href="/rmh-capital/"
+        {/* RMH Capital — integrated institutional site */}
+        <Link
+          to="/rmh-capital"
           className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-site-text-muted hover:text-site-text hover:bg-site-surface ${itemJustifyClass}`}
           title="RMH Capital"
         >
           <Landmark className="w-5 h-5 shrink-0" />
           <span className={labelClass}>RMH Capital</span>
-        </a>
+        </Link>
         {/* Dynamic Profile link (shown when logged in) */}
         {session && (
           <Link
