@@ -107,6 +107,10 @@ model User {
   dailyStreak  DailyStreak?
   postUnlocks  PostUnlock[]
 
+  // Communities created + memberships
+  communitiesCreated Community[]       @relation("CommunityCreator")
+  communityMembers   CommunityMember[]
+
   // Economy: shop inventory, coin ledger (tips/gifts)
   inventory       UserInventory[]
   coinsSent       CoinTransaction[] @relation("CoinSender")
@@ -1053,6 +1057,10 @@ model RMHark {
   // Paid unlock: coins required to view content (null/0 = free)
   unlockPrice Int?
   unlocks     PostUnlock[]
+
+  // Optional community this post belongs to
+  communityId String?
+  community   Community? @relation(fields: [communityId], references: [id], onDelete: SetNull)
 
   // Self-relation for reposts (quote-repost displays the original inline)
   originalId String?
@@ -2362,4 +2370,46 @@ model PostUnlock {
   @@unique([userId, rmheetId])
   @@index([rmheetId])
   @@map("post_unlock")
+}
+
+// ─── Communities ──────────────────────────────────────────────────────────
+enum CommunityRole {
+  MEMBER
+  MOD
+  ADMIN
+}
+
+model Community {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String   @db.VarChar(60)
+  description String?  @db.VarChar(500)
+  color       String?  @db.VarChar(16) // accent color for the header
+  icon        String?  @db.VarChar(8)  // emoji
+  isPrivate   Boolean  @default(false)
+  memberCount Int      @default(1)
+  createdById String
+  createdAt   DateTime @default(now())
+
+  createdBy User              @relation("CommunityCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  members   CommunityMember[]
+  posts     RMHark[]
+
+  @@index([memberCount(sort: Desc)])
+  @@map("community")
+}
+
+model CommunityMember {
+  id          String        @id @default(cuid())
+  communityId String
+  userId      String
+  role        CommunityRole @default(MEMBER)
+  joinedAt    DateTime      @default(now())
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([communityId, userId])
+  @@index([userId])
+  @@map("community_member")
 }

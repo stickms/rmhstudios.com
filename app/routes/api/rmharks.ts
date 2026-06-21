@@ -92,10 +92,21 @@ export const Route = createFileRoute('/api/rmharks')({
       );
     }
 
-    const { content, poll, gifUrl, imageUrls, originalId, audience, unlockPrice } = parsed.data;
+    const { content, poll, gifUrl, imageUrls, originalId, audience, unlockPrice, communityId } = parsed.data;
 
     if (imageUrls?.length && !imageUrls.every((u) => ownsFeedImageUrl(u, session.user.id))) {
       return Response.json({ error: "Invalid image reference" }, { status: 400 });
+    }
+
+    // Posting into a community requires membership.
+    if (communityId) {
+      const member = await prisma.communityMember.findUnique({
+        where: { communityId_userId: { communityId, userId: session.user.id } },
+        select: { id: true },
+      });
+      if (!member) {
+        return Response.json({ error: "Join the community to post in it" }, { status: 403 });
+      }
     }
 
     // Validate the quoted post exists (and isn't itself a quote, to avoid chains).
@@ -121,6 +132,7 @@ export const Route = createFileRoute('/api/rmharks')({
           originalId: quotedOriginalId,
           audience: audience ?? "PUBLIC",
           unlockPrice: unlockPrice && unlockPrice > 0 ? unlockPrice : null,
+          communityId: communityId ?? null,
         },
         include: {
           user: { select: userDisplaySelect },

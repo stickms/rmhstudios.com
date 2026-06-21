@@ -119,6 +119,7 @@ import { Route as SiteQuotesRouteImport } from './routes/_site/quotes'
 import { Route as SitePricingRouteImport } from './routes/_site/pricing'
 import { Route as SiteNotificationsRouteImport } from './routes/_site/notifications'
 import { Route as SiteExploreRouteImport } from './routes/_site/explore'
+import { Route as SiteCommunitiesRouteImport } from './routes/_site/communities'
 import { Route as SiteBookmarksRouteImport } from './routes/_site/bookmarks'
 import { Route as SiteAchievementsRouteImport } from './routes/_site/achievements'
 import { Route as SiteAdminRouteRouteImport } from './routes/_site/admin/route'
@@ -132,6 +133,7 @@ import { Route as SecretCursedLogicIndexRouteImport } from './routes/secret/curs
 import { Route as RmhboxMinigamesIndexRouteImport } from './routes/rmhbox/minigames/index'
 import { Route as ApiShopIndexRouteImport } from './routes/api/shop/index'
 import { Route as ApiNotificationsIndexRouteImport } from './routes/api/notifications/index'
+import { Route as ApiCommunitiesIndexRouteImport } from './routes/api/communities/index'
 import { Route as ApiCoinsIndexRouteImport } from './routes/api/coins/index'
 import { Route as AltairMultiplayerIndexRouteImport } from './routes/altair/multiplayer/index'
 import { Route as SiteVIndexRouteImport } from './routes/_site/v/index'
@@ -248,6 +250,7 @@ import { Route as SiteTagTagRouteImport } from './routes/_site/tag.$tag'
 import { Route as SiteResearchCallRouteImport } from './routes/_site/research/call'
 import { Route as SiteProfileIdRouteImport } from './routes/_site/profile/$id'
 import { Route as SiteMessagesConversationIdRouteImport } from './routes/_site/messages/$conversationId'
+import { Route as SiteCSlugRouteImport } from './routes/_site/c.$slug'
 import { Route as SiteAdminUsersRouteImport } from './routes/_site/admin/users'
 import { Route as SiteAdminUserBuildsRouteImport } from './routes/_site/admin/user-builds'
 import { Route as SiteAdminReportsRouteImport } from './routes/_site/admin/reports'
@@ -256,6 +259,7 @@ import { Route as SiteAdminAnnouncementsRouteImport } from './routes/_site/admin
 import { Route as SiteAdminAnalyticsRouteImport } from './routes/_site/admin/analytics'
 import { Route as ApiDoctrineReputationIndexRouteImport } from './routes/api/doctrine/reputation/index'
 import { Route as ApiDoctrineIncidentsIndexRouteImport } from './routes/api/doctrine/incidents/index'
+import { Route as ApiCommunitiesSlugIndexRouteImport } from './routes/api/communities/$slug/index'
 import { Route as SiteUUseridIndexRouteImport } from './routes/_site/u/$userid/index'
 import { Route as SiteAdminBlogIndexRouteImport } from './routes/_site/admin/blog/index'
 import { Route as SecretJobsAssessmentIdRouteImport } from './routes/secret/jobs/assessment/$id'
@@ -308,6 +312,8 @@ import { Route as ApiDoctrineIncidentsIdRouteImport } from './routes/api/doctrin
 import { Route as ApiDoctrineAdminTiersRouteImport } from './routes/api/doctrine/admin/tiers'
 import { Route as ApiDoctrineAdminIncidentsRouteImport } from './routes/api/doctrine/admin/incidents'
 import { Route as ApiDoctrineAdminDisclosuresRouteImport } from './routes/api/doctrine/admin/disclosures'
+import { Route as ApiCommunitiesSlugJoinRouteImport } from './routes/api/communities/$slug/join'
+import { Route as ApiCommunitiesSlugFeedRouteImport } from './routes/api/communities/$slug/feed'
 import { Route as ApiAdminReportsIdRouteImport } from './routes/api/admin/reports/$id'
 import { Route as ApiAdminCuratedBuildsImageRouteImport } from './routes/api/admin/curated-builds/image'
 import { Route as ApiAdminAnnouncementsIdRouteImport } from './routes/api/admin/announcements/$id'
@@ -878,6 +884,11 @@ const SiteExploreRoute = SiteExploreRouteImport.update({
   path: '/explore',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteCommunitiesRoute = SiteCommunitiesRouteImport.update({
+  id: '/communities',
+  path: '/communities',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteBookmarksRoute = SiteBookmarksRouteImport.update({
   id: '/bookmarks',
   path: '/bookmarks',
@@ -942,6 +953,11 @@ const ApiShopIndexRoute = ApiShopIndexRouteImport.update({
 const ApiNotificationsIndexRoute = ApiNotificationsIndexRouteImport.update({
   id: '/api/notifications/',
   path: '/api/notifications/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCommunitiesIndexRoute = ApiCommunitiesIndexRouteImport.update({
+  id: '/api/communities/',
+  path: '/api/communities/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiCoinsIndexRoute = ApiCoinsIndexRouteImport.update({
@@ -1540,6 +1556,11 @@ const SiteMessagesConversationIdRoute =
     path: '/messages/$conversationId',
     getParentRoute: () => SiteRoute,
   } as any)
+const SiteCSlugRoute = SiteCSlugRouteImport.update({
+  id: '/c/$slug',
+  path: '/c/$slug',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteAdminUsersRoute = SiteAdminUsersRouteImport.update({
   id: '/users',
   path: '/users',
@@ -1582,6 +1603,11 @@ const ApiDoctrineIncidentsIndexRoute =
     path: '/api/doctrine/incidents/',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiCommunitiesSlugIndexRoute = ApiCommunitiesSlugIndexRouteImport.update({
+  id: '/api/communities/$slug/',
+  path: '/api/communities/$slug/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SiteUUseridIndexRoute = SiteUUseridIndexRouteImport.update({
   id: '/u/$userid/',
   path: '/u/$userid/',
@@ -1860,6 +1886,16 @@ const ApiDoctrineAdminDisclosuresRoute =
     path: '/api/doctrine/admin/disclosures',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiCommunitiesSlugJoinRoute = ApiCommunitiesSlugJoinRouteImport.update({
+  id: '/api/communities/$slug/join',
+  path: '/api/communities/$slug/join',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCommunitiesSlugFeedRoute = ApiCommunitiesSlugFeedRouteImport.update({
+  id: '/api/communities/$slug/feed',
+  path: '/api/communities/$slug/feed',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminReportsIdRoute = ApiAdminReportsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -2005,6 +2041,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof SiteAdminRouteRouteWithChildren
   '/achievements': typeof SiteAchievementsRoute
   '/bookmarks': typeof SiteBookmarksRoute
+  '/communities': typeof SiteCommunitiesRoute
   '/explore': typeof SiteExploreRoute
   '/notifications': typeof SiteNotificationsRoute
   '/pricing': typeof SitePricingRoute
@@ -2090,6 +2127,7 @@ export interface FileRoutesByFullPath {
   '/admin/reports': typeof SiteAdminReportsRoute
   '/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/admin/users': typeof SiteAdminUsersRoute
+  '/c/$slug': typeof SiteCSlugRoute
   '/messages/$conversationId': typeof SiteMessagesConversationIdRoute
   '/profile/$id': typeof SiteProfileIdRoute
   '/research/call': typeof SiteResearchCallRoute
@@ -2206,6 +2244,7 @@ export interface FileRoutesByFullPath {
   '/v/': typeof SiteVIndexRoute
   '/altair/multiplayer/': typeof AltairMultiplayerIndexRoute
   '/api/coins/': typeof ApiCoinsIndexRoute
+  '/api/communities/': typeof ApiCommunitiesIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
   '/api/shop/': typeof ApiShopIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
@@ -2220,6 +2259,8 @@ export interface FileRoutesByFullPath {
   '/api/admin/announcements/$id': typeof ApiAdminAnnouncementsIdRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
+  '/api/communities/$slug/feed': typeof ApiCommunitiesSlugFeedRoute
+  '/api/communities/$slug/join': typeof ApiCommunitiesSlugJoinRoute
   '/api/doctrine/admin/disclosures': typeof ApiDoctrineAdminDisclosuresRoute
   '/api/doctrine/admin/incidents': typeof ApiDoctrineAdminIncidentsRoute
   '/api/doctrine/admin/tiers': typeof ApiDoctrineAdminTiersRoute
@@ -2272,6 +2313,7 @@ export interface FileRoutesByFullPath {
   '/secret/jobs/assessment/$id': typeof SecretJobsAssessmentIdRoute
   '/admin/blog/': typeof SiteAdminBlogIndexRoute
   '/u/$userid/': typeof SiteUUseridIndexRoute
+  '/api/communities/$slug/': typeof ApiCommunitiesSlugIndexRoute
   '/api/doctrine/incidents/': typeof ApiDoctrineIncidentsIndexRoute
   '/api/doctrine/reputation/': typeof ApiDoctrineReputationIndexRoute
   '/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
@@ -2307,6 +2349,7 @@ export interface FileRoutesByTo {
   '/void-breaker': typeof VoidBreakerRoute
   '/achievements': typeof SiteAchievementsRoute
   '/bookmarks': typeof SiteBookmarksRoute
+  '/communities': typeof SiteCommunitiesRoute
   '/explore': typeof SiteExploreRoute
   '/notifications': typeof SiteNotificationsRoute
   '/pricing': typeof SitePricingRoute
@@ -2388,6 +2431,7 @@ export interface FileRoutesByTo {
   '/admin/reports': typeof SiteAdminReportsRoute
   '/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/admin/users': typeof SiteAdminUsersRoute
+  '/c/$slug': typeof SiteCSlugRoute
   '/messages/$conversationId': typeof SiteMessagesConversationIdRoute
   '/profile/$id': typeof SiteProfileIdRoute
   '/research/call': typeof SiteResearchCallRoute
@@ -2504,6 +2548,7 @@ export interface FileRoutesByTo {
   '/v': typeof SiteVIndexRoute
   '/altair/multiplayer': typeof AltairMultiplayerIndexRoute
   '/api/coins': typeof ApiCoinsIndexRoute
+  '/api/communities': typeof ApiCommunitiesIndexRoute
   '/api/notifications': typeof ApiNotificationsIndexRoute
   '/api/shop': typeof ApiShopIndexRoute
   '/rmhbox/minigames': typeof RmhboxMinigamesIndexRoute
@@ -2518,6 +2563,8 @@ export interface FileRoutesByTo {
   '/api/admin/announcements/$id': typeof ApiAdminAnnouncementsIdRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
+  '/api/communities/$slug/feed': typeof ApiCommunitiesSlugFeedRoute
+  '/api/communities/$slug/join': typeof ApiCommunitiesSlugJoinRoute
   '/api/doctrine/admin/disclosures': typeof ApiDoctrineAdminDisclosuresRoute
   '/api/doctrine/admin/incidents': typeof ApiDoctrineAdminIncidentsRoute
   '/api/doctrine/admin/tiers': typeof ApiDoctrineAdminTiersRoute
@@ -2570,6 +2617,7 @@ export interface FileRoutesByTo {
   '/secret/jobs/assessment/$id': typeof SecretJobsAssessmentIdRoute
   '/admin/blog': typeof SiteAdminBlogIndexRoute
   '/u/$userid': typeof SiteUUseridIndexRoute
+  '/api/communities/$slug': typeof ApiCommunitiesSlugIndexRoute
   '/api/doctrine/incidents': typeof ApiDoctrineIncidentsIndexRoute
   '/api/doctrine/reputation': typeof ApiDoctrineReputationIndexRoute
   '/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
@@ -2624,6 +2672,7 @@ export interface FileRoutesById {
   '/_site/admin': typeof SiteAdminRouteRouteWithChildren
   '/_site/achievements': typeof SiteAchievementsRoute
   '/_site/bookmarks': typeof SiteBookmarksRoute
+  '/_site/communities': typeof SiteCommunitiesRoute
   '/_site/explore': typeof SiteExploreRoute
   '/_site/notifications': typeof SiteNotificationsRoute
   '/_site/pricing': typeof SitePricingRoute
@@ -2710,6 +2759,7 @@ export interface FileRoutesById {
   '/_site/admin/reports': typeof SiteAdminReportsRoute
   '/_site/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/_site/admin/users': typeof SiteAdminUsersRoute
+  '/_site/c/$slug': typeof SiteCSlugRoute
   '/_site/messages/$conversationId': typeof SiteMessagesConversationIdRoute
   '/_site/profile/$id': typeof SiteProfileIdRoute
   '/_site/research/call': typeof SiteResearchCallRoute
@@ -2826,6 +2876,7 @@ export interface FileRoutesById {
   '/_site/v/': typeof SiteVIndexRoute
   '/altair/multiplayer/': typeof AltairMultiplayerIndexRoute
   '/api/coins/': typeof ApiCoinsIndexRoute
+  '/api/communities/': typeof ApiCommunitiesIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
   '/api/shop/': typeof ApiShopIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
@@ -2840,6 +2891,8 @@ export interface FileRoutesById {
   '/api/admin/announcements/$id': typeof ApiAdminAnnouncementsIdRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
+  '/api/communities/$slug/feed': typeof ApiCommunitiesSlugFeedRoute
+  '/api/communities/$slug/join': typeof ApiCommunitiesSlugJoinRoute
   '/api/doctrine/admin/disclosures': typeof ApiDoctrineAdminDisclosuresRoute
   '/api/doctrine/admin/incidents': typeof ApiDoctrineAdminIncidentsRoute
   '/api/doctrine/admin/tiers': typeof ApiDoctrineAdminTiersRoute
@@ -2892,6 +2945,7 @@ export interface FileRoutesById {
   '/secret/jobs/assessment/$id': typeof SecretJobsAssessmentIdRoute
   '/_site/admin/blog/': typeof SiteAdminBlogIndexRoute
   '/_site/u/$userid/': typeof SiteUUseridIndexRoute
+  '/api/communities/$slug/': typeof ApiCommunitiesSlugIndexRoute
   '/api/doctrine/incidents/': typeof ApiDoctrineIncidentsIndexRoute
   '/api/doctrine/reputation/': typeof ApiDoctrineReputationIndexRoute
   '/_site/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
@@ -2947,6 +3001,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/achievements'
     | '/bookmarks'
+    | '/communities'
     | '/explore'
     | '/notifications'
     | '/pricing'
@@ -3032,6 +3087,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/user-builds'
     | '/admin/users'
+    | '/c/$slug'
     | '/messages/$conversationId'
     | '/profile/$id'
     | '/research/call'
@@ -3148,6 +3204,7 @@ export interface FileRouteTypes {
     | '/v/'
     | '/altair/multiplayer/'
     | '/api/coins/'
+    | '/api/communities/'
     | '/api/notifications/'
     | '/api/shop/'
     | '/rmhbox/minigames/'
@@ -3162,6 +3219,8 @@ export interface FileRouteTypes {
     | '/api/admin/announcements/$id'
     | '/api/admin/curated-builds/image'
     | '/api/admin/reports/$id'
+    | '/api/communities/$slug/feed'
+    | '/api/communities/$slug/join'
     | '/api/doctrine/admin/disclosures'
     | '/api/doctrine/admin/incidents'
     | '/api/doctrine/admin/tiers'
@@ -3214,6 +3273,7 @@ export interface FileRouteTypes {
     | '/secret/jobs/assessment/$id'
     | '/admin/blog/'
     | '/u/$userid/'
+    | '/api/communities/$slug/'
     | '/api/doctrine/incidents/'
     | '/api/doctrine/reputation/'
     | '/admin/blog/$slug/edit'
@@ -3249,6 +3309,7 @@ export interface FileRouteTypes {
     | '/void-breaker'
     | '/achievements'
     | '/bookmarks'
+    | '/communities'
     | '/explore'
     | '/notifications'
     | '/pricing'
@@ -3330,6 +3391,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/user-builds'
     | '/admin/users'
+    | '/c/$slug'
     | '/messages/$conversationId'
     | '/profile/$id'
     | '/research/call'
@@ -3446,6 +3508,7 @@ export interface FileRouteTypes {
     | '/v'
     | '/altair/multiplayer'
     | '/api/coins'
+    | '/api/communities'
     | '/api/notifications'
     | '/api/shop'
     | '/rmhbox/minigames'
@@ -3460,6 +3523,8 @@ export interface FileRouteTypes {
     | '/api/admin/announcements/$id'
     | '/api/admin/curated-builds/image'
     | '/api/admin/reports/$id'
+    | '/api/communities/$slug/feed'
+    | '/api/communities/$slug/join'
     | '/api/doctrine/admin/disclosures'
     | '/api/doctrine/admin/incidents'
     | '/api/doctrine/admin/tiers'
@@ -3512,6 +3577,7 @@ export interface FileRouteTypes {
     | '/secret/jobs/assessment/$id'
     | '/admin/blog'
     | '/u/$userid'
+    | '/api/communities/$slug'
     | '/api/doctrine/incidents'
     | '/api/doctrine/reputation'
     | '/admin/blog/$slug/edit'
@@ -3565,6 +3631,7 @@ export interface FileRouteTypes {
     | '/_site/admin'
     | '/_site/achievements'
     | '/_site/bookmarks'
+    | '/_site/communities'
     | '/_site/explore'
     | '/_site/notifications'
     | '/_site/pricing'
@@ -3651,6 +3718,7 @@ export interface FileRouteTypes {
     | '/_site/admin/reports'
     | '/_site/admin/user-builds'
     | '/_site/admin/users'
+    | '/_site/c/$slug'
     | '/_site/messages/$conversationId'
     | '/_site/profile/$id'
     | '/_site/research/call'
@@ -3767,6 +3835,7 @@ export interface FileRouteTypes {
     | '/_site/v/'
     | '/altair/multiplayer/'
     | '/api/coins/'
+    | '/api/communities/'
     | '/api/notifications/'
     | '/api/shop/'
     | '/rmhbox/minigames/'
@@ -3781,6 +3850,8 @@ export interface FileRouteTypes {
     | '/api/admin/announcements/$id'
     | '/api/admin/curated-builds/image'
     | '/api/admin/reports/$id'
+    | '/api/communities/$slug/feed'
+    | '/api/communities/$slug/join'
     | '/api/doctrine/admin/disclosures'
     | '/api/doctrine/admin/incidents'
     | '/api/doctrine/admin/tiers'
@@ -3833,6 +3904,7 @@ export interface FileRouteTypes {
     | '/secret/jobs/assessment/$id'
     | '/_site/admin/blog/'
     | '/_site/u/$userid/'
+    | '/api/communities/$slug/'
     | '/api/doctrine/incidents/'
     | '/api/doctrine/reputation/'
     | '/_site/admin/blog/$slug/edit'
@@ -3985,9 +4057,12 @@ export interface RootRouteChildren {
   ApiVoidBreakerLeaderboardRoute: typeof ApiVoidBreakerLeaderboardRoute
   ApiVoidBreakerScoreRoute: typeof ApiVoidBreakerScoreRoute
   ApiCoinsIndexRoute: typeof ApiCoinsIndexRoute
+  ApiCommunitiesIndexRoute: typeof ApiCommunitiesIndexRoute
   ApiNotificationsIndexRoute: typeof ApiNotificationsIndexRoute
   ApiShopIndexRoute: typeof ApiShopIndexRoute
   ApiAdminCuratedBuildsImageRoute: typeof ApiAdminCuratedBuildsImageRouteWithChildren
+  ApiCommunitiesSlugFeedRoute: typeof ApiCommunitiesSlugFeedRoute
+  ApiCommunitiesSlugJoinRoute: typeof ApiCommunitiesSlugJoinRoute
   ApiDoctrineAdminDisclosuresRoute: typeof ApiDoctrineAdminDisclosuresRoute
   ApiDoctrineAdminIncidentsRoute: typeof ApiDoctrineAdminIncidentsRoute
   ApiDoctrineAdminTiersRoute: typeof ApiDoctrineAdminTiersRoute
@@ -4013,6 +4088,7 @@ export interface RootRouteChildren {
   ApiRmhcodeAuthValidateRoute: typeof ApiRmhcodeAuthValidateRoute
   ApiRmhmusicSpotifySearchRoute: typeof ApiRmhmusicSpotifySearchRoute
   ApiVibeThumbSlugRoute: typeof ApiVibeThumbSlugRoute
+  ApiCommunitiesSlugIndexRoute: typeof ApiCommunitiesSlugIndexRoute
   ApiDoctrineIncidentsIndexRoute: typeof ApiDoctrineIncidentsIndexRoute
   ApiDoctrineReputationIndexRoute: typeof ApiDoctrineReputationIndexRoute
 }
@@ -4789,6 +4865,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteExploreRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/communities': {
+      id: '/_site/communities'
+      path: '/communities'
+      fullPath: '/communities'
+      preLoaderRoute: typeof SiteCommunitiesRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/bookmarks': {
       id: '/_site/bookmarks'
       path: '/bookmarks'
@@ -4878,6 +4961,13 @@ declare module '@tanstack/react-router' {
       path: '/api/notifications'
       fullPath: '/api/notifications/'
       preLoaderRoute: typeof ApiNotificationsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/communities/': {
+      id: '/api/communities/'
+      path: '/api/communities'
+      fullPath: '/api/communities/'
+      preLoaderRoute: typeof ApiCommunitiesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/coins/': {
@@ -5692,6 +5782,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteMessagesConversationIdRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/c/$slug': {
+      id: '/_site/c/$slug'
+      path: '/c/$slug'
+      fullPath: '/c/$slug'
+      preLoaderRoute: typeof SiteCSlugRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/admin/users': {
       id: '/_site/admin/users'
       path: '/users'
@@ -5746,6 +5843,13 @@ declare module '@tanstack/react-router' {
       path: '/api/doctrine/incidents'
       fullPath: '/api/doctrine/incidents/'
       preLoaderRoute: typeof ApiDoctrineIncidentsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/communities/$slug/': {
+      id: '/api/communities/$slug/'
+      path: '/api/communities/$slug'
+      fullPath: '/api/communities/$slug/'
+      preLoaderRoute: typeof ApiCommunitiesSlugIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_site/u/$userid/': {
@@ -6112,6 +6216,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiDoctrineAdminDisclosuresRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/communities/$slug/join': {
+      id: '/api/communities/$slug/join'
+      path: '/api/communities/$slug/join'
+      fullPath: '/api/communities/$slug/join'
+      preLoaderRoute: typeof ApiCommunitiesSlugJoinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/communities/$slug/feed': {
+      id: '/api/communities/$slug/feed'
+      path: '/api/communities/$slug/feed'
+      fullPath: '/api/communities/$slug/feed'
+      preLoaderRoute: typeof ApiCommunitiesSlugFeedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/reports/$id': {
       id: '/api/admin/reports/$id'
       path: '/$id'
@@ -6289,6 +6407,7 @@ interface SiteRouteChildren {
   SiteAdminRouteRoute: typeof SiteAdminRouteRouteWithChildren
   SiteAchievementsRoute: typeof SiteAchievementsRoute
   SiteBookmarksRoute: typeof SiteBookmarksRoute
+  SiteCommunitiesRoute: typeof SiteCommunitiesRoute
   SiteExploreRoute: typeof SiteExploreRoute
   SiteNotificationsRoute: typeof SiteNotificationsRoute
   SitePricingRoute: typeof SitePricingRoute
@@ -6299,6 +6418,7 @@ interface SiteRouteChildren {
   SiteShopRoute: typeof SiteShopRoute
   SiteWalletRoute: typeof SiteWalletRoute
   SiteIndexRoute: typeof SiteIndexRoute
+  SiteCSlugRoute: typeof SiteCSlugRoute
   SiteMessagesConversationIdRoute: typeof SiteMessagesConversationIdRoute
   SiteProfileIdRoute: typeof SiteProfileIdRoute
   SiteResearchCallRoute: typeof SiteResearchCallRoute
@@ -6321,6 +6441,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteAdminRouteRoute: SiteAdminRouteRouteWithChildren,
   SiteAchievementsRoute: SiteAchievementsRoute,
   SiteBookmarksRoute: SiteBookmarksRoute,
+  SiteCommunitiesRoute: SiteCommunitiesRoute,
   SiteExploreRoute: SiteExploreRoute,
   SiteNotificationsRoute: SiteNotificationsRoute,
   SitePricingRoute: SitePricingRoute,
@@ -6331,6 +6452,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteShopRoute: SiteShopRoute,
   SiteWalletRoute: SiteWalletRoute,
   SiteIndexRoute: SiteIndexRoute,
+  SiteCSlugRoute: SiteCSlugRoute,
   SiteMessagesConversationIdRoute: SiteMessagesConversationIdRoute,
   SiteProfileIdRoute: SiteProfileIdRoute,
   SiteResearchCallRoute: SiteResearchCallRoute,
@@ -7098,9 +7220,12 @@ const rootRouteChildren: RootRouteChildren = {
   ApiVoidBreakerLeaderboardRoute: ApiVoidBreakerLeaderboardRoute,
   ApiVoidBreakerScoreRoute: ApiVoidBreakerScoreRoute,
   ApiCoinsIndexRoute: ApiCoinsIndexRoute,
+  ApiCommunitiesIndexRoute: ApiCommunitiesIndexRoute,
   ApiNotificationsIndexRoute: ApiNotificationsIndexRoute,
   ApiShopIndexRoute: ApiShopIndexRoute,
   ApiAdminCuratedBuildsImageRoute: ApiAdminCuratedBuildsImageRouteWithChildren,
+  ApiCommunitiesSlugFeedRoute: ApiCommunitiesSlugFeedRoute,
+  ApiCommunitiesSlugJoinRoute: ApiCommunitiesSlugJoinRoute,
   ApiDoctrineAdminDisclosuresRoute: ApiDoctrineAdminDisclosuresRoute,
   ApiDoctrineAdminIncidentsRoute: ApiDoctrineAdminIncidentsRoute,
   ApiDoctrineAdminTiersRoute: ApiDoctrineAdminTiersRoute,
@@ -7126,6 +7251,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRmhcodeAuthValidateRoute: ApiRmhcodeAuthValidateRoute,
   ApiRmhmusicSpotifySearchRoute: ApiRmhmusicSpotifySearchRoute,
   ApiVibeThumbSlugRoute: ApiVibeThumbSlugRoute,
+  ApiCommunitiesSlugIndexRoute: ApiCommunitiesSlugIndexRoute,
   ApiDoctrineIncidentsIndexRoute: ApiDoctrineIncidentsIndexRoute,
   ApiDoctrineReputationIndexRoute: ApiDoctrineReputationIndexRoute,
 }

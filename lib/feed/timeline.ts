@@ -324,6 +324,7 @@ async function getFollowingTimeline(
         userId: { in: followingIds },
         deletedAt: null,
         audience: { not: "PRIVATE" },
+        communityId: null,
         ...contentWhere,
         ...keyset,
       },
@@ -399,7 +400,7 @@ async function getForYouTimeline(
   if (shouldFetchRmharks) {
     const [rmharks, repostRecords] = await Promise.all([
       prisma.rMHark.findMany({
-        where: { deletedAt: null, ...contentWhere, ...authorWhere, ...audWhere, ...keyset },
+        where: { deletedAt: null, communityId: null, ...contentWhere, ...authorWhere, ...audWhere, ...keyset },
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         take: limit,
         include,

@@ -41,7 +41,7 @@ function isValidMediaUrl(url: string): boolean {
   }
 }
 
-export function ComposeBox() {
+export function ComposeBox({ communityId }: { communityId?: string } = {}) {
   const [content, setContent] = useState('');
   const [audience, setAudience] = useState<'PUBLIC' | 'FOLLOWERS' | 'PRIVATE'>('PUBLIC');
   const [pollDuration, setPollDuration] = useState(0); // hours; 0 = no limit
@@ -124,6 +124,7 @@ export function ComposeBox() {
       if (audience !== 'PUBLIC') body.audience = audience;
       const price = parseInt(unlockPrice, 10);
       if (price > 0) body.unlockPrice = price;
+      if (communityId) body.communityId = communityId;
 
       const res = await fetch('/api/rmharks', {
         method: 'POST',
