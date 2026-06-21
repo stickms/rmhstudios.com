@@ -6,7 +6,7 @@
 
 **Architecture:** A new `go-services/cmd/assets` binary streams objects from the bucket via a new range-aware `go-services/pkg/objectstore` client (the Go analog of the TS `lib/storage/s3.server.ts` seam). The gateway proxies the four prefixes to it like the WS services. A `mc mirror` deploy step uploads `public/{library,music,models,sprites}` to the bucket. Cutover is phased and reversible (re-point one prefix at a time; rollback = one line).
 
-**Tech Stack:** Go 1.23, `aws-sdk-go-v2/s3`, Bazel (`rules_go`/gazelle/`rules_oci`), the existing `pkg/{config,httpx,log}` helpers, Helm (`deploy/helm/rmhstudios-go`), MinIO (→ R2), `mc`/`rclone`.
+**Tech Stack:** Go 1.23 (built/tested via Docker — `go-services/Dockerfile`, `golang:1.23-alpine`), `aws-sdk-go-v2/s3`, the existing `pkg/{config,httpx,log}` helpers, Helm (`deploy/helm/rmhstudios-go`) + `deploy/deploy-go.sh`, MinIO (→ R2), `mc`/`rclone`.
 
 ## Global Constraints
 
@@ -16,9 +16,11 @@
 - S3 config env (already defined for the feed feature): `S3_ENDPOINT`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET`, `S3_FORCE_PATH_STYLE` (path-style when `!= "false"`).
 - Cache headers must match Apache today: `Cache-Control: public, max-age=86400, stale-while-revalidate=604800` and `Accept-Ranges: bytes`; pass through `ETag`/`Last-Modified`.
 - New service port: `ASSETS_PORT` default `7007`. Gateway upstream env: `ASSETS_UPSTREAM` default `http://assets:7007`.
-- Bazel image targets are hand-maintained in `go-services/images/BUILD.bazel`; `cmd/*` and `internal/*` BUILD files are **gazelle-generated** (`make gazelle` — never hand-edit them).
-- Tests run via `bazel test //go-services/...` (canonical). If Go 1.23 is installed locally, `cd go-services && go test ./<pkg>/...` is a faster TDD loop; the verifying run in each task uses Bazel.
-- Adding a Go dependency: edit `go-services/go.mod`, run `bazel run @rules_go//go -- mod tidy` (hermetic toolchain — no local Go needed), then `make gazelle`, then `bazel mod tidy` if Bazel reports a missing `use_repo`.
+- **Build/test runs on Docker, not Bazel** (the project is staying on the Docker path for now). There is no local Go toolchain — compile and test through a Go container. Canonical command (the `rmhgo-modcache` volume keeps re-runs fast):
+  `docker run --rm -v "$(git rev-parse --show-toplevel)/go-services":/src -w /src -v rmhgo-modcache:/go/pkg/mod golang:1.23-alpine go test ./<pkg>/...`
+- Images are built by `go-services/Dockerfile` (generic over `SERVICE` → compiles `./cmd/$SERVICE`) and deployed by `deploy/deploy-go.sh`; a new service is registered by adding it to that script's `SERVICES` array. Do **not** add or maintain Bazel `BUILD.bazel`/`go_service_image` entries or run `gazelle` — if the project returns to Bazel later, `make gazelle` regenerates them in one pass.
+- Adding a Go dependency: edit `go-services/go.mod`'s `require` block, then run `go mod tidy` in the container:
+  `docker run --rm -v "$(git rev-parse --show-toplevel)/go-services":/src -w /src -v rmhgo-modcache:/go/pkg/mod golang:1.23-alpine go mod tidy`.
 
 ---
 
@@ -46,14 +48,12 @@ Edit `go-services/go.mod` to add to the `require` block:
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.27
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.58.2
 ```
-Then resolve and wire Bazel:
+Then resolve modules in a Go container:
 ```bash
 cd "$(git rev-parse --show-toplevel)"
-bazel run @rules_go//go -- mod tidy        # hermetic Go toolchain; updates go.mod/go.sum
-make gazelle                                # regenerate BUILD files + go_deps
-bazel mod tidy || true                      # add any missing use_repo entries to MODULE.bazel
+docker run --rm -v "$PWD/go-services":/src -w /src -v rmhgo-modcache:/go/pkg/mod golang:1.23-alpine go mod tidy
 ```
-Expected: `go.sum` gains the aws-sdk-go-v2 modules; no Bazel errors.
+Expected: `go-services/go.sum` gains the aws-sdk-go-v2 modules.
 
 - [ ] **Step 2: Write the failing test**
 
@@ -103,8 +103,8 @@ func TestSentinelsDistinct(t *testing.T) {
 
 - [ ] **Step 3: Run the test to verify it fails**
 
-Run: `bazel test //go-services/pkg/objectstore:objectstore_test` (run `make gazelle` first so the target exists)
-Expected: FAIL — `loadConfig`, `ErrNotFound`, `ErrRangeNotSatisfiable` undefined.
+Run: `docker run --rm -v "$(git rev-parse --show-toplevel)/go-services":/src -w /src -v rmhgo-modcache:/go/pkg/mod golang:1.23-alpine go test ./pkg/objectstore/...`
+Expected: FAIL (compile error) — `loadConfig`, `ErrNotFound`, `ErrRangeNotSatisfiable` undefined.
 
 - [ ] **Step 4: Write the implementation**
 
@@ -257,13 +257,13 @@ func (s *S3) Get(ctx context.Context, key, rangeHeader string) (*Object, error) 
 
 - [ ] **Step 5: Run the test to verify it passes**
 
-Run: `make gazelle && bazel test //go-services/pkg/objectstore:objectstore_test`
+Run: `docker run --rm -v "$(git rev-parse --show-toplevel)/go-services":/src -w /src -v rmhgo-modcache:/go/pkg/mod golang:1.23-alpine go test ./pkg/objectstore/...`
 Expected: PASS (3 tests).
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add go-services/go.mod go-services/go.sum go-services/pkg/objectstore MODULE.bazel go-services/pkg/objectstore/BUILD.bazel
+git add go-services/go.mod go-services/go.sum go-services/pkg/objectstore
 git commit -m "feat(go): objectstore — range-aware S3 reader for go-services"
 ```
 
@@ -418,8 +418,8 @@ func TestBadRangeReturns416(t *testing.T) {
 
 - [ ] **Step 2: Run the test to verify it fails**
 
-Run: `make gazelle && bazel test //go-services/internal/assets:assets_test`
-Expected: FAIL — `NewHandler` / `Store` undefined.
+Run: `docker run --rm -v "$(git rev-parse --show-toplevel)/go-services":/src -w /src -v rmhgo-modcache:/go/pkg/mod golang:1.23-alpine go test ./internal/assets/...`
+Expected: FAIL (compile error) — `NewHandler` / `Store` undefined.
 
 - [ ] **Step 3: Write the implementation**
 
@@ -541,7 +541,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 - [ ] **Step 4: Run the test to verify it passes**
 
-Run: `make gazelle && bazel test //go-services/internal/assets:assets_test`
+Run: `docker run --rm -v "$(git rev-parse --show-toplevel)/go-services":/src -w /src -v rmhgo-modcache:/go/pkg/mod golang:1.23-alpine go test ./internal/assets/...`
 Expected: PASS (6 tests).
 
 - [ ] **Step 5: Commit**
@@ -553,15 +553,15 @@ git commit -m "feat(go): assets HTTP handler — bucket streaming with Range + c
 
 ---
 
-### Task 3: `cmd/assets` entrypoint + OCI image
+### Task 3: `cmd/assets` entrypoint + Docker deploy registration
 
 **Files:**
 - Create: `go-services/cmd/assets/main.go`
-- Modify: `go-services/images/BUILD.bazel`
+- Modify: `deploy/deploy-go.sh`
 
 **Interfaces:**
 - Consumes: `objectstore.New` (Task 1), `assets.NewHandler` (Task 2), `pkg/{config,httpx,log}`.
-- Produces: a `//go-services/cmd/assets:assets` binary and a `//go-services/images:assets` OCI image (load/push targets).
+- Produces: a `cmd/assets` binary (built by `go-services/Dockerfile` via `SERVICE=assets`) registered in the Docker deploy script.
 
 - [ ] **Step 1: Write the entrypoint**
 
@@ -621,35 +621,32 @@ func main() {
 }
 ```
 
-- [ ] **Step 2: Generate the cmd BUILD file and verify the binary builds**
+- [ ] **Step 2: Verify the binary builds (Docker)**
 
 Run:
 ```bash
-make gazelle
-bazel build //go-services/cmd/assets:assets
+docker build -f go-services/Dockerfile --build-arg SERVICE=assets -t rmhstudios-go-assets:dev go-services
 ```
-Expected: builds successfully (gazelle creates `go-services/cmd/assets/BUILD.bazel`).
+Expected: image builds successfully (the Dockerfile compiles `./cmd/assets` into a static binary).
 
-- [ ] **Step 3: Add the OCI image entry**
+- [ ] **Step 3: Register the service in the Docker deploy script**
 
-In `go-services/images/BUILD.bazel`, add after the `recap` block (standard distroless services):
-```python
-go_service_image(
-    name = "assets",
-    binary = "//go-services/cmd/assets:assets",
-)
+In `deploy/deploy-go.sh`, add `assets` to the `SERVICES` array (around line 21):
+```bash
+SERVICES=(gateway gamehub rmhmusic rmhtube rmhbox recap doctrine-worker vibe-worker discord-bot assets)
 ```
+The Dockerfile is generic over `SERVICE`, so no other build wiring is needed.
 
-- [ ] **Step 4: Verify the image target loads**
+- [ ] **Step 4: Verify the deploy script references the service**
 
-Run: `bazel build //go-services/images:assets_load`
-Expected: builds the `oci_load` target (image tag `rmhstudios-go-assets:dev`).
+Run: `grep -n "assets" deploy/deploy-go.sh`
+Expected: `assets` appears in the `SERVICES` array.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add go-services/cmd/assets go-services/images/BUILD.bazel
-git commit -m "feat(go): assets service entrypoint + OCI image"
+git add go-services/cmd/assets deploy/deploy-go.sh
+git commit -m "feat(go): assets service entrypoint + docker deploy registration"
 ```
 
 ---
@@ -677,7 +674,7 @@ Add to `go-services/internal/gateway/gateway_test.go` inside (or alongside) `Tes
 
 - [ ] **Step 2: Run the test to verify it fails**
 
-Run: `bazel test //go-services/internal/gateway:gateway_test`
+Run: `docker run --rm -v "$(git rev-parse --show-toplevel)/go-services":/src -w /src -v rmhgo-modcache:/go/pkg/mod golang:1.23-alpine go test ./internal/gateway/...`
 Expected: FAIL — those paths currently resolve to the web catch-all (and `AssetsUpstream` field doesn't exist).
 
 - [ ] **Step 3: Implement the routing**
@@ -717,7 +714,7 @@ Add the four prefixes to the `routes` slice in `NewRouter` (after the WS entries
 
 - [ ] **Step 4: Run the test to verify it passes**
 
-Run: `bazel test //go-services/internal/gateway:gateway_test`
+Run: `docker run --rm -v "$(git rev-parse --show-toplevel)/go-services":/src -w /src -v rmhgo-modcache:/go/pkg/mod golang:1.23-alpine go test ./internal/gateway/...`
 Expected: PASS (existing + 4 new cases).
 
 - [ ] **Step 5: Commit**
@@ -900,7 +897,8 @@ gateway cutover.
    idempotent (`mc mirror` uploads only changed/new files).
 2. **Deploy the assets service:** it ships in the Go chart
    (`deploy/helm/rmhstudios-go`, service `assets`, port 7007) via
-   `./deploy/deploy-go.sh production` (or `make prod REGISTRY=…`).
+   `./deploy/deploy-go.sh production` (single-node) or
+   `REGISTRY=… ./deploy/deploy-go.sh production` (multi-node).
 3. **Smoke-test directly** (before routing public traffic):
    `curl -s -o /dev/null -w "%{http_code}\n" http://<assets-host>:7007/models/<known>.glb`
    and a Range request: `curl -s -D- -o /dev/null -H 'Range: bytes=0-1023' http://<assets-host>:7007/music/<known>.mp3` → expect `206` + `Content-Range`.
@@ -931,7 +929,7 @@ git commit -m "docs(deploy): assets/CDN cutover runbook + image build-context ex
 **Spec coverage:**
 - `pkg/objectstore` range-aware S3 client → Task 1. ✓
 - `internal/assets` handler (path→key, prefix validation, traversal, range, headers, errors) → Task 2. ✓
-- `cmd/assets` entrypoint + OCI image → Task 3. ✓
+- `cmd/assets` entrypoint + Docker deploy registration → Task 3. ✓
 - Gateway routes the four prefixes → Task 4. ✓
 - Deploy-time `mc mirror` sync + `make assets-sync` → Task 5. ✓
 - Helm `assets` Deployment/Service + `ASSETS_PORT`/`ASSETS_UPSTREAM` → Task 6. ✓
@@ -946,4 +944,4 @@ git commit -m "docs(deploy): assets/CDN cutover runbook + image build-context ex
 
 **Type consistency:** `Store.Get(ctx, key, rangeHeader) (*objectstore.Object, error)` is defined in Task 2 and satisfied by `*objectstore.S3.Get` from Task 1 (same signature). `objectstore.Object` fields used in Task 2's handler (`Body`, `ContentType`, `ETag`, `LastModified`, `ContentRange`, `Status`) all exist in Task 1's struct. `ErrNotFound`/`ErrRangeNotSatisfiable` defined in Task 1, consumed in Task 2. `AssetsUpstream`/`ASSETS_UPSTREAM`/`ASSETS_PORT`/port `7007` consistent across Tasks 3, 4, 6.
 
-**Note on Bazel test commands:** new packages require `make gazelle` before `bazel test` can see them — each TDD task folds the `make gazelle` into its run step. If a local Go 1.23 is installed, `cd go-services && go test ./pkg/objectstore/...` (or `./internal/assets/...`) is a faster red/green loop; the committed verifying run uses Bazel for hermetic parity with CI.
+**Note on the build/test workflow:** the project is staying on Docker (not Bazel) for now, and there is no local Go toolchain — every red/green run executes `go test` inside a `golang:1.23-alpine` container (see Global Constraints; the `rmhgo-modcache` volume avoids re-downloading modules each run), and images build via `go-services/Dockerfile`. No `make gazelle`/`bazel` steps, and no `BUILD.bazel` files are created for the new packages. If the project returns to Bazel later, a one-shot `make gazelle` regenerates them.
