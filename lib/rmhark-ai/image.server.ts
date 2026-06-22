@@ -47,6 +47,9 @@ export async function generatePostImage(opts: {
     if (!prompt.trim()) return null;
 
     // Reserve budget right before the paid call. If we're at the cap, stop.
+    // Deliberately NOT refunded if the call below fails: counting attempts
+    // (not just successes) keeps the daily cap a hard spend ceiling and avoids
+    // a refund race across the web + bot-worker processes.
     if (!(await tryConsumeImageBudget())) return null;
 
     const res = await xai.images.generate({ model: XAI_IMAGE_MODEL, prompt, n: 1 });
