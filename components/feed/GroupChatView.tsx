@@ -5,6 +5,8 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { Loader2, ArrowLeft, Send, Users, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from './UserAvatar';
+import { GhostTextArea } from './GhostTextArea';
+import { useMessageSuggestion } from '@/lib/useMessageSuggestion';
 
 interface Sender {
   id: string;
@@ -153,10 +155,20 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages]);
 
+  // AI inline autocomplete, grounded in the recent group conversation.
+  const { suggestion, clear: clearSuggestion } = useMessageSuggestion({
+    draft: input,
+    context: messages.map((m) => ({
+      author: m.sender.id === currentUserId ? 'Me' : m.sender.name || m.sender.handle || 'User',
+      content: m.content,
+    })),
+  });
+
   async function send() {
     const text = input.trim();
     if (!text || sending) return;
     setInput('');
+    clearSuggestion();
     setSending(true);
     try {
       const res = await fetch(`/api/group-chats/${encodeURIComponent(id)}/messages`, {
@@ -235,8 +247,13 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
 
       <div className="border-t border-site-border p-3">
         <div className="flex items-end gap-2">
-          <textarea
+          <GhostTextArea
             value={input}
+            suggestion={suggestion}
+            onAcceptSuggestion={() => {
+              setInput((v) => v + suggestion);
+              clearSuggestion();
+            }}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
@@ -247,7 +264,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
             placeholder="Message…"
             rows={1}
             maxLength={2000}
-            className="max-h-32 flex-1 resize-none rounded-xl border border-site-border bg-site-surface px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+            className="max-h-32 resize-none rounded-xl border border-site-border bg-site-surface px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
           />
           <Button variant="accent" size="sm" disabled={!input.trim() || sending} onClick={send} className="h-9">
             <Send className="h-4 w-4" />

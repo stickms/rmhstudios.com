@@ -6,6 +6,8 @@ import { Link } from '@tanstack/react-router';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
+import { GhostTextArea } from './GhostTextArea';
+import { useMessageSuggestion } from '@/lib/useMessageSuggestion';
 
 interface Message {
   id: string;
@@ -46,6 +48,15 @@ export function ConversationView({ conversationId }: { conversationId: string })
 
   const { data: session } = useSession();
   const { resolved: resolvedUser } = useResolvedUser();
+
+  // AI inline autocomplete, grounded in the recent DM conversation.
+  const { suggestion, clear: clearSuggestion } = useMessageSuggestion({
+    draft: input,
+    context: messages.map((m) => ({
+      author: m.senderId === session?.user.id ? 'Me' : otherUser?.name || 'Them',
+      content: m.content,
+    })),
+  });
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -292,6 +303,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
     };
     setMessages((prev) => [...prev, optimisticMsg]);
     setInput('');
+    clearSuggestion();
     stopTyping();
     setTimeout(scrollToBottom, 50);
 
@@ -532,9 +544,14 @@ export function ConversationView({ conversationId }: { conversationId: string })
       {/* Input */}
       <div className="shrink-0 border-t border-site-border bg-site-bg px-4 py-3">
         <div className="flex items-end gap-2">
-          <textarea
+          <GhostTextArea
             ref={inputRef}
             value={input}
+            suggestion={suggestion}
+            onAcceptSuggestion={() => {
+              setInput((v) => v + suggestion);
+              clearSuggestion();
+            }}
             onChange={(e) => {
               setInput(e.target.value);
               if (e.target.value.trim()) handleTyping();
@@ -545,7 +562,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
             placeholder="Type a message..."
             rows={1}
             maxLength={2000}
-            className="flex-1 bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-xl px-4 py-2.5 border border-site-border outline-none focus:border-site-accent transition-colors resize-none max-h-32 overflow-y-auto"
+            className="bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-xl px-4 py-2.5 border border-site-border outline-none focus:border-site-accent transition-colors resize-none max-h-32 overflow-y-auto"
             style={{ minHeight: '42px' }}
           />
           <Button

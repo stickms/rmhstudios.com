@@ -62,6 +62,44 @@ export async function translateText(text: string, target: string): Promise<strin
   );
 }
 
+/**
+ * Inline autocomplete for a chat composer (Gmail Smart Compose style). Given the
+ * recent conversation and the user's half-typed `draft`, return ONLY the text
+ * that should be appended after the draft — never a repeat of what they typed.
+ * Returns "" when nothing sensible fits (the UI then shows no ghost text).
+ */
+export async function suggestMessageCompletion(
+  context: { author: string; content: string }[],
+  draft: string
+): Promise<string> {
+  // Cap context for long chats: last 12 turns, then a hard char ceiling.
+  const convo = context
+    .slice(-12)
+    .map((m) => `${m.author}: ${m.content}`)
+    .join('\n')
+    .slice(-2000);
+
+  const raw = await chat(
+    'You are an inline autocomplete inside a chat message box, like Gmail Smart Compose. ' +
+      "Continue the user's half-written message so it flows naturally and matches their tone, " +
+      'the conversation, and any slang/casing they use. ' +
+      'Output ONLY the continuation that comes AFTER what they have already typed — ' +
+      'never repeat their existing words, no quotes, no preamble, no explanation. ' +
+      'Keep it short: a few words, at most one sentence. ' +
+      'If you cannot confidently add something useful, output nothing.',
+    `Conversation so far:\n${convo || '(no earlier messages)'}\n\n` +
+      `The user is typing this message — continue it from the end:\n${draft}`,
+    32,
+    0.3
+  );
+
+  let s = raw.replace(/^["']|["']$/g, '').replace(/\s+/g, ' ').trim();
+  // Models sometimes echo the draft back; drop a leading copy if present.
+  const d = draft.trim().toLowerCase();
+  if (d && s.toLowerCase().startsWith(d)) s = s.slice(draft.trim().length).trimStart();
+  return s;
+}
+
 /** Answer a question grounded in a set of recent posts. */
 export async function askFeed(question: string, posts: { author: string; content: string }[]): Promise<string> {
   const context = posts.slice(0, 60).map((p, i) => `[${i + 1}] ${p.author}: ${p.content}`).join('\n');
