@@ -85,6 +85,8 @@ COPY lib/lights-out ./lib/lights-out/
 COPY lib/doctrine ./lib/doctrine/
 COPY lib/rmhvibe ./lib/rmhvibe/
 COPY lib/rmhark-ai ./lib/rmhark-ai/
+COPY lib/media ./lib/media/
+COPY lib/storage ./lib/storage/
 COPY lib/prisma.server.ts ./lib/prisma.server.ts
 COPY lib/url.ts ./lib/url.ts
 RUN pnpm exec esbuild \
