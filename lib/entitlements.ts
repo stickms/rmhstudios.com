@@ -39,6 +39,11 @@ export function hasApiAccess(tier: Tier): boolean {
   return TIER_RANK[tier] >= TIER_RANK.starter;
 }
 
+/** Image upload via the developer API — starter and above. */
+export function hasApiImageUpload(tier: Tier): boolean {
+  return TIER_RANK[tier] >= TIER_RANK.starter;
+}
+
 /** Pro and above (incl. enterprise) get the profile badge. */
 export function hasBadge(tier: Tier): boolean {
   return TIER_RANK[tier] >= TIER_RANK.pro;

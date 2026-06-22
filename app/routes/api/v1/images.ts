@@ -4,6 +4,8 @@ import { putObject } from "@/lib/storage/s3.server";
 import { withDeveloperApi, apiJson, apiError, apiOptions } from "@/lib/api/with-developer-api.server";
 import { createMediaFromUpload } from "@/lib/media/upload.server";
 import { MEDIA_MAX_BYTES } from "@/lib/media/policy";
+import { hasApiImageUpload } from "@/lib/entitlements";
+import { keyedLimit, checkDailyUploadQuota } from "@/lib/media/quota.server";
 
 /**
  * POST /api/v1/images — upload one image, get an opaque media_id back.
@@ -15,8 +17,25 @@ export const Route = createFileRoute("/api/v1/images")({
       OPTIONS: () => apiOptions(),
 
       POST: ({ request }) =>
-        withDeveloperApi(request, async ({ userId }) => {
-          // Reject oversize bodies before reading them into memory.
+        withDeveloperApi(request, async ({ userId, tier }) => {
+          // 1. Tier capability gate.
+          if (!hasApiImageUpload(tier)) {
+            return apiError("feature_not_available", "Image upload requires a Starter plan or higher.", 403);
+          }
+
+          // 2. Dedicated tight per-key limit (far below the generic 120/min).
+          const burst = await keyedLimit(`dev-api-image:${userId}`, 15, 60_000);
+          if (!burst.allowed) {
+            return apiError("rate_limited", "Too many uploads. Slow down.", 429, { "Retry-After": String(burst.retryAfter) });
+          }
+
+          // 3. Tier-scaled daily quota.
+          const quota = await checkDailyUploadQuota({ limit: keyedLimit }, { userId, tier });
+          if (!quota.allowed) {
+            return apiError("quota_exceeded", "Daily image upload limit reached.", 429, { "Retry-After": String(quota.retryAfter) });
+          }
+
+          // 4. Reject oversize bodies before reading them into memory.
           const declared = Number(request.headers.get("content-length") ?? "0");
           if (declared > MEDIA_MAX_BYTES) {
             return apiError("payload_too_large", `Image too large. Maximum size is ${MEDIA_MAX_BYTES / 1024 / 1024} MB.`, 413);
