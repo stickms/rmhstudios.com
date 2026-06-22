@@ -45,6 +45,7 @@ type CachedSessionUser = {
   username?: string | null;
   isAdmin?: boolean;
   isVerified?: boolean;
+  tier?: string | null;
 };
 
 function readCachedUser(): CachedSessionUser | null {
@@ -186,6 +187,7 @@ export function Providers({ children, initialUser = null }: ProvidersProps) {
         username: (liveUser as { username?: string | null }).username,
         isAdmin: (liveUser as { isAdmin?: boolean }).isAdmin,
         isVerified: (liveUser as { isVerified?: boolean }).isVerified,
+        tier: (liveUser as { tier?: string | null }).tier,
       };
       writeCachedUser(snapshot);
       setCachedUser(snapshot);

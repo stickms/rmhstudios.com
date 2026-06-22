@@ -234,6 +234,7 @@ import { Route as ApiRmhboxLeaderboardRouteImport } from './routes/api/rmhbox/le
 import { Route as ApiRmhboxHistoryRouteImport } from './routes/api/rmhbox/history'
 import { Route as ApiRmharksImageRouteImport } from './routes/api/rmharks/image'
 import { Route as ApiRmharksAiGenerateRouteImport } from './routes/api/rmharks/ai-generate'
+import { Route as ApiRmharksAiImageRouteImport } from './routes/api/rmharks/ai-image'
 import { Route as ApiRmharksIdRouteImport } from './routes/api/rmharks/$id'
 import { Route as ApiRideshareRidesRouteImport } from './routes/api/rideshare/rides'
 import { Route as ApiRidesharePlacesRouteImport } from './routes/api/rideshare/places'
@@ -1578,6 +1579,11 @@ const ApiRmharksAiGenerateRoute = ApiRmharksAiGenerateRouteImport.update({
   path: '/ai-generate',
   getParentRoute: () => ApiRmharksRoute,
 } as any)
+const ApiRmharksAiImageRoute = ApiRmharksAiImageRouteImport.update({
+  id: '/ai-image',
+  path: '/ai-image',
+  getParentRoute: () => ApiRmharksRoute,
+} as any)
 const ApiRmharksIdRoute = ApiRmharksIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -2909,6 +2915,7 @@ export interface FileRoutesByFullPath {
   '/api/rideshare/rides': typeof ApiRideshareRidesRouteWithChildren
   '/api/rmharks/$id': typeof ApiRmharksIdRouteWithChildren
   '/api/rmharks/ai-generate': typeof ApiRmharksAiGenerateRoute
+  '/api/rmharks/ai-image': typeof ApiRmharksAiImageRoute
   '/api/rmharks/image': typeof ApiRmharksImageRoute
   '/api/rmhbox/history': typeof ApiRmhboxHistoryRoute
   '/api/rmhbox/leaderboard': typeof ApiRmhboxLeaderboardRoute
@@ -3321,6 +3328,7 @@ export interface FileRoutesByTo {
   '/api/rideshare/rides': typeof ApiRideshareRidesRouteWithChildren
   '/api/rmharks/$id': typeof ApiRmharksIdRouteWithChildren
   '/api/rmharks/ai-generate': typeof ApiRmharksAiGenerateRoute
+  '/api/rmharks/ai-image': typeof ApiRmharksAiImageRoute
   '/api/rmharks/image': typeof ApiRmharksImageRoute
   '/api/rmhbox/history': typeof ApiRmhboxHistoryRoute
   '/api/rmhbox/leaderboard': typeof ApiRmhboxLeaderboardRoute
@@ -3759,6 +3767,7 @@ export interface FileRoutesById {
   '/api/rideshare/rides': typeof ApiRideshareRidesRouteWithChildren
   '/api/rmharks/$id': typeof ApiRmharksIdRouteWithChildren
   '/api/rmharks/ai-generate': typeof ApiRmharksAiGenerateRoute
+  '/api/rmharks/ai-image': typeof ApiRmharksAiImageRoute
   '/api/rmharks/image': typeof ApiRmharksImageRoute
   '/api/rmhbox/history': typeof ApiRmhboxHistoryRoute
   '/api/rmhbox/leaderboard': typeof ApiRmhboxLeaderboardRoute
@@ -4197,6 +4206,7 @@ export interface FileRouteTypes {
     | '/api/rideshare/rides'
     | '/api/rmharks/$id'
     | '/api/rmharks/ai-generate'
+    | '/api/rmharks/ai-image'
     | '/api/rmharks/image'
     | '/api/rmhbox/history'
     | '/api/rmhbox/leaderboard'
@@ -4609,6 +4619,7 @@ export interface FileRouteTypes {
     | '/api/rideshare/rides'
     | '/api/rmharks/$id'
     | '/api/rmharks/ai-generate'
+    | '/api/rmharks/ai-image'
     | '/api/rmharks/image'
     | '/api/rmhbox/history'
     | '/api/rmhbox/leaderboard'
@@ -5046,6 +5057,7 @@ export interface FileRouteTypes {
     | '/api/rideshare/rides'
     | '/api/rmharks/$id'
     | '/api/rmharks/ai-generate'
+    | '/api/rmharks/ai-image'
     | '/api/rmharks/image'
     | '/api/rmhbox/history'
     | '/api/rmhbox/leaderboard'
@@ -7063,6 +7075,13 @@ declare module '@tanstack/react-router' {
       path: '/ai-generate'
       fullPath: '/api/rmharks/ai-generate'
       preLoaderRoute: typeof ApiRmharksAiGenerateRouteImport
+      parentRoute: typeof ApiRmharksRoute
+    }
+    '/api/rmharks/ai-image': {
+      id: '/api/rmharks/ai-image'
+      path: '/ai-image'
+      fullPath: '/api/rmharks/ai-image'
+      preLoaderRoute: typeof ApiRmharksAiImageRouteImport
       parentRoute: typeof ApiRmharksRoute
     }
     '/api/rmharks/$id': {
@@ -9215,12 +9234,14 @@ const ApiRmharksIdRouteWithChildren = ApiRmharksIdRoute._addFileChildren(
 interface ApiRmharksRouteChildren {
   ApiRmharksIdRoute: typeof ApiRmharksIdRouteWithChildren
   ApiRmharksAiGenerateRoute: typeof ApiRmharksAiGenerateRoute
+  ApiRmharksAiImageRoute: typeof ApiRmharksAiImageRoute
   ApiRmharksImageRoute: typeof ApiRmharksImageRoute
 }
 
 const ApiRmharksRouteChildren: ApiRmharksRouteChildren = {
   ApiRmharksIdRoute: ApiRmharksIdRouteWithChildren,
   ApiRmharksAiGenerateRoute: ApiRmharksAiGenerateRoute,
+  ApiRmharksAiImageRoute: ApiRmharksAiImageRoute,
   ApiRmharksImageRoute: ApiRmharksImageRoute,
 }
 

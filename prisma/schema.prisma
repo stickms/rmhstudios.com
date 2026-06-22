@@ -3218,3 +3218,11 @@ model Media {
   @@index([postId])
   @@index([userId])
 }
+
+/// Global daily counter for AI image generations (cost guard). One row per UTC day.
+model ImageGenBudget {
+  day   String @id // UTC date, "YYYY-MM-DD"
+  count Int    @default(0)
+
+  @@map("image_gen_budget")
+}
