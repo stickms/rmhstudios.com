@@ -33,6 +33,10 @@ import {
   isRmharkAIConfigured,
 } from '@/lib/rmhark-ai/generate.server';
 import {
+  isImageGenConfigured,
+  generatePostImage,
+} from '@/lib/rmhark-ai/image.server';
+import {
   canBotMessage,
   decideInitiation,
   formatDmHistory,
@@ -61,6 +65,8 @@ const USER_CHECK_MS = intEnv('BOT_USER_CHECK_MS', 2 * 60 * 60 * 1000);
 const POST_TICK_MS = intEnv('BOT_POST_TICK_MS', 5 * 60 * 1000);
 // Most posts we'll create in a single tick (protects the DB + paid API).
 const MAX_POSTS_PER_TICK = intEnv('BOT_MAX_POSTS_PER_TICK', 5);
+// Chance a given bot post also gets an AI-generated image (0..1).
+const BOT_IMAGE_PROBABILITY = probEnv('BOT_IMAGE_PROBABILITY', 0.05);
 
 // ─── Reply behaviour ────────────────────────────────────────────
 // How often bots check for replies to answer (default = same as posting).
@@ -216,8 +222,21 @@ async function postTick(): Promise<void> {
     try {
       const content = await generatePost({ persona: bot.botPersona ?? undefined });
       if (!content.trim()) continue;
+
+      // Occasionally attach an AI-generated image. Never let image failure
+      // block the post — fall back to text-only.
+      let imageUrls: string[] = [];
+      if (isImageGenConfigured() && Math.random() < BOT_IMAGE_PROBABILITY) {
+        try {
+          const imageUrl = await generatePostImage({ text: content, userId: bot.id });
+          if (imageUrl) imageUrls = [imageUrl];
+        } catch (e) {
+          errlog('bot image gen failed:', e);
+        }
+      }
+
       await prisma.rMHark.create({
-        data: { userId: bot.id, content },
+        data: { userId: bot.id, content, ...(imageUrls.length ? { imageUrls } : {}) },
       });
       await prisma.user.update({
         where: { id: bot.id },

@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma.server";
 import { generateHandle } from "@/lib/handle";
 import Stripe from "stripe";
 import { stripe } from "@better-auth/stripe";
+import { customSession } from "better-auth/plugins";
+import { getUserTier } from "@/lib/entitlements";
 
 const stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -117,6 +119,10 @@ export const auth = betterAuth({
                     return referenceId === user.id;
                 },
             },
+        }),
+        customSession(async ({ user, session }) => {
+            const tier = await getUserTier(user.id);
+            return { user: { ...user, tier }, session };
         }),
     ],
 });
