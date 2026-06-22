@@ -407,9 +407,21 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
           <div className="flex items-center gap-1.5 text-sm pr-6">
             {item.user ? (
               <Link to={userProfileHref(item.user)} className="flex items-center gap-1.5 min-w-0 hover:underline">
-              <span className="font-bold text-site-text truncate">
+              <span
+                className="font-bold text-site-text truncate"
+                style={
+                  displayUser?.cosmetics?.nameColor?.gradient
+                    ? { background: displayUser.cosmetics.nameColor.gradient, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }
+                    : displayUser?.cosmetics?.nameColor?.color
+                    ? { color: displayUser.cosmetics.nameColor.color }
+                    : undefined
+                }
+              >
                 {displayUser?.name || 'Unknown'}
               </span>
+              {displayUser?.cosmetics?.badge?.emoji && (
+                <span className="shrink-0" title="Equipped badge">{displayUser.cosmetics.badge.emoji}</span>
+              )}
               {item.user.isVerified && (
                 <BadgeCheck className="w-4 h-4 text-emerald-500 shrink-0" />
               )}

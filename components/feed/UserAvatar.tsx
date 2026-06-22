@@ -32,8 +32,9 @@ export function UserAvatar({ user, size = 'md', linkToProfile = true }: UserAvat
 
   const imgSrc = imgError ? DEFAULT_AVATAR : user.image;
   const showImg = !!imgSrc;
+  const frame = user.cosmetics?.avatarFrame;
 
-  const avatar = (
+  const inner = (
     <div className={`${sizeClasses[size]} rounded-full bg-white/10 flex items-center justify-center text-site-text font-bold shrink-0`}>
       {showImg ? (
         <img
@@ -49,6 +50,15 @@ export function UserAvatar({ user, size = 'md', linkToProfile = true }: UserAvat
         (user.name?.[0] || 'U').toUpperCase()
       )}
     </div>
+  );
+
+  // Equipped avatar frame (cosmetic): a thin gradient/solid ring around the avatar.
+  const avatar = frame ? (
+    <div className="rounded-full p-0.5 shrink-0" style={{ background: frame.gradient ?? frame.color }}>
+      {inner}
+    </div>
+  ) : (
+    inner
   );
 
   if (linkToProfile) {

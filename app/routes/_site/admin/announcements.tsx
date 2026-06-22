@@ -6,6 +6,7 @@ import { PageLayout } from '@/components/feed/PageLayout';
 import { useEffect, useState, useCallback } from 'react';
 import { Megaphone, Loader2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { AIGenerateButton } from '@/components/feed/AIGenerateButton';
 import { toast } from 'sonner';
 
 const getAdminSession = createServerFn({ method: 'GET' }).handler(async () => {
@@ -126,8 +127,28 @@ function AdminAnnouncementsPage() {
 
         {/* Create form */}
         <div className="space-y-3 rounded-xl border border-site-border bg-site-surface p-4">
-          <input className={inputCls} placeholder="Title" value={title} maxLength={120} onChange={(e) => setTitle(e.target.value)} />
-          <textarea className={inputCls} placeholder="Message" rows={3} maxLength={1000} value={body} onChange={(e) => setBody(e.target.value)} />
+          <div className="relative">
+            <input className={`${inputCls} pr-10`} placeholder="Title" value={title} maxLength={120} onChange={(e) => setTitle(e.target.value)} />
+            <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+              <AIGenerateButton
+                size="sm"
+                request={{ mode: 'announcement-title', title, body }}
+                onGenerated={setTitle}
+                title="Generate a title with AI"
+              />
+            </div>
+          </div>
+          <div className="relative">
+            <textarea className={`${inputCls} pr-10`} placeholder="Message" rows={3} maxLength={1000} value={body} onChange={(e) => setBody(e.target.value)} />
+            <div className="absolute right-1.5 top-1.5">
+              <AIGenerateButton
+                size="sm"
+                request={{ mode: 'announcement-body', title, body }}
+                onGenerated={setBody}
+                title="Generate a message with AI"
+              />
+            </div>
+          </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <input className={inputCls} placeholder="Link URL (optional)" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} />
             <input className={inputCls} placeholder="Link label (optional)" value={linkLabel} maxLength={60} onChange={(e) => setLinkLabel(e.target.value)} />
