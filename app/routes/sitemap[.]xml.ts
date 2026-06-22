@@ -50,6 +50,7 @@ export const Route = createFileRoute('/sitemap.xml')({
           { loc: '/news', changefreq: 'daily', priority: 0.8 },
           { loc: '/blog', changefreq: 'weekly', priority: 0.8 },
           { loc: '/research', changefreq: 'weekly', priority: 0.6 },
+          { loc: '/deeplink', changefreq: 'weekly', priority: 0.7 },
           { loc: '/user-builds', changefreq: 'daily', priority: 0.7 },
           { loc: '/pricing', changefreq: 'monthly', priority: 0.5 },
           { loc: '/privacy', changefreq: 'yearly', priority: 0.2 },
