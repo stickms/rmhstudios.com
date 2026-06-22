@@ -27,6 +27,8 @@ package botworker
 
 import (
 	"context"
+	crand "crypto/rand"
+	"encoding/binary"
 	"fmt"
 	"strings"
 	"time"
@@ -222,18 +224,22 @@ func (r *PGRepo) UpdateBotLastPostAt(ctx context.Context, userID string) (err er
 // cuid() format. We use a time-based hex string prefixed with 'c' to match the
 // pattern (length ~25 chars). This is used when bypassing Prisma's cuid generator.
 func newCUID() string {
-	// Use nanosecond time + random component for uniqueness.
-	// Format: c + timestamp_base36 + random_suffix = ~25 chars
+	// Use nanosecond time + a crypto-random suffix for uniqueness, so two calls
+	// in the same nanosecond do not collide on a primary-key ID.
+	// Format: c + timestamp_hex + random_suffix_hex = ~25 chars.
 	now := time.Now().UnixNano()
-	// Encode as hex with 'c' prefix to loosely match cuid pattern.
-	// Note: a full cuid spec is complex; this is compatible enough for our tests.
-	return fmt.Sprintf("c%016x%08x", now, pseudoRand())
+	return fmt.Sprintf("c%016x%08x", now, randSuffix())
 }
 
-// pseudoRand returns a cheap pseudo-random 32-bit value from the current time.
-func pseudoRand() uint32 {
-	t := time.Now().UnixNano()
-	return uint32(t>>32) ^ uint32(t)
+// randSuffix returns a 32-bit value from crypto/rand. On the unlikely read
+// error it falls back to a time-derived value so it never panics.
+func randSuffix() uint32 {
+	var b [4]byte
+	if _, err := crand.Read(b[:]); err != nil {
+		t := time.Now().UnixNano()
+		return uint32(t>>32) ^ uint32(t)
+	}
+	return binary.BigEndian.Uint32(b[:])
 }
 
 // assemblePost builds the in-character post text from a persona and generated

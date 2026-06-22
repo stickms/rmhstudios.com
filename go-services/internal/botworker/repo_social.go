@@ -77,8 +77,10 @@ SELECT p.id, p.content, p."userId", o.content AS quoted
  LIMIT 20`
 
 // botsExceptQuery returns bot users other than a given author, with persona.
+// An empty $1 means "no exclusion" (all bots) — made explicit so it does not
+// rely on the accident that no real CUID equals the empty string.
 const botsExceptQuery = `
-SELECT id, COALESCE("botPersona", '') FROM "user" WHERE "isBot" = true AND id <> $1`
+SELECT id, COALESCE("botPersona", '') FROM "user" WHERE "isBot" = true AND ($1 = '' OR id <> $1)`
 
 // commentersOnPostQuery returns the user ids that already commented on a post.
 const commentersOnPostQuery = `

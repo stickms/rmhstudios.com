@@ -477,10 +477,3 @@ var voices = []string{
 
 func randomTheme() string { return themes[rand.Intn(len(themes))] }
 func randomVoice() string  { return voices[rand.Intn(len(voices))] }
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}

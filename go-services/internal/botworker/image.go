@@ -9,8 +9,7 @@ package botworker
 // block a post (mirrors the Node "returns null on any failure" contract).
 //
 // Budget table: ImageGenBudget @@map("image_gen_budget"); columns: day (PK), count.
-// Storage: mirrors the Node LOCAL fallback (LOCAL_STORAGE_DIR or ".uploads").
-// The S3 path from s3.server.ts is NOT ported (no AWS SDK in go.mod) — see report.
+// Storage backends (S3 + local fallback) live in storage.go.
 
 import (
 	"bytes"
