@@ -209,7 +209,7 @@ export function LocationSearch({
       {error && <p className="mt-1 text-xs text-red-400">{error}</p>}
 
       {open && results.length > 0 && !value && (
-        <ul className="absolute z-30 mt-1 max-h-64 w-full overflow-auto rounded-lg border border-site-border-bright bg-site-surface shadow-2xl ring-1 ring-black/40">
+        <ul className="absolute z-30 mt-1 max-h-64 w-full overflow-auto rounded-lg border border-site-border-bright bg-site-surface/90 shadow-2xl ring-1 ring-black/40 backdrop-blur-md">
           {results.map((r, i) => (
             <li key={`${r.lat},${r.lng},${i}`} className="border-b border-site-border/60 last:border-0">
               <button
