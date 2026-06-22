@@ -122,6 +122,41 @@ export async function generatePost(opts: {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Image prompts                                                      */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Turn a finished post into a concise, literal text-to-image prompt for the
+ * image model. Kept deliberately safe and brand/person-free to minimize
+ * provider refusals. Used by lib/rmhark-ai/image.server.ts.
+ */
+export async function generateImagePrompt(postText: string): Promise<string> {
+  const text = postText.trim().slice(0, 600);
+
+  const system = [
+    'You turn a short social-media post into a prompt for a text-to-image model.',
+    'Output ONE vivid, literal visual description of a single image that fits the post.',
+    'Rules: under 40 words. Describe the subject, setting, style, and mood.',
+    'Do NOT put any text or words in the image. Do NOT depict real, named people, celebrities, brands, or logos.',
+    'Keep it safe-for-work and non-violent.',
+    'Output ONLY the image prompt — no quotes, no labels, no markdown.',
+  ].join('\n');
+
+  const user = text
+    ? `Post:\n"""${text}"""\n\nWrite the image prompt.`
+    : 'Write a tasteful, interesting image prompt for a generic lifestyle social post.';
+
+  const raw = await chat(
+    [
+      { role: 'system', content: system },
+      { role: 'user', content: user },
+    ],
+    { maxTokens: 120, temperature: 0.9 },
+  );
+  return cleanGeneratedText(raw, 300);
+}
+
+/* ------------------------------------------------------------------ */
 /*  Replies                                                            */
 /* ------------------------------------------------------------------ */
 
