@@ -12,10 +12,6 @@
 package main
 
 import (
-	"context"
-	"net/http"
-	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/rmhstudios/rmh-go/internal/vibeworker"
@@ -24,6 +20,7 @@ import (
 	"github.com/rmhstudios/rmh-go/pkg/httpx"
 	"github.com/rmhstudios/rmh-go/pkg/log"
 	"github.com/rmhstudios/rmh-go/pkg/telemetry"
+	"github.com/rmhstudios/rmh-go/pkg/worker"
 )
 
 func main() {
@@ -33,7 +30,7 @@ func main() {
 		logger.Fatal("config", "error", err)
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := httpx.SignalContext()
 	defer cancel()
 
 	database, err := db.WaitForReachable(ctx, cfg.DatabaseURL, 10, 5*time.Second)
@@ -43,34 +40,9 @@ func main() {
 	defer database.Close()
 
 	metrics := telemetry.New("vibe-worker")
+	httpx.ServeMetrics(cfg.MetricsAddr, "vibe-worker", metrics.Handler(), logger)
 
-	// Metrics + health only; no client HTTP for this worker. A bind failure must
-	// be fatal — otherwise the pod stays up but unprobeable, so k8s never restarts
-	// it.
-	go func() {
-		mux := http.NewServeMux()
-		mux.HandleFunc("/health", httpx.Health("vibe-worker", nil))
-		mux.Handle("/metrics", metrics.Handler())
-		if err := http.ListenAndServe(cfg.MetricsAddr, mux); err != nil {
-			logger.Fatal("metrics server", "error", err)
-		}
-	}()
-
-	// THUMB_DIR = <cwd>/db/vibe-thumbs (the shared volume the web app serves at
-	// /api/vibe/thumb/{slug}), matching lib/rmhvibe/vibe-thumbs.ts.
-	cwd, err := os.Getwd()
-	if err != nil {
-		logger.Fatal("cwd", "error", err)
+	if err := vibeworker.Run(ctx, worker.Deps{DB: database, Logger: logger, Metrics: metrics, Cfg: cfg}); err != nil {
+		logger.Error("run", "error", err)
 	}
-	thumbDir := filepath.Join(cwd, "db", "vibe-thumbs")
-	execPath := os.Getenv("PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH")
-
-	capturer := vibeworker.NewChromedpCapturer(thumbDir, execPath)
-	w := vibeworker.New(database, capturer, logger, metrics)
-	w.Start(ctx)
-
-	httpx.WaitForSignal()
-	logger.Info("vibe-worker shutting down")
-	cancel()
-	w.Stop()
 }
