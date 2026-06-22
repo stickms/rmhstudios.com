@@ -240,6 +240,22 @@ export const games: GameInfo[] = [
         imagePath: '/images/games/Kowloon-Knockout.webp',
         authGate: false,
     },
+    {
+        id: 'rmh-coding-simulator',
+        title: 'RMH Coding Simulator',
+        description: 'A deep idle clicker where you write Lines of Code, hire AI developers, ship products, and IPO your studio. Features an AI Architect powered by DeepSeek.',
+        longDescription:
+            'Simulate life as an RMH developer in this two-layer-prestige incremental game. Write Lines of Code by hand, hire 14 tiers of auto-coders from Interns to The Codeverse, snag floating Golden Commits for frenzy buffs, and unlock 130+ upgrades. Ship products for Reputation, spend it on a permanent skill tree, then IPO your studio for Equity in a deep endgame with 200+ hours of progression. Chat with ARCH-1, your in-character AI Architect powered by DeepSeek, and generate live sprint buffs.',
+        href: '/rmh-coding-simulator',
+        cta: 'Start Coding',
+        isSteam: false,
+        gradient: 'from-emerald-500 to-cyan-500',
+        iconName: 'Code2',
+        color: 'from-emerald-500/20 to-cyan-500/20 hover:border-emerald-500/50',
+        tags: ['Idle', 'Clicker', 'Prestige', 'AI'],
+        imagePath: '/images/games/rmh_coding_simulator.svg',
+        authGate: false,
+    },
 ];
 
 

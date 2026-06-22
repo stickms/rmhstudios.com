@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VoidBreakerRouteImport } from './routes/void-breaker'
+import { Route as RmhCodingSimulatorRouteImport } from './routes/rmh-coding-simulator'
 import { Route as VersecraftRouteImport } from './routes/versecraft'
 import { Route as Velum2099RouteImport } from './routes/velum2099'
 import { Route as TermsRouteImport } from './routes/terms'
@@ -420,6 +421,11 @@ import { Route as ApiRmharksIdCommentCommentIdLikeRouteImport } from './routes/a
 const VoidBreakerRoute = VoidBreakerRouteImport.update({
   id: '/void-breaker',
   path: '/void-breaker',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RmhCodingSimulatorRoute = RmhCodingSimulatorRouteImport.update({
+  id: '/rmh-coding-simulator',
+  path: '/rmh-coding-simulator',
   getParentRoute: () => rootRouteImport,
 } as any)
 const VersecraftRoute = VersecraftRouteImport.update({
@@ -2540,6 +2546,7 @@ export interface FileRoutesByFullPath {
   '/velum2099': typeof Velum2099Route
   '/versecraft': typeof VersecraftRouteWithChildren
   '/void-breaker': typeof VoidBreakerRoute
+  '/rmh-coding-simulator': typeof RmhCodingSimulatorRoute
   '/admin': typeof SiteAdminRouteRouteWithChildren
   '/achievements': typeof SiteAchievementsRoute
   '/bookmarks': typeof SiteBookmarksRoute
@@ -2930,6 +2937,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/velum2099': typeof Velum2099Route
   '/void-breaker': typeof VoidBreakerRoute
+  '/rmh-coding-simulator': typeof RmhCodingSimulatorRoute
   '/achievements': typeof SiteAchievementsRoute
   '/bookmarks': typeof SiteBookmarksRoute
   '/clips': typeof SiteClipsRoute
@@ -3334,6 +3342,7 @@ export interface FileRoutesById {
   '/velum2099': typeof Velum2099Route
   '/versecraft': typeof VersecraftRouteWithChildren
   '/void-breaker': typeof VoidBreakerRoute
+  '/rmh-coding-simulator': typeof RmhCodingSimulatorRoute
   '/_site/admin': typeof SiteAdminRouteRouteWithChildren
   '/_site/achievements': typeof SiteAchievementsRoute
   '/_site/bookmarks': typeof SiteBookmarksRoute
@@ -3745,6 +3754,7 @@ export interface FileRouteTypes {
     | '/velum2099'
     | '/versecraft'
     | '/void-breaker'
+    | '/rmh-coding-simulator'
     | '/admin'
     | '/achievements'
     | '/bookmarks'
@@ -4135,6 +4145,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/velum2099'
     | '/void-breaker'
+    | '/rmh-coding-simulator'
     | '/achievements'
     | '/bookmarks'
     | '/clips'
@@ -4538,6 +4549,7 @@ export interface FileRouteTypes {
     | '/velum2099'
     | '/versecraft'
     | '/void-breaker'
+    | '/rmh-coding-simulator'
     | '/_site/admin'
     | '/_site/achievements'
     | '/_site/bookmarks'
@@ -4948,6 +4960,7 @@ export interface RootRouteChildren {
   Velum2099Route: typeof Velum2099Route
   VersecraftRoute: typeof VersecraftRouteWithChildren
   VoidBreakerRoute: typeof VoidBreakerRoute
+  RmhCodingSimulatorRoute: typeof RmhCodingSimulatorRoute
   ApiAnnouncementsRoute: typeof ApiAnnouncementsRoute
   ApiBookmarksRoute: typeof ApiBookmarksRoute
   ApiExploreRoute: typeof ApiExploreRoute
@@ -5146,6 +5159,13 @@ declare module '@tanstack/react-router' {
       path: '/void-breaker'
       fullPath: '/void-breaker'
       preLoaderRoute: typeof VoidBreakerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rmh-coding-simulator': {
+      id: '/rmh-coding-simulator'
+      path: '/rmh-coding-simulator'
+      fullPath: '/rmh-coding-simulator'
+      preLoaderRoute: typeof RmhCodingSimulatorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/versecraft': {
@@ -8814,6 +8834,7 @@ const rootRouteChildren: RootRouteChildren = {
   Velum2099Route: Velum2099Route,
   VersecraftRoute: VersecraftRouteWithChildren,
   VoidBreakerRoute: VoidBreakerRoute,
+  RmhCodingSimulatorRoute: RmhCodingSimulatorRoute,
   ApiAnnouncementsRoute: ApiAnnouncementsRoute,
   ApiBookmarksRoute: ApiBookmarksRoute,
   ApiExploreRoute: ApiExploreRoute,
