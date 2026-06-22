@@ -14,13 +14,14 @@
  * the main web app, so the status page stays up even if the web app is down.
  *
  * Probing model:
- *   - The web app is deployed blue/green by deploy/hotswap-web.sh and publishes
- *     its port on the host LOOPBACK only (127.0.0.1), so it is NOT reachable via
- *     host.docker.internal. It IS reachable by container name on the shared
- *     compose network — the active container is ${PROJECT}-web-blue (port
- *     PORT_WEB) or ${PROJECT}-web-green (port PORT_WEB_GREEN), so we probe both.
- *   - The other services share the compose network and are reached by their
- *     compose DNS name (socket, rmhbox, …).
+ *   - The web app is probed via its PUBLIC URL (https://rmhstudios.com) so the
+ *     status reflects what real users hit: DNS → Apache → the active blue/green
+ *     container. Probing the container directly by name would report "up" even
+ *     when the public site is actually broken (bad Apache vhost, a hotswap
+ *     pointed at a dead port, TLS/DNS issues), so it must go through the front
+ *     door. Override the probed origin with STATUS_WEBSITE_URL.
+ *   - The other (internal, non-public) services share the compose network and
+ *     are reached by their compose DNS name (socket, rmhbox, …).
  *
  * Uptime history is bucketed and persisted to the db/ volume so the percentage
  * bars survive restarts/redeploys (see HISTORY_FILE).
@@ -39,12 +40,11 @@ const PORT = parseInt(process.env.STATUS_PORT ?? '7008', 10);
 const PROBE_INTERVAL_MS = parseInt(process.env.STATUS_PROBE_INTERVAL_MS ?? '15000', 10);
 const PROBE_TIMEOUT_MS = parseInt(process.env.STATUS_PROBE_TIMEOUT_MS ?? '4000', 10);
 
-// Compose project (e.g. "rmhstudios-prod"). Used to address the blue/green web
-// containers by name on the shared compose network.
-const PROJECT = process.env.COMPOSE_PROJECT_NAME ?? 'rmhstudios';
+// Probe the web app through its public origin (DNS → Apache → active blue/green
+// container) so the status reflects the real user path, not just whether a
+// container is alive. Override for local/staging via STATUS_WEBSITE_URL.
+const WEBSITE_URL = process.env.STATUS_WEBSITE_URL ?? 'https://rmhstudios.com/';
 
-const PORT_WEB = process.env.PORT_WEB ?? '7005';
-const PORT_WEB_GREEN = process.env.PORT_WEB_GREEN ?? String(parseInt(PORT_WEB, 10) + 10);
 const PORT_SOCKET = process.env.PORT_SOCKET ?? '7001';
 const PORT_RMHBOX = process.env.PORT_RMHBOX ?? '7676';
 const PORT_RMHTUBE = process.env.PORT_RMHTUBE ?? '7003';
@@ -75,13 +75,9 @@ const DEFAULT_SERVICES: ServiceProbe[] = [
         name: 'Website',
         description: 'Main rmhstudios.com web app',
         kind: 'http',
-        urls: [
-            // Active blue/green container (one is live at a time).
-            `http://${PROJECT}-web-blue:${PORT_WEB}/`,
-            `http://${PROJECT}-web-green:${PORT_WEB_GREEN}/`,
-            // Fallback for a non-hotswap `compose up` web container.
-            `http://${PROJECT}-web:${PORT_WEB}/`,
-        ],
+        // Public origin only: a broken front door (Apache/DNS/TLS, or a hotswap
+        // pointed at a dead port) must show as down even if a container is up.
+        urls: [WEBSITE_URL],
     },
     {
         name: 'Realtime / Games',
