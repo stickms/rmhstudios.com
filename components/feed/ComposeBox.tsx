@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Plus, BarChart3, Image, X, ImagePlus, Globe, Users, Lock, Unlock, EyeOff, FileText, CalendarClock, Check } from 'lucide-react';
 import { GifEmbed } from './GifEmbed';
 import { AIGenerateButton } from './AIGenerateButton';
+import { AIImageButton } from './AIImageButton';
 import { ComposeAssist } from './ComposeAssist';
 import { MentionTextarea } from './MentionTextarea';
 import { useSession, useResolvedUser } from '@/components/Providers';
@@ -89,6 +90,10 @@ export function ComposeBox({
   }
 
   const { data: session } = useSession();
+  // Starter and above can generate images. Server re-enforces this.
+  const userTier = (session?.user as { tier?: string } | undefined)?.tier;
+  const canGenerateImage =
+    userTier === 'starter' || userTier === 'pro' || userTier === 'enterprise';
   const { resolved: resolvedUser } = useResolvedUser();
   const remaining = MAX_RMHARK_LENGTH - content.length;
 
@@ -543,6 +548,17 @@ export function ComposeBox({
                 onGenerated={(text) => setContent(text)}
                 title="Generate a post with AI"
               />
+
+              {/* AI image button (Starter+) */}
+              {canGenerateImage && (
+                <AIImageButton
+                  draft={content}
+                  disabled={imageUrls.length >= MAX_IMAGES}
+                  onGenerated={(url) =>
+                    setImageUrls((prev) => [...prev, url].slice(0, MAX_IMAGES))
+                  }
+                />
+              )}
 
               {/* Image upload button */}
               <button
