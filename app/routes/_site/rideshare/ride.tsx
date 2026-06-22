@@ -11,15 +11,20 @@ import {
   Car,
   CheckCircle2,
   LogIn,
+  CalendarClock,
+  Clock,
+  XCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useSession } from '@/components/Providers';
-import { LocationSearch } from '@/components/rideshare/LocationSearch';
+import { LocationSearch, type SavedPlaceOption } from '@/components/rideshare/LocationSearch';
 import { RideMap } from '@/components/rideshare/RideMap';
 import { RideClassPicker } from '@/components/rideshare/RideClassPicker';
 import { FareBreakdown } from '@/components/rideshare/FareBreakdown';
 import { ActiveRidePanel } from '@/components/rideshare/ActiveRidePanel';
+import { SavedPlaces } from '@/components/rideshare/SavedPlaces';
 import {
   estimateFareCents,
   formatDistance,
@@ -50,16 +55,18 @@ interface RidePerson {
 interface Ride {
   id: string;
   rideClass: string;
-  status: 'REQUESTED' | 'ACCEPTED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  status: 'SCHEDULED' | 'REQUESTED' | 'ACCEPTED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
   pickupLabel: string;
   dropoffLabel: string;
   distanceMeters: number | null;
   durationSeconds: number | null;
   requestedAt: string;
+  scheduledFor: string | null;
   driver: (RidePerson & { rideshareDriver: RideVehicle | null }) | null;
 }
 
 const STATUS_META: Record<Ride['status'], { label: string; className: string }> = {
+  SCHEDULED: { label: 'Scheduled', className: 'text-sky-400 bg-sky-400/10' },
   REQUESTED: { label: 'Finding a driver', className: 'text-amber-400 bg-amber-400/10' },
   ACCEPTED: { label: 'Driver on the way', className: 'text-sky-400 bg-sky-400/10' },
   IN_PROGRESS: { label: 'On your trip', className: 'text-site-accent bg-site-accent/10' },
@@ -69,6 +76,12 @@ const STATUS_META: Record<Ride['status'], { label: string; className: string }> 
 
 const ACTIVE = new Set<Ride['status']>(['REQUESTED', 'ACCEPTED', 'IN_PROGRESS']);
 
+/** Minimum selectable datetime-local value (now + 5 min), in local time. */
+function minScheduleValue(): string {
+  const d = new Date(Date.now() + 5 * 60 * 1000 - new Date().getTimezoneOffset() * 60 * 1000);
+  return d.toISOString().slice(0, 16);
+}
+
 function RequestRidePage() {
   const { data: session, isPending } = useSession();
 
@@ -76,6 +89,8 @@ function RequestRidePage() {
   const [dropoff, setDropoff] = useState<RidePlace | null>(null);
   const [rideClass, setRideClass] = useState<RideClassId>('RMH_X');
   const [notes, setNotes] = useState('');
+  const [scheduleMode, setScheduleMode] = useState(false);
+  const [scheduledFor, setScheduledFor] = useState('');
 
   const [routeInfo, setRouteInfo] = useState<{ distanceMeters: number; durationSeconds: number } | null>(null);
   const [routing, setRouting] = useState(false);
@@ -83,6 +98,7 @@ function RequestRidePage() {
 
   const [rides, setRides] = useState<Ride[]>([]);
   const [loadingRides, setLoadingRides] = useState(true);
+  const [savedPlaces, setSavedPlaces] = useState<SavedPlaceOption[]>([]);
 
   const loadRides = useCallback(async () => {
     try {
@@ -96,10 +112,30 @@ function RequestRidePage() {
     }
   }, []);
 
+  const loadPlaces = useCallback(async () => {
+    const res = await fetch('/api/rideshare/places');
+    if (res.ok) {
+      const data = await res.json();
+      setSavedPlaces(
+        (data.places ?? []).map((p: { id: string; label: string; address: string; lat: number; lng: number }) => ({
+          id: p.id,
+          savedLabel: p.label,
+          label: p.address,
+          lat: p.lat,
+          lng: p.lng,
+        })),
+      );
+    }
+  }, []);
+
   useEffect(() => {
-    if (session) loadRides();
-    else setLoadingRides(false);
-  }, [session, loadRides]);
+    if (session) {
+      loadRides();
+      loadPlaces();
+    } else {
+      setLoadingRides(false);
+    }
+  }, [session, loadRides, loadPlaces]);
 
   // Fetch road distance/duration whenever both endpoints are set.
   useEffect(() => {
@@ -153,6 +189,10 @@ function RequestRidePage() {
       toast.error('Please set both a pickup and a drop-off.');
       return;
     }
+    if (scheduleMode && !scheduledFor) {
+      toast.error('Pick a date and time for your scheduled ride.');
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await fetch('/api/rideshare/rides', {
@@ -167,6 +207,7 @@ function RequestRidePage() {
           dropoffLat: dropoff.lat,
           dropoffLng: dropoff.lng,
           notes: notes.trim() || undefined,
+          scheduledFor: scheduleMode && scheduledFor ? new Date(scheduledFor).toISOString() : undefined,
         }),
       });
       const data = await res.json();
@@ -174,16 +215,35 @@ function RequestRidePage() {
         toast.error(data.error || 'Could not request your ride.');
         return;
       }
-      toast.success('Ride requested! Hang tight while we find a driver.');
+      toast.success(
+        scheduleMode ? 'Ride scheduled! We’ll match a driver near your pickup time.' : 'Ride requested! Hang tight while we find a driver.',
+      );
       setPickup(null);
       setDropoff(null);
       setNotes('');
       setRouteInfo(null);
+      setScheduleMode(false);
+      setScheduledFor('');
       loadRides();
     } catch {
       toast.error('Something went wrong. Please try again.');
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function cancelScheduled(id: string) {
+    const res = await fetch(`/api/rideshare/rides/${id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'cancel' }),
+    });
+    if (res.ok) {
+      toast.success('Scheduled ride cancelled.');
+      loadRides();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      toast.error(data.error || 'Could not cancel.');
     }
   }
 
@@ -216,7 +276,8 @@ function RequestRidePage() {
     );
   }
 
-  const pastRides = rides.filter((r) => r.id !== focusRideId);
+  const upcomingRides = rides.filter((r) => r.status === 'SCHEDULED');
+  const pastRides = rides.filter((r) => r.id !== focusRideId && r.status !== 'SCHEDULED');
 
   return (
     <PageLayout title="Request a ride" wide>
@@ -245,6 +306,7 @@ function RequestRidePage() {
                     onSelect={setPickup}
                     dotClassName="bg-emerald-400"
                     placeholder="Enter pickup location"
+                    savedPlaces={savedPlaces}
                   />
                   <LocationSearch
                     label="Drop-off"
@@ -252,6 +314,7 @@ function RequestRidePage() {
                     onSelect={setDropoff}
                     dotClassName="bg-site-accent"
                     placeholder="Enter destination"
+                    savedPlaces={savedPlaces}
                   />
                 </div>
 
@@ -289,27 +352,97 @@ function RequestRidePage() {
                 />
               </div>
 
+              {/* Schedule for later */}
+              <div className="rounded-2xl border border-site-border bg-site-surface/40 p-5">
+                <label className="flex cursor-pointer items-center justify-between gap-3">
+                  <span className="flex items-center gap-2 text-sm font-medium text-site-text">
+                    <CalendarClock className="h-4 w-4 text-site-accent" /> Schedule for later
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={scheduleMode}
+                    onChange={(e) => setScheduleMode(e.target.checked)}
+                    className="h-4 w-4 accent-(--site-accent)"
+                  />
+                </label>
+                {scheduleMode && (
+                  <input
+                    type="datetime-local"
+                    value={scheduledFor}
+                    min={minScheduleValue()}
+                    onChange={(e) => setScheduledFor(e.target.value)}
+                    className="mt-3 w-full rounded-lg border border-site-border bg-site-surface px-3 py-2 text-sm text-site-text outline-none transition-colors focus:border-site-accent/60"
+                  />
+                )}
+              </div>
+
               <button
                 onClick={submit}
                 disabled={submitting || !pickup || !dropoff}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-site-accent px-6 py-3 text-sm font-semibold text-(--site-accent-fg) transition-all hover:bg-(--site-accent-hover) disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Car className="h-4 w-4" />}
-                {`Request ${rideClassName(rideClass)}`}
+                {submitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : scheduleMode ? (
+                  <CalendarClock className="h-4 w-4" />
+                ) : (
+                  <Car className="h-4 w-4" />
+                )}
+                {scheduleMode ? `Schedule ${rideClassName(rideClass)}` : `Request ${rideClassName(rideClass)}`}
               </button>
             </div>
 
-            {/* Right: live map preview */}
-            <div className="lg:sticky lg:top-20 lg:self-start">
-              <RideMap pickup={pickup} dropoff={dropoff} className="h-[28rem]" />
+            {/* Right: live map preview + saved places */}
+            <div className="space-y-5 lg:sticky lg:top-20 lg:self-start">
+              <RideMap pickup={pickup} dropoff={dropoff} className="h-80" />
+              <SavedPlaces places={savedPlaces} onChanged={loadPlaces} />
             </div>
+          </div>
+        )}
+
+        {/* Upcoming scheduled rides */}
+        {upcomingRides.length > 0 && (
+          <div>
+            <h2 className="mb-3 flex items-center gap-2 text-lg font-bold text-site-text">
+              <CalendarClock className="h-5 w-5 text-site-accent" /> Upcoming rides
+            </h2>
+            <ul className="space-y-3">
+              {upcomingRides.map((ride) => (
+                <motion.li
+                  key={ride.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center justify-between gap-3 rounded-xl border border-site-border bg-site-surface/40 p-4"
+                >
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-site-text">
+                      {rideClassName(ride.rideClass)}
+                      {ride.scheduledFor && (
+                        <span className="flex items-center gap-1 text-xs font-normal text-site-accent">
+                          <Clock className="h-3 w-3" /> {format(new Date(ride.scheduledFor), 'EEE d MMM, h:mm a')}
+                        </span>
+                      )}
+                    </div>
+                    <div className="truncate text-xs text-site-text-muted" title={`${ride.pickupLabel} → ${ride.dropoffLabel}`}>
+                      {ride.pickupLabel} → {ride.dropoffLabel}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => cancelScheduled(ride.id)}
+                    className="flex shrink-0 items-center gap-1 text-xs text-red-400 transition-colors hover:text-red-300"
+                  >
+                    <XCircle className="h-3.5 w-3.5" /> Cancel
+                  </button>
+                </motion.li>
+              ))}
+            </ul>
           </div>
         )}
 
         {/* Ride history */}
         <div>
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-bold text-site-text">Your rides</h2>
+            <h2 className="text-lg font-bold text-site-text">Ride history</h2>
             <button onClick={loadRides} className="text-xs text-site-accent hover:underline">
               Refresh
             </button>
@@ -321,7 +454,7 @@ function RequestRidePage() {
             </div>
           ) : pastRides.length === 0 ? (
             <p className="rounded-xl border border-dashed border-site-border px-4 py-8 text-center text-sm text-site-text-muted">
-              {focusRideId ? 'Your trip history will appear here.' : 'No rides yet. Request your first ride!'}
+              {focusRideId || upcomingRides.length > 0 ? 'Your past trips will appear here.' : 'No rides yet. Request your first ride!'}
             </p>
           ) : (
             <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">

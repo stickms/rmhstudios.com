@@ -1,13 +1,18 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Loader2, MapPin, X } from 'lucide-react';
+import { Loader2, MapPin, X, Star } from 'lucide-react';
 import type { RidePlace } from '@/lib/rideshare/geo';
 
 interface GeocodeResult {
   label: string;
   lat: number;
   lng: number;
+}
+
+export interface SavedPlaceOption extends RidePlace {
+  id: string;
+  savedLabel: string;
 }
 
 interface LocationSearchProps {
@@ -17,6 +22,8 @@ interface LocationSearchProps {
   onSelect: (place: RidePlace | null) => void;
   /** Accent dot colour for the field. */
   dotClassName?: string;
+  /** Saved places offered as quick picks before the user types. */
+  savedPlaces?: SavedPlaceOption[];
 }
 
 export function LocationSearch({
@@ -25,6 +32,7 @@ export function LocationSearch({
   value,
   onSelect,
   dotClassName = 'bg-site-accent',
+  savedPlaces,
 }: LocationSearchProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<GeocodeResult[]>([]);
@@ -110,21 +118,39 @@ export function LocationSearch({
           </button>
         </div>
       ) : (
-        <div className="relative">
-          <span className={`absolute left-3 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full ${dotClassName}`} />
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onFocus={() => results.length && setOpen(true)}
-            placeholder={placeholder ?? 'Search for an address or place'}
-            className="w-full rounded-lg border border-site-border bg-site-surface py-2 pl-8 pr-9 text-sm text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60"
-            autoComplete="off"
-          />
-          {loading && (
-            <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-site-text-muted" />
+        <>
+          <div className="relative">
+            <span className={`absolute left-3 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full ${dotClassName}`} />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onFocus={() => results.length && setOpen(true)}
+              placeholder={placeholder ?? 'Search for an address or place'}
+              className="w-full rounded-lg border border-site-border bg-site-surface py-2 pl-8 pr-9 text-sm text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60"
+              autoComplete="off"
+            />
+            {loading && (
+              <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-site-text-muted" />
+            )}
+          </div>
+
+          {/* Saved-place quick picks (before typing) */}
+          {savedPlaces && savedPlaces.length > 0 && query.trim().length < 3 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {savedPlaces.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => choose(p)}
+                  className="inline-flex items-center gap-1 rounded-full border border-site-border bg-site-surface px-2.5 py-1 text-xs text-site-text transition-colors hover:border-site-accent/50 hover:text-site-accent"
+                >
+                  <Star className="h-3 w-3 text-amber-400" /> {p.savedLabel}
+                </button>
+              ))}
+            </div>
           )}
-        </div>
+        </>
       )}
 
       {error && <p className="mt-1 text-xs text-red-400">{error}</p>}

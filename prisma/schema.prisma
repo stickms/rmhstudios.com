@@ -228,6 +228,7 @@ model User {
   ridesRequested        Ride[]            @relation("RideRider")
   ridesDriven           Ride[]            @relation("RideDriver")
   rideMessages          RideMessage[]
+  rideSavedPlaces       RideSavedPlace[]
 
   @@index([isBot])
   @@map("user")
@@ -3050,6 +3051,7 @@ enum DriverApplicationStatus {
 }
 
 enum RideStatus {
+  SCHEDULED
   REQUESTED
   ACCEPTED
   IN_PROGRESS
@@ -3121,10 +3123,14 @@ model Ride {
   dropoffLat   Float
   dropoffLng   Float
 
-  // Trip estimate (rides are currently free, fare stored for reference only)
+  // Trip estimate. Rides are free, so `estimatedFareCents` is the indicative
+  // (waived) quote kept for history, value-delivered stats and future payouts.
   distanceMeters   Int?
   durationSeconds  Int?
   estimatedFareCents Int @default(0)
+
+  // Set when the rider books a trip for later (status starts as SCHEDULED).
+  scheduledFor DateTime?
 
   notes String? @db.VarChar(500)
 
@@ -3162,4 +3168,20 @@ model RideMessage {
   @@index([rideId, createdAt])
   @@index([senderId])
   @@map("ride_message")
+}
+
+model RideSavedPlace {
+  id      String @id @default(cuid())
+  userId  String
+  label   String @db.VarChar(40)
+  address String @db.VarChar(300)
+  lat     Float
+  lng     Float
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("ride_saved_place")
 }

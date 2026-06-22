@@ -45,14 +45,23 @@ export const Route = createFileRoute('/api/rideshare/rides/$id')({
             if (!driver || driver.status !== 'APPROVED') {
               return Response.json({ error: 'You must be an approved driver.' }, { status: 403 });
             }
-            // Guard against races: only claim if still open.
+            // Guard against races: only claim if still open. Scheduled rides
+            // are claimable once they enter the 60-minute lead window.
+            const leadDate = new Date(Date.now() + 60 * 60 * 1000);
             const result = await prisma.ride.updateMany({
-              where: { id: rideId, status: 'REQUESTED', driverId: null },
+              where: {
+                id: rideId,
+                driverId: null,
+                OR: [
+                  { status: 'REQUESTED' },
+                  { status: 'SCHEDULED', scheduledFor: { lte: leadDate } },
+                ],
+              },
               data: { driverId: userId, status: 'ACCEPTED', acceptedAt: new Date() },
             });
             if (result.count === 0) {
               return Response.json(
-                { error: 'This ride has already been claimed.' },
+                { error: 'This ride isn’t available to accept yet.' },
                 { status: 409 },
               );
             }

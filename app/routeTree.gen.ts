@@ -235,8 +235,10 @@ import { Route as ApiRmharksImageRouteImport } from './routes/api/rmharks/image'
 import { Route as ApiRmharksAiGenerateRouteImport } from './routes/api/rmharks/ai-generate'
 import { Route as ApiRmharksIdRouteImport } from './routes/api/rmharks/$id'
 import { Route as ApiRideshareRidesRouteImport } from './routes/api/rideshare/rides'
+import { Route as ApiRidesharePlacesRouteImport } from './routes/api/rideshare/places'
 import { Route as ApiRideshareLocationRouteImport } from './routes/api/rideshare/location'
 import { Route as ApiRideshareGeocodeRouteImport } from './routes/api/rideshare/geocode'
+import { Route as ApiRideshareEarningsRouteImport } from './routes/api/rideshare/earnings'
 import { Route as ApiRideshareDriverRouteImport } from './routes/api/rideshare/driver'
 import { Route as ApiRideshareDirectionsRouteImport } from './routes/api/rideshare/directions'
 import { Route as ApiPromoFreeMonthRouteImport } from './routes/api/promo/free-month'
@@ -366,6 +368,7 @@ import { Route as ApiRmharksIdInsightsRouteImport } from './routes/api/rmharks/$
 import { Route as ApiRmharksIdCommentRouteImport } from './routes/api/rmharks/$id/comment'
 import { Route as ApiRmharksIdBookmarkRouteImport } from './routes/api/rmharks/$id/bookmark'
 import { Route as ApiRideshareRidesIdRouteImport } from './routes/api/rideshare/rides/$id'
+import { Route as ApiRidesharePlacesIdRouteImport } from './routes/api/rideshare/places/$id'
 import { Route as ApiRankedChallengeIdRouteImport } from './routes/api/ranked/challenge/$id'
 import { Route as ApiRankedGameLeaderboardRouteImport } from './routes/api/ranked/$game/leaderboard'
 import { Route as ApiQuestsIdClaimRouteImport } from './routes/api/quests/$id/claim'
@@ -1579,6 +1582,11 @@ const ApiRideshareRidesRoute = ApiRideshareRidesRouteImport.update({
   path: '/api/rideshare/rides',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRidesharePlacesRoute = ApiRidesharePlacesRouteImport.update({
+  id: '/api/rideshare/places',
+  path: '/api/rideshare/places',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiRideshareLocationRoute = ApiRideshareLocationRouteImport.update({
   id: '/api/rideshare/location',
   path: '/api/rideshare/location',
@@ -1587,6 +1595,11 @@ const ApiRideshareLocationRoute = ApiRideshareLocationRouteImport.update({
 const ApiRideshareGeocodeRoute = ApiRideshareGeocodeRouteImport.update({
   id: '/api/rideshare/geocode',
   path: '/api/rideshare/geocode',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRideshareEarningsRoute = ApiRideshareEarningsRouteImport.update({
+  id: '/api/rideshare/earnings',
+  path: '/api/rideshare/earnings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiRideshareDriverRoute = ApiRideshareDriverRouteImport.update({
@@ -2249,6 +2262,11 @@ const ApiRideshareRidesIdRoute = ApiRideshareRidesIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ApiRideshareRidesRoute,
 } as any)
+const ApiRidesharePlacesIdRoute = ApiRidesharePlacesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiRidesharePlacesRoute,
+} as any)
 const ApiRankedChallengeIdRoute = ApiRankedChallengeIdRouteImport.update({
   id: '/api/ranked/challenge/$id',
   path: '/api/ranked/challenge/$id',
@@ -2878,8 +2896,10 @@ export interface FileRoutesByFullPath {
   '/api/promo/free-month': typeof ApiPromoFreeMonthRoute
   '/api/rideshare/directions': typeof ApiRideshareDirectionsRoute
   '/api/rideshare/driver': typeof ApiRideshareDriverRoute
+  '/api/rideshare/earnings': typeof ApiRideshareEarningsRoute
   '/api/rideshare/geocode': typeof ApiRideshareGeocodeRoute
   '/api/rideshare/location': typeof ApiRideshareLocationRoute
+  '/api/rideshare/places': typeof ApiRidesharePlacesRouteWithChildren
   '/api/rideshare/rides': typeof ApiRideshareRidesRouteWithChildren
   '/api/rmharks/$id': typeof ApiRmharksIdRouteWithChildren
   '/api/rmharks/ai-generate': typeof ApiRmharksAiGenerateRoute
@@ -3013,6 +3033,7 @@ export interface FileRoutesByFullPath {
   '/api/quests/$id/claim': typeof ApiQuestsIdClaimRoute
   '/api/ranked/$game/leaderboard': typeof ApiRankedGameLeaderboardRoute
   '/api/ranked/challenge/$id': typeof ApiRankedChallengeIdRoute
+  '/api/rideshare/places/$id': typeof ApiRidesharePlacesIdRoute
   '/api/rideshare/rides/$id': typeof ApiRideshareRidesIdRouteWithChildren
   '/api/rmharks/$id/bookmark': typeof ApiRmharksIdBookmarkRoute
   '/api/rmharks/$id/comment': typeof ApiRmharksIdCommentRouteWithChildren
@@ -3286,8 +3307,10 @@ export interface FileRoutesByTo {
   '/api/promo/free-month': typeof ApiPromoFreeMonthRoute
   '/api/rideshare/directions': typeof ApiRideshareDirectionsRoute
   '/api/rideshare/driver': typeof ApiRideshareDriverRoute
+  '/api/rideshare/earnings': typeof ApiRideshareEarningsRoute
   '/api/rideshare/geocode': typeof ApiRideshareGeocodeRoute
   '/api/rideshare/location': typeof ApiRideshareLocationRoute
+  '/api/rideshare/places': typeof ApiRidesharePlacesRouteWithChildren
   '/api/rideshare/rides': typeof ApiRideshareRidesRouteWithChildren
   '/api/rmharks/$id': typeof ApiRmharksIdRouteWithChildren
   '/api/rmharks/ai-generate': typeof ApiRmharksAiGenerateRoute
@@ -3421,6 +3444,7 @@ export interface FileRoutesByTo {
   '/api/quests/$id/claim': typeof ApiQuestsIdClaimRoute
   '/api/ranked/$game/leaderboard': typeof ApiRankedGameLeaderboardRoute
   '/api/ranked/challenge/$id': typeof ApiRankedChallengeIdRoute
+  '/api/rideshare/places/$id': typeof ApiRidesharePlacesIdRoute
   '/api/rideshare/rides/$id': typeof ApiRideshareRidesIdRouteWithChildren
   '/api/rmharks/$id/bookmark': typeof ApiRmharksIdBookmarkRoute
   '/api/rmharks/$id/comment': typeof ApiRmharksIdCommentRouteWithChildren
@@ -3720,8 +3744,10 @@ export interface FileRoutesById {
   '/api/promo/free-month': typeof ApiPromoFreeMonthRoute
   '/api/rideshare/directions': typeof ApiRideshareDirectionsRoute
   '/api/rideshare/driver': typeof ApiRideshareDriverRoute
+  '/api/rideshare/earnings': typeof ApiRideshareEarningsRoute
   '/api/rideshare/geocode': typeof ApiRideshareGeocodeRoute
   '/api/rideshare/location': typeof ApiRideshareLocationRoute
+  '/api/rideshare/places': typeof ApiRidesharePlacesRouteWithChildren
   '/api/rideshare/rides': typeof ApiRideshareRidesRouteWithChildren
   '/api/rmharks/$id': typeof ApiRmharksIdRouteWithChildren
   '/api/rmharks/ai-generate': typeof ApiRmharksAiGenerateRoute
@@ -3855,6 +3881,7 @@ export interface FileRoutesById {
   '/api/quests/$id/claim': typeof ApiQuestsIdClaimRoute
   '/api/ranked/$game/leaderboard': typeof ApiRankedGameLeaderboardRoute
   '/api/ranked/challenge/$id': typeof ApiRankedChallengeIdRoute
+  '/api/rideshare/places/$id': typeof ApiRidesharePlacesIdRoute
   '/api/rideshare/rides/$id': typeof ApiRideshareRidesIdRouteWithChildren
   '/api/rmharks/$id/bookmark': typeof ApiRmharksIdBookmarkRoute
   '/api/rmharks/$id/comment': typeof ApiRmharksIdCommentRouteWithChildren
@@ -4154,8 +4181,10 @@ export interface FileRouteTypes {
     | '/api/promo/free-month'
     | '/api/rideshare/directions'
     | '/api/rideshare/driver'
+    | '/api/rideshare/earnings'
     | '/api/rideshare/geocode'
     | '/api/rideshare/location'
+    | '/api/rideshare/places'
     | '/api/rideshare/rides'
     | '/api/rmharks/$id'
     | '/api/rmharks/ai-generate'
@@ -4289,6 +4318,7 @@ export interface FileRouteTypes {
     | '/api/quests/$id/claim'
     | '/api/ranked/$game/leaderboard'
     | '/api/ranked/challenge/$id'
+    | '/api/rideshare/places/$id'
     | '/api/rideshare/rides/$id'
     | '/api/rmharks/$id/bookmark'
     | '/api/rmharks/$id/comment'
@@ -4562,8 +4592,10 @@ export interface FileRouteTypes {
     | '/api/promo/free-month'
     | '/api/rideshare/directions'
     | '/api/rideshare/driver'
+    | '/api/rideshare/earnings'
     | '/api/rideshare/geocode'
     | '/api/rideshare/location'
+    | '/api/rideshare/places'
     | '/api/rideshare/rides'
     | '/api/rmharks/$id'
     | '/api/rmharks/ai-generate'
@@ -4697,6 +4729,7 @@ export interface FileRouteTypes {
     | '/api/quests/$id/claim'
     | '/api/ranked/$game/leaderboard'
     | '/api/ranked/challenge/$id'
+    | '/api/rideshare/places/$id'
     | '/api/rideshare/rides/$id'
     | '/api/rmharks/$id/bookmark'
     | '/api/rmharks/$id/comment'
@@ -4995,8 +5028,10 @@ export interface FileRouteTypes {
     | '/api/promo/free-month'
     | '/api/rideshare/directions'
     | '/api/rideshare/driver'
+    | '/api/rideshare/earnings'
     | '/api/rideshare/geocode'
     | '/api/rideshare/location'
+    | '/api/rideshare/places'
     | '/api/rideshare/rides'
     | '/api/rmharks/$id'
     | '/api/rmharks/ai-generate'
@@ -5130,6 +5165,7 @@ export interface FileRouteTypes {
     | '/api/quests/$id/claim'
     | '/api/ranked/$game/leaderboard'
     | '/api/ranked/challenge/$id'
+    | '/api/rideshare/places/$id'
     | '/api/rideshare/rides/$id'
     | '/api/rmharks/$id/bookmark'
     | '/api/rmharks/$id/comment'
@@ -5321,8 +5357,10 @@ export interface RootRouteChildren {
   ApiPromoFreeMonthRoute: typeof ApiPromoFreeMonthRoute
   ApiRideshareDirectionsRoute: typeof ApiRideshareDirectionsRoute
   ApiRideshareDriverRoute: typeof ApiRideshareDriverRoute
+  ApiRideshareEarningsRoute: typeof ApiRideshareEarningsRoute
   ApiRideshareGeocodeRoute: typeof ApiRideshareGeocodeRoute
   ApiRideshareLocationRoute: typeof ApiRideshareLocationRoute
+  ApiRidesharePlacesRoute: typeof ApiRidesharePlacesRouteWithChildren
   ApiRideshareRidesRoute: typeof ApiRideshareRidesRouteWithChildren
   ApiRmhboxHistoryRoute: typeof ApiRmhboxHistoryRoute
   ApiRmhboxLeaderboardRoute: typeof ApiRmhboxLeaderboardRoute
@@ -7021,6 +7059,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRideshareRidesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/rideshare/places': {
+      id: '/api/rideshare/places'
+      path: '/api/rideshare/places'
+      fullPath: '/api/rideshare/places'
+      preLoaderRoute: typeof ApiRidesharePlacesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/rideshare/location': {
       id: '/api/rideshare/location'
       path: '/api/rideshare/location'
@@ -7033,6 +7078,13 @@ declare module '@tanstack/react-router' {
       path: '/api/rideshare/geocode'
       fullPath: '/api/rideshare/geocode'
       preLoaderRoute: typeof ApiRideshareGeocodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/rideshare/earnings': {
+      id: '/api/rideshare/earnings'
+      path: '/api/rideshare/earnings'
+      fullPath: '/api/rideshare/earnings'
+      preLoaderRoute: typeof ApiRideshareEarningsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/rideshare/driver': {
@@ -7937,6 +7989,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/rideshare/rides/$id'
       preLoaderRoute: typeof ApiRideshareRidesIdRouteImport
       parentRoute: typeof ApiRideshareRidesRoute
+    }
+    '/api/rideshare/places/$id': {
+      id: '/api/rideshare/places/$id'
+      path: '/$id'
+      fullPath: '/api/rideshare/places/$id'
+      preLoaderRoute: typeof ApiRidesharePlacesIdRouteImport
+      parentRoute: typeof ApiRidesharePlacesRoute
     }
     '/api/ranked/challenge/$id': {
       id: '/api/ranked/challenge/$id'
@@ -9224,6 +9283,17 @@ const ApiAdminUsersRouteWithChildren = ApiAdminUsersRoute._addFileChildren(
   ApiAdminUsersRouteChildren,
 )
 
+interface ApiRidesharePlacesRouteChildren {
+  ApiRidesharePlacesIdRoute: typeof ApiRidesharePlacesIdRoute
+}
+
+const ApiRidesharePlacesRouteChildren: ApiRidesharePlacesRouteChildren = {
+  ApiRidesharePlacesIdRoute: ApiRidesharePlacesIdRoute,
+}
+
+const ApiRidesharePlacesRouteWithChildren =
+  ApiRidesharePlacesRoute._addFileChildren(ApiRidesharePlacesRouteChildren)
+
 interface ApiRideshareRidesIdRouteChildren {
   ApiRideshareRidesIdMessagesRoute: typeof ApiRideshareRidesIdMessagesRoute
   ApiRideshareRidesIdRateRoute: typeof ApiRideshareRidesIdRateRoute
@@ -9430,8 +9500,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPromoFreeMonthRoute: ApiPromoFreeMonthRoute,
   ApiRideshareDirectionsRoute: ApiRideshareDirectionsRoute,
   ApiRideshareDriverRoute: ApiRideshareDriverRoute,
+  ApiRideshareEarningsRoute: ApiRideshareEarningsRoute,
   ApiRideshareGeocodeRoute: ApiRideshareGeocodeRoute,
   ApiRideshareLocationRoute: ApiRideshareLocationRoute,
+  ApiRidesharePlacesRoute: ApiRidesharePlacesRouteWithChildren,
   ApiRideshareRidesRoute: ApiRideshareRidesRouteWithChildren,
   ApiRmhboxHistoryRoute: ApiRmhboxHistoryRoute,
   ApiRmhboxLeaderboardRoute: ApiRmhboxLeaderboardRoute,
