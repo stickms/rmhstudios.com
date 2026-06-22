@@ -5,25 +5,32 @@ go_library(
     srcs = [
         "lightsout.go",
         "recap.go",
+        "run.go",
         "runner.go",
     ],
     importpath = "github.com/rmhstudios/rmh-go/internal/recap",
     visibility = ["//go-services:__subpackages__"],
     deps = [
+        "//go-services/pkg/config",
         "//go-services/pkg/db",
         "//go-services/pkg/log",
         "//go-services/pkg/telemetry",
+        "//go-services/pkg/worker",
         "@com_github_bwmarrin_discordgo//:discordgo",
     ],
 )
 
 go_test(
     name = "recap_test",
-    srcs = ["recap_test.go"],
+    srcs = [
+        "recap_test.go",
+        "run_test.go",
+    ],
     embed = [":recap"],
     deps = [
         "//go-services/pkg/log",
         "//go-services/pkg/telemetry",
+        "//go-services/pkg/worker",
         "@com_github_bwmarrin_discordgo//:discordgo",
     ],
 )
