@@ -9,7 +9,9 @@ import { Sparkles, Loader2 } from 'lucide-react';
  */
 export type AIGenerateRequest =
   | { mode: 'post'; draft?: string }
-  | { mode: 'reply'; rmharkId: string; parentId?: string; draft?: string };
+  | { mode: 'reply'; rmharkId: string; parentId?: string; draft?: string }
+  | { mode: 'announcement-title'; title?: string; body?: string }
+  | { mode: 'announcement-body'; title?: string; body?: string };
 
 interface AIGenerateButtonProps {
   request: AIGenerateRequest;

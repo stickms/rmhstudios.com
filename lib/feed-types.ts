@@ -6,6 +6,15 @@ export type FeedItemType =
   | "blog"
   | "research";
 
+export interface UserCosmetics {
+  nameColor?: { color?: string; gradient?: string };
+  avatarFrame?: { color?: string; gradient?: string };
+  badge?: { emoji?: string };
+  banner?: { gradient?: string };
+  postFlair?: { className?: string; color?: string; gradient?: string };
+  pet?: { emoji?: string };
+}
+
 export interface FeedItemUser {
   id: string;
   name?: string | null;
@@ -14,6 +23,8 @@ export interface FeedItemUser {
   image?: string | null;
   isVerified?: boolean;
   isAdmin?: boolean;
+  /** Equipped shop cosmetics (name color, avatar frame, badge, …). */
+  cosmetics?: UserCosmetics;
 }
 
 export interface FeedPollOption {
