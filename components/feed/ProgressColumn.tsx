@@ -78,7 +78,7 @@ interface BattlePassPayload {
   signedIn: boolean;
 }
 
-export function ProgressColumn() {
+export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } = {}) {
   const [data, setData] = useState<ProgressPayload | null>(null);
   const [pass, setPass] = useState<BattlePassPayload | null>(null);
   const [loading, setLoading] = useState(true);
@@ -166,13 +166,15 @@ export function ProgressColumn() {
   const weekly = data.quests.filter((q) => q.period === 'weekly');
 
   return (
-    <div className="min-h-screen">
-      <header className="sticky top-0 z-10 border-b border-site-border bg-site-bg/80 px-4 py-3 backdrop-blur">
-        <div className="flex items-center gap-2">
-          <Zap className="h-5 w-5 text-site-accent" />
-          <h1 className="text-lg font-bold text-site-text">Progress</h1>
-        </div>
-      </header>
+    <div className={hideHeader ? '' : 'min-h-screen'}>
+      {!hideHeader && (
+        <header className="sticky top-0 z-10 border-b border-site-border bg-site-bg/80 px-4 py-3 backdrop-blur">
+          <div className="flex items-center gap-2">
+            <Zap className="h-5 w-5 text-site-accent" />
+            <h1 className="text-lg font-bold text-site-text">Progress</h1>
+          </div>
+        </header>
+      )}
 
       <div className="space-y-8 p-4">
         {/* Level card */}

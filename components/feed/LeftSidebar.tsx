@@ -7,7 +7,7 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import {
   Home, Package, BookOpen, Library, LayoutGrid, Atom,
-  LogOut, PenSquare, User, MessageCircle, ShieldCheck, MoreHorizontal, Wallet, Sparkles, Bell, Landmark, Bookmark, Trophy, Flame, ShoppingBag, Compass, Users, Zap, Shield, Bot, Swords, Clapperboard, Music, Terminal, ChevronDown, type LucideIcon
+  LogOut, PenSquare, User, MessageCircle, ShieldCheck, MoreHorizontal, Wallet, Sparkles, Bell, Landmark, Bookmark, Flame, ShoppingBag, Compass, Users, Zap, Shield, Bot, Swords, Clapperboard, Music, Terminal, ChevronDown, type LucideIcon
 } from 'lucide-react';
 import { ComposeModal } from './ComposeModal';
 import { Button } from '@/components/ui/button';
@@ -238,7 +238,8 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         {/* Daily streak chip (shown when logged in with an active streak) */}
         {session && streak && streak.current > 0 && (
           <Link
-            to="/achievements"
+            to="/progress"
+            hash="streaks"
             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-orange-400 hover:bg-site-surface transition-colors ${itemJustifyClass}`}
             title={`${streak.current}-day streak`}
           >
@@ -246,12 +247,12 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
             <span className={labelClass}>{streak.current}-day streak</span>
           </Link>
         )}
-        {/* Progress link (XP, quests, battle pass — shown when logged in) */}
+        {/* Progress link — combined Streaks / Progress / Achievements page (shown when logged in) */}
         {session && (
           <Link
             to="/progress"
             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${itemJustifyClass} ${
-              pathname?.startsWith('/progress')
+              pathname?.startsWith('/progress') || pathname?.startsWith('/achievements')
                 ? 'text-site-accent bg-site-accent-dim'
                 : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
             }`}
@@ -259,21 +260,6 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
           >
             <Zap className="w-5 h-5 shrink-0" />
             <span className={labelClass}>Progress</span>
-          </Link>
-        )}
-        {/* Achievements link (shown when logged in) */}
-        {session && (
-          <Link
-            to="/achievements"
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${itemJustifyClass} ${
-              pathname?.startsWith('/achievements')
-                ? 'text-site-accent bg-site-accent-dim'
-                : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
-            }`}
-            title="Achievements"
-          >
-            <Trophy className="w-5 h-5 shrink-0" />
-            <span className={labelClass}>Achievements</span>
           </Link>
         )}
         {/* Bookmarks link (shown when logged in) */}

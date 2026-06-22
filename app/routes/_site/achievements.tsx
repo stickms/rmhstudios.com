@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
-import { AchievementsColumn } from '@/components/feed/AchievementsColumn';
+import { JourneyColumn } from '@/components/feed/JourneyColumn';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
@@ -32,7 +32,7 @@ function AchievementsPage() {
             </Link>
           </div>
         ) : (
-          <AchievementsColumn userId={session.user.id} />
+          <JourneyColumn userId={session.user.id} initialTab="achievements" />
         )}
       </AnimatedMain>
       <div className="hidden lg:block w-4 shrink-0" />

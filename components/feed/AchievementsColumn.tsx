@@ -35,7 +35,7 @@ interface Payload {
 
 const CATEGORY_ORDER: AchievementCategory[] = ['social', 'games', 'creator', 'economy', 'special'];
 
-export function AchievementsColumn({ userId }: { userId: string }) {
+export function AchievementsColumn({ userId, hideHeader = false }: { userId: string; hideHeader?: boolean }) {
   const [data, setData] = useState<Payload | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -67,24 +67,34 @@ export function AchievementsColumn({ userId }: { userId: string }) {
 
   const pct = data.stats.total ? Math.round((data.stats.unlocked / data.stats.total) * 100) : 0;
 
+  const Stats = (
+    <>
+      <div className="flex items-center gap-3 text-sm text-site-text-muted">
+        <span>
+          <strong className="text-site-text">{data.stats.unlocked}</strong> / {data.stats.total} unlocked
+        </span>
+        <span aria-hidden>·</span>
+        <span className="inline-flex items-center gap-1"><Coins className="h-3.5 w-3.5 text-amber-400" /> {data.stats.coinsEarned} earned</span>
+      </div>
+      <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-site-surface">
+        <div className="h-full rounded-full bg-site-accent transition-all" style={{ width: `${pct}%` }} />
+      </div>
+    </>
+  );
+
   return (
-    <div className="min-h-screen">
-      <header className="sticky top-0 z-10 border-b border-site-border bg-site-bg/80 px-4 py-3 backdrop-blur">
-        <div className="flex items-center gap-2">
-          <Trophy className="h-5 w-5 text-site-accent" />
-          <h1 className="text-lg font-bold text-site-text">Achievements</h1>
-        </div>
-        <div className="mt-2 flex items-center gap-3 text-sm text-site-text-muted">
-          <span>
-            <strong className="text-site-text">{data.stats.unlocked}</strong> / {data.stats.total} unlocked
-          </span>
-          <span aria-hidden>·</span>
-          <span className="inline-flex items-center gap-1"><Coins className="h-3.5 w-3.5 text-amber-400" /> {data.stats.coinsEarned} earned</span>
-        </div>
-        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-site-surface">
-          <div className="h-full rounded-full bg-site-accent transition-all" style={{ width: `${pct}%` }} />
-        </div>
-      </header>
+    <div className={hideHeader ? '' : 'min-h-screen'}>
+      {hideHeader ? (
+        <div className="px-4 pt-4">{Stats}</div>
+      ) : (
+        <header className="sticky top-0 z-10 border-b border-site-border bg-site-bg/80 px-4 py-3 backdrop-blur">
+          <div className="flex items-center gap-2">
+            <Trophy className="h-5 w-5 text-site-accent" />
+            <h1 className="text-lg font-bold text-site-text">Achievements</h1>
+          </div>
+          <div className="mt-2">{Stats}</div>
+        </header>
+      )}
 
       <div className="space-y-6 p-4">
         {CATEGORY_ORDER.map((cat) => {

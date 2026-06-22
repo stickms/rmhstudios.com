@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
-import { ProgressColumn } from '@/components/feed/ProgressColumn';
+import { JourneyColumn } from '@/components/feed/JourneyColumn';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
@@ -32,7 +32,7 @@ function ProgressPage() {
             </Link>
           </div>
         ) : (
-          <ProgressColumn />
+          <JourneyColumn userId={session.user.id} initialTab="progress" />
         )}
       </AnimatedMain>
       <div className="hidden lg:block w-4 shrink-0" />
