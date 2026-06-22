@@ -1,0 +1,20 @@
+load("@rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "status_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/rmhstudios/rmh-go/cmd/status",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//go-services/internal/status",
+        "//go-services/pkg/config",
+        "//go-services/pkg/httpx",
+        "//go-services/pkg/log",
+    ],
+)
+
+go_binary(
+    name = "status",
+    embed = [":status_lib"],
+    visibility = ["//visibility:public"],
+)

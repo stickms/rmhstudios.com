@@ -1,0 +1,21 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "status",
+    srcs = [
+        "dashboard.go",
+        "probe.go",
+        "status.go",
+    ],
+    importpath = "github.com/rmhstudios/rmh-go/internal/status",
+    visibility = ["//go-services:__subpackages__"],
+)
+
+go_test(
+    name = "status_test",
+    srcs = [
+        "dashboard_test.go",
+        "probe_test.go",
+    ],
+    embed = [":status"],
+)
