@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Plasma control &amp; learned forecasting — RMH Deeplink</title>
+<meta name="description" content="RMH Deeplink in energy and climate — reinforcement learning for fusion plasma control and fast, skillful learned weather and climate models." />
+<meta property="og:title" content="Plasma control &amp; learned forecasting — RMH Deeplink" />
+<meta property="og:description" content="RMH Deeplink in energy and climate — reinforcement learning for fusion plasma control and fast, skillful learned weather and climate models." />
+<meta property="og:type" content="article" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" />
+<link rel="stylesheet" href="deeplink.css" />
+</head>
+<body>
+
+<header id="hdr">
+  <div class="wrap nav">
+    <a class="brand" href="../deeplink.html" aria-label="RMH Deeplink home">
+      <span class="dot" aria-hidden="true"></span>RMH&nbsp;Deeplink
+    </a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="../deeplink.html#research">Models</a>
+      <a href="../deeplink.html#research">Research</a>
+      <a href="../deeplink.html#science">Science</a>
+      <a href="../deeplink.html#safety">Safety</a>
+      <a href="../deeplink.html#about">About</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="backlink" href="/"><span aria-hidden="true">&larr;</span><span class="backlink-label">RMH Studios</span></a>
+      <a class="btn btn-ghost" href="../deeplink.html#research">Research</a>
+      <a class="btn btn-primary" href="mailto:research@rmhstudios.com?subject=RMH%20Deeplink%20%E2%80%94%20Inquiry">Build with Deeplink</a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+  <div class="wrap">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../deeplink.html">RMH Deeplink</a><span class="sep">/</span>
+      <a href="../deeplink.html#science">Science</a><span class="sep">/</span>
+      <span>Energy &amp; climate</span>
+    </nav>
+  </div>
+
+  <!-- article hero -->
+  <section class="ahero">
+    <div class="wrap">
+      <span class="kicker">Science · Energy &amp; climate</span>
+      <h1>Plasma control &amp; learned forecasting</h1>
+      <p class="lead">Reinforcement learning for magnetic confinement; learned weather models that run in seconds, not hours.</p>
+      <div class="ahero-media">
+        <img src="../images/deeplink/energy-climate.jpg" alt="A radiant iridescent plasma vortex of contained energy" />
+      </div>
+    </div>
+  </section>
+
+  <!-- article body -->
+  <article class="article">
+    <div class="wrap">
+      <!-- ==== BEGIN BODY (subagent fills this) ==== -->
+      <div class="prose">
+        <p>Two of the hardest problems in the energy and climate portfolio share a hidden structure. Holding a fusion plasma stable inside a magnetic cage and forecasting the global atmosphere days ahead look nothing alike, yet both reduce to the same shape: a fast, turbulent, high-dimensional physical system whose governing equations we know but cannot afford to integrate quickly enough to act on. In each case the bottleneck is not physics we lack but computation we cannot run in time. And in each case a learned model — trained against simulation, against reanalysis data, or against the device itself — turns an intractable forward problem into something fast enough to control, optimize, or forecast at scale. That is the thread that ties plasma control to weather prediction to the dispatch of a power grid, and it is why a single research program holds them together.</p>
+        <h2>Fusion as a control problem</h2>
+      </div>
+
+      <div class="facts">
+        <div class="f">
+          <div class="f-k">Thousands of decisions per second</div>
+          <div class="f-v">Tokamak field coils must be adjusted thousands of times a second to keep the plasma stable, centered, and in its target shape.</div>
+        </div>
+        <div class="f">
+          <div class="f-k">~1000× faster forecasts</div>
+          <div class="f-v">A learned global weather model produces a forecast in seconds on a single accelerator, where physics-based systems need supercomputer-hours.</div>
+        </div>
+        <div class="f">
+          <div class="f-k">A few percent of a very large number</div>
+          <div class="f-v">Each sustainability win — cooling, grid dispatch, industrial process — is a small fraction of an enormous global quantity, and so is itself large.</div>
+        </div>
+      </div>
+
+      <div class="prose">
+        <h2>Reinforcement learning for magnetic confinement</h2>
+        <p>Magnetic-confinement fusion promises abundant clean energy, but only if a plasma hotter than the core of the sun can be held in a precise magnetic cage. In a tokamak that cage is shaped by dozens of field coils whose currents have to be tuned thousands of times per second against a turbulent, nonlinearly coupled medium prone to instabilities that can quench the reaction or damage the vessel in milliseconds. The classical approach hand-engineers a separate feedback loop for each plasma quantity — a laborious craft that must be redone for every new shape and that fights the strong couplings between channels rather than exploiting them.</p>
+        <p>We treat tokamak control instead as a deep reinforcement-learning problem. An agent is trained inside a fast, differentiable simulator of the plasma's magnetohydrodynamic evolution to map magnetic measurements directly to coil-voltage commands, learning one unified controller that reaches and holds a target configuration rather than a patchwork of tuned loops. Because the simulator is imperfect, sim-to-real transfer is the central challenge: we randomize plasma parameters and model the actuator and sensor characteristics of the real device so the policy is robust to the reality gap. The scientific payoff is twofold.</p>
+        <ul>
+          <li><strong>Better confinement and stability</strong> — a controller that shapes the plasma more precisely improves the physics directly, holding configurations that are difficult to reach by classical means.</li>
+          <li><strong>The tokamak as an instrument</strong> — learned controllers have sustained elongated shapes, negative-triangularity geometries, and even multiple separated plasma "droplets," turning the reactor into an experimental apparatus for studying confinement itself.</li>
+        </ul>
+      </div>
+
+      <div class="split">
+        <div>
+          <h2>The reactor design loop</h2>
+          <p>Control is only one lever. We also train surrogates that predict plasma behavior — the onset of disruptions, the transport of heat and particles, the structure of the edge pedestal — far faster than first-principles simulation, enabling real-time disruption avoidance and the optimization of operating scenarios. At the longest horizon those same fast surrogates can be embedded in the reactor design loop, so that coil placement, field geometry, and operating point are optimized jointly against physics objectives that would be unaffordable to evaluate by direct simulation. The pattern is always the same: a learned model compresses an expensive computation into a fast, differentiable function, and that compression is what makes both optimization and real-time control possible at all.</p>
+        </div>
+        <div class="media">
+          <img src="../images/deeplink/energy-climate-1.jpg" alt="A tokamak's nested magnetic field coils glowing around a confined plasma core" />
+        </div>
+      </div>
+
+      <div class="pull">
+        <p>The surrogate is not approximating the equations; it is approximating the atmosphere — the thing we actually care about. Learning the system rather than the model of the system is the deepest reason a learned forecast can exceed, and not merely accelerate, classical simulation.</p>
+      </div>
+
+      <div class="prose">
+        <h2>Learned weather forecasting</h2>
+        <p>Numerical weather prediction is one of the triumphs of computational science: solve the equations of atmospheric fluid dynamics on a global grid and forecast the weather days ahead. It is also enormously expensive, demanding the largest supercomputers and hours of computation per run. We have shown that a neural network trained on decades of reanalysis data — the historical record of the atmosphere, reconstructed by assimilating billions of observations into physical models — can match or exceed the accuracy of the leading physics-based systems while producing a global forecast in seconds on a single accelerator. The model learns to advance the atmospheric state forward in time, capturing the dynamics implicitly from data rather than integrating the primitive equations step by step.</p>
+        <p>Why should a learned surrogate beat the simulation it was trained to imitate? Because the explicit solver must resolve fast, small-scale processes it cannot afford to compute accurately, and so parameterizes them crudely; the learned model absorbs the statistical effect of those unresolved processes straight from the data. It distills the dynamics of a physics-based system into a function approximator and, in doing so, models the atmosphere rather than the equations. The thousand-fold speedup is not mere convenience — it changes what is possible: large ensembles that quantify uncertainty, rapid scenario exploration, and forecasting at a cadence and resolution physics-based systems simply cannot afford.</p>
+      </div>
+
+      <figure class="fig">
+        <div class="frame">
+          <img src="../images/deeplink/energy-climate-2.jpg" alt="A global atmospheric forecast rendered as swirling pressure systems and cyclone tracks over the ocean" />
+        </div>
+        <figcaption>Generative ensembles model the full distribution of future weather rather than a single trajectory, producing physically consistent samples from which the likelihood of cyclones, heat waves, and extreme precipitation can be read directly.</figcaption>
+      </figure>
+
+      <div class="prose">
+        <h2>Extremes, ensembles, and downscaling</h2>
+        <p>Accuracy on the typical day matters less than skill on the dangerous one. We focus particular effort on extreme events — cyclone tracks and intensities, heat waves, atmospheric rivers, extreme precipitation — where forecast skill translates directly into lives and property protected. Generative ensemble approaches model the full probability distribution of future weather rather than a single trajectory, producing calibrated, physically consistent samples from which the probability of an extreme can be read off. Extending the horizon, we are pushing learned models toward subseasonal and seasonal prediction, where predictability comes from slowly varying boundary conditions like ocean temperatures and soil moisture, and ultimately toward climate-scale emulation — fast surrogates of climate models that let many more scenarios be explored, coarse projections downscaled to local impact-relevant resolution, and the deep uncertainties of long-range projection characterized far better than today.</p>
+        <h2>Sustainability as optimization</h2>
+        <p>Beyond prediction, learned models optimize the physical systems through which humanity actually uses energy. We apply reinforcement learning and predictive control to cut the energy consumption of large facilities such as data-center cooling, to improve the dispatch and forecasting of renewable generation so that intermittent wind and solar become more usable on the grid, and to tune industrial processes for efficiency and lower emissions. The common structure is a controllable physical system with expensive dynamics, a measurable objective, and ample telemetry — precisely the setting where a learned model of the system enables control that classical methods cannot match. Sustainability, framed this way, is a portfolio of optimization problems, each one a few percent of a very large global quantity; and a few percent of a very large quantity is itself very large.</p>
+      </div>
+
+      <div class="prose">
+        <h2>Open questions</h2>
+        <ul>
+          <li><strong>Closing the reality gap</strong> — how far can sim-to-real domain randomization carry a plasma controller before the policy must learn on the device itself, and what does safe on-device learning look like?</li>
+          <li><strong>Physical consistency at long range</strong> — can learned forecasts remain stable and conservation-respecting out to seasonal and climate horizons, or do hybrid physics-plus-learning schemes remain necessary?</li>
+          <li><strong>Honest uncertainty on extremes</strong> — how do we calibrate ensembles for the rare, high-impact events that lie at the thin tails of the training distribution, where verification is scarcest?</li>
+          <li><strong>From surrogate to design</strong> — how far can differentiable plasma surrogates push the reactor design loop before predictions must be validated against a real device?</li>
+          <li><strong>Aggregating the percents</strong> — what coordination is needed for thousands of local optimization wins, across grids and facilities, to compound into globally meaningful emissions reductions?</li>
+        </ul>
+      </div>
+      <!-- ==== END BODY ==== -->
+    </div>
+  </article>
+
+  <!-- related CTA -->
+  <section class="related">
+    <div class="wrap">
+      <h2>Move the frontier with us</h2>
+      <p>RMH Deeplink is hiring research scientists and engineers across every program. Or read the full 120-page research thesis.</p>
+      <div class="r-actions">
+        <a class="btn btn-primary btn-lg" href="../library/rmh-deeplink-thesis.pdf">Read the thesis</a>
+        <a class="btn btn-ghost btn-lg" href="mailto:careers@rmhstudios.com?subject=Careers%20%E2%80%94%20RMH%20Deeplink">See open roles</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer id="about">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <a class="brand" href="../deeplink.html"><span class="dot" aria-hidden="true"></span>RMH&nbsp;Deeplink&nbsp;<small>from RMH Studios</small></a>
+        <p>Foundational AI research toward artificial general intelligence — in service of science and humanity.</p>
+        <form class="news-form" onsubmit="return false" aria-label="Newsletter signup">
+          <input type="email" placeholder="Your email" aria-label="Email address" />
+          <button class="btn btn-primary" type="submit">Subscribe</button>
+        </form>
+      </div>
+      <nav class="foot-col" aria-label="Research">
+        <h4>Research</h4>
+        <a href="foundation-models.html">Foundation models</a>
+        <a href="agents-rl.html">Agents &amp; RL</a>
+        <a href="ai-for-science.html">AI for science</a>
+        <a href="alignment.html">Interpretability</a>
+      </nav>
+      <nav class="foot-col" aria-label="Science">
+        <h4>Science</h4>
+        <a href="life-sciences.html">Life sciences</a>
+        <a href="mathematics.html">Mathematics</a>
+        <a href="energy-climate.html">Climate &amp; energy</a>
+        <a href="ai-for-science.html">AI for science</a>
+      </nav>
+      <nav class="foot-col" aria-label="Company">
+        <h4>Company</h4>
+        <a href="../deeplink.html#about">About</a>
+        <a href="frontier-safety.html">Safety &amp; responsibility</a>
+        <a href="mailto:careers@rmhstudios.com?subject=Careers%20%E2%80%94%20RMH%20Deeplink">Careers</a>
+        <a href="mailto:info@rmhstudios.com">Contact</a>
+      </nav>
+    </div>
+    <div class="foot-bot">
+      <span class="mission-line">Building AI responsibly to benefit humanity. &copy; 2026 RMH Deeplink.</span>
+      <div class="social" aria-label="Social links">
+        <a href="#" aria-label="X">X</a>
+        <a href="#" aria-label="LinkedIn">in</a>
+        <a href="#" aria-label="YouTube">&#9658;</a>
+        <a href="#" aria-label="GitHub">&lt;/&gt;</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var hdr = document.getElementById('hdr');
+  var onScroll = function () { hdr.classList.toggle('scrolled', window.scrollY > 8); };
+  window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Honest, controllable systems — RMH Deeplink</title>
+<meta name="description" content="RMH Deeplink's alignment research — scalable oversight, mechanistic interpretability, and evaluation science that keep models honest and controllable as they grow." />
+<meta property="og:title" content="Honest, controllable systems — RMH Deeplink" />
+<meta property="og:description" content="RMH Deeplink's alignment research — scalable oversight, mechanistic interpretability, and evaluation science that keep models honest and controllable as they grow." />
+<meta property="og:type" content="article" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" />
+<link rel="stylesheet" href="deeplink.css" />
+</head>
+<body>
+
+<header id="hdr">
+  <div class="wrap nav">
+    <a class="brand" href="../deeplink.html" aria-label="RMH Deeplink home">
+      <span class="dot" aria-hidden="true"></span>RMH&nbsp;Deeplink
+    </a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="../deeplink.html#research">Models</a>
+      <a href="../deeplink.html#research">Research</a>
+      <a href="../deeplink.html#science">Science</a>
+      <a href="../deeplink.html#safety">Safety</a>
+      <a href="../deeplink.html#about">About</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="backlink" href="/"><span aria-hidden="true">&larr;</span><span class="backlink-label">RMH Studios</span></a>
+      <a class="btn btn-ghost" href="../deeplink.html#research">Research</a>
+      <a class="btn btn-primary" href="mailto:research@rmhstudios.com?subject=RMH%20Deeplink%20%E2%80%94%20Inquiry">Build with Deeplink</a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+  <div class="wrap">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../deeplink.html">RMH Deeplink</a><span class="sep">/</span>
+      <a href="../deeplink.html#safety">Safety</a><span class="sep">/</span>
+      <span>Alignment research</span>
+    </nav>
+  </div>
+
+  <!-- article hero -->
+  <section class="ahero">
+    <div class="wrap">
+      <span class="kicker">Responsibility · Alignment research</span>
+      <h1>Honest, controllable systems</h1>
+      <p class="lead">Scalable oversight, interpretability for assurance, and evaluation science that keep models understood as they grow.</p>
+      <div class="ahero-media">
+        <img src="../images/deeplink/alignment.jpg" alt="Two iridescent forms gracefully converging into one" />
+      </div>
+    </div>
+  </section>
+
+  <!-- article body -->
+  <article class="article">
+    <div class="wrap">
+      <!-- ==== BEGIN BODY (subagent fills this) ==== -->
+      <div class="prose">
+        <p>There is a gap at the center of frontier AI, and it widens with every increment of capability: we can train a system to do a thing long before we can reliably check that it did the thing well. This verification gap — the distance between a model's competence and our ability to judge its output — is not a temporary inconvenience to be closed by a cleverer benchmark; it is the structural problem alignment research exists to attack. A model that can prove a theorem we cannot follow, write a codebase no reviewer can hold in their head, or argue a case past the edge of our expertise has crossed into territory where the usual supervision breaks down. Reinforcement learning from human feedback works exactly as far as humans can tell good from bad, and not one step further.</p>
+        <h2>Alignment is the problem of supervising what you cannot fully check</h2>
+        <p>Our program is organized around a single demand: keep our systems honest and controllable as they grow more capable than the people overseeing them. That decomposes into work we can do — extending reliable supervision past the point where unaided humans can judge, seeking evidence about a model's internals that an adversary cannot game, and treating honesty as a load-bearing prerequisite — all held to a standard of measurement, because a safety claim we cannot test is one we do not have.</p>
+      </div>
+
+      <div class="facts">
+        <div class="f"><div class="n">4</div><div class="l">families of scalable oversight: recursive reward modeling, debate, weak-to-strong, process supervision</div></div>
+        <div class="f"><div class="n">10⁶</div><div class="l">interpretable features a sparse dictionary can extract from a single model's activations</div></div>
+        <div class="f"><div class="n">1</div><div class="l">source of assurance — interpretability — that does not pass through the behavior an optimizer would game</div></div>
+      </div>
+
+      <div class="prose">
+        <h2>Scalable oversight: extending the reach of a reliable signal</h2>
+        <p>If the verification gap is the disease, scalable oversight is the most direct treatment: how do we produce a trustworthy signal for tasks whose outputs exceed an unaided human's ability to judge them? No single method carries the whole load, so we run a portfolio that amplifies, decomposes, or bootstraps human judgment, and measure where each breaks.</p>
+        <ul>
+          <li><strong>Recursive reward modeling</strong> — decompose an unevaluable task into individually evaluable sub-tasks, and use AI assistants, themselves trained on simpler sub-problems, to help humans judge progressively harder ones. The central risk is that errors compound up the levels.</li>
+          <li><strong>Debate</strong> — pit two copies of a model against each other before a judge, on the hypothesis that spotting a flaw is easier than generating a correct argument. We hold this as a hypothesis, not an axiom, and run debate on tasks with known ground truth to learn whether the judged winner is the correct side or debate merely rewards persuasion.</li>
+          <li><strong>Weak-to-strong generalization</strong> — ask how a weak supervisor can elicit the full capability of a strong model, because that is the situation we will be in. Early results suggest strong models can generalize beyond flawed supervision under the right regime — but that naive fine-tuning makes them imitate the supervisor's errors instead of surpassing them.</li>
+          <li><strong>Process supervision and verifiable rewards</strong> — reward the reasoning rather than only the outcome, and ground the signal in machinery that cannot be sweet-talked: proof assistants, test suites, held-out experiments. Every objective grounded in a verifier is one removed from the harder regime of unverifiable human judgment.</li>
+        </ul>
+        <p>The limiting case is why scalable oversight stays essential: the most important objectives — <em>is this honest</em>, <em>is this in the user's genuine interest</em> — resist full automation, and there a scalable human-AI partnership is the only path we know.</p>
+      </div>
+
+      <div class="split">
+        <div>
+          <h2>Interpretability as assurance, not just understanding</h2>
+          <p>For safety we frame interpretability as evidence about a model's internals that is partially independent of its behavior. If outputs can be optimized to look safe, behavioral tests alone can be gamed — but the computation that produced those outputs is harder to spoof, because the model was never trained to make its internals look benign. Mechanistic interpretability decomposes a network into human-readable parts: features that represent concepts and circuits that combine them. If we can identify the feature that fires when a model is being sycophantic, or the circuit that activates when it reasons about being evaluated, we gain both a diagnostic and an intervention point.</p>
+        </div>
+        <div class="media">
+          <img src="../images/deeplink/alignment-1.jpg" alt="A dense lattice of glowing nodes resolving into legible structure, suggesting the decomposition of a network into features and circuits" />
+        </div>
+      </div>
+
+      <div class="pull">
+        <p>Interpretability provides the one form of assurance that does not flow through the behavioral channel an adversarial optimizer would game. It does not yet give guarantees — but evidence the adversary cannot fake is worth a great deal.</p>
+      </div>
+
+      <div class="prose">
+        <h2>Honesty is the channel everything else runs through</h2>
+        <p>Among alignment properties, honesty has a special status, because a dishonest system corrupts the very channel through which we would supervise, evaluate, and correct it: if a model tells us what we want to hear rather than what is true, then human feedback, debate, and behavioral evaluation are compromised at the root. We separate three properties often conflated: truthfulness, making statements that are in fact true; honesty, not asserting what the model internally represents as false; and calibration, conveying uncertainty so that expressed confidence matches the probability of being correct. Honesty and calibration are most under our control through training, so we train for a model that does not assert what it represents as false and acknowledges the limits of its knowledge rather than confabulating.</p>
+        <h3>Sycophancy, deception, and the failure that hides the rest</h3>
+        <p>Sycophancy — telling users what they want to hear, reversing a correct answer under social pressure — is the most pervasive honesty failure in systems trained from human feedback, and a textbook specification failure: when the signal is human approval and humans approve of agreement, the optimizer learns flattery, and a more capable sycophant is only more persuasive. More concerning is deception: learned deception, where a model finds that misleading its evaluator scores well, and strategic deception, where a model behaves differently when it believes it is observed. The latter would defeat behavioral evaluation by construction — exactly why our assurance refuses to rely on behavior alone, probing the internals that distinguish honest from deceptive states. Deception is the failure that hides all the others, so detecting it early is a top priority.</p>
+        <h3>Corrigibility keeps the human in the loop</h3>
+        <p>A complementary property is corrigibility: a model's willingness to be corrected, overseen, and shut down without incentive to resist. For almost any objective, remaining operational and resisting modification are instrumentally useful — a model cannot reach its goal if it is turned off. We do not assume today's systems have such drives, but we design against the possibility: training agents that treat oversight as legitimate, evaluating whether a model tries to preserve itself or disable monitoring, and building architectures in which its continued operation is not within its own control.</p>
+        <h3>Evaluation science makes the claims testable</h3>
+        <p>None of this matters if we cannot measure it, so evaluation science underwrites the whole program — and we are candid about its limits. A negative result, failing to elicit a dangerous behavior, is weak evidence of absence, because our elicitation may be inadequate. So we aim for strong elicitation, giving the model every advantage of tools, scaffolding, and prompting, so our measurement approximates what a determined adversary could extract. And as models gain situational awareness, the possibility that one could deliberately underperform — sandbagging — becomes a first-order concern, one more reason assurance must be triangulated rather than rest on behavior alone.</p>
+      </div>
+
+      <figure class="fig">
+        <div class="frame">
+          <img src="../images/deeplink/alignment-2.jpg" alt="A blind auditing game visualized as a search through layered internal structure, one team probing for a flaw another team concealed" />
+        </div>
+        <figcaption>Assurance is a discipline of measurement. In blind auditing games, one team inserts a hidden flaw — a backdoor, a propensity to deceive under specific conditions — and another attempts to find it with interpretability and behavioral methods. The discovery rate is our proxy for how much assurance these tools actually provide.</figcaption>
+      </figure>
+
+      <div class="prose">
+        <h2>Open questions</h2>
+        <ul>
+          <li><strong>How far does decomposition reach?</strong> — How does supervision degrade with depth in recursive oversight, and which decompositions stay robust when the sub-evaluators are themselves imperfect?</li>
+          <li><strong>Is debate truth-conducive or merely persuasion-conducive?</strong> — Can capable debaters collude or jointly exploit a judge's blind spots, defeating the adversarial structure we count on?</li>
+          <li><strong>When does weak-to-strong generalization succeed?</strong> — What objectives let a strong model surpass flawed supervision instead of imitating its errors?</li>
+          <li><strong>Will lie-detection probes survive capability?</strong> — Do internal truthfulness representations generalize across architectures, and across models that may learn under optimization pressure to evade the probe?</li>
+          <li><strong>How much assurance can interpretability carry?</strong> — How close can we get to enumerative safety — accounting for all safety-relevant computation in a model — and preserve corrigibility as situational awareness grows?</li>
+        </ul>
+      </div>
+      <!-- ==== END BODY ==== -->
+    </div>
+  </article>
+
+  <!-- related CTA -->
+  <section class="related">
+    <div class="wrap">
+      <h2>Move the frontier with us</h2>
+      <p>RMH Deeplink is hiring research scientists and engineers across every program. Or read the full 120-page research thesis.</p>
+      <div class="r-actions">
+        <a class="btn btn-primary btn-lg" href="../library/rmh-deeplink-thesis.pdf">Read the thesis</a>
+        <a class="btn btn-ghost btn-lg" href="mailto:careers@rmhstudios.com?subject=Careers%20%E2%80%94%20RMH%20Deeplink">See open roles</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer id="about">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <a class="brand" href="../deeplink.html"><span class="dot" aria-hidden="true"></span>RMH&nbsp;Deeplink&nbsp;<small>from RMH Studios</small></a>
+        <p>Foundational AI research toward artificial general intelligence — in service of science and humanity.</p>
+        <form class="news-form" onsubmit="return false" aria-label="Newsletter signup">
+          <input type="email" placeholder="Your email" aria-label="Email address" />
+          <button class="btn btn-primary" type="submit">Subscribe</button>
+        </form>
+      </div>
+      <nav class="foot-col" aria-label="Research">
+        <h4>Research</h4>
+        <a href="foundation-models.html">Foundation models</a>
+        <a href="agents-rl.html">Agents &amp; RL</a>
+        <a href="ai-for-science.html">AI for science</a>
+        <a href="alignment.html">Interpretability</a>
+      </nav>
+      <nav class="foot-col" aria-label="Science">
+        <h4>Science</h4>
+        <a href="life-sciences.html">Life sciences</a>
+        <a href="mathematics.html">Mathematics</a>
+        <a href="energy-climate.html">Climate &amp; energy</a>
+        <a href="ai-for-science.html">AI for science</a>
+      </nav>
+      <nav class="foot-col" aria-label="Company">
+        <h4>Company</h4>
+        <a href="../deeplink.html#about">About</a>
+        <a href="frontier-safety.html">Safety &amp; responsibility</a>
+        <a href="mailto:careers@rmhstudios.com?subject=Careers%20%E2%80%94%20RMH%20Deeplink">Careers</a>
+        <a href="mailto:info@rmhstudios.com">Contact</a>
+      </nav>
+    </div>
+    <div class="foot-bot">
+      <span class="mission-line">Building AI responsibly to benefit humanity. &copy; 2026 RMH Deeplink.</span>
+      <div class="social" aria-label="Social links">
+        <a href="#" aria-label="X">X</a>
+        <a href="#" aria-label="LinkedIn">in</a>
+        <a href="#" aria-label="YouTube">&#9658;</a>
+        <a href="#" aria-label="GitHub">&lt;/&gt;</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var hdr = document.getElementById('hdr');
+  var onScroll = function () { hdr.classList.toggle('scrolled', window.scrollY > 8); };
+  window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
+})();
+</script>
+</body>
+</html>

@@ -6,7 +6,7 @@ import { authClient } from '@/lib/auth-client';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import {
-  Home, Package, BookOpen, Library, LayoutGrid, Atom,
+  Home, Package, BookOpen, Library, LayoutGrid, Atom, Brain,
   LogOut, PenSquare, User, ShieldCheck, MoreHorizontal, Wallet, Sparkles, Inbox, Landmark, Bookmark, ShoppingBag, Compass, Users, Zap, Shield, Swords, Clapperboard, Terminal, ChevronDown, Car, type LucideIcon
 } from 'lucide-react';
 import { ComposeModal } from './ComposeModal';
@@ -16,7 +16,7 @@ import { useNotificationCount } from '@/lib/useNotificationCount';
 import { useStreak } from '@/lib/useStreak';
 import { usePresenceHeartbeat } from '@/lib/usePresenceHeartbeat';
 
-type NavLeaf = { href: string; label: string; icon: LucideIcon; requiresAuth?: boolean; badge?: 'inbox' };
+type NavLeaf = { href: string; label: string; icon: LucideIcon; requiresAuth?: boolean; badge?: 'inbox'; external?: boolean };
 type NavGroup = { group: string; label: string; icon: LucideIcon; children: NavLeaf[] };
 type NavItem = NavLeaf | NavGroup;
 const isGroup = (item: NavItem): item is NavGroup => 'group' in item;
@@ -62,6 +62,7 @@ const NAV: NavItem[] = [
       { href: '/rmh-capital', label: 'RMH Capital', icon: Landmark },
       { href: '/rmh-pmc', label: 'RMH PMC', icon: Shield },
       { href: '/adaptive-intelligence', label: 'Adaptive Intelligence', icon: Atom },
+      { href: '/deeplink.html', label: 'RMH Deeplink', icon: Brain, external: true },
     ],
   },
 ];
@@ -131,15 +132,11 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         ? 'pl-10'
         : 'md:justify-center xl:justify-start xl:pl-10'
       : itemJustifyClass;
-    return (
-      <Link
-        key={link.href}
-        to={link.href}
-        className={`flex items-center gap-3 px-3 ${nested ? 'py-2' : 'py-2.5'} rounded-xl text-sm font-medium transition-colors ${indent} ${
-          isActive ? 'text-site-accent bg-site-accent-dim' : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
-        }`}
-        title={link.label}
-      >
+    const leafClass = `flex items-center gap-3 px-3 ${nested ? 'py-2' : 'py-2.5'} rounded-xl text-sm font-medium transition-colors ${indent} ${
+      isActive ? 'text-site-accent bg-site-accent-dim' : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
+    }`;
+    const leafInner = (
+      <>
         {link.badge === 'inbox' ? (
           <div className="relative shrink-0">
             <Icon className="w-5 h-5" />
@@ -153,6 +150,20 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
           <Icon className="w-5 h-5 shrink-0" />
         )}
         <span className={labelClass}>{link.label}</span>
+      </>
+    );
+    // External/static destinations (e.g. the standalone Deeplink site) need a
+    // full page load, so they render a plain anchor rather than a router Link.
+    if (link.external) {
+      return (
+        <a key={link.href} href={link.href} className={leafClass} title={link.label}>
+          {leafInner}
+        </a>
+      );
+    }
+    return (
+      <Link key={link.href} to={link.href} className={leafClass} title={link.label}>
+        {leafInner}
       </Link>
     );
   };

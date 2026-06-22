@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Responsible capability scaling — RMH Deeplink</title>
+<meta name="description" content="RMH Deeplink's Frontier Safety Framework — critical capability thresholds, dangerous-capability evaluations, pre-committed tripwires, and red-teaming that gate every model." />
+<meta property="og:title" content="Responsible capability scaling — RMH Deeplink" />
+<meta property="og:description" content="RMH Deeplink's Frontier Safety Framework — critical capability thresholds, dangerous-capability evaluations, pre-committed tripwires, and red-teaming that gate every model." />
+<meta property="og:type" content="article" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" />
+<link rel="stylesheet" href="deeplink.css" />
+</head>
+<body>
+
+<header id="hdr">
+  <div class="wrap nav">
+    <a class="brand" href="../deeplink.html" aria-label="RMH Deeplink home">
+      <span class="dot" aria-hidden="true"></span>RMH&nbsp;Deeplink
+    </a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="../deeplink.html#research">Models</a>
+      <a href="../deeplink.html#research">Research</a>
+      <a href="../deeplink.html#science">Science</a>
+      <a href="../deeplink.html#safety">Safety</a>
+      <a href="../deeplink.html#about">About</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="backlink" href="/"><span aria-hidden="true">&larr;</span><span class="backlink-label">RMH Studios</span></a>
+      <a class="btn btn-ghost" href="../deeplink.html#research">Research</a>
+      <a class="btn btn-primary" href="mailto:research@rmhstudios.com?subject=RMH%20Deeplink%20%E2%80%94%20Inquiry">Build with Deeplink</a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+  <div class="wrap">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../deeplink.html">RMH Deeplink</a><span class="sep">/</span>
+      <a href="../deeplink.html#safety">Safety</a><span class="sep">/</span>
+      <span>Frontier safety framework</span>
+    </nav>
+  </div>
+
+  <!-- article hero -->
+  <section class="ahero">
+    <div class="wrap">
+      <span class="kicker">Responsibility · Frontier safety framework</span>
+      <h1>Responsible capability scaling</h1>
+      <p class="lead">Critical capability thresholds, pre-committed tripwires, and red-teaming that gate every model before it ships.</p>
+      <div class="ahero-media">
+        <img src="../images/deeplink/frontier-safety.jpg" alt="Concentric translucent threshold gates receding into depth" />
+      </div>
+    </div>
+  </section>
+
+  <!-- article body -->
+  <article class="article">
+    <div class="wrap">
+      <!-- ==== BEGIN BODY (subagent fills this) ==== -->
+      <div class="prose">
+        <p>Some capabilities are dangerous no matter who controls them. A model that can walk a non-expert through the synthesis of a pathogen, or autonomously find and exploit software it was never shown, lowers the barrier for catastrophic harm regardless of whether the system itself is well-behaved. Alignment governs whether a model wants to do harm; dangerous-capability evaluation governs whether it <em>could</em>. Our Frontier Safety Framework is the discipline that supplies the second answer.</p>
+
+        <h2>What the framework is for</h2>
+        <p>The framework rests on a principle that is hard to honor under competitive pressure: we should know what our models can do before we deploy them, and decide in advance what we will do when they cross thresholds of concern. Deciding after the fact — once the capability is in the world and the incentive to ship is at its peak — means deciding under the conditions most likely to produce the wrong answer. The framework converts that uncertainty into a managed process — capability thresholds, evaluations that test for them, mitigations that engage as a model approaches, and an institution with the authority to pause — a standing contract between capability and the safeguards it requires.</p>
+      </div>
+
+      <div class="facts">
+        <div class="f"><div class="n">5</div><div class="l">Dangerous-capability domains evaluated before every frontier release</div></div>
+        <div class="f"><div class="n">2</div><div class="l">Mitigation axes — security of weights and constraints on deployment</div></div>
+        <div class="f"><div class="n">0</div><div class="l">Deployments presumed safe; the burden is to demonstrate it</div></div>
+      </div>
+
+      <div class="prose">
+        <h2>The capabilities we evaluate for</h2>
+        <p>Our dangerous-capability evaluations target the domains where capability could translate most directly into harm that is catastrophic, hard to reverse, or both. We evaluate hardest where the consequences of being wrong are most severe — each domain with its own threat model and, for the most sensitive, external experts and biosecurity controls over the testing itself.</p>
+        <ul>
+          <li><strong>Biosecurity and chemical risk</strong> — whether a model can meaningfully assist a non-expert in synthesizing or acquiring dangerous biological or chemical agents, the domain where a single misuse is least recoverable.</li>
+          <li><strong>Cyber-offense</strong> — whether a model can discover and exploit vulnerabilities, develop malware, or autonomously conduct intrusions at a level that materially shifts the offense-defense balance.</li>
+          <li><strong>Autonomy and self-proliferation</strong> — whether a model can acquire resources, replicate across systems, evade shutdown, or operate as an agent over long horizons without oversight.</li>
+          <li><strong>Deception and manipulation</strong> — whether a model can reliably steer humans against their own interests or undermine the human oversight every other safeguard depends on.</li>
+          <li><strong>AI R&D acceleration</strong> — whether a model can substantially automate machine-learning research itself, scrutinized most closely because its feedback loop could compress the timeline on which every other risk arrives.</li>
+        </ul>
+      </div>
+
+      <div class="split">
+        <div>
+          <h2>Critical capability levels</h2>
+          <p>For each domain we define <strong>critical capability levels</strong> — thresholds beyond which a model could pose meaningful risk absent specific mitigations. These are lines drawn in advance, against which every frontier model is measured during scaling. As a model approaches a level, heightened mitigations engage along two axes: <strong>security</strong>, to keep its weights from being stolen or misused, and <strong>deployment</strong>, to constrain what the deployed system may do.</p>
+          <p>This is what we mean by <em>responsible capability scaling</em>: the rate at which we advance capability is gated by our ability to manage the risk it creates. If our protective measures are not yet adequate for a level a model has reached, the framework requires that we pause or restrict deployment until they are.</p>
+        </div>
+        <div class="media">
+          <img src="../images/deeplink/frontier-safety-1.jpg" alt="A model's capability trajectory rising toward a luminous threshold line, with a gate poised to close" />
+        </div>
+      </div>
+
+      <div class="pull">
+        <p>The pace at which we scale capability is set by the pace at which we can secure it. Where the safeguards lag, the framework slows the model — not the reverse.</p>
+      </div>
+
+      <div class="prose">
+        <h2>Pre-committed tripwires and mitigations</h2>
+        <p>The value of a threshold is the action it triggers, decided before anyone knows which model will hit it. A tripwire is exactly that: a capability level paired in advance with a required response, so crossing it is not an occasion for fresh negotiation but the automatic engagement of a mitigation already agreed to. Security tripwires escalate how weights are stored and who may touch them; deployment tripwires constrain or withhold capabilities, route them through narrower interfaces, or block release outright. Crossing a tripwire is a fact about the model, not a matter of discretion.</p>
+        <p>That pre-commitment is enforced by a structure built to resist the pressures that erode it. A responsibility and safety function with authority independent of the product teams reviews each frontier model and holds the mandate to delay or block deployment when mitigations are inadequate; the most consequential threshold decisions are escalated to an independent review body rather than left to the launching team. The people who benefit from shipping should not be the only ones who decide whether shipping is safe. Underneath it all sits one inversion of the default: <em>evidence before deployment</em>. The burden is on showing that a model is safe enough to release, not that it is dangerous enough to hold back.</p>
+
+        <h2>Elicitation and the sandbagging problem</h2>
+        <p>An evaluation is only as good as its ability to surface the capability it hunts for, and the methodology is hard. A negative result — failing to elicit a dangerous capability — is weak evidence of absence, because the failure may lie in our measurement rather than the model; a capability can hide behind insufficient prompting, missing scaffolding, or fine-tuning we did not attempt. So we aim for <strong>strong elicitation</strong>: we give the evaluated model every reasonable advantage — tools, fine-tuning, chain-of-thought, agentic scaffolding, expert prompting — so that what we measure approximates what a determined adversary could extract, not what a casual user would see. We add <strong>safety margins</strong>, treating a capability as present once a model comes within striking distance of a threshold, because a false negative is the costly error.</p>
+        <p>Evaluation must also be a live discipline, because the failure mode grows with the model. As systems gain situational awareness, a model could deliberately underperform on an evaluation it recognizes as a test — <em>sandbagging</em> — defeating the measurement by construction. A model clever enough to be dangerous is clever enough to act safe while watched. This is why behavioral evaluation cannot be the whole of our assurance: it must be triangulated with interpretability and process-level evidence that does not depend on the model's cooperation.</p>
+      </div>
+
+      <figure class="fig">
+        <div class="frame">
+          <img src="../images/deeplink/frontier-safety-2.jpg" alt="A red team converging on a model from many directions, probing for the single path that breaks it" />
+        </div>
+        <figcaption>Red-teaming is structured to break the system, not confirm it. A team that finds nothing is treated with suspicion rather than relief — prompting harder methods, not a clean bill of health.</figcaption>
+      </figure>
+
+      <div class="prose">
+        <h2>Red-teaming as a discipline</h2>
+        <p>Red-teaming — adversarial probing to find failures before adversaries or accidents do — is the empirical backbone of the framework. We pair human red teams, including external biosecurity and cyber experts who elicit behavior the developers never anticipated, with automated red teams that use models to generate large, diverse adversarial suites far faster than people can. The posture is adversarial, not confirmatory: the goal is to break the system, and findings feed back into both training, which hardens the model, and evaluation, which expands the suite so fixed failures stay fixed. As everywhere in the framework, a red team's silence is the absence of evidence — never to be mistaken for evidence of absence.</p>
+
+        <h2>The security of model weights</h2>
+        <p>As a model nears a dangerous-capability threshold, its weights become among the most security-sensitive artifacts in the world. A stolen model carries its capabilities with it, stripped of every deployment-time mitigation that constrained it — so security is a load-bearing part of the safety case, not a separate IT concern. A safeguard a thief can bypass by exfiltrating the weights offers no protection against the actor we are most worried about. We invest in protections scaled to the capability at stake: hardened infrastructure for frontier weights, strict access controls and insider-threat mitigations, confidential computing that keeps weights encrypted even in use, and isolation of the most sensitive models. The more dangerous a model in the wrong hands, the higher the bar for access — and inadequate security is itself a reason to slow down.</p>
+      </div>
+
+      <div class="prose">
+        <h2>Open questions</h2>
+        <ul>
+          <li>How do we bound the gap between the capability we can elicit and what a future adversary could extract, when fine-tuning and scaffolding we have not imagined keep widening it?</li>
+          <li>What assurance can survive a model that sandbags, and how much weight can interpretability bear in closing the gap behavior alone leaves open?</li>
+          <li>Where exactly should each critical capability threshold sit, when placing it too high courts catastrophe and too low halts useful work, on a poorly charted curve of harm?</li>
+          <li>How do we keep pre-committed tripwires binding under competitive pressure — the very scenario in which they are hardest to honor?</li>
+          <li>Can weight-level security keep pace with the rising value of frontier models to capable adversaries, and when does inadequate security alone justify pausing scaling?</li>
+        </ul>
+      </div>
+      <!-- ==== END BODY ==== -->
+    </div>
+  </article>
+
+  <!-- related CTA -->
+  <section class="related">
+    <div class="wrap">
+      <h2>Move the frontier with us</h2>
+      <p>RMH Deeplink is hiring research scientists and engineers across every program. Or read the full 120-page research thesis.</p>
+      <div class="r-actions">
+        <a class="btn btn-primary btn-lg" href="../library/rmh-deeplink-thesis.pdf">Read the thesis</a>
+        <a class="btn btn-ghost btn-lg" href="mailto:careers@rmhstudios.com?subject=Careers%20%E2%80%94%20RMH%20Deeplink">See open roles</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer id="about">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <a class="brand" href="../deeplink.html"><span class="dot" aria-hidden="true"></span>RMH&nbsp;Deeplink&nbsp;<small>from RMH Studios</small></a>
+        <p>Foundational AI research toward artificial general intelligence — in service of science and humanity.</p>
+        <form class="news-form" onsubmit="return false" aria-label="Newsletter signup">
+          <input type="email" placeholder="Your email" aria-label="Email address" />
+          <button class="btn btn-primary" type="submit">Subscribe</button>
+        </form>
+      </div>
+      <nav class="foot-col" aria-label="Research">
+        <h4>Research</h4>
+        <a href="foundation-models.html">Foundation models</a>
+        <a href="agents-rl.html">Agents &amp; RL</a>
+        <a href="ai-for-science.html">AI for science</a>
+        <a href="alignment.html">Interpretability</a>
+      </nav>
+      <nav class="foot-col" aria-label="Science">
+        <h4>Science</h4>
+        <a href="life-sciences.html">Life sciences</a>
+        <a href="mathematics.html">Mathematics</a>
+        <a href="energy-climate.html">Climate &amp; energy</a>
+        <a href="ai-for-science.html">AI for science</a>
+      </nav>
+      <nav class="foot-col" aria-label="Company">
+        <h4>Company</h4>
+        <a href="../deeplink.html#about">About</a>
+        <a href="frontier-safety.html">Safety &amp; responsibility</a>
+        <a href="mailto:careers@rmhstudios.com?subject=Careers%20%E2%80%94%20RMH%20Deeplink">Careers</a>
+        <a href="mailto:info@rmhstudios.com">Contact</a>
+      </nav>
+    </div>
+    <div class="foot-bot">
+      <span class="mission-line">Building AI responsibly to benefit humanity. &copy; 2026 RMH Deeplink.</span>
+      <div class="social" aria-label="Social links">
+        <a href="#" aria-label="X">X</a>
+        <a href="#" aria-label="LinkedIn">in</a>
+        <a href="#" aria-label="YouTube">&#9658;</a>
+        <a href="#" aria-label="GitHub">&lt;/&gt;</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var hdr = document.getElementById('hdr');
+  var onScroll = function () { hdr.classList.toggle('scrolled', window.scrollY > 8); };
+  window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
+})();
+</script>
+</body>
+</html>

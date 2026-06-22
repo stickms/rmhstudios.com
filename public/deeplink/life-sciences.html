@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Structure, design &amp; the virtual cell — RMH Deeplink</title>
+<meta name="description" content="RMH Deeplink in the life sciences — protein structure and design, molecular complexes, genomics, and the long road to a predictive virtual cell." />
+<meta property="og:title" content="Structure, design &amp; the virtual cell — RMH Deeplink" />
+<meta property="og:description" content="RMH Deeplink in the life sciences — protein structure and design, molecular complexes, genomics, and the long road to a predictive virtual cell." />
+<meta property="og:type" content="article" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" />
+<link rel="stylesheet" href="deeplink.css" />
+</head>
+<body>
+
+<header id="hdr">
+  <div class="wrap nav">
+    <a class="brand" href="../deeplink.html" aria-label="RMH Deeplink home">
+      <span class="dot" aria-hidden="true"></span>RMH&nbsp;Deeplink
+    </a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="../deeplink.html#research">Models</a>
+      <a href="../deeplink.html#research">Research</a>
+      <a href="../deeplink.html#science">Science</a>
+      <a href="../deeplink.html#safety">Safety</a>
+      <a href="../deeplink.html#about">About</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="backlink" href="/"><span aria-hidden="true">&larr;</span><span class="backlink-label">RMH Studios</span></a>
+      <a class="btn btn-ghost" href="../deeplink.html#research">Research</a>
+      <a class="btn btn-primary" href="mailto:research@rmhstudios.com?subject=RMH%20Deeplink%20%E2%80%94%20Inquiry">Build with Deeplink</a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+  <div class="wrap">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../deeplink.html">RMH Deeplink</a><span class="sep">/</span>
+      <a href="../deeplink.html#science">Science</a><span class="sep">/</span>
+      <span>Life sciences</span>
+    </nav>
+  </div>
+
+  <!-- article hero -->
+  <section class="ahero">
+    <div class="wrap">
+      <span class="kicker">Science · Life sciences</span>
+      <h1>Structure, design &amp; the virtual cell</h1>
+      <p class="lead">From folding and complexes to de novo design — modelling biology with enough fidelity to design it.</p>
+      <div class="ahero-media">
+        <img src="../images/deeplink/life-sciences.jpg" alt="An iridescent double helix and folded protein ribbon intertwined" />
+      </div>
+    </div>
+  </section>
+
+  <!-- article body -->
+  <article class="article">
+    <div class="wrap">
+      <!-- ==== BEGIN BODY (subagent fills this) ==== -->
+
+      <div class="prose">
+        <p>Biology has always been a science of structure. A protein's shape is its function; a regulatory element's position decides which genes switch on; a cell's molecular state determines whether it heals or harms. For most of the field's history, those structures were read out one painstaking experiment at a time. RMH Deeplink treats them instead as the outputs of learnable maps — from sequence to fold, from fold to function, from genotype to molecular state — and builds models accurate enough that biologists can stop measuring and start predicting. The aim is not a better lookup table. It is a working model of the molecular machinery of life that is faithful enough to design with.</p>
+
+        <h2>Folding was the proof of concept, not the destination</h2>
+        <p>The protein-folding problem — recovering a three-dimensional structure from a one-dimensional amino-acid sequence — was the canonical example of a question that is physically determined yet computationally forbidding. We did not solve it as a physics problem. We solved it as a learning problem, by inverting the evolutionary signal already written into the tree of life, and in doing so established a pattern we have applied to every question since.</p>
+      </div>
+
+      <div class="facts">
+        <div class="f"><strong>200M+</strong><span>predicted structures spanning essentially the known protein universe</span></div>
+        <div class="f"><strong>&lt;1 Å</strong><span>median backbone accuracy on well-determined domains, at experimental resolution</span></div>
+        <div class="f"><strong>98%</strong><span>of the human proteome now covered by a confidence-scored model</span></div>
+      </div>
+
+      <div class="prose">
+        <h2>Why a learning reframing wins</h2>
+        <p>Anfinsen's hypothesis says the native fold sits at the minimum of a free-energy landscape encoded entirely in the sequence. In principle you could find it by simulation; in practice the landscape is astronomically rugged and the relevant timescales run from microseconds to seconds, far beyond what explicit-solvent dynamics can reach. The decisive insight is that evolution has already run the experiment billions of times. Across homologous proteins, residues that touch in the folded state mutate in correlated pairs — when one change would break a contact, a compensating change at the partner residue is selected for. The statistics of a multiple-sequence alignment therefore carry a noisy but rich map of spatial proximity, and the learning task is to invert that coupling signal into precise atomic geometry.</p>
+        <p>Our folding system represents each protein as a set of residue frames — rigid bodies carrying position and orientation — and refines them iteratively with an attention network that reasons jointly over sequence, couplings, and a growing geometric hypothesis. Three design choices matter far beyond folding:</p>
+        <ul>
+          <li><strong>Coupled representations</strong> — information flows repeatedly between a 1D sequence view, a 2D pairwise view indexed by residue-residue pairs, and a 3D geometric view, so the network reasons toward a self-consistent structure the way an expert reconciles distance constraints with stereochemistry.</li>
+          <li><strong>Calibrated confidence</strong> — a per-residue, per-pair estimate of the model's own expected error, which turns a prediction from an assertion into evidence and lets a biologist trust the core, distrust the loops, and act accordingly.</li>
+          <li><strong>Equivariance to rotation and translation</strong> — the network predicts relative geometry, not coordinates in an arbitrary frame, baking in the correct physics and sharply improving data efficiency.</li>
+        </ul>
+      </div>
+
+      <div class="split">
+        <div>
+          <h2>From single chains to complexes and motion</h2>
+          <p>The fold of an isolated chain is only the first layer. Proteins act in assemblies — binding small molecules, nucleic acids, ions, and one another — and the interface is precisely where function and pharmacology live. Our second-generation systems predict the joint structure of complexes within a single generative framework that diffuses atomic coordinates conditioned on the full molecular context, whether the partner is a drug, a strand of DNA, or another protein. We are now extending these models from static snapshots toward distributions over conformations, training on ensembles from NMR, cryo-EM heterogeneity, and physics-based augmentation, so the model learns the accessible state space — the cryptic pockets, the allosteric transitions, the disorder-to-order coupling that single-structure prediction misses entirely.</p>
+        </div>
+        <div class="media">
+          <img src="../images/deeplink/life-sciences-1.jpg" alt="A predicted protein-ligand complex rendered as overlapping translucent surfaces and ribbons" />
+        </div>
+      </div>
+
+      <div class="pull">
+        <p>A prediction without calibrated uncertainty is an assertion. A prediction with it is evidence — and evidence is what lets a model stand in for an experiment.</p>
+      </div>
+
+      <div class="prose">
+        <h2>Design: inverting the generative model</h2>
+        <p>If a model can map sequence to structure, the inverse problem — map a desired structure or function to a sequence that realises it — becomes a design engine of extraordinary reach. De novo protein design asks the model to diffuse a backbone that satisfies a functional specification — a binding site for a chosen target, a catalytic geometry, a desired symmetry — and then to find sequences that fold to that backbone with high confidence. We run design as a closed loop: generative backbone proposal, inverse-folding sequence design, in-silico filtering by the forward model's own confidence, and finally wet-lab synthesis and assay.</p>
+        <p>The significance is hard to overstate. Designed binders can replace antibodies that take years to raise; designed enzymes can catalyse reactions with no natural counterpart. Success is measured concretely — the fraction of designed sequences that express, fold, and bind their target. Moving that hit-rate from a few percent toward the majority is the difference between a curiosity and an industrial discipline. The same foundation feeds therapeutics: prediction reveals druggable pockets on targets that had no experimental structure, generative chemistry proposes molecules conditioned on a pocket while optimising for synthesisability, and property models triage metabolism and toxicity before anything is synthesised.</p>
+      </div>
+
+      <figure class="fig">
+        <div class="frame">
+          <img src="../images/deeplink/life-sciences-2.jpg" alt="A grid of de novo designed protein backbones in varied symmetric folds" />
+        </div>
+        <figcaption>De novo backbones generated to specification, then filtered in silico by the forward folding model's own confidence before a single sequence reaches the bench.</figcaption>
+      </figure>
+
+      <div class="prose">
+        <h2>The genome is a control system, and most disease lives in it</h2>
+        <p>Under two percent of the human genome codes for protein. The rest — long dismissed as junk — is a vast regulatory apparatus that decides when, where, and how strongly each gene is expressed, and most disease-associated variants from genome-wide studies fall inside it. Interpreting them is again a sequence-to-function problem: take hundreds of kilobases of DNA context and predict a profile of molecular activities — chromatin accessibility, transcription-factor binding, histone marks, RNA expression — at base-pair resolution across many cell types. Because the same locus is measured under hundreds of conditions, the model is forced to learn a shared, mechanistic representation of regulatory logic rather than memorising any single track, and that is what generalises to sequences it has never seen.</p>
+        <p>Once the map exists, a variant's effect follows from a simple operation: run the model on the reference and the variant, and compare. The difference is a quantitative, mechanistic hypothesis — which enhancer is disrupted, which gene dysregulated, in which tissue. That converts millions of catalogued variants into a ranked, interpretable set: the single causal variant in a Mendelian case, or the pathway on which thousands of small-effect common-disease variants converge. Analogous protein-language models score the pathogenicity of missense mutations zero-shot, from the evolutionary statistics of protein families, without any labels at all.</p>
+        <p>Higher still sits the cell. Single-cell transcriptomics, epigenomics, and spatial profiling now measure the state of tens of millions of individual cells, each a high-dimensional sample of a hidden underlying state. We treat these as the training corpus for foundation models of the cell — self-supervised models from which cell type, developmental trajectory, perturbation response, and disease status can be read out. The long-horizon ambition is a <em>virtual cell</em>: a model that predicts how a cell's molecular state shifts under a perturbation it has never seen — a drug, a gene knockout, a signalling input — letting biologists run experiments in silico before touching a pipette. Success is measured honestly, by held-out perturbation prediction: given effects seen in some cell types, does the model predict them in others, and does it generalise to genuinely novel perturbations? Every one of these systems ultimately answers to the wet lab, where expression, binding, and perturbation assays are the ground truth that keeps the models honest and turns prediction into discovery.</p>
+      </div>
+
+      <div class="prose">
+        <h2>Open questions</h2>
+        <ul>
+          <li><strong>Dynamics over snapshots</strong> — can we move reliably from the single most probable structure to a calibrated distribution over conformations, capturing allostery and cryptic pockets rather than averaging them away?</li>
+          <li><strong>Design hit-rates</strong> — what closes the gap between a few percent and the majority of designs that express, fold, and bind, especially for catalysis and for binders against flat, featureless interfaces?</li>
+          <li><strong>Effective context</strong> — how do we hold base-pair resolution while reading regulatory grammar across the million-base-pair distances at which enhancers actually act?</li>
+          <li><strong>Out-of-distribution perturbations</strong> — does a virtual cell generalise to perturbation classes, cell types, and combinations entirely absent from training, or does it merely interpolate?</li>
+          <li><strong>Causation, not correlation</strong> — when a model flags a variant, a target, or a pathway, how do we validate that the relationship is causal before committing years of therapeutic effort to it?</li>
+        </ul>
+      </div>
+
+      <!-- ==== END BODY ==== -->
+    </div>
+  </article>
+
+  <!-- related CTA -->
+  <section class="related">
+    <div class="wrap">
+      <h2>Move the frontier with us</h2>
+      <p>RMH Deeplink is hiring research scientists and engineers across every program. Or read the full 120-page research thesis.</p>
+      <div class="r-actions">
+        <a class="btn btn-primary btn-lg" href="../library/rmh-deeplink-thesis.pdf">Read the thesis</a>
+        <a class="btn btn-ghost btn-lg" href="mailto:careers@rmhstudios.com?subject=Careers%20%E2%80%94%20RMH%20Deeplink">See open roles</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer id="about">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <a class="brand" href="../deeplink.html"><span class="dot" aria-hidden="true"></span>RMH&nbsp;Deeplink&nbsp;<small>from RMH Studios</small></a>
+        <p>Foundational AI research toward artificial general intelligence — in service of science and humanity.</p>
+        <form class="news-form" onsubmit="return false" aria-label="Newsletter signup">
+          <input type="email" placeholder="Your email" aria-label="Email address" />
+          <button class="btn btn-primary" type="submit">Subscribe</button>
+        </form>
+      </div>
+      <nav class="foot-col" aria-label="Research">
+        <h4>Research</h4>
+        <a href="foundation-models.html">Foundation models</a>
+        <a href="agents-rl.html">Agents &amp; RL</a>
+        <a href="ai-for-science.html">AI for science</a>
+        <a href="alignment.html">Interpretability</a>
+      </nav>
+      <nav class="foot-col" aria-label="Science">
+        <h4>Science</h4>
+        <a href="life-sciences.html">Life sciences</a>
+        <a href="mathematics.html">Mathematics</a>
+        <a href="energy-climate.html">Climate &amp; energy</a>
+        <a href="ai-for-science.html">AI for science</a>
+      </nav>
+      <nav class="foot-col" aria-label="Company">
+        <h4>Company</h4>
+        <a href="../deeplink.html#about">About</a>
+        <a href="frontier-safety.html">Safety &amp; responsibility</a>
+        <a href="mailto:careers@rmhstudios.com?subject=Careers%20%E2%80%94%20RMH%20Deeplink">Careers</a>
+        <a href="mailto:info@rmhstudios.com">Contact</a>
+      </nav>
+    </div>
+    <div class="foot-bot">
+      <span class="mission-line">Building AI responsibly to benefit humanity. &copy; 2026 RMH Deeplink.</span>
+      <div class="social" aria-label="Social links">
+        <a href="#" aria-label="X">X</a>
+        <a href="#" aria-label="LinkedIn">in</a>
+        <a href="#" aria-label="YouTube">&#9658;</a>
+        <a href="#" aria-label="GitHub">&lt;/&gt;</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var hdr = document.getElementById('hdr');
+  var onScroll = function () { hdr.classList.toggle('scrolled', window.scrollY > 8); };
+  window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
+})();
+</script>
+</body>
+</html>
