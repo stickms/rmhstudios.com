@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VoidBreakerRouteImport } from './routes/void-breaker'
-import { Route as RmhCodingSimulatorRouteImport } from './routes/rmh-coding-simulator'
 import { Route as VersecraftRouteImport } from './routes/versecraft'
 import { Route as Velum2099RouteImport } from './routes/velum2099'
 import { Route as TermsRouteImport } from './routes/terms'
@@ -27,6 +26,8 @@ import { Route as RmhstudyRouteImport } from './routes/rmhstudy'
 import { Route as RmhmusicRouteImport } from './routes/rmhmusic'
 import { Route as RmhcodeRouteImport } from './routes/rmhcode'
 import { Route as RmhboxRouteImport } from './routes/rmhbox'
+import { Route as RmhPmcRouteImport } from './routes/rmh-pmc'
+import { Route as RmhCodingSimulatorRouteImport } from './routes/rmh-coding-simulator'
 import { Route as RmhCapitalRouteImport } from './routes/rmh-capital'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as NeonDriftwayRouteImport } from './routes/neon-driftway'
@@ -53,6 +54,7 @@ import { Route as RmhstudyIndexRouteImport } from './routes/rmhstudy/index'
 import { Route as RmhmusicIndexRouteImport } from './routes/rmhmusic/index'
 import { Route as RmhcodeIndexRouteImport } from './routes/rmhcode/index'
 import { Route as RmhboxIndexRouteImport } from './routes/rmhbox/index'
+import { Route as RmhPmcIndexRouteImport } from './routes/rmh-pmc/index'
 import { Route as RmhCapitalIndexRouteImport } from './routes/rmh-capital/index'
 import { Route as KowloonKnockoutIndexRouteImport } from './routes/kowloon-knockout/index'
 import { Route as ForestExplorerIndexRouteImport } from './routes/forest-explorer/index'
@@ -82,6 +84,11 @@ import { Route as RmhmusicPlayerRouteImport } from './routes/rmhmusic/player'
 import { Route as RmhmusicRoomIdRouteImport } from './routes/rmhmusic/$roomId'
 import { Route as RmhcodeAuthRouteImport } from './routes/rmhcode/auth'
 import { Route as RmhboxLobbyIdRouteImport } from './routes/rmhbox/$lobbyId'
+import { Route as RmhPmcOperatorsRouteImport } from './routes/rmh-pmc/operators'
+import { Route as RmhPmcIntelligenceRouteImport } from './routes/rmh-pmc/intelligence'
+import { Route as RmhPmcContactRouteImport } from './routes/rmh-pmc/contact'
+import { Route as RmhPmcCommandRouteImport } from './routes/rmh-pmc/command'
+import { Route as RmhPmcCapabilitiesRouteImport } from './routes/rmh-pmc/capabilities'
 import { Route as RmhCapitalInsightsRouteImport } from './routes/rmh-capital/insights'
 import { Route as RmhCapitalFirmRouteImport } from './routes/rmh-capital/firm'
 import { Route as RmhCapitalContactRouteImport } from './routes/rmh-capital/contact'
@@ -389,6 +396,7 @@ import { Route as ApiCommunitiesSlugFeedRouteImport } from './routes/api/communi
 import { Route as ApiCommentsCommentIdTranslateRouteImport } from './routes/api/comments/$commentId/translate'
 import { Route as ApiClansSlugLeaveRouteImport } from './routes/api/clans/$slug/leave'
 import { Route as ApiClansSlugJoinRouteImport } from './routes/api/clans/$slug/join'
+import { Route as ApiAnnouncementsIdVoteRouteImport } from './routes/api/announcements/$id/vote'
 import { Route as ApiAdminReportsIdRouteImport } from './routes/api/admin/reports/$id'
 import { Route as ApiAdminCuratedBuildsImageRouteImport } from './routes/api/admin/curated-builds/image'
 import { Route as ApiAdminAnnouncementsIdRouteImport } from './routes/api/admin/announcements/$id'
@@ -421,11 +429,6 @@ import { Route as ApiRmharksIdCommentCommentIdLikeRouteImport } from './routes/a
 const VoidBreakerRoute = VoidBreakerRouteImport.update({
   id: '/void-breaker',
   path: '/void-breaker',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RmhCodingSimulatorRoute = RmhCodingSimulatorRouteImport.update({
-  id: '/rmh-coding-simulator',
-  path: '/rmh-coding-simulator',
   getParentRoute: () => rootRouteImport,
 } as any)
 const VersecraftRoute = VersecraftRouteImport.update({
@@ -506,6 +509,16 @@ const RmhcodeRoute = RmhcodeRouteImport.update({
 const RmhboxRoute = RmhboxRouteImport.update({
   id: '/rmhbox',
   path: '/rmhbox',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RmhPmcRoute = RmhPmcRouteImport.update({
+  id: '/rmh-pmc',
+  path: '/rmh-pmc',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RmhCodingSimulatorRoute = RmhCodingSimulatorRouteImport.update({
+  id: '/rmh-coding-simulator',
+  path: '/rmh-coding-simulator',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RmhCapitalRoute = RmhCapitalRouteImport.update({
@@ -636,6 +649,11 @@ const RmhboxIndexRoute = RmhboxIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => RmhboxRoute,
+} as any)
+const RmhPmcIndexRoute = RmhPmcIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => RmhPmcRoute,
 } as any)
 const RmhCapitalIndexRoute = RmhCapitalIndexRouteImport.update({
   id: '/',
@@ -781,6 +799,31 @@ const RmhboxLobbyIdRoute = RmhboxLobbyIdRouteImport.update({
   id: '/$lobbyId',
   path: '/$lobbyId',
   getParentRoute: () => RmhboxRoute,
+} as any)
+const RmhPmcOperatorsRoute = RmhPmcOperatorsRouteImport.update({
+  id: '/operators',
+  path: '/operators',
+  getParentRoute: () => RmhPmcRoute,
+} as any)
+const RmhPmcIntelligenceRoute = RmhPmcIntelligenceRouteImport.update({
+  id: '/intelligence',
+  path: '/intelligence',
+  getParentRoute: () => RmhPmcRoute,
+} as any)
+const RmhPmcContactRoute = RmhPmcContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => RmhPmcRoute,
+} as any)
+const RmhPmcCommandRoute = RmhPmcCommandRouteImport.update({
+  id: '/command',
+  path: '/command',
+  getParentRoute: () => RmhPmcRoute,
+} as any)
+const RmhPmcCapabilitiesRoute = RmhPmcCapabilitiesRouteImport.update({
+  id: '/capabilities',
+  path: '/capabilities',
+  getParentRoute: () => RmhPmcRoute,
 } as any)
 const RmhCapitalInsightsRoute = RmhCapitalInsightsRouteImport.update({
   id: '/insights',
@@ -2359,6 +2402,11 @@ const ApiClansSlugJoinRoute = ApiClansSlugJoinRouteImport.update({
   path: '/api/clans/$slug/join',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAnnouncementsIdVoteRoute = ApiAnnouncementsIdVoteRouteImport.update({
+  id: '/$id/vote',
+  path: '/$id/vote',
+  getParentRoute: () => ApiAnnouncementsRoute,
+} as any)
 const ApiAdminReportsIdRoute = ApiAdminReportsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -2529,6 +2577,8 @@ export interface FileRoutesByFullPath {
   '/neon-driftway': typeof NeonDriftwayRoute
   '/privacy': typeof PrivacyRoute
   '/rmh-capital': typeof RmhCapitalRouteWithChildren
+  '/rmh-coding-simulator': typeof RmhCodingSimulatorRoute
+  '/rmh-pmc': typeof RmhPmcRouteWithChildren
   '/rmhbox': typeof RmhboxRouteWithChildren
   '/rmhcode': typeof RmhcodeRouteWithChildren
   '/rmhmusic': typeof RmhmusicRouteWithChildren
@@ -2546,7 +2596,6 @@ export interface FileRoutesByFullPath {
   '/velum2099': typeof Velum2099Route
   '/versecraft': typeof VersecraftRouteWithChildren
   '/void-breaker': typeof VoidBreakerRoute
-  '/rmh-coding-simulator': typeof RmhCodingSimulatorRoute
   '/admin': typeof SiteAdminRouteRouteWithChildren
   '/achievements': typeof SiteAchievementsRoute
   '/bookmarks': typeof SiteBookmarksRoute
@@ -2568,7 +2617,7 @@ export interface FileRoutesByFullPath {
   '/wallet': typeof SiteWalletRoute
   '/wrapped': typeof SiteWrappedRoute
   '/altair/multiplayer': typeof AltairMultiplayerRouteWithChildren
-  '/api/announcements': typeof ApiAnnouncementsRoute
+  '/api/announcements': typeof ApiAnnouncementsRouteWithChildren
   '/api/bookmarks': typeof ApiBookmarksRoute
   '/api/explore': typeof ApiExploreRoute
   '/api/feedback': typeof ApiFeedbackRoute
@@ -2606,6 +2655,11 @@ export interface FileRoutesByFullPath {
   '/rmh-capital/contact': typeof RmhCapitalContactRoute
   '/rmh-capital/firm': typeof RmhCapitalFirmRoute
   '/rmh-capital/insights': typeof RmhCapitalInsightsRoute
+  '/rmh-pmc/capabilities': typeof RmhPmcCapabilitiesRoute
+  '/rmh-pmc/command': typeof RmhPmcCommandRoute
+  '/rmh-pmc/contact': typeof RmhPmcContactRoute
+  '/rmh-pmc/intelligence': typeof RmhPmcIntelligenceRoute
+  '/rmh-pmc/operators': typeof RmhPmcOperatorsRoute
   '/rmhbox/$lobbyId': typeof RmhboxLobbyIdRoute
   '/rmhcode/auth': typeof RmhcodeAuthRoute
   '/rmhmusic/$roomId': typeof RmhmusicRoomIdRoute
@@ -2634,6 +2688,7 @@ export interface FileRoutesByFullPath {
   '/forest-explorer/': typeof ForestExplorerIndexRoute
   '/kowloon-knockout/': typeof KowloonKnockoutIndexRoute
   '/rmh-capital/': typeof RmhCapitalIndexRoute
+  '/rmh-pmc/': typeof RmhPmcIndexRoute
   '/rmhbox/': typeof RmhboxIndexRoute
   '/rmhcode/': typeof RmhcodeIndexRoute
   '/rmhmusic/': typeof RmhmusicIndexRoute
@@ -2814,6 +2869,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/announcements/$id': typeof ApiAdminAnnouncementsIdRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
+  '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
   '/api/clans/$slug/join': typeof ApiClansSlugJoinRoute
   '/api/clans/$slug/leave': typeof ApiClansSlugLeaveRoute
   '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
@@ -2932,12 +2988,12 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/neon-driftway': typeof NeonDriftwayRoute
   '/privacy': typeof PrivacyRoute
+  '/rmh-coding-simulator': typeof RmhCodingSimulatorRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/synapse-storm': typeof SynapseStormRoute
   '/terms': typeof TermsRoute
   '/velum2099': typeof Velum2099Route
   '/void-breaker': typeof VoidBreakerRoute
-  '/rmh-coding-simulator': typeof RmhCodingSimulatorRoute
   '/achievements': typeof SiteAchievementsRoute
   '/bookmarks': typeof SiteBookmarksRoute
   '/clips': typeof SiteClipsRoute
@@ -2957,7 +3013,7 @@ export interface FileRoutesByTo {
   '/shop': typeof SiteShopRoute
   '/wallet': typeof SiteWalletRoute
   '/wrapped': typeof SiteWrappedRoute
-  '/api/announcements': typeof ApiAnnouncementsRoute
+  '/api/announcements': typeof ApiAnnouncementsRouteWithChildren
   '/api/bookmarks': typeof ApiBookmarksRoute
   '/api/explore': typeof ApiExploreRoute
   '/api/feedback': typeof ApiFeedbackRoute
@@ -2995,6 +3051,11 @@ export interface FileRoutesByTo {
   '/rmh-capital/contact': typeof RmhCapitalContactRoute
   '/rmh-capital/firm': typeof RmhCapitalFirmRoute
   '/rmh-capital/insights': typeof RmhCapitalInsightsRoute
+  '/rmh-pmc/capabilities': typeof RmhPmcCapabilitiesRoute
+  '/rmh-pmc/command': typeof RmhPmcCommandRoute
+  '/rmh-pmc/contact': typeof RmhPmcContactRoute
+  '/rmh-pmc/intelligence': typeof RmhPmcIntelligenceRoute
+  '/rmh-pmc/operators': typeof RmhPmcOperatorsRoute
   '/rmhbox/$lobbyId': typeof RmhboxLobbyIdRoute
   '/rmhcode/auth': typeof RmhcodeAuthRoute
   '/rmhmusic/$roomId': typeof RmhmusicRoomIdRoute
@@ -3020,6 +3081,7 @@ export interface FileRoutesByTo {
   '/forest-explorer': typeof ForestExplorerIndexRoute
   '/kowloon-knockout': typeof KowloonKnockoutIndexRoute
   '/rmh-capital': typeof RmhCapitalIndexRoute
+  '/rmh-pmc': typeof RmhPmcIndexRoute
   '/rmhbox': typeof RmhboxIndexRoute
   '/rmhcode': typeof RmhcodeIndexRoute
   '/rmhmusic': typeof RmhmusicIndexRoute
@@ -3200,6 +3262,7 @@ export interface FileRoutesByTo {
   '/api/admin/announcements/$id': typeof ApiAdminAnnouncementsIdRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
+  '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
   '/api/clans/$slug/join': typeof ApiClansSlugJoinRoute
   '/api/clans/$slug/leave': typeof ApiClansSlugLeaveRoute
   '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
@@ -3325,6 +3388,8 @@ export interface FileRoutesById {
   '/neon-driftway': typeof NeonDriftwayRoute
   '/privacy': typeof PrivacyRoute
   '/rmh-capital': typeof RmhCapitalRouteWithChildren
+  '/rmh-coding-simulator': typeof RmhCodingSimulatorRoute
+  '/rmh-pmc': typeof RmhPmcRouteWithChildren
   '/rmhbox': typeof RmhboxRouteWithChildren
   '/rmhcode': typeof RmhcodeRouteWithChildren
   '/rmhmusic': typeof RmhmusicRouteWithChildren
@@ -3342,7 +3407,6 @@ export interface FileRoutesById {
   '/velum2099': typeof Velum2099Route
   '/versecraft': typeof VersecraftRouteWithChildren
   '/void-breaker': typeof VoidBreakerRoute
-  '/rmh-coding-simulator': typeof RmhCodingSimulatorRoute
   '/_site/admin': typeof SiteAdminRouteRouteWithChildren
   '/_site/achievements': typeof SiteAchievementsRoute
   '/_site/bookmarks': typeof SiteBookmarksRoute
@@ -3364,7 +3428,7 @@ export interface FileRoutesById {
   '/_site/wallet': typeof SiteWalletRoute
   '/_site/wrapped': typeof SiteWrappedRoute
   '/altair/multiplayer': typeof AltairMultiplayerRouteWithChildren
-  '/api/announcements': typeof ApiAnnouncementsRoute
+  '/api/announcements': typeof ApiAnnouncementsRouteWithChildren
   '/api/bookmarks': typeof ApiBookmarksRoute
   '/api/explore': typeof ApiExploreRoute
   '/api/feedback': typeof ApiFeedbackRoute
@@ -3402,6 +3466,11 @@ export interface FileRoutesById {
   '/rmh-capital/contact': typeof RmhCapitalContactRoute
   '/rmh-capital/firm': typeof RmhCapitalFirmRoute
   '/rmh-capital/insights': typeof RmhCapitalInsightsRoute
+  '/rmh-pmc/capabilities': typeof RmhPmcCapabilitiesRoute
+  '/rmh-pmc/command': typeof RmhPmcCommandRoute
+  '/rmh-pmc/contact': typeof RmhPmcContactRoute
+  '/rmh-pmc/intelligence': typeof RmhPmcIntelligenceRoute
+  '/rmh-pmc/operators': typeof RmhPmcOperatorsRoute
   '/rmhbox/$lobbyId': typeof RmhboxLobbyIdRoute
   '/rmhcode/auth': typeof RmhcodeAuthRoute
   '/rmhmusic/$roomId': typeof RmhmusicRoomIdRoute
@@ -3431,6 +3500,7 @@ export interface FileRoutesById {
   '/forest-explorer/': typeof ForestExplorerIndexRoute
   '/kowloon-knockout/': typeof KowloonKnockoutIndexRoute
   '/rmh-capital/': typeof RmhCapitalIndexRoute
+  '/rmh-pmc/': typeof RmhPmcIndexRoute
   '/rmhbox/': typeof RmhboxIndexRoute
   '/rmhcode/': typeof RmhcodeIndexRoute
   '/rmhmusic/': typeof RmhmusicIndexRoute
@@ -3611,6 +3681,7 @@ export interface FileRoutesById {
   '/api/admin/announcements/$id': typeof ApiAdminAnnouncementsIdRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
+  '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
   '/api/clans/$slug/join': typeof ApiClansSlugJoinRoute
   '/api/clans/$slug/leave': typeof ApiClansSlugLeaveRoute
   '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
@@ -3737,6 +3808,8 @@ export interface FileRouteTypes {
     | '/neon-driftway'
     | '/privacy'
     | '/rmh-capital'
+    | '/rmh-coding-simulator'
+    | '/rmh-pmc'
     | '/rmhbox'
     | '/rmhcode'
     | '/rmhmusic'
@@ -3754,7 +3827,6 @@ export interface FileRouteTypes {
     | '/velum2099'
     | '/versecraft'
     | '/void-breaker'
-    | '/rmh-coding-simulator'
     | '/admin'
     | '/achievements'
     | '/bookmarks'
@@ -3814,6 +3886,11 @@ export interface FileRouteTypes {
     | '/rmh-capital/contact'
     | '/rmh-capital/firm'
     | '/rmh-capital/insights'
+    | '/rmh-pmc/capabilities'
+    | '/rmh-pmc/command'
+    | '/rmh-pmc/contact'
+    | '/rmh-pmc/intelligence'
+    | '/rmh-pmc/operators'
     | '/rmhbox/$lobbyId'
     | '/rmhcode/auth'
     | '/rmhmusic/$roomId'
@@ -3842,6 +3919,7 @@ export interface FileRouteTypes {
     | '/forest-explorer/'
     | '/kowloon-knockout/'
     | '/rmh-capital/'
+    | '/rmh-pmc/'
     | '/rmhbox/'
     | '/rmhcode/'
     | '/rmhmusic/'
@@ -4022,6 +4100,7 @@ export interface FileRouteTypes {
     | '/api/admin/announcements/$id'
     | '/api/admin/curated-builds/image'
     | '/api/admin/reports/$id'
+    | '/api/announcements/$id/vote'
     | '/api/clans/$slug/join'
     | '/api/clans/$slug/leave'
     | '/api/comments/$commentId/translate'
@@ -4140,12 +4219,12 @@ export interface FileRouteTypes {
     | '/login'
     | '/neon-driftway'
     | '/privacy'
+    | '/rmh-coding-simulator'
     | '/sitemap.xml'
     | '/synapse-storm'
     | '/terms'
     | '/velum2099'
     | '/void-breaker'
-    | '/rmh-coding-simulator'
     | '/achievements'
     | '/bookmarks'
     | '/clips'
@@ -4203,6 +4282,11 @@ export interface FileRouteTypes {
     | '/rmh-capital/contact'
     | '/rmh-capital/firm'
     | '/rmh-capital/insights'
+    | '/rmh-pmc/capabilities'
+    | '/rmh-pmc/command'
+    | '/rmh-pmc/contact'
+    | '/rmh-pmc/intelligence'
+    | '/rmh-pmc/operators'
     | '/rmhbox/$lobbyId'
     | '/rmhcode/auth'
     | '/rmhmusic/$roomId'
@@ -4228,6 +4312,7 @@ export interface FileRouteTypes {
     | '/forest-explorer'
     | '/kowloon-knockout'
     | '/rmh-capital'
+    | '/rmh-pmc'
     | '/rmhbox'
     | '/rmhcode'
     | '/rmhmusic'
@@ -4408,6 +4493,7 @@ export interface FileRouteTypes {
     | '/api/admin/announcements/$id'
     | '/api/admin/curated-builds/image'
     | '/api/admin/reports/$id'
+    | '/api/announcements/$id/vote'
     | '/api/clans/$slug/join'
     | '/api/clans/$slug/leave'
     | '/api/comments/$commentId/translate'
@@ -4532,6 +4618,8 @@ export interface FileRouteTypes {
     | '/neon-driftway'
     | '/privacy'
     | '/rmh-capital'
+    | '/rmh-coding-simulator'
+    | '/rmh-pmc'
     | '/rmhbox'
     | '/rmhcode'
     | '/rmhmusic'
@@ -4549,7 +4637,6 @@ export interface FileRouteTypes {
     | '/velum2099'
     | '/versecraft'
     | '/void-breaker'
-    | '/rmh-coding-simulator'
     | '/_site/admin'
     | '/_site/achievements'
     | '/_site/bookmarks'
@@ -4609,6 +4696,11 @@ export interface FileRouteTypes {
     | '/rmh-capital/contact'
     | '/rmh-capital/firm'
     | '/rmh-capital/insights'
+    | '/rmh-pmc/capabilities'
+    | '/rmh-pmc/command'
+    | '/rmh-pmc/contact'
+    | '/rmh-pmc/intelligence'
+    | '/rmh-pmc/operators'
     | '/rmhbox/$lobbyId'
     | '/rmhcode/auth'
     | '/rmhmusic/$roomId'
@@ -4638,6 +4730,7 @@ export interface FileRouteTypes {
     | '/forest-explorer/'
     | '/kowloon-knockout/'
     | '/rmh-capital/'
+    | '/rmh-pmc/'
     | '/rmhbox/'
     | '/rmhcode/'
     | '/rmhmusic/'
@@ -4818,6 +4911,7 @@ export interface FileRouteTypes {
     | '/api/admin/announcements/$id'
     | '/api/admin/curated-builds/image'
     | '/api/admin/reports/$id'
+    | '/api/announcements/$id/vote'
     | '/api/clans/$slug/join'
     | '/api/clans/$slug/leave'
     | '/api/comments/$commentId/translate'
@@ -4943,6 +5037,8 @@ export interface RootRouteChildren {
   NeonDriftwayRoute: typeof NeonDriftwayRoute
   PrivacyRoute: typeof PrivacyRoute
   RmhCapitalRoute: typeof RmhCapitalRouteWithChildren
+  RmhCodingSimulatorRoute: typeof RmhCodingSimulatorRoute
+  RmhPmcRoute: typeof RmhPmcRouteWithChildren
   RmhboxRoute: typeof RmhboxRouteWithChildren
   RmhcodeRoute: typeof RmhcodeRouteWithChildren
   RmhmusicRoute: typeof RmhmusicRouteWithChildren
@@ -4960,8 +5056,7 @@ export interface RootRouteChildren {
   Velum2099Route: typeof Velum2099Route
   VersecraftRoute: typeof VersecraftRouteWithChildren
   VoidBreakerRoute: typeof VoidBreakerRoute
-  RmhCodingSimulatorRoute: typeof RmhCodingSimulatorRoute
-  ApiAnnouncementsRoute: typeof ApiAnnouncementsRoute
+  ApiAnnouncementsRoute: typeof ApiAnnouncementsRouteWithChildren
   ApiBookmarksRoute: typeof ApiBookmarksRoute
   ApiExploreRoute: typeof ApiExploreRoute
   ApiFeedbackRoute: typeof ApiFeedbackRoute
@@ -5161,13 +5256,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VoidBreakerRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/rmh-coding-simulator': {
-      id: '/rmh-coding-simulator'
-      path: '/rmh-coding-simulator'
-      fullPath: '/rmh-coding-simulator'
-      preLoaderRoute: typeof RmhCodingSimulatorRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/versecraft': {
       id: '/versecraft'
       path: '/versecraft'
@@ -5278,6 +5366,20 @@ declare module '@tanstack/react-router' {
       path: '/rmhbox'
       fullPath: '/rmhbox'
       preLoaderRoute: typeof RmhboxRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rmh-pmc': {
+      id: '/rmh-pmc'
+      path: '/rmh-pmc'
+      fullPath: '/rmh-pmc'
+      preLoaderRoute: typeof RmhPmcRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rmh-coding-simulator': {
+      id: '/rmh-coding-simulator'
+      path: '/rmh-coding-simulator'
+      fullPath: '/rmh-coding-simulator'
+      preLoaderRoute: typeof RmhCodingSimulatorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rmh-capital': {
@@ -5461,6 +5563,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/rmhbox/'
       preLoaderRoute: typeof RmhboxIndexRouteImport
       parentRoute: typeof RmhboxRoute
+    }
+    '/rmh-pmc/': {
+      id: '/rmh-pmc/'
+      path: '/'
+      fullPath: '/rmh-pmc/'
+      preLoaderRoute: typeof RmhPmcIndexRouteImport
+      parentRoute: typeof RmhPmcRoute
     }
     '/rmh-capital/': {
       id: '/rmh-capital/'
@@ -5664,6 +5773,41 @@ declare module '@tanstack/react-router' {
       fullPath: '/rmhbox/$lobbyId'
       preLoaderRoute: typeof RmhboxLobbyIdRouteImport
       parentRoute: typeof RmhboxRoute
+    }
+    '/rmh-pmc/operators': {
+      id: '/rmh-pmc/operators'
+      path: '/operators'
+      fullPath: '/rmh-pmc/operators'
+      preLoaderRoute: typeof RmhPmcOperatorsRouteImport
+      parentRoute: typeof RmhPmcRoute
+    }
+    '/rmh-pmc/intelligence': {
+      id: '/rmh-pmc/intelligence'
+      path: '/intelligence'
+      fullPath: '/rmh-pmc/intelligence'
+      preLoaderRoute: typeof RmhPmcIntelligenceRouteImport
+      parentRoute: typeof RmhPmcRoute
+    }
+    '/rmh-pmc/contact': {
+      id: '/rmh-pmc/contact'
+      path: '/contact'
+      fullPath: '/rmh-pmc/contact'
+      preLoaderRoute: typeof RmhPmcContactRouteImport
+      parentRoute: typeof RmhPmcRoute
+    }
+    '/rmh-pmc/command': {
+      id: '/rmh-pmc/command'
+      path: '/command'
+      fullPath: '/rmh-pmc/command'
+      preLoaderRoute: typeof RmhPmcCommandRouteImport
+      parentRoute: typeof RmhPmcRoute
+    }
+    '/rmh-pmc/capabilities': {
+      id: '/rmh-pmc/capabilities'
+      path: '/capabilities'
+      fullPath: '/rmh-pmc/capabilities'
+      preLoaderRoute: typeof RmhPmcCapabilitiesRouteImport
+      parentRoute: typeof RmhPmcRoute
     }
     '/rmh-capital/insights': {
       id: '/rmh-capital/insights'
@@ -7814,6 +7958,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiClansSlugJoinRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/announcements/$id/vote': {
+      id: '/api/announcements/$id/vote'
+      path: '/$id/vote'
+      fullPath: '/api/announcements/$id/vote'
+      preLoaderRoute: typeof ApiAnnouncementsIdVoteRouteImport
+      parentRoute: typeof ApiAnnouncementsRoute
+    }
     '/api/admin/reports/$id': {
       id: '/api/admin/reports/$id'
       path: '/$id'
@@ -8243,6 +8394,27 @@ const RmhCapitalRouteWithChildren = RmhCapitalRoute._addFileChildren(
   RmhCapitalRouteChildren,
 )
 
+interface RmhPmcRouteChildren {
+  RmhPmcCapabilitiesRoute: typeof RmhPmcCapabilitiesRoute
+  RmhPmcCommandRoute: typeof RmhPmcCommandRoute
+  RmhPmcContactRoute: typeof RmhPmcContactRoute
+  RmhPmcIntelligenceRoute: typeof RmhPmcIntelligenceRoute
+  RmhPmcOperatorsRoute: typeof RmhPmcOperatorsRoute
+  RmhPmcIndexRoute: typeof RmhPmcIndexRoute
+}
+
+const RmhPmcRouteChildren: RmhPmcRouteChildren = {
+  RmhPmcCapabilitiesRoute: RmhPmcCapabilitiesRoute,
+  RmhPmcCommandRoute: RmhPmcCommandRoute,
+  RmhPmcContactRoute: RmhPmcContactRoute,
+  RmhPmcIntelligenceRoute: RmhPmcIntelligenceRoute,
+  RmhPmcOperatorsRoute: RmhPmcOperatorsRoute,
+  RmhPmcIndexRoute: RmhPmcIndexRoute,
+}
+
+const RmhPmcRouteWithChildren =
+  RmhPmcRoute._addFileChildren(RmhPmcRouteChildren)
+
 interface RmhboxRouteChildren {
   RmhboxLobbyIdRoute: typeof RmhboxLobbyIdRoute
   RmhboxIndexRoute: typeof RmhboxIndexRoute
@@ -8496,6 +8668,17 @@ const VersecraftRouteChildren: VersecraftRouteChildren = {
 const VersecraftRouteWithChildren = VersecraftRoute._addFileChildren(
   VersecraftRouteChildren,
 )
+
+interface ApiAnnouncementsRouteChildren {
+  ApiAnnouncementsIdVoteRoute: typeof ApiAnnouncementsIdVoteRoute
+}
+
+const ApiAnnouncementsRouteChildren: ApiAnnouncementsRouteChildren = {
+  ApiAnnouncementsIdVoteRoute: ApiAnnouncementsIdVoteRoute,
+}
+
+const ApiAnnouncementsRouteWithChildren =
+  ApiAnnouncementsRoute._addFileChildren(ApiAnnouncementsRouteChildren)
 
 interface ApiMessagesConversationIdRouteChildren {
   ApiMessagesConversationIdReadRoute: typeof ApiMessagesConversationIdReadRoute
@@ -8817,6 +9000,8 @@ const rootRouteChildren: RootRouteChildren = {
   NeonDriftwayRoute: NeonDriftwayRoute,
   PrivacyRoute: PrivacyRoute,
   RmhCapitalRoute: RmhCapitalRouteWithChildren,
+  RmhCodingSimulatorRoute: RmhCodingSimulatorRoute,
+  RmhPmcRoute: RmhPmcRouteWithChildren,
   RmhboxRoute: RmhboxRouteWithChildren,
   RmhcodeRoute: RmhcodeRouteWithChildren,
   RmhmusicRoute: RmhmusicRouteWithChildren,
@@ -8834,8 +9019,7 @@ const rootRouteChildren: RootRouteChildren = {
   Velum2099Route: Velum2099Route,
   VersecraftRoute: VersecraftRouteWithChildren,
   VoidBreakerRoute: VoidBreakerRoute,
-  RmhCodingSimulatorRoute: RmhCodingSimulatorRoute,
-  ApiAnnouncementsRoute: ApiAnnouncementsRoute,
+  ApiAnnouncementsRoute: ApiAnnouncementsRouteWithChildren,
   ApiBookmarksRoute: ApiBookmarksRoute,
   ApiExploreRoute: ApiExploreRoute,
   ApiFeedbackRoute: ApiFeedbackRoute,
@@ -9028,12 +9212,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

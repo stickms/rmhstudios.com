@@ -93,6 +93,7 @@ model User {
   rmharkCommentReposts RMHarkCommentRepost[]
   rmharkCommentViews   RMHarkCommentView[]
   rmharkPollVotes      RMHarkPollVote[]
+  announcementPollVotes FeedAnnouncementPollVote[]
 
   // Profile & Social
   profile   UserProfile?
@@ -2640,10 +2641,57 @@ model FeedAnnouncement {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  createdBy User @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  // Rich attachments (mirrors RMHark): uploaded images, an embedded GIF/image
+  // URL, and an optional poll. Mentions/hashtags live inline in `body`.
+  imageUrls String[] @default([])
+  gifUrl    String?  @db.Text
+
+  createdBy User                  @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  poll      FeedAnnouncementPoll?
 
   @@index([active, createdAt(sort: Desc)])
   @@map("feed_announcement")
+}
+
+model FeedAnnouncementPoll {
+  id             String    @id @default(cuid())
+  announcementId String    @unique
+  question       String    @db.VarChar(200)
+  multiSelect    Boolean   @default(false)
+  closesAt       DateTime? // optional scheduled close; null = never closes
+  createdAt      DateTime  @default(now())
+
+  announcement FeedAnnouncement             @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  options      FeedAnnouncementPollOption[]
+
+  @@map("feed_announcement_poll")
+}
+
+model FeedAnnouncementPollOption {
+  id       String @id @default(cuid())
+  pollId   String
+  text     String @db.VarChar(80)
+  position Int
+
+  poll  FeedAnnouncementPoll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  votes FeedAnnouncementPollVote[]
+
+  @@index([pollId])
+  @@map("feed_announcement_poll_option")
+}
+
+model FeedAnnouncementPollVote {
+  id        String   @id @default(cuid())
+  optionId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  option FeedAnnouncementPollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  user   User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([optionId, userId])
+  @@index([optionId])
+  @@map("feed_announcement_poll_vote")
 }
 
 // ─── RMHark Edit History ──────────────────────────────────────────────────

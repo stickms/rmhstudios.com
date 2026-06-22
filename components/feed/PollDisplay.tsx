@@ -9,9 +9,11 @@ interface PollDisplayProps {
   poll: FeedPoll;
   postId: string;
   onUpdate?: (poll: FeedPoll) => void;
+  /** Override the vote endpoint (defaults to the RMHark route). */
+  voteUrl?: string;
 }
 
-export function PollDisplay({ poll, postId, onUpdate }: PollDisplayProps) {
+export function PollDisplay({ poll, postId, onUpdate, voteUrl }: PollDisplayProps) {
   const { data: session } = authClient.useSession();
   const [localPoll, setLocalPoll] = useState(poll);
   const [voting, setVoting] = useState(false);
@@ -62,7 +64,7 @@ export function PollDisplay({ poll, postId, onUpdate }: PollDisplayProps) {
     onUpdate?.(optimistic);
 
     try {
-      const res = await fetch(`/api/rmharks/${postId}/vote`, {
+      const res = await fetch(voteUrl ?? `/api/rmharks/${postId}/vote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ optionId }),
