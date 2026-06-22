@@ -1,0 +1,36 @@
+{
+  "title": "rmhstudios.com — Architecture & History: A Textbook",
+  "footer": "rmhstudios.com · Architecture & History · A Textbook",
+  "headerRight": "rmhstudios — A Textbook",
+  "cover": "00-cover.html",
+  "sections": [
+    { "id": "preface", "label": "Front Matter", "part": "Front Matter", "title": "Preface: How to Use This Book", "file": "00-preface.html" },
+
+    { "id": "ch1", "label": "Chapter 1", "part": "Part I — Foundations", "title": "The rmhstudios Platform at a Glance", "file": "01-overview.html" },
+    { "id": "ch2", "label": "Chapter 2", "title": "A Brief History", "file": "02-history.html" },
+
+    { "id": "ch3", "label": "Chapter 3", "part": "Part II — The Web Tier", "title": "The Web Tier: SSR with TanStack Start and Nitro", "file": "03-web-tier.html" },
+    { "id": "ch4", "label": "Chapter 4", "title": "State, Data Fetching, and the Client", "file": "04-state-client.html" },
+
+    { "id": "ch5", "label": "Chapter 5", "part": "Part III — Data and Identity", "title": "The Data Layer: Postgres and Prisma at Scale", "file": "05-data-layer.html" },
+    { "id": "ch6", "label": "Chapter 6", "title": "Authentication and Identity (RMH Auth)", "file": "06-auth.html" },
+
+    { "id": "ch7", "label": "Chapter 7", "part": "Part IV — Realtime and Products", "title": "Realtime Architecture: The Socket Server Fleet", "file": "07-realtime.html" },
+    { "id": "ch8", "label": "Chapter 8", "title": "The Games Platform", "file": "08-games.html" },
+    { "id": "ch9", "label": "Chapter 9", "title": "Apps and Content Systems", "file": "09-apps-content.html" },
+
+    { "id": "ch10", "label": "Chapter 10", "part": "Part V — Build, Deploy, and Scale", "title": "The Go Microservices Tier", "file": "10-go-tier.html" },
+    { "id": "ch11", "label": "Chapter 11", "title": "Build and Tooling: Bazel, Vite, and the Monorepo", "file": "11-build-tooling.html" },
+    { "id": "ch12", "label": "Chapter 12", "title": "Deployment and Operations", "file": "12-deploy-ops.html" },
+    { "id": "ch13", "label": "Chapter 13", "title": "Scaling and the Road Ahead", "file": "13-scaling.html" },
+
+    { "id": "exam-mid", "label": "Practice Exam A", "part": "Practice Exams", "title": "Midterm — Chapters 1 to 7", "file": "14-exam-midterm.html" },
+    { "id": "exam-final", "label": "Practice Exam B", "title": "Final — Chapters 8 to 13", "file": "15-exam-final.html" },
+    { "id": "exam-comp", "label": "Practice Exam C", "title": "Comprehensive", "file": "16-exam-comprehensive.html" },
+
+    { "id": "appx-a", "label": "Appendix A", "part": "Back Matter", "title": "Solutions to Chapter Exercises", "file": "17-appendix-a-solutions.html" },
+    { "id": "appx-b", "label": "Appendix B", "title": "Practice Exam Answer Keys", "file": "18-appendix-b-exam-keys.html" },
+    { "id": "appx-c", "label": "Appendix C", "title": "Glossary", "file": "19-appendix-c-glossary.html" },
+    { "id": "appx-d", "label": "Appendix D", "title": "Reference Tables: Ports, Events, and File Inventory", "file": "20-appendix-d-reference.html" }
+  ]
+}

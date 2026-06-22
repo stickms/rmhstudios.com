@@ -1,0 +1,349 @@
+<div class="objectives"><h4>Learning Objectives</h4><ul>
+  <li>Explain what realtime, bidirectional communication is and why the HTTP request/response model alone cannot support multiplayer.</li>
+  <li>Describe how Socket.io builds on WebSockets, and how <strong>rooms</strong> and the <strong>emit/on</strong> protocol structure an event-driven server.</li>
+  <li>Trace a player through the lobby lifecycle — join, ready-up, start, play, finish — and follow real events such as <code>ndw:joinLobby</code> and <code>ndw:scoreUpdate</code>.</li>
+  <li>Reason about <strong>in-memory per-lobby state</strong>, the <strong>host-reassignment</strong> rule, and what happens to that state when a process restarts.</li>
+  <li>Justify why the realtime layer is split into many standalone processes (isolation, independent scaling, blast-radius) and read the fleet's port table.</li>
+  <li>Identify the server-authoritative and anti-cheat patterns in the code: cooldowns, per-socket rate limits, and server-computed scores.</li>
+  <li>State the honest scaling limit: in-memory state caps each service at one replica without a backplane and sticky sessions (forward reference to Chapter 13).</li>
+</ul></div>
+
+<p class="lead">A portfolio page can be served, cached, and forgotten — the server answers one request and moves on. A multiplayer game cannot work that way. When one player drifts into a corner on the Neon Driftway track, every other player must see it within a frame or two, and the server has to remember who is in the race even though nobody is currently asking it anything. This chapter is about the part of rmhstudios.com that holds that live, shared state: a <em>fleet</em> of standalone WebSocket processes, each owning one slice of the realtime surface. We read the real socket server, the RMHbox lobby service, and the shared helpers they all lean on, and we end on the single honest limitation that shapes the platform's scaling story.</p>
+
+<h2 id="why-http-is-not-enough">Why request/response is not enough</h2>
+<p>The web's default conversation is <strong>HTTP request/response</strong>: the client asks, the server answers, the connection closes. That model is a superb fit for fetching a blog post. It is a poor fit for a game for two structural reasons.</p>
+<p>First, it is <em>client-initiated</em>. The server can only speak when spoken to. If another player moves, the server has new information for you — but with plain HTTP it has no way to push it. The usual workaround is <strong>polling</strong>: the client re-asks every few hundred milliseconds. Polling wastes bandwidth, adds latency equal to the poll interval, and still cannot deliver a 60-updates-per-second racing feed without melting the network.</p>
+<p>Second, it is <em>stateless</em>. Each HTTP request is meant to stand alone; the server is encouraged to forget you the moment it replies. But a lobby is the opposite of stateless — it is a small, evolving world (who is here, who is ready, what level was chosen) that must persist between messages and be shared by everyone in it.</p>
+<p>Realtime communication solves both problems by keeping the connection <em>open</em> and making it <em>two-way</em>.</p>
+
+<div class="keyterm"><span class="term">WebSocket</span> — a protocol that upgrades a single HTTP connection into a persistent, full-duplex channel. After the upgrade handshake, either side may send a message at any time over the same socket, with almost no per-message overhead. This is what lets a server <em>push</em> to a client.</div>
+
+<div class="keyterm"><span class="term">Realtime / bidirectional communication</span> — a model in which client and server hold a long-lived connection and exchange small messages in both directions as events happen, rather than the client driving every exchange. Latency is bounded by the network round trip, not by a polling interval.</div>
+
+<h2 id="socketio-rooms-events">Socket.io: rooms, namespaces, and the emit/on protocol</h2>
+<p>Raw WebSockets give you a byte pipe and little else — no reconnection, no fallback when a corporate proxy blocks the upgrade, no notion of "everyone in lobby ABC123." rmhstudios.com uses <strong>Socket.io</strong>, a library that wraps WebSockets (falling back to HTTP long-polling when needed) and adds the structure a multiplayer server actually needs. Every realtime process in the fleet constructs a Socket.io <code>Server</code> over a bare Node <code>http</code> server:</p>
+
+<pre><code>const httpServer = createServer(requestHandler);
+
+const io = new Server(httpServer, {
+  path: config.SOCKET_PATH,            // '/socket/'
+  cors: {
+    origin: config.CORS_ORIGIN.split(','),
+    methods: ['GET', 'POST'],
+    credentials: true,
+  },
+  maxHttpBufferSize: config.MAX_HTTP_BUFFER_SIZE,
+  pingInterval: config.PING_INTERVAL_MS,   // 25_000
+  pingTimeout: config.PING_TIMEOUT_MS,     // 20_000
+});</code></pre>
+
+<p>Two ideas in that snippet recur throughout the chapter. The <code>path</code> (<code>/socket/</code> for the main server, <code>/rmhbox-ws/</code> for RMHbox) is the URL prefix the reverse proxy uses to route a WebSocket upgrade to the right process. The <code>cors.origin</code> comes from <code>SOCKET_CORS_ORIGIN</code> — in development it is the web tier at <code>http://localhost:7005</code> — and the client connects using <code>VITE_SOCKET_URL</code> (<code>http://localhost:7001</code>). Those two environment variables are the contract between the browser and the fleet.</p>
+
+<div class="keyterm"><span class="term">Event-driven protocol (emit / on)</span> — instead of calling URLs, a Socket.io client and server exchange named <em>events</em> with JSON payloads. One side <code>emit</code>s an event; the other registers a handler with <code>on</code>. The event name (e.g. <code>'ndw:joinLobby'</code>) is the verb; the payload is the data. The whole multiplayer API is a vocabulary of such events.</div>
+
+<div class="keyterm"><span class="term">Room</span> — a server-side label that groups a set of connected sockets. A socket <code>join</code>s a room; the server can then <code>io.to(room).emit(...)</code> to broadcast to exactly that group. Rooms are how one process hosts thousands of independent lobbies without messages leaking between them. In the code, a Neon Driftway lobby <code>roomId</code> becomes the room <code>ndw:${roomId}</code>.</div>
+
+<div class="keyterm"><span class="term">Namespace</span> — a higher-level Socket.io partition of a single connection (e.g. <code>/admin</code>). rmhstudios.com generally does <em>not</em> split by namespace; RMHbox's auth middleware comment notes it is "applied server-wide — no namespace." Isolation between games comes instead from event-name prefixes (<code>ndw:</code>, <code>rmhtype:</code>, <code>bj:</code>) and from rooms.</div>
+
+<p>When the platform splits its many games inside one process, it does so by prefixing every event. The main socket server's <code>index.ts</code> simply registers each game's handlers against the same socket on connection:</p>
+
+<pre><code>io.on('connection', (socket) =&gt; {
+  // Register all game handlers
+  registerSliceItHandlers(io, socket);
+  registerNeonDriftwayHandlers(io, socket);
+  registerSynapseStormHandlers(io, socket);
+  registerRmhTypeHandlers(io, socket);
+  registerRmhStudyHandlers(io, socket);
+  registerAltairHandlers(io, socket);
+  registerKowloonKnockoutHandlers(io, socket);
+  registerRmhMusicHandlers(io, socket);
+  registerBlackjackHandlers(io, socket);
+  registerHoldemHandlers(io, socket);
+  registerBaccaratHandlers(io, socket);
+  registerRouletteHandlers(io, socket);
+  registerLightsOutHandlers(io, socket);
+  registerDoctrineHandlers(io, socket);
+  // ...
+});</code></pre>
+
+<p>Each <code>register*Handlers</code> call attaches that game's <code>socket.on('prefix:...')</code> listeners. Because the prefixes are disjoint, a <code>blackjack</code> event never reaches the <code>neon-driftway</code> handler even though both live in the same Node process and the same connection.</p>
+
+<h2 id="the-fleet">The fleet: eleven standalone processes</h2>
+<p>The single most important architectural fact about the realtime layer is that it is <em>not</em> one server. The <code>server/</code> directory holds eleven subdirectories, and the <code>package.json</code> scripts and <code>docker-compose.yml</code> services confirm that most of them run as <strong>separate operating-system processes</strong>. Each compose service runs one command of the form <code>node dist-server/server/&lt;name&gt;/index.cjs</code>; in development each has its own <code>tsx watch</code> script.</p>
+
+<div class="keyterm"><span class="term">Worker process</span> — a long-lived process with no client-facing socket. It wakes on a timer (or a queue) to do background work — generating puzzles, rendering thumbnails, posting as bots — and shares the database with the rest of the platform but serves no requests.</div>
+
+<table>
+  <thead><tr><th>Process (server/ dir)</th><th>Prod port</th><th>Dev script</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td><code>socket-server</code></td><td><code>7001</code></td><td><code>socket-server</code></td><td>Main Socket.io server: hosts most games (Slice It, Neon Driftway, Synapse Storm, RMHType, RMHStudy, Altair, Kowloon Knockout, RMHMusic, Blackjack, Hold'em, Baccarat, Roulette, Lights Out, Doctrine).</td></tr>
+    <tr><td><code>rmhbox</code></td><td><code>7676</code></td><td><code>rmhbox-server</code></td><td>RMHbox minigame-party lobby service (its own Socket.io server, path <code>/rmhbox-ws/</code>) with lobby manager, game coordinator, voting, chat, reconnection.</td></tr>
+    <tr><td><code>rmhtube</code></td><td><code>7003</code></td><td><code>rmhtube-server</code></td><td>Synchronized video watch-party rooms: shared media queue and a sync engine keeping playback aligned.</td></tr>
+    <tr><td><code>rmhmusic</code></td><td>(in 7001)</td><td>(part of <code>socket-server</code>)</td><td>Collaborative listening rooms. Not a standalone port — its handlers and source are <em>included</em> into the socket-server process via the watch globs.</td></tr>
+    <tr><td><code>recap</code></td><td><code>7004</code></td><td>(compose <code>recap</code>)</td><td>Lights Out recap runner — generates post-session recaps.</td></tr>
+    <tr><td><code>status</code></td><td><code>7008</code></td><td><code>status-server</code></td><td>Standalone health dashboard (status.rmhstudios.com): probes the website's public URL and the internal services, serves HTML + JSON, persists uptime history.</td></tr>
+    <tr><td><code>discord-bot</code></td><td>(no port)</td><td><code>discord-bot:dev</code></td><td>Discord slash commands + the RMHBot AI editor; long-lived gateway connection, 90s stop grace for in-flight AI requests.</td></tr>
+    <tr><td><code>doctrine-worker</code></td><td>(no port)</td><td><code>doctrine-worker:dev</code></td><td>Worker: daily puzzle generation, weekly reputation decay, 60-second Sahur-mode activation checks.</td></tr>
+    <tr><td><code>vibe-worker</code></td><td>(no port)</td><td><code>vibe-worker:dev</code></td><td>Worker: renders RMHVibe gallery thumbnails with headless Chromium; 30s stop grace for captures.</td></tr>
+    <tr><td><code>bot-worker</code></td><td>(no port)</td><td><code>bot-worker:dev</code></td><td>Worker: invents synthetic RMHark users and posts as them via DeepSeek; idles with no API key.</td></tr>
+    <tr><td><code>shared</code></td><td>(library)</td><td>(imported)</td><td>Not a process — common helpers (<code>logger</code>, <code>prisma-client</code>, <code>rate-limit</code>) imported by the others.</td></tr>
+  </tbody>
+</table>
+
+<div class="note"><b>Ports are environment-driven.</b> The numbers above are the production defaults baked into <code>docker-compose.yml</code> (<code>PORT_SOCKET:-7001</code>, <code>PORT_RMHBOX:-7676</code>, and so on). The compose header documents the staging set as <code>8005 / 8001 / 8676 / 8003</code>. Every port binds to <code>127.0.0.1</code> only; the public WebSocket URLs (e.g. <code>ws://rmhstudios.com/rmhbox-ws</code>) are exposed through Apache, which maps the path prefix to the loopback port.</div>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart TB
+  subgraph Edge[Apache reverse proxy]
+    P1[/socket/]
+    P2[/rmhbox-ws/]
+    P3[/rmhtube-ws/]
+  end
+  Browser[Browser client] -->|WS upgrade| Edge
+  Discord[Discord gateway] --> Bot
+  P1 --> Socket["socket-server :7001"]
+  P2 --> Rmhbox["rmhbox :7676"]
+  P3 --> Rmhtube["rmhtube :7003"]
+  Socket --> DB[("Postgres")]
+  Rmhbox --> DB
+  Rmhtube --> DB
+  Status["status :7008"] -. probes .-> Socket
+  Status -. probes .-> Rmhbox
+  Bot["discord-bot"] --> DB
+  Doc["doctrine-worker"] --> DB
+  Vibe["vibe-worker"] --> DB
+  BotW["bot-worker"] --> DB
+  </div>
+  <figcaption>Figure 7.1: the realtime fleet. Client-facing Socket.io processes sit behind a path-routing reverse proxy; workers and the Discord bot have no inbound port and reach the platform only through Postgres. Every process shares one Docker image but runs as its own container.</figcaption>
+</figure>
+
+<h3>Why split, and not one big server?</h3>
+<p>Running eight-plus processes is more moving parts than one. The platform accepts that cost for three concrete payoffs.</p>
+<ul>
+  <li><strong>Isolation / blast-radius.</strong> If the RMHbox party server hits an unhandled exception and crashes, the racing game on <code>7001</code> and the video rooms on <code>7003</code> keep running. A bug's blast radius is one service, not the whole realtime surface. Docker's <code>restart: unless-stopped</code> then brings just that container back.</li>
+  <li><strong>Independent scaling.</strong> A typing-race surge and a watch-party surge are different load shapes. Separate processes can (in principle) be given different CPU, memory, and replica counts. A worker that renders Chromium thumbnails should never compete for the event loop that is broadcasting a 60 Hz race.</li>
+  <li><strong>Independent deployment and lifecycle.</strong> The Discord bot needs a 90-second stop grace so in-flight AI edits finish; the vibe worker needs 30 seconds for screenshot captures; a socket server can drain in 10. Separate services let each declare its own shutdown contract, which we see directly in their <code>shutdown()</code> handlers.</li>
+</ul>
+<p>This is the same process-split philosophy introduced in Chapter 1, applied to the realtime tier specifically. The realtime fleet is the place where it pays off most, because realtime state is the hardest to move and the most sensitive to a crash.</p>
+
+<h2 id="event-driven-handlers">Anatomy of an event-driven handler</h2>
+<p>Let us read one real game end-to-end. Neon Driftway (event prefix <code>ndw:</code>) is a six-player racing game. Its entire shared state lives in a single module-level map, and a lobby is just a struct:</p>
+
+<pre><code>interface NDWLobby {
+  id: string; hostId: string; players: Map&lt;string, NDWPlayer&gt;;
+  status: 'WAITING' | 'COUNTDOWN' | 'PLAYING' | 'FINISHED'; levelId: number;
+}
+
+const ndwLobbies = new Map&lt;string, NDWLobby&gt;();
+const ABILITY_COOLDOWN_MS = 5000;
+const MAX_NDW_PLAYERS = 6;</code></pre>
+
+<p>Joining a lobby creates it on first arrival, enforces capacity, records the player, and — crucially — calls <code>socket.join</code> so future broadcasts reach this client:</p>
+
+<pre><code>socket.on('ndw:joinLobby', (payload: { roomId?: string; playerName?: string }) =&gt; {
+  const roomId = sanitizeLobbyId(payload?.roomId);
+  const name = sanitizeUserName(payload?.playerName);
+  let lobby = ndwLobbies.get(roomId);
+  if (!lobby) {
+    lobby = { id: roomId, hostId: socket.id, players: new Map(), status: 'WAITING', levelId: 1 };
+    ndwLobbies.set(roomId, lobby);            // first joiner becomes host
+  }
+  if (lobby.players.size &gt;= MAX_NDW_PLAYERS || lobby.status !== 'WAITING') return;
+  lobby.players.set(socket.id, { id: socket.id, name, /* ...zeroed state... */ });
+  socket.join(`ndw:${roomId}`);               // subscribe to this room's broadcasts
+  broadcastLobby(io, roomId);
+});</code></pre>
+
+<p>Notice what is <em>not</em> trusted. The client sends a <code>playerName</code>, which is run through <code>sanitizeUserName</code>; the <code>roomId</code> is run through <code>sanitizeLobbyId</code>. The first connection to a fresh room silently becomes the host (<code>hostId: socket.id</code>). And only the host can start the game — the start handler checks <code>lobby.hostId !== socket.id</code> and refuses otherwise. That check is the seed of <em>server authority</em>.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+sequenceDiagram
+  participant C as Client (host)
+  participant S as socket-server :7001
+  participant R as Room ndw:ABC
+  C-&gt;&gt;S: emit ndw:joinLobby roomId, name
+  S-&gt;&gt;S: create lobby, set hostId
+  S-&gt;&gt;C: socket.join ndw:ABC
+  S--&gt;&gt;R: emit ndw:lobbyState players
+  C-&gt;&gt;S: emit ndw:toggleReady
+  S--&gt;&gt;R: emit ndw:lobbyState updated
+  C-&gt;&gt;S: emit ndw:startGame levelId
+  S--&gt;&gt;R: emit ndw:startCountdown 3s
+  Note over S: setTimeout 3000ms
+  S--&gt;&gt;R: emit ndw:gameStarted
+  loop while PLAYING
+    C-&gt;&gt;S: emit ndw:playerUpdate x, speed
+    S--&gt;&gt;R: relay ndw:playerUpdate to others
+  end
+  </div>
+  <figcaption>Figure 7.2: the lobby-join and start sequence for Neon Driftway. The server owns the room, gates the start on host identity, and relays per-frame updates to the rest of the room with <code>socket.to(room).emit(...)</code> (sender excluded).</figcaption>
+</figure>
+
+<p>During play, each client reports its own position. The server stores it and fans it out to <em>everyone except the sender</em> using <code>socket.to(room)</code> (as opposed to <code>io.to(room)</code>, which would echo back to the sender too):</p>
+
+<pre><code>socket.on('ndw:playerUpdate', (payload) =&gt; {
+  const lobby = ndwLobbies.get(sanitizeLobbyId(payload?.roomId));
+  if (!lobby || lobby.status !== 'PLAYING') return;   // only relay mid-race
+  const player = lobby.players.get(socket.id);
+  if (!player) return;
+  if (typeof payload?.x === 'number') player.x = payload.x;
+  // ...copy the other numeric fields, type-checking each...
+  socket.to(`ndw:${roomId}`).emit('ndw:playerUpdate', {
+    id: socket.id, name: player.name, x: player.x, /* ... */
+  });
+});</code></pre>
+
+<div class="keyterm"><span class="term">In-memory state</span> — application state held in ordinary process memory (here, JavaScript <code>Map</code>s and objects) rather than in a database. It is fast and simple but volatile: it lives and dies with the process and is invisible to any other process.</div>
+
+<h2 id="lobby-lifecycle-host">In-memory state, the host, and reassignment</h2>
+<p>Because a lobby is a plain object in a <code>Map</code>, the lifecycle of that object <em>is</em> the lifecycle of the game session. The <code>status</code> field walks through <code>WAITING → COUNTDOWN → PLAYING → FINISHED</code>, driven entirely by events and timers inside the one process.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+stateDiagram-v2
+  [*] --&gt; WAITING: first ndw:joinLobby
+  WAITING --&gt; COUNTDOWN: host ndw:startGame
+  COUNTDOWN --&gt; PLAYING: after 3000ms timer
+  PLAYING --&gt; WAITING: all players finished
+  WAITING --&gt; [*]: last player leaves, lobby deleted
+  </div>
+  <figcaption>Figure 7.3: the in-memory lifecycle of a Neon Driftway lobby. Transitions are triggered by events (<code>ndw:startGame</code>), timers (the 3s countdown), and conditions (every player <code>finished</code>). When the player count hits zero the lobby object is removed from the map and ceases to exist.</figcaption>
+</figure>
+
+<p>The host is the player whose <code>socket.id</code> equals <code>lobby.hostId</code> — the privileged client that may start the game. But the host can leave or disconnect mid-session, and the lobby must survive. The platform's answer is <strong>host reassignment</strong>: when the host departs, the role passes to whoever is next in the player map.</p>
+
+<pre><code>export function handleNeonDriftwayDisconnect(io: Server, socket: Socket): void {
+  for (const [roomId, lobby] of ndwLobbies.entries()) {
+    if (lobby.players.has(socket.id)) {
+      lobby.players.delete(socket.id);
+      socket.leave(`ndw:${roomId}`);
+      if (lobby.players.size === 0) {
+        ndwLobbies.delete(roomId);                       // empty lobby is destroyed
+      } else {
+        if (lobby.hostId === socket.id)
+          lobby.hostId = lobby.players.keys().next().value || '';  // reassign host
+        io.to(`ndw:${roomId}`).emit('ndw:playerDisconnected', { id: socket.id, reason: 'disconnect' });
+        broadcastLobby(io, roomId);
+      }
+      break;
+    }
+  }
+}</code></pre>
+
+<p>RMHbox implements the same idea with more ceremony, because it is a service-layer codebase rather than a single file. Its <code>LobbyManager</code> holds <code>private readonly lobbies = new Map&lt;string, RMHboxLobby&gt;()</code> plus index maps (<code>userToLobby</code>, <code>channelToLobby</code>) for O(1) lookup. On host departure it explicitly handles <strong>host succession</strong> — promoting the next-joined player, auto-readying them (the host "is always ready"), emitting a host-changed event, and posting a system chat line "Host transferred to …" — and if no players remain it can promote the earliest <em>spectator</em> instead. RMHbox also supports reconnection: its Socket.io server enables <code>connectionStateRecovery</code> with a grace period, and a dedicated <code>ReconnectionHandler</code> tries to re-seat a returning socket into its prior lobby.</p>
+
+<div class="warn"><b>The state is volatile.</b> Every lobby in both services lives only in process memory. If the <code>socket-server</code> container is restarted — a deploy, a crash, an OOM kill — every <code>ndwLobbies</code> entry is gone, and so is every in-progress race. There is no database row for "lobby ABC123 is on lap 2." This is a deliberate trade (speed and simplicity for a transient game session) but it has a sharp consequence for scaling, which we reach below.</div>
+
+<h2 id="anti-cheat">Server authority and anti-cheat</h2>
+<p>If clients are not trusted, the server must be the referee. rmhstudios.com applies several overlapping patterns, all visible in the code.</p>
+
+<div class="keyterm"><span class="term">Server-authoritative</span> — the principle that the server holds the canonical state and validates or recomputes anything that affects the outcome, treating client messages as <em>requests</em> rather than facts. Clients render; the server decides.</div>
+
+<p><strong>Server-computed scores.</strong> RMHType does not let a client report its words-per-minute. The client sends only raw progress — characters typed and error count — and the server computes the score itself from a timestamp it controls:</p>
+
+<pre><code>socket.on('rmhtype:game:progress', (payload?: { position?: number; errors?: number }) =&gt; {
+  if (!checkRateLimit(socket.id, 'rmhtype:game:progress')) return;
+  const room = rooms.get(socketRoomMap.get(socket.id));
+  if (!room || room.state !== 'TYPING' || !room.roundStartTime) return;
+  // ...
+  const elapsedMs = Date.now() - room.roundStartTime;      // server's clock, not the client's
+  if (elapsedMs &gt; 0 &amp;&amp; position &gt; 0) {
+    player.wpm = (position / 5) / (elapsedMs / 60000);
+    player.accuracy = ((position - errors) / position) * 100;
+  }
+});</code></pre>
+
+<p>A cheater cannot simply announce "I typed at 400 WPM," because WPM is derived on the server from elapsed time the server measured. The same handler also refuses progress unless the room is genuinely in the <code>TYPING</code> state and the round has actually started.</p>
+
+<p><strong>Cooldowns.</strong> Abilities are time-gated on the server. Neon Driftway's slowdown power-up checks both a charge count and a wall-clock cooldown before it will fire, so spamming the event achieves nothing:</p>
+
+<pre><code>if (!player || player.abilityCharges &lt;= 0) return;
+const now = Date.now();
+if (now - player.lastAbilityTime &lt; ABILITY_COOLDOWN_MS) return;   // 5000ms gate
+player.abilityCharges--;
+player.lastAbilityTime = now;</code></pre>
+
+<p><strong>Per-socket rate limits.</strong> Underneath everything is a shared sliding-window limiter (<code>server/shared/rate-limit.ts</code>) configured per event in <code>config.SOCKET_RATE_LIMITS</code>. Lobby creation is capped at 3/min, chat at 30/min, while high-frequency events get generous ceilings (Altair's <code>altair:game:input</code> allows 1200/min). The limiter keys on <code>socketId:eventName</code>, garbage-collects expired windows, and caps total entries at <code>MAX_ENTRIES = 50_000</code> so an attacker cannot exhaust memory by flooding distinct events:</p>
+
+<pre><code>check(socketId: string, eventName: string): boolean {
+  const limit = rules[eventName];
+  if (!limit) return true;                       // unlisted events are unlimited
+  const key = `${socketId}:${eventName}`;
+  const entry = counters.get(key);
+  if (!entry || now - entry.windowStart &gt;= limit.windowMs) {
+    counters.set(key, { count: 1, windowStart: now });
+    return true;                                 // new window
+  }
+  if (entry.count &lt; limit.max) { entry.count++; return true; }
+  return false;                                  // over the limit — drop the event
+}</code></pre>
+
+<p><strong>Soft authentication.</strong> The main server's <code>softAuthMiddleware</code> runs on every connection. If the client supplies a session token in the handshake, the server validates it directly against the shared Postgres <code>session</code> table (joining to <code>user</code>) and, if unexpired, attaches <code>userId</code>/<code>userName</code> to <code>socket.data</code>. If there is no token, the connection is still allowed — anonymously — so legacy games keep working. RMHbox, by contrast, applies a stricter <code>authMiddleware</code> server-wide.</p>
+
+<div class="note"><b>Why query the session table directly?</b> A realtime process is not the web tier and does not run Better Auth in-process. Validating tokens with one SQL query against the same database lets every fleet member authenticate without importing the auth framework — the decoupling that Chapters 8–9 explore and that makes the Go migration of Chapter 13 tractable.</div>
+
+<h2 id="scaling-limit">The honest limit: one replica without a backplane</h2>
+<p>Everything that makes this design fast also caps how far it scales. Because each lobby lives in <em>one process's</em> memory, two replicas of the same service do not share lobbies. If a load balancer sent player A to replica 1 and player B to replica 2, they could "join" the same room code and never see each other — each replica has its own <code>ndwLobbies</code> map, and <code>io.to(room).emit(...)</code> on replica 1 reaches only sockets connected to replica 1.</p>
+
+<div class="keyterm"><span class="term">Backplane (adapter)</span> — a shared message bus (commonly a Redis pub/sub adapter for Socket.io) that forwards room broadcasts between server instances, so <code>io.to(room).emit(...)</code> on any replica reaches every member of that room across all replicas. Without it, broadcasts are confined to a single process.</div>
+
+<div class="keyterm"><span class="term">Sticky session</span> — a load-balancer policy that pins a given client to the same backend instance for the life of its connection. WebSocket upgrades and Socket.io's handshake require this even <em>with</em> a backplane, so a client's long-lived connection is not bounced between replicas.</div>
+
+<p>So the realtime fleet today is, by construction, a set of <strong>single-replica</strong> services. Scaling any one of them past one instance requires two additions that are not present in the code we read: a Socket.io <em>backplane</em> (e.g. the Redis adapter) so broadcasts cross process boundaries, and <em>sticky sessions</em> at the proxy so each client stays pinned to its instance. Even then, the lobby's authoritative state would need a shared home (Redis or the database) rather than a private <code>Map</code>, or lobbies would have to be sharded so that all members of one lobby land on one instance.</p>
+
+<div class="scope"><b>Scope: scaled-out realtime is not yet built.</b> As of the code in this chapter, no Redis adapter or sticky-session configuration is wired into the socket processes; each runs as exactly one container with <code>restart: unless-stopped</code>. The platform scales the realtime tier <em>vertically</em> (a bigger box) and by <em>splitting concerns across services</em>, not by replicating a single service. Horizontal replication of a stateful socket server — backplane, sticky routing, externalized lobby state — is the unsolved piece, and it is exactly the problem Chapter 13 takes up when it discusses Kubernetes and horizontal scaling.</div>
+
+<div class="summary"><h4>Summary</h4><ul>
+  <li>HTTP request/response is client-initiated and stateless; multiplayer needs server <em>push</em> and persistent shared state, which <strong>WebSockets</strong> provide and <strong>Socket.io</strong> structures.</li>
+  <li>The realtime API is an <strong>event-driven protocol</strong>: named events with JSON payloads, <code>emit</code> on one side and <code>on</code> the other, scoped to <strong>rooms</strong> like <code>ndw:${roomId}</code>.</li>
+  <li>The realtime layer is a <strong>fleet</strong> of standalone processes — <code>socket-server</code> (7001), <code>rmhbox</code> (7676), <code>rmhtube</code> (7003), <code>recap</code> (7004), <code>status</code> (7008), plus the Discord bot and three workers — split for isolation, independent scaling, and small blast radius.</li>
+  <li>Lobby state is held <strong>in memory</strong> as JavaScript maps; the <strong>host</strong> is just a stored <code>socket.id</code>, and on departure the role is <strong>reassigned</strong> to the next player. Restarting the process destroys all live sessions.</li>
+  <li><strong>Server authority</strong> shows up as server-computed scores (RMHType WPM), server-enforced <strong>cooldowns</strong>, per-socket <strong>rate limits</strong>, and host-only actions.</li>
+  <li>In-memory state caps each service at <strong>one replica</strong>; horizontal scaling needs a <strong>backplane</strong> and <strong>sticky sessions</strong> — the forward reference to Chapter 13.</li>
+</ul></div>
+
+<div class="exercises"><h2 id="ch7-exercises">Practice Exercises</h2>
+
+  <div class="exercise"><span class="qid">7.1</span>
+    <span class="tag concept">concept</span><span class="tag easy">easy</span>
+    Give two structural reasons the plain HTTP request/response model cannot, on its own, drive a real-time multiplayer race. For each, name the workaround a developer might reach for with HTTP alone and say why it falls short.</div>
+
+  <div class="exercise"><span class="qid">7.2</span>
+    <span class="tag concept">concept</span><span class="tag easy">easy</span>
+    Distinguish a Socket.io <em>room</em> from a <em>namespace</em>. Using the code, explain how rmhstudios.com keeps the Blackjack and Neon Driftway games from interfering even though they share one connection and one process.</div>
+
+  <div class="exercise"><span class="qid">7.3</span>
+    <span class="tag trace">trace</span><span class="tag medium">medium</span>
+    Trace the events exchanged from the moment a player emits <code>ndw:joinLobby</code> for a brand-new room code through the host pressing start and the race beginning. List each event by name, say whether it is client→server or server→room, and note the one timer involved.</div>
+
+  <div class="exercise"><span class="qid">7.4</span>
+    <span class="tag trace">trace</span><span class="tag medium">medium</span>
+    In <code>ndw:playerUpdate</code> the relay uses <code>socket.to(room).emit(...)</code>, but <code>ndw:startCountdown</code> uses <code>io.to(room).emit(...)</code>. Explain the behavioral difference and why each handler chose the form it did.</div>
+
+  <div class="exercise"><span class="qid">7.5</span>
+    <span class="tag concept">concept</span><span class="tag medium">medium</span>
+    Explain "server-authoritative" using the RMHType <code>rmhtype:game:progress</code> handler. What does the client send, what does the server refuse to accept, and how does computing WPM from <code>room.roundStartTime</code> defeat a client that lies about its speed?</div>
+
+  <div class="exercise"><span class="qid">7.6</span>
+    <span class="tag design">design</span><span class="tag medium">medium</span>
+    The platform runs the realtime layer as many separate processes instead of one. State the three benefits the chapter argues for, and give one concrete cost of the split. Cite a specific per-service shutdown contract from the code that the split makes possible.</div>
+
+  <div class="exercise"><span class="qid">7.7</span>
+    <span class="tag trace">trace</span><span class="tag hard">hard</span>
+    Walk through <code>handleNeonDriftwayDisconnect</code> for a four-player lobby whose <em>host</em> disconnects. State every mutation to the lobby object and every event emitted, and identify the exact line that performs host reassignment. Then state what happens instead if the disconnecting player was the <em>last</em> one.</div>
+
+  <div class="exercise"><span class="qid">7.8</span>
+    <span class="tag concept">concept</span><span class="tag hard">hard</span>
+    The shared rate limiter caps total entries at <code>MAX_ENTRIES = 50_000</code> and treats unlisted events as unlimited. Explain the attack each choice defends against (or fails to), and why an event like <code>altair:game:input</code> is given a limit of 1200/min while <code>altair:lobby:create</code> is given 3/min.</div>
+
+  <div class="exercise"><span class="qid">7.9</span>
+    <span class="tag design">design</span><span class="tag hard">hard</span>
+    You are asked to run two replicas of <code>socket-server</code> behind a load balancer. Describe precisely what breaks for two players who join the same Neon Driftway room code, and list every change required to make multi-replica work: at the proxy, in Socket.io, and in where lobby state lives. Name the two key terms involved.</div>
+
+  <div class="exercise"><span class="qid">7.10</span>
+    <span class="tag diagram">diagram</span><span class="tag medium">medium</span>
+    Draw a flowchart of the fleet showing the three client-facing Socket.io processes behind the reverse proxy (with their path prefixes and ports), the four no-port processes (Discord bot and three workers), and their shared connection to Postgres. Mark which arrows are WebSocket upgrades and which are plain database connections.</div>
+
+</div>

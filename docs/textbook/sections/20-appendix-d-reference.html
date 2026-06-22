@@ -1,0 +1,181 @@
+<p class="lead">This appendix is a flat reference: the processes and the ports they bind, the realtime
+event vocabulary the fleet speaks, a map of the repository's top-level directories, and
+the handful of environment variables that hold the system together. Everything here is
+read directly from the codebase — <code>docker-compose.yml</code>, the <code>package.json</code>
+scripts, the <code>server/</code> handlers, and <code>.env.example</code>. Where a name in
+the prose chapters was approximate (Baccarat's prefix, for example), this table gives the
+exact string as it appears in source. Use it as a lookup, not a tutorial; the narrative
+chapters explain <em>why</em> each piece exists.</p>
+
+<h2 id="ref-ports">Processes &amp; Ports</h2>
+<p>The platform builds a single Docker image and runs it as many containers, each launching
+one entrypoint of the form <code>node dist-server/server/&lt;name&gt;/index.cjs</code>. In
+development, <code>pnpm run dev</code> launches the same processes under <code>tsx watch</code>.
+The ports below are the production defaults baked into <code>docker-compose.yml</code>
+(<code>${PORT_*:-default}</code>); the compose header documents the staging set as
+<code>8005 / 8001 / 8676 / 8003</code>. Every published port binds to <code>127.0.0.1</code>
+only and is reached publicly through Apache path-routing.</p>
+
+<table>
+  <thead><tr><th>Process (<code>server/</code> dir)</th><th>Dev script (<code>package.json</code>)</th><th>Prod port</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td><code>socket-server</code></td><td><code>socket-server</code></td><td><code>7001</code> (<code>SOCKET_PORT</code>)</td><td>Main Socket.io server. Hosts most games via prefixed handlers: Slice It, Neon Driftway, Synapse Storm, RMHType, RMHStudy, Altair, Kowloon Knockout, RMHMusic, Blackjack, Hold'em, Baccarat, Roulette, Lights Out, Doctrine. Socket path <code>/socket/</code>.</td></tr>
+    <tr><td><code>rmhbox</code></td><td><code>rmhbox-server</code></td><td><code>7676</code> (<code>RMHBOX_PORT</code>)</td><td>RMHbox minigame-party lobby service — its own Socket.io server on path <code>/rmhbox-ws/</code> with a lobby manager, game coordinator, voting, chat, leaderboard, and reconnection handling.</td></tr>
+    <tr><td><code>rmhtube</code></td><td><code>rmhtube-server</code></td><td><code>7003</code> (<code>RMHTUBE_PORT</code>)</td><td>Synchronized video watch-party rooms on path <code>/rmhtube-ws/</code>: a shared media queue plus a sync engine that keeps playback aligned across viewers.</td></tr>
+    <tr><td><code>rmhmusic</code></td><td>(in <code>socket-server</code>)</td><td>(no own port)</td><td>Collaborative listening rooms. Not a standalone container — its handlers and source are <em>included</em> into the <code>socket-server</code> process via that script's <code>--include "server/rmhmusic/**/*"</code> watch glob.</td></tr>
+    <tr><td><code>recap</code></td><td>(compose <code>recap</code>)</td><td><code>7004</code> (<code>RECAP_PORT</code>)</td><td>Lights Out recap runner: a Discord-gateway client (raw <code>ws</code>) plus a small HTTP health server that generates post-session recaps. It is <em>not</em> a Socket.io service.</td></tr>
+    <tr><td><code>status</code></td><td><code>status-server</code></td><td><code>7008</code> (<code>STATUS_PORT</code>)</td><td>Standalone health dashboard (status.rmhstudios.com). Probes the website's public URL and the internal services, serves HTML + JSON at <code>/</code> and <code>/health</code>, and persists uptime history to the shared <code>db/</code> volume.</td></tr>
+    <tr><td><code>discord-bot</code></td><td><code>discord-bot:dev</code></td><td>(no port)</td><td>Discord slash commands plus the RMHBot AI editor. Holds a long-lived gateway connection; <code>stop_grace_period: 90s</code> lets in-flight AI edits finish.</td></tr>
+    <tr><td><code>doctrine-worker</code></td><td><code>doctrine-worker:dev</code></td><td>(no port)</td><td>Background worker: daily puzzle generation, weekly reputation decay, and 60-second Sahur-mode activation checks. No inbound socket.</td></tr>
+    <tr><td><code>vibe-worker</code></td><td><code>vibe-worker:dev</code></td><td>(no port)</td><td>Background worker: renders RMHVibe gallery thumbnails with headless Chromium. <code>stop_grace_period: 30s</code> for in-flight captures.</td></tr>
+    <tr><td><code>bot-worker</code></td><td><code>bot-worker:dev</code></td><td>(no port)</td><td>Background worker: invents synthetic RMHark users and posts as them via DeepSeek. Idles when no <code>DEEPSEEK_API_KEY</code> is set.</td></tr>
+    <tr><td><code>shared</code></td><td>(imported)</td><td>(library)</td><td>Not a process — common helpers (<code>logger</code>, <code>prisma-client</code>, <code>rate-limit</code>) imported by the others.</td></tr>
+    <tr><td><code>web</code> (Nitro/Vite)</td><td><code>vite dev</code></td><td><code>7005</code> blue / <code>7015</code> green (<code>PORT_WEB</code>)</td><td>The SSR web application. Deployed blue/green by <code>deploy/hotswap-web.sh</code> (not a fixed compose port); the active port is published by the hotswap script, which flips Apache between blue and green.</td></tr>
+  </tbody>
+</table>
+
+<div class="note"><b>Non-application ports.</b> Compose also runs <code>minio</code> (S3-compatible object storage) on <code>9000</code> with its console on <code>9001</code>, plus a one-shot <code>minio-init</code> that creates the bucket and exits. These are infrastructure, not part of the realtime fleet.</div>
+
+<h2 id="ref-events">Realtime Event Catalog</h2>
+<p>Each realtime service speaks an event-driven protocol: named events with JSON payloads,
+<code>socket.on</code> on one side and <code>emit</code> on the other. Games are kept disjoint by
+<em>event-name prefix</em> rather than by Socket.io namespace. Below, <b>C2S</b> means
+client&rarr;server (a <code>socket.on</code> handler) and <b>S2C</b> means server&rarr;client/room
+(an <code>emit</code> or <code>io.to(room).emit</code>). The lists are representative, not
+exhaustive; event names are quoted exactly as they appear in source.</p>
+
+<h3>socket-server (port 7001) — per-game handlers</h3>
+<p>Handler files live in <code>server/socket-server/handlers/</code>; each game's
+<code>register*Handlers</code> attaches its listeners on connection.</p>
+<table>
+  <thead><tr><th>Game / prefix</th><th>Direction</th><th>Representative events</th></tr></thead>
+  <tbody>
+    <tr><td rowspan="2">Neon Driftway <code>ndw:</code></td><td>C2S</td><td><code>ndw:joinLobby</code>, <code>ndw:toggleReady</code>, <code>ndw:startGame</code>, <code>ndw:playerUpdate</code>, <code>ndw:scoreUpdate</code>, <code>ndw:abilityUsed</code>, <code>ndw:playerFinished</code>, <code>ndw:leaveLobby</code></td></tr>
+    <tr><td>S2C</td><td><code>ndw:lobbyState</code>, <code>ndw:startCountdown</code>, <code>ndw:gameStarted</code>, <code>ndw:playerUpdate</code>, <code>ndw:slowdownApplied</code>, <code>ndw:playerDisconnected</code>, <code>ndw:gameOver</code></td></tr>
+    <tr><td rowspan="2">RMHType <code>rmhtype:</code></td><td>C2S</td><td><code>rmhtype:room:create</code>, <code>rmhtype:room:join</code>, <code>rmhtype:room:ready</code>, <code>rmhtype:room:transfer_host</code>, <code>rmhtype:game:start</code>, <code>rmhtype:game:progress</code>, <code>rmhtype:game:finish</code>, <code>rmhtype:solo:start</code></td></tr>
+    <tr><td>S2C</td><td><code>rmhtype:room:state</code>, <code>rmhtype:room:list</code>, <code>rmhtype:game:countdown</code>, <code>rmhtype:game:passage</code>, <code>rmhtype:game:roundResults</code>, <code>rmhtype:game:finalResults</code>, <code>rmhtype:error</code></td></tr>
+    <tr><td rowspan="2">Altair <code>altair:</code></td><td>C2S</td><td><code>altair:lobby:create</code>, <code>altair:lobby:join</code>, <code>altair:class:select</code>, <code>altair:game:start</code>, <code>altair:game:input</code>, <code>altair:game:level_up_choice</code>, <code>altair:game:ping</code></td></tr>
+    <tr><td>S2C</td><td><code>altair:lobby:state_snapshot</code>, <code>altair:game:countdown</code>, <code>altair:game:started</code>, <code>altair:game:state_snapshot</code>, <code>altair:game:event</code>, <code>altair:game:results</code>, <code>altair:error</code></td></tr>
+    <tr><td rowspan="2">Synapse Storm <code>ss:</code></td><td>C2S</td><td><code>ss:timeSync</code>, <code>ss:createLobby</code>, <code>ss:joinLobby</code>, <code>ss:toggleReady</code>, <code>ss:startMatch</code>, <code>ss:scoreUpdate</code>, <code>ss:finishMatch</code></td></tr>
+    <tr><td>S2C</td><td><code>ss:lobbyUpdate</code>, <code>ss:leaderboardUpdate</code>, <code>ss:matchStart</code>, <code>ss:countdown</code>, <code>ss:matchFinished</code>, <code>ss:error</code></td></tr>
+    <tr><td rowspan="2">Slice It <i>(bare names)</i></td><td>C2S</td><td><code>join_lobby</code>, <code>select_song</code>, <code>start_game</code>, <code>player_loaded</code>, <code>score_update</code>, <code>player_finished</code>, <code>toggle_ready</code>, <code>update_difficulty</code></td></tr>
+    <tr><td>S2C</td><td><code>lobby_update</code>, <code>song_selected</code>, <code>start_countdown</code>, <code>game_started</code>, <code>player_update</code>, <code>match_results</code>, <code>return_to_lobby</code></td></tr>
+    <tr><td rowspan="2">Kowloon Knockout <code>kk:</code></td><td>C2S</td><td><code>kk:create_room</code>, <code>kk:join_room</code>, <code>kk:input</code>, <code>kk:game_state</code>, <code>kk:fighter_ready</code>, <code>kk:leave</code></td></tr>
+    <tr><td>S2C</td><td><code>kk:room_created</code>, <code>kk:room_joined</code>, <code>kk:input</code>, <code>kk:game_state</code>, <code>kk:opponent_ready</code>, <code>kk:opponent_disconnected</code>, <code>kk:error</code></td></tr>
+    <tr><td rowspan="2">Blackjack <code>bj:</code></td><td>C2S</td><td><code>bj:create_room</code>, <code>bj:join_room</code>, <code>bj:place_bet</code>, <code>bj:hit</code>, <code>bj:stand</code>, <code>bj:double_down</code>, <code>bj:split</code>, <code>bj:take_insurance</code></td></tr>
+    <tr><td>S2C</td><td><code>bj:table_state</code>, <code>bj:betting_phase</code>, <code>bj:deal</code>, <code>bj:turn</code>, <code>bj:dealer_reveal</code>, <code>bj:round_results</code>, <code>bj:balance_update</code>, <code>bj:error</code></td></tr>
+    <tr><td rowspan="2">Hold'em <code>holdem:</code></td><td>C2S</td><td><code>holdem:create_room</code>, <code>holdem:join_room</code>, <code>holdem:fold</code>, <code>holdem:check</code>, <code>holdem:call</code>, <code>holdem:raise</code>, <code>holdem:all_in</code>, <code>holdem:rebuy</code></td></tr>
+    <tr><td>S2C</td><td><code>holdem:table_state</code>, <code>holdem:new_hand</code>, <code>holdem:turn</code>, <code>holdem:community_cards</code>, <code>holdem:showdown</code>, <code>holdem:hand_result</code>, <code>holdem:error</code></td></tr>
+    <tr><td rowspan="2">Baccarat <code>bacc:</code></td><td>C2S</td><td><code>bacc:create_room</code>, <code>bacc:join_room</code>, <code>bacc:place_bet</code>, <code>bacc:clear_bets</code>, <code>bacc:update_room</code>, <code>bacc:leave_room</code></td></tr>
+    <tr><td>S2C</td><td><code>bacc:table_state</code>, <code>bacc:betting_phase</code>, <code>bacc:card_reveal</code>, <code>bacc:round_result</code>, <code>bacc:balance_update</code>, <code>bacc:error</code></td></tr>
+    <tr><td rowspan="2">Roulette <code>rl:</code></td><td>C2S</td><td><code>rl:create_room</code>, <code>rl:join_room</code>, <code>rl:place_bet</code>, <code>rl:clear_bets</code>, <code>rl:update_room</code>, <code>rl:leave_room</code></td></tr>
+    <tr><td>S2C</td><td><code>rl:table_state</code>, <code>rl:betting_phase</code>, <code>rl:spin_result</code>, <code>rl:round_result</code>, <code>rl:balance_update</code>, <code>rl:error</code></td></tr>
+    <tr><td rowspan="2">Lights Out <code>lights-out:</code></td><td>C2S</td><td><code>lights-out:join</code>, <code>lights-out:ready</code>, <code>lights-out:set-mode</code>, <code>lights-out:start</code>, <code>lights-out:update</code>, <code>lights-out:leave</code>, <code>lights-out:return</code></td></tr>
+    <tr><td>S2C</td><td><code>lights-out:error</code> (most broadcasts in this handler emit via computed event variables)</td></tr>
+    <tr><td rowspan="2">RMHStudy <code>rmhstudy:</code></td><td>C2S</td><td><code>rmhstudy:room:create</code>, <code>rmhstudy:room:join</code>, <code>rmhstudy:room:chat</code>, <code>rmhstudy:timer:start</code>, <code>rmhstudy:timer:pause</code>, <code>rmhstudy:task:add</code>, <code>rmhstudy:task:toggle</code></td></tr>
+    <tr><td>S2C</td><td><code>rmhstudy:task:list</code>, <code>rmhstudy:room:browse_result</code>, <code>rmhstudy:error</code></td></tr>
+    <tr><td rowspan="2">Doctrine <code>doctrine:</code></td><td>C2S</td><td><code>doctrine:join:puzzle</code>, <code>doctrine:leave:puzzle</code>, <code>doctrine:join:incidents</code>, <code>doctrine:join:sahur</code></td></tr>
+    <tr><td>S2C</td><td><code>doctrine:players:count</code>, <code>doctrine:leaderboard:update</code>, <code>doctrine:incident:new</code>, <code>doctrine:sahur:activate</code>, <code>doctrine:sahur:deactivate</code></td></tr>
+  </tbody>
+</table>
+
+<h3>rmhbox (port 7676) — prefix <code>rmhbox:</code></h3>
+<p>Names are defined centrally in <code>lib/rmhbox/events.ts</code> and consumed by
+<code>server/rmhbox/</code> (lobby-manager, game-coordinator, vote-manager, chat, etc.).</p>
+<table>
+  <thead><tr><th>Direction</th><th>Representative events</th></tr></thead>
+  <tbody>
+    <tr><td>C2S</td><td><code>rmhbox:lobby:create</code>, <code>rmhbox:lobby:join</code>, <code>rmhbox:lobby:toggle_ready</code>, <code>rmhbox:lobby:transfer_host</code>, <code>rmhbox:lobby:promote_spectator</code>, <code>rmhbox:lobby:chat</code>, <code>rmhbox:game:select</code>, <code>rmhbox:game:cast_vote</code>, <code>rmhbox:game:input</code>, <code>rmhbox:leaderboard:fetch</code></td></tr>
+    <tr><td>S2C</td><td><code>rmhbox:lobby:created</code>, <code>rmhbox:lobby:state_snapshot</code>, <code>rmhbox:lobby:disbanded</code>, <code>rmhbox:game:action</code>, <code>rmhbox:game:countdown</code>, <code>rmhbox:game:started</code>, <code>rmhbox:game:vote_started</code>, <code>rmhbox:game:vote_result</code>, <code>rmhbox:game:session_results</code>, <code>rmhbox:error</code></td></tr>
+  </tbody>
+</table>
+
+<h3>rmhtube (port 7003) — prefix <code>rmhtube:</code></h3>
+<p>Defined in <code>lib/rmhtube/events.ts</code>; consumed by <code>server/rmhtube/</code>
+(room-manager, media-queue, sync-engine, chat-handler, reconnection).</p>
+<table>
+  <thead><tr><th>Direction</th><th>Representative events</th></tr></thead>
+  <tbody>
+    <tr><td>C2S</td><td><code>rmhtube:room:create</code>, <code>rmhtube:room:join</code>, <code>rmhtube:room:set_leader</code>, <code>rmhtube:sync:play</code>, <code>rmhtube:sync:pause</code>, <code>rmhtube:sync:seek</code>, <code>rmhtube:sync:ping</code>, <code>rmhtube:queue:add</code>, <code>rmhtube:queue:vote_skip</code>, <code>rmhtube:reaction:send</code></td></tr>
+    <tr><td>S2C</td><td><code>rmhtube:room:created</code>, <code>rmhtube:room:state_snapshot</code>, <code>rmhtube:sync:state</code>, <code>rmhtube:sync:media_changed</code>, <code>rmhtube:sync:pong</code>, <code>rmhtube:queue:updated</code>, <code>rmhtube:reaction:broadcast</code>, <code>rmhtube:error</code></td></tr>
+  </tbody>
+</table>
+
+<h3>rmhmusic (inside socket-server) — prefix <code>rmhmusic:</code></h3>
+<p>Defined in <code>lib/rmhmusic/events.ts</code>; consumed by <code>server/rmhmusic/</code>,
+whose source is bundled into the <code>socket-server</code> process.</p>
+<table>
+  <thead><tr><th>Direction</th><th>Representative events</th></tr></thead>
+  <tbody>
+    <tr><td>C2S</td><td><code>rmhmusic:room:create</code>, <code>rmhmusic:room:join</code>, <code>rmhmusic:room:chat</code>, <code>rmhmusic:music:play</code>, <code>rmhmusic:music:pause</code>, <code>rmhmusic:music:seek</code>, <code>rmhmusic:music:skip</code>, <code>rmhmusic:queue:add</code></td></tr>
+    <tr><td>S2C</td><td><code>rmhmusic:room:state_snapshot</code>, <code>rmhmusic:music:play</code>, <code>rmhmusic:music:track_changed</code>, <code>rmhmusic:sync:heartbeat</code>, <code>rmhmusic:queue:updated</code>, <code>rmhmusic:error</code></td></tr>
+  </tbody>
+</table>
+
+<div class="note"><b>Naming exactness.</b> A few prefixes differ from what a reader might guess:
+Baccarat is <code>bacc:</code> (not <code>baccarat:</code>), Roulette is <code>rl:</code> (not
+<code>roulette:</code>), Lights Out is hyphenated <code>lights-out:</code>, and Slice It uses
+<em>bare</em> event names (<code>join_lobby</code>, <code>score_update</code>) with no prefix,
+scoping by raw lobby-id rooms. The <code>recap</code> service emits no Socket.io events at
+all — it is a Discord-gateway client.</div>
+
+<h2 id="ref-files">Repository File Inventory</h2>
+<p>A map of the top-level layout. Paths are relative to the repository root.</p>
+<table>
+  <thead><tr><th>Path</th><th>What lives here</th></tr></thead>
+  <tbody>
+    <tr><td><code>app/</code></td><td>TanStack Start application shell: <code>router.tsx</code>, file-based <code>routes/</code>, generated <code>routeTree.gen.ts</code>, and <code>globals.css</code>. The SSR entry surface.</td></tr>
+    <tr><td><code>components/</code></td><td>React UI components, organized by feature/game (admin, altair, feed, library, neon-driftway, lights-out, doctrine, …) plus shared <code>Providers.tsx</code>.</td></tr>
+    <tr><td><code>lib/</code></td><td>Non-component application logic: auth (<code>auth.ts</code>, <code>auth-client.ts</code>), per-game shared code, and the central event-name modules (e.g. <code>lib/rmhbox/events.ts</code>, <code>lib/baccarat/events.ts</code>) shared by client and server.</td></tr>
+    <tr><td><code>server/</code></td><td>The realtime/worker fleet (see the Processes table): <code>socket-server</code>, <code>rmhbox</code>, <code>rmhtube</code>, <code>rmhmusic</code>, <code>recap</code>, <code>status</code>, <code>discord-bot</code>, three workers, and <code>shared</code>.</td></tr>
+    <tr><td><code>stores/</code></td><td>Client-side Zustand stores (<code>feedStore</code>, <code>doctrineStore</code>, <code>themeStore</code>, <code>userDisplayStore</code>).</td></tr>
+    <tr><td><code>hooks/</code></td><td>Reusable React hooks (<code>useDebounce</code>, <code>useFeedSSE</code>, the doctrine hooks, <code>useIsMobile</code>, …).</td></tr>
+    <tr><td><code>prisma/</code></td><td>The data layer: <code>schema.prisma</code> (142 models) and <code>migrations/</code>.</td></tr>
+    <tr><td><code>deploy/</code></td><td>Deployment assets: <code>apache/</code> vhosts, <code>hotswap-web.sh</code> (blue/green flip), Docker helpers, plus the in-progress <code>helm/</code>, <code>k8s/</code>, <code>terraform/</code>, and <code>deploy-go.sh</code> / <code>deploy-k8s.sh</code>.</td></tr>
+    <tr><td><code>go-services/</code></td><td>The strangler-fig Go rewrite scaffold: <code>cmd/</code> entrypoints mirroring the Node services (gateway, gamehub, rmhbox, rmhtube, …), <code>internal/</code>, <code>pkg/</code>, its own <code>go.mod</code> and Bazel/Make build.</td></tr>
+    <tr><td><code>scripts/</code></td><td>One-off and build scripts (<code>build-vibe-packages.ts</code>, <code>generate-library-metadata.ts</code>, seed scripts, the <code>news-pipeline/</code> and <code>epic/</code> subdirs).</td></tr>
+    <tr><td><code>data/</code></td><td>Static data assets, e.g. <code>library-metadata.json</code> and the <code>rmhbox/</code> data set.</td></tr>
+    <tr><td><code>public/</code></td><td>Static web assets served as-is: brand, images, models, textures, sprites, the library PDFs, and <code>manifest.webmanifest</code>.</td></tr>
+    <tr><td><code>docs/</code></td><td>Project documentation by subsystem, including the go-migration notes and this <code>textbook/</code>.</td></tr>
+    <tr><td><code>cli/</code>, <code>specs/</code>, <code>testing/</code>, <code>bazel/</code></td><td>Auxiliary: a small CLI package, game design specs, test fixtures, and Bazel macros.</td></tr>
+    <tr><td><code>deploy.sh</code></td><td>Top-level orchestrator that builds the image and brings the compose stack up (with <code>--scale web=0</code> so the hotswap script owns the web container).</td></tr>
+    <tr><td><code>webhook-server.cjs</code></td><td>Tiny HMAC-verified HTTP server that receives the GitHub deploy webhook and spawns the deploy.</td></tr>
+    <tr><td><code>docker-compose.yml</code></td><td>The single source of truth for services, ports, healthchecks, and stop-grace contracts (prod and staging via <code>--env-file</code>).</td></tr>
+    <tr><td><code>Dockerfile</code></td><td>Multi-stage build producing the one shared <code>rmhstudios-app</code> image (frontend bundle + bundled server entrypoints + Chromium for the vibe worker).</td></tr>
+    <tr><td><code>vite.config.ts</code></td><td>Vite + TanStack Start + Nitro build configuration for the web tier.</td></tr>
+    <tr><td><code>prisma/schema.prisma</code></td><td>The 142-model Postgres schema (auth, feed, games, economy, doctrine, …).</td></tr>
+    <tr><td><code>MODULE.bazel</code>, <code>Makefile</code></td><td>Bazel module + Make targets — the build-system layer used especially by the Go services.</td></tr>
+  </tbody>
+</table>
+
+<h2 id="ref-env">Key Environment Variables</h2>
+<p>The most load-bearing variables, read from <code>.env.example</code>. Many tuning knobs
+(<code>RMHBOX_*</code>, <code>RMHTUBE_*</code>, <code>BOT_*</code>, <code>STATUS_*</code>) are omitted
+here because they are optional and default sensibly; see <code>.env.example</code> for the full
+set.</p>
+<table>
+  <thead><tr><th>Variable</th><th>Purpose</th><th>Example / notes</th></tr></thead>
+  <tbody>
+    <tr><td><code>DATABASE_URL</code></td><td>Postgres connection string used by every process via the shared Prisma client.</td><td><code>postgresql://postgres:password@localhost:5432/rmhstudios</code></td></tr>
+    <tr><td><code>BETTER_AUTH_SECRET</code></td><td>Server-side secret for Better Auth session signing.</td><td>Generate with <code>openssl rand -base64 32</code>.</td></tr>
+    <tr><td><code>BETTER_AUTH_URL</code></td><td>Server-side base URL of the auth/web tier.</td><td><code>http://localhost:7005/</code></td></tr>
+    <tr><td><code>VITE_BETTER_AUTH_URL</code></td><td>Client-side (build-time) copy of the auth base URL.</td><td><code>http://localhost:7005/</code></td></tr>
+    <tr><td><code>SOCKET_CORS_ORIGIN</code></td><td><b>Required.</b> Comma-separated allowed origins; the socket servers refuse to start without it.</td><td><code>http://localhost:7005,https://rmhstudios.com</code></td></tr>
+    <tr><td><code>VITE_SOCKET_URL</code></td><td>Client URL for the main socket-server.</td><td><code>http://localhost:7001/</code></td></tr>
+    <tr><td><code>VITE_RMHBOX_SOCKET_URL</code></td><td>Client URL for the RMHbox service.</td><td><code>http://localhost:7676/</code></td></tr>
+    <tr><td><code>VITE_RMHTUBE_SOCKET_URL</code></td><td>Client URL for the RMHTube service.</td><td><code>http://localhost:7003/</code></td></tr>
+    <tr><td><code>WEBHOOK_SECRET</code></td><td><b>Required.</b> HMAC secret for the GitHub deploy webhook (<code>webhook-server.cjs</code>). Must not be <code>change-me</code>.</td><td>Generate with <code>openssl rand -hex 32</code>.</td></tr>
+    <tr><td><code>DISCORD_CLIENT_ID</code> / <code>DISCORD_CLIENT_SECRET</code></td><td>Discord OAuth credentials for user login.</td><td>From the Discord Developer Portal.</td></tr>
+    <tr><td><code>DISCORD_ACTIVITY_CLIENT_ID</code></td><td>Separate Discord app for embedded activities (e.g. Lights Out); <code>VITE_</code>-prefixed twin is baked into the client.</td><td>Falls back for the bot client id if unset.</td></tr>
+    <tr><td><code>GITHUB_CLIENT_ID</code> / <code>GITHUB_CLIENT_SECRET</code></td><td>GitHub OAuth credentials for the alternate login path.</td><td>From GitHub Developer settings.</td></tr>
+    <tr><td><code>TOKEN_ENCRYPTION_KEY</code></td><td>32-byte hex key for AES-256-GCM encryption of stored GitHub PATs.</td><td>Generated with <code>crypto.randomBytes(32)</code>.</td></tr>
+    <tr><td><code>ANTHROPIC_API_KEY</code></td><td>API key for the automated news pipeline's LLM calls.</td><td>From the Anthropic console.</td></tr>
+    <tr><td><code>DEEPSEEK_API_KEY</code> / <code>KIMI_API_KEY</code></td><td>LLM keys for RMHVibe generation and RMHark AI / bot-worker. When DeepSeek is unset, those features return "unavailable" and the bot-worker idles.</td><td>Optional; degrade gracefully.</td></tr>
+    <tr><td><code>S3_ENDPOINT</code> / <code>S3_BUCKET</code> / <code>S3_ACCESS_KEY_ID</code> / <code>S3_SECRET_ACCESS_KEY</code></td><td>S3-compatible object storage (MinIO locally, R2 in production) for media uploads.</td><td>Defaults match the compose <code>minio</code> service.</td></tr>
+  </tbody>
+</table>
+
+<div class="scope"><b>Scope: staging vs. production ports.</b> All port numbers in this appendix are the
+production defaults. The compose file documents a parallel staging set
+(<code>8005 / 8001 / 8676 / 8003</code>) selected by <code>--env-file</code>; the deploy machinery,
+not the application code, decides which set is live.</div>

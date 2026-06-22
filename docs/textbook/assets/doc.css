@@ -1,0 +1,200 @@
+/* rmhstudios textbook — print stylesheet (A4, Chromium page.pdf).
+   Base is shared with the go-migration report; the TEXTBOOK ADDITIONS block at
+   the bottom adds pedagogical elements (objectives, key terms, exercises, exams,
+   solutions). */
+:root {
+  --ink: #14181f;
+  --muted: #5b6675;
+  --accent: #2f6fed;
+  --accent-2: #0e7a5f;
+  --rule: #d8dee7;
+  --bg-soft: #f5f7fb;
+  --code-bg: #0f1722;
+  --code-ink: #d6e2f0;
+  --mono: "SFMono-Regular", "JetBrains Mono", Menlo, Consolas, monospace;
+  --sans: -apple-system, "Inter", "Segoe UI", Helvetica, Arial, sans-serif;
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+}
+
+* { box-sizing: border-box; }
+
+html { font-size: 10.5pt; }
+body {
+  font-family: var(--sans);
+  color: var(--ink);
+  line-height: 1.5;
+  margin: 0;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+@page { size: A4; margin: 0; }
+
+/* ── Cover ── */
+.cover {
+  height: 238mm;
+  display: flex; flex-direction: column; justify-content: center;
+  page-break-after: always;
+  background:
+    radial-gradient(120% 80% at 0% 0%, #eaf1ff 0%, rgba(234,241,255,0) 55%),
+    radial-gradient(120% 80% at 100% 100%, #e6fbf3 0%, rgba(230,251,243,0) 55%);
+  padding: 0 6mm;
+}
+.cover .eyebrow { color: var(--accent); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; font-size: 10pt; }
+.cover h1 { font-size: 34pt; line-height: 1.08; margin: 10px 0 6px; letter-spacing: -0.5px; }
+.cover .sub { font-size: 14pt; color: var(--muted); margin: 0 0 28px; max-width: 150mm; }
+.cover .meta { border-top: 2px solid var(--rule); padding-top: 14px; color: var(--muted); font-size: 10pt; }
+.cover .meta b { color: var(--ink); }
+.cover .chips { margin-top: 22px; display: flex; flex-wrap: wrap; gap: 8px; }
+.cover .chip { background: #fff; border: 1px solid var(--rule); border-radius: 999px; padding: 5px 12px; font-size: 9pt; font-family: var(--mono); }
+
+/* ── Section structure ── */
+h1.section { page-break-before: always; font-size: 22pt; letter-spacing: -0.3px; margin: 0 0 2px; padding-bottom: 8px; border-bottom: 3px solid var(--accent); }
+h1.section .kicker { display: block; font-size: 10pt; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); border: 0; margin-bottom: 4px; }
+h1.section .num { color: var(--accent); margin-right: 10px; }
+h2 { font-size: 15pt; margin: 22px 0 6px; padding-top: 2px; }
+h3 { font-size: 12pt; margin: 16px 0 4px; color: #25303f; }
+h4 { font-size: 10.5pt; margin: 12px 0 3px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+p { margin: 6px 0; }
+a { color: var(--accent); text-decoration: none; }
+ul, ol { margin: 6px 0 6px 0; padding-left: 20px; }
+li { margin: 3px 0; }
+small { color: var(--muted); }
+
+h1.section, h2, h3, h4 { break-after: avoid-page; }
+figure, table, pre { break-inside: avoid; }
+
+/* ── Callouts ── */
+.note, .warn, .ok, .scope {
+  border-left: 4px solid var(--accent);
+  background: var(--bg-soft);
+  padding: 8px 12px; margin: 12px 0; border-radius: 0 6px 6px 0; font-size: 9.8pt;
+}
+.warn { border-color: #c9821a; background: #fdf6ec; }
+.ok { border-color: var(--accent-2); background: #ecfbf5; }
+.scope { border-color: #7a3ff2; background: #f4efff; }
+.note b, .warn b, .ok b, .scope b { display: inline; }
+
+/* ── Tables ── */
+table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 9.3pt; }
+th, td { text-align: left; padding: 6px 9px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { background: var(--bg-soft); border-bottom: 2px solid var(--rule); font-weight: 700; }
+tr:nth-child(even) td { background: #fafbfe; }
+td code, th code { font-size: 8.6pt; }
+
+/* ── Code ── */
+pre {
+  background: var(--code-bg); color: var(--code-ink);
+  padding: 11px 13px; border-radius: 8px; overflow: hidden;
+  font-family: var(--mono); font-size: 8.4pt; line-height: 1.45;
+  white-space: pre-wrap; word-break: break-word; margin: 10px 0;
+}
+pre .c { color: #7d8aa0; }
+pre .k { color: #79c0ff; }
+pre .s { color: #7ee787; }
+code { font-family: var(--mono); font-size: 9pt; background: #eef1f6; padding: 1px 5px; border-radius: 4px; }
+pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+
+/* ── Figures / diagrams ── */
+figure { margin: 14px 0; text-align: center; }
+figure.mermaid-fig svg { max-width: 100%; height: auto; }
+figcaption { color: var(--muted); font-size: 8.8pt; margin-top: 6px; font-style: italic; }
+.mermaid { text-align: center; }
+
+/* ── TOC ── */
+.toc { page-break-after: always; }
+.toc h1 { font-size: 20pt; border-bottom: 3px solid var(--accent); padding-bottom: 8px; }
+.toc ol { list-style: none; padding-left: 0; counter-reset: toc; }
+.toc > ol > li { margin: 6px 0; font-weight: 600; }
+.toc > ol > li > ol { padding-left: 26px; font-weight: 400; }
+.toc .dot { color: var(--rule); }
+.toc a { color: var(--ink); display: flex; gap: 8px; }
+.toc .secnum { color: var(--accent); font-family: var(--mono); font-size: 8.6pt; min-width: 64px; flex: 0 0 64px; }
+.toc .toc-ttl { flex: 1; }
+.toc .toc-part { font-weight: 800; text-transform: uppercase; letter-spacing: .1em; font-size: 9pt; color: var(--muted); margin: 16px 0 4px; border-bottom: 1px solid var(--rule); padding-bottom: 3px; }
+
+/* ── Stat strip ── */
+.stats { display: flex; flex-wrap: wrap; gap: 10px; margin: 14px 0; }
+.stat { flex: 1 1 120px; border: 1px solid var(--rule); border-radius: 8px; padding: 10px 12px; background: #fff; }
+.stat .v { font-size: 18pt; font-weight: 800; color: var(--accent); line-height: 1; }
+.stat .l { font-size: 8.4pt; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: .05em; }
+
+.kbd { font-family: var(--mono); font-size: 8.6pt; background:#eef1f6; border:1px solid var(--rule); border-radius:4px; padding:1px 5px; }
+hr { border: none; border-top: 1px solid var(--rule); margin: 18px 0; }
+.lead { font-size: 11.5pt; color: #2a3340; }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   TEXTBOOK ADDITIONS
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* Front-matter pages (preface) use a softer body rhythm. */
+.frontmatter h1.section { border-bottom-color: var(--rule); }
+
+/* Learning objectives — opens each chapter. */
+.objectives {
+  border: 1px solid var(--rule); border-top: 4px solid var(--accent);
+  background: #fbfcff; border-radius: 8px; padding: 12px 16px 12px 16px; margin: 14px 0 18px;
+  break-inside: avoid;
+}
+.objectives h4 { margin: 0 0 6px; color: var(--accent); text-transform: uppercase; letter-spacing: .08em; font-size: 9.5pt; }
+.objectives ul { margin: 0; padding-left: 18px; }
+.objectives li { margin: 4px 0; font-size: 10pt; }
+
+/* Key-term callout. */
+.keyterm {
+  border-left: 4px solid var(--accent-2); background: #f0faf6;
+  padding: 8px 12px; margin: 12px 0; border-radius: 0 6px 6px 0; font-size: 9.8pt;
+}
+.keyterm .term { font-weight: 800; color: var(--accent-2); }
+
+/* Chapter summary. */
+.summary {
+  border: 1px dashed var(--rule); background: var(--bg-soft);
+  border-radius: 8px; padding: 10px 14px; margin: 18px 0; break-inside: avoid;
+}
+.summary h4 { margin: 0 0 6px; color: var(--ink); }
+
+/* Exercises block. */
+.exercises {
+  margin: 18px 0 6px; border-top: 3px solid var(--accent); padding-top: 10px;
+  break-before: auto;
+}
+.exercises > h2, .exercises > h3 { color: var(--accent); }
+.exercise {
+  margin: 10px 0; padding: 9px 12px; border: 1px solid var(--rule);
+  border-radius: 8px; background: #fff; break-inside: avoid; font-size: 10pt;
+}
+.exercise .qid { font-family: var(--mono); font-weight: 800; color: var(--accent); margin-right: 8px; }
+.tag {
+  display: inline-block; font-size: 7.4pt; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; padding: 1px 7px; border-radius: 999px; margin-left: 6px;
+  vertical-align: middle; border: 1px solid var(--rule);
+}
+.tag.concept { background: #eaf1ff; color: #2f6fed; border-color: #cfe0ff; }
+.tag.trace   { background: #f4efff; color: #7a3ff2; border-color: #e2d6ff; }
+.tag.diagram { background: #ecfbf5; color: #0e7a5f; border-color: #cdeee2; }
+.tag.design  { background: #fdf6ec; color: #c9821a; border-color: #f3e2c4; }
+.tag.easy    { background: #ecfbf5; color: #0e7a5f; }
+.tag.medium  { background: #fdf6ec; color: #c9821a; }
+.tag.hard    { background: #fdecec; color: #c0392b; border-color: #f3c4c4; }
+
+/* Exam pages. */
+.exam-meta {
+  display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0; font-size: 9.2pt; color: var(--muted);
+}
+.exam-meta .pill { border: 1px solid var(--rule); border-radius: 999px; padding: 3px 12px; background: #fff; }
+.exam-section { margin-top: 16px; }
+.exam-q { margin: 9px 0; padding: 8px 12px; border-left: 3px solid var(--accent); background: var(--bg-soft); border-radius: 0 6px 6px 0; font-size: 10pt; break-inside: avoid; }
+.exam-q .qid { font-family: var(--mono); font-weight: 800; color: var(--accent); margin-right: 8px; }
+.exam-q .pts { float: right; font-size: 8.4pt; color: var(--muted); font-family: var(--mono); }
+.choices { list-style: upper-alpha; margin: 4px 0 0 4px; padding-left: 20px; }
+.choices li { margin: 2px 0; }
+
+/* Worked solutions (appendix). */
+.solution {
+  margin: 10px 0; padding: 9px 12px; border: 1px solid var(--rule);
+  border-left: 4px solid var(--accent-2); border-radius: 0 8px 8px 0;
+  background: #f8fbf9; break-inside: avoid; font-size: 9.8pt;
+}
+.solution .qid { font-family: var(--mono); font-weight: 800; color: var(--accent-2); margin-right: 8px; }
+.solution .ans { font-weight: 700; }

@@ -1,0 +1,135 @@
+<div class="exam-meta"><span class="pill">90 minutes</span><span class="pill">100 points</span><span class="pill">Chapters 8&ndash;13</span></div>
+
+<p class="lead">This is the <b>Final</b>, covering Chapters 8 through 13: the games platform, the apps and content systems, the Go microservices tier, the build toolchain, deployment and operations, and scaling. The exam has three parts &mdash; multiple choice, short answer, and diagram/design &mdash; for 100 points total over 90 minutes. Answer in your own words; where a question names a real file, port, script, or model, cite it. Throughout, favour the book's honest-scope reasoning: say plainly what is <i>ported</i> versus <i>scaffolded</i>, what is <i>built</i> versus <i>planned</i>, and which constraint a given mechanism actually relieves. Budget your time roughly in proportion to the points.</p>
+
+<div class="exam-section">
+<h2 id="final-part-i">Part I &mdash; Multiple Choice (30 points)</h2>
+<p>Ten questions, 3 points each. Choose the single best answer.</p>
+
+<div class="exam-q"><span class="qid">B1</span><span class="pts">3 pts</span>
+In the Slice-It engine, <code>GameEngine.update()</code> reads <code>this.audioManager.getCurrentTime()</code> rather than counting animation frames. What property does sourcing time from audio playback give the simulation?
+<ol class="choices">
+  <li>It lets the game run without a renderer.</li>
+  <li>It keeps the simulation synchronized to the music so it cannot drift even if frames are dropped.</li>
+  <li>It removes the need for a deterministic RNG.</li>
+  <li>It makes the per-frame path perform network I/O.</li>
+</ol></div>
+
+<div class="exam-q"><span class="qid">B2</span><span class="pts">3 pts</span>
+A determined player edits the browser JavaScript and POSTs a score of 480,000 &mdash; in range, at speed 1.0, from a real logged-in session &mdash; directly to <code>app/routes/api/slice-it/score.ts</code>. What does the chapter say happens?
+<ol class="choices">
+  <li>The rate limiter blocks it because forged scores are detected by IP.</li>
+  <li>The <code>0 … 1_000_000_000</code> range check rejects it as impossible.</li>
+  <li>It passes every gate, because the server never received the keystrokes and cannot re-validate a plausible value.</li>
+  <li>The <code>auth.api.getSession()</code> call rejects it as unauthorized.</li>
+</ol></div>
+
+<div class="exam-q"><span class="qid">B3</span><span class="pts">3 pts</span>
+RmhTube ships <code>extrapolate</code>/<code>reanchor</code> sync math, an NTP-lite clock handshake, and two-tier drift correction; RmhMusic has none of these and syncs with one inline expression. What single architectural fact explains the difference?
+<ol class="choices">
+  <li>RmhMusic runs on its own process and port, so it needs less code.</li>
+  <li>RmhTube embeds the player itself and must correct drift, while RmhMusic lets an external Spotify player own the playhead.</li>
+  <li>RmhMusic uses fan-out-on-write and RmhTube uses fan-out-on-read.</li>
+  <li>RmhTube stores its media in MinIO and RmhMusic does not.</li>
+</ol></div>
+
+<div class="exam-q"><span class="qid">B4</span><span class="pts">3 pts</span>
+The live RMHark feed assembles each home timeline by querying <code>prisma.rMHark.findMany({ where: { userId: { in: followingIds }, ... } })</code>. Which fan-out strategy is this, and what is its characteristic cost?
+<ol class="choices">
+  <li>Fan-out-on-write: cheap reads, expensive writes (the "whale" problem).</li>
+  <li>Fan-out-on-read: cheap writes, expensive reads (a fresh query over the follow list per timeline).</li>
+  <li>A hybrid that flags high-follower authors <code>isHighFanout</code>.</li>
+  <li>Neither &mdash; timelines are materialized into a <code>FeedEntry</code> table on post.</li>
+</ol></div>
+
+<div class="exam-q"><span class="qid">B5</span><span class="pts">3 pts</span>
+What makes the Go gateway the strangler-fig boundary of the migration?
+<ol class="choices">
+  <li>It re-implements the React SSR renderer in Go so the Node app can be deleted.</li>
+  <li>It routes by longest-matching path prefix to Go services and sends everything else to the unchanged Node web tier, so services cut over one prefix at a time.</li>
+  <li>It issues Better Auth sessions for every upstream service.</li>
+  <li>It compiles all nine binaries into one container.</li>
+</ol></div>
+
+<div class="exam-q"><span class="qid">B6</span><span class="pts">3 pts</span>
+The Go <code>pkg/auth</code> package authenticates users without the Better Auth SDK. How?
+<ol class="choices">
+  <li>It re-issues sessions by signing new cookies in Go.</li>
+  <li>It calls back into the Node tier over HTTP for every request.</li>
+  <li>It runs one SQL lookup against the shared <code>session</code> table &mdash; a verbatim port of the Node query &mdash; and only <i>validates</i>, never <i>issues</i>.</li>
+  <li>It trusts the client-supplied <code>X-Rmh-*</code> identity headers.</li>
+</ol></div>
+
+<div class="exam-q"><span class="qid">B7</span><span class="pts">3 pts</span>
+The runbook claims "Go is NOT required locally." Which mechanism makes that true?
+<ol class="choices">
+  <li><code>rules_go</code> ships a hermetic Go 1.23 SDK that Bazel downloads and pins, so the build never touches a system <code>go</code>.</li>
+  <li>The frontend leaf shells out to pnpm instead of Go.</li>
+  <li>Gazelle generates the binaries directly from imports without compiling.</li>
+  <li>The distroless base image contains a Go compiler.</li>
+</ol></div>
+
+<div class="exam-q"><span class="qid">B8</span><span class="pts">3 pts</span>
+During a deploy, <code>deploy.sh</code> brings up every service with <code>--scale web=0</code> and hands <code>web</code> to <code>hotswap-web.sh</code>. Why is <code>web</code> treated specially?
+<ol class="choices">
+  <li>The web container is the only one that needs database migrations.</li>
+  <li>Compose recreates a container by stopping the old then starting the new, and that multi-second gap on the web port once produced a user-facing Cloudflare 520; the page must never go dark.</li>
+  <li>The web container cannot be SHA-tagged for rollback.</li>
+  <li>Apache cannot proxy to a Compose-managed container.</li>
+</ol></div>
+
+<div class="exam-q"><span class="qid">B9</span><span class="pts">3 pts</span>
+If a newly built web container never passes its health check in <code>hotswap-web.sh</code>, what happens?
+<ol class="choices">
+  <li>Traffic is moved anyway and the site serves 503s until a human intervenes.</li>
+  <li>Apache is flipped to the new port and then rolled back after draining.</li>
+  <li>Traffic is never moved; the old container keeps serving, so a bad build degrades to "old version stays up."</li>
+  <li>The deploy proceeds and Helm performs an <code>--atomic</code> rollback.</li>
+</ol></div>
+
+<div class="exam-q"><span class="qid">B10</span><span class="pts">3 pts</span>
+Why does the production Helm chart pin every realtime service (<code>socket</code>, <code>rmhbox</code>, <code>rmhtube</code>) to <code>replicas: 1</code>?
+<ol class="choices">
+  <li>Postgres can only accept connections from one realtime replica at a time.</li>
+  <li>They hold per-lobby state in memory, so without a shared backplane and sticky sessions, clients on different replicas cannot see each other.</li>
+  <li>A CDN already caches their websocket responses, so more replicas are redundant.</li>
+  <li>Kubernetes forbids running a stateful service on more than one node.</li>
+</ol></div>
+</div>
+
+<div class="exam-section">
+<h2 id="final-part-ii">Part II &mdash; Short Answer (30 points)</h2>
+<p>Six questions, 5 points each. Two to four sentences each; cite real identifiers where relevant.</p>
+
+<div class="exam-q"><span class="qid">B11</span><span class="pts">5 pts</span>
+Reading <code>app/routes/api/slice-it/score.ts</code> top to bottom, list in order the four kinds of gate a score POST must pass before the database is touched, and explain why the cheapest, most-abusable gate (the IP rate limit) is placed first.</div>
+
+<div class="exam-q"><span class="qid">B12</span><span class="pts">5 pts</span>
+Signal Forge persists both an opaque <code>savedRunState Json?</code> blob and the derived columns <code>highScore</code> and <code>floorReached</code>. State one task each representation can do that the other cannot, and explain why the leaderboard query reads the columns rather than the blob.</div>
+
+<div class="exam-q"><span class="qid">B13</span><span class="pts">5 pts</span>
+The chapter calls the "one MDX content pipeline" premise wrong on purpose. Describe how blog/news content actually flows from authoring to serving (name the authoring format, the offline step, the runtime source, and the body renderer), and state the limited sense in which the system is still "content-as-code."</div>
+
+<div class="exam-q"><span class="qid">B14</span><span class="pts">5 pts</span>
+The Go tier sorts its surfaces into <b>ported</b>, <b>scaffolded</b>, and <b>stubbed</b>. Define each, then classify (a) <code>doctrine-worker</code>, (b) the eight non-Rhyme-Time <code>rmhbox</code> minigames, and (c) the gateway. Explain why a stub like <code>stubGame.Start()</code> still compiles and why that matters for the FOUNDATION rule.</div>
+
+<div class="exam-q"><span class="qid">B15</span><span class="pts">5 pts</span>
+Contrast the repository's two build worlds: the Bazel-built Go core and the <code>//:frontend</code> leaf. Name one concrete mechanism that makes the Go build hermetic and one concrete way the frontend leaf is deliberately non-hermetic, and state the payoff the team accepts in exchange ("New frontend files need no BUILD changes").</div>
+
+<div class="exam-q"><span class="qid">B16</span><span class="pts">5 pts</span>
+Name the two scaling constraints that "actually bind" rmhstudios.com. For each, state precisely what bites and which Stage-1 mechanism relieves it. Then explain why rewriting the realtime tier in Go does not, by itself, relieve either constraint.</div>
+</div>
+
+<div class="exam-section">
+<h2 id="final-part-iii">Part III &mdash; Diagram and Design (40 points)</h2>
+<p>Three questions. Draw clearly (a labelled sketch or text-described flow is fine) and justify your decisions against the stated constraints.</p>
+
+<div class="exam-q"><span class="qid">B17</span><span class="pts">13 pts</span>
+<b>Diagram &mdash; the hotswap deploy.</b> Blue (port 7005) is currently live. Draw the <code>hotswap-web.sh</code> blue-green sequence as a state diagram with the states <i>BlueLive</i>, <i>GreenStarting</i>, <i>GreenHealthy</i>, <i>Flipped</i>, <i>Verified</i>, and <i>RolledBack</i>. Label each transition with its trigger (new container started, health poll passes within 60s, active-port file written and Apache gracefully reloaded, drain 8s, flip-verification probe on <code>:80</code> with the real <code>Host</code> header succeeds or fails). Mark the exact transition at which live user traffic moves to the new container, and mark which state the system lands in if (a) the green container never becomes healthy and (b) the verification probe fails. In one sentence, explain why the old container is only <i>removed</i> after the probe, not before.</div>
+
+<div class="exam-q"><span class="qid">B18</span><span class="pts">13 pts</span>
+<b>Design &mdash; adopt one Go service.</b> You are handed metrics showing the Node <code>rmhmusic</code> service is CPU-bound at peak. Design a plan to adopt <i>only</i> the Go <code>rmhmusic</code> service while leaving the other eight Node services in place. Address: (1) the single gateway change that routes <code>/rmhmusic-ws/</code> to the Go binary and how rollback works; (2) the Socket.IO-v4-versus-JSON-over-raw-WebSocket wire-protocol gap and what must exist before a real browser can connect; (3) how you would validate behavioural equivalence before sending live traffic; and (4) why this per-service, metrics-gated plan honours PR&nbsp;#121's Stage-4 condition rather than amounting to a big-bang rewrite. Be explicit about what stays in JavaScript and why.</div>
+
+<div class="exam-q"><span class="qid">B19</span><span class="pts">14 pts</span>
+<b>Design &mdash; scale the realtime tier.</b> Two players join the same <code>rmhbox</code> lobby. Currently <code>rmhbox</code> is pinned to <code>replicas: 1</code>. (a) Explain why you cannot simply scale it to three replicas behind an ordinary load balancer &mdash; give the concrete failure two lobby-mates would experience. (b) Name the two complementary mechanisms Stage&nbsp;1 adds to fix this, and state precisely what each one guarantees (one keeps a connection coherent; the other keeps a lobby coherent across replicas). (c) Construct a failure scenario that occurs if you enable exactly one of the two but not the other. (d) Draw the post-Stage-1 path of a game event from player X (stuck to replica 1) to player Y's screen (stuck to replica 2), naming every component it passes through, and explain why this same machinery would still be required even if <code>rmhbox</code> were rewritten in Go.</div>
+</div>

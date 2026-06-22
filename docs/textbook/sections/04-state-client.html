@@ -1,0 +1,484 @@
+<div class="objectives"><h4>Learning Objectives</h4><ul>
+  <li>Distinguish <b>local component state</b>, <b>client state</b> in a global store, and <b>server state</b> held in a cache, and pick the right tool for a given piece of data.</li>
+  <li>Read a real Zustand store built with <code>create(...)</code> and explain how its slice of state, its actions, and its selectors fit together.</li>
+  <li>Explain the <b>hydration boundary</b> — how server-rendered HTML becomes a live client tree — and why a mismatch between the two causes a "flash" or a hydration warning.</li>
+  <li>Describe how TanStack React Query turns a <code>fetch</code> into a cached, deduplicated, auto-refetching <b>query cache</b> entry, and when <code>staleTime</code> matters.</li>
+  <li>Trace an <b>optimistic update</b> through the feed store and say what guarantees it makes (and breaks) versus a server round-trip.</li>
+  <li>Justify why rmhstudios keeps durable server data and ephemeral client state in separate systems rather than one global blob.</li>
+</ul></div>
+
+<p class="lead">Every interactive page is a negotiation between three kinds of memory: the
+state that lives and dies inside one component, the state that the whole browser tab shares,
+and the state that really belongs to the server and is only <i>borrowed</i> by the client. This
+chapter reads how rmhstudios.com draws those lines — with React's own hooks for the first,
+<b>Zustand</b> stores for the second, and <b>TanStack React Query</b> for the third — and how all
+of it is stitched onto server-rendered HTML at the <b>hydration boundary</b>.</p>
+
+<h2 id="three-kinds-of-state">Three kinds of state</h2>
+<p>It is tempting to think of "state" as one undifferentiated bag of variables. In practice a
+production frontend has at least three populations of state with very different lifetimes and
+owners, and conflating them is the source of a large fraction of frontend bugs.</p>
+
+<div class="keyterm"><span class="term">Local component state</span> — data scoped to a single
+React component instance, created with <code>useState</code>/<code>useReducer</code> and
+discarded when the component unmounts. Example: whether a dropdown is open.</div>
+<div class="keyterm"><span class="term">Client state</span> — data that is owned by the browser
+session and shared across many components, but has no authoritative copy on the server. Example:
+which of the 30 site themes the visitor picked, or the live HP of the game you are playing.</div>
+<div class="keyterm"><span class="term">Server state</span> — data whose source of truth is the
+database behind an API. The client never <i>owns</i> it; it holds a possibly-stale <i>cache</i> of
+it. Example: the puzzle leaderboard, your reputation score, today's daily puzzles.</div>
+
+<p>The tells are ownership and freshness. If unplugging the network can never make the value
+"wrong," it is client state. If the value can drift out of date because someone else changed the
+database, it is server state and needs a cache with a refetch policy — not a hand-rolled
+variable. rmhstudios uses one library per category, as its <code>README.md</code> "Tech Stack"
+line states plainly: <i>"State: Zustand, TanStack React Query."</i></p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart TD
+  Q{Where is the source of truth?} -->|This component only| L[useState / useReducer]
+  Q -->|Browser session, no server copy| C[Zustand store]
+  Q -->|Database behind an API| S[React Query cache]
+  L --> R[Re-render this component]
+  C --> R2[Re-render every subscriber]
+  S --> R3[Re-render, plus background refetch]
+  </div>
+  <figcaption>Figure 4.1: choosing a state container by asking who owns the source of truth.</figcaption>
+</figure>
+
+<table>
+  <thead><tr><th>Category</th><th>Tool in repo</th><th>Lifetime</th><th>Owner</th><th>Example in code</th></tr></thead>
+  <tbody>
+    <tr><td>Local</td><td><code>useState</code>, custom hooks</td><td>Component mount</td><td>The component</td><td><code>replayPuzzle</code> in <code>$mode.tsx</code></td></tr>
+    <tr><td>Client (global)</td><td>Zustand <code>create(...)</code></td><td>Tab / persisted</td><td>The browser session</td><td><code>useThemeStore</code>, <code>useAltairGameStore</code></td></tr>
+    <tr><td>Server</td><td>TanStack React Query</td><td>Cache TTL</td><td>The database</td><td><code>useDoctrineReputation</code></td></tr>
+  </tbody>
+</table>
+
+<h2 id="local-state-and-hooks">Local state and custom hooks</h2>
+<p>The cheapest state is the kind you never share. When a value only matters to one component,
+React's own <code>useState</code> is the whole answer. In the puzzle page <code>app/routes/strategies/puzzles/$mode.tsx</code>,
+the "play again" replay puzzle and a remount key are exactly this — local, throwaway, owned by the
+page:</p>
+
+<pre><code>const [replayPuzzle, setReplayPuzzle] = useState&lt;PuzzleData | null&gt;(null);
+const [replayKey, setReplayKey] = useState(0);</code></pre>
+
+<p>When a <i>pattern</i> of local state recurs, the repo extracts it into a <b>custom hook</b> under
+<code>hooks/</code> — a plain function whose name starts with <code>use</code> and that calls other
+hooks. These are not global state; each call gets its own independent state. <code>hooks/useDebounce.ts</code>
+is a tidy example that delays a value until typing stops:</p>
+
+<pre><code>export function useDebounce&lt;T&gt;(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  useEffect(() =&gt; {
+    const timer = setTimeout(() =&gt; setDebouncedValue(value), delay);
+    return () =&gt; clearTimeout(timer);
+  }, [value, delay]);
+  return debouncedValue;
+}</code></pre>
+
+<p><code>hooks/useLocalStorage.ts</code> is subtler: it is local state that <i>persists</i> across
+reloads by mirroring into <code>localStorage</code>. Crucially, its comment notes it is "SSR-safe —
+returns initialValue on the server, hydrates from localStorage on mount." That phrase is the whole
+next section in miniature: the server cannot read the browser's <code>localStorage</code>, so the
+first render must use the default, and the real value is read inside a <code>useEffect</code> that
+only runs in the browser.</p>
+
+<div class="note"><b>Why <code>useEffect</code> for storage reads?</b> Effects run only on the client,
+after the first paint. Reading <code>localStorage</code> directly in the render body would either
+crash on the server (no <code>localStorage</code> global) or produce HTML that disagrees with the
+client's first render. Deferring the read to an effect keeps the first render identical on both
+sides.</div>
+
+<h2 id="zustand-stores">Global client state with Zustand</h2>
+<p>When many unrelated components need the same value — the whole app's theme, or every HUD widget
+reading the player's HP — lifting state up through props becomes unworkable. rmhstudios reaches for
+<b>Zustand</b>, a tiny store library. A store is created with the <code>create</code> function,
+which takes a setup callback receiving <code>set</code> (to write) and <code>get</code> (to read),
+and returns a React hook you call from any component.</p>
+
+<div class="keyterm"><span class="term">Store</span> — a single object holding a slice of client
+state plus the <b>actions</b> (functions) that mutate it, created once at module load and shared by
+every component that imports its hook. In Zustand the store hook doubles as a <b>selector</b>: pass
+a function and the component re-renders only when that selected slice changes.</div>
+
+<p>The smallest store in <code>stores/</code> is <code>themeStore.ts</code>. After a long
+<code>SITE_STYLES</code> table (the 30 named themes), the store itself is four lines:</p>
+
+<pre><code>export const useThemeStore = create&lt;ThemeStore&gt;((set) =&gt; ({
+  style: "default",
+  setStyle: (style) =&gt; set({ style }),
+}));</code></pre>
+
+<p>A component selects just the field it needs — <code>const style = useThemeStore((s) =&gt; s.style)</code>
+in <code>components/Providers.tsx</code> — so changing an unrelated field would not re-render it.
+This is the payoff of a store over React context: fine-grained subscriptions instead of re-rendering
+every consumer on any change.</p>
+
+<h3>A real game store: <code>useAltairGameStore</code></h3>
+<p>Games are where global client state earns its keep, because dozens of systems read and write the
+same run. <code>lib/altair/stores/game-store.ts</code> holds the entire per-run session: <code>phase</code>,
+<code>hp</code>, <code>xp</code>, <code>level</code>, <code>kills</code>, <code>coins</code>,
+the chosen weapons and passives, and a long list of <b>actions</b>. Its header comment is explicit
+that this is "per-run state (NOT persisted)" — it is wiped between runs, which is why the store has a
+<code>goToMenu</code> action that resets every field back to its starting value.</p>
+
+<p>The actions show the two ways Zustand lets you write state. The simplest take a fresh value;
+others read the current state with <code>get()</code> or with the functional form of <code>set</code>
+to derive the next value from the previous one:</p>
+
+<pre><code>takeDamage: (amount) =&gt; {
+  const s = get();
+  const reduced = Math.max(1, amount - s.effectiveStats.armor);
+  const newHp = Math.max(0, s.hp - reduced);
+  set({ hp: newHp });
+  if (newHp &lt;= 0) {
+    if (s.revivalsRemaining &gt; 0) {
+      get().revive();
+    } else {
+      get().die();
+    }
+  }
+},
+
+heal: (amount) =&gt; {
+  set((s) =&gt; ({ hp: Math.min(s.maxHp, s.hp + amount) }));
+},</code></pre>
+
+<p>Notice <code>takeDamage</code> calls <code>get().revive()</code> and <code>get().die()</code> —
+actions can invoke other actions, so the store encapsulates not just data but the rules that
+govern it (armor reduces damage, zero HP triggers a revive or death). The HUD does not implement any
+of that logic; it only reads <code>hp</code> and renders a bar. That separation — fat store, thin
+component — is the point.</p>
+
+<div class="keyterm"><span class="term">Combo / derived state</span> — the game store keeps a
+<code>kills</code> counter and a separate <code>totalKills</code>, and an <code>addKill</code> action
+that bumps both then calls <code>checkKillMilestones()</code> to award coins at thresholds
+(500, 1500, 3000, 5000). Derived rewards live in the store, not the component, so every caller sees
+consistent milestone behaviour.</div>
+
+<h3>Persisting client state: the <code>persist</code> middleware</h3>
+<p>Some client state should outlive the tab. Zustand ships a <code>persist</code> middleware that
+serialises a store to <code>localStorage</code> automatically. The Altair settings store
+(<code>lib/altair/stores/settings-store.ts</code>) wraps its setup in <code>persist(...)</code> and
+declares both a storage key and a <code>partialize</code> function that whitelists which fields to
+save:</p>
+
+<pre><code>export const useAltairSettingsStore = create&lt;AltairSettingsState&gt;()(
+  persist(
+    (set, get) =&gt; ({
+      theme: 'dark',
+      keybinds: { ...DEFAULT_KEYBINDS },
+      /* ...volumes, toggles, actions... */
+    }),
+    {
+      name: 'altair-settings',
+      partialize: (s) =&gt; ({
+        theme: s.theme,
+        keybinds: s.keybinds,
+        masterVolume: s.masterVolume,
+        /* ...only the durable fields... */
+      }),
+    }
+  )
+);</code></pre>
+
+<p>The sibling <code>meta-store.ts</code> goes one step further: its header notes it is "persisted to
+localStorage + synced to DB," and an action calls a save endpoint with <code>keepalive</code> on
+unload. That is the boundary case where a store straddles client and server state — the localStorage
+copy is the fast, offline-friendly cache, and the database is the durable backup. It is worth
+flagging honestly:</p>
+
+<div class="scope">The Altair meta-store is the one store that blurs the client/server line on
+purpose: durable progression (coins, unlocked classes, bestiary) is held client-side for instant
+reads and pushed to the database opportunistically. Treat it as the exception that proves the rule,
+not the pattern to copy for ordinary server data.</div>
+
+<h2 id="server-state-react-query">Server state with TanStack React Query</h2>
+<p>Data that lives in the database needs different machinery. The client should fetch it, remember
+it briefly so the next component doesn't re-fetch, refresh it when it goes stale, and re-render when
+it arrives — all without hand-written loading flags scattered across components. That is exactly
+what <b>TanStack React Query</b> provides.</p>
+
+<div class="keyterm"><span class="term">Query cache</span> — React Query's in-memory store keyed by a
+<b>query key</b> (an array like <code>['doctrine', 'reputation']</code>). The first <code>useQuery</code>
+with a given key runs its <code>queryFn</code>; later mounts with the same key get the cached value
+instantly and only refetch when it is older than <code>staleTime</code>. Identical keys mounted at
+once are <b>deduplicated</b> into a single network request.</div>
+
+<p>The cache is configured once, at the app root, by wrapping the tree in a
+<code>QueryClientProvider</code>. In <code>components/Providers.tsx</code> a single
+<code>QueryClient</code> sets sensible defaults:</p>
+
+<pre><code>const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60_000, // 1 minute
+      retry: 1,
+    },
+  },
+});</code></pre>
+
+<p>That <code>Providers</code> component is mounted by <code>app/routes/__root.tsx</code> around the
+router's <code>&lt;Outlet /&gt;</code>, so every route in the app shares one cache. A query itself is
+just a hook. <code>hooks/useDoctrineReputation.ts</code> wraps a <code>fetch</code> in
+<code>useQuery</code>, supplying a key, an async <code>queryFn</code>, and per-query overrides:</p>
+
+<pre><code>export function useDoctrineReputation() {
+  return useQuery({
+    queryKey: ['doctrine', 'reputation'],
+    queryFn: async () =&gt; {
+      const res = await fetch('/api/doctrine/reputation');
+      if (!res.ok) throw new Error('Failed to fetch reputation');
+      return res.json();
+    },
+    staleTime: 60_000,
+    refetchInterval: 120_000,
+  });
+}</code></pre>
+
+<p>The hook returns the familiar <code>{ data, isLoading, error }</code> shape; the component just
+reads <code>data</code>. The <code>refetchInterval</code> of two minutes means the leaderboard slowly
+self-heals as other players' scores change — a polling cadence chosen per query, not globally.
+A query key can carry parameters: <code>useDoctrineReputationLeaderboard(limit)</code> keys on
+<code>['doctrine', 'reputation', 'leaderboard', limit]</code>, so different limits are cached
+separately. The puzzle page reads today's puzzles the same way and then layers <i>local</i> replay
+state on top — a clean illustration of server state and client state coexisting in one component:</p>
+
+<pre><code>const { data: puzzles } = useQuery({
+  queryKey: ['doctrine', 'puzzles', 'today'],
+  queryFn: async () =&gt; {
+    const res = await fetch('/api/doctrine/puzzles/today');
+    return res.json();
+  },
+  staleTime: 60_000,
+});
+const dailyPuzzle = puzzles?.find((p) =&gt; p.mode.toLowerCase() === mode);
+const activePuzzle = replayPuzzle ?? dailyPuzzle;</code></pre>
+
+<div class="note"><b>Reads vs. writes in this codebase.</b> rmhstudios uses React Query's
+<code>useQuery</code> for reads, but it does <i>not</i> use the matching <code>useMutation</code>
+helper for writes. Writes go through a plain <code>fetch</code> and then update a Zustand store
+directly — as the feed does below. So the "optimistic update" pattern here is implemented in the
+store, not via React Query's mutation cache.</div>
+
+<h2 id="optimistic-updates">Optimistic updates in the feed store</h2>
+<p>When you post an "RMHark," waiting for the server before showing it would feel sluggish. The feed
+applies the change to the UI <i>first</i>, assuming success, and lets the server confirm afterward.</p>
+
+<div class="keyterm"><span class="term">Optimistic update</span> — a write that immediately mutates
+local state to the expected post-write value, before (or instead of) waiting for the server's
+response, trading a small risk of having to roll back for a UI that feels instant.</div>
+
+<p><code>stores/feedStore.ts</code> is a Zustand store that <i>also</i> caches a server resource — the
+infinite feed — because the feed needs realtime behaviour (cursor paging, dedup, a "buffer" of
+incoming posts) that goes beyond a simple query. Its <code>prependItem</code> action is the optimistic
+insert, and it guards against duplicates so an optimistic add and the later realtime echo do not
+double up:</p>
+
+<pre><code>prependItem: (item) =&gt; {
+  set((state) =&gt; {
+    // Skip if item already exists (prevents SSE + local double-add)
+    if (state.items.some((i) =&gt; i.id === item.id)) return state;
+    return { items: [item, ...state.items] };
+  });
+},</code></pre>
+
+<p>The store distinguishes <i>your</i> action from everyone else's. In <code>receiveCreated</code>,
+a streamed post that you authored is prepended immediately ("self-action consistency"), while a
+stranger's post is buffered into <code>pendingItems</code> and surfaced behind an "N new posts" pill
+so your scroll position is never yanked. The real comment in the file makes the intent explicit:</p>
+
+<pre><code>// For You surface: your own post appears immediately (self-action
+// consistency); everyone else's is buffered behind an "N new posts" pill
+// so the scroll position is never yanked.
+if (delivery.own) {
+  get().prependItem(item);
+} else {
+  set((state) =&gt; ({ pendingItems: [item, ...state.pendingItems] }));
+}</code></pre>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+sequenceDiagram
+  participant U as User
+  participant C as Component
+  participant FS as feedStore
+  participant API as API / DB
+  U-&gt;&gt;C: Submit post
+  C-&gt;&gt;FS: prependItem(optimistic)
+  FS--&gt;&gt;C: Re-render (post visible)
+  C-&gt;&gt;API: POST /api/rmharks
+  API--&gt;&gt;C: 200 with real id
+  API-&gt;&gt;FS: SSE rmhark.created (own=true)
+  FS-&gt;&gt;FS: dedupe by id, no double-add
+  </div>
+  <figcaption>Figure 4.2: an optimistic insert, then the server echo deduplicated by id.</figcaption>
+</figure>
+
+<p>The store even maintains a <i>second</i> cache for cross-cutting display data:
+<code>userDisplayStore.ts</code> caches each user's avatar and name by id and merges updates so "a
+stale null doesn't clobber a valid image." This is a deliberate, hand-built cache because the same
+user appears across many feed items and should look consistent everywhere.</p>
+
+<h2 id="hydration-boundary">The hydration boundary</h2>
+<p>rmhstudios server-renders pages with TanStack Start over Nitro (Chapter 2). The server produces
+HTML so the first paint is fast and crawlable; then the same React tree boots in the browser and
+"takes over" the static markup, attaching event handlers and state.</p>
+
+<div class="keyterm"><span class="term">Hydration boundary</span> — the moment the client's React
+tree adopts the server-rendered HTML. For it to succeed, the client's <i>first</i> render must
+produce markup identical to what the server emitted; any difference is a hydration mismatch, which
+React must repair (a visible "flash" or a console warning).</div>
+
+<p>This is the precise reason server data and client state are kept apart and seeded carefully. The
+server cannot know browser-only facts — <code>localStorage</code>, the live session cookie's resolved
+user — at the instant it renders, so naively reading them on the client's first render would diverge
+from the server HTML. The repo handles this with two complementary tactics, both visible in
+<code>components/Providers.tsx</code>.</p>
+
+<p>First, an inline theme script in <code>__root.tsx</code> applies the saved theme class and
+background colour <i>before</i> React hydrates, so the document already matches. The Providers effect
+that syncs theme then guards its very first run to avoid touching anything React already agreed on —
+its comment warns that "touching ANYTHING here would flash the wrong colour":</p>
+
+<pre><code>// Hydrate style from localStorage on mount
+useEffect(() =&gt; {
+  const stored = localStorage.getItem("rmh-style") as SiteStyle | null;
+  if (stored &amp;&amp; SITE_STYLES.some((s) =&gt; s.id === stored)) {
+    useThemeStore.getState().setStyle(stored);
+  }
+}, []);</code></pre>
+
+<p>Second, the session is <b>seeded from the server</b> so the shell renders signed-in on the very
+first frame. <code>__root.tsx</code> reads an <code>initialUser</code> in its loader and passes it to
+<code>Providers</code>, which uses it as the initial state — the comment is unambiguous: it makes
+"the very first painted HTML (and the first client render) ... already signed-in — no 'signed out'
+flash on refresh." The live <code>better-auth</code> session then resolves a moment later and "always
+wins," self-healing if the seed was stale.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart LR
+  A[Nitro SSR renders HTML] --&gt;|initialUser, theme class| B[Browser shows first paint]
+  B --&gt; C[React hydrates]
+  C --&gt;|identical first render| D[Tree is live]
+  D --&gt; E[Effects run: read localStorage]
+  E --&gt; F[Live session resolves and wins]
+  C -.mismatch.-&gt; G[Flash / hydration warning]
+  </div>
+  <figcaption>Figure 4.3: crossing the hydration boundary without a mismatch by seeding client state from the server.</figcaption>
+</figure>
+
+<div class="warn"><b>The mismatch trap.</b> Reading <code>localStorage</code>, <code>window</code>, or
+the live session directly in a render body is the classic hydration bug: the server has no such
+value, so the markup differs and React tears down and rebuilds the subtree. The fix is always the
+same — render a server-safe default first, then reconcile to the real value inside a
+<code>useEffect</code> (or seed the real value from the server loader, as the session does).</div>
+
+<h2 id="when-to-use-what">Putting the lines in the right place</h2>
+<p>The discipline that makes this codebase legible is that each piece of state lives in exactly one
+of the three systems, and the choice follows from ownership:</p>
+<ul>
+  <li><b>One component, throwaway?</b> <code>useState</code> — e.g. <code>replayKey</code>.</li>
+  <li><b>Shared across the tab, no server truth?</b> A Zustand store — theme, game run, settings.
+  Add <code>persist</code> if it should survive a reload.</li>
+  <li><b>Owned by the database?</b> React Query, keyed and given a <code>staleTime</code> — reputation,
+  leaderboards, daily puzzles.</li>
+  <li><b>A server resource needing realtime/optimistic behaviour?</b> A purpose-built Zustand store
+  that caches it (the feed), updated optimistically and reconciled by SSE.</li>
+</ul>
+<p>Keeping durable server data out of the global client store means a stale write can never silently
+become the source of truth, and keeping ephemeral client state out of the query cache means a
+background refetch can never wipe your in-progress UI. The separation is not bureaucracy; it is what
+lets server rendering, realtime streams, and instant interactivity coexist on the same page.</p>
+
+<div class="summary"><h4>Summary</h4>
+<ul>
+  <li>Frontend state splits into <b>local</b> (one component), <b>client</b> (the tab, no server
+  truth), and <b>server</b> (a cache of the database). rmhstudios maps these to React hooks, Zustand,
+  and TanStack React Query respectively.</li>
+  <li>Zustand stores are made with <code>create((set, get) =&gt; ...)</code>; they bundle a state
+  slice with the <b>actions</b> that mutate it, and components <b>select</b> just the fields they
+  need. <code>useAltairGameStore</code> holds a whole game run; <code>persist</code> mirrors stores
+  like settings to <code>localStorage</code>.</li>
+  <li>React Query keeps a <b>query cache</b> keyed by a query key, deduplicates concurrent requests,
+  and refetches after <code>staleTime</code>. One <code>QueryClient</code> in <code>Providers.tsx</code>
+  serves the whole app.</li>
+  <li>The feed performs <b>optimistic updates</b> in a Zustand store, prepending your post instantly
+  and deduplicating the later SSE echo by id; this repo uses <code>useQuery</code> for reads but plain
+  <code>fetch</code>-plus-store for writes (no <code>useMutation</code>).</li>
+  <li>The <b>hydration boundary</b> requires the client's first render to match the server HTML.
+  Browser-only state is rendered as a default first and reconciled in a <code>useEffect</code>, or
+  seeded from a server loader (the session) so there is no flash and no mismatch.</li>
+</ul></div>
+
+<div class="exercises"><h2 id="ch4-exercises">Practice Exercises</h2>
+  <div class="exercise"><span class="qid">4.1</span>
+    <span class="tag concept">concept</span><span class="tag easy">easy</span>
+    In your own words, give the deciding question that tells you whether a piece of data is
+    <b>client state</b> or <b>server state</b>, and classify each of these from the chapter: the
+    chosen site theme, the puzzle leaderboard, and a dropdown's open/closed flag.</div>
+
+  <div class="exercise"><span class="qid">4.2</span>
+    <span class="tag concept">concept</span><span class="tag easy">easy</span>
+    The <code>themeStore</code> is created with <code>create((set) =&gt; ({ style: "default",
+    setStyle: (style) =&gt; set({ style }) }))</code>. Explain what role <code>set</code> plays and why
+    a component should select with <code>useThemeStore((s) =&gt; s.style)</code> rather than reading the
+    whole store object.</div>
+
+  <div class="exercise"><span class="qid">4.3</span>
+    <span class="tag trace">trace</span><span class="tag medium">medium</span>
+    Trace a call to <code>takeDamage(30)</code> in <code>useAltairGameStore</code> when the player has
+    <code>hp: 20</code>, <code>armor: 5</code>, and <code>revivalsRemaining: 1</code>. State the value
+    written to <code>hp</code> and which other action(s) fire, citing the relevant lines of logic.</div>
+
+  <div class="exercise"><span class="qid">4.4</span>
+    <span class="tag concept">concept</span><span class="tag medium">medium</span>
+    The settings store wraps its setup in <code>persist(...)</code> with a <code>partialize</code>
+    function, while the game store is annotated "NOT persisted." Explain why per-run game state should
+    <i>not</i> be persisted but keybinds and volumes should, and what <code>partialize</code> controls.</div>
+
+  <div class="exercise"><span class="qid">4.5</span>
+    <span class="tag trace">trace</span><span class="tag medium">medium</span>
+    Two components mount at the same time and both call <code>useDoctrineReputation()</code>. Using the
+    <code>staleTime: 60_000</code> and the shared <code>QueryClient</code>, describe how many network
+    requests fire, what the second component sees, and what happens 90 seconds later.</div>
+
+  <div class="exercise"><span class="qid">4.6</span>
+    <span class="tag diagram">diagram</span><span class="tag medium">medium</span>
+    Redraw Figure 4.2 for the case where the server <i>rejects</i> the post (returns a 4xx). Add the
+    rollback step the UI would need, and state which line in <code>prependItem</code> would otherwise
+    let a duplicate slip through if the SSE echo still arrived.</div>
+
+  <div class="exercise"><span class="qid">4.7</span>
+    <span class="tag design">design</span><span class="tag hard">hard</span>
+    A new feature shows the count of unread notifications in the nav bar, must stay roughly current as
+    others act, and should not flash a wrong number on refresh. Decide which of the three state systems
+    to use (or which combination), how you would seed the first render to avoid a hydration mismatch,
+    and what refetch cadence you would set. Defend the trade-offs.</div>
+
+  <div class="exercise"><span class="qid">4.8</span>
+    <span class="tag concept">concept</span><span class="tag hard">hard</span>
+    The Providers theme effect guards its <i>first</i> run with an <code>isFirstRun</code> ref and the
+    comment warns that "touching ANYTHING here would flash the wrong colour." Explain precisely how the
+    inline theme script, the server-rendered HTML, and this guard cooperate to cross the hydration
+    boundary cleanly, and what would break if the guard were removed.</div>
+
+  <div class="exercise"><span class="qid">4.9</span>
+    <span class="tag design">design</span><span class="tag hard">hard</span>
+    The Altair meta-store is "persisted to localStorage + synced to DB," straddling client and server
+    state. Argue for or against generalising this pattern to all server data in the app. What
+    consistency problems appear when two devices edit the same persisted-and-synced store, and how does
+    a pure React Query cache avoid them?</div>
+
+  <div class="exercise"><span class="qid">4.10</span>
+    <span class="tag trace">trace</span><span class="tag medium">medium</span>
+    Follow a stranger's <code>rmhark.created</code> event from the SSE stream into the feed store when
+    the active filter is <code>"friends"</code> and <code>delivery.followed</code> is <code>false</code>.
+    Where does it end up, and how does that differ from the same event arriving on the "For You"
+    surface? Cite the branch in <code>receiveCreated</code> that decides.</div>
+</div>

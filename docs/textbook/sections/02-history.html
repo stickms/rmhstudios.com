@@ -1,0 +1,291 @@
+<div class="objectives"><h4>Learning Objectives</h4><ul>
+  <li>Reconstruct the evolution of rmhstudios.com from its git history, dividing it into six design <i>eras</i> and naming the pressure that drove each transition.</li>
+  <li>Explain why a starter template (Create Next App) becomes inadequate as a project grows, and what the first real product code adds on top of it.</li>
+  <li>Contrast the Next.js App Router era with the TanStack Start + Vite + Nitro era, and state the concrete reasons a team leaves a framework it already ships on.</li>
+  <li>Describe how a single web process splits into a fleet of realtime and worker processes, and why that split is the precondition for later infrastructure work.</li>
+  <li>Distinguish a reversible infrastructure migration (Compose to k3s) from a strangler-fig service migration (Node to Go), and recognize hermetic builds as an enabling technology for both.</li>
+</ul></div>
+
+<p class="lead">A production system is an archaeological site. Its current shape records every pressure
+it has survived: the day the starter template ran out of road, the day one server process became
+three, the day "it works on my machine" stopped being good enough. This chapter reads the
+rmhstudios.com git history — roughly 1,470 commits, from the first <code>Initial commit from Create
+Next App</code> to a live migration toward Kubernetes — as a sequence of six eras. The dates here are
+not invented: they are the author and commit timestamps recorded in the repository. Where ordering is
+clear but a precise day is not load-bearing, we describe the order rather than overclaim a calendar.</p>
+
+<h2 id="reading-history-from-git">Reading a system's history from its commits</h2>
+<p>Before the eras, a word on method. Architecture documents tell you what a system <i>is</i>; the
+commit log tells you how it <i>became</i> that, including the dead ends. Three commands carry most of
+the weight in this chapter. <code>git log --oneline --reverse | head</code> exposes the genesis — the
+template, the first product code, the first feature. <code>git log --oneline | grep -iE
+"next|tanstack|vite|bazel|k3s|helm|terraform|migrat"</code> dates the migrations by surfacing the
+commits whose messages announce them. And reading a migration's own design docs (the repository keeps
+several under <code>docs/</code>) recovers the <i>reasoning</i> a one-line commit message compresses
+away.</p>
+
+<div class="keyterm"><span class="term">Era</span> — in this book, a stretch of a project's history
+during which the dominant architectural decisions are stable. An era ends when a new design pressure
+(scale, framework limits, deployment pain) forces a structural change large enough to rename the
+system's shape.</div>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+timeline
+  title rmhstudios.com — six eras (2026)
+  Era 0 Jan 27 : Create Next App : First rmh studios code
+  Era 1 Feb : App Router + Socket.io : Games, Better Auth, Prisma
+  Era 2 Mar 06 : TanStack Start + Vite + Nitro : Leave Next.js
+  Era 3 Feb to ongoing : Process-split fleet : rmhbox, rmhtube, rmhmusic, workers
+  Era 4 Jun 17 to 18 : Compose to k3s + Helm + Terraform : PR 121, reversible fallback
+  Era 5 Jun 18 to 20 : Bazel + Go microservices : PR 122, PR 142, strangler-fig
+  </div>
+  <figcaption>Figure 2.1: The six eras of rmhstudios.com, placed on a timeline by commit date. All timestamps are 2026; the project compresses a full architectural lifecycle into roughly five months.</figcaption>
+</figure>
+
+<h2 id="era-0-starter">Era 0 — "Create Next App": the empty lot</h2>
+<p>Every system begins as somebody else's defaults. The first commit, on <b>2026-01-27</b>, is
+literally the output of a scaffolding tool:</p>
+<pre><code>851692a6 Initial commit from Create Next App
+4dbf6afe Initial code for rmh studios</code></pre>
+<p>The gap between those two commits — about two hours, same evening — is the entire content of Era 0.
+The first is a template: a Next.js project with no product in it. The second is the first line the
+team actually owns. Within a day, interactivity appears (<code>feat: implement mouse position context
+and update components for enhanced interactivity</code>), then the personality of the site arrives in
+a burst: a homepage with content, projects, and merch sections; an interactive text effect; a
+<code>ParticleField</code> background; a <code>BouncyCard</code> with 3D hover built on Framer Motion;
+a "hyperpop" theme in <code>globals.css</code>. None of this is load-bearing architecture. It is
+identity — the visual signature that distinguishes "a Next.js app" from "rmhstudios.com." That is the
+real work of Era 0: replacing the template's anonymity with a product's voice.</p>
+<div class="note"><b>Why start from a template at all?</b> A starter gives you a working build,
+routing, and a dev server on minute one, so the first commit can be about <i>your</i> idea rather than
+webpack configuration. The cost is that you inherit the template's assumptions — here, the Next.js App
+Router — and those assumptions become the thing a later era has to renegotiate.</div>
+
+<h2 id="era-1-app-router">Era 1 — the Next.js App Router monolith</h2>
+<p>Era 1 is the longest-lived shape in the early history and the one captured by the repository's
+<code>docs/codebase-overview.md</code>, which describes a <b>Next.js 16 App Router</b> application: the
+web app on port 7000 and a separate Node HTTP + Socket.io server on port 7001, sharing a PostgreSQL
+database through Prisma. This era is where rmhstudios.com stops being a portfolio site and becomes a
+<i>platform</i>. Three things arrive that change its nature.</p>
+
+<h3>Games, and therefore realtime</h3>
+<p>In mid-February the games begin: Slice It (a rhythm game), Echoes/Altair, Laundry Sort, Vega,
+Signal Forge, Temple of Joy, House Always Wins. Single-player games need only a leaderboard endpoint.
+But multiplayer needs a server that holds live state, and on <b>2026-02-19</b> the commit log records
+exactly that being stood up:</p>
+<pre><code>feat: establish socket server for multiplayer game communication
+feat: implement socket server for real-time game interactions</code></pre>
+<p>This is the first structural fork in the system: a second long-running process, speaking Socket.io
+on port 7001, living beside the Next.js app on port 7000. The web app renders pages; the socket server
+owns lobbies, score relays, and host reassignment. The same overview enumerates the event vocabulary —
+<code>join_lobby</code>, <code>select_song</code>, <code>start_game</code>, <code>score_update</code>
+for Slice It, and an <code>ndw:</code>-prefixed set for Neon Driftway — a convention that an event name
+carries the name of the game it belongs to. Era 1 is where the system first becomes two processes.</p>
+
+<div class="keyterm"><span class="term">Realtime server</span> — a long-running process that holds
+mutable session state in memory (lobbies, live scores) and pushes updates to clients over a persistent
+connection such as a WebSocket, rather than answering one stateless HTTP request at a time.</div>
+
+<h3>Identity, and therefore a database</h3>
+<p>Auth and persistence arrive together. The same February cluster of commits sets up Prisma and the
+initial migrations, and shortly after, <code>feat: enforce auth across all games and apis</code>
+(<b>2026-02-18</b>) makes login a precondition rather than a feature. Authentication is <b>Better
+Auth</b> with a Prisma adapter — email/password plus Discord OAuth — and the database grows a model per
+game profile (<code>AltairPlayer</code>, <code>VegaPlayer</code>, <code>SignalForgePlayer</code>, and
+so on) alongside the auth tables (<code>User</code>, <code>Session</code>, <code>Account</code>). This
+is the seed of what becomes, by the present day, a 142-model schema.</p>
+
+<div class="scope"><b>An honest detour worth noticing.</b> The log briefly records the data layer
+oscillating: <code>refactor database interactions from Prisma to direct SQL using
+@neondatabase/serverless</code> (2026-02-18), then features migrating <i>back</i> onto Prisma models
+days later (<code>migrate Signal Forge to auth-based leaderboard with Prisma model</code>). Real
+history is not monotonic. Teams try direct SQL for hot paths, then return to the ORM for consistency.
+The commit log preserves the indecision that a tidy architecture diagram erases.</div>
+
+<h2 id="era-2-tanstack">Era 2 — leaving Next.js for TanStack Start</h2>
+<p>On <b>2026-03-06</b> a single commit renames the system's foundation:</p>
+<pre><code>be48ea33 feat: migrate from Next.js to TanStack Start</code></pre>
+<p>This is the most counterintuitive transition in the history — the team leaves a framework it was
+<i>already shipping on</i>. The current <code>README.md</code> records where it landed: <b>TanStack
+Start</b> for routing and full-stack glue, <b>Vite</b> as the bundler and dev server, and <b>Nitro</b>
+as the server runtime that produces the production output. The flurry of fix-up commits immediately
+after the migration commit shows the real cost of such a move — it is never just one commit:</p>
+<pre><code>22b13f7f Externalize heavy packages and optimize SSR bundling in Vite config
+11a63caa externalize Prisma from Nitro server bundle to fix .prisma/client resolution
+3764a479 correct deploy.sh paths for Nitro output and use .cjs for esbuild bundles</code></pre>
+<p>Why leave? The evidence points at the build and server boundary rather than the UI. The web port
+moves from Next's 7000 to <b>7005</b> (the present <code>BETTER_AUTH_URL=http://localhost:7005/</code>),
+the bundler becomes Vite, and the production server becomes Nitro emitting a portable
+<code>.output/</code> directory that PM2 can run on a plain VPS. A framework like Next.js couples your
+app tightly to its own build, server, and (historically) deployment model; TanStack Start + Vite +
+Nitro is a more <i>unbundled</i> stack where each layer — router, bundler, server runtime — is a
+component you can reason about and swap. For a system already running a second non-Next process (the
+socket server), a foundation that treats "the server" as an ordinary, ejectable artifact is a better
+fit than one that assumes it owns deployment.</p>
+
+<div class="keyterm"><span class="term">SSR (server-side rendering)</span> — rendering a page's HTML on
+the server for the first response, then "hydrating" it into an interactive React app in the browser.
+Both Next.js and the TanStack Start + Nitro stack do SSR; the migration changed <i>which runtime</i>
+produces and serves that HTML, not the fact of it.</div>
+
+<h2 id="era-3-fleet">Era 3 — the process-split fleet grows</h2>
+<p>Era 3 is not a clean break so much as a thickening. The two-process shape of Era 1 (web + socket)
+keeps subdividing as new realtime products land. RMHBox — a Jackbox-style party-game platform — appears
+around <b>2026-02-22</b>; RMHTube (synchronized watch parties) and RMHMusic (collaborative listening
+rooms) follow. The log shows these services being born, sometimes merged into the unified socket
+server and sometimes split back out:</p>
+<pre><code>10ae25b0 feat(rmhmusic): add Spotify OAuth API routes and socket server
+44f4810c refactor(rmhmusic): merge socket server into main unified server</code></pre>
+<p>By the time the infrastructure docs are written, the platform runs as <b>eight long-running Node
+processes</b> from a single shared image: <code>web</code> (SSR + ~130 API routes), <code>socket</code>
+(games and realtime apps), <code>rmhbox</code>, <code>rmhtube</code>, <code>recap</code> (a daily
+Discord recap), <code>discord-bot</code>, <code>doctrine-worker</code> (puzzle generation and decay),
+and <code>vibe-worker</code> (headless-Chromium thumbnails) — with rmhmusic riding inside the socket
+process under an event-name prefix. This proliferation matters for a reason that only pays off in Eras
+4 and 5: the services are <i>already decoupled</i>, already speak well-defined transports, and already
+authenticate by querying the shared <code>session</code> table directly rather than calling into the
+Better Auth library. A system that is process-split before it is orchestrated has done the hardest part
+of the work in advance.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart TB
+  C["Browsers and Discord"] --> W["web — SSR plus ~130 API routes"]
+  C --> S["socket — games and rmhmusic"]
+  C --> B["rmhbox"]
+  C --> T["rmhtube"]
+  W --> DB[("PostgreSQL — Prisma")]
+  S --> DB
+  B --> DB
+  T --> DB
+  R["recap"] --> DB
+  D["discord-bot"] --> DB
+  DW["doctrine-worker"] --> DB
+  VW["vibe-worker"] --> DB
+  S -.shared session table.- DB
+  </div>
+  <figcaption>Figure 2.2: The Era 3 fleet — eight Node processes from one image, all reading the shared session table in Postgres for auth. This decoupling is the precondition for the orchestration and rewrite work that follows.</figcaption>
+</figure>
+
+<h2 id="era-4-k3s">Era 4 — Docker Compose to k3s, Helm, and Terraform</h2>
+<p>A fleet of eight processes is fine until you have to <i>run</i> it reproducibly. Era 4 modernizes
+the run layer. On <b>2026-06-17</b>, PR&nbsp;#121 lands:</p>
+<pre><code>ebcb92f5 feat(deploy): add Terraform + Helm (k3s) migration</code></pre>
+<p>The shape of the change is declarative orchestration. A Helm chart renders the eight processes as
+Kubernetes Deployments from one image; a Prisma migration runs in a <code>pre-upgrade</code> hook with
+atomic auto-rollback; a Terraform module manages DNS; and a registry switch leaves a path open to
+multi-node. Crucially, PR&nbsp;#121 <b>kept Docker Compose intact as a reversible fallback</b>. That is
+the defining discipline of this era: a migration that can be undone is a migration you can ship on a
+Tuesday.</p>
+
+<div class="keyterm"><span class="term">Reversible migration</span> — a change introduced alongside the
+old path rather than in place of it, so that rolling back is a configuration flip rather than a
+re-engineering project. PR&nbsp;#121's retention of the Compose path is the canonical example.</div>
+
+<p>PR&nbsp;#121 also did something rarer: it wrote down the decision it was <i>not</i> making. Its
+recorded roadmap placed any rewrite of the backend in Go at "Stage 4 — only if metrics demand," and
+argued explicitly against a wholesale rewrite, on the grounds that the app was already process-split,
+the web tier must stay JavaScript (React SSR), and the data/auth layers (Prisma + Better Auth) had no
+Go equivalents. We will see in Era 5 that this stated boundary is exactly what the next era chooses to
+cross — deliberately, and on an isolated branch.</p>
+
+<h2 id="era-5-bazel-go">Era 5 — Bazel hermetic builds and an experimental Go tier</h2>
+<p>Era 5 has two intertwined strands, both landing within a few days in mid-June 2026.</p>
+
+<h3>A Go microservices tier (PR #122)</h3>
+<p>On <b>2026-06-18</b>, the Go fleet arrives:</p>
+<pre><code>613405ae feat(go): complete Go microservices migration of the realtime/worker tier
+46462fb9 Merge PR #122: Go microservices migration (additive; web image unchanged)</code></pre>
+<p>Read the parenthetical carefully: <b>additive; web image unchanged</b>. Nine Go binaries
+(<code>gateway</code>, <code>gamehub</code>, <code>rmhmusic</code>, <code>rmhtube</code>,
+<code>rmhbox</code>, <code>recap</code>, and three workers) <i>mirror</i> the Node realtime/worker tier
+rather than replacing it. A new <code>gateway</code> becomes the single ingress and reverse-proxies the
+WebSocket prefixes to the Go services while passing everything else to the still-JavaScript Node
+<code>web</code> app. Session <i>issuance</i> stays in the Node + Better Auth tier; the Go services only
+<i>validate</i> sessions against the shared <code>session</code> table. This is a textbook
+<i>strangler-fig</i>: a new system is grown around the old one, intercepting traffic at a boundary,
+able to take over one service at a time — not a big-bang rewrite. The honest framing the docs maintain
+is that this branch executes the complete Go target at once for evaluation, even though the design
+permits incremental adoption; the deliverable is a working, tested reference, not a claim that the
+rewrite was necessary.</p>
+
+<div class="keyterm"><span class="term">Strangler-fig migration</span> — replacing a system gradually by
+placing a new implementation behind a shared entry point (here, the <code>gateway</code>), routing
+slices of traffic to it as each slice is proven, until the old system can be removed. Named for the fig
+that grows around a host tree and eventually stands in its place.</div>
+
+<h3>A Bazel hermetic build (PR #142)</h3>
+<p>Two days later, on <b>2026-06-20</b>, the build system is rebuilt around Bazel:</p>
+<pre><code>fe9be66b build(bazel): scaffold bzlmod workspace with hermetic Go SDK
+aa7c0655 build(bazel): gazelle-generated BUILD files; all 9 Go services build hermetically
+db0cc58b Merge pull request #142 from stickms/feat/bazel-build-system</code></pre>
+<p>The operator runbook makes the intent explicit: Bazel is pinned to <code>7.4.1</code> via
+<code>.bazelversion</code>, <b>Go is not required locally</b> because <code>rules_go</code> ships a
+hermetic Go 1.23 SDK, and each service builds into a distroless OCI image. A nine-service backend is
+exactly the kind of codebase where ad-hoc per-service build scripts rot; a hermetic build that pins its
+own toolchains is what makes "all 9 Go services build the same way on any machine" a true statement
+rather than a hope.</p>
+
+<div class="keyterm"><span class="term">Hermetic build</span> — a build that depends only on inputs it
+declares and toolchains it pins (here, Bazel 7.4.1 and a bundled Go 1.23 SDK), so the same commit
+produces the same artifact regardless of what happens to be installed on the developer's machine.</div>
+
+<h2 id="eras-table">The eras at a glance</h2>
+<table>
+  <thead><tr><th>Era</th><th>Earliest evidence</th><th>Dominant shape</th><th>Pressure that ended it</th></tr></thead>
+  <tbody>
+    <tr><td>0 — Starter</td><td>2026-01-27</td><td>Create Next App template + first rmh code</td><td>Template has no product identity</td></tr>
+    <tr><td>1 — App Router monolith</td><td>Feb 2026</td><td>Next.js 16 (7000) + Socket.io (7001) + Prisma</td><td>Build/server coupling to Next.js</td></tr>
+    <tr><td>2 — TanStack Start</td><td>2026-03-06</td><td>TanStack Start + Vite + Nitro (web on 7005)</td><td>(current foundation)</td></tr>
+    <tr><td>3 — Process-split fleet</td><td>Feb 2026 onward</td><td>8 Node processes from one image</td><td>Run layer not reproducible</td></tr>
+    <tr><td>4 — k3s + Helm (PR #121)</td><td>2026-06-17</td><td>Single-node k3s + Helm + Terraform; Compose fallback</td><td>(reversible; current run layer)</td></tr>
+    <tr><td>5 — Bazel + Go (PR #122, #142)</td><td>2026-06-18</td><td>9 Go services (strangler-fig) + hermetic Bazel build</td><td>(experimental; on a branch)</td></tr>
+  </tbody>
+</table>
+
+<div class="note"><b>On dates.</b> The <i>year</i> in every timestamp above is 2026, taken directly from
+git. The genesis (Jan 27), the TanStack migration (Mar 6), and the June infrastructure PRs (#121,
+#122, #142) carry exact commit dates. Eras 1 and 3 overlap and are dated by their <i>earliest</i>
+defining commit, not a clean start/end, because real eras blend at the edges.</div>
+
+<div class="summary"><h4>Summary</h4><ul>
+  <li>rmhstudios.com's history splits into six eras, reconstructable directly from ~1,470 commits; every date in this chapter is a real git timestamp, all in 2026.</li>
+  <li><b>Era 0</b> turns a Create Next App template into a product identity; <b>Era 1</b> adds games, a Socket.io realtime server, Better Auth, and Prisma, becoming a two-process platform.</li>
+  <li><b>Era 2</b> leaves Next.js for TanStack Start + Vite + Nitro — a more unbundled stack where router, bundler, and server runtime are separable, fitting a system that already ran a second server process.</li>
+  <li><b>Era 3</b> grows the fleet to eight decoupled Node processes sharing one image and one <code>session</code> table; that decoupling is the precondition for what follows.</li>
+  <li><b>Era 4</b> (PR #121) makes the run layer declarative with k3s + Helm + Terraform while keeping Docker Compose as a reversible fallback; <b>Era 5</b> (PR #122, #142) adds an experimental strangler-fig Go tier behind a gateway and a hermetic Bazel build.</li>
+</ul></div>
+
+<div class="exercises"><h2 id="ch2-exercises">Practice Exercises</h2>
+  <div class="exercise"><span class="qid">2.1</span>
+    <span class="tag concept">concept</span><span class="tag easy">easy</span>
+    In your own words, define an "era" as this chapter uses the term, and explain what event marks the boundary between two eras.</div>
+  <div class="exercise"><span class="qid">2.2</span>
+    <span class="tag trace">trace</span><span class="tag easy">easy</span>
+    Using only the commit messages quoted in the chapter, list the exact commit (hash and message) that ends Era 1 and begins Era 2, and give its date.</div>
+  <div class="exercise"><span class="qid">2.3</span>
+    <span class="tag concept">concept</span><span class="tag medium">medium</span>
+    The team left Next.js even though it was already shipping on it. Give two concrete, evidence-backed reasons from the chapter for the move to TanStack Start + Vite + Nitro.</div>
+  <div class="exercise"><span class="qid">2.4</span>
+    <span class="tag concept">concept</span><span class="tag medium">medium</span>
+    Era 3's process split is described as "the precondition" for Eras 4 and 5. Explain why a system that is process-split <i>before</i> it is orchestrated has done the hardest part of the orchestration work in advance.</div>
+  <div class="exercise"><span class="qid">2.5</span>
+    <span class="tag concept">concept</span><span class="tag medium">medium</span>
+    Distinguish the Era 4 migration (Compose to k3s) from the Era 5 migration (Node to Go) along the axis of <i>reversibility</i>. Which one is built to be undone with a config flip, and how?</div>
+  <div class="exercise"><span class="qid">2.6</span>
+    <span class="tag concept">concept</span><span class="tag medium">medium</span>
+    Define "strangler-fig migration" and identify the single component in the Go tier that makes the rmhstudios.com migration fit the pattern. What does that component do?</div>
+  <div class="exercise"><span class="qid">2.7</span>
+    <span class="tag diagram">diagram</span><span class="tag medium">medium</span>
+    Redraw the Figure 2.2 fleet diagram, then annotate it to show what changes in Era 5: which new process is added in front of the others, and which arrows it intercepts.</div>
+  <div class="exercise"><span class="qid">2.8</span>
+    <span class="tag design">design</span><span class="tag hard">hard</span>
+    PR #121 explicitly recorded a decision <i>against</i> a Go rewrite, yet Era 5 performs one on a branch. Argue both sides: was building the full Go fleet "all at once for evaluation" a sound move, given the stated roadmap? Defend a position under the constraint that production must not be endangered.</div>
+  <div class="exercise"><span class="qid">2.9</span>
+    <span class="tag trace">trace</span><span class="tag hard">hard</span>
+    The chapter notes the data layer briefly moved from Prisma to direct SQL and then back. Trace this oscillation using the commit evidence given, and explain what general lesson about reading git history it illustrates.</div>
+  <div class="exercise"><span class="qid">2.10</span>
+    <span class="tag concept">concept</span><span class="tag hard">hard</span>
+    Define "hermetic build" and explain specifically how PR #142's choice to ship a bundled Go 1.23 SDK (rather than requiring Go locally) supports the claim that "all 9 Go services build the same way on any machine."</div>
+</div>

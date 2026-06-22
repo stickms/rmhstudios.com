@@ -178,5 +178,11 @@
     "description": "The RMHStudios Office of the CFO sets the record straight on the 21 June 2026 outage — a forged apology, the partner who caused it, and the firing of Enterprise Risk Management.",
     "pages": 3,
     "cover": "rmh-cfo-outage-correction.jpg"
+  },
+  "rmhstudios-architecture-and-history.pdf": {
+    "title": "rmhstudios.com — Architecture & History: A Textbook",
+    "description": "A university-style textbook on the architecture and history of rmhstudios.com — server-side rendering, the realtime socket fleet, a 142-model data layer, the games platform, and the migration to k3s — with figures, per-chapter exercises, and three practice exams with full worked solutions.",
+    "pages": 182,
+    "cover": "rmhstudios-architecture-and-history.jpg"
   }
 }
