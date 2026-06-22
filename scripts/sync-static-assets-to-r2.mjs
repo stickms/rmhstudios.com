@@ -26,14 +26,32 @@ import { createHash } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 
-const {
-  S3_ENDPOINT,
-  S3_REGION = "auto",
-  S3_ACCESS_KEY_ID,
-  S3_SECRET_ACCESS_KEY,
-  S3_BUCKET,
-  S3_FORCE_PATH_STYLE,
-} = process.env;
+// Docker's --env-file passes values literally, INCLUDING surrounding quotes
+// (unlike a shell, which strips them). Strip one matching pair so a quoted
+// env file (S3_REGION="auto") doesn't yield the literal '"auto"'. Also trim a
+// trailing slash + bucket segment some people paste from the R2 "S3 API" field
+// — the endpoint must be the bare account host; the SDK appends the bucket.
+const clean = (v) =>
+  v == null ? v : v.trim().replace(/^(['"])([\s\S]*)\1$/, "$2");
+
+// The R2 dashboard's "S3 API" field includes the bucket (…cloudflarestorage.com
+// /rmh-media), but the SDK endpoint must be the bare account host — it appends
+// the bucket itself. Normalize to origin so a pasted-with-bucket value works.
+let endpoint = clean(process.env.S3_ENDPOINT);
+if (endpoint) {
+  try {
+    endpoint = new URL(endpoint).origin;
+  } catch {
+    /* malformed — leave as-is so the SDK throws a clear error */
+  }
+}
+
+const S3_ENDPOINT = endpoint;
+const S3_REGION = clean(process.env.S3_REGION) || "auto";
+const S3_ACCESS_KEY_ID = clean(process.env.S3_ACCESS_KEY_ID);
+const S3_SECRET_ACCESS_KEY = clean(process.env.S3_SECRET_ACCESS_KEY);
+const S3_BUCKET = clean(process.env.S3_BUCKET);
+const S3_FORCE_PATH_STYLE = clean(process.env.S3_FORCE_PATH_STYLE);
 
 if (!S3_ENDPOINT || !S3_ACCESS_KEY_ID || !S3_SECRET_ACCESS_KEY || !S3_BUCKET) {
   console.log(

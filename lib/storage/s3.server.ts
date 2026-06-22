@@ -96,11 +96,26 @@ async function localExists(key: string): Promise<boolean> {
 }
 
 // ─── S3 backend ──────────────────────────────────────────────────────────────
+/**
+ * The R2 dashboard's "S3 API" value includes the bucket
+ * (…cloudflarestorage.com/rmh-media), but the SDK endpoint must be the bare
+ * account host — it appends the bucket itself. Normalize to the origin so a
+ * pasted-with-bucket value still works.
+ */
+function getEndpoint(): string {
+  const raw = requireEnv("S3_ENDPOINT");
+  try {
+    return new URL(raw).origin;
+  } catch {
+    return raw; // malformed — let the SDK surface a clear error
+  }
+}
+
 let client: S3Client | null = null;
 function getClient(): S3Client {
   if (client) return client;
   client = new S3Client({
-    endpoint: requireEnv("S3_ENDPOINT"),
+    endpoint: getEndpoint(),
     region: process.env.S3_REGION || "us-east-1",
     forcePathStyle: process.env.S3_FORCE_PATH_STYLE !== "false",
     credentials: {
