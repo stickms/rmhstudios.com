@@ -6,6 +6,7 @@ import { createCommentSchema } from "@/lib/rmhark-schema";
 import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 import { feedEventBus } from "@/lib/feed-sse";
 import { createNotification } from "@/lib/notifications.server";
+import { notifyMentions } from "@/lib/feed/notify-mentions.server";
 import { grantAchievement } from "@/lib/achievements/engine.server";
 import { getActiveBan } from "@/lib/admin-audit.server";
 import { awardXp } from "@/lib/xp/engine.server";
@@ -209,6 +210,26 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
           entityId: id,
           preview,
           link: postLink,
+        });
+      }
+
+      // Also notify anyone @mentioned in the comment body (parity with posts;
+      // this also feeds the bot-worker mention queue). `postLink` is defined
+      // whenever the post exists.
+      if (post && postLink) {
+        await notifyMentions({
+          content: comment.content,
+          author: {
+            id: comment.user.id,
+            name: comment.user.name ?? null,
+            image: comment.user.image ?? null,
+            handle: comment.user.handle ?? null,
+          },
+          postId: id,
+          entityType: "comment",
+          entityId: comment.id,
+          link: postLink,
+          timestamp: comment.createdAt.toISOString(),
         });
       }
     } catch (e) {

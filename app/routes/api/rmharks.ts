@@ -6,8 +6,7 @@ import { createRMHarkSchema } from "@/lib/rmhark-schema";
 import type { FeedItem, FeedFilter } from "@/lib/feed-types";
 import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 import { feedEventBus } from "@/lib/feed-sse";
-import { parseHandles } from "@/lib/feed/mentions";
-import { createNotification } from "@/lib/notifications.server";
+import { notifyMentions } from "@/lib/feed/notify-mentions.server";
 import { grantAchievement, progressAchievement } from "@/lib/achievements/engine.server";
 import { getActiveBan } from "@/lib/admin-audit.server";
 import { awardXp } from "@/lib/xp/engine.server";
@@ -263,57 +262,25 @@ export const Route = createFileRoute('/api/rmharks')({
       authorId: session.user.id,
     });
 
-    // Notify mentioned users in real time (targeted SSE → toast on the client).
+    // Notify mentioned users (persisted MENTION notification + live SSE toast).
     // Best-effort: never let notification fan-out fail the post creation.
     try {
       const author = item.user;
-      const handles = parseHandles(rmhark.content);
-      if (author && handles.length > 0) {
-        const mentioned = await prisma.user.findMany({
-          where: {
-            id: { not: session.user.id }, // don't notify self-mentions
-            OR: handles.map((h) => ({ handle: { equals: h, mode: "insensitive" as const } })),
+      if (author) {
+        await notifyMentions({
+          content: rmhark.content,
+          author: {
+            id: author.id,
+            name: author.name ?? null,
+            image: author.image ?? null,
+            handle: author.handle ?? null,
           },
-          select: { id: true },
+          postId: item.id,
+          entityType: "rmhark",
+          entityId: item.id,
+          link: `/u/${author.handle ?? author.id}/post/${item.id}`,
+          timestamp: item.createdAt,
         });
-        if (mentioned.length > 0) {
-          feedEventBus.publish({
-            type: "notification.mention",
-            rmharkId: item.id,
-            payload: { id: item.id },
-            timestamp: item.createdAt,
-            authorId: session.user.id,
-            targetUserIds: mentioned.map((m) => m.id),
-            notification: {
-              rmharkId: item.id,
-              preview: rmhark.content.slice(0, 120),
-              author: {
-                id: author.id,
-                name: author.name ?? null,
-                image: author.image ?? null,
-                handle: author.handle ?? null,
-              },
-            },
-          });
-
-          // Persist the mentions so they appear in the notification center.
-          // The post route resolves by post id, so a handle-less author falls
-          // back to their user id in the (decorative) handle segment.
-          const mentionLink = `/u/${author.handle ?? author.id}/post/${item.id}`;
-          await Promise.all(
-            mentioned.map((m) =>
-              createNotification({
-                userId: m.id,
-                actorId: session.user.id,
-                type: "MENTION",
-                entityType: "rmhark",
-                entityId: item.id,
-                preview: rmhark.content,
-                link: mentionLink,
-              })
-            )
-          );
-        }
       }
     } catch (err) {
       console.error("Mention notification error:", err);
