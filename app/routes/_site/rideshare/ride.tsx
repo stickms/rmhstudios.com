@@ -297,7 +297,7 @@ function RequestRidePage() {
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* Left: form */}
             <div className="space-y-5">
-              <div className="rounded-2xl border border-site-border bg-site-surface/40 p-5">
+              <div className="rounded-2xl border border-site-border bg-site-surface/80 p-5">
                 <h2 className="mb-4 text-lg font-bold text-site-text">Where to?</h2>
                 <div className="space-y-3">
                   <LocationSearch
@@ -325,7 +325,7 @@ function RequestRidePage() {
                 )}
               </div>
 
-              <div className="rounded-2xl border border-site-border bg-site-surface/40 p-5">
+              <div className="rounded-2xl border border-site-border bg-site-surface/80 p-5">
                 <h2 className="mb-3 text-lg font-bold text-site-text">Pick your ride</h2>
                 <RideClassPicker value={rideClass} onChange={setRideClass} fareLabels={fareLabels} />
               </div>
@@ -338,7 +338,7 @@ function RequestRidePage() {
                 />
               )}
 
-              <div className="rounded-2xl border border-site-border bg-site-surface/40 p-5">
+              <div className="rounded-2xl border border-site-border bg-site-surface/80 p-5">
                 <label className="mb-1.5 block text-xs font-medium text-site-text-muted">
                   Notes for your driver (optional)
                 </label>
@@ -348,12 +348,12 @@ function RequestRidePage() {
                   maxLength={500}
                   rows={2}
                   placeholder="e.g. I’ll be by the main entrance"
-                  className="w-full resize-none rounded-lg border border-site-border bg-site-surface px-3 py-2 text-sm text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60"
+                  className="w-full resize-none rounded-lg border border-site-border bg-site-surface px-3 py-2.5 text-base text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60 sm:py-2 sm:text-sm"
                 />
               </div>
 
               {/* Schedule for later */}
-              <div className="rounded-2xl border border-site-border bg-site-surface/40 p-5">
+              <div className="rounded-2xl border border-site-border bg-site-surface/80 p-5">
                 <label className="flex cursor-pointer items-center justify-between gap-3">
                   <span className="flex items-center gap-2 text-sm font-medium text-site-text">
                     <CalendarClock className="h-4 w-4 text-site-accent" /> Schedule for later
@@ -371,7 +371,7 @@ function RequestRidePage() {
                     value={scheduledFor}
                     min={minScheduleValue()}
                     onChange={(e) => setScheduledFor(e.target.value)}
-                    className="mt-3 w-full rounded-lg border border-site-border bg-site-surface px-3 py-2 text-sm text-site-text outline-none transition-colors focus:border-site-accent/60"
+                    className="mt-3 w-full rounded-lg border border-site-border bg-site-surface px-3 py-2.5 text-base text-site-text outline-none transition-colors focus:border-site-accent/60 sm:py-2 sm:text-sm"
                   />
                 )}
               </div>
@@ -412,7 +412,7 @@ function RequestRidePage() {
                   key={ride.id}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center justify-between gap-3 rounded-xl border border-site-border bg-site-surface/40 p-4"
+                  className="flex items-center justify-between gap-3 rounded-xl border border-site-border bg-site-surface/80 p-4"
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 text-sm font-semibold text-site-text">
@@ -463,7 +463,7 @@ function RequestRidePage() {
                   key={ride.id}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="rounded-xl border border-site-border bg-site-surface/40 p-4"
+                  className="rounded-xl border border-site-border bg-site-surface/80 p-4"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-sm font-semibold text-site-text">{rideClassName(ride.rideClass)}</span>

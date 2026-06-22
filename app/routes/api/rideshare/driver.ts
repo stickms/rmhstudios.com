@@ -8,6 +8,7 @@ import { putObject, deleteObject } from '@/lib/storage/s3.server';
 import { contentTypeForFilename } from '@/lib/storage/keys';
 import { licenseKey } from '@/lib/rideshare/license-storage';
 import { isRideClassId } from '@/lib/rideshare/classes';
+import { diagnoseServerError } from '@/lib/rideshare/errors.server';
 
 const LICENSE_MAX_BYTES = 8 * 1024 * 1024; // 8 MB
 
@@ -62,14 +63,20 @@ export const Route = createFileRoute('/api/rideshare/driver')({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const session = await auth.api.getSession({ headers: request.headers });
-        if (!session) {
-          return Response.json({ error: 'Unauthorized' }, { status: 401 });
+        try {
+          const session = await auth.api.getSession({ headers: request.headers });
+          if (!session) {
+            return Response.json({ error: 'Unauthorized' }, { status: 401 });
+          }
+          const driver = await prisma.rideshareDriver.findUnique({
+            where: { userId: session.user.id },
+          });
+          return Response.json({ driver: driver ? publicDriver(driver) : null });
+        } catch (error) {
+          console.error('Rideshare driver GET error:', error);
+          const { status, error: message } = diagnoseServerError(error);
+          return Response.json({ error: message }, { status });
         }
-        const driver = await prisma.rideshareDriver.findUnique({
-          where: { userId: session.user.id },
-        });
-        return Response.json({ driver: driver ? publicDriver(driver) : null });
       },
 
       // Toggle availability (online/offline) for approved drivers.
@@ -200,7 +207,8 @@ export const Route = createFileRoute('/api/rideshare/driver')({
           return Response.json({ driver: publicDriver(driver) });
         } catch (error) {
           console.error('Rideshare driver apply error:', error);
-          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
+          const { status, error: message } = diagnoseServerError(error);
+          return Response.json({ error: message }, { status });
         }
       },
     },

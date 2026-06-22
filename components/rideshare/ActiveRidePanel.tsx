@@ -187,7 +187,7 @@ export function ActiveRidePanel({
 
   if (loading) {
     return (
-      <div className="flex justify-center rounded-2xl border border-site-border bg-site-surface/40 py-12">
+      <div className="flex justify-center rounded-2xl border border-site-border bg-site-surface/80 py-12">
         <Loader2 className="h-6 w-6 animate-spin text-site-text-muted" />
       </div>
     );
@@ -211,7 +211,7 @@ export function ActiveRidePanel({
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
       {/* Status timeline */}
-      <div className="rounded-2xl border border-site-border bg-site-surface/40 p-5">
+      <div className="rounded-2xl border border-site-border bg-site-surface/80 p-5">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold text-site-text">{rideClassName(ride.rideClass)}</h2>
           {status === 'CANCELLED' ? (
@@ -259,7 +259,7 @@ export function ActiveRidePanel({
 
       {/* Other party */}
       {other && (
-        <div className="flex items-center gap-3 rounded-2xl border border-site-border bg-site-surface/40 p-4">
+        <div className="flex items-center gap-3 rounded-2xl border border-site-border bg-site-surface/80 p-4">
           <div className="flex h-11 w-11 items-center justify-center rounded-full bg-site-accent/15 text-site-accent">
             <Car className="h-5 w-5" />
           </div>
@@ -284,7 +284,7 @@ export function ActiveRidePanel({
 
       {/* Driver location-sharing hint */}
       {sharingActive && (
-        <div className="flex items-center gap-2 rounded-xl border border-site-border bg-site-surface/40 px-4 py-2.5 text-xs">
+        <div className="flex items-center gap-2 rounded-xl border border-site-border bg-site-surface/80 px-4 py-2.5 text-xs">
           <Crosshair className={`h-4 w-4 ${locationState === 'sharing' ? 'text-emerald-400' : 'text-amber-400'}`} />
           <span className="text-site-text-muted">
             {locationState === 'sharing'
@@ -320,7 +320,7 @@ export function ActiveRidePanel({
 
       {/* Completed → rate */}
       {status === 'COMPLETED' && (
-        <div className="rounded-2xl border border-site-border bg-site-surface/40 p-5 text-center">
+        <div className="rounded-2xl border border-site-border bg-site-surface/80 p-5 text-center">
           <CheckCircle2 className="mx-auto h-8 w-8 text-emerald-400" />
           <h3 className="mt-2 font-semibold text-site-text">
             {myRatingGiven ? 'Thanks for riding with RMH!' : `Rate your ${isDriver ? 'rider' : 'driver'}`}
@@ -349,12 +349,12 @@ export function ActiveRidePanel({
 
       {/* Actions */}
       {status !== 'COMPLETED' && status !== 'CANCELLED' && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           {isDriver && status === 'ACCEPTED' && (
             <button
               onClick={() => act('start')}
               disabled={busy}
-              className="flex items-center gap-2 rounded-xl bg-site-accent px-5 py-2.5 text-sm font-semibold text-(--site-accent-fg) transition-colors hover:bg-(--site-accent-hover) disabled:opacity-50"
+              className="flex items-center justify-center gap-2 rounded-xl bg-site-accent px-5 py-3 text-sm font-semibold text-(--site-accent-fg) transition-colors hover:bg-(--site-accent-hover) disabled:opacity-50 sm:flex-1 sm:py-2.5"
             >
               <Navigation className="h-4 w-4" /> Start trip
             </button>
@@ -363,7 +363,7 @@ export function ActiveRidePanel({
             <button
               onClick={() => act('complete')}
               disabled={busy}
-              className="flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-600 disabled:opacity-50"
+              className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-600 disabled:opacity-50 sm:flex-1 sm:py-2.5"
             >
               <Flag className="h-4 w-4" /> Complete trip
             </button>
@@ -371,7 +371,7 @@ export function ActiveRidePanel({
           <button
             onClick={() => act('cancel')}
             disabled={busy}
-            className="flex items-center gap-2 rounded-xl border border-site-border px-5 py-2.5 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/10 disabled:opacity-50"
+            className="flex items-center justify-center gap-2 rounded-xl border border-site-border px-5 py-3 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/10 disabled:opacity-50 sm:py-2.5"
           >
             <XCircle className="h-4 w-4" /> Cancel
           </button>

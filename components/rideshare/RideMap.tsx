@@ -25,13 +25,16 @@ export function RideMap({ pickup, dropoff, driverLocation, className }: RideMapP
       {ready ? (
         <iframe
           title="Trip map"
-          className="h-full min-h-64 w-full"
+          className="h-full min-h-56 w-full sm:min-h-64"
+          // Desaturate the standard OSM tiles into a soft, minimal grey map
+          // that blends with the dark UI.
+          style={{ filter: 'grayscale(1) contrast(0.9) brightness(0.92)' }}
           src={osmEmbedUrl(pickup, dropoff, driverLocation)}
           loading="lazy"
           referrerPolicy="no-referrer"
         />
       ) : (
-        <div className="flex min-h-64 flex-col items-center justify-center gap-3 p-6 text-center">
+        <div className="flex min-h-56 flex-col items-center justify-center gap-3 p-6 text-center sm:min-h-64">
           <div className="rounded-2xl bg-site-surface-hover p-3">
             <Navigation className="h-7 w-7 text-site-text-muted" />
           </div>
@@ -44,7 +47,7 @@ export function RideMap({ pickup, dropoff, driverLocation, className }: RideMapP
       )}
 
       {ready && (
-        <div className="space-y-1 border-t border-site-border bg-site-bg/80 p-3 backdrop-blur">
+        <div className="space-y-1 border-t border-site-border bg-site-bg/95 p-3 backdrop-blur">
           {driverLocation && (
             <div className="flex items-center gap-2 text-xs font-medium text-sky-400">
               <Car className="h-3.5 w-3.5 shrink-0" />

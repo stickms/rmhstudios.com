@@ -40,7 +40,7 @@ export function DriverEarnings() {
 
   if (loading) {
     return (
-      <div className="flex justify-center rounded-2xl border border-site-border bg-site-surface/40 py-10">
+      <div className="flex justify-center rounded-2xl border border-site-border bg-site-surface/80 py-10">
         <Loader2 className="h-5 w-5 animate-spin text-site-text-muted" />
       </div>
     );
@@ -82,7 +82,7 @@ export function DriverEarnings() {
       {/* Stat grid */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {stats.map((s) => (
-          <div key={s.label} className="rounded-xl border border-site-border bg-site-surface/40 p-4">
+          <div key={s.label} className="rounded-xl border border-site-border bg-site-surface/80 p-4">
             <s.icon className="h-4 w-4 text-site-accent" />
             <div className="mt-2 text-lg font-bold text-site-text">{s.value}</div>
             <div className="text-xs text-site-text-muted">{s.label}</div>
@@ -97,7 +97,7 @@ export function DriverEarnings() {
           <h3 className="mb-2 text-sm font-semibold text-site-text">Recent trips</h3>
           <ul className="space-y-2">
             {data.recent.map((t) => (
-              <li key={t.id} className="flex items-center justify-between gap-3 rounded-xl border border-site-border bg-site-surface/40 p-3">
+              <li key={t.id} className="flex items-center justify-between gap-3 rounded-xl border border-site-border bg-site-surface/80 p-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 text-sm font-medium text-site-text">
                     {rideClassName(t.rideClass)}
