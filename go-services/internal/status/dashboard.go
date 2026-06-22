@@ -44,33 +44,22 @@ func (d *dashboard) handleAPIStatus(w http.ResponseWriter, r *http.Request) {
 	overall := overallStatus(snap)
 	checkedAt := latestCheckedAt(snap)
 
-	type apiService struct {
-		Name        string   `json:"name"`
-		Description string   `json:"description,omitempty"`
-		Status      Status   `json:"status"`
-		LatencyMs   *int64   `json:"latencyMs,omitempty"`
-		Detail      string   `json:"detail"`
-		CheckedAt   string   `json:"checkedAt"`
-		UptimePct   *float64 `json:"uptimePct,omitempty"`
+	// Serialise via a struct (not a map) so the top-level key order — status,
+	// checkedAt, services — matches the Node source exactly. ServiceStatus's own
+	// JSON tags already match the per-service contract (description omitted when
+	// empty; latencyMs / uptimePct emitted as explicit null; internal Up is
+	// json:"-").
+	if snap.Services == nil {
+		snap.Services = []ServiceStatus{}
 	}
-
-	services := make([]apiService, 0, len(snap.Services))
-	for _, ss := range snap.Services {
-		services = append(services, apiService{
-			Name:        ss.Name,
-			Description: ss.Description,
-			Status:      ss.Status,
-			LatencyMs:   ss.LatencyMs,
-			Detail:      ss.Detail,
-			CheckedAt:   ss.CheckedAt,
-			UptimePct:   ss.UptimePct,
-		})
-	}
-
-	body := map[string]any{
-		"status":    overall,
-		"checkedAt": checkedAt,
-		"services":  services,
+	body := struct {
+		Status    Status          `json:"status"`
+		CheckedAt string          `json:"checkedAt"`
+		Services  []ServiceStatus `json:"services"`
+	}{
+		Status:    overall,
+		CheckedAt: checkedAt,
+		Services:  snap.Services,
 	}
 
 	code := http.StatusOK

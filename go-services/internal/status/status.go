@@ -13,6 +13,13 @@ type Config struct {
 	ProbeTimeout  time.Duration
 	BucketDur     time.Duration
 	MaxBuckets    int
+	// HistoryPath, when non-empty, enables persistence of the rolling uptime
+	// history to that file (Node's status-history.json) so percentages survive
+	// restarts. Existing history is loaded on New.
+	HistoryPath string
+	// Logger receives non-fatal warnings (e.g. history persistence problems).
+	// nil disables logging.
+	Logger Warner
 }
 
 // Service orchestrates probing and HTTP serving.
@@ -40,6 +47,12 @@ func New(cfg Config) *Service {
 	p.timeout = cfg.ProbeTimeout
 	p.bucketDur = cfg.BucketDur
 	p.maxBuckets = cfg.MaxBuckets
+
+	// Enable history persistence (load existing buckets now) before any probe
+	// runs, so the first /api/status already reflects pre-restart uptime.
+	if cfg.HistoryPath != "" {
+		p.EnableHistoryPersistence(cfg.HistoryPath, cfg.Logger)
+	}
 
 	return &Service{cfg: cfg, prober: p}
 }

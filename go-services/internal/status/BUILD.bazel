@@ -4,6 +4,7 @@ go_library(
     name = "status",
     srcs = [
         "dashboard.go",
+        "persist.go",
         "probe.go",
         "status.go",
     ],
@@ -15,6 +16,7 @@ go_test(
     name = "status_test",
     srcs = [
         "dashboard_test.go",
+        "persist_test.go",
         "probe_test.go",
     ],
     embed = [":status"],
