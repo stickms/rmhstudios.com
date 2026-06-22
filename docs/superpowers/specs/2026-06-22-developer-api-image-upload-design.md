@@ -154,6 +154,39 @@ explicit purge:
 - Reuse `feedImageKey` / `feedImageUrl`; resolved URLs are byte-identical to in-app
   uploads and served by the existing `/api/feed/image/<filename>` route.
 
+## Abuse & rate limiting
+
+Uploads are far more expensive than the existing JSON endpoints — the route buffers
+the whole file into memory (`Buffer.from(await file.arrayBuffer())`), so the generic
+per-key request budget (120/min starter, 600/min pro) is **not** sufficient: 120 × 5
+MB = 600 MB/min of ingress per key, and a fixed-window counter lets a client burst the
+whole budget instantly. Layered controls, specific to the upload route:
+
+1. **Tier gate** — a dedicated `hasApiImageUpload(tier)` capability in
+   `lib/entitlements.ts` (mirrors `hasApiAccess`), granting **starter and above**
+   (`free` already has no API access). Separate from `hasApiAccess` so uploads can be
+   scoped or disabled independently of the rest of the API. Reject with `403`
+   `feature_not_available`.
+2. **Size guard before buffering** — reject when `Content-Length > 5 MB` with **413**
+   *before* `request.formData()` reads the body into memory. A reverse-proxy
+   `client_max_body_size 5m` is the real backstop (app checks can be bypassed if the
+   proxy fully buffers first) — documented, not enforced in app code.
+3. **Dedicated tight per-key limit** — the upload route uses its own limiter at **15
+   req/min per key**, far below the generic 120, reusing the existing
+   `rateLimit`/`redisRateLimit` (fixed-window). This is what caps the acute burst.
+   A token/leaky bucket is a noted future upgrade — not built now (YAGNI).
+4. **Tier-scaled daily quota** — per-user cap on uploads per rolling 24h:
+   **starter 200, pro 1 000, enterprise 5 000**. A Redis counter keyed
+   `media-quota:<userId>:<dayBucket>` with a 24h TTL; when Redis is absent it
+   degrades to an in-process counter (best-effort, per-instance) — acceptable because
+   the dedicated 15/min limit already bounds single-instance damage. Reject with `429`
+   `quota_exceeded`.
+
+**Considered and dropped (YAGNI):** a full token-bucket limiter, a concurrent
+pending-media cap, and an in-flight concurrency semaphore. The 15/min limit + daily
+quota + size guard cover the stated threat (a targeted flood OOMing the server);
+revisit if upload abuse is observed in practice.
+
 ## Out of scope
 
 - Chunked upload (Twitter's INIT/APPEND/FINALIZE) — single-shot only; 5 MB cap.
@@ -166,8 +199,11 @@ explicit purge:
 ## Testing
 
 - **Upload:** valid image → `PENDING` `Media` row + stored object + `media_id`;
-  oversize → 400; wrong magic bytes → 400; missing field → 400; rate limit → 429;
-  bad/missing API key → 401/403.
+  oversize body (`Content-Length`) → 413; wrong magic bytes → 400; missing field →
+  400; per-key rate limit → 429; bad/missing API key → 401/403.
+- **Abuse controls:** `free`/non-entitled tier → 403 `feature_not_available`;
+  16th upload within a minute → 429; daily quota exceeded → 429 `quota_exceeded`;
+  daily quota scales by tier.
 - **Attach:** valid `media_ids` → post with resolved `imageUrls`, media `ATTACHED`;
   foreign-owner id → 400; already-`ATTACHED` id → 400; > 4 ids → 400; image-only post
   (no `content`) → 201.

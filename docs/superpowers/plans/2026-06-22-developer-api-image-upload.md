@@ -15,6 +15,7 @@
 - **Storage:** reuse `feedImageKey` / `feedImageUrl` / `contentTypeForFilename` from `lib/storage/keys.ts`; filename scheme `<userId>-<ts>-<rand><ext>`. Store image bytes **as-is** (no Sharp re-encode).
 - **Id format:** `media_` + `nanoid()`. Ids are opaque; never expose a raw storage URL in the upload response.
 - **Lifecycle:** media is single-use. Orphan TTL = 24h (`24 * 60 * 60 * 1000`). Deleted-post grace = 7 days (`7 * 24 * 60 * 60 * 1000`).
+- **Abuse controls (upload route only):** tier-gated to **starter+** via a dedicated `hasApiImageUpload(tier)` capability (403 `feature_not_available` otherwise); reject `Content-Length > 5 MB` with **413** before reading the body; a dedicated **15 req/min per key** limit (reusing the existing `rateLimit`/`redisRateLimit`, prefix `dev-api-image`); a tier-scaled **daily quota** (starter 200, pro 1 000, enterprise 5 000) → 429 `quota_exceeded`. No token bucket / pending-cap / concurrency semaphore (dropped, YAGNI).
 - **Test location:** unit tests go in `lib/__tests__/*.test.ts` (picked up by `vitest.config.ts`). Run with `pnpm exec vitest run <path>`.
 - **Dependency injection:** `lib/media/*` server functions take their `prisma`/storage collaborators as an argument so they unit-test with plain mocks (no `vi.mock` of the prisma module). Route handlers pass the real `prisma` (`@/lib/prisma.server`) and storage functions.
 
@@ -31,11 +32,14 @@
 - `lib/media/attach.server.ts` — `resolveMediaForPost` + `markMediaAttached` (DI: prisma).
 - `lib/media/sweep.server.ts` — `sweepUnreferencedMedia` (DI: prisma + storage + now).
 - `app/routes/api/v1/images.ts` — `POST /api/v1/images` route (thin).
-- Tests: `lib/__tests__/media-id.test.ts`, `media-policy.test.ts`, `media-sweep-policy.test.ts`, `storage-cdn.test.ts`, `media-upload.test.ts`, `media-attach.test.ts`, `media-sweep.test.ts`.
+- `lib/media/quota.server.ts` — `checkDailyUploadQuota` (DI: redis/in-process counter) + per-tier quota map.
+- Tests: `lib/__tests__/media-id.test.ts`, `media-policy.test.ts`, `media-sweep-policy.test.ts`, `storage-cdn.test.ts`, `media-upload.test.ts`, `media-attach.test.ts`, `media-sweep.test.ts`, `media-quota.test.ts`, `entitlements-image-upload.test.ts`.
 
 **Modify:**
 - `prisma/schema.prisma` — add `Media` model + `MediaStatus` enum + back-relations on `User` and `RMHark`.
 - `app/routes/api/v1/posts.ts` — accept `media_ids` in the POST handler.
+- `lib/entitlements.ts` — add `hasApiImageUpload(tier)` capability.
+- `app/routes/api/v1/images.ts` — wire abuse controls (capability gate, 413 guard, tight limit, daily quota) — built in Task 5, hardened in Task 9.
 - `server/recap/index.ts` — add an hourly `setInterval` calling the sweep.
 - `.env.example` — document CDN env vars.
 - `docs/developer-api.md` — document the new endpoint + `media_ids`.
@@ -596,6 +600,12 @@ export const Route = createFileRoute("/api/v1/images")({
 
       POST: ({ request }) =>
         withDeveloperApi(request, async ({ userId }) => {
+          // Reject oversize bodies before reading them into memory.
+          const declared = Number(request.headers.get("content-length") ?? "0");
+          if (declared > MEDIA_MAX_BYTES) {
+            return apiError("payload_too_large", `Image too large. Maximum size is ${MEDIA_MAX_BYTES / 1024 / 1024} MB.`, 413);
+          }
+
           let form: FormData;
           try {
             form = await request.formData();
@@ -1176,9 +1186,204 @@ git commit -m "feat(media): reconciling sweep + hourly worker trigger + docs"
 
 ---
 
+## Task 9: Upload abuse controls (capability gate + tight limit + daily quota)
+
+Hardens the `POST /api/v1/images` route from Task 5. Until this task lands, the
+endpoint is still gated to starter+ at 120/min (via `withDeveloperApi` +
+`hasApiAccess`) and 413-guarded, but not yet tier-capability-gated, tight-limited, or
+quota-capped.
+
+**Files:**
+- Modify: `lib/entitlements.ts` (add `hasApiImageUpload`)
+- Create: `lib/media/quota.server.ts`
+- Modify: `app/routes/api/v1/images.ts` (wire the three controls)
+- Test: `lib/__tests__/entitlements-image-upload.test.ts`, `lib/__tests__/media-quota.test.ts`
+
+**Interfaces:**
+- Consumes: `Tier`, `TIER_RANK` from `@/lib/entitlements`; `redisRateLimit` from `@/lib/redis.server`; `rateLimit` from `@/lib/rate-limit`.
+- Produces:
+  - `hasApiImageUpload(tier: Tier): boolean` — true for starter and above.
+  - `DAILY_UPLOAD_QUOTA: Record<Tier, number>` — `{ free: 0, starter: 200, pro: 1000, enterprise: 5000 }`.
+  - `keyedLimit(key: string, max: number, windowMs: number): Promise<{ allowed: boolean; retryAfter: number }>` — Redis limiter with in-process fallback (same composition as `withDeveloperApi`'s private `limit`).
+  - `checkDailyUploadQuota(deps, args): Promise<{ allowed: boolean; retryAfter: number }>` — `deps: { limit: typeof keyedLimit }`, `args: { userId: string; tier: Tier }`. Calls `limit(\`media-quota:\${userId}\`, DAILY_UPLOAD_QUOTA[tier], 24h)`.
+
+- [ ] **Step 1: Write the failing entitlements test**
+
+`lib/__tests__/entitlements-image-upload.test.ts`:
+
+```typescript
+import { describe, it, expect } from "vitest";
+import { hasApiImageUpload } from "@/lib/entitlements";
+
+describe("hasApiImageUpload", () => {
+  it("grants starter and above, denies free", () => {
+    expect(hasApiImageUpload("free")).toBe(false);
+    expect(hasApiImageUpload("starter")).toBe(true);
+    expect(hasApiImageUpload("pro")).toBe(true);
+    expect(hasApiImageUpload("enterprise")).toBe(true);
+  });
+});
+```
+
+- [ ] **Step 2: Run it (fails), then add the capability**
+
+Run: `pnpm exec vitest run lib/__tests__/entitlements-image-upload.test.ts`
+Expected: FAIL — `hasApiImageUpload` is not exported.
+
+In `lib/entitlements.ts`, add next to `hasApiAccess`:
+
+```typescript
+/** Image upload via the developer API — starter and above. */
+export function hasApiImageUpload(tier: Tier): boolean {
+  return TIER_RANK[tier] >= TIER_RANK.starter;
+}
+```
+
+Run again — Expected: PASS.
+
+- [ ] **Step 3: Write the failing quota test**
+
+`lib/__tests__/media-quota.test.ts`:
+
+```typescript
+import { describe, it, expect, vi } from "vitest";
+import { DAILY_UPLOAD_QUOTA, checkDailyUploadQuota } from "@/lib/media/quota.server";
+
+describe("daily upload quota", () => {
+  it("quota map matches the spec", () => {
+    expect(DAILY_UPLOAD_QUOTA).toEqual({ free: 0, starter: 200, pro: 1000, enterprise: 5000 });
+  });
+
+  it("limits per user with the tier's max over a 24h window", async () => {
+    const limit = vi.fn(async () => ({ allowed: true, retryAfter: 0 }));
+    const res = await checkDailyUploadQuota({ limit }, { userId: "u1", tier: "pro" });
+    expect(res.allowed).toBe(true);
+    expect(limit).toHaveBeenCalledWith("media-quota:u1", 1000, 24 * 60 * 60 * 1000);
+  });
+
+  it("propagates a deny", async () => {
+    const limit = vi.fn(async () => ({ allowed: false, retryAfter: 3600 }));
+    const res = await checkDailyUploadQuota({ limit }, { userId: "u1", tier: "starter" });
+    expect(res).toEqual({ allowed: false, retryAfter: 3600 });
+    expect(limit).toHaveBeenCalledWith("media-quota:u1", 200, 24 * 60 * 60 * 1000);
+  });
+});
+```
+
+- [ ] **Step 4: Run it (fails), then implement**
+
+Run: `pnpm exec vitest run lib/__tests__/media-quota.test.ts`
+Expected: FAIL — cannot find module `@/lib/media/quota.server`.
+
+`lib/media/quota.server.ts`:
+
+```typescript
+import type { Tier } from "@/lib/entitlements";
+import { rateLimit } from "@/lib/rate-limit";
+import { redisRateLimit } from "@/lib/redis.server";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+export const DAILY_UPLOAD_QUOTA: Record<Tier, number> = {
+  free: 0,
+  starter: 200,
+  pro: 1000,
+  enterprise: 5000,
+};
+
+/** Cross-instance limiter (Redis) with per-instance fallback. */
+export async function keyedLimit(
+  key: string,
+  max: number,
+  windowMs: number
+): Promise<{ allowed: boolean; retryAfter: number }> {
+  const viaRedis = await redisRateLimit(key, max, windowMs);
+  if (viaRedis) return viaRedis;
+  return rateLimit(key, { limit: max, windowMs });
+}
+
+export interface QuotaDeps {
+  limit: (key: string, max: number, windowMs: number) => Promise<{ allowed: boolean; retryAfter: number }>;
+}
+
+export async function checkDailyUploadQuota(
+  deps: QuotaDeps,
+  args: { userId: string; tier: Tier }
+): Promise<{ allowed: boolean; retryAfter: number }> {
+  return deps.limit(`media-quota:${args.userId}`, DAILY_UPLOAD_QUOTA[args.tier], DAY_MS);
+}
+```
+
+Run again — Expected: PASS (3 tests).
+
+- [ ] **Step 5: Wire the three controls into the route**
+
+In `app/routes/api/v1/images.ts`, update the imports:
+
+```typescript
+import { hasApiImageUpload } from "@/lib/entitlements";
+import { keyedLimit, checkDailyUploadQuota } from "@/lib/media/quota.server";
+```
+
+Change the handler signature to also destructure `tier`, and insert the gate, tight
+limit, and quota checks immediately inside the `withDeveloperApi` callback — **before**
+the 413 guard:
+
+```typescript
+      POST: ({ request }) =>
+        withDeveloperApi(request, async ({ userId, tier }) => {
+          // 1. Tier capability gate.
+          if (!hasApiImageUpload(tier)) {
+            return apiError("feature_not_available", "Image upload requires a Starter plan or higher.", 403);
+          }
+
+          // 2. Dedicated tight per-key limit (far below the generic 120/min).
+          const burst = await keyedLimit(`dev-api-image:${userId}`, 15, 60_000);
+          if (!burst.allowed) {
+            return apiError("rate_limited", "Too many uploads. Slow down.", 429, { "Retry-After": String(burst.retryAfter) });
+          }
+
+          // 3. Tier-scaled daily quota.
+          const quota = await checkDailyUploadQuota({ limit: keyedLimit }, { userId, tier });
+          if (!quota.allowed) {
+            return apiError("quota_exceeded", "Daily image upload limit reached.", 429, { "Retry-After": String(quota.retryAfter) });
+          }
+
+          // 4. Reject oversize bodies before reading them into memory.
+          const declared = Number(request.headers.get("content-length") ?? "0");
+          // ... (rest of the handler unchanged)
+```
+
+- [ ] **Step 6: Typecheck + run the abuse-control tests**
+
+Run: `pnpm exec tsc --noEmit -p tsconfig.json 2>&1 | grep -E "images|quota|entitle" | head`
+Expected: no errors.
+Run: `pnpm exec vitest run lib/__tests__/entitlements-image-upload.test.ts lib/__tests__/media-quota.test.ts`
+Expected: all PASS.
+
+- [ ] **Step 7: Manual smoke**
+
+Run (16th call within a minute on one key):
+```bash
+for i in $(seq 1 16); do
+  curl -s -o /dev/null -w "%{http_code}\n" -X POST http://localhost:3000/api/v1/images \
+    -H "Authorization: Bearer rmh_live_<key>" -F "image=@./some.png"
+done
+```
+Expected: the first 15 return `201`, the 16th returns `429`.
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add lib/entitlements.ts lib/media/quota.server.ts app/routes/api/v1/images.ts lib/__tests__/entitlements-image-upload.test.ts lib/__tests__/media-quota.test.ts
+git commit -m "feat(api): tier-gate, tight-limit, and daily-quota image upload"
+```
+
+---
+
 ## Self-Review Notes (for the implementer)
 
-- **Spec coverage:** upload endpoint (Task 5), opaque media_id (Task 2), attach into posts with URL storage = backward compat (Task 7), Media model (Task 1), single-use + orphan TTL (Tasks 3/6/8), deleted-post cleanup with 7-day grace (Tasks 6/8), CDN abstraction (Task 4 + Task 8 wiring), limits/magic-byte validation (Task 3), tests per the spec's Testing section (every task).
+- **Spec coverage:** upload endpoint (Task 5), opaque media_id (Task 2), attach into posts with URL storage = backward compat (Task 7), Media model (Task 1), single-use + orphan TTL (Tasks 3/6/8), deleted-post cleanup with 7-day grace (Tasks 6/8), CDN abstraction (Task 4 + Task 8 wiring), limits/magic-byte validation (Task 3), abuse controls — starter+ gate, 413 guard, 15/min limit, tier-scaled daily quota (Tasks 5/9), tests per the spec's Testing section (every task).
 - **Backward compat is verified structurally:** posts store resolved URLs in `imageUrls` exactly as the in-app uploader does (Task 7 writes `attached.urls`), so existing posts and the feed renderer are untouched. No migration of existing rows.
 - **Confirm during Task 1:** exact back-relation placement in `User`/`RMHark` (they have many relation fields; add `media Media[]` to each).
 - **Route-tree regeneration:** `app/routeTree.gen.ts` is generated. If your build doesn't auto-run it, run the project's generate/dev step before the manual smoke tests in Tasks 5 and 7.
