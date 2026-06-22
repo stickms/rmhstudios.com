@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>General, multimodal frontier models — RMH Deeplink</title>
+<meta name="description" content="RMH Deeplink's foundation-model program — general, multimodal frontier models that perceive, reason, and act, and the science of how capability scales." />
+<meta property="og:title" content="General, multimodal frontier models — RMH Deeplink" />
+<meta property="og:description" content="RMH Deeplink's foundation-model program — general, multimodal frontier models that perceive, reason, and act, and the science of how capability scales." />
+<meta property="og:type" content="article" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" />
+<link rel="stylesheet" href="deeplink.css" />
+</head>
+<body>
+
+<header id="hdr">
+  <div class="wrap nav">
+    <a class="brand" href="../deeplink.html" aria-label="RMH Deeplink home">
+      <span class="dot" aria-hidden="true"></span>RMH&nbsp;Deeplink
+    </a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="../deeplink.html#research">Models</a>
+      <a href="../deeplink.html#research">Research</a>
+      <a href="../deeplink.html#science">Science</a>
+      <a href="../deeplink.html#safety">Safety</a>
+      <a href="../deeplink.html#about">About</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="backlink" href="/"><span aria-hidden="true">&larr;</span><span class="backlink-label">RMH Studios</span></a>
+      <a class="btn btn-ghost" href="../deeplink.html#research">Research</a>
+      <a class="btn btn-primary" href="mailto:research@rmhstudios.com?subject=RMH%20Deeplink%20%E2%80%94%20Inquiry">Build with Deeplink</a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+  <div class="wrap">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../deeplink.html">RMH Deeplink</a><span class="sep">/</span>
+      <a href="../deeplink.html#research">Research</a><span class="sep">/</span>
+      <span>Foundation models</span>
+    </nav>
+  </div>
+
+  <!-- article hero -->
+  <section class="ahero">
+    <div class="wrap">
+      <span class="kicker">Research · Foundation models</span>
+      <h1>General, multimodal frontier models</h1>
+      <p class="lead">The general engine everything else is built on — models that perceive, reason, and act across language, vision, code, and the physical world.</p>
+      <div class="ahero-media">
+        <img src="../images/deeplink/foundation-models.jpg" alt="Interconnected iridescent glass ribbons forming a neural manifold" />
+      </div>
+    </div>
+  </section>
+
+  <!-- article body -->
+  <article class="article">
+    <div class="wrap">
+      <!-- ==== BEGIN BODY (subagent fills this) ==== -->
+      <div class="prose">
+        <p>A foundation model is a single large network, trained on broad data at scale, whose internal representations transfer across an open-ended range of tasks without bespoke architectural surgery. It is the central organizing artifact of the modern field and the substrate on which every other program at RMH Deeplink is built. When we speak of a frontier model, we mean exactly this: not a tool sharpened for one job, but a general engine of perception and inference that adapts to new problems cheaply, often with no gradient updates at all.</p>
+        <p>The empirical surprise that animates the entire laboratory is that this works. A sufficiently general training objective, applied at scale to sufficiently diverse data, yields capabilities that were never explicitly designed. Next-token prediction over the open web produces, as a byproduct, arithmetic, translation, code synthesis, and a serviceable model of commonsense physics. We do not treat this as a curiosity to be explained away. We treat it as the most important fact in the field and as a resource to be deliberately cultivated.</p>
+        <p>From that fact follows our discipline. A foundation model amortizes the enormous cost of learning general structure across every task that later draws upon it — we pay once, at great expense, and adaptation becomes cheap thereafter. Capability belongs in the shared substrate; the proliferation of special-purpose models is, in our view, a failure of generality to be corrected rather than a catalog to be celebrated.</p>
+
+        <h2>Why a general substrate</h2>
+        <p>The case for generality is a case about transfer. Knowledge learned to satisfy one objective — the grammar of a language, the geometry of a scene, the semantics of a function call — turns out to be reusable across an unbounded set of downstream demands. Concentrating investment in one rich model rather than many thin ones is therefore not merely convenient; it is the correct unit of scientific investment for a laboratory with our ambitions, a standing asset whose value compounds as the surrounding programs learn to draw on it. It is also the unifying interface for the rest of our agenda: the agents that act, the world models that imagine, and the reasoners that deliberate are not separate stacks but capabilities cultivated within, and read out from, the same substrate. The richer the foundation model, the more of these higher faculties become trivial adaptations rather than fresh engineering — and that conversion of hard problems into easy ones is how we measure whether the substrate is doing its job.</p>
+      </div>
+
+      <div class="facts">
+        <div class="f"><div class="n">1M+</div><div class="l">Tokens of context, text and pixels alike</div></div>
+        <div class="f"><div class="n">6</div><div class="l">Native modalities in one representation</div></div>
+        <div class="f"><div class="n">1.4T</div><div class="l">Sparse parameters, a fraction active per token</div></div>
+      </div>
+
+      <div class="prose">
+        <h2>Scaling laws, and where scale stops being enough</h2>
+        <p>For several years the dominant lever on capability has been scale. Smooth, predictable scaling laws relate a model's loss to its compute, parameter, and data budgets, and the consequence is profound: we can forecast a model's capability from small-scale experiments before committing to a large run, transforming frontier development from an artisanal practice into an engineering discipline that allocates compute rationally and de-risks runs through extrapolation rather than faith.</p>
+        <p>But scale is a lever, not a law of nature, and we are deliberately attentive to where it stops paying. Three frontiers reach diminishing returns on raw size alone, and each becomes a research program in its own right.</p>
+        <h3>Where the returns bend</h3>
+        <ul>
+          <li><strong>Architecture</strong> — the quadratic cost of attention in sequence length binds context exactly where multimodal models need it most. Sparse and sliding-window attention, interleaved state-space and linear layers, and learned compression of distant context decouple effective context from quadratic cost. Mixture-of-experts routing decouples knowledge capacity from inference cost, letting parameter counts grow into the trillions while only a sparse fraction activates per token.</li>
+          <li><strong>Data</strong> — high-quality language data is finite and we are approaching its limit; high-quality paired multimodal data is scarcer still. Past a threshold, data quality dominates quantity: a well-filtered, deduplicated, balanced corpus outperforms a larger raw scrape. We invest in learned quality classifiers that improve as the models improve, a virtuous loop we intend to exploit aggressively.</li>
+          <li><strong>Objectives</strong> — imitation aligns a model to the average of its data. The sharpest gains we observe come instead from training against verifiable signals: the execution of generated code, the checking of a derivation, the success or failure of a plan. Better objectives, not merely more tokens, are increasingly where capability is won.</li>
+        </ul>
+      </div>
+
+      <div class="split">
+        <div>
+          <h2>Multimodality and unified representations</h2>
+          <p>A text-only model, however fluent, is a model of a shadow. Language is a compression of human thought; a system trained only on language inherits a world that is linguistically mediated, discretized, and stripped of the continuous, high-bandwidth structure that perception supplies. A child learns "heavy" not from a dictionary but from the resistance of objects against muscle. The grounding problem is not a philosophical indulgence — it is a practical bottleneck.</p>
+          <p>Our wager is that the next decisive advances come from models whose training substrate is genuinely multimodal: vision, audio, video, action, structured data, and language, fused as one representational manifold learned jointly from the start rather than as adapters bolted onto a language core. The precondition is unified tokenization — bringing continuous modalities into the same sequence space as text — and we keep parallel lines on discrete-codec and continuous-latent approaches, letting downstream transfer adjudicate rather than aesthetic preference.</p>
+        </div>
+        <div class="media">
+          <img src="../images/deeplink/foundation-models-1.jpg" alt="Layered translucent panes of text, image, and waveform converging into a single luminous core" />
+        </div>
+      </div>
+
+      <div class="pull">
+        <p>Generality is cheaper than specialization once the substrate is rich enough — and the multimodal foundation model is the richest substrate we know how to build.</p>
+      </div>
+
+      <div class="prose">
+        <h2>Pre-training and post-training</h2>
+        <p>Capability is laid down in two stages, and the science lives in their interplay. Pre-training on broad multimodal data establishes the representational substrate; the open questions are which mixture, in what curriculum, at what relative weighting. We have learned that naive concatenation of modalities underperforms a deliberately staged curriculum — strong unimodal competence first, then cross-modal alignment on paired data — and that the dominant modality, usually language, will crowd out the others unless the schedule is managed with care.</p>
+        <p>Post-training is where a broad, predictive substrate is sharpened into a competent actor. Supervised fine-tuning on demonstrations and preference-based optimization establish helpfulness and tone, but the most reliable gains come from reinforcement against signals that can be checked. This is the seam where the foundation-model program meets the reinforcement-learning and reasoning programs: the same model that was trained to predict is now trained to be correct, and correctness, where it can be verified, is a far less corruptible teacher than imitation.</p>
+
+        <h2>Reasoning, emergent from scale</h2>
+        <p>Among the capabilities that emerge from this recipe, the most consequential is reasoning. A model trained to externalize its intermediate steps — to write out a chain of deliberation before committing to an answer — performs dramatically better on multi-step problems, because the generated reasoning becomes a scratchpad on which sequential computation can unfold that a single forward pass cannot perform. Reasoning, on our account, is computation that happens in the token stream, and lengthening and improving that computation is a lever we pull directly.</p>
+        <p>The decisive move is to train deliberation rather than merely elicit it. Reinforced against verifiable outcomes, a model learns to deliberate longer on harder problems, to check its own work, to backtrack from unpromising lines, and to spend inference-time compute in proportion to difficulty — strategies we never hand-designed, discovered by the model from outcome reward alone. The scaling of inference-time computation thus becomes a second axis of capability, complementary to the scaling of training-time compute and exercisable per problem at deployment.</p>
+      </div>
+
+      <figure class="fig">
+        <div class="frame">
+          <img src="../images/deeplink/foundation-models-2.jpg" alt="A dense lattice of glowing nodes resolving from noise into ordered structure" />
+        </div>
+        <figcaption>Capability laid down in pre-training is sharpened in post-training: the predictive substrate becomes a competent reasoner when optimized against signals that can be checked.</figcaption>
+      </figure>
+
+      <div class="prose">
+        <h2>Reliability as a design target</h2>
+        <p>Fluency without reliability is a liability, and we treat reliability as a first-class objective rather than a finishing polish. A frontier model must be calibrated about what it knows, must fail legibly rather than confabulate confidently, and must hold its broad competence even as it is sharpened on a target distribution — the avoidance of catastrophic narrowing. Reliability also depends on evaluation that genuinely probes fusion and generation rather than rewarding single-modality shortcuts, so we treat contamination-resistant, fusion-requiring evaluations as inseparable from model development itself. The goal is not a model that impresses in a demo but one that can be depended upon as the substrate for the agents, scientists, and reasoners that act on its outputs.</p>
+      </div>
+
+      <div class="prose">
+        <h2>Open questions</h2>
+        <ul>
+          <li>Does a single jointly trained model develop representations strictly more capable on each individual modality than the best unimodal model — and does positive transfer hold in the hard directions, not only the easy ones?</li>
+          <li>Do the smooth scaling laws of unimodal pre-training extend to the multimodal setting with predictable exponents, or does multimodality introduce phase transitions and irreducible unpredictability?</li>
+          <li>How do we surmount the data wall — extracting more capability per token, certifying synthetic data, and exploiting the vast reservoir of unpaired and weakly paired data the naive recipe cannot use?</li>
+          <li>Can high-fidelity generation and strong understanding be unified in one network without each objective degrading the representations the other depends on?</li>
+          <li>Is a trained model's externalized reasoning faithful to the computation that produced its answer, and how do we measure and train for that faithfulness so the trace can be trusted?</li>
+        </ul>
+      </div>
+      <!-- ==== END BODY ==== -->
+    </div>
+  </article>
+
+  <!-- related CTA -->
+  <section class="related">
+    <div class="wrap">
+      <h2>Move the frontier with us</h2>
+      <p>RMH Deeplink is hiring research scientists and engineers across every program. Or read the full 120-page research thesis.</p>
+      <div class="r-actions">
+        <a class="btn btn-primary btn-lg" href="../library/rmh-deeplink-thesis.pdf">Read the thesis</a>
+        <a class="btn btn-ghost btn-lg" href="mailto:careers@rmhstudios.com?subject=Careers%20%E2%80%94%20RMH%20Deeplink">See open roles</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer id="about">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <a class="brand" href="../deeplink.html"><span class="dot" aria-hidden="true"></span>RMH&nbsp;Deeplink&nbsp;<small>from RMH Studios</small></a>
+        <p>Foundational AI research toward artificial general intelligence — in service of science and humanity.</p>
+        <form class="news-form" onsubmit="return false" aria-label="Newsletter signup">
+          <input type="email" placeholder="Your email" aria-label="Email address" />
+          <button class="btn btn-primary" type="submit">Subscribe</button>
+        </form>
+      </div>
+      <nav class="foot-col" aria-label="Research">
+        <h4>Research</h4>
+        <a href="foundation-models.html">Foundation models</a>
+        <a href="agents-rl.html">Agents &amp; RL</a>
+        <a href="ai-for-science.html">AI for science</a>
+        <a href="alignment.html">Interpretability</a>
+      </nav>
+      <nav class="foot-col" aria-label="Science">
+        <h4>Science</h4>
+        <a href="life-sciences.html">Life sciences</a>
+        <a href="mathematics.html">Mathematics</a>
+        <a href="energy-climate.html">Climate &amp; energy</a>
+        <a href="ai-for-science.html">AI for science</a>
+      </nav>
+      <nav class="foot-col" aria-label="Company">
+        <h4>Company</h4>
+        <a href="../deeplink.html#about">About</a>
+        <a href="frontier-safety.html">Safety &amp; responsibility</a>
+        <a href="mailto:careers@rmhstudios.com?subject=Careers%20%E2%80%94%20RMH%20Deeplink">Careers</a>
+        <a href="mailto:info@rmhstudios.com">Contact</a>
+      </nav>
+    </div>
+    <div class="foot-bot">
+      <span class="mission-line">Building AI responsibly to benefit humanity. &copy; 2026 RMH Deeplink.</span>
+      <div class="social" aria-label="Social links">
+        <a href="#" aria-label="X">X</a>
+        <a href="#" aria-label="LinkedIn">in</a>
+        <a href="#" aria-label="YouTube">&#9658;</a>
+        <a href="#" aria-label="GitHub">&lt;/&gt;</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var hdr = document.getElementById('hdr');
+  var onScroll = function () { hdr.classList.toggle('scrolled', window.scrollY > 8); };
+  window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
+})();
+</script>
+</body>
+</html>

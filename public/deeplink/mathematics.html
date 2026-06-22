@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Theorem proving as a frontier — RMH Deeplink</title>
+<meta name="description" content="RMH Deeplink in mathematics — formal theorem proving, autoformalization, and machine-assisted discovery, where correctness is checkable and the bar is absolute." />
+<meta property="og:title" content="Theorem proving as a frontier — RMH Deeplink" />
+<meta property="og:description" content="RMH Deeplink in mathematics — formal theorem proving, autoformalization, and machine-assisted discovery, where correctness is checkable and the bar is absolute." />
+<meta property="og:type" content="article" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" />
+<link rel="stylesheet" href="deeplink.css" />
+</head>
+<body>
+
+<header id="hdr">
+  <div class="wrap nav">
+    <a class="brand" href="../deeplink.html" aria-label="RMH Deeplink home">
+      <span class="dot" aria-hidden="true"></span>RMH&nbsp;Deeplink
+    </a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="../deeplink.html#research">Models</a>
+      <a href="../deeplink.html#research">Research</a>
+      <a href="../deeplink.html#science">Science</a>
+      <a href="../deeplink.html#safety">Safety</a>
+      <a href="../deeplink.html#about">About</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="backlink" href="/"><span aria-hidden="true">&larr;</span><span class="backlink-label">RMH Studios</span></a>
+      <a class="btn btn-ghost" href="../deeplink.html#research">Research</a>
+      <a class="btn btn-primary" href="mailto:research@rmhstudios.com?subject=RMH%20Deeplink%20%E2%80%94%20Inquiry">Build with Deeplink</a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+  <div class="wrap">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../deeplink.html">RMH Deeplink</a><span class="sep">/</span>
+      <a href="../deeplink.html#science">Science</a><span class="sep">/</span>
+      <span>Mathematics</span>
+    </nav>
+  </div>
+
+  <!-- article hero -->
+  <section class="ahero">
+    <div class="wrap">
+      <span class="kicker">Science · Mathematics</span>
+      <h1>Theorem proving as a frontier</h1>
+      <p class="lead">Formal proof search and autoformalization, where correctness is checkable and the bar is absolute.</p>
+      <div class="ahero-media">
+        <img src="../images/deeplink/mathematics.jpg" alt="Interlocking translucent crystalline geometric forms" />
+      </div>
+    </div>
+  </section>
+
+  <!-- article body -->
+  <article class="article">
+    <div class="wrap">
+      <!-- ==== BEGIN BODY (subagent fills this) ==== -->
+      <div class="prose">
+        <p>Mathematics holds a singular place in our research agenda, and it is worth being precise about why. It is the one domain in which truth is mechanically verifiable. A proof, once expressed in a formal system such as a dependent-type-theory proof assistant, is either correct or it is not, and the verdict is rendered by a kernel of a few thousand lines of code that no rhetoric can persuade and no confidence can fool. There is no panel of referees to convince, no consensus to wait on, no margin in which a plausible-sounding step quietly fails. The check is exact, it is cheap, and it is final.</p>
+        <p>That property makes mathematics far more than a benchmark, though it is an exceptionally clean one. Mathematical capability is reasoning in its purest form — long-horizon, compositional, creative deduction with nowhere to hide — and progress here is a direct probe of whether our systems genuinely reason or merely interpolate over patterns they have seen. A model that proves a theorem it has never encountered, against a checker that cannot be charmed, has demonstrated something no leaderboard of multiple-choice questions can establish. For a laboratory whose mission is to build systems that advance science, that is the frontier we most want to stand on.</p>
+
+        <h2>Why mathematics is an ideal frontier</h2>
+        <p>Three features make the domain almost uniquely suited to machine reasoning. It is verifiable: every claim reduces to a check a small trusted kernel can perform. It is infinite: the space of true statements is unbounded, so a system can manufacture as much practice as it can afford, generating conjectures, attempting proofs, and learning from the verified successes with no human in the loop for the verification step. And it is deep: the problems range continuously from the trivial to the unsolved, which means there is always a rung just above the system's current reach, and always a ladder to climb toward it.</p>
+      </div>
+
+      <div class="facts">
+        <div class="f"><div class="n">~7k</div><div class="l">Lines of trusted kernel that decide every proof</div></div>
+        <div class="f"><div class="n">∞</div><div class="l">True statements available as self-generated practice</div></div>
+        <div class="f"><div class="n">0</div><div class="l">Hallucinated steps a verified proof can contain</div></div>
+      </div>
+
+      <div class="prose">
+        <h2>Formal proof search inside the assistant</h2>
+        <p>Our first track places a model directly inside a proof assistant, where it does not write prose that someone later audits but emits tactics that the kernel checks at every step. The search space is the set of valid tactic applications, and because each one is verified as it is applied, hallucinated reasoning is eliminated by construction: a step that does not typecheck simply does not happen. The model cannot bluff its way forward, and that constraint, far from limiting it, is precisely what makes the learning signal trustworthy.</p>
+        <p>The machinery is a guided tree search over proof states. A policy network proposes the tactics most likely to make progress; a value network estimates how close a given proof state sits to completion; and the search, refined by reinforcement learning against the verifier, explores the resulting tree. The verifier supplies the reward, the search supplies the exploration, and the networks compress the lessons of millions of attempts into intuitions about which lines are worth pursuing.</p>
+        <p>The persistent obstacle is data. The corpus of human-written formal proofs is tiny next to the vast informal literature, because formalization is laborious and most mathematics was never written for a machine to read. We attack the shortage from several directions at once.</p>
+        <ul>
+          <li><strong>Autoformalization</strong> — train models to translate informal natural-language statements and proofs into formal ones, converting the enormous existing literature into checkable training material the proof-search model can consume.</li>
+          <li><strong>Expert iteration</strong> — bootstrap from easier auto-generated problems toward progressively harder ones, with each round's solved problems becoming the next round's training data, so the system pulls itself up by its own verified successes.</li>
+          <li><strong>Synthetic self-play</strong> — exploit the infinitude of the domain to generate fresh problems on demand, calibrated to sit just beyond current ability, so that practice never runs out and never goes stale.</li>
+        </ul>
+      </div>
+
+      <div class="split">
+        <div>
+          <h2>Autoformalization, the bridge</h2>
+          <p>Between the informal mathematics that humans write and the formal mathematics a kernel can check lies a translation problem, and autoformalization is the program devoted to it. A model reads a theorem and its argument in ordinary mathematical English — with its elisions, its "clearly," its appeals to a reader's judgment — and renders it as a fully explicit formal statement and proof, supplying every step the human author left tacit.</p>
+          <p>The payoff is leverage. If informal mathematics can be turned into formal mathematics reliably, then the entire accumulated literature becomes a source of verified training data, and the data wall that constrains proof search begins to fall. Autoformalization is therefore not a side project but the hinge on which the whole formal program turns: it is how the fluency of natural-language mathematics is married to the rigor of the checker.</p>
+        </div>
+        <div class="media">
+          <img src="../images/deeplink/mathematics-1.jpg" alt="Two interlocking lattices, one fluid and one rigid, meeting along a luminous seam" />
+        </div>
+      </div>
+
+      <div class="pull">
+        <p>Wherever a verifier exists, the model is free to be creative — even reckless — because a wrong answer is caught with certainty and costs nothing but compute.</p>
+      </div>
+
+      <div class="prose">
+        <h2>Informal reasoning, conjecture, and discovery</h2>
+        <p>The second track embraces the intuitive register in which working mathematicians actually think. Here we use large reasoning models that generate natural-language arguments and then verify their load-bearing steps against formal checkers or numerical evidence, combining the fluency of language with the rigor of verification. The aim is not to abandon formality but to deploy it surgically — to reason expansively and check exactly where the argument carries weight.</p>
+        <p>Beyond proving theorems that are handed to it, we are drawn to the harder and more genuinely scientific act of mathematical discovery: proposing the right conjecture, finding the illuminating construction, identifying which of infinitely many true statements is actually worth proving. This is where mathematics stops being a closed exam and becomes open inquiry. Machine-learning systems have already surfaced unexpected patterns in pure mathematics, detecting structure in data that guided human mathematicians toward new relationships in knot theory and representation theory — the model as a generator of hypotheses, the human as the supplier of judgment and final proof. We believe this collaborative mode is the near-term shape of AI-accelerated mathematics, and a microcosm of AI-accelerated science generally.</p>
+      </div>
+
+      <figure class="fig">
+        <div class="frame">
+          <img src="../images/deeplink/mathematics-2.jpg" alt="A scatter of points resolving into an unexpected geometric pattern, a conjecture taking shape" />
+        </div>
+        <figcaption>The generator–verifier loop: a model proposes freely while a cheap, sound, mechanical oracle for truth catches every error with certainty — the structure mathematics offers and most domains do not.</figcaption>
+      </figure>
+
+      <div class="prose">
+        <h2>The lesson that travels beyond mathematics</h2>
+        <p>There is a methodological insight here that bears on rigor across all of our scientific work. Mathematics offers something almost no other domain does: a cheap, sound, mechanical oracle for truth. Wherever such an oracle exists, the generator can be bold, because the verifier's reliable judgment costs nothing to consult and never errs in the model's favor. The art is to design the generator–verifier loop so that the verifier's verdicts train an ever-stronger generator — and we regard the construction of such verifiers, and the reformulation of scientific questions into forms where verification is possible, as among the highest-leverage activities in AI for science.</p>
+        <p>Seen this way, mathematics is the limiting case of a pattern that recurs everywhere we work. The protein folded and measured by cryo-EM, the material synthesized in the lab, the forecast scored against tomorrow's weather, the controller run on a real tokamak — each is an instance of the same idea, a candidate proposed cheaply and checked against ground truth. Mathematics is simply the case where the check is exact and free, which is why we treat it both as a frontier worth conquering for its own sake and as the cleanest laboratory we have for learning how verification should govern reasoning.</p>
+      </div>
+
+      <div class="prose">
+        <h2>Open questions</h2>
+        <ul>
+          <li>Can autoformalization become reliable enough to convert the informal literature into formal training data at scale, or does the gap between a human's tacit reasoning and a kernel's demands resist automation?</li>
+          <li>How far does expert iteration carry a system before it stalls — is there a difficulty ceiling that self-generated curricula cannot push through, and what supplies the next rung when there is?</li>
+          <li>Can a model learn to choose the worthwhile conjecture, exercising the taste that distinguishes a fruitful problem from a true but inert one, rather than merely proving statements it is given?</li>
+          <li>Does fluent informal reasoning, checked only at its load-bearing steps, remain sound at scale, or do the unchecked steps accumulate error in ways the verifier cannot catch?</li>
+          <li>What is the right division of labor between machine and mathematician, and how do we build tools that amplify human mathematical judgment rather than supplant it?</li>
+        </ul>
+      </div>
+      <!-- ==== END BODY ==== -->
+    </div>
+  </article>
+
+  <!-- related CTA -->
+  <section class="related">
+    <div class="wrap">
+      <h2>Move the frontier with us</h2>
+      <p>RMH Deeplink is hiring research scientists and engineers across every program. Or read the full 120-page research thesis.</p>
+      <div class="r-actions">
+        <a class="btn btn-primary btn-lg" href="../library/rmh-deeplink-thesis.pdf">Read the thesis</a>
+        <a class="btn btn-ghost btn-lg" href="mailto:careers@rmhstudios.com?subject=Careers%20%E2%80%94%20RMH%20Deeplink">See open roles</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer id="about">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <a class="brand" href="../deeplink.html"><span class="dot" aria-hidden="true"></span>RMH&nbsp;Deeplink&nbsp;<small>from RMH Studios</small></a>
+        <p>Foundational AI research toward artificial general intelligence — in service of science and humanity.</p>
+        <form class="news-form" onsubmit="return false" aria-label="Newsletter signup">
+          <input type="email" placeholder="Your email" aria-label="Email address" />
+          <button class="btn btn-primary" type="submit">Subscribe</button>
+        </form>
+      </div>
+      <nav class="foot-col" aria-label="Research">
+        <h4>Research</h4>
+        <a href="foundation-models.html">Foundation models</a>
+        <a href="agents-rl.html">Agents &amp; RL</a>
+        <a href="ai-for-science.html">AI for science</a>
+        <a href="alignment.html">Interpretability</a>
+      </nav>
+      <nav class="foot-col" aria-label="Science">
+        <h4>Science</h4>
+        <a href="life-sciences.html">Life sciences</a>
+        <a href="mathematics.html">Mathematics</a>
+        <a href="energy-climate.html">Climate &amp; energy</a>
+        <a href="ai-for-science.html">AI for science</a>
+      </nav>
+      <nav class="foot-col" aria-label="Company">
+        <h4>Company</h4>
+        <a href="../deeplink.html#about">About</a>
+        <a href="frontier-safety.html">Safety &amp; responsibility</a>
+        <a href="mailto:careers@rmhstudios.com?subject=Careers%20%E2%80%94%20RMH%20Deeplink">Careers</a>
+        <a href="mailto:info@rmhstudios.com">Contact</a>
+      </nav>
+    </div>
+    <div class="foot-bot">
+      <span class="mission-line">Building AI responsibly to benefit humanity. &copy; 2026 RMH Deeplink.</span>
+      <div class="social" aria-label="Social links">
+        <a href="#" aria-label="X">X</a>
+        <a href="#" aria-label="LinkedIn">in</a>
+        <a href="#" aria-label="YouTube">&#9658;</a>
+        <a href="#" aria-label="GitHub">&lt;/&gt;</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var hdr = document.getElementById('hdr');
+  var onScroll = function () { hdr.classList.toggle('scrolled', window.scrollY > 8); };
+  window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
+})();
+</script>
+</body>
+</html>
