@@ -9,12 +9,17 @@
  * server / `public/` dir and everything keeps working off disk.
  *
  * Client and server safe: Vite inlines `import.meta.env.VITE_*` in both the
- * browser and SSR bundles (same pattern as VITE_SOCKET_URL elsewhere).
+ * browser and SSR bundles (same pattern as VITE_SOCKET_URL elsewhere). The
+ * standalone realtime servers are bundled to CommonJS by esbuild, where
+ * `import.meta` is empty — the guard below keeps that case from throwing and
+ * just yields no CDN (relative paths), which is correct for those workers.
  */
-export const CDN_BASE = (import.meta.env.VITE_CDN_BASE_URL ?? "").replace(
-  /\/+$/,
+export const CDN_BASE = (
+  (typeof import.meta !== "undefined" &&
+    import.meta.env &&
+    import.meta.env.VITE_CDN_BASE_URL) ||
   ""
-);
+).replace(/\/+$/, "");
 
 /**
  * Resolve a `public/`-relative asset path (e.g. "/sprites/altair/foo.png") to
