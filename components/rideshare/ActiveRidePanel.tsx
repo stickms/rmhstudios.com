@@ -306,7 +306,7 @@ export function ActiveRidePanel({
         className="h-64"
       />
 
-      {/* Fare (free) */}
+      {/* Fare estimate */}
       <FareBreakdown distanceMeters={ride.distanceMeters} durationSeconds={ride.durationSeconds} classId={ride.rideClass} />
 
       {/* Chat */}

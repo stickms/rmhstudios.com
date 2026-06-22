@@ -2,7 +2,7 @@
  * RMH Rideshare — landing (/rideshare)
  *
  * Marketing hub linking the rider request flow and the driver application,
- * plus the ride-class catalogue. Rides are currently free.
+ * plus the ride-class catalogue. Riders aren't charged to request a ride.
  */
 import { useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
@@ -29,11 +29,11 @@ import { RIDE_CLASSES, type RideClassId } from '@/lib/rideshare/classes';
 export const Route = createFileRoute('/_site/rideshare/')({
   head: () => ({
     meta: [
-      { title: 'RMH Rideshare — Free rides across the community' },
+      { title: 'RMH Rideshare — Rides across the community' },
       {
         name: 'description',
         content:
-          'Request a free ride or sign up to drive with RMH Rideshare. Map your trip with OpenStreetMap and choose from RMH-X, RMH-XL, RMH-Comfort and more.',
+          'Request a ride or sign up to drive with RMH Rideshare. Map your trip with OpenStreetMap and choose from RMH-X, RMH-XL, RMH-Comfort and more.',
       },
     ],
   }),
@@ -46,7 +46,7 @@ const RIDER_STEPS = [
   { icon: MapPin, title: 'Map your trip', text: 'Set pickup and drop-off with OpenStreetMap search.' },
   { icon: Car, title: 'Pick a ride', text: 'Choose RMH-X, XL, Comfort, Green or Black.' },
   { icon: ShieldCheck, title: 'Get matched', text: 'A vetted RMH driver claims your request.' },
-  { icon: CircleDollarSign, title: 'Ride free', text: 'No fares while RMH Rideshare is in preview.' },
+  { icon: CircleDollarSign, title: 'Hop in', text: 'See an upfront estimate — no charge to request a ride.' },
 ];
 
 export function RideshareLanding() {
@@ -65,17 +65,17 @@ export function RideshareLanding() {
           />
           <div className="relative">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-site-accent/40 bg-site-accent/10 px-3 py-1 text-xs font-medium text-site-accent">
-              <Sparkles className="h-3.5 w-3.5" /> Free during preview
+              <Sparkles className="h-3.5 w-3.5" /> Community rideshare
             </span>
             <h1
               className="mt-4 text-4xl font-bold tracking-tight text-site-text md:text-5xl"
               style={{ fontFamily: 'var(--site-font-display)' }}
             >
-              Getting around, on the house.
+              Getting around, together.
             </h1>
             <p className="mt-3 max-w-xl text-lg text-site-text-muted">
               RMH Rideshare connects riders with community drivers. Map your trip with
-              OpenStreetMap, pick the ride that fits, and go — no fares for now.
+              OpenStreetMap, see your route and an upfront estimate, then request a ride.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
@@ -187,8 +187,8 @@ export function RideshareLanding() {
 }
 
 /**
- * Interactive fare visualizer. Lets visitors see what a trip would normally
- * cost across classes — and that every one of them is free right now.
+ * Interactive fare visualizer. Lets visitors estimate what a trip would cost
+ * across the ride classes before they request one.
  */
 function PriceEstimator() {
   const [km, setKm] = useState(8);
@@ -201,10 +201,10 @@ function PriceEstimator() {
   return (
     <section className="mt-10 md:mt-12">
       <h2 className="text-2xl font-bold text-site-text" style={{ fontFamily: 'var(--site-font-display)' }}>
-        See what you’re saving
+        Estimate your trip
       </h2>
       <p className="mt-1 text-site-text-muted">
-        Drag to estimate any trip. Every fare is fully waived during the preview.
+        Drag to estimate any trip across the ride classes.
       </p>
 
       <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2">

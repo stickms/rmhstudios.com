@@ -9,12 +9,13 @@ import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { useCallback, useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { Loader2, ArrowLeft, ShieldCheck, Car, Check, X } from 'lucide-react';
+import { Loader2, ArrowLeft, ShieldCheck, Car, Check, X, MapPin, Search, Route as RouteIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { auth } from '@/lib/auth';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { rideClassName } from '@/lib/rideshare/classes';
+import { formatDistance, formatUsd } from '@/lib/rideshare/geo';
 
 const getAdminSession = createServerFn({ method: 'GET' }).handler(async () => {
   const request = getRequest();
@@ -51,7 +52,44 @@ interface Application {
   reviewedAt: string | null;
 }
 
+type View = 'applications' | 'rides';
+
+type RideStatus = 'SCHEDULED' | 'REQUESTED' | 'ACCEPTED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+const RIDE_STATUS_FILTERS: ('ALL' | RideStatus)[] = [
+  'ALL', 'REQUESTED', 'SCHEDULED', 'ACCEPTED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED',
+];
+const RIDE_STATUS_META: Record<RideStatus, { label: string; className: string }> = {
+  SCHEDULED: { label: 'Scheduled', className: 'text-sky-400 bg-sky-400/10' },
+  REQUESTED: { label: 'Awaiting driver', className: 'text-amber-400 bg-amber-400/10' },
+  ACCEPTED: { label: 'Accepted', className: 'text-sky-400 bg-sky-400/10' },
+  IN_PROGRESS: { label: 'In progress', className: 'text-site-accent bg-site-accent/10' },
+  COMPLETED: { label: 'Completed', className: 'text-emerald-400 bg-emerald-400/10' },
+  CANCELLED: { label: 'Cancelled', className: 'text-site-text-muted bg-site-surface-hover' },
+};
+
+interface RidePerson {
+  id: string;
+  name: string | null;
+  handle: string | null;
+  image: string | null;
+  email?: string | null;
+}
+interface AdminRide {
+  id: string;
+  rideClass: string;
+  status: RideStatus;
+  pickupLabel: string;
+  dropoffLabel: string;
+  distanceMeters: number | null;
+  estimatedFareCents: number | null;
+  scheduledFor: string | null;
+  requestedAt: string;
+  rider: RidePerson | null;
+  driver: RidePerson | null;
+}
+
 function AdminRidesharePage() {
+  const [view, setView] = useState<View>('applications');
   const [status, setStatus] = useState<Status>('PENDING');
   const [items, setItems] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,8 +111,36 @@ function AdminRidesharePage() {
   }, [status]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    if (view === 'applications') load();
+  }, [load, view]);
+
+  // Ride history
+  const [rides, setRides] = useState<AdminRide[]>([]);
+  const [ridesLoading, setRidesLoading] = useState(false);
+  const [rideStatus, setRideStatus] = useState<'ALL' | RideStatus>('ALL');
+  const [query, setQuery] = useState('');
+
+  const loadRides = useCallback(async () => {
+    setRidesLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (rideStatus !== 'ALL') params.set('status', rideStatus);
+      if (query.trim()) params.set('q', query.trim());
+      const res = await fetch(`/api/admin/rideshare/rides?${params}`);
+      if (res.ok) {
+        const data = await res.json();
+        setRides(data.rides ?? []);
+      }
+    } finally {
+      setRidesLoading(false);
+    }
+  }, [rideStatus, query]);
+
+  useEffect(() => {
+    if (view !== 'rides') return;
+    const t = setTimeout(loadRides, query ? 300 : 0);
+    return () => clearTimeout(t);
+  }, [view, loadRides, query]);
 
   async function decide(id: string, action: 'approve' | 'reject', rejectionReason?: string) {
     setBusy(id);
@@ -114,10 +180,36 @@ function AdminRidesharePage() {
             </h1>
           </div>
           <p className="mt-1 text-site-text-muted">
-            Review and verify community drivers. Licenses are deleted from storage upon decision.
+            Review and verify community drivers, and browse every ride placed across the community.
           </p>
         </div>
 
+        {/* View switcher */}
+        <div className="flex gap-1 rounded-xl border border-site-border bg-site-surface/80 p-1">
+          {([['applications', 'Driver applications'], ['rides', 'Ride history']] as const).map(([v, label]) => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              className={`flex-1 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
+                view === v ? 'bg-site-accent text-(--site-accent-fg)' : 'text-site-text-muted hover:text-site-text'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {view === 'rides' ? (
+          <RideHistory
+            rides={rides}
+            loading={ridesLoading}
+            status={rideStatus}
+            onStatus={setRideStatus}
+            query={query}
+            onQuery={setQuery}
+          />
+        ) : (
+        <>
         <div className="flex gap-1 rounded-xl border border-site-border bg-site-surface/80 p-1">
           {TABS.map((t) => (
             <button
@@ -241,8 +333,119 @@ function AdminRidesharePage() {
             ))}
           </ul>
         )}
+        </>
+        )}
       </div>
     </PageLayout>
+  );
+}
+
+function RideHistory({
+  rides,
+  loading,
+  status,
+  onStatus,
+  query,
+  onQuery,
+}: {
+  rides: AdminRide[];
+  loading: boolean;
+  status: 'ALL' | RideStatus;
+  onStatus: (s: 'ALL' | RideStatus) => void;
+  query: string;
+  onQuery: (q: string) => void;
+}) {
+  return (
+    <div className="space-y-4">
+      {/* Search */}
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-site-text-muted" />
+        <input
+          value={query}
+          onChange={(e) => onQuery(e.target.value)}
+          placeholder="Search rider, driver, or address…"
+          className="w-full rounded-xl border border-site-border bg-site-surface/80 py-2.5 pl-9 pr-3 text-sm text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60"
+        />
+      </div>
+
+      {/* Status filter */}
+      <div className="flex flex-wrap gap-1.5">
+        {RIDE_STATUS_FILTERS.map((s) => (
+          <button
+            key={s}
+            onClick={() => onStatus(s)}
+            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+              status === s
+                ? 'bg-site-accent text-(--site-accent-fg)'
+                : 'border border-site-border bg-site-surface/80 text-site-text-muted hover:text-site-text'
+            }`}
+          >
+            {s === 'ALL' ? 'All' : RIDE_STATUS_META[s].label}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-site-text-muted" /></div>
+      ) : rides.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-site-border px-4 py-16 text-center text-site-text-muted">
+          No rides found.
+        </p>
+      ) : (
+        <ul className="space-y-3">
+          {rides.map((ride) => {
+            const meta = RIDE_STATUS_META[ride.status];
+            return (
+              <li key={ride.id} className="rounded-2xl border border-site-border bg-site-surface/80 p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <UserAvatar src={ride.rider?.image ?? null} alt={ride.rider?.name ?? 'Rider'} size={36} />
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-site-text">{ride.rider?.name ?? 'Unknown rider'}</p>
+                      <p className="text-xs text-site-text-muted">
+                        {ride.rider?.handle ? `@${ride.rider.handle}` : ride.rider?.email ?? '—'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-site-text-muted">{rideClassName(ride.rideClass)}</span>
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${meta.className}`}>{meta.label}</span>
+                  </div>
+                </div>
+
+                <div className="mt-3 space-y-1 text-xs text-site-text-muted">
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" />
+                    <span className="truncate" title={ride.pickupLabel}>{ride.pickupLabel}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <MapPin className="h-3 w-3 shrink-0 text-site-accent" />
+                    <span className="truncate" title={ride.dropoffLabel}>{ride.dropoffLabel}</span>
+                  </div>
+                </div>
+
+                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-site-border pt-3 text-xs text-site-text-dim">
+                  {ride.distanceMeters != null && (
+                    <span className="flex items-center gap-1">
+                      <RouteIcon className="h-3 w-3" /> {formatDistance(ride.distanceMeters)}
+                    </span>
+                  )}
+                  {ride.estimatedFareCents != null && (
+                    <span>{formatUsd(ride.estimatedFareCents)} est.</span>
+                  )}
+                  <span>
+                    {ride.driver ? `Driver: ${ride.driver.name ?? 'Unknown'}` : 'No driver matched'}
+                  </span>
+                  <span className="ml-auto">
+                    {formatDistanceToNow(new Date(ride.scheduledFor ?? ride.requestedAt), { addSuffix: true })}
+                  </span>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
   );
 }
 

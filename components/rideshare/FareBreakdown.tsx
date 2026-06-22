@@ -13,8 +13,8 @@ interface FareBreakdownProps {
 }
 
 /**
- * Price visualizer. Itemises the (waived) fare so riders can see what a trip
- * would normally cost, then shows the real total: FREE.
+ * Price visualizer. Itemises the trip into base / distance / time and shows the
+ * estimated fare. Riders aren't charged when they request a ride.
  */
 export function FareBreakdown({ distanceMeters, durationSeconds, classId, compact }: FareBreakdownProps) {
   const fare = fareBreakdown(distanceMeters, durationSeconds, classId);
@@ -22,8 +22,8 @@ export function FareBreakdown({ distanceMeters, durationSeconds, classId, compac
   if (compact) {
     return (
       <span className="inline-flex items-center gap-2">
-        <span className="text-sm font-bold text-emerald-400">Free</span>
-        <span className="text-xs text-site-text-dim line-through">{formatUsd(fare.subtotalCents)}</span>
+        <span className="text-sm font-bold text-site-text">{formatUsd(fare.totalCents)}</span>
+        <span className="text-xs text-site-text-dim">est.</span>
       </span>
     );
   }
@@ -61,13 +61,12 @@ export function FareBreakdown({ distanceMeters, durationSeconds, classId, compac
       <div className="mt-3 flex items-center justify-between border-t border-site-border pt-3">
         <div>
           <div className="flex items-center gap-2">
-            <CircleDollarSign className="h-4 w-4 text-emerald-400" />
-            <span className="text-base font-bold text-emerald-400">Free</span>
+            <CircleDollarSign className="h-4 w-4 text-site-accent" />
+            <span className="text-base font-bold text-site-text">Estimated fare</span>
           </div>
-          <span className="text-xs text-site-text-dim">Free during preview</span>
+          <span className="text-xs text-site-text-dim">You won’t be charged to request a ride.</span>
         </div>
         <div className="text-right">
-          <div className="text-sm text-site-text-dim line-through">{formatUsd(fare.subtotalCents)}</div>
           <div className="text-lg font-bold text-site-text">{formatUsd(fare.totalCents)}</div>
         </div>
       </div>

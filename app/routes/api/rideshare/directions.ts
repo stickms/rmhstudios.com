@@ -49,7 +49,13 @@ export const Route = createFileRoute('/api/rideshare/directions')({
               ? estimateFareCents(estimate.distanceMeters, rideClass)
               : null;
 
-          return Response.json({ ...estimate, fareCents });
+          return Response.json({
+            distanceMeters: estimate.distanceMeters,
+            durationSeconds: estimate.durationSeconds,
+            precise: estimate.precise,
+            geometry: estimate.geometry ?? null,
+            fareCents,
+          });
         } catch (error) {
           console.error('Rideshare directions error:', error);
           return Response.json(

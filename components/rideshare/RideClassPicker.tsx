@@ -56,8 +56,8 @@ export function RideClassPicker({ value, onChange, fareLabels }: RideClassPicker
             </div>
             {fareLabels?.[cls.id] && (
               <div className="shrink-0 text-right">
-                <div className="text-sm font-bold text-site-accent">Free</div>
-                <div className="text-[11px] text-site-text-dim line-through">{fareLabels[cls.id]}</div>
+                <div className="text-sm font-bold text-site-text">{fareLabels[cls.id]}</div>
+                <div className="text-[11px] text-site-text-dim">est.</div>
               </div>
             )}
           </button>

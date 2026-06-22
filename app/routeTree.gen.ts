@@ -296,6 +296,7 @@ import { Route as ApiAltairMetaRouteImport } from './routes/api/altair/meta'
 import { Route as ApiAltairMatchRouteImport } from './routes/api/altair/match'
 import { Route as ApiAltairLeaderboardRouteImport } from './routes/api/altair/leaderboard'
 import { Route as ApiAiTransformRouteImport } from './routes/api/ai/transform'
+import { Route as ApiAiMessageSuggestRouteImport } from './routes/api/ai/message-suggest'
 import { Route as ApiAiAskFeedRouteImport } from './routes/api/ai/ask-feed'
 import { Route as ApiAdminUsersRouteImport } from './routes/api/admin/users'
 import { Route as ApiAdminReportsRouteImport } from './routes/api/admin/reports'
@@ -413,6 +414,7 @@ import { Route as ApiCommentsCommentIdTranslateRouteImport } from './routes/api/
 import { Route as ApiClansSlugLeaveRouteImport } from './routes/api/clans/$slug/leave'
 import { Route as ApiClansSlugJoinRouteImport } from './routes/api/clans/$slug/join'
 import { Route as ApiAnnouncementsIdVoteRouteImport } from './routes/api/announcements/$id/vote'
+import { Route as ApiAdminRideshareRidesRouteImport } from './routes/api/admin/rideshare/rides'
 import { Route as ApiAdminRideshareApplicationsRouteImport } from './routes/api/admin/rideshare/applications'
 import { Route as ApiAdminReportsIdRouteImport } from './routes/api/admin/reports/$id'
 import { Route as ApiAdminCuratedBuildsImageRouteImport } from './routes/api/admin/curated-builds/image'
@@ -1895,6 +1897,11 @@ const ApiAiTransformRoute = ApiAiTransformRouteImport.update({
   path: '/api/ai/transform',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAiMessageSuggestRoute = ApiAiMessageSuggestRouteImport.update({
+  id: '/api/ai/message-suggest',
+  path: '/api/ai/message-suggest',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAiAskFeedRoute = ApiAiAskFeedRouteImport.update({
   id: '/api/ai/ask-feed',
   path: '/api/ai/ask-feed',
@@ -2507,6 +2514,11 @@ const ApiAnnouncementsIdVoteRoute = ApiAnnouncementsIdVoteRouteImport.update({
   path: '/$id/vote',
   getParentRoute: () => ApiAnnouncementsRoute,
 } as any)
+const ApiAdminRideshareRidesRoute = ApiAdminRideshareRidesRouteImport.update({
+  id: '/api/admin/rideshare/rides',
+  path: '/api/admin/rideshare/rides',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminRideshareApplicationsRoute =
   ApiAdminRideshareApplicationsRouteImport.update({
     id: '/api/admin/rideshare/applications',
@@ -2853,6 +2865,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/reports': typeof ApiAdminReportsRouteWithChildren
   '/api/admin/users': typeof ApiAdminUsersRouteWithChildren
   '/api/ai/ask-feed': typeof ApiAiAskFeedRoute
+  '/api/ai/message-suggest': typeof ApiAiMessageSuggestRoute
   '/api/ai/transform': typeof ApiAiTransformRoute
   '/api/altair/leaderboard': typeof ApiAltairLeaderboardRoute
   '/api/altair/match': typeof ApiAltairMatchRoute
@@ -3006,6 +3019,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
   '/api/admin/rideshare/applications': typeof ApiAdminRideshareApplicationsRoute
+  '/api/admin/rideshare/rides': typeof ApiAdminRideshareRidesRoute
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
   '/api/clans/$slug/join': typeof ApiClansSlugJoinRoute
   '/api/clans/$slug/leave': typeof ApiClansSlugLeaveRoute
@@ -3266,6 +3280,7 @@ export interface FileRoutesByTo {
   '/api/admin/reports': typeof ApiAdminReportsRouteWithChildren
   '/api/admin/users': typeof ApiAdminUsersRouteWithChildren
   '/api/ai/ask-feed': typeof ApiAiAskFeedRoute
+  '/api/ai/message-suggest': typeof ApiAiMessageSuggestRoute
   '/api/ai/transform': typeof ApiAiTransformRoute
   '/api/altair/leaderboard': typeof ApiAltairLeaderboardRoute
   '/api/altair/match': typeof ApiAltairMatchRoute
@@ -3419,6 +3434,7 @@ export interface FileRoutesByTo {
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
   '/api/admin/rideshare/applications': typeof ApiAdminRideshareApplicationsRoute
+  '/api/admin/rideshare/rides': typeof ApiAdminRideshareRidesRoute
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
   '/api/clans/$slug/join': typeof ApiClansSlugJoinRoute
   '/api/clans/$slug/leave': typeof ApiClansSlugLeaveRoute
@@ -3705,6 +3721,7 @@ export interface FileRoutesById {
   '/api/admin/reports': typeof ApiAdminReportsRouteWithChildren
   '/api/admin/users': typeof ApiAdminUsersRouteWithChildren
   '/api/ai/ask-feed': typeof ApiAiAskFeedRoute
+  '/api/ai/message-suggest': typeof ApiAiMessageSuggestRoute
   '/api/ai/transform': typeof ApiAiTransformRoute
   '/api/altair/leaderboard': typeof ApiAltairLeaderboardRoute
   '/api/altair/match': typeof ApiAltairMatchRoute
@@ -3858,6 +3875,7 @@ export interface FileRoutesById {
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
   '/api/admin/rideshare/applications': typeof ApiAdminRideshareApplicationsRoute
+  '/api/admin/rideshare/rides': typeof ApiAdminRideshareRidesRoute
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
   '/api/clans/$slug/join': typeof ApiClansSlugJoinRoute
   '/api/clans/$slug/leave': typeof ApiClansSlugLeaveRoute
@@ -4144,6 +4162,7 @@ export interface FileRouteTypes {
     | '/api/admin/reports'
     | '/api/admin/users'
     | '/api/ai/ask-feed'
+    | '/api/ai/message-suggest'
     | '/api/ai/transform'
     | '/api/altair/leaderboard'
     | '/api/altair/match'
@@ -4297,6 +4316,7 @@ export interface FileRouteTypes {
     | '/api/admin/curated-builds/image'
     | '/api/admin/reports/$id'
     | '/api/admin/rideshare/applications'
+    | '/api/admin/rideshare/rides'
     | '/api/announcements/$id/vote'
     | '/api/clans/$slug/join'
     | '/api/clans/$slug/leave'
@@ -4557,6 +4577,7 @@ export interface FileRouteTypes {
     | '/api/admin/reports'
     | '/api/admin/users'
     | '/api/ai/ask-feed'
+    | '/api/ai/message-suggest'
     | '/api/ai/transform'
     | '/api/altair/leaderboard'
     | '/api/altair/match'
@@ -4710,6 +4731,7 @@ export interface FileRouteTypes {
     | '/api/admin/curated-builds/image'
     | '/api/admin/reports/$id'
     | '/api/admin/rideshare/applications'
+    | '/api/admin/rideshare/rides'
     | '/api/announcements/$id/vote'
     | '/api/clans/$slug/join'
     | '/api/clans/$slug/leave'
@@ -4995,6 +5017,7 @@ export interface FileRouteTypes {
     | '/api/admin/reports'
     | '/api/admin/users'
     | '/api/ai/ask-feed'
+    | '/api/ai/message-suggest'
     | '/api/ai/transform'
     | '/api/altair/leaderboard'
     | '/api/altair/match'
@@ -5148,6 +5171,7 @@ export interface FileRouteTypes {
     | '/api/admin/curated-builds/image'
     | '/api/admin/reports/$id'
     | '/api/admin/rideshare/applications'
+    | '/api/admin/rideshare/rides'
     | '/api/announcements/$id/vote'
     | '/api/clans/$slug/join'
     | '/api/clans/$slug/leave'
@@ -5334,6 +5358,7 @@ export interface RootRouteChildren {
   ApiAdminReportsRoute: typeof ApiAdminReportsRouteWithChildren
   ApiAdminUsersRoute: typeof ApiAdminUsersRouteWithChildren
   ApiAiAskFeedRoute: typeof ApiAiAskFeedRoute
+  ApiAiMessageSuggestRoute: typeof ApiAiMessageSuggestRoute
   ApiAiTransformRoute: typeof ApiAiTransformRoute
   ApiAltairLeaderboardRoute: typeof ApiAltairLeaderboardRoute
   ApiAltairMatchRoute: typeof ApiAltairMatchRoute
@@ -5437,6 +5462,7 @@ export interface RootRouteChildren {
   ApiWheelIndexRoute: typeof ApiWheelIndexRoute
   ApiAdminCuratedBuildsImageRoute: typeof ApiAdminCuratedBuildsImageRouteWithChildren
   ApiAdminRideshareApplicationsRoute: typeof ApiAdminRideshareApplicationsRoute
+  ApiAdminRideshareRidesRoute: typeof ApiAdminRideshareRidesRoute
   ApiClansSlugJoinRoute: typeof ApiClansSlugJoinRoute
   ApiClansSlugLeaveRoute: typeof ApiClansSlugLeaveRoute
   ApiCommentsCommentIdTranslateRoute: typeof ApiCommentsCommentIdTranslateRoute
@@ -7510,6 +7536,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAiTransformRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/ai/message-suggest': {
+      id: '/api/ai/message-suggest'
+      path: '/api/ai/message-suggest'
+      fullPath: '/api/ai/message-suggest'
+      preLoaderRoute: typeof ApiAiMessageSuggestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/ai/ask-feed': {
       id: '/api/ai/ask-feed'
       path: '/api/ai/ask-feed'
@@ -8328,6 +8361,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/announcements/$id/vote'
       preLoaderRoute: typeof ApiAnnouncementsIdVoteRouteImport
       parentRoute: typeof ApiAnnouncementsRoute
+    }
+    '/api/admin/rideshare/rides': {
+      id: '/api/admin/rideshare/rides'
+      path: '/api/admin/rideshare/rides'
+      fullPath: '/api/admin/rideshare/rides'
+      preLoaderRoute: typeof ApiAdminRideshareRidesRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/admin/rideshare/applications': {
       id: '/api/admin/rideshare/applications'
@@ -9494,6 +9534,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminReportsRoute: ApiAdminReportsRouteWithChildren,
   ApiAdminUsersRoute: ApiAdminUsersRouteWithChildren,
   ApiAiAskFeedRoute: ApiAiAskFeedRoute,
+  ApiAiMessageSuggestRoute: ApiAiMessageSuggestRoute,
   ApiAiTransformRoute: ApiAiTransformRoute,
   ApiAltairLeaderboardRoute: ApiAltairLeaderboardRoute,
   ApiAltairMatchRoute: ApiAltairMatchRoute,
@@ -9597,6 +9638,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiWheelIndexRoute: ApiWheelIndexRoute,
   ApiAdminCuratedBuildsImageRoute: ApiAdminCuratedBuildsImageRouteWithChildren,
   ApiAdminRideshareApplicationsRoute: ApiAdminRideshareApplicationsRoute,
+  ApiAdminRideshareRidesRoute: ApiAdminRideshareRidesRoute,
   ApiClansSlugJoinRoute: ApiClansSlugJoinRoute,
   ApiClansSlugLeaveRoute: ApiClansSlugLeaveRoute,
   ApiCommentsCommentIdTranslateRoute: ApiCommentsCommentIdTranslateRoute,
@@ -9661,3 +9703,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

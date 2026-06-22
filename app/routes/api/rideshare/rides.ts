@@ -212,9 +212,9 @@ export const Route = createFileRoute('/api/rideshare/rides')({
             }
           }
 
-          const estimate = await routeEstimate(pickup, dropoff);
-          // Rides are free; the indicative quote is stored for history, the
-          // driver "value delivered" stat, and future payouts.
+          const estimate = await routeEstimate(pickup, dropoff, false);
+          // The estimated fare is stored for history, the driver "value
+          // delivered" stat, and future payouts. Riders aren't charged.
           const quoteCents = estimateFareCents(estimate.distanceMeters, body.rideClass, estimate.durationSeconds);
 
           const ride = await prisma.ride.create({

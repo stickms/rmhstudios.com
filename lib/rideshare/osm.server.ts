@@ -78,21 +78,33 @@ export interface RouteEstimate {
   durationSeconds: number;
   /** True when the OSRM road route was used; false for straight-line fallback. */
   precise: boolean;
+  /**
+   * Road geometry as an ordered list of `[lng, lat]` pairs, ready to drop into
+   * a GeoJSON `LineString`. Present only for precise OSRM routes; the
+   * straight-line fallback omits it (the two endpoints are enough to draw a
+   * line). Decimated to a reasonable size so it's cheap to ship to the client.
+   */
+  geometry?: [number, number][];
 }
 
 /**
- * Driving distance/duration between two points. Falls back to a straight-line
- * estimate (with an assumed average speed) if OSRM is unreachable, so a ride
- * can always be quoted.
+ * Driving distance/duration between two points, plus the road geometry for
+ * drawing the route on a map. Falls back to a straight-line estimate (with an
+ * assumed average speed) if OSRM is unreachable, so a ride can always be quoted.
+ *
+ * Pass `withGeometry: false` to skip the polyline when only the numbers are
+ * needed (e.g. quoting a fare).
  */
 export async function routeEstimate(
   pickup: LatLng,
   dropoff: LatLng,
+  withGeometry = true,
 ): Promise<RouteEstimate> {
   try {
     const coords = `${pickup.lng},${pickup.lat};${dropoff.lng},${dropoff.lat}`;
     const url = new URL(`/route/v1/driving/${coords}`, OSRM_BASE);
-    url.searchParams.set('overview', 'false');
+    url.searchParams.set('overview', withGeometry ? 'full' : 'false');
+    url.searchParams.set('geometries', 'geojson');
     url.searchParams.set('alternatives', 'false');
 
     const res = await fetch(url, {
@@ -101,14 +113,23 @@ export async function routeEstimate(
     });
     if (res.ok) {
       const data = (await res.json()) as {
-        routes?: { distance?: number; duration?: number }[];
+        routes?: {
+          distance?: number;
+          duration?: number;
+          geometry?: { coordinates?: [number, number][] };
+        }[];
       };
       const route = data.routes?.[0];
       if (route && typeof route.distance === 'number' && typeof route.duration === 'number') {
+        const coordinates = route.geometry?.coordinates;
         return {
           distanceMeters: Math.round(route.distance),
           durationSeconds: Math.round(route.duration),
           precise: true,
+          geometry:
+            withGeometry && Array.isArray(coordinates) && coordinates.length > 1
+              ? decimate(coordinates, 400)
+              : undefined,
         };
       }
     }
@@ -121,4 +142,13 @@ export async function routeEstimate(
   const distanceMeters = Math.round(straight * 1.25);
   const durationSeconds = Math.round((distanceMeters / 1000 / 30) * 3600);
   return { distanceMeters, durationSeconds, precise: false };
+}
+
+/** Evenly thin a coordinate list down to at most `max` points (keeps ends). */
+function decimate(coords: [number, number][], max: number): [number, number][] {
+  if (coords.length <= max) return coords;
+  const step = (coords.length - 1) / (max - 1);
+  const out: [number, number][] = [];
+  for (let i = 0; i < max; i++) out.push(coords[Math.round(i * step)]);
+  return out;
 }

@@ -71,15 +71,15 @@ export interface FareBreakdown {
   distanceCents: number;
   timeCents: number;
   multiplier: number;
-  /** What the trip would have cost before the free-ride promotion. */
+  /** Subtotal before the (currently flat) total. */
   subtotalCents: number;
-  /** Amount actually charged — always 0 while rides are free. */
+  /** Estimated fare for the trip. Riders aren't charged at booking. */
   totalCents: number;
 }
 
 /**
- * Itemised fare estimate for a trip. Rides are FREE, so `totalCents` is always
- * 0; `subtotalCents` is the indicative value shown struck-through.
+ * Itemised fare estimate for a trip. `totalCents` is the estimated fare shown
+ * to riders; no payment is taken when a ride is requested.
  */
 export function fareBreakdown(
   distanceMeters: number | null | undefined,
@@ -102,13 +102,13 @@ export function fareBreakdown(
     timeCents: Math.round(timeCents * multiplier),
     multiplier,
     subtotalCents,
-    totalCents: 0,
+    totalCents: subtotalCents,
   };
 }
 
 /**
- * Indicative fare in cents for a trip (the struck-through subtotal). Rides are
- * currently FREE; this is only shown to communicate the value of the promotion.
+ * Estimated fare in cents for a trip. Shown to riders as a guide; no charge is
+ * taken when the ride is requested.
  */
 export function estimateFareCents(
   distanceMeters: number | null | undefined,
@@ -120,27 +120,4 @@ export function estimateFareCents(
 
 export function formatUsd(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
-}
-
-/**
- * OpenStreetMap embed URL framing all provided points, with a single marker.
- * Uses the no-API-key OSM export embed (which supports one marker), so we mark
- * the driver's live position when available, otherwise the pickup.
- */
-export function osmEmbedUrl(
-  pickup: LatLng,
-  dropoff: LatLng,
-  markerOverride?: LatLng | null,
-): string {
-  const pad = 0.01;
-  const points = [pickup, dropoff, ...(markerOverride ? [markerOverride] : [])];
-  const minLat = Math.min(...points.map((p) => p.lat)) - pad;
-  const maxLat = Math.max(...points.map((p) => p.lat)) + pad;
-  const minLng = Math.min(...points.map((p) => p.lng)) - pad;
-  const maxLng = Math.max(...points.map((p) => p.lng)) + pad;
-  const bbox = `${minLng},${minLat},${maxLng},${maxLat}`;
-  const marker = markerOverride ?? pickup;
-  return `https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(
-    bbox,
-  )}&layer=mapnik&marker=${encodeURIComponent(`${marker.lat},${marker.lng}`)}`;
 }
