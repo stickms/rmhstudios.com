@@ -3045,6 +3045,8 @@ enum RideClass {
   RMH_COMFORT
   RMH_GREEN
   RMH_BLACK
+  RMH_BIKE
+  RMH_HELI
 }
 
 enum DriverApplicationStatus {

@@ -54,6 +54,25 @@ export async function geocode(query: string, limit = 5): Promise<GeocodeResult[]
     .filter((r) => r.label && Number.isFinite(r.lat) && Number.isFinite(r.lng));
 }
 
+/** Reverse-geocode a coordinate into a human-readable address label. */
+export async function reverseGeocode(lat: number, lng: number): Promise<string | null> {
+  const url = new URL('/reverse', NOMINATIM_BASE);
+  url.searchParams.set('lat', String(lat));
+  url.searchParams.set('lon', String(lng));
+  url.searchParams.set('format', 'jsonv2');
+  url.searchParams.set('zoom', '18');
+
+  const res = await fetch(url, {
+    headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' },
+    signal: AbortSignal.timeout(8000),
+  });
+  if (!res.ok) {
+    throw new Error(`Nominatim reverse error ${res.status}`);
+  }
+  const data = (await res.json()) as { display_name?: string };
+  return data.display_name ?? null;
+}
+
 export interface RouteEstimate {
   distanceMeters: number;
   durationSeconds: number;

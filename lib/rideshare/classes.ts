@@ -10,7 +10,9 @@ export type RideClassId =
   | 'RMH_XL'
   | 'RMH_COMFORT'
   | 'RMH_GREEN'
-  | 'RMH_BLACK';
+  | 'RMH_BLACK'
+  | 'RMH_BIKE'
+  | 'RMH_HELI';
 
 export interface RideClassInfo {
   id: RideClassId;
@@ -21,7 +23,7 @@ export interface RideClassInfo {
   /** Max passengers. */
   seats: number;
   /** Lucide icon name used for the catalogue (resolved on the client). */
-  icon: 'Car' | 'Users' | 'Sparkles' | 'Leaf' | 'Crown';
+  icon: 'Car' | 'Users' | 'Sparkles' | 'Leaf' | 'Crown' | 'Bike' | 'Helicopter';
   /** Per-km fare multiplier used to show an indicative (currently waived) fare. */
   fareMultiplier: number;
   /** Estimated time-of-arrival range in minutes, for landing-page flavour. */
@@ -38,6 +40,16 @@ export const RIDE_CLASSES: RideClassInfo[] = [
     icon: 'Car',
     fareMultiplier: 1,
     etaMinutes: [3, 7],
+  },
+  {
+    id: 'RMH_BIKE',
+    name: 'RMH-Bike',
+    tagline: 'Beat the traffic',
+    description: 'A nippy bike or e-scooter for quick solo trips.',
+    seats: 1,
+    icon: 'Bike',
+    fareMultiplier: 0.55,
+    etaMinutes: [2, 6],
   },
   {
     id: 'RMH_XL',
@@ -78,6 +90,16 @@ export const RIDE_CLASSES: RideClassInfo[] = [
     icon: 'Crown',
     fareMultiplier: 2.4,
     etaMinutes: [6, 12],
+  },
+  {
+    id: 'RMH_HELI',
+    name: 'RMH-Heli',
+    tagline: 'Skip the ground',
+    description: 'A premium helicopter transfer for the ultimate trip.',
+    seats: 4,
+    icon: 'Helicopter',
+    fareMultiplier: 12,
+    etaMinutes: [8, 20],
   },
 ];
 

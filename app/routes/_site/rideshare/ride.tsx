@@ -307,6 +307,7 @@ function RequestRidePage() {
                     dotClassName="bg-emerald-400"
                     placeholder="Enter pickup location"
                     savedPlaces={savedPlaces}
+                    allowCurrentLocation
                   />
                   <LocationSearch
                     label="Drop-off"
@@ -315,6 +316,7 @@ function RequestRidePage() {
                     dotClassName="bg-site-accent"
                     placeholder="Enter destination"
                     savedPlaces={savedPlaces}
+                    allowCurrentLocation
                   />
                 </div>
 

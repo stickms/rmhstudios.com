@@ -118,7 +118,7 @@ export function SavedPlaces({ places, onChanged }: SavedPlacesProps) {
               className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2.5 text-base text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60 sm:py-2 sm:text-sm"
             />
           </div>
-          <LocationSearch label="Location" value={place} onSelect={setPlace} placeholder="Search for the address" />
+          <LocationSearch label="Location" value={place} onSelect={setPlace} placeholder="Search for the address" allowCurrentLocation />
           <button
             onClick={save}
             disabled={saving}

@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Loader2, MapPin, X, Star } from 'lucide-react';
+import { Loader2, MapPin, X, Star, LocateFixed } from 'lucide-react';
+import { toast } from 'sonner';
 import type { RidePlace } from '@/lib/rideshare/geo';
 
 interface GeocodeResult {
@@ -24,6 +25,8 @@ interface LocationSearchProps {
   dotClassName?: string;
   /** Saved places offered as quick picks before the user types. */
   savedPlaces?: SavedPlaceOption[];
+  /** Show a "Use current location" button (browser geolocation). */
+  allowCurrentLocation?: boolean;
 }
 
 export function LocationSearch({
@@ -33,13 +36,52 @@ export function LocationSearch({
   onSelect,
   dotClassName = 'bg-site-accent',
   savedPlaces,
+  allowCurrentLocation,
 }: LocationSearchProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<GeocodeResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [locating, setLocating] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
+
+  function useCurrentLocation() {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      toast.error('Location services aren’t available on this device.');
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude, longitude } = pos.coords;
+          const res = await fetch(`/api/rideshare/reverse?lat=${latitude}&lng=${longitude}`);
+          const data = await res.json();
+          if (!res.ok) {
+            // Still usable: drop a pin even without a nice label.
+            onSelect({ label: data.label ?? `Current location (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`, lat: latitude, lng: longitude });
+            if (!data.label) toast.message('Using your current location.');
+          } else {
+            onSelect({ label: data.label, lat: latitude, lng: longitude });
+          }
+        } catch {
+          toast.error('Could not look up your location.');
+        } finally {
+          setLocating(false);
+        }
+      },
+      (err) => {
+        setLocating(false);
+        toast.error(
+          err.code === err.PERMISSION_DENIED
+            ? 'Location permission denied. Enable it in your browser to use this.'
+            : 'Could not get your location.',
+        );
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 },
+    );
+  }
 
   // Debounced geocode search.
   useEffect(() => {
@@ -135,10 +177,21 @@ export function LocationSearch({
             )}
           </div>
 
-          {/* Saved-place quick picks (before typing) */}
-          {savedPlaces && savedPlaces.length > 0 && query.trim().length < 3 && (
+          {/* Current-location + saved-place quick picks (before typing) */}
+          {(allowCurrentLocation || (savedPlaces && savedPlaces.length > 0)) && query.trim().length < 3 && (
             <div className="mt-2 flex flex-wrap gap-1.5">
-              {savedPlaces.map((p) => (
+              {allowCurrentLocation && (
+                <button
+                  type="button"
+                  onClick={useCurrentLocation}
+                  disabled={locating}
+                  className="inline-flex items-center gap-1 rounded-full border border-site-accent/40 bg-site-accent/10 px-3 py-1.5 text-xs font-medium text-site-accent transition-colors hover:bg-site-accent/20 disabled:opacity-60"
+                >
+                  {locating ? <Loader2 className="h-3 w-3 animate-spin" /> : <LocateFixed className="h-3 w-3" />}
+                  Current location
+                </button>
+              )}
+              {savedPlaces?.map((p) => (
                 <button
                   key={p.id}
                   type="button"

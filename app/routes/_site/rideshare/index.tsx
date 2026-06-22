@@ -16,6 +16,8 @@ import {
   Sparkles,
   Leaf,
   Crown,
+  Bike,
+  Helicopter,
   CircleDollarSign,
   Clock,
   type LucideIcon,
@@ -38,7 +40,7 @@ export const Route = createFileRoute('/_site/rideshare/')({
   component: RideshareLanding,
 });
 
-const CLASS_ICONS: Record<string, LucideIcon> = { Car, Users, Sparkles, Leaf, Crown };
+const CLASS_ICONS: Record<string, LucideIcon> = { Car, Users, Sparkles, Leaf, Crown, Bike, Helicopter };
 
 const RIDER_STEPS = [
   { icon: MapPin, title: 'Map your trip', text: 'Set pickup and drop-off with OpenStreetMap search.' },
