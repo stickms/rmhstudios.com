@@ -230,6 +230,8 @@ model User {
   rideMessages          RideMessage[]
   rideSavedPlaces       RideSavedPlace[]
 
+  media         Media[]
+
   @@index([isBot])
   @@map("user")
 }
@@ -1158,6 +1160,7 @@ model RMHark {
   comments  RMHarkComment[]
   reposts   RMHarkRepost[]
   views     RMHarkView[]
+  media     Media[]
   poll      RMHarkPoll?
   bookmarks RMHarkBookmark[]
 
@@ -3184,6 +3187,36 @@ model RideSavedPlace {
 
   @@index([userId])
   @@map("ride_saved_place")
+}
+
+// ─── Developer API: Media Upload ──────────────────────────────────────────────
+
+enum MediaStatus {
+  PENDING
+  ATTACHED
+}
+
+/// Developer-API uploaded media. The `media_id` is an opaque handle; posts
+/// still store the resolved `url` in RMHark.imageUrls. Reclaimed by the
+/// reconciling sweep in lib/media/sweep.server.ts.
+model Media {
+  id          String      @id
+  userId      String
+  key         String
+  url         String
+  contentType String
+  bytes       Int
+  status      MediaStatus @default(PENDING)
+  postId      String?
+  createdAt   DateTime    @default(now())
+  attachedAt  DateTime?
+
+  user User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post RMHark? @relation(fields: [postId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([postId])
+  @@index([userId])
 }
 
 /// Global daily counter for AI image generations (cost guard). One row per UTC day.

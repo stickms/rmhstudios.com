@@ -203,6 +203,7 @@ import { Route as ApiVersecraftProgressRouteImport } from './routes/api/versecra
 import { Route as ApiVegaScoreRouteImport } from './routes/api/vega/score'
 import { Route as ApiVegaLeaderboardRouteImport } from './routes/api/vega/leaderboard'
 import { Route as ApiV1PostsRouteImport } from './routes/api/v1/posts'
+import { Route as ApiV1ImagesRouteImport } from './routes/api/v1/images'
 import { Route as ApiV1MeRouteImport } from './routes/api/v1/me'
 import { Route as ApiV1FeedRouteImport } from './routes/api/v1/feed'
 import { Route as ApiUsersSearchRouteImport } from './routes/api/users/search'
@@ -1420,6 +1421,11 @@ const ApiVegaLeaderboardRoute = ApiVegaLeaderboardRouteImport.update({
 const ApiV1PostsRoute = ApiV1PostsRouteImport.update({
   id: '/api/v1/posts',
   path: '/api/v1/posts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1ImagesRoute = ApiV1ImagesRouteImport.update({
+  id: '/api/v1/images',
+  path: '/api/v1/images',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiV1MeRoute = ApiV1MeRouteImport.update({
@@ -2938,6 +2944,7 @@ export interface FileRoutesByFullPath {
   '/api/user-builds/featured': typeof ApiUserBuildsFeaturedRoute
   '/api/users/search': typeof ApiUsersSearchRoute
   '/api/v1/feed': typeof ApiV1FeedRoute
+  '/api/v1/images': typeof ApiV1ImagesRoute
   '/api/v1/me': typeof ApiV1MeRoute
   '/api/v1/posts': typeof ApiV1PostsRoute
   '/api/vega/leaderboard': typeof ApiVegaLeaderboardRoute
@@ -3350,6 +3357,7 @@ export interface FileRoutesByTo {
   '/api/user-builds/featured': typeof ApiUserBuildsFeaturedRoute
   '/api/users/search': typeof ApiUsersSearchRoute
   '/api/v1/feed': typeof ApiV1FeedRoute
+  '/api/v1/images': typeof ApiV1ImagesRoute
   '/api/v1/me': typeof ApiV1MeRoute
   '/api/v1/posts': typeof ApiV1PostsRoute
   '/api/vega/leaderboard': typeof ApiVegaLeaderboardRoute
@@ -3788,6 +3796,7 @@ export interface FileRoutesById {
   '/api/user-builds/featured': typeof ApiUserBuildsFeaturedRoute
   '/api/users/search': typeof ApiUsersSearchRoute
   '/api/v1/feed': typeof ApiV1FeedRoute
+  '/api/v1/images': typeof ApiV1ImagesRoute
   '/api/v1/me': typeof ApiV1MeRoute
   '/api/v1/posts': typeof ApiV1PostsRoute
   '/api/vega/leaderboard': typeof ApiVegaLeaderboardRoute
@@ -4226,6 +4235,7 @@ export interface FileRouteTypes {
     | '/api/user-builds/featured'
     | '/api/users/search'
     | '/api/v1/feed'
+    | '/api/v1/images'
     | '/api/v1/me'
     | '/api/v1/posts'
     | '/api/vega/leaderboard'
@@ -4638,6 +4648,7 @@ export interface FileRouteTypes {
     | '/api/user-builds/featured'
     | '/api/users/search'
     | '/api/v1/feed'
+    | '/api/v1/images'
     | '/api/v1/me'
     | '/api/v1/posts'
     | '/api/vega/leaderboard'
@@ -5075,6 +5086,7 @@ export interface FileRouteTypes {
     | '/api/user-builds/featured'
     | '/api/users/search'
     | '/api/v1/feed'
+    | '/api/v1/images'
     | '/api/v1/me'
     | '/api/v1/posts'
     | '/api/vega/leaderboard'
@@ -5398,6 +5410,7 @@ export interface RootRouteChildren {
   ApiTipsLeaderboardRoute: typeof ApiTipsLeaderboardRoute
   ApiUsersSearchRoute: typeof ApiUsersSearchRoute
   ApiV1FeedRoute: typeof ApiV1FeedRoute
+  ApiV1ImagesRoute: typeof ApiV1ImagesRoute
   ApiV1MeRoute: typeof ApiV1MeRoute
   ApiV1PostsRoute: typeof ApiV1PostsRoute
   ApiVegaLeaderboardRoute: typeof ApiVegaLeaderboardRoute
@@ -6845,6 +6858,13 @@ declare module '@tanstack/react-router' {
       path: '/api/v1/posts'
       fullPath: '/api/v1/posts'
       preLoaderRoute: typeof ApiV1PostsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/images': {
+      id: '/api/v1/images'
+      path: '/api/v1/images'
+      fullPath: '/api/v1/images'
+      preLoaderRoute: typeof ApiV1ImagesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/me': {
@@ -9550,6 +9570,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTipsLeaderboardRoute: ApiTipsLeaderboardRoute,
   ApiUsersSearchRoute: ApiUsersSearchRoute,
   ApiV1FeedRoute: ApiV1FeedRoute,
+  ApiV1ImagesRoute: ApiV1ImagesRoute,
   ApiV1MeRoute: ApiV1MeRoute,
   ApiV1PostsRoute: ApiV1PostsRoute,
   ApiVegaLeaderboardRoute: ApiVegaLeaderboardRoute,
