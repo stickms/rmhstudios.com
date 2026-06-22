@@ -7,7 +7,7 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import {
   Home, Package, BookOpen, Library, LayoutGrid, Atom,
-  LogOut, PenSquare, User, MessageCircle, ShieldCheck, MoreHorizontal, Wallet, Sparkles, Bell, Landmark, Bookmark, ShoppingBag, Compass, Users, Zap, Shield, Bot, Swords, Clapperboard, Music, Terminal, ChevronDown, type LucideIcon
+  LogOut, PenSquare, User, MessageCircle, ShieldCheck, MoreHorizontal, Wallet, Sparkles, Bell, Landmark, Bookmark, ShoppingBag, Compass, Users, Zap, Shield, Swords, Clapperboard, Terminal, ChevronDown, type LucideIcon
 } from 'lucide-react';
 import { ComposeModal } from './ComposeModal';
 import { Button } from '@/components/ui/button';
@@ -38,34 +38,18 @@ const NAV: NavItem[] = [
     ],
   },
   {
-    group: 'play',
-    label: 'Play',
-    icon: Swords,
-    children: [
-      { href: '/ranked', label: 'Ranked', icon: Swords },
-      { href: '/clans', label: 'Clans', icon: Shield },
-      { href: '/music-trivia', label: 'Guess the Song', icon: Music },
-    ],
-  },
-  {
     group: 'community',
     label: 'Community',
     icon: Users,
     children: [
       { href: '/communities', label: 'Communities', icon: Users },
       { href: '/clips', label: 'Clips', icon: Clapperboard },
+      { href: '/ranked', label: 'Ranked', icon: Swords },
+      { href: '/clans', label: 'Clans', icon: Shield },
+      { href: '/groups', label: 'Groups', icon: Users },
     ],
   },
-  {
-    group: 'learn',
-    label: 'Learn',
-    icon: BookOpen,
-    children: [
-      { href: '/study', label: 'Flashcards', icon: BookOpen },
-      { href: '/personas', label: 'AI Personas', icon: Bot },
-      { href: '/blog', label: 'Blog', icon: BookOpen },
-    ],
-  },
+  { href: '/blog', label: 'Blog', icon: BookOpen },
   {
     group: 'create',
     label: 'Create',
@@ -293,21 +277,6 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
               )}
             </div>
             <span className={labelClass}>Messages</span>
-          </Link>
-        )}
-        {/* Group chats link (shown when logged in) */}
-        {session && (
-          <Link
-            to="/groups"
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${itemJustifyClass} ${
-              pathname?.startsWith('/groups')
-                ? 'text-site-accent bg-site-accent-dim'
-                : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
-            }`}
-            title="Group chats"
-          >
-            <Users className="w-5 h-5 shrink-0" />
-            <span className={labelClass}>Groups</span>
           </Link>
         )}
         {/* Wallet link (shown when logged in, below Messages) */}

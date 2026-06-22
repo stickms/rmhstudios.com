@@ -96,9 +96,9 @@ export const apps: AppInfo[] = [
     {
         id: 'rmhmusic',
         title: 'RMHMusic',
-        description: 'Listen to Spotify together. Create rooms, share queues, and vibe with friends.',
+        description: 'Listen to Spotify together. Create rooms, share queues, vibe with friends, and play Guess the Song.',
         longDescription:
-            'RMHMusic is a social music player powered by Spotify. Connect your Premium account, create a listening room, and enjoy synced playback with friends. Features a mesmerizing WebGL particle visualizer, shared queues, and real-time chat.',
+            'RMHMusic is a social music player powered by Spotify. Connect your Premium account, create a listening room, and enjoy synced playback with friends. Features a mesmerizing WebGL particle visualizer, shared queues, real-time chat, and Guess the Song — create and solve music puzzles for coins.',
         href: '/rmhmusic',
         status: 'Beta',
         cta: 'Listen Together',
@@ -113,9 +113,9 @@ export const apps: AppInfo[] = [
     {
         id: 'rmhstudy',
         title: 'RMH Study',
-        description: 'Study together with synced Pomodoro timers, focus tracking, and ambient sounds.',
+        description: 'Study together with synced Pomodoro timers, focus tracking, and flashcards.',
         longDescription:
-            'RMH Study brings the Pomodoro technique to a social setting. Create a study room, invite friends, and stay focused together with synced timers. Track your focus time, set session goals, and climb the study leaderboard.',
+            'RMH Study brings the Pomodoro technique to a social setting. Create a study room, invite friends, and stay focused together with synced timers. Track your focus time, set session goals, climb the study leaderboard, and drill solo with flashcard decks and an AI tutor.',
         href: '/rmhstudy',
         cta: 'Start Studying',
         isSteam: false,
@@ -158,6 +158,22 @@ export const apps: AppInfo[] = [
         tags: ['AI', 'CLI', 'Developer Tools', 'Beta'],
         imagePath: '/images/games/rmhcode.webp',
         authGate: true,
+    },
+    {
+        id: 'personas',
+        title: 'AI Personas',
+        description: 'Create and chat with custom AI personas — or talk to ones the community built.',
+        longDescription:
+            'AI Personas lets you craft custom AI characters with their own personality, greeting, and system prompt, then chat with them in real time. Browse public personas made by the community, spin up your own, and share them for others to talk to.',
+        href: '/personas',
+        status: 'Beta',
+        cta: 'Open Personas',
+        isSteam: false,
+        gradient: 'from-fuchsia-500 via-purple-500 to-indigo-600',
+        iconName: 'Bot',
+        color: 'from-fuchsia-500/20 to-indigo-600/20 hover:border-fuchsia-500/50',
+        tags: ['AI', 'Chat', 'Personas', 'Beta'],
+        authGate: false,
     },
     {
         id: 'rmh-strategies',
