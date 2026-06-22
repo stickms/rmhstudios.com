@@ -62,7 +62,7 @@ const NAV: NavItem[] = [
       { href: '/rmh-capital', label: 'RMH Capital', icon: Landmark },
       { href: '/rmh-pmc', label: 'RMH PMC', icon: Shield },
       { href: '/adaptive-intelligence', label: 'Adaptive Intelligence', icon: Atom },
-      { href: '/deeplink.html', label: 'RMH Deeplink', icon: Brain, external: true },
+      { href: '/deeplink', label: 'RMH Deeplink', icon: Brain, external: true },
     ],
   },
 ];
