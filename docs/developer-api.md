@@ -150,6 +150,29 @@ curl -X POST https://rmhstudios.com/api/v1/posts \
 Returns `201 Created`. Posting awards XP and progresses quests exactly like the
 in-app composer. Suspended accounts receive `403 account_suspended`.
 
+### `POST /api/v1/images`
+
+Upload one image and receive an opaque `media_id` to attach to a post. Send
+`multipart/form-data` with a single `image` field. Max 5 MB; png/jpg/webp/gif.
+
+```bash
+curl -X POST https://rmhstudios.com/api/v1/images \
+  -H "Authorization: Bearer rmh_live_..." \
+  -F "image=@./photo.png"
+# → 201 { "id": "media_...", "type": "image", "expires_at": "..." }
+```
+
+Unattached media expires ~24h after upload. Attach within that window:
+
+```bash
+curl -X POST https://rmhstudios.com/api/v1/posts \
+  -H "Authorization: Bearer rmh_live_..." -H "Content-Type: application/json" \
+  -d '{"content":"hello","media_ids":["media_..."]}'
+```
+
+`POST /api/v1/posts` now accepts `media_ids` (array, max 4). `content` is
+optional when at least one `media_id` is supplied.
+
 ### `GET /api/v1/feed`
 
 The public global feed. Only public, free, non-community posts are returned.
@@ -185,4 +208,5 @@ the bearer key (never cookies), this is not a CSRF surface — but it also means
 
 ## Changelog
 
+- **v1.1 (2026-06)** — image upload: `POST /api/v1/images`; `media_ids` field on `POST /api/v1/posts`.
 - **v1 (2026-06)** — initial release: `me`, `posts` (list + create), `feed`.
