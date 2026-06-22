@@ -7,7 +7,7 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import {
   Home, Package, BookOpen, Library, LayoutGrid, Atom,
-  LogOut, PenSquare, User, MessageCircle, ShieldCheck, MoreHorizontal, Wallet, Sparkles, Bell, Landmark, Bookmark, Flame, ShoppingBag, Compass, Users, Zap, Shield, Bot, Swords, Clapperboard, Music, Terminal, ChevronDown, type LucideIcon
+  LogOut, PenSquare, User, MessageCircle, ShieldCheck, MoreHorizontal, Wallet, Sparkles, Bell, Landmark, Bookmark, ShoppingBag, Compass, Users, Zap, Shield, Bot, Swords, Clapperboard, Music, Terminal, ChevronDown, type LucideIcon
 } from 'lucide-react';
 import { ComposeModal } from './ComposeModal';
 import { Button } from '@/components/ui/button';
@@ -235,19 +235,8 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
             <span className={labelClass}>Notifications</span>
           </Link>
         )}
-        {/* Daily streak chip (shown when logged in with an active streak) */}
-        {session && streak && streak.current > 0 && (
-          <Link
-            to="/progress"
-            hash="streaks"
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-orange-400 hover:bg-site-surface transition-colors ${itemJustifyClass}`}
-            title={`${streak.current}-day streak`}
-          >
-            <Flame className="w-5 h-5 shrink-0 fill-orange-500/30" />
-            <span className={labelClass}>{streak.current}-day streak</span>
-          </Link>
-        )}
-        {/* Progress link — combined Streaks / Progress / Achievements page (shown when logged in) */}
+        {/* Progress link — combined Streaks / Progress / Achievements page (shown when logged in).
+            An active daily streak shows as a numbered circle on the icon. */}
         {session && (
           <Link
             to="/progress"
@@ -256,9 +245,16 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
                 ? 'text-site-accent bg-site-accent-dim'
                 : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
             }`}
-            title="Progress"
+            title={streak && streak.current > 0 ? `Progress · ${streak.current}-day streak` : 'Progress'}
           >
-            <Zap className="w-5 h-5 shrink-0" />
+            <div className="relative shrink-0">
+              <Zap className="w-5 h-5" />
+              {streak && streak.current > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-4 h-4 rounded-full bg-orange-500 text-white text-[10px] font-bold px-1 leading-none">
+                  {streak.current > 99 ? '99+' : streak.current}
+                </span>
+              )}
+            </div>
             <span className={labelClass}>Progress</span>
           </Link>
         )}
