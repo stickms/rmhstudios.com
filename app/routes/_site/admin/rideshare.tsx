@@ -121,7 +121,7 @@ function AdminRidesharePage() {
           </p>
         </div>
 
-        <div className="flex gap-1 rounded-xl border border-site-border bg-site-surface/50 p-1">
+        <div className="flex gap-1 rounded-xl border border-site-border bg-site-surface/80 p-1">
           {TABS.map((t) => (
             <button
               key={t}
@@ -144,7 +144,7 @@ function AdminRidesharePage() {
         ) : (
           <ul className="space-y-4">
             {items.map((app) => (
-              <li key={app.id} className="rounded-2xl border border-site-border bg-site-surface/40 p-5">
+              <li key={app.id} className="rounded-2xl border border-site-border bg-site-surface/80 p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <UserAvatar src={app.user.image} alt={app.user.name ?? 'User'} size={40} />

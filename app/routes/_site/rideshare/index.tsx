@@ -93,7 +93,7 @@ export function RideshareLanding() {
         </motion.section>
 
         {/* Ride classes */}
-        <section className="mt-12">
+        <section className="mt-10 md:mt-12">
           <h2 className="text-2xl font-bold text-site-text" style={{ fontFamily: 'var(--site-font-display)' }}>
             Choose your ride
           </h2>
@@ -108,7 +108,7 @@ export function RideshareLanding() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.05 }}
-                  className="group flex flex-col rounded-2xl border border-site-border bg-site-surface/40 p-5 transition-all hover:border-site-accent/50"
+                  className="group flex flex-col rounded-2xl border border-site-border bg-site-surface/80 p-5 transition-all hover:border-site-accent/50"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-site-accent/15 text-site-accent">
@@ -134,13 +134,13 @@ export function RideshareLanding() {
         <PriceEstimator />
 
         {/* How it works (riders) */}
-        <section className="mt-12">
+        <section className="mt-10 md:mt-12">
           <h2 className="text-2xl font-bold text-site-text" style={{ fontFamily: 'var(--site-font-display)' }}>
             How it works
           </h2>
           <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {RIDER_STEPS.map((step, i) => (
-              <div key={step.title} className="rounded-2xl border border-site-border bg-site-surface/40 p-5">
+              <div key={step.title} className="rounded-2xl border border-site-border bg-site-surface/80 p-5">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-site-surface-hover text-site-accent">
                   <step.icon className="h-5 w-5" />
                 </div>
@@ -157,7 +157,7 @@ export function RideshareLanding() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="mt-12 overflow-hidden rounded-3xl border border-site-border bg-site-surface/40 p-8 md:flex md:items-center md:justify-between md:gap-8"
+          className="mt-12 overflow-hidden rounded-3xl border border-site-border bg-site-surface/80 p-8 md:flex md:items-center md:justify-between md:gap-8"
         >
           <div className="max-w-lg">
             <div className="flex items-center gap-2 text-site-accent">
@@ -197,7 +197,7 @@ function PriceEstimator() {
   const durationSeconds = Math.round((km / 30) * 3600);
 
   return (
-    <section className="mt-12">
+    <section className="mt-10 md:mt-12">
       <h2 className="text-2xl font-bold text-site-text" style={{ fontFamily: 'var(--site-font-display)' }}>
         See what you’re saving
       </h2>
@@ -206,7 +206,7 @@ function PriceEstimator() {
       </p>
 
       <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2">
-        <div className="rounded-2xl border border-site-border bg-site-surface/40 p-5">
+        <div className="rounded-2xl border border-site-border bg-site-surface/80 p-5">
           <div className="mb-2 flex items-center justify-between">
             <label htmlFor="estimator-distance" className="text-sm font-medium text-site-text">
               Trip distance

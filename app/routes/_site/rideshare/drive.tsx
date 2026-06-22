@@ -144,7 +144,7 @@ function PendingState() {
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl border border-site-border bg-site-surface/40 p-8 text-center"
+      className="rounded-2xl border border-site-border bg-site-surface/80 p-8 text-center"
     >
       <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-400/15 text-amber-400">
         <Clock className="h-7 w-7" />
@@ -235,7 +235,7 @@ function ApplicationForm({
   }
 
   const inputClass =
-    'w-full rounded-lg border border-site-border bg-site-surface px-3 py-2 text-sm text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60';
+    'w-full rounded-lg border border-site-border bg-site-surface px-3 py-2.5 text-base text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60 sm:py-2 sm:text-sm';
 
   return (
     <form onSubmit={submit} className="space-y-6">
@@ -264,7 +264,7 @@ function ApplicationForm({
         </div>
       )}
 
-      <div className="rounded-2xl border border-site-border bg-site-surface/40 p-5">
+      <div className="rounded-2xl border border-site-border bg-site-surface/80 p-5">
         <h3 className="mb-4 font-semibold text-site-text">Vehicle details</h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
@@ -294,7 +294,7 @@ function ApplicationForm({
         </div>
       </div>
 
-      <div className="rounded-2xl border border-site-border bg-site-surface/40 p-5">
+      <div className="rounded-2xl border border-site-border bg-site-surface/80 p-5">
         <h3 className="mb-1 font-semibold text-site-text">Which class will you drive?</h3>
         <p className="mb-4 text-xs text-site-text-muted">Pick the option that best matches your vehicle.</p>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -315,7 +315,7 @@ function ApplicationForm({
         </div>
       </div>
 
-      <div className="rounded-2xl border border-site-border bg-site-surface/40 p-5">
+      <div className="rounded-2xl border border-site-border bg-site-surface/80 p-5">
         <h3 className="mb-1 font-semibold text-site-text">Driver’s license</h3>
         <p className="mb-4 text-xs text-site-text-muted">
           Upload a clear photo. We use it only to verify you, then delete it after review.
@@ -554,7 +554,7 @@ function RideCard({
     <motion.li
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`rounded-xl border border-site-border bg-site-surface/40 p-4 ${busy ? 'opacity-70' : ''}`}
+      className={`rounded-xl border border-site-border bg-site-surface/80 p-4 ${busy ? 'opacity-70' : ''}`}
     >
       <div className="flex items-center justify-between gap-2">
         <span className="flex items-center gap-2 text-sm font-semibold text-site-text">
