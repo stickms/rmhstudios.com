@@ -51,7 +51,7 @@ export function MobileNav() {
             <Home className="w-6 h-6" />
           </Link>
 
-          <Link to="/search" className={tabClass(isExplore)} aria-label="Explore">
+          <Link to="/search" search={{ q: '' }} className={tabClass(isExplore)} aria-label="Explore">
             <Compass className="w-6 h-6" />
           </Link>
 

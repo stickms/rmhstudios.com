@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Play, Pause, SkipForward, Volume2, VolumeX, Search, Users, Music } from 'lucide-react';
+import { Play, Pause, SkipForward, Volume2, VolumeX, Search, Users, Music, Music2 } from 'lucide-react';
 import { useRmhMusicStore } from '@/lib/rmhmusic/store';
 import { usePreviewPlayer } from '@/lib/rmhmusic/spotify-player';
 import { formatDuration } from '@/lib/rmhmusic/utils';
 
 export default function PlayerBar() {
-  const { currentTrack, playback, settings, isSearchOpen, isChatOpen, setSearchOpen, setChatOpen, updateSettings } = useRmhMusicStore();
+  const { currentTrack, playback, settings, isSearchOpen, isChatOpen, isGuessOpen, setSearchOpen, setChatOpen, setGuessOpen, updateSettings } = useRmhMusicStore();
   const { pause, resume, setVolume } = usePreviewPlayer();
   const [progress, setProgress] = useState(0);
   const progressInterval = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -131,11 +131,19 @@ export default function PlayerBar() {
             <Search className="w-4 h-4" />
           </button>
           <button
-            onClick={() => setChatOpen(!isChatOpen)}
+            onClick={() => { setChatOpen(!isChatOpen); if (!isChatOpen) setGuessOpen(false); }}
             className="p-2 rounded-lg transition-colors"
             style={{ color: isChatOpen ? 'var(--site-accent)' : 'var(--site-text-muted)', background: isChatOpen ? 'color-mix(in srgb, var(--site-accent) 15%, transparent)' : 'transparent' }}
           >
             <Users className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => { setGuessOpen(!isGuessOpen); if (!isGuessOpen) setChatOpen(false); }}
+            className="p-2 rounded-lg transition-colors"
+            style={{ color: isGuessOpen ? 'var(--site-accent)' : 'var(--site-text-muted)', background: isGuessOpen ? 'color-mix(in srgb, var(--site-accent) 15%, transparent)' : 'transparent' }}
+            title="Guess the Song"
+          >
+            <Music2 className="w-4 h-4" />
           </button>
         </div>
       </div>
