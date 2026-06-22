@@ -7,7 +7,7 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import {
   Home, Package, BookOpen, Library, LayoutGrid, Atom,
-  LogOut, PenSquare, User, MessageCircle, ShieldCheck, MoreHorizontal, Wallet, Sparkles, Bell, Landmark, Bookmark, ShoppingBag, Compass, Users, Zap, Shield, Swords, Clapperboard, Terminal, ChevronDown, type LucideIcon
+  LogOut, PenSquare, User, ShieldCheck, MoreHorizontal, Wallet, Sparkles, Inbox, Landmark, Bookmark, ShoppingBag, Compass, Users, Zap, Shield, Swords, Clapperboard, Terminal, ChevronDown, type LucideIcon
 } from 'lucide-react';
 import { ComposeModal } from './ComposeModal';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,7 @@ import { useNotificationCount } from '@/lib/useNotificationCount';
 import { useStreak } from '@/lib/useStreak';
 import { usePresenceHeartbeat } from '@/lib/usePresenceHeartbeat';
 
-type NavLeaf = { href: string; label: string; icon: LucideIcon };
+type NavLeaf = { href: string; label: string; icon: LucideIcon; requiresAuth?: boolean; badge?: 'inbox' };
 type NavGroup = { group: string; label: string; icon: LucideIcon; children: NavLeaf[] };
 type NavItem = NavLeaf | NavGroup;
 const isGroup = (item: NavItem): item is NavGroup => 'group' in item;
@@ -26,17 +26,9 @@ const isGroup = (item: NavItem): item is NavGroup => 'group' in item;
 const NAV: NavItem[] = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/search', label: 'Explore', icon: Compass },
+  { href: '/messages', label: 'Inbox', icon: Inbox, requiresAuth: true, badge: 'inbox' },
+  { href: '/builds', label: 'Builds', icon: Package },
   { href: '/library', label: 'Library', icon: Library },
-  {
-    group: 'lob',
-    label: 'Lines of Business',
-    icon: Landmark,
-    children: [
-      { href: '/rmh-capital', label: 'RMH Capital', icon: Landmark },
-      { href: '/rmh-pmc', label: 'RMH PMC', icon: Shield },
-      { href: '/adaptive-intelligence', label: 'Adaptive Intelligence', icon: Atom },
-    ],
-  },
   {
     group: 'community',
     label: 'Community',
@@ -46,22 +38,38 @@ const NAV: NavItem[] = [
       { href: '/clips', label: 'Clips', icon: Clapperboard },
       { href: '/ranked', label: 'Ranked', icon: Swords },
       { href: '/clans', label: 'Clans', icon: Shield },
-      { href: '/groups', label: 'Groups', icon: Users },
     ],
   },
-  { href: '/blog', label: 'Blog', icon: BookOpen },
   {
     group: 'create',
     label: 'Create',
-    icon: Package,
+    icon: LayoutGrid,
     children: [
       { href: '/v', label: 'Pages', icon: LayoutGrid },
-      { href: '/builds', label: 'Builds', icon: Package },
       { href: '/developer', label: 'Developer', icon: Terminal },
     ],
   },
-  { href: '/shop', label: 'Shop', icon: ShoppingBag },
-  { href: '/pricing', label: 'Membership', icon: Sparkles },
+  {
+    group: 'store',
+    label: 'Store',
+    icon: ShoppingBag,
+    children: [
+      { href: '/shop', label: 'Shop', icon: ShoppingBag },
+      { href: '/pricing', label: 'Membership', icon: Sparkles },
+      { href: '/wallet', label: 'Wallet', icon: Wallet },
+    ],
+  },
+  {
+    group: 'more',
+    label: 'More',
+    icon: MoreHorizontal,
+    children: [
+      { href: '/blog', label: 'Blog', icon: BookOpen },
+      { href: '/rmh-capital', label: 'RMH Capital', icon: Landmark },
+      { href: '/rmh-pmc', label: 'RMH PMC', icon: Shield },
+      { href: '/adaptive-intelligence', label: 'Adaptive Intelligence', icon: Atom },
+    ],
+  },
 ];
 
 export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
@@ -117,9 +125,13 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
     });
   };
 
+  const inboxCount = unreadCount + notificationCount;
+
   const renderLeaf = (link: NavLeaf, nested = false) => {
     const Icon = link.icon;
-    const isActive = pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href + '/'));
+    const isActive = link.badge === 'inbox'
+      ? !!(pathname?.startsWith('/messages') || pathname?.startsWith('/notifications') || pathname?.startsWith('/groups'))
+      : pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href + '/'));
     const indent = nested
       ? expanded
         ? 'pl-10'
@@ -134,7 +146,18 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         }`}
         title={link.label}
       >
-        <Icon className="w-5 h-5 shrink-0" />
+        {link.badge === 'inbox' ? (
+          <div className="relative shrink-0">
+            <Icon className="w-5 h-5" />
+            {inboxCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold px-1 leading-none">
+                {inboxCount > 99 ? '99+' : inboxCount}
+              </span>
+            )}
+          </div>
+        ) : (
+          <Icon className="w-5 h-5 shrink-0" />
+        )}
         <span className={labelClass}>{link.label}</span>
       </Link>
     );
@@ -155,7 +178,10 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
       {/* Nav Links — scrollable region */}
       <nav className="flex flex-col gap-1 flex-1 min-h-0 overflow-y-auto pr-1.5">
         {NAV.map((item) => {
-          if (!isGroup(item)) return renderLeaf(item);
+          if (!isGroup(item)) {
+            if (item.requiresAuth && !session) return null;
+            return renderLeaf(item);
+          }
           const Icon = item.icon;
           const isOpen = !!openGroups[item.group];
           const groupActive = item.children.some((c) => pathname?.startsWith(c.href));
@@ -182,133 +208,6 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
             </div>
           );
         })}
-        {/* Dynamic Profile link (shown when logged in) */}
-        {session && (
-          <Link
-            to={`/u/${(session.user as any).handle || session.user.id}` as string}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${itemJustifyClass} ${
-              pathname?.startsWith('/profile') || pathname?.startsWith('/u/')
-                ? 'text-site-accent bg-site-accent-dim'
-                : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
-            }`}
-            title="Profile"
-          >
-            <User className="w-5 h-5 shrink-0" />
-            <span className={labelClass}>Profile</span>
-          </Link>
-        )}
-        {/* Notifications link (shown when logged in) */}
-        {session && (
-          <Link
-            to="/notifications"
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${itemJustifyClass} ${
-              pathname?.startsWith('/notifications')
-                ? 'text-site-accent bg-site-accent-dim'
-                : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
-            }`}
-            title="Notifications"
-          >
-            <div className="relative shrink-0">
-              <Bell className="w-5 h-5" />
-              {notificationCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold px-1 leading-none">
-                  {notificationCount > 99 ? '99+' : notificationCount}
-                </span>
-              )}
-            </div>
-            <span className={labelClass}>Notifications</span>
-          </Link>
-        )}
-        {/* Progress link — combined Streaks / Progress / Achievements page (shown when logged in).
-            An active daily streak shows as a numbered circle on the icon. */}
-        {session && (
-          <Link
-            to="/progress"
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${itemJustifyClass} ${
-              pathname?.startsWith('/progress') || pathname?.startsWith('/achievements')
-                ? 'text-site-accent bg-site-accent-dim'
-                : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
-            }`}
-            title={streak && streak.current > 0 ? `Progress · ${streak.current}-day streak` : 'Progress'}
-          >
-            <div className="relative shrink-0">
-              <Zap className="w-5 h-5" />
-              {streak && streak.current > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-4 h-4 rounded-full bg-orange-500 text-white text-[10px] font-bold px-1 leading-none">
-                  {streak.current > 99 ? '99+' : streak.current}
-                </span>
-              )}
-            </div>
-            <span className={labelClass}>Progress</span>
-          </Link>
-        )}
-        {/* Bookmarks link (shown when logged in) */}
-        {session && (
-          <Link
-            to="/bookmarks"
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${itemJustifyClass} ${
-              pathname?.startsWith('/bookmarks')
-                ? 'text-site-accent bg-site-accent-dim'
-                : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
-            }`}
-            title="Bookmarks"
-          >
-            <Bookmark className="w-5 h-5 shrink-0" />
-            <span className={labelClass}>Bookmarks</span>
-          </Link>
-        )}
-        {/* Messages link (shown when logged in) */}
-        {session && (
-          <Link
-            to="/messages"
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${itemJustifyClass} ${
-              pathname?.startsWith('/messages')
-                ? 'text-site-accent bg-site-accent-dim'
-                : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
-            }`}
-            title="Messages"
-          >
-            <div className="relative shrink-0">
-              <MessageCircle className="w-5 h-5" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold px-1 leading-none">
-                  {unreadCount > 99 ? '99+' : unreadCount}
-                </span>
-              )}
-            </div>
-            <span className={labelClass}>Messages</span>
-          </Link>
-        )}
-        {/* Wallet link (shown when logged in, below Messages) */}
-        {session && (
-          <Link
-            to="/wallet"
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${itemJustifyClass} ${
-              pathname?.startsWith('/wallet')
-                ? 'text-site-accent bg-site-accent-dim'
-                : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
-            }`}
-            title="Wallet"
-          >
-            <Wallet className="w-5 h-5 shrink-0" />
-            <span className={labelClass}>Wallet</span>
-          </Link>
-        )}
-        {/* Admin Link (shown when user is admin) */}
-        {session && (session.user as any).isAdmin && (
-          <Link
-            to="/admin"
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${itemJustifyClass} ${
-              pathname?.startsWith('/admin')
-                ? 'text-site-accent bg-site-accent-dim'
-                : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
-            }`}
-            title="Admin Dashboard"
-          >
-            <ShieldCheck className="w-5 h-5 shrink-0" />
-            <span className={labelClass}>Admin</span>
-          </Link>
-        )}
       </nav>
 
       {/* Auth Section — pinned to bottom */}
@@ -332,8 +231,8 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
                 if (!showUserMenu && userMenuBtnRef.current) {
                   const rect = userMenuBtnRef.current.getBoundingClientRect();
                   const margin = 8;
-                  const menuWidth = 160; // w-40
-                  const menuHeight = 56; // single item + padding
+                  const menuWidth = 192; // w-48
+                  const menuHeight = 240; // ~5 items + padding
                   const right = Math.min(
                     Math.max(window.innerWidth - rect.right, margin),
                     window.innerWidth - menuWidth - margin
@@ -353,9 +252,44 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
             </button>
             {showUserMenu && (
               <div
-                className="vibe-glass fixed w-40 border border-site-border rounded-2xl shadow-lg py-1 z-50"
+                className="vibe-glass fixed w-48 border border-site-border rounded-2xl shadow-lg py-1 z-50"
                 style={{ bottom: `${userMenuPos.bottom}px`, right: `${userMenuPos.right}px` }}
               >
+                <Link
+                  to={`/u/${(session.user as any).handle || session.user.id}` as string}
+                  onClick={() => setShowUserMenu(false)}
+                  className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors"
+                >
+                  <User className="w-4 h-4" />
+                  <span>Profile</span>
+                </Link>
+                <Link
+                  to="/progress"
+                  onClick={() => setShowUserMenu(false)}
+                  className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors"
+                >
+                  <Zap className="w-4 h-4" />
+                  <span>Progress{streak && streak.current > 0 ? ` · ${streak.current}🔥` : ''}</span>
+                </Link>
+                <Link
+                  to="/bookmarks"
+                  onClick={() => setShowUserMenu(false)}
+                  className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors"
+                >
+                  <Bookmark className="w-4 h-4" />
+                  <span>Bookmarks</span>
+                </Link>
+                {(session.user as any).isAdmin && (
+                  <Link
+                    to="/admin"
+                    onClick={() => setShowUserMenu(false)}
+                    className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors"
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>Admin</span>
+                  </Link>
+                )}
+                <div className="my-1 border-t border-site-border" />
                 <button
                   onClick={() => {
                     setShowUserMenu(false);
