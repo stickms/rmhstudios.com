@@ -4,8 +4,13 @@ go_library(
     name = "botworker",
     srcs = [
         "deepseek.go",
+        "dmpolicy.go",
+        "image.go",
+        "notify.go",
         "repo.go",
+        "repo_social.go",
         "run.go",
+        "ticks.go",
         "types.go",
         "worker.go",
     ],
@@ -22,6 +27,11 @@ go_library(
 go_test(
     name = "botworker_test",
     srcs = [
+        "dmpolicy_test.go",
+        "image_test.go",
+        "notify_test.go",
+        "prompt_test.go",
+        "query_test.go",
         "repo_test.go",
         "worker_test.go",
     ],

@@ -50,6 +50,29 @@ type Repo interface {
 	InsertPost(ctx context.Context, userID, content string, imageURLs []string) (string, error)
 	// UpdateBotLastPostAt sets botLastPostAt = now for the given user id.
 	UpdateBotLastPostAt(ctx context.Context, userID string) error
+
+	// ─── Reply tick ──────────────────────────────────────────────────
+	RecentComments(ctx context.Context, since time.Time) ([]CommentRow, error)
+	CommentAlreadyAnswered(ctx context.Context, commentID, targetBotID string) (bool, error)
+	BuildReplyContext(ctx context.Context, commentID string) (*ReplyContext, error)
+	InsertComment(ctx context.Context, rmheetID, userID, content string, parentID *string) error
+	RecentBotPosts(ctx context.Context, since time.Time) ([]BotPostRow, error)
+	BotsExcept(ctx context.Context, excludeID string) ([]BotUser, error)
+	CommentersOnPost(ctx context.Context, rmheetID string) (map[string]bool, error)
+
+	// ─── DM tick ─────────────────────────────────────────────────────
+	RecentBotConversations(ctx context.Context, since time.Time) ([]ConversationRow, error)
+	LastMessageSender(ctx context.Context, conversationID string) (string, error)
+	RecentDMHistory(ctx context.Context, conversationID string) ([]dmMessage, error)
+	SendBotDM(ctx context.Context, conversationID, botID, content string) (messagePayload, error)
+	DMPrivacy(ctx context.Context, userID string) (DmPrivacy, error)
+	FollowExists(ctx context.Context, followerID, followingID string) (bool, error)
+	ConversationOpenerMessages(ctx context.Context, pOne, pTwo string) (string, []policyMessage, error)
+	UpsertConversation(ctx context.Context, pOne, pTwo string) (string, error)
+	RecentActiveHumans(ctx context.Context, since time.Time) ([]string, error)
+
+	// ─── Image budget ────────────────────────────────────────────────
+	ReserveImageBudget(ctx context.Context, day string, capLimit int) (bool, error)
 }
 
 // PGRepo is the production Repo backed by the shared pgx pool.

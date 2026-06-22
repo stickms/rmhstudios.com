@@ -14,21 +14,36 @@ import (
 	"github.com/rmhstudios/rmh-go/pkg/worker"
 )
 
-const jobName = "bot-post"
+// Job names for JobRuns telemetry. Each tick records ok/error/panic per attempt.
+const (
+	jobName      = "bot-post"
+	jobReply     = "bot-reply"
+	jobDM        = "bot-dm"
+	jobMaintain  = "bot-maintain"
+)
 
 // Worker runs the bot pool: it tops up the bot count, then posts in-voice from
-// each bot according to its persona activity level, paced per-bot.
+// each bot according to its persona activity level, paced per-bot. It also runs
+// the reply tick (reactive + proactive bot replies) and the DM tick (reactive +
+// initiated DMs, with the SSE notify bridge).
 type Worker struct {
 	repo    Repo
 	ds      *DSClient
+	img     *imageGenerator
+	notify  *notifier
 	logger  *log.Logger
 	metrics *telemetry.Metrics
 
-	// reentrancy guards (mirrors the Node `maintaining`, `posting` flags).
-	maintainMu sync.Mutex
+	// reentrancy guards (mirrors the Node `maintaining`, `posting`, `replying`,
+	// `dmRunning` flags).
+	maintainMu  sync.Mutex
 	maintaining bool
-	postMu     sync.Mutex
-	posting    bool
+	postMu      sync.Mutex
+	posting     bool
+	replyMu     sync.Mutex
+	replying    bool
+	dmMu        sync.Mutex
+	dmRunning   bool
 
 	stopOnce sync.Once
 	done     chan struct{}
@@ -44,9 +59,12 @@ func New(d worker.Deps, apiKey string) *Worker {
 	if apiKey != "" {
 		ds = newDSClient(apiKey, "deepseek-chat")
 	}
+	repo := NewPGRepo(d.DB, d.Metrics)
 	return &Worker{
-		repo:    NewPGRepo(d.DB, d.Metrics),
+		repo:    repo,
 		ds:      ds,
+		img:     newImageGenerator(ds, repo),
+		notify:  newNotifier(d.Logger),
 		logger:  d.Logger,
 		metrics: d.Metrics,
 		done:    make(chan struct{}),
@@ -58,6 +76,8 @@ func newWithDeps(repo Repo, ds *DSClient, logger *log.Logger, metrics *telemetry
 	return &Worker{
 		repo:    repo,
 		ds:      ds,
+		img:     newImageGenerator(ds, repo),
+		notify:  newNotifier(logger),
 		logger:  logger,
 		metrics: metrics,
 		done:    make(chan struct{}),
@@ -93,10 +113,25 @@ func (w *Worker) Start(ctx context.Context) {
 	}()
 
 	// Posting goroutine.
+	w.startTicker(ctx, postTickInterval, w.safePostTick)
+	// Reply goroutine (reactive + proactive bot replies).
+	w.startTicker(ctx, replyTickInterval, w.safeReplyTick)
+	// DM goroutine (reactive + initiated DMs + SSE notify).
+	w.startTicker(ctx, dmTickInterval, w.safeDmTick)
+
+	w.logger.Info("bot-worker scheduled",
+		"replyTick", replyTickInterval.String(),
+		"dmTick", dmTickInterval.String(),
+	)
+}
+
+// startTicker launches one ticker goroutine under the shared WaitGroup that
+// calls fn every interval until ctx is cancelled or Stop is called.
+func (w *Worker) startTicker(ctx context.Context, interval time.Duration, fn func(context.Context)) {
 	w.wg.Add(1)
 	go func() {
 		defer w.wg.Done()
-		ticker := time.NewTicker(postTickInterval)
+		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
 		for {
 			select {
@@ -105,12 +140,10 @@ func (w *Worker) Start(ctx context.Context) {
 			case <-w.done:
 				return
 			case <-ticker.C:
-				w.safePostTick(ctx)
+				fn(ctx)
 			}
 		}
 	}()
-
-	w.logger.Info("bot-worker scheduled")
 }
 
 // Stop signals the ticker goroutines to exit and waits for them.
@@ -137,7 +170,7 @@ func (w *Worker) safeMaintain(ctx context.Context) {
 
 	defer func() {
 		if r := recover(); r != nil {
-			w.recordRun("panic")
+			w.recordJob(jobMaintain, "panic")
 			w.logger.Error("bot-worker: maintainBotPool panicked", "panic", r)
 		}
 	}()
@@ -303,11 +336,20 @@ func (w *Worker) postTick(ctx context.Context) error {
 				w.recordRun("error")
 				return
 			}
-			if len([]rune(content)) == 0 {
+			if len(strings.TrimSpace(content)) == 0 {
 				return
 			}
 
-			if _, err := w.repo.InsertPost(ctx, b.ID, content, nil); err != nil {
+			// Occasionally attach an AI-generated image. Never let image failure
+			// block the post — fall back to text-only. Mirrors Node postTick.
+			var imageURLs []string
+			if isImageGenConfigured() && rand.Float64() < botImageProbability {
+				if url, ok := w.img.generatePostImage(ctx, content, b.ID); ok {
+					imageURLs = []string{url}
+				}
+			}
+
+			if _, err := w.repo.InsertPost(ctx, b.ID, content, imageURLs); err != nil {
 				w.logger.Error("bot-worker: insert post failed", "bot", b.ID, "error", err)
 				w.recordRun("error")
 				return
@@ -379,8 +421,13 @@ func shuffle(bots []BotUser) []BotUser {
 }
 
 func (w *Worker) recordRun(outcome string) {
+	w.recordJob(jobName, outcome)
+}
+
+// recordJob records a JobRuns outcome for a specific tick/job.
+func (w *Worker) recordJob(job, outcome string) {
 	if w.metrics != nil {
-		w.metrics.JobRuns.WithLabelValues(jobName, outcome).Inc()
+		w.metrics.JobRuns.WithLabelValues(job, outcome).Inc()
 	}
 }
 

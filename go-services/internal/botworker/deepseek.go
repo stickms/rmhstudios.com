@@ -170,50 +170,127 @@ Return ONLY the post text with no extra commentary.`
 	return c.complete(ctx, system, prompt)
 }
 
-// GenerateReply produces an in-voice reply from a bot persona to a thread.
-func (c *DSClient) GenerateReply(ctx context.Context, persona, postContent, quotedContent string, thread []string) (string, error) {
-	system := `You are a real person replying on a social feed called RMHark.
-Write a short, authentic reply in your own voice (1-3 sentences).
-Do NOT reveal you are an AI, a bot, or a language model under any circumstances.
-Return ONLY the reply text with no extra commentary.`
+// replySystemPrompt builds the in-character reply system prompt. The
+// "never reveal you are a bot" rule is enforced here. Extracted so it is
+// unit-testable without a network call.
+func replySystemPrompt(persona string) string {
+	return strings.Join([]string{
+		"You are roleplaying as a specific person replying on a social feed called RMHark. Stay completely in character.",
+		"Never reveal or hint that you are an AI, a bot, or generated. You are just a person.",
+		"Follow this persona exactly, including the VOICE rules (formality, quirks, and any typos):",
+		"",
+		persona,
+		"",
+		"Be relevant and add something — agree, riff, ask, or gently push back. Sound human.",
+		"Do NOT use markdown, do NOT wrap the reply in quotes, do NOT add a label. Output ONLY the reply text.",
+	}, "\n")
+}
 
-	var sb strings.Builder
-	sb.WriteString("Your persona:\n")
-	sb.WriteString(persona)
-	sb.WriteString("\n\nPost being replied to:\n")
-	sb.WriteString(postContent)
-	if quotedContent != "" {
-		sb.WriteString("\n\nQuoted post:\n")
-		sb.WriteString(quotedContent)
+// assembleReplyContext builds the user message that gives the model the post,
+// any quoted post, and the ancestor thread. Pure (no disclosure language).
+func assembleReplyContext(postContent, quotedContent string, thread []string) string {
+	var parts []string
+	parts = append(parts, fmt.Sprintf("The original post says:\n\"\"\"%s\"\"\"", strings.TrimSpace(postContent)))
+	if q := strings.TrimSpace(quotedContent); q != "" {
+		parts = append(parts, fmt.Sprintf("\nThat post is quoting this earlier post:\n\"\"\"%s\"\"\"", q))
 	}
-	if len(thread) > 0 {
-		sb.WriteString("\n\nComment thread (top to bottom):\n")
-		for i, c := range thread {
-			fmt.Fprintf(&sb, "%d. %s\n", i+1, c)
+	var clean []string
+	for _, c := range thread {
+		if t := strings.TrimSpace(c); t != "" {
+			clean = append(clean, t)
 		}
 	}
-	sb.WriteString("\nWrite your reply now.")
-	return c.complete(ctx, system, sb.String())
+	if len(clean) > 0 {
+		var sb strings.Builder
+		sb.WriteString("\nThe reply thread so far (oldest first), and you are replying to the LAST one:\n")
+		for i, c := range clean {
+			fmt.Fprintf(&sb, "%d. \"%s\"\n", i+1, c)
+		}
+		parts = append(parts, sb.String())
+	}
+	parts = append(parts, "\nWrite the reply.")
+	return strings.Join(parts, "\n")
+}
+
+// GenerateReply produces an in-voice reply from a bot persona to a thread.
+func (c *DSClient) GenerateReply(ctx context.Context, persona, postContent, quotedContent string, thread []string) (string, error) {
+	return c.complete(ctx, replySystemPrompt(persona), assembleReplyContext(postContent, quotedContent, thread))
+}
+
+// dmSystemPrompt builds the in-character DM system prompt. The
+// "never reveal you are a bot" rule is enforced here.
+func dmSystemPrompt(persona string) string {
+	return strings.Join([]string{
+		"You are roleplaying as a specific person chatting in private DMs. Stay completely in character.",
+		"Never reveal or hint that you are an AI, a bot, or generated. You are just a person.",
+		"Follow this persona exactly, including the VOICE rules (formality, quirks, and any typos):",
+		"",
+		persona,
+		"",
+		"This is a private one-to-one direct message (DM), not a public post.",
+		"Write like a real person messaging privately: warm, specific, conversational. You may ask a question back.",
+		"Do NOT use markdown, do NOT wrap the message in quotes, do NOT add a label. Output ONLY the message text.",
+	}, "\n")
+}
+
+// assembleDMTranscript renders the DM history labeled them/you for the model.
+func assembleDMTranscript(turns []dmTurn) string {
+	if len(turns) == 0 {
+		return "(no messages yet)"
+	}
+	var sb strings.Builder
+	for i, t := range turns {
+		who := "Them"
+		if t.From == "you" {
+			who = "You"
+		}
+		if i > 0 {
+			sb.WriteString("\n")
+		}
+		fmt.Fprintf(&sb, "%s: %s", who, t.Text)
+	}
+	return sb.String()
 }
 
 // GenerateDMReply produces an in-voice DM reply from conversation history.
-func (c *DSClient) GenerateDMReply(ctx context.Context, persona, history string) (string, error) {
-	system := `You are a real person in a private DM conversation on RMHark.
-Reply naturally in your own voice (1-3 sentences).
-Do NOT reveal you are an AI, a bot, or a language model under any circumstances.
-Return ONLY your reply text with no extra commentary.`
-
-	prompt := fmt.Sprintf("Your persona:\n%s\n\nConversation history:\n%s\n\nWrite your reply now.", persona, history)
-	return c.complete(ctx, system, prompt)
+func (c *DSClient) GenerateDMReply(ctx context.Context, persona string, history []dmTurn) (string, error) {
+	user := strings.Join([]string{
+		"Here is your DM conversation so far (oldest first):",
+		assembleDMTranscript(history),
+		"",
+		"Write your next message as the most recent reply. Output only the message.",
+	}, "\n")
+	return c.complete(ctx, dmSystemPrompt(persona), user)
 }
 
 // GenerateDMOpener produces an in-voice DM opener from a persona string.
 func (c *DSClient) GenerateDMOpener(ctx context.Context, persona string) (string, error) {
-	system := `You are a real person sending an opening DM on RMHark to someone you find interesting.
-Write a friendly, natural opener (1-2 sentences).
-Do NOT reveal you are an AI, a bot, or a language model under any circumstances.
-Return ONLY the message text with no extra commentary.`
+	user := strings.Join([]string{
+		"Start a new private conversation with someone on the same social platform.",
+		"Open naturally and briefly — a friendly hello, a small question, or a light comment in your voice.",
+		"Output only the message.",
+	}, "\n")
+	return c.complete(ctx, dmSystemPrompt(persona), user)
+}
 
-	prompt := fmt.Sprintf("Your persona:\n%s\n\nWrite your opener now.", persona)
-	return c.complete(ctx, system, prompt)
+// GenerateImagePrompt turns a finished post into a concise text-to-image prompt.
+// Mirrors lib/rmhark-ai/generate.server.ts generateImagePrompt.
+func (c *DSClient) GenerateImagePrompt(ctx context.Context, postText string) (string, error) {
+	text := strings.TrimSpace(postText)
+	if len(text) > 600 {
+		text = text[:600]
+	}
+	system := strings.Join([]string{
+		"You turn a short social-media post into a prompt for a text-to-image model.",
+		"Output ONE vivid, literal visual description of a single image that fits the post.",
+		"Rules: under 40 words. Describe the subject, setting, style, and mood.",
+		"Do NOT put any text or words in the image. Do NOT depict real, named people, celebrities, brands, or logos.",
+		"Keep it safe-for-work and non-violent.",
+		"Output ONLY the image prompt — no quotes, no labels, no markdown.",
+	}, "\n")
+	user := "Write a tasteful, interesting image prompt for a generic lifestyle social post."
+	if text != "" {
+		user = fmt.Sprintf("Post:\n\"\"\"%s\"\"\"\n\nWrite the image prompt.", text)
+	}
+	return c.complete(ctx, system, user)
 }
