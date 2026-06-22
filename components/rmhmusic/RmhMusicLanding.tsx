@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Music, Plus, ArrowRight, Headphones } from 'lucide-react';
+import { Music, Plus, ArrowRight, Headphones, Brain } from 'lucide-react';
 import { useRmhMusicStore } from '@/lib/rmhmusic/store';
 import { connectToRmhMusic, emit } from '@/lib/rmhmusic/socket';
 import { C2S, S2C } from '@/lib/rmhmusic/events';
@@ -67,7 +67,7 @@ export default function RmhMusicPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="flex justify-center mb-8"
+          className="flex flex-wrap justify-center gap-3 mb-8"
         >
           <button
             onClick={() => router.navigate({ to: '/rmhmusic/player' })}
@@ -75,6 +75,13 @@ export default function RmhMusicPage() {
             style={{ background: 'var(--site-accent)', color: '#fff' }}
           >
             <Music className="w-4 h-4" /> Open Player
+          </button>
+          <button
+            onClick={() => router.navigate({ to: '/music-trivia' })}
+            className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all hover:scale-105"
+            style={{ background: 'var(--site-surface)', color: 'var(--site-text)' }}
+          >
+            <Brain className="w-4 h-4" /> Guess the Song
           </button>
         </motion.div>
 

@@ -28,7 +28,7 @@ interface ConversationItem {
   lastMessageAt: string;
 }
 
-export function MessagesColumn() {
+export function MessagesColumn({ embedded = false }: { embedded?: boolean } = {}) {
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [cursor, setCursor] = useState<string | null>(null);
@@ -236,15 +236,17 @@ export function MessagesColumn() {
   return (
     <div className="flex flex-col">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-site-bg/85 backdrop-blur-md border-b border-site-border">
-        <div className="flex items-center justify-between gap-3 px-4 py-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <MobileMenuButton />
-            <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 min-w-0">
-              <MobileBrandPrefix />
-              Messages
-            </h1>
-          </div>
+      <div className={embedded ? 'border-b border-site-border' : 'sticky top-0 z-10 bg-site-bg/85 backdrop-blur-md border-b border-site-border'}>
+        <div className={`flex items-center gap-3 px-4 py-3 ${embedded ? 'justify-end' : 'justify-between'}`}>
+          {!embedded && (
+            <div className="flex items-center gap-3 min-w-0">
+              <MobileMenuButton />
+              <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 min-w-0">
+                <MobileBrandPrefix />
+                Messages
+              </h1>
+            </div>
+          )}
           <button
             type="button"
             onClick={markAllAsRead}

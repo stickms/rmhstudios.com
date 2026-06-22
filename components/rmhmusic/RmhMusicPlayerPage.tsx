@@ -8,6 +8,7 @@ const Visualizer = lazy(() => import('@/components/rmhmusic/Visualizer'));
 import PlayerBar from '@/components/rmhmusic/PlayerBar';
 import SearchPanel from '@/components/rmhmusic/SearchPanel';
 import ChatPanel from '@/components/rmhmusic/ChatPanel';
+import GuessPanel from '@/components/rmhmusic/GuessPanel';
 
 export default function PlayerPage() {
   const { room, currentTrack } = useRmhMusicStore();
@@ -78,6 +79,7 @@ export default function PlayerPage() {
 
       <SearchPanel onPlay={handlePlay} />
       <ChatPanel />
+      <GuessPanel />
       <PlayerBar />
     </div>
   );

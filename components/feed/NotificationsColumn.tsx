@@ -53,7 +53,7 @@ function systemIdentity(entityType: string | null): { label: string; Icon: typeo
   }
 }
 
-export function NotificationsColumn() {
+export function NotificationsColumn({ embedded = false }: { embedded?: boolean } = {}) {
   const navigate = useNavigate();
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -149,8 +149,8 @@ export function NotificationsColumn() {
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-site-border bg-site-bg/80 px-4 py-3 backdrop-blur">
-        <h1 className="text-lg font-bold text-site-text">Notifications</h1>
+      <header className={`flex items-center gap-3 border-b border-site-border px-4 py-3 ${embedded ? 'justify-end' : 'sticky top-0 z-10 justify-between bg-site-bg/80 backdrop-blur'}`}>
+        {!embedded && <h1 className="text-lg font-bold text-site-text">Notifications</h1>}
         <Button variant="accent-ghost" size="sm" onClick={markAllRead}>
           <CheckCheck className="h-4 w-4" />
           Mark all read

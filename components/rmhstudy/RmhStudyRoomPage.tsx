@@ -7,13 +7,14 @@
  */
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { Crown, Copy, Play, Pause, SkipForward, RotateCcw, Plus, Check, Trash2, Circle, UserX, Ban, Globe, GlobeLock, MessageCircle, Users, Timer, Settings, Info, X } from 'lucide-react';
+import { Crown, Copy, Play, Pause, SkipForward, RotateCcw, Plus, Check, Trash2, Circle, UserX, Ban, Globe, GlobeLock, MessageCircle, Users, Timer, Settings, Info, X, Layers } from 'lucide-react';
 import { connectToRmhStudy, emit, getSocket } from '@/lib/rmhstudy/socket';
 import { useRmhStudyStore } from '@/lib/rmhstudy/store';
 import { C2S } from '@/lib/rmhstudy/events';
 import { toast } from '@/lib/rmhstudy/toast-store';
 import RmhStudyHeader from '@/components/rmhstudy/RmhStudyHeader';
 import BanListModal from '@/components/rmhstudy/BanListModal';
+import RmhStudyFlashcards from '@/components/rmhstudy/RmhStudyFlashcards';
 import ChatPanel from '@/components/shared/ChatPanel';
 import type { ChatPanelMessage } from '@/components/shared/ChatPanel';
 import type { TimerPhase } from '@/lib/rmhstudy/types';
@@ -45,7 +46,7 @@ function phaseColor(phase: TimerPhase): string {
   }
 }
 
-type MobileTab = 'session' | 'members' | 'chat';
+type MobileTab = 'session' | 'flashcards' | 'members' | 'chat';
 
 export default function RmhStudyRoom() {
   const { roomId } = useParams({ from: '/rmhstudy/$roomId' });
@@ -58,6 +59,7 @@ export default function RmhStudyRoom() {
 
   const [newTask, setNewTask] = useState('');
   const [mobileTab, setMobileTab] = useState<MobileTab>('session');
+  const [desktopView, setDesktopView] = useState<'session' | 'flashcards'>('session');
   const [unreadChat, setUnreadChat] = useState(0);
   const prevChatLenRef = useRef(0);
 
@@ -412,10 +414,26 @@ export default function RmhStudyRoom() {
 
       {/* ─── Desktop Layout ─────────────────────────────────────── */}
       <div className="flex-1 overflow-hidden hidden md:flex md:flex-row">
-        {/* Main content — Timer + Tasks */}
+        {/* Main content — Timer + Tasks / Flashcards */}
         <div className="flex-1 overflow-y-auto p-4 md:p-6" style={{ scrollbarGutter: 'stable' }}>
           <div className="max-w-2xl mx-auto">
-            {timerAndTasks}
+            <div className="mb-4 flex gap-1 rounded-xl bg-(--rmhstudy-surface) p-1 text-sm">
+              {(['session', 'flashcards'] as const).map((v) => (
+                <button
+                  key={v}
+                  onClick={() => setDesktopView(v)}
+                  className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-1.5 font-medium transition-colors ${
+                    desktopView === v
+                      ? 'bg-(--rmhstudy-accent) text-white'
+                      : 'text-(--rmhstudy-text-muted) hover:text-(--rmhstudy-text)'
+                  }`}
+                >
+                  {v === 'session' ? <Timer className="h-4 w-4" /> : <Layers className="h-4 w-4" />}
+                  {v === 'session' ? 'Session' : 'Flashcards'}
+                </button>
+              ))}
+            </div>
+            {desktopView === 'session' ? timerAndTasks : <RmhStudyFlashcards />}
           </div>
         </div>
 
@@ -447,6 +465,7 @@ export default function RmhStudyRoom() {
               {timerAndTasks}
             </div>
           )}
+          {mobileTab === 'flashcards' && <RmhStudyFlashcards />}
           {mobileTab === 'members' && membersSection}
           {mobileTab === 'chat' && (
             <ChatPanel
@@ -473,6 +492,15 @@ export default function RmhStudyRoom() {
           >
             <Timer className="h-4 w-4" />
             Session
+          </button>
+          <button
+            onClick={() => setMobileTab('flashcards')}
+            className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition-colors ${
+              mobileTab === 'flashcards' ? 'text-(--rmhstudy-accent)' : 'text-(--rmhstudy-text-muted)'
+            }`}
+          >
+            <Layers className="h-4 w-4" />
+            Cards
           </button>
           <button
             onClick={() => setMobileTab('members')}

@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useState, useCallback } from 'react';
-import { BookOpen, Clock, Users, Globe, RefreshCw } from 'lucide-react';
+import { BookOpen, Clock, Users, Globe, RefreshCw, Layers, ArrowRight } from 'lucide-react';
 import { connectToRmhStudy, getSocket, disconnectFromRmhStudy, emit } from '@/lib/rmhstudy/socket';
 import { useRmhStudyStore } from '@/lib/rmhstudy/store';
 import { C2S, S2C } from '@/lib/rmhstudy/events';
@@ -119,6 +119,23 @@ export default function RmhStudyLanding() {
               Study together with synced Pomodoro timers. Create a room, invite friends, and stay focused.
             </p>
           </div>
+
+          {/* Flashcards — solo study with decks + AI tutor */}
+          <button
+            onClick={() => router.navigate({ to: '/study' })}
+            className="group w-full flex items-center gap-4 rounded-xl border border-(--rmhstudy-border) bg-(--rmhstudy-surface) p-5 text-left transition-colors hover:border-(--rmhstudy-accent)"
+          >
+            <div className="rounded-lg p-3 bg-(--rmhstudy-bg)">
+              <Layers className="h-6 w-6 text-(--rmhstudy-accent)" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold flex items-center gap-2">Flashcards</h3>
+              <p className="text-sm text-(--rmhstudy-text-muted)">
+                Drill solo with flashcard decks and an AI tutor — spaced repetition, your pace.
+              </p>
+            </div>
+            <ArrowRight className="h-5 w-5 shrink-0 text-(--rmhstudy-text-muted) transition-transform group-hover:translate-x-1" />
+          </button>
 
           <div className="grid md:grid-cols-2 gap-6">
             {/* Create Room */}

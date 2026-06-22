@@ -15,7 +15,7 @@ interface GroupRow {
   unread: boolean;
 }
 
-export function GroupChatsColumn() {
+export function GroupChatsColumn({ embedded = false }: { embedded?: boolean } = {}) {
   const navigate = useNavigate();
   const [groups, setGroups] = useState<GroupRow[]>([]);
   const [signedIn, setSignedIn] = useState(false);
@@ -95,9 +95,9 @@ export function GroupChatsColumn() {
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-site-border bg-site-bg/80 px-4 py-3 backdrop-blur">
-        <Users className="h-5 w-5 text-site-accent" />
-        <h1 className="text-lg font-bold text-site-text">Group chats</h1>
+      <header className={`flex items-center gap-2 border-b border-site-border px-4 py-3 ${embedded ? '' : 'sticky top-0 z-10 bg-site-bg/80 backdrop-blur'}`}>
+        {!embedded && <Users className="h-5 w-5 text-site-accent" />}
+        {!embedded && <h1 className="text-lg font-bold text-site-text">Group chats</h1>}
         <Button size="sm" variant="accent" className="ml-auto gap-1" onClick={() => setShowForm((v) => !v)}>
           <Plus className="h-3.5 w-3.5" /> New group
         </Button>

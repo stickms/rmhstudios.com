@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Link, useLocation } from '@tanstack/react-router';
-import { Home, Package, MessageCircle, User, PenSquare, Bell } from 'lucide-react';
+import { Home, Package, Compass, Inbox, User, PenSquare } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { ComposeModal } from './ComposeModal';
 import { useUnreadCount } from '@/lib/useUnreadCount';
@@ -20,10 +20,11 @@ export function MobileNav() {
     : '/login';
 
   const isHome = pathname === '/';
+  const isExplore = pathname?.startsWith('/search');
   const isBuilds = pathname?.startsWith('/builds') || pathname?.startsWith('/user-builds');
-  const isMessages = pathname?.startsWith('/messages');
-  const isNotifications = pathname?.startsWith('/notifications');
+  const isInbox = pathname?.startsWith('/messages') || pathname?.startsWith('/notifications') || pathname?.startsWith('/groups');
   const isProfile = pathname?.startsWith('/profile') || pathname?.startsWith('/u/');
+  const inboxCount = unreadCount + notificationCount;
 
   const tabClass = (active: boolean) =>
     `flex items-center justify-center p-3 transition-colors ${
@@ -50,27 +51,20 @@ export function MobileNav() {
             <Home className="w-6 h-6" />
           </Link>
 
+          <Link to="/search" search={{ q: '' }} className={tabClass(isExplore)} aria-label="Explore">
+            <Compass className="w-6 h-6" />
+          </Link>
+
           <Link to="/builds" className={tabClass(isBuilds)} aria-label="Builds">
             <Package className="w-6 h-6" />
           </Link>
 
-          <Link to="/notifications" className={tabClass(isNotifications)} aria-label="Notifications">
+          <Link to="/messages" className={tabClass(isInbox)} aria-label="Inbox">
             <div className="relative">
-              <Bell className="w-6 h-6" />
-              {notificationCount > 0 && (
+              <Inbox className="w-6 h-6" />
+              {inboxCount > 0 && (
                 <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold px-1 leading-none">
-                  {notificationCount > 99 ? '99+' : notificationCount}
-                </span>
-              )}
-            </div>
-          </Link>
-
-          <Link to="/messages" className={tabClass(isMessages)} aria-label="Messages">
-            <div className="relative">
-              <MessageCircle className="w-6 h-6" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold px-1 leading-none">
-                  {unreadCount > 99 ? '99+' : unreadCount}
+                  {inboxCount > 99 ? '99+' : inboxCount}
                 </span>
               )}
             </div>
