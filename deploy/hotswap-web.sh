@@ -19,7 +19,7 @@
 # ADOPTING IT
 # ───────────
 # 1. Apache must reference the upstream port via the variable wired up in
-#    deploy/apache/rmhstudios.com.conf (ProxyPass http://localhost:${WEB_UPSTREAM_PORT}/).
+#    deploy/apache/rmhstudios.conf (ProxyPass http://localhost:${WEB_UPSTREAM_PORT}/).
 # 2. In deploy.sh, stop letting compose manage `web`: after building, scale web
 #    out of the compose `up` (e.g. `dc up -d --no-build --scale web=0 ...`) and
 #    call this script instead:  deploy/hotswap-web.sh
@@ -47,9 +47,29 @@ ACTIVE_CONF="${ACTIVE_CONF:-/home/rmhstudios/rmhstudios-web-active.conf}"
 NETWORK="${NETWORK:-${PROJECT_NAME}_default}"
 HEALTH_TIMEOUT="${HEALTH_TIMEOUT:-60}"
 DRAIN_SECONDS="${DRAIN_SECONDS:-8}"
+# After the flip we PROVE Apache is actually routing to the new port (by stopping
+# the old container and probing Apache itself) before deleting the old one. This
+# bounds how long we wait for that proof before rolling back.
+FLIP_VERIFY_TIMEOUT="${FLIP_VERIFY_TIMEOUT:-15}"
+# Host header used when probing Apache (:80) so the request hits this vhost
+# (ProxyPreserveHost is on). Override for staging/other origins.
+ORIGIN_HOST="${ORIGIN_HOST:-rmhstudios.com}"
 
 log() { echo "[hotswap] $*"; }
 die() { echo "[hotswap] ERROR: $*" >&2; exit 1; }
+
+# Probe Apache itself on :80 with the real vhost Host header. Succeeds only if
+# the proxy reaches a LIVE upstream — our proof that the port flip actually
+# landed (the reload happened AND points at a running container).
+apache_serving() { curl -fsS -o /dev/null --max-time 5 -H "Host: ${ORIGIN_HOST}" http://127.0.0.1/ 2>/dev/null; }
+verify_apache_flip() {
+    local _i
+    for _i in $(seq 1 "$FLIP_VERIFY_TIMEOUT"); do
+        apache_serving && return 0
+        sleep 1
+    done
+    return 1
+}
 
 # Run from the repo root so `docker compose` resolves docker-compose.yml (and its
 # relative paths) the same way deploy.sh does. deploy.sh already cds here; this
@@ -219,11 +239,37 @@ else
 fi
 log "Apache now routing to ${target_color} (port ${target_port})."
 
-# ── Drain in-flight requests, then retire the old container ─────────────────
+# ── Drain in-flight requests, verify the flip landed, then retire old ───────
+# We can't introspect Apache's running config in the sandboxed reload mode, so
+# we PROVE the flip instead of assuming it: STOP (not remove) the old container
+# and probe Apache on :80. If the site still serves, Apache is genuinely routed
+# to the new port and the old container is safe to delete. If it doesn't, the
+# flip never took (path-unit didn't reload, ACTIVE_CONF path doesn't match the
+# port Apache includes, reload errored, ...) — so we restart the old container,
+# revert the port file, and abort. That turns "503 on every route until a human
+# notices" into a bounded blip that self-heals back to the old container.
 sleep "$DRAIN_SECONDS"
 if "$DOCKER_BIN" inspect "$old_container" >/dev/null 2>&1; then
-    log "Retiring ${old_container}."
-    "$DOCKER_BIN" rm -f "$old_container" >/dev/null 2>&1 || true
+    log "Verifying flip: stopping ${old_container}, then probing Apache (:80, Host: ${ORIGIN_HOST})..."
+    "$DOCKER_BIN" stop "$old_container" >/dev/null 2>&1 || true
+
+    if verify_apache_flip; then
+        log "Apache confirmed serving via ${target_color} (port ${target_port}). Retiring ${old_container}."
+        "$DOCKER_BIN" rm -f "$old_container" >/dev/null 2>&1 || true
+    else
+        log "Apache NOT serving after flip — the reload did not route to port ${target_port}."
+        log "  Rolling back: restarting ${old_container} and reverting ${ACTIVE_CONF} → ${current_port}."
+        "$DOCKER_BIN" start "$old_container" >/dev/null 2>&1 || true
+        write_active_conf "$current_port" || true
+        if [ "$RELOADER" = "external" ]; then
+            sleep 3
+        else
+            $SUDO apachectl graceful >/dev/null 2>&1 || $SUDO systemctl reload apache2 >/dev/null 2>&1 || true
+        fi
+        verify_apache_flip || log "  WARNING: site still not responding after rollback — manual intervention needed."
+        "$DOCKER_BIN" rm -f "$new_container" >/dev/null 2>&1 || true
+        die "flip failed verification — rolled back to ${old_color} (port ${current_port}). Check that the systemd path-unit (rmhstudios-apache-reload.path) reloads Apache, and that Apache's WEB_UPSTREAM_PORT include path matches ACTIVE_CONF (${ACTIVE_CONF})."
+    fi
 fi
 
 log "Hotswap complete: ${target_color} live on ${target_port}, zero downtime."

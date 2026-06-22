@@ -400,7 +400,7 @@ fi
 
 # ── Step 1c: Ensure CDN assets are servable by Apache ────────────────────────
 # Apache (as www-data) serves /library, /music, /models, /sprites straight off
-# disk from public/ (see deploy/apache/rmhstudios.com.conf), bypassing the Node
+# disk from public/ (see deploy/apache/rmhstudios.conf), bypassing the Node
 # app. A fresh `git reset --hard` can land files that www-data can't read, which
 # makes Apache return 403 for every asset. git only tracks the owner-exec bit,
 # so we re-assert world read/traverse here on EVERY deploy — this is what keeps
