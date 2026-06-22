@@ -129,7 +129,14 @@ func (w *Worker) runDecayLoop(ctx context.Context) {
 
 // runJob wraps a job with metrics + error logging (replacing the Node
 // `.catch(e => console.error(...))` pattern).
+// A deferred recover ensures a panicking job cannot crash the supervisor process.
 func (w *Worker) runJob(ctx context.Context, name string, fn func(context.Context) error) {
+	defer func() {
+		if r := recover(); r != nil {
+			w.metrics.JobRuns.WithLabelValues(name, "panic").Inc()
+			w.log.Error("job panicked", "job", name, "panic", r)
+		}
+	}()
 	if err := fn(ctx); err != nil {
 		w.metrics.JobRuns.WithLabelValues(name, "error").Inc()
 		w.log.Error("job failed", "job", name, "error", err)

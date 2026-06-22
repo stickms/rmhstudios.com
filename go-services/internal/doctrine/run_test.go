@@ -28,3 +28,14 @@ func TestRunStopsOnContextCancel(t *testing.T) {
 		t.Fatal("Run did not return after context cancel")
 	}
 }
+
+// TestRunJobRecoversPanic proves that a panicking job does not crash the process.
+// If panic recovery is broken, the goroutine (and thus the test process) crashes
+// before reaching the line after w.runJob — the test would never pass.
+func TestRunJobRecoversPanic(t *testing.T) {
+	w := New(nil, log.New("doctrine", "error"), telemetry.New("doctrine"))
+	w.runJob(context.Background(), "boom", func(context.Context) error {
+		panic("kaboom")
+	})
+	// Reaching this line proves the panic was recovered.
+}
