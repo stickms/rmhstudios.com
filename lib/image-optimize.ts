@@ -11,6 +11,10 @@ interface OptimizeOptions {
   quality?: number;
   /** Output format (default webp) */
   format?: ImageFormat;
+  /** Read & preserve all frames (animated GIF → animated WebP). */
+  animated?: boolean;
+  /** Apply EXIF orientation so phone photos aren't sideways. */
+  autoOrient?: boolean;
 }
 
 const FORMAT_CONTENT_TYPES: Record<ImageFormat, string> = {
@@ -33,9 +37,14 @@ export async function optimizeImage(
     height,
     quality = 80,
     format = 'webp',
+    animated = false,
+    autoOrient = false,
   } = opts;
 
-  let pipeline = sharp(input);
+  let pipeline = sharp(input, { animated });
+
+  // EXIF auto-orient (not supported alongside multi-frame input).
+  if (autoOrient && !animated) pipeline = pipeline.rotate();
 
   // Resize if dimensions provided (maintains aspect ratio with fit inside)
   if (width || height) {

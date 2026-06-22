@@ -5,15 +5,17 @@ import {
   MIN_POLL_OPTIONS,
   MAX_POLL_OPTIONS,
 } from "@/lib/rmhark-schema";
+import { isFeedImageUrl } from "@/lib/storage/keys";
 
 export const MAX_ANNOUNCEMENT_TITLE_LENGTH = 120;
 export const MAX_ANNOUNCEMENT_BODY_LENGTH = 1000;
 export const MAX_ANNOUNCEMENT_IMAGES = 4;
 
-// Uploaded images go through /api/rmharks/image, which returns `/api/feed/image/<file>`.
+// Uploaded images go through /api/rmharks/image; the URL is either the local
+// proxy path or the public CDN URL (see isFeedImageUrl).
 const announcementImageUrlSchema = z
   .string()
-  .regex(/^\/api\/feed\/image\/[A-Za-z0-9._-]+$/, "Invalid image reference");
+  .refine(isFeedImageUrl, "Invalid image reference");
 
 const IMAGE_EXT_REGEX = /\.(gif|png|jpe?g|webp|avif)(\?[^\s]*)?$/i;
 

@@ -1,10 +1,12 @@
 import { z } from "zod";
+import { isFeedImageUrl } from "@/lib/storage/keys";
 
 export const MAX_RMHARK_LENGTH = 280;
 export const MAX_RMHARK_IMAGES = 4;
+// Accepts the local proxy path or the public CDN URL (see isFeedImageUrl).
 const feedImageUrlSchema = z
   .string()
-  .regex(/^\/api\/feed\/image\/[A-Za-z0-9._-]+$/, "Invalid image reference");
+  .refine(isFeedImageUrl, "Invalid image reference");
 export const MAX_COMMENT_LENGTH = 500;
 export const MAX_POLL_QUESTION_LENGTH = 200;
 export const MAX_POLL_OPTION_LENGTH = 80;

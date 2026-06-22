@@ -7,6 +7,11 @@ import {
 } from "@/lib/slice-it/upload-validation";
 import { putObject } from "@/lib/storage/s3.server";
 import { feedImageKey, feedImageUrl, contentTypeForFilename } from "@/lib/storage/keys";
+import { optimizeImage } from "@/lib/image-optimize";
+
+// Cap stored dimensions; feed images never need to be larger than this.
+const MAX_DIMENSION = 2048;
+const WEBP_QUALITY = 82;
 
 const FEED_IMAGE_MAX_BYTES = 5 * 1024 * 1024; // 5 MB per image
 const MAX_IMAGES = 4;
@@ -63,9 +68,33 @@ export const Route = createFileRoute('/api/rmharks/image')({
             if (!ext) {
               return Response.json({ error: "Unsupported image format." }, { status: 400 });
             }
+
+            // Compress to WebP before storing (smaller files, faster loads).
+            // Animated GIFs become animated WebP; static images are auto-oriented
+            // from EXIF. Fall back to the original bytes if conversion fails so an
+            // upload never breaks on an odd image.
+            let outBuffer: Buffer = buffer;
+            let outExt: string = ext;
+            let outContentType = contentTypeForFilename(`x${ext}`);
+            try {
+              const optimized = await optimizeImage(buffer, {
+                width: MAX_DIMENSION,
+                height: MAX_DIMENSION,
+                quality: WEBP_QUALITY,
+                format: "webp",
+                animated: ext === ".gif",
+                autoOrient: ext !== ".gif",
+              });
+              outBuffer = optimized.buffer;
+              outExt = ".webp";
+              outContentType = optimized.contentType;
+            } catch (err) {
+              console.warn("[rmhark-image] webp conversion failed, storing original:", err);
+            }
+
             const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-            const filename = `${session.user.id}-${uniqueSuffix}${ext}`;
-            await putObject(feedImageKey(filename), buffer, contentTypeForFilename(filename));
+            const filename = `${session.user.id}-${uniqueSuffix}${outExt}`;
+            await putObject(feedImageKey(filename), outBuffer, outContentType);
             urls.push(feedImageUrl(filename));
           }
 
