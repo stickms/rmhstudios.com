@@ -15,11 +15,14 @@ import {
   MapPin,
   LogIn,
   Trash2,
+  Star,
+  Power,
   Route as RouteLucide,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useSession } from '@/components/Providers';
+import { ActiveRidePanel } from '@/components/rideshare/ActiveRidePanel';
 import { RIDE_CLASSES, rideClassName, type RideClassId } from '@/lib/rideshare/classes';
 import { formatDistance, formatDuration } from '@/lib/rideshare/geo';
 
@@ -37,6 +40,9 @@ interface DriverRecord {
   licensePlate: string;
   vehicleClass: string;
   seats: number;
+  isOnline: boolean;
+  ratingCount: number;
+  ratingAvg: number | null;
   rejectionReason: string | null;
 }
 
@@ -115,7 +121,7 @@ function DrivePage() {
     <PageLayout title="Drive with RMH" wide>
       <div className="mx-auto w-full max-w-3xl px-4 py-6 md:px-8">
         {driver?.status === 'APPROVED' ? (
-          <DriverDashboard driver={driver} />
+          <DriverDashboard driver={driver} currentUserId={session.user.id} onDriverChange={loadDriver} />
         ) : driver?.status === 'PENDING' ? (
           <PendingState />
         ) : (
@@ -351,14 +357,24 @@ function ApplicationForm({
   );
 }
 
-function DriverDashboard({ driver }: { driver: DriverRecord }) {
+function DriverDashboard({
+  driver,
+  currentUserId,
+  onDriverChange,
+}: {
+  driver: DriverRecord;
+  currentUserId: string;
+  onDriverChange: () => void;
+}) {
   const [available, setAvailable] = useState<Ride[]>([]);
   const [driving, setDriving] = useState<Ride[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  const [online, setOnline] = useState(driver.isOnline);
+  const [togglingOnline, setTogglingOnline] = useState(false);
+  const [focusRideId, setFocusRideId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    setLoading(true);
     try {
       const [a, d] = await Promise.all([
         fetch('/api/rideshare/rides?scope=available').then((r) => (r.ok ? r.json() : { rides: [] })),
@@ -371,30 +387,56 @@ function DriverDashboard({ driver }: { driver: DriverRecord }) {
     }
   }, []);
 
+  // Poll open requests + active trips so drivers see new work without refreshing.
   useEffect(() => {
     load();
+    const interval = setInterval(load, 6000);
+    return () => clearInterval(interval);
   }, [load]);
 
-  async function act(rideId: string, action: 'accept' | 'start' | 'complete' | 'cancel') {
+  // Keep the live panel up through completion (so the driver can rate the rider)
+  // until they dismiss it.
+  useEffect(() => {
+    if (driving[0]) setFocusRideId(driving[0].id);
+  }, [driving[0]?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function toggleOnline() {
+    const next = !online;
+    setTogglingOnline(true);
+    setOnline(next); // optimistic
+    try {
+      const res = await fetch('/api/rideshare/driver', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isOnline: next }),
+      });
+      if (!res.ok) {
+        setOnline(!next);
+        toast.error('Could not update availability.');
+      } else {
+        onDriverChange();
+      }
+    } catch {
+      setOnline(!next);
+    } finally {
+      setTogglingOnline(false);
+    }
+  }
+
+  async function accept(rideId: string) {
     setBusy(rideId);
     try {
       const res = await fetch(`/api/rideshare/rides/${rideId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action }),
+        body: JSON.stringify({ action: 'accept' }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         toast.error(data.error || 'Action failed.');
         return;
       }
-      const messages: Record<string, string> = {
-        accept: 'Ride accepted — head to the pickup!',
-        start: 'Trip started.',
-        complete: 'Trip completed. Nice work!',
-        cancel: 'Ride cancelled.',
-      };
-      toast.success(messages[action]);
+      toast.success('Ride accepted — head to the pickup!');
       load();
     } catch {
       toast.error('Something went wrong.');
@@ -405,54 +447,68 @@ function DriverDashboard({ driver }: { driver: DriverRecord }) {
 
   return (
     <div className="space-y-6">
-      {/* Approved banner */}
-      <div className="flex items-center gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4">
-        <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-400" />
-        <div className="min-w-0">
-          <p className="font-semibold text-site-text">You’re an approved RMH driver</p>
-          <p className="truncate text-sm text-site-text-muted">
-            {driver.vehicleColor} {driver.vehicleMake} {driver.vehicleModel} · {driver.licensePlate} ·{' '}
-            {rideClassName(driver.vehicleClass)}
-          </p>
+      {/* Approved banner + availability toggle */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4">
+        <div className="flex items-center gap-3">
+          <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-400" />
+          <div className="min-w-0">
+            <p className="flex items-center gap-2 font-semibold text-site-text">
+              You’re an approved RMH driver
+              {driver.ratingAvg != null && (
+                <span className="flex items-center gap-0.5 text-xs text-amber-400">
+                  <Star className="h-3 w-3 fill-amber-400" /> {driver.ratingAvg.toFixed(1)}
+                </span>
+              )}
+            </p>
+            <p className="truncate text-sm text-site-text-muted">
+              {driver.vehicleColor} {driver.vehicleMake} {driver.vehicleModel} · {driver.licensePlate} ·{' '}
+              {rideClassName(driver.vehicleClass)}
+            </p>
+          </div>
         </div>
+        <button
+          onClick={toggleOnline}
+          disabled={togglingOnline}
+          className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-colors disabled:opacity-50 ${
+            online
+              ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-400'
+              : 'border-site-border bg-site-surface text-site-text-muted'
+          }`}
+        >
+          <Power className="h-4 w-4" />
+          {online ? 'Online' : 'Offline'}
+        </button>
       </div>
 
-      {/* Active trips */}
-      <section>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-site-text">Your active trips</h2>
-          <button onClick={load} className="text-xs text-site-accent hover:underline">Refresh</button>
-        </div>
-        {driving.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-site-border px-4 py-6 text-center text-sm text-site-text-muted">
-            No active trips. Accept a request below to get going.
-          </p>
-        ) : (
-          <ul className="space-y-3">
-            {driving.map((ride) => (
-              <RideCard key={ride.id} ride={ride} busy={busy === ride.id}>
-                {ride.status === 'ACCEPTED' && (
-                  <button onClick={() => act(ride.id, 'start')} disabled={busy === ride.id} className="rounded-lg bg-site-accent px-3 py-1.5 text-xs font-semibold text-(--site-accent-fg) disabled:opacity-50">
-                    Start trip
-                  </button>
-                )}
-                {ride.status === 'IN_PROGRESS' && (
-                  <button onClick={() => act(ride.id, 'complete')} disabled={busy === ride.id} className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50">
-                    Complete
-                  </button>
-                )}
-                <button onClick={() => act(ride.id, 'cancel')} disabled={busy === ride.id} className="rounded-lg border border-site-border px-3 py-1.5 text-xs font-medium text-red-400 disabled:opacity-50">
-                  Cancel
-                </button>
-              </RideCard>
-            ))}
-          </ul>
-        )}
-      </section>
+      {!online && (
+        <p className="rounded-xl border border-dashed border-site-border px-4 py-3 text-center text-sm text-site-text-muted">
+          You’re offline. Go online to receive new ride requests.
+        </p>
+      )}
+
+      {/* Active trip — full live panel */}
+      {focusRideId && (
+        <section className="space-y-4">
+          <h2 className="text-lg font-bold text-site-text">Your active trip</h2>
+          <ActiveRidePanel
+            key={focusRideId}
+            rideId={focusRideId}
+            currentUserId={currentUserId}
+            onChange={load}
+            onClose={() => {
+              setFocusRideId(null);
+              load();
+            }}
+          />
+        </section>
+      )}
 
       {/* Available requests */}
       <section>
-        <h2 className="mb-3 text-lg font-bold text-site-text">Open ride requests</h2>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-bold text-site-text">Open ride requests</h2>
+          <button onClick={load} className="text-xs text-site-accent hover:underline">Refresh</button>
+        </div>
         {loading ? (
           <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-site-text-muted" /></div>
         ) : available.length === 0 ? (
@@ -463,7 +519,7 @@ function DriverDashboard({ driver }: { driver: DriverRecord }) {
           <ul className="space-y-3">
             {available.map((ride) => (
               <RideCard key={ride.id} ride={ride} busy={busy === ride.id} showRider>
-                <button onClick={() => act(ride.id, 'accept')} disabled={busy === ride.id} className="flex items-center gap-1.5 rounded-lg bg-site-accent px-4 py-1.5 text-xs font-semibold text-(--site-accent-fg) disabled:opacity-50">
+                <button onClick={() => accept(ride.id)} disabled={busy === ride.id} className="flex items-center gap-1.5 rounded-lg bg-site-accent px-4 py-1.5 text-xs font-semibold text-(--site-accent-fg) disabled:opacity-50">
                   {busy === ride.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Car className="h-3.5 w-3.5" />}
                   Accept
                 </button>

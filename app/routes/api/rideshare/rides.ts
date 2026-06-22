@@ -6,6 +6,7 @@ import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { isValidLatLng } from '@/lib/rideshare/geo';
 import { routeEstimate } from '@/lib/rideshare/osm.server';
 import { isRideClassId } from '@/lib/rideshare/classes';
+import { notifyAvailableDrivers } from '@/lib/rideshare/notify.server';
 
 const ACTIVE_STATUSES = ['REQUESTED', 'ACCEPTED', 'IN_PROGRESS'] as const;
 
@@ -181,6 +182,15 @@ export const Route = createFileRoute('/api/rideshare/rides')({
               notes: body.notes || null,
             },
             select: rideSelect,
+          });
+
+          // Fan the request out to online drivers (best-effort, non-blocking).
+          await notifyAvailableDrivers({
+            id: ride.id,
+            riderId: userId,
+            rideClass: body.rideClass,
+            pickupLabel: body.pickupLabel,
+            dropoffLabel: body.dropoffLabel,
           });
 
           return Response.json({ ride });

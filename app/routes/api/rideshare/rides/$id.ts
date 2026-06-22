@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
+import { notifyRider, notifyDriver } from '@/lib/rideshare/notify.server';
 
 const actionSchema = z.object({
   action: z.enum(['accept', 'start', 'complete', 'cancel']),
@@ -27,7 +28,7 @@ export const Route = createFileRoute('/api/rideshare/rides/$id')({
 
           const ride = await prisma.ride.findUnique({
             where: { id: rideId },
-            select: { id: true, riderId: true, driverId: true, status: true },
+            select: { id: true, riderId: true, driverId: true, status: true, rideClass: true },
           });
           if (!ride) {
             return Response.json({ error: 'Ride not found' }, { status: 404 });
@@ -55,6 +56,8 @@ export const Route = createFileRoute('/api/rideshare/rides/$id')({
                 { status: 409 },
               );
             }
+            const me = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+            await notifyRider(ride.riderId, userId, ride, `${me?.name ?? 'Your driver'} accepted your ride and is on the way.`);
           } else if (action === 'start') {
             if (ride.driverId !== userId) {
               return Response.json({ error: 'Only the assigned driver can do that.' }, { status: 403 });
@@ -66,6 +69,7 @@ export const Route = createFileRoute('/api/rideshare/rides/$id')({
             if (result.count === 0) {
               return Response.json({ error: 'Ride is not ready to start.' }, { status: 409 });
             }
+            await notifyRider(ride.riderId, userId, ride, 'Your trip has started. Enjoy the ride!');
           } else if (action === 'complete') {
             if (ride.driverId !== userId) {
               return Response.json({ error: 'Only the assigned driver can do that.' }, { status: 403 });
@@ -77,6 +81,7 @@ export const Route = createFileRoute('/api/rideshare/rides/$id')({
             if (result.count === 0) {
               return Response.json({ error: 'Ride cannot be completed.' }, { status: 409 });
             }
+            await notifyRider(ride.riderId, userId, ride, 'Your trip is complete. Tap to rate your driver.');
           } else if (action === 'cancel') {
             const isRider = ride.riderId === userId;
             const isDriver = ride.driverId === userId;
@@ -90,6 +95,12 @@ export const Route = createFileRoute('/api/rideshare/rides/$id')({
               where: { id: rideId },
               data: { status: 'CANCELLED', cancelledAt: new Date() },
             });
+            // Tell the other party, if there is one.
+            if (isRider && ride.driverId) {
+              await notifyDriver(ride.driverId, userId, ride, 'The rider cancelled this trip.');
+            } else if (isDriver) {
+              await notifyRider(ride.riderId, userId, ride, 'Your driver cancelled — request a new ride anytime.');
+            }
           }
 
           const updated = await prisma.ride.findUnique({

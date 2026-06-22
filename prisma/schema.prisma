@@ -227,6 +227,7 @@ model User {
   rideshareApplications RideshareDriver[] @relation("RideshareApplicationReviewer")
   ridesRequested        Ride[]            @relation("RideRider")
   ridesDriven           Ride[]            @relation("RideDriver")
+  rideMessages          RideMessage[]
 
   @@index([isBot])
   @@map("user")
@@ -3070,6 +3071,19 @@ model RideshareDriver {
   vehicleClass RideClass @default(RMH_X)
   seats        Int       @default(4)
 
+  // Availability: drivers toggle themselves online to receive ride requests.
+  isOnline Boolean @default(false)
+
+  // Live location (updated via heartbeats while a trip is active). Shown to the
+  // rider on the trip map; cleared between trips client-side by staleness.
+  lastLat           Float?
+  lastLng           Float?
+  locationUpdatedAt DateTime?
+
+  // Aggregate rating from completed trips (rider → driver).
+  ratingCount Int @default(0)
+  ratingTotal Int @default(0)
+
   // Driver's licence (filename only — served via an admin-only endpoint and
   // DELETED from storage once the application has been reviewed).
   licenseImageKey String?
@@ -3114,17 +3128,38 @@ model Ride {
 
   notes String? @db.VarChar(500)
 
+  // Post-trip ratings (1–5). `ratingByRider` rates the driver; `ratingByDriver`
+  // rates the rider.
+  ratingByRider  Int?
+  ratingByDriver Int?
+
   requestedAt DateTime  @default(now())
   acceptedAt  DateTime?
   completedAt DateTime?
   cancelledAt DateTime?
   updatedAt   DateTime  @updatedAt
 
-  rider  User  @relation("RideRider", fields: [riderId], references: [id], onDelete: Cascade)
-  driver User? @relation("RideDriver", fields: [driverId], references: [id])
+  rider    User          @relation("RideRider", fields: [riderId], references: [id], onDelete: Cascade)
+  driver   User?         @relation("RideDriver", fields: [driverId], references: [id])
+  messages RideMessage[]
 
   @@index([status, rideClass, requestedAt])
   @@index([riderId])
   @@index([driverId])
   @@map("ride")
+}
+
+model RideMessage {
+  id        String   @id @default(cuid())
+  rideId    String
+  senderId  String
+  content   String   @db.VarChar(500)
+  createdAt DateTime @default(now())
+
+  ride   Ride @relation(fields: [rideId], references: [id], onDelete: Cascade)
+  sender User @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([rideId, createdAt])
+  @@index([senderId])
+  @@map("ride_message")
 }

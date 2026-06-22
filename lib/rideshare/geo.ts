@@ -58,22 +58,64 @@ export function formatDuration(seconds: number | null | undefined): string {
   return m ? `${h} h ${m} min` : `${h} h`;
 }
 
+// Pricing constants for the (currently waived) fare estimate.
+export const FARE_RATES = {
+  baseCents: 250, // flag-fall
+  perKmCents: 120, // distance rate
+  perMinCents: 22, // time rate
+  minimumCents: 400, // minimum fare
+} as const;
+
+export interface FareBreakdown {
+  baseCents: number;
+  distanceCents: number;
+  timeCents: number;
+  multiplier: number;
+  /** What the trip would have cost before the free-ride promotion. */
+  subtotalCents: number;
+  /** Amount actually charged — always 0 while rides are free. */
+  totalCents: number;
+}
+
 /**
- * Indicative fare in cents for a trip. Rides are currently FREE, so this is
- * only shown struck-through to communicate the value of the promotion.
- * Base flag-fall + per-km rate, scaled by the ride class multiplier.
+ * Itemised fare estimate for a trip. Rides are FREE, so `totalCents` is always
+ * 0; `subtotalCents` is the indicative value shown struck-through.
+ */
+export function fareBreakdown(
+  distanceMeters: number | null | undefined,
+  durationSeconds: number | null | undefined,
+  classId: string,
+): FareBreakdown {
+  const cls = getRideClass(classId);
+  const multiplier = cls?.fareMultiplier ?? 1;
+  const km = (distanceMeters ?? 0) / 1000;
+  const minutes = (durationSeconds ?? 0) / 60;
+
+  const distanceCents = FARE_RATES.perKmCents * km;
+  const timeCents = FARE_RATES.perMinCents * minutes;
+  const raw = (FARE_RATES.baseCents + distanceCents + timeCents) * multiplier;
+  const subtotalCents = Math.max(FARE_RATES.minimumCents, Math.round(raw));
+
+  return {
+    baseCents: Math.round(FARE_RATES.baseCents * multiplier),
+    distanceCents: Math.round(distanceCents * multiplier),
+    timeCents: Math.round(timeCents * multiplier),
+    multiplier,
+    subtotalCents,
+    totalCents: 0,
+  };
+}
+
+/**
+ * Indicative fare in cents for a trip (the struck-through subtotal). Rides are
+ * currently FREE; this is only shown to communicate the value of the promotion.
  */
 export function estimateFareCents(
   distanceMeters: number | null | undefined,
   classId: string,
+  durationSeconds?: number | null,
 ): number {
-  if (!distanceMeters) return 0;
-  const cls = getRideClass(classId);
-  const multiplier = cls?.fareMultiplier ?? 1;
-  const baseCents = 250; // flag-fall
-  const perKmCents = 120;
-  const km = distanceMeters / 1000;
-  return Math.round((baseCents + perKmCents * km) * multiplier);
+  return fareBreakdown(distanceMeters, durationSeconds, classId).subtotalCents;
 }
 
 export function formatUsd(cents: number): string {
@@ -81,18 +123,24 @@ export function formatUsd(cents: number): string {
 }
 
 /**
- * OpenStreetMap embed URL showing the area covering both points, with a
- * marker at the pickup. Uses the no-API-key OSM export embed.
+ * OpenStreetMap embed URL framing all provided points, with a single marker.
+ * Uses the no-API-key OSM export embed (which supports one marker), so we mark
+ * the driver's live position when available, otherwise the pickup.
  */
-export function osmEmbedUrl(pickup: LatLng, dropoff: LatLng): string {
+export function osmEmbedUrl(
+  pickup: LatLng,
+  dropoff: LatLng,
+  markerOverride?: LatLng | null,
+): string {
   const pad = 0.01;
-  const minLat = Math.min(pickup.lat, dropoff.lat) - pad;
-  const maxLat = Math.max(pickup.lat, dropoff.lat) + pad;
-  const minLng = Math.min(pickup.lng, dropoff.lng) - pad;
-  const maxLng = Math.max(pickup.lng, dropoff.lng) + pad;
+  const points = [pickup, dropoff, ...(markerOverride ? [markerOverride] : [])];
+  const minLat = Math.min(...points.map((p) => p.lat)) - pad;
+  const maxLat = Math.max(...points.map((p) => p.lat)) + pad;
+  const minLng = Math.min(...points.map((p) => p.lng)) - pad;
+  const maxLng = Math.max(...points.map((p) => p.lng)) + pad;
   const bbox = `${minLng},${minLat},${maxLng},${maxLat}`;
-  const marker = `${pickup.lat},${pickup.lng}`;
+  const marker = markerOverride ?? pickup;
   return `https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(
     bbox,
-  )}&layer=mapnik&marker=${encodeURIComponent(marker)}`;
+  )}&layer=mapnik&marker=${encodeURIComponent(`${marker.lat},${marker.lng}`)}`;
 }

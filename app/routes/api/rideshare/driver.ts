@@ -33,6 +33,9 @@ function publicDriver(d: {
   licensePlate: string;
   vehicleClass: string;
   seats: number;
+  isOnline: boolean;
+  ratingCount: number;
+  ratingTotal: number;
   rejectionReason: string | null;
   createdAt: Date;
   reviewedAt: Date | null;
@@ -46,6 +49,9 @@ function publicDriver(d: {
     licensePlate: d.licensePlate,
     vehicleClass: d.vehicleClass,
     seats: d.seats,
+    isOnline: d.isOnline,
+    ratingCount: d.ratingCount,
+    ratingAvg: d.ratingCount > 0 ? d.ratingTotal / d.ratingCount : null,
     rejectionReason: d.rejectionReason,
     createdAt: d.createdAt,
     reviewedAt: d.reviewedAt,
@@ -64,6 +70,31 @@ export const Route = createFileRoute('/api/rideshare/driver')({
           where: { userId: session.user.id },
         });
         return Response.json({ driver: driver ? publicDriver(driver) : null });
+      },
+
+      // Toggle availability (online/offline) for approved drivers.
+      PATCH: async ({ request }) => {
+        try {
+          const session = await auth.api.getSession({ headers: request.headers });
+          if (!session) {
+            return Response.json({ error: 'Unauthorized' }, { status: 401 });
+          }
+          const body = await request.json().catch(() => ({}));
+          if (typeof body.isOnline !== 'boolean') {
+            return Response.json({ error: 'isOnline boolean required' }, { status: 400 });
+          }
+          const result = await prisma.rideshareDriver.updateMany({
+            where: { userId: session.user.id, status: 'APPROVED' },
+            data: { isOnline: body.isOnline },
+          });
+          if (result.count === 0) {
+            return Response.json({ error: 'Not an approved driver.' }, { status: 403 });
+          }
+          return Response.json({ isOnline: body.isOnline });
+        } catch (error) {
+          console.error('Rideshare availability error:', error);
+          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
+        }
       },
 
       POST: async ({ request }) => {

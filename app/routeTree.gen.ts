@@ -235,6 +235,7 @@ import { Route as ApiRmharksImageRouteImport } from './routes/api/rmharks/image'
 import { Route as ApiRmharksAiGenerateRouteImport } from './routes/api/rmharks/ai-generate'
 import { Route as ApiRmharksIdRouteImport } from './routes/api/rmharks/$id'
 import { Route as ApiRideshareRidesRouteImport } from './routes/api/rideshare/rides'
+import { Route as ApiRideshareLocationRouteImport } from './routes/api/rideshare/location'
 import { Route as ApiRideshareGeocodeRouteImport } from './routes/api/rideshare/geocode'
 import { Route as ApiRideshareDriverRouteImport } from './routes/api/rideshare/driver'
 import { Route as ApiRideshareDirectionsRouteImport } from './routes/api/rideshare/directions'
@@ -425,6 +426,9 @@ import { Route as ApiSliceItSongsIdLikeRouteImport } from './routes/api/slice-it
 import { Route as ApiSliceItSongsIdCommentsRouteImport } from './routes/api/slice-it/songs/$id/comments'
 import { Route as ApiRmhmusicGuessIdAttemptRouteImport } from './routes/api/rmhmusic/guess/$id/attempt'
 import { Route as ApiRmharksIdCommentCommentIdRouteImport } from './routes/api/rmharks/$id/comment/$commentId'
+import { Route as ApiRideshareRidesIdSyncRouteImport } from './routes/api/rideshare/rides/$id/sync'
+import { Route as ApiRideshareRidesIdRateRouteImport } from './routes/api/rideshare/rides/$id/rate'
+import { Route as ApiRideshareRidesIdMessagesRouteImport } from './routes/api/rideshare/rides/$id/messages'
 import { Route as ApiAdminUsersIdStrikeRouteImport } from './routes/api/admin/users/$id/strike'
 import { Route as ApiAdminUsersIdGrantMembershipRouteImport } from './routes/api/admin/users/$id/grant-membership'
 import { Route as ApiAdminUsersIdBanRouteImport } from './routes/api/admin/users/$id/ban'
@@ -1575,6 +1579,11 @@ const ApiRideshareRidesRoute = ApiRideshareRidesRouteImport.update({
   path: '/api/rideshare/rides',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRideshareLocationRoute = ApiRideshareLocationRouteImport.update({
+  id: '/api/rideshare/location',
+  path: '/api/rideshare/location',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiRideshareGeocodeRoute = ApiRideshareGeocodeRouteImport.update({
   id: '/api/rideshare/geocode',
   path: '/api/rideshare/geocode',
@@ -2567,6 +2576,22 @@ const ApiRmharksIdCommentCommentIdRoute =
     path: '/$commentId',
     getParentRoute: () => ApiRmharksIdCommentRoute,
   } as any)
+const ApiRideshareRidesIdSyncRoute = ApiRideshareRidesIdSyncRouteImport.update({
+  id: '/sync',
+  path: '/sync',
+  getParentRoute: () => ApiRideshareRidesIdRoute,
+} as any)
+const ApiRideshareRidesIdRateRoute = ApiRideshareRidesIdRateRouteImport.update({
+  id: '/rate',
+  path: '/rate',
+  getParentRoute: () => ApiRideshareRidesIdRoute,
+} as any)
+const ApiRideshareRidesIdMessagesRoute =
+  ApiRideshareRidesIdMessagesRouteImport.update({
+    id: '/messages',
+    path: '/messages',
+    getParentRoute: () => ApiRideshareRidesIdRoute,
+  } as any)
 const ApiAdminUsersIdStrikeRoute = ApiAdminUsersIdStrikeRouteImport.update({
   id: '/$id/strike',
   path: '/$id/strike',
@@ -2854,6 +2879,7 @@ export interface FileRoutesByFullPath {
   '/api/rideshare/directions': typeof ApiRideshareDirectionsRoute
   '/api/rideshare/driver': typeof ApiRideshareDriverRoute
   '/api/rideshare/geocode': typeof ApiRideshareGeocodeRoute
+  '/api/rideshare/location': typeof ApiRideshareLocationRoute
   '/api/rideshare/rides': typeof ApiRideshareRidesRouteWithChildren
   '/api/rmharks/$id': typeof ApiRmharksIdRouteWithChildren
   '/api/rmharks/ai-generate': typeof ApiRmharksAiGenerateRoute
@@ -2987,7 +3013,7 @@ export interface FileRoutesByFullPath {
   '/api/quests/$id/claim': typeof ApiQuestsIdClaimRoute
   '/api/ranked/$game/leaderboard': typeof ApiRankedGameLeaderboardRoute
   '/api/ranked/challenge/$id': typeof ApiRankedChallengeIdRoute
-  '/api/rideshare/rides/$id': typeof ApiRideshareRidesIdRoute
+  '/api/rideshare/rides/$id': typeof ApiRideshareRidesIdRouteWithChildren
   '/api/rmharks/$id/bookmark': typeof ApiRmharksIdBookmarkRoute
   '/api/rmharks/$id/comment': typeof ApiRmharksIdCommentRouteWithChildren
   '/api/rmharks/$id/insights': typeof ApiRmharksIdInsightsRoute
@@ -3040,6 +3066,9 @@ export interface FileRoutesByFullPath {
   '/api/admin/users/$id/ban': typeof ApiAdminUsersIdBanRoute
   '/api/admin/users/$id/grant-membership': typeof ApiAdminUsersIdGrantMembershipRoute
   '/api/admin/users/$id/strike': typeof ApiAdminUsersIdStrikeRoute
+  '/api/rideshare/rides/$id/messages': typeof ApiRideshareRidesIdMessagesRoute
+  '/api/rideshare/rides/$id/rate': typeof ApiRideshareRidesIdRateRoute
+  '/api/rideshare/rides/$id/sync': typeof ApiRideshareRidesIdSyncRoute
   '/api/rmharks/$id/comment/$commentId': typeof ApiRmharksIdCommentCommentIdRouteWithChildren
   '/api/rmhmusic/guess/$id/attempt': typeof ApiRmhmusicGuessIdAttemptRoute
   '/api/slice-it/songs/$id/comments': typeof ApiSliceItSongsIdCommentsRoute
@@ -3258,6 +3287,7 @@ export interface FileRoutesByTo {
   '/api/rideshare/directions': typeof ApiRideshareDirectionsRoute
   '/api/rideshare/driver': typeof ApiRideshareDriverRoute
   '/api/rideshare/geocode': typeof ApiRideshareGeocodeRoute
+  '/api/rideshare/location': typeof ApiRideshareLocationRoute
   '/api/rideshare/rides': typeof ApiRideshareRidesRouteWithChildren
   '/api/rmharks/$id': typeof ApiRmharksIdRouteWithChildren
   '/api/rmharks/ai-generate': typeof ApiRmharksAiGenerateRoute
@@ -3391,7 +3421,7 @@ export interface FileRoutesByTo {
   '/api/quests/$id/claim': typeof ApiQuestsIdClaimRoute
   '/api/ranked/$game/leaderboard': typeof ApiRankedGameLeaderboardRoute
   '/api/ranked/challenge/$id': typeof ApiRankedChallengeIdRoute
-  '/api/rideshare/rides/$id': typeof ApiRideshareRidesIdRoute
+  '/api/rideshare/rides/$id': typeof ApiRideshareRidesIdRouteWithChildren
   '/api/rmharks/$id/bookmark': typeof ApiRmharksIdBookmarkRoute
   '/api/rmharks/$id/comment': typeof ApiRmharksIdCommentRouteWithChildren
   '/api/rmharks/$id/insights': typeof ApiRmharksIdInsightsRoute
@@ -3444,6 +3474,9 @@ export interface FileRoutesByTo {
   '/api/admin/users/$id/ban': typeof ApiAdminUsersIdBanRoute
   '/api/admin/users/$id/grant-membership': typeof ApiAdminUsersIdGrantMembershipRoute
   '/api/admin/users/$id/strike': typeof ApiAdminUsersIdStrikeRoute
+  '/api/rideshare/rides/$id/messages': typeof ApiRideshareRidesIdMessagesRoute
+  '/api/rideshare/rides/$id/rate': typeof ApiRideshareRidesIdRateRoute
+  '/api/rideshare/rides/$id/sync': typeof ApiRideshareRidesIdSyncRoute
   '/api/rmharks/$id/comment/$commentId': typeof ApiRmharksIdCommentCommentIdRouteWithChildren
   '/api/rmhmusic/guess/$id/attempt': typeof ApiRmhmusicGuessIdAttemptRoute
   '/api/slice-it/songs/$id/comments': typeof ApiSliceItSongsIdCommentsRoute
@@ -3688,6 +3721,7 @@ export interface FileRoutesById {
   '/api/rideshare/directions': typeof ApiRideshareDirectionsRoute
   '/api/rideshare/driver': typeof ApiRideshareDriverRoute
   '/api/rideshare/geocode': typeof ApiRideshareGeocodeRoute
+  '/api/rideshare/location': typeof ApiRideshareLocationRoute
   '/api/rideshare/rides': typeof ApiRideshareRidesRouteWithChildren
   '/api/rmharks/$id': typeof ApiRmharksIdRouteWithChildren
   '/api/rmharks/ai-generate': typeof ApiRmharksAiGenerateRoute
@@ -3821,7 +3855,7 @@ export interface FileRoutesById {
   '/api/quests/$id/claim': typeof ApiQuestsIdClaimRoute
   '/api/ranked/$game/leaderboard': typeof ApiRankedGameLeaderboardRoute
   '/api/ranked/challenge/$id': typeof ApiRankedChallengeIdRoute
-  '/api/rideshare/rides/$id': typeof ApiRideshareRidesIdRoute
+  '/api/rideshare/rides/$id': typeof ApiRideshareRidesIdRouteWithChildren
   '/api/rmharks/$id/bookmark': typeof ApiRmharksIdBookmarkRoute
   '/api/rmharks/$id/comment': typeof ApiRmharksIdCommentRouteWithChildren
   '/api/rmharks/$id/insights': typeof ApiRmharksIdInsightsRoute
@@ -3874,6 +3908,9 @@ export interface FileRoutesById {
   '/api/admin/users/$id/ban': typeof ApiAdminUsersIdBanRoute
   '/api/admin/users/$id/grant-membership': typeof ApiAdminUsersIdGrantMembershipRoute
   '/api/admin/users/$id/strike': typeof ApiAdminUsersIdStrikeRoute
+  '/api/rideshare/rides/$id/messages': typeof ApiRideshareRidesIdMessagesRoute
+  '/api/rideshare/rides/$id/rate': typeof ApiRideshareRidesIdRateRoute
+  '/api/rideshare/rides/$id/sync': typeof ApiRideshareRidesIdSyncRoute
   '/api/rmharks/$id/comment/$commentId': typeof ApiRmharksIdCommentCommentIdRouteWithChildren
   '/api/rmhmusic/guess/$id/attempt': typeof ApiRmhmusicGuessIdAttemptRoute
   '/api/slice-it/songs/$id/comments': typeof ApiSliceItSongsIdCommentsRoute
@@ -4118,6 +4155,7 @@ export interface FileRouteTypes {
     | '/api/rideshare/directions'
     | '/api/rideshare/driver'
     | '/api/rideshare/geocode'
+    | '/api/rideshare/location'
     | '/api/rideshare/rides'
     | '/api/rmharks/$id'
     | '/api/rmharks/ai-generate'
@@ -4304,6 +4342,9 @@ export interface FileRouteTypes {
     | '/api/admin/users/$id/ban'
     | '/api/admin/users/$id/grant-membership'
     | '/api/admin/users/$id/strike'
+    | '/api/rideshare/rides/$id/messages'
+    | '/api/rideshare/rides/$id/rate'
+    | '/api/rideshare/rides/$id/sync'
     | '/api/rmharks/$id/comment/$commentId'
     | '/api/rmhmusic/guess/$id/attempt'
     | '/api/slice-it/songs/$id/comments'
@@ -4522,6 +4563,7 @@ export interface FileRouteTypes {
     | '/api/rideshare/directions'
     | '/api/rideshare/driver'
     | '/api/rideshare/geocode'
+    | '/api/rideshare/location'
     | '/api/rideshare/rides'
     | '/api/rmharks/$id'
     | '/api/rmharks/ai-generate'
@@ -4708,6 +4750,9 @@ export interface FileRouteTypes {
     | '/api/admin/users/$id/ban'
     | '/api/admin/users/$id/grant-membership'
     | '/api/admin/users/$id/strike'
+    | '/api/rideshare/rides/$id/messages'
+    | '/api/rideshare/rides/$id/rate'
+    | '/api/rideshare/rides/$id/sync'
     | '/api/rmharks/$id/comment/$commentId'
     | '/api/rmhmusic/guess/$id/attempt'
     | '/api/slice-it/songs/$id/comments'
@@ -4951,6 +4996,7 @@ export interface FileRouteTypes {
     | '/api/rideshare/directions'
     | '/api/rideshare/driver'
     | '/api/rideshare/geocode'
+    | '/api/rideshare/location'
     | '/api/rideshare/rides'
     | '/api/rmharks/$id'
     | '/api/rmharks/ai-generate'
@@ -5137,6 +5183,9 @@ export interface FileRouteTypes {
     | '/api/admin/users/$id/ban'
     | '/api/admin/users/$id/grant-membership'
     | '/api/admin/users/$id/strike'
+    | '/api/rideshare/rides/$id/messages'
+    | '/api/rideshare/rides/$id/rate'
+    | '/api/rideshare/rides/$id/sync'
     | '/api/rmharks/$id/comment/$commentId'
     | '/api/rmhmusic/guess/$id/attempt'
     | '/api/slice-it/songs/$id/comments'
@@ -5273,6 +5322,7 @@ export interface RootRouteChildren {
   ApiRideshareDirectionsRoute: typeof ApiRideshareDirectionsRoute
   ApiRideshareDriverRoute: typeof ApiRideshareDriverRoute
   ApiRideshareGeocodeRoute: typeof ApiRideshareGeocodeRoute
+  ApiRideshareLocationRoute: typeof ApiRideshareLocationRoute
   ApiRideshareRidesRoute: typeof ApiRideshareRidesRouteWithChildren
   ApiRmhboxHistoryRoute: typeof ApiRmhboxHistoryRoute
   ApiRmhboxLeaderboardRoute: typeof ApiRmhboxLeaderboardRoute
@@ -6971,6 +7021,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRideshareRidesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/rideshare/location': {
+      id: '/api/rideshare/location'
+      path: '/api/rideshare/location'
+      fullPath: '/api/rideshare/location'
+      preLoaderRoute: typeof ApiRideshareLocationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/rideshare/geocode': {
       id: '/api/rideshare/geocode'
       path: '/api/rideshare/geocode'
@@ -8301,6 +8358,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRmharksIdCommentCommentIdRouteImport
       parentRoute: typeof ApiRmharksIdCommentRoute
     }
+    '/api/rideshare/rides/$id/sync': {
+      id: '/api/rideshare/rides/$id/sync'
+      path: '/sync'
+      fullPath: '/api/rideshare/rides/$id/sync'
+      preLoaderRoute: typeof ApiRideshareRidesIdSyncRouteImport
+      parentRoute: typeof ApiRideshareRidesIdRoute
+    }
+    '/api/rideshare/rides/$id/rate': {
+      id: '/api/rideshare/rides/$id/rate'
+      path: '/rate'
+      fullPath: '/api/rideshare/rides/$id/rate'
+      preLoaderRoute: typeof ApiRideshareRidesIdRateRouteImport
+      parentRoute: typeof ApiRideshareRidesIdRoute
+    }
+    '/api/rideshare/rides/$id/messages': {
+      id: '/api/rideshare/rides/$id/messages'
+      path: '/messages'
+      fullPath: '/api/rideshare/rides/$id/messages'
+      preLoaderRoute: typeof ApiRideshareRidesIdMessagesRouteImport
+      parentRoute: typeof ApiRideshareRidesIdRoute
+    }
     '/api/admin/users/$id/strike': {
       id: '/api/admin/users/$id/strike'
       path: '/$id/strike'
@@ -9146,12 +9224,27 @@ const ApiAdminUsersRouteWithChildren = ApiAdminUsersRoute._addFileChildren(
   ApiAdminUsersRouteChildren,
 )
 
+interface ApiRideshareRidesIdRouteChildren {
+  ApiRideshareRidesIdMessagesRoute: typeof ApiRideshareRidesIdMessagesRoute
+  ApiRideshareRidesIdRateRoute: typeof ApiRideshareRidesIdRateRoute
+  ApiRideshareRidesIdSyncRoute: typeof ApiRideshareRidesIdSyncRoute
+}
+
+const ApiRideshareRidesIdRouteChildren: ApiRideshareRidesIdRouteChildren = {
+  ApiRideshareRidesIdMessagesRoute: ApiRideshareRidesIdMessagesRoute,
+  ApiRideshareRidesIdRateRoute: ApiRideshareRidesIdRateRoute,
+  ApiRideshareRidesIdSyncRoute: ApiRideshareRidesIdSyncRoute,
+}
+
+const ApiRideshareRidesIdRouteWithChildren =
+  ApiRideshareRidesIdRoute._addFileChildren(ApiRideshareRidesIdRouteChildren)
+
 interface ApiRideshareRidesRouteChildren {
-  ApiRideshareRidesIdRoute: typeof ApiRideshareRidesIdRoute
+  ApiRideshareRidesIdRoute: typeof ApiRideshareRidesIdRouteWithChildren
 }
 
 const ApiRideshareRidesRouteChildren: ApiRideshareRidesRouteChildren = {
-  ApiRideshareRidesIdRoute: ApiRideshareRidesIdRoute,
+  ApiRideshareRidesIdRoute: ApiRideshareRidesIdRouteWithChildren,
 }
 
 const ApiRideshareRidesRouteWithChildren =
@@ -9338,6 +9431,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRideshareDirectionsRoute: ApiRideshareDirectionsRoute,
   ApiRideshareDriverRoute: ApiRideshareDriverRoute,
   ApiRideshareGeocodeRoute: ApiRideshareGeocodeRoute,
+  ApiRideshareLocationRoute: ApiRideshareLocationRoute,
   ApiRideshareRidesRoute: ApiRideshareRidesRouteWithChildren,
   ApiRmhboxHistoryRoute: ApiRmhboxHistoryRoute,
   ApiRmhboxLeaderboardRoute: ApiRmhboxLeaderboardRoute,

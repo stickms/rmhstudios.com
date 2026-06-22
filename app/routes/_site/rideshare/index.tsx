@@ -4,6 +4,7 @@
  * Marketing hub linking the rider request flow and the driver application,
  * plus the ride-class catalogue. Rides are currently free.
  */
+import { useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import {
@@ -20,7 +21,8 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { RIDE_CLASSES } from '@/lib/rideshare/classes';
+import { FareBreakdown } from '@/components/rideshare/FareBreakdown';
+import { RIDE_CLASSES, type RideClassId } from '@/lib/rideshare/classes';
 
 export const Route = createFileRoute('/_site/rideshare/')({
   head: () => ({
@@ -128,6 +130,9 @@ export function RideshareLanding() {
           </div>
         </section>
 
+        {/* Price visualizer */}
+        <PriceEstimator />
+
         {/* How it works (riders) */}
         <section className="mt-12">
           <h2 className="text-2xl font-bold text-site-text" style={{ fontFamily: 'var(--site-font-display)' }}>
@@ -176,5 +181,72 @@ export function RideshareLanding() {
         </motion.section>
       </div>
     </PageLayout>
+  );
+}
+
+/**
+ * Interactive fare visualizer. Lets visitors see what a trip would normally
+ * cost across classes — and that every one of them is free right now.
+ */
+function PriceEstimator() {
+  const [km, setKm] = useState(8);
+  const [classId, setClassId] = useState<RideClassId>('RMH_X');
+
+  const distanceMeters = km * 1000;
+  // Assume ~30 km/h average city speed for the time component.
+  const durationSeconds = Math.round((km / 30) * 3600);
+
+  return (
+    <section className="mt-12">
+      <h2 className="text-2xl font-bold text-site-text" style={{ fontFamily: 'var(--site-font-display)' }}>
+        See what you’re saving
+      </h2>
+      <p className="mt-1 text-site-text-muted">
+        Drag to estimate any trip. Every fare is fully waived during the preview.
+      </p>
+
+      <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2">
+        <div className="rounded-2xl border border-site-border bg-site-surface/40 p-5">
+          <div className="mb-2 flex items-center justify-between">
+            <label htmlFor="estimator-distance" className="text-sm font-medium text-site-text">
+              Trip distance
+            </label>
+            <span className="text-sm font-bold text-site-accent">{km} km</span>
+          </div>
+          <input
+            id="estimator-distance"
+            type="range"
+            min={1}
+            max={60}
+            value={km}
+            onChange={(e) => setKm(Number(e.target.value))}
+            className="w-full accent-(--site-accent)"
+          />
+          <div className="mt-1 flex justify-between text-[11px] text-site-text-dim">
+            <span>1 km</span>
+            <span>60 km</span>
+          </div>
+
+          <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {RIDE_CLASSES.map((cls) => (
+              <button
+                key={cls.id}
+                type="button"
+                onClick={() => setClassId(cls.id)}
+                className={`rounded-lg border px-3 py-2 text-sm font-medium transition-all ${
+                  classId === cls.id
+                    ? 'border-site-accent bg-site-accent/10 text-site-accent'
+                    : 'border-site-border bg-site-surface text-site-text hover:border-site-border-bright'
+                }`}
+              >
+                {cls.name}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <FareBreakdown distanceMeters={distanceMeters} durationSeconds={durationSeconds} classId={classId} />
+      </div>
+    </section>
   );
 }

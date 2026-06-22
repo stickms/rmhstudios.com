@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { formatDistanceToNow } from 'date-fns';
-import { Heart, MessageCircle, UserPlus, AtSign, Repeat2, Bell, CheckCheck, Loader2, Trophy, Sparkles, Zap, Gift } from 'lucide-react';
+import { Heart, MessageCircle, UserPlus, AtSign, Repeat2, Bell, CheckCheck, Loader2, Trophy, Sparkles, Zap, Gift, Car, MapPin } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Button } from '@/components/ui/button';
 
@@ -48,6 +48,12 @@ function systemIdentity(entityType: string | null): { label: string; Icon: typeo
       return { label: 'Level up', Icon: Zap, tint: 'text-site-accent', bg: 'bg-site-accent/15' };
     case 'membership':
       return { label: 'Membership', Icon: Gift, tint: 'text-site-accent', bg: 'bg-site-accent/15' };
+    case 'ride':
+      return { label: 'RMH Rideshare', Icon: Car, tint: 'text-emerald-400', bg: 'bg-emerald-400/15' };
+    case 'ride_request':
+      return { label: 'New ride request', Icon: MapPin, tint: 'text-sky-400', bg: 'bg-sky-400/15' };
+    case 'ride_message':
+      return { label: 'Ride message', Icon: MessageCircle, tint: 'text-site-accent', bg: 'bg-site-accent/15' };
     default:
       return { label: 'RMH Studios', Icon: Sparkles, tint: 'text-site-accent', bg: 'bg-site-accent/15' };
   }
@@ -130,6 +136,11 @@ export function NotificationsColumn({ embedded = false }: { embedded?: boolean }
         return '/progress';
       case 'membership':
         return '/pricing';
+      case 'ride':
+      case 'ride_message':
+        return '/rideshare/ride';
+      case 'ride_request':
+        return '/rideshare/drive';
       default:
         return null;
     }
