@@ -3091,10 +3091,9 @@ model RideshareDriver {
   ratingCount Int @default(0)
   ratingTotal Int @default(0)
 
-  // Driver's licence (filename only — served via an admin-only endpoint and
-  // DELETED from storage once the application has been reviewed).
-  licenseImageKey String?
-  licenseDeletedAt DateTime?
+  // Driver's licence number, self-reported on the application. We no longer
+  // collect or store licence images.
+  licenseNumber String? @db.VarChar(40)
 
   // Review metadata
   reviewedById    String?

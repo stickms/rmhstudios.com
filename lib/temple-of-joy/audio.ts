@@ -4,13 +4,15 @@
  * Uses HTML5 Audio API with pooling for rapid SFX playback.
  */
 
+import { asset } from '@/lib/storage/asset';
+
 const SOUNDTRACK_PATHS = [
-  '/music/temple-of-joy/soundtrack/1.mp3',
-  '/music/temple-of-joy/soundtrack/2.mp3',
+  asset('/music/temple-of-joy/soundtrack/1.mp3'),
+  asset('/music/temple-of-joy/soundtrack/2.mp3'),
 ];
 
-const SFX_CLICK_PATH = '/music/temple-of-joy/sfx/click.mp3';
-const SFX_ACHIEVEMENT_PATH = '/music/temple-of-joy/sfx/achievement.mp3';
+const SFX_CLICK_PATH = asset('/music/temple-of-joy/sfx/click.mp3');
+const SFX_ACHIEVEMENT_PATH = asset('/music/temple-of-joy/sfx/achievement.mp3');
 
 const CLICK_POOL_SIZE = 4;
 

@@ -398,33 +398,11 @@ if [ "$PRE_PULL_HASH" != "$POST_PULL_HASH" ] && [ -z "${DEPLOY_SELF_RESTARTED:-}
     exec bash "$DEPLOY_SCRIPT_PATH" "$ENVIRONMENT"
 fi
 
-# ── Step 1c: Ensure CDN assets are servable by Apache ────────────────────────
-# Apache (as www-data) serves /library, /music, /models, /sprites straight off
-# disk from public/ (see deploy/apache/rmhstudios.conf), bypassing the Node
-# app. A fresh `git reset --hard` can land files that www-data can't read, which
-# makes Apache return 403 for every asset. git only tracks the owner-exec bit,
-# so we re-assert world read/traverse here on EVERY deploy — this is what keeps
-# the self-hosted CDN working. All paths are owned by the deploy user, so no
-# sudo is needed for the chmods. Failures are logged, never fatal: a perms hiccup
-# must not block shipping the app.
-step_start "Ensuring CDN asset permissions..."
-PUBLIC_DIR="${REPO_DIR}/public"
-# Parent dirs need o+x so www-data can traverse in from /home. Derive the repo's
-# parent rather than $HOME, since the deploy may run as root (webhook trigger).
-chmod o+x "$(dirname "$REPO_DIR")" "$REPO_DIR" "$PUBLIC_DIR" 2>/dev/null || true
-if [ -d "$PUBLIC_DIR" ]; then
-    # Read for files, traverse for dirs (capital X applies x to dirs only).
-    chmod -R o+rX "$PUBLIC_DIR" 2>/dev/null || true
-    # Best-effort sanity check as the web user (only if passwordless sudo exists),
-    # so a regression is visible in the deploy log without failing the deploy.
-    if sudo -n true 2>/dev/null && [ -d "$PUBLIC_DIR/library" ]; then
-        sudo -n -u www-data ls "$PUBLIC_DIR/library" >/dev/null 2>&1 \
-            || log "WARNING: www-data cannot read ${PUBLIC_DIR}/library — CDN assets may 403."
-    fi
-else
-    log "WARNING: ${PUBLIC_DIR} not found — Apache-served CDN assets will 404."
-fi
-step_done
+# ── Step 1c: (removed) Apache CDN asset permissions ──────────────────────────
+# Heavy static assets (/library, /music, /models, /sprites) used to be served
+# off disk by Apache, which needed world-read perms re-asserted every deploy.
+# They now live in Cloudflare R2 and are synced below (see "Sync static assets
+# to R2"), so Apache no longer touches them and no chmod dance is needed.
 
 IMAGE_NAME="${PROJECT_NAME}-app"
 GIT_SHA=$("$GIT_BIN" rev-parse --short HEAD 2>/dev/null || echo "unknown")
@@ -494,6 +472,24 @@ if "$DOCKER_BIN" image inspect "${IMAGE_NAME}:latest" >/dev/null 2>&1; then
     step_done
 else
     log "No prior ${IMAGE_NAME}:latest image — skipping library cover generation (first deploy; using committed metadata)."
+fi
+
+# ── Step 1f: Sync static assets to Cloudflare R2 (incremental) ───────────────
+# The heavy static asset dirs (library/music/models/sprites — incl. any covers
+# generated above) are served from R2 behind cdn.rmhstudios.com, not off disk.
+# scripts/sync-static-assets-to-r2.sh runs `rclone sync`, which compares
+# checksums and only uploads NEW/CHANGED files and removes ones deleted from
+# public/ — so a deploy that didn't touch these dirs transfers nothing.
+# Best-effort: a sync hiccup must not block shipping the app (a short
+# Cache-Control TTL + the next deploy are the safety net). Skips itself when R2
+# isn't configured (S3_*/VITE_CDN_BASE_URL unset) or rclone isn't installed.
+if grep -qE '^VITE_CDN_BASE_URL=.+' "$ENV_FILE" 2>/dev/null; then
+    step_start "Syncing static assets to R2 (incremental)..."
+    ( set -a; . "$ENV_FILE"; set +a; REPO_DIR="$REPO_DIR" bash "${REPO_DIR}/scripts/sync-static-assets-to-r2.sh" ) \
+        || log "WARNING: R2 static asset sync failed — assets may be stale until the next deploy."
+    step_done
+else
+    log "VITE_CDN_BASE_URL not set — skipping R2 static asset sync (assets served from origin/public)."
 fi
 
 # ── Step 2: Build Docker image ──────────────────────────────────────────────

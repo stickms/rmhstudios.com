@@ -4,8 +4,9 @@
 // sprite file from the downloaded packs.
 
 import type { SpritePack } from './types';
+import { asset } from '@/lib/storage/asset';
 
-const SPRITE_BASE = '/sprites/versecraft';
+const SPRITE_BASE = asset('/sprites/versecraft');
 
 /** Available sprite filenames per character (without .png extension).
  *  Generated from Sutemo PSD packs via generate_sprites.py */

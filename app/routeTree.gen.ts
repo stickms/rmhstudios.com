@@ -438,7 +438,6 @@ import { Route as ApiRideshareRidesIdMessagesRouteImport } from './routes/api/ri
 import { Route as ApiAdminUsersIdStrikeRouteImport } from './routes/api/admin/users/$id/strike'
 import { Route as ApiAdminUsersIdGrantMembershipRouteImport } from './routes/api/admin/users/$id/grant-membership'
 import { Route as ApiAdminUsersIdBanRouteImport } from './routes/api/admin/users/$id/ban'
-import { Route as ApiAdminRideshareLicenseFilenameRouteImport } from './routes/api/admin/rideshare/license/$filename'
 import { Route as ApiAdminCuratedBuildsImageProxyRouteImport } from './routes/api/admin/curated-builds/image/proxy'
 import { Route as ApiAdminCuratedBuildsImageFilenameRouteImport } from './routes/api/admin/curated-builds/image/$filename'
 import { Route as SiteUUseridPostPostidRouteImport } from './routes/_site/u/$userid/post/$postid'
@@ -2644,12 +2643,6 @@ const ApiAdminUsersIdBanRoute = ApiAdminUsersIdBanRouteImport.update({
   path: '/$id/ban',
   getParentRoute: () => ApiAdminUsersRoute,
 } as any)
-const ApiAdminRideshareLicenseFilenameRoute =
-  ApiAdminRideshareLicenseFilenameRouteImport.update({
-    id: '/api/admin/rideshare/license/$filename',
-    path: '/api/admin/rideshare/license/$filename',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiAdminCuratedBuildsImageProxyRoute =
   ApiAdminCuratedBuildsImageProxyRouteImport.update({
     id: '/proxy',
@@ -3104,7 +3097,6 @@ export interface FileRoutesByFullPath {
   '/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
   '/api/admin/curated-builds/image/$filename': typeof ApiAdminCuratedBuildsImageFilenameRoute
   '/api/admin/curated-builds/image/proxy': typeof ApiAdminCuratedBuildsImageProxyRoute
-  '/api/admin/rideshare/license/$filename': typeof ApiAdminRideshareLicenseFilenameRoute
   '/api/admin/users/$id/ban': typeof ApiAdminUsersIdBanRoute
   '/api/admin/users/$id/grant-membership': typeof ApiAdminUsersIdGrantMembershipRoute
   '/api/admin/users/$id/strike': typeof ApiAdminUsersIdStrikeRoute
@@ -3518,7 +3510,6 @@ export interface FileRoutesByTo {
   '/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
   '/api/admin/curated-builds/image/$filename': typeof ApiAdminCuratedBuildsImageFilenameRoute
   '/api/admin/curated-builds/image/proxy': typeof ApiAdminCuratedBuildsImageProxyRoute
-  '/api/admin/rideshare/license/$filename': typeof ApiAdminRideshareLicenseFilenameRoute
   '/api/admin/users/$id/ban': typeof ApiAdminUsersIdBanRoute
   '/api/admin/users/$id/grant-membership': typeof ApiAdminUsersIdGrantMembershipRoute
   '/api/admin/users/$id/strike': typeof ApiAdminUsersIdStrikeRoute
@@ -3958,7 +3949,6 @@ export interface FileRoutesById {
   '/_site/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
   '/api/admin/curated-builds/image/$filename': typeof ApiAdminCuratedBuildsImageFilenameRoute
   '/api/admin/curated-builds/image/proxy': typeof ApiAdminCuratedBuildsImageProxyRoute
-  '/api/admin/rideshare/license/$filename': typeof ApiAdminRideshareLicenseFilenameRoute
   '/api/admin/users/$id/ban': typeof ApiAdminUsersIdBanRoute
   '/api/admin/users/$id/grant-membership': typeof ApiAdminUsersIdGrantMembershipRoute
   '/api/admin/users/$id/strike': typeof ApiAdminUsersIdStrikeRoute
@@ -4398,7 +4388,6 @@ export interface FileRouteTypes {
     | '/u/$userid/post/$postid'
     | '/api/admin/curated-builds/image/$filename'
     | '/api/admin/curated-builds/image/proxy'
-    | '/api/admin/rideshare/license/$filename'
     | '/api/admin/users/$id/ban'
     | '/api/admin/users/$id/grant-membership'
     | '/api/admin/users/$id/strike'
@@ -4812,7 +4801,6 @@ export interface FileRouteTypes {
     | '/u/$userid/post/$postid'
     | '/api/admin/curated-builds/image/$filename'
     | '/api/admin/curated-builds/image/proxy'
-    | '/api/admin/rideshare/license/$filename'
     | '/api/admin/users/$id/ban'
     | '/api/admin/users/$id/grant-membership'
     | '/api/admin/users/$id/strike'
@@ -5251,7 +5239,6 @@ export interface FileRouteTypes {
     | '/_site/u/$userid/post/$postid'
     | '/api/admin/curated-builds/image/$filename'
     | '/api/admin/curated-builds/image/proxy'
-    | '/api/admin/rideshare/license/$filename'
     | '/api/admin/users/$id/ban'
     | '/api/admin/users/$id/grant-membership'
     | '/api/admin/users/$id/strike'
@@ -5503,7 +5490,6 @@ export interface RootRouteChildren {
   ApiRmhtubeClipsIndexRoute: typeof ApiRmhtubeClipsIndexRoute
   ApiStorefrontProductsIndexRoute: typeof ApiStorefrontProductsIndexRoute
   ApiStudyDecksIndexRoute: typeof ApiStudyDecksIndexRoute
-  ApiAdminRideshareLicenseFilenameRoute: typeof ApiAdminRideshareLicenseFilenameRoute
   ApiRmhmusicGuessIdAttemptRoute: typeof ApiRmhmusicGuessIdAttemptRoute
   ApiStorefrontProductsIdBuyRoute: typeof ApiStorefrontProductsIdBuyRoute
   ApiStudyCardsIdReviewRoute: typeof ApiStudyCardsIdReviewRoute
@@ -8518,13 +8504,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminUsersIdBanRouteImport
       parentRoute: typeof ApiAdminUsersRoute
     }
-    '/api/admin/rideshare/license/$filename': {
-      id: '/api/admin/rideshare/license/$filename'
-      path: '/api/admin/rideshare/license/$filename'
-      fullPath: '/api/admin/rideshare/license/$filename'
-      preLoaderRoute: typeof ApiAdminRideshareLicenseFilenameRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/admin/curated-builds/image/proxy': {
       id: '/api/admin/curated-builds/image/proxy'
       path: '/proxy'
@@ -9671,7 +9650,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRmhtubeClipsIndexRoute: ApiRmhtubeClipsIndexRoute,
   ApiStorefrontProductsIndexRoute: ApiStorefrontProductsIndexRoute,
   ApiStudyDecksIndexRoute: ApiStudyDecksIndexRoute,
-  ApiAdminRideshareLicenseFilenameRoute: ApiAdminRideshareLicenseFilenameRoute,
   ApiRmhmusicGuessIdAttemptRoute: ApiRmhmusicGuessIdAttemptRoute,
   ApiStorefrontProductsIdBuyRoute: ApiStorefrontProductsIdBuyRoute,
   ApiStudyCardsIdReviewRoute: ApiStudyCardsIdReviewRoute,
@@ -9683,12 +9661,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

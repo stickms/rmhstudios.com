@@ -1,12 +1,11 @@
 /**
  * RMH Rideshare — driver application & dashboard (/rideshare/drive)
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import {
   Loader2,
-  Upload,
   ShieldCheck,
   Clock,
   CheckCircle2,
@@ -14,7 +13,6 @@ import {
   Car,
   MapPin,
   LogIn,
-  Trash2,
   Star,
   Power,
   CalendarClock,
@@ -67,8 +65,6 @@ interface Ride {
   notes: string | null;
   rider: RidePerson;
 }
-
-const LICENSE_MAX_MB = 8;
 
 function DrivePage() {
   const { data: session, isPending } = useSession();
@@ -151,8 +147,8 @@ function PendingState() {
       </div>
       <h2 className="mt-4 text-xl font-bold text-site-text">Application under review</h2>
       <p className="mx-auto mt-2 max-w-md text-site-text-muted">
-        Thanks for applying! Our team is reviewing your details and license. You’ll be able to
-        accept rides as soon as you’re approved. We delete your license image right after review.
+        Thanks for applying! Our team is reviewing your details and license number. You’ll be able
+        to accept rides as soon as you’re approved.
       </p>
     </motion.div>
   );
@@ -165,61 +161,37 @@ function ApplicationForm({
   rejected: DriverRecord | null;
   onApplied: () => void;
 }) {
-  const fileRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     vehicleMake: rejected?.vehicleMake ?? '',
     vehicleModel: rejected?.vehicleModel ?? '',
     vehicleYear: rejected ? String(rejected.vehicleYear) : '',
     vehicleColor: rejected?.vehicleColor ?? '',
     licensePlate: rejected?.licensePlate ?? '',
+    licenseNumber: '',
     seats: rejected ? String(rejected.seats) : '4',
   });
   const [vehicleClass, setVehicleClass] = useState<RideClassId>(
     (rejected?.vehicleClass as RideClassId) ?? 'RMH_X',
   );
-  const [licenseFile, setLicenseFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   function set<K extends keyof typeof form>(key: K, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
-  function onFile(file: File | undefined) {
-    if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image of your license.');
-      return;
-    }
-    if (file.size > LICENSE_MAX_MB * 1024 * 1024) {
-      toast.error(`Image is too large (max ${LICENSE_MAX_MB} MB).`);
-      return;
-    }
-    setLicenseFile(file);
-    const reader = new FileReader();
-    reader.onload = (e) => setPreview(e.target?.result as string);
-    reader.readAsDataURL(file);
-  }
-
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!licenseFile) {
-      toast.error('Please upload a photo of your driver’s license.');
+    if (!form.licenseNumber.trim()) {
+      toast.error('Please enter your driver’s license number.');
       return;
     }
     setSubmitting(true);
     try {
-      const fd = new FormData();
-      fd.set('vehicleMake', form.vehicleMake);
-      fd.set('vehicleModel', form.vehicleModel);
-      fd.set('vehicleYear', form.vehicleYear);
-      fd.set('vehicleColor', form.vehicleColor);
-      fd.set('licensePlate', form.licensePlate);
-      fd.set('seats', form.seats);
-      fd.set('vehicleClass', vehicleClass);
-      fd.set('license', licenseFile);
-
-      const res = await fetch('/api/rideshare/driver', { method: 'POST', body: fd });
+      const res = await fetch('/api/rideshare/driver', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...form, vehicleClass }),
+      });
       const data = await res.json();
       if (!res.ok) {
         toast.error(data.error || 'Could not submit your application.');
@@ -248,8 +220,8 @@ function ApplicationForm({
           Tell us about your ride
         </h2>
         <p className="mt-1 text-site-text-muted">
-          We’ll review your details and license. Your license is deleted from our storage as soon
-          as the review is complete.
+          We’ll review your vehicle details and license number, then let you know once you’re
+          approved to drive.
         </p>
       </div>
 
@@ -288,6 +260,10 @@ function ApplicationForm({
             <input required maxLength={16} value={form.licensePlate} onChange={(e) => set('licensePlate', e.target.value.toUpperCase())} placeholder="ABC-1234" className={inputClass} />
           </div>
           <div>
+            <label className="mb-1.5 block text-xs font-medium text-site-text-muted">Driver’s license #</label>
+            <input required maxLength={40} value={form.licenseNumber} onChange={(e) => set('licenseNumber', e.target.value.toUpperCase())} placeholder="D1234567" className={inputClass} />
+          </div>
+          <div>
             <label className="mb-1.5 block text-xs font-medium text-site-text-muted">Passenger seats</label>
             <input required type="number" min={1} max={8} value={form.seats} onChange={(e) => set('seats', e.target.value)} className={inputClass} />
           </div>
@@ -313,40 +289,6 @@ function ApplicationForm({
             </button>
           ))}
         </div>
-      </div>
-
-      <div className="rounded-2xl border border-site-border bg-site-surface/80 p-5">
-        <h3 className="mb-1 font-semibold text-site-text">Driver’s license</h3>
-        <p className="mb-4 text-xs text-site-text-muted">
-          Upload a clear photo. We use it only to verify you, then delete it after review.
-        </p>
-        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => onFile(e.currentTarget.files?.[0])} />
-        {preview ? (
-          <div className="relative overflow-hidden rounded-xl border border-site-border">
-            <img src={preview} alt="License preview" className="max-h-64 w-full object-contain bg-black/40" />
-            <button
-              type="button"
-              onClick={() => {
-                setLicenseFile(null);
-                setPreview(null);
-                if (fileRef.current) fileRef.current.value = '';
-              }}
-              className="absolute right-2 top-2 flex items-center gap-1 rounded-lg bg-black/60 px-2 py-1 text-xs text-white backdrop-blur transition-colors hover:bg-black/80"
-            >
-              <Trash2 className="h-3.5 w-3.5" /> Remove
-            </button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => fileRef.current?.click()}
-            className="flex w-full flex-col items-center gap-2 rounded-xl border border-dashed border-site-border bg-site-surface px-4 py-8 text-sm text-site-text-muted transition-colors hover:border-site-accent/50 hover:text-site-text"
-          >
-            <Upload className="h-6 w-6" />
-            Click to upload your license photo
-            <span className="text-xs text-site-text-dim">PNG, JPEG or WebP · up to {LICENSE_MAX_MB} MB</span>
-          </button>
-        )}
       </div>
 
       <button

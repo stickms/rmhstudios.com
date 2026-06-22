@@ -1,3 +1,5 @@
+import { asset } from '@/lib/storage/asset';
+
 export interface TrackMetadata {
     id: string;
     name: string;
@@ -11,14 +13,14 @@ export const TRACKS: TrackMetadata[] = [
         id: 'rmh-afrosoul',
         name: 'RMH Afrosoul',
         artist: 'RMH Studios',
-        audioUrl: '/music/rmh_afrosoul.mp3',
-        bpm: 120 
+        audioUrl: asset('/music/rmh_afrosoul.mp3'),
+        bpm: 120
     },
     {
         id: 'rmh-official',
         name: 'RMH Official',
         artist: 'RMH Studios',
-        audioUrl: '/music/rmh_song_official.mp3',
-        bpm: 128 
+        audioUrl: asset('/music/rmh_song_official.mp3'),
+        bpm: 128
     }
 ];

@@ -41,18 +41,20 @@ db/avatars
 db/builds
 db/music
 
-# ─── Public media served by Apache off the host disk (not the image) ────────
-# Apache serves /library, /music, /models and /sprites directly from the host's
-# public/ checkout (see deploy/apache/rmhstudios.com.conf), so they don't belong
-# in the build context or the image. Keeping them out shrinks the context, the
-# COPY public layer, the build cache, AND the runtime image.
-#   - music/sprites: excluded entirely.
+# ─── Heavy static media served from Cloudflare R2 (not the image) ───────────
+# /library, /music, /models and /sprites are served from R2 behind
+# cdn.rmhstudios.com (see lib/storage/asset.ts), not off disk and not from the
+# Node image — the host checkout is only the sync source for
+# scripts/sync-static-assets-to-r2.sh. Keeping them out shrinks the build
+# context, the COPY public layer, the build cache, AND the runtime image.
+#   - music/sprites/models: excluded entirely.
 #   - library: only the heavy PDFs (~488 MB) are excluded; covers/ stays so the
 #     metadata step can see them. data/library-metadata.json (committed) carries
 #     the catalogue. Adding a NEW library PDF requires running
 #     `pnpm run library:metadata` locally and committing its cover + the JSON.
 public/music
 public/sprites
+public/models
 public/library/*.pdf
 public/**/*.psd
 public/**/generate_sprites.py

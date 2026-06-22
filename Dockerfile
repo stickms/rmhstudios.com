@@ -135,6 +135,7 @@ ARG VITE_SOCKET_URL
 ARG VITE_RMHBOX_SOCKET_URL
 ARG VITE_RMHTUBE_SOCKET_URL
 ARG VITE_DISCORD_ACTIVITY_CLIENT_ID
+ARG VITE_CDN_BASE_URL
 # Optional: only used to title/describe NEW library PDFs. Cover rendering itself
 # needs no key — titles fall back to the humanized filename when it's absent.
 ARG DEEPSEEK_API_KEY
@@ -147,6 +148,7 @@ ENV DATABASE_URL=${DATABASE_URL} \
     VITE_RMHBOX_SOCKET_URL=${VITE_RMHBOX_SOCKET_URL} \
     VITE_RMHTUBE_SOCKET_URL=${VITE_RMHTUBE_SOCKET_URL} \
     VITE_DISCORD_ACTIVITY_CLIENT_ID=${VITE_DISCORD_ACTIVITY_CLIENT_ID} \
+    VITE_CDN_BASE_URL=${VITE_CDN_BASE_URL} \
     DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
 
 # Auto-generate library book covers + metadata for any PDF in public/library that
