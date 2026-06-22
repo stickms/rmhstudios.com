@@ -28,6 +28,7 @@ export async function sweepUnreferencedMedia(deps: SweepDeps): Promise<{ deleted
       OR: [
         { status: "PENDING", createdAt: { lt: orphanCutoff(now) } },
         { post: { deletedAt: { not: null, lt: deletedPostCutoff(now) } } },
+        { status: "ATTACHED", postId: null, createdAt: { lt: deletedPostCutoff(now) } },
       ],
     },
     select: { id: true, key: true },
@@ -35,11 +36,19 @@ export async function sweepUnreferencedMedia(deps: SweepDeps): Promise<{ deleted
 
   if (targets.length === 0) return { deleted: 0 };
 
+  const succeededIds: string[] = [];
   for (const t of targets) {
-    await deps.deleteObject(t.key);
-    await deps.purgeFromCdn(t.key);
+    try {
+      await deps.deleteObject(t.key);
+      await deps.purgeFromCdn(t.key);
+      succeededIds.push(t.id);
+    } catch (err) {
+      console.error(`[sweep] failed to delete object/CDN for key ${t.key}:`, err);
+    }
   }
 
-  await deps.prisma.media.deleteMany({ where: { id: { in: targets.map((t) => t.id) } } });
-  return { deleted: targets.length };
+  if (succeededIds.length === 0) return { deleted: 0 };
+
+  await deps.prisma.media.deleteMany({ where: { id: { in: succeededIds } } });
+  return { deleted: succeededIds.length };
 }

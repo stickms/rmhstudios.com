@@ -4,7 +4,12 @@ import { mediaExpiresAt } from "@/lib/media/sweep-policy";
 import { feedImageKey, feedImageUrl, contentTypeForFilename } from "@/lib/storage/keys";
 
 export interface UploadDeps {
-  prisma: { media: { create(args: { data: Record<string, unknown> }): Promise<unknown> } };
+  prisma: {
+    media: {
+      create(args: { data: Record<string, unknown> }): Promise<unknown>;
+      delete(args: { where: { id: string } }): Promise<unknown>;
+    };
+  };
   putObject(key: string, body: Buffer, contentType: string): Promise<void>;
 }
 
@@ -22,8 +27,6 @@ export async function createMediaFromUpload(
   const url = feedImageUrl(filename);
   const contentType = contentTypeForFilename(filename);
 
-  await deps.putObject(key, args.buffer, contentType);
-
   const id = newMediaId();
   await deps.prisma.media.create({
     data: {
@@ -37,6 +40,13 @@ export async function createMediaFromUpload(
       createdAt: now,
     },
   });
+
+  try {
+    await deps.putObject(key, args.buffer, contentType);
+  } catch (err) {
+    deps.prisma.media.delete({ where: { id } }).catch(() => {});
+    throw err;
+  }
 
   return { id, expiresAt: mediaExpiresAt(now) };
 }
