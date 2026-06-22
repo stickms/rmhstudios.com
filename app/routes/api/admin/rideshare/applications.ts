@@ -2,8 +2,6 @@ import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
-import { deleteObject } from '@/lib/storage/s3.server';
-import { licenseFilenameFromKey } from '@/lib/rideshare/license-storage';
 
 function isAdmin(session: { user: unknown } | null): boolean {
   return !!session && !!(session.user as { isAdmin?: boolean }).isAdmin;
@@ -49,8 +47,7 @@ export const Route = createFileRoute('/api/admin/rideshare/applications')({
             licensePlate: d.licensePlate,
             vehicleClass: d.vehicleClass,
             seats: d.seats,
-            licenseFilename: d.licenseImageKey ? licenseFilenameFromKey(d.licenseImageKey) : null,
-            licenseDeleted: !!d.licenseDeletedAt,
+            licenseNumber: d.licenseNumber,
             rejectionReason: d.rejectionReason,
             createdAt: d.createdAt,
             reviewedAt: d.reviewedAt,
@@ -85,14 +82,6 @@ export const Route = createFileRoute('/api/admin/rideshare/applications')({
             return Response.json({ error: 'Application already reviewed.' }, { status: 409 });
           }
 
-          // Delete the licence image from storage as soon as it is reviewed —
-          // we never retain identity documents after a decision.
-          if (driver.licenseImageKey) {
-            await deleteObject(driver.licenseImageKey).catch((e) => {
-              console.error('Failed to delete licence image:', e);
-            });
-          }
-
           const updated = await prisma.rideshareDriver.update({
             where: { id },
             data: {
@@ -100,8 +89,6 @@ export const Route = createFileRoute('/api/admin/rideshare/applications')({
               rejectionReason: action === 'reject' ? rejectionReason || 'Application not approved.' : null,
               reviewedById: adminId,
               reviewedAt: new Date(),
-              licenseImageKey: null,
-              licenseDeletedAt: new Date(),
             },
           });
 

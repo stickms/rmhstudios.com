@@ -14,6 +14,7 @@ import { Lock, Check, Swords, Shield, Zap, Crown, Users } from 'lucide-react';
 import { CLASSES } from '@/lib/altair/data/classes';
 import { WEAPONS } from '@/lib/altair/data/weapons';
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
+import { asset } from '@/lib/storage/asset';
 import { useAltairMultiplayerStore } from '@/lib/altair/multiplayer/store';
 import { emit } from '@/lib/altair/multiplayer/socket';
 import { C2S } from '@/lib/altair/multiplayer/events';
@@ -32,7 +33,7 @@ function ClassSprite({ classId, size = 48 }: { classId: string; size?: number })
   const filename = classId.replace('_', '-');
   return (
     <SpriteIcon
-      sheetSrc={`/sprites/altair/characters/${filename}.png`}
+      sheetSrc={asset(`/sprites/altair/characters/${filename}.png`)}
       frameIndex={0}
       frameWidth={16}
       frameHeight={16}

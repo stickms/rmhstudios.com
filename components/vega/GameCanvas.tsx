@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { VegaGame } from '@/lib/vega/VegaGame';
+import { asset } from '@/lib/storage/asset';
 import { useGameStore, TOWER_COSTS } from '@/lib/vega/GameState';
 import { TowerType } from '@/lib/vega/Entities';
 
@@ -94,7 +95,7 @@ export default function GameCanvas() {
       {/* Audio Element */}
       <audio 
         ref={audioRef}
-        src={`/music/vega/${currentTrack}.mp3`}
+        src={asset(`/music/vega/${currentTrack}.mp3`)}
         onEnded={handleTrackEnd}
         autoPlay
         loop={false}

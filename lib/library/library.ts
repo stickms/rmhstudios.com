@@ -14,6 +14,7 @@
  */
 
 import metadata from '@/data/library-metadata.json';
+import { asset } from '@/lib/storage/asset';
 
 /** A table-of-contents entry: a chapter/section title and the page it starts on. */
 export type TocEntry = { title: string; page: number; depth?: number };
@@ -89,7 +90,7 @@ function buildBooks(): LibraryBook[] {
     return {
       slug,
       filename,
-      url: `/library/${encodeURIComponent(filename)}`,
+      url: asset(`/library/${encodeURIComponent(filename)}`),
       title: meta.title || humanize(filename),
       description: meta.description || '',
       pages: meta.pages || 0,

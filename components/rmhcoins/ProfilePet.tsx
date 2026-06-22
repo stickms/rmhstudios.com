@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { asset } from '@/lib/storage/asset';
 
 export function ProfilePet() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -68,7 +69,7 @@ export function ProfilePet() {
       <div
         className="absolute bottom-0 left-0 right-0 h-4"
         style={{
-          backgroundImage: "url('/sprites/rmhcoins/grass-tile.png')",
+          backgroundImage: `url('${asset('/sprites/rmhcoins/grass-tile.png')}')`,
           backgroundRepeat: 'repeat-x',
           backgroundSize: '32px 16px',
           imageRendering: 'pixelated',
@@ -81,7 +82,7 @@ export function ProfilePet() {
           left: `${pos.x}%`,
           width: 32,
           height: 32,
-          backgroundImage: "url('/sprites/rmhcoins/dog-walk.png')",
+          backgroundImage: `url('${asset('/sprites/rmhcoins/dog-walk.png')}')`,
           backgroundSize: '128px 32px',
           imageRendering: 'pixelated',
           animation: 'dog-walk-frames 0.4s steps(4) infinite',

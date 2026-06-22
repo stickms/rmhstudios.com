@@ -7,6 +7,7 @@
 
 import { Howl, Howler } from 'howler';
 import { useAltairSettingsStore } from '../stores/settings-store';
+import { asset } from '@/lib/storage/asset';
 
 export type AltairSfxEvent =
   | 'ui_click'
@@ -45,10 +46,10 @@ interface EventDef {
   rateMax?: number;
 }
 
-const P1 = '/music/altair/sound/hzsmith/pack-1';
-const P2 = '/music/altair/sound/hzsmith/pack-2';
-const P3 = '/music/altair/sound/hzsmith/pack-3';
-const P4 = '/music/altair/sound/hzsmith/pack-4';
+const P1 = asset('/music/altair/sound/hzsmith/pack-1');
+const P2 = asset('/music/altair/sound/hzsmith/pack-2');
+const P3 = asset('/music/altair/sound/hzsmith/pack-3');
+const P4 = asset('/music/altair/sound/hzsmith/pack-4');
 
 // Event map: gameplay + menu actions with relative loudness tiers.
 const EVENTS: Record<AltairSfxEvent, EventDef> = {

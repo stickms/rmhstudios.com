@@ -18,6 +18,7 @@ import { PLAYER_SLOT_COLORS } from '@/lib/altair/engine/types';
 import { CLASSES } from '@/lib/altair/data/classes';
 import ChatPanel, { type ChatPanelMessage } from '@/components/shared/ChatPanel';
 import SpriteIcon from '@/components/altair/hud/SpriteIcon';
+import { asset } from '@/lib/storage/asset';
 import type { AltairClientPlayer, ChatMessage, AltairLobbySettings } from '@/lib/altair/multiplayer/types';
 
 const CLASS_MAP = new Map(CLASSES.map((c) => [c.id, c]));
@@ -334,7 +335,7 @@ function PlayerRow({
           {classDef ? (
             <>
               <SpriteIcon
-                sheetSrc={`/sprites/altair/characters/${classDef.id.replace('_', '-')}.png`}
+                sheetSrc={asset(`/sprites/altair/characters/${classDef.id.replace('_', '-')}.png`)}
                 frameIndex={0}
                 size={14}
               />
@@ -404,7 +405,7 @@ function ClassPicker({
         {currentClass ? (
           <>
             <SpriteIcon
-              sheetSrc={`/sprites/altair/characters/${currentClass.id.replace('_', '-')}.png`}
+              sheetSrc={asset(`/sprites/altair/characters/${currentClass.id.replace('_', '-')}.png`)}
               frameIndex={0}
               size={28}
             />
@@ -447,7 +448,7 @@ function ClassPicker({
                 style={isActive ? { borderColor: cls.color, boxShadow: `0 0 12px ${cls.color}25` } : {}}
               >
                 <SpriteIcon
-                  sheetSrc={`/sprites/altair/characters/${cls.id.replace('_', '-')}.png`}
+                  sheetSrc={asset(`/sprites/altair/characters/${cls.id.replace('_', '-')}.png`)}
                   frameIndex={0}
                   size={24}
                 />

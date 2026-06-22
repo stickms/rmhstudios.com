@@ -1,3 +1,5 @@
+import { CDN_BASE } from "./asset";
+
 export const FEED_IMAGE_PREFIX = "rmharks/";
 
 const SAFE_FILENAME_RE = /^[A-Za-z0-9._-]+$/;
@@ -26,7 +28,12 @@ export function feedImageKey(filename: string): string {
 }
 
 export function feedImageUrl(filename: string): string {
-  return `/api/feed/image/${filename}`;
+  // With R2 + a public CDN domain configured, serve feed images straight from
+  // the edge. Otherwise (local dev / MinIO) fall back to the Node proxy route,
+  // which streams the object out of object storage.
+  return CDN_BASE
+    ? `${CDN_BASE}/${feedImageKey(filename)}`
+    : `/api/feed/image/${filename}`;
 }
 
 /** True if a feed image URL's filename belongs to the given user (filename is `<userId>-<ts>-<rand>.<ext>`). */

@@ -18,8 +18,9 @@
 
 import { loadSpriteSheet, type SpriteSheet } from './sprite-loader';
 import type { SpriteAnimation, EntitySpriteSet } from './sprite-animator';
+import { asset } from '@/lib/storage/asset';
 
-const BASE = '/sprites/altair';
+const BASE = asset('/sprites/altair');
 const FRAME_SIZE = 16; // base pixel size of all sprites
 const ANIM_SPEED = 0.15; // seconds per frame
 

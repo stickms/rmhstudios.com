@@ -1,22 +1,20 @@
 /**
  * Admin — RMH Rideshare driver applications (/admin/rideshare)
  *
- * Review pending driver applications, inspect the uploaded license, and
- * approve or reject. The license image is deleted from storage the moment a
- * decision is made.
+ * Review pending driver applications (vehicle details + self-reported licence
+ * number) and approve or reject.
  */
 import { createFileRoute, redirect, Link } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { useCallback, useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { Loader2, ArrowLeft, ShieldCheck, Car, Check, X, ImageOff } from 'lucide-react';
+import { Loader2, ArrowLeft, ShieldCheck, Car, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { auth } from '@/lib/auth';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { rideClassName } from '@/lib/rideshare/classes';
-import { licenseAdminUrl } from '@/lib/rideshare/license-storage';
 
 const getAdminSession = createServerFn({ method: 'GET' }).handler(async () => {
   const request = getRequest();
@@ -47,8 +45,7 @@ interface Application {
   licensePlate: string;
   vehicleClass: string;
   seats: number;
-  licenseFilename: string | null;
-  licenseDeleted: boolean;
+  licenseNumber: string | null;
   rejectionReason: string | null;
   createdAt: string;
   reviewedAt: string | null;
@@ -178,20 +175,9 @@ function AdminRidesharePage() {
                   {/* License */}
                   <div className="rounded-xl border border-site-border bg-site-surface p-4">
                     <div className="mb-2 text-sm font-semibold text-site-text">Driver’s license</div>
-                    {app.licenseFilename ? (
-                      <a href={licenseAdminUrl(app.licenseFilename)} target="_blank" rel="noreferrer">
-                        <img
-                          src={licenseAdminUrl(app.licenseFilename)}
-                          alt="Driver license"
-                          className="max-h-48 w-full rounded-lg border border-site-border bg-black/40 object-contain"
-                        />
-                      </a>
-                    ) : (
-                      <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-site-border py-8 text-site-text-muted">
-                        <ImageOff className="h-6 w-6" />
-                        <span className="text-xs">{app.licenseDeleted ? 'Deleted after review' : 'No image'}</span>
-                      </div>
-                    )}
+                    <dl className="space-y-1.5">
+                      <Row label="License #" value={app.licenseNumber || '—'} />
+                    </dl>
                   </div>
                 </div>
 

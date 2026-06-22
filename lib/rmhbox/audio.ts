@@ -15,6 +15,7 @@
 
 import { Howl } from 'howler';
 import { useRMHboxStore } from './store';
+import { asset } from '@/lib/storage/asset';
 
 // ─── Sound Definitions ──────────────────────────────────────────
 
@@ -29,14 +30,14 @@ export type SoundName =
   | 'swoosh';
 
 const SOUND_PATHS: Record<SoundName, string> = {
-  chime: '/music/rmhbox/sfx/chime.mp3',
-  click: '/music/rmhbox/sfx/click.mp3',
-  countdownBeep: '/music/rmhbox/sfx/countdownBeep.mp3',
-  goFanfare: '/music/rmhbox/sfx/goFanfare.mp3',
-  scoreDing: '/music/rmhbox/sfx/scoreDing.mp3',
-  buzzer: '/music/rmhbox/sfx/buzzer.mp3',
-  victoryFanfare: '/music/rmhbox/sfx/victoryFanfare.mp3',
-  swoosh: '/music/rmhbox/sfx/swoosh.mp3',
+  chime: asset('/music/rmhbox/sfx/chime.mp3'),
+  click: asset('/music/rmhbox/sfx/click.mp3'),
+  countdownBeep: asset('/music/rmhbox/sfx/countdownBeep.mp3'),
+  goFanfare: asset('/music/rmhbox/sfx/goFanfare.mp3'),
+  scoreDing: asset('/music/rmhbox/sfx/scoreDing.mp3'),
+  buzzer: asset('/music/rmhbox/sfx/buzzer.mp3'),
+  victoryFanfare: asset('/music/rmhbox/sfx/victoryFanfare.mp3'),
+  swoosh: asset('/music/rmhbox/sfx/swoosh.mp3'),
 };
 
 // ─── Sound Cache ────────────────────────────────────────────────

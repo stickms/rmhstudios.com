@@ -3,14 +3,8 @@ import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
-import { validateImageBuffer, detectImageExt } from '@/lib/slice-it/upload-validation';
-import { putObject, deleteObject } from '@/lib/storage/s3.server';
-import { contentTypeForFilename } from '@/lib/storage/keys';
-import { licenseKey } from '@/lib/rideshare/license-storage';
 import { isRideClassId } from '@/lib/rideshare/classes';
 import { diagnoseServerError } from '@/lib/rideshare/errors.server';
-
-const LICENSE_MAX_BYTES = 8 * 1024 * 1024; // 8 MB
 
 const currentYear = new Date().getFullYear();
 
@@ -20,6 +14,7 @@ const applicationSchema = z.object({
   vehicleYear: z.coerce.number().int().min(1980).max(currentYear + 2),
   vehicleColor: z.string().trim().min(1).max(30),
   licensePlate: z.string().trim().min(1).max(16),
+  licenseNumber: z.string().trim().min(1).max(40),
   vehicleClass: z.string().refine(isRideClassId, 'Invalid ride class'),
   seats: z.coerce.number().int().min(1).max(8),
 });
@@ -139,16 +134,8 @@ export const Route = createFileRoute('/api/rideshare/driver')({
             );
           }
 
-          const formData = await request.formData();
-          const parsed = applicationSchema.safeParse({
-            vehicleMake: formData.get('vehicleMake'),
-            vehicleModel: formData.get('vehicleModel'),
-            vehicleYear: formData.get('vehicleYear'),
-            vehicleColor: formData.get('vehicleColor'),
-            licensePlate: formData.get('licensePlate'),
-            vehicleClass: formData.get('vehicleClass'),
-            seats: formData.get('seats'),
-          });
+          const body = await request.json().catch(() => ({}));
+          const parsed = applicationSchema.safeParse(body);
           if (!parsed.success) {
             return Response.json(
               { error: parsed.error.issues[0]?.message ?? 'Invalid details' },
@@ -156,43 +143,9 @@ export const Route = createFileRoute('/api/rideshare/driver')({
             );
           }
 
-          const file = formData.get('license');
-          if (!(file instanceof File) || file.size === 0) {
-            return Response.json(
-              { error: 'A photo of your driver’s license is required.' },
-              { status: 400 },
-            );
-          }
-          if (file.size > LICENSE_MAX_BYTES) {
-            return Response.json(
-              { error: `License image too large (max ${LICENSE_MAX_BYTES / 1024 / 1024} MB).` },
-              { status: 400 },
-            );
-          }
-          const buffer = Buffer.from(await file.arrayBuffer());
-          const validation = validateImageBuffer(buffer);
-          if (!validation.ok) {
-            return Response.json({ error: validation.error }, { status: 400 });
-          }
-          const ext = detectImageExt(buffer);
-          if (!ext) {
-            return Response.json({ error: 'Unsupported image format.' }, { status: 400 });
-          }
-
-          const filename = `${session.user.id}-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
-          const key = licenseKey(filename);
-          await putObject(key, buffer, contentTypeForFilename(filename));
-
-          // If re-applying, clean up any previously stored licence.
-          if (existing?.licenseImageKey && existing.licenseImageKey !== key) {
-            await deleteObject(existing.licenseImageKey).catch(() => {});
-          }
-
           const data = {
             ...parsed.data,
             status: 'PENDING' as const,
-            licenseImageKey: key,
-            licenseDeletedAt: null,
             reviewedById: null,
             reviewedAt: null,
             rejectionReason: null,

@@ -8,9 +8,10 @@ import { getChapterEntry } from '@/lib/versecraft/chapters/registry';
 import { getWordPool } from '@/lib/versecraft/words';
 import { getSpritePath } from '@/lib/versecraft/sprites';
 import type { DialogueNode, Scene, WordSelectPuzzleData } from '@/lib/versecraft/types';
+import { asset } from '@/lib/storage/asset';
 
 // Background image presets (Sutemo VN backgrounds)
-const BG_BASE = '/sprites/versecraft/backgrounds';
+const BG_BASE = asset('/sprites/versecraft/backgrounds');
 const BACKGROUNDS: Record<string, { image: string; fallback: string }> = {
   school_hallway: { image: `${BG_BASE}/school_hallway_day.png`, fallback: '#4A3F35' },
   club_room:      { image: `${BG_BASE}/club_room_day.png`, fallback: '#4A3B6B' },

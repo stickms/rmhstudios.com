@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect, useCallback } from 'react';
+import { asset } from '@/lib/storage/asset';
 
 /**
  * Manages two looping HTMLAudioElement tracks (day + night) with crossfade.
@@ -18,12 +19,12 @@ export function useForestAudio(mode: 'day' | 'night', active: boolean) {
 
     // Create audio elements once (client-side only)
     useEffect(() => {
-        const day = new Audio('/music/ForestExplorer/daytime.mp3');
+        const day = new Audio(asset('/music/ForestExplorer/daytime.mp3'));
         day.loop = true;
         day.volume = 0;
         day.preload = 'auto';
 
-        const night = new Audio('/music/ForestExplorer/nighttime.mp3');
+        const night = new Audio(asset('/music/ForestExplorer/nighttime.mp3'));
         night.loop = true;
         night.volume = 0;
         night.preload = 'auto';

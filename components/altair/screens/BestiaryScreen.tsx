@@ -5,6 +5,7 @@ import { Book, Skull, Sword, Eye, Crown } from 'lucide-react';
 import { ENEMIES, type EnemyDef } from '@/lib/altair/data/enemies';
 import { BOSSES, type BossDef } from '@/lib/altair/data/bosses';
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
+import { asset } from '@/lib/storage/asset';
 
 // Sprite paths (matching sprite-defs.ts)
 const ENEMY_SPRITE_PATH: Record<string, string> = {
@@ -32,6 +33,11 @@ const BOSS_SPRITE_PATH: Record<string, string> = {
   elder_lich_malachar: '/sprites/altair/bosses/elder-lich.png',
   terminus: '/sprites/altair/bosses/terminus.png',
 };
+
+// Rewrite sprite paths to their CDN origin once (no-op without a CDN configured).
+for (const m of [ENEMY_SPRITE_PATH, BOSS_SPRITE_PATH]) {
+  for (const k in m) m[k] = asset(m[k]);
+}
 
 const TIER_COLORS: Record<number, string> = {
   1: 'var(--altair-text-muted)',
