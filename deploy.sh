@@ -474,23 +474,8 @@ else
     log "No prior ${IMAGE_NAME}:latest image — skipping library cover generation (first deploy; using committed metadata)."
 fi
 
-# ── Step 1f: Sync static assets to Cloudflare R2 (incremental) ───────────────
-# The heavy static asset dirs (library/music/models/sprites — incl. any covers
-# generated above) are served from R2 behind cdn.rmhstudios.com, not off disk.
-# scripts/sync-static-assets-to-r2.sh runs `rclone sync`, which compares
-# checksums and only uploads NEW/CHANGED files and removes ones deleted from
-# public/ — so a deploy that didn't touch these dirs transfers nothing.
-# Best-effort: a sync hiccup must not block shipping the app (a short
-# Cache-Control TTL + the next deploy are the safety net). Skips itself when R2
-# isn't configured (S3_*/VITE_CDN_BASE_URL unset) or rclone isn't installed.
-if grep -qE '^VITE_CDN_BASE_URL=.+' "$ENV_FILE" 2>/dev/null; then
-    step_start "Syncing static assets to R2 (incremental)..."
-    ( set -a; . "$ENV_FILE"; set +a; REPO_DIR="$REPO_DIR" bash "${REPO_DIR}/scripts/sync-static-assets-to-r2.sh" ) \
-        || log "WARNING: R2 static asset sync failed — assets may be stale until the next deploy."
-    step_done
-else
-    log "VITE_CDN_BASE_URL not set — skipping R2 static asset sync (assets served from origin/public)."
-fi
+# (R2 static asset sync runs post-build as Step 2a, using the freshly built
+#  image — see below.)
 
 # ── Step 2: Build Docker image ──────────────────────────────────────────────
 # The Dockerfile uses parallel BuildKit stages:
@@ -508,6 +493,32 @@ fi
 # Tag with git SHA for instant rollback (docker compose up with the old tag)
 "$DOCKER_BIN" tag "${IMAGE_NAME}:latest" "${IMAGE_NAME}:${GIT_SHA}" 2>/dev/null || true
 step_done
+
+# ── Step 2a: Sync static assets to Cloudflare R2 (incremental) ───────────────
+# library/music/models/sprites are served from R2 behind cdn.rmhstudios.com,
+# not off disk. scripts/sync-static-assets-to-r2.mjs uses the AWS SDK (already a
+# dependency) to diff local public/ against the bucket and upload only NEW or
+# CHANGED files while removing ones deleted locally — so an unchanged deploy
+# transfers nothing. It runs INSIDE the freshly built image (which carries
+# node_modules + scripts/), with the host public/ bind-mounted read-only (the
+# image deliberately omits these heavy dirs). No rclone or host tooling needed.
+# Best-effort: a sync hiccup must never block shipping the app (a short
+# Cache-Control TTL + the next deploy are the safety net). Skips itself when
+# VITE_CDN_BASE_URL isn't set (assets then served from the local origin).
+if grep -qE '^VITE_CDN_BASE_URL=.+' "$ENV_FILE" 2>/dev/null; then
+    step_start "Syncing static assets to R2 (incremental)..."
+    "$DOCKER_BIN" run --rm \
+        --env-file "$ENV_FILE" \
+        -e PUBLIC_DIR=/app/public \
+        -v "${REPO_DIR}/public:/app/public:ro" \
+        --entrypoint node \
+        "${IMAGE_NAME}:latest" \
+        scripts/sync-static-assets-to-r2.mjs \
+        || log "WARNING: R2 static asset sync failed — assets may be stale until the next deploy."
+    step_done
+else
+    log "VITE_CDN_BASE_URL not set — skipping R2 static asset sync (assets served from origin/public)."
+fi
 
 # ── Step 2b (staging only): Connect DBLab clone to compose network ───────────
 # The DBLab thin-clone container ("staging") runs on its own network. The

@@ -44,7 +44,7 @@ db/music
 # ─── Heavy static media served from Cloudflare R2 (not the image) ───────────
 # /library, /music and /sprites are served from R2 behind cdn.rmhstudios.com
 # (see lib/storage/asset.ts), not off disk and not from the Node image — the
-# host checkout is only the sync source for scripts/sync-static-assets-to-r2.sh.
+# host checkout is only the sync source for scripts/sync-static-assets-to-r2.mjs.
 # Keeping them out shrinks the build context, the COPY public layer, the build
 # cache, AND the runtime image.
 #   - music/sprites: excluded entirely.
