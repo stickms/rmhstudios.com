@@ -247,14 +247,13 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
             }`}
             title={streak && streak.current > 0 ? `Progress · ${streak.current}-day streak` : 'Progress'}
           >
-            <div className="relative shrink-0">
-              <Zap className="w-5 h-5" />
-              {streak && streak.current > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-4 h-4 rounded-full bg-orange-500 text-white text-[10px] font-bold px-1 leading-none">
-                  {streak.current > 99 ? '99+' : streak.current}
-                </span>
-              )}
-            </div>
+            {streak && streak.current > 0 ? (
+              <span className="flex w-5 h-5 shrink-0 items-center justify-center rounded-full border border-current text-[10px] font-bold leading-none">
+                {streak.current > 99 ? '99+' : streak.current}
+              </span>
+            ) : (
+              <Zap className="w-5 h-5 shrink-0" />
+            )}
             <span className={labelClass}>Progress</span>
           </Link>
         )}
