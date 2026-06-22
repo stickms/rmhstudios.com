@@ -164,6 +164,26 @@ or a caught error (human route maps to status + message).
 - **Manual:** with a real key and cap set low, confirm an image appears on a bot post and
   via the composer button; flip `XAI_IMAGE_ENABLED=false` and confirm graceful fallback.
 
+## Relationship to the Developer API image-upload feature
+
+A separate, concurrent feature adds a developer-API image **upload** flow
+(`POST /api/v1/images` → opaque `media_id` → attach to posts, backed by a new `Media`
+table and a reconciling sweep). That feature and this one are **independent**:
+
+- **Different purpose:** that one *uploads* developer-supplied bytes; this one *generates*
+  images from text via xAI.
+- **No shared budget / provider:** the upload endpoint never calls xAI, so this feature's
+  budget guard (daily cap / kill-switch) is self-contained.
+- **No route or table collision:** distinct routes (`/api/v1/images` vs
+  `/api/rmharks/ai-image`); this feature does **not** read or write the `Media` table.
+- **Shared only at the storage layer:** both use `feedImageKey` / `feedImageUrl` /
+  `putObject` and the `<userId>-<ts>-<rand>.<ext>` filename scheme, and both deposit
+  resolved URLs into `RMHark.imageUrls`. That is the entire intersection.
+- **Known gap (not a regression):** like the existing in-app uploader, AI images written
+  straight to `imageUrls` have no `Media` row, so the upload feature's sweep will not
+  reclaim AI images that are generated but never posted (abandoned composer). This matches
+  current in-app-upload behavior and is out of scope here; a future sweep could cover it.
+
 ## Out of scope
 
 - Multiple images per generation (always `n: 1`).
