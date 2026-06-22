@@ -48,6 +48,9 @@ interface PlayerSeat {
   totalBetThisRound: number;
   lastPayout: number;
   sessionStats: SessionStats;
+  // Set when a player leaves/disconnects mid-round but still has an active bet.
+  // The seat is kept until the spin resolves so the payout still lands.
+  pendingRemoval?: boolean;
 }
 
 interface RouletteRoom {
@@ -366,12 +369,27 @@ async function resolvePayouts(room: RouletteRoom, result: number) {
   broadcastTableState(room);
 
   room.resultsTimer = setTimeout(() => {
-    // Clean up disconnected players
-    for (const [userId, p] of room.players) {
-      const sock = ioRef.sockets.sockets.get(p.socketId);
-      if (!sock || !sock.connected) {
-        room.players.delete(userId);
-        userToRoom.delete(userId);
+    // Prune players who left or disconnected, now that payouts have settled.
+    for (const [uid, p] of room.players) {
+      const sock = p.socketId ? ioRef.sockets.sockets.get(p.socketId) : null;
+      if (p.pendingRemoval || !sock || !sock.connected) {
+        room.players.delete(uid);
+        userToRoom.delete(uid);
+        ioRef.to(roomKey(room.roomId)).emit(S2C.PLAYER_LEFT, { userId: uid, seatIndex: p.seatIndex });
+
+        if (room.ownerId === uid && room.players.size > 0) {
+          const newOwner = room.players.values().next().value!;
+          room.ownerId = newOwner.userId;
+          room.ownerName = newOwner.userName;
+          ioRef.to(roomKey(room.roomId)).emit(S2C.ROOM_UPDATED, {
+            ownerId: room.ownerId,
+            ownerName: room.ownerName,
+            maxPlayers: room.maxPlayers,
+            name: room.name,
+            privacy: room.privacy,
+            joinCode: room.joinCode,
+          });
+        }
       }
     }
 
@@ -380,6 +398,7 @@ async function resolvePayouts(room: RouletteRoom, result: number) {
       return;
     }
 
+    broadcastRoomList();
     startBettingPhase(room);
   }, RESULTS_DISPLAY_MS);
 }
@@ -613,6 +632,24 @@ function leaveRoom(userId: string, socketId: string) {
   }
 
   const seatIndex = player.seatIndex;
+
+  // If the player leaves while the wheel is spinning / showing results and
+  // still has an active bet, keep the seat so the pending payout settles.
+  const roundActive = room.phase === 'spinning' || room.phase === 'results';
+  if (roundActive && player.totalBetThisRound > 0) {
+    player.pendingRemoval = true;
+    player.socketId = '';
+    userToRoom.delete(userId);
+    socketToUserId.delete(socketId);
+    const leavingSock = ioRef.sockets.sockets.get(socketId);
+    if (leavingSock) {
+      leavingSock.leave(roomKey(roomId));
+      leavingSock.emit(S2C.ROOM_LEFT, { roomId });
+    }
+    logger.info({ event: 'rl_player_left_pending_payout', roomId, userId, seatIndex });
+    return;
+  }
+
   room.players.delete(userId);
   userToRoom.delete(userId);
   socketToUserId.delete(socketId);

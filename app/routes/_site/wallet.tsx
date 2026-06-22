@@ -6,7 +6,7 @@ export const Route = createFileRoute('/_site/wallet')({
   head: () => ({
     meta: [
       { title: 'Wallet | RMH Studios' },
-      { name: 'description', content: 'Your RMH Coins wallet — play Plinko, Blackjack, and shop for profile items.' },
+      { name: 'description', content: 'Your RMH Coins wallet — play Plinko, Blackjack, Hold\'em, Baccarat, and Roulette.' },
     ],
   }),
   component: WalletRoute,
@@ -15,7 +15,7 @@ export const Route = createFileRoute('/_site/wallet')({
 function WalletRoute() {
   return (
     <PageLayout title="Wallet" wide>
-      <RMHCoinsPage defaultTab="shop" />
+      <RMHCoinsPage />
     </PageLayout>
   );
 }

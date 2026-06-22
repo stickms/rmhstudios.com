@@ -41,10 +41,29 @@ function CardBack({ small }: { small?: boolean }) {
   );
 }
 
-function PlayerSeatView({ player, isCurrentTurn, isMe }: {
+/**
+ * Local per-turn countdown. Re-syncs to the authoritative `turnTimeout` from
+ * the server whenever it changes, and ticks down smoothly between updates.
+ */
+function useTurnSeconds(active: boolean, turnTimeout: number | null): number | null {
+  const [secs, setSecs] = useState<number | null>(null);
+  useEffect(() => {
+    if (!active || turnTimeout == null) {
+      setSecs(null);
+      return;
+    }
+    setSecs(turnTimeout);
+    const iv = setInterval(() => setSecs((s) => (s != null && s > 0 ? s - 1 : 0)), 1000);
+    return () => clearInterval(iv);
+  }, [active, turnTimeout]);
+  return secs;
+}
+
+function PlayerSeatView({ player, isCurrentTurn, isMe, turnSeconds }: {
   player: PlayerSeatClient;
   isCurrentTurn: boolean;
   isMe: boolean;
+  turnSeconds: number | null;
 }) {
   const actionLabels: Record<string, { label: string; color: string }> = {
     fold: { label: 'Fold', color: 'text-gray-500' },
@@ -67,6 +86,13 @@ function PlayerSeatView({ player, isCurrentTurn, isMe }: {
         {player.isDealer && <span className="text-[8px] sm:text-[9px] font-bold bg-yellow-500/30 text-yellow-400 px-1 rounded">D</span>}
         {player.isSmallBlind && <span className="text-[8px] sm:text-[9px] font-bold bg-blue-500/30 text-blue-400 px-1 rounded">SB</span>}
         {player.isBigBlind && <span className="text-[8px] sm:text-[9px] font-bold bg-purple-500/30 text-purple-400 px-1 rounded">BB</span>}
+        {isCurrentTurn && turnSeconds != null && (
+          <span className={`text-[8px] sm:text-[9px] font-bold tabular-nums px-1 rounded ${
+            turnSeconds <= 5 ? 'bg-red-500/30 text-red-400 animate-pulse' : 'bg-emerald-500/20 text-emerald-400'
+          }`}>
+            {turnSeconds}s
+          </span>
+        )}
       </div>
 
       {/* Hole cards */}
@@ -121,7 +147,13 @@ export function HoldemTable() {
     myUserId,
     phase,
     lastHandResults,
+    turnTimeout,
   } = useHoldemStore();
+
+  const turnSeconds = useTurnSeconds(
+    !!currentTurnUserId && phase !== 'results' && phase !== 'showdown' && phase !== 'waiting',
+    turnTimeout
+  );
 
   return (
     <div className="flex flex-col items-center gap-3 sm:gap-4">
@@ -187,6 +219,7 @@ export function HoldemTable() {
                   player={player}
                   isCurrentTurn={currentTurnUserId === player.userId}
                   isMe={player.userId === myUserId}
+                  turnSeconds={currentTurnUserId === player.userId ? turnSeconds : null}
                 />
               ))}
           </div>

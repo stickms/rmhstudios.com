@@ -13,7 +13,7 @@ interface Props {
 
 const BET_OPTIONS: { type: BetType; label: string; payout: string; color: string; hoverColor: string }[] = [
   { type: 'player', label: 'Player', payout: '1:1', color: 'bg-red-600', hoverColor: 'hover:bg-red-700' },
-  { type: 'banker', label: 'Banker', payout: '0.95:1', color: 'bg-blue-600', hoverColor: 'hover:bg-blue-700' },
+  { type: 'banker', label: 'Banker', payout: '1:1*', color: 'bg-blue-600', hoverColor: 'hover:bg-blue-700' },
   { type: 'tie', label: 'Tie', payout: '8:1', color: 'bg-emerald-600', hoverColor: 'hover:bg-emerald-700' },
 ];
 
@@ -147,6 +147,10 @@ export function BaccaratControls({ coins }: Props) {
             </button>
           ))}
         </div>
+
+        <p className="text-[10px] text-center text-site-text-dim -mt-1">
+          No commission · Banker win on 6 pays ½
+        </p>
 
         {/* Side bet buttons — 2x2 on mobile, 4 across on larger */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">

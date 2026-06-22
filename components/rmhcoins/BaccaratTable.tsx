@@ -12,13 +12,17 @@ import { CoinIcon } from './CoinIcon';
 const SUIT_SYMBOLS: Record<string, string> = { H: '\u2665', D: '\u2666', C: '\u2663', S: '\u2660' };
 const SUIT_COLORS: Record<string, string> = { H: 'text-red-500', D: 'text-red-500', C: 'text-gray-900', S: 'text-gray-900' };
 
-function CardFace({ card, flipDelay }: { card: Card; flipDelay?: number }) {
+const FLIP_DURATION_MS = 600;
+
+function CardFace({ card }: { card: Card }) {
   const [flipped, setFlipped] = useState(false);
 
+  // Flip shortly after mount. Cards already arrive staggered from the server,
+  // so we only need a small delay to trigger the CSS transition.
   useEffect(() => {
-    const timer = setTimeout(() => setFlipped(true), flipDelay ?? 100);
+    const timer = setTimeout(() => setFlipped(true), 60);
     return () => clearTimeout(timer);
-  }, [flipDelay]);
+  }, []);
 
   return (
     <div className="shrink-0 w-11 h-15 sm:w-13 sm:h-18" style={{ perspective: '600px' }}>
@@ -73,13 +77,28 @@ function CardBack() {
 
 // ── Hand Display ───────────────────────────────────────────────────
 
-function HandDisplay({ cards, label, value, natural, staggerOffset }: {
+function HandDisplay({ cards, label, value, natural, showValue }: {
   cards: Card[];
   label: string;
   value: number | null;
   natural: boolean;
-  staggerOffset?: number;
+  showValue: boolean;
 }) {
+  // Gate the running total behind the flip animation: only reveal the value
+  // once the most recently dealt card has finished flipping face-up.
+  const [settled, setSettled] = useState(false);
+  useEffect(() => {
+    if (cards.length === 0) {
+      setSettled(false);
+      return;
+    }
+    setSettled(false);
+    const timer = setTimeout(() => setSettled(true), FLIP_DURATION_MS + 120);
+    return () => clearTimeout(timer);
+  }, [cards.length]);
+
+  const valueVisible = showValue && settled && value !== null;
+
   return (
     <div className="flex flex-col items-center gap-1.5 sm:gap-2 min-w-0">
       <span className="text-[10px] sm:text-xs text-site-text-dim font-bold uppercase tracking-wider">{label}</span>
@@ -89,7 +108,6 @@ function HandDisplay({ cards, label, value, natural, staggerOffset }: {
             <CardFace
               key={`${card.rank}${card.suit}${i}`}
               card={card}
-              flipDelay={(staggerOffset ?? 0) + i * 500}
             />
           ))
         ) : (
@@ -99,7 +117,7 @@ function HandDisplay({ cards, label, value, natural, staggerOffset }: {
           </>
         )}
       </div>
-      {value !== null && (
+      {valueVisible && (
         <div className="flex flex-col items-center gap-0.5">
           <span className="text-xl sm:text-2xl font-bold text-site-text font-mono">{value}</span>
           {natural && (
@@ -208,8 +226,8 @@ export function BaccaratTable() {
   } = useBaccaratStore();
 
   const showValues = tablePhase === 'dealing' || tablePhase === 'drawing' || tablePhase === 'results';
-  const playerValue = showValues && playerHand.length > 0 ? handValue(playerHand) : null;
-  const bankerValue = showValues && bankerHand.length > 0 ? handValue(bankerHand) : null;
+  const playerValue = playerHand.length > 0 ? handValue(playerHand) : null;
+  const bankerValue = bankerHand.length > 0 ? handValue(bankerHand) : null;
   const playerNatural = playerHand.length === 2 && isNatural(playerHand);
   const bankerNatural = bankerHand.length === 2 && isNatural(bankerHand);
 
@@ -243,7 +261,7 @@ export function BaccaratTable() {
           label="Player"
           value={playerValue}
           natural={playerNatural}
-          staggerOffset={0}
+          showValue={showValues}
         />
 
         <div className="flex flex-col items-center justify-center py-3 sm:py-4">
@@ -257,7 +275,7 @@ export function BaccaratTable() {
           label="Banker"
           value={bankerValue}
           natural={bankerNatural}
-          staggerOffset={200}
+          showValue={showValues}
         />
       </div>
 
