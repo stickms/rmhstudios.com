@@ -1,0 +1,352 @@
+<div class="objectives"><h4>Learning Objectives</h4><ul>
+  <li>Define <i>server-side rendering</i>, <i>hydration</i>, and <i>file-based routing</i>, and explain how the three combine in a TanStack Start application.</li>
+  <li>Trace a single page request through the rmhstudios.com web tier — from the browser, through the Nitro server runtime, to a rendered HTML document and its subsequent hydration.</li>
+  <li>Distinguish a <i>page route</i> (renders UI) from a <i>server route</i> (returns data), and read both kinds out of real route files under <code>app/routes/</code>.</li>
+  <li>Explain the role of Nitro as the production server runtime and how the Vite build emits the <code>.output/server/index.mjs</code> entry that Docker actually runs.</li>
+  <li>Justify why a content-and-games site chooses SSR with selective client-only escape hatches, rather than a pure single-page app or a fully static build.</li>
+</ul></div>
+
+<p class="lead">A web framework's job is to answer one question well: when a browser asks for a URL,
+what HTML comes back, and how does that static HTML become a living React application? rmhstudios.com
+answers it with three cooperating layers — <b>TanStack Start</b> for routing and server functions,
+<b>Nitro</b> for the server runtime, and <b>Vite</b> for the build. This chapter reads those layers as
+they actually appear in the repository: the root route in <code>app/routes/__root.tsx</code>, the
+build configuration in <code>vite.config.ts</code>, and the production entry the container launches,
+<code>node .output/server/index.mjs</code>. By the end you should be able to follow a request end to
+end and explain every hop it takes.</p>
+
+<h2 id="what-ssr-is">What server-side rendering means here</h2>
+<p>There are three broad ways to put a React page in front of a user. A <b>single-page application</b>
+(SPA) ships an empty HTML shell plus a JavaScript bundle; the browser downloads the bundle, runs it,
+and only then paints content. <b>Static site generation</b> renders every page to HTML once at build
+time and serves the files. <b>Server-side rendering</b> sits between them: for each request, a server
+runs the React component tree to a finished HTML string, sends that to the browser so the user sees
+content immediately, and then ships the same component code to the browser so React can <i>take over</i>
+the already-painted DOM. rmhstudios.com is an SSR app.</p>
+
+<div class="keyterm"><span class="term">Server-side rendering (SSR)</span> — rendering a UI component
+tree to an HTML string on the server, per request, so the browser receives a complete, content-filled
+document instead of an empty shell. The same components later run in the browser to make the page
+interactive.</div>
+
+<div class="keyterm"><span class="term">Hydration</span> — the browser-side phase in which React
+attaches event listeners and internal state to server-rendered DOM that already exists, rather than
+recreating it. After hydration the page is a normal interactive React app; before it, the page is
+visible but not yet clickable.</div>
+
+<p>The root route makes the tradeoff concrete. <code>app/routes/__root.tsx</code> defines a server
+function <code>getInitialUser</code> that reads the session cookie <i>on the server</i> and threads the
+signed-in user into the first render. The comment in the file states the motivation precisely: it runs
+&quot;so the shell can render signed-in on the first paint instead of flashing &#39;signed out&#39;
+while better-auth&#39;s client session loads after hydration.&quot; That single sentence is the whole
+argument for SSR on a social site — the server already holds the cookie, so it can render the correct,
+personalized shell before a byte of client JavaScript executes.</p>
+
+<pre><code>// app/routes/__root.tsx (excerpt)
+const getInitialUser = createServerFn({ method: &quot;GET&quot; }).handler(async () =&gt; {
+  const request = getRequest();
+  const session = await auth.api.getSession({ headers: request.headers });
+  const u = session?.user;
+  if (!u) return null;
+  return { id: u.id, name: u.name ?? null, /* ... */ isAdmin: ... };
+});
+
+export const Route = createRootRoute({
+  loader: () =&gt; getInitialUser(),
+  component: RootComponent,
+  shellComponent: RootDocument,
+});</code></pre>
+
+<div class="keyterm"><span class="term">Server function</span> — in TanStack Start, a function created
+with <code>createServerFn</code> that <i>only ever executes on the server</i>, even when called from
+component code. It compiles to an RPC: the client calls it like a function, but the body runs on Nitro,
+giving safe access to the database, cookies, and secrets.</div>
+
+<h2 id="file-based-routing">File-based routing</h2>
+<p>rmhstudios.com has no central route table that a developer edits by hand. Instead, the file system
+<i>is</i> the route table. Every file under <code>app/routes/</code> becomes a route whose URL is
+derived from its path. The README states this directly: <code>app/routes/</code> holds &quot;All page
+and API routes,&quot; organized into folders such as <code>_site/</code> (public pages),
+<code>api/</code> (server endpoints), and one folder per game.</p>
+
+<div class="keyterm"><span class="term">File-based routing</span> — a routing scheme in which the
+location and name of a file on disk determine the URL it serves. Adding a page means adding a file; no
+separate registry is edited. A build-time generator turns the file tree into a typed route tree.</div>
+
+<p>The naming conventions are worth learning because they encode real behavior:</p>
+<table>
+  <thead><tr><th>File on disk</th><th>URL / meaning</th></tr></thead>
+  <tbody>
+    <tr><td><code>app/routes/__root.tsx</code></td><td>The root layout wrapping every route — the HTML document shell.</td></tr>
+    <tr><td><code>app/routes/_site.tsx</code></td><td>A <i>pathless</i> layout (leading <code>_</code>): adds the sidebar but contributes no URL segment.</td></tr>
+    <tr><td><code>app/routes/_site/index.tsx</code></td><td>The <code>/</code> home feed, nested inside the <code>_site</code> layout.</td></tr>
+    <tr><td><code>app/routes/blog.$slug.tsx</code></td><td><code>/blog/&lt;slug&gt;</code> — the <code>$slug</code> segment is a dynamic parameter.</td></tr>
+    <tr><td><code>app/routes/api/search.ts</code></td><td><code>/api/search</code> — a server route (note: <code>.ts</code>, not <code>.tsx</code>).</td></tr>
+    <tr><td><code>app/routes/sitemap[.]xml.ts</code></td><td><code>/sitemap.xml</code> — brackets escape a literal dot in the URL.</td></tr>
+  </tbody>
+</table>
+
+<p>The pathless layout is the most pedagogically useful of these. <code>app/routes/_site.tsx</code>
+declares <code>createFileRoute('/_site')</code> and renders a <code>LeftSidebar</code>, mobile
+navigation, and an <code>&lt;Outlet /&gt;</code> where its children mount. Its own file comment explains
+the design: &quot;Game routes, <code>/secret</code>, and <code>/login</code> are NOT nested under this
+layout, so they render full-screen without any sidebar.&quot; Because the home feed lives at
+<code>app/routes/_site/index.tsx</code>, it inherits the sidebar; because <code>app/routes/altair.tsx</code>
+lives at the top level, it does not. Layout is expressed purely by where a file sits in the tree.</p>
+
+<p>That tree is not interpreted at runtime. The TanStack Start plugin generates a single typed file,
+<code>app/routeTree.gen.ts</code> (over 9,000 lines in this repository), whose banner warns: &quot;This
+file was automatically generated by TanStack Router. You should NOT make any changes in this file.&quot;
+The router entry, <code>app/router.tsx</code>, simply imports that generated tree and wires it into a
+router instance:</p>
+
+<pre><code>// app/router.tsx
+import { createRouter as createTanStackRouter } from &quot;@tanstack/react-router&quot;;
+import { routeTree } from &quot;./routeTree.gen&quot;;
+
+export function getRouter() {
+  return createTanStackRouter({
+    routeTree,
+    scrollRestoration: true,
+    defaultPreload: &quot;intent&quot;,
+  });
+}</code></pre>
+
+<div class="note"><b>What <code>defaultPreload: &quot;intent&quot;</code> buys you.</b> &quot;Intent&quot;
+means the router begins loading a route's code and data as soon as the user <i>signals</i> they might
+go there — typically on hover or focus of a link — so the navigation feels instant when the click
+actually lands. It is a small line with a large UX effect on a link-dense site.</div>
+
+<h2 id="page-routes-vs-server-routes">Page routes versus server routes</h2>
+<p>Two route files in the same directory tree can do completely different jobs. A <b>page route</b>
+exports a <code>component</code> and renders UI; a <b>server route</b> exports HTTP method handlers and
+returns data. Compare the home page with the search endpoint.</p>
+
+<p>The home page, <code>app/routes/_site/index.tsx</code>, is a page route. It declares a
+<code>loader</code> that calls a server function to fetch sidebar data, a <code>head</code> for
+metadata, and a <code>component</code> that renders the feed:</p>
+
+<pre><code>// app/routes/_site/index.tsx (excerpt)
+const fetchSidebarData = createServerFn({ method: 'GET' }).handler(async () =&gt; {
+  return getSidebarData();
+});
+
+export const Route = createFileRoute('/_site/')({
+  validateSearch: (search) =&gt; { /* parse ?q= */ },
+  loader: () =&gt; fetchSidebarData(),
+  head: () =&gt; ({ meta: [{ title: 'RMH Studios' }, /* ... */] }),
+  component: Home,
+});</code></pre>
+
+<p>The search endpoint, <code>app/routes/api/search.ts</code>, is a server route. It exports no
+component at all — instead it provides a <code>server.handlers.GET</code> function that rate-limits the
+caller, reads the query string, runs four Prisma queries in parallel, and returns JSON:</p>
+
+<pre><code>// app/routes/api/search.ts (excerpt)
+export const Route = createFileRoute('/api/search')({
+  server: {
+    handlers: {
+      GET: async ({ request }) =&gt; {
+        const ip = getClientIp(request);
+        const { allowed } = rateLimit(ip, { limit: 60, windowMs: 60_000, prefix: 'search' });
+        if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
+        // ... Prisma queries across users, posts, builds, blog ...
+        return Response.json({ people, posts, builds, blog });
+      },
+    },
+  },
+});</code></pre>
+
+<p>The same pattern appears across <code>app/routes/api/</code> — <code>explore.ts</code> assembles
+trending tags and suggested users; <code>sitemap[.]xml.ts</code> returns an XML document for crawlers.
+These handlers receive a standard Web <code>Request</code> and return a standard Web <code>Response</code>,
+the same primitives the page-render path uses. There is no second framework for the API; it is the same
+file-based router, just exporting handlers instead of a component.</p>
+
+<div class="keyterm"><span class="term">Backend-for-frontend (BFF)</span> — a server layer that exists
+specifically to serve <i>one</i> frontend, shaping data and aggregating sources exactly as that UI
+needs. The <code>app/routes/api/</code> handlers and the <code>createServerFn</code> loaders together
+form rmhstudios.com's BFF: they sit between the browser and Postgres, applying auth, rate limits,
+moderation filters, and per-page shaping before any data crosses the network.</div>
+
+<div class="scope"><b>Scope: not all server work lives in the web tier.</b> The BFF described here
+handles request-shaped reads and writes. Long-lived realtime traffic does not go through Nitro at all —
+it is served by standalone Socket.io processes (<code>server/socket-server</code>, <code>server/rmhbox</code>,
+<code>server/rmhtube</code>) started separately by the <code>start</code> script and covered in a later
+chapter. The web tier is one process in a fleet, not the whole backend.</div>
+
+<h2 id="nitro-runtime">Nitro: the server runtime</h2>
+<p>TanStack Start defines <i>what</i> to render; it does not, by itself, listen on a TCP port. That job
+belongs to <b>Nitro</b>, the server runtime configured in <code>vite.config.ts</code>. The README's
+tech-stack section names it explicitly under &quot;SSR / Server: Nitro (server runtime).&quot;</p>
+
+<div class="keyterm"><span class="term">Nitro</span> — a server runtime and build target that takes a
+framework's render logic and packages it into a deployable server. It produces a portable
+<code>.output/</code> directory containing a Node entry point, the SSR bundle, and static assets, and
+it abstracts over deployment targets (Node, edge, serverless) behind one build.</div>
+
+<p>In the Vite config, Nitro is added as a plugin alongside the TanStack Start plugin. The interesting
+detail is dependency handling: heavy, browser- or native-only packages must be kept out of the server
+bundle, and Nitro's bundler ignores Vite's normal <code>ssr.external</code> list. The config's own
+comment makes the rule explicit — <code>traceDeps</code> is &quot;the only way to externalize from the
+production server bundle&quot;:</p>
+
+<pre><code>// vite.config.ts (excerpt)
+plugins: [
+  stubServerFiles(),
+  tailwindcss(),
+  tanstackStart({ srcDirectory: &quot;app&quot; }),
+  react(),
+  nitro({
+    // externalize from Nitro's Rolldown server bundle, then trace into
+    // .output/node_modules for runtime resolution
+    traceDeps: [&quot;@prisma/client&quot;, &quot;.prisma&quot;, &quot;@resvg/resvg-js&quot;, &quot;satori&quot;, &quot;esbuild&quot;],
+    rollupConfig: { external: heavyExternals.map(/* three, monaco, pixi, ... */) },
+  }),
+],</code></pre>
+
+<p>The <code>build:frontend</code> script — <code>vite build</code> with an 8&nbsp;GB Node heap — drives
+this build, and the <code>start</code> script runs its output. The Dockerfile confirms exactly what the
+container executes: after copying <code>.output</code> into the image it declares
+<code>CMD [&quot;node&quot;, &quot;.output/server/index.mjs&quot;]</code> and <code>EXPOSE 7005</code>.
+A build-time check in the Dockerfile even asserts the entry exists
+(<code>test -f /app/build-output/server/index.mjs</code>) before the image is allowed to proceed. The
+web tier's whole runtime, in one line, is <i>that</i> file.</p>
+
+<div class="note"><b>Ports, from the deploy script.</b> The web process listens on <code>7005</code> in
+production (with a blue/green sibling on <code>7015</code> for zero-downtime swaps, per
+<code>deploy.sh</code>). The socket fleet uses <code>7001</code>, RMHBox <code>7676</code>, and RMHTube
+<code>7003</code> — the same ports the Dockerfile exposes.</div>
+
+<h2 id="request-lifecycle">The request lifecycle, end to end</h2>
+<p>We can now follow a real request for the home feed, <code>GET /</code>, from browser to interactive
+page. Each numbered hop corresponds to code we have already read.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+sequenceDiagram
+  participant B as Browser
+  participant N as Nitro server
+  participant R as Route tree
+  participant DB as Postgres via Prisma
+  B-&gt;&gt;N: GET / (cookie attached)
+  N-&gt;&gt;R: Match route, run root loader
+  R-&gt;&gt;DB: getInitialUser (session) + sidebar data
+  DB--&gt;&gt;R: user + feed data
+  R-&gt;&gt;N: Render component tree to HTML string
+  N--&gt;&gt;B: HTML document + serialized loader data
+  Note over B: First paint - content visible, not yet interactive
+  B-&gt;&gt;N: Request JS bundle
+  N--&gt;&gt;B: Client bundle
+  Note over B: Hydration - React attaches to existing DOM
+  Note over B: Page interactive
+  </div>
+  <figcaption>Figure 3.1: The SSR request lifecycle for <code>GET /</code>. The server renders content-filled HTML on the first response; the browser later hydrates it into a live React app using the same component code.</figcaption>
+</figure>
+
+<p>Step by step: (1) The browser sends <code>GET /</code> with its session cookie. (2) Nitro matches
+the URL against the generated route tree, finding <code>__root</code> &rarr; <code>_site</code> &rarr;
+<code>_site/index</code>. (3) The loaders run on the server: the root's <code>getInitialUser</code>
+reads the cookie via <code>getRequest()</code> and queries Better Auth; the index's
+<code>fetchSidebarData</code> pulls official builds, user builds, recommended users, and blog posts.
+(4) React renders the matched component tree — sidebar, feed, the correct signed-in shell — to an HTML
+string. (5) Nitro returns that HTML plus the serialized loader data embedded in the document. (6) The
+browser paints content immediately, then downloads the client bundle. (7) <b>Hydration</b>: React
+re-runs the components in the browser, finds the matching DOM already present, and attaches event
+handlers and state without rebuilding it. The page becomes interactive.</p>
+
+<p>A subtlety visible in <code>__root.tsx</code> is how SSR avoids a <i>flash of unstyled content</i>.
+The root injects a small inline <code>themeScript</code> that applies the persisted theme class to
+<code>&lt;html&gt;</code> <i>before</i> React hydrates, and the document shell is marked
+<code>suppressHydrationWarning</code> because the server cannot know the user's chosen theme. This is the
+recurring SSR engineering problem in miniature: the server renders a generic shell, and a tiny pre-hydration
+script reconciles it with browser-only state (theme, in this case) before React takes over.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart LR
+  Dev[app/routes/*] --&gt; Gen[routeTree.gen.ts]
+  Gen --&gt; Vite[vite build]
+  Vite --&gt; Out[.output/server/index.mjs]
+  Out --&gt; Docker[node .output/server/index.mjs]
+  Docker --&gt; Port[Listen :7005]
+  </div>
+  <figcaption>Figure 3.2: From source to running server. File-based routes are generated into a typed tree, Vite plus Nitro build the <code>.output</code> bundle, and the container runs its Node entry on port 7005.</figcaption>
+</figure>
+
+<h2 id="why-ssr-here">Why SSR for a content-and-games site</h2>
+<p>The choice of SSR is not aesthetic; it follows from what rmhstudios.com <i>is</i>. It is two sites
+in one body: a content platform (feed, blog, news, research, user profiles, builds) and a games library
+(3D, audio, multiplayer). Those halves want opposite things, and SSR with escape hatches serves both.</p>
+
+<p>The content half benefits from SSR for three concrete reasons. <b>Crawlability</b>: blog posts, news,
+and public builds must be indexable, which is exactly why <code>sitemap[.]xml.ts</code> exists and emits
+real URLs. A pure SPA serves crawlers an empty shell. <b>Personalized first paint</b>: the signed-in
+shell is rendered on the server from the cookie, the precise problem <code>getInitialUser</code> solves.
+<b>Time-to-content</b>: a content document should show text on the first response, not after a megabyte
+of JavaScript executes.</p>
+
+<p>The games half does not want to be rendered on the server at all — <code>three</code>, <code>pixi.js</code>,
+<code>monaco-editor</code>, and <code>tone</code> are browser-only and enormous. The web tier accommodates
+them with two mechanisms already in <code>vite.config.ts</code>: these packages are listed in
+<code>heavyExternals</code> so they never enter the server bundle, and they are split into named
+<code>manualChunks</code> (<code>vendor-three</code>, <code>vendor-pixi</code>, <code>vendor-monaco-*</code>)
+so a content visitor never downloads game code. The <code>stubServerFiles</code> plugin even replaces
+<code>*.server.ts</code> imports with empty stubs on the client so Node-only dependencies like
+<code>pg</code> never leak into the browser bundle.</p>
+
+<div class="ok"><b>The design in one sentence.</b> SSR by default gives the content site fast,
+crawlable, personalized pages; per-package externalization and chunking carve out a client-only lane for
+the games, so one framework serves a portfolio blog and a 3D physics game without compromising either.</div>
+
+<div class="summary"><h4>Summary</h4><ul>
+  <li><b>SSR</b> renders the React tree to HTML on the server per request, then <b>hydrates</b> it in the browser; rmhstudios.com uses it so the personalized shell renders correctly on the first paint (<code>getInitialUser</code> in <code>app/routes/__root.tsx</code>).</li>
+  <li><b>File-based routing</b> turns the <code>app/routes/</code> tree into URLs. A build step generates <code>app/routeTree.gen.ts</code>, which <code>app/router.tsx</code> imports; pathless layouts like <code>_site.tsx</code> add structure without URL segments, and <code>$slug</code> marks dynamic parameters.</li>
+  <li><b>Page routes</b> export a <code>component</code> and <code>loader</code>; <b>server routes</b> (e.g. <code>app/routes/api/search.ts</code>) export HTTP <code>handlers</code> returning Web <code>Response</code>s. Together with <code>createServerFn</code> they form the app's <b>BFF</b>.</li>
+  <li><b>Nitro</b> is the runtime: the Vite build emits <code>.output/server/index.mjs</code>, which the Dockerfile runs as <code>node .output/server/index.mjs</code> on port <code>7005</code>. <code>traceDeps</code> controls what gets externalized from the server bundle.</li>
+  <li>SSR fits a mixed site: it makes content crawlable and fast while <code>heavyExternals</code>, <code>manualChunks</code>, and <code>stubServerFiles</code> keep browser-only game code out of both the server bundle and content visitors' downloads.</li>
+</ul></div>
+
+<div class="exercises"><h2 id="ch3-exercises">Practice Exercises</h2>
+
+  <div class="exercise"><span class="qid">3.1</span>
+    <span class="tag concept">concept</span><span class="tag easy">easy</span>
+    Define <i>server-side rendering</i> and <i>hydration</i> in your own words, and state precisely what is true of the page in the window <i>between</i> first paint and the completion of hydration.</div>
+
+  <div class="exercise"><span class="qid">3.2</span>
+    <span class="tag trace">trace</span><span class="tag medium">medium</span>
+    A signed-in user requests <code>GET /</code>. List, in order, the hops the request takes from the browser to an interactive page, naming the specific function or file responsible at each step (use Figure 3.1 and the route files as your guide).</div>
+
+  <div class="exercise"><span class="qid">3.3</span>
+    <span class="tag concept">concept</span><span class="tag medium">medium</span>
+    Given the four files <code>app/routes/_site.tsx</code>, <code>app/routes/_site/index.tsx</code>, <code>app/routes/blog.$slug.tsx</code>, and <code>app/routes/api/search.ts</code>, state the URL each serves and classify each as a pathless layout, a page route, or a server route. Explain how you can tell <code>search.ts</code> is not a page route from its file extension and exports alone.</div>
+
+  <div class="exercise"><span class="qid">3.4</span>
+    <span class="tag concept">concept</span><span class="tag easy">easy</span>
+    The home feed shows the sidebar; the game route <code>app/routes/altair.tsx</code> does not. Explain why, in terms of file-based routing and the pathless <code>_site</code> layout — without referring to any runtime configuration.</div>
+
+  <div class="exercise"><span class="qid">3.5</span>
+    <span class="tag design">design</span><span class="tag hard">hard</span>
+    Suppose a teammate proposes converting rmhstudios.com to a pure SPA to &quot;simplify the server.&quot; Argue against it using at least three concrete features or files from this chapter (e.g. <code>getInitialUser</code>, <code>sitemap[.]xml.ts</code>). Then concede one case where SPA-style rendering is genuinely the right call here, and point to the config mechanism that already supports it.</div>
+
+  <div class="exercise"><span class="qid">3.6</span>
+    <span class="tag trace">trace</span><span class="tag medium">medium</span>
+    A request arrives for <code>GET /api/search?q=ab</code> at a rate exceeding the limit. Trace what the <code>GET</code> handler in <code>app/routes/api/search.ts</code> does, and give the exact HTTP status code and shape of the response it returns. Contrast this control flow with what a page route's <code>loader</code> returns.</div>
+
+  <div class="exercise"><span class="qid">3.7</span>
+    <span class="tag concept">concept</span><span class="tag medium">medium</span>
+    Explain the term <i>backend-for-frontend</i> and identify two distinct mechanisms in this codebase that together implement it. Why is &quot;the same file-based router, just exporting handlers instead of a component&quot; an accurate description of the API layer?</div>
+
+  <div class="exercise"><span class="qid">3.8</span>
+    <span class="tag diagram">diagram</span><span class="tag medium">medium</span>
+    Draw the source-to-running-server pipeline (compare Figure 3.2): from the route files on disk to the process the container runs. Label the generated file, the build command from <code>package.json</code>, the output entry path, and the port. State which build script (<code>build:frontend</code> or <code>build</code>) produces the web entry and what the full <code>build</code> additionally bundles.</div>
+
+  <div class="exercise"><span class="qid">3.9</span>
+    <span class="tag design">design</span><span class="tag hard">hard</span>
+    The game library depends on <code>three</code>, <code>pixi.js</code>, and <code>monaco-editor</code> — large, browser-only packages. Describe the two distinct problems these create for an SSR build, and name the specific <code>vite.config.ts</code> mechanisms (<code>heavyExternals</code>/<code>traceDeps</code>, <code>manualChunks</code>, <code>stubServerFiles</code>) that solve each. Why is <code>ssr.external</code> alone insufficient?</div>
+
+  <div class="exercise"><span class="qid">3.10</span>
+    <span class="tag trace">trace</span><span class="tag hard">hard</span>
+    The root route injects an inline <code>themeScript</code> and marks the document <code>suppressHydrationWarning</code>. Explain the hydration hazard this addresses: what would the user see if the theme class were applied only inside a normal React effect after hydration, and why must this particular script run <i>before</i> React takes over?</div>
+
+</div>

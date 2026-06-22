@@ -1,0 +1,533 @@
+<p class="lead">A reference list of the technical vocabulary this book introduces, defined as the
+chapters use each term. Where a definition is clearer with a concrete example, it points
+to how rmhstudios.com actually applies the idea, and cites the chapter where the term is
+first taught.</p>
+
+<h2 id="glossary-a">A</h2>
+<dl>
+  <dt><b>Authentication (authn)</b></dt>
+  <dd>Establishing <i>who</i> a request comes from — turning an anonymous HTTP request into
+  a known <code>User</code>. In rmhstudios this is handled by Better Auth via
+  <code>auth.api.getSession()</code>; a missing session yields <code>401 Unauthorized</code>.
+  Not to be confused with authorization. (Ch. 6)</dd>
+
+  <dt><b>Authorization (authz)</b></dt>
+  <dd>Deciding <i>what</i> an already-identified principal may do. It runs after
+  authentication and is scattered across the routes that need it — for example game routes
+  keying every read and write on <code>session.user.id</code>. A pure authorization failure
+  is conventionally <code>403 Forbidden</code>. (Ch. 6)</dd>
+</dl>
+
+<h2 id="glossary-b">B</h2>
+<dl>
+  <dt><b>Backplane (Redis pub/sub)</b></dt>
+  <dd>A shared message bus — commonly a Redis pub/sub adapter — that forwards room
+  broadcasts between server instances so that <code>io.to(room).emit(...)</code> reaches
+  clients connected to <i>every</i> replica. rmhstudios does not yet wire one into its
+  socket fleet (each realtime service runs single-replica); the feed's SSE bus is already
+  written to use one behind <code>REDIS_URL</code>, dormant only because that variable is
+  unset. (Ch. 7, Ch. 13)</dd>
+
+  <dt><b>Beatmap</b></dt>
+  <dd>The timed list of notes a rhythm game scores against; in Slice-It each note is a
+  <code>Slice</code> with a <code>time</code>, <code>lane</code>, and <code>type</code>.
+  Beatmaps are generated at runtime — arithmetically from a track's BPM, or by onset
+  detection on an uploaded <code>AudioBuffer</code> — and never persisted to disk. (Ch. 8)</dd>
+
+  <dt><b>BFF (backend-for-frontend)</b></dt>
+  <dd>A server layer that exists to serve one specific frontend, shaping and aggregating
+  data exactly as that UI needs. In the Node web tier the <code>app/routes/api/</code>
+  handlers and <code>createServerFn</code> loaders together form the BFF; in the Go tier the
+  <code>gateway</code> on port <code>7005</code> plays the same edge role, turning validated
+  sessions into trusted <code>X-Rmh-*</code> headers. Realtime traffic bypasses it. (Ch. 3, Ch. 10)</dd>
+
+  <dt><b>Big-bang rewrite</b></dt>
+  <dd>Replacing a system all at once in a single cutover — high risk, with no incremental
+  validation or rollback. rmhstudios explicitly <i>declined</i> this for its Go tier
+  (PR #121), building the full target branch only to learn from it while leaving the
+  production web image untouched. Contrast with strangler-fig. (Ch. 2, Ch. 10)</dd>
+
+  <dt><b>Blue-green deploy</b></dt>
+  <dd>Keeping two complete copies of a service — "blue" and "green" — with one live at a
+  time; a release starts the idle color, health-checks it, switches traffic, and keeps the
+  old color as a standby rollback target. rmhstudios runs blue on port <code>7005</code> and
+  green on <code>7015</code>, with the active color recorded in an Apache include file. (Ch. 12)</dd>
+
+  <dt><b>BUILD target</b></dt>
+  <dd>A named unit in a <code>BUILD.bazel</code> file — such as
+  <code>//go-services/cmd/gateway:gateway</code> — declaring an artifact, its sources, and
+  its dependencies. Bazel builds the dependency graph that these targets form. (Ch. 11)</dd>
+
+  <dt><b>Bundler</b></dt>
+  <dd>A tool that resolves a module's import graph and packs the sources into optimized
+  output files. rmhstudios uses two: Vite (on Rolldown) bundles the SSR web app and its
+  Nitro server into <code>.output/</code>, while esbuild separately bundles the standalone
+  Node WebSocket and worker servers into <code>dist-server/</code> as CommonJS. (Ch. 11)</dd>
+</dl>
+
+<h2 id="glossary-c">C</h2>
+<dl>
+  <dt><b>Catch-all route</b></dt>
+  <dd>A router pattern whose file name ends in <code>$</code> (for example
+  <code>app/routes/api/auth/$.ts</code>) so it matches every URL under a prefix and forwards
+  them to one handler. rmhstudios uses one to hand all of <code>/api/auth/*</code> to Better
+  Auth, adding only CORS handling on top. (Ch. 6)</dd>
+
+  <dt><b>CDN (content delivery network)</b></dt>
+  <dd>A network of distributed cache nodes that store static responses near users; effective
+  only for content that is identical across all users. rmhstudios fronts its static surface
+  with Cloudflare (the Terraform <code>proxied</code> flag); WebSocket hostnames are
+  deliberately <i>not</i> proxied because they must reach a live origin. The Apache reverse
+  proxy also acts as a self-hosted CDN for <code>/library</code> and similar static dirs. (Ch. 12, Ch. 13)</dd>
+
+  <dt><b>Client state</b></dt>
+  <dd>Data owned by the browser session and shared across components, with no authoritative
+  server copy — for example the chosen site theme or a live game's HP. The tell is that
+  unplugging the network can never make it "wrong." rmhstudios holds it in Zustand stores.
+  Contrast with server state. (Ch. 4)</dd>
+
+  <dt><b>Connection pool</b></dt>
+  <dd>A fixed set of reusable database connections, borrowed per query and returned
+  afterward, capping concurrency against Postgres's hard connection ceiling. rmhstudios uses
+  a singleton Prisma client over a pg <code>Pool</code> (web default <code>max</code> 10,
+  realtime servers default 5), all converging on one Postgres instance. (Ch. 5)</dd>
+
+  <dt><b>Content-as-code</b></dt>
+  <dd>Treating editorial content as source artifacts that flow through the same version
+  control, review, and build tooling as program code. rmhstudios honors this at authoring
+  time — MDX files in <code>content/</code> parsed and seeded into the database — but serves
+  from Postgres at runtime, so the principle holds for authoring but not for serving. (Ch. 9)</dd>
+
+  <dt><b>CSRF (cross-site request forgery)</b></dt>
+  <dd>An attack in which a malicious third-party page forges a state-changing request on the
+  user's behalf, exploiting the session cookie the browser sends automatically. Better Auth
+  defends the OAuth flow with a <code>state</code> parameter that must round-trip through the
+  identity provider, plus a strict origin allow-list. (Ch. 6)</dd>
+</dl>
+
+<h2 id="glossary-d">D</h2>
+<dl>
+  <dt><b>Deployment pipeline</b></dt>
+  <dd>The fixed, repeatable sequence of stages a release passes through. rmhstudios's is a
+  single Bash script, <code>deploy.sh</code>, running linearly on one VPS: pull, build,
+  migrate, bring up services, hotswap web, health-check, prune — all under a per-environment
+  <code>flock</code>. (Ch. 12)</dd>
+
+  <dt><b>Deterministic RNG</b></dt>
+  <dd>A seeded pseudo-random generator whose entire output is fixed by its initial seed,
+  enabling replays, reproducible level generation, and seeded-run leaderboards. rmhstudios
+  uses a <code>mulberry32</code>-style <code>createSeededRandom(seed)</code> for beatmap
+  generation; some game effects still fall back to raw <code>Math.random()</code>. (Ch. 8)</dd>
+
+  <dt><b>Distroless image</b></dt>
+  <dd>A container base that ships only what the program needs — libraries and CA certificates,
+  but no shell or package manager — making images smaller and harder to attack. Seven of
+  rmhstudios's nine Go services build on <code>distroless_base</code> pinned by digest; the
+  two exceptions need a fuller base (headless Chromium, git). (Ch. 11)</dd>
+</dl>
+
+<h2 id="glossary-e">E</h2>
+<dl>
+  <dt><b>Edge</b></dt>
+  <dd>Two related senses in this book. As a CDN edge, the cache node nearest the user that
+  serves cached static assets (Ch. 13). As an edge service, the gateway/BFF in front of
+  everything — the single network address clients connect to, where routing, the auth trust
+  boundary, and WebSocket upgrade termination live (Ch. 10).</dd>
+</dl>
+
+<h2 id="glossary-f">F</h2>
+<dl>
+  <dt><b>Fan-out</b></dt>
+  <dd>Propagating one event (a new post) to the many places that must reflect it (every
+  follower's timeline). Fan-out-on-write pushes the event into each follower's stored
+  timeline; fan-out-on-read stores it once and assembles each timeline on demand. The live
+  RMHark feed is pure fan-out-on-read; the push/hybrid path is designed but not yet built. (Ch. 9)</dd>
+
+  <dt><b>File-based routing</b></dt>
+  <dd>A scheme in which a file's location and name on disk determine its URL, so adding a page
+  means adding a file rather than editing a central registry. rmhstudios uses TanStack
+  Router, whose generator produces the typed <code>app/routeTree.gen.ts</code> from files
+  under <code>app/routes/</code> (conventions include <code>__root.tsx</code>,
+  <code>blog.$slug.tsx</code>, and pathless <code>_site.tsx</code> layouts). (Ch. 3)</dd>
+</dl>
+
+<h2 id="glossary-g">G</h2>
+<dl>
+  <dt><b>Game loop</b></dt>
+  <dd>The per-frame function that reads the clock, updates game state, resolves inputs and
+  collisions, then hands the new state to the renderer. Slice-It's <code>GameEngine.update()</code>
+  runs every frame and reads time from the audio subsystem rather than a frame counter, so
+  timing stays locked to the music. (Ch. 8)</dd>
+
+  <dt><b>Gazelle</b></dt>
+  <dd>A Bazel tool that reads Go source <code>import</code>s and generates or updates
+  <code>BUILD.bazel</code> targets automatically, so developers do not hand-maintain build
+  dependencies. rmhstudios runs it via <code>make gazelle</code> with
+  <code>node_modules</code> excluded. (Ch. 11)</dd>
+</dl>
+
+<h2 id="glossary-h">H</h2>
+<dl>
+  <dt><b>Helm chart</b></dt>
+  <dd>A templated, versioned package of Kubernetes manifests, with values supplied
+  separately and applied via <code>helm upgrade --install</code>. rmhstudios's chart renders
+  all eight services from one image and runs the same Prisma migration sequence as
+  <code>deploy.sh</code> in a <code>pre-install,pre-upgrade</code> hook. (Ch. 12)</dd>
+
+  <dt><b>Hermetic / reproducible build</b></dt>
+  <dd>A build whose every input — compiler, libraries, source — is declared and version-pinned,
+  so it ignores host-installed tools and yields the same artifact everywhere; a build is
+  <i>reproducible</i> when that artifact is byte-for-byte identical. rmhstudios's Bazel core is
+  hermetic (it downloads its own pinned Go SDK, so Go need not be installed locally); the Vite
+  frontend leaf is deliberately not. (Ch. 2, Ch. 11)</dd>
+
+  <dt><b>Horizontal scaling</b></dt>
+  <dd>Running more replicas across more machines and distributing load between them —
+  effectively unbounded and fault-tolerant, but clean only for stateless services. In
+  rmhstudios the <code>web</code> tier and workers scale this way freely; the stateful socket
+  servers cannot until given a backplane and sticky sessions. Contrast with vertical scaling. (Ch. 13)</dd>
+
+  <dt><b>HPA (Horizontal Pod Autoscaler)</b></dt>
+  <dd>A Kubernetes controller that automatically adjusts a Deployment's replica count based on
+  observed metrics (CPU or a custom signal such as active connections) within min/max bounds.
+  In the scaling roadmap it is a Stage-2 step, applied to the stateless tiers first; planned,
+  not yet deployed. (Ch. 13)</dd>
+
+  <dt><b>Hydration</b></dt>
+  <dd>The browser-side phase in which React attaches event listeners and state to DOM that the
+  server already rendered, rather than recreating it. Before hydration the page is visible but
+  not interactive; after it, a normal React app. rmhstudios uses an inline theme script and
+  <code>suppressHydrationWarning</code> to avoid a flash of unstyled content. (Ch. 3)</dd>
+
+  <dt><b>Hydration boundary</b></dt>
+  <dd>The moment the client's React tree adopts the server-rendered HTML; the client's first
+  render must produce markup identical to the server's, or a hydration mismatch results.
+  rmhstudios crosses it cleanly by seeding the loader's <code>initialUser</code> into the
+  providers and reconciling browser-only state (such as the localStorage theme) afterward in
+  <code>useEffect</code>. (Ch. 4)</dd>
+</dl>
+
+<h2 id="glossary-i">I</h2>
+<dl>
+  <dt><b>Identity provider (IdP)</b></dt>
+  <dd>The external service that authenticates a user and issues an identity assertion, with
+  your application acting as the relying party. In rmhstudios, Discord, Google, and GitHub act
+  as IdPs; <code>overrideUserInfoOnSignIn: true</code> keeps the IdP the source of truth for
+  name and image. (Ch. 6)</dd>
+
+  <dt><b>Index</b></dt>
+  <dd>A secondary structure (a Postgres B-tree) that lets the database find or order rows by a
+  column without scanning the whole table — speeding reads at the cost of write and storage
+  overhead. rmhstudios uses sorted indexes for leaderboards, a composite
+  <code>(createdAt, id)</code> index for feed keyset pagination, and <code>@@unique</code>
+  composites that serve as both constraint and index. (Ch. 5)</dd>
+
+  <dt><b>In-memory state</b></dt>
+  <dd>Application state held in process memory (JavaScript Maps or objects) rather than a
+  database — fast, but volatile, invisible to other processes, and lost when the process dies.
+  rmhstudios keeps live lobbies in an in-memory Map, so restarting the socket server destroys
+  every race in progress. (Ch. 7)</dd>
+
+  <dt><b>Infrastructure as Code (IaC)</b></dt>
+  <dd>Describing servers, networking, DNS, and cluster resources in version-controlled
+  declarative files that are applied as code. rmhstudios uses a Helm chart for the cluster and
+  Terraform for Cloudflare DNS records. (Ch. 12)</dd>
+</dl>
+
+<h2 id="glossary-j">J</h2>
+<dl>
+  <dt><b>JSON / JSONB column</b></dt>
+  <dd>A column that stores an arbitrary JSON document; Postgres <code>jsonb</code> keeps a
+  parsed binary form that can be indexed and queried inside the document, trading relational
+  structure for flexibility. rmhstudios uses its ~38 <code>Json</code> fields for opaque game
+  state, following the rule of thumb that scores and identifiers are columns while opaque game
+  state is JSON. (Ch. 5)</dd>
+</dl>
+
+<h2 id="glossary-l">L</h2>
+<dl>
+  <dt><b>Latency-based DNS</b></dt>
+  <dd>A DNS routing policy that resolves one hostname to different IPs depending on which
+  region can serve the requester with the lowest measured latency. In the scaling roadmap it
+  replaces the one-record-per-host scheme at Stage 3 to steer users to the nearest regional
+  cluster; planned, not yet deployed. (Ch. 13)</dd>
+
+  <dt><b>Leaderboard</b></dt>
+  <dd>The ranked, persistent record of scores, read from indexed scalar columns rather than
+  opaque blobs. In rmhstudios each game pairs a <code>score.ts</code> write route with a
+  <code>leaderboard.ts</code> read route; reads typically take the top ten ordered by an
+  indexed score column. (Ch. 8)</dd>
+
+  <dt><b>Lobby</b></dt>
+  <dd>A small, evolving in-memory world — who is present, who is ready, the chosen level —
+  shared by everyone in it. In Neon Driftway a lobby is an <code>NDWLobby</code> struct whose
+  status walks <code>WAITING &rarr; COUNTDOWN &rarr; PLAYING &rarr; FINISHED</code>; lobby
+  creation is rate-limited. (Ch. 7)</dd>
+</dl>
+
+<h2 id="glossary-m">M</h2>
+<dl>
+  <dt><b>MDX</b></dt>
+  <dd>Markdown extended so a document can embed and render components inline. rmhstudios uses
+  it only as an authoring format: <code>.mdx</code> files under <code>content/</code> are
+  parsed offline and seeded into Postgres, and the runtime renders plain Markdown — there is
+  no MDX runtime in the serving path. (Ch. 9)</dd>
+
+  <dt><b>Microservice</b></dt>
+  <dd>A small service owning one slice of behavior, running as its own process and container,
+  and communicating only over well-defined transports (HTTP, WebSocket, the database, a
+  message bus) — never shared in-process memory. The Go tier follows "one binary, one
+  container, one deployable unit." Contrast with a monolith. (Ch. 10)</dd>
+
+  <dt><b>Migration</b></dt>
+  <dd>A recorded, ordered SQL change to database structure, tracked in the database so the
+  schema's history is reproducible. rmhstudios authors migrations with
+  <code>prisma migrate dev</code> and applies them on deploy with
+  <code>prisma migrate deploy</code>, starting from a squashed <code>0_baseline</code>. (Ch. 5)</dd>
+
+  <dt><b>Monorepo</b></dt>
+  <dd>One Git repository holding many independently deployable units, favoring atomic
+  cross-service changes over per-repo isolation. rmhstudios keeps its SSR web app, nine Go
+  services, and nine Node servers and workers in one repo — pnpm workspaces on the JS side, a
+  single Go module on the Go side. (Ch. 11)</dd>
+</dl>
+
+<h2 id="glossary-n">N</h2>
+<dl>
+  <dt><b>Nitro</b></dt>
+  <dd>The server runtime and build target that packages the framework's render logic into a
+  deployable server, emitting a portable <code>.output/</code> directory and abstracting over
+  deploy targets. In rmhstudios it is configured as a Vite plugin alongside TanStack Start; the
+  build produces <code>.output/server/index.mjs</code>, run as the web tier on port
+  <code>7005</code>. (Ch. 1, Ch. 3)</dd>
+</dl>
+
+<h2 id="glossary-o">O</h2>
+<dl>
+  <dt><b>OAuth (OAuth 2.0)</b></dt>
+  <dd>A delegation protocol that lets a user authorize your application to receive an identity
+  assertion from another site without sharing a password with it, using the authorization-code
+  flow (redirect, approve, short-lived code, server-to-server exchange). rmhstudios kicks it
+  off with <code>authClient.signIn.social({ provider })</code> for Discord, Google, and GitHub. (Ch. 6)</dd>
+
+  <dt><b>Object storage</b></dt>
+  <dd>A service that holds arbitrary blobs addressed by a string key inside a named bucket over
+  HTTP, rather than via SQL or a filesystem; the de-facto interface is the S3 API. rmhstudios
+  runs a MinIO container (bucket <code>rmh-media</code>) behind an S3 gateway, used today only
+  for social-feed images, with Cloudflare R2 as the eventual target. (Ch. 9)</dd>
+
+  <dt><b>Optimistic update</b></dt>
+  <dd>A write that immediately mutates local state to its expected post-write value instead of
+  waiting for the server, trading rollback risk for an instant-feeling UI. rmhstudios
+  implements this in its Zustand feed store, prepending a new item locally and de-duplicating
+  it against the later server echo. (Ch. 4)</dd>
+
+  <dt><b>ORM (object-relational mapper)</b></dt>
+  <dd>A library that maps database tables to in-language structures, turning method calls such
+  as <code>prisma.user.findUnique(...)</code> into SQL. rmhstudios uses Prisma, which generates
+  a typed TypeScript client from <code>prisma/schema.prisma</code>. (Ch. 5)</dd>
+
+  <dt><b>Observability</b></dt>
+  <dd>Instrumenting a system with metrics, logs, and traces so its internal state can be
+  inferred from the outside — a prerequisite for safe autoscaling. The Go reference
+  implementation already exposes <code>/metrics</code> endpoints; full dashboards and alerts
+  are a Stage-2 roadmap item. (Ch. 13)</dd>
+</dl>
+
+<h2 id="glossary-p">P</h2>
+<dl>
+  <dt><b>PgBouncer</b></dt>
+  <dd>A lightweight PostgreSQL connection pooler that applications connect to instead of
+  Postgres directly; it keeps a small real-backend pool and hands connections out per
+  transaction, so a large idle client fleet consumes far fewer database connections. In the
+  scaling roadmap it is a Stage-1 fix in transaction-pooling mode; planned, not yet deployed. (Ch. 13)</dd>
+
+  <dt><b>Process manager</b></dt>
+  <dd>The run-layer that launches, supervises, restarts, and governs the lifecycle of
+  long-lived processes. rmhstudios deliberately does <i>not</i> use PM2 — Docker Compose fills
+  the role with <code>restart: unless-stopped</code> — and the migration target for this layer
+  is Kubernetes (k3s). (Ch. 12)</dd>
+</dl>
+
+<h2 id="glossary-q">Q</h2>
+<dl>
+  <dt><b>Query cache</b></dt>
+  <dd>TanStack React Query's in-memory store, keyed by a query key. The first
+  <code>useQuery</code> runs its <code>queryFn</code>; later mounts read the cached value and
+  refetch only once it is older than <code>staleTime</code>, and identical keys mounted at the
+  same time are deduplicated into one request. rmhstudios shares one <code>QueryClient</code>
+  across the whole app (<code>staleTime: 60_000</code>). (Ch. 4)</dd>
+</dl>
+
+<h2 id="glossary-r">R</h2>
+<dl>
+  <dt><b>Rate limiting</b></dt>
+  <dd>Capping how many requests a client may make per time window. rmhstudios uses an
+  in-process fixed-window counter (no Redis) for HTTP routes — for example five Slice-It score
+  submissions per sixty seconds — returning <code>429</code> with a <code>Retry-After</code>
+  header, plus a separate per-socket sliding-window limiter for realtime events. (Ch. 7, Ch. 8)</dd>
+
+  <dt><b>Read replica</b></dt>
+  <dd>A read-only database copy that asynchronously follows the primary's write stream; reads
+  are routed to replicas while writes go to the single primary. A Stage-3 roadmap item, with
+  the caveat that replica lag can break read-your-writes; planned, not yet deployed. (Ch. 13)</dd>
+
+  <dt><b>Reverse proxy</b></dt>
+  <dd>A server that fronts application processes, forwarding each request to the right backend
+  and relaying the response, and centralizing TLS, routing, and the blue/green flip. rmhstudios
+  uses Apache, which routes WebSocket upstreams to their loopback ports and proxies
+  <code>/</code> to whichever web port is currently active. (Ch. 12)</dd>
+
+  <dt><b>Reversible migration</b></dt>
+  <dd>A change applied so it can be undone or retried from a recorded baseline. rmhstudios's
+  deploy marks <code>0_baseline</code> as applied (so re-deploying onto a migrated database is a
+  no-op), resolves any failed migration as rolled-back, and only then runs
+  <code>migrate deploy</code> — gated on the database being reachable. The same logic runs in
+  the Helm pre-upgrade hook. (Ch. 12)</dd>
+</dl>
+
+<h2 id="glossary-s">S</h2>
+<dl>
+  <dt><b>Save blob</b></dt>
+  <dd>A player's complete game state serialized to one opaque JSON document and stored in a
+  single column, rather than decomposed into relational rows. rmhstudios upserts these per user
+  (last-write-wins, capped around 500 KB) for games such as Temple of Joy and Signal Forge. (Ch. 8)</dd>
+
+  <dt><b>Schema</b></dt>
+  <dd>The single declarative <code>prisma/schema.prisma</code> file describing every model,
+  field, relation, index, and enum — at once the spec the database is migrated to and the spec
+  the typed client is generated from. rmhstudios's schema defines roughly 142 models against a
+  single Postgres instance. (Ch. 5)</dd>
+
+  <dt><b>Server-authoritative</b></dt>
+  <dd>A design in which the server holds the canonical state and validates or recomputes
+  anything that affects an outcome; clients render, but the server decides. rmhstudios computes
+  WPM from its own clock in RMHType and gates every score submission (rate-limit, bound,
+  authenticate, persist) before it touches a leaderboard. (Ch. 7, Ch. 8)</dd>
+
+  <dt><b>Server function</b></dt>
+  <dd>In TanStack Start, a function created with <code>createServerFn</code> that only ever runs
+  on the server even when called from component code, compiling to an RPC with safe access to
+  the database, cookies, and secrets. rmhstudios uses them for loaders such as
+  <code>getInitialUser</code>. (Ch. 3)</dd>
+
+  <dt><b>Server state</b></dt>
+  <dd>Data whose source of truth is the database behind an API; the client holds only a possibly
+  stale cache — for example a leaderboard or reputation score. rmhstudios manages it with
+  TanStack React Query. Contrast with client state. (Ch. 4)</dd>
+
+  <dt><b>Session</b></dt>
+  <dd>A server-stored record that a user is currently logged in — a row in the
+  <code>session</code> table holding a <code>token</code>, <code>userId</code>,
+  <code>expiresAt</code>, and forensic fields. rmhstudios uses stateful session auth: login
+  inserts a row and returns the token as an <code>HttpOnly</code>, <code>Secure</code> cookie,
+  and deleting the row invalidates the cookie everywhere at once. (Ch. 6)</dd>
+
+  <dt><b>Shared foundation</b></dt>
+  <dd>The common packages that every service imports for cross-cutting concerns, so a fix lands
+  once for all of them. In the Go tier this is the <code>pkg/</code> set (config, logging,
+  database pool, auth, rate limiting, telemetry, events, realtime); service authors import it
+  but never edit it. (Ch. 10)</dd>
+
+  <dt><b>SSR (server-side rendering)</b></dt>
+  <dd>Rendering the React component tree to a finished HTML string on the server, per request,
+  so the browser receives a content-filled document instead of an empty shell; the same
+  components then run in the browser to make it interactive. rmhstudios renders the signed-in
+  shell server-side on first paint. (Ch. 3)</dd>
+
+  <dt><b>Stateful</b></dt>
+  <dd>A service that holds live, client-specific state in its own memory, so its replicas are
+  not interchangeable and scaling out needs extra machinery. rmhstudios's socket servers are
+  stateful — they hold per-lobby state in the owning process — and the chart pins them to a
+  single replica. Contrast with stateless. (Ch. 13)</dd>
+
+  <dt><b>Stateless</b></dt>
+  <dd>A service that keeps no client-specific state in memory between requests, putting
+  everything in the request or in shared storage, so its replicas are interchangeable.
+  rmhstudios's SSR web tier and its workers are stateless and scale horizontally with ease. (Ch. 13)</dd>
+
+  <dt><b>Sticky session</b></dt>
+  <dd>A load-balancer policy that pins a client to the same backend instance for the life of a
+  connection — required for WebSocket and Socket.io handshakes even when a backplane is present.
+  rmhstudios does not configure this today; it is one of the two pieces (with a backplane)
+  needed to run more than one socket replica. (Ch. 7, Ch. 13)</dd>
+
+  <dt><b>Store (Zustand)</b></dt>
+  <dd>A single object holding a slice of client state together with the actions that mutate it,
+  created once via <code>create((set, get) =&gt; ...)</code> at module load and shared by every
+  component that imports its hook; the hook doubles as a selector that re-renders only on its
+  slice's changes. rmhstudios uses stores such as <code>useThemeStore</code> and the Altair
+  game store, some with <code>persist</code> middleware. (Ch. 4)</dd>
+
+  <dt><b>Strangler-fig</b></dt>
+  <dd>A migration strategy that gradually replaces a system by putting a stable interface (a
+  gateway or proxy) in front of the old one and routing slices of traffic to new pieces as each
+  is proven, with the option to roll back; named for the fig that grows around a host tree. The
+  Go <code>gateway</code> reverse-proxies WebSocket prefixes to new services while passing the
+  catch-all <code>/</code> to the unchanged Node web — "to strangle one more service you add one
+  prefix." (Ch. 2, Ch. 10)</dd>
+
+  <dt><b>Streaming</b></dt>
+  <dd>Delivering media as byte ranges that a player can consume before the whole file arrives,
+  via HTTP <code>Range</code> requests or a manifest such as HLS or DASH. rmhstudios does
+  <i>not</i> stream — its feed image route returns each object in one immutable, cacheable
+  response — and true range-streaming is named only as a future step. (Ch. 9)</dd>
+
+  <dt><b>Socket.io namespace</b></dt>
+  <dd>A higher-level partition of a single Socket.io connection (such as <code>/admin</code>).
+  rmhstudios generally does not use namespaces; it isolates traffic with event-name prefixes and
+  rooms instead, applying auth middleware server-wide. (Ch. 7)</dd>
+
+  <dt><b>Socket.io room</b></dt>
+  <dd>A server-side label that groups connected sockets: a socket <code>join</code>s a room and
+  the server broadcasts to just that group with <code>io.to(room).emit(...)</code>, letting one
+  process host thousands of lobbies without leakage. rmhstudios maps a Neon Driftway
+  <code>roomId</code> to the room <code>ndw:${roomId}</code>. (Ch. 7)</dd>
+
+  <dt><b>Social feed</b></dt>
+  <dd>The home timeline that must decide whose screens light up when someone posts. In
+  rmhstudios it is branded RMHark (the <code>RMHark</code> model maps to table
+  <code>rmheet</code>); the timeline uses keyset pagination, denormalized counters repaired by a
+  cron job, and live arrivals over SSE. (Ch. 9)</dd>
+</dl>
+
+<h2 id="glossary-t">T</h2>
+<dl>
+  <dt><b>Toolchain pinning</b></dt>
+  <dd>Fixing the exact version of each build tool so upgrades are explicit rather than accidental
+  PATH drift. rmhstudios pins Bazel, a downloaded Go SDK, Gazelle, and its Bazel rule sets — many
+  in <code>MODULE.bazel</code>, the distroless base by digest. (Ch. 11)</dd>
+</dl>
+
+<h2 id="glossary-v">V</h2>
+<dl>
+  <dt><b>Vertical scaling</b></dt>
+  <dd>Adding CPU, RAM, or disk to a single machine or pod so one instance handles more — simple,
+  but bounded by the largest available machine and offering no redundancy. For rmhstudios it is
+  the easy first move: bump the VPS and the single-node cluster keeps working unchanged. Contrast
+  with horizontal scaling. (Ch. 13)</dd>
+</dl>
+
+<h2 id="glossary-w">W</h2>
+<dl>
+  <dt><b>WebSocket</b></dt>
+  <dd>A protocol that upgrades a single HTTP connection into a persistent, full-duplex channel;
+  after the handshake either side may push messages at any time. rmhstudios exposes its socket
+  fleet through path prefixes on the reverse proxy (such as <code>/socket/</code>) mapped to
+  loopback ports. (Ch. 7)</dd>
+
+  <dt><b>Worker process</b></dt>
+  <dd>A long-lived process with no client-facing socket that wakes on a timer or queue to do
+  background work, sharing the database but serving no requests. rmhstudios runs several —
+  <code>doctrine-worker</code>, <code>vibe-worker</code>, <code>bot-worker</code> — all of which
+  reach the platform only through Postgres. (Ch. 7)</dd>
+</dl>
+
+<h2 id="glossary-z">Z</h2>
+<dl>
+  <dt><b>Zero-downtime (hotswap) deploy</b></dt>
+  <dd>Releasing with no interval of unavailability by keeping the old version serving until the
+  new one is proven. rmhstudios's <code>hotswap-web.sh</code> starts the idle color, polls
+  <code>GET /</code> until it is healthy, flips Apache, drains briefly, then verifies before
+  deleting the old container; a bad build simply leaves the old version up. (Ch. 12)</dd>
+</dl>

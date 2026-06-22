@@ -1,0 +1,227 @@
+<div class="objectives"><h4>Learning Objectives</h4><ul>
+  <li>Distinguish <strong>vertical</strong> from <strong>horizontal</strong> scaling, and <strong>stateless</strong> from <strong>stateful</strong> services, and explain why each combination scales differently.</li>
+  <li>Name the two global-scale constraints that actually bind rmhstudios.com — a single Postgres instance and in-memory per-lobby websocket state — and explain why each one resists naive replication.</li>
+  <li>Explain why a stateful realtime service cannot be served from a CDN and cannot run past one replica without a <strong>backplane</strong> and <strong>sticky sessions</strong>.</li>
+  <li>Describe connection pooling (PgBouncer) and the read/write split with read replicas as two independent ways to relieve a single database.</li>
+  <li>Walk the project's agreed three-stage scaling roadmap and say, for each stage, what it adds and which constraint it relieves.</li>
+  <li>Justify why this system scales by reaching for a Redis backplane, a CDN, and database replicas — <em>not</em> by rewriting services in another language.</li>
+</ul></div>
+
+<p class="lead">Every chapter so far has read the system as it is built today: a single-node k3s cluster, one Postgres, a fleet of realtime processes each holding game state in memory. This closing chapter asks the next question — <em>what happens when one node is not enough?</em> — and answers it the way the team has agreed to answer it. Most of what follows is a <strong>plan</strong>, not shipped code. The discipline of the chapter is to reason from the two real constraints the architecture imposes, derive a staged roadmap that relieves them in order, and resist the tempting-but-wrong move of treating "scale" as a synonym for "rewrite."</p>
+
+<h2 id="two-kinds-of-scaling">Two kinds of scaling, two kinds of service</h2>
+<p>There are only two ways to make a system handle more load. You can give a machine more resources — a bigger CPU, more memory, faster disk — and let the same single process do more. Or you can run more copies of the process and spread the load across them. The first is <strong>vertical</strong> scaling; the second is <strong>horizontal</strong>. Vertical scaling is the easy first move because it changes nothing about the software: bump the VPS to a larger instance and the single-node k3s deploy from Chapter&nbsp;12 keeps working unchanged. Its ceiling is the largest machine you can rent, and its failure mode is total — one node, one outage.</p>
+
+<div class="keyterm"><span class="term">Vertical scaling (scale up)</span> — increasing the resources (CPU, RAM, disk) of a single machine or pod so one instance handles more load. Simple and fast, but bounded by the largest available machine and offering no redundancy.</div>
+<div class="keyterm"><span class="term">Horizontal scaling (scale out)</span> — running more replicas of a service across machines and distributing load among them. Effectively unbounded and fault-tolerant, but it only works cleanly for services that hold no per-request state in memory.</div>
+
+<p>That last clause is the whole problem. Horizontal scaling assumes any replica can serve any request — that the replicas are interchangeable. Whether that assumption holds depends on whether a service is <strong>stateless</strong> or <strong>stateful</strong>.</p>
+
+<div class="keyterm"><span class="term">Stateless service</span> — one that keeps no client-specific state in process memory between requests; everything it needs is either in the request itself or in shared backing storage (the database, Redis, object storage). Two replicas of a stateless service are interchangeable, so it scales out trivially.</div>
+<div class="keyterm"><span class="term">Stateful service</span> — one that holds live, client-specific state in its own memory (an open game lobby, a connected socket's room membership). A second replica does not share that memory, so two replicas are <em>not</em> interchangeable; scaling out requires extra machinery to make the in-memory state visible across replicas.</div>
+
+<p>Map this onto the rmhstudios fleet from Chapter&nbsp;1. The <code>web</code> SSR tier and the workers (<code>doctrine-worker</code>, <code>vibe-worker</code>, <code>bot-worker</code>, <code>recap</code>, <code>discord-bot</code>) are essentially stateless with respect to client connections: a page render reads from Postgres and returns HTML, and any replica can render any page. The realtime tier is different. <code>socket</code>, <code>rmhbox</code>, and <code>rmhtube</code> are Socket.io servers that hold per-lobby game state — who is in which room, whose turn it is, the current round — <em>in the memory of the process that owns the connection</em> (Chapters&nbsp;5–7). That single design fact is what makes scaling this platform interesting rather than routine.</p>
+
+<div class="warn"><b>The interchangeability test.</b> Before scaling any service horizontally, ask: "If I kill this replica and a client's next packet lands on a different replica, does anything break?" For <code>web</code> the answer is no — it re-reads from Postgres. For <code>rmhbox</code> the answer is yes — the new replica has never heard of that lobby. That asymmetry drives the entire roadmap below.</p></div>
+
+<h2 id="the-two-constraints">The two constraints that actually bind</h2>
+<p>A scaling discussion can drift into a wishlist. The honest version names the constraints that bite <em>first</em> and treats everything else as secondary. For rmhstudios.com there are exactly two, and both come straight from the architecture as built.</p>
+
+<h3>Constraint A — a single Postgres instance</h3>
+<p>Every tier ultimately reads and writes one Postgres database (Chapter&nbsp;8). The Helm chart provisions one data volume; the deploy syncs one connection string. As the fleet grows — more <code>web</code> replicas, more realtime replicas, more workers — every new process opens its own pool of connections to that one database. Postgres serves connections from a fixed-size worker pool, and each idle connection still costs memory and a backend process. The database does not fall over because it is slow; it falls over because it runs out of connection slots long before it runs out of CPU. This is the constraint that bites as soon as you scale <em>anything</em> out, because more replicas means more connections to the same database.</p>
+
+<div class="keyterm"><span class="term">Connection pool</span> — a bounded set of reusable database connections shared by an application, so that many requests take turns on a few connections rather than each opening its own. Pooling caps the number of connections the database must service at once.</div>
+
+<h3>Constraint B — un-CDN-able, single-replica websockets</h3>
+<p>The realtime services hold per-lobby state in memory. Two consequences follow, and they are the analytical heart of this chapter. First, <strong>they cannot be served from a CDN.</strong> A CDN caches and replays a response from an edge node near the user; that only works for content that is the same for everyone and changes slowly (static assets, images, built JS bundles). A websocket is a long-lived, bidirectional, per-connection conversation whose contents are unique to one lobby at one instant — there is nothing to cache and replay. The CDN can sit in front of the <em>static</em> site, but the realtime path must reach a live origin process. Second, and more sharply, <strong>each realtime service is pinned to one replica.</strong> If you naively run two <code>rmhbox</code> pods behind a load balancer, two players in the same lobby may land on different pods. Pod A holds the lobby; pod B has never heard of it. The players cannot see each other. The deploy README states this constraint in plain terms:</p>
+
+<pre><code>&gt; Stateful realtime note: socket/rmhbox/rmhtube hold in-memory game/lobby
+&gt; state. Scaling them past 1 replica needs sticky sessions at the ingress AND a
+&gt; shared backplane (e.g. socket.io Redis adapter) — otherwise clients on
+&gt; different replicas can't see each other. web and the workers scale freely;
+&gt; the realtime tier needs that backplane first.</code></pre>
+
+<p>So the production chart sets every realtime service to <code>replicas: 1</code>, and the prod values file comments that <code>web</code> "is the scale target" while the realtime tier is held at one. That is not an oversight; it is the architecture telling you the order in which scaling work must happen. You cannot scale the realtime tier out until you give it a way to share state across replicas — a backplane — and a way to keep each conversation on one replica — sticky sessions.</p>
+
+<div class="keyterm"><span class="term">Backplane (Redis pub/sub)</span> — a shared message bus (here, the Socket.io Redis adapter) that every replica of a realtime service subscribes to. When one replica receives an event for a room, it publishes it on the backplane; the other replicas holding members of that room receive it and forward it to their own clients. The backplane makes replicas <em>cooperate</em> so an event reaches everyone in a logical room regardless of which replica holds each connection.</div>
+<div class="keyterm"><span class="term">Sticky session (session affinity)</span> — a load-balancer policy that pins a given client to the same backend replica for the life of its connection (by cookie or source-hash). It guarantees a client's many websocket frames all hit the replica that already holds its connection, rather than scattering across replicas mid-conversation.</div>
+
+<div class="note">Backplane and sticky sessions are complementary, not redundant. Sticky sessions keep <em>one client</em> on <em>one replica</em> (so a single connection is coherent). The backplane lets <em>different clients in the same lobby</em>, who may be stuck to <em>different replicas</em>, still exchange events. You need both: stickiness for connection integrity, the backplane for cross-replica room coherence.</div>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart TB
+  subgraph Edge[Edge]
+    CDN[CDN cache for static assets]
+    LB[Sticky load balancer]
+  end
+  subgraph Realtime[Realtime replicas]
+    R1[rmhbox replica 1]
+    R2[rmhbox replica 2]
+  end
+  Redis[(Redis backplane pub/sub)]
+  Browser[Browser] -->|static JS, CSS, images| CDN
+  Browser -->|websocket, sticky| LB
+  LB --> R1
+  LB --> R2
+  R1 <--> Redis
+  R2 <--> Redis
+  </div>
+  <figcaption>Figure 13.1 — Why static content is CDN-cacheable but the websocket is not. Static assets are served from the edge cache; the websocket is pinned by the sticky load balancer to one replica, and the Redis backplane lets the two replicas relay room events to each other.</figcaption>
+</figure>
+
+<h2 id="stage-1-relieve">Stage 1 — relieve the two constraints in place</h2>
+<p>The first real step does not add nodes or regions. It removes the two constraints from a single-node deploy that has been scaled <em>up</em> as far as is reasonable, so that the realtime tier can finally run more than one replica and the database stops being throttled by connection count. Three changes, each targeting one pressure.</p>
+
+<h3>A CDN in front of the static surface</h3>
+<p>The static half of the site — built JS bundles, CSS, images, the marketing and blog pages that change rarely — is moved behind a CDN. The team already fronts DNS with Cloudflare (the Terraform <code>cloudflare_record</code> resources support a <code>proxied</code> flag), so the edge is one configuration away. The CDN absorbs the bulk of byte-volume traffic at the edge, near users, and only cache misses and the dynamic SSR routes reach the origin. Crucially, the websocket hostnames (<code>socket.</code>, <code>box.</code>, <code>tube.</code>) are <em>not</em> proxied through the cache — they must reach a live origin, per Constraint&nbsp;B.</p>
+
+<div class="keyterm"><span class="term">CDN / edge cache</span> — a network of geographically distributed cache nodes that store copies of static responses close to users. The first request for an asset fills the cache from the origin; subsequent requests are served from the nearest edge node, cutting latency and offloading the origin. Effective only for content identical across users.</div>
+
+<h3>A Redis backplane plus sticky sessions for the realtime tier</h3>
+<p>This is the change that unlocks horizontal scaling of <code>socket</code>, <code>rmhbox</code>, and <code>rmhtube</code>. Enable the Socket.io Redis adapter so the replicas share a pub/sub bus, and configure the ingress for session affinity so each client stays on its replica. With both in place, the prod values file's <code>replicas: 1</code> can rise:</p>
+
+<pre><code>kubectl -n rmhstudios scale deploy/rmhstudios-socket --replicas=3
+kubectl -n rmhstudios scale deploy/rmhstudios-rmhbox --replicas=3</code></pre>
+
+<p>Each new replica registers on the backplane; a lobby event published by one replica reaches members held by the others. The realtime tier moves from "pinned at one" to "scales out like any other service" — but only because the backplane made its in-memory state effectively shared.</p>
+
+<h3>PgBouncer in front of Postgres</h3>
+<p>With more replicas of everything, the connection count against the single Postgres climbs. <strong>PgBouncer</strong> is a lightweight connection pooler that sits between the application fleet and Postgres: the many application connections terminate at PgBouncer, which multiplexes them onto a small, fixed set of real backend connections. In <em>transaction</em> pooling mode, a backend connection is borrowed only for the duration of a transaction and returned immediately, so hundreds of mostly-idle application connections share a handful of real ones. This directly relieves Constraint&nbsp;A without touching the database's size: the same Postgres now tolerates a much larger fleet because it never sees more than PgBouncer's pool of real connections.</p>
+
+<div class="keyterm"><span class="term">PgBouncer</span> — a lightweight PostgreSQL connection pooler. Applications connect to PgBouncer instead of directly to Postgres; it maintains a small pool of real backend connections and hands them out per-transaction, so a large, mostly-idle client fleet is served by far fewer database connections.</div>
+
+<div class="ok"><b>Why Stage 1 comes first.</b> It is the cheapest stage — no new nodes, no new regions — and it removes the two binding constraints. After Stage 1 the realtime tier scales horizontally and the database survives the larger fleet. Only now does adding <em>nodes</em> make sense, because there is finally something that benefits from more of them.</div>
+
+<h2 id="stage-2-multi-node">Stage 2 — multi-node k3s, autoscaling, observability</h2>
+<p>With the constraints relieved, the deploy can spread across multiple nodes. The infrastructure is already <em>wired</em> for this, which is the point of the registry seam from Chapter&nbsp;12: setting the <code>REGISTRY</code> environment variable flips <code>deploy-k8s.sh</code> from importing the image into one node's containerd (<code>pullPolicy: Never</code>) to pushing it to a registry that every node pulls from (<code>pullPolicy: IfNotPresent</code>). Two storage seams, both flagged <code>MULTI-NODE SEAM</code> in the chart, must also be addressed: the <code>local-path</code> data volume is node-local <code>ReadWriteOnce</code> and must move to a <code>ReadWriteMany</code> class (NFS/Longhorn/Rook) for pods to share <code>/app/db</code> across nodes, and the <code>discord-bot</code> host-path repo mount must be pinned with a <code>nodeSelector</code> or moved onto the shared volume.</p>
+
+<p>Once load is spread, replica counts should follow demand rather than being set by hand. A <strong>Horizontal Pod Autoscaler</strong> watches a metric (CPU, or a custom metric like active connections) and adjusts replica count between a floor and a ceiling automatically. The stateless tiers — <code>web</code> and the workers — are the natural first targets; the realtime tiers can join only because Stage&nbsp;1 gave them a backplane and stickiness.</p>
+
+<div class="keyterm"><span class="term">Horizontal Pod Autoscaler (HPA)</span> — a Kubernetes controller that automatically scales a Deployment's replica count up or down based on observed metrics (CPU utilization or custom metrics), within configured minimum and maximum bounds, so capacity tracks load without manual intervention.</div>
+
+<p>None of this autoscaling is safe to enable blind. You cannot scale on a metric you do not collect, and you cannot trust an HPA you cannot watch. That is why <strong>observability</strong> is a Stage-2 prerequisite, not a nicety: metrics (request rate, connection count, pool saturation), logs (aggregated across replicas and nodes), and traces (a request followed across services). The Go-migration reference implementation already emits <code>/metrics</code> endpoints; the operational work is a Prometheus scrape config, dashboards, and alerts. Observability is listed alongside the autoscaling work precisely because it is the input the autoscaler — and every human decision after it — depends on.</p>
+
+<div class="keyterm"><span class="term">Observability</span> — the practice of instrumenting a system with metrics, logs, and traces so its internal state can be inferred from the outside. It is a prerequisite for scaling: autoscaling needs metrics to act on, and capacity decisions need data to be made rather than guessed.</div>
+
+<h2 id="stage-3-multi-region">Stage 3 — regional clusters, latency DNS, read replicas</h2>
+<p>The final stage attacks the last fixed cost: the speed of light. A user far from the single VPS pays round-trip latency on every request. Stage&nbsp;3 stands up <strong>regional clusters</strong> — a full k3s deploy in more than one geography — and uses <strong>latency-based DNS</strong> to route each user to the nearest healthy region. The Terraform DNS surface is provider-agnostic and already the seam where this policy would live; today it returns one <code>A</code> record per host, and latency routing replaces that with a geo-aware answer.</p>
+
+<div class="keyterm"><span class="term">Latency-based DNS</span> — a DNS routing policy that resolves a hostname to different IP addresses depending on which region can serve the requester with the lowest measured latency, steering each user to the nearest healthy cluster.</div>
+
+<p>Multiple regions reopen Constraint&nbsp;A in a new form: there is still one <em>writable</em> Postgres, and a region far from it pays cross-region latency on every query. The standard answer is the <strong>read/write split</strong> with <strong>read replicas</strong>. The primary database takes all writes and streams its changes to read-only replicas placed near each region. Read-heavy queries (page renders, feeds, leaderboards) are served by the local replica; writes still travel to the single primary. Most web traffic is reads, so this removes most of the cross-region penalty while keeping a single source of truth for writes.</p>
+
+<div class="keyterm"><span class="term">Read replica</span> — a read-only copy of a database that asynchronously follows a primary's write stream. Read queries are directed to replicas (often a nearby one) to spread read load and reduce latency; all writes still go to the single primary.</div>
+<div class="keyterm"><span class="term">Read/write split</span> — routing read-only queries to replicas and write queries to the primary, so the primary's capacity is reserved for writes while reads scale across replicas.</div>
+
+<div class="warn"><b>Replicas are not free consistency.</b> A read replica lags the primary by some replication delay. A user who writes and immediately reads from a different replica can see stale data ("read-your-writes" violation). The realtime tier sidesteps this — it broadcasts over the backplane rather than polling the database — but ordinary web reads must tolerate, or route around, replica lag. Splitting reads from writes buys throughput at the cost of a weaker consistency guarantee, and that trade has to be made deliberately per query.</div>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart TB
+  Users[Users worldwide] --> DNS[Latency-based DNS]
+  DNS --> RegA[Region A cluster]
+  DNS --> RegB[Region B cluster]
+  RegA --> ReplicaA[(Postgres read replica A)]
+  RegB --> ReplicaB[(Postgres read replica B)]
+  RegA -->|writes| Primary[(Postgres primary)]
+  RegB -->|writes| Primary
+  Primary -->|stream| ReplicaA
+  Primary -->|stream| ReplicaB
+  </div>
+  <figcaption>Figure 13.2 — Stage 3 multi-region shape. Latency DNS steers each user to the nearest regional cluster; reads are served by a local replica, writes travel to the single primary, which streams changes back to the replicas.</figcaption>
+</figure>
+
+<h2 id="the-roadmap">The roadmap, stage by stage</h2>
+<p>The three stages are ordered by cost and by dependency: each relieves a constraint that the next stage would otherwise hit, and each is only safe once the prior one is in place.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart LR
+  S0[Stage 0: single-node k3s, scale up] --> S1[Stage 1: CDN plus Redis backplane plus sticky plus PgBouncer]
+  S1 --> S2[Stage 2: multi-node k3s plus HPA plus observability]
+  S2 --> S3[Stage 3: regional clusters plus latency DNS plus read replicas]
+  </div>
+  <figcaption>Figure 13.3 — The agreed three-stage scaling roadmap. Each stage depends on the constraints relieved by the one before it.</figcaption>
+</figure>
+
+<table>
+  <thead><tr><th>Stage</th><th>What it adds</th><th>Why — which constraint it relieves</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>1 — Backplane &amp; pooling</strong></td>
+      <td>CDN for static assets; Socket.io Redis backplane + sticky sessions; PgBouncer in front of Postgres.</td>
+      <td>Unblocks Constraint&nbsp;B (realtime can finally run multiple replicas) and Constraint&nbsp;A (the single DB tolerates a larger fleet). No new nodes — cheapest first step.</td>
+    </tr>
+    <tr>
+      <td><strong>2 — Multi-node &amp; autoscale</strong></td>
+      <td>Multi-node k3s via the <code>REGISTRY</code> seam + RWX storage; Horizontal Pod Autoscalers; metrics/logs/traces.</td>
+      <td>Spreads load across machines and makes capacity track demand. Observability is the prerequisite — you cannot autoscale on metrics you do not collect.</td>
+    </tr>
+    <tr>
+      <td><strong>3 — Multi-region</strong></td>
+      <td>Regional k3s clusters; latency-based DNS; Postgres read replicas with a read/write split.</td>
+      <td>Attacks geographic latency and reopens Constraint&nbsp;A across regions; read replicas serve local reads while writes stay on the single primary.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="not-a-rewrite">Why scaling here is not a language rewrite</h2>
+<p>A recurring temptation, when a realtime system needs to scale, is to rewrite it in a faster language — and the team did build a complete Go reference implementation of the realtime tier (Chapter on the Go migration). It is important to be precise about what that does and does not buy. A Go realtime service uses less memory per connection and starts faster, so a single replica can hold more idle connections. But notice that <em>none of the two binding constraints is a per-connection-cost problem.</em> Constraint&nbsp;A is connection count against one database — relieved by PgBouncer and read replicas, which are language-agnostic. Constraint&nbsp;B is shared room state across replicas — relieved by a Redis backplane and sticky sessions, which a Go rewrite still needs in exactly the same form. The Go performance notes say as much: the realtime tier "scales horizontally" only "with the Redis backplane enabled," behind "sticky-session ingress." The backplane is the load-bearing mechanism in either language.</p>
+
+<p>That is why the project declined the wholesale Go rewrite as a <em>scaling strategy</em> and adopted the <strong>strangler-fig</strong> stance from Chapter&nbsp;2 instead: keep the proven Node tier in production, and adopt Go per-service later, only if collected metrics prove a specific service is bottlenecked on per-connection cost. The rewrite is a possible <em>optimization of one stage's constituent services</em>, not a substitute for the staged roadmap. Scaling this system means a backplane, a CDN, connection pooling, and database replicas — applied in order, justified by observability — regardless of what language the services are written in.</p>
+
+<div class="scope"><b>Scope: this is a roadmap, not a shipped system.</b> As of this writing the production deploy is <strong>single-node k3s + Helm + Terraform</strong> with every realtime service at <code>replicas: 1</code> and one Postgres, kept reversibly alongside Docker Compose (PR&nbsp;#121). The multi-node path is <em>wired</em> (the <code>REGISTRY</code> env var and the <code>MULTI-NODE SEAM</code> storage flags exist) but unused; the Redis backplane, sticky-session ingress, PgBouncer, HPAs, observability stack, regional clusters, latency DNS, and read replicas are <strong>planned, not deployed</strong>. No load testing has been performed, so the ordering here is argued from the architecture's constraints, not from measured benchmarks. Treat the stages as the team's agreed direction and the proof points (load tests, metrics baselines) as explicit future work.</div>
+
+<div class="summary"><h4>Summary</h4>
+<ul>
+  <li><strong>Vertical</strong> scaling grows one machine; <strong>horizontal</strong> scaling adds replicas. Horizontal scaling is clean only for <strong>stateless</strong> services whose replicas are interchangeable.</li>
+  <li>Two constraints bind this system: <strong>(A)</strong> a single Postgres, throttled by connection count; <strong>(B)</strong> realtime services that hold per-lobby state in memory, which makes them un-CDN-able and pinned to one replica.</li>
+  <li>A <strong>backplane</strong> (Redis pub/sub) plus <strong>sticky sessions</strong> together let the realtime tier scale out: stickiness keeps a connection coherent, the backplane keeps a lobby coherent across replicas.</li>
+  <li><strong>Stage 1</strong> relieves both constraints in place (CDN + backplane/sticky + PgBouncer). <strong>Stage 2</strong> adds multi-node k3s, HPAs, and observability. <strong>Stage 3</strong> adds regional clusters, latency DNS, and read replicas with a read/write split.</li>
+  <li>Scaling this platform is achieved with backplanes, edge caches, pooling, and replicas — <em>not</em> a language rewrite. A Go realtime tier still needs the same backplane and stickiness, so Go is a per-service optimization gated on metrics, not a scaling plan.</li>
+</ul></div>
+
+<div class="exercises"><h2 id="ch13-exercises">Practice Exercises</h2>
+
+<div class="exercise"><span class="qid">13.1</span>
+<span class="tag concept">concept</span><span class="tag easy">easy</span>
+Define vertical and horizontal scaling, and explain why horizontal scaling is "clean" for a stateless service but not for a stateful one. Use one rmhstudios service of each kind as your example.</div>
+
+<div class="exercise"><span class="qid">13.2</span>
+<span class="tag concept">concept</span><span class="tag medium">medium</span>
+The chapter names two constraints that "actually bind" the system. State both precisely, and explain why each one bites at a different moment as the fleet grows.</div>
+
+<div class="exercise"><span class="qid">13.3</span>
+<span class="tag concept">concept</span><span class="tag medium">medium</span>
+A teammate proposes putting the <code>rmhbox</code> websocket behind the same CDN used for static assets, "to scale it." Explain in two or three sentences why this cannot work, grounding your answer in what a CDN caches and what a websocket is.</div>
+
+<div class="exercise"><span class="qid">13.4</span>
+<span class="tag concept">concept</span><span class="tag hard">hard</span>
+Sticky sessions and a Redis backplane are both required to run the realtime tier on multiple replicas. Explain what each one provides, and construct a concrete failure scenario that occurs if you enable exactly one of them but not the other.</div>
+
+<div class="exercise"><span class="qid">13.5</span>
+<span class="tag trace">trace</span><span class="tag medium">medium</span>
+Two players join the same <code>rmhbox</code> lobby. After Stage 1, the sticky load balancer pins player&nbsp;X to replica&nbsp;1 and player&nbsp;Y to replica&nbsp;2. Trace the path of a game event X triggers until it reaches Y's screen, naming each component it passes through.</div>
+
+<div class="exercise"><span class="qid">13.6</span>
+<span class="tag design">design</span><span class="tag medium">medium</span>
+The single Postgres is groaning under connection count from a growing fleet. You may add PgBouncer or add read replicas, but only one this quarter. Which do you choose, and why? Be explicit about which symptom each option relieves.</div>
+
+<div class="exercise"><span class="qid">13.7</span>
+<span class="tag concept">concept</span><span class="tag medium">medium</span>
+Why does the chapter call observability a <em>prerequisite</em> for Stage 2 rather than a parallel nice-to-have? Tie your answer to how an HPA decides to scale and to how a human would justify adding a node.</div>
+
+<div class="exercise"><span class="qid">13.8</span>
+<span class="tag design">design</span><span class="tag hard">hard</span>
+Stage 3 introduces read replicas with a read/write split. Give one rmhstudios read path that is safe to serve from a possibly-stale replica and one that is not, and explain the consistency reasoning that distinguishes them.</div>
+
+<div class="exercise"><span class="qid">13.9</span>
+<span class="tag design">design</span><span class="tag hard">hard</span>
+Argue, using the two binding constraints, why rewriting the realtime tier in Go is not by itself a scaling strategy. Then state the narrow condition under which adopting Go for a specific service <em>would</em> be justified.</div>
+
+<div class="exercise"><span class="qid">13.10</span>
+<span class="tag diagram">diagram</span><span class="tag easy">easy</span>
+Draw the three-stage roadmap as a flowchart, labelling on each arrow the single constraint or pressure that the next stage relieves. Your diagram should make clear why the stages cannot be reordered.</div>
+
+</div>

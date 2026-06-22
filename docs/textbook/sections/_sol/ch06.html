@@ -1,0 +1,41 @@
+<div class="solution"><span class="qid">6.1</span> <span class="ans">Answer:</span>
+Authentication establishes <i>who</i> a request is from (identity); authorization decides <i>what</i> that already-known principal may do (permission). RMH Auth is almost entirely authentication — it turns an anonymous request into a known <code>User</code>. The clearest authorization line in <code>lib/auth.ts</code> is the Stripe plugin's <code>authorizeReference: async ({ user, referenceId }) =&gt; referenceId === user.id</code>. It is authorization because by the time it runs the <code>user</code> is already authenticated; the rule only decides whether that known user may manage the subscription whose <code>referenceId</code> was passed (only their own).</div>
+
+<div class="solution"><span class="qid">6.2</span> <span class="ans">Answer:</span>
+(1) <code>login.tsx</code> calls <code>authClient.signIn.email({ email, password, callbackURL })</code>, which fires a <code>POST /api/auth/sign-in/email</code>. (2) The request hits the catch-all route <code>app/routes/api/auth/$.ts</code>, whose POST handler wraps the call in <code>withCors</code> and passes the raw <code>Request</code> to <code>auth.handler(request)</code>. (3) Better Auth looks up the email/password <code>Account</code>, verifies the submitted password against the stored hash, and on success inserts exactly one new <code>Session</code> row (unique <code>token</code>, <code>userId</code>, <code>expiresAt</code>, plus <code>ipAddress</code> and <code>userAgent</code>). (4) It returns a <code>Set-Cookie</code> header carrying the token, sent <code>HttpOnly</code> and (under HTTPS, since <code>useSecureCookies</code> is true) <code>Secure</code>. The single created row is the <code>Session</code> row.</div>
+
+<div class="solution"><span class="qid">6.3</span> <span class="ans">Answer:</span>
+The <code>$</code> makes <code>app/routes/api/auth/$.ts</code> a catch-all (splat) route: it matches any path beneath <code>/api/auth/</code>, not a single endpoint. All three method handlers do the same thing — forward the unmodified <code>Request</code> to <code>auth.handler(request)</code> and wrap the response in <code>withCors</code>. Better Auth then inspects the URL and method internally and dispatches <code>/sign-in/email</code>, <code>/callback/discord</code>, <code>/get-session</code>, etc. to the right logic. So one route can serve every auth endpoint because the <i>library</i> owns the sub-routing; the application only provides one delegating entry point plus CORS.</div>
+
+<div class="solution"><span class="qid">6.4</span> <span class="ans">Answer:</span> A correct sequence (mirroring Figure 6.3 with Google as IdP):
+<pre><code>Browser -&gt; RMH:    signIn.social({ provider: 'google' })
+RMH -&gt; Browser:    302 redirect to Google authorize (clientId, redirect_uri, state)
+Browser -&gt; Google: user approves on Google's own page
+Google -&gt; Browser: 302 back to /api/auth/callback/google?code=...&amp;state=...
+Browser -&gt; RMH:    GET the callback (catch-all route)
+RMH -&gt; Google:     exchange code for tokens (server-to-server)
+Google -&gt; RMH:     access token + id token + profile
+RMH -&gt; Postgres:   upsert User, upsert Account, INSERT Session
+RMH -&gt; Browser:    Set-Cookie session + redirect to callbackURL</code></pre>
+RMH first learns the user's Google identity at the server-to-server token exchange, when Google returns the profile (the preceding authorization code is opaque and not yet identity). RMH never sees the user's Google password.</div>
+
+<div class="solution"><span class="qid">6.5</span> <span class="ans">Answer:</span>
+A <code>User</code> has a one-to-many relation to <code>Account</code>, where each <code>Account</code> is one sign-in method or linked provider. Concretely, the same person could sign in with Discord, link GitHub, and also set an email/password — three <code>Account</code> rows, one <code>User</code> (distinguished by <code>providerId</code>/<code>accountId</code>). On <code>Account</code>, an OAuth access token is stored in the <code>accessToken</code> column (with <code>refreshToken</code>, <code>idToken</code>, <code>scope</code>), while the email/password method's hashed password is stored in the <code>password</code> column.</div>
+
+<div class="solution"><span class="qid">6.6</span> <span class="ans">Answer:</span>
+<code>auth.api.getSession({ headers: request.headers })</code> reads the token from the cookie, fails to find a matching <i>unexpired</i> <code>Session</code> row (it has expired), and returns <code>null</code>. In <code>app/routes/api/slice-it/score.ts</code> the guard <code>if (!session?.user)</code> is therefore true, and the route returns <code>Response.json({ error: 'Unauthorized.' }, { status: 401 })</code>. The score is never written because the route never reaches <code>const userId = session.user.id</code>.</div>
+
+<div class="solution"><span class="qid">6.7</span> <span class="ans">Answer:</span>
+Because each login is its own <code>Session</code> row keyed by <code>userId</code>, "log out of all other devices" is a single delete of every session for the current user except the one making the request: conceptually <code>DELETE FROM session WHERE userId = :me AND token != :currentToken</code> (in Prisma, <code>prisma.session.deleteMany({ where: { userId, NOT: { token: currentToken } } })</code>). It works instantly because sessions are <b>stateful</b>: the cookie only holds a key into the table, so once the row is gone, the next <code>getSession</code> on that other device finds nothing and treats the request as anonymous — the cookie is dead even though the browser still holds it. The stored <code>ipAddress</code>/<code>userAgent</code> can be surfaced to let the user recognize which sessions they are ending.</div>
+
+<div class="solution"><span class="qid">6.8</span> <span class="ans">Answer:</span>
+Hashing happens entirely inside Better Auth; the application contains no hashing code. The result is stored in the <code>password</code> column of the email/password <code>Account</code> row (never plaintext, and never on the request path the app handles). "Never write your own password hashing" is sound because correct password hashing requires a vetted, deliberately slow, salted algorithm with constant-time verification and safe defaults; small mistakes (fast hashes, missing salts, timing leaks) silently weaken security, so delegating to a maintained library is the safe default.</div>
+
+<div class="solution"><span class="qid">6.9</span> <span class="ans">Answer:</span>
+Stateful sessions store a row server-side and put only an opaque key in the cookie; self-contained tokens carry their claims and are trusted on signature alone with no server lookup. Advantage of self-contained tokens: no per-request database read, so they scale statelessly. Advantage of stateful sessions: instant, reliable revocation — there is a row to delete. RMH chose stateful sessions, which is exactly why 6.7 is easy: deleting the other <code>Session</code> rows revokes those logins immediately, whereas self-contained tokens would stay valid until expiry because there is no server-side record to remove (you would need an extra denylist to revoke them).</div>
+
+<div class="solution"><span class="qid">6.10</span> <span class="ans">Answer:</span> A correct sketch:
+<pre><code>User ||--o{ Session : has      (one user, many sessions)
+User ||--o{ Account : links     (one user, many accounts)
+Verification                    (no relation to User)</code></pre>
+<code>User</code> is the parent of both <code>Session</code> (via <code>Session.userId</code>) and <code>Account</code> (via <code>Account.userId</code>), each one-to-many with <code>onDelete: Cascade</code>. <code>Verification</code> stands alone — it is keyed by <code>identifier</code> (e.g. an email for a pending verification or reset) and has no foreign key to <code>User</code>.</div>

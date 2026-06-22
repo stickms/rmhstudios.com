@@ -1,0 +1,502 @@
+<div class="objectives"><h4>Learning Objectives</h4><ul>
+  <li>Identify the three recurring building blocks of an in-browser game engine — the <i>game loop</i>, a <i>deterministic RNG</i>, and a <i>beatmap</i> — and trace each through the real <code>lib/game/</code> Slice-It engine.</li>
+  <li>Explain why a score that is computed entirely on the client cannot be trusted, and describe the server-authoritative validation that <code>app/routes/api/&lt;game&gt;/score.ts</code> performs before a number reaches a leaderboard.</li>
+  <li>Justify why every score endpoint sits behind an in-memory IP rate limiter, and read the limit/window pairs the codebase actually uses.</li>
+  <li>Compare the two save strategies in the platform — an opaque JSON <i>save blob</i> (Temple of Joy, Signal Forge) versus derived high-water-mark columns (leaderboards) — and state the trade-offs of each.</li>
+  <li>Distinguish the 2D rendering paths (Canvas 2D, WebGL) from the 3D stack (React Three Fiber + Rapier) and explain why the same game-loop pattern survives across both.</li>
+  <li>Connect single-player play to the realtime socket fleet of Chapter 7 through the <code>MultiplayerFactory</code> abstraction.</li>
+</ul></div>
+
+<p class="lead">A games library is a stress test for everything else in this book. Each game is a tiny
+real-time system: it runs a loop at sixty frames per second, generates its own content, talks to a
+realtime socket fleet for multiplayer, and — the moment a player wants their score remembered —
+crosses the same authentication, persistence, and abuse-prevention boundaries as the rest of the
+platform. rmhstudios.com ships <i>a suite</i> of these (the README lists Slice It!, Signal Forge,
+Neon Driftway, Altair, Temple of Joy, the 3D titles VELUM 2099 and Forest Explorer, and more). This
+chapter reads the real engine code in <code>lib/game/</code> and several per-game libraries, then
+follows the single most security-sensitive path in the whole subsystem: how a score travels from a
+browser nobody controls to a leaderboard everybody can see.</p>
+
+<h2 id="anatomy-of-an-engine">The anatomy of an in-browser engine</h2>
+<p>Strip away the art and every game in the library reduces to the same skeleton: a <b>game loop</b>
+that advances state once per animation frame, a <b>renderer</b> that draws the current state, an
+<b>input</b> path that mutates state in response to the player, and some source of <b>content</b> — a
+level, a deck, a beatmap. The clearest reference implementation in the repository is the Slice-It
+rhythm engine, whose logic lives in <code>lib/game/GameEngine.ts</code> rather than in
+<code>lib/slice-it/</code> (that directory holds only <code>upload-validation.ts</code>, the helper
+that vets user-uploaded songs).</p>
+
+<div class="keyterm"><span class="term">Game loop</span> — the function a game calls on every frame to
+advance one tick of simulation: read the clock, update state, resolve collisions and inputs, then hand
+the new state to the renderer. In Slice-It the loop body is <code>GameEngine.update()</code>, invoked
+by the Canvas component every frame.</div>
+
+<p>Notice what <code>update()</code> does <i>not</i> do: it does not own a clock. A rhythm game must
+stay synchronized to the music, so the engine reads time from the audio subsystem instead of from a
+frame counter. The loop's first act is to ask the audio manager where the song is, then subtract a
+user-calibrated offset:</p>
+
+<pre><code>public update() {
+    // Called every frame by the Canvas loop
+    if (useGameStore.getState().status !== 'PLAYING' || useGameStore.getState().isPaused) return;
+
+    const offsetSeconds = (useGameStore.getState().audioOffset || 0) / 1000;
+    const rawTime = this.audioManager.getCurrentTime();
+    const currentTime = rawTime - offsetSeconds;
+    const duration = this.audioManager.getDuration();
+
+    // Complete check
+    if (duration &gt; 0 &amp;&amp; currentTime &gt;= duration) {
+        useGameStore.getState().setStatus('FINISHED');
+        this.audioManager.stop();
+        if (this.lobbyId) this.mp.finishGame(this.lobbyId, this.score);
+    }
+    // ... resolve holds, scan for missed notes, throttle multiplayer sync ...
+}</code></pre>
+
+<p>Two design decisions in this excerpt recur across the whole library. First, <b>the loop is a pure
+consumer of an external clock</b> (here, audio playback time), so the simulation cannot drift even if
+frames are dropped. The arcade racer Neon Driftway makes the same choice differently: its design spec
+(<code>specs/neon-driftway.md</code>, internally titled "REDLINE") mandates a variable-but-clamped
+timestep — <code>dt = min(dt, 0.033)</code> — so that a long frame can never tunnel a car through a
+wall. Second, <b>the loop never blocks</b>: long-running work (decoding audio, loading a track) happens
+in <code>loadMap()</code> before play starts, leaving the per-frame path cheap.</p>
+
+<h3>Input as a state mutation, not an event handler</h3>
+<p>Player input enters through <code>submitInput(lane)</code>. Two details make it robust. A per-lane
+cooldown (<code>INPUT_COOLDOWN_MS = 50</code>) guarantees one press maps to at most one note, and the
+engine only allows the <i>next sequential</i> unhit note in a lane to be struck — found by
+<code>getTargetedSlice(lane)</code>. The timing windows that grade a hit are constants in
+<code>lib/game/types.ts</code>:</p>
+
+<pre><code>export const HIT_WINDOWS = {
+  MARVELOUS: 0.020,    // 20ms
+  PERFECT: 0.033333,   // ~33ms
+  GREAT: 0.108333,     // ~108ms
+  GOOD: 0.158333,      // ~158ms
+  BAD: 0.191666,       // ~191ms
+};</code></pre>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart TD
+  A[Audio clock] --&gt;|getCurrentTime| B[GameEngine.update]
+  B --&gt; C{currentTime &gt;= duration?}
+  C --&gt;|yes| D[status = FINISHED]
+  C --&gt;|no| E[resolve active holds]
+  E --&gt; F[scan slices for misses]
+  F --&gt; G[throttled mp.updateScore]
+  H[Keypress] --&gt; I[submitInput lane]
+  I --&gt; J[getTargetedSlice]
+  J --&gt; K[getHitResult vs HIT_WINDOWS]
+  K --&gt; L[handleHit: score, combo, feedback]
+  L --&gt; M[useGameStore setScore]
+  B --&gt; N[Canvas renderer draws state]
+  </div>
+  <figcaption>Figure 8.1: The Slice-It loop and input path. The renderer reads state the loop produces; nothing in the per-frame path performs network I/O except a throttled multiplayer sync.</figcaption>
+</figure>
+
+<h2 id="deterministic-rng">Deterministic randomness</h2>
+<p>Games need randomness — which lane a beat lands in, which card a shop offers, where traffic spawns —
+but raw <code>Math.random()</code> is a liability: it cannot be reproduced, so a bug, a replay, or a
+"seeded run" leaderboard is impossible. The fix is a <b>deterministic RNG</b>: a small pseudo-random
+generator seeded from a string, so the same seed always yields the same sequence. Both
+<code>GameEngine.ts</code> and <code>BeatMapGenerator.ts</code> carry an identical
+<code>mulberry32</code> implementation:</p>
+
+<div class="keyterm"><span class="term">Deterministic RNG</span> — a pseudo-random number generator
+whose output is fully determined by an initial <i>seed</i>. Re-running with the same seed reproduces
+the same sequence, which is what makes replays, deterministic level generation, and seeded-run
+leaderboards possible.</div>
+
+<pre><code>function createSeededRandom(seed: string): () =&gt; number {
+    let h = 0;
+    for (let i = 0; i &lt; seed.length; i++) {
+        h = Math.imul(31, h) + seed.charCodeAt(i) | 0;
+    }
+    return () =&gt; {
+        h |= 0; h = h + 0x6D2B79F5 | 0;
+        let t = Math.imul(h ^ h &gt;&gt;&gt; 15, 1 | h);
+        t = t + Math.imul(t ^ t &gt;&gt;&gt; 7, 61 | t) ^ t;
+        return ((t ^ t &gt;&gt;&gt; 14) &gt;&gt;&gt; 0) / 4294967296;
+    };
+}</code></pre>
+
+<p>The beatmap generator seeds it with the track id (<code>createSeededRandom(`${id}-${120}`)</code>)
+so that the lane assignment for a balanced stereo beat is stable for a given song. Neon Driftway's
+spec goes further, recording <code>seed = timestamp XOR random</code> in each run's stats "for
+debugging and replay." The discipline is worth naming as a rule: <b>any randomness whose result you
+might later need to reproduce should flow through a seeded generator, never the global RNG.</b></p>
+
+<div class="scope"><b>Scope: not every randomness path is deterministic yet.</b> The simulated
+opponents in <code>lib/game/useOpponents.ts</code> advance with raw <code>Math.random()</code> on a
+100&nbsp;ms interval, and the map modifiers in <code>loadMap()</code> (converting ~5% of slices to
+<code>BOMB</code> or ~15% to <code>SWITCH</code>) also use <code>Math.random()</code>. These are cosmetic
+or single-session, so reproducibility is not required — but a future seeded-replay feature would have
+to route them through <code>createSeededRandom</code> too.</div>
+
+<h2 id="beatmaps-and-content">Beatmaps and procedural content</h2>
+<p>A <b>beatmap</b> is the score sheet a rhythm game plays against: an ordered list of notes, each with
+a timestamp, a lane, and a type. In this engine the unit is a <code>Slice</code>
+(<code>lib/game/types.ts</code>): <code>{ id, time, type, lane, duration?, ... }</code>, where
+<code>type</code> is one of seven <code>SliceType</code>s (<code>STANDARD</code>, <code>LONG</code>,
+<code>SWITCH</code>, <code>BOMB</code>, and so on). A <code>BeatMap</code> bundles slices with track
+metadata, and crucially its <code>slices</code> field can be either a flat array <i>or</i> a
+<code>Record&lt;Difficulty, Slice[]&gt;</code> — one chart per difficulty.</p>
+
+<div class="keyterm"><span class="term">Beatmap</span> — the timed list of notes a rhythm game scores
+the player against. Each note carries a <code>time</code> (seconds from track start), a
+<code>lane</code>, and a <code>type</code>; the player's job is to act on each note inside its hit
+window.</div>
+
+<p>The platform generates beatmaps two ways. <code>MapGenerator.generate()</code> builds a chart
+arithmetically from BPM — <code>secPerBeat = 60 / bpm</code>, one slice per beat from beat 4 on,
+promoting every 8th beat to a <code>MOVING</code> note and every 16th to a <code>LONG</code> — which is
+cheap and perfectly regular. <code>BeatMapGenerator.generateFromBuffer()</code> instead does
+<i>onset detection</i> on an uploaded song: it walks the decoded <code>AudioBuffer</code> in
+0.1&nbsp;second windows, finds peaks above a threshold, enforces a minimum spacing so beats cannot
+spam, and assigns a lane from stereo balance (louder-left → lane 0, louder-right → lane 1, balanced →
+the seeded RNG decides):</p>
+
+<pre><code>const peak = Math.max(maxL, maxR);
+if (peak &gt; threshold) {
+    const currentTime = i / sampleRate;
+    if (currentTime - lastBeatTime &gt;= minDistance) {
+        let lane = 0;
+        if (maxL &gt; maxR * 1.2)      lane = 0; // Top
+        else if (maxR &gt; maxL * 1.2) lane = 1; // Bottom
+        else                        lane = rng() &gt; 0.5 ? 1 : 0; // balanced → seeded
+        slices.push({ id: `slice-${slices.length}`, time: currentTime, type: 'STANDARD', lane });
+        lastBeatTime = currentTime;
+    }
+}</code></pre>
+
+<div class="note"><b>Where do beatmaps live?</b> Nowhere on disk. The <code>data/</code> directory holds
+content for the RMHbox party games (e.g. <code>data/rmhbox/emoji-cinema/movies.json</code>), not Slice-It
+charts. A Slice-It beatmap is generated at runtime from a track in <code>lib/game/tracks.ts</code> or
+from a freshly uploaded file — it is never persisted, which is why the score endpoint, not a stored
+chart, is the system of record for what a player achieved.</div>
+
+<h2 id="score-pipeline">The score pipeline: why scoring must be server-authoritative</h2>
+<p>Here is the central lesson of the chapter. The browser computes the score — <code>handleHit()</code>
+adds points, multiplies by combo, applies modifier multipliers from
+<code>calculateScoreMultiplier()</code> — but <b>that number cannot be trusted</b>. The player owns the
+machine running it; a determined user can call the endpoint directly with any number they like. The
+only defense is to make the <i>server</i> the authority over what counts.</p>
+
+<div class="keyterm"><span class="term">Server-authoritative scoring</span> — a design in which the
+client may compute and display a score for responsiveness, but the server independently authenticates,
+validates, and bounds every submission before it is allowed to affect persistent state such as a
+leaderboard. The client's number is a claim; the server decides what is true.</div>
+
+<p>rmhstudios.com cannot fully re-simulate a play on the server (it never received the keystrokes), so
+it does the next best thing: it treats every submission as hostile and gates it through a fixed
+sequence of checks. Reading <code>app/routes/api/slice-it/score.ts</code> top to bottom, the gates are:
+<b>(1) rate-limit by IP</b>, <b>(2) shape and bound the payload</b>, <b>(3) authenticate the session</b>,
+then <b>(4) persist</b> only what survived. The order matters — the cheapest, most abusable check runs
+first:</p>
+
+<pre><code>POST: async ({ request }) =&gt; {
+    const ip = getClientIp(request);
+    const { allowed, retryAfter } = rateLimit(ip, { limit: 5, windowMs: 60_000, prefix: 'slice-score' });
+    if (!allowed) return Response.json({ error: 'Too many requests' },
+        { status: 429, headers: { 'Retry-After': String(retryAfter) } });
+
+    const { username, score, accuracy, maxCombo, songId, speed, modifiers } = await request.json();
+
+    if (!username || typeof username !== 'string' || typeof score !== 'number')
+        return Response.json({ error: 'Invalid score data.' }, { status: 400 });
+
+    const cleanUsername = username.trim().replace(/[^a-zA-Z0-9_\-. ]/g, '').slice(0, 24);
+    if (cleanUsername.length &lt; 2) return Response.json({ error: 'Invalid username' }, { status: 400 });
+    if (score &lt; 0 || score &gt; 1_000_000_000) return Response.json({ error: 'Invalid score' }, { status: 400 });
+
+    const playSpeed = typeof speed === 'number' ? speed : 1.0;
+    if (playSpeed &lt; 1.0) return Response.json({ error: 'Scores at speeds below 1.0x are unranked' }, { status: 400 });
+
+    const session = await auth.api.getSession({ headers: request.headers });
+    if (!session?.user) return Response.json({ error: 'Unauthorized.' }, { status: 401 });
+    // ... only now do we touch the database ...
+}</code></pre>
+
+<p>Every line here is a guardrail. The username is sanitized to an allow-list of characters and capped
+at 24, so it cannot smuggle markup or grow unboundedly. The score is range-checked
+(<code>0 … 1_000_000_000</code>) so an obviously impossible value is rejected even though a
+<i>plausible</i> forged value still could not be caught this way — bounding limits the blast radius, it
+does not prove honesty. Sub-1.0x plays are declared unranked at the server, not merely hidden in the
+UI. And the <code>auth.api.getSession()</code> call ties the submission to a real account, so a
+leaderboard entry always has an owner. Only after all of this does the handler write to Postgres,
+incrementing the player's <code>totalScore</code> and, if a <code>songId</code> matches a real
+<code>Song</code>, recording a per-song personal best.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+sequenceDiagram
+  participant C as Client (GameEngine)
+  participant API as score.ts handler
+  participant RL as rateLimit (in-memory)
+  participant Auth as auth.api.getSession
+  participant DB as Postgres (Prisma)
+  C-&gt;&gt;API: POST username, score, songId, speed
+  API-&gt;&gt;RL: rateLimit(ip, limit 5 / 60s)
+  RL--&gt;&gt;API: allowed or 429 Retry-After
+  API-&gt;&gt;API: sanitize username, bound score, reject speed below 1.0
+  API-&gt;&gt;Auth: getSession(headers)
+  Auth--&gt;&gt;API: session.user or 401
+  API-&gt;&gt;DB: upsert Player.totalScore
+  API-&gt;&gt;DB: upsert SongLeaderboard if new best
+  DB--&gt;&gt;API: ok
+  API--&gt;&gt;C: success, isNewBest
+  </div>
+  <figcaption>Figure 8.2: Score submission as a sequence. The rate limiter and validators run before any database access; authentication gates persistence; the leaderboard write happens only on a new personal best.</figcaption>
+</figure>
+
+<p>This shape is uniform across the library. Every game has a sibling pair
+<code>app/routes/api/&lt;game&gt;/score.ts</code> and <code>.../leaderboard.ts</code> — Slice-It,
+Signal Forge, Neon Driftway, Altair, Vega, Void Breaker, and more. They differ only in the columns they
+keep. Neon Driftway's handler, for instance, bounds <code>score</code> to ten million, clamps
+<code>level</code> to the valid range <code>1…3</code>, and stores high-water marks
+(<code>highScore</code>, <code>bestDistance</code>, <code>bestTimeMs</code>) with
+<code>Math.max(existing, incoming)</code> so a worse run never overwrites a better one.</p>
+
+<h2 id="rate-limiting">Rate limiting the write path</h2>
+<p>The first gate, <code>rateLimit()</code> from <code>lib/rate-limit.ts</code>, is an in-process
+fixed-window counter keyed by client IP. It is deliberately humble: a bounded <code>Map</code>
+(<code>MAX_STORE_SIZE = 10_000</code>) swept by a 60-second GC timer, with FIFO eviction if it ever
+fills. There is no Redis, no shared store — which means each server process keeps its own counts.</p>
+
+<div class="keyterm"><span class="term">Rate limiting</span> — capping how many requests a given client
+(here, an IP address) may make in a time window. Slice-It allows <code>5</code> score POSTs per
+<code>60_000</code>&nbsp;ms but <code>20</code> leaderboard GETs, reflecting that writes are far more
+abusable than reads.</div>
+
+<p>The limit/window pairs encode a threat model. Reads are generous (leaderboard GET: 20/min); writes
+are tight (score POST: 5/min). Save endpoints sit in between (Temple of Joy save: 20/min; Signal Forge
+save: 10/min). A blocked request returns <code>429</code> with a <code>Retry-After</code> header so a
+well-behaved client can back off.</p>
+
+<div class="warn"><b>The IP is only as trustworthy as the proxy.</b> <code>getClientIp()</code> reads the
+first entry of <code>x-forwarded-for</code>. The file's own comment is explicit: this "is only safe
+behind a trusted reverse proxy (nginx, Cloudflare) that sets/overwrites this header. Without a trusted
+proxy, clients can spoof this header to bypass rate limits." The limiter is a speed bump that depends on
+the deployment topology of Chapter 7, not a cryptographic guarantee.</div>
+
+<h2 id="save-systems">Save systems: opaque blobs versus derived columns</h2>
+<p>Two of the games persist a player's <i>entire progress</i>, not just a number. The idle game Temple
+of Joy and the deckbuilder Signal Forge each store a <b>save blob</b>: a single JSON document the
+client serializes and ships up whole. The Prisma schema models this with a <code>Json</code> column —
+<code>TempleOfJoySave.saveData Json</code> and <code>SignalForgePlayer.savedRunState Json?</code>:</p>
+
+<div class="keyterm"><span class="term">Save blob</span> — a player's complete game state serialized to
+one opaque JSON document and stored as a single column, rather than decomposed into relational rows. The
+server treats it as a value to hold for that user, not a structure to query.</div>
+
+<pre><code>model TempleOfJoySave {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  saveData  Json
+  updatedAt DateTime @default(now()) @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("temple_of_joy_save")
+}</code></pre>
+
+<p>The save handler (<code>app/routes/api/temple-of-joy/save.ts</code>) is a textbook
+upsert-per-user: authenticate, rate-limit, reject a non-object body, cap the payload at 500&nbsp;KB
+(<code>bodyStr.length &gt; 500_000</code>), then <code>prisma.templeOfJoySave.upsert</code> keyed on
+<code>userId</code> — one save row per player, last write wins. Signal Forge's
+<code>save.ts</code> adds a little more semantics: because its blob is a roguelike run, the handler peeks
+inside it to validate essential fields (<code>typeof runState.floor !== 'number'</code> is rejected as
+malformed) and to maintain derived leaderboard columns alongside the blob:</p>
+
+<pre><code>const currentScore  = typeof runState.score === 'number' ? runState.score : 0;
+const newHighScore  = existing ? Math.max(existing.highScore, currentScore) : currentScore;
+const newFloorReached = existing ? Math.max(existing.floorReached, currentFloor) : currentFloor;
+
+await prisma.signalForgePlayer.upsert({
+  where: { userId: session.user.id },
+  update: { savedRunState: runState, highScore: newHighScore, floorReached: newFloorReached, username },
+  create: { userId: session.user.id, username, savedRunState: runState, highScore: currentScore, floorReached: currentFloor },
+});</code></pre>
+
+<p>The contrast is the lesson. The <b>blob</b> is dead simple to write and lets the client evolve its
+state shape without a migration — but the database cannot index, query, or validate its interior, the
+server must trust the client's serialization, and a 500&nbsp;KB cap is the only bound on its growth. The
+<b>derived column</b> (<code>highScore</code>, <code>floorReached</code>, indexed
+<code>@@index([highScore(sort: Desc)])</code>) is what the leaderboard reads, because you cannot
+<code>ORDER BY</code> a field buried inside a JSON document efficiently. So Signal Forge keeps both: the
+blob to <i>resume</i> a run, the columns to <i>rank</i> it. This split — opaque state for resume,
+extracted scalars for queries — is the pragmatic answer whenever you must both store and rank.</p>
+
+<div class="scope"><b>Scope: leaderboards reuse the same dual idea.</b> Slice-It's global board reads
+<code>Player.totalScore</code> (a scalar column), while its per-song board reads
+<code>SongLeaderboard</code> rows keyed <code>@@unique([songId, userId])</code> and indexed
+<code>@@index([songId, score(sort: Desc)])</code>. The leaderboard GET simply
+<code>findMany … take 10, orderBy score desc</code>. No blob is ever read on the ranking path.</div>
+
+<h2 id="rendering-2d-3d">The rendering split: 2D, WebGL, and the 3D stack</h2>
+<p>The README's tech stack lists "React Three Fiber, Rapier Physics, Pixi.js, Howler.js," and it is
+tempting to assume every game uses all of them. It does not — and reading the source corrects the
+assumption. The five games detailed here are all <b>2D</b>, and they reach for different renderers:</p>
+
+<div class="keyterm"><span class="term">2D vs 3D split</span> — a 2D game draws a flat scene with a
+canvas drawing API (Canvas 2D) or a 2D-batched GPU layer (WebGL/Pixi), updating positions directly. A
+3D game describes a scene graph of meshes that React Three Fiber renders and Rapier simulates with real
+physics. The same game-loop pattern drives both; only the renderer and physics differ.</div>
+
+<p>Slice-It, Signal Forge, and Neon Driftway draw with the plain <b>Canvas 2D</b> context
+(<code>canvas.getContext('2d')</code>); Slice-It synthesizes its audio through the Web Audio API, while
+Neon Driftway renders pixel-art sprites (<code>setPixelArt(ctx)</code>) and clamps its timestep as its
+spec demands. Altair is also 2D but renders through a hand-written <b>WebGL2</b> batch renderer
+(<code>lib/altair/engine/webgl/</code>, with <code>initWebGL()</code> and a <code>SpriteBatch</code>)
+and uses <b>howler</b> for audio — it is the survivors-like with the heaviest draw load, so it pays for
+a GPU path. Temple of Joy renders no canvas at all: it is a pure React-DOM idle game whose engine
+(<code>lib/temple-of-joy/engine.ts</code>) is a set of pure compute functions like
+<code>computeTotalHPS</code> driven by a Zustand store and an <code>applyTick</code> step.</p>
+
+<div class="scope"><b>Scope: where the 3D stack actually runs.</b> <code>@react-three/fiber</code>,
+<code>@react-three/rapier</code>, and <code>three</code> are real dependencies, and the README assigns
+them to the 3D titles (VELUM 2099, "a 3D cyberpunk game"; Forest Explorer, "a 3D exploration game").
+None of the five games dissected in this chapter import them — a useful reminder to read source rather
+than the dependency list. The <i>pattern</i> (loop → update → render) is identical across 2D and 3D;
+only the renderer (a canvas context vs. an R3F scene graph) and the physics (manual AABB checks vs.
+Rapier) change.</div>
+
+<table>
+  <thead><tr><th>Game</th><th>Genre</th><th>2D/3D</th><th>Render / physics</th><th>Engine entry point</th></tr></thead>
+  <tbody>
+    <tr><td>Slice It!</td><td>Rhythm</td><td>2D</td><td>Canvas 2D + Web Audio</td><td><code>lib/game/GameEngine.ts</code></td></tr>
+    <tr><td>Signal Forge</td><td>Deckbuilder roguelike</td><td>2D</td><td>Canvas 2D (pure render fn)</td><td><code>lib/signal-forge/index.ts</code></td></tr>
+    <tr><td>Neon Driftway</td><td>Endless racer</td><td>2D</td><td>Canvas 2D, pixel-art sprites</td><td><code>lib/neon-driftway/game.ts</code></td></tr>
+    <tr><td>Altair</td><td>Survivors-like</td><td>2D</td><td>WebGL2 batches + howler</td><td><code>lib/altair/engine/game-loop.ts</code></td></tr>
+    <tr><td>Temple of Joy</td><td>Idle / incremental</td><td>2D (DOM)</td><td>React DOM, no canvas</td><td><code>lib/temple-of-joy/engine.ts</code></td></tr>
+    <tr><td>VELUM 2099 / Forest Explorer</td><td>3D action / exploration</td><td>3D</td><td>R3F + Rapier (per README)</td><td><i>3D stack</i></td></tr>
+  </tbody>
+</table>
+
+<p>The component layout is just as uniform. Each game is a top-level shell (<code>GameCanvas.tsx</code>,
+<code>SignalForgeGame.tsx</code>, <code>NeonDriftwayGame.tsx</code>, <code>AltairShell.tsx</code>,
+<code>TempleOfJoyGame.tsx</code>) wrapping a HUD (<code>HUD.tsx</code> / <code>CombatHUD.tsx</code> /
+<code>GameHUD.tsx</code>) and a folder of screens (a menu/landing screen, a game-over screen, a pause
+overlay, a settings panel, a leaderboard panel). Learn one game's component tree and you can navigate
+the rest.</p>
+
+<h2 id="multiplayer-bridge">Multiplayer through the socket fleet</h2>
+<p>Single-player play is self-contained, but the moment two players share a lobby the game must talk to
+the realtime fleet of Chapter 7. Slice-It does this through <code>MultiplayerFactory</code>
+(<code>lib/game/MultiplayerFactory.ts</code>), a singleton that wraps one <code>socket.io-client</code>
+connection behind a small action/event API. The engine never touches a socket directly; it calls the
+factory, and the factory speaks the fleet's protocol.</p>
+
+<pre><code>private mp = MultiplayerFactory.getInstance();
+// inside update(), throttled to ~3 times/sec:
+if (this.lobbyId &amp;&amp; Math.random() &lt; 0.05) {
+    this.mp.updateScore(this.lobbyId, { score: this.score, combo: this.combo });
+}</code></pre>
+
+<p>The factory connects to <code>VITE_SOCKET_URL</code> (default <code>http://localhost:7001</code>) over
+the <code>path: "/socket/"</code> WebSocket transport — the same fleet endpoint Chapter 7 describes. It
+exposes outbound actions (<code>joinLobby</code>, <code>selectSong</code>, <code>startGame</code>,
+<code>updateScore</code>, <code>finishGame</code>) and a local pub/sub for inbound
+<code>GameEvent</code>s (<code>'lobby_update'</code>, <code>'player_update'</code>,
+<code>'player_finished'</code>, <code>'match_results'</code>, …). When a <code>'lobby_update'</code>
+arrives it reconciles the opponent list into the Zustand store — adding present players, removing absent
+ones. The abstraction is the point: by funneling all realtime traffic through one factory, the engine
+stays testable, the socket lifecycle is owned in one place, and a different transport could be swapped in
+without touching <code>GameEngine</code>.</p>
+
+<div class="note"><b>Authoritative scoring still applies in multiplayer.</b> The throttled
+<code>updateScore</code> messages drive the live opponent HUD only; they are not the record of truth. A
+final, ranked score still travels the server-authoritative <code>score.ts</code> pipeline of Figure 8.2.
+Realtime sync is for <i>presence</i>; the leaderboard is for <i>truth</i>.</div>
+
+<div class="summary"><h4>Summary</h4>
+<ul>
+  <li>Every game reduces to the same skeleton — a <b>game loop</b>, a renderer, an input path, and a
+  content source. Slice-It's <code>GameEngine.update()</code> reads its clock from audio playback, so the
+  simulation stays in sync even when frames drop.</li>
+  <li>A <b>deterministic RNG</b> (the shared <code>mulberry32</code> seeded generator) makes lane
+  assignment, level generation, and seeded-run leaderboards reproducible; raw <code>Math.random()</code>
+  remains only on cosmetic, single-session paths.</li>
+  <li>A <b>beatmap</b> is a timed list of <code>Slice</code> notes, built arithmetically by
+  <code>MapGenerator</code> or by onset detection in <code>BeatMapGenerator.generateFromBuffer()</code>;
+  it is generated at runtime, never stored.</li>
+  <li>Scoring is <b>server-authoritative</b>: <code>score.ts</code> rate-limits by IP, sanitizes and
+  bounds the payload, authenticates the session, and only then writes — because the client's number is a
+  claim, not a fact.</li>
+  <li><b>Rate limiting</b> (<code>lib/rate-limit.ts</code>) caps writes tightly (5/min) and reads loosely
+  (20/min), but trusts <code>x-forwarded-for</code>, so it is only as strong as the proxy in front of it.</li>
+  <li><b>Save blobs</b> (<code>Json</code> columns) make progress easy to persist and evolve but
+  impossible to query; the platform pairs them with derived, indexed columns (<code>highScore</code>) for
+  ranking.</li>
+  <li>The library spans Canvas 2D, WebGL2, and pure DOM rendering, with the R3F + Rapier <b>3D stack</b>
+  reserved for the 3D titles — yet the loop-update-render pattern is invariant across all of them.</li>
+  <li>Multiplayer flows through the <code>MultiplayerFactory</code> singleton to the Chapter 7 socket
+  fleet for live presence, while final scores still cross the authoritative pipeline.</li>
+</ul></div>
+
+<div class="exercises"><h2 id="ch8-exercises">Practice Exercises</h2>
+  <div class="exercise"><span class="qid">8.1</span>
+    <span class="tag concept">concept</span><span class="tag easy">easy</span>
+    Define <i>server-authoritative scoring</i> in your own words and explain why a score computed by
+    <code>handleHit()</code> in the browser cannot be trusted to populate a leaderboard, even though it is
+    the same arithmetic the player sees on screen.</div>
+
+  <div class="exercise"><span class="qid">8.2</span>
+    <span class="tag trace">trace</span><span class="tag medium">medium</span>
+    Trace a single score POST through <code>app/routes/api/slice-it/score.ts</code> from the first line
+    of the handler to the database write. List, in order, every gate the request must pass and the HTTP
+    status code returned if it fails each one.</div>
+
+  <div class="exercise"><span class="qid">8.3</span>
+    <span class="tag concept">concept</span><span class="tag medium">medium</span>
+    The Slice-It limiter allows <code>5</code> score POSTs but <code>20</code> leaderboard GETs per
+    60-second window. Explain the threat model that justifies the asymmetry, and why a generous read
+    limit is lower risk than a generous write limit.</div>
+
+  <div class="exercise"><span class="qid">8.4</span>
+    <span class="tag concept">concept</span><span class="tag hard">hard</span>
+    The score handler rejects values outside <code>0 … 1_000_000_000</code>. Explain why this range check
+    cannot, by itself, stop a cheater, and describe what a forged-but-plausible submission would look
+    like that passes every gate in <code>score.ts</code>. What additional evidence would the server need
+    to actually re-validate the play?</div>
+
+  <div class="exercise"><span class="qid">8.5</span>
+    <span class="tag design">design</span><span class="tag medium">medium</span>
+    Signal Forge stores both an opaque <code>savedRunState Json?</code> blob and the derived columns
+    <code>highScore</code> and <code>floorReached</code>. Defend this duplication: state one task each
+    representation does that the other cannot, and explain why the leaderboard query cannot read the
+    blob.</div>
+
+  <div class="exercise"><span class="qid">8.6</span>
+    <span class="tag concept">concept</span><span class="tag easy">easy</span>
+    Explain what makes the shared <code>createSeededRandom(seed)</code> generator <i>deterministic</i>,
+    and give one concrete feature (named in this chapter) that becomes possible only because randomness
+    flows through a seed instead of <code>Math.random()</code>.</div>
+
+  <div class="exercise"><span class="qid">8.7</span>
+    <span class="tag trace">trace</span><span class="tag medium">medium</span>
+    Follow one beat from an uploaded song through
+    <code>BeatMapGenerator.generateFromBuffer()</code>. Given a window whose left-channel peak is much
+    louder than the right, state which <code>lane</code> the resulting <code>Slice</code> is assigned and
+    why; then state what happens when the channels are balanced.</div>
+
+  <div class="exercise"><span class="qid">8.8</span>
+    <span class="tag diagram">diagram</span><span class="tag medium">medium</span>
+    Redraw Figure 8.2 as a flowchart instead of a sequence diagram, but add the multiplayer path: show
+    where <code>MultiplayerFactory.updateScore</code> branches off during play and why that branch does
+    <i>not</i> reach the leaderboard write.</div>
+
+  <div class="exercise"><span class="qid">8.9</span>
+    <span class="tag design">design</span><span class="tag hard">hard</span>
+    The warning callout notes that <code>getClientIp()</code> trusts <code>x-forwarded-for</code>, which
+    clients can spoof without a trusted proxy. Propose two independent hardening measures (one at the
+    infrastructure layer, one at the application layer) that would make the score endpoint harder to abuse
+    even if IP-based rate limiting is bypassed.</div>
+
+  <div class="exercise"><span class="qid">8.10</span>
+    <span class="tag concept">concept</span><span class="tag hard">hard</span>
+    Altair renders through a hand-written WebGL2 batch renderer while Slice-It uses Canvas 2D, yet both
+    are 2D games with the same loop-update-render shape. Explain what property of Altair (named in this
+    chapter) justifies paying for a GPU path, and describe one thing that would remain unchanged if
+    Slice-It were ported to WebGL.</div>
+</div>

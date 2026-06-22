@@ -1,0 +1,135 @@
+<div class="exam-meta"><span class="pill">90 minutes</span><span class="pill">100 points</span><span class="pill">Chapters 1&ndash;7</span></div>
+
+<p class="lead">This midterm covers the web tier and the platform around it: the process split, the history, SSR and routing, client/server state, the Prisma data layer, RMH Auth, and the realtime fleet. Answer every question. For multiple choice, choose the single best option. For short answer, be specific &mdash; cite real identifiers, ports, file paths, and event names from the case study where they matter. Budget roughly 30 minutes per part.</p>
+
+<div class="exam-section">
+<h2 id="part-i-multiple-choice">Part I &mdash; Multiple Choice</h2>
+<p>Ten questions, 3 points each (30 points). Choose the one best answer.</p>
+
+<div class="exam-q"><span class="qid">A1</span><span class="pts">3 pts</span>
+According to the chapters, which stack actually serves the rmhstudios.com web tier in production, and on which port?
+<ol class="choices">
+  <li>Next.js 16 App Router on port 7000.</li>
+  <li>TanStack Start + Vite + Nitro on port 7005.</li>
+  <li>Express + Socket.io on port 7001.</li>
+  <li>A static build served by Apache on port 9000.</li>
+</ol></div>
+
+<div class="exam-q"><span class="qid">A2</span><span class="pts">3 pts</span>
+In <code>docker-compose.yml</code>, the <code>discord-bot</code>, <code>doctrine-worker</code>, <code>vibe-worker</code>, and <code>bot-worker</code> services publish <em>no</em> host port. What does this most directly tell you about them?
+<ol class="choices">
+  <li>They are misconfigured and unreachable.</li>
+  <li>They are realtime Socket.io servers that clients connect to directly.</li>
+  <li>They are background workers that take no inbound user traffic and reach the world through the database and outbound calls.</li>
+  <li>They run only in development and are absent in production.</li>
+</ol></div>
+
+<div class="exam-q"><span class="qid">A3</span><span class="pts">3 pts</span>
+Which single commit, dated <strong>2026-03-06</strong>, marks the end of Era 1 and the beginning of Era 2 in the project's history?
+<ol class="choices">
+  <li><code>Initial commit from Create Next App</code></li>
+  <li><code>feat: establish socket server for multiplayer game communication</code></li>
+  <li><code>feat: migrate from Next.js to TanStack Start</code></li>
+  <li><code>feat(deploy): add Terraform + Helm (k3s) migration</code></li>
+</ol></div>
+
+<div class="exam-q"><span class="qid">A4</span><span class="pts">3 pts</span>
+In a TanStack Start route file, what is the defining difference between a <em>page route</em> and a <em>server route</em>?
+<ol class="choices">
+  <li>A page route exports a <code>component</code> and renders UI; a server route exports HTTP method <code>handlers</code> that return a Web <code>Response</code>.</li>
+  <li>A page route runs only in the browser; a server route runs only at build time.</li>
+  <li>A page route uses <code>.ts</code> files; a server route uses <code>.tsx</code> files.</li>
+  <li>A page route cannot read the database, but a server route renders HTML.</li>
+</ol></div>
+
+<div class="exam-q"><span class="qid">A5</span><span class="pts">3 pts</span>
+A teammate writes a value to <code>localStorage</code> and reads it directly in the render body of a server-rendered component. What is the most likely consequence at the hydration boundary?
+<ol class="choices">
+  <li>Nothing &mdash; the server and client always agree on <code>localStorage</code>.</li>
+  <li>A hydration mismatch: the server has no <code>localStorage</code>, so the markup differs from the client's first render and React must repair it (a flash or warning).</li>
+  <li>The build fails because <code>localStorage</code> is a reserved word.</li>
+  <li>React Query silently caches the value and refetches it after <code>staleTime</code>.</li>
+</ol></div>
+
+<div class="exam-q"><span class="qid">A6</span><span class="pts">3 pts</span>
+In the state model of Chapter 4, which piece of data is <em>server state</em> rather than client state?
+<ol class="choices">
+  <li>Whether a dropdown is currently open.</li>
+  <li>Which of the 30 site themes the visitor picked.</li>
+  <li>The puzzle leaderboard / a user's reputation score.</li>
+  <li>The live HP of the game run you are currently playing.</li>
+</ol></div>
+
+<div class="exam-q"><span class="qid">A7</span><span class="pts">3 pts</span>
+Why does the <code>RMHark</code> (feed post) model store <code>likeCount</code>, <code>commentCount</code>, and <code>repostCount</code> as plain integer columns instead of aggregating <code>RMHarkLike</code> rows on every read?
+<ol class="choices">
+  <li>Postgres cannot count rows.</li>
+  <li>It is a denormalized cache: aggregating at feed scale on every read is expensive, so the counts are maintained transactionally on write (trading a risk of drift for cheap reads).</li>
+  <li>Prisma forbids relations on feed models.</li>
+  <li>The counts are stored as a JSON blob for schema flexibility.</li>
+</ol></div>
+
+<div class="exam-q"><span class="qid">A8</span><span class="pts">3 pts</span>
+Which Prisma command applies already-authored, version-controlled migrations in order and never invents new ones &mdash; the one meant to run on production deploy?
+<ol class="choices">
+  <li><code>prisma db push --accept-data-loss</code></li>
+  <li><code>prisma migrate dev</code></li>
+  <li><code>prisma migrate deploy</code></li>
+  <li><code>prisma db push --force-reset</code></li>
+</ol></div>
+
+<div class="exam-q"><span class="qid">A9</span><span class="pts">3 pts</span>
+RMH Auth uses <em>session-based</em> (stateful) authentication. What is the chief advantage of this over self-contained tokens verified by signature alone?
+<ol class="choices">
+  <li>Sessions never expire, so users stay logged in forever.</li>
+  <li>The token in the cookie is self-validating and needs no database.</li>
+  <li>Because the session is a server row, deleting or expiring the row instantly invalidates the cookie everywhere &mdash; sessions are revocable.</li>
+  <li>Stateful sessions remove the need for HTTPS or <code>HttpOnly</code> cookies.</li>
+</ol></div>
+
+<div class="exam-q"><span class="qid">A10</span><span class="pts">3 pts</span>
+In the Neon Driftway handler, <code>ndw:playerUpdate</code> relays with <code>socket.to(room).emit(...)</code> while <code>ndw:startCountdown</code> uses <code>io.to(room).emit(...)</code>. What is the behavioral difference?
+<ol class="choices">
+  <li><code>socket.to(room)</code> sends to everyone in the room <em>except the sender</em>; <code>io.to(room)</code> sends to <em>everyone</em> in the room including the sender.</li>
+  <li><code>socket.to(room)</code> sends only to the sender; <code>io.to(room)</code> sends to no one.</li>
+  <li>They are identical aliases; the choice is purely stylistic.</li>
+  <li><code>socket.to(room)</code> writes to the database; <code>io.to(room)</code> writes to memory.</li>
+</ol></div>
+</div>
+
+<div class="exam-section">
+<h2 id="part-ii-short-answer">Part II &mdash; Short Answer</h2>
+<p>Six questions, 5 points each (30 points). Two to four sentences each unless asked for more.</p>
+
+<div class="exam-q"><span class="qid">A11</span><span class="pts">5 pts</span>
+Define the <em>process-split architecture</em> used by rmhstudios.com and give two distinct benefits it provides over running everything in one process. Name one realtime server and one worker from the fleet to ground your answer.</div>
+
+<div class="exam-q"><span class="qid">A12</span><span class="pts">5 pts</span>
+A signed-in user requests <code>GET /</code>. List, in order, the hops the request takes from the browser to an interactive page. Name the server function in <code>__root.tsx</code> that reads the session cookie on the server, and state precisely what is true of the page in the window <em>between</em> first paint and the completion of hydration.</div>
+
+<div class="exam-q"><span class="qid">A13</span><span class="pts">5 pts</span>
+Two components mount at the same time and both call <code>useDoctrineReputation()</code>, which uses <code>staleTime: 60_000</code> against the shared <code>QueryClient</code>. How many network requests fire, what does the second component see, and what happens 90 seconds later? Define <em>deduplication</em> in your answer.</div>
+
+<div class="exam-q"><span class="qid">A14</span><span class="pts">5 pts</span>
+The <code>DailyPuzzleScore</code> model declares both <code>@@unique([userId, gameMode, dateKey])</code> and <code>@@index([gameMode, dateKey, score(sort: Desc)])</code>. Explain what each one is for, and why a <code>@@unique</code> constraint is described as being "both an index and a correctness rule."</div>
+
+<div class="exam-q"><span class="qid">A15</span><span class="pts">5 pts</span>
+Distinguish <em>authentication</em> from <em>authorization</em>, then trace what happens when a request reaches <code>/api/slice-it/score</code> with an <em>expired</em> session cookie: what does <code>auth.api.getSession</code> return, and what exact HTTP status code does the route send back? Explain why that particular code (rather than 403) is used.</div>
+
+<div class="exam-q"><span class="qid">A16</span><span class="pts">5 pts</span>
+Explain why each lobby in the realtime fleet living in a single process's in-memory <code>Map</code> caps that service at <em>one replica</em>. Name the two additions that horizontal scaling would require, and define each in one phrase.</div>
+</div>
+
+<div class="exam-section">
+<h2 id="part-iii-diagram-design">Part III &mdash; Diagram / Design</h2>
+<p>Three questions, 40 points total. Diagrams may be hand-sketched; label every box and arrow. Design answers must state assumptions and defend trade-offs.</p>
+
+<div class="exam-q"><span class="qid">A17</span><span class="pts">13 pts</span>
+<strong>Draw the production fleet.</strong> Sketch a single diagram of the production processes that (a) places each service in the correct tier &mdash; web/SSR, realtime, workers, ops/status, storage; (b) shows the shared PostgreSQL database as the common backbone; and (c) marks which services are user-facing (publish/proxy a port, e.g. <code>web</code> 7005, <code>socket</code> 7001, <code>rmhbox</code> 7676, <code>rmhtube</code> 7003, <code>status</code> 7008) versus which take no inbound user traffic. Show the two connection types a single browser holds at once, and add the <code>status</code> process with dashed "probe" arrows to the services it checks. In one sentence below the diagram, state how the tiers coordinate given that the web tier and realtime tier do not call each other directly.</div>
+
+<div class="exam-q"><span class="qid">A18</span><span class="pts">13 pts</span>
+<strong>Critique a "pure SPA" proposal.</strong> A teammate proposes converting rmhstudios.com to a pure single-page application "to simplify the server," deleting SSR. Argue against it using at least three concrete features or files from the web-tier chapter (for example <code>getInitialUser</code>, <code>sitemap[.]xml.ts</code>, crawlable/personalized first paint, time-to-content). Then concede the one case where client-only rendering is genuinely correct here &mdash; the games library &mdash; and name the specific <code>vite.config.ts</code> mechanisms (<code>heavyExternals</code>/<code>traceDeps</code>, <code>manualChunks</code>, <code>stubServerFiles</code>) that already carve out that client-only lane. Conclude with a one-sentence statement of the design in your own words.</div>
+
+<div class="exam-q"><span class="qid">A19</span><span class="pts">14 pts</span>
+<strong>Design an "unread notifications" indicator.</strong> The nav bar must show a count of unread notifications that (i) stays roughly current as other users act, and (ii) never flashes a wrong number on refresh. Decide which of the three state systems (local <code>useState</code>, a Zustand store, or a TanStack React Query cache) you would use &mdash; or which combination &mdash; and justify it against the ownership/freshness test from Chapter 4. Then explain how you would seed the very first render to avoid a hydration mismatch (referencing how the session is seeded from the server loader), and what refetch cadence you would choose and why. Finally, name one consistency hazard your design introduces and how you would mitigate it.</div>
+</div>

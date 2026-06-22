@@ -1,0 +1,383 @@
+<div class="objectives"><h4>Learning Objectives</h4><ul>
+  <li>Explain what an <b>ORM</b> is and how Prisma maps a <code>model</code> to a Postgres table, a field to a column, and a relation to a foreign key.</li>
+  <li>Describe how rmhstudios organizes a 142-model schema into coherent <b>domains</b> (auth, per-game profiles, music library, social feed, economy, content) rather than one undifferentiated blob.</li>
+  <li>Reason about <b>indexing</b>: why leaderboards index a score column <code>sort: Desc</code>, why the feed has a composite keyset index, and what a <code>@@unique</code> constraint buys you.</li>
+  <li>Weigh the trade-off of storing flexible game state in a <b>JSON/JSONB column</b> versus modeling it relationally.</li>
+  <li>Distinguish the <b>migration workflows</b>: <code>db push</code> vs <code>migrate dev</code> vs <code>migrate deploy</code>, and dev vs prod.</li>
+  <li>Explain the <b>singleton client</b> pattern and why it prevents connection-pool exhaustion.</li>
+</ul></div>
+
+<p class="lead">Every feature in the previous chapters eventually has to remember something: who is logged in, what your high score was, which posts you liked, how many coins you hold. All of that durable memory lives in one PostgreSQL database, reached through one type-safe contract: a Prisma schema of 142 models. This chapter reads that schema closely — not to memorize it, but to learn how a single relational data layer stays legible while a platform grows a hundred features around it.</p>
+
+<div class="stats">
+  <div class="stat"><div class="v">142</div><div class="l">Prisma models</div></div>
+  <div class="stat"><div class="v">168</div><div class="l">@@index declarations</div></div>
+  <div class="stat"><div class="v">58</div><div class="l">@@unique constraints</div></div>
+  <div class="stat"><div class="v">38</div><div class="l">Json columns</div></div>
+  <div class="stat"><div class="v">1</div><div class="l">Postgres instance</div></div>
+</div>
+
+<h2 id="what-is-an-orm">What an ORM is, and what Prisma is doing</h2>
+<p>A relational database speaks SQL and stores rows in tables. Application code speaks objects: a <code>User</code>, a <code>Song</code>, a list of comments. Something has to translate between the two worlds, and that something is an <b>object-relational mapper</b>.</p>
+
+<div class="keyterm"><span class="term">ORM (object-relational mapper)</span> — a library that maps database tables to in-language data structures and turns method calls (<code>prisma.user.findUnique(...)</code>) into SQL, so you read and write rows as typed objects instead of hand-writing query strings.</div>
+
+<p>Prisma is the ORM rmhstudios uses. Its source of truth is a single declarative file, <code>prisma/schema.prisma</code>. From that file Prisma <i>generates</i> a TypeScript client whose method names and argument shapes are derived from your models, so a typo in a field name fails at compile time rather than at 3 a.m. in production.</p>
+
+<div class="keyterm"><span class="term">Schema</span> — the <code>prisma/schema.prisma</code> file: a single declarative description of every model, field, relation, index, and enum. It is both the spec the database is migrated to match and the spec the generated client is built from.</div>
+
+<p>The header of the schema tells you the two key choices. The datasource is Postgres, and the generator is configured to run through a JavaScript query engine rather than a native binary, because the database is reached through a connection-pool adapter (more on that below):</p>
+
+<pre><code>generator client {
+  provider        = "prisma-client-js"
+  // Skip engine binary — the pg adapter uses the JS-based query engine
+  previewFeatures = ["relationJoins"]
+}
+
+datasource db {
+  provider = "postgresql"
+}</code></pre>
+
+<h3 id="model-to-table">Model → table, field → column, relation → foreign key</h3>
+<p>The cleanest way to see the mapping is the authentication core. rmhstudios uses the <a>Better Auth</a> library, and its <code>User</code> model is annotated to map onto a table literally named <code>user</code>:</p>
+
+<pre><code>model User {
+  id            String   @id @default(cuid())
+  username        String?   @unique // Added for username login
+  handle          String?   @unique // Unique user handle for @mentions and URLs
+  email           String?   @unique
+  emailVerified   Boolean?
+  isAdmin         Boolean   @default(false)
+  bannedUntil     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  sessions Session[]
+  accounts Account[]
+  // ... ~90 more relation fields ...
+
+  @@index([isBot])
+  @@map("user")
+}</code></pre>
+
+<p>Read the annotations as a vocabulary:</p>
+<ul>
+  <li><code>@id</code> marks the primary key; <code>@default(cuid())</code> generates a collision-resistant string id at insert time. (Some game models instead use <code>@default(uuid())</code> or Postgres-native <code>gen_random_uuid()</code> — the schema mixes both.)</li>
+  <li><code>@unique</code> on <code>email</code>, <code>username</code>, and <code>handle</code> becomes a unique index — the database itself refuses a duplicate, so a uniqueness bug can't slip through a race condition.</li>
+  <li><code>String?</code> (the <code>?</code>) maps to a <i>nullable</i> column; <code>String</code> to <code>NOT NULL</code>.</li>
+  <li><code>@@map("user")</code> renames the table. The model is <code>User</code> in code but <code>user</code> in Postgres. Many feature tables go further: the social post model is <code>RMHark</code> in code but <code>@@map("rmheet")</code> in the database, a fossil of an earlier product name.</li>
+  <li><code>@@index([isBot])</code> declares a secondary index (covered later).</li>
+</ul>
+
+<p>A <b>relation</b> is how Prisma models a foreign key. <code>Session</code> belongs to a <code>User</code>:</p>
+
+<pre><code>model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}</code></pre>
+
+<p>The <code>userId String</code> field is the actual foreign-key column. The <code>user User @relation(...)</code> line is the <i>virtual</i> field that lets you write <code>session.user</code> in code; it stores nothing extra. <code>onDelete: Cascade</code> tells Postgres that deleting a user deletes their sessions automatically. On the other side, <code>User</code> declares <code>sessions Session[]</code> — the back-reference. Out of 223 <code>@relation</code> declarations in the schema, the vast majority radiate from <code>User</code> like this, which is exactly why <code>User</code> is ~90 relation fields long.</p>
+
+<div class="note"><b>Better Auth's four tables.</b> The auth domain is just <code>User</code>, <code>Session</code>, <code>Account</code> (one row per linked OAuth/password credential, with <code>@@index([providerId, accountId])</code>), and <code>Verification</code> (email/reset tokens). Everything else in the schema is application data hanging off <code>User.id</code>.</div>
+
+<h2 id="domains">Organizing 142 models into domains</h2>
+<p>A schema this large stays comprehensible because related models cluster. They are grouped in the file with comment banners (<code>// --- Slice-It Music Library Models ---</code>, <code>// ─── Doctrine Engine ───</code>) and share naming prefixes. Reading the model list top to bottom, the platform's whole product history scrolls past: a single-player games site that grew per-game leaderboards, then a music library, then a Twitter-like social feed, then an economy, then moderation tooling.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart TB
+  U[User auth core]
+  U --> G[Per-game profiles and saves]
+  U --> M[Music and watch-together]
+  U --> S[Social feed and messaging]
+  U --> E[Economy and subscriptions]
+  U --> C[Content and CMS]
+  U --> MOD[Moderation and gamification]
+  U --> D[Doctrine and Discord]
+  G --> B[Build marketplace and ranked]
+  </div>
+  <figcaption>Figure 5.1: Domain map. Nearly every domain is anchored to the <code>User</code> table; the per-game cluster further branches into a build marketplace and ranked play.</figcaption>
+</figure>
+
+<p>The table below groups the models into domains with approximate counts. The boundaries are judgment calls (flashcards live under the RMHStudy game; the build marketplace could be its own domain), so the per-row numbers are <i>approximate</i> and exist to convey proportion, not to be summed to exactly 142.</p>
+
+<table>
+  <thead><tr><th>Domain</th><th>~Count</th><th>Representative models</th><th>What it stores</th></tr></thead>
+  <tbody>
+    <tr><td>Auth &amp; identity</td><td>~8</td><td><code>User</code>, <code>Session</code>, <code>Account</code>, <code>Verification</code>, <code>UserProfile</code>, <code>Follow</code></td><td>Login, sessions, OAuth links, profile, follow graph.</td></tr>
+    <tr><td>Per-game profiles, saves &amp; builds</td><td>~40</td><td><code>AltairPlayer</code>, <code>VegaPlayer</code>, <code>SignalForgePlayer</code>, <code>TempleOfJoySave</code>, <code>DailyPuzzleScore</code>, <code>UserBuild</code>, <code>EloRating</code></td><td>One profile/leaderboard/save model per game; ranked ELO; the user-build marketplace.</td></tr>
+    <tr><td>Music library &amp; watch-together</td><td>~21</td><td><code>Song</code>, <code>SongLeaderboard</code>, <code>SongPlay</code>, <code>RmhTubeRoom</code>, <code>RmhMusicRoom</code>, <code>MusicGuessPuzzle</code></td><td>Uploaded tracks, ratings/likes/plays, synchronized listening and video rooms.</td></tr>
+    <tr><td>Social feed &amp; messaging</td><td>~21</td><td><code>RMHark</code>, <code>RMHarkComment</code>, <code>RMHarkLike</code>, <code>RMHarkPoll</code>, <code>Conversation</code>, <code>DirectMessage</code>, <code>GroupChat</code>, <code>Community</code></td><td>Posts, threaded comments, polls, reposts, DMs, group chats, communities.</td></tr>
+    <tr><td>Economy &amp; subscriptions</td><td>~10</td><td><code>Subscription</code>, <code>CoinTransaction</code>, <code>CoinStake</code>, <code>UserInventory</code>, <code>StorefrontProduct</code>, <code>GiftMembership</code></td><td>Stripe plans, coin ledger, staking vault, shop, creator storefront.</td></tr>
+    <tr><td>Content &amp; CMS</td><td>~7</td><td><code>BlogPost</code>, <code>NewsArticle</code>, <code>FeedAnnouncement</code>, <code>ScheduledPost</code>, <code>AiPersona</code></td><td>Blog, news pipeline, admin announcements, scheduled posts, AI chatbots.</td></tr>
+    <tr><td>Moderation &amp; gamification</td><td>~11</td><td><code>ContentReport</code>, <code>UserStrike</code>, <code>AdminAuditLog</code>, <code>UserAchievement</code>, <code>DailyStreak</code>, <code>UserQuest</code>, <code>Clan</code></td><td>Reports, blocks/mutes, strikes, audit log, achievements, streaks, quests, clans.</td></tr>
+    <tr><td>Doctrine engine &amp; Discord</td><td>~19</td><td><code>DoctrinePuzzle</code>, <code>DoctrineReputation</code>, <code>DoctrineIncident</code>, <code>DiscordActivityChannel</code>, <code>DiscordDailyProgress</code></td><td>An ARG-style strategy game with tiers, puzzles, incidents; Discord activity tracking.</td></tr>
+    <tr><td>Vibe pages</td><td>~2</td><td><code>VibePage</code>, <code>VibePageVersion</code></td><td>AI-generated mini-sites with version history.</td></tr>
+  </tbody>
+</table>
+
+<h3 id="per-game-pattern">The per-game profile pattern, repeated 20+ times</h3>
+<p>The single biggest reason the schema has so many models is a deliberate, repeated pattern: <b>each game gets its own profile/leaderboard model</b> instead of one shared <code>scores</code> table. Compare two of them:</p>
+
+<pre><code>model AltairPlayer {
+  id                String   @id @default(uuid())
+  username          String   @unique
+  bestTime          Float    @default(0)
+  totalKills        Int      @default(0)
+  totalXP           Int      @default(0)
+  gamesPlayed       Int      @default(1)
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([bestTime(sort: Desc)], map: "idx_altair_best_time")
+  @@index([totalKills(sort: Desc)], map: "idx_altair_kills")
+  @@index([totalXP(sort: Desc)],    map: "idx_altair_xp")
+}
+
+model VegaPlayer {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  highestLoop  Int      @default(1)
+  highestLevel Int      @default(1)
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([highestLoop(sort: Desc)],  map: "idx_vega_loop")
+  @@index([highestLevel(sort: Desc)], map: "idx_vega_level")
+}</code></pre>
+
+<p>Each game scores differently — Altair tracks <code>bestTime</code> and <code>totalKills</code>, Vega tracks <code>highestLoop</code> and <code>highestLevel</code> — so each gets exactly the typed columns and indexes it needs. The cost is repetition (20-odd near-identical models); the benefit is that a leaderboard query is a single indexed sort with no game-id filter, and a schema change to one game can never break another. Note <code>userId String? @unique</code>: the link to the auth user is <i>optional</i> (guests can have a leaderboard row) but <i>at most one</i> profile per user per game.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+erDiagram
+  User ||--o{ Song : uploads
+  User ||--o{ SongLeaderboard : scores
+  User ||--o{ SongLike : likes
+  User ||--o{ SongRating : rates
+  Song ||--o{ SongLeaderboard : has
+  Song ||--o{ SongLike : has
+  Song ||--o{ SongRating : has
+  Song ||--o{ SongComment : has
+  Song ||--o{ SongPlay : has
+  </div>
+  <figcaption>Figure 5.2: The music-library cluster. One <code>Song</code> fans out to leaderboard, like, rating, comment, and play-count tables, each also tied back to <code>User</code>.</figcaption>
+</figure>
+
+<p>The music cluster shows the more relational style. Rather than store likes as a count on <code>Song</code>, each like is its own row in <code>SongLike</code> with a <code>@@unique([songId, userId])</code> constraint — the database guarantees a user can like a song at most once. The same join-table pattern appears for ratings, plays, and scores.</p>
+
+<h2 id="indexing">Indexing: making reads cheap on purpose</h2>
+<div class="keyterm"><span class="term">Index</span> — a secondary data structure (in Postgres, usually a B-tree) that lets the database find or order rows by a column without scanning the whole table. It speeds reads but adds write cost and storage, so you add one only where a query needs it.</div>
+
+<p>With 168 <code>@@index</code> declarations, indexing is not an afterthought here; it is shaped to the read patterns. Three patterns recur:</p>
+
+<p><b>1. Sorted leaderboard indexes.</b> A leaderboard query is "top N by score, descending." Indexing the score column in descending order means Postgres can read the top of the index directly:</p>
+<pre><code>@@index([highScore(sort: Desc)], map: "idx_signal_forge_high_score")
+@@index([songId, score(sort: Desc)])   // top scores per song</code></pre>
+
+<p><b>2. Composite keyset-pagination index on the feed.</b> The social feed scrolls newest-first, and uses <i>keyset</i> (cursor) pagination instead of <code>OFFSET</code>. That requires an index on the exact sort tuple:</p>
+<pre><code>model RMHark {
+  // ...
+  @@index([userId])
+  @@index([createdAt(sort: Desc)])
+  // Composite index backing keyset pagination on (createdAt desc, id desc)
+  @@index([createdAt(sort: Desc), id(sort: Desc)])
+  @@index([userId, pinnedAt])
+}</code></pre>
+<p>The composite <code>(createdAt desc, id desc)</code> index lets the feed ask "give me the next 20 posts older than this exact (timestamp, id) cursor" as a single index range scan — the cost stays flat no matter how deep you scroll, where <code>OFFSET 100000</code> would force Postgres to count past 100,000 rows.</p>
+
+<p><b>3. Unique composite keys as constraints.</b> A <code>@@unique</code> is both an index and a correctness rule. The daily-puzzle leaderboard uses one row per user, per game mode, per day:</p>
+<pre><code>model DailyPuzzleScore {
+  userId    String
+  gameMode  String   // lights-out | alibi | spectrum | ...
+  dateKey   String   // YYYY-MM-DD
+  score     Int      @default(0)
+  resultJson  Json?
+  @@unique([userId, gameMode, dateKey])
+  @@index([gameMode, dateKey, score(sort: Desc)])
+  @@index([gameMode, dateKey, moves(sort: Asc)])
+}</code></pre>
+<p>The <code>@@unique([userId, gameMode, dateKey])</code> makes "one score per player per puzzle per day" a database invariant, and doubles as the index for an upsert. The two <code>@@index</code> lines back two different leaderboards: most games rank by <code>score</code> descending, but lights-out ranks by <code>moves</code> ascending (fewer is better).</p>
+
+<div class="warn"><b>Indexes are not free.</b> Each index must be updated on every insert, update, and delete to the table, and it consumes storage. The discipline visible in this schema — indexes that match real query shapes, not "index everything" — is what keeps writes fast. A late migration named <code>add_missing_indexes</code> shows this is tuned over time, not guessed up front.</div>
+
+<h2 id="json-columns">JSON columns: flexible blobs and their trade-off</h2>
+<div class="keyterm"><span class="term">JSON / JSONB column</span> — a single column that stores an arbitrary JSON document. In Postgres the <code>jsonb</code> form is stored in a parsed binary layout that supports indexing and querying into the document. It trades relational structure for schema flexibility.</div>
+
+<p>The schema has 38 <code>Json</code> fields, and they cluster around a clear use case: <b>game state whose shape is the game's business, not the database's.</b> A save file, a procedural run, an audio beatmap — these change whenever the game updates, and the data layer has no reason to know their internals.</p>
+
+<pre><code>model TempleOfJoySave {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  saveData  Json
+  updatedAt DateTime @default(now()) @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("temple_of_joy_save")
+}
+
+model SignalForgePlayer {
+  // ...indexed score columns...
+  savedRunState Json?     // mid-run snapshot, shape owned by the game
+}
+
+model Song {
+  // ...
+  analysisData Json?      // beatmap / audio-analysis blob
+}</code></pre>
+
+<p>Some models mix the two styles deliberately. <code>VersecraftProgress</code> keeps countable, queryable facts as typed columns and bundles open-ended lists as JSON with sane defaults:</p>
+<pre><code>model VersecraftProgress {
+  completedChapters Json     @default("[]")
+  unlockedEndings   Json     @default("[]")
+  totalPoemsWritten Int      @default(0)   // typed: you might sort/aggregate it
+  totalPlaytime     Int      @default(0)
+}</code></pre>
+
+<div class="note"><b>The trade-off in one sentence.</b> A JSON column lets a game evolve its save format with zero migrations, but the database can no longer enforce, index, or efficiently query <i>inside</i> the blob — so anything you need to sort a leaderboard by, filter on, or constrain should be a real typed column instead. The schema's rule of thumb: <i>scores and identifiers are columns; opaque game state is JSON.</i></div>
+
+<h2 id="migrations">The migration workflow: push, migrate dev, migrate deploy</h2>
+<div class="keyterm"><span class="term">Migration</span> — a recorded, ordered change to the database structure (a <code>.sql</code> file). The set of applied migrations is tracked in the database so the same schema can be reproduced exactly across dev, CI, and production.</div>
+
+<p>Prisma offers two ways to make the database match the schema, and rmhstudios uses both at different times. They are exposed as <code>db:*</code> scripts in <code>package.json</code>:</p>
+
+<pre><code>"db:push":         "prisma db push --accept-data-loss",
+"db:generate":     "prisma generate",
+"db:migrate":      "prisma migrate dev",
+"db:migrate:prod": "prisma migrate deploy",
+"db:reset":        "prisma db push --force-reset",
+"db:seed-jobs":    "pnpm exec tsx scripts/seed-jobs.ts",</code></pre>
+
+<ul>
+  <li><code>db:push</code> (<code>prisma db push</code>) shoves the current schema straight into the database without writing a migration file. Fast and disposable — good for local prototyping. The <code>--accept-data-loss</code> flag means it will drop columns to converge, so it is a development tool, not a production one.</li>
+  <li><code>db:migrate</code> (<code>prisma migrate dev</code>) is the authoring command: it diffs the schema against the last migration, writes a new timestamped SQL file under <code>prisma/migrations/</code>, applies it, and regenerates the client.</li>
+  <li><code>db:migrate:prod</code> (<code>prisma migrate deploy</code>) is the production command: it applies already-authored, version-controlled migrations in order and never invents new ones. This is what runs on deploy.</li>
+  <li><code>db:reset</code> force-resets the schema (everything is dropped) — strictly local.</li>
+  <li><code>db:generate</code> regenerates the typed client; it also runs automatically via the <code>postinstall</code> hook.</li>
+</ul>
+
+<p>The <code>prisma/migrations/</code> directory tells the platform's recent story directly. It starts with a squashed <code>0_baseline</code> (an 1,883-line SQL file capturing the schema as it stood) and then a run of dated migrations — <code>add_doctrine_engine</code>, <code>add_vibe_page</code>, <code>add_feed_counters_and_keyset</code>, <code>communities</code>, <code>coin_stake</code>, <code>clans</code>, <code>storefront</code>, <code>ai_personas</code> — each one a feature landing. Config lives in <code>prisma.config.ts</code>, which points Prisma at the schema file and the <code>DATABASE_URL</code>:</p>
+
+<pre><code>export default defineConfig({
+  schema: path.join('prisma', 'schema.prisma'),
+  datasource: { url: process.env.DATABASE_URL! },
+});</code></pre>
+
+<div class="scope"><b>Scope: schema-side data scripts.</b> Beyond migrations, <code>scripts/</code> holds one-off TypeScript jobs run with <code>tsx</code> that touch the database directly via Prisma — e.g. <code>assign-handles.ts</code> (backfill user handles), <code>backfill-vibe-thumbs.ts</code>, <code>reconcile-feed-counts.ts</code> (repair the denormalized feed counters described below), and several seeders (<code>seed-news.ts</code>, <code>seed-official-builds.ts</code>). These are operational backfills, not part of the migration chain.</div>
+
+<h2 id="singleton-client">The singleton client and the connection pool</h2>
+<div class="keyterm"><span class="term">Connection pool</span> — a fixed set of reusable database connections held open by the application. Requests borrow a connection, run a query, and return it. Postgres allows only so many connections, so the pool caps concurrency and avoids the cost of opening a new connection per query.</div>
+
+<p>Every query needs a connection, and Postgres has a hard ceiling on how many it will accept. If each module that needs the database constructed its own <code>PrismaClient</code> — and in a dev server with hot-reload, did so on every reload — you would exhaust connections and crash. The fix is a <b>singleton</b>: build the client once and reuse it. The web app does this in <code>lib/prisma.server.ts</code>:</p>
+
+<pre><code>const globalForPrisma = global as unknown as { prisma: PrismaClient };
+
+function createPrismaClient() {
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) throw new Error('DATABASE_URL ... required');
+
+  // PrismaPg wraps a pg Pool — configure pool sizing for predictable behaviour under load.
+  const adapter = new PrismaPg({
+    connectionString,
+    max: parseInt(process.env.DATABASE_POOL_SIZE || '10', 10),
+    idleTimeoutMillis: 30_000,
+    connectionTimeoutMillis: 10_000,
+  });
+  return new PrismaClient({ adapter, log: /* dev vs prod */ });
+}
+
+export const prisma = globalForPrisma.prisma || createPrismaClient();
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;</code></pre>
+
+<p>Two things make this work. First, <code>globalForPrisma.prisma || createPrismaClient()</code> reuses an existing client if one is stashed on the global object; the last line stashes it <i>only in non-production</i>, which is precisely the dev hot-reload case where reloads would otherwise leak clients. Second, the <code>PrismaPg</code> adapter wraps a real Postgres connection pool with an explicit <code>max</code> (default 10), an idle timeout, and a connection timeout — so the app's concurrency against the database is bounded and predictable.</p>
+
+<p>The standalone realtime servers (socket-server, rmhbox, rmhtube) get their own factory in <code>server/shared/prisma-client.ts</code> with a smaller default pool (<code>SERVER_DB_POOL_SIZE</code>, default 5), because there are several such processes and their pools <i>add up</i> against the same Postgres ceiling.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart LR
+  subgraph App processes
+    W[Web SSR pool max 10]
+    S1[socket-server pool max 5]
+    S2[rmhbox pool max 5]
+    S3[rmhtube pool max 5]
+  end
+  W --> PG[(Single Postgres)]
+  S1 --> PG
+  S2 --> PG
+  S3 --> PG
+  </div>
+  <figcaption>Figure 5.3: Every process holds a bounded pool, but all pools converge on one Postgres instance — the sum of all <code>max</code> values must stay under the server's connection limit.</figcaption>
+</figure>
+
+<div class="warn"><b>One Postgres, and that is the ceiling (forward-ref Ch. 13).</b> Pooling protects the database from connection storms, but it cannot change the fact that there is exactly one Postgres instance behind every domain in this schema. Reads and writes for auth, the feed, leaderboards, the economy, and Doctrine all land on the same machine. That single-instance constraint — and the strategies for living with it, from the denormalized feed counters below to eventual read replicas — is the scaling story Chapter 13 takes up.</div>
+
+<h3 id="denormalization">A glimpse of scaling pressure: denormalized counters</h3>
+<p>One concession to the single-Postgres constraint already lives in the schema. The feed could compute a post's like/comment counts by aggregating rows, but at feed scale that is expensive on every read. So <code>RMHark</code> caches them as plain integer columns, updated transactionally on write:</p>
+<pre><code>// Denormalized engagement counters (Phase 1: eventual consistency)
+// Maintained transactionally by the like/comment/repost/view routes via
+// atomic increment/decrement, so the feed read path never needs `_count`.
+likeCount    Int @default(0)
+commentCount Int @default(0)
+repostCount  Int @default(0)
+viewCount    Int @default(0)</code></pre>
+<p>The trade-off mirrors the JSON one: faster reads in exchange for the risk of drift between the counter and the true row count — which is exactly why <code>scripts/reconcile-feed-counts.ts</code> exists to repair it.</p>
+
+<div class="summary"><h4>Summary</h4>
+<ul>
+  <li>An <b>ORM</b> maps tables to typed objects; Prisma generates a TypeScript client from one <code>schema.prisma</code> file, mapping <code>model</code>→table, field→column, and <code>@relation</code>→foreign key.</li>
+  <li>The 142-model schema is organized into <b>domains</b> (auth, per-game, music, social, economy, content, moderation, Doctrine) by comment banners and naming prefixes; the largest is the deliberate per-game profile pattern, one model per game.</li>
+  <li><b>Indexes</b> are shaped to queries: descending score columns for leaderboards, a composite <code>(createdAt desc, id desc)</code> index for keyset feed pagination, and <code>@@unique</code> composites that are both constraints and indexes.</li>
+  <li><b>JSON columns</b> hold opaque game state (saves, run snapshots, beatmaps) for schema-free evolution, at the cost of in-database querying — so scores and identifiers stay typed columns.</li>
+  <li>Migrations split by environment: <code>db push</code> for local prototyping, <code>migrate dev</code> to author migrations, <code>migrate deploy</code> in production.</li>
+  <li>A <b>singleton client</b> over a sized connection <b>pool</b> prevents connection exhaustion; but every pool points at one Postgres instance — the scaling constraint of Chapter 13.</li>
+</ul></div>
+
+<div class="exercises"><h2 id="ch5-exercises">Practice Exercises</h2>
+
+  <div class="exercise"><span class="qid">5.1</span>
+    <span class="tag concept">concept</span><span class="tag easy">easy</span>
+    In your own words, define an ORM and explain what the line <code>@@map("rmheet")</code> on the <code>RMHark</code> model does. Why might a model name and its table name differ?</div>
+
+  <div class="exercise"><span class="qid">5.2</span>
+    <span class="tag trace">trace</span><span class="tag easy">easy</span>
+    Trace what the database does when a <code>User</code> row is deleted, given that <code>Session</code> declares <code>user User @relation(fields: [userId], references: [id], onDelete: Cascade)</code>. What happens to that user's sessions, and why doesn't the application have to delete them manually?</div>
+
+  <div class="exercise"><span class="qid">5.3</span>
+    <span class="tag concept">concept</span><span class="tag medium">medium</span>
+    The <code>DailyPuzzleScore</code> model has both <code>@@unique([userId, gameMode, dateKey])</code> and <code>@@index([gameMode, dateKey, score(sort: Desc)])</code>. Explain what each one is for and why the columns appear in those particular orders.</div>
+
+  <div class="exercise"><span class="qid">5.4</span>
+    <span class="tag design">design</span><span class="tag medium">medium</span>
+    A new game, "PixelRunner," needs to store a high score, a best lap time, and a fully opaque save blob that the game team will change often. Decide which of these become typed columns (and what indexes you'd add) and which become a <code>Json</code> column, and justify each choice using the schema's stated rule of thumb.</div>
+
+  <div class="exercise"><span class="qid">5.5</span>
+    <span class="tag concept">concept</span><span class="tag medium">medium</span>
+    Compare <code>prisma db push --accept-data-loss</code> and <code>prisma migrate deploy</code>. For each, state when it is appropriate to run and one thing that would go wrong if you used it in the other's situation.</div>
+
+  <div class="exercise"><span class="qid">5.6</span>
+    <span class="tag trace">trace</span><span class="tag medium">medium</span>
+    The <code>RMHark</code> model stores <code>likeCount</code> as a denormalized integer. Trace the two ways that column can come to disagree with the actual number of <code>RMHarkLike</code> rows, and name the script whose job is to repair the drift.</div>
+
+  <div class="exercise"><span class="qid">5.7</span>
+    <span class="tag diagram">diagram</span><span class="tag medium">medium</span>
+    Draw an <code>erDiagram</code> for the social-feed cluster centered on <code>RMHark</code>, including at least <code>RMHarkLike</code>, <code>RMHarkComment</code>, and <code>RMHarkPoll</code>, with correct one-to-many / optional-one relationships back to <code>User</code> and to <code>RMHark</code>.</div>
+
+  <div class="exercise"><span class="qid">5.8</span>
+    <span class="tag concept">concept</span><span class="tag hard">hard</span>
+    Explain why the web app's Prisma singleton is stashed on the global object <i>only</i> when <code>NODE_ENV !== 'production'</code>. What problem does this specifically solve, and why would doing it in production be unnecessary or harmful?</div>
+
+  <div class="exercise"><span class="qid">5.9</span>
+    <span class="tag design">design</span><span class="tag hard">hard</span>
+    The web pool defaults to <code>max: 10</code> and each standalone server pool to <code>max: 5</code>. Given one web process and three realtime servers, compute the worst-case total connections. If Postgres is configured for 60 connections, how many additional realtime server processes could you add before you must change the configuration, and what are two options once you hit the ceiling?</div>
+
+  <div class="exercise"><span class="qid">5.10</span>
+    <span class="tag design">design</span><span class="tag hard">hard</span>
+    The platform stores one profile model per game (<code>AltairPlayer</code>, <code>VegaPlayer</code>, …) rather than a single shared <code>GameScore</code> table with a <code>gameId</code> and a JSON payload. Argue both sides of this decision, then state which you would choose for a platform expecting 50 more games and why.</div>
+
+</div>

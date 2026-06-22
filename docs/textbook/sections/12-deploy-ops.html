@@ -1,0 +1,287 @@
+<div class="objectives"><h4>Learning Objectives</h4><ul>
+  <li>Define <em>deployment</em> and describe the build &rarr; migrate &rarr; swap pipeline that <code>deploy.sh</code> runs on every push to <code>main</code>.</li>
+  <li>Explain <strong>zero-downtime (blue-green) deployment</strong> and trace the hotswap algorithm: start new, health-check, flip the reverse proxy, verify, retire old.</li>
+  <li>Explain the role of a <strong>reverse proxy</strong> (Apache) and how the active upstream port is flipped without dropping connections.</li>
+  <li>Contrast the platform's two run-layers &mdash; Docker Compose (current/default) and single-node k3s + Helm (PR&nbsp;#121) &mdash; and say why a <em>reversible fallback</em> is kept.</li>
+  <li>Trace a <strong>webhook-driven deploy</strong> from a GitHub push to a detached deploy process.</li>
+  <li>Read the Terraform DNS and Helm chart artifacts as examples of <strong>Infrastructure as Code</strong>, and identify the honest scope of the migration.</li>
+</ul></div>
+
+<p class="lead">Writing code is only half of shipping software; the other half is getting that code onto a server, running it, and replacing the old version without anyone noticing. This chapter reads the operations layer of rmhstudios.com closely: the single deploy script that pulls, builds, migrates, and swaps; the small blue-green script that flips live traffic between two running copies of the web container; the reverse proxy that fronts everything; and the in-progress migration from Docker Compose to Kubernetes. Where earlier chapters described what the code <em>does</em>, this one describes how it gets to production and stays up while it changes.</p>
+
+<div class="keyterm"><span class="term">Deployment</span> &mdash; the process of taking a specific version of the source code, turning it into runnable artifacts, and making those artifacts the live, traffic-serving version of the system on its servers.</div>
+
+<h2 id="what-deployment-is">What deployment is, and what makes it hard</h2>
+<p>rmhstudios.com runs on a single VPS (virtual private server) under the deploy user <code>rmhstudios</code>, from a checkout at <code>/home/rmhstudios/rmhstudios.com</code>. A deploy must do four things in order: get the new code, turn it into a runnable image, bring the database schema up to date, and switch the running services over. Each of these can fail, and the dangerous moment is the switch &mdash; if you stop the old version before the new one is ready, the site is down for the gap. Most of the engineering in this chapter exists to shrink or eliminate that gap.</p>
+
+<p>The whole pipeline is one Bash script, <code>deploy.sh</code> at the repository root (~34&nbsp;KB). Despite its size it is linear: a header that picks the environment, a block of helper functions, and then a sequence of numbered steps from "Step 1: Pull latest code" to "Step 6: Prune stale images." Its own header comment calls it the <em>"Docker-based deploy script,"</em> and that is the key fact about the current production system: the run-layer is Docker Compose, not a bare process manager.</p>
+
+<div class="scope"><b>Scope: process management here is Docker, not PM2.</b> A common Node deployment uses <strong>PM2</strong>, a userspace process manager that keeps Node processes alive and restarts them on crash. rmhstudios.com does <em>not</em> use PM2. The same job &mdash; keep every service process running, restart it on failure, cap its logs &mdash; is done by Docker Compose with <code>restart: unless-stopped</code> and a <code>json-file</code> logging driver capped at <code>max-size: "10m"</code> (see <code>docker-compose.yml</code>). When this chapter says "process manager," read it as <em>the run-layer that supervises long-lived processes</em>; in production that role is filled by Docker/Compose, and in the migration target by Kubernetes.</div>
+
+<div class="keyterm"><span class="term">Deployment pipeline</span> &mdash; the fixed, repeatable sequence of stages a release passes through on its way to production. Here: pull &rarr; build &rarr; migrate &rarr; bring up services &rarr; hotswap web &rarr; health-check &rarr; prune.</div>
+
+<h2 id="the-pipeline">The build &rarr; migrate &rarr; swap pipeline</h2>
+<p>The script starts by choosing an environment from its first argument (<code>production</code> maps to branch <code>main</code>, env file <code>.env.production</code>, Compose project <code>rmhstudios-prod</code>, and the port block <code>7005/7001/7676/7003/7008</code>; <code>staging</code> is currently disabled and exits early). It then takes a per-environment lock with <code>flock</code> so two deploys can never run at once &mdash; a second trigger queues its PID and waits, and if a newer request arrives while it waits, it notices it has been superseded and exits rather than running a stale build.</p>
+
+<p>From there the steps run in order. A subtle but important one comes right after the pull: the script hashes <code>deploy.sh</code> before and after <code>git reset --hard</code>, and if the script itself changed, it re-<code>exec</code>s the new version so the rest of the deploy runs with updated logic (a <code>DEPLOY_SELF_RESTARTED</code> env var guards against an infinite loop).</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart TD
+  A[GitHub push to main] --> B[webhook-server.cjs verifies HMAC]
+  B --> C[spawn deploy.sh production detached]
+  C --> D[flock lock acquired]
+  D --> E[git fetch and reset --hard]
+  E --> F{deploy.sh changed?}
+  F -- yes --> G[re-exec new deploy.sh]
+  F -- no --> H[docker compose build web]
+  G --> H
+  H --> I[prisma migrate deploy]
+  I --> J[compose up all except web]
+  J --> K[hotswap-web.sh blue-green flip]
+  K --> L[parallel port health checks]
+  L --> M[prune images and build cache]
+  M --> N[notify Discord and GitHub status]
+  </div>
+  <figcaption>Figure 12.1: the end-to-end deploy pipeline, from a GitHub push through the webhook to the build &rarr; migrate &rarr; swap stages and post-deploy cleanup.</figcaption>
+</figure>
+
+<h3>Build</h3>
+<p>The build is a single command, <code>dc build web</code>, where <code>dc()</code> is a helper that wraps <code>docker compose -p "$PROJECT_NAME" --env-file "$ENV_FILE"</code>. One multi-stage <code>Dockerfile</code> produces one image, <code>rmhstudios-prod-app</code>, shared by all services; the realtime servers and workers just override the container <code>CMD</code>. After a successful build the script tags the image with the short git SHA so any past release can be brought back instantly:</p>
+
+<pre><code># ── Step 2: Build Docker image ──
+step_start "Building Docker image..."
+if ! dc build web; then
+    log "ERROR: Docker build failed."
+    update_deploy_status fail "docker build failed"
+    exit 1
+fi
+
+# Tag with git SHA for instant rollback (docker compose up with the old tag)
+"$DOCKER_BIN" tag "${IMAGE_NAME}:latest" "${IMAGE_NAME}:${GIT_SHA}" 2>/dev/null || true</code></pre>
+
+<p>Because the build runs on the VPS itself, the script spends real effort on disk hygiene around it: before building it prunes dangling images and stale SHA-tagged rollback images, and if free space is under 10&nbsp;GB it wipes the BuildKit cache entirely rather than die mid-build with "no space left on device." After building it trims the build cache back toward a 5&nbsp;GB target and hard-caps it at 8&nbsp;GB. None of this changes <em>what</em> ships; it exists because there is no separate build farm.</p>
+
+<div class="keyterm"><span class="term">Reversible migration</span> &mdash; a schema change applied in a way that can be undone or retried, with a recorded baseline, so a half-applied or failed migration does not leave the database in an unrecoverable state.</div>
+
+<h3>Migrate</h3>
+<p>Before swapping any code, the database schema is brought forward with Prisma. The script first proves the database is reachable &mdash; it retries <code>prisma migrate status</code> up to ten times, distinguishing a real connection failure (retry) from a non-zero exit that merely reports a pending or failed migration (proceed). It then runs baseline-resolve, an optional rolled-back-resolution for a previously failed migration, and <code>migrate deploy</code> &mdash; all collapsed into one container invocation to avoid paying Node+Prisma startup three times:</p>
+
+<pre><code>MIGRATE_CMD='npx prisma migrate resolve --applied 0_baseline 2>/dev/null || true'
+
+FAILED_MIGRATION=$(echo "$MIGRATE_OUTPUT" | grep -oP '(?&lt;=resolve --rolled-back ")[^"]+' || true)
+if [ -n "$FAILED_MIGRATION" ]; then
+    MIGRATE_CMD="$MIGRATE_CMD; npx prisma migrate resolve --rolled-back \"$FAILED_MIGRATION\" || true"
+fi
+MIGRATE_CMD="$MIGRATE_CMD; npx prisma migrate deploy"</code></pre>
+
+<p>Marking <code>0_baseline</code> as applied is what makes the migration reversible and idempotent: it tells Prisma "these tables already exist, do not try to recreate them," so a re-deploy onto an already-migrated database is a safe no-op rather than an error. The same logic reappears verbatim in the Kubernetes run-layer, as a Helm pre-upgrade hook (below) &mdash; the two run-layers share one migration contract.</p>
+
+<h3>Swap</h3>
+<p>The swap is split deliberately. Every service <em>except</em> <code>web</code> is brought up with <code>dc up -d --no-build --remove-orphans --scale web=0</code>. The <code>--scale web=0</code> is the crucial detail: Docker Compose recreates a container in place by stopping the old one and then starting the new one, and that multi-second gap on the web port is exactly what once produced a user-facing Cloudflare 520. So Compose is told never to manage <code>web</code>; a brief blip on a websocket or worker reconnect is invisible, but the page must never go dark. The web container is instead handed to a separate blue-green script.</p>
+
+<pre><code># ── Step 4: Bring up containers (everything EXCEPT web) ──
+if ! dc up -d --no-build --remove-orphans --scale web=0; then
+    log "ERROR: docker compose up failed."
+    update_deploy_status fail "docker compose up failed"
+    exit 1
+fi
+
+# ── Step 4b: Zero-downtime hotswap of the web container ──
+if ! PROJECT_NAME="$PROJECT_NAME" ENV_FILE="$ENV_FILE" \
+     IMAGE_NAME="$IMAGE_NAME" IMAGE_TAG="latest" \
+     BLUE_PORT="$PORT_WEB" GREEN_PORT="${PORT_WEB_GREEN:-$((PORT_WEB + 10))}" \
+     NETWORK="${PROJECT_NAME}_default" DOCKER_BIN="$DOCKER_BIN" \
+     bash "${REPO_DIR}/deploy/hotswap-web.sh"; then
+    log "ERROR: web hotswap failed."
+    exit 1
+fi</code></pre>
+
+<h2 id="zero-downtime-hotswap">Zero-downtime hotswap (blue-green)</h2>
+
+<div class="keyterm"><span class="term">Zero-downtime deployment</span> &mdash; releasing a new version with no interval during which the service is unavailable, by keeping the old version answering requests until the new one is proven able to take over.</div>
+
+<div class="keyterm"><span class="term">Blue-green deployment</span> &mdash; running two complete copies of a service, "blue" and "green," with only one live at a time. A release starts the idle color, health-checks it, then switches traffic to it; the previously live color becomes the standby (and the instant rollback target).</div>
+
+<p>The file <code>deploy/hotswap-web.sh</code> implements blue-green for one container. Production reserves two ports for it: <code>7005</code> (blue, <code>PORT_WEB</code>) and <code>7015</code> (green, <code>PORT_WEB_GREEN</code>). The script reads which color is currently live from an Apache include file, brings up the <em>other</em> color on its spare port, and only moves traffic once the new container actually answers HTTP.</p>
+
+<p>It starts the new container with <code>docker compose run</code> rather than a hand-rolled <code>docker run</code> &mdash; an important choice, because Compose's parser strips quotes and applies the service's <code>env_file</code>, <code>extra_hosts</code>, volumes, and network exactly as the real <code>web</code> service has them (a naive <code>docker run --env-file</code> passes a quoted <code>DATABASE_URL</code> through literally and can't reach Postgres). It overrides only <code>PORT</code> and publishes that port on loopback:</p>
+
+<pre><code>"$DOCKER_BIN" compose -p "$PROJECT_NAME" --env-file "$ENV_FILE" \
+    run -d --no-deps \
+    --name "$new_container" \
+    -p "127.0.0.1:${target_port}:${target_port}" \
+    -e "PORT=${target_port}" \
+    -e "HOSTNAME=0.0.0.0" \
+    web &gt;/dev/null || die "failed to start ${new_container}"</code></pre>
+
+<p>It then polls the new port for up to <code>HEALTH_TIMEOUT</code> (60s), curling <code>http://127.0.0.1:${target_port}/</code> until it returns success, and bails early if the container exits during startup. The guarantee here is the whole point: <em>if the new container never becomes healthy, traffic is never moved and the old one keeps serving</em> &mdash; a bad build degrades to "old version stays up," never to an outage.</p>
+
+<pre><code>healthy=false
+for _ in $(seq 1 "$HEALTH_TIMEOUT"); do
+    if curl -fsS -o /dev/null --max-time 3 "http://127.0.0.1:${target_port}/"; then
+        healthy=true; break
+    fi
+    if [ "$("$DOCKER_BIN" inspect -f '{{.State.Running}}' "$new_container" \
+            2>/dev/null || echo false)" != "true" ]; then
+        die "${new_container} exited during startup — keeping ${old_color} live."
+    fi
+    sleep 1
+done</code></pre>
+
+<p>Only after the new container is healthy does the script flip the reverse proxy, drain in-flight requests for <code>DRAIN_SECONDS</code> (8s), and then <em>prove</em> the flip landed before deleting anything: it stops (not removes) the old container and probes Apache itself on <code>:80</code> with the real <code>Host</code> header. If the site still serves, the flip genuinely routed to the new port and the old container is safe to delete; if not, it restarts the old container, reverts the port file, and aborts &mdash; converting "503 on every route until a human notices" into a bounded blip that self-heals back to the old version.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+sequenceDiagram
+  participant D as deploy.sh
+  participant H as hotswap-web.sh
+  participant N as New web (green 7015)
+  participant A as Apache (:80)
+  participant O as Old web (blue 7005)
+  D->>H: run hotswap (blue live)
+  H->>N: docker compose run on 7015
+  H->>N: poll GET / up to 60s
+  N-->>H: 200 OK (healthy)
+  H->>A: write active port 7015, reload graceful
+  H->>H: drain 8s
+  H->>O: stop old container
+  H->>A: probe :80 with Host header
+  A-->>H: 200 OK (flip verified)
+  H->>O: remove old container
+  H-->>D: zero-downtime swap complete
+  </div>
+  <figcaption>Figure 12.2: the hotswap sequence. Traffic moves only after the new container is healthy, and the old container is removed only after Apache is proven to be routing to the new port.</figcaption>
+</figure>
+
+<h2 id="reverse-proxy">The reverse proxy: Apache out front</h2>
+
+<div class="keyterm"><span class="term">Reverse proxy</span> &mdash; a server that sits in front of one or more application processes, accepting client requests and forwarding them to the right backend, then relaying the response. It centralizes TLS, routing, caching, and (here) the traffic flip between blue and green.</div>
+
+<p>Apache fronts the whole site (<code>deploy/apache/rmhstudios.conf</code>). TLS is terminated at Cloudflare, so Apache listens on <code>:80</code> only. It does three jobs. First, it is a self-hosted CDN: the heavy static directories <code>/library</code>, <code>/music</code>, <code>/models</code>, and <code>/sprites</code> are served straight off the host disk via <code>Alias</code> directives and excluded from the proxy with <code>ProxyPass /library !</code>, so those requests never touch Node. (This is why <code>deploy.sh</code> re-asserts world-read permissions on <code>public/</code> on every deploy &mdash; a fresh <code>git reset</code> can land files Apache's <code>www-data</code> can't read, 403-ing every asset.) Second, it routes the WebSocket upstreams (<code>/socket/</code>&rarr;7001, <code>/rmhbox-ws/</code>&rarr;7676, <code>/rmhtube-ws/</code>&rarr;7003) and the <code>/webhook</code> endpoint. Third, and central to the hotswap, it proxies everything else to the <em>active</em> web port:</p>
+
+<pre><code>IncludeOptional /home/rmhstudios/rmhstudios-web-active.conf
+&lt;IfDefine !WEB_UPSTREAM_PORT&gt;
+    Define WEB_UPSTREAM_PORT 7005
+&lt;/IfDefine&gt;
+...
+    ProxyPass / http://localhost:${WEB_UPSTREAM_PORT}/
+    ProxyPassReverse / http://localhost:${WEB_UPSTREAM_PORT}/</code></pre>
+
+<p>The flip is just a one-line file. The hotswap script writes <code>Define WEB_UPSTREAM_PORT 7015</code> (or 7005) into the included <code>rmhstudios-web-active.conf</code>, and Apache picks up the new upstream on a graceful reload &mdash; which finishes in-flight requests on the old worker set before swapping. The include lives under the deploy user's <em>home</em>, not <code>/etc</code>, for a concrete security reason: the webhook that triggers deploys runs sandboxed (<code>ProtectSystem=strict</code> + <code>NoNewPrivileges</code>) and cannot write <code>/etc</code> or use sudo, so a root-owned systemd <em>path-unit</em> watches the home file and runs <code>apachectl graceful</code> when it changes. The deploy only writes a file; the privileged reload is delegated.</p>
+
+<div class="warn"><b>Path coupling.</b> The <code>IncludeOptional</code> path in the vhost MUST equal <code>ACTIVE_CONF</code> in <code>hotswap-web.sh</code> (<code>/home/rmhstudios/rmhstudios-web-active.conf</code>). If they diverge &mdash; say the include points at <code>/etc/...</code> &mdash; the deploy writes the home file while Apache keeps reading the stale one, the flip never lands, and every route 503s the instant the old container stops. The flip-verification probe exists precisely to catch this and roll back.</div>
+
+<h2 id="webhook-deploys">Webhook-driven deploys</h2>
+<p>Nobody SSHes in to deploy. A tiny Node HTTP server, <code>webhook-server.cjs</code>, listens on <code>127.0.0.1:7002</code> (Apache proxies <code>/webhook</code> to it) and turns a GitHub push into a deploy. It is deliberately minimal and security-first: it verifies the GitHub <code>X-Hub-Signature-256</code> HMAC against a shared <code>WEBHOOK_SECRET</code> before doing anything, refuses to start if the secret is unset or left at <code>change-me</code>, and never logs the computed signature or secret. It maps <code>refs/heads/main</code> to <code>production</code> and (when enabled) <code>refs/heads/staging</code> to <code>staging</code>, ignoring every other ref.</p>
+
+<pre><code>const sig = req.headers['x-hub-signature-256'];
+const expected = 'sha256=' + crypto.createHmac('sha256', SECRET)
+    .update(body).digest('hex');
+if (sig !== expected) {
+    logMsg(`WARN: Invalid signature — rejected. bodyLen=${body.length} hasSig=${!!sig}`);
+    res.writeHead(401);
+    return res.end('Unauthorized');
+}
+...
+const child = spawn('bash', [DEPLOY_SCRIPT, environment], {
+    detached: true,
+    stdio: ['ignore', fs.openSync(LOG_FILE, 'a'), fs.openSync(LOG_FILE, 'a')],
+    cwd: PROJECT_DIR, env: { ...process.env, PATH: '...' }
+});
+child.unref();</code></pre>
+
+<p>The deploy is <code>spawn</code>ed <em>detached</em> and <code>unref</code>'d so it outlives the HTTP request &mdash; the webhook answers GitHub immediately with "Deploying production" and the long build runs independently. Note the indirection that makes the run-layer migration painless: the script to run is <code>process.env.DEPLOY_SCRIPT || '.../deploy.sh'</code>. Cutting over to Kubernetes is one environment variable.</p>
+
+<h2 id="two-run-layers">Two run-layers and a reversible fallback</h2>
+<p>The platform is mid-migration between two ways of <em>running</em> the same image. The build is identical in both; only the run-layer differs.</p>
+
+<div class="keyterm"><span class="term">Process manager / run-layer</span> &mdash; the component that launches the application's processes, keeps them running, restarts them on failure, and governs their lifecycle. Here it is Docker Compose today and Kubernetes (k3s) in the migration target.</div>
+
+<p>The current/default layer is <strong>Docker Compose + the hotswap script</strong>, driven by <code>deploy.sh</code>. The migration target (PR&nbsp;#121) is <strong>single-node k3s + Helm</strong>, driven by <code>deploy/deploy-k8s.sh</code>. The k8s script keeps the build on Compose (<code>docker compose build web</code>, same caching and build-args), then re-tags the image to <code>rmhstudios:&lt;sha&gt;</code>, imports it into k3s's containerd, syncs a Secret from <code>.env.production</code>, and runs <code>helm upgrade --install ... --atomic --wait</code>. The <code>--atomic</code> flag is the k8s analogue of the hotswap's rollback: if any hook or readiness probe fails, Helm rolls the whole release back automatically.</p>
+
+<table>
+  <thead><tr><th>Concern</th><th>Compose run-layer (current/default)</th><th>k3s + Helm run-layer (PR&nbsp;#121)</th></tr></thead>
+  <tbody>
+    <tr><td>Driver script</td><td><code>deploy.sh</code></td><td><code>deploy/deploy-k8s.sh</code></td></tr>
+    <tr><td>Build</td><td><code>docker compose build web</code></td><td><code>docker compose build web</code> (identical)</td></tr>
+    <tr><td>Run / supervise</td><td>Compose, <code>restart: unless-stopped</code></td><td>k3s Deployments (8 services)</td></tr>
+    <tr><td>Migrations</td><td><code>prisma migrate deploy</code> in a one-shot container</td><td>Helm pre-upgrade Job (same Prisma logic)</td></tr>
+    <tr><td>Zero-downtime web swap</td><td><code>hotswap-web.sh</code> blue-green + Apache flip</td><td>Deployment rolling update + readiness probes</td></tr>
+    <tr><td>Rollback</td><td>Re-run with SHA-tagged image / hotswap keeps old</td><td><code>helm rollback</code>; <code>--atomic</code> auto-rollback</td></tr>
+    <tr><td>Reverse proxy / ingress</td><td>Apache vhost on <code>:80</code></td><td>Traefik ingress (bundled with k3s)</td></tr>
+    <tr><td>Image distribution</td><td>Local Docker image, SHA-tagged</td><td>Local <code>k3s ctr</code> import (or registry, see below)</td></tr>
+  </tbody>
+</table>
+
+<div class="keyterm"><span class="term">Reversible fallback</span> &mdash; keeping the previous, working deployment mechanism fully in place during a migration so that cutting back to it is a small, well-understood operation rather than an emergency rebuild.</div>
+
+<p>The migration is deliberately reversible. Per <code>deploy/README.md</code>, cutover is just pointing the webhook at the new script (<code>DEPLOY_SCRIPT=.../deploy/deploy-k8s.sh</code>) and restarting it; rolling back to Compose is unsetting that variable, restarting the webhook, and running <code>docker compose ... up -d</code>. The old Compose stack (<code>deploy.sh</code> + <code>docker-compose.yml</code>) "stays in place as a fallback." This is why the webhook reads the script path from an env var instead of hard-coding it &mdash; the whole switch, and its undo, is one variable.</p>
+
+<div class="note"><b>Why keep a fallback at all?</b> The migration target is new and single-node; the Compose path has served production for the life of the site. Keeping both means a Kubernetes problem discovered in production is a one-variable revert to a known-good system, not a multi-hour scramble. The cost is maintaining two run-layers briefly; the benefit is that the risky change is cheap to undo.</div>
+
+<h2 id="iac">Infrastructure as Code: Helm and Terraform</h2>
+
+<div class="keyterm"><span class="term">Infrastructure as Code (IaC)</span> &mdash; describing servers, networking, DNS, and cluster resources in version-controlled declarative files, so infrastructure is created and changed by applying code rather than by clicking in a console or running ad-hoc commands.</div>
+
+<div class="keyterm"><span class="term">Helm chart</span> &mdash; a templated, versioned package of Kubernetes manifests. Values (image tag, replica counts, hostnames) are supplied separately, so one chart renders into the concrete manifests for a given environment with <code>helm upgrade --install</code>.</div>
+
+<p>The k3s layer is defined as code under <code>deploy/helm/rmhstudios</code>. The chart renders all eight services from one image and includes a <code>service.yaml</code>, an <code>ingress.yaml</code>, a <code>pvc.yaml</code> for the shared <code>/app/db</code> volume, and a <code>migrate-job.yaml</code>. That migration Job is a Helm <em>hook</em> annotated <code>"helm.sh/hook": pre-install,pre-upgrade</code> &mdash; it runs the same Prisma reachability-check, baseline-resolve, rolled-back-resolution, and <code>migrate deploy</code> sequence as <code>deploy.sh</code> Step&nbsp;3, so the two run-layers cannot drift apart on the one operation that touches persistent state. Replica counts, ports, resource floors, and the storage class all live in <code>values.yaml</code>, overridden by <code>values-prod.yaml</code>.</p>
+
+<p>Networking is Terraform. <code>deploy/terraform/dns.tf</code> declares the four Cloudflare A-records (app, socket, rmhbox, rmhtube) as a <code>for_each</code> over a map, all pointing at <code>var.vps_ip</code>; <code>versions.tf</code> pins Terraform <code>&gt;= 1.6.0</code> and the <code>cloudflare/cloudflare</code> provider. To move the site to a new IP you change one variable and apply &mdash; the DNS records are not manual console edits but reviewable code.</p>
+
+<div class="scope"><b>Scope: where the migration honestly stands.</b> The k3s/Helm/Terraform layer is real and runnable but is the migration target, not yet the default production path &mdash; the webhook still defaults to <code>deploy.sh</code>. The build deliberately <em>stays on the VPS</em>: there is no external CI or image registry in the default path; the image is imported straight into k3s's containerd with <code>k3s ctr</code>. Multi-node support <em>is</em> wired but inert: setting a <code>REGISTRY</code> env var makes <code>deploy-k8s.sh</code> push to a registry and flip the chart to <code>pullPolicy: IfNotPresent</code> instead of importing locally, and the chart marks the two remaining seams (the node-local <code>local-path</code> PVC and the discord-bot host-path mount) with <code>MULTI-NODE SEAM</code> comments. There is also a parallel <code>deploy/deploy-go.sh</code> for a Go microservice fleet. Genuine multi-node scaling &mdash; a registry, shared RWX storage, and a realtime backplane &mdash; is the subject of Chapter&nbsp;13; here we note only that the seams exist and are switched by one variable.</div>
+
+<div class="summary"><h4>Summary</h4><ul>
+  <li><strong>Deployment</strong> turns a code version into the live, traffic-serving system. rmhstudios.com does it with one script, <code>deploy.sh</code>, that runs a fixed <strong>pull &rarr; build &rarr; migrate &rarr; swap</strong> pipeline under a <code>flock</code> lock.</li>
+  <li>The <strong>build</strong> produces one shared image, SHA-tagged for instant rollback; the <strong>migrate</strong> step runs idempotent, reversible Prisma migrations gated on database reachability.</li>
+  <li>The web tier is swapped <strong>zero-downtime</strong> by <code>hotswap-web.sh</code>: start the idle blue/green color on a spare port, health-check it, flip Apache to it, verify the flip, then retire the old container. A bad build degrades to "old version stays up."</li>
+  <li><strong>Apache</strong> is the reverse proxy; the traffic flip is a one-line included file plus a graceful reload delegated to a root-owned systemd path-unit (because the deploy webhook is sandboxed).</li>
+  <li>Deploys are <strong>webhook-driven</strong>: an HMAC-verified GitHub push spawns a detached deploy. The script to run is an env var, which is also the migration switch.</li>
+  <li>Two <strong>run-layers</strong> coexist &mdash; Docker Compose (default) and single-node k3s + Helm (PR&nbsp;#121) &mdash; sharing one build and one migration contract. The Compose path is kept as a <strong>reversible fallback</strong>.</li>
+  <li>The k3s layer is <strong>Infrastructure as Code</strong> (Helm chart + Terraform DNS). Build stays on the VPS by default; multi-node registry support is wired behind a <code>REGISTRY</code> env var (Ch.&nbsp;13).</li>
+</ul></div>
+
+<div class="exercises"><h2 id="ch12-exercises">Practice Exercises</h2>
+
+  <div class="exercise"><span class="qid">12.1</span>
+    <span class="tag concept">concept</span><span class="tag easy">easy</span>
+    In your own words, define <em>zero-downtime deployment</em> and explain the single guarantee that <code>hotswap-web.sh</code> provides when a newly built web container fails its health check.</div>
+
+  <div class="exercise"><span class="qid">12.2</span>
+    <span class="tag concept">concept</span><span class="tag easy">easy</span>
+    The chapter says rmhstudios.com does <em>not</em> use PM2 even though it is a Node application. What actually performs the "process manager" role of keeping services running and restarting them on failure in the current production layer, and which two <code>docker-compose.yml</code> settings express it?</div>
+
+  <div class="exercise"><span class="qid">12.3</span>
+    <span class="tag trace">trace</span><span class="tag medium">medium</span>
+    Trace a push to <code>main</code> from the moment GitHub sends the webhook to the moment Apache serves the new version. Name, in order, the components and the key files involved (<code>webhook-server.cjs</code>, <code>deploy.sh</code>, <code>hotswap-web.sh</code>, <code>rmhstudios-web-active.conf</code>).</div>
+
+  <div class="exercise"><span class="qid">12.4</span>
+    <span class="tag trace">trace</span><span class="tag medium">medium</span>
+    During a deploy, blue (7005) is currently live. Walk through what <code>hotswap-web.sh</code> does step by step, naming the target port, the health check, the Apache flip, the drain, and the flip-verification probe. At which exact point does live user traffic move to the new container?</div>
+
+  <div class="exercise"><span class="qid">12.5</span>
+    <span class="tag concept">concept</span><span class="tag medium">medium</span>
+    Why does <code>deploy.sh</code> bring up every service with <code>--scale web=0</code> and hand <code>web</code> to a separate script, instead of letting Compose recreate the web container like the others? What user-visible failure did this design eliminate?</div>
+
+  <div class="exercise"><span class="qid">12.6</span>
+    <span class="tag concept">concept</span><span class="tag medium">medium</span>
+    Explain what a <em>reversible fallback</em> is in this system. Describe concretely how an operator cuts over from the Compose run-layer to the k3s run-layer, and how they roll back, citing the env var and the README steps that make both a one-variable change.</div>
+
+  <div class="exercise"><span class="qid">12.7</span>
+    <span class="tag design">design</span><span class="tag hard">hard</span>
+    The Apache <code>IncludeOptional</code> path and the hotswap script's <code>ACTIVE_CONF</code> must be identical. Suppose someone "tidies up" by moving the include to <code>/etc/apache2/</code> but leaves <code>ACTIVE_CONF</code> under the deploy user's home. Predict the exact failure during the next deploy, explain why, and state which safeguard in <code>hotswap-web.sh</code> prevents it from becoming a sustained outage.</div>
+
+  <div class="exercise"><span class="qid">12.8</span>
+    <span class="tag concept">concept</span><span class="tag medium">medium</span>
+    The Prisma migration step marks <code>0_baseline</code> as applied and resolves any failed migration as rolled-back before running <code>migrate deploy</code>. Explain how each of these makes the migration <em>reversible/idempotent</em>, and identify where the <em>same</em> logic appears in the k3s run-layer.</div>
+
+  <div class="exercise"><span class="qid">12.9</span>
+    <span class="tag design">design</span><span class="tag hard">hard</span>
+    The default deploy builds on the VPS with no CI or registry, and imports the image with <code>k3s ctr</code>. State two concrete reasons this is acceptable for a single node, and describe what setting the <code>REGISTRY</code> env var changes in <code>deploy-k8s.sh</code> (image path, push vs. import, and <code>pullPolicy</code>).</div>
+
+  <div class="exercise"><span class="qid">12.10</span>
+    <span class="tag diagram">diagram</span><span class="tag medium">medium</span>
+    Redraw Figure 12.2 as a state diagram with these states: <em>BlueLive</em>, <em>GreenStarting</em>, <em>GreenHealthy</em>, <em>Flipped</em>, <em>Verified</em>, and <em>RolledBack</em>. Label each transition with its trigger (health check passes, flip written, verify probe fails, etc.) and mark which state the system lands in if the new container never becomes healthy.</div>
+
+</div>
