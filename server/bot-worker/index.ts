@@ -738,7 +738,7 @@ async function reactToMentions(): Promise<number> {
       actorId: true,
       entityType: true,
       entityId: true,
-      user: { select: { id: true, botPersona: true, botLastPostAt: true } },
+      user: { select: { id: true, botLastPostAt: true } },
     },
   });
 
@@ -765,12 +765,13 @@ async function reactToMentions(): Promise<number> {
         ? await prisma.user.findUnique({ where: { id: n.actorId }, select: { isBot: true } })
         : null;
       const actorIsBot = !!actor?.isBot;
-      const depth =
-        n.entityType === 'comment'
+      // Only a bot-authored mention can form a bot↔bot chain; a human actor is
+      // always answered, so skip the (multi-query) chain walk for humans.
+      const depth = !actorIsBot
+        ? 0
+        : n.entityType === 'comment'
           ? await commentChainBotDepth(n.entityId)
-          : actorIsBot
-            ? 1 // post mention: chain is length 1 if the poster is a bot
-            : 0;
+          : 1; // bot post-mention: a one-step chain
       if (
         !shouldReplyToMention({
           actorIsBot,
@@ -804,6 +805,11 @@ async function reactToMentions(): Promise<number> {
       if (replied) {
         made++;
         log(`bot ${bot.id} answered ${n.entityType} mention (${n.entityId})`);
+      } else {
+        // No reply produced — e.g. the thread is past MAX_REPLY_DEPTH, the
+        // post/comment was deleted, or the bot already answered it. Logged so a
+        // silent non-answer to a human mention is observable.
+        log(`bot ${bot.id} did not reply to ${n.entityType} mention (${n.entityId})`);
       }
     } catch (e) {
       errlog('mention reply failed:', e);
