@@ -21,7 +21,6 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -237,19 +236,4 @@ func validateImageBuffer(buf []byte) bool {
 	return detectImageExt(buf) != ""
 }
 
-// putObject hosts the image. Mirrors the Node LOCAL fallback in s3.server.ts:
-// writes under LOCAL_STORAGE_DIR (default ".uploads"), preserving the key path.
-// The S3 path is NOT ported (no AWS SDK) — see report.
-func putObject(key string, body []byte, _ string) error {
-	root := os.Getenv("LOCAL_STORAGE_DIR")
-	if root == "" {
-		root = ".uploads"
-	}
-	safe := strings.TrimLeft(strings.ReplaceAll(key, "\\", "/"), "/")
-	safe = strings.ReplaceAll(safe, "..", "")
-	dest := filepath.Join(root, filepath.FromSlash(safe))
-	if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
-		return err
-	}
-	return os.WriteFile(dest, body, 0o644)
-}
+// putObject lives in storage.go and dispatches to the S3 or local backend.

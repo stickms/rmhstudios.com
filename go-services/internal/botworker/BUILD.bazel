@@ -10,6 +10,7 @@ go_library(
         "repo.go",
         "repo_social.go",
         "run.go",
+        "storage.go",
         "ticks.go",
         "types.go",
         "worker.go",
@@ -21,6 +22,9 @@ go_library(
         "//go-services/pkg/log",
         "//go-services/pkg/telemetry",
         "//go-services/pkg/worker",
+        "@com_github_aws_aws_sdk_go_v2//aws",
+        "@com_github_aws_aws_sdk_go_v2_credentials//:credentials",
+        "@com_github_aws_aws_sdk_go_v2_service_s3//:s3",
     ],
 )
 
@@ -33,6 +37,7 @@ go_test(
         "prompt_test.go",
         "query_test.go",
         "repo_test.go",
+        "storage_test.go",
         "worker_test.go",
     ],
     embed = [":botworker"],
