@@ -1,12 +1,9 @@
-// Command doctrine-worker is the Go port of server/doctrine-worker/index.ts:
-// a long-lived background scheduler that generates daily puzzles, checks Sahur
-// activation per timezone, and applies weekly reputation decay. It exposes only
-// /health and /metrics — no client-facing HTTP.
+// Command doctrine-worker runs the doctrine scheduler standalone. The worker
+// logic lives in internal/doctrine.Run; this wrapper only wires config, db,
+// metrics, and the /health + /metrics server. The supervisor runs the same Run.
 package main
 
 import (
-	"context"
-	"net/http"
 	"time"
 
 	"github.com/rmhstudios/rmh-go/internal/doctrine"
@@ -15,6 +12,7 @@ import (
 	"github.com/rmhstudios/rmh-go/pkg/httpx"
 	"github.com/rmhstudios/rmh-go/pkg/log"
 	"github.com/rmhstudios/rmh-go/pkg/telemetry"
+	"github.com/rmhstudios/rmh-go/pkg/worker"
 )
 
 func main() {
@@ -24,7 +22,7 @@ func main() {
 		logger.Fatal("config", "error", err)
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := httpx.SignalContext()
 	defer cancel()
 
 	database, err := db.WaitForReachable(ctx, cfg.DatabaseURL, 10, 5*time.Second)
@@ -34,22 +32,9 @@ func main() {
 	defer database.Close()
 
 	metrics := telemetry.New("doctrine-worker")
-	go func() {
-		mux := http.NewServeMux()
-		mux.HandleFunc("/health", httpx.Health("doctrine-worker", nil))
-		mux.Handle("/metrics", metrics.Handler())
-		if err := http.ListenAndServe(cfg.MetricsAddr, mux); err != nil {
-			// A bind failure leaves the pod unprobeable (k8s liveness hits
-			// /health here), so fail loudly rather than run blind.
-			logger.Fatal("metrics server", "error", err)
-		}
-	}()
+	httpx.ServeMetrics(cfg.MetricsAddr, "doctrine-worker", metrics.Handler(), logger)
 
-	w := doctrine.New(database, logger, metrics)
-	w.Start(ctx) // launches goroutine tickers
-
-	httpx.WaitForSignal() // block until SIGINT/SIGTERM
-
-	cancel()
-	w.Stop()
+	if err := doctrine.Run(ctx, worker.Deps{DB: database, Logger: logger, Metrics: metrics, Cfg: cfg}); err != nil {
+		logger.Error("run", "error", err)
+	}
 }
