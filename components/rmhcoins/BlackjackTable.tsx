@@ -12,6 +12,46 @@ import { CoinIcon } from './CoinIcon';
 const SUIT_SYMBOLS: Record<string, string> = { H: '\u2665', D: '\u2666', C: '\u2663', S: '\u2660' };
 const SUIT_COLORS: Record<string, string> = { H: 'text-red-500', D: 'text-red-500', C: 'text-white', S: 'text-white' };
 
+const FLIP_DURATION_MS = 500;
+
+/**
+ * Returns true only once the most recently dealt card has finished flipping
+ * face-up. Used to gate hand totals so the number never appears before the
+ * cards have visually settled. `lastCardDelayMs` is the flip delay applied to
+ * the newest card (index count - 1).
+ */
+function useFlipSettled(count: number, lastCardDelayMs: number): boolean {
+  const [settled, setSettled] = useState(false);
+  useEffect(() => {
+    if (count === 0) {
+      setSettled(false);
+      return;
+    }
+    setSettled(false);
+    const timer = setTimeout(() => setSettled(true), lastCardDelayMs + FLIP_DURATION_MS + 80);
+    return () => clearTimeout(timer);
+  }, [count, lastCardDelayMs]);
+  return settled;
+}
+
+/**
+ * Local per-turn countdown. Re-syncs to the authoritative `turnTimeout` from
+ * the server whenever it changes, and ticks down smoothly between updates.
+ */
+function useTurnSeconds(active: boolean, turnTimeout: number | null): number | null {
+  const [secs, setSecs] = useState<number | null>(null);
+  useEffect(() => {
+    if (!active || turnTimeout == null) {
+      setSecs(null);
+      return;
+    }
+    setSecs(turnTimeout);
+    const iv = setInterval(() => setSecs((s) => (s != null && s > 0 ? s - 1 : 0)), 1000);
+    return () => clearInterval(iv);
+  }, [active, turnTimeout]);
+  return secs;
+}
+
 function CardFace({ card, small, delay }: { card: Card; small?: boolean; delay?: number }) {
   const [flipped, setFlipped] = useState(false);
 
@@ -60,12 +100,54 @@ function Hand({ cards, hidden }: { cards: Card[]; hidden?: boolean }) {
   );
 }
 
+// ── Split Hand ─────────────────────────────────────────────────────
+
+function SplitHandView({ sh, idx, active }: {
+  sh: PlayerSeatClient['splitHands'][number];
+  idx: number;
+  active: boolean;
+}) {
+  const settled = useFlipSettled(sh.hand.length, Math.max(0, sh.hand.length - 1) * 300 + 100);
+
+  return (
+    <div className={`flex flex-col items-center gap-0.5 ${active ? 'ring-1 ring-yellow-400 rounded p-0.5' : ''}`}>
+      <span className="text-[8px] text-site-text-dim uppercase">Hand {idx + 2}</span>
+      <div className="flex gap-0.5">
+        {sh.hand.map((card, i) => (
+          <CardFace key={`s${idx}-${card.rank}${card.suit}${i}`} card={card} small delay={i * 300 + 100} />
+        ))}
+      </div>
+      <span className="text-[10px] text-site-text-dim font-mono min-h-3">
+        {settled && sh.hand.length > 0 ? formatHandValue(sh.hand) : ''}
+      </span>
+      {sh.bet > 0 && (
+        <div className="flex items-center gap-0.5">
+          <CoinIcon className="w-2.5 h-2.5" />
+          <span className="text-[9px] text-yellow-500 font-bold">{sh.bet}</span>
+        </div>
+      )}
+      {sh.result && (
+        <span className={`text-[9px] font-bold px-1 py-0.5 rounded-full ${
+          sh.result === 'win' ? 'bg-emerald-500/30 text-emerald-400'
+          : sh.result === 'blackjack' ? 'bg-yellow-500/30 text-yellow-300'
+          : sh.result === 'push' ? 'bg-blue-500/30 text-blue-400'
+          : 'bg-red-500/30 text-red-400'
+        }`}>
+          {sh.result === 'blackjack' ? 'BJ!' : sh.result.toUpperCase()}
+        </span>
+      )}
+      {sh.payout > 0 && <span className="text-[9px] text-emerald-400 font-bold">+{sh.payout}</span>}
+    </div>
+  );
+}
+
 // ── Player Seat ────────────────────────────────────────────────────
 
-function PlayerSeatView({ player, isCurrentTurn, isMe }: {
+function PlayerSeatView({ player, isCurrentTurn, isMe, turnSeconds }: {
   player: PlayerSeatClient;
   isCurrentTurn: boolean;
   isMe: boolean;
+  turnSeconds: number | null;
 }) {
   const statusBadge: Record<string, { label: string; color: string }> = {
     waiting: { label: '', color: '' },
@@ -86,6 +168,9 @@ function PlayerSeatView({ player, isCurrentTurn, isMe }: {
 
   const badge = player.result ? resultBadge[player.result] : statusBadge[player.status];
 
+  // Gate the running total behind the flip of the most recently dealt card.
+  const mainSettled = useFlipSettled(player.hand.length, Math.max(0, player.hand.length - 1) * 300 + 100);
+
   return (
     <div
       className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all min-w-0 shrink-0 ${
@@ -100,6 +185,13 @@ function PlayerSeatView({ player, isCurrentTurn, isMe }: {
         <span className={`text-xs font-bold truncate max-w-16 sm:max-w-20 ${isMe ? 'text-yellow-400' : 'text-site-text'}`}>
           {isMe ? 'You' : player.userName}
         </span>
+        {isCurrentTurn && turnSeconds != null && (
+          <span className={`text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded-full ${
+            turnSeconds <= 5 ? 'bg-red-500/30 text-red-400 animate-pulse' : 'bg-yellow-500/20 text-yellow-400'
+          }`}>
+            {turnSeconds}s
+          </span>
+        )}
       </div>
 
       {/* Main hand */}
@@ -111,42 +203,20 @@ function PlayerSeatView({ player, isCurrentTurn, isMe }: {
               <CardFace key={`${card.rank}${card.suit}${i}`} card={card} small delay={i * 300 + 100} />
             ))}
           </div>
-          <span className="text-[10px] text-site-text-dim font-mono">
-            {formatHandValue(player.hand)}
+          <span className="text-[10px] text-site-text-dim font-mono min-h-3">
+            {mainSettled ? formatHandValue(player.hand) : ''}
           </span>
         </div>
       ) : null}
 
       {/* Split hands */}
       {player.splitHands?.map((sh, idx) => (
-        <div key={idx} className={`flex flex-col items-center gap-0.5 ${player.activeSplitIndex === idx && isCurrentTurn ? 'ring-1 ring-yellow-400 rounded p-0.5' : ''}`}>
-          <span className="text-[8px] text-site-text-dim uppercase">Hand {idx + 2}</span>
-          <div className="flex gap-0.5">
-            {sh.hand.map((card, i) => (
-              <CardFace key={`s${idx}-${card.rank}${card.suit}${i}`} card={card} small delay={i * 300 + 100} />
-            ))}
-          </div>
-          <span className="text-[10px] text-site-text-dim font-mono">
-            {sh.hand.length > 0 ? formatHandValue(sh.hand) : ''}
-          </span>
-          {sh.bet > 0 && (
-            <div className="flex items-center gap-0.5">
-              <CoinIcon className="w-2.5 h-2.5" />
-              <span className="text-[9px] text-yellow-500 font-bold">{sh.bet}</span>
-            </div>
-          )}
-          {sh.result && (
-            <span className={`text-[9px] font-bold px-1 py-0.5 rounded-full ${
-              sh.result === 'win' ? 'bg-emerald-500/30 text-emerald-400'
-              : sh.result === 'blackjack' ? 'bg-yellow-500/30 text-yellow-300'
-              : sh.result === 'push' ? 'bg-blue-500/30 text-blue-400'
-              : 'bg-red-500/30 text-red-400'
-            }`}>
-              {sh.result === 'blackjack' ? 'BJ!' : sh.result.toUpperCase()}
-            </span>
-          )}
-          {sh.payout > 0 && <span className="text-[9px] text-emerald-400 font-bold">+{sh.payout}</span>}
-        </div>
+        <SplitHandView
+          key={idx}
+          sh={sh}
+          idx={idx}
+          active={player.activeSplitIndex === idx && isCurrentTurn}
+        />
       ))}
 
       {/* Bet */}
@@ -193,9 +263,17 @@ export function BlackjackTable() {
     currentTurnUserId,
     myUserId,
     tablePhase,
+    turnTimeout,
   } = useBlackjackStore();
 
+  const turnSeconds = useTurnSeconds(!!currentTurnUserId && tablePhase === 'player_turns', turnTimeout);
+
   const showDealerHidden = tablePhase !== 'dealer_turn' && tablePhase !== 'results' && tablePhase !== 'payout';
+
+  // Gate the dealer total behind the flip of its most recently revealed card.
+  const dealerSettled = useFlipSettled(dealerHand.length, Math.max(0, dealerHand.length - 1) * 200);
+  // While the hole card is hidden we never show a total (no premature reveal).
+  const dealerValueVisible = !showDealerHidden && dealerSettled;
 
   return (
     <div className="flex flex-col items-center gap-3 sm:gap-4">
@@ -207,12 +285,9 @@ export function BlackjackTable() {
         {dealerHand.length > 0 ? (
           <div className="flex flex-col items-center gap-1">
             <Hand cards={dealerHand} hidden={showDealerHidden} />
-            {dealerValue !== null && (
-              <span className="text-xs text-site-text-dim font-mono">{dealerValue}</span>
-            )}
-            {!showDealerHidden && dealerHand.length > 0 && dealerValue === null && (
+            {dealerValueVisible && (
               <span className="text-xs text-site-text-dim font-mono">
-                {formatHandValue(dealerHand)}
+                {dealerValue !== null ? dealerValue : formatHandValue(dealerHand)}
               </span>
             )}
           </div>
@@ -233,6 +308,7 @@ export function BlackjackTable() {
                   player={player}
                   isCurrentTurn={currentTurnUserId === player.userId}
                   isMe={player.userId === myUserId}
+                  turnSeconds={currentTurnUserId === player.userId ? turnSeconds : null}
                 />
               ))}
           </div>

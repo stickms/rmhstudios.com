@@ -20,6 +20,7 @@ import {
   bankerDrawsThird,
   determineResult,
   calculateSideBets,
+  bankerWinMultiplier,
   PAYOUTS,
 } from '../../../lib/baccarat/logic';
 import { C2S, S2C } from '../../../lib/baccarat/events';
@@ -57,6 +58,9 @@ interface PlayerSeat {
   totalBetThisRound: number;
   lastPayout: number;
   sessionStats: SessionStats;
+  // Set when a player leaves/disconnects mid-round but still has an active bet.
+  // The seat is kept until the round resolves so the payout still lands, then pruned.
+  pendingRemoval?: boolean;
 }
 
 interface BaccaratRoom {
@@ -399,7 +403,8 @@ async function resolveRound(room: BaccaratRoom) {
     }
 
     if (result === 'banker') {
-      payout += p.bets.banker * (1 + PAYOUTS.banker); // bet + winnings (minus 5% commission)
+      // No-commission: even money, except a banker win on 6 pays half.
+      payout += p.bets.banker * (1 + PAYOUTS.banker * bankerWinMultiplier(room.bankerHand));
     } else if (result === 'player') {
       payout += p.bets.banker * 0; // lost
     } else {
@@ -480,12 +485,28 @@ async function resolveRound(room: BaccaratRoom) {
   broadcastTableState(room);
 
   room.resultsTimer = setTimeout(() => {
-    // Prune disconnected players
-    for (const [userId, p] of room.players) {
-      const sock = ioRef.sockets.sockets.get(p.socketId);
-      if (!sock || !sock.connected) {
-        room.players.delete(userId);
-        userToRoom.delete(userId);
+    // Prune players who left or disconnected (now that their payout has settled).
+    for (const [uid, p] of room.players) {
+      const sock = p.socketId ? ioRef.sockets.sockets.get(p.socketId) : null;
+      if (p.pendingRemoval || !sock || !sock.connected) {
+        room.players.delete(uid);
+        userToRoom.delete(uid);
+        ioRef.to(roomKey(room.roomId)).emit(S2C.PLAYER_LEFT, { userId: uid, seatIndex: p.seatIndex });
+
+        // Transfer ownership if the owner departed.
+        if (room.ownerId === uid && room.players.size > 0) {
+          const newOwner = room.players.values().next().value!;
+          room.ownerId = newOwner.userId;
+          room.ownerName = newOwner.userName;
+          ioRef.to(roomKey(room.roomId)).emit(S2C.ROOM_UPDATED, {
+            ownerId: room.ownerId,
+            ownerName: room.ownerName,
+            maxPlayers: room.maxPlayers,
+            name: room.name,
+            privacy: room.privacy,
+            joinCode: room.joinCode,
+          });
+        }
       }
     }
 
@@ -494,6 +515,7 @@ async function resolveRound(room: BaccaratRoom) {
       return;
     }
 
+    broadcastRoomList();
     startBettingPhase(room);
   }, RESULTS_DISPLAY_MS);
 }
@@ -730,6 +752,25 @@ function leaveRoom(userId: string, socketId: string) {
   }
 
   const seatIndex = player.seatIndex;
+
+  // If the player leaves while a round is in progress and still has an active
+  // bet, keep the seat so the pending payout still settles. Detach the socket
+  // now; the seat is pruned once the round resolves.
+  const roundActive = room.phase === 'dealing' || room.phase === 'drawing' || room.phase === 'results';
+  if (roundActive && player.totalBetThisRound > 0) {
+    player.pendingRemoval = true;
+    player.socketId = '';
+    userToRoom.delete(userId);
+    socketToUserId.delete(socketId);
+    const leavingSock = ioRef.sockets.sockets.get(socketId);
+    if (leavingSock) {
+      leavingSock.leave(roomKey(roomId));
+      leavingSock.emit(S2C.ROOM_LEFT, { roomId });
+    }
+    logger.info({ event: 'bacc_player_left_pending_payout', roomId, userId, seatIndex });
+    return;
+  }
+
   room.players.delete(userId);
   userToRoom.delete(userId);
   socketToUserId.delete(socketId);

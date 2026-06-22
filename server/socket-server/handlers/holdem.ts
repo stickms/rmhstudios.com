@@ -110,6 +110,7 @@ interface HoldemRoom {
   handNumber: number;
   lastRaiseAmount: number;
   resultsEndTime: number | null;
+  turnDeadline: number | null;
 }
 
 // ── Constants ──────────────────────────────────────────────────────
@@ -224,7 +225,9 @@ function serializeTableState(room: HoldemRoom, forUserId?: string) {
     currentTurnUserId: room.currentTurnUserId,
     currentBet: room.currentBet,
     minRaise: room.minRaise,
-    turnTimeout: room.currentTurnUserId ? Math.ceil(TURN_TIMEOUT_MS / 1000) : null,
+    turnTimeout: room.currentTurnUserId && room.turnDeadline
+      ? Math.max(0, Math.ceil((room.turnDeadline - Date.now()) / 1000))
+      : null,
     smallBlind: room.smallBlind,
     bigBlind: room.bigBlind,
     resultsCountdown: room.resultsEndTime ? Math.max(0, Math.ceil((room.resultsEndTime - Date.now()) / 1000)) : null,
@@ -398,6 +401,7 @@ function advanceToNextPlayer(room: HoldemRoom) {
 
     if (player && !player.folded && !player.allIn && !player.sittingOut) {
       room.currentTurnUserId = userId;
+      room.turnDeadline = Date.now() + TURN_TIMEOUT_MS;
 
       ioRef.to(roomKey(room.roomId)).emit(S2C.TURN, {
         userId,
@@ -408,9 +412,9 @@ function advanceToNextPlayer(room: HoldemRoom) {
 
       if (room.turnTimer) clearTimeout(room.turnTimer);
       room.turnTimer = setTimeout(() => {
+        // Max turn time reached — auto-fold (or check) so the table never stalls.
         if (room.currentTurnUserId === userId) {
-          // Auto-fold on timeout
-          onFold(room, userId);
+          onTurnTimeout(room, userId);
         }
       }, TURN_TIMEOUT_MS);
 
@@ -439,6 +443,7 @@ function allBetsEqual(room: HoldemRoom): boolean {
 
 function nextPhase(room: HoldemRoom) {
   room.currentTurnUserId = null;
+  room.turnDeadline = null;
   if (room.turnTimer) { clearTimeout(room.turnTimer); room.turnTimer = null; }
 
   // Reset bets for new betting round
@@ -514,6 +519,7 @@ function dealRemaining(room: HoldemRoom) {
 function endHand(room: HoldemRoom) {
   room.phase = 'showdown';
   room.currentTurnUserId = null;
+  room.turnDeadline = null;
   if (room.turnTimer) { clearTimeout(room.turnTimer); room.turnTimer = null; }
 
   const active = activePlayers(room);
@@ -834,6 +840,7 @@ async function onCreateRoom(socket: Socket, payload: unknown) {
     handNumber: 0,
     lastRaiseAmount: bigBlind,
     resultsEndTime: null,
+    turnDeadline: null,
   };
 
   rooms.set(roomId, room);
@@ -1136,6 +1143,24 @@ function onUpdateRoom(socket: Socket, payload: unknown) {
 }
 
 // ── Player Actions ────────────────────────────────────────────────
+
+/**
+ * Auto-action when a player runs out of turn time. Checks for free when there
+ * is nothing to call (so the player isn't folded out of a hand they could have
+ * stayed in), otherwise folds. Keeps the table moving without punishing a
+ * player who only owes a check.
+ */
+function onTurnTimeout(room: HoldemRoom, userId: string) {
+  if (room.currentTurnUserId !== userId) return;
+  const player = room.players.get(userId);
+  if (!player) return;
+  const sock = ioRef.sockets.sockets.get(player.socketId);
+  if (sock && player.currentBet >= room.currentBet) {
+    onCheck(room, sock, userId);
+  } else {
+    onFold(room, userId);
+  }
+}
 
 function onFold(room: HoldemRoom, userId: string) {
   if (room.currentTurnUserId !== userId) return;

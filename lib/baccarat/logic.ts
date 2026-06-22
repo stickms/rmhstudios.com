@@ -142,11 +142,24 @@ export function createShoe(deckCount = 8): Card[] {
   return shoe;
 }
 
-/** Standard payout multipliers */
+/** No-commission ("EZ") payout multipliers. */
 export const PAYOUTS = {
   player: 1,       // 1:1
-  banker: 0.95,    // 1:1 minus 5% commission
+  banker: 1,       // 1:1, no commission (see bankerWinMultiplier for the banker-6 rule)
   tie: 8,          // 8:1
   playerPair: 11,  // 11:1
   bankerPair: 11,  // 11:1
 } as const;
+
+/**
+ * No-commission baccarat banker payout multiplier.
+ *
+ * Banker wins pay even money (1:1) EXCEPT when the banker wins with a total
+ * of 6, which pays 1:2 (half the stake). Dropping the 5% commission while
+ * halving the banker-6 win keeps the house edge fair and close to the classic
+ * commission game (~1.46% on banker) instead of handing the banker bet a
+ * player-favourable edge.
+ */
+export function bankerWinMultiplier(bankerHand: Card[]): number {
+  return handValue(bankerHand) === 6 ? 0.5 : 1;
+}
