@@ -99,9 +99,12 @@ type history struct {
 	buckets []Bucket
 }
 
-// Warner is the minimal logging surface the prober uses for non-fatal history
-// persistence problems. *log.Logger satisfies it; nil disables logging.
+// Warner is the minimal logging surface the prober uses for history
+// persistence: Info for the successful load, Warn for non-fatal problems
+// (missing/corrupt file, write errors). *log.Logger satisfies it; nil disables
+// logging. (Kept named Warner for API compatibility with existing callers.)
 type Warner interface {
+	Info(msg string, args ...any)
 	Warn(msg string, args ...any)
 }
 
@@ -136,12 +139,18 @@ func NewProber(targets []Target) *Prober {
 				Name:        t.Name,
 				Description: t.Description,
 				Status:      StatusUnknown,
-				CheckedAt:   time.Now().UTC().Format(time.RFC3339Nano),
+				Detail:      "Not checked yet",
+				CheckedAt:   epochSentinel,
 			},
 		}
 	}
 	return p
 }
+
+// epochSentinel is the "not yet checked" timestamp, matching Node's
+// `new Date(0).toISOString()` exactly (millisecond precision, ".000Z").
+// Consumers use this to detect a service that has not been probed yet.
+const epochSentinel = "1970-01-01T00:00:00.000Z"
 
 // ProbeOnce fires a parallel HTTP GET for every target and records results.
 func (p *Prober) ProbeOnce(ctx context.Context) {

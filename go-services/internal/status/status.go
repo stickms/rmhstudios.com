@@ -24,8 +24,9 @@ type Config struct {
 
 // Service orchestrates probing and HTTP serving.
 type Service struct {
-	cfg    Config
-	prober *Prober
+	cfg       Config
+	prober    *Prober
+	startedAt time.Time
 }
 
 // New constructs a Service from the given config.
@@ -54,7 +55,7 @@ func New(cfg Config) *Service {
 		p.EnableHistoryPersistence(cfg.HistoryPath, cfg.Logger)
 	}
 
-	return &Service{cfg: cfg, prober: p}
+	return &Service{cfg: cfg, prober: p, startedAt: time.Now()}
 }
 
 // Start fires an initial probe immediately then probes on the configured interval
@@ -67,6 +68,9 @@ func (s *Service) Start(ctx context.Context) {
 		for {
 			select {
 			case <-ctx.Done():
+				// Final flush on shutdown, matching Node's SIGTERM saveHistory().
+				// Best-effort: SaveHistory tolerates and logs any error.
+				s.prober.SaveHistory()
 				return
 			case <-ticker.C:
 				s.prober.ProbeOnce(ctx)
@@ -77,5 +81,5 @@ func (s *Service) Start(ctx context.Context) {
 
 // Handler returns the HTTP mux for the status service.
 func (s *Service) Handler() http.Handler {
-	return newDashboard(s.prober)
+	return newDashboard(s.prober, s.startedAt)
 }

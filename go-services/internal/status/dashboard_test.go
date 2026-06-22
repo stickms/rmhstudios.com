@@ -1,6 +1,7 @@
 package status
 
 import (
+	"encoding/json"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -20,6 +21,37 @@ func TestHandlerServesAPIAndHealth(t *testing.T) {
 	h.ServeHTTP(rec, httptest.NewRequest("GET", "/health", nil))
 	if rec.Code != 200 {
 		t.Fatalf("health wrong: %d", rec.Code)
+	}
+}
+
+// TestHealthHasUptime asserts /health returns the Node shape
+// {"status":"ok","uptime":<seconds>} — the uptime field must be present and a
+// non-negative number.
+func TestHealthHasUptime(t *testing.T) {
+	svc := New(Config{Targets: []Target{{Name: "web", URL: "https://rmhstudios.com"}}})
+	h := svc.Handler()
+
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest("GET", "/health", nil))
+	if rec.Code != 200 {
+		t.Fatalf("health wrong: %d", rec.Code)
+	}
+
+	var body struct {
+		Status string   `json:"status"`
+		Uptime *float64 `json:"uptime"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatalf("health body not JSON: %v (%s)", err, rec.Body.String())
+	}
+	if body.Status != "ok" {
+		t.Fatalf("expected status ok, got %q", body.Status)
+	}
+	if body.Uptime == nil {
+		t.Fatalf("health missing uptime field: %s", rec.Body.String())
+	}
+	if *body.Uptime < 0 {
+		t.Fatalf("uptime should be non-negative, got %v", *body.Uptime)
 	}
 }
 

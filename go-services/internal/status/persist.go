@@ -89,8 +89,22 @@ func (p *Prober) LoadHistory() {
 		loaded++
 	}
 	if logger != nil {
-		logger.Warn("status: loaded uptime history", "services", loaded, "path", path)
+		logger.Info("status: loaded uptime history", "services", loaded, "path", path)
 	}
+}
+
+// SaveHistory persists the rolling history to historyPath, acquiring the lock.
+// It is the exported, lock-acquiring counterpart of saveHistoryLocked, used for
+// the final flush on shutdown (Node's SIGTERM saveHistory()). It is a no-op
+// when persistence is disabled (historyPath empty). Best-effort: errors are
+// logged, never returned.
+func (p *Prober) SaveHistory() {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	if p.historyPath == "" {
+		return
+	}
+	p.saveHistoryLocked()
 }
 
 // saveHistoryLocked writes the rolling history to historyPath atomically

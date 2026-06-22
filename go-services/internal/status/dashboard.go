@@ -12,12 +12,14 @@ import (
 
 // dashboard is the HTTP handler for the status service.
 type dashboard struct {
-	prober *Prober
+	prober    *Prober
+	startedAt time.Time
 }
 
-// newDashboard constructs the handler mux for the status service.
-func newDashboard(p *Prober) http.Handler {
-	d := &dashboard{prober: p}
+// newDashboard constructs the handler mux for the status service. startedAt is
+// the process/service start time, used to report /health uptime as Node does.
+func newDashboard(p *Prober, startedAt time.Time) http.Handler {
+	d := &dashboard{prober: p, startedAt: startedAt}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", d.handleRoot)
 	mux.HandleFunc("/api/status", d.handleAPIStatus)
@@ -77,9 +79,18 @@ func (d *dashboard) handleAPIStatus(w http.ResponseWriter, r *http.Request) {
 
 // handleHealth serves a simple liveness probe at /health.
 func (d *dashboard) handleHealth(w http.ResponseWriter, r *http.Request) {
+	// Match Node's `{ status: 'ok', uptime: process.uptime() }`: uptime is the
+	// number of seconds (a float) since the service started.
+	body := struct {
+		Status string  `json:"status"`
+		Uptime float64 `json:"uptime"`
+	}{
+		Status: "ok",
+		Uptime: time.Since(d.startedAt).Seconds(),
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(`{"status":"ok"}` + "\n"))
+	_ = json.NewEncoder(w).Encode(body)
 }
 
 // overallStatus derives the platform status from the snapshot — matching the
@@ -109,11 +120,12 @@ func overallStatus(snap Snapshot) Status {
 	return StatusUnknown
 }
 
-// latestCheckedAt returns the most recent checkedAt among services, or a zero
-// time when there are no results yet.
+// latestCheckedAt returns the most recent checkedAt among services, or the Node
+// epoch sentinel ("1970-01-01T00:00:00.000Z") when there are no results yet —
+// matching Node's lastCheckedAt initialization.
 func latestCheckedAt(snap Snapshot) string {
 	if len(snap.Services) == 0 {
-		return time.Time{}.UTC().Format(time.RFC3339Nano)
+		return epochSentinel
 	}
 	latest := snap.Services[0].CheckedAt
 	for _, ss := range snap.Services[1:] {

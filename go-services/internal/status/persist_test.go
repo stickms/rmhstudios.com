@@ -8,7 +8,55 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
+	"time"
 )
+
+// waitForFile polls until path exists or the deadline passes.
+func waitForFile(t *testing.T, path string, within time.Duration) bool {
+	t.Helper()
+	deadline := time.Now().Add(within)
+	for time.Now().Before(deadline) {
+		if _, err := os.Stat(path); err == nil {
+			return true
+		}
+		time.Sleep(2 * time.Millisecond)
+	}
+	return false
+}
+
+// TestShutdownFlush asserts Service.Start writes the history once more when its
+// context is cancelled (Node's SIGTERM saveHistory()). A long probe interval
+// guarantees the ticker never fires, so re-creation of a removed file can only
+// come from the shutdown flush.
+func TestShutdownFlush(t *testing.T) {
+	path := filepath.Join(t.TempDir(), HistoryFileName)
+	lat := int64(1)
+	svc := New(Config{
+		Targets: []Target{{
+			Name:  "db",
+			Probe: func(ctx context.Context) ProbeResult { return ProbeResult{Status: StatusUp, LatencyMs: &lat, Detail: "ok"} },
+		}},
+		ProbeInterval: time.Hour, // ticker must not fire during the test
+		HistoryPath:   path,
+	})
+
+	ctx, cancel := context.WithCancel(context.Background())
+	svc.Start(ctx)
+
+	// The initial probe persists the file; wait for it, then remove it so the
+	// only thing that can re-create it is the shutdown flush.
+	if !waitForFile(t, path, time.Second) {
+		t.Fatal("initial probe did not persist history")
+	}
+	if err := os.Remove(path); err != nil {
+		t.Fatalf("remove: %v", err)
+	}
+
+	cancel()
+	if !waitForFile(t, path, time.Second) {
+		t.Fatal("shutdown flush did not persist history after cancel")
+	}
+}
 
 // TestHistoryRoundTrip writes a probe's rolling history to a temp file, reloads
 // it into a fresh prober, and asserts the buckets survive byte-for-byte.

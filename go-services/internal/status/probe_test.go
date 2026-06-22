@@ -7,6 +7,30 @@ import (
 	"testing"
 )
 
+// TestInitialServiceState asserts a freshly-constructed Prober reports the Node
+// "not yet checked" sentinels for an un-probed service: checkedAt is the epoch
+// ("1970-01-01T00:00:00.000Z"), detail is "Not checked yet", status unknown.
+func TestInitialServiceState(t *testing.T) {
+	p := NewProber([]Target{{Name: "web", URL: "http://example.invalid"}})
+	snap := p.Snapshot()
+	got := snap.Service("web")
+	if got == nil {
+		t.Fatal("missing web service")
+	}
+	if got.CheckedAt != "1970-01-01T00:00:00.000Z" {
+		t.Fatalf("expected epoch checkedAt, got %q", got.CheckedAt)
+	}
+	if got.Detail != "Not checked yet" {
+		t.Fatalf("expected detail 'Not checked yet', got %q", got.Detail)
+	}
+	if got.Status != StatusUnknown {
+		t.Fatalf("expected unknown status, got %q", got.Status)
+	}
+	if got.LatencyMs != nil {
+		t.Fatalf("expected nil latency, got %d", *got.LatencyMs)
+	}
+}
+
 func TestProbeMarksUpAndDown(t *testing.T) {
 	up := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(200) }))
 	defer up.Close()
