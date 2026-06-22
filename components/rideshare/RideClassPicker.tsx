@@ -1,6 +1,6 @@
 'use client';
 
-import { Car, Users, Sparkles, Leaf, Crown, type LucideIcon } from 'lucide-react';
+import { Car, Users, Sparkles, Leaf, Crown, Bike, Helicopter, type LucideIcon } from 'lucide-react';
 import { RIDE_CLASSES, type RideClassId } from '@/lib/rideshare/classes';
 
 export const RIDE_CLASS_ICONS: Record<string, LucideIcon> = {
@@ -9,6 +9,8 @@ export const RIDE_CLASS_ICONS: Record<string, LucideIcon> = {
   Sparkles,
   Leaf,
   Crown,
+  Bike,
+  Helicopter,
 };
 
 interface RideClassPickerProps {

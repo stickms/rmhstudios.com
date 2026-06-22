@@ -203,8 +203,8 @@ import { Route as ApiVersecraftProgressRouteImport } from './routes/api/versecra
 import { Route as ApiVegaScoreRouteImport } from './routes/api/vega/score'
 import { Route as ApiVegaLeaderboardRouteImport } from './routes/api/vega/leaderboard'
 import { Route as ApiV1PostsRouteImport } from './routes/api/v1/posts'
-import { Route as ApiV1ImagesRouteImport } from './routes/api/v1/images'
 import { Route as ApiV1MeRouteImport } from './routes/api/v1/me'
+import { Route as ApiV1ImagesRouteImport } from './routes/api/v1/images'
 import { Route as ApiV1FeedRouteImport } from './routes/api/v1/feed'
 import { Route as ApiUsersSearchRouteImport } from './routes/api/users/search'
 import { Route as ApiUserBuildsFeaturedRouteImport } from './routes/api/user-builds/featured'
@@ -233,10 +233,11 @@ import { Route as ApiRmhboxStatsRouteImport } from './routes/api/rmhbox/stats'
 import { Route as ApiRmhboxLeaderboardRouteImport } from './routes/api/rmhbox/leaderboard'
 import { Route as ApiRmhboxHistoryRouteImport } from './routes/api/rmhbox/history'
 import { Route as ApiRmharksImageRouteImport } from './routes/api/rmharks/image'
-import { Route as ApiRmharksAiGenerateRouteImport } from './routes/api/rmharks/ai-generate'
 import { Route as ApiRmharksAiImageRouteImport } from './routes/api/rmharks/ai-image'
+import { Route as ApiRmharksAiGenerateRouteImport } from './routes/api/rmharks/ai-generate'
 import { Route as ApiRmharksIdRouteImport } from './routes/api/rmharks/$id'
 import { Route as ApiRideshareRidesRouteImport } from './routes/api/rideshare/rides'
+import { Route as ApiRideshareReverseRouteImport } from './routes/api/rideshare/reverse'
 import { Route as ApiRidesharePlacesRouteImport } from './routes/api/rideshare/places'
 import { Route as ApiRideshareLocationRouteImport } from './routes/api/rideshare/location'
 import { Route as ApiRideshareGeocodeRouteImport } from './routes/api/rideshare/geocode'
@@ -1423,14 +1424,14 @@ const ApiV1PostsRoute = ApiV1PostsRouteImport.update({
   path: '/api/v1/posts',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiV1ImagesRoute = ApiV1ImagesRouteImport.update({
-  id: '/api/v1/images',
-  path: '/api/v1/images',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiV1MeRoute = ApiV1MeRouteImport.update({
   id: '/api/v1/me',
   path: '/api/v1/me',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1ImagesRoute = ApiV1ImagesRouteImport.update({
+  id: '/api/v1/images',
+  path: '/api/v1/images',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiV1FeedRoute = ApiV1FeedRouteImport.update({
@@ -1574,14 +1575,14 @@ const ApiRmharksImageRoute = ApiRmharksImageRouteImport.update({
   path: '/image',
   getParentRoute: () => ApiRmharksRoute,
 } as any)
-const ApiRmharksAiGenerateRoute = ApiRmharksAiGenerateRouteImport.update({
-  id: '/ai-generate',
-  path: '/ai-generate',
-  getParentRoute: () => ApiRmharksRoute,
-} as any)
 const ApiRmharksAiImageRoute = ApiRmharksAiImageRouteImport.update({
   id: '/ai-image',
   path: '/ai-image',
+  getParentRoute: () => ApiRmharksRoute,
+} as any)
+const ApiRmharksAiGenerateRoute = ApiRmharksAiGenerateRouteImport.update({
+  id: '/ai-generate',
+  path: '/ai-generate',
   getParentRoute: () => ApiRmharksRoute,
 } as any)
 const ApiRmharksIdRoute = ApiRmharksIdRouteImport.update({
@@ -1592,6 +1593,11 @@ const ApiRmharksIdRoute = ApiRmharksIdRouteImport.update({
 const ApiRideshareRidesRoute = ApiRideshareRidesRouteImport.update({
   id: '/api/rideshare/rides',
   path: '/api/rideshare/rides',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRideshareReverseRoute = ApiRideshareReverseRouteImport.update({
+  id: '/api/rideshare/reverse',
+  path: '/api/rideshare/reverse',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiRidesharePlacesRoute = ApiRidesharePlacesRouteImport.update({
@@ -2912,6 +2918,7 @@ export interface FileRoutesByFullPath {
   '/api/rideshare/geocode': typeof ApiRideshareGeocodeRoute
   '/api/rideshare/location': typeof ApiRideshareLocationRoute
   '/api/rideshare/places': typeof ApiRidesharePlacesRouteWithChildren
+  '/api/rideshare/reverse': typeof ApiRideshareReverseRoute
   '/api/rideshare/rides': typeof ApiRideshareRidesRouteWithChildren
   '/api/rmharks/$id': typeof ApiRmharksIdRouteWithChildren
   '/api/rmharks/ai-generate': typeof ApiRmharksAiGenerateRoute
@@ -3325,6 +3332,7 @@ export interface FileRoutesByTo {
   '/api/rideshare/geocode': typeof ApiRideshareGeocodeRoute
   '/api/rideshare/location': typeof ApiRideshareLocationRoute
   '/api/rideshare/places': typeof ApiRidesharePlacesRouteWithChildren
+  '/api/rideshare/reverse': typeof ApiRideshareReverseRoute
   '/api/rideshare/rides': typeof ApiRideshareRidesRouteWithChildren
   '/api/rmharks/$id': typeof ApiRmharksIdRouteWithChildren
   '/api/rmharks/ai-generate': typeof ApiRmharksAiGenerateRoute
@@ -3764,6 +3772,7 @@ export interface FileRoutesById {
   '/api/rideshare/geocode': typeof ApiRideshareGeocodeRoute
   '/api/rideshare/location': typeof ApiRideshareLocationRoute
   '/api/rideshare/places': typeof ApiRidesharePlacesRouteWithChildren
+  '/api/rideshare/reverse': typeof ApiRideshareReverseRoute
   '/api/rideshare/rides': typeof ApiRideshareRidesRouteWithChildren
   '/api/rmharks/$id': typeof ApiRmharksIdRouteWithChildren
   '/api/rmharks/ai-generate': typeof ApiRmharksAiGenerateRoute
@@ -4203,6 +4212,7 @@ export interface FileRouteTypes {
     | '/api/rideshare/geocode'
     | '/api/rideshare/location'
     | '/api/rideshare/places'
+    | '/api/rideshare/reverse'
     | '/api/rideshare/rides'
     | '/api/rmharks/$id'
     | '/api/rmharks/ai-generate'
@@ -4616,6 +4626,7 @@ export interface FileRouteTypes {
     | '/api/rideshare/geocode'
     | '/api/rideshare/location'
     | '/api/rideshare/places'
+    | '/api/rideshare/reverse'
     | '/api/rideshare/rides'
     | '/api/rmharks/$id'
     | '/api/rmharks/ai-generate'
@@ -5054,6 +5065,7 @@ export interface FileRouteTypes {
     | '/api/rideshare/geocode'
     | '/api/rideshare/location'
     | '/api/rideshare/places'
+    | '/api/rideshare/reverse'
     | '/api/rideshare/rides'
     | '/api/rmharks/$id'
     | '/api/rmharks/ai-generate'
@@ -5385,6 +5397,7 @@ export interface RootRouteChildren {
   ApiRideshareGeocodeRoute: typeof ApiRideshareGeocodeRoute
   ApiRideshareLocationRoute: typeof ApiRideshareLocationRoute
   ApiRidesharePlacesRoute: typeof ApiRidesharePlacesRouteWithChildren
+  ApiRideshareReverseRoute: typeof ApiRideshareReverseRoute
   ApiRideshareRidesRoute: typeof ApiRideshareRidesRouteWithChildren
   ApiRmhboxHistoryRoute: typeof ApiRmhboxHistoryRoute
   ApiRmhboxLeaderboardRoute: typeof ApiRmhboxLeaderboardRoute
@@ -6860,18 +6873,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1PostsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/v1/images': {
-      id: '/api/v1/images'
-      path: '/api/v1/images'
-      fullPath: '/api/v1/images'
-      preLoaderRoute: typeof ApiV1ImagesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/v1/me': {
       id: '/api/v1/me'
       path: '/api/v1/me'
       fullPath: '/api/v1/me'
       preLoaderRoute: typeof ApiV1MeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/images': {
+      id: '/api/v1/images'
+      path: '/api/v1/images'
+      fullPath: '/api/v1/images'
+      preLoaderRoute: typeof ApiV1ImagesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/feed': {
@@ -7070,18 +7083,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRmharksImageRouteImport
       parentRoute: typeof ApiRmharksRoute
     }
-    '/api/rmharks/ai-generate': {
-      id: '/api/rmharks/ai-generate'
-      path: '/ai-generate'
-      fullPath: '/api/rmharks/ai-generate'
-      preLoaderRoute: typeof ApiRmharksAiGenerateRouteImport
-      parentRoute: typeof ApiRmharksRoute
-    }
     '/api/rmharks/ai-image': {
       id: '/api/rmharks/ai-image'
       path: '/ai-image'
       fullPath: '/api/rmharks/ai-image'
       preLoaderRoute: typeof ApiRmharksAiImageRouteImport
+      parentRoute: typeof ApiRmharksRoute
+    }
+    '/api/rmharks/ai-generate': {
+      id: '/api/rmharks/ai-generate'
+      path: '/ai-generate'
+      fullPath: '/api/rmharks/ai-generate'
+      preLoaderRoute: typeof ApiRmharksAiGenerateRouteImport
       parentRoute: typeof ApiRmharksRoute
     }
     '/api/rmharks/$id': {
@@ -7096,6 +7109,13 @@ declare module '@tanstack/react-router' {
       path: '/api/rideshare/rides'
       fullPath: '/api/rideshare/rides'
       preLoaderRoute: typeof ApiRideshareRidesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/rideshare/reverse': {
+      id: '/api/rideshare/reverse'
+      path: '/api/rideshare/reverse'
+      fullPath: '/api/rideshare/reverse'
+      preLoaderRoute: typeof ApiRideshareReverseRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/rideshare/places': {
@@ -9545,6 +9565,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRideshareGeocodeRoute: ApiRideshareGeocodeRoute,
   ApiRideshareLocationRoute: ApiRideshareLocationRoute,
   ApiRidesharePlacesRoute: ApiRidesharePlacesRouteWithChildren,
+  ApiRideshareReverseRoute: ApiRideshareReverseRoute,
   ApiRideshareRidesRoute: ApiRideshareRidesRouteWithChildren,
   ApiRmhboxHistoryRoute: ApiRmhboxHistoryRoute,
   ApiRmhboxLeaderboardRoute: ApiRmhboxLeaderboardRoute,
