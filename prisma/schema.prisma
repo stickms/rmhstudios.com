@@ -222,6 +222,12 @@ model User {
   doctrineRecruitmentCodes    DoctrineRecruitmentCode[]
   doctrineSahurParticipations DoctrineSahurParticipation[]
 
+  // ─── RMH Rideshare ────────────────────────────────────────────
+  rideshareDriver       RideshareDriver?
+  rideshareApplications RideshareDriver[] @relation("RideshareApplicationReviewer")
+  ridesRequested        Ride[]            @relation("RideRider")
+  ridesDriven           Ride[]            @relation("RideDriver")
+
   @@index([isBot])
   @@map("user")
 }
@@ -3020,4 +3026,105 @@ model AiPersonaMessage {
 
   @@index([personaId, userId, createdAt])
   @@map("ai_persona_message")
+}
+
+// ─── RMH Rideshare ─────────────────────────────────────────────────
+// Free, community ride-hailing. Riders map pickup/drop-off via OSM and pick
+// a ride class (RMH-X, RMH-XL, …). Drivers apply with a license + vehicle
+// details; admins review and approve, after which the license image is
+// deleted from storage for privacy.
+
+enum RideClass {
+  RMH_X
+  RMH_XL
+  RMH_COMFORT
+  RMH_GREEN
+  RMH_BLACK
+}
+
+enum DriverApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum RideStatus {
+  REQUESTED
+  ACCEPTED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model RideshareDriver {
+  id     String                  @id @default(cuid())
+  userId String                  @unique
+  status DriverApplicationStatus @default(PENDING)
+
+  // Vehicle details
+  vehicleMake  String    @db.VarChar(60)
+  vehicleModel String    @db.VarChar(60)
+  vehicleYear  Int
+  vehicleColor String    @db.VarChar(30)
+  licensePlate String    @db.VarChar(16)
+  vehicleClass RideClass @default(RMH_X)
+  seats        Int       @default(4)
+
+  // Driver's licence (filename only — served via an admin-only endpoint and
+  // DELETED from storage once the application has been reviewed).
+  licenseImageKey String?
+  licenseDeletedAt DateTime?
+
+  // Review metadata
+  reviewedById    String?
+  reviewedAt      DateTime?
+  rejectionReason String?   @db.VarChar(500)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewedBy User?  @relation("RideshareApplicationReviewer", fields: [reviewedById], references: [id])
+
+  @@index([status])
+  @@map("rideshare_driver")
+}
+
+model Ride {
+  id        String     @id @default(cuid())
+  riderId   String
+  driverId  String?
+  rideClass RideClass  @default(RMH_X)
+  status    RideStatus @default(REQUESTED)
+
+  // Pickup
+  pickupLabel String @db.VarChar(300)
+  pickupLat   Float
+  pickupLng   Float
+
+  // Drop-off
+  dropoffLabel String @db.VarChar(300)
+  dropoffLat   Float
+  dropoffLng   Float
+
+  // Trip estimate (rides are currently free, fare stored for reference only)
+  distanceMeters   Int?
+  durationSeconds  Int?
+  estimatedFareCents Int @default(0)
+
+  notes String? @db.VarChar(500)
+
+  requestedAt DateTime  @default(now())
+  acceptedAt  DateTime?
+  completedAt DateTime?
+  cancelledAt DateTime?
+  updatedAt   DateTime  @updatedAt
+
+  rider  User  @relation("RideRider", fields: [riderId], references: [id], onDelete: Cascade)
+  driver User? @relation("RideDriver", fields: [driverId], references: [id])
+
+  @@index([status, rideClass, requestedAt])
+  @@index([riderId])
+  @@index([driverId])
+  @@map("ride")
 }

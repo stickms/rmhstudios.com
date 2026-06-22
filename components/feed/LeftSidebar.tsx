@@ -7,7 +7,7 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import {
   Home, Package, BookOpen, Library, LayoutGrid, Atom,
-  LogOut, PenSquare, User, ShieldCheck, MoreHorizontal, Wallet, Sparkles, Inbox, Landmark, Bookmark, ShoppingBag, Compass, Users, Zap, Shield, Swords, Clapperboard, Terminal, ChevronDown, type LucideIcon
+  LogOut, PenSquare, User, ShieldCheck, MoreHorizontal, Wallet, Sparkles, Inbox, Landmark, Bookmark, ShoppingBag, Compass, Users, Zap, Shield, Swords, Clapperboard, Terminal, ChevronDown, Car, type LucideIcon
 } from 'lucide-react';
 import { ComposeModal } from './ComposeModal';
 import { Button } from '@/components/ui/button';
@@ -56,6 +56,7 @@ const NAV: NavItem[] = [
     label: 'More',
     icon: MoreHorizontal,
     children: [
+      { href: '/rideshare', label: 'Rideshare', icon: Car },
       { href: '/developer', label: 'Developer', icon: Terminal },
       { href: '/blog', label: 'Blog', icon: BookOpen },
       { href: '/rmh-capital', label: 'RMH Capital', icon: Landmark },
