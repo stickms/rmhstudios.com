@@ -184,5 +184,11 @@
     "description": "A university-style textbook on the architecture and history of rmhstudios.com — server-side rendering, the realtime socket fleet, a 142-model data layer, the games platform, and the migration to k3s — with figures, per-chapter exercises, and three practice exams with full worked solutions.",
     "pages": 182,
     "cover": "rmhstudios-architecture-and-history.jpg"
+  },
+  "rmh-deeplink-thesis.pdf": {
+    "title": "The Deeplink Thesis",
+    "description": "The flagship scientific manifesto and research agenda of RMH Deeplink — a frontier AI lab doing foundational research toward artificial general intelligence, in service of science and humanity.",
+    "pages": 136,
+    "cover": "rmh-deeplink-thesis.jpg"
   }
 }
