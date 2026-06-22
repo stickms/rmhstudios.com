@@ -27,6 +27,7 @@ const NAV: NavItem[] = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/search', label: 'Explore', icon: Compass },
   { href: '/messages', label: 'Inbox', icon: Inbox, requiresAuth: true, badge: 'inbox' },
+  { href: '/v', label: 'Pages', icon: LayoutGrid },
   { href: '/builds', label: 'Builds', icon: Package },
   { href: '/library', label: 'Library', icon: Library },
   {
@@ -38,15 +39,6 @@ const NAV: NavItem[] = [
       { href: '/clips', label: 'Clips', icon: Clapperboard },
       { href: '/ranked', label: 'Ranked', icon: Swords },
       { href: '/clans', label: 'Clans', icon: Shield },
-    ],
-  },
-  {
-    group: 'create',
-    label: 'Create',
-    icon: LayoutGrid,
-    children: [
-      { href: '/v', label: 'Pages', icon: LayoutGrid },
-      { href: '/developer', label: 'Developer', icon: Terminal },
     ],
   },
   {
@@ -64,6 +56,7 @@ const NAV: NavItem[] = [
     label: 'More',
     icon: MoreHorizontal,
     children: [
+      { href: '/developer', label: 'Developer', icon: Terminal },
       { href: '/blog', label: 'Blog', icon: BookOpen },
       { href: '/rmh-capital', label: 'RMH Capital', icon: Landmark },
       { href: '/rmh-pmc', label: 'RMH PMC', icon: Shield },
@@ -253,7 +246,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
             {showUserMenu && (
               <div
                 className="vibe-glass fixed w-48 border border-site-border rounded-2xl shadow-lg py-1 z-50"
-                style={{ bottom: `${userMenuPos.bottom}px`, right: `${userMenuPos.right}px` }}
+                style={{ bottom: `${userMenuPos.bottom}px`, right: `${userMenuPos.right}px`, background: 'rgba(12, 12, 13, 0.96)' }}
               >
                 <Link
                   to={`/u/${(session.user as any).handle || session.user.id}` as string}
