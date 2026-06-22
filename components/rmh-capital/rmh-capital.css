@@ -63,14 +63,12 @@
 .rmhc-root .topnav{position:sticky;top:0;z-index:90;background:rgba(6,9,15,0.72);backdrop-filter:blur(16px) saturate(130%);border-bottom:1px solid var(--line-soft);transition:border-color .3s}
 .rmhc-root .topnav.scrolled{border-bottom-color:var(--line);background:rgba(6,9,15,0.9)}
 .rmhc-root .topnav-inner{max-width:var(--maxw);margin:0 auto;padding:0 var(--pad);height:74px;display:flex;align-items:center;justify-content:space-between;gap:24px}
+.rmhc-root .topnav-left{display:flex;align-items:center;gap:20px;flex:0 0 auto}
+.rmhc-root .backlink{display:inline-flex;align-items:center;gap:8px;font-family:var(--sans);font-size:12px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:var(--gray);padding-right:20px;border-right:1px solid var(--line-soft);transition:color .22s}
+.rmhc-root .backlink:hover{color:var(--gold)}
 .rmhc-root .brand{display:flex;align-items:center;gap:13px;flex:0 0 auto}
 .rmhc-root .brand svg{width:30px;height:30px}
 .rmhc-root .brand-text{font-family:var(--sans);font-size:14px;font-weight:600;letter-spacing:0.3em;text-transform:uppercase;color:var(--ivory)}
-/* floating back-to-parent arrow */
-.rmhc-root .float-back{position:fixed;left:clamp(16px,3vw,30px);bottom:clamp(16px,3vw,30px);z-index:80;width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--ivory);background:rgba(11,17,28,0.72);border:1px solid var(--line);backdrop-filter:blur(10px) saturate(130%);box-shadow:0 10px 30px rgba(0,0,0,0.45);transition:color .25s,background .25s,border-color .25s,transform .25s}
-.rmhc-root .float-back svg{width:20px;height:20px}
-.rmhc-root .float-back:hover{color:var(--void);background:var(--gold);border-color:var(--gold);transform:translateX(-3px)}
-@media(prefers-reduced-motion:reduce){.rmhc-root .float-back{transition:none}.rmhc-root .float-back:hover{transform:none}}
 .rmhc-root .navlinks{display:flex;align-items:center;gap:36px}
 .rmhc-root .navlinks a{font-size:13.5px;font-weight:500;letter-spacing:0.04em;color:var(--gray);transition:color .22s;position:relative;padding:6px 0;background:none;border:0;cursor:pointer;font-family:var(--sans)}
 .rmhc-root .navlinks a:hover{color:var(--ivory)}
@@ -88,6 +86,11 @@
 @media(max-width:900px){
   .rmhc-root .navlinks,.rmhc-root .nav-right .nav-cta{display:none}
   .rmhc-root .nav-toggle{display:flex}
+}
+@media(max-width:560px){
+  .rmhc-root .backlink-label{display:none}
+  .rmhc-root .backlink{padding-right:16px}
+  .rmhc-root .topnav-left{gap:16px}
 }
 
 /* ════ BUTTONS ════ */

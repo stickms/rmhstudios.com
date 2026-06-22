@@ -3,7 +3,7 @@
  * renders the shared nav + footer, and drives the scroll-reveal animation.
  */
 import { Outlet, useRouterState } from '@tanstack/react-router';
-import { TopNav, SiteFooter, FloatBack, useReveal } from './shared';
+import { TopNav, SiteFooter, useReveal } from './shared';
 
 export default function RmhCapitalLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -16,7 +16,6 @@ export default function RmhCapitalLayout() {
         <Outlet />
       </main>
       <SiteFooter />
-      <FloatBack />
     </div>
   );
 }
