@@ -12,6 +12,7 @@ go_library(
         "//go-services/pkg/httpx",
         "//go-services/pkg/log",
         "//go-services/pkg/telemetry",
+        "//go-services/pkg/worker",
     ],
 )
 

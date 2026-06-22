@@ -6,8 +6,6 @@
 package main
 
 import (
-	"context"
-	"net/http"
 	"time"
 
 	"github.com/rmhstudios/rmh-go/internal/discordbot"
@@ -16,6 +14,7 @@ import (
 	"github.com/rmhstudios/rmh-go/pkg/httpx"
 	"github.com/rmhstudios/rmh-go/pkg/log"
 	"github.com/rmhstudios/rmh-go/pkg/telemetry"
+	"github.com/rmhstudios/rmh-go/pkg/worker"
 )
 
 func main() {
@@ -25,7 +24,7 @@ func main() {
 		logger.Fatal("config", "error", err)
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := httpx.SignalContext()
 	defer cancel()
 
 	// DB is used for /chat session persistence. The chat handler tolerates a nil
@@ -39,52 +38,9 @@ func main() {
 	metrics := telemetry.New("discord-bot")
 	// Metrics + health only; no client HTTP for this bot. A bind failure must be
 	// fatal — otherwise the pod stays up but unprobeable, so k8s never restarts it.
-	go func() {
-		mux := http.NewServeMux()
-		mux.HandleFunc("/health", httpx.Health("discord-bot", nil))
-		mux.Handle("/metrics", metrics.Handler())
-		if err := http.ListenAndServe(cfg.MetricsAddr, mux); err != nil {
-			logger.Fatal("metrics server", "error", err)
-		}
-	}()
+	httpx.ServeMetrics(cfg.MetricsAddr, "discord-bot", metrics.Handler(), logger)
 
-	botCfg := discordbot.Config{
-		Token:        firstNonEmpty(config.GetString("DISCORD_BOT_TOKEN", ""), config.GetString("DISCORD_ACTIVITY_BOT_TOKEN", "")),
-		DevGuildID:   config.GetString("DISCORD_DEV_GUILD_ID", ""),
-		OwnerID:      config.GetString("OWNER_ID", ""),
-		DeepSeekKey:  config.GetString("DEEPSEEK_API_KEY", ""),
-		DeepSeekMod:  config.GetString("DEEPSEEK_MODEL", "deepseek-chat"),
-		WorktreesDir: config.GetString("RMHBOT_WORKTREES_DIR", ""),
-		GithubToken:  config.GetString("GITHUB_TOKEN", ""),
+	if err := discordbot.Run(ctx, worker.Deps{DB: database, Logger: logger, Metrics: metrics, Cfg: cfg}); err != nil {
+		logger.Error("run", "error", err)
 	}
-	if botCfg.Token == "" {
-		logger.Fatal("config", "error", "DISCORD_BOT_TOKEN or DISCORD_ACTIVITY_BOT_TOKEN is required")
-	}
-
-	deepseek := discordbot.NewDeepSeekClient(botCfg.DeepSeekKey, botCfg.DeepSeekMod)
-	chat := discordbot.NewChatService(deepseek, database, logger)
-	rmhbot := discordbot.NewRmhbotService(deepseek, logger, botCfg.WorktreesDir, botCfg.GithubToken)
-
-	bot, err := discordbot.New(botCfg, chat, rmhbot, logger)
-	if err != nil {
-		logger.Fatal("bot init", "error", err)
-	}
-
-	// Block on signal; Run closes the gateway when ctx is cancelled.
-	go func() {
-		httpx.WaitForSignal()
-		cancel()
-	}()
-	if err := bot.Run(ctx); err != nil {
-		logger.Error("bot run", "error", err)
-	}
-}
-
-func firstNonEmpty(vals ...string) string {
-	for _, v := range vals {
-		if v != "" {
-			return v
-		}
-	}
-	return ""
 }
