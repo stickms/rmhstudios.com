@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { Megaphone, X } from 'lucide-react';
+import { RMHarkContent } from './RMHarkContent';
+import { GifEmbed } from './GifEmbed';
+import { PollDisplay } from './PollDisplay';
+import type { FeedPoll } from '@/lib/feed-types';
 
 interface Announcement {
   id: string;
@@ -11,6 +15,9 @@ interface Announcement {
   linkLabel: string | null;
   variant: string;
   createdAt: string;
+  imageUrls?: string[];
+  gifUrl?: string | null;
+  poll?: FeedPoll | null;
 }
 
 const VARIANT_STYLES: Record<string, string> = {
@@ -53,6 +60,10 @@ export function FeedAnnouncements() {
     }
   };
 
+  const updatePoll = (id: string, poll: FeedPoll) => {
+    setItems((prev) => prev.map((a) => (a.id === id ? { ...a, poll } : a)));
+  };
+
   const visible = items.filter((a) => !dismissed.includes(a.id));
   if (visible.length === 0) return null;
 
@@ -72,9 +83,41 @@ export function FeedAnnouncements() {
           </button>
           <div className="flex items-start gap-2">
             <Megaphone className="mt-0.5 h-4 w-4 shrink-0 text-site-accent" />
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-site-text">{a.title}</p>
-              <p className="mt-0.5 whitespace-pre-line text-sm text-site-text-muted">{a.body}</p>
+              <RMHarkContent
+                text={a.body}
+                className="mt-0.5 whitespace-pre-line text-sm text-site-text-muted"
+              />
+
+              {/* Uploaded images */}
+              {a.imageUrls && a.imageUrls.length > 0 && (
+                <div className={`mt-2 grid gap-1 ${a.imageUrls.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                  {a.imageUrls.map((url) => (
+                    <img
+                      key={url}
+                      src={url}
+                      alt=""
+                      loading="lazy"
+                      className="w-full rounded-lg object-cover max-h-48 border border-site-border"
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* GIF / linked image */}
+              {a.gifUrl && <GifEmbed url={a.gifUrl} className="mt-2" />}
+
+              {/* Poll */}
+              {a.poll && (
+                <PollDisplay
+                  poll={a.poll}
+                  postId={a.id}
+                  voteUrl={`/api/announcements/${a.id}/vote`}
+                  onUpdate={(poll) => updatePoll(a.id, poll)}
+                />
+              )}
+
               {a.linkUrl && (
                 <a
                   href={a.linkUrl}
