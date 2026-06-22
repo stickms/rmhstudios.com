@@ -4,7 +4,7 @@
  * the scroll-reveal animation.
  */
 import { Outlet, useRouterState } from '@tanstack/react-router';
-import { CommandBar, Gutter, SiteFooter, FloatBack, useReveal } from './shared';
+import { CommandBar, Gutter, SiteFooter, useReveal } from './shared';
 
 export default function RmhPmcLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -18,7 +18,6 @@ export default function RmhPmcLayout() {
         <Outlet />
       </main>
       <SiteFooter />
-      <FloatBack />
     </div>
   );
 }
