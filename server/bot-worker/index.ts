@@ -43,6 +43,11 @@ import {
   type DmPrivacy,
 } from '@/lib/rmhark-ai/dm-policy';
 import { consecutiveBotDepth, shouldReplyToMention } from '@/lib/rmhark-ai/mention-policy';
+import {
+  seedPredictions,
+  placeNoiseBets,
+  resolveDuePredictions,
+} from '@/lib/predictions/predictions-ai.server';
 import type { MessagePayload } from '@/lib/message-events';
 
 // ─── Config ─────────────────────────────────────────────────────
@@ -122,6 +127,20 @@ const DM_FOLLOWUP_SILENCE_MS = intEnv('BOT_DM_FOLLOWUP_SILENCE_MS', 3 * 24 * 60 
 const DM_ACTIVE_HUMAN_LOOKBACK_MS = intEnv('BOT_DM_ACTIVE_HUMAN_LOOKBACK_MS', 7 * 24 * 60 * 60 * 1000);
 
 const TICKS_PER_DAY = (24 * 60 * 60 * 1000) / POST_TICK_MS;
+
+// ─── Prediction-market automation ───────────────────────────────
+// How often to seed new AI prediction markets (default 3h).
+const PREDICTION_SEED_MS = intEnv('PREDICTION_SEED_MS', 3 * 60 * 60 * 1000);
+// New AI markets minted per seed tick.
+const PREDICTION_SEED_BATCH = intEnv('PREDICTION_SEED_BATCH', 3);
+// Cap on simultaneously-open AI markets.
+const PREDICTION_OPEN_CAP = intEnv('PREDICTION_OPEN_CAP', 24);
+// How often bot users place noise trades (default 10m).
+const PREDICTION_NOISE_MS = intEnv('PREDICTION_NOISE_MS', 10 * 60 * 1000);
+// Max noise trades per tick.
+const PREDICTION_NOISE_MAX = intEnv('PREDICTION_NOISE_MAX', 6);
+// How often to resolve due AI markets (default 30m).
+const PREDICTION_RESOLVE_MS = intEnv('PREDICTION_RESOLVE_MS', 30 * 60 * 1000);
 
 // ─── Prisma (standalone client for the worker process) ──────────
 function createPrisma() {
@@ -899,11 +918,17 @@ let postTimer: NodeJS.Timeout | undefined;
 let replyTimer: NodeJS.Timeout | undefined;
 let dmTimer: NodeJS.Timeout | undefined;
 let mentionTimer: NodeJS.Timeout | undefined;
+let predictionSeedTimer: NodeJS.Timeout | undefined;
+let predictionNoiseTimer: NodeJS.Timeout | undefined;
+let predictionResolveTimer: NodeJS.Timeout | undefined;
 let maintaining = false;
 let posting = false;
 let replying = false;
 let dmRunning = false;
 let mentionRunning = false;
+let predictionSeeding = false;
+let predictionNoising = false;
+let predictionResolving = false;
 
 async function safeMaintain() {
   if (maintaining) return;
@@ -965,6 +990,47 @@ async function safeMentionTick() {
   }
 }
 
+async function safePredictionSeedTick() {
+  if (predictionSeeding) return;
+  predictionSeeding = true;
+  try {
+    const n = await seedPredictions(prisma, {
+      target: PREDICTION_SEED_BATCH,
+      cap: PREDICTION_OPEN_CAP,
+    });
+    if (n > 0) log(`seeded ${n} prediction market(s)`);
+  } catch (e) {
+    errlog('prediction seed tick failed:', e);
+  } finally {
+    predictionSeeding = false;
+  }
+}
+
+async function safePredictionNoiseTick() {
+  if (predictionNoising) return;
+  predictionNoising = true;
+  try {
+    await placeNoiseBets(prisma, { maxBets: PREDICTION_NOISE_MAX });
+  } catch (e) {
+    errlog('prediction noise tick failed:', e);
+  } finally {
+    predictionNoising = false;
+  }
+}
+
+async function safePredictionResolveTick() {
+  if (predictionResolving) return;
+  predictionResolving = true;
+  try {
+    const n = await resolveDuePredictions(prisma);
+    if (n > 0) log(`resolved ${n} prediction market(s)`);
+  } catch (e) {
+    errlog('prediction resolve tick failed:', e);
+  } finally {
+    predictionResolving = false;
+  }
+}
+
 async function startup() {
   log('Starting…');
   if (!isRmharkAIConfigured()) {
@@ -982,6 +1048,11 @@ async function startup() {
   replyTimer = setInterval(() => void safeReplyTick(), REPLY_TICK_MS);
   dmTimer = setInterval(() => void safeDmTick(), DM_TICK_MS);
   mentionTimer = setInterval(() => void safeMentionTick(), MENTION_TICK_MS);
+  predictionSeedTimer = setInterval(() => void safePredictionSeedTick(), PREDICTION_SEED_MS);
+  predictionNoiseTimer = setInterval(() => void safePredictionNoiseTick(), PREDICTION_NOISE_MS);
+  predictionResolveTimer = setInterval(() => void safePredictionResolveTick(), PREDICTION_RESOLVE_MS);
+  // Kick off an initial seed so a fresh deploy has markets to trade.
+  void safePredictionSeedTick();
   log('Scheduled.');
 }
 
@@ -995,6 +1066,9 @@ async function shutdown(signal: string) {
   if (replyTimer) clearInterval(replyTimer);
   if (dmTimer) clearInterval(dmTimer);
   if (mentionTimer) clearInterval(mentionTimer);
+  if (predictionSeedTimer) clearInterval(predictionSeedTimer);
+  if (predictionNoiseTimer) clearInterval(predictionNoiseTimer);
+  if (predictionResolveTimer) clearInterval(predictionResolveTimer);
   await prisma.$disconnect();
   process.exit(0);
 }

@@ -7,7 +7,7 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import {
   Home, BookOpen, Library, Atom, Brain, Wand2,
-  LogOut, PenSquare, User, ShieldCheck, MoreHorizontal, Wallet, Inbox, Landmark, Bookmark, ShoppingBag, Compass, Users, Zap, Shield, Clapperboard, Terminal, ChevronDown, Car, type LucideIcon
+  LogOut, PenSquare, User, ShieldCheck, MoreHorizontal, TrendingUp, Inbox, Landmark, Bookmark, ShoppingBag, Compass, Users, Zap, Shield, Terminal, ChevronDown, Car, type LucideIcon
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ComposeModal } from './ComposeModal';
@@ -31,17 +31,9 @@ const NAV: NavItem[] = [
   { href: '/messages', label: 'Inbox', icon: Inbox, requiresAuth: true, badge: 'inbox' },
   { href: '/create', label: 'Creator Studio', icon: Wand2 },
   { href: '/library', label: 'Library', icon: Library },
-  {
-    group: 'community',
-    label: 'Community',
-    icon: Users,
-    children: [
-      { href: '/communities', label: 'Communities', icon: Users },
-      { href: '/clips', label: 'Clips', icon: Clapperboard },
-    ],
-  },
+  { href: '/communities', label: 'Communities', icon: Users },
   { href: '/store', label: 'Store', icon: ShoppingBag },
-  { href: '/wallet', label: 'Wallet', icon: Wallet },
+  { href: '/predictions', label: 'Predictions', icon: TrendingUp },
   {
     group: 'more',
     label: 'More',
