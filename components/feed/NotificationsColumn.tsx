@@ -6,6 +6,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { Heart, MessageCircle, UserPlus, AtSign, Repeat2, Bell, CheckCheck, Loader2, Trophy, Sparkles, Zap, Gift, Car, MapPin } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Button } from '@/components/ui/button';
+import { NOTIFICATIONS_READ_EVENT } from '@/lib/useNotificationCount';
 
 type NotificationType = 'LIKE' | 'COMMENT' | 'REPLY' | 'FOLLOW' | 'MENTION' | 'REPOST' | 'SYSTEM';
 
@@ -97,6 +98,8 @@ export function NotificationsColumn({ embedded = false }: { embedded?: boolean }
       })
         .then(() => {
           if (active) setItems((prev) => prev.map((n) => ({ ...n, read: true })));
+          // Tell the nav badge to refresh now instead of waiting for its poll.
+          window.dispatchEvent(new Event(NOTIFICATIONS_READ_EVENT));
         })
         .catch(() => {});
     })();
@@ -113,6 +116,8 @@ export function NotificationsColumn({ embedded = false }: { embedded?: boolean }
       credentials: 'include',
       body: JSON.stringify({ all: true }),
     }).catch(() => {});
+    // Refresh the nav badge immediately rather than on its next poll.
+    window.dispatchEvent(new Event(NOTIFICATIONS_READ_EVENT));
   };
 
   // Where a notification should take you when tapped. Prefer the link stored at
