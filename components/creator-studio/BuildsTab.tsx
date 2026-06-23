@@ -1,12 +1,13 @@
 /**
- * Creator Studio · Builds tab.
+ * Creator Studio · Builds surfaces.
  *
  * A grid of slightly-rounded cards (with the Library's staggered rise + a 3D
- * tilt-on-hover) showing either Curated/Official builds (the RMH-made games +
- * apps, code-defined) or community User builds (from the DB). A switch toggles
- * between them — defaulting to Curated — with sorting, search, and, for user
- * builds, lazy infinite-scroll pagination. Ported from the former standalone
- * /builds route. Each card links to its detail page at /builds/$slug.
+ * tilt-on-hover). Curated/Official builds (the RMH-made games + apps,
+ * code-defined) are split into their own Games and Apps tabs via
+ * `CuratedBuildsTab`; community submissions (from the DB) live in their own tab
+ * via `UserBuildsTab` (with sorting, search, and lazy infinite-scroll
+ * pagination). Ported from the former standalone /builds route. Each card links
+ * to its detail page at /builds/$slug.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -16,7 +17,6 @@ import { Search, Plus, Heart, Info } from 'lucide-react';
 import type { CuratedBuild } from '@/lib/builds/curated';
 import { shelfRiseDelay } from '@/components/library/shelf';
 
-type Tab = 'curated' | 'user';
 type UserSort = 'recent' | 'popular' | 'views';
 type CuratedSort = 'featured' | 'name';
 
@@ -145,20 +145,24 @@ function usePointerCards(gridRef: React.RefObject<HTMLDivElement | null>) {
   }, [gridRef]);
 }
 
-export function BuildsTab({ curated }: { curated: CuratedBuild[] }) {
+/**
+ * Curated (official) builds for a single kind — used by both the Games and the
+ * Apps tab. Handles its own search + sort over the pre-filtered list.
+ */
+export function CuratedBuildsTab({
+  curated,
+  searchPlaceholder,
+  emptyLabel,
+}: {
+  curated: CuratedBuild[];
+  searchPlaceholder?: string;
+  emptyLabel?: string;
+}) {
   const { t } = useTranslation('builds');
-  const [tab, setTab] = useState<Tab>('curated');
   const [query, setQuery] = useState('');
-  const [curatedSort, setCuratedSort] = useState<CuratedSort>('featured');
-  const [userSort, setUserSort] = useState<UserSort>('recent');
+  const [sort, setSort] = useState<CuratedSort>('featured');
 
-  const [userItems, setUserItems] = useState<UserBuildItem[]>([]);
-  const [cursor, setCursor] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [loadedOnce, setLoadedOnce] = useState(false);
-  const reqId = useRef(0);
-
-  const curatedView = useMemo(() => {
+  const view = useMemo(() => {
     const q = query.trim().toLowerCase();
     let list = curated;
     if (q) {
@@ -169,12 +173,74 @@ export function BuildsTab({ curated }: { curated: CuratedBuild[] }) {
           b.tags.some((tag) => tag.toLowerCase().includes(q)),
       );
     }
-    if (curatedSort === 'name') list = [...list].sort((a, b) => a.title.localeCompare(b.title));
+    if (sort === 'name') list = [...list].sort((a, b) => a.title.localeCompare(b.title));
     return list;
-  }, [curated, query, curatedSort]);
+  }, [curated, query, sort]);
+
+  const gridRef = useRef<HTMLDivElement>(null);
+  usePointerCards(gridRef);
+
+  return (
+    <div className="lib">
+      <div className="builds-toolbar">
+        <div className="builds-toolbar__right">
+          <div className="vibe-search">
+            <Search size={16} className="vibe-search__icon" aria-hidden="true" />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={searchPlaceholder ?? t('search-builds-placeholder', { defaultValue: 'Search builds...' })}
+              aria-label={t('search-builds-label', { defaultValue: 'Search builds' })}
+              className="vibe-search__input"
+            />
+          </div>
+          <label className="builds-sort">
+            <span className="builds-sort__label">{t('sort-label', { defaultValue: 'Sort' })}</span>
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as CuratedSort)}
+              className="builds-sort__select"
+            >
+              <option value="featured">{t('sort-featured', { defaultValue: 'Featured' })}</option>
+              <option value="name">{t('sort-name-az', { defaultValue: 'Name (A–Z)' })}</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      {view.length === 0 ? (
+        <p className="vibe-hint lib__empty">
+          {emptyLabel ?? t('empty-curated', { defaultValue: 'No builds match that search.' })}
+        </p>
+      ) : (
+        <div ref={gridRef} className="builds-grid" role="list">
+          {view.map((b, i) => (
+            <CuratedCard key={b.id} build={b} index={i} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Community-submitted builds (the former "User builds" half of the Builds tab),
+ * now promoted to its own Creator Studio tab. Fetches from /api/user-builds
+ * with search, sort, and lazy infinite-scroll pagination.
+ */
+export function UserBuildsTab() {
+  const { t } = useTranslation('builds');
+  const [query, setQuery] = useState('');
+  const [userSort, setUserSort] = useState<UserSort>('recent');
+
+  const [userItems, setUserItems] = useState<UserBuildItem[]>([]);
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [loadedOnce, setLoadedOnce] = useState(false);
+  const reqId = useRef(0);
 
   useEffect(() => {
-    if (tab !== 'user') return;
     const id = ++reqId.current;
     const timer = setTimeout(async () => {
       setLoading(true);
@@ -192,10 +258,10 @@ export function BuildsTab({ curated }: { curated: CuratedBuild[] }) {
       }
     }, 300);
     return () => clearTimeout(timer);
-  }, [tab, userSort, query]);
+  }, [userSort, query]);
 
   const loadMore = useCallback(async () => {
-    if (loading || !cursor || tab !== 'user') return;
+    if (loading || !cursor) return;
     const id = reqId.current;
     setLoading(true);
     try {
@@ -209,14 +275,13 @@ export function BuildsTab({ curated }: { curated: CuratedBuild[] }) {
     } finally {
       if (reqId.current === id) setLoading(false);
     }
-  }, [loading, cursor, tab, userSort, query]);
+  }, [loading, cursor, userSort, query]);
 
   const gridRef = useRef<HTMLDivElement>(null);
   usePointerCards(gridRef);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (tab !== 'user') return;
     const el = sentinelRef.current;
     if (!el || !cursor) return;
     const obs = new IntersectionObserver(
@@ -227,35 +292,13 @@ export function BuildsTab({ curated }: { curated: CuratedBuild[] }) {
     );
     obs.observe(el);
     return () => obs.disconnect();
-  }, [tab, cursor, loadMore]);
+  }, [cursor, loadMore]);
 
-  const showingCurated = tab === 'curated';
-  const isEmpty = showingCurated ? curatedView.length === 0 : loadedOnce && userItems.length === 0 && !loading;
+  const isEmpty = loadedOnce && userItems.length === 0 && !loading;
 
   return (
     <div className="lib">
       <div className="builds-toolbar">
-        <div className="builds-switch" role="tablist" aria-label={t('build-source-label', { defaultValue: 'Build source' })}>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={showingCurated}
-            className={`builds-switch__btn ${showingCurated ? 'is-active' : ''}`}
-            onClick={() => setTab('curated')}
-          >
-            {t('tab-curated', { defaultValue: 'Curated' })}
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={!showingCurated}
-            className={`builds-switch__btn ${!showingCurated ? 'is-active' : ''}`}
-            onClick={() => setTab('user')}
-          >
-            {t('tab-user-builds', { defaultValue: 'User builds' })}
-          </button>
-        </div>
-
         <div className="builds-toolbar__right">
           <div className="vibe-search">
             <Search size={16} className="vibe-search__icon" aria-hidden="true" />
@@ -263,64 +306,46 @@ export function BuildsTab({ curated }: { curated: CuratedBuild[] }) {
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder={showingCurated ? t('search-builds-placeholder', { defaultValue: 'Search builds...' }) : t('search-user-builds-placeholder', { defaultValue: 'Search user builds...' })}
+              placeholder={t('search-user-builds-placeholder', { defaultValue: 'Search user builds...' })}
               aria-label={t('search-builds-label', { defaultValue: 'Search builds' })}
               className="vibe-search__input"
             />
           </div>
-          {showingCurated ? (
-            <label className="builds-sort">
-              <span className="builds-sort__label">{t('sort-label', { defaultValue: 'Sort' })}</span>
-              <select
-                value={curatedSort}
-                onChange={(e) => setCuratedSort(e.target.value as CuratedSort)}
-                className="builds-sort__select"
-              >
-                <option value="featured">{t('sort-featured', { defaultValue: 'Featured' })}</option>
-                <option value="name">{t('sort-name-az', { defaultValue: 'Name (A–Z)' })}</option>
-              </select>
-            </label>
-          ) : (
-            <>
-              <Link to="/user-builds/submit" className="builds-submit">
-                <Plus size={15} />
-                <span>{t('submit', { defaultValue: 'Submit' })}</span>
-              </Link>
-              <label className="builds-sort">
-                <span className="builds-sort__label">{t('sort-label', { defaultValue: 'Sort' })}</span>
-                <select
-                  value={userSort}
-                  onChange={(e) => setUserSort(e.target.value as UserSort)}
-                  className="builds-sort__select"
-                >
-                  <option value="recent">{t('sort-recent', { defaultValue: 'Recent' })}</option>
-                  <option value="popular">{t('sort-most-liked', { defaultValue: 'Most liked' })}</option>
-                  <option value="views">{t('sort-most-viewed', { defaultValue: 'Most viewed' })}</option>
-                </select>
-              </label>
-            </>
-          )}
+          <Link to="/user-builds/submit" className="builds-submit">
+            <Plus size={15} />
+            <span>{t('submit', { defaultValue: 'Submit' })}</span>
+          </Link>
+          <label className="builds-sort">
+            <span className="builds-sort__label">{t('sort-label', { defaultValue: 'Sort' })}</span>
+            <select
+              value={userSort}
+              onChange={(e) => setUserSort(e.target.value as UserSort)}
+              className="builds-sort__select"
+            >
+              <option value="recent">{t('sort-recent', { defaultValue: 'Recent' })}</option>
+              <option value="popular">{t('sort-most-liked', { defaultValue: 'Most liked' })}</option>
+              <option value="views">{t('sort-most-viewed', { defaultValue: 'Most viewed' })}</option>
+            </select>
+          </label>
         </div>
       </div>
 
       {isEmpty ? (
         <p className="vibe-hint lib__empty">
-          {showingCurated ? t('empty-curated', { defaultValue: 'No builds match that search.' }) : query.trim() ? t('empty-user-search', { defaultValue: 'No user builds match that search.' }) : t('empty-user-no-builds', { defaultValue: 'No user builds yet — be the first to submit one.' })}
+          {query.trim()
+            ? t('empty-user-search', { defaultValue: 'No user builds match that search.' })
+            : t('empty-user-no-builds', { defaultValue: 'No user builds yet — be the first to submit one.' })}
         </p>
       ) : (
         <div ref={gridRef} className="builds-grid" role="list">
-          {showingCurated
-            ? curatedView.map((b, i) => <CuratedCard key={b.id} build={b} index={i} />)
-            : userItems.map((b, i) => <UserCard key={b.id} build={b} index={i} />)}
+          {userItems.map((b, i) => (
+            <UserCard key={b.id} build={b} index={i} />
+          ))}
         </div>
       )}
 
-      {!showingCurated && (
-        <>
-          <div ref={sentinelRef} aria-hidden="true" className="h-px w-full" />
-          {loading && <p className="vibe-hint vibe-gallery__loading">{t('loading', { defaultValue: 'Loading…' })}</p>}
-        </>
-      )}
+      <div ref={sentinelRef} aria-hidden="true" className="h-px w-full" />
+      {loading && <p className="vibe-hint vibe-gallery__loading">{t('loading', { defaultValue: 'Loading…' })}</p>}
     </div>
   );
 }

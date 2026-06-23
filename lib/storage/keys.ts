@@ -36,6 +36,23 @@ export function feedImageUrl(filename: string): string {
     : `/api/feed/image/${filename}`;
 }
 
+// AI-generated persona avatars live in their own namespace so they're never
+// confused with user-posted feed images (different ownership/serving rules).
+export const PERSONA_AVATAR_PREFIX = "personas/avatars/";
+
+export function personaAvatarKey(filename: string): string {
+  return `${PERSONA_AVATAR_PREFIX}${filename}`;
+}
+
+export function personaAvatarUrl(filename: string): string {
+  // Same CDN-vs-proxy split as feed images: serve from the edge when a public
+  // CDN domain is set, else through the Node proxy route that streams from
+  // object storage (see app/routes/api/personas/avatar/$filename.ts).
+  return CDN_BASE
+    ? `${CDN_BASE}/${personaAvatarKey(filename)}`
+    : `/api/personas/avatar/${filename}`;
+}
+
 /**
  * Extract the safe filename from a stored feed-image URL, or null if it isn't
  * one. Accepts both forms the app produces:

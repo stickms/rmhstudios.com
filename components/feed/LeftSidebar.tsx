@@ -7,7 +7,7 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import {
   Home, BookOpen, Library, Atom, Brain, Wand2,
-  LogOut, PenSquare, User, ShieldCheck, MoreHorizontal, Wallet, Sparkles, Inbox, Landmark, Bookmark, ShoppingBag, Compass, Users, Zap, Shield, Swords, Clapperboard, Terminal, ChevronDown, Car, type LucideIcon
+  LogOut, PenSquare, User, ShieldCheck, MoreHorizontal, Wallet, Inbox, Landmark, Bookmark, ShoppingBag, Compass, Users, Zap, Shield, Clapperboard, Terminal, ChevronDown, Car, type LucideIcon
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ComposeModal } from './ComposeModal';
@@ -18,7 +18,7 @@ import { useNotificationCount } from '@/lib/useNotificationCount';
 import { useStreak } from '@/lib/useStreak';
 import { usePresenceHeartbeat } from '@/lib/usePresenceHeartbeat';
 
-type NavLeaf = { href: string; label: string; icon: LucideIcon; requiresAuth?: boolean; badge?: 'inbox'; external?: boolean };
+type NavLeaf = { href: string; label: string; icon: LucideIcon; requiresAuth?: boolean; requiresAdmin?: boolean; badge?: 'inbox'; external?: boolean };
 type NavGroup = { group: string; label: string; icon: LucideIcon; children: NavLeaf[] };
 type NavItem = NavLeaf | NavGroup;
 const isGroup = (item: NavItem): item is NavGroup => 'group' in item;
@@ -38,19 +38,10 @@ const NAV: NavItem[] = [
     children: [
       { href: '/communities', label: 'Communities', icon: Users },
       { href: '/clips', label: 'Clips', icon: Clapperboard },
-      { href: '/ranked', label: 'Ranked', icon: Swords },
     ],
   },
-  {
-    group: 'store',
-    label: 'Store',
-    icon: ShoppingBag,
-    children: [
-      { href: '/shop', label: 'Shop', icon: ShoppingBag },
-      { href: '/pricing', label: 'Membership', icon: Sparkles },
-      { href: '/wallet', label: 'Wallet', icon: Wallet },
-    ],
-  },
+  { href: '/store', label: 'Store', icon: ShoppingBag },
+  { href: '/wallet', label: 'Wallet', icon: Wallet },
   {
     group: 'more',
     label: 'More',
@@ -65,6 +56,8 @@ const NAV: NavItem[] = [
       { href: '/deeplink', label: 'RMH Deeplink', icon: Brain, external: true },
     ],
   },
+  // Admin lives at the bottom of the rail and is only rendered for admins.
+  { href: '/admin', label: 'Admin', icon: ShieldCheck, requiresAdmin: true },
 ];
 
 export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
@@ -95,6 +88,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   const [userMenuPos, setUserMenuPos] = useState({ bottom: 0, right: 0 });
 
   const { data: session, isPending } = useSession();
+  const isAdmin = !!(session?.user as any)?.isAdmin;
   const { resolved: resolvedUser } = useResolvedUser();
   const unreadCount = useUnreadCount(!!session);
   const { count: notificationCount } = useNotificationCount(!!session);
@@ -186,6 +180,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         {NAV.map((item) => {
           if (!isGroup(item)) {
             if (item.requiresAuth && !session) return null;
+            if (item.requiresAdmin && !isAdmin) return null;
             return renderLeaf(item);
           }
           const Icon = item.icon;
@@ -290,16 +285,6 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
                   <Bookmark className="w-4 h-4" />
                   <span>{t('bookmarks', { defaultValue: 'Bookmarks' })}</span>
                 </Link>
-                {(session.user as any).isAdmin && (
-                  <Link
-                    to="/admin"
-                    onClick={() => setShowUserMenu(false)}
-                    className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors"
-                  >
-                    <ShieldCheck className="w-4 h-4" />
-                    <span>{t('admin', { defaultValue: 'Admin' })}</span>
-                  </Link>
-                )}
                 <div className="my-1 border-t border-site-border" />
                 <button
                   onClick={() => {

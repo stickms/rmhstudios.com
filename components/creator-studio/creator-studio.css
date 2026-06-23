@@ -111,3 +111,177 @@
 .cstudio-body--pages {
   padding-top: 0;
 }
+
+/* ── Ranked summary (top of the Games tab) ──────────────────────────────── */
+.cstudio-ranked {
+  margin-bottom: clamp(16px, 3vw, 24px);
+  border: 1px solid var(--site-border, #232328);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--site-surface, #18181b) 60%, transparent);
+  overflow: hidden;
+}
+
+.cstudio-ranked__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+}
+
+.cstudio-ranked__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  color: var(--site-accent, #6c5cff);
+  background: var(--site-accent-dim, rgba(108, 92, 255, 0.14));
+}
+
+.cstudio-ranked__titles {
+  min-width: 0;
+  flex: 1;
+}
+
+.cstudio-ranked__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--site-text, #f5f5f7);
+}
+
+.cstudio-ranked__badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  color: var(--site-accent, #6c5cff);
+  background: var(--site-accent-dim, rgba(108, 92, 255, 0.14));
+}
+
+.cstudio-ranked__sub {
+  margin-top: 2px;
+  font-size: 0.82rem;
+  color: var(--site-text-muted, #a9a9b2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cstudio-ranked__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.cstudio-ranked__toggle,
+.cstudio-ranked__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 12px;
+  border-radius: 9999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
+}
+
+.cstudio-ranked__toggle {
+  color: var(--site-text-muted, #a9a9b2);
+  background: transparent;
+  border: 1px solid var(--site-border, #232328);
+}
+.cstudio-ranked__toggle:hover {
+  color: var(--site-text, #f5f5f7);
+  background: var(--site-surface, #18181b);
+}
+
+.cstudio-ranked__link {
+  color: var(--site-accent, #6c5cff);
+  background: var(--site-accent-dim, rgba(108, 92, 255, 0.14));
+  border: 1px solid color-mix(in srgb, var(--site-accent, #6c5cff) 30%, transparent);
+}
+.cstudio-ranked__link:hover {
+  background: color-mix(in srgb, var(--site-accent, #6c5cff) 22%, transparent);
+}
+
+.cstudio-ranked__chev {
+  transition: transform 0.18s ease;
+}
+.cstudio-ranked__chev.is-open {
+  transform: rotate(180deg);
+}
+
+.cstudio-ranked__body {
+  padding: 4px 16px 16px;
+  border-top: 1px solid var(--site-border, #232328);
+}
+
+.cstudio-ranked__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 8px;
+}
+
+.cstudio-ranked__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+}
+.cstudio-ranked__row:hover {
+  background: var(--site-surface, #18181b);
+}
+
+.cstudio-ranked__game {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  color: var(--site-text, #f5f5f7);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cstudio-ranked__rating {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--site-accent, #6c5cff);
+}
+
+.cstudio-ranked__record {
+  font-variant-numeric: tabular-nums;
+  color: var(--site-text-dim, #8a8a90);
+}
+
+.cstudio-ranked__games {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.cstudio-ranked__chip {
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  color: var(--site-text-muted, #a9a9b2);
+  background: var(--site-surface, #18181b);
+  border: 1px solid var(--site-border, #232328);
+}
+
+@media (max-width: 640px) {
+  .cstudio-ranked__sub {
+    display: none;
+  }
+}

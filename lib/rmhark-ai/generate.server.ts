@@ -156,6 +156,43 @@ export async function generateImagePrompt(postText: string): Promise<string> {
   return cleanGeneratedText(raw, 300);
 }
 
+/**
+ * Turn an AI persona's identity (name / tagline / system prompt) into a concise
+ * text-to-image prompt for a square avatar portrait. Used by
+ * lib/personas/avatar.server.ts. Same safety rails as generateImagePrompt.
+ */
+export async function generatePersonaAvatarPrompt(persona: {
+  name: string;
+  tagline?: string | null;
+  systemPrompt: string;
+}): Promise<string> {
+  const system = [
+    'You write prompts for a text-to-image model that will produce a single SQUARE avatar portrait of a character.',
+    'Given a chatbot persona (its name, tagline, and instructions), describe ONE vivid avatar image that captures who it is.',
+    'Rules: under 40 words. Describe the subject, art style, palette, and mood. Favor a centered head-and-shoulders portrait on a simple background.',
+    'Do NOT put any text, letters, or words in the image. Do NOT depict real, named people, celebrities, brands, or logos.',
+    'Keep it safe-for-work and non-violent.',
+    'Output ONLY the image prompt — no quotes, no labels, no markdown.',
+  ].join('\n');
+
+  const details = [
+    `Name: ${persona.name}`,
+    persona.tagline ? `Tagline: ${persona.tagline}` : '',
+    `Personality / instructions: ${persona.systemPrompt.slice(0, 600)}`,
+  ]
+    .filter(Boolean)
+    .join('\n');
+
+  const raw = await chat(
+    [
+      { role: 'system', content: system },
+      { role: 'user', content: `Persona:\n"""${details}"""\n\nWrite the avatar image prompt.` },
+    ],
+    { maxTokens: 120, temperature: 0.9 },
+  );
+  return cleanGeneratedText(raw, 300);
+}
+
 /* ------------------------------------------------------------------ */
 /*  Replies                                                            */
 /* ------------------------------------------------------------------ */

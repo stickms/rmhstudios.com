@@ -180,8 +180,9 @@ DEPS: <comma-separated bare npm packages with pinned versions, excluding react/r
  * Adapted from the open-source "frontend-design" skill
  * (https://github.com/Ilm-Alan/frontend-design): pick ONE aesthetic anchor per
  * page and hold its locked CSS tokens, with disciplined on-screen content.
- * Note the sandbox font limits below — webfonts only load via the @fontsource npm
- * packages (through esm.sh) or system stacks; there are no Google-Fonts URLs.
+ * Note the sandbox font limits below — webfonts can't load at all (no Google-Fonts
+ * URLs, and @fontsource packages are CSS-only and break native ESM), so anchors map
+ * their named typefaces to the nearest system stack.
  */
 const VIBE_FRONTEND_DESIGN_SKILL = `
 
@@ -207,7 +208,7 @@ THE EIGHT ANCHORS (pick one; if rendered output drifts outside its tokens, the a
 7. Organic — Surface earth tones (sage #8B9D83, clay #B08B6E, terracotta #C66B3D, ochre #C08E3A, moss #606C38); light surface sand #E8DCC7 / oat #D4B895, NEVER cream warm-paper. Type: humanist serif (Fraunces — this anchor only — Caslon) or warm geometric sans (Epilogue, Recoleta). Rounded corners 16–32px; grain 1–3% via SVG feTurbulence; gentle ease 300–500ms, breathing animations. Breaks if: cream backgrounds, cold greys, pure white/black, or hard rectangles.
 8. Lo-Fi — Surface paper-yellow #E8E0C0 / #EDE4CF (more saturated than cream). Type: mixed system fonts colliding (Times + Helvetica + Courier). Rotated elements 2–8° off-grid; halftone dot transitions; Risograph misregistration (text-shadow: 3px 0 #FF006E, -3px 0 #00FFCC); SVG staple/tape/torn-edge. Breaks if: precision, single typeface, smooth motion, grid-squared rectangles, or cream.
 
-FONTS IN THIS SANDBOX: no external font URLs. Use a strong system stack matching the anchor, OR import an @fontsource package and list it in DEPS (e.g. \`DEPS: @fontsource/fraunces@5\`) then \`import '@fontsource/fraunces'\`. If a named typeface can't be loaded, pick the closest in-spec system fallback rather than abandoning the anchor.
+FONTS IN THIS SANDBOX: webfonts CANNOT be loaded — no external font URLs, no Google Fonts, and NO \`@fontsource/*\` packages (those are CSS-only and fail to load as ES modules, crashing the page). Use ONLY system / web-safe font stacks. When an anchor names a specific typeface, map it to the closest system stack rather than importing it — the anchor holds through weight, size, spacing, and case, not the exact font file. Reliable stacks: sans — \`'Helvetica Neue', Helvetica, Arial, sans-serif\` or \`system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif\`; mono — \`'SF Mono', 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace\`; serif — \`Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Times New Roman', serif\`. Never list a font package in DEPS.
 
 BEFORE SHIPPING: unexpected pairing (not the safe default)? every rendered token inside the anchor's range? content discipline held (no fabrication/filler/themed-copy/glyph-icons/slop)? differentiator actually rendered? one anchor held (no drift into hybrids)?`;
 

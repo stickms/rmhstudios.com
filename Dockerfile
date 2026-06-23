@@ -87,24 +87,19 @@ COPY lib/blackjack ./lib/blackjack/
 COPY lib/holdem ./lib/holdem/
 COPY lib/baccarat ./lib/baccarat/
 COPY lib/roulette ./lib/roulette/
-COPY lib/lights-out ./lib/lights-out/
-COPY lib/doctrine ./lib/doctrine/
-COPY lib/rmhvibe ./lib/rmhvibe/
-COPY lib/rmhark-ai ./lib/rmhark-ai/
-COPY lib/media ./lib/media/
-COPY lib/storage ./lib/storage/
+# lights-out, doctrine, rmhvibe, rmhark-ai, media and storage were only imported
+# by the Node workers now running in the Go supervisor — no longer copied here so
+# changes to them don't bust this stage's cache.
 COPY lib/prisma.server.ts ./lib/prisma.server.ts
 COPY lib/url.ts ./lib/url.ts
+# Only the three Node hubs still served by compose (socket/rmhbox/rmhtube) are
+# bundled here. recap, status, discord-bot, doctrine-worker, vibe-worker and
+# bot-worker were migrated to the Go supervisor/status binaries (built in the
+# go-builder stage), so their Node entrypoints are no longer compiled or shipped.
 RUN pnpm exec esbuild \
     server/socket-server/index.ts \
     server/rmhbox/index.ts \
     server/rmhtube/index.ts \
-    server/recap/index.ts \
-    server/status/index.ts \
-    server/discord-bot/index.ts \
-    server/doctrine-worker/index.ts \
-    server/vibe-worker/index.ts \
-    server/bot-worker/index.ts \
     --bundle --platform=node --target=node20 \
     --outdir=dist-server --outbase=. \
     --format=cjs --out-extension:.js=.cjs --packages=external --tree-shaking=true \
@@ -112,13 +107,7 @@ RUN pnpm exec esbuild \
 
 RUN test -f dist-server/server/socket-server/index.cjs && \
     test -f dist-server/server/rmhbox/index.cjs && \
-    test -f dist-server/server/rmhtube/index.cjs && \
-    test -f dist-server/server/recap/index.cjs && \
-    test -f dist-server/server/status/index.cjs && \
-    test -f dist-server/server/discord-bot/index.cjs && \
-    test -f dist-server/server/doctrine-worker/index.cjs && \
-    test -f dist-server/server/vibe-worker/index.cjs && \
-    test -f dist-server/server/bot-worker/index.cjs
+    test -f dist-server/server/rmhtube/index.cjs
 
 # ── Stage 3: Vite/Nitro build (env-specific) ─────────────────────────────
 # BuildKit executes this IN PARALLEL with server-builder (stage 2).

@@ -524,6 +524,16 @@ function virtualFilesPlugin(
         const spec = args.path;
         const isBare = !spec.startsWith('.') && !spec.startsWith('/');
         if (isBare) {
+          // CSS-only font packages (@fontsource/*, @fontsource-variable/*) can't be
+          // loaded as ES modules in the sandbox: esm.sh serves their entry as a .css
+          // file, which the browser refuses to import as a module (disallowed MIME
+          // type), and the failed import crashes the whole page. The system prompt
+          // tells the model not to use them, but neutralise any stray import to an
+          // empty module so a slip can't black-screen the page — it just falls back
+          // to the system font stack the model's CSS already specifies.
+          if (/^@fontsource(-variable)?\//.test(spec)) {
+            return { path: spec, namespace: 'vibe-empty' };
+          }
           const cls = classifyImport(spec);
           if (cls.tier === 'inline') {
             // Defer to esbuild's default resolver → bundle it from node_modules.
@@ -541,6 +551,11 @@ function virtualFilesPlugin(
           return { errors: [{ text: `Cannot resolve '${spec}' from '${args.importer || 'entry'}'` }] };
         }
         return { path: resolved, namespace: 'vfs' };
+      });
+
+      // Stubbed-out imports (CSS-only font packages) compile to nothing.
+      build.onLoad({ filter: /.*/, namespace: 'vibe-empty' }, () => {
+        return { contents: '', loader: 'js' };
       });
 
       build.onLoad({ filter: /.*/, namespace: 'vfs' }, (args) => {
