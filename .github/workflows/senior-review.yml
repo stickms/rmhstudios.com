@@ -1,0 +1,112 @@
+name: senior-review
+
+# Runs an LLM "senior SWE" review on pull requests opened by a specific author
+# (arexwu) and blocks merge until the review passes. PRs from anyone else still
+# trigger this workflow but short-circuit to success on the first step, so the
+# check always reports a result and can safely be marked "required" in branch
+# protection without blocking other contributors.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+# A new push to the same PR cancels an in-flight review of the stale commit so
+# the gate reflects the latest code and we don't waste model tokens.
+concurrency:
+  group: senior-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  senior-swe-review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      # Decide whether this PR's author is the one we gate on. Every later step
+      # is guarded on this output, so non-target PRs finish green with no review.
+      - name: author gate
+        id: author
+        run: |
+          if [ "${{ github.event.pull_request.user.login }}" = "arexwu" ]; then
+            echo "is_target=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_target=false" >> "$GITHUB_OUTPUT"
+            echo "PR author is not the gated author; skipping review."
+          fi
+
+      - name: checkout
+        if: steps.author.outputs.is_target == 'true'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Materialize the PR diff to a file the reviewer reads. base...HEAD gives
+      # exactly what this PR adds on top of its merge base.
+      - name: compute diff
+        if: steps.author.outputs.is_target == 'true'
+        env:
+          BASE: ${{ github.event.pull_request.base.ref }}
+        run: git diff "origin/$BASE...HEAD" > pr.diff
+
+      # Claude reviews pr.diff and writes two artifacts into the workspace:
+      #   review.md   — the full human-readable review
+      #   verdict.txt — a single token, exactly PASS or FAIL
+      - name: senior SWE review
+        if: steps.author.outputs.is_target == 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_args: "--model claude-opus-4-8 --allowedTools Read,Write,Glob,Grep,Bash"
+          prompt: |
+            You are a senior software engineer reviewing a pull request the way you
+            would review a colleague's PR before merge. The diff is in the file
+            `pr.diff` in the repository root. You may read any other repo files with
+            Read/Glob/Grep to understand context and conventions.
+
+            Review for: correctness bugs, unhandled edge cases, needless complexity,
+            duplicated logic that should reuse existing code, unclear naming, dead
+            code, missing or weak tests, and deviations from this repository's
+            conventions. Be specific and cite `file:line`. Ignore pure style nits a
+            formatter would catch.
+
+            Then make a merge decision:
+            - FAIL if there is at least one blocking issue (a correctness bug, a
+              likely regression, a missing test for new risky logic, or a clear
+              convention violation) that should be fixed before merge.
+            - PASS otherwise. Non-blocking suggestions are fine and do not fail.
+
+            Write two files in the repository root, overwriting any existing ones:
+            1. `review.md` — your full review in Markdown, ending with a
+               "## Verdict" section that states PASS or FAIL and a one-line reason.
+            2. `verdict.txt` — its entire contents must be exactly `PASS` or `FAIL`
+               (uppercase, no other text or whitespace).
+
+      # Post the review as a PR comment regardless of verdict so the author always
+      # sees the feedback.
+      - name: post review comment
+        if: steps.author.outputs.is_target == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -f review.md ]; then
+            gh pr comment "${{ github.event.pull_request.number }}" --body-file review.md
+          else
+            echo "No review.md produced by the reviewer." >&2
+          fi
+
+      # The gate: a FAIL verdict (or a missing/garbled verdict) fails the job,
+      # which turns the required check red and blocks merge.
+      - name: enforce verdict
+        if: steps.author.outputs.is_target == 'true'
+        run: |
+          verdict="$(tr -d '[:space:]' < verdict.txt 2>/dev/null || true)"
+          echo "Reviewer verdict: '${verdict:-<none>}'"
+          if [ "$verdict" = "PASS" ]; then
+            echo "Senior SWE review passed."
+          elif [ "$verdict" = "FAIL" ]; then
+            echo "::error::Senior SWE review failed — see the PR review comment." >&2
+            exit 1
+          else
+            echo "::error::No valid verdict produced (expected PASS or FAIL)." >&2
+            exit 1
+          fi
