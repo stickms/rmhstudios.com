@@ -1,8 +1,11 @@
 # gazelle:ignore
 # This package is gated behind the `e2e` build tag and is invoked via
-#   go test -tags e2e ./e2e/...
-# rather than through the standard bazel test gate (//go-services/cmd/...
-# //go-services/internal/... //go-services/pkg/...).
+#   go test -tags e2e ./e2e/...   (CI: the `e2e` job runs scripts/e2e/run.sh,
+# which starts Postgres + the service binaries first).
+# These tests dial running services and t.Fatalf on connection-refused, so they
+# must NOT run in the plain `bazelisk test //go-services/...` unit gate (the
+# `build-test` job), where no services are up. The `manual` tag excludes this
+# target from wildcard expansion; it stays runnable by explicit label.
 # gazelle cannot auto-generate this rule because all sources carry the `e2e`
 # build constraint; the rule is maintained by hand.
 
@@ -18,7 +21,7 @@ go_test(
     ],
     gotags = ["e2e"],
     importpath = "github.com/rmhstudios/rmh-go/e2e",
-    tags = ["e2e"],
+    tags = ["e2e", "manual"],
     deps = [
         "//go-services/pkg/realtime",
         "@com_github_gorilla_websocket//:websocket",
