@@ -723,18 +723,39 @@ if [ $ok -ne 0 ]; then
     exit 1
 fi
 
-# Also wait for discord-bot to be running (it has no HTTP port to check)
-BOT_CONTAINER="${PROJECT_NAME}-discord-bot"
-BOT_OK=false
-for i in $(seq 1 15); do
-    STATUS=$("$DOCKER_BIN" inspect --format='{{.State.Status}}' "$BOT_CONTAINER" 2>/dev/null || echo "missing")
-    if [ "$STATUS" = "running" ]; then BOT_OK=true; break; fi
-    sleep 2
+# ── Supervisor health gate (the five Go background workers) ──────────────────
+# discord-bot / recap / doctrine-worker / vibe-worker / bot-worker now run as
+# goroutines inside the single `supervisor` process (they were five Node
+# containers — see the FALLBACK blocks in docker-compose.yml). The supervisor
+# serves a MERGED /health + /metrics for all five on METRICS_ADDR (:9090), which
+# is NOT host-published, so we probe it from INSIDE the container with `dc exec`.
+# A failed /health means the whole background tier is down — treat it like the
+# port checks above and fail the deploy. start_period covers the DB wait
+# (WaitForReachable: up to 10×5s) before the metrics server binds, so poll ~120s.
+SUPERVISOR_METRICS_PORT="${PORT_SUPERVISOR_METRICS:-9090}"
+SUP_OK=false
+for i in $(seq 1 24); do
+    if dc exec -T supervisor curl -fsS "http://localhost:${SUPERVISOR_METRICS_PORT}/health" >/dev/null 2>&1; then
+        SUP_OK=true; break
+    fi
+    sleep 5
 done
-if [ "$BOT_OK" = false ]; then
-    log "WARNING: discord-bot container did not reach 'running' state."
-    dc logs --tail=20 discord-bot 2>&1 || true
+if [ "$SUP_OK" = false ]; then
+    log "ERROR: supervisor /health did not come up on :${SUPERVISOR_METRICS_PORT} after 120s."
+    dc logs --tail=50 supervisor 2>&1 || true
+    update_deploy_status fail "supervisor health check failed"
+    exit 1
 fi
+
+# Confirm the merged metrics registry exposes all five workers. A missing label
+# means one worker silently failed to register inside the shared process (not
+# that the process is down) — log it for the post-deploy watch rather than
+# blocking the deploy.
+SUP_METRICS=$(dc exec -T supervisor curl -fsS "http://localhost:${SUPERVISOR_METRICS_PORT}/metrics" 2>/dev/null || echo "")
+for w in discord-bot recap doctrine-worker vibe-worker bot-worker; do
+    printf '%s' "$SUP_METRICS" | grep -q "service=\"$w\"" || \
+        log "WARNING: supervisor /metrics missing service=\"$w\" label — check that worker."
+done
 
 step_done
 

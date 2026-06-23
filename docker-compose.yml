@@ -179,64 +179,6 @@ services:
       retries: 3
       start_period: 60s
 
-  # FALLBACK (Node): five individual background-worker services — restore by
-  # removing or disabling the `supervisor` block above and un-commenting below.
-  #
-  # ─── Discord Bot (slash commands + RMHBot AI editor) ──────────────────────
-  # discord-bot:
-  #   <<: *common
-  #   container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-discord-bot
-  #   env_file: ${ENV_FILE:-.env.production}
-  #   # Override volumes to add repo mount for RMHBot git operations
-  #   volumes:
-  #     - ${STORAGE_PATH:-./db}:/app/db
-  #     - ${RMHBOT_REPO_PATH:-/home/rmhstudios/rmhstudios.com}:${RMHBOT_REPO_PATH:-/home/rmhstudios/rmhstudios.com}
-  #   command: ["node", "dist-server/server/discord-bot/index.cjs"]
-  #   restart: unless-stopped
-  #   # Allow in-flight AI requests (up to 2 min) to finish before force-kill
-  #   stop_grace_period: 90s
-  #
-  # ─── Lights Out Recap Runner ───────────────────────────────────────────────
-  # recap:
-  #   <<: *common
-  #   container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-recap
-  #   env_file: ${ENV_FILE:-.env.production}
-  #   environment:
-  #     - RECAP_PORT=${PORT_RECAP:-7004}
-  #   command: ["node", "dist-server/server/recap/index.cjs"]
-  #   healthcheck:
-  #     test: ["CMD", "curl", "-f", "http://localhost:${PORT_RECAP:-7004}/"]
-  #     interval: 60s
-  #     timeout: 10s
-  #     retries: 3
-  #     start_period: 10s
-  #
-  # ─── Doctrine Engine Worker (puzzle gen, reputation decay, Sahur activation) ─
-  # doctrine-worker:
-  #   <<: *common
-  #   container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-doctrine-worker
-  #   env_file: ${ENV_FILE:-.env.production}
-  #   command: ["node", "dist-server/server/doctrine-worker/index.cjs"]
-  #   restart: unless-stopped
-  #
-  # ─── RMHVibe Thumbnail Worker (renders gallery screenshots via headless Chromium) ─
-  # vibe-worker:
-  #   <<: *common
-  #   container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-vibe-worker
-  #   env_file: ${ENV_FILE:-.env.production}
-  #   command: ["node", "dist-server/server/vibe-worker/index.cjs"]
-  #   restart: unless-stopped
-  #   # Chromium captures can outlive a quick SIGTERM; give them room to finish.
-  #   stop_grace_period: 30s
-  #
-  # ─── RMHark Bot Worker (generates synthetic users + posts via DeepSeek) ─
-  # bot-worker:
-  #   <<: *common
-  #   container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-bot-worker
-  #   env_file: ${ENV_FILE:-.env.production}
-  #   command: ["node", "dist-server/server/bot-worker/index.cjs"]
-  #   restart: unless-stopped
-
   # ─── Status Page (status.rmhstudios.com) ───────────────────────────────────
   # Standalone health dashboard. Probes the website via its PUBLIC URL (so the
   # status reflects the real user path through Apache/DNS, not just a live
@@ -262,7 +204,6 @@ services:
       - PORT_RECAP=${PORT_RECAP:-7004}
       # Uptime history persists to the shared db/ volume (mounted at /app/db).
       - STATUS_DATA_DIR=/app/db
-    # FALLBACK (Node): command: ["node", "dist-server/server/status/index.cjs"]
     command: ["/app/bin/status"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${PORT_STATUS:-7008}/health"]
