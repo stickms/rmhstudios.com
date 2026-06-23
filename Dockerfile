@@ -2,8 +2,13 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # rmhstudios.com — Multi-stage Docker build (cache-optimized)
 #
-# Produces a single image used by all services (web, socket, rmhbox, rmhtube).
-# Each service overrides the CMD via docker-compose.yml.
+# Produces TWO runner images from one shared build graph:
+#   - runner       (slim): web, socket, rmhbox, rmhtube  — Node only, no Chromium
+#   - runner-full         : supervisor, status           — + Go bins, Chromium, git
+# Each service overrides the CMD via docker-compose.yml. Splitting keeps Chromium
+# (~300-400 MB) and the Go binaries off the four user-facing services, and makes
+# the slim image invariant to go-services changes (so the web hotswap can be
+# skipped when nothing web-facing moved).
 #
 # Architecture: ARM64 (aarch64)
 #
@@ -12,7 +17,8 @@
 #   deps ──→ prisma-generate ──┬──→ server-builder (esbuild, env-agnostic)
 #                              └──→ vite-builder   (vite build, env-specific)
 #
-#   All stages feed into → runner
+#   server-builder + vite-builder + prod-deps → runner (slim)
+#   runner + go-builder + apk(chromium,git)    → runner-full
 #
 # Cache strategy:
 #   - pnpm store mount  → avoids re-downloading packages between builds
@@ -224,26 +230,35 @@ COPY go-services/ ./
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} \
     go build -trimpath -ldflags="-s -w" -o /app/bin/ ./cmd/...
 
-# ── Stage 4: Production runner ────────────────────────────────────────────
+# ── Stage 4: Slim production runner (web, socket, rmhbox, rmhtube) ────────────
+# The four user-facing Node services need only the Node runtime, node_modules,
+# the Nitro/.output bundle, and the esbuild server bundles. They do NOT need:
+#   - Chromium — the vibe-worker captures thumbnails via Go chromedp (in the
+#     supervisor), and the web /api/vibe/thumb route only readFile()s a
+#     pre-rendered PNG (lib/rmhvibe/vibe-thumbs.ts is deliberately Playwright-free).
+#   - git — only the discord-bot worker (in the supervisor) shells out to git.
+#   - the Go binaries — supervisor/status run them, the Node services don't.
+# Keeping those OUT of this image:
+#   - drops ~300-400 MB (Chromium + fonts) from the four services → faster pulls,
+#     less disk, smaller SHA-tagged rollback images;
+#   - makes this image INVARIANT to go-services changes, so a Go-only or
+#     supervisor-only deploy leaves it byte-for-byte identical — which lets
+#     deploy/hotswap-web.sh skip the web hotswap entirely (no second container,
+#     no health wait, no Apache reload) when nothing web-facing changed.
+# The heavier bits live in the runner-full stage below (supervisor + status).
 FROM node:24-alpine AS runner
 
-# chromium + fonts: used by the RMHVibe thumbnail capture (Playwright). Alpine
-# is musl, so Playwright's own download won't run — we use the OS Chromium and
-# point Playwright at it via PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH below.
-RUN apk add --no-cache curl git \
-    chromium nss freetype harfbuzz ca-certificates ttf-freefont font-noto-emoji
+# curl: container healthchecks (compose) + the deploy's port probes.
+# ca-certificates: outbound TLS (R2 sync, DeepSeek, Discord, etc.).
+RUN apk add --no-cache curl ca-certificates
 
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV HOSTNAME=0.0.0.0
-# Reuse the system Chromium for Playwright instead of a (musl-incompatible) download.
-ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
-ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 
 RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 app && \
-    mkdir -p /app/.rmhbot-worktrees && chown app:nodejs /app/.rmhbot-worktrees
+    adduser --system --uid 1001 app
 
 # ─── Production-only node_modules ───────────────────────────────────────
 # Sourced from prod-deps (not prisma-generate) — excludes devDependencies
@@ -259,13 +274,6 @@ COPY --from=vite-builder --chown=app:nodejs /app/build-output ./.output
 # ─── Custom server bundles (from env-agnostic stage) ────────────────────
 COPY --from=server-builder --chown=app:nodejs /app/dist-server ./dist-server
 
-# ─── Go binaries (supervisor, status, bot-worker, hubs, gateway) ────────
-# Compiled in the go-builder stage (CGO_ENABLED=0, fully static).
-# supervisor runs 5 background workers as goroutines; status is the
-# Go status page server; the remaining hubs/gateway are available for
-# future compose wiring.
-COPY --from=go-builder --chown=app:nodejs /app/bin/ /app/bin/
-
 # ─── Supporting files (from build context, not a builder stage) ─────────
 COPY --chown=app:nodejs scripts ./scripts
 COPY --chown=app:nodejs content ./content
@@ -279,3 +287,36 @@ USER app
 EXPOSE 7005 7001 7676 7003
 
 CMD ["node", ".output/server/index.mjs"]
+
+# ── Stage 4b: Full runtime (Go supervisor + status) ──────────────────────────
+# Adds, on top of the slim runner, everything ONLY the background fleet needs:
+#   - Go binaries: supervisor runs 5 workers as goroutines; status is the Go
+#     status page server (the remaining hubs/gateway are available for future
+#     compose wiring).
+#   - Chromium + fonts: the vibe-worker captures gallery thumbnails via Go
+#     chromedp, which drives the system Chromium (musl Alpine can't run
+#     Playwright's own download — point it at the OS Chromium below).
+#   - git: the discord-bot worker runs RMHBot git operations in worktrees.
+# Used ONLY by the `supervisor` and `status` compose services. Because Chromium
+# is the slow apk layer, isolating it here means a web/source change never
+# re-runs it, and a go-services change never touches the slim web image.
+FROM runner AS runner-full
+
+USER root
+RUN apk add --no-cache git \
+    chromium nss freetype harfbuzz ttf-freefont font-noto-emoji
+
+# Reuse the system Chromium for chromedp/Playwright instead of a (musl-incompatible) download.
+ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+
+# discord-bot worker writes RMHBot git worktrees here.
+RUN mkdir -p /app/.rmhbot-worktrees && chown app:nodejs /app/.rmhbot-worktrees
+
+# ─── Go binaries (supervisor, status, bot-worker, hubs, gateway) ────────
+# Compiled in the go-builder stage (CGO_ENABLED=0, fully static).
+COPY --from=go-builder --chown=app:nodejs /app/bin/ /app/bin/
+
+USER app
+
+CMD ["/app/bin/supervisor"]

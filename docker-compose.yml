@@ -10,8 +10,12 @@
 #   Production:  7005 / 7001 / 7676 / 7003
 #   Staging:     8005 / 8001 / 8676 / 8003
 #
-# A single image (rmhstudios-app) is built once by the `web` service and
-# shared by all other services — no redundant rebuilds.
+# TWO images are built from the SAME Dockerfile + build args (only the target
+# stage differs):
+#   - rmhstudios-app       (slim): web, socket, rmhbox, rmhtube  (Node, no Chromium)
+#   - rmhstudios-app-full         : supervisor, status  (+ Go bins, Chromium, git)
+# The slim image is shared by the four Node services; the full image is shared by
+# the two Go services. No redundant rebuilds — shared stages cache once.
 #
 # All four application services start independently in parallel for faster
 # deployment. No artificial dependency ordering.
@@ -30,29 +34,38 @@ x-common: &common
       max-size: "10m"
       max-file: "3"
 
+# Shared BUILD config for both images. Factored out so the long arg list isn't
+# duplicated and the slim (`runner`) and full (`runner-full`) images can never
+# drift apart — they differ only in the `target:` overridden by each service.
+x-build: &build-common
+  context: .
+  dockerfile: Dockerfile
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+  args:
+    COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:-rmhstudios}
+    DATABASE_URL: ${DATABASE_URL}
+    BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+    BETTER_AUTH_URL: ${BETTER_AUTH_URL}
+    VITE_BETTER_AUTH_URL: ${VITE_BETTER_AUTH_URL}
+    VITE_SOCKET_URL: ${VITE_SOCKET_URL}
+    VITE_RMHBOX_SOCKET_URL: ${VITE_RMHBOX_SOCKET_URL}
+    VITE_RMHTUBE_SOCKET_URL: ${VITE_RMHTUBE_SOCKET_URL}
+    VITE_DISCORD_ACTIVITY_CLIENT_ID: ${VITE_DISCORD_ACTIVITY_CLIENT_ID}
+    VITE_CDN_BASE_URL: ${VITE_CDN_BASE_URL}
+    # Used at build time to auto-generate library covers/metadata for new
+    # PDFs. Optional — covers still render without it (titles fall back).
+    DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+
 services:
   # ─── Vite/Nitro Web App ─────────────────────────────────────────────────────
   web:
     <<: *common
+    # Slim image (no Chromium / git / Go binaries). image: comes from *common
+    # (${COMPOSE_PROJECT_NAME}-app:latest) and is shared by socket/rmhbox/rmhtube.
     build:
-      context: .
-      dockerfile: Dockerfile
-      extra_hosts:
-        - "host.docker.internal:host-gateway"
-      args:
-        COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:-rmhstudios}
-        DATABASE_URL: ${DATABASE_URL}
-        BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
-        BETTER_AUTH_URL: ${BETTER_AUTH_URL}
-        VITE_BETTER_AUTH_URL: ${VITE_BETTER_AUTH_URL}
-        VITE_SOCKET_URL: ${VITE_SOCKET_URL}
-        VITE_RMHBOX_SOCKET_URL: ${VITE_RMHBOX_SOCKET_URL}
-        VITE_RMHTUBE_SOCKET_URL: ${VITE_RMHTUBE_SOCKET_URL}
-        VITE_DISCORD_ACTIVITY_CLIENT_ID: ${VITE_DISCORD_ACTIVITY_CLIENT_ID}
-        VITE_CDN_BASE_URL: ${VITE_CDN_BASE_URL}
-        # Used at build time to auto-generate library covers/metadata for new
-        # PDFs. Optional — covers still render without it (titles fall back).
-        DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+      <<: *build-common
+      target: runner
     container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-web
     # NOTE: web does NOT publish a fixed host port. It is deployed blue/green by
     # deploy/hotswap-web.sh (zero-downtime), which publishes the active port
@@ -130,6 +143,13 @@ services:
   #   in-flight AI requests and Chromium captures both get time to finish.
   supervisor:
     <<: *common
+    # Full image: Go binaries + Chromium (vibe-worker chromedp) + git (discord-bot).
+    # This service carries the `runner-full` build; `status` reuses the image it
+    # produces. Overrides the slim image: from *common.
+    image: ${COMPOSE_PROJECT_NAME:-rmhstudios}-app-full:latest
+    build:
+      <<: *build-common
+      target: runner-full
     container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-supervisor
     env_file: ${ENV_FILE:-.env.production}
     # Override volumes to add the repo mount required by the discord-bot worker
@@ -225,6 +245,9 @@ services:
   # published below.
   status:
     <<: *common
+    # Runs the Go /app/bin/status binary, so it uses the full image (built by the
+    # supervisor service above). Overrides the slim image: from *common.
+    image: ${COMPOSE_PROJECT_NAME:-rmhstudios}-app-full:latest
     container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-status
     ports:
       - "127.0.0.1:${PORT_STATUS:-7008}:${PORT_STATUS:-7008}"

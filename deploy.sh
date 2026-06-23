@@ -255,9 +255,16 @@ dc() {
 # newest (current + one rollback target), remove the rest — the older SHAs are
 # almost never used and are the single biggest avoidable disk cost.
 prune_rollback_images() {
-    "$DOCKER_BIN" images "${IMAGE_NAME}" --format '{{.Tag}} {{.CreatedAt}}' 2>/dev/null | \
-        grep -v 'latest' | sort -k2 -r | tail -n +3 | awk '{print "'"${IMAGE_NAME}"':" $1}' | \
-        xargs -r "$DOCKER_BIN" rmi 2>/dev/null || true
+    # Both the slim (${IMAGE_NAME}) and full (${FULL_IMAGE_NAME}) images are
+    # SHA-tagged each deploy; trim each repo to its 2 newest tags. They share
+    # most layers on disk, so this is mostly about untagging — but untagged old
+    # SHAs are what let `image prune` reclaim the unique layers underneath.
+    local img
+    for img in "${IMAGE_NAME}" "${FULL_IMAGE_NAME:-${IMAGE_NAME}-full}"; do
+        "$DOCKER_BIN" images "${img}" --format '{{.Tag}} {{.CreatedAt}}' 2>/dev/null | \
+            grep -v 'latest' | sort -k2 -r | tail -n +3 | awk -v img="$img" '{print img ":" $1}' | \
+            xargs -r "$DOCKER_BIN" rmi 2>/dev/null || true
+    done
 }
 
 # ── Helper: free space (whole GB) on the filesystem backing Docker's data dir ─
@@ -405,6 +412,10 @@ fi
 # to R2"), so Apache no longer touches them and no chmod dance is needed.
 
 IMAGE_NAME="${PROJECT_NAME}-app"
+# Full image (Go supervisor/status: + Go bins, Chromium, git). Built from the
+# same Dockerfile as the slim web image, target runner-full. Must match the
+# `image:` for the supervisor/status services in docker-compose.yml.
+FULL_IMAGE_NAME="${IMAGE_NAME}-full"
 GIT_SHA=$("$GIT_BIN" rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
 send_deploy_started
@@ -483,15 +494,21 @@ fi
 #   - vite-builder   (vite build, env-specific → incrementally cached)
 # node_modules layer in runner comes from deps stage (lockfile-keyed),
 # not from the builder, so it caches independently of source/env changes.
-step_start "Building Docker image..."
-if ! dc build web; then
+step_start "Building Docker images (slim web + full supervisor/status)..."
+# Build BOTH targets: `web` → runner (slim), `supervisor` → runner-full.
+# They share the entire build graph (deps/prisma/server/vite/go), so the second
+# target is just the extra Chromium+git+Go-binary layers on top of the slim
+# image — near-zero added build time on a warm cache.
+if ! dc build web supervisor; then
     log "ERROR: Docker build failed."
     update_deploy_status fail "docker build failed"
     exit 1
 fi
 
-# Tag with git SHA for instant rollback (docker compose up with the old tag)
+# Tag both images with the git SHA for instant rollback (docker compose up with
+# the old tag). Layers are shared, so the full SHA tag costs almost no disk.
 "$DOCKER_BIN" tag "${IMAGE_NAME}:latest" "${IMAGE_NAME}:${GIT_SHA}" 2>/dev/null || true
+"$DOCKER_BIN" tag "${FULL_IMAGE_NAME}:latest" "${FULL_IMAGE_NAME}:${GIT_SHA}" 2>/dev/null || true
 step_done
 
 # ── Step 2a: Sync static assets to Cloudflare R2 (incremental) ───────────────
@@ -611,19 +628,29 @@ done
 #     re-create existing tables. Idempotent + ignored on later runs.
 #   - resolve --rolled-back <name>: if the prior `migrate status` reported a
 #     failed migration, mark it rolled back so `migrate deploy` can retry it.
-MIGRATE_CMD='npx prisma migrate resolve --applied 0_baseline 2>/dev/null || true'
+# `prisma migrate status` exits 0 ONLY when the schema is already up to date
+# (no pending and no failed migrations). In that case there is nothing to apply,
+# so skip the resolve+deploy container entirely — saving a full node+prisma boot
+# (~5-10s) on every deploy that doesn't introduce a new migration (the common
+# case). A non-zero exit here means the loop above confirmed the DB is reachable
+# but reported pending/failed migrations, so we run the full resolve+deploy.
+if [ "${MIGRATE_EXIT:-1}" -eq 0 ]; then
+    log "  Schema already up to date — skipping migrate deploy (no pending migrations)."
+else
+    MIGRATE_CMD='npx prisma migrate resolve --applied 0_baseline 2>/dev/null || true'
 
-FAILED_MIGRATION=$(echo "$MIGRATE_OUTPUT" | grep -oP '(?<=resolve --rolled-back ")[^"]+' || true)
-if [ -n "$FAILED_MIGRATION" ]; then
-    log "  Will resolve failed migration '$FAILED_MIGRATION' as rolled back before deploy."
-    MIGRATE_CMD="$MIGRATE_CMD; npx prisma migrate resolve --rolled-back \"$FAILED_MIGRATION\" || true"
-fi
-MIGRATE_CMD="$MIGRATE_CMD; npx prisma migrate deploy"
+    FAILED_MIGRATION=$(echo "$MIGRATE_OUTPUT" | grep -oP '(?<=resolve --rolled-back ")[^"]+' || true)
+    if [ -n "$FAILED_MIGRATION" ]; then
+        log "  Will resolve failed migration '$FAILED_MIGRATION' as rolled back before deploy."
+        MIGRATE_CMD="$MIGRATE_CMD; npx prisma migrate resolve --rolled-back \"$FAILED_MIGRATION\" || true"
+    fi
+    MIGRATE_CMD="$MIGRATE_CMD; npx prisma migrate deploy"
 
-if ! dc run --rm --no-deps web sh -c "$MIGRATE_CMD"; then
-    log "ERROR: Database migration failed."
-    update_deploy_status fail "database migration failed"
-    exit 1
+    if ! dc run --rm --no-deps web sh -c "$MIGRATE_CMD"; then
+        log "ERROR: Database migration failed."
+        update_deploy_status fail "database migration failed"
+        exit 1
+    fi
 fi
 step_done
 
