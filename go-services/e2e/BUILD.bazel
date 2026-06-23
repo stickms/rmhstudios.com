@@ -1,0 +1,27 @@
+# gazelle:ignore
+# This package is gated behind the `e2e` build tag and is invoked via
+#   go test -tags e2e ./e2e/...
+# rather than through the standard bazel test gate (//go-services/cmd/...
+# //go-services/internal/... //go-services/pkg/...).
+# gazelle cannot auto-generate this rule because all sources carry the `e2e`
+# build constraint; the rule is maintained by hand.
+
+load("@rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "e2e_test",
+    srcs = [
+        "auth_rmhtube_e2e_test.go",
+        "gamehub_e2e_test.go",
+        "harness.go",
+        "supervisor_e2e_test.go",
+    ],
+    gotags = ["e2e"],
+    importpath = "github.com/rmhstudios/rmh-go/e2e",
+    tags = ["e2e"],
+    deps = [
+        "//go-services/pkg/realtime",
+        "@com_github_gorilla_websocket//:websocket",
+        "@com_github_jackc_pgx_v5//pgxpool",
+    ],
+)
