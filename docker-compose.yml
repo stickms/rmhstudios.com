@@ -140,10 +140,23 @@ services:
     environment:
       # recap worker's internal HTTP port (doctrine / vibe-worker idles if absent)
       - RECAP_PORT=${PORT_RECAP:-7004}
+      # Merged /metrics + /health endpoint for all five workers (httpx.ServeMetrics).
+      # Templated so the healthcheck below stays in sync with the bind port.
+      - METRICS_ADDR=:${PORT_SUPERVISOR_METRICS:-9090}
     command: ["/app/bin/supervisor"]
     restart: unless-stopped
     # discord-bot needs 90s for in-flight AI; vibe-worker needs 30s for Chromium
     stop_grace_period: 90s
+    # Supervisor serves /health on METRICS_ADDR (default :9090). This restores
+    # the health signal the removed recap service had. start_period covers the
+    # db-wait (WaitForReachable: up to 10 tries × 5s = 50s) before the metrics
+    # server comes up.
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT_SUPERVISOR_METRICS:-9090}/health"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   # FALLBACK (Node): five individual background-worker services — restore by
   # removing or disabling the `supervisor` block above and un-commenting below.
