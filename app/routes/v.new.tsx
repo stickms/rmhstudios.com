@@ -14,6 +14,7 @@ import { createFileRoute, redirect, useNavigate, Link } from '@tanstack/react-ro
 import { streamVibe, VibeStreamError } from '@/lib/rmhvibe/vibe-stream';
 import { asVibeModel } from '@/lib/rmhvibe/vibe-types';
 import { ThinkingStream } from '@/components/rmhvibe/ThinkingStream';
+import { VibeProgress } from '@/components/rmhvibe/VibeProgress';
 import '@/components/rmhvibe/vibe.css';
 
 const GENERIC_ERROR = 'Something went wrong while generating. Give it another go.';
@@ -34,6 +35,9 @@ function VibeNew() {
   const navigate = useNavigate();
   const started = useRef(false);
   const [thinking, setThinking] = useState('');
+  // Accumulated answer text (metadata + files) — drives the live "what's being
+  // built" panel so the long code-writing phase shows real progress, not a spinner.
+  const [content, setContent] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -73,6 +77,8 @@ function VibeNew() {
         reservedSlug = event.slug;
       } else if (event.type === 'thinking') {
         setThinking((t) => t + event.text);
+      } else if (event.type === 'content') {
+        setContent((c) => c + event.text);
       } else if (event.type === 'done') {
         goTo(event.slug);
       } else if (event.type === 'error') {
@@ -110,10 +116,20 @@ function VibeNew() {
       <div className="text-center">
         <p className="vibe-rise text-lg font-semibold tracking-tight">Creating your vibe…</p>
         <p className="vibe-rise-2 vibe-hint mt-2">
-          {thinking ? 'Thinking it through.' : 'Warming up the model.'}
+          {content
+            ? 'Writing the code.'
+            : thinking
+              ? 'Thinking it through.'
+              : 'Warming up the model.'}
         </p>
       </div>
-      <ThinkingStream text={thinking} className="vibe-think--lg" />
+      {/* Show the thinking until code starts, then swap to the live file list so the
+          long writing phase isn't a blank spinner. */}
+      {content ? (
+        <VibeProgress content={content} />
+      ) : (
+        <ThinkingStream text={thinking} className="vibe-think--lg" />
+      )}
     </div>
   );
 }

@@ -343,6 +343,7 @@ import { Route as SiteAdminBlogIndexRouteImport } from './routes/_site/admin/blo
 import { Route as SecretJobsAssessmentIdRouteImport } from './routes/secret/jobs/assessment/$id'
 import { Route as RmhboxMinigamesMinigameIdHistoryRouteImport } from './routes/rmhbox/minigames/$minigameId/history'
 import { Route as ApiVibeThumbSlugRouteImport } from './routes/api/vibe/thumb/$slug'
+import { Route as ApiVibePkgFileRouteImport } from './routes/api/vibe/pkg/$file'
 import { Route as ApiUserBuildsIdViewRouteImport } from './routes/api/user-builds/$id/view'
 import { Route as ApiUserBuildsIdUnlockRouteImport } from './routes/api/user-builds/$id/unlock'
 import { Route as ApiUserBuildsIdLikeRouteImport } from './routes/api/user-builds/$id/like'
@@ -2138,6 +2139,11 @@ const ApiVibeThumbSlugRoute = ApiVibeThumbSlugRouteImport.update({
   path: '/api/vibe/thumb/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiVibePkgFileRoute = ApiVibePkgFileRouteImport.update({
+  id: '/api/vibe/pkg/$file',
+  path: '/api/vibe/pkg/$file',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiUserBuildsIdViewRoute = ApiUserBuildsIdViewRouteImport.update({
   id: '/view',
   path: '/view',
@@ -3091,6 +3097,7 @@ export interface FileRoutesByFullPath {
   '/api/user-builds/$id/like': typeof ApiUserBuildsIdLikeRoute
   '/api/user-builds/$id/unlock': typeof ApiUserBuildsIdUnlockRoute
   '/api/user-builds/$id/view': typeof ApiUserBuildsIdViewRoute
+  '/api/vibe/pkg/$file': typeof ApiVibePkgFileRoute
   '/api/vibe/thumb/$slug': typeof ApiVibeThumbSlugRoute
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
   '/secret/jobs/assessment/$id': typeof SecretJobsAssessmentIdRoute
@@ -3506,6 +3513,7 @@ export interface FileRoutesByTo {
   '/api/user-builds/$id/like': typeof ApiUserBuildsIdLikeRoute
   '/api/user-builds/$id/unlock': typeof ApiUserBuildsIdUnlockRoute
   '/api/user-builds/$id/view': typeof ApiUserBuildsIdViewRoute
+  '/api/vibe/pkg/$file': typeof ApiVibePkgFileRoute
   '/api/vibe/thumb/$slug': typeof ApiVibeThumbSlugRoute
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
   '/secret/jobs/assessment/$id': typeof SecretJobsAssessmentIdRoute
@@ -3947,6 +3955,7 @@ export interface FileRoutesById {
   '/api/user-builds/$id/like': typeof ApiUserBuildsIdLikeRoute
   '/api/user-builds/$id/unlock': typeof ApiUserBuildsIdUnlockRoute
   '/api/user-builds/$id/view': typeof ApiUserBuildsIdViewRoute
+  '/api/vibe/pkg/$file': typeof ApiVibePkgFileRoute
   '/api/vibe/thumb/$slug': typeof ApiVibeThumbSlugRoute
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
   '/secret/jobs/assessment/$id': typeof SecretJobsAssessmentIdRoute
@@ -4388,6 +4397,7 @@ export interface FileRouteTypes {
     | '/api/user-builds/$id/like'
     | '/api/user-builds/$id/unlock'
     | '/api/user-builds/$id/view'
+    | '/api/vibe/pkg/$file'
     | '/api/vibe/thumb/$slug'
     | '/rmhbox/minigames/$minigameId/history'
     | '/secret/jobs/assessment/$id'
@@ -4803,6 +4813,7 @@ export interface FileRouteTypes {
     | '/api/user-builds/$id/like'
     | '/api/user-builds/$id/unlock'
     | '/api/user-builds/$id/view'
+    | '/api/vibe/pkg/$file'
     | '/api/vibe/thumb/$slug'
     | '/rmhbox/minigames/$minigameId/history'
     | '/secret/jobs/assessment/$id'
@@ -5243,6 +5254,7 @@ export interface FileRouteTypes {
     | '/api/user-builds/$id/like'
     | '/api/user-builds/$id/unlock'
     | '/api/user-builds/$id/view'
+    | '/api/vibe/pkg/$file'
     | '/api/vibe/thumb/$slug'
     | '/rmhbox/minigames/$minigameId/history'
     | '/secret/jobs/assessment/$id'
@@ -5504,6 +5516,7 @@ export interface RootRouteChildren {
   ApiRmhtubeClipsIdRoute: typeof ApiRmhtubeClipsIdRoute
   ApiRmhtubeSubscribeChannelIdRoute: typeof ApiRmhtubeSubscribeChannelIdRoute
   ApiStorefrontCreatorUseridRoute: typeof ApiStorefrontCreatorUseridRoute
+  ApiVibePkgFileRoute: typeof ApiVibePkgFileRoute
   ApiVibeThumbSlugRoute: typeof ApiVibeThumbSlugRoute
   ApiClansSlugIndexRoute: typeof ApiClansSlugIndexRoute
   ApiCommunitiesSlugIndexRoute: typeof ApiCommunitiesSlugIndexRoute
@@ -7865,6 +7878,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiVibeThumbSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/vibe/pkg/$file': {
+      id: '/api/vibe/pkg/$file'
+      path: '/api/vibe/pkg/$file'
+      fullPath: '/api/vibe/pkg/$file'
+      preLoaderRoute: typeof ApiVibePkgFileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/user-builds/$id/view': {
       id: '/api/user-builds/$id/view'
       path: '/view'
@@ -9680,6 +9700,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRmhtubeClipsIdRoute: ApiRmhtubeClipsIdRoute,
   ApiRmhtubeSubscribeChannelIdRoute: ApiRmhtubeSubscribeChannelIdRoute,
   ApiStorefrontCreatorUseridRoute: ApiStorefrontCreatorUseridRoute,
+  ApiVibePkgFileRoute: ApiVibePkgFileRoute,
   ApiVibeThumbSlugRoute: ApiVibeThumbSlugRoute,
   ApiClansSlugIndexRoute: ApiClansSlugIndexRoute,
   ApiCommunitiesSlugIndexRoute: ApiCommunitiesSlugIndexRoute,

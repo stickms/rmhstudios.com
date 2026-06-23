@@ -31,6 +31,7 @@ import { streamVibe, VibeStreamError } from '@/lib/rmhvibe/vibe-stream';
 import { DEFAULT_VIBE_MODEL, type VibeModel } from '@/lib/rmhvibe/vibe-types';
 import { ModelSelect } from '@/components/rmhvibe/ModelSelect';
 import { ThinkingStream } from '@/components/rmhvibe/ThinkingStream';
+import { VibeProgress } from '@/components/rmhvibe/VibeProgress';
 import '@/components/rmhvibe/vibe.css';
 
 // Background-build polling cadence + guards (see the generating-status effect).
@@ -105,6 +106,8 @@ function VibeViewer() {
   const [model, setModel] = useState<VibeModel>(DEFAULT_VIBE_MODEL);
   const [busy, setBusy] = useState(false);
   const [thinking, setThinking] = useState('');
+  // Streamed answer (metadata + files) for the live build-progress panel.
+  const [content, setContent] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   // Version history. `versions` is loaded lazily when the panel first opens.
@@ -244,6 +247,7 @@ function VibeViewer() {
     setBusy(true);
     setError(null);
     setThinking('');
+    setContent('');
 
     let finalHtml = '';
     let finalTitle = '';
@@ -255,6 +259,8 @@ function VibeViewer() {
       await streamVibe({ slug, prompt: trimmed, fromVersionId, model }, (event) => {
         if (event.type === 'thinking') {
           setThinking((t) => t + event.text);
+        } else if (event.type === 'content') {
+          setContent((c) => c + event.text);
         } else if (event.type === 'done') {
           finalHtml = event.html;
           finalTitle = event.title;
@@ -299,6 +305,7 @@ function VibeViewer() {
       if (finalTitle) document.title = `${finalTitle} | RMH Studios`;
       setPrompt('');
       setThinking('');
+      setContent('');
       setPanelOpen(false);
       // The new version is now the latest; drop any older-variant selection and
       // refresh the history list so the new entry shows up.
@@ -470,7 +477,12 @@ function VibeViewer() {
             </div>
           </div>
 
-          {busy && <ThinkingStream text={thinking} className="vibe-think--sm mb-3" />}
+          {busy &&
+            (content ? (
+              <VibeProgress content={content} className="vibe-progress--sm mb-3" />
+            ) : (
+              <ThinkingStream text={thinking} className="vibe-think--sm mb-3" />
+            ))}
 
           <div className="flex items-end gap-2">
             <textarea

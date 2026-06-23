@@ -48,7 +48,15 @@ const VIBE_AI_ORIGIN = new URL(VIBE_AI_BASE_URL).origin;
 // origin (see scripts/build-vibe-packages.ts + public/vibe-packages/). Generated
 // pages point their importmap here instead of esm.sh, so the common case (React +
 // large libs) never depends on a third-party CDN at view time.
-const VIBE_PACKAGES_BASE = `${VIBE_AI_BASE_URL}/vibe-packages`;
+//
+// NOT the bare static path (/vibe-packages/) but the /api/vibe/pkg route, which
+// re-serves the same files WITH cross-origin headers. Generated pages run in a
+// sandboxed iframe with an OPAQUE origin, and ES-module imports are always fetched
+// in CORS mode — so from that opaque origin every fetch is cross-origin and the
+// response MUST carry Access-Control-Allow-Origin or the browser blocks it. A bare
+// static asset has no such header (only esm.sh sent one, which is why self-hosted
+// React black-screened); the route adds it. See app/routes/api/vibe/pkg/$file.ts.
+const VIBE_PACKAGES_BASE = `${VIBE_AI_BASE_URL}/api/vibe/pkg`;
 
 // React version pinned for the esm.sh fallback path (matches package.json). Only
 // used when the self-hosted bundles aren't present (see hostedPackagesAvailable).
@@ -69,23 +77,49 @@ const ESM_REACT_VERSION = '19';
  * absent we fall back to esm.sh for everything, including React — slower, but it
  * RENDERS instead of black-screening. Fail-safe: a false negative only costs speed.
  */
+// Directories the pre-built bundles may live in: dev `public/`, and the two prod
+// build output roots. Checked in order; the first that has a file wins.
+function hostedPackageDirs(): string[] {
+  return [
+    path.join(process.cwd(), 'public', 'vibe-packages'),
+    path.join(process.cwd(), '.output', 'public', 'vibe-packages'),
+    path.join(process.cwd(), 'dist', 'public', 'vibe-packages'),
+  ];
+}
+
 let hostedAvailableCache: boolean | undefined;
 function hostedPackagesAvailable(): boolean {
   if (hostedAvailableCache !== undefined) return hostedAvailableCache;
   const probe = `${hostedStem('react')}.js`; // "react.js" — always built when the step ran
-  const candidates = [
-    path.join(process.cwd(), 'public', 'vibe-packages', probe),
-    path.join(process.cwd(), '.output', 'public', 'vibe-packages', probe),
-    path.join(process.cwd(), 'dist', 'public', 'vibe-packages', probe),
-  ];
-  hostedAvailableCache = candidates.some((p) => {
+  hostedAvailableCache = hostedPackageDirs().some((dir) => {
     try {
-      return existsSync(p);
+      return existsSync(path.join(dir, probe));
     } catch {
       return false;
     }
   });
   return hostedAvailableCache;
+}
+
+/**
+ * Resolve a hosted-package bundle filename (e.g. "react.js",
+ * "react-dom__client.js") to an absolute path on disk, or null if it doesn't
+ * exist or the name is unsafe. Backs the /api/vibe/pkg route, which serves these
+ * to generated pages WITH cross-origin headers (see VIBE_PACKAGES_BASE above).
+ * The name is constrained to a flat `<stem>.js` so it can never escape the dir.
+ */
+export function resolveHostedPackagePath(file: string): string | null {
+  const safe = path.basename(file);
+  if (!/^[A-Za-z0-9_.-]+\.js$/.test(safe)) return null;
+  for (const dir of hostedPackageDirs()) {
+    const p = path.join(dir, safe);
+    try {
+      if (existsSync(p)) return p;
+    } catch {
+      /* keep probing the remaining dirs */
+    }
+  }
+  return null;
 }
 
 // Strict CSP for bundled pages. Code/styles come from our own origin
