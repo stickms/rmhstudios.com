@@ -46,6 +46,12 @@ export type LibraryBook = {
   hue: number;
   /** Pre-computed table of contents (chapter → page), when known. May be empty. */
   toc: TocEntry[];
+  /** Where the book comes from: the bundled static catalog or a user upload. */
+  source?: 'static' | 'upload';
+  /** LibraryDocument id for uploaded books (used for delete/report). */
+  id?: string;
+  /** Uploader attribution, for user-uploaded books. */
+  uploadedBy?: { handle: string | null; name: string | null } | null;
 };
 
 /** "everything_platform_minute_vol1.pdf" → "Everything Platform Minute Vol1". */

@@ -7,13 +7,21 @@
  */
 
 import { createFileRoute, notFound } from '@tanstack/react-router';
-import { getLibraryBook } from '@/lib/library/library';
+import { createServerFn } from '@tanstack/react-start';
+import { getBook } from '@/lib/library/library.server';
 import { BookReader } from '@/components/library/BookReader';
 import '@/components/library/library.css';
 
+const fetchBook = createServerFn({ method: 'GET' })
+  .validator((slug: string) => slug)
+  .handler(async ({ data: slug }) => {
+    const book = await getBook(slug);
+    return { book: book ?? null };
+  });
+
 export const Route = createFileRoute('/library/$slug')({
-  loader: ({ params }) => {
-    const book = getLibraryBook(params.slug);
+  loader: async ({ params }) => {
+    const { book } = await fetchBook({ data: params.slug });
     if (!book) throw notFound();
     return { book };
   },

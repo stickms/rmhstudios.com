@@ -51,6 +51,7 @@ model User {
   synapseStormProfile SynapseStormPlayer?
   rmhboxProfile       RMHboxProfile?
   rmhtypeProfiles     RmhTypeProfile[]
+  libraryUploads      LibraryDocument[] @relation("LibraryUploader")
   rmhstudyProfile     RmhStudyProfile?
   voidBreakerProfile  VoidBreakerPlayer?
   dailyPuzzleScores   DailyPuzzleScore[]
@@ -3230,4 +3231,27 @@ model ImageGenBudget {
   count Int    @default(0)
 
   @@map("image_gen_budget")
+}
+
+/// A user-uploaded library book. PDF + cover live in R2 (keyed by id); this row
+/// is the metadata the bookshelf and reader resolve. The static catalog
+/// (public/library + data/library-metadata.json) is unaffected.
+model LibraryDocument {
+  id               String   @id @default(cuid())
+  slug             String   @unique
+  title            String
+  description      String   @default("")
+  pages            Int      @default(0)
+  pdfKey           String
+  coverKey         String?
+  sizeBytes        Int      @default(0)
+  uploadedByUserId String?
+  uploadedBy       User?    @relation("LibraryUploader", fields: [uploadedByUserId], references: [id], onDelete: SetNull)
+  reported         Boolean  @default(false)
+  hidden           Boolean  @default(false)
+  createdAt        DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([uploadedByUserId])
+  @@map("library_document")
 }
