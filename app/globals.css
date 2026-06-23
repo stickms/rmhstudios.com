@@ -2381,3 +2381,8 @@ input[type='number'] {
   -moz-appearance: textfield;
   appearance: textfield;
 }
+
+/* ----- RTL support (Arabic) ----- */
+[dir="rtl"] body { text-align: right; }
+/* Flip directional chevron/arrow icons that imply forward/back. */
+[dir="rtl"] .rtl-flip { transform: scaleX(-1); }
