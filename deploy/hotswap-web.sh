@@ -154,6 +154,23 @@ image="${IMAGE_NAME}:${IMAGE_TAG}"
 
 log "Live port: ${current_port}. Bringing up ${target_color} on ${target_port} from ${image}."
 
+# ── Fast path: skip the swap if the live container already runs this image ───
+# The slim web image is invariant to go-services / supervisor-only changes, so
+# those deploys produce a byte-for-byte identical image (same content-addressed
+# ID). Spinning up a second container, waiting for health, and reloading Apache
+# would all be pure overhead with nothing new to serve. We skip ONLY when the
+# currently-live container is actually RUNNING the exact target image — if web is
+# down, missing, or on a different image, we fall through to the normal swap.
+if "$DOCKER_BIN" inspect "$old_container" >/dev/null 2>&1; then
+    live_running=$("$DOCKER_BIN" inspect -f '{{.State.Running}}' "$old_container" 2>/dev/null || echo false)
+    live_img=$("$DOCKER_BIN" inspect -f '{{.Image}}' "$old_container" 2>/dev/null || echo "")
+    new_img=$("$DOCKER_BIN" image inspect -f '{{.Id}}' "$image" 2>/dev/null || echo "")
+    if [ "$live_running" = "true" ] && [ -n "$new_img" ] && [ "$live_img" = "$new_img" ]; then
+        log "Live ${old_color} container already runs ${image} — web unchanged, skipping hotswap."
+        exit 0
+    fi
+fi
+
 # ── Start the new (target) container ────────────────────────────────────────
 # Launch via `docker compose run`, NOT a hand-rolled `docker run`, so the new
 # web container inherits the EXACT `web` service config from docker-compose.yml:
