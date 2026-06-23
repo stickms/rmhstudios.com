@@ -11,10 +11,10 @@
  * This Creator Studio lives at `/create` to avoid colliding with it.)
  */
 
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { Wand2, FileText, Package, Bot } from 'lucide-react';
+import { type LucideIcon, FileText, Gamepad2, AppWindow, Boxes, Bot } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { MobileTopBar } from '@/components/feed/MobileHeader';
@@ -22,14 +22,15 @@ import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { listCuratedBuilds } from '@/lib/builds/curated';
 import { listVibePages } from '@/lib/rmhvibe/vibe.server';
 import { PagesTab, type VibeGallery } from '@/components/creator-studio/PagesTab';
-import { BuildsTab } from '@/components/creator-studio/BuildsTab';
+import { CuratedBuildsTab, UserBuildsTab } from '@/components/creator-studio/BuildsTab';
+import { RankedSummary } from '@/components/creator-studio/RankedSummary';
 import { PersonasColumn } from '@/components/feed/PersonasColumn';
 import '@/components/rmhvibe/vibe.css';
 import '@/components/library/library.css';
 import '@/components/builds/builds.css';
 import '@/components/creator-studio/creator-studio.css';
 
-const STUDIO_TABS = ['pages', 'builds', 'personas'] as const;
+const STUDIO_TABS = ['pages', 'games', 'apps', 'user-builds', 'personas'] as const;
 type StudioTab = (typeof STUDIO_TABS)[number];
 
 const fetchGallery = createServerFn({ method: 'GET' })
@@ -70,9 +71,14 @@ function CreatorStudio() {
     [navigate],
   );
 
-  const tabs: { id: StudioTab; label: string; icon: typeof Wand2 }[] = [
+  const games = useMemo(() => curated.filter((b) => b.kind === 'game'), [curated]);
+  const apps = useMemo(() => curated.filter((b) => b.kind === 'app'), [curated]);
+
+  const tabs: { id: StudioTab; label: string; icon: LucideIcon }[] = [
     { id: 'pages', label: t('studio-tab-pages', { defaultValue: 'Pages' }), icon: FileText },
-    { id: 'builds', label: t('studio-tab-builds', { defaultValue: 'Builds' }), icon: Package },
+    { id: 'games', label: t('studio-tab-games', { defaultValue: 'Games' }), icon: Gamepad2 },
+    { id: 'apps', label: t('studio-tab-apps', { defaultValue: 'Apps' }), icon: AppWindow },
+    { id: 'user-builds', label: t('studio-tab-user-builds', { defaultValue: 'User Builds' }), icon: Boxes },
     { id: 'personas', label: t('studio-tab-personas', { defaultValue: 'AI Personas' }), icon: Bot },
   ];
 
@@ -124,9 +130,28 @@ function CreatorStudio() {
             <PagesTab initial={gallery} fetchGallery={fetchGallery} />
           </div>
         )}
-        {tab === 'builds' && (
+        {tab === 'games' && (
           <div className="cstudio-body">
-            <BuildsTab curated={curated} />
+            <RankedSummary />
+            <CuratedBuildsTab
+              curated={games}
+              searchPlaceholder={t('search-games-placeholder', { defaultValue: 'Search games...' })}
+              emptyLabel={t('empty-games', { defaultValue: 'No games match that search.' })}
+            />
+          </div>
+        )}
+        {tab === 'apps' && (
+          <div className="cstudio-body">
+            <CuratedBuildsTab
+              curated={apps}
+              searchPlaceholder={t('search-apps-placeholder', { defaultValue: 'Search apps...' })}
+              emptyLabel={t('empty-apps', { defaultValue: 'No apps match that search.' })}
+            />
+          </div>
+        )}
+        {tab === 'user-builds' && (
+          <div className="cstudio-body">
+            <UserBuildsTab />
           </div>
         )}
         {tab === 'personas' && (

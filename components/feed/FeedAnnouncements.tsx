@@ -71,7 +71,7 @@ export function FeedAnnouncements() {
   if (visible.length === 0) return null;
 
   return (
-    <div className="flex flex-col gap-2 px-3 pt-3">
+    <div className="flex flex-col gap-2 px-3 pt-3 pb-4">
       {visible.map((a) => (
         <div
           key={a.id}

@@ -1,9 +1,10 @@
 /**
- * Pricing Page Route (/pricing)
+ * /store — the combined Store.
  *
- * Standalone "membership" page. The tier UI itself lives in the reusable
- * `MembershipPanel` (also embedded at the top of the combined /store page);
- * this route just supplies the loader (current tier) and page chrome.
+ * Merges what used to be two separate destinations — Membership (/pricing) and
+ * the cosmetics Shop (/shop) — into a single page. Membership leads at the top
+ * (the reusable `MembershipPanel`), with the coin-purchasable Shop catalog
+ * below. Surfaced as a single "Store" link in the sidebar.
  */
 import { useTranslation } from 'react-i18next';
 import { createFileRoute } from '@tanstack/react-router';
@@ -14,6 +15,7 @@ import { getUserTier, type Tier } from '@/lib/entitlements';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { MobileTopBar } from '@/components/feed/MobileHeader';
 import { MembershipPanel } from '@/components/membership/MembershipPanel';
+import { ShopColumn } from '@/components/feed/ShopColumn';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 
 const fetchCurrentTier = createServerFn({ method: 'GET' }).handler(async (): Promise<Tier> => {
@@ -23,20 +25,18 @@ const fetchCurrentTier = createServerFn({ method: 'GET' }).handler(async (): Pro
   return getUserTier(session.user.id);
 });
 
-export const Route = createFileRoute('/_site/pricing')({
+export const Route = createFileRoute('/_site/store/')({
   loader: () => fetchCurrentTier(),
   head: () => ({
     meta: [
-      { title: 'Membership — RMH Studios' },
-      { name: 'description', content: 'Become a member of RMH Studios. Four tiers, from Free to Enterprise.' },
+      { title: 'Store — RMH Studios' },
+      { name: 'description', content: 'Membership tiers and the cosmetics shop — all in one place.' },
     ],
   }),
-  component: Pricing,
+  component: Store,
 });
 
-function Pricing() {
-  // Cast to Tier: until app/routeTree.gen.ts regenerates (first dev/build),
-  // useLoaderData() infers `any`, which breaks RANK[currentTier] indexing.
+function Store() {
   const { t } = useTranslation('site');
   const currentTier = Route.useLoaderData() as Tier;
 
@@ -46,9 +46,11 @@ function Pricing() {
         className="relative isolate min-h-screen w-full min-w-0 overflow-hidden border-r border-site-border pb-16 md:pb-0"
         targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
       >
-        {/* Mobile: hamburger + brand (this page leads with an editorial hero) */}
-        <MobileTopBar title={t('membership-title', { defaultValue: 'Membership' })} />
-        <MembershipPanel currentTier={currentTier} returnPath="/pricing" />
+        <MobileTopBar title={t('store-title', { defaultValue: 'Store' })} />
+        <MembershipPanel currentTier={currentTier} returnPath="/store" />
+        <div className="border-t border-site-border">
+          <ShopColumn />
+        </div>
       </AnimatedMain>
       {/* Trailing gutter to match the blog/library layout */}
       <div className="hidden lg:block w-4 shrink-0" />

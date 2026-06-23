@@ -11,6 +11,7 @@ interface Persona {
   name: string;
   tagline: string | null;
   emoji: string | null;
+  avatarUrl?: string | null;
   chatCount: number;
   owner?: { name: string | null; handle: string | null };
   isPublic?: boolean;
@@ -99,8 +100,12 @@ export function PersonasColumn({ hideHeader = false }: { hideHeader?: boolean } 
       to={`/personas/${p.id}` as string}
       className="flex items-start gap-3 rounded-xl border border-site-border bg-site-surface p-3 transition-colors hover:border-site-accent/60"
     >
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-site-accent/12 text-xl">
-        {p.emoji || <Bot className="h-5 w-5 text-site-accent" />}
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-site-accent/12 text-xl">
+        {p.avatarUrl ? (
+          <img src={p.avatarUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+        ) : (
+          p.emoji || <Bot className="h-5 w-5 text-site-accent" />
+        )}
       </div>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-site-text">{p.name}</p>

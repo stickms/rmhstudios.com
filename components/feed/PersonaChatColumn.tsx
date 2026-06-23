@@ -16,6 +16,7 @@ interface Persona {
   tagline: string | null;
   greeting: string | null;
   emoji: string | null;
+  avatarUrl?: string | null;
   chatCount: number;
   isOwner: boolean;
   owner: { name: string | null; handle: string | null };
@@ -120,8 +121,12 @@ export function PersonaChatColumn({ id }: { id: string }) {
         <Link to="/personas" className="text-site-text-dim hover:text-site-text">
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-site-accent/12 text-lg">
-          {persona.emoji || <Bot className="h-4 w-4 text-site-accent" />}
+        <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg bg-site-accent/12 text-lg">
+          {persona.avatarUrl ? (
+            <img src={persona.avatarUrl} alt="" className="h-full w-full object-cover" />
+          ) : (
+            persona.emoji || <Bot className="h-4 w-4 text-site-accent" />
+          )}
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-bold text-site-text">{persona.name}</p>
@@ -136,17 +141,17 @@ export function PersonaChatColumn({ id }: { id: string }) {
 
       <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4">
         {greetingShown && (
-          <Bubble role="assistant" emoji={persona.emoji}>
+          <Bubble role="assistant" emoji={persona.emoji} avatarUrl={persona.avatarUrl}>
             {persona.greeting}
           </Bubble>
         )}
         {messages.map((m, i) => (
-          <Bubble key={i} role={m.role} emoji={persona.emoji}>
+          <Bubble key={i} role={m.role} emoji={persona.emoji} avatarUrl={persona.avatarUrl}>
             {m.content}
           </Bubble>
         ))}
         {sending && (
-          <Bubble role="assistant" emoji={persona.emoji}>
+          <Bubble role="assistant" emoji={persona.emoji} avatarUrl={persona.avatarUrl}>
             <span className="inline-flex items-center gap-1 text-site-text-dim">
               <Loader2 className="h-3.5 w-3.5 animate-spin" /> {t('typing', { defaultValue: 'typing…' })}
             </span>
@@ -192,13 +197,17 @@ export function PersonaChatColumn({ id }: { id: string }) {
   );
 }
 
-function Bubble({ role, emoji, children }: { role: string; emoji: string | null; children: React.ReactNode }) {
+function Bubble({ role, emoji, avatarUrl, children }: { role: string; emoji: string | null; avatarUrl?: string | null; children: React.ReactNode }) {
   const isUser = role === 'user';
   return (
     <div className={`flex gap-2 ${isUser ? 'flex-row-reverse' : ''}`}>
       {!isUser && (
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-site-accent/12 text-sm">
-          {emoji || <Bot className="h-3.5 w-3.5 text-site-accent" />}
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-site-accent/12 text-sm">
+          {avatarUrl ? (
+            <img src={avatarUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+          ) : (
+            emoji || <Bot className="h-3.5 w-3.5 text-site-accent" />
+          )}
         </div>
       )}
       <div

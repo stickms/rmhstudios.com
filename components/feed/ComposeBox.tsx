@@ -551,16 +551,15 @@ export function ComposeBox({
                 title={t("ai-generate-title", { defaultValue: "Generate a post with AI" })}
               />
 
-              {/* AI image button (Starter+) */}
-              {canGenerateImage && (
-                <AIImageButton
-                  draft={content}
-                  disabled={imageUrls.length >= MAX_IMAGES}
-                  onGenerated={(url) =>
-                    setImageUrls((prev) => [...prev, url].slice(0, MAX_IMAGES))
-                  }
-                />
-              )}
+              {/* AI image button — locked (greyed + upgrade nudge) below Starter */}
+              <AIImageButton
+                draft={content}
+                locked={!canGenerateImage}
+                disabled={imageUrls.length >= MAX_IMAGES}
+                onGenerated={(url) =>
+                  setImageUrls((prev) => [...prev, url].slice(0, MAX_IMAGES))
+                }
+              />
 
               {/* Image upload button */}
               <button

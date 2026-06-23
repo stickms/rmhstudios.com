@@ -10,6 +10,7 @@ export default defineConfig({
       'testing/**/*.test.ts',
       'lib/dream-rift/__tests__/**/*.test.ts',
       'lib/rmhark-ai/__tests__/**/*.test.ts',
+      'lib/personas/__tests__/**/*.test.ts',
       'lib/__tests__/**/*.test.ts',
     ],
     environment: 'node',

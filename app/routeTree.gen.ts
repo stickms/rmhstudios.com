@@ -173,6 +173,7 @@ import { Route as AltairMultiplayerIndexRouteImport } from './routes/altair/mult
 import { Route as SiteVIndexRouteImport } from './routes/_site/v/index'
 import { Route as SiteUserBuildsIndexRouteImport } from './routes/_site/user-builds/index'
 import { Route as SiteStudyIndexRouteImport } from './routes/_site/study/index'
+import { Route as SiteStoreIndexRouteImport } from './routes/_site/store/index'
 import { Route as SiteRideshareIndexRouteImport } from './routes/_site/rideshare/index'
 import { Route as SiteResearchIndexRouteImport } from './routes/_site/research/index'
 import { Route as SitePersonasIndexRouteImport } from './routes/_site/personas/index'
@@ -385,6 +386,7 @@ import { Route as ApiProfileIdLikesRouteImport } from './routes/api/profile/$id/
 import { Route as ApiProfileIdFollowingRouteImport } from './routes/api/profile/$id/following'
 import { Route as ApiProfileIdFollowersRouteImport } from './routes/api/profile/$id/followers'
 import { Route as ApiProfileIdFollowRouteImport } from './routes/api/profile/$id/follow'
+import { Route as ApiPersonasAvatarFilenameRouteImport } from './routes/api/personas/avatar/$filename'
 import { Route as ApiPersonasIdChatRouteImport } from './routes/api/personas/$id/chat'
 import { Route as ApiOgPostIdRouteImport } from './routes/api/og/post/$id'
 import { Route as ApiMessagesConversationIdTypingRouteImport } from './routes/api/messages/$conversationId/typing'
@@ -1269,6 +1271,11 @@ const SiteUserBuildsIndexRoute = SiteUserBuildsIndexRouteImport.update({
 const SiteStudyIndexRoute = SiteStudyIndexRouteImport.update({
   id: '/study/',
   path: '/study/',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteStoreIndexRoute = SiteStoreIndexRouteImport.update({
+  id: '/store/',
+  path: '/store/',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteRideshareIndexRoute = SiteRideshareIndexRouteImport.update({
@@ -2356,6 +2363,12 @@ const ApiProfileIdFollowRoute = ApiProfileIdFollowRouteImport.update({
   path: '/follow',
   getParentRoute: () => ApiProfileIdRoute,
 } as any)
+const ApiPersonasAvatarFilenameRoute =
+  ApiPersonasAvatarFilenameRouteImport.update({
+    id: '/api/personas/avatar/$filename',
+    path: '/api/personas/avatar/$filename',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPersonasIdChatRoute = ApiPersonasIdChatRouteImport.update({
   id: '/api/personas/$id/chat',
   path: '/api/personas/$id/chat',
@@ -3012,6 +3025,7 @@ export interface FileRoutesByFullPath {
   '/personas/': typeof SitePersonasIndexRoute
   '/research/': typeof SiteResearchIndexRoute
   '/rideshare/': typeof SiteRideshareIndexRoute
+  '/store/': typeof SiteStoreIndexRoute
   '/study/': typeof SiteStudyIndexRoute
   '/user-builds/': typeof SiteUserBuildsIndexRoute
   '/v/': typeof SiteVIndexRoute
@@ -3073,6 +3087,7 @@ export interface FileRoutesByFullPath {
   '/api/messages/$conversationId/typing': typeof ApiMessagesConversationIdTypingRoute
   '/api/og/post/$id': typeof ApiOgPostIdRoute
   '/api/personas/$id/chat': typeof ApiPersonasIdChatRoute
+  '/api/personas/avatar/$filename': typeof ApiPersonasAvatarFilenameRoute
   '/api/profile/$id/follow': typeof ApiProfileIdFollowRoute
   '/api/profile/$id/followers': typeof ApiProfileIdFollowersRoute
   '/api/profile/$id/following': typeof ApiProfileIdFollowingRoute
@@ -3430,6 +3445,7 @@ export interface FileRoutesByTo {
   '/personas': typeof SitePersonasIndexRoute
   '/research': typeof SiteResearchIndexRoute
   '/rideshare': typeof SiteRideshareIndexRoute
+  '/store': typeof SiteStoreIndexRoute
   '/study': typeof SiteStudyIndexRoute
   '/user-builds': typeof SiteUserBuildsIndexRoute
   '/v': typeof SiteVIndexRoute
@@ -3491,6 +3507,7 @@ export interface FileRoutesByTo {
   '/api/messages/$conversationId/typing': typeof ApiMessagesConversationIdTypingRoute
   '/api/og/post/$id': typeof ApiOgPostIdRoute
   '/api/personas/$id/chat': typeof ApiPersonasIdChatRoute
+  '/api/personas/avatar/$filename': typeof ApiPersonasAvatarFilenameRoute
   '/api/profile/$id/follow': typeof ApiProfileIdFollowRoute
   '/api/profile/$id/followers': typeof ApiProfileIdFollowersRoute
   '/api/profile/$id/following': typeof ApiProfileIdFollowingRoute
@@ -3874,6 +3891,7 @@ export interface FileRoutesById {
   '/_site/personas/': typeof SitePersonasIndexRoute
   '/_site/research/': typeof SiteResearchIndexRoute
   '/_site/rideshare/': typeof SiteRideshareIndexRoute
+  '/_site/store/': typeof SiteStoreIndexRoute
   '/_site/study/': typeof SiteStudyIndexRoute
   '/_site/user-builds/': typeof SiteUserBuildsIndexRoute
   '/_site/v/': typeof SiteVIndexRoute
@@ -3935,6 +3953,7 @@ export interface FileRoutesById {
   '/api/messages/$conversationId/typing': typeof ApiMessagesConversationIdTypingRoute
   '/api/og/post/$id': typeof ApiOgPostIdRoute
   '/api/personas/$id/chat': typeof ApiPersonasIdChatRoute
+  '/api/personas/avatar/$filename': typeof ApiPersonasAvatarFilenameRoute
   '/api/profile/$id/follow': typeof ApiProfileIdFollowRoute
   '/api/profile/$id/followers': typeof ApiProfileIdFollowersRoute
   '/api/profile/$id/following': typeof ApiProfileIdFollowingRoute
@@ -4318,6 +4337,7 @@ export interface FileRouteTypes {
     | '/personas/'
     | '/research/'
     | '/rideshare/'
+    | '/store/'
     | '/study/'
     | '/user-builds/'
     | '/v/'
@@ -4379,6 +4399,7 @@ export interface FileRouteTypes {
     | '/api/messages/$conversationId/typing'
     | '/api/og/post/$id'
     | '/api/personas/$id/chat'
+    | '/api/personas/avatar/$filename'
     | '/api/profile/$id/follow'
     | '/api/profile/$id/followers'
     | '/api/profile/$id/following'
@@ -4736,6 +4757,7 @@ export interface FileRouteTypes {
     | '/personas'
     | '/research'
     | '/rideshare'
+    | '/store'
     | '/study'
     | '/user-builds'
     | '/v'
@@ -4797,6 +4819,7 @@ export interface FileRouteTypes {
     | '/api/messages/$conversationId/typing'
     | '/api/og/post/$id'
     | '/api/personas/$id/chat'
+    | '/api/personas/avatar/$filename'
     | '/api/profile/$id/follow'
     | '/api/profile/$id/followers'
     | '/api/profile/$id/following'
@@ -5179,6 +5202,7 @@ export interface FileRouteTypes {
     | '/_site/personas/'
     | '/_site/research/'
     | '/_site/rideshare/'
+    | '/_site/store/'
     | '/_site/study/'
     | '/_site/user-builds/'
     | '/_site/v/'
@@ -5240,6 +5264,7 @@ export interface FileRouteTypes {
     | '/api/messages/$conversationId/typing'
     | '/api/og/post/$id'
     | '/api/personas/$id/chat'
+    | '/api/personas/avatar/$filename'
     | '/api/profile/$id/follow'
     | '/api/profile/$id/followers'
     | '/api/profile/$id/following'
@@ -5531,6 +5556,7 @@ export interface RootRouteChildren {
   ApiLibraryFileIdRoute: typeof ApiLibraryFileIdRoute
   ApiOgPostIdRoute: typeof ApiOgPostIdRoute
   ApiPersonasIdChatRoute: typeof ApiPersonasIdChatRoute
+  ApiPersonasAvatarFilenameRoute: typeof ApiPersonasAvatarFilenameRoute
   ApiQuestsIdClaimRoute: typeof ApiQuestsIdClaimRoute
   ApiRankedGameLeaderboardRoute: typeof ApiRankedGameLeaderboardRoute
   ApiRankedChallengeIdRoute: typeof ApiRankedChallengeIdRoute
@@ -6712,6 +6738,13 @@ declare module '@tanstack/react-router' {
       path: '/study'
       fullPath: '/study/'
       preLoaderRoute: typeof SiteStudyIndexRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/store/': {
+      id: '/_site/store/'
+      path: '/store'
+      fullPath: '/store/'
+      preLoaderRoute: typeof SiteStoreIndexRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/rideshare/': {
@@ -8198,6 +8231,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProfileIdFollowRouteImport
       parentRoute: typeof ApiProfileIdRoute
     }
+    '/api/personas/avatar/$filename': {
+      id: '/api/personas/avatar/$filename'
+      path: '/api/personas/avatar/$filename'
+      fullPath: '/api/personas/avatar/$filename'
+      preLoaderRoute: typeof ApiPersonasAvatarFilenameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/personas/$id/chat': {
       id: '/api/personas/$id/chat'
       path: '/api/personas/$id/chat'
@@ -8733,6 +8773,7 @@ interface SiteRouteChildren {
   SitePersonasIndexRoute: typeof SitePersonasIndexRoute
   SiteResearchIndexRoute: typeof SiteResearchIndexRoute
   SiteRideshareIndexRoute: typeof SiteRideshareIndexRoute
+  SiteStoreIndexRoute: typeof SiteStoreIndexRoute
   SiteStudyIndexRoute: typeof SiteStudyIndexRoute
   SiteUserBuildsIndexRoute: typeof SiteUserBuildsIndexRoute
   SiteVIndexRoute: typeof SiteVIndexRoute
@@ -8785,6 +8826,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SitePersonasIndexRoute: SitePersonasIndexRoute,
   SiteResearchIndexRoute: SiteResearchIndexRoute,
   SiteRideshareIndexRoute: SiteRideshareIndexRoute,
+  SiteStoreIndexRoute: SiteStoreIndexRoute,
   SiteStudyIndexRoute: SiteStudyIndexRoute,
   SiteUserBuildsIndexRoute: SiteUserBuildsIndexRoute,
   SiteVIndexRoute: SiteVIndexRoute,
@@ -9741,6 +9783,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiLibraryFileIdRoute: ApiLibraryFileIdRoute,
   ApiOgPostIdRoute: ApiOgPostIdRoute,
   ApiPersonasIdChatRoute: ApiPersonasIdChatRoute,
+  ApiPersonasAvatarFilenameRoute: ApiPersonasAvatarFilenameRoute,
   ApiQuestsIdClaimRoute: ApiQuestsIdClaimRoute,
   ApiRankedGameLeaderboardRoute: ApiRankedGameLeaderboardRoute,
   ApiRankedChallengeIdRoute: ApiRankedChallengeIdRoute,
