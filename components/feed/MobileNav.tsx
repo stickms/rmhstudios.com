@@ -7,6 +7,7 @@ import { useSession } from '@/components/Providers';
 import { ComposeModal } from './ComposeModal';
 import { useUnreadCount } from '@/lib/useUnreadCount';
 import { useNotificationCount } from '@/lib/useNotificationCount';
+import { LanguageSwitcher } from '@/components/site/LanguageSwitcher';
 
 export function MobileNav() {
   const { pathname } = useLocation();
@@ -46,6 +47,9 @@ export function MobileNav() {
 
       {/* Bottom navigation bar */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 vibe-glass border-t border-site-border">
+        <div className="flex items-center justify-end px-4 py-1 border-b border-site-border">
+          <LanguageSwitcher />
+        </div>
         <div className="flex items-center justify-around h-12">
           <Link to="/" className={tabClass(isHome)} aria-label="Home">
             <Home className="w-6 h-6" />

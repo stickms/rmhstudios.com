@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { ComposeModal } from './ComposeModal';
 import { Button } from '@/components/ui/button';
+import { LanguageSwitcher } from '@/components/site/LanguageSwitcher';
 import { useUnreadCount } from '@/lib/useUnreadCount';
 import { useNotificationCount } from '@/lib/useNotificationCount';
 import { useStreak } from '@/lib/useStreak';
@@ -215,8 +216,13 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         })}
       </nav>
 
+      {/* Language Switcher — pinned above auth section */}
+      <div className="px-3 py-2 shrink-0">
+        <LanguageSwitcher />
+      </div>
+
       {/* Auth Section — pinned to bottom */}
-      <div className="mt-auto border-t border-site-border pt-3 shrink-0">
+      <div className="border-t border-site-border pt-3 shrink-0">
         {isPending ? (
           <div className="h-10 bg-site-surface rounded-xl animate-pulse" />
         ) : session ? (
