@@ -128,9 +128,6 @@ model User {
   // Coin staking (interest-bearing vault)
   coinStake CoinStake?
 
-  // Clans / teams
-  clansOwned     Clan[]      @relation("ClanOwner")
-  clanMembership ClanMember?
 
   // Creator storefront
   storefrontProducts  StorefrontProduct[]  @relation("StorefrontCreator")
@@ -2914,49 +2911,6 @@ model CoinStake {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("coin_stake")
-}
-
-/// A competitive team (#4). Unlike communities (topic groups, many memberships),
-/// a user belongs to at most one clan. Member XP gains are aggregated into the
-/// clan's totalXp for a cross-clan leaderboard.
-model Clan {
-  id          String   @id @default(cuid())
-  slug        String   @unique
-  name        String   @db.VarChar(40)
-  tag         String   @db.VarChar(6) // short uppercase team tag, e.g. RMH
-  description String?  @db.VarChar(300)
-  color       String?  @db.VarChar(16)
-  ownerId     String
-  memberCount Int      @default(1)
-  totalXp     Int      @default(0)
-  createdAt   DateTime @default(now())
-
-  owner   User         @relation("ClanOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  members ClanMember[]
-
-  @@index([totalXp(sort: Desc)])
-  @@map("clan")
-}
-
-enum ClanRole {
-  OWNER
-  OFFICER
-  MEMBER
-}
-
-model ClanMember {
-  id            String   @id @default(cuid())
-  clanId        String
-  userId        String   @unique // one clan per user
-  role          ClanRole @default(MEMBER)
-  contributedXp Int      @default(0)
-  joinedAt      DateTime @default(now())
-
-  clan Clan @relation(fields: [clanId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([clanId])
-  @@map("clan_member")
 }
 
 /// A digital product a creator sells for coins (#19). The `deliverable` (a link,

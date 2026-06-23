@@ -97,7 +97,6 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'social.viral_post', name: 'Gone Viral', description: 'Get a single post to 100 likes.', icon: '🚀', category: 'social', tier: 'gold', coinReward: 150, target: 1 },
   { id: 'social.first_dm', name: 'Slid In', description: 'Send your first direct message.', icon: '✉️', category: 'social', tier: 'bronze', coinReward: 5, target: 1 },
   { id: 'social.first_mention_received', name: 'Tagged', description: 'Get mentioned in a post.', icon: '🔔', category: 'social', tier: 'bronze', coinReward: 5, target: 1 },
-  { id: 'social.first_clan', name: 'Squad Up', description: 'Join a clan.', icon: '🛡️', category: 'social', tier: 'bronze', coinReward: 10, target: 1 },
   { id: 'social.followers_5000', name: 'Verified Energy', description: 'Reach 5,000 followers.', icon: '💫', category: 'social', tier: 'platinum', coinReward: 1000, target: 5000 },
 
   // ─── More creator ────────────────────────────────────────────────────────

@@ -32,22 +32,6 @@ export async function awardXp(userId: string, amount: number): Promise<number | 
       update: { seasonXp: { increment: amount } },
     });
 
-    // Aggregate into the user's clan (if any) for the clan leaderboard.
-    try {
-      const membership = await prisma.clanMember.findUnique({
-        where: { userId },
-        select: { id: true, clanId: true },
-      });
-      if (membership) {
-        await prisma.$transaction([
-          prisma.clanMember.update({ where: { id: membership.id }, data: { contributedXp: { increment: amount } } }),
-          prisma.clan.update({ where: { id: membership.clanId }, data: { totalXp: { increment: amount } } }),
-        ]);
-      }
-    } catch {
-      // best-effort: never let clan aggregation break XP awards
-    }
-
     const afterLevel = levelFromXp(profile.xp);
     if (afterLevel > beforeLevel) {
       await createNotification({

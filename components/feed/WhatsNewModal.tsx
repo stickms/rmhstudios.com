@@ -6,7 +6,6 @@ import { Link } from '@tanstack/react-router';
 import {
   Sparkles,
   Zap,
-  Shield,
   Swords,
   Bot,
   Users,
@@ -28,7 +27,6 @@ const WELCOME_KEY = 'rmh-welcome-seen-v1';
 
 const FEATURES_DEF = [
   { icon: Zap, titleKey: 'feature-progression-title', titleDefault: 'Progression & rewards', bodyKey: 'feature-progression-body', bodyDefault: 'Earn XP, level up, complete daily/weekly quests, climb the battle pass, spin the daily wheel, and stake coins.', to: '/progress' },
-  { icon: Shield, titleKey: 'feature-clans-title', titleDefault: 'Clans', bodyKey: 'feature-clans-body', bodyDefault: 'Form a team — your XP fuels the clan leaderboard.', to: '/clans' },
   { icon: Swords, titleKey: 'feature-ranked-title', titleDefault: 'Ranked play', bodyKey: 'feature-ranked-body', bodyDefault: 'ELO ratings and challenge ladders across our games.', to: '/ranked' },
   { icon: Bot, titleKey: 'feature-personas-title', titleDefault: 'AI personas', bodyKey: 'feature-personas-body', bodyDefault: 'Create and chat with custom AI characters.', to: '/personas' },
   { icon: Users, titleKey: 'feature-groups-title', titleDefault: 'Group chats', bodyKey: 'feature-groups-body', bodyDefault: 'Message multiple friends in real time.', to: '/groups' },

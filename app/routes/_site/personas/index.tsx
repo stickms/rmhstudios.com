@@ -1,23 +1,15 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
-import { PersonasColumn } from '@/components/feed/PersonasColumn';
+/**
+ * /personas — legacy path.
+ *
+ * The standalone AI Personas gallery was folded into the unified Creator Studio
+ * (/studio). This route forwards to the Studio's Personas tab so existing links
+ * and bookmarks keep working. The /personas/$id chat view remains its own route.
+ */
+
+import { createFileRoute, redirect } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_site/personas/')({
-  head: () => ({ meta: [{ title: 'AI Personas | RMH Studios' }] }),
-  component: PersonasPage,
+  beforeLoad: () => {
+    throw redirect({ to: '/create', search: { tab: 'personas' } });
+  },
 });
-
-function PersonasPage() {
-  return (
-    <>
-      <AnimatedMain
-        className="w-full min-w-0 border-r border-site-border pb-16 md:pb-0"
-        targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
-      >
-        <PersonasColumn />
-      </AnimatedMain>
-      <div className="hidden lg:block w-4 shrink-0" />
-    </>
-  );
-}
