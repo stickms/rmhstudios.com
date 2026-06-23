@@ -7,6 +7,7 @@
  */
 
 import { createFileRoute, Outlet } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { LeftSidebar } from '@/components/feed/LeftSidebar';
 import { MobileNav } from '@/components/feed/MobileNav';
 import { MobileSidebarShell } from '@/components/feed/MobileSidebarShell';
@@ -20,6 +21,7 @@ export const Route = createFileRoute('/_site')({
 });
 
 function SiteLayout() {
+  const { t } = useTranslation('common');
   return (
     <div className="vibe-app min-h-dvh bg-site-bg flex flex-col md:flex-row">
       {/* Keyboard skip link — visually hidden until focused. */}
@@ -27,7 +29,7 @@ function SiteLayout() {
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-site-accent focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-site-accent-fg"
       >
-        Skip to content
+        {t('skipToContent', { defaultValue: 'Skip to content' })}
       </a>
       <WelcomeModal />
       <WhatsNewModal />
