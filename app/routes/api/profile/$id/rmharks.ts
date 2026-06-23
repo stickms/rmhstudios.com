@@ -159,6 +159,7 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
       original: mapOriginal(r.original),
       poll: mapPoll(r.poll),
       gifUrl: r.gifUrl ?? undefined,
+      imageUrls: r.imageUrls ?? undefined,
     }, r, viewerId));
 
     // Map reposts to FeedItems with repostedBy
@@ -181,6 +182,7 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
         original: mapOriginal(r.original),
         poll: mapPoll(r.poll),
         gifUrl: r.gifUrl ?? undefined,
+        imageUrls: r.imageUrls ?? undefined,
       }, r, viewerId);
     });
 
@@ -221,6 +223,7 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
           original: mapOriginal(p.original),
           poll: mapPoll(p.poll),
           gifUrl: p.gifUrl ?? undefined,
+          imageUrls: p.imageUrls ?? undefined,
         }, p, viewerId);
         items = [pinnedItem, ...merged.filter((it) => (it.actualId ?? it.id) !== p.id)];
       }
