@@ -3,6 +3,7 @@
 import { Search, X } from 'lucide-react';
 import { useJobSearchStore } from '@/lib/store/useJobSearchStore';
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export function JobSearch() {
     const { query, sort, setQuery, setSort, resetFilters } = useJobSearchStore();
@@ -20,6 +21,8 @@ export function JobSearch() {
         setLocalQuery(query);
     }, [query]);
 
+    const { t } = useTranslation("c-rmh-jobs");
+
     const hasFilters = sort !== 'newest' || query !== '';
 
     return (
@@ -35,7 +38,7 @@ export function JobSearch() {
                         type="text"
                         value={localQuery}
                         onChange={(e) => setLocalQuery(e.target.value)}
-                        placeholder='Search jobs... (e.g. "Dragon Hunter", "React Developer")'
+                        placeholder={t("search-placeholder", { defaultValue: 'Search jobs... (e.g. "Dragon Hunter", "React Developer")' })}
                         className="jobs-search-input w-full pl-9 pr-9 py-2.5 rounded-lg text-sm"
                         style={{ borderRadius: 'var(--jobs-radius)' }}
                     />
@@ -55,7 +58,7 @@ export function JobSearch() {
                         className="text-xs px-3 py-2.5 rounded-lg hover:bg-(--jobs-surface-2) transition-colors"
                         style={{ color: 'var(--jobs-accent)' }}
                     >
-                        Reset
+                        {t("reset", { defaultValue: "Reset" })}
                     </button>
                 )}
             </div>
@@ -65,7 +68,7 @@ export function JobSearch() {
                 style={{ background: 'var(--jobs-surface-2)', borderRadius: 'var(--jobs-radius)' }}
             >
                 <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium" style={{ color: 'var(--jobs-text-muted)' }}>Sort:</span>
+                    <span className="text-xs font-medium" style={{ color: 'var(--jobs-text-muted)' }}>{t("sort-label", { defaultValue: "Sort:" })}</span>
                     {(['newest', 'oldest', 'company'] as const).map((s) => (
                         <button
                             key={s}
@@ -76,7 +79,7 @@ export function JobSearch() {
                                     : 'bg-(--jobs-surface-3) text-(--jobs-text-muted) hover:text-(--jobs-text)'
                             }`}
                         >
-                            {s === 'newest' ? 'Newest' : s === 'oldest' ? 'Oldest' : 'Company A-Z'}
+                            {s === 'newest' ? t("sort-newest", { defaultValue: "Newest" }) : s === 'oldest' ? t("sort-oldest", { defaultValue: "Oldest" }) : t("sort-company", { defaultValue: "Company A-Z" })}
                         </button>
                     ))}
                 </div>

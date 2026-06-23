@@ -2,6 +2,7 @@
 
 import { CheckCircle2, XCircle, Clock, FileCode2, AlertTriangle } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 
 interface Application {
     id: string;
@@ -27,11 +28,13 @@ interface Application {
 }
 
 export function ApplicationTimeline({ applications }: { applications: Application[] }) {
+    const { t } = useTranslation("c-rmh-jobs");
+
     if (applications.length === 0) {
         return (
             <div className="text-center py-16" style={{ color: 'var(--jobs-text-muted)' }}>
-                <p className="text-lg mb-2">No applications yet</p>
-                <p className="text-sm">Browse jobs and start applying. Every journey begins with a rejection.</p>
+                <p className="text-lg mb-2">{t("no-applications-yet", { defaultValue: "No applications yet" })}</p>
+                <p className="text-sm">{t("no-applications-hint", { defaultValue: "Browse jobs and start applying. Every journey begins with a rejection." })}</p>
             </div>
         );
     }
@@ -46,7 +49,8 @@ export function ApplicationTimeline({ applications }: { applications: Applicatio
 }
 
 function ApplicationCard({ application: app }: { application: Application }) {
-    const statusConfig = getStatusConfig(app);
+    const { t } = useTranslation("c-rmh-jobs");
+    const statusConfig = getStatusConfig(app, t);
 
     return (
         <div
@@ -77,36 +81,36 @@ function ApplicationCard({ application: app }: { application: Application }) {
 
             {/* Timeline steps */}
             <div className="flex items-center gap-1 text-xs mb-3" style={{ color: 'var(--jobs-text-subtle)' }}>
-                <span className="text-(--jobs-accent)">Applied</span>
+                <span className="text-(--jobs-accent)">{t("timeline-applied", { defaultValue: "Applied" })}</span>
                 <span className="mx-1">→</span>
                 {app.status === 'pending' && (
-                    <span style={{ color: 'var(--jobs-warning)' }}>Under Review...</span>
+                    <span style={{ color: 'var(--jobs-warning)' }}>{t("timeline-under-review", { defaultValue: "Under Review..." })}</span>
                 )}
                 {app.status === 'rejected' && !app.assessment && (
-                    <span style={{ color: 'var(--jobs-danger)' }}>Rejected</span>
+                    <span style={{ color: 'var(--jobs-danger)' }}>{t("timeline-rejected", { defaultValue: "Rejected" })}</span>
                 )}
                 {(app.status === 'oa_invited' || app.status === 'oa_completed' || (app.status === 'rejected' && app.assessment)) && (
                     <>
-                        <span className="text-(--jobs-accent)">OA Invited</span>
+                        <span className="text-(--jobs-accent)">{t("timeline-oa-invited", { defaultValue: "OA Invited" })}</span>
                         <span className="mx-1">→</span>
                         {app.assessment?.submittedAt ? (
                             <>
-                                <span className="text-(--jobs-accent)">OA Submitted</span>
+                                <span className="text-(--jobs-accent)">{t("timeline-oa-submitted", { defaultValue: "OA Submitted" })}</span>
                                 {app.status === 'oa_completed' && (
                                     <>
                                         <span className="mx-1">→</span>
-                                        <span style={{ color: 'var(--jobs-warning)' }}>Under Review...</span>
+                                        <span style={{ color: 'var(--jobs-warning)' }}>{t("timeline-under-review", { defaultValue: "Under Review..." })}</span>
                                     </>
                                 )}
                                 {app.status === 'rejected' && (
                                     <>
                                         <span className="mx-1">→</span>
-                                        <span style={{ color: 'var(--jobs-danger)' }}>Rejected</span>
+                                        <span style={{ color: 'var(--jobs-danger)' }}>{t("timeline-rejected", { defaultValue: "Rejected" })}</span>
                                     </>
                                 )}
                             </>
                         ) : app.assessment ? (
-                            <span style={{ color: 'var(--jobs-warning)' }}>OA Pending</span>
+                            <span style={{ color: 'var(--jobs-warning)' }}>{t("timeline-oa-pending", { defaultValue: "OA Pending" })}</span>
                         ) : null}
                     </>
                 )}
@@ -120,7 +124,7 @@ function ApplicationCard({ application: app }: { application: Application }) {
                     style={{ borderRadius: 'var(--jobs-radius-sm)' }}
                 >
                     <FileCode2 size={14} />
-                    Start Online Assessment
+                    {t("start-online-assessment", { defaultValue: "Start Online Assessment" })}
                 </Link>
             )}
 
@@ -134,42 +138,42 @@ function ApplicationCard({ application: app }: { application: Application }) {
             )}
 
             <p className="text-xs mt-3" style={{ color: 'var(--jobs-text-subtle)' }}>
-                Applied {new Date(app.createdAt).toLocaleDateString()}
+                {t("applied-date", { defaultValue: "Applied {{date}}", date: new Date(app.createdAt).toLocaleDateString() })}
             </p>
         </div>
     );
 }
 
-function getStatusConfig(app: Application) {
+function getStatusConfig(app: Application, t: (key: string, opts: { defaultValue: string }) => string) {
     switch (app.status) {
         case 'pending':
             return {
-                label: 'Under Review',
+                label: t("status-under-review", { defaultValue: "Under Review" }),
                 className: 'status-pending',
                 icon: <Clock size={12} />,
             };
         case 'rejected':
             return {
-                label: 'Rejected',
+                label: t("status-rejected", { defaultValue: "Rejected" }),
                 className: 'status-rejected',
                 icon: <XCircle size={12} />,
             };
         case 'oa_invited':
             if (app.assessment?.submittedAt) {
                 return {
-                    label: 'OA Complete',
+                    label: t("status-oa-complete", { defaultValue: "OA Complete" }),
                     className: 'status-oa-invited',
                     icon: <CheckCircle2 size={12} />,
                 };
             }
             return {
-                label: 'OA Invited',
+                label: t("status-oa-invited", { defaultValue: "OA Invited" }),
                 className: 'status-oa-invited',
                 icon: <AlertTriangle size={12} />,
             };
         case 'oa_completed':
             return {
-                label: 'OA Completed',
+                label: t("status-oa-completed", { defaultValue: "OA Completed" }),
                 className: 'status-oa-invited',
                 icon: <CheckCircle2 size={12} />,
             };

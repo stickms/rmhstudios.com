@@ -9,6 +9,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Layers, Loader2, ArrowLeft, ExternalLink, RotateCw } from 'lucide-react';
 import { toast } from '@/lib/rmhstudy/toast-store';
 
@@ -35,6 +36,7 @@ const GRADES: { grade: number; label: string; cls: string }[] = [
 ];
 
 export default function RmhStudyFlashcards() {
+  const { t } = useTranslation("c-rmhstudy");
   const [loading, setLoading] = useState(true);
   const [signedIn, setSignedIn] = useState(true);
   const [mine, setMine] = useState<DeckRow[]>([]);
@@ -71,13 +73,13 @@ export default function RmhStudyFlashcards() {
     try {
       const res = await fetch(`/api/study/decks/${deck.id}/review`, { credentials: 'include' });
       if (!res.ok) {
-        toast.error('Could not load cards');
+        toast.error(t("could-not-load-cards", { defaultValue: "Could not load cards" }));
         return;
       }
       const data = await res.json();
       const due: DueCard[] = data.due ?? [];
       if (due.length === 0) {
-        toast.info('No cards due right now — nice work!');
+        toast.info(t("no-cards-due", { defaultValue: "No cards due right now — nice work!" }));
         return;
       }
       setActiveDeck(deck);
@@ -86,7 +88,7 @@ export default function RmhStudyFlashcards() {
       setRevealed(false);
       setDone(false);
     } catch {
-      toast.error('Could not load cards');
+      toast.error(t("could-not-load-cards", { defaultValue: "Could not load cards" }));
     }
   }, []);
 
@@ -134,7 +136,7 @@ export default function RmhStudyFlashcards() {
   if (!signedIn) {
     return (
       <div className="p-6 text-center text-sm text-(--rmhstudy-text-muted)">
-        Sign in to study flashcards in this room.
+        {t("sign-in-prompt", { defaultValue: "Sign in to study flashcards in this room." })}
       </div>
     );
   }
@@ -149,7 +151,7 @@ export default function RmhStudyFlashcards() {
             onClick={exitReview}
             className="flex items-center gap-1.5 text-sm text-(--rmhstudy-text-muted) hover:text-(--rmhstudy-text)"
           >
-            <ArrowLeft className="h-4 w-4" /> Decks
+            <ArrowLeft className="h-4 w-4" /> {t("decks", { defaultValue: "Decks" })}
           </button>
           <span className="text-xs text-(--rmhstudy-text-muted)">
             {done ? `${cards.length}/${cards.length}` : `${index + 1}/${cards.length}`} · {activeDeck.title}
@@ -159,20 +161,20 @@ export default function RmhStudyFlashcards() {
         {done ? (
           <div className="rounded-xl border border-(--rmhstudy-border) bg-(--rmhstudy-surface) p-8 text-center space-y-4">
             <Layers className="h-8 w-8 mx-auto text-(--rmhstudy-accent)" />
-            <p className="font-semibold">Session complete!</p>
-            <p className="text-sm text-(--rmhstudy-text-muted)">You reviewed {cards.length} card{cards.length === 1 ? '' : 's'}.</p>
+            <p className="font-semibold">{t("session-complete", { defaultValue: "Session complete!" })}</p>
+            <p className="text-sm text-(--rmhstudy-text-muted)">{t("session-reviewed", { defaultValue: "You reviewed {{count}} card.", count: cards.length })}</p>
             <div className="flex items-center justify-center gap-2">
               <button
                 onClick={() => startReview(activeDeck)}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-(--rmhstudy-surface-hover) text-(--rmhstudy-text) hover:bg-(--rmhstudy-surface-active)"
               >
-                <RotateCw className="h-4 w-4" /> Again
+                <RotateCw className="h-4 w-4" /> {t("again", { defaultValue: "Again" })}
               </button>
               <button
                 onClick={exitReview}
                 className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-(--rmhstudy-accent) hover:bg-(--rmhstudy-accent-hover)"
               >
-                Back to decks
+                {t("back-to-decks", { defaultValue: "Back to decks" })}
               </button>
             </div>
           </div>
@@ -190,7 +192,7 @@ export default function RmhStudyFlashcards() {
                   <span className="text-(--rmhstudy-text-muted) whitespace-pre-wrap">{card?.back}</span>
                 </>
               ) : (
-                <span className="text-xs text-(--rmhstudy-text-dim)">Tap to reveal</span>
+                <span className="text-xs text-(--rmhstudy-text-dim)">{t("tap-to-reveal", { defaultValue: "Tap to reveal" })}</span>
               )}
             </button>
 
@@ -203,7 +205,7 @@ export default function RmhStudyFlashcards() {
                     onClick={() => grade(g.grade)}
                     className={`py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${g.cls}`}
                   >
-                    {g.label}
+                    {t(`grade-${g.grade}`, { defaultValue: g.label })}
                   </button>
                 ))}
               </div>
@@ -224,7 +226,7 @@ export default function RmhStudyFlashcards() {
       <div className="min-w-0 flex-1">
         <div className="text-sm font-medium truncate">{deck.title}</div>
         <div className="text-xs text-(--rmhstudy-text-muted) truncate">
-          {deck.cardCount} card{deck.cardCount === 1 ? '' : 's'}{subtitle ? ` · ${subtitle}` : ''}
+          {t("card-count", { defaultValue: "{{count}} card", count: deck.cardCount })}{subtitle ? ` · ${subtitle}` : ''}
         </div>
       </div>
     </button>
@@ -234,7 +236,7 @@ export default function RmhStudyFlashcards() {
     <div className="p-4 max-w-2xl mx-auto space-y-5">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold flex items-center gap-2">
-          <Layers className="h-4 w-4 text-(--rmhstudy-accent)" /> Flashcards
+          <Layers className="h-4 w-4 text-(--rmhstudy-accent)" /> {t("flashcards", { defaultValue: "Flashcards" })}
         </h3>
         <a
           href="/study"
@@ -242,16 +244,16 @@ export default function RmhStudyFlashcards() {
           rel="noreferrer"
           className="flex items-center gap-1 text-xs text-(--rmhstudy-text-muted) hover:text-(--rmhstudy-text)"
         >
-          Manage decks <ExternalLink className="h-3 w-3" />
+          {t("manage-decks", { defaultValue: "Manage decks" })} <ExternalLink className="h-3 w-3" />
         </a>
       </div>
 
       <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-wider text-(--rmhstudy-text-muted)">My decks</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-(--rmhstudy-text-muted)">{t("my-decks", { defaultValue: "My decks" })}</p>
         {mine.length === 0 ? (
           <p className="text-xs text-(--rmhstudy-text-dim) py-2">
-            No decks yet. Create one on the{' '}
-            <a href="/study" target="_blank" rel="noreferrer" className="underline">Flashcards page</a>.
+            {t("no-decks-yet", { defaultValue: "No decks yet. Create one on the" })}{' '}
+            <a href="/study" target="_blank" rel="noreferrer" className="underline">{t("flashcards-page", { defaultValue: "Flashcards page" })}</a>.
           </p>
         ) : (
           mine.map((d) => <DeckButton key={d.id} deck={d} />)
@@ -260,9 +262,9 @@ export default function RmhStudyFlashcards() {
 
       {popular.length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wider text-(--rmhstudy-text-muted)">Popular decks</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-(--rmhstudy-text-muted)">{t("popular-decks", { defaultValue: "Popular decks" })}</p>
           {popular.map((d) => (
-            <DeckButton key={d.id} deck={d} subtitle={d.user?.name ? `by ${d.user.name}` : undefined} />
+            <DeckButton key={d.id} deck={d} subtitle={d.user?.name ? t("by-name", { defaultValue: "by {{name}}", name: d.user.name }) : undefined} />
           ))}
         </div>
       )}

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from "react-i18next";
 import { getCategoryColor, ALL_CATEGORIES } from '@/lib/news-categories';
 
 interface NewsCategoryTabsProps {
@@ -13,6 +14,7 @@ export function NewsCategoryTabs({
     onCategoryChange,
     availableCategories,
 }: NewsCategoryTabsProps) {
+    const { t } = useTranslation("c-news");
     const categories = availableCategories ?? ALL_CATEGORIES;
 
     return (
@@ -24,7 +26,7 @@ export function NewsCategoryTabs({
                         : 'bg-(--site-surface) text-(--site-text-muted) border border-(--site-border) hover:text-(--site-text) hover:bg-(--site-surface-hover)'
                     }`}
             >
-                All
+                {t("all", { defaultValue: "All" })}
             </button>
             {categories.map((category) => {
                 const color = getCategoryColor(category);

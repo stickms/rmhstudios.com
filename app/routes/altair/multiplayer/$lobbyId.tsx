@@ -7,6 +7,7 @@
 
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState, useCallback, lazy, Suspense } from 'react'
+import { useTranslation } from 'react-i18next'
 import { connectToAltair, emit } from '@/lib/altair/multiplayer/socket'
 import { useAltairMultiplayerStore } from '@/lib/altair/multiplayer/store'
 import { C2S, S2C } from '@/lib/altair/multiplayer/events'
@@ -27,6 +28,7 @@ const MultiplayerResultsScreen = lazy(
 )
 
 function AltairLobbyPage() {
+  const { t } = useTranslation("r-altair")
   const { lobbyId } = Route.useParams()
   const navigate = useNavigate()
   const lobby = useAltairMultiplayerStore((s) => s.lobby)
@@ -51,7 +53,7 @@ function AltairLobbyPage() {
         socket.on(S2C.LOBBY_KICKED, () => {
           if (mounted) {
             useAltairMultiplayerStore.getState().leaveLobby()
-            addToast('You were kicked from the lobby', 'warning')
+            addToast(t("kicked-from-lobby", { defaultValue: "You were kicked from the lobby" }), 'warning')
             navigate({ to: '/altair/multiplayer' })
           }
         })
@@ -60,7 +62,7 @@ function AltairLobbyPage() {
         socket.on(S2C.LOBBY_DISBANDED, () => {
           if (mounted) {
             useAltairMultiplayerStore.getState().leaveLobby()
-            addToast('Lobby was disbanded', 'info')
+            addToast(t("lobby-disbanded", { defaultValue: "Lobby was disbanded" }), 'info')
             navigate({ to: '/altair/multiplayer' })
           }
         })
@@ -74,7 +76,7 @@ function AltairLobbyPage() {
           }
         })
       } catch (err) {
-        if (mounted) addToast(err instanceof Error ? err.message : 'Failed to connect', 'error')
+        if (mounted) addToast(err instanceof Error ? err.message : t("failed-to-connect", { defaultValue: "Failed to connect" }), 'error')
       }
     }
 
@@ -95,7 +97,7 @@ function AltairLobbyPage() {
         <AltairHeader context="menu" title="Multiplayer" onBack={() => navigate({ to: '/altair/multiplayer' })} connectionStatus={connectionStatus} />
         <div className="flex flex-1 items-center justify-center">
           <div className="text-center">
-            <div className="text-2xl mb-4 text-(--altair-text)">Connecting...</div>
+            <div className="text-2xl mb-4 text-(--altair-text)">{t("connecting", { defaultValue: "Connecting..." })}</div>
             <div className="animate-spin w-8 h-8 border-2 border-t-transparent rounded-full mx-auto border-(--altair-accent)" style={{ borderTopColor: 'transparent' }} />
           </div>
         </div>
@@ -110,12 +112,12 @@ function AltairLobbyPage() {
         <AltairHeader context="menu" title="Multiplayer" onBack={() => navigate({ to: '/altair/multiplayer' })} connectionStatus={connectionStatus} />
         <div className="flex flex-1 items-center justify-center">
           <div className="text-center">
-            <div className="text-2xl mb-4 text-(--altair-danger)">Connection error</div>
+            <div className="text-2xl mb-4 text-(--altair-danger)">{t("connection-error", { defaultValue: "Connection error" })}</div>
             <button
               onClick={() => navigate({ to: '/altair/multiplayer' })}
               className="px-6 py-2 rounded-lg bg-(--altair-accent) text-white font-semibold hover:bg-(--altair-accent-hover) transition-colors"
             >
-              Back to Lobby Browser
+              {t("back-to-lobby-browser", { defaultValue: "Back to Lobby Browser" })}
             </button>
           </div>
         </div>
@@ -130,7 +132,7 @@ function AltairLobbyPage() {
         <AltairHeader context="menu" title="Multiplayer" onBack={() => navigate({ to: '/altair/multiplayer' })} connectionStatus={connectionStatus} />
         <div className="flex flex-1 items-center justify-center">
           <div className="text-center">
-            <div className="text-2xl mb-4 text-(--altair-text)">Joining lobby {lobbyId}...</div>
+            <div className="text-2xl mb-4 text-(--altair-text)">{t("joining-lobby", { defaultValue: "Joining lobby {{lobbyId}}...", lobbyId })}</div>
             <div className="animate-spin w-8 h-8 border-2 border-t-transparent rounded-full mx-auto border-(--altair-accent)" style={{ borderTopColor: 'transparent' }} />
           </div>
         </div>
@@ -146,7 +148,7 @@ function AltairLobbyPage() {
       <Suspense fallback={
         <div className="fixed inset-0 bg-(--altair-bg) flex items-center justify-center">
           <div className="text-(--altair-accent) font-mono tracking-widest animate-pulse text-sm">
-            LOADING GAME...
+            {t("loading-game", { defaultValue: "LOADING GAME..." })}
           </div>
         </div>
       }>
@@ -178,7 +180,7 @@ function AltairLobbyPage() {
         <AltairHeader context="menu" title="Multiplayer" connectionStatus={connectionStatus} />
         <div className="flex flex-1 items-center justify-center">
           <div className="text-center">
-            <div className="text-sm text-(--altair-text-muted) mb-4 uppercase tracking-widest">Game starts in</div>
+            <div className="text-sm text-(--altair-text-muted) mb-4 uppercase tracking-widest">{t("game-starts-in", { defaultValue: "Game starts in" })}</div>
             <div
               className="text-9xl font-black text-(--altair-accent) animate-pulse"
               style={{ fontFamily: 'var(--altair-font-display)' }}

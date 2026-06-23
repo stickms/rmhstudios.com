@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useBlackjackStore } from '@/lib/blackjack/store';
 import { CoinIcon } from './CoinIcon';
@@ -8,6 +9,7 @@ import { CoinIcon } from './CoinIcon';
 export function BlackjackSessionStats() {
   const players = useBlackjackStore((s) => s.players);
   const myUserId = useBlackjackStore((s) => s.myUserId);
+  const { t } = useTranslation("c-rmhcoins");
   const [expanded, setExpanded] = useState(false);
 
   const sorted = [...players].sort((a, b) => {
@@ -26,7 +28,7 @@ export function BlackjackSessionStats() {
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center justify-between px-3 py-2 text-xs font-bold text-site-text-dim hover:text-site-text transition-colors"
       >
-        <span>Session Stats</span>
+        <span>{t("session-stats", { defaultValue: "Session Stats" })}</span>
         {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
       </button>
 
@@ -35,11 +37,11 @@ export function BlackjackSessionStats() {
           <table className="w-full text-xs">
             <thead>
               <tr className="text-site-text-dim border-b border-site-border">
-                <th className="text-left py-1 font-medium">Player</th>
-                <th className="text-right py-1 font-medium">Bet</th>
-                <th className="text-right py-1 font-medium">Won</th>
-                <th className="text-right py-1 font-medium">Net</th>
-                <th className="text-right py-1 font-medium">W/L</th>
+                <th className="text-left py-1 font-medium">{t("player", { defaultValue: "Player" })}</th>
+                <th className="text-right py-1 font-medium">{t("bet", { defaultValue: "Bet" })}</th>
+                <th className="text-right py-1 font-medium">{t("won", { defaultValue: "Won" })}</th>
+                <th className="text-right py-1 font-medium">{t("net", { defaultValue: "Net" })}</th>
+                <th className="text-right py-1 font-medium">{t("wl", { defaultValue: "W/L" })}</th>
               </tr>
             </thead>
             <tbody>
@@ -49,7 +51,7 @@ export function BlackjackSessionStats() {
                 return (
                   <tr key={p.userId} className={isMe ? 'text-yellow-400' : 'text-site-text'}>
                     <td className="py-1 font-bold truncate max-w-20">
-                      {isMe ? 'You' : p.userName}
+                      {isMe ? t("you", { defaultValue: "You" }) : p.userName}
                     </td>
                     <td className="text-right py-1">
                       <span className="inline-flex items-center gap-0.5">

@@ -1,5 +1,6 @@
 'use client';
 import * as React from 'react';
+import { useTranslation } from "react-i18next";
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,6 +33,7 @@ const formatBind = (bind: string) =>
         .replace('Key', '').replace('Arrow', '');
 
 const KeybindInput = ({ label, value, onChange }: { label: string, value: string, onChange: (val: string) => void }) => {
+    const { t } = useTranslation("c-game");
     const [listening, setListening] = React.useState(false);
     const justAssigned = React.useRef(false);
 
@@ -78,7 +80,7 @@ const KeybindInput = ({ label, value, onChange }: { label: string, value: string
                     setListening(true);
                 }}
             >
-                {listening ? 'PRESS KEY/BTN...' : formatBind(value)}
+                {listening ? t("press-key-btn", { defaultValue: "PRESS KEY/BTN..." }) : formatBind(value)}
             </Button>
         </div>
     );
@@ -86,6 +88,7 @@ const KeybindInput = ({ label, value, onChange }: { label: string, value: string
 
 
 export function MainMenu({ engine: propEngine }: MainMenuProps) {
+    const { t } = useTranslation("c-game");
     const { setUserName, userName, keybinds, setKeybinds, volume, setVolume, hitSound, setHitSound, setIsLoadingSong, setLoadingProgress, setLoadingProgressText, setIsMultiplayer, setCountdown } = useGameStore();
     const setSongId = useGameStore(state => state.setSongId);
     const setStatus = useGameStore(state => state.setStatus);
@@ -437,7 +440,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                     {(isLoading || session.isPending) && (
                 <div className="absolute inset-0 z-70 bg-slice-bg/80 flex items-center justify-center flex-col gap-4">
                     <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                    <div className="text-blue-500 font-extrabold animate-pulse uppercase tracking-widest">{session.isPending ? 'Validating Session' : 'Initializing Track'}</div>
+                    <div className="text-blue-500 font-extrabold animate-pulse uppercase tracking-widest">{session.isPending ? t("validating-session", { defaultValue: "Validating Session" }) : t("initializing-track", { defaultValue: "Initializing Track" })}</div>
                 </div>
             )}
 
@@ -448,7 +451,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                         {userName ? userName.charAt(0).toUpperCase() : '?'}
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-[10px] font-black text-slice-text-light uppercase tracking-wider">System Operator</span>
+                        <span className="text-[10px] font-black text-slice-text-light uppercase tracking-wider">{t("system-operator", { defaultValue: "System Operator" })}</span>
                         <div className="font-black text-slice-text text-base uppercase tracking-tight">{userName || 'GUEST'}</div>
                     </div>
                 </div>
@@ -460,14 +463,14 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                         onClick={() => setShowMultiplayer(true)}
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mr-1.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                        MULTIPLAYER
+                        {t("multiplayer", { defaultValue: "MULTIPLAYER" })}
                     </Button>
                     <Button
                         variant="ghost"
                         size="icon"
                         className="h-10 w-10 text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark dark:text-slice-text-muted dark:hover:text-slice-text dark:hover:bg-slice-shadow-light rounded-lg transition-all"
                         onClick={() => setIsDarkMode(!isDarkMode)}
-                        title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                        title={isDarkMode ? t("switch-to-light-mode", { defaultValue: "Switch to Light Mode" }) : t("switch-to-dark-mode", { defaultValue: "Switch to Dark Mode" })}
                     >
                         {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
                     </Button>
@@ -477,7 +480,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                         className="h-10 w-10 text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark dark:text-slice-text-muted dark:hover:text-slice-text dark:hover:bg-slice-shadow-light rounded-lg transition-all"
                         onClick={() => setShowSettings(true)}
                     >
-                        <span className="sr-only">Settings</span>
+                        <span className="sr-only">{t("settings", { defaultValue: "Settings" })}</span>
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
                     </Button>
                 </div>
@@ -488,14 +491,14 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                 {!session.data && !session.isPending && (
                     <div className="absolute inset-0 z-60 bg-slice-bg/90 flex items-center justify-center p-8 backdrop-blur-xl rounded-[4rem] shadow-[inset_15px_15px_40px_var(--slice-shadow-dark),inset_-15px_-15px_40px_var(--slice-shadow-light)]">
                         <div className="w-full max-w-md space-y-10 text-center animate-in fade-in zoom-in duration-700">
-                             <h3 className="text-3xl sm:text-5xl font-black tracking-tighter uppercase italic text-slice-text">Connect to Start</h3>
-                             <p className="text-slice-text-muted font-bold uppercase text-xs tracking-[0.5em] opacity-60">Authentication is required for leaderboard ranking</p>
+                             <h3 className="text-3xl sm:text-5xl font-black tracking-tighter uppercase italic text-slice-text">{t("connect-to-start", { defaultValue: "Connect to Start" })}</h3>
+                             <p className="text-slice-text-muted font-bold uppercase text-xs tracking-[0.5em] opacity-60">{t("auth-required", { defaultValue: "Authentication is required for leaderboard ranking" })}</p>
                              <div className="space-y-6">
                                 <Button
                                     className="w-full py-6 sm:py-12 text-xl sm:text-3xl font-black tracking-widest bg-blue-500 hover:bg-blue-400 text-white shadow-[15px_15px_30px_rgba(59,130,246,0.4),-15px_-15px_30px_var(--slice-shadow-light)] rounded-[2.5rem] transition-all transform hover:scale-[1.03] active:scale-95 uppercase"
                                     onClick={() => navigate({ to: '/login', search: { callbackURL: undefined } })}
                                 >
-                                    Log In
+                                    {t("log-in", { defaultValue: "Log In" })}
                                 </Button>
                              </div>
                         </div>
@@ -525,7 +528,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                         <div className="absolute top-0 right-0 bottom-0 w-full sm:max-w-2xl bg-slice-bg shadow-2xl z-70 animate-in slide-in-from-right duration-300 flex flex-col overflow-hidden">
                             {/* Sidebar Header */}
                             <div className="flex items-center justify-between p-4 border-b border-slice-shadow-dark/50 bg-slice-shadow-dark/20">
-                                <h2 className="text-lg font-black text-slice-text">Song Details</h2>
+                                <h2 className="text-lg font-black text-slice-text">{t("song-details", { defaultValue: "Song Details" })}</h2>
                                 <Button
                                     variant="ghost"
                                     size="icon"
@@ -555,24 +558,24 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
             {showSettings && (
                 <div className="absolute inset-0 z-80 bg-slice-bg p-5 sm:p-12 flex flex-col animate-in slide-in-from-right-10 overflow-y-auto">
                     <div className="flex items-center justify-between mb-5 sm:mb-12">
-                        <h2 className="text-2xl sm:text-5xl font-black text-slice-text tracking-tighter uppercase italic">System Configuration</h2>
+                        <h2 className="text-2xl sm:text-5xl font-black text-slice-text tracking-tighter uppercase italic">{t("system-configuration", { defaultValue: "System Configuration" })}</h2>
                         <Button 
                             variant="ghost" 
                             className="bg-slice-bg shadow-[5px_5px_12px_var(--slice-shadow-dark),-5px_-5px_12px_var(--slice-shadow-light)] active:shadow-inner text-slice-text-muted hover:text-slice-text font-black uppercase tracking-[0.2em] px-5 sm:px-10 h-10 sm:h-16 rounded-2xl text-sm" 
                             onClick={() => setShowSettings(false)}
                         >
-                            CLOSE
+                            {t("close", { defaultValue: "CLOSE" })}
                         </Button>
                     </div>
 
                     <div className="max-w-3xl mx-auto w-full space-y-8 sm:space-y-12">
                          {/* Settings content ... */}
                          <div className="space-y-4">
-                            <label className="text-[10px] text-slice-text-light uppercase tracking-[0.4em] font-black ml-4">Authorized Operator</label>
-                            <input 
-                                type="text" 
+                            <label className="text-[10px] text-slice-text-light uppercase tracking-[0.4em] font-black ml-4">{t("authorized-operator", { defaultValue: "Authorized Operator" })}</label>
+                            <input
+                                type="text"
                                 className="w-full bg-slice-bg shadow-[inset_4px_4px_8px_var(--slice-shadow-dark),inset_-4px_-4px_8px_var(--slice-shadow-light)] rounded-2xl p-6 text-xl font-bold text-slice-text focus:outline-none transition-shadow"
-                                placeholder="Enter name"
+                                placeholder={t("enter-name", { defaultValue: "Enter name" })}
                                 maxLength={32}
                                 value={userName}
                                 onChange={(e) => setUserName(e.target.value)}
@@ -581,16 +584,16 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
                              <div className="space-y-4">
-                                <label className="text-[10px] text-slice-text-light uppercase tracking-[0.4em] font-black ml-4">Audio Output Level</label>
+                                <label className="text-[10px] text-slice-text-light uppercase tracking-[0.4em] font-black ml-4">{t("audio-output-level", { defaultValue: "Audio Output Level" })}</label>
                                 <div className="bg-slice-bg p-8 rounded-3xl shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)] space-y-6">
                                      <div className="flex justify-between text-sm font-black text-slice-text-darker">
-                                        <span>Master</span>
+                                        <span>{t("master", { defaultValue: "Master" })}</span>
                                         <span className="text-blue-500 font-mono">{volume}%</span>
                                      </div>
                                      <Slider value={[volume]} max={100} step={1} onValueChange={handleVolumeChange} />
                                      
                                      <div className="flex justify-between text-sm font-black text-slice-text-darker pt-4">
-                                        <span>Effects</span>
+                                        <span>{t("effects", { defaultValue: "Effects" })}</span>
                                         <span className="text-blue-500 font-mono">{useGameStore.getState().sfxVolume}%</span>
                                      </div>
                                      <Slider value={[useGameStore.getState().sfxVolume]} max={100} step={1} onValueChange={(vals) => useGameStore.getState().setSfxVolume(vals[0])} />
@@ -598,10 +601,10 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                              </div>
 
                              <div className="space-y-4">
-                                <label className="text-[10px] text-slice-text-light uppercase tracking-[0.4em] font-black ml-4">Input Mapping</label>
+                                <label className="text-[10px] text-slice-text-light uppercase tracking-[0.4em] font-black ml-4">{t("input-mapping", { defaultValue: "Input Mapping" })}</label>
                                 <div className="space-y-4">
-                                    <KeybindInput label="Lane A" value={keybinds.lane1} onChange={(k) => setKeybinds({...keybinds, lane1: k})} />
-                                    <KeybindInput label="Lane B" value={keybinds.lane2} onChange={(k) => setKeybinds({...keybinds, lane2: k})} />
+                                    <KeybindInput label={t("lane-a", { defaultValue: "Lane A" })} value={keybinds.lane1} onChange={(k) => setKeybinds({...keybinds, lane1: k})} />
+                                    <KeybindInput label={t("lane-b", { defaultValue: "Lane B" })} value={keybinds.lane2} onChange={(k) => setKeybinds({...keybinds, lane2: k})} />
                                 </div>
 
                                 <div className="pt-4">
@@ -609,7 +612,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
                                         className="w-full h-16 bg-slice-bg text-slice-text-darker shadow-[8px_8px_16px_var(--slice-shadow-dark),-8px_-8px_16px_var(--slice-shadow-light)] active:shadow-inner rounded-2xl font-black text-sm tracking-widest uppercase transition-all"
                                         onClick={() => setShowCalibration(true)}
                                     >
-                                        Calibrate Synchronization
+                                        {t("calibrate-synchronization", { defaultValue: "Calibrate Synchronization" })}
                                     </Button>
                                     <div className="text-center text-[10px] text-slice-text-light font-mono mt-3 uppercase tracking-[0.2em]">
                                         Offset: {useGameStore.getState().audioOffset}ms
@@ -620,7 +623,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
 
                         {/* Hit Sound Selector */}
                         <div className="space-y-4">
-                            <label className="text-[10px] text-slice-text-light uppercase tracking-[0.4em] font-black ml-4">Hit Sound Effect</label>
+                            <label className="text-[10px] text-slice-text-light uppercase tracking-[0.4em] font-black ml-4">{t("hit-sound-effect", { defaultValue: "Hit Sound Effect" })}</label>
                             <div className="bg-slice-bg p-6 rounded-3xl shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)]">
                                 {(() => {
                                     const categories = [...new Set(hitSoundOptions.map(s => s.category))];

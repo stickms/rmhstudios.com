@@ -8,6 +8,7 @@
 
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import Fuse from 'fuse.js';
+import { useTranslation } from 'react-i18next';
 
 interface GuessInputProps {
   onSubmit: (guess: string) => void;
@@ -18,6 +19,7 @@ interface GuessInputProps {
 }
 
 export default function GuessInput({ onSubmit, disabled, maxGuesses, guessesUsed, movieTitles }: GuessInputProps) {
+  const { t } = useTranslation("c-rmhbox");
   const [value, setValue] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -79,7 +81,7 @@ export default function GuessInput({ onSubmit, disabled, maxGuesses, guessesUsed
           <input
             ref={inputRef}
             type="text"
-            placeholder={disabled ? 'No guesses remaining' : 'Guess the movie…'}
+            placeholder={disabled ? t("no-guesses-remaining", { defaultValue: "No guesses remaining" }) : t("guess-the-movie", { defaultValue: "Guess the movie…" })}
             value={value}
             onChange={(e) => {
               setValue(e.target.value);
@@ -113,11 +115,11 @@ export default function GuessInput({ onSubmit, disabled, maxGuesses, guessesUsed
           disabled={disabled || !value.trim()}
           className="px-4 py-2 rounded-lg bg-(--rmhbox-accent) text-white font-semibold disabled:opacity-50"
         >
-          Guess
+          {t("guess", { defaultValue: "Guess" })}
         </button>
       </div>
       <span className="text-xs text-(--rmhbox-text-muted)">
-        {remaining} guess{remaining !== 1 ? 'es' : ''} remaining
+        {t("guesses-remaining", { count: remaining, defaultValue: "{{count}} guess remaining", defaultValue_other: "{{count}} guesses remaining" })}
       </span>
     </div>
   );

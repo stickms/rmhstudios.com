@@ -8,6 +8,7 @@
 'use client';
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import type { Card } from '@/lib/signal-forge';
 import { cardKeywordTags, keywordColor, typeColor, rarityBorder } from './uiHelpers';
@@ -23,15 +24,16 @@ interface RemoveProps {
 }
 
 export function CardRemovalModal({ deckList, removalCurrency, canRemove, onRemove, onClose }: RemoveProps) {
+  const { t } = useTranslation("c-signal-forge");
   return (
     <div className="w-full h-full bg-black bg-opacity-75 flex items-center justify-center z-50 p-6">
       <div className="bg-linear-to-b from-slate-900 to-black border-2 border-red-500 p-8 rounded-lg max-w-2xl w-full shadow-2xl">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-3xl font-bold text-red-400">Select Card to Remove</h2>
+          <h2 className="text-3xl font-bold text-red-400">{t("select-card-to-remove", { defaultValue: "Select Card to Remove" })}</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-red-400 text-2xl font-bold">✕</button>
         </div>
 
-        <p className="text-slate-300 mb-4">Choose a card to remove from your deck (Cost: {removalCurrency})</p>
+        <p className="text-slate-300 mb-4">{t("choose-card-to-remove", { defaultValue: "Choose a card to remove from your deck (Cost: {{cost}})", cost: removalCurrency })}</p>
 
         <div className="max-h-96 overflow-y-auto space-y-2 bg-black bg-opacity-50 p-4 rounded border border-slate-700 mb-6">
           {deckList.map((card) => {
@@ -62,7 +64,7 @@ export function CardRemovalModal({ deckList, removalCurrency, canRemove, onRemov
                     disabled={!canRemove}
                     className="bg-red-600 hover:bg-red-700 disabled:bg-slate-700 text-white font-bold px-4 py-2 rounded ml-3 shrink-0"
                   >
-                    Remove
+                    {t("remove", { defaultValue: "Remove" })}
                   </Button>
                 </div>
               </div>
@@ -71,7 +73,7 @@ export function CardRemovalModal({ deckList, removalCurrency, canRemove, onRemov
         </div>
 
         <Button onClick={onClose} className="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-lg">
-          Cancel
+          {t("cancel", { defaultValue: "Cancel" })}
         </Button>
       </div>
     </div>
@@ -89,17 +91,18 @@ interface UpgradeProps {
 }
 
 export function CardUpgradeModal({ deckList, upgradeCurrency, canUpgrade, onUpgrade, onClose }: UpgradeProps) {
+  const { t } = useTranslation("c-signal-forge");
   const upgradableCards = deckList.filter(c => !c.upgraded);
 
   return (
     <div className="w-full h-full bg-black bg-opacity-75 flex items-center justify-center z-50 p-6">
       <div className="bg-linear-to-b from-slate-900 to-black border-2 border-yellow-500 p-8 rounded-lg max-w-2xl w-full shadow-2xl">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-3xl font-bold text-yellow-400">Select Card to Upgrade</h2>
+          <h2 className="text-3xl font-bold text-yellow-400">{t("select-card-to-upgrade", { defaultValue: "Select Card to Upgrade" })}</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-yellow-400 text-2xl font-bold">✕</button>
         </div>
 
-        <p className="text-slate-300 mb-4">Choose a card to upgrade: +25% damage/shield (Cost: {upgradeCurrency})</p>
+        <p className="text-slate-300 mb-4">{t("choose-card-to-upgrade", { defaultValue: "Choose a card to upgrade: +25% damage/shield (Cost: {{cost}})", cost: upgradeCurrency })}</p>
 
         <div className="max-h-96 overflow-y-auto space-y-2 bg-black bg-opacity-50 p-4 rounded border border-slate-700 mb-6">
           {upgradableCards.map((card) => {
@@ -140,7 +143,7 @@ export function CardUpgradeModal({ deckList, upgradeCurrency, canUpgrade, onUpgr
                     disabled={!canUpgrade}
                     className="bg-yellow-600 hover:bg-yellow-700 disabled:bg-slate-700 text-white font-bold px-4 py-2 rounded ml-3 shrink-0"
                   >
-                    Upgrade
+                    {t("upgrade", { defaultValue: "Upgrade" })}
                   </Button>
                 </div>
               </div>
@@ -149,7 +152,7 @@ export function CardUpgradeModal({ deckList, upgradeCurrency, canUpgrade, onUpgr
         </div>
 
         <Button onClick={onClose} className="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-lg">
-          Cancel
+          {t("cancel", { defaultValue: "Cancel" })}
         </Button>
       </div>
     </div>

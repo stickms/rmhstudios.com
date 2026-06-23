@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, Suspense } from 'react';
+import { useTranslation } from 'react-i18next';
 import { SlidersHorizontal } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { NewsList } from '@/components/news/NewsList';
@@ -11,6 +12,7 @@ interface NewsPageContentProps {
 }
 
 export function NewsPageContent({ articles, featured, rightSidebar }: NewsPageContentProps) {
+    const { t } = useTranslation("c-news");
     const [filtersOpen, setFiltersOpen] = useState(false);
     const panelRef = useRef<HTMLDivElement>(null);
 
@@ -28,7 +30,7 @@ export function NewsPageContent({ articles, featured, rightSidebar }: NewsPageCo
 
     return (
         <PageLayout
-            title="News"
+            title={t("news-title", { defaultValue: "News" })}
             wide
             rightSidebar={rightSidebar}
             headerRight={
@@ -40,13 +42,13 @@ export function NewsPageContent({ articles, featured, rightSidebar }: NewsPageCo
                             ? 'text-site-accent bg-site-accent-dim'
                             : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
                     }`}
-                    title="Toggle filters"
+                    title={t("toggle-filters", { defaultValue: "Toggle filters" })}
                 >
                     <SlidersHorizontal className="w-5 h-5" />
                 </button>
             }
         >
-            <Suspense fallback={<div className="px-4 py-8 text-center text-site-text-dim">Loading...</div>}>
+            <Suspense fallback={<div className="px-4 py-8 text-center text-site-text-dim">{t("loading", { defaultValue: "Loading..." })}</div>}>
                 <NewsList
                     initialArticles={articles}
                     featuredArticles={featured}

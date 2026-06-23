@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/lib/versecraft/store';
 import { CHARACTERS } from '@/lib/versecraft/characters';
 import { formatPlaytime } from '@/lib/versecraft/persistence';
@@ -18,6 +19,8 @@ export function ProgressScreen() {
   const affinity = useGameStore(s => s.affinity);
   const totalPoemsWritten = useGameStore(s => s.totalPoemsWritten);
   const playtime = useGameStore(s => s.playtime);
+
+  const { t } = useTranslation("c-versecraft");
 
   const [dbProgress, setDbProgress] = useState<ProgressData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -87,7 +90,7 @@ export function ProgressScreen() {
               className="text-3xl md:text-4xl font-bold"
               style={{ fontFamily: 'var(--font-cinzel, serif)', color: '#e8e0d0' }}
             >
-              Your Journey
+              {t("your-journey", { defaultValue: "Your Journey" })}
             </h1>
             <button
               onClick={() => setScreen('menu')}
@@ -98,7 +101,7 @@ export function ProgressScreen() {
                 color: '#a89888',
               }}
             >
-              Back
+              {t("back", { defaultValue: "Back" })}
             </button>
           </div>
 
@@ -117,7 +120,7 @@ export function ProgressScreen() {
           </div>
 
           {loading && (
-            <p className="text-xs" style={{ color: '#666' }}>Syncing progress...</p>
+            <p className="text-xs" style={{ color: '#666' }}>{t("syncing-progress", { defaultValue: "Syncing progress..." })}</p>
           )}
         </motion.div>
 
@@ -129,10 +132,10 @@ export function ProgressScreen() {
           transition={{ delay: 0.2 }}
         >
           {[
-            { label: 'Poems Written', value: String(progress.totalPoemsWritten) },
-            { label: 'Playtime', value: formatPlaytime(progress.totalPlaytime) },
-            { label: 'Chapters', value: `${progress.completedChapters.length}/${ALL_CHAPTERS.length}` },
-            { label: 'Favorite', value: favoriteChar ? CHARACTERS[favoriteChar[0]]?.names.feminine.first ?? '—' : '—' },
+            { label: t("stat-poems-written", { defaultValue: "Poems Written" }), value: String(progress.totalPoemsWritten) },
+            { label: t("stat-playtime", { defaultValue: "Playtime" }), value: formatPlaytime(progress.totalPlaytime) },
+            { label: t("stat-chapters", { defaultValue: "Chapters" }), value: `${progress.completedChapters.length}/${ALL_CHAPTERS.length}` },
+            { label: t("stat-favorite", { defaultValue: "Favorite" }), value: favoriteChar ? CHARACTERS[favoriteChar[0]]?.names.feminine.first ?? '—' : '—' },
           ].map(stat => (
             <div
               key={stat.label}
@@ -156,11 +159,11 @@ export function ProgressScreen() {
             className="text-xl font-semibold mb-4"
             style={{ fontFamily: 'var(--font-playfair, serif)', color: '#e8e0d0' }}
           >
-            Chapters
+            {t("chapters-heading", { defaultValue: "Chapters" })}
           </h2>
           {Object.entries(chaptersByAct).map(([act, chapters]) => (
             <div key={act} className="mb-4">
-              <h3 className="text-sm mb-2" style={{ color: '#c4a35a' }}>Act {act}</h3>
+              <h3 className="text-sm mb-2" style={{ color: '#c4a35a' }}>{t("act-label", { defaultValue: "Act {{act}}", act })}</h3>
               <div className="grid grid-cols-5 gap-2">
                 {chapters.map(ch => {
                   const completed = progress.completedChapters.includes(ch.id);
@@ -173,7 +176,7 @@ export function ProgressScreen() {
                         border: `1px solid ${completed ? 'rgba(196, 163, 90, 0.3)' : 'rgba(255,255,255,0.05)'}`,
                         color: completed ? '#e8e0d0' : '#555',
                       }}
-                      title={completed ? ch.title : 'Locked'}
+                      title={completed ? ch.title : t("locked", { defaultValue: "Locked" })}
                     >
                       {completed ? (
                         <>
@@ -183,7 +186,7 @@ export function ProgressScreen() {
                       ) : (
                         <>
                           <div>&#128274;</div>
-                          <div>Ch. {ch.number}</div>
+                          <div>{t("chapter-number", { defaultValue: "Ch. {{number}}", number: ch.number })}</div>
                         </>
                       )}
                     </div>
@@ -205,7 +208,7 @@ export function ProgressScreen() {
             className="text-xl font-semibold mb-4"
             style={{ fontFamily: 'var(--font-playfair, serif)', color: '#e8e0d0' }}
           >
-            Character Routes
+            {t("character-routes-heading", { defaultValue: "Character Routes" })}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {ALL_ROUTES.map(route => {
@@ -240,7 +243,7 @@ export function ProgressScreen() {
                       {route.id === 'muse' && !isStarted ? '???' : route.name}
                     </div>
                     <div className="text-xs truncate" style={{ color: '#888' }}>
-                      {isCompleted ? 'Route Complete' : isStarted ? 'In Progress' : route.id === 'muse' ? 'Hidden Route' : 'Locked'}
+                      {isCompleted ? t("route-complete", { defaultValue: "Route Complete" }) : isStarted ? t("in-progress", { defaultValue: "In Progress" }) : route.id === 'muse' ? t("hidden-route", { defaultValue: "Hidden Route" }) : t("locked", { defaultValue: "Locked" })}
                     </div>
                     {charAffinity && charAffinity.affinity > 0 && (
                       <div className="mt-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(42, 34, 53, 0.8)' }}>
@@ -268,7 +271,7 @@ export function ProgressScreen() {
             className="text-xl font-semibold mb-4"
             style={{ fontFamily: 'var(--font-playfair, serif)', color: '#e8e0d0' }}
           >
-            Endings ({progress.unlockedEndings.length}/{ALL_ENDINGS.length})
+            {t("endings-heading", { defaultValue: "Endings ({{unlocked}}/{{total}})", unlocked: progress.unlockedEndings.length, total: ALL_ENDINGS.length })}
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {ALL_ENDINGS.map(ending => {
@@ -290,7 +293,7 @@ export function ProgressScreen() {
                     {unlocked ? ending.name : '???'}
                   </div>
                   <div className="text-xs" style={{ color: unlocked ? '#a89888' : '#444' }}>
-                    {unlocked ? ending.description : 'Ending not yet discovered'}
+                    {unlocked ? ending.description : t("ending-not-discovered", { defaultValue: "Ending not yet discovered" })}
                   </div>
                 </div>
               );
@@ -306,7 +309,7 @@ export function ProgressScreen() {
             animate={{ opacity: 0.8 }}
             transition={{ delay: 0.6 }}
           >
-            Sign in to save your progress to the cloud
+            {t("sign-in-to-save", { defaultValue: "Sign in to save your progress to the cloud" })}
           </motion.p>
         )}
       </div>

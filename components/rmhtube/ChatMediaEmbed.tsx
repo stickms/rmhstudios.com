@@ -8,6 +8,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { ImageOff } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 // ─── URL extraction & classification ─────────────────────────────
 
@@ -163,6 +164,7 @@ function useTenorResolve(url: string | null): { src: string | null; loading: boo
 // ─── Single embed renderer ───────────────────────────────────────
 
 function EmbedItem({ embed }: { embed: MediaEmbedInfo }) {
+  const { t } = useTranslation("c-rmhtube");
   const [error, setError] = useState(false);
   const tenor = useTenorResolve(
     embed.type === 'tenor-pending' ? embed.originalUrl : null,
@@ -180,7 +182,7 @@ function EmbedItem({ embed }: { embed: MediaEmbedInfo }) {
       return (
         <div className="mt-1 inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-(--rmhtube-surface) text-(--rmhtube-text-dim) text-xs">
           <ImageOff className="h-3.5 w-3.5" />
-          Failed to load media
+          {t("failed-to-load-media", { defaultValue: "Failed to load media" })}
         </div>
       );
     }

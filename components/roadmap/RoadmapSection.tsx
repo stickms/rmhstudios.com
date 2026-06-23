@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 
 type Milestone = {
   title: string;
@@ -853,6 +854,7 @@ function MilestoneCard({ title, body }: { title: string; body: string }) {
 }
 
 export function RoadmapSection() {
+  const { t } = useTranslation("c-roadmap");
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -898,10 +900,7 @@ export function RoadmapSection() {
       {/* Intro */}
       <div className="roadmap-animate mb-6 rounded-xl border border-site-border bg-site-surface backdrop-blur-sm p-4">
         <p className="text-site-text-muted text-sm leading-relaxed">
-          We&apos;re an indie studio building rhythm games, deckbuilders,
-          narrative horror, and more. Our roadmap isn&apos;t tied to one
-          title—we&apos;re growing the catalog, Discord, and new worlds in
-          parallel. Timelines are guides, not promises.
+          {t("intro-body", { defaultValue: "We're an indie studio building rhythm games, deckbuilders, narrative horror, and more. Our roadmap isn't tied to one title—we're growing the catalog, Discord, and new worlds in parallel. Timelines are guides, not promises." })}
         </p>
       </div>
 
@@ -937,7 +936,7 @@ export function RoadmapSection() {
       </div>
 
       <p className="roadmap-animate text-center text-site-text-dim text-xs mt-10 pb-4">
-        We&apos;ll update this as we ship.
+        {t("update-note", { defaultValue: "We'll update this as we ship." })}
       </p>
     </div>
   );

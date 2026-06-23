@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from 'react-i18next';
 import {
   BarChart,
   Bar,
@@ -127,10 +128,11 @@ const headerCell: React.CSSProperties = {
    -------------------------------------------- */
 
 export function NeuromorphicNPCPaper() {
+  const { t } = useTranslation("c-research");
   return (
     <>
       {/* 1. INTRODUCTION */}
-      <h2 style={h2Style}>1. Introduction</h2>
+      <h2 style={h2Style}>{t("section-1-intro", { defaultValue: "1. Introduction" })}</h2>
 
       <p className="mb-4">
         Non-player character (NPC) artificial intelligence remains one of the most persistent
@@ -203,9 +205,9 @@ export function NeuromorphicNPCPaper() {
       </p>
 
       {/* 2. NEUROMORPHIC ARCHITECTURE DESIGN */}
-      <h2 style={h2Style}>2. Neuromorphic Architecture Design</h2>
+      <h2 style={h2Style}>{t("section-2-arch", { defaultValue: "2. Neuromorphic Architecture Design" })}</h2>
 
-      <h3 style={h3Style}>2.1 Spiking Neuron Model</h3>
+      <h3 style={h3Style}>{t("section-2-1", { defaultValue: "2.1 Spiking Neuron Model" })}</h3>
 
       <p className="mb-4">
         The fundamental computational unit of our NPC cognition framework is the leaky
@@ -254,7 +256,7 @@ export function NeuromorphicNPCPaper() {
         superior temporal credit assignment in the STDP learning rule described in Section 3.
       </p>
 
-      <h3 style={h3Style}>2.2 Hierarchical Network Topology</h3>
+      <h3 style={h3Style}>{t("section-2-2", { defaultValue: "2.2 Hierarchical Network Topology" })}</h3>
 
       <p className="mb-4">
         Our NPC cognition architecture organizes spiking neurons into a four-layer
@@ -324,7 +326,7 @@ export function NeuromorphicNPCPaper() {
         more natural-appearing NPC movement.
       </p>
 
-      <h3 style={h3Style}>2.3 Neurocore Mapping</h3>
+      <h3 style={h3Style}>{t("section-2-3", { defaultValue: "2.3 Neurocore Mapping" })}</h3>
 
       <p className="mb-4">
         The total network comprises <Tex math="N = N_S + N_C + N_I + N_E + N_M = 2{,}176" /> neurons
@@ -358,9 +360,9 @@ export function NeuromorphicNPCPaper() {
       </PaperFigure>
 
       {/* 3. SPIKE-TIMING DEPENDENT LEARNING */}
-      <h2 style={h2Style}>3. Spike-Timing Dependent Learning</h2>
+      <h2 style={h2Style}>{t("section-3-stdp", { defaultValue: "3. Spike-Timing Dependent Learning" })}</h2>
 
-      <h3 style={h3Style}>3.1 Classical STDP</h3>
+      <h3 style={h3Style}>{t("section-3-1", { defaultValue: "3.1 Classical STDP" })}</h3>
 
       <p className="mb-4">
         The biological plausibility of our NPC cognition framework derives in large part
@@ -399,7 +401,7 @@ export function NeuromorphicNPCPaper() {
         layer.
       </p>
 
-      <h3 style={h3Style}>3.2 Reward-Modulated STDP (R-STDP)</h3>
+      <h3 style={h3Style}>{t("section-3-2", { defaultValue: "3.2 Reward-Modulated STDP (R-STDP)" })}</h3>
 
       <p className="mb-4">
         Classical STDP alone is insufficient for goal-directed NPC behavior because it
@@ -430,7 +432,7 @@ export function NeuromorphicNPCPaper() {
         connection between biological plasticity and policy gradient reinforcement learning.
       </p>
 
-      <h3 style={h3Style}>3.3 Homeostatic Plasticity</h3>
+      <h3 style={h3Style}>{t("section-3-3", { defaultValue: "3.3 Homeostatic Plasticity" })}</h3>
 
       <p className="mb-4">
         To maintain stable network dynamics during online learning, we supplement R-STDP
@@ -462,9 +464,9 @@ export function NeuromorphicNPCPaper() {
       </p>
 
       {/* 4. HARDWARE IMPLEMENTATION */}
-      <h2 style={h2Style}>4. Hardware Implementation</h2>
+      <h2 style={h2Style}>{t("section-4-hw", { defaultValue: "4. Hardware Implementation" })}</h2>
 
-      <h3 style={h3Style}>4.1 Intel Loihi 2 Deployment</h3>
+      <h3 style={h3Style}>{t("section-4-1", { defaultValue: "4.1 Intel Loihi 2 Deployment" })}</h3>
 
       <p className="mb-4">
         The primary hardware platform for our NPC cognition framework is the Intel
@@ -494,7 +496,7 @@ export function NeuromorphicNPCPaper() {
         routing optimized for the recurrent connectivity pattern.
       </p>
 
-      <h3 style={h3Style}>4.2 Spike Encoding and Decoding Interface</h3>
+      <h3 style={h3Style}>{t("section-4-2", { defaultValue: "4.2 Spike Encoding and Decoding Interface" })}</h3>
 
       <p className="mb-4">
         The interface between the game engine and the neuromorphic chip is mediated
@@ -523,7 +525,7 @@ export function NeuromorphicNPCPaper() {
         fresh sensory input available without introducing synchronization stalls.
       </p>
 
-      <h3 style={h3Style}>4.3 Multi-Agent Scaling</h3>
+      <h3 style={h3Style}>{t("section-4-3", { defaultValue: "4.3 Multi-Agent Scaling" })}</h3>
 
       <p className="mb-4">
         A key advantage of the neuromorphic approach is the ability to scale to
@@ -541,44 +543,44 @@ export function NeuromorphicNPCPaper() {
       <table className={tableStyle}>
         <thead>
           <tr>
-            <th style={headerCell}>Component</th>
-            <th style={headerCell}>Neurons</th>
-            <th style={headerCell}>Synapses</th>
-            <th style={headerCell}>Neurocores</th>
-            <th style={headerCell}>Avg. Power (mW)</th>
+            <th style={headerCell}>{t("col-component", { defaultValue: "Component" })}</th>
+            <th style={headerCell}>{t("col-neurons", { defaultValue: "Neurons" })}</th>
+            <th style={headerCell}>{t("col-synapses", { defaultValue: "Synapses" })}</th>
+            <th style={headerCell}>{t("col-neurocores", { defaultValue: "Neurocores" })}</th>
+            <th style={headerCell}>{t("col-avg-power-mw", { defaultValue: "Avg. Power (mW)" })}</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td style={cellStyle}>Sensory Encoding (S)</td>
+            <td style={cellStyle}>{t("row-sensory-encoding", { defaultValue: "Sensory Encoding (S)" })}</td>
             <td style={cellCenter}>512</td>
             <td style={cellCenter}>262K</td>
             <td style={cellCenter}>1 (shared)</td>
             <td style={cellCenter}>0.28</td>
           </tr>
           <tr>
-            <td style={cellStyle}>Cognitive Integration (C+I)</td>
+            <td style={cellStyle}>{t("row-cognitive-integration", { defaultValue: "Cognitive Integration (C+I)" })}</td>
             <td style={cellCenter}>1,280</td>
             <td style={cellCenter}>819K</td>
             <td style={cellCenter}>1.5</td>
             <td style={cellCenter}>0.61</td>
           </tr>
           <tr>
-            <td style={cellStyle}>Emotional Modulation (E)</td>
+            <td style={cellStyle}>{t("row-emotional-modulation", { defaultValue: "Emotional Modulation (E)" })}</td>
             <td style={cellCenter}>128</td>
             <td style={cellCenter}>65K</td>
             <td style={cellCenter}>0.25 (shared)</td>
             <td style={cellCenter}>0.08</td>
           </tr>
           <tr>
-            <td style={cellStyle}>Motor Output (M)</td>
+            <td style={cellStyle}>{t("row-motor-output", { defaultValue: "Motor Output (M)" })}</td>
             <td style={cellCenter}>256</td>
             <td style={cellCenter}>131K</td>
             <td style={cellCenter}>0.25 (shared)</td>
             <td style={cellCenter}>0.14</td>
           </tr>
           <tr>
-            <td style={{ ...cellStyle, fontWeight: 'bold' }}>Total per NPC</td>
+            <td style={{ ...cellStyle, fontWeight: 'bold' }}>{t("row-total-per-npc", { defaultValue: "Total per NPC" })}</td>
             <td style={{ ...cellCenter, fontWeight: 'bold' }}>2,176</td>
             <td style={{ ...cellCenter, fontWeight: 'bold' }}>1.28M</td>
             <td style={{ ...cellCenter, fontWeight: 'bold' }}>3.0</td>
@@ -604,9 +606,9 @@ export function NeuromorphicNPCPaper() {
       </PaperFigure>
 
       {/* 5. EXPERIMENTAL RESULTS */}
-      <h2 style={h2Style}>5. Experimental Results</h2>
+      <h2 style={h2Style}>{t("section-5-results", { defaultValue: "5. Experimental Results" })}</h2>
 
-      <h3 style={h3Style}>5.1 Experimental Setup</h3>
+      <h3 style={h3Style}>{t("section-5-1", { defaultValue: "5.1 Experimental Setup" })}</h3>
 
       <p className="mb-4">
         We evaluated our neuromorphic NPC cognition framework across three game
@@ -629,11 +631,11 @@ export function NeuromorphicNPCPaper() {
       <table className={tableStyle}>
         <thead>
           <tr>
-            <th style={headerCell}>Architecture</th>
-            <th style={headerCell}>Training Method</th>
-            <th style={headerCell}>Training Time (hrs)</th>
-            <th style={headerCell}>Training Energy (kWh)</th>
-            <th style={headerCell}>Inference Power (W)</th>
+            <th style={headerCell}>{t("col-architecture", { defaultValue: "Architecture" })}</th>
+            <th style={headerCell}>{t("col-training-method", { defaultValue: "Training Method" })}</th>
+            <th style={headerCell}>{t("col-training-time-hrs", { defaultValue: "Training Time (hrs)" })}</th>
+            <th style={headerCell}>{t("col-training-energy-kwh", { defaultValue: "Training Energy (kWh)" })}</th>
+            <th style={headerCell}>{t("col-inference-power-w", { defaultValue: "Inference Power (W)" })}</th>
           </tr>
         </thead>
         <tbody>
@@ -668,7 +670,7 @@ export function NeuromorphicNPCPaper() {
         </tbody>
       </table>
 
-      <h3 style={h3Style}>5.2 Behavioral Turing Tests</h3>
+      <h3 style={h3Style}>{t("section-5-2", { defaultValue: "5.2 Behavioral Turing Tests" })}</h3>
 
       <p className="mb-4">
         To assess the perceptual quality of NPC behavior, we conducted a series of
@@ -716,7 +718,7 @@ export function NeuromorphicNPCPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      <h3 style={h3Style}>5.3 Online Learning Dynamics</h3>
+      <h3 style={h3Style}>{t("section-5-3", { defaultValue: "5.3 Online Learning Dynamics" })}</h3>
 
       <p className="mb-4">
         A central advantage of the neuromorphic NPC framework is the ability to
@@ -764,7 +766,7 @@ export function NeuromorphicNPCPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      <h3 style={h3Style}>5.4 Spike Sparsity and Energy Efficiency</h3>
+      <h3 style={h3Style}>{t("section-5-4", { defaultValue: "5.4 Spike Sparsity and Energy Efficiency" })}</h3>
 
       <p className="mb-4">
         The extraordinary energy efficiency of neuromorphic NPC inference is a direct
@@ -796,7 +798,7 @@ export function NeuromorphicNPCPaper() {
       <TexBlock math="E_{\mathrm{DNN}} = N_{\mathrm{MACs}} \cdot E_{\mathrm{MAC}} = 2.4 \times 10^6 \times 8.1\,\mathrm{pJ} = 19.4\,\mu\mathrm{J}" />
       <TexBlock math="\text{Efficiency Ratio} = \frac{E_{\mathrm{DNN}}}{E_{\mathrm{SNN}}} = \frac{19.4 \times 10^{-6}}{3.78 \times 10^{-9}} \approx 5{,}132\times" />
 
-      <h3 style={h3Style}>5.5 Scalability Analysis</h3>
+      <h3 style={h3Style}>{t("section-5-5", { defaultValue: "5.5 Scalability Analysis" })}</h3>
 
       <p className="mb-4">
         To characterize the scaling properties of our neuromorphic NPC framework, we
@@ -828,11 +830,11 @@ export function NeuromorphicNPCPaper() {
       <table className={tableStyle}>
         <thead>
           <tr>
-            <th style={headerCell}>NPC Count</th>
-            <th style={headerCell}>Loihi 2 Power (W)</th>
-            <th style={headerCell}>GPU Power (W)</th>
-            <th style={headerCell}>Power Ratio</th>
-            <th style={headerCell}>Mean BT Score</th>
+            <th style={headerCell}>{t("col-npc-count", { defaultValue: "NPC Count" })}</th>
+            <th style={headerCell}>{t("col-loihi-power-w", { defaultValue: "Loihi 2 Power (W)" })}</th>
+            <th style={headerCell}>{t("col-gpu-power-w", { defaultValue: "GPU Power (W)" })}</th>
+            <th style={headerCell}>{t("col-power-ratio", { defaultValue: "Power Ratio" })}</th>
+            <th style={headerCell}>{t("col-mean-bt-score", { defaultValue: "Mean BT Score" })}</th>
           </tr>
         </thead>
         <tbody>
@@ -875,9 +877,9 @@ export function NeuromorphicNPCPaper() {
       </table>
 
       {/* 6. DISCUSSION */}
-      <h2 style={h2Style}>6. Discussion</h2>
+      <h2 style={h2Style}>{t("section-6-discussion", { defaultValue: "6. Discussion" })}</h2>
 
-      <h3 style={h3Style}>6.1 Implications for Game Development</h3>
+      <h3 style={h3Style}>{t("section-6-1", { defaultValue: "6.1 Implications for Game Development" })}</h3>
 
       <p className="mb-4">
         The results presented in Section 5 establish that neuromorphic spiking neural
@@ -908,7 +910,7 @@ export function NeuromorphicNPCPaper() {
         to designing learning environments in which emergent behaviors arise naturally.
       </p>
 
-      <h3 style={h3Style}>6.2 Edge Computing and Embodied AI</h3>
+      <h3 style={h3Style}>{t("section-6-2", { defaultValue: "6.2 Edge Computing and Embodied AI" })}</h3>
 
       <p className="mb-4">
         Beyond the gaming domain, our results provide a compelling proof-of-concept
@@ -937,7 +939,7 @@ export function NeuromorphicNPCPaper() {
         is predominantly served by devices with power budgets of 3&ndash;8 W.
       </p>
 
-      <h3 style={h3Style}>6.3 Limitations and Future Work</h3>
+      <h3 style={h3Style}>{t("section-6-3", { defaultValue: "6.3 Limitations and Future Work" })}</h3>
 
       <p className="mb-4">
         Several limitations of the current work merit discussion. First, the Loihi 2
@@ -971,7 +973,7 @@ export function NeuromorphicNPCPaper() {
         design.
       </p>
 
-      <h3 style={h3Style}>6.4 Biological Plausibility and Neuroscience Connections</h3>
+      <h3 style={h3Style}>{t("section-6-4", { defaultValue: "6.4 Biological Plausibility and Neuroscience Connections" })}</h3>
 
       <p className="mb-4">
         An intriguing secondary contribution of this work is the validation of
@@ -1005,7 +1007,7 @@ export function NeuromorphicNPCPaper() {
       </p>
 
       {/* 7. CONCLUSION */}
-      <h2 style={h2Style}>7. Conclusion</h2>
+      <h2 style={h2Style}>{t("section-7-conclusion", { defaultValue: "7. Conclusion" })}</h2>
 
       <p className="mb-4">
         We have presented a comprehensive framework for deploying spiking neural
@@ -1047,7 +1049,7 @@ export function NeuromorphicNPCPaper() {
       </p>
 
       {/* REFERENCES */}
-      <h2 style={h2Style}>References</h2>
+      <h2 style={h2Style}>{t("section-references", { defaultValue: "References" })}</h2>
 
       <div style={{ fontSize: '9pt', lineHeight: '1.6' }}>
         <p className="mb-2">[1] Akopyan, F., et al. (2015). TrueNorth: Design and tool flow of a 65 mW 1 million neuron programmable neurosynaptic chip. <em>IEEE Transactions on Computer-Aided Design of Integrated Circuits and Systems</em>, 34(10), 1537&ndash;1557.</p>

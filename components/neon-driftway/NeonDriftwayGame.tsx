@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useEffect, useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { NeonDriftwayEngine } from '@/lib/neon-driftway/game';
 import { NeonDriftwayRenderer } from '@/lib/neon-driftway/renderer';
 import { SpriteSheet } from '@/lib/neon-driftway/sprites';
@@ -51,6 +52,7 @@ export function NeonDriftwayGame() {
   const [currentLevel, setCurrentLevel] = useState<LevelId>(1);
   const [multiplayerRankings, setMultiplayerRankings] = useState<{ id: string; name: string; score: number; rank: number }[]>([]);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const { t } = useTranslation("c-neon-driftway");
 
   // Multiplayer refs
   const multiplayerRoomRef = useRef<string | null>(null);
@@ -421,12 +423,12 @@ export function NeonDriftwayGame() {
       {uiState === 'multiplayerGameOver' && (
         <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-auto bg-black/80 backdrop-blur-sm">
           <div className="max-w-md w-full px-4 space-y-4">
-            <h2 className="text-4xl font-black text-cyan-400 text-center tracking-tight">RACE OVER</h2>
+            <h2 className="text-4xl font-black text-cyan-400 text-center tracking-tight">{t("race-over", { defaultValue: "RACE OVER" })}</h2>
 
             {runStats && (
               <div className="bg-zinc-900/80 border border-zinc-700 rounded-lg p-5 space-y-3">
                 <div className="text-center">
-                  <div className="text-xs text-zinc-400 uppercase tracking-wider">Your Score</div>
+                  <div className="text-xs text-zinc-400 uppercase tracking-wider">{t("your-score", { defaultValue: "Your Score" })}</div>
                   <div className="text-3xl font-black text-cyan-400 tabular-nums">
                     {runStats.score.toLocaleString()}
                   </div>
@@ -436,7 +438,7 @@ export function NeonDriftwayGame() {
 
             {multiplayerRankings.length > 0 && (
               <div className="bg-zinc-900/80 border border-zinc-700 rounded-lg p-4 space-y-2">
-                <div className="text-xs text-zinc-400 uppercase tracking-wider mb-2">Final Rankings</div>
+                <div className="text-xs text-zinc-400 uppercase tracking-wider mb-2">{t("final-rankings", { defaultValue: "Final Rankings" })}</div>
                 {multiplayerRankings.map((r) => {
                   const myId = NDWMultiplayerClient.getInstance().getSocketId();
                   const isSelf = r.id === myId;
@@ -448,7 +450,7 @@ export function NeonDriftwayGame() {
                           #{r.rank}
                         </span>
                         <span className={`font-bold text-sm ${isSelf ? 'text-cyan-400' : 'text-white'}`}>
-                          {r.name} {isSelf ? '(You)' : ''}
+                          {r.name} {isSelf ? t("you-label", { defaultValue: "(You)" }) : ''}
                         </span>
                       </div>
                       <span className="font-bold text-cyan-300 tabular-nums">{r.score.toLocaleString()}</span>
@@ -463,13 +465,13 @@ export function NeonDriftwayGame() {
                 onClick={() => setUiState('menu')}
                 className="flex-1 bg-zinc-700 hover:bg-zinc-600 text-white font-bold py-2 px-4 rounded transition-colors"
               >
-                Main Menu
+                {t("main-menu", { defaultValue: "Main Menu" })}
               </button>
               <button
                 onClick={() => setUiState('multiplayerMenu')}
                 className="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-4 rounded transition-colors"
               >
-                Play Again
+                {t("play-again", { defaultValue: "Play Again" })}
               </button>
             </div>
           </div>

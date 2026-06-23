@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, ChevronDown, ChevronUp, Play, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { formatDateKey, getTodayEST } from '@/lib/daily-puzzles/seed';
@@ -21,6 +22,7 @@ export function PastPuzzlesSection({
     onSelectDate,
     renderScore,
 }: PastPuzzlesSectionProps) {
+    const { t } = useTranslation("c-daily-puzzles");
     const [showHistory, setShowHistory] = useState(false);
     const [completedMap, setCompletedMap] = useState<Record<string, PuzzleResult>>({});
     const session = authClient.useSession();
@@ -63,7 +65,7 @@ export function PastPuzzlesSection({
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 hover:bg-amber-500/30 transition-colors text-xs font-medium"
                     >
                         <ArrowLeft className="w-3 h-3" />
-                        Back to today&apos;s puzzle
+                        {t("back-to-todays-puzzle", { defaultValue: "Back to today's puzzle" })}
                     </button>
                 </div>
             )}
@@ -75,7 +77,7 @@ export function PastPuzzlesSection({
                     className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-site-surface border border-site-border text-site-text hover:border-site-accent/50 transition-colors text-sm font-medium"
                 >
                     <Calendar className="w-4 h-4" />
-                    Past Puzzles
+                    {t("past-puzzles", { defaultValue: "Past Puzzles" })}
                     {showHistory ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </button>
 
@@ -116,7 +118,7 @@ export function PastPuzzlesSection({
                                                             renderScore(result)
                                                         ) : (
                                                             <span className="font-mono font-semibold text-sm text-amber-400">
-                                                                {result.score} pts
+                                                                {t("score-pts", { defaultValue: "{{score}} pts", score: result.score })}
                                                             </span>
                                                         )
                                                     ) : (
@@ -126,7 +128,7 @@ export function PastPuzzlesSection({
                                                             className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-site-surface border border-site-border text-site-text hover:border-amber-500/50 transition-colors text-xs font-medium"
                                                         >
                                                             <Play className="w-3 h-3" />
-                                                            Play
+                                                            {t("play", { defaultValue: "Play" })}
                                                         </button>
                                                     )}
                                                 </div>

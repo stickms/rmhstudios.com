@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { PuzzleComponentProps } from './PuzzleRegistry';
 
 const RUNE_SYMBOLS = ['◈', '◇', '△', '○', '☆', '♢', '✧', '⬡'];
 
 export function RuneSequencePuzzle({ config, onSolve, onAttempt }: PuzzleComponentProps) {
+    const { t } = useTranslation("c-forest-explorer");
     const symbolCount = (config.symbolCount as number) ?? 5;
     const seqLength = (config.sequenceLength as number) ?? 4;
     const displayDuration = (config.displayDuration as number) ?? 800;
@@ -84,18 +86,18 @@ export function RuneSequencePuzzle({ config, onSolve, onAttempt }: PuzzleCompone
             {/* Status */}
             <div className="text-center">
                 {phase === 'showing' && (
-                    <p className="text-white/60 text-sm">Watch the pattern...</p>
+                    <p className="text-white/60 text-sm">{t("watch-the-pattern", { defaultValue: "Watch the pattern..." })}</p>
                 )}
                 {phase === 'input' && (
                     <p className="text-white/60 text-sm">
-                        Repeat the pattern ({playerInput.length}/{sequence.length})
+                        {t("repeat-the-pattern", { defaultValue: "Repeat the pattern ({{current}}/{{total}})", current: playerInput.length, total: sequence.length })}
                     </p>
                 )}
                 {phase === 'wrong' && (
-                    <p className="text-red-400 text-sm">Wrong! Watch again...</p>
+                    <p className="text-red-400 text-sm">{t("wrong-watch-again", { defaultValue: "Wrong! Watch again..." })}</p>
                 )}
                 {phase === 'correct' && (
-                    <p className="text-green-400 text-sm font-medium">Correct!</p>
+                    <p className="text-green-400 text-sm font-medium">{t("correct", { defaultValue: "Correct!" })}</p>
                 )}
             </div>
 

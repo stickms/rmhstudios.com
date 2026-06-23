@@ -5,6 +5,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Play, ShoppingBag, Settings, Trophy, Zap, Users, Clock, Crosshair, Sparkles, Coins, RefreshCw, X, ScrollText, Book } from 'lucide-react';
 import PatchnotesModal from './PatchnotesModal';
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
@@ -19,6 +20,7 @@ interface MenuScreenProps {
 }
 
 export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettings, onBestiary }: MenuScreenProps) {
+  const { t } = useTranslation("c-altair");
   const coins = useAltairMetaStore((s) => s.coins);
   const doubleTimeUnlocked = useAltairMetaStore((s) => s.doubleTimeUnlocked);
   const totalRuns = useAltairMetaStore((s) => s.totalRunsPlayed);
@@ -68,12 +70,12 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
         <p className="text-(--altair-text-muted) text-sm tracking-widest uppercase"
           style={{ fontFamily: 'var(--altair-font-display)' }}
         >
-          Survive the Realm
+          {t("survive-the-realm", { defaultValue: "Survive the Realm" })}
         </p>
         {doubleTimeUnlocked && (
           <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-(--altair-warning-dim) text-(--altair-warning) text-xs font-bold">
             <Zap size={12} />
-            Double Time Unlocked
+            {t("double-time-unlocked", { defaultValue: "Double Time Unlocked" })}
           </div>
         )}
       </div>
@@ -85,7 +87,7 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
           className={`flex items-center justify-center gap-2 py-4 rounded-lg font-bold text-white text-lg tracking-wider bg-(--altair-accent) hover:bg-(--altair-accent-hover) transition-all shadow-lg ${focusClass(0)}`}
         >
           <Play size={20} />
-          PLAY
+          {t("play", { defaultValue: "PLAY" })}
         </button>
 
         <button
@@ -93,7 +95,7 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
           className={`flex items-center justify-center gap-2 py-3 rounded-lg font-bold text-white tracking-wider bg-(--altair-info) hover:brightness-110 transition-all shadow-md ${focusClass(1)}`}
         >
           <Users size={18} />
-          MULTIPLAYER
+          {t("multiplayer", { defaultValue: "MULTIPLAYER" })}
         </button>
 
         <button
@@ -101,8 +103,8 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
           className={`flex items-center gap-2 px-4 py-3 rounded-lg font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:border-(--altair-border-bright) hover:bg-(--altair-surface-hover) transition-all ${focusClass(2)}`}
         >
           <ShoppingBag size={18} />
-          Meta Shop
-          <span className="ml-auto text-sm text-(--altair-warning) font-bold">{coins} coins</span>
+          {t("meta-shop", { defaultValue: "Meta Shop" })}
+          <span className="ml-auto text-sm text-(--altair-warning) font-bold">{t("coins-count", { defaultValue: "{{coins}} coins", coins })}</span>
         </button>
 
         <button
@@ -110,7 +112,7 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
           className={`flex items-center justify-center gap-2 py-3 rounded-lg font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:border-(--altair-border-bright) hover:bg-(--altair-surface-hover) transition-all ${focusClass(3)}`}
         >
           <Settings size={18} />
-          Settings
+          {t("settings", { defaultValue: "Settings" })}
         </button>
 
         <button
@@ -118,7 +120,7 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
           className={`flex items-center justify-center gap-2 py-3 rounded-lg font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:border-(--altair-border-bright) hover:bg-(--altair-surface-hover) transition-all ${focusClass(4)}`}
         >
           <Trophy size={18} />
-          Leaderboard
+          {t("leaderboard", { defaultValue: "Leaderboard" })}
         </button>
 
         <button
@@ -126,7 +128,7 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
           className={`flex items-center justify-center gap-2 py-3 rounded-lg font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:border-(--altair-border-bright) hover:bg-(--altair-surface-hover) transition-all ${focusClass(5)}`}
         >
           <Book size={18} />
-          Bestiary
+          {t("bestiary", { defaultValue: "Bestiary" })}
         </button>
 
         <button
@@ -134,13 +136,13 @@ export default function MenuScreen({ onPlay, onMultiplayer, onMetaShop, onSettin
           className={`flex items-center justify-center gap-2 py-3 rounded-lg font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:border-(--altair-border-bright) hover:bg-(--altair-surface-hover) transition-all ${focusClass(6)}`}
         >
           <ScrollText size={18} />
-          Patch Notes
+          {t("patch-notes", { defaultValue: "Patch Notes" })}
         </button>
       </div>
 
       {/* Stats footer */}
       <div className="mt-8 text-center text-(--altair-text-dim) text-xs">
-        <p>Runs played: {totalRuns}</p>
+        <p>{t("runs-played", { defaultValue: "Runs played: {{totalRuns}}", totalRuns })}</p>
       </div>
 
       {/* Leaderboard panel */}
@@ -199,6 +201,7 @@ function formatValue(entry: LeaderboardEntry, category: LeaderboardCategory): st
 // ── Leaderboard Modal ──────────────────────────────────────────
 
 function LeaderboardModal({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation("c-altair");
   const [category, setCategory] = useState<LeaderboardCategory>('gold');
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -236,13 +239,13 @@ function LeaderboardModal({ onClose }: { onClose: () => void }) {
         <div className="flex items-center justify-between px-5 pt-5 pb-3">
           <h2 className="text-xl font-bold text-(--altair-text) flex items-center gap-2">
             <Trophy size={20} className="text-(--altair-warning)" />
-            Leaderboard
+            {t("leaderboard", { defaultValue: "Leaderboard" })}
           </h2>
           <div className="flex items-center gap-2">
             <button
               onClick={() => fetchLeaderboard(category)}
               className="p-1.5 rounded-md text-(--altair-text-dim) hover:text-(--altair-text) hover:bg-(--altair-surface-hover) transition-colors"
-              title="Refresh"
+              title={t("refresh", { defaultValue: "Refresh" })}
             >
               <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
             </button>
@@ -291,7 +294,7 @@ function LeaderboardModal({ onClose }: { onClose: () => void }) {
 
           {!error && !loading && entries.length === 0 && (
             <p className="text-sm text-(--altair-text-muted) text-center py-6">
-              No entries yet. Play a game to get on the board!
+              {t("no-entries-yet", { defaultValue: "No entries yet. Play a game to get on the board!" })}
             </p>
           )}
 
@@ -322,7 +325,7 @@ function LeaderboardModal({ onClose }: { onClose: () => void }) {
 
                   {/* Games played (subtle) */}
                   <span className="text-[10px] text-(--altair-text-dim) w-10 text-right">
-                    {entry.gamesPlayed} run{entry.gamesPlayed !== 1 ? 's' : ''}
+                    {entry.gamesPlayed} {t("run-label", { defaultValue: "run", count: entry.gamesPlayed })}
                   </span>
                 </div>
               ))}

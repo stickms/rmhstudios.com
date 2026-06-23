@@ -1,8 +1,10 @@
 'use client';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export default function VibeCheck() {
+  const { t } = useTranslation('c-temple-of-joy');
   const vibeCheckTimer = useTempleStore((s) => s.vibeCheckTimer);
   const vibeBuff = useTempleStore((s) => s.vibeBuff);
   const showEventModal = useTempleStore((s) => s.showEventModal);
@@ -80,7 +82,7 @@ export default function VibeCheck() {
         }}
       >
         <div className="flex items-center justify-between mb-2">
-          <span className="font-bold text-base tracking-wide">✨ VIBE CHECK</span>
+          <span className="font-bold text-base tracking-wide">{t("vibe-check-heading", { defaultValue: "✨ VIBE CHECK" })}</span>
           <span
             className="text-2xl font-mono font-bold tabular-nums"
             style={{ color: dark ? '#d4a847' : '#8b6914' }}
@@ -89,7 +91,7 @@ export default function VibeCheck() {
           </span>
         </div>
         <p className="text-sm opacity-80 mb-4">
-          Your vibes are being evaluated. Pass to earn a happiness boost.
+          {t("vibe-check-description", { defaultValue: "Your vibes are being evaluated. Pass to earn a happiness boost." })}
         </p>
         {/* Countdown progress bar */}
         <div
@@ -112,7 +114,7 @@ export default function VibeCheck() {
             color: dark ? '#1a120b' : '#f5f0e8',
           }}
         >
-          I&#39;m Vibing 🌊
+          {t("im-vibing-button", { defaultValue: "I'm Vibing 🌊" })}
         </button>
       </div>
     </div>

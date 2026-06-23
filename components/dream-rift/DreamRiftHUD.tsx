@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from "react-i18next";
 import { useDreamRiftStore } from '@/lib/dream-rift/store';
 import {
   CANVAS_HEIGHT,
@@ -9,6 +10,7 @@ import {
 } from '@/lib/dream-rift/constants';
 
 export function DreamRiftHUD() {
+  const { t } = useTranslation("c-dream-rift");
   const player = useDreamRiftStore((s) => s.player);
   const stage = useDreamRiftStore((s) => s.stage);
   const difficulty = useDreamRiftStore((s) => s.difficulty);
@@ -37,7 +39,7 @@ export function DreamRiftHUD() {
           {/* Title bar */}
           <div className="px-3 py-2 border-b border-amber-400/20 text-center">
             <div className="text-[10px] tracking-[0.3em] text-amber-400/60 uppercase">
-              Dream Rift
+              {t("title", { defaultValue: "Dream Rift" })}
             </div>
           </div>
 
@@ -62,8 +64,8 @@ export function DreamRiftHUD() {
 
           {/* Scores section */}
           <div className="px-3 py-1.5">
-            <HUDRow label="HiScore" value={player.hiScore.toLocaleString()} />
-            <HUDRow label="Score" value={player.score.toLocaleString()} highlight />
+            <HUDRow label={t("hi-score", { defaultValue: "HiScore" })} value={player.hiScore.toLocaleString()} />
+            <HUDRow label={t("score", { defaultValue: "Score" })} value={player.score.toLocaleString()} highlight />
           </div>
 
           {/* Divider */}
@@ -72,7 +74,7 @@ export function DreamRiftHUD() {
           {/* Lives */}
           <div className="px-3 py-1.5">
             <div className="text-[8px] tracking-[0.2em] text-amber-400/40 uppercase mb-0.5">
-              Player
+              {t("player", { defaultValue: "Player" })}
             </div>
             <div className="flex gap-0.5">
               {Array.from({ length: Math.max(0, player.lives) }).map((_, i) => (
@@ -87,7 +89,7 @@ export function DreamRiftHUD() {
           {/* Bombs */}
           <div className="px-3 py-1.5">
             <div className="text-[8px] tracking-[0.2em] text-amber-400/40 uppercase mb-0.5">
-              Spell
+              {t("spell", { defaultValue: "Spell" })}
             </div>
             <div className="flex gap-0.5">
               {Array.from({ length: Math.max(0, player.bombs) }).map((_, i) => (
@@ -106,7 +108,7 @@ export function DreamRiftHUD() {
           <div className="px-3 py-1.5">
             <div className="flex items-baseline justify-between mb-1">
               <span className="text-[8px] tracking-[0.2em] text-amber-400/40 uppercase">
-                Power
+                {t("power", { defaultValue: "Power" })}
               </span>
               <span className="text-[9px] text-zinc-500 tabular-nums font-mono">
                 {player.power}/{POWER_MAX}
@@ -128,7 +130,7 @@ export function DreamRiftHUD() {
 
           {/* Graze */}
           <div className="px-3 py-1.5">
-            <HUDRow label="Graze" value={player.graze.toLocaleString()} />
+            <HUDRow label={t("graze", { defaultValue: "Graze" })} value={player.graze.toLocaleString()} />
           </div>
 
           {/* Spacer */}
@@ -137,11 +139,11 @@ export function DreamRiftHUD() {
           {/* Bottom info */}
           <div className="px-3 py-2 border-t border-amber-400/15">
             <div className="flex items-center justify-between text-[9px]">
-              <span className="text-amber-400/40">Stage</span>
+              <span className="text-amber-400/40">{t("stage", { defaultValue: "Stage" })}</span>
               <span className="text-zinc-300 tabular-nums font-mono">{stage}</span>
             </div>
             <div className="flex items-center justify-between text-[9px] mt-0.5">
-              <span className="text-amber-400/40">Difficulty</span>
+              <span className="text-amber-400/40">{t("difficulty", { defaultValue: "Difficulty" })}</span>
               <span style={{ color: diffColor }} className="tracking-wide">
                 {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
               </span>

@@ -17,6 +17,7 @@
 'use client';
 
 import { useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { BookOpen } from 'lucide-react';
 
@@ -89,6 +90,7 @@ export default function StoryDisplay({
   edits = [],
   showEdits = false,
 }: StoryDisplayProps) {
+  const { t } = useTranslation("c-rmhbox");
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to latest sentence
@@ -110,7 +112,7 @@ export default function StoryDisplay({
       <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
         {sentences.length === 0 && (
           <p className="text-center text-xs text-(--rmhbox-text-muted) italic py-4">
-            The story hasn&apos;t started yet…
+            {t("story-not-started", { defaultValue: "The story hasn't started yet…" })}
           </p>
         )}
         {sentences.map((s, i) => (
@@ -125,7 +127,7 @@ export default function StoryDisplay({
               {renderSentenceText(s.text, i, edits, showEdits)}
             </p>
             <p className="mt-1 text-[10px] text-(--rmhbox-text-muted)">
-              — {s.authorName} · Turn {s.turnNumber}
+              — {s.authorName} · {t("turn-number", { defaultValue: "Turn {{n}}", n: s.turnNumber })}
             </p>
           </motion.div>
         ))}

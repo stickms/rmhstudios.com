@@ -11,6 +11,7 @@
 'use client';
 
 import { useRef, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Undo2 } from 'lucide-react';
 import type { MMStroke } from './DrawingCard';
 
@@ -41,6 +42,7 @@ export default function DrawingCanvas({
   onUndo,
   disabled,
 }: DrawingCanvasProps) {
+  const { t } = useTranslation("c-rmhbox");
   const svgRef = useRef<SVGSVGElement>(null);
   // Pending first endpoint for click-click mode
   const [pendingStart, setPendingStart] = useState<Point | null>(null);
@@ -170,7 +172,7 @@ export default function DrawingCanvas({
   const previewStart = pendingStart ?? dragStart.current;
 
   return (
-    <div className="relative" tabIndex={0} onKeyDown={handleKeyDown} role="application" aria-label="Drawing canvas — place straight lines">
+    <div className="relative" tabIndex={0} onKeyDown={handleKeyDown} role="application" aria-label={t("drawing-canvas-label", { defaultValue: "Drawing canvas — place straight lines" })}>
       <svg
         ref={svgRef}
         viewBox="0 0 300 300"
@@ -232,8 +234,8 @@ export default function DrawingCanvas({
         <button
           onClick={onUndo}
           className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-(--rmhbox-surface)/80 border border-(--rmhbox-border) text-(--rmhbox-text) hover:bg-(--rmhbox-border) transition-colors"
-          title="Undo last stroke"
-          aria-label="Undo last stroke"
+          title={t("undo-last-stroke", { defaultValue: "Undo last stroke" })}
+          aria-label={t("undo-last-stroke", { defaultValue: "Undo last stroke" })}
         >
           <Undo2 size={16} />
         </button>
@@ -242,7 +244,7 @@ export default function DrawingCanvas({
       {/* Pending indicator — pointer-events-none so it doesn't block endpoint placement */}
       {pendingStart && (
         <span className="absolute bottom-2 left-2 text-xs text-(--rmhbox-text-muted) bg-(--rmhbox-surface)/80 px-2 py-0.5 rounded pointer-events-none select-none">
-          Click to place endpoint (Esc to cancel)
+          {t("click-to-place-endpoint", { defaultValue: "Click to place endpoint (Esc to cancel)" })}
         </span>
       )}
     </div>

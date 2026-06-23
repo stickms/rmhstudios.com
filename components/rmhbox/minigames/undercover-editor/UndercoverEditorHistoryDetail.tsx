@@ -9,6 +9,7 @@
  */
 'use client';
 
+import { useTranslation } from "react-i18next";
 import type { HistoryDetailProps } from '@/lib/rmhbox/history-display-registry';
 
 interface EditEntry {
@@ -96,6 +97,8 @@ export default function UndercoverEditorHistoryDetail({
   const revealAction = gameLog.actions.find((a) => a.type === 'reveal');
   const storyReveals = (revealAction?.payload?.storyReveals ?? []) as StoryReveal[];
 
+  const { t } = useTranslation("c-rmhbox");
+
   const getName = (userId: string) =>
     players.find((p) => p.userId === userId)?.userName ?? userId;
 
@@ -105,14 +108,14 @@ export default function UndercoverEditorHistoryDetail({
       {gameLog.initialState && (
         <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-3">
           <h4 className="text-xs font-semibold text-(--rmhbox-text-muted) uppercase mb-1">
-            Game Settings
+            {t("game-settings", { defaultValue: "Game Settings" })}
           </h4>
           <div className="flex flex-wrap gap-3 text-xs text-(--rmhbox-text-muted)">
             {gameLog.initialState.totalSteps != null && (
-              <span>Steps: {String(gameLog.initialState.totalSteps)}</span>
+              <span>{t("steps-value", { defaultValue: "Steps: {{count}}", count: gameLog.initialState.totalSteps })}</span>
             )}
             {gameLog.initialState.numPlayers != null && (
-              <span>Players: {String(gameLog.initialState.numPlayers)}</span>
+              <span>{t("players-value", { defaultValue: "Players: {{count}}", count: gameLog.initialState.numPlayers })}</span>
             )}
           </div>
         </div>
@@ -125,7 +128,7 @@ export default function UndercoverEditorHistoryDetail({
           className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-4"
         >
           <h4 className="text-sm font-semibold text-(--rmhbox-text-muted) mb-3">
-            📖 Story {idx + 1}
+            📖 {t("story-number", { defaultValue: "Story {{number}}", number: idx + 1 })}
           </h4>
 
           {/* Sentences with in-situ edit highlighting */}
@@ -143,9 +146,9 @@ export default function UndercoverEditorHistoryDetail({
                   <p className={`mt-1 text-[10px] ${
                     isMe ? 'text-(--rmhbox-accent) font-semibold' : 'text-(--rmhbox-text-muted)'
                   }`}>
-                    — {authorLabel} · Round {s.roundNumber}
+                    — {authorLabel} · {t("round-number", { defaultValue: "Round {{number}}", number: s.roundNumber })}
                     {sentenceEdits.length > 0 && (
-                      <span className="text-(--rmhbox-rare)"> · {sentenceEdits.length} edit{sentenceEdits.length > 1 ? 's' : ''}</span>
+                      <span className="text-(--rmhbox-rare)"> · {t("edit-count", { defaultValue: "{{count}} edit(s)", count: sentenceEdits.length })}</span>
                     )}
                   </p>
                 </div>
@@ -156,7 +159,7 @@ export default function UndercoverEditorHistoryDetail({
           {/* Editor reveal */}
           <div className="text-sm">
             <p className="text-(--rmhbox-text)">
-              Editor:{' '}
+              {t("editor-label", { defaultValue: "Editor:" })}{' '}
               <span className={`font-bold ${
                 reveal.editorUserId === currentUserId ? 'text-(--rmhbox-accent)' : 'text-(--rmhbox-rare)'
               }`}>
@@ -169,7 +172,7 @@ export default function UndercoverEditorHistoryDetail({
 
       {/* Final Scores */}
       <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-4">
-        <h4 className="text-sm font-semibold text-(--rmhbox-text-muted) mb-2">Final Scores</h4>
+        <h4 className="text-sm font-semibold text-(--rmhbox-text-muted) mb-2">{t("final-scores", { defaultValue: "Final Scores" })}</h4>
         <div className="space-y-1">
           {players
             .sort((a, b) => a.rank - b.rank)

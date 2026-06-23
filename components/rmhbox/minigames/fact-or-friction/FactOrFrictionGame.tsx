@@ -20,6 +20,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getSocket, emit } from '@/lib/rmhbox/socket';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
@@ -59,6 +60,7 @@ interface FactOrFrictionGameProps {
 
 export default function FactOrFrictionGame({ playerId, playerName: _playerName }: FactOrFrictionGameProps) {
   void _playerName; // Consumed by MinigameProps interface; not directly used
+  const { t } = useTranslation('c-rmhbox');
 
   const [phase, setPhase] = useState<Phase>('QUESTION_REVEAL');
   const [questionData, setQuestionData] = useState<QuestionData | null>(null);
@@ -419,7 +421,7 @@ export default function FactOrFrictionGame({ playerId, playerName: _playerName }
           transition={{ duration: 0.2 }}
           className="flex items-center justify-center p-8"
         >
-          <p className="text-sm text-(--rmhbox-text-muted)">Next question…</p>
+          <p className="text-sm text-(--rmhbox-text-muted)">{t("next-question", { defaultValue: "Next question…" })}</p>
         </motion.div>
       )}
 
@@ -432,7 +434,7 @@ export default function FactOrFrictionGame({ playerId, playerName: _playerName }
           transition={{ duration: 0.3 }}
           className="flex items-center justify-center p-8"
         >
-          <p className="text-sm text-(--rmhbox-text-muted)">Game over — calculating results…</p>
+          <p className="text-sm text-(--rmhbox-text-muted)">{t("game-over-calculating", { defaultValue: "Game over — calculating results…" })}</p>
         </motion.div>
       )}
     </AnimatePresence>

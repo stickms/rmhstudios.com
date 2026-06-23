@@ -1,0 +1,15 @@
+{
+  "copy-token-label": "نسخ الرمز",
+  "created-date": "تم إنشاؤه في {{date}}",
+  "expired": "منتهي الصلاحية",
+  "generate-token": "توليد رمز",
+  "last-used-date": "آخر استخدام {{date}}",
+  "no-active-tokens": "لا توجد رموز نشطة. قم بإنشاء واحد لبدء الاستخدام.",
+  "revoke-token-label": "إلغاء الرمز",
+  "token-auth-instruction-post": "للمصادقة.",
+  "token-auth-instruction-pre": "يجري",
+  "token-generated-notice": "تم إنشاء الرمز! انسخه الآن - لن يظهر مرة أخرى.",
+  "token-name-placeholder": "اسم الرمز (اختياري)",
+  "unnamed-token": "رمز غير مسمى",
+  "your-tokens": "رموزك"
+}

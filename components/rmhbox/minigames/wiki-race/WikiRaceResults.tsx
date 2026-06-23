@@ -15,6 +15,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Trophy, MapPin, Target, Flag } from 'lucide-react';
 
@@ -43,6 +44,7 @@ export default function WikiRaceResults({
   getPlayerName: _getPlayerName,
 }: WikiRaceResultsProps) {
   void _getPlayerName;
+  const { t } = useTranslation("c-rmhbox");
 
   // Sort by score descending
   const sortedPlayers = useMemo(() => {
@@ -55,7 +57,7 @@ export default function WikiRaceResults({
     <div className="flex flex-col gap-6">
       {/* Header */}
       <div className="text-center">
-        <h3 className="text-xl font-bold flex items-center justify-center gap-1.5"><Flag className="h-5 w-5" /> Race Results</h3>
+        <h3 className="text-xl font-bold flex items-center justify-center gap-1.5"><Flag className="h-5 w-5" /> {t("race-results", { defaultValue: "Race Results" })}</h3>
         <div className="mt-2 flex items-center justify-center gap-3 text-sm text-(--rmhbox-text-muted)">
           <span className="flex items-center gap-1">
             <MapPin size={12} className="text-green-400" /> {startTitle}
@@ -95,7 +97,7 @@ export default function WikiRaceResults({
                   <span className="font-semibold">
                     {player.userName}
                     {isMe && (
-                      <span className="ml-1 text-xs text-(--rmhbox-accent)">(you)</span>
+                      <span className="ml-1 text-xs text-(--rmhbox-accent)">{t("you-label", { defaultValue: "(you)" })}</span>
                     )}
                   </span>
                 </div>
@@ -107,17 +109,17 @@ export default function WikiRaceResults({
               {/* Stats row */}
               <div className="mb-2 flex items-center gap-4 text-xs text-(--rmhbox-text-muted)">
                 <span>
-                  {player.clickCount} click{player.clickCount !== 1 ? 's' : ''}
+                  {t("click-count", { count: player.clickCount, defaultValue: "{{count}} click", defaultValue_plural: "{{count}} clicks" })}
                 </span>
                 <span>
-                  {player.path.length} article{player.path.length !== 1 ? 's' : ''} visited
+                  {t("articles-visited", { count: player.path.length, defaultValue: "{{count}} article visited", defaultValue_plural: "{{count}} articles visited" })}
                 </span>
                 {player.hasFinished ? (
                   <span className="text-green-400 font-medium">
-                    Finished #{player.finishRank}
+                    {t("finished-rank", { rank: player.finishRank, defaultValue: "Finished #{{rank}}" })}
                   </span>
                 ) : (
-                  <span className="text-red-400 font-medium">DNF</span>
+                  <span className="text-red-400 font-medium">{t("dnf", { defaultValue: "DNF" })}</span>
                 )}
               </div>
 

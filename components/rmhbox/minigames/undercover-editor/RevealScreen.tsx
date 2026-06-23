@@ -14,6 +14,7 @@
  */
 'use client';
 
+import { useTranslation } from "react-i18next";
 import { motion } from 'framer-motion';
 import { Eye, PenLine, Star } from 'lucide-react';
 
@@ -62,9 +63,10 @@ export default function RevealScreen({
   myPlayerId,
   matchResults,
 }: RevealScreenProps) {
+  const { t } = useTranslation("c-rmhbox");
   return (
     <div className="flex w-full max-w-lg flex-col items-center gap-6 text-(--rmhbox-text)">
-      <h2 className="text-xl font-bold">The Truth Revealed</h2>
+      <h2 className="text-xl font-bold">{t("the-truth-revealed", { defaultValue: "The Truth Revealed" })}</h2>
 
       {/* Per-story reveals */}
       {storyReveals.map((reveal, ri) => {
@@ -79,14 +81,14 @@ export default function RevealScreen({
           >
             {/* Story header — numbered */}
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-semibold">Story {ri + 1}</span>
+              <span className="text-sm font-semibold">{t("story-n", { defaultValue: "Story {{n}}", n: ri + 1 })}</span>
               {myGuess && (
                 <span className={`text-xs px-2 py-0.5 rounded-full ${
                   myGuess.correct
                     ? 'bg-(--rmhbox-success-dim) text-(--rmhbox-success)'
                     : 'bg-(--rmhbox-danger-dim) text-(--rmhbox-danger)'
                 }`}>
-                  {myGuess.correct ? '✓ Correct' : '✗ Wrong'}
+                  {myGuess.correct ? t("correct", { defaultValue: "✓ Correct" }) : t("wrong", { defaultValue: "✗ Wrong" })}
                 </span>
               )}
             </div>
@@ -94,7 +96,7 @@ export default function RevealScreen({
             {/* Editor reveal */}
             <div className="flex items-center gap-2 mb-2">
               <Eye className="h-4 w-4 text-(--rmhbox-rare)" />
-              <span className="text-sm text-(--rmhbox-text-muted)">Editor:</span>
+              <span className="text-sm text-(--rmhbox-text-muted)">{t("editor-label", { defaultValue: "Editor:" })}</span>
               <span className="font-bold text-(--rmhbox-rare)">{reveal.editorName}</span>
             </div>
 
@@ -102,7 +104,7 @@ export default function RevealScreen({
             {reveal.edits.length > 0 && (
               <div className="mt-2">
                 <h4 className="flex items-center gap-1.5 text-xs font-semibold uppercase text-(--rmhbox-text-muted) mb-1">
-                  <PenLine className="h-3.5 w-3.5" /> Edits
+                  <PenLine className="h-3.5 w-3.5" /> {t("edits", { defaultValue: "Edits" })}
                 </h4>
                 <div className="space-y-1">
                   {reveal.edits.map((edit, i) => (
@@ -131,7 +133,7 @@ export default function RevealScreen({
           className="w-full rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-4"
         >
           <h3 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase text-(--rmhbox-text-muted)">
-            <Star className="h-3.5 w-3.5" /> Scores
+            <Star className="h-3.5 w-3.5" /> {t("scores", { defaultValue: "Scores" })}
           </h3>
           <div className="space-y-1.5">
             {scores

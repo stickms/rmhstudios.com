@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Note, NOTE_COLORS } from './types';
 
 interface Props {
@@ -30,6 +31,7 @@ function getPreviewText(content: string): string {
 }
 
 export default function NoteCard({ note, selected, onClick, onQuickAction, onDuplicate }: Props) {
+  const { t } = useTranslation("c-rmh-notes");
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const preview = getPreviewText(note.content);
@@ -38,7 +40,7 @@ export default function NoteCard({ note, selected, onClick, onQuickAction, onDup
   const relativeTime = (iso: string) => {
     const diff = Date.now() - new Date(iso).getTime();
     const mins = Math.floor(diff / 60000);
-    if (mins < 1) return 'just now';
+    if (mins < 1) return t("just-now", { defaultValue: "just now" });
     if (mins < 60) return `${mins}m`;
     const hours = Math.floor(mins / 60);
     if (hours < 24) return `${hours}h`;
@@ -83,12 +85,12 @@ export default function NoteCard({ note, selected, onClick, onQuickAction, onDup
       >
         {/* Top row: title + badges */}
         <div className="flex items-start gap-1.5">
-          {note.isLocked && <span className="text-xs mt-0.5" title="Locked">🔒</span>}
+          {note.isLocked && <span className="text-xs mt-0.5" title={t("locked", { defaultValue: "Locked" })}>🔒</span>}
           <span className="font-semibold text-sm flex-1 truncate" style={{ color: 'var(--notes-text)' }}>
-            {note.title || 'Untitled'}
+            {note.title || t("untitled", { defaultValue: "Untitled" })}
           </span>
           <div className="flex items-center gap-1 shrink-0">
-            {note.isPinned && <span className="text-xs" title="Pinned" style={{ color: 'var(--notes-pin-color)' }}>📌</span>}
+            {note.isPinned && <span className="text-xs" title={t("pinned", { defaultValue: "Pinned" })} style={{ color: 'var(--notes-pin-color)' }}>📌</span>}
             {note.isFavorite && <span className="text-xs" style={{ color: 'var(--notes-fav-color)' }}>⭐</span>}
           </div>
         </div>
@@ -145,13 +147,14 @@ const ContextMenu = React.forwardRef<HTMLDivElement, {
   onAction: (a: string) => void;
   onClose: () => void;
 }>(({ x, y, note, onAction }, ref) => {
+  const { t } = useTranslation("c-rmh-notes");
   const items = [
-    { action: 'pin', label: note.isPinned ? '📌 Unpin' : '📌 Pin' },
-    { action: 'fav', label: note.isFavorite ? '⭐ Unfavorite' : '⭐ Favorite' },
-    { action: 'duplicate', label: '📋 Duplicate' },
-    { action: 'archive', label: note.isArchived ? '📤 Unarchive' : '📦 Archive' },
+    { action: 'pin', label: note.isPinned ? t("unpin", { defaultValue: "📌 Unpin" }) : t("pin", { defaultValue: "📌 Pin" }) },
+    { action: 'fav', label: note.isFavorite ? t("unfavorite", { defaultValue: "⭐ Unfavorite" }) : t("favorite", { defaultValue: "⭐ Favorite" }) },
+    { action: 'duplicate', label: t("duplicate", { defaultValue: "📋 Duplicate" }) },
+    { action: 'archive', label: note.isArchived ? t("unarchive", { defaultValue: "📤 Unarchive" }) : t("archive", { defaultValue: "📦 Archive" }) },
     null,
-    { action: note.isDeleted ? 'delete' : 'trash', label: note.isDeleted ? '🗑️ Delete permanently' : '🗑️ Move to trash', danger: true },
+    { action: note.isDeleted ? 'delete' : 'trash', label: note.isDeleted ? t("delete-permanently", { defaultValue: "🗑️ Delete permanently" }) : t("move-to-trash", { defaultValue: "🗑️ Move to trash" }), danger: true },
   ];
 
   // Keep menu within viewport

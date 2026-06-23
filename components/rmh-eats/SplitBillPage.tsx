@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Minus, Plus, Copy, Check } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useEatsStore } from '@/lib/store/useEatsStore';
 
 const PERSON_COLORS = [
@@ -12,6 +13,7 @@ const PERSON_COLORS = [
 ];
 
 export default function SplitBillPage() {
+    const { t } = useTranslation("c-rmh-eats");
     const { orders, splitBillTargetOrderId, setView } = useEatsStore();
     const order = useMemo(
         () => orders.find((o) => o.id === splitBillTargetOrderId),
@@ -27,9 +29,9 @@ export default function SplitBillPage() {
         return (
             <div className="flex flex-col items-center gap-4 py-24">
                 <span className="text-5xl">🧾</span>
-                <p className="text-slate-400">Order not found.</p>
+                <p className="text-slate-400">{t("order-not-found", { defaultValue: "Order not found." })}</p>
                 <button onClick={() => setView('history')} className="text-orange-400 hover:text-orange-300 text-sm">
-                    Back
+                    {t("back", { defaultValue: "Back" })}
                 </button>
             </div>
         );
@@ -87,14 +89,14 @@ export default function SplitBillPage() {
                     <ArrowLeft className="h-5 w-5" />
                 </button>
                 <div>
-                    <h2 className="text-xl font-bold text-white">Split the Bill</h2>
-                    <p className="text-sm text-slate-400">{order.restaurantName} · ${order.total.toFixed(2)} total</p>
+                    <h2 className="text-xl font-bold text-white">{t("split-the-bill", { defaultValue: "Split the Bill" })}</h2>
+                    <p className="text-sm text-slate-400">{order.restaurantName} · ${order.total.toFixed(2)} {t("total", { defaultValue: "total" })}</p>
                 </div>
             </div>
 
             {/* People selector */}
             <div className="rounded-2xl bg-slate-800/50 border border-slate-700/50 p-4 mb-4">
-                <p className="text-sm font-medium text-white mb-3">Number of people</p>
+                <p className="text-sm font-medium text-white mb-3">{t("number-of-people", { defaultValue: "Number of people" })}</p>
                 <div className="flex items-center gap-4">
                     <button
                         onClick={() => setPeople(Math.max(2, people - 1))}
@@ -134,7 +136,7 @@ export default function SplitBillPage() {
                             mode === m ? 'bg-orange-500 text-white' : 'text-slate-400 hover:text-white'
                         }`}
                     >
-                        {m === 'equal' ? 'Equal Split' : 'By Item'}
+                        {m === 'equal' ? t("equal-split", { defaultValue: "Equal Split" }) : t("by-item", { defaultValue: "By Item" })}
                     </button>
                 ))}
             </div>
@@ -145,17 +147,17 @@ export default function SplitBillPage() {
                     animate={{ opacity: 1 }}
                     className="rounded-2xl bg-slate-800/50 border border-slate-700/50 p-5 mb-4"
                 >
-                    <p className="text-sm text-slate-400 mb-4">Total ÷ {people} people</p>
+                    <p className="text-sm text-slate-400 mb-4">{t("total-divided-people", { defaultValue: "Total ÷ {{people}} people", people })}</p>
                     <div className="grid grid-cols-2 gap-3">
                         {Array.from({ length: people }, (_, i) => (
                             <div key={i} className={`rounded-xl p-4 bg-linear-to-br ${PERSON_COLORS[i]}/20 border border-slate-700`}>
-                                <p className="text-xs text-slate-400 mb-1">Person {i + 1}</p>
+                                <p className="text-xs text-slate-400 mb-1">{t("person-n", { defaultValue: "Person {{n}}", n: i + 1 })}</p>
                                 <p className="text-2xl font-bold text-white">${perPerson.toFixed(2)}</p>
                             </div>
                         ))}
                     </div>
                     <div className="mt-4 pt-3 border-t border-slate-700/50 flex justify-between text-sm">
-                        <span className="text-slate-400">Grand Total</span>
+                        <span className="text-slate-400">{t("grand-total", { defaultValue: "Grand Total" })}</span>
                         <span className="font-semibold text-white">${order.total.toFixed(2)}</span>
                     </div>
                 </motion.div>
@@ -167,7 +169,7 @@ export default function SplitBillPage() {
                 >
                     {/* Items */}
                     <div className="rounded-2xl bg-slate-800/50 border border-slate-700/50 p-4">
-                        <p className="text-sm font-medium text-white mb-3">Assign items to people</p>
+                        <p className="text-sm font-medium text-white mb-3">{t("assign-items-to-people", { defaultValue: "Assign items to people" })}</p>
                         <div className="space-y-3">
                             {order.items.map((item, idx) => (
                                 <div key={idx} className="flex items-center gap-3">
@@ -208,11 +210,11 @@ export default function SplitBillPage() {
 
                     {/* Per-person totals */}
                     <div className="rounded-2xl bg-slate-800/50 border border-slate-700/50 p-4">
-                        <p className="text-sm font-medium text-white mb-3">Per-person totals</p>
+                        <p className="text-sm font-medium text-white mb-3">{t("per-person-totals", { defaultValue: "Per-person totals" })}</p>
                         <div className="grid grid-cols-2 gap-2">
                             {personTotals.map((total, i) => (
                                 <div key={i} className={`rounded-xl p-3 bg-linear-to-br ${PERSON_COLORS[i]}/15 border border-slate-700`}>
-                                    <p className="text-xs text-slate-400">Person {i + 1}</p>
+                                    <p className="text-xs text-slate-400">{t("person-n", { defaultValue: "Person {{n}}", n: i + 1 })}</p>
                                     <p className="text-xl font-bold text-white mt-0.5">${total.toFixed(2)}</p>
                                 </div>
                             ))}
@@ -228,12 +230,12 @@ export default function SplitBillPage() {
                 {copied ? (
                     <>
                         <Check className="h-4 w-4 text-green-400" />
-                        <span className="text-green-400">Copied!</span>
+                        <span className="text-green-400">{t("copied", { defaultValue: "Copied!" })}</span>
                     </>
                 ) : (
                     <>
                         <Copy className="h-4 w-4" />
-                        Copy Summary
+                        {t("copy-summary", { defaultValue: "Copy Summary" })}
                     </>
                 )}
             </button>

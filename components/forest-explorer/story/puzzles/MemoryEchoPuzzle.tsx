@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { PuzzleComponentProps } from './PuzzleRegistry';
 
 const SOUND_ICONS: Record<string, string> = {
@@ -22,6 +23,7 @@ const SOUND_COLORS: Record<string, string> = {
 };
 
 export function MemoryEchoPuzzle({ config, onSolve, onAttempt }: PuzzleComponentProps) {
+    const { t } = useTranslation("c-forest-explorer");
     const sounds = (config.sounds as string[]) ?? ['owl', 'wind', 'creek', 'rustle', 'birdsong', 'thunder'];
     const seqLength = (config.sequenceLength as number) ?? 5;
 
@@ -88,21 +90,21 @@ export function MemoryEchoPuzzle({ config, onSolve, onAttempt }: PuzzleComponent
         <div className="w-full max-w-md mx-auto space-y-6">
             <div className="text-center">
                 {phase === 'idle' && (
-                    <p className="text-white/50 text-sm">Press play to hear the forest&apos;s memory</p>
+                    <p className="text-white/50 text-sm">{t("press-play-prompt", { defaultValue: "Press play to hear the forest's memory" })}</p>
                 )}
                 {phase === 'playing' && (
-                    <p className="text-blue-300 text-sm">Listen carefully...</p>
+                    <p className="text-blue-300 text-sm">{t("listen-carefully", { defaultValue: "Listen carefully..." })}</p>
                 )}
                 {phase === 'input' && (
                     <p className="text-white/60 text-sm">
-                        Replay the sounds ({playerInput.length}/{sequence.length})
+                        {t("replay-sounds", { defaultValue: "Replay the sounds ({{current}}/{{total}})", current: playerInput.length, total: sequence.length })}
                     </p>
                 )}
                 {phase === 'wrong' && (
-                    <p className="text-red-400 text-sm">Incorrect sequence. Try again.</p>
+                    <p className="text-red-400 text-sm">{t("incorrect-sequence", { defaultValue: "Incorrect sequence. Try again." })}</p>
                 )}
                 {phase === 'correct' && (
-                    <p className="text-green-400 text-sm font-medium">The forest remembers!</p>
+                    <p className="text-green-400 text-sm font-medium">{t("forest-remembers", { defaultValue: "The forest remembers!" })}</p>
                 )}
             </div>
 
@@ -157,7 +159,7 @@ export function MemoryEchoPuzzle({ config, onSolve, onAttempt }: PuzzleComponent
                         className="px-6 py-2.5 bg-blue-800/50 hover:bg-blue-700/50 border border-blue-600/30 text-blue-200 rounded-xl text-sm font-medium cursor-pointer"
                         onClick={playSequence}
                     >
-                        Play Sequence
+                        {t("play-sequence", { defaultValue: "Play Sequence" })}
                     </button>
                 </div>
             )}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, ScrollText, Sword, Shield, Skull, TrendingUp, TrendingDown, Sparkles, ShoppingBag, Zap, FlaskConical, Target, Wrench, Book, Eye } from 'lucide-react';
 
 // ── Patch Notes Data ─────────────────────────────────────────
@@ -330,6 +331,7 @@ const PATCH_NOTES: PatchVersion[] = [
 // ── Component ────────────────────────────────────────────────
 
 export default function PatchnotesModal({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation("c-altair");
   const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
 
   const toggleDetail = (key: string) => {
@@ -352,7 +354,7 @@ export default function PatchnotesModal({ onClose }: { onClose: () => void }) {
         <div className="flex items-center justify-between px-5 pt-5 pb-3 shrink-0">
           <h2 className="text-xl font-bold text-(--altair-text) flex items-center gap-2">
             <ScrollText size={20} className="text-(--altair-accent)" />
-            Patch Notes
+            {t("patch-notes", { defaultValue: "Patch Notes" })}
           </h2>
           <button
             onClick={onClose}

@@ -17,6 +17,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Send, Clock, Users } from 'lucide-react';
 import SubmissionPill from './SubmissionPill';
 import type { SubmissionPillProps } from './SubmissionPill';
@@ -54,6 +55,7 @@ export default function RhymeTimeInput({
   disabled = false,
   onSubmit,
 }: RhymeTimeInputProps) {
+  const { t } = useTranslation("c-rmhbox");
   const [value, setValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const atLimit = mySubmissions.length >= maxSubmissions || disabled;
@@ -103,7 +105,7 @@ export default function RhymeTimeInput({
         {/* Root word */}
         <div className="text-center">
           <p className="text-xs uppercase tracking-wider text-(--rmhbox-text-muted)">
-            Rhyme with
+            {t("rhyme-with", { defaultValue: "Rhyme with" })}
           </p>
           <h2 className="mt-1 text-5xl font-extrabold text-(--rmhbox-accent)">{rootWord}</h2>
         </div>
@@ -117,7 +119,7 @@ export default function RhymeTimeInput({
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={handleKeyDown}
             disabled={atLimit}
-            placeholder={atLimit ? 'Max submissions reached' : 'Type a rhyming word…'}
+            placeholder={atLimit ? t("max-submissions-reached", { defaultValue: "Max submissions reached" }) : t("type-a-rhyming-word", { defaultValue: "Type a rhyming word..." })}
             className="flex-1 rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-surface) px-4 py-2 text-sm text-(--rmhbox-text) placeholder:text-(--rmhbox-text-muted) focus:outline-none focus:ring-2 focus:ring-(--rmhbox-accent) disabled:opacity-50"
           />
           <button
@@ -125,7 +127,7 @@ export default function RhymeTimeInput({
             disabled={atLimit || !value.trim()}
             className="flex items-center gap-2 rounded-lg bg-(--rmhbox-accent) px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
           >
-            <Send className="h-4 w-4" /> Send
+            <Send className="h-4 w-4" /> {t("send", { defaultValue: "Send" })}
           </button>
         </div>
 
@@ -152,7 +154,7 @@ export default function RhymeTimeInput({
       {/* Sidebar — live leaderboard */}
       <aside className="hidden w-52 shrink-0 rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-4 md:block">
         <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-(--rmhbox-text-muted)">
-          <Users className="h-3.5 w-3.5" /> Submissions
+          <Users className="h-3.5 w-3.5" /> {t("submissions", { defaultValue: "Submissions" })}
         </h3>
         <ul className="space-y-1.5">
           {submissionCounts

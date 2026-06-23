@@ -9,6 +9,7 @@
 'use client';
 
 import React from 'react';
+import { useTranslation } from "react-i18next";
 import type { Card } from '@/lib/signal-forge';
 import { CARD_CATALOG } from '@/lib/signal-forge';
 
@@ -22,6 +23,7 @@ interface Props {
 }
 
 export function OverwriterPenOverlay({ hand, deckList, overwriterPenTarget, onActivate, onConfirm, onCancel }: Props) {
+  const { t } = useTranslation("c-signal-forge");
   const targetCard = hand[overwriterPenTarget];
   const availableCards = deckList
     .filter(c => !c.isGlitch && c.id !== targetCard?.id)
@@ -39,7 +41,7 @@ export function OverwriterPenOverlay({ hand, deckList, overwriterPenTarget, onAc
 
         {/* Select which hand card to transform */}
         <p className="text-center text-gray-400 mb-3 text-sm">
-          Select a card from your hand to transform:
+          {t("select-hand-card", { defaultValue: "Select a card from your hand to transform:" })}
         </p>
         <div className="flex gap-2 justify-center mb-4 flex-wrap">
           {hand.map((card, i) => (
@@ -60,7 +62,7 @@ export function OverwriterPenOverlay({ hand, deckList, overwriterPenTarget, onAc
         {targetCard && (
           <>
             <p className="text-center text-gray-400 mb-3 text-sm">
-              Transform <span className="text-purple-300 font-bold">{targetCard.name}</span> into:
+              {t("transform-into-prefix", { defaultValue: "Transform" })} <span className="text-purple-300 font-bold">{targetCard.name}</span> {t("transform-into-suffix", { defaultValue: "into:" })}
             </p>
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 mb-4">
               {availableCards.map((card) => {
@@ -89,7 +91,7 @@ export function OverwriterPenOverlay({ hand, deckList, overwriterPenTarget, onAc
             onClick={onCancel}
             className="bg-gray-700 hover:bg-gray-600 border border-gray-500 rounded px-4 py-2 text-gray-300"
           >
-            Cancel
+            {t("cancel", { defaultValue: "Cancel" })}
           </button>
         </div>
       </div>

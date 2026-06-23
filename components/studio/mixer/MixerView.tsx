@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useStudioStore } from '@/lib/studio/store';
 import { ChannelStrip } from './ChannelStrip';
 import { MasterStrip } from './MasterStrip';
@@ -8,6 +9,7 @@ interface MixerViewProps {
 }
 
 export function MixerView({ compact = false }: MixerViewProps) {
+  const { t } = useTranslation("c-studio");
   const { tracks, selectedTrackId } = useStudioStore();
 
   if (tracks.length === 0) {
@@ -15,7 +17,7 @@ export function MixerView({ compact = false }: MixerViewProps) {
       <div className="flex h-full items-center justify-center text-[var(--site-muted)]">
         <div className="text-center">
           <SlidersHorizontal className="mx-auto h-10 w-10 opacity-20" />
-          <p className="mt-2 text-xs">Add tracks to see the mixer</p>
+          <p className="mt-2 text-xs">{t("add-tracks-to-see-mixer", { defaultValue: "Add tracks to see the mixer" })}</p>
         </div>
       </div>
     );

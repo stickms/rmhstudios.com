@@ -23,6 +23,7 @@
 'use client';
 
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Users, ChevronRight } from 'lucide-react';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { emit } from '@/lib/rmhbox/socket';
@@ -41,6 +42,7 @@ export default function GameShell({
   playerCount,
   children,
 }: GameShellProps) {
+  const { t } = useTranslation("c-rmhbox");
   void _roundNumber; // retained in the prop interface; round info now comes from minigameRound store field
   const minigameRound = useRMHboxStore((s) => s.minigameRound);
   const timerInfo = useRMHboxStore((s) => s.timerInfo);
@@ -61,8 +63,8 @@ export default function GameShell({
 
   const roundLabel = minigameRound
     ? minigameRound.total > 0
-      ? `Round ${minigameRound.current}/${minigameRound.total}`
-      : `Turn ${minigameRound.current}`
+      ? t("round-current-of-total", { current: minigameRound.current, total: minigameRound.total, defaultValue: "Round {{current}}/{{total}}" })
+      : t("turn-current", { current: minigameRound.current, defaultValue: "Turn {{current}}" })
     : null;
 
   return (
@@ -77,7 +79,7 @@ export default function GameShell({
       {/* Footer */}
       <footer className="relative flex shrink-0 items-center border-t border-(--rmhbox-border) px-4 py-1.5 text-sm">
         <span className="font-mono font-semibold">
-          Score: <span className="text-(--rmhbox-accent)">{displayScore}</span>
+          {t("score-label", { defaultValue: "Score:" })} <span className="text-(--rmhbox-accent)">{displayScore}</span>
         </span>
         {/* Center — round counter or host "Next" button for infinite phases */}
         <div className="absolute inset-0 flex items-center justify-center">
@@ -87,7 +89,7 @@ export default function GameShell({
               className="flex items-center gap-1 rounded-full px-4 py-1 text-xs font-semibold text-white transition-all hover:brightness-110 active:scale-95 animate-pulse"
               style={{ backgroundColor: 'var(--rmhbox-accent)' }}
             >
-              Next
+              {t("next", { defaultValue: "Next" })}
               <ChevronRight className="h-3.5 w-3.5" />
             </button>
           ) : roundLabel ? (

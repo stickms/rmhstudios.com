@@ -1,4 +1,5 @@
 'use client';
+import { useTranslation } from "react-i18next";
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { fmt, formatDuration } from '@/lib/temple-of-joy/numbers';
 
@@ -9,6 +10,7 @@ export default function OfflineModal() {
   const setShowOfflineModal = useTempleStore((s) => s.setShowOfflineModal);
   const numberFormat = useTempleStore((s) => s.numberFormat);
   const theme = useTempleStore((s) => s.theme);
+  const { t } = useTranslation("c-temple-of-joy");
 
   if (!showOfflineModal || offlineSecondsOnLoad <= 0) return null;
 
@@ -35,7 +37,7 @@ export default function OfflineModal() {
           className="text-xl font-serif font-bold mb-1"
           style={{ color: dark ? '#d4a847' : '#8b6914' }}
         >
-          Welcome Back
+          {t("welcome-back", { defaultValue: "Welcome Back" })}
         </h2>
 
         <div
@@ -46,7 +48,7 @@ export default function OfflineModal() {
         {/* Stats */}
         <div className="space-y-3 mb-5 text-sm">
           <p className="opacity-80">
-            You were away for{' '}
+            {t("you-were-away-for", { defaultValue: "You were away for" })}{' '}
             <span className="font-semibold" style={{ color: dark ? '#d4a847' : '#8b6914' }}>
               {formatDuration(offlineSecondsOnLoad)}
             </span>
@@ -55,11 +57,11 @@ export default function OfflineModal() {
             className="rounded-xl py-3 px-4"
             style={{ background: dark ? '#1a120b' : '#f5f0e8' }}
           >
-            <p className="text-xs opacity-60 mb-0.5">Your temple earned</p>
+            <p className="text-xs opacity-60 mb-0.5">{t("your-temple-earned", { defaultValue: "Your temple earned" })}</p>
             <p className="text-lg font-bold" style={{ color: dark ? '#d4a847' : '#8b6914' }}>
               +{fmt(offlineHappinessOnLoad, numberFormat)}
             </p>
-            <p className="text-xs opacity-60">happiness</p>
+            <p className="text-xs opacity-60">{t("happiness", { defaultValue: "happiness" })}</p>
           </div>
         </div>
 
@@ -72,7 +74,7 @@ export default function OfflineModal() {
             color: dark ? '#1a120b' : '#f5f0e8',
           }}
         >
-          Collect &amp; Continue ✓
+          {t("collect-and-continue", { defaultValue: "Collect & Continue ✓" })}
         </button>
       </div>
     </div>

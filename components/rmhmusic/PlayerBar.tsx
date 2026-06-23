@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Play, Pause, SkipForward, Volume2, VolumeX, Search, Users, Music, Music2 } from 'lucide-react';
 import { useRmhMusicStore } from '@/lib/rmhmusic/store';
@@ -9,6 +10,7 @@ import { formatDuration } from '@/lib/rmhmusic/utils';
 
 export default function PlayerBar() {
   const { currentTrack, playback, settings, isSearchOpen, isChatOpen, isGuessOpen, setSearchOpen, setChatOpen, setGuessOpen, updateSettings } = useRmhMusicStore();
+  const { t } = useTranslation("c-rmhmusic");
   const { pause, resume, setVolume } = usePreviewPlayer();
   const [progress, setProgress] = useState(0);
   const progressInterval = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -69,10 +71,10 @@ export default function PlayerBar() {
           )}
           <div className="min-w-0">
             <p className="text-sm font-medium truncate" style={{ color: 'var(--site-text)' }}>
-              {currentTrack?.title ?? 'No track playing'}
+              {currentTrack?.title ?? t("no-track-playing", { defaultValue: "No track playing" })}
             </p>
             <p className="text-xs truncate" style={{ color: 'var(--site-text-muted)' }}>
-              {currentTrack?.artist ?? 'Search for a song to start'}
+              {currentTrack?.artist ?? t("search-for-a-song", { defaultValue: "Search for a song to start" })}
             </p>
           </div>
         </div>
@@ -141,7 +143,7 @@ export default function PlayerBar() {
             onClick={() => { setGuessOpen(!isGuessOpen); if (!isGuessOpen) setChatOpen(false); }}
             className="p-2 rounded-lg transition-colors"
             style={{ color: isGuessOpen ? 'var(--site-accent)' : 'var(--site-text-muted)', background: isGuessOpen ? 'color-mix(in srgb, var(--site-accent) 15%, transparent)' : 'transparent' }}
-            title="Guess the Song"
+            title={t("guess-the-song", { defaultValue: "Guess the Song" })}
           >
             <Music2 className="w-4 h-4" />
           </button>

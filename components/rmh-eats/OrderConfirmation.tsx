@@ -5,8 +5,10 @@ import { motion } from 'framer-motion';
 import { CheckCircle, Clock, MapPin, CreditCard, Package } from 'lucide-react';
 import { useEatsStore } from '@/lib/store/useEatsStore';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 export default function OrderConfirmation() {
+    const { t } = useTranslation("c-rmh-eats");
     const { orders, selectedOrderId, setView, openTracker } = useEatsStore();
 
     const order = useMemo(
@@ -20,19 +22,19 @@ export default function OrderConfirmation() {
             const timers = [
                 setTimeout(() => {
                     useEatsStore.getState().advanceOrderStatus(order.id);
-                    toast.success('Your order is being prepared!', {
+                    toast.success(t("order-being-prepared", { defaultValue: "Your order is being prepared!" }), {
                         icon: '👨‍🍳',
                     });
                 }, 5000),
                 setTimeout(() => {
                     useEatsStore.getState().advanceOrderStatus(order.id);
-                    toast.success('Your order is on its way!', {
+                    toast.success(t("order-on-its-way", { defaultValue: "Your order is on its way!" }), {
                         icon: '🛵',
                     });
                 }, 15000),
                 setTimeout(() => {
                     useEatsStore.getState().advanceOrderStatus(order.id);
-                    toast.success('Your order has been delivered! Enjoy!', {
+                    toast.success(t("order-delivered", { defaultValue: "Your order has been delivered! Enjoy!" }), {
                         icon: '🎉',
                     });
                 }, 30000),
@@ -45,9 +47,9 @@ export default function OrderConfirmation() {
         return (
             <div className="flex flex-col items-center gap-4 py-24">
                 <span className="text-5xl">❓</span>
-                <p className="text-slate-400">Order not found.</p>
+                <p className="text-slate-400">{t("order-not-found", { defaultValue: "Order not found." })}</p>
                 <button onClick={() => setView('home')} className="text-orange-400 hover:text-orange-300 text-sm">
-                    Go home
+                    {t("go-home", { defaultValue: "Go home" })}
                 </button>
             </div>
         );
@@ -78,12 +80,12 @@ export default function OrderConfirmation() {
                         🎉
                     </motion.div>
                 </div>
-                <h2 className="text-2xl font-bold text-white mb-2">Order Placed!</h2>
+                <h2 className="text-2xl font-bold text-white mb-2">{t("order-placed", { defaultValue: "Order Placed!" })}</h2>
                 <p className="text-slate-400 text-sm">
-                    Your order has been received by {order.restaurantName}
+                    {t("order-received-by", { defaultValue: "Your order has been received by {{restaurantName}}", restaurantName: order.restaurantName })}
                 </p>
                 <div className="mt-3 rounded-xl bg-orange-500/10 border border-orange-500/30 px-4 py-2">
-                    <p className="text-xs text-orange-400 font-medium uppercase tracking-wide">Order ID</p>
+                    <p className="text-xs text-orange-400 font-medium uppercase tracking-wide">{t("order-id-label", { defaultValue: "Order ID" })}</p>
                     <p className="text-lg font-mono font-bold text-orange-400">#{order.id}</p>
                 </div>
             </motion.div>
@@ -98,10 +100,10 @@ export default function OrderConfirmation() {
                 >
                     <div className="flex items-center gap-3 mb-3">
                         <Clock className="h-5 w-5 text-orange-400" />
-                        <h3 className="font-semibold text-white">Estimated Delivery</h3>
+                        <h3 className="font-semibold text-white">{t("estimated-delivery", { defaultValue: "Estimated Delivery" })}</h3>
                     </div>
                     <p className="text-3xl font-bold text-white mb-1">{timeStr}</p>
-                    <p className="text-sm text-slate-400">Your food should arrive around this time</p>
+                    <p className="text-sm text-slate-400">{t("food-arrive-time", { defaultValue: "Your food should arrive around this time" })}</p>
                 </motion.div>
 
                 {/* Order details */}
@@ -111,7 +113,7 @@ export default function OrderConfirmation() {
                     transition={{ delay: 0.3 }}
                     className="rounded-2xl bg-slate-800/50 border border-slate-700/50 p-4"
                 >
-                    <h3 className="font-semibold text-white mb-3">Order Details</h3>
+                    <h3 className="font-semibold text-white mb-3">{t("order-details", { defaultValue: "Order Details" })}</h3>
                     <div className="space-y-2 mb-3">
                         {order.items.map((item, i) => (
                             <div key={i} className="flex justify-between text-sm">
@@ -126,21 +128,21 @@ export default function OrderConfirmation() {
                     </div>
                     <div className="border-t border-slate-700 pt-3 space-y-1">
                         <div className="flex justify-between text-sm text-slate-400">
-                            <span>Subtotal</span>
+                            <span>{t("subtotal", { defaultValue: "Subtotal" })}</span>
                             <span>${order.subtotal.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-sm text-slate-400">
-                            <span>Delivery fee</span>
-                            <span>{order.deliveryFee === 0 ? 'Free' : `$${order.deliveryFee.toFixed(2)}`}</span>
+                            <span>{t("delivery-fee", { defaultValue: "Delivery fee" })}</span>
+                            <span>{order.deliveryFee === 0 ? t("free", { defaultValue: "Free" }) : `$${order.deliveryFee.toFixed(2)}`}</span>
                         </div>
                         {order.tip > 0 && (
                             <div className="flex justify-between text-sm text-slate-400">
-                                <span>Tip</span>
+                                <span>{t("tip", { defaultValue: "Tip" })}</span>
                                 <span>${order.tip.toFixed(2)}</span>
                             </div>
                         )}
                         <div className="flex justify-between font-bold text-white pt-1">
-                            <span>Total charged</span>
+                            <span>{t("total-charged", { defaultValue: "Total charged" })}</span>
                             <span className="text-orange-400">${order.total.toFixed(2)}</span>
                         </div>
                     </div>
@@ -155,7 +157,7 @@ export default function OrderConfirmation() {
                 >
                     <MapPin className="h-5 w-5 text-orange-400 shrink-0 mt-0.5" />
                     <div>
-                        <p className="text-sm font-medium text-white mb-0.5">Delivering to</p>
+                        <p className="text-sm font-medium text-white mb-0.5">{t("delivering-to", { defaultValue: "Delivering to" })}</p>
                         <p className="text-sm text-slate-400">
                             {order.address.street}, {order.address.city}, {order.address.state}{' '}
                             {order.address.zip}
@@ -172,7 +174,7 @@ export default function OrderConfirmation() {
                 >
                     <CreditCard className="h-5 w-5 text-orange-400 shrink-0 mt-0.5" />
                     <div>
-                        <p className="text-sm font-medium text-white mb-0.5">Paid with</p>
+                        <p className="text-sm font-medium text-white mb-0.5">{t("paid-with", { defaultValue: "Paid with" })}</p>
                         <p className="text-sm text-slate-400">{order.paymentMethod.label}</p>
                     </div>
                 </motion.div>
@@ -189,13 +191,13 @@ export default function OrderConfirmation() {
                         className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-orange-500 hover:bg-orange-400 py-3.5 font-semibold text-white transition-colors shadow-lg shadow-orange-500/20"
                     >
                         <Package className="h-5 w-5" />
-                        Track Order
+                        {t("track-order", { defaultValue: "Track Order" })}
                     </button>
                     <button
                         onClick={() => setView('home')}
                         className="flex-1 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 py-3.5 font-semibold text-white transition-colors"
                     >
-                        Back to Home
+                        {t("back-to-home", { defaultValue: "Back to Home" })}
                     </button>
                 </motion.div>
             </div>

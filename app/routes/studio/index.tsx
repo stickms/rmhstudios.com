@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { lazy, Suspense } from 'react';
+import { useTranslation } from "react-i18next";
 
 const StudioShell = lazy(() => import('@/components/studio/StudioShell'));
 
@@ -8,13 +9,14 @@ export const Route = createFileRoute('/studio/')({
 });
 
 function StudioPage() {
+  const { t } = useTranslation("r-studio");
   return (
     <Suspense
       fallback={
         <div className="flex h-screen w-full items-center justify-center bg-[var(--site-bg)]">
           <div className="flex flex-col items-center gap-4">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent" />
-            <p className="text-sm text-[var(--site-muted)]">Loading RMH Studio...</p>
+            <p className="text-sm text-[var(--site-muted)]">{t("loading", { defaultValue: "Loading RMH Studio..." })}</p>
           </div>
         </div>
       }

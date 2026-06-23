@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from "react-i18next";
 import { useDreamRiftStore } from '@/lib/dream-rift/store';
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '@/lib/dream-rift/constants';
 import { TouhouFrame, TouhouMenuButton, TouhouDivider } from './TouhouFrame';
@@ -11,6 +12,7 @@ export function DreamRiftGameOver({ onQuit }: { onQuit: () => void }) {
   const player = useDreamRiftStore((s) => s.player);
   const totalScore = useDreamRiftStore((s) => s.totalScore);
   const setScreen = useDreamRiftStore((s) => s.setScreen);
+  const { t } = useTranslation("c-dream-rift");
 
   const maxContinues =
     difficulty === 'easy' ? 5 :
@@ -41,7 +43,7 @@ export function DreamRiftGameOver({ onQuit }: { onQuit: () => void }) {
                 textShadow: '0 0 20px rgba(204,51,68,0.4), 0 0 40px rgba(204,51,68,0.1)',
               }}
             >
-              GAME OVER
+              {t("game-over", { defaultValue: "GAME OVER" })}
             </h2>
             <TouhouDivider />
           </div>
@@ -50,7 +52,7 @@ export function DreamRiftGameOver({ onQuit }: { onQuit: () => void }) {
           <div className="border border-amber-400/15 bg-white/[0.02] p-3 mb-3">
             <div className="text-center mb-2">
               <div className="text-[8px] tracking-[0.2em] text-amber-400/40 uppercase">
-                Final Score
+                {t("final-score", { defaultValue: "Final Score" })}
               </div>
               <div
                 className="text-lg text-white tabular-nums font-mono mt-0.5"
@@ -62,14 +64,14 @@ export function DreamRiftGameOver({ onQuit }: { onQuit: () => void }) {
 
             <div className="flex justify-between text-[10px] mt-2 pt-2 border-t border-white/5">
               <div className="text-center flex-1">
-                <div className="text-amber-400/40 text-[8px] tracking-wider uppercase">Graze</div>
+                <div className="text-amber-400/40 text-[8px] tracking-wider uppercase">{t("graze", { defaultValue: "Graze" })}</div>
                 <div className="text-zinc-400 tabular-nums font-mono mt-0.5">
                   {player.graze.toLocaleString()}
                 </div>
               </div>
               <div className="w-px bg-white/5" />
               <div className="text-center flex-1">
-                <div className="text-amber-400/40 text-[8px] tracking-wider uppercase">Continues</div>
+                <div className="text-amber-400/40 text-[8px] tracking-wider uppercase">{t("continues", { defaultValue: "Continues" })}</div>
                 <div className="text-zinc-400 tabular-nums font-mono mt-0.5">{continues}</div>
               </div>
             </div>
@@ -79,7 +81,7 @@ export function DreamRiftGameOver({ onQuit }: { onQuit: () => void }) {
           {canContinue && (
             <div className="text-center mb-2">
               <p className="text-[10px] text-zinc-500" style={{ fontFamily: "'Georgia', serif" }}>
-                Continues remaining: <span className="text-amber-300">{remaining}</span>
+                {t("continues-remaining", { defaultValue: "Continues remaining:" })} <span className="text-amber-300">{remaining}</span>
               </p>
             </div>
           )}
@@ -90,14 +92,14 @@ export function DreamRiftGameOver({ onQuit }: { onQuit: () => void }) {
           <div className="mt-1">
             {canContinue && (
               <TouhouMenuButton variant="accent" onClick={() => useContinue()}>
-                Continue
+                {t("continue", { defaultValue: "Continue" })}
               </TouhouMenuButton>
             )}
             <TouhouMenuButton onClick={() => setScreen('leaderboard')}>
-              Leaderboard
+              {t("leaderboard", { defaultValue: "Leaderboard" })}
             </TouhouMenuButton>
             <TouhouMenuButton onClick={onQuit}>
-              Quit to Title
+              {t("quit-to-title", { defaultValue: "Quit to Title" })}
             </TouhouMenuButton>
           </div>
         </div>

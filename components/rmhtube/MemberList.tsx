@@ -11,6 +11,7 @@
 'use client';
 
 import { useCallback, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Crown,
   Wifi,
@@ -37,11 +38,12 @@ const STATUS_OPTIONS: { value: UserPresenceStatus; label: string }[] = [
 ];
 
 function PresenceBadge({ status }: { status: UserPresenceStatus }) {
+  const { t } = useTranslation("c-rmhtube");
   if (status === 'afk') {
     return (
       <span className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-semibold leading-none bg-yellow-500/20 text-yellow-400">
         <Coffee className="h-2.5 w-2.5" />
-        AFK
+        {t("status-afk", { defaultValue: "AFK" })}
       </span>
     );
   }
@@ -49,7 +51,7 @@ function PresenceBadge({ status }: { status: UserPresenceStatus }) {
     return (
       <span className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-semibold leading-none bg-orange-500/20 text-orange-400">
         <Clock className="h-2.5 w-2.5" />
-        BRB
+        {t("status-brb", { defaultValue: "BRB" })}
       </span>
     );
   }
@@ -75,6 +77,7 @@ function sortMembers(members: ClientMemberInfo[]): ClientMemberInfo[] {
 // ─── Status Selector (for the current user) ───────────────────
 
 function StatusSelector({ currentStatus }: { currentStatus: UserPresenceStatus }) {
+  const { t } = useTranslation("c-rmhtube");
   const [open, setOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement>(null);
   const [pos, setPos] = useState({ top: 0, right: 0 });
@@ -105,10 +108,10 @@ function StatusSelector({ currentStatus }: { currentStatus: UserPresenceStatus }
         onClick={handleOpen}
         className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium transition-colors
           text-(--rmhtube-text-dim) hover:text-(--rmhtube-text) hover:bg-(--rmhtube-surface-hover)"
-        title="Change your status"
+        title={t("change-your-status", { defaultValue: "Change your status" })}
       >
         <StatusIcon className="h-3 w-3" />
-        {currentStatus === 'watching' ? 'Watching' : currentStatus.toUpperCase()}
+        {currentStatus === 'watching' ? t("status-watching", { defaultValue: "Watching" }) : currentStatus.toUpperCase()}
       </button>
 
       {open && (
@@ -132,7 +135,7 @@ function StatusSelector({ currentStatus }: { currentStatus: UserPresenceStatus }
                 {opt.value === 'watching' && <Eye className="h-3 w-3 text-green-400" />}
                 {opt.value === 'afk' && <Coffee className="h-3 w-3 text-yellow-400" />}
                 {opt.value === 'brb' && <Clock className="h-3 w-3 text-orange-400" />}
-                {opt.label}
+                {opt.value === 'watching' ? t("status-watching", { defaultValue: "Watching" }) : opt.value === 'afk' ? t("status-afk", { defaultValue: "AFK" }) : t("status-brb", { defaultValue: "BRB" })}
               </button>
             ))}
           </div>
@@ -145,18 +148,19 @@ function StatusSelector({ currentStatus }: { currentStatus: UserPresenceStatus }
 // ─── Role Badge ────────────────────────────────────────────────
 
 function RoleBadge({ isHost, isLeader }: { isHost: boolean; isLeader: boolean }) {
+  const { t } = useTranslation("c-rmhtube");
   return (
     <>
       {isHost && (
         <span className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-semibold leading-none bg-(--rmhtube-warning)/20 text-(--rmhtube-warning)">
           <Crown className="h-2.5 w-2.5" />
-          Host
+          {t("role-host", { defaultValue: "Host" })}
         </span>
       )}
       {isLeader && (
         <span className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-semibold leading-none bg-(--rmhtube-info)/20 text-(--rmhtube-info)">
           <Star className="h-2.5 w-2.5" />
-          Leader
+          {t("role-leader", { defaultValue: "Leader" })}
         </span>
       )}
     </>
@@ -174,6 +178,7 @@ function BanConfirmDialog({
   onConfirm: (reason: string) => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation("c-rmhtube");
   const [reason, setReason] = useState('');
 
   return (
@@ -186,16 +191,16 @@ function BanConfirmDialog({
           onClick={(e) => e.stopPropagation()}
         >
           <h4 className="text-sm font-semibold text-(--rmhtube-text) mb-2">
-            Ban {memberName}?
+            {t("ban-dialog-title", { defaultValue: "Ban {{name}}?", name: memberName })}
           </h4>
           <p className="text-xs text-(--rmhtube-text-muted) mb-3">
-            This will remove them from the room and prevent them from rejoining.
+            {t("ban-dialog-description", { defaultValue: "This will remove them from the room and prevent them from rejoining." })}
           </p>
           <input
             type="text"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="Reason (optional)"
+            placeholder={t("ban-reason-placeholder", { defaultValue: "Reason (optional)" })}
             className="w-full rounded border border-(--rmhtube-border) bg-(--rmhtube-bg) px-2 py-1.5 text-xs text-(--rmhtube-text) placeholder:text-(--rmhtube-text-dim) focus:outline-none focus:border-(--rmhtube-accent) mb-3"
           />
           <div className="flex justify-end gap-2">
@@ -203,13 +208,13 @@ function BanConfirmDialog({
               onClick={onCancel}
               className="rounded px-3 py-1.5 text-xs font-medium text-(--rmhtube-text-muted) hover:bg-(--rmhtube-surface-hover) transition-colors"
             >
-              Cancel
+              {t("cancel", { defaultValue: "Cancel" })}
             </button>
             <button
               onClick={() => onConfirm(reason)}
               className="rounded px-3 py-1.5 text-xs font-medium bg-(--rmhtube-danger) text-white hover:opacity-90 transition-opacity"
             >
-              Ban
+              {t("ban-confirm", { defaultValue: "Ban" })}
             </button>
           </div>
         </div>
@@ -221,6 +226,7 @@ function BanConfirmDialog({
 // ─── Main Component ────────────────────────────────────────────
 
 export default function MemberList() {
+  const { t } = useTranslation("c-rmhtube");
   const room = useRmhTubeStore((s) => s.room);
   const [banTarget, setBanTarget] = useState<ClientMemberInfo | null>(null);
 
@@ -266,7 +272,7 @@ export default function MemberList() {
       {/* Header */}
       <div className="px-3 py-2 border-b border-(--rmhtube-border) flex items-center justify-between">
         <h3 className="text-sm font-semibold text-(--rmhtube-text-muted)">
-          Members ({room.members.length})
+          {t("members-header", { defaultValue: "Members ({{count}})", count: room.members.length })}
         </h3>
         {/* Status selector for current user */}
         {myMember && <StatusSelector currentStatus={myMember.status} />}
@@ -320,7 +326,7 @@ export default function MemberList() {
                   </span>
                   <RoleBadge isHost={memberIsHost} isLeader={memberIsLeader} />
                   {isMe && (
-                    <span className="text-xs text-(--rmhtube-text-dim)">(you)</span>
+                    <span className="text-xs text-(--rmhtube-text-dim)">{t("you-label", { defaultValue: "(you)" })}</span>
                   )}
                 </div>
                 {/* Presence badge (afk / brb) shown below the name row */}
@@ -348,7 +354,7 @@ export default function MemberList() {
                     <button
                       onClick={() => handleTransferHost(member.userId)}
                       className="rounded p-1 transition-colors text-(--rmhtube-text-dim) hover:text-(--rmhtube-warning) hover:bg-(--rmhtube-warning-dim)"
-                      title="Transfer host"
+                      title={t("transfer-host", { defaultValue: "Transfer host" })}
                     >
                       <ArrowRightLeft className="h-3 w-3" />
                     </button>
@@ -359,7 +365,7 @@ export default function MemberList() {
                     <button
                       onClick={() => handleSetLeader(member.userId)}
                       className="rounded p-1 transition-colors text-(--rmhtube-text-dim) hover:text-(--rmhtube-info) hover:bg-(--rmhtube-info-dim)"
-                      title="Make leader"
+                      title={t("make-leader", { defaultValue: "Make leader" })}
                     >
                       <Star className="h-3 w-3" />
                     </button>
@@ -370,7 +376,7 @@ export default function MemberList() {
                     <button
                       onClick={() => handleKick(member.userId)}
                       className="rounded p-1 transition-colors text-(--rmhtube-text-dim) hover:text-(--rmhtube-danger) hover:bg-(--rmhtube-danger-dim)"
-                      title="Kick"
+                      title={t("kick", { defaultValue: "Kick" })}
                     >
                       <UserX className="h-3 w-3" />
                     </button>
@@ -381,7 +387,7 @@ export default function MemberList() {
                     <button
                       onClick={() => setBanTarget(member)}
                       className="rounded p-1 transition-colors text-(--rmhtube-text-dim) hover:text-(--rmhtube-danger) hover:bg-(--rmhtube-danger-dim)"
-                      title="Ban"
+                      title={t("ban", { defaultValue: "Ban" })}
                     >
                       <Ban className="h-3 w-3" />
                     </button>

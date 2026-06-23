@@ -8,6 +8,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Check, ChevronDown } from 'lucide-react';
 import {
   VIBE_MODEL_META,
@@ -28,6 +29,7 @@ export function ModelSelect({
   disabled?: boolean;
   className?: string;
 }) {
+  const { t } = useTranslation("c-rmhvibe");
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -62,7 +64,7 @@ export function ModelSelect({
         className="vibe-model-select__button"
         aria-haspopup="listbox"
         aria-expanded={open}
-        aria-label="Generation model"
+        aria-label={t("generation-model", { defaultValue: "Generation model" })}
         disabled={disabled}
         onClick={() => setOpen((o) => !o)}
       >
@@ -75,7 +77,7 @@ export function ModelSelect({
       </button>
 
       {open && (
-        <div className="vibe-model-select__menu" role="listbox" aria-label="Generation model">
+        <div className="vibe-model-select__menu" role="listbox" aria-label={t("generation-model", { defaultValue: "Generation model" })}>
           {VIBE_PROVIDER_ORDER.map((provider) => (
             <div key={provider} className="vibe-model-select__group">
               <div className="vibe-model-select__group-label">{VIBE_PROVIDER_LABELS[provider]}</div>

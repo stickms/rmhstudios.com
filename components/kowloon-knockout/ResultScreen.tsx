@@ -1,11 +1,13 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/lib/kowloon-knockout/store';
 import { CLASS_DISPLAY } from '@/lib/kowloon-knockout/game/fighters/stats';
 import { networkClient } from '@/lib/kowloon-knockout/network/client';
 
 export default function ResultScreen() {
+    const { t } = useTranslation("c-kowloon-knockout");
     const {
         result, playerWins, opponentWins,
         playerHealth, opponentHealth,
@@ -48,11 +50,11 @@ export default function ResultScreen() {
     const playerDisplay = CLASS_DISPLAY[selectedClass];
     const opponentDisplay = CLASS_DISPLAY[opponentClass];
 
-    const resultText = isDraw ? 'DRAW' : playerWon ? 'YOU WIN!' : 'YOU LOSE';
+    const resultText = isDraw ? t("draw", { defaultValue: "DRAW" }) : playerWon ? t("you-win", { defaultValue: "YOU WIN!" }) : t("you-lose", { defaultValue: "YOU LOSE" });
     const resultColor = isDraw ? '#ffcc00' : playerWon ? '#33ff99' : '#ff3366';
     const subText = result === 'ko'
-        ? (playerWon ? 'KNOCKOUT!' : 'KNOCKED OUT!')
-        : 'DECISION';
+        ? (playerWon ? t("knockout", { defaultValue: "KNOCKOUT!" }) : t("knocked-out", { defaultValue: "KNOCKED OUT!" }))
+        : t("decision", { defaultValue: "DECISION" });
 
     return (
         <div className="result-container">
@@ -101,18 +103,18 @@ export default function ResultScreen() {
                             {playerDisplay.name}
                         </div>
                         <div className="result-hp" style={{ color: playerDisplay.color }}>
-                            {playerHpPct}% HP
+                            {t("hp-pct", { defaultValue: "{{pct}}% HP", pct: playerHpPct })}
                         </div>
                     </div>
 
-                    <div className="result-vs">VS</div>
+                    <div className="result-vs">{t("vs", { defaultValue: "VS" })}</div>
 
                     <div className="result-fighter">
                         <div className="result-fighter-name" style={{ color: opponentDisplay.color }}>
                             {opponentDisplay.name}
                         </div>
                         <div className="result-hp" style={{ color: opponentDisplay.color }}>
-                            {opponentHpPct}% HP
+                            {t("hp-pct", { defaultValue: "{{pct}}% HP", pct: opponentHpPct })}
                         </div>
                     </div>
                 </motion.div>
@@ -129,13 +131,13 @@ export default function ResultScreen() {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                     >
-                        FIGHT AGAIN
+                        {t("fight-again", { defaultValue: "FIGHT AGAIN" })}
                     </motion.button>
                     <button
                         className="neon-button neon-button-back"
                         onClick={handleMainMenu}
                     >
-                        MAIN MENU
+                        {t("main-menu", { defaultValue: "MAIN MENU" })}
                     </button>
                 </motion.div>
             </motion.div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { Plus, Play } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { formatDuration } from '@/lib/rmhmusic/utils';
 
 interface TrackCardProps {
@@ -15,6 +16,7 @@ interface TrackCardProps {
 }
 
 export default function TrackCard({ uri, title, artist, albumArt, durationMs, album, onPlay, onAddToQueue }: TrackCardProps) {
+  const { t } = useTranslation("c-rmhmusic");
   return (
     <div
       className="flex items-center gap-3 p-2 rounded-lg transition-colors group cursor-pointer"
@@ -50,7 +52,7 @@ export default function TrackCard({ uri, title, artist, albumArt, durationMs, al
           onClick={(e) => { e.stopPropagation(); onAddToQueue(); }}
           className="p-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
           style={{ color: 'var(--site-accent)' }}
-          title="Add to queue"
+          title={t("add-to-queue", { defaultValue: "Add to queue" })}
         >
           <Plus className="w-4 h-4" />
         </button>

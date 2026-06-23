@@ -5,6 +5,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Send, Reply, Pin, X, SmilePlus, AtSign } from 'lucide-react';
 import { emit } from '@/lib/rmhtube/socket';
 import { C2S } from '@/lib/rmhtube/events';
@@ -73,6 +74,7 @@ function renderContent(
 // ─── Component ────────────────────────────────────────────────────
 
 export default function ChatPanel() {
+  const { t } = useTranslation("c-rmhtube");
   const store = useRmhTubeStore();
   const room = store.room;
   const settings = store.settings;
@@ -279,7 +281,7 @@ export default function ChatPanel() {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="px-3 py-2 border-b border-(--rmhtube-border)">
-        <h3 className="text-sm font-semibold text-(--rmhtube-text-muted)">Chat</h3>
+        <h3 className="text-sm font-semibold text-(--rmhtube-text-muted)">{t("chat", { defaultValue: "Chat" })}</h3>
       </div>
 
       {/* Pinned Message Banner */}
@@ -288,7 +290,7 @@ export default function ChatPanel() {
           <Pin className="h-3.5 w-3.5 shrink-0 mt-0.5 text-(--rmhtube-accent)" />
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-(--rmhtube-accent)">
-              Pinned by {room.pinnedMessage.userName}
+              {t("pinned-by", { defaultValue: "Pinned by {{userName}}", userName: room.pinnedMessage.userName })}
             </p>
             <p className="text-xs text-(--rmhtube-text) truncate">
               {room.pinnedMessage.content}
@@ -298,7 +300,7 @@ export default function ChatPanel() {
             <button
               onClick={() => handlePin(room.pinnedMessage!.id, false)}
               className="shrink-0 p-0.5 rounded hover:bg-(--rmhtube-border) transition-colors"
-              title="Unpin message"
+              title={t("unpin-message", { defaultValue: "Unpin message" })}
             >
               <X className="h-3.5 w-3.5 text-(--rmhtube-text-muted)" />
             </button>
@@ -310,7 +312,7 @@ export default function ChatPanel() {
       <div ref={containerRef} className="flex-1 overflow-y-auto px-1.5 py-3 space-y-1.5">
         {entries.length === 0 ? (
           <p className="text-xs text-center py-4 text-(--rmhtube-text-dim)">
-            No messages yet
+            {t("no-messages-yet", { defaultValue: "No messages yet" })}
           </p>
         ) : (
           entries.map((entry) => {
@@ -398,7 +400,7 @@ export default function ChatPanel() {
                         emit(C2S.SYNC_SEEK, { time: msg.timestamp });
                       }}
                       className="shrink-0 text-xs font-mono font-semibold text-(--rmhtube-accent) hover:underline"
-                      title={`Jump to ${formatDuration(msg.timestamp)}`}
+                      title={t("jump-to", { defaultValue: "Jump to {{time}}", time: formatDuration(msg.timestamp) })}
                     >
                       {formatDuration(msg.timestamp)}
                     </button>
@@ -448,7 +450,7 @@ export default function ChatPanel() {
                         inputRef.current?.focus();
                       }}
                       className="p-1 rounded hover:bg-(--rmhtube-surface) transition-colors"
-                      title="Reply"
+                      title={t("reply", { defaultValue: "Reply" })}
                     >
                       <Reply className="h-3.5 w-3.5 text-(--rmhtube-text-muted)" />
                     </button>
@@ -460,7 +462,7 @@ export default function ChatPanel() {
                         );
                       }}
                       className="p-1 rounded hover:bg-(--rmhtube-surface) transition-colors"
-                      title="React"
+                      title={t("react", { defaultValue: "React" })}
                     >
                       <SmilePlus className="h-3.5 w-3.5 text-(--rmhtube-text-muted)" />
                     </button>
@@ -552,7 +554,7 @@ export default function ChatPanel() {
           value={message}
           onChange={handleInputChange}
           maxLength={CHAT_MAX_LENGTH}
-          placeholder={replyTo ? `Reply to ${replyTo.userName}...` : 'Type a message...'}
+          placeholder={replyTo ? t("reply-to-placeholder", { defaultValue: "Reply to {{userName}}...", userName: replyTo.userName }) : t("type-a-message", { defaultValue: "Type a message..." })}
           className="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm border border-(--rmhtube-border) bg-(--rmhtube-bg) text-(--rmhtube-text) placeholder:text-(--rmhtube-text-dim) outline-none focus:ring-1 focus:ring-(--rmhtube-accent)"
         />
         <button
@@ -577,7 +579,7 @@ export default function ChatPanel() {
               className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-(--rmhtube-text) hover:bg-(--rmhtube-surface) transition-colors"
             >
               <Pin className="h-3.5 w-3.5" />
-              Unpin Message
+              {t("unpin-message-action", { defaultValue: "Unpin Message" })}
             </button>
           ) : (
             <button
@@ -585,7 +587,7 @@ export default function ChatPanel() {
               className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-(--rmhtube-text) hover:bg-(--rmhtube-surface) transition-colors"
             >
               <Pin className="h-3.5 w-3.5" />
-              Pin Message
+              {t("pin-message-action", { defaultValue: "Pin Message" })}
             </button>
           )}
           <button
@@ -598,7 +600,7 @@ export default function ChatPanel() {
             className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-(--rmhtube-text) hover:bg-(--rmhtube-surface) transition-colors"
           >
             <Reply className="h-3.5 w-3.5" />
-            Reply
+            {t("reply", { defaultValue: "Reply" })}
           </button>
         </div>
       )}

@@ -5,6 +5,7 @@
  */
 'use client';
 
+import { useTranslation } from "react-i18next";
 import DrawingCard from './DrawingCard';
 import BidControls from './BidControls';
 import type { MMStroke } from './DrawingCard';
@@ -27,9 +28,11 @@ interface AuctionPanelProps {
 }
 
 export default function AuctionPanel({ drawings, currency, onBid, disabled }: AuctionPanelProps) {
+  const { t } = useTranslation("c-rmhbox");
+
   if (drawings.length === 0) {
     return (
-      <p className="text-sm text-(--rmhbox-text-muted)">No drawings available.</p>
+      <p className="text-sm text-(--rmhbox-text-muted)">{t("no-drawings-available", { defaultValue: "No drawings available." })}</p>
     );
   }
 
@@ -46,7 +49,7 @@ export default function AuctionPanel({ drawings, currency, onBid, disabled }: Au
         >
           <DrawingCard strokes={drawing.strokes} backgroundColor={drawing.backgroundColor} label={drawing.label} />
           {drawing.isMine ? (
-            <span className="text-xs text-(--rmhbox-text-muted) italic">Your drawing</span>
+            <span className="text-xs text-(--rmhbox-text-muted) italic">{t("your-drawing", { defaultValue: "Your drawing" })}</span>
           ) : (
             <BidControls
               currentBid={drawing.myBidAmount}

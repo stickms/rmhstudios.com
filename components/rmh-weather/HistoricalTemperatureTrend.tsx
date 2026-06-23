@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from "react-i18next";
 import { useWeatherStore } from '@/lib/store/useWeatherStore';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
 
 export const HistoricalTemperatureTrend = () => {
+  const { t } = useTranslation("c-rmh-weather");
   const { selectedLocation } = useWeatherStore();
   const [data, setData] = useState<{ day: string; temp: number }[]>([]);
   const [loading, setLoading] = useState(false);
@@ -32,10 +34,10 @@ export const HistoricalTemperatureTrend = () => {
 
   return (
     <div className="my-2">
-      <div className="text-lg font-semibold text-blue-400 mb-2">Historical Temperature Trend (30 days)</div>
+      <div className="text-lg font-semibold text-blue-400 mb-2">{t("historical-temperature-trend-30-days", { defaultValue: "Historical Temperature Trend (30 days)" })}</div>
       <div className="bg-weather-glass rounded-2xl p-4 border border-weather text-weather">
         {loading ? (
-          <div className="h-48 flex items-center justify-center text-sm text-weather-muted">Loading...</div>
+          <div className="h-48 flex items-center justify-center text-sm text-weather-muted">{t("loading", { defaultValue: "Loading..." })}</div>
         ) : (
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={data} margin={{ top: 36, right: 16, left: 0, bottom: 20 }}>
@@ -44,7 +46,7 @@ export const HistoricalTemperatureTrend = () => {
                 dataKey="day"
                 tick={tickStyle}
                 interval={4}
-                label={{ value: 'Date', position: 'insideBottom', offset: -16, fill: 'var(--weather-fg-muted)', fontSize: 12 }}
+                label={{ value: t("date-axis-label", { defaultValue: "Date" }), position: 'insideBottom', offset: -16, fill: 'var(--weather-fg-muted)', fontSize: 12 }}
               />
               <YAxis
                 tick={tickStyle}
@@ -55,13 +57,13 @@ export const HistoricalTemperatureTrend = () => {
                 labelStyle={{ color: '#94a3b8' }}
                 itemStyle={{ color: '#3b82f6' }}
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              formatter={(v: any) => [`${v}°C`, 'Temperature']}
+              formatter={(v: any) => [`${v}°C`, t("temperature", { defaultValue: "Temperature" })]}
               />
               <Legend verticalAlign="top" align="center" wrapperStyle={{ fontSize: 12, color: 'var(--weather-fg-muted)', paddingBottom: 8 }} />
               <Line
                 type="monotone"
                 dataKey="temp"
-                name="Temperature (°C)"
+                name={t("temperature-celsius", { defaultValue: "Temperature (°C)" })}
                 stroke="#3b82f6"
                 strokeWidth={2}
                 dot={false}

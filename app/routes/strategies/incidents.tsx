@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { IncidentCard } from '@/components/doctrine/incidents/incident-card';
 import { aggregateReactions } from '@/lib/doctrine/divisiveness';
 import { EMPTY_REACTIONS } from '@/lib/doctrine/types';
@@ -10,6 +11,7 @@ export const Route = createFileRoute('/strategies/incidents')({
 });
 
 function IncidentsPage() {
+  const { t } = useTranslation("r-strategies");
   const { data, isLoading } = useQuery({
     queryKey: ['doctrine', 'incidents'],
     queryFn: async () => {
@@ -24,11 +26,11 @@ function IncidentsPage() {
       <div className="flex items-center gap-2">
         <AlertTriangle size={20} style={{ color: 'var(--doctrine-error)' }} />
         <h1 className="text-xl font-bold" style={{ color: 'var(--doctrine-text-primary)' }}>
-          Incident Feed
+          {t("incident-feed", { defaultValue: "Incident Feed" })}
         </h1>
       </div>
       <p className="text-sm" style={{ color: 'var(--doctrine-text-muted)' }}>
-        Every failure is content. Every outage is an event. This is the Hall of Incidents.
+        {t("hall-of-incidents-desc", { defaultValue: "Every failure is content. Every outage is an event. This is the Hall of Incidents." })}
       </p>
 
       {isLoading && (
@@ -62,7 +64,7 @@ function IncidentsPage() {
       {data?.length === 0 && (
         <div className="text-center py-16">
           <AlertTriangle size={32} className="mx-auto mb-3 opacity-10" />
-          <p className="text-sm text-white/30">All systems nominal. For now.</p>
+          <p className="text-sm text-white/30">{t("all-systems-nominal", { defaultValue: "All systems nominal. For now." })}</p>
         </div>
       )}
     </div>

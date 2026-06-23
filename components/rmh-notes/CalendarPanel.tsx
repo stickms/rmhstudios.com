@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNotesDataStore } from '@/lib/store/useNotesDataStore';
 import { NoteReminder } from './types';
 import { toast } from 'sonner';
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export default function CalendarPanel({ onSelectNote }: Props) {
+  const { t } = useTranslation("c-rmh-notes");
   const reminders = useNotesDataStore((s) => s.reminders);
   const updateReminder = useNotesDataStore((s) => s.updateReminder);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -17,12 +19,13 @@ export default function CalendarPanel({ onSelectNote }: Props) {
 
   const handleComplete = (id: string) => {
     updateReminder(id, { isCompleted: true });
-    toast.success('Reminder completed!');
+    toast.success(t("reminder-completed", { defaultValue: "Reminder completed!" }));
   };
 
   const handleSnooze = (id: string, minutes: number) => {
     updateReminder(id, { snoozeMinutes: minutes } as Record<string, unknown>);
-    toast.success(`Snoozed ${minutes < 60 ? minutes + 'm' : minutes / 60 + 'h'}`);
+    const label = minutes < 60 ? minutes + 'm' : minutes / 60 + 'h';
+    toast.success(t("snoozed", { defaultValue: "Snoozed {{label}}", label }));
   };
 
   const now = new Date();
@@ -51,7 +54,7 @@ export default function CalendarPanel({ onSelectNote }: Props) {
             className="font-semibold text-sm hover:underline text-left block truncate"
             style={{ color: 'var(--notes-text)' }}
           >
-            {r.title ?? r.note?.title ?? 'Reminder'}
+            {r.title ?? r.note?.title ?? t("reminder-fallback", { defaultValue: "Reminder" })}
           </button>
           <p className="text-xs mt-0.5" style={{ color: isOver ? 'var(--notes-danger)' : 'var(--notes-text-muted)' }}>
             {new Date(r.dueAt).toLocaleString()} {r.repeatRule && `• ${r.repeatRule}`}
@@ -63,7 +66,7 @@ export default function CalendarPanel({ onSelectNote }: Props) {
               +{m < 60 ? `${m}m` : `${m / 60}h`}
             </button>
           ))}
-          <button onClick={() => handleComplete(r.id)} title="Mark done" className="text-sm px-1.5 py-0.5 rounded" style={{ background: 'var(--notes-success)', color: '#fff' }}>✓</button>
+          <button onClick={() => handleComplete(r.id)} title={t("mark-done", { defaultValue: "Mark done" })} className="text-sm px-1.5 py-0.5 rounded" style={{ background: 'var(--notes-success)', color: '#fff' }}>✓</button>
         </div>
       </div>
     );
@@ -72,7 +75,7 @@ export default function CalendarPanel({ onSelectNote }: Props) {
   return (
     <div className="flex-1 overflow-y-auto p-6" style={{ background: 'var(--notes-surface)' }}>
       <div className="flex items-center gap-3 mb-6">
-        <h2 className="text-xl font-bold" style={{ color: 'var(--notes-text)' }}>📅 Reminders</h2>
+        <h2 className="text-xl font-bold" style={{ color: 'var(--notes-text)' }}>📅 {t("reminders-heading", { defaultValue: "Reminders" })}</h2>
         <div className="flex gap-1 ml-auto">
           {(['agenda', 'calendar', 'overdue'] as const).map((v) => (
             <button
@@ -84,7 +87,7 @@ export default function CalendarPanel({ onSelectNote }: Props) {
                 color: view === v ? 'var(--notes-accent-fg)' : 'var(--notes-text-muted)',
               }}
             >
-              {v === 'agenda' ? '📋 Agenda' : v === 'calendar' ? '📅 Calendar' : '⚠️ Overdue'}
+              {v === 'agenda' ? `📋 ${t("view-agenda", { defaultValue: "Agenda" })}` : v === 'calendar' ? `📅 ${t("view-calendar", { defaultValue: "Calendar" })}` : `⚠️ ${t("view-overdue", { defaultValue: "Overdue" })}`}
               {v === 'overdue' && overdue.length > 0 && (
                 <span className="ml-1 px-1 rounded-full text-xs" style={{ background: 'var(--notes-danger)', color: '#fff' }}>{overdue.length}</span>
               )}
@@ -97,21 +100,21 @@ export default function CalendarPanel({ onSelectNote }: Props) {
         <div className="space-y-2">
           {overdue.length > 0 && (
             <>
-              <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--notes-danger)' }}>Overdue ({overdue.length})</p>
+              <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--notes-danger)' }}>{t("overdue-count", { defaultValue: "Overdue ({{count}})", count: overdue.length })}</p>
               {overdue.map((r) => <ReminderItem key={r.id} r={r} />)}
               <div className="h-3" />
             </>
           )}
           {upcoming.length > 0 ? (
             <>
-              <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--notes-text-subtle)' }}>Upcoming ({upcoming.length})</p>
+              <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--notes-text-subtle)' }}>{t("upcoming-count", { defaultValue: "Upcoming ({{count}})", count: upcoming.length })}</p>
               {upcoming.map((r) => <ReminderItem key={r.id} r={r} />)}
             </>
           ) : overdue.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-4xl mb-3">🎉</p>
-              <p className="text-sm font-medium" style={{ color: 'var(--notes-text-muted)' }}>You&apos;re all caught up!</p>
-              <p className="text-xs mt-1" style={{ color: 'var(--notes-text-subtle)' }}>No upcoming reminders</p>
+              <p className="text-sm font-medium" style={{ color: 'var(--notes-text-muted)' }}>{t("all-caught-up", { defaultValue: "You're all caught up!" })}</p>
+              <p className="text-xs mt-1" style={{ color: 'var(--notes-text-subtle)' }}>{t("no-upcoming-reminders", { defaultValue: "No upcoming reminders" })}</p>
             </div>
           ) : null}
         </div>
@@ -120,7 +123,7 @@ export default function CalendarPanel({ onSelectNote }: Props) {
           {overdue.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-4xl mb-3">✅</p>
-              <p className="text-sm font-medium" style={{ color: 'var(--notes-text-muted)' }}>No overdue reminders!</p>
+              <p className="text-sm font-medium" style={{ color: 'var(--notes-text-muted)' }}>{t("no-overdue-reminders", { defaultValue: "No overdue reminders!" })}</p>
             </div>
           ) : overdue.map((r) => <ReminderItem key={r.id} r={r} />)}
         </div>
@@ -135,7 +138,15 @@ export default function CalendarPanel({ onSelectNote }: Props) {
             <button onClick={() => setCurrentMonth((m) => { const n = new Date(m); n.setMonth(n.getMonth() + 1); return n; })} className="text-sm px-2 py-1 rounded" style={{ color: 'var(--notes-text-muted)' }}>▶</button>
           </div>
           <div className="grid grid-cols-7 gap-1 text-center mb-2">
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
+            {[
+              t("day-sun", { defaultValue: "Sun" }),
+              t("day-mon", { defaultValue: "Mon" }),
+              t("day-tue", { defaultValue: "Tue" }),
+              t("day-wed", { defaultValue: "Wed" }),
+              t("day-thu", { defaultValue: "Thu" }),
+              t("day-fri", { defaultValue: "Fri" }),
+              t("day-sat", { defaultValue: "Sat" }),
+            ].map((d) => (
               <div key={d} className="text-xs font-semibold py-1" style={{ color: 'var(--notes-text-subtle)' }}>{d}</div>
             ))}
           </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useHoldemStore } from '@/lib/holdem/store';
 import { HAND_RANK_LABELS } from '@/lib/holdem/logic';
 import type { Card } from '@/lib/holdem/logic';
@@ -65,12 +66,13 @@ function PlayerSeatView({ player, isCurrentTurn, isMe, turnSeconds }: {
   isMe: boolean;
   turnSeconds: number | null;
 }) {
+  const { t } = useTranslation("c-rmhcoins");
   const actionLabels: Record<string, { label: string; color: string }> = {
-    fold: { label: 'Fold', color: 'text-gray-500' },
-    check: { label: 'Check', color: 'text-blue-400' },
-    call: { label: 'Call', color: 'text-emerald-400' },
-    raise: { label: 'Raise', color: 'text-yellow-400' },
-    all_in: { label: 'ALL IN', color: 'text-red-400' },
+    fold: { label: t("action-fold", { defaultValue: "Fold" }), color: 'text-gray-500' },
+    check: { label: t("action-check", { defaultValue: "Check" }), color: 'text-blue-400' },
+    call: { label: t("action-call", { defaultValue: "Call" }), color: 'text-emerald-400' },
+    raise: { label: t("action-raise", { defaultValue: "Raise" }), color: 'text-yellow-400' },
+    all_in: { label: t("action-all-in", { defaultValue: "ALL IN" }), color: 'text-red-400' },
   };
 
   return (
@@ -81,7 +83,7 @@ function PlayerSeatView({ player, isCurrentTurn, isMe, turnSeconds }: {
       <div className="flex items-center gap-1 flex-wrap justify-center">
         {player.avatarUrl && <img src={player.avatarUrl} alt="" className="w-4 h-4 rounded-full shrink-0" />}
         <span className={`text-xs font-bold truncate max-w-14 sm:max-w-20 ${isMe ? 'text-emerald-400' : 'text-site-text'}`}>
-          {isMe ? 'You' : player.userName}
+          {isMe ? t("you", { defaultValue: "You" }) : player.userName}
         </span>
         {player.isDealer && <span className="text-[8px] sm:text-[9px] font-bold bg-yellow-500/30 text-yellow-400 px-1 rounded">D</span>}
         {player.isSmallBlind && <span className="text-[8px] sm:text-[9px] font-bold bg-blue-500/30 text-blue-400 px-1 rounded">SB</span>}
@@ -121,7 +123,7 @@ function PlayerSeatView({ player, isCurrentTurn, isMe, turnSeconds }: {
 
       {/* Current bet */}
       {player.currentBet > 0 && (
-        <span className="text-[10px] text-yellow-500 font-bold">Bet: {player.currentBet}</span>
+        <span className="text-[10px] text-yellow-500 font-bold">{t("bet-amount", { defaultValue: "Bet: {{amount}}", amount: player.currentBet })}</span>
       )}
 
       {/* Last action */}
@@ -131,14 +133,15 @@ function PlayerSeatView({ player, isCurrentTurn, isMe, turnSeconds }: {
         </span>
       )}
 
-      {player.sittingOut && <span className="text-[10px] text-orange-400 font-bold">Sitting Out</span>}
-      {player.folded && !player.sittingOut && <span className="text-[10px] text-gray-500 font-bold">Folded</span>}
-      {player.allIn && <span className="text-[10px] text-red-400 font-bold animate-pulse">ALL IN</span>}
+      {player.sittingOut && <span className="text-[10px] text-orange-400 font-bold">{t("sitting-out", { defaultValue: "Sitting Out" })}</span>}
+      {player.folded && !player.sittingOut && <span className="text-[10px] text-gray-500 font-bold">{t("folded", { defaultValue: "Folded" })}</span>}
+      {player.allIn && <span className="text-[10px] text-red-400 font-bold animate-pulse">{t("action-all-in", { defaultValue: "ALL IN" })}</span>}
     </div>
   );
 }
 
 export function HoldemTable() {
+  const { t } = useTranslation("c-rmhcoins");
   const {
     players,
     communityCards,
@@ -173,7 +176,7 @@ export function HoldemTable() {
           ))
         ) : (
           <span className="text-xs text-site-text-dim px-4">
-            {phase === 'waiting' ? 'Waiting for players...' : 'Cards will appear here'}
+            {phase === 'waiting' ? t("waiting-for-players", { defaultValue: "Waiting for players..." }) : t("cards-will-appear", { defaultValue: "Cards will appear here" })}
           </span>
         )}
       </div>
@@ -183,7 +186,7 @@ export function HoldemTable() {
         <div className="flex flex-col gap-1 text-center">
           {lastHandResults.map((r) => {
             const player = players.find((p) => p.userId === r.userId);
-            const name = player?.userId === myUserId ? 'You' : player?.userName;
+            const name = player?.userId === myUserId ? t("you", { defaultValue: "You" }) : player?.userName;
             const net = r.netGain ?? 0;
             if (net === 0 && !r.payout) return null;
             return (
@@ -196,7 +199,7 @@ export function HoldemTable() {
                 ) : net < 0 ? (
                   <span className="font-bold text-red-400"> {net}</span>
                 ) : (
-                  <span className="text-site-text-dim"> broke even</span>
+                  <span className="text-site-text-dim"> {t("broke-even", { defaultValue: "broke even" })}</span>
                 )}
                 {r.handRank && (
                   <span className="text-site-text-dim"> — {HAND_RANK_LABELS[r.handRank]}</span>
@@ -225,7 +228,7 @@ export function HoldemTable() {
           </div>
         </div>
       ) : (
-        <p className="text-sm text-site-text-dim">No players at the table yet.</p>
+        <p className="text-sm text-site-text-dim">{t("no-players", { defaultValue: "No players at the table yet." })}</p>
       )}
     </div>
   );

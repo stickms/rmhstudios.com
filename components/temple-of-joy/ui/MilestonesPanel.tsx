@@ -1,4 +1,5 @@
 'use client';
+import { useTranslation } from "react-i18next";
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { MILESTONES } from '@/lib/temple-of-joy/data/milestones';
 import { fmt } from '@/lib/temple-of-joy/numbers';
@@ -8,6 +9,8 @@ export default function MilestonesPanel() {
   const lifetimeHappiness = useTempleStore((s) => s.lifetimeHappiness);
   const numberFormat = useTempleStore((s) => s.numberFormat);
   const theme = useTempleStore((s) => s.theme);
+
+  const { t } = useTranslation("c-temple-of-joy");
 
   const dark = theme === 'dark';
 
@@ -31,7 +34,7 @@ export default function MilestonesPanel() {
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-serif font-bold">⛩️ Milestones</h2>
+        <h2 className="text-lg font-serif font-bold">⛩️ {t("milestones", { defaultValue: "Milestones" })}</h2>
         <span
           className="text-sm font-semibold px-3 py-1 rounded-full"
           style={{
@@ -67,13 +70,13 @@ export default function MilestonesPanel() {
             borderColor: dark ? '#6b4c2a' : '#c4a97a',
           }}
         >
-          <span className="opacity-60 text-xs font-medium uppercase tracking-wide">Next</span>
+          <span className="opacity-60 text-xs font-medium uppercase tracking-wide">{t("next", { defaultValue: "Next" })}</span>
           <p className="font-semibold mt-0.5">
             {nextMilestone.label}
           </p>
           <div className="flex items-center justify-between mt-1">
             <span className="text-xs opacity-70">
-              {fmt(nextMilestone.threshold, numberFormat)} lifetime happiness
+              {fmt(nextMilestone.threshold, numberFormat)} {t("lifetime-happiness", { defaultValue: "lifetime happiness" })}
             </span>
             <span
               className="text-xs font-semibold"
@@ -104,7 +107,7 @@ export default function MilestonesPanel() {
           <h3
             className="text-xs font-semibold uppercase tracking-wider mb-2 opacity-60"
           >
-            Reached
+            {t("reached", { defaultValue: "Reached" })}
           </h3>
           <div className="space-y-2">
             {[...reached].reverse().map((m) => (
@@ -140,7 +143,7 @@ export default function MilestonesPanel() {
           <h3
             className="text-xs font-semibold uppercase tracking-wider mb-2 opacity-60"
           >
-            Upcoming
+            {t("upcoming", { defaultValue: "Upcoming" })}
           </h3>
           <div className="space-y-2">
             {upcoming.map((m) => (

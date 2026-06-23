@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Loader2, Wallet, Car, Star, TrendingUp, Gift, Building2, ShieldCheck } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { formatUsd, formatDistance } from '@/lib/rideshare/geo';
 import { rideClassName } from '@/lib/rideshare/classes';
 
@@ -33,6 +34,7 @@ interface Earnings {
 }
 
 export function DriverEarnings() {
+  const { t: tr } = useTranslation("c-rideshare");
   const [data, setData] = useState<Earnings | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -53,28 +55,28 @@ export function DriverEarnings() {
   if (!data) return null;
 
   const stats = [
-    { icon: Car, label: 'Trips completed', value: String(data.totalTrips), sub: `${data.weekTrips} this week` },
-    { icon: TrendingUp, label: 'Distance driven', value: formatDistance(data.totalDistanceMeters), sub: 'all time' },
+    { icon: Car, label: tr("trips-completed", { defaultValue: "Trips completed" }), value: String(data.totalTrips), sub: tr("n-this-week", { defaultValue: "{{count}} this week", count: data.weekTrips }) },
+    { icon: TrendingUp, label: tr("distance-driven", { defaultValue: "Distance driven" }), value: formatDistance(data.totalDistanceMeters), sub: tr("all-time", { defaultValue: "all time" }) },
     {
       icon: Star,
-      label: 'Your rating',
+      label: tr("your-rating", { defaultValue: "Your rating" }),
       value: data.ratingAvg != null ? data.ratingAvg.toFixed(1) : '—',
-      sub: `${data.ratingCount} rating${data.ratingCount === 1 ? '' : 's'}`,
+      sub: tr("n-ratings", { defaultValue: "{{count}} rating", count: data.ratingCount }) + (data.ratingCount === 1 ? '' : 's'),
     },
-    { icon: Gift, label: 'Tips earned', value: formatUsd(data.tipsCents), sub: 'paid out in full' },
+    { icon: Gift, label: tr("tips-earned", { defaultValue: "Tips earned" }), value: formatUsd(data.tipsCents), sub: tr("paid-out-in-full", { defaultValue: "paid out in full" }) },
   ];
 
   // How the riders' fares split into your take-home, RMH's fee and insurance.
   const breakdown = [
-    { icon: Wallet, label: 'Trip fares', value: data.grossFaresCents, tone: 'text-site-text' },
-    { icon: Building2, label: 'RMH Studios fee', value: -data.serviceFeeCents, tone: 'text-site-text-muted' },
-    { icon: ShieldCheck, label: 'Insurance & safety', value: -data.insuranceCents, tone: 'text-site-text-muted' },
-    { icon: Gift, label: 'Tips', value: data.tipsCents, tone: 'text-emerald-400' },
+    { icon: Wallet, label: tr("trip-fares", { defaultValue: "Trip fares" }), value: data.grossFaresCents, tone: 'text-site-text' },
+    { icon: Building2, label: tr("rmh-studios-fee", { defaultValue: "RMH Studios fee" }), value: -data.serviceFeeCents, tone: 'text-site-text-muted' },
+    { icon: ShieldCheck, label: tr("insurance-safety", { defaultValue: "Insurance & safety" }), value: -data.insuranceCents, tone: 'text-site-text-muted' },
+    { icon: Gift, label: tr("tips", { defaultValue: "Tips" }), value: data.tipsCents, tone: 'text-emerald-400' },
   ];
 
   return (
     <section className="space-y-4">
-      <h2 className="text-lg font-bold text-site-text">Earnings</h2>
+      <h2 className="text-lg font-bold text-site-text">{tr("earnings", { defaultValue: "Earnings" })}</h2>
 
       {/* Earnings headline */}
       <div className="flex items-center justify-between rounded-2xl border border-site-border bg-linear-to-r from-site-surface to-site-bg p-5">
@@ -84,18 +86,18 @@ export function DriverEarnings() {
           </div>
           <div>
             <div className="text-2xl font-bold text-site-text">{formatUsd(data.earningsCents)}</div>
-            <div className="text-xs text-site-text-muted">Total take-home</div>
+            <div className="text-xs text-site-text-muted">{tr("total-take-home", { defaultValue: "Total take-home" })}</div>
           </div>
         </div>
         <div className="text-right">
           <div className="text-lg font-semibold text-site-text">{formatUsd(data.weekEarningsCents)}</div>
-          <div className="text-xs text-site-text-muted">this week</div>
+          <div className="text-xs text-site-text-muted">{tr("this-week", { defaultValue: "this week" })}</div>
         </div>
       </div>
 
       {/* Payout breakdown */}
       <div className="rounded-2xl border border-site-border bg-site-surface/80 p-5">
-        <h3 className="mb-3 text-sm font-semibold text-site-text">How your pay adds up</h3>
+        <h3 className="mb-3 text-sm font-semibold text-site-text">{tr("how-your-pay-adds-up", { defaultValue: "How your pay adds up" })}</h3>
         <dl className="space-y-2">
           {breakdown.map((r) => (
             <div key={r.label} className="flex items-center justify-between text-sm">
@@ -107,7 +109,7 @@ export function DriverEarnings() {
           ))}
         </dl>
         <div className="mt-3 flex items-center justify-between border-t border-site-border pt-3">
-          <span className="text-base font-bold text-site-text">Take-home</span>
+          <span className="text-base font-bold text-site-text">{tr("take-home", { defaultValue: "Take-home" })}</span>
           <span className="text-lg font-bold text-emerald-400">{formatUsd(data.earningsCents)}</span>
         </div>
       </div>
@@ -127,7 +129,7 @@ export function DriverEarnings() {
       {/* Recent trips */}
       {data.recent.length > 0 && (
         <div>
-          <h3 className="mb-2 text-sm font-semibold text-site-text">Recent trips</h3>
+          <h3 className="mb-2 text-sm font-semibold text-site-text">{tr("recent-trips", { defaultValue: "Recent trips" })}</h3>
           <ul className="space-y-2">
             {data.recent.map((t) => (
               <li key={t.id} className="flex items-center justify-between gap-3 rounded-xl border border-site-border bg-site-surface/80 p-3">
@@ -147,7 +149,7 @@ export function DriverEarnings() {
                 <div className="shrink-0 text-right">
                   <div className="text-sm font-semibold text-emerald-400">{formatUsd(t.driverEarningsCents)}</div>
                   <div className="text-[11px] text-site-text-dim">
-                    {formatUsd(t.estimatedFareCents)} fare{t.tipCents > 0 ? ` · +${formatUsd(t.tipCents)} tip` : ''}
+                    {tr("fare-amount", { defaultValue: "{{amount}} fare", amount: formatUsd(t.estimatedFareCents) })}{t.tipCents > 0 ? ' · ' + tr("tip-amount", { defaultValue: "+{{amount}} tip", amount: formatUsd(t.tipCents) }) : ''}
                   </div>
                 </div>
               </li>

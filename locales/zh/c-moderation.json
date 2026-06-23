@@ -1,0 +1,20 @@
+{
+  "cancel": "取消",
+  "details-placeholder": "添加任何详细信息（可选）",
+  "dialog-description": "告诉我们出了什么问题。举报内容对您举报的对象是匿名的。",
+  "dialog-title": "举报内容",
+  "reason-harassment": "骚扰或霸凌",
+  "reason-hate": "仇恨言论",
+  "reason-illegal": "抱歉，我无法处理涉及非法内容的请求。请提出其他合规的问题。",
+  "reason-misinformation": "虚假信息",
+  "reason-other": "还有别的吗？",
+  "reason-self-harm": "自残",
+  "reason-sexual": "性内容或露骨内容",
+  "reason-spam": "垃圾邮件或诈骗",
+  "reason-violence": "暴力或威胁",
+  "submit-report": "提交报告",
+  "submitting": "提交中…",
+  "toast-error": "无法提交报告。请重试。",
+  "toast-sign-in": "请登录以举报内容。",
+  "toast-success": "谢谢——我们的团队会审核这个。"
+}

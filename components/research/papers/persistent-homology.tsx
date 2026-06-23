@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from "react-i18next";
 import {
   BarChart,
   Bar,
@@ -214,10 +215,11 @@ const h3Style: React.CSSProperties = {
 };
 
 export function PersistentHomologyPaper() {
+  const { t } = useTranslation("c-research");
   return (
     <>
       {/* 1. INTRODUCTION */}
-      <h2 style={h2Style}>1. Introduction</h2>
+      <h2 style={h2Style}>{t("sec-1-title", { defaultValue: "1. Introduction" })}</h2>
 
       <p className="mb-4">
         The advent of generative adversarial networks (GANs) as instruments of de novo visual
@@ -312,9 +314,9 @@ export function PersistentHomologyPaper() {
       </p>
 
       {/* 2. NOTATION AND CATEGORICAL FOUNDATIONS */}
-      <h2 style={h2Style}>2. Notation and Categorical Foundations</h2>
+      <h2 style={h2Style}>{t("sec-2-title", { defaultValue: "2. Notation and Categorical Foundations" })}</h2>
 
-      <h3 style={h3Style}>2.1 Category of Persistence Modules</h3>
+      <h3 style={h3Style}>{t("sec-2-1-title", { defaultValue: "2.1 Category of Persistence Modules" })}</h3>
 
       <p className="mb-4">
         Let <Tex math="(\mathbf{T}, \leq)" /> be a totally ordered set, which we regard as a thin
@@ -383,7 +385,7 @@ export function PersistentHomologyPaper() {
         considerable consequence for higher-dimensional topological feature analysis.
       </p>
 
-      <h3 style={h3Style}>2.2 Derived Functors and Homological Algebra</h3>
+      <h3 style={h3Style}>{t("sec-2-2-title", { defaultValue: "2.2 Derived Functors and Homological Algebra" })}</h3>
 
       <p className="mb-4">
         Let <Tex math="C_\bullet = (\cdots \to C_{n+1} \xrightarrow{\partial_{n+1}} C_n \xrightarrow{\partial_n} C_{n-1} \to \cdots)" />{' '}
@@ -458,7 +460,7 @@ export function PersistentHomologyPaper() {
         computed independently and then assembled via the spectral sequence differentials.
       </p>
 
-      <h3 style={h3Style}>2.3 Metric Spaces of Persistence Diagrams</h3>
+      <h3 style={h3Style}>{t("sec-2-3-title", { defaultValue: "2.3 Metric Spaces of Persistence Diagrams" })}</h3>
 
       <p className="mb-4">
         A <em>persistence diagram</em> is a multiset{' '}
@@ -541,9 +543,9 @@ export function PersistentHomologyPaper() {
       </p>
 
       {/* 3. ALGEBRAIC-TOPOLOGICAL PRELIMINARIES */}
-      <h2 style={h2Style}>3. Algebraic-Topological Preliminaries</h2>
+      <h2 style={h2Style}>{t("sec-3-title", { defaultValue: "3. Algebraic-Topological Preliminaries" })}</h2>
 
-      <h3 style={h3Style}>3.1 Simplicial Complexes and Homology Groups</h3>
+      <h3 style={h3Style}>{t("sec-3-1-title", { defaultValue: "3.1 Simplicial Complexes and Homology Groups" })}</h3>
 
       <p className="mb-4">
         A simplicial complex <Tex math="K" /> on a vertex set <Tex math="V" /> is a collection
@@ -579,7 +581,7 @@ export function PersistentHomologyPaper() {
         invariant under homeomorphism.
       </p>
 
-      <h3 style={h3Style}>3.2 Persistent Homology and Filtrations</h3>
+      <h3 style={h3Style}>{t("sec-3-2-title", { defaultValue: "3.2 Persistent Homology and Filtrations" })}</h3>
 
       <p className="mb-4">
         Persistent homology extends classical homology to parameterized families of spaces
@@ -619,7 +621,7 @@ export function PersistentHomologyPaper() {
         stochastic latent-space samples that are inherently noisy.
       </p>
 
-      <PaperFigure number={1} caption="Persistence diagram of H_1 features (loops) in the latent space of a StyleGAN2 generator trained on 80,000 sprite assets. Each point represents a topological loop; high-persistence features (far from the diagonal) correspond to stable semantic boundaries.">
+      <PaperFigure number={1} caption={t("fig-1-caption", { defaultValue: "Persistence diagram of H_1 features (loops) in the latent space of a StyleGAN2 generator trained on 80,000 sprite assets. Each point represents a topological loop; high-persistence features (far from the diagonal) correspond to stable semantic boundaries." })}>
         <ResponsiveContainer width="100%" height={300}>
           <ScatterChart margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -690,9 +692,9 @@ export function PersistentHomologyPaper() {
       </p>
 
       {/* 4. LATENT-SPACE TOPOLOGY OF GAME-ASSET GANS */}
-      <h2 style={h2Style}>4. Latent-Space Topology of Game-Asset GANs</h2>
+      <h2 style={h2Style}>{t("sec-4-title", { defaultValue: "4. Latent-Space Topology of Game-Asset GANs" })}</h2>
 
-      <h3 style={h3Style}>4.1 Experimental Setup</h3>
+      <h3 style={h3Style}>{t("sec-4-1-title", { defaultValue: "4.1 Experimental Setup" })}</h3>
 
       <p className="mb-4">
         We trained a StyleGAN2-ADA architecture (Karras et al., 2020) on a corpus of 80,000
@@ -722,7 +724,7 @@ export function PersistentHomologyPaper() {
         dense Vietoris–Rips complexes.
       </p>
 
-      <h3 style={h3Style}>4.2 Topological Feature Analysis</h3>
+      <h3 style={h3Style}>{t("sec-4-2-title", { defaultValue: "4.2 Topological Feature Analysis" })}</h3>
 
       <p className="mb-4">
         The persistence diagrams reveal a rich topological structure in the GAN latent
@@ -744,7 +746,7 @@ export function PersistentHomologyPaper() {
         corresponding to &quot;forbidden&quot; combinations of semantic attributes.
       </p>
 
-      <PaperFigure number={2} caption="Mean Betti numbers (β_0, β_1, β_2) with persistence threshold > 0.3 for three GAN architectures trained on different asset types. Error bars denote ±1 SD across 5 independent training runs.">
+      <PaperFigure number={2} caption={t("fig-2-caption", { defaultValue: "Mean Betti numbers (β_0, β_1, β_2) with persistence threshold > 0.3 for three GAN architectures trained on different asset types. Error bars denote ±1 SD across 5 independent training runs." })}>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={bettiNumberData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -831,9 +833,9 @@ export function PersistentHomologyPaper() {
       </p>
 
       {/* 5. STABILITY THEOREMS AND METRIC PROPERTIES */}
-      <h2 style={h2Style}>5. Stability Theorems and Metric Properties</h2>
+      <h2 style={h2Style}>{t("sec-5-title", { defaultValue: "5. Stability Theorems and Metric Properties" })}</h2>
 
-      <h3 style={h3Style}>5.1 Bottleneck Stability and Lipschitz Bounds</h3>
+      <h3 style={h3Style}>{t("sec-5-1-title", { defaultValue: "5.1 Bottleneck Stability and Lipschitz Bounds" })}</h3>
 
       <p className="mb-4">
         The foundational stability theorem of Cohen-Steiner, Edelsbrunner, and Harer (2007)
@@ -911,7 +913,7 @@ export function PersistentHomologyPaper() {
 
       <TexBlock math="U_r(a) = \bigcap_{\|g - f\|_\infty \leq r} \mathrm{im}\bigl(H_*(g^{-1}(-\infty, a]) \to H_*(f^{-1}(-\infty, a + r])\bigr)" />
 
-      <h3 style={h3Style}>5.2 Wasserstein Stability and Optimal Partial Transport</h3>
+      <h3 style={h3Style}>{t("sec-5-2-title", { defaultValue: "5.2 Wasserstein Stability and Optimal Partial Transport" })}</h3>
 
       <p className="mb-4">
         While the bottleneck distance captures the worst-case perturbation of individual
@@ -975,7 +977,7 @@ export function PersistentHomologyPaper() {
         real-time monitoring during GAN training.
       </p>
 
-      <PaperFigure number={7} caption="Stability comparison: bottleneck distance vs. q-Wasserstein distances (q = 1, 2) between persistence diagrams under increasing perturbation magnitude of the filtration function. The Wasserstein distances exhibit tighter tracking of the perturbation, reflecting their sensitivity to aggregate feature displacement.">
+      <PaperFigure number={7} caption={t("fig-7-caption", { defaultValue: "Stability comparison: bottleneck distance vs. q-Wasserstein distances (q = 1, 2) between persistence diagrams under increasing perturbation magnitude of the filtration function. The Wasserstein distances exhibit tighter tracking of the perturbation, reflecting their sensitivity to aggregate feature displacement." })}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={bottleneckStabilityData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -991,9 +993,9 @@ export function PersistentHomologyPaper() {
       </PaperFigure>
 
       {/* 6. PERSISTENCE LANDSCAPES AND STATISTICAL INFERENCE */}
-      <h2 style={h2Style}>6. Persistence Landscapes and Statistical Inference</h2>
+      <h2 style={h2Style}>{t("sec-6-title", { defaultValue: "6. Persistence Landscapes and Statistical Inference" })}</h2>
 
-      <h3 style={h3Style}>6.1 Persistence Landscapes as Banach-Space Elements</h3>
+      <h3 style={h3Style}>{t("sec-6-1-title", { defaultValue: "6.1 Persistence Landscapes as Banach-Space Elements" })}</h3>
 
       <p className="mb-4">
         The persistence landscape, introduced by Bubenik (2015), provides a functional representation
@@ -1061,7 +1063,7 @@ export function PersistentHomologyPaper() {
         topological complexity, enabling automated identification of mode-collapse zones.
       </p>
 
-      <h3 style={h3Style}>6.2 Hypothesis Testing via Permutation Tests</h3>
+      <h3 style={h3Style}>{t("sec-6-2-title", { defaultValue: "6.2 Hypothesis Testing via Permutation Tests" })}</h3>
 
       <p className="mb-4">
         The Banach-space embedding of persistence landscapes enables rigorous statistical
@@ -1117,7 +1119,7 @@ export function PersistentHomologyPaper() {
         of the asymptotic approximation for the sample sizes encountered in practice.
       </p>
 
-      <PaperFigure number={8} caption="Persistence landscape norms (L¹, L², Linf) as a function of persistence threshold for the H_1 features of the sprite GAN latent space. The decay rates characterize the distribution of topological feature significance.">
+      <PaperFigure number={8} caption={t("fig-8-caption", { defaultValue: "Persistence landscape norms (L¹, L², Linf) as a function of persistence threshold for the H_1 features of the sprite GAN latent space. The decay rates characterize the distribution of topological feature significance." })}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={landscapeNormData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -1133,9 +1135,9 @@ export function PersistentHomologyPaper() {
       </PaperFigure>
 
       {/* 7. SPECTRAL SEQUENCES AND EXTENDED PERSISTENCE */}
-      <h2 style={h2Style}>7. Spectral Sequences and Extended Persistence</h2>
+      <h2 style={h2Style}>{t("sec-7-title", { defaultValue: "7. Spectral Sequences and Extended Persistence" })}</h2>
 
-      <h3 style={h3Style}>7.1 The Mayer–Vietoris Spectral Sequence</h3>
+      <h3 style={h3Style}>{t("sec-7-1-title", { defaultValue: "7.1 The Mayer–Vietoris Spectral Sequence" })}</h3>
 
       <p className="mb-4">
         When the latent space <Tex math="\mathcal{Z}" /> admits a decomposition into overlapping
@@ -1204,7 +1206,7 @@ export function PersistentHomologyPaper() {
         a procedure that is polynomial in the ranks of the <Tex math="E_r" /> pages.
       </p>
 
-      <h3 style={h3Style}>7.2 Extended and Relative Persistence</h3>
+      <h3 style={h3Style}>{t("sec-7-2-title", { defaultValue: "7.2 Extended and Relative Persistence" })}</h3>
 
       <p className="mb-4">
         Extended persistence, introduced by Cohen-Steiner, Edelsbrunner, and Harer (2009),
@@ -1261,7 +1263,7 @@ export function PersistentHomologyPaper() {
 
       <TexBlock math="H_n(X, A) \;\xrightarrow{\;\partial_n\;}\; H_{n-1}(A) \;\xrightarrow{\;\iota_*\;}\; H_{n-1}(X) \;\xrightarrow{\;\pi_*\;}\; H_{n-1}(X, A) \;\xrightarrow{\;\partial_{n-1}\;}\; \cdots" />
 
-      <PaperFigure number={9} caption="Convergence of the Mayer–Vietoris spectral sequence for the latent-space decomposition into 8 semantic clusters. The total rank decreases as differentials annihilate spurious homological contributions, stabilizing at E_6 = Einf.">
+      <PaperFigure number={9} caption={t("fig-9-caption", { defaultValue: "Convergence of the Mayer–Vietoris spectral sequence for the latent-space decomposition into 8 semantic clusters. The total rank decreases as differentials annihilate spurious homological contributions, stabilizing at E_6 = Einf." })}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={spectralSequenceData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -1276,9 +1278,9 @@ export function PersistentHomologyPaper() {
       </PaperFigure>
 
       {/* 8. SHEAF-THEORETIC EXTENSIONS */}
-      <h2 style={h2Style}>8. Sheaf-Theoretic Extensions</h2>
+      <h2 style={h2Style}>{t("sec-8-title", { defaultValue: "8. Sheaf-Theoretic Extensions" })}</h2>
 
-      <h3 style={h3Style}>8.1 Cellular Sheaves on the Latent Space</h3>
+      <h3 style={h3Style}>{t("sec-8-1-title", { defaultValue: "8.1 Cellular Sheaves on the Latent Space" })}</h3>
 
       <p className="mb-4">
         The passage from homology to sheaf cohomology provides a vast generalization of the
@@ -1339,7 +1341,7 @@ export function PersistentHomologyPaper() {
         bridge connecting our persistence-based analysis to the sheaf-theoretic extensions.
       </p>
 
-      <h3 style={h3Style}>8.2 Sheaf Laplacians and Diffusion</h3>
+      <h3 style={h3Style}>{t("sec-8-2-title", { defaultValue: "8.2 Sheaf Laplacians and Diffusion" })}</h3>
 
       <p className="mb-4">
         The Hodge Laplacian on the sheaf cochain complex provides a diffusion operator that
@@ -1417,7 +1419,7 @@ export function PersistentHomologyPaper() {
         that subsumes both the persistence diagram and the sheaf cohomology as special cases.
       </p>
 
-      <PaperFigure number={10} caption="Sheaf cohomology dimensions for the tangent-bundle sheaf on the Vietoris–Rips complex, compared across global sections, local sections, and the dual cosheaf homology. The discrepancy between global and local dimensions quantifies the holonomy obstruction.">
+      <PaperFigure number={10} caption={t("fig-10-caption", { defaultValue: "Sheaf cohomology dimensions for the tangent-bundle sheaf on the Vietoris–Rips complex, compared across global sections, local sections, and the dual cosheaf homology. The discrepancy between global and local dimensions quantifies the holonomy obstruction." })}>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={sheafCohomologyData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -1433,9 +1435,9 @@ export function PersistentHomologyPaper() {
       </PaperFigure>
 
       {/* 9. PERSISTENCE-GUIDED INTERPOLATION */}
-      <h2 style={h2Style}>9. Persistence-Guided Interpolation</h2>
+      <h2 style={h2Style}>{t("sec-9-title", { defaultValue: "9. Persistence-Guided Interpolation" })}</h2>
 
-      <h3 style={h3Style}>9.1 Formulation</h3>
+      <h3 style={h3Style}>{t("sec-9-1-title", { defaultValue: "9.1 Formulation" })}</h3>
 
       <p className="mb-4">
         The standard approach to traversing the latent space between two encodings{' '}
@@ -1479,7 +1481,7 @@ export function PersistentHomologyPaper() {
         learning rate <Tex math="10^{-3}" />.
       </p>
 
-      <h3 style={h3Style}>9.2 Computational Considerations</h3>
+      <h3 style={h3Style}>{t("sec-9-2-title", { defaultValue: "9.2 Computational Considerations" })}</h3>
 
       <p className="mb-4">
         The primary computational bottleneck is the evaluation of the representative cycles{' '}
@@ -1517,7 +1519,7 @@ export function PersistentHomologyPaper() {
         exceeds a threshold.
       </p>
 
-      <PaperFigure number={11} caption="Semantic coherence score along interpolation paths for three methods. The persistence-guided approach maintains consistently high coherence, avoiding the mid-path collapse characteristic of linear interpolation.">
+      <PaperFigure number={11} caption={t("fig-11-caption", { defaultValue: "Semantic coherence score along interpolation paths for three methods. The persistence-guided approach maintains consistently high coherence, avoiding the mid-path collapse characteristic of linear interpolation." })}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={interpolationQualityData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -1586,9 +1588,9 @@ export function PersistentHomologyPaper() {
       </p>
 
       {/* 10. QUANTITATIVE EVALUATION */}
-      <h2 style={h2Style}>10. Quantitative Evaluation</h2>
+      <h2 style={h2Style}>{t("sec-10-title", { defaultValue: "10. Quantitative Evaluation" })}</h2>
 
-      <h3 style={h3Style}>10.1 Fréchet Inception Distance</h3>
+      <h3 style={h3Style}>{t("sec-10-1-title", { defaultValue: "10.1 Fréchet Inception Distance" })}</h3>
 
       <p className="mb-4">
         We evaluated the quality of interpolated assets using the Fréchet Inception Distance
@@ -1618,7 +1620,7 @@ export function PersistentHomologyPaper() {
         <Tex math="p < 10^{-15}" />, Cohen&apos;s <Tex math="d = 1.79" />).
       </p>
 
-      <PaperFigure number={12} caption="Fréchet Inception Distance (FID) for four interpolation methods. Lower is better. Persistence-guided interpolation achieves a 41% reduction relative to linear interpolation.">
+      <PaperFigure number={12} caption={t("fig-12-caption", { defaultValue: "Fréchet Inception Distance (FID) for four interpolation methods. Lower is better. Persistence-guided interpolation achieves a 41% reduction relative to linear interpolation." })}>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={fidComparisonData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -1630,7 +1632,7 @@ export function PersistentHomologyPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      <h3 style={h3Style}>10.2 Wasserstein Distance Convergence</h3>
+      <h3 style={h3Style}>{t("sec-10-2-title", { defaultValue: "10.2 Wasserstein Distance Convergence" })}</h3>
 
       <p className="mb-4">
         To assess the topological fidelity of the generated latent-space structure, we computed
@@ -1652,7 +1654,7 @@ export function PersistentHomologyPaper() {
         aspects of the data distribution.
       </p>
 
-      <PaperFigure number={13} caption="Wasserstein-2 distance between persistence diagrams of real and generated latent encodings across GAN training epochs, for homological dimensions H_0, H_1, and H_2.">
+      <PaperFigure number={13} caption={t("fig-13-caption", { defaultValue: "Wasserstein-2 distance between persistence diagrams of real and generated latent encodings across GAN training epochs, for homological dimensions H_0, H_1, and H_2." })}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={wasserDistanceData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -1668,7 +1670,7 @@ export function PersistentHomologyPaper() {
       </PaperFigure>
 
       {/* 11. HUMAN EVALUATION */}
-      <h2 style={h2Style}>11. Human Evaluation</h2>
+      <h2 style={h2Style}>{t("sec-11-title", { defaultValue: "11. Human Evaluation" })}</h2>
 
       <p className="mb-4">
         We conducted a human evaluation study with <Tex math="N = 85" /> participants
@@ -1702,7 +1704,7 @@ export function PersistentHomologyPaper() {
         through entangled latent regions.
       </p>
 
-      <PaperFigure number={14} caption="Human-rated semantic coherence across five perceptual dimensions for three interpolation methods. The persistence-guided approach significantly outperforms baselines, with the largest gains in pose plausibility.">
+      <PaperFigure number={14} caption={t("fig-14-caption", { defaultValue: "Human-rated semantic coherence across five perceptual dimensions for three interpolation methods. The persistence-guided approach significantly outperforms baselines, with the largest gains in pose plausibility." })}>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={semanticCoherenceData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -1771,7 +1773,7 @@ export function PersistentHomologyPaper() {
       </p>
 
       {/* 12. DISCUSSION */}
-      <h2 style={h2Style}>12. Discussion</h2>
+      <h2 style={h2Style}>{t("sec-12-title", { defaultValue: "12. Discussion" })}</h2>
 
       <p className="mb-4">
         The results presented herein establish persistent homology as a viable and effective
@@ -1867,7 +1869,7 @@ export function PersistentHomologyPaper() {
       </p>
 
       {/* 13. TOPOLOGICAL REGULARIZATION OF GAN TRAINING */}
-      <h2 style={h2Style}>13. Topological Regularization of GAN Training</h2>
+      <h2 style={h2Style}>{t("sec-13-title", { defaultValue: "13. Topological Regularization of GAN Training" })}</h2>
 
       <p className="mb-4">
         The preceding sections have demonstrated that persistent homology furnishes a powerful
@@ -1881,7 +1883,7 @@ export function PersistentHomologyPaper() {
         of Brüel-Gabrielsson et al. (2020), which we adapt to the game-asset GAN setting.
       </p>
 
-      <h3 style={h3Style}>13.1 Persistence-Based Loss Functions</h3>
+      <h3 style={h3Style}>{t("sec-13-1-title", { defaultValue: "13.1 Persistence-Based Loss Functions" })}</h3>
 
       <p className="mb-4">
         Let <Tex math="G_\theta: \mathcal{Z} \to \mathcal{X}" /> denote the generator with
@@ -1935,7 +1937,7 @@ export function PersistentHomologyPaper() {
         framework, anchoring the learned topology to the structure of the data manifold itself.
       </p>
 
-      <h3 style={h3Style}>13.2 Backpropagation Through the Persistence Module</h3>
+      <h3 style={h3Style}>{t("sec-13-2-title", { defaultValue: "13.2 Backpropagation Through the Persistence Module" })}</h3>
 
       <p className="mb-4">
         The critical technical obstacle in optimizing <Tex math="\mathcal{L}_{\mathrm{topo}}" />{' '}
@@ -2007,7 +2009,7 @@ export function PersistentHomologyPaper() {
         that suffices for convergence of stochastic gradient descent under standard assumptions.
       </p>
 
-      <PaperFigure number={15} caption="FID comparison of baseline GAN training (no topological regularization) versus topologically-regularized training (λ_1 = 0.05, μ = 0.05) across 500 epochs. The topological regularizer achieves consistently lower FID after epoch 75, converging to 25.4 versus 34.3 for the baseline.">
+      <PaperFigure number={15} caption={t("fig-15-caption", { defaultValue: "FID comparison of baseline GAN training (no topological regularization) versus topologically-regularized training (λ_1 = 0.05, μ = 0.05) across 500 epochs. The topological regularizer achieves consistently lower FID after epoch 75, converging to 25.4 versus 34.3 for the baseline." })}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={topoRegularizationData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -2022,7 +2024,7 @@ export function PersistentHomologyPaper() {
       </PaperFigure>
 
       {/* 14. MULTI-SCALE TOPOLOGICAL ANALYSIS */}
-      <h2 style={h2Style}>14. Multi-Scale Topological Analysis</h2>
+      <h2 style={h2Style}>{t("sec-14-title", { defaultValue: "14. Multi-Scale Topological Analysis" })}</h2>
 
       <p className="mb-4">
         Persistent homology is, by construction, a multi-scale theory: the filtration parameter{' '}
@@ -2036,7 +2038,7 @@ export function PersistentHomologyPaper() {
         spaces.
       </p>
 
-      <h3 style={h3Style}>14.1 Persistent Homology Across Scales</h3>
+      <h3 style={h3Style}>{t("sec-14-1-title", { defaultValue: "14.1 Persistent Homology Across Scales" })}</h3>
 
       <p className="mb-4">
         Given a persistence diagram{' '}
@@ -2097,7 +2099,7 @@ export function PersistentHomologyPaper() {
         framework to the Morse-theoretic scale-space analysis of Chazal et al. (2011).
       </p>
 
-      <PaperFigure number={16} caption="Total topological features and statistically significant features (persistence > δ = 0.08) in the H_1 diagram of the sprite GAN latent space as a function of filtration scale. The significant curve peaks near scale 0.20, identifying the characteristic radius of semantic loops.">
+      <PaperFigure number={16} caption={t("fig-16-caption", { defaultValue: "Total topological features and statistically significant features (persistence > δ = 0.08) in the H_1 diagram of the sprite GAN latent space as a function of filtration scale. The significant curve peaks near scale 0.20, identifying the characteristic radius of semantic loops." })}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={multiScaleData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -2111,7 +2113,7 @@ export function PersistentHomologyPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      <h3 style={h3Style}>14.2 Persistence Images and Vectorization</h3>
+      <h3 style={h3Style}>{t("sec-14-2-title", { defaultValue: "14.2 Persistence Images and Vectorization" })}</h3>
 
       <p className="mb-4">
         While persistence diagrams are theoretically elegant, their nature as multisets of
@@ -2175,7 +2177,7 @@ export function PersistentHomologyPaper() {
         optimally balances discriminative resolution against noise robustness.
       </p>
 
-      <PaperFigure number={17} caption="Maximum mean discrepancy (MMD) between persistence images of real and generated asset diagrams, and classification accuracy of a linear SVM trained on persistence images, as a function of the Gaussian bandwidth σ. Optimal classification occurs near σ = 0.20.">
+      <PaperFigure number={17} caption={t("fig-17-caption", { defaultValue: "Maximum mean discrepancy (MMD) between persistence images of real and generated asset diagrams, and classification accuracy of a linear SVM trained on persistence images, as a function of the Gaussian bandwidth σ. Optimal classification occurs near σ = 0.20." })}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={persistenceImageData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -2191,7 +2193,7 @@ export function PersistentHomologyPaper() {
       </PaperFigure>
 
       {/* 15. ZIGZAG PERSISTENCE AND TEMPORAL ANALYSIS */}
-      <h2 style={h2Style}>15. Zigzag Persistence and Temporal Analysis</h2>
+      <h2 style={h2Style}>{t("sec-15-title", { defaultValue: "15. Zigzag Persistence and Temporal Analysis" })}</h2>
 
       <p className="mb-4">
         Standard persistent homology tracks the evolution of topological features across a
@@ -2206,7 +2208,7 @@ export function PersistentHomologyPaper() {
         topological spaces.
       </p>
 
-      <h3 style={h3Style}>15.1 Zigzag Modules and Quiver Representations</h3>
+      <h3 style={h3Style}>{t("sec-15-1-title", { defaultValue: "15.1 Zigzag Modules and Quiver Representations" })}</h3>
 
       <p className="mb-4">
         A zigzag diagram of topological spaces is a sequence of spaces connected by maps that
@@ -2272,7 +2274,7 @@ export function PersistentHomologyPaper() {
         500-epoch training run with 10 snapshots.
       </p>
 
-      <h3 style={h3Style}>15.2 Tracking Topological Evolution During Training</h3>
+      <h3 style={h3Style}>{t("sec-15-2-title", { defaultValue: "15.2 Tracking Topological Evolution During Training" })}</h3>
 
       <p className="mb-4">
         We apply the zigzag persistence framework to track the evolution of the latent-space
@@ -2329,7 +2331,7 @@ export function PersistentHomologyPaper() {
         configuration as the adversarial equilibrium is approached.
       </p>
 
-      <PaperFigure number={18} caption="Betti numbers β_0 (connected components), β_1 (loops), and β_2 (voids) of the GAN latent-space Vietoris–Rips complex (ε = 0.25) across training snapshots. The zigzag barcode decomposition reveals that β_1 features stabilize after epoch 200, indicating topological convergence of the semantic loop structure.">
+      <PaperFigure number={18} caption={t("fig-18-caption", { defaultValue: "Betti numbers β_0 (connected components), β_1 (loops), and β_2 (voids) of the GAN latent-space Vietoris–Rips complex (ε = 0.25) across training snapshots. The zigzag barcode decomposition reveals that β_1 features stabilize after epoch 200, indicating topological convergence of the semantic loop structure." })}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={zigzagPersistenceData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -2345,7 +2347,7 @@ export function PersistentHomologyPaper() {
       </PaperFigure>
 
       {/* 16. COMPUTATIONAL COMPLEXITY AND ALGORITHMIC CONSIDERATIONS */}
-      <h2 style={h2Style}>16. Computational Complexity and Algorithmic Considerations</h2>
+      <h2 style={h2Style}>{t("sec-16-title", { defaultValue: "16. Computational Complexity and Algorithmic Considerations" })}</h2>
 
       <p className="mb-4">
         The practical deployment of persistent homology within generative-model pipelines
@@ -2360,7 +2362,7 @@ export function PersistentHomologyPaper() {
         exponent is substantially smaller for geometrically structured data.
       </p>
 
-      <h3 style={h3Style}>16.1 Complexity of Persistent Homology Computation</h3>
+      <h3 style={h3Style}>{t("sec-16-1-title", { defaultValue: "16.1 Complexity of Persistent Homology Computation" })}</h3>
 
       <p className="mb-4 indent-8">
         The column-reduction algorithm processes the boundary matrix <Tex math="D = [\partial_{k+1}]" /> by
@@ -2402,7 +2404,7 @@ export function PersistentHomologyPaper() {
         consistent with the sub-cubic scaling reported by Bauer (2021).
       </p>
 
-      <h3 style={h3Style}>16.2 Approximation Schemes</h3>
+      <h3 style={h3Style}>{t("sec-16-2-title", { defaultValue: "16.2 Approximation Schemes" })}</h3>
 
       <p className="mb-4 indent-8">
         When exact computation remains intractable, several approximation schemes provide
@@ -2448,7 +2450,7 @@ export function PersistentHomologyPaper() {
         production-scale latent spaces.
       </p>
 
-      <PaperFigure number={19} caption="Wall-clock computation time (seconds) for persistent homology as a function of point-cloud size, comparing exact Ripser, sparse Rips filtration (ε = 0.3), and witness complex (L = 200 landmarks). The approximate methods achieve orders-of-magnitude speedup for large inputs while preserving diagram accuracy within bottleneck distance ε · diam(X).">
+      <PaperFigure number={19} caption={t("fig-19-caption", { defaultValue: "Wall-clock computation time (seconds) for persistent homology as a function of point-cloud size, comparing exact Ripser, sparse Rips filtration (ε = 0.3), and witness complex (L = 200 landmarks). The approximate methods achieve orders-of-magnitude speedup for large inputs while preserving diagram accuracy within bottleneck distance ε · diam(X)." })}>
         <ResponsiveContainer width="100%" height={350}>
           <LineChart data={complexityData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -2464,7 +2466,7 @@ export function PersistentHomologyPaper() {
       </PaperFigure>
 
       {/* 17. ABLATION STUDIES AND SENSITIVITY ANALYSIS */}
-      <h2 style={h2Style}>17. Ablation Studies and Sensitivity Analysis</h2>
+      <h2 style={h2Style}>{t("sec-17-title", { defaultValue: "17. Ablation Studies and Sensitivity Analysis" })}</h2>
 
       <p className="mb-4">
         To disentangle the contributions of individual components within our
@@ -2478,7 +2480,7 @@ export function PersistentHomologyPaper() {
         \mathcal{L}_{\text{topo}}(\gamma) = \sum_{k=0}^{2} \lambda_k \sum_{(b_i, d_i) \in \mathrm{Dgm}_k(\gamma)} (d_i - b_i)^p \cdot K_\sigma\!\left(\gamma(t),\, \tfrac{b_i + d_i}{2}\right)
       " />
 
-      <h3 style={h3Style}>17.1 Component Ablation</h3>
+      <h3 style={h3Style}>{t("sec-17-1-title", { defaultValue: "17.1 Component Ablation" })}</h3>
 
       <p className="mb-4 indent-8">
         We evaluate seven configurations: (i) the full model; (ii) removal of the
@@ -2516,7 +2518,7 @@ export function PersistentHomologyPaper() {
         from the persistence landscape improves local sensitivity to the topological environment.
       </p>
 
-      <PaperFigure number={20} caption="Ablation study results showing FID (lower is better) and human-rated semantic coherence (higher is better, scale 1–7) for systematic removal of individual components from the persistence-guided interpolation framework. The H_1 loop penalty contributes most to both metrics.">
+      <PaperFigure number={20} caption={t("fig-20-caption", { defaultValue: "Ablation study results showing FID (lower is better) and human-rated semantic coherence (higher is better, scale 1–7) for systematic removal of individual components from the persistence-guided interpolation framework. The H_1 loop penalty contributes most to both metrics." })}>
         <ResponsiveContainer width="100%" height={350}>
           <BarChart data={ablationData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -2530,7 +2532,7 @@ export function PersistentHomologyPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      <h3 style={h3Style}>17.2 Hyperparameter Sensitivity</h3>
+      <h3 style={h3Style}>{t("sec-17-2-title", { defaultValue: "17.2 Hyperparameter Sensitivity" })}</h3>
 
       <p className="mb-4 indent-8">
         We further investigate the sensitivity of the framework to the regularization
@@ -2571,7 +2573,7 @@ export function PersistentHomologyPaper() {
         all significant features.
       </p>
 
-      <PaperFigure number={21} caption="Path length, topological boundary crossings, and semantic coherence for various interpolation methods parameterized by regularization strength λ. Higher λ produces longer, topologically safer paths, but coherence degrades beyond λ = 1.0 due to traversal of low-density latent regions.">
+      <PaperFigure number={21} caption={t("fig-21-caption", { defaultValue: "Path length, topological boundary crossings, and semantic coherence for various interpolation methods parameterized by regularization strength λ. Higher λ produces longer, topologically safer paths, but coherence degrades beyond λ = 1.0 due to traversal of low-density latent regions." })}>
         <ResponsiveContainer width="100%" height={350}>
           <BarChart data={interpolationLengthData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -2587,7 +2589,7 @@ export function PersistentHomologyPaper() {
       </PaperFigure>
 
       {/* 18. RELATED WORK */}
-      <h2 style={h2Style}>18. Related Work</h2>
+      <h2 style={h2Style}>{t("sec-18-title", { defaultValue: "18. Related Work" })}</h2>
 
       <p className="mb-4">
         The present work lies at the confluence of three rapidly evolving research streams:
@@ -2597,7 +2599,7 @@ export function PersistentHomologyPaper() {
         landscape and identifying the specific lacunae that our framework addresses.
       </p>
 
-      <h3 style={h3Style}>18.1 Topological Data Analysis in Machine Learning</h3>
+      <h3 style={h3Style}>{t("sec-18-1-title", { defaultValue: "18.1 Topological Data Analysis in Machine Learning" })}</h3>
 
       <p className="mb-4 indent-8">
         The integration of persistent homology into machine-learning pipelines has
@@ -2619,7 +2621,7 @@ export function PersistentHomologyPaper() {
         than input data topology.
       </p>
 
-      <h3 style={h3Style}>18.2 Latent-Space Analysis of Generative Models</h3>
+      <h3 style={h3Style}>{t("sec-18-2-title", { defaultValue: "18.2 Latent-Space Analysis of Generative Models" })}</h3>
 
       <p className="mb-4 indent-8">
         The geometric structure of GAN latent spaces has attracted sustained attention
@@ -2644,7 +2646,7 @@ export function PersistentHomologyPaper() {
         Jacobian-based metric computation.
       </p>
 
-      <h3 style={h3Style}>18.3 Procedural Content Generation</h3>
+      <h3 style={h3Style}>{t("sec-18-3-title", { defaultValue: "18.3 Procedural Content Generation" })}</h3>
 
       <p className="mb-4 indent-8">
         GAN-based procedural content generation for games has progressed from early
@@ -2748,7 +2750,7 @@ export function PersistentHomologyPaper() {
       </p>
 
       {/* 19. FUTURE DIRECTIONS */}
-      <h2 style={h2Style}>19. Future Directions</h2>
+      <h2 style={h2Style}>{t("sec-19-title", { defaultValue: "19. Future Directions" })}</h2>
 
       <p className="mb-4">
         Several promising extensions of the present framework merit investigation. First,
@@ -2898,7 +2900,7 @@ export function PersistentHomologyPaper() {
       </p>
 
       {/* 20. CONCLUSION */}
-      <h2 style={h2Style}>20. Conclusion</h2>
+      <h2 style={h2Style}>{t("sec-20-title", { defaultValue: "20. Conclusion" })}</h2>
 
       <p className="mb-4">
         We have introduced a computational pipeline grounded in persistent homology for the
@@ -2964,7 +2966,7 @@ export function PersistentHomologyPaper() {
       </p>
 
       {/* REFERENCES */}
-      <h2 style={h2Style}>References</h2>
+      <h2 style={h2Style}>{t("sec-references-title", { defaultValue: "References" })}</h2>
 
       <div style={{ fontSize: '9pt', lineHeight: 1.5 }}>
         <p className="mb-2">Achlioptas, P., Diamanti, O., Mitliagkas, I., &amp; Guibas, L. (2018). Learning representations and generative models for 3D point clouds. <em>Proc. ICML</em>, 80, 40–49.</p>

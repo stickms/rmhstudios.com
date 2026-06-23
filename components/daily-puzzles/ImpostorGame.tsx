@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Trophy, Copy, Check, CircleAlert } from 'lucide-react';
@@ -16,6 +17,7 @@ import { PastPuzzlesSection } from '@/components/daily-puzzles/PastPuzzlesSectio
 type StatementResult = 'real' | 'fake-found' | 'fake-missed' | 'wrong-guess';
 
 function ImpostorGameContent({ dateKey, isToday }: { dateKey: string; isToday: boolean }) {
+    const { t } = useTranslation("c-daily-puzzles");
     const selectedDate = useMemo(() => {
         const [y, m, d] = dateKey.split('-').map(Number);
         return new Date(y, m - 1, d);
@@ -188,7 +190,7 @@ function ImpostorGameContent({ dateKey, isToday }: { dateKey: string; isToday: b
                 className="inline-flex items-center gap-1.5 text-site-text-muted hover:text-site-text text-sm mb-6 transition-colors"
             >
                 <ArrowLeft className="w-4 h-4" />
-                Back to Daily Puzzles
+                {t("back-to-daily-puzzles", { defaultValue: "Back to Daily Puzzles" })}
             </Link>
 
             {/* Header */}
@@ -206,7 +208,7 @@ function ImpostorGameContent({ dateKey, isToday }: { dateKey: string; isToday: b
                 </p>
                 <p className="text-site-text-muted text-xs mt-2">
                     <CircleAlert className="w-3.5 h-3.5 inline mr-1 -mt-0.5" />
-                    Five facts. Two are lies. Find the impostors.
+                    {t("five-facts-tagline", { defaultValue: "Five facts. Two are lies. Find the impostors." })}
                 </p>
             </motion.div>
 
@@ -219,7 +221,7 @@ function ImpostorGameContent({ dateKey, isToday }: { dateKey: string; isToday: b
                         exit={{ opacity: 0, y: -8 }}
                         className="mb-4 p-3 rounded-xl border border-amber-500/30 bg-amber-500/10 text-center text-sm text-amber-300"
                     >
-                        {feedbackMessage} — Guess again.
+                        {feedbackMessage} {t("guess-again", { defaultValue: "— Guess again." })}
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -227,7 +229,7 @@ function ImpostorGameContent({ dateKey, isToday }: { dateKey: string; isToday: b
             {/* Guess indicator */}
             {!completed && (
                 <div className="text-center mb-4 text-xs text-site-text-muted">
-                    Guess {guessNumber}/2 · Select {remainingToFind - selectedStatements.size} more
+                    {t("guess-indicator", { defaultValue: "Guess {{guessNumber}}/2 · Select {{remaining}} more", guessNumber, remaining: remainingToFind - selectedStatements.size })}
                 </div>
             )}
 
@@ -266,7 +268,7 @@ function ImpostorGameContent({ dateKey, isToday }: { dateKey: string; isToday: b
                                                     ? 'bg-red-500/20 text-red-400'
                                                     : 'bg-emerald-500/20 text-emerald-400'
                                             }`}>
-                                                {solution.isFake ? 'FAKE' : 'TRUE'}
+                                                {solution.isFake ? t("label-fake", { defaultValue: "FAKE" }) : t("label-true", { defaultValue: "TRUE" })}
                                             </span>
                                             <p className="mt-1.5 text-xs text-site-text-muted leading-relaxed">
                                                 {solution.explanation}
@@ -285,10 +287,10 @@ function ImpostorGameContent({ dateKey, isToday }: { dateKey: string; isToday: b
                                 </motion.div>
                             )}
                             {!completed && foundFakes.includes(puzzle.statements[i].text) && (
-                                <span className="shrink-0 text-xs text-red-400 font-semibold">Lie</span>
+                                <span className="shrink-0 text-xs text-red-400 font-semibold">{t("label-lie", { defaultValue: "Lie" })}</span>
                             )}
                             {!completed && confirmedReal.has(i) && (
-                                <span className="shrink-0 text-xs text-site-text-muted">Real</span>
+                                <span className="shrink-0 text-xs text-site-text-muted">{t("label-real", { defaultValue: "Real" })}</span>
                             )}
                         </div>
                     </motion.button>
@@ -308,7 +310,7 @@ function ImpostorGameContent({ dateKey, isToday }: { dateKey: string; isToday: b
                         disabled={selectedStatements.size !== remainingToFind}
                         className="px-6 py-3 rounded-xl font-semibold text-sm transition-all disabled:opacity-30 disabled:cursor-not-allowed bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500/30 enabled:hover:scale-[1.02]"
                     >
-                        Lock In Guess
+                        {t("lock-in-guess", { defaultValue: "Lock In Guess" })}
                     </button>
                 </motion.div>
             )}
@@ -324,16 +326,16 @@ function ImpostorGameContent({ dateKey, isToday }: { dateKey: string; isToday: b
                     >
                         <Trophy className="w-8 h-8 mx-auto mb-3 text-amber-400" />
                         <p className="text-2xl font-bold text-site-text mb-1">
-                            {finalScore} pts
+                            {t("score-pts", { defaultValue: "{{score}} pts", score: finalScore })}
                         </p>
                         <p className="text-sm text-site-text-muted mb-1">
-                            {foundFakes.length}/2 impostors found
+                            {t("impostors-found", { defaultValue: "{{found}}/2 impostors found", found: foundFakes.length })}
                         </p>
                         <p className="text-xs text-site-text-muted mb-6">
-                            {finalScore === 100 && 'Perfect — both found on the first guess!'}
-                            {finalScore === 50 && 'Both found across two guesses. Nice detective work.'}
-                            {finalScore === 20 && 'One impostor slipped through the cracks.'}
-                            {finalScore === 0 && 'The impostors got away this time.'}
+                            {finalScore === 100 && t("result-perfect", { defaultValue: "Perfect — both found on the first guess!" })}
+                            {finalScore === 50 && t("result-two-guesses", { defaultValue: "Both found across two guesses. Nice detective work." })}
+                            {finalScore === 20 && t("result-one-missed", { defaultValue: "One impostor slipped through the cracks." })}
+                            {finalScore === 0 && t("result-none-found", { defaultValue: "The impostors got away this time." })}
                         </p>
 
                         <div className="flex items-center justify-center gap-3">
@@ -344,12 +346,12 @@ function ImpostorGameContent({ dateKey, isToday }: { dateKey: string; isToday: b
                                 {copied ? (
                                     <>
                                         <Check className="w-4 h-4 text-emerald-400" />
-                                        Copied!
+                                        {t("copied", { defaultValue: "Copied!" })}
                                     </>
                                 ) : (
                                     <>
                                         <Copy className="w-4 h-4" />
-                                        Share Result
+                                        {t("share-result", { defaultValue: "Share Result" })}
                                     </>
                                 )}
                             </button>
@@ -358,7 +360,7 @@ function ImpostorGameContent({ dateKey, isToday }: { dateKey: string; isToday: b
                                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium bg-site-surface border border-site-border hover:border-site-text-muted/50 text-site-text transition-all"
                             >
                                 <ArrowLeft className="w-4 h-4" />
-                                All Puzzles
+                                {t("all-puzzles", { defaultValue: "All Puzzles" })}
                             </Link>
                         </div>
                     </motion.div>

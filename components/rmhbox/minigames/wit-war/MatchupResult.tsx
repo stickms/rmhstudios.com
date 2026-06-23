@@ -9,6 +9,7 @@
 
 import { motion } from 'framer-motion';
 import { Zap, Trophy } from 'lucide-react';
+import { useTranslation } from "react-i18next";
 import type { MatchupData } from './WitWarGame';
 
 interface MatchupResultProps {
@@ -28,6 +29,8 @@ export default function MatchupResult({ matchup }: MatchupResultProps) {
     playerA,
     isWitWham,
   } = matchup;
+
+  const { t } = useTranslation("c-rmhbox");
 
   const winnerIsA = winnerId === playerA;
   const isDraw = winnerId === null;
@@ -50,7 +53,7 @@ export default function MatchupResult({ matchup }: MatchupResultProps) {
       )}
 
       <div className="rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-4 text-center">
-        <div className="text-xs font-medium text-(--rmhbox-text-muted) mb-1">The prompt:</div>
+        <div className="text-xs font-medium text-(--rmhbox-text-muted) mb-1">{t("the-prompt", { defaultValue: "The prompt:" })}</div>
         <div className="text-lg font-bold text-(--rmhbox-text)">{promptText}</div>
       </div>
 
@@ -73,7 +76,7 @@ export default function MatchupResult({ matchup }: MatchupResultProps) {
             {answerA}
           </div>
           <div className="text-xs font-semibold text-(--rmhbox-text-muted)">
-            — {playerAName ?? 'Player A'}
+            — {playerAName ?? t("player-a", { defaultValue: "Player A" })}
           </div>
         </motion.div>
 
@@ -95,7 +98,7 @@ export default function MatchupResult({ matchup }: MatchupResultProps) {
             {answerB}
           </div>
           <div className="text-xs font-semibold text-(--rmhbox-text-muted)">
-            — {playerBName ?? 'Player B'}
+            — {playerBName ?? t("player-b", { defaultValue: "Player B" })}
           </div>
         </motion.div>
       </div>
@@ -133,7 +136,7 @@ export default function MatchupResult({ matchup }: MatchupResultProps) {
 
       {isDraw && (
         <div className="text-center text-sm font-medium text-(--rmhbox-text-muted)">
-          It&apos;s a tie!
+          {t("its-a-tie", { defaultValue: "It's a tie!" })}
         </div>
       )}
     </div>

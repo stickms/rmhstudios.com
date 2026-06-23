@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useGameStore } from '@/lib/versecraft/store';
 import { CHARACTERS, getCharacterFirstName } from '@/lib/versecraft/characters';
@@ -8,6 +9,7 @@ import { getChapterEntry, getNextChapterId } from '@/lib/versecraft/chapters/reg
 import { ALL_CHAPTERS } from '@/lib/versecraft/progress';
 
 export function ChapterSummary() {
+  const { t } = useTranslation("c-versecraft");
   const {
     currentChapter, affinity, poemHistory, totalPoemsWritten,
     playtime, settings, setScreen, completeChapter, advanceToNextChapter,
@@ -50,7 +52,7 @@ export function ChapterSummary() {
           className="text-2xl text-center mb-1"
           style={{ fontFamily: 'var(--font-cinzel, serif)', color: '#c4a35a' }}
         >
-          Chapter Complete
+          {t("chapter-complete", { defaultValue: "Chapter Complete" })}
         </h2>
         <p
           className="text-center text-sm mb-6 italic"
@@ -62,22 +64,22 @@ export function ChapterSummary() {
         {/* Stats */}
         <div className="space-y-3 mb-6">
           <div className="flex justify-between text-sm">
-            <span style={{ color: '#a89888' }}>Poems Written</span>
+            <span style={{ color: '#a89888' }}>{t("poems-written", { defaultValue: "Poems Written" })}</span>
             <span style={{ color: '#e8e0d0' }}>{chapterPoems.length}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span style={{ color: '#a89888' }}>Playtime</span>
+            <span style={{ color: '#a89888' }}>{t("playtime", { defaultValue: "Playtime" })}</span>
             <span style={{ color: '#e8e0d0' }}>{formatPlaytime(playtime)}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span style={{ color: '#a89888' }}>Total Poems</span>
+            <span style={{ color: '#a89888' }}>{t("total-poems", { defaultValue: "Total Poems" })}</span>
             <span style={{ color: '#e8e0d0' }}>{totalPoemsWritten}</span>
           </div>
         </div>
 
         {/* Character affinity changes */}
         <div className="mb-6">
-          <h3 className="text-sm mb-3" style={{ color: '#a89888' }}>Relationships</h3>
+          <h3 className="text-sm mb-3" style={{ color: '#a89888' }}>{t("relationships", { defaultValue: "Relationships" })}</h3>
           <div className="space-y-2">
             {Object.entries(affinity)
               .filter(([, a]) => a.affinity > 0)
@@ -124,7 +126,7 @@ export function ChapterSummary() {
               color: '#a89888',
             }}
           >
-            Main Menu
+            {t("main-menu", { defaultValue: "Main Menu" })}
           </button>
           {hasNextChapter ? (
             <button
@@ -136,7 +138,7 @@ export function ChapterSummary() {
                 color: '#c4a35a',
               }}
             >
-              Next Chapter
+              {t("next-chapter", { defaultValue: "Next Chapter" })}
             </button>
           ) : (
             <button
@@ -148,7 +150,7 @@ export function ChapterSummary() {
                 color: '#a89888',
               }}
             >
-              Coming Soon
+              {t("coming-soon", { defaultValue: "Coming Soon" })}
             </button>
           )}
         </div>

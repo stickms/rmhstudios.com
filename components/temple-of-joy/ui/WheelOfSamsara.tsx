@@ -1,29 +1,18 @@
 'use client';
 
+import { useTranslation } from "react-i18next";
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { WHEEL_UPGRADES } from '@/lib/temple-of-joy/data/wheel';
 import { computeTranscendenceThreshold } from '@/lib/temple-of-joy/engine';
 import { fmt } from '@/lib/temple-of-joy/numbers';
 import type { WheelTier } from '@/lib/temple-of-joy/types';
 
-const TIER_LABELS: Record<WheelTier, string> = {
-  1: 'Tier I — The First Steps',
-  2: 'Tier II — Deepening',
-  3: 'Tier III — Enlightenment',
-  4: 'Tier IV — The Infinite',
-  5: 'Tier V — Beyond the Wheel',
-  6: 'Tier VI — Celestial',
-  7: 'Tier VII — Cosmic',
-  8: 'Tier VIII — Eternal',
-  9: 'Tier IX — Ascendant',
-  10: 'Tier X — Omega',
-};
-
 interface WheelCardProps {
   upgradeId: string;
 }
 
 function WheelCard({ upgradeId }: WheelCardProps) {
+  const { t } = useTranslation("c-temple-of-joy");
   const blissShards        = useTempleStore(s => s.blissShards);
   const wheelPurchased     = useTempleStore(s => s.wheelPurchased);
   const purchaseWheelUpgrade = useTempleStore(s => s.purchaseWheelUpgrade);
@@ -83,7 +72,7 @@ function WheelCard({ upgradeId }: WheelCardProps) {
           className="text-[10px]"
           style={{ color: requiresMet ? 'var(--temple-text)' : 'var(--temple-text)', opacity: requiresMet ? 0.5 : 0.5 }}
         >
-          Requires:{' '}
+          {t("requires-label", { defaultValue: "Requires:" })}{' '}
           {def.requires.map((r, i) => {
             const met = wheelPurchased.has(r);
             const reqDef = WHEEL_UPGRADES.find(w => w.id === r);
@@ -112,7 +101,7 @@ function WheelCard({ upgradeId }: WheelCardProps) {
             opacity: canBuy ? 1 : 0.5,
           }}
         >
-          {!requiresMet ? 'Locked' : !canAfford ? 'Need shards' : 'Purchase'}
+          {!requiresMet ? t("btn-locked", { defaultValue: "Locked" }) : !canAfford ? t("btn-need-shards", { defaultValue: "Need shards" }) : t("btn-purchase", { defaultValue: "Purchase" })}
         </button>
       )}
     </div>
@@ -120,12 +109,26 @@ function WheelCard({ upgradeId }: WheelCardProps) {
 }
 
 export default function WheelOfSamsara() {
+  const { t } = useTranslation("c-temple-of-joy");
   const blissShards    = useTempleStore(s => s.blissShards);
   const prestigeCount  = useTempleStore(s => s.prestigeCount);
   const runHappiness   = useTempleStore(s => s.runHappiness);
   const numberFormat   = useTempleStore(s => s.numberFormat);
 
   const nextThreshold = computeTranscendenceThreshold(prestigeCount);
+
+  const TIER_LABELS: Record<WheelTier, string> = {
+    1: t("tier-1", { defaultValue: "Tier I — The First Steps" }),
+    2: t("tier-2", { defaultValue: "Tier II — Deepening" }),
+    3: t("tier-3", { defaultValue: "Tier III — Enlightenment" }),
+    4: t("tier-4", { defaultValue: "Tier IV — The Infinite" }),
+    5: t("tier-5", { defaultValue: "Tier V — Beyond the Wheel" }),
+    6: t("tier-6", { defaultValue: "Tier VI — Celestial" }),
+    7: t("tier-7", { defaultValue: "Tier VII — Cosmic" }),
+    8: t("tier-8", { defaultValue: "Tier VIII — Eternal" }),
+    9: t("tier-9", { defaultValue: "Tier IX — Ascendant" }),
+    10: t("tier-10", { defaultValue: "Tier X — Omega" }),
+  };
 
   const tiers: WheelTier[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
@@ -137,13 +140,13 @@ export default function WheelOfSamsara() {
           className="text-xs font-bold uppercase tracking-widest"
           style={{ color: 'var(--temple-accent)' }}
         >
-          Wheel of Samsara
+          {t("wheel-of-samsara", { defaultValue: "Wheel of Samsara" })}
         </h2>
         <span
           className="text-sm font-bold"
           style={{ color: 'var(--temple-accent)' }}
         >
-          💎 {blissShards} Bliss Shards
+          💎 {blissShards} {t("bliss-shards", { defaultValue: "Bliss Shards" })}
         </span>
       </div>
 
@@ -153,12 +156,12 @@ export default function WheelOfSamsara() {
           className="text-xs text-center"
           style={{ color: 'var(--temple-text)', opacity: 0.7 }}
         >
-          Next transcendence at{' '}
+          {t("next-transcendence-at", { defaultValue: "Next transcendence at" })}{' '}
           <span style={{ color: 'var(--temple-accent)', fontWeight: 600 }}>
             {fmt(nextThreshold, numberFormat)}
           </span>{' '}
-          run happiness
-          {' '}({fmt(runHappiness, numberFormat)} earned this run)
+          {t("run-happiness-label", { defaultValue: "run happiness" })}
+          {' '}({fmt(runHappiness, numberFormat)} {t("earned-this-run", { defaultValue: "earned this run" })})
         </p>
       )}
 
@@ -175,13 +178,13 @@ export default function WheelOfSamsara() {
             className="text-sm font-semibold mb-1"
             style={{ color: 'var(--temple-text)' }}
           >
-            🔒 Transcend once to unlock
+            🔒 {t("transcend-once-to-unlock", { defaultValue: "Transcend once to unlock" })}
           </p>
           <p
             className="text-xs"
             style={{ color: 'var(--temple-text)', opacity: 0.65 }}
           >
-            Requires <span style={{ color: 'var(--temple-accent)' }}>{fmt(nextThreshold, numberFormat)}</span> run happiness.
+            {t("requires-happiness", { defaultValue: "Requires" })} <span style={{ color: 'var(--temple-accent)' }}>{fmt(nextThreshold, numberFormat)}</span> {t("run-happiness-label", { defaultValue: "run happiness" })}.
           </p>
         </div>
       )}

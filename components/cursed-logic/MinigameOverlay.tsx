@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { MinigameKind } from '@/lib/cursed-logic/types';
 
 const BAR_MS = 950;
@@ -49,6 +50,7 @@ interface TimedPressProps {
 }
 
 function TimedPressOverlay({ distort, onComplete }: TimedPressProps) {
+  const { t } = useTranslation("c-cursed-logic");
   const [position, setPosition] = useState(0);
   const [result, setResult] = useState<'pending' | 'hit' | 'miss' | null>(null);
   const startRef = useRef<number>(0);
@@ -120,9 +122,9 @@ function TimedPressOverlay({ distort, onComplete }: TimedPressProps) {
           handlePress();
         }
       }}
-      aria-label="Press when the indicator is in the zone"
+      aria-label={t("press-zone-aria", { defaultValue: "Press when the indicator is in the zone" })}
     >
-      <p className="text-cyan-300 text-sm font-mono">Press when in the zone</p>
+      <p className="text-cyan-300 text-sm font-mono">{t("press-zone-hint", { defaultValue: "Press when in the zone" })}</p>
       <div className="w-full max-w-xs h-10 rounded-lg bg-white/10 border border-cyan-500/40 relative overflow-hidden">
         <div
           className="absolute inset-y-0 rounded bg-cyan-500/40 border border-cyan-400/60"
@@ -138,8 +140,8 @@ function TimedPressOverlay({ distort, onComplete }: TimedPressProps) {
           />
         )}
       </div>
-      {result === 'hit' && <p className="text-cyan-400 font-mono font-bold">Hit!</p>}
-      {result === 'miss' && <p className="text-amber-400/90 font-mono">Miss</p>}
+      {result === 'hit' && <p className="text-cyan-400 font-mono font-bold">{t("result-hit", { defaultValue: "Hit!" })}</p>}
+      {result === 'miss' && <p className="text-amber-400/90 font-mono">{t("result-miss", { defaultValue: "Miss" })}</p>}
     </div>
   );
 }
@@ -150,6 +152,7 @@ interface HoldZoneProps {
 }
 
 function HoldZoneOverlay({ distort, onComplete }: HoldZoneProps) {
+  const { t } = useTranslation("c-cursed-logic");
   const [progress, setProgress] = useState(0);
   const [position, setPosition] = useState(0.5);
   const [failed, setFailed] = useState(false);
@@ -245,7 +248,7 @@ function HoldZoneOverlay({ distort, onComplete }: HoldZoneProps) {
 
   return (
     <div className="fixed inset-0 z-60 flex flex-col items-center justify-center gap-6 bg-black/70 backdrop-blur-sm">
-      <p className="text-cyan-300 text-sm font-mono">Hold — Brace to correct drift</p>
+      <p className="text-cyan-300 text-sm font-mono">{t("hold-hint", { defaultValue: "Hold — Brace to correct drift" })}</p>
       <div className="w-full max-w-xs h-12 rounded-lg bg-white/10 border border-cyan-500/40 relative overflow-hidden">
         <div
           className="absolute inset-y-0 rounded bg-cyan-500/40 border border-cyan-400/60"
@@ -267,7 +270,7 @@ function HoldZoneOverlay({ distort, onComplete }: HoldZoneProps) {
           onPointerLeave={handlePointerUp}
           className="rounded-xl border-2 border-cyan-500/60 bg-cyan-500/20 px-6 py-3 font-mono font-bold text-cyan-200"
         >
-          {holding ? 'Holding…' : 'Hold'}
+          {holding ? t("hold-active", { defaultValue: "Holding…" }) : t("hold-idle", { defaultValue: "Hold" })}
         </button>
         <button
           type="button"
@@ -275,10 +278,10 @@ function HoldZoneOverlay({ distort, onComplete }: HoldZoneProps) {
           disabled={!holding || failed || nudgesLeft <= 0}
           className="rounded-xl border-2 border-amber-500/50 bg-amber-500/10 px-4 py-3 font-mono text-amber-200 disabled:opacity-40"
         >
-          Brace ({nudgesLeft})
+          {t("brace-btn", { defaultValue: "Brace ({{count}})", count: nudgesLeft })}
         </button>
       </div>
-      <p className="text-white/50 text-xs font-mono">Space or Brace to nudge toward center</p>
+      <p className="text-white/50 text-xs font-mono">{t("nudge-hint", { defaultValue: "Space or Brace to nudge toward center" })}</p>
       {progress > 0 && progress < 1 && !failed && (
         <div className="w-48 h-1.5 rounded-full bg-white/10 overflow-hidden">
           <div
@@ -287,7 +290,7 @@ function HoldZoneOverlay({ distort, onComplete }: HoldZoneProps) {
           />
         </div>
       )}
-      {failed && progress < 1 && <p className="text-amber-400/90 font-mono">Lost grip</p>}
+      {failed && progress < 1 && <p className="text-amber-400/90 font-mono">{t("hold-failed", { defaultValue: "Lost grip" })}</p>}
     </div>
   );
 }
@@ -297,6 +300,7 @@ interface RapidChoiceProps {
 }
 
 function RapidChoiceOverlay({ onComplete }: RapidChoiceProps) {
+  const { t } = useTranslation("c-cursed-logic");
   const [ready, setReady] = useState(false);
   const [chosen, setChosen] = useState<number | null>(null);
   const [timedOut, setTimedOut] = useState(false);
@@ -333,7 +337,7 @@ function RapidChoiceOverlay({ onComplete }: RapidChoiceProps) {
   return (
     <div className="fixed inset-0 z-60 flex flex-col items-center justify-center gap-6 bg-black/70 backdrop-blur-sm">
       <p className="text-cyan-300 text-sm font-mono">
-        {!ready ? '…' : 'Choose quickly'}
+        {!ready ? '…' : t("choose-quickly", { defaultValue: "Choose quickly" })}
       </p>
       {ready && (
         <div className="flex gap-4">
@@ -343,7 +347,7 @@ function RapidChoiceOverlay({ onComplete }: RapidChoiceProps) {
             disabled={chosen !== null}
             className="rounded-xl border-2 border-cyan-500/50 bg-cyan-500/10 px-6 py-4 font-mono text-cyan-200 hover:bg-cyan-500/20 disabled:opacity-50"
           >
-            Absorb
+            {t("choice-absorb", { defaultValue: "Absorb" })}
           </button>
           <button
             type="button"
@@ -351,7 +355,7 @@ function RapidChoiceOverlay({ onComplete }: RapidChoiceProps) {
             disabled={chosen !== null}
             className="rounded-xl border-2 border-amber-500/50 bg-amber-500/10 px-6 py-4 font-mono text-amber-200 hover:bg-amber-500/20 disabled:opacity-50"
           >
-            Deflect
+            {t("choice-deflect", { defaultValue: "Deflect" })}
           </button>
         </div>
       )}
@@ -360,10 +364,10 @@ function RapidChoiceOverlay({ onComplete }: RapidChoiceProps) {
       )}
       {chosen !== null && (
         <p className="text-white/70 font-mono text-sm">
-          {chosen === betterIndexRef.current ? 'Recovered' : 'Staggered'}
+          {chosen === betterIndexRef.current ? t("rapid-recovered", { defaultValue: "Recovered" }) : t("rapid-staggered", { defaultValue: "Staggered" })}
         </p>
       )}
-      {timedOut && <p className="text-amber-400/90 font-mono text-sm">Too slow</p>}
+      {timedOut && <p className="text-amber-400/90 font-mono text-sm">{t("rapid-too-slow", { defaultValue: "Too slow" })}</p>}
     </div>
   );
 }

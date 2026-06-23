@@ -10,6 +10,7 @@
 'use client';
 
 import { useRef, useEffect, useCallback, useState, useImperativeHandle, forwardRef, lazy, Suspense } from 'react';
+import { useTranslation } from 'react-i18next';
 import type ReactPlayerType from 'react-player';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
 import { emit, syncClock } from '@/lib/rmhtube/socket';
@@ -64,6 +65,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
   // CTA shown when the environment (mobile background / autoplay block) pauses a
   // viewer whose room is still playing — tapping it resyncs + resumes.
   const [needsResync, setNeedsResync] = useState(false);
+  const { t } = useTranslation("c-rmhtube");
 
   // ─── Volume: local state to decouple native controls from store ──
   // Prevents feedback loop: native event → store → re-render → prop → native event
@@ -277,7 +279,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     const now = Date.now();
     if (now - lastControlToastRef.current < 4_000) return;
     lastControlToastRef.current = now;
-    toast.info('Only the leader can control playback');
+    toast.info(t("only-leader-can-control", { defaultValue: "Only the leader can control playback" }));
   }, []);
 
   const handlePlay = useCallback(() => {
@@ -497,9 +499,9 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     return (
       <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-(--rmhtube-surface) flex items-center justify-center">
         <div className="text-center">
-          <p className="text-lg font-medium text-(--rmhtube-text-muted)">No video playing</p>
+          <p className="text-lg font-medium text-(--rmhtube-text-muted)">{t("no-video-playing", { defaultValue: "No video playing" })}</p>
           <p className="text-sm text-(--rmhtube-text-dim) mt-1">
-            {isHost ? 'Add a video to the queue to get started' : 'Waiting for the host to play a video'}
+            {isHost ? t("add-video-to-queue", { defaultValue: "Add a video to the queue to get started" }) : t("waiting-for-host-video", { defaultValue: "Waiting for the host to play a video" })}
           </p>
         </div>
       </div>
@@ -548,7 +550,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           <span className="flex h-14 w-14 items-center justify-center rounded-full bg-(--rmhtube-accent)">
             <svg className="h-7 w-7" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
           </span>
-          <span className="text-sm font-medium">Paused — tap to resync</span>
+          <span className="text-sm font-medium">{t("paused-tap-to-resync", { defaultValue: "Paused — tap to resync" })}</span>
         </button>
       )}
     </div>

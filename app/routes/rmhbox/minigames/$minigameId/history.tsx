@@ -10,6 +10,7 @@
 
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronDown, ChevronUp, Search, ArrowUpDown, Filter } from 'lucide-react';
 import RMHboxHeader from '@/components/rmhbox/RMHboxHeader';
 import { MINIGAME_REGISTRY } from '@/lib/rmhbox/minigame-registry';
@@ -43,6 +44,7 @@ type SortDir = 'asc' | 'desc';
 
 function MinigameHistoryPage() {
   const { minigameId } = Route.useParams();
+  const { t } = useTranslation("r-rmhbox");
   const game = MINIGAME_REGISTRY[minigameId];
   const historyConfig = getHistoryDisplay(minigameId);
 
@@ -224,7 +226,7 @@ function MinigameHistoryPage() {
     <div className="flex h-screen flex-col">
       <RMHboxHeader
         context="history"
-        backLabel="Minigames"
+        backLabel={t("minigames", { defaultValue: "Minigames" })}
         backHref="/rmhbox/minigames"
         title={game?.displayName ?? minigameId}
       />
@@ -240,8 +242,8 @@ function MinigameHistoryPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={
                 historyConfig?.searchableFields.length
-                  ? `Search by ${historyConfig.searchableFields.map((f) => f.label.toLowerCase()).join(', ')}, players...`
-                  : 'Search games...'
+                  ? t("search-by-fields", { defaultValue: "Search by {{fields}}, players...", fields: historyConfig.searchableFields.map((f) => f.label.toLowerCase()).join(', ') })
+                  : t("search-games", { defaultValue: "Search games..." })
               }
               className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) text-(--rmhbox-text) placeholder:text-(--rmhbox-text-dim) outline-none focus:ring-1 focus:ring-(--rmhbox-accent) text-sm"
               data-testid="history-search"
@@ -250,11 +252,11 @@ function MinigameHistoryPage() {
 
           {/* Sort controls */}
           <div className="flex items-center gap-4 mb-4 px-1">
-            <span className="text-xs text-(--rmhbox-text-muted)">Sort by:</span>
-            <SortButton label="Date" field="date" />
-            <SortButton label="Score" field="score" />
-            <SortButton label="Rank" field="rank" />
-            <SortButton label="Duration" field="duration" />
+            <span className="text-xs text-(--rmhbox-text-muted)">{t("sort-by", { defaultValue: "Sort by:" })}</span>
+            <SortButton label={t("sort-date", { defaultValue: "Date" })} field="date" />
+            <SortButton label={t("sort-score", { defaultValue: "Score" })} field="score" />
+            <SortButton label={t("sort-rank", { defaultValue: "Rank" })} field="rank" />
+            <SortButton label={t("sort-duration", { defaultValue: "Duration" })} field="duration" />
           </div>
 
           {/* Filter controls */}
@@ -284,7 +286,7 @@ function MinigameHistoryPage() {
                     className="text-xs px-2 py-1.5 rounded-md border border-(--rmhbox-border) bg-(--rmhbox-bg) text-(--rmhbox-text) outline-none focus:ring-1 focus:ring-(--rmhbox-accent)"
                     data-testid={`history-filter-${field.key}`}
                   >
-                    <option value="">{field.label}: All</option>
+                    <option value="">{t("filter-all", { defaultValue: "{{label}}: All", label: field.label })}</option>
                     {(filterOptions[field.key] ?? []).map((opt) => (
                       <option key={opt} value={opt}>
                         {field.label}: {opt}
@@ -298,10 +300,10 @@ function MinigameHistoryPage() {
 
           {/* Match list */}
           {loading ? (
-            <p className="text-sm text-center py-12 text-(--rmhbox-text-muted)">Loading history...</p>
+            <p className="text-sm text-center py-12 text-(--rmhbox-text-muted)">{t("loading-history", { defaultValue: "Loading history..." })}</p>
           ) : filteredMatches.length === 0 ? (
             <p className="text-sm text-center py-12 text-(--rmhbox-text-muted)">
-              {searchQuery || Object.keys(activeFilters).length > 0 ? 'No matches found.' : 'No game history yet.'}
+              {searchQuery || Object.keys(activeFilters).length > 0 ? t("no-matches-found", { defaultValue: "No matches found." }) : t("no-game-history", { defaultValue: "No game history yet." })}
             </p>
           ) : (
             <div className="space-y-2">
@@ -324,7 +326,7 @@ function MinigameHistoryPage() {
                         <div className="flex items-center gap-3 text-sm">
                           <span className="text-(--rmhbox-text-muted)">{formatDate(match.startedAt)}</span>
                           <span className="text-(--rmhbox-text-muted)">·</span>
-                          <span className="text-(--rmhbox-text)">{match.playerCount} players</span>
+                          <span className="text-(--rmhbox-text)">{t("player-count", { defaultValue: "{{count}} players", count: match.playerCount })}</span>
                           <span className="text-(--rmhbox-text-muted)">·</span>
                           <span className="text-(--rmhbox-text-muted)">{formatDuration(match.durationMs)}</span>
                         </div>
@@ -337,9 +339,9 @@ function MinigameHistoryPage() {
                           </p>
                         )}
                         <div className="text-xs mt-1 text-(--rmhbox-text-muted)">
-                          Winner:{' '}
+                          {t("winner-label", { defaultValue: "Winner:" })}{' '}
                           <span className="text-(--rmhbox-accent) font-medium">
-                            {winner?.userName ?? 'None'}
+                            {winner?.userName ?? t("winner-none", { defaultValue: "None" })}
                           </span>
                         </div>
                       </div>
@@ -365,7 +367,7 @@ function MinigameHistoryPage() {
                           </pre>
                         ) : (
                           <p className="text-sm text-center py-4 text-(--rmhbox-text-muted)">
-                            Game log not available.
+                            {t("game-log-unavailable", { defaultValue: "Game log not available." })}
                           </p>
                         )}
                       </div>
@@ -384,17 +386,17 @@ function MinigameHistoryPage() {
                 disabled={offset === 0}
                 className="px-4 py-2 text-sm rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--rmhbox-surface-hover) text-(--rmhbox-text-muted) hover:text-(--rmhbox-text)"
               >
-                Previous
+                {t("pagination-previous", { defaultValue: "Previous" })}
               </button>
               <span className="text-sm text-(--rmhbox-text-muted)">
-                {offset + 1}–{Math.min(offset + limit, total)} of {total}
+                {t("pagination-range", { defaultValue: "{{from}}–{{to}} of {{total}}", from: offset + 1, to: Math.min(offset + limit, total), total })}
               </span>
               <button
                 onClick={() => setOffset((o) => o + limit)}
                 disabled={offset + limit >= total}
                 className="px-4 py-2 text-sm rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--rmhbox-surface-hover) text-(--rmhbox-text-muted) hover:text-(--rmhbox-text)"
               >
-                Next
+                {t("pagination-next", { defaultValue: "Next" })}
               </button>
             </div>
           )}

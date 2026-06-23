@@ -19,6 +19,7 @@ import Image from '@tiptap/extension-image';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import { common, createLowlight } from 'lowlight';
 
+import { useTranslation } from 'react-i18next';
 import { Note, NoteFolder, NoteTag, NOTE_COLORS } from './types';
 import { OGPreviewExtension } from './OGPreviewExtension';
 import EditorToolbar from './EditorToolbar';
@@ -55,6 +56,7 @@ interface Props {
 }
 
 export default function NoteEditor({ note, onUpdate, onDelete, onRefresh, tags, folders }: Props) {
+  const { t } = useTranslation("c-rmh-notes");
   const { readingMode, markdownMode, toggleReadingMode, toggleMarkdownMode } = useNotesStore();
   const dataStore = useNotesDataStore();
   const [title, setTitle] = useState(note.title);
@@ -96,7 +98,7 @@ export default function NoteEditor({ note, onUpdate, onDelete, onRefresh, tags, 
       Image,
       CharacterCount,
       CodeBlockLowlight.configure({ lowlight }),
-      Placeholder.configure({ placeholder: 'Start writing your note...' }),
+      Placeholder.configure({ placeholder: t("start-writing", { defaultValue: "Start writing your note..." }) }),
       OGPreviewExtension,
     ],
     content: (() => { try { return JSON.parse(note.content); } catch { return EMPTY_DOC; } })(),
@@ -217,7 +219,7 @@ export default function NoteEditor({ note, onUpdate, onDelete, onRefresh, tags, 
 
   const handleTrash = () => {
     const updated = dataStore.softDeleteNote(note.id);
-    if (updated) { onDelete(note.id); toast.success('Moved to trash'); }
+    if (updated) { onDelete(note.id); toast.success(t("moved-to-trash", { defaultValue: "Moved to trash" })); }
   };
 
   const handleVersionRestore = (versionId: string) => {
@@ -227,7 +229,7 @@ export default function NoteEditor({ note, onUpdate, onDelete, onRefresh, tags, 
       setShowVersions(false);
       const content = (() => { try { return JSON.parse(updated.content); } catch { return EMPTY_DOC; } })();
       editor?.commands.setContent(content, { emitUpdate: false });
-      toast.success('Version restored');
+      toast.success(t("version-restored", { defaultValue: "Version restored" }));
     }
   };
 
@@ -239,14 +241,14 @@ export default function NoteEditor({ note, onUpdate, onDelete, onRefresh, tags, 
       <div className="flex-1 flex items-center justify-center" style={bgStyle}>
         <div className="text-center space-y-4 p-8">
           <div className="text-5xl">🔒</div>
-          <h3 className="font-bold text-lg" style={{ color: 'var(--notes-text)' }}>This note is locked</h3>
-          <p style={{ color: 'var(--notes-text-muted)' }}>Enter the password to view this note.</p>
+          <h3 className="font-bold text-lg" style={{ color: 'var(--notes-text)' }}>{t("note-is-locked", { defaultValue: "This note is locked" })}</h3>
+          <p style={{ color: 'var(--notes-text-muted)' }}>{t("enter-password", { defaultValue: "Enter the password to view this note." })}</p>
           <button
             onClick={() => setShowLock(true)}
             className="px-4 py-2 rounded-lg font-semibold text-sm"
             style={{ background: 'var(--notes-accent)', color: 'var(--notes-accent-fg)' }}
           >
-            Unlock Note
+            {t("unlock-note", { defaultValue: "Unlock Note" })}
           </button>
           {showLock && (
             <Suspense fallback={null}>
@@ -275,28 +277,28 @@ export default function NoteEditor({ note, onUpdate, onDelete, onRefresh, tags, 
         <input
           value={title}
           onChange={(e) => handleTitleChange(e.target.value)}
-          placeholder="Untitled"
+          placeholder={t("untitled", { defaultValue: "Untitled" })}
           className="flex-1 min-w-0 font-bold text-lg bg-transparent outline-none"
           style={{ color: 'var(--notes-text)' }}
         />
 
         {/* Action icons */}
         <div className="flex items-center gap-1">
-          <IconBtn onClick={handlePin} title={note.isPinned ? 'Unpin' : 'Pin'} active={note.isPinned} activeColor="var(--notes-pin-color)">📌</IconBtn>
-          <IconBtn onClick={handleFav} title={note.isFavorite ? 'Unfavorite' : 'Favorite'} active={note.isFavorite} activeColor="var(--notes-fav-color)">⭐</IconBtn>
-          <IconBtn onClick={() => setShowColorPicker((v) => !v)} title="Note color">🎨</IconBtn>
-          <IconBtn onClick={() => setShowTagEditor((v) => !v)} title="Tags">🏷️</IconBtn>
-          <IconBtn onClick={() => setShowFolderSelector((v) => !v)} title="Move to folder">📁</IconBtn>
-          <IconBtn onClick={() => setShowReminder(true)} title="Add reminder">🔔</IconBtn>
-          <IconBtn onClick={toggleReadingMode} title="Reading mode (⌘⇧R)" active={readingMode}>📖</IconBtn>
-          <IconBtn onClick={toggleMarkdownMode} title="Markdown mode (⌘⇧M)" active={markdownMode}>Md</IconBtn>
-          <IconBtn onClick={() => setShowVersions(true)} title="Version history">🕐</IconBtn>
-          <IconBtn onClick={() => setShowShare(true)} title="Share link">🔗</IconBtn>
-          <IconBtn onClick={() => setShowExport(true)} title="Export">⬇️</IconBtn>
-          <IconBtn onClick={() => setShowTweet(true)} title="Tweet formatter">𝕏</IconBtn>
-          <IconBtn onClick={() => setShowLock(true)} title={note.isLocked ? 'Manage lock' : 'Lock note'} active={note.isLocked} activeColor="var(--notes-lock-color)">🔒</IconBtn>
+          <IconBtn onClick={handlePin} title={note.isPinned ? t("unpin", { defaultValue: "Unpin" }) : t("pin", { defaultValue: "Pin" })} active={note.isPinned} activeColor="var(--notes-pin-color)">📌</IconBtn>
+          <IconBtn onClick={handleFav} title={note.isFavorite ? t("unfavorite", { defaultValue: "Unfavorite" }) : t("favorite", { defaultValue: "Favorite" })} active={note.isFavorite} activeColor="var(--notes-fav-color)">⭐</IconBtn>
+          <IconBtn onClick={() => setShowColorPicker((v) => !v)} title={t("note-color", { defaultValue: "Note color" })}>🎨</IconBtn>
+          <IconBtn onClick={() => setShowTagEditor((v) => !v)} title={t("tags", { defaultValue: "Tags" })}>🏷️</IconBtn>
+          <IconBtn onClick={() => setShowFolderSelector((v) => !v)} title={t("move-to-folder", { defaultValue: "Move to folder" })}>📁</IconBtn>
+          <IconBtn onClick={() => setShowReminder(true)} title={t("add-reminder", { defaultValue: "Add reminder" })}>🔔</IconBtn>
+          <IconBtn onClick={toggleReadingMode} title={t("reading-mode", { defaultValue: "Reading mode (⌘⇧R)" })} active={readingMode}>📖</IconBtn>
+          <IconBtn onClick={toggleMarkdownMode} title={t("markdown-mode", { defaultValue: "Markdown mode (⌘⇧M)" })} active={markdownMode}>Md</IconBtn>
+          <IconBtn onClick={() => setShowVersions(true)} title={t("version-history", { defaultValue: "Version history" })}>🕐</IconBtn>
+          <IconBtn onClick={() => setShowShare(true)} title={t("share-link", { defaultValue: "Share link" })}>🔗</IconBtn>
+          <IconBtn onClick={() => setShowExport(true)} title={t("export", { defaultValue: "Export" })}>⬇️</IconBtn>
+          <IconBtn onClick={() => setShowTweet(true)} title={t("tweet-formatter", { defaultValue: "Tweet formatter" })}>𝕏</IconBtn>
+          <IconBtn onClick={() => setShowLock(true)} title={note.isLocked ? t("manage-lock", { defaultValue: "Manage lock" }) : t("lock-note", { defaultValue: "Lock note" })} active={note.isLocked} activeColor="var(--notes-lock-color)">🔒</IconBtn>
           <div className="w-px h-4 mx-1" style={{ background: 'var(--notes-border)' }} />
-          <IconBtn onClick={handleTrash} title="Move to trash" danger>🗑️</IconBtn>
+          <IconBtn onClick={handleTrash} title={t("move-to-trash", { defaultValue: "Move to trash" })} danger>🗑️</IconBtn>
         </div>
       </div>
 
@@ -351,7 +353,7 @@ export default function NoteEditor({ note, onUpdate, onDelete, onRefresh, tags, 
           <span>{note.tags.map((t) => `#${t.tag.name}`).join(' ')}</span>
         )}
         <span className="ml-auto">
-          {saving ? '💾 Saving...' : savedAt ? `✓ Saved ${savedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}
+          {saving ? t("saving", { defaultValue: "💾 Saving..." }) : savedAt ? t("saved-at", { defaultValue: "✓ Saved {{time}}", time: savedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }) : ''}
         </span>
       </div>
 

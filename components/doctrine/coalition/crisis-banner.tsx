@@ -1,6 +1,7 @@
 import { AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from '@tanstack/react-router';
+import { useTranslation } from "react-i18next";
 
 interface CrisisBannerProps {
   incidentId: string;
@@ -17,6 +18,7 @@ const SEVERITY_COLORS: Record<string, string> = {
 };
 
 export function CrisisBanner({ incidentId, codename, severity, title }: CrisisBannerProps) {
+  const { t } = useTranslation("c-doctrine");
   const color = SEVERITY_COLORS[severity] ?? '#EF4444';
 
   return (
@@ -37,7 +39,7 @@ export function CrisisBanner({ incidentId, codename, severity, title }: CrisisBa
           </div>
           <p className="text-sm text-white/80 truncate">{title}</p>
         </div>
-        <span className="text-[10px] text-white/20 shrink-0">View →</span>
+        <span className="text-[10px] text-white/20 shrink-0">{t("view-arrow", { defaultValue: "View →" })}</span>
       </motion.div>
     </Link>
   );

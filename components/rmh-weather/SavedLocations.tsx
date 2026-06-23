@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useWeatherStore } from '@/lib/store/useWeatherStore';
 import { X, Star, MapPin, Home, Building2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,6 +16,7 @@ interface SavedLocationsProps {
 type Shortcut = { name: string; lat: number; lon: number } | null;
 
 export const SavedLocations = ({ onSelect, isOpen, onClose }: SavedLocationsProps) => {
+  const { t } = useTranslation("c-rmh-weather");
   const { favorites, removeFavorite } = useWeatherStore();
   const [home, setHome] = React.useState<Shortcut>(null);
   const [work, setWork] = React.useState<Shortcut>(null);
@@ -63,12 +65,12 @@ export const SavedLocations = ({ onSelect, isOpen, onClose }: SavedLocationsProp
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-weather flex items-center gap-2">
             <Star className="w-6 h-6 text-yellow-500 fill-yellow-500" />
-            Saved
+            {t("saved", { defaultValue: "Saved" })}
           </h2>
           <button
             onClick={onClose}
             className="p-2 rounded-xl text-weather-muted hover:text-weather hover:bg-weather-glass transition-colors"
-            aria-label="Close panel"
+            aria-label={t("close-panel", { defaultValue: "Close panel" })}
           >
             <X className="w-5 h-5" />
           </button>
@@ -89,9 +91,9 @@ export const SavedLocations = ({ onSelect, isOpen, onClose }: SavedLocationsProp
             >
               <Home className="w-4 h-4 shrink-0" />
               <div className="min-w-0">
-                <div className="text-xs font-bold leading-none">Home</div>
+                <div className="text-xs font-bold leading-none">{t("home", { defaultValue: "Home" })}</div>
                 <div className="text-[10px] opacity-70 truncate mt-0.5">
-                  {home ? home.name : 'Not set'}
+                  {home ? home.name : t("not-set", { defaultValue: "Not set" })}
                 </div>
               </div>
             </button>
@@ -99,7 +101,7 @@ export const SavedLocations = ({ onSelect, isOpen, onClose }: SavedLocationsProp
               <button
                 onClick={() => clearShortcut('home')}
                 className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-blue-500 text-white flex items-center justify-center hover:bg-red-500 transition-colors"
-                title="Clear home"
+                title={t("clear-home", { defaultValue: "Clear home" })}
               >
                 <X className="w-2.5 h-2.5" />
               </button>
@@ -119,9 +121,9 @@ export const SavedLocations = ({ onSelect, isOpen, onClose }: SavedLocationsProp
             >
               <Building2 className="w-4 h-4 shrink-0" />
               <div className="min-w-0">
-                <div className="text-xs font-bold leading-none">Work</div>
+                <div className="text-xs font-bold leading-none">{t("work", { defaultValue: "Work" })}</div>
                 <div className="text-[10px] opacity-70 truncate mt-0.5">
-                  {work ? work.name : 'Not set'}
+                  {work ? work.name : t("not-set", { defaultValue: "Not set" })}
                 </div>
               </div>
             </button>
@@ -129,7 +131,7 @@ export const SavedLocations = ({ onSelect, isOpen, onClose }: SavedLocationsProp
               <button
                 onClick={() => clearShortcut('work')}
                 className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-purple-500 text-white flex items-center justify-center hover:bg-red-500 transition-colors"
-                title="Clear work"
+                title={t("clear-work", { defaultValue: "Clear work" })}
               >
                 <X className="w-2.5 h-2.5" />
               </button>
@@ -144,8 +146,8 @@ export const SavedLocations = ({ onSelect, isOpen, onClose }: SavedLocationsProp
               <div className="w-16 h-16 bg-weather-glass rounded-full flex items-center justify-center mx-auto mb-4">
                 <Star className="w-8 h-8 text-weather-muted opacity-40" />
               </div>
-              <p className="text-weather-muted font-medium">No saved locations yet</p>
-              <p className="text-xs text-weather-muted/60 mt-2">Add a city from the dashboard to see it here.</p>
+              <p className="text-weather-muted font-medium">{t("no-saved-locations", { defaultValue: "No saved locations yet" })}</p>
+              <p className="text-xs text-weather-muted/60 mt-2">{t("add-city-hint", { defaultValue: "Add a city from the dashboard to see it here." })}</p>
             </div>
           ) : (
             favorites.map((loc) => {
@@ -174,12 +176,12 @@ export const SavedLocations = ({ onSelect, isOpen, onClose }: SavedLocationsProp
                           <div className="flex gap-1.5 mt-1.5">
                             {isHome && (
                               <span className="inline-flex items-center gap-1 text-[10px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded-full border border-blue-500/40 font-semibold">
-                                <Home className="w-2.5 h-2.5" /> Home
+                                <Home className="w-2.5 h-2.5" /> {t("home", { defaultValue: "Home" })}
                               </span>
                             )}
                             {isWork && (
                               <span className="inline-flex items-center gap-1 text-[10px] bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded-full border border-purple-500/40 font-semibold">
-                                <Building2 className="w-2.5 h-2.5" /> Work
+                                <Building2 className="w-2.5 h-2.5" /> {t("work", { defaultValue: "Work" })}
                               </span>
                             )}
                           </div>
@@ -192,14 +194,14 @@ export const SavedLocations = ({ onSelect, isOpen, onClose }: SavedLocationsProp
                               onClick={(e) => { e.stopPropagation(); saveShortcut('home', loc); }}
                               className="inline-flex items-center gap-1 text-[10px] bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded-full border border-blue-500/30 hover:bg-blue-500/25 transition-colors"
                             >
-                              <Home className="w-2.5 h-2.5" /> Set Home
+                              <Home className="w-2.5 h-2.5" /> {t("set-home", { defaultValue: "Set Home" })}
                             </button>
                           ) : (
                             <button
                               onClick={(e) => { e.stopPropagation(); clearShortcut('home'); }}
                               className="inline-flex items-center gap-1 text-[10px] bg-red-500/10 text-red-400 px-1.5 py-0.5 rounded-full border border-red-500/30 hover:bg-red-500/20 transition-colors"
                             >
-                              <X className="w-2.5 h-2.5" /> Unset Home
+                              <X className="w-2.5 h-2.5" /> {t("unset-home", { defaultValue: "Unset Home" })}
                             </button>
                           )}
                           {!isWork ? (
@@ -207,14 +209,14 @@ export const SavedLocations = ({ onSelect, isOpen, onClose }: SavedLocationsProp
                               onClick={(e) => { e.stopPropagation(); saveShortcut('work', loc); }}
                               className="inline-flex items-center gap-1 text-[10px] bg-purple-500/10 text-purple-400 px-1.5 py-0.5 rounded-full border border-purple-500/30 hover:bg-purple-500/25 transition-colors"
                             >
-                              <Building2 className="w-2.5 h-2.5" /> Set Work
+                              <Building2 className="w-2.5 h-2.5" /> {t("set-work", { defaultValue: "Set Work" })}
                             </button>
                           ) : (
                             <button
                               onClick={(e) => { e.stopPropagation(); clearShortcut('work'); }}
                               className="inline-flex items-center gap-1 text-[10px] bg-red-500/10 text-red-400 px-1.5 py-0.5 rounded-full border border-red-500/30 hover:bg-red-500/20 transition-colors"
                             >
-                              <X className="w-2.5 h-2.5" /> Unset Work
+                              <X className="w-2.5 h-2.5" /> {t("unset-work", { defaultValue: "Unset Work" })}
                             </button>
                           )}
                         </div>
@@ -237,7 +239,7 @@ export const SavedLocations = ({ onSelect, isOpen, onClose }: SavedLocationsProp
 
         <div className="p-3 rounded-2xl bg-blue-500/5 border border-blue-500/10">
           <p className="text-[10px] text-blue-400 font-medium uppercase tracking-wider text-center">
-            Synced via LocalStorage
+            {t("synced-via-local-storage", { defaultValue: "Synced via LocalStorage" })}
           </p>
         </div>
       </motion.div>

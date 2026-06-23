@@ -18,6 +18,7 @@
 'use client';
 
 import { BookOpen, Lightbulb, SkipForward } from 'lucide-react';
+import { useTranslation } from "react-i18next";
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 
 interface InstructionsScreenProps {
@@ -39,6 +40,7 @@ export default function InstructionsScreen({
   isHost,
   onSkip,
 }: InstructionsScreenProps) {
+  const { t } = useTranslation("c-rmhbox");
   const timerInfo = useRMHboxStore((s) => s.timerInfo);
   const remaining = timerInfo?.remaining ?? durationSeconds;
   const total = timerInfo?.total ?? durationSeconds;
@@ -64,7 +66,7 @@ export default function InstructionsScreen({
       {rules.length > 0 && (
         <div>
           <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-(--rmhbox-text-muted)">
-            <BookOpen className="h-4 w-4" /> Rules
+            <BookOpen className="h-4 w-4" /> {t("rules", { defaultValue: "Rules" })}
           </h3>
           <ul className="list-inside list-disc space-y-1 text-sm">
             {rules.map((rule, i) => (
@@ -78,7 +80,7 @@ export default function InstructionsScreen({
       {tips.length > 0 && (
         <div>
           <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-(--rmhbox-text-muted)">
-            <Lightbulb className="h-4 w-4" /> Tips
+            <Lightbulb className="h-4 w-4" /> {t("tips", { defaultValue: "Tips" })}
           </h3>
           <ul className="list-inside list-disc space-y-1 text-sm text-(--rmhbox-text-muted)">
             {tips.map((tip, i) => (
@@ -94,7 +96,7 @@ export default function InstructionsScreen({
           onClick={onSkip}
           className="mx-auto flex items-center gap-2 rounded-lg bg-(--rmhbox-surface) border border-(--rmhbox-border) px-4 py-2 text-sm font-medium text-(--rmhbox-text-muted) transition-colors hover:bg-(--rmhbox-surface-hover) hover:text-(--rmhbox-text)"
         >
-          <SkipForward className="h-4 w-4" /> Skip Instructions
+          <SkipForward className="h-4 w-4" /> {t("skip-instructions", { defaultValue: "Skip Instructions" })}
         </button>
       )}
     </div>

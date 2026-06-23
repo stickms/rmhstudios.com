@@ -4,6 +4,7 @@
 
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useEffect, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useJobSearchStore } from '@/lib/store/useJobSearchStore';
 import { useJobsDataStore } from '@/lib/store/useJobsDataStore';
 import { JobCard } from '@/components/rmh-jobs/JobCard';
@@ -15,6 +16,7 @@ export const Route = createFileRoute('/secret/jobs/')({
 });
 
 function RMHJobsPage() {
+  const { t } = useTranslation("r-secret");
   const { query, sort, page, setPage } = useJobSearchStore();
   const getJobs = useJobsDataStore((s) => s.getJobs);
   const [loading, setLoading] = useState(true);
@@ -34,7 +36,7 @@ function RMHJobsPage() {
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <Briefcase size={18} style={{ color: 'var(--jobs-accent)' }} />
-            <h1 className="text-base font-semibold">RMH Job Search</h1>
+            <h1 className="text-base font-semibold">{t("jobs-heading", { defaultValue: "RMH Job Search" })}</h1>
           </div>
           <div className="flex items-center gap-3">
             <Link
@@ -43,7 +45,7 @@ function RMHJobsPage() {
               style={{ color: 'var(--jobs-text-muted)' }}
             >
               <ClipboardList size={14} />
-              My Applications
+              {t("my-applications", { defaultValue: "My Applications" })}
             </Link>
           </div>
         </div>
@@ -52,13 +54,13 @@ function RMHJobsPage() {
       <main className="max-w-5xl mx-auto px-4 py-6">
         <div className="text-center mb-8">
           <h2 className="text-2xl font-bold mb-2">
-            Find Your Dream Job
+            {t("find-your-dream-job", { defaultValue: "Find Your Dream Job" })}
             <span className="text-xs font-normal ml-2" style={{ color: 'var(--jobs-text-subtle)' }}>
-              (rejection guaranteed)
+              {t("rejection-guaranteed", { defaultValue: "(rejection guaranteed)" })}
             </span>
           </h2>
           <p className="text-sm" style={{ color: 'var(--jobs-text-muted)' }}>
-            {result.pagination.total} open positions — realistic, ridiculous, and everything in between.
+            {t("open-positions", { defaultValue: "{{total}} open positions — realistic, ridiculous, and everything in between.", total: result.pagination.total })}
           </p>
         </div>
 
@@ -72,8 +74,8 @@ function RMHJobsPage() {
           </div>
         ) : result.jobs.length === 0 ? (
           <div className="text-center py-16" style={{ color: 'var(--jobs-text-muted)' }}>
-            <p className="text-lg mb-2">No jobs found</p>
-            <p className="text-sm">Try adjusting your search or filters.</p>
+            <p className="text-lg mb-2">{t("no-jobs-found", { defaultValue: "No jobs found" })}</p>
+            <p className="text-sm">{t("adjust-search", { defaultValue: "Try adjusting your search or filters." })}</p>
           </div>
         ) : (
           <>
@@ -92,10 +94,10 @@ function RMHJobsPage() {
                   style={{ borderRadius: 'var(--jobs-radius)' }}
                 >
                   <ChevronLeft size={14} />
-                  Previous
+                  {t("previous", { defaultValue: "Previous" })}
                 </button>
                 <span className="text-sm" style={{ color: 'var(--jobs-text-muted)' }}>
-                  Page {result.pagination.page} of {result.pagination.totalPages}
+                  {t("page-of", { defaultValue: "Page {{page}} of {{totalPages}}", page: result.pagination.page, totalPages: result.pagination.totalPages })}
                 </span>
                 <button
                   onClick={() => setPage(page + 1)}
@@ -103,7 +105,7 @@ function RMHJobsPage() {
                   className="jobs-btn-secondary flex items-center gap-1 px-3 py-2 rounded-lg text-sm disabled:opacity-30"
                   style={{ borderRadius: 'var(--jobs-radius)' }}
                 >
-                  Next
+                  {t("next", { defaultValue: "Next" })}
                   <ChevronRight size={14} />
                 </button>
               </div>

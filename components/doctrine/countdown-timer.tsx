@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useDoctrineCountdown } from '@/hooks/useDoctrineCountdown';
 
 interface CountdownTimerProps {
@@ -7,12 +8,13 @@ interface CountdownTimerProps {
 }
 
 export function CountdownTimer({ target, label }: CountdownTimerProps) {
+  const { t } = useTranslation("c-doctrine");
   const { hours, minutes, seconds, expired } = useDoctrineCountdown(target);
 
   if (expired) {
     return (
       <span className="font-mono text-sm" style={{ color: 'var(--doctrine-accent, #F97316)' }}>
-        NOW
+        {t("now", { defaultValue: "NOW" })}
       </span>
     );
   }

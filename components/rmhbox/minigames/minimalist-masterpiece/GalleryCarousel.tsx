@@ -3,6 +3,7 @@
  */
 'use client';
 
+import { useTranslation } from "react-i18next";
 import DrawingCard from './DrawingCard';
 import type { MMStroke } from './DrawingCard';
 
@@ -18,9 +19,10 @@ interface GalleryCarouselProps {
 }
 
 export default function GalleryCarousel({ drawings }: GalleryCarouselProps) {
+  const { t } = useTranslation("c-rmhbox");
   if (drawings.length === 0) {
     return (
-      <p className="text-sm text-(--rmhbox-text-muted)">No drawings to display.</p>
+      <p className="text-sm text-(--rmhbox-text-muted)">{t("no-drawings-to-display", { defaultValue: "No drawings to display." })}</p>
     );
   }
 

@@ -3,8 +3,10 @@
 import { Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export function LoggedOutScreen() {
+  const { t } = useTranslation("c-house-always-wins");
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-neutral-950 text-white relative overflow-hidden">
       {/* Dim ambient vignette */}
@@ -23,15 +25,14 @@ export function LoggedOutScreen() {
         <div className="w-16 h-px bg-linear-to-r from-transparent via-amber-700/50 to-transparent mb-8" />
 
         <h1 className="text-4xl font-bold tracking-tight text-amber-100/90 mb-2">
-          House Always Wins
+          {t("title", { defaultValue: "House Always Wins" })}
         </h1>
         <p className="text-neutral-500 text-sm font-mono tracking-widest uppercase mb-8">
-          The table is waiting
+          {t("subtitle", { defaultValue: "The table is waiting" })}
         </p>
 
         <p className="text-neutral-400 text-base leading-relaxed mb-10">
-          You need to sign in before you can enter the casino.
-          Your debts will be recorded.
+          {t("sign-in-prompt", { defaultValue: "You need to sign in before you can enter the casino. Your debts will be recorded." })}
         </p>
 
         <Link
@@ -39,7 +40,7 @@ export function LoggedOutScreen() {
           search={{ callbackURL: "/house-always-wins" }}
           className="px-8 py-3 bg-amber-900/30 hover:bg-amber-800/40 border border-amber-700/40 hover:border-amber-600/60 text-amber-200/90 font-semibold rounded-lg transition-all duration-300 tracking-wide"
         >
-          Login to Play
+          {t("login-to-play", { defaultValue: "Login to Play" })}
         </Link>
 
         <Link
@@ -47,7 +48,7 @@ export function LoggedOutScreen() {
           className="mt-6 flex items-center gap-2 text-neutral-600 hover:text-neutral-400 text-sm transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back Home
+          {t("back-home", { defaultValue: "Back Home" })}
         </Link>
 
         {/* Decorative line */}

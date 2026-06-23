@@ -11,6 +11,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { playSound } from '@/lib/rmhbox/audio';
 import { emitGameInput, useGameSocket, extractTimerTick } from '@/lib/rmhbox/minigame-client';
@@ -106,6 +107,8 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
   const [bidSubmitStatus, setBidSubmitStatus] = useState<{ submitted: number; total: number } | null>(null);
   const [drawingSubmitted, setDrawingSubmitted] = useState(false);
   const [drawingSubmitStatus, setDrawingSubmitStatus] = useState<{ submitted: number; total: number } | null>(null);
+
+  const { t } = useTranslation("c-rmhbox");
 
   // Track spectator status
   const isSpectator = useRMHboxStore((s) => s.lobby?.myRole === 'spectator');
@@ -370,8 +373,8 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
     case 'PROMPT_REVEAL':
       return (
         <div className="flex flex-col items-center justify-center gap-4 p-8 text-center animate-in fade-in">
-          <h2 className="text-2xl font-bold text-(--rmhbox-text)">Draw:</h2>
-          <p className="text-xl text-(--rmhbox-accent)">{prompt || 'Get ready...'}</p>
+          <h2 className="text-2xl font-bold text-(--rmhbox-text)">{t("draw-label", { defaultValue: "Draw:" })}</h2>
+          <p className="text-xl text-(--rmhbox-accent)">{prompt || t("get-ready", { defaultValue: "Get ready..." })}</p>
         </div>
       );
 
@@ -396,12 +399,12 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
             colors={colorPalette}
             selectedColor={selectedColor}
             onSelect={setSelectedColor}
-            label="Color:"
+            label={t("color-label", { defaultValue: "Color:" })}
           />
 
           {/* Stroke width slider */}
           <div className="flex items-center gap-2 w-full max-w-72">
-            <span className="text-xs text-(--rmhbox-text-muted)">Width:</span>
+            <span className="text-xs text-(--rmhbox-text-muted)">{t("width-label", { defaultValue: "Width:" })}</span>
             <input
               type="range"
               min={MIN_WIDTH}
@@ -410,7 +413,7 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
               value={selectedWidth}
               onChange={(e) => setSelectedWidth(Number(e.target.value))}
               className="flex-1 accent-(--rmhbox-accent)"
-              aria-label="Stroke width"
+              aria-label={t("stroke-width-aria", { defaultValue: "Stroke width" })}
             />
             {/* Preview: shows a colored dot scaled to the actual rendered width.
                 When the dot exceeds 36px, display the numerical width instead.
@@ -428,7 +431,7 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
                     height: '40px',
                     backgroundColor: contrastBg,
                   }}
-                  title={`Width: ${selectedWidth}`}
+                  title={t("width-value-title", { defaultValue: "Width: {{width}}", width: selectedWidth })}
                 >
                   {showNumber ? (
                     <span
@@ -458,16 +461,16 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
             selectedColor={backgroundColor}
             onSelect={setBackgroundColor}
             swatchSize="w-6 h-6"
-            label="Background:"
+            label={t("background-label", { defaultValue: "Background:" })}
           />
 
           <div className="flex items-center gap-4">
             <StrokeCounter current={strokes.length} max={maxStrokes} />
             <span className="text-xs text-(--rmhbox-text-muted)">
-              Auto-saving • {timeRemaining}s
+              {t("auto-saving-timer", { defaultValue: "Auto-saving • {{seconds}}s", seconds: timeRemaining })}
               {drawingSubmitStatus && (
                 <span className="ml-2">
-                  • {drawingSubmitStatus.submitted}/{drawingSubmitStatus.total} submitted
+                  {t("drawing-submit-status", { defaultValue: "• {{submitted}}/{{total}} submitted", submitted: drawingSubmitStatus.submitted, total: drawingSubmitStatus.total })}
                 </span>
               )}
             </span>
@@ -482,7 +485,7 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
                   : 'bg-(--rmhbox-accent) text-white hover:opacity-90'
               }`}
             >
-              {drawingSubmitted ? 'Drawing Submitted ✓' : 'Submit Drawing'}
+              {drawingSubmitted ? t("drawing-submitted", { defaultValue: "Drawing Submitted ✓" }) : t("submit-drawing", { defaultValue: "Submit Drawing" })}
             </button>
           )}
         </div>
@@ -491,8 +494,8 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
     case 'GALLERY':
       return (
         <div className="flex flex-col items-center gap-4 p-4">
-          <h2 className="text-xl font-bold text-(--rmhbox-text)">Gallery Walk</h2>
-          <p className="text-sm text-(--rmhbox-text-muted)">Prompt: &quot;{prompt}&quot;</p>
+          <h2 className="text-xl font-bold text-(--rmhbox-text)">{t("gallery-walk", { defaultValue: "Gallery Walk" })}</h2>
+          <p className="text-sm text-(--rmhbox-text-muted)">{t("prompt-label", { defaultValue: "Prompt:" })} &quot;{prompt}&quot;</p>
           <GalleryCarousel drawings={galleryDrawings} />
         </div>
       );
@@ -500,12 +503,12 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
     case 'AUCTION':
       return (
         <div className="flex flex-col items-center gap-4 p-4">
-          <h2 className="text-xl font-bold text-(--rmhbox-text)">Auction Phase</h2>
+          <h2 className="text-xl font-bold text-(--rmhbox-text)">{t("auction-phase", { defaultValue: "Auction Phase" })}</h2>
           <p className="text-sm text-(--rmhbox-text-muted)">
-            Remaining: {currency} coins • Time: {timeRemaining}s
+            {t("auction-remaining", { defaultValue: "Remaining: {{currency}} coins • Time: {{seconds}}s", currency, seconds: timeRemaining })}
             {bidSubmitStatus && (
-              <span className="ml-2" aria-label={`${bidSubmitStatus.submitted} of ${bidSubmitStatus.total} players submitted bids`}>
-                • {bidSubmitStatus.submitted}/{bidSubmitStatus.total} submitted
+              <span className="ml-2" aria-label={t("bid-submit-aria", { defaultValue: "{{submitted}} of {{total}} players submitted bids", submitted: bidSubmitStatus.submitted, total: bidSubmitStatus.total })}>
+                {t("bid-submit-status", { defaultValue: "• {{submitted}}/{{total}} submitted", submitted: bidSubmitStatus.submitted, total: bidSubmitStatus.total })}
               </span>
             )}
           </p>
@@ -525,7 +528,7 @@ export default function MinimalistMasterpieceGame({ playerId: _playerId, playerN
                   : 'bg-(--rmhbox-accent) text-white hover:opacity-90'
               }`}
             >
-              {bidSubmitted ? 'Bids Submitted ✓' : 'Submit Bids'}
+              {bidSubmitted ? t("bids-submitted", { defaultValue: "Bids Submitted ✓" }) : t("submit-bids", { defaultValue: "Submit Bids" })}
             </button>
           )}
         </div>

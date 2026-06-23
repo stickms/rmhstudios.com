@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Plus, Play, Pause } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useStudioStore } from '@/lib/studio/store';
 import { RMHDrums } from '@/lib/studio/plugins/instruments/RMHDrums';
 import type { Pattern, PatternStep } from '@/lib/studio/types';
@@ -8,6 +9,7 @@ const STEPS = 16;
 const DEFAULT_VELOCITY = 100;
 
 export function PatternView() {
+  const { t } = useTranslation("c-studio");
   const { patterns, addPattern, updatePattern, isPlaying } = useStudioStore();
   const [selectedPatternId, setSelectedPatternId] = useState<string | null>(patterns[0]?.id ?? null);
   const [currentStep, setCurrentStep] = useState(-1);
@@ -50,13 +52,13 @@ export function PatternView() {
   if (patterns.length === 0) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 text-[var(--site-muted)]">
-        <p className="text-sm">No patterns yet</p>
+        <p className="text-sm">{t("no-patterns-yet", { defaultValue: "No patterns yet" })}</p>
         <button
           onClick={handleCreatePattern}
           className="flex items-center gap-2 rounded-lg bg-cyan-500/20 px-4 py-2 text-sm text-cyan-400 hover:bg-cyan-500/30"
         >
           <Plus className="h-4 w-4" />
-          Create Pattern
+          {t("create-pattern", { defaultValue: "Create Pattern" })}
         </button>
       </div>
     );
@@ -79,7 +81,7 @@ export function PatternView() {
         <button
           onClick={handleCreatePattern}
           className="rounded p-1 text-[var(--site-muted)] hover:bg-white/10"
-          title="New Pattern"
+          title={t("new-pattern", { defaultValue: "New Pattern" })}
         >
           <Plus className="h-3.5 w-3.5" />
         </button>
@@ -93,7 +95,7 @@ export function PatternView() {
               <div key={trackIdx} className="flex items-center gap-1">
                 {/* Row label */}
                 <div className="w-16 shrink-0 truncate text-right text-[10px] text-[var(--site-muted)]">
-                  {RMHDrums.PAD_LABELS[trackIdx] || `Pad ${trackIdx + 1}`}
+                  {RMHDrums.PAD_LABELS[trackIdx] || t("pad-number", { defaultValue: "Pad {{number}}", number: trackIdx + 1 })}
                 </div>
 
                 {/* Steps */}

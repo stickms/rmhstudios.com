@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from '@tanstack/react-router';
 import {
@@ -45,6 +46,7 @@ function AlibiGameContent({ dateKey, isToday }: { dateKey: string; isToday: bool
     const puzzleNumber = getPuzzleNumber(selectedDate);
     const puzzle = generateAlibiPuzzle(selectedDate);
 
+    const { t } = useTranslation("c-daily-puzzles");
     const [phase, setPhase] = useState<GamePhase>('rules');
     const [guesses, setGuesses] = useState<string[]>([]);
     const [solved, setSolved] = useState(false);
@@ -206,9 +208,9 @@ function AlibiGameContent({ dateKey, isToday }: { dateKey: string; isToday: bool
                         >
                             <div className="text-center mb-5">
                                 <div className="text-4xl mb-3">🔍</div>
-                                <h2 className="text-2xl font-bold text-site-text mb-1">Alibi</h2>
+                                <h2 className="text-2xl font-bold text-site-text mb-1">{t("alibi-title", { defaultValue: "Alibi" })}</h2>
                                 <p className="text-site-text-muted text-sm">
-                                    {isToday ? 'Daily puzzle' : 'Past puzzle'} · {dateKey} · #{puzzleNumber}
+                                    {isToday ? t("daily-puzzle", { defaultValue: "Daily puzzle" }) : t("past-puzzle", { defaultValue: "Past puzzle" })} · {dateKey} · #{puzzleNumber}
                                 </p>
                             </div>
 
@@ -216,35 +218,35 @@ function AlibiGameContent({ dateKey, isToday }: { dateKey: string; isToday: bool
                                 <div className="flex items-start gap-3 p-3 rounded-xl bg-site-bg-subtle">
                                     <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
                                     <div>
-                                        <p className="text-site-text text-sm font-medium">Read the crime scenario</p>
-                                        <p className="text-site-text-muted text-xs">A crime has been committed. Four suspects have alibis.</p>
+                                        <p className="text-site-text text-sm font-medium">{t("read-crime-scenario", { defaultValue: "Read the crime scenario" })}</p>
+                                        <p className="text-site-text-muted text-xs">{t("crime-committed-desc", { defaultValue: "A crime has been committed. Four suspects have alibis." })}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-3 p-3 rounded-xl bg-site-bg-subtle">
                                     <Search className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
                                     <div>
-                                        <p className="text-site-text text-sm font-medium">Find the contradiction</p>
-                                        <p className="text-site-text-muted text-xs">Exactly one alibi contains a logical contradiction with the scenario or another alibi.</p>
+                                        <p className="text-site-text text-sm font-medium">{t("find-contradiction", { defaultValue: "Find the contradiction" })}</p>
+                                        <p className="text-site-text-muted text-xs">{t("contradiction-desc", { defaultValue: "Exactly one alibi contains a logical contradiction with the scenario or another alibi." })}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-3 p-3 rounded-xl bg-site-bg-subtle">
                                     <Eye className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
                                     <div>
-                                        <p className="text-site-text text-sm font-medium">2 guesses to find the liar</p>
-                                        <p className="text-site-text-muted text-xs">Tap a suspect to accuse them. Wrong guess clears them. You're timed — faster solves earn bonus points.</p>
+                                        <p className="text-site-text text-sm font-medium">{t("two-guesses", { defaultValue: "2 guesses to find the liar" })}</p>
+                                        <p className="text-site-text-muted text-xs">{t("tap-to-accuse-desc", { defaultValue: "Tap a suspect to accuse them. Wrong guess clears them. You're timed — faster solves earn bonus points." })}</p>
                                     </div>
                                 </div>
                             </div>
 
                             <div className="space-y-2 mb-5 px-3">
                                 <p className="text-site-text-muted text-xs">
-                                    <span className="text-site-text font-medium">Guess 1 correct:</span> 100 pts + time bonus (max 50)
+                                    <span className="text-site-text font-medium">{t("guess-1-correct", { defaultValue: "Guess 1 correct:" })}</span> {t("guess-1-pts", { defaultValue: "100 pts + time bonus (max 50)" })}
                                 </p>
                                 <p className="text-site-text-muted text-xs">
-                                    <span className="text-site-text font-medium">Guess 2 correct:</span> 50 pts + time bonus (max 25)
+                                    <span className="text-site-text font-medium">{t("guess-2-correct", { defaultValue: "Guess 2 correct:" })}</span> {t("guess-2-pts", { defaultValue: "50 pts + time bonus (max 25)" })}
                                 </p>
                                 <p className="text-site-text-muted text-xs">
-                                    <span className="text-site-text font-medium">Failed:</span> 0 pts
+                                    <span className="text-site-text font-medium">{t("failed-label", { defaultValue: "Failed:" })}</span> {t("failed-pts", { defaultValue: "0 pts" })}
                                 </p>
                             </div>
 
@@ -254,10 +256,10 @@ function AlibiGameContent({ dateKey, isToday }: { dateKey: string; isToday: bool
                                 className="w-full py-3 rounded-xl bg-red-500/20 border border-red-500/40 text-red-400 font-semibold hover:bg-red-500/30 transition-colors flex items-center justify-center gap-2"
                             >
                                 <Eye className="w-5 h-5" />
-                                Start Puzzle
+                                {t("start-puzzle", { defaultValue: "Start Puzzle" })}
                             </button>
                             <p className="text-site-text-muted text-xs text-center mt-2">
-                                Timer starts when you tap this button.
+                                {t("timer-starts", { defaultValue: "Timer starts when you tap this button." })}
                             </p>
                         </motion.div>
                     </motion.div>
@@ -270,7 +272,7 @@ function AlibiGameContent({ dateKey, isToday }: { dateKey: string; isToday: bool
                 className="inline-flex items-center gap-1.5 text-site-text-muted hover:text-site-text text-sm mb-6 transition-colors"
             >
                 <ArrowLeft className="w-4 h-4" />
-                Back to Daily Puzzles
+                {t("back-to-daily", { defaultValue: "Back to Daily Puzzles" })}
             </Link>
 
             {/* Header */}
@@ -280,7 +282,7 @@ function AlibiGameContent({ dateKey, isToday }: { dateKey: string; isToday: bool
                     Alibi
                 </h1>
                 <p className="text-site-text-muted text-sm">
-                    {isToday ? 'Daily puzzle' : 'Past puzzle'} · {dateKey} · #{puzzleNumber}
+                    {isToday ? t("daily-puzzle", { defaultValue: "Daily puzzle" }) : t("past-puzzle", { defaultValue: "Past puzzle" })} · {dateKey} · #{puzzleNumber}
                 </p>
             </div>
 
@@ -292,7 +294,7 @@ function AlibiGameContent({ dateKey, isToday }: { dateKey: string; isToday: bool
                         <span className="text-site-text font-mono font-semibold">{formatTime(elapsedSeconds)}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="text-site-text-muted text-sm">Guesses</span>
+                        <span className="text-site-text-muted text-sm">{t("guesses-label", { defaultValue: "Guesses" })}</span>
                         <span className="text-site-text font-mono font-semibold">{guesses.length}/2</span>
                     </div>
                 </div>
@@ -306,7 +308,7 @@ function AlibiGameContent({ dateKey, isToday }: { dateKey: string; isToday: bool
             >
                 <div className="flex items-center gap-2 mb-3">
                     <AlertTriangle className="w-5 h-5 text-red-400 shrink-0" />
-                    <h2 className="text-sm font-semibold text-site-text uppercase tracking-wide">Crime Report</h2>
+                    <h2 className="text-sm font-semibold text-site-text uppercase tracking-wide">{t("crime-report", { defaultValue: "Crime Report" })}</h2>
                 </div>
                 <p className="text-site-text text-sm leading-relaxed">{puzzle.scenario}</p>
             </motion.div>
@@ -343,13 +345,13 @@ function AlibiGameContent({ dateKey, isToday }: { dateKey: string; isToday: bool
                             {cleared && (
                                 <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-medium">
                                     <CheckCircle2 className="w-3 h-3" />
-                                    Cleared
+                                    {t("cleared", { defaultValue: "Cleared" })}
                                 </div>
                             )}
                             {accused && (
                                 <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 text-xs font-medium">
                                     <XCircle className="w-3 h-3" />
-                                    Guilty
+                                    {t("guilty", { defaultValue: "Guilty" })}
                                 </div>
                             )}
 
@@ -368,14 +370,14 @@ function AlibiGameContent({ dateKey, isToday }: { dateKey: string; isToday: bool
             {/* Tap to accuse hint (reading phase, no guesses yet) */}
             {phase === 'reading' && !isGameOver && guesses.length === 0 && (
                 <p className="text-center text-site-text-muted text-sm">
-                    Tap a suspect to accuse them.
+                    {t("tap-to-accuse-hint", { defaultValue: "Tap a suspect to accuse them." })}
                 </p>
             )}
 
             {/* Wrong guess hint */}
             {phase === 'reading' && !isGameOver && guesses.length === 1 && (
                 <p className="text-center text-site-text-muted text-sm">
-                    Wrong — that suspect has been cleared. You have 1 guess left.
+                    {t("wrong-guess-hint", { defaultValue: "Wrong — that suspect has been cleared. You have 1 guess left." })}
                 </p>
             )}
 
@@ -398,16 +400,16 @@ function AlibiGameContent({ dateKey, isToday }: { dateKey: string; isToday: bool
                         >
                             {solved ? (
                                 <>
-                                    <div className="text-2xl font-bold text-emerald-400 mb-1">Case Closed!</div>
+                                    <div className="text-2xl font-bold text-emerald-400 mb-1">{t("case-closed", { defaultValue: "Case Closed!" })}</div>
                                     <p className="text-site-text-muted text-sm">
-                                        You found the liar in {guesses.length} guess{guesses.length !== 1 ? 'es' : ''}.
+                                        {t("found-liar", { defaultValue: "You found the liar in {{count}} guess{{suffix}}.", count: guesses.length, suffix: guesses.length !== 1 ? 'es' : '' })}
                                     </p>
                                 </>
                             ) : (
                                 <>
-                                    <div className="text-2xl font-bold text-red-400 mb-1">Cold Case</div>
+                                    <div className="text-2xl font-bold text-red-400 mb-1">{t("cold-case", { defaultValue: "Cold Case" })}</div>
                                     <p className="text-site-text-muted text-sm">
-                                        The guilty suspect was <span className="text-site-text font-medium">{puzzle._solution.guiltyName}</span>.
+                                        {t("guilty-was", { defaultValue: "The guilty suspect was" })} <span className="text-site-text font-medium">{puzzle._solution.guiltyName}</span>.
                                     </p>
                                 </>
                             )}
@@ -424,17 +426,17 @@ function AlibiGameContent({ dateKey, isToday }: { dateKey: string; isToday: bool
                                 <div className="flex flex-col items-center">
                                     <Trophy className="w-6 h-6 text-amber-400 mb-1" />
                                     <span className="text-2xl font-bold text-amber-400">{score}</span>
-                                    <span className="text-site-text-muted text-xs">points</span>
+                                    <span className="text-site-text-muted text-xs">{t("points", { defaultValue: "points" })}</span>
                                 </div>
                                 <div className="flex flex-col items-center">
                                     <Clock className="w-6 h-6 text-site-text-muted mb-1" />
                                     <span className="text-2xl font-bold text-site-text">{formatTime(elapsedSeconds)}</span>
-                                    <span className="text-site-text-muted text-xs">time</span>
+                                    <span className="text-site-text-muted text-xs">{t("time", { defaultValue: "time" })}</span>
                                 </div>
                                 <div className="flex flex-col items-center">
                                     <Search className="w-6 h-6 text-site-text-muted mb-1" />
                                     <span className="text-2xl font-bold text-site-text">{guesses.length}/2</span>
-                                    <span className="text-site-text-muted text-xs">guesses</span>
+                                    <span className="text-site-text-muted text-xs">{t("guesses", { defaultValue: "guesses" })}</span>
                                 </div>
                             </div>
                         </motion.div>
@@ -448,7 +450,7 @@ function AlibiGameContent({ dateKey, isToday }: { dateKey: string; isToday: bool
                         >
                             <h3 className="text-sm font-semibold text-site-text uppercase tracking-wide mb-3 flex items-center gap-2">
                                 <AlertTriangle className="w-4 h-4 text-amber-400" />
-                                The Contradiction
+                                {t("the-contradiction", { defaultValue: "The Contradiction" })}
                             </h3>
                             <p className="text-site-text text-sm leading-relaxed mb-4">
                                 {puzzle._solution.contradiction.explanation}
@@ -464,7 +466,7 @@ function AlibiGameContent({ dateKey, isToday }: { dateKey: string; isToday: bool
                                         }`}
                                     >
                                         {highlight.source === 'scenario' ? (
-                                            <span className="text-xs text-site-text-muted mr-2 font-medium">SCENARIO:</span>
+                                            <span className="text-xs text-site-text-muted mr-2 font-medium">{t("scenario-label", { defaultValue: "SCENARIO:" })}</span>
                                         ) : (
                                             <span className="text-xs text-site-text-muted mr-2 font-medium">{highlight.suspectName}:</span>
                                         )}
@@ -485,7 +487,7 @@ function AlibiGameContent({ dateKey, isToday }: { dateKey: string; isToday: bool
                                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-site-surface border border-site-border text-site-text hover:border-site-accent/50 transition-colors"
                             >
                                 <Share2 className="w-4 h-4" />
-                                {copied ? 'Copied!' : 'Share Result'}
+                                {copied ? t("copied", { defaultValue: "Copied!" }) : t("share-result", { defaultValue: "Share Result" })}
                             </motion.button>
                             <motion.div
                                 initial={{ opacity: 0 }}
@@ -497,13 +499,13 @@ function AlibiGameContent({ dateKey, isToday }: { dateKey: string; isToday: bool
                                     className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-site-surface border border-site-border text-site-text hover:border-site-accent/50 transition-colors"
                                 >
                                     <ArrowLeft className="w-4 h-4" />
-                                    All Puzzles
+                                    {t("all-puzzles", { defaultValue: "All Puzzles" })}
                                 </Link>
                             </motion.div>
                         </div>
 
                         <p className="text-site-text-muted text-xs text-center">
-                            A new case unlocks tomorrow — same for everyone worldwide.
+                            {t("new-case-tomorrow", { defaultValue: "A new case unlocks tomorrow — same for everyone worldwide." })}
                         </p>
                     </motion.div>
                 )}

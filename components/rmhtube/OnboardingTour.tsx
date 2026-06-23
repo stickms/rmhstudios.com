@@ -9,39 +9,41 @@
 import { useState, useCallback } from 'react';
 import { X, ChevronRight, ChevronLeft, Sparkles } from 'lucide-react';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
-
-const TOUR_STEPS = [
-  {
-    title: 'Welcome to RmhTube!',
-    description: 'Watch videos together in real-time with friends. The host controls playback and everyone stays in sync.',
-    icon: '🎬',
-  },
-  {
-    title: 'Add Videos',
-    description: 'Click the "Add" button in the queue panel to add YouTube, Twitch, or direct video links.',
-    icon: '➕',
-  },
-  {
-    title: 'Chat & React',
-    description: 'Chat with everyone in real-time. React to messages, mention others with @, and send emoji reactions.',
-    icon: '💬',
-  },
-  {
-    title: 'Keyboard Shortcuts',
-    description: 'Press Shift+? to see all keyboard shortcuts. Use Space to play/pause, arrows to seek, and more.',
-    icon: '⌨️',
-  },
-  {
-    title: 'Share the Room',
-    description: 'Click the room code in the header to copy the invite link. Share it with friends to watch together!',
-    icon: '🔗',
-  },
-];
+import { useTranslation } from 'react-i18next';
 
 export default function OnboardingTour() {
+  const { t } = useTranslation("c-rmhtube");
   const hasSeenTour = useRmhTubeStore((s) => s.settings.hasSeenTour);
   const updateSettings = useRmhTubeStore((s) => s.updateSettings);
   const [step, setStep] = useState(0);
+
+  const TOUR_STEPS = [
+    {
+      title: t("tour-welcome-title", { defaultValue: "Welcome to RmhTube!" }),
+      description: t("tour-welcome-desc", { defaultValue: "Watch videos together in real-time with friends. The host controls playback and everyone stays in sync." }),
+      icon: '🎬',
+    },
+    {
+      title: t("tour-add-videos-title", { defaultValue: "Add Videos" }),
+      description: t("tour-add-videos-desc", { defaultValue: 'Click the "Add" button in the queue panel to add YouTube, Twitch, or direct video links.' }),
+      icon: '➕',
+    },
+    {
+      title: t("tour-chat-title", { defaultValue: "Chat & React" }),
+      description: t("tour-chat-desc", { defaultValue: "Chat with everyone in real-time. React to messages, mention others with @, and send emoji reactions." }),
+      icon: '💬',
+    },
+    {
+      title: t("tour-shortcuts-title", { defaultValue: "Keyboard Shortcuts" }),
+      description: t("tour-shortcuts-desc", { defaultValue: "Press Shift+? to see all keyboard shortcuts. Use Space to play/pause, arrows to seek, and more." }),
+      icon: '⌨️',
+    },
+    {
+      title: t("tour-share-title", { defaultValue: "Share the Room" }),
+      description: t("tour-share-desc", { defaultValue: "Click the room code in the header to copy the invite link. Share it with friends to watch together!" }),
+      icon: '🔗',
+    },
+  ];
 
   const handleClose = useCallback(() => {
     updateSettings({ hasSeenTour: true });
@@ -102,7 +104,7 @@ export default function OnboardingTour() {
             className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-md transition-colors disabled:opacity-30 text-(--rmhtube-text-muted) hover:text-(--rmhtube-text) hover:bg-(--rmhtube-surface-hover)"
           >
             <ChevronLeft className="h-3.5 w-3.5" />
-            Back
+            {t("back", { defaultValue: "Back" })}
           </button>
 
           <span className="text-xs text-(--rmhtube-text-dim)">
@@ -115,13 +117,13 @@ export default function OnboardingTour() {
           >
             {step < TOUR_STEPS.length - 1 ? (
               <>
-                Next
+                {t("next", { defaultValue: "Next" })}
                 <ChevronRight className="h-3.5 w-3.5" />
               </>
             ) : (
               <>
                 <Sparkles className="h-3.5 w-3.5" />
-                Get Started
+                {t("get-started", { defaultValue: "Get Started" })}
               </>
             )}
           </button>
@@ -133,7 +135,7 @@ export default function OnboardingTour() {
             onClick={handleClose}
             className="w-full mt-3 text-xs text-center text-(--rmhtube-text-dim) hover:text-(--rmhtube-text-muted)"
           >
-            Skip tour
+            {t("skip-tour", { defaultValue: "Skip tour" })}
           </button>
         )}
       </div>

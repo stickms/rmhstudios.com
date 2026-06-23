@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useBaccaratStore } from '@/lib/baccarat/store';
 import { handValue, isNatural } from '@/lib/baccarat/logic';
 import type { Card, BaccaratResult } from '@/lib/baccarat/logic';
@@ -84,6 +85,7 @@ function HandDisplay({ cards, label, value, natural, showValue }: {
   natural: boolean;
   showValue: boolean;
 }) {
+  const { t } = useTranslation("c-rmhcoins");
   // Gate the running total behind the flip animation: only reveal the value
   // once the most recently dealt card has finished flipping face-up.
   const [settled, setSettled] = useState(false);
@@ -122,7 +124,7 @@ function HandDisplay({ cards, label, value, natural, showValue }: {
           <span className="text-xl sm:text-2xl font-bold text-site-text font-mono">{value}</span>
           {natural && (
             <span className="text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 uppercase tracking-wider">
-              Natural
+              {t("natural", { defaultValue: "Natural" })}
             </span>
           )}
         </div>
@@ -134,10 +136,11 @@ function HandDisplay({ cards, label, value, natural, showValue }: {
 // ── Result Announcement ────────────────────────────────────────────
 
 function ResultAnnouncement({ result }: { result: BaccaratResult }) {
+  const { t } = useTranslation("c-rmhcoins");
   const cfg: Record<BaccaratResult, { label: string; color: string; bg: string }> = {
-    player: { label: 'Player Wins!', color: 'text-red-400', bg: 'bg-red-500/20 border-red-500/30' },
-    banker: { label: 'Banker Wins!', color: 'text-blue-400', bg: 'bg-blue-500/20 border-blue-500/30' },
-    tie: { label: 'Tie!', color: 'text-emerald-400', bg: 'bg-emerald-500/20 border-emerald-500/30' },
+    player: { label: t("player-wins", { defaultValue: "Player Wins!" }), color: 'text-red-400', bg: 'bg-red-500/20 border-red-500/30' },
+    banker: { label: t("banker-wins", { defaultValue: "Banker Wins!" }), color: 'text-blue-400', bg: 'bg-blue-500/20 border-blue-500/30' },
+    tie: { label: t("tie", { defaultValue: "Tie!" }), color: 'text-emerald-400', bg: 'bg-emerald-500/20 border-emerald-500/30' },
   };
 
   const c = cfg[result];
@@ -152,6 +155,7 @@ function ResultAnnouncement({ result }: { result: BaccaratResult }) {
 // ── History Bead Road ──────────────────────────────────────────────
 
 function HistoryScoreboard({ history }: { history: BaccaratResult[] }) {
+  const { t } = useTranslation("c-rmhcoins");
   if (history.length === 0) return null;
 
   const dotColor: Record<BaccaratResult, string> = {
@@ -195,7 +199,7 @@ function HistoryScoreboard({ history }: { history: BaccaratResult[] }) {
           T: {history.filter((r) => r === 'tie').length}
         </span>
         {currentStreak > 1 && (
-          <span className="text-site-text-dim">Streak: {currentStreak}</span>
+          <span className="text-site-text-dim">{t("streak", { defaultValue: "Streak: {{count}}", count: currentStreak })}</span>
         )}
       </div>
     </div>
@@ -215,6 +219,7 @@ const BET_LABELS: Record<BetType, { short: string; color: string }> = {
 };
 
 export function BaccaratTable() {
+  const { t } = useTranslation("c-rmhcoins");
   const {
     playerHand,
     bankerHand,
@@ -247,7 +252,7 @@ export function BaccaratTable() {
       {(tablePhase === 'dealing' || tablePhase === 'drawing') && (
         <div className="text-center">
           <span className="text-sm text-red-400 font-bold animate-pulse">
-            {tablePhase === 'dealing' ? 'Dealing...' : 'Drawing third card...'}
+            {tablePhase === 'dealing' ? t("dealing", { defaultValue: "Dealing..." }) : t("drawing-third-card", { defaultValue: "Drawing third card..." })}
           </span>
         </div>
       )}
@@ -258,7 +263,7 @@ export function BaccaratTable() {
       }`}>
         <HandDisplay
           cards={playerHand}
-          label="Player"
+          label={t("player", { defaultValue: "Player" })}
           value={playerValue}
           natural={playerNatural}
           showValue={showValues}
@@ -266,13 +271,13 @@ export function BaccaratTable() {
 
         <div className="flex flex-col items-center justify-center py-3 sm:py-4">
           <div className="w-px h-8 sm:h-12 bg-red-700/30" />
-          <span className="text-[10px] text-site-text-dim font-bold my-1">VS</span>
+          <span className="text-[10px] text-site-text-dim font-bold my-1">{t("vs", { defaultValue: "VS" })}</span>
           <div className="w-px h-8 sm:h-12 bg-red-700/30" />
         </div>
 
         <HandDisplay
           cards={bankerHand}
-          label="Banker"
+          label={t("banker", { defaultValue: "Banker" })}
           value={bankerValue}
           natural={bankerNatural}
           showValue={showValues}
@@ -282,7 +287,7 @@ export function BaccaratTable() {
       {/* Players & their bets — scrollable on mobile */}
       {activeBets.length > 0 && (
         <div className="w-full flex flex-col gap-1.5">
-          <span className="text-[10px] text-site-text-dim uppercase tracking-wider font-bold text-center">Bets at Table</span>
+          <span className="text-[10px] text-site-text-dim uppercase tracking-wider font-bold text-center">{t("bets-at-table", { defaultValue: "Bets at Table" })}</span>
           <div className="flex flex-wrap justify-center gap-2 max-h-32 overflow-y-auto">
             {activeBets.map((p) => {
               const isMe = p.userId === myUserId;
@@ -297,7 +302,7 @@ export function BaccaratTable() {
                   <div className="flex items-center gap-1.5">
                     {p.avatarUrl && <img src={p.avatarUrl} alt="" className="w-4 h-4 rounded-full" />}
                     <span className={`text-xs font-bold truncate max-w-20 ${isMe ? 'text-red-400' : 'text-site-text'}`}>
-                      {isMe ? 'You' : p.userName}
+                      {isMe ? t("you", { defaultValue: "You" }) : p.userName}
                     </span>
                     <div className="flex items-center gap-0.5 ml-auto">
                       <CoinIcon className="w-3 h-3" />

@@ -8,30 +8,34 @@ import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useCardSheen } from '@/hooks/useCardSheen';
 import { formatCount } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 interface BuildCardProps {
   build: Build;
   onLike?: (id: string) => void;
 }
 
-function timeAgo(dateStr: string): string {
+type TFunc = (key: string, opts: { defaultValue: string; count?: number }) => string;
+
+function timeAgo(dateStr: string, t: TFunc): string {
   const now = Date.now();
   const then = new Date(dateStr).getTime();
   const seconds = Math.floor((now - then) / 1000);
 
-  if (seconds < 60) return 'just now';
+  if (seconds < 60) return t('just-now', { defaultValue: 'just now' });
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 60) return t('minutes-ago', { defaultValue: '{{count}}m ago', count: minutes }).replace('{{count}}', String(minutes));
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) return t('hours-ago', { defaultValue: '{{count}}h ago', count: hours }).replace('{{count}}', String(hours));
   const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
+  if (days < 30) return t('days-ago', { defaultValue: '{{count}}d ago', count: days }).replace('{{count}}', String(days));
   const months = Math.floor(days / 30);
-  if (months < 12) return `${months}mo ago`;
-  return `${Math.floor(months / 12)}y ago`;
+  if (months < 12) return t('months-ago', { defaultValue: '{{count}}mo ago', count: months }).replace('{{count}}', String(months));
+  return t('years-ago', { defaultValue: '{{count}}y ago', count: Math.floor(months / 12) }).replace('{{count}}', String(Math.floor(months / 12)));
 }
 
 export function BuildCard({ build, onLike }: BuildCardProps) {
+  const { t } = useTranslation("c-user-builds");
   const { cardRef, sheenStyle, handlers: sheenHandlers } = useCardSheen();
 
   const handleLike = async (e: React.MouseEvent) => {
@@ -71,7 +75,7 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
             </div>
           )}
           {build.featured && (
-            <div className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/60 backdrop-blur-sm" title="Curated">
+            <div className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/60 backdrop-blur-sm" title={t("curated", { defaultValue: "Curated" })}>
               <Award className="w-4 h-4 text-amber-400" />
             </div>
           )}
@@ -108,12 +112,12 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
           {/* Author & Meta */}
           <div className="flex items-center justify-between mt-auto">
             <div className="flex items-center gap-2 min-w-0">
-              <UserAvatar src={build.user.image ?? undefined} alt={build.user.name || 'User'} size={24} fallbackName={build.user.name ?? undefined} />
+              <UserAvatar src={build.user.image ?? undefined} alt={build.user.name || t("user", { defaultValue: "User" })} size={24} fallbackName={build.user.name ?? undefined} />
               <span className="text-sm text-site-text-muted truncate">
-                {build.user.name || 'Anonymous'}
+                {build.user.name || t("anonymous", { defaultValue: "Anonymous" })}
               </span>
               <span className="text-xs text-site-text-dim">
-                {timeAgo(build.publishedAt || build.createdAt)}
+                {timeAgo(build.publishedAt || build.createdAt, t)}
               </span>
             </div>
 
@@ -126,7 +130,7 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
                   className="hover:text-site-text transition-colors"
-                  title="View source"
+                  title={t("view-source", { defaultValue: "View source" })}
                 >
                   <Github className="w-4 h-4" />
                 </a>
@@ -138,7 +142,7 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
                   className="hover:text-site-text transition-colors"
-                  title="View demo"
+                  title={t("view-demo", { defaultValue: "View demo" })}
                 >
                   <ExternalLink className="w-4 h-4" />
                 </a>

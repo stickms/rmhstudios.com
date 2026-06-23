@@ -16,6 +16,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import * as THREE from 'three';
 
 const PI = Math.PI;
@@ -47,6 +48,7 @@ export type BookCanvasProps = {
 };
 
 export function BookCanvas({ aspect, single, numPages, getImg, ensurePage, onPageChange, seek }: BookCanvasProps) {
+  const { t } = useTranslation("c-library");
   const wrapRef = useRef<HTMLDivElement>(null);
   const [k, setK] = useState(0);
   const [turn, setTurn] = useState<Turn | null>(null);
@@ -344,7 +346,7 @@ export function BookCanvas({ aspect, single, numPages, getImg, ensurePage, onPag
         className="lib-reader__nav lib-reader__nav--prev"
         onClick={() => beginTurn('prev', false)}
         disabled={!canPrev}
-        aria-label="Previous page"
+        aria-label={t("previous-page", { defaultValue: "Previous page" })}
       >
         <ChevronLeft size={26} />
       </button>
@@ -353,7 +355,7 @@ export function BookCanvas({ aspect, single, numPages, getImg, ensurePage, onPag
         className="lib-reader__nav lib-reader__nav--next"
         onClick={() => beginTurn('next', false)}
         disabled={!canNext}
-        aria-label="Next page"
+        aria-label={t("next-page", { defaultValue: "Next page" })}
       >
         <ChevronRight size={26} />
       </button>

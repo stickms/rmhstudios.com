@@ -15,6 +15,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Send, Clock } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface ClueInputProps {
   gridWords: string[];
@@ -26,6 +27,7 @@ interface ClueInputProps {
 const NUMBER_OPTIONS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, '∞'] as const;
 
 export default function ClueInput({ gridWords, onSubmit, timeRemaining }: ClueInputProps) {
+  const { t } = useTranslation('c-rmhbox');
   const [word, setWord] = useState('');
   const [clueNumber, setClueNumber] = useState<number | 'unlimited'>(1);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -59,9 +61,9 @@ export default function ClueInput({ gridWords, onSubmit, timeRemaining }: ClueIn
         </div>
       )}
 
-      <h3 className="text-lg font-bold text-(--rmhbox-text)">Give a Clue</h3>
+      <h3 className="text-lg font-bold text-(--rmhbox-text)">{t("give-a-clue", { defaultValue: "Give a Clue" })}</h3>
       <p className="text-xs text-(--rmhbox-text-muted)">
-        One word + a number (how many tiles relate to it)
+        {t("clue-hint", { defaultValue: "One word + a number (how many tiles relate to it)" })}
       </p>
 
       {/* Word input */}
@@ -71,17 +73,17 @@ export default function ClueInput({ gridWords, onSubmit, timeRemaining }: ClueIn
         value={word}
         onChange={(e) => setWord(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-        placeholder="Enter a one-word clue…"
+        placeholder={t("clue-placeholder", { defaultValue: "Enter a one-word clue..." })}
         maxLength={30}
         className="w-full rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) px-4 py-2 text-sm text-(--rmhbox-text) placeholder:text-(--rmhbox-text-muted) focus:outline-none focus:ring-2 focus:ring-(--rmhbox-accent)"
       />
 
       {/* Warnings */}
       {hasSpaces && (
-        <p className="text-xs text-yellow-400">Clue must be a single word (no spaces)</p>
+        <p className="text-xs text-yellow-400">{t("clue-no-spaces", { defaultValue: "Clue must be a single word (no spaces)" })}</p>
       )}
       {isGridWord && (
-        <p className="text-xs text-yellow-400">This word is on the grid!</p>
+        <p className="text-xs text-yellow-400">{t("clue-on-grid", { defaultValue: "This word is on the grid!" })}</p>
       )}
 
       {/* Number selector */}
@@ -112,7 +114,7 @@ export default function ClueInput({ gridWords, onSubmit, timeRemaining }: ClueIn
         disabled={!isValid}
         className="flex items-center gap-2 rounded-lg bg-(--rmhbox-accent) px-6 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
       >
-        <Send className="h-4 w-4" /> Submit Clue
+        <Send className="h-4 w-4" /> {t("submit-clue", { defaultValue: "Submit Clue" })}
       </button>
     </div>
   );

@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { RotateCcw, AlertTriangle } from 'lucide-react';
 import { useStudioStore } from '@/lib/studio/store';
 import {
@@ -10,6 +11,7 @@ import {
 } from '@/lib/studio/keybinds';
 
 export function KeybindSettings() {
+  const { t } = useTranslation("c-studio");
   const { settings, setKeybindOverride, resetKeybinds } = useStudioStore();
   const [rebindingAction, setRebindingAction] = useState<string | null>(null);
   const [conflict, setConflict] = useState<string | null>(null);
@@ -39,7 +41,7 @@ export function KeybindSettings() {
 
       if (conflicts.length > 0) {
         const conflictAction = KEYBIND_ACTIONS.find((a) => a.id === conflicts[0]);
-        setConflict(`Conflicts with: ${conflictAction?.label || conflicts[0]}`);
+        setConflict(t("conflicts-with", { defaultValue: "Conflicts with: {{name}}", name: conflictAction?.label || conflicts[0] }));
         // Still set it — user can resolve later
       } else {
         setConflict(null);
@@ -57,13 +59,13 @@ export function KeybindSettings() {
     <div className="flex h-full flex-col overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-[var(--site-border)] px-4 py-2">
-        <span className="text-sm font-medium text-[var(--site-text)]">Keyboard Shortcuts</span>
+        <span className="text-sm font-medium text-[var(--site-text)]">{t("keyboard-shortcuts", { defaultValue: "Keyboard Shortcuts" })}</span>
         <button
           onClick={resetKeybinds}
           className="flex items-center gap-1.5 rounded px-2 py-1 text-xs text-[var(--site-muted)] hover:bg-white/10 hover:text-[var(--site-text)]"
         >
           <RotateCcw className="h-3 w-3" />
-          Reset All
+          {t("reset-all", { defaultValue: "Reset All" })}
         </button>
       </div>
 
@@ -103,7 +105,7 @@ export function KeybindSettings() {
                         : 'bg-white/5 text-[var(--site-muted)] hover:bg-white/10'
                     }`}
                   >
-                    {isRebinding ? 'Press a key...' : keys.join(', ')}
+                    {isRebinding ? t("press-a-key", { defaultValue: "Press a key..." }) : keys.join(', ')}
                   </button>
                 </div>
               );
@@ -114,7 +116,7 @@ export function KeybindSettings() {
 
       {/* Footer hint */}
       <div className="border-t border-[var(--site-border)] px-4 py-2 text-[10px] text-[var(--site-muted)]">
-        Click a shortcut to rebind. Press Escape to cancel. Purple = customized.
+        {t("footer-hint", { defaultValue: "Click a shortcut to rebind. Press Escape to cancel. Purple = customized." })}
       </div>
     </div>
   );

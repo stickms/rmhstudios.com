@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from 'react-i18next';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { fmt } from '@/lib/temple-of-joy/numbers';
 import { UPGRADES } from '@/lib/temple-of-joy/data/upgrades';
@@ -15,7 +16,7 @@ const ALL_FILTERS: Array<UpgradePath | 'all'> = [
   'all', 'carnal', 'social', 'mind', 'spirit', 'indulgence', 'philosophy', 'offering', 'synergy',
 ];
 
-const FILTER_LABELS: Record<UpgradePath | 'all', string> = {
+const FILTER_LABEL_DEFAULTS: Record<UpgradePath | 'all', string> = {
   all: 'All',
   carnal: 'Carnal',
   social: 'Social',
@@ -34,6 +35,7 @@ interface UpgradeRowProps {
 }
 
 function UpgradeRow({ upgradeId, purchased, affordable }: UpgradeRowProps) {
+  const { t } = useTranslation("c-temple-of-joy");
   const state          = useTempleStore(s => s);
   const numberFormat   = useTempleStore(s => s.numberFormat);
   const purchaseUpgrade = useTempleStore(s => s.purchaseUpgrade);
@@ -53,7 +55,7 @@ function UpgradeRow({ upgradeId, purchased, affordable }: UpgradeRowProps) {
     if (def.idleHPSMultiplier) parts.push(`×${def.idleHPSMultiplier} idle HPS`);
     if (def.karmaBonus) parts.push(`+${def.karmaBonus} karma`);
     if (def.karmaRateMultiplier) parts.push(`×${def.karmaRateMultiplier} karma/s`);
-    return parts.join(' · ') || 'Special effect';
+    return parts.join(' · ') || t("special-effect", { defaultValue: "Special effect" });
   };
 
   if (purchased) {
@@ -146,7 +148,7 @@ function UpgradeRow({ upgradeId, purchased, affordable }: UpgradeRowProps) {
             opacity: affordable ? 1 : 0.5,
           }}
         >
-          Buy
+          {t("buy", { defaultValue: "Buy" })}
         </button>
       </div>
     </div>
@@ -154,6 +156,7 @@ function UpgradeRow({ upgradeId, purchased, affordable }: UpgradeRowProps) {
 }
 
 export default function UpgradesPanel() {
+  const { t } = useTranslation("c-temple-of-joy");
   const state              = useTempleStore(s => s);
   const upgrades           = useTempleStore(s => s.upgrades);
   const upgradePathFilter  = useTempleStore(s => s.upgradePathFilter);
@@ -181,7 +184,7 @@ export default function UpgradesPanel() {
         className="text-xs font-bold uppercase tracking-widest px-1"
         style={{ color: 'var(--temple-accent)' }}
       >
-        Upgrades
+        {t("upgrades", { defaultValue: "Upgrades" })}
       </h2>
 
       {/* Filter row */}
@@ -204,7 +207,7 @@ export default function UpgradesPanel() {
                 : '1px solid var(--temple-border)',
             }}
           >
-            {FILTER_LABELS[f]}
+            {t(`filter-${f}`, { defaultValue: FILTER_LABEL_DEFAULTS[f] })}
           </button>
         ))}
       </div>
@@ -217,7 +220,7 @@ export default function UpgradesPanel() {
               className="text-[10px] uppercase tracking-widest font-bold mb-2 px-1"
               style={{ color: 'var(--temple-accent)' }}
             >
-              Available ({available.length})
+              {t("available-count", { defaultValue: "Available ({{count}})", count: available.length })}
             </p>
             <div className="flex flex-col gap-1.5">
               {available.map(u => (
@@ -239,7 +242,7 @@ export default function UpgradesPanel() {
               className="text-[10px] uppercase tracking-widest font-bold mb-2 px-1"
               style={{ color: 'var(--temple-text)', opacity: 0.55 }}
             >
-              Locked ({locked.length})
+              {t("locked-count", { defaultValue: "Locked ({{count}})", count: locked.length })}
             </p>
             <div className="flex flex-col gap-1.5">
               {locked.map(u => (
@@ -261,7 +264,7 @@ export default function UpgradesPanel() {
               className="text-[10px] uppercase tracking-widest font-bold mb-2 px-1"
               style={{ color: 'var(--temple-text)', opacity: 0.45 }}
             >
-              Purchased ({purchased.length})
+              {t("purchased-count", { defaultValue: "Purchased ({{count}})", count: purchased.length })}
             </p>
             <div className="flex flex-col gap-1">
               {purchased.map(u => (
@@ -281,7 +284,7 @@ export default function UpgradesPanel() {
             className="text-sm text-center py-8 italic"
             style={{ color: 'var(--temple-text)', opacity: 0.5 }}
           >
-            No upgrades to show.
+            {t("no-upgrades", { defaultValue: "No upgrades to show." })}
           </p>
         )}
       </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Loader2, Lightbulb } from 'lucide-react';
@@ -46,6 +47,7 @@ export function DailyPuzzleLeaderboard({
     const [loading, setLoading] = useState(false);
     const [submitted, setSubmitted] = useState(false);
 
+    const { t } = useTranslation("c-daily-puzzles");
     const session = authClient.useSession();
     const isLightsOut = gameMode === 'lights-out';
 
@@ -108,9 +110,9 @@ export function DailyPuzzleLeaderboard({
             >
                 <div className="flex items-center gap-2 mb-4">
                     <Trophy className="w-5 h-5 text-amber-400" />
-                    <h2 className="text-lg font-semibold text-site-text">Today&apos;s Leaderboard</h2>
+                    <h2 className="text-lg font-semibold text-site-text">{t("todays-leaderboard", { defaultValue: "Today's Leaderboard" })}</h2>
                     <span className="text-site-text-muted text-xs">
-                        ({isLightsOut ? 'least moves' : 'highest score'})
+                        ({isLightsOut ? t("least-moves", { defaultValue: "least moves" }) : t("highest-score", { defaultValue: "highest score" })})
                     </span>
                 </div>
 
@@ -119,9 +121,9 @@ export function DailyPuzzleLeaderboard({
                     <div className="mb-4 p-3 rounded-xl border border-amber-500/30 bg-amber-500/10 text-center">
                         <p className="text-sm text-amber-300">
                             <Link to="/login" search={{ callbackURL: undefined }} className="font-semibold underline hover:text-amber-200">
-                                Sign in
+                                {t("sign-in", { defaultValue: "Sign in" })}
                             </Link>{' '}
-                            to save your score to the leaderboard and sync progress across devices.
+                            {t("sign-in-prompt", { defaultValue: "to save your score to the leaderboard and sync progress across devices." })}
                         </p>
                     </div>
                 )}
@@ -132,7 +134,7 @@ export function DailyPuzzleLeaderboard({
                     </div>
                 ) : leaderboard.length === 0 ? (
                     <p className="text-site-text-muted text-sm py-4 text-center">
-                        No scores yet. {session.data ? "You're the first!" : ''}
+                        {t("no-scores-yet", { defaultValue: "No scores yet." })}{' '}{session.data ? t("youre-the-first", { defaultValue: "You're the first!" }) : ''}
                     </p>
                 ) : (
                     <div className="space-y-2">
@@ -145,7 +147,7 @@ export function DailyPuzzleLeaderboard({
                                 <span className="text-site-text font-medium flex-1 truncate">{e.displayName}</span>
                                 <span className="flex items-center gap-1.5">
                                     {isLightsOut && e.hintUsed && (
-                                        <span title="Used hint">
+                                        <span title={t("used-hint", { defaultValue: "Used hint" })}>
                                             <Lightbulb className="w-3.5 h-3.5 text-cyan-400 shrink-0" aria-hidden />
                                         </span>
                                     )}

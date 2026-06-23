@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Gift, Loader2, Heart } from 'lucide-react';
 import {
   TIP_PERCENTS,
@@ -21,6 +22,7 @@ interface TipPromptProps {
  * percentages plus a custom amount, or a thank-you once a tip is recorded.
  */
 export function TipPrompt({ fareCents, tipCents, onTip }: TipPromptProps) {
+  const { t } = useTranslation("c-rideshare");
   const [selected, setSelected] = useState<number | null>(null);
   const [custom, setCustom] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -30,10 +32,10 @@ export function TipPrompt({ fareCents, tipCents, onTip }: TipPromptProps) {
       <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5 text-center">
         <Heart className="mx-auto h-7 w-7 fill-emerald-400 text-emerald-400" />
         <h3 className="mt-2 font-semibold text-site-text">
-          You tipped {formatUsd(tipCents)}
+          {t("you-tipped", { defaultValue: "You tipped {{amount}}", amount: formatUsd(tipCents) })}
         </h3>
         <p className="mt-1 text-sm text-site-text-muted">
-          Your driver gets 100% of it. Thanks for the love!
+          {t("driver-gets-all-thanks", { defaultValue: "Your driver gets 100% of it. Thanks for the love!" })}
         </p>
       </div>
     );
@@ -57,10 +59,10 @@ export function TipPrompt({ fareCents, tipCents, onTip }: TipPromptProps) {
     <div className="rounded-2xl border border-site-border bg-site-surface/80 p-5">
       <div className="flex items-center gap-2">
         <Gift className="h-5 w-5 text-site-accent" />
-        <h3 className="font-semibold text-site-text">Add a tip for your driver</h3>
+        <h3 className="font-semibold text-site-text">{t("add-tip-header", { defaultValue: "Add a tip for your driver" })}</h3>
       </div>
       <p className="mt-1 text-sm text-site-text-muted">
-        100% of your tip goes straight to your driver.
+        {t("tip-goes-to-driver", { defaultValue: "100% of your tip goes straight to your driver." })}
       </p>
 
       <div className="mt-4 grid grid-cols-4 gap-2">
@@ -81,7 +83,7 @@ export function TipPrompt({ fareCents, tipCents, onTip }: TipPromptProps) {
                   : 'border-site-border bg-site-surface text-site-text hover:border-site-border-bright'
               }`}
             >
-              <div className="text-sm font-semibold">{pct === 0 ? 'No tip' : `${Math.round(pct * 100)}%`}</div>
+              <div className="text-sm font-semibold">{pct === 0 ? t("no-tip", { defaultValue: "No tip" }) : `${Math.round(pct * 100)}%`}</div>
               {pct > 0 && <div className="text-[11px] text-site-text-dim">{formatUsd(cents)}</div>}
             </button>
           );
@@ -101,7 +103,7 @@ export function TipPrompt({ fareCents, tipCents, onTip }: TipPromptProps) {
               setCustom(e.target.value);
               setSelected(null);
             }}
-            placeholder="Custom amount"
+            placeholder={t("custom-amount-placeholder", { defaultValue: "Custom amount" })}
             className="w-full rounded-lg border border-site-border bg-site-surface py-2.5 pl-7 pr-3 text-sm text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60"
           />
         </div>
@@ -111,7 +113,7 @@ export function TipPrompt({ fareCents, tipCents, onTip }: TipPromptProps) {
           className="flex items-center justify-center gap-2 rounded-lg bg-site-accent px-5 py-2.5 text-sm font-semibold text-(--site-accent-fg) transition-colors hover:bg-(--site-accent-hover) disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Gift className="h-4 w-4" />}
-          Tip {amount > 0 ? formatUsd(amount) : ''}
+          {amount > 0 ? t("tip-with-amount", { defaultValue: "Tip {{amount}}", amount: formatUsd(amount) }) : t("tip-label", { defaultValue: "Tip" })}
         </button>
       </div>
     </div>

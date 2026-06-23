@@ -8,6 +8,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { Flame } from 'lucide-react';
+import { useTranslation } from "react-i18next";
 
 interface PointPotDisplayProps {
   potValue: number;
@@ -15,6 +16,7 @@ interface PointPotDisplayProps {
 }
 
 export default function PointPotDisplay({ potValue, maxValue }: PointPotDisplayProps) {
+  const { t } = useTranslation("c-rmhbox");
   const ratio = maxValue > 0 ? potValue / maxValue : 0;
 
   // Color gradient: green (high) → yellow (mid) → red (low)
@@ -53,7 +55,7 @@ export default function PointPotDisplay({ potValue, maxValue }: PointPotDisplayP
           {potValue}
         </motion.span>
       </AnimatePresence>
-      <span className="text-xs text-(--rmhbox-text-muted)">pts</span>
+      <span className="text-xs text-(--rmhbox-text-muted)">{t("pts", { defaultValue: "pts" })}</span>
     </motion.div>
   );
 }

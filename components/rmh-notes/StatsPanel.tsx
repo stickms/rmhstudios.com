@@ -1,8 +1,10 @@
 'use client';
 
+import { useTranslation } from "react-i18next";
 import { useNotesDataStore } from '@/lib/store/useNotesDataStore';
 
 export default function StatsPanel() {
+  const { t } = useTranslation("c-rmh-notes");
   const getStats = useNotesDataStore((s) => s.getStats);
   const stats = getStats();
 
@@ -28,35 +30,35 @@ export default function StatsPanel() {
 
   return (
     <div className="flex-1 overflow-y-auto p-6" style={{ background: 'var(--notes-surface)' }}>
-      <h2 className="text-xl font-bold mb-6" style={{ color: 'var(--notes-text)' }}>📊 Statistics</h2>
+      <h2 className="text-xl font-bold mb-6" style={{ color: 'var(--notes-text)' }}>📊 {t("statistics", { defaultValue: "Statistics" })}</h2>
 
       {/* Streak banner */}
       {stats.streak > 0 && (
         <div className="rounded-2xl p-4 mb-6 flex items-center gap-4" style={{ background: 'linear-gradient(135deg, var(--notes-accent), var(--notes-accent-hover))', color: 'var(--notes-accent-fg)' }}>
           <span className="text-4xl">🔥</span>
           <div>
-            <p className="text-2xl font-bold">{stats.streak} day streak!</p>
-            <p className="text-sm opacity-80">Keep writing every day to maintain your streak</p>
+            <p className="text-2xl font-bold">{t("streak-count", { defaultValue: "{{count}} day streak!", count: stats.streak })}</p>
+            <p className="text-sm opacity-80">{t("streak-encouragement", { defaultValue: "Keep writing every day to maintain your streak" })}</p>
           </div>
         </div>
       )}
 
       {/* Cards grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-8">
-        <Card icon="📄" label="Total Notes" value={stats.totalNotes} />
-        <Card icon="📝" label="This Week" value={stats.weekNotes} sub="+notes created" />
-        <Card icon="📌" label="Pinned" value={stats.pinnedCount} />
-        <Card icon="⭐" label="Favorites" value={stats.totalNotes > 0 ? stats.pinnedCount : 0} />
-        <Card icon="🔔" label="Reminders" value={stats.remindersTotal} sub={`${stats.remindersCompleted} completed`} />
-        {stats.overdueCount > 0 && <Card icon="⚠️" label="Overdue" value={stats.overdueCount} sub="need attention" />}
-        <Card icon="🏷️" label="Tags" value={stats.tagsCount} />
-        <Card icon="📁" label="Folders" value={stats.foldersCount} />
-        <Card icon="📦" label="Archived" value={stats.archivedCount} />
+        <Card icon="📄" label={t("total-notes", { defaultValue: "Total Notes" })} value={stats.totalNotes} />
+        <Card icon="📝" label={t("this-week", { defaultValue: "This Week" })} value={stats.weekNotes} sub={t("notes-created-sub", { defaultValue: "+notes created" })} />
+        <Card icon="📌" label={t("pinned", { defaultValue: "Pinned" })} value={stats.pinnedCount} />
+        <Card icon="⭐" label={t("favorites", { defaultValue: "Favorites" })} value={stats.totalNotes > 0 ? stats.pinnedCount : 0} />
+        <Card icon="🔔" label={t("reminders", { defaultValue: "Reminders" })} value={stats.remindersTotal} sub={t("reminders-completed-sub", { defaultValue: "{{count}} completed", count: stats.remindersCompleted })} />
+        {stats.overdueCount > 0 && <Card icon="⚠️" label={t("overdue", { defaultValue: "Overdue" })} value={stats.overdueCount} sub={t("need-attention", { defaultValue: "need attention" })} />}
+        <Card icon="🏷️" label={t("tags", { defaultValue: "Tags" })} value={stats.tagsCount} />
+        <Card icon="📁" label={t("folders", { defaultValue: "Folders" })} value={stats.foldersCount} />
+        <Card icon="📦" label={t("archived", { defaultValue: "Archived" })} value={stats.archivedCount} />
       </div>
 
       {/* Heatmap */}
       <div className="rounded-2xl p-5" style={{ background: 'var(--notes-surface-2)', border: '1px solid var(--notes-border)' }}>
-        <h3 className="font-semibold text-sm mb-4" style={{ color: 'var(--notes-text-muted)' }}>Last 28 days</h3>
+        <h3 className="font-semibold text-sm mb-4" style={{ color: 'var(--notes-text-muted)' }}>{t("last-28-days", { defaultValue: "Last 28 days" })}</h3>
         <div className="flex gap-1.5 flex-wrap">
           {days.map((d) => {
             const intensity = d.count === 0 ? 0 : Math.ceil((d.count / maxCount) * 4);
@@ -64,7 +66,7 @@ export default function StatsPanel() {
             return (
               <div
                 key={d.date}
-                title={`${d.date}: ${d.count} note${d.count !== 1 ? 's' : ''}`}
+                title={t("heatmap-day-title", { defaultValue: "{{date}}: {{count}} note", date: d.date, count: d.count })}
                 className="rounded-sm transition-all hover:scale-125 cursor-default"
                 style={{ width: 14, height: 14, background: bgColors[intensity] }}
               />
@@ -72,11 +74,11 @@ export default function StatsPanel() {
           })}
         </div>
         <div className="flex items-center gap-1.5 mt-3 text-xs" style={{ color: 'var(--notes-text-subtle)' }}>
-          <span>Less</span>
+          <span>{t("less", { defaultValue: "Less" })}</span>
           {['var(--notes-border)', '#F5C86A', '#E8A840', '#D4862A', '#C17F3A'].map((c, i) => (
             <div key={i} className="rounded-sm" style={{ width: 12, height: 12, background: c }} />
           ))}
-          <span>More</span>
+          <span>{t("more", { defaultValue: "More" })}</span>
         </div>
       </div>
     </div>

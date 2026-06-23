@@ -38,6 +38,7 @@ import {
 } from '@/lib/rmh-coding-simulator/persistence';
 import { askArchitect, generateSprintGoal } from '@/lib/rmh-coding-simulator/ai';
 import type { GameState, NumberFormat, BuyQty, TabId } from '@/lib/rmh-coding-simulator/types';
+import { useTranslation } from "react-i18next";
 
 // ─── Root ─────────────────────────────────────────────────────────────────────
 
@@ -62,11 +63,13 @@ export function RMHCodingSimulator() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const { t } = useTranslation("c-rmh-coding-simulator");
+
   if (!ready) {
     return (
       <div className="rcs-loading">
         <div className="rcs-spin" />
-        <p className="rcs-mono">booting RMH Coding Simulator…</p>
+        <p className="rcs-mono">{t("booting", { defaultValue: "booting RMH Coding Simulator…" })}</p>
       </div>
     );
   }
@@ -77,6 +80,7 @@ export function RMHCodingSimulator() {
 // ─── Game loop + layout ─────────────────────────────────────────────────────
 
 function Game() {
+  const { t } = useTranslation("c-rmh-coding-simulator");
   const activeTab = useGameStore((s) => s.activeTab);
   const setTab = useGameStore((s) => s.setTab);
 
@@ -135,11 +139,11 @@ function Game() {
           <nav className="rcs-tabs">
             {(
               [
-                ['studio', '👩‍💻 Studio'],
-                ['upgrades', '⬆️ Upgrades'],
-                ['prestige', '🚀 Prestige'],
-                ['archlab', '🤖 AI Architect'],
-                ['stats', '📊 Stats'],
+                ['studio', `👩‍💻 ${t("tab-studio", { defaultValue: "Studio" })}`],
+                ['upgrades', `⬆️ ${t("tab-upgrades", { defaultValue: "Upgrades" })}`],
+                ['prestige', `🚀 ${t("tab-prestige", { defaultValue: "Prestige" })}`],
+                ['archlab', `🤖 ${t("tab-archlab", { defaultValue: "AI Architect" })}`],
+                ['stats', `📊 ${t("tab-stats", { defaultValue: "Stats" })}`],
               ] as [TabId, string][]
             ).map(([id, label]) => (
               <button
@@ -174,7 +178,7 @@ function Game() {
                 <div>
                   <b>{a.name}</b>
                   <br />
-                  <span>Achievement unlocked!</span>
+                  <span>{t("achievement-unlocked", { defaultValue: "Achievement unlocked!" })}</span>
                 </div>
               </div>
             );
@@ -188,6 +192,7 @@ function Game() {
 // ─── Top bar ─────────────────────────────────────────────────────────────────
 
 function TopBar() {
+  const { t } = useTranslation("c-rmh-coding-simulator");
   const loc = useGameStore((s) => s.loc);
   const reputation = useGameStore((s) => s.reputation);
   const equity = useGameStore((s) => s.equity);
@@ -196,7 +201,7 @@ function TopBar() {
 
   return (
     <header className="rcs-topbar">
-      <a href="/builds" className="rcs-back">← Builds</a>
+      <a href="/builds" className="rcs-back">{t("back-builds", { defaultValue: "← Builds" })}</a>
       <div className="rcs-brand">
         <span style={{ fontSize: '1.3rem' }}>⌨️</span>
         RMH Coding Simulator <small className="rcs-mono">v1.0</small>
@@ -204,18 +209,18 @@ function TopBar() {
       <div className="rcs-counters">
         <div className="rcs-counter rcs-counter--loc">
           <b className="rcs-mono">{fmt(loc, fmtMode)}</b>
-          <span>Lines of Code · {fmtRate(cps, fmtMode)}</span>
+          <span>{t("loc-rate", { defaultValue: "Lines of Code · {{rate}}", rate: fmtRate(cps, fmtMode) })}</span>
         </div>
         {reputation > 0 && (
           <div className="rcs-counter rcs-counter--rep">
             <b className="rcs-mono">⭐ {fmt(reputation, fmtMode)}</b>
-            <span>Reputation</span>
+            <span>{t("reputation", { defaultValue: "Reputation" })}</span>
           </div>
         )}
         {equity > 0 && (
           <div className="rcs-counter rcs-counter--eq">
             <b className="rcs-mono">📈 {fmt(equity, fmtMode)}</b>
-            <span>Equity</span>
+            <span>{t("equity", { defaultValue: "Equity" })}</span>
           </div>
         )}
       </div>
@@ -228,6 +233,7 @@ function TopBar() {
 interface Float { id: number; x: number; y: number; text: string; }
 
 function ClickPanel() {
+  const { t } = useTranslation("c-rmh-coding-simulator");
   const click = useGameStore((s) => s.click);
   const clickGolden = useGameStore((s) => s.clickGolden);
   const golden = useGameStore((s) => s.golden);
@@ -267,14 +273,14 @@ function ClickPanel() {
     <div className="rcs-left" ref={panelRef}>
       <div className="rcs-rate">
         <b className="rcs-mono">{fmtRate(cps, fmtMode)}</b>
-        <span>Lines of Code per second</span>
-        <small className="rcs-mono">+{fmt(clickVal, fmtMode)} per click</small>
+        <span>{t("loc-per-second", { defaultValue: "Lines of Code per second" })}</span>
+        <small className="rcs-mono">{t("per-click", { defaultValue: "+{{val}} per click", val: fmt(clickVal, fmtMode) })}</small>
       </div>
 
-      <button className="rcs-clicker" onClick={onClick} aria-label="Write code">
+      <button className="rcs-clicker" onClick={onClick} aria-label={t("write-code-aria", { defaultValue: "Write code" })}>
         <span className="rcs-clicker__emoji">👨‍💻</span>
         <span className="rcs-clicker__label rcs-mono">git commit</span>
-        <span className="rcs-clicker__hint">click to write code</span>
+        <span className="rcs-clicker__hint">{t("click-to-write", { defaultValue: "click to write code" })}</span>
       </button>
 
       {buffs.length > 0 && (
@@ -298,8 +304,8 @@ function ClickPanel() {
           className="rcs-golden"
           style={{ left: `${golden.x}%`, top: `${golden.y}%` }}
           onClick={onGolden}
-          aria-label="Golden commit"
-          title="A Golden Commit! Click it!"
+          aria-label={t("golden-commit-aria", { defaultValue: "Golden commit" })}
+          title={t("golden-commit-title", { defaultValue: "A Golden Commit! Click it!" })}
         >
           ✨
         </button>
@@ -317,6 +323,7 @@ function ClickPanel() {
 // ─── Studio tab (generators) ──────────────────────────────────────────────────
 
 function StudioTab() {
+  const { t } = useTranslation("c-rmh-coding-simulator");
   const loc = useGameStore((s) => s.loc);
   const generators = useGameStore((s) => s.generators);
   const buyQty = useGameStore((s) => s.buyQty);
@@ -369,7 +376,7 @@ function StudioTab() {
               <span className="rcs-item__blurb">{g.blurb}</span>
               {owned > 0 && (
                 <span className="rcs-item__blurb rcs-mono">
-                  each: {fmtRate(unitCps, fmtMode)} · line: {fmtRate(unitCps * owned, fmtMode)}
+                  {t("gen-each-line", { defaultValue: "each: {{each}} · line: {{line}}", each: fmtRate(unitCps, fmtMode), line: fmtRate(unitCps * owned, fmtMode) })}
                 </span>
               )}
             </span>
@@ -377,7 +384,7 @@ function StudioTab() {
               <span className={`rcs-item__cost rcs-mono ${afford ? 'is-afford' : ''}`}>
                 {fmt(cost, fmtMode)}
               </span>
-              <span className="rcs-item__sub">buy {buyQty === 'max' ? `×${fmtInt(count)}` : `×${count}`}</span>
+              <span className="rcs-item__sub">{t("buy-qty", { defaultValue: "buy ×{{count}}", count: buyQty === 'max' ? fmtInt(count) : String(count) })}</span>
             </span>
           </button>
         );
@@ -389,6 +396,7 @@ function StudioTab() {
 // ─── Upgrades tab ──────────────────────────────────────────────────────────────
 
 function UpgradesTab() {
+  const { t } = useTranslation("c-rmh-coding-simulator");
   const loc = useGameStore((s) => s.loc);
   const lifetimeLoc = useGameStore((s) => s.lifetimeLoc);
   const generators = useGameStore((s) => s.generators);
@@ -407,11 +415,11 @@ function UpgradesTab() {
   return (
     <div>
       <p className="rcs-section-title">
-        Available upgrades · {available.length} ready · {purchased.length} purchased
+        {t("upgrades-summary", { defaultValue: "Available upgrades · {{ready}} ready · {{purchased}} purchased", ready: available.length, purchased: purchased.length })}
       </p>
       {available.length === 0 && (
         <p className="rcs-empty">
-          No upgrades available yet. Hire more developers and write more code to unlock them. 🔧
+          {t("no-upgrades", { defaultValue: "No upgrades available yet. Hire more developers and write more code to unlock them. 🔧" })}
         </p>
       )}
       {available.slice(0, 60).map((u) => {
@@ -438,6 +446,7 @@ function UpgradesTab() {
 // ─── Prestige tab ──────────────────────────────────────────────────────────────
 
 function PrestigeTab() {
+  const { t } = useTranslation("c-rmh-coding-simulator");
   const fmtMode = useGameStore((s) => s.numberFormat);
   const reputation = useGameStore((s) => s.reputation);
   const reputationEarned = useGameStore((s) => s.reputationEarned);
@@ -462,51 +471,48 @@ function PrestigeTab() {
     <div>
       {/* Ship It */}
       <div className="rcs-prestige-card">
-        <h3>🚀 Ship a Product</h3>
+        <h3>🚀 {t("ship-product-title", { defaultValue: "Ship a Product" })}</h3>
         <p>
-          Reset your code, developers and upgrades to ship a release. You keep Reputation, skills and
-          achievements. Reputation gives <b>+2% production each</b>, permanently (this studio era).
+          {t("ship-product-desc", { defaultValue: "Reset your code, developers and upgrades to ship a release. You keep Reputation, skills and achievements. Reputation gives +2% production each, permanently (this studio era)." })}
         </p>
         <div className="rcs-settings-row">
           <span className="rcs-prestige-gain rcs-mono" style={{ color: 'var(--rcs-gold)' }}>
             +{fmt(repGain, fmtMode)} ⭐
           </span>
           <button className="rcs-btn rcs-btn--ship" disabled={repGain <= 0} onClick={ship}>
-            Ship It!
+            {t("ship-it", { defaultValue: "Ship It!" })}
           </button>
         </div>
         {repGain <= 0 && (
           <p style={{ margin: 0 }}>
-            Reach <b>1M lifetime LoC</b> this run to earn your first Reputation. (Currently {fmt(lifetimeLoc, fmtMode)}.)
+            {t("ship-unlock-hint", { defaultValue: "Reach 1M lifetime LoC this run to earn your first Reputation. (Currently {{loc}}.)", loc: fmt(lifetimeLoc, fmtMode) })}
           </p>
         )}
       </div>
 
       {/* IPO / Ascend */}
       <div className="rcs-prestige-card" style={{ borderColor: canAscend ? 'var(--rcs-purple)' : undefined }}>
-        <h3>📈 Take the Studio Public (IPO)</h3>
+        <h3>📈 {t("ipo-title", { defaultValue: "Take the Studio Public (IPO)" })}</h3>
         <p>
-          The deep reset. Trade <b>all</b> Reputation &amp; skills for permanent <b>Equity</b> — each Equity
-          gives <b>+50% production forever</b> and unlocks Founder Perks that survive every future reset.
+          {t("ipo-desc", { defaultValue: "The deep reset. Trade all Reputation & skills for permanent Equity — each Equity gives +50% production forever and unlocks Founder Perks that survive every future reset." })}
         </p>
         <div className="rcs-settings-row">
           <span className="rcs-prestige-gain rcs-mono" style={{ color: 'var(--rcs-purple)' }}>
             +{fmt(eqGain, fmtMode)} 📈
           </span>
           <button className="rcs-btn rcs-btn--ascend" disabled={eqGain <= 0} onClick={ascend}>
-            Ring the Bell
+            {t("ring-the-bell", { defaultValue: "Ring the Bell" })}
           </button>
         </div>
         {!canAscend && (
           <p style={{ margin: 0 }}>
-            Earn <b>{ASCEND_MIN_REPUTATION} Reputation</b> in this era to unlock the IPO. (Earned so far:{' '}
-            {fmt(reputationEarned, fmtMode)}.)
+            {t("ipo-unlock-hint", { defaultValue: "Earn {{min}} Reputation in this era to unlock the IPO. (Earned so far: {{earned}}.)", min: ASCEND_MIN_REPUTATION, earned: fmt(reputationEarned, fmtMode) })}
           </p>
         )}
       </div>
 
       {/* Skill tree */}
-      <p className="rcs-section-title">Reputation Skill Tree · spend ⭐ {fmt(reputation, fmtMode)}</p>
+      <p className="rcs-section-title">{t("skill-tree-title", { defaultValue: "Reputation Skill Tree · spend ⭐ {{rep}}", rep: fmt(reputation, fmtMode) })}</p>
       {skillTiers.map((tier) => (
         <div key={tier} style={{ marginBottom: '0.75rem' }}>
           <div className="rcs-tree">
@@ -521,11 +527,11 @@ function PrestigeTab() {
                   className={`rcs-node ${isOwned ? 'is-owned' : ''} ${locked ? 'is-locked' : ''}`}
                   disabled={isOwned || locked || !afford}
                   onClick={() => buySkill(sk.id)}
-                  title={locked ? 'Requires a prerequisite skill' : ''}
+                  title={locked ? t("skill-locked-title", { defaultValue: "Requires a prerequisite skill" }) : ''}
                 >
                   <span className="rcs-node__name">{sk.emoji} {sk.name}</span>
                   <span className="rcs-node__desc">{sk.desc}</span>
-                  <span className="rcs-node__cost rcs-mono">{isOwned ? '✓ Owned' : `⭐ ${sk.cost}`}</span>
+                  <span className="rcs-node__cost rcs-mono">{isOwned ? t("owned", { defaultValue: "✓ Owned" }) : `⭐ ${sk.cost}`}</span>
                 </button>
               );
             })}
@@ -536,7 +542,7 @@ function PrestigeTab() {
       {/* Perks (only once you have equity) */}
       {(equity > 0 || perks.length > 0) && (
         <>
-          <p className="rcs-section-title">Founder Perks · spend 📈 {fmt(equity, fmtMode)}</p>
+          <p className="rcs-section-title">{t("perks-title", { defaultValue: "Founder Perks · spend 📈 {{equity}}", equity: fmt(equity, fmtMode) })}</p>
           <div className="rcs-tree">
             {PERKS.map((p) => {
               const isOwned = ownedPerks.has(p.id);
@@ -552,7 +558,7 @@ function PrestigeTab() {
                 >
                   <span className="rcs-node__name">{p.emoji} {p.name}</span>
                   <span className="rcs-node__desc">{p.desc}</span>
-                  <span className="rcs-node__cost rcs-mono">{isOwned ? '✓ Owned' : `📈 ${p.cost}`}</span>
+                  <span className="rcs-node__cost rcs-mono">{isOwned ? t("owned", { defaultValue: "✓ Owned" }) : `📈 ${p.cost}`}</span>
                 </button>
               );
             })}
@@ -566,6 +572,7 @@ function PrestigeTab() {
 // ─── AI Architect tab ───────────────────────────────────────────────────────
 
 function ArchLabTab() {
+  const { t } = useTranslation("c-rmh-coding-simulator");
   const chat = useGameStore((s) => s.chat);
   const pushChat = useGameStore((s) => s.pushChat);
   const bumpAiCalls = useGameStore((s) => s.bumpAiCalls);
@@ -610,25 +617,23 @@ function ArchLabTab() {
     <div className="rcs-chat" style={{ height: 'calc(100% - 0px)' }}>
       <div className="rcs-chat__tools">
         <button className="rcs-btn rcs-btn--ghost" onClick={sprint} disabled={busy}>
-          🏃 Generate Sprint (×3 buff)
+          🏃 {t("generate-sprint", { defaultValue: "Generate Sprint (×3 buff)" })}
         </button>
       </div>
       <div className="rcs-chat__log" ref={logRef}>
         {chat.length === 0 && (
           <div className="rcs-msg rcs-msg--assistant">
             <div className="rcs-msg__who">ARCH-1</div>
-            Hey, I&apos;m ARCH-1, principal architect at RMH. Ask me anything about shipping code — or
-            hit <b>Generate Sprint</b> for a temporary ×3 production buff. Now stop reading and go commit
-            something. 🦆
+            {t("arch1-greeting", { defaultValue: "Hey, I'm ARCH-1, principal architect at RMH. Ask me anything about shipping code — or hit Generate Sprint for a temporary ×3 production buff. Now stop reading and go commit something. 🦆" })}
           </div>
         )}
         {chat.map((m, i) => (
           <div key={i} className={`rcs-msg rcs-msg--${m.role === 'user' ? 'user' : 'assistant'}`}>
-            <div className="rcs-msg__who">{m.role === 'user' ? 'You' : 'ARCH-1'}</div>
+            <div className="rcs-msg__who">{m.role === 'user' ? t("you", { defaultValue: "You" }) : 'ARCH-1'}</div>
             {m.content}
           </div>
         ))}
-        {busy && <div className="rcs-typing rcs-mono">ARCH-1 is typing…</div>}
+        {busy && <div className="rcs-typing rcs-mono">{t("arch1-typing", { defaultValue: "ARCH-1 is typing…" })}</div>}
       </div>
       <form
         className="rcs-chat__form"
@@ -641,12 +646,12 @@ function ArchLabTab() {
           className="rcs-chat__input"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask the AI Architect…"
+          placeholder={t("ask-placeholder", { defaultValue: "Ask the AI Architect…" })}
           maxLength={500}
           disabled={busy}
         />
         <button type="submit" className="rcs-btn rcs-chat__send" disabled={busy || !input.trim()}>
-          Send
+          {t("send", { defaultValue: "Send" })}
         </button>
       </form>
     </div>
@@ -656,6 +661,7 @@ function ArchLabTab() {
 // ─── Stats tab ─────────────────────────────────────────────────────────────────
 
 function StatsTab() {
+  const { t } = useTranslation("c-rmh-coding-simulator");
   const s = useGameStore();
   const fmtMode = s.numberFormat;
   const setNumberFormat = useGameStore((st) => st.setNumberFormat);
@@ -665,28 +671,28 @@ function StatsTab() {
   const [msg, setMsg] = useState('');
 
   const stats: [string, string][] = [
-    ['Lines of Code', fmt(s.loc, fmtMode)],
-    ['LoC / sec', fmt(totalCps(s), fmtMode)],
-    ['Per click', fmt(clickPower(s), fmtMode)],
-    ['All-time LoC', fmt(s.totalLoc, fmtMode)],
-    ['Production ×', fmt(permanentMultiplier(s), fmtMode)],
-    ['Total clicks', fmtInt(s.totalClicks)],
-    ['Hand-written LoC', fmt(s.handmadeLoc, fmtMode)],
-    ['Golden Commits', fmtInt(s.goldenClicks)],
-    ['Products shipped', fmtInt(s.shipCount)],
-    ['IPOs', fmtInt(s.ascensionCount)],
-    ['Reputation earned', fmt(s.reputationEarned, fmtMode)],
-    ['Equity earned', fmt(s.equityEarned, fmtMode)],
-    ['AI consults', fmtInt(s.aiCalls)],
-    ['Playtime', formatDuration(s.playtime)],
-    ['Achievements', `${s.achievements.length} / ${ACHIEVEMENTS.length}`],
+    [t("stat-loc", { defaultValue: "Lines of Code" }), fmt(s.loc, fmtMode)],
+    [t("stat-loc-sec", { defaultValue: "LoC / sec" }), fmt(totalCps(s), fmtMode)],
+    [t("stat-per-click", { defaultValue: "Per click" }), fmt(clickPower(s), fmtMode)],
+    [t("stat-alltime-loc", { defaultValue: "All-time LoC" }), fmt(s.totalLoc, fmtMode)],
+    [t("stat-production-mult", { defaultValue: "Production ×" }), fmt(permanentMultiplier(s), fmtMode)],
+    [t("stat-total-clicks", { defaultValue: "Total clicks" }), fmtInt(s.totalClicks)],
+    [t("stat-handwritten-loc", { defaultValue: "Hand-written LoC" }), fmt(s.handmadeLoc, fmtMode)],
+    [t("stat-golden-commits", { defaultValue: "Golden Commits" }), fmtInt(s.goldenClicks)],
+    [t("stat-products-shipped", { defaultValue: "Products shipped" }), fmtInt(s.shipCount)],
+    [t("stat-ipos", { defaultValue: "IPOs" }), fmtInt(s.ascensionCount)],
+    [t("stat-reputation-earned", { defaultValue: "Reputation earned" }), fmt(s.reputationEarned, fmtMode)],
+    [t("stat-equity-earned", { defaultValue: "Equity earned" }), fmt(s.equityEarned, fmtMode)],
+    [t("stat-ai-consults", { defaultValue: "AI consults" }), fmtInt(s.aiCalls)],
+    [t("stat-playtime", { defaultValue: "Playtime" }), formatDuration(s.playtime)],
+    [t("stat-achievements", { defaultValue: "Achievements" }), `${s.achievements.length} / ${ACHIEVEMENTS.length}`],
   ];
 
   const doExport = () => {
     const code = exportSave(useGameStore.getState());
     navigator.clipboard?.writeText(code).then(
-      () => setMsg('Save copied to clipboard!'),
-      () => setMsg('Copy failed — select the box below to copy manually.'),
+      () => setMsg(t("export-copied", { defaultValue: "Save copied to clipboard!" })),
+      () => setMsg(t("export-copy-failed", { defaultValue: "Copy failed — select the box below to copy manually." })),
     );
     setImportText(code);
   };
@@ -694,23 +700,23 @@ function StatsTab() {
   const doImport = () => {
     const save = importSave(importText);
     if (!save) {
-      setMsg('Invalid save code.');
+      setMsg(t("import-invalid", { defaultValue: "Invalid save code." }));
       return;
     }
     loadState(applySaveToState(save, createInitialState()));
-    setMsg('Save imported!');
+    setMsg(t("import-success", { defaultValue: "Save imported!" }));
   };
 
   const doReset = () => {
-    if (!window.confirm('Hard reset? This wipes EVERYTHING — no undo.')) return;
+    if (!window.confirm(t("hard-reset-confirm", { defaultValue: "Hard reset? This wipes EVERYTHING — no undo." }))) return;
     clearLocalSave();
     hardReset();
-    setMsg('Game reset.');
+    setMsg(t("game-reset", { defaultValue: "Game reset." }));
   };
 
   return (
     <div>
-      <p className="rcs-section-title">Statistics</p>
+      <p className="rcs-section-title">{t("statistics", { defaultValue: "Statistics" })}</p>
       <div className="rcs-stats">
         {stats.map(([label, val]) => (
           <div className="rcs-stat" key={label}>
@@ -720,7 +726,7 @@ function StatsTab() {
         ))}
       </div>
 
-      <p className="rcs-section-title">Achievements · {s.achievements.length}/{ACHIEVEMENTS.length}</p>
+      <p className="rcs-section-title">{t("achievements-title", { defaultValue: "Achievements · {{earned}}/{{total}}", earned: s.achievements.length, total: ACHIEVEMENTS.length })}</p>
       <div className="rcs-ach-grid">
         {ACHIEVEMENTS.map((a) => {
           const earned = s.achievements.includes(a.id);
@@ -735,9 +741,9 @@ function StatsTab() {
         })}
       </div>
 
-      <p className="rcs-section-title" style={{ marginTop: '1.25rem' }}>Settings</p>
+      <p className="rcs-section-title" style={{ marginTop: '1.25rem' }}>{t("settings", { defaultValue: "Settings" })}</p>
       <div className="rcs-settings-row">
-        <span style={{ fontSize: '0.85rem' }}>Number format:</span>
+        <span style={{ fontSize: '0.85rem' }}>{t("number-format", { defaultValue: "Number format:" })}</span>
         {(['short', 'scientific'] as NumberFormat[]).map((f) => (
           <button
             key={f}
@@ -751,17 +757,17 @@ function StatsTab() {
       </div>
 
       <div className="rcs-settings-row">
-        <button className="rcs-btn rcs-btn--ghost" onClick={doExport}>📋 Export save</button>
-        <button className="rcs-btn rcs-btn--ghost" onClick={doImport}>📥 Import save</button>
+        <button className="rcs-btn rcs-btn--ghost" onClick={doExport}>📋 {t("export-save", { defaultValue: "Export save" })}</button>
+        <button className="rcs-btn rcs-btn--ghost" onClick={doImport}>📥 {t("import-save", { defaultValue: "Import save" })}</button>
         <button className="rcs-btn rcs-btn--ghost" style={{ color: 'var(--rcs-red)' }} onClick={doReset}>
-          ⚠️ Hard reset
+          ⚠️ {t("hard-reset", { defaultValue: "Hard reset" })}
         </button>
       </div>
       <textarea
         className="rcs-textarea"
         value={importText}
         onChange={(e) => setImportText(e.target.value)}
-        placeholder="Paste a save code here, then press Import…"
+        placeholder={t("import-placeholder", { defaultValue: "Paste a save code here, then press Import…" })}
       />
       {msg && <p style={{ color: 'var(--rcs-green)', fontSize: '0.85rem' }}>{msg}</p>}
     </div>
@@ -771,6 +777,7 @@ function StatsTab() {
 // ─── Offline modal ─────────────────────────────────────────────────────────────
 
 function OfflineModal() {
+  const { t } = useTranslation("c-rmh-coding-simulator");
   const offlineLoc = useGameStore((s) => s.offlineLocOnLoad);
   const offlineSeconds = useGameStore((s) => s.offlineSecondsOnLoad);
   const fmtMode = useGameStore((s) => s.numberFormat);
@@ -780,14 +787,14 @@ function OfflineModal() {
   return (
     <div className="rcs-modal-backdrop" onClick={clear}>
       <div className="rcs-modal" onClick={(e) => e.stopPropagation()}>
-        <h2>Welcome back! 👋</h2>
+        <h2>{t("welcome-back", { defaultValue: "Welcome back! 👋" })}</h2>
         <p>
-          Your studio kept shipping for <b>{formatDuration(offlineSeconds)}</b> while you were away.
+          {t("offline-earned", { defaultValue: "Your studio kept shipping for {{duration}} while you were away.", duration: formatDuration(offlineSeconds) })}
         </p>
         <p style={{ fontSize: '1.4rem', color: 'var(--rcs-green)' }} className="rcs-mono">
           +{fmt(offlineLoc, fmtMode)} LoC
         </p>
-        <button className="rcs-btn rcs-btn--ship" onClick={clear}>Collect</button>
+        <button className="rcs-btn rcs-btn--ship" onClick={clear}>{t("collect", { defaultValue: "Collect" })}</button>
       </div>
     </div>
   );

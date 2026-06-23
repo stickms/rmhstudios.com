@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/lib/store/useGameStore';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -9,6 +10,7 @@ interface GameOverProps {
 }
 
 export function GameOver({ onRetry }: GameOverProps) {
+  const { t } = useTranslation("c-game");
   const { score, multiplier, maxCombo, accuracy, songId, reset, userName, status, modifiers } = useGameStore();
   const [isNewBest, setIsNewBest] = useState(false);
   const isUnranked = modifiers.speed < 1.0;
@@ -69,26 +71,26 @@ export function GameOver({ onRetry }: GameOverProps) {
         
         <CardHeader className="text-center pb-2 pt-8">
           <CardTitle className="text-5xl font-black tracking-tight text-blue-500">
-            COMPLETE
+            {t("complete", { defaultValue: "COMPLETE" })}
           </CardTitle>
           {isUnranked && (
             <div className="mt-2 inline-flex items-center gap-1.5 bg-orange-500/20 text-orange-400 text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full mx-auto">
-              <span>Unranked</span>
-              <span className="text-[9px] font-normal normal-case tracking-normal text-orange-400">Speed below 1.0x</span>
+              <span>{t("unranked", { defaultValue: "Unranked" })}</span>
+              <span className="text-[9px] font-normal normal-case tracking-normal text-orange-400">{t("speed-below", { defaultValue: "Speed below 1.0x" })}</span>
             </div>
           )}
         </CardHeader>
         
         <CardContent className="space-y-6 text-center relative z-10 p-8">
           <div className="space-y-1">
-            <div className="text-sm text-slice-text-light uppercase tracking-widest font-bold">Final Score</div>
+            <div className="text-sm text-slice-text-light uppercase tracking-widest font-bold">{t("final-score", { defaultValue: "Final Score" })}</div>
             <div className="text-6xl font-bold text-slice-text relative inline-block">
               {score.toLocaleString()}
               {isNewBest && (
                 <div className="absolute -top-6 -right-12 rotate-12 animate-in zoom-in duration-500">
                   <div className="bg-yellow-400 text-black text-[10px] font-black px-2 py-1 rounded-md shadow-lg flex items-center gap-1">
                     <Trophy className="w-3 h-3" />
-                    NEW BEST!
+                    {t("new-best", { defaultValue: "NEW BEST!" })}
                   </div>
                 </div>
               )}
@@ -97,20 +99,20 @@ export function GameOver({ onRetry }: GameOverProps) {
 
           <div className="grid grid-cols-3 gap-4">
              <div className="bg-slice-bg p-4 rounded-2xl shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)] flex flex-col gap-1">
-                 <div className="text-xs text-slice-text-light uppercase font-bold">Max Chain</div>
+                 <div className="text-xs text-slice-text-light uppercase font-bold">{t("max-chain", { defaultValue: "Max Chain" })}</div>
                  <div className="text-xl font-bold text-slice-text-darker">
                      {maxCombo > 0 ? `${maxCombo}x` : '--'}
                  </div>
              </div>
              <div className="bg-slice-bg p-4 rounded-2xl shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)] flex flex-col gap-1">
-                 <div className="text-xs text-slice-text-light uppercase font-bold">Accuracy</div>
+                 <div className="text-xs text-slice-text-light uppercase font-bold">{t("accuracy", { defaultValue: "Accuracy" })}</div>
                  <div className={`text-xl font-bold font-mono ${accuracyColor}`}>
                      {accuracyPct}%
                  </div>
-                 {isFC && <div className="text-[10px] font-black text-cyan-500 uppercase tracking-widest">Full Combo!</div>}
+                 {isFC && <div className="text-[10px] font-black text-cyan-500 uppercase tracking-widest">{t("full-combo", { defaultValue: "Full Combo!" })}</div>}
              </div>
              <div className="bg-slice-bg p-4 rounded-2xl shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)] flex flex-col gap-1">
-                 <div className="text-xs text-slice-text-light uppercase font-bold">Speed</div>
+                 <div className="text-xs text-slice-text-light uppercase font-bold">{t("speed", { defaultValue: "Speed" })}</div>
                  <div className="text-xl font-bold text-slice-text-darker">
                      {multiplier.toFixed(1)}x
                  </div>
@@ -123,15 +125,15 @@ export function GameOver({ onRetry }: GameOverProps) {
                 onClick={onRetry}
             >
                 <RotateCcw className="w-4 h-4 group-hover:rotate-[-120deg] transition-transform" />
-                Retry
+                {t("retry", { defaultValue: "Retry" })}
             </Button>
-            <Button 
+            <Button
                 variant="ghost"
                 className="flex-1 bg-slice-bg hover:bg-slice-shadow-dark/20 text-slice-text-muted font-bold uppercase tracking-widest text-sm h-14 rounded-xl shadow-[4px_4px_10px_var(--slice-shadow-dark),-4px_-4px_10px_var(--slice-shadow-light)] active:shadow-inner transition-all border-none flex items-center justify-center gap-2"
                 onClick={reset}
             >
                 <Home className="w-4 h-4" />
-                Menu
+                {t("menu", { defaultValue: "Menu" })}
             </Button>
           </div>
         </CardContent>

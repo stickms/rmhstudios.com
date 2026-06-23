@@ -14,6 +14,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from '@tanstack/react-router';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { emit } from '@/lib/rmhbox/socket';
@@ -28,6 +29,7 @@ import ChatOverlay from './ChatOverlay';
 import GameSettingsModal from './GameSettingsModal';
 
 export default function LobbyView() {
+  const { t } = useTranslation('c-rmhbox');
   const lobby = useRMHboxStore((s) => s.lobby);
   const gameSettingsState = useRMHboxStore((s) => s.gameSettingsState);
   const navigate = useNavigate();
@@ -83,7 +85,7 @@ export default function LobbyView() {
   if (!lobby) {
     return (
       <div className="flex items-center justify-center p-8 text-(--rmhbox-text-muted)">
-        Connecting to lobby…
+        {t('connecting-to-lobby', { defaultValue: 'Connecting to lobby…' })}
       </div>
     );
   }
@@ -150,7 +152,7 @@ export default function LobbyView() {
                   onClick={() => setShowViewSettings(true)}
                   className="flex items-center gap-2 rounded-lg bg-(--rmhbox-surface-hover) px-4 py-2 text-sm font-semibold text-(--rmhbox-text) transition-colors hover:brightness-110"
                 >
-                  <SlidersHorizontal className="h-4 w-4" /> View Game Settings
+                  <SlidersHorizontal className="h-4 w-4" /> {t('view-game-settings', { defaultValue: 'View Game Settings' })}
                 </button>
               </div>
             )}

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from "react-i18next";
 import { NOTE_COLORS } from './types';
 
 interface Props {
@@ -9,12 +10,13 @@ interface Props {
 }
 
 export default function ColorPickerDropdown({ currentColor, onChange, onClose }: Props) {
+  const { t } = useTranslation("c-rmh-notes");
   return (
     <div
       className="flex items-center gap-2 px-4 py-2.5 flex-wrap"
       style={{ background: 'var(--notes-surface-2)', borderBottom: '1px solid var(--notes-border)' }}
     >
-      <span className="text-xs font-medium" style={{ color: 'var(--notes-text-muted)' }}>Note color:</span>
+      <span className="text-xs font-medium" style={{ color: 'var(--notes-text-muted)' }}>{t("note-color", { defaultValue: "Note color:" })}</span>
       {NOTE_COLORS.map((c) => (
         <button
           key={c.id}

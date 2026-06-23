@@ -1,5 +1,6 @@
 'use client';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useMultiplayer } from '../../lib/synapse-storm/MultiplayerProvider';
 
 interface MultiplayerMenuProps {
@@ -12,6 +13,7 @@ export const MultiplayerMenu: React.FC<MultiplayerMenuProps> = ({ onBack }) => {
         connect, createLobby, joinLobby, error,
     } = useMultiplayer();
 
+    const { t } = useTranslation("c-synapse-storm");
     const [joinCode, setJoinCode] = useState('');
     const [step, setStep] = useState<'name' | 'choice'>('name');
 
@@ -35,16 +37,16 @@ export const MultiplayerMenu: React.FC<MultiplayerMenuProps> = ({ onBack }) => {
             <div className="ss-mp-menu">
                 <div className="menu-bg-effect" />
                 <div className="ss-mp-menu-content">
-                    <h2 className="ss-mp-title">MULTIPLAYER</h2>
-                    <p className="ss-mp-subtitle">Enter your callsign for the neural network.</p>
+                    <h2 className="ss-mp-title">{t("multiplayer", { defaultValue: "MULTIPLAYER" })}</h2>
+                    <p className="ss-mp-subtitle">{t("enter-callsign", { defaultValue: "Enter your callsign for the neural network." })}</p>
 
                     <div className="ss-mp-input-group">
-                        <label className="ss-mp-label">DISPLAY NAME</label>
+                        <label className="ss-mp-label">{t("display-name", { defaultValue: "DISPLAY NAME" })}</label>
                         <input
                             type="text"
                             value={displayName}
                             onChange={(e) => setDisplayName(e.target.value.slice(0, 20))}
-                            placeholder="Enter name..."
+                            placeholder={t("enter-name-placeholder", { defaultValue: "Enter name..." })}
                             className="ss-mp-input"
                             maxLength={20}
                             onKeyDown={(e) => e.key === 'Enter' && handleSetName()}
@@ -54,10 +56,10 @@ export const MultiplayerMenu: React.FC<MultiplayerMenuProps> = ({ onBack }) => {
 
                     <div className="ss-mp-btn-row">
                         <button className="ss-mp-btn ss-mp-btn-primary" onClick={handleSetName} disabled={!displayName.trim()}>
-                            CONNECT
+                            {t("connect", { defaultValue: "CONNECT" })}
                         </button>
                         <button className="ss-mp-btn ss-mp-btn-ghost" onClick={onBack}>
-                            BACK
+                            {t("back", { defaultValue: "BACK" })}
                         </button>
                     </div>
                 </div>
@@ -69,12 +71,12 @@ export const MultiplayerMenu: React.FC<MultiplayerMenuProps> = ({ onBack }) => {
         <div className="ss-mp-menu">
             <div className="menu-bg-effect" />
             <div className="ss-mp-menu-content">
-                <h2 className="ss-mp-title">MULTIPLAYER</h2>
+                <h2 className="ss-mp-title">{t("multiplayer", { defaultValue: "MULTIPLAYER" })}</h2>
                 <p className="ss-mp-subtitle">
-                    {connectionStatus === 'connecting' ? 'Establishing neural link...' :
-                     connectionStatus === 'connected' ? `Connected as ${displayName}` :
-                     connectionStatus === 'reconnecting' ? 'Reconnecting...' :
-                     'Disconnected'}
+                    {connectionStatus === 'connecting' ? t("establishing-link", { defaultValue: "Establishing neural link..." }) :
+                     connectionStatus === 'connected' ? t("connected-as", { defaultValue: "Connected as {{name}}", name: displayName }) :
+                     connectionStatus === 'reconnecting' ? t("reconnecting", { defaultValue: "Reconnecting..." }) :
+                     t("disconnected", { defaultValue: "Disconnected" })}
                 </p>
 
                 {connectionStatus === 'connecting' && (
@@ -86,15 +88,15 @@ export const MultiplayerMenu: React.FC<MultiplayerMenuProps> = ({ onBack }) => {
                 {connectionStatus === 'connected' && (
                     <>
                         <button className="ss-mp-btn ss-mp-btn-primary ss-mp-btn-wide" onClick={handleCreate}>
-                            CREATE LOBBY
+                            {t("create-lobby", { defaultValue: "CREATE LOBBY" })}
                         </button>
 
                         <div className="ss-mp-divider">
-                            <span>OR</span>
+                            <span>{t("or", { defaultValue: "OR" })}</span>
                         </div>
 
                         <div className="ss-mp-input-group">
-                            <label className="ss-mp-label">JOIN BY CODE</label>
+                            <label className="ss-mp-label">{t("join-by-code", { defaultValue: "JOIN BY CODE" })}</label>
                             <div className="ss-mp-join-row">
                                 <input
                                     type="text"
@@ -106,7 +108,7 @@ export const MultiplayerMenu: React.FC<MultiplayerMenuProps> = ({ onBack }) => {
                                     onKeyDown={(e) => e.key === 'Enter' && handleJoin()}
                                 />
                                 <button className="ss-mp-btn ss-mp-btn-primary" onClick={handleJoin} disabled={joinCode.length < 5}>
-                                    JOIN
+                                    {t("join", { defaultValue: "JOIN" })}
                                 </button>
                             </div>
                         </div>
@@ -116,7 +118,7 @@ export const MultiplayerMenu: React.FC<MultiplayerMenuProps> = ({ onBack }) => {
                 {error && <div className="ss-mp-error">{error}</div>}
 
                 <button className="ss-mp-btn ss-mp-btn-ghost" onClick={onBack} style={{ marginTop: '1rem' }}>
-                    BACK
+                    {t("back", { defaultValue: "BACK" })}
                 </button>
             </div>
         </div>

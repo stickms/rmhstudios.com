@@ -2,8 +2,10 @@
 
 import { Node, mergeAttributes, ReactNodeViewRenderer, NodeViewWrapper } from '@tiptap/react';
 import type { NodeViewProps } from '@tiptap/react';
+import { useTranslation } from "react-i18next";
 
 function OGPreviewCard({ node, deleteNode }: NodeViewProps) {
+  const { t } = useTranslation("c-rmh-notes");
   const { url, title, description, image, siteName } = node.attrs as {
     url: string;
     title: string;
@@ -46,7 +48,7 @@ function OGPreviewCard({ node, deleteNode }: NodeViewProps) {
         )}
         <div style={{ padding: '0.75rem 1rem', flex: 1, overflow: 'hidden', minWidth: 0 }}>
           <div style={{ fontSize: 11, color: 'var(--notes-text-subtle)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            {isLoading ? '⏳ Loading preview...' : domain}
+            {isLoading ? t("loading-preview", { defaultValue: "⏳ Loading preview..." }) : domain}
           </div>
           {!isLoading && (
             <>
@@ -63,7 +65,7 @@ function OGPreviewCard({ node, deleteNode }: NodeViewProps) {
         </div>
         <button
           onClick={(e) => { e.stopPropagation(); deleteNode(); }}
-          title="Remove preview"
+          title={t("remove-preview", { defaultValue: "Remove preview" })}
           style={{
             position: 'absolute', top: 6, right: 6, width: 20, height: 20,
             border: 'none', borderRadius: 4, cursor: 'pointer',

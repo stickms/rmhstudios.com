@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import {
   DndContext,
@@ -24,6 +25,7 @@ import { scoreLineArrangePoem } from '@/lib/versecraft/scoring';
 import type { LineArrangePuzzleData, PoemLine } from '@/lib/versecraft/types';
 
 function SortableLine({ line, index }: { line: PoemLine; index: number }) {
+  const { t } = useTranslation("c-versecraft");
   const {
     attributes,
     listeners,
@@ -63,12 +65,12 @@ function SortableLine({ line, index }: { line: PoemLine; index: number }) {
         <div className="flex gap-1">
           {line.strongOpener && (
             <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(92, 184, 92, 0.2)', color: '#5cb85c' }}>
-              opener
+              {t("opener", { defaultValue: "opener" })}
             </span>
           )}
           {line.strongCloser && (
             <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(196, 163, 90, 0.2)', color: '#c4a35a' }}>
-              closer
+              {t("closer", { defaultValue: "closer" })}
             </span>
           )}
         </div>
@@ -92,6 +94,7 @@ function SortableLine({ line, index }: { line: PoemLine; index: number }) {
 }
 
 export function LineArrangePuzzle() {
+  const { t } = useTranslation("c-versecraft");
   const { currentPuzzle, arrangedLineIds, setArrangedLineIds, submitPoem } = useGameStore();
 
   const puzzle = currentPuzzle as LineArrangePuzzleData | null;
@@ -135,7 +138,7 @@ export function LineArrangePuzzle() {
   if (!puzzle) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p style={{ color: '#a89888' }}>No puzzle loaded.</p>
+        <p style={{ color: '#a89888' }}>{t("no-puzzle-loaded", { defaultValue: "No puzzle loaded." })}</p>
       </div>
     );
   }
@@ -148,10 +151,10 @@ export function LineArrangePuzzle() {
           className="text-xl md:text-2xl mb-2"
           style={{ fontFamily: 'var(--font-cinzel, serif)', color: '#c4a35a' }}
         >
-          Arrange the Lines
+          {t("arrange-the-lines", { defaultValue: "Arrange the Lines" })}
         </h2>
         <p className="text-sm md:text-base" style={{ color: '#a89888' }}>
-          {puzzle.promptText || 'Drag and drop the lines to create the best poem.'}
+          {puzzle.promptText || t("drag-drop-lines-prompt", { defaultValue: "Drag and drop the lines to create the best poem." })}
         </p>
       </div>
 
@@ -193,7 +196,7 @@ export function LineArrangePuzzle() {
               color: '#c4a35a',
             }}
           >
-            Submit Arrangement
+            {t("submit-arrangement", { defaultValue: "Submit Arrangement" })}
           </button>
         </div>
       </div>

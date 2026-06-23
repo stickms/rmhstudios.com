@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useGameStore } from '@/lib/versecraft/store';
 import { loadGame } from '@/lib/versecraft/persistence';
@@ -22,6 +23,7 @@ const RESTORABLE_SCREENS = new Set<GameScreen>([
 ]);
 
 export function VersecraftGame({ isLoggedIn }: { isLoggedIn: boolean }) {
+  const { t } = useTranslation("c-versecraft");
   const screen = useGameStore(s => s.screen);
   const gameStarted = useGameStore(s => s.gameStarted);
   const incrementPlaytime = useGameStore(s => s.incrementPlaytime);
@@ -148,7 +150,7 @@ export function VersecraftGame({ isLoggedIn }: { isLoggedIn: boolean }) {
         }}
       >
         <span style={{ color: '#c4a35a' }}>&larr;</span>
-        Back to Builds
+        {t("back-to-builds", { defaultValue: "Back to Builds" })}
       </Link>
       {renderScreen()}
     </div>

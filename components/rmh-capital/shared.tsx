@@ -4,6 +4,7 @@
  */
 import { useEffect } from 'react';
 import { Link, useRouterState } from '@tanstack/react-router';
+import { useTranslation } from "react-i18next";
 
 /* The geometric RMH mark used in the nav + footer. */
 export function BrandMark() {
@@ -65,16 +66,17 @@ export function useReveal(key: string) {
   }, [key]);
 }
 
-type NavItem = { to: string; label: string };
+type NavItem = { to: string; labelKey: string; labelDefault: string };
 const NAV: NavItem[] = [
-  { to: '/rmh-capital/firm', label: 'Our Firm' },
-  { to: '/rmh-capital/businesses', label: 'Businesses' },
-  { to: '/rmh-capital/insights', label: 'Insights' },
-  { to: '/rmh-capital/careers', label: 'Careers' },
-  { to: '/rmh-capital/contact', label: 'Contact' },
+  { to: '/rmh-capital/firm', labelKey: 'nav-our-firm', labelDefault: 'Our Firm' },
+  { to: '/rmh-capital/businesses', labelKey: 'nav-businesses', labelDefault: 'Businesses' },
+  { to: '/rmh-capital/insights', labelKey: 'nav-insights', labelDefault: 'Insights' },
+  { to: '/rmh-capital/careers', labelKey: 'nav-careers', labelDefault: 'Careers' },
+  { to: '/rmh-capital/contact', labelKey: 'nav-contact', labelDefault: 'Contact' },
 ];
 
 export function TopNav() {
+  const { t } = useTranslation("c-rmh-capital");
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
@@ -104,28 +106,28 @@ export function TopNav() {
     <header className="topnav">
       <div className="topnav-inner">
         <div className="topnav-left">
-          <a className="backlink" href="/" aria-label="Back to RMH Studios">
+          <a className="backlink" href="/" aria-label={t("back-to-rmh-studios", { defaultValue: "Back to RMH Studios" })}>
             <span aria-hidden="true">←</span>
             <span className="backlink-label">RMH Studios</span>
           </a>
-          <Link className="brand" to="/rmh-capital" aria-label="RMH Capital home">
+          <Link className="brand" to="/rmh-capital" aria-label={t("rmh-capital-home", { defaultValue: "RMH Capital home" })}>
             <BrandMark />
             <span className="brand-text">RMH&nbsp;Capital</span>
           </Link>
         </div>
-        <nav className="navlinks" aria-label="Primary">
+        <nav className="navlinks" aria-label={t("nav-primary", { defaultValue: "Primary" })}>
           {NAV.map((item) => (
             <Link key={item.to} to={item.to} aria-current={current(item.to)}>
-              {item.label}
+              {t(item.labelKey, { defaultValue: item.labelDefault })}
             </Link>
           ))}
         </nav>
         <div className="nav-right">
           <Link className="nav-cta" to="/rmh-capital/contact">
-            Contact us
+            {t("contact-us", { defaultValue: "Contact us" })}
           </Link>
         </div>
-        <button className="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="m-menu" onClick={toggleMenu}>
+        <button className="nav-toggle" aria-label={t("open-menu", { defaultValue: "Open menu" })} aria-expanded="false" aria-controls="m-menu" onClick={toggleMenu}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
             <line x1="3" y1="7" x2="21" y2="7" />
             <line x1="3" y1="12" x2="21" y2="12" />
@@ -133,10 +135,10 @@ export function TopNav() {
           </svg>
         </button>
       </div>
-      <nav className="mobile-menu" id="m-menu" aria-label="Mobile">
+      <nav className="mobile-menu" id="m-menu" aria-label={t("nav-mobile", { defaultValue: "Mobile" })}>
         {NAV.map((item) => (
           <Link key={item.to} to={item.to} aria-current={current(item.to)} onClick={closeMenu}>
-            {item.label}
+            {t(item.labelKey, { defaultValue: item.labelDefault })}
           </Link>
         ))}
       </nav>
@@ -169,64 +171,65 @@ export function MarketsTicker() {
 }
 
 export function SiteFooter() {
+  const { t } = useTranslation("c-rmh-capital");
   return (
     <footer className="footer">
       <div className="container">
         <div className="footer-top">
           <div className="footer-brand">
-            <Link className="brand" to="/rmh-capital" aria-label="RMH Capital home">
+            <Link className="brand" to="/rmh-capital" aria-label={t("rmh-capital-home", { defaultValue: "RMH Capital home" })}>
               <BrandMark />
               <span className="brand-text">RMH&nbsp;Capital</span>
             </Link>
-            <p>An integrated investment bank and financial platform, partnering with clients across the full company arc.</p>
+            <p>{t("footer-brand-desc", { defaultValue: "An integrated investment bank and financial platform, partnering with clients across the full company arc." })}</p>
           </div>
           <div className="footer-col">
-            <h4>Businesses</h4>
-            <Link to="/rmh-capital/businesses" hash="investment-banking">Investment Banking</Link>
-            <Link to="/rmh-capital/businesses" hash="markets">Markets</Link>
-            <Link to="/rmh-capital/businesses" hash="corporate-banking">Corporate Banking</Link>
-            <Link to="/rmh-capital/businesses" hash="venture-capital">Venture Capital</Link>
-            <Link to="/rmh-capital/businesses" hash="private-equity">Private Equity</Link>
+            <h4>{t("nav-businesses", { defaultValue: "Businesses" })}</h4>
+            <Link to="/rmh-capital/businesses" hash="investment-banking">{t("investment-banking", { defaultValue: "Investment Banking" })}</Link>
+            <Link to="/rmh-capital/businesses" hash="markets">{t("markets", { defaultValue: "Markets" })}</Link>
+            <Link to="/rmh-capital/businesses" hash="corporate-banking">{t("corporate-banking", { defaultValue: "Corporate Banking" })}</Link>
+            <Link to="/rmh-capital/businesses" hash="venture-capital">{t("venture-capital", { defaultValue: "Venture Capital" })}</Link>
+            <Link to="/rmh-capital/businesses" hash="private-equity">{t("private-equity", { defaultValue: "Private Equity" })}</Link>
           </div>
           <div className="footer-col">
-            <h4>Firm</h4>
-            <Link to="/rmh-capital/firm">Our Firm</Link>
-            <Link to="/rmh-capital/insights">Insights</Link>
-            <Link to="/rmh-capital/careers">Careers</Link>
-            <Link to="/rmh-capital/contact">Contact</Link>
-            <a href="/rmh-capital-board-book.html">Operating Atlas</a>
+            <h4>{t("footer-firm-heading", { defaultValue: "Firm" })}</h4>
+            <Link to="/rmh-capital/firm">{t("nav-our-firm", { defaultValue: "Our Firm" })}</Link>
+            <Link to="/rmh-capital/insights">{t("nav-insights", { defaultValue: "Insights" })}</Link>
+            <Link to="/rmh-capital/careers">{t("nav-careers", { defaultValue: "Careers" })}</Link>
+            <Link to="/rmh-capital/contact">{t("nav-contact", { defaultValue: "Contact" })}</Link>
+            <a href="/rmh-capital-board-book.html">{t("operating-atlas", { defaultValue: "Operating Atlas" })}</a>
           </div>
           <div className="footer-col">
-            <h4>Connect</h4>
-            <Link to="/rmh-capital/contact" search={{ type: 'Media' }}>Media inquiries</Link>
-            <Link to="/rmh-capital/contact" search={{ type: 'Investment Banking' }}>Banking inquiries</Link>
-            <Link to="/rmh-capital/careers">Open roles</Link>
+            <h4>{t("footer-connect-heading", { defaultValue: "Connect" })}</h4>
+            <Link to="/rmh-capital/contact" search={{ type: 'Media' }}>{t("media-inquiries", { defaultValue: "Media inquiries" })}</Link>
+            <Link to="/rmh-capital/contact" search={{ type: 'Investment Banking' }}>{t("banking-inquiries", { defaultValue: "Banking inquiries" })}</Link>
+            <Link to="/rmh-capital/careers">{t("open-roles", { defaultValue: "Open roles" })}</Link>
           </div>
         </div>
 
         <div className="footer-bottom">
-          <span className="copy">© 2026 RMH Capital LLC. All rights reserved.</span>
+          <span className="copy">{t("copyright", { defaultValue: "© 2026 RMH Capital LLC. All rights reserved." })}</span>
           <div className="footer-legal">
-            <a href="#">Privacy</a>
-            <a href="#">Terms</a>
-            <a href="#">Disclosures</a>
-            <a href="#">Accessibility</a>
+            <a href="#">{t("privacy", { defaultValue: "Privacy" })}</a>
+            <a href="#">{t("terms", { defaultValue: "Terms" })}</a>
+            <a href="#">{t("disclosures", { defaultValue: "Disclosures" })}</a>
+            <a href="#">{t("accessibility", { defaultValue: "Accessibility" })}</a>
           </div>
           <div className="footer-social">
-            <a href="#" aria-label="LinkedIn">
+            <a href="#" aria-label={t("linkedin", { defaultValue: "LinkedIn" })}>
               <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9h4v12H3zM9 9h3.8v1.7h.05c.53-1 1.83-2.05 3.77-2.05 4.03 0 4.78 2.65 4.78 6.1V21H21.4v-5.3c0-1.27-.02-2.9-1.77-2.9s-2.04 1.38-2.04 2.8V21H13.8z" /></svg>
             </a>
-            <a href="#" aria-label="X">
+            <a href="#" aria-label={t("x", { defaultValue: "X" })}>
               <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 2H22l-7.5 8.6L23 22h-6.8l-5-6.6L5.3 22H2l8-9.2L1.5 2h7l4.5 6zM17 20h1.7L7.1 3.8H5.3z" /></svg>
             </a>
-            <a href="#" aria-label="YouTube">
+            <a href="#" aria-label={t("youtube", { defaultValue: "YouTube" })}>
               <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.4-.4-5c-.2-.9-.9-1.6-1.8-1.8C19.2 5 12 5 12 5s-7.2 0-8.8.4c-.9.2-1.6.9-1.8 1.8C1 8.6 1 12 1 12s0 3.4.4 5c.2.9.9 1.6 1.8 1.8 1.6.4 8.8.4 8.8.4s7.2 0 8.8-.4c.9-.2 1.6-.9 1.8-1.8.4-1.6.4-5 .4-5zM9.8 15.2V8.8l6 3.2z" /></svg>
             </a>
           </div>
         </div>
 
         <p className="disclaimer">
-          This website is for informational purposes only and does not constitute an offer to sell or a solicitation to buy securities. RMH Capital and its businesses provide services subject to applicable law and regulation; nothing herein is investment, legal, or tax advice. Certain content is illustrative. RMH Capital, RMHCombinator, and the RMH geometric mark are trademarks of RMH Capital LLC.
+          {t("disclaimer", { defaultValue: "This website is for informational purposes only and does not constitute an offer to sell or a solicitation to buy securities. RMH Capital and its businesses provide services subject to applicable law and regulation; nothing herein is investment, legal, or tax advice. Certain content is illustrative. RMH Capital, RMHCombinator, and the RMH geometric mark are trademarks of RMH Capital LLC." })}
         </p>
       </div>
     </footer>

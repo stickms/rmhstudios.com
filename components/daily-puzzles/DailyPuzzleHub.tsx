@@ -9,14 +9,16 @@ import { hasCompleted, syncFromServer } from '@/lib/daily-puzzles/persistence';
 import { loadSave } from '@/lib/lights-out/persistence';
 import { formatDateKey as loFormatDateKey } from '@/lib/lights-out/seed';
 import { authClient } from '@/lib/auth-client';
+import { useTranslation } from 'react-i18next';
 
-const GAME_MODES = [
+const GAME_MODE_DEFS = [
     {
         id: 'lights-out',
         title: 'Lights Out',
         emoji: '🔦',
         icon: Sparkles,
-        description: 'Turn off every light. Tap to toggle neighbors.',
+        descriptionKey: 'lights-out-desc',
+        descriptionDefault: 'Turn off every light. Tap to toggle neighbors.',
         color: 'from-amber-500/20 to-orange-500/20 border-amber-500/30 hover:border-amber-500/50',
         iconColor: 'text-amber-400',
     },
@@ -25,7 +27,8 @@ const GAME_MODES = [
         title: 'Alibi',
         emoji: '🔍',
         icon: Search,
-        description: 'Four suspects. One liar. Find the contradiction.',
+        descriptionKey: 'alibi-desc',
+        descriptionDefault: 'Four suspects. One liar. Find the contradiction.',
         color: 'from-red-500/20 to-orange-500/20 border-red-500/30 hover:border-red-500/50',
         iconColor: 'text-red-400',
     },
@@ -34,7 +37,8 @@ const GAME_MODES = [
         title: 'Spectrum',
         emoji: '🌈',
         icon: Rainbow,
-        description: 'Rank 5 items along a hidden scale.',
+        descriptionKey: 'spectrum-desc',
+        descriptionDefault: 'Rank 5 items along a hidden scale.',
         color: 'from-violet-500/20 to-pink-500/20 border-violet-500/30 hover:border-violet-500/50',
         iconColor: 'text-violet-400',
     },
@@ -43,7 +47,8 @@ const GAME_MODES = [
         title: 'Outcast',
         emoji: '🎭',
         icon: Drama,
-        description: 'Five rounds. Spot the odd one out.',
+        descriptionKey: 'outcast-desc',
+        descriptionDefault: 'Five rounds. Spot the odd one out.',
         color: 'from-emerald-500/20 to-teal-500/20 border-emerald-500/30 hover:border-emerald-500/50',
         iconColor: 'text-emerald-400',
     },
@@ -52,7 +57,8 @@ const GAME_MODES = [
         title: 'Chainlink',
         emoji: '🔗',
         icon: Link2,
-        description: 'Connect two words through association jumps.',
+        descriptionKey: 'chainlink-desc',
+        descriptionDefault: 'Connect two words through association jumps.',
         color: 'from-blue-500/20 to-cyan-500/20 border-blue-500/30 hover:border-blue-500/50',
         iconColor: 'text-blue-400',
     },
@@ -61,18 +67,25 @@ const GAME_MODES = [
         title: 'Impostor',
         emoji: '🤥',
         icon: CircleAlert,
-        description: 'Five facts. Two are lies. Find the fakes.',
+        descriptionKey: 'impostor-desc',
+        descriptionDefault: 'Five facts. Two are lies. Find the fakes.',
         color: 'from-amber-500/20 to-yellow-500/20 border-amber-500/30 hover:border-amber-500/50',
         iconColor: 'text-amber-400',
     },
 ];
 
 export function DailyPuzzleHub() {
+    const { t } = useTranslation("c-daily-puzzles");
     const today = getTodayEST();
     const dateKey = formatDateKey(today);
     const puzzleNumber = getPuzzleNumber(today);
     const session = authClient.useSession();
     const [synced, setSynced] = useState(false);
+
+    const GAME_MODES = GAME_MODE_DEFS.map((g) => ({
+        ...g,
+        description: t(g.descriptionKey, { defaultValue: g.descriptionDefault }),
+    }));
 
     // Sync from server for signed-in users to get accurate completion status
     useEffect(() => {
@@ -96,15 +109,15 @@ export function DailyPuzzleHub() {
                 className="inline-flex items-center gap-1.5 text-site-text-muted hover:text-site-text text-sm mb-6 transition-colors"
             >
                 <ArrowLeft className="w-4 h-4" />
-                Back to Builds
+                {t("back-to-builds", { defaultValue: "Back to Builds" })}
             </Link>
 
             <div className="text-center mb-10">
                 <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-site-text mb-2">
-                    Daily Puzzles
+                    {t("daily-puzzles-title", { defaultValue: "Daily Puzzles" })}
                 </h1>
                 <p className="text-site-text-muted text-sm">
-                    {dateKey} · Puzzle #{puzzleNumber} · New puzzles every day at midnight EST
+                    {t("puzzle-subtitle", { defaultValue: "{{dateKey}} · Puzzle #{{puzzleNumber}} · New puzzles every day at midnight EST", dateKey, puzzleNumber })}
                 </p>
             </div>
 
@@ -116,14 +129,14 @@ export function DailyPuzzleHub() {
                 return (
                     <div className="mb-8 rounded-2xl border border-site-border bg-site-surface p-4">
                         <div className="mb-2 flex items-center justify-between text-sm">
-                            <span className="font-semibold text-site-text">Today&apos;s progress</span>
-                            <span className="text-site-text-muted">{done}/{total} completed</span>
+                            <span className="font-semibold text-site-text">{t("todays-progress", { defaultValue: "Today's progress" })}</span>
+                            <span className="text-site-text-muted">{t("done-of-total", { defaultValue: "{{done}}/{{total}} completed", done, total })}</span>
                         </div>
                         <div className="h-2 w-full overflow-hidden rounded-full bg-site-bg">
                             <div className="h-full rounded-full bg-site-accent transition-all" style={{ width: `${pct}%` }} />
                         </div>
                         {done === total && (
-                            <p className="mt-2 text-center text-sm font-medium text-site-accent">🎉 All puzzles cleared today — nice!</p>
+                            <p className="mt-2 text-center text-sm font-medium text-site-accent">{t("all-cleared", { defaultValue: "🎉 All puzzles cleared today — nice!" })}</p>
                         )}
                     </div>
                 );
@@ -158,7 +171,7 @@ export function DailyPuzzleHub() {
                                     {game.description}
                                 </p>
                                 <div className="mt-3 text-xs font-medium text-site-text-muted group-hover:text-site-text transition-colors">
-                                    {completed ? 'View Results →' : 'Play Now →'}
+                                    {completed ? t("view-results", { defaultValue: "View Results →" }) : t("play-now", { defaultValue: "Play Now →" })}
                                 </div>
                             </Link>
                         </motion.div>

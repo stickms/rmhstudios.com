@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useDreamRiftStore } from '@/lib/dream-rift/store';
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '@/lib/dream-rift/constants';
 import { TouhouFrame, TouhouMenuButton, TouhouDivider } from './TouhouFrame';
@@ -20,6 +21,7 @@ function generateParticles() {
 }
 
 export function DreamRiftTitle() {
+  const { t } = useTranslation("c-dream-rift");
   const setScreen = useDreamRiftStore((s) => s.setScreen);
   const [particles, setParticles] = useState<ReturnType<typeof generateParticles> | null>(null);
 
@@ -100,7 +102,7 @@ export function DreamRiftTitle() {
             className="text-[11px] tracking-[0.35em] text-violet-300/60 mt-1"
             style={{ fontFamily: "'Georgia', serif" }}
           >
-            ~ A Bullet Hell Story ~
+            {t("subtitle", { defaultValue: "~ A Bullet Hell Story ~" })}
           </p>
 
           {/* Decorative line below */}
@@ -115,16 +117,16 @@ export function DreamRiftTitle() {
         <TouhouFrame className="w-52">
           <div className="py-2 px-1">
             <TouhouMenuButton variant="accent" onClick={() => setScreen('charSelect')}>
-              Start Game
+              {t("start-game", { defaultValue: "Start Game" })}
             </TouhouMenuButton>
             <TouhouMenuButton disabled onClick={() => {}}>
-              Practice
+              {t("practice", { defaultValue: "Practice" })}
             </TouhouMenuButton>
             <TouhouMenuButton disabled onClick={() => {}}>
-              Options
+              {t("options", { defaultValue: "Options" })}
             </TouhouMenuButton>
             <TouhouMenuButton onClick={() => setScreen('leaderboard')}>
-              Leaderboard
+              {t("leaderboard", { defaultValue: "Leaderboard" })}
             </TouhouMenuButton>
           </div>
         </TouhouFrame>
@@ -136,8 +138,8 @@ export function DreamRiftTitle() {
             className="text-[9px] text-zinc-600 tracking-wider leading-relaxed"
             style={{ fontFamily: "'Georgia', serif" }}
           >
-            <p>Arrow keys — Move &nbsp; Z — Shoot &nbsp; X — Melee</p>
-            <p>C — Bomb &nbsp; A — Dash &nbsp; Shift — Focus</p>
+            <p>{t("controls-move", { defaultValue: "Arrow keys — Move   Z — Shoot   X — Melee" })}</p>
+            <p>{t("controls-action", { defaultValue: "C — Bomb   A — Dash   Shift — Focus" })}</p>
           </div>
         </div>
       </div>

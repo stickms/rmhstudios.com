@@ -15,6 +15,7 @@
 
 import { motion } from 'framer-motion';
 import { ArrowRight, BookOpen, Target } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface ArticleInfo {
   title: string;
@@ -41,6 +42,7 @@ export default function ArticleReveal({
   duration: _duration,
 }: ArticleRevealProps) {
   void _duration;
+  const { t } = useTranslation("c-rmhbox");
 
   return (
     <div className="flex flex-col items-center gap-6 py-6">
@@ -73,7 +75,7 @@ export default function ArticleReveal({
         >
           <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-(--rmhbox-text-muted)">
             <BookOpen size={12} />
-            Start
+            {t("wiki-race-start-label", { defaultValue: "Start" })}
           </div>
           <h3 className="text-lg font-bold text-(--rmhbox-accent)">{startArticle.title}</h3>
           <p className="mt-1 text-sm text-(--rmhbox-text-muted)">{startArticle.description}</p>
@@ -97,7 +99,7 @@ export default function ArticleReveal({
         >
           <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-(--rmhbox-accent)">
             <Target size={12} />
-            Target
+            {t("wiki-race-target-label", { defaultValue: "Target" })}
           </div>
           <h3 className="text-lg font-bold">{targetArticle.title}</h3>
           <p className="mt-1 text-sm text-(--rmhbox-text-muted)">{targetArticle.description}</p>
@@ -110,7 +112,7 @@ export default function ArticleReveal({
         transition={{ delay: 1.5 }}
         className="text-sm text-(--rmhbox-text-muted)"
       >
-        Navigate from Start → Target by clicking only wiki links!
+        {t("wiki-race-navigate-instruction", { defaultValue: "Navigate from Start → Target by clicking only wiki links!" })}
       </motion.p>
     </div>
   );

@@ -14,6 +14,7 @@
 
 import { createPortal } from 'react-dom';
 import { X, Settings } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { GameSettingsSchema, GameSettingValues } from '@/lib/rmhbox/types';
 import GameSettingsForm from './GameSettingsForm';
 
@@ -45,6 +46,8 @@ export default function GameSettingsModal({
   onSettingChange,
   onReset,
 }: GameSettingsModalProps) {
+  const { t } = useTranslation("c-rmhbox");
+
   if (!isOpen || schema.length === 0) return null;
 
   return createPortal(
@@ -70,7 +73,7 @@ export default function GameSettingsModal({
         <div className="mb-4 flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-lg font-bold text-(--rmhbox-text)">
             <Settings className="h-5 w-5 text-(--rmhbox-accent)" />
-            {displayName} Settings
+            {t("game-settings-title", { defaultValue: "{{displayName}} Settings", displayName })}
           </h2>
           <button
             onClick={onClose}
@@ -83,7 +86,7 @@ export default function GameSettingsModal({
         {/* Subtitle for non-host */}
         {!editable && (
           <p className="mb-3 text-xs text-(--rmhbox-text-muted)">
-            Only the host can change game settings.
+            {t("host-only-settings", { defaultValue: "Only the host can change game settings." })}
           </p>
         )}
 

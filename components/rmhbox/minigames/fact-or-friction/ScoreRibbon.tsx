@@ -8,6 +8,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { SkipForward, Users } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface ScoreRibbonProps {
   score: number;
@@ -28,11 +29,12 @@ export default function ScoreRibbon({
   canPass,
   onPass,
 }: ScoreRibbonProps) {
+  const { t } = useTranslation("c-rmhbox");
   return (
     <div className="flex w-full items-center justify-between rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) px-4 py-2">
       {/* Score */}
       <div className="flex items-center gap-2">
-        <span className="text-sm text-(--rmhbox-text-muted)">Score</span>
+        <span className="text-sm text-(--rmhbox-text-muted)">{t("score", { defaultValue: "Score" })}</span>
         <span className="text-lg font-bold tabular-nums text-(--rmhbox-text)">{score}</span>
         <AnimatePresence>
           {scoreChange != null && scoreChange !== 0 && (
@@ -73,7 +75,7 @@ export default function ScoreRibbon({
           className="flex items-center gap-1 rounded-md border border-(--rmhbox-border) bg-(--rmhbox-surface-hover) px-3 py-1.5 text-xs font-medium text-(--rmhbox-text-muted) transition-colors hover:text-(--rmhbox-text)"
         >
           <SkipForward className="h-3.5 w-3.5" />
-          Pass
+          {t("pass", { defaultValue: "Pass" })}
         </motion.button>
       )}
     </div>

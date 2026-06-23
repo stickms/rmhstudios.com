@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CoinIcon } from './CoinIcon';
@@ -131,6 +132,7 @@ function drawBall(ctx: CanvasRenderingContext2D, x: number, y: number) {
 
 // ---- Component ----
 export function PlinkoGame({ coins, setCoins }: Props) {
+  const { t } = useTranslation('c-rmhcoins');
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
 
@@ -268,8 +270,8 @@ export function PlinkoGame({ coins, setCoins }: Props) {
         setResultWon(won);
         setResultMessage(
           won
-            ? `You won ${payout} coins!`
-            : `Ball landed in bin ${landedBin + 1}. You lost ${betAmount} coins.`
+            ? t('result-won', { defaultValue: 'You won {{payout}} coins!', payout })
+            : t('result-lost', { defaultValue: 'Ball landed in bin {{bin}}. You lost {{amount}} coins.', bin: landedBin + 1, amount: betAmount })
         );
         setGameState('result');
 
@@ -333,7 +335,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
 
       if (!res.ok) {
         const data = await res.json();
-        setResultMessage(data.error || 'Something went wrong');
+        setResultMessage(data.error || t('error-generic', { defaultValue: 'Something went wrong' }));
         setResultWon(false);
         setGameState('result');
         setTimeout(() => {
@@ -352,7 +354,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
         data.newBalance
       );
     } catch {
-      setResultMessage('Network error');
+      setResultMessage(t('error-network', { defaultValue: 'Network error' }));
       setGameState('result');
       setTimeout(() => {
         setGameState('idle');
@@ -395,7 +397,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
       </div>
 
       <div className="w-full max-w-[390px]">
-        <p className="text-sm text-site-text-dim mb-2">Select a bin:</p>
+        <p className="text-sm text-site-text-dim mb-2">{t('select-a-bin', { defaultValue: 'Select a bin:' })}</p>
         <div className="flex gap-1.5 sm:gap-2">
           {Array.from({ length: NUM_BINS }, (_, i) => (
             <button
@@ -419,7 +421,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
       </div>
 
       <div className="w-full max-w-[390px]">
-        <p className="text-sm text-site-text-dim mb-2">Bet amount:</p>
+        <p className="text-sm text-site-text-dim mb-2">{t('bet-amount', { defaultValue: 'Bet amount:' })}</p>
         <div className="flex flex-col gap-2">
           <div className="relative">
             <input
@@ -450,7 +452,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
               disabled={!isIdle}
               className="min-h-10 text-xs font-bold bg-site-surface border border-site-border rounded-xl text-yellow-500 hover:bg-site-surface-hover disabled:opacity-50 active:scale-95 transition-all"
             >
-              All
+              {t('bet-all', { defaultValue: 'All' })}
             </button>
           </div>
         </div>
@@ -464,16 +466,16 @@ export function PlinkoGame({ coins, setCoins }: Props) {
         {submitting ? (
           <Loader2 className="w-4 h-4 animate-spin" />
         ) : gameState === 'dropping' ? (
-          'Dropping...'
+          t('dropping', { defaultValue: 'Dropping...' })
         ) : (
-          'Drop Ball'
+          t('drop-ball', { defaultValue: 'Drop Ball' })
         )}
       </Button>
 
       {coins === 0 && isIdle && (
         <p className="text-sm text-site-text-dim text-center">
-          You&apos;re out of coins! Visit the{' '}
-          <span className="text-yellow-500">Shop</span> tab to get more.
+          {t('out-of-coins', { defaultValue: "You're out of coins! Visit the" })}{' '}
+          <span className="text-yellow-500">{t('shop-tab', { defaultValue: 'Shop' })}</span> {t('out-of-coins-suffix', { defaultValue: 'tab to get more.' })}
         </p>
       )}
     </div>

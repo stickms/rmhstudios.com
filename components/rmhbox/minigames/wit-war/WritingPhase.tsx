@@ -8,6 +8,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Send, Check, Pencil } from 'lucide-react';
 import { WW_MAX_ANSWER_LENGTH } from '@/lib/rmhbox/constants';
@@ -33,6 +34,7 @@ export default function WritingPhase({
   totalPlayers,
   writingTimeUp = false,
 }: WritingPhaseProps) {
+  const { t } = useTranslation("c-rmhbox");
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [sentPrompts, setSentPrompts] = useState<Set<number>>(new Set());
   const answersRef = useRef(answers);
@@ -89,10 +91,10 @@ export default function WritingPhase({
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-(--rmhbox-text) flex items-center gap-2">
           <Pencil className="h-5 w-5" />
-          Write Your Answers
+          {t("write-your-answers", { defaultValue: "Write Your Answers" })}
         </h2>
         <span className="text-sm text-(--rmhbox-text-muted)">
-          {submittedCount}/{totalPlayers} done
+          {t("submitted-count-done", { defaultValue: "{{submittedCount}}/{{totalPlayers}} done", submittedCount, totalPlayers })}
         </span>
       </div>
 
@@ -110,7 +112,7 @@ export default function WritingPhase({
               className="rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-4"
             >
               <div className="text-sm font-medium text-(--rmhbox-text-muted) mb-2">
-                Prompt {idx + 1}
+                {t("prompt-number", { defaultValue: "Prompt {{number}}", number: idx + 1 })}
               </div>
               <div className="text-base font-medium text-(--rmhbox-text) mb-3">
                 {prompt.promptText}
@@ -122,7 +124,7 @@ export default function WritingPhase({
                   onChange={(e) => handleChange(prompt.promptIndex, e.target.value)}
                   maxLength={WW_MAX_ANSWER_LENGTH}
                   disabled={hasSubmitted || isSent}
-                  placeholder="Type your answer..."
+                  placeholder={t("type-your-answer", { defaultValue: "Type your answer..." })}
                   rows={2}
                   className="w-full rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) px-3 py-2 text-(--rmhbox-text) placeholder:text-(--rmhbox-text-muted)/50 focus:outline-none focus:ring-2 focus:ring-(--rmhbox-accent) disabled:opacity-50 resize-none"
                 />
@@ -132,7 +134,7 @@ export default function WritingPhase({
                   </span>
                   {isSent ? (
                     <span className="flex items-center gap-1 text-xs text-green-500">
-                      <Check className="h-3 w-3" /> Sent
+                      <Check className="h-3 w-3" /> {t("sent", { defaultValue: "Sent" })}
                     </span>
                   ) : (
                     <button
@@ -140,7 +142,7 @@ export default function WritingPhase({
                       disabled={!value.trim() || hasSubmitted}
                       className="flex items-center gap-1 rounded-md bg-(--rmhbox-accent) px-3 py-1 text-xs font-medium text-white disabled:opacity-40 hover:opacity-90 transition-opacity"
                     >
-                      <Send className="h-3 w-3" /> Submit
+                      <Send className="h-3 w-3" /> {t("submit", { defaultValue: "Submit" })}
                     </button>
                   )}
                 </div>
@@ -159,13 +161,13 @@ export default function WritingPhase({
           disabled={!allFilled}
           className="w-full rounded-xl bg-(--rmhbox-accent) py-3 text-base font-bold text-white disabled:opacity-40 hover:opacity-90 transition-opacity"
         >
-          {allFilled ? 'Lock In All Answers' : 'Fill in all prompts to submit'}
+          {allFilled ? t("lock-in-all-answers", { defaultValue: "Lock In All Answers" }) : t("fill-in-all-prompts", { defaultValue: "Fill in all prompts to submit" })}
         </motion.button>
       )}
 
       {hasSubmitted && (
         <div className="text-center text-sm text-(--rmhbox-text-muted) py-2">
-          Answers locked in! Waiting for other players...
+          {t("answers-locked-waiting", { defaultValue: "Answers locked in! Waiting for other players..." })}
         </div>
       )}
     </div>

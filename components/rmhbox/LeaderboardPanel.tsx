@@ -9,12 +9,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Trophy } from 'lucide-react';
 import { getSocket, emit } from '@/lib/rmhbox/socket';
 import { C2S, S2C } from '@/lib/rmhbox/events';
 import type { LeaderboardEntry } from '@/lib/rmhbox/types';
 
 export default function LeaderboardPanel() {
+  const { t } = useTranslation("c-rmhbox");
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -58,20 +60,20 @@ export default function LeaderboardPanel() {
   return (
     <div className="rounded-xl bg-(--rmhbox-surface) border border-(--rmhbox-border) p-4">
       <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-(--rmhbox-text-muted)">
-        <Trophy className="h-4 w-4" /> Leaderboard
+        <Trophy className="h-4 w-4" /> {t("leaderboard", { defaultValue: "Leaderboard" })}
       </h3>
 
       {loading ? (
-        <p className="text-sm text-(--rmhbox-text-muted)">Loading…</p>
+        <p className="text-sm text-(--rmhbox-text-muted)">{t("loading", { defaultValue: "Loading…" })}</p>
       ) : entries.length === 0 ? (
-        <p className="text-sm text-(--rmhbox-text-muted)">No entries yet.</p>
+        <p className="text-sm text-(--rmhbox-text-muted)">{t("no-entries", { defaultValue: "No entries yet." })}</p>
       ) : (
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-(--rmhbox-text-muted)">
               <th className="pb-2 pr-2 font-medium">#</th>
-              <th className="pb-2 pr-2 font-medium">Player</th>
-              <th className="pb-2 text-right font-medium">Score</th>
+              <th className="pb-2 pr-2 font-medium">{t("player", { defaultValue: "Player" })}</th>
+              <th className="pb-2 text-right font-medium">{t("score", { defaultValue: "Score" })}</th>
             </tr>
           </thead>
           <tbody>

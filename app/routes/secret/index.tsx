@@ -3,6 +3,7 @@
  */
 
 import { createFileRoute, Link } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import {
   Briefcase,
   BookOpen,
@@ -81,6 +82,7 @@ function ItemCard({ item }: { item: SecretItem }) {
 }
 
 function SecretPage() {
+  const { t } = useTranslation("r-secret");
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white">
       <div className="mx-auto max-w-5xl px-6 py-12">
@@ -89,16 +91,16 @@ function SecretPage() {
           className="mb-8 inline-flex items-center gap-2 text-sm text-white/40 transition-colors hover:text-white/70"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back
+          {t("back", { defaultValue: "Back" })}
         </Link>
 
         <div className="mb-12 text-center">
-          <h1 className="mb-2 text-4xl font-bold tracking-tight">The Vault</h1>
-          <p className="text-white/40">Experimental projects. Enter at your own risk.</p>
+          <h1 className="mb-2 text-4xl font-bold tracking-tight">{t("the-vault", { defaultValue: "The Vault" })}</h1>
+          <p className="text-white/40">{t("vault-subtitle", { defaultValue: "Experimental projects. Enter at your own risk." })}</p>
         </div>
 
         <section className="mb-12">
-          <h2 className="mb-4 text-lg font-semibold text-white/60">Games</h2>
+          <h2 className="mb-4 text-lg font-semibold text-white/60">{t("section-games", { defaultValue: "Games" })}</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {secretGames.map((item) => (
               <ItemCard key={item.id} item={item} />
@@ -107,7 +109,7 @@ function SecretPage() {
         </section>
 
         <section className="mb-12">
-          <h2 className="mb-4 text-lg font-semibold text-white/60">Pages</h2>
+          <h2 className="mb-4 text-lg font-semibold text-white/60">{t("section-pages", { defaultValue: "Pages" })}</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {secretPages.map((item) => (
               <ItemCard key={item.id} item={item} />
@@ -116,7 +118,7 @@ function SecretPage() {
         </section>
 
         <section>
-          <h2 className="mb-4 text-lg font-semibold text-white/60">Apps</h2>
+          <h2 className="mb-4 text-lg font-semibold text-white/60">{t("section-apps", { defaultValue: "Apps" })}</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {secretApps.map((item) => (
               <ItemCard key={item.id} item={item} />
