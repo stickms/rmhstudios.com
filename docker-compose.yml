@@ -56,6 +56,10 @@ x-build: &build-common
     # Used at build time to auto-generate library covers/metadata for new
     # PDFs. Optional — covers still render without it (titles fall back).
     DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+    # EXPERIMENTAL build-speed flag (default off). "1" externalizes the `three`
+    # core from the client bundle (prebuilt + import map). Validate with a real
+    # build + browser test before enabling in prod. See lib/vendor-externals.ts.
+    VITE_EXTERNALIZE_VENDOR: ${VITE_EXTERNALIZE_VENDOR:-}
 
 services:
   # ─── Vite/Nitro Web App ─────────────────────────────────────────────────────

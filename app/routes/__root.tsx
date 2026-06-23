@@ -16,6 +16,7 @@ import { auth } from "@/lib/auth";
 import appCss from "@/app/globals.css?url";
 import { resolveLocale, parseLocaleCookie } from "@/lib/i18n/resolve";
 import { dirFor, type Locale } from "@/lib/i18n/config";
+import { vendorImportMap } from "@/lib/vendor-externals";
 
 /**
  * Resolve the signed-in user from the session cookie on the server. Runs in the
@@ -154,6 +155,20 @@ function RootDocument({ children }: { children: ReactNode }) {
   return (
     <html lang={locale} dir={dirFor(locale)} suppressHydrationWarning>
       <head>
+        {/*
+          EXPERIMENTAL (opt-in via VITE_EXTERNALIZE_VENDOR=1): resolve the
+          externalized `three` core (kept out of the client bundle in
+          vite.config.ts) to the once-prebuilt public/vendor-externals/three.js.
+          Must precede the module scripts <Scripts/> emits in <body> — being in
+          <head> guarantees that. Inlined at build time, so it's absent entirely
+          in default builds. See lib/vendor-externals.ts.
+        */}
+        {import.meta.env.VITE_EXTERNALIZE_VENDOR === "1" && (
+          <script
+            type="importmap"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(vendorImportMap()) }}
+          />
+        )}
         <HeadContent />
       </head>
       <body

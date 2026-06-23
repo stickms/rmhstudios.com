@@ -81,6 +81,8 @@ public/**/generate_sprites.py
 # scripts/build-vibe-packages.ts rebuilds these during `vite build`, so shipping
 # the host's generated copy in the context is pure waste (and risks staleness).
 public/vibe-packages
+# scripts/build-vendor-externals.ts regenerates these in-image (opt-in).
+public/vendor-externals
 
 # ─── Unused scripts ─────────────────────────────────────────────────
 scripts/news-pipeline

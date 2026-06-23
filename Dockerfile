@@ -149,6 +149,11 @@ ARG VITE_CDN_BASE_URL
 # Optional: only used to title/describe NEW library PDFs. Cover rendering itself
 # needs no key — titles fall back to the humanized filename when it's absent.
 ARG DEEPSEEK_API_KEY
+# EXPERIMENTAL build-speed flag (default off). When "1", `three` is prebuilt into
+# public/vendor-externals/ and externalized from the client bundle (resolved via
+# import map). Must be validated with a real build + browser test before enabling
+# in prod. See lib/vendor-externals.ts.
+ARG VITE_EXTERNALIZE_VENDOR
 
 ENV DATABASE_URL=${DATABASE_URL} \
     BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET} \
@@ -159,7 +164,8 @@ ENV DATABASE_URL=${DATABASE_URL} \
     VITE_RMHTUBE_SOCKET_URL=${VITE_RMHTUBE_SOCKET_URL} \
     VITE_DISCORD_ACTIVITY_CLIENT_ID=${VITE_DISCORD_ACTIVITY_CLIENT_ID} \
     VITE_CDN_BASE_URL=${VITE_CDN_BASE_URL} \
-    DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+    DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY} \
+    VITE_EXTERNALIZE_VENDOR=${VITE_EXTERNALIZE_VENDOR}
 
 # Auto-generate library book covers + metadata for any PDF in public/library that
 # doesn't already have them. Idempotent: existing covers (committed under
@@ -176,6 +182,7 @@ RUN pnpm run library:metadata
 RUN --mount=type=cache,id=vinxi-cache-${COMPOSE_PROJECT_NAME},target=/app/.vinxi,sharing=locked \
     rm -rf .output \
     && pnpm run build-vibe-packages \
+    && pnpm run build-vendor-externals \
     && NODE_OPTIONS='--max-old-space-size=8192' pnpm exec vite build \
     && node scripts/fix-ssr-css-hash.mjs \
     && cp -a .output /app/build-output

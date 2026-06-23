@@ -4,6 +4,19 @@ import tailwindcss from "@tailwindcss/vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import react from "@vitejs/plugin-react";
 import { nitro } from "nitro/vite";
+import { VENDOR_EXTERNAL_PACKAGES } from "./lib/vendor-externals.ts";
+
+// EXPERIMENTAL (opt-in via VITE_EXTERNALIZE_VENDOR=1): externalize the heavy
+// `three` core from the CLIENT build so it is not re-bundled/minified every
+// deploy. The browser resolves it via the import map in app/routes/__root.tsx,
+// pointing at the once-prebuilt public/vendor-externals/three.js
+// (scripts/build-vendor-externals.ts). Default OFF — no behavior change.
+// See lib/vendor-externals.ts for scope/rationale.
+const externalizeVendor = process.env.VITE_EXTERNALIZE_VENDOR === "1";
+// Exact-match only: `three` is external, `three/addons/...` stays bundled.
+const vendorExternalMatchers = VENDOR_EXTERNAL_PACKAGES.map(
+  (p) => new RegExp(`^${p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`),
+);
 
 /**
  * Vite plugin that replaces *.server.{ts,tsx,js,jsx} imports with empty
@@ -242,6 +255,10 @@ export default defineConfig({
       build: {
         rolldownOptions: {
           onwarn,
+          // When enabled, keep `three` out of the client bundle entirely — it is
+          // served pre-bundled and resolved via the document import map. R3F and
+          // three/addons stay bundled and import this single external instance.
+          ...(externalizeVendor ? { external: vendorExternalMatchers } : {}),
           output: {
             manualChunks,
           },
