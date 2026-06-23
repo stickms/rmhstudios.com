@@ -158,6 +158,23 @@ async function versionOf(name: string): Promise<string> {
   }
 }
 
+/**
+ * Run `worker` over `items` with at most `limit` in flight at once. Each bundle
+ * is an independent esbuild call that writes its own file, so they parallelize
+ * cleanly — but we cap concurrency to keep peak memory bounded when several heavy
+ * libs (three, pixi, p5, …) are imported + bundled at the same time.
+ */
+async function mapPool<T>(items: T[], limit: number, worker: (item: T) => Promise<void>): Promise<void> {
+  let next = 0;
+  const runners = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (next < items.length) {
+      const i = next++;
+      await worker(items[i]);
+    }
+  });
+  await Promise.all(runners);
+}
+
 async function main() {
   await rm(OUT_DIR, { recursive: true, force: true });
   await mkdir(OUT_DIR, { recursive: true });
@@ -165,26 +182,27 @@ async function main() {
   const pkgs = hostedPackages();
   console.log(`Bundling ${pkgs.length} hosted vibe package(s) → public/vibe-packages/\n`);
 
+  // Flatten every package (and its declared subpaths) into one list of build
+  // targets so they can be bundled concurrently rather than one-at-a-time.
+  const targets = pkgs.flatMap(({ name, entry }) => [
+    { spec: name, stem: hostedStem(name), name },
+    ...(entry.subpaths ?? []).map((s) => ({ spec: `${name}/${s}`, stem: hostedStem(name, s), name })),
+  ]);
+
   let ok = 0;
   let failed = 0;
-  for (const { name, entry } of pkgs) {
-    const ver = await versionOf(name);
-    // Base entry, then each declared deep entry point (react-dom/client, …).
-    const targets: Array<{ spec: string; stem: string }> = [
-      { spec: name, stem: hostedStem(name) },
-      ...(entry.subpaths ?? []).map((s) => ({ spec: `${name}/${s}`, stem: hostedStem(name, s) })),
-    ];
-    for (const { spec, stem } of targets) {
-      try {
-        const bytes = await bundleOne(spec, stem);
-        console.log(`  ✓ ${spec.padEnd(28)} v${ver.padEnd(10)} ${(bytes / 1024).toFixed(0)} KB → ${stem}.js`);
-        ok++;
-      } catch (err) {
-        console.error(`  ✗ ${spec} — ${(err as Error).message}`);
-        failed++;
-      }
+  // Concurrency cap: esbuild parallelizes internally, so a handful of in-flight
+  // JS-side builds saturate it without spiking Node heap on the heavy libs.
+  await mapPool(targets, 6, async ({ spec, stem, name }) => {
+    try {
+      const [bytes, ver] = await Promise.all([bundleOne(spec, stem), versionOf(name)]);
+      console.log(`  ✓ ${spec.padEnd(28)} v${ver.padEnd(10)} ${(bytes / 1024).toFixed(0)} KB → ${stem}.js`);
+      ok++;
+    } catch (err) {
+      console.error(`  ✗ ${spec} — ${(err as Error).message}`);
+      failed++;
     }
-  }
+  });
 
   console.log(`\nDone: ${ok} built${failed ? `, ${failed} failed` : ''}.`);
   if (failed) process.exitCode = 1;

@@ -11,6 +11,14 @@ on:
       - "go-services/**"
       - "deploy/helm/rmhstudios-go/**"
 
+# Cancel superseded runs: a new push to the same branch/PR aborts the in-flight
+# bazel build+test, the Postgres-backed e2e job, and the helm lint instead of
+# letting them run to completion against stale code. Frees runners and gives
+# faster feedback on the latest commit.
+concurrency:
+  group: go-microservices-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-test:
     runs-on: ubuntu-latest
