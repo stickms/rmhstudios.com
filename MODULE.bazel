@@ -54,4 +54,14 @@ oci.pull(
     reproducible = False,
     tag = "latest",
 )
-use_repo(oci, "base_chromium", "base_chromium_linux_amd64", "base_chromium_linux_arm64_v8", "base_git", "base_git_linux_amd64", "base_git_linux_arm64_v8")
+oci.pull(
+    name = "base_chromium_git",
+    image = "ghcr.io/rmhstudios/rmhstudios-go-base-chromium-git",
+    platforms = [
+        "linux/amd64",
+        "linux/arm64/v8",
+    ],
+    reproducible = False,
+    tag = "latest",
+)
+use_repo(oci, "base_chromium", "base_chromium_linux_amd64", "base_chromium_linux_arm64_v8", "base_git", "base_git_linux_amd64", "base_git_linux_arm64_v8", "base_chromium_git", "base_chromium_git_linux_amd64", "base_chromium_git_linux_arm64_v8")
