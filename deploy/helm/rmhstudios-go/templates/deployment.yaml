@@ -55,6 +55,9 @@ spec:
             {{- else if eq $svc "recap" }}
             - name: RECAP_PORT
               value: {{ $cfg.port | quote }}
+            {{- else if eq $svc "status" }}
+            - name: STATUS_PORT
+              value: {{ $cfg.port | quote }}
             {{- else if eq $svc "gateway" }}
             - name: PORT_WEB
               value: {{ $cfg.port | quote }}
@@ -83,6 +86,9 @@ spec:
               value: {{ $root.Values.webUpstream | quote }}
             {{- end }}
             {{- end }}
+            {{- end }}
+            {{- with $cfg.extraEnv }}
+            {{- toYaml . | nindent 12 }}
             {{- end }}
           ports:
             {{- if $cfg.port }}
