@@ -25,6 +25,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Flame, Shield, User, Copy, ChevronRight } from 'lucide-react';
 import type { Category, AnonymizedAnswerSet } from './CategoryCrashGame';
@@ -78,6 +79,7 @@ export default function PeerReview({
   void _myCrashes;
   void _onCrash;
   void _onUncrash;
+  const { t } = useTranslation("c-rmhbox");
   const activeCatIndex = currentVotingCategoryIndex;
 
   // Build a set of my votes for quick lookup
@@ -119,15 +121,15 @@ export default function PeerReview({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h3 className="text-lg font-bold">Voting</h3>
+          <h3 className="text-lg font-bold">{t("voting", { defaultValue: "Voting" })}</h3>
         </div>
         <span className="rounded-lg bg-(--rmhbox-surface) px-3 py-1.5 text-sm font-medium text-(--rmhbox-text-muted)">
-          Host-directed
+          {t("host-directed", { defaultValue: "Host-directed" })}
         </span>
       </div>
 
       <p className="text-sm text-(--rmhbox-text-muted)">
-        Vote <strong>crash</strong> or <strong>safe</strong> on each answer. Letter: <strong>{letter}</strong>
+        {t("vote-instruction", { defaultValue: "Vote crash or safe on each answer. Letter: {{letter}}", letter })}
       </p>
 
       {/* Category indicator (server-driven, no manual navigation) */}
@@ -209,18 +211,18 @@ export default function PeerReview({
                       ? 'line-through text-(--rmhbox-danger)/70'
                       : voteStatusColor
                   }`}>
-                    {answer ?? '— empty —'}
+                    {answer ?? t("empty-answer", { defaultValue: "— empty —" })}
                   </span>
                   {isOwn && (
                     <span className="flex items-center gap-0.5 text-[10px] font-medium text-(--rmhbox-accent) shrink-0">
                       <User className="h-2.5 w-2.5" />
-                      (yours)
+                      {t("yours-label", { defaultValue: "(yours)" })}
                     </span>
                   )}
                   {isDuplicate && (
                     <span className="flex items-center gap-0.5 text-[10px] font-medium text-(--rmhbox-warning) shrink-0">
                       <Copy className="h-2.5 w-2.5" />
-                      Duplicate
+                      {t("duplicate", { defaultValue: "Duplicate" })}
                     </span>
                   )}
                 </span>
@@ -248,7 +250,7 @@ export default function PeerReview({
                           }`}
                         >
                           <Flame className="h-3 w-3" />
-                          Crash
+                          {t("crash-btn", { defaultValue: "Crash" })}
                         </button>
                         <button
                           type="button"
@@ -260,7 +262,7 @@ export default function PeerReview({
                           }`}
                         >
                           <Shield className="h-3 w-3" />
-                          Safe
+                          {t("safe-btn", { defaultValue: "Safe" })}
                         </button>
                       </>
                     )}
@@ -280,7 +282,7 @@ export default function PeerReview({
             onClick={onAdvanceVoting}
             className="flex items-center gap-2 rounded-lg bg-(--rmhbox-accent) px-5 py-2 text-sm font-semibold text-white transition-colors hover:opacity-90"
           >
-            {isLastCategory ? 'Finish Voting' : 'Next Prompt'}
+            {isLastCategory ? t("finish-voting", { defaultValue: "Finish Voting" }) : t("next-prompt", { defaultValue: "Next Prompt" })}
             <ChevronRight size={16} />
           </button>
         </div>

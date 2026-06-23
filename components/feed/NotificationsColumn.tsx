@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { formatDistanceToNow } from 'date-fns';
 import { Heart, MessageCircle, UserPlus, AtSign, Repeat2, Bell, CheckCheck, Loader2, Trophy, Sparkles, Zap, Gift, Car, MapPin } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
@@ -61,6 +62,7 @@ function systemIdentity(entityType: string | null): { label: string; Icon: typeo
 }
 
 export function NotificationsColumn({ embedded = false }: { embedded?: boolean } = {}) {
+  const { t } = useTranslation('feed');
   const navigate = useNavigate();
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -166,10 +168,10 @@ export function NotificationsColumn({ embedded = false }: { embedded?: boolean }
   return (
     <div className="min-h-screen">
       <header className={`flex items-center gap-3 border-b border-site-border px-4 py-3 ${embedded ? 'justify-end' : 'sticky top-0 z-10 justify-between bg-site-bg/80 backdrop-blur'}`}>
-        {!embedded && <h1 className="text-lg font-bold text-site-text">Notifications</h1>}
+        {!embedded && <h1 className="text-lg font-bold text-site-text">{t('notifications-heading', { defaultValue: 'Notifications' })}</h1>}
         <Button variant="accent-ghost" size="sm" onClick={markAllRead}>
           <CheckCheck className="h-4 w-4" />
-          Mark all read
+          {t('mark-all-read', { defaultValue: 'Mark all read' })}
         </Button>
       </header>
 
@@ -182,9 +184,9 @@ export function NotificationsColumn({ embedded = false }: { embedded?: boolean }
           <div className="rounded-2xl border border-site-border bg-site-surface p-4">
             <Bell className="h-8 w-8 text-site-text-muted" />
           </div>
-          <p className="font-medium text-site-text">No notifications yet</p>
+          <p className="font-medium text-site-text">{t('no-notifications-yet', { defaultValue: 'No notifications yet' })}</p>
           <p className="max-w-xs text-sm text-site-text-muted">
-            When someone likes, comments on, reposts, or mentions you, it&apos;ll show up here.
+            {t('no-notifications-description', { defaultValue: "When someone likes, comments on, reposts, or mentions you, it'll show up here." })}
           </p>
         </div>
       ) : (
@@ -197,7 +199,7 @@ export function NotificationsColumn({ embedded = false }: { embedded?: boolean }
             // and lead with the message instead of a "Someone" line.
             const isSystem = n.type === 'SYSTEM' || !n.actor;
             const sys = isSystem ? systemIdentity(n.entityType) : null;
-            const actorName = n.actor?.name || n.actor?.handle || 'Someone';
+            const actorName = n.actor?.name || n.actor?.handle || t('someone', { defaultValue: 'Someone' });
             return (
               <li key={n.id}>
                 <button
@@ -222,12 +224,12 @@ export function NotificationsColumn({ embedded = false }: { embedded?: boolean }
                   )}
                   <div className="min-w-0 flex-1">
                     {sys ? (
-                      <p className="text-sm font-semibold text-site-text">{n.preview || sys.label}</p>
+                      <p className="text-sm font-semibold text-site-text">{n.preview || (sys ? t(`system-label-${n.entityType ?? 'default'}`, { defaultValue: sys.label }) : '')}</p>
                     ) : (
                       <>
                         <p className="text-sm text-site-text">
                           <span className="font-semibold">{actorName}</span>{' '}
-                          <span className="text-site-text-muted">{meta.verb}</span>
+                          <span className="text-site-text-muted">{t(`notification-verb-${n.type.toLowerCase()}`, { defaultValue: meta.verb })}</span>
                         </p>
                         {n.preview && (
                           <p className="mt-0.5 line-clamp-2 text-sm text-site-text-muted">{n.preview}</p>
@@ -249,7 +251,7 @@ export function NotificationsColumn({ embedded = false }: { embedded?: boolean }
       {nextCursor && (
         <div className="flex justify-center py-4">
           <Button variant="secondary" size="sm" onClick={loadMore} disabled={loadingMore}>
-            {loadingMore ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Load more'}
+            {loadingMore ? <Loader2 className="h-4 w-4 animate-spin" /> : t('load-more', { defaultValue: 'Load more' })}
           </Button>
         </div>
       )}

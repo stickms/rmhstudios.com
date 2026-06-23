@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNotesDataStore } from '@/lib/store/useNotesDataStore';
 import { Note, NoteReminder } from './types';
 import { toast } from 'sonner';
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export default function ReminderModal({ note, onClose, onSaved }: Props) {
+  const { t } = useTranslation("c-rmh-notes");
   const dataStore = useNotesDataStore();
   const [title, setTitle] = useState('');
   const [date, setDate] = useState(() => {
@@ -31,19 +33,19 @@ export default function ReminderModal({ note, onClose, onSaved }: Props) {
     });
     onSaved();
     onClose();
-    toast.success('Reminder set!');
+    toast.success(t("reminder-set", { defaultValue: "Reminder set!" }));
   };
 
   const handleSnooze = (reminder: NoteReminder, minutes: number) => {
     dataStore.updateReminder(reminder.id, { snoozeMinutes: minutes } as Record<string, unknown>);
     onSaved();
-    toast.success(`Snoozed for ${minutes >= 60 ? `${minutes / 60}h` : `${minutes}m`}`);
+    toast.success(t("snoozed-for", { duration: minutes >= 60 ? `${minutes / 60}h` : `${minutes}m`, defaultValue: "Snoozed for {{duration}}" }));
   };
 
   const handleComplete = (id: string) => {
     dataStore.updateReminder(id, { isCompleted: true });
     onSaved();
-    toast.success('Reminder completed!');
+    toast.success(t("reminder-completed", { defaultValue: "Reminder completed!" }));
   };
 
   const handleDelete = (id: string) => {
@@ -52,11 +54,11 @@ export default function ReminderModal({ note, onClose, onSaved }: Props) {
   };
 
   return (
-    <Modal title="🔔 Reminders" onClose={onClose}>
+    <Modal title={`🔔 ${t("reminders", { defaultValue: "Reminders" })}`} onClose={onClose}>
       {/* Existing reminders */}
       {note.reminders.length > 0 && (
         <div className="mb-4 space-y-2">
-          <p className="text-xs font-semibold" style={{ color: 'var(--notes-text-muted)' }}>Existing reminders:</p>
+          <p className="text-xs font-semibold" style={{ color: 'var(--notes-text-muted)' }}>{t("existing-reminders", { defaultValue: "Existing reminders:" })}</p>
           {note.reminders.map((r) => {
             const due = new Date(r.dueAt);
             const overdue = due < new Date();
@@ -78,8 +80,8 @@ export default function ReminderModal({ note, onClose, onSaved }: Props) {
                     ))}
                   </div>
                 )}
-                <button onClick={() => handleComplete(r.id)} title="Mark complete" className="text-sm hover:opacity-70">✓</button>
-                <button onClick={() => handleDelete(r.id)} title="Delete" className="text-sm hover:opacity-70" style={{ color: 'var(--notes-danger)' }}>✕</button>
+                <button onClick={() => handleComplete(r.id)} title={t("mark-complete", { defaultValue: "Mark complete" })} className="text-sm hover:opacity-70">✓</button>
+                <button onClick={() => handleDelete(r.id)} title={t("delete", { defaultValue: "Delete" })} className="text-sm hover:opacity-70" style={{ color: 'var(--notes-danger)' }}>✕</button>
               </div>
             );
           })}
@@ -88,11 +90,11 @@ export default function ReminderModal({ note, onClose, onSaved }: Props) {
 
       {/* New reminder form */}
       <div className="space-y-3">
-        <p className="text-xs font-semibold" style={{ color: 'var(--notes-text-muted)' }}>New reminder:</p>
+        <p className="text-xs font-semibold" style={{ color: 'var(--notes-text-muted)' }}>{t("new-reminder", { defaultValue: "New reminder:" })}</p>
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder={note.title || 'Reminder title...'}
+          placeholder={note.title || t("reminder-title-placeholder", { defaultValue: "Reminder title..." })}
           className="w-full px-3 py-2 rounded-lg text-sm outline-none"
           style={{ background: 'var(--notes-surface-2)', border: '1px solid var(--notes-border)', color: 'var(--notes-text)' }}
         />
@@ -109,17 +111,17 @@ export default function ReminderModal({ note, onClose, onSaved }: Props) {
           className="w-full px-3 py-2 rounded-lg text-sm outline-none"
           style={{ background: 'var(--notes-surface-2)', border: '1px solid var(--notes-border)', color: 'var(--notes-text)' }}
         >
-          <option value="">No repeat</option>
-          <option value="daily">Daily</option>
-          <option value="weekly">Weekly</option>
-          <option value="monthly">Monthly</option>
+          <option value="">{t("no-repeat", { defaultValue: "No repeat" })}</option>
+          <option value="daily">{t("daily", { defaultValue: "Daily" })}</option>
+          <option value="weekly">{t("weekly", { defaultValue: "Weekly" })}</option>
+          <option value="monthly">{t("monthly", { defaultValue: "Monthly" })}</option>
         </select>
       </div>
 
       <div className="flex justify-end gap-2 mt-4">
-        <button onClick={onClose} className="px-4 py-2 rounded-lg text-sm" style={{ background: 'var(--notes-surface-2)', color: 'var(--notes-text-muted)' }}>Cancel</button>
+        <button onClick={onClose} className="px-4 py-2 rounded-lg text-sm" style={{ background: 'var(--notes-surface-2)', color: 'var(--notes-text-muted)' }}>{t("cancel", { defaultValue: "Cancel" })}</button>
         <button onClick={handleSave} className="px-4 py-2 rounded-lg text-sm font-semibold" style={{ background: 'var(--notes-accent)', color: 'var(--notes-accent-fg)' }}>
-          Set Reminder
+          {t("set-reminder", { defaultValue: "Set Reminder" })}
         </button>
       </div>
     </Modal>

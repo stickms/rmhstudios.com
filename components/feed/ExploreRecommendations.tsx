@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Hash, Loader2, TrendingUp, Users } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { RMHarkCard } from './RMHarkCard';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import type { FeedItem } from '@/lib/feed-types';
@@ -29,6 +30,7 @@ interface ExploreData {
  * trending tags, people and communities to discover, and hot posts.
  */
 export function ExploreRecommendations() {
+  const { t } = useTranslation('feed');
   const [data, setData] = useState<ExploreData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -54,7 +56,7 @@ export function ExploreRecommendations() {
   if (!data) {
     return (
       <p className="px-4 py-16 text-center text-sm text-site-text-muted">
-        Start typing to search across people, posts, builds, and the blog.
+        {t('explore-empty-hint', { defaultValue: 'Start typing to search across people, posts, builds, and the blog.' })}
       </p>
     );
   }
@@ -65,7 +67,7 @@ export function ExploreRecommendations() {
       {data.trendingTags.length > 0 && (
         <section className="border-b border-site-border p-4">
           <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
-            <TrendingUp className="h-3.5 w-3.5" /> Trending
+            <TrendingUp className="h-3.5 w-3.5" /> {t('trending-heading', { defaultValue: 'Trending' })}
           </h2>
           <div className="flex flex-wrap gap-2">
             {data.trendingTags.map((t) => (
@@ -86,7 +88,7 @@ export function ExploreRecommendations() {
       {/* Who to follow */}
       {data.suggestedUsers.length > 0 && (
         <section className="border-b border-site-border p-4">
-          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">Who to follow</h2>
+          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('who-to-follow', { defaultValue: 'Who to follow' })}</h2>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {data.suggestedUsers.map((u) => (
               <Link
@@ -94,10 +96,10 @@ export function ExploreRecommendations() {
                 to={`/u/${u.handle || u.id}` as string}
                 className="flex items-center gap-3 rounded-xl border border-site-border bg-site-surface p-2.5 hover:border-site-accent/50"
               >
-                <UserAvatar src={u.image} alt={u.name || 'User'} size={36} fallbackName={u.name || 'U'} />
+                <UserAvatar src={u.image} alt={u.name || t('user-alt', { defaultValue: 'User' })} size={36} fallbackName={u.name || 'U'} />
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-site-text">{u.name || u.handle}</p>
-                  <p className="truncate text-xs text-site-text-muted">{u.followerCount} followers</p>
+                  <p className="truncate text-xs text-site-text-muted">{t('follower-count', { count: u.followerCount, defaultValue: '{{count}} followers' })}</p>
                 </div>
               </Link>
             ))}
@@ -109,7 +111,7 @@ export function ExploreRecommendations() {
       {data.communities.length > 0 && (
         <section className="border-b border-site-border p-4">
           <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
-            <Users className="h-3.5 w-3.5" /> Communities
+            <Users className="h-3.5 w-3.5" /> {t('communities-heading', { defaultValue: 'Communities' })}
           </h2>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {data.communities.map((c) => (
@@ -140,7 +142,7 @@ export function ExploreRecommendations() {
       {/* Hot posts */}
       {data.hotPosts.length > 0 && (
         <section>
-          <h2 className="px-4 pt-4 text-xs font-semibold uppercase tracking-wide text-site-text-dim">Hot this week</h2>
+          <h2 className="px-4 pt-4 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('hot-this-week', { defaultValue: 'Hot this week' })}</h2>
           <div className="divide-y divide-site-border">
             {data.hotPosts.map((item) => (
               <RMHarkCard key={item.id} item={item} />

@@ -1,5 +1,6 @@
 import { Heart, MessageCircle, Eye, ArrowRight } from 'lucide-react';
 import { Link, useRouter } from '@tanstack/react-router';
+import { useTranslation } from "react-i18next";
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { useCardSheen } from '@/hooks/useCardSheen';
 import { formatCount } from '@/lib/utils';
@@ -27,6 +28,7 @@ interface OfficialBuildCardProps {
 
 export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardProps) {
     const router = useRouter();
+    const { t } = useTranslation("c-builds");
     const { cardRef, sheenStyle, handlers: sheenHandlers } = useCardSheen();
     const cardUrl = build.href;
     const detailUrl = `/builds/${build.slug}`;
@@ -80,7 +82,7 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
                     <div className="absolute inset-0 w-full h-full overflow-hidden bg-site-bg">
                         <OptimizedImage
                             src={build.thumbnailUrl}
-                            alt={`Screenshot of ${build.title}`}
+                            alt={t("screenshot-of", { defaultValue: "Screenshot of {{title}}", title: build.title })}
                             layout="fullWidth"
                             height={400}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -116,7 +118,7 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
                                 <div className="flex items-center justify-between text-xs text-white/80">
                                     <button
                                         onClick={handleLike}
-                                        aria-label={build.liked ? 'Unlike this build' : 'Like this build'}
+                                        aria-label={build.liked ? t("unlike-this-build", { defaultValue: "Unlike this build" }) : t("like-this-build", { defaultValue: "Like this build" })}
                                         className={`flex items-center gap-1.5 transition-colors ${
                                             build.liked ? 'text-red-400' : 'hover:text-red-400'
                                         }`}
@@ -130,7 +132,7 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
                                             onView?.(build.id);
                                             router.navigate({ to: detailUrl });
                                         }}
-                                        aria-label="View comments"
+                                        aria-label={t("view-comments", { defaultValue: "View comments" })}
                                         className="flex items-center gap-1.5 hover:text-blue-400 transition-colors"
                                     >
                                         <MessageCircle className="w-4 h-4" />
@@ -149,7 +151,7 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
                                     }}
                                     className="flex items-center justify-center gap-1.5 text-xs text-blue-400 border border-blue-400/50 bg-transparent font-semibold w-full py-2 rounded-lg hover:bg-blue-400 hover:text-white hover:border-transparent transition-all"
                                 >
-                                    Read More
+                                    {t("read-more", { defaultValue: "Read More" })}
                                     <ArrowRight className="w-3.5 h-3.5" />
                                 </Link>
                             </div>

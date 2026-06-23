@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from "react-i18next";
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '@/lib/dream-rift/constants';
 import { TouhouFrame, TouhouMenuButton, TouhouDivider } from './TouhouFrame';
 
@@ -12,6 +13,7 @@ export function DreamRiftPause({
   onRestart: () => void;
   onQuit: () => void;
 }) {
+  const { t } = useTranslation("c-dream-rift");
   return (
     <div
       className="absolute inset-0 z-40 flex flex-col items-center justify-center"
@@ -29,19 +31,19 @@ export function DreamRiftPause({
               className="text-lg tracking-[0.3em] text-amber-300/70"
               style={{ fontFamily: "'Georgia', serif" }}
             >
-              PAUSED
+              {t("paused", { defaultValue: "PAUSED" })}
             </h2>
             <TouhouDivider />
           </div>
 
           <TouhouMenuButton variant="accent" onClick={onResume}>
-            Resume
+            {t("resume", { defaultValue: "Resume" })}
           </TouhouMenuButton>
           <TouhouMenuButton onClick={onRestart}>
-            Restart
+            {t("restart", { defaultValue: "Restart" })}
           </TouhouMenuButton>
           <TouhouMenuButton onClick={onQuit}>
-            Quit to Title
+            {t("quit-to-title", { defaultValue: "Quit to Title" })}
           </TouhouMenuButton>
 
           <div className="mt-3 text-center">
@@ -50,7 +52,7 @@ export function DreamRiftPause({
               className="text-[9px] text-zinc-600 tracking-wider"
               style={{ fontFamily: "'Georgia', serif" }}
             >
-              Press Esc to resume
+              {t("press-esc-to-resume", { defaultValue: "Press Esc to resume" })}
             </p>
           </div>
         </div>

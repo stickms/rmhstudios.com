@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { Eye, EyeOff, Lock } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { DivisivenessBadge } from '@/components/doctrine/divisiveness-badge';
 import { ReactionBar } from '@/components/doctrine/reaction-bar';
 import { EMPTY_REACTIONS } from '@/lib/doctrine/types';
@@ -10,6 +11,7 @@ export const Route = createFileRoute('/strategies/safehouse/drops')({
 });
 
 function DropsPage() {
+  const { t } = useTranslation("r-strategies");
   const { data, isLoading } = useQuery({
     queryKey: ['doctrine', 'disclosures'],
     queryFn: async () => {
@@ -24,10 +26,10 @@ function DropsPage() {
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-6 pb-20 md:pb-6">
       <div>
         <h1 className="text-xl font-bold" style={{ color: 'var(--doctrine-text-primary)' }}>
-          Controlled Disclosures
+          {t("controlled-disclosures", { defaultValue: "Controlled Disclosures" })}
         </h1>
         <p className="text-sm mt-1" style={{ color: 'var(--doctrine-text-muted)' }}>
-          Features are not released. They are disclosed.
+          {t("features-not-released", { defaultValue: "Features are not released. They are disclosed." })}
         </p>
       </div>
 

@@ -7,6 +7,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import EmojiSentence from './EmojiSentence';
 import GuessInput from './GuessInput';
 import GuessHistory from './GuessHistory';
@@ -45,6 +46,7 @@ export default function AudienceView({
   movieTitles: propMovieTitles,
   guessLog,
 }: AudienceViewProps) {
+  const { t } = useTranslation("c-rmhbox");
   const disabled = hasGuessedCorrectly || guesses.length >= maxGuesses;
   const [movieTitles, setMovieTitles] = useState<string[]>(propMovieTitles ?? []);
 
@@ -70,7 +72,7 @@ export default function AudienceView({
     <div className="flex flex-col items-center gap-3 p-4 w-full max-w-md mx-auto">
       <div className="flex items-center justify-between w-full">
         <span className="text-xs text-(--rmhbox-text-muted)">
-          Round {roundNumber} • Producer: <span className="font-semibold text-(--rmhbox-text)">{producerName}</span>
+          {t("round-producer", { defaultValue: "Round {{round}} • Producer: ", round: roundNumber })}<span className="font-semibold text-(--rmhbox-text)">{producerName}</span>
         </span>
         <span className="text-sm font-mono text-(--rmhbox-text-muted)">{timeRemaining}s</span>
       </div>
@@ -80,7 +82,7 @@ export default function AudienceView({
       {hasGuessedCorrectly ? (
         <div className="text-center py-4">
           <span className="text-2xl">🎉</span>
-          <p className="text-sm font-semibold text-green-400 mt-1">You guessed correctly!</p>
+          <p className="text-sm font-semibold text-green-400 mt-1">{t("guessed-correctly", { defaultValue: "You guessed correctly!" })}</p>
         </div>
       ) : (
         <GuessInput

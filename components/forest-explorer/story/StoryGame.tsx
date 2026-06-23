@@ -2,6 +2,7 @@
 
 import { Canvas } from '@react-three/fiber';
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useStoryStore } from '@/lib/forest-explorer/store';
 import { actMaps } from '@/lib/forest-explorer/actMaps';
 import { hasSave } from '@/lib/forest-explorer/saveSystem';
@@ -16,6 +17,7 @@ import { StoryToast } from './StoryToast';
 import type { ActId } from '@/lib/forest-explorer/types';
 
 export function StoryGame() {
+    const { t } = useTranslation("c-forest-explorer");
     const { data: session, isPending: sessionPending } = authClient.useSession();
 
     const [locked, setLocked] = useState(false);
@@ -137,7 +139,7 @@ export function StoryGame() {
     if (sessionPending) {
         return (
             <div className="w-full h-full flex items-center justify-center bg-black">
-                <div className="text-white/50 text-sm">Loading...</div>
+                <div className="text-white/50 text-sm">{t("loading", { defaultValue: "Loading..." })}</div>
             </div>
         );
     }
@@ -148,7 +150,7 @@ export function StoryGame() {
         }
         return (
             <div className="w-full h-full flex items-center justify-center bg-black">
-                <div className="text-white/50 text-sm">Redirecting to login...</div>
+                <div className="text-white/50 text-sm">{t("redirecting-to-login", { defaultValue: "Redirecting to login..." })}</div>
             </div>
         );
     }
@@ -156,7 +158,7 @@ export function StoryGame() {
     if (!initialized) {
         return (
             <div className="w-full h-full flex items-center justify-center bg-black">
-                <div className="text-white/50 text-sm">Loading...</div>
+                <div className="text-white/50 text-sm">{t("loading", { defaultValue: "Loading..." })}</div>
             </div>
         );
     }
@@ -179,7 +181,7 @@ export function StoryGame() {
                 <div className="absolute inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm z-50">
                     <div className="text-center text-white px-8 py-9 rounded-2xl bg-black/40 border border-white/10 max-w-xs w-full space-y-4">
                         <div className="text-5xl">🌲</div>
-                        <h1 className="text-2xl font-bold tracking-wide text-green-200">Story Mode</h1>
+                        <h1 className="text-2xl font-bold tracking-wide text-green-200">{t("story-mode", { defaultValue: "Story Mode" })}</h1>
                         <p className="text-green-300/50 text-xs">
                             {actMaps[currentAct].name}
                         </p>
@@ -189,7 +191,7 @@ export function StoryGame() {
                                 className="w-full py-2.5 bg-green-800 hover:bg-green-700 text-green-100 rounded-xl font-medium transition-colors text-sm cursor-pointer"
                                 onClick={handleContinue}
                             >
-                                Continue
+                                {t("continue", { defaultValue: "Continue" })}
                             </button>
                         )}
 
@@ -197,19 +199,19 @@ export function StoryGame() {
                             className="w-full py-2.5 bg-white/10 hover:bg-white/15 text-white/80 rounded-xl font-medium transition-colors text-sm cursor-pointer"
                             onClick={handleNewGame}
                         >
-                            New Game
+                            {t("new-game", { defaultValue: "New Game" })}
                         </button>
 
                         <div className="pt-2 space-y-1 text-xs text-zinc-400">
                             <p>
-                                <span className="text-zinc-200">WASD</span> — walk &nbsp;·&nbsp;
-                                <span className="text-zinc-200">Shift</span> — run &nbsp;·&nbsp;
-                                <span className="text-zinc-200">Space</span> — jump
+                                <span className="text-zinc-200">WASD</span> — {t("walk", { defaultValue: "walk" })} &nbsp;·&nbsp;
+                                <span className="text-zinc-200">Shift</span> — {t("run", { defaultValue: "run" })} &nbsp;·&nbsp;
+                                <span className="text-zinc-200">Space</span> — {t("jump", { defaultValue: "jump" })}
                             </p>
                             <p>
-                                <span className="text-zinc-200">E</span> — interact &nbsp;·&nbsp;
-                                <span className="text-zinc-200">F</span> — flashlight &nbsp;·&nbsp;
-                                <span className="text-zinc-200">Tab</span> — journal
+                                <span className="text-zinc-200">E</span> — {t("interact", { defaultValue: "interact" })} &nbsp;·&nbsp;
+                                <span className="text-zinc-200">F</span> — {t("flashlight", { defaultValue: "flashlight" })} &nbsp;·&nbsp;
+                                <span className="text-zinc-200">Tab</span> — {t("journal", { defaultValue: "journal" })}
                             </p>
                         </div>
                     </div>
@@ -220,7 +222,7 @@ export function StoryGame() {
             {!showMenu && paused && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50">
                     <div className="text-center text-white px-8 py-6 rounded-2xl bg-black/40 border border-white/10 max-w-xs w-full space-y-3">
-                        <h2 className="text-xl font-bold text-white/90">Paused</h2>
+                        <h2 className="text-xl font-bold text-white/90">{t("paused", { defaultValue: "Paused" })}</h2>
                         <button
                             className="w-full py-2.5 bg-green-800 hover:bg-green-700 text-green-100 rounded-xl font-medium transition-colors text-sm cursor-pointer"
                             onClick={() => {
@@ -230,13 +232,13 @@ export function StoryGame() {
                                 }, 50);
                             }}
                         >
-                            Resume
+                            {t("resume", { defaultValue: "Resume" })}
                         </button>
                         <button
                             className="w-full py-2 bg-white/10 hover:bg-white/15 text-white/70 rounded-xl text-sm transition-colors cursor-pointer"
                             onClick={handleSaveAndQuit}
                         >
-                            Save &amp; Quit
+                            {t("save-and-quit", { defaultValue: "Save & Quit" })}
                         </button>
                         <button
                             className="w-full py-2 bg-red-900/30 hover:bg-red-900/50 text-red-300/70 rounded-xl text-sm transition-colors cursor-pointer"
@@ -245,7 +247,7 @@ export function StoryGame() {
                                 window.location.href = '/forest-explorer';
                             }}
                         >
-                            Exit Game
+                            {t("exit-game", { defaultValue: "Exit Game" })}
                         </button>
                     </div>
                 </div>
@@ -270,16 +272,16 @@ export function StoryGame() {
                 >
                     <div className="text-center px-8 py-6 rounded-2xl bg-black/50 backdrop-blur-sm border border-white/10 max-w-sm space-y-3">
                         <p className="text-green-200/90 text-sm italic leading-relaxed">
-                            The forest remembers. Use your flashlight to reveal its secrets.
+                            {t("intro-tagline", { defaultValue: "The forest remembers. Use your flashlight to reveal its secrets." })}
                         </p>
                         <p className="text-white/60 text-xs">
-                            Look for the glowing notebook nearby to begin.
+                            {t("intro-hint", { defaultValue: "Look for the glowing notebook nearby to begin." })}
                         </p>
                         <div className="pt-1 text-white/30 text-xs space-x-3">
-                            <span><span className="text-white/50">WASD</span> move</span>
-                            <span><span className="text-white/50">F</span> flashlight</span>
-                            <span><span className="text-white/50">E</span> interact</span>
-                            <span><span className="text-white/50">Tab</span> journal</span>
+                            <span><span className="text-white/50">WASD</span> {t("move", { defaultValue: "move" })}</span>
+                            <span><span className="text-white/50">F</span> {t("flashlight", { defaultValue: "flashlight" })}</span>
+                            <span><span className="text-white/50">E</span> {t("interact", { defaultValue: "interact" })}</span>
+                            <span><span className="text-white/50">Tab</span> {t("journal", { defaultValue: "journal" })}</span>
                         </div>
                     </div>
                 </div>
@@ -306,15 +308,12 @@ export function StoryGame() {
                 <div className="absolute inset-0 flex items-center justify-center bg-black/90 backdrop-blur-md z-[90]">
                     <div className="text-center text-white px-10 py-12 rounded-2xl bg-black/40 border border-green-700/20 max-w-md w-full space-y-6 animate-in fade-in duration-1000">
                         <div className="text-6xl">🌅</div>
-                        <h1 className="text-3xl font-bold tracking-wide text-green-200">The Forest Remembers</h1>
+                        <h1 className="text-3xl font-bold tracking-wide text-green-200">{t("completion-title", { defaultValue: "The Forest Remembers" })}</h1>
                         <p className="text-white/60 text-sm leading-relaxed">
-                            As the first rays of dawn pierce through the canopy, the forest breathes again.
-                            Every stone, every root, every whisper of wind carries the memories you helped restore.
-                            The Heartwood pulses with renewed life, its light spreading through the root network
-                            to every corner of these ancient woods.
+                            {t("completion-body", { defaultValue: "As the first rays of dawn pierce through the canopy, the forest breathes again. Every stone, every root, every whisper of wind carries the memories you helped restore. The Heartwood pulses with renewed life, its light spreading through the root network to every corner of these ancient woods." })}
                         </p>
                         <p className="text-green-300/50 text-xs">
-                            Thank you for listening.
+                            {t("thank-you", { defaultValue: "Thank you for listening." })}
                         </p>
                         <button
                             className="px-8 py-3 bg-green-800/50 hover:bg-green-700/50 text-green-100 rounded-xl font-medium transition-colors text-sm cursor-pointer border border-green-600/30"
@@ -324,7 +323,7 @@ export function StoryGame() {
                                 setShowCompletion(false);
                             }}
                         >
-                            Return to Menu
+                            {t("return-to-menu", { defaultValue: "Return to Menu" })}
                         </button>
                     </div>
                 </div>

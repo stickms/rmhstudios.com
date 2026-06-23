@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { Loader2, Shield, Users, Trophy, Crown, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -28,6 +29,7 @@ interface ClanDetail {
 const fmt = (n: number) => n.toLocaleString();
 
 export function ClanDetailColumn({ slug }: { slug: string }) {
+  const { t } = useTranslation('feed');
   const [clan, setClan] = useState<ClanDetail | null>(null);
   const [viewer, setViewer] = useState<{ isMember: boolean; inAnotherClan: boolean }>({ isMember: false, inAnotherClan: false });
   const [signedIn, setSignedIn] = useState(false);
@@ -96,9 +98,9 @@ export function ClanDetailColumn({ slug }: { slug: string }) {
   if (notFound || !clan) {
     return (
       <div className="flex flex-col items-center gap-3 px-6 py-24 text-center">
-        <p className="font-medium text-site-text">Clan not found</p>
+        <p className="font-medium text-site-text">{t("clan-not-found", { defaultValue: "Clan not found" })}</p>
         <Link to="/clans">
-          <Button variant="outline">Browse clans</Button>
+          <Button variant="outline">{t("browse-clans", { defaultValue: "Browse clans" })}</Button>
         </Link>
       </div>
     );
@@ -128,23 +130,23 @@ export function ClanDetailColumn({ slug }: { slug: string }) {
             <div className="min-w-0">
               <p className="truncate text-lg font-bold text-site-text">{clan.name}</p>
               <p className="inline-flex items-center gap-1 text-xs text-site-text-dim">
-                <Trophy className="h-3.5 w-3.5 text-site-accent" /> Rank #{clan.rank}
+                <Trophy className="h-3.5 w-3.5 text-site-accent" /> {t("rank-number", { rank: clan.rank, defaultValue: "Rank #{{rank}}" })}
               </p>
             </div>
             <div className="ml-auto shrink-0">
               {viewer.isMember ? (
                 <Button size="sm" variant="outline" disabled={busy} onClick={() => act('leave')}>
-                  {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Leave'}
+                  {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("leave", { defaultValue: "Leave" })}
                 </Button>
               ) : signedIn ? (
                 <Button
                   size="sm"
                   variant="accent"
                   disabled={busy || viewer.inAnotherClan}
-                  title={viewer.inAnotherClan ? 'Leave your current clan first' : undefined}
+                  title={viewer.inAnotherClan ? t("leave-current-clan-first", { defaultValue: "Leave your current clan first" }) : undefined}
                   onClick={() => act('join')}
                 >
-                  {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Join'}
+                  {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("join", { defaultValue: "Join" })}
                 </Button>
               ) : null}
             </div>
@@ -155,17 +157,17 @@ export function ClanDetailColumn({ slug }: { slug: string }) {
           <div className="mt-4 grid grid-cols-2 gap-2">
             <div className="rounded-lg bg-site-bg p-3 text-center">
               <p className="text-lg font-bold text-site-text">{fmt(clan.totalXp)}</p>
-              <p className="text-[11px] text-site-text-dim">Total XP</p>
+              <p className="text-[11px] text-site-text-dim">{t("total-xp", { defaultValue: "Total XP" })}</p>
             </div>
             <div className="rounded-lg bg-site-bg p-3 text-center">
               <p className="text-lg font-bold text-site-text">{fmt(clan.memberCount)}</p>
-              <p className="text-[11px] text-site-text-dim">Members</p>
+              <p className="text-[11px] text-site-text-dim">{t("members", { defaultValue: "Members" })}</p>
             </div>
           </div>
         </div>
 
         {/* Members */}
-        <h2 className="mb-2 mt-6 text-xs font-semibold uppercase tracking-wide text-site-text-dim">Members</h2>
+        <h2 className="mb-2 mt-6 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t("members", { defaultValue: "Members" })}</h2>
         <div className="space-y-1">
           {clan.members.map((m, i) => {
             const Icon = RoleIcon(m.role);
@@ -174,7 +176,7 @@ export function ClanDetailColumn({ slug }: { slug: string }) {
                 <span className="w-5 text-center text-xs font-bold text-site-text-dim">{i + 1}</span>
                 <UserAvatar user={m.user} />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-site-text">{m.user.name || m.user.handle || 'Member'}</p>
+                  <p className="truncate text-sm font-semibold text-site-text">{m.user.name || m.user.handle || t("member", { defaultValue: "Member" })}</p>
                   <p className="inline-flex items-center gap-1 text-[11px] text-site-text-dim">
                     <Icon className="h-3 w-3" /> {m.role.toLowerCase()}
                   </p>

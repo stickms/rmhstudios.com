@@ -14,6 +14,7 @@
  */
 'use client';
 
+import { useTranslation } from "react-i18next";
 import type { HistoryDetailProps } from '@/lib/rmhbox/history-display-registry';
 import DrawingCard from './DrawingCard';
 import type { MMStroke } from './DrawingCard';
@@ -49,6 +50,7 @@ interface LoggedDrawing {
 }
 
 export default function MinimalistMasterpieceHistoryDetail({ gameLog, players }: HistoryDetailProps) {
+  const { t } = useTranslation("c-rmhbox");
   // Extract round data from action log
   const roundStarts = gameLog.actions.filter((a) => a.type === 'round_start');
   const roundEnds = gameLog.actions.filter((a) => a.type === 'round_end');
@@ -63,7 +65,7 @@ export default function MinimalistMasterpieceHistoryDetail({ gameLog, players }:
     <div className="space-y-6">
       {/* Summary header */}
       <div className="text-sm text-(--rmhbox-text-muted)">
-        {totalRounds} round{totalRounds !== 1 ? 's' : ''} played
+        {t("rounds-played", { count: totalRounds, defaultValue: "{{count}} round played", defaultValue_other: "{{count}} rounds played" })}
       </div>
 
       {/* Per-round details */}
@@ -79,9 +81,9 @@ export default function MinimalistMasterpieceHistoryDetail({ gameLog, players }:
           <div key={roundNum} className="rounded-lg border border-(--rmhbox-border) p-4 space-y-3">
             {/* Round header */}
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-(--rmhbox-text)">Round {roundNum}</span>
+              <span className="text-sm font-semibold text-(--rmhbox-text)">{t("round-number", { round: roundNum, defaultValue: "Round {{round}}" })}</span>
               <span className="text-xs text-(--rmhbox-text-muted)">
-                {drawings.length} drawing{drawings.length !== 1 ? 's' : ''}
+                {t("drawings-count", { count: drawings.length, defaultValue: "{{count}} drawing", defaultValue_other: "{{count}} drawings" })}
               </span>
             </div>
 
@@ -109,7 +111,7 @@ export default function MinimalistMasterpieceHistoryDetail({ gameLog, players }:
             {/* Rankings with market values and auction winners */}
             {rankings.length > 0 && (
               <div className="space-y-1">
-                <h5 className="text-xs font-semibold text-(--rmhbox-text-muted) uppercase tracking-wide">Market Values</h5>
+                <h5 className="text-xs font-semibold text-(--rmhbox-text-muted) uppercase tracking-wide">{t("market-values", { defaultValue: "Market Values" })}</h5>
                 {rankings.map((r, j) => {
                   const artist = players.find((p) => p.userId === r.artistUserId);
                   return (
@@ -118,14 +120,14 @@ export default function MinimalistMasterpieceHistoryDetail({ gameLog, players }:
                         <span className="text-(--rmhbox-text)">#{r.rank} {artist?.userName ?? r.artistUserName ?? 'Unknown'}</span>
                         {r.winnerName && (
                           <span className="text-xs text-(--rmhbox-text-muted)">
-                            Won by {r.winnerName} for {r.winnerPaid} coins
+                            {t("won-by", { name: r.winnerName, paid: r.winnerPaid, defaultValue: "Won by {{name}} for {{paid}} coins" })}
                             {(r.overbidPenalty ?? 0) > 0 && (
-                              <span className="text-red-500 ml-1">(penalty: -{r.overbidPenalty})</span>
+                              <span className="text-red-500 ml-1">{t("overbid-penalty", { penalty: r.overbidPenalty, defaultValue: "(penalty: -{{penalty}})" })}</span>
                             )}
                           </span>
                         )}
                       </div>
-                      <span className="font-medium text-(--rmhbox-accent)">{r.marketValue} coins</span>
+                      <span className="font-medium text-(--rmhbox-accent)">{t("market-value-coins", { value: r.marketValue, defaultValue: "{{value}} coins" })}</span>
                     </div>
                   );
                 })}
@@ -135,19 +137,19 @@ export default function MinimalistMasterpieceHistoryDetail({ gameLog, players }:
             {/* Score breakdown for this round */}
             {scoreBreakdowns.length > 0 && (
               <div className="space-y-1">
-                <h5 className="text-xs font-semibold text-(--rmhbox-text-muted) uppercase tracking-wide">Round Scores</h5>
+                <h5 className="text-xs font-semibold text-(--rmhbox-text-muted) uppercase tracking-wide">{t("round-scores", { defaultValue: "Round Scores" })}</h5>
                 {scoreBreakdowns.map((sb, j) => {
                   const player = players.find((p) => p.userId === sb.userId);
                   return (
                     <div key={j} className="flex items-center justify-between rounded-md bg-(--rmhbox-surface) px-3 py-1 text-xs">
                       <span className="text-(--rmhbox-text)">{player?.userName ?? sb.userName ?? 'Unknown'}</span>
                       <div className="flex gap-3 text-(--rmhbox-text-muted)">
-                        <span>Painted: {sb.paintedValue}</span>
-                        <span>Owned: {sb.ownedValue}</span>
+                        <span>{t("painted-value", { value: sb.paintedValue, defaultValue: "Painted: {{value}}" })}</span>
+                        <span>{t("owned-value", { value: sb.ownedValue, defaultValue: "Owned: {{value}}" })}</span>
                         {sb.overbidPenalty > 0 && (
-                          <span className="text-red-500">Penalty: -{sb.overbidPenalty}</span>
+                          <span className="text-red-500">{t("score-penalty", { value: sb.overbidPenalty, defaultValue: "Penalty: -{{value}}" })}</span>
                         )}
-                        <span className="font-medium text-(--rmhbox-accent)">Total: {sb.totalScore}</span>
+                        <span className="font-medium text-(--rmhbox-accent)">{t("total-score", { value: sb.totalScore, defaultValue: "Total: {{value}}" })}</span>
                       </div>
                     </div>
                   );
@@ -161,7 +163,7 @@ export default function MinimalistMasterpieceHistoryDetail({ gameLog, players }:
       {/* Cumulative scores */}
       {cumulativeScores && Object.keys(cumulativeScores).length > 0 && totalRounds > 1 && (
         <div className="space-y-2">
-          <h4 className="text-sm font-semibold text-(--rmhbox-text)">Cumulative Scores</h4>
+          <h4 className="text-sm font-semibold text-(--rmhbox-text)">{t("cumulative-scores", { defaultValue: "Cumulative Scores" })}</h4>
           <div className="space-y-1">
             {Object.entries(cumulativeScores)
               .sort(([, a], [, b]) => b - a)
@@ -170,7 +172,7 @@ export default function MinimalistMasterpieceHistoryDetail({ gameLog, players }:
                 return (
                   <div key={userId} className="flex items-center justify-between rounded-md bg-(--rmhbox-surface) px-3 py-1.5 text-sm">
                     <span className="text-(--rmhbox-text)">#{i + 1} {player?.userName ?? 'Unknown'}</span>
-                    <span className="font-medium text-(--rmhbox-accent)">{score} pts</span>
+                    <span className="font-medium text-(--rmhbox-accent)">{t("score-pts", { score, defaultValue: "{{score}} pts" })}</span>
                   </div>
                 );
               })}

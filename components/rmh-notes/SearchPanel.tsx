@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNotesDataStore } from '@/lib/store/useNotesDataStore';
 import { Note, NoteFolder, NoteTag } from './types';
 
@@ -21,6 +22,7 @@ export default function SearchPanel({ onSelect, onClose, tags, folders }: Props)
   const inputRef = useRef<HTMLInputElement>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const { t } = useTranslation("c-rmh-notes");
   const searchNotes = useNotesDataStore((s) => s.searchNotes);
 
   useEffect(() => { inputRef.current?.focus(); }, []);
@@ -78,7 +80,7 @@ export default function SearchPanel({ onSelect, onClose, tags, folders }: Props)
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search notes..."
+            placeholder={t("search-notes", { defaultValue: "Search notes..." })}
             className="flex-1 text-base bg-transparent outline-none"
             style={{ color: 'var(--notes-text)' }}
           />
@@ -93,7 +95,7 @@ export default function SearchPanel({ onSelect, onClose, tags, folders }: Props)
             className="text-xs px-2 py-1 rounded-lg outline-none"
             style={{ background: 'var(--notes-surface)', border: '1px solid var(--notes-border)', color: 'var(--notes-text-muted)' }}
           >
-            <option value="">All tags</option>
+            <option value="">{t("all-tags", { defaultValue: "All tags" })}</option>
             {tags.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
           <select
@@ -102,23 +104,23 @@ export default function SearchPanel({ onSelect, onClose, tags, folders }: Props)
             className="text-xs px-2 py-1 rounded-lg outline-none"
             style={{ background: 'var(--notes-surface)', border: '1px solid var(--notes-border)', color: 'var(--notes-text-muted)' }}
           >
-            <option value="">All folders</option>
+            <option value="">{t("all-folders", { defaultValue: "All folders" })}</option>
             {folders.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
           </select>
           <label className="flex items-center gap-1.5 text-xs cursor-pointer" style={{ color: 'var(--notes-text-muted)' }}>
             <input type="checkbox" checked={hasReminder} onChange={(e) => setHasReminder(e.target.checked)} className="accent-amber-500" />
-            Has reminder
+            {t("has-reminder", { defaultValue: "Has reminder" })}
           </label>
         </div>
 
         {/* Results */}
         <div className="overflow-y-auto flex-1">
           {loading ? (
-            <div className="text-center py-8" style={{ color: 'var(--notes-text-muted)' }}>Searching...</div>
+            <div className="text-center py-8" style={{ color: 'var(--notes-text-muted)' }}>{t("searching", { defaultValue: "Searching..." })}</div>
           ) : results.length === 0 && (query || selectedTagId || selectedFolderId || hasReminder) ? (
             <div className="text-center py-8">
               <p className="text-3xl mb-2">🔍</p>
-              <p className="text-sm" style={{ color: 'var(--notes-text-muted)' }}>No notes found</p>
+              <p className="text-sm" style={{ color: 'var(--notes-text-muted)' }}>{t("no-notes-found", { defaultValue: "No notes found" })}</p>
             </div>
           ) : (
             <div className="py-2">
@@ -132,7 +134,7 @@ export default function SearchPanel({ onSelect, onClose, tags, folders }: Props)
                 >
                   <div className="flex items-center gap-2">
                     {note.isLocked && <span className="text-xs">🔒</span>}
-                    <span className="font-semibold text-sm flex-1 truncate" style={{ color: 'var(--notes-text)' }}>{note.title || 'Untitled'}</span>
+                    <span className="font-semibold text-sm flex-1 truncate" style={{ color: 'var(--notes-text)' }}>{note.title || t("untitled", { defaultValue: "Untitled" })}</span>
                     <span className="text-xs" style={{ color: 'var(--notes-text-subtle)' }}>
                       {new Date(note.updatedAt).toLocaleDateString()}
                     </span>
@@ -153,7 +155,7 @@ export default function SearchPanel({ onSelect, onClose, tags, folders }: Props)
         </div>
 
         <div className="px-4 py-2 text-xs" style={{ borderTop: '1px solid var(--notes-border)', color: 'var(--notes-text-subtle)' }}>
-          Press <kbd className="px-1.5 py-0.5 rounded mx-0.5" style={{ background: 'var(--notes-surface-2)', border: '1px solid var(--notes-border)' }}>Esc</kbd> to close
+          {t("press-esc-to-close-prefix", { defaultValue: "Press" })} <kbd className="px-1.5 py-0.5 rounded mx-0.5" style={{ background: 'var(--notes-surface-2)', border: '1px solid var(--notes-border)' }}>Esc</kbd> {t("press-esc-to-close-suffix", { defaultValue: "to close" })}
         </div>
       </div>
     </div>

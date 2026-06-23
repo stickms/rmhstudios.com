@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Cropper from 'react-easy-crop';
 import type { Area } from 'react-easy-crop';
 import { FlipHorizontal, FlipVertical, RotateCcw, RotateCw, X, ZoomIn, ZoomOut } from 'lucide-react';
@@ -23,6 +24,7 @@ export function ImageCropModal({ imageSrc, onCropDone, onCancel, aspect = 1, cro
   const [flipV, setFlipV] = useState(false);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [saving, setSaving] = useState(false);
+  const { t } = useTranslation('feed');
 
   const onCropComplete = useCallback((_: Area, croppedPixels: Area) => {
     setCroppedAreaPixels(croppedPixels);
@@ -68,11 +70,11 @@ export function ImageCropModal({ imageSrc, onCropDone, onCancel, aspect = 1, cro
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-site-border shrink-0">
-          <h2 className="font-bold text-site-text">Crop Image</h2>
+          <h2 className="font-bold text-site-text">{t('crop-image', { defaultValue: 'Crop Image' })}</h2>
           <button
             onClick={onCancel}
             className="p-2.5 rounded-lg text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
-            aria-label="Close crop modal"
+            aria-label={t('close-crop-modal', { defaultValue: 'Close crop modal' })}
           >
             <X className="w-5 h-5" />
           </button>
@@ -122,8 +124,8 @@ export function ImageCropModal({ imageSrc, onCropDone, onCancel, aspect = 1, cro
               type="button"
               onClick={() => setRotation((r) => r - 90)}
               className="p-3 rounded-lg text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
-              title="Rotate left"
-              aria-label="Rotate left"
+              title={t('rotate-left', { defaultValue: 'Rotate left' })}
+              aria-label={t('rotate-left', { defaultValue: 'Rotate left' })}
             >
               <RotateCcw className="w-5 h-5" />
             </button>
@@ -131,8 +133,8 @@ export function ImageCropModal({ imageSrc, onCropDone, onCancel, aspect = 1, cro
               type="button"
               onClick={() => setRotation((r) => r + 90)}
               className="p-3 rounded-lg text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
-              title="Rotate right"
-              aria-label="Rotate right"
+              title={t('rotate-right', { defaultValue: 'Rotate right' })}
+              aria-label={t('rotate-right', { defaultValue: 'Rotate right' })}
             >
               <RotateCw className="w-5 h-5" />
             </button>
@@ -140,8 +142,8 @@ export function ImageCropModal({ imageSrc, onCropDone, onCancel, aspect = 1, cro
               type="button"
               onClick={() => setFlipH((f) => !f)}
               className={`p-3 rounded-lg transition-colors ${flipH ? 'text-site-accent bg-site-accent/10' : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'}`}
-              title="Flip horizontal"
-              aria-label="Flip horizontal"
+              title={t('flip-horizontal', { defaultValue: 'Flip horizontal' })}
+              aria-label={t('flip-horizontal', { defaultValue: 'Flip horizontal' })}
             >
               <FlipHorizontal className="w-5 h-5" />
             </button>
@@ -149,8 +151,8 @@ export function ImageCropModal({ imageSrc, onCropDone, onCancel, aspect = 1, cro
               type="button"
               onClick={() => setFlipV((f) => !f)}
               className={`p-3 rounded-lg transition-colors ${flipV ? 'text-site-accent bg-site-accent/10' : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'}`}
-              title="Flip vertical"
-              aria-label="Flip vertical"
+              title={t('flip-vertical', { defaultValue: 'Flip vertical' })}
+              aria-label={t('flip-vertical', { defaultValue: 'Flip vertical' })}
             >
               <FlipVertical className="w-5 h-5" />
             </button>
@@ -160,10 +162,10 @@ export function ImageCropModal({ imageSrc, onCropDone, onCancel, aspect = 1, cro
         {/* Actions */}
         <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-site-border shrink-0">
           <Button variant="ghost" onClick={onCancel}>
-            Cancel
+            {t('cancel', { defaultValue: 'Cancel' })}
           </Button>
           <Button variant="accent" disabled={saving} onClick={handleSave}>
-            {saving ? 'Applying...' : 'Apply'}
+            {saving ? t('applying', { defaultValue: 'Applying...' }) : t('apply', { defaultValue: 'Apply' })}
           </Button>
         </div>
       </div>

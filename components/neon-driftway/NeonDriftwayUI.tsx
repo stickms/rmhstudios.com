@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Play, ArrowLeft, RotateCcw, Trophy, Lock, Users } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
@@ -38,6 +39,7 @@ export function NeonDriftwayUI({
   onGoToMultiplayer?: () => void;
   multiplayerRankings?: { id: string; name: string; score: number; rank: number }[];
 }) {
+  const { t } = useTranslation("c-neon-driftway");
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
   const session = authClient.useSession();
@@ -94,7 +96,7 @@ export function NeonDriftwayUI({
           <h1 className="text-3xl sm:text-5xl font-black text-transparent bg-clip-text bg-linear-to-r from-cyan-400 via-white to-red-500 tracking-tighter">
             NEON DRIFTWAY
           </h1>
-          <p className="text-zinc-400 text-xs sm:text-sm">Endless highway survival racer. Dodge traffic, survive hazards, chase the leaderboard.</p>
+          <p className="text-zinc-400 text-xs sm:text-sm">{t("menu-tagline", { defaultValue: "Endless highway survival racer. Dodge traffic, survive hazards, chase the leaderboard." })}</p>
 
           <div className="space-y-3">
             {!session.data ? (
@@ -102,7 +104,7 @@ export function NeonDriftwayUI({
                 onClick={() => navigate({ to: '/login', search: { callbackURL: undefined } })}
                 className="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-3"
               >
-                Sign In to Play
+                {t("sign-in-to-play", { defaultValue: "Sign In to Play" })}
               </Button>
             ) : (
               <>
@@ -111,7 +113,7 @@ export function NeonDriftwayUI({
                   className="w-full bg-linear-to-r from-cyan-500 to-red-500 hover:from-cyan-600 hover:to-red-600 text-black font-bold py-3 text-lg"
                 >
                   <Play className="w-5 h-5 mr-2" />
-                  Play
+                  {t("play", { defaultValue: "Play" })}
                 </Button>
                 {onGoToMultiplayer && (
                   <Button
@@ -119,7 +121,7 @@ export function NeonDriftwayUI({
                     className="w-full bg-linear-to-r from-purple-500 to-cyan-500 hover:from-purple-600 hover:to-cyan-600 text-white font-bold py-3"
                   >
                     <Users className="w-5 h-5 mr-2" />
-                    Multiplayer
+                    {t("multiplayer", { defaultValue: "Multiplayer" })}
                   </Button>
                 )}
               </>
@@ -131,7 +133,7 @@ export function NeonDriftwayUI({
             <div className="bg-black/60 border border-zinc-700 rounded-lg p-4 mt-4">
               <div className="flex items-center gap-2 mb-3">
                 <Trophy className="w-4 h-4 text-yellow-400" />
-                <span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">Top Scores</span>
+                <span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">{t("top-scores", { defaultValue: "Top Scores" })}</span>
               </div>
               <div className="space-y-1">
                 {leaderboard.slice(0, 5).map((e, i) => (
@@ -145,8 +147,8 @@ export function NeonDriftwayUI({
           )}
 
           <div className="text-[10px] sm:text-xs text-zinc-600 space-y-1">
-            <p className="hidden sm:block">W/↑ accelerate · A/D or ←/→ steer · S/↓ brake · Shift boost · Esc pause</p>
-            <p className="sm:hidden">Touch controls appear during gameplay</p>
+            <p className="hidden sm:block">{t("keyboard-controls", { defaultValue: "W/↑ accelerate · A/D or ←/→ steer · S/↓ brake · Shift boost · Esc pause" })}</p>
+            <p className="sm:hidden">{t("touch-controls-hint", { defaultValue: "Touch controls appear during gameplay" })}</p>
           </div>
         </div>
       </div>
@@ -163,10 +165,10 @@ export function NeonDriftwayUI({
             onClick={onGoToMenu}
             className="flex items-center gap-1 text-zinc-400 hover:text-white text-xs sm:text-sm transition-colors"
           >
-            <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Back
+            <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> {t("back", { defaultValue: "Back" })}
           </button>
 
-          <h2 className="text-2xl sm:text-3xl font-black text-white text-center tracking-tight">SELECT LEVEL</h2>
+          <h2 className="text-2xl sm:text-3xl font-black text-white text-center tracking-tight">{t("select-level", { defaultValue: "SELECT LEVEL" })}</h2>
 
           <div className="grid gap-3">
             {levelIds.map(id => {
@@ -185,17 +187,17 @@ export function NeonDriftwayUI({
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="text-lg font-bold text-white">
-                        Level {id}: {lvl.name}
+                        {t("level-name", { defaultValue: "Level {{id}}: {{name}}", id, name: lvl.name })}
                       </div>
                       <div className="text-xs text-zinc-400 mt-0.5">{lvl.subtitle}</div>
                       <div className="text-xs text-zinc-500 mt-1">
-                        HP: {lvl.hp} · {lvl.gripEnabled ? 'Grip system' : lvl.headlightsEnabled ? 'Headlights' : 'Standard'}
+                        HP: {lvl.hp} · {lvl.gripEnabled ? t("grip-system", { defaultValue: "Grip system" }) : lvl.headlightsEnabled ? t("headlights", { defaultValue: "Headlights" }) : t("standard", { defaultValue: "Standard" })}
                       </div>
                     </div>
                     {!unlocked && <Lock className="w-5 h-5 text-zinc-500" />}
                     {unlocked && (
                       <div className="bg-cyan-500 text-black rounded-full px-3 py-1 text-xs font-bold">
-                        GO
+                        {t("go", { defaultValue: "GO" })}
                       </div>
                     )}
                   </div>
@@ -205,7 +207,7 @@ export function NeonDriftwayUI({
           </div>
 
           <p className="text-[10px] sm:text-xs text-zinc-600 text-center">
-            Drive 1,500m on a level to complete it and unlock the next
+            {t("unlock-hint", { defaultValue: "Drive 1,500m on a level to complete it and unlock the next" })}
           </p>
         </div>
       </div>
@@ -220,11 +222,11 @@ export function NeonDriftwayUI({
     return (
       <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-auto bg-black/80 backdrop-blur-sm overflow-y-auto">
         <div className="max-w-md w-full px-4 space-y-3 sm:space-y-4 py-6">
-          <h2 className="text-3xl sm:text-4xl font-black text-red-500 text-center tracking-tight">CRASHED</h2>
+          <h2 className="text-3xl sm:text-4xl font-black text-red-500 text-center tracking-tight">{t("crashed", { defaultValue: "CRASHED" })}</h2>
 
           <div className="bg-zinc-900/80 border border-zinc-700 rounded-lg p-5 space-y-3">
             <div className="text-center">
-              <div className="text-xs text-zinc-400 uppercase tracking-wider">Score</div>
+              <div className="text-xs text-zinc-400 uppercase tracking-wider">{t("score", { defaultValue: "Score" })}</div>
               <div className="text-3xl font-black text-cyan-400 tabular-nums">
                 {runStats.score.toLocaleString()}
               </div>
@@ -232,25 +234,25 @@ export function NeonDriftwayUI({
 
             <div className="grid grid-cols-2 gap-3 text-center">
               <div>
-                <div className="text-xs text-zinc-500">Distance</div>
+                <div className="text-xs text-zinc-500">{t("distance", { defaultValue: "Distance" })}</div>
                 <div className="text-lg font-bold text-white">{runStats.distance.toLocaleString()}m</div>
               </div>
               <div>
-                <div className="text-xs text-zinc-500">Time</div>
+                <div className="text-xs text-zinc-500">{t("time", { defaultValue: "Time" })}</div>
                 <div className="text-lg font-bold text-white">{timeStr}</div>
               </div>
               <div>
-                <div className="text-xs text-zinc-500">Top Speed</div>
+                <div className="text-xs text-zinc-500">{t("top-speed", { defaultValue: "Top Speed" })}</div>
                 <div className="text-lg font-bold text-white">{Math.round(runStats.maxSpeed * 0.5)} km/h</div>
               </div>
               <div>
-                <div className="text-xs text-zinc-500">Close Calls</div>
+                <div className="text-xs text-zinc-500">{t("close-calls", { defaultValue: "Close Calls" })}</div>
                 <div className="text-lg font-bold text-yellow-400">{runStats.closeCalls}</div>
               </div>
             </div>
 
             <div className="text-xs text-zinc-500 text-center">
-              Level {runStats.level}: {LEVELS[runStats.level].name}
+              {t("level-name", { defaultValue: "Level {{id}}: {{name}}", id: runStats.level, name: LEVELS[runStats.level].name })}
             </div>
           </div>
 
@@ -259,11 +261,11 @@ export function NeonDriftwayUI({
               onClick={() => navigate({ to: '/login', search: { callbackURL: undefined } })}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold"
             >
-              Sign In to Submit Score
+              {t("sign-in-to-submit", { defaultValue: "Sign In to Submit Score" })}
             </Button>
           ) : (
             <p className="text-xs text-green-400 text-center">
-              {scoreSubmitted ? '✓ Score submitted!' : 'Submitting score…'}
+              {scoreSubmitted ? t("score-submitted", { defaultValue: "Score submitted!" }) : t("submitting-score", { defaultValue: "Submitting score…" })}
             </p>
           )}
 
@@ -272,14 +274,14 @@ export function NeonDriftwayUI({
               onClick={() => onStartLevel(currentLevel)}
               className="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white font-bold"
             >
-              <RotateCcw className="w-4 h-4 mr-1" /> Restart
+              <RotateCcw className="w-4 h-4 mr-1" /> {t("restart", { defaultValue: "Restart" })}
             </Button>
             <Button
               onClick={onGoToLevelSelect}
               variant="outline"
               className="flex-1 border-zinc-600 text-zinc-300 hover:bg-zinc-800"
             >
-              Level Select
+              {t("level-select", { defaultValue: "Level Select" })}
             </Button>
           </div>
 
@@ -288,7 +290,7 @@ export function NeonDriftwayUI({
             <div className="bg-black/60 border border-zinc-700 rounded-lg p-3">
               <div className="flex items-center gap-2 mb-2">
                 <Trophy className="w-3 h-3 text-yellow-400" />
-                <span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">Leaderboard</span>
+                <span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">{t("leaderboard", { defaultValue: "Leaderboard" })}</span>
               </div>
               <div className="space-y-1 max-h-32 overflow-y-auto">
                 {leaderboard.slice(0, 10).map((e, i) => (
@@ -313,11 +315,11 @@ export function NeonDriftwayUI({
     return (
       <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-auto bg-black/80 backdrop-blur-sm overflow-y-auto">
         <div className="max-w-md w-full px-4 space-y-3 sm:space-y-4 py-6">
-          <h2 className="text-3xl sm:text-4xl font-black text-green-400 text-center tracking-tight">LEVEL COMPLETE!</h2>
+          <h2 className="text-3xl sm:text-4xl font-black text-green-400 text-center tracking-tight">{t("level-complete", { defaultValue: "LEVEL COMPLETE!" })}</h2>
 
           <div className="bg-zinc-900/80 border border-zinc-700 rounded-lg p-5 space-y-3">
             <div className="text-center">
-              <div className="text-xs text-zinc-400 uppercase tracking-wider">Score</div>
+              <div className="text-xs text-zinc-400 uppercase tracking-wider">{t("score", { defaultValue: "Score" })}</div>
               <div className="text-3xl font-black text-cyan-400 tabular-nums">
                 {runStats.score.toLocaleString()}
               </div>
@@ -325,31 +327,31 @@ export function NeonDriftwayUI({
 
             <div className="grid grid-cols-2 gap-3 text-center">
               <div>
-                <div className="text-xs text-zinc-500">Distance</div>
+                <div className="text-xs text-zinc-500">{t("distance", { defaultValue: "Distance" })}</div>
                 <div className="text-lg font-bold text-white">{runStats.distance.toLocaleString()}m</div>
               </div>
               <div>
-                <div className="text-xs text-zinc-500">Time</div>
+                <div className="text-xs text-zinc-500">{t("time", { defaultValue: "Time" })}</div>
                 <div className="text-lg font-bold text-white">{timeStr}</div>
               </div>
               <div>
-                <div className="text-xs text-zinc-500">Top Speed</div>
+                <div className="text-xs text-zinc-500">{t("top-speed", { defaultValue: "Top Speed" })}</div>
                 <div className="text-lg font-bold text-white">{Math.round(runStats.maxSpeed * 0.5)} km/h</div>
               </div>
               <div>
-                <div className="text-xs text-zinc-500">Close Calls</div>
+                <div className="text-xs text-zinc-500">{t("close-calls", { defaultValue: "Close Calls" })}</div>
                 <div className="text-lg font-bold text-yellow-400">{runStats.closeCalls}</div>
               </div>
             </div>
 
             <div className="text-xs text-zinc-500 text-center">
-              Level {runStats.level}: {LEVELS[runStats.level].name}
+              {t("level-name", { defaultValue: "Level {{id}}: {{name}}", id: runStats.level, name: LEVELS[runStats.level].name })}
             </div>
           </div>
 
           {session.data && (
             <p className="text-xs text-green-400 text-center">
-              {scoreSubmitted ? '✓ Score submitted!' : 'Submitting score…'}
+              {scoreSubmitted ? t("score-submitted", { defaultValue: "Score submitted!" }) : t("submitting-score", { defaultValue: "Submitting score…" })}
             </p>
           )}
 
@@ -358,19 +360,19 @@ export function NeonDriftwayUI({
               onClick={onContinueEndless}
               className="flex-1 bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold"
             >
-              Continue Endless
+              {t("continue-endless", { defaultValue: "Continue Endless" })}
             </Button>
             <Button
               onClick={onGoToLevelSelect}
               variant="outline"
               className="flex-1 border-zinc-600 text-zinc-300 hover:bg-zinc-800"
             >
-              Level Select
+              {t("level-select", { defaultValue: "Level Select" })}
             </Button>
           </div>
 
           <p className="text-xs text-zinc-600 text-center">
-            Endless mode ramps difficulty beyond the normal cap
+            {t("endless-mode-hint", { defaultValue: "Endless mode ramps difficulty beyond the normal cap" })}
           </p>
         </div>
       </div>

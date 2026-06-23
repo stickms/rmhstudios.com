@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import {
   Brain,
@@ -40,6 +41,7 @@ export function ResearchCard({
   article: ResearchArticle;
   index: number;
 }) {
+  const { t } = useTranslation("c-research");
   const Icon = iconMap[article.iconName] ?? Activity;
 
   return (
@@ -88,7 +90,7 @@ export function ResearchCard({
                 {article.journal} &middot; Vol.&nbsp;{article.volume}
               </span>
               <span className="text-xs font-medium text-(--site-accent) opacity-0 group-hover:opacity-100 transition-opacity">
-                Read Paper &rarr;
+                {t("read-paper", { defaultValue: "Read Paper" })} &rarr;
               </span>
             </div>
           </div>

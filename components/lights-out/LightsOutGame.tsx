@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from 'react-i18next';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from '@tanstack/react-router';
@@ -35,6 +36,7 @@ import {
 } from 'lucide-react';
 
 export function LightsOutGame() {
+    const { t } = useTranslation("c-lights-out");
     const todayKey = formatDateKey(new Date());
 
     // Selected date — defaults to today, can switch to past puzzles
@@ -255,7 +257,7 @@ export function LightsOutGame() {
     if (!grid) {
         return (
             <div className="min-h-100 flex items-center justify-center">
-                <div className="animate-pulse text-site-text-muted">Loading...</div>
+                <div className="animate-pulse text-site-text-muted">{t("loading", { defaultValue: "Loading..." })}</div>
             </div>
         );
     }
@@ -277,7 +279,7 @@ export function LightsOutGame() {
                 className="inline-flex items-center gap-1.5 text-site-text-muted hover:text-site-text text-sm mb-6 transition-colors"
             >
                 <ArrowLeft className="w-4 h-4" />
-                Back to Daily Puzzles
+                {t("back-to-daily-puzzles", { defaultValue: "Back to Daily Puzzles" })}
             </Link>
 
             {/* Header */}
@@ -287,7 +289,7 @@ export function LightsOutGame() {
                     Lights Out
                 </h1>
                 <p className="text-site-text-muted text-sm mb-2">
-                    {isToday ? 'Daily puzzle' : 'Past puzzle'} · {dateKey} · {getShapeLabel(shape)}
+                    {isToday ? t("daily-puzzle", { defaultValue: "Daily puzzle" }) : t("past-puzzle", { defaultValue: "Past puzzle" })} · {dateKey} · {getShapeLabel(shape)}
                 </p>
                 {!isToday && (
                     <button
@@ -296,13 +298,13 @@ export function LightsOutGame() {
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 mb-2 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 hover:bg-amber-500/30 transition-colors text-xs font-medium"
                     >
                         <ArrowLeft className="w-3 h-3" />
-                        Back to today&apos;s puzzle
+                        {t("back-to-todays-puzzle", { defaultValue: "Back to today's puzzle" })}
                     </button>
                 )}
                 <div className="inline-block px-4 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30">
-                    <p className="text-amber-400 font-semibold text-sm">Goal: Turn off every light</p>
+                    <p className="text-amber-400 font-semibold text-sm">{t("goal-label", { defaultValue: "Goal: Turn off every light" })}</p>
                     <p className="text-site-text-muted text-xs mt-0.5">
-                        Tap a light to toggle it and its neighbors. Fewer moves = better.
+                        {t("goal-description", { defaultValue: "Tap a light to toggle it and its neighbors. Fewer moves = better." })}
                     </p>
                 </div>
             </div>
@@ -310,19 +312,19 @@ export function LightsOutGame() {
             {/* Stats */}
             <div className="flex justify-center items-center gap-6 mb-6 flex-wrap">
                 <div className="flex items-center gap-2">
-                    <span className="text-site-text-muted text-sm">Moves</span>
+                    <span className="text-site-text-muted text-sm">{t("moves-label", { defaultValue: "Moves" })}</span>
                     <span className="text-site-text font-mono font-semibold">{moves}</span>
                 </div>
                 {bestMoves != null && (
                     <div className="flex items-center gap-2">
                         <Trophy className="w-4 h-4 text-amber-400" />
-                        <span className="text-site-text-muted text-sm">Best</span>
+                        <span className="text-site-text-muted text-sm">{t("best-label", { defaultValue: "Best" })}</span>
                         <span className="text-amber-400 font-mono font-semibold">{bestMoves}</span>
                     </div>
                 )}
                 <div className="flex items-center gap-2 text-site-text-muted text-sm">
                     <Lightbulb className="w-4 h-4" />
-                    <span>{hintsUsed}/3 hints</span>
+                    <span>{t("hints-used", { defaultValue: "{{hintsUsed}}/3 hints", hintsUsed })}</span>
                 </div>
             </div>
 
@@ -403,20 +405,20 @@ export function LightsOutGame() {
                     onClick={handleHint}
                     disabled={solved || hintsUsed >= 3}
                     className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-site-surface border border-site-border text-site-text hover:border-cyan-500/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Highlight next move (3 per day)"
+                    title={t("hint-title", { defaultValue: "Highlight next move (3 per day)" })}
                 >
                     <Lightbulb className="w-4 h-4" />
-                    Hint
+                    {t("hint-btn", { defaultValue: "Hint" })}
                 </motion.button>
                 {hintsUsed >= 3 && !solved && (
                     <motion.button
                         type="button"
                         onClick={handleGiveUp}
                         className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-site-surface border border-site-danger/50 text-site-danger hover:bg-site-danger/10 transition-colors"
-                        title="End puzzle with DNF"
+                        title={t("give-up-title", { defaultValue: "End puzzle with DNF" })}
                     >
                         <Flag className="w-4 h-4" />
-                        Give up?
+                        {t("give-up-btn", { defaultValue: "Give up?" })}
                     </motion.button>
                 )}
                 <motion.button
@@ -424,20 +426,20 @@ export function LightsOutGame() {
                     onClick={handleUndo}
                     disabled={solved || moveHistory.length === 0}
                     className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-site-surface border border-site-border text-site-text hover:border-site-accent/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Take back your last move"
+                    title={t("undo-title", { defaultValue: "Take back your last move" })}
                 >
                     <Undo2 className="w-4 h-4" />
-                    Undo
+                    {t("undo-btn", { defaultValue: "Undo" })}
                 </motion.button>
                 <motion.button
                     type="button"
                     onClick={initPuzzle}
                     disabled={solved}
                     className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-site-surface border border-site-border text-site-text hover:border-site-accent/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Restart this puzzle"
+                    title={t("restart-title", { defaultValue: "Restart this puzzle" })}
                 >
                     <RotateCcw className="w-4 h-4" />
-                    Restart
+                    {t("restart-btn", { defaultValue: "Restart" })}
                 </motion.button>
             </div>
 
@@ -454,8 +456,8 @@ export function LightsOutGame() {
                     >
                         {gaveUp ? (
                             <>
-                                <div className="text-2xl font-bold text-site-danger mb-1">Did Not Finish</div>
-                                <p className="text-site-text-muted text-sm">Submitted as DNF on the leaderboard.</p>
+                                <div className="text-2xl font-bold text-site-danger mb-1">{t("did-not-finish", { defaultValue: "Did Not Finish" })}</div>
+                                <p className="text-site-text-muted text-sm">{t("dnf-submitted", { defaultValue: "Submitted as DNF on the leaderboard." })}</p>
                             </>
                         ) : (
                             <>
@@ -463,15 +465,15 @@ export function LightsOutGame() {
                                     <div className="text-3xl mb-2">{rating.emoji}</div>
                                 )}
                                 <div className="text-2xl font-bold text-amber-400 mb-1">
-                                    {rating ? rating.label : 'All lights out!'}
+                                    {rating ? rating.label : t("all-lights-out", { defaultValue: "All lights out!" })}
                                 </div>
                                 <p className="text-site-text-muted text-sm">
-                                    Solved in {moves} move{moves !== 1 ? 's' : ''}.
-                                    {bestMoves != null && moves === bestMoves && ' Personal best!'}
+                                    {t("solved-in-moves", { defaultValue: "Solved in {{moves}} move{{plural}}.", moves, plural: moves !== 1 ? 's' : '' })}
+                                    {bestMoves != null && moves === bestMoves && ` ${t("personal-best", { defaultValue: "Personal best!" })}`}
                                 </p>
                                 {optimalMoves != null && (
                                     <p className="text-site-text-dim text-xs mt-1">
-                                        Optimal: {optimalMoves} move{optimalMoves !== 1 ? 's' : ''}
+                                        {t("optimal-moves", { defaultValue: "Optimal: {{optimalMoves}} move{{plural}}.", optimalMoves, plural: optimalMoves !== 1 ? 's' : '' })}
                                     </p>
                                 )}
 
@@ -479,11 +481,11 @@ export function LightsOutGame() {
                                 {optimalMoves != null && (
                                     <div className="mt-4 text-left max-w-[260px] mx-auto">
                                         {[
-                                            { emoji: '\u{1F31F}', label: 'Perfect!', desc: 'Optimal moves' },
-                                            { emoji: '\u2728', label: 'Excellent!', desc: '+1 move' },
-                                            { emoji: '\u{1F525}', label: 'Great!', desc: '+2\u20133 moves' },
-                                            { emoji: '\u{1F44D}', label: 'Good!', desc: '+4\u20136 moves' },
-                                            { emoji: '\u{1F4A1}', label: 'Solved!', desc: '+7 or more' },
+                                            { emoji: '\u{1F31F}', label: 'Perfect!', translatedLabel: t("tier-perfect", { defaultValue: "Perfect!" }), desc: t("tier-perfect-desc", { defaultValue: "Optimal moves" }) },
+                                            { emoji: '\u2728', label: 'Excellent!', translatedLabel: t("tier-excellent", { defaultValue: "Excellent!" }), desc: t("tier-excellent-desc", { defaultValue: "+1 move" }) },
+                                            { emoji: '\u{1F525}', label: 'Great!', translatedLabel: t("tier-great", { defaultValue: "Great!" }), desc: t("tier-great-desc", { defaultValue: "+2\u20133 moves" }) },
+                                            { emoji: '\u{1F44D}', label: 'Good!', translatedLabel: t("tier-good", { defaultValue: "Good!" }), desc: t("tier-good-desc", { defaultValue: "+4\u20136 moves" }) },
+                                            { emoji: '\u{1F4A1}', label: 'Solved!', translatedLabel: t("tier-solved", { defaultValue: "Solved!" }), desc: t("tier-solved-desc", { defaultValue: "+7 or more" }) },
                                         ].map((tier) => (
                                             <div
                                                 key={tier.label}
@@ -494,7 +496,7 @@ export function LightsOutGame() {
                                                 }`}
                                             >
                                                 <span className="w-5 text-center">{tier.emoji}</span>
-                                                <span className="w-20">{tier.label}</span>
+                                                <span className="w-20">{tier.translatedLabel}</span>
                                                 <span className="text-site-text-dim font-normal">{tier.desc}</span>
                                             </div>
                                         ))}
@@ -513,12 +515,12 @@ export function LightsOutGame() {
                                 {sharecopied ? (
                                     <>
                                         <Check className="w-4 h-4" />
-                                        Copied!
+                                        {t("copied", { defaultValue: "Copied!" })}
                                     </>
                                 ) : (
                                     <>
                                         <Share2 className="w-4 h-4" />
-                                        Share Result
+                                        {t("share-result", { defaultValue: "Share Result" })}
                                     </>
                                 )}
                             </button>
@@ -526,12 +528,12 @@ export function LightsOutGame() {
 
                         {!isToday && (
                             <p className="text-site-text-dim text-xs mt-3">
-                                Past puzzle — scores are saved locally but not to the leaderboard.
+                                {t("past-puzzle-note", { defaultValue: "Past puzzle — scores are saved locally but not to the leaderboard." })}
                             </p>
                         )}
                         {isToday && (
                             <p className="text-site-text-dim text-xs mt-2">
-                                A new puzzle unlocks tomorrow — same for everyone worldwide.
+                                {t("new-puzzle-tomorrow", { defaultValue: "A new puzzle unlocks tomorrow — same for everyone worldwide." })}
                             </p>
                         )}
                     </motion.div>
@@ -559,7 +561,7 @@ export function LightsOutGame() {
                     className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-site-surface border border-site-border text-site-text hover:border-site-accent/50 transition-colors text-sm font-medium"
                 >
                     <Calendar className="w-4 h-4" />
-                    Past Puzzles
+                    {t("past-puzzles-btn", { defaultValue: "Past Puzzles" })}
                     {showHistory ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </button>
 
@@ -603,7 +605,7 @@ export function LightsOutGame() {
                                                                 p.save.dnf ? 'text-site-danger' : 'text-amber-400'
                                                             }`}
                                                         >
-                                                            {p.save.dnf ? 'DNF' : `${p.save.moves} moves`}
+                                                            {p.save.dnf ? 'DNF' : t("moves-count", { defaultValue: "{{count}} moves", count: p.save.moves })}
                                                         </span>
                                                     </>
                                                 ) : (
@@ -613,7 +615,7 @@ export function LightsOutGame() {
                                                         className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-site-surface border border-site-border text-site-text hover:border-amber-500/50 transition-colors text-xs font-medium"
                                                     >
                                                         <Play className="w-3 h-3" />
-                                                        Play
+                                                        {t("play-btn", { defaultValue: "Play" })}
                                                     </button>
                                                 )}
                                             </div>

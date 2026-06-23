@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { GlassCard } from './GlassCard';
 import { WeatherData, getWeatherCondition } from '@/lib/weather';
 import { Cloud, Sun, CloudRain, CloudLightning, CloudSnow } from 'lucide-react';
@@ -11,6 +12,7 @@ interface ForecastWeeklyProps {
 }
 
 export const ForecastWeekly = ({ data, units }: ForecastWeeklyProps) => {
+  const { t } = useTranslation("c-rmh-weather");
   const tempUnit = units === 'metric' ? '°C' : '°F';
 
   const getIcon = (code: number) => {
@@ -27,7 +29,7 @@ export const ForecastWeekly = ({ data, units }: ForecastWeeklyProps) => {
     <GlassCard className="p-0">
       <div className="px-6 py-4 border-b border-weather bg-weather-glass">
         <h3 className="text-lg font-semibold text-weather">
-          7-Day Forecast
+          {t("7-day-forecast", { defaultValue: "7-Day Forecast" })}
         </h3>
       </div>
       <div className="divide-y border-weather overflow-x-auto">
@@ -40,7 +42,7 @@ export const ForecastWeekly = ({ data, units }: ForecastWeeklyProps) => {
             <div key={day.date} className="px-6 py-4 flex items-center justify-between group hover:bg-white/5 transition-colors min-w-105">
               <div className="w-32">
                 <div className={`font-medium ${isToday ? 'text-blue-500 font-bold' : 'text-weather'}`}>
-                  {isToday ? 'Today' : date.split(',')[0]}
+                  {isToday ? t("today", { defaultValue: "Today" }) : date.split(',')[0]}
                 </div>
                 <div className="text-xs text-weather-muted opacity-80">
                   {date.split(',')[1]}

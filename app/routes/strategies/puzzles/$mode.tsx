@@ -11,6 +11,7 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, useCallback } from 'react';
 import { ArrowLeft, RotateCcw, ArrowUpDown, GripVertical } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { PuzzleShell } from '@/components/doctrine/puzzles/puzzle-shell';
 import { ResultCard } from '@/components/doctrine/puzzles/result-card';
 import { useDoctrinePuzzleState } from '@/hooks/useDoctrinePuzzleState';
@@ -28,6 +29,7 @@ type PuzzleData = {
 };
 
 function PuzzleModePage() {
+  const { t } = useTranslation("r-strategies");
   const params = Route.useParams() as { mode: string };
   const mode = params.mode;
   const [replayPuzzle, setReplayPuzzle] = useState<PuzzleData | null>(null);
@@ -62,7 +64,7 @@ function PuzzleModePage() {
   if (!activePuzzle) {
     return (
       <div className="min-h-dvh flex items-center justify-center" style={{ background: 'var(--doctrine-bg-primary)' }}>
-        <p className="text-sm text-white/40">Loading puzzle...</p>
+        <p className="text-sm text-white/40">{t("loading-puzzle", { defaultValue: "Loading puzzle..." })}</p>
       </div>
     );
   }
@@ -89,6 +91,7 @@ function PuzzlePlayer({
   isReplay: boolean;
   onPlayAgain: () => void;
 }) {
+  const { t } = useTranslation("r-strategies");
   const queryClient = useQueryClient();
   const { phase, result, error, attempts, startPlaying, submit, reset } = useDoctrinePuzzleState(puzzle.id, isReplay);
   const { playTung, playSuccess } = useDoctrineSound();
@@ -135,12 +138,12 @@ function PuzzlePlayer({
             className="w-full py-3 rounded-lg text-base md:text-sm font-bold transition-all hover:brightness-110 active:scale-[0.98] min-h-11"
             style={{ background: 'var(--doctrine-accent, #F97316)', color: '#000' }}
           >
-            SUBMIT
+            {t("submit", { defaultValue: "SUBMIT" })}
           </button>
         )}
 
         {phase === 'submitting' && (
-          <div className="text-center text-sm text-white/40">Submitting...</div>
+          <div className="text-center text-sm text-white/40">{t("submitting", { defaultValue: "Submitting..." })}</div>
         )}
 
         {/* Result card */}
@@ -163,7 +166,7 @@ function PuzzlePlayer({
                 style={{ background: 'var(--doctrine-bg-secondary)', border: '1px solid rgba(255,255,255,0.06)', color: 'var(--doctrine-text-primary, #fff)' }}
               >
                 <ArrowLeft size={16} />
-                Back to Puzzles
+                {t("back-to-puzzles", { defaultValue: "Back to Puzzles" })}
               </Link>
               <button
                 onClick={handlePlayAgain}
@@ -171,7 +174,7 @@ function PuzzlePlayer({
                 style={{ background: 'var(--doctrine-accent, #F97316)', color: '#000' }}
               >
                 <RotateCcw size={16} />
-                Play Again
+                {t("play-again", { defaultValue: "Play Again" })}
               </button>
             </div>
           </>
@@ -184,15 +187,15 @@ function PuzzlePlayer({
 
         {phase === 'expired' && (
           <div className="text-center py-8 space-y-4">
-            <p className="text-lg font-bold text-white/60">Time's Up</p>
-            <p className="text-sm text-white/30 mt-1">This puzzle has expired.</p>
+            <p className="text-lg font-bold text-white/60">{t("times-up", { defaultValue: "Time's Up" })}</p>
+            <p className="text-sm text-white/30 mt-1">{t("puzzle-expired", { defaultValue: "This puzzle has expired." })}</p>
             <button
               onClick={handlePlayAgain}
               className="px-6 py-3 rounded-lg text-base md:text-sm font-medium min-h-11 transition-all hover:brightness-110"
               style={{ background: 'var(--doctrine-accent, #F97316)', color: '#000' }}
             >
               <RotateCcw size={16} className="inline mr-2" />
-              Play a New Puzzle
+              {t("play-new-puzzle", { defaultValue: "Play a New Puzzle" })}
             </button>
           </div>
         )}
@@ -215,13 +218,14 @@ function PuzzleContent({ mode, data, onAnswer }: { mode: string; data: Record<st
 // ─── Alibi ──────────────────────────────────────────────────────────────────
 
 function AlibiPuzzle({ data, onAnswer }: { data: Record<string, unknown>; onAnswer: (a: unknown) => void }) {
+  const { t } = useTranslation("r-strategies");
   const suspects = data.suspects as Array<{ name: string; claim: string }>;
   const evidence = data.evidence as string | undefined;
   const [selected, setSelected] = useState<string | null>(null);
 
   return (
     <div className="space-y-3">
-      <p className="text-base md:text-sm text-white/60 text-center">Who's lying? Tap the suspect whose alibi is contradicted.</p>
+      <p className="text-base md:text-sm text-white/60 text-center">{t("alibi-prompt", { defaultValue: "Who's lying? Tap the suspect whose alibi is contradicted." })}</p>
       {evidence && (
         <div className="p-3 rounded-lg text-sm md:text-xs text-amber-300/80 text-center leading-relaxed"
           style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.15)' }}>
@@ -254,12 +258,13 @@ function AlibiPuzzle({ data, onAnswer }: { data: Record<string, unknown>; onAnsw
 // ─── Outcast ────────────────────────────────────────────────────────────────
 
 function OutcastPuzzle({ data, onAnswer }: { data: Record<string, unknown>; onAnswer: (a: unknown) => void }) {
+  const { t } = useTranslation("r-strategies");
   const words = data.words as string[];
   const [selected, setSelected] = useState<string | null>(null);
 
   return (
     <div className="space-y-3">
-      <p className="text-base md:text-sm text-white/60 text-center">Which word doesn't belong?</p>
+      <p className="text-base md:text-sm text-white/60 text-center">{t("outcast-prompt", { defaultValue: "Which word doesn't belong?" })}</p>
       <div className="flex flex-wrap justify-center gap-2">
         {words?.map(w => (
           <button
@@ -284,12 +289,13 @@ function OutcastPuzzle({ data, onAnswer }: { data: Record<string, unknown>; onAn
 // ─── Impostor ───────────────────────────────────────────────────────────────
 
 function ImpostorPuzzle({ data, onAnswer }: { data: Record<string, unknown>; onAnswer: (a: unknown) => void }) {
+  const { t } = useTranslation("r-strategies");
   const pairs = data.pairs as Array<{ word: string; definition: string }>;
   const [selected, setSelected] = useState<string | null>(null);
 
   return (
     <div className="space-y-3">
-      <p className="text-base md:text-sm text-white/60 text-center">Which word has the wrong definition?</p>
+      <p className="text-base md:text-sm text-white/60 text-center">{t("impostor-prompt", { defaultValue: "Which word has the wrong definition?" })}</p>
       <div className="space-y-2">
         {pairs?.map(p => (
           <button
@@ -315,6 +321,7 @@ function ImpostorPuzzle({ data, onAnswer }: { data: Record<string, unknown>; onA
 // ─── Spectrum (drag-to-reorder) ─────────────────────────────────────────────
 
 function SpectrumPuzzle({ data, onAnswer }: { data: Record<string, unknown>; onAnswer: (a: unknown) => void }) {
+  const { t } = useTranslation("r-strategies");
   const low = data.low as string;
   const high = data.high as string;
   const initialItems = data.items as string[];
@@ -333,7 +340,7 @@ function SpectrumPuzzle({ data, onAnswer }: { data: Record<string, unknown>; onA
     <div className="space-y-4">
       <p className="text-base md:text-sm text-white/60 text-center">
         <ArrowUpDown size={14} className="inline mr-1" />
-        Order these items from <strong className="text-white/80">{low}</strong> to <strong className="text-white/80">{high}</strong>
+        {t("spectrum-prompt", { defaultValue: "Order these items from {{low}} to {{high}}", low, high })}
       </p>
 
       {/* Spectrum endpoints */}
@@ -368,7 +375,7 @@ function SpectrumPuzzle({ data, onAnswer }: { data: Record<string, unknown>; onA
       </div>
 
       {/* Tap-to-swap for mobile: select two items to swap */}
-      <p className="text-xs text-white/20 text-center md:hidden">Drag items to reorder, or tap two items to swap</p>
+      <p className="text-xs text-white/20 text-center md:hidden">{t("drag-to-reorder", { defaultValue: "Drag items to reorder, or tap two items to swap" })}</p>
     </div>
   );
 }
@@ -376,6 +383,7 @@ function SpectrumPuzzle({ data, onAnswer }: { data: Record<string, unknown>; onA
 // ─── Chainlink (reorder middle words) ───────────────────────────────────────
 
 function ChainlinkPuzzle({ data, onAnswer }: { data: Record<string, unknown>; onAnswer: (a: unknown) => void }) {
+  const { t } = useTranslation("r-strategies");
   const start = data.start as string;
   const end = data.end as string;
   const scrambled = data.scrambled as string[];
@@ -396,7 +404,7 @@ function ChainlinkPuzzle({ data, onAnswer }: { data: Record<string, unknown>; on
   return (
     <div className="space-y-4">
       <p className="text-base md:text-sm text-white/60 text-center">
-        Build the chain! Reorder the middle words to connect <strong className="text-white/80">{start}</strong> to <strong className="text-white/80">{end}</strong>.
+        {t("chainlink-prompt", { defaultValue: "Build the chain! Reorder the middle words to connect {{start}} to {{end}}.", start, end })}
       </p>
 
       {/* Fixed start */}
@@ -405,7 +413,7 @@ function ChainlinkPuzzle({ data, onAnswer }: { data: Record<string, unknown>; on
         style={{ background: 'var(--doctrine-accent-muted)', border: '1px solid var(--doctrine-accent, #F97316)' }}
       >
         <span className="text-base md:text-sm font-bold" style={{ color: 'var(--doctrine-accent)' }}>{start}</span>
-        <span className="text-xs font-mono text-white/30 ml-auto">START</span>
+        <span className="text-xs font-mono text-white/30 ml-auto">{t("chain-start", { defaultValue: "START" })}</span>
       </div>
 
       {/* Draggable middle */}
@@ -438,7 +446,7 @@ function ChainlinkPuzzle({ data, onAnswer }: { data: Record<string, unknown>; on
         style={{ background: 'var(--doctrine-accent-muted)', border: '1px solid var(--doctrine-accent, #F97316)' }}
       >
         <span className="text-base md:text-sm font-bold" style={{ color: 'var(--doctrine-accent)' }}>{end}</span>
-        <span className="text-xs font-mono text-white/30 ml-auto">END</span>
+        <span className="text-xs font-mono text-white/30 ml-auto">{t("chain-end", { defaultValue: "END" })}</span>
       </div>
     </div>
   );
@@ -447,10 +455,11 @@ function ChainlinkPuzzle({ data, onAnswer }: { data: Record<string, unknown>; on
 // ─── Generic fallback ───────────────────────────────────────────────────────
 
 function GenericPuzzle() {
+  const { t } = useTranslation("r-strategies");
   return (
     <div className="text-center py-8">
-      <p className="text-sm text-white/40">Puzzle mode not yet implemented.</p>
-      <p className="text-xs text-white/20 mt-1">Check back soon.</p>
+      <p className="text-sm text-white/40">{t("generic-not-implemented", { defaultValue: "Puzzle mode not yet implemented." })}</p>
+      <p className="text-xs text-white/20 mt-1">{t("check-back-soon", { defaultValue: "Check back soon." })}</p>
     </div>
   );
 }

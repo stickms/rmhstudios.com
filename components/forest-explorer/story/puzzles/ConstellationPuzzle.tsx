@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useRef, useCallback } from 'react';
+import { useTranslation } from "react-i18next";
 import type { PuzzleComponentProps } from './PuzzleRegistry';
 
 interface Star {
@@ -69,6 +70,7 @@ export { PATTERNS as CONSTELLATION_PATTERNS };
 // ─── Component ─────────────────────────────────────────────────────────────
 
 export function ConstellationPuzzle({ config, onSolve, onAttempt }: PuzzleComponentProps) {
+    const { t } = useTranslation("c-forest-explorer");
     const patternName = (config.pattern as string) ?? 'tree_of_life';
     const pattern = PATTERNS[patternName] ?? PATTERNS.tree_of_life;
 
@@ -142,7 +144,7 @@ export function ConstellationPuzzle({ config, onSolve, onAttempt }: PuzzleCompon
     return (
         <div className="w-full max-w-lg mx-auto space-y-4">
             <p className="text-center text-white/50 text-sm">
-                Connect the bright stars ({edges.length}/{correctEdges.length} edges)
+                {t("connect-bright-stars", { defaultValue: "Connect the bright stars ({{current}}/{{total}} edges)", current: edges.length, total: correctEdges.length })}
             </p>
 
             <div className="relative bg-gradient-to-b from-[#0a0a2a] to-[#0a0520] rounded-xl border border-white/10 overflow-hidden">
@@ -223,7 +225,7 @@ export function ConstellationPuzzle({ config, onSolve, onAttempt }: PuzzleCompon
                     className="px-4 py-2 bg-white/10 hover:bg-white/15 text-white/60 rounded-lg text-xs cursor-pointer"
                     onClick={() => { setEdges([]); setSelectedStar(null); }}
                 >
-                    Reset
+                    {t("reset", { defaultValue: "Reset" })}
                 </button>
             </div>
         </div>

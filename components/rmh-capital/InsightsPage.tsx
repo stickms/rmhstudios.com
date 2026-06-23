@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
+import { useTranslation } from "react-i18next";
 
 const CATEGORIES = [
   { id: 'all', label: 'All' },
@@ -30,17 +31,17 @@ const ARTICLES: Article[] = [
 ];
 
 export default function InsightsPage() {
+  const { t } = useTranslation("c-rmh-capital");
   const [active, setActive] = useState<string>('all');
 
   return (
     <>
       <section className="pagehead">
         <div className="container pagehead-inner">
-          <span className="eyebrow reveal">Insights</span>
-          <h1 className="serif reveal d1">Intelligence from across the platform.</h1>
+          <span className="eyebrow reveal">{t("insights-eyebrow", { defaultValue: "Insights" })}</span>
+          <h1 className="serif reveal d1">{t("insights-heading", { defaultValue: "Intelligence from across the platform." })}</h1>
           <p className="lede reveal d2">
-            Research and commentary from the teams advising on the deals, markets, and companies shaping the year ahead —
-            written for the people who have to act on it.
+            {t("insights-lede", { defaultValue: "Research and commentary from the teams advising on the deals, markets, and companies shaping the year ahead — written for the people who have to act on it." })}
           </p>
         </div>
       </section>
@@ -50,34 +51,33 @@ export default function InsightsPage() {
           {/* FEATURED */}
           <div className="featured reveal">
             <a className="featured-main" href="#">
-              <span className="metaline">Markets <span className="dot" /> <span className="t">8 min read</span></span>
-              <h3>The 2026 capital cycle: where conviction meets discipline</h3>
+              <span className="metaline">{t("featured-main-metaline", { defaultValue: "Markets" })} <span className="dot" /> <span className="t">{t("featured-main-read", { defaultValue: "8 min read" })}</span></span>
+              <h3>{t("featured-main-title", { defaultValue: "The 2026 capital cycle: where conviction meets discipline" })}</h3>
               <p>
-                Our markets and investment-banking teams on the conditions reshaping issuance, M&amp;A, and private capital
-                — and how the firm's clients are positioning for what comes next.
+                {t("featured-main-blurb", { defaultValue: "Our markets and investment-banking teams on the conditions reshaping issuance, M&A, and private capital — and how the firm's clients are positioning for what comes next." })}
               </p>
             </a>
             <div className="featured-side">
               <a className="fside-item" href="#">
-                <span className="metaline">Venture Capital</span>
-                <h4>What the strongest founders get right before their first round</h4>
-                <p>Patterns from across our accelerator cohorts.</p>
+                <span className="metaline">{t("fside-1-metaline", { defaultValue: "Venture Capital" })}</span>
+                <h4>{t("fside-1-title", { defaultValue: "What the strongest founders get right before their first round" })}</h4>
+                <p>{t("fside-1-blurb", { defaultValue: "Patterns from across our accelerator cohorts." })}</p>
               </a>
               <a className="fside-item" href="#">
-                <span className="metaline">Risk &amp; Regulation</span>
-                <h4>Reading the new capital rules without overreacting to them</h4>
-                <p>A practical view on the Basel III endgame.</p>
+                <span className="metaline">{t("fside-2-metaline", { defaultValue: "Risk & Regulation" })}</span>
+                <h4>{t("fside-2-title", { defaultValue: "Reading the new capital rules without overreacting to them" })}</h4>
+                <p>{t("fside-2-blurb", { defaultValue: "A practical view on the Basel III endgame." })}</p>
               </a>
               <a className="fside-item" href="#">
-                <span className="metaline">Private Equity</span>
-                <h4>Impact housing as an institutional asset class</h4>
-                <p>Returns and resilience in affordable housing.</p>
+                <span className="metaline">{t("fside-3-metaline", { defaultValue: "Private Equity" })}</span>
+                <h4>{t("fside-3-title", { defaultValue: "Impact housing as an institutional asset class" })}</h4>
+                <p>{t("fside-3-blurb", { defaultValue: "Returns and resilience in affordable housing." })}</p>
               </a>
             </div>
           </div>
 
           {/* FILTERS */}
-          <div className="filters reveal" role="group" aria-label="Filter insights by category">
+          <div className="filters reveal" role="group" aria-label={t("filters-aria-label", { defaultValue: "Filter insights by category" })}>
             {CATEGORIES.map((c) => (
               <button
                 key={c.id}
@@ -99,7 +99,7 @@ export default function InsightsPage() {
                   <span className="metaline">{a.meta} <span className="dot" /> <span className="t">{a.read}</span></span>
                   <h3>{a.title}</h3>
                   <p>{a.blurb}</p>
-                  <span className="rd">Read →</span>
+                  <span className="rd">{t("read-link", { defaultValue: "Read →" })}</span>
                 </a>
               );
             })}
@@ -110,11 +110,11 @@ export default function InsightsPage() {
       <section className="section tight">
         <div className="container">
           <div className="cta-band reveal">
-            <span className="eyebrow center">Stay Informed</span>
-            <h2 style={{ marginTop: 18 }}>Get our perspectives in your inbox.</h2>
-            <p>Subscribe for research and commentary from across the platform. We send what's worth reading, and nothing else.</p>
+            <span className="eyebrow center">{t("cta-eyebrow", { defaultValue: "Stay Informed" })}</span>
+            <h2 style={{ marginTop: 18 }}>{t("cta-heading", { defaultValue: "Get our perspectives in your inbox." })}</h2>
+            <p>{t("cta-body", { defaultValue: "Subscribe for research and commentary from across the platform. We send what's worth reading, and nothing else." })}</p>
             <Link className="btn btn-gold" to="/rmh-capital/contact" search={{ type: 'General Inquiry' }}>
-              Subscribe <span className="arw">→</span>
+              {t("cta-subscribe", { defaultValue: "Subscribe" })} <span className="arw">&rarr;</span>
             </Link>
           </div>
         </div>

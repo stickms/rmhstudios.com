@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Search, ChevronDown, X, User, Plus, Award } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
 import type { BuildCategory, BuildSortOption } from '@/lib/user-builds-types';
 
@@ -20,10 +21,10 @@ interface BuildFiltersProps {
   onCuratedChange: (curated: boolean) => void;
 }
 
-const SORT_OPTIONS: { value: BuildSortOption; label: string }[] = [
-  { value: 'recent', label: 'Most Recent' },
-  { value: 'popular', label: 'Most Liked' },
-  { value: 'views', label: 'Most Viewed' },
+const SORT_OPTIONS_VALUES: { value: BuildSortOption; labelKey: string; labelDefault: string }[] = [
+  { value: 'recent', labelKey: 'sort-most-recent', labelDefault: 'Most Recent' },
+  { value: 'popular', labelKey: 'sort-most-liked', labelDefault: 'Most Liked' },
+  { value: 'views', labelKey: 'sort-most-viewed', labelDefault: 'Most Viewed' },
 ];
 
 export function BuildFilters({
@@ -39,6 +40,7 @@ export function BuildFilters({
   onMyBuildsChange,
   onCuratedChange,
 }: BuildFiltersProps) {
+  const { t } = useTranslation("c-user-builds");
   const { data: session } = useSession();
   const [search, setSearch] = useState(searchQuery);
   const [showCategories, setShowCategories] = useState(false);
@@ -54,6 +56,7 @@ export function BuildFilters({
     return () => clearTimeout(timer);
   }, [search, searchQuery, onSearchChange]);
 
+  const SORT_OPTIONS = SORT_OPTIONS_VALUES.map((o) => ({ ...o, label: t(o.labelKey, { defaultValue: o.labelDefault }) }));
   const selectedCategoryData = categories.find((c) => c.id === selectedCategory);
   const selectedSortData = SORT_OPTIONS.find((s) => s.value === selectedSort);
 
@@ -65,7 +68,7 @@ export function BuildFilters({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-site-text-dim" />
           <input
             type="text"
-            placeholder="Search builds..."
+            placeholder={t("search-builds", { defaultValue: "Search builds..." })}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-9 py-2 rounded-lg bg-site-surface border border-site-border text-site-text text-sm outline-none focus:border-violet-500/50 transition-colors"
@@ -84,7 +87,7 @@ export function BuildFilters({
           className="flex items-center gap-1.5 shrink-0 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium transition-colors"
         >
           <Plus className="w-4 h-4" />
-          <span className="hidden sm:inline">Submit</span>
+          <span className="hidden sm:inline">{t("submit", { defaultValue: "Submit" })}</span>
         </Link>
       </div>
 
@@ -96,7 +99,7 @@ export function BuildFilters({
               onClick={() => setShowCategories(!showCategories)}
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-site-surface border border-site-border text-sm text-site-text hover:border-violet-500/50 transition-colors min-w-[140px]"
             >
-              <span className="truncate">{selectedCategoryData?.name || 'All Categories'}</span>
+              <span className="truncate">{selectedCategoryData?.name || t("all-categories", { defaultValue: "All Categories" })}</span>
               <ChevronDown className={`w-4 h-4 ml-auto transition-transform ${showCategories ? 'rotate-180' : ''}`} />
             </button>
 
@@ -115,7 +118,7 @@ export function BuildFilters({
                         : 'text-site-text-muted hover:text-site-text hover:bg-site-surface-hover'
                     }`}
                   >
-                    All Categories
+                    {t("all-categories", { defaultValue: "All Categories" })}
                   </button>
                   {categories.map((cat) => (
                     <button
@@ -147,7 +150,7 @@ export function BuildFilters({
               onClick={() => setShowSort(!showSort)}
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-site-surface border border-site-border text-sm text-site-text hover:border-violet-500/50 transition-colors min-w-[140px]"
             >
-              <span>{selectedSortData?.label || 'Sort by'}</span>
+              <span>{selectedSortData?.label || t("sort-by", { defaultValue: "Sort by" })}</span>
               <ChevronDown className={`w-4 h-4 ml-auto transition-transform ${showSort ? 'rotate-180' : ''}`} />
             </button>
 
@@ -186,7 +189,7 @@ export function BuildFilters({
             }`}
           >
             <Award className="w-4 h-4" />
-            <span>Curated</span>
+            <span>{t("curated", { defaultValue: "Curated" })}</span>
           </button>
 
           {/* My Builds Toggle */}
@@ -200,7 +203,7 @@ export function BuildFilters({
               }`}
             >
               <User className="w-4 h-4" />
-              <span>My Builds</span>
+              <span>{t("my-builds", { defaultValue: "My Builds" })}</span>
             </button>
           )}
         </div>

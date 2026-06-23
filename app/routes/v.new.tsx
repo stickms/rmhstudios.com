@@ -10,6 +10,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { createFileRoute, redirect, useNavigate, Link } from '@tanstack/react-router';
 import { streamVibe, VibeStreamError } from '@/lib/rmhvibe/vibe-stream';
 import { asVibeModel } from '@/lib/rmhvibe/vibe-types';
@@ -31,6 +32,7 @@ export const Route = createFileRoute('/v/new')({
 });
 
 function VibeNew() {
+  const { t } = useTranslation("pages");
   const { prompt, model } = Route.useSearch();
   const navigate = useNavigate();
   const started = useRef(false);
@@ -114,13 +116,13 @@ function VibeNew() {
     <div className="vibe-screen fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 px-6 py-12">
       <div className="vibe-spinner" aria-hidden="true" />
       <div className="text-center">
-        <p className="vibe-rise text-lg font-semibold tracking-tight">Creating your vibe…</p>
+        <p className="vibe-rise text-lg font-semibold tracking-tight">{t("creating-your-vibe", { defaultValue: "Creating your vibe…" })}</p>
         <p className="vibe-rise-2 vibe-hint mt-2">
           {content
-            ? 'Writing the code.'
+            ? t("writing-the-code", { defaultValue: "Writing the code." })
             : thinking
-              ? 'Thinking it through.'
-              : 'Warming up the model.'}
+              ? t("thinking-it-through", { defaultValue: "Thinking it through." })
+              : t("warming-up-the-model", { defaultValue: "Warming up the model." })}
         </p>
       </div>
       {/* Show the thinking until code starts, then swap to the live file list so the
@@ -135,12 +137,13 @@ function VibeNew() {
 }
 
 function VibeError({ message }: { message: string }) {
+  const { t } = useTranslation("pages");
   return (
     <div className="vibe-screen fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 px-6 text-center">
-      <p className="vibe-rise text-2xl font-bold tracking-tight">Couldn&apos;t create that vibe</p>
+      <p className="vibe-rise text-2xl font-bold tracking-tight">{t("couldnt-create-that-vibe", { defaultValue: "Couldn't create that vibe" })}</p>
       <p className="vibe-rise-2 vibe-hint max-w-md">{message}</p>
       <Link to="/v" className="vibe-rise-3 vibe-toolbar__cta mt-3">
-        Back to pages
+        {t("back-to-pages", { defaultValue: "Back to pages" })}
       </Link>
     </div>
   );

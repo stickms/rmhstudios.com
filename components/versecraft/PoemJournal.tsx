@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/lib/versecraft/store';
 import { CHARACTERS, getCharacterFirstName } from '@/lib/versecraft/characters';
 import type { PoemRecord, Grade } from '@/lib/versecraft/types';
@@ -51,6 +52,7 @@ function PoemCard({ poem, isSelected, onClick }: {
 }
 
 export function PoemJournal() {
+  const { t } = useTranslation("c-versecraft");
   const poemHistory = useGameStore(s => s.poemHistory);
   const settings = useGameStore(s => s.settings);
   const setScreen = useGameStore(s => s.setScreen);
@@ -70,7 +72,7 @@ export function PoemJournal() {
           className="text-xl"
           style={{ fontFamily: 'var(--font-cinzel, serif)', color: '#c4a35a' }}
         >
-          Poem Journal
+          {t("poem-journal", { defaultValue: "Poem Journal" })}
         </h2>
         <button
           onClick={goBack}
@@ -81,7 +83,7 @@ export function PoemJournal() {
             color: '#a89888',
           }}
         >
-          Close
+          {t("close", { defaultValue: "Close" })}
         </button>
       </div>
 
@@ -94,7 +96,7 @@ export function PoemJournal() {
         >
           {poemHistory.length === 0 ? (
             <p className="text-sm text-center py-8" style={{ color: '#555' }}>
-              No poems written yet.
+              {t("no-poems-yet", { defaultValue: "No poems written yet." })}
             </p>
           ) : (
             poemHistory.map(poem => (
@@ -190,7 +192,7 @@ export function PoemJournal() {
               </motion.div>
             ) : (
               <p className="text-sm text-center py-12" style={{ color: '#555' }}>
-                Select a poem to view details.
+                {t("select-poem-prompt", { defaultValue: "Select a poem to view details." })}
               </p>
             )}
           </AnimatePresence>

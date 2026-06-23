@@ -9,6 +9,7 @@
 
 import { motion } from 'framer-motion';
 import { Check, X, Clock, SkipForward, Zap } from 'lucide-react';
+import { useTranslation } from "react-i18next";
 import { FF_SPEED_BONUS } from '@/lib/rmhbox/constants';
 
 export interface PlayerResult {
@@ -43,6 +44,7 @@ export default function AnswerReveal({
   playerResults,
   myPlayerId,
 }: AnswerRevealProps) {
+  const { t } = useTranslation("c-rmhbox");
   // Sort: correct first, then by score change desc
   const sorted = [...playerResults].sort((a, b) => {
     if (a.isCorrect !== b.isCorrect) return a.isCorrect ? -1 : 1;
@@ -58,7 +60,7 @@ export default function AnswerReveal({
     >
       {/* Correct answer highlight */}
       <div className="rounded-xl border-2 border-green-500 bg-green-500/10 p-4 text-center">
-        <p className="mb-1 text-xs font-semibold uppercase text-green-400">Correct Answer</p>
+        <p className="mb-1 text-xs font-semibold uppercase text-green-400">{t("correct-answer", { defaultValue: "Correct Answer" })}</p>
         <p className="text-lg font-bold text-green-400">
           {LABELS[correctIndex]}. {correctAnswer}
         </p>
@@ -87,7 +89,7 @@ export default function AnswerReveal({
 
       {/* Player results */}
       <div className="space-y-2">
-        <h4 className="text-xs font-semibold uppercase text-(--rmhbox-text-muted)">Results</h4>
+        <h4 className="text-xs font-semibold uppercase text-(--rmhbox-text-muted)">{t("results", { defaultValue: "Results" })}</h4>
         {sorted.map((pr, i) => {
           const isMe = pr.userId === myPlayerId;
           return (
@@ -122,16 +124,16 @@ export default function AnswerReveal({
                   {/* First badge */}
                   {pr.isFirst && (
                     <span className="flex items-center gap-0.5 rounded-full bg-yellow-500/20 px-1.5 py-0.5 text-[10px] font-bold text-yellow-400">
-                      <Zap className="h-3 w-3" /> First! +{pr.speedBonus ?? FF_SPEED_BONUS}
+                      <Zap className="h-3 w-3" /> {t("first-badge", { defaultValue: "First!" })} +{pr.speedBonus ?? FF_SPEED_BONUS}
                     </span>
                   )}
 
                   {/* Pass/timeout label */}
                   {pr.passed && (
-                    <span className="text-[10px] text-yellow-400">Passed</span>
+                    <span className="text-[10px] text-yellow-400">{t("passed", { defaultValue: "Passed" })}</span>
                   )}
                   {pr.timedOut && (
-                    <span className="text-[10px] text-(--rmhbox-text-muted)">Timed out</span>
+                    <span className="text-[10px] text-(--rmhbox-text-muted)">{t("timed-out", { defaultValue: "Timed out" })}</span>
                   )}
                 </div>
 
@@ -157,7 +159,7 @@ export default function AnswerReveal({
               {pr.newTotalScore != null && (
                 <div className="flex items-center justify-end pl-6 text-[11px] text-(--rmhbox-text-muted)">
                   <span className="tabular-nums font-medium">
-                    Total: {pr.newTotalScore}
+                    {t("total-score", { defaultValue: "Total: {{score}}", score: pr.newTotalScore })}
                   </span>
                 </div>
               )}

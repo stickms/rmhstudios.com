@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/lib/store/useGameStore';
 import { AudioManager } from '@/lib/audio/AudioManager';
 
@@ -11,6 +12,7 @@ function fmt(s: number) {
 }
 
 export function HUD() {
+  const { t } = useTranslation("c-game");
   const { score, combo, multiplier, opponents, modifiers } = useGameStore();
   const [currentTime, setCurrentTime] = useState(0);
   const [prevCombo, setPrevCombo] = useState(0);
@@ -35,7 +37,7 @@ export function HUD() {
         {/* Score + Speed row */}
         <div className="flex justify-between items-start relative px-1">
             <div className="bg-slice-bg shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] rounded-2xl px-4 py-2">
-                <div className="text-[10px] sm:text-xs text-slice-text-muted uppercase tracking-wider font-bold leading-none mb-1">Score</div>
+                <div className="text-[10px] sm:text-xs text-slice-text-muted uppercase tracking-wider font-bold leading-none mb-1">{t("score", { defaultValue: "Score" })}</div>
                 <div className="text-xl sm:text-2xl font-bold text-slice-text leading-tight">
                     {score.toLocaleString()}
                 </div>
@@ -43,7 +45,7 @@ export function HUD() {
 
             {/* Speed row — shifted left to avoid settings gear overlap */}
             <div className="bg-slice-bg shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] rounded-2xl px-4 py-2 text-right mr-10 sm:mr-12">
-                <div className="text-[10px] sm:text-xs text-slice-text-muted uppercase tracking-wider font-bold leading-none mb-1">Speed</div>
+                <div className="text-[10px] sm:text-xs text-slice-text-muted uppercase tracking-wider font-bold leading-none mb-1">{t("speed", { defaultValue: "Speed" })}</div>
                 <div className="text-xl sm:text-2xl font-bold text-slice-text leading-tight">
                     {modifiers.speed.toFixed(1)}x
                 </div>

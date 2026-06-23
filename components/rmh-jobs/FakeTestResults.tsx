@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Check, X, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface TestResult {
     caseNumber: number;
@@ -16,6 +17,7 @@ interface FakeTestResultsProps {
 }
 
 export function FakeTestResults({ totalTests, passedTests, isRunning, onComplete }: FakeTestResultsProps) {
+    const { t } = useTranslation("c-rmh-jobs");
     const [visibleResults, setVisibleResults] = useState<TestResult[]>([]);
     const generatedRef = useRef<TestResult[]>([]);
     const intervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -75,12 +77,12 @@ export function FakeTestResults({ totalTests, passedTests, isRunning, onComplete
                 {isRunning && doneCount < displayCount ? (
                     <>
                         <Loader2 size={12} className="animate-spin" />
-                        Running against {totalTests} test cases...
+                        {t("running-against-cases", { defaultValue: "Running against {{count}} test cases...", count: totalTests })}
                     </>
                 ) : (
                     <span>
-                        {passedTests}/{totalTests} test cases passed
-                        {passedTests < totalTests && ' — Time Limit Exceeded on remaining'}
+                        {t("cases-passed", { defaultValue: "{{passed}}/{{total}} test cases passed", passed: passedTests, total: totalTests })}
+                        {passedTests < totalTests && (' — ' + t("time-limit-exceeded-remaining", { defaultValue: "Time Limit Exceeded on remaining" }))}
                     </span>
                 )}
             </div>
@@ -88,7 +90,7 @@ export function FakeTestResults({ totalTests, passedTests, isRunning, onComplete
                 <div key={idx} className={result.passed ? 'test-result-pass' : 'test-result-fail'}>
                     <span className="inline-flex items-center gap-1.5">
                         {result.passed ? <Check size={10} /> : <X size={10} />}
-                        Test Case {result.caseNumber}: {result.passed ? 'Passed' : 'Time Limit Exceeded'}
+                        {t("test-case-result", { defaultValue: "Test Case {{number}}: {{status}}", number: result.caseNumber, status: result.passed ? t("passed", { defaultValue: "Passed" }) : t("time-limit-exceeded", { defaultValue: "Time Limit Exceeded" }) })}
                     </span>
                 </div>
             ))}

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { Decrypt } from './shared';
 
@@ -90,6 +91,7 @@ const DISPATCHES: Dispatch[] = [
 ];
 
 export default function IntelligencePage() {
+  const { t } = useTranslation("c-rmh-pmc");
   const [active, setActive] = useState<string>('all');
 
   return (
@@ -97,16 +99,14 @@ export default function IntelligencePage() {
       <section className="pagehead">
         <div className="container pagehead-inner">
           <div className="brief-meta reveal">
-            <span className="field"><b>File</b> ▸ <span className="v"><Decrypt text="RMH-INT / DISPATCHES" /></span></span>
-            <span className="field"><b>Class</b> ▸ <span className="v"><Decrypt text="CLEARED FOR RELEASE" /></span></span>
-            <span className="field"><b>Feed</b> ▸ <span className="v"><Decrypt text="PUBLIC" /></span></span>
+            <span className="field"><b>{t("field-file", { defaultValue: "File" })}</b> ▸ <span className="v"><Decrypt text="RMH-INT / DISPATCHES" /></span></span>
+            <span className="field"><b>{t("field-class", { defaultValue: "Class" })}</b> ▸ <span className="v"><Decrypt text="CLEARED FOR RELEASE" /></span></span>
+            <span className="field"><b>{t("field-feed", { defaultValue: "Feed" })}</b> ▸ <span className="v"><Decrypt text="PUBLIC" /></span></span>
           </div>
-          <span className="desig reveal">Intelligence // Dispatches</span>
-          <h1 className="reveal d1">The product our clients act on.</h1>
+          <span className="desig reveal">{t("page-desig", { defaultValue: "Intelligence // Dispatches" })}</span>
+          <h1 className="reveal d1">{t("page-heading", { defaultValue: "The product our clients act on." })}</h1>
           <p className="lede reveal d2">
-            Sanitized assessments from the same intelligence cell that supports our deployed teams. What you read here
-            has been stripped of sources and methods and cleared for release — the judgment is the same one we hand a
-            commander on the ground.
+            {t("page-lede", { defaultValue: "Sanitized assessments from the same intelligence cell that supports our deployed teams. What you read here has been stripped of sources and methods and cleared for release — the judgment is the same one we hand a commander on the ground." })}
           </p>
         </div>
       </section>
@@ -116,35 +116,33 @@ export default function IntelligencePage() {
           {/* LEAD CABLE */}
           <div className="cable-lead reveal">
             <Link className="lead-main" to="/rmh-pmc/intelligence">
-              <span className="metaline">Threat <span className="dot" /> <span className="t">RMH-INT-0434 · 21 JUN 2026</span></span>
-              <h3>The 2026 fragility map: where instability becomes a private problem</h3>
+              <span className="metaline">{t("lead-category", { defaultValue: "Threat" })} <span className="dot" /> <span className="t">RMH-INT-0434 · 21 JUN 2026</span></span>
+              <h3>{t("lead-title", { defaultValue: "The 2026 fragility map: where instability becomes a private problem" })}</h3>
               <p>
-                Our standing read on the corridors, contested coastlines, and governance vacuums most likely to demand
-                a private response this year — scored on probability, proximity to client interests, and how fast a
-                situation can move from headline to evacuation.
+                {t("lead-blurb", { defaultValue: "Our standing read on the corridors, contested coastlines, and governance vacuums most likely to demand a private response this year — scored on probability, proximity to client interests, and how fast a situation can move from headline to evacuation." })}
               </p>
             </Link>
             <div className="lead-side">
               <Link className="side-item" to="/rmh-pmc/intelligence">
-                <span className="metaline">Maritime</span>
-                <h4>The next chokepoint, before it closes</h4>
-                <p>Red Sea and Gulf of Aden risk, week by week.</p>
+                <span className="metaline">{t("side1-category", { defaultValue: "Maritime" })}</span>
+                <h4>{t("side1-title", { defaultValue: "The next chokepoint, before it closes" })}</h4>
+                <p>{t("side1-blurb", { defaultValue: "Red Sea and Gulf of Aden risk, week by week." })}</p>
               </Link>
               <Link className="side-item" to="/rmh-pmc/intelligence">
-                <span className="metaline">Stabilization</span>
-                <h4>Why some transitions hold and others don't</h4>
-                <p>Patterns from our sovereign engagements.</p>
+                <span className="metaline">{t("side2-category", { defaultValue: "Stabilization" })}</span>
+                <h4>{t("side2-title", { defaultValue: "Why some transitions hold and others don't" })}</h4>
+                <p>{t("side2-blurb", { defaultValue: "Patterns from our sovereign engagements." })}</p>
               </Link>
               <Link className="side-item" to="/rmh-pmc/intelligence">
-                <span className="metaline">Cyber &amp; Signals</span>
-                <h4>Principals targeted before they land</h4>
-                <p>Pre-travel digital threat reduction.</p>
+                <span className="metaline">{t("side3-category", { defaultValue: "Cyber & Signals" })}</span>
+                <h4>{t("side3-title", { defaultValue: "Principals targeted before they land" })}</h4>
+                <p>{t("side3-blurb", { defaultValue: "Pre-travel digital threat reduction." })}</p>
               </Link>
             </div>
           </div>
 
           {/* FILTERS */}
-          <div className="filters reveal" role="group" aria-label="Filter dispatches by category">
+          <div className="filters reveal" role="group" aria-label={t("filters-aria-label", { defaultValue: "Filter dispatches by category" })}>
             {CATEGORIES.map((c) => (
               <button
                 key={c.id}
@@ -152,7 +150,7 @@ export default function IntelligencePage() {
                 aria-pressed={active === c.id}
                 onClick={() => setActive(c.id)}
               >
-                {c.label}
+                {t(`cat-${c.id}`, { defaultValue: c.label })}
               </button>
             ))}
           </div>
@@ -180,14 +178,13 @@ export default function IntelligencePage() {
       <section className="sec tight">
         <div className="container">
           <div className="cta-band reveal">
-            <span className="desig center">Cleared Distribution</span>
-            <h2 style={{ marginTop: 18 }}>Read the version we don't release.</h2>
+            <span className="desig center">{t("cta-desig", { defaultValue: "Cleared Distribution" })}</span>
+            <h2 style={{ marginTop: 18 }}>{t("cta-heading", { defaultValue: "Read the version we don't release." })}</h2>
             <p>
-              Clients on a standing engagement receive named-theater assessments, warning thresholds, and a direct line
-              to the cell that wrote them. The public feed is the part we can show.
+              {t("cta-body", { defaultValue: "Clients on a standing engagement receive named-theater assessments, warning thresholds, and a direct line to the cell that wrote them. The public feed is the part we can show." })}
             </p>
             <Link className="btn btn-amber" to="/rmh-pmc/contact">
-              Request a briefing <span className="arw">→</span>
+              {t("cta-button", { defaultValue: "Request a briefing" })} <span className="arw">→</span>
             </Link>
           </div>
         </div>

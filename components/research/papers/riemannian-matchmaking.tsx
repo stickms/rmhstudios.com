@@ -14,6 +14,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
+import { useTranslation } from 'react-i18next';
 import { PaperFigure } from '../PaperFigure';
 import { Tex, TexBlock } from '../Latex';
 
@@ -123,12 +124,13 @@ const h3Style: React.CSSProperties = {
 };
 
 export function RiemannianMatchmakingPaper() {
+  const { t } = useTranslation("c-research");
   return (
     <>
       {/* --------------------------------------------------------------------
           1. INTRODUCTION
          -------------------------------------------------------------------- */}
-      <h2 style={h2Style}>1. Introduction</h2>
+      <h2 style={h2Style}>{t("section-introduction", { defaultValue: "1. Introduction" })}</h2>
 
       <p className="mb-4">
         The matchmaking problem in competitive multiplayer games &mdash; the algorithmic
@@ -206,9 +208,9 @@ export function RiemannianMatchmakingPaper() {
       {/* --------------------------------------------------------------------
           2. SKILL MANIFOLD CONSTRUCTION
          -------------------------------------------------------------------- */}
-      <h2 style={h2Style}>2. Skill Manifold Construction</h2>
+      <h2 style={h2Style}>{t("section-skill-manifold", { defaultValue: "2. Skill Manifold Construction" })}</h2>
 
-      <h3 style={h3Style}>2.1 Feature Extraction and Embedding</h3>
+      <h3 style={h3Style}>{t("subsection-feature-extraction", { defaultValue: "2.1 Feature Extraction and Embedding" })}</h3>
 
       <p className="mb-4">
         The construction of the skill manifold begins with the extraction of a
@@ -265,7 +267,7 @@ export function RiemannianMatchmakingPaper() {
 
       <TexBlock math="\mathcal{R}_{\text{topo}} = \frac{1}{N} \sum_{i=1}^{N} \left(1 - \frac{|\mathcal{N}_k(\mathbf{x}_i) \cap \mathcal{N}_k(\mathbf{z}_i)|}{k}\right)^2" />
 
-      <h3 style={h3Style}>2.2 Manifold Characterization</h3>
+      <h3 style={h3Style}>{t("subsection-manifold-characterization", { defaultValue: "2.2 Manifold Characterization" })}</h3>
 
       <p className="mb-4">
         The embedded latent space <Tex math="\mathcal{Z} = \{f_\phi(\mathbf{x}_i)\}_{i=1}^N \subset \mathbb{R}^8" /> is
@@ -294,15 +296,15 @@ export function RiemannianMatchmakingPaper() {
         further confirming the 8-dimensional intrinsic structure.
       </p>
 
-      <PaperFigure number={1} caption="Eigenvalue spectrum of the metric tensor at the manifold centroid, showing the 8-dimensional intrinsic structure of the skill manifold. The sharp spectral gap between components 8 and 9 confirms the embedding dimensionality selection.">
+      <PaperFigure number={1} caption={t("figure-1-caption", { defaultValue: "Eigenvalue spectrum of the metric tensor at the manifold centroid, showing the 8-dimensional intrinsic structure of the skill manifold. The sharp spectral gap between components 8 and 9 confirms the embedding dimensionality selection." })}>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={metricTensorEigenvalueData}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="component" label={{ value: 'Principal Component', position: 'insideBottom', offset: -5 }} />
-            <YAxis label={{ value: 'Eigenvalue', angle: -90, position: 'insideLeft' }} />
+            <XAxis dataKey="component" label={{ value: t("chart-principal-component", { defaultValue: "Principal Component" }), position: 'insideBottom', offset: -5 }} />
+            <YAxis label={{ value: t("chart-eigenvalue", { defaultValue: "Eigenvalue" }), angle: -90, position: 'insideLeft' }} />
             <Tooltip />
             <Legend />
-            <Bar dataKey="eigenvalue" fill="#6366f1" name="Eigenvalue" />
+            <Bar dataKey="eigenvalue" fill="#6366f1" name={t("chart-eigenvalue", { defaultValue: "Eigenvalue" })} />
           </BarChart>
         </ResponsiveContainer>
       </PaperFigure>
@@ -310,9 +312,9 @@ export function RiemannianMatchmakingPaper() {
       {/* --------------------------------------------------------------------
           3. RIEMANNIAN METRIC LEARNING
          -------------------------------------------------------------------- */}
-      <h2 style={h2Style}>3. Riemannian Metric Learning</h2>
+      <h2 style={h2Style}>{t("section-metric-learning", { defaultValue: "3. Riemannian Metric Learning" })}</h2>
 
-      <h3 style={h3Style}>3.1 Metric Tensor Parameterization</h3>
+      <h3 style={h3Style}>{t("subsection-metric-tensor-param", { defaultValue: "3.1 Metric Tensor Parameterization" })}</h3>
 
       <p className="mb-4">
         The central geometric object in our framework is the Riemannian metric tensor{' '}
@@ -348,7 +350,7 @@ export function RiemannianMatchmakingPaper() {
         a critical requirement for the well-posedness of the geodesic equation.
       </p>
 
-      <h3 style={h3Style}>3.2 Learning Objective</h3>
+      <h3 style={h3Style}>{t("subsection-learning-objective", { defaultValue: "3.2 Learning Objective" })}</h3>
 
       <p className="mb-4">
         The parameters <Tex math="\psi" /> of the metric tensor network are learned from
@@ -409,7 +411,7 @@ export function RiemannianMatchmakingPaper() {
         <Tex math="3 \times 10^{-4}" /> and cosine annealing over 200 epochs.
       </p>
 
-      <h3 style={h3Style}>3.3 Christoffel Symbols and Connection</h3>
+      <h3 style={h3Style}>{t("subsection-christoffel-symbols", { defaultValue: "3.3 Christoffel Symbols and Connection" })}</h3>
 
       <p className="mb-4">
         The Levi-Civita connection associated with the learned metric{' '}
@@ -432,9 +434,9 @@ export function RiemannianMatchmakingPaper() {
       {/* --------------------------------------------------------------------
           4. GEODESIC MATCHMAKING ALGORITHM
          -------------------------------------------------------------------- */}
-      <h2 style={h2Style}>4. Geodesic Matchmaking Algorithm</h2>
+      <h2 style={h2Style}>{t("section-geodesic-algorithm", { defaultValue: "4. Geodesic Matchmaking Algorithm" })}</h2>
 
-      <h3 style={h3Style}>4.1 Geodesic Equation and Numerical Integration</h3>
+      <h3 style={h3Style}>{t("subsection-geodesic-equation", { defaultValue: "4.1 Geodesic Equation and Numerical Integration" })}</h3>
 
       <p className="mb-4">
         A geodesic <Tex math="\gamma: [0, 1] \to \mathcal{M}" /> connecting two
@@ -469,22 +471,22 @@ export function RiemannianMatchmakingPaper() {
         this procedure is illustrated in Figure 2.
       </p>
 
-      <PaperFigure number={2} caption="Convergence of the geodesic shooting method. The geodesic energy functional (solid blue), step size (dashed red), and mean sectional curvature along the geodesic path (green) all converge within approximately 100 iterations for typical player pairs.">
+      <PaperFigure number={2} caption={t("figure-2-caption", { defaultValue: "Convergence of the geodesic shooting method. The geodesic energy functional (solid blue), step size (dashed red), and mean sectional curvature along the geodesic path (green) all converge within approximately 100 iterations for typical player pairs." })}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={geodesicConvergenceData}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="iteration" label={{ value: 'Iteration', position: 'insideBottom', offset: -5 }} />
-            <YAxis label={{ value: 'Value', angle: -90, position: 'insideLeft' }} />
+            <XAxis dataKey="iteration" label={{ value: t("chart-iteration", { defaultValue: "Iteration" }), position: 'insideBottom', offset: -5 }} />
+            <YAxis label={{ value: t("chart-value", { defaultValue: "Value" }), angle: -90, position: 'insideLeft' }} />
             <Tooltip />
             <Legend />
-            <Line type="monotone" dataKey="energy" stroke="#6366f1" name="Energy" strokeWidth={2} />
-            <Line type="monotone" dataKey="stepSize" stroke="#ef4444" name="Step Size" strokeDasharray="5 5" />
-            <Line type="monotone" dataKey="curvature" stroke="#22c55e" name="Curvature" />
+            <Line type="monotone" dataKey="energy" stroke="#6366f1" name={t("chart-energy", { defaultValue: "Energy" })} strokeWidth={2} />
+            <Line type="monotone" dataKey="stepSize" stroke="#ef4444" name={t("chart-step-size", { defaultValue: "Step Size" })} strokeDasharray="5 5" />
+            <Line type="monotone" dataKey="curvature" stroke="#22c55e" name={t("chart-curvature", { defaultValue: "Curvature" })} />
           </LineChart>
         </ResponsiveContainer>
       </PaperFigure>
 
-      <h3 style={h3Style}>4.2 Parallel Transport for Skill Comparison</h3>
+      <h3 style={h3Style}>{t("subsection-parallel-transport", { defaultValue: "4.2 Parallel Transport for Skill Comparison" })}</h3>
 
       <p className="mb-4">
         A critical challenge in comparing players at different locations on the skill
@@ -522,7 +524,7 @@ export function RiemannianMatchmakingPaper() {
 
       <TexBlock math="\text{Hol}(\gamma) = P_\gamma \in O(T_p\mathcal{M}) \cong O(d)" />
 
-      <h3 style={h3Style}>4.3 Match Quality Functional</h3>
+      <h3 style={h3Style}>{t("subsection-match-quality", { defaultValue: "4.3 Match Quality Functional" })}</h3>
 
       <p className="mb-4">
         We define a match quality functional that integrates geodesic distance, parallel
@@ -563,9 +565,9 @@ export function RiemannianMatchmakingPaper() {
       {/* --------------------------------------------------------------------
           5. EXPERIMENTAL RESULTS
          -------------------------------------------------------------------- */}
-      <h2 style={h2Style}>5. Experimental Results</h2>
+      <h2 style={h2Style}>{t("section-experimental-results", { defaultValue: "5. Experimental Results" })}</h2>
 
-      <h3 style={h3Style}>5.1 Dataset and Experimental Setup</h3>
+      <h3 style={h3Style}>{t("subsection-dataset-setup", { defaultValue: "5.1 Dataset and Experimental Setup" })}</h3>
 
       <p className="mb-4">
         We evaluate our geodesic matchmaking system on a large-scale dataset comprising
@@ -589,7 +591,7 @@ export function RiemannianMatchmakingPaper() {
         and perceived skill growth.
       </p>
 
-      <h3 style={h3Style}>5.2 Match Fairness Comparison</h3>
+      <h3 style={h3Style}>{t("subsection-match-fairness", { defaultValue: "5.2 Match Fairness Comparison" })}</h3>
 
       <p className="mb-4">
         Figure 3 presents the primary fairness and satisfaction comparison across the four
@@ -602,17 +604,17 @@ export function RiemannianMatchmakingPaper() {
         <Tex math="t" />-test with Bonferroni correction.
       </p>
 
-      <PaperFigure number={3} caption="Comparison of match unfairness (lower is better) and player satisfaction (higher is better) across matchmaking algorithms. Geodesic Riemannian matchmaking achieves a 67% reduction in unfairness and 43% improvement in satisfaction relative to Elo.">
+      <PaperFigure number={3} caption={t("figure-3-caption", { defaultValue: "Comparison of match unfairness (lower is better) and player satisfaction (higher is better) across matchmaking algorithms. Geodesic Riemannian matchmaking achieves a 67% reduction in unfairness and 43% improvement in satisfaction relative to Elo." })}>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={fairnessComparisonData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="method" />
-            <YAxis yAxisId="left" label={{ value: 'Unfairness', angle: -90, position: 'insideLeft' }} />
-            <YAxis yAxisId="right" orientation="right" label={{ value: 'Satisfaction', angle: 90, position: 'insideRight' }} />
+            <YAxis yAxisId="left" label={{ value: t("chart-unfairness", { defaultValue: "Unfairness" }), angle: -90, position: 'insideLeft' }} />
+            <YAxis yAxisId="right" orientation="right" label={{ value: t("chart-satisfaction", { defaultValue: "Satisfaction" }), angle: 90, position: 'insideRight' }} />
             <Tooltip />
             <Legend />
-            <Bar yAxisId="left" dataKey="unfairness" fill="#ef4444" name="Unfairness" />
-            <Bar yAxisId="right" dataKey="satisfaction" fill="#22c55e" name="Satisfaction (1-10)" />
+            <Bar yAxisId="left" dataKey="unfairness" fill="#ef4444" name={t("chart-unfairness", { defaultValue: "Unfairness" })} />
+            <Bar yAxisId="right" dataKey="satisfaction" fill="#22c55e" name={t("chart-satisfaction-scale", { defaultValue: "Satisfaction (1-10)" })} />
           </BarChart>
         </ResponsiveContainer>
       </PaperFigure>
@@ -627,22 +629,22 @@ export function RiemannianMatchmakingPaper() {
         of geometric matchmaking compound through improved player retention and engagement.
       </p>
 
-      <PaperFigure number={4} caption="Player satisfaction trajectories over the 8-week evaluation period. Geodesic matchmaking shows sustained improvement while Elo-based satisfaction declines, suggesting compounding benefits from improved match quality.">
+      <PaperFigure number={4} caption={t("figure-4-caption", { defaultValue: "Player satisfaction trajectories over the 8-week evaluation period. Geodesic matchmaking shows sustained improvement while Elo-based satisfaction declines, suggesting compounding benefits from improved match quality." })}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={satisfactionOverTimeData}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="week" label={{ value: 'Week', position: 'insideBottom', offset: -5 }} />
-            <YAxis label={{ value: 'Satisfaction Score', angle: -90, position: 'insideLeft' }} domain={[3, 8]} />
+            <XAxis dataKey="week" label={{ value: t("chart-week", { defaultValue: "Week" }), position: 'insideBottom', offset: -5 }} />
+            <YAxis label={{ value: t("chart-satisfaction-score", { defaultValue: "Satisfaction Score" }), angle: -90, position: 'insideLeft' }} domain={[3, 8]} />
             <Tooltip />
             <Legend />
             <Line type="monotone" dataKey="elo" stroke="#ef4444" name="Elo" strokeWidth={2} />
             <Line type="monotone" dataKey="glicko" stroke="#f59e0b" name="Glicko-2" strokeWidth={2} />
-            <Line type="monotone" dataKey="geodesic" stroke="#6366f1" name="Geodesic (Ours)" strokeWidth={2} />
+            <Line type="monotone" dataKey="geodesic" stroke="#6366f1" name={t("chart-geodesic-ours", { defaultValue: "Geodesic (Ours)" })} strokeWidth={2} />
           </LineChart>
         </ResponsiveContainer>
       </PaperFigure>
 
-      <h3 style={h3Style}>5.3 Geodesic Distance and Win Rate Prediction</h3>
+      <h3 style={h3Style}>{t("subsection-win-rate-prediction", { defaultValue: "5.3 Geodesic Distance and Win Rate Prediction" })}</h3>
 
       <p className="mb-4">
         A key validation of the learned Riemannian metric is the relationship between
@@ -655,14 +657,14 @@ export function RiemannianMatchmakingPaper() {
         separation provides no additional discriminative information.
       </p>
 
-      <PaperFigure number={5} caption="Win rate deviation from 50% as a function of geodesic distance between matched players. The monotonic relationship confirms that the learned Riemannian metric captures meaningful skill dissimilarity.">
+      <PaperFigure number={5} caption={t("figure-5-caption", { defaultValue: "Win rate deviation from 50% as a function of geodesic distance between matched players. The monotonic relationship confirms that the learned Riemannian metric captures meaningful skill dissimilarity." })}>
         <ResponsiveContainer width="100%" height={300}>
           <ScatterChart>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="geodesicDistance" name="Geodesic Distance" label={{ value: 'Geodesic Distance', position: 'insideBottom', offset: -5 }} />
-            <YAxis dataKey="winRateDeviation" name="Win Rate Deviation" label={{ value: '|Win Rate - 0.5|', angle: -90, position: 'insideLeft' }} />
+            <XAxis dataKey="geodesicDistance" name={t("chart-geodesic-distance", { defaultValue: "Geodesic Distance" })} label={{ value: t("chart-geodesic-distance", { defaultValue: "Geodesic Distance" }), position: 'insideBottom', offset: -5 }} />
+            <YAxis dataKey="winRateDeviation" name={t("chart-win-rate-deviation", { defaultValue: "Win Rate Deviation" })} label={{ value: t("chart-win-rate-axis", { defaultValue: "|Win Rate - 0.5|" }), angle: -90, position: 'insideLeft' }} />
             <Tooltip />
-            <Scatter data={winRatePredictionData} fill="#6366f1" name="Win Rate Deviation" />
+            <Scatter data={winRatePredictionData} fill="#6366f1" name={t("chart-win-rate-deviation", { defaultValue: "Win Rate Deviation" })} />
           </ScatterChart>
         </ResponsiveContainer>
       </PaperFigure>
@@ -679,7 +681,7 @@ export function RiemannianMatchmakingPaper() {
         heterogeneous and the limitations of scalar ratings are most severe.
       </p>
 
-      <h3 style={h3Style}>5.4 Ablation Study</h3>
+      <h3 style={h3Style}>{t("subsection-ablation-study", { defaultValue: "5.4 Ablation Study" })}</h3>
 
       <p className="mb-4">
         To isolate the contributions of individual components, we conduct a systematic
@@ -697,7 +699,7 @@ export function RiemannianMatchmakingPaper() {
         dimensionality reduction for capturing the intrinsic geometry of the skill space.
       </p>
 
-      <h3 style={h3Style}>5.5 Queue Time Analysis</h3>
+      <h3 style={h3Style}>{t("subsection-queue-time", { defaultValue: "5.5 Queue Time Analysis" })}</h3>
 
       <p className="mb-4">
         A natural concern with geodesic matchmaking is that the increased computational
@@ -717,9 +719,9 @@ export function RiemannianMatchmakingPaper() {
       {/* --------------------------------------------------------------------
           6. DISCUSSION
          -------------------------------------------------------------------- */}
-      <h2 style={h2Style}>6. Discussion</h2>
+      <h2 style={h2Style}>{t("section-discussion", { defaultValue: "6. Discussion" })}</h2>
 
-      <h3 style={h3Style}>6.1 Geometric Interpretation of the Learned Metric</h3>
+      <h3 style={h3Style}>{t("subsection-geometric-interpretation", { defaultValue: "6.1 Geometric Interpretation of the Learned Metric" })}</h3>
 
       <p className="mb-4">
         The learned metric tensor exhibits several geometrically interpretable features
@@ -752,7 +754,7 @@ export function RiemannianMatchmakingPaper() {
         skills that are misaligned with the scalar metric&apos;s implicit weighting.
       </p>
 
-      <h3 style={h3Style}>6.2 Curvature and Matchmaking Instabilities</h3>
+      <h3 style={h3Style}>{t("subsection-curvature-instabilities", { defaultValue: "6.2 Curvature and Matchmaking Instabilities" })}</h3>
 
       <p className="mb-4">
         The sectional curvature of the skill manifold provides a principled diagnostic
@@ -780,7 +782,7 @@ export function RiemannianMatchmakingPaper() {
         higher levels.
       </p>
 
-      <h3 style={h3Style}>6.3 Implications for Competitive Game Design</h3>
+      <h3 style={h3Style}>{t("subsection-game-design-implications", { defaultValue: "6.3 Implications for Competitive Game Design" })}</h3>
 
       <p className="mb-4">
         The Riemannian matchmaking framework has implications that extend beyond the
@@ -820,7 +822,7 @@ export function RiemannianMatchmakingPaper() {
       {/* --------------------------------------------------------------------
           7. CONCLUSION
          -------------------------------------------------------------------- */}
-      <h2 style={h2Style}>7. Conclusion</h2>
+      <h2 style={h2Style}>{t("section-conclusion", { defaultValue: "7. Conclusion" })}</h2>
 
       <p className="mb-4">
         This work has introduced a Riemannian geometric framework for competitive game
@@ -872,7 +874,7 @@ export function RiemannianMatchmakingPaper() {
       {/* --------------------------------------------------------------------
           REFERENCES
          -------------------------------------------------------------------- */}
-      <h2 style={h2Style}>References</h2>
+      <h2 style={h2Style}>{t("section-references", { defaultValue: "References" })}</h2>
 
       <ol
         style={{

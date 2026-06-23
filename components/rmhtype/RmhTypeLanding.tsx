@@ -5,6 +5,7 @@
  */
 
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Keyboard, Users, User, Trophy } from 'lucide-react';
 import { connectToRmhType, getSocket, disconnectFromRmhType, emit } from '@/lib/rmhtype/socket';
 import { useRmhTypeStore } from '@/lib/rmhtype/store';
@@ -33,23 +34,24 @@ interface LeaderboardEntry {
 const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard'];
 
 function LeaderboardTable({ entries, loading }: { entries: LeaderboardEntry[]; loading: boolean }) {
+  const { t } = useTranslation("c-rmhtype");
   if (loading) {
-    return <p className="text-sm text-(--rmhtype-text-muted) text-center py-4">Loading...</p>;
+    return <p className="text-sm text-(--rmhtype-text-muted) text-center py-4">{t("loading", { defaultValue: "Loading..." })}</p>;
   }
   if (entries.length === 0) {
-    return <p className="text-sm text-(--rmhtype-text-muted) text-center py-4">No scores yet. Be the first!</p>;
+    return <p className="text-sm text-(--rmhtype-text-muted) text-center py-4">{t("no-scores-yet", { defaultValue: "No scores yet. Be the first!" })}</p>;
   }
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
           <tr className="text-(--rmhtype-text-muted) border-b border-(--rmhtype-border)">
-            <th className="text-left py-2 pr-3 font-medium">#</th>
-            <th className="text-left py-2 pr-3 font-medium">Player</th>
-            <th className="text-right py-2 pr-3 font-medium">Score</th>
-            <th className="text-right py-2 pr-3 font-medium">Best WPM</th>
-            <th className="text-right py-2 pr-3 font-medium">Accuracy</th>
-            <th className="text-right py-2 font-medium">Games</th>
+            <th className="text-left py-2 pr-3 font-medium">{t("col-rank", { defaultValue: "#" })}</th>
+            <th className="text-left py-2 pr-3 font-medium">{t("col-player", { defaultValue: "Player" })}</th>
+            <th className="text-right py-2 pr-3 font-medium">{t("col-score", { defaultValue: "Score" })}</th>
+            <th className="text-right py-2 pr-3 font-medium">{t("col-best-wpm", { defaultValue: "Best WPM" })}</th>
+            <th className="text-right py-2 pr-3 font-medium">{t("col-accuracy", { defaultValue: "Accuracy" })}</th>
+            <th className="text-right py-2 font-medium">{t("col-games", { defaultValue: "Games" })}</th>
           </tr>
         </thead>
         <tbody>
@@ -87,6 +89,7 @@ function LeaderboardTable({ entries, loading }: { entries: LeaderboardEntry[]; l
 }
 
 export default function RmhTypeLanding() {
+  const { t } = useTranslation("c-rmhtype");
   const router = useRouter();
   const connectionStatus = useRmhTypeStore((s) => s.connectionStatus);
 
@@ -123,7 +126,7 @@ export default function RmhTypeLanding() {
         });
       } catch (err) {
         if (mounted) {
-          toast.error(err instanceof Error ? err.message : 'Connection failed');
+          toast.error(err instanceof Error ? err.message : t("connection-failed", { defaultValue: "Connection failed" }));
           setLoadingStates({ easy: false, medium: false, hard: false });
         }
       }
@@ -165,7 +168,7 @@ export default function RmhTypeLanding() {
               <h2 className="text-3xl font-bold">RMH Type</h2>
             </div>
             <p className="text-(--rmhtype-text-muted) max-w-md mx-auto">
-              Test your typing speed solo or race against friends in real-time.
+              {t("hero-subtitle", { defaultValue: "Test your typing speed solo or race against friends in real-time." })}
             </p>
           </div>
 
@@ -174,9 +177,9 @@ export default function RmhTypeLanding() {
               className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-8 text-left transition-all hover:border-(--rmhtype-accent) hover:bg-(--rmhtype-surface-hover)"
             >
               <User className="h-8 w-8 mb-4 text-(--rmhtype-accent)" />
-              <h3 className="text-xl font-semibold mb-2">Solo Practice</h3>
+              <h3 className="text-xl font-semibold mb-2">{t("solo-title", { defaultValue: "Solo Practice" })}</h3>
               <p className="text-sm text-(--rmhtype-text-muted)">
-                Practice typing at your own pace. Track your WPM and accuracy, and compete on the leaderboard.
+                {t("solo-desc", { defaultValue: "Practice typing at your own pace. Track your WPM and accuracy, and compete on the leaderboard." })}
               </p>
             </Link>
 
@@ -184,9 +187,9 @@ export default function RmhTypeLanding() {
               className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-8 text-left transition-all hover:border-(--rmhtype-accent) hover:bg-(--rmhtype-surface-hover)"
             >
               <Users className="h-8 w-8 mb-4 text-(--rmhtype-accent)" />
-              <h3 className="text-xl font-semibold mb-2">Multiplayer Race</h3>
+              <h3 className="text-xl font-semibold mb-2">{t("multiplayer-title", { defaultValue: "Multiplayer Race" })}</h3>
               <p className="text-sm text-(--rmhtype-text-muted)">
-                Create a room or join a friend. Race on the same passage and see who types fastest.
+                {t("multiplayer-desc", { defaultValue: "Create a room or join a friend. Race on the same passage and see who types fastest." })}
               </p>
             </Link>
           </div>
@@ -195,8 +198,8 @@ export default function RmhTypeLanding() {
           <div className="space-y-6">
             <div className="flex items-center gap-2">
               <Trophy className="h-5 w-5 text-(--rmhtype-accent)" />
-              <h3 className="text-lg font-semibold">Leaderboards</h3>
-              <span className="text-xs text-(--rmhtype-text-muted) ml-auto">Ranked by WPM &times; Accuracy</span>
+              <h3 className="text-lg font-semibold">{t("leaderboards-title", { defaultValue: "Leaderboards" })}</h3>
+              <span className="text-xs text-(--rmhtype-text-muted) ml-auto">{t("leaderboards-ranked-by", { defaultValue: "Ranked by WPM × Accuracy" })}</span>
             </div>
 
             {DIFFICULTIES.map((d) => (

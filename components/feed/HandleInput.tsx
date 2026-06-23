@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback, type KeyboardEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { BadgeCheck } from 'lucide-react';
 
 interface UserSuggestion {
@@ -64,6 +65,7 @@ export function HandleInput({ value, onChange, multiple = false, placeholder, cl
   const [loading, setLoading] = useState(false);
   const requestSeq = useRef(0);
 
+  const { t } = useTranslation('feed');
   const { token, start } = currentToken(value, multiple);
 
   const close = useCallback(() => {
@@ -160,7 +162,7 @@ export function HandleInput({ value, onChange, multiple = false, placeholder, cl
           onMouseDown={(e) => e.preventDefault()}
         >
           {loading && suggestions.length === 0 ? (
-            <div className="px-3 py-2 text-xs text-site-text-dim">Searching…</div>
+            <div className="px-3 py-2 text-xs text-site-text-dim">{t("searching", { defaultValue: "Searching…" })}</div>
           ) : (
             suggestions.map((u, i) => (
               <button

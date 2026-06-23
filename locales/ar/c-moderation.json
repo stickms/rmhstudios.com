@@ -1,0 +1,20 @@
+{
+  "cancel": "إلغاء",
+  "details-placeholder": "أضف أي تفاصيل (اختياري)",
+  "dialog-description": "أخبرنا ما المشكلة. التقارير مجهولة المصدر بالنسبة للشخص الذي تبلغ عنه.",
+  "dialog-title": "الإبلاغ عن المحتوى",
+  "reason-harassment": "التحرش أو التنمر",
+  "reason-hate": "خطاب الكراهية",
+  "reason-illegal": "محتوى غير قانوني",
+  "reason-misinformation": "معلومات مضللة",
+  "reason-other": "شيء آخر",
+  "reason-self-harm": "إيذاء النفس",
+  "reason-sexual": "محتوى جنسي أو صريح",
+  "reason-spam": "بريد عشوائي أو احتيال",
+  "reason-violence": "عنف أو تهديدات",
+  "submit-report": "تقديم التقرير",
+  "submitting": "جاري الإرسال…",
+  "toast-error": "تعذر إرسال التقرير. يرجى المحاولة مرة أخرى.",
+  "toast-sign-in": "يرجى تسجيل الدخول للإبلاغ عن المحتوى.",
+  "toast-success": "شكرًا — سيراجع فريقنا هذا."
+}

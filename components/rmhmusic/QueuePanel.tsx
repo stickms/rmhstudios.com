@@ -1,12 +1,14 @@
 'use client';
 
 import { ListMusic, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useRmhMusicStore } from '@/lib/rmhmusic/store';
 import { emit } from '@/lib/rmhmusic/socket';
 import { C2S } from '@/lib/rmhmusic/events';
 import { formatDuration } from '@/lib/rmhmusic/utils';
 
 export default function QueuePanel() {
+  const { t } = useTranslation("c-rmhmusic");
   const { room } = useRmhMusicStore();
   const queue = room?.queue ?? [];
 
@@ -18,7 +20,7 @@ export default function QueuePanel() {
     return (
       <div className="flex flex-col items-center justify-center py-8 gap-2">
         <ListMusic className="w-8 h-8" style={{ color: 'var(--site-text-dim)' }} />
-        <p className="text-sm" style={{ color: 'var(--site-text-dim)' }}>Queue is empty</p>
+        <p className="text-sm" style={{ color: 'var(--site-text-dim)' }}>{t("queue-is-empty", { defaultValue: "Queue is empty" })}</p>
       </div>
     );
   }
@@ -28,7 +30,7 @@ export default function QueuePanel() {
       <div className="flex items-center gap-2 px-2 py-1">
         <ListMusic className="w-4 h-4" style={{ color: 'var(--site-accent)' }} />
         <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--site-text-muted)' }}>
-          Queue ({queue.length})
+          {t("queue-count", { defaultValue: "Queue ({{count}})", count: queue.length })}
         </span>
       </div>
       {queue.map((item) => (

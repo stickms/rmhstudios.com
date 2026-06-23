@@ -1,5 +1,6 @@
 'use client';
 import React from 'react';
+import { useTranslation } from "react-i18next";
 import { GameState } from '../../lib/synapse-storm/types';
 import type { SSLeaderboardEntry } from '../../lib/synapse-storm/multiplayerClient';
 import { MultiplayerLeaderboard } from './MultiplayerLeaderboard';
@@ -16,6 +17,7 @@ interface MultiplayerGameOverProps {
 export const MultiplayerGameOver: React.FC<MultiplayerGameOverProps> = ({
     gameState, leaderboard, currentUserId, isHost, onBackToLobby, onPlayAgain,
 }) => {
+    const { t } = useTranslation("c-synapse-storm");
     const myEntry = leaderboard.find(e => e.userId === currentUserId);
     const myRank = leaderboard
         .sort((a, b) => b.score - a.score)
@@ -30,7 +32,7 @@ export const MultiplayerGameOver: React.FC<MultiplayerGameOverProps> = ({
             <div className="menu-bg-effect" style={{ opacity: 0.3 }} />
             <div className="go-content" style={{ maxWidth: '600px' }}>
                 <h2 className="hud-label" style={{ fontSize: '1.2rem', color: 'var(--accent-cyan)' }}>
-                    MATCH COMPLETE
+                    {t("match-complete", { defaultValue: "MATCH COMPLETE" })}
                 </h2>
 
                 <div className="ss-mp-go-rank">
@@ -40,27 +42,27 @@ export const MultiplayerGameOver: React.FC<MultiplayerGameOverProps> = ({
 
                 <div className="go-stats-grid">
                     <div className="go-stat">
-                        <span className="hud-label">Solved</span>
+                        <span className="hud-label">{t("solved", { defaultValue: "Solved" })}</span>
                         <div className="hud-value">{myEntry?.puzzlesSolved ?? gameState.puzzlesSolved}</div>
                     </div>
                     <div className="go-stat">
-                        <span className="hud-label">Max Combo</span>
+                        <span className="hud-label">{t("max-combo", { defaultValue: "Max Combo" })}</span>
                         <div className="hud-value">{myEntry?.maxCombo ?? gameState.maxCombo}</div>
                     </div>
                     <div className="go-stat">
-                        <span className="hud-label">Accuracy</span>
+                        <span className="hud-label">{t("accuracy", { defaultValue: "Accuracy" })}</span>
                         <div className="hud-value">{accuracy}%</div>
                     </div>
                     <div className="go-stat">
-                        <span className="hud-label">Survival</span>
+                        <span className="hud-label">{t("survival", { defaultValue: "Survival" })}</span>
                         <div className="hud-value">{Math.floor(gameState.totalTime)}s</div>
                     </div>
                     <div className="go-stat">
-                        <span className="hud-label">Peak Intensity</span>
+                        <span className="hud-label">{t("peak-intensity", { defaultValue: "Peak Intensity" })}</span>
                         <div className="hud-value">{gameState.difficulty.toFixed(1)}</div>
                     </div>
                     <div className="go-stat">
-                        <span className="hud-label">Rank</span>
+                        <span className="hud-label">{t("rank", { defaultValue: "Rank" })}</span>
                         <div className="hud-value" style={{ color: 'var(--accent-gold)' }}>
                             #{myRank} / {leaderboard.length}
                         </div>
@@ -75,7 +77,7 @@ export const MultiplayerGameOver: React.FC<MultiplayerGameOverProps> = ({
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', marginTop: '1.5rem' }}>
                     {isHost && (
                         <button className="go-button go-restart" onClick={onPlayAgain}>
-                            PLAY AGAIN
+                            {t("play-again", { defaultValue: "PLAY AGAIN" })}
                         </button>
                     )}
                     <button
@@ -83,7 +85,7 @@ export const MultiplayerGameOver: React.FC<MultiplayerGameOverProps> = ({
                         style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}
                         onClick={onBackToLobby}
                     >
-                        {isHost ? 'BACK TO LOBBY' : 'WAITING FOR HOST...'}
+                        {isHost ? t("back-to-lobby", { defaultValue: "BACK TO LOBBY" }) : t("waiting-for-host", { defaultValue: "WAITING FOR HOST..." })}
                     </button>
                 </div>
             </div>

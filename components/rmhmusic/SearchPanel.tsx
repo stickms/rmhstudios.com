@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, ListMusic } from 'lucide-react';
 import { useRmhMusicStore } from '@/lib/rmhmusic/store';
@@ -13,6 +14,7 @@ interface SearchPanelProps {
 }
 
 export default function SearchPanel({ onPlay }: SearchPanelProps) {
+  const { t } = useTranslation("c-rmhmusic");
   const { isSearchOpen, searchResults, searchQuery, setSearchResults, setSearchQuery, room } = useRmhMusicStore();
   const [loading, setLoading] = useState(false);
   const [notConfigured, setNotConfigured] = useState(false);
@@ -78,7 +80,7 @@ export default function SearchPanel({ onPlay }: SearchPanelProps) {
               <input
                 ref={inputRef}
                 type="text"
-                placeholder="Search Spotify..."
+                placeholder={t("search-spotify-placeholder", { defaultValue: "Search Spotify..." })}
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
                 className="w-full pl-10 pr-8 py-2 rounded-lg text-sm outline-none"
@@ -96,14 +98,14 @@ export default function SearchPanel({ onPlay }: SearchPanelProps) {
           <div className="flex-1 overflow-y-auto p-2">
             {searchQuery ? (
               <>
-                {loading && <p className="text-center py-4 text-sm" style={{ color: 'var(--site-text-muted)' }}>Searching...</p>}
+                {loading && <p className="text-center py-4 text-sm" style={{ color: 'var(--site-text-muted)' }}>{t("searching", { defaultValue: "Searching..." })}</p>}
                 {!loading && notConfigured && (
                   <p className="text-center py-4 text-sm" style={{ color: 'var(--site-text-muted)' }}>
-                    Music search isn’t configured on this server.
+                    {t("not-configured", { defaultValue: "Music search isn't configured on this server." })}
                   </p>
                 )}
                 {!loading && !notConfigured && searchResults.length === 0 && searchQuery && (
-                  <p className="text-center py-4 text-sm" style={{ color: 'var(--site-text-muted)' }}>No results found</p>
+                  <p className="text-center py-4 text-sm" style={{ color: 'var(--site-text-muted)' }}>{t("no-results", { defaultValue: "No results found" })}</p>
                 )}
                 {searchResults.map((track: any) => (
                   <TrackCard
@@ -125,7 +127,7 @@ export default function SearchPanel({ onPlay }: SearchPanelProps) {
                   <>
                     <div className="flex items-center gap-2 px-2 py-1 mb-1">
                       <ListMusic className="w-4 h-4" style={{ color: 'var(--site-accent)' }} />
-                      <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--site-text-muted)' }}>Queue</span>
+                      <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--site-text-muted)' }}>{t("queue-label", { defaultValue: "Queue" })}</span>
                     </div>
                     {room.queue.map((item) => (
                       <TrackCard
@@ -142,7 +144,7 @@ export default function SearchPanel({ onPlay }: SearchPanelProps) {
                 )}
                 {(!room || room.queue.length === 0) && (
                   <p className="text-center py-8 text-sm" style={{ color: 'var(--site-text-dim)' }}>
-                    Search for songs above
+                    {t("search-prompt", { defaultValue: "Search for songs above" })}
                   </p>
                 )}
               </>

@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Share2, Trophy, Clock, Target } from 'lucide-react';
+import { useTranslation } from "react-i18next";
 import { RankBadge } from '../reputation/rank-badge';
 
 interface ResultCardProps {
@@ -23,6 +24,7 @@ const MODE_COLORS: Record<string, string> = {
 };
 
 export function ResultCard({ mode, correct, score, timeMs, attempts, difficulty, userXp = 0, date, isReplay = false }: ResultCardProps) {
+  const { t } = useTranslation("c-doctrine");
   const color = MODE_COLORS[mode] ?? '#F97316';
   const timeStr = (timeMs / 1000).toFixed(1);
 
@@ -53,16 +55,16 @@ export function ResultCard({ mode, correct, score, timeMs, attempts, difficulty,
       {/* Mode + Result */}
       <div className="text-center">
         <p className="text-xs font-mono uppercase tracking-widest mb-1" style={{ color }}>
-          {mode}{isReplay ? ' — REPLAY' : ''}
+          {mode}{isReplay ? ` — ${t("replay", { defaultValue: "REPLAY" })}` : ''}
         </p>
         {isReplay && (
-          <p className="text-[10px] text-white/30 mb-1">+3 XP (replay)</p>
+          <p className="text-[10px] text-white/30 mb-1">{t("replay-xp", { defaultValue: "+3 XP (replay)" })}</p>
         )}
         <p className="text-3xl font-black text-white">
-          {correct ? score : 'FAILED'}
+          {correct ? score : t("failed", { defaultValue: "FAILED" })}
         </p>
         {correct && (
-          <p className="text-xs text-white/40 mt-1">points</p>
+          <p className="text-xs text-white/40 mt-1">{t("points", { defaultValue: "points" })}</p>
         )}
       </div>
 
@@ -71,12 +73,12 @@ export function ResultCard({ mode, correct, score, timeMs, attempts, difficulty,
         <div className="text-center">
           <Clock size={14} className="mx-auto text-white/30 mb-1" />
           <p className="text-base md:text-sm font-mono text-white/80">{timeStr}s</p>
-          <p className="text-xs md:text-[10px] text-white/30">time</p>
+          <p className="text-xs md:text-[10px] text-white/30">{t("time", { defaultValue: "time" })}</p>
         </div>
         <div className="text-center">
           <Target size={14} className="mx-auto text-white/30 mb-1" />
           <p className="text-base md:text-sm font-mono text-white/80">{attempts}</p>
-          <p className="text-xs md:text-[10px] text-white/30">attempts</p>
+          <p className="text-xs md:text-[10px] text-white/30">{t("attempts", { defaultValue: "attempts" })}</p>
         </div>
         <div className="text-center">
           <Trophy size={14} className="mx-auto text-white/30 mb-1" />
@@ -85,7 +87,7 @@ export function ResultCard({ mode, correct, score, timeMs, attempts, difficulty,
               <span key={i} className="text-sm md:text-xs" style={{ color }}>★</span>
             ))}
           </div>
-          <p className="text-xs md:text-[10px] text-white/30">difficulty</p>
+          <p className="text-xs md:text-[10px] text-white/30">{t("difficulty", { defaultValue: "difficulty" })}</p>
         </div>
       </div>
 
@@ -103,7 +105,7 @@ export function ResultCard({ mode, correct, score, timeMs, attempts, difficulty,
         style={{ background: color, color: '#000' }}
       >
         <Share2 size={14} />
-        Share Result
+        {t("share-result", { defaultValue: "Share Result" })}
       </button>
 
       <p className="text-center text-[9px] text-white/20 font-mono">

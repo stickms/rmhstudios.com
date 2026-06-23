@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { MusicManager } from "@/lib/house-always-wins/music";
 
 interface MenuOverlayProps {
@@ -9,6 +10,7 @@ interface MenuOverlayProps {
 }
 
 export function MenuOverlay({ open, onClose }: MenuOverlayProps) {
+  const { t } = useTranslation("c-house-always-wins");
   const [volume, setVolume] = useState(() => MusicManager.getVolume());
 
   const handleVolumeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -35,13 +37,13 @@ export function MenuOverlay({ open, onClose }: MenuOverlayProps) {
     <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/80 backdrop-blur-sm">
       <div className="bg-neutral-900 border border-neutral-700/50 rounded-xl p-6 w-72 shadow-2xl">
         <h2 className="text-amber-100/90 text-lg font-bold tracking-wide mb-6 text-center">
-          Menu
+          {t("menu-title", { defaultValue: "Menu" })}
         </h2>
 
         {/* Volume */}
         <div className="mb-6">
           <label className="text-neutral-400 text-xs font-mono tracking-widest uppercase block mb-2">
-            Music Volume
+            {t("music-volume", { defaultValue: "Music Volume" })}
           </label>
           <div className="flex items-center gap-3">
             <input
@@ -61,17 +63,17 @@ export function MenuOverlay({ open, onClose }: MenuOverlayProps) {
 
         {/* Controls reference */}
         <div className="mb-6 text-neutral-500 text-xs font-mono space-y-1">
-          <div>WASD / Arrows &mdash; Move</div>
-          <div>Space &mdash; Jump</div>
-          <div>E &mdash; Interact</div>
-          <div>M &mdash; Menu</div>
+          <div>{t("controls-move", { defaultValue: "WASD / Arrows — Move" })}</div>
+          <div>{t("controls-jump", { defaultValue: "Space — Jump" })}</div>
+          <div>{t("controls-interact", { defaultValue: "E — Interact" })}</div>
+          <div>{t("controls-menu", { defaultValue: "M — Menu" })}</div>
         </div>
 
         <button
           onClick={onClose}
           className="w-full py-2 bg-neutral-800 hover:bg-neutral-700 border border-neutral-600/30 text-neutral-300 text-sm font-mono rounded-lg transition-colors"
         >
-          Resume [M]
+          {t("resume", { defaultValue: "Resume [M]" })}
         </button>
       </div>
     </div>

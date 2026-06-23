@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { Clock, Play, Send, ChevronDown, Check } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { FakeTestResults } from './FakeTestResults';
 import { useJobsDataStore } from '@/lib/store/useJobsDataStore';
 
@@ -57,6 +58,7 @@ export function OAEditor({
     initialLanguage,
     isSubmitted: initialSubmitted,
 }: OAEditorProps) {
+    const { t } = useTranslation("c-rmh-jobs");
     const [language, setLanguage] = useState(initialLanguage ?? 'javascript');
     const [code, setCode] = useState(initialCode ?? problem.starterCode[language] ?? '');
     const [timeLeft, setTimeLeft] = useState<number>(0);
@@ -172,12 +174,12 @@ export function OAEditor({
                             }}
                         />
                     </div>
-                    <h1 className="text-2xl font-bold mb-3">Assessment Submitted</h1>
+                    <h1 className="text-2xl font-bold mb-3">{t("assessment-submitted", { defaultValue: "Assessment Submitted" })}</h1>
                     <p className="text-sm mb-2" style={{ color: 'var(--jobs-text-muted)' }}>
-                        Your Online Assessment for <strong>{job.title}</strong> at <strong>{job.company}</strong> has been submitted successfully.
+                        {t("assessment-submitted-detail", { defaultValue: "Your Online Assessment for {{jobTitle}} at {{company}} has been submitted successfully.", jobTitle: job.title, company: job.company })}
                     </p>
                     <p className="text-sm mb-8" style={{ color: 'var(--jobs-text-subtle)' }}>
-                        Your submission is under review. You will be notified of the results.
+                        {t("submission-under-review", { defaultValue: "Your submission is under review. You will be notified of the results." })}
                     </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                         <Link
@@ -185,14 +187,14 @@ export function OAEditor({
                             className="jobs-btn-primary px-6 py-2.5 rounded-lg text-sm inline-block"
                             style={{ borderRadius: 'var(--jobs-radius)' }}
                         >
-                            Return to RMH Jobs Portal
+                            {t("return-to-jobs-portal", { defaultValue: "Return to RMH Jobs Portal" })}
                         </Link>
                         <Link
                             to="/secret/jobs/applications"
                             className="jobs-btn-secondary px-6 py-2.5 rounded-lg text-sm inline-block"
                             style={{ borderRadius: 'var(--jobs-radius)' }}
                         >
-                            View My Applications
+                            {t("view-my-applications", { defaultValue: "View My Applications" })}
                         </Link>
                     </div>
                 </div>
@@ -213,13 +215,13 @@ export function OAEditor({
                     </span>
                     <span className="text-xs" style={{ color: 'var(--jobs-text-subtle)' }}>|</span>
                     <span className="text-xs" style={{ color: 'var(--jobs-text-muted)' }}>
-                        Online Assessment — {job.company}
+                        {t("online-assessment-company", { defaultValue: "Online Assessment — {{company}}", company: job.company })}
                     </span>
                 </div>
                 <div className={`flex items-center gap-1.5 font-mono text-sm ${isUrgent ? 'timer-urgent' : ''}`} style={{ color: isUrgent ? undefined : 'var(--jobs-text)' }}>
                     <Clock size={14} />
                     {timeLeft <= 0 ? (
-                        <span>Time&apos;s up</span>
+                        <span>{t("times-up", { defaultValue: "Time's up" })}</span>
                     ) : (
                         <span>{String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}</span>
                     )}
@@ -241,7 +243,7 @@ export function OAEditor({
                             {problem.difficulty}
                         </span>
                         <span className="text-xs" style={{ color: 'var(--jobs-text-subtle)' }}>
-                            Required: {problem.complexityRequirement}
+                            {t("required-complexity", { defaultValue: "Required: {{complexity}}", complexity: problem.complexityRequirement })}
                         </span>
                         <span className="text-xs ml-auto" style={{ color: 'var(--jobs-text-subtle)' }}>
                             {problem.gameReference}
@@ -258,7 +260,7 @@ export function OAEditor({
                         />
 
                         <div className="mt-6">
-                            <h4 className="font-semibold text-sm mb-3" style={{ color: 'var(--jobs-text)' }}>Examples</h4>
+                            <h4 className="font-semibold text-sm mb-3" style={{ color: 'var(--jobs-text)' }}>{t("examples", { defaultValue: "Examples" })}</h4>
                             {problem.examples.map((ex, i) => (
                                 <div
                                     key={i}
@@ -266,15 +268,15 @@ export function OAEditor({
                                     style={{ background: 'var(--jobs-surface-2)', borderRadius: 'var(--jobs-radius-sm)' }}
                                 >
                                     <div className="mb-2">
-                                        <span className="font-semibold" style={{ color: 'var(--jobs-text-muted)' }}>Input:</span>
+                                        <span className="font-semibold" style={{ color: 'var(--jobs-text-muted)' }}>{t("input-label", { defaultValue: "Input:" })}</span>
                                         <pre className="mt-1 whitespace-pre-wrap" style={{ color: 'var(--jobs-text)' }}>{ex.input}</pre>
                                     </div>
                                     <div className="mb-2">
-                                        <span className="font-semibold" style={{ color: 'var(--jobs-text-muted)' }}>Output:</span>
+                                        <span className="font-semibold" style={{ color: 'var(--jobs-text-muted)' }}>{t("output-label", { defaultValue: "Output:" })}</span>
                                         <pre className="mt-1" style={{ color: 'var(--jobs-accent)' }}>{ex.output}</pre>
                                     </div>
                                     <div>
-                                        <span className="font-semibold" style={{ color: 'var(--jobs-text-muted)' }}>Explanation:</span>
+                                        <span className="font-semibold" style={{ color: 'var(--jobs-text-muted)' }}>{t("explanation-label", { defaultValue: "Explanation:" })}</span>
                                         <p className="mt-1" style={{ color: 'var(--jobs-text-muted)' }}>{ex.explanation}</p>
                                     </div>
                                 </div>
@@ -282,7 +284,7 @@ export function OAEditor({
                         </div>
 
                         <div className="mt-6">
-                            <h4 className="font-semibold text-sm mb-2" style={{ color: 'var(--jobs-text)' }}>Constraints</h4>
+                            <h4 className="font-semibold text-sm mb-2" style={{ color: 'var(--jobs-text)' }}>{t("constraints", { defaultValue: "Constraints" })}</h4>
                             <ul className="space-y-1">
                                 {problem.constraints.map((c, i) => (
                                     <li key={i} className="text-xs flex items-start gap-2" style={{ color: 'var(--jobs-text-muted)' }}>
@@ -338,7 +340,7 @@ export function OAEditor({
                                 style={{ borderRadius: 'var(--jobs-radius-sm)' }}
                             >
                                 <Play size={11} />
-                                Run
+                                {t("run", { defaultValue: "Run" })}
                             </button>
                             <button
                                 onClick={handleSubmitClick}
@@ -347,7 +349,7 @@ export function OAEditor({
                                 style={{ borderRadius: 'var(--jobs-radius-sm)' }}
                             >
                                 <Send size={11} />
-                                {isSubmitting ? 'Submitting...' : 'Submit'}
+                                {isSubmitting ? t("submitting", { defaultValue: "Submitting..." }) : t("submit", { defaultValue: "Submit" })}
                             </button>
                         </div>
                     </div>
@@ -356,7 +358,7 @@ export function OAEditor({
                     <div className="flex-1 min-h-0">
                         <Suspense fallback={
                             <div className="flex items-center justify-center h-full" style={{ color: 'var(--jobs-text-muted)' }}>
-                                Loading editor...
+                                {t("loading-editor", { defaultValue: "Loading editor..." })}
                             </div>
                         }>
                             <MonacoEditor
@@ -394,7 +396,7 @@ export function OAEditor({
                             ) : runResults ? (
                                 <div className="space-y-2">
                                     <p className="text-xs font-mono" style={{ color: 'var(--jobs-danger)' }}>
-                                        {runResults.passedTests}/{runResults.totalTests} test cases passed — Time Limit Exceeded on remaining
+                                        {t("test-results-tle", { defaultValue: "{{passed}}/{{total}} test cases passed — Time Limit Exceeded on remaining", passed: runResults.passedTests, total: runResults.totalTests })}
                                     </p>
                                 </div>
                             ) : null}
@@ -410,10 +412,9 @@ export function OAEditor({
                         className="p-6 rounded-xl border max-w-md w-full mx-4"
                         style={{ background: 'var(--jobs-surface)', borderColor: 'var(--jobs-border)', borderRadius: 'var(--jobs-radius-lg)' }}
                     >
-                        <h3 className="text-lg font-bold mb-2">Submit Assessment?</h3>
+                        <h3 className="text-lg font-bold mb-2">{t("submit-assessment-title", { defaultValue: "Submit Assessment?" })}</h3>
                         <p className="text-sm mb-6" style={{ color: 'var(--jobs-text-muted)' }}>
-                            Are you sure you want to submit your solution? This action cannot be undone and your assessment will be
-                            sent for evaluation.
+                            {t("submit-assessment-confirm", { defaultValue: "Are you sure you want to submit your solution? This action cannot be undone and your assessment will be sent for evaluation." })}
                         </p>
                         <div className="flex items-center gap-3 justify-end">
                             <button
@@ -421,14 +422,14 @@ export function OAEditor({
                                 className="jobs-btn-secondary px-4 py-2 rounded-lg text-sm"
                                 style={{ borderRadius: 'var(--jobs-radius)' }}
                             >
-                                Cancel
+                                {t("cancel", { defaultValue: "Cancel" })}
                             </button>
                             <button
                                 onClick={doSubmit}
                                 className="jobs-btn-primary px-4 py-2 rounded-lg text-sm"
                                 style={{ borderRadius: 'var(--jobs-radius)' }}
                             >
-                                Yes, Submit
+                                {t("yes-submit", { defaultValue: "Yes, Submit" })}
                             </button>
                         </div>
                     </div>

@@ -4,6 +4,7 @@
  */
 'use client';
 
+import { useTranslation } from "react-i18next";
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
 import { META_UPGRADES, MetaUpgradeDef } from '@/lib/altair/data/meta-upgrades';
 import { useAltairToastStore } from '@/lib/altair/stores/toast-store';
@@ -39,6 +40,7 @@ interface MetaShopScreenProps {
 }
 
 export default function MetaShopScreen({ onBack }: MetaShopScreenProps) {
+  const { t } = useTranslation("c-altair");
   const coins = useAltairMetaStore((s) => s.coins);
   const upgrades = useAltairMetaStore((s) => s.upgrades);
   const purchaseUpgrade = useAltairMetaStore((s) => s.purchaseUpgrade);
@@ -47,9 +49,9 @@ export default function MetaShopScreen({ onBack }: MetaShopScreenProps) {
   const handlePurchase = (id: string, name: string) => {
     const success = purchaseUpgrade(id);
     if (success) {
-      addToast(`Upgraded ${name}!`, 'success');
+      addToast(t("upgraded-name", { defaultValue: "Upgraded {{name}}!", name }), 'success');
     } else {
-      addToast('Not enough coins!', 'error');
+      addToast(t("not-enough-coins", { defaultValue: "Not enough coins!" }), 'error');
     }
   };
 
@@ -57,7 +59,7 @@ export default function MetaShopScreen({ onBack }: MetaShopScreenProps) {
     <div className="altair-parchment flex flex-col min-h-[calc(100vh-56px)] px-4 py-6 max-w-2xl mx-auto">
       {/* Coin balance */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-(--altair-text)">Meta Shop</h2>
+        <h2 className="text-2xl font-bold text-(--altair-text)">{t("meta-shop-title", { defaultValue: "Meta Shop" })}</h2>
         <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-(--altair-surface) border border-(--altair-warning)/30">
           <Coins size={18} className="text-(--altair-warning)" />
           <span className="text-lg font-bold text-(--altair-warning)">{coins}</span>
@@ -119,7 +121,7 @@ export default function MetaShopScreen({ onBack }: MetaShopScreenProps) {
                             : 'bg-(--altair-surface-active) text-(--altair-text-dim) cursor-not-allowed'
                         }`}
                       >
-                        {nextCost} coins
+                        {t("cost-coins", { defaultValue: "{{count}} coins", count: nextCost })}
                       </button>
                     )}
                   </div>
@@ -136,7 +138,7 @@ export default function MetaShopScreen({ onBack }: MetaShopScreenProps) {
         data-altair-sfx="menu_back"
         className="mt-auto py-3 rounded-xl font-semibold text-(--altair-text) bg-(--altair-surface) border border-(--altair-border) hover:bg-(--altair-surface-hover) transition-colors"
       >
-        Back
+        {t("back", { defaultValue: "Back" })}
       </button>
     </div>
   );

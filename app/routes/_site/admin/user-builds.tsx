@@ -4,6 +4,7 @@
 
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { ArrowLeft, Loader2, Search, AlertCircle, Edit, ExternalLink, Lock, Award } from 'lucide-react';
 import { useSession } from '@/components/Providers';
@@ -25,6 +26,7 @@ export const Route = createFileRoute('/_site/admin/user-builds')({
 });
 
 function AdminUserBuildsPage() {
+  const { t } = useTranslation("admin");
   const { data: session } = useSession();
   const navigate = useNavigate();
   const [builds, setBuilds] = useState<Build[]>([]);
@@ -88,22 +90,22 @@ function AdminUserBuildsPage() {
   };
 
   return (
-    <PageLayout title="Manage User Builds" wide>
+    <PageLayout title={t("manage-user-builds", { defaultValue: "Manage User Builds" })} wide>
       <div className="p-4 md:p-6 space-y-6">
         <div className="flex items-center gap-4">
           <Link to="/admin" className="p-2 hover:bg-site-surface-hover rounded-full transition-colors">
             <ArrowLeft className="w-5 h-5 text-site-text-dim" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold font-display text-site-text">User Builds</h1>
-            <p className="text-site-text-muted mt-1">Search, moderate, and manage all user-submitted builds.</p>
+            <h1 className="text-2xl font-bold font-display text-site-text">{t("user-builds-title", { defaultValue: "User Builds" })}</h1>
+            <p className="text-site-text-muted mt-1">{t("user-builds-description", { defaultValue: "Search, moderate, and manage all user-submitted builds." })}</p>
           </div>
         </div>
 
         <div className="bg-site-surface border border-site-border rounded-xl overflow-hidden p-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-site-text-dim" />
-            <input type="text" placeholder="Search by build title or description..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full bg-site-bg border border-site-border rounded-lg pl-10 pr-4 py-2.5 text-site-text focus:outline-none focus:border-site-accent/50 focus:ring-1 focus:ring-site-accent/50 transition-all placeholder:text-site-text-dim/50" />
+            <input type="text" placeholder={t("search-builds-placeholder", { defaultValue: "Search by build title or description..." })} value={search} onChange={(e) => setSearch(e.target.value)} className="w-full bg-site-bg border border-site-border rounded-lg pl-10 pr-4 py-2.5 text-site-text focus:outline-none focus:border-site-accent/50 focus:ring-1 focus:ring-site-accent/50 transition-all placeholder:text-site-text-dim/50" />
           </div>
         </div>
 
@@ -112,14 +114,14 @@ function AdminUserBuildsPage() {
             {loading && (
               <div className="absolute inset-0 bg-site-surface/50 backdrop-blur-sm z-10 flex flex-col items-center justify-center p-8">
                 <Loader2 className="w-8 h-8 text-site-accent animate-spin mb-4" />
-                <span className="text-site-text-muted">Loading builds...</span>
+                <span className="text-site-text-muted">{t("loading-builds", { defaultValue: "Loading builds..." })}</span>
               </div>
             )}
             
             {!loading && builds.length === 0 && (
               <div className="p-12 text-center text-site-text-muted flex flex-col items-center">
                 <AlertCircle className="w-8 h-8 mb-3 text-site-text-dim" />
-                <p>No builds found matching your search.</p>
+                <p>{t("no-builds-found", { defaultValue: "No builds found matching your search." })}</p>
               </div>
             )}
 
@@ -133,13 +135,13 @@ function AdminUserBuildsPage() {
                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${build.visibility === 'PUBLIC' ? 'bg-green-500/10 text-green-400' : build.visibility === 'UNLISTED' ? 'bg-yellow-500/10 text-yellow-400' : 'bg-site-bg text-site-text-dim'}`}>{build.visibility}</span>
                       {build.visibility === 'PRIVATE' && <Lock className="w-3.5 h-3.5 text-site-text-dim ml-1" />}
                       {build.featured && (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-400">Curated</span>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-400">{t("curated-badge", { defaultValue: "Curated" })}</span>
                       )}
                     </div>
                     <div className="flex items-center gap-2 text-sm text-site-text-dim truncate">
                       <Link to={`/u/${build.user.handle || build.user.username}` as string} className="hover:text-site-text transition-colors">@{build.user.handle || build.user.username}</Link>
                       <span>&bull;</span>
-                      <span>{build.category?.name || 'Uncategorized'}</span>
+                      <span>{build.category?.name || t("uncategorized", { defaultValue: "Uncategorized" })}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 mt-3 sm:mt-0">
@@ -150,14 +152,14 @@ function AdminUserBuildsPage() {
                           ? 'text-amber-400 hover:bg-amber-500/10 hover:border-amber-500/20'
                           : 'text-site-text-dim hover:text-amber-400 hover:bg-amber-500/10 hover:border-amber-500/20'
                       }`}
-                      title={build.featured ? 'Remove Curated badge' : 'Add Curated badge'}
+                      title={build.featured ? t("remove-curated-badge", { defaultValue: "Remove Curated badge" }) : t("add-curated-badge", { defaultValue: "Add Curated badge" })}
                     >
                       <Award className="w-4 h-4" />
                     </button>
-                    <Link to={`/user-builds/${build.slug}` as string} className="p-2 rounded-lg text-site-text-dim hover:text-site-accent hover:bg-site-bg transition-colors border border-transparent hover:border-site-border" title="View Build">
+                    <Link to={`/user-builds/${build.slug}` as string} className="p-2 rounded-lg text-site-text-dim hover:text-site-accent hover:bg-site-bg transition-colors border border-transparent hover:border-site-border" title={t("view-build", { defaultValue: "View Build" })}>
                       <ExternalLink className="w-4 h-4" />
                     </Link>
-                    <Link to="/user-builds/submit" search={{ edit: build.id }} className="p-2 rounded-lg text-blue-400 hover:bg-blue-500/10 transition-colors border border-transparent hover:border-blue-500/20" title="Edit Build as Admin">
+                    <Link to="/user-builds/submit" search={{ edit: build.id }} className="p-2 rounded-lg text-blue-400 hover:bg-blue-500/10 transition-colors border border-transparent hover:border-blue-500/20" title={t("edit-build-as-admin", { defaultValue: "Edit Build as Admin" })}>
                       <Edit className="w-4 h-4" />
                     </Link>
                   </div>

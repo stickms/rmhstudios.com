@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, Users, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export function HoldemLobby({ coins }: Props) {
+  const { t } = useTranslation("c-rmhcoins");
   const roomList = useHoldemStore((s) => s.roomList);
   const [showCreate, setShowCreate] = useState(false);
   const [joinCodeInput, setJoinCodeInput] = useState('');
@@ -69,7 +71,7 @@ export function HoldemLobby({ coins }: Props) {
       <div className="flex gap-2">
         <input
           type="text"
-          placeholder="Join code..."
+          placeholder={t("join-code-placeholder", { defaultValue: "Join code..." })}
           value={joinCodeInput}
           onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
           maxLength={5}
@@ -80,7 +82,7 @@ export function HoldemLobby({ coins }: Props) {
           disabled={!joinCodeInput.trim()}
           className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-sm"
         >
-          Join
+          {t("join", { defaultValue: "Join" })}
         </Button>
       </div>
 
@@ -88,7 +90,7 @@ export function HoldemLobby({ coins }: Props) {
         <div className="flex flex-col gap-2 p-3 rounded-lg bg-site-surface border border-site-border">
           <input
             type="text"
-            placeholder="Table name (optional)"
+            placeholder={t("table-name-placeholder", { defaultValue: "Table name (optional)" })}
             value={roomName}
             onChange={(e) => setRoomName(e.target.value)}
             maxLength={30}
@@ -96,40 +98,40 @@ export function HoldemLobby({ coins }: Props) {
           />
           <div className="grid grid-cols-2 gap-2">
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-site-text-dim">Max players</label>
+              <label className="text-xs text-site-text-dim">{t("max-players", { defaultValue: "Max players" })}</label>
               <Select value={maxPlayers} onChange={(e) => setMaxPlayers(Number(e.target.value))}>
                 {[2, 3, 4, 5, 6].map((n) => <option key={n} value={n}>{n}</option>)}
               </Select>
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-site-text-dim">Small blind</label>
+              <label className="text-xs text-site-text-dim">{t("small-blind", { defaultValue: "Small blind" })}</label>
               <Select value={smallBlind} onChange={(e) => setSmallBlind(Number(e.target.value))}>
                 {[1, 5, 10, 25, 50].map((n) => <option key={n} value={n}>{n}/{n * 2}</option>)}
               </Select>
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-site-text-dim">Buy-in</label>
+              <label className="text-xs text-site-text-dim">{t("buy-in", { defaultValue: "Buy-in" })}</label>
               <input type="number" min={smallBlind * 2} value={buyIn} onChange={(e) => setBuyIn(Number(e.target.value))}
                 className="bg-site-bg border border-site-border rounded px-2 py-1 text-site-text text-sm" />
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-site-text-dim">Privacy</label>
+              <label className="text-xs text-site-text-dim">{t("privacy", { defaultValue: "Privacy" })}</label>
               <Select value={privacy} onChange={(e) => setPrivacy(e.target.value as 'public' | 'unlisted')}>
-                <option value="public">Public</option>
-                <option value="unlisted">Unlisted</option>
+                <option value="public">{t("privacy-public", { defaultValue: "Public" })}</option>
+                <option value="unlisted">{t("privacy-unlisted", { defaultValue: "Unlisted" })}</option>
               </Select>
             </div>
           </div>
           {coins < buyIn && (
-            <p className="text-xs text-red-400">Not enough coins (need {buyIn})</p>
+            <p className="text-xs text-red-400">{t("not-enough-coins", { defaultValue: "Not enough coins (need {{buyIn}})", buyIn })}</p>
           )}
           <div className="flex gap-2">
             <Button onClick={handleCreate} disabled={coins < buyIn}
               className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-sm">
-              Create Table
+              {t("create-table", { defaultValue: "Create Table" })}
             </Button>
             <Button onClick={() => setShowCreate(false)} variant="outline" className="flex-1 rounded-lg text-sm">
-              Cancel
+              {t("cancel", { defaultValue: "Cancel" })}
             </Button>
           </div>
         </div>
@@ -137,7 +139,7 @@ export function HoldemLobby({ coins }: Props) {
         <div className="flex gap-2">
           <Button onClick={() => setShowCreate(true)}
             className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-sm">
-            <Plus className="w-4 h-4 mr-1" /> Create Table
+            <Plus className="w-4 h-4 mr-1" /> {t("create-table", { defaultValue: "Create Table" })}
           </Button>
           <button onClick={handleRefresh}
             className="p-2 rounded-lg border border-site-border bg-site-surface text-site-text-dim hover:text-site-text transition-colors">
@@ -148,7 +150,7 @@ export function HoldemLobby({ coins }: Props) {
 
       {roomList.length === 0 ? (
         <div className="text-center py-8">
-          <p className="text-sm text-site-text-dim">No tables yet. Create one to start playing!</p>
+          <p className="text-sm text-site-text-dim">{t("no-tables", { defaultValue: "No tables yet. Create one to start playing!" })}</p>
         </div>
       ) : (
         <div className="flex flex-col gap-2">
@@ -159,8 +161,8 @@ export function HoldemLobby({ coins }: Props) {
               <div className="flex flex-col gap-0.5">
                 <span className="text-sm font-bold text-site-text">{room.name}</span>
                 <span className="text-xs text-site-text-dim">
-                  Blinds: {room.smallBlind}/{room.bigBlind}
-                  {room.inProgress && <span className="ml-1.5 text-emerald-500">In progress</span>}
+                  {t("blinds", { defaultValue: "Blinds" })}: {room.smallBlind}/{room.bigBlind}
+                  {room.inProgress && <span className="ml-1.5 text-emerald-500">{t("in-progress", { defaultValue: "In progress" })}</span>}
                 </span>
               </div>
               <div className="flex items-center gap-1.5">

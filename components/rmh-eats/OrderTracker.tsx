@@ -14,37 +14,28 @@ import {
     Phone,
     AlertTriangle,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useEatsStore } from '@/lib/store/useEatsStore';
 import type { OrderStatus } from '@/lib/rmh-eats/types';
 
 const STATUS_STEPS: {
     status: OrderStatus;
-    label: string;
-    description: string;
     icon: React.ReactNode;
 }[] = [
     {
         status: 'received',
-        label: 'Order Received',
-        description: 'Your order has been confirmed and sent to the restaurant.',
         icon: <Clock className="h-5 w-5" />,
     },
     {
         status: 'preparing',
-        label: 'Preparing',
-        description: 'The kitchen is cooking your food right now.',
         icon: <ChefHat className="h-5 w-5" />,
     },
     {
         status: 'out_for_delivery',
-        label: 'Out for Delivery',
-        description: 'Your driver has picked up the order and is on their way.',
         icon: <Bike className="h-5 w-5" />,
     },
     {
         status: 'delivered',
-        label: 'Delivered',
-        description: 'Your order has arrived. Enjoy your meal!',
         icon: <PartyPopper className="h-5 w-5" />,
     },
 ];
@@ -52,7 +43,22 @@ const STATUS_STEPS: {
 const STATUS_ORDER: OrderStatus[] = ['received', 'preparing', 'out_for_delivery', 'delivered'];
 
 export default function OrderTracker() {
+    const { t } = useTranslation("c-rmh-eats");
     const { orders, selectedOrderId, setView, openReview, openIssueReport } = useEatsStore();
+
+    const statusLabels: Record<OrderStatus, string> = {
+        received: t("status-received-label", { defaultValue: "Order Received" }),
+        preparing: t("status-preparing-label", { defaultValue: "Preparing" }),
+        out_for_delivery: t("status-out-for-delivery-label", { defaultValue: "Out for Delivery" }),
+        delivered: t("status-delivered-label", { defaultValue: "Delivered" }),
+    };
+
+    const statusDescriptions: Record<OrderStatus, string> = {
+        received: t("status-received-desc", { defaultValue: "Your order has been confirmed and sent to the restaurant." }),
+        preparing: t("status-preparing-desc", { defaultValue: "The kitchen is cooking your food right now." }),
+        out_for_delivery: t("status-out-for-delivery-desc", { defaultValue: "Your driver has picked up the order and is on their way." }),
+        delivered: t("status-delivered-desc", { defaultValue: "Your order has arrived. Enjoy your meal!" }),
+    };
 
     const order = useMemo(
         () => orders.find((o) => o.id === selectedOrderId),
@@ -63,9 +69,9 @@ export default function OrderTracker() {
         return (
             <div className="flex flex-col items-center gap-4 py-24">
                 <span className="text-5xl">❓</span>
-                <p className="text-slate-400">Order not found.</p>
+                <p className="text-slate-400">{t("order-not-found", { defaultValue: "Order not found." })}</p>
                 <button onClick={() => setView('home')} className="text-orange-400 hover:text-orange-300 text-sm">
-                    Go home
+                    {t("go-home", { defaultValue: "Go home" })}
                 </button>
             </div>
         );
@@ -85,7 +91,7 @@ export default function OrderTracker() {
                     <ArrowLeft className="h-5 w-5" />
                 </button>
                 <div>
-                    <h2 className="text-xl font-bold text-white">Track Order</h2>
+                    <h2 className="text-xl font-bold text-white">{t("track-order", { defaultValue: "Track Order" })}</h2>
                     <p className="text-sm text-slate-400">#{order.id} · {order.restaurantName}</p>
                 </div>
             </div>
@@ -141,10 +147,10 @@ export default function OrderTracker() {
                                                 isCurrent ? 'text-orange-400' : isPast ? 'text-white' : 'text-slate-600'
                                             }`}
                                         >
-                                            {step.label}
+                                            {statusLabels[step.status]}
                                         </p>
                                         {(isCurrent || isPast) && (
-                                            <p className="text-sm text-slate-400 mt-0.5">{step.description}</p>
+                                            <p className="text-sm text-slate-400 mt-0.5">{statusDescriptions[step.status]}</p>
                                         )}
                                         {/* Timestamp from history */}
                                         {order.statusHistory.find((h) => h.status === step.status) && (
@@ -169,7 +175,7 @@ export default function OrderTracker() {
                         {order.driver.emoji}
                     </div>
                     <div className="flex-1 min-w-0">
-                        <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">Your Driver</p>
+                        <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">{t("your-driver", { defaultValue: "Your Driver" })}</p>
                         <p className="font-semibold text-white">{order.driver.name}</p>
                         <div className="flex items-center gap-1 text-xs text-yellow-400">
                             <Star className="h-3 w-3 fill-current" />
@@ -180,7 +186,7 @@ export default function OrderTracker() {
                         href={`tel:${order.driver.phone}`}
                         onClick={(e) => e.stopPropagation()}
                         className="rounded-xl bg-slate-700 hover:bg-slate-600 p-2.5 text-slate-300 hover:text-white transition-colors"
-                        aria-label="Call driver"
+                        aria-label={t("call-driver", { defaultValue: "Call driver" })}
                     >
                         <Phone className="h-4 w-4" />
                     </a>
@@ -190,7 +196,7 @@ export default function OrderTracker() {
             {/* ETA */}
             {!isDelivered && (
                 <div className="rounded-2xl bg-orange-500/10 border border-orange-500/30 p-4 mb-4">
-                    <p className="text-sm text-orange-400 font-medium">Estimated Arrival</p>
+                    <p className="text-sm text-orange-400 font-medium">{t("estimated-arrival", { defaultValue: "Estimated Arrival" })}</p>
                     <p className="text-2xl font-bold text-white mt-1">
                         {new Date(order.estimatedDelivery).toLocaleTimeString([], {
                             hour: '2-digit',
@@ -202,7 +208,7 @@ export default function OrderTracker() {
 
             {/* Order items */}
             <div className="rounded-2xl bg-slate-800/50 border border-slate-700/50 p-4 mb-4">
-                <h3 className="font-semibold text-white mb-3">Your Order</h3>
+                <h3 className="font-semibold text-white mb-3">{t("your-order", { defaultValue: "Your Order" })}</h3>
                 <div className="space-y-1.5">
                     {order.items.map((item, i) => (
                         <div key={i} className="flex justify-between text-sm">
@@ -213,7 +219,7 @@ export default function OrderTracker() {
                         </div>
                     ))}
                     <div className="pt-2 border-t border-slate-700 flex justify-between font-medium text-white text-sm">
-                        <span>Total</span>
+                        <span>{t("total", { defaultValue: "Total" })}</span>
                         <span>${order.total.toFixed(2)}</span>
                     </div>
                 </div>
@@ -228,14 +234,14 @@ export default function OrderTracker() {
                             className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-orange-500 hover:bg-orange-400 py-3.5 font-semibold text-white transition-colors shadow-lg shadow-orange-500/20"
                         >
                             <Star className="h-5 w-5" />
-                            Leave a Review
+                            {t("leave-a-review", { defaultValue: "Leave a Review" })}
                         </button>
                     )}
                     <button
                         onClick={() => setView('home')}
                         className="flex-1 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 py-3.5 font-semibold text-white transition-colors"
                     >
-                        Back to Home
+                        {t("back-to-home", { defaultValue: "Back to Home" })}
                     </button>
                 </div>
                 {isDelivered && !order.issueReported && (
@@ -244,7 +250,7 @@ export default function OrderTracker() {
                         className="w-full flex items-center justify-center gap-2 rounded-2xl bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 py-3 text-sm font-medium text-slate-400 hover:text-white transition-colors"
                     >
                         <AlertTriangle className="h-4 w-4 text-yellow-400" />
-                        Report an Issue
+                        {t("report-an-issue", { defaultValue: "Report an Issue" })}
                     </button>
                 )}
             </div>

@@ -3,6 +3,7 @@
  */
 
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { useTranslation } from "react-i18next";
 import { useJobsDataStore } from '@/lib/store/useJobsDataStore';
 import { OAEditor } from '@/components/rmh-jobs/OAEditor';
 
@@ -11,6 +12,7 @@ export const Route = createFileRoute('/secret/jobs/assessment/$id')({
 });
 
 function AssessmentPage() {
+  const { t } = useTranslation("r-secret");
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const data = useJobsDataStore((s) => s.getAssessment(id));
@@ -18,13 +20,13 @@ function AssessmentPage() {
   if (!data || !data.problem) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-        <p className="text-lg" style={{ color: 'var(--jobs-danger)' }}>Assessment not found</p>
+        <p className="text-lg" style={{ color: 'var(--jobs-danger)' }}>{t("assessment-not-found", { defaultValue: "Assessment not found" })}</p>
         <button
           onClick={() => navigate({ to: '/secret/jobs/applications' })}
           className="text-sm"
           style={{ color: 'var(--jobs-accent)' }}
         >
-          &larr; Back to applications
+          &larr; {t("back-to-applications", { defaultValue: "Back to applications" })}
         </button>
       </div>
     );
@@ -49,8 +51,8 @@ function AssessmentPage() {
                   passedTests: data.assessment.evaluationResult === 'pass' ? 247 : 14,
                   message:
                     data.assessment.evaluationResult === 'pass'
-                      ? 'All 247 test cases passed! Warning: solution appears to be O(2^n).'
-                      : '14/247 test cases passed — Time Limit Exceeded on remaining.',
+                      ? t("result-pass-message", { defaultValue: "All 247 test cases passed! Warning: solution appears to be O(2^n)." })
+                      : t("result-fail-message", { defaultValue: "14/247 test cases passed — Time Limit Exceeded on remaining." }),
                   rejectionMessage: data.assessment.rejectionMessage ?? '',
               }
             : null

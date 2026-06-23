@@ -7,6 +7,7 @@ import { useFeedStore } from '@/stores/feedStore';
 import { authClient } from '@/lib/auth-client';
 import { ComposeModal } from './ComposeModal';
 import type { FeedItem } from '@/lib/feed-types';
+import { useTranslation } from 'react-i18next';
 
 interface RMHarkActionsProps {
   item: FeedItem;
@@ -22,6 +23,7 @@ function formatCount(n: number | undefined): string {
 
 export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation('feed');
   const { updateItem: storeUpdate } = useFeedStore();
   const { data: session } = authClient.useSession();
   const [repostMenu, setRepostMenu] = useState(false);
@@ -122,7 +124,7 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
               className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
             >
               <PenSquare className="w-4 h-4 text-site-text-dim" />
-              Quote
+              {t('quote', { defaultValue: 'Quote' })}
             </button>
           </div>
         )}
@@ -142,7 +144,7 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
             ? 'text-rose-400'
             : 'text-site-text-dim hover:text-rose-400 hover:bg-rose-400/10'
         }`}
-        title="Like"
+        title={t('like', { defaultValue: 'Like' })}
       >
         <Heart className={`w-4 h-4 group-hover:scale-110 transition-transform ${item.liked ? 'fill-current' : ''}`} />
         <span className="text-xs">{formatCount(item.likeCount)}</span>

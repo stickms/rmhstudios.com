@@ -1,4 +1,5 @@
 import { Shield, Lock } from 'lucide-react';
+import { useTranslation } from "react-i18next";
 import { TIERS } from '@/lib/doctrine/constants';
 import type { TierId } from '@/lib/doctrine/types';
 
@@ -9,6 +10,7 @@ interface AccessGateProps {
 }
 
 export function AccessGate({ requiredTier, children, userTier }: AccessGateProps) {
+  const { t } = useTranslation("c-doctrine");
   const hasAccess = (
     requiredTier === 'PUBLIC' ||
     (requiredTier === 'INSIDER' && (userTier === 'INSIDER' || userTier === 'OPERATOR')) ||
@@ -31,16 +33,16 @@ export function AccessGate({ requiredTier, children, userTier }: AccessGateProps
         <Lock size={20} style={{ color: tier.color }} />
       </div>
       <h3 className="text-sm font-semibold text-white/80">
-        {tier.name} Access Required
+        {t("access-required", { defaultValue: "{{tierName}} Access Required", tierName: tier.name })}
       </h3>
       <p className="text-xs text-white/40 max-w-xs">
-        This content is restricted to {tier.name} tier and above.
-        {requiredTier === 'INSIDER' && ' Upgrade to Asset ($5/mo) to unlock.'}
-        {requiredTier === 'OPERATOR' && ' Upgrade to Operator ($15/mo) to unlock.'}
+        {t("content-restricted", { defaultValue: "This content is restricted to {{tierName}} tier and above.", tierName: tier.name })}
+        {requiredTier === 'INSIDER' && ' ' + t("upgrade-insider", { defaultValue: "Upgrade to Asset ($5/mo) to unlock." })}
+        {requiredTier === 'OPERATOR' && ' ' + t("upgrade-operator", { defaultValue: "Upgrade to Operator ($15/mo) to unlock." })}
       </p>
       <div className="flex items-center gap-1 text-[10px] text-white/20 font-mono">
         <Shield size={10} />
-        <span>CLASSIFICATION: {requiredTier}</span>
+        <span>{t("classification", { defaultValue: "CLASSIFICATION: {{tier}}", tier: requiredTier })}</span>
       </div>
     </div>
   );

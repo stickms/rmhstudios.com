@@ -7,6 +7,7 @@
 
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { Puzzle, Shield, AlertTriangle, Moon, Trophy, Flame } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useDoctrineReputation } from '@/hooks/useDoctrineReputation';
 import { useDoctrineSahur } from '@/hooks/useDoctrineSahur';
@@ -22,6 +23,7 @@ export const Route = createFileRoute('/strategies/')({
 });
 
 function DashboardPage() {
+  const { t } = useTranslation("r-strategies");
   const { data: rep } = useDoctrineReputation();
   const { sahurActive, sahurCountdown } = useDoctrineSahur();
 
@@ -50,10 +52,10 @@ function DashboardPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold" style={{ color: 'var(--doctrine-text-primary)' }}>
-          Coalition Dashboard
+          {t("coalition-dashboard", { defaultValue: "Coalition Dashboard" })}
         </h1>
         <p className="text-sm mt-1" style={{ color: 'var(--doctrine-text-muted)' }}>
-          Your standing across the RMH ecosystem
+          {t("coalition-dashboard-subtitle", { defaultValue: "Your standing across the RMH ecosystem" })}
         </p>
       </div>
 
@@ -67,7 +69,7 @@ function DashboardPage() {
           <XpBar totalXp={rep.totalXp} />
           {rep.coalitionScore > 1 && (
             <p className="text-sm md:text-xs text-white/30 font-mono">
-              Coalition Multiplier: {rep.coalitionScore.toFixed(1)}x
+              {t("coalition-multiplier", { defaultValue: "Coalition Multiplier: {{score}}x", score: rep.coalitionScore.toFixed(1) })}
             </p>
           )}
         </div>
@@ -77,7 +79,7 @@ function DashboardPage() {
       {activeIncidents.length > 0 && (
         <div className="space-y-2">
           <h2 className="text-sm md:text-xs font-mono uppercase tracking-wider" style={{ color: 'var(--doctrine-error)' }}>
-            Active Incidents
+            {t("active-incidents", { defaultValue: "Active Incidents" })}
           </h2>
           {activeIncidents.map((incident: { id: string; codename: string; severity: string; title: string }) => (
             <CrisisBanner
@@ -93,10 +95,10 @@ function DashboardPage() {
 
       {/* Quick Actions Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
-        <QuickAction to="/strategies/puzzles" icon={Puzzle} label="Puzzles" count={puzzles?.length ?? 0} countLabel="today" color="#F97316" />
-        <QuickAction to="/strategies/safehouse" icon={Shield} label="Safehouse" color="#22D3EE" />
-        <QuickAction to="/strategies/incidents" icon={AlertTriangle} label="Incidents" count={activeIncidents.length} countLabel="active" color="#EF4444" />
-        <QuickAction to="/strategies/sahur" icon={Moon} label={sahurActive ? 'SAHUR LIVE' : 'Sahur'} color={sahurActive ? '#F59E0B' : '#6B7280'} pulse={sahurActive} />
+        <QuickAction to="/strategies/puzzles" icon={Puzzle} label={t("puzzles", { defaultValue: "Puzzles" })} count={puzzles?.length ?? 0} countLabel={t("today", { defaultValue: "today" })} color="#F97316" />
+        <QuickAction to="/strategies/safehouse" icon={Shield} label={t("safehouse", { defaultValue: "Safehouse" })} color="#22D3EE" />
+        <QuickAction to="/strategies/incidents" icon={AlertTriangle} label={t("incidents", { defaultValue: "Incidents" })} count={activeIncidents.length} countLabel={t("active", { defaultValue: "active" })} color="#EF4444" />
+        <QuickAction to="/strategies/sahur" icon={Moon} label={sahurActive ? t("sahur-live", { defaultValue: "SAHUR LIVE" }) : t("sahur", { defaultValue: "Sahur" })} color={sahurActive ? '#F59E0B' : '#6B7280'} pulse={sahurActive} />
       </div>
 
       {/* Sahur Countdown */}
@@ -104,7 +106,7 @@ function DashboardPage() {
         <div className="rounded-lg p-4 flex items-center justify-between" style={{ background: 'var(--doctrine-bg-secondary)', border: '1px solid rgba(255,255,255,0.06)' }}>
           <div className="flex items-center gap-2">
             <Moon size={16} className="text-amber-400/40" />
-            <span className="text-sm md:text-xs text-white/40">Next Sahur Mode (3x XP)</span>
+            <span className="text-sm md:text-xs text-white/40">{t("next-sahur-mode", { defaultValue: "Next Sahur Mode (3x XP)" })}</span>
           </div>
           <span className="text-sm md:text-xs font-mono text-white/30">
             {sahurCountdown > 0 ? `${Math.floor(sahurCountdown / 60)}h ${sahurCountdown % 60}m` : '—'}
@@ -115,7 +117,7 @@ function DashboardPage() {
       {/* Coalition Projects */}
       <div className="space-y-3">
         <h2 className="text-sm md:text-xs font-mono uppercase tracking-wider" style={{ color: 'var(--doctrine-text-muted)' }}>
-          Coalition
+          {t("coalition", { defaultValue: "Coalition" })}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <ProjectCard name="Daily Puzzles" description="Alibi, Spectrum, Outcast, Chainlink, Impostor" status="active" userActive={true} url="/strategies/puzzles" />

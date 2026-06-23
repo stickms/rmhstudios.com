@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Hash, Loader2 } from 'lucide-react';
 import { RMHarkCard } from './RMHarkCard';
 import { Button } from '@/components/ui/button';
 import type { FeedItem } from '@/lib/feed-types';
 
 export function TagColumn({ tag }: { tag: string }) {
+  const { t } = useTranslation('feed');
   const [items, setItems] = useState<FeedItem[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
@@ -55,7 +57,7 @@ export function TagColumn({ tag }: { tag: string }) {
           <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
         </div>
       ) : items.length === 0 ? (
-        <p className="px-4 py-16 text-center text-sm text-site-text-muted">No posts with #{tag} yet.</p>
+        <p className="px-4 py-16 text-center text-sm text-site-text-muted">{t('no-posts-with-tag', { tag, defaultValue: 'No posts with #{{tag}} yet.' })}</p>
       ) : (
         <div className="divide-y divide-site-border">
           {items.map((item) => (
@@ -67,7 +69,7 @@ export function TagColumn({ tag }: { tag: string }) {
       {hasMore && (
         <div className="flex justify-center py-4">
           <Button variant="secondary" size="sm" onClick={loadMore} disabled={loadingMore}>
-            {loadingMore ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Load more'}
+            {loadingMore ? <Loader2 className="h-4 w-4 animate-spin" /> : t('load-more', { defaultValue: 'Load more' })}
           </Button>
         </div>
       )}

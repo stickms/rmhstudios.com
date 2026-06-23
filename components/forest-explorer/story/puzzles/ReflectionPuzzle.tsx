@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { PuzzleComponentProps } from './PuzzleRegistry';
 
 type Direction = 'up' | 'down' | 'left' | 'right';
@@ -13,6 +14,7 @@ interface Mirror {
 }
 
 export function ReflectionPuzzle({ config, onSolve, onAttempt }: PuzzleComponentProps) {
+    const { t } = useTranslation("c-forest-explorer");
     const gridSize = (config.gridSize as number) ?? 7;
     const mirrorCount = (config.mirrorCount as number) ?? 5;
     const lightSource = (config.lightSource as [number, number]) ?? [0, 0];
@@ -124,7 +126,7 @@ export function ReflectionPuzzle({ config, onSolve, onAttempt }: PuzzleComponent
     return (
         <div className="w-full max-w-lg mx-auto space-y-4">
             <p className="text-center text-white/50 text-sm">
-                Click to place/rotate mirrors and guide the light beam to the target
+                {t("reflection-instructions", { defaultValue: "Click to place/rotate mirrors and guide the light beam to the target" })}
             </p>
 
             <div className="flex justify-center">
@@ -209,7 +211,7 @@ export function ReflectionPuzzle({ config, onSolve, onAttempt }: PuzzleComponent
                     }`}
                     onClick={handleCheck}
                 >
-                    {hitsTarget ? 'Beam hits target!' : 'Check Beam'}
+                    {hitsTarget ? t("beam-hits-target", { defaultValue: "Beam hits target!" }) : t("check-beam", { defaultValue: "Check Beam" })}
                 </button>
             </div>
         </div>

@@ -16,6 +16,7 @@
  */
 
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft, Check, Download, List, Loader2, SlidersHorizontal } from 'lucide-react';
 import type { LibraryBook } from '@/lib/library/library';
@@ -100,6 +101,7 @@ async function buildChapters(pdf: PdfDoc): Promise<Chapter[]> {
 }
 
 export function BookReader({ book }: { book: LibraryBook }) {
+  const { t } = useTranslation("c-library");
   const [doc, setDoc] = useState<PdfDoc | null>(null);
   const [numPages, setNumPages] = useState(0);
   const [aspect, setAspect] = useState(0.72); // page width / height (from page 1)
@@ -262,7 +264,7 @@ export function BookReader({ book }: { book: LibraryBook }) {
   return (
     <main className="vibe-screen lib-reader">
       <header className="lib-reader__bar">
-        <Link to="/library" aria-label="Back to library" className="vibe-toolbar__icon">
+        <Link to="/library" aria-label={t("back-to-library", { defaultValue: "Back to library" })} className="vibe-toolbar__icon">
           <ArrowLeft size={17} />
         </Link>
         <span className="lib-reader__title" title={book.title}>
@@ -289,15 +291,15 @@ export function BookReader({ book }: { book: LibraryBook }) {
                   type="button"
                   className="lib-reader__count lib-reader__count--btn"
                   onClick={() => setEditingPage(true)}
-                  title="Jump to page"
-                  aria-label="Jump to a page"
+                  title={t("jump-to-page", { defaultValue: "Jump to page" })}
+                  aria-label={t("jump-to-a-page", { defaultValue: "Jump to a page" })}
                 >
                   {pageLabel}
                 </button>
               )
             ))}
           {status === 'ready' && <QualityMenu quality={quality} onChange={setQuality} />}
-          <a href={book.url} download className="vibe-toolbar__icon" aria-label="Download PDF">
+          <a href={book.url} download className="vibe-toolbar__icon" aria-label={t("download-pdf", { defaultValue: "Download PDF" })}>
             <Download size={16} />
           </a>
         </div>
@@ -307,14 +309,14 @@ export function BookReader({ book }: { book: LibraryBook }) {
         {status === 'loading' && (
           <div className="lib-reader__status">
             <Loader2 className="lib-spin" size={22} />
-            <span>Opening book…</span>
+            <span>{t("opening-book", { defaultValue: "Opening book…" })}</span>
           </div>
         )}
         {status === 'error' && (
           <div className="lib-reader__status">
-            <span>Couldn&apos;t open this PDF.</span>
+            <span>{t("couldnt-open-pdf", { defaultValue: "Couldn't open this PDF." })}</span>
             <a href={book.url} className="lib-reader__fallback" target="_blank" rel="noreferrer">
-              Open it directly →
+              {t("open-directly", { defaultValue: "Open it directly →" })}
             </a>
           </div>
         )}
@@ -349,6 +351,7 @@ function PageJump({
   onJump: (page: number) => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation("c-library");
   const [val, setVal] = useState(String(curPage));
   const ref = useRef<HTMLInputElement>(null);
   const done = useRef(false);
@@ -389,7 +392,7 @@ function PageJump({
           }
         }}
         onBlur={commit}
-        aria-label={`Go to page (1–${numPages})`}
+        aria-label={t("go-to-page", { defaultValue: "Go to page (1–{{numPages}})", numPages })}
         className="lib-reader__jump-input"
       />
       <span className="lib-reader__jump-total">/ {numPages}</span>
@@ -399,6 +402,7 @@ function PageJump({
 
 /** Dropdown to pick the page raster quality (sharpness vs. memory). Defaults high. */
 function QualityMenu({ quality, onChange }: { quality: PageQuality; onChange: (q: PageQuality) => void }) {
+  const { t } = useTranslation("c-library");
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -426,13 +430,13 @@ function QualityMenu({ quality, onChange }: { quality: PageQuality; onChange: (q
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        aria-label="Page quality"
-        title="Page quality"
+        aria-label={t("page-quality", { defaultValue: "Page quality" })}
+        title={t("page-quality", { defaultValue: "Page quality" })}
       >
         <SlidersHorizontal size={16} />
       </button>
       {open && (
-        <ul className="lib-reader__chapters-menu lib-reader__quality-menu" role="listbox" aria-label="Page quality">
+        <ul className="lib-reader__chapters-menu lib-reader__quality-menu" role="listbox" aria-label={t("page-quality", { defaultValue: "Page quality" })}>
           {QUALITY_ORDER.map((q) => (
             <li key={q} role="option" aria-selected={q === quality}>
               <button
@@ -443,7 +447,7 @@ function QualityMenu({ quality, onChange }: { quality: PageQuality; onChange: (q
                   setOpen(false);
                 }}
               >
-                <span className="lib-reader__chapter-title">{QUALITY_LABEL[q]}</span>
+                <span className="lib-reader__chapter-title">{t(`quality-${q}`, { defaultValue: QUALITY_LABEL[q] })}</span>
                 {q === quality && <Check size={14} className="lib-reader__chapter-page" />}
               </button>
             </li>
@@ -464,6 +468,7 @@ function ChapterMenu({
   curPage: number;
   onJump: (page: number) => void;
 }) {
+  const { t } = useTranslation("c-library");
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -497,13 +502,13 @@ function ChapterMenu({
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        aria-label="Chapters"
-        title="Chapters"
+        aria-label={t("chapters", { defaultValue: "Chapters" })}
+        title={t("chapters", { defaultValue: "Chapters" })}
       >
         <List size={16} />
       </button>
       {open && (
-        <ul className="lib-reader__chapters-menu" role="listbox" aria-label="Chapters">
+        <ul className="lib-reader__chapters-menu" role="listbox" aria-label={t("chapters", { defaultValue: "Chapters" })}>
           {chapters.map((c, i) => (
             <li key={`${c.page}-${i}`} role="option" aria-selected={i === activeIdx}>
               <button

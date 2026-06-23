@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Loader2 } from 'lucide-react';
 import { LayoutGroup, motion } from 'framer-motion';
 import { BuildCard } from './BuildCard';
@@ -25,6 +26,7 @@ export function BuildGrid({
   userId,
   curated,
 }: BuildGridProps) {
+  const { t } = useTranslation("c-user-builds");
   const [builds, setBuilds] = useState<Build[]>(initialBuilds);
   const [loading, setLoading] = useState(initialBuilds.length === 0);
   const [resorting, setResorting] = useState(false);
@@ -149,10 +151,10 @@ export function BuildGrid({
   if (builds.length === 0) {
     return (
       <div className="text-center py-20">
-        <p className="text-site-text-muted">No builds found</p>
+        <p className="text-site-text-muted">{t("no-builds-found", { defaultValue: "No builds found" })}</p>
         {search && (
           <p className="text-sm text-site-text-dim mt-2">
-            Try a different search term
+            {t("try-different-search", { defaultValue: "Try a different search term" })}
           </p>
         )}
       </div>

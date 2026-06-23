@@ -5,6 +5,7 @@ import { X, Plus, Minus, ShoppingCart, Trash2, ArrowRight, Info, Flame } from 'l
 import { useEatsStore } from '@/lib/store/useEatsStore';
 import { mockRestaurants } from '@/lib/rmh-eats/mockData';
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const SERVICE_FEE_RATE = 0.08; // 8%
 
@@ -14,6 +15,7 @@ interface CartProps {
 }
 
 export default function Cart({ isOpen, onClose }: CartProps) {
+    const { t } = useTranslation("c-rmh-eats");
     const cart = useEatsStore((s) => s.cart);
     const cartRestaurantId = useEatsStore((s) => s.cartRestaurantId);
     const updateQuantity = useEatsStore((s) => s.updateQuantity);
@@ -66,7 +68,7 @@ export default function Cart({ isOpen, onClose }: CartProps) {
                         <div className="flex items-center justify-between p-4 border-b border-slate-700">
                             <div className="flex items-center gap-2">
                                 <ShoppingCart className="h-5 w-5 text-orange-400" />
-                                <h2 className="font-semibold text-white">Your Cart</h2>
+                                <h2 className="font-semibold text-white">{t("your-cart", { defaultValue: "Your Cart" })}</h2>
                                 {cart.length > 0 && (
                                     <span className="rounded-full bg-orange-500 px-2 py-0.5 text-xs font-medium text-white">
                                         {cart.reduce((s, i) => s + i.quantity, 0)}
@@ -85,13 +87,13 @@ export default function Cart({ isOpen, onClose }: CartProps) {
                         {cart.length === 0 ? (
                             <div className="flex flex-1 flex-col items-center justify-center gap-3 text-slate-500 p-6">
                                 <ShoppingCart className="h-12 w-12 opacity-30" />
-                                <p className="font-medium">Your cart is empty</p>
-                                <p className="text-sm text-center">Browse restaurants and add something delicious!</p>
+                                <p className="font-medium">{t("cart-empty", { defaultValue: "Your cart is empty" })}</p>
+                                <p className="text-sm text-center">{t("cart-empty-hint", { defaultValue: "Browse restaurants and add something delicious!" })}</p>
                                 <button
                                     onClick={onClose}
                                     className="mt-2 rounded-xl bg-orange-500 hover:bg-orange-400 px-5 py-2.5 text-sm font-medium text-white transition-colors"
                                 >
-                                    Browse Restaurants
+                                    {t("browse-restaurants", { defaultValue: "Browse Restaurants" })}
                                 </button>
                             </div>
                         ) : (
@@ -108,7 +110,7 @@ export default function Cart({ isOpen, onClose }: CartProps) {
                                             className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors"
                                         >
                                             <Trash2 className="h-3 w-3" />
-                                            Clear
+                                            {t("clear", { defaultValue: "Clear" })}
                                         </button>
                                     </div>
                                 )}
@@ -185,14 +187,14 @@ export default function Cart({ isOpen, onClose }: CartProps) {
                                 {/* Fees breakdown */}
                                 <div className="border-t border-slate-700 p-4 space-y-2">
                                     <div className="flex justify-between text-sm text-slate-400">
-                                        <span>Subtotal</span>
+                                        <span>{t("subtotal", { defaultValue: "Subtotal" })}</span>
                                         <span>${subtotal.toFixed(2)}</span>
                                     </div>
                                     <div className="flex justify-between text-sm text-slate-400">
-                                        <span>Delivery fee</span>
+                                        <span>{t("delivery-fee", { defaultValue: "Delivery fee" })}</span>
                                         <span>
                                             {deliveryFee === 0 ? (
-                                                <span className="text-green-400">Free</span>
+                                                <span className="text-green-400">{t("free", { defaultValue: "Free" })}</span>
                                             ) : (
                                                 `$${deliveryFee.toFixed(2)}`
                                             )}
@@ -200,20 +202,19 @@ export default function Cart({ isOpen, onClose }: CartProps) {
                                     </div>
                                     <div className="flex justify-between text-sm text-slate-400">
                                         <span className="flex items-center gap-1">
-                                            Service fee
+                                            {t("service-fee", { defaultValue: "Service fee" })}
                                             <Info className="h-3 w-3" />
                                         </span>
                                         <span>${serviceFee.toFixed(2)}</span>
                                     </div>
                                     <div className="flex justify-between font-semibold text-white text-base pt-1 border-t border-slate-700/50">
-                                        <span>Total</span>
+                                        <span>{t("total", { defaultValue: "Total" })}</span>
                                         <span>${grandTotal.toFixed(2)}</span>
                                     </div>
 
                                     {!meetsMinimum && (
                                         <p className="text-xs text-yellow-400 bg-yellow-500/10 rounded-lg px-3 py-2 mt-2">
-                                            Minimum order is ${restaurant!.minimumOrder}. Add $
-                                            {(restaurant!.minimumOrder - subtotal).toFixed(2)} more.
+                                            {t("minimum-order-notice", { defaultValue: "Minimum order is ${{min}}. Add ${{remaining}} more.", min: restaurant!.minimumOrder, remaining: (restaurant!.minimumOrder - subtotal).toFixed(2) })}
                                         </p>
                                     )}
 
@@ -221,10 +222,10 @@ export default function Cart({ isOpen, onClose }: CartProps) {
                                     {cartCalories() > 0 && (
                                         <div className="flex items-center gap-2 text-xs text-slate-500 pt-1 border-t border-slate-700/30">
                                             <Flame className="h-3.5 w-3.5 text-orange-400 shrink-0" />
-                                            <span>Est. {cartCalories()} cal total</span>
+                                            <span>{t("cal-total", { defaultValue: "Est. {{cal}} cal total", cal: cartCalories() })}</span>
                                             {calorieBudget && (
                                                 <span className={calorieBudget - cartCalories() < 0 ? 'text-red-400' : 'text-green-400'}>
-                                                    · {calorieBudget - cartCalories()} cal remaining after
+                                                    {t("cal-remaining", { defaultValue: "· {{remaining}} cal remaining after", remaining: calorieBudget - cartCalories() })}
                                                 </span>
                                             )}
                                         </div>
@@ -235,7 +236,7 @@ export default function Cart({ isOpen, onClose }: CartProps) {
                                         disabled={!meetsMinimum}
                                         className="mt-2 w-full flex items-center justify-between gap-2 rounded-xl bg-orange-500 hover:bg-orange-400 disabled:opacity-40 disabled:cursor-not-allowed px-4 py-3 font-semibold text-white transition-colors shadow-lg shadow-orange-500/20"
                                     >
-                                        <span>Proceed to Checkout</span>
+                                        <span>{t("proceed-to-checkout", { defaultValue: "Proceed to Checkout" })}</span>
                                         <ArrowRight className="h-4 w-4" />
                                     </button>
                                 </div>

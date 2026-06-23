@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Loader2, ArrowLeft, Plus, Trash2, RotateCcw, GraduationCap, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from 'react-i18next';
 
 interface Card {
   id: string;
@@ -27,6 +28,7 @@ const GRADES: { grade: number; label: string; cls: string }[] = [
 ];
 
 export function DeckStudyColumn({ deckId }: { deckId: string }) {
+  const { t } = useTranslation('feed');
   const navigate = useNavigate();
   const [deck, setDeck] = useState<Deck | null>(null);
   const [cards, setCards] = useState<Card[]>([]);
@@ -130,7 +132,7 @@ export function DeckStudyColumn({ deckId }: { deckId: string }) {
   }
 
   async function deleteDeck() {
-    if (!confirm('Delete this deck and all its cards?')) return;
+    if (!confirm(t('delete-deck-confirm', { defaultValue: 'Delete this deck and all its cards?' }))) return;
     const res = await fetch(`/api/study/decks/${encodeURIComponent(deckId)}`, { method: 'DELETE', credentials: 'include' });
     if (res.ok) navigate({ to: '/study' });
   }
@@ -145,9 +147,9 @@ export function DeckStudyColumn({ deckId }: { deckId: string }) {
   if (notFound || !deck) {
     return (
       <div className="flex flex-col items-center gap-3 px-6 py-24 text-center">
-        <p className="font-medium text-site-text">Deck not found</p>
+        <p className="font-medium text-site-text">{t('deck-not-found', { defaultValue: 'Deck not found' })}</p>
         <Link to="/study">
-          <Button variant="outline">Back to decks</Button>
+          <Button variant="outline">{t('back-to-decks', { defaultValue: 'Back to decks' })}</Button>
         </Link>
       </div>
     );
@@ -179,13 +181,13 @@ export function DeckStudyColumn({ deckId }: { deckId: string }) {
             <div className="mt-4 grid grid-cols-4 gap-2">
               {GRADES.map((g) => (
                 <Button key={g.grade} variant="outline" disabled={reviewBusy} onClick={() => grade(g.grade)} className={`flex-col ${g.cls}`}>
-                  {g.label}
+                  {t(`grade-${g.grade}`, { defaultValue: g.label })}
                 </Button>
               ))}
             </div>
           ) : (
             <Button variant="accent" className="mt-4 w-full" onClick={() => setRevealed(true)}>
-              Show answer
+              {t('show-answer', { defaultValue: 'Show answer' })}
             </Button>
           )}
         </div>
@@ -204,7 +206,7 @@ export function DeckStudyColumn({ deckId }: { deckId: string }) {
           {deck.description && <p className="truncate text-xs text-site-text-dim">{deck.description}</p>}
         </div>
         {deck.isOwner && (
-          <button onClick={deleteDeck} className="text-site-text-dim hover:text-site-danger" title="Delete deck" aria-label="Delete deck">
+          <button onClick={deleteDeck} className="text-site-text-dim hover:text-site-danger" title={t('delete-deck', { defaultValue: 'Delete deck' })} aria-label={t('delete-deck', { defaultValue: 'Delete deck' })}>
             <Trash2 className="h-4 w-4" />
           </button>
         )}
@@ -214,34 +216,34 @@ export function DeckStudyColumn({ deckId }: { deckId: string }) {
         {signedIn && (
           <Button variant="accent" className="w-full gap-2" disabled={cards.length === 0} onClick={startReview}>
             <GraduationCap className="h-4 w-4" />
-            {dueCount > 0 ? `Study ${dueCount} due card${dueCount === 1 ? '' : 's'}` : 'Review deck'}
+            {dueCount > 0 ? t('study-due-cards', { count: dueCount, defaultValue: 'Study {{count}} due card' }) : t('review-deck', { defaultValue: 'Review deck' })}
           </Button>
         )}
 
         {deck.isOwner && (
           <div className="rounded-xl border border-site-border bg-site-surface p-3">
             <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
-              <Plus className="h-3.5 w-3.5" /> Add a card
+              <Plus className="h-3.5 w-3.5" /> {t('add-a-card', { defaultValue: 'Add a card' })}
             </p>
             <div className="space-y-2">
               <input
                 value={front}
                 onChange={(e) => setFront(e.target.value)}
-                placeholder="Front (question)"
+                placeholder={t('front-placeholder', { defaultValue: 'Front (question)' })}
                 maxLength={500}
                 className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
               />
               <textarea
                 value={back}
                 onChange={(e) => setBack(e.target.value)}
-                placeholder="Back (answer)"
+                placeholder={t('back-placeholder', { defaultValue: 'Back (answer)' })}
                 maxLength={500}
                 rows={2}
                 className="w-full resize-none rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
               />
               <div className="flex justify-end">
                 <Button size="sm" variant="accent" disabled={adding || !front.trim() || !back.trim()} onClick={addCard} className="gap-1">
-                  {adding ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />} Add
+                  {adding ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />} {t('add', { defaultValue: 'Add' })}
                 </Button>
               </div>
             </div>
@@ -250,7 +252,7 @@ export function DeckStudyColumn({ deckId }: { deckId: string }) {
 
         <section>
           <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
-            <RotateCcw className="h-3.5 w-3.5" /> {cards.length} card{cards.length === 1 ? '' : 's'}
+            <RotateCcw className="h-3.5 w-3.5" /> {t('card-count', { count: cards.length, defaultValue: '{{count}} card' })}
           </h2>
           <div className="space-y-1">
             {cards.map((c) => (

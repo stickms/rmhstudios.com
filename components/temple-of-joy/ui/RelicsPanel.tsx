@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from "react-i18next";
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { RELICS } from '@/lib/temple-of-joy/data/relics';
 import type { RelicId } from '@/lib/temple-of-joy/types';
@@ -28,13 +29,14 @@ interface ActiveSlotProps {
 }
 
 function ActiveSlot({ relicId, onUnequip }: ActiveSlotProps) {
+  const { t } = useTranslation("c-temple-of-joy");
   const def = RELICS.find(r => r.id === relicId);
   if (!def) return <EmptySlot index={0} />;
 
   return (
     <button
       onClick={() => onUnequip(relicId)}
-      title={`${def.name} — click to unequip`}
+      title={t("active-slot-title", { defaultValue: "{{name}} — click to unequip", name: def.name })}
       className="flex flex-col items-center justify-center rounded-xl transition-all duration-150 group"
       style={{
         width: 64,
@@ -65,6 +67,7 @@ interface RelicCardProps {
 }
 
 function RelicCard({ relicId, karma, activeRelics, maxRelicSlots, onEquip }: RelicCardProps) {
+  const { t } = useTranslation("c-temple-of-joy");
   const def = RELICS.find(r => r.id === relicId)!;
 
   const isEquipped  = activeRelics.includes(relicId);
@@ -121,7 +124,7 @@ function RelicCard({ relicId, karma, activeRelics, maxRelicSlots, onEquip }: Rel
                 color: 'var(--temple-accent)',
               }}
             >
-              Equipped
+              {t("equipped", { defaultValue: "Equipped" })}
             </span>
           ) : (
             <button
@@ -135,7 +138,7 @@ function RelicCard({ relicId, karma, activeRelics, maxRelicSlots, onEquip }: Rel
                 opacity: canEquip ? 1 : 0.5,
               }}
             >
-              Equip
+              {t("equip", { defaultValue: "Equip" })}
             </button>
           )}
         </div>
@@ -145,7 +148,7 @@ function RelicCard({ relicId, karma, activeRelics, maxRelicSlots, onEquip }: Rel
           className="text-[10px]"
           style={{ color: 'var(--temple-text)', opacity: 0.5 }}
         >
-          Needs {def.karmaCost - Math.floor(karma)} more karma
+          {t("needs-more-karma", { defaultValue: "Needs {{amount}} more karma", amount: def.karmaCost - Math.floor(karma) })}
         </p>
       )}
       {!hasSlot && !isEquipped && canAfford && (
@@ -153,7 +156,7 @@ function RelicCard({ relicId, karma, activeRelics, maxRelicSlots, onEquip }: Rel
           className="text-[10px]"
           style={{ color: 'var(--temple-text)', opacity: 0.5 }}
         >
-          No free relic slots
+          {t("no-free-slots", { defaultValue: "No free relic slots" })}
         </p>
       )}
     </div>
@@ -161,6 +164,7 @@ function RelicCard({ relicId, karma, activeRelics, maxRelicSlots, onEquip }: Rel
 }
 
 export default function RelicsPanel() {
+  const { t } = useTranslation("c-temple-of-joy");
   const karma         = useTempleStore(s => s.karma);
   const peakKarma     = useTempleStore(s => s.peakKarma);
   const activeRelics  = useTempleStore(s => s.activeRelics);
@@ -182,13 +186,13 @@ export default function RelicsPanel() {
           className="text-xs font-bold uppercase tracking-widest"
           style={{ color: 'var(--temple-accent)' }}
         >
-          Relics
+          {t("relics", { defaultValue: "Relics" })}
         </h2>
         <span
           className="text-sm font-bold"
           style={{ color: 'var(--temple-accent)' }}
         >
-          💫 {karma.toFixed(0)} Karma
+          💫 {karma.toFixed(0)} {t("karma", { defaultValue: "Karma" })}
         </span>
       </div>
 
@@ -198,7 +202,7 @@ export default function RelicsPanel() {
           className="text-[10px] uppercase tracking-widest font-semibold mb-2"
           style={{ color: 'var(--temple-text)', opacity: 0.55 }}
         >
-          Active Slots ({activeRelics.length}/{maxRelicSlots})
+          {t("active-slots", { defaultValue: "Active Slots ({{used}}/{{max}})", used: activeRelics.length, max: maxRelicSlots })}
         </p>
         <div className="flex flex-wrap gap-2">
           {activeRelics.map(id => (
@@ -216,7 +220,7 @@ export default function RelicsPanel() {
           className="text-[10px] uppercase tracking-widest font-semibold mb-2"
           style={{ color: 'var(--temple-text)', opacity: 0.55 }}
         >
-          Available Relics
+          {t("available-relics", { defaultValue: "Available Relics" })}
         </p>
         <div className="flex flex-col gap-2 overflow-y-auto max-h-[55vh] pr-1">
           {visibleRelics.map(r => (
@@ -232,7 +236,7 @@ export default function RelicsPanel() {
           {visibleRelics.length === 0 && (
             <p className="text-xs italic opacity-55 text-center py-4"
               style={{ color: 'var(--temple-text)' }}>
-              Keep generating karma to reveal relics…
+              {t("keep-generating-karma", { defaultValue: "Keep generating karma to reveal relics..." })}
             </p>
           )}
         </div>

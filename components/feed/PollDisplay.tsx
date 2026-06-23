@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Check } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
 import type { FeedPoll } from '@/lib/feed-types';
@@ -14,6 +15,7 @@ interface PollDisplayProps {
 }
 
 export function PollDisplay({ poll, postId, onUpdate, voteUrl }: PollDisplayProps) {
+  const { t } = useTranslation("feed");
   const { data: session } = authClient.useSession();
   const [localPoll, setLocalPoll] = useState(poll);
   const [voting, setVoting] = useState(false);
@@ -103,7 +105,7 @@ export function PollDisplay({ poll, postId, onUpdate, voteUrl }: PollDisplayProp
       <p className="text-sm font-semibold text-site-text mb-2">{localPoll.question}</p>
 
       {localPoll.multiSelect && !showResults && (
-        <p className="text-xs text-site-text-dim mb-2">Select all that apply</p>
+        <p className="text-xs text-site-text-dim mb-2">{t("select-all-that-apply", { defaultValue: "Select all that apply" })}</p>
       )}
 
       <div className="space-y-2">
@@ -157,10 +159,10 @@ export function PollDisplay({ poll, postId, onUpdate, voteUrl }: PollDisplayProp
       </div>
 
       <p className="text-xs text-site-text-dim mt-2">
-        {localPoll.totalVotes} vote{localPoll.totalVotes !== 1 ? 's' : ''}
-        {localPoll.multiSelect && ' · Multiple choice'}
+        {t("vote-count", { count: localPoll.totalVotes, defaultValue: "{{count}} vote", defaultValue_one: "{{count}} vote", defaultValue_other: "{{count}} votes" })}
+        {localPoll.multiSelect && ` · ${t("multiple-choice", { defaultValue: "Multiple choice" })}`}
         {localPoll.closesAt && (
-          <> · {isClosed ? 'Final results' : `Closes ${new Date(localPoll.closesAt).toLocaleString()}`}</>
+          <> · {isClosed ? t("final-results", { defaultValue: "Final results" }) : t("closes-at", { date: new Date(localPoll.closesAt).toLocaleString(), defaultValue: "Closes {{date}}" })}</>
         )}
       </p>
     </div>

@@ -7,6 +7,7 @@
 'use client';
 
 import { X, CheckCircle2, AlertCircle, AlertTriangle, Info } from 'lucide-react';
+import { useTranslation } from "react-i18next";
 import { useToastStore, type ToastType } from '@/lib/rmhbox/toast-store';
 
 const ICON_MAP: Record<ToastType, React.ReactNode> = {
@@ -24,6 +25,7 @@ const COLOR_MAP: Record<ToastType, string> = {
 };
 
 export default function ToastContainer() {
+  const { t: tr } = useTranslation("c-rmhbox");
   const toasts = useToastStore((s) => s.toasts);
   const dismissToast = useToastStore((s) => s.dismissToast);
 
@@ -50,7 +52,7 @@ export default function ToastContainer() {
           <button
             onClick={() => dismissToast(t.id)}
             className="shrink-0 rounded p-0.5 text-(--rmhbox-text-muted) transition-colors hover:text-(--rmhbox-text)"
-            aria-label="Dismiss"
+            aria-label={tr("dismiss", { defaultValue: "Dismiss" })}
           >
             <X className="h-3.5 w-3.5" />
           </button>

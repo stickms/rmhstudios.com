@@ -8,6 +8,7 @@ import { emit } from '@/lib/rmhmusic/socket';
 import { C2S } from '@/lib/rmhmusic/events';
 import { formatRelativeTime } from '@/lib/rmhmusic/utils';
 import MemberList from './MemberList';
+import { useTranslation } from 'react-i18next';
 
 export default function ChatPanel() {
   const store = useRmhMusicStore();
@@ -15,6 +16,7 @@ export default function ChatPanel() {
   const [message, setMessage] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const { t } = useTranslation("c-rmhmusic");
   const entries = getChatEntries(store);
 
   useEffect(() => {
@@ -91,7 +93,7 @@ export default function ChatPanel() {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-                placeholder="Say something..."
+                placeholder={t("say-something", { defaultValue: "Say something..." })}
                 className="flex-1 px-3 py-2 rounded-lg text-sm outline-none"
                 style={{ background: 'var(--site-surface)', color: 'var(--site-text)' }}
                 maxLength={300}

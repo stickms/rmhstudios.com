@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { ScrollText, Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { UserAvatar } from '@/components/ui/UserAvatar';
+import { useTranslation } from 'react-i18next';
 
 const getAdminSession = createServerFn({ method: 'GET' }).handler(async () => {
   const request = getRequest();
@@ -32,6 +33,7 @@ interface Entry {
 }
 
 function AuditLogPage() {
+  const { t } = useTranslation("admin");
   const [items, setItems] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -43,11 +45,11 @@ function AuditLogPage() {
   }, []);
 
   return (
-    <PageLayout title="Audit Log" wide>
+    <PageLayout title={t("audit-log", { defaultValue: "Audit Log" })} wide>
       <div className="mx-auto max-w-3xl space-y-4 p-4 md:p-8">
         <div className="flex items-center gap-3">
           <ScrollText className="h-6 w-6 text-site-accent" />
-          <h1 className="font-display text-2xl font-bold text-site-text">Audit Log</h1>
+          <h1 className="font-display text-2xl font-bold text-site-text">{t("audit-log", { defaultValue: "Audit Log" })}</h1>
         </div>
 
         {loading ? (
@@ -55,7 +57,7 @@ function AuditLogPage() {
             <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
           </div>
         ) : items.length === 0 ? (
-          <p className="py-12 text-center text-sm text-site-text-muted">No admin actions logged yet.</p>
+          <p className="py-12 text-center text-sm text-site-text-muted">{t("no-admin-actions", { defaultValue: "No admin actions logged yet." })}</p>
         ) : (
           <ul className="divide-y divide-site-border rounded-xl border border-site-border bg-site-surface">
             {items.map((e) => (

@@ -7,9 +7,11 @@ import { C2S, S2C } from '@/lib/rmhmusic/events';
 import RoomBrowser from '@/components/rmhmusic/RoomBrowser';
 import Visualizer from '@/components/rmhmusic/Visualizer';
 import { useRouter } from '@tanstack/react-router';
+import { useTranslation } from "react-i18next";
 
 export default function RmhMusicPage() {
   const router = useRouter();
+  const { t } = useTranslation("c-rmhmusic");
   const { connectionStatus } = useRmhMusicStore();
   const [joinCode, setJoinCode] = useState('');
   const [roomName, setRoomName] = useState('');
@@ -58,7 +60,7 @@ export default function RmhMusicPage() {
             RMH Music
           </h1>
           <p className="text-lg" style={{ color: 'var(--site-text-muted)' }}>
-            Listen to Spotify previews with friends. Vibe together.
+            {t("hero-subtitle", { defaultValue: "Listen to Spotify previews with friends. Vibe together." })}
           </p>
         </motion.div>
 
@@ -74,14 +76,14 @@ export default function RmhMusicPage() {
             className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all hover:scale-105"
             style={{ background: 'var(--site-accent)', color: '#fff' }}
           >
-            <Music className="w-4 h-4" /> Open Player
+            <Music className="w-4 h-4" /> {t("open-player", { defaultValue: "Open Player" })}
           </button>
           <button
             onClick={() => router.navigate({ to: '/music-trivia' })}
             className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all hover:scale-105"
             style={{ background: 'var(--site-surface)', color: 'var(--site-text)' }}
           >
-            <Brain className="w-4 h-4" /> Guess the Song
+            <Brain className="w-4 h-4" /> {t("guess-the-song", { defaultValue: "Guess the Song" })}
           </button>
         </motion.div>
 
@@ -94,10 +96,10 @@ export default function RmhMusicPage() {
         >
           {/* Create */}
           <div className="p-4 rounded-xl" style={{ background: 'color-mix(in srgb, var(--site-surface) 80%, transparent)' }}>
-            <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--site-text)' }}>Create a Room</h3>
+            <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--site-text)' }}>{t("create-a-room", { defaultValue: "Create a Room" })}</h3>
             <input
               type="text"
-              placeholder="Room name (optional)"
+              placeholder={t("room-name-placeholder", { defaultValue: "Room name (optional)" })}
               value={roomName}
               onChange={(e) => setRoomName(e.target.value)}
               className="w-full px-3 py-2 rounded-lg text-sm mb-3 outline-none"
@@ -110,16 +112,16 @@ export default function RmhMusicPage() {
               className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all disabled:opacity-40"
               style={{ background: 'var(--site-accent)', color: '#fff' }}
             >
-              <Plus className="w-4 h-4" /> Create Room
+              <Plus className="w-4 h-4" /> {t("create-room", { defaultValue: "Create Room" })}
             </button>
           </div>
 
           {/* Join */}
           <div className="p-4 rounded-xl" style={{ background: 'color-mix(in srgb, var(--site-surface) 80%, transparent)' }}>
-            <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--site-text)' }}>Join a Room</h3>
+            <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--site-text)' }}>{t("join-a-room", { defaultValue: "Join a Room" })}</h3>
             <input
               type="text"
-              placeholder="Enter room code"
+              placeholder={t("enter-room-code", { defaultValue: "Enter room code" })}
               value={joinCode}
               onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
               className="w-full px-3 py-2 rounded-lg text-sm mb-3 outline-none font-mono tracking-widest text-center"
@@ -132,7 +134,7 @@ export default function RmhMusicPage() {
               className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all disabled:opacity-40"
               style={{ background: 'var(--site-surface)', color: 'var(--site-text)' }}
             >
-              <ArrowRight className="w-4 h-4" /> Join Room
+              <ArrowRight className="w-4 h-4" /> {t("join-room", { defaultValue: "Join Room" })}
             </button>
           </div>
         </motion.div>

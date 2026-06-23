@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Search, Loader2, Package, BookOpen } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
@@ -31,6 +32,7 @@ const TABS: { id: Tab; label: string }[] = [
 const EMPTY: SearchResults = { people: [], posts: [], builds: [], blog: [] };
 
 export function SearchColumn({ initialQuery = '' }: { initialQuery?: string }) {
+  const { t } = useTranslation('feed');
   const navigate = useNavigate();
   const [query, setQuery] = useState(initialQuery);
   const [tab, setTab] = useState<Tab>('top');
@@ -76,28 +78,28 @@ export function SearchColumn({ initialQuery = '' }: { initialQuery?: string }) {
           <input
             autoFocus
             type="search"
-            aria-label="Search people, posts, builds, and blog"
+            aria-label={t('search-input-aria-label', { defaultValue: 'Search people, posts, builds, and blog' })}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search people, posts, builds…"
+            placeholder={t('search-placeholder', { defaultValue: 'Search people, posts, builds…' })}
             className="w-full bg-transparent text-sm text-site-text placeholder:text-site-text-dim focus:outline-none"
           />
           {loading && <Loader2 className="h-4 w-4 animate-spin text-site-text-muted" />}
         </div>
-        <div className="mt-3 flex gap-1 overflow-x-auto" role="tablist" aria-label="Search categories">
-          {TABS.map((t) => (
+        <div className="mt-3 flex gap-1 overflow-x-auto" role="tablist" aria-label={t('search-categories-aria-label', { defaultValue: 'Search categories' })}>
+          {TABS.map((tab_item) => (
             <button
-              key={t.id}
+              key={tab_item.id}
               role="tab"
-              aria-selected={tab === t.id}
-              onClick={() => setTab(t.id)}
+              aria-selected={tab === tab_item.id}
+              onClick={() => setTab(tab_item.id)}
               className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
-                tab === t.id
+                tab === tab_item.id
                   ? 'bg-site-accent text-site-accent-fg'
                   : 'text-site-text-muted hover:bg-site-surface hover:text-site-text'
               }`}
             >
-              {t.label}
+              {t(`tab-${tab_item.id}`, { defaultValue: tab_item.label })}
             </button>
           ))}
         </div>
@@ -107,13 +109,13 @@ export function SearchColumn({ initialQuery = '' }: { initialQuery?: string }) {
         <ExploreRecommendations />
       ) : !hasResults && !loading ? (
         <p className="px-4 py-16 text-center text-sm text-site-text-muted">
-          No results for &ldquo;{query}&rdquo;.
+          {t('no-results', { query, defaultValue: 'No results for "{{query}}".' })}
         </p>
       ) : (
         <div className="divide-y divide-site-border">
           {showPeople && results.people.length > 0 && (
             <section className="py-2">
-              {tab === 'top' && <h2 className="px-4 py-1 text-xs font-semibold uppercase text-site-text-dim">People</h2>}
+              {tab === 'top' && <h2 className="px-4 py-1 text-xs font-semibold uppercase text-site-text-dim">{t('tab-people', { defaultValue: 'People' })}</h2>}
               {results.people.map((u) => (
                 <Link
                   key={u.id}
@@ -132,7 +134,7 @@ export function SearchColumn({ initialQuery = '' }: { initialQuery?: string }) {
 
           {showPosts && results.posts.length > 0 && (
             <section className="py-2">
-              {tab === 'top' && <h2 className="px-4 py-1 text-xs font-semibold uppercase text-site-text-dim">Posts</h2>}
+              {tab === 'top' && <h2 className="px-4 py-1 text-xs font-semibold uppercase text-site-text-dim">{t('tab-posts', { defaultValue: 'Posts' })}</h2>}
               {results.posts.map((p) => (
                 <button
                   key={p.id}
@@ -151,7 +153,7 @@ export function SearchColumn({ initialQuery = '' }: { initialQuery?: string }) {
 
           {showBuilds && results.builds.length > 0 && (
             <section className="py-2">
-              {tab === 'top' && <h2 className="px-4 py-1 text-xs font-semibold uppercase text-site-text-dim">Builds</h2>}
+              {tab === 'top' && <h2 className="px-4 py-1 text-xs font-semibold uppercase text-site-text-dim">{t('tab-builds', { defaultValue: 'Builds' })}</h2>}
               {results.builds.map((b) => (
                 <Link
                   key={b.slug}
@@ -170,7 +172,7 @@ export function SearchColumn({ initialQuery = '' }: { initialQuery?: string }) {
 
           {showBlog && results.blog.length > 0 && (
             <section className="py-2">
-              {tab === 'top' && <h2 className="px-4 py-1 text-xs font-semibold uppercase text-site-text-dim">Blog</h2>}
+              {tab === 'top' && <h2 className="px-4 py-1 text-xs font-semibold uppercase text-site-text-dim">{t('tab-blog', { defaultValue: 'Blog' })}</h2>}
               {results.blog.map((b) => (
                 <Link
                   key={b.slug}

@@ -19,6 +19,7 @@
 
 import { motion } from 'framer-motion';
 import { Sparkles, Zap, Star } from 'lucide-react';
+import { useTranslation } from "react-i18next";
 
 export type RarityTier = 'rare' | 'uncommon' | 'common' | 'does_not_rhyme' | 'not_in_dict';
 
@@ -52,12 +53,12 @@ interface RhymeTimeResultsProps {
   roundNumber: number;
 }
 
-const RARITY_CONFIG: Record<RarityTier, { label: string; color: string; bg: string }> = {
-  rare:           { label: 'Rare',             color: 'text-(--rmhbox-rare)',       bg: 'bg-(--rmhbox-rare)/20 border-(--rmhbox-rare)/40' },
-  uncommon:       { label: 'Uncommon',         color: 'text-(--rmhbox-info)',       bg: 'bg-(--rmhbox-info)/20 border-(--rmhbox-info)/40' },
-  common:         { label: 'Common',           color: 'text-(--rmhbox-text-muted)', bg: 'bg-(--rmhbox-text-muted)/20 border-(--rmhbox-text-muted)/40' },
-  does_not_rhyme: { label: "Doesn't Rhyme",    color: 'text-(--rmhbox-danger)',     bg: 'bg-(--rmhbox-danger)/20 border-(--rmhbox-danger)/40' },
-  not_in_dict:    { label: 'Not In Dictionary', color: 'text-(--rmhbox-text-dim)',   bg: 'bg-(--rmhbox-text-dim)/10 border-(--rmhbox-text-dim)/30' },
+const RARITY_CONFIG_BASE: Record<RarityTier, { color: string; bg: string }> = {
+  rare:           { color: 'text-(--rmhbox-rare)',       bg: 'bg-(--rmhbox-rare)/20 border-(--rmhbox-rare)/40' },
+  uncommon:       { color: 'text-(--rmhbox-info)',       bg: 'bg-(--rmhbox-info)/20 border-(--rmhbox-info)/40' },
+  common:         { color: 'text-(--rmhbox-text-muted)', bg: 'bg-(--rmhbox-text-muted)/20 border-(--rmhbox-text-muted)/40' },
+  does_not_rhyme: { color: 'text-(--rmhbox-danger)',     bg: 'bg-(--rmhbox-danger)/20 border-(--rmhbox-danger)/40' },
+  not_in_dict:    { color: 'text-(--rmhbox-text-dim)',   bg: 'bg-(--rmhbox-text-dim)/10 border-(--rmhbox-text-dim)/30' },
 };
 
 const TIER_ORDER: RarityTier[] = ['rare', 'uncommon', 'common', 'does_not_rhyme', 'not_in_dict'];
@@ -79,6 +80,16 @@ export default function RhymeTimeResults({
   playerBreakdowns,
   roundNumber,
 }: RhymeTimeResultsProps) {
+  const { t } = useTranslation("c-rmhbox");
+
+  const RARITY_CONFIG: Record<RarityTier, { label: string; color: string; bg: string }> = {
+    rare:           { label: t("rarity-rare", { defaultValue: "Rare" }),                       ...RARITY_CONFIG_BASE.rare },
+    uncommon:       { label: t("rarity-uncommon", { defaultValue: "Uncommon" }),               ...RARITY_CONFIG_BASE.uncommon },
+    common:         { label: t("rarity-common", { defaultValue: "Common" }),                   ...RARITY_CONFIG_BASE.common },
+    does_not_rhyme: { label: t("rarity-does-not-rhyme", { defaultValue: "Doesn't Rhyme" }),    ...RARITY_CONFIG_BASE.does_not_rhyme },
+    not_in_dict:    { label: t("rarity-not-in-dictionary", { defaultValue: "Not In Dictionary" }), ...RARITY_CONFIG_BASE.not_in_dict },
+  };
+
   // Deduplicate words: group by word string so each word appears once
   const uniqueWords = deduplicateWords(wordResults);
 
@@ -96,9 +107,9 @@ export default function RhymeTimeResults({
     >
       {/* Header */}
       <motion.div variants={itemVariants} className="text-center">
-        <h2 className="text-2xl font-bold">Round {roundNumber} Results</h2>
+        <h2 className="text-2xl font-bold">{t("round-results-heading", { defaultValue: "Round {{number}} Results", number: roundNumber })}</h2>
         <p className="mt-1 text-sm text-(--rmhbox-text-muted)">
-          Root word: <span className="font-semibold text-(--rmhbox-accent)">{rootWord}</span>
+          {t("root-word-label", { defaultValue: "Root word:" })} <span className="font-semibold text-(--rmhbox-accent)">{rootWord}</span>
         </p>
       </motion.div>
 
@@ -114,7 +125,7 @@ export default function RhymeTimeResults({
           >
             <h3 className={`mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider ${config.color}`}>
               {tier === 'rare' && <Sparkles className="h-4 w-4" />}
-              {config.label} — {words.length} word{words.length !== 1 ? 's' : ''}
+              {config.label} — {words.length} {t("word-count", { defaultValue: "word", count: words.length })}
             </h3>
             <ul className="space-y-1">
               {words.map((w) => {
@@ -132,7 +143,7 @@ export default function RhymeTimeResults({
                       </span>
                       {w.multiSyllable && (
                         <span className="rounded-full bg-(--rmhbox-warning)/20 px-1.5 py-0.5 text-[10px] font-medium text-(--rmhbox-warning) border border-(--rmhbox-warning)/30">
-                          multi
+                          {t("multi-syllable", { defaultValue: "multi" })}
                         </span>
                       )}
                       <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${config.bg} ${config.color}`}>
@@ -148,7 +159,7 @@ export default function RhymeTimeResults({
                               {s.userName}
                             </span>
                             {s.speedBonus && (
-                              <span title="Speed bonus"><Zap className="inline h-3 w-3 text-(--rmhbox-warning)" /></span>
+                              <span title={t("speed-bonus", { defaultValue: "Speed bonus" })}><Zap className="inline h-3 w-3 text-(--rmhbox-warning)" /></span>
                             )}
                           </span>
                         ))}
@@ -171,15 +182,15 @@ export default function RhymeTimeResults({
         className="rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-3"
       >
         <h3 className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-(--rmhbox-text-muted)">
-          <Star className="h-4 w-4" /> Player Breakdown
+          <Star className="h-4 w-4" /> {t("player-breakdown", { defaultValue: "Player Breakdown" })}
         </h3>
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-(--rmhbox-text-muted)">
-              <th className="pb-1.5 font-medium">Player</th>
-              <th className="pb-1.5 text-right font-medium">Valid</th>
-              <th className="pb-1.5 text-right font-medium">Invalid</th>
-              <th className="pb-1.5 text-right font-medium">Score</th>
+              <th className="pb-1.5 font-medium">{t("col-player", { defaultValue: "Player" })}</th>
+              <th className="pb-1.5 text-right font-medium">{t("col-valid", { defaultValue: "Valid" })}</th>
+              <th className="pb-1.5 text-right font-medium">{t("col-invalid", { defaultValue: "Invalid" })}</th>
+              <th className="pb-1.5 text-right font-medium">{t("col-score", { defaultValue: "Score" })}</th>
             </tr>
           </thead>
           <tbody>

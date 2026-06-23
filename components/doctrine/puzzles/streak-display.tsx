@@ -1,5 +1,6 @@
 import { Flame } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useTranslation } from "react-i18next";
 
 interface StreakDisplayProps {
   streak: number;
@@ -7,6 +8,7 @@ interface StreakDisplayProps {
 }
 
 export function StreakDisplay({ streak, longestStreak }: StreakDisplayProps) {
+  const { t } = useTranslation("c-doctrine");
   const isHot = streak >= 7;
   const isOnFire = streak >= 14;
 
@@ -29,8 +31,8 @@ export function StreakDisplay({ streak, longestStreak }: StreakDisplayProps) {
         </span>
       </motion.div>
       <div className="text-[10px] text-white/30 leading-tight">
-        <p>day streak</p>
-        <p>best: {longestStreak}</p>
+        <p>{t("day-streak", { defaultValue: "day streak" })}</p>
+        <p>{t("best-streak", { defaultValue: "best: {{longestStreak}}", longestStreak })}</p>
       </div>
     </div>
   );

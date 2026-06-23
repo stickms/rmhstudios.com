@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useStoryStore } from '@/lib/forest-explorer/store';
 import { getPuzzleById } from '@/lib/forest-explorer/puzzleDefinitions';
 import { PuzzleRegistry } from './PuzzleRegistry';
 
 export function PuzzleOverlay() {
+    const { t } = useTranslation("c-forest-explorer");
     const activePuzzleId = useStoryStore(s => s.activePuzzleId);
     const showOverlay = useStoryStore(s => s.showPuzzleOverlay);
     const closePuzzle = useStoryStore(s => s.closePuzzle);
@@ -65,7 +67,7 @@ export function PuzzleOverlay() {
                     <div className="flex items-center gap-3">
                         {!isSolved && (
                             <span className="text-white/30 text-xs">
-                                Attempts: {attempts}
+                                {t("attempts-count", { defaultValue: "Attempts: {{count}}", count: attempts })}
                             </span>
                         )}
                         <button
@@ -82,12 +84,12 @@ export function PuzzleOverlay() {
                     {isSolved ? (
                         <div className="text-center space-y-3">
                             <div className="text-4xl">✓</div>
-                            <p className="text-green-300 font-medium">Puzzle Solved!</p>
+                            <p className="text-green-300 font-medium">{t("puzzle-solved", { defaultValue: "Puzzle Solved!" })}</p>
                             <button
                                 className="px-4 py-2 bg-white/10 hover:bg-white/15 text-white/70 rounded-lg text-sm cursor-pointer"
                                 onClick={closePuzzle}
                             >
-                                Close
+                                {t("close", { defaultValue: "Close" })}
                             </button>
                         </div>
                     ) : PuzzleComponent ? (
@@ -97,7 +99,7 @@ export function PuzzleOverlay() {
                             onAttempt={() => incrementAttempt(activePuzzleId)}
                         />
                     ) : (
-                        <p className="text-white/40 text-sm">Puzzle type not implemented yet.</p>
+                        <p className="text-white/40 text-sm">{t("puzzle-type-not-implemented", { defaultValue: "Puzzle type not implemented yet." })}</p>
                     )}
                 </div>
 
@@ -111,7 +113,7 @@ export function PuzzleOverlay() {
                                 toggleJournal();
                             }}
                         >
-                            View Hint in Journal
+                            {t("view-hint-in-journal", { defaultValue: "View Hint in Journal" })}
                         </button>
                     )}
                     <div className="flex-1" />

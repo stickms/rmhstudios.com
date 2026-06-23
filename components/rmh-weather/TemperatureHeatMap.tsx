@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTranslation } from "react-i18next";
 import { useWeatherStore } from '@/lib/store/useWeatherStore';
 
 function tempToColor(temp: number): string {
@@ -25,6 +26,7 @@ function tempToColor(temp: number): string {
 }
 
 export const TemperatureHeatMap = () => {
+  const { t } = useTranslation("c-rmh-weather");
   const { locations } = useWeatherStore();
 
   const tempData = useMemo(() =>
@@ -38,10 +40,10 @@ export const TemperatureHeatMap = () => {
 
   return (
     <div className="my-2">
-      <div className="text-lg font-semibold text-red-400 mb-2">Temperature Heat Map</div>
+      <div className="text-lg font-semibold text-red-400 mb-2">{t("temperature-heat-map", { defaultValue: "Temperature Heat Map" })}</div>
       <div className="bg-weather-glass rounded-2xl p-4 border border-weather text-weather">
         {tempData.length === 0 ? (
-          <div className="text-sm text-weather-muted">Add locations to see comparisons.</div>
+          <div className="text-sm text-weather-muted">{t("add-locations-to-compare", { defaultValue: "Add locations to see comparisons." })}</div>
         ) : (
           <div className="flex flex-wrap gap-4 justify-center">
             {tempData.map((t) => (
@@ -63,14 +65,14 @@ export const TemperatureHeatMap = () => {
         {/* Color scale legend */}
         <div className="mt-4">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-weather-muted whitespace-nowrap">Cold</span>
+            <span className="text-xs text-weather-muted whitespace-nowrap">{t("cold", { defaultValue: "Cold" })}</span>
             <div
               className="flex-1 h-3 rounded-full"
               style={{
                 background: 'linear-gradient(to right, rgb(59,130,246), rgb(34,197,94), rgb(251,191,36), rgb(239,68,68))',
               }}
             />
-            <span className="text-xs text-weather-muted whitespace-nowrap">Hot</span>
+            <span className="text-xs text-weather-muted whitespace-nowrap">{t("hot", { defaultValue: "Hot" })}</span>
           </div>
           <div className="flex justify-between mt-0.5 px-0">
             <span className="text-xs text-weather-muted">−10°C</span>
@@ -79,7 +81,7 @@ export const TemperatureHeatMap = () => {
             <span className="text-xs text-weather-muted">35°C</span>
           </div>
         </div>
-        <div className="mt-2 text-xs text-weather-muted">Demo: Temperature intensity for saved locations (mock data).</div>
+        <div className="mt-2 text-xs text-weather-muted">{t("demo-mock-data-note", { defaultValue: "Demo: Temperature intensity for saved locations (mock data)." })}</div>
       </div>
     </div>
   );

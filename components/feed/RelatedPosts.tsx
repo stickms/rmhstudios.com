@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { RMHarkCard } from './RMHarkCard';
 import type { FeedItem } from '@/lib/feed-types';
 
 /** Topically similar posts ("more like this"), shown under a post. */
 export function RelatedPosts({ postId }: { postId: string }) {
+  const { t } = useTranslation('feed');
   const [items, setItems] = useState<FeedItem[]>([]);
 
   useEffect(() => {
@@ -23,7 +25,7 @@ export function RelatedPosts({ postId }: { postId: string }) {
 
   return (
     <section className="border-t border-site-border">
-      <h2 className="px-4 pt-3 text-xs font-semibold uppercase tracking-wide text-site-text-dim">Related posts</h2>
+      <h2 className="px-4 pt-3 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t("related-posts", { defaultValue: "Related posts" })}</h2>
       <div className="divide-y divide-site-border">
         {items.map((item) => (
           <RMHarkCard key={item.id} item={item} />

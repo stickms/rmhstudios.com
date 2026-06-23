@@ -2,17 +2,19 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslation } from "react-i18next";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useGameStore } from '@/lib/store/useGameStore';
 import { AudioManager } from '@/lib/audio/AudioManager';
 
 export function CalibrationScreen({ onBack }: { onBack: () => void }) {
+    const { t } = useTranslation("c-game");
     const { audioOffset, setAudioOffset } = useGameStore();
     const [isPlaying, setIsPlaying] = React.useState(false);
     const [beats, setBeats] = React.useState<number[]>([]);
     const [tempOffset, setTempOffset] = React.useState(audioOffset);
-    const [message, setMessage] = React.useState("Tap the button or SPACE to the beat!");
+    const [message, setMessage] = React.useState(t("tap-to-beat", { defaultValue: "Tap the button or SPACE to the beat!" }));
     
     // Metronome logic
     const intervalRef = React.useRef<NodeJS.Timeout | null>(null);
@@ -57,7 +59,7 @@ export function CalibrationScreen({ onBack }: { onBack: () => void }) {
     const stopMetronome = () => {
         if (intervalRef.current) clearInterval(intervalRef.current);
         setIsPlaying(false);
-        setMessage("Calibration stopped.");
+        setMessage(t("calibration-stopped", { defaultValue: "Calibration stopped." }));
     };
 
     const handleTap = React.useCallback(() => {
@@ -88,7 +90,7 @@ export function CalibrationScreen({ onBack }: { onBack: () => void }) {
         // Running average
         const avg = Math.round([...beats, delta].reduce((a, b) => a + b, 0) / (beats.length + 1));
         setTempOffset(avg);
-        setMessage(`Average Offset: ${avg}ms`);
+        setMessage(t("average-offset", { defaultValue: "Average Offset: {{avg}}ms", avg }));
 
     }, [isPlaying, beats]);
 
@@ -119,11 +121,11 @@ export function CalibrationScreen({ onBack }: { onBack: () => void }) {
         <div className="absolute inset-0 z-60 flex items-center justify-center bg-slice-bg p-4">
              <Card className="w-full max-w-md bg-slice-bg text-slice-text shadow-[20px_20px_60px_var(--slice-shadow-dark),-20px_-20px_60px_var(--slice-shadow-light)] rounded-[2rem] border-none">
                 <CardHeader>
-                    <CardTitle className="text-2xl font-black text-center text-slice-text-darker">AUDIO CALIBRATION</CardTitle>
+                    <CardTitle className="text-2xl font-black text-center text-slice-text-darker">{t("audio-calibration", { defaultValue: "AUDIO CALIBRATION" })}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6 text-center">
                     <p className="text-slice-text-muted text-sm">
-                        Listen to the beat and tap SPACE or the button exactly when you hear it.
+                        {t("listen-instruction", { defaultValue: "Listen to the beat and tap SPACE or the button exactly when you hear it." })}
                     </p>
                     
                     <div className={`bg-slice-bg p-8 rounded-full w-48 h-48 mx-auto flex items-center justify-center transition-all duration-75 ${beatFlash ? 'shadow-[0_0_30px_rgba(59,130,246,0.8),inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)]' : 'shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)]'}`}>
@@ -131,7 +133,7 @@ export function CalibrationScreen({ onBack }: { onBack: () => void }) {
                             className={`w-32 h-32 rounded-full font-bold text-xl shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)] transition-all ${isPlaying ? 'bg-blue-500 text-white' : 'bg-slice-bg text-slice-text-muted'} ${beatFlash ? 'scale-95' : 'scale-100'}`}
                             onClick={isPlaying ? handleTap : startMetronome}
                         >
-                            {isPlaying ? 'TAP!' : 'START'}
+                            {isPlaying ? t("tap", { defaultValue: "TAP!" }) : t("start", { defaultValue: "START" })}
                         </Button>
                     </div>
 
@@ -147,14 +149,14 @@ export function CalibrationScreen({ onBack }: { onBack: () => void }) {
                             onClick={stopMetronome}
                             disabled={!isPlaying}
                         >
-                            STOP
+                            {t("stop", { defaultValue: "STOP" })}
                         </Button>
-                         <Button 
+                         <Button
                             variant="ghost"
                             className="flex-1 bg-slice-bg text-slice-text-muted shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)] rounded-xl"
                             onClick={() => { setTempOffset(0); setBeats([]); }}
                         >
-                            RESET
+                            {t("reset", { defaultValue: "RESET" })}
                         </Button>
                     </div>
 
@@ -164,13 +166,13 @@ export function CalibrationScreen({ onBack }: { onBack: () => void }) {
                             className="flex-1 text-slice-text-muted"
                             onClick={onBack}
                         >
-                            CANCEL
+                            {t("cancel", { defaultValue: "CANCEL" })}
                         </Button>
-                        <Button 
+                        <Button
                             className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold shadow-lg rounded-xl"
                             onClick={saveAndBack}
                         >
-                            SAVE & EXIT
+                            {t("save-and-exit", { defaultValue: "SAVE & EXIT" })}
                         </Button>
                     </div>
                 </CardContent>

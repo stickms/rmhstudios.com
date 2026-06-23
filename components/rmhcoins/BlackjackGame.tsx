@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Circle, Loader2 } from 'lucide-react';
 import { connectToBlackjack, disconnectFromBlackjack, getBlackjackSocket, onBalanceUpdate } from '@/lib/blackjack/socket';
 import { useBlackjackStore } from '@/lib/blackjack/store';
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export function BlackjackGame({ coins, setCoins }: Props) {
+  const { t } = useTranslation("c-rmhcoins");
   const connectionStatus = useBlackjackStore((s) => s.connectionStatus);
   const viewMode = useBlackjackStore((s) => s.viewMode);
   const roomInfo = useBlackjackStore((s) => s.roomInfo);
@@ -56,7 +58,7 @@ export function BlackjackGame({ coins, setCoins }: Props) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="w-6 h-6 text-site-accent animate-spin" />
-        <span className="ml-2 text-sm text-site-text-dim">Connecting...</span>
+        <span className="ml-2 text-sm text-site-text-dim">{t("connecting", { defaultValue: "Connecting..." })}</span>
       </div>
     );
   }
@@ -64,7 +66,7 @@ export function BlackjackGame({ coins, setCoins }: Props) {
   if (connectionStatus === 'error') {
     return (
       <div className="text-center py-12">
-        <p className="text-sm text-red-400">Failed to connect. Please try again.</p>
+        <p className="text-sm text-red-400">{t("failed-to-connect", { defaultValue: "Failed to connect. Please try again." })}</p>
       </div>
     );
   }
@@ -78,7 +80,7 @@ export function BlackjackGame({ coins, setCoins }: Props) {
     return (
       <div className="flex flex-col gap-4 px-3 sm:px-4 py-4 sm:py-6">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-bold text-site-text">Blackjack Rooms</h3>
+          <h3 className="text-sm font-bold text-site-text">{t("blackjack-rooms", { defaultValue: "Blackjack Rooms" })}</h3>
           <Circle className={`h-3 w-3 fill-current ${statusColor}`} />
         </div>
         <div className="max-w-125 mx-auto w-full">
@@ -103,7 +105,7 @@ export function BlackjackGame({ coins, setCoins }: Props) {
             onClick={handleLeave}
             className="shrink-0 min-h-8 px-2 text-xs text-site-text-dim hover:text-site-text transition-colors"
           >
-            &larr; Leave
+            &larr; {t("leave", { defaultValue: "Leave" })}
           </button>
           <h3 className="text-sm font-bold text-site-text truncate">
             {roomInfo.name}
@@ -112,7 +114,7 @@ export function BlackjackGame({ coins, setCoins }: Props) {
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {roomInfo.joinCode && (
             <span className="text-[10px] sm:text-xs text-site-text-dim hidden sm:inline">
-              Code: <span className="font-mono font-bold text-yellow-400">{roomInfo.joinCode}</span>
+              {t("code-label", { defaultValue: "Code:" })} <span className="font-mono font-bold text-yellow-400">{roomInfo.joinCode}</span>
             </span>
           )}
           <span className="text-[10px] sm:text-xs text-site-text-dim">

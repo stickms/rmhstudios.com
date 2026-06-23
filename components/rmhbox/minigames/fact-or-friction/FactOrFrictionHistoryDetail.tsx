@@ -9,6 +9,7 @@
  */
 'use client';
 
+import { useTranslation } from "react-i18next";
 import type { HistoryDetailProps } from '@/lib/rmhbox/history-display-registry';
 import { Check, X, Clock, SkipForward, Zap } from 'lucide-react';
 
@@ -37,6 +38,7 @@ export default function FactOrFrictionHistoryDetail({
   currentUserId,
   players,
 }: HistoryDetailProps) {
+  const { t } = useTranslation("c-rmhbox");
   const questionStarts = gameLog.actions.filter((a) => a.type === 'question_start');
   const answerReveals = gameLog.actions.filter((a) => a.type === 'answer_reveal');
 
@@ -45,14 +47,14 @@ export default function FactOrFrictionHistoryDetail({
       {/* Game Settings */}
       {gameLog.initialState && (
         <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-3">
-          <h4 className="mb-1 text-xs font-semibold uppercase text-(--rmhbox-text-muted)">Game Settings</h4>
+          <h4 className="mb-1 text-xs font-semibold uppercase text-(--rmhbox-text-muted)">{t("game-settings", { defaultValue: "Game Settings" })}</h4>
           <div className="flex flex-wrap gap-3 text-xs text-(--rmhbox-text-muted)">
-            <span>Questions: {(gameLog.initialState.totalQuestions as number) ?? questionStarts.length}</span>
+            <span>{t("questions-count", { defaultValue: "Questions: {{count}}", count: (gameLog.initialState.totalQuestions as number) ?? questionStarts.length })}</span>
             {gameLog.initialState.answerDuration != null && (
-              <span>Answer Time: {String(gameLog.initialState.answerDuration)}s</span>
+              <span>{t("answer-time", { defaultValue: "Answer Time: {{duration}}s", duration: String(gameLog.initialState.answerDuration) })}</span>
             )}
             {gameLog.initialState.potStartValue != null && (
-              <span>Starting Pot: {String(gameLog.initialState.potStartValue)}</span>
+              <span>{t("starting-pot", { defaultValue: "Starting Pot: {{value}}", value: String(gameLog.initialState.potStartValue) })}</span>
             )}
           </div>
         </div>
@@ -79,7 +81,7 @@ export default function FactOrFrictionHistoryDetail({
             {/* Question header */}
             <div className="mb-3 flex items-center justify-between">
               <h4 className="text-sm font-semibold text-(--rmhbox-text-muted)">
-                Question {questionNum}
+                {t("question-number", { defaultValue: "Question {{num}}", num: questionNum })}
               </h4>
               <div className="flex items-center gap-2">
                 {category && (
@@ -124,7 +126,7 @@ export default function FactOrFrictionHistoryDetail({
             {/* Player results for this question */}
             {revealResults.length > 0 && (
               <div className="border-t border-(--rmhbox-border) pt-2">
-                <span className="text-xs font-medium uppercase text-(--rmhbox-text-muted)">Responses</span>
+                <span className="text-xs font-medium uppercase text-(--rmhbox-text-muted)">{t("responses", { defaultValue: "Responses" })}</span>
                 <div className="mt-1 space-y-1">
                   {revealResults.map((pr) => {
                     const name = players.find((p) => p.userId === pr.userId)?.userName ?? pr.userId;
@@ -149,7 +151,7 @@ export default function FactOrFrictionHistoryDetail({
                           <span>{name}</span>
                           {pr.isFirst && (
                             <span className="flex items-center gap-0.5 text-[10px] text-yellow-400">
-                              <Zap className="h-2.5 w-2.5" /> First
+                              <Zap className="h-2.5 w-2.5" /> {t("first", { defaultValue: "First" })}
                             </span>
                           )}
                           {pr.selectedIndex != null && options[pr.selectedIndex] && (
@@ -171,7 +173,7 @@ export default function FactOrFrictionHistoryDetail({
 
       {/* Final scores */}
       <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-4">
-        <h4 className="mb-2 text-sm font-semibold text-(--rmhbox-text-muted)">Final Scores</h4>
+        <h4 className="mb-2 text-sm font-semibold text-(--rmhbox-text-muted)">{t("final-scores", { defaultValue: "Final Scores" })}</h4>
         <div className="space-y-1">
           {players
             .sort((a, b) => a.rank - b.rank)

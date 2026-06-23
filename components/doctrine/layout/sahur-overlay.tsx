@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { useDoctrineSahur } from '@/hooks/useDoctrineSahur';
 import { SAHUR_WINDOW } from '@/lib/doctrine/constants';
 
@@ -8,6 +9,7 @@ import { SAHUR_WINDOW } from '@/lib/doctrine/constants';
  * Tung Tung Tung Doctrine: Maximum intensity. The smell is the weapon.
  */
 export function SahurOverlay() {
+  const { t } = useTranslation("c-doctrine");
   const { sahurActive, sahurCountdown } = useDoctrineSahur();
   const [dismissed, setDismissed] = useState(false);
   const [showGreeting, setShowGreeting] = useState(true);
@@ -54,7 +56,7 @@ export function SahurOverlay() {
               {sahurCountdown} minutes remaining — {SAHUR_WINDOW.xpMultiplier}x XP
             </p>
             <p className="text-sm text-amber-300/30 mt-4 md:mt-6">
-              Tap to enter
+              {t("tap-to-enter", { defaultValue: "Tap to enter" })}
             </p>
           </motion.div>
         </motion.div>

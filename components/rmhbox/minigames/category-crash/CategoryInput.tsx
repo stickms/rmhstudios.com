@@ -19,6 +19,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Clock } from 'lucide-react';
 import type { Category } from './CategoryCrashGame';
@@ -114,6 +115,7 @@ export default function CategoryInput({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const { t } = useTranslation("c-rmhbox");
   const filledCount = localAnswers.filter((a) => a && a.trim().length > 0).length;
   const isUrgent = timeRemaining <= 10;
 
@@ -126,7 +128,7 @@ export default function CategoryInput({
             {letter}
           </div>
           <div className="text-sm text-(--rmhbox-text-muted)">
-            {filledCount}/{categories.length} answered
+            {t("answered-count", { defaultValue: "{{filled}}/{{total}} answered", filled: filledCount, total: categories.length })}
           </div>
         </div>
         <div
@@ -195,7 +197,7 @@ export default function CategoryInput({
                 />
                 {!startsCorrectly && (
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-(--rmhbox-danger)">
-                    Must start with {letter.toUpperCase()}
+                    {t("must-start-with", { defaultValue: "Must start with {{letter}}", letter: letter.toUpperCase() })}
                   </span>
                 )}
               </div>

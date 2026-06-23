@@ -1,0 +1,18 @@
+{
+  "back-home": "回家",
+  "controls-hint": "WASD/方向键 • 空格跳跃 • E互动 • M菜单",
+  "controls-interact": "E — 互动",
+  "controls-jump": "太空 — 跳跃",
+  "controls-menu": "M — 菜单",
+  "controls-move": "WASD / 方向键 — 移动",
+  "debt": "债务",
+  "e-continue": "继续",
+  "loading": "加载中……",
+  "login-to-play": "登录Play",
+  "menu-title": "菜单",
+  "music-volume": "音乐音量",
+  "resume": "简历 [M]",
+  "sign-in-prompt": "进入赌场前需先登录，您的债务将被记录。",
+  "subtitle": "桌子在等着呢。",
+  "title": "庄家永远赢"
+}

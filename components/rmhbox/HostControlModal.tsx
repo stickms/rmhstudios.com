@@ -13,6 +13,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
 import {
   Crown,
@@ -29,13 +30,14 @@ import { C2S } from '@/lib/rmhbox/events';
 import { toast } from '@/lib/rmhbox/toast-store';
 
 export default function HostControlModal() {
+  const { t } = useTranslation('c-rmhbox');
   const [isOpen, setIsOpen] = useState(false);
   const lobby = useRMHboxStore((s) => s.lobby);
 
   const handleForceEnd = useCallback(() => {
     if (!lobby) return;
     emit(C2S.GAME_FORCE_END, { lobbyId: lobby.lobbyId });
-    toast.info('Force-ending game…');
+    toast.info(t('force-ending-game', { defaultValue: 'Force-ending game…' }));
     setIsOpen(false);
   }, [lobby]);
 
@@ -43,7 +45,7 @@ export default function HostControlModal() {
     (userId: string, userName: string) => {
       if (!lobby) return;
       emit(C2S.LOBBY_KICK, { lobbyId: lobby.lobbyId, targetUserId: userId });
-      toast.warning(`Kicked ${userName}`);
+      toast.warning(t('kicked-player', { defaultValue: 'Kicked {{userName}}', userName }));
     },
     [lobby],
   );
@@ -52,7 +54,7 @@ export default function HostControlModal() {
     (userId: string, userName: string) => {
       if (!lobby) return;
       emit(C2S.LOBBY_PROMOTE_SPECTATOR, { lobbyId: lobby.lobbyId, userId });
-      toast.success(`Promoted ${userName} to player`);
+      toast.success(t('promoted-to-player', { defaultValue: 'Promoted {{userName}} to player', userName }));
     },
     [lobby],
   );
@@ -61,7 +63,7 @@ export default function HostControlModal() {
     (userId: string, userName: string) => {
       if (!lobby) return;
       emit(C2S.LOBBY_TRANSFER_HOST, { lobbyId: lobby.lobbyId, targetUserId: userId });
-      toast.info(`Transferred host to ${userName}`);
+      toast.info(t('transferred-host', { defaultValue: 'Transferred host to {{userName}}', userName }));
       setIsOpen(false);
     },
     [lobby],
@@ -87,8 +89,8 @@ export default function HostControlModal() {
             backgroundColor: 'var(--rmhbox-warning)',
             color: '#000',
           }}
-          aria-label="Host controls"
-          title="Host controls"
+          aria-label={t('host-controls', { defaultValue: 'Host controls' })}
+          title={t('host-controls', { defaultValue: 'Host controls' })}
         >
           <Crown className="h-5 w-5" />
         </button>
@@ -114,7 +116,7 @@ export default function HostControlModal() {
             <div className="mb-4 flex items-center justify-between">
               <h2 className="flex items-center gap-2 text-lg font-bold text-(--rmhbox-text)">
                 <Shield className="h-5 w-5 text-(--rmhbox-warning)" />
-                Host Controls
+                {t('host-controls', { defaultValue: 'Host controls' })}
               </h2>
               <button
                 onClick={() => setIsOpen(false)}
@@ -133,7 +135,7 @@ export default function HostControlModal() {
                   style={{ backgroundColor: 'var(--rmhbox-danger)' }}
                 >
                   <StopCircle className="h-4 w-4" />
-                  Force End
+                  {t('force-end', { defaultValue: 'Force End' })}
                 </button>
               </div>
             )}
@@ -142,7 +144,7 @@ export default function HostControlModal() {
             {otherPlayers.length > 0 && (
               <div className="mb-4">
                 <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-(--rmhbox-text-muted)">
-                  Players ({otherPlayers.length})
+                  {t('players-count', { defaultValue: 'Players ({{count}})', count: otherPlayers.length })}
                 </h3>
                 <div className="max-h-48 space-y-1 overflow-y-auto">
                   {otherPlayers.map((player) => (
@@ -186,14 +188,14 @@ export default function HostControlModal() {
                         <button
                           onClick={() => handleTransferHost(player.userId, player.userName)}
                           className="rounded p-1.5 text-(--rmhbox-warning) transition-colors hover:bg-(--rmhbox-warning-dim)"
-                          title="Transfer host"
+                          title={t('transfer-host', { defaultValue: 'Transfer host' })}
                         >
                           <ArrowRightLeft className="h-3.5 w-3.5" />
                         </button>
                         <button
                           onClick={() => handleKick(player.userId, player.userName)}
                           className="rounded p-1.5 text-(--rmhbox-danger) transition-colors hover:bg-(--rmhbox-danger-dim)"
-                          title="Kick player"
+                          title={t('kick-player', { defaultValue: 'Kick player' })}
                         >
                           <UserMinus className="h-3.5 w-3.5" style={{ transform: 'scaleX(-1)' }} />
                         </button>
@@ -208,7 +210,7 @@ export default function HostControlModal() {
             {lobby.spectators.length > 0 && (
               <div>
                 <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-(--rmhbox-text-muted)">
-                  Spectators ({lobby.spectators.length})
+                  {t('spectators-count', { defaultValue: 'Spectators ({{count}})', count: lobby.spectators.length })}
                 </h3>
                 <div className="max-h-32 space-y-1 overflow-y-auto">
                   {lobby.spectators.map((spec) => (
@@ -247,7 +249,7 @@ export default function HostControlModal() {
                         <button
                           onClick={() => handlePromote(spec.userId, spec.userName)}
                           className="rounded p-1.5 text-(--rmhbox-success) transition-colors hover:bg-(--rmhbox-success-dim)"
-                          title="Promote to player"
+                          title={t('promote-to-player-btn', { defaultValue: 'Promote to player' })}
                         >
                           <UserPlus className="h-3.5 w-3.5" />
                         </button>
@@ -260,7 +262,7 @@ export default function HostControlModal() {
 
             {otherPlayers.length === 0 && lobby.spectators.length === 0 && !isInGame && (
               <p className="text-center text-sm text-(--rmhbox-text-muted)">
-                No other players or spectators in the lobby.
+                {t('no-other-players', { defaultValue: 'No other players or spectators in the lobby.' })}
               </p>
             )}
           </div>

@@ -14,6 +14,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
+import { useTranslation } from 'react-i18next';
 import { PaperFigure } from '../PaperFigure';
 import { Tex, TexBlock } from '../Latex';
 
@@ -243,10 +244,11 @@ const h3Style: React.CSSProperties = {
 };
 
 export function ErgodicMarkovPaper() {
+  const { t } = useTranslation("c-research");
   return (
     <>
       {/* 1. INTRODUCTION */}
-      <h2 style={h2Style}>1. Introduction</h2>
+      <h2 style={h2Style}>{t("section-1-introduction", { defaultValue: "1. Introduction" })}</h2>
 
       <p className="mb-4">
         The procedural generation of game levels constitutes one of the most formidable combinatorial
@@ -294,7 +296,7 @@ export function ErgodicMarkovPaper() {
       </p>
 
       {/* 2. NOTATION AND PRELIMINARIES */}
-      <h2 style={h2Style}>2. Notation and Preliminaries</h2>
+      <h2 style={h2Style}>{t("section-2-notation", { defaultValue: "2. Notation and Preliminaries" })}</h2>
 
       <p className="mb-4">
         We establish here the notational conventions and measure-theoretic foundations that undergird
@@ -309,7 +311,7 @@ export function ErgodicMarkovPaper() {
         <Tex math="\|\mu - \nu\|_{\text{TV}} = \frac{1}{2} \sum_{x \in \Omega} |\mu(x) - \nu(x)|" />.
       </p>
 
-      <h3 style={h3Style}>2.1 Operator-Theoretic Notation</h3>
+      <h3 style={h3Style}>{t("section-2-1-operator-notation", { defaultValue: "2.1 Operator-Theoretic Notation" })}</h3>
 
       <p className="mb-4">
         For a reversible Markov chain with transition kernel <Tex math="P" /> and stationary measure{' '}
@@ -339,7 +341,7 @@ export function ErgodicMarkovPaper() {
         theory and the functional-analytic machinery developed in Sections 5 and 10.
       </p>
 
-      <h3 style={h3Style}>2.2 Graph-Theoretic Conventions</h3>
+      <h3 style={h3Style}>{t("section-2-2-graph-conventions", { defaultValue: "2.2 Graph-Theoretic Conventions" })}</h3>
 
       <p className="mb-4">
         We employ standard graph-theoretic terminology throughout. A graph <Tex math="G = (V, E)" /> is
@@ -356,7 +358,7 @@ export function ErgodicMarkovPaper() {
         <Tex math="\gamma = \mu_2 / 2" /> when <Tex math="P = (I + D^{-1}W)/2" />.
       </p>
 
-      <h3 style={h3Style}>2.3 Measure-Theoretic Foundations</h3>
+      <h3 style={h3Style}>{t("section-2-3-measure-foundations", { defaultValue: "2.3 Measure-Theoretic Foundations" })}</h3>
 
       <p className="mb-4">
         The Gibbs measure framework requires careful specification of the underlying sigma-algebra
@@ -386,9 +388,9 @@ export function ErgodicMarkovPaper() {
       </p>
 
       {/* 3. MATHEMATICAL FRAMEWORK */}
-      <h2 style={h2Style}>3. Mathematical Framework</h2>
+      <h2 style={h2Style}>{t("section-3-math-framework", { defaultValue: "3. Mathematical Framework" })}</h2>
 
-      <h3 style={h3Style}>2.1 Tile-Adjacency Graphs and State Spaces</h3>
+      <h3 style={h3Style}>{t("section-tile-adjacency-graphs", { defaultValue: "2.1 Tile-Adjacency Graphs and State Spaces" })}</h3>
 
       <p className="mb-4">
         Let <Tex math="\mathcal{T} = \{t_1, t_2, \ldots, t_K\}" /> denote a finite tile palette
@@ -425,7 +427,7 @@ export function ErgodicMarkovPaper() {
         <Tex math="\Omega_A" /> via a random walk on <Tex math="G" />.
       </p>
 
-      <h3 style={h3Style}>2.2 Transition Kernels and Reversibility</h3>
+      <h3 style={h3Style}>{t("section-transition-kernels", { defaultValue: "2.2 Transition Kernels and Reversibility" })}</h3>
 
       <p className="mb-4">
         We construct a Markov chain <Tex math="(X_t)_{t \geq 0}" /> on <Tex math="\Omega_A" /> by
@@ -459,22 +461,22 @@ export function ErgodicMarkovPaper() {
         spectral gap.
       </p>
 
-      <PaperFigure number={1} caption="Spectral gap of the transition matrix under different weight configurations for the ludometric energy functional. The balanced configuration (α_1 = α_2 = α_3 = 1) yields the largest spectral gap, indicating fastest mixing.">
+      <PaperFigure number={1} caption={t("fig-1-caption", { defaultValue: "Spectral gap of the transition matrix under different weight configurations for the ludometric energy functional. The balanced configuration (α_1 = α_2 = α_3 = 1) yields the largest spectral gap, indicating fastest mixing." })}>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={spectralGapData} margin={{ top: 10, right: 30, left: 20, bottom: 40 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="config" angle={-25} textAnchor="end" tick={{ fontSize: 10 }} />
-            <YAxis label={{ value: 'Spectral Gap γ', angle: -90, position: 'insideLeft' }} />
+            <YAxis label={{ value: t("chart-spectral-gap-y", { defaultValue: "Spectral Gap γ" }), angle: -90, position: 'insideLeft' }} />
             <Tooltip />
-            <Bar dataKey="gap" fill="#10b981" name="Spectral Gap γ" />
+            <Bar dataKey="gap" fill="#10b981" name={t("chart-spectral-gap-series", { defaultValue: "Spectral Gap γ" })} />
           </BarChart>
         </ResponsiveContainer>
       </PaperFigure>
 
       {/* 4. SPECTRAL ANALYSIS */}
-      <h2 style={h2Style}>4. Spectral Analysis of Tile-Adjacency Graphs</h2>
+      <h2 style={h2Style}>{t("section-4-spectral-analysis", { defaultValue: "4. Spectral Analysis of Tile-Adjacency Graphs" })}</h2>
 
-      <h3 style={h3Style}>4.1 Eigenvalue Decomposition and the Spectral Gap</h3>
+      <h3 style={h3Style}>{t("section-4-1-eigenvalue", { defaultValue: "4.1 Eigenvalue Decomposition and the Spectral Gap" })}</h3>
 
       <p className="mb-4">
         The transition matrix <Tex math="P" /> of a reversible Markov chain on a finite state
@@ -511,7 +513,7 @@ export function ErgodicMarkovPaper() {
         level sample can be produced in <Tex math="O(\gamma^{-1} \log |\Omega_A|)" /> steps.
       </p>
 
-      <h3 style={h3Style}>4.2 Cheeger Inequality and Conductance</h3>
+      <h3 style={h3Style}>{t("section-4-2-cheeger", { defaultValue: "4.2 Cheeger Inequality and Conductance" })}</h3>
 
       <p className="mb-4">
         A powerful tool for bounding the spectral gap from below is the Cheeger inequality, which
@@ -552,9 +554,9 @@ export function ErgodicMarkovPaper() {
       </p>
 
       {/* 5. POINCARÉ INEQUALITIES AND FUNCTIONAL-ANALYTIC BOUNDS */}
-      <h2 style={h2Style}>5. Poincaré Inequalities and Functional-Analytic Bounds</h2>
+      <h2 style={h2Style}>{t("section-5-poincare", { defaultValue: "5. Poincare Inequalities and Functional-Analytic Bounds" })}</h2>
 
-      <h3 style={h3Style}>5.1 Poincaré Inequality on Configuration Spaces</h3>
+      <h3 style={h3Style}>{t("section-5-1-poincare-config", { defaultValue: "5.1 Poincare Inequality on Configuration Spaces" })}</h3>
 
       <p className="mb-4">
         The spectral gap <Tex math="\gamma" /> of the reversible Markov chain{' '}
@@ -661,7 +663,7 @@ export function ErgodicMarkovPaper() {
         <Tex math="O(\log n)" />, which are amenable to direct numerical computation.
       </p>
 
-      <h3 style={h3Style}>5.2 Log-Sobolev Inequalities and Hypercontractivity</h3>
+      <h3 style={h3Style}>{t("section-5-2-log-sobolev", { defaultValue: "5.2 Log-Sobolev Inequalities and Hypercontractivity" })}</h3>
 
       <p className="mb-4">
         A strictly stronger functional inequality that yields sharper concentration and
@@ -748,24 +750,24 @@ export function ErgodicMarkovPaper() {
         increasingly refined information about the mixing profile of the chain.
       </p>
 
-      <PaperFigure number={7} caption="Poincaré constant C_P as a function of lattice dimension n for the tile-configuration Gibbs measure at β = 1.5. The empirically measured constant (solid) is compared against the theoretical logarithmic lower bound from the Dobrushin-regime analysis (dashed). The gap narrows as lattice size increases, confirming near-optimality of the comparison-theoretic estimates.">
+      <PaperFigure number={7} caption={t("fig-7-caption", { defaultValue: "Poincare constant C_P as a function of lattice dimension n for the tile-configuration Gibbs measure at β = 1.5. The empirically measured constant (solid) is compared against the theoretical logarithmic lower bound from the Dobrushin-regime analysis (dashed). The gap narrows as lattice size increases, confirming near-optimality of the comparison-theoretic estimates." })}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={poincareConstantData} margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="latticeSize" label={{ value: 'Lattice Size n', position: 'insideBottomRight', offset: -5 }} />
-            <YAxis label={{ value: 'C_P', angle: -90, position: 'insideLeft' }} />
+            <XAxis dataKey="latticeSize" label={{ value: t("chart-lattice-size-n", { defaultValue: "Lattice Size n" }), position: 'insideBottomRight', offset: -5 }} />
+            <YAxis label={{ value: t("chart-cp", { defaultValue: "C_P" }), angle: -90, position: 'insideLeft' }} />
             <Tooltip />
             <Legend />
-            <Line type="monotone" dataKey="constant" stroke="#10b981" name="Measured C_P" strokeWidth={2} />
-            <Line type="monotone" dataKey="logBound" stroke="#f59e0b" name="Dobrushin Bound" strokeWidth={2} strokeDasharray="5 5" />
+            <Line type="monotone" dataKey="constant" stroke="#10b981" name={t("chart-measured-cp", { defaultValue: "Measured C_P" })} strokeWidth={2} />
+            <Line type="monotone" dataKey="logBound" stroke="#f59e0b" name={t("chart-dobrushin-bound", { defaultValue: "Dobrushin Bound" })} strokeWidth={2} strokeDasharray="5 5" />
           </LineChart>
         </ResponsiveContainer>
       </PaperFigure>
 
       {/* 6. INFORMATION-GEOMETRIC STRUCTURE OF CONFIGURATION SPACES */}
-      <h2 style={h2Style}>6. Information-Geometric Structure of Configuration Spaces</h2>
+      <h2 style={h2Style}>{t("section-6-information-geometric", { defaultValue: "6. Information-Geometric Structure of Configuration Spaces" })}</h2>
 
-      <h3 style={h3Style}>6.1 Fisher Information Metric on the Parameter Manifold</h3>
+      <h3 style={h3Style}>{t("section-6-1-fisher-metric", { defaultValue: "6.1 Fisher Information Metric on the Parameter Manifold" })}</h3>
 
       <p className="mb-4">
         The family of Gibbs measures{' '}
@@ -848,7 +850,7 @@ export function ErgodicMarkovPaper() {
         of the distribution in the critical regime.
       </p>
 
-      <h3 style={h3Style}>6.2 Natural Gradient and Amari&apos;s α-Connections</h3>
+      <h3 style={h3Style}>{t("section-6-2-natural-gradient", { defaultValue: "6.2 Natural Gradient and Amari's α-Connections" })}</h3>
 
       <p className="mb-4">
         The Fisher metric induces a natural notion of steepest descent on the parameter
@@ -940,22 +942,22 @@ export function ErgodicMarkovPaper() {
         phase transition in the tile-generation model.
       </p>
 
-      <PaperFigure number={8} caption="Fisher information curvature (Gaussian curvature K and sectional curvature K_σ) of the Gibbs parameter manifold as a function of inverse temperature β. The monotonic increase and divergent behavior near the critical temperature β_c ~ 3.2 reflect the information-geometric signature of the order-disorder phase transition.">
+      <PaperFigure number={8} caption={t("fig-8-caption", { defaultValue: "Fisher information curvature (Gaussian curvature K and sectional curvature K_σ) of the Gibbs parameter manifold as a function of inverse temperature β. The monotonic increase and divergent behavior near the critical temperature β_c ~ 3.2 reflect the information-geometric signature of the order-disorder phase transition." })}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={fisherCurvatureData} margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="beta" label={{ value: 'Inverse Temperature β', position: 'insideBottomRight', offset: -5 }} />
-            <YAxis label={{ value: 'Curvature', angle: -90, position: 'insideLeft' }} />
+            <XAxis dataKey="beta" label={{ value: t("chart-inverse-temp-beta", { defaultValue: "Inverse Temperature β" }), position: 'insideBottomRight', offset: -5 }} />
+            <YAxis label={{ value: t("chart-curvature", { defaultValue: "Curvature" }), angle: -90, position: 'insideLeft' }} />
             <Tooltip />
             <Legend />
-            <Line type="monotone" dataKey="curvature" stroke="#8b5cf6" name="Gaussian Curvature K" strokeWidth={2} />
-            <Line type="monotone" dataKey="sectional" stroke="#ef4444" name="Sectional Curvature K_σ" strokeWidth={2} strokeDasharray="5 5" />
+            <Line type="monotone" dataKey="curvature" stroke="#8b5cf6" name={t("chart-gaussian-curvature", { defaultValue: "Gaussian Curvature K" })} strokeWidth={2} />
+            <Line type="monotone" dataKey="sectional" stroke="#ef4444" name={t("chart-sectional-curvature", { defaultValue: "Sectional Curvature K_σ" })} strokeWidth={2} strokeDasharray="5 5" />
           </LineChart>
         </ResponsiveContainer>
       </PaperFigure>
 
       {/* 7. LUDOMETRIC ENERGY FUNCTIONALS */}
-      <h2 style={h2Style}>7. Ludometric Energy Functionals</h2>
+      <h2 style={h2Style}>{t("section-7-ludometric-energy", { defaultValue: "7. Ludometric Energy Functionals" })}</h2>
 
       <p className="mb-4">
         The target distribution <Tex math="\pi" /> is specified as a Gibbs measure whose energy
@@ -979,7 +981,7 @@ export function ErgodicMarkovPaper() {
         weights and the individual terms are defined below.
       </p>
 
-      <h3 style={h3Style}>7.1 Navigational Entropy</h3>
+      <h3 style={h3Style}>{t("section-7-1-navigational-entropy", { defaultValue: "7.1 Navigational Entropy" })}</h3>
 
       <p className="mb-4">
         The navigational entropy quantifies the diversity of shortest-path routes between
@@ -1010,7 +1012,7 @@ export function ErgodicMarkovPaper() {
         random generation.
       </p>
 
-      <h3 style={h3Style}>7.2 Resource-Density Variance</h3>
+      <h3 style={h3Style}>{t("section-7-2-resource-variance", { defaultValue: "7.2 Resource-Density Variance" })}</h3>
 
       <p className="mb-4">
         Let <Tex math="\rho(x, r)" /> denote the density of resource type{' '}
@@ -1034,7 +1036,7 @@ export function ErgodicMarkovPaper() {
         during MCMC transitions at <Tex math="O(1)" /> cost per single-site flip.
       </p>
 
-      <h3 style={h3Style}>7.3 Encounter-Pacing Regularity</h3>
+      <h3 style={h3Style}>{t("section-7-3-encounter-pacing", { defaultValue: "7.3 Encounter-Pacing Regularity" })}</h3>
 
       <p className="mb-4">
         The encounter-pacing functional <Tex math="\Phi_{\text{enc}}(x)" /> quantifies the
@@ -1060,26 +1062,26 @@ export function ErgodicMarkovPaper() {
         the energy landscape and improve MCMC acceptance rates.
       </p>
 
-      <PaperFigure number={2} caption="Energy functional convergence during MCMC sampling over 10,000 steps. The composite energy and each component (navigational entropy penalty, resource-density variance, encounter-pacing cost) decrease monotonically toward their equilibrium values.">
+      <PaperFigure number={2} caption={t("fig-2-caption", { defaultValue: "Energy functional convergence during MCMC sampling over 10,000 steps. The composite energy and each component (navigational entropy penalty, resource-density variance, encounter-pacing cost) decrease monotonically toward their equilibrium values." })}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={energyConvergenceData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="step" label={{ value: 'MCMC Step', position: 'insideBottom', offset: -5 }} />
-            <YAxis label={{ value: 'Energy', angle: -90, position: 'insideLeft' }} />
+            <XAxis dataKey="step" label={{ value: t("chart-mcmc-step", { defaultValue: "MCMC Step" }), position: 'insideBottom', offset: -5 }} />
+            <YAxis label={{ value: t("chart-energy", { defaultValue: "Energy" }), angle: -90, position: 'insideLeft' }} />
             <Tooltip />
             <Legend />
-            <Line type="monotone" dataKey="energy" stroke="#111827" strokeWidth={2} name="Total E(x)" dot={false} />
-            <Line type="monotone" dataKey="navEntropy" stroke="#10b981" name="H_nav penalty" dot={false} />
-            <Line type="monotone" dataKey="resourceVar" stroke="#6366f1" name="σ²_ρ" dot={false} />
-            <Line type="monotone" dataKey="encounterPace" stroke="#f59e0b" name="Φ_enc" dot={false} />
+            <Line type="monotone" dataKey="energy" stroke="#111827" strokeWidth={2} name={t("chart-total-energy", { defaultValue: "Total E(x)" })} dot={false} />
+            <Line type="monotone" dataKey="navEntropy" stroke="#10b981" name={t("chart-nav-entropy-penalty", { defaultValue: "H_nav penalty" })} dot={false} />
+            <Line type="monotone" dataKey="resourceVar" stroke="#6366f1" name={t("chart-resource-var", { defaultValue: "σ²_ρ" })} dot={false} />
+            <Line type="monotone" dataKey="encounterPace" stroke="#f59e0b" name={t("chart-encounter-pace", { defaultValue: "Φ_enc" })} dot={false} />
           </LineChart>
         </ResponsiveContainer>
       </PaperFigure>
 
       {/* 8. MCMC SAMPLING AND MIXING */}
-      <h2 style={h2Style}>8. MCMC Sampling and Mixing</h2>
+      <h2 style={h2Style}>{t("section-8-mcmc-sampling", { defaultValue: "8. MCMC Sampling and Mixing" })}</h2>
 
-      <h3 style={h3Style}>8.1 Metropolis–Hastings on the Configuration Space</h3>
+      <h3 style={h3Style}>{t("section-8-1-metropolis-hastings", { defaultValue: "8.1 Metropolis-Hastings on the Configuration Space" })}</h3>
 
       <p className="mb-4">
         The standard Metropolis–Hastings (MH) algorithm applied to our configuration space
@@ -1101,7 +1103,7 @@ export function ErgodicMarkovPaper() {
         <Tex math="\exp(-\beta \Delta E)" />.
       </p>
 
-      <h3 style={h3Style}>8.2 Spectral-Gap-Guided Acceleration</h3>
+      <h3 style={h3Style}>{t("section-8-2-spectral-guided", { defaultValue: "8.2 Spectral-Gap-Guided Acceleration" })}</h3>
 
       <p className="mb-4">
         Vanilla MH sampling suffers from slow mixing when the energy landscape contains
@@ -1134,25 +1136,25 @@ export function ErgodicMarkovPaper() {
         in <Tex math="O(k^2)" /> time per step.
       </p>
 
-      <PaperFigure number={3} caption="Mixing time convergence: total-variation distance to stationarity as a function of MCMC iteration for spectral-guided, vanilla Metropolis–Hastings, and uniform-random sampling. Spectral-guided sampling achieves ε = 0.01 convergence in approximately 3.2× fewer iterations.">
+      <PaperFigure number={3} caption={t("fig-3-caption", { defaultValue: "Mixing time convergence: total-variation distance to stationarity as a function of MCMC iteration for spectral-guided, vanilla Metropolis-Hastings, and uniform-random sampling. Spectral-guided sampling achieves ε = 0.01 convergence in approximately 3.2× fewer iterations." })}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={mixingTimeData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="iteration" label={{ value: 'Iteration', position: 'insideBottom', offset: -5 }} />
-            <YAxis label={{ value: 'd_TV(P^t, π)', angle: -90, position: 'insideLeft' }} />
+            <XAxis dataKey="iteration" label={{ value: t("chart-iteration", { defaultValue: "Iteration" }), position: 'insideBottom', offset: -5 }} />
+            <YAxis label={{ value: t("chart-dtv", { defaultValue: "d_TV(P^t, π)" }), angle: -90, position: 'insideLeft' }} />
             <Tooltip />
             <Legend />
-            <Line type="monotone" dataKey="spectral" stroke="#10b981" strokeWidth={2} name="Spectral-Guided" dot={false} />
-            <Line type="monotone" dataKey="mh" stroke="#6366f1" strokeWidth={2} name="Vanilla MH" dot={false} />
-            <Line type="monotone" dataKey="uniform" stroke="#ef4444" strokeWidth={2} name="Uniform Random" dot={false} />
+            <Line type="monotone" dataKey="spectral" stroke="#10b981" strokeWidth={2} name={t("chart-spectral-guided", { defaultValue: "Spectral-Guided" })} dot={false} />
+            <Line type="monotone" dataKey="mh" stroke="#6366f1" strokeWidth={2} name={t("chart-vanilla-mh", { defaultValue: "Vanilla MH" })} dot={false} />
+            <Line type="monotone" dataKey="uniform" stroke="#ef4444" strokeWidth={2} name={t("chart-uniform-random", { defaultValue: "Uniform Random" })} dot={false} />
           </LineChart>
         </ResponsiveContainer>
       </PaperFigure>
 
       {/* 9. GIBBS MEASURES AND PHASE TRANSITIONS */}
-      <h2 style={h2Style}>9. Gibbs Measures and Phase Transitions in the Design Space</h2>
+      <h2 style={h2Style}>{t("section-9-gibbs-measures", { defaultValue: "9. Gibbs Measures and Phase Transitions in the Design Space" })}</h2>
 
-      <h3 style={h3Style}>9.1 Partition Function Asymptotics</h3>
+      <h3 style={h3Style}>{t("section-9-1-partition-function", { defaultValue: "9.1 Partition Function Asymptotics" })}</h3>
 
       <p className="mb-4">
         The thermodynamic behavior of the tile-configuration Gibbs measure is governed by the
@@ -1239,7 +1241,7 @@ export function ErgodicMarkovPaper() {
         <Tex math="\beta \lesssim 0.8" /> for our tile-configuration energies.
       </p>
 
-      <h3 style={h3Style}>9.2 Critical Temperature and Metastability</h3>
+      <h3 style={h3Style}>{t("section-9-2-critical-temp", { defaultValue: "9.2 Critical Temperature and Metastability" })}</h3>
 
       <p className="mb-4">
         The phase structure of the tile-configuration model bears a deep analogy with the
@@ -1320,26 +1322,26 @@ export function ErgodicMarkovPaper() {
         temperatures without tempering or parallel strategies.
       </p>
 
-      <PaperFigure number={9} caption="Phase diagram of the tile-configuration Gibbs measure in the (β, α_1) parameter plane. Points are colored by macroscopic phase: disordered (high temperature, low coherence), critical (fluctuation-dominated regime near the transition), ordered (long-range tile-type correlations), and frozen (concentration on a single ground state). The phase boundaries were determined via Binder cumulant crossings on lattices of size n = 10, ..., 50.">
+      <PaperFigure number={9} caption={t("fig-9-caption", { defaultValue: "Phase diagram of the tile-configuration Gibbs measure in the (β, α_1) parameter plane. Points are colored by macroscopic phase: disordered (high temperature, low coherence), critical (fluctuation-dominated regime near the transition), ordered (long-range tile-type correlations), and frozen (concentration on a single ground state). The phase boundaries were determined via Binder cumulant crossings on lattices of size n = 10, ..., 50." })}>
         <ResponsiveContainer width="100%" height={300}>
           <ScatterChart margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="beta" name="β" type="number" label={{ value: 'Inverse Temperature β', position: 'insideBottomRight', offset: -5 }} />
-            <YAxis dataKey="alpha1" name="α_1" type="number" label={{ value: 'Weight α_1', angle: -90, position: 'insideLeft' }} />
+            <XAxis dataKey="beta" name="β" type="number" label={{ value: t("chart-inverse-temp-beta", { defaultValue: "Inverse Temperature β" }), position: 'insideBottomRight', offset: -5 }} />
+            <YAxis dataKey="alpha1" name="α_1" type="number" label={{ value: t("chart-weight-alpha1", { defaultValue: "Weight α_1" }), angle: -90, position: 'insideLeft' }} />
             <Tooltip cursor={{ strokeDasharray: '3 3' }} />
             <Legend />
-            <Scatter name="Disordered" data={phaseDiagramData.filter(d => d.phase === 'disordered')} fill="#60a5fa" />
-            <Scatter name="Critical" data={phaseDiagramData.filter(d => d.phase === 'critical')} fill="#f59e0b" />
-            <Scatter name="Ordered" data={phaseDiagramData.filter(d => d.phase === 'ordered')} fill="#10b981" />
-            <Scatter name="Frozen" data={phaseDiagramData.filter(d => d.phase === 'frozen')} fill="#8b5cf6" />
+            <Scatter name={t("chart-disordered", { defaultValue: "Disordered" })} data={phaseDiagramData.filter(d => d.phase === 'disordered')} fill="#60a5fa" />
+            <Scatter name={t("chart-critical", { defaultValue: "Critical" })} data={phaseDiagramData.filter(d => d.phase === 'critical')} fill="#f59e0b" />
+            <Scatter name={t("chart-ordered", { defaultValue: "Ordered" })} data={phaseDiagramData.filter(d => d.phase === 'ordered')} fill="#10b981" />
+            <Scatter name={t("chart-frozen", { defaultValue: "Frozen" })} data={phaseDiagramData.filter(d => d.phase === 'frozen')} fill="#8b5cf6" />
           </ScatterChart>
         </ResponsiveContainer>
       </PaperFigure>
 
       {/* 10. COUPLING METHODS AND EXACT SAMPLING */}
-      <h2 style={h2Style}>10. Coupling Methods and Exact Sampling</h2>
+      <h2 style={h2Style}>{t("section-10-coupling-methods", { defaultValue: "10. Coupling Methods and Exact Sampling" })}</h2>
 
-      <h3 style={h3Style}>10.1 Monotone Coupling and Coupling Inequality</h3>
+      <h3 style={h3Style}>{t("section-10-1-monotone-coupling", { defaultValue: "10.1 Monotone Coupling and Coupling Inequality" })}</h3>
 
       <p className="mb-4">
         Coupling arguments provide the most versatile tool for bounding the mixing time of
@@ -1410,7 +1412,7 @@ export function ErgodicMarkovPaper() {
         Dobrushin condition from the coupling perspective.
       </p>
 
-      <h3 style={h3Style}>10.2 Coupling from the Past (CFTP)</h3>
+      <h3 style={h3Style}>{t("section-10-2-cftp", { defaultValue: "10.2 Coupling from the Past (CFTP)" })}</h3>
 
       <p className="mb-4">
         The Propp–Wilson algorithm (1996) provides a method for exact sampling from the
@@ -1497,23 +1499,23 @@ export function ErgodicMarkovPaper() {
         construction of Huber (2004) is bounded by <Tex math="O(K)" />.
       </p>
 
-      <PaperFigure number={10} caption="Mean coupling-from-the-past coalescence time as a function of lattice dimension n for the tile-configuration Glauber dynamics at β = 1.5. Error bars indicate ±1 standard deviation over 200 independent CFTP runs. The empirical scaling is consistent with O(n² log n), confirming the theoretical prediction from the Dobrushin-regime mixing-time analysis.">
+      <PaperFigure number={10} caption={t("fig-10-caption", { defaultValue: "Mean coupling-from-the-past coalescence time as a function of lattice dimension n for the tile-configuration Glauber dynamics at β = 1.5. Error bars indicate ±1 standard deviation over 200 independent CFTP runs. The empirical scaling is consistent with O(n² log n), confirming the theoretical prediction from the Dobrushin-regime mixing-time analysis." })}>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={couplingTimeData} margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="latticeSize" label={{ value: 'Lattice Size n', position: 'insideBottomRight', offset: -5 }} />
-            <YAxis label={{ value: 'Mean Coalescence Time', angle: -90, position: 'insideLeft' }} />
+            <XAxis dataKey="latticeSize" label={{ value: t("chart-lattice-size-n", { defaultValue: "Lattice Size n" }), position: 'insideBottomRight', offset: -5 }} />
+            <YAxis label={{ value: t("chart-mean-coalescence-time", { defaultValue: "Mean Coalescence Time" }), angle: -90, position: 'insideLeft' }} />
             <Tooltip />
             <Legend />
-            <Bar dataKey="meanTime" fill="#10b981" name="Mean CFTP Time" />
+            <Bar dataKey="meanTime" fill="#10b981" name={t("chart-mean-cftp-time", { defaultValue: "Mean CFTP Time" })} />
           </BarChart>
         </ResponsiveContainer>
       </PaperFigure>
 
       {/* 11. SIMULATED TEMPERING AND REPLICA EXCHANGE */}
-      <h2 style={h2Style}>11. Simulated Tempering and Replica Exchange</h2>
+      <h2 style={h2Style}>{t("section-11-simulated-tempering", { defaultValue: "11. Simulated Tempering and Replica Exchange" })}</h2>
 
-      <h3 style={h3Style}>11.1 Parallel Tempering Architecture</h3>
+      <h3 style={h3Style}>{t("section-11-1-parallel-tempering", { defaultValue: "11.1 Parallel Tempering Architecture" })}</h3>
 
       <p className="mb-4">
         The exponential escape times from metastable wells identified in Section 8.2 render
@@ -1597,7 +1599,7 @@ export function ErgodicMarkovPaper() {
         temperature updates are rejected.
       </p>
 
-      <h3 style={h3Style}>11.2 Optimal Temperature Ladder Design</h3>
+      <h3 style={h3Style}>{t("section-11-2-temp-ladder", { defaultValue: "11.2 Optimal Temperature Ladder Design" })}</h3>
 
       <p className="mb-4">
         The efficiency of both parallel tempering and simulated tempering depends critically
@@ -1687,21 +1689,21 @@ export function ErgodicMarkovPaper() {
         at the endpoints of the temperature ladder.
       </p>
 
-      <PaperFigure number={11} caption="Replica exchange acceptance rate as a function of the temperature ratio r = β_{l+1}/β_l between adjacent replicas. The optimal operating regime (shaded) corresponds to acceptance rates in the range 0.20–0.25, achieved at temperature ratios r ~ 1.25–1.35 for the tile-configuration Gibbs measure with balanced energy weights.">
+      <PaperFigure number={11} caption={t("fig-11-caption", { defaultValue: "Replica exchange acceptance rate as a function of the temperature ratio r = β_{l+1}/β_l between adjacent replicas. The optimal operating regime (shaded) corresponds to acceptance rates in the range 0.20-0.25, achieved at temperature ratios r ~ 1.25-1.35 for the tile-configuration Gibbs measure with balanced energy weights." })}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={replicaAcceptanceData} margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="tempRatio" label={{ value: 'Temperature Ratio r', position: 'insideBottomRight', offset: -5 }} />
-            <YAxis label={{ value: 'Acceptance Rate', angle: -90, position: 'insideLeft' }} domain={[0, 1]} />
+            <XAxis dataKey="tempRatio" label={{ value: t("chart-temperature-ratio", { defaultValue: "Temperature Ratio r" }), position: 'insideBottomRight', offset: -5 }} />
+            <YAxis label={{ value: t("chart-acceptance-rate", { defaultValue: "Acceptance Rate" }), angle: -90, position: 'insideLeft' }} domain={[0, 1]} />
             <Tooltip />
             <Legend />
-            <Line type="monotone" dataKey="acceptance" stroke="#6366f1" strokeWidth={2} name="Swap Acceptance ᾱ" />
+            <Line type="monotone" dataKey="acceptance" stroke="#6366f1" strokeWidth={2} name={t("chart-swap-acceptance", { defaultValue: "Swap Acceptance ᾱ" })} />
           </LineChart>
         </ResponsiveContainer>
       </PaperFigure>
 
       {/* 12. LARGE DEVIATIONS AND CONCENTRATION INEQUALITIES */}
-      <h2 style={h2Style}>12. Large Deviations and Concentration Inequalities</h2>
+      <h2 style={h2Style}>{t("section-12-large-deviations", { defaultValue: "12. Large Deviations and Concentration Inequalities" })}</h2>
 
       <p className="mb-4">
         Having established the mixing-time guarantees and spectral structure of the tile-configuration
@@ -1715,7 +1717,7 @@ export function ErgodicMarkovPaper() {
         navigational entropy and resource-variance functionals that underpin ludometric evaluation.
       </p>
 
-      <h3 style={h3Style}>12.1 Cramér&apos;s Theorem for Empirical Energies</h3>
+      <h3 style={h3Style}>{t("section-12-1-cramer", { defaultValue: "12.1 Cramer's Theorem for Empirical Energies" })}</h3>
 
       <p className="mb-4">
         Let <Tex math="\{X_t\}_{t \geq 0}" /> denote the stationary Markov chain on{' '}
@@ -1793,7 +1795,7 @@ export function ErgodicMarkovPaper() {
         whose energy departs significantly from equilibrium.
       </p>
 
-      <h3 style={h3Style}>12.2 McDiarmid&apos;s Inequality and Bounded-Difference Concentration</h3>
+      <h3 style={h3Style}>{t("section-12-2-mcdiarmid", { defaultValue: "12.2 McDiarmid's Inequality and Bounded-Difference Concentration" })}</h3>
 
       <p className="mb-4">
         While the large deviation principle provides asymptotic exponential rates, finite-sample
@@ -1866,21 +1868,21 @@ export function ErgodicMarkovPaper() {
         below which the Gaussian regime dominates and above which the exponential tails take over.
       </p>
 
-      <PaperFigure number={12} caption="Empirical rate function I(e) for the energy observable under the tile-configuration Gibbs measure at inverse temperature β = 2.0, estimated from 10^6 independent samples. The quadratic approximation (dashed) is accurate near the mean but underestimates the true rate function in the tails, confirming the relevance of higher-order large-deviation corrections.">
+      <PaperFigure number={12} caption={t("fig-12-caption", { defaultValue: "Empirical rate function I(e) for the energy observable under the tile-configuration Gibbs measure at inverse temperature β = 2.0, estimated from 10^6 independent samples. The quadratic approximation (dashed) is accurate near the mean but underestimates the true rate function in the tails, confirming the relevance of higher-order large-deviation corrections." })}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={largeDeviationData} margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="deviation" label={{ value: 'Energy Deviation (e - <E>)', position: 'insideBottomRight', offset: -5 }} />
-            <YAxis label={{ value: 'Rate Function I(e)', angle: -90, position: 'insideLeft' }} />
+            <XAxis dataKey="deviation" label={{ value: t("chart-energy-deviation", { defaultValue: "Energy Deviation (e - <E>)" }), position: 'insideBottomRight', offset: -5 }} />
+            <YAxis label={{ value: t("chart-rate-function", { defaultValue: "Rate Function I(e)" }), angle: -90, position: 'insideLeft' }} />
             <Tooltip />
             <Legend />
-            <Line type="monotone" dataKey="rateFunction" stroke="#8b5cf6" strokeWidth={2} name="Rate Function I(e)" />
+            <Line type="monotone" dataKey="rateFunction" stroke="#8b5cf6" strokeWidth={2} name={t("chart-rate-function", { defaultValue: "Rate Function I(e)" })} />
           </LineChart>
         </ResponsiveContainer>
       </PaperFigure>
 
       {/* 13. CONNECTIONS TO OPTIMAL TRANSPORT */}
-      <h2 style={h2Style}>13. Connections to Optimal Transport</h2>
+      <h2 style={h2Style}>{t("section-13-optimal-transport", { defaultValue: "13. Connections to Optimal Transport" })}</h2>
 
       <p className="mb-4">
         The measure-theoretic perspective on Markov chain Monte Carlo naturally invites connections
@@ -1894,7 +1896,7 @@ export function ErgodicMarkovPaper() {
         displacement interpolation structure of the Wasserstein space.
       </p>
 
-      <h3 style={h3Style}>13.1 Wasserstein Distances on Configuration Measures</h3>
+      <h3 style={h3Style}>{t("section-13-1-wasserstein", { defaultValue: "13.1 Wasserstein Distances on Configuration Measures" })}</h3>
 
       <p className="mb-4">
         For probability measures <Tex math="\mu, \nu" /> on the discrete configuration space{' '}
@@ -1959,7 +1961,7 @@ export function ErgodicMarkovPaper() {
         space.
       </p>
 
-      <h3 style={h3Style}>13.2 Otto Calculus and Gradient Flows</h3>
+      <h3 style={h3Style}>{t("section-13-2-otto-calculus", { defaultValue: "13.2 Otto Calculus and Gradient Flows" })}</h3>
 
       <p className="mb-4">
         The seminal insight of Jordan, Kinderlehrer, and Otto (1998) is that the Fokker–Planck
@@ -2048,23 +2050,23 @@ export function ErgodicMarkovPaper() {
         chain&apos;s practical performance than the spectral gap alone.
       </p>
 
-      <PaperFigure number={13} caption="Convergence of the empirical chain distribution to the stationary Gibbs measure in Wasserstein-1 (W_1), Wasserstein-2 (W_2), and Wasserstein-inf (W_inf) distances on a 20×20 tile-configuration lattice at β = 2.0. The W_2 metric exhibits the smoothest convergence profile, while W_inf reveals persistent outlier configurations that are slow to equilibrate near the phase boundary.">
+      <PaperFigure number={13} caption={t("fig-13-caption", { defaultValue: "Convergence of the empirical chain distribution to the stationary Gibbs measure in Wasserstein-1 (W_1), Wasserstein-2 (W_2), and Wasserstein-inf (W_inf) distances on a 20×20 tile-configuration lattice at β = 2.0. The W_2 metric exhibits the smoothest convergence profile, while W_inf reveals persistent outlier configurations that are slow to equilibrate near the phase boundary." })}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={wassersteinConvergenceData} margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="step" label={{ value: 'MCMC Iteration', position: 'insideBottomRight', offset: -5 }} />
-            <YAxis label={{ value: 'Wasserstein Distance', angle: -90, position: 'insideLeft' }} />
+            <XAxis dataKey="step" label={{ value: t("chart-mcmc-iteration", { defaultValue: "MCMC Iteration" }), position: 'insideBottomRight', offset: -5 }} />
+            <YAxis label={{ value: t("chart-wasserstein-distance", { defaultValue: "Wasserstein Distance" }), angle: -90, position: 'insideLeft' }} />
             <Tooltip />
             <Legend />
-            <Line type="monotone" dataKey="w1" stroke="#10b981" strokeWidth={2} name="W_1 Distance" />
-            <Line type="monotone" dataKey="w2" stroke="#3b82f6" strokeWidth={2} name="W_2 Distance" />
-            <Line type="monotone" dataKey="wInf" stroke="#ef4444" strokeWidth={2} name="W_inf Distance" />
+            <Line type="monotone" dataKey="w1" stroke="#10b981" strokeWidth={2} name={t("chart-w1-distance", { defaultValue: "W_1 Distance" })} />
+            <Line type="monotone" dataKey="w2" stroke="#3b82f6" strokeWidth={2} name={t("chart-w2-distance", { defaultValue: "W_2 Distance" })} />
+            <Line type="monotone" dataKey="wInf" stroke="#ef4444" strokeWidth={2} name={t("chart-winf-distance", { defaultValue: "W_inf Distance" })} />
           </LineChart>
         </ResponsiveContainer>
       </PaperFigure>
 
       {/* 14. CONVERGENCE DIAGNOSTICS AND EFFECTIVE SAMPLE SIZE */}
-      <h2 style={h2Style}>14. Convergence Diagnostics and Effective Sample Size</h2>
+      <h2 style={h2Style}>{t("section-14-convergence-diagnostics", { defaultValue: "14. Convergence Diagnostics and Effective Sample Size" })}</h2>
 
       <p className="mb-4">
         The theoretical mixing-time guarantees developed in the preceding sections, while
@@ -2081,7 +2083,7 @@ export function ErgodicMarkovPaper() {
         sampling efficiency.
       </p>
 
-      <h3 style={h3Style}>14.1 Gelman–Rubin Diagnostic</h3>
+      <h3 style={h3Style}>{t("section-14-1-gelman-rubin", { defaultValue: "14.1 Gelman-Rubin Diagnostic" })}</h3>
 
       <p className="mb-4">
         Consider <Tex math="M \geq 2" /> independent chains{' '}
@@ -2172,7 +2174,7 @@ export function ErgodicMarkovPaper() {
         size presented below.
       </p>
 
-      <h3 style={h3Style}>14.2 Effective Sample Size and Autocorrelation Time</h3>
+      <h3 style={h3Style}>{t("section-14-2-ess-autocorrelation", { defaultValue: "14.2 Effective Sample Size and Autocorrelation Time" })}</h3>
 
       <p className="mb-4">
         The effective sample size (ESS) quantifies the number of independent draws from{' '}
@@ -2251,40 +2253,40 @@ export function ErgodicMarkovPaper() {
         vanilla MH sampling suffer catastrophic ESS degradation.
       </p>
 
-      <PaperFigure number={14} caption="Gelman–Rubin convergence diagnostic (R̂) as a function of MCMC iteration for M = 8 parallel chains sampling the ludometric energy functional on a 25×25 tile-configuration lattice at β = 2.0. The solid line shows the median R̂ across 50 independent replications; dashed lines indicate the 5th and 95th percentiles. The convergence threshold R̂ < 1.01 (horizontal dotted line) is reached at approximately 5,000 iterations under spectral-guided sampling, confirming rapid equilibration of the between-chain variance.">
+      <PaperFigure number={14} caption={t("fig-14-caption", { defaultValue: "Gelman-Rubin convergence diagnostic (R̂) as a function of MCMC iteration for M = 8 parallel chains sampling the ludometric energy functional on a 25×25 tile-configuration lattice at β = 2.0. The solid line shows the median R̂ across 50 independent replications; dashed lines indicate the 5th and 95th percentiles. The convergence threshold R̂ < 1.01 (horizontal dotted line) is reached at approximately 5,000 iterations under spectral-guided sampling, confirming rapid equilibration of the between-chain variance." })}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={gelmanRubinData} margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="step" label={{ value: 'MCMC Iteration', position: 'insideBottomRight', offset: -5 }} />
-            <YAxis label={{ value: 'R̂ Statistic', angle: -90, position: 'insideLeft' }} />
+            <XAxis dataKey="step" label={{ value: t("chart-mcmc-iteration", { defaultValue: "MCMC Iteration" }), position: 'insideBottomRight', offset: -5 }} />
+            <YAxis label={{ value: t("chart-rhat-statistic", { defaultValue: "R̂ Statistic" }), angle: -90, position: 'insideLeft' }} />
             <Tooltip />
             <Legend />
-            <Line type="monotone" dataKey="rhat" stroke="#3b82f6" strokeWidth={2} name="R̂ (median)" />
-            <Line type="monotone" dataKey="upper" stroke="#3b82f6" strokeWidth={1} strokeDasharray="5 5" name="R̂ (95th pctl)" />
-            <Line type="monotone" dataKey="lower" stroke="#3b82f6" strokeWidth={1} strokeDasharray="5 5" name="R̂ (5th pctl)" />
+            <Line type="monotone" dataKey="rhat" stroke="#3b82f6" strokeWidth={2} name={t("chart-rhat-median", { defaultValue: "R̂ (median)" })} />
+            <Line type="monotone" dataKey="upper" stroke="#3b82f6" strokeWidth={1} strokeDasharray="5 5" name={t("chart-rhat-95th", { defaultValue: "R̂ (95th pctl)" })} />
+            <Line type="monotone" dataKey="lower" stroke="#3b82f6" strokeWidth={1} strokeDasharray="5 5" name={t("chart-rhat-5th", { defaultValue: "R̂ (5th pctl)" })} />
           </LineChart>
         </ResponsiveContainer>
       </PaperFigure>
 
-      <PaperFigure number={15} caption="Effective sample size (ESS) per 10,000 MCMC iterations as a function of lattice dimension for spectral-guided, vanilla Metropolis–Hastings, and uniform-random sampling. The spectral-guided sampler maintains ESS > 250 even at dimension 1,600, while uniform sampling collapses below ESS = 10, demonstrating the critical role of spectral guidance in mitigating the curse of dimensionality for tile-configuration sampling.">
+      <PaperFigure number={15} caption={t("fig-15-caption", { defaultValue: "Effective sample size (ESS) per 10,000 MCMC iterations as a function of lattice dimension for spectral-guided, vanilla Metropolis-Hastings, and uniform-random sampling. The spectral-guided sampler maintains ESS > 250 even at dimension 1,600, while uniform sampling collapses below ESS = 10, demonstrating the critical role of spectral guidance in mitigating the curse of dimensionality for tile-configuration sampling." })}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={essVsDimensionData} margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="dimension" label={{ value: 'Lattice Dimension |Λ|', position: 'insideBottomRight', offset: -5 }} />
-            <YAxis label={{ value: 'Effective Sample Size', angle: -90, position: 'insideLeft' }} />
+            <XAxis dataKey="dimension" label={{ value: t("chart-lattice-dimension", { defaultValue: "Lattice Dimension |Λ|" }), position: 'insideBottomRight', offset: -5 }} />
+            <YAxis label={{ value: t("chart-effective-sample-size", { defaultValue: "Effective Sample Size" }), angle: -90, position: 'insideLeft' }} />
             <Tooltip />
             <Legend />
-            <Line type="monotone" dataKey="spectralESS" stroke="#10b981" strokeWidth={2} name="Spectral-Guided ESS" />
-            <Line type="monotone" dataKey="mhESS" stroke="#f59e0b" strokeWidth={2} name="Vanilla MH ESS" />
-            <Line type="monotone" dataKey="uniformESS" stroke="#ef4444" strokeWidth={2} name="Uniform ESS" />
+            <Line type="monotone" dataKey="spectralESS" stroke="#10b981" strokeWidth={2} name={t("chart-spectral-guided-ess", { defaultValue: "Spectral-Guided ESS" })} />
+            <Line type="monotone" dataKey="mhESS" stroke="#f59e0b" strokeWidth={2} name={t("chart-vanilla-mh-ess", { defaultValue: "Vanilla MH ESS" })} />
+            <Line type="monotone" dataKey="uniformESS" stroke="#ef4444" strokeWidth={2} name={t("chart-uniform-ess", { defaultValue: "Uniform ESS" })} />
           </LineChart>
         </ResponsiveContainer>
       </PaperFigure>
 
       {/* 15. EXPERIMENTAL EVALUATION */}
-      <h2 style={h2Style}>15. Experimental Evaluation</h2>
+      <h2 style={h2Style}>{t("section-15-experimental", { defaultValue: "15. Experimental Evaluation" })}</h2>
 
-      <h3 style={h3Style}>15.1 Testbed and Methodology</h3>
+      <h3 style={h3Style}>{t("section-15-1-testbed", { defaultValue: "15.1 Testbed and Methodology" })}</h3>
 
       <p className="mb-4">
         We implemented the spectral-gap-guided MCMC sampler in a custom dungeon-generation
@@ -2302,7 +2304,7 @@ export function ErgodicMarkovPaper() {
         <Tex math="\Phi_{\text{enc}}" />, and the composite energy <Tex math="E(x)" />.
       </p>
 
-      <h3 style={h3Style}>15.2 Autocorrelation Analysis</h3>
+      <h3 style={h3Style}>{t("section-15-2-autocorrelation", { defaultValue: "15.2 Autocorrelation Analysis" })}</h3>
 
       <p className="mb-4">
         A primary measure of sampler efficiency is the autocorrelation function of the energy
@@ -2322,22 +2324,22 @@ export function ErgodicMarkovPaper() {
         to a <Tex math="3.2\times" /> improvement in effective sample size.
       </p>
 
-      <PaperFigure number={4} caption="Normalized autocorrelation C(l) as a function of lag for spectral-guided, vanilla Metropolis–Hastings, and uniform-random sampling. The spectral-guided sampler decorrelates approximately 3.2× faster than vanilla MH.">
+      <PaperFigure number={4} caption={t("fig-4-caption", { defaultValue: "Normalized autocorrelation C(l) as a function of lag for spectral-guided, vanilla Metropolis-Hastings, and uniform-random sampling. The spectral-guided sampler decorrelates approximately 3.2× faster than vanilla MH." })}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={autocorrelationData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="lag" label={{ value: 'Lag l', position: 'insideBottom', offset: -5 }} />
-            <YAxis label={{ value: 'C(l)', angle: -90, position: 'insideLeft' }} />
+            <XAxis dataKey="lag" label={{ value: t("chart-lag-l", { defaultValue: "Lag l" }), position: 'insideBottom', offset: -5 }} />
+            <YAxis label={{ value: t("chart-cl", { defaultValue: "C(l)" }), angle: -90, position: 'insideLeft' }} />
             <Tooltip />
             <Legend />
-            <Line type="monotone" dataKey="spectral" stroke="#10b981" strokeWidth={2} name="Spectral-Guided" dot={false} />
-            <Line type="monotone" dataKey="mh" stroke="#6366f1" strokeWidth={2} name="Vanilla MH" dot={false} />
-            <Line type="monotone" dataKey="uniform" stroke="#ef4444" strokeWidth={2} name="Uniform Random" dot={false} />
+            <Line type="monotone" dataKey="spectral" stroke="#10b981" strokeWidth={2} name={t("chart-spectral-guided", { defaultValue: "Spectral-Guided" })} dot={false} />
+            <Line type="monotone" dataKey="mh" stroke="#6366f1" strokeWidth={2} name={t("chart-vanilla-mh", { defaultValue: "Vanilla MH" })} dot={false} />
+            <Line type="monotone" dataKey="uniform" stroke="#ef4444" strokeWidth={2} name={t("chart-uniform-random", { defaultValue: "Uniform Random" })} dot={false} />
           </LineChart>
         </ResponsiveContainer>
       </PaperFigure>
 
-      <h3 style={h3Style}>15.3 Quality Metric Distributions</h3>
+      <h3 style={h3Style}>{t("section-15-3-quality-metrics", { defaultValue: "15.3 Quality Metric Distributions" })}</h3>
 
       <p className="mb-4">
         Across the 50,000-sample corpus, spectral-guided sampling produced levels with
@@ -2358,7 +2360,7 @@ export function ErgodicMarkovPaper() {
       </p>
 
       {/* 16. HUMAN PLAYTESTING */}
-      <h2 style={h2Style}>16. Human Playtesting</h2>
+      <h2 style={h2Style}>{t("section-16-human-playtesting", { defaultValue: "16. Human Playtesting" })}</h2>
 
       <p className="mb-4">
         To validate the ecological relevance of the automated quality metrics, we conducted a
@@ -2386,32 +2388,32 @@ export function ErgodicMarkovPaper() {
         differences in gameplay experience.
       </p>
 
-      <PaperFigure number={5} caption="Mean human preference ratings (10-point Likert composite) across the four level-generation methods. Error bars denote ±1 SE. Spectral-guided sampling significantly outperforms all baselines (p < .001).">
+      <PaperFigure number={5} caption={t("fig-5-caption", { defaultValue: "Mean human preference ratings (10-point Likert composite) across the four level-generation methods. Error bars denote ±1 SE. Spectral-guided sampling significantly outperforms all baselines (p < .001)." })}>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={preferenceData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="method" />
-            <YAxis domain={[0, 10]} label={{ value: 'Mean Rating', angle: -90, position: 'insideLeft' }} />
+            <YAxis domain={[0, 10]} label={{ value: t("chart-mean-rating", { defaultValue: "Mean Rating" }), angle: -90, position: 'insideLeft' }} />
             <Tooltip />
-            <Bar dataKey="rating" fill="#6366f1" name="Preference Rating" />
+            <Bar dataKey="rating" fill="#6366f1" name={t("chart-preference-rating", { defaultValue: "Preference Rating" })} />
           </BarChart>
         </ResponsiveContainer>
       </PaperFigure>
 
-      <PaperFigure number={6} caption="Relationship between navigational entropy H_nav and mean player satisfaction score. The inverted-U shape indicates an optimal entropy range (~ 2.5–3.1 nats) consistent with the flow-channel hypothesis.">
+      <PaperFigure number={6} caption={t("fig-6-caption", { defaultValue: "Relationship between navigational entropy H_nav and mean player satisfaction score. The inverted-U shape indicates an optimal entropy range (~ 2.5-3.1 nats) consistent with the flow-channel hypothesis." })}>
         <ResponsiveContainer width="100%" height={300}>
           <ScatterChart margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="entropy" name="H_nav (nats)" label={{ value: 'Navigational Entropy (nats)', position: 'insideBottom', offset: -5 }} />
-            <YAxis dataKey="satisfaction" name="Satisfaction" label={{ value: 'Satisfaction', angle: -90, position: 'insideLeft' }} />
+            <XAxis dataKey="entropy" name="H_nav (nats)" label={{ value: t("chart-navigational-entropy-nats", { defaultValue: "Navigational Entropy (nats)" }), position: 'insideBottom', offset: -5 }} />
+            <YAxis dataKey="satisfaction" name="Satisfaction" label={{ value: t("chart-satisfaction", { defaultValue: "Satisfaction" }), angle: -90, position: 'insideLeft' }} />
             <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-            <Scatter data={entropyVsSatisfaction} fill="#f59e0b" name="Entropy vs. Satisfaction" />
+            <Scatter data={entropyVsSatisfaction} fill="#f59e0b" name={t("chart-entropy-vs-satisfaction", { defaultValue: "Entropy vs. Satisfaction" })} />
           </ScatterChart>
         </ResponsiveContainer>
       </PaperFigure>
 
       {/* 17. ASYMPTOTIC OPTIMALITY AND MINIMAX ANALYSIS */}
-      <h2 style={h2Style}>17. Asymptotic Optimality and Minimax Analysis</h2>
+      <h2 style={h2Style}>{t("section-17-minimax", { defaultValue: "17. Asymptotic Optimality and Minimax Analysis" })}</h2>
 
       <p className="mb-4">
         The sampling efficiency improvements documented in the preceding sections raise a natural
@@ -2424,7 +2426,7 @@ export function ErgodicMarkovPaper() {
         nonparametric class of Gibbs measures indexed by the ludometric energy parameters.
       </p>
 
-      <h3 style={h3Style}>17.1 Minimax Risk for Level Quality Estimation</h3>
+      <h3 style={h3Style}>{t("section-17-1-minimax-risk", { defaultValue: "17.1 Minimax Risk for Level Quality Estimation" })}</h3>
 
       <p className="mb-4">
         Let <Tex math="\mathcal{P}_\Theta = \{\pi_\theta : \theta \in \Theta \subseteq \mathbb{R}^d\}" />{' '}
@@ -2498,7 +2500,7 @@ export function ErgodicMarkovPaper() {
         empirical estimate from the truncated eigendecomposition.
       </p>
 
-      <h3 style={h3Style}>17.2 Asymptotic Efficiency of Spectral-Guided Sampling</h3>
+      <h3 style={h3Style}>{t("section-17-2-asymptotic-efficiency", { defaultValue: "17.2 Asymptotic Efficiency of Spectral-Guided Sampling" })}</h3>
 
       <p className="mb-4">
         The asymptotic relative efficiency (ARE) of the spectral-guided estimator relative to
@@ -2542,23 +2544,23 @@ export function ErgodicMarkovPaper() {
         convolution theorem for locally asymptotically normal (LAN) experiments.
       </p>
 
-      <PaperFigure number={16} caption="Minimax risk comparison for estimating the expected ludometric energy ψ(θ) as a function of lattice dimension d. The spectral-guided estimator (green) tracks the information-theoretic lower bound (not shown, proportional to d-¹) most closely, while the uniform sampler (red) exhibits risk scaling characteristic of the curse of dimensionality, consistent with the O(d-¹ γ-¹) rate predicted by the minimax analysis.">
+      <PaperFigure number={16} caption={t("fig-16-caption", { defaultValue: "Minimax risk comparison for estimating the expected ludometric energy ψ(θ) as a function of lattice dimension d. The spectral-guided estimator (green) tracks the information-theoretic lower bound (not shown, proportional to d-¹) most closely, while the uniform sampler (red) exhibits risk scaling characteristic of the curse of dimensionality, consistent with the O(d-¹ γ-¹) rate predicted by the minimax analysis." })}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={minimaxRiskData} margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="dimension" label={{ value: 'Lattice Dimension d', position: 'insideBottomRight', offset: -5 }} />
-            <YAxis label={{ value: 'Minimax Risk', angle: -90, position: 'insideLeft' }} />
+            <XAxis dataKey="dimension" label={{ value: t("chart-lattice-dimension-d", { defaultValue: "Lattice Dimension d" }), position: 'insideBottomRight', offset: -5 }} />
+            <YAxis label={{ value: t("chart-minimax-risk", { defaultValue: "Minimax Risk" }), angle: -90, position: 'insideLeft' }} />
             <Tooltip />
             <Legend />
-            <Line type="monotone" dataKey="spectralRisk" stroke="#10b981" strokeWidth={2} name="Spectral-Guided Risk" />
-            <Line type="monotone" dataKey="mhRisk" stroke="#f59e0b" strokeWidth={2} name="Vanilla MH Risk" />
-            <Line type="monotone" dataKey="uniformRisk" stroke="#ef4444" strokeWidth={2} name="Uniform Risk" />
+            <Line type="monotone" dataKey="spectralRisk" stroke="#10b981" strokeWidth={2} name={t("chart-spectral-guided-risk", { defaultValue: "Spectral-Guided Risk" })} />
+            <Line type="monotone" dataKey="mhRisk" stroke="#f59e0b" strokeWidth={2} name={t("chart-vanilla-mh-risk", { defaultValue: "Vanilla MH Risk" })} />
+            <Line type="monotone" dataKey="uniformRisk" stroke="#ef4444" strokeWidth={2} name={t("chart-uniform-risk", { defaultValue: "Uniform Risk" })} />
           </LineChart>
         </ResponsiveContainer>
       </PaperFigure>
 
       {/* 18. BAYESIAN HIERARCHICAL MODEL OF PLAYER PREFERENCES */}
-      <h2 style={h2Style}>18. Bayesian Hierarchical Model of Player Preferences</h2>
+      <h2 style={h2Style}>{t("section-18-bayesian-hierarchical", { defaultValue: "18. Bayesian Hierarchical Model of Player Preferences" })}</h2>
 
       <p className="mb-4">
         The ludometric energy functional <Tex math="\mathcal{E}(\sigma)" /> introduced in
@@ -2572,7 +2574,7 @@ export function ErgodicMarkovPaper() {
         conducted via Hamiltonian Monte Carlo (HMC) on the augmented parameter space.
       </p>
 
-      <h3 style={h3Style}>18.1 Hierarchical Likelihood Specification</h3>
+      <h3 style={h3Style}>{t("section-18-1-hierarchical-likelihood", { defaultValue: "18.1 Hierarchical Likelihood Specification" })}</h3>
 
       <p className="mb-4">
         Let <Tex math="i = 1, \ldots, I" /> index players and{' '}
@@ -2632,7 +2634,7 @@ export function ErgodicMarkovPaper() {
         <Tex math="(\mu_\alpha, \Sigma_\alpha, \phi, \mathbf{c}, \alpha_1, \ldots, \alpha_I)" />.
       </p>
 
-      <h3 style={h3Style}>18.2 Posterior Inference via Hamiltonian Monte Carlo</h3>
+      <h3 style={h3Style}>{t("section-18-2-posterior-hmc", { defaultValue: "18.2 Posterior Inference via Hamiltonian Monte Carlo" })}</h3>
 
       <p className="mb-4">
         We employ Hamiltonian Monte Carlo (HMC) with the No-U-Turn Sampler (NUTS) adaptation
@@ -2691,23 +2693,23 @@ export function ErgodicMarkovPaper() {
         ludometric preferences.
       </p>
 
-      <PaperFigure number={17} caption="Posterior marginal densities of the population-level mean weight parameters μ_α = (μ_1, μ_2, μ_3) corresponding to navigational entropy (density1), resource-density variance (density2), and encounter-pacing cost (density3). The separation of the modes indicates distinct posterior-inferred preferences, with navigational complexity receiving the highest average weight. Densities estimated via kernel density estimation from 4,000 post-warmup HMC draws across 4 chains.">
+      <PaperFigure number={17} caption={t("fig-17-caption", { defaultValue: "Posterior marginal densities of the population-level mean weight parameters μ_α = (μ_1, μ_2, μ_3) corresponding to navigational entropy (density1), resource-density variance (density2), and encounter-pacing cost (density3). The separation of the modes indicates distinct posterior-inferred preferences, with navigational complexity receiving the highest average weight. Densities estimated via kernel density estimation from 4,000 post-warmup HMC draws across 4 chains." })}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={posteriorAlphaData} margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="alpha" label={{ value: 'α (weight parameter)', position: 'insideBottomRight', offset: -5 }} />
-            <YAxis label={{ value: 'Posterior Density', angle: -90, position: 'insideLeft' }} />
+            <XAxis dataKey="alpha" label={{ value: t("chart-alpha-weight-param", { defaultValue: "α (weight parameter)" }), position: 'insideBottomRight', offset: -5 }} />
+            <YAxis label={{ value: t("chart-posterior-density", { defaultValue: "Posterior Density" }), angle: -90, position: 'insideLeft' }} />
             <Tooltip />
             <Legend />
-            <Line type="monotone" dataKey="density1" stroke="#3b82f6" strokeWidth={2} name="p(μ_1 | y) — Navigation" />
-            <Line type="monotone" dataKey="density2" stroke="#10b981" strokeWidth={2} name="p(μ_2 | y) — Resource" />
-            <Line type="monotone" dataKey="density3" stroke="#f59e0b" strokeWidth={2} name="p(μ_3 | y) — Encounter" />
+            <Line type="monotone" dataKey="density1" stroke="#3b82f6" strokeWidth={2} name={t("chart-density1-navigation", { defaultValue: "p(μ_1 | y) — Navigation" })} />
+            <Line type="monotone" dataKey="density2" stroke="#10b981" strokeWidth={2} name={t("chart-density2-resource", { defaultValue: "p(μ_2 | y) — Resource" })} />
+            <Line type="monotone" dataKey="density3" stroke="#f59e0b" strokeWidth={2} name={t("chart-density3-encounter", { defaultValue: "p(μ_3 | y) — Encounter" })} />
           </LineChart>
         </ResponsiveContainer>
       </PaperFigure>
 
       {/* 19. SENSITIVITY ANALYSIS AND ROBUSTNESS */}
-      <h2 style={h2Style}>19. Sensitivity Analysis and Robustness</h2>
+      <h2 style={h2Style}>{t("section-19-sensitivity", { defaultValue: "19. Sensitivity Analysis and Robustness" })}</h2>
 
       <p className="mb-4">
         The practical deployment of the spectral-guided MCMC sampler depends on the specification
@@ -2723,7 +2725,7 @@ export function ErgodicMarkovPaper() {
         uncertainty.
       </p>
 
-      <h3 style={h3Style}>19.1 Local Sensitivity via Fisher Score</h3>
+      <h3 style={h3Style}>{t("section-19-1-fisher-score", { defaultValue: "19.1 Local Sensitivity via Fisher Score" })}</h3>
 
       <p className="mb-4">
         The local sensitivity of the expected energy{' '}
@@ -2791,7 +2793,7 @@ export function ErgodicMarkovPaper() {
         configurations.
       </p>
 
-      <h3 style={h3Style}>19.2 Global Sensitivity Analysis (Sobol Indices)</h3>
+      <h3 style={h3Style}>{t("section-19-2-sobol", { defaultValue: "19.2 Global Sensitivity Analysis (Sobol Indices)" })}</h3>
 
       <p className="mb-4">
         While the Fisher score captures infinitesimal sensitivities, global sensitivity
@@ -2856,24 +2858,24 @@ export function ErgodicMarkovPaper() {
         spectral-guided sampling.
       </p>
 
-      <PaperFigure number={18} caption="Sensitivity analysis of the mean ludometric energy to the six primary hyperparameters (β, α_1, α_2, α_3, k, η) across four operating regimes: low β (disordered), mid β (optimal), high β (ordered), and very high β (frozen). Bar heights represent the total-effect Sobol index S_i^T × 100. The inverse temperature β dominates at low values, while energy weights α_1, α_2 become the primary drivers in the ordered regime. The spectral parameter η exhibits low main effects but significant interactions, evidenced by the gap between S_i^T and S_i (not shown).">
+      <PaperFigure number={18} caption={t("fig-18-caption", { defaultValue: "Sensitivity analysis of the mean ludometric energy to the six primary hyperparameters (β, α_1, α_2, α_3, k, η) across four operating regimes: low β (disordered), mid β (optimal), high β (ordered), and very high β (frozen). Bar heights represent the total-effect Sobol index S_i^T × 100. The inverse temperature β dominates at low values, while energy weights α_1, α_2 become the primary drivers in the ordered regime. The spectral parameter η exhibits low main effects but significant interactions, evidenced by the gap between S_i^T and S_i (not shown)." })}>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={sensitivityHeatmapData} margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="param" label={{ value: 'Parameter', position: 'insideBottomRight', offset: -5 }} />
-            <YAxis label={{ value: 'Total Sobol Index (×100)', angle: -90, position: 'insideLeft' }} />
+            <XAxis dataKey="param" label={{ value: t("chart-parameter", { defaultValue: "Parameter" }), position: 'insideBottomRight', offset: -5 }} />
+            <YAxis label={{ value: t("chart-total-sobol-index", { defaultValue: "Total Sobol Index (×100)" }), angle: -90, position: 'insideLeft' }} />
             <Tooltip />
             <Legend />
-            <Bar dataKey="low" fill="#93c5fd" name="Low β regime" />
-            <Bar dataKey="mid" fill="#3b82f6" name="Mid β regime" />
-            <Bar dataKey="high" fill="#1d4ed8" name="High β regime" />
-            <Bar dataKey="veryHigh" fill="#1e3a5f" name="Very high β regime" />
+            <Bar dataKey="low" fill="#93c5fd" name={t("chart-low-beta-regime", { defaultValue: "Low β regime" })} />
+            <Bar dataKey="mid" fill="#3b82f6" name={t("chart-mid-beta-regime", { defaultValue: "Mid β regime" })} />
+            <Bar dataKey="high" fill="#1d4ed8" name={t("chart-high-beta-regime", { defaultValue: "High β regime" })} />
+            <Bar dataKey="veryHigh" fill="#1e3a5f" name={t("chart-very-high-beta-regime", { defaultValue: "Very high β regime" })} />
           </BarChart>
         </ResponsiveContainer>
       </PaperFigure>
 
       {/* 20. RELATED WORK */}
-      <h2 style={h2Style}>20. Related Work</h2>
+      <h2 style={h2Style}>{t("section-20-related-work", { defaultValue: "20. Related Work" })}</h2>
 
       <p className="mb-4">
         Procedural content generation (PCG) in games has evolved along several complementary trajectories.
@@ -2965,7 +2967,7 @@ export function ErgodicMarkovPaper() {
       </p>
 
       {/* 21. FUTURE DIRECTIONS */}
-      <h2 style={h2Style}>21. Future Directions</h2>
+      <h2 style={h2Style}>{t("section-21-future-directions", { defaultValue: "21. Future Directions" })}</h2>
 
       <p className="mb-4">
         Several promising extensions of the present framework merit investigation. First,
@@ -3038,7 +3040,7 @@ export function ErgodicMarkovPaper() {
       </p>
 
       {/* 22. DISCUSSION */}
-      <h2 style={h2Style}>22. Discussion</h2>
+      <h2 style={h2Style}>{t("section-22-discussion", { defaultValue: "22. Discussion" })}</h2>
 
       <p className="mb-4">
         The foregoing results substantiate the hypothesis that spectral-theoretic methods applied
@@ -3087,7 +3089,7 @@ export function ErgodicMarkovPaper() {
       </p>
 
       {/* 23. CONCLUSION */}
-      <h2 style={h2Style}>23. Conclusion</h2>
+      <h2 style={h2Style}>{t("section-23-conclusion", { defaultValue: "23. Conclusion" })}</h2>
 
       <p className="mb-4">
         We have presented a rigorous mathematical framework for procedural level generation
@@ -3107,7 +3109,7 @@ export function ErgodicMarkovPaper() {
       </p>
 
       {/* REFERENCES */}
-      <h2 style={h2Style}>References</h2>
+      <h2 style={h2Style}>{t("section-references", { defaultValue: "References" })}</h2>
 
       <div style={{ fontSize: '9pt', lineHeight: 1.5 }}>
         <p className="mb-2">Amari, S. (1998). Natural gradient works efficiently in learning. <em>Neural Computation</em>, 10(2), 251–276.</p>

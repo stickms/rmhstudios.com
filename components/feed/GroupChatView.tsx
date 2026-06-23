@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Loader2, ArrowLeft, Send, Users, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,7 @@ interface Group {
 }
 
 export function GroupChatView({ id, currentUserId }: { id: string; currentUserId: string }) {
+  const { t } = useTranslation("feed");
   const navigate = useNavigate();
   const [group, setGroup] = useState<Group | null>(null);
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -187,7 +189,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
   }
 
   async function leave() {
-    if (!confirm('Leave this group?')) return;
+    if (!confirm(t("leave-group-confirm", { defaultValue: "Leave this group?" }))) return;
     const res = await fetch(`/api/group-chats/${encodeURIComponent(id)}/leave`, { method: 'POST', credentials: 'include' });
     if (res.ok) navigate({ to: '/groups' });
   }
@@ -202,9 +204,9 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
   if (notFound || !group) {
     return (
       <div className="flex flex-col items-center gap-3 px-6 py-24 text-center">
-        <p className="font-medium text-site-text">Group not found</p>
+        <p className="font-medium text-site-text">{t("group-not-found", { defaultValue: "Group not found" })}</p>
         <Link to="/groups">
-          <Button variant="outline">Back to groups</Button>
+          <Button variant="outline">{t("back-to-groups", { defaultValue: "Back to groups" })}</Button>
         </Link>
       </div>
     );
@@ -221,9 +223,9 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-bold text-site-text">{group.name}</p>
-          <p className="truncate text-xs text-site-text-dim">{group.members.length} members</p>
+          <p className="truncate text-xs text-site-text-dim">{t("member-count", { count: group.members.length, defaultValue: "{{count}} members" })}</p>
         </div>
-        <button onClick={leave} className="text-site-text-dim hover:text-site-danger" title="Leave group" aria-label="Leave group">
+        <button onClick={leave} className="text-site-text-dim hover:text-site-danger" title={t("leave-group", { defaultValue: "Leave group" })} aria-label={t("leave-group", { defaultValue: "Leave group" })}>
           <LogOut className="h-4 w-4" />
         </button>
       </header>
@@ -235,7 +237,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
             <div key={m.id} className={`flex gap-2 ${mine ? 'flex-row-reverse' : ''}`}>
               {!mine && <UserAvatar user={m.sender} />}
               <div className="max-w-[78%]">
-                {!mine && <p className="mb-0.5 px-1 text-[11px] text-site-text-dim">{m.sender.name || m.sender.handle || 'Member'}</p>}
+                {!mine && <p className="mb-0.5 px-1 text-[11px] text-site-text-dim">{m.sender.name || m.sender.handle || t("member-fallback", { defaultValue: "Member" })}</p>}
                 <div className={`whitespace-pre-wrap break-words rounded-2xl px-3 py-2 text-sm ${mine ? 'bg-site-accent text-(--site-accent-fg)' : 'bg-site-surface text-site-text'}`}>
                   {m.content}
                 </div>
@@ -261,7 +263,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
                 send();
               }
             }}
-            placeholder="Message…"
+            placeholder={t("message-placeholder", { defaultValue: "Message…" })}
             rows={1}
             maxLength={2000}
             className="max-h-32 resize-none rounded-xl border border-site-border bg-site-surface px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"

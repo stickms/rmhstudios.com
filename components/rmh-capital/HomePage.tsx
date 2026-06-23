@@ -1,7 +1,9 @@
 import { Link } from '@tanstack/react-router';
+import { useTranslation } from "react-i18next";
 import { MarketsTicker } from './shared';
 
 export default function HomePage() {
+  const { t } = useTranslation("c-rmh-capital");
   return (
     <>
       {/* ══ HERO — gold great-circle arc signature ══ */}
@@ -25,19 +27,17 @@ export default function HomePage() {
           </svg>
         </div>
         <div className="container hero-content">
-          <span className="eyebrow reveal">An integrated financial platform</span>
-          <h1 className="serif reveal d1">Capital, advisory, and intelligence across the full company arc</h1>
+          <span className="eyebrow reveal">{t("hero-eyebrow", { defaultValue: "An integrated financial platform" })}</span>
+          <h1 className="serif reveal d1">{t("hero-heading", { defaultValue: "Capital, advisory, and intelligence across the full company arc" })}</h1>
           <p className="lede reveal d2">
-            RMH Capital partners with founders, corporations, and institutions across investment banking, markets,
-            corporate banking, venture, consulting, and private equity — one platform for every stage a company moves
-            through.
+            {t("hero-lede", { defaultValue: "RMH Capital partners with founders, corporations, and institutions across investment banking, markets, corporate banking, venture, consulting, and private equity — one platform for every stage a company moves through." })}
           </p>
           <div className="hero-actions reveal d3">
             <Link className="btn btn-gold" to="/rmh-capital/firm">
-              Explore our firm <span className="arw">→</span>
+              {t("hero-cta-firm", { defaultValue: "Explore our firm" })} <span className="arw">→</span>
             </Link>
             <Link className="btn btn-outline" to="/rmh-capital/businesses">
-              Our businesses <span className="arw">→</span>
+              {t("hero-cta-businesses", { defaultValue: "Our businesses" })} <span className="arw">→</span>
             </Link>
           </div>
         </div>
@@ -46,11 +46,11 @@ export default function HomePage() {
       <MarketsTicker />
 
       {/* ══ STAT BAND ══ */}
-      <section className="statband" aria-label="Platform at a glance">
-        <div className="stat reveal"><div className="v">6</div><div className="k">Integrated businesses under one platform</div></div>
-        <div className="stat reveal d1"><div className="v">1</div><div className="k">Shared client view, from first round to public markets</div></div>
-        <div className="stat reveal d2"><div className="v">20+</div><div className="k">Markets served across the Americas, Europe, and Asia</div></div>
-        <div className="stat reveal d3"><div className="v">2026</div><div className="k">A platform built for the next generation of companies</div></div>
+      <section className="statband" aria-label={t("statband-aria", { defaultValue: "Platform at a glance" })}>
+        <div className="stat reveal"><div className="v">6</div><div className="k">{t("stat-1", { defaultValue: "Integrated businesses under one platform" })}</div></div>
+        <div className="stat reveal d1"><div className="v">1</div><div className="k">{t("stat-2", { defaultValue: "Shared client view, from first round to public markets" })}</div></div>
+        <div className="stat reveal d2"><div className="v">20+</div><div className="k">{t("stat-3", { defaultValue: "Markets served across the Americas, Europe, and Asia" })}</div></div>
+        <div className="stat reveal d3"><div className="v">2026</div><div className="k">{t("stat-4", { defaultValue: "A platform built for the next generation of companies" })}</div></div>
       </section>
 
       {/* ══ OUR FIRM ══ */}
@@ -58,19 +58,16 @@ export default function HomePage() {
         <div className="container">
           <div className="feature">
             <div className="feature-copy reveal">
-              <span className="eyebrow">Our Firm</span>
-              <h3>One firm, organized around the client — not the product.</h3>
+              <span className="eyebrow">{t("firm-eyebrow", { defaultValue: "Our Firm" })}</span>
+              <h3>{t("firm-heading", { defaultValue: "One firm, organized around the client — not the product." })}</h3>
               <p>
-                Most financial institutions are built as a federation of product lines. RMH Capital is built the other
-                way around: a single platform that follows a client through every stage of their growth, from the first
-                venture round to large-cap M&amp;A, from a revolving credit line to a public listing.
+                {t("firm-p1", { defaultValue: "Most financial institutions are built as a federation of product lines. RMH Capital is built the other way around: a single platform that follows a client through every stage of their growth, from the first venture round to large-cap M&A, from a revolving credit line to a public listing." })}
               </p>
               <p>
-                That structure lets us bring the whole firm to a single relationship — advisory, capital, and
-                intelligence — with the judgment and discretion our clients expect.
+                {t("firm-p2", { defaultValue: "That structure lets us bring the whole firm to a single relationship — advisory, capital, and intelligence — with the judgment and discretion our clients expect." })}
               </p>
               <Link className="btn-text" to="/rmh-capital/firm">
-                Read about our firm <span className="arw">→</span>
+                {t("firm-cta", { defaultValue: "Read about our firm" })} <span className="arw">→</span>
               </Link>
             </div>
             <div className="feature-media reveal d1" aria-hidden="true">
@@ -90,53 +87,52 @@ export default function HomePage() {
       <section className="section">
         <div className="container">
           <div className="shead reveal">
-            <span className="eyebrow">Our Businesses</span>
-            <h2 className="serif">Six businesses. One continuous relationship.</h2>
+            <span className="eyebrow">{t("businesses-eyebrow", { defaultValue: "Our Businesses" })}</span>
+            <h2 className="serif">{t("businesses-heading", { defaultValue: "Six businesses. One continuous relationship." })}</h2>
             <p className="lede">
-              Each business is a leader in its discipline. Together, they let a client raise, grow, advise, transact,
-              and own — without ever leaving the platform.
+              {t("businesses-lede", { defaultValue: "Each business is a leader in its discipline. Together, they let a client raise, grow, advise, transact, and own — without ever leaving the platform." })}
             </p>
           </div>
           <div className="cards c3 reveal">
             <Link className="card" to="/rmh-capital/businesses" hash="investment-banking">
-              <span className="ix">01</span><h3>Investment Banking</h3>
+              <span className="ix">01</span><h3>{t("biz-ib-name", { defaultValue: "Investment Banking" })}</h3>
               <span className="card-brand">RMHan Stanley</span>
-              <p>M&amp;A advisory, equity and debt capital markets, and leveraged finance for companies at every scale.</p>
-              <span className="card-link">Learn more <span className="arw">→</span></span>
+              <p>{t("biz-ib-desc", { defaultValue: "M&A advisory, equity and debt capital markets, and leveraged finance for companies at every scale." })}</p>
+              <span className="card-link">{t("learn-more", { defaultValue: "Learn more" })} <span className="arw">→</span></span>
             </Link>
             <Link className="card" to="/rmh-capital/businesses" hash="markets">
-              <span className="ix">02</span><h3>Markets</h3>
+              <span className="ix">02</span><h3>{t("biz-markets-name", { defaultValue: "Markets" })}</h3>
               <span className="card-brand">RMH Street</span>
-              <p>Sales, trading, research, and liquidity across equities, credit, and rates for institutional clients.</p>
-              <span className="card-link">Learn more <span className="arw">→</span></span>
+              <p>{t("biz-markets-desc", { defaultValue: "Sales, trading, research, and liquidity across equities, credit, and rates for institutional clients." })}</p>
+              <span className="card-link">{t("learn-more", { defaultValue: "Learn more" })} <span className="arw">→</span></span>
             </Link>
             <Link className="card" to="/rmh-capital/businesses" hash="corporate-banking">
-              <span className="ix">03</span><h3>Corporate Banking</h3>
-              <p>Credit facilities, structured lending, and treasury solutions that scale with a growing company.</p>
-              <span className="card-link">Learn more <span className="arw">→</span></span>
+              <span className="ix">03</span><h3>{t("biz-cb-name", { defaultValue: "Corporate Banking" })}</h3>
+              <p>{t("biz-cb-desc", { defaultValue: "Credit facilities, structured lending, and treasury solutions that scale with a growing company." })}</p>
+              <span className="card-link">{t("learn-more", { defaultValue: "Learn more" })} <span className="arw">→</span></span>
             </Link>
             <Link className="card" to="/rmh-capital/businesses" hash="venture-capital">
-              <span className="ix">04</span><h3>Venture Capital</h3>
+              <span className="ix">04</span><h3>{t("biz-vc-name", { defaultValue: "Venture Capital" })}</h3>
               <span className="card-brand">RMHCombinator</span>
-              <p>Early-stage capital, an accelerator, and a venture studio backing founders from the very first round.</p>
-              <span className="card-link">Learn more <span className="arw">→</span></span>
+              <p>{t("biz-vc-desc", { defaultValue: "Early-stage capital, an accelerator, and a venture studio backing founders from the very first round." })}</p>
+              <span className="card-link">{t("learn-more", { defaultValue: "Learn more" })} <span className="arw">→</span></span>
             </Link>
             <Link className="card" to="/rmh-capital/businesses" hash="management-consulting">
-              <span className="ix">05</span><h3>Management Consulting</h3>
+              <span className="ix">05</span><h3>{t("biz-mc-name", { defaultValue: "Management Consulting" })}</h3>
               <span className="card-brand">RMHcKinsey</span>
-              <p>Strategy, operations, and transformation advisory delivered alongside the firm's capital and markets reach.</p>
-              <span className="card-link">Learn more <span className="arw">→</span></span>
+              <p>{t("biz-mc-desc", { defaultValue: "Strategy, operations, and transformation advisory delivered alongside the firm's capital and markets reach." })}</p>
+              <span className="card-link">{t("learn-more", { defaultValue: "Learn more" })} <span className="arw">→</span></span>
             </Link>
             <Link className="card" to="/rmh-capital/businesses" hash="private-equity">
-              <span className="ix">06</span><h3>Private Equity</h3>
+              <span className="ix">06</span><h3>{t("biz-pe-name", { defaultValue: "Private Equity" })}</h3>
               <span className="card-brand">RMHstone</span>
-              <p>Growth-equity and impact-housing strategies that let the firm own and build alongside its clients.</p>
-              <span className="card-link">Learn more <span className="arw">→</span></span>
+              <p>{t("biz-pe-desc", { defaultValue: "Growth-equity and impact-housing strategies that let the firm own and build alongside its clients." })}</p>
+              <span className="card-link">{t("learn-more", { defaultValue: "Learn more" })} <span className="arw">→</span></span>
             </Link>
             <div className="card" style={{ background: 'linear-gradient(150deg,var(--ink),var(--void))' }}>
-              <span className="ix">→</span><h3>See the full platform</h3>
-              <p>How six businesses share clients, intelligence, and capital to create advantage no single-product firm can match.</p>
-              <Link className="card-link" to="/rmh-capital/businesses">All businesses <span className="arw">→</span></Link>
+              <span className="ix">→</span><h3>{t("biz-all-heading", { defaultValue: "See the full platform" })}</h3>
+              <p>{t("biz-all-desc", { defaultValue: "How six businesses share clients, intelligence, and capital to create advantage no single-product firm can match." })}</p>
+              <Link className="card-link" to="/rmh-capital/businesses">{t("all-businesses", { defaultValue: "All businesses" })} <span className="arw">→</span></Link>
             </div>
           </div>
         </div>
@@ -148,41 +144,40 @@ export default function HomePage() {
       <section className="section">
         <div className="container">
           <div className="shead reveal">
-            <span className="eyebrow">Latest Perspectives</span>
-            <h2 className="serif">Intelligence from across the platform.</h2>
+            <span className="eyebrow">{t("insights-eyebrow", { defaultValue: "Latest Perspectives" })}</span>
+            <h2 className="serif">{t("insights-heading", { defaultValue: "Intelligence from across the platform." })}</h2>
             <p className="lede">
-              Research and commentary from the teams advising on the deals, markets, and companies shaping the year ahead.
+              {t("insights-lede", { defaultValue: "Research and commentary from the teams advising on the deals, markets, and companies shaping the year ahead." })}
             </p>
           </div>
 
           <div className="featured reveal">
             <Link className="featured-main" to="/rmh-capital/insights">
-              <span className="metaline">Markets <span className="dot" /> <span className="t">Outlook</span></span>
-              <h3>The 2026 capital cycle: where conviction meets discipline</h3>
+              <span className="metaline">{t("insight-1-metaline", { defaultValue: "Markets" })} <span className="dot" /> <span className="t">{t("insight-1-type", { defaultValue: "Outlook" })}</span></span>
+              <h3>{t("insight-1-heading", { defaultValue: "The 2026 capital cycle: where conviction meets discipline" })}</h3>
               <p>
-                Our markets and investment-banking teams on the conditions reshaping issuance, M&amp;A, and private capital
-                — and how clients are positioning for them.
+                {t("insight-1-desc", { defaultValue: "Our markets and investment-banking teams on the conditions reshaping issuance, M&A, and private capital — and how clients are positioning for them." })}
               </p>
             </Link>
             <div className="featured-side">
               <Link className="fside-item" to="/rmh-capital/insights">
-                <span className="metaline">Venture Capital</span>
-                <h4>What the strongest founders get right before their first round</h4>
-                <p>Lessons from across our accelerator cohorts.</p>
+                <span className="metaline">{t("insight-2-metaline", { defaultValue: "Venture Capital" })}</span>
+                <h4>{t("insight-2-heading", { defaultValue: "What the strongest founders get right before their first round" })}</h4>
+                <p>{t("insight-2-desc", { defaultValue: "Lessons from across our accelerator cohorts." })}</p>
               </Link>
               <Link className="fside-item" to="/rmh-capital/insights">
-                <span className="metaline">Risk &amp; Regulation</span>
-                <h4>Reading the new capital rules without overreacting to them</h4>
-                <p>A practical view on Basel III endgame.</p>
+                <span className="metaline">{t("insight-3-metaline", { defaultValue: "Risk & Regulation" })}</span>
+                <h4>{t("insight-3-heading", { defaultValue: "Reading the new capital rules without overreacting to them" })}</h4>
+                <p>{t("insight-3-desc", { defaultValue: "A practical view on Basel III endgame." })}</p>
               </Link>
               <Link className="fside-item" to="/rmh-capital/insights">
-                <span className="metaline">Private Equity</span>
-                <h4>Impact housing as an institutional asset class</h4>
-                <p>Returns and resilience in affordable housing.</p>
+                <span className="metaline">{t("insight-4-metaline", { defaultValue: "Private Equity" })}</span>
+                <h4>{t("insight-4-heading", { defaultValue: "Impact housing as an institutional asset class" })}</h4>
+                <p>{t("insight-4-desc", { defaultValue: "Returns and resilience in affordable housing." })}</p>
               </Link>
             </div>
           </div>
-          <Link className="btn-text reveal" to="/rmh-capital/insights">All insights <span className="arw">→</span></Link>
+          <Link className="btn-text reveal" to="/rmh-capital/insights">{t("all-insights", { defaultValue: "All insights" })} <span className="arw">→</span></Link>
         </div>
       </section>
 
@@ -207,17 +202,15 @@ export default function HomePage() {
               </svg>
             </div>
             <div className="feature-copy reveal d1">
-              <span className="eyebrow">Global Platform</span>
-              <h3>Local judgment, global reach.</h3>
+              <span className="eyebrow">{t("global-eyebrow", { defaultValue: "Global Platform" })}</span>
+              <h3>{t("global-heading", { defaultValue: "Local judgment, global reach." })}</h3>
               <p>
-                Our clients operate across borders, and so do we. RMH Capital connects teams across the Americas, Europe,
-                and Asia, giving every relationship access to the firm's full capabilities wherever opportunity arises.
+                {t("global-p1", { defaultValue: "Our clients operate across borders, and so do we. RMH Capital connects teams across the Americas, Europe, and Asia, giving every relationship access to the firm's full capabilities wherever opportunity arises." })}
               </p>
               <p>
-                One coordinated platform means a client in any market gets the same standard of advice, the same risk
-                discipline, and the same access to capital.
+                {t("global-p2", { defaultValue: "One coordinated platform means a client in any market gets the same standard of advice, the same risk discipline, and the same access to capital." })}
               </p>
-              <Link className="btn-text" to="/rmh-capital/firm">Inside the platform <span className="arw">→</span></Link>
+              <Link className="btn-text" to="/rmh-capital/firm">{t("global-cta", { defaultValue: "Inside the platform" })} <span className="arw">→</span></Link>
             </div>
           </div>
         </div>
@@ -227,13 +220,12 @@ export default function HomePage() {
       <section className="section tight">
         <div className="container">
           <div className="cta-band reveal">
-            <span className="eyebrow center">Careers</span>
-            <h2 style={{ marginTop: 18 }}>Build a career across the whole company arc.</h2>
+            <span className="eyebrow center">{t("careers-eyebrow", { defaultValue: "Careers" })}</span>
+            <h2 style={{ marginTop: 18 }}>{t("careers-heading", { defaultValue: "Build a career across the whole company arc." })}</h2>
             <p>
-              From analyst programs to engineering and senior advisory roles, RMH Capital is a place to do the most
-              interesting work in finance — and to grow with a platform built for the long term.
+              {t("careers-desc", { defaultValue: "From analyst programs to engineering and senior advisory roles, RMH Capital is a place to do the most interesting work in finance — and to grow with a platform built for the long term." })}
             </p>
-            <Link className="btn btn-gold" to="/rmh-capital/careers">Explore careers <span className="arw">→</span></Link>
+            <Link className="btn btn-gold" to="/rmh-capital/careers">{t("careers-cta", { defaultValue: "Explore careers" })} <span className="arw">→</span></Link>
           </div>
         </div>
       </section>

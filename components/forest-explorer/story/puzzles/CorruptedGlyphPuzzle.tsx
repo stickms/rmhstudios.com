@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { PuzzleComponentProps } from './PuzzleRegistry';
 
 interface Fragment {
@@ -15,6 +16,7 @@ interface Fragment {
 }
 
 export function CorruptedGlyphPuzzle({ config, onSolve, onAttempt }: PuzzleComponentProps) {
+    const { t } = useTranslation("c-forest-explorer");
     const fragmentCount = (config.fragmentCount as number) ?? 8;
     const rotationSnap = (config.rotationSnap as number) ?? 90;
     const snapDistance = (config.snapDistance as number) ?? 20;
@@ -113,7 +115,7 @@ export function CorruptedGlyphPuzzle({ config, onSolve, onAttempt }: PuzzleCompo
     return (
         <div className="w-full max-w-lg mx-auto space-y-4">
             <p className="text-center text-white/50 text-sm">
-                Drag fragments to the center and right-click to rotate. Reassemble the glyph.
+                {t("glyph-instructions", { defaultValue: "Drag fragments to the center and right-click to rotate. Reassemble the glyph." })}
             </p>
 
             <div className="relative bg-gradient-to-b from-[#1a0a1a] to-[#0a0510] rounded-xl border border-white/10 overflow-hidden">
@@ -153,12 +155,12 @@ export function CorruptedGlyphPuzzle({ config, onSolve, onAttempt }: PuzzleCompo
             </div>
 
             <div className="flex justify-between items-center">
-                <span className="text-white/30 text-xs">Right-click to rotate</span>
+                <span className="text-white/30 text-xs">{t("right-click-rotate", { defaultValue: "Right-click to rotate" })}</span>
                 <button
                     className="px-6 py-2.5 bg-purple-800/50 hover:bg-purple-700/50 border border-purple-600/30 text-purple-200 rounded-xl text-sm font-medium cursor-pointer"
                     onClick={handleCheck}
                 >
-                    Check Assembly
+                    {t("check-assembly", { defaultValue: "Check Assembly" })}
                 </button>
             </div>
         </div>

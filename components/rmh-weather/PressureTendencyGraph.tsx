@@ -1,9 +1,11 @@
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
 
 export const PressureTendencyGraph = ({ pressure }: { pressure: number[] }) => {
+  const { t } = useTranslation("c-rmh-weather");
   const data = useMemo(() => {
     const values = (pressure ?? []).filter((v) => v != null && !isNaN(v));
     if (values.length === 0) return [];
@@ -21,9 +23,9 @@ export const PressureTendencyGraph = ({ pressure }: { pressure: number[] }) => {
   if (data.length === 0) {
     return (
       <div className="my-2">
-        <div className="text-lg font-semibold text-blue-400 mb-2">Pressure Tendency</div>
+        <div className="text-lg font-semibold text-blue-400 mb-2">{t("pressure-tendency", { defaultValue: "Pressure Tendency" })}</div>
         <div className="bg-weather-glass rounded-2xl p-4 border border-weather text-weather">
-          <div className="h-32 flex items-center justify-center text-sm text-weather-muted">No pressure data available.</div>
+          <div className="h-32 flex items-center justify-center text-sm text-weather-muted">{t("no-pressure-data", { defaultValue: "No pressure data available." })}</div>
         </div>
       </div>
     );
@@ -31,7 +33,7 @@ export const PressureTendencyGraph = ({ pressure }: { pressure: number[] }) => {
 
   return (
     <div className="my-2">
-      <div className="text-lg font-semibold text-blue-400 mb-2">Pressure Tendency</div>
+      <div className="text-lg font-semibold text-blue-400 mb-2">{t("pressure-tendency", { defaultValue: "Pressure Tendency" })}</div>
       <div className="bg-weather-glass rounded-2xl p-4 border border-weather text-weather">
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={data} margin={{ top: 36, right: 16, left: 8, bottom: 20 }}>
@@ -39,7 +41,7 @@ export const PressureTendencyGraph = ({ pressure }: { pressure: number[] }) => {
             <XAxis
               dataKey="time"
               tick={tickStyle}
-              label={{ value: 'Time', position: 'insideBottom', offset: -16, fill: 'var(--weather-fg-muted)', fontSize: 12 }}
+              label={{ value: t("time-label", { defaultValue: "Time" }), position: 'insideBottom', offset: -16, fill: 'var(--weather-fg-muted)', fontSize: 12 }}
             />
             <YAxis
               tick={tickStyle}
@@ -51,13 +53,13 @@ export const PressureTendencyGraph = ({ pressure }: { pressure: number[] }) => {
               labelStyle={{ color: '#94a3b8' }}
               itemStyle={{ color: '#3b82f6' }}
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              formatter={(v: any) => [`${v} hPa`, 'Pressure']}
+              formatter={(v: any) => [`${v} hPa`, t("pressure-label", { defaultValue: "Pressure" })]}
             />
             <Legend verticalAlign="top" align="center" wrapperStyle={{ fontSize: 12, color: 'var(--weather-fg-muted)', paddingBottom: 8 }} />
             <Line
               type="monotone"
               dataKey="pressure"
-              name="Pressure (hPa)"
+              name={t("pressure-hpa", { defaultValue: "Pressure (hPa)" })}
               stroke="#3b82f6"
               strokeWidth={2}
               dot={{ r: 4, fill: '#3b82f6' }}

@@ -5,6 +5,7 @@
 'use client';
 
 import { X, GripVertical, Play, ThumbsUp } from 'lucide-react';
+import { useTranslation } from "react-i18next";
 import { formatDuration } from '@/lib/rmhtube/utils';
 import type { ClientQueueItem } from '@/lib/rmhtube/types';
 
@@ -20,6 +21,7 @@ interface QueueItemProps {
 }
 
 export default function QueueItem({ item, isActive, isHost, canRemove, queueVoting, onRemove, onPlay, onVote }: QueueItemProps) {
+  const { t } = useTranslation("c-rmhtube");
   return (
     <div
       className={`flex items-center gap-3 p-2 rounded-lg transition-colors ${
@@ -67,7 +69,7 @@ export default function QueueItem({ item, isActive, isHost, canRemove, queueVoti
               ? 'text-(--rmhtube-accent) bg-(--rmhtube-accent-dim)'
               : 'text-(--rmhtube-text-dim) hover:text-(--rmhtube-accent) hover:bg-(--rmhtube-accent-dim)'
           }`}
-          title="Vote for this item"
+          title={t("vote-for-this-item", { defaultValue: "Vote for this item" })}
         >
           <ThumbsUp className="h-3.5 w-3.5" />
           {item.votes > 0 && <span>{item.votes}</span>}
@@ -79,7 +81,7 @@ export default function QueueItem({ item, isActive, isHost, canRemove, queueVoti
         <button
           onClick={onRemove}
           className="shrink-0 rounded p-1 transition-colors text-(--rmhtube-text-dim) hover:text-(--rmhtube-danger) hover:bg-(--rmhtube-danger-dim)"
-          title="Remove from queue"
+          title={t("remove-from-queue", { defaultValue: "Remove from queue" })}
         >
           <X className="h-3.5 w-3.5" />
         </button>

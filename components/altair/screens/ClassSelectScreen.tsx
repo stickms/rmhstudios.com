@@ -4,6 +4,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Lock, Swords, Shield, Zap, Coins } from 'lucide-react';
 import { CLASSES, ClassDef } from '@/lib/altair/data/classes';
 import { WEAPONS } from '@/lib/altair/data/weapons';
@@ -40,6 +41,7 @@ function ClassSprite({ classId, size = 48 }: { classId: string; size?: number })
 }
 
 export default function ClassSelectScreen({ onSelect, onBack }: ClassSelectScreenProps) {
+  const { t } = useTranslation("c-altair");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const unlockedClasses = useAltairMetaStore((s) => s.unlockedClasses);
   const doubleTimeUnlocked = useAltairMetaStore((s) => s.doubleTimeUnlocked);
@@ -82,8 +84,8 @@ export default function ClassSelectScreen({ onSelect, onBack }: ClassSelectScree
 
   return (
     <div className="altair-parchment flex flex-col min-h-[calc(100vh-56px)] px-4 py-6 max-w-3xl mx-auto">
-      <h2 className="text-2xl font-bold text-(--altair-text) mb-1">Choose Your Class</h2>
-      <p className="text-sm text-(--altair-text-muted) mb-6">Select a class to begin your run</p>
+      <h2 className="text-2xl font-bold text-(--altair-text) mb-1">{t("choose-your-class", { defaultValue: "Choose Your Class" })}</h2>
+      <p className="text-sm text-(--altair-text-muted) mb-6">{t("select-class-prompt", { defaultValue: "Select a class to begin your run" })}</p>
 
       {/* Class grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
@@ -147,7 +149,7 @@ export default function ClassSelectScreen({ onSelect, onBack }: ClassSelectScree
           {startingWeapon && (
             <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-(--altair-bg-subtle) mb-3">
               <Swords size={14} className="text-(--altair-text-muted)" />
-              <span className="text-xs text-(--altair-text-muted)">Starting weapon:</span>
+              <span className="text-xs text-(--altair-text-muted)">{t("starting-weapon", { defaultValue: "Starting weapon:" })}</span>
               <span className="text-xs font-bold text-(--altair-text)">{startingWeapon.name}</span>
             </div>
           )}
@@ -158,7 +160,7 @@ export default function ClassSelectScreen({ onSelect, onBack }: ClassSelectScree
               <div className="flex items-center gap-2 mb-1">
                 <Shield size={12} className="text-(--altair-info)" />
                 <span className="text-xs font-bold text-(--altair-text)">{selectedClass.ability1.name}</span>
-                <span className="text-[10px] text-(--altair-text-dim)">Innate</span>
+                <span className="text-[10px] text-(--altair-text-dim)">{t("ability-innate", { defaultValue: "Innate" })}</span>
               </div>
               <p className="text-[11px] text-(--altair-text-muted)">{selectedClass.ability1.description}</p>
             </div>
@@ -166,7 +168,7 @@ export default function ClassSelectScreen({ onSelect, onBack }: ClassSelectScree
               <div className="flex items-center gap-2 mb-1">
                 <Zap size={12} className="text-(--altair-warning)" />
                 <span className="text-xs font-bold text-(--altair-text)">{selectedClass.ability2.name}</span>
-                <span className="text-[10px] text-(--altair-text-dim)">Lv.10</span>
+                <span className="text-[10px] text-(--altair-text-dim)">{t("ability-lv10", { defaultValue: "Lv.10" })}</span>
               </div>
               <p className="text-[11px] text-(--altair-text-muted)">{selectedClass.ability2.description}</p>
             </div>
@@ -188,7 +190,7 @@ export default function ClassSelectScreen({ onSelect, onBack }: ClassSelectScree
           data-altair-sfx="menu_back"
           className="flex-1 py-3 rounded-xl font-semibold text-(--altair-text-muted) bg-(--altair-surface) border border-(--altair-border) hover:bg-(--altair-surface-hover) transition-colors"
         >
-          Back
+          {t("back", { defaultValue: "Back" })}
         </button>
         <button
           onClick={() => selectedId && onSelect(selectedId)}
@@ -200,7 +202,7 @@ export default function ClassSelectScreen({ onSelect, onBack }: ClassSelectScree
               : 'bg-(--altair-surface-active) text-(--altair-text-dim) cursor-not-allowed'
           }`}
         >
-          Begin Run
+          {t("begin-run", { defaultValue: "Begin Run" })}
         </button>
       </div>
     </div>
@@ -210,6 +212,7 @@ export default function ClassSelectScreen({ onSelect, onBack }: ClassSelectScree
 // ── Lock overlay with popover ──────────────────────────────────────────
 
 function LockOverlay({ cls }: { cls: ClassDef }) {
+  const { t } = useTranslation("c-altair");
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const coins = useAltairMetaStore((s) => s.coins);
@@ -221,10 +224,10 @@ function LockOverlay({ cls }: { cls: ClassDef }) {
   const handlePurchase = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (purchaseClassUnlock(cls.id, cls.unlockCost)) {
-      addToast(`${cls.name} unlocked!`, 'success');
+      addToast(t("class-unlocked", { defaultValue: "{{name}} unlocked!", name: cls.name }), 'success');
       setOpen(false);
     } else {
-      addToast('Not enough coins!', 'error');
+      addToast(t("not-enough-coins", { defaultValue: "Not enough coins!" }), 'error');
     }
   };
 
@@ -284,7 +287,7 @@ function LockOverlay({ cls }: { cls: ClassDef }) {
               <>
                 <span className="flex items-center gap-1 text-[11px] font-bold text-(--altair-warning)">
                   <Coins size={12} />
-                  {cls.unlockCost} coins
+                  {t("unlock-cost-coins", { defaultValue: "{{cost}} coins", cost: cls.unlockCost })}
                 </span>
                 <div
                   role="button"
@@ -298,7 +301,7 @@ function LockOverlay({ cls }: { cls: ClassDef }) {
                       : 'bg-(--altair-surface-active) text-(--altair-text-dim) cursor-not-allowed pointer-events-none'
                   }`}
                 >
-                  {canPurchase ? 'Purchase' : 'Not enough coins'}
+                  {canPurchase ? t("purchase", { defaultValue: "Purchase" }) : t("not-enough-coins-label", { defaultValue: "Not enough coins" })}
                 </div>
               </>
             )}
@@ -320,6 +323,7 @@ function DoubleTimeToggle({
   enabled: boolean;
   onToggle: () => void;
 }) {
+  const { t } = useTranslation("c-altair");
   const [popoverOpen, setPopoverOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -346,8 +350,8 @@ function DoubleTimeToggle({
         </div>
         <div className="flex items-center gap-2">
           <Zap size={16} className={enabled ? 'text-(--altair-warning)' : 'text-(--altair-text-dim)'} />
-          <span className="text-sm font-semibold text-(--altair-text)">Double Time</span>
-          <span className="text-[10px] text-(--altair-text-dim)">2x game speed</span>
+          <span className="text-sm font-semibold text-(--altair-text)">{t("double-time", { defaultValue: "Double Time" })}</span>
+          <span className="text-[10px] text-(--altair-text-dim)">{t("double-time-speed", { defaultValue: "2x game speed" })}</span>
         </div>
       </button>
     );
@@ -367,8 +371,8 @@ function DoubleTimeToggle({
         </div>
         <div className="flex items-center gap-2">
           <Lock size={14} className="text-(--altair-text-dim)" />
-          <span className="text-sm font-semibold text-(--altair-text-dim)">Double Time</span>
-          <span className="text-[10px] text-(--altair-text-dim)">Locked</span>
+          <span className="text-sm font-semibold text-(--altair-text-dim)">{t("double-time", { defaultValue: "Double Time" })}</span>
+          <span className="text-[10px] text-(--altair-text-dim)">{t("locked", { defaultValue: "Locked" })}</span>
         </div>
       </div>
 
@@ -378,9 +382,9 @@ function DoubleTimeToggle({
           <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 bg-(--altair-surface) border-r border-b border-(--altair-border)" />
           <div className="relative flex flex-col items-center text-center gap-1.5">
             <Zap size={16} className="text-(--altair-warning)" />
-            <span className="text-xs font-bold text-(--altair-text)">Double Time</span>
+            <span className="text-xs font-bold text-(--altair-text)">{t("double-time", { defaultValue: "Double Time" })}</span>
             <p className="text-[11px] text-(--altair-text-muted) leading-snug">
-              Complete a run (survive 20:00) to unlock 2x game speed mode
+              {t("double-time-unlock-hint", { defaultValue: "Complete a run (survive 20:00) to unlock 2x game speed mode" })}
             </p>
           </div>
         </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { GameEngine } from '@/lib/game/GameEngine';
 import { useGameStore } from '@/lib/store/useGameStore';
 import { AudioManager } from '@/lib/audio/AudioManager';
@@ -71,6 +72,7 @@ export function GameCanvas() {
     const [hasGamepad, setHasGamepad] = useState(false);
     const [hasTouch, setHasTouch] = useState(false);
 
+    const { t } = useTranslation("c-game");
     const { status, keybinds, isPaused, setIsPaused, isLoadingSong, loadingProgress, loadingProgressText, countdown, setCountdown, isMultiplayer, volume, setVolume, audioOffset, setAudioOffset, setKeybinds, multiplayerResults } = useGameStore();
 
     // Multiplayer lobby tracking
@@ -1172,14 +1174,14 @@ export function GameCanvas() {
                     {isPaused && status === 'PLAYING' && !isMultiplayer && (
                         <div className="absolute inset-0 z-50 bg-black/20 backdrop-blur-sm flex items-center justify-center overflow-y-auto">
                             <div className="bg-slice-bg p-6 rounded-[30px] shadow-[9px_9px_16px_var(--slice-shadow-dark),-9px_-9px_16px_var(--slice-shadow-light)] flex flex-col gap-4 items-center w-full max-w-sm mx-4 my-4">
-                                <h2 className="text-3xl font-black text-slice-text">PAUSED</h2>
+                                <h2 className="text-3xl font-black text-slice-text">{t("paused", { defaultValue: "PAUSED" })}</h2>
 
                                 {/* Settings section */}
                                 <div className="w-full bg-slice-shadow-dark/30 rounded-2xl p-4 shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] flex flex-col gap-4">
                                     {/* Volume */}
                                     <div className="flex flex-col gap-1.5">
                                         <div className="flex justify-between items-center">
-                                            <span className="text-[11px] font-black text-slice-text-muted uppercase tracking-wider">Volume</span>
+                                            <span className="text-[11px] font-black text-slice-text-muted uppercase tracking-wider">{t("volume", { defaultValue: "Volume" })}</span>
                                             <span className="text-sm font-bold text-blue-500">{volume}%</span>
                                         </div>
                                         <Slider value={[volume]} min={0} max={100} step={1} onValueChange={([v]) => setVolume(v)} className="w-full" />
@@ -1188,7 +1190,7 @@ export function GameCanvas() {
                                     {/* SFX Volume */}
                                     <div className="flex flex-col gap-1.5">
                                         <div className="flex justify-between items-center">
-                                            <span className="text-[11px] font-black text-slice-text-muted uppercase tracking-wider">Effects</span>
+                                            <span className="text-[11px] font-black text-slice-text-muted uppercase tracking-wider">{t("effects", { defaultValue: "Effects" })}</span>
                                             <span className="text-sm font-bold text-blue-500">{useGameStore.getState().sfxVolume}%</span>
                                         </div>
                                         <Slider value={[useGameStore.getState().sfxVolume]} min={0} max={100} step={1} onValueChange={([v]) => useGameStore.getState().setSfxVolume(v)} className="w-full" />
@@ -1196,7 +1198,7 @@ export function GameCanvas() {
 
                                     {/* Audio Offset */}
                                     <div className="flex items-center justify-between gap-2">
-                                        <span className="text-[11px] font-black text-slice-text-muted uppercase tracking-wider">Audio Offset</span>
+                                        <span className="text-[11px] font-black text-slice-text-muted uppercase tracking-wider">{t("audio-offset", { defaultValue: "Audio Offset" })}</span>
                                         <div className="flex items-center gap-2">
                                             <button className="w-7 h-7 rounded-lg bg-slice-bg shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)] text-slice-text-darker font-bold text-sm flex items-center justify-center active:shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)]"
                                                 onClick={() => setAudioOffset(audioOffset - 5)}>−</button>
@@ -1208,10 +1210,10 @@ export function GameCanvas() {
 
                                     {/* Keybinds */}
                                     <div className="flex flex-col gap-2">
-                                        <span className="text-[11px] font-black text-slice-text-muted uppercase tracking-wider">Keybinds</span>
+                                        <span className="text-[11px] font-black text-slice-text-muted uppercase tracking-wider">{t("keybinds", { defaultValue: "Keybinds" })}</span>
                                         {(['lane1', 'lane2'] as const).map((lane, i) => (
                                             <div key={lane} className="flex items-center justify-between">
-                                                <span className="text-xs font-bold text-slice-text-muted">Lane {i + 1}</span>
+                                                <span className="text-xs font-bold text-slice-text-muted">{t("lane-n", { defaultValue: "Lane {{n}}", n: i + 1 })}</span>
                                                 <button
                                                     className={`px-3 py-1.5 rounded-lg text-xs font-black font-mono transition-all ${
                                                         listeningForKey === lane
@@ -1223,7 +1225,7 @@ export function GameCanvas() {
                                                         setListeningForKey(listeningForKey === lane ? null : lane)
                                                     }}
                                                 >
-                                                    {listeningForKey === lane ? 'press key / btn…' : keybinds[lane].replace('Mouse0','LMB').replace('Mouse1','MMB').replace('Mouse2','RMB').replace('ArrowUp', '↑').replace('ArrowDown', '↓').replace('ArrowLeft', '←').replace('ArrowRight', '→').replace('Key', '')}
+                                                    {listeningForKey === lane ? t("press-key-btn", { defaultValue: "press key / btn..." }) : keybinds[lane].replace('Mouse0','LMB').replace('Mouse1','MMB').replace('Mouse2','RMB').replace('ArrowUp', '↑').replace('ArrowDown', '↓').replace('ArrowLeft', '←').replace('ArrowRight', '→').replace('Key', '')}
                                                 </button>
                                             </div>
                                         ))}
@@ -1231,11 +1233,11 @@ export function GameCanvas() {
                                 </div>
 
                                 <Button size="lg" className="w-full shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] bg-slice-bg text-slice-text hover:bg-slice-shadow-dark/20 border-none active:shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)]"
-                                    onClick={() => { setListeningForKey(null); engine?.resume(); }}>RESUME</Button>
+                                    onClick={() => { setListeningForKey(null); engine?.resume(); }}>{t("resume", { defaultValue: "RESUME" })}</Button>
                                 <Button size="lg" variant="ghost" className="w-full text-slice-text-muted hover:text-slice-text hover:bg-transparent shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)]"
-                                    onClick={() => { setListeningForKey(null); engine?.reset(); engine?.start(); setIsPaused(false); }}>RETRY</Button>
+                                    onClick={() => { setListeningForKey(null); engine?.reset(); engine?.start(); setIsPaused(false); }}>{t("retry", { defaultValue: "RETRY" })}</Button>
                                 <Button size="lg" variant="ghost" className="w-full text-red-400 hover:text-red-500 hover:bg-transparent"
-                                    onClick={() => { setListeningForKey(null); useGameStore.getState().setStatus('MENU'); useGameStore.getState().setIsMultiplayer(false); setIsPaused(false); engine?.reset(); engine?.setLobbyId(null); }}>QUIT</Button>
+                                    onClick={() => { setListeningForKey(null); useGameStore.getState().setStatus('MENU'); useGameStore.getState().setIsMultiplayer(false); setIsPaused(false); engine?.reset(); engine?.setLobbyId(null); }}>{t("quit", { defaultValue: "QUIT" })}</Button>
                             </div>
                         </div>
                     )}
@@ -1249,7 +1251,7 @@ export function GameCanvas() {
                             onTouchStart={e => e.stopPropagation()}
                         >
                             <div className="flex items-center justify-between">
-                                <h2 className="text-sm font-black text-slice-text-darker uppercase tracking-widest">Settings</h2>
+                                <h2 className="text-sm font-black text-slice-text-darker uppercase tracking-widest">{t("settings", { defaultValue: "Settings" })}</h2>
                                 <button className="w-7 h-7 rounded-full bg-slice-bg shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)] flex items-center justify-center text-slice-text-muted hover:text-slice-text active:shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)]"
                                     onClick={() => setShowSettings(false)}>
                                     <X className="w-3.5 h-3.5" />
@@ -1260,7 +1262,7 @@ export function GameCanvas() {
                                 {/* Volume */}
                                 <div className="flex flex-col gap-1.5">
                                     <div className="flex justify-between items-center">
-                                        <span className="text-[10px] font-black text-slice-text-muted uppercase tracking-wider">Volume</span>
+                                        <span className="text-[10px] font-black text-slice-text-muted uppercase tracking-wider">{t("volume", { defaultValue: "Volume" })}</span>
                                         <span className="text-xs font-bold text-blue-500">{volume}%</span>
                                     </div>
                                     <Slider value={[volume]} min={0} max={100} step={1} onValueChange={([v]) => setVolume(v)} className="w-full" />
@@ -1268,7 +1270,7 @@ export function GameCanvas() {
 
                                 {/* Audio Offset */}
                                 <div className="flex items-center justify-between gap-2">
-                                    <span className="text-[10px] font-black text-slice-text-muted uppercase tracking-wider">Audio Offset</span>
+                                    <span className="text-[10px] font-black text-slice-text-muted uppercase tracking-wider">{t("audio-offset", { defaultValue: "Audio Offset" })}</span>
                                     <div className="flex items-center gap-1.5">
                                         <button className="w-6 h-6 rounded-md bg-slice-bg shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)] text-slice-text-darker font-bold text-xs flex items-center justify-center active:shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)]"
                                             onClick={() => setAudioOffset(audioOffset - 5)}>−</button>
@@ -1280,9 +1282,9 @@ export function GameCanvas() {
 
                                 {/* Keybinds */}
                                 <div className="flex flex-col gap-1.5">
-                                    <span className="text-[10px] font-black text-slice-text-muted uppercase tracking-wider">Keybinds</span>
+                                    <span className="text-[10px] font-black text-slice-text-muted uppercase tracking-wider">{t("keybinds", { defaultValue: "Keybinds" })}</span>
                                     {(['lane1', 'lane2'] as const).map((lane, i) => {
-                                        let displayBind = 'press key / btn…';
+                                        let displayBind = t("press-key-btn", { defaultValue: "press key / btn..." });
                                         if (listeningForKey !== lane) {
                                             displayBind = keybinds[lane]
                                                 .replace('Mouse0', 'LMB').replace('Mouse1', 'MMB').replace('Mouse2', 'RMB')
@@ -1295,7 +1297,7 @@ export function GameCanvas() {
 
                                         return (
                                             <div key={lane} className="flex items-center justify-between">
-                                                <span className="text-[10px] font-bold text-slice-text-muted">Lane {i + 1}</span>
+                                                <span className="text-[10px] font-bold text-slice-text-muted">{t("lane-n", { defaultValue: "Lane {{n}}", n: i + 1 })}</span>
                                                 <button
                                                     className={`px-2 py-1 rounded-md text-[10px] font-black font-mono transition-all ${
                                                         listeningForKey === lane
@@ -1316,7 +1318,7 @@ export function GameCanvas() {
                             </div>
 
                             <Button size="sm" variant="ghost" className="w-full text-red-400 hover:text-red-500 hover:bg-transparent text-xs font-black"
-                                onClick={() => { setShowSettings(false); useGameStore.getState().setStatus('MENU'); useGameStore.getState().setIsMultiplayer(false); engine?.setLobbyId(null); engine?.reset(); }}>EXIT GAME</Button>
+                                onClick={() => { setShowSettings(false); useGameStore.getState().setStatus('MENU'); useGameStore.getState().setIsMultiplayer(false); engine?.setLobbyId(null); engine?.reset(); }}>{t("exit-game", { defaultValue: "EXIT GAME" })}</Button>
                         </div>
                     )}
 
@@ -1328,7 +1330,7 @@ export function GameCanvas() {
                             <div className="w-full max-w-md space-y-4">
                                 <div className="flex justify-between items-end mb-1">
                                     <span className="text-sm font-black text-slice-text-muted uppercase tracking-widest">
-                                        {loadingProgressText || 'Loading Assets'}
+                                        {loadingProgressText || t("loading-assets", { defaultValue: "Loading Assets" })}
                                     </span>
                                     <span className="text-2xl font-black text-blue-500">{Math.round(loadingProgress)}%</span>
                                 </div>
@@ -1343,7 +1345,7 @@ export function GameCanvas() {
                                 {isMultiplayer && loadingPlayers.length > 0 && (
                                     <div className="space-y-2 pt-2">
                                         <p className="text-[11px] font-black text-slice-text-light uppercase tracking-widest text-center">
-                                            Waiting for players...
+                                            {t("waiting-for-players", { defaultValue: "Waiting for players..." })}
                                         </p>
                                         {/* Overall bar: X / total loaded */}
                                         <div className="h-2 bg-slice-bg rounded-full shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] overflow-hidden">
@@ -1360,11 +1362,11 @@ export function GameCanvas() {
                                                 >
                                                     <span className="text-xs font-bold text-slice-text-darker truncate">{p.name}</span>
                                                     {p.loaded ? (
-                                                        <span className="text-[11px] font-black text-green-500 uppercase tracking-wide">Ready ✓</span>
+                                                        <span className="text-[11px] font-black text-green-500 uppercase tracking-wide">{t("player-ready", { defaultValue: "Ready ✓" })}</span>
                                                     ) : (
                                                         <span className="flex items-center gap-1 text-[11px] font-bold text-slice-text-light">
                                                             <span className="w-3 h-3 border-2 border-slate-400 border-t-blue-500 rounded-full animate-spin inline-block" />
-                                                            Loading
+                                                            {t("loading", { defaultValue: "Loading" })}
                                                         </span>
                                                     )}
                                                 </div>
@@ -1375,7 +1377,7 @@ export function GameCanvas() {
 
                                 {!isMultiplayer && (
                                     <p className="text-center text-xs text-slice-text-light font-bold uppercase tracking-tighter animate-pulse">
-                                        Synchronizing with group...
+                                        {t("synchronizing", { defaultValue: "Synchronizing with group..." })}
                                     </p>
                                 )}
                             </div>
@@ -1430,8 +1432,8 @@ export function GameCanvas() {
                             <div className="bg-amber-50 border-2 border-amber-400 rounded-2xl px-5 py-4 shadow-lg flex items-start gap-3">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500 shrink-0 mt-0.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                                 <div>
-                                    <p className="text-sm font-black text-amber-800 uppercase tracking-wide">No Input Device Detected</p>
-                                    <p className="text-xs text-amber-700 mt-1 leading-relaxed">Connect a keyboard or controller to play. The game requires physical input to hit notes.</p>
+                                    <p className="text-sm font-black text-amber-800 uppercase tracking-wide">{t("no-input-device", { defaultValue: "No Input Device Detected" })}</p>
+                                    <p className="text-xs text-amber-700 mt-1 leading-relaxed">{t("no-input-device-desc", { defaultValue: "Connect a keyboard or controller to play. The game requires physical input to hit notes." })}</p>
                                 </div>
                             </div>
                         </div>
@@ -1442,7 +1444,7 @@ export function GameCanvas() {
                         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-90 animate-in fade-in slide-in-from-bottom-4 duration-500">
                             <div className="bg-green-50 border-2 border-green-400 rounded-2xl px-5 py-3 shadow-lg flex items-center gap-3">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-green-600 shrink-0"><path d="M6 12h4m-2-2v4m5-3h.01M17 10h.01"/><path d="M2 15.24V7.5A2.5 2.5 0 0 1 4.5 5h15A2.5 2.5 0 0 1 22 7.5v7.74a2.5 2.5 0 0 1-1.26 2.17l-5.5 3.17a2.5 2.5 0 0 1-2.49 0H11.24a2.5 2.5 0 0 1-2.49 0l-5.5-3.17A2.5 2.5 0 0 1 2 15.24Z"/></svg>
-                                <p className="text-sm font-black text-green-800 uppercase tracking-wide">Controller Connected</p>
+                                <p className="text-sm font-black text-green-800 uppercase tracking-wide">{t("controller-connected", { defaultValue: "Controller Connected" })}</p>
                             </div>
                         </div>
                     )}

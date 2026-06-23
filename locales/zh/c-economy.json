@@ -1,0 +1,23 @@
+{
+  "cancel": "取消",
+  "custom-amount": "自定义金额",
+  "duration": "持续时间",
+  "gift-a-membership": "赠送会员",
+  "gift-desc": "给这个用户发放带金币的会员。",
+  "gift-desc-named": "给{{name}}一个带金币的会员资格。",
+  "gift-error": "无法赠送会员资格。",
+  "gift-for": "礼物",
+  "gift-sign-in": "请登录以赠送会员资格。",
+  "gift-success": "赠送了{{months}}个月的{{tier}}！",
+  "gift-success-named": "赠送了{{months}}个月的{{tier}}给{{name}}！",
+  "note-placeholder": "添加备注（可选）",
+  "sending": "发送中…",
+  "tier": "层级",
+  "tip-amount-group-label": "小费金额",
+  "tip-btn": "小费",
+  "tip-dialog-description": "发送{{recipient}}一些代币以表感谢。",
+  "tip-dialog-title": "发送小费",
+  "tip-error": "无法发送小费",
+  "tip-sign-in": "请登录以打赏。",
+  "tip-success": "给{{recipient}}打赏了{{amount}}个金币！"
+}

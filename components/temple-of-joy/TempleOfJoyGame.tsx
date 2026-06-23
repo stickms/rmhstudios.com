@@ -1,5 +1,6 @@
 'use client';
 import { useCallback, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { saveDataToState, computeOfflineProgress, useAutoSave, saveToServer } from '@/lib/temple-of-joy/persistence';
 import { templeAudio } from '@/lib/temple-of-joy/audio';
@@ -22,6 +23,7 @@ import OfflineModal from '@/components/temple-of-joy/ui/OfflineModal';
 import AchievementToast from '@/components/temple-of-joy/ui/AchievementToast';
 
 export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveData | null }) {
+  const { t } = useTranslation("c-temple-of-joy");
   const activeTab = useTempleStore(s => s.activeTab);
   const theme = useTempleStore(s => s.theme);
 
@@ -182,13 +184,13 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
           className="w-24 text-sm opacity-70 hover:opacity-100 transition-opacity shrink-0"
           style={{ color: theme === 'dark' ? '#d4a847' : '#8b6914' }}
         >
-          ← Builds
+          {t("back-to-builds", { defaultValue: "← Builds" })}
         </a>
         <h1
           className="flex-1 text-center text-xl font-bold tracking-wide"
           style={{ fontFamily: 'var(--font-cormorant, Georgia, serif)' }}
         >
-          Temple of Joy
+          {t("game-title", { defaultValue: "Temple of Joy" })}
         </h1>
         <div className="w-24 shrink-0" />
       </header>

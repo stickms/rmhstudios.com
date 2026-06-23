@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from "react-i18next";
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { fmt } from '@/lib/temple-of-joy/numbers';
 import { useEffect, useState, useCallback, useRef } from 'react';
@@ -14,6 +15,7 @@ interface FloatLabel {
 const RITUAL_MAX_COOLDOWN = 30; // seconds
 
 export default function SmileButton() {
+  const { t } = useTranslation("c-temple-of-joy");
   const numberFormat = useTempleStore(s => s.numberFormat);
   const ritualCooldown = useTempleStore(s => s.ritualCooldown);
   const activeBuffs = useTempleStore(s => s.activeBuffs);
@@ -129,7 +131,7 @@ export default function SmileButton() {
           onMouseDown={() => { if (!pilgrimageActive) setPressing(true); }}
           onMouseUp={() => setPressing(false)}
           onClick={handleClick}
-          aria-label={pilgrimageActive ? 'Pilgrimage in progress' : 'Spread joy'}
+          aria-label={pilgrimageActive ? t("pilgrimage-in-progress", { defaultValue: "Pilgrimage in progress" }) : t("spread-joy", { defaultValue: "Spread joy" })}
           disabled={pilgrimageActive}
           className="relative flex items-center justify-center rounded-full transition-all duration-150"
           style={{
@@ -177,7 +179,7 @@ export default function SmileButton() {
                 className="text-xs font-bold tracking-widest uppercase"
                 style={{ color: 'var(--temple-accent)', opacity: 0.8 }}
               >
-                PILGRIMAGE
+                {t("pilgrimage-label", { defaultValue: "PILGRIMAGE" })}
               </span>
               <span
                 className="text-xs tabular-nums"
@@ -193,7 +195,7 @@ export default function SmileButton() {
                 className="text-xs font-bold tracking-widest uppercase"
                 style={{ color: 'var(--temple-accent)' }}
               >
-                RITUAL!
+                {t("ritual-label", { defaultValue: "RITUAL!" })}
               </span>
               <span
                 className="text-xs tabular-nums"
@@ -232,7 +234,7 @@ export default function SmileButton() {
         style={{ color: 'var(--temple-text)', opacity: 0.8 }}
       >
         {fmt(activeHps, numberFormat)}{' '}
-        <span style={{ opacity: 0.65 }}>happiness/sec</span>
+        <span style={{ opacity: 0.65 }}>{t("happiness-per-sec", { defaultValue: "happiness/sec" })}</span>
       </p>
 
       {/* Pilgrimage button (hidden during active pilgrimage) */}
@@ -250,8 +252,8 @@ export default function SmileButton() {
           }}
         >
           {pilgrimageCooldown > 0
-            ? `Pilgrimage Cooldown (${Math.ceil(pilgrimageCooldown)}s)`
-            : '🕯️ Make Pilgrimage'}
+            ? t("pilgrimage-cooldown", { defaultValue: "Pilgrimage Cooldown ({{seconds}}s)", seconds: Math.ceil(pilgrimageCooldown) })
+            : t("make-pilgrimage", { defaultValue: "🕯️ Make Pilgrimage" })}
         </button>
       )}
 

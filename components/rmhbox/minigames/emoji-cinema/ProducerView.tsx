@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from "react-i18next";
 import EmojiSentence from './EmojiSentence';
 import EmojiKeyboard from './EmojiKeyboard';
 import GuessLog from './GuessLog';
@@ -28,10 +29,11 @@ export default function ProducerView({
   timeRemaining,
   guessLog,
 }: ProducerViewProps) {
+  const { t } = useTranslation("c-rmhbox");
   return (
     <div className="flex flex-col items-center gap-3 p-4 w-full max-w-md mx-auto">
       <div className="flex items-center justify-between w-full">
-        <span className="text-xs text-(--rmhbox-text-muted) uppercase tracking-wide">Your Movie</span>
+        <span className="text-xs text-(--rmhbox-text-muted) uppercase tracking-wide">{t("your-movie", { defaultValue: "Your Movie" })}</span>
         <span className="text-sm font-mono text-(--rmhbox-text-muted)">{timeRemaining}s</span>
       </div>
 
@@ -50,8 +52,8 @@ export default function ProducerView({
       <EmojiKeyboard onSelect={onAddEmoji} />
 
       <div className="flex gap-4 text-xs text-(--rmhbox-text-muted)">
-        <span>Guesses: {guessCount}</span>
-        <span>Correct: {correctCount}</span>
+        <span>{t("guesses-count", { defaultValue: "Guesses: {{count}}", count: guessCount })}</span>
+        <span>{t("correct-count", { defaultValue: "Correct: {{count}}", count: correctCount })}</span>
       </div>
 
       <GuessLog entries={guessLog} />

@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { ArrowLeft, Heart, Star, Clock, Leaf } from 'lucide-react';
+import { useTranslation } from "react-i18next";
 import { useEatsStore } from '@/lib/store/useEatsStore';
 import { mockRestaurants } from '@/lib/rmh-eats/mockData';
 
@@ -12,6 +13,7 @@ function carbonColor(score: number) {
 }
 
 export default function FavoritesPage() {
+    const { t } = useTranslation("c-rmh-eats");
     const { favoriteRestaurantIds, toggleFavorite, selectRestaurant, setView } = useEatsStore();
     const favorites = mockRestaurants.filter((r) => favoriteRestaurantIds.includes(r.id));
 
@@ -25,9 +27,9 @@ export default function FavoritesPage() {
                     <ArrowLeft className="h-5 w-5" />
                 </button>
                 <div>
-                    <h2 className="text-xl font-bold text-white">Favorites</h2>
+                    <h2 className="text-xl font-bold text-white">{t("favorites", { defaultValue: "Favorites" })}</h2>
                     <p className="text-sm text-slate-400">
-                        {favorites.length} saved restaurant{favorites.length !== 1 ? 's' : ''}
+                        {t("saved-restaurants-count", { count: favorites.length, defaultValue: "{{count}} saved restaurant" })}
                     </p>
                 </div>
             </div>
@@ -35,15 +37,15 @@ export default function FavoritesPage() {
             {favorites.length === 0 ? (
                 <div className="flex flex-col items-center gap-3 py-24 text-slate-500">
                     <Heart className="h-12 w-12 opacity-30" />
-                    <p className="font-medium text-slate-400">No favorites yet</p>
+                    <p className="font-medium text-slate-400">{t("no-favorites-yet", { defaultValue: "No favorites yet" })}</p>
                     <p className="text-sm text-center">
-                        Tap the heart icon on any restaurant to save it here.
+                        {t("tap-heart-hint", { defaultValue: "Tap the heart icon on any restaurant to save it here." })}
                     </p>
                     <button
                         onClick={() => setView('home')}
                         className="mt-3 rounded-xl bg-orange-500 hover:bg-orange-400 px-5 py-2.5 text-sm font-medium text-white transition-colors"
                     >
-                        Browse Restaurants
+                        {t("browse-restaurants", { defaultValue: "Browse Restaurants" })}
                     </button>
                 </div>
             ) : (
@@ -73,7 +75,7 @@ export default function FavoritesPage() {
                                 {/* Carbon score */}
                                 <div className={`absolute bottom-2 left-2 flex items-center gap-1 rounded-full bg-black/50 px-2 py-0.5 text-xs font-medium ${carbonColor(r.carbonScore)}`}>
                                     <Leaf className="h-3 w-3" />
-                                    {r.carbonScore <= 3 ? 'Eco' : r.carbonScore <= 6 ? 'Moderate' : 'High CO₂'}
+                                    {r.carbonScore <= 3 ? t("carbon-eco", { defaultValue: "Eco" }) : r.carbonScore <= 6 ? t("carbon-moderate", { defaultValue: "Moderate" }) : t("carbon-high", { defaultValue: "High CO₂" })}
                                 </div>
                             </div>
 
@@ -92,9 +94,9 @@ export default function FavoritesPage() {
                                     </span>
                                     <span>
                                         {r.deliveryFee === 0 ? (
-                                            <span className="text-green-400">Free delivery</span>
+                                            <span className="text-green-400">{t("free-delivery", { defaultValue: "Free delivery" })}</span>
                                         ) : (
-                                            `$${r.deliveryFee.toFixed(2)} delivery`
+                                            t("delivery-fee", { fee: r.deliveryFee.toFixed(2), defaultValue: "${{fee}} delivery" })
                                         )}
                                     </span>
                                 </div>

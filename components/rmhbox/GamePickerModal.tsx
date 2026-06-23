@@ -14,6 +14,7 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X, AlertCircle, Vote, Gamepad2, icons } from 'lucide-react';
 import { getAllMinigames } from '@/lib/rmhbox/minigame-registry';
+import { useTranslation } from 'react-i18next';
 
 /** Convert kebab-case icon name to PascalCase for lucide-react lookup */
 function kebabToPascal(name: string): string {
@@ -45,6 +46,7 @@ export default function GamePickerModal({
   playerCount,
   currentPickId,
 }: GamePickerModalProps) {
+  const { t } = useTranslation("c-rmhbox");
   const [confirmGame, setConfirmGame] = useState<string | null>(null);
 
   if (!isOpen) return null;
@@ -95,7 +97,7 @@ export default function GamePickerModal({
         <div className="mb-4 flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-lg font-bold text-(--rmhbox-text)">
             <Gamepad2 className="h-5 w-5 text-(--rmhbox-accent)" />
-            Pick a Game
+            {t("pick-a-game", { defaultValue: "Pick a Game" })}
           </h2>
           <button
             onClick={() => { setConfirmGame(null); onClose(); }}
@@ -125,7 +127,7 @@ export default function GamePickerModal({
                 <Vote className="h-3.5 w-3.5" />
               </div>
               <span className={`flex-1 truncate text-sm font-medium ${currentPickId === '__vote__' ? 'text-white' : 'text-(--rmhbox-text)'}`}>
-                Let Players Vote
+                {t("let-players-vote", { defaultValue: "Let Players Vote" })}
               </span>
               {currentPickId === '__vote__' && (
                 <span className="shrink-0 text-xs font-semibold">✓</span>
@@ -135,7 +137,7 @@ export default function GamePickerModal({
 
           {/* Section header */}
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-(--rmhbox-text-muted)">
-            Games ({allGames.length})
+            {t("games-count", { defaultValue: "Games ({{count}})", count: allGames.length })}
           </h3>
 
           {/* All games */}
@@ -181,11 +183,11 @@ export default function GamePickerModal({
                       )}
                     </div>
                     <div className={`text-xs text-left ${isSelected ? 'text-white/70' : 'text-(--rmhbox-text-muted)'}`}>
-                      {game.category} · {game.minPlayers}–{game.maxPlayers} players
+                      {t("game-player-range", { defaultValue: "{{category}} · {{min}}–{{max}} players", category: game.category, min: game.minPlayers, max: game.maxPlayers })}
                     </div>
                     {isConfirming && (
                       <div className="text-xs font-semibold text-(--rmhbox-warning) mt-0.5">
-                        Requires {game.minPlayers}–{game.maxPlayers} players (you have {playerCount}). Tap again to pick anyway.
+                        {t("confirm-incompatible", { defaultValue: "Requires {{min}}–{{max}} players (you have {{playerCount}}). Tap again to pick anyway.", min: game.minPlayers, max: game.maxPlayers, playerCount })}
                       </div>
                     )}
                   </div>

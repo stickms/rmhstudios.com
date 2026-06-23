@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Users, Plus, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,7 @@ interface Community {
 
 export function CommunitiesColumn() {
   const navigate = useNavigate();
+  const { t } = useTranslation('feed');
   const { data: session } = useSession();
   const [items, setItems] = useState<Community[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,11 +58,11 @@ export function CommunitiesColumn() {
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        toast.success('Community created!');
+        toast.success(t('community-created', { defaultValue: 'Community created!' }));
         setCreateOpen(false);
         navigate({ to: `/c/${data.slug}` as string });
       } else {
-        toast.error(data.error || 'Could not create community');
+        toast.error(data.error || t('community-create-error', { defaultValue: 'Could not create community' }));
       }
     } finally {
       setSubmitting(false);
@@ -75,11 +77,11 @@ export function CommunitiesColumn() {
       <header className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-site-border bg-site-bg/80 px-4 py-3 backdrop-blur">
         <div className="flex items-center gap-2">
           <Users className="h-5 w-5 text-site-accent" />
-          <h1 className="text-lg font-bold text-site-text">Communities</h1>
+          <h1 className="text-lg font-bold text-site-text">{t('communities-heading', { defaultValue: 'Communities' })}</h1>
         </div>
         {session && (
           <Button size="sm" variant="accent" onClick={() => setCreateOpen(true)}>
-            <Plus className="h-4 w-4" /> New
+            <Plus className="h-4 w-4" /> {t('new-button', { defaultValue: 'New' })}
           </Button>
         )}
       </header>
@@ -89,7 +91,7 @@ export function CommunitiesColumn() {
           <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
         </div>
       ) : items.length === 0 ? (
-        <p className="px-4 py-16 text-center text-sm text-site-text-muted">No communities yet — create the first one!</p>
+        <p className="px-4 py-16 text-center text-sm text-site-text-muted">{t('no-communities', { defaultValue: 'No communities yet — create the first one!' })}</p>
       ) : (
         <ul className="divide-y divide-site-border">
           {items.map((c) => (
@@ -104,11 +106,11 @@ export function CommunitiesColumn() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-site-text">{c.name}</p>
                   <p className="truncate text-xs text-site-text-muted">
-                    {c.memberCount} member{c.memberCount === 1 ? '' : 's'}
+                    {t('member-count', { count: c.memberCount, defaultValue: '{{count}} member' })}
                     {c.description ? ` · ${c.description}` : ''}
                   </p>
                 </div>
-                {c.joined && <span className="shrink-0 rounded-full bg-site-accent-dim px-2 py-0.5 text-xs text-site-accent">Joined</span>}
+                {c.joined && <span className="shrink-0 rounded-full bg-site-accent-dim px-2 py-0.5 text-xs text-site-accent">{t('joined-badge', { defaultValue: 'Joined' })}</span>}
               </Link>
             </li>
           ))}
@@ -118,15 +120,15 @@ export function CommunitiesColumn() {
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Create a community</DialogTitle>
+            <DialogTitle>{t('create-community-title', { defaultValue: 'Create a community' })}</DialogTitle>
           </DialogHeader>
-          <input className={inputCls} placeholder="Name" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} />
-          <textarea className={inputCls} placeholder="Description (optional)" rows={2} maxLength={500} value={description} onChange={(e) => setDescription(e.target.value)} />
-          <input className={inputCls} placeholder="Emoji icon (optional, e.g. 🎮)" value={icon} maxLength={8} onChange={(e) => setIcon(e.target.value)} />
+          <input className={inputCls} placeholder={t('name-placeholder', { defaultValue: 'Name' })} value={name} maxLength={60} onChange={(e) => setName(e.target.value)} />
+          <textarea className={inputCls} placeholder={t('description-placeholder', { defaultValue: 'Description (optional)' })} rows={2} maxLength={500} value={description} onChange={(e) => setDescription(e.target.value)} />
+          <input className={inputCls} placeholder={t('icon-placeholder', { defaultValue: 'Emoji icon (optional, e.g. 🎮)' })} value={icon} maxLength={8} onChange={(e) => setIcon(e.target.value)} />
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setCreateOpen(false)} disabled={submitting}>Cancel</Button>
+            <Button variant="ghost" onClick={() => setCreateOpen(false)} disabled={submitting}>{t('cancel-button', { defaultValue: 'Cancel' })}</Button>
             <Button variant="accent" onClick={create} disabled={submitting || name.trim().length < 2}>
-              {submitting ? 'Creating…' : 'Create'}
+              {submitting ? t('creating-button', { defaultValue: 'Creating…' }) : t('create-button', { defaultValue: 'Create' })}
             </Button>
           </DialogFooter>
         </DialogContent>

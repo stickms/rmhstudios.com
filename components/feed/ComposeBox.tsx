@@ -18,6 +18,7 @@ import {
   MAX_POLL_OPTIONS,
 } from '@/lib/rmhark-schema';
 import { Link } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 
 const MAX_IMAGES = 4;
 
@@ -89,6 +90,7 @@ export function ComposeBox({
     });
   }
 
+  const { t } = useTranslation('feed');
   const { data: session } = useSession();
   // Starter and above can generate images. Server re-enforces this.
   const userTier = (session?.user as { tier?: string } | undefined)?.tier;
@@ -214,15 +216,15 @@ export function ComposeBox({
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setSavedMsg(data.error ?? 'Could not save');
+        setSavedMsg(data.error ?? t("could-not-save", { defaultValue: "Could not save" }));
         return;
       }
       resetForm();
-      setSavedMsg(scheduledAtIso ? 'Scheduled' : 'Saved to drafts');
+      setSavedMsg(scheduledAtIso ? t("scheduled-msg", { defaultValue: "Scheduled" }) : t("saved-to-drafts-msg", { defaultValue: "Saved to drafts" }));
       setTimeout(() => setSavedMsg(null), 3000);
     } catch (error) {
       console.error('Save draft error:', error);
-      setSavedMsg('Could not save');
+      setSavedMsg(t("could-not-save", { defaultValue: "Could not save" }));
     } finally {
       setSubmitting(false);
     }
@@ -231,9 +233,9 @@ export function ComposeBox({
   if (!session) {
     return (
       <div className="px-4 py-6 border-b border-site-border text-center">
-        <p className="text-sm text-site-text-muted mb-2">Sign in to post RMHarks</p>
+        <p className="text-sm text-site-text-muted mb-2">{t("sign-in-prompt", { defaultValue: "Sign in to post RMHarks" })}</p>
         <Link to="/login" search={{ callbackURL: undefined }}>
-          <Button variant="accent" size="sm">Sign In</Button>
+          <Button variant="accent" size="sm">{t("sign-in", { defaultValue: "Sign In" })}</Button>
         </Link>
       </div>
     );
@@ -247,7 +249,7 @@ export function ComposeBox({
           {(resolvedUser?.image || session.user.image) ? (
             <img
               src={resolvedUser?.image || session.user.image!}
-              alt={resolvedUser?.name || session.user.name || 'User'}
+              alt={resolvedUser?.name || session.user.name || t("user-alt", { defaultValue: "User" })}
               className="w-full h-full rounded-full object-cover"
               onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }}
             />
@@ -263,7 +265,7 @@ export function ComposeBox({
             id="compose-box"
             value={content}
             onChange={setContent}
-            placeholder="What's on your mind?"
+            placeholder={t("compose-placeholder", { defaultValue: "What's on your mind?" })}
             rows={3}
             maxLength={MAX_RMHARK_LENGTH}
             className="w-full bg-transparent text-site-text placeholder:text-site-text-dim text-base resize-none border-none outline-none"
@@ -277,11 +279,11 @@ export function ComposeBox({
           <ComposeAssist value={content} onChange={setContent} />
 
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <div className="inline-flex items-center gap-1 rounded-full border border-site-border bg-site-surface p-0.5" role="group" aria-label="Who can see this post">
+            <div className="inline-flex items-center gap-1 rounded-full border border-site-border bg-site-surface p-0.5" role="group" aria-label={t("audience-group-label", { defaultValue: "Who can see this post" })}>
               {([
-                { value: 'PUBLIC', label: 'Everyone', icon: Globe },
-                { value: 'FOLLOWERS', label: 'Followers', icon: Users },
-                { value: 'PRIVATE', label: 'Only me', icon: Lock },
+                { value: 'PUBLIC', label: t("audience-everyone", { defaultValue: "Everyone" }), icon: Globe },
+                { value: 'FOLLOWERS', label: t("audience-followers", { defaultValue: "Followers" }), icon: Users },
+                { value: 'PRIVATE', label: t("audience-only-me", { defaultValue: "Only me" }), icon: Lock },
               ] as const).map(({ value, label, icon: Icon }) => (
                 <button
                   key={value}
@@ -300,25 +302,25 @@ export function ComposeBox({
             </div>
             <div className="inline-flex items-center gap-1 rounded-full border border-site-border bg-site-surface px-3 py-1">
               <Unlock className="h-3.5 w-3.5 text-site-text-muted" />
-              <span className="text-xs text-site-text-muted">Unlock price</span>
+              <span className="text-xs text-site-text-muted">{t("unlock-price-label", { defaultValue: "Unlock price" })}</span>
               <input
                 type="number"
                 min={0}
                 value={unlockPrice}
                 onChange={(e) => setUnlockPrice(e.target.value)}
-                placeholder="free"
-                aria-label="Coins required to unlock this post"
+                placeholder={t("unlock-price-placeholder", { defaultValue: "free" })}
+                aria-label={t("unlock-price-aria", { defaultValue: "Coins required to unlock this post" })}
                 className="w-16 bg-transparent text-xs text-site-text placeholder:text-site-text-dim focus:outline-none"
               />
             </div>
             <button
               type="button"
               onClick={insertSpoiler}
-              title="Mark selection as a spoiler"
+              title={t("spoiler-title", { defaultValue: "Mark selection as a spoiler" })}
               className="inline-flex items-center gap-1 rounded-full border border-site-border bg-site-surface px-3 py-1 text-xs font-medium text-site-text-muted transition-colors hover:text-site-text"
             >
               <EyeOff className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Spoiler</span>
+              <span className="hidden sm:inline">{t("spoiler-label", { defaultValue: "Spoiler" })}</span>
             </button>
           </div>
 
@@ -326,7 +328,7 @@ export function ComposeBox({
           {attachment === 'poll' && (
             <div className="mt-2 border border-site-border rounded-xl p-3 bg-site-surface/20">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-site-text-dim uppercase tracking-wide">Poll</span>
+                <span className="text-xs font-semibold text-site-text-dim uppercase tracking-wide">{t("poll-heading", { defaultValue: "Poll" })}</span>
                 <button
                   onClick={() => {
                     setAttachment(null);
@@ -342,7 +344,7 @@ export function ComposeBox({
                 type="text"
                 value={poll.question}
                 onChange={(e) => setPoll((p) => ({ ...p, question: e.target.value }))}
-                placeholder="Ask a question..."
+                placeholder={t("poll-question-placeholder", { defaultValue: "Ask a question..." })}
                 maxLength={MAX_POLL_QUESTION_LENGTH}
                 className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-lg p-2 border border-site-border outline-none focus:border-site-accent transition-colors mb-2"
               />
@@ -358,7 +360,7 @@ export function ComposeBox({
                         newOptions[i] = e.target.value;
                         setPoll((p) => ({ ...p, options: newOptions }));
                       }}
-                      placeholder={`Option ${i + 1}`}
+                      placeholder={t("poll-option-placeholder", { count: i + 1, defaultValue: "Option {{count}}" })}
                       maxLength={MAX_POLL_OPTION_LENGTH}
                       className="flex-1 bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-lg p-2 border border-site-border outline-none focus:border-site-accent transition-colors"
                     />
@@ -382,7 +384,7 @@ export function ComposeBox({
                   onClick={() => setPoll((p) => ({ ...p, options: [...p.options, ''] }))}
                   className="mt-2 text-xs text-site-accent hover:text-site-accent-hover transition-colors"
                 >
-                  + Add option
+                  {t("poll-add-option", { defaultValue: "+ Add option" })}
                 </button>
               )}
 
@@ -393,22 +395,22 @@ export function ComposeBox({
                   onChange={(e) => setPoll((p) => ({ ...p, multiSelect: e.target.checked }))}
                   className="rounded border-site-border text-site-accent focus:ring-site-accent"
                 />
-                <span className="text-xs text-site-text-dim">Allow multiple selections</span>
+                <span className="text-xs text-site-text-dim">{t("poll-multi-select", { defaultValue: "Allow multiple selections" })}</span>
               </label>
 
               <label className="mt-3 flex items-center gap-2">
-                <span className="text-xs text-site-text-dim">Poll length</span>
+                <span className="text-xs text-site-text-dim">{t("poll-length-label", { defaultValue: "Poll length" })}</span>
                 <select
                   value={pollDuration}
                   onChange={(e) => setPollDuration(Number(e.target.value))}
                   className="rounded-lg border border-site-border bg-site-surface px-2 py-1 text-xs text-site-text focus:outline-none"
                 >
-                  <option value={0}>No limit</option>
-                  <option value={1}>1 hour</option>
-                  <option value={6}>6 hours</option>
-                  <option value={24}>1 day</option>
-                  <option value={72}>3 days</option>
-                  <option value={168}>1 week</option>
+                  <option value={0}>{t("poll-duration-no-limit", { defaultValue: "No limit" })}</option>
+                  <option value={1}>{t("poll-duration-1h", { defaultValue: "1 hour" })}</option>
+                  <option value={6}>{t("poll-duration-6h", { defaultValue: "6 hours" })}</option>
+                  <option value={24}>{t("poll-duration-1d", { defaultValue: "1 day" })}</option>
+                  <option value={72}>{t("poll-duration-3d", { defaultValue: "3 days" })}</option>
+                  <option value={168}>{t("poll-duration-1w", { defaultValue: "1 week" })}</option>
                 </select>
               </label>
             </div>
@@ -418,7 +420,7 @@ export function ComposeBox({
           {attachment === 'gif' && (
             <div className="mt-2 border border-site-border rounded-xl p-3 bg-site-surface/20">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-site-text-dim uppercase tracking-wide">Image</span>
+                <span className="text-xs font-semibold text-site-text-dim uppercase tracking-wide">{t("gif-heading", { defaultValue: "Image" })}</span>
                 <button
                   onClick={() => {
                     setAttachment(null);
@@ -434,7 +436,7 @@ export function ComposeBox({
                 type="url"
                 value={gifUrl}
                 onChange={(e) => setGifUrl(e.target.value)}
-                placeholder="Paste an image URL or Tenor/Giphy link..."
+                placeholder={t("gif-url-placeholder", { defaultValue: "Paste an image URL or Tenor/Giphy link..." })}
                 className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-lg p-2 border border-site-border outline-none focus:border-site-accent transition-colors"
               />
 
@@ -443,7 +445,7 @@ export function ComposeBox({
               )}
 
               {gifUrl.trim() && !isValidMediaUrl(gifUrl.trim()) && (
-                <p className="text-xs text-site-danger mt-1">Must be a direct image URL or Tenor/Giphy link</p>
+                <p className="text-xs text-site-danger mt-1">{t("gif-url-invalid", { defaultValue: "Must be a direct image URL or Tenor/Giphy link" })}</p>
               )}
             </div>
           )}
@@ -461,7 +463,7 @@ export function ComposeBox({
                   />
                   <button
                     type="button"
-                    aria-label="Remove image"
+                    aria-label={t("remove-image-aria", { defaultValue: "Remove image" })}
                     onClick={() => setImageUrls((prev) => prev.filter((u) => u !== url))}
                     className="absolute top-1 right-1 p-0.5 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity"
                   >
@@ -489,7 +491,7 @@ export function ComposeBox({
           {showSchedule && (
             <div className="mt-2 flex flex-wrap items-center gap-2 rounded-xl border border-site-border bg-site-surface/20 p-3">
               <CalendarClock className="h-4 w-4 text-site-text-dim" />
-              <span className="text-xs text-site-text-dim">Publish at</span>
+              <span className="text-xs text-site-text-dim">{t("schedule-publish-at", { defaultValue: "Publish at" })}</span>
               <input
                 type="datetime-local"
                 value={scheduleAt}
@@ -505,7 +507,7 @@ export function ComposeBox({
                   if (iso) handleSaveScheduled(iso);
                 }}
               >
-                Schedule
+                {t("schedule-button", { defaultValue: "Schedule" })}
               </Button>
               <button
                 type="button"
@@ -514,7 +516,7 @@ export function ComposeBox({
                   setScheduleAt('');
                 }}
                 className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors"
-                aria-label="Cancel scheduling"
+                aria-label={t("cancel-scheduling-aria", { defaultValue: "Cancel scheduling" })}
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -546,7 +548,7 @@ export function ComposeBox({
               <AIGenerateButton
                 request={{ mode: 'post', draft: content }}
                 onGenerated={(text) => setContent(text)}
-                title="Generate a post with AI"
+                title={t("ai-generate-title", { defaultValue: "Generate a post with AI" })}
               />
 
               {/* AI image button (Starter+) */}
@@ -565,7 +567,7 @@ export function ComposeBox({
                 type="button"
                 disabled={imageUrls.length >= MAX_IMAGES}
                 onClick={() => imageInputRef.current?.click()}
-                title={imageUrls.length >= MAX_IMAGES ? 'Maximum 4 images' : 'Attach images'}
+                title={imageUrls.length >= MAX_IMAGES ? t("max-images-title", { defaultValue: "Maximum 4 images" }) : t("attach-images-title", { defaultValue: "Attach images" })}
                 className="p-1.5 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <ImagePlus className="w-4.5 h-4.5" />
@@ -591,7 +593,7 @@ export function ComposeBox({
                       className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
                     >
                       <BarChart3 className="w-4 h-4 text-site-text-dim" />
-                      Create Poll
+                      {t("menu-create-poll", { defaultValue: "Create Poll" })}
                     </button>
                     <button
                       onClick={() => {
@@ -602,7 +604,7 @@ export function ComposeBox({
                       className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
                     >
                       <Image className="w-4 h-4 text-site-text-dim" />
-                      Add Image
+                      {t("menu-add-image", { defaultValue: "Add Image" })}
                     </button>
                     <div className="my-1 border-t border-site-border" />
                     <button
@@ -614,7 +616,7 @@ export function ComposeBox({
                       className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       <FileText className="w-4 h-4 text-site-text-dim" />
-                      Save as draft
+                      {t("menu-save-draft", { defaultValue: "Save as draft" })}
                     </button>
                     <button
                       onClick={() => {
@@ -625,7 +627,7 @@ export function ComposeBox({
                       className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       <CalendarClock className="w-4 h-4 text-site-text-dim" />
-                      Schedule…
+                      {t("menu-schedule", { defaultValue: "Schedule…" })}
                     </button>
                     <Link
                       to="/drafts"
@@ -633,7 +635,7 @@ export function ComposeBox({
                       className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text-muted hover:bg-site-surface hover:text-site-text transition-colors"
                     >
                       <FileText className="w-4 h-4 text-site-text-dim" />
-                      View drafts
+                      {t("menu-view-drafts", { defaultValue: "View drafts" })}
                     </Link>
                   </div>
                 )}
@@ -645,7 +647,7 @@ export function ComposeBox({
                 disabled={!canSubmit}
                 onClick={handleSubmit}
               >
-                {submitting ? 'Posting...' : 'Post'}
+                {submitting ? t("posting", { defaultValue: "Posting..." }) : t("post-button", { defaultValue: "Post" })}
               </Button>
             </div>
           </div>

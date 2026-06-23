@@ -1,6 +1,7 @@
 'use client';
 
 import { lazy, Suspense } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { ResearchArticle } from '@/lib/research';
 
 /* ── Volume 1 ────────────────────────────────────────────────────── */
@@ -73,6 +74,7 @@ const paperComponents: Record<string, React.ComponentType> = {
 };
 
 export function PaperContent({ article }: { article: ResearchArticle }) {
+  const { t } = useTranslation("c-research");
   const Body = paperComponents[article.slug];
 
   return (
@@ -106,8 +108,8 @@ export function PaperContent({ article }: { article: ResearchArticle }) {
         className="text-center text-gray-500 mb-1"
         style={{ fontSize: '9pt' }}
       >
-        {article.journal}, Vol.&nbsp;{article.volume}, Issue&nbsp;
-        {article.issue}, pp.&nbsp;{article.pages} &mdash;{' '}
+        {article.journal}, {t("vol-label", { defaultValue: "Vol." })}&nbsp;{article.volume}, {t("issue-label", { defaultValue: "Issue" })}&nbsp;
+        {article.issue}, {t("pp-label", { defaultValue: "pp." })}&nbsp;{article.pages} &mdash;{' '}
         {new Date(article.date).toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'long',
@@ -120,7 +122,7 @@ export function PaperContent({ article }: { article: ResearchArticle }) {
         className="text-center text-gray-500 mb-6"
         style={{ fontSize: '9pt' }}
       >
-        DOI: {article.doi}
+        {t("doi-label", { defaultValue: "DOI:" })} {article.doi}
       </p>
 
       <hr className="border-gray-300 mb-6" />
@@ -131,7 +133,7 @@ export function PaperContent({ article }: { article: ResearchArticle }) {
           className="font-bold mb-2"
           style={{ fontSize: '12pt' }}
         >
-          Abstract
+          {t("abstract-heading", { defaultValue: "Abstract" })}
         </h2>
         <p
           className="text-gray-800 text-justify"
@@ -142,7 +144,7 @@ export function PaperContent({ article }: { article: ResearchArticle }) {
 
         {/* Keywords */}
         <p className="mt-3" style={{ fontSize: '9pt' }}>
-          <strong>Keywords:</strong>{' '}
+          <strong>{t("keywords-label", { defaultValue: "Keywords:" })}</strong>{' '}
           <span className="italic text-gray-600">
             {article.keywords.join(', ')}
           </span>
@@ -154,7 +156,7 @@ export function PaperContent({ article }: { article: ResearchArticle }) {
         className="text-justify"
         style={{ fontSize: '11pt' }}
       >
-        {Body ? <Suspense fallback={null}><Body /></Suspense> : <p>Paper content not found.</p>}
+        {Body ? <Suspense fallback={null}><Body /></Suspense> : <p>{t("paper-not-found", { defaultValue: "Paper content not found." })}</p>}
       </div>
     </div>
   );

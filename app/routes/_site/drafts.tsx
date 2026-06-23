@@ -5,6 +5,7 @@ import { DraftsColumn } from '@/components/feed/DraftsColumn';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export const Route = createFileRoute('/_site/drafts')({
   head: () => ({ meta: [{ title: 'Drafts | RMH Studios' }] }),
@@ -12,6 +13,7 @@ export const Route = createFileRoute('/_site/drafts')({
 });
 
 function DraftsPage() {
+  const { t } = useTranslation("site");
   const { data: session, isPending } = useSession();
 
   return (
@@ -26,9 +28,9 @@ function DraftsPage() {
           </div>
         ) : !session ? (
           <div className="flex flex-col items-center gap-3 px-6 py-24 text-center">
-            <p className="font-medium text-site-text">Sign in to manage drafts</p>
+            <p className="font-medium text-site-text">{t("sign-in-to-manage-drafts", { defaultValue: "Sign in to manage drafts" })}</p>
             <Link to="/login" search={{ callbackURL: '/drafts' }}>
-              <Button variant="accent">Sign in</Button>
+              <Button variant="accent">{t("sign-in", { defaultValue: "Sign in" })}</Button>
             </Link>
           </div>
         ) : (

@@ -2,6 +2,7 @@
  * Admin Dashboard Route
  */
 
+import { useTranslation } from "react-i18next";
 import { createFileRoute, Link, redirect } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
@@ -26,12 +27,13 @@ export const Route = createFileRoute('/_site/admin/')({
 });
 
 function AdminDashboardPage() {
+  const { t } = useTranslation("admin");
   return (
-    <PageLayout title="Admin Dashboard" wide>
+    <PageLayout title={t("admin-dashboard", { defaultValue: "Admin Dashboard" })} wide>
       <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
         <div>
-          <h1 className="text-2xl font-bold font-display text-site-text">Admin Dashboard</h1>
-          <p className="text-site-text-muted mt-1">Manage users, builds, and site content.</p>
+          <h1 className="text-2xl font-bold font-display text-site-text">{t("admin-dashboard", { defaultValue: "Admin Dashboard" })}</h1>
+          <p className="text-site-text-muted mt-1">{t("admin-dashboard-subtitle", { defaultValue: "Manage users, builds, and site content." })}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -39,9 +41,9 @@ function AdminDashboardPage() {
             to="/admin/users"
             className="block p-6 rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
           >
-            <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">Users</h2>
+            <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("users-title", { defaultValue: "Users" })}</h2>
             <p className="text-site-text-muted text-sm mt-2">
-              Manage user accounts, verify users, edit profiles, and view statistics.
+              {t("users-description", { defaultValue: "Manage user accounts, verify users, edit profiles, and view statistics." })}
             </p>
           </Link>
 
@@ -49,9 +51,9 @@ function AdminDashboardPage() {
             to="/admin/user-builds"
             className="block p-6 rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
           >
-            <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">All User Builds</h2>
+            <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("user-builds-title", { defaultValue: "All User Builds" })}</h2>
             <p className="text-site-text-muted text-sm mt-2">
-              Moderate and search through all submitted builds from the community. Edit metadata and change visibilities.
+              {t("user-builds-description", { defaultValue: "Moderate and search through all submitted builds from the community. Edit metadata and change visibilities." })}
             </p>
           </Link>
 
@@ -59,9 +61,9 @@ function AdminDashboardPage() {
             to="/admin/blog"
             className="block p-6 rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
           >
-            <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">Manage Blog Posts</h2>
+            <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("blog-title", { defaultValue: "Manage Blog Posts" })}</h2>
             <p className="text-site-text-muted text-sm mt-2">
-              Write new developer logs, or edit and delete existing blog posts.
+              {t("blog-description", { defaultValue: "Write new developer logs, or edit and delete existing blog posts." })}
             </p>
           </Link>
 
@@ -69,9 +71,9 @@ function AdminDashboardPage() {
             to="/admin/reports"
             className="block p-6 rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
           >
-            <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">Moderation Queue</h2>
+            <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("moderation-queue-title", { defaultValue: "Moderation Queue" })}</h2>
             <p className="text-site-text-muted text-sm mt-2">
-              Review user reports of posts, comments, profiles, and builds. Resolve, dismiss, or take content down.
+              {t("moderation-queue-description", { defaultValue: "Review user reports of posts, comments, profiles, and builds. Resolve, dismiss, or take content down." })}
             </p>
           </Link>
 
@@ -79,9 +81,9 @@ function AdminDashboardPage() {
             to="/admin/announcements"
             className="block p-6 rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
           >
-            <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">Feed Announcements</h2>
+            <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("announcements-title", { defaultValue: "Feed Announcements" })}</h2>
             <p className="text-site-text-muted text-sm mt-2">
-              Publish pinned banners shown at the top of everyone&apos;s feed. Activate, deactivate, or remove them.
+              {t("announcements-description", { defaultValue: "Publish pinned banners shown at the top of everyone's feed. Activate, deactivate, or remove them." })}
             </p>
           </Link>
 
@@ -89,9 +91,9 @@ function AdminDashboardPage() {
             to="/admin/analytics"
             className="block p-6 rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
           >
-            <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">Analytics</h2>
+            <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("analytics-title", { defaultValue: "Analytics" })}</h2>
             <p className="text-site-text-muted text-sm mt-2">
-              Platform stats: users, active users, posts, comments, reports, and coins in circulation.
+              {t("analytics-description", { defaultValue: "Platform stats: users, active users, posts, comments, reports, and coins in circulation." })}
             </p>
           </Link>
 
@@ -99,9 +101,9 @@ function AdminDashboardPage() {
             to="/admin/rideshare"
             className="block p-6 rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
           >
-            <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">Rideshare Applications</h2>
+            <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("rideshare-title", { defaultValue: "Rideshare Applications" })}</h2>
             <p className="text-site-text-muted text-sm mt-2">
-              Review RMH Rideshare driver applications, inspect licenses, and approve or reject drivers.
+              {t("rideshare-description", { defaultValue: "Review RMH Rideshare driver applications, inspect licenses, and approve or reject drivers." })}
             </p>
           </Link>
 
@@ -109,9 +111,9 @@ function AdminDashboardPage() {
             to="/admin/audit"
             className="block p-6 rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
           >
-            <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">Audit Log</h2>
+            <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("audit-log-title", { defaultValue: "Audit Log" })}</h2>
             <p className="text-site-text-muted text-sm mt-2">
-              A record of admin actions — report decisions, bans, strikes, and announcements.
+              {t("audit-log-description", { defaultValue: "A record of admin actions — report decisions, bans, strikes, and announcements." })}
             </p>
           </Link>
         </div>

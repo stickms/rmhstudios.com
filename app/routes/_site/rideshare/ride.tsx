@@ -2,6 +2,7 @@
  * RMH Rideshare — request a ride (/rideshare/ride)
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import {
@@ -83,6 +84,7 @@ function minScheduleValue(): string {
 }
 
 function RequestRidePage() {
+  const { t } = useTranslation('rideshare');
   const { data: session, isPending } = useSession();
 
   const [pickup, setPickup] = useState<RidePlace | null>(null);
@@ -186,11 +188,11 @@ function RequestRidePage() {
 
   async function submit() {
     if (!pickup || !dropoff) {
-      toast.error('Please set both a pickup and a drop-off.');
+      toast.error(t('error-missing-locations', { defaultValue: 'Please set both a pickup and a drop-off.' }));
       return;
     }
     if (scheduleMode && !scheduledFor) {
-      toast.error('Pick a date and time for your scheduled ride.');
+      toast.error(t('error-missing-schedule-time', { defaultValue: 'Pick a date and time for your scheduled ride.' }));
       return;
     }
     setSubmitting(true);
@@ -212,11 +214,13 @@ function RequestRidePage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error || 'Could not request your ride.');
+        toast.error(data.error || t('error-request-failed', { defaultValue: 'Could not request your ride.' }));
         return;
       }
       toast.success(
-        scheduleMode ? 'Ride scheduled! We’ll match a driver near your pickup time.' : 'Ride requested! Hang tight while we find a driver.',
+        scheduleMode
+          ? t('success-ride-scheduled', { defaultValue: "Ride scheduled! We'll match a driver near your pickup time." })
+          : t('success-ride-requested', { defaultValue: 'Ride requested! Hang tight while we find a driver.' }),
       );
       setPickup(null);
       setDropoff(null);
@@ -226,7 +230,7 @@ function RequestRidePage() {
       setScheduledFor('');
       loadRides();
     } catch {
-      toast.error('Something went wrong. Please try again.');
+      toast.error(t('error-generic', { defaultValue: 'Something went wrong. Please try again.' }));
     } finally {
       setSubmitting(false);
     }
@@ -239,17 +243,17 @@ function RequestRidePage() {
       body: JSON.stringify({ action: 'cancel' }),
     });
     if (res.ok) {
-      toast.success('Scheduled ride cancelled.');
+      toast.success(t('success-ride-cancelled', { defaultValue: 'Scheduled ride cancelled.' }));
       loadRides();
     } else {
       const data = await res.json().catch(() => ({}));
-      toast.error(data.error || 'Could not cancel.');
+      toast.error(data.error || t('error-cancel-failed', { defaultValue: 'Could not cancel.' }));
     }
   }
 
   if (isPending) {
     return (
-      <PageLayout title="Request a ride" wide>
+      <PageLayout title={t('page-title', { defaultValue: 'Request a ride' })} wide>
         <div className="flex justify-center py-20">
           <Loader2 className="h-6 w-6 animate-spin text-site-text-muted" />
         </div>
@@ -259,17 +263,17 @@ function RequestRidePage() {
 
   if (!session) {
     return (
-      <PageLayout title="Request a ride" wide>
+      <PageLayout title={t('page-title', { defaultValue: 'Request a ride' })} wide>
         <div className="mx-auto max-w-md px-4 py-20 text-center">
           <Navigation className="mx-auto h-10 w-10 text-site-accent" />
-          <h2 className="mt-4 text-xl font-bold text-site-text">Sign in to request a ride</h2>
-          <p className="mt-2 text-site-text-muted">You need an RMH account to use RMH Rideshare.</p>
+          <h2 className="mt-4 text-xl font-bold text-site-text">{t('sign-in-heading', { defaultValue: 'Sign in to request a ride' })}</h2>
+          <p className="mt-2 text-site-text-muted">{t('sign-in-description', { defaultValue: 'You need an RMH account to use RMH Rideshare.' })}</p>
           <Link
             to="/login"
             search={{ callbackURL: '/rideshare/ride' }}
             className="mt-5 inline-flex items-center gap-2 rounded-xl bg-site-accent px-6 py-3 text-sm font-semibold text-(--site-accent-fg) transition-all hover:scale-105"
           >
-            <LogIn className="h-4 w-4" /> Sign in
+            <LogIn className="h-4 w-4" /> {t('sign-in-button', { defaultValue: 'Sign in' })}
           </Link>
         </div>
       </PageLayout>
@@ -280,7 +284,7 @@ function RequestRidePage() {
   const pastRides = rides.filter((r) => r.id !== focusRideId && r.status !== 'SCHEDULED');
 
   return (
-    <PageLayout title="Request a ride" wide>
+    <PageLayout title={t('page-title', { defaultValue: 'Request a ride' })} wide>
       <div className="mx-auto w-full max-w-4xl space-y-8 px-4 py-6 md:px-8">
         {focusRideId ? (
           /* Live trip takes over the page while a ride is in flight. */
@@ -298,23 +302,23 @@ function RequestRidePage() {
             {/* Left: form */}
             <div className="space-y-5">
               <div className="rounded-2xl border border-site-border bg-site-surface/80 p-5">
-                <h2 className="mb-4 text-lg font-bold text-site-text">Where to?</h2>
+                <h2 className="mb-4 text-lg font-bold text-site-text">{t('where-to-heading', { defaultValue: 'Where to?' })}</h2>
                 <div className="space-y-3">
                   <LocationSearch
-                    label="Pickup"
+                    label={t('pickup-label', { defaultValue: 'Pickup' })}
                     value={pickup}
                     onSelect={setPickup}
                     dotClassName="bg-emerald-400"
-                    placeholder="Enter pickup location"
+                    placeholder={t('pickup-placeholder', { defaultValue: 'Enter pickup location' })}
                     savedPlaces={savedPlaces}
                     allowCurrentLocation
                   />
                   <LocationSearch
-                    label="Drop-off"
+                    label={t('dropoff-label', { defaultValue: 'Drop-off' })}
                     value={dropoff}
                     onSelect={setDropoff}
                     dotClassName="bg-site-accent"
-                    placeholder="Enter destination"
+                    placeholder={t('dropoff-placeholder', { defaultValue: 'Enter destination' })}
                     savedPlaces={savedPlaces}
                     allowCurrentLocation
                   />
@@ -322,13 +326,13 @@ function RequestRidePage() {
 
                 {routing && !routeInfo && (
                   <div className="mt-4 flex items-center gap-2 rounded-xl border border-site-border bg-site-surface px-4 py-3 text-sm text-site-text-muted">
-                    <Loader2 className="h-4 w-4 animate-spin" /> Calculating route…
+                    <Loader2 className="h-4 w-4 animate-spin" /> {t('calculating-route', { defaultValue: 'Calculating route…' })}
                   </div>
                 )}
               </div>
 
               <div className="rounded-2xl border border-site-border bg-site-surface/80 p-5">
-                <h2 className="mb-3 text-lg font-bold text-site-text">Pick your ride</h2>
+                <h2 className="mb-3 text-lg font-bold text-site-text">{t('pick-your-ride-heading', { defaultValue: 'Pick your ride' })}</h2>
                 <RideClassPicker value={rideClass} onChange={setRideClass} fareLabels={fareLabels} />
               </div>
 
@@ -342,14 +346,14 @@ function RequestRidePage() {
 
               <div className="rounded-2xl border border-site-border bg-site-surface/80 p-5">
                 <label className="mb-1.5 block text-xs font-medium text-site-text-muted">
-                  Notes for your driver (optional)
+                  {t('notes-label', { defaultValue: 'Notes for your driver (optional)' })}
                 </label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   maxLength={500}
                   rows={2}
-                  placeholder="e.g. I’ll be by the main entrance"
+                  placeholder={t('notes-placeholder', { defaultValue: "e.g. I'll be by the main entrance" })}
                   className="w-full resize-none rounded-lg border border-site-border bg-site-surface px-3 py-2.5 text-base text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60 sm:py-2 sm:text-sm"
                 />
               </div>
@@ -358,7 +362,7 @@ function RequestRidePage() {
               <div className="rounded-2xl border border-site-border bg-site-surface/80 p-5">
                 <label className="flex cursor-pointer items-center justify-between gap-3">
                   <span className="flex items-center gap-2 text-sm font-medium text-site-text">
-                    <CalendarClock className="h-4 w-4 text-site-accent" /> Schedule for later
+                    <CalendarClock className="h-4 w-4 text-site-accent" /> {t('schedule-for-later', { defaultValue: 'Schedule for later' })}
                   </span>
                   <input
                     type="checkbox"
@@ -390,7 +394,9 @@ function RequestRidePage() {
                 ) : (
                   <Car className="h-4 w-4" />
                 )}
-                {scheduleMode ? `Schedule ${rideClassName(rideClass)}` : `Request ${rideClassName(rideClass)}`}
+                {scheduleMode
+                  ? t('schedule-ride-button', { rideClass: rideClassName(rideClass), defaultValue: 'Schedule {{rideClass}}' })
+                  : t('request-ride-button', { rideClass: rideClassName(rideClass), defaultValue: 'Request {{rideClass}}' })}
               </button>
             </div>
 
@@ -406,7 +412,7 @@ function RequestRidePage() {
         {upcomingRides.length > 0 && (
           <div>
             <h2 className="mb-3 flex items-center gap-2 text-lg font-bold text-site-text">
-              <CalendarClock className="h-5 w-5 text-site-accent" /> Upcoming rides
+              <CalendarClock className="h-5 w-5 text-site-accent" /> {t('upcoming-rides-heading', { defaultValue: 'Upcoming rides' })}
             </h2>
             <ul className="space-y-3">
               {upcomingRides.map((ride) => (
@@ -433,7 +439,7 @@ function RequestRidePage() {
                     onClick={() => cancelScheduled(ride.id)}
                     className="flex shrink-0 items-center gap-1 text-xs text-red-400 transition-colors hover:text-red-300"
                   >
-                    <XCircle className="h-3.5 w-3.5" /> Cancel
+                    <XCircle className="h-3.5 w-3.5" /> {t('cancel-button', { defaultValue: 'Cancel' })}
                   </button>
                 </motion.li>
               ))}
@@ -444,9 +450,9 @@ function RequestRidePage() {
         {/* Ride history */}
         <div>
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-bold text-site-text">Ride history</h2>
+            <h2 className="text-lg font-bold text-site-text">{t('ride-history-heading', { defaultValue: 'Ride history' })}</h2>
             <button onClick={loadRides} className="text-xs text-site-accent hover:underline">
-              Refresh
+              {t('refresh-button', { defaultValue: 'Refresh' })}
             </button>
           </div>
 
@@ -456,7 +462,9 @@ function RequestRidePage() {
             </div>
           ) : pastRides.length === 0 ? (
             <p className="rounded-xl border border-dashed border-site-border px-4 py-8 text-center text-sm text-site-text-muted">
-              {focusRideId || upcomingRides.length > 0 ? 'Your past trips will appear here.' : 'No rides yet. Request your first ride!'}
+              {focusRideId || upcomingRides.length > 0
+                ? t('past-trips-placeholder', { defaultValue: 'Your past trips will appear here.' })
+                : t('no-rides-placeholder', { defaultValue: 'No rides yet. Request your first ride!' })}
             </p>
           ) : (
             <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -491,7 +499,7 @@ function RequestRidePage() {
                     )}
                     {ride.status === 'COMPLETED' && (
                       <span className="flex items-center gap-1 text-emerald-400">
-                        <CheckCircle2 className="h-3 w-3" /> Done
+                        <CheckCircle2 className="h-3 w-3" /> {t('done-label', { defaultValue: 'Done' })}
                       </span>
                     )}
                   </div>

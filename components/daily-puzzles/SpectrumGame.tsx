@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Lock, Trophy, Copy, Check, ArrowUp, ArrowDown, GripVertical } from 'lucide-react';
@@ -34,6 +35,7 @@ function accuracyColor(accuracy: number): string {
 }
 
 function SpectrumGameContent({ dateKey, isToday }: { dateKey: string; isToday: boolean }) {
+    const { t } = useTranslation("c-daily-puzzles");
     const selectedDate = useMemo(() => {
         const [y, m, d] = dateKey.split('-').map(Number);
         return new Date(y, m - 1, d);
@@ -149,7 +151,7 @@ function SpectrumGameContent({ dateKey, isToday }: { dateKey: string; isToday: b
                 className="inline-flex items-center gap-1.5 text-site-text-muted hover:text-site-text text-sm mb-6 transition-colors"
             >
                 <ArrowLeft className="w-4 h-4" />
-                Back to Daily Puzzles
+                {t("back-to-daily-puzzles", { defaultValue: "Back to Daily Puzzles" })}
             </Link>
 
             {/* Header */}
@@ -159,7 +161,7 @@ function SpectrumGameContent({ dateKey, isToday }: { dateKey: string; isToday: b
                     Spectrum
                 </h1>
                 <p className="text-site-text-muted text-sm">
-                    #{puzzleNumber} · {isToday ? 'Today' : dateKey}
+                    #{puzzleNumber} · {isToday ? t("today", { defaultValue: "Today" }) : dateKey}
                 </p>
             </div>
 
@@ -174,7 +176,7 @@ function SpectrumGameContent({ dateKey, isToday }: { dateKey: string; isToday: b
                 </p>
                 {!locked && (
                     <p className="text-site-text-muted text-xs mt-1">
-                        Arrange the items in the correct order, then lock in your answer.
+                        {t("arrange-items-instruction", { defaultValue: "Arrange the items in the correct order, then lock in your answer." })}
                     </p>
                 )}
             </motion.div>
@@ -228,7 +230,7 @@ function SpectrumGameContent({ dateKey, isToday }: { dateKey: string; isToday: b
                                             className="mt-1 flex items-center gap-2 text-xs"
                                         >
                                             <span className="text-site-text-muted">
-                                                Actual: #{solution.trueRank} — {solution.displayValue}
+                                                {t("actual-rank", { defaultValue: "Actual: #{{rank}} — {{value}}", rank: solution.trueRank, value: solution.displayValue })}
                                             </span>
                                             {itemScore && (
                                                 <span className="font-medium">
@@ -246,7 +248,7 @@ function SpectrumGameContent({ dateKey, isToday }: { dateKey: string; isToday: b
                                             onClick={() => moveItem(index, -1)}
                                             disabled={index === 0}
                                             className="p-1 rounded-md hover:bg-site-bg disabled:opacity-20 disabled:cursor-not-allowed transition-colors text-site-text-muted hover:text-site-text"
-                                            aria-label={`Move ${name} up`}
+                                            aria-label={t("move-up", { defaultValue: "Move {{name}} up", name })}
                                         >
                                             <ArrowUp className="w-4 h-4" />
                                         </button>
@@ -254,7 +256,7 @@ function SpectrumGameContent({ dateKey, isToday }: { dateKey: string; isToday: b
                                             onClick={() => moveItem(index, 1)}
                                             disabled={index === playerOrder.length - 1}
                                             className="p-1 rounded-md hover:bg-site-bg disabled:opacity-20 disabled:cursor-not-allowed transition-colors text-site-text-muted hover:text-site-text"
-                                            aria-label={`Move ${name} down`}
+                                            aria-label={t("move-down", { defaultValue: "Move {{name}} down", name })}
                                         >
                                             <ArrowDown className="w-4 h-4" />
                                         </button>
@@ -287,7 +289,7 @@ function SpectrumGameContent({ dateKey, isToday }: { dateKey: string; isToday: b
                     className="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 text-white font-semibold py-3 px-6 rounded-xl transition-colors"
                 >
                     <Lock className="w-4 h-4" />
-                    Lock In
+                    {t("lock-in", { defaultValue: "Lock In" })}
                 </motion.button>
             )}
 
@@ -305,7 +307,7 @@ function SpectrumGameContent({ dateKey, isToday }: { dateKey: string; isToday: b
                         <div className="bg-site-surface border border-site-border rounded-xl p-5 text-center">
                             <div className="flex items-center justify-center gap-2 mb-3">
                                 <Trophy className="w-5 h-5 text-yellow-400" />
-                                <span className="text-site-text font-semibold">Results</span>
+                                <span className="text-site-text font-semibold">{t("results", { defaultValue: "Results" })}</span>
                             </div>
 
                             {/* Accuracy bar */}
@@ -313,7 +315,7 @@ function SpectrumGameContent({ dateKey, isToday }: { dateKey: string; isToday: b
                                 <div className={`text-3xl font-bold ${accuracyColor(result.accuracy)}`}>
                                     {result.accuracy}/10
                                 </div>
-                                <p className="text-site-text-muted text-xs mt-1">Accuracy</p>
+                                <p className="text-site-text-muted text-xs mt-1">{t("accuracy", { defaultValue: "Accuracy" })}</p>
                             </div>
 
                             {/* Visual block row */}
@@ -333,7 +335,7 @@ function SpectrumGameContent({ dateKey, isToday }: { dateKey: string; isToday: b
 
                             {/* Points */}
                             <div className="text-site-text text-sm font-medium">
-                                {result.points} points earned
+                                {t("points-earned", { defaultValue: "{{points}} points earned", points: result.points })}
                             </div>
                         </div>
 
@@ -344,7 +346,7 @@ function SpectrumGameContent({ dateKey, isToday }: { dateKey: string; isToday: b
                             transition={{ delay: 0.8 }}
                             className="bg-site-surface border border-site-border rounded-xl p-4"
                         >
-                            <p className="text-xs font-semibold text-violet-400 mb-1">Fun Fact</p>
+                            <p className="text-xs font-semibold text-violet-400 mb-1">{t("fun-fact", { defaultValue: "Fun Fact" })}</p>
                             <p className="text-site-text-muted text-sm leading-relaxed">
                                 {puzzle._funFact}
                             </p>
@@ -359,12 +361,12 @@ function SpectrumGameContent({ dateKey, isToday }: { dateKey: string; isToday: b
                                 {copied ? (
                                     <>
                                         <Check className="w-4 h-4 text-emerald-400" />
-                                        Copied!
+                                        {t("copied", { defaultValue: "Copied!" })}
                                     </>
                                 ) : (
                                     <>
                                         <Copy className="w-4 h-4" />
-                                        Share Result
+                                        {t("share-result", { defaultValue: "Share Result" })}
                                     </>
                                 )}
                             </button>
@@ -373,7 +375,7 @@ function SpectrumGameContent({ dateKey, isToday }: { dateKey: string; isToday: b
                                 className="flex-1 flex items-center justify-center gap-2 bg-site-surface border border-site-border hover:border-site-text/30 text-site-text font-medium py-3 px-4 rounded-xl transition-colors text-sm"
                             >
                                 <ArrowLeft className="w-4 h-4" />
-                                All Puzzles
+                                {t("all-puzzles", { defaultValue: "All Puzzles" })}
                             </Link>
                         </div>
                     </motion.div>

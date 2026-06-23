@@ -15,6 +15,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Gamepad2, Settings, SlidersHorizontal } from 'lucide-react';
 import { emit } from '@/lib/rmhbox/socket';
 import { C2S } from '@/lib/rmhbox/events';
@@ -48,6 +49,7 @@ export default function HostControls({
   const [showSettings, setShowSettings] = useState(true);
   const [showGameSettings, setShowGameSettings] = useState(false);
 
+  const { t } = useTranslation("c-rmhbox");
   const gameSettingsState = useRMHboxStore((s) => s.gameSettingsState);
 
   const handleUpdateSettings = useCallback((partial: Partial<LobbySettings>) => {
@@ -70,7 +72,7 @@ export default function HostControls({
   return (
     <div className="flex flex-col gap-3">
       <span className="w-full text-xs font-semibold uppercase tracking-wider text-(--rmhbox-text-muted)">
-        Host Controls
+        {t("host-controls", { defaultValue: "Host Controls" })}
       </span>
 
       <div className="flex flex-wrap justify-center gap-3">
@@ -79,7 +81,7 @@ export default function HostControls({
           disabled={!isWaiting}
           className="flex items-center gap-2 rounded-lg bg-(--rmhbox-accent) px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-(--rmhbox-accent-hover) disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          <Gamepad2 className="h-4 w-4" /> Pick Game
+          <Gamepad2 className="h-4 w-4" /> {t("pick-game", { defaultValue: "Pick Game" })}
         </button>
 
         {/* Game Settings — only when a game with settings is selected */}
@@ -88,7 +90,7 @@ export default function HostControls({
             onClick={() => setShowGameSettings(true)}
             className="flex items-center gap-2 rounded-lg bg-(--rmhbox-surface-hover) px-4 py-2 text-sm font-semibold text-(--rmhbox-text) transition-colors hover:brightness-110"
           >
-            <SlidersHorizontal className="h-4 w-4" /> Game Settings
+            <SlidersHorizontal className="h-4 w-4" /> {t("game-settings", { defaultValue: "Game Settings" })}
           </button>
         )}
 
@@ -96,7 +98,7 @@ export default function HostControls({
           onClick={() => setShowSettings(!showSettings)}
           className="flex items-center gap-2 rounded-lg bg-(--rmhbox-surface-hover) px-4 py-2 text-sm font-semibold text-(--rmhbox-text) transition-colors hover:brightness-110"
         >
-          <Settings className="h-4 w-4" /> Lobby Settings
+          <Settings className="h-4 w-4" /> {t("lobby-settings", { defaultValue: "Lobby Settings" })}
         </button>
       </div>
 
@@ -127,7 +129,7 @@ export default function HostControls({
       {showSettings && settings && (
         <div className="mt-2 rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-3 space-y-3">
           <label className="flex items-center justify-between text-sm cursor-pointer">
-            <span className="text-(--rmhbox-text)">Public lobby</span>
+            <span className="text-(--rmhbox-text)">{t("public-lobby", { defaultValue: "Public lobby" })}</span>
             <button
               type="button"
               role="switch"
@@ -139,7 +141,7 @@ export default function HostControls({
             </button>
           </label>
           <label className="flex items-center justify-between text-sm">
-            <span className="text-(--rmhbox-text)">Max players</span>
+            <span className="text-(--rmhbox-text)">{t("max-players", { defaultValue: "Max players" })}</span>
             <select
               value={settings.maxPlayers}
               onChange={(e) => handleUpdateSettings({ maxPlayers: Number(e.target.value) })}
@@ -151,7 +153,7 @@ export default function HostControls({
             </select>
           </label>
           <label className="flex items-center justify-between text-sm cursor-pointer">
-            <span className="text-(--rmhbox-text)">Allow mid-game join</span>
+            <span className="text-(--rmhbox-text)">{t("allow-mid-game-join", { defaultValue: "Allow mid-game join" })}</span>
             <button
               type="button"
               role="switch"
@@ -163,7 +165,7 @@ export default function HostControls({
             </button>
           </label>
           <label className="flex items-center justify-between text-sm cursor-pointer">
-            <span className="text-(--rmhbox-text)">Allow spectator promotion</span>
+            <span className="text-(--rmhbox-text)">{t("allow-spectator-promotion", { defaultValue: "Allow spectator promotion" })}</span>
             <button
               type="button"
               role="switch"

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Play, RotateCcw, Trophy, Volume2, VolumeX, BookOpen, ArrowLeft, Settings } from 'lucide-react';
@@ -26,6 +27,7 @@ export function VoidBreakerUI({
   onClearSave: () => void;
   onContinueGame?: () => void;
 }) {
+  const { t } = useTranslation("c-void-breaker");
   const [lb, setLb] = useState<LBEntry[]>([]);
   const [submitted, setSubmitted] = useState(false);
   const [showLore, setShowLore] = useState(false);
@@ -81,17 +83,17 @@ export function VoidBreakerUI({
         <div className="max-w-sm mx-auto px-6 py-10 space-y-6">
           <button onClick={() => setShowSettings(false)}
             className="flex items-center gap-1.5 text-zinc-500 hover:text-[#d4af37] text-sm transition-colors mb-4">
-            <ArrowLeft className="w-4 h-4" /> Back
+            <ArrowLeft className="w-4 h-4" /> {t("back", { defaultValue: "Back" })}
           </button>
 
           <h2 className="text-xl font-bold text-[#d4af37] flex items-center gap-2">
-            <Settings className="w-5 h-5" /> Settings
+            <Settings className="w-5 h-5" /> {t("settings", { defaultValue: "Settings" })}
           </h2>
 
           <div className="space-y-4">
             <div>
               <div className="flex justify-between items-center mb-2">
-                <label className="text-sm text-zinc-400">Music Volume</label>
+                <label className="text-sm text-zinc-400">{t("music-volume", { defaultValue: "Music Volume" })}</label>
                 <span className="text-xs text-[#d4af37] font-mono tabular-nums">{musicVolume}%</span>
               </div>
               <Slider
@@ -107,7 +109,7 @@ export function VoidBreakerUI({
 
           <Button onClick={() => setShowSettings(false)}
             className="w-full bg-[#1a1a24] hover:bg-[#252530] text-[#d4af37] border border-[#c9a227]/40">
-            Done
+            {t("done", { defaultValue: "Done" })}
           </Button>
         </div>
       </div>
@@ -121,7 +123,7 @@ export function VoidBreakerUI({
         <div className="max-w-2xl mx-auto px-6 py-10 space-y-6">
           <button onClick={() => setShowLore(false)}
             className="flex items-center gap-1.5 text-zinc-500 hover:text-[#d4af37] text-sm transition-colors mb-4">
-            <ArrowLeft className="w-4 h-4" /> Back
+            <ArrowLeft className="w-4 h-4" /> {t("back", { defaultValue: "Back" })}
           </button>
 
           <div className="text-center space-y-2">
@@ -214,7 +216,7 @@ export function VoidBreakerUI({
           <div className="text-center pt-4">
             <Button onClick={() => { setShowLore(false); }}
               className="px-8 py-2 font-bold bg-[#1a1a24] hover:bg-[#252530] border border-[#c9a227]/40 text-[#d4af37]">
-              Return
+              {t("return", { defaultValue: "Return" })}
             </Button>
           </div>
         </div>
@@ -244,20 +246,20 @@ export function VoidBreakerUI({
                 VOID BREAKER
               </h1>
               <div className="text-[10px] tracking-[0.2em] text-zinc-500 font-mono">
-                Obsidian Arena Shooter
+                {t("tagline", { defaultValue: "Obsidian Arena Shooter" })}
               </div>
             </div>
 
             <p className="text-zinc-500 text-xs leading-relaxed max-w-xs mx-auto">
-              Collect shards. Dash. Focus to slow time. Detonate when overwhelmed. Survive the waves.
+              {t("instructions", { defaultValue: "Collect shards. Dash. Focus to slow time. Detonate when overwhelmed. Survive the waves." })}
             </p>
 
             {saveInfo && (
               <div className="bg-[#0a0a18] border border-[#00f5ff]/20 rounded-lg p-3 text-left">
-                <div className="text-[10px] text-[#00f5ff]/60 font-mono mb-1">SAVED PROGRESS</div>
+                <div className="text-[10px] text-[#00f5ff]/60 font-mono mb-1">{t("saved-progress", { defaultValue: "SAVED PROGRESS" })}</div>
                 <div className="flex justify-between items-center">
                   <div>
-                    <span className="text-zinc-300 text-sm">Wave {saveInfo.wave}</span>
+                    <span className="text-zinc-300 text-sm">{t("wave-number", { defaultValue: "Wave {{wave}}", wave: saveInfo.wave })}</span>
                     {saveInfo.score !== undefined && (
                       <span className="text-[#d4af37] text-[10px] ml-2 font-mono">
                         {saveInfo.score.toLocaleString()} pts
@@ -271,7 +273,7 @@ export function VoidBreakerUI({
                     onClick={onClearSave}
                     className="text-[10px] text-zinc-600 hover:text-red-400 font-mono transition-colors"
                   >
-                    ✕ Clear
+                    ✕ {t("clear", { defaultValue: "Clear" })}
                   </button>
                 </div>
                 {onContinueGame && (
@@ -280,7 +282,7 @@ export function VoidBreakerUI({
                     className="w-full mt-2 py-2 bg-[#00f5ff]/10 hover:bg-[#00f5ff]/20 text-[#00f5ff] font-bold border border-[#00f5ff]/40 font-mono tracking-wider text-sm"
                     style={{ boxShadow: '0 0 15px rgba(0,245,255,0.1)' }}
                   >
-                    ▶ CONTINUE FROM WAVE {saveInfo.wave}
+                    ▶ {t("continue-from-wave", { defaultValue: "CONTINUE FROM WAVE {{wave}}", wave: saveInfo.wave })}
                   </Button>
                 )}
               </div>
@@ -289,30 +291,30 @@ export function VoidBreakerUI({
             {!session.data ? (
               <Button onClick={() => navigate({ to: '/login', search: { callbackURL: undefined } })}
                 className="w-full bg-[#0a0a18] hover:bg-[#14141f] text-[#00f5ff] font-bold py-3 border border-[#00f5ff]/30">
-                Sign In to Play
+                {t("sign-in-to-play", { defaultValue: "Sign In to Play" })}
               </Button>
             ) : (
               <Button onClick={onStartGame}
                 className="w-full py-3 text-lg font-bold bg-[#0a0a18] hover:bg-[#14141f] text-[#00f5ff] border border-[#00f5ff]/40"
                 style={{ boxShadow: '0 0 20px rgba(0,245,255,0.15)' }}>
-                <Play className="w-5 h-5 mr-2" /> {saveInfo ? 'New Game' : 'Play'}
+                <Play className="w-5 h-5 mr-2" /> {saveInfo ? t("new-game", { defaultValue: "New Game" }) : t("play", { defaultValue: "Play" })}
               </Button>
             )}
             <div className="flex gap-2">
               <Button onClick={() => setShowSettings(true)} variant="outline"
                 className="flex-1 py-2 border-[#2a2a3a] text-zinc-500 hover:text-[#d4af37] hover:border-[#c9a227]/40">
-                <Settings className="w-4 h-4 mr-2" /> Settings
+                <Settings className="w-4 h-4 mr-2" /> {t("settings", { defaultValue: "Settings" })}
               </Button>
               <Button onClick={() => setShowLore(true)} variant="outline"
                 className="flex-1 py-2 border-[#2a2a3a] text-zinc-500 hover:text-[#d4af37] hover:border-[#c9a227]/40">
-                <BookOpen className="w-4 h-4 mr-2" /> Story
+                <BookOpen className="w-4 h-4 mr-2" /> {t("story", { defaultValue: "Story" })}
               </Button>
             </div>
             {lb.length > 0 && (
               <div className="bg-[#1a1a24] border border-[#c9a227]/20 rounded-lg p-3">
                 <div className="flex items-center gap-2 mb-2">
                   <Trophy className="w-3.5 h-3.5 text-[#d4af37]" />
-                  <span className="text-[10px] text-[#c9a227]/80 font-bold uppercase tracking-[0.15em]">Leaderboard</span>
+                  <span className="text-[10px] text-[#c9a227]/80 font-bold uppercase tracking-[0.15em]">{t("leaderboard", { defaultValue: "Leaderboard" })}</span>
                 </div>
                 <div className="space-y-1">
                   {lb.slice(0, 5).map((e, i) => (
@@ -326,8 +328,8 @@ export function VoidBreakerUI({
             )}
 
             <div className="text-[9px] text-zinc-600 font-mono space-y-0.5">
-              <p className="hidden sm:block">WASD move {'\u00b7'} Mouse aim {'\u00b7'} Shift dash {'\u00b7'} F focus {'\u00b7'} Space detonate {'\u00b7'} Esc pause</p>
-              <p className="sm:hidden">Touch controls during gameplay</p>
+              <p className="hidden sm:block">{t("controls-desktop", { defaultValue: "WASD move \u00b7 Mouse aim \u00b7 Shift dash \u00b7 F focus \u00b7 Space detonate \u00b7 Esc pause" })}</p>
+              <p className="sm:hidden">{t("controls-touch", { defaultValue: "Touch controls during gameplay" })}</p>
             </div>
           </div>
         </div>
@@ -344,23 +346,23 @@ export function VoidBreakerUI({
         <div className="max-w-md w-full px-4 space-y-3 py-6">
           <div className="text-center space-y-1">
             <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-[#d4af37]">
-              GAME OVER
+              {t("game-over", { defaultValue: "GAME OVER" })}
             </h2>
           </div>
 
           <div className="bg-[#1a1a24] border border-[#c9a227]/30 rounded-lg p-5 space-y-3">
             <div className="text-center">
-              <div className="text-[10px] text-zinc-500 uppercase tracking-[0.2em]">Score</div>
+              <div className="text-[10px] text-zinc-500 uppercase tracking-[0.2em]">{t("score", { defaultValue: "Score" })}</div>
               <div className="text-3xl font-black text-[#d4af37] tabular-nums">{runStats.score.toLocaleString()}</div>
             </div>
             <div className="grid grid-cols-2 gap-3 text-center">
               {[
-                ['Wave', runStats.wave, 'text-zinc-300'],
-                ['Time', timeStr, 'text-zinc-300'],
-                ['Kills', runStats.enemiesKilled, 'text-zinc-300'],
-                ['Peak Multi', `${runStats.maxMultiplier}x`, 'text-[#d4af37]'],
-                ...(runStats.bossesKilled > 0 ? [['Bosses', runStats.bossesKilled, 'text-red-400']] : []),
-                ...(runStats.maxCombo > 1 ? [['Best Combo', `${runStats.maxCombo}x`, 'text-[#c9a227]']] : []),
+                [t("stat-wave", { defaultValue: "Wave" }), runStats.wave, 'text-zinc-300'],
+                [t("stat-time", { defaultValue: "Time" }), timeStr, 'text-zinc-300'],
+                [t("stat-kills", { defaultValue: "Kills" }), runStats.enemiesKilled, 'text-zinc-300'],
+                [t("stat-peak-multi", { defaultValue: "Peak Multi" }), `${runStats.maxMultiplier}x`, 'text-[#d4af37]'],
+                ...(runStats.bossesKilled > 0 ? [[t("stat-bosses", { defaultValue: "Bosses" }), runStats.bossesKilled, 'text-red-400']] : []),
+                ...(runStats.maxCombo > 1 ? [[t("stat-best-combo", { defaultValue: "Best Combo" }), `${runStats.maxCombo}x`, 'text-[#c9a227]']] : []),
               ].map(([label, val, cls], i) => (
                 <div key={i}>
                   <div className="text-[10px] text-zinc-600">{label}</div>
@@ -373,18 +375,18 @@ export function VoidBreakerUI({
           {!session.data ? (
             <Button onClick={() => navigate({ to: '/login', search: { callbackURL: undefined } })}
               className="w-full bg-[#1a1a24] hover:bg-[#252530] text-[#d4af37] font-bold border border-[#c9a227]/40">
-              Sign In to Submit
+              {t("sign-in-to-submit", { defaultValue: "Sign In to Submit" })}
             </Button>
           ) : (
             <p className="text-[10px] text-[#c9a227]/80 text-center font-mono">
-              {submitted ? '\u2713 Score submitted' : 'Submitting\u2026'}
+              {submitted ? t("score-submitted", { defaultValue: "\u2713 Score submitted" }) : t("score-submitting", { defaultValue: "Submitting\u2026" })}
             </p>
           )}
 
           <div className="flex gap-2 flex-wrap">
             <Button onClick={onStartGame}
               className="flex-1 min-w-[100px] font-bold bg-[#1a1a24] hover:bg-[#252530] text-[#d4af37] border border-[#c9a227]/40">
-              <RotateCcw className="w-4 h-4 mr-1" /> Again
+              <RotateCcw className="w-4 h-4 mr-1" /> {t("again", { defaultValue: "Again" })}
             </Button>
             <Button onClick={() => setShowSettings(true)} variant="outline"
               className="border-[#2a2a3a] text-zinc-500 hover:bg-[#1a1a24] hover:text-[#d4af37]">
@@ -392,7 +394,7 @@ export function VoidBreakerUI({
             </Button>
             <Button onClick={onGoToMenu} variant="outline"
               className="flex-1 min-w-[100px] border-[#2a2a3a] text-zinc-500 hover:bg-[#1a1a24] hover:text-[#d4af37]">
-              Menu
+              {t("menu", { defaultValue: "Menu" })}
             </Button>
           </div>
 
@@ -400,7 +402,7 @@ export function VoidBreakerUI({
             <div className="bg-[#1a1a24] border border-[#c9a227]/20 rounded-lg p-3">
               <div className="flex items-center gap-2 mb-2">
                 <Trophy className="w-3 h-3 text-[#d4af37]" />
-                <span className="text-[10px] text-[#c9a227]/80 font-bold uppercase tracking-[0.15em]">Leaderboard</span>
+                <span className="text-[10px] text-[#c9a227]/80 font-bold uppercase tracking-[0.15em]">{t("leaderboard", { defaultValue: "Leaderboard" })}</span>
               </div>
               <div className="space-y-1 max-h-32 overflow-y-auto">
                 {lb.slice(0, 10).map((e, i) => (

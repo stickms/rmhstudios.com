@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { computeBlissShards, computeTranscendenceThreshold } from '@/lib/temple-of-joy/engine';
 import { fmt } from '@/lib/temple-of-joy/numbers';
@@ -20,6 +21,7 @@ export default function TranscendenceModal() {
   const emberSelections = useTempleStore((s) => s.emberSelections);
   const setEmberSelections = useTempleStore((s) => s.setEmberSelections);
 
+  const { t } = useTranslation("c-temple-of-joy");
   const [dissolving, setDissolving] = useState(false);
 
   if (!showTranscendenceModal) return null;
@@ -35,11 +37,11 @@ export default function TranscendenceModal() {
 
   let retentionNote: string | null = null;
   if (hasDivine) {
-    retentionNote = '🌀 Divine Memory — All upgrades retained';
+    retentionNote = t("retention-divine", { defaultValue: "🌀 Divine Memory — All upgrades retained" });
   } else if (hasProphet) {
-    retentionNote = "🔮 The Prophet's Memory — 20 most valuable upgrades kept";
+    retentionNote = t("retention-prophet", { defaultValue: "🔮 The Prophet's Memory — 20 most valuable upgrades kept" });
   } else if (hasEmber) {
-    retentionNote = '🕯️ Ember of Memory — Choose 5 upgrades to keep (see below)';
+    retentionNote = t("retention-ember", { defaultValue: "🕯️ Ember of Memory — Choose 5 upgrades to keep (see below)" });
   }
 
   // Sorted upgrades for ember selection UI (most expensive first)
@@ -87,10 +89,10 @@ export default function TranscendenceModal() {
           className="text-2xl font-serif font-bold mb-1 text-center"
           style={{ color: dark ? '#d4a847' : '#8b6914' }}
         >
-          🌀 Transcendence
+          {t("title", { defaultValue: "🌀 Transcendence" })}
         </h2>
         <p className="text-xs text-center opacity-60 mb-4">
-          The eternal cycle continues.
+          {t("subtitle", { defaultValue: "The eternal cycle continues." })}
         </p>
 
         <div
@@ -103,13 +105,13 @@ export default function TranscendenceModal() {
           {/* What you earn */}
         <div className="mb-4 text-sm space-y-1">
           <p className="font-semibold mb-2" style={{ color: dark ? '#d4a847' : '#8b6914' }}>
-            You will earn:
+            {t("you-will-earn", { defaultValue: "You will earn:" })}
           </p>
           <p className="text-base font-bold">
-            💎 {fmt(shardsEarned, numberFormat)} Bliss Shards
+            {t("bliss-shards-earned", { defaultValue: "💎 {{count}} Bliss Shards", count: fmt(shardsEarned, numberFormat) })}
           </p>
           <p className="text-xs opacity-60">
-            (Current total after this: {fmt(blissShards + shardsEarned, numberFormat)} shards)
+            {t("current-total", { defaultValue: "(Current total after this: {{total}} shards)", total: fmt(blissShards + shardsEarned, numberFormat) })}
           </p>
         </div>
 
@@ -121,22 +123,22 @@ export default function TranscendenceModal() {
           <div className="grid grid-cols-2 gap-3">
             {/* Reset column */}
             <div>
-              <p className="font-semibold opacity-70 mb-1">Reset:</p>
+              <p className="font-semibold opacity-70 mb-1">{t("reset-label", { defaultValue: "Reset:" })}</p>
               <ul className="space-y-0.5 opacity-80 text-xs">
-                <li>• Happiness</li>
-                <li>• Run progress</li>
-                <li>• Sources</li>
-                <li>• Upgrades (most)</li>
+                <li>• {t("reset-happiness", { defaultValue: "Happiness" })}</li>
+                <li>• {t("reset-run-progress", { defaultValue: "Run progress" })}</li>
+                <li>• {t("reset-sources", { defaultValue: "Sources" })}</li>
+                <li>• {t("reset-upgrades-most", { defaultValue: "Upgrades (most)" })}</li>
               </ul>
             </div>
             {/* Kept column */}
             <div>
-              <p className="font-semibold opacity-70 mb-1">Kept:</p>
+              <p className="font-semibold opacity-70 mb-1">{t("kept-label", { defaultValue: "Kept:" })}</p>
               <ul className="space-y-0.5 opacity-80 text-xs">
-                <li>• Lifetime Happiness</li>
-                <li>• Bliss Shards</li>
-                <li>• Wheel Upgrades</li>
-                <li>• Achievements</li>
+                <li>• {t("kept-lifetime-happiness", { defaultValue: "Lifetime Happiness" })}</li>
+                <li>• {t("kept-bliss-shards", { defaultValue: "Bliss Shards" })}</li>
+                <li>• {t("kept-wheel-upgrades", { defaultValue: "Wheel Upgrades" })}</li>
+                <li>• {t("kept-achievements", { defaultValue: "Achievements" })}</li>
               </ul>
             </div>
           </div>
@@ -157,10 +159,10 @@ export default function TranscendenceModal() {
               className="text-xs font-semibold mb-1.5"
               style={{ color: dark ? '#d4a847' : '#8b6914' }}
             >
-              🕯️ Choose up to 5 upgrades to keep:
+              {t("ember-choose", { defaultValue: "🕯️ Choose up to 5 upgrades to keep:" })}
             </p>
             {sortedUpgrades.length === 0 ? (
-              <p className="text-xs opacity-50 italic">No upgrades purchased yet.</p>
+              <p className="text-xs opacity-50 italic">{t("no-upgrades", { defaultValue: "No upgrades purchased yet." })}</p>
             ) : (
               <>
                 <div
@@ -200,7 +202,7 @@ export default function TranscendenceModal() {
                   })}
                 </div>
                 <p className="text-[10px] opacity-50 mt-1">
-                  {validEmberCount}/5 selected
+                  {t("ember-selected", { defaultValue: "{{count}}/5 selected", count: validEmberCount })}
                 </p>
               </>
             )}
@@ -210,7 +212,7 @@ export default function TranscendenceModal() {
 
         {/* Threshold reminder */}
         <p className="text-xs opacity-50 text-center mb-5">
-          Required run happiness: {fmt(threshold, numberFormat)}
+          {t("required-happiness", { defaultValue: "Required run happiness: {{threshold}}", threshold: fmt(threshold, numberFormat) })}
         </p>
 
         {/* Buttons */}
@@ -224,7 +226,7 @@ export default function TranscendenceModal() {
               color: dark ? '#e8d5b0' : '#3d2c1e',
             }}
           >
-            Not Yet
+            {t("not-yet", { defaultValue: "Not Yet" })}
           </button>
           <button
             onClick={handleTranscend}
@@ -234,7 +236,7 @@ export default function TranscendenceModal() {
               color: dark ? '#1a120b' : '#f5f0e8',
             }}
           >
-            Transcend 🌀
+            {t("transcend-btn", { defaultValue: "Transcend 🌀" })}
           </button>
         </div>
       </div>

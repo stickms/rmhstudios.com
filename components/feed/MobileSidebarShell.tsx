@@ -9,6 +9,7 @@ import {
   useState,
 } from 'react';
 import { useLocation } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { LeftSidebar } from './LeftSidebar';
 
 const DRAWER_WIDTH = 256; // w-64 — must match the aside width below
@@ -50,6 +51,7 @@ interface MobileSidebarShellProps {
  * Rendered only on mobile (`md:hidden`); desktop keeps its own fixed sidebar.
  */
 export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
+  const { t } = useTranslation('feed');
   const [isOpen, setIsOpen] = useState(false);
   // Live drag offset in px (0 → DRAWER_WIDTH). null means "not dragging — animate
   // to the resting position via CSS transition".
@@ -223,7 +225,7 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
               }`}
               style={{ opacity: scrimProgress }}
               onClick={close}
-              aria-label="Close menu"
+              aria-label={t("close-menu", { defaultValue: "Close menu" })}
             />
           )}
         </div>

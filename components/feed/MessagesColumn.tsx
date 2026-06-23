@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Loader2, MessageCircle, CheckCheck } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Link } from '@tanstack/react-router';
@@ -38,6 +39,7 @@ export function MessagesColumn({ embedded = false }: { embedded?: boolean } = {}
   const sentinelRef = useRef<HTMLDivElement>(null);
   const initialFetched = useRef(false);
 
+  const { t } = useTranslation("feed");
   const { data: session } = useSession();
 
   const fetchConversations = useCallback(async (isInitial = false) => {
@@ -209,10 +211,10 @@ export function MessagesColumn({ embedded = false }: { embedded?: boolean } = {}
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return 'now';
-    if (diffMins < 60) return `${diffMins}m`;
-    if (diffHours < 24) return `${diffHours}h`;
-    if (diffDays < 7) return `${diffDays}d`;
+    if (diffMins < 1) return t("time-now", { defaultValue: "now" });
+    if (diffMins < 60) return t("time-minutes", { count: diffMins, defaultValue: "{{count}}m" });
+    if (diffHours < 24) return t("time-hours", { count: diffHours, defaultValue: "{{count}}h" });
+    if (diffDays < 7) return t("time-days", { count: diffDays, defaultValue: "{{count}}d" });
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
@@ -220,12 +222,12 @@ export function MessagesColumn({ embedded = false }: { embedded?: boolean } = {}
     return (
       <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
         <MessageCircle className="w-12 h-12 text-site-text-dim mb-4" />
-        <p className="text-lg font-medium text-site-text mb-1">Sign in to view messages</p>
+        <p className="text-lg font-medium text-site-text mb-1">{t("sign-in-to-view-messages", { defaultValue: "Sign in to view messages" })}</p>
         <p className="text-sm text-site-text-muted mb-4">
-          You need to be logged in to send and receive messages.
+          {t("login-required-message", { defaultValue: "You need to be logged in to send and receive messages." })}
         </p>
         <Link to="/login" search={{ callbackURL: undefined }}>
-          <Button variant="accent" size="sm">Sign In</Button>
+          <Button variant="accent" size="sm">{t("sign-in", { defaultValue: "Sign In" })}</Button>
         </Link>
       </div>
     );
@@ -243,7 +245,7 @@ export function MessagesColumn({ embedded = false }: { embedded?: boolean } = {}
               <MobileMenuButton />
               <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 min-w-0">
                 <MobileBrandPrefix />
-                Messages
+                {t("messages-heading", { defaultValue: "Messages" })}
               </h1>
             </div>
           )}
@@ -252,10 +254,10 @@ export function MessagesColumn({ embedded = false }: { embedded?: boolean } = {}
             onClick={markAllAsRead}
             disabled={!hasUnread || markingAll}
             className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-site-accent transition-colors hover:bg-site-accent-dim disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
-            title="Mark all conversations as read"
+            title={t("mark-all-as-read-title", { defaultValue: "Mark all conversations as read" })}
           >
             {markingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCheck className="w-4 h-4" />}
-            <span className="hidden sm:inline">Mark all as read</span>
+            <span className="hidden sm:inline">{t("mark-all-as-read", { defaultValue: "Mark all as read" })}</span>
           </button>
         </div>
       </div>
@@ -268,9 +270,9 @@ export function MessagesColumn({ embedded = false }: { embedded?: boolean } = {}
       ) : conversations.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
           <MessageCircle className="w-12 h-12 text-site-text-dim mb-4" />
-          <p className="text-lg font-medium text-site-text mb-1">No messages yet</p>
+          <p className="text-lg font-medium text-site-text mb-1">{t("no-messages-yet", { defaultValue: "No messages yet" })}</p>
           <p className="text-sm text-site-text-muted">
-            Send a message to someone from their profile page.
+            {t("no-messages-hint", { defaultValue: "Send a message to someone from their profile page." })}
           </p>
         </div>
       ) : (
@@ -282,14 +284,14 @@ export function MessagesColumn({ embedded = false }: { embedded?: boolean } = {}
               className="flex items-center gap-3 px-4 py-3 hover:bg-site-surface/50 transition-colors border-b border-site-border"
             >
               {/* Avatar */}
-              <UserAvatar src={conv.otherUser.image ?? undefined} alt={conv.otherUser.name || 'User'} size={48} fallbackName={conv.otherUser.name ?? undefined} className="ring-2 ring-site-bg" />
+              <UserAvatar src={conv.otherUser.image ?? undefined} alt={conv.otherUser.name || t("user-alt", { defaultValue: "User" })} size={48} fallbackName={conv.otherUser.name ?? undefined} className="ring-2 ring-site-bg" />
 
               {/* Content */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5 min-w-0">
                     <span className={`text-sm truncate ${conv.unreadCount > 0 ? 'font-bold text-site-text' : 'font-medium text-site-text'}`}>
-                      {conv.otherUser.name || 'Unknown'}
+                      {conv.otherUser.name || t("unknown-user", { defaultValue: "Unknown" })}
                     </span>
                     {conv.otherUser.username && (
                       <span className="text-xs text-site-text-dim truncate">
@@ -312,7 +314,7 @@ export function MessagesColumn({ embedded = false }: { embedded?: boolean } = {}
                 </div>
                 {conv.lastMessage && (
                   <p className={`text-sm truncate mt-0.5 ${conv.unreadCount > 0 ? 'text-site-text' : 'text-site-text-muted'}`}>
-                    {conv.lastMessage.senderId === session.user.id ? 'You: ' : ''}
+                    {conv.lastMessage.senderId === session.user.id ? t("you-prefix", { defaultValue: "You: " }) : ''}
                     {conv.lastMessage.content}
                   </p>
                 )}
@@ -328,7 +330,7 @@ export function MessagesColumn({ embedded = false }: { embedded?: boolean } = {}
 
           {!hasMore && conversations.length > 0 && (
             <div className="py-8 text-center text-sm text-site-text-dim">
-              No more conversations
+              {t("no-more-conversations", { defaultValue: "No more conversations" })}
             </div>
           )}
 

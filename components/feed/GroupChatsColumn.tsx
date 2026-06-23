@@ -5,6 +5,7 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { Loader2, Users, Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { HandleInput } from './HandleInput';
+import { useTranslation } from 'react-i18next';
 
 interface GroupRow {
   id: string;
@@ -16,6 +17,7 @@ interface GroupRow {
 }
 
 export function GroupChatsColumn({ embedded = false }: { embedded?: boolean } = {}) {
+  const { t } = useTranslation("feed");
   const navigate = useNavigate();
   const [groups, setGroups] = useState<GroupRow[]>([]);
   const [signedIn, setSignedIn] = useState(false);
@@ -65,7 +67,7 @@ export function GroupChatsColumn({ embedded = false }: { embedded?: boolean } = 
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error ?? 'Could not create');
+        setError(data.error ?? t("could-not-create", { defaultValue: "Could not create" }));
         return;
       }
       navigate({ to: `/groups/${data.id}` as string });
@@ -85,9 +87,9 @@ export function GroupChatsColumn({ embedded = false }: { embedded?: boolean } = 
   if (!signedIn) {
     return (
       <div className="flex flex-col items-center gap-3 px-6 py-24 text-center">
-        <p className="font-medium text-site-text">Sign in to use group chats</p>
+        <p className="font-medium text-site-text">{t("sign-in-to-use-group-chats", { defaultValue: "Sign in to use group chats" })}</p>
         <Link to="/login" search={{ callbackURL: '/groups' }}>
-          <Button variant="accent">Sign in</Button>
+          <Button variant="accent">{t("sign-in", { defaultValue: "Sign in" })}</Button>
         </Link>
       </div>
     );
@@ -97,17 +99,17 @@ export function GroupChatsColumn({ embedded = false }: { embedded?: boolean } = 
     <div className="min-h-screen">
       <header className={`flex items-center gap-2 border-b border-site-border px-4 py-3 ${embedded ? '' : 'sticky top-0 z-10 bg-site-bg/80 backdrop-blur'}`}>
         {!embedded && <Users className="h-5 w-5 text-site-accent" />}
-        {!embedded && <h1 className="text-lg font-bold text-site-text">Group chats</h1>}
+        {!embedded && <h1 className="text-lg font-bold text-site-text">{t("group-chats", { defaultValue: "Group chats" })}</h1>}
         <Button size="sm" variant="accent" className="ml-auto gap-1" onClick={() => setShowForm((v) => !v)}>
-          <Plus className="h-3.5 w-3.5" /> New group
+          <Plus className="h-3.5 w-3.5" /> {t("new-group", { defaultValue: "New group" })}
         </Button>
       </header>
 
       {showForm && (
         <div className="border-b border-site-border bg-site-surface/30 p-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-site-text">New group</h2>
-            <button onClick={() => setShowForm(false)} className="text-site-text-dim hover:text-site-text" aria-label="Close">
+            <h2 className="text-sm font-semibold text-site-text">{t("new-group", { defaultValue: "New group" })}</h2>
+            <button onClick={() => setShowForm(false)} className="text-site-text-dim hover:text-site-text" aria-label={t("close", { defaultValue: "Close" })}>
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -115,7 +117,7 @@ export function GroupChatsColumn({ embedded = false }: { embedded?: boolean } = 
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Group name"
+              placeholder={t("group-name-placeholder", { defaultValue: "Group name" })}
               maxLength={60}
               className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
@@ -123,13 +125,13 @@ export function GroupChatsColumn({ embedded = false }: { embedded?: boolean } = 
               value={members}
               onChange={setMembers}
               multiple
-              placeholder="Members by @handle, comma-separated"
+              placeholder={t("members-placeholder", { defaultValue: "Members by @handle, comma-separated" })}
               className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
             {error && <p className="text-xs text-site-danger">{error}</p>}
             <div className="flex justify-end">
               <Button size="sm" variant="accent" disabled={busy || name.trim().length < 1 || !members.trim()} onClick={create}>
-                {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Create group'}
+                {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("create-group", { defaultValue: "Create group" })}
               </Button>
             </div>
           </div>
@@ -137,7 +139,7 @@ export function GroupChatsColumn({ embedded = false }: { embedded?: boolean } = 
       )}
 
       {groups.length === 0 ? (
-        <p className="px-4 py-16 text-center text-sm text-site-text-muted">No group chats yet.</p>
+        <p className="px-4 py-16 text-center text-sm text-site-text-muted">{t("no-group-chats-yet", { defaultValue: "No group chats yet." })}</p>
       ) : (
         <div className="divide-y divide-site-border/60">
           {groups.map((g) => (
@@ -155,7 +157,7 @@ export function GroupChatsColumn({ embedded = false }: { embedded?: boolean } = 
                   {g.unread && <span className="h-2 w-2 shrink-0 rounded-full bg-site-accent" />}
                 </div>
                 <p className="truncate text-xs text-site-text-dim">
-                  {g.lastMessage ?? `${g.memberCount} members`}
+                  {g.lastMessage ?? t("member-count", { count: g.memberCount, defaultValue: "{{count}} members" })}
                 </p>
               </div>
             </Link>

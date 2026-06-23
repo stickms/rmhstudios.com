@@ -5,6 +5,7 @@
 
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft, Circle } from 'lucide-react';
+import { useTranslation } from "react-i18next";
 import { useRmhStudyStore } from '@/lib/rmhstudy/store';
 
 interface RmhStudyHeaderProps {
@@ -24,6 +25,7 @@ export default function RmhStudyHeader({
   onCopyCode,
   leftActions,
 }: RmhStudyHeaderProps) {
+  const { t } = useTranslation("c-rmhstudy");
   const connectionStatus = useRmhStudyStore((s) => s.connectionStatus);
 
   const statusColor =
@@ -68,7 +70,7 @@ export default function RmhStudyHeader({
           <button
             onClick={onCopyCode}
             className="flex items-center gap-1.5 rounded-md px-2 py-1 font-mono text-sm font-bold tracking-widest transition-colors bg-(--rmhstudy-surface) text-(--rmhstudy-text) hover:bg-(--rmhstudy-surface-hover)"
-            title="Copy room code"
+            title={t("copy-room-code", { defaultValue: "Copy room code" })}
           >
             {roomCode}
           </button>

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Modal from './Modal';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   content: string;
@@ -13,6 +14,7 @@ interface Props {
 const TWEET_LIMIT = 280;
 
 export default function TweetFormatter({ content, title, onClose }: Props) {
+  const { t } = useTranslation("c-rmh-notes");
   const splitIntoTweets = (text: string): string[] => {
     const sentences = text.replace(/\n+/g, ' ').split(/(?<=[.!?])\s+/);
     const tweets: string[] = [];
@@ -34,7 +36,7 @@ export default function TweetFormatter({ content, title, onClose }: Props) {
   const copyAll = async () => {
     const thread = tweets.map((t, i) => `${i + 1}/${tweets.length} ${t}`).join('\n\n---\n\n');
     await navigator.clipboard.writeText(thread);
-    toast.success('Thread copied!');
+    toast.success(t("thread-copied", { defaultValue: "Thread copied!" }));
   };
 
   const updateTweet = (i: number, val: string) => {
@@ -48,10 +50,10 @@ export default function TweetFormatter({ content, title, onClose }: Props) {
     <Modal title="𝕏 Tweet Thread Formatter" onClose={onClose} wide>
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <p className="text-sm" style={{ color: 'var(--notes-text-muted)' }}>{tweets.length} tweet{tweets.length !== 1 ? 's' : ''} in thread</p>
+          <p className="text-sm" style={{ color: 'var(--notes-text-muted)' }}>{t("tweet-count-in-thread", { count: tweets.length, defaultValue: "{{count}} tweet in thread", defaultValue_plural: "{{count}} tweets in thread" })}</p>
           <div className="flex gap-2">
-            <button onClick={addTweet} className="text-xs px-2.5 py-1.5 rounded-lg" style={{ background: 'var(--notes-surface-2)', color: 'var(--notes-text-muted)', border: '1px solid var(--notes-border)' }}>+ Add tweet</button>
-            <button onClick={copyAll} className="text-xs px-2.5 py-1.5 rounded-lg font-semibold" style={{ background: 'var(--notes-accent)', color: 'var(--notes-accent-fg)' }}>Copy thread</button>
+            <button onClick={addTweet} className="text-xs px-2.5 py-1.5 rounded-lg" style={{ background: 'var(--notes-surface-2)', color: 'var(--notes-text-muted)', border: '1px solid var(--notes-border)' }}>+ {t("add-tweet", { defaultValue: "Add tweet" })}</button>
+            <button onClick={copyAll} className="text-xs px-2.5 py-1.5 rounded-lg font-semibold" style={{ background: 'var(--notes-accent)', color: 'var(--notes-accent-fg)' }}>{t("copy-thread", { defaultValue: "Copy thread" })}</button>
           </div>
         </div>
         <div className="space-y-2 max-h-96 overflow-y-auto pr-1">

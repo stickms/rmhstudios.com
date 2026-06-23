@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { PuzzleComponentProps } from './PuzzleRegistry';
 
 interface Node {
@@ -15,6 +16,7 @@ interface Edge {
 }
 
 export function RootNetworkPuzzle({ config, onSolve, onAttempt }: PuzzleComponentProps) {
+    const { t } = useTranslation("c-forest-explorer");
     const nodeCount = (config.nodeCount as number) ?? 12;
     const edgeCount = (config.edgeCount as number) ?? 20;
     const sourceNode = (config.sourceNode as number) ?? 0;
@@ -134,7 +136,7 @@ export function RootNetworkPuzzle({ config, onSolve, onAttempt }: PuzzleComponen
     return (
         <div className="w-full max-w-lg mx-auto space-y-4">
             <p className="text-center text-white/50 text-sm">
-                Activate root paths to connect source to target ({activeEdges.size}/{maxActive} edges)
+                {t("activate-root-paths", { defaultValue: "Activate root paths to connect source to target ({{active}}/{{max}} edges)", active: activeEdges.size, max: maxActive })}
             </p>
 
             <div className="relative bg-gradient-to-b from-[#0a1a0a] to-[#0a0a0a] rounded-xl border border-white/10 overflow-hidden">
@@ -197,7 +199,7 @@ export function RootNetworkPuzzle({ config, onSolve, onAttempt }: PuzzleComponen
                     className="px-4 py-2 bg-white/10 hover:bg-white/15 text-white/60 rounded-lg text-xs cursor-pointer"
                     onClick={() => setActiveEdges(new Set())}
                 >
-                    Reset
+                    {t("reset", { defaultValue: "Reset" })}
                 </button>
                 <button
                     className={`px-6 py-2.5 rounded-xl text-sm font-medium cursor-pointer ${
@@ -207,7 +209,7 @@ export function RootNetworkPuzzle({ config, onSolve, onAttempt }: PuzzleComponen
                     }`}
                     onClick={handleCheck}
                 >
-                    {isConnected ? 'Path Connected!' : 'Check Network'}
+                    {isConnected ? t("path-connected", { defaultValue: "Path Connected!" }) : t("check-network", { defaultValue: "Check Network" })}
                 </button>
             </div>
         </div>

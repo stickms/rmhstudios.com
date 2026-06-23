@@ -2,10 +2,12 @@
 
 import { Editor } from '@tiptap/react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface Props { editor: Editor; }
 
 export default function EditorToolbar({ editor }: Props) {
+  const { t } = useTranslation("c-rmh-notes");
   const [showColorMenu, setShowColorMenu] = useState(false);
   const [showInsertMenu, setShowInsertMenu] = useState(false);
 
@@ -33,13 +35,13 @@ export default function EditorToolbar({ editor }: Props) {
   const sep = (key: string) => <div key={key} className="w-px h-4" style={{ background: 'var(--notes-border)', margin: '0 2px' }} />;
 
   const TEXT_COLORS = [
-    { label: '●', color: '#C17F3A', title: 'Amber' },
-    { label: '●', color: '#D95B3A', title: 'Red' },
-    { label: '●', color: '#3D7A4F', title: 'Green' },
-    { label: '●', color: '#5B8FD6', title: 'Blue' },
-    { label: '●', color: '#8B6FC0', title: 'Purple' },
-    { label: '●', color: '#E6A817', title: 'Yellow' },
-    { label: '●', color: 'var(--notes-text)', title: 'Default' },
+    { label: '●', color: '#C17F3A', title: t("color-amber", { defaultValue: "Amber" }) },
+    { label: '●', color: '#D95B3A', title: t("color-red", { defaultValue: "Red" }) },
+    { label: '●', color: '#3D7A4F', title: t("color-green", { defaultValue: "Green" }) },
+    { label: '●', color: '#5B8FD6', title: t("color-blue", { defaultValue: "Blue" }) },
+    { label: '●', color: '#8B6FC0', title: t("color-purple", { defaultValue: "Purple" }) },
+    { label: '●', color: '#E6A817', title: t("color-yellow", { defaultValue: "Yellow" }) },
+    { label: '●', color: 'var(--notes-text)', title: t("color-default", { defaultValue: "Default" }) },
   ];
 
   return (
@@ -54,11 +56,11 @@ export default function EditorToolbar({ editor }: Props) {
       {sep('s1')}
 
       {/* Text formatting */}
-      {btn(() => editor.chain().focus().toggleBold().run(), 'B', editor.isActive('bold'), 'Bold (⌘B)')}
-      {btn(() => editor.chain().focus().toggleItalic().run(), 'I', editor.isActive('italic'), 'Italic (⌘I)')}
-      {btn(() => editor.chain().focus().toggleStrike().run(), 'S̶', editor.isActive('strike'), 'Strikethrough')}
-      {btn(() => editor.chain().focus().toggleCode().run(), '<>', editor.isActive('code'), 'Inline code')}
-      {btn(() => editor.chain().focus().toggleHighlight().run(), '✦', editor.isActive('highlight'), 'Highlight')}
+      {btn(() => editor.chain().focus().toggleBold().run(), 'B', editor.isActive('bold'), t("bold", { defaultValue: "Bold (⌘B)" }))}
+      {btn(() => editor.chain().focus().toggleItalic().run(), 'I', editor.isActive('italic'), t("italic", { defaultValue: "Italic (⌘I)" }))}
+      {btn(() => editor.chain().focus().toggleStrike().run(), 'S̶', editor.isActive('strike'), t("strikethrough", { defaultValue: "Strikethrough" }))}
+      {btn(() => editor.chain().focus().toggleCode().run(), '<>', editor.isActive('code'), t("inline-code", { defaultValue: "Inline code" }))}
+      {btn(() => editor.chain().focus().toggleHighlight().run(), '✦', editor.isActive('highlight'), t("highlight", { defaultValue: "Highlight" }))}
       {sep('s2')}
 
       {/* Lists */}
@@ -68,8 +70,8 @@ export default function EditorToolbar({ editor }: Props) {
       {sep('s3')}
 
       {/* Blocks */}
-      {btn(() => editor.chain().focus().toggleCodeBlock().run(), 'Code', editor.isActive('codeBlock'), 'Code block')}
-      {btn(() => editor.chain().focus().toggleBlockquote().run(), '" "', editor.isActive('blockquote'), 'Blockquote')}
+      {btn(() => editor.chain().focus().toggleCodeBlock().run(), 'Code', editor.isActive('codeBlock'), t("code-block", { defaultValue: "Code block" }))}
+      {btn(() => editor.chain().focus().toggleBlockquote().run(), '" "', editor.isActive('blockquote'), t("blockquote", { defaultValue: "Blockquote" }))}
       {sep('s4')}
 
       {/* Text color */}
@@ -78,7 +80,7 @@ export default function EditorToolbar({ editor }: Props) {
           onMouseDown={(e) => { e.preventDefault(); setShowColorMenu((v) => !v); setShowInsertMenu(false); }}
           className="px-2 h-7 rounded text-xs font-semibold transition-colors"
           style={{ background: 'transparent', color: 'var(--notes-text-muted)', border: '1px solid transparent' }}
-          title="Text color"
+          title={t("text-color", { defaultValue: "Text color" })}
         >
           A▾
         </button>
@@ -99,7 +101,7 @@ export default function EditorToolbar({ editor }: Props) {
               onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().unsetColor().run(); setShowColorMenu(false); }}
               className="text-xs px-1 rounded"
               style={{ color: 'var(--notes-text-muted)' }}
-              title="Reset color"
+              title={t("reset-color", { defaultValue: "Reset color" })}
             >✕</button>
           </div>
         )}
@@ -113,25 +115,25 @@ export default function EditorToolbar({ editor }: Props) {
           onMouseDown={(e) => { e.preventDefault(); setShowInsertMenu((v) => !v); setShowColorMenu(false); }}
           className="px-2 h-7 rounded text-xs font-semibold transition-colors"
           style={{ background: 'transparent', color: 'var(--notes-text-muted)', border: '1px solid transparent' }}
-          title="Insert"
+          title={t("insert", { defaultValue: "Insert" })}
         >
-          Insert ▾
+          {t("insert", { defaultValue: "Insert" })} ▾
         </button>
         {showInsertMenu && (
           <div className="absolute top-9 left-0 z-50 rounded-xl shadow-lg overflow-hidden text-xs w-40" style={{ background: 'var(--notes-surface)', border: '1px solid var(--notes-border)' }}>
             {[
-              { label: '─── Divider', action: () => editor.chain().focus().setHorizontalRule().run() },
+              { label: t("insert-divider", { defaultValue: "─── Divider" }), action: () => editor.chain().focus().setHorizontalRule().run() },
               {
-                label: '🔗 Link', action: () => {
-                  const url = window.prompt('Enter URL:');
+                label: t("insert-link", { defaultValue: "🔗 Link" }), action: () => {
+                  const url = window.prompt(t("prompt-enter-url", { defaultValue: "Enter URL:" }));
                   if (url) editor.chain().focus().setLink({ href: url }).run();
                 }
               },
-              { label: '🖼 Image URL', action: () => {
-                  const url = window.prompt('Image URL:');
+              { label: t("insert-image-url", { defaultValue: "🖼 Image URL" }), action: () => {
+                  const url = window.prompt(t("prompt-image-url", { defaultValue: "Image URL:" }));
                   if (url) editor.chain().focus().setImage({ src: url }).run();
               }},
-              { label: '⊞ Table 3×3', action: () => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run() },
+              { label: t("insert-table", { defaultValue: "⊞ Table 3×3" }), action: () => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run() },
             ].map((item) => (
               <button
                 key={item.label}
@@ -151,8 +153,8 @@ export default function EditorToolbar({ editor }: Props) {
       {sep('s6')}
 
       {/* Undo/Redo */}
-      {btn(() => editor.chain().focus().undo().run(), '↩', false, 'Undo (⌘Z)')}
-      {btn(() => editor.chain().focus().redo().run(), '↪', false, 'Redo (⌘Y)')}
+      {btn(() => editor.chain().focus().undo().run(), '↩', false, t("undo", { defaultValue: "Undo (⌘Z)" }))}
+      {btn(() => editor.chain().focus().redo().run(), '↪', false, t("redo", { defaultValue: "Redo (⌘Y)" }))}
     </div>
   );
 }

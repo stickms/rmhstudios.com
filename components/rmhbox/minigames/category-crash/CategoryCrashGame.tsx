@@ -28,6 +28,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { emitGameInput, useGameSocket, extractTimerTick } from '@/lib/rmhbox/minigame-client';
@@ -110,6 +111,8 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
   const [anonymizationMap, setAnonymizationMap] = useState<Record<string, string>>({});
   const [myAnonymousLabel, setMyAnonymousLabel] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const { t } = useTranslation('c-rmhbox');
 
   // Track spectator status
   const isSpectator = useRMHboxStore((s) => s.lobby?.myRole === 'spectator');
@@ -377,7 +380,7 @@ export default function CategoryCrashGame({ playerId, playerName: _playerName }:
             className="flex flex-col items-center justify-center gap-6 py-8"
           >
             <p className="text-sm uppercase tracking-wider text-(--rmhbox-text-muted)">
-              Round {currentRound} of {totalRounds}
+              {t("round-x-of-y", { defaultValue: "Round {{current}} of {{total}}", current: currentRound, total: totalRounds })}
             </p>
             <motion.div
               initial={{ opacity: 0, y: 30 }}

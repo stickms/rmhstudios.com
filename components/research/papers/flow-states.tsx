@@ -14,6 +14,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
+import { useTranslation } from 'react-i18next';
 import { PaperFigure } from '../PaperFigure';
 
 const coherenceData = [
@@ -71,12 +72,13 @@ const h3Style: React.CSSProperties = {
 };
 
 export function FlowStatesPaper() {
+  const { t } = useTranslation('c-research');
   return (
     <>
       {/* --------------------------------------------------------------------
           1. INTRODUCTION
          -------------------------------------------------------------------- */}
-      <h2 style={h2Style}>1. Introduction</h2>
+      <h2 style={h2Style}>{t("section-introduction", { defaultValue: "1. Introduction" })}</h2>
 
       <p className="mb-4">
         The concept of flow, first articulated by Csikszentmihalyi (1990), describes a psychological
@@ -151,9 +153,9 @@ export function FlowStatesPaper() {
       {/* --------------------------------------------------------------------
           2. METHODS
          -------------------------------------------------------------------- */}
-      <h2 style={h2Style}>2. Methods</h2>
+      <h2 style={h2Style}>{t("section-methods", { defaultValue: "2. Methods" })}</h2>
 
-      <h3 style={h3Style}>2.1 Participants</h3>
+      <h3 style={h3Style}>{t("section-participants", { defaultValue: "2.1 Participants" })}</h3>
 
       <p className="mb-4">
         Forty-eight experienced gamers (32 male, 16 female; age range 18&ndash;32 years, <em>M</em> = 23.4,{' '}
@@ -170,7 +172,7 @@ export function FlowStatesPaper() {
         sessions.
       </p>
 
-      <h3 style={h3Style}>2.2 Apparatus</h3>
+      <h3 style={h3Style}>{t("section-apparatus", { defaultValue: "2.2 Apparatus" })}</h3>
 
       <p className="mb-4">
         Electroencephalographic data were acquired using a 64-channel BioSemi ActiveTwo system
@@ -191,7 +193,7 @@ export function FlowStatesPaper() {
         comprehensive server-side logging of all game events with millisecond-precision timestamps.
       </p>
 
-      <h3 style={h3Style}>2.3 Procedure</h3>
+      <h3 style={h3Style}>{t("section-procedure", { defaultValue: "2.3 Procedure" })}</h3>
 
       <p className="mb-4">
         The study employed a within-subjects design with three experimental conditions, presented in
@@ -222,7 +224,7 @@ export function FlowStatesPaper() {
         damage dealt, and spatial positioning data, were continuously logged throughout each session.
       </p>
 
-      <h3 style={h3Style}>2.4 Data Analysis</h3>
+      <h3 style={h3Style}>{t("section-data-analysis", { defaultValue: "2.4 Data Analysis" })}</h3>
 
       <p className="mb-4">
         EEG data were preprocessed offline using EEGLAB v2024.0 (Delorme &amp; Makeig, 2004) running
@@ -269,9 +271,9 @@ export function FlowStatesPaper() {
       {/* --------------------------------------------------------------------
           3. RESULTS
          -------------------------------------------------------------------- */}
-      <h2 style={h2Style}>3. Results</h2>
+      <h2 style={h2Style}>{t("section-results", { defaultValue: "3. Results" })}</h2>
 
-      <h3 style={h3Style}>3.1 Frontal Theta&ndash;Parietal Alpha Coherence</h3>
+      <h3 style={h3Style}>{t("section-ftacoh", { defaultValue: "3.1 Frontal Theta–Parietal Alpha Coherence" })}</h3>
 
       <p className="mb-4">
         The primary analysis revealed a significant main effect of condition on frontal
@@ -301,7 +303,7 @@ export function FlowStatesPaper() {
               tick={{ fill: '#1f2937', fontSize: 12 }}
               axisLine={{ stroke: '#6b7280' }}
               label={{
-                value: 'FTACoh (magnitude\u00b2)',
+                value: t("axis-ftacoh-magnitude", { defaultValue: "FTACoh (magnitude\u00b2)" }),
                 angle: -90,
                 position: 'insideLeft',
                 style: { fill: '#1f2937', fontSize: 12 },
@@ -310,14 +312,14 @@ export function FlowStatesPaper() {
             <Tooltip
               contentStyle={{ backgroundColor: '#fff', border: '1px solid #d1d5db' }}
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              formatter={(v: any) => [Number(v).toFixed(2), 'Coherence']}
+              formatter={(v: any) => [Number(v).toFixed(2), t("chart-coherence", { defaultValue: "Coherence" })]}
             />
             <Bar dataKey="coherence" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={60} />
           </BarChart>
         </ResponsiveContainer>
       </PaperFigure>
 
-      <h3 style={h3Style}>3.2 Descriptive Statistics</h3>
+      <h3 style={h3Style}>{t("section-descriptive-stats", { defaultValue: "3.2 Descriptive Statistics" })}</h3>
 
       <p className="mb-4">
         Table 1 presents the descriptive statistics for self-reported flow (FSS), neural coherence
@@ -333,28 +335,28 @@ export function FlowStatesPaper() {
         <thead>
           <tr style={{ backgroundColor: '#f3f4f6' }}>
             <th style={{ border: '1px solid #d1d5db', padding: '6px 10px', textAlign: 'left' }}>
-              Condition
+              {t("col-condition", { defaultValue: "Condition" })}
             </th>
             <th style={{ border: '1px solid #d1d5db', padding: '6px 10px', textAlign: 'center' }}>
-              FSS Mean
+              {t("col-fss-mean", { defaultValue: "FSS Mean" })}
             </th>
             <th style={{ border: '1px solid #d1d5db', padding: '6px 10px', textAlign: 'center' }}>
-              FSS <em>SD</em>
+              {t("col-fss-sd", { defaultValue: "FSS" })} <em>SD</em>
             </th>
             <th style={{ border: '1px solid #d1d5db', padding: '6px 10px', textAlign: 'center' }}>
-              FTACoh Mean
+              {t("col-ftacoh-mean", { defaultValue: "FTACoh Mean" })}
             </th>
             <th style={{ border: '1px solid #d1d5db', padding: '6px 10px', textAlign: 'center' }}>
-              FTACoh <em>SD</em>
+              {t("col-ftacoh-sd", { defaultValue: "FTACoh" })} <em>SD</em>
             </th>
             <th style={{ border: '1px solid #d1d5db', padding: '6px 10px', textAlign: 'center' }}>
-              K/D Mean
+              {t("col-kd-mean", { defaultValue: "K/D Mean" })}
             </th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td style={{ border: '1px solid #d1d5db', padding: '6px 10px' }}>Casual</td>
+            <td style={{ border: '1px solid #d1d5db', padding: '6px 10px' }}>{t("condition-casual", { defaultValue: "Casual" })}</td>
             <td style={{ border: '1px solid #d1d5db', padding: '6px 10px', textAlign: 'center' }}>
               3.54
             </td>
@@ -372,7 +374,7 @@ export function FlowStatesPaper() {
             </td>
           </tr>
           <tr style={{ backgroundColor: '#f9fafb' }}>
-            <td style={{ border: '1px solid #d1d5db', padding: '6px 10px' }}>Competitive</td>
+            <td style={{ border: '1px solid #d1d5db', padding: '6px 10px' }}>{t("condition-competitive", { defaultValue: "Competitive" })}</td>
             <td style={{ border: '1px solid #d1d5db', padding: '6px 10px', textAlign: 'center' }}>
               5.41
             </td>
@@ -390,7 +392,7 @@ export function FlowStatesPaper() {
             </td>
           </tr>
           <tr>
-            <td style={{ border: '1px solid #d1d5db', padding: '6px 10px' }}>Spectating</td>
+            <td style={{ border: '1px solid #d1d5db', padding: '6px 10px' }}>{t("condition-spectating", { defaultValue: "Spectating" })}</td>
             <td style={{ border: '1px solid #d1d5db', padding: '6px 10px', textAlign: 'center' }}>
               2.17
             </td>
@@ -428,7 +430,7 @@ export function FlowStatesPaper() {
         </tfoot>
       </table>
 
-      <h3 style={h3Style}>3.3 Flow State Dynamics Over Time</h3>
+      <h3 style={h3Style}>{t("section-flow-dynamics", { defaultValue: "3.3 Flow State Dynamics Over Time" })}</h3>
 
       <p className="mb-4">
         Analysis of flow state scores over the 30-minute session duration revealed distinct temporal
@@ -456,7 +458,7 @@ export function FlowStatesPaper() {
               tick={{ fill: '#1f2937', fontSize: 12 }}
               axisLine={{ stroke: '#6b7280' }}
               label={{
-                value: 'Time (minutes)',
+                value: t("axis-time-minutes", { defaultValue: "Time (minutes)" }),
                 position: 'insideBottom',
                 offset: -2,
                 style: { fill: '#1f2937', fontSize: 12 },
@@ -467,7 +469,7 @@ export function FlowStatesPaper() {
               tick={{ fill: '#1f2937', fontSize: 12 }}
               axisLine={{ stroke: '#6b7280' }}
               label={{
-                value: 'FSS Score',
+                value: t("axis-fss-score", { defaultValue: "FSS Score" }),
                 angle: -90,
                 position: 'insideLeft',
                 style: { fill: '#1f2937', fontSize: 12 },
@@ -478,7 +480,7 @@ export function FlowStatesPaper() {
             <Line
               type="monotone"
               dataKey="casual"
-              name="Casual"
+              name={t("condition-casual", { defaultValue: "Casual" })}
               stroke="#6b7280"
               strokeWidth={2}
               dot={{ fill: '#6b7280', r: 4 }}
@@ -486,7 +488,7 @@ export function FlowStatesPaper() {
             <Line
               type="monotone"
               dataKey="competitive"
-              name="Competitive"
+              name={t("condition-competitive", { defaultValue: "Competitive" })}
               stroke="#3b82f6"
               strokeWidth={2}
               dot={{ fill: '#3b82f6', r: 4 }}
@@ -495,7 +497,7 @@ export function FlowStatesPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      <h3 style={h3Style}>3.4 Relationship Between Flow and Performance</h3>
+      <h3 style={h3Style}>{t("section-flow-performance", { defaultValue: "3.4 Relationship Between Flow and Performance" })}</h3>
 
       <p className="mb-4">
         Pearson product-moment correlation analysis revealed a strong positive relationship between
@@ -521,11 +523,11 @@ export function FlowStatesPaper() {
               dataKey="flow"
               type="number"
               domain={[1.5, 8]}
-              name="Flow Score"
+              name={t("chart-flow-score", { defaultValue: "Flow Score" })}
               tick={{ fill: '#1f2937', fontSize: 12 }}
               axisLine={{ stroke: '#6b7280' }}
               label={{
-                value: 'FSS Score',
+                value: t("axis-fss-score", { defaultValue: "FSS Score" }),
                 position: 'insideBottom',
                 offset: -2,
                 style: { fill: '#1f2937', fontSize: 12 },
@@ -535,11 +537,11 @@ export function FlowStatesPaper() {
               dataKey="kd"
               type="number"
               domain={[0, 3]}
-              name="K/D Ratio"
+              name={t("chart-kd-ratio", { defaultValue: "K/D Ratio" })}
               tick={{ fill: '#1f2937', fontSize: 12 }}
               axisLine={{ stroke: '#6b7280' }}
               label={{
-                value: 'K/D Ratio',
+                value: t("chart-kd-ratio", { defaultValue: "K/D Ratio" }),
                 angle: -90,
                 position: 'insideLeft',
                 style: { fill: '#1f2937', fontSize: 12 },
@@ -550,7 +552,7 @@ export function FlowStatesPaper() {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               formatter={(v: any, name: any) => [
                 Number(v).toFixed(2),
-                name === 'flow' ? 'Flow Score' : 'K/D Ratio',
+                name === 'flow' ? t("chart-flow-score", { defaultValue: "Flow Score" }) : t("chart-kd-ratio", { defaultValue: "K/D Ratio" }),
               ]}
             />
             <Scatter data={scatterData} fill="#8b5cf6" />
@@ -573,7 +575,7 @@ export function FlowStatesPaper() {
       {/* --------------------------------------------------------------------
           4. DISCUSSION
          -------------------------------------------------------------------- */}
-      <h2 style={h2Style}>4. Discussion</h2>
+      <h2 style={h2Style}>{t("section-discussion", { defaultValue: "4. Discussion" })}</h2>
 
       <p className="mb-4">
         The present study provides the first systematic investigation of the neural correlates of
@@ -655,7 +657,7 @@ export function FlowStatesPaper() {
       {/* --------------------------------------------------------------------
           5. CONCLUSION
          -------------------------------------------------------------------- */}
-      <h2 style={h2Style}>5. Conclusion</h2>
+      <h2 style={h2Style}>{t("section-conclusion", { defaultValue: "5. Conclusion" })}</h2>
 
       <p className="mb-4">
         This study demonstrates that competitive gaming environments reliably induce flow states
@@ -679,7 +681,7 @@ export function FlowStatesPaper() {
       {/* --------------------------------------------------------------------
           REFERENCES
          -------------------------------------------------------------------- */}
-      <h2 style={h2Style}>References</h2>
+      <h2 style={h2Style}>{t("section-references", { defaultValue: "References" })}</h2>
 
       <ol
         style={{

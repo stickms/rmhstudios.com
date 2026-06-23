@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Link2, Check, Code2 } from 'lucide-react';
 
 interface ShareModalProps {
@@ -13,6 +14,7 @@ interface ShareModalProps {
 }
 
 export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProps) {
+  const { t } = useTranslation('feed');
   const contentRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
   const [embedCopied, setEmbedCopied] = useState(false);
@@ -87,7 +89,7 @@ export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProp
         >
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-site-border">
-            <h2 className="font-bold text-site-text">Share</h2>
+            <h2 className="font-bold text-site-text">{t('share-title', { defaultValue: 'Share' })}</h2>
             <button
               onClick={onClose}
               className="p-1 rounded-full hover:bg-site-surface transition-colors text-site-text-dim hover:text-site-text"
@@ -107,7 +109,7 @@ export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProp
               ) : (
                 <Link2 className="w-5 h-5 text-site-text-dim" />
               )}
-              {copied ? 'Copied!' : 'Copy link'}
+              {copied ? t('copied', { defaultValue: 'Copied!' }) : t('copy-link', { defaultValue: 'Copy link' })}
             </button>
 
             <button
@@ -117,7 +119,7 @@ export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProp
               <svg className="w-5 h-5 text-site-text-dim" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
               </svg>
-              Share on X
+              {t('share-on-x', { defaultValue: 'Share on X' })}
             </button>
 
             <button
@@ -127,7 +129,7 @@ export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProp
               <svg className="w-5 h-5 text-site-text-dim" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 1.09.044 1.613.115V7.78c-.344-.036-.94-.054-1.684-.054-2.39 0-3.316.905-3.316 3.26v1.058h4.612l-.683 3.667h-3.929v8.08c5.013-.838 8.828-5.12 8.828-10.311C20.4 7.216 16.472 3 12 3S3.6 7.216 3.6 13.48c0 4.785 3.274 8.778 7.694 9.954z" />
               </svg>
-              Share on Facebook
+              {t('share-on-facebook', { defaultValue: 'Share on Facebook' })}
             </button>
 
             <button
@@ -138,7 +140,7 @@ export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProp
                 <rect width="20" height="16" x="2" y="4" rx="2" />
                 <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
               </svg>
-              Share via Email
+              {t('share-via-email', { defaultValue: 'Share via Email' })}
             </button>
           </div>
 
@@ -153,7 +155,7 @@ export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProp
                 ) : (
                   <Code2 className="w-5 h-5 text-site-text-dim" />
                 )}
-                {embedCopied ? 'Embed code copied!' : 'Copy embed code'}
+                {embedCopied ? t('embed-code-copied', { defaultValue: 'Embed code copied!' }) : t('copy-embed-code', { defaultValue: 'Copy embed code' })}
               </button>
             </div>
           )}

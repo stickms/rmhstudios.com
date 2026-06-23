@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useBlackjackStore } from '@/lib/blackjack/store';
 import { formatHandValue } from '@/lib/blackjack/logic';
 import type { Card } from '@/lib/blackjack/logic';
@@ -107,11 +108,12 @@ function SplitHandView({ sh, idx, active }: {
   idx: number;
   active: boolean;
 }) {
+  const { t } = useTranslation("c-rmhcoins");
   const settled = useFlipSettled(sh.hand.length, Math.max(0, sh.hand.length - 1) * 300 + 100);
 
   return (
     <div className={`flex flex-col items-center gap-0.5 ${active ? 'ring-1 ring-yellow-400 rounded p-0.5' : ''}`}>
-      <span className="text-[8px] text-site-text-dim uppercase">Hand {idx + 2}</span>
+      <span className="text-[8px] text-site-text-dim uppercase">{t("hand-n", { defaultValue: "Hand {{n}}", n: idx + 2 })}</span>
       <div className="flex gap-0.5">
         {sh.hand.map((card, i) => (
           <CardFace key={`s${idx}-${card.rank}${card.suit}${i}`} card={card} small delay={i * 300 + 100} />
@@ -133,7 +135,7 @@ function SplitHandView({ sh, idx, active }: {
           : sh.result === 'push' ? 'bg-blue-500/30 text-blue-400'
           : 'bg-red-500/30 text-red-400'
         }`}>
-          {sh.result === 'blackjack' ? 'BJ!' : sh.result.toUpperCase()}
+          {sh.result === 'blackjack' ? t("bj-short", { defaultValue: "BJ!" }) : sh.result.toUpperCase()}
         </span>
       )}
       {sh.payout > 0 && <span className="text-[9px] text-emerald-400 font-bold">+{sh.payout}</span>}
@@ -149,21 +151,22 @@ function PlayerSeatView({ player, isCurrentTurn, isMe, turnSeconds }: {
   isMe: boolean;
   turnSeconds: number | null;
 }) {
+  const { t } = useTranslation("c-rmhcoins");
   const statusBadge: Record<string, { label: string; color: string }> = {
     waiting: { label: '', color: '' },
-    betting: { label: 'Bet placed', color: 'bg-yellow-500/20 text-yellow-400' },
-    playing: { label: 'Thinking...', color: 'bg-blue-500/20 text-blue-400' },
-    standing: { label: 'Stand', color: 'bg-gray-500/20 text-gray-400' },
-    busted: { label: 'Bust!', color: 'bg-red-500/20 text-red-400' },
-    blackjack: { label: 'BJ!', color: 'bg-yellow-500/20 text-yellow-300' },
+    betting: { label: t("status-bet-placed", { defaultValue: "Bet placed" }), color: 'bg-yellow-500/20 text-yellow-400' },
+    playing: { label: t("status-thinking", { defaultValue: "Thinking..." }), color: 'bg-blue-500/20 text-blue-400' },
+    standing: { label: t("status-stand", { defaultValue: "Stand" }), color: 'bg-gray-500/20 text-gray-400' },
+    busted: { label: t("status-bust", { defaultValue: "Bust!" }), color: 'bg-red-500/20 text-red-400' },
+    blackjack: { label: t("bj-short", { defaultValue: "BJ!" }), color: 'bg-yellow-500/20 text-yellow-300' },
     done: { label: '', color: '' },
   };
 
   const resultBadge: Record<string, { label: string; color: string }> = {
-    win: { label: 'WIN', color: 'bg-emerald-500/30 text-emerald-400' },
-    lose: { label: 'LOSE', color: 'bg-red-500/30 text-red-400' },
-    push: { label: 'PUSH', color: 'bg-blue-500/30 text-blue-400' },
-    blackjack: { label: 'BLACKJACK!', color: 'bg-yellow-500/30 text-yellow-300' },
+    win: { label: t("result-win", { defaultValue: "WIN" }), color: 'bg-emerald-500/30 text-emerald-400' },
+    lose: { label: t("result-lose", { defaultValue: "LOSE" }), color: 'bg-red-500/30 text-red-400' },
+    push: { label: t("result-push", { defaultValue: "PUSH" }), color: 'bg-blue-500/30 text-blue-400' },
+    blackjack: { label: t("result-blackjack", { defaultValue: "BLACKJACK!" }), color: 'bg-yellow-500/30 text-yellow-300' },
   };
 
   const badge = player.result ? resultBadge[player.result] : statusBadge[player.status];
@@ -183,7 +186,7 @@ function PlayerSeatView({ player, isCurrentTurn, isMe, turnSeconds }: {
           <img src={player.avatarUrl} alt="" className="w-4 h-4 rounded-full shrink-0" />
         ) : null}
         <span className={`text-xs font-bold truncate max-w-16 sm:max-w-20 ${isMe ? 'text-yellow-400' : 'text-site-text'}`}>
-          {isMe ? 'You' : player.userName}
+          {isMe ? t("you", { defaultValue: "You" }) : player.userName}
         </span>
         {isCurrentTurn && turnSeconds != null && (
           <span className={`text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded-full ${
@@ -197,7 +200,7 @@ function PlayerSeatView({ player, isCurrentTurn, isMe, turnSeconds }: {
       {/* Main hand */}
       {player.hand.length > 0 ? (
         <div className={`flex flex-col items-center gap-0.5 ${player.hasSplit && player.activeSplitIndex === -1 && isCurrentTurn ? 'ring-1 ring-yellow-400 rounded p-0.5' : ''}`}>
-          {player.hasSplit && <span className="text-[8px] text-site-text-dim uppercase">Hand 1</span>}
+          {player.hasSplit && <span className="text-[8px] text-site-text-dim uppercase">{t("hand-1", { defaultValue: "Hand 1" })}</span>}
           <div className="flex gap-0.5">
             {player.hand.map((card, i) => (
               <CardFace key={`${card.rank}${card.suit}${i}`} card={card} small delay={i * 300 + 100} />
@@ -233,7 +236,7 @@ function PlayerSeatView({ player, isCurrentTurn, isMe, turnSeconds }: {
           <span className="text-[10px] text-blue-400 font-bold">
             INS: {player.insuranceBet}
             {player.insuranceResult === 'won' && ' +' + player.insuranceBet * 2}
-            {player.insuranceResult === 'lost' && ' lost'}
+            {player.insuranceResult === 'lost' && ' ' + t("insurance-lost", { defaultValue: "lost" })}
           </span>
         </div>
       )}
@@ -256,6 +259,7 @@ function PlayerSeatView({ player, isCurrentTurn, isMe, turnSeconds }: {
 // ── Table Component ────────────────────────────────────────────────
 
 export function BlackjackTable() {
+  const { t } = useTranslation("c-rmhcoins");
   const {
     players,
     dealerHand,
@@ -281,7 +285,7 @@ export function BlackjackTable() {
       <div className={`flex flex-col items-center gap-1 p-2.5 sm:p-3 rounded-xl bg-emerald-900/30 border border-emerald-700/20 min-h-18 sm:min-h-20 w-full transition-all ${
         tablePhase === 'dealer_turn' ? 'ring-2 ring-emerald-500/50' : ''
       }`}>
-        <span className="text-[10px] sm:text-xs text-site-text-dim font-bold uppercase tracking-wider">Dealer</span>
+        <span className="text-[10px] sm:text-xs text-site-text-dim font-bold uppercase tracking-wider">{t("dealer", { defaultValue: "Dealer" })}</span>
         {dealerHand.length > 0 ? (
           <div className="flex flex-col items-center gap-1">
             <Hand cards={dealerHand} hidden={showDealerHidden} />
@@ -292,7 +296,7 @@ export function BlackjackTable() {
             )}
           </div>
         ) : (
-          <span className="text-xs text-site-text-dim">Waiting to deal...</span>
+          <span className="text-xs text-site-text-dim">{t("waiting-to-deal", { defaultValue: "Waiting to deal..." })}</span>
         )}
       </div>
 
@@ -314,7 +318,7 @@ export function BlackjackTable() {
           </div>
         </div>
       ) : (
-        <p className="text-sm text-site-text-dim">No players at the table yet.</p>
+        <p className="text-sm text-site-text-dim">{t("no-players", { defaultValue: "No players at the table yet." })}</p>
       )}
     </div>
   );

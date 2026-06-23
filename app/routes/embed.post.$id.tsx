@@ -9,6 +9,7 @@
 
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
+import { useTranslation } from 'react-i18next';
 import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { Heart, MessageCircle, Repeat } from 'lucide-react';
@@ -56,6 +57,7 @@ export const Route = createFileRoute('/embed/post/$id')({
 });
 
 function EmbedPost() {
+  const { t } = useTranslation("pages");
   const { post } = Route.useLoaderData();
   const profileHref = post ? `https://rmhstudios.com/u/${post.user.handle || post.user.id}` : '#';
   const postHref = post ? `https://rmhstudios.com/u/${post.user.handle || post.user.id}/post/${post.id}` : '#';
@@ -64,7 +66,7 @@ function EmbedPost() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-site-bg p-4">
         <div className="rounded-xl border border-site-border bg-site-surface px-5 py-4 text-sm text-site-text-muted">
-          This post isn’t available to embed.
+          {t("post-not-embeddable", { defaultValue: "This post isn’t available to embed." })}
         </div>
       </div>
     );
@@ -82,7 +84,7 @@ function EmbedPost() {
             </div>
           )}
           <a href={profileHref} target="_blank" rel="noopener noreferrer" className="min-w-0">
-            <p className="truncate text-sm font-bold text-site-text">{post.user.name || 'Someone'}</p>
+            <p className="truncate text-sm font-bold text-site-text">{post.user.name || t("anonymous-user", { defaultValue: "Someone" })}</p>
             {post.user.handle && <p className="truncate text-xs text-site-text-dim">@{post.user.handle}</p>}
           </a>
         </div>

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from 'react-i18next';
 import {
   LineChart,
   Line,
@@ -86,12 +87,13 @@ const thStyle: React.CSSProperties = {
 /* ------------------------------------------------------------------ */
 
 export function RLRoguelikePaper() {
+  const { t } = useTranslation('c-research');
   return (
     <>
       {/* ============================================================ */}
       {/* 1. INTRODUCTION                                              */}
       {/* ============================================================ */}
-      <h2 style={h2Style}>1. Introduction</h2>
+      <h2 style={h2Style}>{t('rl-section-introduction', { defaultValue: '1. Introduction' })}</h2>
 
       <p className="mb-4">
         Reinforcement learning (RL) has achieved extraordinary milestones over
@@ -181,10 +183,10 @@ export function RLRoguelikePaper() {
       {/* ============================================================ */}
       {/* 2. METHODS                                                    */}
       {/* ============================================================ */}
-      <h2 style={h2Style}>2. Methods</h2>
+      <h2 style={h2Style}>{t('rl-section-methods', { defaultValue: '2. Methods' })}</h2>
 
       {/* 2.1 Environment Design */}
-      <h3 style={h3Style}>2.1 Environment Design</h3>
+      <h3 style={h3Style}>{t('rl-subsection-env-design', { defaultValue: '2.1 Environment Design' })}</h3>
 
       <p className="mb-4">
         We developed a custom roguelike testbed implemented as an OpenAI
@@ -237,7 +239,7 @@ export function RLRoguelikePaper() {
       </p>
 
       {/* 2.2 Agent Architecture */}
-      <h3 style={h3Style}>2.2 Agent Architecture</h3>
+      <h3 style={h3Style}>{t('rl-subsection-agent-arch', { defaultValue: '2.2 Agent Architecture' })}</h3>
 
       <p className="mb-4">
         All agents employ Proximal Policy Optimization (PPO; Schulman et al.,
@@ -272,7 +274,7 @@ export function RLRoguelikePaper() {
       </p>
 
       {/* 2.3 Curriculum Learning Protocol */}
-      <h3 style={h3Style}>2.3 Curriculum Learning Protocol</h3>
+      <h3 style={h3Style}>{t('rl-subsection-curriculum', { defaultValue: '2.3 Curriculum Learning Protocol' })}</h3>
 
       <p className="mb-4">
         The curriculum training regime transitions the agent through three
@@ -307,7 +309,7 @@ export function RLRoguelikePaper() {
       </p>
 
       {/* 2.4 Evaluation */}
-      <h3 style={h3Style}>2.4 Evaluation</h3>
+      <h3 style={h3Style}>{t('rl-subsection-evaluation', { defaultValue: '2.4 Evaluation' })}</h3>
 
       <p className="mb-4">
         Evaluation was conducted on a held-out test set of 50 procedurally
@@ -343,7 +345,7 @@ export function RLRoguelikePaper() {
       {/* ============================================================ */}
       {/* 3. RESULTS                                                    */}
       {/* ============================================================ */}
-      <h2 style={h2Style}>3. Results</h2>
+      <h2 style={h2Style}>{t('rl-section-results', { defaultValue: '3. Results' })}</h2>
 
       <p className="mb-4">
         We present three principal analyses: training dynamics (Section 3.1),
@@ -354,7 +356,7 @@ export function RLRoguelikePaper() {
       </p>
 
       {/* 3.1 Training Dynamics */}
-      <h3 style={h3Style}>3.1 Training Dynamics</h3>
+      <h3 style={h3Style}>{t('rl-subsection-training-dynamics', { defaultValue: '3.1 Training Dynamics' })}</h3>
 
       <p className="mb-4">
         Figure&nbsp;1 presents the cumulative mean reward as a function of
@@ -415,7 +417,7 @@ export function RLRoguelikePaper() {
       </p>
 
       {/* 3.2 Zero-Shot Generalization */}
-      <h3 style={h3Style}>3.2 Zero-Shot Generalization</h3>
+      <h3 style={h3Style}>{t('rl-subsection-zero-shot', { defaultValue: '3.2 Zero-Shot Generalization' })}</h3>
 
       <p className="mb-4">
         Table&nbsp;1 summarizes the final performance of each agent type across
@@ -428,19 +430,18 @@ export function RLRoguelikePaper() {
       {/* Table 1 */}
       <div className="my-4 overflow-x-auto">
         <p className="text-center mb-2" style={{ fontSize: '10pt', fontWeight: 'bold' }}>
-          Table 1. Final performance summary across training regimes and evaluation conditions.
-          Values are means &plusmn; SD over 5 seeds.
+          {t('rl-table1-caption', { defaultValue: 'Table 1. Final performance summary across training regimes and evaluation conditions. Values are means ± SD over 5 seeds.' })}
         </p>
         <table className="w-full border-collapse my-4" style={{ fontSize: '10pt' }}>
           <thead>
             <tr>
-              <th style={thStyle}>Agent Type</th>
-              <th style={thStyle}>Mean Reward</th>
-              <th style={thStyle}>Seen (%)</th>
-              <th style={thStyle}>Novel Easy (%)</th>
-              <th style={thStyle}>Novel Medium (%)</th>
-              <th style={thStyle}>Novel Hard (%)</th>
-              <th style={thStyle}>BDI</th>
+              <th style={thStyle}>{t('rl-col-agent-type', { defaultValue: 'Agent Type' })}</th>
+              <th style={thStyle}>{t('rl-col-mean-reward', { defaultValue: 'Mean Reward' })}</th>
+              <th style={thStyle}>{t('rl-col-seen', { defaultValue: 'Seen (%)' })}</th>
+              <th style={thStyle}>{t('rl-col-novel-easy', { defaultValue: 'Novel Easy (%)' })}</th>
+              <th style={thStyle}>{t('rl-col-novel-medium', { defaultValue: 'Novel Medium (%)' })}</th>
+              <th style={thStyle}>{t('rl-col-novel-hard', { defaultValue: 'Novel Hard (%)' })}</th>
+              <th style={thStyle}>{t('rl-col-bdi', { defaultValue: 'BDI' })}</th>
             </tr>
           </thead>
           <tbody>
@@ -545,7 +546,7 @@ export function RLRoguelikePaper() {
       </p>
 
       {/* 3.3 Behavioral Profile Analysis */}
-      <h3 style={h3Style}>3.3 Behavioral Profile Analysis</h3>
+      <h3 style={h3Style}>{t('rl-subsection-behavioral', { defaultValue: '3.3 Behavioral Profile Analysis' })}</h3>
 
       <p className="mb-4">
         To understand the qualitative nature of the policies learned under each
@@ -619,7 +620,7 @@ export function RLRoguelikePaper() {
       {/* ============================================================ */}
       {/* 4. DISCUSSION                                                 */}
       {/* ============================================================ */}
-      <h2 style={h2Style}>4. Discussion</h2>
+      <h2 style={h2Style}>{t('rl-section-discussion', { defaultValue: '4. Discussion' })}</h2>
 
       <p className="mb-4">
         The central finding of this study is the magnitude and character of the
@@ -720,7 +721,7 @@ export function RLRoguelikePaper() {
       {/* ============================================================ */}
       {/* 5. CONCLUSION                                                 */}
       {/* ============================================================ */}
-      <h2 style={h2Style}>5. Conclusion</h2>
+      <h2 style={h2Style}>{t('rl-section-conclusion', { defaultValue: '5. Conclusion' })}</h2>
 
       <p className="mb-4">
         This study provides comprehensive empirical evidence that curriculum
@@ -749,7 +750,7 @@ export function RLRoguelikePaper() {
       {/* ============================================================ */}
       {/* REFERENCES                                                    */}
       {/* ============================================================ */}
-      <h2 style={h2Style}>References</h2>
+      <h2 style={h2Style}>{t('rl-section-references', { defaultValue: 'References' })}</h2>
 
       <div style={{ fontSize: '9.5pt', lineHeight: 1.5 }}>
         <p className="mb-2" style={{ paddingLeft: '2em', textIndent: '-2em' }}>

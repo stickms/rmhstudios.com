@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Gift, Check, Loader2, X, Sparkles } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 
@@ -19,6 +20,7 @@ const WHATSNEW_KEY = 'rmh-whatsnew-seen-v2';
  * occasionally rather than on every visit).
  */
 export function FreeMonthModal() {
+  const { t } = useTranslation("feed");
   const { data: session, isPending } = useSession();
   const [open, setOpen] = useState(false);
   const [claiming, setClaiming] = useState(false);
@@ -85,7 +87,7 @@ export function FreeMonthModal() {
       aria-labelledby="freemonth-title"
     >
       <div className="relative w-full max-w-sm rounded-2xl border border-site-border bg-site-surface p-6 text-center shadow-2xl">
-        <button onClick={snooze} aria-label="Close" className="absolute right-3 top-3 rounded-md p-1 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text">
+        <button onClick={snooze} aria-label={t("close", { defaultValue: "Close" })} className="absolute right-3 top-3 rounded-md p-1 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text">
           <X className="h-4 w-4" />
         </button>
 
@@ -97,29 +99,29 @@ export function FreeMonthModal() {
 
         {claimed ? (
           <>
-            <h2 id="freemonth-title" className="text-xl font-bold text-site-text">You’re on Pro! 🎉</h2>
+            <h2 id="freemonth-title" className="text-xl font-bold text-site-text">{t("claimed-title", { defaultValue: "You’re on Pro! 🎉" })}</h2>
             <p className="mx-auto mt-2 max-w-xs text-sm text-site-text-muted">
-              Your free month of Pro is active. Enjoy the perks — including the developer API.
+              {t("claimed-body", { defaultValue: "Your free month of Pro is active. Enjoy the perks — including the developer API." })}
             </p>
             <Button variant="accent" className="mt-5 w-full" onClick={() => setOpen(false)}>
-              Let’s go
+              {t("lets-go", { defaultValue: "Let’s go" })}
             </Button>
           </>
         ) : (
           <>
             <h2 id="freemonth-title" className="inline-flex items-center gap-1.5 text-xl font-bold text-site-text">
-              <Sparkles className="h-5 w-5 text-site-accent" /> A month of Pro, on us
+              <Sparkles className="h-5 w-5 text-site-accent" /> {t("offer-title", { defaultValue: "A month of Pro, on us" })}
             </h2>
             <p className="mx-auto mt-2 max-w-xs text-sm text-site-text-muted">
-              Try RMH Pro free for one month — no payment, no card. Unlock the developer API, the profile badge, and more.
+              {t("offer-body", { defaultValue: "Try RMH Pro free for one month — no payment, no card. Unlock the developer API, the profile badge, and more." })}
             </p>
             <div className="mt-5 flex flex-col gap-2">
               <Button variant="accent" disabled={claiming} onClick={claim} className="w-full gap-1.5">
                 {claiming ? <Loader2 className="h-4 w-4 animate-spin" /> : <Gift className="h-4 w-4" />}
-                Claim free month
+                {t("claim-free-month", { defaultValue: "Claim free month" })}
               </Button>
               <Button variant="ghost" size="sm" onClick={snooze} className="w-full text-site-text-muted">
-                Maybe later
+                {t("maybe-later", { defaultValue: "Maybe later" })}
               </Button>
             </div>
           </>

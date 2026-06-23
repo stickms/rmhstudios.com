@@ -8,6 +8,7 @@ import { ComposeModal } from './ComposeModal';
 import { useUnreadCount } from '@/lib/useUnreadCount';
 import { useNotificationCount } from '@/lib/useNotificationCount';
 import { LanguageSwitcher } from '@/components/site/LanguageSwitcher';
+import { useTranslation } from "react-i18next";
 
 export function MobileNav() {
   const { pathname } = useLocation();
@@ -26,6 +27,7 @@ export function MobileNav() {
   const isInbox = pathname?.startsWith('/messages') || pathname?.startsWith('/notifications') || pathname?.startsWith('/groups');
   const isProfile = pathname?.startsWith('/profile') || pathname?.startsWith('/u/');
   const inboxCount = unreadCount + notificationCount;
+  const { t } = useTranslation("feed");
 
   const tabClass = (active: boolean) =>
     `flex items-center justify-center p-3 transition-colors ${
@@ -39,7 +41,7 @@ export function MobileNav() {
         <button
           onClick={() => setComposeOpen(true)}
           className="md:hidden fixed right-4 bottom-18 z-50 w-14 h-14 rounded-full bg-site-accent hover:bg-site-accent-hover text-site-bg shadow-lg flex items-center justify-center transition-colors active:scale-95"
-          aria-label="New post"
+          aria-label={t("new-post", { defaultValue: "New post" })}
         >
           <PenSquare className="w-6 h-6" />
         </button>
@@ -51,19 +53,19 @@ export function MobileNav() {
           <LanguageSwitcher />
         </div>
         <div className="flex items-center justify-around h-12">
-          <Link to="/" className={tabClass(isHome)} aria-label="Home">
+          <Link to="/" className={tabClass(isHome)} aria-label={t("home", { defaultValue: "Home" })}>
             <Home className="w-6 h-6" />
           </Link>
 
-          <Link to="/search" search={{ q: '' }} className={tabClass(isExplore)} aria-label="Explore">
+          <Link to="/search" search={{ q: '' }} className={tabClass(isExplore)} aria-label={t("explore", { defaultValue: "Explore" })}>
             <Compass className="w-6 h-6" />
           </Link>
 
-          <Link to="/builds" className={tabClass(isBuilds)} aria-label="Builds">
+          <Link to="/builds" className={tabClass(isBuilds)} aria-label={t("builds", { defaultValue: "Builds" })}>
             <Package className="w-6 h-6" />
           </Link>
 
-          <Link to="/messages" className={tabClass(isInbox)} aria-label="Inbox">
+          <Link to="/messages" className={tabClass(isInbox)} aria-label={t("inbox", { defaultValue: "Inbox" })}>
             <div className="relative">
               <Inbox className="w-6 h-6" />
               {inboxCount > 0 && (
@@ -74,7 +76,7 @@ export function MobileNav() {
             </div>
           </Link>
 
-          <Link to={profileHref} className={tabClass(isProfile)} aria-label="Profile">
+          <Link to={profileHref} className={tabClass(isProfile)} aria-label={t("profile", { defaultValue: "Profile" })}>
             <User className="w-6 h-6" />
           </Link>
         </div>

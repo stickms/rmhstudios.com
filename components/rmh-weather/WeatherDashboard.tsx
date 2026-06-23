@@ -2,6 +2,7 @@
 import './weather.css';
 
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from "react-i18next";
 import { useWeatherStore } from '@/lib/store/useWeatherStore';
 import { fetchWeather, WeatherData, getWeatherTheme } from '@/lib/weather';
 import { WeatherSearch } from './WeatherSearch';
@@ -50,6 +51,7 @@ function getCampingHikingSuitability(daily: any) {
 }
 
 export const WeatherDashboard = () => {
+    const { t } = useTranslation("c-rmh-weather");
     const { units, lastLocation, setLastLocation, setUnits, hasHydrated, windUnit, setWindUnit } = useWeatherStore();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -73,7 +75,7 @@ export const WeatherDashboard = () => {
         setData(weather);
         setLastLocation(loc);
       } catch (err) {
-        setError('Failed to fetch weather data. Please try again.');
+        setError(t("fetch-error", { defaultValue: "Failed to fetch weather data. Please try again." }));
         console.error(err);
       } finally {
         setLoading(false);
@@ -112,7 +114,7 @@ export const WeatherDashboard = () => {
             <Link
               to="/secret"
               className="p-4 bg-weather-glass border border-weather rounded-2xl hover:bg-weather-glass-hover transition-all backdrop-blur-md shrink-0"
-              title="Back to homepage"
+              title={t("back-to-homepage", { defaultValue: "Back to homepage" })}
             >
               <ArrowLeft className="w-6 h-6 text-weather" />
             </Link>
@@ -134,7 +136,7 @@ export const WeatherDashboard = () => {
                 mode === 'light' ? 'bg-yellow-400 text-black shadow-lg' : 'bg-slate-900 text-white shadow-lg'
               }`}
             >
-              {mode === 'light' ? '☀ Light Mode' : '🌙 Dark Mode'}
+              {mode === 'light' ? t("light-mode", { defaultValue: "☀ Light Mode" }) : t("dark-mode", { defaultValue: "🌙 Dark Mode" })}
             </button>
             <button
               onClick={() => setUnits('metric')}
@@ -142,7 +144,7 @@ export const WeatherDashboard = () => {
                 units === 'metric' ? 'bg-blue-600 text-white shadow-lg' : 'text-weather-muted hover:text-weather'
               }`}
             >
-              Metric
+              {t("metric", { defaultValue: "Metric" })}
             </button>
             <button
               onClick={() => setUnits('imperial')}
@@ -150,7 +152,7 @@ export const WeatherDashboard = () => {
                 units === 'imperial' ? 'bg-blue-600 text-white shadow-lg' : 'text-weather-muted hover:text-weather'
               }`}
             >
-              Imperial
+              {t("imperial", { defaultValue: "Imperial" })}
             </button>
             <button
               onClick={() => setWindUnit('km/h')}
@@ -158,7 +160,7 @@ export const WeatherDashboard = () => {
                 windUnit === 'km/h' ? 'bg-cyan-600 text-white shadow-lg' : 'text-weather-muted hover:text-weather'
               }`}
             >
-              km/h
+              {t("kmh", { defaultValue: "km/h" })}
             </button>
             <button
               onClick={() => setWindUnit('mph')}
@@ -166,7 +168,7 @@ export const WeatherDashboard = () => {
                 windUnit === 'mph' ? 'bg-cyan-600 text-white shadow-lg' : 'text-weather-muted hover:text-weather'
               }`}
             >
-              mph
+              {t("mph", { defaultValue: "mph" })}
             </button>
             <button
               onClick={() => setWindUnit('knots')}
@@ -174,7 +176,7 @@ export const WeatherDashboard = () => {
                 windUnit === 'knots' ? 'bg-cyan-600 text-white shadow-lg' : 'text-weather-muted hover:text-weather'
               }`}
             >
-              knots
+              {t("knots", { defaultValue: "knots" })}
             </button>
           </div>
         </div>
@@ -196,7 +198,7 @@ export const WeatherDashboard = () => {
               className="flex flex-col items-center justify-center py-32 space-y-4"
             >
               <Loader2 className="w-12 h-12 text-blue-400 animate-spin" />
-              <p className="text-weather-muted font-medium animate-pulse">Fetching atmospheric data...</p>
+              <p className="text-weather-muted font-medium animate-pulse">{t("fetching-data", { defaultValue: "Fetching atmospheric data..." })}</p>
             </motion.div>
           ) : data ? (
             <motion.div
@@ -226,7 +228,7 @@ export const WeatherDashboard = () => {
 
               {/* Commute Weather Summary */}
               <div className="my-8">
-                <div className="text-lg font-semibold text-blue-400 mb-2">Commute Weather Summary</div>
+                <div className="text-lg font-semibold text-blue-400 mb-2">{t("commute-summary", { defaultValue: "Commute Weather Summary" })}</div>
                 <div className="grid grid-cols-2 gap-6">
                   {['morning', 'evening'].map((period) => {
                     const commuteHours = period === 'morning' ? [7,8,9] : [17,18,19];
@@ -239,16 +241,16 @@ export const WeatherDashboard = () => {
                     });
                     return (
                       <div key={period} className="bg-weather-glass rounded-2xl p-4 border border-weather">
-                        <div className="font-bold text-weather mb-2">{period === 'morning' ? 'Morning (7–9 AM)' : 'Evening (5–7 PM)'}</div>
+                        <div className="font-bold text-weather mb-2">{period === 'morning' ? t("morning-commute", { defaultValue: "Morning (7–9 AM)" }) : t("evening-commute", { defaultValue: "Evening (5–7 PM)" })}</div>
                         {hourly.length === 0 ? (
-                          <div className="text-weather-muted">No forecast available.</div>
+                          <div className="text-weather-muted">{t("no-forecast", { defaultValue: "No forecast available." })}</div>
                         ) : (
                           <ul className="space-y-2">
                             {hourly.map((h: any) => (
                               <li key={h.time} className="flex items-center gap-3">
                                 <span className="text-weather font-semibold">{new Date(h.time).toLocaleTimeString([], { hour: 'numeric', hour12: true })}</span>
                                 <span className="text-weather-muted">{Math.round(h.temp)}{units === 'metric' ? '°C' : '°F'}</span>
-                                <span className="text-blue-400">{h.precipProb}% rain</span>
+                                <span className="text-blue-400">{t("precip-rain", { defaultValue: "{{pct}}% rain", pct: h.precipProb })}</span>
                               </li>
                             ))}
                           </ul>
@@ -294,7 +296,7 @@ export const WeatherDashboard = () => {
   );
                 {/* Hourly Precipitation Bar Chart */}
                 <div className="my-8">
-                  <div className="text-lg font-semibold text-blue-400 mb-2">Hourly Precipitation Probability</div>
+                  <div className="text-lg font-semibold text-blue-400 mb-2">{t("hourly-precip-probability", { defaultValue: "Hourly Precipitation Probability" })}</div>
                   <div className="flex gap-1 overflow-x-auto scrollbar-hide">
                     {data.hourly.slice(0, 24).map((h: any, i: number) => (
                       <div key={h.time} className="flex flex-col items-center min-w-8">
@@ -331,7 +333,7 @@ export const WeatherDashboard = () => {
             <Link
               to="/secret"
               className="p-4 bg-weather-glass border border-weather rounded-2xl hover:bg-weather-glass-hover transition-all backdrop-blur-md shrink-0"
-              title="Back to homepage"
+              title={t("back-to-homepage", { defaultValue: "Back to homepage" })}
             >
               <ArrowLeft className="w-6 h-6 text-weather" />
             </Link>
@@ -353,7 +355,7 @@ export const WeatherDashboard = () => {
                 mode === 'light' ? 'bg-yellow-400 text-black shadow-lg' : 'bg-slate-900 text-white shadow-lg'
               }`}
             >
-              {mode === 'light' ? '☀ Light Mode' : '🌙 Dark Mode'}
+              {mode === 'light' ? t("light-mode", { defaultValue: "☀ Light Mode" }) : t("dark-mode", { defaultValue: "🌙 Dark Mode" })}
             </button>
             <button
               onClick={() => setUnits('metric')}
@@ -361,7 +363,7 @@ export const WeatherDashboard = () => {
                 units === 'metric' ? 'bg-blue-600 text-white shadow-lg' : 'text-weather-muted hover:text-weather'
               }`}
             >
-              Metric
+              {t("metric", { defaultValue: "Metric" })}
             </button>
             <button
               onClick={() => setUnits('imperial')}
@@ -369,7 +371,7 @@ export const WeatherDashboard = () => {
                 units === 'imperial' ? 'bg-blue-600 text-white shadow-lg' : 'text-weather-muted hover:text-weather'
               }`}
             >
-              Imperial
+              {t("imperial", { defaultValue: "Imperial" })}
             </button>
             <button
               onClick={() => setWindUnit('km/h')}
@@ -377,7 +379,7 @@ export const WeatherDashboard = () => {
                 windUnit === 'km/h' ? 'bg-cyan-600 text-white shadow-lg' : 'text-weather-muted hover:text-weather'
               }`}
             >
-              km/h
+              {t("kmh", { defaultValue: "km/h" })}
             </button>
             <button
               onClick={() => setWindUnit('mph')}
@@ -385,7 +387,7 @@ export const WeatherDashboard = () => {
                 windUnit === 'mph' ? 'bg-cyan-600 text-white shadow-lg' : 'text-weather-muted hover:text-weather'
               }`}
             >
-              mph
+              {t("mph", { defaultValue: "mph" })}
             </button>
             <button
               onClick={() => setWindUnit('knots')}
@@ -393,7 +395,7 @@ export const WeatherDashboard = () => {
                 windUnit === 'knots' ? 'bg-cyan-600 text-white shadow-lg' : 'text-weather-muted hover:text-weather'
               }`}
             >
-              knots
+              {t("knots", { defaultValue: "knots" })}
             </button>
           </div>
         </div>
@@ -415,7 +417,7 @@ export const WeatherDashboard = () => {
               className="flex flex-col items-center justify-center py-32 space-y-4"
             >
               <Loader2 className="w-12 h-12 text-blue-400 animate-spin" />
-              <p className="text-weather-muted font-medium animate-pulse">Fetching atmospheric data...</p>
+              <p className="text-weather-muted font-medium animate-pulse">{t("fetching-data", { defaultValue: "Fetching atmospheric data..." })}</p>
             </motion.div>
           ) : data ? (
             <motion.div
@@ -445,7 +447,7 @@ export const WeatherDashboard = () => {
 
               {/* Commute Weather Summary */}
               <div className="my-8">
-                <div className="text-lg font-semibold text-blue-400 mb-2">Commute Weather Summary</div>
+                <div className="text-lg font-semibold text-blue-400 mb-2">{t("commute-summary", { defaultValue: "Commute Weather Summary" })}</div>
                 <div className="grid grid-cols-2 gap-6">
                   {['morning', 'evening'].map((period) => {
                     const commuteHours = period === 'morning' ? [7,8,9] : [17,18,19];
@@ -458,16 +460,16 @@ export const WeatherDashboard = () => {
                     });
                     return (
                       <div key={period} className="bg-weather-glass rounded-2xl p-4 border border-weather">
-                        <div className="font-bold text-weather mb-2">{period === 'morning' ? 'Morning (7–9 AM)' : 'Evening (5–7 PM)'}</div>
+                        <div className="font-bold text-weather mb-2">{period === 'morning' ? t("morning-commute", { defaultValue: "Morning (7–9 AM)" }) : t("evening-commute", { defaultValue: "Evening (5–7 PM)" })}</div>
                         {hourly.length === 0 ? (
-                          <div className="text-weather-muted">No forecast available.</div>
+                          <div className="text-weather-muted">{t("no-forecast", { defaultValue: "No forecast available." })}</div>
                         ) : (
                           <ul className="space-y-2">
                             {hourly.map((h: any) => (
                               <li key={h.time} className="flex items-center gap-3">
                                 <span className="text-weather font-semibold">{new Date(h.time).toLocaleTimeString([], { hour: 'numeric', hour12: true })}</span>
                                 <span className="text-weather-muted">{Math.round(h.temp)}{units === 'metric' ? '°C' : '°F'}</span>
-                                <span className="text-blue-400">{h.precipProb}% rain</span>
+                                <span className="text-blue-400">{t("precip-rain", { defaultValue: "{{pct}}% rain", pct: h.precipProb })}</span>
                               </li>
                             ))}
                           </ul>

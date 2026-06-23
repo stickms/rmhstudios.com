@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Copy, Check, UserPlus } from 'lucide-react';
+import { useTranslation } from "react-i18next";
 
 export function RecruitForm() {
+  const { t } = useTranslation("c-doctrine");
   const [message, setMessage] = useState('');
   const [skills, setSkills] = useState('');
   const [code, setCode] = useState<string | null>(null);
@@ -47,7 +49,7 @@ export function RecruitForm() {
       <div className="space-y-3 p-4 rounded-lg" style={{ background: 'var(--doctrine-bg-secondary, #141416)' }}>
         <h3 className="text-sm font-semibold text-white/80 flex items-center gap-2">
           <UserPlus size={16} style={{ color: 'var(--doctrine-accent, #F97316)' }} />
-          Recruitment Link Generated
+          {t("recruitment-link-generated", { defaultValue: "Recruitment Link Generated" })}
         </h3>
         <div className="flex items-center gap-2">
           <code className="flex-1 text-xs font-mono text-white/60 bg-white/5 p-2 rounded truncate">
@@ -61,7 +63,7 @@ export function RecruitForm() {
           onClick={() => { setCode(null); setMessage(''); }}
           className="text-sm md:text-xs text-white/40 hover:text-white/60 transition-colors min-h-[44px] md:min-h-0 flex items-center"
         >
-          Generate another
+          {t("generate-another", { defaultValue: "Generate another" })}
         </button>
       </div>
     );
@@ -71,19 +73,19 @@ export function RecruitForm() {
     <div className="space-y-3 p-4 rounded-lg" style={{ background: 'var(--doctrine-bg-secondary, #141416)' }}>
       <h3 className="text-sm font-semibold text-white/80 flex items-center gap-2">
         <UserPlus size={16} style={{ color: 'var(--doctrine-accent, #F97316)' }} />
-        Recruit an Asset
+        {t("recruit-an-asset", { defaultValue: "Recruit an Asset" })}
       </h3>
       <textarea
         value={message}
         onChange={e => setMessage(e.target.value)}
-        placeholder="Write a personal recruitment message..."
+        placeholder={t("recruitment-message-placeholder", { defaultValue: "Write a personal recruitment message..." })}
         className="w-full h-28 md:h-24 text-base md:text-sm bg-white/5 border border-white/10 rounded-lg p-3 text-white/80 placeholder:text-white/20 resize-none focus:outline-none focus:border-white/20"
         maxLength={500}
       />
       <input
         value={skills}
         onChange={e => setSkills(e.target.value)}
-        placeholder="Target skills (comma-separated): frontend, design, music"
+        placeholder={t("target-skills-placeholder", { defaultValue: "Target skills (comma-separated): frontend, design, music" })}
         className="w-full text-base md:text-sm bg-white/5 border border-white/10 rounded-lg p-3 md:p-2.5 text-white/80 placeholder:text-white/20 focus:outline-none focus:border-white/20 min-h-[44px]"
       />
       <button
@@ -92,7 +94,7 @@ export function RecruitForm() {
         className="w-full py-3 md:py-2 text-base md:text-sm font-medium rounded-lg transition-all disabled:opacity-40 min-h-[44px]"
         style={{ background: 'var(--doctrine-accent, #F97316)', color: '#000' }}
       >
-        {loading ? 'Generating...' : 'Generate Recruitment Code'}
+        {loading ? t("generating", { defaultValue: "Generating..." }) : t("generate-recruitment-code", { defaultValue: "Generate Recruitment Code" })}
       </button>
     </div>
   );

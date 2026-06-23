@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Trophy, BookmarkCheck, Leaf, Trash2, ShoppingBag, Flame, Sparkles, ChevronRight } from 'lucide-react';
 import { useEatsStore } from '@/lib/store/useEatsStore';
@@ -31,6 +32,7 @@ export default function ProfilePage() {
 
     const [showSaveForm, setShowSaveForm] = useState(false);
     const [saveLabel, setSaveLabel] = useState('');
+    const { t } = useTranslation("c-rmh-eats");
     const [showRecs, setShowRecs] = useState(false);
     const [calorieInput, setCalorieInput] = useState(calorieBudget?.toString() ?? '');
 
@@ -43,29 +45,29 @@ export default function ProfilePage() {
 
     function handleSaveCart() {
         if (!saveLabel.trim()) {
-            toast.error('Please enter a name for this order');
+            toast.error(t("save-order-name-required", { defaultValue: "Please enter a name for this order" }));
             return;
         }
         saveCurrentCart(saveLabel.trim());
         setSaveLabel('');
         setShowSaveForm(false);
-        toast.success('Order saved!');
+        toast.success(t("order-saved", { defaultValue: "Order saved!" }));
     }
 
     function handleLoadSaved(id: string) {
         loadSavedOrder(id);
         setView('home');
-        toast.success('Items added to cart!');
+        toast.success(t("items-added-to-cart", { defaultValue: "Items added to cart!" }));
     }
 
     function handleSetBudget() {
         const n = parseInt(calorieInput);
         if (isNaN(n) || n < 100) {
-            toast.error('Enter a valid calorie target (min 100)');
+            toast.error(t("calorie-target-invalid", { defaultValue: "Enter a valid calorie target (min 100)" }));
             return;
         }
         setCalorieBudget(n);
-        toast.success(`Calorie budget set to ${n} cal/day`);
+        toast.success(t("calorie-budget-set", { defaultValue: "Calorie budget set to {{n}} cal/day", n }));
     }
 
     return (
@@ -77,18 +79,18 @@ export default function ProfilePage() {
                 >
                     <ArrowLeft className="h-5 w-5" />
                 </button>
-                <h2 className="text-xl font-bold text-white">Profile</h2>
+                <h2 className="text-xl font-bold text-white">{t("profile", { defaultValue: "Profile" })}</h2>
             </div>
 
             {/* Loyalty Points */}
             <div className="rounded-2xl bg-linear-to-br from-orange-500/20 to-amber-500/10 border border-orange-500/30 p-5">
                 <div className="flex items-center gap-2 mb-3">
                     <Trophy className="h-5 w-5 text-orange-400" />
-                    <h3 className="font-semibold text-white">Loyalty Points</h3>
+                    <h3 className="font-semibold text-white">{t("loyalty-points", { defaultValue: "Loyalty Points" })}</h3>
                 </div>
                 <div className="flex items-end gap-2 mb-3">
                     <span className="text-4xl font-bold text-orange-400">{loyaltyPoints}</span>
-                    <span className="text-slate-400 mb-1">pts</span>
+                    <span className="text-slate-400 mb-1">{t("pts", { defaultValue: "pts" })}</span>
                 </div>
                 <div className="w-full bg-slate-700 rounded-full h-2 mb-2">
                     <div
@@ -97,28 +99,28 @@ export default function ProfilePage() {
                     />
                 </div>
                 <p className="text-xs text-slate-400">
-                    {pointsToNextReward} pts until your next $1.00 reward · ${Math.floor(loyaltyPoints / 100).toFixed(2)} redeemable
+                    {t("pts-until-reward", { defaultValue: "{{pointsToNextReward}} pts until your next $1.00 reward · ${{redeemable}} redeemable", pointsToNextReward, redeemable: Math.floor(loyaltyPoints / 100).toFixed(2) })}
                 </p>
                 <p className="text-xs text-slate-500 mt-2">
-                    ${totalSpent.toFixed(2)} lifetime spent · {orders.length} orders
+                    {t("lifetime-spent", { defaultValue: "${{totalSpent}} lifetime spent · {{orderCount}} orders", totalSpent: totalSpent.toFixed(2), orderCount: orders.length })}
                 </p>
-                <p className="text-xs text-slate-500 mt-1">Redeem at checkout — 100 pts = $1.00 off</p>
+                <p className="text-xs text-slate-500 mt-1">{t("redeem-info", { defaultValue: "Redeem at checkout — 100 pts = $1.00 off" })}</p>
             </div>
 
             {/* Dietary Preferences */}
             <div className="rounded-2xl bg-slate-800/50 border border-slate-700/50 p-5">
                 <div className="flex items-center gap-2 mb-4">
                     <Leaf className="h-5 w-5 text-green-400" />
-                    <h3 className="font-semibold text-white">Dietary Preferences</h3>
+                    <h3 className="font-semibold text-white">{t("dietary-preferences", { defaultValue: "Dietary Preferences" })}</h3>
                 </div>
                 <p className="text-xs text-slate-400 mb-4">
-                    Active filters apply across the whole app — restaurant cards and menus will be filtered automatically.
+                    {t("diet-filters-info", { defaultValue: "Active filters apply across the whole app — restaurant cards and menus will be filtered automatically." })}
                 </p>
                 <div className="space-y-3">
                     {([
-                        { key: 'vegetarian' as const, label: '🌿 Vegetarian', desc: 'Show only vegetarian options' },
-                        { key: 'vegan' as const, label: '🌱 Vegan', desc: 'Show only vegan options' },
-                        { key: 'spicy' as const, label: '🌶️ Spicy', desc: 'Show only spicy dishes' },
+                        { key: 'vegetarian' as const, label: t("filter-vegetarian-label", { defaultValue: "🌿 Vegetarian" }), desc: t("filter-vegetarian-desc", { defaultValue: "Show only vegetarian options" }) },
+                        { key: 'vegan' as const, label: t("filter-vegan-label", { defaultValue: "🌱 Vegan" }), desc: t("filter-vegan-desc", { defaultValue: "Show only vegan options" }) },
+                        { key: 'spicy' as const, label: t("filter-spicy-label", { defaultValue: "🌶️ Spicy" }), desc: t("filter-spicy-desc", { defaultValue: "Show only spicy dishes" }) },
                     ]).map(({ key, label, desc }) => (
                         <div key={key} className="flex items-center justify-between">
                             <div>
@@ -135,11 +137,11 @@ export default function ProfilePage() {
             <div className="rounded-2xl bg-slate-800/50 border border-slate-700/50 p-5">
                 <div className="flex items-center gap-2 mb-3">
                     <Flame className="h-5 w-5 text-orange-400" />
-                    <h3 className="font-semibold text-white">Daily Calorie Budget</h3>
+                    <h3 className="font-semibold text-white">{t("daily-calorie-budget", { defaultValue: "Daily Calorie Budget" })}</h3>
                 </div>
                 {calorieBudget && (
                     <p className="text-sm text-green-400 mb-3">
-                        Current budget: <strong>{calorieBudget} cal/day</strong>
+                        {t("current-budget", { defaultValue: "Current budget:" })} <strong>{calorieBudget} {t("cal-per-day", { defaultValue: "cal/day" })}</strong>
                     </p>
                 )}
                 <div className="flex gap-2">
@@ -147,21 +149,21 @@ export default function ProfilePage() {
                         type="number"
                         value={calorieInput}
                         onChange={(e) => setCalorieInput(e.target.value)}
-                        placeholder="e.g. 2000"
+                        placeholder={t("calorie-placeholder", { defaultValue: "e.g. 2000" })}
                         className="flex-1 rounded-xl bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500 outline-none focus:border-orange-500"
                     />
                     <button
                         onClick={handleSetBudget}
                         className="rounded-xl bg-orange-500 hover:bg-orange-400 px-4 py-2 text-sm font-medium text-white transition-colors"
                     >
-                        Set
+                        {t("set", { defaultValue: "Set" })}
                     </button>
                     {calorieBudget && (
                         <button
                             onClick={() => { setCalorieBudget(null); setCalorieInput(''); }}
                             className="rounded-xl bg-slate-700 hover:bg-slate-600 px-3 py-2 text-sm text-slate-400 hover:text-white transition-colors"
                         >
-                            Clear
+                            {t("clear", { defaultValue: "Clear" })}
                         </button>
                     )}
                 </div>
@@ -169,7 +171,7 @@ export default function ProfilePage() {
                     onClick={() => setView('calorie-planner')}
                     className="mt-3 flex items-center gap-1 text-xs text-orange-400 hover:text-orange-300 transition-colors"
                 >
-                    Open Calorie Planner <ChevronRight className="h-3 w-3" />
+                    {t("open-calorie-planner", { defaultValue: "Open Calorie Planner" })} <ChevronRight className="h-3 w-3" />
                 </button>
             </div>
 
@@ -178,14 +180,14 @@ export default function ProfilePage() {
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                         <BookmarkCheck className="h-5 w-5 text-blue-400" />
-                        <h3 className="font-semibold text-white">Saved Orders</h3>
+                        <h3 className="font-semibold text-white">{t("saved-orders", { defaultValue: "Saved Orders" })}</h3>
                     </div>
                     {cart.length > 0 && cartRestaurantId && !showSaveForm && (
                         <button
                             onClick={() => setShowSaveForm(true)}
                             className="text-xs text-orange-400 hover:text-orange-300 transition-colors"
                         >
-                            + Save current cart
+                            {t("save-current-cart", { defaultValue: "+ Save current cart" })}
                         </button>
                     )}
                 </div>
@@ -204,20 +206,20 @@ export default function ProfilePage() {
                                     value={saveLabel}
                                     onChange={(e) => setSaveLabel(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleSaveCart()}
-                                    placeholder='Name (e.g. "My usual sushi")'
+                                    placeholder={t("save-order-placeholder", { defaultValue: 'Name (e.g. "My usual sushi")' })}
                                     className="flex-1 rounded-xl bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500 outline-none focus:border-orange-500"
                                 />
                                 <button
                                     onClick={handleSaveCart}
                                     className="rounded-xl bg-orange-500 hover:bg-orange-400 px-3 py-2 text-sm font-medium text-white transition-colors"
                                 >
-                                    Save
+                                    {t("save", { defaultValue: "Save" })}
                                 </button>
                                 <button
                                     onClick={() => setShowSaveForm(false)}
                                     className="rounded-xl bg-slate-700 px-3 py-2 text-sm text-slate-400 hover:text-white transition-colors"
                                 >
-                                    Cancel
+                                    {t("cancel", { defaultValue: "Cancel" })}
                                 </button>
                             </div>
                         </motion.div>
@@ -227,8 +229,8 @@ export default function ProfilePage() {
                 {savedOrders.length === 0 ? (
                     <div className="text-center py-6 text-slate-500 text-sm">
                         <ShoppingBag className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                        <p>No saved orders yet.</p>
-                        <p className="text-xs mt-1">Build a cart and save it for quick reordering.</p>
+                        <p>{t("no-saved-orders", { defaultValue: "No saved orders yet." })}</p>
+                        <p className="text-xs mt-1">{t("no-saved-orders-hint", { defaultValue: "Build a cart and save it for quick reordering." })}</p>
                     </div>
                 ) : (
                     <div className="space-y-3">
@@ -237,13 +239,13 @@ export default function ProfilePage() {
                                 <span className="text-2xl">{so.restaurantImage}</span>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium text-white truncate">{so.label}</p>
-                                    <p className="text-xs text-slate-400 truncate">{so.restaurantName} · {so.items.length} item{so.items.length !== 1 ? 's' : ''}</p>
+                                    <p className="text-xs text-slate-400 truncate">{so.restaurantName} · {t("item-count", { count: so.items.length, defaultValue: "{{count}} item", defaultValue_other: "{{count}} items" })}</p>
                                 </div>
                                 <button
                                     onClick={() => handleLoadSaved(so.id)}
                                     className="rounded-lg bg-orange-500 hover:bg-orange-400 px-2.5 py-1.5 text-xs font-medium text-white transition-colors shrink-0"
                                 >
-                                    Load
+                                    {t("load", { defaultValue: "Load" })}
                                 </button>
                                 <button
                                     onClick={() => deleteSavedOrder(so.id)}
@@ -262,13 +264,13 @@ export default function ProfilePage() {
                 <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                         <Sparkles className="h-5 w-5 text-purple-400" />
-                        <h3 className="font-semibold text-white">AI Meal Suggestions</h3>
+                        <h3 className="font-semibold text-white">{t("ai-meal-suggestions", { defaultValue: "AI Meal Suggestions" })}</h3>
                     </div>
                     <button
                         onClick={() => setShowRecs(!showRecs)}
                         className="rounded-xl bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/30 px-3 py-1.5 text-xs font-medium text-purple-300 transition-colors"
                     >
-                        {showRecs ? 'Hide' : 'Suggest a meal'}
+                        {showRecs ? t("hide", { defaultValue: "Hide" }) : t("suggest-a-meal", { defaultValue: "Suggest a meal" })}
                     </button>
                 </div>
 
@@ -282,7 +284,7 @@ export default function ProfilePage() {
                         >
                             {recommendations.length === 0 ? (
                                 <p className="text-sm text-slate-400 text-center py-4">
-                                    Place a few orders first to get personalized recommendations!
+                                    {t("no-recommendations", { defaultValue: "Place a few orders first to get personalized recommendations!" })}
                                 </p>
                             ) : (
                                 <div className="space-y-3 pt-1">

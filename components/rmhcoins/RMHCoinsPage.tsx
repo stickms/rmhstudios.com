@@ -6,10 +6,12 @@ import { Loader2 } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 import { CoinIcon } from './CoinIcon';
 import { PlayTab } from './PlayTab';
 
 export function RMHCoinsPage() {
+  const { t } = useTranslation("c-rmhcoins");
   const { data: session, isPending } = authClient.useSession();
   const navigate = useNavigate();
   const [coins, setCoins] = useState(0);
@@ -42,13 +44,13 @@ export function RMHCoinsPage() {
       const res = await fetch('/api/coins/claim', { method: 'POST' });
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error || 'Claim failed');
+        toast.error(data.error || t("claim-failed", { defaultValue: "Claim failed" }));
         return;
       }
       setCoins(data.newBalance);
-      toast.success('+10 coins added!');
+      toast.success(t("coins-added", { defaultValue: "+10 coins added!" }));
     } catch {
-      toast.error('Network error');
+      toast.error(t("network-error", { defaultValue: "Network error" }));
     } finally {
       setClaiming(false);
     }
@@ -71,7 +73,7 @@ export function RMHCoinsPage() {
         <div className="flex items-center gap-2">
           <CoinIcon className="w-6 h-6" />
           <span className="font-bold text-2xl text-yellow-500">{coins}</span>
-          <span className="text-sm text-site-text-dim ml-1">RMH Coins</span>
+          <span className="text-sm text-site-text-dim ml-1">{t("rmh-coins", { defaultValue: "RMH Coins" })}</span>
         </div>
         {coins < 10 && (
           <Button
@@ -81,7 +83,7 @@ export function RMHCoinsPage() {
             size="sm"
             className="rounded-lg border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10"
           >
-            {claiming ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Claim 10 Free Coins'}
+            {claiming ? <Loader2 className="w-4 h-4 animate-spin" /> : t("claim-free-coins", { defaultValue: "Claim 10 Free Coins" })}
           </Button>
         )}
       </div>

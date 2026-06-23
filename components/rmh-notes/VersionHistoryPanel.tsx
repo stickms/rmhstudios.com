@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNotesDataStore } from '@/lib/store/useNotesDataStore';
 import { NoteVersion } from './types';
 import Modal from './Modal';
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export default function VersionHistoryPanel({ noteId, onRestore, onClose }: Props) {
+  const { t } = useTranslation("c-rmh-notes");
   const versions = useNotesDataStore((s) => s.getVersions)(noteId);
   const [preview, setPreview] = useState<string | null>(null);
 
@@ -34,20 +36,20 @@ export default function VersionHistoryPanel({ noteId, onRestore, onClose }: Prop
   const relativeTime = (iso: string) => {
     const diff = Date.now() - new Date(iso).getTime();
     const mins = Math.floor(diff / 60000);
-    if (mins < 1) return 'just now';
-    if (mins < 60) return `${mins} minutes ago`;
+    if (mins < 1) return t("just-now", { defaultValue: "just now" });
+    if (mins < 60) return t("minutes-ago", { defaultValue: "{{mins}} minutes ago", mins });
     const hours = Math.floor(mins / 60);
-    if (hours < 24) return `${hours} hours ago`;
+    if (hours < 24) return t("hours-ago", { defaultValue: "{{hours}} hours ago", hours });
     const days = Math.floor(hours / 24);
-    return days < 7 ? `${days} days ago` : new Date(iso).toLocaleDateString();
+    return days < 7 ? t("days-ago", { defaultValue: "{{days}} days ago", days }) : new Date(iso).toLocaleDateString();
   };
 
   return (
-    <Modal title="🕐 Version History" onClose={onClose} wide>
+    <Modal title={t("version-history-title", { defaultValue: "Version History" })} onClose={onClose} wide>
       {versions.length === 0 ? (
         <div className="text-center py-8">
           <p className="text-3xl mb-2">📭</p>
-          <p className="text-sm" style={{ color: 'var(--notes-text-muted)' }}>No versions saved yet. Versions are saved automatically when you edit.</p>
+          <p className="text-sm" style={{ color: 'var(--notes-text-muted)' }}>{t("no-versions-yet", { defaultValue: "No versions saved yet. Versions are saved automatically when you edit." })}</p>
         </div>
       ) : (
         <div className="flex gap-4" style={{ minHeight: 300 }}>
@@ -87,14 +89,14 @@ export default function VersionHistoryPanel({ noteId, onRestore, onClose }: Prop
                       className="px-4 py-2 rounded-lg text-sm font-semibold self-end"
                       style={{ background: 'var(--notes-accent)', color: 'var(--notes-accent-fg)' }}
                     >
-                      Restore this version
+                      {t("restore-this-version", { defaultValue: "Restore this version" })}
                     </button>
                   </div>
                 );
               })()
             ) : (
               <div className="flex items-center justify-center h-full" style={{ color: 'var(--notes-text-subtle)' }}>
-                <p className="text-sm">Select a version to preview</p>
+                <p className="text-sm">{t("select-version-to-preview", { defaultValue: "Select a version to preview" })}</p>
               </div>
             )}
           </div>

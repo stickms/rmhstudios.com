@@ -12,6 +12,9 @@ import { AIGenerateButton } from './AIGenerateButton';
 import { MentionTextarea } from './MentionTextarea';
 import { useFreshUser } from '@/stores/userDisplayStore';
 import { timeAgoShort } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
+import { useLocaleStore } from '@/stores/localeStore';
+import { LOCALE_TO_LANGUAGE_NAME } from '@/lib/i18n/config';
 
 export interface Comment {
   id: string;
@@ -62,6 +65,8 @@ interface CommentItemProps {
 }
 
 export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onCommentRemoved, depth = 0 }: CommentItemProps) {
+  const { t } = useTranslation("feed");
+  const locale = useLocaleStore((s) => s.locale);
   const freshCommentUser = useFreshUser(comment.user) ?? comment.user;
   const [replyOpen, setReplyOpen] = useState(false);
   const [replyContent, setReplyContent] = useState('');
@@ -82,18 +87,20 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
   const [translating, setTranslating] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  // When the site language changes, drop any cached translation so the next
+  // "Translate" click re-translates into the newly selected language.
+  useEffect(() => {
+    setTranslatedText(null);
+    setShowTranslated(false);
+  }, [locale]);
+
   const handleTranslate = async () => {
     setMenuOpen(false);
     if (translatedText) {
       setShowTranslated((s) => !s);
       return;
     }
-    const map: Record<string, string> = {
-      en: 'English', es: 'Spanish', fr: 'French', de: 'German', pt: 'Portuguese', it: 'Italian',
-      nl: 'Dutch', ja: 'Japanese', ko: 'Korean', zh: 'Chinese', ru: 'Russian', ar: 'Arabic',
-      hi: 'Hindi', tr: 'Turkish', pl: 'Polish',
-    };
-    const to = typeof navigator !== 'undefined' ? (map[(navigator.language || 'en').slice(0, 2).toLowerCase()] ?? 'English') : 'English';
+    const to = LOCALE_TO_LANGUAGE_NAME[locale];
     setTranslating(true);
     try {
       const res = await fetch(`/api/comments/${comment.id}/translate?to=${encodeURIComponent(to)}`, { credentials: 'include' });
@@ -174,7 +181,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
   };
 
   const handleDelete = async () => {
-    if (!confirm('Delete this reply?')) return;
+    if (!confirm(t('delete-reply-confirm', { defaultValue: 'Delete this reply?' }))) return;
     try {
       const res = await fetch(`/api/rmharks/${postId}/comment/${comment.id}`, { method: 'DELETE' });
       if (res.ok) {
@@ -227,7 +234,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
                 <BadgeCheck className="w-4 h-4 text-emerald-500 shrink-0" />
               )}
               {freshCommentUser.isAdmin && (
-                <span title="Admin" className="inline-flex items-center shrink-0">
+                <span title={t('admin-title', { defaultValue: 'Admin' })} className="inline-flex items-center shrink-0">
                   <ShieldCheck className="w-4 h-4 text-site-accent" />
                 </span>
               )}
@@ -257,14 +264,14 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
                       className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
                     >
                       <Heart className="w-4 h-4 text-site-text-dim" />
-                      Liked by
+                      {t('liked-by', { defaultValue: 'Liked by' })}
                     </button>
                     <button
                       onClick={() => { setMenuOpen(false); setEngagementModal('reposts'); }}
                       className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
                     >
                       <Repeat className="w-4 h-4 text-site-text-dim" />
-                      reRMHark'd by
+                      {t('rermarkd-by', { defaultValue: "reRMHark'd by" })}
                     </button>
                     {comment.content.length > 8 && (
                       <button
@@ -273,7 +280,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
                         className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors disabled:opacity-60"
                       >
                         <Languages className="w-4 h-4 text-site-text-dim" />
-                        {translating ? 'Translating…' : translatedText ? (showTranslated ? 'Show original' : 'Show translation') : 'Translate'}
+                        {translating ? t('translating', { defaultValue: 'Translating…' }) : translatedText ? (showTranslated ? t('show-original', { defaultValue: 'Show original' }) : t('show-translation', { defaultValue: 'Show translation' })) : t('translate', { defaultValue: 'Translate' })}
                       </button>
                     )}
                     {isAuthor && (
@@ -282,7 +289,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
                         className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-danger hover:bg-site-danger/10 transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
-                        Delete
+                        {t('delete', { defaultValue: 'Delete' })}
                       </button>
                     )}
                   </div>
@@ -367,7 +374,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
                   autoFocus
                   value={replyContent}
                   onChange={setReplyContent}
-                  placeholder={`Reply to @${freshCommentUser.handle || freshCommentUser.name || 'Unknown'}...`}
+                  placeholder={t('reply-placeholder', { handle: freshCommentUser.handle || freshCommentUser.name || 'Unknown', defaultValue: 'Reply to @{{handle}}...' })}
                   rows={2}
                   maxLength={MAX_COMMENT_LENGTH}
                   className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-xs rounded-lg p-2 border border-site-border resize-none outline-none focus:border-site-accent transition-colors"
@@ -390,7 +397,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
                       onClick={() => { setReplyOpen(false); setReplyContent(''); }}
                       className="text-[10px] text-site-text-dim hover:text-site-text transition-colors"
                     >
-                      Cancel
+                      {t('cancel', { defaultValue: 'Cancel' })}
                     </button>
                   </div>
                   <div className="flex items-center gap-2">
@@ -407,7 +414,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
                       onClick={handleSubmitReply}
                       className="h-6 text-xs px-2.5"
                     >
-                      {submitting ? 'Posting...' : 'Reply'}
+                      {submitting ? t('posting', { defaultValue: 'Posting...' }) : t('reply', { defaultValue: 'Reply' })}
                     </Button>
                   </div>
                 </div>
@@ -423,7 +430,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
                 className="mt-2 ml-2 flex items-center gap-1.5 text-xs font-medium text-site-accent hover:underline"
               >
                 <MessageCircle className="w-3.5 h-3.5" />
-                Show {countDescendants(comment.replies)} more {countDescendants(comment.replies) === 1 ? 'reply' : 'replies'}
+                {t('show-more-replies', { count: countDescendants(comment.replies), defaultValue: 'Show {{count}} more reply', defaultValue_plural: 'Show {{count}} more replies' })}
               </button>
             ) : (
               <div className="mt-2 ml-2 border-l-2 border-site-border pl-3 space-y-1">

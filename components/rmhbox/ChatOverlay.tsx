@@ -12,6 +12,7 @@
 'use client';
 
 import { useRef, useEffect, useState, useCallback, type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Send, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
 import type { ChatMessage } from '@/lib/rmhbox/types';
 
@@ -21,6 +22,7 @@ interface ChatOverlayProps {
 }
 
 export default function ChatOverlay({ messages, onSend }: ChatOverlayProps) {
+  const { t } = useTranslation("c-rmhbox");
   const [input, setInput] = useState('');
   const [minimized, setMinimized] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -51,7 +53,7 @@ export default function ChatOverlay({ messages, onSend }: ChatOverlayProps) {
       >
         <div className="flex items-center gap-2 text-sm font-semibold text-(--rmhbox-text)">
           <MessageSquare className="h-4 w-4" />
-          Chat
+          {t("chat", { defaultValue: "Chat" })}
           {minimized && messages.length > 0 && (
             <span className="rounded-full bg-(--rmhbox-accent)/20 px-1.5 text-xs text-(--rmhbox-accent)">
               {messages.length}
@@ -91,14 +93,14 @@ export default function ChatOverlay({ messages, onSend }: ChatOverlayProps) {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Type a message…"
+              placeholder={t("type-a-message", { defaultValue: "Type a message…" })}
               maxLength={200}
               className="flex-1 rounded-lg bg-(--rmhbox-bg) px-3 py-1.5 text-sm text-(--rmhbox-text) placeholder:text-(--rmhbox-text-muted) outline-none focus:ring-1 focus:ring-(--rmhbox-accent)"
             />
             <button
               type="submit"
               className="rounded-lg bg-(--rmhbox-accent) p-2 text-white transition-colors hover:bg-(--rmhbox-accent-hover)"
-              aria-label="Send message"
+              aria-label={t("send-message", { defaultValue: "Send message" })}
             >
               <Send className="h-4 w-4" />
             </button>

@@ -12,6 +12,7 @@
  */
 
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { useTranslation } from "react-i18next";
 import { connectToRmhTube, getSocket, disconnectFromRmhTube, emit } from '@/lib/rmhtube/socket';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
 import { S2C, C2S } from '@/lib/rmhtube/events';
@@ -36,6 +37,7 @@ import { useRouter, useParams } from '@tanstack/react-router';
 type MobileTab = 'queue' | 'chat' | 'members';
 
 export default function RmhTubeRoomPage() {
+  const { t } = useTranslation("c-rmhtube");
   const { roomId } = useParams({ from: '/rmhtube/$roomId' });
   const router = useRouter();
   const room = useRmhTubeStore((s) => s.room);
@@ -84,7 +86,7 @@ export default function RmhTubeRoomPage() {
         });
       } catch (err) {
         if (mounted) {
-          toast.error(err instanceof Error ? err.message : 'Connection failed');
+          toast.error(err instanceof Error ? err.message : t("connection-failed", { defaultValue: "Connection failed" }));
           router.navigate({ to: '/rmhtube' });
         }
       }
@@ -217,9 +219,9 @@ export default function RmhTubeRoomPage() {
     const shareUrl = `${window.location.origin}/rmhtube/${roomId}`;
     try {
       await navigator.clipboard.writeText(shareUrl);
-      toast.success('Invite link copied!');
+      toast.success(t("invite-link-copied", { defaultValue: "Invite link copied!" }));
     } catch {
-      toast.error('Failed to copy');
+      toast.error(t("failed-to-copy", { defaultValue: "Failed to copy" }));
     }
   }, [roomId]);
 
@@ -249,11 +251,11 @@ export default function RmhTubeRoomPage() {
     return (
       <div className={`flex h-screen flex-col ${densityClass}`}>
         <div className="border-b border-(--rmhtube-border)">
-          <RmhTubeHeader backLabel="Leave" onBack={handleLeave} roomCode={roomId} onCopyCode={handleCopyCode} />
+          <RmhTubeHeader backLabel={t("leave", { defaultValue: "Leave" })} onBack={handleLeave} roomCode={roomId} onCopyCode={handleCopyCode} />
         </div>
         <div className="flex-1 flex items-center justify-center">
           <p className="text-(--rmhtube-text-muted)">
-            {connectionStatus === 'connecting' ? 'Connecting...' : 'Joining room...'}
+            {connectionStatus === 'connecting' ? t("connecting", { defaultValue: "Connecting..." }) : t("joining-room", { defaultValue: "Joining room..." })}
           </p>
         </div>
       </div>
@@ -270,7 +272,7 @@ export default function RmhTubeRoomPage() {
       <div className="flex items-center border-b border-(--rmhtube-border)">
         <div className="flex-1">
           <RmhTubeHeader
-            backLabel="Leave"
+            backLabel={t("leave", { defaultValue: "Leave" })}
             onBack={handleLeave}
             roomCode={roomId}
             onCopyCode={handleCopyCode}
@@ -281,7 +283,7 @@ export default function RmhTubeRoomPage() {
             <button
               onClick={() => setShowBanList(true)}
               className="rounded-md p-2 transition-colors text-(--rmhtube-text-muted) hover:text-(--rmhtube-text) hover:bg-(--rmhtube-surface-hover)"
-              title="Ban List"
+              title={t("ban-list", { defaultValue: "Ban List" })}
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
             </button>
@@ -290,7 +292,7 @@ export default function RmhTubeRoomPage() {
             <button
               onClick={() => setShowInviteModal(true)}
               className="rounded-md p-2 transition-colors text-(--rmhtube-text-muted) hover:text-(--rmhtube-text) hover:bg-(--rmhtube-surface-hover)"
-              title="Create Invite"
+              title={t("create-invite", { defaultValue: "Create Invite" })}
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
             </button>
@@ -354,7 +356,7 @@ export default function RmhTubeRoomPage() {
                   onClick={() => setSidebarOpen((s) => !s)}
                   className="fixed right-4 top-20 z-40 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors bg-(--rmhtube-surface) text-(--rmhtube-text-muted) hover:text-(--rmhtube-text) border border-(--rmhtube-border)"
                 >
-                  {sidebarOpen ? 'Hide Chat' : 'Show Chat'}
+                  {sidebarOpen ? t("hide-chat", { defaultValue: "Hide Chat" }) : t("show-chat", { defaultValue: "Show Chat" })}
                 </button>
                 <div className={`rmhtube-sidebar ${sidebarOpen ? 'rmhtube-sidebar-open' : ''}`}>
                   <div className="flex flex-col h-full">
@@ -406,7 +408,7 @@ export default function RmhTubeRoomPage() {
                       : 'text-(--rmhtube-text-muted)'
                   }`}
                 >
-                  {tab === 'queue' ? `Queue (${room.queue.length})` : tab === 'chat' ? 'Chat' : `Members (${room.members.length})`}
+                  {tab === 'queue' ? t("queue-count", { defaultValue: "Queue ({{count}})", count: room.queue.length }) : tab === 'chat' ? t("chat", { defaultValue: "Chat" }) : t("members-count", { defaultValue: "Members ({{count}})", count: room.members.length })}
                 </button>
               ))}
             </div>

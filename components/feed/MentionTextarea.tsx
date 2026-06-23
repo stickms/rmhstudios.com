@@ -11,6 +11,7 @@ import {
   type TextareaHTMLAttributes,
 } from 'react';
 import { BadgeCheck } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { getCaretCoordinates } from '@/lib/feed/caret-coordinates';
 
 interface UserSuggestion {
@@ -68,6 +69,7 @@ interface MentionTextareaProps
 
 export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaProps>(
   function MentionTextarea({ value, onChange, onKeyDown, ...props }, forwardedRef) {
+    const { t: tl } = useTranslation('feed');
     const innerRef = useRef<HTMLTextAreaElement>(null);
     useImperativeHandle(forwardedRef, () => innerRef.current as HTMLTextAreaElement, []);
 
@@ -214,7 +216,7 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
             onMouseDown={(e) => e.preventDefault()}
           >
             {loading && suggestions.length === 0 ? (
-              <div className="px-3 py-2 text-xs text-site-text-dim">Searching…</div>
+              <div className="px-3 py-2 text-xs text-site-text-dim">{tl("searching", { defaultValue: "Searching…" })}</div>
             ) : (
               suggestions.map((suggestion, i) => {
                 const active = i === activeIndex;
@@ -274,7 +276,7 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
                         #{highlightMatch(t.tag, query)}
                       </span>
                       <span className="block text-xs text-site-text-dim">
-                        {t.count} {t.count === 1 ? 'post' : 'posts'}
+                        {tl("tag-post-count", { count: t.count, defaultValue: "{{count}} posts" })}
                       </span>
                     </span>
                   </button>

@@ -1,4 +1,5 @@
 'use client';
+import { useTranslation } from "react-i18next";
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { ACHIEVEMENTS } from '@/lib/temple-of-joy/data/achievements';
 
@@ -6,6 +7,7 @@ export default function AchievementsPanel() {
   const achievements = useTempleStore((s) => s.achievements);
   const theme = useTempleStore((s) => s.theme);
 
+  const { t } = useTranslation("c-temple-of-joy");
   const dark = theme === 'dark';
 
   const total = ACHIEVEMENTS.length;
@@ -31,7 +33,7 @@ export default function AchievementsPanel() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-serif font-bold">
-          🏆 Achievements
+          🏆 {t("achievements", { defaultValue: "Achievements" })}
         </h2>
         <span
           className="text-sm font-semibold px-3 py-1 rounded-full"
