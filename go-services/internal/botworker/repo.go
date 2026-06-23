@@ -30,7 +30,6 @@ import (
 	crand "crypto/rand"
 	"encoding/binary"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/rmhstudios/rmh-go/pkg/db"
@@ -136,12 +135,8 @@ func (r *PGRepo) CreateBotUser(ctx context.Context, name, handle, image, persona
 		}
 	}()
 
-	// Insert user row; let the DB generate a CUID via the default.
-	// Prisma's cuid() is server-side; we use gen_random_uuid() equivalent here
-	// via the Prisma default — but since we are bypassing Prisma we generate
-	// an id manually using a time-based approach. The schema uses @default(cuid())
-	// which is a Prisma JS function, not a Postgres function. We generate the id
-	// in Go using a compatible approach.
+	// Insert user row. The schema uses @default(cuid()) which is a Prisma JS
+	// function, not a Postgres function, so we generate a compatible CUID in Go.
 	id := newCUID()
 	const qUser = `INSERT INTO "user" (id, name, handle, image, "isBot", "botPersona", "createdAt", "updatedAt")
 	               VALUES ($1, $2, $3, $4, true, $5, now(), now())`
@@ -242,13 +237,3 @@ func randSuffix() uint32 {
 	return binary.BigEndian.Uint32(b[:])
 }
 
-// assemblePost builds the in-character post text from a persona and generated
-// content. It is kept as a pure function so it can be unit-tested without a DB
-// or a live DeepSeek key. The rule "never reveal you are a bot" is enforced at
-// prompt-generation time (see deepseek.go); this function just formats output.
-// It must never inject any bot-disclosure language.
-func assemblePost(p Persona, content string) string {
-	// No framing is added — the raw generated content is the post. Any wrapper
-	// that added "as an AI..." would violate the "never reveal" rule.
-	return strings.TrimSpace(content)
-}

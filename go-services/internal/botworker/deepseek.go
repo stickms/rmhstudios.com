@@ -3,7 +3,7 @@ package botworker
 // DeepSeek client for the bot-worker. Mirrors the HTTP shape from
 // internal/discordbot/deepseek.go without importing that package.
 //
-// Three generation tasks:
+// Five generation tasks:
 //   - GenerateBotProfile: name + handle + bio for a new synthetic user.
 //   - GeneratePost: in-voice feed post from a persona string.
 //   - GenerateReply: in-voice reply to a thread from a persona string.
@@ -277,8 +277,8 @@ func (c *DSClient) GenerateDMOpener(ctx context.Context, persona string) (string
 // Mirrors lib/rmhark-ai/generate.server.ts generateImagePrompt.
 func (c *DSClient) GenerateImagePrompt(ctx context.Context, postText string) (string, error) {
 	text := strings.TrimSpace(postText)
-	if len(text) > 600 {
-		text = text[:600]
+	if len([]rune(text)) > 600 {
+		text = string([]rune(text)[:600])
 	}
 	system := strings.Join([]string{
 		"You turn a short social-media post into a prompt for a text-to-image model.",

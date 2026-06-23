@@ -15,8 +15,11 @@ package botworker
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // ─── Query strings (pinned by query_test.go) ──────────────────────────
@@ -150,25 +153,28 @@ SELECT DISTINCT uid FROM (
   SELECT p."userId" AS uid
     FROM "rmheet" p JOIN "user" u ON u.id = p."userId"
    WHERE p."createdAt" >= $1 AND p."deletedAt" IS NULL AND u."isBot" = false
-   ORDER BY p."createdAt" DESC LIMIT 200
+   LIMIT 200
   UNION
   SELECT c."userId" AS uid
     FROM "rmheet_comment" c JOIN "user" u ON u.id = c."userId"
    WHERE c."createdAt" >= $1 AND c."deletedAt" IS NULL AND u."isBot" = false
-   ORDER BY c."createdAt" DESC LIMIT 200
+   LIMIT 200
 ) sub`
 
 // ─── Image budget ──────────────────────────────────────────────────────
 
-// reserveImageBudgetQuery atomically reserves one unit of today's budget. The
-// CTE ensures the row exists, then conditionally increments only while under cap.
+// reserveImageBudgetQuery atomically reserves one unit of today's budget using a
+// single upsert. On the first call of the day the row does not exist yet, so the
+// INSERT path fires and count starts at 1. On subsequent calls the ON CONFLICT
+// path increments count, but only while it is still under the cap ($2). RETURNING
+// count lets the caller distinguish "reserved" (row returned) from "cap reached"
+// (no row, pgx.ErrNoRows).
 const reserveImageBudgetQuery = `
-WITH ensure AS (
-  INSERT INTO "image_gen_budget" (day, count) VALUES ($1, 0)
-  ON CONFLICT (day) DO NOTHING
-)
-UPDATE "image_gen_budget" SET count = count + 1
- WHERE day = $1 AND count < $2`
+INSERT INTO "image_gen_budget" (day, count) VALUES ($1, 1)
+ON CONFLICT (day) DO UPDATE
+  SET count = "image_gen_budget".count + 1
+  WHERE "image_gen_budget".count < $2
+RETURNING count`
 
 // ─── Reply-tick row types ──────────────────────────────────────────────
 
@@ -514,9 +520,14 @@ func (r *PGRepo) RecentActiveHumans(ctx context.Context, since time.Time) (ids [
 // Returns true iff a slot was reserved (under cap). Fails closed on DB error.
 func (r *PGRepo) ReserveImageBudget(ctx context.Context, day string, capLimit int) (reserved bool, err error) {
 	defer func() { r.record(err) }()
-	tag, err := r.db.Pool.Exec(ctx, reserveImageBudgetQuery, day, capLimit)
+	var count int
+	err = r.db.Pool.QueryRow(ctx, reserveImageBudgetQuery, day, capLimit).Scan(&count)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			// ON CONFLICT … WHERE condition not met: cap already reached.
+			return false, nil
+		}
 		return false, fmt.Errorf("botworker: reserve image budget: %w", err)
 	}
-	return tag.RowsAffected() == 1, nil
+	return true, nil
 }

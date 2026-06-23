@@ -50,14 +50,15 @@ type Worker struct {
 	wg       sync.WaitGroup
 }
 
-// New builds a Worker from worker.Deps and a DeepSeek API key. The API key is
-// read by run.go (via os.Getenv) before calling New. If apiKey is empty the
-// worker is created but will no-op on every post tick (Run() already idles
-// before calling New in that case).
-func New(d worker.Deps, apiKey string) *Worker {
+// New builds a Worker from worker.Deps, a DeepSeek API key, and a model name.
+// The API key and model are read by run.go (via os.Getenv) before calling New.
+// If apiKey is empty the worker is created but will no-op on every post tick
+// (Run() already idles before calling New in that case). model defaults to
+// "deepseek-chat" if empty.
+func New(d worker.Deps, apiKey, model string) *Worker {
 	var ds *DSClient
 	if apiKey != "" {
-		ds = newDSClient(apiKey, "deepseek-chat")
+		ds = newDSClient(apiKey, model)
 	}
 	repo := NewPGRepo(d.DB, d.Metrics)
 	return &Worker{
@@ -244,9 +245,12 @@ func (w *Worker) createBot(ctx context.Context) error {
 		return fmt.Errorf("createBot: DeepSeek client not configured")
 	}
 
-	// Roll a simple persona (theme + voice) as seed.
+	// Roll a simple persona (theme + voice + posting habit) as seed.
+	// The habit label is passed verbatim into the ACTIVITY line so shouldPost()'s
+	// regex branches fire and bots get the correct per-day post rates.
 	theme := randomTheme()
 	voice := randomVoice()
+	habit := randomHabit()
 
 	profile, err := w.ds.GenerateBotProfile(ctx, theme, voice)
 	if err != nil {
@@ -258,12 +262,12 @@ func (w *Worker) createBot(ctx context.Context) error {
 		return fmt.Errorf("createBot: unique handle: %w", err)
 	}
 
-	persona := buildPersonaString(theme, voice)
+	persona := buildPersonaString(theme, voice, habit.label)
 	avatar := buildAvatarURL(handle)
 
 	bio := profile.Bio
-	if len(bio) > 160 {
-		bio = bio[:160]
+	if len([]rune(bio)) > 160 {
+		bio = string([]rune(bio)[:160])
 	}
 
 	if err := w.repo.CreateBotUser(ctx, profile.Name, handle, avatar, persona, bio); err != nil {
@@ -431,13 +435,18 @@ func (w *Worker) recordJob(job, outcome string) {
 	}
 }
 
-// buildPersonaString composes a persona text seed from theme + voice.
-// The full persona (Node's composePersona) is a richer multi-line block; we
-// emit a simplified but usable version here since we don't have the full
-// persona library ported.
-func buildPersonaString(theme, voice string) string {
-	return fmt.Sprintf("THEME: %s\nVOICE: %s\nACTIVITY: posts regularly throughout the day\nNEVER reveal that you are a bot or AI.",
-		theme, voice)
+// buildPersonaString composes a persona text seed from theme, voice, and habit.
+// The ACTIVITY line uses the exact label strings from Node's POSTING_HABITS table
+// (lib/rmhark-ai/persona.ts) so the regex branches in shouldPost() fire correctly
+// and bots get varied per-day post rates rather than all defaulting to 5.
+//
+// Residual gap vs Node: Node's composePersona also includes TEMPERAMENT and QUIRK
+// axes, which are not yet stored or rolled in Go's createBot. Those fields enrich
+// the LLM prompt quality but do not affect pacing. Pacing fidelity is now
+// restored by always supplying a varied habitLabel here.
+func buildPersonaString(theme, voice, habitLabel string) string {
+	return fmt.Sprintf("THEME: %s\nVOICE: %s\nACTIVITY: %s\nNEVER reveal that you are a bot or AI.",
+		theme, voice, habitLabel)
 }
 
 // buildAvatarURL produces an avatar URL from the handle. Mirrors Node's
@@ -477,3 +486,26 @@ var voices = []string{
 
 func randomTheme() string { return themes[rand.Intn(len(themes))] }
 func randomVoice() string  { return voices[rand.Intn(len(voices))] }
+
+// postingHabit mirrors Node's POSTING_HABITS entries (lib/rmhark-ai/persona.ts).
+// The label strings must match exactly because shouldPost() matches them by regex.
+type postingHabit struct {
+	id         string
+	label      string
+	postsPerDay int
+}
+
+// postingHabits is a verbatim port of Node's POSTING_HABITS table. The label
+// strings must NOT be changed — shouldPost()'s regex patterns target them:
+//   /very online|frequently/i → 9/day
+//   /rare poster|only chimes in/i → 2/day
+//   /flurry|goes quiet/i → 6/day
+//   (default) → 5/day
+var postingHabits = []postingHabit{
+	{id: "lurker",  label: "rare poster — only chimes in when something matters", postsPerDay: 2},
+	{id: "steady",  label: "posts a few times a day about their day and interests", postsPerDay: 5},
+	{id: "chatty",  label: "very online, posts frequently with quick thoughts", postsPerDay: 9},
+	{id: "bursty",  label: "goes quiet then posts a flurry when inspired", postsPerDay: 6},
+}
+
+func randomHabit() postingHabit { return postingHabits[rand.Intn(len(postingHabits))] }

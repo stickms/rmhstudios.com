@@ -21,7 +21,11 @@ func Run(ctx context.Context, d worker.Deps) error {
 		return nil
 	}
 
-	w := New(d, apiKey)
+	model := os.Getenv("DEEPSEEK_MODEL")
+	if model == "" {
+		model = "deepseek-chat"
+	}
+	w := New(d, apiKey, model)
 	w.Start(ctx)
 	<-ctx.Done()
 	w.Stop()

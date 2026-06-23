@@ -259,7 +259,7 @@ func probe(ctx context.Context, client *http.Client, t Target) ServiceStatus {
 		Description: t.Description,
 		Status:      StatusUnknown,
 		Detail:      "",
-		CheckedAt:   time.Now().UTC().Format(time.RFC3339Nano),
+		CheckedAt:   time.Now().UTC().Format("2006-01-02T15:04:05.000Z07:00"),
 	}
 
 	reqCtx, cancel := context.WithTimeout(ctx, client.Timeout)
@@ -314,7 +314,7 @@ func customProbe(ctx context.Context, t Target) ServiceStatus {
 		Name:        t.Name,
 		Description: t.Description,
 		Status:      StatusUnknown,
-		CheckedAt:   time.Now().UTC().Format(time.RFC3339Nano),
+		CheckedAt:   time.Now().UTC().Format("2006-01-02T15:04:05.000Z07:00"),
 	}
 	r := t.Probe(ctx)
 	ss.Status = r.Status

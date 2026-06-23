@@ -19,7 +19,7 @@ type dbProbe struct {
 	pool    *pgxpool.Pool
 }
 
-// newDBProbe returns a status.ProbeFunc that runs the SAME health check the Node
+// newDBProbe returns a func(ctx context.Context) status.ProbeResult that runs the SAME health check the Node
 // status service runs for the Database service: `SELECT 1` with a timeout. It
 // reports:
 //   - up      / "SELECT 1 ok"        on success (with latency)
