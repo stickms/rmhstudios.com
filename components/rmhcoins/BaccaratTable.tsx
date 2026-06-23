@@ -288,7 +288,7 @@ export function BaccaratTable() {
       {activeBets.length > 0 && (
         <div className="w-full flex flex-col gap-1.5">
           <span className="text-[10px] text-site-text-dim uppercase tracking-wider font-bold text-center">{t("bets-at-table", { defaultValue: "Bets at Table" })}</span>
-          <div className="flex flex-wrap justify-center gap-2 max-h-32 overflow-y-auto">
+          <div className="flex flex-wrap justify-center gap-2">
             {activeBets.map((p) => {
               const isMe = p.userId === myUserId;
               const betEntries = (Object.entries(p.bets) as [BetType, number][]).filter(([, v]) => v > 0);
