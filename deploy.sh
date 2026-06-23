@@ -431,27 +431,28 @@ step_start "Pre-build disk cleanup..."
 # behind and every retry failed identically with "no space left on device".
 prune_rollback_images
 
-# Build cache is the main disk hog. A full rebuild needs ~8–10 GB of headroom
-# to materialize the new node_modules + .output layers into the runner image.
-# When free space is below that, escalate to a full cache + image wipe so the
-# build doesn't die mid-COPY with "no space left on device". The only cost is a
-# slower next build (re-downloads the pnpm/vinxi caches), and it's a rare safety
-# valve, not the common path.
+# Build cache is the main disk hog. A full rebuild needs headroom to materialize
+# the new node_modules + .output layers into the runner image. When free space is
+# below that, escalate to a full cache + image wipe so the build doesn't die
+# mid-COPY with "no space left on device". The wipe is a rare safety valve, not
+# the common path — and it is EXPENSIVE: it evicts the BuildKit layer cache AND
+# the cache MOUNTS (pnpm store + .vinxi Vite/Rolldown module graph). Since the
+# `vite build` re-runs every deploy (any source change busts its COPY layer), a
+# warm .vinxi is the difference between an incremental build and a cold one — so
+# the higher the disk headroom we can keep, the more often the build stays fast.
 #
-# When disk is healthy we deliberately do NOT trim the build cache here: the
-# pnpm store + Vinxi cache + layer cache (this project pulls three.js, monaco,
-# tiptap, playwright, etc.) is well over a few GB, and trimming it right before
-# `dc build` evicts the exact cache the build is about to reuse — turning every
-# deploy into a near-cold build. Growth is already bounded by the post-build cap
-# (≤5 GB, see step 6), so the cache enters each build warm and stays small.
+# These thresholds are env-overridable: on a larger disk, lower DEPLOY_MIN_FREE_GB
+# (wipe less often) to keep the cache warm across more deploys — trading storage
+# for build speed. Defaults assume a generous disk.
+DEPLOY_MIN_FREE_GB="${DEPLOY_MIN_FREE_GB:-6}"
 DISK_FREE_GB=$(free_disk_gb)
-if [ "${DISK_FREE_GB:-0}" -lt 10 ]; then
-    log "Low disk: ${DISK_FREE_GB}G free — wiping all build cache and unused images."
+if [ "${DISK_FREE_GB:-0}" -lt "$DEPLOY_MIN_FREE_GB" ]; then
+    log "Low disk: ${DISK_FREE_GB}G free (< ${DEPLOY_MIN_FREE_GB}G) — wiping all build cache and unused images."
     "$DOCKER_BIN" builder prune -af > /dev/null 2>&1 || true
     "$DOCKER_BIN" image prune -af > /dev/null 2>&1 || true
     log "After aggressive prune: $(free_disk_gb)G free."
 else
-    log "Disk healthy: ${DISK_FREE_GB}G free — keeping build cache warm for a fast incremental build."
+    log "Disk healthy: ${DISK_FREE_GB}G free (≥ ${DEPLOY_MIN_FREE_GB}G) — keeping build cache warm for a fast incremental build."
 fi
 step_done
 
@@ -744,10 +745,14 @@ log "Pruning dangling images..."
 # Keep at most 2 SHA-tagged images per environment for rollback.
 prune_rollback_images
 
-# Cap BuildKit build cache. First do the cheap LRU trim toward 5 GB — this keeps
-# the pnpm store, Vinxi, and TanStack cache mounts around for fast rebuilds.
-log "Pruning build cache (LRU trim toward ≤5 GB)..."
-"$DOCKER_BIN" builder prune --keep-storage 5g -f > /dev/null 2>&1 || true
+# Cap BuildKit build cache. First do the cheap LRU trim toward the keep-storage
+# target — this keeps the pnpm store, Vinxi, and layer cache mounts around for
+# fast rebuilds. A LARGER target keeps more of the warm cache (notably .vinxi,
+# which is what makes the per-deploy `vite build` incremental rather than cold),
+# trading disk for build speed. Env-overridable for bigger disks.
+BUILD_CACHE_KEEP_GB="${BUILD_CACHE_KEEP_GB:-20}"
+log "Pruning build cache (LRU trim toward ≤${BUILD_CACHE_KEEP_GB} GB)..."
+"$DOCKER_BIN" builder prune --keep-storage "${BUILD_CACHE_KEEP_GB}g" -f > /dev/null 2>&1 || true
 
 # Hard ceiling to stop slow creep: `--keep-storage` can't trim WITHIN the
 # long-lived pnpm-store / vinxi cache mounts (old package versions and stale
@@ -755,7 +760,9 @@ log "Pruning build cache (LRU trim toward ≤5 GB)..."
 # LRU trim above can report "done" while real usage keeps drifting up deploy
 # after deploy. Measure actual size and, if it's still over the ceiling, do a
 # full reset. Costs one cold rebuild next time but guarantees a fixed cap.
-BUILD_CACHE_CEILING_GB=8
+# Set generously (env-overridable) so the warm cache survives across many
+# deploys; only a runaway cache triggers the reset.
+BUILD_CACHE_CEILING_GB="${BUILD_CACHE_CEILING_GB:-30}"
 CACHE_GB=$(build_cache_gb)
 if [ "${CACHE_GB:-0}" -gt "$BUILD_CACHE_CEILING_GB" ]; then
     log "Build cache ${CACHE_GB}G over ${BUILD_CACHE_CEILING_GB}G ceiling after LRU trim — full reset to stop creep."
