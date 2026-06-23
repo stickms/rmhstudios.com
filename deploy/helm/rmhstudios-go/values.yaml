@@ -55,9 +55,11 @@ services:
     port: 7676
     replicas: 1
     path: /rmhbox-ws/
-  recap:
-    port: 7004
-    replicas: 1
+  # NOTE: there is no standalone `recap` service in the Go topology. recap runs
+  # ONLY as a goroutine inside the supervisor (see cmd/supervisor). A separate
+  # recap Deployment would open a second Discord gateway connection and
+  # double-post the daily recaps. The status page probes the supervisor's shared
+  # /health instead of a standalone recap (STATUS_SUPERVISOR_URL, wired below).
   # supervisor: single pod running the five background workers as goroutines
   # (discord-bot, recap, doctrine-worker, vibe-worker, bot-worker).
   # It exposes only the shared /health + /metrics endpoint on metricsPort (9090).
@@ -84,12 +86,17 @@ services:
     replicas: 1
     storage: true          # mounts /app/db PVC for vibe-worker thumbnails
     terminationGracePeriodSeconds: 90  # discord-bot needs 90 s to disconnect
+    # Emit a ClusterIP Service on metricsPort (9090) so the status page can
+    # probe the supervisor's shared /health. Internal only — no ingress/path.
+    metricsService: true
     extraEnv:
       # recap goroutine binds RECAP_PORT inside the supervisor process
       - name: RECAP_PORT
         value: "7004"
   # status: standalone health-dashboard; survives when the rest of the stack is
-  # down. Runs on STATUS_PORT (default 7008); /health is served at /.
+  # down. Runs on STATUS_PORT (default 7008); /health is served at /. It probes
+  # the supervisor's shared /health; STATUS_SUPERVISOR_URL is wired in the
+  # deployment template to the rendered supervisor Service name ({release}-supervisor).
   status:
     port: 7008
     replicas: 1
