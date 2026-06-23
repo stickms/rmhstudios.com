@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Megaphone, X } from 'lucide-react';
 import { RMHarkContent } from './RMHarkContent';
 import { GifEmbed } from './GifEmbed';
+import { PostImageGrid } from './PostImageGrid';
 import { PollDisplay } from './PollDisplay';
 import type { FeedPoll } from '@/lib/feed-types';
 
@@ -92,17 +93,7 @@ export function FeedAnnouncements() {
 
               {/* Uploaded images */}
               {a.imageUrls && a.imageUrls.length > 0 && (
-                <div className={`mt-2 grid gap-1 ${a.imageUrls.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
-                  {a.imageUrls.map((url) => (
-                    <img
-                      key={url}
-                      src={url}
-                      alt=""
-                      loading="lazy"
-                      className="w-full rounded-lg object-cover max-h-48 border border-site-border"
-                    />
-                  ))}
-                </div>
+                <PostImageGrid urls={a.imageUrls} className="mt-2" />
               )}
 
               {/* GIF / linked image */}
