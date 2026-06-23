@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Link, useLocation } from '@tanstack/react-router';
-import { Home, Package, Compass, Inbox, User, PenSquare } from 'lucide-react';
+import { Home, Wand2, Compass, Inbox, User, PenSquare } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { ComposeModal } from './ComposeModal';
 import { useUnreadCount } from '@/lib/useUnreadCount';
@@ -23,7 +23,7 @@ export function MobileNav() {
 
   const isHome = pathname === '/';
   const isExplore = pathname?.startsWith('/search');
-  const isBuilds = pathname?.startsWith('/builds') || pathname?.startsWith('/user-builds');
+  const isStudio = pathname?.startsWith('/create') || pathname?.startsWith('/builds') || pathname?.startsWith('/user-builds') || pathname?.startsWith('/v') || pathname?.startsWith('/personas');
   const isInbox = pathname?.startsWith('/messages') || pathname?.startsWith('/notifications') || pathname?.startsWith('/groups');
   const isProfile = pathname?.startsWith('/profile') || pathname?.startsWith('/u/');
   const inboxCount = unreadCount + notificationCount;
@@ -61,8 +61,8 @@ export function MobileNav() {
             <Compass className="w-6 h-6" />
           </Link>
 
-          <Link to="/builds" className={tabClass(isBuilds)} aria-label={t("builds", { defaultValue: "Builds" })}>
-            <Package className="w-6 h-6" />
+          <Link to="/create" className={tabClass(isStudio)} aria-label={t("creator-studio", { defaultValue: "Creator Studio" })}>
+            <Wand2 className="w-6 h-6" />
           </Link>
 
           <Link to="/messages" className={tabClass(isInbox)} aria-label={t("inbox", { defaultValue: "Inbox" })}>

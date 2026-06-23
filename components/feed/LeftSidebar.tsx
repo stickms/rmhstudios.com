@@ -6,7 +6,7 @@ import { authClient } from '@/lib/auth-client';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import {
-  Home, Package, BookOpen, Library, LayoutGrid, Atom, Brain,
+  Home, BookOpen, Library, Atom, Brain, Wand2,
   LogOut, PenSquare, User, ShieldCheck, MoreHorizontal, Wallet, Sparkles, Inbox, Landmark, Bookmark, ShoppingBag, Compass, Users, Zap, Shield, Swords, Clapperboard, Terminal, ChevronDown, Car, type LucideIcon
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -29,8 +29,7 @@ const NAV: NavItem[] = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/search', label: 'Explore', icon: Compass },
   { href: '/messages', label: 'Inbox', icon: Inbox, requiresAuth: true, badge: 'inbox' },
-  { href: '/v', label: 'Pages', icon: LayoutGrid },
-  { href: '/builds', label: 'Builds', icon: Package },
+  { href: '/create', label: 'Creator Studio', icon: Wand2 },
   { href: '/library', label: 'Library', icon: Library },
   {
     group: 'community',
@@ -40,7 +39,6 @@ const NAV: NavItem[] = [
       { href: '/communities', label: 'Communities', icon: Users },
       { href: '/clips', label: 'Clips', icon: Clapperboard },
       { href: '/ranked', label: 'Ranked', icon: Swords },
-      { href: '/clans', label: 'Clans', icon: Shield },
     ],
   },
   {

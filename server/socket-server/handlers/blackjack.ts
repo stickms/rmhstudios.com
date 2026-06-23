@@ -127,6 +127,12 @@ const MAX_PLAYERS_CAP = 6;
 const BETTING_DURATION_MS = 15_000;
 const TURN_TIMEOUT_MS = 30_000;
 const RESULTS_DISPLAY_MS = 5_000;
+// Client card-flip timing (kept in sync with BlackjackTable.tsx). The server
+// holds the round results until the dealer's cards have visually settled on
+// every client, so nobody sees the outcome before the flip animation finishes.
+const DEAL_STAGGER_MS = 200;
+const CARD_FLIP_MS = 500;
+const REVEAL_SETTLE_BUFFER_MS = 250;
 const INSURANCE_TIMEOUT_MS = 10_000;
 const MIN_BET = 1;
 const RESHUFFLE_THRESHOLD = 75;
@@ -468,6 +474,37 @@ function proceedAfterInsurance(room: BlackjackRoom) {
 
 // ── Player Turns ──────────────────────────────────────────────────
 
+/**
+ * (Re)start the turn clock for the player whose turn it currently is. Called
+ * when a turn begins and again whenever that player takes an action that keeps
+ * the turn (hit, split, advancing between split hands) — re-emitting TURN resets
+ * every client's countdown, so acting effectively "extends" the timer.
+ *
+ * When the clock runs out the player is auto-stood; if they're somehow no longer
+ * in a playable state (left, busted out-of-band, etc.) the turn is force-advanced
+ * so the table can never freeze.
+ */
+function armTurnTimer(room: BlackjackRoom, userId: string) {
+  room.turnDeadline = Date.now() + TURN_TIMEOUT_MS;
+
+  ioRef.to(roomKey(room.roomId)).emit(S2C.TURN, {
+    userId,
+    timeoutSeconds: Math.ceil(TURN_TIMEOUT_MS / 1000),
+  });
+
+  if (room.turnTimer) clearTimeout(room.turnTimer);
+  room.turnTimer = setTimeout(() => {
+    if (room.currentTurnUserId !== userId) return;
+    const player = room.players.get(userId);
+    if (player && player.status === 'playing') {
+      onStand(room, userId);
+    } else {
+      room.turnIndex++;
+      advanceToNextPlayer(room);
+    }
+  }, TURN_TIMEOUT_MS);
+}
+
 function advanceToNextPlayer(room: BlackjackRoom) {
   while (room.turnIndex < room.turnOrder.length) {
     const userId = room.turnOrder[room.turnIndex];
@@ -476,23 +513,8 @@ function advanceToNextPlayer(room: BlackjackRoom) {
     if (player && player.status !== 'busted' && player.status !== 'standing' && player.status !== 'blackjack') {
       player.status = 'playing';
       room.currentTurnUserId = userId;
-      room.turnDeadline = Date.now() + TURN_TIMEOUT_MS;
-
-      ioRef.to(roomKey(room.roomId)).emit(S2C.TURN, {
-        userId,
-        timeoutSeconds: Math.ceil(TURN_TIMEOUT_MS / 1000),
-      });
-
+      armTurnTimer(room, userId);
       broadcastTableState(room);
-
-      if (room.turnTimer) clearTimeout(room.turnTimer);
-      room.turnTimer = setTimeout(() => {
-        // Max turn time reached — auto-stand so the table never stalls.
-        if (room.currentTurnUserId === userId) {
-          onStand(room, userId);
-        }
-      }, TURN_TIMEOUT_MS);
-
       return;
     }
 
@@ -522,7 +544,12 @@ function dealerTurn(room: BlackjackRoom) {
   });
 
   broadcastTableState(room);
-  setTimeout(() => resolvePayouts(room), 1500);
+
+  // Wait for the dealer's cards to finish flipping on every client before
+  // revealing the result — the delay scales with how many cards the dealer drew.
+  const revealSettleMs =
+    Math.max(0, room.dealerHand.length - 1) * DEAL_STAGGER_MS + CARD_FLIP_MS + REVEAL_SETTLE_BUFFER_MS;
+  setTimeout(() => resolvePayouts(room), revealSettleMs);
 }
 
 // ── Payouts ───────────────────────────────────────────────────────
@@ -1210,6 +1237,7 @@ function advanceSplitOrNext(room: BlackjackRoom, player: PlayerSeat) {
     // Deal second card to this split hand
     nextSplit.hand.push(drawCard(room));
     nextSplit.status = 'playing';
+    armTurnTimer(room, player.userId);
     broadcastTableState(room);
     return;
   }
@@ -1260,6 +1288,8 @@ function onHit(room: BlackjackRoom, userId: string) {
     }
     advanceSplitOrNext(room, player);
   } else {
+    // Turn continues with the same player — give them a fresh clock.
+    armTurnTimer(room, userId);
     broadcastTableState(room);
   }
 }
@@ -1347,6 +1377,8 @@ async function onSplit(room: BlackjackRoom, socket: Socket, userId: string) {
     // Deal a second card to the main hand
     player.hand.push(drawCard(room));
 
+    // Player now has two hands to play — refresh their clock for the extra work.
+    armTurnTimer(room, userId);
     broadcastTableState(room);
   } catch (err) {
     if (err instanceof Error && err.message === 'INSUFFICIENT_COINS') {

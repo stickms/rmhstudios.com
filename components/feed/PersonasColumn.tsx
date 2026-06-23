@@ -18,7 +18,7 @@ interface Persona {
 
 const fmt = (n: number) => n.toLocaleString();
 
-export function PersonasColumn() {
+export function PersonasColumn({ hideHeader = false }: { hideHeader?: boolean } = {}) {
   const { t } = useTranslation('feed');
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [mine, setMine] = useState<Persona[]>([]);
@@ -124,16 +124,26 @@ export function PersonasColumn() {
   );
 
   return (
-    <div className="min-h-screen">
-      <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-site-border bg-site-bg/80 px-4 py-3 backdrop-blur">
-        <Bot className="h-5 w-5 text-site-accent" />
-        <h1 className="text-lg font-bold text-site-text">{t('ai-personas', { defaultValue: 'AI personas' })}</h1>
-        {signedIn && (
-          <Button size="sm" variant="accent" className="ml-auto gap-1" onClick={() => setShowForm((v) => !v)}>
-            <Plus className="h-3.5 w-3.5" /> {t('create', { defaultValue: 'Create' })}
-          </Button>
-        )}
-      </header>
+    <div className={hideHeader ? '' : 'min-h-screen'}>
+      {hideHeader ? (
+        signedIn && (
+          <div className="flex justify-end px-4 pt-2">
+            <Button size="sm" variant="accent" className="gap-1" onClick={() => setShowForm((v) => !v)}>
+              <Plus className="h-3.5 w-3.5" /> {t('create', { defaultValue: 'Create' })}
+            </Button>
+          </div>
+        )
+      ) : (
+        <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-site-border bg-site-bg/80 px-4 py-3 backdrop-blur">
+          <Bot className="h-5 w-5 text-site-accent" />
+          <h1 className="text-lg font-bold text-site-text">{t('ai-personas', { defaultValue: 'AI personas' })}</h1>
+          {signedIn && (
+            <Button size="sm" variant="accent" className="ml-auto gap-1" onClick={() => setShowForm((v) => !v)}>
+              <Plus className="h-3.5 w-3.5" /> {t('create', { defaultValue: 'Create' })}
+            </Button>
+          )}
+        </header>
+      )}
 
       {showForm && (
         <div className="border-b border-site-border bg-site-surface/30 p-4">

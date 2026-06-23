@@ -1,0 +1,113 @@
+/**
+ * Creator Studio chrome — the page header and the top-level tab bar that sits
+ * above the Pages / Builds / Personas surfaces. The individual tabs reuse the
+ * vibe + builds + library styles; this file only styles the shared shell.
+ */
+
+.cstudio-screen {
+  --studio-gutter: clamp(16px, 4vw, 40px);
+}
+
+/* ── Header / hero ───────────────────────────────────────────────────────── */
+.cstudio-head {
+  padding: clamp(28px, 6vw, 64px) var(--studio-gutter) 0;
+}
+
+.cstudio-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--site-text-dim, #8a8a90);
+}
+
+.cstudio-eyebrow__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--site-accent, #6c5cff);
+  box-shadow: 0 0 12px var(--site-accent, #6c5cff);
+}
+
+.cstudio-title {
+  margin-top: 10px;
+  font-size: clamp(1.9rem, 5vw, 2.9rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--site-text, #f5f5f7);
+}
+
+.cstudio-sub {
+  margin-top: 10px;
+  max-width: 54ch;
+  font-size: 0.98rem;
+  line-height: 1.5;
+  color: var(--site-text-muted, #a9a9b2);
+}
+
+/* ── Tab bar ─────────────────────────────────────────────────────────────── */
+.cstudio-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  gap: 4px;
+  margin-top: clamp(20px, 4vw, 32px);
+  padding: 8px var(--studio-gutter);
+  background: color-mix(in srgb, var(--site-bg, #0c0c0d) 82%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--site-border, #232328);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.cstudio-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.cstudio-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 9px 16px;
+  border-radius: 9999px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--site-text-muted, #a9a9b2);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
+}
+
+.cstudio-tab:hover {
+  color: var(--site-text, #f5f5f7);
+  background: var(--site-surface, #18181b);
+}
+
+.cstudio-tab.is-active {
+  color: var(--site-accent, #6c5cff);
+  background: var(--site-accent-dim, rgba(108, 92, 255, 0.14));
+  border-color: color-mix(in srgb, var(--site-accent, #6c5cff) 40%, transparent);
+}
+
+.cstudio-tab__icon {
+  width: 17px;
+  height: 17px;
+}
+
+/* ── Tab body ────────────────────────────────────────────────────────────── */
+.cstudio-body {
+  padding: clamp(16px, 3vw, 28px) var(--studio-gutter) 0;
+}
+
+/* The Pages tab brings its own hero, so it shouldn't double up the top padding. */
+.cstudio-body--pages {
+  padding-top: 0;
+}

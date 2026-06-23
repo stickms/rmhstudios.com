@@ -189,13 +189,20 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
     <MobileSidebarContext.Provider value={{ isOpen, open, close, toggle }}>
       <div
         ref={scrollRef}
-        className={`md:hidden min-w-0 w-full flex-1 overflow-x-hidden ${
+        // `touch-pan-y` reserves horizontal gestures for our own drawer drag so the
+        // browser never treats a sideways swipe as a back/forward navigation, while
+        // still allowing native vertical scrolling. `overscroll-contain` keeps any
+        // scroll from chaining out to the document.
+        className={`md:hidden min-w-0 w-full flex-1 overflow-x-hidden touch-pan-y overscroll-contain ${
           isOpen ? 'overflow-y-hidden' : 'overflow-y-auto'
         }`}
       >
-        {/* Sidebar — sits fixed behind the page content */}
+        {/* Sidebar — sits fixed behind the page content. `overscroll-contain`
+            (plus `touch-pan-y`) means grabbing and swiping the sidebar scrolls
+            only the sidebar itself — never the page behind it, even when its
+            content is too short to scroll. */}
         <aside
-          className="fixed left-0 top-0 bottom-0 z-0 w-64 bg-site-bg border-r border-site-border overflow-y-auto"
+          className="fixed left-0 top-0 bottom-0 z-0 w-64 bg-site-bg border-r border-site-border overflow-y-auto overscroll-contain touch-pan-y"
           aria-hidden={!isOpen}
         >
           <LeftSidebar expanded />

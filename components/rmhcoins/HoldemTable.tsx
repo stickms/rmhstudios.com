@@ -210,10 +210,10 @@ export function HoldemTable() {
         </div>
       )}
 
-      {/* Players — scrollable horizontally on mobile */}
+      {/* Players — wrap onto multiple rows so every seat is shown without a scrollbar */}
       {players.length > 0 ? (
-        <div className="w-full overflow-x-auto -mx-1 px-1">
-          <div className="flex justify-center gap-2 min-w-0">
+        <div className="w-full">
+          <div className="flex flex-wrap justify-center gap-2">
             {[...players]
               .sort((a, b) => a.seatIndex - b.seatIndex)
               .map((player) => (
