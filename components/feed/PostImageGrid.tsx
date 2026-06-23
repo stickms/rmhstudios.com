@@ -36,7 +36,7 @@ export function PostImageGrid({ urls, className = '' }: PostImageGridProps) {
               loading="lazy"
               className={
                 single
-                  ? 'mx-auto max-h-[600px] max-w-full rounded-lg object-contain'
+                  ? 'mx-auto max-h-150 max-w-full rounded-lg object-contain'
                   : 'h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]'
               }
             />
@@ -92,8 +92,11 @@ function Lightbox({ urls, index, onIndexChange, onClose }: LightboxProps) {
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm"
-      onClick={onClose}
+      className="fixed inset-0 z-100 flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm"
+      onClick={(e) => {
+        e.stopPropagation();
+        onClose();
+      }}
     >
       <button
         type="button"
