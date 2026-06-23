@@ -27,6 +27,7 @@ const (
 	defaultRmhboxUpstream   = "http://rmhbox:7676"
 	defaultRmhtubeUpstream  = "http://rmhtube:7003"
 	defaultRmhmusicUpstream = "http://rmhmusic:7002"
+	defaultAssetsUpstream   = "http://assets:7007"
 )
 
 // upstream is a single proxy target keyed by the path prefix it serves.
@@ -54,6 +55,7 @@ type Config struct {
 	RmhboxUpstream   string
 	RmhtubeUpstream  string
 	RmhmusicUpstream string
+	AssetsUpstream   string
 	StaticDir        string
 }
 
@@ -66,6 +68,7 @@ func LoadConfig() Config {
 		RmhboxUpstream:   config.GetString("RMHBOX_UPSTREAM", defaultRmhboxUpstream),
 		RmhtubeUpstream:  config.GetString("RMHTUBE_UPSTREAM", defaultRmhtubeUpstream),
 		RmhmusicUpstream: config.GetString("RMHMUSIC_UPSTREAM", defaultRmhmusicUpstream),
+		AssetsUpstream:   config.GetString("ASSETS_UPSTREAM", defaultAssetsUpstream),
 		StaticDir:        config.GetString("STATIC_DIR", ""),
 	}
 }
@@ -93,6 +96,10 @@ func NewRouter(cfg Config, logger *log.Logger) (*Router, error) {
 		{"/rmhbox-ws/", cfg.RmhboxUpstream},
 		{"/rmhtube-ws/", cfg.RmhtubeUpstream},
 		{"/rmhmusic-ws/", cfg.RmhmusicUpstream},
+		{"/library/", cfg.AssetsUpstream},
+		{"/music/", cfg.AssetsUpstream},
+		{"/models/", cfg.AssetsUpstream},
+		{"/sprites/", cfg.AssetsUpstream},
 	}
 	for _, rt := range routes {
 		u, err := newProxy(rt.target, logger)

@@ -12,10 +12,13 @@ RELEASE  ?= rmhstudios-go
 CHART    := deploy/helm/rmhstudios-go
 GUARD    := ./scripts/preflight.sh --guard
 
-.PHONY: help bootstrap dev gazelle build images base-images push prod test test-e2e clean
+.PHONY: help bootstrap dev gazelle build images base-images push prod test test-e2e clean assets-sync
 
 help: ## list targets
 	@grep -hE '^[a-z][a-z-]*:.*?## ' $(MAKEFILE_LIST) | awk -F':.*?## ' '{printf "  \033[36m%-12s\033[0m %s\n",$$1,$$2}'
+
+assets-sync: ## Mirror public/{library,music,models,sprites} to the S3 bucket (reads S3_* env)
+	./scripts/assets-sync.sh
 
 bootstrap: ## install/verify all toolchain prerequisites
 	./scripts/preflight.sh

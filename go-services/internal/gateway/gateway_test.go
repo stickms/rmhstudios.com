@@ -38,6 +38,10 @@ func TestPrefixRouterSelection(t *testing.T) {
 		{"/assets/app.js", ""},
 		{"/socket", ""},    // no trailing slash => not the /socket/ prefix
 		{"/rmhbox-ws", ""}, // ditto
+		{"/library/book.pdf", "/library/"},
+		{"/music/song.mp3", "/music/"},
+		{"/models/x.glb", "/models/"},
+		{"/sprites/s.png", "/sprites/"},
 	}
 
 	for _, c := range cases {

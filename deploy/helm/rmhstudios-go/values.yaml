@@ -55,6 +55,10 @@ services:
     port: 7676
     replicas: 1
     path: /rmhbox-ws/
+  assets:
+    port: 7007
+    replicas: 2
+    path: /library/
   # NOTE: there is no standalone `recap` service in the Go topology. recap runs
   # ONLY as a goroutine inside the supervisor (see cmd/supervisor). A separate
   # recap Deployment would open a second Discord gateway connection and
