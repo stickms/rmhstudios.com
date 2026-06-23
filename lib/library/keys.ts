@@ -1,12 +1,12 @@
 /**
  * RMH Studios — Library upload storage keys & slugs.
  *
- * Uploaded books are stored in R2 under the same `library/` key space as the
- * static catalog, so the reader resolves them through the existing
- * `/library/...` → CDN convention (see lib/storage/asset.ts). Keyed by the
- * LibraryDocument id (a cuid), never by the uploaded filename.
+ * Uploaded books are stored in R2 under the `library/` key space, keyed by the
+ * LibraryDocument id (never the uploaded filename). They are served back through
+ * same-origin streaming routes (`/api/library/file|cover/<id>`) so they resolve
+ * in every environment — unlike a bare `/library/...` path, which only works
+ * where a CDN fronts R2.
  */
-import { asset } from '@/lib/storage/asset';
 
 /** R2 object key for an uploaded book's PDF. */
 export function libraryPdfKey(id: string): string {
@@ -18,14 +18,19 @@ export function libraryCoverKey(id: string): string {
   return `library/covers/${id}.jpg`;
 }
 
-/** Public URL the reader fetches the PDF from (CDN-fronted when configured). */
+/** Same-origin URL the reader fetches the PDF from (streams from R2). */
 export function libraryPdfUrl(id: string): string {
-  return asset(`/library/${id}.pdf`);
+  return `/api/library/file/${id}`;
 }
 
-/** Public URL of an uploaded book's cover image. */
+/** Same-origin URL of an uploaded book's cover image (streams from R2). */
 export function libraryCoverUrl(id: string): string {
-  return asset(`/library/covers/${id}.jpg`);
+  return `/api/library/cover/${id}`;
+}
+
+/** Guard against path traversal: ids are cuids/uuids (alphanumerics + dashes). */
+export function isSafeLibraryId(id: string): boolean {
+  return /^[A-Za-z0-9-]+$/.test(id);
 }
 
 /** Lowercase, hyphenated slug from a title; "book" when nothing usable remains. */
