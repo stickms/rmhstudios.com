@@ -8,6 +8,7 @@ import { Lock, Swords, Shield, Zap, Coins } from 'lucide-react';
 import { CLASSES, ClassDef } from '@/lib/altair/data/classes';
 import { WEAPONS } from '@/lib/altair/data/weapons';
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
+import { asset } from '@/lib/storage/asset';
 import { useAltairSettingsStore } from '@/lib/altair/stores/settings-store';
 import { useAltairToastStore } from '@/lib/altair/stores/toast-store';
 import { useKeyboardNav } from '@/lib/altair/hooks/use-keyboard-nav';
@@ -29,7 +30,7 @@ function ClassSprite({ classId, size = 48 }: { classId: string; size?: number })
   const filename = classId.replace('_', '-');
   return (
     <SpriteIcon
-      sheetSrc={`/sprites/altair/characters/${filename}.png`}
+      sheetSrc={asset(`/sprites/altair/characters/${filename}.png`)}
       frameIndex={0}
       frameWidth={16}
       frameHeight={16}

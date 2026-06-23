@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect, useCallback } from 'react';
 import type { ActId } from '@/lib/forest-explorer/types';
+import { asset } from '@/lib/storage/asset';
 
 /**
  * Per-act audio track management for Story Mode.
@@ -18,9 +19,9 @@ import type { ActId } from '@/lib/forest-explorer/types';
  */
 
 const ACT_TRACKS: Record<ActId, string> = {
-    act1: '/music/ForestExplorer/story_act1.mp3',
-    act2: '/music/ForestExplorer/story_act2.mp3',
-    act3: '/music/ForestExplorer/story_act3.mp3',
+    act1: asset('/music/ForestExplorer/story_act1.mp3'),
+    act2: asset('/music/ForestExplorer/story_act2.mp3'),
+    act3: asset('/music/ForestExplorer/story_act3.mp3'),
 };
 
 const SFX_PATHS = {

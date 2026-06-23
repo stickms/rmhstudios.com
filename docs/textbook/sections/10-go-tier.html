@@ -1,0 +1,457 @@
+<div class="objectives"><h4>Learning Objectives</h4><ul>
+  <li>Define a <b>microservice</b> and explain how splitting a process tier into independently deployable binaries differs from a monolith.</li>
+  <li>Explain the <b>strangler-fig</b> migration pattern and contrast it with a <b>big-bang rewrite</b>, using the rmhstudios Go tier as the worked example.</li>
+  <li>Justify why some components — the React SSR web tier and Better&nbsp;Auth session issuance — are deliberately <i>not</i> ported, and are integrated rather than re-implemented.</li>
+  <li>Describe the role of a <b>shared foundation</b> (the <code>pkg/</code> library) and what it buys a fleet of nine services.</li>
+  <li>Read a service inventory and tell apart what is genuinely <b>ported</b>, <b>scaffolded</b>, and <b>stubbed</b> — and why every stub still compiles.</li>
+  <li>Explain why this entire tier is a branch-isolated experiment rather than a production cutover.</li>
+</ul></div>
+
+<p class="lead">This chapter studies a migration that was, as a matter of recorded
+architecture decision, <i>declined</i>. PR&nbsp;#121 — the infrastructure direction that
+moved rmhstudios.com onto k3s and Helm — explicitly chose <b>not</b> to rewrite the
+backend in Go. And yet the repository contains <code>go-services/</code>: nine Go
+binaries that mirror the Node realtime and worker tier. The two facts are not in
+tension. They are the whole lesson. The Go tier is a disciplined, branch-isolated
+experiment built so that Go could be adopted <i>per service, later, only if metrics
+prove a bottleneck</i> — never as a wholesale replacement. Read this chapter as a case
+study in how to explore a rewrite without betting the platform on it.</p>
+
+<h2 id="what-is-a-microservice">What a microservice tier is</h2>
+<p>The earlier chapters described rmhstudios.com as a <i>process-split</i> platform: one
+React SSR web server plus a fleet of small, single-purpose processes for realtime games,
+watch parties, music rooms, scheduled jobs, and a Discord bot. Each of those processes is
+a <b>microservice</b> — and the Go tier is a second, parallel implementation of that same
+fleet, one binary per service.</p>
+
+<div class="keyterm"><span class="term">Microservice</span> — a small service that owns
+one slice of a system's behavior, runs as its own process (here, its own container), and
+communicates with the rest of the system only over well-defined transports (HTTP,
+WebSocket, a database, a message bus) rather than by sharing in-process memory. The
+opposite is a <b>monolith</b>, where all behavior lives in one process and modules call
+each other by direct function calls.</div>
+
+<p>The structural rule of the Go tier is stated in <code>go-services/FOUNDATION.md</code>
+and is worth memorizing because the whole layout follows from it: <i>&ldquo;Every service is
+a binary under <code>cmd/&lt;service&gt;/main.go</code> with its private code under
+<code>internal/&lt;service&gt;/</code>.&rdquo;</i> One binary equals one container equals one
+deployable unit. The module path is <code>github.com/rmhstudios/rmh-go</code>, pinned to
+Go&nbsp;1.23.</p>
+
+<p>This division — many small replaceable processes behind a stable set of transports — is
+precisely what makes the next idea, incremental migration, mechanically possible.</p>
+
+<h2 id="strangler-fig">The strangler-fig pattern</h2>
+<p>There are two ways to replace a working system. The reckless way is the
+<b>big-bang rewrite</b>: build the new system in full, then on one terrifying day switch
+every user from old to new. Big-bang rewrites are notorious for shipping late, losing
+behavior nobody documented, and offering no safe rollback — when the switch fails, the old
+system is already gone. The disciplined way is the strangler fig.</p>
+
+<div class="keyterm"><span class="term">Strangler-fig migration</span> — a pattern named
+after a vine that grows around a host tree, gradually taking over until the original can be
+removed. In software: place a <b>stable interface</b> (often a gateway or proxy) in front
+of the old system, build the replacement behind it one piece at a time, and route traffic
+to each new piece only once it is proven. The old and new systems run side by side; you can
+always route back. The host is &ldquo;strangled&rdquo; incrementally, never amputated.</div>
+
+<div class="keyterm"><span class="term">Big-bang rewrite</span> — replacing a system all at
+once, with a single cutover from old to new. High risk: no incremental validation, no
+partial rollback, and a long period during which neither system is shippable.</div>
+
+<p>The rmhstudios Go tier is built for the strangler-fig path and not the big-bang one. The
+mechanism that makes it strangler-fig is a new service, the <b>gateway</b>, which becomes
+the single front door. The gateway reverse-proxies a handful of WebSocket path prefixes to
+the Go services and proxies <i>everything else</i> straight through to the still-running
+Node web tier. Because routing happens at exactly one boundary, services can be cut over
+one prefix at a time — or not at all.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart LR
+  C[Browsers and Discord] --> G[Gateway 7005]
+  G -->|prefix /socket/| GH[Go gamehub 7001]
+  G -->|prefix /rmhbox-ws/| RB[Go rmhbox 7676]
+  G -->|prefix /rmhtube-ws/| RT[Go rmhtube 7003]
+  G -->|prefix /rmhmusic-ws/| RM[Go rmhmusic 7002]
+  G -->|catch-all /| WEB[Node React SSR web]
+  GH --> PG[(Postgres)]
+  RB --> PG
+  WEB --> PG
+  </div>
+  <figcaption>Figure 10.1: The gateway as the strangler-fig boundary. WebSocket prefixes
+  route to Go services; the catch-all sends every other request to the unchanged Node SSR
+  app. Routing at one place is what makes per-service cutover possible.</figcaption>
+</figure>
+
+<p>The routing decision itself is small and tested. In
+<code>internal/gateway/proxy.go</code> the router selects an upstream by
+<i>longest-matching path prefix</i>, falling back to the web upstream:</p>
+
+<pre><code>routes := []struct {
+    prefix string
+    target string
+}{
+    {"/socket/", cfg.GamehubUpstream},
+    {"/rmhbox-ws/", cfg.RmhboxUpstream},
+    {"/rmhtube-ws/", cfg.RmhtubeUpstream},
+    {"/rmhmusic-ws/", cfg.RmhmusicUpstream},
+}
+// ... sorted longest-prefix-first so "most specific wins" ...
+
+func (r *Router) pick(path string) *upstream {
+    for _, u := range r.prefixed {
+        if hasPrefix(path, u.prefix) {
+            return u
+        }
+    }
+    return r.web // catch-all: SSR pages and any API Go does not own
+}</code></pre>
+
+<p>Note what is <i>absent</i>: there is no list of &ldquo;migrated&rdquo; routes baked into
+the clients, no feature flag, no rewrite of the Node app. To strangle one more service you
+add one prefix to this slice. To roll back, you remove it and the catch-all carries the
+traffic. This is the strangler fig in four lines of Go.</p>
+
+<div class="note">A subtle detail makes WebSocket pass-through work at all. The gateway uses
+Go&nbsp;1.23's <code>httputil.NewSingleHostReverseProxy</code> with its <i>default</i>
+director. The comment in <code>newProxy</code> explains why: Go&rsquo;s reverse proxy
+detects a WebSocket upgrade request, switches to bidirectional-copy mode on a
+<code>101 Switching Protocols</code> response, and manages the hop-by-hop headers itself.
+Stripping <code>Connection</code>/<code>Upgrade</code> manually would break it. The realtime
+hubs serve their exact prefixes (e.g. <code>hub.ServeWS</code> on
+<code>/rmhbox-ws/</code>), so the gateway proxies the full path through unchanged — no
+prefix stripping.</div>
+
+<h2 id="not-portable">What is deliberately not portable</h2>
+<p>A migration earns trust by being precise about its <i>non</i>-goals. Two large
+components are kept in JavaScript on purpose, and the honesty of the whole tier rests on
+admitting this plainly.</p>
+
+<p><b>The React SSR web tier stays JavaScript.</b> The TanStack Start renderer and its
+roughly 130 API routes are not ported. There is no faithful way to re-implement a React
+server-side renderer in Go; it would mean rewriting the entire frontend. So the Go gateway
+<i>proxies</i> to it rather than replacing it. The SSR app is integrated, not faked.</p>
+
+<p><b>Better&nbsp;Auth session <i>issuance</i> stays JavaScript.</b> OAuth callbacks, cookie
+signing, and session creation remain owned by Better&nbsp;Auth in the React tier. There is
+no Go equivalent for that stack. Crucially, though, the Go services do not need one. The
+single most important insight of the whole migration — stated verbatim atop
+<code>pkg/auth/auth.go</code> — is that the Node services already authenticate <i>without</i>
+the Better&nbsp;Auth SDK, by running one SQL lookup against the shared <code>session</code>
+table. Go reproduces that lookup exactly:</p>
+
+<pre><code>// ValidateSession is the verbatim port of the Node query.
+const q = `SELECT s."userId", s."expiresAt", u."name", u."image", u."isAdmin"
+    FROM "session" s JOIN "user" u ON u."id" = s."userId"
+    WHERE s."token" = $1 LIMIT 1`
+
+err := v.pool.QueryRow(ctx, q, token).Scan(&amp;userID, &amp;expiresAt, &amp;name, &amp;image, &amp;isAdmin)
+if errors.Is(err, pgx.ErrNoRows) {
+    return Identity{}, ErrUnauthenticated
+}
+if time.Now().After(expiresAt) {
+    return Identity{}, ErrUnauthenticated
+}</code></pre>
+
+<p>This is the dividing line that makes the migration tractable. Better&nbsp;Auth
+<i>issues</i> sessions (hard, framework-bound, kept in JS). Any service merely
+<i>validates</i> them (one query, trivially portable). The Go fleet only validates. The
+gateway turns a validated session into trusted <code>X-Rmh-*</code> identity headers for
+upstreams, and — at the trust boundary — strips any client-supplied <code>X-Rmh-*</code>
+header first so it cannot be forged.</p>
+
+<div class="warn">Validating is not the same as interoperating. The browsers speak the
+Socket.IO v4 wire protocol; the Go realtime services speak a clean JSON-over-raw-WebSocket
+protocol with the <i>same semantics</i> but a <i>different wire format</i>. They are not
+interoperable. A production cutover of any WebSocket prefix needs a client-side adapter that
+is, per <code>24-risks.html</code>, <b>designed but not built</b>. Until then the Go realtime
+services are exercised by new-protocol end-to-end clients, never by live browsers. This is
+the single largest limitation of the tier.</div>
+
+<h2 id="shared-foundation">The shared foundation</h2>
+<p>Nine services could easily become nine snowflakes, each with its own logging style,
+config parsing, and database boilerplate. The Go tier avoids that with a
+<b>shared foundation</b>: the packages under <code>pkg/</code>, imported by every service.</p>
+
+<div class="keyterm"><span class="term">Shared foundation (shared library)</span> — a set of
+common packages that every service in a fleet imports for cross-cutting concerns (config,
+logging, database access, auth, HTTP server lifecycle, metrics, realtime transport). It
+makes the services consistent and lets a fix or feature land once for all of them. In
+<code>go-services/</code> the rule is strict: service authors import <code>pkg/</code> but
+must never edit it or <code>go.mod</code> — they write only under their own
+<code>cmd/</code> and <code>internal/</code> directories.</div>
+
+<p>The foundation is the part the project documents as <b>faithful and fully tested</b>,
+race-detector and all. Its packages map cleanly onto the cross-cutting needs of a realtime
+fleet:</p>
+
+<table>
+<thead><tr><th><code>pkg/</code> package</th><th>Responsibility</th></tr></thead>
+<tbody>
+<tr><td><code>config</code></td><td><code>LoadCommon</code> + typed <code>GetString/GetInt/GetBool/GetDuration/GetCSV</code> env readers.</td></tr>
+<tr><td><code>log</code></td><td>structured <code>slog</code> logger; <code>logger.Fatal</code> logs then <code>os.Exit(1)</code>.</td></tr>
+<tr><td><code>db</code></td><td><code>pgxpool</code> wrapper; <code>WaitForReachable</code> for workers; typed models over the shared schema.</td></tr>
+<tr><td><code>auth</code></td><td>the session-validation <code>Validator</code> shown above.</td></tr>
+<tr><td><code>httpx</code></td><td><code>Health</code> handler, <code>WriteJSON</code>, <code>SessionToken</code>, and a draining <code>Server</code>.</td></tr>
+<tr><td><code>ratelimit</code></td><td>per-connection token buckets keyed by rule name.</td></tr>
+<tr><td><code>telemetry</code></td><td>Prometheus metrics (<code>ActiveConnections</code>, <code>MessagesTotal</code>, <code>JobRuns</code>&hellip;).</td></tr>
+<tr><td><code>events</code></td><td>the cross-instance pub/sub backplane (<code>Local</code> bus, or Redis when <code>REDIS_URL</code> is set).</td></tr>
+<tr><td><code>realtime</code></td><td>the WebSocket framework (<code>Hub</code>, <code>Room</code>, <code>Conn</code>, <code>Envelope</code>) that replaces Socket.IO.</td></tr>
+</tbody>
+</table>
+
+<p>Because the foundation exists, a service's <code>main.go</code> is almost entirely
+boilerplate: load config, open the database, build a validator, build a hub, register
+handlers, serve <code>/health</code> and <code>/metrics</code>, run until SIGINT/SIGTERM,
+drain. The <code>events.Bus</code> backplane is what lets the realtime services scale past
+one replica — an empty <code>REDIS_URL</code> gives an in-process bus; a Redis URL fans
+messages across instances. That scaling primitive, notably, is language-agnostic: it could
+be applied to the existing Node services too.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart TB
+  subgraph svc[One service]
+    M[cmd svc main.go] --> I[internal svc logic]
+  end
+  M --> CFG[pkg config]
+  M --> LOG[pkg log]
+  M --> DB[pkg db]
+  M --> AUTH[pkg auth]
+  M --> HTTPX[pkg httpx]
+  M --> RT[pkg realtime]
+  M --> TEL[pkg telemetry]
+  RT --> BUS[pkg events bus]
+  BUS --> REDIS[(Redis backplane)]
+  DB --> PG[(Postgres shared schema)]
+  </div>
+  <figcaption>Figure 10.2: A service is thin business logic over a thick shared foundation.
+  Authors write only <code>cmd/&lt;svc&gt;</code> and <code>internal/&lt;svc&gt;</code>;
+  everything cross-cutting comes from <code>pkg/</code>.</figcaption>
+</figure>
+
+<h2 id="hermetic-build">A hermetic build for nine binaries</h2>
+<p>Nine services need a build that is reproducible and does not depend on each developer
+having the right Go installed. The operator runbook (<code>go-backend-and-bazel.md</code>)
+describes two paths, both arranged so <b>Go is not required locally</b>.</p>
+
+<div class="keyterm"><span class="term">Hermetic Go SDK</span> — a toolchain the build
+system downloads and pins itself, so every build uses the exact same compiler version
+regardless of what is installed on the machine. Under Bazel, <code>rules_go 0.50.1</code>
+ships a hermetic Go&nbsp;1.23.0 SDK; the build never touches a system <code>go</code>.</div>
+
+<div class="keyterm"><span class="term">Gateway / BFF (edge service)</span> — a single
+service that sits at the network edge, in front of everything else, and is the one address
+clients connect to. It routes, enforces the auth trust boundary, and terminates WebSocket
+upgrades. &ldquo;BFF&rdquo; (backend-for-frontend) names the same idea when the edge is
+tailored to one frontend. The rmhstudios <code>gateway</code> on port 7005 is this edge.</div>
+
+<p>The Makefile's no-Bazel path runs the official Go image in Docker so a contributor needs
+only Docker: <code>make all</code> expands to <code>tidy → vet → test → build</code>, each
+running <code>go ...</code> inside <code>golang:1.23-alpine</code>. The Bazel path
+(<code>make gazelle / build / images</code>) uses the hermetic SDK and a
+<code>go_service_image</code> macro that emits one <code>oci_image</code> per service, loaded
+locally as <code>rmhstudios-go-&lt;svc&gt;:dev</code>. Seven services build on a
+distroless base; <code>vibe-worker</code> uses a Chromium base (it renders thumbnails) and
+<code>discord-bot</code> a git base. Either way the deliverable is nine containers that slot
+into PR&nbsp;#121's Helm conventions, reusing its <code>rmhstudios-secrets</code> Secret.</p>
+
+<h2 id="ported-scaffolded-stubbed">Ported, scaffolded, stubbed — the honest inventory</h2>
+<p>This is the part to read most carefully, because it is where overstatement would do real
+harm. The tier mixes three honestly-different states, and the codebase's own scope document
+(<code>03-scope.html</code>) and risk document (<code>24-risks.html</code>) label each one.</p>
+
+<ul>
+  <li><b>Ported</b> — a faithful re-implementation of the Node behavior, tested. Safe to
+  reason about as equivalent (modulo the wire-protocol gap above).</li>
+  <li><b>Scaffolded</b> — the structure, interfaces, and lifecycle are real and tested, but
+  a representative slice of the behavior is implemented while the long tail is not. A
+  framework with the first example filled in.</li>
+  <li><b>Stubbed</b> — a placeholder that <i>compiles</i> behind a real interface and runs,
+  but does nothing meaningful yet (marked <code>// TODO(migration):</code>). It exists so the
+  surrounding system can be exercised and so finishing it is additive, not structural.</li>
+</ul>
+
+<p>The discipline that ties these together is the FOUNDATION rule: <i>code must compile with
+<code>go build ./...</code>; never leave broken code; where a piece is out of scope, leave a
+clearly-marked stub that still compiles.</i> A stub is not a lie — it is an honestly-empty
+implementation of a real contract. The <code>rmhbox</code> minigame registry shows it: eight
+of nine games are a <code>stubGame</code> that auto-completes after one second with everyone
+ranked zero, while Rhyme&nbsp;Time is a full port.</p>
+
+<pre><code>func (g *stubGame) Start() {
+    g.isRunning = true
+    // TODO(migration): replace with the real handler. Auto-complete after 1s.
+    g.setTimeout(func() { g.ctx.OnComplete(g.ComputeResults()) }, 1000)
+}</code></pre>
+
+<p>Here is the per-service inventory, drawn from <code>README.md</code>, the runbook's
+nine-binary table, and the scope/risk documents. Ports and gateway prefixes are real.</p>
+
+<table>
+<thead><tr><th>Service (<code>cmd/</code>)</th><th>Replaces (Node)</th><th>Port</th><th>Kind</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td><code>gateway</code></td><td>web edge / API routing</td><td>7005</td><td>edge / BFF</td><td><b>Ported + new</b> — reverse proxy + auth trust boundary.</td></tr>
+<tr><td><code>gamehub</code></td><td>socket-server</td><td>7001</td><td>WS <code>/socket/</code></td><td><b>Ported</b> (Kowloon&nbsp;Knockout) <span style="color:#7a3ff2">+ scaffolded</span> generic relay registry for other games.</td></tr>
+<tr><td><code>rmhmusic</code></td><td>rmhmusic</td><td>7002</td><td>WS <code>/rmhmusic-ws/</code> (auth)</td><td><b>Ported</b> — snapshot+delta, drift sync, host reassignment.</td></tr>
+<tr><td><code>rmhtube</code></td><td>rmhtube</td><td>7003</td><td>WS <code>/rmhtube-ws/</code></td><td><b>Ported core</b> — sync/queue/chat/persistence real; ban/invite simplified.</td></tr>
+<tr><td><code>rmhbox</code></td><td>rmhbox</td><td>7676</td><td>WS <code>/rmhbox-ws/</code></td><td><b>Ported</b> lobby/coordinator/state-sync; <span style="color:#7a3ff2">1 minigame ported + 8 stubs</span>.</td></tr>
+<tr><td><code>recap</code></td><td>recap</td><td>7004</td><td>HTTP (not via gateway)</td><td><b>Ported</b> — Lights&nbsp;Out daily recap → Discord; presence via discordgo.</td></tr>
+<tr><td><code>doctrine-worker</code></td><td>doctrine-worker</td><td>—</td><td>worker</td><td><b>Ported, bit-exact</b> — mulberry32 golden-tested; all three jobs.</td></tr>
+<tr><td><code>vibe-worker</code></td><td>vibe-worker</td><td>—</td><td>worker</td><td><b>Ported w/ substitution</b> — chromedp replaces Playwright; device-scale replaces <code>sharp</code>.</td></tr>
+<tr><td><code>discord-bot</code></td><td>discord-bot</td><td>—</td><td>worker</td><td><b>Ported</b> <code>/chat</code> (DeepSeek); <span style="color:#7a3ff2">scaffolded</span> <code>/rmhbot</code> agentic editor (several tools stubbed).</td></tr>
+</tbody>
+</table>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart TB
+  subgraph edge[Edge]
+    GW[gateway 7005]
+  end
+  subgraph realtime[Realtime services]
+    GH[gamehub 7001]
+    RM[rmhmusic 7002]
+    RT[rmhtube 7003]
+    RB[rmhbox 7676]
+  end
+  subgraph workers[Workers no client WS]
+    DW[doctrine-worker]
+    VW[vibe-worker]
+    DB2[discord-bot]
+    RC[recap 7004]
+  end
+  GW --> GH
+  GW --> RM
+  GW --> RT
+  GW --> RB
+  realtime --> PG[(Postgres)]
+  workers --> PG
+  realtime --> RD[(Redis backplane)]
+  </div>
+  <figcaption>Figure 10.3: The nine-service map. The gateway fronts the four realtime
+  services; the four workers (recap, doctrine, vibe, discord-bot) have no browser WebSocket
+  clients and so are untouched by the Socket.IO protocol gap.</figcaption>
+</figure>
+
+<div class="scope"><b>Honest scope of this tier — read before believing any &ldquo;done.&rdquo;</b>
+The Go fleet is a <b>strangler-fig experiment on an isolated branch</b>, not a production
+system. (1) <b>The architecture decision was to decline a wholesale rewrite</b> — PR&nbsp;#121
+set Go as a Stage-4 option, to be adopted <i>per service, only if metrics prove a
+bottleneck</i>. (2) <b>The React SSR web tier and Better&nbsp;Auth issuance are kept in JS by
+design</b> and proxied/validated, not ported. (3) <b>The realtime services are not wire-compatible
+with live browsers</b> — they speak JSON-over-raw-WebSocket, not Socket.IO v4; the client adapter
+is designed but unbuilt, so no real browser has ever connected. (4) <b>Several surfaces are
+scaffolded or stubbed</b>: 8 of 9 rmhbox minigames are compiling stubs, non-KK gamehub games are
+an empty registry, and <code>/rmhbot</code>'s typecheck and PR-creation tools are stubs. (5)
+<b>Nothing is load-tested or measured</b> — performance claims are structural, not empirical.
+The codebase's own recommendation: do not adopt wholesale, and not now. Its value is as a tested
+reference, a source of extracted-good-ideas (the single auth query, the events backplane, the
+atomic stat-merge), and an option to migrate one service in isolation and <i>measure</i> it —
+exactly the discipline PR&nbsp;#121 prescribed.</div>
+
+<h2 id="why-this-is-discipline">Why this counts as good engineering</h2>
+<p>It is tempting to read &ldquo;a full rewrite that we won't deploy&rdquo; as wasted work.
+The opposite is closer to the truth, and the reasoning is the real takeaway of the chapter.
+A big-bang rewrite that <i>shipped</i> would have been the failure: it would have endangered a
+working platform, discarded the irreplaceable React/Better&nbsp;Auth/Prisma core, and offered no
+rollback. What was built instead is additive (the web image is unchanged), branch-isolated (no
+production traffic), interface-honest (every stub compiles behind a real contract), and
+gateway-fronted (cutover, if it ever happens, is per-prefix and reversible). The risk that a
+rewrite normally carries — the cliff of a single switch — has been engineered out. That is what
+disciplined migration looks like: you may build the whole target to <i>learn</i> from it, precisely
+because you have made it impossible for that target to hurt you.</p>
+
+<div class="summary"><h4>Summary</h4><ul>
+  <li>A <b>microservice</b> tier is many small single-purpose processes communicating over
+  transports, not shared memory. The Go tier mirrors the Node fleet, one binary per service
+  under <code>cmd/</code>, private code under <code>internal/</code>.</li>
+  <li>The <b>strangler-fig</b> pattern replaces a system incrementally behind a stable
+  interface; the <code>gateway</code> (port 7005) is that interface, routing WebSocket
+  prefixes to Go services and everything else to the unchanged Node SSR app. The opposite —
+  a <b>big-bang rewrite</b> — was deliberately declined in PR&nbsp;#121.</li>
+  <li>Some components are <b>not portable by design</b>: the React SSR renderer and Better&nbsp;Auth
+  <i>issuance</i> stay in JS and are integrated, not faked. Go only <i>validates</i> sessions —
+  one SQL query against the shared <code>session</code> table.</li>
+  <li>The <b>shared foundation</b> (<code>pkg/</code>) gives nine services consistent config,
+  logging, db, auth, http, ratelimit, telemetry, an events backplane, and a realtime framework;
+  authors never edit it.</li>
+  <li>Honesty has three grades — <b>ported</b>, <b>scaffolded</b>, <b>stubbed</b> — and every
+  stub still compiles behind a real interface. The tier is a branch-isolated, unmeasured
+  experiment, adoptable later only per-service and only if metrics justify it.</li>
+</ul></div>
+
+<div class="exercises"><h2 id="ch10-exercises">Practice Exercises</h2>
+
+<div class="exercise"><span class="qid">10.1</span>
+<span class="tag concept">concept</span><span class="tag easy">easy</span>
+In your own words, define a <i>microservice</i> and contrast it with a monolith. Using the
+Go tier, give one concrete example of the &ldquo;one binary = one container = one deployable
+unit&rdquo; rule and name the two directories a service author is allowed to write in.</div>
+
+<div class="exercise"><span class="qid">10.2</span>
+<span class="tag concept">concept</span><span class="tag medium">medium</span>
+Explain the strangler-fig pattern and why it is safer than a big-bang rewrite. Identify the
+single component in the Go tier that makes the strangler-fig approach possible, and explain
+what about its design lets services be cut over one at a time.</div>
+
+<div class="exercise"><span class="qid">10.3</span>
+<span class="tag concept">concept</span><span class="tag medium">medium</span>
+The migration keeps the React SSR tier and Better&nbsp;Auth session <i>issuance</i> in
+JavaScript, yet the Go services still authenticate users. Resolve this apparent contradiction
+by distinguishing session <i>issuance</i> from session <i>validation</i>, and state exactly
+what the Go <code>auth</code> package does instead of using a Better&nbsp;Auth library.</div>
+
+<div class="exercise"><span class="qid">10.4</span>
+<span class="tag trace">trace</span><span class="tag medium">medium</span>
+A browser opens a WebSocket to <code>/rmhbox-ws/abc</code> through the gateway. Trace the
+request: which gateway function selects the upstream, by what rule, which service and port it
+lands on, and why the gateway does <i>not</i> strip the <code>Connection</code>/<code>Upgrade</code>
+headers. Then name the one reason this exact flow does not work with a real production browser
+today.</div>
+
+<div class="exercise"><span class="qid">10.5</span>
+<span class="tag trace">trace</span><span class="tag easy">easy</span>
+Classify each of these as <b>ported</b>, <b>scaffolded</b>, or <b>stubbed</b>, citing the
+table: (a) <code>doctrine-worker</code>; (b) the eight non-Rhyme-Time rmhbox minigames;
+(c) the non-Kowloon-Knockout gamehub games; (d) <code>rmhmusic</code>; (e) the
+<code>/rmhbot</code> agentic editor. For one of your &ldquo;stubbed&rdquo; answers, explain
+why the stub still compiles and why that matters.</div>
+
+<div class="exercise"><span class="qid">10.6</span>
+<span class="tag diagram">diagram</span><span class="tag medium">medium</span>
+Redraw Figure 10.1 to show the <i>state after one more cutover</i>: suppose the team decides
+to strangle the <code>recap</code> HTTP endpoint through the gateway as well. Show the new
+prefix arrow and explain, referencing the runbook, why recap is <i>not</i> routed through the
+gateway in the current design.</div>
+
+<div class="exercise"><span class="qid">10.7</span>
+<span class="tag design">design</span><span class="tag hard">hard</span>
+You are handed metrics showing the Node <code>rmhmusic</code> service is CPU-bound at peak.
+Design a plan to adopt <i>only</i> the Go <code>rmhmusic</code> service while leaving the other
+eight Node services in place. Address: the gateway route, the Socket.IO wire-protocol gap, how
+you would validate equivalence before sending real traffic, and how you would roll back. Justify
+why this per-service plan honors PR&nbsp;#121's Stage-4 condition.</div>
+
+<div class="exercise"><span class="qid">10.8</span>
+<span class="tag concept">concept</span><span class="tag medium">medium</span>
+The <code>pkg/</code> foundation is documented as &ldquo;faithful, fully tested&rdquo; while
+many services above it are scaffolded or stubbed. Explain why it is reasonable — even good
+engineering — for the shared library to be more complete than the services that use it. What
+property of stubs makes finishing the services &ldquo;additive rather than structural&rdquo;?</div>
+
+<div class="exercise"><span class="qid">10.9</span>
+<span class="tag design">design</span><span class="tag hard">hard</span>
+A teammate argues: &ldquo;We built nine Go services and a Helm chart for nothing — we're not
+even deploying them.&rdquo; Write a rebuttal grounded in this chapter. Identify at least three
+concrete forms of value the branch delivers regardless of whether it ships, and explain how the
+design neutralizes the risk a rewrite normally carries.</div>
+
+<div class="exercise"><span class="qid">10.10</span>
+<span class="tag concept">concept</span><span class="tag easy">easy</span>
+Define <i>hermetic Go SDK</i> and explain why the build is arranged so that &ldquo;Go is not
+required locally.&rdquo; Name the two build paths the project offers (Makefile-via-Docker and
+Bazel) and what each produces for a single service.</div>
+
+</div>

@@ -57,6 +57,7 @@
   --site-text-muted: #9a9ba4;
   --site-text-dim: #6a6b74;
   --site-accent: #9b7ad8;
+  --site-accent-fg: #000;
   --site-accent-hover: #8a68c9;
   --site-accent-dim: rgba(155, 122, 216, 0.12);
   --site-success: #7bc88a;
@@ -180,6 +181,7 @@
   --site-text-muted: #6a6b74;
   --site-text-dim: #9a9ba4;
   --site-accent: #7c5cb8;
+  --site-accent-fg: #fff;
   --site-accent-hover: #6b4ba8;
   --site-accent-dim: rgba(124, 92, 184, 0.08);
   --site-success: #5aad6a;
@@ -203,6 +205,7 @@
   --site-text-muted: #70b070;
   --site-text-dim: #406040;
   --site-accent: #00ff66;
+  --site-accent-fg: #000;
   --site-accent-hover: #00cc52;
   --site-accent-dim: rgba(0, 255, 102, 0.1);
   --site-shadow: 0 4px 24px rgba(0, 255, 102, 0.08);
@@ -232,6 +235,7 @@
   --site-text-muted: #8a5080;
   --site-text-dim: #b080a0;
   --site-accent: #ff6b9d;
+  --site-accent-fg: #000;
   --site-accent-hover: #ff4488;
   --site-accent-dim: rgba(255, 107, 157, 0.08);
   --site-success: #7bc88a;
@@ -263,6 +267,7 @@
   --site-text-muted: #a09880;
   --site-text-dim: #706850;
   --site-accent: #d4a847;
+  --site-accent-fg: #000;
   --site-accent-hover: #c49838;
   --site-accent-dim: rgba(212, 168, 71, 0.1);
   --site-shadow: 0 4px 24px rgba(212, 168, 71, 0.06);
@@ -290,6 +295,7 @@
   --site-text-muted: #dd88ff;
   --site-text-dim: #aa44dd;
   --site-accent: #ff00ff;
+  --site-accent-fg: #000;
   --site-accent-hover: #ff44ff;
   --site-accent-dim: rgba(255, 0, 255, 0.15);
   --site-shadow: 0 4px 24px rgba(255, 0, 255, 0.12);
@@ -318,6 +324,7 @@
   --site-text-muted: #404060;
   --site-text-dim: #6060a0;
   --site-accent: #dd2200;
+  --site-accent-fg: #fff;
   --site-accent-hover: #bb1a00;
   --site-accent-dim: rgba(221, 34, 0, 0.06);
   --site-success: #228b22;
@@ -351,6 +358,7 @@
   --site-text-muted: #a09880;
   --site-text-dim: #686050;
   --site-accent: #c8a84a;
+  --site-accent-fg: #000;
   --site-accent-hover: #b89838;
   --site-accent-dim: rgba(200, 168, 74, 0.1);
   --site-shadow: 0 4px 24px rgba(200, 168, 74, 0.06);
@@ -378,6 +386,7 @@
   --site-text-muted: #a098b0;
   --site-text-dim: #706888;
   --site-accent: #a0d8b0;
+  --site-accent-fg: #000;
   --site-accent-hover: #88c898;
   --site-accent-dim: rgba(160, 216, 176, 0.1);
   --site-shadow: 0 4px 24px rgba(160, 216, 176, 0.06);
@@ -405,6 +414,7 @@
   --site-text-muted: #6a5a48;
   --site-text-dim: #9a8a78;
   --site-accent: #8b4513;
+  --site-accent-fg: #fff;
   --site-accent-hover: #723a10;
   --site-accent-dim: rgba(139, 69, 19, 0.06);
   --site-success: #5a8a3a;
@@ -440,6 +450,7 @@
   --site-text-muted: #c08070;
   --site-text-dim: #805040;
   --site-accent: #ff3030;
+  --site-accent-fg: #000;
   --site-accent-hover: #e02020;
   --site-accent-dim: rgba(255, 48, 48, 0.12);
   --site-shadow: 0 4px 24px rgba(255, 48, 48, 0.1);
@@ -468,6 +479,7 @@
   --site-text-muted: #90a880;
   --site-text-dim: #607850;
   --site-accent: #5a9e3a;
+  --site-accent-fg: #000;
   --site-accent-hover: #4a8e2a;
   --site-accent-dim: rgba(90, 158, 58, 0.1);
   --site-shadow: 0 4px 24px rgba(90, 158, 58, 0.06);
@@ -494,6 +506,7 @@
   --site-text-muted: #a0a0d0;
   --site-text-dim: #6868a0;
   --site-accent: #f0d020;
+  --site-accent-fg: #000;
   --site-accent-hover: #e0c010;
   --site-accent-dim: rgba(240, 208, 32, 0.1);
   --site-shadow: 0 4px 24px rgba(240, 208, 32, 0.08);
@@ -522,6 +535,7 @@
   --site-text-muted: #8898b0;
   --site-text-dim: #586880;
   --site-accent: #b0c8e8;
+  --site-accent-fg: #000;
   --site-accent-hover: #98b8e0;
   --site-accent-dim: rgba(176, 200, 232, 0.1);
   --site-shadow: 0 4px 24px rgba(176, 200, 232, 0.06);
@@ -549,6 +563,7 @@
   --site-text-muted: #c0a070;
   --site-text-dim: #887050;
   --site-accent: #ffc830;
+  --site-accent-fg: #000;
   --site-accent-hover: #f0b820;
   --site-accent-dim: rgba(255, 200, 48, 0.12);
   --site-shadow: 0 4px 24px rgba(255, 200, 48, 0.1);
@@ -577,6 +592,7 @@
   --site-text-muted: #5a6458;
   --site-text-dim: #8a9488;
   --site-accent: #5a8a50;
+  --site-accent-fg: #000;
   --site-accent-hover: #4a7a40;
   --site-accent-dim: rgba(90, 138, 80, 0.06);
   --site-success: #4a8a3a;
@@ -610,6 +626,7 @@
   --site-text-muted: #7a5878;
   --site-text-dim: #a080a0;
   --site-accent: #c47ab0;
+  --site-accent-fg: #000;
   --site-accent-hover: #b468a0;
   --site-accent-dim: rgba(196, 122, 176, 0.08);
   --site-success: #6aaa7a;
@@ -642,6 +659,7 @@
   --site-text-muted: #a07080;
   --site-text-dim: #704858;
   --site-accent: #c01040;
+  --site-accent-fg: #fff;
   --site-accent-hover: #a00830;
   --site-accent-dim: rgba(192, 16, 64, 0.12);
   --site-shadow: 0 4px 24px rgba(192, 16, 64, 0.1);
@@ -670,6 +688,7 @@
   --site-text-muted: #a898cc;
   --site-text-dim: #706898;
   --site-accent: #9050e0;
+  --site-accent-fg: #fff;
   --site-accent-hover: #7e40d0;
   --site-accent-dim: rgba(144, 80, 224, 0.1);
   --site-shadow: 0 4px 24px rgba(144, 80, 224, 0.08);
@@ -697,6 +716,7 @@
   --site-text-muted: #8a8a94;
   --site-text-dim: #5a5a64;
   --site-accent: #8090a0;
+  --site-accent-fg: #000;
   --site-accent-hover: #708090;
   --site-accent-dim: rgba(128, 144, 160, 0.1);
   --site-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
@@ -725,6 +745,7 @@
   --site-text-muted: #70a0d0;
   --site-text-dim: #4070a0;
   --site-accent: #00c8ff;
+  --site-accent-fg: #000;
   --site-accent-hover: #00b0e8;
   --site-accent-dim: rgba(0, 200, 255, 0.1);
   --site-shadow: 0 4px 24px rgba(0, 200, 255, 0.08);
@@ -753,6 +774,7 @@
   --site-text-muted: #88a0c0;
   --site-text-dim: #587090;
   --site-accent: #60b8b8;
+  --site-accent-fg: #000;
   --site-accent-hover: #50a8a8;
   --site-accent-dim: rgba(96, 184, 184, 0.1);
   --site-shadow: 0 4px 24px rgba(96, 184, 184, 0.06);
@@ -782,6 +804,7 @@
   --site-text-muted: #4a6848;
   --site-text-dim: #7a9878;
   --site-accent: #e06888;
+  --site-accent-fg: #000;
   --site-accent-hover: #d05878;
   --site-accent-dim: rgba(224, 104, 136, 0.08);
   --site-success: #5aaa5a;
@@ -814,6 +837,7 @@
   --site-text-muted: #7a6040;
   --site-text-dim: #a89070;
   --site-accent: #f08020;
+  --site-accent-fg: #000;
   --site-accent-hover: #e07010;
   --site-accent-dim: rgba(240, 128, 32, 0.08);
   --site-success: #5aaa4a;
@@ -846,6 +870,7 @@
   --site-text-muted: #b89870;
   --site-text-dim: #887050;
   --site-accent: #d07030;
+  --site-accent-fg: #000;
   --site-accent-hover: #c06020;
   --site-accent-dim: rgba(208, 112, 48, 0.1);
   --site-shadow: 0 4px 24px rgba(208, 112, 48, 0.06);
@@ -873,6 +898,7 @@
   --site-text-muted: #88a0c0;
   --site-text-dim: #506888;
   --site-accent: #70b8f0;
+  --site-accent-fg: #000;
   --site-accent-hover: #58a8e8;
   --site-accent-dim: rgba(112, 184, 240, 0.1);
   --site-shadow: 0 4px 24px rgba(112, 184, 240, 0.06);
@@ -901,6 +927,7 @@
   --site-text-muted: #6a5a44;
   --site-text-dim: #9a8a70;
   --site-accent: #2288dd;
+  --site-accent-fg: #000;
   --site-accent-hover: #1878cc;
   --site-accent-dim: rgba(34, 136, 221, 0.06);
   --site-success: #22aa44;
@@ -933,6 +960,7 @@
   --site-text-muted: #8aa0b0;
   --site-text-dim: #5a7080;
   --site-accent: #20b0a0;
+  --site-accent-fg: #000;
   --site-accent-hover: #18a090;
   --site-accent-dim: rgba(32, 176, 160, 0.1);
   --site-shadow: 0 4px 24px rgba(32, 176, 160, 0.06);
@@ -960,6 +988,7 @@
   --site-text-muted: #a0a0a8;
   --site-text-dim: #686870;
   --site-accent: #cc2244;
+  --site-accent-fg: #fff;
   --site-accent-hover: #b01838;
   --site-accent-dim: rgba(204, 34, 68, 0.1);
   --site-shadow: 0 4px 24px rgba(204, 34, 68, 0.06);
@@ -988,6 +1017,7 @@
   --site-text-muted: #4a5468;
   --site-text-dim: #7a8498;
   --site-accent: #1a3a6a;
+  --site-accent-fg: #fff;
   --site-accent-hover: #102a58;
   --site-accent-dim: rgba(26, 58, 106, 0.06);
   --site-success: #3a7a4a;
@@ -1020,6 +1050,7 @@
   --color-site-text-muted: var(--site-text-muted);
   --color-site-text-dim: var(--site-text-dim);
   --color-site-accent: var(--site-accent);
+  --color-site-accent-fg: var(--site-accent-fg, #fff);
   --color-site-accent-hover: var(--site-accent-hover);
   --color-site-accent-dim: var(--site-accent-dim);
   --color-site-success: var(--site-success);
@@ -2334,4 +2365,19 @@ img.emoji {
   font-size: 0.75rem;
   color: rgba(255,255,255,0.4);
   min-height: 1.2em;
+}
+
+/* ─── Number inputs ──────────────────────────────────────────────────────
+ * The native up/down spinners render with the OS theme and clash with the
+ * site's dark UI. Hide them globally so number fields match every other
+ * themed input; users still type values (and themed stepper controls can be
+ * added per-field where needed). */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }

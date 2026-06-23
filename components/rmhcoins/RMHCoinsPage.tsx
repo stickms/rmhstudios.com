@@ -4,24 +4,17 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { Loader2 } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import { CoinIcon } from './CoinIcon';
-import { CoinShop } from './CoinShop';
 import { PlayTab } from './PlayTab';
 
-type Tab = 'shop' | 'play';
-
-const tabs: { label: string; value: Tab }[] = [
-  { label: 'Shop', value: 'shop' },
-  { label: 'Play', value: 'play' },
-];
-
-export function RMHCoinsPage({ defaultTab = 'shop' }: { defaultTab?: Tab }) {
+export function RMHCoinsPage() {
   const { data: session, isPending } = authClient.useSession();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<Tab>(defaultTab);
   const [coins, setCoins] = useState(0);
-  const [hasProfilePet, setHasProfilePet] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [claiming, setClaiming] = useState(false);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -37,11 +30,29 @@ export function RMHCoinsPage({ defaultTab = 'shop' }: { defaultTab?: Tab }) {
       .then((r) => r.json())
       .then((data) => {
         setCoins(data.coins ?? 0);
-        setHasProfilePet(data.hasProfilePet ?? false);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [session]);
+
+  const handleClaimCoins = async () => {
+    if (claiming || coins >= 10) return;
+    setClaiming(true);
+    try {
+      const res = await fetch('/api/coins/claim', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || 'Claim failed');
+        return;
+      }
+      setCoins(data.newBalance);
+      toast.success('+10 coins added!');
+    } catch {
+      toast.error('Network error');
+    } finally {
+      setClaiming(false);
+    }
+  };
 
   if (isPending || loading) {
     return (
@@ -62,41 +73,22 @@ export function RMHCoinsPage({ defaultTab = 'shop' }: { defaultTab?: Tab }) {
           <span className="font-bold text-2xl text-yellow-500">{coins}</span>
           <span className="text-sm text-site-text-dim ml-1">RMH Coins</span>
         </div>
-      </div>
-
-      {/* Tab bar */}
-      <div className="border-b border-site-border">
-        <div className="flex">
-          {tabs.map((t) => (
-            <button
-              key={t.value}
-              onClick={() => setTab(t.value)}
-              className={`flex-1 py-3 text-center text-sm font-bold transition-colors relative ${
-                tab === t.value
-                  ? 'text-yellow-500'
-                  : 'text-site-text-dim hover:text-site-text hover:bg-site-surface/50'
-              }`}
-            >
-              {t.label}
-              {tab === t.value && (
-                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-0.5 bg-yellow-500 rounded-full" />
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Tab content */}
-      <div className="flex-1">
-        {tab === 'shop' && (
-          <CoinShop
-            coins={coins}
-            setCoins={setCoins}
-            hasProfilePet={hasProfilePet}
-            setHasProfilePet={setHasProfilePet}
-          />
+        {coins < 10 && (
+          <Button
+            onClick={handleClaimCoins}
+            disabled={claiming}
+            variant="outline"
+            size="sm"
+            className="rounded-lg border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10"
+          >
+            {claiming ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Claim 10 Free Coins'}
+          </Button>
         )}
-        {tab === 'play' && <PlayTab coins={coins} setCoins={setCoins} />}
+      </div>
+
+      {/* Play */}
+      <div className="flex-1">
+        <PlayTab coins={coins} setCoins={setCoins} />
       </div>
     </div>
   );

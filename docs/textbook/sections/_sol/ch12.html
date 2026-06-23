@@ -1,0 +1,54 @@
+<div class="solution"><span class="qid">12.1</span> <span class="ans">Answer:</span>
+A <em>zero-downtime deployment</em> releases a new version with no interval in which the service is unavailable: the old version keeps answering requests until the new one is proven able to take over, then traffic is switched. The guarantee <code>hotswap-web.sh</code> provides is that <strong>if the new web container never becomes healthy, traffic is never moved and the old container keeps serving</strong>. The new color is brought up on a spare port and polled with <code>curl</code> for up to <code>HEALTH_TIMEOUT</code> (60s); if it exits or never returns a success, the script removes the new container (or leaves it for diagnosis), never writes the active-port file, and the old color stays live. A bad build therefore degrades to "old version stays up," never to an outage.</div>
+
+<div class="solution"><span class="qid">12.2</span> <span class="ans">Answer:</span>
+The "process manager" role is filled by <strong>Docker Compose</strong> (not PM2). The two <code>docker-compose.yml</code> settings that express it are (1) <code>restart: unless-stopped</code> &mdash; Compose/Docker restarts a crashed service automatically and brings it back after a reboot, and (2) the <code>logging</code> driver <code>json-file</code> with <code>options: max-size: "10m"</code>, <code>max-file: "3"</code> &mdash; capping each service's logs the way a process manager would. In the migration target the same role is played by Kubernetes Deployments.</div>
+
+<div class="solution"><span class="qid">12.3</span> <span class="ans">Answer:</span>
+In order:
+<ol>
+  <li>GitHub sends a push event to <code>/webhook</code>, which Apache proxies to <code>webhook-server.cjs</code> on <code>127.0.0.1:7002</code>.</li>
+  <li><code>webhook-server.cjs</code> verifies the <code>X-Hub-Signature-256</code> HMAC against <code>WEBHOOK_SECRET</code>, maps <code>refs/heads/main</code> &rarr; <code>production</code>, answers GitHub immediately, and <code>spawn</code>s <code>deploy.sh production</code> <strong>detached</strong> (the script path comes from <code>DEPLOY_SCRIPT</code>, defaulting to <code>deploy.sh</code>).</li>
+  <li><code>deploy.sh</code> takes the <code>flock</code> lock, does <code>git fetch</code> + <code>reset --hard</code>, (re-execs itself if it changed), re-asserts <code>public/</code> permissions, runs <code>dc build web</code>, SHA-tags the image, runs the Prisma migration, and brings up all services <em>except</em> web with <code>--scale web=0</code>.</li>
+  <li>It then calls <code>deploy/hotswap-web.sh</code>, which starts the new web container on the spare blue/green port, health-checks it, and writes the active port into <code>/home/rmhstudios/rmhstudios-web-active.conf</code>.</li>
+  <li>A root-owned systemd path-unit watching that file (or <code>apachectl graceful</code> directly) reloads Apache, whose <code>ProxyPass / http://localhost:${WEB_UPSTREAM_PORT}/</code> now points at the new port. Apache serves the new version.</li>
+</ol></div>
+
+<div class="solution"><span class="qid">12.4</span> <span class="ans">Answer:</span>
+Blue (7005) is live, so the target is <strong>green on 7015</strong>.
+<ol>
+  <li>Start green with <code>docker compose run</code> on <code>127.0.0.1:7015</code>, overriding <code>PORT=7015</code>.</li>
+  <li>Health check: <code>curl http://127.0.0.1:7015/</code> in a loop up to 60s; bail early if the container exits.</li>
+  <li>Once healthy, promote its restart policy to <code>unless-stopped</code> and write <code>Define WEB_UPSTREAM_PORT 7015</code> into <code>rmhstudios-web-active.conf</code>; Apache reloads <code>graceful</code> (finishing in-flight requests on the old workers).</li>
+  <li>Drain <code>DRAIN_SECONDS</code> (8s).</li>
+  <li>Flip-verification: <code>stop</code> (not remove) the old blue container, then probe Apache on <code>:80</code> with <code>Host: rmhstudios.com</code>. If it serves, the flip landed &mdash; remove blue. If not, restart blue, revert the port file, and abort.</li>
+</ol>
+Live user traffic moves at step&nbsp;3, the instant Apache completes its graceful reload pointing at port 7015 (existing connections drain on blue; new requests go to green).</div>
+
+<div class="solution"><span class="qid">12.5</span> <span class="ans">Answer:</span>
+Docker Compose recreates a container <em>in place</em>: it stops the old one, then starts the new one, leaving a multi-second gap where nothing answers on the web port. For the realtime/worker services that gap is invisible (a websocket/worker just reconnects), but for the user-facing web port it produced a <strong>Cloudflare 520</strong> (origin unreachable) on every request during the gap. By bringing the rest of the stack up with <code>--scale web=0</code> and handing <code>web</code> to <code>hotswap-web.sh</code>, the old web container keeps serving until the new one is healthy and Apache has flipped &mdash; eliminating the gap and the 520.</div>
+
+<div class="solution"><span class="qid">12.6</span> <span class="ans">Answer:</span>
+A <em>reversible fallback</em> means the previous, working deploy mechanism (Compose + <code>deploy.sh</code> + <code>docker-compose.yml</code>) is kept fully in place during the k3s migration, so switching back is a tiny, well-understood operation. Cutover (per <code>deploy/README.md</code>): set <code>DEPLOY_SCRIPT=/home/rmhstudios/rmhstudios.com/deploy/deploy-k8s.sh</code> in the webhook's environment and restart the webhook &mdash; new pushes now run the k8s deploy. Rollback: unset <code>DEPLOY_SCRIPT</code> (it defaults back to <code>deploy.sh</code>), restart the webhook, and run <code>docker compose -p rmhstudios-prod --env-file .env.production up -d</code> to bring the Compose stack back. Both directions hinge on the single <code>DEPLOY_SCRIPT</code> env var that <code>webhook-server.cjs</code> reads, which is why the script path is an env var rather than hard-coded.</div>
+
+<div class="solution"><span class="qid">12.7</span> <span class="ans">Answer:</span>
+The deploy would write <code>Define WEB_UPSTREAM_PORT &lt;new&gt;</code> into the home file (<code>ACTIVE_CONF</code>), but Apache now includes only the <code>/etc/apache2/</code> copy, which still holds the <em>old</em> port. So the graceful reload never changes the upstream &mdash; the flip never lands. The hotswap then drains and runs its flip-verification: it <code>stop</code>s the old container and probes Apache on <code>:80</code>. Apache is still routing to the now-stopped old port, so the probe fails. The safeguard is exactly this <strong>flip-verification + automatic rollback</strong>: on a failed probe the script <code>start</code>s the old container again, reverts the active-port file, reloads, and aborts the deploy. That converts "503 on every route until a human notices" into a bounded blip that self-heals back to the old version. (The deploy fails loudly, but the site stays up.)</div>
+
+<div class="solution"><span class="qid">12.8</span> <span class="ans">Answer:</span>
+<strong>resolve --applied 0_baseline</strong> marks the baseline migration as already applied, telling Prisma the existing tables are accounted for; without it a re-deploy onto a populated database would try to recreate tables and error. It is wrapped in <code>|| true</code>, so it is idempotent &mdash; harmless on every run after the first. <strong>resolve --rolled-back &lt;name&gt;</strong> handles a migration that previously failed mid-apply: Prisma refuses to proceed while a failed migration is recorded, so marking it rolled-back lets <code>migrate deploy</code> retry it cleanly instead of leaving the DB stuck. Together they make the step safe to re-run and recoverable from a partial failure. The same logic appears in the k3s layer as the Helm <code>pre-install,pre-upgrade</code> migration hook in <code>deploy/helm/rmhstudios/templates/migrate-job.yaml</code>, which runs the identical reachability check, baseline-resolve, rolled-back-resolution, and <code>migrate deploy</code>.</div>
+
+<div class="solution"><span class="qid">12.9</span> <span class="ans">Answer:</span>
+Building on the VPS with no CI/registry is acceptable on a single node because (any two): (1) there is only one node, so the freshly built image is already on the machine that will run it &mdash; importing it into k3s's containerd with <code>k3s ctr</code> is enough; no other node needs to pull it, so a registry adds no value. (2) BuildKit cache mounts (pnpm store, Vinxi/TanStack cache) live on that same host, so incremental builds are fast and a separate build farm would lose that warm cache. (3) Fewer moving parts and no external CI service to secure, pay for, or depend on. Setting <code>REGISTRY</code> (e.g. <code>registry.example.com</code> or <code>ghcr.io/owner</code>) changes three things in <code>deploy-k8s.sh</code>: the image path becomes <code>${REGISTRY}/rmhstudios</code> instead of the bare <code>rmhstudios</code>; the script <code>docker push</code>es the image instead of importing it with <code>k3s ctr</code>; and the chart's <code>pullPolicy</code> flips from <code>Never</code> to <code>IfNotPresent</code> (with an optional <code>REGISTRY_PULL_SECRET</code> for a private registry) so every node pulls the same image.</div>
+
+<div class="solution"><span class="qid">12.10</span> <span class="ans">Answer:</span>
+A correct state diagram:
+<pre><code>[*] --> BlueLive
+BlueLive    --> GreenStarting : deploy starts (run green on 7015)
+GreenStarting --> GreenHealthy : health check passes (GET / 200)
+GreenStarting --> BlueLive     : never healthy / container exits  (remove green)
+GreenHealthy --> Flipped       : write active port + Apache graceful reload
+Flipped      --> Verified      : stop old, probe :80 succeeds  --> remove old
+Flipped      --> RolledBack    : verify probe fails (restart old, revert port)
+RolledBack   --> BlueLive      : old container serving again
+Verified     --> [*]           : zero-downtime swap complete (green is new live)</code></pre>
+If the new container never becomes healthy, the system lands back in <strong>BlueLive</strong> from <em>GreenStarting</em> &mdash; traffic was never moved, so blue is still live and no rollback of the proxy is even needed. The only path that touches the active-port file is <em>GreenHealthy &rarr; Flipped</em>; a failure after that (verify probe fails) goes to <strong>RolledBack</strong> and then back to BlueLive.</div>

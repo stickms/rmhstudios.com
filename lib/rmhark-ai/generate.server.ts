@@ -122,6 +122,41 @@ export async function generatePost(opts: {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Image prompts                                                      */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Turn a finished post into a concise, literal text-to-image prompt for the
+ * image model. Kept deliberately safe and brand/person-free to minimize
+ * provider refusals. Used by lib/rmhark-ai/image.server.ts.
+ */
+export async function generateImagePrompt(postText: string): Promise<string> {
+  const text = postText.trim().slice(0, 600);
+
+  const system = [
+    'You turn a short social-media post into a prompt for a text-to-image model.',
+    'Output ONE vivid, literal visual description of a single image that fits the post.',
+    'Rules: under 40 words. Describe the subject, setting, style, and mood.',
+    'Do NOT put any text or words in the image. Do NOT depict real, named people, celebrities, brands, or logos.',
+    'Keep it safe-for-work and non-violent.',
+    'Output ONLY the image prompt — no quotes, no labels, no markdown.',
+  ].join('\n');
+
+  const user = text
+    ? `Post:\n"""${text}"""\n\nWrite the image prompt.`
+    : 'Write a tasteful, interesting image prompt for a generic lifestyle social post.';
+
+  const raw = await chat(
+    [
+      { role: 'system', content: system },
+      { role: 'user', content: user },
+    ],
+    { maxTokens: 120, temperature: 0.9 },
+  );
+  return cleanGeneratedText(raw, 300);
+}
+
+/* ------------------------------------------------------------------ */
 /*  Replies                                                            */
 /* ------------------------------------------------------------------ */
 
@@ -193,6 +228,96 @@ export async function generateReply(opts: {
     { maxTokens: 300, temperature: 1.0 },
   );
   return cleanGeneratedText(raw, MAX_REPLY_CHARS);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Feed announcements (admin)                                         */
+/* ------------------------------------------------------------------ */
+
+// Mirror the limits enforced by the announcement API/form.
+const ANNOUNCEMENT_TITLE_MAX = 120;
+const ANNOUNCEMENT_BODY_MAX = 1000;
+
+/**
+ * Draft a short headline for a pinned feed announcement banner. Both the
+ * current title draft and the message body are passed as context so the
+ * headline reflects whatever the admin is actually announcing — if they've
+ * started a title, it's refined rather than replaced.
+ */
+export async function generateAnnouncementTitle(opts: {
+  title?: string;
+  body?: string;
+}): Promise<string> {
+  const title = opts.title?.trim();
+  const body = opts.body?.trim();
+
+  const system = [
+    `You write short, punchy titles for pinned announcement banners on a community site called ${FEED_NAME}.`,
+    `Hard limit: ${ANNOUNCEMENT_TITLE_MAX} characters. Aim for a few words — a clear, attention-grabbing headline.`,
+    title
+      ? 'The admin has started a title. Build on it: keep their intent and topic, just sharpen it.'
+      : 'Write a clear, inviting headline that captures the announcement.',
+    'Do NOT use markdown, do NOT wrap the title in quotes, do NOT add a label. Output ONLY the title text.',
+  ].join('\n');
+
+  const context = [
+    title ? `The current title draft is:\n"""${title}"""` : '',
+    body ? `The announcement message is:\n"""${body}"""` : '',
+    !title && !body ? 'Write a friendly, generic announcement headline.' : '',
+    '\nWrite the title.',
+  ]
+    .filter(Boolean)
+    .join('\n');
+
+  const raw = await chat(
+    [
+      { role: 'system', content: system },
+      { role: 'user', content: context },
+    ],
+    { maxTokens: 60, temperature: 0.9 },
+  );
+  return cleanGeneratedText(raw, ANNOUNCEMENT_TITLE_MAX);
+}
+
+/**
+ * Draft the message body for a pinned feed announcement. The current title and
+ * any in-progress body are folded in so the message stays on-topic; an existing
+ * body draft is refined rather than discarded.
+ */
+export async function generateAnnouncementBody(opts: {
+  title?: string;
+  body?: string;
+}): Promise<string> {
+  const title = opts.title?.trim();
+  const body = opts.body?.trim();
+
+  const system = [
+    `You write the message for a pinned announcement banner on a community site called ${FEED_NAME}.`,
+    `Hard limit: ${ANNOUNCEMENT_BODY_MAX} characters, but keep it tight — one short paragraph (a sentence or three).`,
+    body
+      ? 'The admin has started writing. Build on their draft: keep the intent, specifics, and tone, and finish/refine it.'
+      : 'Write a clear, friendly message that tells the community what is happening.',
+    'Sound like a real person announcing something, not a corporate notice.',
+    'Do NOT use markdown, do NOT wrap the message in quotes, do NOT add a label. Output ONLY the message text.',
+  ].join('\n');
+
+  const context = [
+    title ? `The announcement title is:\n"""${title}"""` : '',
+    body ? `The message I've started writing:\n"""${body}"""` : '',
+    !title && !body ? 'Write a friendly, generic announcement message.' : '',
+    '\nWrite the message.',
+  ]
+    .filter(Boolean)
+    .join('\n');
+
+  const raw = await chat(
+    [
+      { role: 'system', content: system },
+      { role: 'user', content: context },
+    ],
+    { maxTokens: 400, temperature: 0.95 },
+  );
+  return cleanGeneratedText(raw, ANNOUNCEMENT_BODY_MAX);
 }
 
 /* ------------------------------------------------------------------ */

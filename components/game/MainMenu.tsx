@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Play, Pause, FastForward, SkipBack, Share2, Heart, Download, Upload, Trash2, Info, Moon, Sun } from 'lucide-react';
 import { useGameStore } from '@/lib/store/useGameStore';
 import { GameEngine } from '@/lib/game/GameEngine';
+import { asset } from '@/lib/storage/asset';
 import { Slider } from '@/components/ui/slider';
 import { AudioManager } from '@/lib/audio/AudioManager';
 import { BPMDetector } from '@/lib/audio/BPMDetector';
@@ -141,7 +142,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
             am.playSfX(880, 'triangle', 0.1, sfxVol);
             setTimeout(() => setPreviewingSound(null), 300);
         } else {
-            const url = `/music/slice-it/sounds/${soundId}`;
+            const url = asset(`/music/slice-it/sounds/${soundId}`);
             if (!am.isHitSoundCached(url)) {
                 setLoadingSound(soundId);
                 try {
@@ -183,7 +184,7 @@ export function MainMenu({ engine: propEngine }: MainMenuProps) {
         if (hitSound && hitSound !== 'default') {
             const am = AudioManager.getInstance();
             am.initialize();
-            am.preloadHitSound(`/music/slice-it/sounds/${hitSound}`).catch(() => {});
+            am.preloadHitSound(asset(`/music/slice-it/sounds/${hitSound}`)).catch(() => {});
         }
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

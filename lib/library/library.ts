@@ -14,6 +14,7 @@
  */
 
 import metadata from '@/data/library-metadata.json';
+import { asset } from '@/lib/storage/asset';
 
 /** A table-of-contents entry: a chapter/section title and the page it starts on. */
 export type TocEntry = { title: string; page: number; depth?: number };
@@ -45,6 +46,12 @@ export type LibraryBook = {
   hue: number;
   /** Pre-computed table of contents (chapter → page), when known. May be empty. */
   toc: TocEntry[];
+  /** Where the book comes from: the bundled static catalog or a user upload. */
+  source?: 'static' | 'upload';
+  /** LibraryDocument id for uploaded books (used for delete/report). */
+  id?: string;
+  /** Uploader attribution, for user-uploaded books. */
+  uploadedBy?: { handle: string | null; name: string | null } | null;
 };
 
 /** "everything_platform_minute_vol1.pdf" → "Everything Platform Minute Vol1". */
@@ -89,7 +96,7 @@ function buildBooks(): LibraryBook[] {
     return {
       slug,
       filename,
-      url: `/library/${encodeURIComponent(filename)}`,
+      url: asset(`/library/${encodeURIComponent(filename)}`),
       title: meta.title || humanize(filename),
       description: meta.description || '',
       pages: meta.pages || 0,

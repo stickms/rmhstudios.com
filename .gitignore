@@ -73,3 +73,6 @@ cli/node_modules/
 # Bazel
 /bazel-*
 MODULE.bazel.lock
+
+# Local filesystem storage fallback (when S3 is not configured)
+.uploads/

@@ -64,6 +64,56 @@ function AdminDashboardPage() {
               Write new developer logs, or edit and delete existing blog posts.
             </p>
           </Link>
+
+          <Link
+            to="/admin/reports"
+            className="block p-6 rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
+          >
+            <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">Moderation Queue</h2>
+            <p className="text-site-text-muted text-sm mt-2">
+              Review user reports of posts, comments, profiles, and builds. Resolve, dismiss, or take content down.
+            </p>
+          </Link>
+
+          <Link
+            to="/admin/announcements"
+            className="block p-6 rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
+          >
+            <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">Feed Announcements</h2>
+            <p className="text-site-text-muted text-sm mt-2">
+              Publish pinned banners shown at the top of everyone&apos;s feed. Activate, deactivate, or remove them.
+            </p>
+          </Link>
+
+          <Link
+            to="/admin/analytics"
+            className="block p-6 rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
+          >
+            <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">Analytics</h2>
+            <p className="text-site-text-muted text-sm mt-2">
+              Platform stats: users, active users, posts, comments, reports, and coins in circulation.
+            </p>
+          </Link>
+
+          <Link
+            to="/admin/rideshare"
+            className="block p-6 rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
+          >
+            <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">Rideshare Applications</h2>
+            <p className="text-site-text-muted text-sm mt-2">
+              Review RMH Rideshare driver applications, inspect licenses, and approve or reject drivers.
+            </p>
+          </Link>
+
+          <Link
+            to="/admin/audit"
+            className="block p-6 rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
+          >
+            <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">Audit Log</h2>
+            <p className="text-site-text-muted text-sm mt-2">
+              A record of admin actions — report decisions, bans, strikes, and announcements.
+            </p>
+          </Link>
         </div>
       </div>
     </PageLayout>

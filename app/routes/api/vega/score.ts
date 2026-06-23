@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { prisma } from '@/lib/prisma.server';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { recordGamePlay } from '@/lib/quests/engine.server';
 
 export const Route = createFileRoute('/api/vega/score')({
   server: {
@@ -52,6 +53,7 @@ export const Route = createFileRoute('/api/vega/score')({
                     username: session.user.name || session.user.email || 'Anonymous' // Update username if changed
                 }
             });
+            await recordGamePlay(session.user.id);
             return Response.json({ success: true, profile: updated, isRecord: isBetter });
         } else {
             // Create new
@@ -64,6 +66,7 @@ export const Route = createFileRoute('/api/vega/score')({
                     gamesPlayed: 1
                 }
             });
+            await recordGamePlay(session.user.id);
             return Response.json({ success: true, profile: newProfile, isRecord: true });
         }
         

@@ -1,9 +1,12 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { MapPin, Link as LinkIcon, Calendar, Loader2, ArrowLeft, MessageCircle, BadgeCheck, ShieldCheck } from 'lucide-react';
+import { MapPin, Link as LinkIcon, Calendar, Loader2, MessageCircle, BadgeCheck, ShieldCheck, Coins, Store, Gift } from 'lucide-react';
+import { TipDialog } from '@/components/economy/TipDialog';
+import { GiftSubDialog } from '@/components/economy/GiftSubDialog';
 import { useNavigate } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
+import { MobileMenuButton } from './MobileMenuButton';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser } from '@/components/Providers';
 import { RMHarkCard } from './RMHarkCard';
@@ -45,6 +48,17 @@ interface ProfileData {
   coins: number;
   hasProfilePet: boolean;
   showProfilePet: boolean;
+  isOnline?: boolean;
+  tipGoal?: number | null;
+  tipGoalLabel?: string | null;
+  tipsThisMonth?: number;
+  cosmetics?: {
+    nameColor?: { color?: string; gradient?: string };
+    avatarFrame?: { color?: string; gradient?: string };
+    badge?: { emoji?: string };
+    banner?: { gradient?: string };
+    pet?: { emoji?: string };
+  };
 }
 
 type ProfileTab = 'rmharks' | 'likes';
@@ -71,6 +85,8 @@ export function ProfileColumn({ userId }: { userId: string }) {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const [tipOpen, setTipOpen] = useState(false);
+  const [giftOpen, setGiftOpen] = useState(false);
   const [tab, setTab] = useState<ProfileTab>('rmharks');
   const [socialModal, setSocialModal] = useState<'followers' | 'following' | null>(null);
   const { refresh: refreshResolvedUser } = useResolvedUser();
@@ -129,6 +145,24 @@ export function ProfileColumn({ userId }: { userId: string }) {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
+  }, [userId]);
+
+  // Reset per-profile post state when navigating to a different profile. The
+  // ProfileColumn instance is reused across /u/$userid routes, so without this
+  // the previous user's RMHarks/likes (and the "already fetched" refs) linger
+  // until a full page refresh.
+  useEffect(() => {
+    setItems([]);
+    setCursor(null);
+    setHasMore(true);
+    setLoadingItems(false);
+    initialFetched.current = false;
+    setLikedItems([]);
+    setLikedCursor(null);
+    setLikedHasMore(true);
+    setLoadingLiked(false);
+    likedInitialFetched.current = false;
+    setTab('rmharks');
   }, [userId]);
 
   // Spotify IFrame API — load script & create controller for profile song
@@ -388,9 +422,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
       {/* Header bar */}
       <div className="sticky top-0 z-10 bg-site-bg/85 backdrop-blur-md border-b border-site-border">
         <div className="flex items-center gap-3 px-4 py-3">
-          <Link to="/" className="p-1.5 -ml-1.5 rounded-lg hover:bg-site-surface transition-colors">
-            <ArrowLeft className="w-5 h-5 text-site-text" />
-          </Link>
+          <MobileMenuButton />
           <div>
             <div className="flex items-center gap-1">
               <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text truncate">
@@ -408,10 +440,33 @@ export function ProfileColumn({ userId }: { userId: string }) {
         </div>
       </div>
 
+      {/* Equipped profile banner (cosmetic) */}
+      {profile.cosmetics?.banner?.gradient && (
+        <div className="h-24 w-full" style={{ background: profile.cosmetics.banner.gradient }} aria-hidden />
+      )}
+
       {/* Profile header */}
       <div className="px-4 pt-6 pb-4 border-b border-site-border">
         <div className="flex items-start justify-between mb-4">
-          <ProfileAvatar image={displayImage ?? null} name={displayName ?? null} />
+          <div className="relative shrink-0">
+            {profile.cosmetics?.avatarFrame ? (
+              <div
+                className="rounded-full p-[3px]"
+                style={{ background: profile.cosmetics.avatarFrame.gradient ?? profile.cosmetics.avatarFrame.color }}
+              >
+                <ProfileAvatar image={displayImage ?? null} name={displayName ?? null} />
+              </div>
+            ) : (
+              <ProfileAvatar image={displayImage ?? null} name={displayName ?? null} />
+            )}
+            {profile.isOnline && (
+              <span
+                className="absolute bottom-1 right-1 h-4 w-4 rounded-full border-2 border-site-bg bg-emerald-500"
+                title="Online now"
+                aria-label="Online now"
+              />
+            )}
+          </div>
 
           {/* Profile Pet banner between avatar and vinyl */}
           {profile.hasProfilePet && profile.showProfilePet && (
@@ -438,7 +493,21 @@ export function ProfileColumn({ userId }: { userId: string }) {
         <div className="flex items-start justify-between mb-3">
           <div>
             <div className="flex items-center gap-1.5 align-middle">
-              <h2 className="font-bold text-xl text-site-text truncate">{displayName || 'Unknown'}</h2>
+              <h2
+                className="font-bold text-xl text-site-text truncate"
+                style={
+                  profile.cosmetics?.nameColor?.gradient
+                    ? { background: profile.cosmetics.nameColor.gradient, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }
+                    : profile.cosmetics?.nameColor?.color
+                    ? { color: profile.cosmetics.nameColor.color }
+                    : undefined
+                }
+              >
+                {displayName || 'Unknown'}
+              </h2>
+              {profile.cosmetics?.badge?.emoji && (
+                <span className="shrink-0 text-lg" title="Equipped badge">{profile.cosmetics.badge.emoji}</span>
+              )}
               {profile.isVerified && <BadgeCheck className="w-5 h-5 text-emerald-500 shrink-0" />}
               {profile.isAdmin && (
                 <span title="Admin" className="inline-flex items-center shrink-0">
@@ -460,6 +529,15 @@ export function ProfileColumn({ userId }: { userId: string }) {
             )}
           </div>
           <div className="flex items-center gap-2">
+            <Link to={`/store/${profile.handle || profile.id}` as string} title="Storefront">
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-lg border-site-border text-site-text hover:bg-site-surface"
+              >
+                <Store className="w-4 h-4" />
+              </Button>
+            </Link>
             {profile.isOwnProfile ? (
               <Button
                 variant="outline"
@@ -471,6 +549,24 @@ export function ProfileColumn({ userId }: { userId: string }) {
               </Button>
             ) : session ? (
               <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setTipOpen(true)}
+                  className="rounded-lg border-site-border text-site-text hover:bg-site-surface"
+                  title="Send a tip"
+                >
+                  <Coins className="w-4 h-4 text-amber-400" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setGiftOpen(true)}
+                  className="rounded-lg border-site-border text-site-text hover:bg-site-surface"
+                  title="Gift a membership"
+                >
+                  <Gift className="w-4 h-4 text-site-accent" />
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"
@@ -498,6 +594,26 @@ export function ProfileColumn({ userId }: { userId: string }) {
           <p className="text-site-text text-[15px] whitespace-pre-wrap break-words mb-3">
             {profile.bio}
           </p>
+        )}
+
+        {/* Creator tip goal */}
+        {profile.tipGoal && profile.tipGoal > 0 && (
+          <div className="mb-3 rounded-xl border border-site-border bg-site-surface p-3">
+            <div className="mb-1 flex items-center justify-between text-sm">
+              <span className="inline-flex items-center gap-1.5 font-medium text-site-text">
+                <CoinIcon className="h-4 w-4" /> {profile.tipGoalLabel || 'Tip goal'}
+              </span>
+              <span className="text-site-text-muted">
+                {(profile.tipsThisMonth ?? 0).toLocaleString()} / {profile.tipGoal.toLocaleString()}
+              </span>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-site-bg">
+              <div
+                className="h-full rounded-full bg-amber-400 transition-all"
+                style={{ width: `${Math.min(100, ((profile.tipsThisMonth ?? 0) / profile.tipGoal) * 100)}%` }}
+              />
+            </div>
+          </div>
         )}
 
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-site-text-dim mb-3">
@@ -647,6 +763,28 @@ export function ProfileColumn({ userId }: { userId: string }) {
         </div>
       )}
 
+      {/* Tip dialog (non-owner) */}
+      {profile && !profile.isOwnProfile && (
+        <TipDialog
+          open={tipOpen}
+          onOpenChange={setTipOpen}
+          recipientId={profile.id}
+          recipientName={displayName ?? profile.name}
+          entityType="profile"
+          entityId={profile.id}
+        />
+      )}
+
+      {/* Gift membership dialog (non-owner) */}
+      {profile && !profile.isOwnProfile && (
+        <GiftSubDialog
+          open={giftOpen}
+          onOpenChange={setGiftOpen}
+          recipientId={profile.id}
+          recipientName={displayName ?? profile.name}
+        />
+      )}
+
       {/* Edit modal */}
       {showEdit && (
         <ProfileEditModal
@@ -665,6 +803,8 @@ export function ProfileColumn({ userId }: { userId: string }) {
             dmPrivacy: profile.dmPrivacy,
             hasProfilePet: profile.hasProfilePet,
             showProfilePet: profile.showProfilePet,
+            tipGoal: profile.tipGoal,
+            tipGoalLabel: profile.tipGoalLabel,
             profileSongSpotifyId: profile.profileSongSpotifyId,
             profileSongTitle: profile.profileSongTitle,
             profileSongArtist: profile.profileSongArtist,

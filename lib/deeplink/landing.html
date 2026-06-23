@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>RMH Deeplink — Solving intelligence to advance science and benefit humanity</title>
+<meta name="description" content="RMH Deeplink is a frontier AI research lab. We build AI responsibly to benefit humanity — foundational research toward artificial general intelligence, used to advance science." />
+<meta property="og:title" content="RMH Deeplink — a frontier AI research lab" />
+<meta property="og:description" content="Building AI responsibly to benefit humanity." />
+<meta property="og:type" content="website" />
+<link rel="icon" type="image/svg+xml" href="/brand/deeplink-favicon.svg" />
+<link rel="icon" type="image/png" sizes="32x32" href="/brand/deeplink-favicon-32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="/brand/deeplink-favicon-16.png" />
+<link rel="apple-touch-icon" href="/brand/deeplink-apple-touch.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" />
+<style>
+/* ============================================================================
+   RMH Deeplink — frontier AI lab landing, in the spirit of deepmind.google
+   but with elevated craft: distinctive grotesk type pairing, atmospheric
+   gradient + grain depth, a layered Gemini gradient orb with bloom and
+   reflection, colour-matched card glows, and an orchestrated page-load.
+   Self-contained (inline CSS/JS).
+   ============================================================================ */
+:root{
+  --bg:#f5f6f8;
+  --bg-warm:#fbfcfd;
+  --surface:#ffffff;
+  --ink:#13151b;
+  --ink-soft:#565c68;
+  --ink-faint:#878d99;
+  --line:#e6e9ef;
+  --line-strong:#d6dae2;
+  --blue:#0b57d0;
+  --blue-bright:#1a73e8;
+  --blue-dark:#073a8f;
+  --radius:26px;
+  --radius-sm:16px;
+  --display:'Schibsted Grotesk',-apple-system,BlinkMacSystemFont,sans-serif;
+  --body:'Hanken Grotesk',-apple-system,BlinkMacSystemFont,sans-serif;
+  --shadow-card:0 1px 2px rgba(19,21,27,.04),0 8px 24px rgba(19,21,27,.05);
+  --shadow-lift:0 12px 28px rgba(19,21,27,.10),0 40px 80px rgba(19,21,27,.08);
+  /* Gemini gradient palette */
+  --g-blue:#4285f4;
+  --g-indigo:#5b6cff;
+  --g-cyan:#16c2d5;
+  --g-green:#34a853;
+  --g-yellow:#fbbc04;
+  --g-purple:#9b6bff;
+  --g-pink:#ff6f91;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);color:var(--ink);font-family:var(--body);font-weight:400;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;line-height:1.55;
+  overflow-x:hidden;position:relative;
+}
+/* atmospheric wash + faint grain for depth (never flat white) */
+body::before{
+  content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;
+  background:
+    radial-gradient(60% 50% at 78% -8%,rgba(91,108,255,.16),transparent 60%),
+    radial-gradient(46% 42% at 8% 4%,rgba(22,194,213,.12),transparent 60%),
+    radial-gradient(50% 46% at 50% 108%,rgba(155,107,255,.10),transparent 60%),
+    var(--bg);
+}
+body::after{
+  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.5;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+}
+a{color:inherit;text-decoration:none}
+::selection{background:rgba(66,133,244,.2)}
+:focus-visible{outline:2px solid var(--blue-bright);outline-offset:3px;border-radius:8px}
+.wrap{max-width:1220px;margin:0 auto;padding:0 clamp(20px,4vw,44px)}
+.display{font-family:var(--display)}
+
+/* ---------- nav ---------- */
+header{position:sticky;top:0;z-index:60;background:rgba(245,246,248,.72);backdrop-filter:saturate(180%) blur(18px);
+  border-bottom:1px solid transparent;transition:border-color .3s,background .3s}
+header.scrolled{border-color:var(--line);background:rgba(245,246,248,.9)}
+.nav{display:flex;align-items:center;gap:30px;height:72px}
+.brand{display:flex;align-items:center;gap:11px;font-family:var(--display);font-weight:700;font-size:1.06rem;letter-spacing:-.02em;white-space:nowrap}
+.dot{width:26px;height:26px;border-radius:50%;flex:0 0 auto;position:relative;
+  background:conic-gradient(from 210deg,var(--g-blue),var(--g-indigo),var(--g-purple),var(--g-pink),var(--g-yellow),var(--g-green),var(--g-cyan),var(--g-blue));
+  box-shadow:0 2px 8px rgba(91,108,255,.4)}
+.dot::after{content:"";position:absolute;inset:30%;border-radius:50%;background:var(--surface)}
+.brand small{color:var(--ink-soft);font-weight:400;font-family:var(--body)}
+.nav-links{display:flex;align-items:center;gap:28px;margin-left:6px}
+.nav-links a{font-size:.94rem;color:var(--ink-soft);font-weight:500;transition:color .2s;position:relative}
+.nav-links a::after{content:"";position:absolute;left:0;bottom:-6px;height:2px;width:0;background:var(--blue);transition:width .25s}
+.nav-links a:hover{color:var(--ink)}
+.nav-links a:hover::after{width:100%}
+.nav-cta{display:flex;align-items:center;gap:12px;margin-left:auto}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:var(--display);font-weight:600;
+  font-size:.92rem;letter-spacing:-.01em;border-radius:100px;padding:11px 22px;cursor:pointer;border:1px solid transparent;
+  transition:transform .2s,box-shadow .25s,background .2s,border-color .2s}
+.btn-primary{background:var(--blue);color:#fff;box-shadow:0 2px 10px rgba(11,87,208,.22)}
+.btn-primary:hover{background:var(--blue-dark);transform:translateY(-1px);box-shadow:0 10px 26px rgba(11,87,208,.34)}
+.btn-ghost{background:var(--surface);color:var(--ink);border-color:var(--line-strong)}
+.btn-ghost:hover{border-color:var(--ink-faint);transform:translateY(-1px)}
+.btn-lg{padding:15px 30px;font-size:1rem}
+.backlink{font-size:.84rem;color:var(--ink-faint);display:inline-flex;align-items:center;gap:6px;transition:color .2s}
+.backlink:hover{color:var(--ink-soft)}
+@media(max-width:900px){.nav-links{display:none}.backlink-label{display:none}}
+@media(max-width:560px){.nav-cta .btn-ghost{display:none}}
+
+/* page-load orchestration */
+.reveal{opacity:0;transform:translateY(22px);animation:rise .9s cubic-bezier(.2,.7,.2,1) forwards}
+@keyframes rise{to{opacity:1;transform:none}}
+
+/* ---------- hero ---------- */
+.hero{position:relative}
+.hero .wrap{display:grid;grid-template-columns:1.04fr .96fr;gap:clamp(28px,5vw,80px);align-items:center;
+  padding:clamp(44px,8vh,96px) clamp(20px,4vw,44px) clamp(56px,10vh,116px)}
+.eyebrow{display:inline-flex;align-items:center;gap:9px;font-family:var(--display);font-size:.8rem;font-weight:600;letter-spacing:.01em;
+  color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:100px;padding:8px 15px 8px 9px;margin-bottom:26px;box-shadow:var(--shadow-card)}
+.eyebrow .mini{width:18px;height:18px;border-radius:50%;
+  background:conic-gradient(from 210deg,var(--g-blue),var(--g-purple),var(--g-pink),var(--g-yellow),var(--g-green),var(--g-cyan),var(--g-blue))}
+.hero h1{font-family:var(--display);font-size:clamp(2.6rem,6vw,4.9rem);font-weight:700;letter-spacing:-.04em;line-height:.99;margin-bottom:26px;max-width:14ch}
+.hero h1 .grad{position:relative;background:linear-gradient(96deg,var(--g-blue),var(--g-indigo) 34%,var(--g-purple) 56%,var(--g-pink) 78%,var(--g-yellow));
+  -webkit-background-clip:text;background-clip:text;color:transparent;background-size:200% 100%;animation:hue 9s ease-in-out infinite}
+@keyframes hue{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.hero p.lead{font-size:clamp(1.06rem,1.5vw,1.3rem);color:var(--ink-soft);line-height:1.62;max-width:50ch;margin-bottom:36px}
+.hero-actions{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+.hero-actions .meta-note{font-size:.86rem;color:var(--ink-faint);margin-left:4px}
+@media(max-width:880px){.hero .wrap{grid-template-columns:1fr}.hero h1{max-width:none}.visual{order:-1;max-width:380px}}
+
+/* layered Gemini gradient orb */
+.visual{position:relative;aspect-ratio:1;width:100%;max-width:500px;margin:0 auto;justify-self:center;
+  opacity:0;transform:scale(.86);animation:orbin 1.2s .15s cubic-bezier(.2,.7,.2,1) forwards}
+@keyframes orbin{to{opacity:1;transform:none}}
+.orb-glow{position:absolute;inset:-18%;border-radius:50%;filter:blur(46px);opacity:.85;z-index:0;
+  background:conic-gradient(from 0deg,var(--g-blue),var(--g-cyan),var(--g-green),var(--g-yellow),var(--g-pink),var(--g-purple),var(--g-blue));
+  animation:spin 22s linear infinite}
+.orb{position:absolute;inset:7%;border-radius:50%;overflow:hidden;z-index:1;
+  box-shadow:0 30px 90px rgba(66,133,244,.28),inset 0 0 60px rgba(255,255,255,.25)}
+.orb .layer-a{position:absolute;inset:-32%;
+  background:conic-gradient(from 40deg,var(--g-blue),var(--g-cyan),var(--g-green),var(--g-yellow),var(--g-pink),var(--g-purple),var(--g-blue));
+  filter:blur(14px);animation:spin 16s linear infinite}
+.orb .layer-b{position:absolute;inset:0;mix-blend-mode:screen;
+  background:radial-gradient(40% 44% at 30% 28%,rgba(255,255,255,.95),transparent 58%),
+            radial-gradient(34% 40% at 74% 70%,rgba(255,255,255,.4),transparent 60%);
+  animation:morph 9s ease-in-out infinite}
+.orb .grain{position:absolute;inset:0;opacity:.16;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E")}
+.orb-ring{position:absolute;inset:5%;border-radius:50%;z-index:2;pointer-events:none;
+  box-shadow:inset 0 2px 30px rgba(255,255,255,.5),inset 0 -10px 40px rgba(19,21,27,.12)}
+/* rounded media block for the generated hero image (DeepMind-style) */
+.hero-media{position:absolute;inset:5%;border-radius:42px;overflow:hidden;z-index:1;
+  box-shadow:0 30px 90px rgba(66,133,244,.26),0 8px 24px rgba(19,21,27,.12);
+  border:1px solid rgba(255,255,255,.5)}
+.hero-media img{width:100%;height:100%;object-fit:cover;display:block}
+.hero-media::after{content:"";position:absolute;inset:0;pointer-events:none;
+  box-shadow:inset 0 1px 40px rgba(255,255,255,.35)}
+.orb-floor{position:absolute;left:14%;right:14%;bottom:-4%;height:14%;border-radius:50%;z-index:0;
+  background:radial-gradient(closest-side,rgba(91,108,255,.34),transparent 75%);filter:blur(14px)}
+.spark{position:absolute;border-radius:50%;background:#fff;z-index:3;box-shadow:0 0 0 5px rgba(255,255,255,.3),0 4px 14px rgba(19,21,27,.18)}
+.spark.s1{width:12px;height:12px;top:12%;left:62%;animation:floaty 7s ease-in-out infinite}
+.spark.s2{width:8px;height:8px;top:70%;left:26%;animation:floaty 9s ease-in-out infinite reverse}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes morph{0%,100%{transform:scale(1) translate(0,0)}50%{transform:scale(1.07) translate(2%,-2%)}}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+
+/* ---------- stat strip ---------- */
+.strip{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:rgba(255,255,255,.5);backdrop-filter:blur(6px)}
+.strip .wrap{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:0}
+.strip .cell{padding:clamp(30px,4vw,44px) clamp(14px,2vw,30px);border-left:1px solid var(--line)}
+.strip .cell:first-child{border-left:0}
+.strip .num{font-family:var(--display);font-size:clamp(1.9rem,3.6vw,2.8rem);font-weight:700;letter-spacing:-.04em;line-height:1;
+  background:linear-gradient(120deg,var(--ink),var(--blue));-webkit-background-clip:text;background-clip:text;color:transparent}
+.strip .num sup{font-size:.46em;font-weight:700;-webkit-text-fill-color:var(--blue)}
+.strip .cap{font-size:.86rem;color:var(--ink-soft);margin-top:9px;line-height:1.5}
+@media(max-width:760px){.strip .wrap{grid-template-columns:1fr 1fr}.strip .cell:nth-child(3){border-left:0}.strip .cell{border-top:1px solid var(--line)}.strip .cell:nth-child(-n+2){border-top:0}}
+
+/* ---------- sections ---------- */
+section.block{padding:clamp(64px,10vh,120px) 0}
+.sec-head{display:flex;align-items:flex-end;justify-content:space-between;gap:28px;margin-bottom:clamp(34px,5vh,56px);flex-wrap:wrap}
+.kicker{display:inline-flex;align-items:center;gap:8px;font-family:var(--display);font-size:.8rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--blue)}
+.kicker::before{content:"";width:22px;height:2px;background:var(--blue);border-radius:2px}
+.sec-head h2{font-family:var(--display);font-size:clamp(2rem,4vw,3.1rem);font-weight:700;letter-spacing:-.035em;line-height:1.04;margin-top:14px;max-width:17ch}
+.sec-head .lead2{color:var(--ink-soft);max-width:42ch;font-size:1.04rem;line-height:1.6}
+
+/* card grid */
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:clamp(18px,2.2vw,26px)}
+.card{position:relative;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:var(--surface);
+  display:flex;flex-direction:column;box-shadow:var(--shadow-card);
+  transition:transform .4s cubic-bezier(.2,.7,.2,1),box-shadow .4s,border-color .3s;
+  opacity:0;transform:translateY(22px)}
+.card.in{opacity:1;transform:none}
+.card:hover{transform:translateY(-6px);box-shadow:var(--shadow-lift);border-color:var(--line-strong)}
+.card .thumb{height:178px;position:relative;overflow:hidden}
+.card{cursor:pointer}.card a.more::after{content:"";position:absolute;inset:0;z-index:2}
+.card .thumb .gr{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .5s cubic-bezier(.2,.7,.2,1)}
+.card:hover .thumb .gr{transform:scale(1.06)}
+.card .thumb::after{content:"";position:absolute;inset:0;
+  background:radial-gradient(70% 90% at 75% 12%,rgba(255,255,255,.5),transparent 55%);}
+.card .thumb .arc{position:absolute;inset:0;opacity:.5}
+.t-blue{background:linear-gradient(135deg,var(--g-indigo),var(--g-purple) 75%)}
+.t-green{background:linear-gradient(135deg,var(--g-cyan),var(--g-green) 65%,var(--g-yellow))}
+.t-warm{background:linear-gradient(135deg,var(--g-purple),var(--g-pink) 58%,var(--g-yellow))}
+.t-teal{background:linear-gradient(135deg,var(--g-blue),var(--g-cyan) 72%,var(--g-green))}
+.card .body{padding:26px 26px 30px;display:flex;flex-direction:column;flex:1}
+.card .tag{font-family:var(--display);font-size:.74rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:11px}
+.card h3{font-family:var(--display);font-size:1.4rem;font-weight:700;letter-spacing:-.025em;line-height:1.12;margin-bottom:11px}
+.card p{color:var(--ink-soft);font-size:.97rem;line-height:1.6;flex:1}
+.card .more{margin-top:20px;font-family:var(--display);font-weight:600;font-size:.92rem;color:var(--blue);display:inline-flex;align-items:center;gap:7px;transition:gap .25s}
+.card:hover .more{gap:12px}
+@media(max-width:720px){.cards{grid-template-columns:1fr}}
+
+/* mission band */
+.mission{position:relative;overflow:hidden;background:#0a0d18;color:#fff}
+.mission::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(48% 70% at 10% 18%,rgba(66,133,244,.6),transparent 60%),
+            radial-gradient(44% 64% at 92% 88%,rgba(155,107,255,.55),transparent 60%),
+            radial-gradient(40% 54% at 74% 6%,rgba(22,194,213,.4),transparent 60%);
+  animation:missiondrift 14s ease-in-out infinite alternate}
+.mission::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='m'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23m)'/%3E%3C/svg%3E")}
+@keyframes missiondrift{to{transform:translate3d(0,-3%,0) scale(1.05)}}
+.mission .wrap{position:relative;z-index:1;padding:clamp(72px,13vh,140px) clamp(20px,4vw,44px);text-align:center}
+.mission .kicker{color:#a8c1ff}
+.mission .kicker::before{background:#a8c1ff}
+.mission h2{font-family:var(--display);font-size:clamp(2.1rem,4.8vw,3.7rem);font-weight:700;letter-spacing:-.035em;line-height:1.08;margin:16px auto 26px;max-width:19ch}
+.mission p{color:rgba(255,255,255,.76);max-width:58ch;margin:0 auto 34px;font-size:1.12rem;line-height:1.62}
+.mission .btn-primary{background:#fff;color:#0a0d18;box-shadow:0 8px 30px rgba(0,0,0,.3)}
+.mission .btn-primary:hover{background:#eef0f4}
+.mission .btn-ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.28)}
+.mission .btn-ghost:hover{border-color:rgba(255,255,255,.6)}
+.mission .m-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+
+/* news grid */
+.news{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(18px,2.2vw,26px)}
+.news .card .thumb{height:150px}
+@media(max-width:820px){.news{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.news{grid-template-columns:1fr}}
+
+/* safety section tint */
+.tinted{background:linear-gradient(180deg,rgba(255,255,255,.5),rgba(245,246,248,.2));border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+
+/* ---------- footer ---------- */
+footer{background:var(--bg-warm);border-top:1px solid var(--line)}
+.foot-top{display:grid;grid-template-columns:1.7fr 1fr 1fr 1fr;gap:clamp(28px,4vw,60px);
+  padding:clamp(52px,8vh,90px) 0 clamp(38px,5vh,56px)}
+.foot-brand .brand{margin-bottom:18px}
+.foot-brand p{color:var(--ink-soft);font-size:.95rem;line-height:1.62;max-width:33ch;margin-bottom:24px}
+.news-form{display:flex;gap:8px;max-width:350px}
+.news-form input{flex:1;border:1px solid var(--line-strong);border-radius:100px;padding:12px 18px;font-family:var(--body);font-size:.92rem;background:var(--surface);transition:border-color .2s}
+.news-form input:focus{outline:none;border-color:var(--blue-bright)}
+.foot-col h4{font-family:var(--display);font-size:.82rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:18px}
+.foot-col a{display:block;color:var(--ink-soft);font-size:.94rem;margin-bottom:12px;transition:color .2s}
+.foot-col a:hover{color:var(--ink)}
+.foot-bot{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;
+  border-top:1px solid var(--line);padding:26px 0 44px;color:var(--ink-faint);font-size:.86rem}
+.foot-bot .mission-line{font-family:var(--display);font-weight:500;color:var(--ink-soft)}
+.social{display:flex;gap:12px}
+.social a{width:36px;height:36px;border-radius:50%;border:1px solid var(--line-strong);display:inline-flex;align-items:center;justify-content:center;
+  color:var(--ink-soft);font-size:.82rem;font-weight:600;transition:.2s}
+.social a:hover{background:var(--ink);color:#fff;border-color:var(--ink);transform:translateY(-2px)}
+@media(max-width:820px){.foot-top{grid-template-columns:1fr 1fr}.foot-brand{grid-column:1/-1}}
+@media(max-width:460px){.foot-top{grid-template-columns:1fr}}
+
+@media(prefers-reduced-motion:reduce){
+  *{animation:none!important;transition-duration:.01ms!important}
+  html{scroll-behavior:auto}
+  .reveal,.visual{opacity:1;transform:none}
+  .card{opacity:1;transform:none}
+}
+</style>
+</head>
+<body>
+
+<header id="hdr">
+  <div class="wrap nav">
+    <a class="brand" href="#top" aria-label="RMH Deeplink home">
+      <span class="dot" aria-hidden="true"></span>RMH&nbsp;Deeplink
+    </a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="#research">Models</a>
+      <a href="#research">Research</a>
+      <a href="#science">Science</a>
+      <a href="#safety">Safety</a>
+      <a href="#about">About</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="backlink" href="/"><span aria-hidden="true">&larr;</span><span class="backlink-label">RMH Studios</span></a>
+      <a class="btn btn-ghost" href="#research">Research</a>
+      <a class="btn btn-primary" href="mailto:research@rmhstudios.com?subject=RMH%20Deeplink%20%E2%80%94%20Inquiry">Build with Deeplink</a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- hero -->
+  <section class="hero">
+    <div class="wrap">
+      <div class="hero-copy">
+        <span class="eyebrow reveal" style="animation-delay:.05s"><span class="mini" aria-hidden="true"></span>A frontier AI research lab</span>
+        <h1 class="reveal" style="animation-delay:.14s">Solving <span class="grad">intelligence</span> to advance science and benefit humanity.</h1>
+        <p class="lead reveal" style="animation-delay:.26s">
+          RMH Deeplink does foundational research toward artificial general intelligence — building
+          the models, methods, and theory that move the frontier, and applying them to humanity&rsquo;s
+          hardest scientific challenges.
+        </p>
+        <div class="hero-actions reveal" style="animation-delay:.38s">
+          <a class="btn btn-primary btn-lg" href="#research">Explore our research</a>
+          <a class="btn btn-ghost btn-lg" href="#mission">Our mission</a>
+          <span class="meta-note">120-page research thesis &mdash; out now</span>
+        </div>
+      </div>
+      <div class="visual">
+        <div class="orb-glow" aria-hidden="true"></div>
+        <div class="orb-floor" aria-hidden="true"></div>
+        <div class="hero-media">
+          <img src="/images/deeplink/hero.jpg" alt="An abstract iridescent rendering evoking RMH Deeplink's research" />
+        </div>
+        <span class="spark s1" aria-hidden="true"></span>
+        <span class="spark s2" aria-hidden="true"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- stat strip -->
+  <div class="strip">
+    <div class="wrap">
+      <div class="cell"><div class="num">1</div><div class="cap">Mission — AGI, responsibly built, for the benefit of all</div></div>
+      <div class="cell"><div class="num">8</div><div class="cap">Research programs, from foundation models to safety</div></div>
+      <div class="cell"><div class="num">10<sup>25</sup></div><div class="cap">FLOP-class training runs on dedicated compute</div></div>
+      <div class="cell"><div class="num">&infin;</div><div class="cap">Scientific problems worth pointing intelligence at</div></div>
+    </div>
+  </div>
+
+  <!-- research -->
+  <section class="block" id="research">
+    <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <span class="kicker">Research</span>
+          <h2>The programs moving the frontier</h2>
+        </div>
+        <p class="lead2">Eight interlocking programs — from the general engine to the science it accelerates and the safety that governs it.</p>
+      </div>
+      <div class="cards">
+        <article class="card">
+          <div class="thumb"><img class="gr" src="/images/deeplink/foundation-models.jpg" alt="Interconnected glass ribbons forming a neural lattice" loading="lazy" /></div>
+          <div class="body">
+            <span class="tag">Foundation models</span>
+            <h3>General, multimodal frontier models</h3>
+            <p>Models that perceive, reason, and act across language, vision, code, and the physical world — the general engine everything else is built on.</p>
+            <a class="more" href="/deeplink/foundation-models">Learn more <span aria-hidden="true">&rarr;</a></span>
+          </div>
+        </article>
+        <article class="card">
+          <div class="thumb"><img class="gr" src="/images/deeplink/agents-rl.jpg" alt="Swirling currents of light suggesting agents in motion" loading="lazy" /></div>
+          <div class="body">
+            <span class="tag">Agents &amp; RL</span>
+            <h3>Agents that learn from experience</h3>
+            <p>Reward, search, and self-play remain the sharpest tools for behavior that exceeds its training data. We build agents that plan, explore, and improve.</p>
+            <a class="more" href="/deeplink/agents-rl">Learn more <span aria-hidden="true">&rarr;</a></span>
+          </div>
+        </article>
+        <article class="card">
+          <div class="thumb"><img class="gr" src="/images/deeplink/ai-for-science.jpg" alt="A glossy helical structure evoking protein design" loading="lazy" /></div>
+          <div class="body">
+            <span class="tag">AI for science</span>
+            <h3>Intelligence as an instrument of discovery</h3>
+            <p>Protein structure, materials, mathematics, fusion, weather and climate — grand challenges where a model is either right or it is not.</p>
+            <a class="more" href="/deeplink/ai-for-science">Learn more <span aria-hidden="true">&rarr;</a></span>
+          </div>
+        </article>
+        <article class="card">
+          <div class="thumb"><img class="gr" src="/images/deeplink/safety-alignment.jpg" alt="A translucent ordered lattice evoking safety" loading="lazy" /></div>
+          <div class="body">
+            <span class="tag">Safety &amp; alignment</span>
+            <h3>Frontier capability, frontier safety</h3>
+            <p>Interpretability, scalable oversight, and evaluation science so systems stay honest, controllable, and understood as they grow more capable.</p>
+            <a class="more" href="/deeplink/safety-alignment">Learn more <span aria-hidden="true">&rarr;</a></span>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- mission band -->
+  <section class="mission" id="mission">
+    <div class="wrap">
+      <span class="kicker">Our mission</span>
+      <h2>Building AI responsibly to benefit humanity.</h2>
+      <p>
+        We&rsquo;re a scientific endeavour first. Solve intelligence — understand it well enough to
+        build it deliberately — then use it to solve everything else. We pursue capability and safety
+        as one discipline, never a trade-off.
+      </p>
+      <div class="m-actions">
+        <a class="btn btn-primary btn-lg" href="/library/rmh-deeplink-thesis">Read the thesis</a>
+        <a class="btn btn-ghost btn-lg" href="#safety">Our approach to safety</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- science -->
+  <section class="block" id="science">
+    <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <span class="kicker">Science &amp; impact</span>
+          <h2>Where intelligence earns its keep</h2>
+        </div>
+        <p class="lead2">Selected directions where a learned model becomes a new scientific instrument.</p>
+      </div>
+      <div class="news cards">
+        <article class="card">
+          <div class="thumb"><img class="gr" src="/images/deeplink/life-sciences.jpg" alt="An iridescent double helix and folded protein" loading="lazy" /></div>
+          <div class="body">
+            <span class="tag">Life sciences</span>
+            <h3>Structure, design &amp; the virtual cell</h3>
+            <p>From folding and complexes to de novo design — modelling biology with enough fidelity to design it.</p>
+            <a class="more" href="/deeplink/life-sciences">Read more <span aria-hidden="true">&rarr;</a></span>
+          </div>
+        </article>
+        <article class="card">
+          <div class="thumb"><img class="gr" src="/images/deeplink/energy-climate.jpg" alt="A radiant plasma vortex of energy" loading="lazy" /></div>
+          <div class="body">
+            <span class="tag">Energy &amp; climate</span>
+            <h3>Plasma control &amp; learned forecasting</h3>
+            <p>Reinforcement learning for magnetic confinement; weather models that run in seconds, not hours.</p>
+            <a class="more" href="/deeplink/energy-climate">Read more <span aria-hidden="true">&rarr;</a></span>
+          </div>
+        </article>
+        <article class="card">
+          <div class="thumb"><img class="gr" src="/images/deeplink/mathematics.jpg" alt="Interlocking crystalline geometric forms" loading="lazy" /></div>
+          <div class="body">
+            <span class="tag">Mathematics</span>
+            <h3>Theorem proving as a frontier</h3>
+            <p>Formal proof search and autoformalization, where correctness is checkable and the bar is absolute.</p>
+            <a class="more" href="/deeplink/mathematics">Read more <span aria-hidden="true">&rarr;</a></span>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- safety -->
+  <section class="block tinted" id="safety">
+    <div class="wrap">
+      <div class="sec-head">
+        <div>
+          <span class="kicker">Responsibility</span>
+          <h2>Safety is built in, not bolted on</h2>
+        </div>
+        <p class="lead2">A frontier safety framework, dangerous-capability evaluations, and interpretability research that scale with capability.</p>
+      </div>
+      <div class="cards">
+        <article class="card">
+          <div class="thumb"><img class="gr" src="/images/deeplink/frontier-safety.jpg" alt="Concentric translucent gates receding into depth" loading="lazy" /></div>
+          <div class="body">
+            <span class="tag">Frontier safety framework</span>
+            <h3>Responsible capability scaling</h3>
+            <p>Critical capability thresholds, pre-committed tripwires, and red-teaming gate every model before it ships.</p>
+            <a class="more" href="/deeplink/frontier-safety">Learn more <span aria-hidden="true">&rarr;</a></span>
+          </div>
+        </article>
+        <article class="card">
+          <div class="thumb"><img class="gr" src="/images/deeplink/alignment.jpg" alt="Two iridescent forms converging into harmony" loading="lazy" /></div>
+          <div class="body">
+            <span class="tag">Alignment research</span>
+            <h3>Honest, controllable systems</h3>
+            <p>Scalable oversight, interpretability for assurance, and evaluation science that keep models understood as they grow.</p>
+            <a class="more" href="/deeplink/alignment">Learn more <span aria-hidden="true">&rarr;</a></span>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- footer -->
+<footer id="about">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <a class="brand" href="#top"><span class="dot" aria-hidden="true"></span>RMH&nbsp;Deeplink&nbsp;<small>from RMH Studios</small></a>
+        <p>Foundational AI research toward artificial general intelligence — in service of science and humanity.</p>
+        <form class="news-form" onsubmit="return false" aria-label="Newsletter signup">
+          <input type="email" placeholder="Your email" aria-label="Email address" />
+          <button class="btn btn-primary" type="submit">Subscribe</button>
+        </form>
+      </div>
+      <nav class="foot-col" aria-label="Research">
+        <h4>Research</h4>
+        <a href="/deeplink/foundation-models">Foundation models</a>
+        <a href="/deeplink/agents-rl">Agents &amp; RL</a>
+        <a href="/deeplink/agents-rl">World models</a>
+        <a href="/deeplink/alignment">Interpretability</a>
+      </nav>
+      <nav class="foot-col" aria-label="Science">
+        <h4>Science</h4>
+        <a href="/deeplink/life-sciences">Life sciences</a>
+        <a href="/deeplink/ai-for-science">Materials &amp; chemistry</a>
+        <a href="/deeplink/mathematics">Mathematics</a>
+        <a href="/deeplink/energy-climate">Climate &amp; energy</a>
+      </nav>
+      <nav class="foot-col" aria-label="Company">
+        <h4>Company</h4>
+        <a href="#about">About</a>
+        <a href="/deeplink/frontier-safety">Safety &amp; responsibility</a>
+        <a href="mailto:careers@rmhstudios.com?subject=Careers%20%E2%80%94%20RMH%20Deeplink">Careers</a>
+        <a href="mailto:info@rmhstudios.com">Contact</a>
+      </nav>
+    </div>
+    <div class="foot-bot">
+      <span class="mission-line">Building AI responsibly to benefit humanity. &copy; 2026 RMH Deeplink.</span>
+      <div class="social" aria-label="Social links">
+        <a href="#" aria-label="X">X</a>
+        <a href="#" aria-label="LinkedIn">in</a>
+        <a href="#" aria-label="YouTube">&#9658;</a>
+        <a href="#" aria-label="GitHub">&lt;/&gt;</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* header border on scroll */
+(function () {
+  var hdr = document.getElementById('hdr');
+  var onScroll = function () { hdr.classList.toggle('scrolled', window.scrollY > 8); };
+  window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
+})();
+
+/* staggered reveal for cards on scroll */
+(function () {
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+  if (!('IntersectionObserver' in window)) { cards.forEach(function (c) { c.classList.add('in'); }); return; }
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, { threshold: 0.16 });
+  var groups = {};
+  cards.forEach(function (c) {
+    var sec = c.closest('section') || document.body;
+    var id = sec.id || 'x';
+    groups[id] = (groups[id] || 0);
+    c.style.transitionDelay = (groups[id] * 0.07) + 's';
+    groups[id]++;
+    io.observe(c);
+  });
+})();
+</script>
+</body>
+</html>

@@ -49,12 +49,16 @@ services:
         VITE_RMHBOX_SOCKET_URL: ${VITE_RMHBOX_SOCKET_URL}
         VITE_RMHTUBE_SOCKET_URL: ${VITE_RMHTUBE_SOCKET_URL}
         VITE_DISCORD_ACTIVITY_CLIENT_ID: ${VITE_DISCORD_ACTIVITY_CLIENT_ID}
+        VITE_CDN_BASE_URL: ${VITE_CDN_BASE_URL}
         # Used at build time to auto-generate library covers/metadata for new
         # PDFs. Optional — covers still render without it (titles fall back).
         DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
     container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-web
-    ports:
-      - "127.0.0.1:${PORT_WEB:-7005}:${PORT_WEB:-7005}"
+    # NOTE: web does NOT publish a fixed host port. It is deployed blue/green by
+    # deploy/hotswap-web.sh (zero-downtime), which publishes the active port
+    # (7005 blue / 7015 green) itself and flips Apache between them. deploy.sh
+    # brings the rest of the stack up with `--scale web=0` so compose never
+    # recreates web in place (the old cause of the Cloudflare 520 during deploy).
     env_file: ${ENV_FILE:-.env.production}
     environment:
       - PORT=${PORT_WEB:-7005}
@@ -142,6 +146,36 @@ services:
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${PORT_RECAP:-7004}/"]
       interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ─── Status Page (status.rmhstudios.com) ───────────────────────────────────
+  # Standalone health dashboard. Probes the website via its PUBLIC URL (so the
+  # status reflects the real user path through Apache/DNS, not just a live
+  # container) and the internal services by compose DNS name. Serves an HTML +
+  # JSON status page; Apache proxies status.rmhstudios.com to the loopback port
+  # published below.
+  status:
+    <<: *common
+    container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-status
+    ports:
+      - "127.0.0.1:${PORT_STATUS:-7008}:${PORT_STATUS:-7008}"
+    env_file: ${ENV_FILE:-.env.production}
+    environment:
+      - STATUS_PORT=${PORT_STATUS:-7008}
+      # Public origin the website probe hits (DNS → Apache → active container).
+      - STATUS_WEBSITE_URL=${STATUS_WEBSITE_URL:-https://rmhstudios.com/}
+      - PORT_SOCKET=${PORT_SOCKET:-7001}
+      - PORT_RMHBOX=${PORT_RMHBOX:-7676}
+      - PORT_RMHTUBE=${PORT_RMHTUBE:-7003}
+      - PORT_RECAP=${PORT_RECAP:-7004}
+      # Uptime history persists to the shared db/ volume (mounted at /app/db).
+      - STATUS_DATA_DIR=/app/db
+    command: ["node", "dist-server/server/status/index.cjs"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT_STATUS:-7008}/health"]
+      interval: 30s
       timeout: 10s
       retries: 3
       start_period: 10s

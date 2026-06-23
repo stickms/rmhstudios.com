@@ -90,6 +90,9 @@ interface PlayerSeat {
     handsWon: number;
     blackjacks: number;
   };
+  // Set when a player leaves/disconnects mid-round but still has money at
+  // stake. The seat is kept until payouts settle, then pruned.
+  pendingRemoval?: boolean;
 }
 
 interface BlackjackRoom {
@@ -114,6 +117,7 @@ interface BlackjackRoom {
   insuranceTimer: ReturnType<typeof setTimeout> | null;
   roundNumber: number;
   bettingDeadline: number | null;
+  turnDeadline: number | null;
 }
 
 // ── Constants ──────────────────────────────────────────────────────
@@ -205,7 +209,9 @@ function serializeTableState(room: BlackjackRoom) {
     bettingCountdown: room.bettingDeadline
       ? Math.max(0, Math.ceil((room.bettingDeadline - Date.now()) / 1000))
       : null,
-    turnTimeout: room.currentTurnUserId ? Math.ceil(TURN_TIMEOUT_MS / 1000) : null,
+    turnTimeout: room.currentTurnUserId && room.turnDeadline
+      ? Math.max(0, Math.ceil((room.turnDeadline - Date.now()) / 1000))
+      : null,
   };
 }
 
@@ -470,6 +476,7 @@ function advanceToNextPlayer(room: BlackjackRoom) {
     if (player && player.status !== 'busted' && player.status !== 'standing' && player.status !== 'blackjack') {
       player.status = 'playing';
       room.currentTurnUserId = userId;
+      room.turnDeadline = Date.now() + TURN_TIMEOUT_MS;
 
       ioRef.to(roomKey(room.roomId)).emit(S2C.TURN, {
         userId,
@@ -480,6 +487,7 @@ function advanceToNextPlayer(room: BlackjackRoom) {
 
       if (room.turnTimer) clearTimeout(room.turnTimer);
       room.turnTimer = setTimeout(() => {
+        // Max turn time reached — auto-stand so the table never stalls.
         if (room.currentTurnUserId === userId) {
           onStand(room, userId);
         }
@@ -492,6 +500,7 @@ function advanceToNextPlayer(room: BlackjackRoom) {
   }
 
   room.currentTurnUserId = null;
+  room.turnDeadline = null;
   if (room.turnTimer) { clearTimeout(room.turnTimer); room.turnTimer = null; }
   room.phase = 'dealer_turn';
   dealerTurn(room);
@@ -627,11 +636,27 @@ async function resolvePayouts(room: BlackjackRoom) {
   broadcastTableState(room);
 
   room.resultsTimer = setTimeout(() => {
-    for (const [userId, p] of room.players) {
-      const sock = ioRef.sockets.sockets.get(p.socketId);
-      if (!sock || !sock.connected) {
-        room.players.delete(userId);
-        userToRoom.delete(userId);
+    // Prune players who left or disconnected, now that payouts have settled.
+    for (const [uid, p] of room.players) {
+      const sock = p.socketId ? ioRef.sockets.sockets.get(p.socketId) : null;
+      if (p.pendingRemoval || !sock || !sock.connected) {
+        room.players.delete(uid);
+        userToRoom.delete(uid);
+        ioRef.to(roomKey(room.roomId)).emit(S2C.PLAYER_LEFT, { userId: uid, seatIndex: p.seatIndex });
+
+        if (room.ownerId === uid && room.players.size > 0) {
+          const newOwner = room.players.values().next().value!;
+          room.ownerId = newOwner.userId;
+          room.ownerName = newOwner.userName;
+          ioRef.to(roomKey(room.roomId)).emit(S2C.ROOM_UPDATED, {
+            ownerId: room.ownerId,
+            ownerName: room.ownerName,
+            maxPlayers: room.maxPlayers,
+            name: room.name,
+            privacy: room.privacy,
+            joinCode: room.joinCode,
+          });
+        }
       }
     }
 
@@ -640,6 +665,7 @@ async function resolvePayouts(room: BlackjackRoom) {
       return;
     }
 
+    broadcastRoomList();
     startBettingPhase(room);
   }, RESULTS_DISPLAY_MS);
 }
@@ -722,6 +748,7 @@ function onCreateRoom(socket: Socket, payload: unknown) {
     insuranceTimer: null,
     roundNumber: 0,
     bettingDeadline: null,
+    turnDeadline: null,
   };
 
   rooms.set(roomId, room);
@@ -890,6 +917,31 @@ function leaveRoom(userId: string, socketId: string) {
   }
 
   const seatIndex = player.seatIndex;
+
+  // If the player leaves while a round is live and still has money at stake,
+  // keep the seat so payouts settle; detach the socket and prune after results.
+  const roundActive = room.phase !== 'idle' && room.phase !== 'betting';
+  const atStake = player.bet > 0 || player.insuranceBet > 0 ||
+    player.splitHands.some((sh) => sh.bet > 0);
+  if (roundActive && atStake) {
+    player.pendingRemoval = true;
+    player.socketId = '';
+    userToRoom.delete(userId);
+    socketToUserId.delete(socketId);
+    const leavingSock = ioRef.sockets.sockets.get(socketId);
+    if (leavingSock) {
+      leavingSock.leave(roomKey(roomId));
+      leavingSock.emit(S2C.ROOM_LEFT, { roomId });
+    }
+    logger.info({ event: 'bj_player_left_pending_payout', roomId, userId, seatIndex });
+    // Don't let a departing player stall the insurance phase.
+    if (room.phase === 'insurance' && player.insuranceDecision === 'pending') {
+      player.insuranceDecision = 'declined';
+      checkAllInsuranceDecided(room);
+    }
+    return;
+  }
+
   room.players.delete(userId);
   userToRoom.delete(userId);
   socketToUserId.delete(socketId);

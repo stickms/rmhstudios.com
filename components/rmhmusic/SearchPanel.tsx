@@ -15,6 +15,7 @@ interface SearchPanelProps {
 export default function SearchPanel({ onPlay }: SearchPanelProps) {
   const { isSearchOpen, searchResults, searchQuery, setSearchResults, setSearchQuery, room } = useRmhMusicStore();
   const [loading, setLoading] = useState(false);
+  const [notConfigured, setNotConfigured] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -38,6 +39,7 @@ export default function SearchPanel({ onPlay }: SearchPanelProps) {
           return;
         }
         const data = await res.json();
+        setNotConfigured(data.configured === false);
         setSearchResults(data.tracks ?? []);
       } catch {
         setSearchResults([]);
@@ -95,7 +97,12 @@ export default function SearchPanel({ onPlay }: SearchPanelProps) {
             {searchQuery ? (
               <>
                 {loading && <p className="text-center py-4 text-sm" style={{ color: 'var(--site-text-muted)' }}>Searching...</p>}
-                {!loading && searchResults.length === 0 && searchQuery && (
+                {!loading && notConfigured && (
+                  <p className="text-center py-4 text-sm" style={{ color: 'var(--site-text-muted)' }}>
+                    Music search isn’t configured on this server.
+                  </p>
+                )}
+                {!loading && !notConfigured && searchResults.length === 0 && searchQuery && (
                   <p className="text-center py-4 text-sm" style={{ color: 'var(--site-text-muted)' }}>No results found</p>
                 )}
                 {searchResults.map((track: any) => (

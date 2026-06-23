@@ -1,4 +1,5 @@
 import { AudioManager } from '../audio/AudioManager';
+import { asset } from '@/lib/storage/asset';
 import { BeatMap, Slice, HIT_WINDOWS, HitResult } from './types';
 import { useGameStore, Difficulty } from '../store/useGameStore';
 import { MultiplayerFactory } from "./MultiplayerFactory";
@@ -132,7 +133,7 @@ export class GameEngine {
         // Pre-load selected hit sound so first hit is instant
         const hitSound = useGameStore.getState().hitSound;
         if (hitSound && hitSound !== 'default') {
-            this.audioManager.preloadHitSound(`/music/slice-it/sounds/${hitSound}`).catch(() => {});
+            this.audioManager.preloadHitSound(asset(`/music/slice-it/sounds/${hitSound}`)).catch(() => {});
         }
     }
     
@@ -428,7 +429,7 @@ export class GameEngine {
             const hitSound = useGameStore.getState().hitSound;
             if (hitSound && hitSound !== 'default') {
                 const pitch = (result === 'MARVELOUS' || result === 'PERFECT') ? 1.0 : 0.85;
-                this.audioManager.playHitSoundFile(`/music/slice-it/sounds/${hitSound}`, sfxVol, pitch);
+                this.audioManager.playHitSoundFile(asset(`/music/slice-it/sounds/${hitSound}`), sfxVol, pitch);
             } else {
                 const freq = (result === 'MARVELOUS' || result === 'PERFECT') ? 880 : 440;
                 this.audioManager.playSfX(freq, 'triangle', 0.1, sfxVol);

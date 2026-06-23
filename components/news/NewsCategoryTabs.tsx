@@ -20,7 +20,7 @@ export function NewsCategoryTabs({
             <button
                 onClick={() => onCategoryChange(null)}
                 className={`shrink-0 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all ${!activeCategory
-                        ? 'bg-(--site-accent) text-white shadow-md'
+                        ? 'bg-(--site-accent) text-site-accent-fg shadow-md'
                         : 'bg-(--site-surface) text-(--site-text-muted) border border-(--site-border) hover:text-(--site-text) hover:bg-(--site-surface-hover)'
                     }`}
             >

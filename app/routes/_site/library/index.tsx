@@ -10,12 +10,22 @@
 
 import { useMemo, useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { ArrowLeft, Search } from 'lucide-react';
-import { listLibraryBooks, type LibraryBook } from '@/lib/library/library';
+import { createServerFn } from '@tanstack/react-start';
+import { Menu, Search, Upload } from 'lucide-react';
+import { useMobileSidebar } from '@/components/feed/MobileSidebarShell';
+import { MobileBrandPrefix } from '@/components/feed/MobileHeader';
+import { type LibraryBook } from '@/lib/library/library';
+import { listAllBooks } from '@/lib/library/library.server';
 import { shelfRiseDelay } from '@/components/library/shelf';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
+import { useSession } from '@/components/Providers';
+import { UploadModal } from '@/components/library/UploadModal';
 import '@/components/library/library.css';
+
+const fetchBooks = createServerFn({ method: 'GET' }).handler(async () => ({
+  books: await listAllBooks(),
+}));
 
 export const Route = createFileRoute('/_site/library/')({
   head: () => ({
@@ -24,13 +34,16 @@ export const Route = createFileRoute('/_site/library/')({
       { name: 'description', content: 'Browse and read the RMH Studios library — a shelf of documents, theses, and plans.' },
     ],
   }),
-  loader: () => ({ books: listLibraryBooks() }),
+  loader: () => fetchBooks(),
   component: Library,
 });
 
 function Library() {
+  const { open: openSidebar } = useMobileSidebar();
   const { books } = Route.useLoaderData();
+  const session = useSession();
   const [query, setQuery] = useState('');
+  const [uploadOpen, setUploadOpen] = useState(false);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -47,10 +60,17 @@ function Library() {
       targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
     >
       <header className="vibe-gallery__head">
-        <Link to="/" aria-label="Back to home" className="vibe-toolbar__icon">
-          <ArrowLeft size={17} />
-        </Link>
-        <h1 className="vibe-gallery__title">Library</h1>
+        {/* Wrapper carries md:hidden — `.vibe-toolbar__icon` sets its own
+            display, which would otherwise override the utility on desktop. */}
+        <span className="md:hidden">
+          <button type="button" onClick={openSidebar} aria-label="Open menu" className="vibe-toolbar__icon">
+            <Menu size={18} />
+          </button>
+        </span>
+        <div className="flex items-center gap-2 min-w-0">
+          <MobileBrandPrefix />
+          <h1 className="vibe-gallery__title">Library</h1>
+        </div>
         <div className="vibe-search">
           <Search size={16} className="vibe-search__icon" aria-hidden="true" />
           <input
@@ -62,6 +82,17 @@ function Library() {
             className="vibe-search__input"
           />
         </div>
+        {session.data && (
+          <button
+            type="button"
+            className="lib-upload__open"
+            onClick={() => setUploadOpen(true)}
+            aria-label="Upload a PDF"
+          >
+            <Upload size={15} aria-hidden="true" />
+            <span className="lib-upload__open-label">Upload</span>
+          </button>
+        )}
       </header>
 
       {filtered.length === 0 ? (
@@ -76,6 +107,7 @@ function Library() {
     </AnimatedMain>
     {/* Trailing gutter to match the blog/feed layout */}
     <div className="hidden lg:block w-4 shrink-0" />
+    {uploadOpen && <UploadModal onClose={() => setUploadOpen(false)} />}
     </>
   );
 }

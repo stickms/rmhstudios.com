@@ -6,6 +6,15 @@ export type FeedItemType =
   | "blog"
   | "research";
 
+export interface UserCosmetics {
+  nameColor?: { color?: string; gradient?: string };
+  avatarFrame?: { color?: string; gradient?: string };
+  badge?: { emoji?: string };
+  banner?: { gradient?: string };
+  postFlair?: { className?: string; color?: string; gradient?: string };
+  pet?: { emoji?: string };
+}
+
 export interface FeedItemUser {
   id: string;
   name?: string | null;
@@ -14,6 +23,8 @@ export interface FeedItemUser {
   image?: string | null;
   isVerified?: boolean;
   isAdmin?: boolean;
+  /** Equipped shop cosmetics (name color, avatar frame, badge, …). */
+  cosmetics?: UserCosmetics;
 }
 
 export interface FeedPollOption {
@@ -29,6 +40,7 @@ export interface FeedPoll {
   totalVotes: number;
   options: FeedPollOption[];
   myVotes?: string[]; // option IDs the current user voted for
+  closesAt?: string | null; // scheduled close time, if any
 }
 
 export interface FeedItem {
@@ -45,6 +57,12 @@ export interface FeedItem {
   viewCount?: number;
   liked?: boolean;
   reposted?: boolean;
+  bookmarked?: boolean;
+  pinned?: boolean;
+  edited?: boolean;
+  // Paid post: locked = content hidden until unlocked with coins.
+  locked?: boolean;
+  unlockPrice?: number;
   original?: FeedItem;
   repostedBy?: FeedItemUser;
   actualId?: string;

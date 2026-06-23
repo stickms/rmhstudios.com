@@ -18,6 +18,7 @@ import { createFileRoute } from '@tanstack/react-router';
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
 export const Route = createFileRoute('/api/rmhbox/history')({
@@ -65,6 +66,15 @@ export const Route = createFileRoute('/api/rmhbox/history')({
         return Response.json({ error: 'Match not found' }, { status: 404 });
       }
 
+      // The raw gameLog/results can contain per-round internal state, so only
+      // expose them to participants of the match or admins. Everyone else gets
+      // the public leaderboard-style summary.
+      const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+      const viewerId = session?.user?.id ?? null;
+      const isParticipant = !!viewerId && match.players.some((p) => p.userId === viewerId);
+      const isAdmin = !!session && (session.user as { isAdmin?: boolean }).isAdmin === true;
+      const canSeeDetail = isParticipant || isAdmin;
+
       return Response.json({
         match: {
           id: match.id,
@@ -75,8 +85,8 @@ export const Route = createFileRoute('/api/rmhbox/history')({
           durationMs: match.durationMs,
           winnerUserId: match.winnerUserId,
           playerCount: match.playerCount,
-          gameLog: match.gameLog,
-          results: match.results,
+          gameLog: canSeeDetail ? match.gameLog : null,
+          results: canSeeDetail ? match.results : null,
           players: match.players,
         },
       });
@@ -124,7 +134,6 @@ export const Route = createFileRoute('/api/rmhbox/history')({
         winnerUserId: m.winnerUserId,
         playerCount: m.playerCount,
         players: m.players,
-        gameLog: m.gameLog ?? null,
       })),
       total,
       limit,

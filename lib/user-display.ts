@@ -2,7 +2,11 @@
  * Shared Prisma select and resolver for user display data.
  * Resolves custom profile fields (displayName, customImage) with
  * fallback to User model fields (name, image from Discord OAuth).
+ * Also joins equipped shop cosmetics so names/avatars render with their
+ * purchased styling everywhere the feed shows an author.
  */
+
+import { resolveEquippedCosmetics, type EquippedCosmetics } from '@/lib/shop/equipped';
 
 export const userDisplaySelect = {
   id: true,
@@ -17,6 +21,10 @@ export const userDisplaySelect = {
       displayName: true,
       customImage: true,
     },
+  },
+  inventory: {
+    where: { equipped: true },
+    select: { itemId: true },
   },
 } as const;
 
@@ -39,10 +47,27 @@ type UserWithProfileAndId = UserWithProfile & {
   id: string;
   username: string | null;
   handle?: string | null;
+  inventory?: { itemId: string }[] | null;
 };
 
-/** Returns { id, name, image, username, handle, isVerified, isAdmin } with custom fields resolved. */
-export function resolveUser(user: UserWithProfileAndId) {
+/**
+ * Returns { id, name, image, username, handle, isVerified, isAdmin, cosmetics }
+ * with custom fields resolved. `cosmetics` is the equipped shop styling (name
+ * color, avatar frame, badge, …) when the row joined in `inventory`.
+ */
+export function resolveUser(user: UserWithProfileAndId): {
+  id: string;
+  name: string | null;
+  image: string | null;
+  username: string | null;
+  handle: string | null;
+  isVerified: boolean;
+  isAdmin: boolean;
+  cosmetics?: EquippedCosmetics;
+} {
+  const cosmetics = user.inventory
+    ? resolveEquippedCosmetics(user.inventory.map((i) => i.itemId))
+    : undefined;
   return {
     id: user.id,
     name: user.profile?.displayName ?? user.name,
@@ -51,5 +76,6 @@ export function resolveUser(user: UserWithProfileAndId) {
     handle: user.handle ?? null,
     isVerified: user.isVerified ?? false,
     isAdmin: user.isAdmin ?? false,
+    ...(cosmetics && Object.keys(cosmetics).length > 0 ? { cosmetics } : {}),
   };
 }

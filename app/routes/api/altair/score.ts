@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { prisma } from '@/lib/prisma.server';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { recordGamePlay } from '@/lib/quests/engine.server';
 
 export const Route = createFileRoute('/api/altair/score')({
   server: {
@@ -60,6 +61,7 @@ export const Route = createFileRoute('/api/altair/score')({
                     username, // Keep username in sync with auth
                 }
             });
+            await recordGamePlay(userId);
             return Response.json({ success: true, linked: true });
         }
 
@@ -76,6 +78,7 @@ export const Route = createFileRoute('/api/altair/score')({
                 gamesPlayed: 1
             }
         });
+        await recordGamePlay(userId);
         return Response.json({ success: true, created: true });
     } catch (e) {
         console.error('Altair score submit failed:', e);

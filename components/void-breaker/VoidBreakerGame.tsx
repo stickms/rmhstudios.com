@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useEffect, useCallback, useState } from 'react';
+import { asset } from '@/lib/storage/asset';
 import { VoidBreakerEngine } from '@/lib/void-breaker/game';
 import { VoidBreakerRenderer } from '@/lib/void-breaker/renderer';
 import { CANVAS_WIDTH, CANVAS_HEIGHT, MAX_SHARDS, DET_MIN_SHARDS, DASH_COOLDOWN, FOCUS_COOLDOWN } from '@/lib/void-breaker/constants';
@@ -11,7 +12,7 @@ import { saveGame, loadGame, deleteSave, getSaveInfo } from '@/lib/void-breaker/
 import { ABILITY_COOLDOWNS } from '@/lib/void-breaker/abilityProgression';
 
 /** Background music track path */
-const MUSIC_SRC = '/music/VoidBreaker/cold coffee - lofi rap beat (FREE FOR PROFIT USE).mp3';
+const MUSIC_SRC = asset('/music/VoidBreaker/cold coffee - lofi rap beat (FREE FOR PROFIT USE).mp3');
 
 /** Master volume (0–1). Adjust here globally. */
 const MASTER_VOLUME = 0.75;

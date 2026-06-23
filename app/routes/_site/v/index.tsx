@@ -16,6 +16,7 @@ import { ModelSelect } from '@/components/rmhvibe/ModelSelect';
 import { DEFAULT_VIBE_MODEL, type VibeModel } from '@/lib/rmhvibe/vibe-types';
 import { listVibePages, type VibeCard } from '@/lib/rmhvibe/vibe.server';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
+import { MobileTopBar } from '@/components/feed/MobileHeader';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import '@/components/rmhvibe/vibe.css';
 
@@ -142,6 +143,9 @@ function Gallery() {
       className="vibe-screen vibe-gallery min-h-screen w-full min-w-0 border-r border-site-border pb-16 md:pb-0"
       targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
     >
+      {/* Mobile: hamburger + brand (this page leads with a hero, not a header) */}
+      <MobileTopBar title="Pages" />
+
       {/* Prompt hero: generate a new page. */}
       <section className="vibe-gallery__hero">
         <p className="vibe-rise vibe-presents mb-3">RMH Studios presents</p>

@@ -46,7 +46,7 @@ function AdminBlogDashboard() {
             </div>
           </div>
 
-          <Link to="/admin/blog/new" className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors h-10 px-4 py-2 gap-2 bg-site-accent hover:bg-site-accent-hover text-white self-end sm:self-auto shrink-0">
+          <Link to="/admin/blog/new" className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors h-10 px-4 py-2 gap-2 bg-site-accent hover:bg-site-accent-hover text-site-accent-fg self-end sm:self-auto shrink-0">
             <Plus className="w-4 h-4" /> New Post
           </Link>
         </div>

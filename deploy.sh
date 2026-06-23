@@ -28,9 +28,12 @@ case "$ENVIRONMENT" in
         ENV_FILE=".env.production"
         PROJECT_NAME="rmhstudios-prod"
         PORT_WEB=7005
+        # Blue/green spare port for zero-downtime web hotswaps (deploy/hotswap-web.sh).
+        PORT_WEB_GREEN=7015
         PORT_SOCKET=7001
         PORT_RMHBOX=7676
         PORT_RMHTUBE=7003
+        PORT_STATUS=7008
         COMPOSE_PROFILES=""
         ;;
     staging)
@@ -395,33 +398,11 @@ if [ "$PRE_PULL_HASH" != "$POST_PULL_HASH" ] && [ -z "${DEPLOY_SELF_RESTARTED:-}
     exec bash "$DEPLOY_SCRIPT_PATH" "$ENVIRONMENT"
 fi
 
-# ── Step 1c: Ensure CDN assets are servable by Apache ────────────────────────
-# Apache (as www-data) serves /library, /music, /models, /sprites straight off
-# disk from public/ (see deploy/apache/rmhstudios.com.conf), bypassing the Node
-# app. A fresh `git reset --hard` can land files that www-data can't read, which
-# makes Apache return 403 for every asset. git only tracks the owner-exec bit,
-# so we re-assert world read/traverse here on EVERY deploy — this is what keeps
-# the self-hosted CDN working. All paths are owned by the deploy user, so no
-# sudo is needed for the chmods. Failures are logged, never fatal: a perms hiccup
-# must not block shipping the app.
-step_start "Ensuring CDN asset permissions..."
-PUBLIC_DIR="${REPO_DIR}/public"
-# Parent dirs need o+x so www-data can traverse in from /home. Derive the repo's
-# parent rather than $HOME, since the deploy may run as root (webhook trigger).
-chmod o+x "$(dirname "$REPO_DIR")" "$REPO_DIR" "$PUBLIC_DIR" 2>/dev/null || true
-if [ -d "$PUBLIC_DIR" ]; then
-    # Read for files, traverse for dirs (capital X applies x to dirs only).
-    chmod -R o+rX "$PUBLIC_DIR" 2>/dev/null || true
-    # Best-effort sanity check as the web user (only if passwordless sudo exists),
-    # so a regression is visible in the deploy log without failing the deploy.
-    if sudo -n true 2>/dev/null && [ -d "$PUBLIC_DIR/library" ]; then
-        sudo -n -u www-data ls "$PUBLIC_DIR/library" >/dev/null 2>&1 \
-            || log "WARNING: www-data cannot read ${PUBLIC_DIR}/library — CDN assets may 403."
-    fi
-else
-    log "WARNING: ${PUBLIC_DIR} not found — Apache-served CDN assets will 404."
-fi
-step_done
+# ── Step 1c: (removed) Apache CDN asset permissions ──────────────────────────
+# Heavy static assets (/library, /music, /models, /sprites) used to be served
+# off disk by Apache, which needed world-read perms re-asserted every deploy.
+# They now live in Cloudflare R2 and are synced below (see "Sync static assets
+# to R2"), so Apache no longer touches them and no chmod dance is needed.
 
 IMAGE_NAME="${PROJECT_NAME}-app"
 GIT_SHA=$("$GIT_BIN" rev-parse --short HEAD 2>/dev/null || echo "unknown")
@@ -493,6 +474,9 @@ else
     log "No prior ${IMAGE_NAME}:latest image — skipping library cover generation (first deploy; using committed metadata)."
 fi
 
+# (R2 static asset sync runs post-build as Step 2a, using the freshly built
+#  image — see below.)
+
 # ── Step 2: Build Docker image ──────────────────────────────────────────────
 # The Dockerfile uses parallel BuildKit stages:
 #   - server-builder (esbuild, env-agnostic → fully cached between envs)
@@ -509,6 +493,32 @@ fi
 # Tag with git SHA for instant rollback (docker compose up with the old tag)
 "$DOCKER_BIN" tag "${IMAGE_NAME}:latest" "${IMAGE_NAME}:${GIT_SHA}" 2>/dev/null || true
 step_done
+
+# ── Step 2a: Sync static assets to Cloudflare R2 (incremental) ───────────────
+# library/music/models/sprites are served from R2 behind cdn.rmhstudios.com,
+# not off disk. scripts/sync-static-assets-to-r2.mjs uses the AWS SDK (already a
+# dependency) to diff local public/ against the bucket and upload only NEW or
+# CHANGED files while removing ones deleted locally — so an unchanged deploy
+# transfers nothing. It runs INSIDE the freshly built image (which carries
+# node_modules + scripts/), with the host public/ bind-mounted read-only (the
+# image deliberately omits these heavy dirs). No rclone or host tooling needed.
+# Best-effort: a sync hiccup must never block shipping the app (a short
+# Cache-Control TTL + the next deploy are the safety net). Skips itself when
+# VITE_CDN_BASE_URL isn't set (assets then served from the local origin).
+if grep -qE '^VITE_CDN_BASE_URL=.+' "$ENV_FILE" 2>/dev/null; then
+    step_start "Syncing static assets to R2 (incremental)..."
+    "$DOCKER_BIN" run --rm \
+        --env-file "$ENV_FILE" \
+        -e PUBLIC_DIR=/app/public \
+        -v "${REPO_DIR}/public:/app/public:ro" \
+        --entrypoint node \
+        "${IMAGE_NAME}:latest" \
+        scripts/sync-static-assets-to-r2.mjs \
+        || log "WARNING: R2 static asset sync failed — assets may be stale until the next deploy."
+    step_done
+else
+    log "VITE_CDN_BASE_URL not set — skipping R2 static asset sync (assets served from origin/public)."
+fi
 
 # ── Step 2b (staging only): Connect DBLab clone to compose network ───────────
 # The DBLab thin-clone container ("staging") runs on its own network. The
@@ -617,29 +627,61 @@ if ! dc run --rm --no-deps web sh -c "$MIGRATE_CMD"; then
 fi
 step_done
 
-# ── Step 4: Bring up containers ─────────────────────────────────────────────
+# ── Step 4: Bring up containers (everything EXCEPT web) ─────────────────────
 # --no-build: image is already built in step 2, skip the build check.
-# All 4 services start in parallel (no depends_on ordering).
-step_start "Starting containers..."
-if ! dc up -d --no-build --remove-orphans; then
+# --scale web=0: the web service is NOT managed by compose anymore — compose
+#   recreates containers IN PLACE (stop-old-then-start-new), which is exactly
+#   the multi-second gap that produced the Cloudflare 520. The web container is
+#   instead deployed blue/green by deploy/hotswap-web.sh below, which keeps the
+#   old container serving until the new one is healthy and Apache has flipped.
+#   All the OTHER services (socket, rmhbox, rmhtube, workers, minio, bot) start
+#   here in parallel as before — a brief blip on a websocket/worker reconnect is
+#   invisible, the user-facing 520 only ever came from the web port.
+step_start "Starting containers (all services except web)..."
+if ! dc up -d --no-build --remove-orphans --scale web=0; then
     log "ERROR: docker compose up failed."
     update_deploy_status fail "docker compose up failed"
     exit 1
 fi
 step_done
 
+# ── Step 4b: Zero-downtime hotswap of the web container ─────────────────────
+# Runs the freshly built image as a second web container on the spare port,
+# waits until it actually serves traffic, then flips Apache to it with a
+# graceful reload and retires the old one. If the new container never becomes
+# healthy, traffic is never moved and the old container keeps serving — so a
+# bad build degrades to "old version stays up", never to an outage.
+step_start "Hotswapping web container (blue/green)..."
+if ! PROJECT_NAME="$PROJECT_NAME" \
+     ENV_FILE="$ENV_FILE" \
+     IMAGE_NAME="$IMAGE_NAME" \
+     IMAGE_TAG="latest" \
+     BLUE_PORT="$PORT_WEB" \
+     GREEN_PORT="${PORT_WEB_GREEN:-$((PORT_WEB + 10))}" \
+     NETWORK="${PROJECT_NAME}_default" \
+     DOCKER_BIN="$DOCKER_BIN" \
+     bash "${REPO_DIR}/deploy/hotswap-web.sh"; then
+    log "ERROR: web hotswap failed."
+    update_deploy_status fail "web hotswap failed"
+    exit 1
+fi
+step_done
+
 # ── Step 5: Health checks (parallel) ────────────────────────────────────────
+# NOTE: web is intentionally NOT checked here — the hotswap in Step 4b already
+# proved the new web container serves traffic before flipping Apache to it, and
+# web now listens on the blue/green port, not the fixed $PORT_WEB.
 step_start "Running health checks..."
 ok=0
 pids=()
 
-check_port "$PORT_WEB" &
-pids+=($!)
 check_port "$PORT_SOCKET" &
 pids+=($!)
 check_port "$PORT_RMHBOX" &
 pids+=($!)
 check_port "$PORT_RMHTUBE" &
+pids+=($!)
+check_port "$PORT_STATUS" &
 pids+=($!)
 
 for pid in "${pids[@]}"; do
@@ -696,4 +738,4 @@ fi
 
 # ── Done ─────────────────────────────────────────────────────────────────────
 update_deploy_status success
-log "=== Deployment complete ($ENVIRONMENT: web=$PORT_WEB, socket=$PORT_SOCKET, rmhbox=$PORT_RMHBOX, rmhtube=$PORT_RMHTUBE) ==="
+log "=== Deployment complete ($ENVIRONMENT: web=$PORT_WEB, socket=$PORT_SOCKET, rmhbox=$PORT_RMHBOX, rmhtube=$PORT_RMHTUBE, status=$PORT_STATUS) ==="

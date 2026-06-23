@@ -1,0 +1,3 @@
+-- AlterEnum: new ride classes
+ALTER TYPE "RideClass" ADD VALUE IF NOT EXISTS 'RMH_BIKE';
+ALTER TYPE "RideClass" ADD VALUE IF NOT EXISTS 'RMH_HELI';

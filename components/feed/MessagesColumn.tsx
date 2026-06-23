@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { Loader2, ArrowLeft, MessageCircle, CheckCheck } from 'lucide-react';
+import { Loader2, MessageCircle, CheckCheck } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Link } from '@tanstack/react-router';
+import { MobileMenuButton } from './MobileMenuButton';
+import { MobileBrandPrefix } from './MobileHeader';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 
@@ -26,7 +28,7 @@ interface ConversationItem {
   lastMessageAt: string;
 }
 
-export function MessagesColumn() {
+export function MessagesColumn({ embedded = false }: { embedded?: boolean } = {}) {
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [cursor, setCursor] = useState<string | null>(null);
@@ -234,16 +236,17 @@ export function MessagesColumn() {
   return (
     <div className="flex flex-col">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-site-bg/85 backdrop-blur-md border-b border-site-border">
-        <div className="flex items-center justify-between gap-3 px-4 py-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <Link to="/" className="p-1.5 -ml-1.5 rounded-lg hover:bg-site-surface transition-colors">
-              <ArrowLeft className="w-5 h-5 text-site-text" />
-            </Link>
-            <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text">
-              Messages
-            </h1>
-          </div>
+      <div className={embedded ? 'border-b border-site-border' : 'sticky top-0 z-10 bg-site-bg/85 backdrop-blur-md border-b border-site-border'}>
+        <div className={`flex items-center gap-3 px-4 py-3 ${embedded ? 'justify-end' : 'justify-between'}`}>
+          {!embedded && (
+            <div className="flex items-center gap-3 min-w-0">
+              <MobileMenuButton />
+              <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 min-w-0">
+                <MobileBrandPrefix />
+                Messages
+              </h1>
+            </div>
+          )}
           <button
             type="button"
             onClick={markAllAsRead}

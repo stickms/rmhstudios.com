@@ -1,4 +1,10 @@
 {
+  "RMHStudios_Michael_Huang_Dual_Appointment.pdf": {
+    "title": "RMHStudios Executive Appointment — Michael Huang",
+    "description": "RMHStudios names Michael Huang Chief Operating Officer of RMHStudios and Chief Executive Officer of RMH PMC, completed as the firm's first \"equity-linked executive placement,\" with a deal tombstone recording the terms and a verifying word from Co-CTO Mahmoud Said.",
+    "pages": 2,
+    "cover": "RMHStudios_Michael_Huang_Dual_Appointment.jpg"
+  },
   "RMH_Capital_Board_Pitch_200p-1.pdf": {
     "title": "RMH Capital Board Pitch 200p 1",
     "description": "",
@@ -172,5 +178,23 @@
     "description": "A founding master specification for an AI co-scientist for biology, built on a reproducibility substrate to transform biomedical research.",
     "pages": 3365,
     "cover": "rmhtech-the-co-scientist-thesis.jpg"
+  },
+  "rmh-cfo-outage-correction.pdf": {
+    "title": "Office of the CFO — Statement of Correction",
+    "description": "The RMHStudios Office of the CFO sets the record straight on the 21 June 2026 outage — a forged apology, the partner who caused it, and the firing of Enterprise Risk Management.",
+    "pages": 3,
+    "cover": "rmh-cfo-outage-correction.jpg"
+  },
+  "rmhstudios-architecture-and-history.pdf": {
+    "title": "rmhstudios.com — Architecture & History: A Textbook",
+    "description": "A university-style textbook on the architecture and history of rmhstudios.com — server-side rendering, the realtime socket fleet, a 142-model data layer, the games platform, and the migration to k3s — with figures, per-chapter exercises, and three practice exams with full worked solutions.",
+    "pages": 182,
+    "cover": "rmhstudios-architecture-and-history.jpg"
+  },
+  "rmh-deeplink-thesis.pdf": {
+    "title": "The Deeplink Thesis",
+    "description": "The flagship scientific manifesto and research agenda of RMH Deeplink — a frontier AI lab doing foundational research toward artificial general intelligence, in service of science and humanity.",
+    "pages": 136,
+    "cover": "rmh-deeplink-thesis.jpg"
   }
 }

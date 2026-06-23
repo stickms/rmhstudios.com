@@ -33,11 +33,16 @@ import {
   isRmharkAIConfigured,
 } from '@/lib/rmhark-ai/generate.server';
 import {
+  isImageGenConfigured,
+  generatePostImage,
+} from '@/lib/rmhark-ai/image.server';
+import {
   canBotMessage,
   decideInitiation,
   formatDmHistory,
   type DmPrivacy,
 } from '@/lib/rmhark-ai/dm-policy';
+import { consecutiveBotDepth, shouldReplyToMention } from '@/lib/rmhark-ai/mention-policy';
 import type { MessagePayload } from '@/lib/message-events';
 
 // ─── Config ─────────────────────────────────────────────────────
@@ -61,6 +66,8 @@ const USER_CHECK_MS = intEnv('BOT_USER_CHECK_MS', 2 * 60 * 60 * 1000);
 const POST_TICK_MS = intEnv('BOT_POST_TICK_MS', 5 * 60 * 1000);
 // Most posts we'll create in a single tick (protects the DB + paid API).
 const MAX_POSTS_PER_TICK = intEnv('BOT_MAX_POSTS_PER_TICK', 5);
+// Chance a given bot post also gets an AI-generated image (0..1).
+const BOT_IMAGE_PROBABILITY = probEnv('BOT_IMAGE_PROBABILITY', 0.05);
 
 // ─── Reply behaviour ────────────────────────────────────────────
 // How often bots check for replies to answer (default = same as posting).
@@ -79,6 +86,22 @@ const BOT_TO_BOT_PROB = probEnv('BOT_TO_BOT_REPLY_PROB', 0.3);
 const PROACTIVE_PROB = probEnv('BOT_PROACTIVE_PROB', 0.4);
 // Proactive replies only target posts newer than this (default 6h).
 const PROACTIVE_LOOKBACK_MS = intEnv('BOT_PROACTIVE_LOOKBACK_MS', 6 * 60 * 60 * 1000);
+
+// ─── Mention-reply behaviour ────────────────────────────────────
+// How often bots answer @mentions (default 60s — snappier than the post tick).
+const MENTION_TICK_MS = intEnv('BOT_MENTION_TICK_MS', 60 * 1000);
+// Only answer mentions whose notification is newer than this (default 24h) —
+// bounds a backlog so a long-idle bot doesn't answer days of old mentions at once.
+const MENTION_LOOKBACK_MS = intEnv('BOT_MENTION_LOOKBACK_MS', 24 * 60 * 60 * 1000);
+// Cap mention replies created per tick (protects the DB + paid API).
+const MAX_MENTION_REPLIES_PER_TICK = intEnv('BOT_MAX_MENTION_REPLIES_PER_TICK', 4);
+// Stop bot↔bot @mention ping-pong: skip once this many consecutive bot-authored
+// comments lead the thread (default 3). Human mentions are always answered.
+// (Defensive: bot-authored content bypasses the API routes, so the queue is
+// effectively human/admin mentions only — see plan's Global Constraints.)
+const MAX_BOT_MENTION_DEPTH = intEnv('MAX_BOT_MENTION_DEPTH', 3);
+// Min gap between a single bot's mention replies (default 30s).
+const MENTION_COOLDOWN_MS = intEnv('BOT_MENTION_COOLDOWN_MS', 30 * 1000);
 
 // ─── DM behaviour ───────────────────────────────────────────────
 // How often the worker services DMs (snappier than the feed tick).
@@ -216,8 +239,21 @@ async function postTick(): Promise<void> {
     try {
       const content = await generatePost({ persona: bot.botPersona ?? undefined });
       if (!content.trim()) continue;
+
+      // Occasionally attach an AI-generated image. Never let image failure
+      // block the post — fall back to text-only.
+      let imageUrls: string[] = [];
+      if (isImageGenConfigured() && Math.random() < BOT_IMAGE_PROBABILITY) {
+        try {
+          const imageUrl = await generatePostImage({ text: content, userId: bot.id });
+          if (imageUrl) imageUrls = [imageUrl];
+        } catch (e) {
+          errlog('bot image gen failed:', e);
+        }
+      }
+
       await prisma.rMHark.create({
-        data: { userId: bot.id, content },
+        data: { userId: bot.id, content, ...(imageUrls.length ? { imageUrls } : {}) },
       });
       await prisma.user.update({
         where: { id: bot.id },
@@ -569,6 +605,60 @@ async function replyToComment(
 }
 
 /**
+ * Post an in-character top-level comment from `botId` onto `postId` — used when a
+ * *post* @mentions the bot. Skips deleted posts and posts the bot already answered.
+ */
+async function replyToPostMention(botId: string, postId: string): Promise<boolean> {
+  const post = await prisma.rMHark.findUnique({
+    where: { id: postId },
+    select: {
+      content: true,
+      deletedAt: true,
+      original: { select: { content: true } },
+      comments: { where: { userId: botId }, take: 1, select: { id: true } },
+    },
+  });
+  if (!post || post.deletedAt) return false;
+  if (post.comments.length > 0) return false; // already answered this post
+
+  const content = await generateReply({
+    postContent: post.content,
+    quotedPostContent: post.original?.content || undefined,
+    thread: [],
+    persona: await getPersona(botId),
+  });
+  if (!content.trim()) return false;
+
+  await prisma.$transaction([
+    prisma.rMHarkComment.create({ data: { rmheetId: postId, userId: botId, content } }),
+    prisma.rMHark.update({ where: { id: postId }, data: { commentCount: { increment: 1 } } }),
+  ]);
+  await prisma.user.update({ where: { id: botId }, data: { botLastPostAt: new Date() } });
+  return true;
+}
+
+/**
+ * Walk a comment thread tip→root collecting whether each author is a bot, then
+ * return the leading run of bot authors (consecutiveBotDepth). Bounds the walk
+ * so a deep thread can't stall the tick.
+ */
+async function commentChainBotDepth(commentId: string): Promise<number> {
+  const tipToRootIsBot: boolean[] = [];
+  let currentId: string | null = commentId;
+  for (let i = 0; currentId && i < MAX_BOT_MENTION_DEPTH + 2; i++) {
+    const node: { parentId: string | null; user: { isBot: boolean } } | null =
+      await prisma.rMHarkComment.findUnique({
+        where: { id: currentId },
+        select: { parentId: true, user: { select: { isBot: true } } },
+      });
+    if (!node) break;
+    tipToRootIsBot.push(node.user.isBot);
+    currentId = node.parentId;
+  }
+  return consecutiveBotDepth(tipToRootIsBot);
+}
+
+/**
  * Reactive replies: when someone (human or bot) replies to a bot's post or
  * comment, the bot replies back in-context. Humans get answered readily; bots
  * answering bots is rarer and depth-capped so threads don't spiral.
@@ -620,6 +710,109 @@ async function reactToComments(): Promise<number> {
       }
     } catch (e) {
       errlog('reactive reply failed:', e);
+    }
+  }
+  return made;
+}
+
+/**
+ * Answer @mentions of bots. The post/comment routes persist mentions as MENTION
+ * notifications; this consumes the unread ones addressed to bot users, replies
+ * in-context, and marks them read (bots have no UI, so `read` is a safe
+ * processed-marker). Humans are always answered; bot↔bot mention chains are
+ * depth-capped so they don't ping-pong.
+ */
+async function reactToMentions(): Promise<number> {
+  const since = new Date(Date.now() - MENTION_LOOKBACK_MS);
+  const mentions = await prisma.notification.findMany({
+    where: {
+      type: 'MENTION',
+      read: false,
+      createdAt: { gte: since },
+      user: { is: { isBot: true } },
+    },
+    orderBy: { createdAt: 'asc' },
+    take: 60,
+    select: {
+      id: true,
+      actorId: true,
+      entityType: true,
+      entityId: true,
+      user: { select: { id: true, botLastPostAt: true } },
+    },
+  });
+
+  const markRead = (id: string) =>
+    prisma.notification.update({ where: { id }, data: { read: true } });
+
+  let made = 0;
+  for (const n of mentions) {
+    if (made >= MAX_MENTION_REPLIES_PER_TICK) break;
+    const bot = n.user;
+    if (!n.entityId) {
+      await markRead(n.id);
+      continue;
+    }
+
+    // Per-bot cooldown — leave the notification unread so it retries on a later tick.
+    if (bot.botLastPostAt && Date.now() - bot.botLastPostAt.getTime() < MENTION_COOLDOWN_MS) {
+      continue;
+    }
+
+    try {
+      // Loop cap: how deep is the bot↔bot mention chain at the thread tip?
+      const actor = n.actorId
+        ? await prisma.user.findUnique({ where: { id: n.actorId }, select: { isBot: true } })
+        : null;
+      const actorIsBot = !!actor?.isBot;
+      // Only a bot-authored mention can form a bot↔bot chain; a human actor is
+      // always answered, so skip the (multi-query) chain walk for humans.
+      const depth = !actorIsBot
+        ? 0
+        : n.entityType === 'comment'
+          ? await commentChainBotDepth(n.entityId)
+          : 1; // bot post-mention: a one-step chain
+      if (
+        !shouldReplyToMention({
+          actorIsBot,
+          botChainDepth: depth,
+          maxBotMentionDepth: MAX_BOT_MENTION_DEPTH,
+        })
+      ) {
+        await markRead(n.id);
+        continue;
+      }
+
+      let replied = false;
+      if (n.entityType === 'comment') {
+        const comment = await prisma.rMHarkComment.findUnique({
+          where: { id: n.entityId },
+          select: {
+            id: true,
+            rmheetId: true,
+            deletedAt: true,
+            replies: { where: { userId: bot.id }, take: 1, select: { id: true } },
+          },
+        });
+        if (comment && !comment.deletedAt && comment.replies.length === 0) {
+          replied = await replyToComment(bot.id, { id: comment.id, rmheetId: comment.rmheetId });
+        }
+      } else if (n.entityType === 'rmhark') {
+        replied = await replyToPostMention(bot.id, n.entityId);
+      }
+
+      await markRead(n.id);
+      if (replied) {
+        made++;
+        log(`bot ${bot.id} answered ${n.entityType} mention (${n.entityId})`);
+      } else {
+        // No reply produced — e.g. the thread is past MAX_REPLY_DEPTH, the
+        // post/comment was deleted, or the bot already answered it. Logged so a
+        // silent non-answer to a human mention is observable.
+        log(`bot ${bot.id} did not reply to ${n.entityType} mention (${n.entityId})`);
+      }
+    } catch (e) {
+      errlog('mention reply failed:', e);
     }
   }
   return made;
@@ -695,15 +888,22 @@ async function dmTick(): Promise<void> {
   await initiateDirectMessages();
 }
 
+async function mentionTick(): Promise<void> {
+  personaCache.clear();
+  await reactToMentions();
+}
+
 // ─── Loops ──────────────────────────────────────────────────────
 let userTimer: NodeJS.Timeout | undefined;
 let postTimer: NodeJS.Timeout | undefined;
 let replyTimer: NodeJS.Timeout | undefined;
 let dmTimer: NodeJS.Timeout | undefined;
+let mentionTimer: NodeJS.Timeout | undefined;
 let maintaining = false;
 let posting = false;
 let replying = false;
 let dmRunning = false;
+let mentionRunning = false;
 
 async function safeMaintain() {
   if (maintaining) return;
@@ -753,6 +953,18 @@ async function safeDmTick() {
   }
 }
 
+async function safeMentionTick() {
+  if (mentionRunning) return;
+  mentionRunning = true;
+  try {
+    await mentionTick();
+  } catch (e) {
+    errlog('mention tick failed:', e);
+  } finally {
+    mentionRunning = false;
+  }
+}
+
 async function startup() {
   log('Starting…');
   if (!isRmharkAIConfigured()) {
@@ -760,7 +972,7 @@ async function startup() {
     return;
   }
   log(
-    `config: target=${TARGET_BOT_COUNT}, postTick=${POST_TICK_MS}ms, replyTick=${REPLY_TICK_MS}ms, dmTick=${DM_TICK_MS}ms, userCheck=${USER_CHECK_MS}ms`,
+    `config: target=${TARGET_BOT_COUNT}, postTick=${POST_TICK_MS}ms, replyTick=${REPLY_TICK_MS}ms, dmTick=${DM_TICK_MS}ms, mentionTick=${MENTION_TICK_MS}ms, userCheck=${USER_CHECK_MS}ms`,
   );
 
   await safeMaintain();
@@ -769,6 +981,7 @@ async function startup() {
   postTimer = setInterval(() => void safePostTick(), POST_TICK_MS);
   replyTimer = setInterval(() => void safeReplyTick(), REPLY_TICK_MS);
   dmTimer = setInterval(() => void safeDmTick(), DM_TICK_MS);
+  mentionTimer = setInterval(() => void safeMentionTick(), MENTION_TICK_MS);
   log('Scheduled.');
 }
 
@@ -781,6 +994,7 @@ async function shutdown(signal: string) {
   if (postTimer) clearInterval(postTimer);
   if (replyTimer) clearInterval(replyTimer);
   if (dmTimer) clearInterval(dmTimer);
+  if (mentionTimer) clearInterval(mentionTimer);
   await prisma.$disconnect();
   process.exit(0);
 }

@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { safeFetch, SsrfError } from '@/lib/ssrf-guard.server';
 /**
  * /api/rmhtube/oembed — Resolve Tenor share URLs to direct GIF URLs.
  *
@@ -12,14 +13,14 @@ export const Route = createFileRoute('/api/rmhtube/oembed')({
     handlers: {
   GET: async ({ request }) => {
   const url = new URL(request.url).searchParams.get('url');
-  if (!url || !url.includes('tenor.com/')) {
+  if (!url) {
     return Response.json({ error: 'Invalid URL' }, { status: 400 });
   }
 
   try {
-    const res = await fetch(url, {
+    const res = await safeFetch(url, {
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; RmhTubeBot/1.0)' },
-      // Note: Next.js cache option removed; use Cache-Control headers instead
+      allowedHosts: ['tenor.com'],
     });
 
     if (!res.ok) {
@@ -50,7 +51,8 @@ export const Route = createFileRoute('/api/rmhtube/oembed')({
         },
       },
     );
-  } catch {
+  } catch (e) {
+    if (e instanceof SsrfError) return Response.json({ error: 'Disallowed URL' }, { status: 400 });
     return Response.json({ error: 'Fetch failed' }, { status: 502 });
   }
 },

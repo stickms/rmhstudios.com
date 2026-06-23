@@ -1,0 +1,53 @@
+<div class="solution"><span class="qid">1.1</span> <span class="ans">Answer:</span>
+A process-split architecture runs one logical application as several independent operating-system processes, each with a single responsibility, instead of one monolithic server. In rmhstudios.com this means one web/SSR tier (Nitro) plus a fleet of standalone processes — three Socket.io realtime servers and several background workers. Two distinct benefits (any two): (1) <em>fault isolation</em> — if one process (e.g. the <code>vibe-worker</code> rendering thumbnails) crashes, the web tier and the rest keep serving, whereas a monolith would fail as a unit; (2) <em>independent scaling</em> — you can run extra copies of just the part under load (e.g. more realtime servers during a tournament) without duplicating everything; (3) <em>independent deployment/runtime</em> — long-lived WebSocket servers and stateless request renderers can be restarted, tuned, or even rewritten in another language separately.</div>
+
+<div class="solution"><span class="qid">1.2</span> <span class="ans">Answer:</span>
+The stale claim is that the web tier is <strong>"Next.js 16"</strong> (running on port 7000). The current web tier is <strong>TanStack Start + Vite + Nitro</strong>, listening on port <code>7005</code> in production. The two authoritative sources the chapter uses instead are <code>README.md</code> and the running code itself (e.g. <code>package.json</code> scripts and <code>docker-compose.yml</code>).</div>
+
+<div class="solution"><span class="qid">1.3</span> <span class="ans">Answer:</span>
+The <code>dev</code> script launches eight things via <code>concurrently</code>:
+<ul>
+  <li><code>vite dev</code> — <strong>web tier</strong> (TanStack Start dev server).</li>
+  <li><code>socket-server</code> — <strong>realtime server</strong>.</li>
+  <li><code>rmhbox-server</code> — <strong>realtime server</strong>.</li>
+  <li><code>rmhtube-server</code> — <strong>realtime server</strong>.</li>
+  <li><code>discord-bot:dev</code> — <strong>worker</strong> (no inbound user traffic).</li>
+  <li><code>doctrine-worker:dev</code> — <strong>worker</strong>.</li>
+  <li><code>vibe-worker:dev</code> — <strong>worker</strong>.</li>
+  <li><code>bot-worker:dev</code> — <strong>worker</strong>.</li>
+</ul>
+So: one web tier, three realtime servers, four workers. (Note <code>recap</code> and <code>status</code> are not in the <code>dev</code> script but appear in the production <code>build</code>/<code>start</code> and in compose.)</div>
+
+<div class="solution"><span class="qid">1.4</span> <span class="ans">Answer:</span>
+The browser holds two connections at once (Figure 1.3):
+<ol>
+  <li><strong>HTTP</strong> to the <strong>web tier (Nitro SSR)</strong> — fetches the rendered game page and its JS, and serves API routes. In production this is the <code>web</code> service (port 7005).</li>
+  <li><strong>WebSocket</strong> to a <strong>realtime server</strong> — for joining the lobby and receiving live game events. For most games this is <code>socket-server</code> (port 7001); for the minigame lobby it is <code>rmhbox</code> (7676).</li>
+</ol>
+What they have in common is the <strong>shared PostgreSQL database</strong>: both the web tier and the realtime server read/write it, and that is the only thing connecting the two halves — they do not call each other directly.</div>
+
+<div class="solution"><span class="qid">1.5</span> <span class="ans">Answer:</span>
+Publishing a host port means a service accepts inbound network connections from users (via the reverse proxy). <code>socket</code>, <code>rmhbox</code>, and <code>rmhtube</code> publish loopback ports (7001 / 7676 / 7003) because they are <strong>realtime servers</strong> that clients connect to over WebSockets. The four bot/worker services publish no port because they are <strong>background workers</strong>: they take no inbound user traffic and instead reach the rest of the system through the shared database and outbound calls (e.g. Discord, DeepSeek). The presence or absence of a published port is therefore a reliable signal of "server vs. worker."</div>
+
+<div class="solution"><span class="qid">1.6</span> <span class="ans">Answer:</span>
+A correct sketch keeps the Figure 1.1 core — Browser connecting by HTTP to the Nitro web tier and by WebSocket to the realtime servers, with every server pointing into PostgreSQL — and adds a <code>status</code> node off to the side. From <code>status</code>, draw <em>dashed</em> arrows (probes, not data dependencies) to the web tier and to each realtime server. A strong answer notes the asymmetry from the compose file: <code>status</code> probes the web tier via its <strong>public URL</strong> (through Apache/DNS, so it sees the real user path) and probes the internal services by their <strong>compose DNS names</strong>.</div>
+
+<div class="solution"><span class="qid">1.7</span> <span class="ans">Answer:</span>
+A strangler-fig migration replaces a system incrementally: new components grow alongside the old ones and take over responsibilities one at a time until the original can be removed (named after the strangler fig that grows around and eventually replaces its host tree). It is feasible here because the realtime tier is already split into independent processes that coordinate only through the shared database — they do not call each other in-process. The load-bearing property is the <strong>loose coupling</strong> between tiers (communication via the database rather than direct in-process calls). Because a Go binary under <code>go-services/cmd/&lt;service&gt;/</code> can speak to the same PostgreSQL, it can replace one Node service at a time, with the web tier and the remaining Node services none the wiser. A tightly coupled monolith would have to be cut over all at once.</div>
+
+<div class="solution"><span class="qid">1.8</span> <span class="ans">Answer:</span>
+Because RMHBox is its own process (<code>rmhbox</code> on port 7676), the natural response is to run <strong>multiple instances of just the rmhbox service</strong> during tournaments and load-balance new connections across them, leaving the single web tier untouched. A single-process monolith cannot do this: every responsibility shares one process, so scaling RMHBox would mean duplicating the home page, blog rendering, and every other server too — wasteful and possibly impossible if the monolith holds shared in-process state. The new problem the split introduces is <strong>stateful WebSocket connections</strong>: a lobby's players must reach the <em>same</em> instance that holds their room. Naïve round-robin would scatter a lobby across instances. A strong answer proposes sticky sessions / room-aware routing, or sharing room state out of the process (e.g. via Redis or the database) so any instance can serve any room.</div>
+
+<div class="solution"><span class="qid">1.9</span> <span class="ans">Answer:</span>
+One image, many commands: <em>Advantage</em> — the image is built once and shared by every service (no redundant rebuilds, identical dependencies and code across the fleet, and rollback is a single tagged image). <em>Drawback</em> — every service carries the full payload even if it only needs a slice of it (e.g. workers ship the whole web build; the <code>vibe-worker</code> drags in everything although only it needs headless Chromium), so images are larger and a vulnerability anywhere in the shared image affects all services. Per-service minimal images would be leaner and have smaller attack surfaces, at the cost of more build complexity and more artifacts to manage.</div>
+
+<div class="solution"><span class="qid">1.10</span> <span class="ans">Answer:</span>
+A correct diagram (essentially Figure 1.2 with storage added) groups services into tiers and connects them to one PostgreSQL node:
+<ul>
+  <li><strong>Web/SSR:</strong> <code>web</code> (Nitro, port 7005/7015) — user-facing.</li>
+  <li><strong>Realtime:</strong> <code>socket</code> (7001), <code>rmhbox</code> (7676), <code>rmhtube</code> (7003) — user-facing (publish loopback ports).</li>
+  <li><strong>Workers:</strong> <code>discord-bot</code>, <code>doctrine-worker</code>, <code>vibe-worker</code>, <code>bot-worker</code>, <code>recap</code> — <em>not</em> user-facing (no published port).</li>
+  <li><strong>Ops:</strong> <code>status</code> (7008) — published, but its arrows to the other services are dashed probes.</li>
+  <li><strong>Storage:</strong> <code>minio</code> / <code>minio-init</code> (9000/9001) S3-compatible object store, plus the shared PostgreSQL all tiers read and write.</li>
+</ul>
+Marking is correct if every realtime server and the web tier are shown as user-facing, and the workers are clearly marked as taking no inbound user traffic.</div>

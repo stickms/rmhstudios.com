@@ -1,18 +1,40 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { X, Link2, Check } from 'lucide-react';
+import { X, Link2, Check, Code2 } from 'lucide-react';
 
 interface ShareModalProps {
   open: boolean;
   onClose: () => void;
   url: string;
   text?: string;
+  /** When set, offers an "Embed" option with an iframe snippet for this post. */
+  embedId?: string;
 }
 
-export function ShareModal({ open, onClose, url, text }: ShareModalProps) {
+export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProps) {
   const contentRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
+  const [embedCopied, setEmbedCopied] = useState(false);
+
+  const embedCode = embedId
+    ? `<iframe src="https://rmhstudios.com/embed/post/${embedId}" width="100%" height="320" frameborder="0" style="border:1px solid #2a2a2a;border-radius:16px;max-width:560px" title="RMH Studios post"></iframe>`
+    : null;
+
+  const copyText = async (value: string, setFlag: (b: boolean) => void) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setFlag(true);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = value;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      setFlag(true);
+    }
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -27,23 +49,16 @@ export function ShareModal({ open, onClose, url, text }: ShareModalProps) {
     }
   }, [copied]);
 
+  useEffect(() => {
+    if (embedCopied) {
+      const t = setTimeout(() => setEmbedCopied(false), 2000);
+      return () => clearTimeout(t);
+    }
+  }, [embedCopied]);
+
   if (!open) return null;
 
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-    } catch {
-      // fallback
-      const ta = document.createElement('textarea');
-      ta.value = url;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-      setCopied(true);
-    }
-  };
+  const handleCopy = () => copyText(url, setCopied);
 
   const shareToX = () => {
     const params = new URLSearchParams({ url, ...(text ? { text } : {}) });
@@ -126,6 +141,22 @@ export function ShareModal({ open, onClose, url, text }: ShareModalProps) {
               Share via Email
             </button>
           </div>
+
+          {embedCode && (
+            <div className="px-3 pb-1">
+              <button
+                onClick={() => copyText(embedCode, setEmbedCopied)}
+                className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm text-site-text hover:bg-site-surface transition-colors"
+              >
+                {embedCopied ? (
+                  <Check className="w-5 h-5 text-green-500" />
+                ) : (
+                  <Code2 className="w-5 h-5 text-site-text-dim" />
+                )}
+                {embedCopied ? 'Embed code copied!' : 'Copy embed code'}
+              </button>
+            </div>
+          )}
 
           {/* URL preview */}
           <div className="px-4 pb-4">

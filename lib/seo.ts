@@ -1,4 +1,4 @@
-const SITE_URL = 'https://rmhstudios.com';
+export const SITE_URL = 'https://rmhstudios.com';
 
 interface SeoConfig {
   title: string;

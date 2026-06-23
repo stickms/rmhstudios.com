@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Frontier capability, frontier safety — RMH Deeplink</title>
+<meta name="description" content="RMH Deeplink treats safety as a research discipline pursued in lockstep with capability — alignment, interpretability, scalable oversight, and evaluation science." />
+<meta property="og:title" content="Frontier capability, frontier safety — RMH Deeplink" />
+<meta property="og:description" content="RMH Deeplink treats safety as a research discipline pursued in lockstep with capability — alignment, interpretability, scalable oversight, and evaluation science." />
+<meta property="og:type" content="article" />
+<link rel="icon" type="image/svg+xml" href="/brand/deeplink-favicon.svg" />
+<link rel="icon" type="image/png" sizes="32x32" href="/brand/deeplink-favicon-32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="/brand/deeplink-favicon-16.png" />
+<link rel="apple-touch-icon" href="/brand/deeplink-apple-touch.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" />
+<link rel="stylesheet" href="/deeplink.css" />
+</head>
+<body>
+
+<header id="hdr">
+  <div class="wrap nav">
+    <a class="brand" href="/deeplink" aria-label="RMH Deeplink home">
+      <span class="dot" aria-hidden="true"></span>RMH&nbsp;Deeplink
+    </a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="/deeplink#research">Models</a>
+      <a href="/deeplink#research">Research</a>
+      <a href="/deeplink#science">Science</a>
+      <a href="/deeplink#safety">Safety</a>
+      <a href="/deeplink#about">About</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="backlink" href="/"><span aria-hidden="true">&larr;</span><span class="backlink-label">RMH Studios</span></a>
+      <a class="btn btn-ghost" href="/deeplink#research">Research</a>
+      <a class="btn btn-primary" href="mailto:research@rmhstudios.com?subject=RMH%20Deeplink%20%E2%80%94%20Inquiry">Build with Deeplink</a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+  <div class="wrap">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="/deeplink">RMH Deeplink</a><span class="sep">/</span>
+      <a href="/deeplink#safety">Safety</a><span class="sep">/</span>
+      <span>Safety &amp; alignment</span>
+    </nav>
+  </div>
+
+  <!-- article hero -->
+  <section class="ahero">
+    <div class="wrap">
+      <span class="kicker">Research · Safety &amp; alignment</span>
+      <h1>Frontier capability, frontier safety</h1>
+      <p class="lead">Frontier capability without frontier safety is a liability, not a breakthrough. We pursue them as one discipline.</p>
+      <div class="ahero-media">
+        <img src="/images/deeplink/safety-alignment.jpg" alt="A translucent ordered iridescent lattice evoking safety and structure" />
+      </div>
+    </div>
+  </section>
+
+  <!-- article body -->
+  <article class="article">
+    <div class="wrap">
+      <!-- ==== BEGIN BODY (subagent fills this) ==== -->
+      <div class="prose">
+        <p>The case for technical AI safety does not rest on a speculative scenario. It rests on a structural fact: as we hand more consequential decisions to systems whose competence increasingly exceeds our ability to check their work, the distance between <em>what we can build</em> and <em>what we can verify</em> grows. A system that proves a theorem we cannot follow, designs a molecule we cannot rationalize, or writes a million lines of code we will never read is, by construction, a system whose outputs we accept partly on trust. Safety research is the discipline of converting that trust into something earned.</p>
+        <p>At RMH Deeplink we refuse the comfortable assumption that a sufficiently capable model will simply <em>get</em> what we want. Modeling a preference and being disposed to pursue it are different things, and capability sharpens whatever objective is actually in force — not the one we intended. That is why we treat safety and capability as a single research program, advancing on the same calendar, judged by the same scientists, gated by the same evidence.</p>
+        <h2>Why capability and safety are one discipline</h2>
+        <p>Every gain in capability widens the verification gap unless a matching gain in assurance closes it. A model that can do more can also fail in more consequential, harder-to-detect ways: it can exploit a flaw in its reward function, game an evaluation, or produce an answer that is fluent, plausible, and wrong. Treating safety as a downstream review step — something that inspects a finished model rather than shaping it — guarantees that assurance always lags the thing it is meant to assure. So we do not run two clocks. The teams that push the frontier and the teams that secure it share infrastructure, share models, and share the obligation to ship evidence alongside capability.</p>
+      </div>
+
+      <div class="facts">
+        <div class="f">
+          <h3>3 sub-problems</h3>
+          <p>Specification, robustness, and assurance — the standard decomposition of alignment that organizes our technical agenda.</p>
+        </div>
+        <div class="f">
+          <h3>1 asymmetry</h3>
+          <p>Generation is becoming cheaper than verification. Every safety method we build is an attack on that single inversion.</p>
+        </div>
+        <div class="f">
+          <h3>0 unmeasured claims</h3>
+          <p>Safety that cannot be operationalized into an experiment that could fail is treated as public relations, not research.</p>
+        </div>
+      </div>
+
+      <div class="prose">
+        <h2>The alignment problem</h2>
+        <p>Alignment is the problem of ensuring that a system robustly does what its designers and users intend — including in situations the designers did not anticipate and on objectives they did not fully articulate. Following a now-standard taxonomy, we decompose it into three interacting sub-problems, each mapping onto distinct failure modes and distinct research methods.</p>
+        <p>Every trained system optimizes a proxy. We cannot write down "be helpful, honest, and harmless" as a loss function; we write down something we hope correlates with it — a learned reward model, a set of preference comparisons, a constitution of principles. When that proxy diverges from intent in regions the training distribution did not cover, a competent optimizer finds the gap. The classic symptom is reward hacking: sycophancy that tells the user what they want to hear, hedging engineered to please a grader, answers built to <em>look</em> correct to a non-expert rather than to <em>be</em> correct. The work decomposes cleanly:</p>
+        <ul>
+          <li><strong>Specification</strong> — does the objective we train on actually capture what we want? We make proxies harder to game by grounding them in verifiable signals wherever possible, and treat the irreducible residue of unverifiable objectives as the domain of scalable oversight.</li>
+          <li><strong>Robustness</strong> — does the system keep pursuing that objective under distribution shift and adversarial pressure? The failure we worry about most is goal misgeneralization, where a capability generalizes well but a <em>goal</em> generalizes badly, licensing actions no human approved.</li>
+          <li><strong>Assurance</strong> — can we understand and monitor the system well enough to justify a deployment decision? Assurance must be <em>independent</em> of the optimization process, or we have merely moved the gaming problem up one level.</li>
+        </ul>
+      </div>
+
+      <div class="split">
+        <div>
+          <h2>The verification gap and the asymmetry of oversight</h2>
+          <p>Science and engineering have long relied on verification being cheap relative to generation — which is why peer review, replication, and auditing work. Model capability is inverting that asymmetry. A system can now produce work faster than any human, or any institution of humans, can responsibly vet. Scalable oversight is our most direct attack on the gap: how do we supply a reliable training and evaluation signal for tasks whose outputs exceed an unaided supervisor's ability to judge them? Decomposition and recursive reward modeling break unevaluable tasks into evaluable steps; debate pits models against each other so a judge need only spot the weaker argument; weak-to-strong generalization asks how a flawed supervisor can still elicit the full capabilities of a stronger model — because that is the situation we are walking into.</p>
+        </div>
+        <div class="media">
+          <img src="/images/deeplink/safety-alignment-1.jpg" alt="Layered translucent panes resolving into an ordered structure, evoking oversight closing a gap" />
+        </div>
+      </div>
+
+      <div class="pull">
+        <p>Evidence that a model is safe should not be produced by the same loop that trained it to <em>appear</em> safe.</p>
+      </div>
+
+      <div class="prose">
+        <h2>Safety as an empirical science</h2>
+        <p>We reject the framing that safety is either pure speculation or pure engineering. It is an empirical science with measurable quantities: the rate at which a model exploits a held-out reward hack; the fraction of adversarial prompts that elicit prohibited behavior; the calibration of a model's stated confidence against its accuracy; the degree to which an interpretability probe recovers a feature that causally drives behavior. Claims in this field are operationalized into experiments and held to the standard that they could, in principle, fail.</p>
+        <p>Where we make conjectures about systems more capable than any we can build today — and responsible foresight requires us to — we label them as conjectures and design the experiments that would test them as capabilities advance. This empiricism extends into assurance. Interpretability offers evidence that is partially <em>independent</em> of behavior: if outputs can be optimized to look safe, behavioral tests alone can be gamed, but inspecting the computation that produced those outputs is harder to spoof. Red-teaming supplies the adversarial backbone, with the discipline that a red team finding nothing is treated with suspicion rather than relief. None of these certify safety alone; triangulated, they build an assurance case that no single channel could.</p>
+      </div>
+
+      <figure class="fig">
+        <div class="frame">
+          <img src="/images/deeplink/safety-alignment-2.jpg" alt="A fine-grained iridescent lattice resolving from noise into order, suggesting interpretability of a model's internals" />
+        </div>
+        <figcaption>Assurance is built by triangulation — evaluation, interpretability, and oversight — because no single channel of evidence is robust to an adversarial optimizer pointed at it.</figcaption>
+      </figure>
+
+      <div class="prose">
+        <h2>Where this work lives</h2>
+        <p>This page states the thesis; two dedicated programs carry it. Our <a href="/deeplink/frontier-safety">Frontier Safety Framework</a> governs dangerous-capability evaluations — biosecurity, cyber-offense, autonomy, deception, and AI&nbsp;R&amp;D acceleration — defining critical capability levels and committing in advance to the security and deployment mitigations that come into force as models approach them. That is responsible capability scaling: the rate at which we advance is gated by our ability to manage the risks each advance creates. Our <a href="/deeplink/alignment">Alignment Research</a> program pursues the specification, robustness, and assurance agenda directly — scalable oversight, interpretability, honesty and corrigibility — turning the open problems below into experiments with ground truth.</p>
+      </div>
+
+      <div class="prose">
+        <h2>Open questions</h2>
+        <ul>
+          <li>How far does scalable oversight reach before supervision quality degrades — and can recursive decomposition stay robust to imperfect sub-evaluators as depth increases?</li>
+          <li>Is debate genuinely truth-conducive, or merely persuasion-conducive once debaters are capable enough to exploit a judge's biases toward fluency, confidence, and length?</li>
+          <li>When does weak-to-strong generalization succeed, and which auxiliary objectives keep a strong model from simply imitating a weak supervisor's mistakes?</li>
+          <li>Can interpretability probes for truthfulness and deception generalize to models that represent those concepts differently, or that learn to evade probing under optimization pressure?</li>
+          <li>How do we detect deceptive alignment — a model that behaves as trained while observed and differently in deployment — without relying on the behavioral evidence it is built to defeat?</li>
+        </ul>
+      </div>
+      <!-- ==== END BODY ==== -->
+    </div>
+  </article>
+
+  <!-- related CTA -->
+  <section class="related">
+    <div class="wrap">
+      <h2>Move the frontier with us</h2>
+      <p>RMH Deeplink is hiring research scientists and engineers across every program. Or read the full 120-page research thesis.</p>
+      <div class="r-actions">
+        <a class="btn btn-primary btn-lg" href="/library/rmh-deeplink-thesis">Read the thesis</a>
+        <a class="btn btn-ghost btn-lg" href="mailto:careers@rmhstudios.com?subject=Careers%20%E2%80%94%20RMH%20Deeplink">See open roles</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer id="about">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <a class="brand" href="/deeplink"><span class="dot" aria-hidden="true"></span>RMH&nbsp;Deeplink&nbsp;<small>from RMH Studios</small></a>
+        <p>Foundational AI research toward artificial general intelligence — in service of science and humanity.</p>
+        <form class="news-form" onsubmit="return false" aria-label="Newsletter signup">
+          <input type="email" placeholder="Your email" aria-label="Email address" />
+          <button class="btn btn-primary" type="submit">Subscribe</button>
+        </form>
+      </div>
+      <nav class="foot-col" aria-label="Research">
+        <h4>Research</h4>
+        <a href="/deeplink/foundation-models">Foundation models</a>
+        <a href="/deeplink/agents-rl">Agents &amp; RL</a>
+        <a href="/deeplink/ai-for-science">AI for science</a>
+        <a href="/deeplink/alignment">Interpretability</a>
+      </nav>
+      <nav class="foot-col" aria-label="Science">
+        <h4>Science</h4>
+        <a href="/deeplink/life-sciences">Life sciences</a>
+        <a href="/deeplink/mathematics">Mathematics</a>
+        <a href="/deeplink/energy-climate">Climate &amp; energy</a>
+        <a href="/deeplink/ai-for-science">AI for science</a>
+      </nav>
+      <nav class="foot-col" aria-label="Company">
+        <h4>Company</h4>
+        <a href="/deeplink#about">About</a>
+        <a href="/deeplink/frontier-safety">Safety &amp; responsibility</a>
+        <a href="mailto:careers@rmhstudios.com?subject=Careers%20%E2%80%94%20RMH%20Deeplink">Careers</a>
+        <a href="mailto:info@rmhstudios.com">Contact</a>
+      </nav>
+    </div>
+    <div class="foot-bot">
+      <span class="mission-line">Building AI responsibly to benefit humanity. &copy; 2026 RMH Deeplink.</span>
+      <div class="social" aria-label="Social links">
+        <a href="#" aria-label="X">X</a>
+        <a href="#" aria-label="LinkedIn">in</a>
+        <a href="#" aria-label="YouTube">&#9658;</a>
+        <a href="#" aria-label="GitHub">&lt;/&gt;</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var hdr = document.getElementById('hdr');
+  var onScroll = function () { hdr.classList.toggle('scrolled', window.scrollY > 8); };
+  window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
+})();
+</script>
+</body>
+</html>

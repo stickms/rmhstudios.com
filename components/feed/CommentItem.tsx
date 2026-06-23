@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Link } from '@tanstack/react-router';
-import { MessageCircle, Repeat2, Heart, Eye, Trash2, MoreHorizontal, Repeat, BadgeCheck, ShieldCheck } from 'lucide-react';
+import { MessageCircle, Repeat2, Heart, Eye, Trash2, MoreHorizontal, Repeat, BadgeCheck, ShieldCheck, Languages } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MAX_COMMENT_LENGTH } from '@/lib/rmhark-schema';
 import { RMHarkContent } from './RMHarkContent';
@@ -77,7 +77,37 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
   const [menuOpen, setMenuOpen] = useState(false);
   const [engagementModal, setEngagementModal] = useState<'likes' | 'reposts' | null>(null);
   const [threadExpanded, setThreadExpanded] = useState(false);
+  const [translatedText, setTranslatedText] = useState<string | null>(null);
+  const [showTranslated, setShowTranslated] = useState(false);
+  const [translating, setTranslating] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const handleTranslate = async () => {
+    setMenuOpen(false);
+    if (translatedText) {
+      setShowTranslated((s) => !s);
+      return;
+    }
+    const map: Record<string, string> = {
+      en: 'English', es: 'Spanish', fr: 'French', de: 'German', pt: 'Portuguese', it: 'Italian',
+      nl: 'Dutch', ja: 'Japanese', ko: 'Korean', zh: 'Chinese', ru: 'Russian', ar: 'Arabic',
+      hi: 'Hindi', tr: 'Turkish', pl: 'Polish',
+    };
+    const to = typeof navigator !== 'undefined' ? (map[(navigator.language || 'en').slice(0, 2).toLowerCase()] ?? 'English') : 'English';
+    setTranslating(true);
+    try {
+      const res = await fetch(`/api/comments/${comment.id}/translate?to=${encodeURIComponent(to)}`, { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.text) {
+          setTranslatedText(data.text);
+          setShowTranslated(true);
+        }
+      }
+    } finally {
+      setTranslating(false);
+    }
+  };
 
   const hasReplies = !!comment.replies?.length;
   // At the depth cap, collapse the remaining chain behind a button instead of
@@ -236,6 +266,16 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
                       <Repeat className="w-4 h-4 text-site-text-dim" />
                       reRMHark'd by
                     </button>
+                    {comment.content.length > 8 && (
+                      <button
+                        onClick={handleTranslate}
+                        disabled={translating}
+                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors disabled:opacity-60"
+                      >
+                        <Languages className="w-4 h-4 text-site-text-dim" />
+                        {translating ? 'Translating…' : translatedText ? (showTranslated ? 'Show original' : 'Show translation') : 'Translate'}
+                      </button>
+                    )}
                     {isAuthor && (
                       <button
                         onClick={() => { setMenuOpen(false); handleDelete(); }}
@@ -253,6 +293,11 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
 
           {/* Content */}
           <RMHarkContent text={comment.content} className="text-sm text-site-text mt-0.5 whitespace-pre-wrap break-words" />
+          {showTranslated && translatedText && (
+            <p className="mt-1 whitespace-pre-wrap break-words rounded-lg bg-site-surface/50 p-2 text-sm text-site-text">
+              {translatedText}
+            </p>
+          )}
 
           {/* Actions row */}
           {!comment.deletedAt && (

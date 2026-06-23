@@ -1,3 +1,5 @@
+import { CDN_BASE } from "./asset";
+
 export const FEED_IMAGE_PREFIX = "rmharks/";
 
 const SAFE_FILENAME_RE = /^[A-Za-z0-9._-]+$/;
@@ -26,13 +28,43 @@ export function feedImageKey(filename: string): string {
 }
 
 export function feedImageUrl(filename: string): string {
-  return `/api/feed/image/${filename}`;
+  // With R2 + a public CDN domain configured, serve feed images straight from
+  // the edge. Otherwise (local dev / MinIO) fall back to the Node proxy route,
+  // which streams the object out of object storage.
+  return CDN_BASE
+    ? `${CDN_BASE}/${feedImageKey(filename)}`
+    : `/api/feed/image/${filename}`;
+}
+
+/**
+ * Extract the safe filename from a stored feed-image URL, or null if it isn't
+ * one. Accepts both forms the app produces:
+ *  - the local Node proxy path `/api/feed/image/<filename>` (dev / no CDN), and
+ *  - the public CDN URL `<CDN_BASE>/rmharks/<filename>` (R2 + cdn.rmhstudios.com).
+ */
+export function feedImageFilename(url: string): string | null {
+  const localPrefix = "/api/feed/image/";
+  if (url.startsWith(localPrefix)) {
+    const f = url.slice(localPrefix.length);
+    return isSafeFilename(f) ? f : null;
+  }
+  if (CDN_BASE) {
+    const cdnPrefix = `${CDN_BASE}/${FEED_IMAGE_PREFIX}`;
+    if (url.startsWith(cdnPrefix)) {
+      const f = url.slice(cdnPrefix.length);
+      return isSafeFilename(f) ? f : null;
+    }
+  }
+  return null;
+}
+
+/** True if `url` is a valid feed-image URL (either supported form). */
+export function isFeedImageUrl(url: string): boolean {
+  return feedImageFilename(url) !== null;
 }
 
 /** True if a feed image URL's filename belongs to the given user (filename is `<userId>-<ts>-<rand>.<ext>`). */
 export function ownsFeedImageUrl(url: string, userId: string): boolean {
-  const prefix = "/api/feed/image/";
-  if (!url.startsWith(prefix)) return false;
-  const filename = url.slice(prefix.length);
-  return filename.startsWith(`${userId}-`);
+  const filename = feedImageFilename(url);
+  return filename !== null && filename.startsWith(`${userId}-`);
 }

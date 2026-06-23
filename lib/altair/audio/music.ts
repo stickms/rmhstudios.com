@@ -7,12 +7,13 @@
 
 import { Howl } from 'howler';
 import { useAltairSettingsStore } from '../stores/settings-store';
+import { asset } from '@/lib/storage/asset';
 
 const TRACKS = [
-  '/music/altair/1.mp3',
-  '/music/altair/2.mp3',
-  '/music/altair/3.mp3',
-  '/music/altair/4.mp3',
+  asset('/music/altair/1.mp3'),
+  asset('/music/altair/2.mp3'),
+  asset('/music/altair/3.mp3'),
+  asset('/music/altair/4.mp3'),
 ];
 
 let currentHowl: Howl | null = null;

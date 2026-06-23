@@ -17,18 +17,35 @@
 import type { FeedItem } from "../feed-types";
 
 /**
- * Master switch. Off by default: turning it on changes intra-page ordering
- * but not the (chronological) page boundaries, so it's safe to flip once we
- * want the ranked surface. Kept here so the seam is real, not theoretical.
+ * Master switch. Ranking reorders the candidate window *within* a page but
+ * never moves the (chronological) page boundary, so infinite scroll stays
+ * stable. Enabled to power the personalized "For You" surface (#11).
  */
-export const RANKING_ENABLED = false;
+export const RANKING_ENABLED = true;
 
 /** Half-life (hours) for the recency decay term. */
 const RECENCY_HALF_LIFE_HOURS = 6;
 
+/** Extract lowercased #hashtags from post content (pure, cheap). */
+export function extractTags(text: string): string[] {
+  const out: string[] = [];
+  const re = /#(\w{2,50})/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) out.push(m[1].toLowerCase());
+  return out;
+}
+
 export interface RankContext {
   /** Author ids the viewer follows — affinity boost. */
   followingIds?: Set<string>;
+  /**
+   * Personalized author affinity: authorId → weight (0..1), derived from the
+   * viewer's recent engagement. Boosts authors the viewer actually interacts
+   * with, beyond the binary follow signal.
+   */
+  authorAffinity?: Map<string, number>;
+  /** Personalized topic interest: hashtag → weight (0..1) from recent likes. */
+  topicInterest?: Map<string, number>;
   /** "Now" for deterministic testing; defaults to Date.now(). */
   now?: number;
 }
@@ -59,7 +76,26 @@ export function scoreCandidate(item: FeedItem, ctx: RankContext = {}): number {
   const affinity =
     item.user?.id && ctx.followingIds?.has(item.user.id) ? 1.25 : 1;
 
-  return (recency * 3 + Math.log1p(velocity)) * affinity;
+  // Personalized boost from the viewer's recent engagement: authors they
+  // interact with + topics (hashtags) they like. Capped so it tilts, not
+  // dominates, the ranking — recency/engagement still lead.
+  const personalAffinity = item.user?.id ? ctx.authorAffinity?.get(item.user.id) ?? 0 : 0;
+  let topic = 0;
+  if (ctx.topicInterest && ctx.topicInterest.size > 0 && item.content) {
+    for (const tag of extractTags(item.content)) {
+      topic += ctx.topicInterest.get(tag) ?? 0;
+    }
+  }
+  const personalBoost = 1 + Math.min(1.5, personalAffinity * 0.6 + topic * 0.4);
+
+  // Freshness pin: brand-new posts (last ~15 min) are guaranteed to sort above
+  // ranked-but-older content, so just-posted content (e.g. a paid post you
+  // just published) is always visible at the top after a refresh instead of
+  // being buried — or cut from the first page — by engagement ranking.
+  const FRESH_PIN = 1_000_000;
+  const freshness = ageHours < 0.25 ? FRESH_PIN - ageHours : 0;
+
+  return freshness + (recency * 3 + Math.log1p(velocity)) * affinity * personalBoost;
 }
 
 /**

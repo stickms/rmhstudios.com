@@ -1,0 +1,318 @@
+<div class="objectives"><h4>Learning Objectives</h4><ul>
+  <li>Explain why media (video and audio) and content (articles) push the platform past the games-and-realtime model of earlier chapters, and what new infrastructure each demands.</li>
+  <li>Distinguish <strong>object storage</strong> from a relational database, and trace a media-image upload from the browser through the server to a bucket and back.</li>
+  <li>Compare two realtime apps built on the same socket-fleet pattern — RmhTube (video) and RmhMusic (listening rooms) — and explain why their <strong>sync engines</strong> differ.</li>
+  <li>Describe the <strong>social feed</strong> as a <strong>fan-out</strong> problem and identify which fan-out strategy the live code actually uses.</li>
+  <li>Explain the <strong>content-as-code</strong> idea and read honestly how the blog/news/research/library systems are really implemented.</li>
+  <li>Read a scope note that separates a built app from a designed-but-unshipped one.</li>
+</ul></div>
+
+<p class="lead">The previous chapters built a platform out of games and the realtime fleet that drives them. This chapter follows the system as it grows past that mould. A video platform and a collaborative listening room need somewhere to put bytes that are too big for a row in a table, and a way to keep many viewers in step on the same timeline. A social feed needs to decide, every time anyone posts, whose screens should light up — a question with no single right answer at scale. And the site's prose — devlogs, news, research, a PDF library — needs a pipeline that treats writing the way the rest of the repository treats code. Four subsystems, four different shapes; we take them in that order, and we are honest throughout about which ones are finished and which are still drawings.</p>
+
+<h2 id="beyond-games">Beyond games: media and content as new pressures</h2>
+<p>Up to now the platform's data has been small and structured: a leaderboard score, a room's membership, a chat line. All of it fits comfortably in PostgreSQL rows, which is exactly what Chapter 8 described. Media and content break that assumption from two directions.</p>
+<p>Media is <em>large and opaque</em>. A video file or an uploaded image is megabytes of bytes that the database has no reason to parse, index, or join against. Storing such blobs in Postgres is possible but wasteful — it bloats backups, slows replication, and competes for the same connection pool that serves your queries. The standard answer is <strong>object storage</strong>: a separate service whose entire job is to hold named blobs cheaply and serve them back by key.</p>
+<p>Content is <em>structured but authored</em>. A blog post is not a runtime object the way a game room is; it is a document a human writes once and the system serves many times. That invites a different discipline — version it, review it, build it — which the industry calls <strong>content-as-code</strong>. As we will see, rmhstudios.com reaches for that idea at authoring time but, in its current code, serves the result from the database rather than from files.</p>
+
+<div class="keyterm"><span class="term">Object storage</span> — a storage service that holds arbitrary blobs ("objects") addressed by a string key inside a named <em>bucket</em>, exposed over an HTTP API rather than a filesystem or SQL. It optimizes for cheap, durable, flat storage of large immutable files, not for querying their contents. The de-facto interface is Amazon's S3 API; compatible implementations (MinIO, Cloudflare R2) speak the same protocol.</div>
+
+<h2 id="object-storage">Object storage: MinIO, S3, and the media bucket</h2>
+<p>The repository runs an S3-compatible store as its own container. In <code>docker-compose.yml</code> the <code>minio</code> service uses the official image and a companion one-shot, <code>minio-init</code>, that creates the bucket and exits:</p>
+
+<pre><code>minio:
+  image: minio/minio:latest
+  command: ["server", "/data", "--console-address", ":9001"]
+  environment:
+    - MINIO_ROOT_USER=${S3_ACCESS_KEY_ID:-rmhminio}
+    - MINIO_ROOT_PASSWORD=${S3_SECRET_ACCESS_KEY:-rmhminio-dev-secret}
+  ports:
+    - "127.0.0.1:9000:9000"   # S3 API
+    - "127.0.0.1:9001:9001"   # web console
+
+minio-init:
+  image: minio/mc:latest
+  # mc mb --ignore-existing local/${S3_BUCKET:-rmh-media}
+</code></pre>
+
+<p>The configuration lives in <code>.env.example</code> under a comment that states the migration intent plainly — <em>"Object storage (S3-compatible: MinIO now, Cloudflare R2 later)"</em>:</p>
+
+<pre><code>S3_ENDPOINT=http://minio:9000
+S3_REGION=us-east-1
+S3_ACCESS_KEY_ID=rmhminio
+S3_SECRET_ACCESS_KEY=rmhminio-dev-secret
+S3_BUCKET=rmh-media
+S3_FORCE_PATH_STYLE=true
+</code></pre>
+
+<div class="keyterm"><span class="term">S3-compatible</span> — speaking the same HTTP request/response protocol as Amazon S3, so that a client written against the S3 SDK works unchanged against a different backend. This is why the same code path can target MinIO in development and Cloudflare R2 in production by changing only <code>S3_ENDPOINT</code> and the keys.</div>
+
+<p>The application's gateway to the bucket is a small server-only module, <code>lib/storage/s3.server.ts</code>, built on the official <code>@aws-sdk/client-s3</code>. It exports exactly the primitives an object store needs and nothing more: <code>putObject(key, body, contentType)</code>, <code>getObject(key)</code>, <code>deleteObject(key)</code>, <code>objectExists(key)</code>, and <code>getBucket()</code>. Keys are minted by <code>lib/storage/keys.ts</code>, which defines a single prefix, <code>FEED_IMAGE_PREFIX = "rmharks/"</code>, and helpers such as <code>feedImageKey</code> and <code>contentTypeForFilename</code>.</p>
+
+<div class="scope"><b>Scope: object storage is wired, but narrow.</b> The store is real and running, yet its <em>only</em> consumers in the code are the social feed's image upload and serve routes (the <code>rmharks/</code> prefix in bucket <code>rmh-media</code>). RmhTube, RmhMusic, RmhType, RmhStudy, and RmhCode do <em>not</em> use it — as we will see, their media comes from external providers. There are also no presigned URLs, no multipart upload, and no HTTP <code>Range</code> streaming anywhere: a repo-wide search for <code>presigned</code>, <code>getSignedUrl</code>, and <code>multipart</code> returns nothing. Uploads and downloads both proxy the whole file through the Node server.</div>
+
+<h3>An upload's round trip</h3>
+<p>The feed's image endpoints show the pattern end to end. The upload route <code>app/routes/api/rmharks/image.ts</code> handles a <code>POST</code>: it requires a Better Auth session, rate-limits to 10 requests per minute, caps the request at 4 images of 5&nbsp;MB each, and — crucially — verifies each file is really an image by inspecting its leading bytes (<code>validateImageBuffer</code>) rather than trusting the filename. Only then does it write:</p>
+
+<pre><code>const filename = `${session.user.id}-${Date.now()}-${rand}${ext}`;
+await putObject(
+  feedImageKey(filename),                 // "rmharks/" + filename
+  buffer,
+  contentTypeForFilename(filename),       // png | jpg | jpeg | webp | gif
+);
+</code></pre>
+
+<p>Serving is the mirror image. <code>app/routes/api/feed/image/$filename.ts</code> handles a <code>GET</code>, fetches the bytes with <code>getObject(feedImageKey(filename))</code>, and returns them with a long immutable cache header so the browser and any CDN never re-ask for the same object:</p>
+
+<pre><code>return new Response(buffer, {
+  headers: {
+    "Content-Type": contentType,
+    "Cache-Control": "public, max-age=31536000, immutable",
+  },
+});
+</code></pre>
+
+<div class="keyterm"><span class="term">Streaming</span> — delivering media as a sequence of byte ranges the player can begin consuming before the whole file arrives, typically via HTTP <code>Range</code> requests or a manifest format (HLS <code>.m3u8</code>, DASH <code>.mpd</code>). The feed's image route does <em>not</em> stream; it returns each object in one response. True range-streaming would be the next step if the platform ever self-hosted large video.</div>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart LR
+  B[Browser file input] -->|POST multipart| U[api/rmharks/image]
+  U -->|auth, rate limit, magic-byte check| U
+  U -->|putObject rmharks/key| M[(MinIO bucket rmh-media)]
+  M -.->|later GET by key| S[api/feed/image/filename]
+  S -->|getObject + immutable cache| B
+  </div>
+  <figcaption>Figure 9.1: a feed image upload, store, and serve round trip. Bytes proxy through the Node server in both directions; the bucket is addressed purely by key.</figcaption>
+</figure>
+
+<h2 id="rmhtube-video">RmhTube: a watch-together video platform</h2>
+<p>RmhTube is the most fully built of the apps. It is a <em>watch-together</em> platform: a host opens a room, others join by a six-character code, and everyone's player stays locked to the host's timeline. Critically, RmhTube stores <strong>no media of its own</strong>. Its <code>detectMediaType</code> helper (in <code>lib/rmhtube/utils.ts</code>) recognizes three external sources and refuses anything else:</p>
+
+<pre><code>// host youtube.com | youtu.be | m.youtube.com  -&gt; 'youtube'
+// host twitch.tv | *.twitch.tv                 -&gt; 'twitch'
+// pathname matching .mp4|.webm|.ogg|.m3u8|.mpd -&gt; 'direct'
+// else null
+</code></pre>
+
+<p>So the bytes live on YouTube, Twitch, or a direct URL; RmhTube only synchronizes <em>playback state</em>. That is the whole engineering problem, and it reuses the socket-fleet pattern from Chapter 7 exactly. RmhTube runs as its own standalone Node process — header comment: <em>"Runs as a separate Node.js process on port 7003"</em> — listening on Socket.io path <code>/rmhtube-ws/</code>. Its <code>index.ts</code> bootstraps the same service-layer shape we have seen before: an auth middleware, then a <code>RoomManager</code>, <code>SyncEngine</code>, <code>MediaQueue</code>, <code>ChatHandler</code>, and <code>ReconnectionHandler</code>, all sharing one <code>io</code> instance.</p>
+
+<p>Authentication is the cross-tier trick from Chapter 7 made concrete. RmhTube does not call into the Better Auth library; it validates the session token by querying the shared Postgres tables directly, through a small <code>pg.Pool</code>:</p>
+
+<pre><code>SELECT s."userId", s."expiresAt", u."name", u."image"
+FROM "session" s
+JOIN "user" u ON u."id" = s."userId"
+WHERE s."token" = $1
+LIMIT 1
+</code></pre>
+
+<p>An empty or unknown token is rejected with <code>AUTH_REQUIRED</code> / <code>AUTH_FAILED</code>; an expired one with <code>SESSION_EXPIRED</code>. On success the middleware attaches <code>socket.data.userId</code>, <code>userName</code>, and <code>avatarUrl</code> for every downstream handler.</p>
+
+<h3 id="sync-engines">Two sync engines, one pattern</h3>
+<p>The heart of RmhTube is its <code>SyncEngine</code>, and it is worth dwelling on because it is the textbook example of <em>host-authoritative</em> realtime. The host's player is the source of truth. The server keeps a canonical <code>videoState</code> — <code>{ playing, currentTime, playbackRate, updatedAt }</code> — and broadcasts it to non-host members on a two-second heartbeat (<code>SYNC_HEARTBEAT_INTERVAL_MS = 2_000</code>), while explicit host actions (play, pause, seek) broadcast immediately.</p>
+
+<p>The subtle part is time. Because <code>currentTime</code> is captured at a server-clock instant <code>updatedAt</code>, finding the playhead "now" means extrapolating forward by elapsed wall-clock multiplied by the playback rate. That math lives in <code>lib/rmhtube/sync-math.ts</code> and is shared identically by client and server:</p>
+
+<pre><code>export function extrapolate(vs, serverNow) {
+  if (!vs.playing) return vs.currentTime;
+  const elapsedMs = Math.max(0, serverNow - vs.updatedAt);
+  return vs.currentTime + (elapsedMs / 1000) * (vs.playbackRate || 1);
+}
+
+export function reanchor(vs, serverNow) {
+  return { ...vs, currentTime: extrapolate(vs, serverNow), updatedAt: serverNow };
+}
+</code></pre>
+
+<p>Extrapolating on the server matters for a reason that is easy to miss: when the host's browser tab is throttled or frozen, its state reports stall, but the heartbeat keeps emitting an advancing timeline so the <em>room does not freeze</em> with it. To compare two clocks fairly, RmhTube also ships an NTP-lite handshake — <code>SYNC_PING</code>/<code>SYNC_PONG</code> in <code>lib/rmhtube/clock.ts</code> — that estimates each client's offset from the lowest-round-trip sample, and a two-tier drift correction (gentle &plusmn;5% playback-rate nudge inside two seconds of drift, a hard seek beyond it).</p>
+
+<div class="keyterm"><span class="term">Host-authoritative sync</span> — a model in which one participant (the host or "leader") owns the canonical state and the server treats their reports as truth, broadcasting a single agreed timeline to everyone else. It avoids the impossible problem of merging conflicting playback states from many clients by designating one of them as correct.</div>
+
+<p>RmhTube even separates two roles: <code>hostUserId</code> (owns the room, can kick and ban) and <code>leaderUserId</code> (drives playback). Most playback handlers gate on the leader, returning <code>NOT_LEADER</code> otherwise. The <code>MediaQueue</code> layers on the social machinery — add, reorder, vote-to-skip (passes above 50% of connected members), queue voting, Fisher–Yates shuffle, loop, and a fifty-item history ring — persisting queue items to the <code>RmhTubeQueueItem</code> Prisma model while keeping the live room in memory for speed.</p>
+
+<h2 id="rmhmusic-rooms">RmhMusic: listening rooms on the shared socket fleet</h2>
+<p>RmhMusic is a <strong>listening room</strong>: the audio analogue of RmhTube, where a group hears the same track in step. It is a perfect contrast case because it reuses the same room/sync/queue/chat decomposition but makes two telling architectural choices differently.</p>
+
+<div class="keyterm"><span class="term">Listening room</span> — a realtime space in which a host controls playback of an audio queue and all members' players are kept synchronized to a shared position, so everyone hears the same moment of the same song together.</div>
+
+<p><strong>First difference: where it runs.</strong> RmhTube earns its own process and port; RmhMusic does not. There is no <code>server/rmhmusic/index.ts</code>. Instead its managers are registered as <em>handlers inside the unified</em> <code>server/socket-server</code> (port <code>7001</code>, path <code>/socket/</code>) alongside the games. The wrapper <code>server/socket-server/handlers/rmhmusic.ts</code> builds the four managers as shared singletons and wires them only for authenticated sockets:</p>
+
+<pre><code>export function registerRmhMusicHandlers(io, socket) {
+  if (!socket.data.userId) return;        // RmhMusic requires auth
+  const { roomManager, syncEngine, queueManager, chatHandler } = ensureInit(io);
+  roomManager.handleConnection(socket);
+  syncEngine.handleConnection(socket);
+  queueManager.handleConnection(socket);
+  chatHandler.handleConnection(socket);
+}
+</code></pre>
+
+<p><strong>Second difference: how it syncs.</strong> RmhMusic's <code>SyncEngine</code> is dramatically simpler than RmhTube's. There is no <code>sync-math.ts</code>, no clock handshake, no drift tolerance, no playback-rate nudging. The entire extrapolation is one inline expression in a five-second heartbeat:</p>
+
+<pre><code>io.to(room.id).emit(S2C.SYNC_HEARTBEAT, {
+  trackUri: room.playback.trackUri,
+  positionMs: room.playback.positionMs + (Date.now() - room.playback.updatedAt),
+  isPlaying: room.playback.isPlaying,
+});
+</code></pre>
+
+<p>Why so much thinner? Because the actual playhead is owned by an external player — RmhMusic is Spotify-powered (its design doc describes the Web Playback SDK and per-user Premium), so the server only needs to rebroadcast an authoritative position and let each Spotify client hold the timeline. RmhTube embeds the player itself and must therefore correct drift by hand. The lesson is general: <em>how much sync machinery you build depends on how much the underlying player gives you for free.</em></p>
+
+<table>
+  <thead><tr><th>Concern</th><th>RmhTube (video)</th><th>RmhMusic (audio)</th></tr></thead>
+  <tbody>
+    <tr><td>Process</td><td>Standalone, port <code>7003</code>, path <code>/rmhtube-ws/</code></td><td>Handler inside socket-server, port <code>7001</code>, path <code>/socket/</code></td></tr>
+    <tr><td>Sync math</td><td><code>extrapolate</code> / <code>reanchor</code> + NTP-lite clock</td><td>inline <code>pos + (now - updatedAt)</code>, no clock</td></tr>
+    <tr><td>Drift correction</td><td>two-tier: &plusmn;5% nudge, then hard seek</td><td>none</td></tr>
+    <tr><td>Heartbeat</td><td>2&nbsp;s state + 1&nbsp;s host reports</td><td>5&nbsp;s heartbeat</td></tr>
+    <tr><td>Authority</td><td>host + separate leader (<code>NOT_LEADER</code>)</td><td>host only (<code>NOT_HOST</code>)</td></tr>
+    <tr><td>Player / media</td><td>embedded YouTube / Twitch / direct file</td><td>external Spotify player</td></tr>
+    <tr><td>Max members / queue</td><td>20 / 100</td><td>10 / 50</td></tr>
+  </tbody>
+</table>
+
+<div class="scope"><b>Scope: RmhMusic is built in code but not in deployment.</b> The managers, events (<code>lib/rmhmusic/events.ts</code> with the <code>rmhmusic:</code> prefix), zod schemas, routes under <code>app/routes/rmhmusic/</code>, and four Prisma models (<code>RmhMusicRoom</code>, <code>RmhMusicRoomMember</code>, <code>RmhMusicQueueItem</code>, <code>RmhMusicChatMessage</code>) all exist. But there is <em>no</em> <code>rmhmusic</code> service in <code>docker-compose.yml</code>, and at runtime only <code>RmhMusicRoom</code> is actually persisted — members, queue items, and chat live only in memory despite having tables. Treat RmhMusic as a working feature on the shared fleet, not an independently deployed one.</div>
+
+<p>The other three apps are thinner still. RmhType (typing races) and RmhStudy (flashcards) are real features that run as handlers on the shared socket-server; RmhCode is the least built — its route <code>app/routes/rmhcode.tsx</code> is essentially an <code>&lt;Outlet/&gt;</code>, and its <code>RmhCodeToken</code> model reads as an auth bridge to an external editor rather than an in-app one.</p>
+
+<h2 id="social-feed-fanout">The social feed as a fan-out problem</h2>
+<p>The feed (branded <strong>RMHark</strong> in code; the post entity is the <code>RMHark</code> Prisma model, mapped to table <code>rmheet</code>) is where the platform meets the hardest distributed-systems question in the chapter. When someone posts, which followers' timelines must change? That is the <strong>fan-out</strong> problem, and it has two classic answers.</p>
+
+<div class="keyterm"><span class="term">Fan-out</span> — the act of propagating one event (a new post) to the many places that must reflect it (every follower's home timeline). The two strategies are <em>fan-out-on-write</em> (push the post into each follower's stored timeline the moment it is created) and <em>fan-out-on-read</em> (store the post once and assemble each timeline on demand by querying the authors a viewer follows).</div>
+
+<p><strong>Fan-out-on-write (push)</strong> does the work at post time: it writes a copy, or a reference, into a materialized timeline per follower, so reads are a cheap scan of one pre-built list. It is fast to read and brutal to write when an author has millions of followers (the "whale" problem). <strong>Fan-out-on-read (pull)</strong> does the opposite: it stores the post once and, at read time, gathers posts from everyone the viewer follows. It is cheap to write and expensive to read, because each timeline is a fresh query over a potentially huge follow list.</p>
+
+<p>The live RMHark code is <strong>pure fan-out-on-read</strong>. The unified entry point is <code>getTimeline()</code> in <code>lib/feed/timeline.ts</code>, which dispatches on a <code>surface</code> of <code>"following"</code> or <code>"foryou"</code>. The following timeline loads the viewer's follow graph and then queries posts with an unbounded <code>IN</code> clause:</p>
+
+<pre><code>// getFollowingTimeline (paraphrased)
+const follows = await prisma.follow.findMany({ where: { followerId: userId } });
+const followingIds = follows.map(f =&gt; f.followingId);
+
+const posts = await prisma.rMHark.findMany({
+  where: { userId: { in: followingIds }, deletedAt: null,
+           audience: { not: "PRIVATE" }, communityId: null, ...keysetWhere(cursor) },
+  orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+  take: limit,
+});
+</code></pre>
+
+<p>That <code>userId: { in: followingIds }</code> <em>is</em> fan-out-on-read: no per-follower timeline is ever written; every home feed is computed from scratch. The companion <code>RMHarkRepost</code> query runs in parallel and the two streams are merged, deduplicated, and sliced.</p>
+
+<p>Two engineering details make this pull model workable. First, <strong>keyset pagination</strong>. Rather than offset-based paging (which drifts as new rows arrive), <code>lib/feed/cursor.ts</code> encodes a composite cursor of <code>(createdAt, id)</code> and emits a <code>WHERE</code> that walks strictly past the last row seen:</p>
+
+<pre><code>// keysetWhere(cursor) for (createdAt desc, id desc)
+OR: [
+  { createdAt: { lt: cursor.createdAt } },
+  { createdAt: cursor.createdAt, id: { lt: cursor.id } },
+]
+</code></pre>
+
+<p>This is backed by a real index on the model: <code>@@index([createdAt(sort: Desc), id(sort: Desc)])</code>. Second, <strong>denormalized counts</strong>. Engagement totals are stored as columns on <code>RMHark</code> — <code>likeCount</code>, <code>commentCount</code>, <code>repostCount</code>, <code>viewCount</code> — and maintained atomically. A like, for instance, toggles the join row <em>and</em> bumps the counter in one transaction, so the feed never has to <code>COUNT(*)</code> at read time:</p>
+
+<pre><code>await prisma.$transaction([
+  prisma.rMHarkLike.create({ data: { rmheetId, userId } }),
+  prisma.rMHark.update({ where: { id: rmheetId },
+    data: { likeCount: { increment: 1 } } }),
+]);
+</code></pre>
+
+<p>Drift in those counters is tolerated and repaired out of band by a reconciliation cron, <code>scripts/reconcile-feed-counts.ts</code> (run as <code>pnpm feed:reconcile-counts</code>), which re-derives all four columns with one set-based <code>UPDATE</code>. New posts reach open clients through a server-sent-events bus (<code>feedEventBus</code> in <code>lib/feed-sse.ts</code> over <code>app/routes/api/feed/stream.ts</code>): the create route publishes a <code>rmhark.created</code> event, the stream tags it per viewer as <code>followed</code> or <code>own</code>, and the client either prepends it or counts it behind an "N new posts" pill.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart TB
+  P[Author posts] --> W[POST api/rmharks]
+  W -->|tx: insert RMHark + bump counters| DB[(Postgres rmheet)]
+  W -->|publish rmhark.created| BUS[feedEventBus / SSE]
+  BUS -->|tag followed or own per viewer| V1[Follower stream]
+  R[Reader opens feed] --> GT[getTimeline]
+  GT -->|find follows| DB
+  GT -->|RMHark where userId in followingIds, keyset| DB
+  GT -->|merge + dedupe reposts| R
+  </div>
+  <figcaption>Figure 9.2: the RMHark feed. Posts are written once (fan-out-on-read); each timeline is assembled on demand by querying followed authors, while SSE pushes live arrivals to open clients.</figcaption>
+</figure>
+
+<div class="scope"><b>Scope: the push path is designed, not built.</b> <code>docs/feed/plan.md</code> lays out a future hybrid — a materialized <code>FeedEntry</code> timeline written on post (fan-out-on-write) for normal authors, with high-follower "whale" authors flagged <code>isHighFanout</code> and merged at read time. None of that exists in the schema or code today: there is no <code>FeedEntry</code> model, no <code>isHighFanout</code> flag, and no write fan-out — only the SSE publish. The live system is entirely pull-based. (One thing the plan <em>under</em>states: the SSE bus already has a Redis backplane behind <code>REDIS_URL</code>, dormant only because that variable is unset.) A light ranking pass (<code>lib/feed/ranking.ts</code>) reorders the "For You" surface within a page without moving the chronological cursor.</div>
+
+<h2 id="content-as-code">Content as code: blog, news, research, library</h2>
+<p>The site's prose comes in four flavours — blog, news, research, and a PDF library — and the tidy story you might expect is "one MDX pipeline compiles Markdown-with-components into pages." The reality, read honestly from the code, is more interesting: it is <em>four separate, heterogeneous systems</em>, and MDX survives only as an authoring format at build time.</p>
+
+<div class="keyterm"><span class="term">MDX</span> — Markdown extended so that documents may embed and render components (interactive widgets, custom layouts) inline. It lets prose live as source files that compile to UI, blurring the line between a document and a program.</div>
+
+<div class="keyterm"><span class="term">Content-as-code</span> — treating editorial content as source artifacts that flow through the same version control, review, and build tooling as program code, rather than living only in a CMS database edited through a web form.</div>
+
+<p><strong>Blog</strong> and <strong>news</strong> are the closest to content-as-code, but with a twist. The <code>.mdx</code> source files were authored under <code>content/blog</code> and <code>content/news</code> and parsed offline with <code>gray-matter</code> by scripts such as <code>scripts/generate-blog-data.ts</code>, which upsert them into Postgres. The runtime, however, reads from the database, not from files: <code>lib/blog.ts</code> opens with <code>import { prisma } from "./prisma.server"</code> and exposes <code>getPostSlugs()</code>, <code>getPostBySlug()</code>, and <code>getAllPosts()</code> over the <code>BlogPost</code> model (table <code>blog_post</code>). Its <code>Post</code> interface is plain:</p>
+
+<pre><code>export interface Post {
+  slug: string; title: string; date: string; description: string;
+  image?: string; tags?: string[]; content: string;
+}
+</code></pre>
+
+<p>The route <code>app/routes/blog.$slug.tsx</code> uses a TanStack Start server function to load a post by slug and renders the body with <code>react-markdown</code> — not an MDX runtime — through an <code>animatedComponents</code> map. <code>news.$slug.tsx</code> is the same shape over the <code>NewsArticle</code> model, with extra source-attribution fields.</p>
+
+<p><strong>Research</strong> and <strong>library</strong> abandon the pattern entirely. Research articles are a hardcoded TypeScript array in <code>lib/research.ts</code> (slugs like <code>quantum-nash-equilibrium</code>); <code>research.$slug.tsx</code> renders a <code>PaperViewer</code> of metadata and an abstract, with no Markdown body. The library is PDFs in <code>public/library/</code> described by <code>data/library-metadata.json</code>; <code>library.$slug.tsx</code> loads a book synchronously and renders a <code>BookReader</code>. There is no shared content helper across the four — only blog and news happen to share the <code>react-markdown</code> dependency.</p>
+
+<div class="scope"><b>Scope: the chapter's tidy premise is wrong, on purpose.</b> It is tempting to teach "one MDX content pipeline." The real code is four systems: blog and news are DB-backed and rendered with <code>react-markdown</code> (the <code>.mdx</code> files were even removed from the tree and are recovered from git history by the seed scripts); research is a static array; library is PDFs. No <code>next-mdx-remote</code>, <code>@mdx-js</code>, or <code>mdx-bundler</code> appears anywhere. The content-as-code idea is honored at <em>authoring</em> time and discarded at <em>serving</em> time.</div>
+
+<table>
+  <thead><tr><th>Domain</th><th>Helper</th><th>Runtime source</th><th>Body rendering</th></tr></thead>
+  <tbody>
+    <tr><td>Blog</td><td><code>lib/blog.ts</code></td><td>Prisma <code>blog_post</code></td><td><code>react-markdown</code></td></tr>
+    <tr><td>News</td><td><code>lib/news.ts</code></td><td>Prisma <code>news_article</code></td><td><code>react-markdown</code></td></tr>
+    <tr><td>Research</td><td><code>lib/research.ts</code></td><td>static TS array</td><td>none (abstract only)</td></tr>
+    <tr><td>Library</td><td><code>lib/library/library.ts</code></td><td>JSON + PDFs</td><td>none (PDF reader)</td></tr>
+  </tbody>
+</table>
+
+<div class="summary"><h4>Summary</h4><ul>
+  <li>Media and content push past the games model: large opaque blobs want <strong>object storage</strong>; authored documents invite <strong>content-as-code</strong>.</li>
+  <li>The platform runs an S3-compatible store (<strong>MinIO</strong> &rarr; future R2) in bucket <code>rmh-media</code> via <code>lib/storage/s3.server.ts</code>, but currently only for feed image uploads — no presigned URLs, no range streaming.</li>
+  <li><strong>RmhTube</strong> is a fully built watch-together video app on its own process (port 7003) with a sophisticated host-authoritative <code>SyncEngine</code> (<code>extrapolate</code>/<code>reanchor</code> + NTP-lite + drift correction); it stores no media, only syncs external players.</li>
+  <li><strong>RmhMusic</strong> reuses the same room/sync/queue/chat decomposition but runs as handlers on the shared socket-server and syncs far more simply, because Spotify owns the playhead. Its tables exist but only <code>RmhMusicRoom</code> is persisted.</li>
+  <li>The <strong>RMHark feed</strong> is a <strong>fan-out</strong> problem; the live code uses <strong>fan-out-on-read</strong> with keyset pagination, denormalized counters, and SSE for live arrivals. The push path is designed in <code>docs/feed/plan.md</code> but unbuilt.</li>
+  <li>The four content systems are heterogeneous: blog/news are DB-backed Markdown, research is a static array, library is PDFs. MDX is an authoring-time format only.</li>
+</ul></div>
+
+<div class="exercises"><h2 id="ch9-exercises">Practice Exercises</h2>
+
+  <div class="exercise"><span class="qid">9.1</span>
+    <span class="tag concept">concept</span><span class="tag easy">easy</span>
+    Define <em>object storage</em> and give two concrete reasons the platform stores feed images in MinIO's <code>rmh-media</code> bucket rather than as a column in a PostgreSQL table.</div>
+
+  <div class="exercise"><span class="qid">9.2</span>
+    <span class="tag trace">trace</span><span class="tag medium">medium</span>
+    Trace a user uploading a profile image through the feed image endpoints. List, in order, the checks <code>app/routes/api/rmharks/image.ts</code> applies before calling <code>putObject</code>, and explain why the magic-byte check (<code>validateImageBuffer</code>) cannot be replaced by trusting the filename extension.</div>
+
+  <div class="exercise"><span class="qid">9.3</span>
+    <span class="tag concept">concept</span><span class="tag medium">medium</span>
+    RmhTube's <code>SyncEngine</code> has <code>extrapolate</code>/<code>reanchor</code>, an NTP-lite clock, and two-tier drift correction; RmhMusic's has none of this. Explain the single architectural fact about each app's media player that justifies the difference in sync machinery.</div>
+
+  <div class="exercise"><span class="qid">9.4</span>
+    <span class="tag trace">trace</span><span class="tag hard">hard</span>
+    The host's browser tab is throttled by the OS and stops sending host-state reports for ten seconds. Using <code>extrapolate</code> and the two-second heartbeat, explain precisely what non-host viewers see during those ten seconds and why the room's timeline keeps advancing rather than freezing.</div>
+
+  <div class="exercise"><span class="qid">9.5</span>
+    <span class="tag concept">concept</span><span class="tag easy">easy</span>
+    Define <em>fan-out-on-write</em> and <em>fan-out-on-read</em>. For each, state which operation (posting or reading) is cheap and which is expensive, and name the scaling hazard each one faces.</div>
+
+  <div class="exercise"><span class="qid">9.6</span>
+    <span class="tag trace">trace</span><span class="tag medium">medium</span>
+    Read the <code>getFollowingTimeline</code> query in the chapter. Identify the exact clause that proves the feed is fan-out-on-read, and explain how the <code>(createdAt, id)</code> keyset cursor prevents a post that arrives mid-scroll from being skipped or duplicated across pages.</div>
+
+  <div class="exercise"><span class="qid">9.7</span>
+    <span class="tag design">design</span><span class="tag hard">hard</span>
+    <code>docs/feed/plan.md</code> proposes flagging high-follower authors <code>isHighFanout</code> and merging their posts at read time while normal authors are fanned out on write. Defend this hybrid: why not fan-out-on-write for everyone, and why not leave whales on the write path too? State the constraint that makes the split worthwhile.</div>
+
+  <div class="exercise"><span class="qid">9.8</span>
+    <span class="tag concept">concept</span><span class="tag medium">medium</span>
+    The feed stores <code>likeCount</code> as a denormalized column maintained in a transaction, yet also ships a reconciliation cron that re-derives it. Explain why a system would keep a count it can always recompute, and what failure mode the cron exists to repair.</div>
+
+  <div class="exercise"><span class="qid">9.9</span>
+    <span class="tag concept">concept</span><span class="tag medium">medium</span>
+    The chapter calls the "one MDX content pipeline" premise wrong on purpose. Describe how blog/news content actually flows from authoring to serving, and explain in what limited sense the system is still "content-as-code."</div>
+
+  <div class="exercise"><span class="qid">9.10</span>
+    <span class="tag diagram">diagram</span><span class="tag medium">medium</span>
+    Draw a single diagram that places RmhTube and RmhMusic side by side, showing for each: the process it runs in, its socket path/port, where its media bytes come from, and where the playhead authority lives. Use the contrast table as your source.</div>
+</div>

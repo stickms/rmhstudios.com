@@ -5,7 +5,7 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { ArrowLeft, Loader2, Search, CheckCircle, Shield, AlertCircle, Pencil, Check, X } from 'lucide-react';
+import { ArrowLeft, Loader2, Search, CheckCircle, Shield, AlertCircle, Pencil, Check, X, Crown } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 
 interface User {
@@ -85,6 +85,33 @@ function AdminUsersPage() {
       if (res.ok) { const updated = await res.json(); setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updated } : u)); }
       else { const err = await res.text(); alert(`Failed to update user: ${err}`); }
     } catch (error) { console.error("Failed to update user", error); alert("Failed to connect to server."); } finally { setUpdating(null); }
+  };
+
+  const grantMembership = async (userId: string) => {
+    const choice = prompt('Grant membership — enter "starter" or "pro" (or "revoke" to remove):', 'pro');
+    if (!choice) return;
+    const action = choice.trim().toLowerCase();
+    let body: Record<string, unknown>;
+    if (action === 'revoke') {
+      body = { revoke: true };
+    } else if (action === 'starter' || action === 'pro') {
+      const monthsStr = prompt('How many months?', '1');
+      const months = Math.max(1, Math.min(24, parseInt(monthsStr || '1', 10) || 1));
+      body = { tier: action, months };
+    } else {
+      alert('Enter "starter", "pro", or "revoke".');
+      return;
+    }
+    setUpdating(userId);
+    try {
+      const res = await fetch(`/api/admin/users/${userId}/grant-membership`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) alert(action === 'revoke' ? 'Active grants revoked.' : `Granted ${action}.`);
+      else { const d = await res.json().catch(() => ({})); alert(`Failed: ${d.error || 'error'}`); }
+    } catch { alert('Failed to connect to server.'); } finally { setUpdating(null); }
   };
 
   const startEditHandle = (user: User) => { setEditingHandle(user.id); setHandleInput(user.handle || ''); setHandleError(null); };
@@ -196,7 +223,10 @@ function AdminUsersPage() {
                       <CheckCircle className="w-4 h-4" />
                     </button>
                   </div>
-                  <div className="w-20 flex-shrink-0 flex justify-center">
+                  <div className="w-20 flex-shrink-0 flex justify-center gap-1">
+                    <button onClick={() => grantMembership(user.id)} disabled={updating === user.id} className={`p-1.5 rounded-lg transition-colors border bg-transparent text-site-text-dim border-site-border hover:border-amber-500/40 hover:text-amber-400 ${updating === user.id ? 'opacity-50 cursor-not-allowed' : ''}`} title="Grant / revoke membership">
+                      <Crown className="w-4 h-4" />
+                    </button>
                     <button onClick={() => toggleStatus(user.id, 'isAdmin', user.isAdmin)} disabled={updating === user.id} className={`p-1.5 rounded-lg transition-colors border ${user.isAdmin ? 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20' : 'bg-transparent text-site-text-dim border-site-border hover:border-site-text-muted'} ${updating === user.id ? 'opacity-50 cursor-not-allowed' : ''}`} title={user.isAdmin ? "Remove Admin" : "Make Admin"}>
                       <Shield className="w-4 h-4" />
                     </button>

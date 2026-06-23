@@ -5,6 +5,12 @@ import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { createCommentSchema } from "@/lib/rmhark-schema";
 import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 import { feedEventBus } from "@/lib/feed-sse";
+import { createNotification } from "@/lib/notifications.server";
+import { notifyMentions } from "@/lib/feed/notify-mentions.server";
+import { grantAchievement } from "@/lib/achievements/engine.server";
+import { getActiveBan } from "@/lib/admin-audit.server";
+import { awardXp } from "@/lib/xp/engine.server";
+import { progressQuests } from "@/lib/quests/engine.server";
 
 export const Route = createFileRoute('/api/rmharks/$id/comment')({
   server: {
@@ -102,6 +108,14 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const ban = await getActiveBan(session.user.id);
+    if (ban) {
+      return Response.json(
+        { error: `Your account is suspended${ban.reason ? `: ${ban.reason}` : ''}` },
+        { status: 403 }
+      );
+    }
+
     const ip = getClientIp(request);
     const { allowed, retryAfter } = rateLimit(ip, {
       limit: 10,
@@ -152,6 +166,79 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
       payload: { id, commentCount },
       timestamp: new Date().toISOString(),
     });
+
+    // Notify the post owner (COMMENT) and, for a threaded reply, the parent
+    // comment's author (REPLY). Best-effort — never blocks the response.
+    try {
+      const post = await prisma.rMHark.findUnique({
+        where: { id },
+        select: { userId: true, user: { select: { handle: true } } },
+      });
+      // Always link to the post; the route resolves by post id, so a handle-less
+      // author falls back to their user id in the (decorative) handle segment.
+      const postLink = post ? `/u/${post.user?.handle ?? post.userId}/post/${id}` : undefined;
+      const preview = parsed.data.content.trim();
+
+      let parentAuthorId: string | null = null;
+      if (parsed.data.parentId) {
+        const parent = await prisma.rMHarkComment.findUnique({
+          where: { id: parsed.data.parentId },
+          select: { userId: true },
+        });
+        if (parent) {
+          parentAuthorId = parent.userId;
+          await createNotification({
+            userId: parent.userId,
+            actorId: session.user.id,
+            type: "REPLY",
+            entityType: "comment",
+            entityId: comment.id,
+            preview,
+            link: postLink,
+          });
+        }
+      }
+
+      // Notify the post owner — unless they already got the REPLY notification
+      // above (i.e. they authored the parent comment).
+      if (post && post.userId !== parentAuthorId) {
+        await createNotification({
+          userId: post.userId,
+          actorId: session.user.id,
+          type: "COMMENT",
+          entityType: "rmhark",
+          entityId: id,
+          preview,
+          link: postLink,
+        });
+      }
+
+      // Also notify anyone @mentioned in the comment body (parity with posts;
+      // this also feeds the bot-worker mention queue). `postLink` is defined
+      // whenever the post exists.
+      if (post && postLink) {
+        await notifyMentions({
+          content: comment.content,
+          author: {
+            id: comment.user.id,
+            name: comment.user.name ?? null,
+            image: comment.user.image ?? null,
+            handle: comment.user.handle ?? null,
+          },
+          postId: id,
+          entityType: "comment",
+          entityId: comment.id,
+          link: postLink,
+          timestamp: comment.createdAt.toISOString(),
+        });
+      }
+    } catch (e) {
+      console.error("comment notification error:", e);
+    }
+
+    await grantAchievement(session.user.id, "social.first_comment");
+    await awardXp(session.user.id, 10);
+    await progressQuests(session.user.id, "comment");
 
     return Response.json({
       ...comment,

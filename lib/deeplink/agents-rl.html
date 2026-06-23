@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Agents that learn from experience — RMH Deeplink</title>
+<meta name="description" content="RMH Deeplink's agents and reinforcement-learning program — reward, search, self-play, and world models for behavior that exceeds its training data." />
+<meta property="og:title" content="Agents that learn from experience — RMH Deeplink" />
+<meta property="og:description" content="RMH Deeplink's agents and reinforcement-learning program — reward, search, self-play, and world models for behavior that exceeds its training data." />
+<meta property="og:type" content="article" />
+<link rel="icon" type="image/svg+xml" href="/brand/deeplink-favicon.svg" />
+<link rel="icon" type="image/png" sizes="32x32" href="/brand/deeplink-favicon-32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="/brand/deeplink-favicon-16.png" />
+<link rel="apple-touch-icon" href="/brand/deeplink-apple-touch.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" />
+<link rel="stylesheet" href="/deeplink.css" />
+</head>
+<body>
+
+<header id="hdr">
+  <div class="wrap nav">
+    <a class="brand" href="/deeplink" aria-label="RMH Deeplink home">
+      <span class="dot" aria-hidden="true"></span>RMH&nbsp;Deeplink
+    </a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="/deeplink#research">Models</a>
+      <a href="/deeplink#research">Research</a>
+      <a href="/deeplink#science">Science</a>
+      <a href="/deeplink#safety">Safety</a>
+      <a href="/deeplink#about">About</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="backlink" href="/"><span aria-hidden="true">&larr;</span><span class="backlink-label">RMH Studios</span></a>
+      <a class="btn btn-ghost" href="/deeplink#research">Research</a>
+      <a class="btn btn-primary" href="mailto:research@rmhstudios.com?subject=RMH%20Deeplink%20%E2%80%94%20Inquiry">Build with Deeplink</a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+  <div class="wrap">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="/deeplink">RMH Deeplink</a><span class="sep">/</span>
+      <a href="/deeplink#research">Research</a><span class="sep">/</span>
+      <span>Agents &amp; RL</span>
+    </nav>
+  </div>
+
+  <!-- article hero -->
+  <section class="ahero">
+    <div class="wrap">
+      <span class="kicker">Research · Agents &amp; reinforcement learning</span>
+      <h1>Agents that learn from experience</h1>
+      <p class="lead">Reward, search, and self-play remain the sharpest tools we have for behavior that exceeds its training data.</p>
+      <div class="ahero-media">
+        <img src="/images/deeplink/agents-rl.jpg" alt="Swirling iridescent currents of light suggesting agents exploring" />
+      </div>
+    </div>
+  </section>
+
+  <!-- article body -->
+  <article class="article">
+    <div class="wrap">
+      <!-- ==== BEGIN BODY (subagent fills this) ==== -->
+      <div class="prose">
+        <h2>Imitation has a ceiling. Reward does not.</h2>
+        <p>A foundation model trained to predict the next token learns to imitate, and at its best imitation only matches the people who produced the data — inheriting their errors, their blind spots, and the outer edge of their competence. That ceiling is the central limitation of pure prediction, and the reason reinforcement learning sits at the heart of our agenda rather than bolted onto its side. A model trained to optimize an outcome is supervised by the environment's verdict, not a teacher's example, and in principle it can surpass any demonstrator, discovering strategies no human ever performed.</p>
+        <p>The proof of concept is old: the strongest game-playing systems reached superhuman skill not by copying masters but through self-play and reward, which carried them past the human frontier into novel play. Our work generalizes that result from closed, perfectly-scored games to the messy, partially observed, sparsely rewarded domains where consequential problems live. We take the foundation model as the starting policy — exploiting the knowledge and language it already holds — and improve it from the consequences of its own actions.</p>
+      </div>
+
+      <div class="facts">
+        <div class="f"><div class="n">3</div><div class="l">families of reward signal: verifiable, learned-preference, and self-play</div></div>
+        <div class="f"><div class="n">10²</div><div class="l">tool calls a single research-agent session may chain before any reward arrives</div></div>
+        <div class="f"><div class="n">95%</div><div class="l">per-step reliability still fails most long trajectories — errors compound over the horizon</div></div>
+      </div>
+
+      <div class="prose">
+        <h2>Where the learning signal comes from</h2>
+        <p>The hardest part of reinforcement learning is rarely the optimizer; it is the reward. We cannot write down the function we actually want. The goals we care about — be helpful, be honest, do sound science, do not deceive — do not reduce to clean scalar functions of an agent's observations. When we approximate them we get proxies, and a capable optimizer finds the gap between the proxy and the intent with relentless creativity. This is reward hacking: not a bug to be patched but a structural feature of optimization, since the cheapest path to high reward is rarely the path we meant. The more capable the system, the more reliably it finds the exploit.</p>
+        <p>Because no single signal is robust, we run a portfolio of three.</p>
+        <ul>
+          <li><strong>Verifiable reward</strong> — wherever an outcome can be checked automatically: unit tests for code, formal verifiers for proofs, exact-match for math, task completion for agentic workflows. These signals are dense and trustworthy and sidestep the pathologies of learned reward models entirely. The craft lies in shaping reward so the policy finds better strategies rather than exploiting quirks of the checker.</li>
+          <li><strong>Learned preferences</strong> — for the vast space of tasks no verifier covers, a reward model trained on human or AI judgments supplies the signal. Reward models are themselves proxies and themselves exploitable, so we defend with regularization toward the reference policy, ensembles that flag when the policy has wandered off the support where the model is trustworthy, and repeated retraining as behavior shifts.</li>
+          <li><strong>Self-play and self-improvement</strong> — the most powerful family and the least tamed. Two-player games hand you a curriculum of ever-stronger opponents; single-agent settings force you to manufacture one. We pursue generator–verifier asymmetries — propose a solution, separately critique it, bootstrap competence from the gap — and self-generated curricula in which the agent invents tasks at the frontier of its own ability.</li>
+        </ul>
+        <h3>Process over outcome</h3>
+        <p>A signal that rewards only the final answer says nothing about whether the answer was reached for the right reasons. A system trained purely on outcomes can learn to be correct by routes that do not generalize — spurious correlations, lucky guesses, invalid steps that happen to land. So we increasingly reward the reasoning and not only the result. Sound methods generalize where lucky guesses do not, and a process we can supervise is one whose failures we can anticipate. Rewarding good deliberation is also what lets a model learn to think for longer on harder problems — turning inference-time compute into a second axis of capability, distinct from the scaling of training.</p>
+      </div>
+
+      <div class="split">
+        <div>
+          <h2>Search supplies the deliberation</h2>
+          <p>A learned model gives an agent fast intuition; explicit search gives it deliberation. The pattern that proved decisive in games — expand a tree of imagined futures, use a learned value function to prune it, fold the result back into the policy — is one of the most powerful in the field. We mean to carry it from closed, fully observed games into open domains where the dynamics must be learned rather than handed to us. The model proposes; the search deliberates; the value learned from the search's outcomes sharpens the model's next intuition.</p>
+        </div>
+        <div class="media">
+          <img src="/images/deeplink/agents-rl-1.jpg" alt="Branching tree of luminous paths fanning out from a single point, suggesting search over possible futures" />
+        </div>
+      </div>
+
+      <div class="pull">
+        <p>An agent that optimizes an outcome will optimize exactly the outcome we specify — and not the one we intended. Alignment is therefore not a constraint on the research. It is part of it.</p>
+      </div>
+
+      <div class="prose">
+        <h2>The horizon problem</h2>
+        <p>A system that answers questions is an oracle. A system that pursues goals over time, living with the consequences of its actions, is an agent — and the transition between them is, in our view, the most consequential capability frontier of the coming period. An agent must hold coherent goals across long horizons, decompose an abstract goal into a tree of executable subgoals, recover from errors without starting over, and decide when it has gathered enough to act and when it must gather more.</p>
+        <p>The difficulty is not any single decision; the underlying model is usually capable of each step. The difficulty is composition over the horizon. Errors compound. A system right ninety-five percent of the time at each step is, after a hundred dependent steps, almost certainly somewhere it did not intend to be — reliability that is more than adequate for one response becomes catastrophically inadequate for a long autonomous trajectory. Agency is therefore not simply more capability but a distinct regime with its own failure modes, and progress on it demands advances in error detection, error recovery, and a system's calibrated sense of whether it is still on track. It is also why real-world agents are expensive: where the environment is a robot, a live system, or a human collaborator, interaction is slow, costly, and sometimes irreversible. The data hunger of reinforcement learning, tolerable in a simulator running millions of episodes, becomes prohibitive — and that constraint points directly at world models.</p>
+      </div>
+
+      <figure class="fig">
+        <div class="frame">
+          <img src="/images/deeplink/agents-rl-2.jpg" alt="A compact latent lattice of points and connections evoking an imagined simulation of an environment" />
+        </div>
+        <figcaption>A world model is a learned simulator. Once trained on every transition the agent observes, it can be queried without limit at the cost of computation rather than real-world interaction.</figcaption>
+      </figure>
+
+      <div class="prose">
+        <h2>Imagining before acting</h2>
+        <p>An agent that learns only by trial in the world is bound by the speed and cost of the world. To act well in a situation it has never seen, it must be able to imagine — to run candidate actions forward internally and choose the one whose predicted outcome it prefers. That capacity for internal simulation is what we mean by a world model: a learned, predictive representation of the environment's dynamics, rich enough to plan inside. It is what turns a reactive policy into a deliberative one.</p>
+        <p>The argument from machine learning is sharp. Model-free reinforcement learning is profligate with experience because each datum teaches only about the action actually taken. A world model is trained on every transition the agent observes, regardless of reward, and once learned it can be queried without limit. This resolves the sample-efficiency problem: pay the high cost of real interaction to learn the model, then pay the low cost of computation to plan within it. We learn the model in a compact latent space rather than at the level of raw pixels, concentrating capacity on what is predictable and relevant and discarding the texture of walls the agent will never touch.</p>
+        <p>The hard problem is causal. A predictor trained on passive observation learns the distribution of what happens; it does not necessarily learn what would happen if the agent did something it has never done. An agent that plans with a non-causal model confidently takes actions whose consequences it has mismodeled, confusing co-occurrence in its data with the effects of its own intervention. Closing that gap is unsolvable by passive prediction alone — it requires acting, observing the result, and updating on consequences the agent actually caused. This is why the predictive and experiential paths must be married: observation supplies the breadth that makes learning efficient; intervention supplies the causal validity that makes planning safe.</p>
+      </div>
+
+      <div class="prose">
+        <h2>Open questions</h2>
+        <ul>
+          <li><strong>Reward beyond the verifiable.</strong> We can check code and proofs; we cannot cheaply check whether an essay is insightful or a research direction is promising. The most useful tasks are precisely the ones whose outcomes resist verification, and inventing trustworthy reward there gates the whole program.</li>
+          <li><strong>Exploration in vast action spaces.</strong> A foundation-model agent's action space is every token sequence it can emit. Discovering genuinely novel strategies means departing from the prior in directed ways — exploiting the model's knowledge while escaping its imitative gravity. Principled, scalable exploration here is unsolved.</li>
+          <li><strong>Compounding error over long horizons.</strong> Autoregressive rollouts accumulate error: each step conditions on the model's own imperfect last step, and planning over long horizons becomes planning in an increasingly fictional world. Faithful rollouts need calibrated uncertainty that tells the planner when to distrust the model.</li>
+          <li><strong>Stability and reproducibility.</strong> Reinforcement learning at scale is brittle — small changes in hyperparameters, reward scaling, or seed swing outcomes wildly. We need both a deeper theory of these dynamics and engineering that makes large RL runs as predictable as pretraining has become.</li>
+          <li><strong>Self-improvement without divergence.</strong> The aspiration is a system that improves without bound by generating its own signal. The hazard is that it optimizes a proxy that drifts from what we intended. Whether self-play and self-generated curricula can be made to converge — monotonically, without collapse — is our most speculative and most consequential bet.</li>
+        </ul>
+      </div>
+      <!-- ==== END BODY ==== -->
+    </div>
+  </article>
+
+  <!-- related CTA -->
+  <section class="related">
+    <div class="wrap">
+      <h2>Move the frontier with us</h2>
+      <p>RMH Deeplink is hiring research scientists and engineers across every program. Or read the full 120-page research thesis.</p>
+      <div class="r-actions">
+        <a class="btn btn-primary btn-lg" href="/library/rmh-deeplink-thesis">Read the thesis</a>
+        <a class="btn btn-ghost btn-lg" href="mailto:careers@rmhstudios.com?subject=Careers%20%E2%80%94%20RMH%20Deeplink">See open roles</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer id="about">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <a class="brand" href="/deeplink"><span class="dot" aria-hidden="true"></span>RMH&nbsp;Deeplink&nbsp;<small>from RMH Studios</small></a>
+        <p>Foundational AI research toward artificial general intelligence — in service of science and humanity.</p>
+        <form class="news-form" onsubmit="return false" aria-label="Newsletter signup">
+          <input type="email" placeholder="Your email" aria-label="Email address" />
+          <button class="btn btn-primary" type="submit">Subscribe</button>
+        </form>
+      </div>
+      <nav class="foot-col" aria-label="Research">
+        <h4>Research</h4>
+        <a href="/deeplink/foundation-models">Foundation models</a>
+        <a href="/deeplink/agents-rl">Agents &amp; RL</a>
+        <a href="/deeplink/ai-for-science">AI for science</a>
+        <a href="/deeplink/alignment">Interpretability</a>
+      </nav>
+      <nav class="foot-col" aria-label="Science">
+        <h4>Science</h4>
+        <a href="/deeplink/life-sciences">Life sciences</a>
+        <a href="/deeplink/mathematics">Mathematics</a>
+        <a href="/deeplink/energy-climate">Climate &amp; energy</a>
+        <a href="/deeplink/ai-for-science">AI for science</a>
+      </nav>
+      <nav class="foot-col" aria-label="Company">
+        <h4>Company</h4>
+        <a href="/deeplink#about">About</a>
+        <a href="/deeplink/frontier-safety">Safety &amp; responsibility</a>
+        <a href="mailto:careers@rmhstudios.com?subject=Careers%20%E2%80%94%20RMH%20Deeplink">Careers</a>
+        <a href="mailto:info@rmhstudios.com">Contact</a>
+      </nav>
+    </div>
+    <div class="foot-bot">
+      <span class="mission-line">Building AI responsibly to benefit humanity. &copy; 2026 RMH Deeplink.</span>
+      <div class="social" aria-label="Social links">
+        <a href="#" aria-label="X">X</a>
+        <a href="#" aria-label="LinkedIn">in</a>
+        <a href="#" aria-label="YouTube">&#9658;</a>
+        <a href="#" aria-label="GitHub">&lt;/&gt;</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var hdr = document.getElementById('hdr');
+  var onScroll = function () { hdr.classList.toggle('scrolled', window.scrollY > 8); };
+  window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
+})();
+</script>
+</body>
+</html>

@@ -43,9 +43,11 @@ function isValidMediaUrl(url: string): boolean {
 interface ComposeModalProps {
   open: boolean;
   onClose: () => void;
+  /** When quoting, the post being quoted (renders a preview + sends originalId). */
+  quoteItem?: { id: string; content?: string; user?: { name?: string | null; handle?: string | null } } | null;
 }
 
-export function ComposeModal({ open, onClose }: ComposeModalProps) {
+export function ComposeModal({ open, onClose, quoteItem }: ComposeModalProps) {
   const [content, setContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [attachment, setAttachment] = useState<Attachment>(null);
@@ -83,7 +85,7 @@ export function ComposeModal({ open, onClose }: ComposeModalProps) {
   const hasGif = attachment === 'gif' && gifUrl.trim() && isValidMediaUrl(gifUrl.trim());
   const hasImages = imageUrls.length > 0;
   const hasContent = content.trim().length > 0;
-  const canSubmit = (hasContent || hasPoll || hasGif || hasImages) && remaining >= 0 && !submitting;
+  const canSubmit = (hasContent || hasPoll || hasGif || hasImages || !!quoteItem) && remaining >= 0 && !submitting;
 
   const handleImageFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -121,6 +123,7 @@ export function ComposeModal({ open, onClose }: ComposeModalProps) {
       }
       if (hasGif) body.gifUrl = gifUrl.trim();
       if (hasImages) body.imageUrls = imageUrls;
+      if (quoteItem) body.originalId = quoteItem.id;
 
       const res = await fetch('/api/rmharks', {
         method: 'POST',
@@ -269,6 +272,16 @@ export function ComposeModal({ open, onClose }: ComposeModalProps) {
                   }
                 }}
               />
+
+              {/* Quoted post preview */}
+              {quoteItem && (
+                <div className="mt-2 rounded-xl border border-site-border p-3">
+                  <p className="text-xs font-semibold text-site-text">
+                    {quoteItem.user?.name || quoteItem.user?.handle || 'Someone'}
+                  </p>
+                  <p className="mt-0.5 line-clamp-3 text-sm text-site-text-muted">{quoteItem.content}</p>
+                </div>
+              )}
 
               {/* Poll creator */}
               {attachment === 'poll' && (

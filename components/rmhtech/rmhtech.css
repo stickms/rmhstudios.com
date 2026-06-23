@@ -42,6 +42,10 @@
 .rmht .req{font-family:var(--mono);font-size:.74rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);
   border:1px solid var(--line);border-radius:100px;padding:9px 18px;transition:.35s}
 .rmht .req:hover{color:var(--bg);background:var(--accent);border-color:var(--accent)}
+.rmht .bar-left{display:flex;align-items:center;gap:18px}
+.rmht .backlink{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);padding-right:18px;border-right:1px solid var(--line);transition:color .3s}
+.rmht .backlink:hover{color:var(--accent)}
+@media(max-width:560px){.rmht .backlink-label{display:none}.rmht .backlink{padding-right:14px}.rmht .bar-left{gap:14px}}
 
 /* hero — one screen, centered, brutally sparse */
 .rmht .hero{min-height:100svh;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;

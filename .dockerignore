@@ -41,19 +41,22 @@ db/avatars
 db/builds
 db/music
 
-# ─── Public media served by Apache off the host disk (not the image) ────────
-# Apache serves /music and /sprites directly from the host's public/ checkout
-# (see deploy/apache/rmhstudios.com.conf), so they don't belong in the build
-# context or the image. Keeping them out shrinks the context, the COPY public
-# layer, the build cache, AND the runtime image.
+# ─── Heavy static media served from object storage / R2 (not the image) ─────
+# /library, /music, /models and /sprites live in the S3-compatible bucket
+# (MinIO → R2) behind cdn.rmhstudios.com — served on the web side via the TS
+# asset() helper (see lib/storage/asset.ts) and on the deployed fleet by the Go
+# `assets` service (go-services/internal/assets). Not off disk, not from the
+# Node image — the host checkout is only the sync source (make assets-sync /
+# scripts/sync-static-assets-to-r2.mjs). Keeping them out shrinks the build
+# context, the COPY public layer, the build cache, AND the runtime image.
 #   - music/sprites: excluded entirely.
 #   - library: only the heavy PDFs (~488 MB) are excluded; covers/ stays so the
 #     metadata step can see them. data/library-metadata.json (committed) carries
 #     the catalogue. Adding a NEW library PDF requires running
 #     `pnpm run library:metadata` locally and committing its cover + the JSON.
-#   - models: still shipped in the build context (Dockerfile sanity-checks
-#     public/models/marlonjack.glb). Exclusion deferred to Phase 4 — see block
-#     below.
+#   - models: still shipped IN the image for now (~20 MB; the Dockerfile
+#     smoke-tests public/models/marlonjack.glb). Exclusion deferred to Phase 4 —
+#     see block below.
 public/library/*.pdf
 public/music
 public/sprites

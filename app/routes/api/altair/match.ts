@@ -7,9 +7,44 @@ import { createFileRoute } from '@tanstack/react-router';
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { z } from 'zod';
+import { grantAchievement, progressAchievement } from '@/lib/achievements/engine.server';
+import { recordGamePlay } from '@/lib/quests/engine.server';
 
 // Server-to-server auth via shared secret
 const ALTAIR_SERVER_SECRET = process.env.ALTAIR_SERVER_SECRET;
+
+// Bound every client-influenced stat to a sane maximum so a compromised/abused
+// caller can't write absurd totals into a user's co-op profile (which feeds
+// leaderboards). Values are clamped, not rejected, to keep match recording
+// resilient.
+const playerSchema = z.object({
+  userId: z.string().min(1).max(64),
+  userName: z.string().max(64).optional(),
+  classId: z.string().max(64).optional(),
+  slot: z.number().int().min(0).max(64).optional(),
+  level: z.number().int().min(0).max(1000).optional(),
+  kills: z.number().int().min(0).max(1_000_000).optional(),
+  coinsEarned: z.number().int().min(0).max(100_000_000).optional(),
+  timeSurvived: z.number().min(0).max(86_400_000).optional(),
+  wasDowned: z.boolean().optional(),
+  wasRevived: z.boolean().optional(),
+  revivesGiven: z.number().int().min(0).max(10_000).optional(),
+  revivesReceived: z.number().int().min(0).max(10_000).optional(),
+  wasAliveAtEnd: z.boolean().optional(),
+  coinBreakdown: z.unknown().optional(),
+});
+
+const matchSchema = z.object({
+  lobbyId: z.string().min(1).max(64),
+  playerCount: z.number().int().min(0).max(64).optional(),
+  doubleTime: z.boolean().optional(),
+  victory: z.boolean().optional(),
+  sharedKills: z.number().int().min(0).max(10_000_000).optional(),
+  bossesDefeated: z.array(z.string().max(64)).max(100).optional(),
+  durationMs: z.number().int().min(0).max(86_400_000).nullable().optional(),
+  players: z.array(playerSchema).min(1).max(64),
+});
 
 export const Route = createFileRoute('/api/altair/match')({
   server: {
@@ -23,6 +58,13 @@ export const Route = createFileRoute('/api/altair/match')({
     }
 
     const body = await request.json();
+    const parsed = matchSchema.safeParse(body);
+    if (!parsed.success) {
+      return Response.json(
+        { error: parsed.error.issues[0]?.message ?? 'Invalid payload' },
+        { status: 400 }
+      );
+    }
     const {
       lobbyId,
       playerCount,
@@ -32,12 +74,18 @@ export const Route = createFileRoute('/api/altair/match')({
       bossesDefeated,
       durationMs,
       players,
-    } = body;
+    } = parsed.data;
 
-    // Basic validation
-    if (!lobbyId || !Array.isArray(players) || players.length === 0) {
-      return Response.json({ error: 'Invalid payload' }, { status: 400 });
-    }
+    // Only update co-op profiles for userIds that map to real accounts —
+    // never let a caller mint/inflate profiles for arbitrary or anonymous ids.
+    const realUserIds = new Set(
+      (
+        await prisma.user.findMany({
+          where: { id: { in: players.map((p) => p.userId) } },
+          select: { id: true },
+        })
+      ).map((u) => u.id)
+    );
 
     // Create match record with player records in a transaction
     const match = await prisma.$transaction(async (tx) => {
@@ -77,7 +125,8 @@ export const Route = createFileRoute('/api/altair/match')({
           },
         });
 
-        // Upsert co-op profile
+        // Upsert co-op profile — only for verified real users.
+        if (!realUserIds.has(p.userId)) continue;
         await tx.altairCoopProfile.upsert({
           where: { userId: p.userId },
           create: {
@@ -103,6 +152,21 @@ export const Route = createFileRoute('/api/altair/match')({
 
       return matchRecord;
     });
+
+    // Achievements for real co-op players (best-effort).
+    try {
+      for (const p of players) {
+        if (!realUserIds.has(p.userId)) continue;
+        await grantAchievement(p.userId, 'game.altair.first_run');
+        if (victory) await grantAchievement(p.userId, 'game.altair.first_victory');
+        if (p.revivesGiven && p.revivesGiven > 0) {
+          await progressAchievement(p.userId, 'game.altair.coop_revives_10', { by: p.revivesGiven });
+        }
+        await recordGamePlay(p.userId);
+      }
+    } catch (e) {
+      console.error('altair achievement error:', e);
+    }
 
     return Response.json({ success: true, matchId: match.id });
   } catch (e) {

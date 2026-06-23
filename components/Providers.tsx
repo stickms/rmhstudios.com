@@ -1,6 +1,7 @@
 import { ReactNode, createContext, useContext, useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useLocation } from "@tanstack/react-router";
+import { MotionConfig } from "framer-motion";
 import { Toaster } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { useThemeStore, SITE_STYLES, SiteStyle } from "@/stores/themeStore";
@@ -44,6 +45,7 @@ type CachedSessionUser = {
   username?: string | null;
   isAdmin?: boolean;
   isVerified?: boolean;
+  tier?: string | null;
 };
 
 function readCachedUser(): CachedSessionUser | null {
@@ -185,6 +187,7 @@ export function Providers({ children, initialUser = null }: ProvidersProps) {
         username: (liveUser as { username?: string | null }).username,
         isAdmin: (liveUser as { isAdmin?: boolean }).isAdmin,
         isVerified: (liveUser as { isVerified?: boolean }).isVerified,
+        tier: (liveUser as { tier?: string | null }).tier,
       };
       writeCachedUser(snapshot);
       setCachedUser(snapshot);
@@ -283,6 +286,8 @@ export function Providers({ children, initialUser = null }: ProvidersProps) {
 
   return (
     <QueryClientProvider client={queryClient}>
+      {/* Honor the OS "reduce motion" setting across all framer-motion animations. */}
+      <MotionConfig reducedMotion="user">
       <SessionCtx.Provider value={effectiveSession}>
         <ResolvedUserCtx.Provider value={{ resolved: resolvedUser, refresh: fetchResolvedUser }}>
         {children}
@@ -299,6 +304,7 @@ export function Providers({ children, initialUser = null }: ProvidersProps) {
           }}
         />
       </SessionCtx.Provider>
+      </MotionConfig>
     </QueryClientProvider>
   );
 }
