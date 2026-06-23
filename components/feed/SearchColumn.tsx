@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Search, Loader2, Package, BookOpen } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
+import { ExploreRecommendations } from './ExploreRecommendations';
 
 interface SearchUser {
   id: string;
@@ -103,9 +104,7 @@ export function SearchColumn({ initialQuery = '' }: { initialQuery?: string }) {
       </header>
 
       {query.trim().length < 2 ? (
-        <p className="px-4 py-16 text-center text-sm text-site-text-muted">
-          Start typing to search across people, posts, builds, and the blog.
-        </p>
+        <ExploreRecommendations />
       ) : !hasResults && !loading ? (
         <p className="px-4 py-16 text-center text-sm text-site-text-muted">
           No results for &ldquo;{query}&rdquo;.

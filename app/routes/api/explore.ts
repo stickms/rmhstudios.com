@@ -76,13 +76,21 @@ export const Route = createFileRoute('/api/explore')({
             followerCount: u._count.followers,
           }));
 
+          // Communities to discover: most members first, public only.
+          const communityRows = await prisma.community.findMany({
+            where: { isPrivate: false },
+            orderBy: { memberCount: 'desc' },
+            take: 6,
+            select: { id: true, slug: true, name: true, description: true, icon: true, color: true, memberCount: true },
+          });
+
           return Response.json(
-            { trendingTags, hotPosts, suggestedUsers },
+            { trendingTags, hotPosts, suggestedUsers, communities: communityRows },
             { headers: { 'Cache-Control': 'public, max-age=60' } }
           );
         } catch (error) {
           console.error('Explore error:', error);
-          return Response.json({ trendingTags: [], hotPosts: [], suggestedUsers: [] });
+          return Response.json({ trendingTags: [], hotPosts: [], suggestedUsers: [], communities: [] });
         }
       },
     },
