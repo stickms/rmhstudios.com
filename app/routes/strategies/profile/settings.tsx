@@ -27,7 +27,7 @@ function SettingsPage() {
       <div className="rounded-lg p-4 space-y-4" style={{ background: 'var(--doctrine-bg-secondary)', border: '1px solid rgba(255,255,255,0.06)' }}>
         <div className="space-y-2">
           <label className="text-xs font-mono uppercase tracking-wider text-white/40">
-            {t('language')}
+            {t('language', { defaultValue: 'Language' })}
           </label>
           <select
             value={locale}

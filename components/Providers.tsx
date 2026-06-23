@@ -5,7 +5,8 @@ import { MotionConfig } from "framer-motion";
 import { Toaster } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { useThemeStore, SITE_STYLES, SiteStyle } from "@/stores/themeStore";
-import { useLocaleStore } from "@/stores/localeStore";
+import { useLocaleStore, writeLocaleCookie } from "@/stores/localeStore";
+import { applyHtmlLangDir } from "@/lib/i18n/dom";
 import { games } from "@/lib/games";
 import { apps } from "@/lib/apps";
 import { AppI18nProvider } from "@/components/i18n/AppI18nProvider";
@@ -168,8 +169,14 @@ export function Providers({ children, initialUser = null, locale = "en" }: Provi
   const { pathname } = useLocation();
   const isFirstRun = useRef(true);
 
-  // Sync the locale store to the SSR-resolved locale without re-writing the cookie.
+  // Sync the locale store to the SSR-resolved locale and reconcile <html lang/dir>
+  // so a user whose locale was resolved via Accept-Language (no cookie yet) gets
+  // the correct layout direction from the first client render onward.
   useEffect(() => {
+    if (typeof document !== "undefined") {
+      applyHtmlLangDir(locale, document.documentElement);
+      writeLocaleCookie(locale);
+    }
     useLocaleStore.setState({ locale });
   }, [locale]);
 
