@@ -40,6 +40,12 @@ const ENDPOINTS = [
     desc: 'The public global feed (public, free posts only).',
     example: `curl "${BASE}/api/v1/feed?limit=20" \\\n  -H "Authorization: Bearer rmh_live_..."`,
   },
+  {
+    method: 'POST',
+    path: '/api/v1/images',
+    desc: 'Upload an image (multipart/form-data, field "image", max 5 MB) and get a media_id to attach via media_ids on a post.',
+    example: `curl -X POST ${BASE}/api/v1/images \\\n  -H "Authorization: Bearer rmh_live_..." \\\n  -F "image=@./photo.png"`,
+  },
 ];
 
 function CodeBlock({ code }: { code: string }) {
