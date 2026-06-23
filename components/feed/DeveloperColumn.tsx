@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { Loader2, KeyRound, Plus, Trash2, Copy, Check, Terminal, ShieldCheck, BookOpen, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -49,6 +50,7 @@ const ENDPOINTS = [
 ];
 
 function CodeBlock({ code }: { code: string }) {
+  const { t } = useTranslation('feed');
   const [copied, setCopied] = useState(false);
   return (
     <div className="relative">
@@ -63,7 +65,7 @@ function CodeBlock({ code }: { code: string }) {
           });
         }}
         className="absolute right-2 top-2 rounded-md p-1 text-site-text-dim hover:bg-site-surface hover:text-site-text"
-        aria-label="Copy"
+        aria-label={t('copy', { defaultValue: 'Copy' })}
       >
         {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
       </button>
@@ -72,6 +74,7 @@ function CodeBlock({ code }: { code: string }) {
 }
 
 export function DeveloperColumn() {
+  const { t } = useTranslation('feed');
   const [keys, setKeys] = useState<ApiKey[]>([]);
   const [hasAccess, setHasAccess] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -119,7 +122,7 @@ export function DeveloperColumn() {
         setName('');
         await load();
       } else {
-        alert(data.error || 'Could not create key');
+        alert(data.error || t('could-not-create-key', { defaultValue: 'Could not create key' }));
       }
     } finally {
       setCreating(false);
@@ -127,7 +130,7 @@ export function DeveloperColumn() {
   }
 
   async function revoke(id: string) {
-    if (!confirm('Revoke this key? Apps using it will stop working immediately.')) return;
+    if (!confirm(t('revoke-key-confirm', { defaultValue: 'Revoke this key? Apps using it will stop working immediately.' }))) return;
     const res = await fetch(`/api/developer/keys/${id}`, { method: 'DELETE', credentials: 'include' });
     if (res.ok) setKeys((k) => k.filter((x) => x.id !== id));
   }
@@ -144,16 +147,16 @@ export function DeveloperColumn() {
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-site-border bg-site-bg/80 px-4 py-3 backdrop-blur">
         <Terminal className="h-5 w-5 text-site-accent" />
-        <h1 className="text-lg font-bold text-site-text">Developer API</h1>
+        <h1 className="text-lg font-bold text-site-text">{t('developer-api', { defaultValue: 'Developer API' })}</h1>
       </header>
 
       <div className="space-y-8 p-4">
         {/* Intro */}
         <section>
           <p className="text-sm text-site-text-muted">
-            Build on RMH Studios programmatically. The REST API is available to{' '}
-            <strong className="text-site-text">Starter subscribers and above</strong>. Authenticate every request with
-            an API key via the <code className="rounded bg-site-surface px-1">Authorization: Bearer</code> header.
+            {t('api-intro-build', { defaultValue: 'Build on RMH Studios programmatically. The REST API is available to' })}{' '}
+            <strong className="text-site-text">{t('api-intro-tier', { defaultValue: 'Starter subscribers and above' })}</strong>. {t('api-intro-auth', { defaultValue: 'Authenticate every request with an API key via the' })}{' '}
+            <code className="rounded bg-site-surface px-1">Authorization: Bearer</code> {t('api-intro-header', { defaultValue: 'header.' })}
           </p>
         </section>
 
@@ -161,27 +164,26 @@ export function DeveloperColumn() {
         {!hasAccess ? (
           <section className="rounded-xl border border-site-border bg-site-surface p-5 text-center">
             <ShieldCheck className="mx-auto mb-2 h-7 w-7 text-site-accent" />
-            <p className="font-semibold text-site-text">A subscription is required</p>
+            <p className="font-semibold text-site-text">{t('subscription-required', { defaultValue: 'A subscription is required' })}</p>
             <p className="mx-auto mt-1 max-w-sm text-sm text-site-text-muted">
-              The developer API needs an active Starter plan or higher. Your access is checked on every request, so it
-              stays in sync with your subscription.
+              {t('subscription-required-desc', { defaultValue: 'The developer API needs an active Starter plan or higher. Your access is checked on every request, so it stays in sync with your subscription.' })}
             </p>
             <Link to="/pricing" className="mt-3 inline-block">
-              <Button variant="accent" size="sm">View plans</Button>
+              <Button variant="accent" size="sm">{t('view-plans', { defaultValue: 'View plans' })}</Button>
             </Link>
           </section>
         ) : (
           <section>
             <div className="mb-2 flex items-center gap-2">
               <KeyRound className="h-4 w-4 text-site-accent" />
-              <h2 className="text-sm font-bold text-site-text">Your API keys</h2>
+              <h2 className="text-sm font-bold text-site-text">{t('your-api-keys', { defaultValue: 'Your API keys' })}</h2>
             </div>
 
             {newKey && (
               <div className="mb-3 rounded-xl border border-site-accent/40 bg-site-accent/5 p-3">
                 <div className="mb-1 flex items-center justify-between">
-                  <p className="text-xs font-semibold text-site-accent">Copy your key now — it won’t be shown again.</p>
-                  <button onClick={() => setNewKey(null)} className="text-site-text-dim hover:text-site-text" aria-label="Dismiss">
+                  <p className="text-xs font-semibold text-site-accent">{t('copy-key-now', { defaultValue: "Copy your key now — it won't be shown again." })}</p>
+                  <button onClick={() => setNewKey(null)} className="text-site-text-dim hover:text-site-text" aria-label={t('dismiss', { defaultValue: 'Dismiss' })}>
                     <X className="h-3.5 w-3.5" />
                   </button>
                 </div>
@@ -208,18 +210,18 @@ export function DeveloperColumn() {
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Key name (e.g. “My bot”)"
+                placeholder={t('key-name-placeholder', { defaultValue: 'Key name (e.g. "My bot")' })}
                 maxLength={100}
                 className="flex-1 rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
               />
               <Button size="sm" variant="accent" disabled={creating || !name.trim()} onClick={create} className="gap-1">
-                {creating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} Create
+                {creating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} {t('create', { defaultValue: 'Create' })}
               </Button>
             </div>
 
             {keys.length === 0 ? (
               <p className="rounded-lg border border-dashed border-site-border py-6 text-center text-sm text-site-text-muted">
-                No keys yet. Create one to get started.
+                {t('no-keys-yet', { defaultValue: 'No keys yet. Create one to get started.' })}
               </p>
             ) : (
               <div className="space-y-2">
@@ -229,10 +231,10 @@ export function DeveloperColumn() {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold text-site-text">{k.name}</p>
                       <p className="font-mono text-[11px] text-site-text-dim">
-                        {k.prefix}… · {k.lastUsedAt ? `last used ${new Date(k.lastUsedAt).toLocaleDateString()}` : 'never used'}
+                        {k.prefix}… · {k.lastUsedAt ? t('last-used', { date: new Date(k.lastUsedAt).toLocaleDateString(), defaultValue: 'last used {{date}}' }) : t('never-used', { defaultValue: 'never used' })}
                       </p>
                     </div>
-                    <button onClick={() => revoke(k.id)} className="text-site-text-dim hover:text-site-danger" aria-label="Revoke key">
+                    <button onClick={() => revoke(k.id)} className="text-site-text-dim hover:text-site-danger" aria-label={t('revoke-key', { defaultValue: 'Revoke key' })}>
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
@@ -246,14 +248,14 @@ export function DeveloperColumn() {
         <section>
           <div className="mb-2 flex items-center gap-2">
             <BookOpen className="h-4 w-4 text-site-accent" />
-            <h2 className="text-sm font-bold text-site-text">API reference</h2>
+            <h2 className="text-sm font-bold text-site-text">{t('api-reference', { defaultValue: 'API reference' })}</h2>
           </div>
 
           <div className="space-y-2 rounded-xl border border-site-border bg-site-surface p-4 text-sm text-site-text-muted">
-            <p><strong className="text-site-text">Base URL</strong> — <code className="rounded bg-site-bg px-1">{BASE}</code></p>
-            <p><strong className="text-site-text">Auth</strong> — send <code className="rounded bg-site-bg px-1">Authorization: Bearer &lt;key&gt;</code> (or <code className="rounded bg-site-bg px-1">X-API-Key</code>) on every request.</p>
-            <p><strong className="text-site-text">Rate limits</strong> — 120 req/min (Starter), 600 req/min (Pro+), per key. A <code className="rounded bg-site-bg px-1">429</code> includes <code className="rounded bg-site-bg px-1">Retry-After</code>.</p>
-            <p><strong className="text-site-text">Errors</strong> — non-2xx responses are <code className="rounded bg-site-bg px-1">{'{ "error": { "code", "message" } }'}</code>.</p>
+            <p><strong className="text-site-text">{t('base-url', { defaultValue: 'Base URL' })}</strong> — <code className="rounded bg-site-bg px-1">{BASE}</code></p>
+            <p><strong className="text-site-text">{t('auth', { defaultValue: 'Auth' })}</strong> — {t('auth-desc', { defaultValue: 'send' })} <code className="rounded bg-site-bg px-1">Authorization: Bearer &lt;key&gt;</code> ({t('auth-or', { defaultValue: 'or' })} <code className="rounded bg-site-bg px-1">X-API-Key</code>) {t('on-every-request', { defaultValue: 'on every request.' })}</p>
+            <p><strong className="text-site-text">{t('rate-limits', { defaultValue: 'Rate limits' })}</strong> — {t('rate-limits-desc', { defaultValue: '120 req/min (Starter), 600 req/min (Pro+), per key. A' })} <code className="rounded bg-site-bg px-1">429</code> {t('rate-limits-includes', { defaultValue: 'includes' })} <code className="rounded bg-site-bg px-1">Retry-After</code>.</p>
+            <p><strong className="text-site-text">{t('errors', { defaultValue: 'Errors' })}</strong> — {t('errors-desc', { defaultValue: 'non-2xx responses are' })} <code className="rounded bg-site-bg px-1">{'{ "error": { "code", "message" } }'}</code>.</p>
           </div>
 
           <div className="mt-3 space-y-3">
@@ -278,8 +280,8 @@ export function DeveloperColumn() {
           </div>
 
           <p className="mt-3 text-xs text-site-text-dim">
-            Full reference, examples, and changelog: see{' '}
-            <code className="rounded bg-site-surface px-1">docs/developer-api.md</code> in the repository.
+            {t('full-reference-see', { defaultValue: 'Full reference, examples, and changelog: see' })}{' '}
+            <code className="rounded bg-site-surface px-1">docs/developer-api.md</code> {t('in-the-repository', { defaultValue: 'in the repository.' })}
           </p>
         </section>
       </div>

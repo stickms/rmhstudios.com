@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Bookmark, Loader2 } from 'lucide-react';
 import { RMHarkCard } from './RMHarkCard';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ export function BookmarksColumn() {
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const { t } = useTranslation('feed');
 
   const load = useCallback(async (cur?: string) => {
     try {
@@ -43,7 +45,7 @@ export function BookmarksColumn() {
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-site-border bg-site-bg/80 px-4 py-3 backdrop-blur">
         <Bookmark className="h-5 w-5 text-site-accent" />
-        <h1 className="text-lg font-bold text-site-text">Bookmarks</h1>
+        <h1 className="text-lg font-bold text-site-text">{t("bookmarks-title", { defaultValue: "Bookmarks" })}</h1>
       </header>
 
       {loading ? (
@@ -55,9 +57,9 @@ export function BookmarksColumn() {
           <div className="rounded-2xl border border-site-border bg-site-surface p-4">
             <Bookmark className="h-8 w-8 text-site-text-muted" />
           </div>
-          <p className="font-medium text-site-text">No bookmarks yet</p>
+          <p className="font-medium text-site-text">{t("no-bookmarks-yet", { defaultValue: "No bookmarks yet" })}</p>
           <p className="max-w-xs text-sm text-site-text-muted">
-            Save posts from the &ldquo;&hellip;&rdquo; menu and they&apos;ll show up here.
+            {t("no-bookmarks-hint", { defaultValue: "Save posts from the “…” menu and they’ll show up here." })}
           </p>
         </div>
       ) : (
@@ -71,7 +73,7 @@ export function BookmarksColumn() {
       {hasMore && (
         <div className="flex justify-center py-4">
           <Button variant="secondary" size="sm" onClick={loadMore} disabled={loadingMore}>
-            {loadingMore ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Load more'}
+            {loadingMore ? <Loader2 className="h-4 w-4 animate-spin" /> : t("load-more", { defaultValue: "Load more" })}
           </Button>
         </div>
       )}

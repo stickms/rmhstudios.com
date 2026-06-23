@@ -8,6 +8,7 @@ import { useSession, useResolvedUser } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { GhostTextArea } from './GhostTextArea';
 import { useMessageSuggestion } from '@/lib/useMessageSuggestion';
+import { useTranslation } from "react-i18next";
 
 interface Message {
   id: string;
@@ -46,6 +47,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
   const typingStopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const otherTypingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const { t } = useTranslation("feed");
   const { data: session } = useSession();
   const { resolved: resolvedUser } = useResolvedUser();
 
@@ -316,7 +318,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error || 'Failed to send message');
+        setError(data.error || t("failed-to-send-message", { defaultValue: "Failed to send message" }));
         // Remove optimistic message
         setMessages((prev) => prev.filter((m) => m.id !== tempId));
         setInput(content);
@@ -329,7 +331,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
         prev.map((m) => (m.id === tempId ? data.message : m))
       );
     } catch {
-      setError('Failed to send message');
+      setError(t("failed-to-send-message", { defaultValue: "Failed to send message" }));
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
       setInput(content);
     } finally {
@@ -356,8 +358,8 @@ export function ConversationView({ conversationId }: { conversationId: string })
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
 
-    if (d.toDateString() === today.toDateString()) return 'Today';
-    if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
+    if (d.toDateString() === today.toDateString()) return t("today", { defaultValue: "Today" });
+    if (d.toDateString() === yesterday.toDateString()) return t("yesterday", { defaultValue: "Yesterday" });
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
@@ -371,9 +373,9 @@ export function ConversationView({ conversationId }: { conversationId: string })
   if (!session) {
     return (
       <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-        <p className="text-lg font-medium text-site-text mb-1">Sign in to view messages</p>
+        <p className="text-lg font-medium text-site-text mb-1">{t("sign-in-to-view-messages", { defaultValue: "Sign in to view messages" })}</p>
         <Link to="/login" search={{ callbackURL: undefined }}>
-          <Button variant="accent" size="sm">Sign In</Button>
+          <Button variant="accent" size="sm">{t("sign-in", { defaultValue: "Sign In" })}</Button>
         </Link>
       </div>
     );
@@ -382,9 +384,9 @@ export function ConversationView({ conversationId }: { conversationId: string })
   if (notFound) {
     return (
       <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-        <p className="text-lg font-medium text-site-text mb-1">Conversation not found</p>
+        <p className="text-lg font-medium text-site-text mb-1">{t("conversation-not-found", { defaultValue: "Conversation not found" })}</p>
         <Link to="/messages">
-          <Button variant="accent" size="sm">Back to Messages</Button>
+          <Button variant="accent" size="sm">{t("back-to-messages", { defaultValue: "Back to Messages" })}</Button>
         </Link>
       </div>
     );
@@ -432,7 +434,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
                   disabled={loadingOlder}
                   className="text-sm text-site-accent hover:underline disabled:opacity-50"
                 >
-                  {loadingOlder ? 'Loading...' : 'Load older messages'}
+                  {loadingOlder ? t("loading", { defaultValue: "Loading..." }) : t("load-older-messages", { defaultValue: "Load older messages" })}
                 </button>
               </div>
             )}
@@ -440,7 +442,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
             {messages.length === 0 && (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <p className="text-sm text-site-text-muted">
-                  No messages yet. Send one to start the conversation!
+                  {t("no-messages-yet", { defaultValue: "No messages yet. Send one to start the conversation!" })}
                 </p>
               </div>
             )}
@@ -520,7 +522,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
                   fallbackName={otherUser?.name ?? undefined}
                 />
                 <div className="bg-site-surface text-site-text rounded-tl-md rounded-tr-2xl rounded-br-2xl rounded-bl-md px-4 py-3">
-                  <div className="flex items-center gap-1" aria-label={`${otherUser?.name || 'User'} is typing`}>
+                  <div className="flex items-center gap-1" aria-label={t("user-is-typing", { name: otherUser?.name || t("user-fallback", { defaultValue: "User" }), defaultValue: "{{name}} is typing" })}>
                     <span className="w-1.5 h-1.5 rounded-full bg-site-text-dim animate-bounce [animation-delay:-0.3s]" />
                     <span className="w-1.5 h-1.5 rounded-full bg-site-text-dim animate-bounce [animation-delay:-0.15s]" />
                     <span className="w-1.5 h-1.5 rounded-full bg-site-text-dim animate-bounce" />
@@ -559,7 +561,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
             }}
             onBlur={stopTyping}
             onKeyDown={handleKeyDown}
-            placeholder="Type a message..."
+            placeholder={t("type-a-message", { defaultValue: "Type a message..." })}
             rows={1}
             maxLength={2000}
             className="bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-xl px-4 py-2.5 border border-site-border outline-none focus:border-site-accent transition-colors resize-none max-h-32 overflow-y-auto"

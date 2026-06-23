@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { MessageCircle, Users, Bell } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { MobileMenuButton } from './MobileMenuButton';
 import { MobileBrandPrefix } from './MobileHeader';
 import { useSession } from '@/components/Providers';
@@ -21,14 +22,15 @@ type InboxTab = 'messages' | 'groups' | 'notifications';
  */
 export function InboxColumn({ initialTab = 'messages' }: { initialTab?: InboxTab }) {
   const [tab, setTab] = useState<InboxTab>(initialTab);
+  const { t } = useTranslation('feed');
   const { data: session } = useSession();
   const unreadMessages = useUnreadCount(!!session);
   const { count: unreadNotifications } = useNotificationCount(!!session);
 
   const tabs: { id: InboxTab; label: string; icon: typeof MessageCircle; badge?: number }[] = [
-    { id: 'messages', label: 'Messages', icon: MessageCircle, badge: unreadMessages },
-    { id: 'groups', label: 'Groups', icon: Users },
-    { id: 'notifications', label: 'Notifications', icon: Bell, badge: unreadNotifications },
+    { id: 'messages', label: t('inbox-tab-messages', { defaultValue: 'Messages' }), icon: MessageCircle, badge: unreadMessages },
+    { id: 'groups', label: t('inbox-tab-groups', { defaultValue: 'Groups' }), icon: Users },
+    { id: 'notifications', label: t('inbox-tab-notifications', { defaultValue: 'Notifications' }), icon: Bell, badge: unreadNotifications },
   ];
 
   return (
@@ -39,10 +41,10 @@ export function InboxColumn({ initialTab = 'messages' }: { initialTab?: InboxTab
           <MobileMenuButton />
           <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 min-w-0">
             <MobileBrandPrefix />
-            Inbox
+            {t('inbox-title', { defaultValue: 'Inbox' })}
           </h1>
         </div>
-        <div className="flex items-center gap-1 px-2 pb-2" role="tablist" aria-label="Inbox sections">
+        <div className="flex items-center gap-1 px-2 pb-2" role="tablist" aria-label={t('inbox-sections-label', { defaultValue: 'Inbox sections' })}>
           {tabs.map((t) => {
             const Icon = t.icon;
             const active = tab === t.id;

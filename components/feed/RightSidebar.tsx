@@ -1,6 +1,7 @@
 'use client';
 
 import { Link } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import {
@@ -66,13 +67,14 @@ export function RightSidebar({
   recommendedUsers,
   blogPosts,
 }: RightSidebarProps) {
+  const { t } = useTranslation('feed');
   return (
     <div className="p-4 space-y-6">
       {/* Official Builds */}
       <section className="bg-site-surface rounded-2xl p-4 border border-site-border">
         <h2 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 mb-3">
           <Package className="w-5 h-5 text-site-accent" />
-          Official Builds
+          {t('official-builds', { defaultValue: 'Official Builds' })}
         </h2>
         <div className="space-y-2.5">
           {officialBuilds.map((build) => {
@@ -127,7 +129,7 @@ export function RightSidebar({
           })}
         </div>
         <Link to="/builds" className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors">
-          Show more
+          {t('show-more', { defaultValue: 'Show more' })}
         </Link>
       </section>
 
@@ -135,7 +137,7 @@ export function RightSidebar({
       <section className="bg-site-surface rounded-2xl p-4 border border-site-border">
         <h2 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 mb-3">
           <Hammer className="w-5 h-5 text-site-accent" />
-          User Builds
+          {t('user-builds', { defaultValue: 'User Builds' })}
         </h2>
         <div className="space-y-2.5">
           {userBuilds.map((build) => (
@@ -157,7 +159,7 @@ export function RightSidebar({
                 </p>
                 {build.creator && (
                   <p className="text-xs text-site-text-dim truncate mt-0.5">
-                    by {build.creator.name || build.creator.username || 'Unknown'}
+                    {t('build-by', { creator: build.creator.name || build.creator.username || t('unknown', { defaultValue: 'Unknown' }), defaultValue: 'by {{creator}}' })}
                   </p>
                 )}
                 <div className="flex items-center gap-2 text-[11px] text-site-text-dim mt-0.5">
@@ -178,7 +180,7 @@ export function RightSidebar({
       <section className="bg-site-surface rounded-2xl p-4 border border-site-border">
         <h2 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 mb-3">
           <UserPlus className="w-5 h-5 text-site-accent" />
-          Recommended Users
+          {t('recommended-users', { defaultValue: 'Recommended Users' })}
         </h2>
         <div className="space-y-2.5">
           {recommendedUsers.map((user) => {
@@ -186,16 +188,16 @@ export function RightSidebar({
             return (
               <div key={user.id} className="-mx-2 px-2 flex items-center gap-2.5 rounded-lg py-1.5 hover:bg-site-surface-hover transition-colors">
                 <Link to={profileHref as string} className="flex items-center gap-2.5 min-w-0 flex-1">
-                  <UserAvatar src={user.image ?? undefined} alt={user.name || user.username || 'User'} size={36} fallbackName={(user.name || user.username) ?? undefined} />
+                  <UserAvatar src={user.image ?? undefined} alt={user.name || user.username || t('user', { defaultValue: 'User' })} size={36} fallbackName={(user.name || user.username) ?? undefined} />
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-site-text truncate">{user.name || user.username || 'User'}</p>
+                    <p className="text-sm font-medium text-site-text truncate">{user.name || user.username || t('user', { defaultValue: 'User' })}</p>
                     <p className="text-xs text-site-text-dim">
-                      {user.followerCount} followers
+                      {t('follower-count', { count: user.followerCount, defaultValue: '{{count}} followers' })}
                     </p>
                   </div>
                 </Link>
                 <Link to={profileHref as string} className="text-xs font-semibold text-site-accent hover:text-site-accent-hover transition-colors">
-                  Follow
+                  {t('follow', { defaultValue: 'Follow' })}
                 </Link>
               </div>
             );
@@ -207,7 +209,7 @@ export function RightSidebar({
       <section className="bg-site-surface rounded-2xl p-4 border border-site-border">
         <h2 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 mb-3">
           <BookOpen className="w-5 h-5 text-site-accent" />
-          Blog
+          {t('blog', { defaultValue: 'Blog' })}
         </h2>
         <div className="space-y-3">
           {blogPosts.map((post) => (
@@ -226,10 +228,10 @@ export function RightSidebar({
 
       {/* Footer */}
       <div className="text-xs text-site-text-dim px-2 space-y-1">
-        <p>RMH | The Everything Platform</p>
+        <p>{t('footer-tagline', { defaultValue: 'RMH | The Everything Platform' })}</p>
         <div className="flex flex-wrap gap-x-2 gap-y-0.5">
-          <Link to="/blog" className="hover:text-site-text transition-colors">Blog</Link>
-          <Link to="/roadmap" className="hover:text-site-text transition-colors">Roadmap</Link>
+          <Link to="/blog" className="hover:text-site-text transition-colors">{t('blog', { defaultValue: 'Blog' })}</Link>
+          <Link to="/roadmap" className="hover:text-site-text transition-colors">{t('roadmap', { defaultValue: 'Roadmap' })}</Link>
         </div>
       </div>
     </div>

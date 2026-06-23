@@ -9,6 +9,7 @@ import { Loader2, Flag, ExternalLink, ArrowLeft } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 const getAdminSession = createServerFn({ method: 'GET' }).handler(async () => {
   const request = getRequest();
@@ -55,6 +56,7 @@ function entityLink(r: Report): string | null {
 }
 
 function AdminReportsPage() {
+  const { t } = useTranslation('admin');
   const [status, setStatus] = useState<Status>('PENDING');
   const [reports, setReports] = useState<Report[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
@@ -99,12 +101,12 @@ function AdminReportsPage() {
   };
 
   const moderateUser = async (userId: string, kind: 'strike' | 'ban') => {
-    const reason = prompt(kind === 'ban' ? 'Ban reason:' : 'Strike reason:');
+    const reason = prompt(kind === 'ban' ? t('ban-reason-prompt', { defaultValue: 'Ban reason:' }) : t('strike-reason-prompt', { defaultValue: 'Strike reason:' }));
     if (!reason) return;
     const url = `/api/admin/users/${userId}/${kind}`;
     const body =
       kind === 'ban'
-        ? { reason, durationDays: parseInt(prompt('Ban length in days (blank = permanent):') || '', 10) || null }
+        ? { reason, durationDays: parseInt(prompt(t('ban-length-prompt', { defaultValue: 'Ban length in days (blank = permanent):' })) || '', 10) || null }
         : { reason };
     const res = await fetch(url, {
       method: 'POST',
@@ -112,21 +114,21 @@ function AdminReportsPage() {
       credentials: 'include',
       body: JSON.stringify(body),
     });
-    if (res.ok) toast.success(kind === 'ban' ? 'User banned' : 'Strike issued');
-    else toast.error('Action failed');
+    if (res.ok) toast.success(kind === 'ban' ? t('user-banned', { defaultValue: 'User banned' }) : t('strike-issued', { defaultValue: 'Strike issued' }));
+    else toast.error(t('action-failed', { defaultValue: 'Action failed' }));
   };
 
   return (
-    <PageLayout title="Moderation Queue" wide>
+    <PageLayout title={t('moderation-queue', { defaultValue: 'Moderation Queue' })} wide>
       <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
         <div className="flex items-center gap-3">
-          <Link to="/admin" className="text-site-text-dim hover:text-site-text transition-colors shrink-0" aria-label="Back to admin">
+          <Link to="/admin" className="text-site-text-dim hover:text-site-text transition-colors shrink-0" aria-label={t('back-to-admin', { defaultValue: 'Back to admin' })}>
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <Flag className="h-6 w-6 text-site-accent" />
           <div>
-            <h1 className="text-2xl font-bold font-display text-site-text">Moderation Queue</h1>
-            <p className="text-site-text-muted mt-1 text-sm">Review and resolve user reports.</p>
+            <h1 className="text-2xl font-bold font-display text-site-text">{t('moderation-queue', { defaultValue: 'Moderation Queue' })}</h1>
+            <p className="text-site-text-muted mt-1 text-sm">{t('moderation-queue-description', { defaultValue: 'Review and resolve user reports.' })}</p>
           </div>
         </div>
 
@@ -154,7 +156,7 @@ function AdminReportsPage() {
           </div>
         ) : reports.length === 0 ? (
           <div className="rounded-xl border border-site-border bg-site-surface p-10 text-center text-site-text-muted">
-            Nothing here. The queue is clear.
+            {t('queue-empty', { defaultValue: 'Nothing here. The queue is clear.' })}
           </div>
         ) : (
           <ul className="space-y-3">
@@ -179,7 +181,7 @@ function AdminReportsPage() {
                         rel="noreferrer"
                         className="ml-auto inline-flex items-center gap-1 text-xs text-site-accent hover:underline"
                       >
-                        View content <ExternalLink className="h-3 w-3" />
+                        {t('view-content', { defaultValue: 'View content' })} <ExternalLink className="h-3 w-3" />
                       </a>
                     )}
                   </div>
@@ -188,13 +190,13 @@ function AdminReportsPage() {
 
                   <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-site-text-muted">
                     <span className="inline-flex items-center gap-1.5">
-                      <UserAvatar src={r.reporter.image} alt={r.reporter.name || 'Reporter'} size={20} fallbackName={r.reporter.name || 'R'} />
-                      reported by <strong className="text-site-text">{r.reporter.name || r.reporter.handle}</strong>
+                      <UserAvatar src={r.reporter.image} alt={r.reporter.name || t('reporter', { defaultValue: 'Reporter' })} size={20} fallbackName={r.reporter.name || 'R'} />
+                      {t('reported-by', { defaultValue: 'reported by' })} <strong className="text-site-text">{r.reporter.name || r.reporter.handle}</strong>
                     </span>
                     {r.targetUser && (
                       <span className="inline-flex items-center gap-1.5">
-                        <UserAvatar src={r.targetUser.image} alt={r.targetUser.name || 'User'} size={20} fallbackName={r.targetUser.name || 'U'} />
-                        against <strong className="text-site-text">{r.targetUser.name || r.targetUser.handle}</strong>
+                        <UserAvatar src={r.targetUser.image} alt={r.targetUser.name || t('user', { defaultValue: 'User' })} size={20} fallbackName={r.targetUser.name || 'U'} />
+                        {t('against', { defaultValue: 'against' })} <strong className="text-site-text">{r.targetUser.name || r.targetUser.handle}</strong>
                       </span>
                     )}
                   </div>
@@ -203,27 +205,27 @@ function AdminReportsPage() {
                     <div className="mt-4 flex flex-wrap gap-2">
                       {status === 'PENDING' && (
                         <Button size="sm" variant="secondary" disabled={busyId === r.id} onClick={() => act(r.id, 'review')}>
-                          Mark reviewing
+                          {t('mark-reviewing', { defaultValue: 'Mark reviewing' })}
                         </Button>
                       )}
                       <Button size="sm" variant="accent" disabled={busyId === r.id} onClick={() => act(r.id, 'resolve')}>
-                        Resolve
+                        {t('resolve', { defaultValue: 'Resolve' })}
                       </Button>
                       {(r.entityType === 'rmhark' || r.entityType === 'comment') && (
                         <Button size="sm" variant="destructive" disabled={busyId === r.id} onClick={() => act(r.id, 'resolve', true)}>
-                          Resolve &amp; remove content
+                          {t('resolve-and-remove-content', { defaultValue: 'Resolve & remove content' })}
                         </Button>
                       )}
                       <Button size="sm" variant="ghost" disabled={busyId === r.id} onClick={() => act(r.id, 'dismiss')}>
-                        Dismiss
+                        {t('dismiss', { defaultValue: 'Dismiss' })}
                       </Button>
                       {r.targetUser && (
                         <>
                           <Button size="sm" variant="ghost" onClick={() => moderateUser(r.targetUser!.id, 'strike')}>
-                            Strike author
+                            {t('strike-author', { defaultValue: 'Strike author' })}
                           </Button>
                           <Button size="sm" variant="ghost" className="text-site-danger" onClick={() => moderateUser(r.targetUser!.id, 'ban')}>
-                            Ban author
+                            {t('ban-author', { defaultValue: 'Ban author' })}
                           </Button>
                         </>
                       )}

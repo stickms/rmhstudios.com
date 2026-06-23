@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Loader2, ShoppingBag, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
@@ -21,6 +22,7 @@ interface ShopItemView {
 }
 
 function Preview({ item }: { item: ShopItemView }) {
+  const { t } = useTranslation("feed");
   const { kind, data } = item;
   if (kind === 'BADGE' || kind === 'PET') {
     return <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-site-bg text-2xl">{data.emoji}</div>;
@@ -31,7 +33,7 @@ function Preview({ item }: { item: ShopItemView }) {
         className="flex h-12 items-center justify-center rounded-lg px-3 text-sm font-bold"
         style={data.gradient ? { background: data.gradient, color: '#fff' } : { color: data.color }}
       >
-        Name
+        {t("name-preview", { defaultValue: "Name" })}
       </div>
     );
   }
@@ -47,6 +49,7 @@ function Preview({ item }: { item: ShopItemView }) {
 }
 
 export function ShopColumn() {
+  const { t } = useTranslation("feed");
   const [items, setItems] = useState<ShopItemView[]>([]);
   const [coins, setCoins] = useState(0);
   const [signedIn, setSignedIn] = useState(false);
@@ -83,11 +86,11 @@ export function ShopColumn() {
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        toast.success(`Purchased ${item.name}!`);
+        toast.success(t("purchased-item", { name: item.name, defaultValue: "Purchased {{name}}!" }));
         setCoins(data.newBalance);
         setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, owned: true } : i)));
       } else {
-        toast.error(data.error || 'Purchase failed');
+        toast.error(data.error || t("purchase-failed", { defaultValue: "Purchase failed" }));
       }
     } finally {
       setBusy(null);
@@ -122,7 +125,7 @@ export function ShopColumn() {
       <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-site-border bg-site-bg/80 px-4 py-3 backdrop-blur">
         <div className="flex items-center gap-2">
           <ShoppingBag className="h-5 w-5 text-site-accent" />
-          <h1 className="text-lg font-bold text-site-text">Shop</h1>
+          <h1 className="text-lg font-bold text-site-text">{t("shop-title", { defaultValue: "Shop" })}</h1>
         </div>
         {signedIn && (
           <span className="inline-flex items-center gap-1 rounded-full bg-site-surface px-3 py-1 text-sm font-semibold text-site-text">
@@ -131,7 +134,7 @@ export function ShopColumn() {
         )}
       </header>
 
-      <div className="flex gap-1 overflow-x-auto border-b border-site-border px-3 py-2" role="tablist" aria-label="Shop categories">
+      <div className="flex gap-1 overflow-x-auto border-b border-site-border px-3 py-2" role="tablist" aria-label={t("shop-categories-label", { defaultValue: "Shop categories" })}>
         {KIND_ORDER.map((k) => (
           <button
             key={k}
@@ -169,7 +172,7 @@ export function ShopColumn() {
                 </div>
                 <p className="truncate text-xs text-site-text-muted">{item.description}</p>
                 {item.requiresTier && (
-                  <p className="text-[10px] uppercase text-site-accent">{item.requiresTier} plan</p>
+                  <p className="text-[10px] uppercase text-site-accent">{t("requires-tier-plan", { tier: item.requiresTier, defaultValue: "{{tier}} plan" })}</p>
                 )}
               </div>
               <div className="shrink-0">
@@ -182,7 +185,7 @@ export function ShopColumn() {
                     disabled={busy === item.id}
                     onClick={() => equip(item, !item.equipped)}
                   >
-                    {item.equipped ? <><Check className="h-4 w-4" /> Equipped</> : 'Equip'}
+                    {item.equipped ? <><Check className="h-4 w-4" /> {t("equipped", { defaultValue: "Equipped" })}</> : t("equip", { defaultValue: "Equip" })}
                   </Button>
                 ) : (
                   <Button size="sm" variant="accent-outline" disabled={busy === item.id} onClick={() => buy(item)}>

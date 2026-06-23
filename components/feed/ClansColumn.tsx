@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { Loader2, Shield, Plus, Trophy, Users, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,7 @@ interface ClanRow {
 const fmt = (n: number) => n.toLocaleString();
 
 export function ClansColumn() {
+  const { t } = useTranslation('feed');
   const [clans, setClans] = useState<ClanRow[]>([]);
   const [myClanSlug, setMyClanSlug] = useState<string | null>(null);
   const [foundCost, setFoundCost] = useState(500);
@@ -71,7 +73,7 @@ export function ClansColumn() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error ?? 'Could not create clan');
+        setError(data.error ?? t('could-not-create-clan', { defaultValue: 'Could not create clan' }));
         return;
       }
       setShowForm(false);
@@ -94,16 +96,16 @@ export function ClansColumn() {
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-site-border bg-site-bg/80 px-4 py-3 backdrop-blur">
         <Shield className="h-5 w-5 text-site-accent" />
-        <h1 className="text-lg font-bold text-site-text">Clans</h1>
+        <h1 className="text-lg font-bold text-site-text">{t('clans-heading', { defaultValue: 'Clans' })}</h1>
         {signedIn && !myClanSlug && (
           <Button size="sm" variant="accent" className="ml-auto gap-1" onClick={() => setShowForm((v) => !v)}>
-            <Plus className="h-3.5 w-3.5" /> Found a clan
+            <Plus className="h-3.5 w-3.5" /> {t('found-a-clan', { defaultValue: 'Found a clan' })}
           </Button>
         )}
         {myClanSlug && (
           <Link to={`/clans/${myClanSlug}` as string} className="ml-auto">
             <Button size="sm" variant="outline" className="gap-1">
-              <Shield className="h-3.5 w-3.5" /> My clan
+              <Shield className="h-3.5 w-3.5" /> {t('my-clan', { defaultValue: 'My clan' })}
             </Button>
           </Link>
         )}
@@ -112,8 +114,8 @@ export function ClansColumn() {
       {showForm && (
         <div className="border-b border-site-border bg-site-surface/30 p-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-site-text">Found a new clan</h2>
-            <button onClick={() => setShowForm(false)} className="text-site-text-dim hover:text-site-text" aria-label="Close">
+            <h2 className="text-sm font-semibold text-site-text">{t('found-new-clan-heading', { defaultValue: 'Found a new clan' })}</h2>
+            <button onClick={() => setShowForm(false)} className="text-site-text-dim hover:text-site-text" aria-label={t('close', { defaultValue: 'Close' })}>
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -121,21 +123,21 @@ export function ClansColumn() {
             <input
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-              placeholder="Clan name"
+              placeholder={t('clan-name-placeholder', { defaultValue: 'Clan name' })}
               maxLength={40}
               className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
             <input
               value={form.tag}
               onChange={(e) => setForm((f) => ({ ...f, tag: e.target.value.toUpperCase() }))}
-              placeholder="Tag (2–6, e.g. RMH)"
+              placeholder={t('clan-tag-placeholder', { defaultValue: 'Tag (2–6, e.g. RMH)' })}
               maxLength={6}
               className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm uppercase text-site-text outline-none focus:border-site-accent"
             />
             <textarea
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-              placeholder="Description (optional)"
+              placeholder={t('clan-description-placeholder', { defaultValue: 'Description (optional)' })}
               maxLength={300}
               rows={2}
               className="w-full resize-none rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
@@ -143,7 +145,7 @@ export function ClansColumn() {
             {error && <p className="text-xs text-site-danger">{error}</p>}
             <div className="flex items-center justify-between">
               <span className="inline-flex items-center gap-1 text-xs text-site-text-dim">
-                Costs <CoinIcon className="h-3.5 w-3.5" /> {fmt(foundCost)}
+                {t('costs-label', { defaultValue: 'Costs' })} <CoinIcon className="h-3.5 w-3.5" /> {fmt(foundCost)}
               </span>
               <Button
                 size="sm"
@@ -151,7 +153,7 @@ export function ClansColumn() {
                 disabled={creating || form.name.trim().length < 2 || form.tag.trim().length < 2}
                 onClick={create}
               >
-                {creating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Create'}
+                {creating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t('create-button', { defaultValue: 'Create' })}
               </Button>
             </div>
           </div>
@@ -160,10 +162,10 @@ export function ClansColumn() {
 
       <div className="p-4">
         <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
-          <Trophy className="h-3.5 w-3.5" /> Leaderboard
+          <Trophy className="h-3.5 w-3.5" /> {t('leaderboard', { defaultValue: 'Leaderboard' })}
         </h2>
         {clans.length === 0 ? (
-          <p className="py-12 text-center text-sm text-site-text-muted">No clans yet — found the first one!</p>
+          <p className="py-12 text-center text-sm text-site-text-muted">{t('no-clans-yet', { defaultValue: 'No clans yet — found the first one!' })}</p>
         ) : (
           <div className="space-y-2">
             {clans.map((c) => (

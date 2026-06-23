@@ -25,6 +25,9 @@ import { EngagementListModal } from './EngagementListModal';
 import { InsightsModal } from './InsightsModal';
 import { ShareModal } from './ShareModal';
 import { timeAgoShort } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
+import { useLocaleStore } from '@/stores/localeStore';
+import { LOCALE_TO_LANGUAGE_NAME } from '@/lib/i18n/config';
 
 interface RMHarkCardProps {
   item: FeedItem;
@@ -43,6 +46,8 @@ function postHref(user: FeedItemUser | undefined | null, postId: string): string
 // UserAvatar imported from shared component
 
 export function RMHarkCard({ item }: RMHarkCardProps) {
+  const { t } = useTranslation('feed');
+  const locale = useLocaleStore((s) => s.locale);
   const viewTracked = useRef(false);
   const navigate = useNavigate();
   const actualId = item.actualId ?? item.id;
@@ -77,15 +82,12 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
   const [translating, setTranslating] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const browserLang = () => {
-    const map: Record<string, string> = {
-      en: 'English', es: 'Spanish', fr: 'French', de: 'German', pt: 'Portuguese', it: 'Italian',
-      nl: 'Dutch', ja: 'Japanese', ko: 'Korean', zh: 'Chinese', ru: 'Russian', ar: 'Arabic',
-      hi: 'Hindi', tr: 'Turkish', pl: 'Polish',
-    };
-    if (typeof navigator === 'undefined') return 'English';
-    return map[(navigator.language || 'en').slice(0, 2).toLowerCase()] ?? 'English';
-  };
+  // When the site language changes, drop any cached translation so the next
+  // "Translate" click re-translates into the newly selected language.
+  useEffect(() => {
+    setTranslatedText(null);
+    setShowTranslated(false);
+  }, [locale]);
 
   const handleTranslate = async () => {
     setMenuOpen(false);
@@ -95,9 +97,9 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
     }
     setTranslating(true);
     try {
-      const res = await fetch(`/api/rmharks/${actualId}/translate?to=${encodeURIComponent(browserLang())}`, { credentials: 'include' });
+      const res = await fetch(`/api/rmharks/${actualId}/translate?to=${encodeURIComponent(LOCALE_TO_LANGUAGE_NAME[locale])}`, { credentials: 'include' });
       if (!res.ok) {
-        toast.error('Could not translate this post.');
+        toast.error(t('translate-error', { defaultValue: 'Could not translate this post.' }));
         return;
       }
       const data = await res.json();
@@ -117,12 +119,12 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
         setPinned(!!data.pinned);
-        toast.success(data.pinned ? 'Pinned to your profile' : 'Unpinned');
+        toast.success(data.pinned ? t('pinned-success', { defaultValue: 'Pinned to your profile' }) : t('unpinned-success', { defaultValue: 'Unpinned' }));
       } else {
-        toast.error(data.error || 'Could not pin post');
+        toast.error(data.error || t('pin-error', { defaultValue: 'Could not pin post' }));
       }
     } catch {
-      toast.error('Could not pin post');
+      toast.error(t('pin-error', { defaultValue: 'Could not pin post' }));
     }
   };
 
@@ -138,10 +140,10 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
         setBookmarked(!!data.bookmarked);
-        toast.success(data.bookmarked ? 'Saved to bookmarks' : 'Removed from bookmarks');
+        toast.success(data.bookmarked ? t('bookmark-saved', { defaultValue: 'Saved to bookmarks' }) : t('bookmark-removed', { defaultValue: 'Removed from bookmarks' }));
       } else {
         setBookmarked(!next);
-        if (res.status === 401) toast.error('Please sign in to bookmark posts.');
+        if (res.status === 401) toast.error(t('bookmark-sign-in', { defaultValue: 'Please sign in to bookmark posts.' }));
       }
     } catch {
       setBookmarked(!next);
@@ -161,13 +163,13 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        toast.success(data.blocked ? 'User blocked' : 'User unblocked');
+        toast.success(data.blocked ? t('user-blocked', { defaultValue: 'User blocked' }) : t('user-unblocked', { defaultValue: 'User unblocked' }));
         if (data.blocked) removeItem(item.id);
       } else {
-        toast.error(data.error || 'Could not block user');
+        toast.error(data.error || t('block-error', { defaultValue: 'Could not block user' }));
       }
     } catch {
-      toast.error('Could not block user');
+      toast.error(t('block-error', { defaultValue: 'Could not block user' }));
     }
   };
   const handleMute = async () => {
@@ -182,13 +184,13 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        toast.success(data.muted ? 'User muted' : 'User unmuted');
+        toast.success(data.muted ? t('user-muted', { defaultValue: 'User muted' }) : t('user-unmuted', { defaultValue: 'User unmuted' }));
         if (data.muted) removeItem(item.id);
       } else {
-        toast.error(data.error || 'Could not mute user');
+        toast.error(data.error || t('mute-error', { defaultValue: 'Could not mute user' }));
       }
     } catch {
-      toast.error('Could not mute user');
+      toast.error(t('mute-error', { defaultValue: 'Could not mute user' }));
     }
   };
 
@@ -224,7 +226,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
 
   const handleDelete = async () => {
     setMenuOpen(false);
-    if (!confirm('Delete this RMHark?')) return;
+    if (!confirm(t('delete-confirm', { defaultValue: 'Delete this RMHark?' }))) return;
     removeItem(item.id);
     try {
       await fetch(`/api/rmharks/${actualId}`, { method: 'DELETE' });
@@ -274,7 +276,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
                   className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
                 >
                   <Bookmark className={`w-4 h-4 ${bookmarked ? 'fill-site-accent text-site-accent' : 'text-site-text-dim'}`} />
-                  {bookmarked ? 'Saved' : 'Bookmark'}
+                  {bookmarked ? t('bookmark-saved-label', { defaultValue: 'Saved' }) : t('bookmark-label', { defaultValue: 'Bookmark' })}
                 </button>
               )}
               <button
@@ -282,21 +284,21 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
                 className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
               >
                 <Heart className="w-4 h-4 text-site-text-dim" />
-                Liked by
+                {t('liked-by', { defaultValue: 'Liked by' })}
               </button>
               <button
                 onClick={() => { setMenuOpen(false); setEngagementModal('reposts'); }}
                 className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
               >
                 <Repeat className="w-4 h-4 text-site-text-dim" />
-                reRMHark'd by
+                {t('rermharkd-by', { defaultValue: "reRMHark'd by" })}
               </button>
               <button
                 onClick={handleShare}
                 className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
               >
                 <Share2 className="w-4 h-4 text-site-text-dim" />
-                Share
+                {t('share', { defaultValue: 'Share' })}
               </button>
               {item.content && !item.deletedAt && item.content.length > 8 && (
                 <button
@@ -305,7 +307,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
                   className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors disabled:opacity-60"
                 >
                   <Languages className="w-4 h-4 text-site-text-dim" />
-                  {translating ? 'Translating…' : translatedText ? (showTranslated ? 'Show original' : 'Show translation') : 'Translate'}
+                  {translating ? t('translating', { defaultValue: 'Translating…' }) : translatedText ? (showTranslated ? t('show-original', { defaultValue: 'Show original' }) : t('show-translation', { defaultValue: 'Show translation' })) : t('translate', { defaultValue: 'Translate' })}
                 </button>
               )}
               {isAuthor && (
@@ -315,28 +317,28 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
                     className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
                   >
                     <TrendingUp className="w-4 h-4 text-site-text-dim" />
-                    View insights
+                    {t('view-insights', { defaultValue: 'View insights' })}
                   </button>
                   <button
                     onClick={() => { setMenuOpen(false); setEditOpen(true); }}
                     className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
                   >
                     <Pencil className="w-4 h-4 text-site-text-dim" />
-                    Edit
+                    {t('edit', { defaultValue: 'Edit' })}
                   </button>
                   <button
                     onClick={handlePin}
                     className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
                   >
                     <Pin className={`w-4 h-4 ${pinned ? 'fill-site-accent text-site-accent' : 'text-site-text-dim'}`} />
-                    {pinned ? 'Unpin from profile' : 'Pin to profile'}
+                    {pinned ? t('unpin-from-profile', { defaultValue: 'Unpin from profile' }) : t('pin-to-profile', { defaultValue: 'Pin to profile' })}
                   </button>
                   <button
                     onClick={handleDelete}
                     className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-danger hover:bg-site-danger/10 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
-                    Delete
+                    {t('delete', { defaultValue: 'Delete' })}
                   </button>
                 </>
               )}
@@ -348,7 +350,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
                       className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
                     >
                       <Coins className="w-4 h-4 text-amber-400" />
-                      Send tip
+                      {t('send-tip', { defaultValue: 'Send tip' })}
                     </button>
                   )}
                   <button
@@ -356,21 +358,21 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
                     className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
                   >
                     <Flag className="w-4 h-4 text-site-text-dim" />
-                    Report
+                    {t('report', { defaultValue: 'Report' })}
                   </button>
                   <button
                     onClick={handleMute}
                     className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
                   >
                     <VolumeX className="w-4 h-4 text-site-text-dim" />
-                    Mute
+                    {t('mute', { defaultValue: 'Mute' })}
                   </button>
                   <button
                     onClick={handleBlock}
                     className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-danger hover:bg-site-danger/10 transition-colors"
                   >
                     <Ban className="w-4 h-4" />
-                    Block
+                    {t('block', { defaultValue: 'Block' })}
                   </button>
                 </>
               )}
@@ -383,7 +385,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
       {pinned && (
         <div className="flex items-center gap-1.5 text-xs text-site-text-dim mb-2 ml-12">
           <Pin className="w-3.5 h-3.5 fill-site-accent text-site-accent" />
-          <span>Pinned</span>
+          <span>{t('pinned', { defaultValue: 'Pinned' })}</span>
         </div>
       )}
 
@@ -395,7 +397,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
             to={userProfileHref(freshRepostedBy)}
             className="hover:underline"
           >
-            {freshRepostedBy.name || freshRepostedBy.handle || 'Someone'} reRMHark&apos;d
+            {freshRepostedBy.name || freshRepostedBy.handle || t('someone', { defaultValue: 'Someone' })} reRMHark&apos;d
           </Link>
         </div>
       )}
@@ -418,7 +420,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
                     : undefined
                 }
               >
-                {displayUser?.name || 'Unknown'}
+                {displayUser?.name || t('unknown-user', { defaultValue: 'Unknown' })}
               </span>
               {displayUser?.cosmetics?.badge?.emoji && (
                 <span className="shrink-0" title="Equipped badge">{displayUser.cosmetics.badge.emoji}</span>
@@ -439,14 +441,14 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
             </Link>
             ) : (
               <span className="font-bold text-site-text truncate">
-                Unknown
+                {t('unknown-user', { defaultValue: 'Unknown' })}
               </span>
             )}
             <span className="text-site-text-dim shrink-0">
               · {timeAgoShort(item.createdAt)}
             </span>
             {item.edited && (
-              <span className="text-site-text-dim shrink-0" title="Edited">· edited</span>
+              <span className="text-site-text-dim shrink-0" title="Edited">· {t('edited', { defaultValue: 'edited' })}</span>
             )}
           </div>
 
@@ -499,7 +501,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
                 {freshOriginalUser ? (
                   <Link to={userProfileHref(freshOriginalUser)} className="flex items-center gap-1.5 min-w-0 hover:underline">
                     <span className="font-bold text-site-text truncate">
-                      {freshOriginalUser.name || 'Unknown'}
+                      {freshOriginalUser.name || t('unknown-user', { defaultValue: 'Unknown' })}
                     </span>
                     {freshOriginalUser.isVerified && (
                       <BadgeCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface PostImageGridProps {
   urls: string[];
@@ -10,6 +11,7 @@ interface PostImageGridProps {
 }
 
 export function PostImageGrid({ urls, className = '' }: PostImageGridProps) {
+  const { t } = useTranslation('feed');
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   if (!urls || urls.length === 0) return null;
@@ -28,7 +30,7 @@ export function PostImageGrid({ urls, className = '' }: PostImageGridProps) {
               setLightboxIndex(i);
             }}
             className={`group relative block overflow-hidden rounded-lg ${single ? '' : 'aspect-square'}`}
-            aria-label="Open image"
+            aria-label={t('open-image', { defaultValue: 'Open image' })}
           >
             <img
               src={url}
@@ -64,6 +66,7 @@ interface LightboxProps {
 }
 
 function Lightbox({ urls, index, onIndexChange, onClose }: LightboxProps) {
+  const { t } = useTranslation('feed');
   const hasMultiple = urls.length > 1;
 
   const prev = useCallback(() => {
@@ -102,7 +105,7 @@ function Lightbox({ urls, index, onIndexChange, onClose }: LightboxProps) {
         type="button"
         onClick={onClose}
         className="absolute right-4 top-4 rounded-full bg-black/50 p-2 text-white/90 transition-colors hover:bg-black/70 hover:text-white"
-        aria-label="Close"
+        aria-label={t('close', { defaultValue: 'Close' })}
       >
         <X className="h-6 w-6" />
       </button>
@@ -116,7 +119,7 @@ function Lightbox({ urls, index, onIndexChange, onClose }: LightboxProps) {
               prev();
             }}
             className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white/90 transition-colors hover:bg-black/70 hover:text-white"
-            aria-label="Previous image"
+            aria-label={t('previous-image', { defaultValue: 'Previous image' })}
           >
             <ChevronLeft className="h-7 w-7" />
           </button>
@@ -127,7 +130,7 @@ function Lightbox({ urls, index, onIndexChange, onClose }: LightboxProps) {
               next();
             }}
             className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white/90 transition-colors hover:bg-black/70 hover:text-white"
-            aria-label="Next image"
+            aria-label={t('next-image', { defaultValue: 'Next image' })}
           >
             <ChevronRight className="h-7 w-7" />
           </button>

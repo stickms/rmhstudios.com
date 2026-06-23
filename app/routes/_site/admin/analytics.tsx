@@ -5,6 +5,7 @@ import { auth } from '@/lib/auth';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useEffect, useState } from 'react';
 import { BarChart3, Loader2, Users, FileText, Flag, Coins } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const getAdminSession = createServerFn({ method: 'GET' }).handler(async () => {
   const request = getRequest();
@@ -41,6 +42,7 @@ function Stat({ icon: Icon, label, value, sub }: { icon: typeof Users; label: st
 }
 
 function AnalyticsPage() {
+  const { t } = useTranslation('admin');
   const [data, setData] = useState<Analytics | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -54,11 +56,11 @@ function AnalyticsPage() {
   const maxCount = data ? Math.max(1, ...data.postsPerDay.map((d) => d.count)) : 1;
 
   return (
-    <PageLayout title="Analytics" wide>
+    <PageLayout title={t('analytics', { defaultValue: 'Analytics' })} wide>
       <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-8">
         <div className="flex items-center gap-3">
           <BarChart3 className="h-6 w-6 text-site-accent" />
-          <h1 className="font-display text-2xl font-bold text-site-text">Analytics</h1>
+          <h1 className="font-display text-2xl font-bold text-site-text">{t('analytics', { defaultValue: 'Analytics' })}</h1>
         </div>
 
         {loading ? (
@@ -66,22 +68,22 @@ function AnalyticsPage() {
             <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
           </div>
         ) : !data ? (
-          <p className="text-center text-sm text-site-text-muted">Could not load analytics.</p>
+          <p className="text-center text-sm text-site-text-muted">{t('analytics-load-error', { defaultValue: 'Could not load analytics.' })}</p>
         ) : (
           <>
             <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-              <Stat icon={Users} label="Users" value={data.users.total} sub={`+${data.users.new7} this week`} />
-              <Stat icon={Users} label="Active (7d)" value={data.users.active7} sub="posted recently" />
-              <Stat icon={FileText} label="Posts" value={data.content.posts} sub={`+${data.content.posts7} this week`} />
-              <Stat icon={FileText} label="Comments" value={data.content.comments} />
-              <Stat icon={FileText} label="Builds" value={data.content.builds} />
-              <Stat icon={Users} label="New (30d)" value={data.users.new30} />
-              <Stat icon={Flag} label="Open reports" value={data.moderation.pendingReports} />
-              <Stat icon={Coins} label="Coins in circulation" value={data.economy.coinsInCirculation} />
+              <Stat icon={Users} label={t('stat-users', { defaultValue: 'Users' })} value={data.users.total} sub={t('stat-new-this-week', { count: data.users.new7, defaultValue: '+{{count}} this week' })} />
+              <Stat icon={Users} label={t('stat-active-7d', { defaultValue: 'Active (7d)' })} value={data.users.active7} sub={t('stat-posted-recently', { defaultValue: 'posted recently' })} />
+              <Stat icon={FileText} label={t('stat-posts', { defaultValue: 'Posts' })} value={data.content.posts} sub={t('stat-new-this-week', { count: data.content.posts7, defaultValue: '+{{count}} this week' })} />
+              <Stat icon={FileText} label={t('stat-comments', { defaultValue: 'Comments' })} value={data.content.comments} />
+              <Stat icon={FileText} label={t('stat-builds', { defaultValue: 'Builds' })} value={data.content.builds} />
+              <Stat icon={Users} label={t('stat-new-30d', { defaultValue: 'New (30d)' })} value={data.users.new30} />
+              <Stat icon={Flag} label={t('stat-open-reports', { defaultValue: 'Open reports' })} value={data.moderation.pendingReports} />
+              <Stat icon={Coins} label={t('stat-coins-in-circulation', { defaultValue: 'Coins in circulation' })} value={data.economy.coinsInCirculation} />
             </div>
 
             <div className="rounded-xl border border-site-border bg-site-surface p-4">
-              <h2 className="mb-3 text-sm font-semibold text-site-text">Posts per day (14 days)</h2>
+              <h2 className="mb-3 text-sm font-semibold text-site-text">{t('posts-per-day-14d', { defaultValue: 'Posts per day (14 days)' })}</h2>
               <div className="flex h-40 items-end gap-1">
                 {data.postsPerDay.map((d) => (
                   <div key={d.day} className="flex flex-1 flex-col items-center gap-1" title={`${d.day}: ${d.count}`}>

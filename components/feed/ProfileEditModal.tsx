@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { ImageCropModal } from './ImageCropModal';
 import { SpotifySongSearch, type SpotifyTrack } from './SpotifySongSearch';
 import { useResolvedUser } from '@/components/Providers';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 
 interface ProfileSongData {
   profileSongSpotifyId: string | null;
@@ -54,13 +56,14 @@ const MAX_WEBSITE = 200;
 const MAX_AVATAR_MB = 5;
 const MAX_HANDLE = 20;
 
-function formatCooldown(ms: number): string {
+function formatCooldown(ms: number, t: TFunction<"feed">): string {
   const days = Math.ceil(ms / (1000 * 60 * 60 * 24));
-  if (days <= 1) return 'less than a day';
-  return `${days} days`;
+  if (days <= 1) return t("cooldown-less-than-a-day", { defaultValue: "less than a day" });
+  return t("cooldown-days", { days, defaultValue: "{{days}} days" });
 }
 
 export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEditModalProps) {
+  const { t } = useTranslation("feed");
   const { refresh: refreshResolvedUser } = useResolvedUser();
   const [handle, setHandle] = useState(initial.handle ?? '');
   const [handleStatus, setHandleStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle');
@@ -160,7 +163,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
     if (!file) return;
 
     if (file.size > MAX_AVATAR_MB * 1024 * 1024) {
-      setError(`Avatar must be under ${MAX_AVATAR_MB} MB`);
+      setError(t("avatar-size-error", { maxMb: MAX_AVATAR_MB, defaultValue: `Avatar must be under ${MAX_AVATAR_MB} MB` }));
       return;
     }
 
@@ -192,7 +195,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
       const res = await fetch('/api/profile/avatar', { method: 'DELETE' });
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error || 'Failed to reset avatar');
+        setError(data.error || t("failed-reset-avatar", { defaultValue: "Failed to reset avatar" }));
         return;
       }
       const data = await res.json();
@@ -221,7 +224,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
         profileSongAlbumArt: selectedSong?.albumArt ?? null,
       });
     } catch {
-      setError('Failed to reset avatar');
+      setError(t("failed-reset-avatar", { defaultValue: "Failed to reset avatar" }));
     } finally {
       setResettingAvatar(false);
       setShowResetConfirm(false);
@@ -233,17 +236,17 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
 
     const trimmedName = displayName.trim();
     if (trimmedName.length === 0) {
-      setError('Display name cannot be empty');
+      setError(t("display-name-empty", { defaultValue: "Display name cannot be empty" }));
       return;
     }
 
     if (handleChanged && handleStatus === 'taken') {
-      setError('Handle is already taken');
+      setError(t("handle-taken", { defaultValue: "Handle is already taken" }));
       return;
     }
 
     if (handleChanged && handleStatus === 'invalid') {
-      setError('Handle must start with a letter and contain only lowercase letters, numbers, and underscores (min 3 chars)');
+      setError(t("handle-invalid", { defaultValue: "Handle must start with a letter and contain only lowercase letters, numbers, and underscores (min 3 chars)" }));
       return;
     }
 
@@ -262,7 +265,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
         });
         if (!avatarRes.ok) {
           const data = await avatarRes.json();
-          setError(data.error || 'Failed to upload avatar');
+          setError(data.error || t("failed-upload-avatar", { defaultValue: "Failed to upload avatar" }));
           setSubmitting(false);
           return;
         }
@@ -294,7 +297,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error || 'Failed to save');
+        setError(data.error || t("failed-save", { defaultValue: "Failed to save" }));
         setSubmitting(false);
         return;
       }
@@ -310,7 +313,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
       });
       onClose();
     } catch {
-      setError('Failed to save');
+      setError(t("failed-save", { defaultValue: "Failed to save" }));
     } finally {
       setSubmitting(false);
     }
@@ -329,7 +332,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
         >
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-site-border">
-            <h2 className="font-bold text-site-text">Edit Profile</h2>
+            <h2 className="font-bold text-site-text">{t("edit-profile", { defaultValue: "Edit Profile" })}</h2>
             <button
               onClick={onClose}
               className="p-1.5 rounded-lg text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
@@ -348,7 +351,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
                 className="relative group w-20 h-20 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-site-bg font-bold text-2xl ring-4 ring-site-bg shrink-0 overflow-hidden cursor-pointer"
               >
                 {avatarPreview ? (
-                  <img src={avatarPreview} alt="Avatar" className="w-full h-full rounded-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }} />
+                  <img src={avatarPreview} alt={t("avatar-alt", { defaultValue: "Avatar" })} className="w-full h-full rounded-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }} />
                 ) : (
                   (displayName?.[0] || initial.name?.[0] || 'U').toUpperCase()
                 )}
@@ -363,30 +366,30 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
                 className="hidden"
                 onChange={handleAvatarSelect}
               />
-              <p className="text-xs text-site-text-dim">Click to change avatar (max {MAX_AVATAR_MB} MB)</p>
+              <p className="text-xs text-site-text-dim">{t("avatar-change-hint", { maxMb: MAX_AVATAR_MB, defaultValue: "Click to change avatar (max {{maxMb}} MB)" })}</p>
               {(hasCustomAvatar || avatarFile) && (
                 <button
                   type="button"
                   onClick={() => setShowResetConfirm(true)}
                   className="flex items-center gap-1 text-xs text-site-text-dim hover:text-site-danger transition-colors"
-                  title="Reset to default avatar"
+                  title={t("reset-avatar-title", { defaultValue: "Reset to default avatar" })}
                 >
                   <RotateCcw className="w-3 h-3" />
-                  Reset avatar
+                  {t("reset-avatar", { defaultValue: "Reset avatar" })}
                 </button>
               )}
             </div>
 
             {/* Handle */}
             <div>
-              <label className="block text-xs font-medium text-site-text-dim mb-1.5">Handle</label>
+              <label className="block text-xs font-medium text-site-text-dim mb-1.5">{t("handle-label", { defaultValue: "Handle" })}</label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-site-text-dim text-sm">@</span>
                 <input
                   type="text"
                   value={handle}
                   onChange={(e) => handleHandleChange(e.target.value)}
-                  placeholder="your_handle"
+                  placeholder={t("handle-placeholder", { defaultValue: "your_handle" })}
                   maxLength={MAX_HANDLE}
                   disabled={handleOnCooldown}
                   className={`w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-xl p-3 pl-7 border outline-none transition-colors ${
@@ -412,28 +415,28 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
               <div className="mt-1">
                 {handleOnCooldown ? (
                   <p className="text-xs text-site-text-dim">
-                    You can change your handle again in {formatCooldown(initial.handleCooldownMs)}
+                    {t("handle-cooldown", { cooldown: formatCooldown(initial.handleCooldownMs, t), defaultValue: "You can change your handle again in {{cooldown}}" })}
                   </p>
                 ) : handleChanged && handleStatus === 'available' ? (
-                  <p className="text-xs text-emerald-500">Handle is available</p>
+                  <p className="text-xs text-emerald-500">{t("handle-available", { defaultValue: "Handle is available" })}</p>
                 ) : handleChanged && handleStatus === 'taken' ? (
-                  <p className="text-xs text-red-400">Handle is already taken</p>
+                  <p className="text-xs text-red-400">{t("handle-taken", { defaultValue: "Handle is already taken" })}</p>
                 ) : handleChanged && handleStatus === 'invalid' ? (
-                  <p className="text-xs text-red-400">Must start with a letter, 3-20 chars, lowercase letters/numbers/underscores only</p>
+                  <p className="text-xs text-red-400">{t("handle-invalid-hint", { defaultValue: "Must start with a letter, 3-20 chars, lowercase letters/numbers/underscores only" })}</p>
                 ) : (
-                  <p className="text-xs text-site-text-dim">Your unique handle for @mentions and profile URL</p>
+                  <p className="text-xs text-site-text-dim">{t("handle-hint", { defaultValue: "Your unique handle for @mentions and profile URL" })}</p>
                 )}
               </div>
             </div>
 
             {/* Display Name */}
             <div>
-              <label className="block text-xs font-medium text-site-text-dim mb-1.5">Display Name</label>
+              <label className="block text-xs font-medium text-site-text-dim mb-1.5">{t("display-name-label", { defaultValue: "Display Name" })}</label>
               <input
                 type="text"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="Your display name"
+                placeholder={t("display-name-placeholder", { defaultValue: "Your display name" })}
                 maxLength={MAX_NAME}
                 className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-xl p-3 border border-site-border outline-none focus:border-site-accent transition-colors"
               />
@@ -444,11 +447,11 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
 
             {/* Bio */}
             <div>
-              <label className="block text-xs font-medium text-site-text-dim mb-1.5">Bio</label>
+              <label className="block text-xs font-medium text-site-text-dim mb-1.5">{t("bio-label", { defaultValue: "Bio" })}</label>
               <textarea
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
-                placeholder="Tell people about yourself"
+                placeholder={t("bio-placeholder", { defaultValue: "Tell people about yourself" })}
                 rows={3}
                 maxLength={MAX_BIO}
                 className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-xl p-3 border border-site-border resize-none outline-none focus:border-site-accent transition-colors"
@@ -460,12 +463,12 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
 
             {/* Location */}
             <div>
-              <label className="block text-xs font-medium text-site-text-dim mb-1.5">Location</label>
+              <label className="block text-xs font-medium text-site-text-dim mb-1.5">{t("location-label", { defaultValue: "Location" })}</label>
               <input
                 type="text"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                placeholder="Where are you based?"
+                placeholder={t("location-placeholder", { defaultValue: "Where are you based?" })}
                 maxLength={MAX_LOCATION}
                 className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-xl p-3 border border-site-border outline-none focus:border-site-accent transition-colors"
               />
@@ -473,7 +476,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
 
             {/* Website */}
             <div>
-              <label className="block text-xs font-medium text-site-text-dim mb-1.5">Website</label>
+              <label className="block text-xs font-medium text-site-text-dim mb-1.5">{t("website-label", { defaultValue: "Website" })}</label>
               <input
                 type="url"
                 value={website}
@@ -486,7 +489,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
 
             {/* Tip goal (creator) */}
             <div>
-              <label className="block text-xs font-medium text-site-text-dim mb-1.5">Monthly tip goal (coins) — optional</label>
+              <label className="block text-xs font-medium text-site-text-dim mb-1.5">{t("tip-goal-label", { defaultValue: "Monthly tip goal (coins) — optional" })}</label>
               <div className="flex gap-2">
                 <input
                   type="number"
@@ -500,7 +503,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
                   type="text"
                   value={tipGoalLabel}
                   onChange={(e) => setTipGoalLabel(e.target.value)}
-                  placeholder="Goal label (e.g. New mic fund)"
+                  placeholder={t("tip-goal-label-placeholder", { defaultValue: "Goal label (e.g. New mic fund)" })}
                   maxLength={80}
                   className="flex-1 bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-xl p-3 border border-site-border outline-none focus:border-site-accent transition-colors"
                 />
@@ -510,8 +513,8 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
             {/* Show Likes toggle */}
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-site-text">Show liked posts</p>
-                <p className="text-xs text-site-text-dim mt-0.5">Let others see posts you&apos;ve liked</p>
+                <p className="text-sm text-site-text">{t("show-liked-posts", { defaultValue: "Show liked posts" })}</p>
+                <p className="text-xs text-site-text-dim mt-0.5">{t("show-liked-posts-hint", { defaultValue: "Let others see posts you've liked" })}</p>
               </div>
               <button
                 type="button"
@@ -532,8 +535,8 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
             {initial.hasProfilePet && (
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-site-text">Profile Pet</p>
-                  <p className="text-xs text-site-text-dim mt-0.5">Show your 8-bit dog on your profile</p>
+                  <p className="text-sm text-site-text">{t("profile-pet", { defaultValue: "Profile Pet" })}</p>
+                  <p className="text-xs text-site-text-dim mt-0.5">{t("profile-pet-hint", { defaultValue: "Show your 8-bit dog on your profile" })}</p>
                 </div>
                 <button
                   type="button"
@@ -553,20 +556,20 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
 
             {/* DM Privacy */}
             <div>
-              <label className="block text-xs font-medium text-site-text-dim mb-1.5">Who can message you</label>
+              <label className="block text-xs font-medium text-site-text-dim mb-1.5">{t("dm-privacy-label", { defaultValue: "Who can message you" })}</label>
               <select
                 value={dmPrivacy}
                 onChange={(e) => setDmPrivacy(e.target.value)}
                 className="w-full bg-site-surface text-site-text text-sm rounded-xl p-3 border border-site-border outline-none focus:border-site-accent transition-colors appearance-none cursor-pointer"
               >
-                <option value="EVERYONE">Everyone</option>
-                <option value="FOLLOWERS">People I follow</option>
-                <option value="NONE">Nobody</option>
+                <option value="EVERYONE">{t("dm-everyone", { defaultValue: "Everyone" })}</option>
+                <option value="FOLLOWERS">{t("dm-followers", { defaultValue: "People I follow" })}</option>
+                <option value="NONE">{t("dm-none", { defaultValue: "Nobody" })}</option>
               </select>
               <p className="text-xs text-site-text-dim mt-1">
-                {dmPrivacy === 'EVERYONE' && 'Anyone can send you a direct message.'}
-                {dmPrivacy === 'FOLLOWERS' && 'Only people you follow can message you.'}
-                {dmPrivacy === 'NONE' && 'No one can send you direct messages.'}
+                {dmPrivacy === 'EVERYONE' && t("dm-everyone-hint", { defaultValue: "Anyone can send you a direct message." })}
+                {dmPrivacy === 'FOLLOWERS' && t("dm-followers-hint", { defaultValue: "Only people you follow can message you." })}
+                {dmPrivacy === 'NONE' && t("dm-none-hint", { defaultValue: "No one can send you direct messages." })}
               </p>
             </div>
 
@@ -584,10 +587,10 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
           {/* Actions */}
           <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-site-border">
             <Button variant="ghost" size="sm" onClick={onClose}>
-              Cancel
+              {t("cancel", { defaultValue: "Cancel" })}
             </Button>
             <Button variant="accent" size="sm" disabled={submitting} onClick={handleSave}>
-              {submitting ? 'Saving...' : 'Save'}
+              {submitting ? t("saving", { defaultValue: "Saving..." }) : t("save", { defaultValue: "Save" })}
             </Button>
           </div>
         </div>
@@ -610,14 +613,14 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
             className="relative bg-site-bg border border-site-border rounded-2xl shadow-xl w-full max-w-sm mx-4 p-5"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="font-bold text-site-text mb-2">Reset avatar?</h3>
+            <h3 className="font-bold text-site-text mb-2">{t("reset-avatar-confirm-title", { defaultValue: "Reset avatar?" })}</h3>
             <p className="text-sm text-site-text-muted mb-4">
-              This will remove your custom avatar and revert to your default profile picture. This action cannot be undone.
+              {t("reset-avatar-confirm-body", { defaultValue: "This will remove your custom avatar and revert to your default profile picture. This action cannot be undone." })}
             </p>
             {error && <p className="text-sm text-site-danger mb-3">{error}</p>}
             <div className="flex items-center justify-end gap-2">
               <Button variant="ghost" size="sm" onClick={() => setShowResetConfirm(false)} disabled={resettingAvatar}>
-                Cancel
+                {t("cancel", { defaultValue: "Cancel" })}
               </Button>
               <Button
                 variant="accent"
@@ -626,7 +629,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
                 onClick={handleResetAvatar}
                 className="bg-site-danger hover:bg-site-danger/80 text-white"
               >
-                {resettingAvatar ? 'Resetting...' : 'Reset Avatar'}
+                {resettingAvatar ? t("resetting", { defaultValue: "Resetting..." }) : t("reset-avatar-btn", { defaultValue: "Reset Avatar" })}
               </Button>
             </div>
           </div>

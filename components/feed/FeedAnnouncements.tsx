@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Megaphone, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { RMHarkContent } from './RMHarkContent';
 import { GifEmbed } from './GifEmbed';
 import { PostImageGrid } from './PostImageGrid';
@@ -40,6 +41,7 @@ function readDismissed(): string[] {
 
 /** Admin-authored announcement banners, pinned at the top of the feed. */
 export function FeedAnnouncements() {
+  const { t } = useTranslation('feed');
   const [items, setItems] = useState<Announcement[]>([]);
   const [dismissed, setDismissed] = useState<string[]>([]);
 
@@ -77,7 +79,7 @@ export function FeedAnnouncements() {
         >
           <button
             onClick={() => dismiss(a.id)}
-            aria-label="Dismiss announcement"
+            aria-label={t("dismiss-announcement", { defaultValue: "Dismiss announcement" })}
             className="absolute right-2 top-2 rounded-md p-1 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text"
           >
             <X className="h-4 w-4" />
@@ -116,7 +118,7 @@ export function FeedAnnouncements() {
                   target={a.linkUrl.startsWith('http') ? '_blank' : undefined}
                   rel="noreferrer"
                 >
-                  {a.linkLabel || 'Learn more'} →
+                  {a.linkLabel || t("learn-more", { defaultValue: "Learn more" })} →
                 </a>
               )}
             </div>

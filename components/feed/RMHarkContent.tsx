@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 
 interface RMHarkContentProps {
   text: string;
@@ -70,11 +71,12 @@ function renderTokens(text: string, keyPrefix: string): React.ReactNode {
 /** Click-to-reveal blurred span for spoiler-tagged text. */
 function Spoiler({ children }: { children: React.ReactNode }) {
   const [revealed, setRevealed] = useState(false);
+  const { t } = useTranslation('feed');
   return (
     <span
       role="button"
       tabIndex={0}
-      aria-label={revealed ? 'Spoiler revealed' : 'Reveal spoiler'}
+      aria-label={revealed ? t('spoiler-revealed', { defaultValue: 'Spoiler revealed' }) : t('reveal-spoiler', { defaultValue: 'Reveal spoiler' })}
       onClick={(e) => {
         e.stopPropagation();
         setRevealed(true);

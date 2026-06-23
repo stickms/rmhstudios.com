@@ -12,6 +12,7 @@ import { type KeyboardEvent, useCallback, useEffect, useRef, useState } from 're
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { ArrowRight, Search } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { ModelSelect } from '@/components/rmhvibe/ModelSelect';
 import { DEFAULT_VIBE_MODEL, type VibeModel } from '@/lib/rmhvibe/vibe-types';
 import { listVibePages, type VibeCard } from '@/lib/rmhvibe/vibe.server';
@@ -60,6 +61,7 @@ function timeAgo(iso: string): string {
 }
 
 function Gallery() {
+  const { t } = useTranslation('v');
   const initial = Route.useLoaderData();
   const navigate = useNavigate();
 
@@ -144,12 +146,12 @@ function Gallery() {
       targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
     >
       {/* Mobile: hamburger + brand (this page leads with a hero, not a header) */}
-      <MobileTopBar title="Pages" />
+      <MobileTopBar title={t('pages-title', { defaultValue: 'Pages' })} />
 
       {/* Prompt hero: generate a new page. */}
       <section className="vibe-gallery__hero">
         <p className="vibe-rise vibe-presents mb-3">RMH Studios presents</p>
-        <h1 className="vibe-rise-2 vibe-title">The anything platform.</h1>
+        <h1 className="vibe-rise-2 vibe-title">{t('hero-headline', { defaultValue: 'The anything platform.' })}</h1>
         <div className="mt-8 flex w-full justify-center">
           <div className="vibe-dock vibe-dock--area vibe-rise-soft">
             <textarea
@@ -158,13 +160,13 @@ function Gallery() {
               rows={3}
               autoComplete="off"
               onKeyDown={handlePromptKeyDown}
-              placeholder="Where do you want to go?"
-              aria-label="Describe the page you want to create"
+              placeholder={t('prompt-placeholder', { defaultValue: 'Where do you want to go?' })}
+              aria-label={t('prompt-aria-label', { defaultValue: 'Describe the page you want to create' })}
               className="vibe-dock__textarea"
             />
             <div className="vibe-dock__footer">
               <ModelSelect value={model} onChange={setModel} />
-              <button type="button" onClick={submit} aria-label="Generate" className="vibe-dock__submit">
+              <button type="button" onClick={submit} aria-label={t('generate-aria-label', { defaultValue: 'Generate' })} className="vibe-dock__submit">
                 <ArrowRight size={20} />
               </button>
             </div>
@@ -174,15 +176,15 @@ function Gallery() {
 
       {/* Pages section: searchable grid of everything generated so far. */}
       <header className="vibe-gallery__head">
-        <h2 className="vibe-gallery__title">Pages</h2>
+        <h2 className="vibe-gallery__title">{t('pages-title', { defaultValue: 'Pages' })}</h2>
         <div className="vibe-search">
           <Search size={16} className="vibe-search__icon" aria-hidden="true" />
           <input
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search pages..."
-            aria-label="Search pages"
+            placeholder={t('search-placeholder', { defaultValue: 'Search pages...' })}
+            aria-label={t('search-aria-label', { defaultValue: 'Search pages' })}
             className="vibe-search__input"
           />
         </div>
@@ -190,7 +192,7 @@ function Gallery() {
 
       {items.length === 0 && !loading ? (
         <p className="vibe-hint vibe-gallery__empty">
-          {query.trim() ? 'No pages match that search.' : 'No pages yet — be the first to make one.'}
+          {query.trim() ? t('no-results', { defaultValue: 'No pages match that search.' }) : t('empty-gallery', { defaultValue: 'No pages yet — be the first to make one.' })}
         </p>
       ) : (
         <div className="vibe-grid">
@@ -201,7 +203,7 @@ function Gallery() {
       )}
 
       <div ref={sentinelRef} aria-hidden="true" className="h-px w-full" />
-      {loading && <p className="vibe-hint vibe-gallery__loading">Loading…</p>}
+      {loading && <p className="vibe-hint vibe-gallery__loading">{t('loading', { defaultValue: 'Loading…' })}</p>}
     </AnimatedMain>
     {/* Trailing gutter to match the blog/feed layout */}
     <div className="hidden lg:block w-4 shrink-0" />

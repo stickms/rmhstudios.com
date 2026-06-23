@@ -1,0 +1,10 @@
+{
+  "library-heading": "مكتبة",
+  "no-results": "لا توجد كتب تطابق هذا البحث.",
+  "open-book": "افتح {{title}}",
+  "open-menu": "افتح القائمة",
+  "search-label": "ابحث في المكتبة",
+  "search-placeholder": "ابحث في المكتبة...",
+  "upload-button": "رفع",
+  "upload-label": "قم بتحميل ملف PDF"
+}

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Wand2, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface AIImageButtonProps {
   /** Current composer text — used to theme the generated image. */
@@ -22,8 +23,10 @@ export function AIImageButton({
   draft,
   onGenerated,
   disabled = false,
-  title = 'Generate an image with AI',
+  title,
 }: AIImageButtonProps) {
+  const { t } = useTranslation('feed');
+  const resolvedTitle = title ?? t('ai-image-generate', { defaultValue: 'Generate an image with AI' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,14 +42,14 @@ export function AIImageButton({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data?.error || 'Failed to generate image');
+        setError(data?.error || t('ai-image-failed', { defaultValue: 'Failed to generate image' }));
         return;
       }
       if (typeof data?.url === 'string' && data.url) {
         onGenerated(data.url);
       }
     } catch {
-      setError('Failed to generate image');
+      setError(t('ai-image-failed', { defaultValue: 'Failed to generate image' }));
     } finally {
       setLoading(false);
     }
@@ -57,8 +60,8 @@ export function AIImageButton({
       type="button"
       onClick={handleClick}
       disabled={loading || disabled}
-      title={error || title}
-      aria-label={title}
+      title={error || resolvedTitle}
+      aria-label={resolvedTitle}
       className={`p-1.5 rounded-full transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
         error
           ? 'text-site-danger hover:bg-site-danger/10'

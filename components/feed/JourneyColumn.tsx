@@ -2,16 +2,17 @@
 
 import { useState } from 'react';
 import { Flame, Zap, Trophy } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { ProgressColumn } from './ProgressColumn';
 import { AchievementsColumn } from './AchievementsColumn';
 import { StreakColumn } from './StreakColumn';
 
 export type JourneyTab = 'streaks' | 'progress' | 'achievements';
 
-const TABS: { id: JourneyTab; label: string; icon: typeof Flame }[] = [
-  { id: 'streaks', label: 'Streaks', icon: Flame },
-  { id: 'progress', label: 'Progress', icon: Zap },
-  { id: 'achievements', label: 'Achievements', icon: Trophy },
+const TABS: { id: JourneyTab; labelKey: string; defaultLabel: string; icon: typeof Flame }[] = [
+  { id: 'streaks', labelKey: 'journey-tab-streaks', defaultLabel: 'Streaks', icon: Flame },
+  { id: 'progress', labelKey: 'journey-tab-progress', defaultLabel: 'Progress', icon: Zap },
+  { id: 'achievements', labelKey: 'journey-tab-achievements', defaultLabel: 'Achievements', icon: Trophy },
 ];
 
 /**
@@ -24,6 +25,7 @@ function isJourneyTab(value: string): value is JourneyTab {
 }
 
 export function JourneyColumn({ userId, initialTab = 'progress' }: { userId: string; initialTab?: JourneyTab }) {
+  const { t } = useTranslation("feed");
   const [tab, setTab] = useState<JourneyTab>(() => {
     if (typeof window !== 'undefined') {
       const hash = window.location.hash.replace('#', '');
@@ -42,8 +44,8 @@ export function JourneyColumn({ userId, initialTab = 'progress' }: { userId: str
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 border-b border-site-border bg-site-bg/80 backdrop-blur">
-        <nav className="flex" role="tablist" aria-label="Journey sections">
-          {TABS.map(({ id, label, icon: Icon }) => {
+        <nav className="flex" role="tablist" aria-label={t("journey-sections-label", { defaultValue: "Journey sections" })}>
+          {TABS.map(({ id, labelKey, defaultLabel, icon: Icon }) => {
             const active = tab === id;
             return (
               <button
@@ -59,7 +61,7 @@ export function JourneyColumn({ userId, initialTab = 'progress' }: { userId: str
                 }`}
               >
                 <Icon className={`h-4 w-4 ${id === 'streaks' && active ? 'text-orange-400' : ''}`} />
-                <span>{label}</span>
+                <span>{t(labelKey, { defaultValue: defaultLabel })}</span>
               </button>
             );
           })}

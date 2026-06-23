@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Loader2, Clapperboard, Plus, X, Trash2, Play, Bell, BellOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from './UserAvatar';
@@ -41,6 +42,7 @@ function watchUrl(clip: Clip): string {
 }
 
 export function ClipsColumn() {
+  const { t } = useTranslation('feed');
   const [clips, setClips] = useState<Clip[]>([]);
   const [filter, setFilter] = useState<Filter>('all');
   const [signedIn, setSignedIn] = useState(false);
@@ -100,7 +102,7 @@ export function ClipsColumn() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error ?? 'Could not save clip');
+        setError(data.error ?? t('could-not-save-clip', { defaultValue: 'Could not save clip' }));
         return;
       }
       setForm({ url: '', title: '', start: '', end: '', note: '' });
@@ -137,10 +139,10 @@ export function ClipsColumn() {
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-site-border bg-site-bg/80 px-4 py-3 backdrop-blur">
         <Clapperboard className="h-5 w-5 text-site-accent" />
-        <h1 className="text-lg font-bold text-site-text">Clips</h1>
+        <h1 className="text-lg font-bold text-site-text">{t('clips-heading', { defaultValue: 'Clips' })}</h1>
         {signedIn && (
           <Button size="sm" variant="accent" className="ml-auto gap-1" onClick={() => setShowForm((v) => !v)}>
-            <Plus className="h-3.5 w-3.5" /> New clip
+            <Plus className="h-3.5 w-3.5" /> {t('new-clip', { defaultValue: 'New clip' })}
           </Button>
         )}
       </header>
@@ -162,23 +164,23 @@ export function ClipsColumn() {
       {showForm && (
         <div className="border-b border-site-border bg-site-surface/30 p-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-site-text">Save a clip</h2>
-            <button onClick={() => setShowForm(false)} className="text-site-text-dim hover:text-site-text" aria-label="Close">
+            <h2 className="text-sm font-semibold text-site-text">{t('save-a-clip', { defaultValue: 'Save a clip' })}</h2>
+            <button onClick={() => setShowForm(false)} className="text-site-text-dim hover:text-site-text" aria-label={t('close', { defaultValue: 'Close' })}>
               <X className="h-4 w-4" />
             </button>
           </div>
           <div className="mt-3 space-y-2">
-            <input value={form.url} onChange={(e) => setForm((f) => ({ ...f, url: e.target.value }))} placeholder="Video URL (YouTube, etc.)" className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent" />
-            <input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="Clip title" maxLength={120} className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent" />
+            <input value={form.url} onChange={(e) => setForm((f) => ({ ...f, url: e.target.value }))} placeholder={t('video-url-placeholder', { defaultValue: 'Video URL (YouTube, etc.)' })} className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent" />
+            <input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder={t('clip-title-placeholder', { defaultValue: 'Clip title' })} maxLength={120} className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent" />
             <div className="flex gap-2">
-              <input value={form.start} onChange={(e) => setForm((f) => ({ ...f, start: e.target.value }))} placeholder="Start (1:30 or 90)" className="flex-1 rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent" />
-              <input value={form.end} onChange={(e) => setForm((f) => ({ ...f, end: e.target.value }))} placeholder="End (2:00 or 120)" className="flex-1 rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent" />
+              <input value={form.start} onChange={(e) => setForm((f) => ({ ...f, start: e.target.value }))} placeholder={t('start-placeholder', { defaultValue: 'Start (1:30 or 90)' })} className="flex-1 rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent" />
+              <input value={form.end} onChange={(e) => setForm((f) => ({ ...f, end: e.target.value }))} placeholder={t('end-placeholder', { defaultValue: 'End (2:00 or 120)' })} className="flex-1 rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent" />
             </div>
-            <input value={form.note} onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))} placeholder="Note / chapter (optional)" maxLength={300} className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent" />
+            <input value={form.note} onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))} placeholder={t('note-placeholder', { defaultValue: 'Note / chapter (optional)' })} maxLength={300} className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent" />
             {error && <p className="text-xs text-site-danger">{error}</p>}
             <div className="flex justify-end">
               <Button size="sm" variant="accent" disabled={busy === 'create' || !validForm} onClick={create}>
-                {busy === 'create' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Save clip'}
+                {busy === 'create' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t('save-clip', { defaultValue: 'Save clip' })}
               </Button>
             </div>
           </div>
@@ -190,7 +192,7 @@ export function ClipsColumn() {
           <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
         </div>
       ) : clips.length === 0 ? (
-        <p className="px-4 py-16 text-center text-sm text-site-text-muted">No clips here yet.</p>
+        <p className="px-4 py-16 text-center text-sm text-site-text-muted">{t('no-clips', { defaultValue: 'No clips here yet.' })}</p>
       ) : (
         <div className="space-y-3 p-4">
           {clips.map((c) => (
@@ -215,15 +217,15 @@ export function ClipsColumn() {
                 {c.note && <p className="mt-0.5 text-xs text-site-text-muted">{c.note}</p>}
                 <div className="mt-2 flex items-center gap-2">
                   <UserAvatar user={c.user} />
-                  <span className="min-w-0 flex-1 truncate text-xs text-site-text-dim">{c.user.name || c.user.handle || 'Someone'}</span>
+                  <span className="min-w-0 flex-1 truncate text-xs text-site-text-dim">{c.user.name || c.user.handle || t('someone', { defaultValue: 'Someone' })}</span>
                   {c.isOwner ? (
-                    <button onClick={() => del(c.id)} disabled={busy === `del:${c.id}`} className="text-site-text-dim hover:text-site-danger" aria-label="Delete clip">
+                    <button onClick={() => del(c.id)} disabled={busy === `del:${c.id}`} className="text-site-text-dim hover:text-site-danger" aria-label={t('delete-clip', { defaultValue: 'Delete clip' })}>
                       <Trash2 className="h-4 w-4" />
                     </button>
                   ) : signedIn ? (
                     <Button size="sm" variant={c.subscribed ? 'outline' : 'accent'} disabled={busy === `sub:${c.user.id}`} onClick={() => toggleSub(c.user.id)} className="h-7 gap-1 px-2 text-xs">
                       {c.subscribed ? <BellOff className="h-3.5 w-3.5" /> : <Bell className="h-3.5 w-3.5" />}
-                      {c.subscribed ? 'Subscribed' : 'Subscribe'}
+                      {c.subscribed ? t('subscribed', { defaultValue: 'Subscribed' }) : t('subscribe', { defaultValue: 'Subscribe' })}
                     </Button>
                   ) : null}
                 </div>

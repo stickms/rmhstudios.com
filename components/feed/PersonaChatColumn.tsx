@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { Loader2, Bot, Send, ArrowLeft, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,7 @@ interface Persona {
 }
 
 export function PersonaChatColumn({ id }: { id: string }) {
+  const { t } = useTranslation('feed');
   const [persona, setPersona] = useState<Persona | null>(null);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [signedIn, setSignedIn] = useState(false);
@@ -79,7 +81,7 @@ export function PersonaChatColumn({ id }: { id: string }) {
       if (res.ok) {
         setMessages((m) => [...m, { role: 'assistant', content: data.reply }]);
       } else {
-        setMessages((m) => [...m, { role: 'assistant', content: `(${data.error ?? 'Something went wrong'})` }]);
+        setMessages((m) => [...m, { role: 'assistant', content: `(${data.error ?? t('chat-error', { defaultValue: 'Something went wrong' })})` }]);
       }
     } finally {
       setSending(false);
@@ -87,7 +89,7 @@ export function PersonaChatColumn({ id }: { id: string }) {
   }
 
   async function del() {
-    if (!confirm('Delete this persona?')) return;
+    if (!confirm(t('delete-persona-confirm', { defaultValue: 'Delete this persona?' }))) return;
     const res = await fetch(`/api/personas/${encodeURIComponent(id)}`, { method: 'DELETE', credentials: 'include' });
     if (res.ok) window.location.href = '/personas';
   }
@@ -102,9 +104,9 @@ export function PersonaChatColumn({ id }: { id: string }) {
   if (notFound || !persona) {
     return (
       <div className="flex flex-col items-center gap-3 px-6 py-24 text-center">
-        <p className="font-medium text-site-text">Persona not found</p>
+        <p className="font-medium text-site-text">{t('persona-not-found', { defaultValue: 'Persona not found' })}</p>
         <Link to="/personas">
-          <Button variant="outline">Browse personas</Button>
+          <Button variant="outline">{t('browse-personas', { defaultValue: 'Browse personas' })}</Button>
         </Link>
       </div>
     );
@@ -126,7 +128,7 @@ export function PersonaChatColumn({ id }: { id: string }) {
           {persona.tagline && <p className="truncate text-xs text-site-text-dim">{persona.tagline}</p>}
         </div>
         {persona.isOwner && (
-          <button onClick={del} className="text-site-text-dim hover:text-site-danger" title="Delete persona" aria-label="Delete persona">
+          <button onClick={del} className="text-site-text-dim hover:text-site-danger" title={t('delete-persona', { defaultValue: 'Delete persona' })} aria-label={t('delete-persona', { defaultValue: 'Delete persona' })}>
             <Trash2 className="h-4 w-4" />
           </button>
         )}
@@ -146,7 +148,7 @@ export function PersonaChatColumn({ id }: { id: string }) {
         {sending && (
           <Bubble role="assistant" emoji={persona.emoji}>
             <span className="inline-flex items-center gap-1 text-site-text-dim">
-              <Loader2 className="h-3.5 w-3.5 animate-spin" /> typing…
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> {t('typing', { defaultValue: 'typing…' })}
             </span>
           </Bubble>
         )}
@@ -164,7 +166,7 @@ export function PersonaChatColumn({ id }: { id: string }) {
                   send();
                 }
               }}
-              placeholder={`Message ${persona.name}…`}
+              placeholder={t('message-placeholder', { name: persona.name, defaultValue: 'Message {{name}}…' })}
               rows={1}
               maxLength={1000}
               className="max-h-32 flex-1 resize-none rounded-xl border border-site-border bg-site-surface px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
@@ -180,9 +182,9 @@ export function PersonaChatColumn({ id }: { id: string }) {
               search={{ callbackURL: `/personas/${id}` }}
               className="font-semibold text-site-accent hover:underline"
             >
-              Sign in
+              {t('sign-in', { defaultValue: 'Sign in' })}
             </Link>{' '}
-            to chat with {persona.name}.
+            {t('sign-in-to-chat', { name: persona.name, defaultValue: 'to chat with {{name}}.' })}
           </p>
         )}
       </div>

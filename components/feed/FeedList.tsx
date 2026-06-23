@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useFeedStore } from '@/stores/feedStore';
 import { FeedItem } from './FeedItem';
 import { Loader2, ArrowUp } from 'lucide-react';
@@ -13,6 +14,7 @@ interface FeedListProps {
 }
 
 export function FeedList({ following = false, onSwitchToForYou }: FeedListProps) {
+  const { t } = useTranslation('feed');
   const { items, loading, initialized, hasMore, fetchNextPage, pendingItems, flushPending } =
     useFeedStore();
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -63,7 +65,7 @@ export function FeedList({ following = false, onSwitchToForYou }: FeedListProps)
             className="pointer-events-auto flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-site-accent text-site-bg text-sm font-bold shadow-lg hover:bg-site-accent-hover transition-colors"
           >
             <ArrowUp className="w-4 h-4" />
-            {pendingItems.length} new {pendingItems.length === 1 ? 'post' : 'posts'}
+            {t('new-posts', { count: pendingItems.length, defaultValue: '{{count}} new post', defaultValue_plural: '{{count}} new posts' })}
           </button>
         </div>
       )}
@@ -84,24 +86,24 @@ export function FeedList({ following = false, onSwitchToForYou }: FeedListProps)
       {initialized && !loading && items.length === 0 && (
         following ? (
           <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-            <p className="text-lg font-medium text-site-text mb-1">Your Following feed is quiet</p>
+            <p className="text-lg font-medium text-site-text mb-1">{t('following-empty-title', { defaultValue: 'Your Following feed is quiet' })}</p>
             <p className="text-sm text-site-text-muted mb-6">
-              Follow some people and their posts will show up here.
+              {t('following-empty-subtitle', { defaultValue: 'Follow some people and their posts will show up here.' })}
             </p>
             {onSwitchToForYou && (
               <button
                 onClick={onSwitchToForYou}
                 className="px-5 py-2 rounded-lg bg-site-accent text-site-bg text-sm font-bold hover:bg-site-accent-hover transition-colors"
               >
-                Browse For You
+                {t('browse-for-you', { defaultValue: 'Browse For You' })}
               </button>
             )}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-            <p className="text-lg font-medium text-site-text mb-1">Nothing here yet</p>
+            <p className="text-lg font-medium text-site-text mb-1">{t('for-you-empty-title', { defaultValue: 'Nothing here yet' })}</p>
             <p className="text-sm text-site-text-muted">
-              Be the first to post an RMHark, or check back later!
+              {t('for-you-empty-subtitle', { defaultValue: 'Be the first to post an RMHark, or check back later!' })}
             </p>
           </div>
         )
@@ -110,7 +112,7 @@ export function FeedList({ following = false, onSwitchToForYou }: FeedListProps)
       {/* No more items */}
       {!hasMore && items.length > 0 && (
         <div className="py-8 text-center text-sm text-site-text-dim">
-          You&apos;ve reached the end
+          {t('reached-end', { defaultValue: "You've reached the end" })}
         </div>
       )}
 

@@ -1,0 +1,10 @@
+{
+  "library-heading": "图书馆",
+  "no-results": "没有找到匹配的书籍。",
+  "open-book": "打开{{title}}",
+  "open-menu": "打开菜单",
+  "search-label": "搜索图书馆",
+  "search-placeholder": "搜索图书馆...",
+  "upload-button": "上传",
+  "upload-label": "上传一个PDF文件"
+}

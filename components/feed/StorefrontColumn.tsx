@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Loader2, Store, Plus, Trash2, Check, ShoppingBag, X, EyeOff, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
@@ -27,6 +28,7 @@ interface Creator {
 const fmt = (n: number) => n.toLocaleString();
 
 export function StorefrontColumn({ userid }: { userid: string }) {
+  const { t } = useTranslation('feed');
   const [creator, setCreator] = useState<Creator | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [isOwner, setIsOwner] = useState(false);
@@ -85,7 +87,7 @@ export function StorefrontColumn({ userid }: { userid: string }) {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error ?? 'Could not create');
+        setError(data.error ?? t('could-not-create', { defaultValue: 'Could not create' }));
         return;
       }
       setForm({ title: '', description: '', price: '', deliverable: '' });
@@ -144,7 +146,7 @@ export function StorefrontColumn({ userid }: { userid: string }) {
     );
   }
   if (notFound || !creator) {
-    return <p className="px-4 py-24 text-center text-sm text-site-text-muted">Storefront not found.</p>;
+    return <p className="px-4 py-24 text-center text-sm text-site-text-muted">{t('storefront-not-found', { defaultValue: 'Storefront not found.' })}</p>;
   }
 
   const validForm = form.title.trim().length >= 2 && parseInt(form.price, 10) > 0;
@@ -155,12 +157,12 @@ export function StorefrontColumn({ userid }: { userid: string }) {
         <Store className="h-5 w-5 text-site-accent" />
         <div className="min-w-0">
           <h1 className="truncate text-lg font-bold text-site-text">
-            {creator.name || creator.handle || 'Creator'}’s store
+            {t('creators-store', { name: creator.name || creator.handle || 'Creator', defaultValue: "{{name}}'s store" })}
           </h1>
         </div>
         {isOwner && (
           <Button size="sm" variant="accent" className="ml-auto gap-1" onClick={() => setShowForm((v) => !v)}>
-            <Plus className="h-3.5 w-3.5" /> New product
+            <Plus className="h-3.5 w-3.5" /> {t('new-product', { defaultValue: 'New product' })}
           </Button>
         )}
       </header>
@@ -176,8 +178,8 @@ export function StorefrontColumn({ userid }: { userid: string }) {
       {showForm && (
         <div className="border-b border-site-border bg-site-surface/30 p-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-site-text">New product</h2>
-            <button onClick={() => setShowForm(false)} className="text-site-text-dim hover:text-site-text" aria-label="Close">
+            <h2 className="text-sm font-semibold text-site-text">{t('new-product', { defaultValue: 'New product' })}</h2>
+            <button onClick={() => setShowForm(false)} className="text-site-text-dim hover:text-site-text" aria-label={t('close', { defaultValue: 'Close' })}>
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -185,14 +187,14 @@ export function StorefrontColumn({ userid }: { userid: string }) {
             <input
               value={form.title}
               onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-              placeholder="Title"
+              placeholder={t('title-placeholder', { defaultValue: 'Title' })}
               maxLength={80}
               className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
             <textarea
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-              placeholder="Description (optional)"
+              placeholder={t('description-optional-placeholder', { defaultValue: 'Description (optional)' })}
               maxLength={500}
               rows={2}
               className="w-full resize-none rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
@@ -202,13 +204,13 @@ export function StorefrontColumn({ userid }: { userid: string }) {
               min={1}
               value={form.price}
               onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
-              placeholder="Price (coins)"
+              placeholder={t('price-coins-placeholder', { defaultValue: 'Price (coins)' })}
               className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
             <textarea
               value={form.deliverable}
               onChange={(e) => setForm((f) => ({ ...f, deliverable: e.target.value }))}
-              placeholder="Deliverable — link, code, or message revealed to buyers (optional)"
+              placeholder={t('deliverable-placeholder', { defaultValue: 'Deliverable — link, code, or message revealed to buyers (optional)' })}
               maxLength={2000}
               rows={2}
               className="w-full resize-none rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
@@ -216,7 +218,7 @@ export function StorefrontColumn({ userid }: { userid: string }) {
             {error && <p className="text-xs text-site-danger">{error}</p>}
             <div className="flex justify-end">
               <Button size="sm" variant="accent" disabled={!validForm || busy === 'create'} onClick={create}>
-                {busy === 'create' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'List product'}
+                {busy === 'create' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t('list-product', { defaultValue: 'List product' })}
               </Button>
             </div>
           </div>
@@ -226,7 +228,7 @@ export function StorefrontColumn({ userid }: { userid: string }) {
       <div className="space-y-2 p-4">
         {products.length === 0 ? (
           <p className="py-16 text-center text-sm text-site-text-muted">
-            {isOwner ? 'No products yet — list your first one!' : 'This creator has no products yet.'}
+            {isOwner ? t('no-products-owner', { defaultValue: 'No products yet — list your first one!' }) : t('no-products-visitor', { defaultValue: 'This creator has no products yet.' })}
           </p>
         ) : (
           products.map((p) => (
@@ -239,7 +241,7 @@ export function StorefrontColumn({ userid }: { userid: string }) {
                   <p className="font-semibold text-site-text">{p.title}</p>
                   {p.description && <p className="mt-0.5 text-sm text-site-text-muted">{p.description}</p>}
                   <p className="mt-1 text-[11px] text-site-text-dim">
-                    {fmt(p.salesCount)} sold{!p.active ? ' · hidden' : ''}
+                    {t('sold-count', { count: p.salesCount, formattedCount: fmt(p.salesCount), defaultValue: '{{formattedCount}} sold' })}{!p.active ? t('hidden-suffix', { defaultValue: ' · hidden' }) : ''}
                   </p>
                 </div>
                 <span className="inline-flex shrink-0 items-center gap-1 text-sm font-bold text-site-text">
@@ -249,7 +251,7 @@ export function StorefrontColumn({ userid }: { userid: string }) {
 
               {p.deliverable && (
                 <div className="mt-2 rounded-lg border border-site-accent/30 bg-site-accent/5 p-2 text-sm text-site-text">
-                  <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-site-accent">Deliverable</p>
+                  <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-site-accent">{t('deliverable-label', { defaultValue: 'Deliverable' })}</p>
                   <p className="whitespace-pre-wrap break-words">{p.deliverable}</p>
                 </div>
               )}
@@ -259,7 +261,7 @@ export function StorefrontColumn({ userid }: { userid: string }) {
                   <>
                     <Button size="sm" variant="outline" disabled={busy === `tog:${p.id}`} onClick={() => toggleActive(p)} className="gap-1">
                       {p.active ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                      {p.active ? 'Hide' : 'Show'}
+                      {p.active ? t('hide', { defaultValue: 'Hide' }) : t('show', { defaultValue: 'Show' })}
                     </Button>
                     <Button
                       size="sm"
@@ -268,12 +270,12 @@ export function StorefrontColumn({ userid }: { userid: string }) {
                       onClick={() => remove(p.id)}
                       className="gap-1 text-site-text-muted hover:text-site-danger"
                     >
-                      <Trash2 className="h-3.5 w-3.5" /> Delete
+                      <Trash2 className="h-3.5 w-3.5" /> {t('delete', { defaultValue: 'Delete' })}
                     </Button>
                   </>
                 ) : p.owned ? (
                   <span className="inline-flex items-center gap-1 text-sm font-semibold text-site-accent">
-                    <Check className="h-4 w-4" /> Purchased
+                    <Check className="h-4 w-4" /> {t('purchased', { defaultValue: 'Purchased' })}
                   </span>
                 ) : (
                   <Button
@@ -284,7 +286,7 @@ export function StorefrontColumn({ userid }: { userid: string }) {
                     className="gap-1"
                   >
                     {busy === `buy:${p.id}` ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShoppingBag className="h-3.5 w-3.5" />}
-                    {signedIn ? 'Buy' : 'Sign in to buy'}
+                    {signedIn ? t('buy', { defaultValue: 'Buy' }) : t('sign-in-to-buy', { defaultValue: 'Sign in to buy' })}
                   </Button>
                 )}
               </div>

@@ -3,6 +3,7 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 
 export const Route = createFileRoute('/_site/quotes')({
@@ -177,8 +178,9 @@ function QuoteCard({ quote, index }: { quote: typeof quotes[number]; index: numb
 }
 
 function QuotesPage() {
+  const { t } = useTranslation("site");
   return (
-    <PageLayout title="Steve Jobs Quotes" wide>
+    <PageLayout title={t("steve-jobs-quotes-title", { defaultValue: "Steve Jobs Quotes" })} wide>
       <div className="px-4 pt-4 pb-12 max-w-2xl mx-auto">
         {/* Hero section */}
         <div className="text-center mb-12">
@@ -191,8 +193,7 @@ function QuotesPage() {
             </svg>
           </div>
           <p className="text-site-text-muted text-sm leading-relaxed max-w-lg mx-auto">
-            A curated collection of the most memorable words from Steve Jobs &mdash; co-founder of Apple,
-            visionary, and one of the most influential thinkers of the modern era.
+            {t("quotes-hero-description", { defaultValue: "A curated collection of the most memorable words from Steve Jobs — co-founder of Apple, visionary, and one of the most influential thinkers of the modern era." })}
           </p>
         </div>
 
@@ -215,7 +216,7 @@ function QuotesPage() {
           </div>
           <div className="relative flex justify-center">
             <span className="bg-site-bg px-3 text-xs font-mono text-site-text-muted uppercase tracking-widest">
-              {quotes.length} Quotes
+              {t("quotes-count", { count: quotes.length, defaultValue: "{{count}} Quotes" })}
             </span>
           </div>
         </div>
@@ -230,8 +231,7 @@ function QuotesPage() {
         {/* Footer note */}
         <div className="mt-12 pt-8 border-t border-site-border text-center">
           <p className="text-xs text-site-text-muted">
-            &ldquo;Your work is going to fill a large part of your life, and the only way to be truly satisfied
-            is to do what you believe is great work. And the only way to do great work is to love what you do.&rdquo;
+            {t("quotes-footer-note", { defaultValue: "“Your work is going to fill a large part of your life, and the only way to be truly satisfied is to do what you believe is great work. And the only way to do great work is to love what you do.”" })}
           </p>
         </div>
       </div>
