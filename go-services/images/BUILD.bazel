@@ -40,6 +40,13 @@ go_service_image(
     binary = "//go-services/cmd/doctrine-worker:doctrine-worker",
 )
 
+# assets: streams /library /music /models /sprites from the S3-compatible
+# bucket. The AWS SDK is pure Go, so distroless static is sufficient.
+go_service_image(
+    name = "assets",
+    binary = "//go-services/cmd/assets:assets",
+)
+
 # ── Special bases ────────────────────────────────────────────────────────────
 # vibe-worker needs headless Chromium; discord-bot needs git/ssh.
 go_service_image(

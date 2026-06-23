@@ -67,6 +67,23 @@ spec:
             # STATUS_SUPERVISOR_URL at the actual rendered Service name.
             - name: STATUS_SUPERVISOR_URL
               value: "http://{{ include "rmhgo.fullname" $root }}-supervisor:{{ $root.Values.metricsPort }}/health"
+            # The WS-hub rows default to compose DNS (socket/rmhbox/rmhtube),
+            # which don't resolve in k8s — "socket" in particular maps to the
+            # gamehub Service. Point each at its rendered Service name so those
+            # rows read correctly under k3s.
+            {{- $fn := include "rmhgo.fullname" $root }}
+            {{- with $root.Values.services.gamehub }}
+            - name: STATUS_SOCKET_URL
+              value: "http://{{ $fn }}-gamehub:{{ .port }}/health"
+            {{- end }}
+            {{- with $root.Values.services.rmhbox }}
+            - name: STATUS_RMHBOX_URL
+              value: "http://{{ $fn }}-rmhbox:{{ .port }}/health"
+            {{- end }}
+            {{- with $root.Values.services.rmhtube }}
+            - name: STATUS_RMHTUBE_URL
+              value: "http://{{ $fn }}-rmhtube:{{ .port }}/health"
+            {{- end }}
             {{- else if eq $svc "gateway" }}
             - name: PORT_WEB
               value: {{ $cfg.port | quote }}

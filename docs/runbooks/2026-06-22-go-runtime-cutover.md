@@ -131,12 +131,13 @@ Size `DB_POOL_SIZE` for the sum of their concurrency, not a single worker.
 - **Health gate:** `curl -fsS http://<status>:7008/health` → `{"status":"ok","uptime":...}`;
   load `GET /` (dashboard) and `GET /api/status` (JSON; field names match the Node
   contract). The "Background workers" row probes the supervisor (see §3b).
-- **Known k8s limitation (not a regression):** the `socket`/`rmhbox`/`rmhtube`
-  status rows use bare compose DNS names hardcoded in `cmd/status`; under k3s
-  they resolve to `{release}-<svc>` and `socket`→`gamehub`, so those three rows
-  read "down" until `cmd/status` gains `STATUS_<svc>_URL` env hooks wired like
-  the supervisor one. Compose is unaffected. Website/Database/Background-workers
-  rows are correct. Track as a follow-up.
+- **k8s hub rows (resolved):** the `socket`/`rmhbox`/`rmhtube` status rows now
+  take full-URL overrides — `STATUS_SOCKET_URL` / `STATUS_RMHBOX_URL` /
+  `STATUS_RMHTUBE_URL` — wired like `STATUS_SUPERVISOR_URL`. The Helm `status`
+  Deployment sets them to the rendered Service names (`{release}-gamehub` for
+  socket, `{release}-rmhbox`, `{release}-rmhtube`), so all rows read correctly
+  under k3s. Unset (compose) → the bare compose-DNS defaults are preserved, so
+  compose is unaffected.
 
 ### 3b. supervisor (the background workers)
 - **Compose:** `docker compose up -d supervisor` (replaces the five Node worker
