@@ -55,6 +55,15 @@ spec:
             {{- else if eq $svc "recap" }}
             - name: RECAP_PORT
               value: {{ $cfg.port | quote }}
+            {{- else if eq $svc "status" }}
+            - name: STATUS_PORT
+              value: {{ $cfg.port | quote }}
+            # The status page probes the supervisor's shared /health. In k8s the
+            # supervisor Service renders as {release}-supervisor (not the bare
+            # compose name "supervisor" that cmd/status defaults to), so point
+            # STATUS_SUPERVISOR_URL at the actual rendered Service name.
+            - name: STATUS_SUPERVISOR_URL
+              value: "http://{{ include "rmhgo.fullname" $root }}-supervisor:{{ $root.Values.metricsPort }}/health"
             {{- else if eq $svc "gateway" }}
             - name: PORT_WEB
               value: {{ $cfg.port | quote }}
@@ -83,6 +92,9 @@ spec:
               value: {{ $root.Values.webUpstream | quote }}
             {{- end }}
             {{- end }}
+            {{- end }}
+            {{- with $cfg.extraEnv }}
+            {{- toYaml . | nindent 12 }}
             {{- end }}
           ports:
             {{- if $cfg.port }}

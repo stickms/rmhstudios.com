@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1
+# syntax=docker/dockerfile:1.7-labs
 # ─────────────────────────────────────────────────────────────────────────────
 # rmhstudios.com — Multi-stage Docker build (cache-optimized)
 #
@@ -124,7 +124,11 @@ RUN test -f dist-server/server/socket-server/index.cjs && \
 FROM prisma-generate AS vite-builder
 
 COPY public ./public/
-COPY . .
+# Exclude go-services from this stage's context copy. .dockerignore no longer
+# excludes it globally (the go-builder stage needs it), but the Vite build does
+# NOT use it — pulling it in here would bust the expensive vite/public layer
+# cache on every Go-only change. Requires the dockerfile:1.7-labs syntax.
+COPY --exclude=go-services . .
 
 ARG COMPOSE_PROJECT_NAME=rmhstudios
 ARG DATABASE_URL
@@ -191,6 +195,35 @@ RUN rm -rf /app/build-output/public/library \
            /app/build-output/public/music \
            /app/build-output/public/sprites
 
+# ── Stage 3b: Go binaries ────────────────────────────────────────────────
+# Builds supervisor, status, and bot-worker (plus all other cmd/ packages)
+# from the go-services module using the official Go toolchain. The binaries
+# are statically linked (CGO_ENABLED=0) so they drop cleanly into the musl
+# Alpine runner without libc ceremony.
+FROM golang:1.23-alpine AS go-builder
+
+WORKDIR /build
+
+# TARGETARCH is set automatically by BuildKit from --platform (defaults to the
+# build host's arch). Threading it into GOARCH guarantees the binaries match the
+# image's target architecture — critical when building on x86 CI for the ARM64
+# host, where a host-arch build would exec-format-fail silently at runtime.
+ARG TARGETARCH
+
+# Copy only the module files first so the module download layer is cached
+# independently of source changes.
+COPY go-services/go.mod go-services/go.sum ./
+
+RUN go mod download
+
+# Copy the full source tree and compile every cmd/ package.
+# CGO_ENABLED=0 → fully static binaries (no glibc / musl mismatch in runner).
+# GOOS/GOARCH → cross-arch-correct binaries for the image's target platform.
+COPY go-services/ ./
+
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} \
+    go build -trimpath -ldflags="-s -w" -o /app/bin/ ./cmd/...
+
 # ── Stage 4: Production runner ────────────────────────────────────────────
 FROM node:24-alpine AS runner
 
@@ -225,6 +258,13 @@ COPY --from=vite-builder --chown=app:nodejs /app/build-output ./.output
 
 # ─── Custom server bundles (from env-agnostic stage) ────────────────────
 COPY --from=server-builder --chown=app:nodejs /app/dist-server ./dist-server
+
+# ─── Go binaries (supervisor, status, bot-worker, hubs, gateway) ────────
+# Compiled in the go-builder stage (CGO_ENABLED=0, fully static).
+# supervisor runs 5 background workers as goroutines; status is the
+# Go status page server; the remaining hubs/gateway are available for
+# future compose wiring.
+COPY --from=go-builder --chown=app:nodejs /app/bin/ /app/bin/
 
 # ─── Supporting files (from build context, not a builder stage) ─────────
 COPY --chown=app:nodejs scripts ./scripts

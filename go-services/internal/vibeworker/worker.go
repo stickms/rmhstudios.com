@@ -117,6 +117,14 @@ func (w *Worker) processStale(ctx context.Context) {
 		w.running = false
 		w.mu.Unlock()
 	}()
+	// Failure-isolation: recover any panic (e.g. nil-DB dereference in SelectStale)
+	// so a single job crash cannot take down the shared supervisor process.
+	defer func() {
+		if r := recover(); r != nil {
+			w.metrics.JobRuns.WithLabelValues(jobName, "panic").Inc()
+			w.logger.Error("processStale panicked", "panic", r)
+		}
+	}()
 
 	pages, err := w.repo.SelectStale(ctx, batchSize)
 	if err != nil {

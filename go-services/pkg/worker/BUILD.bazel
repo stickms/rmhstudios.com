@@ -1,0 +1,18 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "worker",
+    srcs = [
+        "standalone.go",
+        "worker.go",
+    ],
+    importpath = "github.com/rmhstudios/rmh-go/pkg/worker",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//go-services/pkg/config",
+        "//go-services/pkg/db",
+        "//go-services/pkg/httpx",
+        "//go-services/pkg/log",
+        "//go-services/pkg/telemetry",
+    ],
+)

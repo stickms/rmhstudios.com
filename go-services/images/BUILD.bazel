@@ -54,3 +54,26 @@ go_service_image(
     base = "@base_git",
     binary = "//go-services/cmd/discord-bot:discord-bot",
 )
+
+# ── Supervisor + status ───────────────────────────────────────────────────────
+# status: dependency-light HTTP service (probes + dashboard, raw pgx for the
+# optional DB probe). Pure Go — distroless static base is sufficient.
+go_service_image(
+    name = "status",
+    binary = "//go-services/cmd/status:status",
+)
+
+# supervisor: runs ALL FIVE background workers (vibe-worker, discord-bot,
+# bot-worker, doctrine-worker, recap) as goroutines in one process. Its base
+# must satisfy the union of their runtime needs:
+#   - vibe-worker → headless Chromium + PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+#   - discord-bot → git + openssh-client (rmhbot worktree/PR feature)
+#   - others      → pure Go (no special runtime)
+# @base_chromium_git = ghcr.io/rmhstudios/rmhstudios-go-base-chromium-git
+# (Alpine 3.20 + chromium + git/ssh). See deploy/docker/base-chromium-git.Dockerfile.
+go_service_image(
+    name = "supervisor",
+    base = "@base_chromium_git",
+    binary = "//go-services/cmd/supervisor:supervisor",
+    env = {"PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH": "/usr/bin/chromium-browser"},
+)

@@ -3,6 +3,7 @@ load("@rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "doctrine",
     srcs = [
+        "run.go",
         "schedule.go",
         "seed.go",
         "worker.go",
@@ -13,6 +14,7 @@ go_library(
         "//go-services/pkg/db",
         "//go-services/pkg/log",
         "//go-services/pkg/telemetry",
+        "//go-services/pkg/worker",
         "@com_github_google_uuid//:uuid",
         "@com_github_jackc_pgx_v5//:pgx",
     ],
@@ -20,6 +22,14 @@ go_library(
 
 go_test(
     name = "doctrine_test",
-    srcs = ["seed_test.go"],
+    srcs = [
+        "run_test.go",
+        "seed_test.go",
+    ],
     embed = [":doctrine"],
+    deps = [
+        "//go-services/pkg/log",
+        "//go-services/pkg/telemetry",
+        "//go-services/pkg/worker",
+    ],
 )

@@ -1,0 +1,31 @@
+load("@rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+
+go_library(
+    name = "status_lib",
+    srcs = [
+        "dbprobe.go",
+        "main.go",
+    ],
+    importpath = "github.com/rmhstudios/rmh-go/cmd/status",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//go-services/internal/status",
+        "//go-services/pkg/config",
+        "//go-services/pkg/httpx",
+        "//go-services/pkg/log",
+        "@com_github_jackc_pgx_v5//pgxpool",
+    ],
+)
+
+go_binary(
+    name = "status",
+    embed = [":status_lib"],
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "status_test",
+    srcs = ["main_test.go"],
+    embed = [":status_lib"],
+    deps = ["//go-services/internal/status"],
+)
