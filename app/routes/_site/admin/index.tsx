@@ -88,6 +88,16 @@ function AdminDashboardPage() {
           </Link>
 
           <Link
+            to="/admin/predictions"
+            className="block p-6 rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
+          >
+            <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("predictions-title", { defaultValue: "Prediction Markets" })}</h2>
+            <p className="text-site-text-muted text-sm mt-2">
+              {t("predictions-description", { defaultValue: "Approve or deny submitted predictions, and resolve open markets to YES or NO to pay out winners." })}
+            </p>
+          </Link>
+
+          <Link
             to="/admin/analytics"
             className="block p-6 rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
           >

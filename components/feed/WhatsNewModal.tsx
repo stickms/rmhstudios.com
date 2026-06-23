@@ -9,7 +9,7 @@ import {
   Swords,
   Bot,
   Users,
-  Clapperboard,
+  TrendingUp,
   Music,
   BookOpen,
   Store,
@@ -31,7 +31,7 @@ const FEATURES_DEF = [
   { icon: Bot, titleKey: 'feature-personas-title', titleDefault: 'AI personas', bodyKey: 'feature-personas-body', bodyDefault: 'Create and chat with custom AI characters.', to: '/personas' },
   { icon: Users, titleKey: 'feature-groups-title', titleDefault: 'Group chats', bodyKey: 'feature-groups-body', bodyDefault: 'Message multiple friends in real time.', to: '/groups' },
   { icon: BookOpen, titleKey: 'feature-study-title', titleDefault: 'Flashcards + AI tutor', bodyKey: 'feature-study-body', bodyDefault: 'Study with spaced repetition and AI-generated cards.', to: '/study' },
-  { icon: Clapperboard, titleKey: 'feature-clips-title', titleDefault: 'Clips', bodyKey: 'feature-clips-body', bodyDefault: 'Save and share timestamped video moments.', to: '/clips' },
+  { icon: TrendingUp, titleKey: 'feature-predictions-title', titleDefault: 'Prediction markets', bodyKey: 'feature-predictions-body', bodyDefault: 'Create predictions and bet coins on what happens next.', to: '/predictions' },
   { icon: Music, titleKey: 'feature-music-title', titleDefault: 'Guess the Song', bodyKey: 'feature-music-body', bodyDefault: 'Create and solve music puzzles for coins.', to: '/music-trivia' },
   { icon: Store, titleKey: 'feature-creator-title', titleDefault: 'Creator economy', bodyKey: 'feature-creator-body', bodyDefault: 'Storefronts, the build marketplace, gift memberships, and more.', to: '/shop' },
 ];
