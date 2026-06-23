@@ -519,7 +519,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
               )}
               {/* RMH Coins */}
               <Link
-                to="/wallet"
+                to="/predictions"
                 className="inline-flex items-center gap-0.5 shrink-0 hover:opacity-80 transition-opacity"
                 title={t('rmh-coins-count', { count: profile.coins, defaultValue: '{{count}} RMH Coins' })}
               >

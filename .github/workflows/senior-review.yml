@@ -21,6 +21,9 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+      # claude-code-action fetches a GitHub OIDC token at startup; without this
+      # the action fails with "Unable to get ACTIONS_ID_TOKEN_REQUEST_URL".
+      id-token: write
     steps:
       # Decide whether this PR's author is the one we gate on. Every later step
       # is guarded on this output, so non-target PRs finish green with no review.

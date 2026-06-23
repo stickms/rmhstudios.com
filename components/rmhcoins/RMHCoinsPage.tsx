@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { CoinIcon } from './CoinIcon';
 import { PlayTab } from './PlayTab';
+import { PredictionsMarketTab } from '@/components/predictions/PredictionsMarketTab';
 
 export function RMHCoinsPage() {
   const { t } = useTranslation("c-rmhcoins");
@@ -17,11 +18,12 @@ export function RMHCoinsPage() {
   const [coins, setCoins] = useState(0);
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(false);
+  const [tab, setTab] = useState<'markets' | 'games'>('markets');
 
   // Redirect if not authenticated
   useEffect(() => {
     if (!isPending && !session?.user) {
-      navigate({ to: '/login', search: { callbackURL: '/wallet' } });
+      navigate({ to: '/login', search: { callbackURL: '/predictions' } });
     }
   }, [isPending, session, navigate]);
 
@@ -88,9 +90,36 @@ export function RMHCoinsPage() {
         )}
       </div>
 
-      {/* Play */}
+      {/* Markets / Games tab switch */}
+      <div className="flex border-b border-site-border">
+        {([
+          { id: 'markets' as const, label: t("tab-markets", { defaultValue: "Markets" }) },
+          { id: 'games' as const, label: t("tab-games", { defaultValue: "Games" }) },
+        ]).map((tb) => (
+          <button
+            key={tb.id}
+            onClick={() => setTab(tb.id)}
+            className={`flex-1 py-3 text-sm font-semibold transition-colors relative ${
+              tab === tb.id
+                ? 'text-site-text'
+                : 'text-site-text-dim hover:text-site-text'
+            }`}
+          >
+            {tb.label}
+            {tab === tb.id && (
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-site-accent" />
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab content */}
       <div className="flex-1">
-        <PlayTab coins={coins} setCoins={setCoins} />
+        {tab === 'markets' ? (
+          <PredictionsMarketTab coins={coins} setCoins={setCoins} />
+        ) : (
+          <PlayTab coins={coins} setCoins={setCoins} />
+        )}
       </div>
     </div>
   );

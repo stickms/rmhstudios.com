@@ -158,8 +158,7 @@ model User {
   flashcardDecks   FlashcardDeck[]
   flashcardReviews FlashcardReview[]
 
-  // RMHTube clips + channel subscriptions
-  rmhtubeClips         RmhTubeClip[]
+  // RMHTube channel subscriptions
   rmhtubeSubscriptions RmhTubeSubscription[] @relation("TubeSubscriber")
   rmhtubeSubscribers   RmhTubeSubscription[] @relation("TubeChannel")
 
@@ -175,6 +174,10 @@ model User {
   inventory       UserInventory[]
   coinsSent       CoinTransaction[] @relation("CoinSender")
   coinsReceived   CoinTransaction[] @relation("CoinRecipient")
+
+  // Prediction markets: created markets + open positions
+  predictionsCreated  Prediction[]         @relation("PredictionCreator")
+  predictionPositions PredictionPosition[] @relation("PredictionPositions")
 
   // Admin-authored feed announcements
   feedAnnouncements FeedAnnouncement[]
@@ -827,28 +830,6 @@ model RmhTubePlaylistItem {
   @@map("rmhtube_playlist_item")
 }
 
-/// A saved timestamped segment ("clip") of a video (#32). No external API —
-/// just the URL plus a start/end the user marks, with optional chapter notes.
-model RmhTubeClip {
-  id           String   @id @default(cuid())
-  userId       String
-  url          String
-  mediaType    String   @default("youtube")
-  title        String   @db.VarChar(120)
-  startSeconds Int
-  endSeconds   Int
-  thumbnailUrl String?
-  note         String?  @db.VarChar(300)
-  isPublic     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId, createdAt(sort: Desc)])
-  @@index([isPublic, createdAt(sort: Desc)])
-  @@map("rmhtube_clip")
-}
-
 /// Channel subscription — subscribe to another user's RMHTube activity (#32).
 model RmhTubeSubscription {
   id           String   @id @default(cuid())
@@ -1390,6 +1371,68 @@ model UserProfile {
   updatedAt             DateTime  @updatedAt
 
   @@map("user_profile")
+}
+
+// ─── Prediction markets ────────────────────────────────────────────
+
+enum PredictionStatus {
+  PENDING // submitted by a user, awaiting admin approval
+  OPEN // approved, trading is live
+  RESOLVED_YES
+  RESOLVED_NO
+  DENIED // rejected by an admin
+}
+
+/// A binary (YES/NO) prediction market priced by an LMSR market maker. The live
+/// YES price is the implied probability and moves as users trade. Shares pay 1
+/// coin each on the winning side at resolution. `creatorId` is null for markets
+/// seeded by the DeepSeek worker.
+model Prediction {
+  id            String           @id @default(cuid())
+  title         String           @db.VarChar(160)
+  description   String?          @db.VarChar(1000)
+  creatorId     String?
+  status        PredictionStatus @default(PENDING)
+  isAiGenerated Boolean          @default(false)
+
+  // LMSR state (floats). Shares pay 1 coin each on the winning side.
+  b      Float @default(120) // liquidity parameter
+  qYes   Float @default(0) // YES shares outstanding
+  qNo    Float @default(0) // NO shares outstanding
+  volume Int   @default(0) // total coins traded (display only)
+
+  closesAt   DateTime? // trading deadline
+  resolvedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  creator   User?                @relation("PredictionCreator", fields: [creatorId], references: [id], onDelete: SetNull)
+  positions PredictionPosition[]
+
+  @@index([status, createdAt(sort: Desc)])
+  @@map("prediction")
+}
+
+/// A user's aggregate holdings in a single market. Updated per trade; settled at
+/// resolution (winning shares credited back as coins).
+model PredictionPosition {
+  id           String  @id @default(cuid())
+  predictionId String
+  userId       String
+  yesShares    Float   @default(0)
+  noShares     Float   @default(0)
+  spent        Int     @default(0) // net coins spent (cost basis)
+  settled      Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  prediction Prediction @relation(fields: [predictionId], references: [id], onDelete: Cascade)
+  user       User       @relation("PredictionPositions", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([predictionId, userId])
+  @@index([userId])
+  @@map("prediction_position")
 }
 
 // ─── News ─────────────────────────────────────────────────────────
