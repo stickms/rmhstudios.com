@@ -32,6 +32,39 @@ rmhstudios.com is a modern, high-performance web application designed to showcas
 -   **Authentication**: [Better Auth](https://better-auth.com/)
 -   **WebGL / Audio**: React Three Fiber, Rapier Physics, Pixi.js, Howler.js
 -   **State**: Zustand, TanStack React Query
+-   **Backend services**: Go (`go-services/`) — built with [Bazel](https://bazel.build/) (+ gazelle)
+
+## Backend Services (Go)
+
+The backend service layer has been ported to Go (`go-services/`). The React SSR
+`web` tier stays on Node; everything behind it has a Go equivalent. The deploy is
+reversible — the original Node services are preserved as fallbacks (commented
+`# FALLBACK (Node):` blocks in `docker-compose.yml`; the Node Helm chart for k3s).
+
+| Service | Port | Role |
+|---|---|---|
+| `gateway` | 7005 | Edge / reverse-proxy in front of the hubs + assets |
+| `gamehub` (socket) | 7001 | Realtime games WebSocket hub |
+| `rmhbox` | 7676 | Party-game WebSocket hub |
+| `rmhtube` | 7003 | Watch-together WebSocket hub |
+| `rmhmusic` | 7002 | Collaborative listening WebSocket hub |
+| `assets` | 7007 | Streams `/library` `/music` `/models` `/sprites` from S3 (Range-aware), replacing the Apache-off-disk CDN |
+| `status` | 7008 | Standalone health dashboard (`/`, `/api/status`); survives outages |
+| `supervisor` | 9090 | Runs the five background workers (discord-bot, recap, doctrine-worker, vibe-worker, bot-worker) as goroutines in one process |
+
+Build & test the Go services with Bazel:
+
+```bash
+cd go-services
+bazel run //:gazelle                 # regenerate BUILD files after adding Go files
+bazel test //go-services/...         # run all Go tests
+bazel build //go-services/images/... # assemble the per-service OCI images
+```
+
+Locally, `docker-compose.yml` runs the Go services from two images built off the
+same `Dockerfile` (`rmhstudios-app` slim for the Node services, `rmhstudios-app-full`
+for the Go services + Chromium/git). MinIO provides the S3-compatible bucket the
+`assets` service streams from.
 
 ## Project Structure
 
@@ -46,14 +79,17 @@ rmhstudios.com is a modern, high-performance web application designed to showcas
 │   └── globals.css       # Global styles and theme definitions
 ├── components/           # React components organized by feature (594 files)
 ├── lib/                  # Utility functions, schemas, and shared logic (361 files)
-├── server/               # Real-time WebSocket servers (socket-server, rmhbox, rmhtube)
+├── server/               # Node service entrypoints (WebSocket servers, workers, status)
+├── go-services/          # Go port of the backend services (hubs, gateway, status, assets, supervisor)
 ├── stores/               # Zustand state management
 ├── hooks/                # Custom React hooks
 ├── prisma/               # Database schema and migrations
 ├── data/                 # Game data (JSON)
 ├── scripts/              # Utility scripts (seeding, migrations, blog generation)
 ├── public/               # Static assets (images, sprites, music)
+├── deploy/               # Helm charts, Docker bases, runbooks
 ├── testing/              # Vitest test files
+├── docker-compose.yml    # Container topology (web + Go services + MinIO)
 └── deploy.sh             # Deployment script
 ```
 

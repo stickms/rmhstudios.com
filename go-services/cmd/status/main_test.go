@@ -8,15 +8,20 @@ import (
 	"github.com/rmhstudios/rmh-go/internal/status"
 )
 
-// defaultSupervisorURL mirrors the STATUS_SUPERVISOR_URL default in main().
-const defaultSupervisorURL = "http://supervisor:9090/health"
+// default*URL mirror the corresponding env defaults in main().
+const (
+	defaultSocketURL     = "http://socket:7001/health"
+	defaultRMHBoxURL     = "http://rmhbox:7676/health"
+	defaultRMHTubeURL    = "http://rmhtube:7003/health"
+	defaultSupervisorURL = "http://supervisor:9090/health"
+)
 
 // TestBuildTargetsOmitsDatabaseWithoutDSN asserts that with DATABASE_URL unset
 // the Database probe target is omitted, and the five HTTP targets are present.
 func TestBuildTargetsOmitsDatabaseWithoutDSN(t *testing.T) {
 	t.Setenv("DATABASE_URL", "")
 
-	targets := buildTargets("https://rmhstudios.com/", "7001", "7676", "7003", defaultSupervisorURL, 4*time.Second)
+	targets := buildTargets("https://rmhstudios.com/", defaultSocketURL, defaultRMHBoxURL, defaultRMHTubeURL, defaultSupervisorURL, 4*time.Second)
 
 	if len(targets) != 5 {
 		t.Fatalf("expected 5 targets without DATABASE_URL, got %d", len(targets))
@@ -37,7 +42,7 @@ func TestBuildTargetsOmitsDatabaseWithoutDSN(t *testing.T) {
 func TestBuildTargetsIncludesDatabaseWithDSN(t *testing.T) {
 	t.Setenv("DATABASE_URL", "postgres://user:pass@localhost:5432/db")
 
-	targets := buildTargets("https://rmhstudios.com/", "7001", "7676", "7003", defaultSupervisorURL, 4*time.Second)
+	targets := buildTargets("https://rmhstudios.com/", defaultSocketURL, defaultRMHBoxURL, defaultRMHTubeURL, defaultSupervisorURL, 4*time.Second)
 
 	if len(targets) != 6 {
 		t.Fatalf("expected 6 targets with DATABASE_URL, got %d", len(targets))
@@ -67,7 +72,7 @@ func TestBuildTargetsIncludesDatabaseWithDSN(t *testing.T) {
 func TestBuildTargetsProbesSupervisorNotRecap(t *testing.T) {
 	t.Setenv("DATABASE_URL", "")
 
-	targets := buildTargets("https://rmhstudios.com/", "7001", "7676", "7003", defaultSupervisorURL, 4*time.Second)
+	targets := buildTargets("https://rmhstudios.com/", defaultSocketURL, defaultRMHBoxURL, defaultRMHTubeURL, defaultSupervisorURL, 4*time.Second)
 
 	bg := findTarget(targets, "Background workers")
 	if bg == nil {
@@ -96,11 +101,47 @@ func TestBuildTargetsSupervisorURLOverride(t *testing.T) {
 	t.Setenv("DATABASE_URL", "")
 
 	const custom = "http://localhost:19090/health"
-	targets := buildTargets("https://rmhstudios.com/", "7001", "7676", "7003", custom, 4*time.Second)
+	targets := buildTargets("https://rmhstudios.com/", defaultSocketURL, defaultRMHBoxURL, defaultRMHTubeURL, custom, 4*time.Second)
 
 	bg := findTarget(targets, "Background workers")
 	if bg == nil || bg.URL != custom {
 		t.Fatalf("supervisor override not honored: %+v", bg)
+	}
+}
+
+// TestBuildTargetsWSHubURLs asserts the WS-hub targets carry the resolved URLs
+// passed in (compose DNS default → STATUS_<svc>_URL override), so the same
+// binary probes the right hosts under both compose and k3s.
+func TestBuildTargetsWSHubURLs(t *testing.T) {
+	t.Setenv("DATABASE_URL", "")
+
+	// Defaults (compose DNS) flow through unchanged.
+	targets := buildTargets("https://rmhstudios.com/", defaultSocketURL, defaultRMHBoxURL, defaultRMHTubeURL, defaultSupervisorURL, 4*time.Second)
+	for _, c := range []struct{ name, want string }{
+		{"Realtime / Games", defaultSocketURL},
+		{"RMHbox", defaultRMHBoxURL},
+		{"RMHtube", defaultRMHTubeURL},
+	} {
+		if tg := findTarget(targets, c.name); tg == nil || tg.URL != c.want {
+			t.Fatalf("%q URL = %+v, want %q", c.name, tg, c.want)
+		}
+	}
+
+	// Overrides (k3s service names) flow through unchanged.
+	const (
+		k8sSocket  = "http://rmhstudios-go-gamehub:7001/health"
+		k8sRMHBox  = "http://rmhstudios-go-rmhbox:7676/health"
+		k8sRMHTube = "http://rmhstudios-go-rmhtube:7003/health"
+	)
+	overridden := buildTargets("https://rmhstudios.com/", k8sSocket, k8sRMHBox, k8sRMHTube, defaultSupervisorURL, 4*time.Second)
+	for _, c := range []struct{ name, want string }{
+		{"Realtime / Games", k8sSocket},
+		{"RMHbox", k8sRMHBox},
+		{"RMHtube", k8sRMHTube},
+	} {
+		if tg := findTarget(overridden, c.name); tg == nil || tg.URL != c.want {
+			t.Fatalf("override %q URL = %+v, want %q", c.name, tg, c.want)
+		}
 	}
 }
 

@@ -13,9 +13,9 @@
 # TWO images are built from the SAME Dockerfile + build args (only the target
 # stage differs):
 #   - rmhstudios-app       (slim): web, socket, rmhbox, rmhtube  (Node, no Chromium)
-#   - rmhstudios-app-full         : supervisor, status  (+ Go bins, Chromium, git)
+#   - rmhstudios-app-full         : supervisor, status, assets  (+ Go bins, Chromium, git)
 # The slim image is shared by the four Node services; the full image is shared by
-# the two Go services. No redundant rebuilds — shared stages cache once.
+# the three Go services. No redundant rebuilds — shared stages cache once.
 #
 # All four application services start independently in parallel for faster
 # deployment. No artificial dependency ordering.
@@ -266,6 +266,36 @@ services:
     command: ["/app/bin/status"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${PORT_STATUS:-7008}/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ─── Assets (streams /library /music /models /sprites from object storage) ──
+  # Go port of the Apache-off-disk static CDN for the heavy media prefixes. In
+  # the production/Helm topology the gateway proxies those four prefixes here;
+  # in compose the main user path still goes through web/Apache, so this service
+  # is for local dev/smoke-testing — hit it directly on the published port
+  # (e.g. curl -r 0-1023 http://127.0.0.1:7007/models/<key> → 206). It reads
+  # from the same S3-compatible bucket as bot-worker (S3_* from env_file; locally
+  # S3_ENDPOINT points at the minio service below), so it waits for minio.
+  assets:
+    <<: *common
+    # Runs the Go /app/bin/assets binary, so it uses the full image (built by the
+    # supervisor service's runner-full build). Overrides the slim image: from *common.
+    image: ${COMPOSE_PROJECT_NAME:-rmhstudios}-app-full:latest
+    container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-assets
+    ports:
+      - "127.0.0.1:${PORT_ASSETS:-7007}:${PORT_ASSETS:-7007}"
+    env_file: ${ENV_FILE:-.env.production}
+    environment:
+      - ASSETS_PORT=${PORT_ASSETS:-7007}
+    command: ["/app/bin/assets"]
+    depends_on:
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT_ASSETS:-7007}/health"]
       interval: 30s
       timeout: 10s
       retries: 3
