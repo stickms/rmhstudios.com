@@ -15,6 +15,7 @@ import { RMHarkContent, extractFirstUrl } from './RMHarkContent';
 import { PollDisplay } from './PollDisplay';
 import { GifEmbed } from './GifEmbed';
 import { LinkPreview } from './LinkPreview';
+import { PostImageGrid } from './PostImageGrid';
 import { UserAvatar } from './UserAvatar';
 import { useFeedStore } from '@/stores/feedStore';
 import { authClient } from '@/lib/auth-client';
@@ -483,17 +484,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
 
           {/* Uploaded images grid */}
           {item.imageUrls && item.imageUrls.length > 0 && (
-            <div className={`mt-2 grid gap-1 ${item.imageUrls.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
-              {item.imageUrls.map((url) => (
-                <img
-                  key={url}
-                  src={url}
-                  alt=""
-                  loading="lazy"
-                  className="w-full rounded-lg object-cover max-h-80"
-                />
-              ))}
-            </div>
+            <PostImageGrid urls={item.imageUrls} className="mt-2" />
           )}
 
           {/* Link preview — only when no poll, gif, or image */}

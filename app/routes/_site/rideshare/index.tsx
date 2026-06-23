@@ -46,7 +46,7 @@ const RIDER_STEPS = [
   { icon: MapPin, title: 'Map your trip', text: 'Set pickup and drop-off with OpenStreetMap search.' },
   { icon: Car, title: 'Pick a ride', text: 'Choose RMH-X, XL, Comfort, Green or Black.' },
   { icon: ShieldCheck, title: 'Get matched', text: 'A vetted RMH driver claims your request.' },
-  { icon: CircleDollarSign, title: 'Hop in', text: 'See an upfront estimate — no charge to request a ride.' },
+  { icon: CircleDollarSign, title: 'Hop in', text: 'See an upfront fare, pay after the trip, and tip if you loved it.' },
 ];
 
 export function RideshareLanding() {

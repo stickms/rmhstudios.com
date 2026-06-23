@@ -25,7 +25,7 @@ import { useSession } from '@/components/Providers';
 import { ActiveRidePanel } from '@/components/rideshare/ActiveRidePanel';
 import { DriverEarnings } from '@/components/rideshare/DriverEarnings';
 import { RIDE_CLASSES, rideClassName, type RideClassId } from '@/lib/rideshare/classes';
-import { formatDistance, formatDuration } from '@/lib/rideshare/geo';
+import { formatDistance, formatDuration, formatUsd, payoutBreakdown } from '@/lib/rideshare/geo';
 
 export const Route = createFileRoute('/_site/rideshare/drive')({
   head: () => ({ meta: [{ title: 'Drive with RMH Rideshare' }] }),
@@ -61,6 +61,7 @@ interface Ride {
   dropoffLabel: string;
   distanceMeters: number | null;
   durationSeconds: number | null;
+  estimatedFareCents: number;
   scheduledFor: string | null;
   notes: string | null;
   rider: RidePerson;
@@ -524,19 +525,27 @@ function RideCard({
       {ride.notes && (
         <p className="mt-2 rounded-lg bg-site-surface px-3 py-2 text-xs text-site-text-muted">“{ride.notes}”</p>
       )}
-      <div className="mt-3 flex items-center justify-between gap-2">
-        <span className="flex items-center gap-3 text-xs text-site-text-dim">
-          {ride.distanceMeters != null && (
-            <span className="flex items-center gap-1">
-              <RouteLucide className="h-3 w-3" /> {formatDistance(ride.distanceMeters)}
+      <div className="mt-3 flex items-center justify-between gap-2 border-t border-site-border pt-3">
+        <div className="min-w-0">
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-sm font-bold text-emerald-400">
+              {formatUsd(payoutBreakdown(ride.estimatedFareCents).driverEarningsCents)}
             </span>
-          )}
-          {ride.durationSeconds != null && (
-            <span className="flex items-center gap-1">
-              <Clock className="h-3 w-3" /> {formatDuration(ride.durationSeconds)}
-            </span>
-          )}
-        </span>
+            <span className="text-[11px] text-site-text-dim">est. pay</span>
+          </div>
+          <span className="mt-1 flex items-center gap-3 text-xs text-site-text-dim">
+            {ride.distanceMeters != null && (
+              <span className="flex items-center gap-1">
+                <RouteLucide className="h-3 w-3" /> {formatDistance(ride.distanceMeters)}
+              </span>
+            )}
+            {ride.durationSeconds != null && (
+              <span className="flex items-center gap-1">
+                <Clock className="h-3 w-3" /> {formatDuration(ride.durationSeconds)}
+              </span>
+            )}
+          </span>
+        </div>
         <div className="flex items-center gap-2">{children}</div>
       </div>
     </motion.li>

@@ -3,9 +3,12 @@ import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { notifyRider, notifyDriver } from '@/lib/rideshare/notify.server';
+import { MAX_TIP_CENTS, formatUsd } from '@/lib/rideshare/geo';
 
 const actionSchema = z.object({
-  action: z.enum(['accept', 'start', 'complete', 'cancel']),
+  action: z.enum(['accept', 'start', 'complete', 'cancel', 'tip']),
+  // Only used by the `tip` action: a rider tip (in cents) for a completed trip.
+  tipCents: z.coerce.number().int().min(1).max(MAX_TIP_CENTS).optional(),
 });
 
 export const Route = createFileRoute('/api/rideshare/rides/$id')({
@@ -28,7 +31,7 @@ export const Route = createFileRoute('/api/rideshare/rides/$id')({
 
           const ride = await prisma.ride.findUnique({
             where: { id: rideId },
-            select: { id: true, riderId: true, driverId: true, status: true, rideClass: true },
+            select: { id: true, riderId: true, driverId: true, status: true, rideClass: true, tipCents: true },
           });
           if (!ride) {
             return Response.json({ error: 'Ride not found' }, { status: 404 });
@@ -110,6 +113,37 @@ export const Route = createFileRoute('/api/rideshare/rides/$id')({
             } else if (isDriver) {
               await notifyRider(ride.riderId, userId, ride, 'Your driver cancelled — request a new ride anytime.');
             }
+          } else if (action === 'tip') {
+            if (ride.riderId !== userId) {
+              return Response.json({ error: 'Only the rider can add a tip.' }, { status: 403 });
+            }
+            if (ride.status !== 'COMPLETED') {
+              return Response.json({ error: 'You can only tip a completed trip.' }, { status: 409 });
+            }
+            if (!ride.driverId) {
+              return Response.json({ error: 'This trip has no driver to tip.' }, { status: 409 });
+            }
+            if (ride.tipCents > 0) {
+              return Response.json({ error: 'You already tipped this trip.' }, { status: 409 });
+            }
+            const tipCents = parsed.data.tipCents ?? 0;
+            if (tipCents <= 0) {
+              return Response.json({ error: 'Enter a tip amount.' }, { status: 400 });
+            }
+            // Guard against double-tipping under races: only set if still zero.
+            const result = await prisma.ride.updateMany({
+              where: { id: rideId, riderId: userId, status: 'COMPLETED', tipCents: 0 },
+              data: { tipCents },
+            });
+            if (result.count === 0) {
+              return Response.json({ error: 'You already tipped this trip.' }, { status: 409 });
+            }
+            await notifyDriver(
+              ride.driverId,
+              userId,
+              ride,
+              `Your rider added a ${formatUsd(tipCents)} tip. Thanks for the great ride!`,
+            );
           }
 
           const updated = await prisma.ride.findUnique({

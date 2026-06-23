@@ -58,7 +58,7 @@ export function formatDuration(seconds: number | null | undefined): string {
   return m ? `${h} h ${m} min` : `${h} h`;
 }
 
-// Pricing constants for the (currently waived) fare estimate.
+// Pricing constants for the trip fare.
 export const FARE_RATES = {
   baseCents: 250, // flag-fall
   perKmCents: 120, // distance rate
@@ -73,13 +73,13 @@ export interface FareBreakdown {
   multiplier: number;
   /** Subtotal before the (currently flat) total. */
   subtotalCents: number;
-  /** Estimated fare for the trip. Riders aren't charged at booking. */
+  /** Total fare charged to the rider for the trip (excludes tips). */
   totalCents: number;
 }
 
 /**
- * Itemised fare estimate for a trip. `totalCents` is the estimated fare shown
- * to riders; no payment is taken when a ride is requested.
+ * Itemised fare estimate for a trip. `totalCents` is the fare the rider pays
+ * for the trip (tips are added separately, after the ride).
  */
 export function fareBreakdown(
   distanceMeters: number | null | undefined,
@@ -107,8 +107,8 @@ export function fareBreakdown(
 }
 
 /**
- * Estimated fare in cents for a trip. Shown to riders as a guide; no charge is
- * taken when the ride is requested.
+ * Estimated fare in cents for a trip. The rider pays this for the trip;
+ * tips are added afterwards.
  */
 export function estimateFareCents(
   distanceMeters: number | null | undefined,
@@ -117,6 +117,68 @@ export function estimateFareCents(
 ): number {
   return fareBreakdown(distanceMeters, durationSeconds, classId).subtotalCents;
 }
+
+// ─── Driver payout ─────────────────────────────────────────────────────────
+//
+// When a trip completes the rider's fare is split between the driver, RMH
+// Studios (the platform service fee) and a per-trip insurance & safety
+// contribution. Tips are passed through to the driver in full.
+export const PAYOUT_RATES = {
+  serviceFeeRate: 0.2, // RMH Studios' share of the fare
+  insuranceRate: 0.06, // insurance & safety contribution
+  insuranceMinCents: 100, // minimum insurance per completed trip
+} as const;
+
+export interface PayoutBreakdown {
+  /** The trip fare the rider paid (excludes tips). */
+  fareCents: number;
+  /** RMH Studios' platform service fee. */
+  serviceFeeCents: number;
+  /** Insurance & safety contribution. */
+  insuranceCents: number;
+  /** Rider tip, paid to the driver in full. */
+  tipCents: number;
+  /** Fare-only driver earnings (fare − service fee − insurance), before tips. */
+  driverBaseCents: number;
+  /** Driver's total take-home: fare share + tips. */
+  driverEarningsCents: number;
+}
+
+/**
+ * Splits a completed trip's fare (plus any tip) into the driver's take-home,
+ * RMH Studios' service fee, and the insurance contribution.
+ */
+export function payoutBreakdown(
+  fareCents: number | null | undefined,
+  tipCents: number | null | undefined = 0,
+): PayoutBreakdown {
+  const fare = Math.max(0, Math.round(fareCents ?? 0));
+  const tip = Math.max(0, Math.round(tipCents ?? 0));
+  const serviceFeeCents = Math.round(fare * PAYOUT_RATES.serviceFeeRate);
+  const insuranceCents = Math.min(
+    Math.max(0, fare - serviceFeeCents),
+    Math.max(PAYOUT_RATES.insuranceMinCents, Math.round(fare * PAYOUT_RATES.insuranceRate)),
+  );
+  const driverBaseCents = Math.max(0, fare - serviceFeeCents - insuranceCents);
+  return {
+    fareCents: fare,
+    serviceFeeCents,
+    insuranceCents,
+    tipCents: tip,
+    driverBaseCents,
+    driverEarningsCents: driverBaseCents + tip,
+  };
+}
+
+/** Suggested tip amounts (in cents) for a completed trip, plus a "no tip" option. */
+export const TIP_PERCENTS = [0, 0.1, 0.15, 0.2] as const;
+
+export function suggestedTipCents(fareCents: number, percent: number): number {
+  return Math.round(fareCents * percent);
+}
+
+/** Maximum tip we accept, to guard against fat-fingered amounts. */
+export const MAX_TIP_CENTS = 50_000;
 
 export function formatUsd(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;

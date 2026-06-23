@@ -205,14 +205,19 @@ export function BookCanvas({ aspect, single, numPages, getImg, ensurePage, onPag
 
   // Called by the scene when progress settles at 0 (cancelled) or 1 (completed).
   const onSettle = useCallback((reached: number) => {
+    const t = turnRef.current;
     turnRef.current = null;
-    setTurn((cur) => {
-      if (cur && reached >= 0.999) {
-        kRef.current = cur.target;
-        setK(cur.target);
-      }
-      return null;
-    });
+    // Commit the new spread and drop the leaf as sibling top-level setters so React
+    // batches them into ONE commit. Calling setK from *inside* a setTurn updater (it
+    // runs in the render phase) made it a separate render-phase update: React applied
+    // `turn → null` first — a frame where the leaf is gone but `k` still points at the
+    // OLD spread, so `base` painted the previous pages — then re-rendered with the new
+    // `k`. r3f drew that stale in-between frame, which was the end-of-turn flicker.
+    if (t && reached >= 0.999) {
+      kRef.current = t.target;
+      setK(t.target);
+    }
+    setTurn(null);
     // Pin progress at the value it settled on rather than snapping to 0. Clearing
     // `turn` only takes effect on React's next commit, so the leaf stays mounted for
     // a frame or two longer — and if we reset progress to 0 here, that lingering leaf

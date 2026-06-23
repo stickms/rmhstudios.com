@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Loader2, Wallet, Car, Star, TrendingUp, Gift } from 'lucide-react';
+import { Loader2, Wallet, Car, Star, TrendingUp, Gift, Building2, ShieldCheck } from 'lucide-react';
 import { formatUsd, formatDistance } from '@/lib/rideshare/geo';
 import { rideClassName } from '@/lib/rideshare/classes';
 
@@ -12,15 +12,20 @@ interface RecentTrip {
   dropoffLabel: string;
   distanceMeters: number | null;
   estimatedFareCents: number;
+  tipCents: number;
+  driverEarningsCents: number;
   completedAt: string | null;
   ratingByRider: number | null;
 }
 interface Earnings {
   totalTrips: number;
   totalDistanceMeters: number;
-  grossWaivedCents: number;
+  grossFaresCents: number;
+  tipsCents: number;
+  serviceFeeCents: number;
+  insuranceCents: number;
   weekTrips: number;
-  weekWaivedCents: number;
+  weekEarningsCents: number;
   earningsCents: number;
   ratingCount: number;
   ratingAvg: number | null;
@@ -56,27 +61,55 @@ export function DriverEarnings() {
       value: data.ratingAvg != null ? data.ratingAvg.toFixed(1) : '—',
       sub: `${data.ratingCount} rating${data.ratingCount === 1 ? '' : 's'}`,
     },
-    { icon: Gift, label: 'Value delivered', value: formatUsd(data.grossWaivedCents), sub: 'fares waived for riders' },
+    { icon: Gift, label: 'Tips earned', value: formatUsd(data.tipsCents), sub: 'paid out in full' },
+  ];
+
+  // How the riders' fares split into your take-home, RMH's fee and insurance.
+  const breakdown = [
+    { icon: Wallet, label: 'Trip fares', value: data.grossFaresCents, tone: 'text-site-text' },
+    { icon: Building2, label: 'RMH Studios fee', value: -data.serviceFeeCents, tone: 'text-site-text-muted' },
+    { icon: ShieldCheck, label: 'Insurance & safety', value: -data.insuranceCents, tone: 'text-site-text-muted' },
+    { icon: Gift, label: 'Tips', value: data.tipsCents, tone: 'text-emerald-400' },
   ];
 
   return (
     <section className="space-y-4">
       <h2 className="text-lg font-bold text-site-text">Earnings</h2>
 
-      {/* Earnings headline (free for now) */}
-      <div className="flex items-center justify-between rounded-2xl border border-site-border bg-gradient-to-r from-site-surface to-site-bg p-5">
+      {/* Earnings headline */}
+      <div className="flex items-center justify-between rounded-2xl border border-site-border bg-linear-to-r from-site-surface to-site-bg p-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-site-accent/15 text-site-accent">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-400">
             <Wallet className="h-5 w-5" />
           </div>
           <div>
             <div className="text-2xl font-bold text-site-text">{formatUsd(data.earningsCents)}</div>
-            <div className="text-xs text-site-text-muted">Total earnings</div>
+            <div className="text-xs text-site-text-muted">Total take-home</div>
           </div>
         </div>
-        <p className="max-w-[14rem] text-right text-xs text-site-text-muted">
-          Rides are free during preview — driver payouts begin when fares go live.
-        </p>
+        <div className="text-right">
+          <div className="text-lg font-semibold text-site-text">{formatUsd(data.weekEarningsCents)}</div>
+          <div className="text-xs text-site-text-muted">this week</div>
+        </div>
+      </div>
+
+      {/* Payout breakdown */}
+      <div className="rounded-2xl border border-site-border bg-site-surface/80 p-5">
+        <h3 className="mb-3 text-sm font-semibold text-site-text">How your pay adds up</h3>
+        <dl className="space-y-2">
+          {breakdown.map((r) => (
+            <div key={r.label} className="flex items-center justify-between text-sm">
+              <dt className="flex items-center gap-2 text-site-text-muted">
+                <r.icon className="h-3.5 w-3.5" /> {r.label}
+              </dt>
+              <dd className={r.tone}>{r.value < 0 ? `−${formatUsd(-r.value)}` : formatUsd(r.value)}</dd>
+            </div>
+          ))}
+        </dl>
+        <div className="mt-3 flex items-center justify-between border-t border-site-border pt-3">
+          <span className="text-base font-bold text-site-text">Take-home</span>
+          <span className="text-lg font-bold text-emerald-400">{formatUsd(data.earningsCents)}</span>
+        </div>
       </div>
 
       {/* Stat grid */}
@@ -112,8 +145,10 @@ export function DriverEarnings() {
                   </div>
                 </div>
                 <div className="shrink-0 text-right">
-                  <div className="text-sm font-semibold text-emerald-400">Free</div>
-                  <div className="text-[11px] text-site-text-dim line-through">{formatUsd(t.estimatedFareCents)}</div>
+                  <div className="text-sm font-semibold text-emerald-400">{formatUsd(t.driverEarningsCents)}</div>
+                  <div className="text-[11px] text-site-text-dim">
+                    {formatUsd(t.estimatedFareCents)} fare{t.tipCents > 0 ? ` · +${formatUsd(t.tipCents)} tip` : ''}
+                  </div>
                 </div>
               </li>
             ))}

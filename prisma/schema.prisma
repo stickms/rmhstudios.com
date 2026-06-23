@@ -3127,11 +3127,15 @@ model Ride {
   dropoffLat   Float
   dropoffLng   Float
 
-  // Trip estimate. Rides are free, so `estimatedFareCents` is the indicative
-  // (waived) quote kept for history, value-delivered stats and future payouts.
+  // Trip fare. `estimatedFareCents` is the quote at booking and the amount the
+  // rider pays for the trip; it also drives the driver payout split.
   distanceMeters   Int?
   durationSeconds  Int?
   estimatedFareCents Int @default(0)
+
+  // Optional rider tip, added after a completed trip and paid to the driver
+  // in full. Zero until the rider tips.
+  tipCents Int @default(0)
 
   // Set when the rider books a trip for later (status starts as SCHEDULED).
   scheduledFor DateTime?

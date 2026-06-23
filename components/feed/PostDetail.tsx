@@ -18,6 +18,7 @@ import type { FeedItem } from '@/lib/feed-types';
 import { RMHarkContent, extractFirstUrl } from './RMHarkContent';
 import { PollDisplay } from './PollDisplay';
 import { GifEmbed } from './GifEmbed';
+import { PostImageGrid } from './PostImageGrid';
 import { LinkPreview } from './LinkPreview';
 import { EngagementListModal } from './EngagementListModal';
 import { UserAvatar } from './UserAvatar';
@@ -310,17 +311,7 @@ export function PostDetail({ postId }: PostDetailProps) {
 
         {/* Uploaded images grid */}
         {post.imageUrls && post.imageUrls.length > 0 && (
-          <div className={`mb-3 grid gap-1 ${post.imageUrls.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
-            {post.imageUrls.map((url) => (
-              <img
-                key={url}
-                src={url}
-                alt=""
-                loading="lazy"
-                className="w-full rounded-lg object-cover max-h-80"
-              />
-            ))}
-          </div>
+          <PostImageGrid urls={post.imageUrls} className="mb-3" />
         )}
 
         {/* Link preview — only when no poll, gif, or image */}

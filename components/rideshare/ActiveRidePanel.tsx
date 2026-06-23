@@ -17,6 +17,8 @@ import { toast } from 'sonner';
 import { RideMap } from './RideMap';
 import { RideChat, type RideChatMessage } from './RideChat';
 import { FareBreakdown } from './FareBreakdown';
+import { PayoutBreakdown } from './PayoutBreakdown';
+import { TipPrompt } from './TipPrompt';
 import { StarRating } from './StarRating';
 import { rideClassName } from '@/lib/rideshare/classes';
 import { formatDistance, formatDuration, type LatLng } from '@/lib/rideshare/geo';
@@ -55,6 +57,8 @@ interface SyncRide {
   dropoffLng: number;
   distanceMeters: number | null;
   durationSeconds: number | null;
+  estimatedFareCents: number;
+  tipCents: number;
   ratingByRider: number | null;
   ratingByDriver: number | null;
   rider: Person;
@@ -185,6 +189,21 @@ export function ActiveRidePanel({
     sync();
   }
 
+  async function tip(cents: number) {
+    const res = await fetch(`/api/rideshare/rides/${rideId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'tip', tipCents: cents }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      toast.error(data.error || 'Could not add your tip.');
+      return;
+    }
+    toast.success('Tip sent — thank you!');
+    await sync();
+  }
+
   if (loading) {
     return (
       <div className="flex justify-center rounded-2xl border border-site-border bg-site-surface/80 py-12">
@@ -306,8 +325,16 @@ export function ActiveRidePanel({
         className="h-64"
       />
 
-      {/* Fare estimate */}
-      <FareBreakdown distanceMeters={ride.distanceMeters} durationSeconds={ride.durationSeconds} classId={ride.rideClass} />
+      {/* Fare (rider) / pay (driver) */}
+      {isDriver ? (
+        <PayoutBreakdown
+          fareCents={ride.estimatedFareCents}
+          tipCents={ride.tipCents}
+          estimate={status !== 'COMPLETED'}
+        />
+      ) : (
+        <FareBreakdown distanceMeters={ride.distanceMeters} durationSeconds={ride.durationSeconds} classId={ride.rideClass} />
+      )}
 
       {/* Chat */}
       <RideChat
@@ -335,6 +362,11 @@ export function ActiveRidePanel({
             </div>
           )}
         </div>
+      )}
+
+      {/* Completed → rider can tip the driver */}
+      {status === 'COMPLETED' && !isDriver && ride.driver && (
+        <TipPrompt fareCents={ride.estimatedFareCents} tipCents={ride.tipCents} onTip={tip} />
       )}
 
       {/* Dismiss a finished trip */}

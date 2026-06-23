@@ -1,12 +1,32 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
+import { PAYOUT_RATES, payoutBreakdown } from '@/lib/rideshare/geo';
 
 /**
- * Driver earnings summary. Rides are free, so actual earnings are $0 — but we
- * surface trip counts, ratings, and the value delivered (the waived fares) so
- * the dashboard is meaningful now and ready for when fares go live.
+ * Driver earnings summary. Rides are paid, so we split each completed trip's
+ * fare into the driver's take-home, RMH Studios' service fee and the insurance
+ * contribution, then add tips on top.
  */
+
+/** Aggregate payout split for a batch of completed trips (mirrors {@link payoutBreakdown}). */
+function aggregatePayout(grossFaresCents: number, tipsCents: number, trips: number) {
+  const serviceFeeCents = Math.round(grossFaresCents * PAYOUT_RATES.serviceFeeRate);
+  const insuranceCents = Math.min(
+    Math.max(0, grossFaresCents - serviceFeeCents),
+    Math.max(trips * PAYOUT_RATES.insuranceMinCents, Math.round(grossFaresCents * PAYOUT_RATES.insuranceRate)),
+  );
+  const driverBaseCents = Math.max(0, grossFaresCents - serviceFeeCents - insuranceCents);
+  return {
+    grossFaresCents,
+    tipsCents,
+    serviceFeeCents,
+    insuranceCents,
+    driverBaseCents,
+    earningsCents: driverBaseCents + tipsCents,
+  };
+}
+
 export const Route = createFileRoute('/api/rideshare/earnings')({
   server: {
     handlers: {
@@ -32,12 +52,12 @@ export const Route = createFileRoute('/api/rideshare/earnings')({
             prisma.ride.aggregate({
               where: { driverId: userId, status: 'COMPLETED' },
               _count: { _all: true },
-              _sum: { estimatedFareCents: true, distanceMeters: true },
+              _sum: { estimatedFareCents: true, tipCents: true, distanceMeters: true },
             }),
             prisma.ride.aggregate({
               where: { driverId: userId, status: 'COMPLETED', completedAt: { gte: weekAgo } },
               _count: { _all: true },
-              _sum: { estimatedFareCents: true },
+              _sum: { estimatedFareCents: true, tipCents: true },
             }),
             prisma.ride.findMany({
               where: { driverId: userId, status: 'COMPLETED' },
@@ -50,23 +70,42 @@ export const Route = createFileRoute('/api/rideshare/earnings')({
                 dropoffLabel: true,
                 distanceMeters: true,
                 estimatedFareCents: true,
+                tipCents: true,
                 completedAt: true,
                 ratingByRider: true,
               },
             }),
           ]);
 
+          const allPayout = aggregatePayout(
+            allTime._sum.estimatedFareCents ?? 0,
+            allTime._sum.tipCents ?? 0,
+            allTime._count._all,
+          );
+          const weekPayout = aggregatePayout(
+            week._sum.estimatedFareCents ?? 0,
+            week._sum.tipCents ?? 0,
+            week._count._all,
+          );
+
           return Response.json({
             totalTrips: allTime._count._all,
             totalDistanceMeters: allTime._sum.distanceMeters ?? 0,
-            grossWaivedCents: allTime._sum.estimatedFareCents ?? 0,
+            // Lifetime payout split.
+            grossFaresCents: allPayout.grossFaresCents,
+            tipsCents: allPayout.tipsCents,
+            serviceFeeCents: allPayout.serviceFeeCents,
+            insuranceCents: allPayout.insuranceCents,
+            earningsCents: allPayout.earningsCents,
             weekTrips: week._count._all,
-            weekWaivedCents: week._sum.estimatedFareCents ?? 0,
-            // Rides are free for now.
-            earningsCents: 0,
+            weekEarningsCents: weekPayout.earningsCents,
             ratingCount: driver.ratingCount,
             ratingAvg: driver.ratingCount > 0 ? driver.ratingTotal / driver.ratingCount : null,
-            recent,
+            // Per-trip take-home for the recent list.
+            recent: recent.map((t) => ({
+              ...t,
+              driverEarningsCents: payoutBreakdown(t.estimatedFareCents, t.tipCents).driverEarningsCents,
+            })),
           });
         } catch (error) {
           console.error('Rideshare earnings error:', error);

@@ -32,6 +32,8 @@ export const Route = createFileRoute('/api/rideshare/rides/$id/sync')({
               dropoffLng: true,
               distanceMeters: true,
               durationSeconds: true,
+              estimatedFareCents: true,
+              tipCents: true,
               requestedAt: true,
               acceptedAt: true,
               completedAt: true,

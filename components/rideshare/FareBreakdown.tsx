@@ -14,7 +14,7 @@ interface FareBreakdownProps {
 
 /**
  * Price visualizer. Itemises the trip into base / distance / time and shows the
- * estimated fare. Riders aren't charged when they request a ride.
+ * estimated fare the rider pays for the trip. Tips are optional, after the ride.
  */
 export function FareBreakdown({ distanceMeters, durationSeconds, classId, compact }: FareBreakdownProps) {
   const fare = fareBreakdown(distanceMeters, durationSeconds, classId);
@@ -64,7 +64,7 @@ export function FareBreakdown({ distanceMeters, durationSeconds, classId, compac
             <CircleDollarSign className="h-4 w-4 text-site-accent" />
             <span className="text-base font-bold text-site-text">Estimated fare</span>
           </div>
-          <span className="text-xs text-site-text-dim">You won’t be charged to request a ride.</span>
+          <span className="text-xs text-site-text-dim">Charged after your trip · tip optional.</span>
         </div>
         <div className="text-right">
           <div className="text-lg font-bold text-site-text">{formatUsd(fare.totalCents)}</div>
