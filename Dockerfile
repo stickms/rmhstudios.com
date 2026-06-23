@@ -189,6 +189,27 @@ RUN rm -rf /app/build-output/public/library \
            /app/build-output/public/music \
            /app/build-output/public/sprites
 
+# ── Stage 3b: Go binaries ────────────────────────────────────────────────
+# Builds supervisor, status, and bot-worker (plus all other cmd/ packages)
+# from the go-services module using the official Go toolchain. The binaries
+# are statically linked (CGO_ENABLED=0) so they drop cleanly into the musl
+# Alpine runner without libc ceremony.
+FROM golang:1.23-alpine AS go-builder
+
+WORKDIR /build
+
+# Copy only the module files first so the module download layer is cached
+# independently of source changes.
+COPY go-services/go.mod go-services/go.sum ./
+
+RUN go mod download
+
+# Copy the full source tree and compile every cmd/ package.
+# CGO_ENABLED=0 → fully static binaries (no glibc / musl mismatch in runner).
+COPY go-services/ ./
+
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /app/bin/ ./cmd/...
+
 # ── Stage 4: Production runner ────────────────────────────────────────────
 FROM node:24-alpine AS runner
 
@@ -223,6 +244,13 @@ COPY --from=vite-builder --chown=app:nodejs /app/build-output ./.output
 
 # ─── Custom server bundles (from env-agnostic stage) ────────────────────
 COPY --from=server-builder --chown=app:nodejs /app/dist-server ./dist-server
+
+# ─── Go binaries (supervisor, status, bot-worker, hubs, gateway) ────────
+# Compiled in the go-builder stage (CGO_ENABLED=0, fully static).
+# supervisor runs 5 background workers as goroutines; status is the
+# Go status page server; the remaining hubs/gateway are available for
+# future compose wiring.
+COPY --from=go-builder --chown=app:nodejs /app/bin/ /app/bin/
 
 # ─── Supporting files (from build context, not a builder stage) ─────────
 COPY --chown=app:nodejs scripts ./scripts
