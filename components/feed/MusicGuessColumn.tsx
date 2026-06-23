@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Loader2, Music, Plus, X, Check, Lightbulb, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
@@ -16,6 +17,7 @@ interface PuzzleRow {
 }
 
 export function MusicGuessColumn() {
+  const { t } = useTranslation('feed');
   const [puzzles, setPuzzles] = useState<PuzzleRow[]>([]);
   const [signedIn, setSignedIn] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -61,7 +63,7 @@ export function MusicGuessColumn() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error ?? 'Could not create');
+        setError(data.error ?? t('could-not-create', { defaultValue: 'Could not create' }));
         return;
       }
       setForm({ title: '', artist: '', hints: '' });
@@ -87,10 +89,10 @@ export function MusicGuessColumn() {
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-site-border bg-site-bg/80 px-4 py-3 backdrop-blur">
         <Music className="h-5 w-5 text-site-accent" />
-        <h1 className="text-lg font-bold text-site-text">Guess the Song</h1>
+        <h1 className="text-lg font-bold text-site-text">{t('guess-the-song', { defaultValue: 'Guess the Song' })}</h1>
         {signedIn && (
           <Button size="sm" variant="accent" className="ml-auto gap-1" onClick={() => setShowForm((v) => !v)}>
-            <Plus className="h-3.5 w-3.5" /> New puzzle
+            <Plus className="h-3.5 w-3.5" /> {t('new-puzzle', { defaultValue: 'New puzzle' })}
           </Button>
         )}
       </header>
@@ -98,19 +100,19 @@ export function MusicGuessColumn() {
       {showForm && (
         <div className="border-b border-site-border bg-site-surface/30 p-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-site-text">New puzzle</h2>
-            <button onClick={() => setShowForm(false)} className="text-site-text-dim hover:text-site-text" aria-label="Close">
+            <h2 className="text-sm font-semibold text-site-text">{t('new-puzzle', { defaultValue: 'New puzzle' })}</h2>
+            <button onClick={() => setShowForm(false)} className="text-site-text-dim hover:text-site-text" aria-label={t('close', { defaultValue: 'Close' })}>
               <X className="h-4 w-4" />
             </button>
           </div>
           <div className="mt-3 space-y-2">
-            <input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="Song title (the answer)" maxLength={160} className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent" />
-            <input value={form.artist} onChange={(e) => setForm((f) => ({ ...f, artist: e.target.value }))} placeholder="Artist (shown to players)" maxLength={160} className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent" />
-            <textarea value={form.hints} onChange={(e) => setForm((f) => ({ ...f, hints: e.target.value }))} placeholder="Hints, one per line (revealed progressively). e.g. a lyric, the year, the genre…" rows={4} className="w-full resize-none rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent" />
+            <input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder={t('song-title-placeholder', { defaultValue: 'Song title (the answer)' })} maxLength={160} className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent" />
+            <input value={form.artist} onChange={(e) => setForm((f) => ({ ...f, artist: e.target.value }))} placeholder={t('artist-placeholder', { defaultValue: 'Artist (shown to players)' })} maxLength={160} className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent" />
+            <textarea value={form.hints} onChange={(e) => setForm((f) => ({ ...f, hints: e.target.value }))} placeholder={t('hints-placeholder', { defaultValue: 'Hints, one per line (revealed progressively). e.g. a lyric, the year, the genre…' })} rows={4} className="w-full resize-none rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent" />
             {error && <p className="text-xs text-site-danger">{error}</p>}
             <div className="flex justify-end">
               <Button size="sm" variant="accent" disabled={busy || !validForm} onClick={create}>
-                {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Create puzzle'}
+                {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t('create-puzzle', { defaultValue: 'Create puzzle' })}
               </Button>
             </div>
           </div>
@@ -118,7 +120,7 @@ export function MusicGuessColumn() {
       )}
 
       {puzzles.length === 0 ? (
-        <p className="px-4 py-16 text-center text-sm text-site-text-muted">No puzzles yet — create the first!</p>
+        <p className="px-4 py-16 text-center text-sm text-site-text-muted">{t('no-puzzles-yet', { defaultValue: 'No puzzles yet — create the first!' })}</p>
       ) : (
         <div className="space-y-2 p-4">
           {puzzles.map((p) => (
@@ -131,17 +133,17 @@ export function MusicGuessColumn() {
                 <Music className="h-5 w-5" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-site-text">Artist: {p.artist}</p>
+                <p className="truncate text-sm font-semibold text-site-text">{t('artist-label', { defaultValue: 'Artist' })}: {p.artist}</p>
                 <div className="mt-0.5 flex items-center gap-2 text-[11px] text-site-text-dim">
                   <UserAvatar user={p.author} />
-                  <span className="truncate">{p.author.name || p.author.handle || 'Someone'}</span>
+                  <span className="truncate">{p.author.name || p.author.handle || t('someone', { defaultValue: 'Someone' })}</span>
                   <span aria-hidden>·</span>
-                  <span>{p.solves} solved</span>
+                  <span>{t('solves-count', { count: p.solves, defaultValue: '{{count}} solved' })}</span>
                 </div>
               </div>
               {p.solved && (
                 <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-400">
-                  <Check className="h-4 w-4" /> Solved
+                  <Check className="h-4 w-4" /> {t('solved', { defaultValue: 'Solved' })}
                 </span>
               )}
             </button>
@@ -164,6 +166,7 @@ interface Puzzle {
 }
 
 function PlayModal({ id, signedIn, onClose }: { id: string; signedIn: boolean; onClose: () => void }) {
+  const { t } = useTranslation('feed');
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
   const [revealed, setRevealed] = useState(1);
   const [guess, setGuess] = useState('');
@@ -205,9 +208,9 @@ function PlayModal({ id, signedIn, onClose }: { id: string; signedIn: boolean; o
       <div className="relative z-10 w-full max-w-md rounded-2xl border border-site-border bg-site-bg p-5 shadow-xl" onMouseDown={(e) => e.stopPropagation()}>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-lg font-bold text-site-text">
-            <Music className="h-5 w-5 text-site-accent" /> Guess the Song
+            <Music className="h-5 w-5 text-site-accent" /> {t('guess-the-song', { defaultValue: 'Guess the Song' })}
           </h2>
-          <button onClick={onClose} className="text-site-text-dim hover:text-site-text" aria-label="Close">
+          <button onClick={onClose} className="text-site-text-dim hover:text-site-text" aria-label={t('close', { defaultValue: 'Close' })}>
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -218,7 +221,7 @@ function PlayModal({ id, signedIn, onClose }: { id: string; signedIn: boolean; o
           </div>
         ) : (
           <>
-            <p className="text-sm text-site-text-dim">Artist: <span className="font-semibold text-site-text">{puzzle.artist}</span></p>
+            <p className="text-sm text-site-text-dim">{t('artist-label', { defaultValue: 'Artist' })}: <span className="font-semibold text-site-text">{puzzle.artist}</span></p>
 
             <div className="mt-3 space-y-2">
               {puzzle.hints.slice(0, revealed).map((h, i) => (
@@ -231,7 +234,7 @@ function PlayModal({ id, signedIn, onClose }: { id: string; signedIn: boolean; o
             {result?.correct ? (
               <div className="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-center">
                 <p className="inline-flex items-center gap-1.5 font-semibold text-emerald-400">
-                  <Trophy className="h-4 w-4" /> Correct! It’s “{result.title}”
+                  <Trophy className="h-4 w-4" /> {t('correct-answer', { title: result.title, defaultValue: 'Correct! It\'s "{{title}}"' })}
                 </p>
                 {result.reward != null && (
                   <p className="mt-1 inline-flex items-center gap-1 text-sm text-site-text-muted">
@@ -243,7 +246,7 @@ function PlayModal({ id, signedIn, onClose }: { id: string; signedIn: boolean; o
               <>
                 {revealed < puzzle.hints.length && (
                   <button onClick={() => setRevealed((r) => r + 1)} className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-site-accent hover:underline">
-                    <Lightbulb className="h-3.5 w-3.5" /> Reveal another hint ({revealed}/{puzzle.hints.length})
+                    <Lightbulb className="h-3.5 w-3.5" /> {t('reveal-another-hint', { revealed, total: puzzle.hints.length, defaultValue: 'Reveal another hint ({{revealed}}/{{total}})' })}
                   </button>
                 )}
                 <div className="mt-3 flex items-center gap-2">
@@ -251,17 +254,17 @@ function PlayModal({ id, signedIn, onClose }: { id: string; signedIn: boolean; o
                     value={guess}
                     onChange={(e) => setGuess(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && submit()}
-                    placeholder="Your guess…"
+                    placeholder={t('your-guess-placeholder', { defaultValue: 'Your guess…' })}
                     className="flex-1 rounded-lg border border-site-border bg-site-surface px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
                   />
                   <Button variant="accent" size="sm" disabled={!guess.trim() || busy} onClick={submit}>
-                    {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Guess'}
+                    {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : t('guess-button', { defaultValue: 'Guess' })}
                   </Button>
                 </div>
-                {result && !result.correct && <p className="mt-2 text-sm text-site-danger">Not quite — try another hint or guess.</p>}
+                {result && !result.correct && <p className="mt-2 text-sm text-site-danger">{t('not-quite', { defaultValue: 'Not quite — try another hint or guess.' })}</p>}
               </>
             ) : (
-              <p className="mt-4 text-center text-sm text-site-text-muted">Sign in to guess.</p>
+              <p className="mt-4 text-center text-sm text-site-text-muted">{t('sign-in-to-guess', { defaultValue: 'Sign in to guess.' })}</p>
             )}
           </>
         )}

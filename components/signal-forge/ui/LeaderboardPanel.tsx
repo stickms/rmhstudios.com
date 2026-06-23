@@ -7,6 +7,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from "react-i18next";
 import { Button } from '@/components/ui/button';
 
 export interface LeaderboardEntry {
@@ -49,6 +50,7 @@ export async function submitScoreToServer(score: number, floorReached: number): 
 }
 
 export function LeaderboardPanel({ inline, onClose }: Props) {
+  const { t } = useTranslation("c-signal-forge");
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
 
   useEffect(() => {
@@ -61,10 +63,10 @@ export function LeaderboardPanel({ inline, onClose }: Props) {
 
   const content = (
     <>
-      <h3 className="text-xl font-bold text-cyan-400 mb-3 flex items-center gap-2">🏆 Top Scores</h3>
+      <h3 className="text-xl font-bold text-cyan-400 mb-3 flex items-center gap-2">🏆 {t("top-scores", { defaultValue: "Top Scores" })}</h3>
       <div className="space-y-1 max-h-64 overflow-y-auto bg-black bg-opacity-50 p-3 rounded border border-slate-700">
         {leaderboard.length === 0 ? (
-          <p className="text-slate-400 text-sm text-center py-4">No scores yet. Be the first!</p>
+          <p className="text-slate-400 text-sm text-center py-4">{t("no-scores-yet", { defaultValue: "No scores yet. Be the first!" })}</p>
         ) : (
           leaderboard.map((entry, idx) => (
             <div key={idx} className="flex items-center justify-between text-sm font-mono p-2 hover:bg-slate-800 rounded">
@@ -92,7 +94,7 @@ export function LeaderboardPanel({ inline, onClose }: Props) {
             onClick={onClose}
             className="w-full bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg"
           >
-            Close
+            {t("close", { defaultValue: "Close" })}
           </Button>
         </div>
       </div>

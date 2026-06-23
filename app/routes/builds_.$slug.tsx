@@ -7,6 +7,7 @@
  */
 
 import { createFileRoute, notFound, Link } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { createServerFn } from '@tanstack/react-start';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { BuildDetail } from '@/components/user-builds';
@@ -62,6 +63,7 @@ export const Route = createFileRoute('/builds_/$slug')({
 });
 
 function BuildPage() {
+  const { t } = useTranslation("pages");
   const result = Route.useLoaderData();
 
   if (result.kind === 'user-build') {
@@ -82,7 +84,7 @@ function BuildPage() {
       <div className="mx-auto max-w-4xl px-5 sm:px-8 pt-8 pb-16">
         <Link to="/builds" className="builds-detail__back">
           <ArrowLeft className="h-4 w-4" />
-          Back to builds
+          {t("back-to-builds", { defaultValue: "Back to builds" })}
         </Link>
 
         <header className="mt-7">

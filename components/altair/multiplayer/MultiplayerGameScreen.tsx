@@ -11,6 +11,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { useTranslation } from "react-i18next";
 import { useAltairMultiplayerStore } from '@/lib/altair/multiplayer/store';
 
 interface MultiplayerGameScreenProps {
@@ -22,6 +23,7 @@ export default function MultiplayerGameScreen({ lobbyId }: MultiplayerGameScreen
   const gameSnapshot = useAltairMultiplayerStore((s) => s.gameSnapshot);
   const isHost = useAltairMultiplayerStore((s) => s.isHost);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const { t } = useTranslation("c-altair");
 
   return (
     <div className="fixed inset-0 bg-(--altair-bg)">
@@ -34,11 +36,11 @@ export default function MultiplayerGameScreen({ lobbyId }: MultiplayerGameScreen
       <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-3 px-4 py-2 rounded-lg bg-black/60 backdrop-blur-sm">
         <div className="w-2 h-2 rounded-full bg-(--altair-success) animate-pulse" />
         <span className="text-sm text-white font-mono">
-          {isHost ? 'HOST' : 'CLIENT'} — Lobby {lobbyId}
+          {isHost ? t("role-host", { defaultValue: "HOST" }) : t("role-client", { defaultValue: "CLIENT" })} — {t("lobby-label", { defaultValue: "Lobby" })} {lobbyId}
         </span>
         {gameSnapshot && (
           <span className="text-xs text-white/60">
-            Tick {gameSnapshot.tick} | {gameSnapshot.players?.length ?? 0} players | {gameSnapshot.enemies?.length ?? 0} enemies
+            {t("game-tick", { defaultValue: "Tick {{tick}} | {{players}} players | {{enemies}} enemies", tick: gameSnapshot.tick, players: gameSnapshot.players?.length ?? 0, enemies: gameSnapshot.enemies?.length ?? 0 })}
           </span>
         )}
       </div>

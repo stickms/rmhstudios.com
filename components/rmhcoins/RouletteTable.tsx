@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useRouletteStore } from '@/lib/roulette/store';
 import { getRouletteSocket } from '@/lib/roulette/socket';
 import { C2S } from '@/lib/roulette/events';
@@ -118,12 +119,13 @@ function SpinningWheel({ result }: { result: number | null }) {
 // ── Winning Number Display ──────────────────────────────────────
 
 function WinningNumberDisplay({ number: num }: { number: number }) {
+  const { t } = useTranslation("c-rmhcoins");
   const color = getNumberColor(num);
   const bg = color === 'red' ? '#dc2626' : color === 'green' ? '#059669' : '#1f2937';
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <span className="text-xs text-site-text-dim uppercase tracking-wider font-bold">Winning Number</span>
+      <span className="text-xs text-site-text-dim uppercase tracking-wider font-bold">{t("winning-number", { defaultValue: "Winning Number" })}</span>
       <div
         className="flex items-center justify-center rounded-full text-white font-black text-2xl sm:text-3xl shadow-2xl"
         style={{
@@ -162,6 +164,7 @@ export function RouletteTable({ coins }: Props) {
     lastRoundResult,
   } = useRouletteStore();
 
+  const { t } = useTranslation("c-rmhcoins");
   const addStagedBet = useRouletteStore((s) => s.addStagedBet);
 
   const isBetting = tablePhase === 'betting';
@@ -269,7 +272,7 @@ export function RouletteTable({ coins }: Props) {
               onClick={() => handlePlaceBet('topline', [0, DOUBLE_ZERO, 1, 2, 3])}
               className="w-full min-h-7 bg-site-surface border border-site-border text-site-text text-[10px] font-bold rounded transition-all hover:bg-site-surface-hover active:scale-[0.98] relative"
             >
-              Top Line (0, 00, 1-3) 6:1
+              {t("top-line-bet", { defaultValue: "Top Line (0, 00, 1-3) 6:1" })}
               <ChipOverlay type="topline" numbers={[0, DOUBLE_ZERO, 1, 2, 3]} />
             </button>
           )}
@@ -378,7 +381,7 @@ export function RouletteTable({ coins }: Props) {
                   isBetting ? 'cursor-pointer' : 'cursor-default'
                 }`}
               >
-                Col {i + 1}
+                {t("col-n", { defaultValue: "Col {{col}}", col: i + 1 })}
                 <ChipOverlay type={type} numbers={getOutsideBetNumbers(type)} />
               </button>
             ))}
@@ -395,7 +398,7 @@ export function RouletteTable({ coins }: Props) {
                   isBetting ? 'cursor-pointer' : 'cursor-default'
                 }`}
               >
-                {i === 0 ? '1st 12' : i === 1 ? '2nd 12' : '3rd 12'}
+                {i === 0 ? t("dozen-1st", { defaultValue: "1st 12" }) : i === 1 ? t("dozen-2nd", { defaultValue: "2nd 12" }) : t("dozen-3rd", { defaultValue: "3rd 12" })}
                 <ChipOverlay type={type} numbers={getOutsideBetNumbers(type)} />
               </button>
             ))}
@@ -404,13 +407,13 @@ export function RouletteTable({ coins }: Props) {
           {/* Outside bets — 3 columns on mobile for bigger targets, 6 on desktop */}
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-0.5">
             {([
-              { type: 'low' as BetType, label: '1-18' },
-              { type: 'even' as BetType, label: 'Even' },
-              { type: 'red' as BetType, label: 'Red' },
-              { type: 'black' as BetType, label: 'Black' },
-              { type: 'odd' as BetType, label: 'Odd' },
-              { type: 'high' as BetType, label: '19-36' },
-            ]).map(({ type, label }) => (
+              { type: 'low' as BetType, label: '1-18', key: 'low' },
+              { type: 'even' as BetType, label: 'Even', key: 'even' },
+              { type: 'red' as BetType, label: 'Red', key: 'red' },
+              { type: 'black' as BetType, label: 'Black', key: 'black' },
+              { type: 'odd' as BetType, label: 'Odd', key: 'odd' },
+              { type: 'high' as BetType, label: '19-36', key: 'high' },
+            ]).map(({ type, label, key }) => (
               <button
                 key={type}
                 onClick={() => handlePlaceBet(type, getOutsideBetNumbers(type))}
@@ -425,7 +428,7 @@ export function RouletteTable({ coins }: Props) {
                     : 'bg-site-surface border border-site-border text-site-text hover:bg-site-surface-hover'
                 }`}
               >
-                {label}
+                {t(`outside-${key}`, { defaultValue: label })}
                 <ChipOverlay type={type} numbers={getOutsideBetNumbers(type)} />
               </button>
             ))}
@@ -436,7 +439,7 @@ export function RouletteTable({ coins }: Props) {
       {/* History */}
       {history.length > 0 && (
         <div className="flex flex-col items-center gap-1 w-full">
-          <span className="text-[10px] text-site-text-dim uppercase tracking-wider font-bold">History</span>
+          <span className="text-[10px] text-site-text-dim uppercase tracking-wider font-bold">{t("history", { defaultValue: "History" })}</span>
           <div className="flex gap-1 flex-wrap justify-center">
             {history.slice(-15).map((n, i) => {
               const color = getNumberColor(n);
@@ -475,7 +478,7 @@ export function RouletteTable({ coins }: Props) {
                       <img src={player.avatarUrl} alt="" className="w-4 h-4 rounded-full" />
                     ) : null}
                     <span className={`text-xs font-bold truncate max-w-15 ${isMe ? 'text-violet-400' : 'text-site-text'}`}>
-                      {isMe ? 'You' : player.userName}
+                      {isMe ? t("you", { defaultValue: "You" }) : player.userName}
                     </span>
                   </div>
                   {player.totalBetThisRound > 0 && (

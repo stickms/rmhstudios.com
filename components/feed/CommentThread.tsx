@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { authClient } from '@/lib/auth-client';
@@ -22,6 +23,7 @@ export function CommentThread({ rmharkId, open, onClose, onCommentAdded }: Comme
   const [loading, setLoading] = useState(true);
   const [content, setContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const { t } = useTranslation('feed');
   const { data: session } = authClient.useSession();
   const remaining = MAX_COMMENT_LENGTH - content.length;
 
@@ -78,7 +80,7 @@ export function CommentThread({ rmharkId, open, onClose, onCommentAdded }: Comme
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-site-border">
-          <h2 className="font-bold text-site-text">Comments</h2>
+          <h2 className="font-bold text-site-text">{t("comments-heading", { defaultValue: "Comments" })}</h2>
           <button
             onClick={onClose}
             className="p-1.5 rounded-lg text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
@@ -95,7 +97,7 @@ export function CommentThread({ rmharkId, open, onClose, onCommentAdded }: Comme
             </div>
           ) : comments.length === 0 ? (
             <p className="text-center text-sm text-site-text-dim py-8">
-              No comments yet. Be the first!
+              {t("no-comments", { defaultValue: "No comments yet. Be the first!" })}
             </p>
           ) : (
             comments.map((comment) => (
@@ -110,7 +112,7 @@ export function CommentThread({ rmharkId, open, onClose, onCommentAdded }: Comme
             <MentionTextarea
               value={content}
               onChange={setContent}
-              placeholder="Write a comment..."
+              placeholder={t("write-comment-placeholder", { defaultValue: "Write a comment..." })}
               rows={2}
               maxLength={MAX_COMMENT_LENGTH}
               className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-xl p-3 border border-site-border resize-none outline-none focus:border-site-accent transition-colors"
@@ -124,7 +126,7 @@ export function CommentThread({ rmharkId, open, onClose, onCommentAdded }: Comme
                   request={{ mode: 'reply', rmharkId, draft: content }}
                   onGenerated={(text) => setContent(text)}
                   size="sm"
-                  title="Generate a reply with AI"
+                  title={t("generate-reply-ai", { defaultValue: "Generate a reply with AI" })}
                 />
               </div>
               <Button
@@ -133,13 +135,13 @@ export function CommentThread({ rmharkId, open, onClose, onCommentAdded }: Comme
                 disabled={!content.trim() || remaining < 0 || submitting}
                 onClick={handleSubmit}
               >
-                {submitting ? 'Posting...' : 'Comment'}
+                {submitting ? t("posting", { defaultValue: "Posting..." }) : t("comment-button", { defaultValue: "Comment" })}
               </Button>
             </div>
           </div>
         ) : (
           <div className="border-t border-site-border px-4 py-3 text-center text-sm text-site-text-dim">
-            Sign in to comment
+            {t("sign-in-to-comment", { defaultValue: "Sign in to comment" })}
           </div>
         )}
       </div>

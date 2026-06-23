@@ -19,6 +19,7 @@
 
 import { Eye, ChevronDown } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { SpectatorTargetInfo, SpectatorMode } from '../../lib/rmhbox/types';
 
 interface SpectatorBannerProps {
@@ -36,6 +37,7 @@ export default function SpectatorBanner({
   spectatorMode,
   onSelectPlayer,
 }: SpectatorBannerProps) {
+  const { t } = useTranslation("c-rmhbox");
   const canJoin = lobbyState === 'WAITING' || lobbyState === 'ROUND_RESULTS';
   const showPlayerSwitcher = spectatorMode === 'competitive-individual'
     && spectatorTarget
@@ -60,7 +62,7 @@ export default function SpectatorBanner({
   return (
     <div className="sticky top-0 z-30 flex h-12 items-center justify-center gap-4 bg-(--rmhbox-surface)/50 border-b border-(--rmhbox-border) px-4 backdrop-blur-[1px] pointer-events-none">
       <span className="flex items-center gap-1.5 text-sm font-medium text-(--rmhbox-text) pointer-events-auto">
-        <Eye className="h-4 w-4" /> You are spectating
+        <Eye className="h-4 w-4" /> {t("you-are-spectating", { defaultValue: "You are spectating" })}
       </span>
 
       {/* Player switcher for competitive-individual games */}
@@ -70,7 +72,7 @@ export default function SpectatorBanner({
             onClick={() => setDropdownOpen((o) => !o)}
             className="flex items-center gap-1.5 rounded-lg bg-(--rmhbox-surface) border border-(--rmhbox-border) px-3 py-1 text-xs font-semibold text-(--rmhbox-text) transition-colors hover:bg-(--rmhbox-surface-hover)"
           >
-            Viewing: {spectatorTarget.targetPlayerName}
+            {t("viewing-player", { defaultValue: "Viewing: {{name}}", name: spectatorTarget.targetPlayerName })}
             <ChevronDown className="h-3 w-3" />
           </button>
           {dropdownOpen && (
@@ -102,7 +104,7 @@ export default function SpectatorBanner({
           onClick={onRequestPromotion}
           className="rounded-lg bg-(--rmhbox-accent) px-3 py-1 text-xs font-semibold text-white transition-colors hover:bg-(--rmhbox-accent-hover) pointer-events-auto"
         >
-          Join as Player
+          {t("join-as-player", { defaultValue: "Join as Player" })}
         </button>
       )}
     </div>

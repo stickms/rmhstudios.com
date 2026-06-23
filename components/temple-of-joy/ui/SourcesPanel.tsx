@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { fmt } from '@/lib/temple-of-joy/numbers';
 import { SOURCES } from '@/lib/temple-of-joy/data/sources';
@@ -32,6 +33,7 @@ interface SourceRowProps {
 }
 
 function SourceRow({ id, buyQty }: SourceRowProps) {
+  const { t } = useTranslation("c-temple-of-joy");
   const state = useTempleStore(s => s);
   const peakHappiness = useTempleStore(s => s.peakHappiness);
   const lifetimeHappiness = useTempleStore(s => s.lifetimeHappiness);
@@ -134,8 +136,8 @@ function SourceRow({ id, buyQty }: SourceRowProps) {
           style={{ color: 'var(--temple-text)', opacity: 0.65 }}
         >
           {count === 0
-            ? `${fmt(perSourceHps, numberFormat)}/s each`
-            : `${fmt(perSourceHps, numberFormat)}/s each · ${fmt(totalHps, numberFormat)}/s total`}
+            ? t("hps-each", { defaultValue: "{{hps}}/s each", hps: fmt(perSourceHps, numberFormat) })
+            : t("hps-each-total", { defaultValue: "{{hps}}/s each · {{total}}/s total", hps: fmt(perSourceHps, numberFormat), total: fmt(totalHps, numberFormat) })}
         </p>
       </div>
 
@@ -163,13 +165,14 @@ function SourceRow({ id, buyQty }: SourceRowProps) {
         <span className="block text-[10px] font-normal tabular-nums">
           💰 {fmt(displayCost, numberFormat)}
         </span>
-        {buyQty === 'max' ? `MAX (${canAfford ? maxN : 0})` : `×${buyQty}`}
+        {buyQty === 'max' ? t("buy-max-n", { defaultValue: "MAX ({{n}})", n: canAfford ? maxN : 0 }) : `×${buyQty}`}
       </button>
     </div>
   );
 }
 
 export default function SourcesPanel() {
+  const { t } = useTranslation("c-temple-of-joy");
   const buyQty = useTempleStore(s => s.sourceBuyQty);
   const setBuyQty = useTempleStore(s => s.setSourceBuyQty);
   const theme = useTempleStore(s => s.theme);
@@ -187,7 +190,7 @@ export default function SourcesPanel() {
           className="text-xs font-bold uppercase tracking-widest"
           style={{ color: 'var(--temple-accent)' }}
         >
-          🌿 Sources of Joy
+          🌿 {t("sources-of-joy-heading", { defaultValue: "Sources of Joy" })}
         </h2>
         <div className="flex gap-1">
           {QTY_OPTIONS.map(q => (
@@ -205,7 +208,7 @@ export default function SourcesPanel() {
                   : '1px solid var(--temple-border)',
               }}
             >
-              {q === 'max' ? 'MAX' : `×${q}`}
+              {q === 'max' ? t("qty-max", { defaultValue: "MAX" }) : `×${q}`}
             </button>
           ))}
         </div>

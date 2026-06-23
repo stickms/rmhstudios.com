@@ -1,0 +1,15 @@
+{
+  "copy-token-label": "复制令牌",
+  "created-date": "创建于{{date}}",
+  "expired": "已过期",
+  "generate-token": "生成代币",
+  "last-used-date": "上次使用 {{date}}",
+  "no-active-tokens": "无活跃令牌。请生成一个以开始使用。",
+  "revoke-token-label": "撤销令牌",
+  "token-auth-instruction-post": "进行身份验证。",
+  "token-auth-instruction-pre": "跑",
+  "token-generated-notice": "令牌已生成！立即复制——此令牌将不再显示。",
+  "token-name-placeholder": "代币名称（可选）",
+  "unnamed-token": "未命名代币",
+  "your-tokens": "您的代币"
+}

@@ -11,6 +11,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { Loader2, ArrowLeft, ShieldCheck, Car, Check, X, MapPin, Search, Route as RouteIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 import { auth } from '@/lib/auth';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { UserAvatar } from '@/components/ui/UserAvatar';
@@ -89,6 +90,7 @@ interface AdminRide {
 }
 
 function AdminRidesharePage() {
+  const { t } = useTranslation('admin');
   const [view, setView] = useState<View>('applications');
   const [status, setStatus] = useState<Status>('PENDING');
   const [items, setItems] = useState<Application[]>([]);
@@ -152,15 +154,15 @@ function AdminRidesharePage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error(data.error || 'Action failed.');
+        toast.error(data.error || t('action-failed', { defaultValue: 'Action failed.' }));
         return;
       }
-      toast.success(action === 'approve' ? 'Driver approved.' : 'Application rejected.');
+      toast.success(action === 'approve' ? t('driver-approved', { defaultValue: 'Driver approved.' }) : t('application-rejected', { defaultValue: 'Application rejected.' }));
       setRejecting(null);
       setReason('');
       setItems((prev) => prev.filter((i) => i.id !== id));
     } catch {
-      toast.error('Something went wrong.');
+      toast.error(t('something-went-wrong', { defaultValue: 'Something went wrong.' }));
     } finally {
       setBusy(null);
     }
@@ -171,22 +173,22 @@ function AdminRidesharePage() {
       <div className="mx-auto w-full max-w-4xl space-y-5 p-4 md:p-8">
         <div>
           <Link to="/admin" className="inline-flex items-center gap-1 text-sm text-site-text-muted hover:text-site-text">
-            <ArrowLeft className="h-4 w-4" /> Admin
+            <ArrowLeft className="h-4 w-4" /> {t('admin-link', { defaultValue: 'Admin' })}
           </Link>
           <div className="mt-2 flex items-center gap-2">
             <ShieldCheck className="h-6 w-6 text-site-accent" />
             <h1 className="text-2xl font-bold text-site-text" style={{ fontFamily: 'var(--site-font-display)' }}>
-              Driver Applications
+              {t('driver-applications-heading', { defaultValue: 'Driver Applications' })}
             </h1>
           </div>
           <p className="mt-1 text-site-text-muted">
-            Review and verify community drivers, and browse every ride placed across the community.
+            {t('rideshare-admin-description', { defaultValue: 'Review and verify community drivers, and browse every ride placed across the community.' })}
           </p>
         </div>
 
         {/* View switcher */}
         <div className="flex gap-1 rounded-xl border border-site-border bg-site-surface/80 p-1">
-          {([['applications', 'Driver applications'], ['rides', 'Ride history']] as const).map(([v, label]) => (
+          {([[`applications`, t('view-driver-applications', { defaultValue: 'Driver applications' })], [`rides`, t('view-ride-history', { defaultValue: 'Ride history' })]] as const).map(([v, label]) => (
             <button
               key={v}
               onClick={() => setView(v)}
@@ -228,7 +230,7 @@ function AdminRidesharePage() {
           <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-site-text-muted" /></div>
         ) : items.length === 0 ? (
           <p className="rounded-xl border border-dashed border-site-border px-4 py-16 text-center text-site-text-muted">
-            No {status.toLowerCase()} applications.
+            {t('no-applications', { status: status.toLowerCase(), defaultValue: 'No {{status}} applications.' })}
           </p>
         ) : (
           <ul className="space-y-4">
@@ -236,9 +238,9 @@ function AdminRidesharePage() {
               <li key={app.id} className="rounded-2xl border border-site-border bg-site-surface/80 p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <UserAvatar src={app.user.image} alt={app.user.name ?? 'User'} size={40} />
+                    <UserAvatar src={app.user.image} alt={app.user.name ?? t('user-alt', { defaultValue: 'User' })} size={40} />
                     <div>
-                      <p className="font-semibold text-site-text">{app.user.name ?? 'Unknown'}</p>
+                      <p className="font-semibold text-site-text">{app.user.name ?? t('unknown', { defaultValue: 'Unknown' })}</p>
                       <p className="text-xs text-site-text-muted">
                         {app.user.handle ? `@${app.user.handle}` : app.user.email ?? app.user.id}
                       </p>
@@ -253,29 +255,29 @@ function AdminRidesharePage() {
                   {/* Vehicle */}
                   <div className="rounded-xl border border-site-border bg-site-surface p-4">
                     <div className="flex items-center gap-2 text-sm font-semibold text-site-text">
-                      <Car className="h-4 w-4 text-site-accent" /> Vehicle
+                      <Car className="h-4 w-4 text-site-accent" /> {t('vehicle-section', { defaultValue: 'Vehicle' })}
                     </div>
                     <dl className="mt-2 space-y-1 text-sm">
-                      <Row label="Vehicle" value={`${app.vehicleColor} ${app.vehicleMake} ${app.vehicleModel}`} />
-                      <Row label="Year" value={String(app.vehicleYear)} />
-                      <Row label="Plate" value={app.licensePlate} />
-                      <Row label="Class" value={rideClassName(app.vehicleClass)} />
-                      <Row label="Seats" value={String(app.seats)} />
+                      <Row label={t('vehicle-label', { defaultValue: 'Vehicle' })} value={`${app.vehicleColor} ${app.vehicleMake} ${app.vehicleModel}`} />
+                      <Row label={t('year-label', { defaultValue: 'Year' })} value={String(app.vehicleYear)} />
+                      <Row label={t('plate-label', { defaultValue: 'Plate' })} value={app.licensePlate} />
+                      <Row label={t('class-label', { defaultValue: 'Class' })} value={rideClassName(app.vehicleClass)} />
+                      <Row label={t('seats-label', { defaultValue: 'Seats' })} value={String(app.seats)} />
                     </dl>
                   </div>
 
                   {/* License */}
                   <div className="rounded-xl border border-site-border bg-site-surface p-4">
-                    <div className="mb-2 text-sm font-semibold text-site-text">Driver’s license</div>
+                    <div className="mb-2 text-sm font-semibold text-site-text">{t('drivers-license-section', { defaultValue: "Driver's license" })}</div>
                     <dl className="space-y-1.5">
-                      <Row label="License #" value={app.licenseNumber || '—'} />
+                      <Row label={t('license-number-label', { defaultValue: 'License #' })} value={app.licenseNumber || '—'} />
                     </dl>
                   </div>
                 </div>
 
                 {app.status === 'REJECTED' && app.rejectionReason && (
                   <p className="mt-3 rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-300">
-                    Reason: {app.rejectionReason}
+                    {t('rejection-reason', { reason: app.rejectionReason, defaultValue: 'Reason: {{reason}}' })}
                   </p>
                 )}
 
@@ -288,7 +290,7 @@ function AdminRidesharePage() {
                           onChange={(e) => setReason(e.target.value)}
                           rows={2}
                           maxLength={500}
-                          placeholder="Reason for rejection (shared with the applicant)"
+                          placeholder={t('rejection-reason-placeholder', { defaultValue: 'Reason for rejection (shared with the applicant)' })}
                           className="w-full resize-none rounded-lg border border-site-border bg-site-surface px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent/60"
                         />
                         <div className="flex gap-2">
@@ -298,13 +300,13 @@ function AdminRidesharePage() {
                             className="flex items-center gap-1.5 rounded-lg bg-red-500 px-4 py-1.5 text-sm font-semibold text-white disabled:opacity-50"
                           >
                             {busy === app.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
-                            Confirm reject
+                            {t('confirm-reject', { defaultValue: 'Confirm reject' })}
                           </button>
                           <button
                             onClick={() => { setRejecting(null); setReason(''); }}
                             className="rounded-lg border border-site-border px-4 py-1.5 text-sm text-site-text-muted hover:text-site-text"
                           >
-                            Cancel
+                            {t('cancel', { defaultValue: 'Cancel' })}
                           </button>
                         </div>
                       </div>
@@ -316,14 +318,14 @@ function AdminRidesharePage() {
                           className="flex items-center gap-1.5 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
                         >
                           {busy === app.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                          Approve
+                          {t('approve', { defaultValue: 'Approve' })}
                         </button>
                         <button
                           onClick={() => setRejecting(app.id)}
                           disabled={busy === app.id}
                           className="flex items-center gap-1.5 rounded-lg border border-site-border px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 disabled:opacity-50"
                         >
-                          <X className="h-4 w-4" /> Reject
+                          <X className="h-4 w-4" /> {t('reject', { defaultValue: 'Reject' })}
                         </button>
                       </div>
                     )}
@@ -355,6 +357,7 @@ function RideHistory({
   query: string;
   onQuery: (q: string) => void;
 }) {
+  const { t } = useTranslation('admin');
   return (
     <div className="space-y-4">
       {/* Search */}
@@ -363,7 +366,7 @@ function RideHistory({
         <input
           value={query}
           onChange={(e) => onQuery(e.target.value)}
-          placeholder="Search rider, driver, or address…"
+          placeholder={t('ride-search-placeholder', { defaultValue: 'Search rider, driver, or address…' })}
           className="w-full rounded-xl border border-site-border bg-site-surface/80 py-2.5 pl-9 pr-3 text-sm text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60"
         />
       </div>
@@ -380,7 +383,7 @@ function RideHistory({
                 : 'border border-site-border bg-site-surface/80 text-site-text-muted hover:text-site-text'
             }`}
           >
-            {s === 'ALL' ? 'All' : RIDE_STATUS_META[s].label}
+            {s === 'ALL' ? t('status-all', { defaultValue: 'All' }) : RIDE_STATUS_META[s].label}
           </button>
         ))}
       </div>
@@ -389,7 +392,7 @@ function RideHistory({
         <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-site-text-muted" /></div>
       ) : rides.length === 0 ? (
         <p className="rounded-xl border border-dashed border-site-border px-4 py-16 text-center text-site-text-muted">
-          No rides found.
+          {t('no-rides-found', { defaultValue: 'No rides found.' })}
         </p>
       ) : (
         <ul className="space-y-3">
@@ -399,9 +402,9 @@ function RideHistory({
               <li key={ride.id} className="rounded-2xl border border-site-border bg-site-surface/80 p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <UserAvatar src={ride.rider?.image ?? null} alt={ride.rider?.name ?? 'Rider'} size={36} />
+                    <UserAvatar src={ride.rider?.image ?? null} alt={ride.rider?.name ?? t('rider-alt', { defaultValue: 'Rider' })} size={36} />
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-site-text">{ride.rider?.name ?? 'Unknown rider'}</p>
+                      <p className="text-sm font-semibold text-site-text">{ride.rider?.name ?? t('unknown-rider', { defaultValue: 'Unknown rider' })}</p>
                       <p className="text-xs text-site-text-muted">
                         {ride.rider?.handle ? `@${ride.rider.handle}` : ride.rider?.email ?? '—'}
                       </p>
@@ -431,10 +434,10 @@ function RideHistory({
                     </span>
                   )}
                   {ride.estimatedFareCents != null && (
-                    <span>{formatUsd(ride.estimatedFareCents)} est.</span>
+                    <span>{formatUsd(ride.estimatedFareCents)} {t('estimated-abbr', { defaultValue: 'est.' })}</span>
                   )}
                   <span>
-                    {ride.driver ? `Driver: ${ride.driver.name ?? 'Unknown'}` : 'No driver matched'}
+                    {ride.driver ? t('driver-name', { name: ride.driver.name ?? t('unknown', { defaultValue: 'Unknown' }), defaultValue: 'Driver: {{name}}' }) : t('no-driver-matched', { defaultValue: 'No driver matched' })}
                   </span>
                   <span className="ml-auto">
                     {formatDistanceToNow(new Date(ride.scheduledFor ?? ride.requestedAt), { addSuffix: true })}

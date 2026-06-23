@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     getDateSeed,
@@ -197,6 +198,7 @@ export function LightsOutDiscordActivity({ discord }: LightsOutDiscordActivityPr
 // ─── Mode Selection Menu ─────────────────────────────────────────────
 
 function ModeMenu({ discord, onSelect }: { discord: DiscordContext; onSelect: (mode: GameMode) => void }) {
+    const { t } = useTranslation("c-lights-out");
     const displayName = discord.user.global_name || discord.user.username;
     const todayKey = formatDateKey(new Date());
     const [alreadyCompleted, setAlreadyCompleted] = useState<DailyCompletion | null>(getDailyCompletion(todayKey));
@@ -223,11 +225,11 @@ function ModeMenu({ discord, onSelect }: { discord: DiscordContext; onSelect: (m
                         <h1 className="text-3xl font-bold text-white">Lights Out</h1>
                     </div>
                     <p className="text-[#b5bac1] text-sm">
-                        Welcome, {displayName}!
+                        {t("welcome-user", { defaultValue: "Welcome, {{name}}!", name: displayName })}
                     </p>
                     {discord.linkedUserId && (
                         <p className="text-emerald-400 text-xs mt-1 flex items-center justify-center gap-1">
-                            <Check className="w-3 h-3" /> Account linked
+                            <Check className="w-3 h-3" /> {t("account-linked", { defaultValue: "Account linked" })}
                         </p>
                     )}
                 </div>
@@ -243,11 +245,11 @@ function ModeMenu({ discord, onSelect }: { discord: DiscordContext; onSelect: (m
                             <Calendar className="w-6 h-6 text-amber-400" />
                         </div>
                         <div className="flex-1">
-                            <div className="text-white font-semibold group-hover:text-amber-400 transition-colors">Daily Puzzle</div>
+                            <div className="text-white font-semibold group-hover:text-amber-400 transition-colors">{t("daily-puzzle", { defaultValue: "Daily Puzzle" })}</div>
                             <div className="text-[#b5bac1] text-sm">
                                 {alreadyCompleted
-                                    ? `Completed — ${alreadyCompleted.ratingEmoji} ${alreadyCompleted.moves} moves`
-                                    : "Today's puzzle — same for everyone worldwide"}
+                                    ? t("daily-completed-summary", { defaultValue: "Completed — {{emoji}} {{moves}} moves", emoji: alreadyCompleted.ratingEmoji, moves: alreadyCompleted.moves })
+                                    : t("daily-puzzle-subtitle", { defaultValue: "Today's puzzle — same for everyone worldwide" })}
                             </div>
                         </div>
                         {alreadyCompleted && (
@@ -264,8 +266,8 @@ function ModeMenu({ discord, onSelect }: { discord: DiscordContext; onSelect: (m
                             <Swords className="w-6 h-6 text-purple-400" />
                         </div>
                         <div>
-                            <div className="text-white font-semibold group-hover:text-purple-400 transition-colors">Race Mode</div>
-                            <div className="text-[#b5bac1] text-sm">Race your friends — first to solve wins!</div>
+                            <div className="text-white font-semibold group-hover:text-purple-400 transition-colors">{t("race-mode", { defaultValue: "Race Mode" })}</div>
+                            <div className="text-[#b5bac1] text-sm">{t("race-mode-subtitle", { defaultValue: "Race your friends — first to solve wins!" })}</div>
                         </div>
                     </button>
                 </div>
@@ -274,7 +276,7 @@ function ModeMenu({ discord, onSelect }: { discord: DiscordContext; onSelect: (m
                 {discord.participants.length > 1 && (
                     <div className="flex items-center justify-center gap-2 text-[#b5bac1] text-xs">
                         <Users className="w-3.5 h-3.5" />
-                        <span>{discord.participants.length} players in activity</span>
+                        <span>{t("players-in-activity", { defaultValue: "{{count}} players in activity", count: discord.participants.length })}</span>
                     </div>
                 )}
             </div>
@@ -394,6 +396,7 @@ function CongratsModal({
     guildId: string | null;
     onReturn: () => void;
 }) {
+    const { t } = useTranslation("c-lights-out");
     const [showLeaderboard, setShowLeaderboard] = useState(false);
 
     return (
@@ -415,12 +418,12 @@ function CongratsModal({
 
                 <div className="px-6 pb-4 space-y-2">
                     <div className="flex justify-between items-center py-2 px-3 rounded-lg bg-[#1e1f22]">
-                        <span className="text-[#b5bac1] text-sm">Your moves</span>
+                        <span className="text-[#b5bac1] text-sm">{t("your-moves", { defaultValue: "Your moves" })}</span>
                         <span className="text-white font-mono font-bold text-lg">{moves}</span>
                     </div>
                     {optimalMoves != null && (
                         <div className="flex justify-between items-center py-2 px-3 rounded-lg bg-[#1e1f22]">
-                            <span className="text-[#b5bac1] text-sm">Optimal</span>
+                            <span className="text-[#b5bac1] text-sm">{t("optimal", { defaultValue: "Optimal" })}</span>
                             <span className="text-amber-400 font-mono font-bold text-lg">{optimalMoves}</span>
                         </div>
                     )}
@@ -434,7 +437,7 @@ function CongratsModal({
                             className="w-full py-3 rounded-xl bg-[#1e1f22] border border-[#3f4147] hover:border-amber-500/50 text-white font-bold text-sm transition-colors flex items-center justify-center gap-2"
                         >
                             <Trophy className="w-4 h-4 text-amber-400" />
-                            Leaderboard
+                            {t("leaderboard", { defaultValue: "Leaderboard" })}
                         </button>
                     )}
                     <button
@@ -442,7 +445,7 @@ function CongratsModal({
                         onClick={onReturn}
                         className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-amber-950 font-bold text-sm transition-colors"
                     >
-                        Return
+                        {t("return", { defaultValue: "Return" })}
                     </button>
                 </div>
             </motion.div>
@@ -478,6 +481,7 @@ function LeaderboardModal({
     dateKey: string;
     onClose: () => void;
 }) {
+    const { t } = useTranslation("c-lights-out");
     const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -515,7 +519,7 @@ function LeaderboardModal({
                 <div className="px-6 pt-5 pb-3 flex items-center justify-between">
                     <h2 className="text-lg font-bold text-white flex items-center gap-2">
                         <Trophy className="w-5 h-5 text-amber-400" />
-                        Leaderboard
+                        {t("leaderboard", { defaultValue: "Leaderboard" })}
                     </h2>
                     <button type="button" onClick={onClose} className="text-[#b5bac1] hover:text-white transition-colors">
                         <ArrowLeft className="w-5 h-5" />
@@ -524,9 +528,9 @@ function LeaderboardModal({
 
                 <div className="px-6 pb-6">
                     {loading ? (
-                        <div className="text-center text-[#b5bac1] text-sm py-6 animate-pulse">Loading...</div>
+                        <div className="text-center text-[#b5bac1] text-sm py-6 animate-pulse">{t("loading", { defaultValue: "Loading..." })}</div>
                     ) : ranked.length === 0 ? (
-                        <div className="text-center text-[#949ba4] text-sm py-6">No one has played yet today.</div>
+                        <div className="text-center text-[#949ba4] text-sm py-6">{t("leaderboard-empty", { defaultValue: "No one has played yet today." })}</div>
                     ) : (
                         <div className="space-y-1.5">
                             {ranked.map((entry, i) => {
@@ -551,7 +555,7 @@ function LeaderboardModal({
                                         <span className={`text-sm font-mono shrink-0 ${
                                             isCompleted ? 'text-emerald-400' : 'text-[#949ba4]'
                                         }`}>
-                                            {isCompleted ? `${entry.moves} move${entry.moves !== 1 ? 's' : ''}` : 'playing...'}
+                                            {isCompleted ? t("moves-count", { defaultValue: "{{count}} move", defaultValue_plural: "{{count}} moves", count: entry.moves ?? 0 }) : t("playing", { defaultValue: "playing..." })}
                                         </span>
                                     </div>
                                 );
@@ -567,6 +571,7 @@ function LeaderboardModal({
 // ─── Instructions Modal ──────────────────────────────────────────────
 
 function InstructionsModal({ onClose }: { onClose: () => void }) {
+    const { t } = useTranslation("c-lights-out");
     return (
         <motion.div
             initial={{ opacity: 0 }}
@@ -582,26 +587,26 @@ function InstructionsModal({ onClose }: { onClose: () => void }) {
             >
                 <div className="px-6 pt-6 pb-4 text-center">
                     <div className="text-4xl mb-3">{'\u{1F4A1}'}</div>
-                    <h2 className="text-xl font-bold text-white mb-1">How to Play</h2>
-                    <p className="text-[#b5bac1] text-sm">Turn off every light to win</p>
+                    <h2 className="text-xl font-bold text-white mb-1">{t("how-to-play", { defaultValue: "How to Play" })}</h2>
+                    <p className="text-[#b5bac1] text-sm">{t("how-to-play-subtitle", { defaultValue: "Turn off every light to win" })}</p>
                 </div>
 
                 <div className="px-6 pb-4 space-y-3">
                     <div className="flex gap-3 items-start">
                         <div className="w-8 h-8 rounded-lg bg-amber-400 shrink-0 mt-0.5" />
                         <p className="text-[#b5bac1] text-sm">
-                            <span className="text-white font-semibold">Tap a light</span> to toggle it and all its neighbors on or off.
+                            <span className="text-white font-semibold">{t("tap-a-light", { defaultValue: "Tap a light" })}</span> {t("tap-a-light-description", { defaultValue: "to toggle it and all its neighbors on or off." })}
                         </p>
                     </div>
                     <div className="flex gap-3 items-start">
                         <div className="w-8 h-8 rounded-lg bg-[#1e1f22] border border-[#3f4147] shrink-0 mt-0.5" />
                         <p className="text-[#b5bac1] text-sm">
-                            <span className="text-white font-semibold">Goal:</span> turn all lights dark. Fewer moves = better rating.
+                            <span className="text-white font-semibold">{t("goal-label", { defaultValue: "Goal:" })}</span> {t("goal-description", { defaultValue: "turn all lights dark. Fewer moves = better rating." })}
                         </p>
                     </div>
                     <div className="py-2 px-3 rounded-lg bg-[#1e1f22] text-center">
                         <p className="text-[#949ba4] text-xs">
-                            The daily puzzle has no undos or restarts — every move counts!
+                            {t("daily-no-undos", { defaultValue: "The daily puzzle has no undos or restarts — every move counts!" })}
                         </p>
                     </div>
                 </div>
@@ -612,7 +617,7 @@ function InstructionsModal({ onClose }: { onClose: () => void }) {
                         onClick={onClose}
                         className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-amber-950 font-bold text-sm transition-colors"
                     >
-                        Let&apos;s Go
+                        {t("lets-go", { defaultValue: "Let's Go" })}
                     </button>
                 </div>
             </motion.div>
@@ -623,6 +628,7 @@ function InstructionsModal({ onClose }: { onClose: () => void }) {
 // ─── Daily Game Mode ─────────────────────────────────────────────────
 
 function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () => void }) {
+    const { t } = useTranslation("c-lights-out");
     const todayKey = formatDateKey(new Date());
     const seed = getDateSeed(new Date());
     const shape = getDailyShape(seed);
@@ -845,7 +851,7 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
     if (!grid) {
         return (
             <div className="min-h-dvh bg-[#313338] flex items-center justify-center">
-                <div className="animate-pulse text-[#b5bac1]">Loading...</div>
+                <div className="animate-pulse text-[#b5bac1]">{t("loading", { defaultValue: "Loading..." })}</div>
             </div>
         );
     }
@@ -861,7 +867,7 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
                     <div className="text-center">
                         <h2 className="text-base font-bold text-white flex items-center gap-1.5">
                             <Sparkles className="w-4 h-4 text-amber-400" />
-                            Daily Puzzle
+                            {t("daily-puzzle", { defaultValue: "Daily Puzzle" })}
                         </h2>
                         <p className="text-[#b5bac1] text-[11px]">{todayKey} · {shapeLabel}</p>
                     </div>
@@ -872,7 +878,7 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
             {/* Move counter — outside grid area so sizing is accurate */}
             <div className="shrink-0 flex justify-center items-center gap-4 py-1 text-sm">
                 <div className="flex items-center gap-1.5">
-                    <span className="text-[#b5bac1]">Moves</span>
+                    <span className="text-[#b5bac1]">{t("moves-label", { defaultValue: "Moves" })}</span>
                     <span className="text-white font-mono font-semibold">{moves}</span>
                 </div>
             </div>
@@ -921,6 +927,7 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
 // ─── Race Mode (Lobby-based, WebSocket) ─────────────────────────────
 
 function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => void }) {
+    const { t } = useTranslation("c-lights-out");
     // Use channelId as lobby key so all players in the same channel share one lobby,
     // regardless of how they launched the activity. Falls back to instanceId for DMs.
     const instanceId = discord.channelId ?? discord.sdk.instanceId;
@@ -1113,7 +1120,7 @@ function RaceGame({ discord, onBack }: { discord: DiscordContext; onBack: () => 
     if (!lobby || lobby.phase === 'empty') {
         return (
             <div className="h-dvh bg-[#313338] flex items-center justify-center">
-                <div className="animate-pulse text-[#b5bac1]">Joining lobby...</div>
+                <div className="animate-pulse text-[#b5bac1]">{t("joining-lobby", { defaultValue: "Joining lobby..." })}</div>
             </div>
         );
     }
@@ -1165,6 +1172,7 @@ function LobbyWaiting({
 }: {
     lobby: LobbyState; discordId: string; isHost: boolean; emit: EmitFn; onBack: () => void;
 }) {
+    const { t } = useTranslation("c-lights-out");
     const me = lobby.participants.find(p => p.discordId === discordId);
     const canStart = isHost && !!me?.ready;
 
@@ -1178,10 +1186,10 @@ function LobbyWaiting({
                     <div className="text-center">
                         <h2 className="text-lg font-bold text-white flex items-center gap-2">
                             <Swords className="w-5 h-5 text-purple-400" />
-                            Race Lobby
+                            {t("race-lobby", { defaultValue: "Race Lobby" })}
                         </h2>
                         <p className="text-[#b5bac1] text-xs">
-                            {lobby.roundNumber > 0 ? `Round ${lobby.roundNumber + 1}` : 'Waiting for players'}
+                            {lobby.roundNumber > 0 ? t("round-n", { defaultValue: "Round {{n}}", n: lobby.roundNumber + 1 }) : t("waiting-for-players", { defaultValue: "Waiting for players" })}
                         </p>
                     </div>
                     <div className="w-7" />
@@ -1209,7 +1217,7 @@ function LobbyWaiting({
                                 </span>
                             </div>
                             <span className={`text-xs font-medium ${p.ready ? 'text-emerald-400' : 'text-[#949ba4]'}`}>
-                                {p.ready ? 'Ready' : 'Not Ready'}
+                                {p.ready ? t("ready", { defaultValue: "Ready" }) : t("not-ready", { defaultValue: "Not Ready" })}
                             </span>
                         </div>
                     ))}
@@ -1218,7 +1226,7 @@ function LobbyWaiting({
                 {/* Race mode setting */}
                 <div className="w-full max-w-sm mb-4">
                     <div className="flex items-center justify-between p-3 rounded-lg bg-[#2b2d31] border border-[#3f4147]">
-                        <span className="text-[#b5bac1] text-sm">Ranking</span>
+                        <span className="text-[#b5bac1] text-sm">{t("ranking", { defaultValue: "Ranking" })}</span>
                         {isHost ? (
                             <div className="flex rounded-lg overflow-hidden border border-[#3f4147]">
                                 <button
@@ -1230,7 +1238,7 @@ function LobbyWaiting({
                                             : 'bg-[#1e1f22] text-[#949ba4] hover:text-white'
                                     }`}
                                 >
-                                    <Clock className="w-3 h-3" /> Timed
+                                    <Clock className="w-3 h-3" /> {t("timed", { defaultValue: "Timed" })}
                                 </button>
                                 <button
                                     type="button"
@@ -1241,15 +1249,15 @@ function LobbyWaiting({
                                             : 'bg-[#1e1f22] text-[#949ba4] hover:text-white'
                                     }`}
                                 >
-                                    <Sparkles className="w-3 h-3" /> Fewest Moves
+                                    <Sparkles className="w-3 h-3" /> {t("fewest-moves", { defaultValue: "Fewest Moves" })}
                                 </button>
                             </div>
                         ) : (
                             <span className="text-white text-sm font-medium flex items-center gap-1">
                                 {lobby.raceMode === 'time' ? (
-                                    <><Clock className="w-3.5 h-3.5 text-purple-400" /> Timed Race</>
+                                    <><Clock className="w-3.5 h-3.5 text-purple-400" /> {t("timed-race", { defaultValue: "Timed Race" })}</>
                                 ) : (
-                                    <><Sparkles className="w-3.5 h-3.5 text-purple-400" /> Fewest Moves</>
+                                    <><Sparkles className="w-3.5 h-3.5 text-purple-400" /> {t("fewest-moves", { defaultValue: "Fewest Moves" })}</>
                                 )}
                             </span>
                         )}
@@ -1267,7 +1275,7 @@ function LobbyWaiting({
                                 : 'bg-emerald-500 hover:bg-emerald-400 text-white'
                         }`}
                     >
-                        {me?.ready ? 'Unready' : 'Ready Up'}
+                        {me?.ready ? t("unready", { defaultValue: "Unready" }) : t("ready-up", { defaultValue: "Ready Up" })}
                     </button>
 
                     {isHost && (
@@ -1277,7 +1285,7 @@ function LobbyWaiting({
                             disabled={!canStart}
                             className="w-full py-3 rounded-xl bg-purple-500 hover:bg-purple-400 text-white font-bold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {lobby.participants.length === 1 ? 'Start Solo Practice' : 'Start Race'}
+                            {lobby.participants.length === 1 ? t("start-solo-practice", { defaultValue: "Start Solo Practice" }) : t("start-race", { defaultValue: "Start Race" })}
                         </button>
                     )}
                 </div>
@@ -1293,6 +1301,7 @@ function RaceGameplay({
 }: {
     lobby: LobbyState; discord: DiscordContext; emit: EmitFn; onBack: () => void;
 }) {
+    const { t } = useTranslation("c-lights-out");
     const discordId = discord.user.id;
     const seed = lobby.seed!;
     const shape = getDailyShape(seed);
@@ -1383,7 +1392,7 @@ function RaceGameplay({
     if (!grid) {
         return (
             <div className="h-dvh bg-[#313338] flex items-center justify-center">
-                <div className="animate-pulse text-[#b5bac1]">Loading...</div>
+                <div className="animate-pulse text-[#b5bac1]">{t("loading", { defaultValue: "Loading..." })}</div>
             </div>
         );
     }
@@ -1424,7 +1433,7 @@ function RaceGameplay({
                     <div className="text-center">
                         <h2 className="text-base font-bold text-white flex items-center gap-1.5">
                             <Swords className="w-4 h-4 text-purple-400" />
-                            Race Mode
+                            {t("race-mode", { defaultValue: "Race Mode" })}
                         </h2>
                         <p className="text-[#b5bac1] text-[11px]">{getShapeLabel(shape)}</p>
                     </div>
@@ -1439,7 +1448,7 @@ function RaceGameplay({
                     <div className="shrink-0 order-first md:order-last md:w-52 md:border-l md:border-[#3f4147] overflow-y-auto">
                         <div className="px-3 py-2 md:p-3">
                             <div className="text-[#b5bac1] text-xs font-medium mb-1 md:mb-2 flex items-center gap-1.5">
-                                <Users className="w-3.5 h-3.5" /> Racers
+                                <Users className="w-3.5 h-3.5" /> {t("racers", { defaultValue: "Racers" })}
                             </div>
                             {/* Horizontal scroll on mobile, vertical list on desktop */}
                             <div className="flex md:flex-col gap-3 md:gap-1.5 overflow-x-auto md:overflow-x-visible pb-1 md:pb-0">
@@ -1452,8 +1461,8 @@ function RaceGameplay({
                                             p.status === 'solved' ? 'text-emerald-400' :
                                             p.status === 'dnf' ? 'text-red-400' : 'text-[#949ba4]'
                                         }`}>
-                                            {p.status === 'solved' ? `\u2713 ${p.moves} moves` :
-                                             p.status === 'dnf' ? 'DNF' : 'solving...'}
+                                            {p.status === 'solved' ? `\u2713 ${t("moves-count", { defaultValue: "{{count}} move", defaultValue_plural: "{{count}} moves", count: p.moves })}` :
+                                             p.status === 'dnf' ? 'DNF' : t("solving", { defaultValue: "solving..." })}
                                         </span>
                                     </div>
                                 ))}
@@ -1468,7 +1477,7 @@ function RaceGameplay({
                     {isRacer && (
                         <div className="shrink-0 flex justify-center items-center gap-4 py-1 text-sm">
                             <div className="flex items-center gap-1.5">
-                                <span className="text-[#b5bac1]">Moves</span>
+                                <span className="text-[#b5bac1]">{t("moves-label", { defaultValue: "Moves" })}</span>
                                 <span className="text-white font-mono font-semibold">{moves}</span>
                             </div>
                             {lobby.raceStartedAt && (
@@ -1502,13 +1511,13 @@ function RaceGameplay({
                                 disabled={moveHistory.length === 0}
                                 className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium bg-[#2b2d31] border border-[#3f4147] text-white hover:border-[#5865f2]/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                <Undo2 className="w-4 h-4" /> Undo
+                                <Undo2 className="w-4 h-4" /> {t("undo", { defaultValue: "Undo" })}
                             </button>
                         </div>
                     )}
 
                     {!isRacer && (
-                        <p className="shrink-0 text-[#949ba4] text-xs text-center py-2">Spectating — joined mid-race</p>
+                        <p className="shrink-0 text-[#949ba4] text-xs text-center py-2">{t("spectating", { defaultValue: "Spectating — joined mid-race" })}</p>
                     )}
                 </div>
             </div>
@@ -1523,6 +1532,7 @@ function RaceResults({
 }: {
     lobby: LobbyState; discordId: string; isHost: boolean; emit: EmitFn; onBack: () => void;
 }) {
+    const { t } = useTranslation("c-lights-out");
     const seed = lobby.seed!;
     const shape = getDailyShape(seed);
     const shapeLabel = getShapeLabel(shape);
@@ -1548,9 +1558,9 @@ function RaceResults({
                 <div className="max-w-sm mx-auto text-center">
                     <h2 className="text-lg font-bold text-white flex items-center justify-center gap-2">
                         <Trophy className="w-5 h-5 text-amber-400" />
-                        Race Results
+                        {t("race-results", { defaultValue: "Race Results" })}
                     </h2>
-                    <p className="text-[#b5bac1] text-xs">Round {lobby.roundNumber} · {shapeLabel} · {isTimed ? 'Timed' : 'Fewest Moves'}{optimal != null ? ` · Optimal: ${optimal}` : ''}</p>
+                    <p className="text-[#b5bac1] text-xs">{t("race-results-subtitle", { defaultValue: "Round {{round}} · {{shape}} · {{mode}}{{optimal}}", round: lobby.roundNumber, shape: shapeLabel, mode: isTimed ? t("timed", { defaultValue: "Timed" }) : t("fewest-moves", { defaultValue: "Fewest Moves" }), optimal: optimal != null ? ` · ${t("optimal-label", { defaultValue: "Optimal: {{n}}", n: optimal })}` : '' })}</p>
                 </div>
             </div>
 
@@ -1581,9 +1591,9 @@ function RaceResults({
                                 }`}>
                                     {isSolvedP ? (
                                         isTimed && p.finishedAt && lobby.raceStartedAt
-                                            ? `${((p.finishedAt - lobby.raceStartedAt) / 1000).toFixed(1)}s · ${p.moves} move${p.moves !== 1 ? 's' : ''}`
-                                            : `${p.moves} move${p.moves !== 1 ? 's' : ''}${p.finishedAt && lobby.raceStartedAt ? ` · ${((p.finishedAt - lobby.raceStartedAt) / 1000).toFixed(1)}s` : ''}`
-                                    ) : p.status === 'dnf' ? 'DNF' : 'Spectator'}
+                                            ? `${((p.finishedAt - lobby.raceStartedAt) / 1000).toFixed(1)}s · ${t("moves-count", { defaultValue: "{{count}} move", defaultValue_plural: "{{count}} moves", count: p.moves })}`
+                                            : `${t("moves-count", { defaultValue: "{{count}} move", defaultValue_plural: "{{count}} moves", count: p.moves })}${p.finishedAt && lobby.raceStartedAt ? ` · ${((p.finishedAt - lobby.raceStartedAt) / 1000).toFixed(1)}s` : ''}`
+                                    ) : p.status === 'dnf' ? 'DNF' : t("spectator", { defaultValue: "Spectator" })}
                                 </span>
                             </div>
                         );
@@ -1598,17 +1608,17 @@ function RaceResults({
                             onClick={() => emit('lights-out:return', {})}
                             className="w-full py-3 rounded-xl bg-purple-500 hover:bg-purple-400 text-white font-bold text-sm transition-colors"
                         >
-                            Return to Lobby
+                            {t("return-to-lobby", { defaultValue: "Return to Lobby" })}
                         </button>
                     ) : (
-                        <p className="text-center text-[#949ba4] text-sm">Waiting for host to start next round...</p>
+                        <p className="text-center text-[#949ba4] text-sm">{t("waiting-for-host", { defaultValue: "Waiting for host to start next round..." })}</p>
                     )}
                     <button
                         type="button"
                         onClick={onBack}
                         className="w-full py-3 rounded-xl bg-[#2b2d31] border border-[#3f4147] text-white font-bold text-sm transition-colors hover:border-[#5865f2]/50"
                     >
-                        Exit
+                        {t("exit", { defaultValue: "Exit" })}
                     </button>
                 </div>
             </div>

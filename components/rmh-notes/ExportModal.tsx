@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Note } from './types';
 import { toast } from 'sonner';
 import Modal from './Modal';
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export default function ExportModal({ note, editorHtml, onClose }: Props) {
+  const { t } = useTranslation("c-rmh-notes");
   const [copied, setCopied] = useState<string | null>(null);
 
   const toMarkdown = () => {
@@ -36,14 +38,14 @@ export default function ExportModal({ note, editorHtml, onClose }: Props) {
     a.download = filename;
     a.click();
     URL.revokeObjectURL(a.href);
-    toast.success(`Exported as ${filename}`);
+    toast.success(t("exported-as", { filename, defaultValue: "Exported as {{filename}}" }));
   };
 
   const copy = async (content: string, format: string) => {
     await navigator.clipboard.writeText(content);
     setCopied(format);
     setTimeout(() => setCopied(null), 2000);
-    toast.success('Copied to clipboard!');
+    toast.success(t("copied-to-clipboard", { defaultValue: "Copied to clipboard!" }));
   };
 
   const safeName = note.title.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'note';
@@ -51,32 +53,32 @@ export default function ExportModal({ note, editorHtml, onClose }: Props) {
   const formats = [
     {
       id: 'markdown',
-      label: '📝 Markdown',
+      label: t("format-markdown-label", { defaultValue: "📝 Markdown" }),
       ext: '.md',
-      description: 'GitHub-flavored Markdown',
+      description: t("format-markdown-desc", { defaultValue: "GitHub-flavored Markdown" }),
       get: toMarkdown,
       mime: 'text/markdown',
     },
     {
       id: 'html',
-      label: '🌐 HTML',
+      label: t("format-html-label", { defaultValue: "🌐 HTML" }),
       ext: '.html',
-      description: 'Standalone HTML file',
+      description: t("format-html-desc", { defaultValue: "Standalone HTML file" }),
       get: toHTML,
       mime: 'text/html',
     },
     {
       id: 'text',
-      label: '📄 Plain Text',
+      label: t("format-text-label", { defaultValue: "📄 Plain Text" }),
       ext: '.txt',
-      description: 'Plain text (no formatting)',
+      description: t("format-text-desc", { defaultValue: "Plain text (no formatting)" }),
       get: toText,
       mime: 'text/plain',
     },
   ];
 
   return (
-    <Modal title="⬇️ Export Note" onClose={onClose}>
+    <Modal title={t("export-note-title", { defaultValue: "⬇️ Export Note" })} onClose={onClose}>
       <div className="space-y-3">
         {formats.map((f) => (
           <div
@@ -93,21 +95,21 @@ export default function ExportModal({ note, editorHtml, onClose }: Props) {
               className="text-xs px-2.5 py-1.5 rounded-lg transition-colors"
               style={{ background: 'var(--notes-surface-3)', color: 'var(--notes-text-muted)', border: '1px solid var(--notes-border)' }}
             >
-              {copied === f.id ? '✓ Copied!' : 'Copy'}
+              {copied === f.id ? t("copied-indicator", { defaultValue: "✓ Copied!" }) : t("copy", { defaultValue: "Copy" })}
             </button>
             <button
               onClick={() => download(f.get(), `${safeName}${f.ext}`, f.mime)}
               className="text-xs px-2.5 py-1.5 rounded-lg font-semibold"
               style={{ background: 'var(--notes-accent)', color: 'var(--notes-accent-fg)' }}
             >
-              Download
+              {t("download", { defaultValue: "Download" })}
             </button>
           </div>
         ))}
 
         <div className="pt-2" style={{ borderTop: '1px solid var(--notes-border)' }}>
           <p className="text-xs" style={{ color: 'var(--notes-text-subtle)' }}>
-            💡 PDF export is available via your browser&apos;s Print function (⌘P → Save as PDF).
+            {t("pdf-export-hint", { defaultValue: "💡 PDF export is available via your browser's Print function (⌘P → Save as PDF)." })}
           </p>
         </div>
       </div>

@@ -5,6 +5,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { Link, useRouterState } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 
 /* Reticle-in-hex mark — the hex keeps lineage with the RMH holding mark;
    the crosshair + chevron make it PMC. */
@@ -126,6 +127,7 @@ const NAV: NavItem[] = [
 ];
 
 export function CommandBar() {
+  const { t } = useTranslation("c-rmh-pmc");
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
@@ -160,7 +162,7 @@ export function CommandBar() {
             <span className="brand-text">RMH&nbsp;PMC</span>
           </Link>
         </div>
-        <nav className="navlinks" aria-label="Primary">
+        <nav className="navlinks" aria-label={t("nav-primary-label", { defaultValue: "Primary" })}>
           {NAV.map((item) => (
             <Link key={item.to} to={item.to} aria-current={current(item.to)}>
               {item.label}
@@ -170,16 +172,16 @@ export function CommandBar() {
         <div className="nav-right">
           <ZuluClock />
           <Link className="nav-cta" to="/rmh-pmc/contact">
-            Request a briefing
+            {t("request-briefing", { defaultValue: "Request a briefing" })}
           </Link>
         </div>
-        <button className="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="m-menu" onClick={toggleMenu}>
+        <button className="nav-toggle" aria-label={t("open-menu", { defaultValue: "Open menu" })} aria-expanded="false" aria-controls="m-menu" onClick={toggleMenu}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
             <line x1="3" y1="7" x2="21" y2="7" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="17" x2="21" y2="17" />
           </svg>
         </button>
       </div>
-      <nav className="mobile-menu" id="m-menu" aria-label="Mobile">
+      <nav className="mobile-menu" id="m-menu" aria-label={t("nav-mobile-label", { defaultValue: "Mobile" })}>
         {NAV.map((item) => (
           <Link key={item.to} to={item.to} aria-current={current(item.to)} onClick={closeMenu}>
             {item.label}
@@ -246,6 +248,7 @@ export function TransmissionLog() {
 }
 
 export function SiteFooter() {
+  const { t } = useTranslation("c-rmh-pmc");
   return (
     <footer className="footer">
       <div className="container">
@@ -255,38 +258,38 @@ export function SiteFooter() {
               <BrandMark />
               <span className="brand-text">RMH&nbsp;PMC</span>
             </Link>
-            <p>The private military arm of RMH Studios. Protective, intelligence, logistics, and advisory operations for clients who cannot afford to be wrong.</p>
+            <p>{t("footer-tagline", { defaultValue: "The private military arm of RMH Studios. Protective, intelligence, logistics, and advisory operations for clients who cannot afford to be wrong." })}</p>
           </div>
           <div className="footer-col">
-            <h4>Capabilities</h4>
-            <Link to="/rmh-pmc/capabilities" hash="protective">Protective Services</Link>
-            <Link to="/rmh-pmc/capabilities" hash="guarding">Static Guarding</Link>
-            <Link to="/rmh-pmc/capabilities" hash="intelligence">Intelligence &amp; ISR</Link>
-            <Link to="/rmh-pmc/capabilities" hash="logistics">Logistics</Link>
-            <Link to="/rmh-pmc/capabilities" hash="sovereign">Sovereign Solutions</Link>
+            <h4>{t("footer-capabilities-heading", { defaultValue: "Capabilities" })}</h4>
+            <Link to="/rmh-pmc/capabilities" hash="protective">{t("footer-protective-services", { defaultValue: "Protective Services" })}</Link>
+            <Link to="/rmh-pmc/capabilities" hash="guarding">{t("footer-static-guarding", { defaultValue: "Static Guarding" })}</Link>
+            <Link to="/rmh-pmc/capabilities" hash="intelligence">{t("footer-intelligence-isr", { defaultValue: "Intelligence & ISR" })}</Link>
+            <Link to="/rmh-pmc/capabilities" hash="logistics">{t("footer-logistics", { defaultValue: "Logistics" })}</Link>
+            <Link to="/rmh-pmc/capabilities" hash="sovereign">{t("footer-sovereign-solutions", { defaultValue: "Sovereign Solutions" })}</Link>
           </div>
           <div className="footer-col">
-            <h4>Company</h4>
-            <Link to="/rmh-pmc/command">Command</Link>
-            <Link to="/rmh-pmc/intelligence">Intelligence</Link>
-            <Link to="/rmh-pmc/operators">Operators</Link>
-            <Link to="/rmh-pmc/contact">Contact</Link>
+            <h4>{t("footer-company-heading", { defaultValue: "Company" })}</h4>
+            <Link to="/rmh-pmc/command">{t("footer-command", { defaultValue: "Command" })}</Link>
+            <Link to="/rmh-pmc/intelligence">{t("footer-intelligence", { defaultValue: "Intelligence" })}</Link>
+            <Link to="/rmh-pmc/operators">{t("footer-operators", { defaultValue: "Operators" })}</Link>
+            <Link to="/rmh-pmc/contact">{t("footer-contact", { defaultValue: "Contact" })}</Link>
           </div>
           <div className="footer-col">
-            <h4>Engage</h4>
-            <Link to="/rmh-pmc/contact" search={{ type: 'Protective Services' }}>Protective inquiries</Link>
-            <Link to="/rmh-pmc/contact" search={{ type: 'Sovereign Solutions' }}>Sovereign desk</Link>
-            <Link to="/rmh-pmc/operators">Selection &amp; recruiting</Link>
+            <h4>{t("footer-engage-heading", { defaultValue: "Engage" })}</h4>
+            <Link to="/rmh-pmc/contact" search={{ type: 'Protective Services' }}>{t("footer-protective-inquiries", { defaultValue: "Protective inquiries" })}</Link>
+            <Link to="/rmh-pmc/contact" search={{ type: 'Sovereign Solutions' }}>{t("footer-sovereign-desk", { defaultValue: "Sovereign desk" })}</Link>
+            <Link to="/rmh-pmc/operators">{t("footer-selection-recruiting", { defaultValue: "Selection & recruiting" })}</Link>
           </div>
         </div>
 
         <div className="footer-bottom">
           <span className="copy">© 2026 RMH PMC LLC · An RMH Studios company</span>
           <div className="footer-legal">
-            <a href="#">Vetting</a>
-            <a href="#">Compliance</a>
-            <a href="#">Rules of Engagement</a>
-            <a href="#">Accessibility</a>
+            <a href="#">{t("footer-vetting", { defaultValue: "Vetting" })}</a>
+            <a href="#">{t("footer-compliance", { defaultValue: "Compliance" })}</a>
+            <a href="#">{t("footer-rules-of-engagement", { defaultValue: "Rules of Engagement" })}</a>
+            <a href="#">{t("footer-accessibility", { defaultValue: "Accessibility" })}</a>
           </div>
           <div className="footer-social">
             <a href="#" aria-label="LinkedIn">
@@ -302,7 +305,7 @@ export function SiteFooter() {
         </div>
 
         <p className="disclaimer">
-          This website is for informational purposes only and does not constitute an offer of services, a solicitation, or a representation of present operational capability. RMH PMC provides services only to vetted, lawful clients, subject to applicable export controls, sanctions regimes, the laws of armed conflict, and the jurisdictions in which it operates. Unit affiliations, theaters, partner relationships, and personnel histories described herein are illustrative. RMH PMC and the RMH reticle mark are trademarks of RMH PMC LLC, an RMH Studios company.
+          {t("footer-disclaimer", { defaultValue: "This website is for informational purposes only and does not constitute an offer of services, a solicitation, or a representation of present operational capability. RMH PMC provides services only to vetted, lawful clients, subject to applicable export controls, sanctions regimes, the laws of armed conflict, and the jurisdictions in which it operates. Unit affiliations, theaters, partner relationships, and personnel histories described herein are illustrative. RMH PMC and the RMH reticle mark are trademarks of RMH PMC LLC, an RMH Studios company." })}
         </p>
       </div>
     </footer>

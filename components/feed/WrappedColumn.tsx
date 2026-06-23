@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import {
   Loader2,
@@ -34,6 +35,7 @@ interface Wrapped {
 const fmt = (n: number) => n.toLocaleString();
 
 export function WrappedColumn() {
+  const { t } = useTranslation('feed');
   const [data, setData] = useState<Wrapped | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -53,16 +55,16 @@ export function WrappedColumn() {
     );
   }
   if (!data) {
-    return <p className="px-4 py-16 text-center text-sm text-site-text-muted">Could not load your Wrapped.</p>;
+    return <p className="px-4 py-16 text-center text-sm text-site-text-muted">{t('wrapped-load-error', { defaultValue: 'Could not load your Wrapped.' })}</p>;
   }
 
   const tiles = [
-    { label: 'Posts', value: fmt(data.posts), icon: PenSquare },
-    { label: 'Likes earned', value: fmt(data.likesReceived), icon: Heart },
-    { label: 'Comments', value: fmt(data.commentsReceived), icon: MessageCircle },
-    { label: 'New followers', value: fmt(data.newFollowers), icon: UserPlus },
-    { label: 'Achievements', value: fmt(data.achievementsUnlocked), icon: Trophy },
-    { label: 'Longest streak', value: `${fmt(data.longestStreak)}d`, icon: Flame },
+    { label: t('tile-posts', { defaultValue: 'Posts' }), value: fmt(data.posts), icon: PenSquare },
+    { label: t('tile-likes-earned', { defaultValue: 'Likes earned' }), value: fmt(data.likesReceived), icon: Heart },
+    { label: t('tile-comments', { defaultValue: 'Comments' }), value: fmt(data.commentsReceived), icon: MessageCircle },
+    { label: t('tile-new-followers', { defaultValue: 'New followers' }), value: fmt(data.newFollowers), icon: UserPlus },
+    { label: t('tile-achievements', { defaultValue: 'Achievements' }), value: fmt(data.achievementsUnlocked), icon: Trophy },
+    { label: t('tile-longest-streak', { defaultValue: 'Longest streak' }), value: `${fmt(data.longestStreak)}d`, icon: Flame },
   ];
 
   return (
@@ -70,17 +72,17 @@ export function WrappedColumn() {
       <header className="sticky top-0 z-10 border-b border-site-border bg-site-bg/80 px-4 py-3 backdrop-blur">
         <div className="flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-site-accent" />
-          <h1 className="text-lg font-bold text-site-text">{data.year} Wrapped</h1>
+          <h1 className="text-lg font-bold text-site-text">{t('wrapped-heading', { year: data.year, defaultValue: '{{year}} Wrapped' })}</h1>
         </div>
       </header>
 
       <div className="space-y-6 p-4">
         {/* Hero */}
         <section className="overflow-hidden rounded-2xl border border-site-border bg-gradient-to-br from-site-accent/20 via-site-surface to-site-surface p-6">
-          <p className="text-xs font-semibold uppercase tracking-widest text-site-accent">Your year on RMH</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-site-accent">{t('your-year-on-rmh', { defaultValue: 'Your year on RMH' })}</p>
           <p className="mt-2 text-2xl font-extrabold leading-snug text-site-text">{data.blurb}</p>
           <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-site-bg px-3 py-1.5 text-sm font-semibold text-site-text">
-            <Star className="h-4 w-4 text-site-accent" /> Level {data.level}
+            <Star className="h-4 w-4 text-site-accent" /> {t('level-value', { level: data.level, defaultValue: 'Level {{level}}' })}
           </div>
         </section>
 
@@ -96,13 +98,13 @@ export function WrappedColumn() {
           <div className="rounded-xl border border-site-border bg-site-surface p-4">
             <CoinIcon className="h-5 w-5" />
             <p className="mt-2 text-2xl font-extrabold text-site-text">{fmt(data.coinsEarned)}</p>
-            <p className="text-xs text-site-text-dim">Coins earned</p>
+            <p className="text-xs text-site-text-dim">{t('tile-coins-earned', { defaultValue: 'Coins earned' })}</p>
           </div>
           {data.busiestMonth && (
             <div className="rounded-xl border border-site-border bg-site-surface p-4">
               <CalendarDays className="h-5 w-5 text-site-accent" />
               <p className="mt-2 text-2xl font-extrabold text-site-text">{data.busiestMonth}</p>
-              <p className="text-xs text-site-text-dim">Busiest month</p>
+              <p className="text-xs text-site-text-dim">{t('tile-busiest-month', { defaultValue: 'Busiest month' })}</p>
             </div>
           )}
         </section>
@@ -111,17 +113,17 @@ export function WrappedColumn() {
         {data.topPost && (
           <section>
             <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
-              Your top post
+              {t('your-top-post', { defaultValue: 'Your top post' })}
             </h2>
             <Link
               to={`/u/me/post/${data.topPost.id}` as string}
               className="block rounded-xl border border-site-border bg-site-surface p-4 transition-colors hover:border-site-accent/60"
             >
               <p className="line-clamp-4 whitespace-pre-wrap break-words text-sm text-site-text">
-                {data.topPost.content || '(media post)'}
+                {data.topPost.content || t('media-post-fallback', { defaultValue: '(media post)' })}
               </p>
               <p className="mt-2 inline-flex items-center gap-1 text-xs text-site-text-dim">
-                <Heart className="h-3.5 w-3.5 text-site-accent" /> {fmt(data.topPost.likeCount)} likes
+                <Heart className="h-3.5 w-3.5 text-site-accent" /> {t('top-post-likes', { count: data.topPost.likeCount, formattedCount: fmt(data.topPost.likeCount), defaultValue: '{{formattedCount}} likes' })}
               </p>
             </Link>
           </section>

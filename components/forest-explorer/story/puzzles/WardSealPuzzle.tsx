@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { PuzzleComponentProps } from './PuzzleRegistry';
 
 const WARD_SYMBOLS = ['⟐', '⟡', '⟢', '⟣', '⟤', '⟥', '⟦', '⟧'];
 
 export function WardSealPuzzle({ config, onSolve, onAttempt }: PuzzleComponentProps) {
+    const { t } = useTranslation("c-forest-explorer");
     const ringCount = (config.ringCount as number) ?? 3;
     const symbolsPerRing = (config.symbolsPerRing as number) ?? 6;
     const correctPositions = (config.correctPositions as number[]) ?? [2, 5, 1];
@@ -48,7 +50,7 @@ export function WardSealPuzzle({ config, onSolve, onAttempt }: PuzzleComponentPr
     return (
         <div className="w-full max-w-md mx-auto space-y-6">
             <p className="text-center text-white/50 text-sm">
-                Rotate each ring to align the ward symbols
+                {t("ward-seal-instruction", { defaultValue: "Rotate each ring to align the ward symbols" })}
             </p>
 
             {/* Concentric rings visualization */}
@@ -106,7 +108,7 @@ export function WardSealPuzzle({ config, onSolve, onAttempt }: PuzzleComponentPr
             {/* Ring controls */}
             <div className="space-y-2">
                 {rings.map((_, ringIdx) => {
-                    const label = ringIdx === 0 ? 'Inner' : ringIdx === ringCount - 1 ? 'Outer' : 'Middle';
+                    const label = ringIdx === 0 ? t("ring-inner", { defaultValue: "Inner" }) : ringIdx === ringCount - 1 ? t("ring-outer", { defaultValue: "Outer" }) : t("ring-middle", { defaultValue: "Middle" });
                     return (
                         <div key={ringIdx} className="flex items-center justify-center gap-4">
                             <button
@@ -134,7 +136,7 @@ export function WardSealPuzzle({ config, onSolve, onAttempt }: PuzzleComponentPr
                     className="px-6 py-2.5 bg-amber-800/50 hover:bg-amber-700/50 border border-amber-600/30 text-amber-200 rounded-xl text-sm font-medium cursor-pointer"
                     onClick={handleCheck}
                 >
-                    Activate Seal
+                    {t("activate-seal", { defaultValue: "Activate Seal" })}
                 </button>
             </div>
         </div>

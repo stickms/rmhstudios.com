@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { Search, Calendar, Filter, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, X } from "lucide-react";
@@ -24,6 +25,7 @@ interface BlogListProps {
 }
 
 export function BlogList({ initialPosts, filtersOpen = false }: BlogListProps) {
+  const { t } = useTranslation("c-blog");
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as Record<string, string | undefined>;
 
@@ -155,7 +157,7 @@ export function BlogList({ initialPosts, filtersOpen = false }: BlogListProps) {
           </div>
           <input
             type="text"
-            placeholder="Search titles, descriptions, tags..."
+            placeholder={t("search-placeholder", { defaultValue: "Search titles, descriptions, tags..." })}
             className="w-full bg-site-surface border border-site-border rounded-xl py-2.5 pl-9 pr-9 text-sm text-site-text placeholder-site-text-dim focus:outline-none focus:border-site-accent focus:ring-1 focus:ring-site-accent transition-all"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
@@ -175,13 +177,13 @@ export function BlogList({ initialPosts, filtersOpen = false }: BlogListProps) {
           {/* Tags */}
           <div className="flex flex-wrap gap-2 items-center">
             <div className="flex items-center gap-1.5 text-xs text-site-accent mr-1 whitespace-nowrap">
-              <Filter className="w-3.5 h-3.5" /> Tags:
+              <Filter className="w-3.5 h-3.5" /> {t("tags-label", { defaultValue: "Tags:" })}
             </div>
             <button
               onClick={() => setSelectedTag(null)}
               className={`px-2.5 py-1 rounded-full text-xs font-bold transition-all ${!selectedTag ? "bg-site-accent text-site-accent-fg" : "bg-site-bg text-site-text-muted hover:bg-site-surface-hover"}`}
             >
-              All
+              {t("tag-all", { defaultValue: "All" })}
             </button>
             {(showAllTags ? allTags : allTags.slice(0, 5)).map(tag => (
               <button
@@ -205,7 +207,7 @@ export function BlogList({ initialPosts, filtersOpen = false }: BlogListProps) {
                 onClick={() => setShowAllTags(false)}
                 className="text-xs text-site-accent hover:text-site-text transition-colors ml-1 font-mono"
               >
-                less
+                {t("show-less", { defaultValue: "less" })}
               </button>
             )}
           </div>
@@ -217,22 +219,22 @@ export function BlogList({ initialPosts, filtersOpen = false }: BlogListProps) {
                 onClick={clearAllFilters}
                 className="text-xs text-site-danger hover:text-site-text transition-colors font-mono flex items-center gap-1"
               >
-                <X className="w-3 h-3" /> Clear
+                <X className="w-3 h-3" /> {t("clear", { defaultValue: "Clear" })}
               </button>
             )}
-            <span className="text-xs text-site-text-dim">Sort:</span>
+            <span className="text-xs text-site-text-dim">{t("sort-label", { defaultValue: "Sort:" })}</span>
             <select
               value={sortMode}
               onChange={(e) => setSortMode(e.target.value as "newest" | "oldest" | "az" | "za")}
               className="bg-site-bg border border-site-border rounded-lg py-1 px-2 text-xs text-site-text focus:outline-none focus:border-site-accent"
             >
-              <option value="newest">Newest</option>
-              <option value="oldest">Oldest</option>
-              <option value="az">A-Z</option>
-              <option value="za">Z-A</option>
+              <option value="newest">{t("sort-newest", { defaultValue: "Newest" })}</option>
+              <option value="oldest">{t("sort-oldest", { defaultValue: "Oldest" })}</option>
+              <option value="az">{t("sort-az", { defaultValue: "A-Z" })}</option>
+              <option value="za">{t("sort-za", { defaultValue: "Z-A" })}</option>
             </select>
             <span className="text-xs text-site-text-dim font-mono ml-auto">
-              {filteredPosts.length} {filteredPosts.length === 1 ? "entry" : "entries"}
+              {filteredPosts.length} {filteredPosts.length === 1 ? t("entry-singular", { defaultValue: "entry" }) : t("entry-plural", { defaultValue: "entries" })}
             </span>
           </div>
         </div>
@@ -242,8 +244,8 @@ export function BlogList({ initialPosts, filtersOpen = false }: BlogListProps) {
       {/* Active filter indicator when collapsed */}
       {!filtersOpen && hasActiveFilters && (
         <div className="mb-3 flex items-center gap-2 text-xs text-site-text-dim">
-          <span className="font-mono">{filteredPosts.length} results</span>
-          <button onClick={clearAllFilters} className="text-site-accent hover:underline">Clear filters</button>
+          <span className="font-mono">{filteredPosts.length} {t("results", { defaultValue: "results" })}</span>
+          <button onClick={clearAllFilters} className="text-site-accent hover:underline">{t("clear-filters", { defaultValue: "Clear filters" })}</button>
         </div>
       )}
 
@@ -299,7 +301,7 @@ export function BlogList({ initialPosts, filtersOpen = false }: BlogListProps) {
                     </p>
 
                     <div className="mt-auto flex items-center text-site-accent text-xs font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
-                        Read Entry &rarr;
+                        {t("read-entry", { defaultValue: "Read Entry" })} &rarr;
                     </div>
                   </div>
                </div>
@@ -309,15 +311,15 @@ export function BlogList({ initialPosts, filtersOpen = false }: BlogListProps) {
 
         {filteredPosts.length === 0 && (
             <div className="col-span-full text-center py-20 text-site-text-dim">
-                <p className="text-lg">No logs found matching your filters.</p>
+                <p className="text-lg">{t("no-results", { defaultValue: "No logs found matching your filters." })}</p>
                 {debouncedSearch && (
-                  <p className="mt-2 text-sm">Try different search terms or fewer filters.</p>
+                  <p className="mt-2 text-sm">{t("no-results-hint", { defaultValue: "Try different search terms or fewer filters." })}</p>
                 )}
                 <button
                     onClick={clearAllFilters}
                     className="mt-4 text-site-accent hover:underline"
                 >
-                    Clear All Filters
+                    {t("clear-all-filters", { defaultValue: "Clear All Filters" })}
                 </button>
             </div>
         )}
@@ -336,7 +338,7 @@ export function BlogList({ initialPosts, filtersOpen = false }: BlogListProps) {
               onClick={() => goToPage(1)}
               disabled={safePage === 1}
               className="p-2 rounded-lg text-site-text-dim hover:text-site-text hover:bg-site-surface disabled:opacity-20 disabled:cursor-not-allowed transition-all"
-              aria-label="First page"
+              aria-label={t("first-page", { defaultValue: "First page" })}
             >
               <ChevronsLeft className="w-4 h-4" />
             </button>
@@ -345,7 +347,7 @@ export function BlogList({ initialPosts, filtersOpen = false }: BlogListProps) {
               onClick={() => goToPage(safePage - 1)}
               disabled={safePage === 1}
               className="p-2 rounded-lg text-site-text-dim hover:text-site-text hover:bg-site-surface disabled:opacity-20 disabled:cursor-not-allowed transition-all"
-              aria-label="Previous page"
+              aria-label={t("prev-page", { defaultValue: "Previous page" })}
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -372,7 +374,7 @@ export function BlogList({ initialPosts, filtersOpen = false }: BlogListProps) {
               onClick={() => goToPage(safePage + 1)}
               disabled={safePage === totalPages}
               className="p-2 rounded-lg text-site-text-dim hover:text-site-text hover:bg-site-surface disabled:opacity-20 disabled:cursor-not-allowed transition-all"
-              aria-label="Next page"
+              aria-label={t("next-page", { defaultValue: "Next page" })}
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -381,14 +383,14 @@ export function BlogList({ initialPosts, filtersOpen = false }: BlogListProps) {
               onClick={() => goToPage(totalPages)}
               disabled={safePage === totalPages}
               className="p-2 rounded-lg text-site-text-dim hover:text-site-text hover:bg-site-surface disabled:opacity-20 disabled:cursor-not-allowed transition-all"
-              aria-label="Last page"
+              aria-label={t("last-page", { defaultValue: "Last page" })}
             >
               <ChevronsRight className="w-4 h-4" />
             </button>
           </div>
 
           <p className="text-xs text-site-text-dim font-mono">
-            Page {safePage} of {totalPages}
+            {t("page-of", { defaultValue: "Page {{page}} of {{total}}", page: safePage, total: totalPages })}
           </p>
         </motion.div>
       )}

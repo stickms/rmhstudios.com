@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/lib/versecraft/store';
 import { loadGame } from '@/lib/versecraft/persistence';
 
@@ -46,6 +47,7 @@ function FloatingWord({ word, index }: { word: string; index: number }) {
 }
 
 export function MainMenu() {
+  const { t } = useTranslation("c-versecraft");
   const startNewGame = useGameStore(s => s.startNewGame);
   const continueGame = useGameStore(s => s.continueGame);
   const setScreen = useGameStore(s => s.setScreen);
@@ -80,12 +82,12 @@ export function MainMenu() {
   }, [isLoggedIn]);
 
   const menuItems = [
-    { label: 'New Game', action: startNewGame, always: true },
-    { label: 'Continue', action: () => continueGame(), always: false },
-    { label: 'Load Save', action: () => setScreen('load'), always: false },
-    { label: 'Progress', action: () => setScreen('progress'), always: false },
-    { label: 'Poem Journal', action: () => setScreen('journal'), always: false },
-    { label: 'Settings', action: () => setScreen('settings'), always: true },
+    { label: t("new-game", { defaultValue: "New Game" }), action: startNewGame, always: true },
+    { label: t("continue", { defaultValue: "Continue" }), action: () => continueGame(), always: false },
+    { label: t("load-save", { defaultValue: "Load Save" }), action: () => setScreen('load'), always: false },
+    { label: t("progress", { defaultValue: "Progress" }), action: () => setScreen('progress'), always: false },
+    { label: t("poem-journal", { defaultValue: "Poem Journal" }), action: () => setScreen('journal'), always: false },
+    { label: t("settings", { defaultValue: "Settings" }), action: () => setScreen('settings'), always: true },
   ];
 
   return (
@@ -138,7 +140,7 @@ export function MainMenu() {
             color: '#a89888',
           }}
         >
-          Whispers of the Muse
+          {t("subtitle", { defaultValue: "Whispers of the Muse" })}
         </p>
       </motion.div>
 
@@ -189,7 +191,7 @@ export function MainMenu() {
           animate={{ opacity: 0.7 }}
           transition={{ delay: 1.5, duration: 1 }}
         >
-          Sign in to save progress to the cloud
+          {t("sign-in-hint", { defaultValue: "Sign in to save progress to the cloud" })}
         </motion.p>
       )}
 
@@ -201,7 +203,7 @@ export function MainMenu() {
         animate={{ opacity: 0.6 }}
         transition={{ delay: 1.5, duration: 1 }}
       >
-        "Every poem is a door. What will you find on the other side?"
+        {t("tagline", { defaultValue: "Every poem is a door. What will you find on the other side?" })}
       </motion.p>
 
       {/* Studio credit */}

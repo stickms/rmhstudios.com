@@ -10,6 +10,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { Menu, Search, Plus, Heart, Info } from 'lucide-react';
 import { useMobileSidebar } from '@/components/feed/MobileSidebarShell';
@@ -173,6 +174,7 @@ function usePointerCards(gridRef: React.RefObject<HTMLDivElement | null>) {
 }
 
 function Builds() {
+  const { t } = useTranslation('builds');
   const { curated } = Route.useLoaderData();
   const { open: openSidebar } = useMobileSidebar();
   const [tab, setTab] = useState<Tab>('curated');
@@ -274,13 +276,13 @@ function Builds() {
         {/* Wrapper carries md:hidden — `.vibe-toolbar__icon` sets its own
             display, which would otherwise override the utility on desktop. */}
         <span className="md:hidden">
-          <button type="button" onClick={openSidebar} aria-label="Open menu" className="vibe-toolbar__icon">
+          <button type="button" onClick={openSidebar} aria-label={t('open-menu', { defaultValue: 'Open menu' })} className="vibe-toolbar__icon">
             <Menu size={18} />
           </button>
         </span>
         <div className="flex items-center gap-2 min-w-0">
           <MobileBrandPrefix />
-          <h1 className="vibe-gallery__title">Builds</h1>
+          <h1 className="vibe-gallery__title">{t('page-title', { defaultValue: 'Builds' })}</h1>
         </div>
         <div className="vibe-search">
           <Search size={16} className="vibe-search__icon" aria-hidden="true" />
@@ -288,15 +290,15 @@ function Builds() {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={showingCurated ? 'Search builds...' : 'Search user builds...'}
-            aria-label="Search builds"
+            placeholder={showingCurated ? t('search-builds-placeholder', { defaultValue: 'Search builds...' }) : t('search-user-builds-placeholder', { defaultValue: 'Search user builds...' })}
+            aria-label={t('search-builds-label', { defaultValue: 'Search builds' })}
             className="vibe-search__input"
           />
         </div>
       </header>
 
       <div className="builds-toolbar">
-        <div className="builds-switch" role="tablist" aria-label="Build source">
+        <div className="builds-switch" role="tablist" aria-label={t('build-source-label', { defaultValue: 'Build source' })}>
           <button
             type="button"
             role="tab"
@@ -304,7 +306,7 @@ function Builds() {
             className={`builds-switch__btn ${showingCurated ? 'is-active' : ''}`}
             onClick={() => setTab('curated')}
           >
-            Curated
+            {t('tab-curated', { defaultValue: 'Curated' })}
           </button>
           <button
             type="button"
@@ -313,39 +315,39 @@ function Builds() {
             className={`builds-switch__btn ${!showingCurated ? 'is-active' : ''}`}
             onClick={() => setTab('user')}
           >
-            User builds
+            {t('tab-user-builds', { defaultValue: 'User builds' })}
           </button>
         </div>
 
         <div className="builds-toolbar__right">
           {showingCurated ? (
             <label className="builds-sort">
-              <span className="builds-sort__label">Sort</span>
+              <span className="builds-sort__label">{t('sort-label', { defaultValue: 'Sort' })}</span>
               <select
                 value={curatedSort}
                 onChange={(e) => setCuratedSort(e.target.value as CuratedSort)}
                 className="builds-sort__select"
               >
-                <option value="featured">Featured</option>
-                <option value="name">Name (A–Z)</option>
+                <option value="featured">{t('sort-featured', { defaultValue: 'Featured' })}</option>
+                <option value="name">{t('sort-name-az', { defaultValue: 'Name (A–Z)' })}</option>
               </select>
             </label>
           ) : (
             <>
               <Link to="/user-builds/submit" className="builds-submit">
                 <Plus size={15} />
-                <span>Submit</span>
+                <span>{t('submit', { defaultValue: 'Submit' })}</span>
               </Link>
               <label className="builds-sort">
-                <span className="builds-sort__label">Sort</span>
+                <span className="builds-sort__label">{t('sort-label', { defaultValue: 'Sort' })}</span>
                 <select
                   value={userSort}
                   onChange={(e) => setUserSort(e.target.value as UserSort)}
                   className="builds-sort__select"
                 >
-                  <option value="recent">Recent</option>
-                  <option value="popular">Most liked</option>
-                  <option value="views">Most viewed</option>
+                  <option value="recent">{t('sort-recent', { defaultValue: 'Recent' })}</option>
+                  <option value="popular">{t('sort-most-liked', { defaultValue: 'Most liked' })}</option>
+                  <option value="views">{t('sort-most-viewed', { defaultValue: 'Most viewed' })}</option>
                 </select>
               </label>
             </>
@@ -355,7 +357,7 @@ function Builds() {
 
       {isEmpty ? (
         <p className="vibe-hint lib__empty">
-          {showingCurated ? 'No builds match that search.' : query.trim() ? 'No user builds match that search.' : 'No user builds yet — be the first to submit one.'}
+          {showingCurated ? t('empty-curated', { defaultValue: 'No builds match that search.' }) : query.trim() ? t('empty-user-search', { defaultValue: 'No user builds match that search.' }) : t('empty-user-no-builds', { defaultValue: 'No user builds yet — be the first to submit one.' })}
         </p>
       ) : (
         <div ref={gridRef} className="builds-grid" role="list">
@@ -368,7 +370,7 @@ function Builds() {
       {!showingCurated && (
         <>
           <div ref={sentinelRef} aria-hidden="true" className="h-px w-full" />
-          {loading && <p className="vibe-hint vibe-gallery__loading">Loading…</p>}
+          {loading && <p className="vibe-hint vibe-gallery__loading">{t('loading', { defaultValue: 'Loading…' })}</p>}
         </>
       )}
     </AnimatedMain>
@@ -418,26 +420,27 @@ function CardFace({
  * button (top-right) opens the /builds/$slug detail page.
  */
 function CuratedCard({ build, index }: { build: CuratedBuild; index: number }) {
+  const { t } = useTranslation('builds');
   return (
     <div
       className="builds-card"
       role="listitem"
       style={{ '--card-hue': String(build.hue), animationDelay: shelfRiseDelay(index) } as React.CSSProperties}
     >
-      <a className="builds-card__primary" href={build.href} aria-label={`Open ${build.title}`}>
+      <a className="builds-card__primary" href={build.href} aria-label={t('open-build', { title: build.title, defaultValue: 'Open {{title}}' })}>
         <CardFace
           title={build.title}
           description={build.description}
           coverUrl={build.thumbnailUrl}
-          badge={build.status || (build.kind === 'game' ? 'Game' : 'App')}
+          badge={build.status || (build.kind === 'game' ? t('badge-game', { defaultValue: 'Game' }) : t('badge-app', { defaultValue: 'App' }))}
         />
       </a>
       <Link
         to="/builds/$slug"
         params={{ slug: build.slug }}
         className="builds-card__details"
-        aria-label={`Details for ${build.title}`}
-        title="Build details"
+        aria-label={t('details-for', { title: build.title, defaultValue: 'Details for {{title}}' })}
+        title={t('build-details', { defaultValue: 'Build details' })}
       >
         <Info size={15} />
       </Link>
@@ -447,6 +450,7 @@ function CuratedCard({ build, index }: { build: CuratedBuild; index: number }) {
 
 /** User build: opens its detail page. */
 function UserCard({ build, index }: { build: UserBuildItem; index: number }) {
+  const { t } = useTranslation('builds');
   return (
     <Link
       to="/builds/$slug"
@@ -454,7 +458,7 @@ function UserCard({ build, index }: { build: UserBuildItem; index: number }) {
       className="builds-card"
       role="listitem"
       style={{ '--card-hue': String(hueFor(build.id)), animationDelay: shelfRiseDelay(index) } as React.CSSProperties}
-      aria-label={`Open ${build.title}`}
+      aria-label={t('open-build', { title: build.title, defaultValue: 'Open {{title}}' })}
     >
       <CardFace
         title={build.title}

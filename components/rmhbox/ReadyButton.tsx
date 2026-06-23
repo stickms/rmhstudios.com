@@ -19,6 +19,7 @@
 
 import { useState, useEffect } from 'react';
 import { Play } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface ReadyButtonProps {
   isReady: boolean;
@@ -39,6 +40,7 @@ export default function ReadyButton({
   selectedGameName,
   hasGamePicked = false,
 }: ReadyButtonProps) {
+  const { t } = useTranslation("c-rmhbox");
   const [forceStartPrimed, setForceStartPrimed] = useState(false);
 
   // Reset force start prime when all players become ready or when game pick changes
@@ -86,7 +88,7 @@ export default function ReadyButton({
           )}
           <span className="relative z-10 flex items-center gap-2 text-lg">
             <Play className="h-5 w-5" />
-            Start Game
+            {t("start-game", { defaultValue: "Start Game" })}
           </span>
           {selectedGameName && (
             <span className="relative z-10 text-xs opacity-80 mt-0.5">{selectedGameName}</span>
@@ -94,14 +96,14 @@ export default function ReadyButton({
         </button>
         {!hasGamePicked && (
           <span className="text-center text-xs text-(--rmhbox-text-muted)">
-            Pick a game first
+            {t("pick-a-game-first", { defaultValue: "Pick a game first" })}
           </span>
         )}
         {hasGamePicked && !canStart && (
           <span className="text-center text-xs text-(--rmhbox-text-muted)">
             {forceStartPrimed
-              ? 'Not all players are ready. Press again to force start.'
-              : 'Waiting for all players to ready up…'}
+              ? t("force-start-prompt", { defaultValue: "Not all players are ready. Press again to force start." })
+              : t("waiting-for-players", { defaultValue: "Waiting for all players to ready up…" })}
           </span>
         )}
       </div>
@@ -127,11 +129,11 @@ export default function ReadyButton({
       {!isReady && !disabled && (
         <span className="pointer-events-none absolute inset-0 animate-ping rounded-xl bg-(--rmhbox-accent) opacity-30" />
       )}
-      <span className="relative z-10 text-lg">{isReady ? '✓ Ready!' : 'Ready Up'}</span>
+      <span className="relative z-10 text-lg">{isReady ? t("ready", { defaultValue: "✓ Ready!" }) : t("ready-up", { defaultValue: "Ready Up" })}</span>
       {selectedGameName ? (
-        <span className="relative z-10 text-xs opacity-80 mt-0.5">for {selectedGameName}</span>
+        <span className="relative z-10 text-xs opacity-80 mt-0.5">{t("for-game", { defaultValue: "for {{game}}", game: selectedGameName })}</span>
       ) : (
-        <span className="relative z-10 text-xs opacity-60 mt-0.5">Waiting for host to pick…</span>
+        <span className="relative z-10 text-xs opacity-60 mt-0.5">{t("waiting-for-host", { defaultValue: "Waiting for host to pick…" })}</span>
       )}
     </button>
   );

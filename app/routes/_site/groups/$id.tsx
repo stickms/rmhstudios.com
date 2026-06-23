@@ -5,6 +5,7 @@ import { GroupChatView } from '@/components/feed/GroupChatView';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export const Route = createFileRoute('/_site/groups/$id')({
   head: () => ({ meta: [{ title: 'Group Chat | RMH Studios' }] }),
@@ -12,6 +13,7 @@ export const Route = createFileRoute('/_site/groups/$id')({
 });
 
 function GroupChatPage() {
+  const { t } = useTranslation('groups');
   const { id } = Route.useParams();
   const { data: session, isPending } = useSession();
 
@@ -24,9 +26,9 @@ function GroupChatPage() {
           </div>
         ) : !session ? (
           <div className="flex flex-col items-center gap-3 px-6 py-24 text-center">
-            <p className="font-medium text-site-text">Sign in to view this group</p>
+            <p className="font-medium text-site-text">{t("sign-in-to-view-group", { defaultValue: "Sign in to view this group" })}</p>
             <Link to="/login" search={{ callbackURL: `/groups/${id}` }}>
-              <Button variant="accent">Sign in</Button>
+              <Button variant="accent">{t("sign-in", { defaultValue: "Sign in" })}</Button>
             </Link>
           </div>
         ) : (

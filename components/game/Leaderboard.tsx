@@ -1,6 +1,7 @@
 'use client';
 
 import { memo, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Bomb, Zap, Ghost, RefreshCw, Layers, Crosshair, Flame, RotateCcw } from 'lucide-react';
 import { Tooltip } from '@/components/ui/Tooltip';
 
@@ -27,6 +28,7 @@ interface LeaderboardProps {
 }
 
 export const Leaderboard = memo(function Leaderboard({ songId }: LeaderboardProps) {
+    const { t } = useTranslation("c-game");
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -53,13 +55,13 @@ export const Leaderboard = memo(function Leaderboard({ songId }: LeaderboardProp
         <div className="space-y-2 flex-1 overflow-auto flex flex-col min-h-0">
             <label className="text-xs text-slice-text-light uppercase tracking-widest font-bold flex items-center gap-2 shrink-0">
                 <span className={`w-2 h-2 rounded-full ${songId ? 'bg-blue-500' : 'bg-yellow-400'} animate-pulse`}/>
-                {songId ? 'Song Leaderboard' : 'Global Leaderboard'}
+                {songId ? t("song-leaderboard", { defaultValue: "Song Leaderboard" }) : t("global-leaderboard", { defaultValue: "Global Leaderboard" })}
             </label>
             <div className="bg-slice-bg rounded-xl shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] px-3 pb-3 pt-4 text-xs space-y-1 overflow-y-auto custom-scrollbar flex-1 min-h-[200px]">
                 {isLoading ? (
-                    <div className="text-slice-text-light text-center py-4">Loading...</div>
+                    <div className="text-slice-text-light text-center py-4">{t("loading", { defaultValue: "Loading..." })}</div>
                 ) : leaderboard.length === 0 ? (
-                    <div className="text-slice-text-light text-center py-4">No scores yet</div>
+                    <div className="text-slice-text-light text-center py-4">{t("no-scores-yet", { defaultValue: "No scores yet" })}</div>
                 ) : (
                     leaderboard.map((p, i) => (
                         <div key={i} className={`flex items-center gap-2 p-2 hover:bg-slice-shadow-dark/50 rounded cursor-default border-b border-slice-shadow-dark/30/50 last:border-0
@@ -74,44 +76,44 @@ export const Leaderboard = memo(function Leaderboard({ songId }: LeaderboardProp
                                     {p.modifiers && (
                                         <div className="flex items-center gap-1">
                                             {p.modifiers.bombs && (
-                                                <Tooltip content="Bombs">
+                                                <Tooltip content={t("mod-bombs", { defaultValue: "Bombs" })}>
                                                     <Bomb className="w-3 h-3 text-red-500" />
                                                 </Tooltip>
                                             )}
                                             {p.modifiers.switching && (
-                                                <Tooltip content="Switching">
+                                                <Tooltip content={t("mod-switching", { defaultValue: "Switching" })}>
                                                     <RefreshCw className="w-3 h-3 text-blue-400" />
                                                 </Tooltip>
                                             )}
                                             {p.modifiers.suddenDeath && (
-                                                <Tooltip content="Sudden Death">
+                                                <Tooltip content={t("mod-sudden-death", { defaultValue: "Sudden Death" })}>
                                                     <Flame className="w-3 h-3 text-orange-500" />
                                                 </Tooltip>
                                             )}
                                             {p.modifiers.invisible && (
-                                                <Tooltip content="Invisible Notes">
+                                                <Tooltip content={t("mod-invisible-notes", { defaultValue: "Invisible Notes" })}>
                                                     <Ghost className="w-3 h-3 text-purple-400" />
                                                 </Tooltip>
                                             )}
                                             {p.modifiers.spin && (
-                                                <Tooltip content="Spin Mod">
+                                                <Tooltip content={t("mod-spin", { defaultValue: "Spin Mod" })}>
                                                     <RotateCcw className="w-3 h-3 text-indigo-400" />
                                                 </Tooltip>
                                             )}
                                             {p.modifiers.strictTiming && (
-                                                <Tooltip content="Strict Timing">
+                                                <Tooltip content={t("mod-strict-timing", { defaultValue: "Strict Timing" })}>
                                                     <Crosshair className="w-3 h-3 text-emerald-500" />
                                                 </Tooltip>
                                             )}
                                             {p.modifiers.oneTrack && (
-                                                <Tooltip content="One Track">
+                                                <Tooltip content={t("mod-one-track", { defaultValue: "One Track" })}>
                                                     <Layers className="w-3 h-3 text-amber-500" />
                                                 </Tooltip>
                                             )}
                                         </div>
                                     )}
                                     {p.speedMod && p.speedMod !== 1.0 && (
-                                        <Tooltip content={`${p.speedMod.toFixed(1)}x Speed`}>
+                                        <Tooltip content={t("speed-mod-tooltip", { defaultValue: "{{speed}}x Speed", speed: p.speedMod.toFixed(1) })}>
                                             <span className="text-[10px] font-black text-purple-500 bg-purple-100 px-1.5 py-0.5 rounded-full">
                                                 {p.speedMod.toFixed(1)}x
                                             </span>
@@ -121,7 +123,7 @@ export const Leaderboard = memo(function Leaderboard({ songId }: LeaderboardProp
                                 </div>
                                 <div className="flex items-center gap-1.5">
                                     {p.accuracy !== undefined && (
-                                        <Tooltip content={`${(p.accuracy * 100).toFixed(2)}% Accuracy`}>
+                                        <Tooltip content={t("accuracy-tooltip", { defaultValue: "{{pct}}% Accuracy", pct: (p.accuracy * 100).toFixed(2) })}>
                                             <span className={`text-[10px] font-bold font-mono px-1.5 py-0.5 rounded-full ${
                                                 p.accuracy >= 1      ? 'bg-cyan-100 text-cyan-600'  :
                                                 p.accuracy >= 0.95   ? 'bg-green-100 text-green-600' :
@@ -133,7 +135,7 @@ export const Leaderboard = memo(function Leaderboard({ songId }: LeaderboardProp
                                         </Tooltip>
                                     )}
                                     {p.maxCombo !== undefined && p.maxCombo > 0 && (
-                                        <Tooltip content={`${p.maxCombo}x Max Combo`}>
+                                        <Tooltip content={t("max-combo-tooltip", { defaultValue: "{{combo}}x Max Combo", combo: p.maxCombo })}>
                                             <span className="text-[10px] font-bold text-slice-text-light font-mono italic">{p.maxCombo}x</span>
                                         </Tooltip>
                                     )}

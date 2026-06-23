@@ -8,6 +8,7 @@
 
 import { motion } from 'framer-motion';
 import { Trophy, Crown, Zap } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { ClientPlayerInfo } from '@/lib/rmhbox/types';
 import type { MatchupData } from './WitWarGame';
 
@@ -28,6 +29,7 @@ export default function WitWarResults({
   isGameOver,
   players,
 }: WitWarResultsProps) {
+  const { t } = useTranslation("c-rmhbox");
   const ranked = Object.entries(scores)
     .map(([userId, score]) => {
       const player = players.find((p) => p.userId === userId);
@@ -45,11 +47,11 @@ export default function WitWarResults({
             className="flex flex-col items-center gap-2"
           >
             <Crown className="h-10 w-10 text-yellow-400" />
-            <h2 className="text-2xl font-black text-(--rmhbox-text)">Final Results</h2>
+            <h2 className="text-2xl font-black text-(--rmhbox-text)">{t("final-results", { defaultValue: "Final Results" })}</h2>
           </motion.div>
         ) : (
           <h2 className="text-xl font-bold text-(--rmhbox-text)">
-            Round {round} of {totalRounds} — Standings
+            {t("round-standings", { round, totalRounds, defaultValue: "Round {{round}} of {{totalRounds}} — Standings" })}
           </h2>
         )}
       </div>
@@ -91,7 +93,7 @@ export default function WitWarResults({
       {matchups.length > 0 && (
         <div className="flex flex-col gap-3">
           <h3 className="text-sm font-semibold text-(--rmhbox-text-muted) uppercase tracking-wider">
-            Round Matchups
+            {t("round-matchups", { defaultValue: "Round Matchups" })}
           </h3>
           {matchups.map((m, idx) => (
             <motion.div
@@ -109,7 +111,7 @@ export default function WitWarResults({
                     ({m.playerAName ?? 'A'}) {m.votePercentA}%
                   </span>
                 </div>
-                <span className="text-(--rmhbox-text-muted) text-xs shrink-0">vs</span>
+                <span className="text-(--rmhbox-text-muted) text-xs shrink-0">{t("vs", { defaultValue: "vs" })}</span>
                 <div className={`flex-1 text-right ${m.winnerId === m.playerB ? 'font-bold text-green-400' : 'text-(--rmhbox-text)'}`}>
                   &ldquo;{m.answerB}&rdquo;
                   <span className="text-xs text-(--rmhbox-text-muted) ml-1">

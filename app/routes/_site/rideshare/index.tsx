@@ -6,6 +6,7 @@
  */
 import { useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import {
   ArrowRight,
@@ -42,14 +43,15 @@ export const Route = createFileRoute('/_site/rideshare/')({
 
 const CLASS_ICONS: Record<string, LucideIcon> = { Car, Users, Sparkles, Leaf, Crown, Bike, Helicopter };
 
-const RIDER_STEPS = [
-  { icon: MapPin, title: 'Map your trip', text: 'Set pickup and drop-off with OpenStreetMap search.' },
-  { icon: Car, title: 'Pick a ride', text: 'Choose RMH-X, XL, Comfort, Green or Black.' },
-  { icon: ShieldCheck, title: 'Get matched', text: 'A vetted RMH driver claims your request.' },
-  { icon: CircleDollarSign, title: 'Hop in', text: 'See an upfront fare, pay after the trip, and tip if you loved it.' },
+const RIDER_STEPS_KEYS = [
+  { icon: MapPin, titleKey: 'step-map-title', titleDefault: 'Map your trip', textKey: 'step-map-text', textDefault: 'Set pickup and drop-off with OpenStreetMap search.' },
+  { icon: Car, titleKey: 'step-pick-title', titleDefault: 'Pick a ride', textKey: 'step-pick-text', textDefault: 'Choose RMH-X, XL, Comfort, Green or Black.' },
+  { icon: ShieldCheck, titleKey: 'step-match-title', titleDefault: 'Get matched', textKey: 'step-match-text', textDefault: 'A vetted RMH driver claims your request.' },
+  { icon: CircleDollarSign, titleKey: 'step-hopin-title', titleDefault: 'Hop in', textKey: 'step-hopin-text', textDefault: 'See an upfront fare, pay after the trip, and tip if you loved it.' },
 ];
 
 export function RideshareLanding() {
+  const { t } = useTranslation('rideshare');
   return (
     <PageLayout title="RMH Rideshare" wide>
       <div className="mx-auto w-full max-w-4xl px-4 py-6 md:px-8 md:py-10">
@@ -65,30 +67,29 @@ export function RideshareLanding() {
           />
           <div className="relative">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-site-accent/40 bg-site-accent/10 px-3 py-1 text-xs font-medium text-site-accent">
-              <Sparkles className="h-3.5 w-3.5" /> Community rideshare
+              <Sparkles className="h-3.5 w-3.5" /> {t('community-rideshare', { defaultValue: 'Community rideshare' })}
             </span>
             <h1
               className="mt-4 text-4xl font-bold tracking-tight text-site-text md:text-5xl"
               style={{ fontFamily: 'var(--site-font-display)' }}
             >
-              Getting around, together.
+              {t('hero-heading', { defaultValue: 'Getting around, together.' })}
             </h1>
             <p className="mt-3 max-w-xl text-lg text-site-text-muted">
-              RMH Rideshare connects riders with community drivers. Map your trip with
-              OpenStreetMap, see your route and an upfront estimate, then request a ride.
+              {t('hero-body', { defaultValue: 'RMH Rideshare connects riders with community drivers. Map your trip with OpenStreetMap, see your route and an upfront estimate, then request a ride.' })}
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
                 to="/rideshare/ride"
                 className="inline-flex items-center gap-2 rounded-xl bg-site-accent px-6 py-3 text-sm font-semibold text-(--site-accent-fg) transition-all hover:scale-105 hover:bg-(--site-accent-hover)"
               >
-                <MapPin className="h-4 w-4" /> Request a ride
+                <MapPin className="h-4 w-4" /> {t('request-a-ride', { defaultValue: 'Request a ride' })}
               </Link>
               <Link
                 to="/rideshare/drive"
                 className="inline-flex items-center gap-2 rounded-xl border border-site-border bg-site-surface px-6 py-3 text-sm font-semibold text-site-text transition-all hover:scale-105 hover:border-site-border-bright"
               >
-                <Car className="h-4 w-4" /> Become a driver
+                <Car className="h-4 w-4" /> {t('become-a-driver', { defaultValue: 'Become a driver' })}
               </Link>
             </div>
           </div>
@@ -97,9 +98,9 @@ export function RideshareLanding() {
         {/* Ride classes */}
         <section className="mt-10 md:mt-12">
           <h2 className="text-2xl font-bold text-site-text" style={{ fontFamily: 'var(--site-font-display)' }}>
-            Choose your ride
+            {t('choose-your-ride', { defaultValue: 'Choose your ride' })}
           </h2>
-          <p className="mt-1 text-site-text-muted">A ride for every trip — from everyday to extra-special.</p>
+          <p className="mt-1 text-site-text-muted">{t('ride-classes-subtitle', { defaultValue: 'A ride for every trip — from everyday to extra-special.' })}</p>
           <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {RIDE_CLASSES.map((cls, i) => {
               const Icon = CLASS_ICONS[cls.icon] ?? Car;
@@ -117,14 +118,14 @@ export function RideshareLanding() {
                       <Icon className="h-5 w-5" />
                     </div>
                     <span className="flex items-center gap-1 text-xs text-site-text-muted">
-                      <Users className="h-3.5 w-3.5" /> up to {cls.seats}
+                      <Users className="h-3.5 w-3.5" /> {t('up-to-seats', { seats: cls.seats, defaultValue: 'up to {{seats}}' })}
                     </span>
                   </div>
                   <h3 className="mt-3 text-lg font-bold text-site-text">{cls.name}</h3>
                   <p className="text-xs font-medium text-site-accent">{cls.tagline}</p>
                   <p className="mt-2 flex-1 text-sm text-site-text-muted">{cls.description}</p>
                   <div className="mt-3 flex items-center gap-1.5 text-xs text-site-text-dim">
-                    <Clock className="h-3.5 w-3.5" /> {cls.etaMinutes[0]}–{cls.etaMinutes[1]} min away
+                    <Clock className="h-3.5 w-3.5" /> {t('eta-minutes-away', { min: cls.etaMinutes[0], max: cls.etaMinutes[1], defaultValue: '{{min}}–{{max}} min away' })}
                   </div>
                 </motion.article>
               );
@@ -138,17 +139,17 @@ export function RideshareLanding() {
         {/* How it works (riders) */}
         <section className="mt-10 md:mt-12">
           <h2 className="text-2xl font-bold text-site-text" style={{ fontFamily: 'var(--site-font-display)' }}>
-            How it works
+            {t('how-it-works', { defaultValue: 'How it works' })}
           </h2>
           <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {RIDER_STEPS.map((step, i) => (
-              <div key={step.title} className="rounded-2xl border border-site-border bg-site-surface/80 p-5">
+            {RIDER_STEPS_KEYS.map((step, i) => (
+              <div key={step.titleKey} className="rounded-2xl border border-site-border bg-site-surface/80 p-5">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-site-surface-hover text-site-accent">
                   <step.icon className="h-5 w-5" />
                 </div>
-                <div className="mt-3 text-xs font-semibold text-site-text-dim">Step {i + 1}</div>
-                <h3 className="font-semibold text-site-text">{step.title}</h3>
-                <p className="mt-1 text-sm text-site-text-muted">{step.text}</p>
+                <div className="mt-3 text-xs font-semibold text-site-text-dim">{t('step-number', { number: i + 1, defaultValue: 'Step {{number}}' })}</div>
+                <h3 className="font-semibold text-site-text">{t(step.titleKey, { defaultValue: step.titleDefault })}</h3>
+                <p className="mt-1 text-sm text-site-text-muted">{t(step.textKey, { defaultValue: step.textDefault })}</p>
               </div>
             ))}
           </div>
@@ -164,21 +165,20 @@ export function RideshareLanding() {
           <div className="max-w-lg">
             <div className="flex items-center gap-2 text-site-accent">
               <ShieldCheck className="h-5 w-5" />
-              <span className="text-xs font-semibold uppercase tracking-wide">Drive with RMH</span>
+              <span className="text-xs font-semibold uppercase tracking-wide">{t('drive-with-rmh', { defaultValue: 'Drive with RMH' })}</span>
             </div>
             <h2 className="mt-2 text-2xl font-bold text-site-text" style={{ fontFamily: 'var(--site-font-display)' }}>
-              Earn your wings as an RMH driver
+              {t('driver-cta-heading', { defaultValue: 'Earn your wings as an RMH driver' })}
             </h2>
             <p className="mt-2 text-site-text-muted">
-              Tell us about your vehicle and upload your license for a quick review. We delete
-              your license the moment it’s approved — your documents are never kept on file.
+              {t('driver-cta-body', { defaultValue: "Tell us about your vehicle and upload your license for a quick review. We delete your license the moment it’s approved — your documents are never kept on file." })}
             </p>
           </div>
           <Link
             to="/rideshare/drive"
             className="mt-5 inline-flex shrink-0 items-center gap-2 rounded-xl bg-site-accent px-6 py-3 text-sm font-semibold text-(--site-accent-fg) transition-all hover:scale-105 hover:bg-(--site-accent-hover) md:mt-0"
           >
-            Start your application <ArrowRight className="h-4 w-4" />
+            {t('start-your-application', { defaultValue: 'Start your application' })} <ArrowRight className="h-4 w-4" />
           </Link>
         </motion.section>
       </div>
@@ -191,6 +191,7 @@ export function RideshareLanding() {
  * across the ride classes before they request one.
  */
 function PriceEstimator() {
+  const { t } = useTranslation('rideshare');
   const [km, setKm] = useState(8);
   const [classId, setClassId] = useState<RideClassId>('RMH_X');
 
@@ -201,17 +202,17 @@ function PriceEstimator() {
   return (
     <section className="mt-10 md:mt-12">
       <h2 className="text-2xl font-bold text-site-text" style={{ fontFamily: 'var(--site-font-display)' }}>
-        Estimate your trip
+        {t('estimate-your-trip', { defaultValue: 'Estimate your trip' })}
       </h2>
       <p className="mt-1 text-site-text-muted">
-        Drag to estimate any trip across the ride classes.
+        {t('estimator-subtitle', { defaultValue: 'Drag to estimate any trip across the ride classes.' })}
       </p>
 
       <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2">
         <div className="rounded-2xl border border-site-border bg-site-surface/80 p-5">
           <div className="mb-2 flex items-center justify-between">
             <label htmlFor="estimator-distance" className="text-sm font-medium text-site-text">
-              Trip distance
+              {t('trip-distance', { defaultValue: 'Trip distance' })}
             </label>
             <span className="text-sm font-bold text-site-accent">{km} km</span>
           </div>

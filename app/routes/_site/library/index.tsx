@@ -12,6 +12,7 @@ import { useMemo, useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { Menu, Search, Upload } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useMobileSidebar } from '@/components/feed/MobileSidebarShell';
 import { MobileBrandPrefix } from '@/components/feed/MobileHeader';
 import { type LibraryBook } from '@/lib/library/library';
@@ -39,6 +40,7 @@ export const Route = createFileRoute('/_site/library/')({
 });
 
 function Library() {
+  const { t } = useTranslation("library");
   const { open: openSidebar } = useMobileSidebar();
   const { books } = Route.useLoaderData();
   const session = useSession();
@@ -63,13 +65,13 @@ function Library() {
         {/* Wrapper carries md:hidden — `.vibe-toolbar__icon` sets its own
             display, which would otherwise override the utility on desktop. */}
         <span className="md:hidden">
-          <button type="button" onClick={openSidebar} aria-label="Open menu" className="vibe-toolbar__icon">
+          <button type="button" onClick={openSidebar} aria-label={t("open-menu", { defaultValue: "Open menu" })} className="vibe-toolbar__icon">
             <Menu size={18} />
           </button>
         </span>
         <div className="flex items-center gap-2 min-w-0">
           <MobileBrandPrefix />
-          <h1 className="vibe-gallery__title">Library</h1>
+          <h1 className="vibe-gallery__title">{t("library-heading", { defaultValue: "Library" })}</h1>
         </div>
         <div className="vibe-search">
           <Search size={16} className="vibe-search__icon" aria-hidden="true" />
@@ -77,8 +79,8 @@ function Library() {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search the library..."
-            aria-label="Search the library"
+            placeholder={t("search-placeholder", { defaultValue: "Search the library..." })}
+            aria-label={t("search-label", { defaultValue: "Search the library" })}
             className="vibe-search__input"
           />
         </div>
@@ -87,16 +89,16 @@ function Library() {
             type="button"
             className="lib-upload__open"
             onClick={() => setUploadOpen(true)}
-            aria-label="Upload a PDF"
+            aria-label={t("upload-label", { defaultValue: "Upload a PDF" })}
           >
             <Upload size={15} aria-hidden="true" />
-            <span className="lib-upload__open-label">Upload</span>
+            <span className="lib-upload__open-label">{t("upload-button", { defaultValue: "Upload" })}</span>
           </button>
         )}
       </header>
 
       {filtered.length === 0 ? (
-        <p className="vibe-hint lib__empty">No books match that search.</p>
+        <p className="vibe-hint lib__empty">{t("no-results", { defaultValue: "No books match that search." })}</p>
       ) : (
         <div className="lib__shelf" role="list">
           {filtered.map((book, i) => (
@@ -113,6 +115,7 @@ function Library() {
 }
 
 function BookSpine({ book, index }: { book: LibraryBook; index: number }) {
+  const { t } = useTranslation("library");
   // Per-book accent, kept subtle so the shelf stays in the monochrome aesthetic.
   const style = {
     '--book-hue': String(book.hue),
@@ -126,7 +129,7 @@ function BookSpine({ book, index }: { book: LibraryBook; index: number }) {
       className="lib-book"
       role="listitem"
       style={style}
-      aria-label={`Open ${book.title}`}
+      aria-label={t("open-book", { title: book.title, defaultValue: "Open {{title}}" })}
     >
       <div className="lib-book__3d">
         <div className={`lib-book__cover ${book.coverUrl ? 'has-cover' : ''}`}>

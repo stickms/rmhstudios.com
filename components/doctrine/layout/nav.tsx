@@ -1,5 +1,6 @@
 import { Link, useRouterState } from '@tanstack/react-router';
 import { Shield, Puzzle, AlertTriangle, Moon, User, BarChart3, Trophy, Home } from 'lucide-react';
+import { useTranslation } from "react-i18next";
 import { useDoctrineStore } from '@/stores/doctrineStore';
 import { CURRENT_PHASE } from '@/lib/doctrine/constants';
 
@@ -13,7 +14,18 @@ const NAV_ITEMS = [
   { to: '/strategies/profile', icon: User, label: 'Profile' },
 ] as const;
 
+const NAV_LABEL_KEYS: Record<string, { key: string; defaultValue: string }> = {
+  Dashboard: { key: "nav-dashboard", defaultValue: "Dashboard" },
+  Puzzles: { key: "nav-puzzles", defaultValue: "Puzzles" },
+  Safehouse: { key: "nav-safehouse", defaultValue: "Safehouse" },
+  Incidents: { key: "nav-incidents", defaultValue: "Incidents" },
+  Sahur: { key: "nav-sahur", defaultValue: "Sahur" },
+  Leaderboard: { key: "nav-leaderboard", defaultValue: "Leaderboard" },
+  Profile: { key: "nav-profile", defaultValue: "Profile" },
+};
+
 export function DoctrineNav() {
+  const { t } = useTranslation("c-doctrine");
   const pathname = useRouterState({ select: s => s.location.pathname });
   const { sahurActive, activeIncidentCount } = useDoctrineStore();
 
@@ -48,12 +60,12 @@ export function DoctrineNav() {
               }`}
             >
               <Icon size={18} />
-              <span>{item.label}</span>
+              <span>{NAV_LABEL_KEYS[item.label] ? t(NAV_LABEL_KEYS[item.label].key, { defaultValue: NAV_LABEL_KEYS[item.label].defaultValue }) : item.label}</span>
 
               {/* Sahur indicator */}
               {item.label === 'Sahur' && sahurActive && (
                 <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 animate-pulse">
-                  LIVE
+                  {t("live-badge", { defaultValue: "LIVE" })}
                 </span>
               )}
 

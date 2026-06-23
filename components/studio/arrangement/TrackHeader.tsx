@@ -2,6 +2,7 @@ import {
   Volume2, VolumeX, Headphones, Mic,
   GripVertical,
 } from 'lucide-react';
+import { useTranslation } from "react-i18next";
 import { useStudioStore } from '@/lib/studio/store';
 import { TRACK_COLORS, DEFAULT_TRACK_HEIGHT } from '@/lib/studio/constants';
 import type { Track } from '@/lib/studio/types';
@@ -13,6 +14,7 @@ interface TrackHeaderProps {
 }
 
 export function TrackHeader({ track, isSelected, width }: TrackHeaderProps) {
+  const { t } = useTranslation("c-studio");
   const { selectTrack, toggleTrackMute, toggleTrackSolo, toggleTrackArm } = useStudioStore();
 
   return (
@@ -55,7 +57,7 @@ export function TrackHeader({ track, isSelected, width }: TrackHeaderProps) {
                 ? 'bg-red-500/20 text-red-400'
                 : 'text-[var(--site-muted)] hover:text-[var(--site-text)]'
             }`}
-            title="Mute"
+            title={t("mute", { defaultValue: "Mute" })}
           >
             {track.muted ? <VolumeX className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
           </button>
@@ -68,7 +70,7 @@ export function TrackHeader({ track, isSelected, width }: TrackHeaderProps) {
                 ? 'bg-yellow-500/20 text-yellow-400'
                 : 'text-[var(--site-muted)] hover:text-[var(--site-text)]'
             }`}
-            title="Solo"
+            title={t("solo", { defaultValue: "Solo" })}
           >
             <Headphones className="h-3 w-3" />
           </button>
@@ -82,7 +84,7 @@ export function TrackHeader({ track, isSelected, width }: TrackHeaderProps) {
                   ? 'bg-red-500/20 text-red-400'
                   : 'text-[var(--site-muted)] hover:text-[var(--site-text)]'
               }`}
-              title="Record Arm"
+              title={t("record-arm", { defaultValue: "Record Arm" })}
             >
               <Mic className="h-3 w-3" />
             </button>
@@ -100,6 +102,7 @@ interface AddTrackButtonProps {
 }
 
 export function AddTrackButton({ width }: AddTrackButtonProps) {
+  const { t } = useTranslation("c-studio");
   const { addTrack, tracks } = useStudioStore();
   const handleAddTrack = (type: 'audio' | 'midi') => {
     const id = crypto.randomUUID();
@@ -130,13 +133,13 @@ export function AddTrackButton({ width }: AddTrackButtonProps) {
         onClick={() => handleAddTrack('midi')}
         className="flex-1 rounded bg-cyan-500/10 px-2 py-1 text-[10px] text-cyan-400 hover:bg-cyan-500/20"
       >
-        + MIDI
+        {t("add-midi", { defaultValue: "+ MIDI" })}
       </button>
       <button
         onClick={() => handleAddTrack('audio')}
         className="flex-1 rounded bg-purple-500/10 px-2 py-1 text-[10px] text-purple-400 hover:bg-purple-500/20"
       >
-        + Audio
+        {t("add-audio", { defaultValue: "+ Audio" })}
       </button>
     </div>
   );

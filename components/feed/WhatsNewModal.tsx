@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import {
   Sparkles,
@@ -25,23 +26,16 @@ const STORAGE_KEY = 'rmh-whatsnew-seen-v2';
 // brand-new user never sees both at once.
 const WELCOME_KEY = 'rmh-welcome-seen-v1';
 
-interface Feature {
-  icon: typeof Sparkles;
-  title: string;
-  body: string;
-  to?: string;
-}
-
-const FEATURES: Feature[] = [
-  { icon: Zap, title: 'Progression & rewards', body: 'Earn XP, level up, complete daily/weekly quests, climb the battle pass, spin the daily wheel, and stake coins.', to: '/progress' },
-  { icon: Shield, title: 'Clans', body: 'Form a team — your XP fuels the clan leaderboard.', to: '/clans' },
-  { icon: Swords, title: 'Ranked play', body: 'ELO ratings and challenge ladders across our games.', to: '/ranked' },
-  { icon: Bot, title: 'AI personas', body: 'Create and chat with custom AI characters.', to: '/personas' },
-  { icon: Users, title: 'Group chats', body: 'Message multiple friends in real time.', to: '/groups' },
-  { icon: BookOpen, title: 'Flashcards + AI tutor', body: 'Study with spaced repetition and AI-generated cards.', to: '/study' },
-  { icon: Clapperboard, title: 'Clips', body: 'Save and share timestamped video moments.', to: '/clips' },
-  { icon: Music, title: 'Guess the Song', body: 'Create and solve music puzzles for coins.', to: '/music-trivia' },
-  { icon: Store, title: 'Creator economy', body: 'Storefronts, the build marketplace, gift memberships, and more.', to: '/shop' },
+const FEATURES_DEF = [
+  { icon: Zap, titleKey: 'feature-progression-title', titleDefault: 'Progression & rewards', bodyKey: 'feature-progression-body', bodyDefault: 'Earn XP, level up, complete daily/weekly quests, climb the battle pass, spin the daily wheel, and stake coins.', to: '/progress' },
+  { icon: Shield, titleKey: 'feature-clans-title', titleDefault: 'Clans', bodyKey: 'feature-clans-body', bodyDefault: 'Form a team — your XP fuels the clan leaderboard.', to: '/clans' },
+  { icon: Swords, titleKey: 'feature-ranked-title', titleDefault: 'Ranked play', bodyKey: 'feature-ranked-body', bodyDefault: 'ELO ratings and challenge ladders across our games.', to: '/ranked' },
+  { icon: Bot, titleKey: 'feature-personas-title', titleDefault: 'AI personas', bodyKey: 'feature-personas-body', bodyDefault: 'Create and chat with custom AI characters.', to: '/personas' },
+  { icon: Users, titleKey: 'feature-groups-title', titleDefault: 'Group chats', bodyKey: 'feature-groups-body', bodyDefault: 'Message multiple friends in real time.', to: '/groups' },
+  { icon: BookOpen, titleKey: 'feature-study-title', titleDefault: 'Flashcards + AI tutor', bodyKey: 'feature-study-body', bodyDefault: 'Study with spaced repetition and AI-generated cards.', to: '/study' },
+  { icon: Clapperboard, titleKey: 'feature-clips-title', titleDefault: 'Clips', bodyKey: 'feature-clips-body', bodyDefault: 'Save and share timestamped video moments.', to: '/clips' },
+  { icon: Music, titleKey: 'feature-music-title', titleDefault: 'Guess the Song', bodyKey: 'feature-music-body', bodyDefault: 'Create and solve music puzzles for coins.', to: '/music-trivia' },
+  { icon: Store, titleKey: 'feature-creator-title', titleDefault: 'Creator economy', bodyKey: 'feature-creator-body', bodyDefault: 'Storefronts, the build marketplace, gift memberships, and more.', to: '/shop' },
 ];
 
 /**
@@ -51,6 +45,7 @@ const FEATURES: Feature[] = [
  * STORAGE_KEY for the next major update.
  */
 export function WhatsNewModal() {
+  const { t } = useTranslation('feed');
   const { data: session, isPending } = useSession();
   const [open, setOpen] = useState(false);
 
@@ -87,7 +82,7 @@ export function WhatsNewModal() {
       <div className="relative flex max-h-[85vh] w-full max-w-lg flex-col rounded-2xl border border-site-border bg-site-surface shadow-2xl">
         <button
           onClick={dismiss}
-          aria-label="Close"
+          aria-label={t("close", { defaultValue: "Close" })}
           className="absolute right-3 top-3 rounded-md p-1 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text"
         >
           <X className="h-4 w-4" />
@@ -100,15 +95,15 @@ export function WhatsNewModal() {
             </div>
           </div>
           <h2 id="whatsnew-title" className="text-xl font-bold text-site-text">
-            A big update just landed
+            {t("whatsnew-title", { defaultValue: "A big update just landed" })}
           </h2>
           <p className="mx-auto mt-2 max-w-sm text-sm text-site-text-muted">
-            We shipped a wave of new features. Here’s a quick tour — tap any to jump in.
+            {t("whatsnew-subtitle", { defaultValue: "We shipped a wave of new features. Here’s a quick tour — tap any to jump in." })}
           </p>
         </div>
 
         <div className="mt-4 flex-1 space-y-2 overflow-y-auto px-6 pb-2">
-          {FEATURES.map((f) => {
+          {FEATURES_DEF.map((f) => {
             const Icon = f.icon;
             const inner = (
               <div className="flex items-start gap-3 rounded-xl border border-site-border bg-site-bg p-3 transition-colors hover:border-site-accent/60">
@@ -116,24 +111,24 @@ export function WhatsNewModal() {
                   <Icon className="h-4 w-4" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-site-text">{f.title}</p>
-                  <p className="text-xs text-site-text-muted">{f.body}</p>
+                  <p className="text-sm font-semibold text-site-text">{t(f.titleKey, { defaultValue: f.titleDefault })}</p>
+                  <p className="text-xs text-site-text-muted">{t(f.bodyKey, { defaultValue: f.bodyDefault })}</p>
                 </div>
               </div>
             );
             return f.to ? (
-              <Link key={f.title} to={f.to as string} onClick={dismiss} className="block">
+              <Link key={f.titleKey} to={f.to as string} onClick={dismiss} className="block">
                 {inner}
               </Link>
             ) : (
-              <div key={f.title}>{inner}</div>
+              <div key={f.titleKey}>{inner}</div>
             );
           })}
         </div>
 
         <div className="flex justify-end gap-2 border-t border-site-border px-6 py-4">
           <Button variant="accent" size="sm" onClick={dismiss}>
-            Got it
+            {t("got-it", { defaultValue: "Got it" })}
           </Button>
         </div>
       </div>

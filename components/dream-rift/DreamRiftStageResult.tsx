@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from "react-i18next";
 import { useDreamRiftStore } from '@/lib/dream-rift/store';
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '@/lib/dream-rift/constants';
 import { TouhouFrame, TouhouMenuButton, TouhouDivider } from './TouhouFrame';
@@ -20,7 +21,8 @@ export function DreamRiftStageResult({ onQuit }: { onQuit: () => void }) {
   const nextStage = useDreamRiftStore((s) => s.nextStage);
   const setScreen = useDreamRiftStore((s) => s.setScreen);
 
-  const stageName = STAGE_NAMES[stage] ?? `Stage ${stage}`;
+  const { t } = useTranslation("c-dream-rift");
+  const stageName = STAGE_NAMES[stage] ?? t("stage-number", { defaultValue: "Stage {{stage}}", stage });
   const isFinalStage = stage >= 6;
 
   const handleNext = () => {
@@ -45,7 +47,7 @@ export function DreamRiftStageResult({ onQuit }: { onQuit: () => void }) {
           {/* Stage header */}
           <div className="text-center mb-3">
             <div className="text-[9px] tracking-[0.3em] text-amber-400/40 uppercase">
-              Stage {stage}
+              {t("stage-number", { defaultValue: "Stage {{stage}}", stage })}
             </div>
             <h2
               className="text-lg tracking-[0.15em] text-amber-200/90 mt-0.5"
@@ -61,19 +63,19 @@ export function DreamRiftStageResult({ onQuit }: { onQuit: () => void }) {
                 textShadow: '0 0 12px rgba(102,204,136,0.3)',
               }}
             >
-              CLEAR
+              {t("clear", { defaultValue: "CLEAR" })}
             </p>
             <TouhouDivider />
           </div>
 
           {/* Score breakdown */}
           <div className="border border-amber-400/15 bg-white/[0.02] p-3 space-y-2">
-            <ScoreRow label="Stage Score" value={player.score.toLocaleString()} highlight />
-            <ScoreRow label="Total Score" value={totalScore.toLocaleString()} highlight />
+            <ScoreRow label={t("stage-score", { defaultValue: "Stage Score" })} value={player.score.toLocaleString()} highlight />
+            <ScoreRow label={t("total-score", { defaultValue: "Total Score" })} value={totalScore.toLocaleString()} highlight />
             <div className="h-px bg-amber-400/10" />
-            <ScoreRow label="Graze" value={player.graze.toLocaleString()} />
-            <ScoreRow label="Lives" value={`${Math.max(0, player.lives)}`} />
-            <ScoreRow label="Spell Cards" value={`${Math.max(0, player.bombs)}`} />
+            <ScoreRow label={t("graze", { defaultValue: "Graze" })} value={player.graze.toLocaleString()} />
+            <ScoreRow label={t("lives", { defaultValue: "Lives" })} value={`${Math.max(0, player.lives)}`} />
+            <ScoreRow label={t("spell-cards", { defaultValue: "Spell Cards" })} value={`${Math.max(0, player.bombs)}`} />
           </div>
 
           <TouhouDivider />
@@ -81,10 +83,10 @@ export function DreamRiftStageResult({ onQuit }: { onQuit: () => void }) {
           {/* Buttons */}
           <div className="mt-1">
             <TouhouMenuButton variant="accent" onClick={handleNext}>
-              {isFinalStage ? 'Leaderboard' : 'Next Stage ▸'}
+              {isFinalStage ? t("leaderboard", { defaultValue: "Leaderboard" }) : t("next-stage", { defaultValue: "Next Stage ▸" })}
             </TouhouMenuButton>
             <TouhouMenuButton onClick={onQuit}>
-              Quit to Title
+              {t("quit-to-title", { defaultValue: "Quit to Title" })}
             </TouhouMenuButton>
           </div>
         </div>

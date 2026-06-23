@@ -1,5 +1,6 @@
 'use client';
 import React from 'react';
+import { useTranslation } from "react-i18next";
 import type { SSLeaderboardEntry } from '../../lib/synapse-storm/multiplayerClient';
 
 interface MultiplayerLeaderboardProps {
@@ -11,12 +12,13 @@ interface MultiplayerLeaderboardProps {
 export const MultiplayerLeaderboard: React.FC<MultiplayerLeaderboardProps> = ({
     leaderboard, currentUserId, compact = false,
 }) => {
+    const { t } = useTranslation("c-synapse-storm");
     const sorted = [...leaderboard].sort((a, b) => b.score - a.score);
 
     if (compact) {
         return (
             <div className="ss-lb-compact">
-                <div className="ss-lb-header">LEADERBOARD</div>
+                <div className="ss-lb-header">{t("leaderboard", { defaultValue: "LEADERBOARD" })}</div>
                 {sorted.map((entry, i) => (
                     <div
                         key={entry.userId}
@@ -33,7 +35,7 @@ export const MultiplayerLeaderboard: React.FC<MultiplayerLeaderboardProps> = ({
 
     return (
         <div className="ss-lb-full">
-            <h3 className="ss-lb-full-title">FINAL RANKINGS</h3>
+            <h3 className="ss-lb-full-title">{t("final-rankings", { defaultValue: "FINAL RANKINGS" })}</h3>
             <div className="ss-lb-full-list">
                 {sorted.map((entry, i) => (
                     <div
@@ -46,9 +48,9 @@ export const MultiplayerLeaderboard: React.FC<MultiplayerLeaderboardProps> = ({
                         <div className="ss-lb-full-info">
                             <span className="ss-lb-full-name">{entry.displayName}</span>
                             <div className="ss-lb-full-stats">
-                                <span>Solved: {entry.puzzlesSolved}</span>
-                                <span>Combo: x{entry.maxCombo}</span>
-                                <span>Missed: {entry.puzzlesMissed}</span>
+                                <span>{t("solved", { defaultValue: "Solved:" })} {entry.puzzlesSolved}</span>
+                                <span>{t("combo", { defaultValue: "Combo:" })} x{entry.maxCombo}</span>
+                                <span>{t("missed", { defaultValue: "Missed:" })} {entry.puzzlesMissed}</span>
                             </div>
                         </div>
                         <div className="ss-lb-full-score">{entry.score.toLocaleString()}</div>

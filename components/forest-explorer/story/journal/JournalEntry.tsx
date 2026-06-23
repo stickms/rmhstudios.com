@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from "react-i18next";
 import type { JournalEntryData } from '@/lib/forest-explorer/types';
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -11,6 +12,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 export function JournalEntryCard({ entry }: { entry: JournalEntryData }) {
+    const { t } = useTranslation("c-forest-explorer");
     const colorClass = CATEGORY_COLORS[entry.category] ?? CATEGORY_COLORS.personal;
 
     return (
@@ -27,7 +29,7 @@ export function JournalEntryCard({ entry }: { entry: JournalEntryData }) {
                     {Array.from({ length: entry.hintLevel }, (_, i) => (
                         <span key={i} className="text-amber-400 text-xs">*</span>
                     ))}
-                    <span className="text-amber-400/50 text-[10px]">hint</span>
+                    <span className="text-amber-400/50 text-[10px]">{t("hint", { defaultValue: "hint" })}</span>
                 </div>
             )}
         </div>

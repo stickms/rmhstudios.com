@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Loader2, Flame, Trophy, CalendarCheck, Check } from 'lucide-react';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
+import { useTranslation } from 'react-i18next';
 
 interface StreakState {
   current: number;
@@ -20,6 +21,7 @@ const MILESTONES = [
 ];
 
 export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = {}) {
+  const { t } = useTranslation('feed');
   const [streak, setStreak] = useState<StreakState | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -46,7 +48,7 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
     );
   }
   if (!streak) {
-    return <p className="px-4 py-16 text-center text-sm text-site-text-muted">Could not load your streak.</p>;
+    return <p className="px-4 py-16 text-center text-sm text-site-text-muted">{t('streak-load-error', { defaultValue: 'Could not load your streak.' })}</p>;
   }
 
   const next = MILESTONES.find((m) => m.day > streak.current);
@@ -58,7 +60,7 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
         <header className="sticky top-0 z-10 border-b border-site-border bg-site-bg/80 px-4 py-3 backdrop-blur">
           <div className="flex items-center gap-2">
             <Flame className="h-5 w-5 text-orange-400" />
-            <h1 className="text-lg font-bold text-site-text">Streak</h1>
+            <h1 className="text-lg font-bold text-site-text">{t('streak-title', { defaultValue: 'Streak' })}</h1>
           </div>
         </header>
       )}
@@ -71,15 +73,15 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
           </div>
           <div>
             <p className="text-4xl font-extrabold text-site-text">{streak.current}</p>
-            <p className="text-sm text-site-text-muted">day{streak.current === 1 ? '' : 's'} in a row</p>
+            <p className="text-sm text-site-text-muted">{streak.current === 1 ? t('streak-day-in-a-row', { defaultValue: 'day in a row' }) : t('streak-days-in-a-row', { defaultValue: 'days in a row' })}</p>
           </div>
           {streak.checkedInToday ? (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1.5 text-sm font-semibold text-emerald-400">
-              <Check className="h-4 w-4" /> Checked in today
+              <Check className="h-4 w-4" /> {t('checked-in-today', { defaultValue: 'Checked in today' })}
             </span>
           ) : (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-500/15 px-3 py-1.5 text-sm font-semibold text-orange-400">
-              <Flame className="h-4 w-4" /> Visit today to keep it alive
+              <Flame className="h-4 w-4" /> {t('visit-today-to-keep-alive', { defaultValue: 'Visit today to keep it alive' })}
             </span>
           )}
         </section>
@@ -88,17 +90,17 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
         <section className="grid grid-cols-2 gap-3">
           <div className="rounded-xl border border-site-border bg-site-surface p-4">
             <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
-              <Trophy className="h-3.5 w-3.5" /> Longest
+              <Trophy className="h-3.5 w-3.5" /> {t('longest-label', { defaultValue: 'Longest' })}
             </div>
             <p className="mt-1 text-2xl font-bold text-site-text">{streak.longest}</p>
-            <p className="text-xs text-site-text-muted">day{streak.longest === 1 ? '' : 's'}</p>
+            <p className="text-xs text-site-text-muted">{streak.longest === 1 ? t('day-unit', { defaultValue: 'day' }) : t('days-unit', { defaultValue: 'days' })}</p>
           </div>
           <div className="rounded-xl border border-site-border bg-site-surface p-4">
             <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
-              <CalendarCheck className="h-3.5 w-3.5" /> Total check-ins
+              <CalendarCheck className="h-3.5 w-3.5" /> {t('total-check-ins-label', { defaultValue: 'Total check-ins' })}
             </div>
             <p className="mt-1 text-2xl font-bold text-site-text">{streak.totalCheckIns}</p>
-            <p className="text-xs text-site-text-muted">all time</p>
+            <p className="text-xs text-site-text-muted">{t('all-time', { defaultValue: 'all time' })}</p>
           </div>
         </section>
 
@@ -106,7 +108,7 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
         {next && (
           <section className="rounded-xl border border-site-border bg-site-surface p-4">
             <div className="mb-2 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-site-text">Next milestone</h2>
+              <h2 className="text-sm font-semibold text-site-text">{t('next-milestone', { defaultValue: 'Next milestone' })}</h2>
               <span className="text-xs text-site-text-muted">
                 {streak.current} / {next.day} days
               </span>
@@ -115,14 +117,16 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
               <div className="h-full rounded-full bg-orange-400 transition-all" style={{ width: `${nextPct}%` }} />
             </div>
             <p className="mt-1.5 text-xs text-site-text-dim">
-              {next.day - streak.current} more day{next.day - streak.current === 1 ? '' : 's'} to reach the {next.label}.
+              {next.day - streak.current === 1
+                ? t('more-day-to-milestone', { label: next.label, defaultValue: '{{count}} more day to reach the {{label}}.', count: next.day - streak.current })
+                : t('more-days-to-milestone', { label: next.label, defaultValue: '{{count}} more days to reach the {{label}}.', count: next.day - streak.current })}
             </p>
           </section>
         )}
 
         {/* Milestones list */}
         <section>
-          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">Milestones</h2>
+          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('milestones-heading', { defaultValue: 'Milestones' })}</h2>
           <div className="space-y-2">
             {MILESTONES.map((m) => {
               const reached = streak.current >= m.day || streak.longest >= m.day;
@@ -142,7 +146,7 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-site-text">{m.label}</p>
-                    <p className="text-xs text-site-text-muted">Reach a {m.day}-day check-in streak.</p>
+                    <p className="text-xs text-site-text-muted">{t('reach-day-streak', { day: m.day, defaultValue: 'Reach a {{day}}-day check-in streak.' })}</p>
                   </div>
                   {reached && <Check className="h-4 w-4 shrink-0 text-emerald-400" />}
                 </div>
@@ -152,7 +156,7 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
         </section>
 
         <p className="flex items-center justify-center gap-1.5 text-center text-xs text-site-text-dim">
-          <CoinIcon className="h-3.5 w-3.5" /> Check in daily to earn coins — rewards grow as your streak does.
+          <CoinIcon className="h-3.5 w-3.5" /> {t('check-in-daily-earn-coins', { defaultValue: 'Check in daily to earn coins — rewards grow as your streak does.' })}
         </p>
       </div>
     </div>

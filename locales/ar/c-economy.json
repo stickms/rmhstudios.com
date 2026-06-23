@@ -1,0 +1,23 @@
+{
+  "cancel": "إلغاء",
+  "custom-amount": "مبلغ مخصص",
+  "duration": "المدة",
+  "gift-a-membership": "أهدِ عضوية",
+  "gift-desc": "امنح هذا المستخدم عضوية مع عملات.",
+  "gift-desc-named": "امنح {{name}} عضوية مع عملات.",
+  "gift-error": "تعذر إهداء العضوية",
+  "gift-for": "هدية لـ",
+  "gift-sign-in": "يرجى تسجيل الدخول لإهداء عضوية.",
+  "gift-success": "تم منح {{months}} شهرًا من {{tier}}!",
+  "gift-success-named": "تم إهداء {{name}} {{months}} شهرًا من {{tier}}!",
+  "note-placeholder": "أضف ملاحظة (اختياري)",
+  "sending": "جارٍ الإرسال…",
+  "tier": "مستوى",
+  "tip-amount-group-label": "مبلغ الإكرامية",
+  "tip-btn": "نصيحة",
+  "tip-dialog-description": "أرسل عملات إلى {{recipient}} لإظهار بعض التقدير.",
+  "tip-dialog-title": "أرسل إكرامية",
+  "tip-error": "تعذر إرسال الإكرامية",
+  "tip-sign-in": "يرجى تسجيل الدخول للإكرامية.",
+  "tip-success": "أرسل {{amount}} عملة كإكرامية{{recipient}}!"
+}

@@ -1,6 +1,7 @@
 'use client';
 
 import { lazy, Suspense } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/lib/kowloon-knockout/store';
 import MainMenu from '@/components/kowloon-knockout/MainMenu';
 import CharacterSelect from '@/components/kowloon-knockout/CharacterSelect';
@@ -12,6 +13,7 @@ import './kowloon-knockout.css';
 const GameCanvas = lazy(() => import('@/components/kowloon-knockout/GameCanvas'));
 
 export default function KowloonKnockout() {
+  const { t } = useTranslation("c-kowloon-knockout");
   const { phase } = useGameStore();
 
   return (
@@ -67,7 +69,7 @@ export default function KowloonKnockout() {
             >
               <Suspense fallback={
                 <div style={{ color: '#ffcc00', fontSize: '12px' }}>
-                  LOADING...
+                  {t("loading", { defaultValue: "LOADING..." })}
                 </div>
               }>
                 <GameCanvas />

@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { searchCities, fetchWeather, WeatherData } from '@/lib/weather';
 
 const inputClass =
   'w-full bg-weather-glass border border-weather rounded-xl px-3 py-2 text-weather placeholder:text-weather-muted focus:outline-none focus:ring-1 focus:ring-blue-400 text-sm';
 
 export const TripWeatherPlanner = () => {
+  const { t } = useTranslation("c-rmh-weather");
   const [destination, setDestination] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -34,12 +36,12 @@ export const TripWeatherPlanner = () => {
 
   return (
     <div className="my-2">
-      <div className="text-lg font-semibold text-blue-400 mb-2">Trip Weather Planner</div>
+      <div className="text-lg font-semibold text-blue-400 mb-2">{t("trip-weather-planner", { defaultValue: "Trip Weather Planner" })}</div>
       <div className="bg-weather-glass rounded-2xl p-4 border border-weather text-weather flex flex-col gap-3">
         <input
           value={destination}
           onChange={e => setDestination(e.target.value)}
-          placeholder="Destination city"
+          placeholder={t("destination-city", { defaultValue: "Destination city" })}
           className={inputClass}
         />
         <div className="flex gap-2">
@@ -61,7 +63,7 @@ export const TripWeatherPlanner = () => {
           disabled={loading || !destination.trim()}
           className="w-full px-4 py-2 rounded-xl bg-blue-500/80 hover:bg-blue-500 disabled:opacity-40 text-white font-semibold text-sm transition-colors"
         >
-          {loading ? 'Searching…' : 'Get Forecast'}
+          {loading ? t("searching", { defaultValue: "Searching…" }) : t("get-forecast", { defaultValue: "Get Forecast" })}
         </button>
 
         {weather && city && (

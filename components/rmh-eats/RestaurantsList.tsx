@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useDeferredValue, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search, Star, Clock, Bike, X, Leaf, Heart, Zap, Smile, Shuffle } from 'lucide-react';
 import { mockRestaurants, cuisineTypes } from '@/lib/rmh-eats/mockData';
 import { useEatsStore } from '@/lib/store/useEatsStore';
@@ -20,6 +21,7 @@ function carbonLabel(score: number) {
 }
 
 export default function RestaurantsList() {
+    const { t } = useTranslation("c-rmh-eats");
     const selectRestaurant = useEatsStore((s) => s.selectRestaurant);
     const setView = useEatsStore((s) => s.setView);
     const addToCart = useEatsStore((s) => s.addToCart);
@@ -99,7 +101,7 @@ export default function RestaurantsList() {
         const popular = restaurant.menu.filter((i) => i.popular);
         const toAdd = popular.length > 0 ? popular.slice(0, 2) : restaurant.menu.slice(0, 2);
         toAdd.forEach((item) => addToCart(item, restaurant.id, restaurant.name, 1));
-        toast.success(`Taking you to ${restaurant.name}!`, { icon: '🎲' });
+        toast.success(t("taking-you-to", { defaultValue: "Taking you to {{name}}!", name: restaurant.name }), { icon: '🎲' });
         selectRestaurant(restaurant.id);
     }
 
@@ -112,17 +114,17 @@ export default function RestaurantsList() {
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.15),transparent_60%)]" />
                 <div className="relative z-10">
                     <p className="mb-1 text-sm font-medium text-orange-100 uppercase tracking-widest">
-                        Delivering to Springfield, IL
+                        {t("delivering-to", { defaultValue: "Delivering to Springfield, IL" })}
                     </p>
                     <h2 className="mb-4 text-2xl md:text-3xl font-bold text-white">
-                        What are you craving?
+                        {t("what-are-you-craving", { defaultValue: "What are you craving?" })}
                     </h2>
                     {/* Search */}
                     <div className="relative max-w-xl mb-3">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
                         <input
                             type="text"
-                            placeholder="Search restaurants or dishes..."
+                            placeholder={t("search-placeholder", { defaultValue: "Search restaurants or dishes..." })}
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             className="w-full rounded-xl bg-white/95 py-3 pl-10 pr-10 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-orange-400 shadow-lg"
@@ -143,14 +145,14 @@ export default function RestaurantsList() {
                             className="flex items-center gap-1.5 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-sm px-3 py-2 text-sm font-medium text-white transition-colors border border-white/20"
                         >
                             <Shuffle className="h-4 w-4" />
-                            Surprise Me
+                            {t("surprise-me", { defaultValue: "Surprise Me" })}
                         </button>
                         <button
                             onClick={() => setView('mood')}
                             className="flex items-center gap-1.5 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-sm px-3 py-2 text-sm font-medium text-white transition-colors border border-white/20"
                         >
                             <Smile className="h-4 w-4" />
-                            Order by Mood
+                            {t("order-by-mood", { defaultValue: "Order by Mood" })}
                         </button>
                     </div>
                 </div>
@@ -159,7 +161,7 @@ export default function RestaurantsList() {
             {/* Recently Viewed */}
             {recentlyViewed.length > 0 && (
                 <div>
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-2">Recently Viewed</p>
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-2">{t("recently-viewed", { defaultValue: "Recently Viewed" })}</p>
                     <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-none">
                         {recentlyViewed.map((r) => (
                             <button
@@ -197,7 +199,7 @@ export default function RestaurantsList() {
 
             {/* Diet + Sort controls */}
             <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs text-slate-500 font-medium">Filter:</span>
+                <span className="text-xs text-slate-500 font-medium">{t("filter-label", { defaultValue: "Filter:" })}</span>
                 {([
                     { key: 'vegetarian' as const, label: '🌿 Veg', },
                     { key: 'vegan' as const, label: '🌱 Vegan' },
@@ -225,7 +227,7 @@ export default function RestaurantsList() {
                         }`}
                     >
                         <Zap className="h-3 w-3" />
-                        Fastest First
+                        {t("fastest-first", { defaultValue: "Fastest First" })}
                     </button>
                 </div>
             </div>
@@ -234,8 +236,8 @@ export default function RestaurantsList() {
             {filtered.length === 0 ? (
                 <div className="flex flex-col items-center gap-3 py-16 text-slate-500">
                     <span className="text-5xl">🍽️</span>
-                    <p className="text-lg font-medium">No restaurants found</p>
-                    <p className="text-sm">Try a different search or cuisine filter.</p>
+                    <p className="text-lg font-medium">{t("no-restaurants-found", { defaultValue: "No restaurants found" })}</p>
+                    <p className="text-sm">{t("try-different-search", { defaultValue: "Try a different search or cuisine filter." })}</p>
                 </div>
             ) : (
                 <>
@@ -258,7 +260,7 @@ export default function RestaurantsList() {
                     </div>
                     {visibleCount < filtered.length && (
                         <div ref={sentinelRef} className="flex justify-center py-4">
-                            <span className="text-sm text-slate-500">Loading more...</span>
+                            <span className="text-sm text-slate-500">{t("loading-more", { defaultValue: "Loading more..." })}</span>
                         </div>
                     )}
                 </>
@@ -278,6 +280,7 @@ function RestaurantCard({
     onSelect: () => void;
     onToggleFavorite: () => void;
 }) {
+    const { t } = useTranslation("c-rmh-eats");
     const hasVeg = restaurant.menu.some((i) => i.vegetarian);
     const hasVegan = restaurant.menu.some((i) => i.vegan);
 
@@ -313,7 +316,7 @@ function RestaurantCard({
                 <button
                     onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
                     className="absolute top-2 right-2 z-10 rounded-full bg-black/50 p-1.5 backdrop-blur-sm transition-colors hover:bg-black/70"
-                    aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                    aria-label={isFavorite ? t("remove-from-favorites", { defaultValue: "Remove from favorites" }) : t("add-to-favorites", { defaultValue: "Add to favorites" })}
                 >
                     <Heart className={`h-3.5 w-3.5 transition-colors ${isFavorite ? 'fill-red-400 text-red-400' : 'text-white'}`} />
                 </button>
@@ -340,12 +343,12 @@ function RestaurantCard({
                     <div className="flex gap-1 mb-2">
                         {hasVegan && (
                             <span className="rounded-full bg-green-500/15 border border-green-500/30 px-2 py-0.5 text-xs text-green-400">
-                                🌱 Vegan options
+                                🌱 {t("vegan-options", { defaultValue: "Vegan options" })}
                             </span>
                         )}
                         {hasVeg && !hasVegan && (
                             <span className="rounded-full bg-green-500/15 border border-green-500/30 px-2 py-0.5 text-xs text-green-400">
-                                🌿 Veg options
+                                🌿 {t("veg-options", { defaultValue: "Veg options" })}
                             </span>
                         )}
                     </div>
@@ -359,8 +362,8 @@ function RestaurantCard({
                     <span className="flex items-center gap-1">
                         <Bike className="h-3.5 w-3.5 text-orange-400" />
                         {restaurant.deliveryFee === 0
-                            ? 'Free delivery'
-                            : `$${restaurant.deliveryFee.toFixed(2)} delivery`}
+                            ? t("free-delivery", { defaultValue: "Free delivery" })
+                            : t("delivery-fee", { defaultValue: "${{fee}} delivery", fee: restaurant.deliveryFee.toFixed(2) })}
                     </span>
                 </div>
             </div>

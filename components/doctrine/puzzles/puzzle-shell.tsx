@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react';
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft, Zap, RotateCcw } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { CountdownTimer } from '../countdown-timer';
 import { useDoctrineStore } from '@/stores/doctrineStore';
 
@@ -24,6 +25,7 @@ const MODE_COLORS: Record<string, string> = {
 };
 
 export function PuzzleShell({ mode, difficulty, resetsAt, children, attempts = 0, phase, isReplay = false }: PuzzleShellProps) {
+  const { t } = useTranslation("c-doctrine");
   const sahurActive = useDoctrineStore(s => s.sahurActive);
   const color = MODE_COLORS[mode] ?? 'var(--doctrine-accent, #F97316)';
 
@@ -40,7 +42,7 @@ export function PuzzleShell({ mode, difficulty, resetsAt, children, attempts = 0
           </span>
           {isReplay && (
             <span className="flex items-center gap-1 text-[10px] font-mono text-white/30 bg-white/5 px-1.5 py-0.5 rounded">
-              <RotateCcw size={10} /> REPLAY
+              <RotateCcw size={10} /> {t("replay", { defaultValue: "REPLAY" })}
             </span>
           )}
           <div className="flex gap-0.5">
@@ -57,15 +59,15 @@ export function PuzzleShell({ mode, difficulty, resetsAt, children, attempts = 0
         <div className="flex items-center gap-2 md:gap-4">
           {sahurActive && (
             <span className="flex items-center gap-1 text-xs md:text-[10px] font-bold text-amber-400 animate-pulse">
-              <Zap size={12} /> 3x XP
+              <Zap size={12} /> {t("sahur-xp-bonus", { defaultValue: "3x XP" })}
             </span>
           )}
           {attempts > 0 && (
             <span className="text-xs md:text-[10px] text-white/30 font-mono">
-              {attempts} attempt{attempts !== 1 ? 's' : ''}
+              {t("attempt-count", { count: attempts, defaultValue: "{{count}} attempt" })}
             </span>
           )}
-          <CountdownTimer target={resetsAt} label="Resets in" />
+          <CountdownTimer target={resetsAt} label={t("resets-in", { defaultValue: "Resets in" })} />
         </div>
       </div>
 
@@ -77,7 +79,7 @@ export function PuzzleShell({ mode, difficulty, resetsAt, children, attempts = 0
       {/* Phase indicator */}
       {phase === 'complete' && (
         <div className="p-4 text-center" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-          <p className="text-sm text-green-400 font-medium">Puzzle Complete</p>
+          <p className="text-sm text-green-400 font-medium">{t("puzzle-complete", { defaultValue: "Puzzle Complete" })}</p>
         </div>
       )}
     </div>

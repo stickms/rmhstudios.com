@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from "react-i18next";
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { authClient } from '@/lib/auth-client';
@@ -22,6 +23,7 @@ interface SongCommentsProps {
 }
 
 export function SongComments({ songId }: SongCommentsProps) {
+    const { t } = useTranslation("c-game");
     const session = authClient.useSession();
     const [comments, setComments] = useState<Comment[]>([]);
     const [newComment, setNewComment] = useState("");
@@ -76,7 +78,7 @@ export function SongComments({ songId }: SongCommentsProps) {
         return (
             <div className="flex flex-col items-center justify-center p-8 text-slice-text-light gap-2 h-full min-h-[200px] bg-slice-bg rounded-xl shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)]">
                 <MessageSquare className="w-8 h-8 opacity-20" />
-                <span className="text-xs">Select a song to view comments</span>
+                <span className="text-xs">{t("select-song-to-view-comments", { defaultValue: "Select a song to view comments" })}</span>
             </div>
         );
     }
@@ -85,15 +87,15 @@ export function SongComments({ songId }: SongCommentsProps) {
         <div className="flex flex-col h-full bg-slice-bg rounded-xl shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] p-4 overflow-hidden">
              <div className="pb-3 border-b border-slice-shadow-dark/30/50 mb-2 flex items-center gap-2">
                 <MessageSquare className="w-4 h-4 text-slice-text-muted" />
-                <span className="text-xs text-slice-text-muted font-bold uppercase tracking-widest">Discussion</span>
+                <span className="text-xs text-slice-text-muted font-bold uppercase tracking-widest">{t("discussion", { defaultValue: "Discussion" })}</span>
             </div>
 
             <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 min-h-[150px]">
                 {isLoading ? (
-                    <div className="text-center py-8 text-slice-text-light text-xs">Loading...</div>
+                    <div className="text-center py-8 text-slice-text-light text-xs">{t("loading", { defaultValue: "Loading..." })}</div>
                 ) : comments.length === 0 ? (
                     <div className="text-center py-8 text-slice-text-light flex flex-col items-center gap-2">
-                        <span className="text-xs">No comments yet.</span>
+                        <span className="text-xs">{t("no-comments-yet", { defaultValue: "No comments yet." })}</span>
                     </div>
                 ) : (
                     comments.map(comment => (
@@ -117,7 +119,7 @@ export function SongComments({ songId }: SongCommentsProps) {
                 {session.data ? (
                     <div className="flex gap-2">
                         <Textarea 
-                            placeholder="Write a comment..." 
+                            placeholder={t("write-a-comment", { defaultValue: "Write a comment..." })}
                             className="bg-slice-card-bg min-h-[40px] h-[40px] py-2 text-xs resize-none border border-slice-shadow-dark/20 shadow-inner text-slice-text placeholder:text-slice-text-light"
                             value={newComment}
                             onChange={e => setNewComment(e.target.value)}
@@ -128,12 +130,12 @@ export function SongComments({ songId }: SongCommentsProps) {
                             size="sm"
                             className="h-[40px] w-12 bg-blue-500 hover:bg-blue-600 text-white shadow-md rounded-lg p-0"
                         >
-                            POST
+                            {t("post", { defaultValue: "POST" })}
                         </Button>
                     </div>
                 ) : (
                     <div className="text-center text-[10px] text-slice-text-light">
-                        Sign in to comment
+                        {t("sign-in-to-comment", { defaultValue: "Sign in to comment" })}
                     </div>
                 )}
             </div>

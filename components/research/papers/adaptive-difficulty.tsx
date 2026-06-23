@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from 'react-i18next';
 import {
   LineChart,
   Line,
@@ -96,10 +97,11 @@ const headerCell: React.CSSProperties = {
    -------------------------------------------- */
 
 export function AdaptiveDifficultyPaper() {
+  const { t } = useTranslation("c-research");
   return (
     <>
       {/* -- 1  INTRODUCTION --------------------------- */}
-      <h2 style={h2Style}>1. Introduction</h2>
+      <h2 style={h2Style}>{t("section-introduction", { defaultValue: "1. Introduction" })}</h2>
 
       <p className="mb-4">
         Player retention is widely regarded as one of the most consequential metrics in the
@@ -183,9 +185,9 @@ export function AdaptiveDifficultyPaper() {
       </p>
 
       {/* -- 2  METHODS -------------------------------- */}
-      <h2 style={h2Style}>2. Methods</h2>
+      <h2 style={h2Style}>{t("section-methods", { defaultValue: "2. Methods" })}</h2>
 
-      <h3 style={h3Style}>2.1 Participants</h3>
+      <h3 style={h3Style}>{t("subsection-participants", { defaultValue: "2.1 Participants" })}</h3>
 
       <p className="mb-4">
         A total of 240 participants (ages 18&ndash;45, M = 27.4, SD = 6.1) were recruited
@@ -205,7 +207,7 @@ export function AdaptiveDifficultyPaper() {
         of the authors&rsquo; university.
       </p>
 
-      <h3 style={h3Style}>2.2 Testbed Game</h3>
+      <h3 style={h3Style}>{t("subsection-testbed-game", { defaultValue: "2.2 Testbed Game" })}</h3>
 
       <p className="mb-4">
         The experimental testbed was a custom precision platformer developed in Unity 2022
@@ -226,7 +228,7 @@ export function AdaptiveDifficultyPaper() {
         and isolate difficulty perception from aesthetic factors.
       </p>
 
-      <h3 style={h3Style}>2.3 DDA Implementations</h3>
+      <h3 style={h3Style}>{t("subsection-dda-implementations", { defaultValue: "2.3 DDA Implementations" })}</h3>
 
       <p className="mb-4">
         Four experimental conditions were defined, each implementing a distinct difficulty
@@ -281,7 +283,7 @@ export function AdaptiveDifficultyPaper() {
         ability that naturally smoothed over short-term performance fluctuations.
       </p>
 
-      <h3 style={h3Style}>2.4 Measures</h3>
+      <h3 style={h3Style}>{t("subsection-measures", { defaultValue: "2.4 Measures" })}</h3>
 
       <p className="mb-4">
         The primary outcome measure was the daily return rate, operationalized as the
@@ -302,7 +304,7 @@ export function AdaptiveDifficultyPaper() {
         overall enjoyment, and perceived challenge.
       </p>
 
-      <h3 style={h3Style}>2.5 Procedure</h3>
+      <h3 style={h3Style}>{t("subsection-procedure", { defaultValue: "2.5 Procedure" })}</h3>
 
       <p className="mb-4">
         On the first day, all participants completed a standardized tutorial introducing the
@@ -330,9 +332,9 @@ export function AdaptiveDifficultyPaper() {
       </p>
 
       {/* -- 3  RESULTS -------------------------------- */}
-      <h2 style={h2Style}>3. Results</h2>
+      <h2 style={h2Style}>{t("section-results", { defaultValue: "3. Results" })}</h2>
 
-      <h3 style={h3Style}>3.1 Retention</h3>
+      <h3 style={h3Style}>{t("subsection-retention", { defaultValue: "3.1 Retention" })}</h3>
 
       <p className="mb-4">
         Figure 1 presents the daily retention curves for all four experimental conditions
@@ -391,7 +393,7 @@ export function AdaptiveDifficultyPaper() {
         equilibrium.
       </p>
 
-      <h3 style={h3Style}>3.2 Summary Statistics</h3>
+      <h3 style={h3Style}>{t("subsection-summary-statistics", { defaultValue: "3.2 Summary Statistics" })}</h3>
 
       <p className="mb-4">
         Table 1 presents summary statistics for the primary and exploratory outcome measures
@@ -406,37 +408,37 @@ export function AdaptiveDifficultyPaper() {
       <table className={tableStyle}>
         <thead>
           <tr>
-            <th style={headerCell}>Condition</th>
-            <th style={headerCell}>D7 Retention (%)</th>
-            <th style={headerCell}>Mean Session Duration (min)</th>
-            <th style={headerCell}>Mean Levels / Session</th>
-            <th style={headerCell}>Mean NASA-TLX Total</th>
+            <th style={headerCell}>{t("table-condition", { defaultValue: "Condition" })}</th>
+            <th style={headerCell}>{t("table-d7-retention", { defaultValue: "D7 Retention (%)" })}</th>
+            <th style={headerCell}>{t("table-mean-session-duration", { defaultValue: "Mean Session Duration (min)" })}</th>
+            <th style={headerCell}>{t("table-mean-levels-per-session", { defaultValue: "Mean Levels / Session" })}</th>
+            <th style={headerCell}>{t("table-mean-nasa-tlx", { defaultValue: "Mean NASA-TLX Total" })}</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td style={cellStyle}>Static-Easy</td>
+            <td style={cellStyle}>{t("condition-static-easy", { defaultValue: "Static-Easy" })}</td>
             <td style={cellCenter}>46</td>
             <td style={cellCenter}>22.1</td>
             <td style={cellCenter}>12.8</td>
             <td style={cellCenter}>35.8</td>
           </tr>
           <tr>
-            <td style={cellStyle}>Static-Hard</td>
+            <td style={cellStyle}>{t("condition-static-hard", { defaultValue: "Static-Hard" })}</td>
             <td style={cellCenter}>34</td>
             <td style={cellCenter}>16.7</td>
             <td style={cellCenter}>8.4</td>
             <td style={cellCenter}>67.5</td>
           </tr>
           <tr>
-            <td style={cellStyle}>Reactive DDA</td>
+            <td style={cellStyle}>{t("condition-reactive-dda", { defaultValue: "Reactive DDA" })}</td>
             <td style={cellCenter}>64</td>
             <td style={cellCenter}>25.6</td>
             <td style={cellCenter}>13.1</td>
             <td style={cellCenter}>52.3</td>
           </tr>
           <tr>
-            <td style={cellStyle}>Predictive DDA</td>
+            <td style={cellStyle}>{t("condition-predictive-dda", { defaultValue: "Predictive DDA" })}</td>
             <td style={cellCenter}>78</td>
             <td style={cellCenter}>28.3</td>
             <td style={cellCenter}>14.2</td>
@@ -454,7 +456,7 @@ export function AdaptiveDifficultyPaper() {
         composite means (0&ndash;100 scale).
       </p>
 
-      <h3 style={h3Style}>3.3 Cognitive Load</h3>
+      <h3 style={h3Style}>{t("subsection-cognitive-load", { defaultValue: "3.3 Cognitive Load" })}</h3>
 
       <p className="mb-4">
         A one-way multivariate analysis of variance (MANOVA) was conducted to assess the
@@ -523,7 +525,7 @@ export function AdaptiveDifficultyPaper() {
         and less aversive configuration.
       </p>
 
-      <h3 style={h3Style}>3.4 Difficulty Trajectories</h3>
+      <h3 style={h3Style}>{t("subsection-difficulty-trajectories", { defaultValue: "3.4 Difficulty Trajectories" })}</h3>
 
       <p className="mb-4">
         Figure 3 visualizes the mean difficulty trajectories for the two DDA conditions over
@@ -613,7 +615,7 @@ export function AdaptiveDifficultyPaper() {
       </p>
 
       {/* -- 4  DISCUSSION ----------------------------- */}
-      <h2 style={h2Style}>4. Discussion</h2>
+      <h2 style={h2Style}>{t("section-discussion", { defaultValue: "4. Discussion" })}</h2>
 
       <p className="mb-4">
         The results of this study provide strong empirical support for the effectiveness of
@@ -695,7 +697,7 @@ export function AdaptiveDifficultyPaper() {
       </p>
 
       {/* -- 5  CONCLUSION ----------------------------- */}
-      <h2 style={h2Style}>5. Conclusion</h2>
+      <h2 style={h2Style}>{t("section-conclusion", { defaultValue: "5. Conclusion" })}</h2>
 
       <p className="mb-4">
         This study demonstrates that adaptive difficulty adjustment, and predictive
@@ -718,7 +720,7 @@ export function AdaptiveDifficultyPaper() {
       </p>
 
       {/* -- REFERENCES -------------------------------- */}
-      <h2 style={h2Style}>References</h2>
+      <h2 style={h2Style}>{t("section-references", { defaultValue: "References" })}</h2>
 
       <div style={{ fontSize: '10pt', lineHeight: 1.5 }}>
         <p className="mb-2" style={{ paddingLeft: '2em', textIndent: '-2em' }}>

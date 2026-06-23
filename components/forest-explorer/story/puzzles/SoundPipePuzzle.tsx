@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { PuzzleComponentProps } from './PuzzleRegistry';
 
 type PipeType = 'empty' | 'straight_h' | 'straight_v' | 'corner_ne' | 'corner_nw' | 'corner_se' | 'corner_sw' | 'tee_up' | 'tee_down' | 'tee_left' | 'tee_right' | 'cross';
@@ -41,6 +42,7 @@ const PIPE_CONNECTIONS: Record<string, [boolean, boolean, boolean, boolean]> = {
 };
 
 export function SoundPipePuzzle({ config, onSolve, onAttempt }: PuzzleComponentProps) {
+    const { t } = useTranslation("c-forest-explorer");
     const gridSize = (config.gridSize as number) ?? 6;
     const source = (config.source as [number, number]) ?? [0, 3];
     const target = (config.target as [number, number]) ?? [5, 2];
@@ -120,7 +122,7 @@ export function SoundPipePuzzle({ config, onSolve, onAttempt }: PuzzleComponentP
     return (
         <div className="w-full max-w-lg mx-auto space-y-4">
             <p className="text-center text-white/50 text-sm">
-                Click tiles to route flow from source to target
+                {t("click-tiles-instruction", { defaultValue: "Click tiles to route flow from source to target" })}
             </p>
 
             <div className="flex justify-center">
@@ -159,7 +161,7 @@ export function SoundPipePuzzle({ config, onSolve, onAttempt }: PuzzleComponentP
                     className="px-4 py-2 bg-white/10 hover:bg-white/15 text-white/60 rounded-lg text-xs cursor-pointer"
                     onClick={() => setGrid(grid.map(row => row.map(() => 'empty' as PipeType)))}
                 >
-                    Reset
+                    {t("reset", { defaultValue: "Reset" })}
                 </button>
                 <button
                     className={`px-6 py-2.5 rounded-xl text-sm font-medium cursor-pointer ${
@@ -169,7 +171,7 @@ export function SoundPipePuzzle({ config, onSolve, onAttempt }: PuzzleComponentP
                     }`}
                     onClick={handleCheck}
                 >
-                    {isConnected ? 'Path Connected!' : 'Check Path'}
+                    {isConnected ? t("path-connected", { defaultValue: "Path Connected!" }) : t("check-path", { defaultValue: "Check Path" })}
                 </button>
             </div>
         </div>

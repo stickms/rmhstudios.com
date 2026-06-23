@@ -4,6 +4,7 @@ import { getRequest } from '@tanstack/react-start/server';
 import { auth } from '@/lib/auth';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Megaphone, Loader2, Trash2, BarChart3, Image as ImageIcon, ImagePlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AIGenerateButton } from '@/components/feed/AIGenerateButton';
@@ -73,6 +74,7 @@ function isValidMediaUrl(url: string): boolean {
 }
 
 function AdminAnnouncementsPage() {
+  const { t } = useTranslation('admin');
   const [list, setList] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState('');
@@ -173,12 +175,12 @@ function AdminAnnouncementsPage() {
         body: JSON.stringify(payload),
       });
       if (res.ok) {
-        toast.success('Announcement published');
+        toast.success(t('announcement-published', { defaultValue: 'Announcement published' }));
         resetForm();
         load();
       } else {
         const d = await res.json().catch(() => ({}));
-        toast.error(d.error || 'Failed to publish');
+        toast.error(d.error || t('failed-to-publish', { defaultValue: 'Failed to publish' }));
       }
     } finally {
       setSubmitting(false);
@@ -196,7 +198,7 @@ function AdminAnnouncementsPage() {
   };
 
   const remove = async (a: Announcement) => {
-    if (!confirm('Delete this announcement?')) return;
+    if (!confirm(t('confirm-delete', { defaultValue: 'Delete this announcement?' }))) return;
     await fetch(`/api/admin/announcements/${a.id}`, { method: 'DELETE', credentials: 'include' });
     load();
   };
@@ -210,15 +212,15 @@ function AdminAnnouncementsPage() {
         <div className="flex items-center gap-3">
           <Megaphone className="h-6 w-6 text-site-accent" />
           <div>
-            <h1 className="font-display text-2xl font-bold text-site-text">Feed Announcements</h1>
-            <p className="mt-1 text-sm text-site-text-muted">Pinned banners shown at the top of everyone&apos;s feed.</p>
+            <h1 className="font-display text-2xl font-bold text-site-text">{t('feed-announcements', { defaultValue: 'Feed Announcements' })}</h1>
+            <p className="mt-1 text-sm text-site-text-muted">{t('feed-announcements-description', { defaultValue: "Pinned banners shown at the top of everyone's feed." })}</p>
           </div>
         </div>
 
         {/* Create form */}
         <div className="space-y-3 rounded-xl border border-site-border bg-site-surface p-4">
           <div className="relative">
-            <input className={`${inputCls} pr-10`} placeholder="Title" value={title} maxLength={120} onChange={(e) => setTitle(e.target.value)} />
+            <input className={`${inputCls} pr-10`} placeholder={t('title-placeholder', { defaultValue: 'Title' })} value={title} maxLength={120} onChange={(e) => setTitle(e.target.value)} />
             <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
               <AIGenerateButton
                 size="sm"
@@ -231,7 +233,7 @@ function AdminAnnouncementsPage() {
           <div className="relative">
             <MentionTextarea
               className={`${inputCls} pr-10`}
-              placeholder="Message — use @ to mention and # for hashtags"
+              placeholder={t('message-placeholder', { defaultValue: 'Message — use @ to mention and # for hashtags' })}
               rows={3}
               maxLength={1000}
               value={body}
@@ -247,7 +249,7 @@ function AdminAnnouncementsPage() {
             </div>
           </div>
           <p className="text-xs text-site-text-dim">
-            Tip: type <span className="font-mono">@</span> to mention a user or <span className="font-mono">#</span> for a hashtag — both autocomplete.
+            {t('mention-tip-prefix', { defaultValue: 'Tip: type' })} <span className="font-mono">@</span> {t('mention-tip-middle', { defaultValue: 'to mention a user or' })} <span className="font-mono">#</span> {t('mention-tip-suffix', { defaultValue: 'for a hashtag — both autocomplete.' })}
           </p>
 
           {/* Poll creator */}
@@ -270,7 +272,7 @@ function AdminAnnouncementsPage() {
                 type="text"
                 value={poll.question}
                 onChange={(e) => setPoll((p) => ({ ...p, question: e.target.value }))}
-                placeholder="Ask a question..."
+                placeholder={t('poll-question-placeholder', { defaultValue: 'Ask a question...' })}
                 maxLength={MAX_POLL_QUESTION_LENGTH}
                 className={`${inputCls} mb-2`}
               />
@@ -285,7 +287,7 @@ function AdminAnnouncementsPage() {
                         next[i] = e.target.value;
                         setPoll((p) => ({ ...p, options: next }));
                       }}
-                      placeholder={`Option ${i + 1}`}
+                      placeholder={t('poll-option-placeholder', { count: i + 1, defaultValue: 'Option {{count}}' })}
                       maxLength={MAX_POLL_OPTION_LENGTH}
                       className={inputCls}
                     />
@@ -307,7 +309,7 @@ function AdminAnnouncementsPage() {
                   onClick={() => setPoll((p) => ({ ...p, options: [...p.options, ''] }))}
                   className="mt-2 text-xs text-site-accent transition-colors hover:text-site-accent-hover"
                 >
-                  + Add option
+                  {t('add-option', { defaultValue: '+ Add option' })}
                 </button>
               )}
               <label className="mt-3 flex cursor-pointer items-center gap-2">
@@ -317,21 +319,21 @@ function AdminAnnouncementsPage() {
                   onChange={(e) => setPoll((p) => ({ ...p, multiSelect: e.target.checked }))}
                   className="rounded border-site-border text-site-accent focus:ring-site-accent"
                 />
-                <span className="text-xs text-site-text-dim">Allow multiple selections</span>
+                <span className="text-xs text-site-text-dim">{t('allow-multiple-selections', { defaultValue: 'Allow multiple selections' })}</span>
               </label>
               <label className="mt-3 flex items-center gap-2">
-                <span className="text-xs text-site-text-dim">Poll length</span>
+                <span className="text-xs text-site-text-dim">{t('poll-length', { defaultValue: 'Poll length' })}</span>
                 <select
                   value={pollDuration}
                   onChange={(e) => setPollDuration(Number(e.target.value))}
                   className="rounded-lg border border-site-border bg-site-bg px-2 py-1 text-xs text-site-text focus:outline-none"
                 >
-                  <option value={0}>No limit</option>
-                  <option value={1}>1 hour</option>
-                  <option value={6}>6 hours</option>
-                  <option value={24}>1 day</option>
-                  <option value={72}>3 days</option>
-                  <option value={168}>1 week</option>
+                  <option value={0}>{t('poll-no-limit', { defaultValue: 'No limit' })}</option>
+                  <option value={1}>{t('poll-1-hour', { defaultValue: '1 hour' })}</option>
+                  <option value={6}>{t('poll-6-hours', { defaultValue: '6 hours' })}</option>
+                  <option value={24}>{t('poll-1-day', { defaultValue: '1 day' })}</option>
+                  <option value={72}>{t('poll-3-days', { defaultValue: '3 days' })}</option>
+                  <option value={168}>{t('poll-1-week', { defaultValue: '1 week' })}</option>
                 </select>
               </label>
             </div>
@@ -357,12 +359,12 @@ function AdminAnnouncementsPage() {
                 type="url"
                 value={gifUrl}
                 onChange={(e) => setGifUrl(e.target.value)}
-                placeholder="Paste an image URL or Tenor/Giphy link..."
+                placeholder={t('gif-url-placeholder', { defaultValue: 'Paste an image URL or Tenor/Giphy link...' })}
                 className={inputCls}
               />
               {gifUrl.trim() && isValidMediaUrl(gifUrl.trim()) && <GifEmbed url={gifUrl.trim()} className="mt-2" />}
               {gifUrl.trim() && !isValidMediaUrl(gifUrl.trim()) && (
-                <p className="mt-1 text-xs text-site-danger">Must be a direct image URL or Tenor/Giphy link</p>
+                <p className="mt-1 text-xs text-site-danger">{t('gif-url-invalid', { defaultValue: 'Must be a direct image URL or Tenor/Giphy link' })}</p>
               )}
             </div>
           )}
@@ -375,7 +377,7 @@ function AdminAnnouncementsPage() {
                   <img src={url} alt="" loading="lazy" className="max-h-48 w-full rounded-lg object-cover" />
                   <button
                     type="button"
-                    aria-label="Remove image"
+                    aria-label={t('remove-image', { defaultValue: 'Remove image' })}
                     onClick={() => setImageUrls((prev) => prev.filter((u) => u !== url))}
                     className="absolute right-1 top-1 rounded-full bg-black/60 p-0.5 text-white opacity-0 transition-opacity group-hover:opacity-100"
                   >
@@ -397,8 +399,8 @@ function AdminAnnouncementsPage() {
           />
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <input className={inputCls} placeholder="Link URL (optional)" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} />
-            <input className={inputCls} placeholder="Link label (optional)" value={linkLabel} maxLength={60} onChange={(e) => setLinkLabel(e.target.value)} />
+            <input className={inputCls} placeholder={t('link-url-placeholder', { defaultValue: 'Link URL (optional)' })} value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} />
+            <input className={inputCls} placeholder={t('link-label-placeholder', { defaultValue: 'Link label (optional)' })} value={linkLabel} maxLength={60} onChange={(e) => setLinkLabel(e.target.value)} />
           </div>
 
           {/* Attachment toolbar */}
@@ -407,10 +409,10 @@ function AdminAnnouncementsPage() {
               type="button"
               onClick={() => imageInputRef.current?.click()}
               disabled={imageUrls.length >= MAX_ANNOUNCEMENT_IMAGES}
-              title={imageUrls.length >= MAX_ANNOUNCEMENT_IMAGES ? `Maximum ${MAX_ANNOUNCEMENT_IMAGES} images` : 'Attach images'}
+              title={imageUrls.length >= MAX_ANNOUNCEMENT_IMAGES ? t('max-images-title', { count: MAX_ANNOUNCEMENT_IMAGES, defaultValue: 'Maximum {{count}} images' }) : t('attach-images', { defaultValue: 'Attach images' })}
               className="inline-flex items-center gap-1 rounded-full border border-site-border bg-site-bg px-3 py-1 text-xs font-medium text-site-text-muted transition-colors hover:text-site-text disabled:cursor-not-allowed disabled:opacity-40"
             >
-              <ImagePlus className="h-3.5 w-3.5" /> Images
+              <ImagePlus className="h-3.5 w-3.5" /> {t('images-button', { defaultValue: 'Images' })}
             </button>
             <button
               type="button"
@@ -422,7 +424,7 @@ function AdminAnnouncementsPage() {
                 attachment === 'gif' ? 'border-site-accent bg-site-accent text-(--site-accent-fg)' : 'border-site-border bg-site-bg text-site-text-muted hover:text-site-text'
               }`}
             >
-              <ImageIcon className="h-3.5 w-3.5" /> GIF
+              <ImageIcon className="h-3.5 w-3.5" /> {t('gif-button', { defaultValue: 'GIF' })}
             </button>
             <button
               type="button"
@@ -434,7 +436,7 @@ function AdminAnnouncementsPage() {
                 attachment === 'poll' ? 'border-site-accent bg-site-accent text-(--site-accent-fg)' : 'border-site-border bg-site-bg text-site-text-muted hover:text-site-text'
               }`}
             >
-              <BarChart3 className="h-3.5 w-3.5" /> Poll
+              <BarChart3 className="h-3.5 w-3.5" /> {t('poll-button', { defaultValue: 'Poll' })}
             </button>
           </div>
 
@@ -453,7 +455,7 @@ function AdminAnnouncementsPage() {
               ))}
             </div>
             <Button variant="accent" onClick={create} disabled={submitting || !title.trim() || !body.trim()}>
-              {submitting ? 'Publishing…' : 'Publish'}
+              {submitting ? t('publishing', { defaultValue: 'Publishing…' }) : t('publish', { defaultValue: 'Publish' })}
             </Button>
           </div>
         </div>
@@ -464,7 +466,7 @@ function AdminAnnouncementsPage() {
             <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
           </div>
         ) : list.length === 0 ? (
-          <p className="py-12 text-center text-sm text-site-text-muted">No announcements yet.</p>
+          <p className="py-12 text-center text-sm text-site-text-muted">{t('no-announcements', { defaultValue: 'No announcements yet.' })}</p>
         ) : (
           <ul className="space-y-2">
             {list.map((a) => (
@@ -483,9 +485,9 @@ function AdminAnnouncementsPage() {
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     <Button size="sm" variant="secondary" onClick={() => toggleActive(a)}>
-                      {a.active ? 'Deactivate' : 'Activate'}
+                      {a.active ? t('deactivate', { defaultValue: 'Deactivate' }) : t('activate', { defaultValue: 'Activate' })}
                     </Button>
-                    <Button size="icon-sm" variant="ghost" aria-label="Delete" onClick={() => remove(a)}>
+                    <Button size="icon-sm" variant="ghost" aria-label={t('delete', { defaultValue: 'Delete' })} onClick={() => remove(a)}>
                       <Trash2 className="h-4 w-4 text-site-danger" />
                     </Button>
                   </div>

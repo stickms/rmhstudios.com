@@ -16,8 +16,8 @@ describe('mapDocToBook', () => {
   test('maps a row to a LibraryBook with upload URLs and attribution', () => {
     const book = mapDocToBook(baseRow);
     expect(book.slug).toBe('manual');
-    expect(book.url).toBe('/library/abc.pdf');
-    expect(book.coverUrl).toBe('/library/covers/abc.jpg');
+    expect(book.url).toBe('/api/library/file/abc');
+    expect(book.coverUrl).toBe('/api/library/cover/abc');
     expect(book.pages).toBe(5);
     expect(book.source).toBe('upload');
     expect(book.id).toBe('abc');

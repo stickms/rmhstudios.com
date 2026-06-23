@@ -1,4 +1,5 @@
 'use client';
+import { useTranslation } from "react-i18next";
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { EVENT_MAP } from '@/lib/temple-of-joy/data/events';
 
@@ -21,6 +22,7 @@ export default function EventModal() {
     setShowEventModal(false);
   };
 
+  const { t } = useTranslation("c-temple-of-joy");
   const isBlessing = event.type === 'blessing';
   const choices = event.choices ?? [];
 
@@ -67,7 +69,7 @@ export default function EventModal() {
                 color: dark ? '#1a120b' : '#f5f0e8',
               }}
             >
-              Accept the gift ✓
+              {t("accept-the-gift", { defaultValue: "Accept the gift ✓" })}
             </button>
           ) : (
             choices.map((choice, i) => (

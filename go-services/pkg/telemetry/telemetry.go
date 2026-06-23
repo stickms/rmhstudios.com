@@ -53,3 +53,18 @@ func New(service string) *Metrics {
 func (m *Metrics) Handler() http.Handler {
 	return promhttp.HandlerFor(m.reg, promhttp.HandlerOpts{})
 }
+
+// Registry returns the underlying registry so several services' metrics can be
+// merged behind one /metrics endpoint (the supervisor case).
+func (m *Metrics) Registry() *prometheus.Registry { return m.reg }
+
+// MergedHandler serves the union of several services' registries on one
+// endpoint. Each service keeps its own "service" ConstLabel, so per-worker
+// attribution survives consolidation into the supervisor process.
+func MergedHandler(ms ...*Metrics) http.Handler {
+	g := make(prometheus.Gatherers, 0, len(ms))
+	for _, m := range ms {
+		g = append(g, m.reg)
+	}
+	return promhttp.HandlerFor(g, promhttp.HandlerOpts{})
+}

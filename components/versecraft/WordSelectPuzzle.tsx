@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/lib/versecraft/store';
 import { CHARACTERS, getCharacterFirstName } from '@/lib/versecraft/characters';
@@ -74,13 +75,13 @@ const TUTORIAL_CHARS = ['luna', 'kai', 'milo'] as const;
 const TUTORIAL_STEPS = [
   {
     title: 'Your First Poem',
-    content: 'You\'re about to write your first poem by selecting words from the pool. Each word you pick becomes part of your poem — the order you select them in is the order they\'ll appear.',
-    tip: 'There\'s no wrong answer. Write what feels right to you.',
+    content: "You're about to write your first poem by selecting words from the pool. Each word you pick becomes part of your poem — the order you select them in is the order they'll appear.",
+    tip: "There's no wrong answer. Write what feels right to you.",
   },
   {
     title: 'Reading the Room',
-    content: 'Every word is subtly tinted with the color of the character who\'d like it most. Pay attention to these hints — they\'ll guide you toward words that resonate with specific people.',
-    tip: 'You don\'t have to please everyone. Targeting one character deeply can be more effective than trying to impress all three.',
+    content: "Every word is subtly tinted with the color of the character who'd like it most. Pay attention to these hints — they'll guide you toward words that resonate with specific people.",
+    tip: "You don't have to please everyone. Targeting one character deeply can be more effective than trying to impress all three.",
   },
   {
     title: 'Bonus Techniques',
@@ -90,7 +91,7 @@ const TUTORIAL_STEPS = [
       'Rhyming Pair — Select words that rhyme with each other',
       'Literary Vocabulary — Use rare, sophisticated words',
     ],
-    tip: 'Bonuses apply to every character\'s score, so they\'re always worth pursuing.',
+    tip: "Bonuses apply to every character's score, so they're always worth pursuing.",
   },
 ];
 
@@ -98,6 +99,7 @@ function PoemTutorial({ onDismiss, presentations }: {
   onDismiss: () => void;
   presentations: Record<string, string>;
 }) {
+  const { t } = useTranslation("c-versecraft");
   const [step, setStep] = useState(0);
   const current = TUTORIAL_STEPS[step];
   const isLast = step === TUTORIAL_STEPS.length - 1;
@@ -141,7 +143,11 @@ function PoemTutorial({ onDismiss, presentations }: {
           className="text-lg md:text-xl mb-3"
           style={{ fontFamily: 'var(--font-cinzel, serif)', color: '#c4a35a' }}
         >
-          {current.title}
+          {step === 0
+            ? t("tutorial-step0-title", { defaultValue: "Your First Poem" })
+            : step === 1
+            ? t("tutorial-step1-title", { defaultValue: "Reading the Room" })
+            : t("tutorial-step2-title", { defaultValue: "Bonus Techniques" })}
         </h3>
 
         {/* Content */}
@@ -149,18 +155,28 @@ function PoemTutorial({ onDismiss, presentations }: {
           className="text-sm md:text-base leading-relaxed mb-4"
           style={{ color: '#d0c8b8' }}
         >
-          {current.content}
+          {step === 0
+            ? t("tutorial-step0-content", { defaultValue: "You're about to write your first poem by selecting words from the pool. Each word you pick becomes part of your poem — the order you select them in is the order they'll appear." })
+            : step === 1
+            ? t("tutorial-step1-content", { defaultValue: "Every word is subtly tinted with the color of the character who'd like it most. Pay attention to these hints — they'll guide you toward words that resonate with specific people." })
+            : t("tutorial-step2-content", { defaultValue: "You can earn bonus points with poetic techniques:" })}
         </p>
 
         {/* Bullet list for bonus step */}
         {'bullets' in current && current.bullets && (
           <ul className="space-y-2 mb-4 ml-1">
-            {current.bullets.map((bullet, i) => (
-              <li key={i} className="flex items-start gap-2 text-sm" style={{ color: '#b8b0a0' }}>
-                <span style={{ color: '#c4a35a' }} className="mt-0.5 shrink-0">&#9830;</span>
-                {bullet}
-              </li>
-            ))}
+            <li className="flex items-start gap-2 text-sm" style={{ color: '#b8b0a0' }}>
+              <span style={{ color: '#c4a35a' }} className="mt-0.5 shrink-0">&#9830;</span>
+              {t("tutorial-bullet-alliteration", { defaultValue: "Alliteration — Pick 3+ words starting with the same letter" })}
+            </li>
+            <li className="flex items-start gap-2 text-sm" style={{ color: '#b8b0a0' }}>
+              <span style={{ color: '#c4a35a' }} className="mt-0.5 shrink-0">&#9830;</span>
+              {t("tutorial-bullet-rhyming", { defaultValue: "Rhyming Pair — Select words that rhyme with each other" })}
+            </li>
+            <li className="flex items-start gap-2 text-sm" style={{ color: '#b8b0a0' }}>
+              <span style={{ color: '#c4a35a' }} className="mt-0.5 shrink-0">&#9830;</span>
+              {t("tutorial-bullet-vocabulary", { defaultValue: "Literary Vocabulary — Use rare, sophisticated words" })}
+            </li>
           </ul>
         )}
 
@@ -195,14 +211,14 @@ function PoemTutorial({ onDismiss, presentations }: {
                       {name}
                     </span>
                     <span className="text-xs block" style={{ color: '#8a8070' }}>
-                      Loves: {topTastes.join(', ')}
+                      {t("tutorial-char-loves", { defaultValue: "Loves: {{tastes}}", tastes: topTastes.join(', ') })}
                     </span>
                   </div>
                   {/* Color swatch hint */}
                   <div
                     className="w-4 h-4 rounded-sm shrink-0 ml-auto"
                     style={{ backgroundColor: char.color }}
-                    title={`Words tinted this color appeal to ${name}`}
+                    title={t("tutorial-char-color-hint", { defaultValue: "Words tinted this color appeal to {{name}}", name })}
                   />
                 </div>
               );
@@ -219,8 +235,12 @@ function PoemTutorial({ onDismiss, presentations }: {
             color: '#a89878',
           }}
         >
-          <span style={{ color: '#c4a35a' }}>Tip: </span>
-          {current.tip}
+          <span style={{ color: '#c4a35a' }}>{t("tip-label", { defaultValue: "Tip: " })}</span>
+          {step === 0
+            ? t("tutorial-step0-tip", { defaultValue: "There's no wrong answer. Write what feels right to you." })
+            : step === 1
+            ? t("tutorial-step1-tip", { defaultValue: "You don't have to please everyone. Targeting one character deeply can be more effective than trying to impress all three." })
+            : t("tutorial-step2-tip", { defaultValue: "Bonuses apply to every character's score, so they're always worth pursuing." })}
         </div>
 
         {/* Navigation */}
@@ -231,7 +251,7 @@ function PoemTutorial({ onDismiss, presentations }: {
               className="text-sm px-4 py-2 rounded transition-all"
               style={{ color: '#a89888', border: '1px solid rgba(196, 163, 90, 0.15)' }}
             >
-              Back
+              {t("back", { defaultValue: "Back" })}
             </button>
           ) : (
             <button
@@ -239,7 +259,7 @@ function PoemTutorial({ onDismiss, presentations }: {
               className="text-sm px-4 py-2 rounded transition-all"
               style={{ color: '#666' }}
             >
-              Skip
+              {t("skip", { defaultValue: "Skip" })}
             </button>
           )}
 
@@ -252,7 +272,7 @@ function PoemTutorial({ onDismiss, presentations }: {
               color: '#c4a35a',
             }}
           >
-            {isLast ? 'Start Writing' : 'Next'}
+            {isLast ? t("start-writing", { defaultValue: "Start Writing" }) : t("next", { defaultValue: "Next" })}
           </button>
         </div>
       </motion.div>
@@ -261,6 +281,7 @@ function PoemTutorial({ onDismiss, presentations }: {
 }
 
 export function WordSelectPuzzle() {
+  const { t } = useTranslation("c-versecraft");
   const {
     currentPuzzle, selectedWords, settings, totalPoemsWritten,
     toggleWord, clearSelectedWords, submitPoem, setScreen,
@@ -293,7 +314,7 @@ export function WordSelectPuzzle() {
   if (!puzzle) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p style={{ color: '#a89888' }}>No puzzle loaded.</p>
+        <p style={{ color: '#a89888' }}>{t("no-puzzle-loaded", { defaultValue: "No puzzle loaded." })}</p>
       </div>
     );
   }
@@ -322,7 +343,7 @@ export function WordSelectPuzzle() {
           {puzzle.promptText}
         </p>
         <p className="text-sm mt-2" style={{ color: '#666' }}>
-          Select {puzzle.requiredWordCount} words to compose your poem
+          {t("select-words-prompt", { defaultValue: "Select {{count}} words to compose your poem", count: puzzle.requiredWordCount })}
         </p>
       </div>
 
@@ -378,7 +399,7 @@ export function WordSelectPuzzle() {
               </p>
             ) : (
               <p className="text-sm italic" style={{ color: '#555' }}>
-                Your poem will appear here...
+                {t("poem-placeholder", { defaultValue: "Your poem will appear here..." })}
               </p>
             )}
           </div>
@@ -392,7 +413,7 @@ export function WordSelectPuzzle() {
                   color: canSubmit ? '#c4a35a' : '#a89888',
                 }}
               >
-                {selectedWords.length}/{puzzle.requiredWordCount} selected
+                {t("words-selected-count", { defaultValue: "{{selected}}/{{total}} selected", selected: selectedWords.length, total: puzzle.requiredWordCount })}
               </span>
 
               {/* Character reactions (small chibis) */}
@@ -424,7 +445,7 @@ export function WordSelectPuzzle() {
                   color: '#a89888',
                 }}
               >
-                Clear
+                {t("clear", { defaultValue: "Clear" })}
               </button>
               <button
                 onClick={handleSubmit}
@@ -437,7 +458,7 @@ export function WordSelectPuzzle() {
                   cursor: canSubmit ? 'pointer' : 'not-allowed',
                 }}
               >
-                Submit Poem
+                {t("submit-poem", { defaultValue: "Submit Poem" })}
               </button>
             </div>
           </div>

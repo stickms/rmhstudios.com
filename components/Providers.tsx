@@ -5,8 +5,12 @@ import { MotionConfig } from "framer-motion";
 import { Toaster } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { useThemeStore, SITE_STYLES, SiteStyle } from "@/stores/themeStore";
+import { useLocaleStore, writeLocaleCookie } from "@/stores/localeStore";
+import { applyHtmlLangDir } from "@/lib/i18n/dom";
 import { games } from "@/lib/games";
 import { apps } from "@/lib/apps";
+import { AppI18nProvider } from "@/components/i18n/AppI18nProvider";
+import type { Locale } from "@/lib/i18n/config";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -108,6 +112,12 @@ interface ProvidersProps {
    * already signed-in — no "signed out" flash on refresh.
    */
   initialUser?: CachedSessionUser | null;
+  /**
+   * Locale resolved server-side (from the rmh-lang cookie or Accept-Language
+   * header). Passed to AppI18nProvider so all useTranslation() calls in the
+   * tree render in the correct language from the first paint.
+   */
+  locale?: Locale;
 }
 
 const STYLE_CLASSES = SITE_STYLES.map((s) => `style-${s.id}`);
@@ -153,11 +163,22 @@ const THEME_EXCLUDED_ROUTES = [
   ...apps.map((a) => a.href),
 ].filter((href) => href.startsWith("/"));
 
-export function Providers({ children, initialUser = null }: ProvidersProps) {
+export function Providers({ children, initialUser = null, locale = "en" }: ProvidersProps) {
   const session = authClient.useSession();
   const style = useThemeStore((s) => s.style);
   const { pathname } = useLocation();
   const isFirstRun = useRef(true);
+
+  // Sync the locale store to the SSR-resolved locale and reconcile <html lang/dir>
+  // so a user whose locale was resolved via Accept-Language (no cookie yet) gets
+  // the correct layout direction from the first client render onward.
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      applyHtmlLangDir(locale, document.documentElement);
+      writeLocaleCookie(locale);
+    }
+    useLocaleStore.setState({ locale });
+  }, [locale]);
 
   // Seed the known user from the server-resolved session so the shell renders
   // signed-in on the first paint (SSR) and the first client render — matching
@@ -286,6 +307,7 @@ export function Providers({ children, initialUser = null }: ProvidersProps) {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <AppI18nProvider locale={locale}>
       {/* Honor the OS "reduce motion" setting across all framer-motion animations. */}
       <MotionConfig reducedMotion="user">
       <SessionCtx.Provider value={effectiveSession}>
@@ -305,6 +327,7 @@ export function Providers({ children, initialUser = null }: ProvidersProps) {
         />
       </SessionCtx.Provider>
       </MotionConfig>
+      </AppI18nProvider>
     </QueryClientProvider>
   );
 }

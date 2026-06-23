@@ -5,15 +5,12 @@ import { Link } from '@tanstack/react-router';
 import { Sparkles, Gamepad2, Search, UserCircle, X } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from 'react-i18next';
 
 const STORAGE_KEY = 'rmh-welcome-seen-v1';
 
-const STEPS = [
-  { icon: Sparkles, title: 'Welcome to RMH Studios', body: 'Games, apps, and a social feed — all in one place. Here are a few things to try.' },
-  { icon: Gamepad2, title: 'Play something', body: 'Jump into RMHBox party games, daily puzzles, or any of our original titles — right in your browser.', to: '/games', cta: 'Browse games' },
-  { icon: Search, title: 'Find your people', body: 'Search posts, builds, and people, then follow creators to fill your feed.', to: '/search', cta: 'Open search' },
-  { icon: UserCircle, title: 'Make it yours', body: 'Set a display name, avatar, and bio so others can recognise you.', to: '/profile', cta: 'Edit profile' },
-];
+const STEP_ICONS = [Sparkles, Gamepad2, Search, UserCircle];
+const STEP_TOS = [undefined, '/games', '/search', '/profile'];
 
 /**
  * First-run onboarding. Shown once to signed-in users who haven't seen it
@@ -21,9 +18,17 @@ const STEPS = [
  * the rest of the app without depending on any route data.
  */
 export function WelcomeModal() {
+  const { t } = useTranslation('feed');
   const { data: session, isPending } = useSession();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
+
+  const STEPS = [
+    { icon: STEP_ICONS[0], title: t('welcome-title', { defaultValue: 'Welcome to RMH Studios' }), body: t('welcome-body', { defaultValue: 'Games, apps, and a social feed — all in one place. Here are a few things to try.' }), to: STEP_TOS[0] },
+    { icon: STEP_ICONS[1], title: t('play-title', { defaultValue: 'Play something' }), body: t('play-body', { defaultValue: 'Jump into RMHBox party games, daily puzzles, or any of our original titles — right in your browser.' }), to: STEP_TOS[1], cta: t('play-cta', { defaultValue: 'Browse games' }) },
+    { icon: STEP_ICONS[2], title: t('search-title', { defaultValue: 'Find your people' }), body: t('search-body', { defaultValue: 'Search posts, builds, and people, then follow creators to fill your feed.' }), to: STEP_TOS[2], cta: t('search-cta', { defaultValue: 'Open search' }) },
+    { icon: STEP_ICONS[3], title: t('profile-title', { defaultValue: 'Make it yours' }), body: t('profile-body', { defaultValue: 'Set a display name, avatar, and bio so others can recognise you.' }), to: STEP_TOS[3], cta: t('profile-cta', { defaultValue: 'Edit profile' }) },
+  ];
 
   useEffect(() => {
     if (isPending || !session) return;
@@ -59,7 +64,7 @@ export function WelcomeModal() {
       <div className="relative w-full max-w-md rounded-2xl border border-site-border bg-site-surface p-6 shadow-2xl">
         <button
           onClick={dismiss}
-          aria-label="Close"
+          aria-label={t('close-label', { defaultValue: 'Close' })}
           className="absolute right-3 top-3 rounded-md p-1 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text"
         >
           <X className="h-4 w-4" />
@@ -88,7 +93,7 @@ export function WelcomeModal() {
 
         <div className="mt-6 flex items-center justify-between gap-3">
           <Button variant="ghost" size="sm" onClick={dismiss}>
-            Skip
+            {t('skip', { defaultValue: 'Skip' })}
           </Button>
           <div className="flex items-center gap-2">
             {current.to && (
@@ -103,7 +108,7 @@ export function WelcomeModal() {
               size="sm"
               onClick={() => (isLast ? dismiss() : setStep((s) => s + 1))}
             >
-              {isLast ? 'Get started' : 'Next'}
+              {isLast ? t('get-started', { defaultValue: 'Get started' }) : t('next', { defaultValue: 'Next' })}
             </Button>
           </div>
         </div>

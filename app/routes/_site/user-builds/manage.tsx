@@ -8,12 +8,14 @@ import { Boxes, Plus, Edit, Trash2, Eye, Loader2 } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import type { Build } from '@/lib/user-builds-types';
+import { useTranslation } from 'react-i18next';
 
 export const Route = createFileRoute('/_site/user-builds/manage')({
   component: ManageBuildsPage,
 });
 
 function ManageContent() {
+  const { t } = useTranslation("user-builds");
   const navigate = useNavigate();
   const location = useLocation();
   const { data: session, isPending } = useSession();
@@ -44,7 +46,7 @@ function ManageContent() {
   }, [fetchBuilds, session?.user?.id]);
 
   const handleDelete = async (build: Build) => {
-    if (!confirm(`Delete "${build.title}"? This cannot be undone.`)) return;
+    if (!confirm(t("delete-confirm", { title: build.title, defaultValue: `Delete "{{title}}"? This cannot be undone.` }))) return;
     setDeleting(build.id);
     try {
       const res = await fetch(`/api/user-builds/${build.id}`, { method: 'DELETE' });
@@ -72,10 +74,10 @@ function ManageContent() {
         <div className="max-w-md mx-auto px-4 text-center">
           <div className="p-8 rounded-xl border border-site-border bg-site-surface">
             <Boxes className="w-12 h-12 text-violet-400 mx-auto mb-4" />
-            <h1 className="text-xl font-semibold text-site-text mb-2">Sign In Required</h1>
-            <p className="text-site-text-muted mb-6">You need to sign in to manage your builds.</p>
+            <h1 className="text-xl font-semibold text-site-text mb-2">{t("sign-in-required", { defaultValue: "Sign In Required" })}</h1>
+            <p className="text-site-text-muted mb-6">{t("sign-in-to-manage", { defaultValue: "You need to sign in to manage your builds." })}</p>
             <Link to="/login" search={{ callbackURL: '/user-builds/manage' }}>
-              <Button variant="accent" className="w-full bg-violet-600 hover:bg-violet-500">Sign In</Button>
+              <Button variant="accent" className="w-full bg-violet-600 hover:bg-violet-500">{t("sign-in", { defaultValue: "Sign In" })}</Button>
             </Link>
           </div>
         </div>
@@ -90,13 +92,13 @@ function ManageContent() {
           <div>
             <h1 className="text-3xl font-bold text-site-text flex items-center gap-3 mb-2">
               <Boxes className="w-8 h-8 text-violet-400" />
-              My Builds
+              {t("my-builds", { defaultValue: "My Builds" })}
             </h1>
-            <p className="text-site-text-muted">Manage your published and draft builds</p>
+            <p className="text-site-text-muted">{t("manage-subtitle", { defaultValue: "Manage your published and draft builds" })}</p>
           </div>
           <Link to="/user-builds/submit">
             <Button variant="accent" className="bg-violet-600 hover:bg-violet-500">
-              <Plus className="w-4 h-4 mr-2" /> New Build
+              <Plus className="w-4 h-4 mr-2" /> {t("new-build", { defaultValue: "New Build" })}
             </Button>
           </Link>
         </div>
@@ -108,11 +110,11 @@ function ManageContent() {
         ) : builds.length === 0 ? (
           <div className="text-center py-12 rounded-xl border border-site-border bg-site-surface">
             <Boxes className="w-12 h-12 text-site-text-dim mx-auto mb-4" />
-            <h2 className="text-lg font-semibold text-site-text mb-2">No builds yet</h2>
-            <p className="text-site-text-muted mb-6">Create your first build and share it with the community.</p>
+            <h2 className="text-lg font-semibold text-site-text mb-2">{t("no-builds-yet", { defaultValue: "No builds yet" })}</h2>
+            <p className="text-site-text-muted mb-6">{t("no-builds-description", { defaultValue: "Create your first build and share it with the community." })}</p>
             <Link to="/user-builds/submit">
               <Button variant="accent" className="bg-violet-600 hover:bg-violet-500">
-                <Plus className="w-4 h-4 mr-2" /> Create Build
+                <Plus className="w-4 h-4 mr-2" /> {t("create-build", { defaultValue: "Create Build" })}
               </Button>
             </Link>
           </div>
@@ -136,18 +138,18 @@ function ManageContent() {
                     <span className={`px-2 py-0.5 rounded ${build.visibility === 'PUBLIC' ? 'bg-green-500/20 text-green-400' : build.visibility === 'UNLISTED' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-gray-500/20 text-gray-400'}`}>
                       {build.visibility}
                     </span>
-                    <span>{build.likeCount} likes</span>
-                    <span>{build.viewCount} views</span>
+                    <span>{t("like-count", { count: build.likeCount, defaultValue: "{{count}} likes" })}</span>
+                    <span>{t("view-count", { count: build.viewCount, defaultValue: "{{count}} views" })}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Link to={`/user-builds/${build.slug}` as string}>
-                    <Button variant="ghost" size="icon" title="View"><Eye className="w-4 h-4" /></Button>
+                    <Button variant="ghost" size="icon" title={t("view", { defaultValue: "View" })}><Eye className="w-4 h-4" /></Button>
                   </Link>
                   <Link to="/user-builds/submit" search={{ edit: build.id }}>
-                    <Button variant="ghost" size="icon" title="Edit"><Edit className="w-4 h-4" /></Button>
+                    <Button variant="ghost" size="icon" title={t("edit", { defaultValue: "Edit" })}><Edit className="w-4 h-4" /></Button>
                   </Link>
-                  <Button variant="ghost" size="icon" onClick={() => handleDelete(build)} disabled={deleting === build.id} className="text-red-400 hover:text-red-300" title="Delete">
+                  <Button variant="ghost" size="icon" onClick={() => handleDelete(build)} disabled={deleting === build.id} className="text-red-400 hover:text-red-300" title={t("delete", { defaultValue: "Delete" })}>
                     {deleting === build.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                   </Button>
                 </div>

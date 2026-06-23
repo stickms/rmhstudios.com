@@ -4,6 +4,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Settings } from 'lucide-react';
 import { emit } from '@/lib/rmhtube/socket';
 import { C2S } from '@/lib/rmhtube/events';
@@ -11,6 +12,7 @@ import { useRmhTubeStore } from '@/lib/rmhtube/store';
 import type { RoomSettings as RoomSettingsType } from '@/lib/rmhtube/types';
 
 export default function RoomSettings() {
+  const { t } = useTranslation("c-rmhtube");
   const room = useRmhTubeStore((s) => s.room);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -23,7 +25,7 @@ export default function RoomSettings() {
       <button
         onClick={() => setIsOpen(true)}
         className="rounded-md p-2 transition-colors text-(--rmhtube-text-muted) hover:text-(--rmhtube-text) hover:bg-(--rmhtube-surface-hover)"
-        title="Room Settings"
+        title={t("room-settings", { defaultValue: "Room Settings" })}
       >
         <Settings className="h-5 w-5" />
       </button>
@@ -45,6 +47,8 @@ function SettingsModal({
   settings: RoomSettingsType;
   onClose: () => void;
 }) {
+  const { t } = useTranslation("c-rmhtube");
+
   // General
   const [isPublic, setIsPublic] = useState(settings.isPublic);
   const [allowMemberQueue, setAllowMemberQueue] = useState(settings.allowMemberQueue);
@@ -103,45 +107,45 @@ function SettingsModal({
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
       <div className="relative w-full max-w-sm max-h-[85vh] overflow-y-auto rounded-xl border border-(--rmhtube-border) bg-(--rmhtube-surface) p-6 shadow-xl">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">Room Settings</h3>
+          <h3 className="text-lg font-semibold">{t("room-settings", { defaultValue: "Room Settings" })}</h3>
           <button onClick={onClose} className="rounded p-1 text-(--rmhtube-text-muted) hover:text-(--rmhtube-text)">
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* General */}
-        <SectionHeader title="General" />
+        <SectionHeader title={t("general", { defaultValue: "General" })} />
         <div className="space-y-4 mb-6">
-          <ToggleOption label="Public Room" description="Visible in room browser" value={isPublic} onChange={setIsPublic} />
-          <ToggleOption label="Members Can Add Videos" description="Allow non-hosts to add to queue" value={allowMemberQueue} onChange={setAllowMemberQueue} />
-          <ToggleOption label="Members Can Vote Skip" description="Allow non-hosts to vote-skip videos" value={allowMemberSkip} onChange={setAllowMemberSkip} />
-          <ToggleOption label="Auto-Play" description="Automatically play next video in queue" value={autoPlay} onChange={setAutoPlay} />
+          <ToggleOption label={t("public-room", { defaultValue: "Public Room" })} description={t("public-room-desc", { defaultValue: "Visible in room browser" })} value={isPublic} onChange={setIsPublic} />
+          <ToggleOption label={t("members-can-add-videos", { defaultValue: "Members Can Add Videos" })} description={t("members-can-add-videos-desc", { defaultValue: "Allow non-hosts to add to queue" })} value={allowMemberQueue} onChange={setAllowMemberQueue} />
+          <ToggleOption label={t("members-can-vote-skip", { defaultValue: "Members Can Vote Skip" })} description={t("members-can-vote-skip-desc", { defaultValue: "Allow non-hosts to vote-skip videos" })} value={allowMemberSkip} onChange={setAllowMemberSkip} />
+          <ToggleOption label={t("auto-play", { defaultValue: "Auto-Play" })} description={t("auto-play-desc", { defaultValue: "Automatically play next video in queue" })} value={autoPlay} onChange={setAutoPlay} />
         </div>
 
         {/* Queue */}
-        <SectionHeader title="Queue" />
+        <SectionHeader title={t("queue", { defaultValue: "Queue" })} />
         <div className="space-y-4 mb-6">
-          <ToggleOption label="Allow Queue Voting" description="Members can upvote queue items" value={queueVoting} onChange={setQueueVoting} />
+          <ToggleOption label={t("allow-queue-voting", { defaultValue: "Allow Queue Voting" })} description={t("allow-queue-voting-desc", { defaultValue: "Members can upvote queue items" })} value={queueVoting} onChange={setQueueVoting} />
           {queueVoting && (
-            <ToggleOption label="Auto-Sort by Votes" description="Queue items sorted by vote count" value={autoSortByVotes} onChange={setAutoSortByVotes} />
+            <ToggleOption label={t("auto-sort-by-votes", { defaultValue: "Auto-Sort by Votes" })} description={t("auto-sort-by-votes-desc", { defaultValue: "Queue items sorted by vote count" })} value={autoSortByVotes} onChange={setAutoSortByVotes} />
           )}
-          <ToggleOption label="Loop Queue" description="Restart from beginning when queue ends" value={loopQueue} onChange={setLoopQueue} />
+          <ToggleOption label={t("loop-queue", { defaultValue: "Loop Queue" })} description={t("loop-queue-desc", { defaultValue: "Restart from beginning when queue ends" })} value={loopQueue} onChange={setLoopQueue} />
         </div>
 
         {/* Reactions */}
-        <SectionHeader title="Reactions" />
+        <SectionHeader title={t("reactions", { defaultValue: "Reactions" })} />
         <div className="space-y-4 mb-6">
-          <ToggleOption label="Custom Reactions" description="Set custom emoji reactions for this room" value={enableCustomReactions} onChange={setEnableCustomReactions} />
+          <ToggleOption label={t("custom-reactions", { defaultValue: "Custom Reactions" })} description={t("custom-reactions-desc", { defaultValue: "Set custom emoji reactions for this room" })} value={enableCustomReactions} onChange={setEnableCustomReactions} />
           {enableCustomReactions && (
             <div className="pl-1">
               <label className="block text-xs font-medium text-(--rmhtube-text-muted) mb-1">
-                Comma-separated emojis
+                {t("comma-separated-emojis", { defaultValue: "Comma-separated emojis" })}
               </label>
               <input
                 type="text"
                 value={customReactionsInput}
                 onChange={(e) => setCustomReactionsInput(e.target.value)}
-                placeholder="e.g. fire, heart, laughing"
+                placeholder={t("emojis-placeholder", { defaultValue: "e.g. fire, heart, laughing" })}
                 className="w-full rounded-lg border border-(--rmhtube-border) bg-(--rmhtube-bg) px-3 py-2 text-sm text-(--rmhtube-text) placeholder:text-(--rmhtube-text-dim) focus:outline-none focus:ring-1 focus:ring-(--rmhtube-accent)"
               />
             </div>
@@ -152,7 +156,7 @@ function SettingsModal({
           onClick={handleSave}
           className="w-full mt-2 py-2.5 rounded-lg font-semibold text-white transition-colors bg-(--rmhtube-accent) hover:bg-(--rmhtube-accent-hover)"
         >
-          Save
+          {t("save", { defaultValue: "Save" })}
         </button>
       </div>
     </div>

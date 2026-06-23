@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { useInView } from 'framer-motion';
+import { useTranslation } from "react-i18next";
 import { GameInfo } from '@/lib/games';
 import { GameCard } from '@/components/game/GameCard';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -12,6 +13,7 @@ interface GameCarouselProps {
 }
 
 export function GameCarousel({ games }: GameCarouselProps) {
+    const { t } = useTranslation("c-game");
     const [emblaRef, emblaApi] = useEmblaCarousel({
         loop: true,
         align: 'center',
@@ -93,7 +95,7 @@ export function GameCarousel({ games }: GameCarouselProps) {
             <button
                 className="absolute left-4 md:left-12 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-(--site-surface)/80 border border-site-border text-site-text flex items-center justify-center transition-all hover:bg-site-accent hover:border-site-accent hover:text-site-accent-fg z-10 backdrop-blur-sm"
                 onClick={scrollPrev}
-                aria-label="Previous slide"
+                aria-label={t("previous-slide", { defaultValue: "Previous slide" })}
             >
                 <ChevronLeft className="w-6 h-6" />
             </button>
@@ -101,7 +103,7 @@ export function GameCarousel({ games }: GameCarouselProps) {
             <button
                 className="absolute right-4 md:right-12 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-(--site-surface)/80 border border-site-border text-site-text flex items-center justify-center transition-all hover:bg-site-accent hover:border-site-accent hover:text-site-accent-fg z-10 backdrop-blur-sm"
                 onClick={scrollNext}
-                aria-label="Next slide"
+                aria-label={t("next-slide", { defaultValue: "Next slide" })}
             >
                 <ChevronRight className="w-6 h-6" />
             </button>
@@ -113,7 +115,7 @@ export function GameCarousel({ games }: GameCarouselProps) {
                         key={index}
                         onClick={() => scrollTo(index)}
                         className={`relative h-1.5 rounded-full overflow-hidden bg-site-border transition-all duration-500 ease-out ${index === selectedIndex ? "w-12" : "w-1.5"}`}
-                        aria-label={`Go to slide ${index + 1}`}
+                        aria-label={t("go-to-slide", { defaultValue: "Go to slide {{number}}", number: index + 1 })}
                     >
                         {index === selectedIndex && (
                           <div

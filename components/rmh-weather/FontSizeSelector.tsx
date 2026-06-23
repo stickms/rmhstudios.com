@@ -1,18 +1,20 @@
 import React from 'react';
+import { useTranslation } from "react-i18next";
 import { useWeatherStore } from '@/lib/store/useWeatherStore';
 
-const fontSizes = [
-  { key: 'small', label: 'Small' },
-  { key: 'medium', label: 'Medium' },
-  { key: 'large', label: 'Large' },
-];
-
 export const FontSizeSelector = () => {
+  const { t } = useTranslation("c-rmh-weather");
   const { fontSize, setFontSize } = useWeatherStore();
+
+  const fontSizes = [
+    { key: 'small', label: t("font-size-small", { defaultValue: "Small" }) },
+    { key: 'medium', label: t("font-size-medium", { defaultValue: "Medium" }) },
+    { key: 'large', label: t("font-size-large", { defaultValue: "Large" }) },
+  ];
 
   return (
     <div className="my-8">
-      <div className="text-lg font-semibold text-blue-400 mb-2">Font Size & Accessibility</div>
+      <div className="text-lg font-semibold text-blue-400 mb-2">{t("font-size-accessibility", { defaultValue: "Font Size & Accessibility" })}</div>
       <div className="bg-weather-glass rounded-2xl p-4 border border-weather text-weather">
         <div className="flex gap-4">
           {fontSizes.map(f => (
@@ -25,7 +27,7 @@ export const FontSizeSelector = () => {
             </button>
           ))}
         </div>
-        <div className="mt-4 text-xs text-gray-500">Adjust font size for accessibility.</div>
+        <div className="mt-4 text-xs text-gray-500">{t("adjust-font-size", { defaultValue: "Adjust font size for accessibility." })}</div>
       </div>
     </div>
   );

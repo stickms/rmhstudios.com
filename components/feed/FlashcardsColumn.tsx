@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Loader2, BookOpen, Plus, Sparkles, X, Globe, Lock, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,7 @@ interface Deck {
 }
 
 export function FlashcardsColumn() {
+  const { t } = useTranslation('feed');
   const navigate = useNavigate();
   const [mine, setMine] = useState<Deck[]>([]);
   const [popular, setPopular] = useState<Deck[]>([]);
@@ -66,7 +68,7 @@ export function FlashcardsColumn() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error ?? 'Could not create');
+        setError(data.error ?? t('could-not-create', { defaultValue: 'Could not create' }));
         return;
       }
       navigate({ to: `/study/${data.id}` as string });
@@ -96,9 +98,9 @@ export function FlashcardsColumn() {
         <p className="truncate text-sm font-semibold text-site-text">{d.title}</p>
         {d.description && <p className="truncate text-xs text-site-text-muted">{d.description}</p>}
         <p className="mt-0.5 text-[11px] text-site-text-dim">
-          {d.cardCount} card{d.cardCount === 1 ? '' : 's'}
-          {showOwner && d.user ? ` · by ${d.user.name || d.user.handle || 'someone'}` : ''}
-          {d.isPublic ? ' · public' : ''}
+          {t('card-count', { count: d.cardCount, defaultValue: '{{count}} card', defaultValue_other: '{{count}} cards' })}
+          {showOwner && d.user ? t('deck-by-owner', { owner: d.user.name || d.user.handle || t('someone', { defaultValue: 'someone' }), defaultValue: ' · by {{owner}}' }) : ''}
+          {d.isPublic ? t('deck-public-suffix', { defaultValue: ' · public' }) : ''}
         </p>
       </div>
     </Link>
@@ -108,10 +110,10 @@ export function FlashcardsColumn() {
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-site-border bg-site-bg/80 px-4 py-3 backdrop-blur">
         <BookOpen className="h-5 w-5 text-site-accent" />
-        <h1 className="text-lg font-bold text-site-text">Flashcards</h1>
+        <h1 className="text-lg font-bold text-site-text">{t('flashcards-title', { defaultValue: 'Flashcards' })}</h1>
         {signedIn && (
           <Button size="sm" variant="accent" className="ml-auto gap-1" onClick={() => setShowForm((v) => !v)}>
-            <Plus className="h-3.5 w-3.5" /> New deck
+            <Plus className="h-3.5 w-3.5" /> {t('new-deck', { defaultValue: 'New deck' })}
           </Button>
         )}
       </header>
@@ -119,8 +121,8 @@ export function FlashcardsColumn() {
       {showForm && (
         <div className="border-b border-site-border bg-site-surface/30 p-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-site-text">New deck</h2>
-            <button onClick={() => setShowForm(false)} className="text-site-text-dim hover:text-site-text" aria-label="Close">
+            <h2 className="text-sm font-semibold text-site-text">{t('new-deck', { defaultValue: 'New deck' })}</h2>
+            <button onClick={() => setShowForm(false)} className="text-site-text-dim hover:text-site-text" aria-label={t('close', { defaultValue: 'Close' })}>
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -128,25 +130,25 @@ export function FlashcardsColumn() {
             <input
               value={form.title}
               onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-              placeholder="Deck title"
+              placeholder={t('deck-title-placeholder', { defaultValue: 'Deck title' })}
               maxLength={100}
               className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
             <input
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-              placeholder="Description (optional)"
+              placeholder={t('description-placeholder', { defaultValue: 'Description (optional)' })}
               maxLength={500}
               className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
             <div className="rounded-lg border border-site-accent/30 bg-site-accent/5 p-2">
               <label className="mb-1 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-site-accent">
-                <Sparkles className="h-3 w-3" /> AI tutor — auto-generate cards
+                <Sparkles className="h-3 w-3" /> {t('ai-tutor-label', { defaultValue: 'AI tutor — auto-generate cards' })}
               </label>
               <input
                 value={form.generateTopic}
                 onChange={(e) => setForm((f) => ({ ...f, generateTopic: e.target.value }))}
-                placeholder="Topic, e.g. 'French Revolution causes' (optional)"
+                placeholder={t('generate-topic-placeholder', { defaultValue: "Topic, e.g. 'French Revolution causes' (optional)" })}
                 maxLength={200}
                 className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
               />
@@ -158,11 +160,11 @@ export function FlashcardsColumn() {
                 className="inline-flex items-center gap-1.5 rounded-lg border border-site-border px-2.5 py-1.5 text-xs font-medium text-site-text-muted hover:text-site-text"
               >
                 {form.isPublic ? <Globe className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
-                {form.isPublic ? 'Public' : 'Private'}
+                {form.isPublic ? t('public', { defaultValue: 'Public' }) : t('private', { defaultValue: 'Private' })}
               </button>
               {error && <p className="text-xs text-site-danger">{error}</p>}
               <Button size="sm" variant="accent" disabled={busy || form.title.trim().length < 1} onClick={create}>
-                {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Create deck'}
+                {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t('create-deck', { defaultValue: 'Create deck' })}
               </Button>
             </div>
           </div>
@@ -172,14 +174,14 @@ export function FlashcardsColumn() {
       <div className="space-y-6 p-4">
         {mine.length > 0 && (
           <section>
-            <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">Your decks</h2>
+            <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('your-decks', { defaultValue: 'Your decks' })}</h2>
             <div className="space-y-2">{mine.map((d) => DeckCard(d))}</div>
           </section>
         )}
         <section>
-          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">Public decks</h2>
+          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('public-decks', { defaultValue: 'Public decks' })}</h2>
           {popular.length === 0 ? (
-            <p className="py-10 text-center text-sm text-site-text-muted">No public decks yet.</p>
+            <p className="py-10 text-center text-sm text-site-text-muted">{t('no-public-decks', { defaultValue: 'No public decks yet.' })}</p>
           ) : (
             <div className="space-y-2">{popular.map((d) => DeckCard(d, true))}</div>
           )}

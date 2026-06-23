@@ -10,6 +10,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Card, RelicTemplate } from '@/lib/signal-forge';
 import type { GameState } from '@/lib/signal-forge/GameTypes';
 
@@ -101,6 +102,7 @@ export function SignalForgeUI(props: SignalForgeUIProps) {
   } = props;
 
   /* ── Local UI state ── */
+  const { t } = useTranslation("c-signal-forge");
   const [showCollection, setShowCollection] = useState(false);
   const [selectingCardToRemove, setSelectingCardToRemove] = useState(false);
   const [selectingCardToUpgrade, setSelectingCardToUpgrade] = useState(false);
@@ -237,7 +239,7 @@ export function SignalForgeUI(props: SignalForgeUIProps) {
   // Deck/discard viewer
   if (gameState.phase === 'combat' && gameState.viewingPile && onToggleViewPile) {
     const cards = gameState.viewingPile === 'deck' ? gameState.deck : gameState.discard;
-    const label = gameState.viewingPile === 'deck' ? 'Draw Pile' : 'Discard Pile';
+    const label = gameState.viewingPile === 'deck' ? t("draw-pile", { defaultValue: "Draw Pile" }) : t("discard-pile", { defaultValue: "Discard Pile" });
     return <DeckViewer cards={cards} pileLabel={label} onClose={() => onToggleViewPile(null)} />;
   }
 
@@ -322,7 +324,7 @@ export function SignalForgeUI(props: SignalForgeUIProps) {
         onClick={() => setShowCollection(true)}
         className="fixed bottom-6 left-6 pointer-events-auto bg-linear-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold py-2 px-4 rounded-lg border border-cyan-400 shadow-lg transition-all"
       >
-        📚 Collection
+        📚 {t("collection", { defaultValue: "Collection" })}
       </button>
     </div>
   );

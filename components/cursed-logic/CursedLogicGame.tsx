@@ -2,6 +2,7 @@
 import './cursed-logic.css';
 
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useCursedLogicStore } from '@/lib/cursed-logic/gameState';
 import { getProtocolAction } from '@/lib/cursed-logic/protocol';
 import { resolveRound, chargeAfterSpend } from '@/lib/cursed-logic/resolution';
@@ -146,6 +147,7 @@ export function CursedLogicGame() {
     minigameChaosDistort,
   } = useCursedLogicStore();
 
+  const { t } = useTranslation("c-cursed-logic");
   const [animationKey, setAnimationKey] = useState(0);
   const [reinforce, setReinforce] = useState(false);
   const revealTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -316,10 +318,10 @@ export function CursedLogicGame() {
     return (
       <div className="flex flex-col items-center justify-center gap-6 p-6 text-center">
         <h2 className="text-3xl font-black tracking-tighter text-white">
-          {result === 'win' ? 'PROTOCOL OVERLOAD' : 'INTEGRITY ZERO'}
+          {result === 'win' ? t("protocol-overload", { defaultValue: "PROTOCOL OVERLOAD" }) : t("integrity-zero", { defaultValue: "INTEGRITY ZERO" })}
         </h2>
         <p className="text-white/70">
-          {result === 'win' ? 'The system breaks. You survive.' : 'The Protocol consumes you.'}
+          {result === 'win' ? t("win-flavor", { defaultValue: "The system breaks. You survive." }) : t("lose-flavor", { defaultValue: "The Protocol consumes you." })}
         </p>
         <button
           type="button"
@@ -329,7 +331,7 @@ export function CursedLogicGame() {
           }}
           className="rounded-lg bg-cyan-500/20 px-6 py-3 font-bold text-cyan-300 border border-cyan-500/50 hover:bg-cyan-500/30 transition-colors"
         >
-          Play Again
+          {t("play-again", { defaultValue: "Play Again" })}
         </button>
       </div>
     );
@@ -338,8 +340,8 @@ export function CursedLogicGame() {
   if (phase === 'milestone' && milestoneChoices) {
     return (
       <div className="flex flex-col items-center justify-center gap-6 p-6 text-center">
-        <h2 className="text-lg font-bold text-cyan-400 font-mono">Choose an upgrade</h2>
-        <p className="text-white/60 text-sm">Round {round} — pick one for the rest of the run</p>
+        <h2 className="text-lg font-bold text-cyan-400 font-mono">{t("choose-upgrade", { defaultValue: "Choose an upgrade" })}</h2>
+        <p className="text-white/60 text-sm">{t("milestone-subtitle", { defaultValue: "Round {{round}} — pick one for the rest of the run", round })}</p>
         <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs">
           {milestoneChoices.map((choice) => (
             <button
@@ -372,13 +374,13 @@ export function CursedLogicGame() {
       {/* Top stats row — large and clear */}
       <div className="grid grid-cols-4 gap-3 text-center font-mono shrink-0">
         <div className="rounded-xl bg-cyan-500/10 border-2 border-cyan-500/40 p-3">
-          <div className="text-cyan-400 text-sm font-bold">Charge</div>
+          <div className="text-cyan-400 text-sm font-bold">{t("charge", { defaultValue: "Charge" })}</div>
           <div className={`text-xl font-black tabular-nums ${charge <= 1 ? 'text-amber-400' : 'text-white'}`}>
             {charge} / {chargeCap}
           </div>
         </div>
         <div className="rounded-xl bg-white/10 border-2 border-white/20 p-3">
-          <div className="text-cyan-400 text-sm font-bold">Integrity</div>
+          <div className="text-cyan-400 text-sm font-bold">{t("integrity", { defaultValue: "Integrity" })}</div>
           <div className="text-xl font-black text-white tabular-nums">{integrity}</div>
         </div>
         <div className="rounded-xl bg-amber-500/10 border-2 border-amber-500/40 p-3">
@@ -386,7 +388,7 @@ export function CursedLogicGame() {
           <div className="text-xl font-black text-white tabular-nums">{protocolHealth}</div>
         </div>
         <div className="rounded-xl bg-white/10 border-2 border-white/20 p-3">
-          <div className="text-white/70 text-sm font-bold">Round</div>
+          <div className="text-white/70 text-sm font-bold">{t("round", { defaultValue: "Round" })}</div>
           <div className="text-xl font-black text-white tabular-nums">{round}</div>
         </div>
       </div>
@@ -395,12 +397,12 @@ export function CursedLogicGame() {
         <div className="flex flex-wrap justify-center gap-2 shrink-0">
           {playerCondition && (
             <span className="rounded bg-amber-500/20 border border-amber-500/50 px-2 py-0.5 text-amber-300 text-xs font-mono">
-              You: {playerCondition}
+              {t("you-condition", { defaultValue: "You: {{condition}}", condition: playerCondition })}
             </span>
           )}
           {protocolCondition && (
             <span className="rounded bg-cyan-500/20 border border-cyan-500/50 px-2 py-0.5 text-cyan-300 text-xs font-mono">
-              Protocol: {protocolCondition}
+              {t("protocol-condition", { defaultValue: "Protocol: {{condition}}", condition: protocolCondition })}
             </span>
           )}
         </div>
@@ -408,7 +410,7 @@ export function CursedLogicGame() {
 
       {charge <= 1 && phase === 'commit' && (
         <p className="text-amber-400/90 text-xs text-center font-mono shrink-0">
-          {charge === 0 ? 'Overdraw: next action costs 1 and you take a penalty.' : 'Low charge—overdraw risk next round.'}
+          {charge === 0 ? t("overdraw-warning", { defaultValue: "Overdraw: next action costs 1 and you take a penalty." }) : t("low-charge-warning", { defaultValue: "Low charge—overdraw risk next round." })}
         </p>
       )}
 
@@ -517,7 +519,7 @@ export function CursedLogicGame() {
               ${!playerHit && !playerBlocked && !playerPrepared ? 'border-cyan-500/60 bg-cyan-500/10' : ''}
             `}
           >
-            <span className="text-cyan-300 font-bold">YOU</span>
+            <span className="text-cyan-300 font-bold">{t("you-label", { defaultValue: "YOU" })}</span>
           </div>
           <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
             <div
@@ -526,11 +528,11 @@ export function CursedLogicGame() {
             />
           </div>
           {playerPrepared && phase === 'commit' && (
-            <span className="text-cyan-400 text-[10px] font-mono">NEXT +1</span>
+            <span className="text-cyan-400 text-[10px] font-mono">{t("next-plus-one", { defaultValue: "NEXT +1" })}</span>
           )}
         </div>
 
-        <div className="text-white/30 font-mono text-xs shrink-0">VS</div>
+        <div className="text-white/30 font-mono text-xs shrink-0">{t("vs", { defaultValue: "VS" })}</div>
 
         {/* Protocol avatar */}
         <div className="flex flex-col items-center gap-1 w-24 relative">
@@ -587,7 +589,7 @@ export function CursedLogicGame() {
             `}
             style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }}
           >
-            <span className="text-amber-300 font-bold">SYS</span>
+            <span className="text-amber-300 font-bold">{t("sys-label", { defaultValue: "SYS" })}</span>
           </div>
           {phase !== 'stance' && (
             <span className="text-amber-400/80 text-[10px] font-mono">
@@ -601,7 +603,7 @@ export function CursedLogicGame() {
             />
           </div>
           {protocolPrepared && phase === 'commit' && (
-            <span className="text-amber-400 text-[10px] font-mono">NEXT +1</span>
+            <span className="text-amber-400 text-[10px] font-mono">{t("next-plus-one", { defaultValue: "NEXT +1" })}</span>
           )}
         </div>
       </div>
@@ -615,7 +617,7 @@ export function CursedLogicGame() {
       {/* Reveal modifier: show Protocol intent this round (free Probe for current round) */}
       {phase === 'commit' && currentModifier === 'Reveal' && revealedProtocolIntent !== null && (
         <div className="rounded bg-amber-500/10 border border-amber-500/40 px-3 py-2 text-center shrink-0">
-          <p className="text-amber-300 text-xs font-mono">Protocol intent this round</p>
+          <p className="text-amber-300 text-xs font-mono">{t("protocol-intent-this-round", { defaultValue: "Protocol intent this round" })}</p>
           <p className="text-amber-200 font-mono font-bold">{ACTION_LABELS[revealedProtocolIntent]}</p>
         </div>
       )}
@@ -623,11 +625,11 @@ export function CursedLogicGame() {
       {/* Probe: reveals Protocol intent for next round (set when you used Probe last round) */}
       {phase === 'commit' && probeRevealedNextIntent !== null && (
         <div className="rounded bg-cyan-500/10 border border-cyan-500/40 px-3 py-2 text-center shrink-0">
-          <p className="text-cyan-300 text-xs font-mono">Next round Protocol will</p>
+          <p className="text-cyan-300 text-xs font-mono">{t("next-round-protocol-will", { defaultValue: "Next round Protocol will" })}</p>
           <p className="text-cyan-200 font-mono font-bold">{ACTION_LABELS[probeRevealedNextIntent]}</p>
           {probeRevealedRoundAfterNext !== null && (
             <>
-              <p className="text-cyan-300/80 text-xs font-mono mt-1">Round after that</p>
+              <p className="text-cyan-300/80 text-xs font-mono mt-1">{t("round-after-that", { defaultValue: "Round after that" })}</p>
               <p className="text-cyan-200/90 font-mono font-bold">{ACTION_LABELS[probeRevealedRoundAfterNext]}</p>
             </>
           )}
@@ -636,7 +638,7 @@ export function CursedLogicGame() {
 
       {phase === 'stance' && stanceChoices && (
         <div className="flex flex-col gap-3 shrink-0">
-          <p className="text-white/60 text-sm text-center">Choose your stance</p>
+          <p className="text-white/60 text-sm text-center">{t("choose-stance", { defaultValue: "Choose your stance" })}</p>
           <div className="grid grid-cols-3 gap-2">
             {stanceChoices.map((stance) => (
               <button
@@ -657,10 +659,10 @@ export function CursedLogicGame() {
         <div className="flex flex-col gap-3 shrink-0">
           {currentStance && (
             <p className="text-cyan-400/90 text-xs text-center font-mono">
-              Stance: {getStanceLabel(currentStance)}
+              {t("current-stance", { defaultValue: "Stance: {{stance}}", stance: getStanceLabel(currentStance) })}
             </p>
           )}
-          <p className="text-white/60 text-sm text-center">Choose an action</p>
+          <p className="text-white/60 text-sm text-center">{t("choose-action", { defaultValue: "Choose an action" })}</p>
           {charge >= 2 && (
             <label className="flex items-center justify-center gap-2 cursor-pointer">
               <input
@@ -669,7 +671,7 @@ export function CursedLogicGame() {
                 onChange={(e) => setReinforce(e.target.checked)}
                 className="rounded border-cyan-500/50 bg-cyan-500/10"
               />
-              <span className="text-cyan-300 text-xs font-mono">Reinforce (+1 Charge)</span>
+              <span className="text-cyan-300 text-xs font-mono">{t("reinforce-label", { defaultValue: "Reinforce (+1 Charge)" })}</span>
             </label>
           )}
           <div className="grid grid-cols-2 gap-2">
@@ -690,61 +692,59 @@ export function CursedLogicGame() {
       {phase === 'reveal' && (
         <div className="flex flex-col gap-4 text-center shrink-0 animate-[cursed-reveal-in_0.3s_ease-out]">
           <p className="text-white/60 text-sm">
-            {revealStep === 0 ? 'Protocol…' : revealStep === 1 ? 'You…' : 'Resolving…'}
+            {revealStep === 0 ? t("reveal-protocol", { defaultValue: "Protocol…" }) : revealStep === 1 ? t("reveal-you", { defaultValue: "You…" }) : t("resolving", { defaultValue: "Resolving…" })}
           </p>
           <div className="flex justify-center gap-8">
             <div>
-              <div className="text-cyan-400 text-xs">You</div>
+              <div className="text-cyan-400 text-xs">{t("you", { defaultValue: "You" })}</div>
               <div className="font-mono font-bold text-white min-w-16">
                 {revealStep >= 1 && pendingPlayerAction ? ACTION_LABELS[pendingPlayerAction] : '—'}
               </div>
             </div>
             <div>
-              <div className="text-amber-400/90 text-xs">Protocol</div>
+              <div className="text-amber-400/90 text-xs">{t("protocol", { defaultValue: "Protocol" })}</div>
               <div className="font-mono font-bold text-white min-w-16">
                 {revealStep >= 0 && pendingProtocolAction ? ACTION_LABELS[pendingProtocolAction] : '—'}
               </div>
             </div>
           </div>
           {currentModifier === 'Reveal' && (
-            <p className="text-white/50 text-xs">(Reveal modifier: intent shown)</p>
+            <p className="text-white/50 text-xs">{t("reveal-modifier-note", { defaultValue: "(Reveal modifier: intent shown)" })}</p>
           )}
-          {revealStep === 2 && <p className="text-white/40 text-sm animate-pulse">Resolving…</p>}
+          {revealStep === 2 && <p className="text-white/40 text-sm animate-pulse">{t("resolving", { defaultValue: "Resolving…" })}</p>}
         </div>
       )}
 
       {phase === 'resolved' && lastRound && (
         <div className="flex flex-col gap-2 text-center shrink-0">
-          <p className="text-white/60 text-sm">Result</p>
+          <p className="text-white/60 text-sm">{t("result", { defaultValue: "Result" })}</p>
           <p className="font-mono text-sm text-white">
-            You: {ACTION_LABELS[lastRound.playerAction]} — Protocol: {ACTION_LABELS[lastRound.protocolAction]}
+            {t("resolved-actions", { defaultValue: "You: {{playerAction}} — Protocol: {{protocolAction}}", playerAction: ACTION_LABELS[lastRound.playerAction], protocolAction: ACTION_LABELS[lastRound.protocolAction] })}
           </p>
           <p className="text-white/80">
             {lastRound.protocolDamage > 0 && (
-              <span className="text-cyan-400">Protocol -{lastRound.protocolDamage}</span>
+              <span className="text-cyan-400">{t("protocol-damage", { defaultValue: "Protocol -{{damage}}", damage: lastRound.protocolDamage })}</span>
             )}
             {lastRound.protocolDamage > 0 && lastRound.playerDamage > 0 && ' · '}
             {lastRound.playerDamage > 0 && (
-              <span className="text-amber-400">You -{lastRound.playerDamage}</span>
+              <span className="text-amber-400">{t("you-damage", { defaultValue: "You -{{damage}}", damage: lastRound.playerDamage })}</span>
             )}
-            {lastRound.playerDamage === 0 && lastRound.protocolDamage === 0 && 'No damage'}
+            {lastRound.playerDamage === 0 && lastRound.protocolDamage === 0 && t("no-damage", { defaultValue: "No damage" })}
           </p>
           {lastRound.overdraw && (
-            <p className="text-amber-400/80 text-xs">Overdraw penalty applied</p>
+            <p className="text-amber-400/80 text-xs">{t("overdraw-penalty", { defaultValue: "Overdraw penalty applied" })}</p>
           )}
-          <p className="text-white/40 text-sm">Next round...</p>
+          <p className="text-white/40 text-sm">{t("next-round", { defaultValue: "Next round..." })}</p>
         </div>
       )}
 
       {log.length > 0 && (
         <div className="mt-auto border-t border-white/10 pt-3 shrink-0">
-          <p className="text-white/40 text-xs font-mono mb-1">Last rounds</p>
+          <p className="text-white/40 text-xs font-mono mb-1">{t("last-rounds", { defaultValue: "Last rounds" })}</p>
           <ul className="text-xs font-mono text-white/60 space-y-0.5">
             {log.slice(0, 3).map((r, i) => (
               <li key={i}>
-                {r.playerAction} vs {r.protocolAction} — You{' '}
-                {r.playerDamage > 0 ? `-${r.playerDamage}` : '0'} / Protocol{' '}
-                {r.protocolDamage > 0 ? `-${r.protocolDamage}` : '0'}
+                {t("log-entry", { defaultValue: "{{playerAction}} vs {{protocolAction}} — You {{playerScore}} / Protocol {{protocolScore}}", playerAction: r.playerAction, protocolAction: r.protocolAction, playerScore: r.playerDamage > 0 ? `-${r.playerDamage}` : '0', protocolScore: r.protocolDamage > 0 ? `-${r.protocolDamage}` : '0' })}
               </li>
             ))}
           </ul>

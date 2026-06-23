@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Play, Pause, Square, Circle, Repeat,
   Music4, Piano, SlidersHorizontal, Grid3X3, FolderOpen,
@@ -30,6 +31,7 @@ function TransportBar({ compact = false, onSettingsToggle }: { compact?: boolean
     setMetronomeEnabled, setTypingKeyboardEnabled,
   } = useStudioStore();
 
+  const { t } = useTranslation("c-studio");
   const [expandedMobile, setExpandedMobile] = useState(false);
 
   const formatPosition = (beat: number): string => {
@@ -49,21 +51,21 @@ function TransportBar({ compact = false, onSettingsToggle }: { compact?: boolean
       <button
         onClick={() => { setIsPlaying(false); }}
         className="rounded p-1.5 text-[var(--site-muted)] hover:bg-white/10 hover:text-[var(--site-text)]"
-        title="Stop"
+        title={t("stop", { defaultValue: "Stop" })}
       >
         <Square className="h-4 w-4" />
       </button>
       <button
         onClick={() => setIsPlaying(!isPlaying)}
         className={`rounded p-1.5 ${isPlaying ? 'bg-cyan-500/20 text-cyan-400' : 'text-[var(--site-muted)] hover:bg-white/10 hover:text-[var(--site-text)]'}`}
-        title="Play/Pause"
+        title={t("play-pause", { defaultValue: "Play/Pause" })}
       >
         {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
       </button>
       <button
         onClick={() => setIsRecording(!isRecording)}
         className={`rounded p-1.5 ${isRecording ? 'bg-red-500/20 text-red-400' : 'text-[var(--site-muted)] hover:bg-white/10 hover:text-[var(--site-text)]'}`}
-        title="Record"
+        title={t("record", { defaultValue: "Record" })}
       >
         <Circle className="h-4 w-4" fill={isRecording ? 'currentColor' : 'none'} />
       </button>
@@ -104,21 +106,21 @@ function TransportBar({ compact = false, onSettingsToggle }: { compact?: boolean
             <button
               onClick={() => setLoopEnabled(!loopEnabled)}
               className={`rounded p-1.5 ${loopEnabled ? 'bg-cyan-500/20 text-cyan-400' : 'text-[var(--site-muted)]'}`}
-              title="Loop"
+              title={t("loop", { defaultValue: "Loop" })}
             >
               <Repeat className="h-4 w-4" />
             </button>
             <button
               onClick={() => setMetronomeEnabled(!metronomeEnabled)}
               className={`rounded p-1.5 ${metronomeEnabled ? 'bg-cyan-500/20 text-cyan-400' : 'text-[var(--site-muted)]'}`}
-              title="Metronome"
+              title={t("metronome", { defaultValue: "Metronome" })}
             >
               <AudioLines className="h-4 w-4" />
             </button>
             <button
               onClick={() => setTypingKeyboardEnabled(!typingKeyboardEnabled)}
               className={`rounded p-1.5 ${typingKeyboardEnabled ? 'bg-purple-500/20 text-purple-400' : 'text-[var(--site-muted)]'}`}
-              title="Typing Keyboard"
+              title={t("typing-keyboard", { defaultValue: "Typing Keyboard" })}
             >
               <Keyboard className="h-4 w-4" />
             </button>
@@ -167,7 +169,7 @@ function TransportBar({ compact = false, onSettingsToggle }: { compact?: boolean
       <button
         onClick={() => setLoopEnabled(!loopEnabled)}
         className={`rounded p-1.5 ${loopEnabled ? 'bg-cyan-500/20 text-cyan-400' : 'text-[var(--site-muted)] hover:bg-white/10 hover:text-[var(--site-text)]'}`}
-        title="Loop (Ctrl+L)"
+        title={t("loop-shortcut", { defaultValue: "Loop (Ctrl+L)" })}
       >
         <Repeat className="h-4 w-4" />
       </button>
@@ -176,7 +178,7 @@ function TransportBar({ compact = false, onSettingsToggle }: { compact?: boolean
       <button
         onClick={() => setMetronomeEnabled(!metronomeEnabled)}
         className={`rounded p-1.5 ${metronomeEnabled ? 'bg-cyan-500/20 text-cyan-400' : 'text-[var(--site-muted)] hover:bg-white/10 hover:text-[var(--site-text)]'}`}
-        title="Metronome (Ctrl+M)"
+        title={t("metronome-shortcut", { defaultValue: "Metronome (Ctrl+M)" })}
       >
         <AudioLines className="h-4 w-4" />
       </button>
@@ -192,10 +194,10 @@ function TransportBar({ compact = false, onSettingsToggle }: { compact?: boolean
             ? 'bg-purple-500/20 text-purple-400'
             : 'text-[var(--site-muted)] hover:bg-white/10 hover:text-[var(--site-text)]'
         }`}
-        title="Typing Keyboard (\)"
+        title={t("typing-keyboard-shortcut", { defaultValue: "Typing Keyboard (\\)" })}
       >
         <Keyboard className="h-3.5 w-3.5" />
-        <span className="hidden lg:inline">Keys</span>
+        <span className="hidden lg:inline">{t("keys", { defaultValue: "Keys" })}</span>
       </button>
 
       {/* Spacer */}
@@ -211,7 +213,7 @@ function TransportBar({ compact = false, onSettingsToggle }: { compact?: boolean
               ? 'bg-cyan-500/20 text-cyan-400'
               : 'text-[var(--site-muted)] hover:bg-white/10 hover:text-[var(--site-text)]'
           }`}
-          title="Sample Browser"
+          title={t("sample-browser", { defaultValue: "Sample Browser" })}
         >
           <FolderOpen className="h-4 w-4" />
         </button>
@@ -219,7 +221,7 @@ function TransportBar({ compact = false, onSettingsToggle }: { compact?: boolean
         {/* Save */}
         <button
           className="rounded p-1.5 text-[var(--site-muted)] hover:bg-white/10 hover:text-[var(--site-text)]"
-          title="Save Project (Ctrl+S)"
+          title={t("save-project", { defaultValue: "Save Project (Ctrl+S)" })}
         >
           <Save className="h-4 w-4" />
         </button>
@@ -228,7 +230,7 @@ function TransportBar({ compact = false, onSettingsToggle }: { compact?: boolean
         <button
           onClick={onSettingsToggle}
           className="rounded p-1.5 text-[var(--site-muted)] hover:bg-white/10 hover:text-[var(--site-text)]"
-          title="Settings & Keybinds"
+          title={t("settings-keybinds", { defaultValue: "Settings & Keybinds" })}
         >
           <Settings className="h-4 w-4" />
         </button>
@@ -240,21 +242,22 @@ function TransportBar({ compact = false, onSettingsToggle }: { compact?: boolean
 // ─── Toolbar ────────────────────────────────────────────────────────────────
 
 function Toolbar() {
+  const { t } = useTranslation("c-studio");
   const { activeView, setActiveView, selectedTool, setSelectedTool, snapEnabled, setSnapEnabled, snapValue, setSnapValue } = useStudioStore();
 
   const views: { id: ViewMode; icon: React.ComponentType<{ className?: string }>; label: string; shortcut: string }[] = [
-    { id: 'arrangement', icon: Music4, label: 'Arrangement', shortcut: '1' },
-    { id: 'pianoRoll', icon: Piano, label: 'Piano Roll', shortcut: '2' },
-    { id: 'mixer', icon: SlidersHorizontal, label: 'Mixer', shortcut: '3' },
-    { id: 'pattern', icon: Grid3X3, label: 'Pattern', shortcut: '4' },
+    { id: 'arrangement', icon: Music4, label: t("view-arrangement", { defaultValue: "Arrangement" }), shortcut: '1' },
+    { id: 'pianoRoll', icon: Piano, label: t("view-piano-roll", { defaultValue: "Piano Roll" }), shortcut: '2' },
+    { id: 'mixer', icon: SlidersHorizontal, label: t("view-mixer", { defaultValue: "Mixer" }), shortcut: '3' },
+    { id: 'pattern', icon: Grid3X3, label: t("view-pattern", { defaultValue: "Pattern" }), shortcut: '4' },
   ];
 
   const tools: { id: ToolMode; icon: React.ComponentType<{ className?: string }>; label: string; shortcut: string }[] = [
-    { id: 'select', icon: MousePointer2, label: 'Select', shortcut: 'V' },
-    { id: 'draw', icon: Pencil, label: 'Draw', shortcut: 'B' },
-    { id: 'erase', icon: Eraser, label: 'Erase', shortcut: 'E' },
-    { id: 'slice', icon: Scissors, label: 'Slice', shortcut: 'S' },
-    { id: 'mute', icon: VolumeX, label: 'Mute', shortcut: 'Q' },
+    { id: 'select', icon: MousePointer2, label: t("tool-select", { defaultValue: "Select" }), shortcut: 'V' },
+    { id: 'draw', icon: Pencil, label: t("tool-draw", { defaultValue: "Draw" }), shortcut: 'B' },
+    { id: 'erase', icon: Eraser, label: t("tool-erase", { defaultValue: "Erase" }), shortcut: 'E' },
+    { id: 'slice', icon: Scissors, label: t("tool-slice", { defaultValue: "Slice" }), shortcut: 'S' },
+    { id: 'mute', icon: VolumeX, label: t("tool-mute", { defaultValue: "Mute" }), shortcut: 'Q' },
   ];
 
   return (
@@ -303,7 +306,7 @@ function Toolbar() {
           snapEnabled ? 'bg-cyan-500/20 text-cyan-400' : 'text-[var(--site-muted)] hover:bg-white/10'
         }`}
       >
-        Snap
+        {t("snap", { defaultValue: "Snap" })}
       </button>
 
       {/* Snap value */}
@@ -327,15 +330,16 @@ function Toolbar() {
 // ─── Mobile Tab Bar ─────────────────────────────────────────────────────────
 
 function MobileTabBar({ onSettingsToggle, settingsOpen }: { onSettingsToggle?: () => void; settingsOpen?: boolean }) {
+  const { t } = useTranslation("c-studio");
   const { activeView, setActiveView, sampleBrowserOpen, toggleSampleBrowser } = useStudioStore();
 
   const tabs: { id: ViewMode | 'samples' | 'settings'; icon: React.ComponentType<{ className?: string }>; label: string }[] = [
-    { id: 'arrangement', icon: Music4, label: 'Arrange' },
-    { id: 'pianoRoll', icon: Piano, label: 'Piano' },
-    { id: 'pattern', icon: Grid3X3, label: 'Drums' },
-    { id: 'mixer', icon: SlidersHorizontal, label: 'Mixer' },
-    { id: 'samples', icon: FolderOpen, label: 'Samples' },
-    { id: 'settings', icon: Settings, label: 'Settings' },
+    { id: 'arrangement', icon: Music4, label: t("tab-arrange", { defaultValue: "Arrange" }) },
+    { id: 'pianoRoll', icon: Piano, label: t("tab-piano", { defaultValue: "Piano" }) },
+    { id: 'pattern', icon: Grid3X3, label: t("tab-drums", { defaultValue: "Drums" }) },
+    { id: 'mixer', icon: SlidersHorizontal, label: t("view-mixer", { defaultValue: "Mixer" }) },
+    { id: 'samples', icon: FolderOpen, label: t("tab-samples", { defaultValue: "Samples" }) },
+    { id: 'settings', icon: Settings, label: t("tab-settings", { defaultValue: "Settings" }) },
   ];
 
   return (
@@ -395,6 +399,7 @@ function ActiveView({ isMobile = false }: { isMobile?: boolean }) {
 // ─── Studio Shell ───────────────────────────────────────────────────────────
 
 export default function StudioShell() {
+  const { t } = useTranslation("c-studio");
   const isMobile = useIsMobile();
   const { sampleBrowserOpen } = useStudioStore();
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -487,7 +492,7 @@ export default function StudioShell() {
       <div className="flex h-6 items-center justify-between border-t border-[var(--site-border)] bg-[var(--site-surface)] px-3">
         <div className="flex items-center gap-3 text-[10px] text-[var(--site-muted)]">
           <span className={engineReady ? 'text-green-400' : 'text-yellow-400'}>
-            {engineReady ? 'Audio Ready' : 'Click to initialize audio'}
+            {engineReady ? t("audio-ready", { defaultValue: "Audio Ready" }) : t("click-to-init-audio", { defaultValue: "Click to initialize audio" })}
           </span>
         </div>
         <div className="text-[10px] text-[var(--site-muted)]">RMH Studio</div>

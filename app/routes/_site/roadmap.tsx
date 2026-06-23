@@ -3,6 +3,7 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { RoadmapSection } from '@/components/roadmap/RoadmapSection';
 import { PageLayout } from '@/components/feed/PageLayout';
 
@@ -17,8 +18,9 @@ export const Route = createFileRoute('/_site/roadmap')({
 });
 
 function RoadmapPage() {
+  const { t } = useTranslation("site");
   return (
-    <PageLayout title="Roadmap" wide>
+    <PageLayout title={t("roadmap-title", { defaultValue: "Roadmap" })} wide>
       <RoadmapSection />
     </PageLayout>
   );

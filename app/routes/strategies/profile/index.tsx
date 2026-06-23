@@ -6,12 +6,14 @@ import { StreakDisplay } from '@/components/doctrine/puzzles/streak-display';
 import { ActivityHeatmap } from '@/components/doctrine/reputation/activity-heatmap';
 import { User, Settings } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 
 export const Route = createFileRoute('/strategies/profile/')({
   component: ProfilePage,
 });
 
 function ProfilePage() {
+  const { t } = useTranslation("r-strategies");
   const { data: rep, isLoading } = useDoctrineReputation();
 
   return (
@@ -20,7 +22,7 @@ function ProfilePage() {
         <div className="flex items-center gap-2">
           <User size={20} style={{ color: 'var(--doctrine-accent)' }} />
           <h1 className="text-xl font-bold" style={{ color: 'var(--doctrine-text-primary)' }}>
-            Profile
+            {t("profile", { defaultValue: "Profile" })}
           </h1>
         </div>
         <Link to="/strategies/profile/settings" className="p-2 rounded hover:bg-white/5 transition-colors">
@@ -47,21 +49,21 @@ function ProfilePage() {
 
           {/* Stats Grid */}
           <div className="grid grid-cols-3 gap-2 md:gap-3">
-            <StatCard label="Total XP" value={rep.totalXp.toLocaleString()} />
-            <StatCard label="Sahur Count" value={String(rep.sahurCount)} />
-            <StatCard label="Coalition" value={`${rep.coalitionScore.toFixed(1)}x`} />
+            <StatCard label={t("total-xp", { defaultValue: "Total XP" })} value={rep.totalXp.toLocaleString()} />
+            <StatCard label={t("sahur-count", { defaultValue: "Sahur Count" })} value={String(rep.sahurCount)} />
+            <StatCard label={t("coalition", { defaultValue: "Coalition" })} value={`${rep.coalitionScore.toFixed(1)}x`} />
           </div>
 
           {/* Activity Heatmap */}
           <div className="rounded-lg p-4 space-y-3 overflow-x-auto" style={{ background: 'var(--doctrine-bg-secondary)', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <h3 className="text-sm md:text-xs font-mono uppercase tracking-wider text-white/40">Activity</h3>
+            <h3 className="text-sm md:text-xs font-mono uppercase tracking-wider text-white/40">{t("activity", { defaultValue: "Activity" })}</h3>
             <ActivityHeatmap data={{}} weeks={16} />
           </div>
 
           {/* Links */}
           <div className="flex gap-3">
             <Link to="/strategies/profile/reputation" className="text-sm md:text-xs text-white/30 hover:text-white/50 transition-colors min-h-[44px] md:min-h-0 flex items-center">
-              Full XP Breakdown →
+              {t("full-xp-breakdown", { defaultValue: "Full XP Breakdown →" })}
             </Link>
           </div>
         </>

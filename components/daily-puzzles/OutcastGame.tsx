@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Trophy, Copy, Check, ArrowRight } from 'lucide-react';
@@ -35,6 +36,7 @@ function OutcastGameContent({ dateKey, isToday }: { dateKey: string; isToday: bo
     const puzzleNumber = getPuzzleNumber(selectedDate);
     const puzzle = generateOutcastPuzzle(selectedDate);
 
+    const { t } = useTranslation('c-daily-puzzles');
     const [currentRound, setCurrentRound] = useState(0);
     const [correctRounds, setCorrectRounds] = useState<boolean[]>([]);
     const [selectedNames, setSelectedNames] = useState<string[]>([]);
@@ -126,7 +128,7 @@ function OutcastGameContent({ dateKey, isToday }: { dateKey: string; isToday: bo
                 className="inline-flex items-center gap-1.5 text-site-text-muted hover:text-site-text text-sm mb-6 transition-colors"
             >
                 <ArrowLeft className="w-4 h-4" />
-                Back to Daily Puzzles
+                {t("back-to-daily-puzzles", { defaultValue: "Back to Daily Puzzles" })}
             </Link>
 
             <div className="text-center mb-8">
@@ -134,7 +136,7 @@ function OutcastGameContent({ dateKey, isToday }: { dateKey: string; isToday: bo
                     🎭 Outcast
                 </h1>
                 <p className="text-site-text-muted text-sm">
-                    {dateKey} · Puzzle #{puzzleNumber} · Five rounds — spot the odd one out
+                    {t("outcast-subtitle", { defaultValue: "{{dateKey}} · Puzzle #{{puzzleNumber}} · Five rounds — spot the odd one out", dateKey, puzzleNumber })}
                 </p>
             </div>
 
@@ -151,7 +153,7 @@ function OutcastGameContent({ dateKey, isToday }: { dateKey: string; isToday: bo
                         <div className="flex items-center justify-between mb-5">
                             <div className="flex items-center gap-2">
                                 <span className="text-lg font-semibold text-site-text">
-                                    Round {currentRound + 1}/5
+                                    {t("round-progress", { defaultValue: "Round {{current}}/5", current: currentRound + 1 })}
                                 </span>
                                 <span
                                     className={`text-xs font-medium uppercase tracking-wide ${DIFFICULTY_COLORS[round.difficulty]}`}
@@ -179,7 +181,7 @@ function OutcastGameContent({ dateKey, isToday }: { dateKey: string; isToday: bo
                         </div>
 
                         <p className="text-site-text-muted text-sm mb-5 text-center">
-                            Four of these share a trait. Tap the outcast.
+                            {t("tap-outcast-prompt", { defaultValue: "Four of these share a trait. Tap the outcast." })}
                         </p>
 
                         {/* Items grid */}
@@ -223,13 +225,13 @@ function OutcastGameContent({ dateKey, isToday }: { dateKey: string; isToday: bo
                                         </span>
                                         {/* Badges on reveal */}
                                         {roundRevealed && isCorrectPick && (
-                                            <span className="text-xs text-emerald-400 font-medium">✓ Outcast</span>
+                                            <span className="text-xs text-emerald-400 font-medium">{t("badge-outcast-correct", { defaultValue: "✓ Outcast" })}</span>
                                         )}
                                         {roundRevealed && isWrongPick && (
-                                            <span className="text-xs text-red-400 font-medium">✗ Your pick</span>
+                                            <span className="text-xs text-red-400 font-medium">{t("badge-your-pick-wrong", { defaultValue: "✗ Your pick" })}</span>
                                         )}
                                         {roundRevealed && !isSelected && isOutcast && (
-                                            <span className="text-xs text-yellow-400 font-medium">← Outcast</span>
+                                            <span className="text-xs text-yellow-400 font-medium">{t("badge-outcast-missed", { defaultValue: "← Outcast" })}</span>
                                         )}
                                     </motion.button>
                                 );
@@ -248,19 +250,19 @@ function OutcastGameContent({ dateKey, isToday }: { dateKey: string; isToday: bo
                                     <div className="p-4 rounded-xl bg-site-surface border border-site-border">
                                         <p className="text-site-text text-sm font-medium mb-1">
                                             {checkOutcastGuess(round, selectedName!)
-                                                ? '✅ Correct!'
-                                                : `❌ Wrong — the outcast was ${round._solution.outcastName}`}
+                                                ? t("correct", { defaultValue: "✅ Correct!" })
+                                                : t("wrong-outcast-was", { defaultValue: "❌ Wrong — the outcast was {{name}}", name: round._solution.outcastName })}
                                         </p>
                                         <p className="text-site-text-muted text-sm">
                                             <span className="font-medium text-site-text">
-                                                Shared trait:
+                                                {t("shared-trait-label", { defaultValue: "Shared trait:" })}
                                             </span>{' '}
                                             {round._solution.trait}
                                         </p>
                                         {!checkOutcastGuess(round, selectedName!) && (
                                             <p className="text-site-text-muted text-sm mt-1">
                                                 <span className="font-medium text-site-text">
-                                                    Red herring:
+                                                    {t("red-herring-label", { defaultValue: "Red herring:" })}
                                                 </span>{' '}
                                                 {round._solution.redHerring}
                                             </p>
@@ -274,12 +276,12 @@ function OutcastGameContent({ dateKey, isToday }: { dateKey: string; isToday: bo
                                     >
                                         {currentRound < 4 ? (
                                             <>
-                                                Next Round
+                                                {t("next-round", { defaultValue: "Next Round" })}
                                                 <ArrowRight className="w-4 h-4" />
                                             </>
                                         ) : (
                                             <>
-                                                See Results
+                                                {t("see-results", { defaultValue: "See Results" })}
                                                 <Trophy className="w-4 h-4" />
                                             </>
                                         )}
@@ -308,7 +310,7 @@ function OutcastGameContent({ dateKey, isToday }: { dateKey: string; isToday: bo
                             </div>
                             {correctRounds.every(Boolean) && (
                                 <p className="text-emerald-400 text-sm font-medium">
-                                    Perfect! +25 streak bonus
+                                    {t("perfect-streak-bonus", { defaultValue: "Perfect! +25 streak bonus" })}
                                 </p>
                             )}
                         </div>
@@ -344,7 +346,7 @@ function OutcastGameContent({ dateKey, isToday }: { dateKey: string; isToday: bo
                                         <div className="flex items-center justify-between mb-3">
                                             <div className="flex items-center gap-2">
                                                 <span className="text-sm font-semibold text-site-text">
-                                                    Round {i + 1}
+                                                    {t("round-label", { defaultValue: "Round {{num}}", num: i + 1 })}
                                                 </span>
                                                 <span
                                                     className={`text-xs font-medium uppercase tracking-wide ${DIFFICULTY_COLORS[r.difficulty]}`}
@@ -369,15 +371,15 @@ function OutcastGameContent({ dateKey, isToday }: { dateKey: string; isToday: bo
                                                 if (isOutcast && isPlayerPick) {
                                                     // Correct pick
                                                     pillClass = 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400';
-                                                    label = '✓ Your pick';
+                                                    label = t("badge-outcast-correct", { defaultValue: "✓ Outcast" });
                                                 } else if (isPlayerPick && !isOutcast) {
                                                     // Wrong pick
                                                     pillClass = 'bg-red-500/15 border-red-500/40 text-red-400';
-                                                    label = '✗ Your pick';
+                                                    label = t("badge-your-pick-wrong", { defaultValue: "✗ Your pick" });
                                                 } else if (isOutcast && !isPlayerPick) {
                                                     // Correct answer the player missed
                                                     pillClass = 'bg-yellow-500/15 border-yellow-500/40 text-yellow-400';
-                                                    label = '← Outcast';
+                                                    label = t("badge-outcast-missed", { defaultValue: "← Outcast" });
                                                 }
 
                                                 return (
@@ -397,12 +399,12 @@ function OutcastGameContent({ dateKey, isToday }: { dateKey: string; isToday: bo
 
                                         {/* Trait explanation */}
                                         <p className="text-site-text-muted text-xs">
-                                            <span className="text-site-text font-medium">Shared trait:</span>{' '}
+                                            <span className="text-site-text font-medium">{t("shared-trait-label", { defaultValue: "Shared trait:" })}</span>{' '}
                                             {r._solution.trait}
                                         </p>
                                         {!wasCorrect && (
                                             <p className="text-site-text-muted text-xs mt-0.5">
-                                                <span className="text-site-text font-medium">Red herring:</span>{' '}
+                                                <span className="text-site-text font-medium">{t("red-herring-label", { defaultValue: "Red herring:" })}</span>{' '}
                                                 {r._solution.redHerring}
                                             </p>
                                         )}
@@ -420,12 +422,12 @@ function OutcastGameContent({ dateKey, isToday }: { dateKey: string; isToday: bo
                                 {copied ? (
                                     <>
                                         <Check className="w-4 h-4" />
-                                        Copied!
+                                        {t("copied", { defaultValue: "Copied!" })}
                                     </>
                                 ) : (
                                     <>
                                         <Copy className="w-4 h-4" />
-                                        Share Results
+                                        {t("share-results", { defaultValue: "Share Results" })}
                                     </>
                                 )}
                             </button>
@@ -434,7 +436,7 @@ function OutcastGameContent({ dateKey, isToday }: { dateKey: string; isToday: bo
                                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-site-surface border border-site-border hover:border-site-text/30 text-site-text font-medium transition-colors"
                             >
                                 <ArrowLeft className="w-4 h-4" />
-                                Back to Daily Puzzles
+                                {t("back-to-daily-puzzles", { defaultValue: "Back to Daily Puzzles" })}
                             </Link>
                         </div>
                     </motion.div>

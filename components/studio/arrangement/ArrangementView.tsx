@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, Music4 } from 'lucide-react';
 import { useStudioStore } from '@/lib/studio/store';
 import { TRACK_COLORS, DEFAULT_TRACK_HEIGHT } from '@/lib/studio/constants';
@@ -18,6 +19,7 @@ export function ArrangementView({ isMobile = false }: { isMobile?: boolean }) {
   const [containerHeight, setContainerHeight] = useState(400);
   const { tracks, selectedTrackId, scrollX, scrollY, setScroll, zoomX, setZoom, addTrack } = useStudioStore();
 
+  const { t } = useTranslation("c-studio");
   const headerWidth = isMobile ? TRACK_HEADER_WIDTH_MOBILE : TRACK_HEADER_WIDTH;
   const laneWidth = containerWidth - headerWidth;
 
@@ -82,8 +84,8 @@ export function ArrangementView({ isMobile = false }: { isMobile?: boolean }) {
       <div className="flex h-full flex-col items-center justify-center gap-4 text-[var(--site-muted)]">
         <Music4 className="h-16 w-16 opacity-20" />
         <div className="text-center">
-          <p className="text-sm font-medium text-[var(--site-text)]">No tracks yet</p>
-          <p className="mt-1 text-xs">Add a track to start making music</p>
+          <p className="text-sm font-medium text-[var(--site-text)]">{t("no-tracks-yet", { defaultValue: "No tracks yet" })}</p>
+          <p className="mt-1 text-xs">{t("add-track-to-start", { defaultValue: "Add a track to start making music" })}</p>
         </div>
         <div className="flex gap-2">
           <button
@@ -91,14 +93,14 @@ export function ArrangementView({ isMobile = false }: { isMobile?: boolean }) {
             className="flex items-center gap-2 rounded-lg bg-cyan-500/20 px-4 py-2 text-sm text-cyan-400 hover:bg-cyan-500/30"
           >
             <Plus className="h-4 w-4" />
-            MIDI Track
+            {t("midi-track", { defaultValue: "MIDI Track" })}
           </button>
           <button
             onClick={() => handleAddTrack('audio')}
             className="flex items-center gap-2 rounded-lg bg-purple-500/20 px-4 py-2 text-sm text-purple-400 hover:bg-purple-500/30"
           >
             <Plus className="h-4 w-4" />
-            Audio Track
+            {t("audio-track", { defaultValue: "Audio Track" })}
           </button>
         </div>
       </div>

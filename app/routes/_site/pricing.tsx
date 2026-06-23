@@ -7,6 +7,7 @@
  * visually featured (gold accents echo the amber profile badge it unlocks).
  */
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
@@ -94,6 +95,7 @@ const PLANS: Plan[] = [
 function Pricing() {
   // Cast to Tier: until app/routeTree.gen.ts regenerates (first dev/build),
   // useLoaderData() infers `any`, which breaks RANK[currentTier] indexing.
+  const { t } = useTranslation('site');
   const currentTier = Route.useLoaderData() as Tier;
   const [busy, setBusy] = useState<string | null>(null);
   const [status, setStatus] = useState<'success' | 'cancelled' | null>(null);
@@ -152,7 +154,7 @@ function Pricing() {
       <PricingStyles />
 
       {/* Mobile: hamburger + brand (this page leads with an editorial hero) */}
-      <MobileTopBar title="Membership" />
+      <MobileTopBar title={t('membership-title', { defaultValue: 'Membership' })} />
 
       {/* ── Atmosphere ───────────────────────────────────────── */}
       <div aria-hidden className="pricing-glow" />
@@ -173,8 +175,8 @@ function Pricing() {
           >
             <span>
               {status === 'success'
-                ? 'Welcome aboard — your membership is being activated.'
-                : 'Checkout cancelled. No charge was made.'}
+                ? t('status-success', { defaultValue: 'Welcome aboard — your membership is being activated.' })
+                : t('status-cancelled', { defaultValue: 'Checkout cancelled. No charge was made.' })}
             </span>
             <button type="button" onClick={() => setStatus(null)} className="shrink-0 opacity-60 hover:opacity-100">
               <X className="h-4 w-4" />
@@ -187,17 +189,16 @@ function Pricing() {
           <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-site-border bg-site-surface/50 px-3.5 py-1.5">
             <Sparkles className="h-3.5 w-3.5 text-site-accent" />
             <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-site-text-muted">
-              Membership
+              {t('membership-label', { defaultValue: 'Membership' })}
             </span>
           </div>
           <h1 className="pricing-display text-5xl leading-[0.95] text-site-text sm:text-6xl">
-            Choose your
+            {t('hero-heading-line1', { defaultValue: 'Choose your' })}
             <br />
-            <span className="pricing-italic text-site-accent">altitude.</span>
+            <span className="pricing-italic text-site-accent">{t('hero-heading-line2', { defaultValue: 'altitude.' })}</span>
           </h1>
           <p className="mt-6 max-w-md text-base leading-relaxed text-site-text-muted">
-            Four tiers, one studio. Unlock the full toolset, the RMH API, and a verified
-            badge — or scale the whole thing to your company.
+            {t('hero-subheading', { defaultValue: 'Four tiers, one studio. Unlock the full toolset, the RMH API, and a verified badge — or scale the whole thing to your company.' })}
           </p>
 
           {currentTier !== 'free' && (
@@ -208,7 +209,7 @@ function Pricing() {
               className="mt-7 inline-flex items-center gap-2 rounded-full border border-site-border bg-site-surface/60 px-5 py-2.5 text-sm font-semibold text-site-text transition-colors hover:bg-site-surface-hover disabled:opacity-50"
             >
               {busy === 'portal' ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUpRight className="h-4 w-4" />}
-              Manage billing
+              {t('manage-billing', { defaultValue: 'Manage billing' })}
             </button>
           )}
         </header>
@@ -229,11 +230,11 @@ function Pricing() {
                 style={{ animationDelay: `${120 + i * 90}ms` }}
               >
                 {plan.featured && (
-                  <span className="pricing-ribbon">Most popular</span>
+                  <span className="pricing-ribbon">{t('most-popular', { defaultValue: 'Most popular' })}</span>
                 )}
                 {isCurrent && (
                   <span className="absolute right-5 top-6 rounded-full border border-site-accent/40 bg-site-accent-dim px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-widest text-site-accent">
-                    Current
+                    {t('current-badge', { defaultValue: 'Current' })}
                   </span>
                 )}
 
@@ -278,7 +279,7 @@ function Pricing() {
                 <div className="mt-7">
                   {plan.cta === 'current' && (
                     <div className="flex h-11 items-center justify-center rounded-full border border-dashed border-site-border text-sm font-medium text-site-text-dim">
-                      {isCurrent ? 'Your current plan' : owned ? 'Included' : 'Free forever'}
+                      {isCurrent ? t('your-current-plan', { defaultValue: 'Your current plan' }) : owned ? t('included', { defaultValue: 'Included' }) : t('free-forever', { defaultValue: 'Free forever' })}
                     </div>
                   )}
 
@@ -296,12 +297,12 @@ function Pricing() {
                       {busy === plan.tier ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : isCurrent ? (
-                        'Current plan'
+                        t('current-plan', { defaultValue: 'Current plan' })
                       ) : owned ? (
-                        'Included'
+                        t('included', { defaultValue: 'Included' })
                       ) : (
                         <>
-                          {RANK[currentTier] < RANK[plan.tier] && currentTier !== 'free' ? 'Upgrade' : 'Subscribe'}
+                          {RANK[currentTier] < RANK[plan.tier] && currentTier !== 'free' ? t('upgrade', { defaultValue: 'Upgrade' }) : t('subscribe', { defaultValue: 'Subscribe' })}
                           <ArrowUpRight className="h-4 w-4" />
                         </>
                       )}
@@ -313,7 +314,7 @@ function Pricing() {
                       href="mailto:team@rmhstudios.com?subject=Enterprise%20plan"
                       className="flex h-11 w-full items-center justify-center gap-2 rounded-full border border-site-border-bright text-sm font-bold text-site-text transition-colors hover:bg-site-surface-hover"
                     >
-                      Contact team
+                      {t('contact-team', { defaultValue: 'Contact team' })}
                       <ArrowUpRight className="h-4 w-4" />
                     </a>
                   )}
@@ -325,7 +326,7 @@ function Pricing() {
 
         {/* ── Footnote ───────────────────────────────────────── */}
         <p className="pricing-fade mt-12 text-center font-mono text-xs text-site-text-dim">
-          Billed monthly · cancel anytime · secure checkout by Stripe
+          {t('billing-footnote', { defaultValue: 'Billed monthly · cancel anytime · secure checkout by Stripe' })}
         </p>
       </div>
     </AnimatedMain>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { PuzzleComponentProps } from './PuzzleRegistry';
 
 interface DraggableObject {
@@ -13,6 +14,7 @@ interface DraggableObject {
 }
 
 export function ShadowMatchPuzzle({ config, onSolve, onAttempt }: PuzzleComponentProps) {
+    const { t } = useTranslation("c-forest-explorer");
     const objectCount = (config.objectCount as number) ?? 4;
     const snapTolerance = (config.snapTolerance as number) ?? 15;
     const targetShapes = (config.targetShapes as string[]) ?? ['deer', 'tree', 'moon', 'river'];
@@ -96,7 +98,7 @@ export function ShadowMatchPuzzle({ config, onSolve, onAttempt }: PuzzleComponen
     return (
         <div className="w-full max-w-lg mx-auto space-y-4">
             <p className="text-center text-white/50 text-sm">
-                Drag the totems to match the shadow silhouettes
+                {t("drag-totems-instruction", { defaultValue: "Drag the totems to match the shadow silhouettes" })}
             </p>
 
             <div className="relative bg-gradient-to-b from-[#1a1a2e] to-[#0a0a1e] rounded-xl border border-white/10 overflow-hidden">
@@ -120,7 +122,7 @@ export function ShadowMatchPuzzle({ config, onSolve, onAttempt }: PuzzleComponen
                     {/* Divider line */}
                     <line x1="0" y1="200" x2="400" y2="200" stroke="white" strokeWidth="1" opacity="0.15" />
                     <text x="200" y="195" textAnchor="middle" fill="white" fontSize="10" opacity="0.3">
-                        ▲ Match the shapes above ▲
+                        {t("match-shapes-above", { defaultValue: "▲ Match the shapes above ▲" })}
                     </text>
 
                     {/* Draggable objects */}
@@ -148,7 +150,7 @@ export function ShadowMatchPuzzle({ config, onSolve, onAttempt }: PuzzleComponen
                     className="px-6 py-2.5 bg-blue-800/50 hover:bg-blue-700/50 border border-blue-600/30 text-blue-200 rounded-xl text-sm font-medium cursor-pointer"
                     onClick={handleCheck}
                 >
-                    Check Alignment
+                    {t("check-alignment", { defaultValue: "Check Alignment" })}
                 </button>
             </div>
         </div>

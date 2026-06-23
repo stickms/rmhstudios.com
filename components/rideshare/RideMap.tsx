@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Map, { Marker, Source, Layer, type MapRef } from 'react-map-gl/maplibre';
 import type { StyleSpecification } from 'maplibre-gl';
 import { MapPin, Navigation, Car } from 'lucide-react';
@@ -41,6 +42,7 @@ type Coord = [number, number];
  * draws it; otherwise it shows a friendly prompt. No API key required.
  */
 export function RideMap({ pickup, dropoff, driverLocation, className }: RideMapProps) {
+  const { t } = useTranslation('c-rideshare');
   const ready = Boolean(pickup && dropoff);
   const mapRef = useRef<MapRef | null>(null);
   const [route, setRoute] = useState<Coord[] | null>(null);
@@ -169,8 +171,8 @@ export function RideMap({ pickup, dropoff, driverLocation, className }: RideMapP
           </div>
           <p className="max-w-xs text-sm text-site-text-muted">
             {pickup
-              ? 'Now choose where you’re heading to see your route on the map.'
-              : 'Set a pickup and drop-off to preview your route on OpenStreetMap.'}
+              ? t('choose-dropoff-prompt', { defaultValue: "Now choose where you're heading to see your route on the map." })
+              : t('set-pickup-dropoff-prompt', { defaultValue: 'Set a pickup and drop-off to preview your route on OpenStreetMap.' })}
           </p>
         </div>
       )}
@@ -180,7 +182,7 @@ export function RideMap({ pickup, dropoff, driverLocation, className }: RideMapP
           {driverLocation && (
             <div className="flex items-center gap-2 text-xs font-medium text-sky-400">
               <Car className="h-3.5 w-3.5 shrink-0" />
-              <span>Driver location (live)</span>
+              <span>{t('driver-location-live', { defaultValue: 'Driver location (live)' })}</span>
             </div>
           )}
           <div className="flex items-center gap-2 text-xs text-site-text">

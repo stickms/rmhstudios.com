@@ -6,6 +6,7 @@
  */
 'use client';
 
+import { useTranslation } from "react-i18next";
 import type { CorrectGuesserInfo } from './EmojiCinemaGame';
 
 interface CorrectGuessersPanelProps {
@@ -13,12 +14,14 @@ interface CorrectGuessersPanelProps {
 }
 
 export default function CorrectGuessersPanel({ correctGuessers }: CorrectGuessersPanelProps) {
+  const { t } = useTranslation("c-rmhbox");
+
   if (correctGuessers.length === 0) return null;
 
   return (
     <div className="w-full flex flex-col gap-1">
       <span className="text-xs font-semibold text-(--rmhbox-text-muted) uppercase tracking-wide">
-        Correct Guessers
+        {t("correct-guessers", { defaultValue: "Correct Guessers" })}
       </span>
       <div className="flex flex-col gap-1">
         {correctGuessers.map((g) => (

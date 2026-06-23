@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/lib/kowloon-knockout/store';
 import { networkClient } from '@/lib/kowloon-knockout/network/client';
 import { useState, useEffect, useRef } from 'react';
@@ -15,6 +16,7 @@ export default function MultiplayerLobby() {
         setRoomCode, setConnectionStatus, roomCode, resetMultiplayer,
     } = useGameStore();
 
+    const { t } = useTranslation("c-kowloon-knockout");
     const [view, setView] = useState<LobbyView>('choice');
     const [joinCode, setJoinCode] = useState('');
     const [error, setError] = useState('');
@@ -36,7 +38,7 @@ export default function MultiplayerLobby() {
         try {
             await networkClient.connect();
         } catch {
-            setError('Failed to connect to server');
+            setError(t("failed-to-connect", { defaultValue: "Failed to connect to server" }));
             setView('choice');
             setConnectionStatus('disconnected');
             return;
@@ -75,7 +77,7 @@ export default function MultiplayerLobby() {
 
         const onDisconnect = (msg: ServerMessage) => {
             if (msg.type === 'opponent_disconnected' && !cleanupRef.current) {
-                setError('Connection lost');
+                setError(t("connection-lost", { defaultValue: "Connection lost" }));
                 setView('choice');
                 setConnectionStatus('disconnected');
             }
@@ -91,7 +93,7 @@ export default function MultiplayerLobby() {
 
     const handleJoin = async () => {
         if (joinCode.length !== 6) {
-            setError('Enter a 6-character room code');
+            setError(t("enter-room-code", { defaultValue: "Enter a 6-character room code" }));
             return;
         }
 
@@ -101,7 +103,7 @@ export default function MultiplayerLobby() {
         try {
             await networkClient.connect();
         } catch {
-            setError('Failed to connect to server');
+            setError(t("failed-to-connect", { defaultValue: "Failed to connect to server" }));
             setConnectionStatus('disconnected');
             return;
         }
@@ -133,7 +135,7 @@ export default function MultiplayerLobby() {
 
         const onDisconnect = (msg: ServerMessage) => {
             if (msg.type === 'opponent_disconnected' && !cleanupRef.current) {
-                setError('Connection lost');
+                setError(t("connection-lost", { defaultValue: "Connection lost" }));
                 setView('choice');
                 setConnectionStatus('disconnected');
             }
@@ -161,7 +163,7 @@ export default function MultiplayerLobby() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
             >
-                VERSUS MODE
+                {t("versus-mode", { defaultValue: "VERSUS MODE" })}
             </motion.h1>
 
             {view === 'choice' && (
@@ -177,7 +179,7 @@ export default function MultiplayerLobby() {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                     >
-                        CREATE ROOM
+                        {t("create-room", { defaultValue: "CREATE ROOM" })}
                     </motion.button>
                     <motion.button
                         className="neon-button neon-button-versus"
@@ -185,7 +187,7 @@ export default function MultiplayerLobby() {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                     >
-                        JOIN ROOM
+                        {t("join-room", { defaultValue: "JOIN ROOM" })}
                     </motion.button>
                 </motion.div>
             )}
@@ -210,13 +212,13 @@ export default function MultiplayerLobby() {
                                 whileTap={{ scale: 0.95 }}
                                 style={{ marginTop: '-4px' }}
                             >
-                                {copied ? 'COPIED!' : 'COPY CODE'}
+                                {copied ? t("copied", { defaultValue: "COPIED!" }) : t("copy-code", { defaultValue: "COPY CODE" })}
                             </motion.button>
-                            <div className="lobby-status">SHARE THIS CODE WITH YOUR OPPONENT</div>
-                            <div className="lobby-status">WAITING FOR OPPONENT...</div>
+                            <div className="lobby-status">{t("share-code", { defaultValue: "SHARE THIS CODE WITH YOUR OPPONENT" })}</div>
+                            <div className="lobby-status">{t("waiting-for-opponent", { defaultValue: "WAITING FOR OPPONENT..." })}</div>
                         </>
                     ) : (
-                        <div className="lobby-status">CREATING ROOM...</div>
+                        <div className="lobby-status">{t("creating-room", { defaultValue: "CREATING ROOM..." })}</div>
                     )}
                 </motion.div>
             )}
@@ -231,7 +233,7 @@ export default function MultiplayerLobby() {
                         className="lobby-input"
                         type="text"
                         maxLength={6}
-                        placeholder="CODE"
+                        placeholder={t("code-placeholder", { defaultValue: "CODE" })}
                         value={joinCode}
                         onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                         onKeyDown={(e) => { if (e.key === 'Enter') handleJoin(); }}
@@ -243,7 +245,7 @@ export default function MultiplayerLobby() {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                     >
-                        JOIN
+                        {t("join", { defaultValue: "JOIN" })}
                     </motion.button>
                 </motion.div>
             )}
@@ -261,7 +263,7 @@ export default function MultiplayerLobby() {
                         >
                             {CLASS_DISPLAY[matchInfo.hostClass as keyof typeof CLASS_DISPLAY]?.name}
                         </span>
-                        <span className="lobby-match-vs">VS</span>
+                        <span className="lobby-match-vs">{t("vs", { defaultValue: "VS" })}</span>
                         <span
                             className="lobby-match-player"
                             style={{ color: CLASS_DISPLAY[matchInfo.guestClass as keyof typeof CLASS_DISPLAY]?.color }}
@@ -269,7 +271,7 @@ export default function MultiplayerLobby() {
                             {CLASS_DISPLAY[matchInfo.guestClass as keyof typeof CLASS_DISPLAY]?.name}
                         </span>
                     </div>
-                    <div className="lobby-status">GET READY...</div>
+                    <div className="lobby-status">{t("get-ready", { defaultValue: "GET READY..." })}</div>
                 </motion.div>
             )}
 
@@ -283,7 +285,7 @@ export default function MultiplayerLobby() {
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.5 }}
                 >
-                    BACK
+                    {t("back", { defaultValue: "BACK" })}
                 </motion.button>
             )}
         </div>

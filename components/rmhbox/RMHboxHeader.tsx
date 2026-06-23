@@ -19,6 +19,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { ArrowLeft, Circle, Infinity, Pause, Play } from 'lucide-react';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
@@ -137,6 +138,7 @@ export default function RMHboxHeader({
   backHref,
   backLabel,
 }: RMHboxHeaderProps) {
+  const { t } = useTranslation("c-rmhbox");
   const connectionStatus = useRMHboxStore((s) => s.connectionStatus);
   const theme = useRMHboxStore((s) => s.settings.theme) ?? 'dark';
   const updateSettings = useRMHboxStore((s) => s.updateSettings);
@@ -163,10 +165,10 @@ export default function RMHboxHeader({
     <Circle className="h-2.5 w-2.5 fill-red-500 text-red-500 inline-block" />;
 
   const statusText =
-    connectionStatus === 'connected' ? 'Connected' :
-    connectionStatus === 'connecting' ? 'Connecting...' :
-    connectionStatus === 'disconnected' ? 'Disconnected' :
-    'Error';
+    connectionStatus === 'connected' ? t("connected", { defaultValue: "Connected" }) :
+    connectionStatus === 'connecting' ? t("connecting", { defaultValue: "Connecting..." }) :
+    connectionStatus === 'disconnected' ? t("disconnected", { defaultValue: "Disconnected" }) :
+    t("connection-error", { defaultValue: "Error" });
 
   return (
     <header className="relative flex shrink-0 items-center border-b border-(--rmhbox-border) bg-(--rmhbox-bg)/90 px-3 py-3 h-16 backdrop-blur-sm">
@@ -189,7 +191,7 @@ export default function RMHboxHeader({
           >
             <span className="flex items-center gap-1">
               <ArrowLeft size={16} />
-              {backLabel ?? 'Back'}
+              {backLabel ?? t("back", { defaultValue: "Back" })}
             </span>
           </Link>
         )}

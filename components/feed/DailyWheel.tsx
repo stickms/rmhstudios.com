@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
@@ -15,6 +16,7 @@ interface WheelState {
 const COLORS = ['#f5a623', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f59e0b'];
 
 export function DailyWheel() {
+  const { t } = useTranslation('feed');
   const [state, setState] = useState<WheelState | null>(null);
   const [angle, setAngle] = useState(0);
   const [spinning, setSpinning] = useState(false);
@@ -85,7 +87,7 @@ export function DailyWheel() {
     <section className="rounded-xl border border-site-border bg-site-surface p-4">
       <div className="mb-3 flex items-center gap-2">
         <Sparkles className="h-4 w-4 text-site-accent" />
-        <h2 className="text-sm font-bold text-site-text">Daily wheel</h2>
+        <h2 className="text-sm font-bold text-site-text">{t('daily-wheel', { defaultValue: 'Daily wheel' })}</h2>
       </div>
 
       <div className="flex flex-col items-center gap-4">
@@ -123,16 +125,16 @@ export function DailyWheel() {
 
         {won !== null ? (
           <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-site-text">
-            You won <CoinIcon className="h-4 w-4" /> {won} today!
+            {t('you-won-prefix', { defaultValue: 'You won' })} <CoinIcon className="h-4 w-4" /> {won}{t('you-won-suffix', { defaultValue: ' today!' })}
           </p>
         ) : (
           <Button variant="accent" disabled={!state.canSpin || spinning || !state.signedIn} onClick={spin} className="gap-1.5">
             {spinning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-            {state.signedIn ? (spinning ? 'Spinning…' : 'Spin') : 'Sign in to spin'}
+            {state.signedIn ? (spinning ? t('spinning', { defaultValue: 'Spinning…' }) : t('spin', { defaultValue: 'Spin' })) : t('sign-in-to-spin', { defaultValue: 'Sign in to spin' })}
           </Button>
         )}
         {!state.canSpin && won === null && state.today && (
-          <p className="text-xs text-site-text-dim">Come back tomorrow for another spin.</p>
+          <p className="text-xs text-site-text-dim">{t('come-back-tomorrow', { defaultValue: 'Come back tomorrow for another spin.' })}</p>
         )}
       </div>
     </section>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from '@tanstack/react-router';
 import {
@@ -38,6 +39,7 @@ import { DailyPuzzleLeaderboard } from '@/components/daily-puzzles/DailyPuzzleLe
 const MAX_MIDDLE_LINKS = 6;
 
 function ChainlinkGameContent({ dateKey, isToday }: { dateKey: string; isToday: boolean }) {
+    const { t } = useTranslation("c-daily-puzzles");
     const selectedDate = useMemo(() => {
         const [y, m, d] = dateKey.split('-').map(Number);
         return new Date(y, m - 1, d);
@@ -127,7 +129,7 @@ function ChainlinkGameContent({ dateKey, isToday }: { dateKey: string; isToday: 
         // Check for empty inputs
         for (let i = 0; i < chain.length; i++) {
             if (!chain[i].trim()) {
-                errors[i] = 'Enter a word';
+                errors[i] = t("enter-a-word", { defaultValue: "Enter a word" });
                 hasError = true;
             }
         }
@@ -144,12 +146,12 @@ function ChainlinkGameContent({ dateKey, isToday }: { dateKey: string; isToday: 
                     // i=0 means start->chain[0] is invalid -> error on chain[0] (index 0)
                     // i=chain.length means chain[last]->end is invalid -> error on chain[last]
                     if (i === 0) {
-                        errors[0] = `No link between "${full[0]}" and "${full[1]}"`;
+                        errors[0] = t("no-link-between", { defaultValue: 'No link between "{{a}}" and "{{b}}"', a: full[0], b: full[1] });
                     } else if (i === full.length - 2) {
-                        errors[chain.length - 1] = `No link between "${full[i]}" and "${full[i + 1]}"`;
+                        errors[chain.length - 1] = t("no-link-between", { defaultValue: 'No link between "{{a}}" and "{{b}}"', a: full[i], b: full[i + 1] });
                     } else {
                         // Between two middle words: mark the second one
-                        errors[i] = `No link between "${full[i]}" and "${full[i + 1]}"`;
+                        errors[i] = t("no-link-between", { defaultValue: 'No link between "{{a}}" and "{{b}}"', a: full[i], b: full[i + 1] });
                     }
                 }
             }
@@ -231,7 +233,7 @@ function ChainlinkGameContent({ dateKey, isToday }: { dateKey: string; isToday: 
                 className="inline-flex items-center gap-1.5 text-site-text-muted hover:text-site-text text-sm mb-6 transition-colors"
             >
                 <ArrowLeft className="w-4 h-4" />
-                Back to Daily Puzzles
+                {t("back-to-daily-puzzles", { defaultValue: "Back to Daily Puzzles" })}
             </Link>
 
             {/* Header */}
@@ -244,9 +246,9 @@ function ChainlinkGameContent({ dateKey, isToday }: { dateKey: string; isToday: 
                     Daily puzzle &middot; {dateKey} &middot; #{puzzleNumber}
                 </p>
                 <div className="inline-block px-4 py-2 rounded-lg bg-blue-500/10 border border-blue-500/30">
-                    <p className="text-blue-400 font-semibold text-sm">Connect the words through association</p>
+                    <p className="text-blue-400 font-semibold text-sm">{t("connect-words-instruction", { defaultValue: "Connect the words through association" })}</p>
                     <p className="text-site-text-muted text-xs mt-0.5">
-                        Build a chain from start to end. Each adjacent pair must be associated.
+                        {t("build-chain-instruction", { defaultValue: "Build a chain from start to end. Each adjacent pair must be associated." })}
                     </p>
                 </div>
             </div>
@@ -264,7 +266,7 @@ function ChainlinkGameContent({ dateKey, isToday }: { dateKey: string; isToday: 
                     </div>
                     <div className="flex-1 px-4 py-3 rounded-xl bg-blue-500/10 border border-blue-500/30">
                         <span className="text-blue-400 font-bold text-lg tracking-wide">{puzzle.startWord}</span>
-                        <span className="text-site-text-muted text-xs ml-2">start</span>
+                        <span className="text-site-text-muted text-xs ml-2">{t("start-label", { defaultValue: "start" })}</span>
                     </div>
                 </div>
 
@@ -296,7 +298,7 @@ function ChainlinkGameContent({ dateKey, isToday }: { dateKey: string; isToday: 
                                     onChange={e => handleInputChange(i, e.target.value)}
                                     onKeyDown={e => handleKeyDown(e, i)}
                                     disabled={isGameOver}
-                                    placeholder="Type a linking word..."
+                                    placeholder={t("type-linking-word", { defaultValue: "Type a linking word..." })}
                                     className={`w-full px-4 py-3 rounded-xl bg-site-surface border text-site-text placeholder:text-site-text-muted/50 focus:outline-none focus:ring-2 transition-all ${
                                         validationErrors[i]
                                             ? 'border-red-500/50 focus:ring-red-500/30'
@@ -310,7 +312,7 @@ function ChainlinkGameContent({ dateKey, isToday }: { dateKey: string; isToday: 
                                         type="button"
                                         onClick={() => handleRemoveLink(i)}
                                         className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-site-text-muted hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                                        title="Remove link"
+                                        title={t("remove-link", { defaultValue: "Remove link" })}
                                     >
                                         <X className="w-4 h-4" />
                                     </button>
@@ -344,7 +346,7 @@ function ChainlinkGameContent({ dateKey, isToday }: { dateKey: string; isToday: 
                     </div>
                     <div className="flex-1 px-4 py-3 rounded-xl bg-blue-500/10 border border-blue-500/30">
                         <span className="text-blue-400 font-bold text-lg tracking-wide">{puzzle.endWord}</span>
-                        <span className="text-site-text-muted text-xs ml-2">end</span>
+                        <span className="text-site-text-muted text-xs ml-2">{t("end-label", { defaultValue: "end" })}</span>
                     </div>
                 </div>
             </motion.div>
@@ -361,7 +363,7 @@ function ChainlinkGameContent({ dateKey, isToday }: { dateKey: string; isToday: 
                             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-site-surface border border-site-border text-site-text-muted hover:text-site-text hover:border-blue-500/40 transition-colors text-sm"
                         >
                             <Plus className="w-4 h-4" />
-                            Add Link
+                            {t("add-link", { defaultValue: "Add Link" })}
                         </motion.button>
                     )}
                     <motion.button
@@ -372,7 +374,7 @@ function ChainlinkGameContent({ dateKey, isToday }: { dateKey: string; isToday: 
                         className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-500/20 border border-blue-500/40 text-blue-400 font-semibold hover:bg-blue-500/30 transition-colors text-sm"
                     >
                         <Send className="w-4 h-4" />
-                        Submit Chain
+                        {t("submit-chain", { defaultValue: "Submit Chain" })}
                     </motion.button>
                     <motion.button
                         type="button"
@@ -382,7 +384,7 @@ function ChainlinkGameContent({ dateKey, isToday }: { dateKey: string; isToday: 
                         className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-site-surface border border-site-border text-site-text-muted hover:text-red-400 hover:border-red-500/40 transition-colors text-sm"
                     >
                         <X className="w-4 h-4" />
-                        Give Up
+                        {t("give-up", { defaultValue: "Give Up" })}
                     </motion.button>
                 </div>
             )}
@@ -390,7 +392,7 @@ function ChainlinkGameContent({ dateKey, isToday }: { dateKey: string; isToday: 
             {/* Chain length indicator */}
             {!isGameOver && (
                 <p className="text-center text-site-text-muted text-xs mb-4">
-                    Chain length: {chainLength} words &middot; Par: {puzzle.parLinks} &middot; Score if submitted: {computeChainlinkScore(chainLength)} pts
+                    {t("chain-length-info", { defaultValue: "Chain length: {{length}} words · Par: {{par}} · Score if submitted: {{score}} pts", length: chainLength, par: puzzle.parLinks, score: computeChainlinkScore(chainLength) })}
                 </p>
             )}
 
@@ -413,18 +415,21 @@ function ChainlinkGameContent({ dateKey, isToday }: { dateKey: string; isToday: 
                         >
                             {gaveUp ? (
                                 <>
-                                    <div className="text-2xl font-bold text-red-400 mb-1">Chain Broken</div>
+                                    <div className="text-2xl font-bold text-red-400 mb-1">{t("chain-broken", { defaultValue: "Chain Broken" })}</div>
                                     <p className="text-site-text-muted text-sm">
-                                        You gave up on today&apos;s puzzle.
+                                        {t("gave-up-message", { defaultValue: "You gave up on today's puzzle." })}
                                     </p>
                                 </>
                             ) : (
                                 <>
-                                    <div className="text-2xl font-bold text-emerald-400 mb-1">Chain Complete!</div>
+                                    <div className="text-2xl font-bold text-emerald-400 mb-1">{t("chain-complete", { defaultValue: "Chain Complete!" })}</div>
                                     <p className="text-site-text-muted text-sm">
-                                        You connected <span className="text-site-text font-medium">{puzzle.startWord}</span> to{' '}
-                                        <span className="text-site-text font-medium">{puzzle.endWord}</span> in{' '}
-                                        {chainLength} links.
+                                        {t("chain-complete-message-pre", { defaultValue: "You connected" })}{' '}
+                                        <span className="text-site-text font-medium">{puzzle.startWord}</span>{' '}
+                                        {t("chain-complete-message-to", { defaultValue: "to" })}{' '}
+                                        <span className="text-site-text font-medium">{puzzle.endWord}</span>{' '}
+                                        {t("chain-complete-message-in", { defaultValue: "in" })}{' '}
+                                        {chainLength} {t("links-label", { defaultValue: "links." })}
                                     </p>
                                 </>
                             )}
@@ -441,19 +446,19 @@ function ChainlinkGameContent({ dateKey, isToday }: { dateKey: string; isToday: 
                                 <div className="flex flex-col items-center">
                                     <Trophy className="w-6 h-6 text-amber-400 mb-1" />
                                     <span className="text-2xl font-bold text-amber-400">{score}</span>
-                                    <span className="text-site-text-muted text-xs">points</span>
+                                    <span className="text-site-text-muted text-xs">{t("points-label", { defaultValue: "points" })}</span>
                                 </div>
                                 <div className="flex flex-col items-center">
                                     <Link2 className="w-6 h-6 text-blue-400 mb-1" />
                                     <span className="text-2xl font-bold text-site-text">{gaveUp ? '--' : chainLength}</span>
-                                    <span className="text-site-text-muted text-xs">chain length</span>
+                                    <span className="text-site-text-muted text-xs">{t("chain-length-label", { defaultValue: "chain length" })}</span>
                                 </div>
                                 <div className="flex flex-col items-center">
                                     <span className="text-xl mb-1">
                                         {!gaveUp && chainLength <= puzzle.parLinks ? '🟢' : '🔴'}
                                     </span>
                                     <span className="text-2xl font-bold text-site-text">{puzzle.parLinks}</span>
-                                    <span className="text-site-text-muted text-xs">par</span>
+                                    <span className="text-site-text-muted text-xs">{t("par-label", { defaultValue: "par" })}</span>
                                 </div>
                             </div>
                         </motion.div>
@@ -467,7 +472,7 @@ function ChainlinkGameContent({ dateKey, isToday }: { dateKey: string; isToday: 
                         >
                             <h3 className="text-sm font-semibold text-site-text uppercase tracking-wide mb-3 flex items-center gap-2">
                                 <Link2 className="w-4 h-4 text-blue-400" />
-                                Example Chain
+                                {t("example-chain", { defaultValue: "Example Chain" })}
                             </h3>
                             <div className="space-y-2">
                                 {puzzle._exampleChain.map((word, i) => (
@@ -507,7 +512,7 @@ function ChainlinkGameContent({ dateKey, isToday }: { dateKey: string; isToday: 
                                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-site-surface border border-site-border text-site-text hover:border-site-accent/50 transition-colors"
                             >
                                 {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                                {copied ? 'Copied!' : 'Share Result'}
+                                {copied ? t("copied", { defaultValue: "Copied!" }) : t("share-result", { defaultValue: "Share Result" })}
                             </motion.button>
                             <motion.div
                                 initial={{ opacity: 0 }}
@@ -519,13 +524,13 @@ function ChainlinkGameContent({ dateKey, isToday }: { dateKey: string; isToday: 
                                     className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-site-surface border border-site-border text-site-text hover:border-site-accent/50 transition-colors"
                                 >
                                     <ArrowLeft className="w-4 h-4" />
-                                    All Puzzles
+                                    {t("all-puzzles", { defaultValue: "All Puzzles" })}
                                 </Link>
                             </motion.div>
                         </div>
 
                         <p className="text-site-text-muted text-xs text-center">
-                            A new chain unlocks tomorrow — same for everyone worldwide.
+                            {t("new-chain-tomorrow", { defaultValue: "A new chain unlocks tomorrow — same for everyone worldwide." })}
                         </p>
                     </motion.div>
                 )}

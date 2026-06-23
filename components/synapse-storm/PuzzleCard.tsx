@@ -18,6 +18,7 @@ import {
     ShapeInfo,
 } from '../../lib/synapse-storm/types';
 import { soundManager } from '../../lib/synapse-storm/sounds';
+import { useTranslation } from 'react-i18next';
 
 interface PuzzleCardProps {
     puzzle: ActivePuzzle;
@@ -111,7 +112,8 @@ const MetaRenderer: React.FC<{
         if (gameState) return computeMetaAnswerAndOptions(data.variant, gameState);
         return null;
     });
-    if (!resolved) return <div className="puzzle-content">Loading...</div>;
+    const { t } = useTranslation("c-synapse-storm");
+    if (!resolved) return <div className="puzzle-content">{t("loading", { defaultValue: "Loading..." })}</div>;
     return (
         <div className="puzzle-content">
             <div className="puzzle-options">
@@ -231,6 +233,7 @@ const LanguageRenderer: React.FC<{
     data: LanguagePuzzleData;
     onAnswer: (correct: boolean) => void;
 }> = ({ data, onAnswer }) => {
+    const { t } = useTranslation("c-synapse-storm");
     const [input, setInput] = useState('');
     const submittedRef = useRef(false);
 
@@ -275,7 +278,7 @@ const LanguageRenderer: React.FC<{
                     type="text"
                     value={input}
                     onChange={handleChange}
-                    placeholder={data.variant === 'spelling' ? 'Letter...' : 'Type here...'}
+                    placeholder={data.variant === 'spelling' ? t("letter-placeholder", { defaultValue: "Letter..." }) : t("type-here-placeholder", { defaultValue: "Type here..." })}
                     className="puzzle-text-input"
                     maxLength={data.variant === 'spelling' ? 1 : 20}
                     autoFocus={data.variant === 'spelling'}
@@ -337,6 +340,7 @@ const MemoryRenderer: React.FC<{
     onAnswer: (correct: boolean) => void;
     onSkipPhase?: (id: string) => void;
 }> = ({ data, puzzleId, phase = 'show', onAnswer, onSkipPhase }) => {
+    const { t } = useTranslation("c-synapse-storm");
     const [input, setInput] = useState('');
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -380,13 +384,13 @@ const MemoryRenderer: React.FC<{
                         )
                     ))}
                 </div>
-                <div className="memory-hint">Memorize!</div>
+                <div className="memory-hint">{t("memorize", { defaultValue: "Memorize!" })}</div>
                 <button
                     className="option-btn ready-btn"
                     onClick={() => onSkipPhase?.(puzzleId)}
                     style={{ marginTop: '12px', width: '100%', background: 'rgba(255,255,255,0.1)', fontWeight: 'bold' }}
                 >
-                    READY!
+                    {t("ready", { defaultValue: "READY!" })}
                 </button>
             </div>
         );
@@ -403,7 +407,7 @@ const MemoryRenderer: React.FC<{
                         autoFocus
                         value={input}
                         onChange={(e) => setInput(e.target.value.replace(/[^0-9]/g, ''))}
-                        placeholder="e.g. 385"
+                        placeholder={t("numbers-placeholder", { defaultValue: "e.g. 385" })}
                         className="puzzle-text-input"
                         maxLength={data.sequence.length + 2}
                         style={{ width: '100%', textAlign: 'center', fontSize: '1.2rem', marginBottom: '8px' }}
@@ -416,7 +420,7 @@ const MemoryRenderer: React.FC<{
                                     <svg width={24} height={24}>{SVG_SHAPES[s]?.('#76ff03', 24, `sel-${i}`)}</svg>
                                 </span>
                             ))}
-                            {input === '' && <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Tap shapes in order</span>}
+                            {input === '' && <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t("tap-shapes-in-order", { defaultValue: "Tap shapes in order" })}</span>}
                         </div>
                         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
                             {SHAPE_NAMES.map(shape => (
@@ -437,9 +441,9 @@ const MemoryRenderer: React.FC<{
                             ))}
                         </div>
                         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                            <button type="button" className="option-btn text-small" onClick={() => setInput('')}>Clear</button>
+                            <button type="button" className="option-btn text-small" onClick={() => setInput('')}>{t("clear", { defaultValue: "Clear" })}</button>
                             <button type="submit" className="submit-btn" style={{ flex: 1 }} disabled={input.split(',').filter(Boolean).length !== data.sequence.length}>
-                                SUBMIT
+                                {t("submit", { defaultValue: "SUBMIT" })}
                             </button>
                         </div>
                     </div>
@@ -449,7 +453,7 @@ const MemoryRenderer: React.FC<{
                             {input.split(',').filter(Boolean).map((c, i) => (
                                 <span key={i} className="color-dot" style={{ backgroundColor: c, width: 20, height: 20, borderRadius: '50%', display: 'inline-block' }} />
                             ))}
-                            {input === '' && <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Tap colors in order</span>}
+                            {input === '' && <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t("tap-colors-in-order", { defaultValue: "Tap colors in order" })}</span>}
                         </div>
                         <div style={{ display: 'flex', gap: '10px' }}>
                             <div className="color-buttons" style={{ flex: 1 }}>
@@ -480,14 +484,14 @@ const MemoryRenderer: React.FC<{
                                     borderColor: input.split(',').filter(Boolean).length === data.sequence.length ? 'var(--accent-green)' : 'transparent',
                                 }}
                             >
-                                SUBMIT
+                                {t("submit", { defaultValue: "SUBMIT" })}
                             </button>
                         </div>
-                        <button type="button" className="option-btn text-small" style={{ width: 'fit-content' }} onClick={() => setInput('')}>Clear</button>
+                        <button type="button" className="option-btn text-small" style={{ width: 'fit-content' }} onClick={() => setInput('')}>{t("clear", { defaultValue: "Clear" })}</button>
                     </div>
                 )}
                 {data.variant === 'numbers' && (
-                    <button type="submit" className="submit-btn" style={{ width: '100%' }}>✓ SUBMIT</button>
+                    <button type="submit" className="submit-btn" style={{ width: '100%' }}>{t("check-submit", { defaultValue: "✓ SUBMIT" })}</button>
                 )}
             </form>
         </div>
@@ -615,6 +619,7 @@ const MinigameRenderer: React.FC<{
     data: MinigamePuzzleData;
     onAnswer: (correct: boolean) => void;
 }> = ({ data, onAnswer }) => {
+    const { t } = useTranslation("c-synapse-storm");
     const [phase, setPhase] = useState<'wait' | 'go'>('wait');
     const [count, setCount] = useState(3);
     const [tapCount, setTapCount] = useState(0);
@@ -695,7 +700,7 @@ const MinigameRenderer: React.FC<{
         return (
             <div className="puzzle-content minigame-area" onClick={handleClickWhenGo}>
                 <button className="minigame-go-btn" style={{ opacity: phase === 'go' ? 1 : 0.3, cursor: phase === 'go' ? 'pointer' : 'default' }}>
-                    {phase === 'go' ? 'GO!' : '...'}
+                    {phase === 'go' ? t("go", { defaultValue: "GO!" }) : t("waiting", { defaultValue: "..." })}
                 </button>
             </div>
         );
@@ -736,7 +741,7 @@ const MinigameRenderer: React.FC<{
         return (
             <div className="puzzle-content minigame-area">
                 <button className="minigame-double-tap" onClick={handleDoubleTap}>
-                    {doubleTapStage === 'second' ? 'Tap again!' : 'Double-tap!'}
+                    {doubleTapStage === 'second' ? t("tap-again", { defaultValue: "Tap again!" }) : t("double-tap", { defaultValue: "Double-tap!" })}
                 </button>
             </div>
         );
@@ -746,7 +751,7 @@ const MinigameRenderer: React.FC<{
         return (
             <div className="puzzle-content minigame-area" onClick={handleDontClick}>
                 <button className="minigame-go-btn" style={{ opacity: 1, cursor: 'pointer' }}>
-                    {phase === 'go' ? 'CLICK!' : 'Don\'t tap!'}
+                    {phase === 'go' ? t("click", { defaultValue: "CLICK!" }) : t("dont-tap", { defaultValue: "Don't tap!" })}
                 </button>
             </div>
         );
@@ -774,7 +779,7 @@ const MinigameRenderer: React.FC<{
         return (
             <div className="puzzle-content minigame-area fling-hint">
                 <span className="fling-arrow">👆</span>
-                <p>Drag & fling this card!</p>
+                <p>{t("drag-fling", { defaultValue: "Drag & fling this card!" })}</p>
             </div>
         );
     }
@@ -786,6 +791,7 @@ const PowerUpRenderer: React.FC<{
     data: PowerUpPuzzleData;
     onAnswer: (correct: boolean) => void;
 }> = ({ data, onAnswer }) => {
+    const { t } = useTranslation("c-synapse-storm");
     const [progress, setProgress] = useState(0);
     const holdTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -835,13 +841,13 @@ const PowerUpRenderer: React.FC<{
     return (
         <div className="puzzle-content powerup-puzzle">
             <div className="powerup-badge">
-                {data.variant.toUpperCase()} INTERVENTION
+                {data.variant.toUpperCase()} {t("intervention", { defaultValue: "INTERVENTION" })}
             </div>
             <div className="powerup-effect">{data.effectDescription}</div>
 
             {data.actionType === 'spam' && (
                 <button className="option-btn powerup-action-btn" onClick={handleAction}>
-                    CLICK ME! ({progress}/{data.targetValue})
+                    {t("click-me", { defaultValue: "CLICK ME! ({{progress}}/{{target}})", progress, target: data.targetValue })}
                 </button>
             )}
 
@@ -866,7 +872,7 @@ const PowerUpRenderer: React.FC<{
                     onTouchEnd={stopHold}
                     style={{ background: `linear-gradient(to right, rgba(255, 215, 64, 0.4) ${(progress / data.targetValue) * 100}%, rgba(255, 215, 64, 0.1) ${(progress / data.targetValue) * 100}%)` }}
                 >
-                    HOLD!
+                    {t("hold", { defaultValue: "HOLD!" })}
                 </button>
             )}
         </div>

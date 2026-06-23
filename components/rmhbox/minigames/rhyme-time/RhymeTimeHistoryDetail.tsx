@@ -11,6 +11,7 @@
 'use client';
 
 import { Zap } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { HistoryDetailProps } from '@/lib/rmhbox/history-display-registry';
 
 interface SubmissionEntry {
@@ -79,6 +80,7 @@ export default function RhymeTimeHistoryDetail({
   currentUserId,
   players,
 }: HistoryDetailProps) {
+  const { t } = useTranslation("c-rmhbox");
   const roundStarts = gameLog.actions.filter((a) => a.type === 'round_start');
   const roundEnds = gameLog.actions.filter((a) => a.type === 'round_end');
   const allSubmissions = gameLog.actions.filter((a) => a.type === 'submission');
@@ -88,14 +90,14 @@ export default function RhymeTimeHistoryDetail({
       {/* Game Settings */}
       {gameLog.initialState && (
         <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-3">
-          <h4 className="text-xs font-semibold text-(--rmhbox-text-muted) uppercase mb-1">Game Settings</h4>
+          <h4 className="text-xs font-semibold text-(--rmhbox-text-muted) uppercase mb-1">{t("game-settings", { defaultValue: "Game Settings" })}</h4>
           <div className="flex flex-wrap gap-3 text-xs text-(--rmhbox-text-muted)">
-            <span>Rounds: {(gameLog.initialState.rounds as number) ?? roundStarts.length}</span>
+            <span>{t("rounds-count", { defaultValue: "Rounds: {{count}}", count: (gameLog.initialState.rounds as number) ?? roundStarts.length })}</span>
             {gameLog.initialState.secondsPerRound != null && (
-              <span>Time per Round: {String(gameLog.initialState.secondsPerRound)}s</span>
+              <span>{t("time-per-round", { defaultValue: "Time per Round: {{seconds}}s", seconds: String(gameLog.initialState.secondsPerRound) })}</span>
             )}
             {gameLog.initialState.maxSubmissionsPerRound != null && (
-              <span>Max Submissions: {String(gameLog.initialState.maxSubmissionsPerRound)}</span>
+              <span>{t("max-submissions", { defaultValue: "Max Submissions: {{count}}", count: String(gameLog.initialState.maxSubmissionsPerRound) })}</span>
             )}
           </div>
         </div>
@@ -157,7 +159,7 @@ export default function RhymeTimeHistoryDetail({
             {/* Round header */}
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-sm font-semibold text-(--rmhbox-text-muted)">
-                Round {roundNum}
+                {t("round-num", { defaultValue: "Round {{num}}", num: roundNum })}
               </h4>
               <div className="flex items-center gap-2">
                 <span className="text-lg font-bold text-(--rmhbox-accent)">
@@ -186,10 +188,10 @@ export default function RhymeTimeHistoryDetail({
                 invalid: 'text-red-400',
               };
               const tierLabels: Record<string, string> = {
-                rare: '★ Rare',
-                uncommon: 'Uncommon',
-                common: 'Common',
-                invalid: 'Invalid',
+                rare: t("tier-rare", { defaultValue: "★ Rare" }),
+                uncommon: t("tier-uncommon", { defaultValue: "Uncommon" }),
+                common: t("tier-common", { defaultValue: "Common" }),
+                invalid: t("tier-invalid", { defaultValue: "Invalid" }),
               };
               return (
                 <div key={tier} className="mb-2">
@@ -236,7 +238,7 @@ export default function RhymeTimeHistoryDetail({
             {/* Per-player round scores */}
             {Object.keys(playerScores).length > 0 && (
               <div className="mt-3 pt-2 border-t border-(--rmhbox-border)">
-                <span className="text-xs font-medium text-(--rmhbox-text-muted) uppercase">Round Scores</span>
+                <span className="text-xs font-medium text-(--rmhbox-text-muted) uppercase">{t("round-scores", { defaultValue: "Round Scores" })}</span>
                 <div className="flex flex-wrap gap-3 mt-1">
                   {Object.entries(playerScores)
                     .sort(([, a], [, b]) => b - a)
@@ -259,7 +261,7 @@ export default function RhymeTimeHistoryDetail({
             {/* Round winner */}
             {roundWinner && (
               <div className="mt-2 text-xs text-(--rmhbox-text-muted)">
-                🏆 Round winner:{' '}
+                {t("round-winner", { defaultValue: "🏆 Round winner:" })}{' '}
                 <span className="font-semibold text-(--rmhbox-accent)">
                   {players.find((p) => p.userId === roundWinner)?.userName ?? roundWinner}
                 </span>
@@ -271,7 +273,7 @@ export default function RhymeTimeHistoryDetail({
 
       {/* Final scores */}
       <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-4">
-        <h4 className="text-sm font-semibold text-(--rmhbox-text-muted) mb-2">Final Scores</h4>
+        <h4 className="text-sm font-semibold text-(--rmhbox-text-muted) mb-2">{t("final-scores", { defaultValue: "Final Scores" })}</h4>
         <div className="space-y-1">
           {players
             .sort((a, b) => a.rank - b.rank)

@@ -5,6 +5,7 @@ import { Link } from '@tanstack/react-router';
 import useEmblaCarousel from 'embla-carousel-react';
 import { useInView } from 'framer-motion';
 import { ArrowRight, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { getCategoryColor } from '@/lib/news-categories';
 import { NewsSourceBadge } from './NewsSourceBadge';
 import type { NewsArticle } from '@/lib/news';
@@ -22,6 +23,7 @@ interface NewsHeroProps {
 }
 
 export function NewsHero({ articles }: NewsHeroProps) {
+    const { t } = useTranslation("c-news");
     const [emblaRef, emblaApi] = useEmblaCarousel(EMBLA_OPTIONS);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
@@ -114,7 +116,7 @@ export function NewsHero({ articles }: NewsHeroProps) {
                                             to={`/news/${article.slug}` as string}
                                             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-(--site-accent) text-site-accent-fg text-sm font-bold hover:opacity-90 transition-opacity"
                                         >
-                                            Read Our Take <ArrowRight className="w-4 h-4" />
+                                            {t("read-our-take", { defaultValue: "Read Our Take" })} <ArrowRight className="w-4 h-4" />
                                         </Link>
                                     </div>
                                 </div>
@@ -132,7 +134,7 @@ export function NewsHero({ articles }: NewsHeroProps) {
                         <button
                             onClick={scrollPrev}
                             className="p-1.5 rounded-full bg-(--site-surface)/80 border border-(--site-border) text-(--site-text) hover:bg-(--site-accent) hover:border-(--site-accent) hover:text-site-accent-fg transition-all backdrop-blur-md"
-                            aria-label="Previous featured article"
+                            aria-label={t("prev-featured-article", { defaultValue: "Previous featured article" })}
                         >
                             <ChevronLeft className="w-4 h-4" />
                         </button>
@@ -146,7 +148,7 @@ export function NewsHero({ articles }: NewsHeroProps) {
                                             ? 'w-8 bg-(--site-accent)/30'
                                             : 'w-1.5 bg-(--site-border) hover:bg-(--site-text-dim)'
                                         }`}
-                                    aria-label={`Go to featured article ${index + 1}`}
+                                    aria-label={t("go-to-featured-article", { defaultValue: "Go to featured article {{n}}", n: index + 1 })}
                                 >
                                     {index === selectedIndex && (
                                         <span
@@ -164,7 +166,7 @@ export function NewsHero({ articles }: NewsHeroProps) {
                         <button
                             onClick={scrollNext}
                             className="p-1.5 rounded-full bg-(--site-surface)/80 border border-(--site-border) text-(--site-text) hover:bg-(--site-accent) hover:border-(--site-accent) hover:text-site-accent-fg transition-all backdrop-blur-md"
-                            aria-label="Next featured article"
+                            aria-label={t("next-featured-article", { defaultValue: "Next featured article" })}
                         >
                             <ChevronRight className="w-4 h-4" />
                         </button>

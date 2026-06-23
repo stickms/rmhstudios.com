@@ -1,5 +1,6 @@
 'use client';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { GameState } from '../../lib/synapse-storm/types';
 import { HUD } from './HUD';
 import { PuzzleCard } from './PuzzleCard';
@@ -11,6 +12,7 @@ interface GameBoardProps {
 }
 
 export const GameBoard: React.FC<GameBoardProps> = ({ state, onSolve, onSkipPhase }) => {
+    const { t } = useTranslation("c-synapse-storm");
     return (
         <div className={`game-board ${state.isSaturated ? 'saturated' : ''}`}>
             <HUD state={state} />
@@ -19,7 +21,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ state, onSolve, onSkipPhas
                 {state.activePuzzles.length === 0 && (
                     <div className="playfield-empty">
                         <span className="loading-pulse">🌩️</span>
-                        <p>Preparing sequence...</p>
+                        <p>{t("preparing-sequence", { defaultValue: "Preparing sequence..." })}</p>
                     </div>
                 )}
 
@@ -37,7 +39,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ state, onSolve, onSkipPhas
 
                 {state.combo >= 10 && (
                     <div className="combo-overlay">
-                        <span className="combo-text">{state.combo} COMBO!</span>
+                        <span className="combo-text">{t("combo-count", { defaultValue: "{{combo}} COMBO!", combo: state.combo })}</span>
                     </div>
                 )}
             </div>

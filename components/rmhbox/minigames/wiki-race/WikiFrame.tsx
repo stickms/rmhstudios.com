@@ -25,6 +25,7 @@
 'use client';
 
 import { useRef, useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 
@@ -43,6 +44,7 @@ export default function WikiFrame({
   disabled,
   onNavigate,
 }: WikiFrameProps) {
+  const { t } = useTranslation("c-rmhbox");
   const scrollRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -88,7 +90,7 @@ export default function WikiFrame({
     <div className="relative rounded-xl border border-(--rmhbox-border) bg-white/5 overflow-hidden">
       {/* Title bar */}
       <div className="flex items-center justify-between border-b border-(--rmhbox-border) bg-(--rmhbox-surface) px-4 py-2">
-        <h3 className="text-sm font-bold truncate">{currentTitle || 'Loading…'}</h3>
+        <h3 className="text-sm font-bold truncate">{currentTitle || t("loading", { defaultValue: "Loading…" })}</h3>
         {isLoading && (
           <Loader2 size={14} className="animate-spin text-(--rmhbox-accent)" />
         )}

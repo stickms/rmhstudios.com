@@ -1,5 +1,10 @@
 # ─── Dependencies & build artifacts ──────────────────────────────────
+# `node_modules` only matches the context root; `**/node_modules` is needed to
+# catch nested copies (e.g. a stray `.next/node_modules/@prisma/client-<hash>`,
+# whose transient files otherwise race the COPY checksum and fail the build).
 node_modules
+**/node_modules
+.next
 .output
 .vinxi
 .tanstack
@@ -85,10 +90,10 @@ docs
 *.md
 !README.md
 
-# ─── Go microservices fleet + new infra (not part of the web image) ──
-# Keeps these out of the `COPY . .` build context so adding them never
-# busts the web image cache or triggers an unnecessary container recreate.
-go-services
+# ─── Go microservices fleet + new infra ──────────────────────────────
+# go-services is included so the go-builder stage can compile supervisor,
+# status, and bot-worker into /app/bin. Only deploy/ and .github/ are
+# excluded from the context (they are never needed inside the image).
 deploy
 .github
 

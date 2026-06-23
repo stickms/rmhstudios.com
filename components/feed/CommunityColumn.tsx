@@ -8,6 +8,7 @@ import { ComposeBox } from './ComposeBox';
 import { Button } from '@/components/ui/button';
 import { useSession } from '@/components/Providers';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 import type { FeedItem } from '@/lib/feed-types';
 
 interface CommunityData {
@@ -23,6 +24,7 @@ interface CommunityData {
 }
 
 export function CommunityColumn({ slug }: { slug: string }) {
+  const { t } = useTranslation('feed');
   const { data: session } = useSession();
   const [community, setCommunity] = useState<CommunityData | null>(null);
   const [items, setItems] = useState<FeedItem[]>([]);
@@ -52,7 +54,7 @@ export function CommunityColumn({ slug }: { slug: string }) {
       if (res.ok) {
         setCommunity((c) => c && { ...c, joined: data.joined, memberCount: c.memberCount + (data.joined ? 1 : -1) });
       } else {
-        toast.error(data.error || 'Could not update membership');
+        toast.error(data.error || t('could-not-update-membership', { defaultValue: 'Could not update membership' }));
       }
     } finally {
       setJoining(false);
@@ -67,13 +69,13 @@ export function CommunityColumn({ slug }: { slug: string }) {
     );
   }
   if (!community) {
-    return <p className="px-4 py-16 text-center text-sm text-site-text-muted">Community not found.</p>;
+    return <p className="px-4 py-16 text-center text-sm text-site-text-muted">{t('community-not-found', { defaultValue: 'Community not found.' })}</p>;
   }
 
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-site-border bg-site-bg/80 px-4 py-3 backdrop-blur">
-        <Link to="/communities" className="text-site-text-muted hover:text-site-text" aria-label="Back to communities">
+        <Link to="/communities" className="text-site-text-muted hover:text-site-text" aria-label={t('back-to-communities', { defaultValue: 'Back to communities' })}>
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <h1 className="truncate text-lg font-bold text-site-text">{community.name}</h1>
@@ -100,7 +102,7 @@ export function CommunityColumn({ slug }: { slug: string }) {
               disabled={joining}
               onClick={toggleJoin}
             >
-              {community.joined ? 'Joined' : 'Join'}
+              {community.joined ? t('joined', { defaultValue: 'Joined' }) : t('join', { defaultValue: 'Join' })}
             </Button>
           )}
         </div>
@@ -116,7 +118,7 @@ export function CommunityColumn({ slug }: { slug: string }) {
       )}
 
       {items.length === 0 ? (
-        <p className="px-4 py-16 text-center text-sm text-site-text-muted">No posts yet. Be the first!</p>
+        <p className="px-4 py-16 text-center text-sm text-site-text-muted">{t('no-posts-yet', { defaultValue: 'No posts yet. Be the first!' })}</p>
       ) : (
         <div className="divide-y divide-site-border">
           {items.map((item) => (

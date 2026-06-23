@@ -6,6 +6,7 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, Shuffle, Repeat, ChevronDown, ChevronUp, History } from 'lucide-react';
 import { emit } from '@/lib/rmhtube/socket';
 import { C2S } from '@/lib/rmhtube/events';
@@ -54,6 +55,8 @@ export default function MediaQueue() {
     emit(C2S.QUEUE_ADD, { url, title });
   }, []);
 
+  const { t } = useTranslation("c-rmhtube");
+
   if (!room) return null;
 
   const isHost = room.myUserId === room.hostUserId;
@@ -64,7 +67,7 @@ export default function MediaQueue() {
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-(--rmhtube-border)">
         <h3 className="text-sm font-semibold text-(--rmhtube-text-muted)">
-          Queue ({room.queue.length})
+          {t("queue-count", { defaultValue: "Queue ({{count}})", count: room.queue.length })}
           {totalDuration > 0 && (
             <span className="font-normal text-(--rmhtube-text-dim)">
               {' · '}{formatTotalDuration(totalDuration)}
@@ -82,7 +85,7 @@ export default function MediaQueue() {
                   ? 'text-(--rmhtube-accent) bg-(--rmhtube-accent-dim)'
                   : 'text-(--rmhtube-text-dim) hover:text-(--rmhtube-text-muted) hover:bg-(--rmhtube-surface-hover)'
               }`}
-              title={room.settings.loopQueue ? 'Loop queue: ON' : 'Loop queue: OFF'}
+              title={room.settings.loopQueue ? t("loop-queue-on", { defaultValue: "Loop queue: ON" }) : t("loop-queue-off", { defaultValue: "Loop queue: OFF" })}
             >
               <Repeat className="h-3.5 w-3.5" />
             </button>
@@ -93,7 +96,7 @@ export default function MediaQueue() {
             <button
               onClick={handleShuffle}
               className="p-1 rounded-md transition-colors text-(--rmhtube-text-dim) hover:text-(--rmhtube-text-muted) hover:bg-(--rmhtube-surface-hover)"
-              title="Shuffle queue"
+              title={t("shuffle-queue", { defaultValue: "Shuffle queue" })}
             >
               <Shuffle className="h-3.5 w-3.5" />
             </button>
@@ -106,7 +109,7 @@ export default function MediaQueue() {
               className="flex items-center gap-1 text-xs px-2 py-1 rounded-md transition-colors bg-(--rmhtube-accent) text-white hover:bg-(--rmhtube-accent-hover)"
             >
               <Plus className="h-3 w-3" />
-              Add
+              {t("add", { defaultValue: "Add" })}
             </button>
           )}
         </div>
@@ -116,7 +119,7 @@ export default function MediaQueue() {
       <div className="flex-1 overflow-y-auto p-2 space-y-1">
         {room.queue.length === 0 ? (
           <p className="text-sm text-center py-8 text-(--rmhtube-text-dim)">
-            Queue is empty
+            {t("queue-empty", { defaultValue: "Queue is empty" })}
           </p>
         ) : (
           room.queue.map((item) => {
@@ -148,7 +151,7 @@ export default function MediaQueue() {
           >
             <span className="flex items-center gap-1.5">
               <History className="h-3.5 w-3.5" />
-              History ({room.playedItems.length})
+              {t("history-count", { defaultValue: "History ({{count}})", count: room.playedItems.length })}
             </span>
             {showHistory ? (
               <ChevronUp className="h-3.5 w-3.5" />
@@ -164,7 +167,7 @@ export default function MediaQueue() {
                   key={item.id}
                   onClick={() => handleReAddFromHistory(item.url, item.title)}
                   className="flex items-start gap-2 w-full p-2 rounded-lg text-left transition-colors bg-(--rmhtube-bg) hover:bg-(--rmhtube-surface-hover) group"
-                  title="Click to re-add to queue"
+                  title={t("re-add-to-queue", { defaultValue: "Click to re-add to queue" })}
                 >
                   <div className="flex-1 min-w-0">
                     <p className="text-sm truncate text-(--rmhtube-text) group-hover:text-(--rmhtube-accent)">

@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 
 export default function PilgrimageOverlay() {
@@ -7,6 +8,7 @@ export default function PilgrimageOverlay() {
   const pilgrimageTimer = useTempleStore((s) => s.pilgrimageTimer);
   const theme = useTempleStore((s) => s.theme);
 
+  const { t } = useTranslation("c-temple-of-joy");
   const [returnFlash, setReturnFlash] = useState(false);
   const prevActive = useRef(false);
 
@@ -40,7 +42,7 @@ export default function PilgrimageOverlay() {
           className="flex items-center justify-center py-3 text-sm font-semibold animate-pulse"
           style={{ color: dark ? '#d4a847' : '#8b6914' }}
         >
-          ✨ The pilgrim returns! HPS burst active for 5 minutes!
+          {t("pilgrim-returns", { defaultValue: "✨ The pilgrim returns! HPS burst active for 5 minutes!" })}
         </div>
       ) : (
         <div className="px-4 py-2">
@@ -55,14 +57,14 @@ export default function PilgrimageOverlay() {
               >
                 🕯️
               </span>
-              Pilgrimage in progress —{' '}
+              {t("pilgrimage-in-progress", { defaultValue: "Pilgrimage in progress" })} —{' '}
               <span
                 className="font-mono tabular-nums"
                 style={{ color: dark ? '#d4a847' : '#8b6914' }}
               >
                 {Math.ceil(pilgrimageTimer)}s
               </span>{' '}
-              remaining
+              {t("remaining", { defaultValue: "remaining" })}
               <span
                 style={{
                   display: 'inline-block',

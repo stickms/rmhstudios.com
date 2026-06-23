@@ -112,7 +112,16 @@ func (r *Runner) loop(ctx context.Context) {
 
 // runOnce wraps processDueRecaps with job metrics, mirroring the Node
 // `processDueRecaps().catch(...)`.
+//
+// Failure-isolation: recover any panic (e.g. nil-DB dereference in DueChannels)
+// so a single job crash cannot take down the shared supervisor process.
 func (r *Runner) runOnce(ctx context.Context) {
+	defer func() {
+		if r2 := recover(); r2 != nil {
+			r.metrics.JobRuns.WithLabelValues("recap", "panic").Inc()
+			r.log.Error("recap run panicked", "panic", r2)
+		}
+	}()
 	if err := r.processDueRecaps(ctx); err != nil {
 		r.metrics.JobRuns.WithLabelValues("recap", "error").Inc()
 		r.log.Error("recap run failed", "error", err)

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { searchCities, fetchWeather, WeatherData } from '@/lib/weather';
 
 interface CityWeather {
@@ -9,6 +10,7 @@ interface CityWeather {
 }
 
 export const MultiCityComparison = () => {
+  const { t } = useTranslation("c-rmh-weather");
   const [cities, setCities] = useState<CityWeather[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -31,14 +33,14 @@ export const MultiCityComparison = () => {
 
   return (
     <div className="my-2">
-      <div className="text-lg font-semibold text-blue-400 mb-2">Multi-City Comparison</div>
+      <div className="text-lg font-semibold text-blue-400 mb-2">{t("multi-city-comparison", { defaultValue: "Multi-City Comparison" })}</div>
       <div className="bg-weather-glass rounded-2xl p-4 border border-weather text-weather flex flex-col gap-3">
         <div className="flex gap-2">
           <input
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && !loading && !!input.trim() && handleAddCity()}
-            placeholder="Enter city name"
+            placeholder={t("enter-city-name", { defaultValue: "Enter city name" })}
             className="flex-1 min-w-0 bg-weather-glass border border-weather rounded-xl px-3 py-2 text-weather placeholder:text-weather-muted focus:outline-none focus:ring-1 focus:ring-blue-400 text-sm"
           />
           <button
@@ -46,12 +48,12 @@ export const MultiCityComparison = () => {
             disabled={loading || !input.trim()}
             className="px-4 py-2 rounded-xl bg-blue-500/80 hover:bg-blue-500 disabled:opacity-40 text-white font-semibold text-sm transition-colors whitespace-nowrap"
           >
-            {loading ? '…' : 'Add'}
+            {loading ? '…' : t("add", { defaultValue: "Add" })}
           </button>
         </div>
 
         {cities.length === 0 && (
-          <p className="text-xs text-weather-muted text-center py-1">Add cities to compare weather.</p>
+          <p className="text-xs text-weather-muted text-center py-1">{t("add-cities-prompt", { defaultValue: "Add cities to compare weather." })}</p>
         )}
 
         <div className="flex flex-col gap-2">
@@ -63,7 +65,7 @@ export const MultiCityComparison = () => {
                   onClick={() => handleRemoveCity(city.name)}
                   className="text-xs text-red-400 hover:text-red-300 transition-colors"
                 >
-                  Remove
+                  {t("remove", { defaultValue: "Remove" })}
                 </button>
               </div>
               {city.data ? (
@@ -72,7 +74,7 @@ export const MultiCityComparison = () => {
                   <span>↑{Math.round(city.data.daily[0].maxTemp)}° ↓{Math.round(city.data.daily[0].minTemp)}°</span>
                 </div>
               ) : (
-                <div className="text-xs text-weather-muted">Loading…</div>
+                <div className="text-xs text-weather-muted">{t("loading", { defaultValue: "Loading…" })}</div>
               )}
             </div>
           ))}

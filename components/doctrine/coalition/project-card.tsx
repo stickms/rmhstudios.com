@@ -1,4 +1,5 @@
 import { ExternalLink } from 'lucide-react';
+import { useTranslation } from "react-i18next";
 
 interface ProjectCardProps {
   name: string;
@@ -15,6 +16,7 @@ const STATUS_COLORS = {
 };
 
 export function ProjectCard({ name, description, status, userActive, url }: ProjectCardProps) {
+  const { t } = useTranslation("c-doctrine");
   return (
     <div
       className="rounded-lg p-4 space-y-2 transition-colors hover:bg-white/[0.02]"
@@ -37,12 +39,12 @@ export function ProjectCard({ name, description, status, userActive, url }: Proj
         {userActive && (
           <span className="text-[10px] text-green-400/80 flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />
-            Active
+            {t("active", { defaultValue: "Active" })}
           </span>
         )}
         {url && (
           <a href={url} className="text-[10px] text-white/30 hover:text-white/50 flex items-center gap-1">
-            Open <ExternalLink size={10} />
+            {t("open", { defaultValue: "Open" })} <ExternalLink size={10} />
           </a>
         )}
       </div>

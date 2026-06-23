@@ -5,6 +5,7 @@
 
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft, Circle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useRmhTypeStore } from '@/lib/rmhtype/store';
 
 interface RmhTypeHeaderProps {
@@ -22,6 +23,7 @@ export default function RmhTypeHeader({
   roomCode,
   onCopyCode,
 }: RmhTypeHeaderProps) {
+  const { t } = useTranslation("c-rmhtype");
   const connectionStatus = useRmhTypeStore((s) => s.connectionStatus);
 
   const statusColor =
@@ -65,7 +67,7 @@ export default function RmhTypeHeader({
           <button
             onClick={onCopyCode}
             className="flex items-center gap-1.5 rounded-md px-2 py-1 font-mono text-sm font-bold tracking-widest transition-colors bg-(--rmhtype-surface) text-(--rmhtype-text) hover:bg-(--rmhtype-surface-hover)"
-            title="Copy room code"
+            title={t("copy-room-code", { defaultValue: "Copy room code" })}
           >
             {roomCode}
           </button>

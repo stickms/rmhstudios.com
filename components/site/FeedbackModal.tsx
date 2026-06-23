@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   MessageSquarePlus,
@@ -78,6 +79,7 @@ function timeAgo(dateStr: string): string {
 }
 
 export function FeedbackModal() {
+  const { t } = useTranslation("site");
   const [open, setOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -158,10 +160,10 @@ export function FeedbackModal() {
         const newItem: FeedbackItem = await res.json();
         setFeedbacks((prev) => [newItem, ...prev]);
         resetForm();
-        toast.success("Feedback posted!");
+        toast.success(t("feedback-posted", { defaultValue: "Feedback posted!" }));
       } catch (err) {
         toast.error(
-          err instanceof Error ? err.message : "Something went wrong"
+          err instanceof Error ? err.message : t("something-went-wrong", { defaultValue: "Something went wrong" })
         );
       } finally {
         setSending(false);
@@ -181,7 +183,7 @@ export function FeedbackModal() {
         transition={{ delay: 1, type: "spring", stiffness: 260, damping: 20 }}
         whileHover={{ scale: 1.08 }}
         whileTap={{ scale: 0.95 }}
-        aria-label="Feedback"
+        aria-label={t("feedback-aria-label", { defaultValue: "Feedback" })}
       >
         <MessageSquarePlus className="h-5 w-5 md:h-6 md:w-6" />
       </motion.button>
@@ -191,10 +193,10 @@ export function FeedbackModal() {
         <DialogContent className="bg-site-surface border-site-border text-site-text sm:max-w-lg max-h-[85vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="text-site-text font-(family-name:--font-nunito) text-xl font-bold">
-              Feedback Board
+              {t("feedback-board", { defaultValue: "Feedback Board" })}
             </DialogTitle>
             <DialogDescription className="text-site-text-muted">
-              See what others are saying, or share your own thoughts.
+              {t("feedback-board-description", { defaultValue: "See what others are saying, or share your own thoughts." })}
             </DialogDescription>
           </DialogHeader>
 
@@ -206,7 +208,7 @@ export function FeedbackModal() {
               </div>
             ) : feedbacks.length === 0 ? (
               <p className="text-center text-site-text-dim py-8 text-sm">
-                No feedback yet. Be the first!
+                {t("no-feedback-yet", { defaultValue: "No feedback yet. Be the first!" })}
               </p>
             ) : (
               <AnimatePresence initial={false}>
@@ -279,7 +281,7 @@ export function FeedbackModal() {
                   className="h-9 rounded-md border border-site-border bg-site-bg px-2 text-sm text-site-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--site-accent)"
                 >
                   <option value="" disabled>
-                    Category
+                    {t("category-placeholder", { defaultValue: "Category" })}
                   </option>
                   {FEEDBACK_CATEGORIES.map((cat) => (
                     <option key={cat} value={cat}>
@@ -296,7 +298,7 @@ export function FeedbackModal() {
               <div className="space-y-1">
                 <Textarea
                   rows={2}
-                  placeholder="Share your feedback..."
+                  placeholder={t("share-feedback-placeholder", { defaultValue: "Share your feedback..." })}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   className="bg-site-bg border-site-border text-site-text placeholder:text-site-text-dim focus-visible:ring-(--site-accent) resize-none text-sm"
@@ -324,12 +326,12 @@ export function FeedbackModal() {
                 {sending ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Posting...
+                    {t("posting", { defaultValue: "Posting..." })}
                   </>
                 ) : (
                   <>
                     <Send className="h-4 w-4" />
-                    Post Feedback
+                    {t("post-feedback", { defaultValue: "Post Feedback" })}
                   </>
                 )}
               </Button>
@@ -343,9 +345,9 @@ export function FeedbackModal() {
                   search={{ callbackURL: undefined }}
                   className="text-site-accent hover:underline font-medium"
                 >
-                  Sign in
+                  {t("sign-in", { defaultValue: "Sign in" })}
                 </Link>{" "}
-                to leave feedback
+                {t("to-leave-feedback", { defaultValue: "to leave feedback" })}
               </span>
             </div>
           )}

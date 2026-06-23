@@ -1,6 +1,7 @@
 'use client';
 
 import { Car, Users, Sparkles, Leaf, Crown, Bike, Helicopter, type LucideIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { RIDE_CLASSES, type RideClassId } from '@/lib/rideshare/classes';
 
 export const RIDE_CLASS_ICONS: Record<string, LucideIcon> = {
@@ -21,6 +22,7 @@ interface RideClassPickerProps {
 }
 
 export function RideClassPicker({ value, onChange, fareLabels }: RideClassPickerProps) {
+  const { t } = useTranslation("c-rideshare");
   return (
     <div className="space-y-2">
       {RIDE_CLASSES.map((cls) => {
@@ -57,7 +59,7 @@ export function RideClassPicker({ value, onChange, fareLabels }: RideClassPicker
             {fareLabels?.[cls.id] && (
               <div className="shrink-0 text-right">
                 <div className="text-sm font-bold text-site-text">{fareLabels[cls.id]}</div>
-                <div className="text-[11px] text-site-text-dim">est.</div>
+                <div className="text-[11px] text-site-text-dim">{t("estimated-abbr", { defaultValue: "est." })}</div>
               </div>
             )}
           </button>

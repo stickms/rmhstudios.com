@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from "react-i18next";
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { fmt } from '@/lib/temple-of-joy/numbers';
 import { SOURCES } from '@/lib/temple-of-joy/data/sources';
@@ -48,6 +49,7 @@ function Row({
 }
 
 export default function StatsPanel() {
+  const { t } = useTranslation("c-temple-of-joy");
   const happiness              = useTempleStore(s => s.happiness);
   const lifetimeHappiness      = useTempleStore(s => s.lifetimeHappiness);
   const runHappiness           = useTempleStore(s => s.runHappiness);
@@ -95,67 +97,67 @@ export default function StatsPanel() {
         className="text-xs font-bold uppercase tracking-widest mb-2"
         style={{ color: 'var(--temple-accent)' }}
       >
-        Statistics
+        {t("statistics", { defaultValue: "Statistics" })}
       </h2>
 
       <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-x-4">
         {/* Left column */}
         <div>
           <Row
-            label="Happiness"
+            label={t("happiness", { defaultValue: "Happiness" })}
             value={fmt(happiness, numberFormat)}
           />
           <Row
-            label="Satisfaction"
+            label={t("satisfaction", { defaultValue: "Satisfaction" })}
             value={fmt(getEffectiveSatisfaction(), numberFormat)}
-            sub="above baseline"
+            sub={t("above-baseline", { defaultValue: "above baseline" })}
           />
           <Row
-            label="This Run"
+            label={t("this-run", { defaultValue: "This Run" })}
             value={fmt(runHappiness, numberFormat)}
-            sub="for transcendence"
+            sub={t("for-transcendence", { defaultValue: "for transcendence" })}
           />
           <Row
-            label="All Time"
+            label={t("all-time", { defaultValue: "All Time" })}
             value={fmt(lifetimeHappiness, numberFormat)}
-            sub="total earned"
+            sub={t("total-earned", { defaultValue: "total earned" })}
           />
         </div>
 
         {/* Right column */}
         <div>
           <Row
-            label="Global Mult"
+            label={t("global-mult", { defaultValue: "Global Mult" })}
             value={`×${fmt(globalMult, numberFormat)}`}
           />
           <Row
-            label="HPS"
+            label={t("hps", { defaultValue: "HPS" })}
             value={fmt(totalHps, numberFormat)}
             sub={`${fmt(rawBaseHPS, numberFormat)} × ${fmt(globalMult, numberFormat)}`}
             highlight={true}
           />
           <Row
-            label="HPC"
+            label={t("hpc", { defaultValue: "HPC" })}
             value={
               <>
-                {fmt(getHPC(), numberFormat)}/click{' '}
+                {fmt(getHPC(), numberFormat)}{t("per-click", { defaultValue: "/click" })}{' '}
                 {ritualReady && (
                   <span
                     className="ml-1 text-[10px] font-bold uppercase"
                     style={{ color: 'var(--temple-accent)' }}
                   >
-                    ✨ RITUAL READY!
+                    ✨ {t("ritual-ready", { defaultValue: "RITUAL READY!" })}
                   </span>
                 )}
               </>
             }
           />
           <Row
-            label="Karma"
-            value={`${fmt(karma, numberFormat)} karma`}
+            label={t("karma", { defaultValue: "Karma" })}
+            value={`${fmt(karma, numberFormat)} ${t("karma-unit", { defaultValue: "karma" })}`}
           />
           <Row
-            label="Bliss Shards"
+            label={t("bliss-shards", { defaultValue: "Bliss Shards" })}
             value={`${blissShards} 💎`}
           />
         </div>
@@ -166,7 +168,7 @@ export default function StatsPanel() {
           className="mt-2 pt-2 text-xs"
           style={{ borderTop: '1px solid var(--temple-border)', color: 'var(--temple-text)', opacity: 0.7 }}
         >
-          Transcendence: ×{prestigeCount}
+          {t("transcendence-count", { defaultValue: "Transcendence: ×{{count}}", count: prestigeCount })}
         </div>
       )}
 
@@ -181,7 +183,7 @@ export default function StatsPanel() {
             color: 'var(--temple-accent)',
           }}
         >
-          ⚡ Transcendence Available — click to ascend
+          ⚡ {t("transcendence-available", { defaultValue: "Transcendence Available — click to ascend" })}
         </button>
       )}
 
@@ -191,7 +193,7 @@ export default function StatsPanel() {
           className="mt-1.5 text-xs text-center italic"
           style={{ color: 'var(--temple-text)', opacity: 0.75 }}
         >
-          🚶 Pilgrimage: {Math.ceil(pilgrimageTimer)}s remaining
+          🚶 {t("pilgrimage-remaining", { defaultValue: "Pilgrimage: {{seconds}}s remaining", seconds: Math.ceil(pilgrimageTimer) })}
         </div>
       )}
 
@@ -201,7 +203,7 @@ export default function StatsPanel() {
           className="mt-1.5 text-xs text-center"
           style={{ color: 'var(--temple-accent)' }}
         >
-          ✨ Vibe check incoming...
+          ✨ {t("vibe-check-incoming", { defaultValue: "Vibe check incoming..." })}
         </div>
       )}
 

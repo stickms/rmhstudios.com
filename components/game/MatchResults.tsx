@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslation } from "react-i18next";
 import { Button } from '@/components/ui/button';
 import { useGameStore, Difficulty } from '@/lib/store/useGameStore';
 import { MultiplayerFactory } from '@/lib/game/MultiplayerFactory';
@@ -17,6 +18,7 @@ interface PlayerResult {
 }
 
 export function MatchResults({ onBack, isHost, lobbyId }: { onBack: () => void; isHost: boolean; lobbyId: string | null }) {
+    const { t } = useTranslation("c-game");
     const { opponents, score, maxCombo, accuracy, multiplayerResults, userName, songId } = useGameStore();
     const [results, setResults] = React.useState<PlayerResult[]>([]);
     const [scoreSubmitted, setScoreSubmitted] = React.useState(false);
@@ -146,11 +148,11 @@ export function MatchResults({ onBack, isHost, lobbyId }: { onBack: () => void; 
                 {/* Header */}
                 <div className="text-center py-6 px-4">
                     <h2 className="text-3xl font-black text-slice-text-darker uppercase tracking-tighter">
-                        {allFinished ? 'Match Results' : 'Waiting for Players...'}
+                        {allFinished ? t("match-results", { defaultValue: "Match Results" }) : t("waiting-for-players", { defaultValue: "Waiting for Players..." })}
                     </h2>
                     {!allFinished && (
                         <p className="text-xs font-bold text-slice-text-light uppercase tracking-widest mt-1 animate-pulse">
-                            {sorted.filter(r => r.isFinished).length} / {sorted.length} finished
+                            {t("players-finished-count", { defaultValue: "{{finished}} / {{total}} finished", finished: sorted.filter(r => r.isFinished).length, total: sorted.length })}
                         </p>
                     )}
                 </div>
@@ -182,16 +184,16 @@ export function MatchResults({ onBack, isHost, lobbyId }: { onBack: () => void; 
                                         {p.name}
                                     </span>
                                     {p.isLocal && (
-                                        <span className="text-[9px] font-black bg-blue-500 text-white px-1.5 py-0.5 rounded-full">YOU</span>
+                                        <span className="text-[9px] font-black bg-blue-500 text-white px-1.5 py-0.5 rounded-full">{t("you-badge", { defaultValue: "YOU" })}</span>
                                     )}
                                 </div>
                                 <div className="flex items-center gap-2 mt-0.5">
                                     {p.isFinished ? (
                                         <span className="flex items-center gap-1 text-[10px] font-bold text-green-500">
-                                            <CheckCircle2 className="w-3 h-3" /> Finished
+                                            <CheckCircle2 className="w-3 h-3" /> {t("finished", { defaultValue: "Finished" })}
                                         </span>
                                     ) : (
-                                        <span className="text-[10px] font-bold text-slice-text-light animate-pulse">Still playing...</span>
+                                        <span className="text-[10px] font-bold text-slice-text-light animate-pulse">{t("still-playing", { defaultValue: "Still playing..." })}</span>
                                     )}
                                     {p.difficulty && p.difficulty.level && p.difficulty.level !== 'normal' && (
                                         <span
@@ -218,7 +220,7 @@ export function MatchResults({ onBack, isHost, lobbyId }: { onBack: () => void; 
                                 </div>
                                 {p.combo > 0 && (
                                     <div className="text-[10px] font-bold text-slice-text-light">
-                                        {p.combo}x combo
+                                        {t("combo-count", { defaultValue: "{{combo}}x combo", combo: p.combo })}
                                     </div>
                                 )}
                             </div>
@@ -227,7 +229,7 @@ export function MatchResults({ onBack, isHost, lobbyId }: { onBack: () => void; 
 
                     {sorted.length === 0 && (
                         <div className="text-center text-slice-text-light py-8 font-bold">
-                            Waiting for results...
+                            {t("waiting-for-results", { defaultValue: "Waiting for results..." })}
                         </div>
                     )}
                 </div>
@@ -243,11 +245,11 @@ export function MatchResults({ onBack, isHost, lobbyId }: { onBack: () => void; 
                                 }
                             }}
                         >
-                            Return to Lobby
+                            {t("return-to-lobby", { defaultValue: "Return to Lobby" })}
                         </Button>
                     ) : (
                         <p className="text-center text-xs font-bold text-slice-text-light uppercase tracking-widest py-3">
-                            Waiting for host to return to lobby...
+                            {t("waiting-for-host", { defaultValue: "Waiting for host to return to lobby..." })}
                         </p>
                     )}
                 </div>

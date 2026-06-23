@@ -13,6 +13,7 @@
 
 import { useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import { Settings, Volume2, VolumeX, Sun, Moon, X } from 'lucide-react';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 
@@ -24,6 +25,7 @@ interface SettingsMenuProps {
 }
 
 export default function SettingsMenu({ theme, onToggleTheme }: SettingsMenuProps) {
+  const { t } = useTranslation("c-rmhbox");
   const [isOpen, setIsOpen] = useState(false);
   const settings = useRMHboxStore((s) => s.settings);
   const updateSettings = useRMHboxStore((s) => s.updateSettings);
@@ -46,8 +48,8 @@ export default function SettingsMenu({ theme, onToggleTheme }: SettingsMenuProps
           border: '1px solid var(--rmhbox-border)',
           color: 'var(--rmhbox-text-muted)',
         }}
-        aria-label="Settings"
-        title="Settings"
+        aria-label={t("settings", { defaultValue: "Settings" })}
+        title={t("settings", { defaultValue: "Settings" })}
       >
         <Settings className="h-5 w-5" />
       </button>
@@ -71,7 +73,7 @@ export default function SettingsMenu({ theme, onToggleTheme }: SettingsMenuProps
           >
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-sm font-bold uppercase tracking-wider text-(--rmhbox-text-muted)">
-                Settings
+                {t("settings", { defaultValue: "Settings" })}
               </h3>
               <button
                 onClick={() => setIsOpen(false)}
@@ -84,7 +86,7 @@ export default function SettingsMenu({ theme, onToggleTheme }: SettingsMenuProps
             <div className="space-y-4">
               {/* Theme Toggle */}
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-(--rmhbox-text)">Theme</span>
+                <span className="text-sm font-medium text-(--rmhbox-text)">{t("theme", { defaultValue: "Theme" })}</span>
                 <button
                   onClick={onToggleTheme}
                   className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
@@ -96,11 +98,11 @@ export default function SettingsMenu({ theme, onToggleTheme }: SettingsMenuProps
                 >
                   {theme === 'dark' ? (
                     <>
-                      <Moon className="h-3.5 w-3.5" /> Dark
+                      <Moon className="h-3.5 w-3.5" /> {t("dark", { defaultValue: "Dark" })}
                     </>
                   ) : (
                     <>
-                      <Sun className="h-3.5 w-3.5" /> Light
+                      <Sun className="h-3.5 w-3.5" /> {t("light", { defaultValue: "Light" })}
                     </>
                   )}
                 </button>
@@ -117,26 +119,26 @@ export default function SettingsMenu({ theme, onToggleTheme }: SettingsMenuProps
                   ) : (
                     <Volume2 className="h-3.5 w-3.5" />
                   )}
-                  Audio
+                  {t("audio", { defaultValue: "Audio" })}
                 </div>
 
                 {/* Master Volume */}
                 <VolumeSlider
-                  label="Master"
+                  label={t("master", { defaultValue: "Master" })}
                   value={settings.masterVolume}
                   onChange={(v) => handleVolumeChange('masterVolume', v)}
                 />
 
                 {/* SFX Volume */}
                 <VolumeSlider
-                  label="SFX"
+                  label={t("sfx", { defaultValue: "SFX" })}
                   value={settings.sfxVolume}
                   onChange={(v) => handleVolumeChange('sfxVolume', v)}
                 />
 
                 {/* Music Volume */}
                 <VolumeSlider
-                  label="Music"
+                  label={t("music", { defaultValue: "Music" })}
                   value={settings.musicVolume}
                   onChange={(v) => handleVolumeChange('musicVolume', v)}
                 />

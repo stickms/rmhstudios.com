@@ -8,6 +8,7 @@
  */
 'use client';
 
+import { useTranslation } from "react-i18next";
 import type { HistoryDetailProps } from '@/lib/rmhbox/history-display-registry';
 
 interface AnswerEntry {
@@ -29,6 +30,7 @@ export default function CategoryCrashHistoryDetail({
   currentUserId,
   players,
 }: HistoryDetailProps) {
+  const { t } = useTranslation("c-rmhbox");
   const roundStarts = gameLog.actions.filter((a) => a.type === 'round_start');
   const answersLocked = gameLog.actions.filter((a) => a.type === 'answers_locked');
   const crashActions = gameLog.actions.filter((a) => a.type === 'crash' || a.type === 'crash_result');
@@ -43,11 +45,11 @@ export default function CategoryCrashHistoryDetail({
       {/* Game Settings */}
       {gameLog.initialState && (
         <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-3">
-          <h4 className="text-xs font-semibold text-(--rmhbox-text-muted) uppercase mb-1">Game Settings</h4>
+          <h4 className="text-xs font-semibold text-(--rmhbox-text-muted) uppercase mb-1">{t("game-settings", { defaultValue: "Game Settings" })}</h4>
           <div className="flex flex-wrap gap-3 text-xs text-(--rmhbox-text-muted)">
-            <span>Rounds: {(gameLog.initialState.rounds as number) ?? roundStarts.length}</span>
+            <span>{t("rounds-count", { defaultValue: "Rounds: {{count}}", count: (gameLog.initialState.rounds as number) ?? roundStarts.length })}</span>
             {gameLog.initialState.categoriesPerRound != null && (
-              <span>Categories per Round: {String(gameLog.initialState.categoriesPerRound)}</span>
+              <span>{t("categories-per-round", { defaultValue: "Categories per Round: {{count}}", count: String(gameLog.initialState.categoriesPerRound) })}</span>
             )}
           </div>
         </div>
@@ -119,7 +121,7 @@ export default function CategoryCrashHistoryDetail({
             {/* Round header */}
             <div className="flex items-center gap-3 mb-3">
               <h4 className="text-sm font-semibold text-(--rmhbox-text-muted)">
-                Round {roundNum}
+                {t("round-number", { defaultValue: "Round {{num}}", num: roundNum })}
               </h4>
               <span className="text-2xl font-bold text-(--rmhbox-accent)">{letter}</span>
             </div>
@@ -130,7 +132,7 @@ export default function CategoryCrashHistoryDetail({
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="text-left text-(--rmhbox-text-muted)">
-                      <th className="pb-1 pr-2 font-medium">Category</th>
+                      <th className="pb-1 pr-2 font-medium">{t("category", { defaultValue: "Category" })}</th>
                       {players.map((p) => (
                         <th
                           key={p.userId}
@@ -182,7 +184,7 @@ export default function CategoryCrashHistoryDetail({
             {/* Crash details */}
             {crashDetails.length > 0 && (
               <div className="mt-3 pt-2 border-t border-(--rmhbox-border)">
-                <span className="text-xs font-medium text-(--rmhbox-text-muted) uppercase">Crashes</span>
+                <span className="text-xs font-medium text-(--rmhbox-text-muted) uppercase">{t("crashes", { defaultValue: "Crashes" })}</span>
                 <div className="space-y-0.5 mt-1">
                   {crashDetails.map((c, i) => (
                     <div key={i} className="text-xs text-(--rmhbox-text-muted)">
@@ -190,12 +192,12 @@ export default function CategoryCrashHistoryDetail({
                       <span className={c.crasher === currentUserId ? 'text-(--rmhbox-accent) font-semibold' : ''}>
                         {getPlayerName(c.crasher)}
                       </span>
-                      {' crashed '}
+                      {' '}{t("crashed", { defaultValue: "crashed" })}{' '}
                       <span className={c.target === currentUserId ? 'text-(--rmhbox-accent) font-semibold' : ''}>
                         {getPlayerName(c.target)}
                       </span>
-                      {c.crashedAnswer && <>{'\'s \u201C'}{c.crashedAnswer}{'\u201D'}</>}
-                      {' in '}{c.category}
+                      {c.crashedAnswer && <>{t("crashed-answer-possessive", { defaultValue: "'s \"{{answer}}\"", answer: c.crashedAnswer })}</>}
+                      {' '}{t("in-category", { defaultValue: "in" })}{' '}{c.category}
                     </div>
                   ))}
                 </div>
@@ -205,7 +207,7 @@ export default function CategoryCrashHistoryDetail({
             {/* Per-round scores */}
             {roundScores.length > 0 && (
               <div className="mt-3 pt-2 border-t border-(--rmhbox-border)">
-                <span className="text-xs font-medium text-(--rmhbox-text-muted) uppercase">Round Scores</span>
+                <span className="text-xs font-medium text-(--rmhbox-text-muted) uppercase">{t("round-scores", { defaultValue: "Round Scores" })}</span>
                 <div className="flex flex-wrap gap-3 mt-1">
                   {roundScores
                     .sort((a, b) => b.points - a.points)
@@ -234,7 +236,7 @@ export default function CategoryCrashHistoryDetail({
 
       {/* Final scores */}
       <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-4">
-        <h4 className="text-sm font-semibold text-(--rmhbox-text-muted) mb-2">Final Scores</h4>
+        <h4 className="text-sm font-semibold text-(--rmhbox-text-muted) mb-2">{t("final-scores", { defaultValue: "Final Scores" })}</h4>
         <div className="space-y-1">
           {players
             .sort((a, b) => a.rank - b.rank)

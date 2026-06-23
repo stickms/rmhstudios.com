@@ -9,6 +9,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Trophy, X } from 'lucide-react';
 import type { LeaderboardEntry } from '@/lib/rmhbox/types';
 
@@ -27,6 +28,7 @@ export default function MinigameLeaderboardModal({
   isOpen,
   onClose,
 }: MinigameLeaderboardModalProps) {
+  const { t } = useTranslation("c-rmhbox");
   const [activePeriod, setActivePeriod] = useState<Period>('all-time');
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [userRank, setUserRank] = useState<number | null>(null);
@@ -75,12 +77,12 @@ export default function MinigameLeaderboardModal({
         <div className="flex items-center justify-between mb-4">
           <h3 className="flex items-center gap-2 text-lg font-semibold text-(--rmhbox-text)">
             <Trophy className="h-5 w-5 text-(--rmhbox-accent)" />
-            {displayName} Leaderboard
+            {t("leaderboard-title", { defaultValue: "{{displayName}} Leaderboard", displayName })}
           </h3>
           <button
             onClick={onClose}
             className="rounded-lg p-1 text-(--rmhbox-text-muted) hover:text-(--rmhbox-text) transition-colors"
-            aria-label="Close leaderboard"
+            aria-label={t("close-leaderboard", { defaultValue: "Close leaderboard" })}
           >
             <X className="h-5 w-5" />
           </button>
@@ -98,23 +100,23 @@ export default function MinigameLeaderboardModal({
                   : 'bg-(--rmhbox-surface-hover) text-(--rmhbox-text-muted) hover:text-(--rmhbox-text)'
               }`}
             >
-              {period === 'all-time' ? 'All-Time' : 'Weekly'}
+              {period === 'all-time' ? t("period-all-time", { defaultValue: "All-Time" }) : t("period-weekly", { defaultValue: "Weekly" })}
             </button>
           ))}
         </div>
 
         {/* Leaderboard table */}
         {loading ? (
-          <p className="text-sm text-center py-8 text-(--rmhbox-text-muted)">Loading…</p>
+          <p className="text-sm text-center py-8 text-(--rmhbox-text-muted)">{t("loading", { defaultValue: "Loading…" })}</p>
         ) : entries.length === 0 ? (
-          <p className="text-sm text-center py-8 text-(--rmhbox-text-muted)">No entries yet.</p>
+          <p className="text-sm text-center py-8 text-(--rmhbox-text-muted)">{t("no-entries", { defaultValue: "No entries yet." })}</p>
         ) : (
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-(--rmhbox-text-muted)">
                 <th className="pb-2 pr-2 font-medium">#</th>
-                <th className="pb-2 pr-2 font-medium">Player</th>
-                <th className="pb-2 text-right font-medium">Score</th>
+                <th className="pb-2 pr-2 font-medium">{t("col-player", { defaultValue: "Player" })}</th>
+                <th className="pb-2 text-right font-medium">{t("col-score", { defaultValue: "Score" })}</th>
               </tr>
             </thead>
             <tbody>
@@ -134,7 +136,7 @@ export default function MinigameLeaderboardModal({
         {/* User rank */}
         {userRank !== null && (
           <p className="mt-4 text-sm text-center text-(--rmhbox-text-muted)">
-            Your Rank: <span className="font-bold text-(--rmhbox-accent)">#{userRank}</span>
+            {t("your-rank", { defaultValue: "Your Rank:" })} <span className="font-bold text-(--rmhbox-accent)">#{userRank}</span>
           </p>
         )}
       </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Plus, BarChart3, Image, ImagePlus } from 'lucide-react';
 import { GifEmbed } from './GifEmbed';
 import { AIGenerateButton } from './AIGenerateButton';
@@ -48,6 +49,7 @@ interface ComposeModalProps {
 }
 
 export function ComposeModal({ open, onClose, quoteItem }: ComposeModalProps) {
+  const { t } = useTranslation('feed');
   const [content, setContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [attachment, setAttachment] = useState<Attachment>(null);
@@ -178,7 +180,7 @@ export function ComposeModal({ open, onClose, quoteItem }: ComposeModalProps) {
             <AIGenerateButton
               request={{ mode: 'post', draft: content }}
               onGenerated={(text) => setContent(text)}
-              title="Generate a post with AI"
+              title={t("generate-post-ai", { defaultValue: "Generate a post with AI" })}
             />
 
             {/* Image upload button */}
@@ -186,7 +188,7 @@ export function ComposeModal({ open, onClose, quoteItem }: ComposeModalProps) {
               type="button"
               disabled={imageUrls.length >= MAX_IMAGES}
               onClick={() => imageInputRef.current?.click()}
-              title={imageUrls.length >= MAX_IMAGES ? 'Maximum 4 images' : 'Attach images'}
+              title={imageUrls.length >= MAX_IMAGES ? t("max-images", { defaultValue: "Maximum 4 images" }) : t("attach-images", { defaultValue: "Attach images" })}
               className="p-1.5 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <ImagePlus className="w-4.5 h-4.5" />
@@ -212,7 +214,7 @@ export function ComposeModal({ open, onClose, quoteItem }: ComposeModalProps) {
                     className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
                   >
                     <BarChart3 className="w-4 h-4 text-site-text-dim" />
-                    Create Poll
+                    {t("create-poll", { defaultValue: "Create Poll" })}
                   </button>
                   <button
                     onClick={() => {
@@ -223,7 +225,7 @@ export function ComposeModal({ open, onClose, quoteItem }: ComposeModalProps) {
                     className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
                   >
                     <Image className="w-4 h-4 text-site-text-dim" />
-                    Add Image
+                    {t("add-image", { defaultValue: "Add Image" })}
                   </button>
                 </div>
               )}
@@ -235,7 +237,7 @@ export function ComposeModal({ open, onClose, quoteItem }: ComposeModalProps) {
               disabled={!canSubmit}
               onClick={handleSubmit}
             >
-              {submitting ? 'Posting...' : 'Post'}
+              {submitting ? t("posting", { defaultValue: "Posting..." }) : t("post", { defaultValue: "Post" })}
             </Button>
           </div>
         </div>
@@ -248,7 +250,7 @@ export function ComposeModal({ open, onClose, quoteItem }: ComposeModalProps) {
               {(resolvedUser?.image || session.user.image) ? (
                 <img
                   src={resolvedUser?.image || session.user.image!}
-                  alt={resolvedUser?.name || session.user.name || 'User'}
+                  alt={resolvedUser?.name || session.user.name || t("user-alt", { defaultValue: "User" })}
                   className="w-full h-full rounded-full object-cover"
                   onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }}
                 />
@@ -262,7 +264,7 @@ export function ComposeModal({ open, onClose, quoteItem }: ComposeModalProps) {
                 autoFocus
                 value={content}
                 onChange={setContent}
-                placeholder="What's on your mind?"
+                placeholder={t("compose-placeholder", { defaultValue: "What's on your mind?" })}
                 rows={4}
                 maxLength={MAX_RMHARK_LENGTH}
                 className="w-full bg-transparent text-site-text placeholder:text-site-text-dim text-base resize-none border-none outline-none"
@@ -303,7 +305,7 @@ export function ComposeModal({ open, onClose, quoteItem }: ComposeModalProps) {
                     type="text"
                     value={poll.question}
                     onChange={(e) => setPoll((p) => ({ ...p, question: e.target.value }))}
-                    placeholder="Ask a question..."
+                    placeholder={t("poll-question-placeholder", { defaultValue: "Ask a question..." })}
                     maxLength={MAX_POLL_QUESTION_LENGTH}
                     className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-lg p-2 border border-site-border outline-none focus:border-site-accent transition-colors mb-2"
                   />
@@ -319,7 +321,7 @@ export function ComposeModal({ open, onClose, quoteItem }: ComposeModalProps) {
                             newOptions[i] = e.target.value;
                             setPoll((p) => ({ ...p, options: newOptions }));
                           }}
-                          placeholder={`Option ${i + 1}`}
+                          placeholder={t("poll-option-placeholder", { count: i + 1, defaultValue: "Option {{count}}" })}
                           maxLength={MAX_POLL_OPTION_LENGTH}
                           className="flex-1 bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-lg p-2 border border-site-border outline-none focus:border-site-accent transition-colors"
                         />
@@ -343,7 +345,7 @@ export function ComposeModal({ open, onClose, quoteItem }: ComposeModalProps) {
                       onClick={() => setPoll((p) => ({ ...p, options: [...p.options, ''] }))}
                       className="mt-2 text-xs text-site-accent hover:text-site-accent-hover transition-colors"
                     >
-                      + Add option
+                      {t("add-poll-option", { defaultValue: "+ Add option" })}
                     </button>
                   )}
 
@@ -354,7 +356,7 @@ export function ComposeModal({ open, onClose, quoteItem }: ComposeModalProps) {
                       onChange={(e) => setPoll((p) => ({ ...p, multiSelect: e.target.checked }))}
                       className="rounded border-site-border text-site-accent focus:ring-site-accent"
                     />
-                    <span className="text-xs text-site-text-dim">Allow multiple selections</span>
+                    <span className="text-xs text-site-text-dim">{t("allow-multiple-selections", { defaultValue: "Allow multiple selections" })}</span>
                   </label>
                 </div>
               )}
@@ -379,7 +381,7 @@ export function ComposeModal({ open, onClose, quoteItem }: ComposeModalProps) {
                     type="url"
                     value={gifUrl}
                     onChange={(e) => setGifUrl(e.target.value)}
-                    placeholder="Paste an image URL or Tenor/Giphy link..."
+                    placeholder={t("gif-url-placeholder", { defaultValue: "Paste an image URL or Tenor/Giphy link..." })}
                     className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-lg p-2 border border-site-border outline-none focus:border-site-accent transition-colors"
                   />
 
@@ -388,7 +390,7 @@ export function ComposeModal({ open, onClose, quoteItem }: ComposeModalProps) {
                   )}
 
                   {gifUrl.trim() && !isValidMediaUrl(gifUrl.trim()) && (
-                    <p className="text-xs text-site-danger mt-1">Must be a direct image URL or Tenor/Giphy link</p>
+                    <p className="text-xs text-site-danger mt-1">{t("invalid-image-url", { defaultValue: "Must be a direct image URL or Tenor/Giphy link" })}</p>
                   )}
                 </div>
               )}
@@ -406,7 +408,7 @@ export function ComposeModal({ open, onClose, quoteItem }: ComposeModalProps) {
                       />
                       <button
                         type="button"
-                        aria-label="Remove image"
+                        aria-label={t("remove-image", { defaultValue: "Remove image" })}
                         onClick={() => setImageUrls((prev) => prev.filter((u) => u !== url))}
                         className="absolute top-1 right-1 p-0.5 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity"
                       >

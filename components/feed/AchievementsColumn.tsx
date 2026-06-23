@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Loader2, Trophy, Users, Gamepad2, Coins, Hammer, Sparkles, Lock } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { TIER_COLORS, CATEGORY_LABELS, type AchievementCategory, type AchievementTier } from '@/lib/achievements/catalog';
 
 // Library icons per achievement category (replaces emoji badges).
@@ -36,6 +37,7 @@ interface Payload {
 const CATEGORY_ORDER: AchievementCategory[] = ['social', 'games', 'creator', 'economy', 'special'];
 
 export function AchievementsColumn({ userId, hideHeader = false }: { userId: string; hideHeader?: boolean }) {
+  const { t } = useTranslation("feed");
   const [data, setData] = useState<Payload | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -62,7 +64,7 @@ export function AchievementsColumn({ userId, hideHeader = false }: { userId: str
     );
   }
   if (!data) {
-    return <p className="px-4 py-16 text-center text-sm text-site-text-muted">Could not load achievements.</p>;
+    return <p className="px-4 py-16 text-center text-sm text-site-text-muted">{t("could-not-load-achievements", { defaultValue: "Could not load achievements." })}</p>;
   }
 
   const pct = data.stats.total ? Math.round((data.stats.unlocked / data.stats.total) * 100) : 0;
@@ -71,10 +73,10 @@ export function AchievementsColumn({ userId, hideHeader = false }: { userId: str
     <>
       <div className="flex items-center gap-3 text-sm text-site-text-muted">
         <span>
-          <strong className="text-site-text">{data.stats.unlocked}</strong> / {data.stats.total} unlocked
+          <strong className="text-site-text">{data.stats.unlocked}</strong> / {data.stats.total} {t("unlocked", { defaultValue: "unlocked" })}
         </span>
         <span aria-hidden>·</span>
-        <span className="inline-flex items-center gap-1"><Coins className="h-3.5 w-3.5 text-amber-400" /> {data.stats.coinsEarned} earned</span>
+        <span className="inline-flex items-center gap-1"><Coins className="h-3.5 w-3.5 text-amber-400" /> {data.stats.coinsEarned} {t("earned", { defaultValue: "earned" })}</span>
       </div>
       <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-site-surface">
         <div className="h-full rounded-full bg-site-accent transition-all" style={{ width: `${pct}%` }} />
@@ -90,7 +92,7 @@ export function AchievementsColumn({ userId, hideHeader = false }: { userId: str
         <header className="sticky top-0 z-10 border-b border-site-border bg-site-bg/80 px-4 py-3 backdrop-blur">
           <div className="flex items-center gap-2">
             <Trophy className="h-5 w-5 text-site-accent" />
-            <h1 className="text-lg font-bold text-site-text">Achievements</h1>
+            <h1 className="text-lg font-bold text-site-text">{t("achievements-header", { defaultValue: "Achievements" })}</h1>
           </div>
           <div className="mt-2">{Stats}</div>
         </header>

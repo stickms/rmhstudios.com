@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Loader2, MoreHorizontal, Heart, Repeat, Trash2, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { authClient } from '@/lib/auth-client';
@@ -31,6 +32,7 @@ interface PostDetailProps {
 }
 
 export function PostDetail({ postId }: PostDetailProps) {
+  const { t } = useTranslation("feed");
   const navigate = useNavigate();
   const [post, setPost] = useState<FeedItem | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -207,9 +209,9 @@ export function PostDetail({ postId }: PostDetailProps) {
   if (notFound || !post) {
     return (
       <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-        <p className="text-lg font-medium text-site-text mb-1">Post not found</p>
-        <p className="text-sm text-site-text-muted mb-4">This post doesn&apos;t exist or was deleted.</p>
-        <Link to="/"><Button variant="accent" size="sm">Go Home</Button></Link>
+        <p className="text-lg font-medium text-site-text mb-1">{t("post-not-found", { defaultValue: "Post not found" })}</p>
+        <p className="text-sm text-site-text-muted mb-4">{t("post-not-found-detail", { defaultValue: "This post doesn't exist or was deleted." })}</p>
+        <Link to="/"><Button variant="accent" size="sm">{t("go-home", { defaultValue: "Go Home" })}</Button></Link>
       </div>
     );
   }
@@ -226,7 +228,7 @@ export function PostDetail({ postId }: PostDetailProps) {
             <ArrowLeft className="w-5 h-5 text-site-text" />
           </button>
           <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text">
-            Post
+            {t("post-header", { defaultValue: "Post" })}
           </h1>
         </div>
       </div>
@@ -248,21 +250,21 @@ export function PostDetail({ postId }: PostDetailProps) {
                 className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
               >
                 <Heart className="w-4 h-4 text-site-text-dim" />
-                Liked by
+                {t("liked-by", { defaultValue: "Liked by" })}
               </button>
               <button
                 onClick={() => { setMenuOpen(false); setEngagementModal('reposts'); }}
                 className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
               >
                 <Repeat className="w-4 h-4 text-site-text-dim" />
-                reRMHark'd by
+                {t("rermharkd-by", { defaultValue: "reRMHark'd by" })}
               </button>
               <button
                 onClick={handleShare}
                 className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
               >
                 <Share2 className="w-5 h-5 text-site-text-dim" />
-                Share
+                {t("share", { defaultValue: "Share" })}
               </button>
               {isAuthor && (
                 <button
@@ -270,7 +272,7 @@ export function PostDetail({ postId }: PostDetailProps) {
                   className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-danger hover:bg-site-danger/10 transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
-                  Delete
+                  {t("delete", { defaultValue: "Delete" })}
                 </button>
               )}
             </div>
@@ -282,7 +284,7 @@ export function PostDetail({ postId }: PostDetailProps) {
           <UserAvatar user={freshPostUser} size="lg" />
           <div>
             <Link to={`/u/${freshPostUser?.handle || freshPostUser?.id}` as string} className="hover:underline">
-              <span className="font-bold text-site-text">{freshPostUser?.name || 'Unknown'}</span>
+              <span className="font-bold text-site-text">{freshPostUser?.name || t("unknown-user", { defaultValue: "Unknown" })}</span>
             </Link>
             {freshPostUser?.handle && (
               <p className="text-sm text-site-text-dim">@{freshPostUser.handle}</p>
@@ -323,13 +325,13 @@ export function PostDetail({ postId }: PostDetailProps) {
             <div className="flex items-center gap-1.5 text-sm mb-1">
               {freshOriginalUser ? (
                 <Link to={`/u/${freshOriginalUser.handle || freshOriginalUser.id}` as string} className="flex items-center gap-1.5 min-w-0 hover:underline">
-                  <span className="font-bold text-site-text truncate">{freshOriginalUser.name || 'Unknown'}</span>
+                  <span className="font-bold text-site-text truncate">{freshOriginalUser.name || t("unknown-user", { defaultValue: "Unknown" })}</span>
                   {freshOriginalUser.handle && (
                     <span className="text-site-text-dim truncate">@{freshOriginalUser.handle}</span>
                   )}
                 </Link>
               ) : (
-                <span className="font-bold text-site-text truncate">Unknown</span>
+                <span className="font-bold text-site-text truncate">{t("unknown-user", { defaultValue: "Unknown" })}</span>
               )}
             </div>
             <RMHarkContent text={post.original.content ?? ''} className="text-site-text text-sm whitespace-pre-wrap break-words" />
@@ -343,15 +345,15 @@ export function PostDetail({ postId }: PostDetailProps) {
         {!post.deletedAt && <div className="flex items-center gap-4 py-3 border-t border-site-border text-sm">
           <span>
             <span className="font-bold text-site-text">{post.repostCount ?? 0}</span>{' '}
-            <span className="text-site-text-dim">reRMHarks</span>
+            <span className="text-site-text-dim">{t("rermharks", { defaultValue: "reRMHarks" })}</span>
           </span>
           <span>
             <span className="font-bold text-site-text">{post.likeCount ?? 0}</span>{' '}
-            <span className="text-site-text-dim">Likes</span>
+            <span className="text-site-text-dim">{t("likes", { defaultValue: "Likes" })}</span>
           </span>
           <span>
             <span className="font-bold text-site-text">{post.viewCount ?? 0}</span>{' '}
-            <span className="text-site-text-dim">Views</span>
+            <span className="text-site-text-dim">{t("views", { defaultValue: "Views" })}</span>
           </span>
         </div>}
 
@@ -374,8 +376,8 @@ export function PostDetail({ postId }: PostDetailProps) {
         <div className="px-4 py-4 border-b border-site-border">
           <p className="text-sm text-site-text-dim text-center">
             {post.deletedByAdmin
-              ? 'This RMHark was deleted by an admin.'
-              : 'This RMHark was deleted by the user.'}
+              ? t("deleted-by-admin", { defaultValue: "This RMHark was deleted by an admin." })
+              : t("deleted-by-user", { defaultValue: "This RMHark was deleted by the user." })}
           </p>
         </div>
       )}
@@ -399,7 +401,7 @@ export function PostDetail({ postId }: PostDetailProps) {
                 id="post-comment-input"
                 value={commentContent}
                 onChange={setCommentContent}
-                placeholder="Post your reply..."
+                placeholder={t("reply-placeholder", { defaultValue: "Post your reply..." })}
                 rows={2}
                 maxLength={MAX_COMMENT_LENGTH}
                 className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-xl p-3 border border-site-border resize-none outline-none focus:border-site-accent transition-colors"
@@ -418,7 +420,7 @@ export function PostDetail({ postId }: PostDetailProps) {
                     request={{ mode: 'reply', rmharkId: postId, draft: commentContent }}
                     onGenerated={(text) => setCommentContent(text)}
                     size="sm"
-                    title="Generate a reply with AI"
+                    title={t("ai-generate-title", { defaultValue: "Generate a reply with AI" })}
                   />
                   <Button
                     variant="accent"
@@ -426,7 +428,7 @@ export function PostDetail({ postId }: PostDetailProps) {
                     disabled={!commentContent.trim() || remaining < 0 || submitting}
                     onClick={handleSubmit}
                   >
-                    {submitting ? 'Posting...' : 'Reply'}
+                    {submitting ? t("posting", { defaultValue: "Posting..." }) : t("reply", { defaultValue: "Reply" })}
                   </Button>
                 </div>
               </div>
@@ -435,7 +437,7 @@ export function PostDetail({ postId }: PostDetailProps) {
         </div>
       ) : !post.deletedAt ? (
         <div className="px-4 py-3 border-b border-site-border text-center text-sm text-site-text-dim">
-          Sign in to reply
+          {t("sign-in-to-reply", { defaultValue: "Sign in to reply" })}
         </div>
       ) : null}
 
@@ -450,7 +452,7 @@ export function PostDetail({ postId }: PostDetailProps) {
           </div>
         ) : comments.length === 0 ? (
           <p className="text-center text-sm text-site-text-dim py-8">
-            No replies yet. Be the first!
+            {t("no-replies", { defaultValue: "No replies yet. Be the first!" })}
           </p>
         ) : (
           <div className="divide-y divide-site-border">

@@ -1,6 +1,7 @@
 'use client';
 
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import {
   useShopStore,
   RUN_MODIFIERS,
@@ -15,6 +16,7 @@ interface ShopModalProps {
 }
 
 export function ShopModal({ open, onClose }: ShopModalProps) {
+  const { t } = useTranslation("c-cursed-logic");
   const {
     fragments,
     pendingRunModifier,
@@ -34,7 +36,7 @@ export function ShopModal({ open, onClose }: ShopModalProps) {
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-label="Shop"
+      aria-label={t("shop", { defaultValue: "Shop" })}
     >
       <div
         className="bg-[#0f0f14] border border-amber-500/30 rounded-xl max-w-sm w-full max-h-[85vh] overflow-y-auto shadow-2xl shadow-amber-500/10"
@@ -42,30 +44,30 @@ export function ShopModal({ open, onClose }: ShopModalProps) {
       >
         <div className="sticky top-0 flex justify-between items-center p-4 border-b border-white/10 bg-[#0f0f14]/95">
           <div className="flex items-center gap-2">
-            <h2 className="text-lg font-bold text-amber-400 font-mono">Shop</h2>
+            <h2 className="text-lg font-bold text-amber-400 font-mono">{t("shop", { defaultValue: "Shop" })}</h2>
             <span className="text-amber-200/90 font-mono text-sm">({fragments} F)</span>
           </div>
           <button
             type="button"
             onClick={onClose}
             className="p-1 rounded text-white/60 hover:text-white hover:bg-white/10"
-            aria-label="Close"
+            aria-label={t("close", { defaultValue: "Close" })}
           >
             <X className="w-5 h-5" />
           </button>
         </div>
         <div className="p-4 space-y-4">
           <p className="text-white/60 text-xs">
-            Run modifiers apply to your next run only. Unlocks add Protocol types to the random pool.
+            {t("shop-description", { defaultValue: "Run modifiers apply to your next run only. Unlocks add Protocol types to the random pool." })}
           </p>
           {pendingRunModifier && (
             <p className="text-cyan-400/90 text-xs font-mono">
-              Next run: {RUN_MODIFIERS[pendingRunModifier as RunModifierId]?.label ?? pendingRunModifier}
+              {t("next-run", { defaultValue: "Next run:" })} {RUN_MODIFIERS[pendingRunModifier as RunModifierId]?.label ?? pendingRunModifier}
             </p>
           )}
 
           <div>
-            <h3 className="text-amber-400/90 font-mono text-xs font-bold mb-2">Run modifiers (next run)</h3>
+            <h3 className="text-amber-400/90 font-mono text-xs font-bold mb-2">{t("run-modifiers-heading", { defaultValue: "Run modifiers (next run)" })}</h3>
             <div className="space-y-2">
               {(Object.keys(RUN_MODIFIERS) as RunModifierId[]).map((id) => {
                 const meta = RUN_MODIFIERS[id];
@@ -83,7 +85,7 @@ export function ShopModal({ open, onClose }: ShopModalProps) {
                       onClick={() => purchaseRunModifier(id)}
                       className="mt-2 text-sm font-mono px-3 py-1 rounded bg-amber-500/20 text-amber-300 border border-amber-500/50 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-amber-500/30"
                     >
-                      {isPending ? 'Active' : `Buy (${meta.cost} F)`}
+                      {isPending ? t("active", { defaultValue: "Active" }) : t("buy-cost", { defaultValue: "Buy ({{cost}} F)", cost: meta.cost })}
                     </button>
                   </div>
                 );
@@ -92,8 +94,8 @@ export function ShopModal({ open, onClose }: ShopModalProps) {
           </div>
 
           <div>
-            <h3 className="text-amber-400/90 font-mono text-xs font-bold mb-2">Unlock Protocol types</h3>
-            <p className="text-white/50 text-xs mb-2">Unlocked types can appear randomly in runs.</p>
+            <h3 className="text-amber-400/90 font-mono text-xs font-bold mb-2">{t("unlock-protocol-heading", { defaultValue: "Unlock Protocol types" })}</h3>
+            <p className="text-white/50 text-xs mb-2">{t("unlock-protocol-description", { defaultValue: "Unlocked types can appear randomly in runs." })}</p>
             <div className="space-y-2">
               {(Object.keys(VARIANT_UNLOCKS) as VariantUnlockId[]).map((id) => {
                 const meta = VARIANT_UNLOCKS[id];
@@ -106,7 +108,7 @@ export function ShopModal({ open, onClose }: ShopModalProps) {
                     <div className="font-mono font-bold text-white text-sm">{meta.label}</div>
                     <div className="text-white/60 text-xs mt-1">{meta.description}</div>
                     {owned ? (
-                      <span className="text-cyan-400 text-xs font-mono mt-2 inline-block">Unlocked</span>
+                      <span className="text-cyan-400 text-xs font-mono mt-2 inline-block">{t("unlocked", { defaultValue: "Unlocked" })}</span>
                     ) : (
                       <button
                         type="button"
@@ -114,7 +116,7 @@ export function ShopModal({ open, onClose }: ShopModalProps) {
                         onClick={() => purchaseVariantUnlock(id)}
                         className="mt-2 text-sm font-mono px-3 py-1 rounded bg-amber-500/20 text-amber-300 border border-amber-500/50 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-amber-500/30"
                       >
-                        Buy ({meta.cost} F)
+                        {t("buy-cost", { defaultValue: "Buy ({{cost}} F)", cost: meta.cost })}
                       </button>
                     )}
                   </div>

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from "react-i18next";
 import { useDreamRiftStore } from '@/lib/dream-rift/store';
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '@/lib/dream-rift/constants';
 import { TouhouFrame, TouhouDivider } from './TouhouFrame';
@@ -53,6 +54,8 @@ export function DreamRiftCharSelect() {
   const selectCharacter = useDreamRiftStore((s) => s.selectCharacter);
   const setScreen = useDreamRiftStore((s) => s.setScreen);
 
+  const { t } = useTranslation("c-dream-rift");
+
   const handleSelect = (character: Character) => {
     selectCharacter(character);
     setScreen('difficultySelect');
@@ -73,7 +76,7 @@ export function DreamRiftCharSelect() {
           className="text-lg tracking-[0.25em] text-amber-300/80"
           style={{ fontFamily: "'Georgia', serif" }}
         >
-          SELECT CHARACTER
+          {t("select-character", { defaultValue: "SELECT CHARACTER" })}
         </h2>
         <div className="flex items-center justify-center gap-2 mt-1">
           <div className="w-12 h-px bg-gradient-to-r from-transparent to-amber-400/40" />
@@ -136,10 +139,10 @@ export function DreamRiftCharSelect() {
 
                 {/* Stats */}
                 <div className="space-y-1.5 text-[10px] mt-2">
-                  <StatRow label="Shot" value={char.shot} />
-                  <StatRow label="Melee" value={char.melee} />
-                  <StatRow label="Special" value={char.special} />
-                  <StatRow label="Speed" value={char.speed} />
+                  <StatRow label={t("stat-shot", { defaultValue: "Shot" })} value={char.shot} />
+                  <StatRow label={t("stat-melee", { defaultValue: "Melee" })} value={char.melee} />
+                  <StatRow label={t("stat-special", { defaultValue: "Special" })} value={char.special} />
+                  <StatRow label={t("stat-speed", { defaultValue: "Speed" })} value={char.speed} />
                 </div>
 
                 {/* Description */}
@@ -161,7 +164,7 @@ export function DreamRiftCharSelect() {
         className="mt-4 text-[10px] tracking-[0.2em] text-zinc-600 hover:text-amber-400/60 transition-colors"
         style={{ fontFamily: "'Georgia', serif" }}
       >
-        ◂ Back
+        {t("back", { defaultValue: "◂ Back" })}
       </button>
     </div>
   );

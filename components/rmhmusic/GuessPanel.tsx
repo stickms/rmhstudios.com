@@ -12,6 +12,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Music2, Loader2, ArrowLeft, ExternalLink, Lightbulb, Check } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useRmhMusicStore } from '@/lib/rmhmusic/store';
 
 interface PuzzleRow {
@@ -33,6 +34,7 @@ interface ActivePuzzle {
 }
 
 export default function GuessPanel() {
+  const { t } = useTranslation("c-rmhmusic");
   const isGuessOpen = useRmhMusicStore((s) => s.isGuessOpen);
   const [loading, setLoading] = useState(true);
   const [signedIn, setSignedIn] = useState(true);
@@ -116,7 +118,7 @@ export default function GuessPanel() {
           <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: 'color-mix(in srgb, var(--site-text) 10%, transparent)' }}>
             <div className="flex items-center gap-2">
               <Music2 className="w-4 h-4" style={{ color: 'var(--site-accent)' }} />
-              <span className="text-sm font-semibold" style={{ color: 'var(--site-text)' }}>Guess the Song</span>
+              <span className="text-sm font-semibold" style={{ color: 'var(--site-text)' }}>{t("guess-the-song", { defaultValue: "Guess the Song" })}</span>
             </div>
             <a
               href="/music-trivia"
@@ -125,7 +127,7 @@ export default function GuessPanel() {
               className="flex items-center gap-1 text-xs"
               style={{ color: 'var(--site-text-muted)' }}
             >
-              New <ExternalLink className="w-3 h-3" />
+              {t("new", { defaultValue: "New" })} <ExternalLink className="w-3 h-3" />
             </a>
           </div>
 
@@ -142,11 +144,11 @@ export default function GuessPanel() {
                   className="flex items-center gap-1.5 text-sm"
                   style={{ color: 'var(--site-text-muted)' }}
                 >
-                  <ArrowLeft className="w-4 h-4" /> Puzzles
+                  <ArrowLeft className="w-4 h-4" /> {t("puzzles", { defaultValue: "Puzzles" })}
                 </button>
 
                 <div>
-                  <p className="text-xs uppercase tracking-wider" style={{ color: 'var(--site-text-dim)' }}>Artist</p>
+                  <p className="text-xs uppercase tracking-wider" style={{ color: 'var(--site-text-dim)' }}>{t("artist", { defaultValue: "Artist" })}</p>
                   <p className="text-sm font-medium" style={{ color: 'var(--site-text)' }}>{active.artist}</p>
                 </div>
 
@@ -163,7 +165,7 @@ export default function GuessPanel() {
                       className="text-xs"
                       style={{ color: 'var(--site-accent)' }}
                     >
-                      Reveal another hint ({active.hints.length - revealed} left)
+                      {t("reveal-another-hint", { defaultValue: "Reveal another hint ({{count}} left)", count: active.hints.length - revealed })}
                     </button>
                   )}
                 </div>
@@ -172,8 +174,8 @@ export default function GuessPanel() {
                   <div className="rounded-lg px-3 py-3 text-sm flex items-center gap-2" style={{ background: 'color-mix(in srgb, var(--site-accent) 15%, transparent)', color: 'var(--site-text)' }}>
                     <Check className="w-4 h-4" style={{ color: 'var(--site-accent)' }} />
                     <span>
-                      Correct — <strong>{result.title}</strong>
-                      {typeof result.reward === 'number' ? ` · +${result.reward} coins` : ''}
+                      {t("correct-title", { defaultValue: "Correct — {{title}}", title: result.title })}
+                      {typeof result.reward === 'number' ? t("reward-coins", { defaultValue: " · +{{reward}} coins", reward: result.reward }) : ''}
                     </span>
                   </div>
                 ) : active.signedIn || signedIn ? (
@@ -184,7 +186,7 @@ export default function GuessPanel() {
                         value={guess}
                         onChange={(e) => setGuess(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && submitGuess()}
-                        placeholder="Song title..."
+                        placeholder={t("song-title-placeholder", { defaultValue: "Song title..." })}
                         className="flex-1 px-3 py-2 rounded-lg text-sm outline-none"
                         style={{ background: 'var(--site-surface)', color: 'var(--site-text)' }}
                         maxLength={160}
@@ -195,17 +197,17 @@ export default function GuessPanel() {
                         className="px-3 py-2 rounded-lg text-sm font-medium transition-opacity disabled:opacity-40"
                         style={{ background: 'var(--site-accent)', color: '#fff' }}
                       >
-                        Guess
+                        {t("guess", { defaultValue: "Guess" })}
                       </button>
                     </div>
                     {result && !result.correct && (
                       <p className="text-xs" style={{ color: 'var(--site-text-muted)' }}>
-                        Not quite — try another hint or guess.
+                        {t("not-quite", { defaultValue: "Not quite — try another hint or guess." })}
                       </p>
                     )}
                   </div>
                 ) : (
-                  <p className="text-xs" style={{ color: 'var(--site-text-muted)' }}>Sign in to guess.</p>
+                  <p className="text-xs" style={{ color: 'var(--site-text-muted)' }}>{t("sign-in-to-guess", { defaultValue: "Sign in to guess." })}</p>
                 )}
               </div>
             ) : (
@@ -213,7 +215,7 @@ export default function GuessPanel() {
               <div className="space-y-2">
                 {puzzles.length === 0 ? (
                   <p className="text-sm text-center py-8" style={{ color: 'var(--site-text-muted)' }}>
-                    No puzzles yet.
+                    {t("no-puzzles-yet", { defaultValue: "No puzzles yet." })}
                   </p>
                 ) : (
                   puzzles.map((p) => (
@@ -227,7 +229,7 @@ export default function GuessPanel() {
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-medium truncate" style={{ color: 'var(--site-text)' }}>{p.artist}</div>
                         <div className="text-xs" style={{ color: 'var(--site-text-muted)' }}>
-                          {p.solves} solved · {p.plays} plays
+                          {t("solves-plays", { defaultValue: "{{solves}} solved · {{plays}} plays", solves: p.solves, plays: p.plays })}
                         </div>
                       </div>
                       {p.solved && <Check className="w-4 h-4 shrink-0" style={{ color: 'var(--site-accent)' }} />}

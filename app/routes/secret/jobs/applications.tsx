@@ -4,6 +4,7 @@
 
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { ArrowLeft, ClipboardList } from 'lucide-react';
+import { useTranslation } from "react-i18next";
 import { useJobsDataStore } from '@/lib/store/useJobsDataStore';
 import { ApplicationTimeline } from '@/components/rmh-jobs/ApplicationTimeline';
 
@@ -12,6 +13,7 @@ export const Route = createFileRoute('/secret/jobs/applications')({
 });
 
 function ApplicationsPage() {
+  const { t } = useTranslation("r-secret");
   const getApplications = useJobsDataStore((s) => s.getApplications);
   const assessments = useJobsDataStore((s) => s.assessments);
   const applications = getApplications();
@@ -59,7 +61,7 @@ function ApplicationsPage() {
             style={{ color: 'var(--jobs-text-muted)' }}
           >
             <ArrowLeft size={14} />
-            Back to jobs
+            {t("back-to-jobs", { defaultValue: "Back to jobs" })}
           </Link>
         </div>
       </header>
@@ -67,7 +69,7 @@ function ApplicationsPage() {
       <main className="max-w-3xl mx-auto px-4 py-8">
         <div className="flex items-center gap-2.5 mb-6">
           <ClipboardList size={20} style={{ color: 'var(--jobs-accent)' }} />
-          <h1 className="text-xl font-bold">My Applications</h1>
+          <h1 className="text-xl font-bold">{t("my-applications", { defaultValue: "My Applications" })}</h1>
           <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'var(--jobs-surface-2)', color: 'var(--jobs-text-muted)' }}>
             {transformed.length}
           </span>

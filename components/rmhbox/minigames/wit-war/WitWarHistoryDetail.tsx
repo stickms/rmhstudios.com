@@ -6,6 +6,7 @@
  */
 'use client';
 
+import { useTranslation } from 'react-i18next';
 import { Zap } from 'lucide-react';
 import type { HistoryDetailProps } from '@/lib/rmhbox/history-display-registry';
 
@@ -31,6 +32,7 @@ export default function WitWarHistoryDetail({
   currentUserId,
   players,
 }: HistoryDetailProps) {
+  const { t } = useTranslation("c-rmhbox");
   const matchupActions = gameLog.actions.filter(
     (a) => a.type === 'matchup_resolved',
   ) as unknown as MatchupAction[];
@@ -62,18 +64,18 @@ export default function WitWarHistoryDetail({
       {gameLog.initialState && (
         <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-3">
           <h4 className="text-xs font-semibold text-(--rmhbox-text-muted) uppercase mb-1">
-            Game Settings
+            {t("game-settings", { defaultValue: "Game Settings" })}
           </h4>
           <div className="flex flex-wrap gap-3 text-xs text-(--rmhbox-text-muted)">
-            <span>Rounds: {totalRounds}</span>
-            <span>Players: {String(gameLog.initialState.playerCount ?? players.length)}</span>
+            <span>{t("rounds-count", { defaultValue: "Rounds: {{count}}", count: totalRounds })}</span>
+            <span>{t("players-count", { defaultValue: "Players: {{count}}", count: String(gameLog.initialState.playerCount ?? players.length) })}</span>
           </div>
         </div>
       )}
 
       {rounds.map((roundMatchups, roundIdx) => (
         <div key={roundIdx} className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-3 space-y-3">
-          <h4 className="text-sm font-bold text-(--rmhbox-text)">Round {roundIdx + 1}</h4>
+          <h4 className="text-sm font-bold text-(--rmhbox-text)">{t("round-number", { defaultValue: "Round {{number}}", number: roundIdx + 1 })}</h4>
 
           {roundMatchups.map((m, mIdx) => {
             const isMyMatchup =
@@ -98,7 +100,7 @@ export default function WitWarHistoryDetail({
                       — {getPlayerName(m.payload.playerA ?? '')} ({m.payload.votePercentA}%)
                     </span>
                   </div>
-                  <span className="text-(--rmhbox-text-muted) text-xs mt-1">vs</span>
+                  <span className="text-(--rmhbox-text-muted) text-xs mt-1">{t("vs", { defaultValue: "vs" })}</span>
                   <div className={`flex-1 text-right ${m.payload.winnerId === m.payload.playerB ? 'font-semibold text-green-400' : 'text-(--rmhbox-text)'}`}>
                     &ldquo;{m.payload.answerB}&rdquo;
                     <span className="text-xs text-(--rmhbox-text-muted) ml-1">
@@ -116,14 +118,14 @@ export default function WitWarHistoryDetail({
           })}
 
           {roundMatchups.length === 0 && (
-            <p className="text-xs text-(--rmhbox-text-muted)">No matchup data available.</p>
+            <p className="text-xs text-(--rmhbox-text-muted)">{t("no-matchup-data", { defaultValue: "No matchup data available." })}</p>
           )}
         </div>
       ))}
 
       {/* Final scores */}
       <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-4">
-        <h4 className="text-sm font-semibold text-(--rmhbox-text-muted) mb-2">Final Scores</h4>
+        <h4 className="text-sm font-semibold text-(--rmhbox-text-muted) mb-2">{t("final-scores", { defaultValue: "Final Scores" })}</h4>
         <div className="space-y-1">
           {players
             .sort((a, b) => a.rank - b.rank)

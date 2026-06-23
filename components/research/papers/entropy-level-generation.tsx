@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from 'react-i18next';
 import {
   LineChart,
   Line,
@@ -91,12 +92,13 @@ const h3Style: React.CSSProperties = {
 };
 
 export function EntropyLevelGenerationPaper() {
+  const { t } = useTranslation("c-research");
   return (
     <>
       {/* --------------------------------------------------------------------
           1. INTRODUCTION
          -------------------------------------------------------------------- */}
-      <h2 style={h2Style}>1. Introduction</h2>
+      <h2 style={h2Style}>{t("section-1-introduction", { defaultValue: "1. Introduction" })}</h2>
 
       <p className="mb-4">
         Procedural content generation (PCG) has long occupied a central role in the design of
@@ -170,9 +172,9 @@ export function EntropyLevelGenerationPaper() {
       {/* --------------------------------------------------------------------
           2. INFORMATION-THEORETIC FRAMEWORK
          -------------------------------------------------------------------- */}
-      <h2 style={h2Style}>2. Information-Theoretic Framework</h2>
+      <h2 style={h2Style}>{t("section-2-info-theoretic-framework", { defaultValue: "2. Information-Theoretic Framework" })}</h2>
 
-      <h3 style={h3Style}>2.1 Levels as Random Variables</h3>
+      <h3 style={h3Style}>{t("section-2-1-levels-as-random-variables", { defaultValue: "2.1 Levels as Random Variables" })}</h3>
 
       <p className="mb-4">
         We begin by establishing a probabilistic model of level generation and player perception. Let{' '}
@@ -223,7 +225,7 @@ export function EntropyLevelGenerationPaper() {
         expected surprise that the generator can sustain against an optimally adapting player.
       </p>
 
-      <h3 style={h3Style}>2.2 The Channel Coding Interpretation</h3>
+      <h3 style={h3Style}>{t("section-2-2-channel-coding", { defaultValue: "2.2 The Channel Coding Interpretation" })}</h3>
 
       <p className="mb-4">
         We now introduce the channel coding perspective that motivates our rate-distortion formulation.
@@ -255,7 +257,7 @@ export function EntropyLevelGenerationPaper() {
         preserving the playability structure encoded in the template.
       </p>
 
-      <h3 style={h3Style}>2.3 Kolmogorov Complexity and Incompressibility</h3>
+      <h3 style={h3Style}>{t("section-2-3-kolmogorov-complexity", { defaultValue: "2.3 Kolmogorov Complexity and Incompressibility" })}</h3>
 
       <p className="mb-4">
         Our information-theoretic framework connects naturally to the theory of algorithmic information.
@@ -286,9 +288,9 @@ export function EntropyLevelGenerationPaper() {
       {/* --------------------------------------------------------------------
           3. RATE-DISTORTION FORMULATION
          -------------------------------------------------------------------- */}
-      <h2 style={h2Style}>3. Rate-Distortion Formulation</h2>
+      <h2 style={h2Style}>{t("section-3-rate-distortion", { defaultValue: "3. Rate-Distortion Formulation" })}</h2>
 
-      <h3 style={h3Style}>3.1 Playability as a Distortion Measure</h3>
+      <h3 style={h3Style}>{t("section-3-1-playability-distortion", { defaultValue: "3.1 Playability as a Distortion Measure" })}</h3>
 
       <p className="mb-4">
         The central challenge of surprise-optimal level generation is that unconstrained entropy
@@ -315,7 +317,7 @@ export function EntropyLevelGenerationPaper() {
         navigational integrity.
       </p>
 
-      <h3 style={h3Style}>3.2 The Rate-Distortion Function</h3>
+      <h3 style={h3Style}>{t("section-3-2-rate-distortion-function", { defaultValue: "3.2 The Rate-Distortion Function" })}</h3>
 
       <p className="mb-4">
         With the distortion measure in hand, we formulate the surprise-optimal generation problem as a
@@ -363,23 +365,23 @@ export function EntropyLevelGenerationPaper() {
         closer to zero permit greater distortion and higher surprise.
       </p>
 
-      <PaperFigure number={1} caption="Rate-distortion curves comparing our optimal coding scheme (RD-Optimal) against a naive heuristic baseline and a greedy search approach. The optimal curve achieves the information-theoretic lower bound on the rate (mutual information) for any given distortion level, enabling maximum surprise at each playability threshold.">
+      <PaperFigure number={1} caption={t("figure-1-caption", { defaultValue: "Rate-distortion curves comparing our optimal coding scheme (RD-Optimal) against a naive heuristic baseline and a greedy search approach. The optimal curve achieves the information-theoretic lower bound on the rate (mutual information) for any given distortion level, enabling maximum surprise at each playability threshold." })}>
         <ResponsiveContainer width="100%" height={320}>
           <LineChart data={rateDistortionData} margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis
               dataKey="distortion"
-              label={{ value: 'Distortion D', position: 'insideBottom', offset: -5 }}
+              label={{ value: t("chart-distortion-d", { defaultValue: "Distortion D" }), position: 'insideBottom', offset: -5 }}
             />
             <YAxis
-              label={{ value: 'Rate R(D) (bits)', angle: -90, position: 'insideLeft' }}
+              label={{ value: t("chart-rate-rd-bits", { defaultValue: "Rate R(D) (bits)" }), angle: -90, position: 'insideLeft' }}
             />
             <Tooltip />
             <Legend verticalAlign="top" />
             <Line
               type="monotone"
               dataKey="rateOptimal"
-              name="RD-Optimal (Ours)"
+              name={t("chart-rd-optimal-ours", { defaultValue: "RD-Optimal (Ours)" })}
               stroke="#2563eb"
               strokeWidth={2}
               dot={{ r: 3 }}
@@ -387,7 +389,7 @@ export function EntropyLevelGenerationPaper() {
             <Line
               type="monotone"
               dataKey="rateHeuristic"
-              name="Heuristic Search"
+              name={t("chart-heuristic-search", { defaultValue: "Heuristic Search" })}
               stroke="#d97706"
               strokeWidth={2}
               strokeDasharray="5 5"
@@ -396,7 +398,7 @@ export function EntropyLevelGenerationPaper() {
             <Line
               type="monotone"
               dataKey="rateBaseline"
-              name="Greedy Baseline"
+              name={t("chart-greedy-baseline", { defaultValue: "Greedy Baseline" })}
               stroke="#dc2626"
               strokeWidth={2}
               strokeDasharray="3 3"
@@ -406,7 +408,7 @@ export function EntropyLevelGenerationPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      <h3 style={h3Style}>3.3 Achievability and Converse</h3>
+      <h3 style={h3Style}>{t("section-3-3-achievability-converse", { defaultValue: "3.3 Achievability and Converse" })}</h3>
 
       <p className="mb-4">
         We establish that the rate-distortion function <Tex math="R(D)" /> is both achievable and
@@ -440,9 +442,9 @@ export function EntropyLevelGenerationPaper() {
       {/* --------------------------------------------------------------------
           4. ALGORITHMIC IMPLEMENTATION
          -------------------------------------------------------------------- */}
-      <h2 style={h2Style}>4. Algorithmic Implementation</h2>
+      <h2 style={h2Style}>{t("section-4-algorithmic-implementation", { defaultValue: "4. Algorithmic Implementation" })}</h2>
 
-      <h3 style={h3Style}>4.1 Tractable Approximation via Tile-Local Factorization</h3>
+      <h3 style={h3Style}>{t("section-4-1-tractable-approximation", { defaultValue: "4.1 Tractable Approximation via Tile-Local Factorization" })}</h3>
 
       <p className="mb-4">
         The exact Blahut&ndash;Arimoto computation is intractable for realistic level sizes because
@@ -473,7 +475,7 @@ export function EntropyLevelGenerationPaper() {
         arising from level layouts.
       </p>
 
-      <h3 style={h3Style}>4.2 The RD-Gen Algorithm</h3>
+      <h3 style={h3Style}>{t("section-4-2-rd-gen-algorithm", { defaultValue: "4.2 The RD-Gen Algorithm" })}</h3>
 
       <p className="mb-4">
         Our complete algorithm, which we call RD-Gen (Rate-Distortion Generator), proceeds in three
@@ -500,7 +502,7 @@ export function EntropyLevelGenerationPaper() {
         real-time budgets for most applications.
       </p>
 
-      <h3 style={h3Style}>4.3 Convergence Guarantees</h3>
+      <h3 style={h3Style}>{t("section-4-3-convergence-guarantees", { defaultValue: "4.3 Convergence Guarantees" })}</h3>
 
       <p className="mb-4">
         The Blahut&ndash;Arimoto algorithm enjoys strong convergence guarantees. At each iteration,
@@ -520,23 +522,23 @@ export function EntropyLevelGenerationPaper() {
         remains within 5% of the true value after convergence.
       </p>
 
-      <PaperFigure number={2} caption="Convergence of the Blahut-Arimoto algorithm, Lagrangian relaxation, and Bethe entropy bound for a representative patch-level rate-distortion computation (D = 0.3). The Blahut-Arimoto iterates converge monotonically to the true rate-distortion value of R(0.3) = 2.14 bits within approximately 200 iterations.">
+      <PaperFigure number={2} caption={t("figure-2-caption", { defaultValue: "Convergence of the Blahut-Arimoto algorithm, Lagrangian relaxation, and Bethe entropy bound for a representative patch-level rate-distortion computation (D = 0.3). The Blahut-Arimoto iterates converge monotonically to the true rate-distortion value of R(0.3) = 2.14 bits within approximately 200 iterations." })}>
         <ResponsiveContainer width="100%" height={320}>
           <LineChart data={convergenceData} margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis
               dataKey="iteration"
-              label={{ value: 'Iteration', position: 'insideBottom', offset: -5 }}
+              label={{ value: t("chart-iteration", { defaultValue: "Iteration" }), position: 'insideBottom', offset: -5 }}
             />
             <YAxis
-              label={{ value: 'Mutual Information (bits)', angle: -90, position: 'insideLeft' }}
+              label={{ value: t("chart-mutual-information-bits", { defaultValue: "Mutual Information (bits)" }), angle: -90, position: 'insideLeft' }}
             />
             <Tooltip />
             <Legend verticalAlign="top" />
             <Line
               type="monotone"
               dataKey="blahutArimoto"
-              name="Blahut-Arimoto"
+              name={t("chart-blahut-arimoto", { defaultValue: "Blahut-Arimoto" })}
               stroke="#2563eb"
               strokeWidth={2}
               dot={{ r: 3 }}
@@ -544,7 +546,7 @@ export function EntropyLevelGenerationPaper() {
             <Line
               type="monotone"
               dataKey="lagrangian"
-              name="Lagrangian Relaxation"
+              name={t("chart-lagrangian-relaxation", { defaultValue: "Lagrangian Relaxation" })}
               stroke="#059669"
               strokeWidth={2}
               strokeDasharray="5 5"
@@ -553,7 +555,7 @@ export function EntropyLevelGenerationPaper() {
             <Line
               type="monotone"
               dataKey="entropyBound"
-              name="Bethe Entropy Bound"
+              name={t("chart-bethe-entropy-bound", { defaultValue: "Bethe Entropy Bound" })}
               stroke="#9333ea"
               strokeWidth={2}
               strokeDasharray="3 3"
@@ -566,9 +568,9 @@ export function EntropyLevelGenerationPaper() {
       {/* --------------------------------------------------------------------
           5. EXPERIMENTAL RESULTS
          -------------------------------------------------------------------- */}
-      <h2 style={h2Style}>5. Experimental Results</h2>
+      <h2 style={h2Style}>{t("section-5-experimental-results", { defaultValue: "5. Experimental Results" })}</h2>
 
-      <h3 style={h3Style}>5.1 Experimental Setup</h3>
+      <h3 style={h3Style}>{t("section-5-1-experimental-setup", { defaultValue: "5.1 Experimental Setup" })}</h3>
 
       <p className="mb-4">
         We evaluated RD-Gen on the task of generating platformer levels in the style of{' '}
@@ -596,7 +598,7 @@ export function EntropyLevelGenerationPaper() {
         scale. The study protocol was approved by the institutional review board (IRB #2024-0847).
       </p>
 
-      <h3 style={h3Style}>5.2 Entropy&ndash;Playability Tradeoff</h3>
+      <h3 style={h3Style}>{t("section-5-2-entropy-playability-tradeoff", { defaultValue: "5.2 Entropy–Playability Tradeoff" })}</h3>
 
       <p className="mb-4">
         Figure 3 displays the entropy&ndash;playability tradeoff achieved by each method. RD-Gen
@@ -618,24 +620,24 @@ export function EntropyLevelGenerationPaper() {
         high playability are fundamentally incompatible.
       </p>
 
-      <PaperFigure number={3} caption="Entropy vs. playability for RD-Gen (ours), Perlin Noise, and Uniform Random generation. Each point represents the average over 500 generated levels at a given entropy operating point. RD-Gen maintains high playability at significantly higher entropy values than either baseline.">
+      <PaperFigure number={3} caption={t("figure-3-caption", { defaultValue: "Entropy vs. playability for RD-Gen (ours), Perlin Noise, and Uniform Random generation. Each point represents the average over 500 generated levels at a given entropy operating point. RD-Gen maintains high playability at significantly higher entropy values than either baseline." })}>
         <ResponsiveContainer width="100%" height={320}>
           <LineChart data={entropyPlayabilityData} margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis
               dataKey="entropy"
-              label={{ value: 'Entropy H (bits/tile)', position: 'insideBottom', offset: -5 }}
+              label={{ value: t("chart-entropy-h-bits-tile", { defaultValue: "Entropy H (bits/tile)" }), position: 'insideBottom', offset: -5 }}
             />
             <YAxis
               domain={[0, 1]}
-              label={{ value: 'Playability Rate', angle: -90, position: 'insideLeft' }}
+              label={{ value: t("chart-playability-rate", { defaultValue: "Playability Rate" }), angle: -90, position: 'insideLeft' }}
             />
             <Tooltip />
             <Legend verticalAlign="top" />
             <Line
               type="monotone"
               dataKey="playabilityOurs"
-              name="RD-Gen (Ours)"
+              name={t("chart-rd-gen-ours", { defaultValue: "RD-Gen (Ours)" })}
               stroke="#2563eb"
               strokeWidth={2}
               dot={{ r: 3 }}
@@ -643,7 +645,7 @@ export function EntropyLevelGenerationPaper() {
             <Line
               type="monotone"
               dataKey="playabilityPerlin"
-              name="Perlin Noise"
+              name={t("chart-perlin-noise", { defaultValue: "Perlin Noise" })}
               stroke="#d97706"
               strokeWidth={2}
               strokeDasharray="5 5"
@@ -652,7 +654,7 @@ export function EntropyLevelGenerationPaper() {
             <Line
               type="monotone"
               dataKey="playabilityRandom"
-              name="Uniform Random"
+              name={t("chart-uniform-random", { defaultValue: "Uniform Random" })}
               stroke="#dc2626"
               strokeWidth={2}
               strokeDasharray="3 3"
@@ -662,7 +664,7 @@ export function EntropyLevelGenerationPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      <h3 style={h3Style}>5.3 Subjective Surprise and Engagement Ratings</h3>
+      <h3 style={h3Style}>{t("section-5-3-surprise-engagement-ratings", { defaultValue: "5.3 Subjective Surprise and Engagement Ratings" })}</h3>
 
       <p className="mb-4">
         The results of the human evaluation study are summarized in Figure 4. RD-Gen achieved the
@@ -697,7 +699,7 @@ export function EntropyLevelGenerationPaper() {
         coherence.
       </p>
 
-      <PaperFigure number={4} caption="Mean subjective ratings for surprise (dark), engagement (medium), and playability (light) across five generation methods. Error bars represent standard errors. RD-Gen (Ours) achieves the highest surprise and engagement ratings while maintaining competitive playability. N = 84 participants, 7-point Likert scale.">
+      <PaperFigure number={4} caption={t("figure-4-caption", { defaultValue: "Mean subjective ratings for surprise (dark), engagement (medium), and playability (light) across five generation methods. Error bars represent standard errors. RD-Gen (Ours) achieves the highest surprise and engagement ratings while maintaining competitive playability. N = 84 participants, 7-point Likert scale." })}>
         <ResponsiveContainer width="100%" height={320}>
           <BarChart data={surpriseRatingsData} margin={{ top: 10, right: 30, left: 20, bottom: 30 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -710,18 +712,18 @@ export function EntropyLevelGenerationPaper() {
             />
             <YAxis
               domain={[0, 7]}
-              label={{ value: 'Rating (1-7)', angle: -90, position: 'insideLeft' }}
+              label={{ value: t("chart-rating-1-7", { defaultValue: "Rating (1-7)" }), angle: -90, position: 'insideLeft' }}
             />
             <Tooltip />
             <Legend verticalAlign="top" />
-            <Bar dataKey="surprise" name="Surprise" fill="#2563eb" />
-            <Bar dataKey="engagement" name="Engagement" fill="#6366f1" />
-            <Bar dataKey="playability" name="Playability" fill="#a5b4fc" />
+            <Bar dataKey="surprise" name={t("chart-surprise", { defaultValue: "Surprise" })} fill="#2563eb" />
+            <Bar dataKey="engagement" name={t("chart-engagement", { defaultValue: "Engagement" })} fill="#6366f1" />
+            <Bar dataKey="playability" name={t("chart-playability", { defaultValue: "Playability" })} fill="#a5b4fc" />
           </BarChart>
         </ResponsiveContainer>
       </PaperFigure>
 
-      <h3 style={h3Style}>5.4 Ablation Study</h3>
+      <h3 style={h3Style}>{t("section-5-4-ablation-study", { defaultValue: "5.4 Ablation Study" })}</h3>
 
       <p className="mb-4">
         To isolate the contributions of each component of RD-Gen, we conducted an ablation study
@@ -740,9 +742,9 @@ export function EntropyLevelGenerationPaper() {
       {/* --------------------------------------------------------------------
           6. DISCUSSION
          -------------------------------------------------------------------- */}
-      <h2 style={h2Style}>6. Discussion</h2>
+      <h2 style={h2Style}>{t("section-6-discussion", { defaultValue: "6. Discussion" })}</h2>
 
-      <h3 style={h3Style}>6.1 Theoretical Implications</h3>
+      <h3 style={h3Style}>{t("section-6-1-theoretical-implications", { defaultValue: "6.1 Theoretical Implications" })}</h3>
 
       <p className="mb-4">
         Our results establish that rate-distortion theory provides the correct mathematical framework
@@ -767,7 +769,7 @@ export function EntropyLevelGenerationPaper() {
         for navigating it.
       </p>
 
-      <h3 style={h3Style}>6.2 Practical Implications for Game Design</h3>
+      <h3 style={h3Style}>{t("section-6-2-practical-implications", { defaultValue: "6.2 Practical Implications for Game Design" })}</h3>
 
       <p className="mb-4">
         From a practical standpoint, the RD-Gen framework offers game designers a principled
@@ -792,7 +794,7 @@ export function EntropyLevelGenerationPaper() {
         monolithic generation methods.
       </p>
 
-      <h3 style={h3Style}>6.3 Limitations and Future Work</h3>
+      <h3 style={h3Style}>{t("section-6-3-limitations-future-work", { defaultValue: "6.3 Limitations and Future Work" })}</h3>
 
       <p className="mb-4">
         Several limitations merit discussion. First, our model of player surprise assumes a stationary
@@ -837,7 +839,7 @@ export function EntropyLevelGenerationPaper() {
       {/* --------------------------------------------------------------------
           7. CONCLUSION
          -------------------------------------------------------------------- */}
-      <h2 style={h2Style}>7. Conclusion</h2>
+      <h2 style={h2Style}>{t("section-7-conclusion", { defaultValue: "7. Conclusion" })}</h2>
 
       <p className="mb-4">
         We have presented an information-theoretic framework for procedural level generation that
@@ -877,7 +879,7 @@ export function EntropyLevelGenerationPaper() {
       {/* --------------------------------------------------------------------
           REFERENCES
          -------------------------------------------------------------------- */}
-      <h2 style={h2Style}>References</h2>
+      <h2 style={h2Style}>{t("section-references", { defaultValue: "References" })}</h2>
 
       <ol
         style={{

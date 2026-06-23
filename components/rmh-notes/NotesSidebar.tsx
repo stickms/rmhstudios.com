@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { useNotesStore, NoteView } from '@/lib/store/useNotesStore';
 import { useNotesDataStore } from '@/lib/store/useNotesDataStore';
 import { NoteFolder, NoteTag, NoteReminder } from './types';
@@ -20,6 +21,7 @@ interface Props {
 }
 
 export default function NotesSidebar({ folders, tags, reminders, overdueCount, onFoldersChange, onTagsChange, onCreateNote }: Props) {
+  const { t } = useTranslation("c-rmh-notes");
   const { selectedView, setView, isDarkMode, setDarkMode } = useNotesStore();
   const dataStore = useNotesDataStore();
   const [addingFolder, setAddingFolder] = useState(false);
@@ -75,17 +77,17 @@ export default function NotesSidebar({ folders, tags, reminders, overdueCount, o
 
   const deleteFolder = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm('Delete this folder? Notes inside will be moved to root.')) return;
+    if (!confirm(t("delete-folder-confirm", { defaultValue: "Delete this folder? Notes inside will be moved to root." }))) return;
     dataStore.deleteFolder(id);
     onFoldersChange();
-    toast.success('Folder deleted');
+    toast.success(t("folder-deleted", { defaultValue: "Folder deleted" }));
   };
 
   const deleteTag = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     dataStore.deleteTag(id);
     onTagsChange();
-    toast.success('Tag deleted');
+    toast.success(t("tag-deleted", { defaultValue: "Tag deleted" }));
   };
 
   return (
@@ -96,14 +98,14 @@ export default function NotesSidebar({ folders, tags, reminders, overdueCount, o
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--notes-sidebar-border)' }}>
         <div className="flex items-center gap-2">
-          <Link to="/secret" className="text-base hover:opacity-70 transition-opacity" title="Back to home" style={{ color: 'var(--notes-text-muted)' }}>←</Link>
+          <Link to="/secret" className="text-base hover:opacity-70 transition-opacity" title={t("back-to-home", { defaultValue: "Back to home" })} style={{ color: 'var(--notes-text-muted)' }}>←</Link>
           <span className="text-xl">📓</span>
           <span className="font-bold text-sm tracking-wide" style={{ color: 'var(--notes-text)' }}>RMHNotes</span>
         </div>
         <button
           onClick={() => setDarkMode(isDarkMode ? false : true)}
           className="text-base hover:opacity-70 transition-opacity"
-          title="Toggle theme"
+          title={t("toggle-theme", { defaultValue: "Toggle theme" })}
         >
           {isDarkMode ? '☀️' : '🌙'}
         </button>
@@ -116,43 +118,43 @@ export default function NotesSidebar({ folders, tags, reminders, overdueCount, o
           className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-colors"
           style={{ background: 'var(--notes-accent)', color: 'var(--notes-accent-fg)' }}
         >
-          <span>✦</span> New Note
+          <span>✦</span> {t("new-note", { defaultValue: "New Note" })}
           <kbd className="ml-auto text-xs opacity-60 font-normal">⌘N</kbd>
         </button>
       </div>
 
       {/* Nav */}
       <div className="flex-1 overflow-y-auto px-2 pb-4 space-y-0.5">
-        <SectionLabel>Library</SectionLabel>
-        {navItem('all', '📄', 'All Notes')}
-        {navItem('pinned', '📌', 'Pinned')}
-        {navItem('favorites', '⭐', 'Favorites')}
-        {navItem('recent', '🕐', 'Recently Viewed')}
+        <SectionLabel>{t("section-library", { defaultValue: "Library" })}</SectionLabel>
+        {navItem('all', '📄', t("nav-all-notes", { defaultValue: "All Notes" }))}
+        {navItem('pinned', '📌', t("nav-pinned", { defaultValue: "Pinned" }))}
+        {navItem('favorites', '⭐', t("nav-favorites", { defaultValue: "Favorites" }))}
+        {navItem('recent', '🕐', t("nav-recently-viewed", { defaultValue: "Recently Viewed" }))}
 
-        <SectionLabel className="mt-2">Reminders</SectionLabel>
-        {navItem('reminders', '🔔', 'Upcoming', upcomingCount)}
-        {navItem('overdue', '⚠️', 'Overdue', overdueCount)}
-        {navItem('calendar', '📅', 'Calendar')}
+        <SectionLabel className="mt-2">{t("section-reminders", { defaultValue: "Reminders" })}</SectionLabel>
+        {navItem('reminders', '🔔', t("nav-upcoming", { defaultValue: "Upcoming" }), upcomingCount)}
+        {navItem('overdue', '⚠️', t("nav-overdue", { defaultValue: "Overdue" }), overdueCount)}
+        {navItem('calendar', '📅', t("nav-calendar", { defaultValue: "Calendar" }))}
 
-        <SectionLabel className="mt-2">Views</SectionLabel>
-        {navItem('mood', '🌈', 'Mood Journal')}
-        {navItem('stats', '📊', 'Statistics')}
+        <SectionLabel className="mt-2">{t("section-views", { defaultValue: "Views" })}</SectionLabel>
+        {navItem('mood', '🌈', t("nav-mood-journal", { defaultValue: "Mood Journal" }))}
+        {navItem('stats', '📊', t("nav-statistics", { defaultValue: "Statistics" }))}
 
-        <SectionLabel className="mt-2">Organize</SectionLabel>
-        {navItem('archive', '📦', 'Archive')}
-        {navItem('trash', '🗑️', 'Trash')}
+        <SectionLabel className="mt-2">{t("section-organize", { defaultValue: "Organize" })}</SectionLabel>
+        {navItem('archive', '📦', t("nav-archive", { defaultValue: "Archive" }))}
+        {navItem('trash', '🗑️', t("nav-trash", { defaultValue: "Trash" }))}
 
         {/* Folders */}
         <div className="mt-2">
           <div className="w-full flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold tracking-widest uppercase" style={{ color: 'var(--notes-text-subtle)' }}>
             <button className="flex items-center gap-1.5 flex-1 min-w-0 transition-opacity hover:opacity-70" onClick={() => setExpandedFolders((v) => !v)}>
               <span>{expandedFolders ? '▾' : '▸'}</span>
-              Folders
+              {t("section-folders", { defaultValue: "Folders" })}
             </button>
             <button
               className="ml-auto hover:opacity-70 transition-opacity"
               onClick={() => setAddingFolder(true)}
-              title="New folder"
+              title={t("new-folder", { defaultValue: "New folder" })}
             >＋</button>
           </div>
 
@@ -168,7 +170,7 @@ export default function NotesSidebar({ folders, tags, reminders, overdueCount, o
                     value={newFolderName}
                     onChange={(e) => setNewFolderName(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') createFolder(); if (e.key === 'Escape') setAddingFolder(false); }}
-                    placeholder="Folder name..."
+                    placeholder={t("folder-name-placeholder", { defaultValue: "Folder name..." })}
                     className="w-full text-xs px-2 py-1.5 rounded-md outline-none"
                     style={{ background: 'var(--notes-surface)', border: '1px solid var(--notes-border)', color: 'var(--notes-text)' }}
                   />
@@ -183,8 +185,8 @@ export default function NotesSidebar({ folders, tags, reminders, overdueCount, o
                     ))}
                   </div>
                   <div className="flex gap-1">
-                    <button onClick={createFolder} className="text-xs px-2 py-1 rounded" style={{ background: 'var(--notes-accent)', color: 'var(--notes-accent-fg)' }}>Create</button>
-                    <button onClick={() => setAddingFolder(false)} className="text-xs px-2 py-1 rounded" style={{ background: 'var(--notes-surface-2)', color: 'var(--notes-text-muted)' }}>Cancel</button>
+                    <button onClick={createFolder} className="text-xs px-2 py-1 rounded" style={{ background: 'var(--notes-accent)', color: 'var(--notes-accent-fg)' }}>{t("create", { defaultValue: "Create" })}</button>
+                    <button onClick={() => setAddingFolder(false)} className="text-xs px-2 py-1 rounded" style={{ background: 'var(--notes-surface-2)', color: 'var(--notes-text-muted)' }}>{t("cancel", { defaultValue: "Cancel" })}</button>
                   </div>
                 </div>
               )}
@@ -197,12 +199,12 @@ export default function NotesSidebar({ folders, tags, reminders, overdueCount, o
           <div className="w-full flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold tracking-widest uppercase" style={{ color: 'var(--notes-text-subtle)' }}>
             <button className="flex items-center gap-1.5 flex-1 min-w-0 transition-opacity hover:opacity-70" onClick={() => setExpandedTags((v) => !v)}>
               <span>{expandedTags ? '▾' : '▸'}</span>
-              Tags
+              {t("section-tags", { defaultValue: "Tags" })}
             </button>
             <button
               className="ml-auto hover:opacity-70 transition-opacity"
               onClick={() => setAddingTag(true)}
-              title="New tag"
+              title={t("new-tag", { defaultValue: "New tag" })}
             >＋</button>
           </div>
 
@@ -218,7 +220,7 @@ export default function NotesSidebar({ folders, tags, reminders, overdueCount, o
                     value={newTagName}
                     onChange={(e) => setNewTagName(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') createTag(); if (e.key === 'Escape') setAddingTag(false); }}
-                    placeholder="Tag name..."
+                    placeholder={t("tag-name-placeholder", { defaultValue: "Tag name..." })}
                     className="w-full text-xs px-2 py-1.5 rounded-md outline-none"
                     style={{ background: 'var(--notes-surface)', border: '1px solid var(--notes-border)', color: 'var(--notes-text)' }}
                   />
@@ -241,6 +243,7 @@ function SectionLabel({ children, className = '' }: { children: React.ReactNode;
 }
 
 function FolderItem({ folder, onDelete }: { folder: NoteFolder; onDelete: (id: string, e: React.MouseEvent) => void }) {
+  const { t } = useTranslation("c-rmh-notes");
   const { selectedView, setView } = useNotesStore();
   const active = selectedView === `folder:${folder.id}`;
   return (
@@ -257,12 +260,13 @@ function FolderItem({ folder, onDelete }: { folder: NoteFolder; onDelete: (id: s
       <span className="text-xs" style={{ color: folder.color ?? 'var(--notes-text-muted)' }}>📁</span>
       <span className="flex-1 truncate text-xs">{folder.name}</span>
       {folder._count !== undefined && <span className="text-xs opacity-50">{folder._count.notes}</span>}
-      <span role="button" tabIndex={0} onClick={(e) => onDelete(folder.id, e)} onKeyDown={(e) => { if (e.key === 'Enter') onDelete(folder.id, e as unknown as React.MouseEvent); }} className="opacity-0 group-hover:opacity-60 hover:opacity-100! text-xs cursor-pointer" title="Delete folder">✕</span>
+      <span role="button" tabIndex={0} onClick={(e) => onDelete(folder.id, e)} onKeyDown={(e) => { if (e.key === 'Enter') onDelete(folder.id, e as unknown as React.MouseEvent); }} className="opacity-0 group-hover:opacity-60 hover:opacity-100! text-xs cursor-pointer" title={t("delete-folder", { defaultValue: "Delete folder" })}>✕</span>
     </button>
   );
 }
 
 function TagItem({ tag, onDelete }: { tag: NoteTag; onDelete: (id: string, e: React.MouseEvent) => void }) {
+  const { t } = useTranslation("c-rmh-notes");
   const { selectedView, setView } = useNotesStore();
   const active = selectedView === `tag:${tag.id}`;
   return (
@@ -279,7 +283,7 @@ function TagItem({ tag, onDelete }: { tag: NoteTag; onDelete: (id: string, e: Re
       <span className="w-2 h-2 rounded-full shrink-0" style={{ background: tag.color ?? 'var(--notes-text-subtle)' }} />
       <span className="flex-1 truncate text-xs">{tag.name}</span>
       {tag._count !== undefined && <span className="text-xs opacity-50">{tag._count.notes}</span>}
-      <span role="button" tabIndex={0} onClick={(e) => onDelete(tag.id, e)} onKeyDown={(e) => { if (e.key === 'Enter') onDelete(tag.id, e as unknown as React.MouseEvent); }} className="opacity-0 group-hover:opacity-60 hover:opacity-100! text-xs cursor-pointer" title="Delete tag">✕</span>
+      <span role="button" tabIndex={0} onClick={(e) => onDelete(tag.id, e)} onKeyDown={(e) => { if (e.key === 'Enter') onDelete(tag.id, e as unknown as React.MouseEvent); }} className="opacity-0 group-hover:opacity-60 hover:opacity-100! text-xs cursor-pointer" title={t("delete-tag", { defaultValue: "Delete tag" })}>✕</span>
     </button>
   );
 }

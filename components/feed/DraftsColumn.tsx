@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Loader2, FileText, CalendarClock, Send, Trash2, Globe, Users, Lock, BarChart3, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
@@ -30,6 +31,7 @@ function formatWhen(iso: string): string {
 }
 
 export function DraftsColumn() {
+  const { t } = useTranslation('feed');
   const [drafts, setDrafts] = useState<ScheduledRow[]>([]);
   const [scheduled, setScheduled] = useState<ScheduledRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -99,18 +101,18 @@ export function DraftsColumn() {
       <header className="sticky top-0 z-10 border-b border-site-border bg-site-bg/80 px-4 py-3 backdrop-blur">
         <div className="flex items-center gap-2">
           <FileText className="h-5 w-5 text-site-accent" />
-          <h1 className="text-lg font-bold text-site-text">Drafts &amp; Scheduled</h1>
+          <h1 className="text-lg font-bold text-site-text">{t('drafts-and-scheduled', { defaultValue: 'Drafts & Scheduled' })}</h1>
         </div>
       </header>
 
       {empty ? (
         <p className="px-4 py-20 text-center text-sm text-site-text-muted">
-          No drafts yet. Use the “Save as draft” or “Schedule” options in the composer.
+          {t('no-drafts-yet', { defaultValue: 'No drafts yet. Use the "Save as draft" or "Schedule" options in the composer.' })}
         </p>
       ) : (
         <div className="space-y-8 p-4">
           <Section
-            title="Scheduled"
+            title={t('section-scheduled', { defaultValue: 'Scheduled' })}
             icon={CalendarClock}
             rows={scheduled}
             busy={busy}
@@ -118,7 +120,7 @@ export function DraftsColumn() {
             onDiscard={discard}
           />
           <Section
-            title="Drafts"
+            title={t('section-drafts', { defaultValue: 'Drafts' })}
             icon={FileText}
             rows={drafts}
             busy={busy}
@@ -146,6 +148,7 @@ function Section({
   onPublish: (id: string) => void;
   onDiscard: (id: string) => void;
 }) {
+  const { t } = useTranslation('feed');
   if (rows.length === 0) return null;
   return (
     <section>
@@ -158,7 +161,7 @@ function Section({
           return (
             <div key={r.id} className="rounded-xl border border-site-border bg-site-surface p-3">
               <p className="whitespace-pre-wrap break-words text-sm text-site-text">
-                {r.content || <span className="text-site-text-dim">(no text)</span>}
+                {r.content || <span className="text-site-text-dim">{t('no-text', { defaultValue: '(no text)' })}</span>}
               </p>
               <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-site-text-dim">
                 {r.scheduledAt && (
@@ -171,12 +174,12 @@ function Section({
                 </span>
                 {r.poll?.question && (
                   <span className="inline-flex items-center gap-1">
-                    <BarChart3 className="h-3 w-3" /> poll
+                    <BarChart3 className="h-3 w-3" /> {t('poll-label', { defaultValue: 'poll' })}
                   </span>
                 )}
                 {(r.imageUrls.length > 0 || r.gifUrl) && (
                   <span className="inline-flex items-center gap-1">
-                    <ImageIcon className="h-3 w-3" /> media
+                    <ImageIcon className="h-3 w-3" /> {t('media-label', { defaultValue: 'media' })}
                   </span>
                 )}
                 {r.unlockPrice && r.unlockPrice > 0 && (
@@ -194,7 +197,7 @@ function Section({
                   className="gap-1"
                 >
                   {busy === `p:${r.id}` ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-                  Post now
+                  {t('post-now', { defaultValue: 'Post now' })}
                 </Button>
                 <Button
                   size="sm"
@@ -204,7 +207,7 @@ function Section({
                   className="gap-1 text-site-text-muted hover:text-site-danger"
                 >
                   {busy === `d:${r.id}` ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
-                  Discard
+                  {t('discard', { defaultValue: 'Discard' })}
                 </Button>
               </div>
             </div>

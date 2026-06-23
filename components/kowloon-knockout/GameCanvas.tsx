@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { initGame } from '@/lib/kowloon-knockout/game/engine';
 import { initMultiplayerGame } from '@/lib/kowloon-knockout/game/multiplayerEngine';
 import { useGameStore } from '@/lib/kowloon-knockout/store';
@@ -8,6 +9,7 @@ import type { GameState } from '@/lib/kowloon-knockout/game/fighters/types';
 import { CANVAS_WIDTH, CANVAS_HEIGHT, SCALE } from '@/lib/kowloon-knockout/game/fighters/types';
 
 export default function GameCanvas() {
+    const { t } = useTranslation("c-kowloon-knockout");
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const cleanupRef = useRef<(() => void) | null>(null);
     const { selectedClass, opponentClass, isMultiplayer, isHost, setPhase, updateFightState } = useGameStore();
@@ -70,27 +72,27 @@ export default function GameCanvas() {
             <div className="controls-hint">
                 <div className="control-group">
                     <span className="control-key">A/D</span>
-                    <span className="control-label">Move</span>
+                    <span className="control-label">{t("move", { defaultValue: "Move" })}</span>
                 </div>
                 <div className="control-group">
                     <span className="control-key">S</span>
-                    <span className="control-label">Block</span>
+                    <span className="control-label">{t("block", { defaultValue: "Block" })}</span>
                 </div>
                 <div className="control-group">
                     <span className="control-key">J</span>
-                    <span className="control-label">Jab</span>
+                    <span className="control-label">{t("jab", { defaultValue: "Jab" })}</span>
                 </div>
                 <div className="control-group">
                     <span className="control-key">K</span>
-                    <span className="control-label">Cross</span>
+                    <span className="control-label">{t("cross", { defaultValue: "Cross" })}</span>
                 </div>
                 <div className="control-group">
                     <span className="control-key">L</span>
-                    <span className="control-label">Hook</span>
+                    <span className="control-label">{t("hook", { defaultValue: "Hook" })}</span>
                 </div>
                 <div className="control-group">
                     <span className="control-key">U</span>
-                    <span className="control-label">Uppercut</span>
+                    <span className="control-label">{t("uppercut", { defaultValue: "Uppercut" })}</span>
                 </div>
             </div>
         </div>

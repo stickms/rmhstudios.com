@@ -2,6 +2,7 @@
 
 import { Canvas } from '@react-three/fiber';
 import { useRef, useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { TimeOfDay } from '../shared/types';
 import { useForestAudio } from '../audio/useForestAudio';
 import { ExploreScene } from './ExploreScene';
@@ -12,6 +13,7 @@ export function ExploreGame() {
     const [flashlightOn, setFlashlightOn] = useState(false);
     const night = mode === 'night';
 
+    const { t } = useTranslation("c-forest-explorer");
     const { muted, toggleMute, volume, setVolume } = useForestAudio(mode, locked);
 
     const nightRef  = useRef(night);
@@ -50,9 +52,9 @@ export function ExploreGame() {
                     <div className="text-center text-white px-8 py-9 rounded-2xl bg-black/30 border border-white/10 max-w-xs w-full space-y-3">
                         <div className="text-5xl">🌲</div>
                         <h1 className="text-3xl font-bold tracking-wide text-green-200">
-                            Forest Explorer
+                            {t("forest-explorer-title", { defaultValue: "Forest Explorer" })}
                         </h1>
-                        <p className="text-green-300/70 text-sm">Wander a peaceful ancient forest</p>
+                        <p className="text-green-300/70 text-sm">{t("forest-explorer-subtitle", { defaultValue: "Wander a peaceful ancient forest" })}</p>
 
                         <div className="flex gap-2 pt-1">
                             <button
@@ -63,7 +65,7 @@ export function ExploreGame() {
                                 }`}
                                 onClick={() => setMode('day')}
                             >
-                                ☀ Day
+                                {t("day", { defaultValue: "☀ Day" })}
                             </button>
                             <button
                                 className={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors cursor-pointer ${
@@ -73,19 +75,19 @@ export function ExploreGame() {
                                 }`}
                                 onClick={() => setMode('night')}
                             >
-                                ☾ Night
+                                {t("night", { defaultValue: "☾ Night" })}
                             </button>
                         </div>
 
                         <div className="pt-1 space-y-1 text-xs text-zinc-400">
                             <p>
-                                <span className="text-zinc-200">WASD</span> — walk &nbsp;·&nbsp;{' '}
-                                <span className="text-zinc-200">Shift</span> — run &nbsp;·&nbsp;{' '}
-                                <span className="text-zinc-200">Space</span> — jump
+                                <span className="text-zinc-200">WASD</span>{t("hint-walk", { defaultValue: " — walk" })} &nbsp;·&nbsp;{' '}
+                                <span className="text-zinc-200">Shift</span>{t("hint-run", { defaultValue: " — run" })} &nbsp;·&nbsp;{' '}
+                                <span className="text-zinc-200">Space</span>{t("hint-jump", { defaultValue: " — jump" })}
                             </p>
                             <p>
-                                <span className="text-zinc-200">Mouse</span> — look &nbsp;·&nbsp;{' '}
-                                <span className="text-zinc-200">ESC</span> — pause
+                                <span className="text-zinc-200">Mouse</span>{t("hint-look", { defaultValue: " — look" })} &nbsp;·&nbsp;{' '}
+                                <span className="text-zinc-200">ESC</span>{t("hint-pause", { defaultValue: " — pause" })}
                             </p>
                         </div>
                         <button
@@ -96,7 +98,7 @@ export function ExploreGame() {
                             }`}
                             onClick={toggleMute}
                         >
-                            {muted ? '🔇 Sound Off' : '🔊 Sound On'}
+                            {muted ? t("sound-off", { defaultValue: "🔇 Sound Off" }) : t("sound-on", { defaultValue: "🔊 Sound On" })}
                         </button>
                         {!muted && (
                             <div className="flex items-center gap-2 px-1">
@@ -121,7 +123,7 @@ export function ExploreGame() {
                                 canvas?.click();
                             }}
                         >
-                            Enter the Forest
+                            {t("enter-the-forest", { defaultValue: "Enter the Forest" })}
                         </button>
                     </div>
                 </div>
@@ -137,14 +139,14 @@ export function ExploreGame() {
                                     : 'bg-black/50 border-white/10 text-white/40'
                             }`}
                         >
-                            🔦 {flashlightOn ? 'ON' : 'OFF'}
+                            {flashlightOn ? t("flashlight-on", { defaultValue: "🔦 ON" }) : t("flashlight-off", { defaultValue: "🔦 OFF" })}
                         </span>
                     )}
                     <button
                         className="px-3 py-1.5 rounded-lg bg-black/50 backdrop-blur-sm border border-white/10 text-white/60 hover:text-white text-xs font-medium transition-colors cursor-pointer"
                         onClick={() => setMode((m) => m === 'day' ? 'night' : 'day')}
                     >
-                        {night ? '☀ Day' : '☾ Night'}
+                        {night ? t("day", { defaultValue: "☀ Day" }) : t("night", { defaultValue: "☾ Night" })}
                     </button>
                     <button
                         className="px-3 py-1.5 rounded-lg bg-black/50 backdrop-blur-sm border border-white/10 text-white/60 hover:text-white text-xs font-medium transition-colors cursor-pointer"
@@ -166,7 +168,9 @@ export function ExploreGame() {
 
             {locked && (
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/30 text-xs tracking-widest whitespace-nowrap">
-                    WASD · SHIFT run · SPACE jump{night ? ' · F flashlight' : ''} · ESC pause
+                    {night
+                        ? t("locked-hint-night", { defaultValue: "WASD · SHIFT run · SPACE jump · F flashlight · ESC pause" })
+                        : t("locked-hint-day", { defaultValue: "WASD · SHIFT run · SPACE jump · ESC pause" })}
                 </div>
             )}
         </div>

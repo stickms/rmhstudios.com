@@ -1,4 +1,5 @@
 import { useRef, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useStudioStore } from '@/lib/studio/store';
 import { getPixelsPerBeat, snapToGrid, pixelToBeat } from '@/lib/studio/utils/grid';
 import type { Track, Clip, MidiClipData } from '@/lib/studio/types';
@@ -10,6 +11,7 @@ interface TrackLaneProps {
 }
 
 export function TrackLane({ track, width, isSelected }: TrackLaneProps) {
+  const { t } = useTranslation("c-studio");
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { clips, zoomX, scrollX, timeSignature, selectedClipIds, selectedTool, snapEnabled, snapValue } = useStudioStore();
 
@@ -112,7 +114,7 @@ export function TrackLane({ track, width, isSelected }: TrackLaneProps) {
             id: crypto.randomUUID(),
             trackId: track.id,
             type: 'midi',
-            name: 'New Pattern',
+            name: t("new-pattern", { defaultValue: "New Pattern" }),
             startBeat: snappedBeat,
             durationBeats: timeSignature[0], // 1 bar
             color: track.color,
@@ -122,7 +124,7 @@ export function TrackLane({ track, width, isSelected }: TrackLaneProps) {
             id: crypto.randomUUID(),
             trackId: track.id,
             type: 'audio',
-            name: 'New Clip',
+            name: t("new-clip", { defaultValue: "New Clip" }),
             startBeat: snappedBeat,
             durationBeats: timeSignature[0],
             color: track.color,

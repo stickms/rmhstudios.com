@@ -10,6 +10,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { HexColorPicker } from 'react-colorful';
 import { Pipette } from 'lucide-react';
+import { useTranslation } from "react-i18next";
 
 interface ColorPaletteProps {
   colors: string[];
@@ -22,6 +23,7 @@ interface ColorPaletteProps {
 }
 
 export default function ColorPalette({ colors, selectedColor, onSelect, swatchSize = 'w-8 h-8', label }: ColorPaletteProps) {
+  const { t } = useTranslation("c-rmhbox");
   const [showPicker, setShowPicker] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
 
@@ -55,7 +57,7 @@ export default function ColorPalette({ colors, selectedColor, onSelect, swatchSi
               : 'border-(--rmhbox-border) hover:scale-105'
           }`}
           style={{ backgroundColor: color }}
-          aria-label={`Select color ${color}`}
+          aria-label={t("select-color", { defaultValue: "Select color {{color}}", color })}
         />
       ))}
       {/* Custom color picker circle — aligned with swatches via inline-flex */}
@@ -68,8 +70,8 @@ export default function ColorPalette({ colors, selectedColor, onSelect, swatchSi
           }`}
           style={{ backgroundColor: selectedColor }}
           onClick={() => setShowPicker((v) => !v)}
-          title="Custom color"
-          aria-label="Custom color picker"
+          title={t("custom-color", { defaultValue: "Custom color" })}
+          aria-label={t("custom-color-picker", { defaultValue: "Custom color picker" })}
         >
           <Pipette size={14} className="text-white drop-shadow-[0_0_2px_rgba(0,0,0,0.8)]" />
         </button>

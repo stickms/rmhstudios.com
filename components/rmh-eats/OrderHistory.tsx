@@ -6,6 +6,7 @@ import { useEatsStore } from '@/lib/store/useEatsStore';
 import { mockRestaurants } from '@/lib/rmh-eats/mockData';
 import { toast } from 'sonner';
 import type { Order } from '@/lib/rmh-eats/types';
+import { useTranslation } from 'react-i18next';
 
 const STATUS_LABELS: Record<string, string> = {
     received: 'Order Received',
@@ -22,6 +23,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function OrderHistory() {
+    const { t } = useTranslation("c-rmh-eats");
     const { orders, setView, openTracker, openReview, addToCart, openIssueReport, openSplitBill } = useEatsStore();
 
     if (orders.length === 0) {
@@ -34,18 +36,18 @@ export default function OrderHistory() {
                     >
                         <ArrowLeft className="h-5 w-5" />
                     </button>
-                    <h2 className="text-xl font-bold text-white">Order History</h2>
+                    <h2 className="text-xl font-bold text-white">{t("order-history", { defaultValue: "Order History" })}</h2>
                 </div>
 
                 <div className="flex flex-col items-center gap-3 py-20 text-slate-500">
                     <Package className="h-12 w-12 opacity-30" />
-                    <p className="font-medium text-slate-400">No orders yet</p>
-                    <p className="text-sm text-center">Place your first order to see it here!</p>
+                    <p className="font-medium text-slate-400">{t("no-orders-yet", { defaultValue: "No orders yet" })}</p>
+                    <p className="text-sm text-center">{t("place-first-order", { defaultValue: "Place your first order to see it here!" })}</p>
                     <button
                         onClick={() => setView('home')}
                         className="mt-3 rounded-xl bg-orange-500 hover:bg-orange-400 px-5 py-2.5 text-sm font-medium text-white transition-colors"
                     >
-                        Browse Restaurants
+                        {t("browse-restaurants", { defaultValue: "Browse Restaurants" })}
                     </button>
                 </div>
             </div>
@@ -62,8 +64,8 @@ export default function OrderHistory() {
                     <ArrowLeft className="h-5 w-5" />
                 </button>
                 <div>
-                    <h2 className="text-xl font-bold text-white">Order History</h2>
-                    <p className="text-sm text-slate-400">{orders.length} order{orders.length !== 1 ? 's' : ''}</p>
+                    <h2 className="text-xl font-bold text-white">{t("order-history", { defaultValue: "Order History" })}</h2>
+                    <p className="text-sm text-slate-400">{orders.length} {orders.length !== 1 ? t("orders-plural", { defaultValue: "orders" }) : t("order-singular", { defaultValue: "order" })}</p>
                 </div>
             </div>
 
@@ -89,10 +91,10 @@ export default function OrderHistory() {
                                 }
                             });
                             if (added > 0) {
-                                toast.success(`${added} item${added !== 1 ? 's' : ''} added to cart!`);
+                                toast.success(t("reorder-added-to-cart", { count: added, defaultValue: "{{count}} item(s) added to cart!" }));
                                 setView('home');
                             } else {
-                                toast.error('Could not reorder — items no longer available');
+                                toast.error(t("reorder-unavailable", { defaultValue: "Could not reorder — items no longer available" }));
                             }
                         }}
                     />
@@ -119,6 +121,7 @@ function OrderCard({
     onReportIssue: () => void;
     onSplitBill: () => void;
 }) {
+    const { t } = useTranslation("c-rmh-eats");
     const restaurant = mockRestaurants.find((r) => r.id === order.restaurantId);
     const date = new Date(order.placedAt);
     const dateStr = date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
@@ -139,14 +142,19 @@ function OrderCard({
                     <div>
                         <p className="font-semibold text-white">{order.restaurantName}</p>
                         <p className="text-xs text-slate-400">
-                            {dateStr} at {timeStr}
+                            {t("date-at-time", { date: dateStr, time: timeStr, defaultValue: "{{date}} at {{time}}" })}
                         </p>
                     </div>
                 </div>
                 <span
                     className={`rounded-full border px-2.5 py-1 text-xs font-medium ${STATUS_COLORS[order.status]}`}
                 >
-                    {STATUS_LABELS[order.status]}
+                    {({
+                        received: t("status-received", { defaultValue: "Order Received" }),
+                        preparing: t("status-preparing", { defaultValue: "Preparing" }),
+                        out_for_delivery: t("status-out-for-delivery", { defaultValue: "Out for Delivery" }),
+                        delivered: t("status-delivered", { defaultValue: "Delivered" }),
+                    } as Record<string, string>)[order.status] ?? STATUS_LABELS[order.status]}
                 </span>
             </div>
 
@@ -158,8 +166,7 @@ function OrderCard({
                 <div className="flex items-center justify-between mt-2">
                     <p className="text-sm font-semibold text-orange-400">${order.total.toFixed(2)}</p>
                     <p className="text-xs text-slate-500">
-                        {order.items.reduce((s, i) => s + i.quantity, 0)} item
-                        {order.items.reduce((s, i) => s + i.quantity, 0) !== 1 ? 's' : ''}
+                        {(() => { const qty = order.items.reduce((s, i) => s + i.quantity, 0); return `${qty} ${qty !== 1 ? t("items-plural", { defaultValue: "items" }) : t("item-singular", { defaultValue: "item" })}`; })()}
                     </p>
                 </div>
             </div>
@@ -172,7 +179,7 @@ function OrderCard({
                         className="flex items-center gap-1.5 rounded-xl bg-orange-500 hover:bg-orange-400 px-3 py-2 text-sm font-medium text-white transition-colors"
                     >
                         <Clock className="h-4 w-4" />
-                        Track
+                        {t("track", { defaultValue: "Track" })}
                     </button>
                 )}
                 {order.status === 'delivered' && !order.reviewed && (
@@ -181,13 +188,13 @@ function OrderCard({
                         className="flex items-center gap-1.5 rounded-xl bg-yellow-500 hover:bg-yellow-400 px-3 py-2 text-sm font-medium text-slate-900 transition-colors"
                     >
                         <Star className="h-4 w-4" />
-                        Review
+                        {t("review", { defaultValue: "Review" })}
                     </button>
                 )}
                 {order.status === 'delivered' && order.reviewed && (
                     <span className="flex items-center gap-1.5 rounded-xl bg-green-500/10 border border-green-500/30 px-3 py-2 text-sm text-green-400">
                         <Star className="h-4 w-4 fill-current" />
-                        Reviewed
+                        {t("reviewed", { defaultValue: "Reviewed" })}
                     </span>
                 )}
                 <button
@@ -195,7 +202,7 @@ function OrderCard({
                     className="flex items-center gap-1.5 rounded-xl bg-slate-700 hover:bg-slate-600 px-3 py-2 text-sm font-medium text-white transition-colors"
                 >
                     <RotateCcw className="h-4 w-4" />
-                    Reorder
+                    {t("reorder", { defaultValue: "Reorder" })}
                 </button>
                 {order.status === 'delivered' && (
                     <button
@@ -203,7 +210,7 @@ function OrderCard({
                         className="flex items-center gap-1.5 rounded-xl bg-slate-700 hover:bg-slate-600 px-3 py-2 text-sm font-medium text-white transition-colors"
                     >
                         <Users className="h-4 w-4" />
-                        Split
+                        {t("split", { defaultValue: "Split" })}
                     </button>
                 )}
                 {order.status === 'delivered' && !order.issueReported && (
@@ -212,13 +219,13 @@ function OrderCard({
                         className="flex items-center gap-1.5 rounded-xl bg-slate-700/50 hover:bg-slate-700 border border-slate-700/50 px-3 py-2 text-sm font-medium text-yellow-400 hover:text-yellow-300 transition-colors"
                     >
                         <AlertTriangle className="h-4 w-4" />
-                        Issue
+                        {t("issue", { defaultValue: "Issue" })}
                     </button>
                 )}
                 {order.status === 'delivered' && order.issueReported && (
                     <span className="flex items-center gap-1.5 rounded-xl bg-yellow-500/10 border border-yellow-500/30 px-3 py-2 text-xs text-yellow-500">
                         <AlertTriangle className="h-3.5 w-3.5" />
-                        Issue filed
+                        {t("issue-filed", { defaultValue: "Issue filed" })}
                     </span>
                 )}
                 {isActive && (
@@ -226,7 +233,7 @@ function OrderCard({
                         onClick={onTrack}
                         className="ml-auto flex items-center gap-1 text-xs text-slate-400 hover:text-orange-400 transition-colors"
                     >
-                        Details
+                        {t("details", { defaultValue: "Details" })}
                         <ChevronRight className="h-3.5 w-3.5" />
                     </button>
                 )}

@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslation } from "react-i18next";
 
 interface Player {
     username: string;
@@ -9,6 +10,7 @@ interface Player {
 }
 
 export function LeaderboardSidebar() {
+    const { t } = useTranslation("c-game");
     const [leaderboard, setLeaderboard] = React.useState<Player[]>([]);
     const [loading, setLoading] = React.useState(true);
 
@@ -37,18 +39,18 @@ export function LeaderboardSidebar() {
              <div className="flex items-center gap-2 mb-2">
                 <div className="w-2 h-2 rounded-full bg-neon-cyan animate-pulse shadow-[0_0_10px_#06b6d4]" />
                 <h3 className="text-xs font-bold text-neon-cyan uppercase tracking-widest neon-glow">
-                    Global Ranking
+                    {t("global-ranking", { defaultValue: "Global Ranking" })}
                 </h3>
             </div>
 
             <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
                 {loading && leaderboard.length === 0 ? (
                     <div className="text-center text-zinc-500 py-4 text-xs animate-pulse">
-                        SYNCING DATABASE...
+                        {t("syncing-database", { defaultValue: "SYNCING DATABASE..." })}
                     </div>
                 ) : leaderboard.length === 0 ? (
                     <div className="text-center text-zinc-600 py-4 text-xs border border-dashed border-zinc-800 rounded">
-                        NO SCORES YET
+                        {t("no-scores-yet", { defaultValue: "NO SCORES YET" })}
                     </div>
                 ) : (
                     leaderboard.map((player, index) => (
@@ -72,7 +74,7 @@ export function LeaderboardSidebar() {
                                             {player.username}
                                         </span>
                                         <span className="text-[10px] text-zinc-500 font-mono">
-                                            {player.gamesPlayed} GAMES
+                                            {t("games-played", { defaultValue: "{{count}} GAMES", count: player.gamesPlayed })}
                                         </span>
                                     </div>
                                 </div>

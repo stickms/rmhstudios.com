@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback, lazy, Suspense } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNotesStore } from '@/lib/store/useNotesStore';
 import { useNotesDataStore } from '@/lib/store/useNotesDataStore';
 import { Note } from './types';
@@ -19,6 +20,7 @@ const CalendarPanel = lazy(() => import('./CalendarPanel'));
 const MoodPanel = lazy(() => import('./MoodPanel'));
 
 export default function NotesApp() {
+  const { t } = useTranslation("c-rmh-notes");
   const { isDarkMode, selectedView, selectedNoteId, sidebarOpen, searchOpen, quickCaptureOpen, toggleSearch, toggleQuickCapture, selectNote } = useNotesStore();
 
   const dataStore = useNotesDataStore();
@@ -74,11 +76,11 @@ export default function NotesApp() {
       if (hour >= 20 && !sessionStorage.getItem('notes-reflection-shown')) {
         sessionStorage.setItem('notes-reflection-shown', '1');
         setTimeout(() => {
-          toast('🌙 Evening Reflection', {
-            description: 'What did you accomplish today?',
+          toast('🌙 ' + t("evening-reflection", { defaultValue: "Evening Reflection" }), {
+            description: t("evening-reflection-desc", { defaultValue: "What did you accomplish today?" }),
             duration: 8000,
             action: {
-              label: 'Write it down',
+              label: t("write-it-down", { defaultValue: "Write it down" }),
               onClick: () => {
                 createNote({ title: `🌙 Reflection – ${new Date().toLocaleDateString()}` });
               },
@@ -114,7 +116,7 @@ export default function NotesApp() {
   if (!mounted) {
     return (
       <div className="notes-theme flex h-screen items-center justify-center" style={{ background: 'var(--notes-bg)', color: 'var(--notes-text)' }}>
-        <div className="animate-pulse text-sm opacity-50">Loading notes...</div>
+        <div className="animate-pulse text-sm opacity-50">{t("loading-notes", { defaultValue: "Loading notes..." })}</div>
       </div>
     );
   }
@@ -192,7 +194,7 @@ export default function NotesApp() {
           <QuickCaptureModal
             onSave={async (title, content) => {
               dataStore.createNote({ title, content });
-              toast.success('Note captured!');
+              toast.success(t("note-captured", { defaultValue: "Note captured!" }));
               toggleQuickCapture();
             }}
             onClose={toggleQuickCapture}
@@ -204,20 +206,21 @@ export default function NotesApp() {
 }
 
 function EmptyEditorState({ onCreateNote }: { onCreateNote: () => void }) {
+  const { t } = useTranslation("c-rmh-notes");
   return (
     <div className="flex-1 flex flex-col items-center justify-center gap-4 p-8" style={{ background: 'var(--notes-surface)', color: 'var(--notes-text-muted)' }}>
       <div className="text-7xl opacity-30 select-none">📝</div>
-      <p className="text-lg font-medium" style={{ color: 'var(--notes-text-muted)' }}>Select a note or create a new one</p>
+      <p className="text-lg font-medium" style={{ color: 'var(--notes-text-muted)' }}>{t("select-or-create", { defaultValue: "Select a note or create a new one" })}</p>
       <button
         onClick={() => onCreateNote()}
         className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
         style={{ background: 'var(--notes-accent)', color: 'var(--notes-accent-fg)' }}
       >
-        ✦ New Note
+        ✦ {t("new-note", { defaultValue: "New Note" })}
       </button>
       <p className="text-xs" style={{ color: 'var(--notes-text-subtle)' }}>
-        <kbd className="px-1.5 py-0.5 rounded text-xs" style={{ background: 'var(--notes-surface-2)', border: '1px solid var(--notes-border)' }}>⌘K</kbd> to search &nbsp;·&nbsp;
-        <kbd className="px-1.5 py-0.5 rounded text-xs" style={{ background: 'var(--notes-surface-2)', border: '1px solid var(--notes-border)' }}>⌘⇧N</kbd> to quick capture
+        <kbd className="px-1.5 py-0.5 rounded text-xs" style={{ background: 'var(--notes-surface-2)', border: '1px solid var(--notes-border)' }}>⌘K</kbd> {t("to-search", { defaultValue: "to search" })} &nbsp;·&nbsp;
+        <kbd className="px-1.5 py-0.5 rounded text-xs" style={{ background: 'var(--notes-surface-2)', border: '1px solid var(--notes-border)' }}>⌘⇧N</kbd> {t("to-quick-capture", { defaultValue: "to quick capture" })}
       </p>
     </div>
   );

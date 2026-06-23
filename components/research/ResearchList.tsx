@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { ResearchArticle } from '@/lib/research';
 import { ResearchCard } from './ResearchCard';
@@ -8,6 +9,7 @@ import { ResearchCard } from './ResearchCard';
 const ARTICLES_PER_PAGE = 6;
 
 export function ResearchList({ articles }: { articles: ResearchArticle[] }) {
+  const { t } = useTranslation("c-research");
   const [page, setPage] = useState(1);
 
   const totalPages = Math.ceil(articles.length / ARTICLES_PER_PAGE);
@@ -29,7 +31,7 @@ export function ResearchList({ articles }: { articles: ResearchArticle[] }) {
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
             className="p-2 rounded-lg border border-(--site-border) text-(--site-text-muted) hover:text-(--site-text) hover:border-(--site-accent)/50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-            aria-label="Previous page"
+            aria-label={t("previous-page", { defaultValue: "Previous page" })}
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -52,7 +54,7 @@ export function ResearchList({ articles }: { articles: ResearchArticle[] }) {
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
             className="p-2 rounded-lg border border-(--site-border) text-(--site-text-muted) hover:text-(--site-text) hover:border-(--site-accent)/50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-            aria-label="Next page"
+            aria-label={t("next-page", { defaultValue: "Next page" })}
           >
             <ChevronRight className="w-4 h-4" />
           </button>

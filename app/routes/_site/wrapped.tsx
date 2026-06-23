@@ -5,6 +5,7 @@ import { WrappedColumn } from '@/components/feed/WrappedColumn';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export const Route = createFileRoute('/_site/wrapped')({
   head: () => ({ meta: [{ title: 'Wrapped | RMH Studios' }] }),
@@ -12,6 +13,7 @@ export const Route = createFileRoute('/_site/wrapped')({
 });
 
 function WrappedPage() {
+  const { t } = useTranslation("site");
   const { data: session, isPending } = useSession();
 
   return (
@@ -26,9 +28,9 @@ function WrappedPage() {
           </div>
         ) : !session ? (
           <div className="flex flex-col items-center gap-3 px-6 py-24 text-center">
-            <p className="font-medium text-site-text">Sign in to see your Wrapped</p>
+            <p className="font-medium text-site-text">{t("sign-in-to-see-wrapped", { defaultValue: "Sign in to see your Wrapped" })}</p>
             <Link to="/login" search={{ callbackURL: '/wrapped' }}>
-              <Button variant="accent">Sign in</Button>
+              <Button variant="accent">{t("sign-in", { defaultValue: "Sign in" })}</Button>
             </Link>
           </div>
         ) : (

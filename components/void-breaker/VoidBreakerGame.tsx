@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useEffect, useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { asset } from '@/lib/storage/asset';
 import { VoidBreakerEngine } from '@/lib/void-breaker/game';
 import { VoidBreakerRenderer } from '@/lib/void-breaker/renderer';
@@ -36,6 +37,7 @@ const EMPTY_HUD: HUDState = {
 };
 
 export function VoidBreakerGame() {
+  const { t } = useTranslation('c-void-breaker');
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gameRef = useRef<VoidBreakerEngine | null>(null);
   const rendererRef = useRef<VoidBreakerRenderer | null>(null);
@@ -451,20 +453,20 @@ export function VoidBreakerGame() {
                 hud.multiplier > 2 ? 'text-[#d4af37]' : 'text-zinc-400'
                 }`}>
                 {hud.multiplier.toFixed(1)}x
-                {hud.combo > 1 && <span className="text-[#ff00cc] ml-1">COMBO {hud.combo}</span>}
+                {hud.combo > 1 && <span className="text-[#ff00cc] ml-1">{t('combo', { defaultValue: 'COMBO {{combo}}', combo: hud.combo })}</span>}
               </div>
             </div>
 
             {/* Wave */}
             <div className="bg-black/70 rounded px-3 py-1 border border-[#00f5ff]/20 backdrop-blur-sm">
               <div className="text-[#00f5ff] font-mono text-xs sm:text-sm font-bold text-center tracking-widest">
-                WAVE {hud.wave}
+                {t('wave', { defaultValue: 'WAVE {{wave}}', wave: hud.wave })}
               </div>
             </div>
 
             {/* HP hearts */}
             <div className="bg-black/70 rounded px-2 py-1 text-right border border-[#00f5ff]/20 backdrop-blur-sm">
-              <div className="text-[9px] font-mono text-zinc-500 mb-0.5">HP</div>
+              <div className="text-[9px] font-mono text-zinc-500 mb-0.5">{t('hp', { defaultValue: 'HP' })}</div>
               <div className="text-sm sm:text-base flex items-center gap-0.5">
                 {Array.from({ length: hud.maxHp }, (_, i) => (
                   <span key={i} className={i < hud.hp
@@ -507,9 +509,9 @@ export function VoidBreakerGame() {
             <div className="bg-black/70 rounded px-3 py-1.5 text-center border border-[#00f5ff]/20 backdrop-blur-sm">
               <div className="text-[9px] sm:text-[10px] text-zinc-500 font-mono mb-0.5">
                 {hud.detonateReady ? (
-                  <span className="text-[#00f5ff] animate-pulse">⚡ SPACE → VOID BURST</span>
+                  <span className="text-[#00f5ff] animate-pulse">{t('void-burst-ready', { defaultValue: '⚡ SPACE → VOID BURST' })}</span>
                 ) : (
-                  `SHARDS ${hud.shards}/${DET_MIN_SHARDS}`
+                  t('shards', { defaultValue: 'SHARDS {{shards}}/{{max}}', shards: hud.shards, max: DET_MIN_SHARDS })
                 )}
               </div>
               <div className="w-28 sm:w-36 h-1.5 bg-zinc-800/80 rounded-full overflow-hidden relative">
@@ -529,8 +531,8 @@ export function VoidBreakerGame() {
                 ? 'border-[#00f5ff]/60 text-[#00f5ff] bg-black/60'
                 : 'border-zinc-700/40 text-zinc-600 bg-black/40'
               }`}>
-              <span className="text-[7px]">SHIFT</span>
-              <span>DASH</span>
+              <span className="text-[7px]">{t('key-shift', { defaultValue: 'SHIFT' })}</span>
+              <span>{t('ability-dash', { defaultValue: 'DASH' })}</span>
               {!hud.dashReady && (
                 <div
                   className="absolute inset-0 rounded-lg bg-zinc-800/40"
@@ -547,8 +549,8 @@ export function VoidBreakerGame() {
                   ? 'border-[#00f5ff]/60 text-[#00f5ff] bg-black/60'
                   : 'border-zinc-700/40 text-zinc-600 bg-black/40'
               }`}>
-              <span className="text-[7px]">F KEY</span>
-              <span>FOCUS</span>
+              <span className="text-[7px]">{t('key-f', { defaultValue: 'F KEY' })}</span>
+              <span>{t('ability-focus', { defaultValue: 'FOCUS' })}</span>
               {!hud.focusReady && !hud.focusActive && (
                 <div
                   className="absolute inset-0 rounded-lg bg-zinc-800/40"
@@ -564,8 +566,8 @@ export function VoidBreakerGame() {
                   ? 'border-[#00f5ff]/60 text-[#00f5ff] bg-black/60'
                   : 'border-zinc-700/40 text-zinc-600 bg-black/40'
                 }`}>
-                <span className="text-[7px]">Q</span>
-                <span>PULSE</span>
+                <span className="text-[7px]">{t('key-q', { defaultValue: 'Q' })}</span>
+                <span>{t('ability-pulse', { defaultValue: 'PULSE' })}</span>
                 {!hud.voidPulseReady && hud.voidPulseCooldownFraction > 0 && (
                   <div
                     className="absolute inset-0 rounded-lg bg-zinc-800/40"
@@ -584,8 +586,8 @@ export function VoidBreakerGame() {
                     ? 'border-[#00f5ff]/60 text-[#00f5ff] bg-black/60'
                     : 'border-zinc-700/40 text-zinc-600 bg-black/40'
                 }`}>
-                <span className="text-[7px]">E</span>
-                <span>PHASE</span>
+                <span className="text-[7px]">{t('key-e', { defaultValue: 'E' })}</span>
+                <span>{t('ability-phase', { defaultValue: 'PHASE' })}</span>
                 {!hud.phaseShiftReady && !hud.phaseShiftActive && hud.phaseShiftCooldownFraction > 0 && (
                   <div
                     className="absolute inset-0 rounded-lg bg-zinc-800/40"
@@ -604,8 +606,8 @@ export function VoidBreakerGame() {
                     ? 'border-[#00f5ff]/60 text-[#00f5ff] bg-black/60'
                     : 'border-zinc-700/40 text-zinc-600 bg-black/40'
                 }`}>
-                <span className="text-[7px]">R</span>
-                <span>SHIELD</span>
+                <span className="text-[7px]">{t('key-r', { defaultValue: 'R' })}</span>
+                <span>{t('ability-shield', { defaultValue: 'SHIELD' })}</span>
                 {!hud.reflectShieldReady && !hud.reflectShieldActive && hud.reflectShieldCooldownFraction > 0 && (
                   <div
                     className="absolute inset-0 rounded-lg bg-zinc-800/40"
@@ -624,8 +626,8 @@ export function VoidBreakerGame() {
                     ? 'border-[#00ff88]/60 text-[#00ff88] bg-black/60'
                     : 'border-zinc-700/40 text-zinc-600 bg-black/40'
                 }`}>
-                <span className="text-[7px]">T</span>
-                <span>ALLY</span>
+                <span className="text-[7px]">{t('key-t', { defaultValue: 'T' })}</span>
+                <span>{t('ability-ally', { defaultValue: 'ALLY' })}</span>
                 {!hud.allySynergyReady && !hud.allySynergyActive && hud.allySynergyCooldownFraction > 0 && (
                   <div
                     className="absolute inset-0 rounded-lg bg-zinc-800/40"
@@ -643,7 +645,7 @@ export function VoidBreakerGame() {
         <div className="absolute top-14 right-2 sm:right-3 pointer-events-none">
           <div className="bg-black/70 border border-[#00ff88]/30 rounded px-2 py-1 backdrop-blur-sm min-w-[80px]">
             <div className="text-[9px] font-mono text-[#00ff88]/70 mb-0.5">
-              LIN {hud.allyDowned ? '— DOWN' : ''}
+              LIN {hud.allyDowned ? t('ally-down', { defaultValue: '— DOWN' }) : ''}
             </div>
             <div className="w-20 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
               <div
@@ -660,7 +662,7 @@ export function VoidBreakerGame() {
         <div className="absolute top-20 left-1/2 -translate-x-1/2 pointer-events-none z-30">
           <div className="bg-black/90 border border-[#00f5ff]/50 rounded-lg px-4 py-2 text-center backdrop-blur-md"
             style={{ boxShadow: '0 0 30px rgba(0,245,255,0.3)' }}>
-            <div className="text-[9px] text-zinc-400 font-mono uppercase tracking-widest">ABILITY UNLOCKED</div>
+            <div className="text-[9px] text-zinc-400 font-mono uppercase tracking-widest">{t('ability-unlocked', { defaultValue: 'ABILITY UNLOCKED' })}</div>
             <div className="text-[#00f5ff] font-bold font-mono text-sm mt-0.5">{hud.pendingUnlock.name}</div>
             <div className="text-zinc-400 text-[10px] mt-0.5">{hud.pendingUnlock.description}</div>
             <div className="text-[#d4af37] text-[9px] font-mono mt-1">[{hud.pendingUnlock.keybind}]</div>
@@ -673,7 +675,7 @@ export function VoidBreakerGame() {
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
           <div className="text-center">
             <div className="text-3xl font-black text-[#00f5ff] tracking-widest animate-pulse drop-shadow-[0_0_40px_rgba(0,245,255,0.8)]">
-              ZONE ADVANCE
+              {t('zone-advance', { defaultValue: 'ZONE ADVANCE' })}
             </div>
             <div className="text-sm text-zinc-400 font-mono mt-2">{hud.mapName}</div>
           </div>
@@ -684,7 +686,7 @@ export function VoidBreakerGame() {
       {showGame && hud.controlsInverted && (
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-20">
           <div className="text-[#0066ff] font-black text-lg font-mono tracking-widest animate-pulse opacity-70">
-            ⚠ REALITY FRACTURED ⚠
+            {t('reality-fractured', { defaultValue: '⚠ REALITY FRACTURED ⚠' })}
           </div>
         </div>
       )}
@@ -717,7 +719,7 @@ export function VoidBreakerGame() {
       {showGame && hud.countdown > 0 && gameRef.current?.state === 'countdown' && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="text-7xl sm:text-8xl font-black text-[#00f5ff] drop-shadow-[0_0_40px_rgba(0,245,255,0.6)] animate-pulse">
-            {Math.ceil(hud.countdown) > 0 ? Math.ceil(hud.countdown) : 'GO!'}
+            {Math.ceil(hud.countdown) > 0 ? Math.ceil(hud.countdown) : t('go', { defaultValue: 'GO!' })}
           </div>
         </div>
       )}
@@ -726,7 +728,7 @@ export function VoidBreakerGame() {
       {showGame && hud.waveBreak && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="text-xl font-black text-[#d4af37] opacity-60 drop-shadow-[0_0_20px_rgba(212,175,55,0.5)] tracking-widest">
-            WAVE CLEAR
+            {t('wave-clear', { defaultValue: 'WAVE CLEAR' })}
           </div>
         </div>
       )}
@@ -737,27 +739,27 @@ export function VoidBreakerGame() {
           <div className="text-center space-y-4 bg-black/40 border border-[#00f5ff]/20 rounded-xl p-8 max-w-xs w-full mx-4"
             style={{ boxShadow: '0 0 40px rgba(0,245,255,0.1)' }}>
             <div className="text-3xl font-black text-[#00f5ff] tracking-widest drop-shadow-[0_0_20px_rgba(0,245,255,0.5)]">
-              PAUSED
+              {t('paused', { defaultValue: 'PAUSED' })}
             </div>
-            <div className="text-xs text-zinc-500 font-mono">WAVE {hud.wave}</div>
+            <div className="text-xs text-zinc-500 font-mono">{t('wave', { defaultValue: 'WAVE {{wave}}', wave: hud.wave })}</div>
 
             <div className="space-y-2 pt-2">
               <button
                 onClick={handleResume}
                 className="w-full py-3 px-6 rounded-lg bg-[#00f5ff]/10 hover:bg-[#00f5ff]/20 border border-[#00f5ff]/40 text-[#00f5ff] font-bold font-mono tracking-wider transition-all duration-200 hover:shadow-[0_0_20px_rgba(0,245,255,0.3)]"
               >
-                ▶ RESUME
+                {t('resume', { defaultValue: '▶ RESUME' })}
               </button>
               <button
                 onClick={handleSaveAndQuit}
                 className="w-full py-3 px-6 rounded-lg bg-[#ff00cc]/10 hover:bg-[#ff00cc]/20 border border-[#ff00cc]/40 text-[#ff00cc] font-bold font-mono tracking-wider transition-all duration-200 hover:shadow-[0_0_20px_rgba(255,0,204,0.3)]"
               >
-                💾 SAVE & QUIT
+                {t('save-and-quit', { defaultValue: '💾 SAVE & QUIT' })}
               </button>
             </div>
 
             <div className="text-[10px] text-zinc-600 font-mono pt-1">
-              ESC or tap to resume
+              {t('esc-to-resume', { defaultValue: 'ESC or tap to resume' })}
             </div>
           </div>
         </div>

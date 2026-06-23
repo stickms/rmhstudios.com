@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslation } from "react-i18next";
+
 import {
   BarChart,
   Bar,
@@ -267,10 +269,11 @@ const h3Style: React.CSSProperties = {
 };
 
 export function StatMechMARLPaper() {
+  const { t } = useTranslation("c-research");
   return (
     <>
       {/* 1. INTRODUCTION */}
-      <h2 style={h2Style}>1. Introduction</h2>
+      <h2 style={h2Style}>{t("intro-heading", { defaultValue: "1. Introduction" })}</h2>
 
       <p className="mb-4">
         The dynamics of multi-agent reinforcement learning (MARL) in adversarial game environments
@@ -376,7 +379,7 @@ export function StatMechMARLPaper() {
       </p>
 
       {/* 2. NOTATION AND MATHEMATICAL PRELIMINARIES */}
-      <h2 style={h2Style}>2. Notation and Mathematical Preliminaries</h2>
+      <h2 style={h2Style}>{t("notation-heading", { defaultValue: "2. Notation and Mathematical Preliminaries" })}</h2>
 
       <p className="mb-4">
         Before developing the statistical-mechanical theory of multi-agent learning, we
@@ -388,7 +391,7 @@ export function StatMechMARLPaper() {
         section for notation and proceed directly to Section 3.
       </p>
 
-      <h3 style={h3Style}>2.1 Stochastic Calculus and SDE Framework</h3>
+      <h3 style={h3Style}>{t("sde-framework-subheading", { defaultValue: "2.1 Stochastic Calculus and SDE Framework" })}</h3>
 
       <p className="mb-4">
         Throughout this paper we work on a filtered probability space{' '}
@@ -432,7 +435,7 @@ export function StatMechMARLPaper() {
         work (Risken, 1996).
       </p>
 
-      <h3 style={h3Style}>2.2 Statistical Mechanics Preliminaries</h3>
+      <h3 style={h3Style}>{t("stat-mech-prelim-subheading", { defaultValue: "2.2 Statistical Mechanics Preliminaries" })}</h3>
 
       <p className="mb-4">
         We adopt the canonical-ensemble formulation of equilibrium statistical mechanics. A
@@ -484,7 +487,7 @@ export function StatMechMARLPaper() {
         instabilities in cooperative MARL training.
       </p>
 
-      <h3 style={h3Style}>2.3 Graph-Theoretic Notation</h3>
+      <h3 style={h3Style}>{t("graph-notation-subheading", { defaultValue: "2.3 Graph-Theoretic Notation" })}</h3>
 
       <p className="mb-4">
         The interaction topology of the agent population is encoded in an undirected graph{' '}
@@ -541,9 +544,9 @@ export function StatMechMARLPaper() {
       </p>
 
       {/* 3. THEORETICAL FRAMEWORK */}
-      <h2 style={h2Style}>3. Theoretical Framework</h2>
+      <h2 style={h2Style}>{t("theory-heading", { defaultValue: "3. Theoretical Framework" })}</h2>
 
-      <h3 style={h3Style}>3.1 Agent Dynamics as Coupled Stochastic Processes</h3>
+      <h3 style={h3Style}>{t("agent-dynamics-subheading", { defaultValue: "3.1 Agent Dynamics as Coupled Stochastic Processes" })}</h3>
 
       <p className="mb-4">
         Consider a population of <Tex math="N" /> reinforcement learning agents, each
@@ -587,7 +590,7 @@ export function StatMechMARLPaper() {
         models in statistical physics.
       </p>
 
-      <h3 style={h3Style}>3.2 Mean-Field Reduction and the Fokker–Planck Equation</h3>
+      <h3 style={h3Style}>{t("mean-field-reduction-subheading", { defaultValue: "3.2 Mean-Field Reduction and the Fokker–Planck Equation" })}</h3>
 
       <p className="mb-4">
         In the mean-field limit, each agent interacts not with specific neighbors but with the
@@ -617,7 +620,7 @@ export function StatMechMARLPaper() {
         self-consistent mean-field equation of the Curie–Weiss model in magnetism.
       </p>
 
-      <h3 style={h3Style}>3.3 Order Parameter and Self-Consistency</h3>
+      <h3 style={h3Style}>{t("order-parameter-subheading", { defaultValue: "3.3 Order Parameter and Self-Consistency" })}</h3>
 
       <p className="mb-4">
         To characterize the macroscopic state of the agent population, we introduce the
@@ -657,7 +660,7 @@ export function StatMechMARLPaper() {
         two possible strategy-cluster orientations.
       </p>
 
-      <PaperFigure number={1} caption="Order parameter m as a function of reward-coupling strength J, showing the continuous phase transition at J_c ~ 0.75. Data points are from 64-agent simulations; the solid curve is the mean-field prediction.">
+      <PaperFigure number={1} caption={t("fig-1-caption", { defaultValue: "Order parameter m as a function of reward-coupling strength J, showing the continuous phase transition at J_c ~ 0.75. Data points are from 64-agent simulations; the solid curve is the mean-field prediction." })}>
         <ResponsiveContainer width="100%" height={300}>
           <ScatterChart margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -670,9 +673,9 @@ export function StatMechMARLPaper() {
       </PaperFigure>
 
       {/* 4. HAMILTONIAN FORMULATION AND ENERGY LANDSCAPE */}
-      <h2 style={h2Style}>4. Hamiltonian Formulation and Energy Landscape</h2>
+      <h2 style={h2Style}>{t("hamiltonian-heading", { defaultValue: "4. Hamiltonian Formulation and Energy Landscape" })}</h2>
 
-      <h3 style={h3Style}>4.1 Effective Hamiltonian for the Agent System</h3>
+      <h3 style={h3Style}>{t("effective-hamiltonian-subheading", { defaultValue: "4.1 Effective Hamiltonian for the Agent System" })}</h3>
 
       <p className="mb-4">
         The statistical-mechanical programme initiated in the preceding sections reaches its
@@ -729,7 +732,7 @@ export function StatMechMARLPaper() {
         of Gaussian fluctuations via <Tex math="\tau_k \sim |\lambda_k|^{-1}" />.
       </p>
 
-      <h3 style={h3Style}>4.2 Landscape Topology and Barrier Heights</h3>
+      <h3 style={h3Style}>{t("landscape-topology-subheading", { defaultValue: "4.2 Landscape Topology and Barrier Heights" })}</h3>
 
       <p className="mb-4">
         The global structure of the energy landscape is characterised by Morse theory, which
@@ -772,7 +775,7 @@ export function StatMechMARLPaper() {
         for the irreversibility of symmetry-broken phases in competitive multi-agent systems.
       </p>
 
-      <PaperFigure number={7} caption="Eigenvalue spectrum of the effective Hamiltonian Hessian M evaluated at the mean-field saddle point for a 10-agent system. Negative eigenvalues indicate unstable directions corresponding to incipient symmetry breaking.">
+      <PaperFigure number={7} caption={t("fig-7-caption", { defaultValue: "Eigenvalue spectrum of the effective Hamiltonian Hessian M evaluated at the mean-field saddle point for a 10-agent system. Negative eigenvalues indicate unstable directions corresponding to incipient symmetry breaking." })}>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={hamiltonianSpectrumData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -785,9 +788,9 @@ export function StatMechMARLPaper() {
       </PaperFigure>
 
       {/* 5. FREE ENERGY AND THERMODYNAMIC POTENTIALS */}
-      <h2 style={h2Style}>5. Free Energy and Thermodynamic Potentials</h2>
+      <h2 style={h2Style}>{t("free-energy-heading", { defaultValue: "5. Free Energy and Thermodynamic Potentials" })}</h2>
 
-      <h3 style={h3Style}>5.1 Partition Function and Free Energy</h3>
+      <h3 style={h3Style}>{t("partition-function-subheading", { defaultValue: "5.1 Partition Function and Free Energy" })}</h3>
 
       <p className="mb-4">
         The thermodynamic properties of the multi-agent system are encoded in the partition
@@ -832,7 +835,7 @@ export function StatMechMARLPaper() {
         become locked into correlated strategy clusters.
       </p>
 
-      <h3 style={h3Style}>5.2 Specific Heat and Critical Singularities</h3>
+      <h3 style={h3Style}>{t("specific-heat-subheading", { defaultValue: "5.2 Specific Heat and Critical Singularities" })}</h3>
 
       <p className="mb-4">
         The specific heat — the most experimentally accessible thermodynamic quantity in
@@ -863,7 +866,7 @@ export function StatMechMARLPaper() {
         the <Tex math="\varepsilon" />-expansion of Wilson and Fisher.
       </p>
 
-      <PaperFigure number={8} caption="Thermodynamic potentials as functions of inverse temperature β: Helmholtz free energy F(β), entropy S(β), and internal energy U(β). The entropy decrease near β ~ 0.75 signals the onset of strategy ordering.">
+      <PaperFigure number={8} caption={t("fig-8-caption", { defaultValue: "Thermodynamic potentials as functions of inverse temperature β: Helmholtz free energy F(β), entropy S(β), and internal energy U(β). The entropy decrease near β ~ 0.75 signals the onset of strategy ordering." })}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={freeEnergyData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -878,7 +881,7 @@ export function StatMechMARLPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      <PaperFigure number={9} caption="Specific heat C(J) as a function of coupling strength, exhibiting a sharp peak at J_c ~ 0.75. The near-divergence reflects the mean-field logarithmic singularity (α = 0), broadened by finite-size effects.">
+      <PaperFigure number={9} caption={t("fig-9-caption", { defaultValue: "Specific heat C(J) as a function of coupling strength, exhibiting a sharp peak at J_c ~ 0.75. The near-divergence reflects the mean-field logarithmic singularity (α = 0), broadened by finite-size effects." })}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={specificHeatData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -891,9 +894,9 @@ export function StatMechMARLPaper() {
       </PaperFigure>
 
       {/* 6. REPLICA SYMMETRY AND SPIN-GLASS ANALOGIES */}
-      <h2 style={h2Style}>6. Replica Symmetry and Spin-Glass Analogies</h2>
+      <h2 style={h2Style}>{t("replica-symmetry-heading", { defaultValue: "6. Replica Symmetry and Spin-Glass Analogies" })}</h2>
 
-      <h3 style={h3Style}>6.1 Edwards–Anderson Order Parameter</h3>
+      <h3 style={h3Style}>{t("edwards-anderson-subheading", { defaultValue: "6.1 Edwards–Anderson Order Parameter" })}</h3>
 
       <p className="mb-4">
         The preceding analysis assumes that the interaction couplings are deterministic and
@@ -951,7 +954,7 @@ export function StatMechMARLPaper() {
         failure mode.
       </p>
 
-      <h3 style={h3Style}>6.2 Replica Symmetry Breaking</h3>
+      <h3 style={h3Style}>{t("replica-symmetry-breaking-subheading", { defaultValue: "6.2 Replica Symmetry Breaking" })}</h3>
 
       <p className="mb-4">
         The replica-symmetric (RS) ansatz assumes <Tex math="Q_{ab} = q" /> for all{' '}
@@ -1008,7 +1011,7 @@ export function StatMechMARLPaper() {
         Parisi, and Virasoro.
       </p>
 
-      <PaperFigure number={10} caption="Edwards–Anderson order parameter q_EA and mean overlap q̄ as functions of coupling strength. The separation between q_EA and q̄ near J ~ 0.65 signals the onset of the spin-glass phase with frozen disorder.">
+      <PaperFigure number={10} caption={t("fig-10-caption", { defaultValue: "Edwards–Anderson order parameter q_EA and mean overlap q̄ as functions of coupling strength. The separation between q_EA and q̄ near J ~ 0.65 signals the onset of the spin-glass phase with frozen disorder." })}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={replicaSymmetryData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -1023,9 +1026,9 @@ export function StatMechMARLPaper() {
       </PaperFigure>
 
       {/* 7. FINITE-SIZE SCALING ANALYSIS */}
-      <h2 style={h2Style}>7. Finite-Size Scaling Analysis</h2>
+      <h2 style={h2Style}>{t("finite-size-heading", { defaultValue: "7. Finite-Size Scaling Analysis" })}</h2>
 
-      <h3 style={h3Style}>7.1 Scaling Ansatz and Binder Cumulant</h3>
+      <h3 style={h3Style}>{t("scaling-ansatz-subheading", { defaultValue: "7.1 Scaling Ansatz and Binder Cumulant" })}</h3>
 
       <p className="mb-4">
         The thermodynamic-limit results of the preceding sections are, strictly speaking,
@@ -1081,7 +1084,7 @@ export function StatMechMARLPaper() {
         that the MARL phase transition belongs to the mean-field universality class.
       </p>
 
-      <h3 style={h3Style}>7.2 Shift Exponent and Correction Terms</h3>
+      <h3 style={h3Style}>{t("shift-exponent-subheading", { defaultValue: "7.2 Shift Exponent and Correction Terms" })}</h3>
 
       <p className="mb-4">
         The apparent critical coupling in a finite system of <Tex math="N" /> agents is
@@ -1137,7 +1140,7 @@ export function StatMechMARLPaper() {
         to the large-<Tex math="N" /> regime.
       </p>
 
-      <PaperFigure number={11} caption="Finite-size scaling of the critical coupling J_c(N). The solid curve is the fit J_c(N) = 0.751 + 0.21·N^(-1/2), demonstrating N^(-1/2) convergence to the thermodynamic-limit value.">
+      <PaperFigure number={11} caption={t("fig-11-caption", { defaultValue: "Finite-size scaling of the critical coupling J_c(N). The solid curve is the fit J_c(N) = 0.751 + 0.21·N^(-1/2), demonstrating N^(-1/2) convergence to the thermodynamic-limit value." })}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={finiteSizeData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -1149,7 +1152,7 @@ export function StatMechMARLPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      <PaperFigure number={12} caption="Binder cumulant U_4(J) for system sizes N = 8, 16, 32, 64. The curves cross at J_c ~ 0.75 with universal value U_4* ~ 0.27, confirming mean-field universality.">
+      <PaperFigure number={12} caption={t("fig-12-caption", { defaultValue: "Binder cumulant U_4(J) for system sizes N = 8, 16, 32, 64. The curves cross at J_c ~ 0.75 with universal value U_4* ~ 0.27, confirming mean-field universality." })}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={binderCumulantData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -1166,9 +1169,9 @@ export function StatMechMARLPaper() {
       </PaperFigure>
 
       {/* 8. ENTROPY PRODUCTION AND IRREVERSIBILITY */}
-      <h2 style={h2Style}>8. Entropy Production and Irreversibility</h2>
+      <h2 style={h2Style}>{t("entropy-production-heading", { defaultValue: "8. Entropy Production and Irreversibility" })}</h2>
 
-      <h3 style={h3Style}>8.1 Non-Equilibrium Thermodynamics of Learning</h3>
+      <h3 style={h3Style}>{t("non-equilibrium-thermo-subheading", { defaultValue: "8.1 Non-Equilibrium Thermodynamics of Learning" })}</h3>
 
       <p className="mb-4">
         The training dynamics of multi-agent reinforcement learning systems are
@@ -1217,7 +1220,7 @@ export function StatMechMARLPaper() {
         macroscopic order is sustained by entropy export to the environment.
       </p>
 
-      <h3 style={h3Style}>8.2 Detailed Balance Violations</h3>
+      <h3 style={h3Style}>{t("detailed-balance-subheading", { defaultValue: "8.2 Detailed Balance Violations" })}</h3>
 
       <p className="mb-4">
         The fundamental distinction between equilibrium and non-equilibrium
@@ -1258,7 +1261,7 @@ export function StatMechMARLPaper() {
         dramatic qualitative reorganisation.
       </p>
 
-      <PaperFigure number={13} caption="Entropy production rate σ(t) and environmental dissipation rate during MARL training. The peak near step 30,000 coincides with the onset of collective strategy formation; the subsequent relaxation toward σ ~ 0 reflects approach to the non-equilibrium steady state.">
+      <PaperFigure number={13} caption={t("fig-13-caption", { defaultValue: "Entropy production rate σ(t) and environmental dissipation rate during MARL training. The peak near step 30,000 coincides with the onset of collective strategy formation; the subsequent relaxation toward σ ~ 0 reflects approach to the non-equilibrium steady state." })}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={entropyProductionData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -1333,9 +1336,9 @@ export function StatMechMARLPaper() {
       </p>
 
       {/* 9. FLUCTUATION-DISSIPATION RELATIONS */}
-      <h2 style={h2Style}>9. Fluctuation-Dissipation Relations</h2>
+      <h2 style={h2Style}>{t("fluctuation-dissipation-heading", { defaultValue: "9. Fluctuation-Dissipation Relations" })}</h2>
 
-      <h3 style={h3Style}>9.1 Generalized FDR for Agent Populations</h3>
+      <h3 style={h3Style}>{t("generalized-fdr-subheading", { defaultValue: "9.1 Generalized FDR for Agent Populations" })}</h3>
 
       <p className="mb-4">
         The fluctuation-dissipation relation (FDR), first established by Nyquist and
@@ -1392,7 +1395,7 @@ export function StatMechMARLPaper() {
         non-equilibrium behaviour in MARL systems.
       </p>
 
-      <h3 style={h3Style}>9.2 Aging and Non-Stationarity</h3>
+      <h3 style={h3Style}>{t("aging-non-stationarity-subheading", { defaultValue: "9.2 Aging and Non-Stationarity" })}</h3>
 
       <p className="mb-4">
         During the transient approach to steady state, the MARL system exhibits
@@ -1418,7 +1421,7 @@ export function StatMechMARLPaper() {
         sub-aging (<Tex math="\mu < 1" />) indicates partial equilibration of fast modes.
       </p>
 
-      <PaperFigure number={14} caption="Comparison of the response function Im χ̂(ω) and the rescaled correlation spectrum ωĈ(ω)/2T. Deviations at low frequencies indicate FDR violation and yield an effective temperature T_eff ~ 2.3T in the slow-mode sector.">
+      <PaperFigure number={14} caption={t("fig-14-caption", { defaultValue: "Comparison of the response function Im χ̂(ω) and the rescaled correlation spectrum ωĈ(ω)/2T. Deviations at low frequencies indicate FDR violation and yield an effective temperature T_eff ~ 2.3T in the slow-mode sector." })}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={fluctuationDissipationData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -1433,9 +1436,9 @@ export function StatMechMARLPaper() {
       </PaperFigure>
 
       {/* 10. DYNAMICAL SYSTEMS ANALYSIS AND CHAOS */}
-      <h2 style={h2Style}>10. Dynamical Systems Analysis and Chaos</h2>
+      <h2 style={h2Style}>{t("dynamical-systems-heading", { defaultValue: "10. Dynamical Systems Analysis and Chaos" })}</h2>
 
-      <h3 style={h3Style}>10.1 Lyapunov Exponents and Attractor Dimension</h3>
+      <h3 style={h3Style}>{t("lyapunov-exponents-subheading", { defaultValue: "10.1 Lyapunov Exponents and Attractor Dimension" })}</h3>
 
       <p className="mb-4">
         The MARL training dynamics, viewed as a continuous-time flow on the
@@ -1502,7 +1505,7 @@ export function StatMechMARLPaper() {
         as <Tex math="N" /> increases.
       </p>
 
-      <h3 style={h3Style}>10.2 Strange Attractors in Policy Space</h3>
+      <h3 style={h3Style}>{t("strange-attractors-subheading", { defaultValue: "10.2 Strange Attractors in Policy Space" })}</h3>
 
       <p className="mb-4">
         When the MARL dynamics are chaotic, the long-time trajectory is confined
@@ -1536,7 +1539,7 @@ export function StatMechMARLPaper() {
         embedded in the high-dimensional parameter space.
       </p>
 
-      <PaperFigure number={15} caption="Maximum Lyapunov exponent λ_1 and Kaplan–Yorke dimension D_KY as functions of agent population size N. The sub-linear growth of λ_1 ~ N^{0.38} contrasts with the extensive scaling D_KY ~ N, indicating extensively chaotic dynamics.">
+      <PaperFigure number={15} caption={t("fig-15-caption", { defaultValue: "Maximum Lyapunov exponent λ_1 and Kaplan–Yorke dimension D_KY as functions of agent population size N. The sub-linear growth of λ_1 ~ N^{0.38} contrasts with the extensive scaling D_KY ~ N, indicating extensively chaotic dynamics." })}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={lyapunovData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -1551,9 +1554,9 @@ export function StatMechMARLPaper() {
       </PaperFigure>
 
       {/* 11. DYNAMIC CRITICAL EXPONENTS AND RELAXATION */}
-      <h2 style={h2Style}>11. Dynamic Critical Exponents and Relaxation</h2>
+      <h2 style={h2Style}>{t("dynamic-critical-heading", { defaultValue: "11. Dynamic Critical Exponents and Relaxation" })}</h2>
 
-      <h3 style={h3Style}>11.1 Critical Slowing Down</h3>
+      <h3 style={h3Style}>{t("critical-slowing-down-subheading", { defaultValue: "11.1 Critical Slowing Down" })}</h3>
 
       <p className="mb-4">
         One of the most consequential manifestations of the MARL phase transition for
@@ -1612,7 +1615,7 @@ export function StatMechMARLPaper() {
         time-reversal symmetry of the noise.
       </p>
 
-      <h3 style={h3Style}>11.2 Landscape Ruggedness at Criticality</h3>
+      <h3 style={h3Style}>{t("landscape-ruggedness-subheading", { defaultValue: "11.2 Landscape Ruggedness at Criticality" })}</h3>
 
       <p className="mb-4">
         The energy landscape of the MARL system — defined by the effective
@@ -1652,7 +1655,7 @@ export function StatMechMARLPaper() {
         Section 11.1.
       </p>
 
-      <PaperFigure number={16} caption="Relaxation time τ as a function of coupling strength J, exhibiting the characteristic critical slowing down with divergence τ ~ |J - J_c|^{-zν} at J_c ~ 0.75, consistent with the mean-field dynamic exponent zν = 2.">
+      <PaperFigure number={16} caption={t("fig-16-caption", { defaultValue: "Relaxation time τ as a function of coupling strength J, exhibiting the characteristic critical slowing down with divergence τ ~ |J - J_c|^{-zν} at J_c ~ 0.75, consistent with the mean-field dynamic exponent zν = 2." })}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={dynamicCriticalData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -1664,7 +1667,7 @@ export function StatMechMARLPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      <PaperFigure number={17} caption="Landscape ruggedness (measured by the normalized complexity Σ) and mean barrier height ΔE as functions of coupling strength. Both quantities peak sharply at J_c ~ 0.75, reflecting the maximally complex energy landscape at criticality.">
+      <PaperFigure number={17} caption={t("fig-17-caption", { defaultValue: "Landscape ruggedness (measured by the normalized complexity Σ) and mean barrier height ΔE as functions of coupling strength. Both quantities peak sharply at J_c ~ 0.75, reflecting the maximally complex energy landscape at criticality." })}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={landscapeRuggednessData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -1679,9 +1682,9 @@ export function StatMechMARLPaper() {
       </PaperFigure>
 
       {/* 12. CRITICAL PHENOMENA */}
-      <h2 style={h2Style}>12. Critical Phenomena and Scaling Laws</h2>
+      <h2 style={h2Style}>{t("critical-phenomena-heading", { defaultValue: "12. Critical Phenomena and Scaling Laws" })}</h2>
 
-      <h3 style={h3Style}>12.1 Susceptibility and Correlation Length</h3>
+      <h3 style={h3Style}>{t("susceptibility-correlation-subheading", { defaultValue: "12.1 Susceptibility and Correlation Length" })}</h3>
 
       <p className="mb-4">
         Near the critical point, the fluctuations of the order parameter diverge according to
@@ -1716,7 +1719,7 @@ export function StatMechMARLPaper() {
         gradient updates.
       </p>
 
-      <PaperFigure number={2} caption="Susceptibility χ as a function of coupling strength J, showing the characteristic divergence at the critical point J_c ~ 0.75. The peak corresponds to maximal fluctuations in strategy alignment.">
+      <PaperFigure number={2} caption={t("fig-2-caption", { defaultValue: "Susceptibility χ as a function of coupling strength J, showing the characteristic divergence at the critical point J_c ~ 0.75. The peak corresponds to maximal fluctuations in strategy alignment." })}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={susceptibilityData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -1728,7 +1731,7 @@ export function StatMechMARLPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      <PaperFigure number={3} caption="Correlation length ξ as a function of coupling strength J. The sharp peak at J_c indicates the divergence of inter-agent strategy correlations at the phase transition.">
+      <PaperFigure number={3} caption={t("fig-3-caption", { defaultValue: "Correlation length ξ as a function of coupling strength J. The sharp peak at J_c indicates the divergence of inter-agent strategy correlations at the phase transition." })}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={correlationLengthData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -1740,7 +1743,7 @@ export function StatMechMARLPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      <h3 style={h3Style}>12.2 Critical Exponents and Universality</h3>
+      <h3 style={h3Style}>{t("critical-exponents-subheading", { defaultValue: "12.2 Critical Exponents and Universality" })}</h3>
 
       <p className="mb-4">
         A defining feature of continuous phase transitions is universality: the critical
@@ -1881,7 +1884,7 @@ export function StatMechMARLPaper() {
       </p>
 
       {/* 13. RENORMALIZATION-GROUP-INSPIRED CURRICULUM */}
-      <h2 style={h2Style}>13. Renormalization-Group-Inspired Training Curriculum</h2>
+      <h2 style={h2Style}>{t("rg-curriculum-heading", { defaultValue: "13. Renormalization-Group-Inspired Training Curriculum" })}</h2>
 
       <p className="mb-4">
         The divergence of fluctuations at the critical point poses a practical challenge
@@ -2001,9 +2004,9 @@ export function StatMechMARLPaper() {
       </p>
 
       {/* 14. NUMERICAL SIMULATIONS */}
-      <h2 style={h2Style}>14. Numerical Simulations</h2>
+      <h2 style={h2Style}>{t("numerical-simulations-heading", { defaultValue: "14. Numerical Simulations" })}</h2>
 
-      <h3 style={h3Style}>14.1 Experimental Setup</h3>
+      <h3 style={h3Style}>{t("experimental-setup-subheading", { defaultValue: "14.1 Experimental Setup" })}</h3>
 
       <p className="mb-4">
         We validated the mean-field predictions in a 64-agent adversarial capture-the-flag
@@ -2029,7 +2032,7 @@ export function StatMechMARLPaper() {
         environment transitions per step.
       </p>
 
-      <h3 style={h3Style}>14.2 Critical Exponent Measurement</h3>
+      <h3 style={h3Style}>{t("critical-exponent-measurement-subheading", { defaultValue: "14.2 Critical Exponent Measurement" })}</h3>
 
       <p className="mb-4">
         To measure the critical exponents, we performed a series of quasi-static simulations
@@ -2040,7 +2043,7 @@ export function StatMechMARLPaper() {
         <Tex math="|J - J_c| / J_c < 0.3" />. Table 1 (Figure 4) summarizes the results.
       </p>
 
-      <PaperFigure number={4} caption="Measured critical exponents compared to mean-field and 2D Ising predictions. The MARL system conforms closely to mean-field universality, consistent with the high dimensionality of the policy-parameter space.">
+      <PaperFigure number={4} caption={t("fig-4-caption", { defaultValue: "Measured critical exponents compared to mean-field and 2D Ising predictions. The MARL system conforms closely to mean-field universality, consistent with the high dimensionality of the policy-parameter space." })}>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={criticalExponentData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -2066,7 +2069,7 @@ export function StatMechMARLPaper() {
         and validate the theoretical framework developed in Section 2.
       </p>
 
-      <h3 style={h3Style}>14.3 Training Performance</h3>
+      <h3 style={h3Style}>{t("training-performance-subheading", { defaultValue: "14.3 Training Performance" })}</h3>
 
       <p className="mb-4">
         The practical impact of the phase-transition framework is demonstrated by comparing
@@ -2080,7 +2083,7 @@ export function StatMechMARLPaper() {
         and 0.42 for the annealed schedule.
       </p>
 
-      <PaperFigure number={5} caption="Training return variance (inter-run coefficient of variation) as a function of training step. The RG-inspired curriculum maintains low variance through the critical region (shaded), while the baseline exhibits a large spike corresponding to the phase transition.">
+      <PaperFigure number={5} caption={t("fig-5-caption", { defaultValue: "Training return variance (inter-run coefficient of variation) as a function of training step. The RG-inspired curriculum maintains low variance through the critical region (shaded), while the baseline exhibits a large spike corresponding to the phase transition." })}>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={trainingVarianceData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -2095,7 +2098,7 @@ export function StatMechMARLPaper() {
         </ResponsiveContainer>
       </PaperFigure>
 
-      <PaperFigure number={6} caption="Wall-clock convergence time (to reach 95% of asymptotic return) as a function of agent population size. The RG-inspired curriculum scales more favorably, with convergence time 34% lower than the baseline at N = 64.">
+      <PaperFigure number={6} caption={t("fig-6-caption", { defaultValue: "Wall-clock convergence time (to reach 95% of asymptotic return) as a function of agent population size. The RG-inspired curriculum scales more favorably, with convergence time 34% lower than the baseline at N = 64." })}>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={convergenceTimeData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -2164,7 +2167,7 @@ export function StatMechMARLPaper() {
       </p>
 
       {/* 15. GRAPH TOPOLOGY AND UNIVERSALITY */}
-      <h2 style={h2Style}>15. Graph Topology and Universality</h2>
+      <h2 style={h2Style}>{t("graph-topology-heading", { defaultValue: "15. Graph Topology and Universality" })}</h2>
 
       <p className="mb-4">
         The mean-field analysis developed in preceding sections implicitly assumes
@@ -2183,7 +2186,7 @@ export function StatMechMARLPaper() {
         <Tex math="d_s = 2\bar{d}/\tilde{d}" /> of the graph.
       </p>
 
-      <h3 style={h3Style}>15.1 Dependence on Interaction Graph</h3>
+      <h3 style={h3Style}>{t("interaction-graph-dependence-subheading", { defaultValue: "15.1 Dependence on Interaction Graph" })}</h3>
 
       <p className="mb-4">
         Consider the coupled policy-gradient dynamics on an arbitrary graph{' '}
@@ -2240,7 +2243,7 @@ export function StatMechMARLPaper() {
         continuous symmetries in low dimensions.
       </p>
 
-      <h3 style={h3Style}>15.2 Small-World Effects</h3>
+      <h3 style={h3Style}>{t("small-world-effects-subheading", { defaultValue: "15.2 Small-World Effects" })}</h3>
 
       <p className="mb-4">
         The Watts–Strogatz model interpolates between the ring lattice (rewiring
@@ -2289,7 +2292,7 @@ export function StatMechMARLPaper() {
         shown in Figure 18.
       </p>
 
-      <PaperFigure number={18} caption="Effect of interaction-graph topology on the critical coupling J_c, peak policy-parameter variance, and convergence time (steps to 95% return). Complete and star graphs achieve low J_c via high spectral radius, while the ring lattice requires substantially stronger coupling to induce collective order. Watts–Strogatz small-world networks exhibit intermediate behaviour, with long-range shortcuts reducing J_c relative to the lattice baseline.">
+      <PaperFigure number={18} caption={t("fig-18-caption", { defaultValue: "Effect of interaction-graph topology on the critical coupling J_c, peak policy-parameter variance, and convergence time (steps to 95% return). Complete and star graphs achieve low J_c via high spectral radius, while the ring lattice requires substantially stronger coupling to induce collective order. Watts–Strogatz small-world networks exhibit intermediate behaviour, with long-range shortcuts reducing J_c relative to the lattice baseline." })}>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={graphTopologyData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -2304,7 +2307,7 @@ export function StatMechMARLPaper() {
       </PaperFigure>
 
       {/* 16. ABLATION AND SCHEDULE COMPARISON */}
-      <h2 style={h2Style}>16. Ablation and Schedule Comparison</h2>
+      <h2 style={h2Style}>{t("ablation-heading", { defaultValue: "16. Ablation and Schedule Comparison" })}</h2>
 
       <p className="mb-4">
         The renormalisation-group-inspired curriculum introduced in Section 13
@@ -2322,7 +2325,7 @@ export function StatMechMARLPaper() {
         convergence behaviour.
       </p>
 
-      <h3 style={h3Style}>16.1 Curriculum Schedule Ablation</h3>
+      <h3 style={h3Style}>{t("curriculum-ablation-subheading", { defaultValue: "16.1 Curriculum Schedule Ablation" })}</h3>
 
       <p className="mb-4">
         We parameterise the six schedules as follows. The constant schedule
@@ -2376,7 +2379,7 @@ export function StatMechMARLPaper() {
         transfer matrix.
       </p>
 
-      <h3 style={h3Style}>16.2 Sensitivity to Schedule Parameters</h3>
+      <h3 style={h3Style}>{t("schedule-sensitivity-subheading", { defaultValue: "16.2 Sensitivity to Schedule Parameters" })}</h3>
 
       <p className="mb-4">
         The sigmoid schedule is characterised by two free parameters: the
@@ -2428,7 +2431,7 @@ export function StatMechMARLPaper() {
         sigmoid.
       </p>
 
-      <PaperFigure number={19} caption="Ablation comparison of six coupling-schedule families. The sigmoid (RG-inspired) schedule achieves the lowest peak variance and fastest convergence, while the constant and step-function schedules suffer from quench-induced critical fluctuations. Error bars represent ±1 standard deviation over 10 independent training runs.">
+      <PaperFigure number={19} caption={t("fig-19-caption", { defaultValue: "Ablation comparison of six coupling-schedule families. The sigmoid (RG-inspired) schedule achieves the lowest peak variance and fastest convergence, while the constant and step-function schedules suffer from quench-induced critical fluctuations. Error bars represent ±1 standard deviation over 10 independent training runs." })}>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={ablationScheduleData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -2443,7 +2446,7 @@ export function StatMechMARLPaper() {
       </PaperFigure>
 
       {/* 17. RELATED WORK */}
-      <h2 style={h2Style}>17. Related Work</h2>
+      <h2 style={h2Style}>{t("related-work-heading", { defaultValue: "17. Related Work" })}</h2>
 
       <p className="mb-4">
         The intellectual lineage of this work draws from three largely
@@ -2456,7 +2459,7 @@ export function StatMechMARLPaper() {
         developed herein.
       </p>
 
-      <h3 style={h3Style}>17.1 Statistical Mechanics and Machine Learning</h3>
+      <h3 style={h3Style}>{t("stat-mech-ml-subheading", { defaultValue: "17.1 Statistical Mechanics and Machine Learning" })}</h3>
 
       <p className="mb-4">
         The application of statistical-mechanical methods to learning systems
@@ -2501,7 +2504,7 @@ export function StatMechMARLPaper() {
         mean-field treatment of multi-agent policy networks.
       </p>
 
-      <h3 style={h3Style}>17.2 Multi-Agent Reinforcement Learning</h3>
+      <h3 style={h3Style}>{t("marl-subheading", { defaultValue: "17.2 Multi-Agent Reinforcement Learning" })}</h3>
 
       <p className="mb-4">
         The theoretical foundations of multi-agent learning rest on the
@@ -2542,7 +2545,7 @@ export function StatMechMARLPaper() {
         Landau–Ginzburg theory at successive critical coupling thresholds.
       </p>
 
-      <h3 style={h3Style}>17.3 Phase Transitions in Computational Systems</h3>
+      <h3 style={h3Style}>{t("phase-transitions-computational-subheading", { defaultValue: "17.3 Phase Transitions in Computational Systems" })}</h3>
 
       <p className="mb-4">
         The discovery by Cheeseman, Kanefsky, and Taylor (1991) and Mitchell,
@@ -2585,7 +2588,7 @@ export function StatMechMARLPaper() {
       </p>
 
       {/* 18. FUTURE DIRECTIONS */}
-      <h2 style={h2Style}>18. Future Directions</h2>
+      <h2 style={h2Style}>{t("future-directions-heading", { defaultValue: "18. Future Directions" })}</h2>
 
       <p className="mb-4">
         The mean-field framework developed in this paper characterises the
@@ -2751,7 +2754,7 @@ export function StatMechMARLPaper() {
       </p>
 
       {/* 19. DISCUSSION */}
-      <h2 style={h2Style}>19. Discussion</h2>
+      <h2 style={h2Style}>{t("discussion-heading", { defaultValue: "19. Discussion" })}</h2>
 
       <p className="mb-4">
         The statistical-mechanical framework developed herein provides a unifying
@@ -2866,7 +2869,7 @@ export function StatMechMARLPaper() {
       </p>
 
       {/* 20. CONCLUSION */}
-      <h2 style={h2Style}>20. Conclusion</h2>
+      <h2 style={h2Style}>{t("conclusion-heading", { defaultValue: "20. Conclusion" })}</h2>
 
       <p className="mb-4">
         We have developed a mean-field theoretic framework that maps the joint
@@ -2935,7 +2938,7 @@ export function StatMechMARLPaper() {
       </p>
 
       {/* REFERENCES */}
-      <h2 style={h2Style}>References</h2>
+      <h2 style={h2Style}>{t("references-heading", { defaultValue: "References" })}</h2>
 
       <div style={{ fontSize: '9pt', lineHeight: 1.5 }}>
         <p className="mb-2">[1] Amit, D. J., Gutfreund, H., &amp; Sompolinsky, H. (1985). Spin-glass models of neural networks. <em>Phys. Rev. A</em>, 32(2), 1007–1018.</p>

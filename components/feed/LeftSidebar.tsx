@@ -9,8 +9,10 @@ import {
   Home, Package, BookOpen, Library, LayoutGrid, Atom, Brain,
   LogOut, PenSquare, User, ShieldCheck, MoreHorizontal, Wallet, Sparkles, Inbox, Landmark, Bookmark, ShoppingBag, Compass, Users, Zap, Shield, Swords, Clapperboard, Terminal, ChevronDown, Car, type LucideIcon
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { ComposeModal } from './ComposeModal';
 import { Button } from '@/components/ui/button';
+import { LanguageSwitcher } from '@/components/site/LanguageSwitcher';
 import { useUnreadCount } from '@/lib/useUnreadCount';
 import { useNotificationCount } from '@/lib/useNotificationCount';
 import { useStreak } from '@/lib/useStreak';
@@ -77,6 +79,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   const logoAlignClass = expanded ? 'justify-start' : 'justify-center xl:justify-start';
   const iconMrClass = expanded ? 'mr-2' : 'xl:mr-2';
   const itemJustifyClass = expanded ? '' : 'md:justify-center xl:justify-start';
+  const { t } = useTranslation('feed');
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
@@ -215,8 +218,13 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         })}
       </nav>
 
+      {/* Language Switcher — pinned above auth section */}
+      <div className="px-3 py-2 shrink-0">
+        <LanguageSwitcher />
+      </div>
+
       {/* Auth Section — pinned to bottom */}
-      <div className="mt-auto border-t border-site-border pt-3 shrink-0">
+      <div className="border-t border-site-border pt-3 shrink-0">
         {isPending ? (
           <div className="h-10 bg-site-surface rounded-xl animate-pulse" />
         ) : session ? (
@@ -225,7 +233,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
               to={`/u/${(session.user as any).handle || session.user.id}` as string}
               className={`flex items-center gap-2 px-2 hover:bg-site-surface rounded-xl transition-colors py-1 flex-1 min-w-0 ${itemJustifyClass}`}
             >
-              <UserAvatar src={resolvedUser?.image || session.user.image} alt={resolvedUser?.name || session.user.name || 'User'} size={32} fallbackName={resolvedUser?.name || session.user.name} className="ring-2 ring-site-bg" />
+              <UserAvatar src={resolvedUser?.image || session.user.image} alt={resolvedUser?.name || session.user.name || t('user-avatar-alt', { defaultValue: 'User' })} size={32} fallbackName={resolvedUser?.name || session.user.name} className="ring-2 ring-site-bg" />
               <span className={`${labelClass} text-sm text-site-text truncate max-w-30`}>
                 {resolvedUser?.name || session.user.name}
               </span>
@@ -251,7 +259,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
                 setShowUserMenu(!showUserMenu);
               }}
               className={`p-1.5 rounded-lg text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors shrink-0 ${expanded ? '' : 'hidden xl:block'}`}
-              title="More options"
+              title={t('more-options', { defaultValue: 'More options' })}
             >
               <MoreHorizontal className="w-4 h-4" />
             </button>
@@ -266,7 +274,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
                   className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors"
                 >
                   <User className="w-4 h-4" />
-                  <span>Profile</span>
+                  <span>{t('profile', { defaultValue: 'Profile' })}</span>
                 </Link>
                 <Link
                   to="/progress"
@@ -274,7 +282,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
                   className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors"
                 >
                   <Zap className="w-4 h-4" />
-                  <span>Progress{streak && streak.current > 0 ? ` · ${streak.current}🔥` : ''}</span>
+                  <span>{t('progress', { defaultValue: 'Progress' })}{streak && streak.current > 0 ? ` · ${streak.current}🔥` : ''}</span>
                 </Link>
                 <Link
                   to="/bookmarks"
@@ -282,7 +290,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
                   className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors"
                 >
                   <Bookmark className="w-4 h-4" />
-                  <span>Bookmarks</span>
+                  <span>{t('bookmarks', { defaultValue: 'Bookmarks' })}</span>
                 </Link>
                 {(session.user as any).isAdmin && (
                   <Link
@@ -291,7 +299,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
                     className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors"
                   >
                     <ShieldCheck className="w-4 h-4" />
-                    <span>Admin</span>
+                    <span>{t('admin', { defaultValue: 'Admin' })}</span>
                   </Link>
                 )}
                 <div className="my-1 border-t border-site-border" />
@@ -303,7 +311,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
                   className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 text-site-text-muted hover:text-site-danger hover:bg-site-surface-hover transition-colors"
                 >
                   <LogOut className="w-4 h-4" />
-                  <span>Sign Out</span>
+                  <span>{t('sign-out', { defaultValue: 'Sign Out' })}</span>
                 </button>
               </div>
             )}
@@ -312,7 +320,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
           <Link to="/login" search={{ callbackURL: undefined }}>
             <Button variant="accent" size="sm" className="w-full">
               <User className={`w-4 h-4 ${iconMrClass}`} />
-              <span className={labelClass}>Sign In</span>
+              <span className={labelClass}>{t('sign-in', { defaultValue: 'Sign In' })}</span>
             </Button>
           </Link>
         )}
@@ -335,7 +343,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
             }}
           >
             <PenSquare className={`w-4 h-4 ${iconMrClass}`} />
-            <span className={labelClass}>Post</span>
+            <span className={labelClass}>{t('post', { defaultValue: 'Post' })}</span>
           </Button>
           <ComposeModal open={composeOpen} onClose={() => setComposeOpen(false)} />
         </>

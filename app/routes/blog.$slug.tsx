@@ -6,6 +6,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getPostBySlug } from '@/lib/blog';
 import ReactMarkdown from 'react-markdown';
+import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft, Calendar } from 'lucide-react';
 import { ShareButton } from '@/components/blog/ShareButton';
@@ -57,12 +58,13 @@ export const Route = createFileRoute('/blog/$slug')({
 function BlogPost() {
   const post = Route.useLoaderData();
   const { slug } = Route.useParams();
+  const { t } = useTranslation("pages");
 
   return (
     <article className="min-h-screen pt-20 pb-20 px-4 bg-site-bg relative overflow-hidden">
       <div className="container mx-auto max-w-3xl relative z-10">
         <Link to="/blog" className="inline-flex items-center gap-2 text-site-text-dim hover:text-site-text mb-8 transition-colors animate-in fade-in slide-in-from-left-4 duration-700">
-          <ArrowLeft className="w-4 h-4" /> Back to Logs
+          <ArrowLeft className="w-4 h-4" /> {t("back-to-logs", { defaultValue: "Back to Logs" })}
         </Link>
 
         <header className="mb-12">
@@ -88,7 +90,7 @@ function BlogPost() {
         <hr className="my-12 border-site-border" />
 
         <div className="text-center">
-          <p className="text-site-text-dim italic">End of Log</p>
+          <p className="text-site-text-dim italic">{t("end-of-log", { defaultValue: "End of Log" })}</p>
         </div>
       </div>
     </article>

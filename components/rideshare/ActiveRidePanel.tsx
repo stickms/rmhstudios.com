@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import {
   Loader2,
@@ -97,6 +98,7 @@ export function ActiveRidePanel({
   onChange?: () => void;
   onClose?: () => void;
 }) {
+  const { t } = useTranslation("c-rideshare");
   const [ride, setRide] = useState<SyncRide | null>(null);
   const [role, setRole] = useState<'rider' | 'driver'>('rider');
   const [loading, setLoading] = useState(true);
@@ -140,7 +142,7 @@ export function ActiveRidePanel({
   const locationState = useDriverLocationShare(sharingActive);
 
   async function act(action: 'start' | 'complete' | 'cancel') {
-    if (action === 'cancel' && !confirm('Cancel this ride?')) return;
+    if (action === 'cancel' && !confirm(t("cancel-this-ride", { defaultValue: "Cancel this ride?" }))) return;
     setBusy(true);
     try {
       const res = await fetch(`/api/rideshare/rides/${rideId}`, {
@@ -150,7 +152,7 @@ export function ActiveRidePanel({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error(data.error || 'Action failed.');
+        toast.error(data.error || t("action-failed", { defaultValue: "Action failed." }));
         return;
       }
       await sync();
@@ -168,7 +170,7 @@ export function ActiveRidePanel({
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      toast.error(data.error || 'Could not send message.');
+      toast.error(data.error || t("could-not-send-message", { defaultValue: "Could not send message." }));
       return;
     }
     sync();
@@ -182,10 +184,10 @@ export function ActiveRidePanel({
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      toast.error(data.error || 'Could not submit rating.');
+      toast.error(data.error || t("could-not-submit-rating", { defaultValue: "Could not submit rating." }));
       return;
     }
-    toast.success('Thanks for your rating!');
+    toast.success(t("thanks-for-rating", { defaultValue: "Thanks for your rating!" }));
     sync();
   }
 
@@ -197,10 +199,10 @@ export function ActiveRidePanel({
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      toast.error(data.error || 'Could not add your tip.');
+      toast.error(data.error || t("could-not-add-tip", { defaultValue: "Could not add your tip." }));
       return;
     }
-    toast.success('Tip sent — thank you!');
+    toast.success(t("tip-sent", { defaultValue: "Tip sent — thank you!" }));
     await sync();
   }
 
@@ -235,7 +237,7 @@ export function ActiveRidePanel({
           <h2 className="text-lg font-bold text-site-text">{rideClassName(ride.rideClass)}</h2>
           {status === 'CANCELLED' ? (
             <span className="flex items-center gap-1 rounded-full bg-site-surface-hover px-2.5 py-1 text-xs font-medium text-site-text-muted">
-              <XCircle className="h-3.5 w-3.5" /> Cancelled
+              <XCircle className="h-3.5 w-3.5" /> {t("cancelled", { defaultValue: "Cancelled" })}
             </span>
           ) : (
             <span className="text-xs text-site-text-muted">
@@ -259,7 +261,10 @@ export function ActiveRidePanel({
                       <step.icon className="h-4 w-4" />
                     </div>
                     <span className={`text-[11px] ${reached ? 'text-site-text' : 'text-site-text-dim'}`}>
-                      {step.label}
+                      {step.key === 'REQUESTED' ? t("step-requested", { defaultValue: "Requested" })
+                        : step.key === 'ACCEPTED' ? t("step-matched", { defaultValue: "Matched" })
+                        : step.key === 'IN_PROGRESS' ? t("step-on-trip", { defaultValue: "On trip" })
+                        : t("step-done", { defaultValue: "Done" })}
                     </span>
                   </div>
                   {i < STEPS.length - 1 && (
@@ -284,7 +289,7 @@ export function ActiveRidePanel({
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-site-text">{other.name ?? (isDriver ? 'Your rider' : 'Your driver')}</span>
+              <span className="font-semibold text-site-text">{other.name ?? (isDriver ? t("your-rider", { defaultValue: "Your rider" }) : t("your-driver", { defaultValue: "Your driver" }))}</span>
               {!isDriver && driverRatingAvg && (
                 <span className="flex items-center gap-0.5 text-xs text-amber-400">
                   <Star className="h-3 w-3 fill-amber-400" /> {driverRatingAvg}
@@ -307,12 +312,12 @@ export function ActiveRidePanel({
           <Crosshair className={`h-4 w-4 ${locationState === 'sharing' ? 'text-emerald-400' : 'text-amber-400'}`} />
           <span className="text-site-text-muted">
             {locationState === 'sharing'
-              ? 'Sharing your live location with the rider.'
+              ? t("location-sharing", { defaultValue: "Sharing your live location with the rider." })
               : locationState === 'denied'
-                ? 'Enable location access so your rider can track your approach.'
+                ? t("location-denied", { defaultValue: "Enable location access so your rider can track your approach." })
                 : locationState === 'unavailable'
-                  ? 'Live location isn’t available on this device.'
-                  : 'Starting location sharing…'}
+                  ? t("location-unavailable", { defaultValue: "Live location isn't available on this device." })
+                  : t("location-starting", { defaultValue: "Starting location sharing…" })}
           </span>
         </div>
       )}
@@ -350,7 +355,7 @@ export function ActiveRidePanel({
         <div className="rounded-2xl border border-site-border bg-site-surface/80 p-5 text-center">
           <CheckCircle2 className="mx-auto h-8 w-8 text-emerald-400" />
           <h3 className="mt-2 font-semibold text-site-text">
-            {myRatingGiven ? 'Thanks for riding with RMH!' : `Rate your ${isDriver ? 'rider' : 'driver'}`}
+            {myRatingGiven ? t("thanks-for-riding", { defaultValue: "Thanks for riding with RMH!" }) : (isDriver ? t("rate-your-rider", { defaultValue: "Rate your rider" }) : t("rate-your-driver", { defaultValue: "Rate your driver" }))}
           </h3>
           {myRatingGiven ? (
             <div className="mt-2 flex justify-center">
@@ -375,7 +380,7 @@ export function ActiveRidePanel({
           onClick={onClose}
           className="w-full rounded-xl border border-site-border bg-site-surface px-5 py-2.5 text-sm font-semibold text-site-text transition-colors hover:bg-site-surface-hover"
         >
-          Done
+          {t("done", { defaultValue: "Done" })}
         </button>
       )}
 
@@ -388,7 +393,7 @@ export function ActiveRidePanel({
               disabled={busy}
               className="flex items-center justify-center gap-2 rounded-xl bg-site-accent px-5 py-3 text-sm font-semibold text-(--site-accent-fg) transition-colors hover:bg-(--site-accent-hover) disabled:opacity-50 sm:flex-1 sm:py-2.5"
             >
-              <Navigation className="h-4 w-4" /> Start trip
+              <Navigation className="h-4 w-4" /> {t("start-trip", { defaultValue: "Start trip" })}
             </button>
           )}
           {isDriver && status === 'IN_PROGRESS' && (
@@ -397,7 +402,7 @@ export function ActiveRidePanel({
               disabled={busy}
               className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-600 disabled:opacity-50 sm:flex-1 sm:py-2.5"
             >
-              <Flag className="h-4 w-4" /> Complete trip
+              <Flag className="h-4 w-4" /> {t("complete-trip", { defaultValue: "Complete trip" })}
             </button>
           )}
           <button
@@ -405,7 +410,7 @@ export function ActiveRidePanel({
             disabled={busy}
             className="flex items-center justify-center gap-2 rounded-xl border border-site-border px-5 py-3 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/10 disabled:opacity-50 sm:py-2.5"
           >
-            <XCircle className="h-4 w-4" /> Cancel
+            <XCircle className="h-4 w-4" /> {t("cancel", { defaultValue: "Cancel" })}
           </button>
         </div>
       )}

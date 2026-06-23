@@ -1,4 +1,5 @@
 import { Volume2, VolumeX, Headphones } from 'lucide-react';
+import { useTranslation } from "react-i18next";
 import { useStudioStore } from '@/lib/studio/store';
 import { KnobControl } from '@/components/studio/plugins/KnobControl';
 import { FaderControl } from '@/components/studio/plugins/FaderControl';
@@ -12,6 +13,7 @@ interface ChannelStripProps {
 }
 
 export function ChannelStrip({ track, isSelected, compact = false }: ChannelStripProps) {
+  const { t } = useTranslation("c-studio");
   const { selectTrack, toggleTrackMute, toggleTrackSolo, setTrackVolume, setTrackPan } = useStudioStore();
 
   return (
@@ -37,7 +39,7 @@ export function ChannelStrip({ track, isSelected, compact = false }: ChannelStri
         max={1}
         step={0.01}
         size={compact ? 28 : 32}
-        label="Pan"
+        label={t("pan", { defaultValue: "Pan" })}
         onChange={(v) => setTrackPan(track.id, v)}
         color="#a855f7"
       />
@@ -65,7 +67,7 @@ export function ChannelStrip({ track, isSelected, compact = false }: ChannelStri
           className={`rounded p-1 text-[10px] font-bold ${
             track.muted ? 'bg-red-500/20 text-red-400' : 'text-[var(--site-muted)] hover:bg-white/10'
           }`}
-          title="Mute"
+          title={t("mute", { defaultValue: "Mute" })}
         >
           M
         </button>
@@ -74,7 +76,7 @@ export function ChannelStrip({ track, isSelected, compact = false }: ChannelStri
           className={`rounded p-1 text-[10px] font-bold ${
             track.soloed ? 'bg-yellow-500/20 text-yellow-400' : 'text-[var(--site-muted)] hover:bg-white/10'
           }`}
-          title="Solo"
+          title={t("solo", { defaultValue: "Solo" })}
         >
           S
         </button>

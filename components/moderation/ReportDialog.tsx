@@ -1,23 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
 export type ReportEntityType = 'rmhark' | 'comment' | 'user' | 'build' | 'dm';
-
-const REASONS: { value: string; label: string }[] = [
-  { value: 'SPAM', label: 'Spam or scam' },
-  { value: 'HARASSMENT', label: 'Harassment or bullying' },
-  { value: 'HATE', label: 'Hate speech' },
-  { value: 'VIOLENCE', label: 'Violence or threats' },
-  { value: 'SEXUAL', label: 'Sexual or explicit content' },
-  { value: 'SELF_HARM', label: 'Self-harm' },
-  { value: 'MISINFORMATION', label: 'Misinformation' },
-  { value: 'ILLEGAL', label: 'Illegal content' },
-  { value: 'OTHER', label: 'Something else' },
-];
 
 interface ReportDialogProps {
   open: boolean;
@@ -31,9 +20,22 @@ interface ReportDialogProps {
  * site design system (Dialog primitive + Button variants).
  */
 export function ReportDialog({ open, onOpenChange, entityType, entityId }: ReportDialogProps) {
+  const { t } = useTranslation("c-moderation");
   const [reason, setReason] = useState<string>('');
   const [details, setDetails] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  const REASONS: { value: string; label: string }[] = [
+    { value: 'SPAM', label: t("reason-spam", { defaultValue: "Spam or scam" }) },
+    { value: 'HARASSMENT', label: t("reason-harassment", { defaultValue: "Harassment or bullying" }) },
+    { value: 'HATE', label: t("reason-hate", { defaultValue: "Hate speech" }) },
+    { value: 'VIOLENCE', label: t("reason-violence", { defaultValue: "Violence or threats" }) },
+    { value: 'SEXUAL', label: t("reason-sexual", { defaultValue: "Sexual or explicit content" }) },
+    { value: 'SELF_HARM', label: t("reason-self-harm", { defaultValue: "Self-harm" }) },
+    { value: 'MISINFORMATION', label: t("reason-misinformation", { defaultValue: "Misinformation" }) },
+    { value: 'ILLEGAL', label: t("reason-illegal", { defaultValue: "Illegal content" }) },
+    { value: 'OTHER', label: t("reason-other", { defaultValue: "Something else" }) },
+  ];
 
   const reset = () => {
     setReason('');
@@ -52,16 +54,16 @@ export function ReportDialog({ open, onOpenChange, entityType, entityId }: Repor
         body: JSON.stringify({ entityType, entityId, reason, details: details.trim() || undefined }),
       });
       if (res.ok) {
-        toast.success('Thanks — our team will review this.');
+        toast.success(t("toast-success", { defaultValue: "Thanks — our team will review this." }));
         onOpenChange(false);
         reset();
       } else if (res.status === 401) {
-        toast.error('Please sign in to report content.');
+        toast.error(t("toast-sign-in", { defaultValue: "Please sign in to report content." }));
       } else {
-        toast.error('Could not submit report. Please try again.');
+        toast.error(t("toast-error", { defaultValue: "Could not submit report. Please try again." }));
       }
     } catch {
-      toast.error('Could not submit report. Please try again.');
+      toast.error(t("toast-error", { defaultValue: "Could not submit report. Please try again." }));
     } finally {
       setSubmitting(false);
     }
@@ -71,9 +73,9 @@ export function ReportDialog({ open, onOpenChange, entityType, entityId }: Repor
     <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) reset(); }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Report content</DialogTitle>
+          <DialogTitle>{t("dialog-title", { defaultValue: "Report content" })}</DialogTitle>
           <DialogDescription>
-            Tell us what&apos;s wrong. Reports are anonymous to the person you&apos;re reporting.
+            {t("dialog-description", { defaultValue: "Tell us what's wrong. Reports are anonymous to the person you're reporting." })}
           </DialogDescription>
         </DialogHeader>
 
@@ -104,17 +106,17 @@ export function ReportDialog({ open, onOpenChange, entityType, entityId }: Repor
           value={details}
           onChange={(e) => setDetails(e.target.value)}
           maxLength={1000}
-          placeholder="Add any details (optional)"
+          placeholder={t("details-placeholder", { defaultValue: "Add any details (optional)" })}
           rows={3}
           className="w-full resize-none rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
         />
 
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={submitting}>
-            Cancel
+            {t("cancel", { defaultValue: "Cancel" })}
           </Button>
           <Button variant="accent" onClick={submit} disabled={!reason || submitting}>
-            {submitting ? 'Submitting…' : 'Submit report'}
+            {submitting ? t("submitting", { defaultValue: "Submitting…" }) : t("submit-report", { defaultValue: "Submit report" })}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -21,6 +21,7 @@
 
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -87,6 +88,8 @@ export default function MatchingPanel({
     [guessableStories, currentGuesses],
   );
 
+  const { t } = useTranslation("c-rmhbox");
+
   const totalPlayers = players.length;
   const lockedCount = lockedInPlayers.length;
 
@@ -103,16 +106,16 @@ export default function MatchingPanel({
     >
       {/* Header */}
       <div className="flex flex-col items-center gap-1">
-        <h2 className="text-lg font-bold">Match the Editors</h2>
+        <h2 className="text-lg font-bold">{t("match-the-editors", { defaultValue: "Match the Editors" })}</h2>
         <p className="text-xs text-(--rmhbox-text-muted)">
-          For each story, guess which player was its undercover editor
+          {t("match-the-editors-subtitle", { defaultValue: "For each story, guess which player was its undercover editor" })}
         </p>
       </div>
 
       {/* Lock-in progress */}
       <div className="flex flex-col items-center gap-1 text-xs text-(--rmhbox-text-muted)">
         <span>
-          {lockedCount}/{totalPlayers} players locked in
+          {t("players-locked-in", { lockedCount, totalPlayers, defaultValue: "{{lockedCount}}/{{totalPlayers}} players locked in" })}
         </span>
         {lockedInPlayers.length > 0 && (
           <div className="flex flex-wrap justify-center gap-1.5 mt-1">
@@ -144,14 +147,14 @@ export default function MatchingPanel({
               {/* Story header — numbered */}
               <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold">
-                  Story {idx + 1}
+                  {t("story-number", { number: idx + 1, defaultValue: "Story {{number}}" })}
                 </span>
               </div>
 
               {/* Full story text with prompt as first sentence */}
               <div className="flex flex-col gap-1 rounded-lg bg-(--rmhbox-surface)/60 p-3 text-sm leading-relaxed">
                 <span className="text-(--rmhbox-text)">
-                  <span className="opacity-50 text-xs">(prompt)</span> {story.prompt}
+                  <span className="opacity-50 text-xs">{t("prompt-label", { defaultValue: "(prompt)" })}</span> {story.prompt}
                 </span>
                 {story.sentences
                   .slice()
@@ -164,7 +167,7 @@ export default function MatchingPanel({
               {/* Editor guess dropdown — only excludes the guessing player */}
               <label className="flex flex-col gap-1">
                 <span className="text-xs font-medium text-(--rmhbox-text-muted)">
-                  Who was the editor?
+                  {t("who-was-the-editor", { defaultValue: "Who was the editor?" })}
                 </span>
                 <select
                   disabled={lockedIn}
@@ -174,7 +177,7 @@ export default function MatchingPanel({
                   }
                   className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-surface) px-3 py-2 text-sm text-(--rmhbox-text) outline-none transition-colors focus:border-(--rmhbox-accent) disabled:opacity-50"
                 >
-                  <option value="">— select a player —</option>
+                  <option value="">{t("select-a-player", { defaultValue: "— select a player —" })}</option>
                   {candidates.map((p) => (
                     <option key={p.userId} value={p.userId}>
                       {p.userName}
@@ -196,7 +199,7 @@ export default function MatchingPanel({
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
             className="flex items-center gap-1.5 rounded-full bg-(--rmhbox-success-dim) px-4 py-1.5 text-sm font-semibold text-(--rmhbox-success)"
           >
-            ✓ Locked In
+            ✓ {t("locked-in", { defaultValue: "Locked In" })}
           </motion.div>
         ) : (
           <motion.button
@@ -205,13 +208,13 @@ export default function MatchingPanel({
             onClick={onLockIn}
             className="rounded-xl border border-(--rmhbox-accent) bg-(--rmhbox-accent)/15 px-6 py-2 text-sm font-semibold text-(--rmhbox-accent) transition-opacity disabled:opacity-40"
           >
-            Lock In Guesses
+            {t("lock-in-guesses", { defaultValue: "Lock In Guesses" })}
           </motion.button>
         )}
 
         {!lockedIn && !allGuessed && (
           <p className="text-[11px] text-(--rmhbox-text-muted)">
-            Assign an editor for every story to lock in
+            {t("assign-editor-hint", { defaultValue: "Assign an editor for every story to lock in" })}
           </p>
         )}
       </div>

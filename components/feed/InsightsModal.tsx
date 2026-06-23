@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Loader2, Eye, Heart, MessageCircle, Repeat, Bookmark, TrendingUp, Unlock } from 'lucide-react';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 
@@ -28,6 +29,7 @@ interface InsightsModalProps {
 const fmt = (n: number) => n.toLocaleString();
 
 export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
+  const { t } = useTranslation('feed');
   const [data, setData] = useState<Insights | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -54,11 +56,11 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
 
   const stats = data
     ? [
-        { label: 'Impressions', value: data.views, icon: Eye },
-        { label: 'Likes', value: data.likes, icon: Heart },
-        { label: 'Comments', value: data.comments, icon: MessageCircle },
-        { label: 'Reposts', value: data.reposts, icon: Repeat },
-        { label: 'Bookmarks', value: data.bookmarks, icon: Bookmark },
+        { label: t('impressions', { defaultValue: 'Impressions' }), value: data.views, icon: Eye },
+        { label: t('likes', { defaultValue: 'Likes' }), value: data.likes, icon: Heart },
+        { label: t('comments', { defaultValue: 'Comments' }), value: data.comments, icon: MessageCircle },
+        { label: t('reposts', { defaultValue: 'Reposts' }), value: data.reposts, icon: Repeat },
+        { label: t('bookmarks', { defaultValue: 'Bookmarks' }), value: data.bookmarks, icon: Bookmark },
       ]
     : [];
 
@@ -81,12 +83,12 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
         <div className="flex shrink-0 items-center justify-between border-b border-site-border px-5 py-4">
           <h2 className="flex items-center gap-2 font-(family-name:--site-font-display) text-lg font-bold text-site-text">
             <TrendingUp className="h-5 w-5 text-site-accent" />
-            Post insights
+            {t('post-insights', { defaultValue: 'Post insights' })}
           </h2>
           <button
             onClick={onClose}
             className="rounded-lg p-1.5 text-site-text-muted transition-colors hover:bg-site-surface hover:text-site-text"
-            aria-label="Close"
+            aria-label={t('close', { defaultValue: 'Close' })}
           >
             <X className="h-5 w-5" />
           </button>
@@ -100,7 +102,7 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
           )}
 
           {!loading && !data && (
-            <p className="py-12 text-center text-sm text-site-text-muted">Could not load insights.</p>
+            <p className="py-12 text-center text-sm text-site-text-muted">{t('could-not-load-insights', { defaultValue: 'Could not load insights.' })}</p>
           )}
 
           {data && (
@@ -118,7 +120,7 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
                   <p className="mt-1 text-lg font-bold text-site-text">
                     {(data.engagementRate * 100).toFixed(1)}%
                   </p>
-                  <p className="text-[11px] text-site-text-dim">Engagement rate</p>
+                  <p className="text-[11px] text-site-text-dim">{t('engagement-rate', { defaultValue: 'Engagement rate' })}</p>
                 </div>
               </div>
 
@@ -127,8 +129,8 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
                   <div className="flex items-center gap-2">
                     <Unlock className="h-4 w-4 text-site-accent" />
                     <div>
-                      <p className="text-sm font-semibold text-site-text">{fmt(data.unlocks)} unlocks</p>
-                      <p className="text-[11px] text-site-text-dim">at {data.unlockPrice} each</p>
+                      <p className="text-sm font-semibold text-site-text">{t('unlocks-count', { count: fmt(data.unlocks), defaultValue: '{{count}} unlocks' })}</p>
+                      <p className="text-[11px] text-site-text-dim">{t('unlock-price-each', { price: data.unlockPrice, defaultValue: 'at {{price}} each' })}</p>
                     </div>
                   </div>
                   <span className="inline-flex items-center gap-1 text-sm font-bold text-site-text">
@@ -139,7 +141,7 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
 
               <div className="mt-4">
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
-                  Likes · last 7 days
+                  {t('likes-last-7-days', { defaultValue: 'Likes · last 7 days' })}
                 </p>
                 <div className="flex h-24 items-end gap-1.5">
                   {data.likeTrend.map((d) => (
@@ -148,7 +150,7 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
                         <div
                           className="w-full rounded-t bg-site-accent/70 transition-all"
                           style={{ height: `${(d.count / maxTrend) * 100}%`, minHeight: d.count > 0 ? 4 : 0 }}
-                          title={`${d.count} likes`}
+                          title={t('bar-likes-count', { count: d.count, defaultValue: '{{count}} likes' })}
                         />
                       </div>
                       <span className="text-[9px] text-site-text-dim">
@@ -160,7 +162,7 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
               </div>
 
               <p className="mt-4 text-center text-[11px] text-site-text-dim">
-                Posted {new Date(data.createdAt).toLocaleString()}
+                {t('posted-date', { date: new Date(data.createdAt).toLocaleString(), defaultValue: 'Posted {{date}}' })}
               </p>
             </>
           )}

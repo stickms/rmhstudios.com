@@ -1,6 +1,7 @@
 'use client';
 import './temple-of-joy.css';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { authClient } from '@/lib/auth-client';
 import { loadFromServer } from '@/lib/temple-of-joy/persistence';
 import type { SaveData } from '@/lib/temple-of-joy/types';
@@ -13,6 +14,7 @@ const GOLD = '#d4a847';
 
 // ─── Loading Screen ───────────────────────────────────────────────────────────
 function TempleLoadingScreen() {
+  const { t } = useTranslation("c-temple-of-joy");
   return (
     <div
       className="h-screen flex flex-col items-center justify-center gap-6"
@@ -25,7 +27,7 @@ function TempleLoadingScreen() {
         Temple of Joy
       </h1>
       <p className="text-sm opacity-50 tracking-[0.3em] uppercase animate-pulse">
-        Entering the temple…
+        {t("entering-the-temple", { defaultValue: "Entering the temple…" })}
       </p>
     </div>
   );

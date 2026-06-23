@@ -7,6 +7,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
 import { Send, SmilePlus } from 'lucide-react';
 import { CHAT_REACTION_EMOJIS, CHAT_MAX_LENGTH } from '@/lib/shared/chat-constants';
@@ -48,8 +49,9 @@ export default function ChatPanel({
   showReactions = true,
   showMediaEmbeds = true,
   className = '',
-  placeholder = 'Chat...',
+  placeholder,
 }: ChatPanelProps) {
+  const { t } = useTranslation('shared');
   const [message, setMessage] = useState('');
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
   const [reactionPickerMessageId, setReactionPickerMessageId] = useState<string | null>(null);
@@ -164,7 +166,7 @@ export default function ChatPanel({
             className="text-xs text-center py-8"
             style={{ color: `var(--${themePrefix}-text-dim)` }}
           >
-            No messages yet
+            {t('no-messages-yet', { defaultValue: 'No messages yet' })}
           </p>
         ) : (
           messages.map((msg) => {
@@ -283,7 +285,7 @@ export default function ChatPanel({
                 }
               }}
               className="p-1 rounded transition-colors"
-              title="React"
+              title={t('react', { defaultValue: 'React' })}
               style={{ color: `var(--${themePrefix}-text-muted)` }}
             >
               <SmilePlus className="h-3.5 w-3.5" />
@@ -334,7 +336,7 @@ export default function ChatPanel({
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           maxLength={CHAT_MAX_LENGTH}
-          placeholder={placeholder}
+          placeholder={placeholder ?? t('chat-placeholder', { defaultValue: 'Chat...' })}
           className="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm outline-none"
           style={{
             borderWidth: 1,

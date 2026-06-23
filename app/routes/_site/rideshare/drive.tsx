@@ -2,6 +2,7 @@
  * RMH Rideshare — driver application & dashboard (/rideshare/drive)
  */
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import {
@@ -68,6 +69,7 @@ interface Ride {
 }
 
 function DrivePage() {
+  const { t } = useTranslation('rideshare');
   const { data: session, isPending } = useSession();
   const [driver, setDriver] = useState<DriverRecord | null>(null);
   const [loading, setLoading] = useState(true);
@@ -104,14 +106,14 @@ function DrivePage() {
       <PageLayout title="Drive" wide>
         <div className="mx-auto max-w-md px-4 py-20 text-center">
           <Car className="mx-auto h-10 w-10 text-site-accent" />
-          <h2 className="mt-4 text-xl font-bold text-site-text">Sign in to drive</h2>
-          <p className="mt-2 text-site-text-muted">You need an RMH account to apply as a driver.</p>
+          <h2 className="mt-4 text-xl font-bold text-site-text">{t('sign-in-to-drive', { defaultValue: 'Sign in to drive' })}</h2>
+          <p className="mt-2 text-site-text-muted">{t('sign-in-required', { defaultValue: 'You need an RMH account to apply as a driver.' })}</p>
           <Link
             to="/login"
             search={{ callbackURL: '/rideshare/drive' }}
             className="mt-5 inline-flex items-center gap-2 rounded-xl bg-site-accent px-6 py-3 text-sm font-semibold text-(--site-accent-fg) transition-all hover:scale-105"
           >
-            <LogIn className="h-4 w-4" /> Sign in
+            <LogIn className="h-4 w-4" /> {t('sign-in', { defaultValue: 'Sign in' })}
           </Link>
         </div>
       </PageLayout>
@@ -137,6 +139,7 @@ function DrivePage() {
 }
 
 function PendingState() {
+  const { t } = useTranslation('rideshare');
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -146,10 +149,9 @@ function PendingState() {
       <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-400/15 text-amber-400">
         <Clock className="h-7 w-7" />
       </div>
-      <h2 className="mt-4 text-xl font-bold text-site-text">Application under review</h2>
+      <h2 className="mt-4 text-xl font-bold text-site-text">{t('application-under-review', { defaultValue: 'Application under review' })}</h2>
       <p className="mx-auto mt-2 max-w-md text-site-text-muted">
-        Thanks for applying! Our team is reviewing your details and license number. You’ll be able
-        to accept rides as soon as you’re approved.
+        {t('application-review-desc', { defaultValue: "Thanks for applying! Our team is reviewing your details and license number. You'll be able to accept rides as soon as you're approved." })}
       </p>
     </motion.div>
   );
@@ -175,6 +177,7 @@ function ApplicationForm({
     (rejected?.vehicleClass as RideClassId) ?? 'RMH_X',
   );
   const [submitting, setSubmitting] = useState(false);
+  const { t } = useTranslation('rideshare');
 
   function set<K extends keyof typeof form>(key: K, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -183,7 +186,7 @@ function ApplicationForm({
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.licenseNumber.trim()) {
-      toast.error('Please enter your driver’s license number.');
+      toast.error(t('error-license-required', { defaultValue: "Please enter your driver's license number." }));
       return;
     }
     setSubmitting(true);
@@ -195,13 +198,13 @@ function ApplicationForm({
       });
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error || 'Could not submit your application.');
+        toast.error(data.error || t('error-submit-application', { defaultValue: 'Could not submit your application.' }));
         return;
       }
-      toast.success('Application submitted! We’ll review it shortly.');
+      toast.success(t('application-submitted', { defaultValue: "Application submitted! We'll review it shortly." }));
       onApplied();
     } catch {
-      toast.error('Something went wrong. Please try again.');
+      toast.error(t('error-generic-retry', { defaultValue: 'Something went wrong. Please try again.' }));
     } finally {
       setSubmitting(false);
     }
@@ -215,14 +218,13 @@ function ApplicationForm({
       <div>
         <div className="flex items-center gap-2 text-site-accent">
           <ShieldCheck className="h-5 w-5" />
-          <span className="text-xs font-semibold uppercase tracking-wide">Driver application</span>
+          <span className="text-xs font-semibold uppercase tracking-wide">{t('driver-application', { defaultValue: 'Driver application' })}</span>
         </div>
         <h2 className="mt-1 text-2xl font-bold text-site-text" style={{ fontFamily: 'var(--site-font-display)' }}>
-          Tell us about your ride
+          {t('tell-us-about-your-ride', { defaultValue: 'Tell us about your ride' })}
         </h2>
         <p className="mt-1 text-site-text-muted">
-          We’ll review your vehicle details and license number, then let you know once you’re
-          approved to drive.
+          {t('application-form-desc', { defaultValue: "We'll review your vehicle details and license number, then let you know once you're approved to drive." })}
         </p>
       </div>
 
@@ -230,50 +232,50 @@ function ApplicationForm({
         <div className="flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
           <XCircle className="mt-0.5 h-5 w-5 shrink-0" />
           <div>
-            <p className="font-semibold">Your previous application wasn’t approved</p>
+            <p className="font-semibold">{t('previous-application-rejected', { defaultValue: "Your previous application wasn't approved" })}</p>
             <p className="mt-0.5 text-red-300/90">{rejected.rejectionReason}</p>
-            <p className="mt-1 text-red-300/70">You can update your details and re-apply below.</p>
+            <p className="mt-1 text-red-300/70">{t('reapply-hint', { defaultValue: 'You can update your details and re-apply below.' })}</p>
           </div>
         </div>
       )}
 
       <div className="rounded-2xl border border-site-border bg-site-surface/80 p-5">
-        <h3 className="mb-4 font-semibold text-site-text">Vehicle details</h3>
+        <h3 className="mb-4 font-semibold text-site-text">{t('vehicle-details', { defaultValue: 'Vehicle details' })}</h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-site-text-muted">Make</label>
-            <input required maxLength={60} value={form.vehicleMake} onChange={(e) => set('vehicleMake', e.target.value)} placeholder="Toyota" className={inputClass} />
+            <label className="mb-1.5 block text-xs font-medium text-site-text-muted">{t('label-make', { defaultValue: 'Make' })}</label>
+            <input required maxLength={60} value={form.vehicleMake} onChange={(e) => set('vehicleMake', e.target.value)} placeholder={t('placeholder-make', { defaultValue: 'Toyota' })} className={inputClass} />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-site-text-muted">Model</label>
-            <input required maxLength={60} value={form.vehicleModel} onChange={(e) => set('vehicleModel', e.target.value)} placeholder="Camry" className={inputClass} />
+            <label className="mb-1.5 block text-xs font-medium text-site-text-muted">{t('label-model', { defaultValue: 'Model' })}</label>
+            <input required maxLength={60} value={form.vehicleModel} onChange={(e) => set('vehicleModel', e.target.value)} placeholder={t('placeholder-model', { defaultValue: 'Camry' })} className={inputClass} />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-site-text-muted">Year</label>
-            <input required type="number" min={1980} max={new Date().getFullYear() + 2} value={form.vehicleYear} onChange={(e) => set('vehicleYear', e.target.value)} placeholder="2022" className={inputClass} />
+            <label className="mb-1.5 block text-xs font-medium text-site-text-muted">{t('label-year', { defaultValue: 'Year' })}</label>
+            <input required type="number" min={1980} max={new Date().getFullYear() + 2} value={form.vehicleYear} onChange={(e) => set('vehicleYear', e.target.value)} placeholder={t('placeholder-year', { defaultValue: '2022' })} className={inputClass} />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-site-text-muted">Color</label>
-            <input required maxLength={30} value={form.vehicleColor} onChange={(e) => set('vehicleColor', e.target.value)} placeholder="Silver" className={inputClass} />
+            <label className="mb-1.5 block text-xs font-medium text-site-text-muted">{t('label-color', { defaultValue: 'Color' })}</label>
+            <input required maxLength={30} value={form.vehicleColor} onChange={(e) => set('vehicleColor', e.target.value)} placeholder={t('placeholder-color', { defaultValue: 'Silver' })} className={inputClass} />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-site-text-muted">License plate</label>
-            <input required maxLength={16} value={form.licensePlate} onChange={(e) => set('licensePlate', e.target.value.toUpperCase())} placeholder="ABC-1234" className={inputClass} />
+            <label className="mb-1.5 block text-xs font-medium text-site-text-muted">{t('label-license-plate', { defaultValue: 'License plate' })}</label>
+            <input required maxLength={16} value={form.licensePlate} onChange={(e) => set('licensePlate', e.target.value.toUpperCase())} placeholder={t('placeholder-license-plate', { defaultValue: 'ABC-1234' })} className={inputClass} />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-site-text-muted">Driver’s license #</label>
-            <input required maxLength={40} value={form.licenseNumber} onChange={(e) => set('licenseNumber', e.target.value.toUpperCase())} placeholder="D1234567" className={inputClass} />
+            <label className="mb-1.5 block text-xs font-medium text-site-text-muted">{t('label-drivers-license', { defaultValue: "Driver's license #" })}</label>
+            <input required maxLength={40} value={form.licenseNumber} onChange={(e) => set('licenseNumber', e.target.value.toUpperCase())} placeholder={t('placeholder-drivers-license', { defaultValue: 'D1234567' })} className={inputClass} />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-site-text-muted">Passenger seats</label>
+            <label className="mb-1.5 block text-xs font-medium text-site-text-muted">{t('label-passenger-seats', { defaultValue: 'Passenger seats' })}</label>
             <input required type="number" min={1} max={8} value={form.seats} onChange={(e) => set('seats', e.target.value)} className={inputClass} />
           </div>
         </div>
       </div>
 
       <div className="rounded-2xl border border-site-border bg-site-surface/80 p-5">
-        <h3 className="mb-1 font-semibold text-site-text">Which class will you drive?</h3>
-        <p className="mb-4 text-xs text-site-text-muted">Pick the option that best matches your vehicle.</p>
+        <h3 className="mb-1 font-semibold text-site-text">{t('which-class-drive', { defaultValue: 'Which class will you drive?' })}</h3>
+        <p className="mb-4 text-xs text-site-text-muted">{t('class-hint', { defaultValue: 'Pick the option that best matches your vehicle.' })}</p>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {RIDE_CLASSES.map((cls) => (
             <button
@@ -298,7 +300,7 @@ function ApplicationForm({
         className="flex w-full items-center justify-center gap-2 rounded-xl bg-site-accent px-6 py-3 text-sm font-semibold text-(--site-accent-fg) transition-all hover:bg-(--site-accent-hover) disabled:cursor-not-allowed disabled:opacity-50"
       >
         {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-        Submit application
+        {t('submit-application', { defaultValue: 'Submit application' })}
       </button>
     </form>
   );
@@ -320,6 +322,7 @@ function DriverDashboard({
   const [online, setOnline] = useState(driver.isOnline);
   const [togglingOnline, setTogglingOnline] = useState(false);
   const [focusRideId, setFocusRideId] = useState<string | null>(null);
+  const { t } = useTranslation('rideshare');
 
   const load = useCallback(async () => {
     try {
@@ -359,7 +362,7 @@ function DriverDashboard({
       });
       if (!res.ok) {
         setOnline(!next);
-        toast.error('Could not update availability.');
+        toast.error(t('error-update-availability', { defaultValue: 'Could not update availability.' }));
       } else {
         onDriverChange();
       }
@@ -380,13 +383,13 @@ function DriverDashboard({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error(data.error || 'Action failed.');
+        toast.error(data.error || t('error-action-failed', { defaultValue: 'Action failed.' }));
         return;
       }
-      toast.success('Ride accepted — head to the pickup!');
+      toast.success(t('ride-accepted', { defaultValue: 'Ride accepted — head to the pickup!' }));
       load();
     } catch {
-      toast.error('Something went wrong.');
+      toast.error(t('error-generic', { defaultValue: 'Something went wrong.' }));
     } finally {
       setBusy(null);
     }
@@ -400,7 +403,7 @@ function DriverDashboard({
           <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-400" />
           <div className="min-w-0">
             <p className="flex items-center gap-2 font-semibold text-site-text">
-              You’re an approved RMH driver
+              {t('approved-driver', { defaultValue: "You're an approved RMH driver" })}
               {driver.ratingAvg != null && (
                 <span className="flex items-center gap-0.5 text-xs text-amber-400">
                   <Star className="h-3 w-3 fill-amber-400" /> {driver.ratingAvg.toFixed(1)}
@@ -423,20 +426,20 @@ function DriverDashboard({
           }`}
         >
           <Power className="h-4 w-4" />
-          {online ? 'Online' : 'Offline'}
+          {online ? t('status-online', { defaultValue: 'Online' }) : t('status-offline', { defaultValue: 'Offline' })}
         </button>
       </div>
 
       {!online && (
         <p className="rounded-xl border border-dashed border-site-border px-4 py-3 text-center text-sm text-site-text-muted">
-          You’re offline. Go online to receive new ride requests.
+          {t('offline-hint', { defaultValue: "You're offline. Go online to receive new ride requests." })}
         </p>
       )}
 
       {/* Active trip — full live panel */}
       {focusRideId && (
         <section className="space-y-4">
-          <h2 className="text-lg font-bold text-site-text">Your active trip</h2>
+          <h2 className="text-lg font-bold text-site-text">{t('your-active-trip', { defaultValue: 'Your active trip' })}</h2>
           <ActiveRidePanel
             key={focusRideId}
             rideId={focusRideId}
@@ -453,14 +456,14 @@ function DriverDashboard({
       {/* Available requests */}
       <section>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-site-text">Open ride requests</h2>
-          <button onClick={load} className="text-xs text-site-accent hover:underline">Refresh</button>
+          <h2 className="text-lg font-bold text-site-text">{t('open-ride-requests', { defaultValue: 'Open ride requests' })}</h2>
+          <button onClick={load} className="text-xs text-site-accent hover:underline">{t('refresh', { defaultValue: 'Refresh' })}</button>
         </div>
         {loading ? (
           <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-site-text-muted" /></div>
         ) : available.length === 0 ? (
           <p className="rounded-xl border border-dashed border-site-border px-4 py-6 text-center text-sm text-site-text-muted">
-            No open requests right now. Check back soon!
+            {t('no-open-requests', { defaultValue: 'No open requests right now. Check back soon!' })}
           </p>
         ) : (
           <ul className="space-y-3">
@@ -468,7 +471,7 @@ function DriverDashboard({
               <RideCard key={ride.id} ride={ride} busy={busy === ride.id} showRider>
                 <button onClick={() => accept(ride.id)} disabled={busy === ride.id} className="flex items-center gap-1.5 rounded-lg bg-site-accent px-4 py-1.5 text-xs font-semibold text-(--site-accent-fg) disabled:opacity-50">
                   {busy === ride.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Car className="h-3.5 w-3.5" />}
-                  Accept
+                  {t('accept', { defaultValue: 'Accept' })}
                 </button>
               </RideCard>
             ))}
@@ -493,6 +496,7 @@ function RideCard({
   showRider?: boolean;
   children: React.ReactNode;
 }) {
+  const { t } = useTranslation('rideshare');
   return (
     <motion.li
       initial={{ opacity: 0, y: 8 }}
@@ -509,7 +513,7 @@ function RideCard({
           )}
         </span>
         {showRider && (
-          <span className="text-xs text-site-text-muted">for {ride.rider.name ?? 'a rider'}</span>
+          <span className="text-xs text-site-text-muted">{t('for-rider', { name: ride.rider.name ?? t('a-rider', { defaultValue: 'a rider' }), defaultValue: 'for {{name}}' })}</span>
         )}
       </div>
       <div className="mt-2 space-y-1 text-xs text-site-text-muted">
@@ -523,7 +527,7 @@ function RideCard({
         </div>
       </div>
       {ride.notes && (
-        <p className="mt-2 rounded-lg bg-site-surface px-3 py-2 text-xs text-site-text-muted">“{ride.notes}”</p>
+        <p className="mt-2 rounded-lg bg-site-surface px-3 py-2 text-xs text-site-text-muted">"{ride.notes}"</p>
       )}
       <div className="mt-3 flex items-center justify-between gap-2 border-t border-site-border pt-3">
         <div className="min-w-0">
@@ -531,7 +535,7 @@ function RideCard({
             <span className="text-sm font-bold text-emerald-400">
               {formatUsd(payoutBreakdown(ride.estimatedFareCents).driverEarningsCents)}
             </span>
-            <span className="text-[11px] text-site-text-dim">est. pay</span>
+            <span className="text-[11px] text-site-text-dim">{t('est-pay', { defaultValue: 'est. pay' })}</span>
           </div>
           <span className="mt-1 flex items-center gap-3 text-xs text-site-text-dim">
             {ride.distanceMeters != null && (

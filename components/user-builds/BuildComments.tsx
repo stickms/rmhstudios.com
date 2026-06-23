@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Send, Loader2, MessageCircle, ChevronDown } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { authClient } from '@/lib/auth-client';
@@ -34,17 +35,18 @@ function CommentItem({
   onReply: (parentId: string) => void;
   depth?: number;
 }) {
+  const { t } = useTranslation("c-user-builds");
   const [showReplies, setShowReplies] = useState(depth === 0);
 
   return (
     <div className={depth > 0 ? 'ml-8 border-l border-site-border pl-4' : ''}>
       <div className="py-3">
         <div className="flex items-start gap-3">
-          <UserAvatar src={comment.user.image ?? undefined} alt={comment.user.name || 'User'} size={32} fallbackName={comment.user.name ?? undefined} />
+          <UserAvatar src={comment.user.image ?? undefined} alt={comment.user.name || t("user-alt", { defaultValue: "User" })} size={32} fallbackName={comment.user.name ?? undefined} />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <span className="font-medium text-sm text-site-text">
-                {comment.user.name || 'Anonymous'}
+                {comment.user.name || t("anonymous", { defaultValue: "Anonymous" })}
               </span>
               <span className="text-xs text-site-text-dim">
                 {timeAgo(comment.createdAt)}
@@ -57,7 +59,7 @@ function CommentItem({
               onClick={() => onReply(comment.id)}
               className="mt-1 text-xs text-site-text-dim hover:text-violet-400 transition-colors"
             >
-              Reply
+              {t("reply", { defaultValue: "Reply" })}
             </button>
           </div>
         </div>
@@ -71,7 +73,7 @@ function CommentItem({
                 className="flex items-center gap-1 text-xs text-violet-400 hover:text-violet-300 mb-2"
               >
                 <ChevronDown className={`w-3 h-3 transition-transform ${showReplies ? 'rotate-180' : ''}`} />
-                {showReplies ? 'Hide' : `Show ${comment.replyCount} replies`}
+                {showReplies ? t("hide", { defaultValue: "Hide" }) : t("show-replies", { defaultValue: "Show {{count}} replies", count: comment.replyCount })}
               </button>
             )}
             {showReplies &&
@@ -86,6 +88,7 @@ function CommentItem({
 }
 
 export function BuildComments({ buildId }: BuildCommentsProps) {
+  const { t } = useTranslation("c-user-builds");
   const { data: session } = authClient.useSession();
   const [comments, setComments] = useState<BuildComment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -178,7 +181,7 @@ export function BuildComments({ buildId }: BuildCommentsProps) {
     <div>
       <h2 className="text-lg font-semibold text-site-text mb-4 flex items-center gap-2">
         <MessageCircle className="w-5 h-5 text-violet-400" />
-        Comments
+        {t("comments", { defaultValue: "Comments" })}
       </h2>
 
       {/* Comment Form */}
@@ -186,13 +189,13 @@ export function BuildComments({ buildId }: BuildCommentsProps) {
         <form onSubmit={handleSubmit} className="mb-6">
           {replyTo && replyToComment && (
             <div className="flex items-center gap-2 mb-2 text-sm text-site-text-muted">
-              <span>Replying to {replyToComment.user.name}</span>
+              <span>{t("replying-to", { defaultValue: "Replying to {{name}}", name: replyToComment.user.name })}</span>
               <button
                 type="button"
                 onClick={() => setReplyTo(null)}
                 className="text-violet-400 hover:text-violet-300"
               >
-                Cancel
+                {t("cancel", { defaultValue: "Cancel" })}
               </button>
             </div>
           )}
@@ -200,7 +203,7 @@ export function BuildComments({ buildId }: BuildCommentsProps) {
             <input
               id="comment-input"
               type="text"
-              placeholder={replyTo ? 'Write a reply...' : 'Write a comment...'}
+              placeholder={replyTo ? t("write-reply", { defaultValue: "Write a reply..." }) : t("write-comment", { defaultValue: "Write a comment..." })}
               value={content}
               onChange={(e) => setContent(e.target.value)}
               className="flex-1 px-4 py-2 rounded-lg bg-site-surface border border-site-border text-site-text text-sm outline-none focus:border-violet-500/50 transition-colors"
@@ -218,9 +221,9 @@ export function BuildComments({ buildId }: BuildCommentsProps) {
       ) : (
         <p className="text-sm text-site-text-muted mb-6">
           <a href="/login" className="text-violet-400 hover:text-violet-300">
-            Sign in
+            {t("sign-in", { defaultValue: "Sign in" })}
           </a>{' '}
-          to leave a comment.
+          {t("to-leave-a-comment", { defaultValue: "to leave a comment." })}
         </p>
       )}
 
@@ -230,7 +233,7 @@ export function BuildComments({ buildId }: BuildCommentsProps) {
           <Loader2 className="w-6 h-6 text-violet-400 animate-spin" />
         </div>
       ) : comments.length === 0 ? (
-        <p className="text-center text-site-text-dim py-8">No comments yet. Be the first!</p>
+        <p className="text-center text-site-text-dim py-8">{t("no-comments", { defaultValue: "No comments yet. Be the first!" })}</p>
       ) : (
         <div className="divide-y divide-site-border">
           {comments.map((comment) => (
@@ -245,7 +248,7 @@ export function BuildComments({ buildId }: BuildCommentsProps) {
           onClick={() => cursor && fetchComments(cursor)}
           className="w-full mt-4 py-2 text-sm text-violet-400 hover:text-violet-300 transition-colors"
         >
-          Load more comments
+          {t("load-more-comments", { defaultValue: "Load more comments" })}
         </button>
       )}
     </div>

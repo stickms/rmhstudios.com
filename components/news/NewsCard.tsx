@@ -3,6 +3,7 @@
 import { Link } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { Calendar, ArrowRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { getCategoryColor } from '@/lib/news-categories';
 import { NewsSourceBadge } from './NewsSourceBadge';
 import type { NewsArticle } from '@/lib/news';
@@ -13,6 +14,7 @@ interface NewsCardProps {
 }
 
 export function NewsCard({ article, index }: NewsCardProps) {
+    const { t } = useTranslation("c-news");
     const categoryColor = getCategoryColor(article.category ?? '');
 
     return (
@@ -83,7 +85,7 @@ export function NewsCard({ article, index }: NewsCardProps) {
                     )}
 
                     <div className="mt-auto flex items-center gap-2 text-(--site-accent) text-xs font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
-                        Read Our Take <ArrowRight className="w-3 h-3" />
+                        {t("read-our-take", { defaultValue: "Read Our Take" })} <ArrowRight className="w-3 h-3" />
                     </div>
                 </div>
             </div>

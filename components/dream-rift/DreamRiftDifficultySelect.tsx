@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from "react-i18next";
 import { useDreamRiftStore } from '@/lib/dream-rift/store';
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '@/lib/dream-rift/constants';
 import { TouhouFrame, TouhouDivider } from './TouhouFrame';
@@ -58,6 +59,8 @@ export function DreamRiftDifficultySelect() {
     startGame();
   };
 
+  const { t } = useTranslation("c-dream-rift");
+
   const charColor = character === 'rei' ? '#ff4466' : '#66aaff';
   const charName = character === 'rei' ? 'Rei' : 'Yume';
 
@@ -76,10 +79,10 @@ export function DreamRiftDifficultySelect() {
           className="text-lg tracking-[0.25em] text-amber-300/80"
           style={{ fontFamily: "'Georgia', serif" }}
         >
-          SELECT DIFFICULTY
+          {t("select-difficulty", { defaultValue: "SELECT DIFFICULTY" })}
         </h2>
         <p className="mt-1 text-[10px] tracking-wider text-zinc-500" style={{ fontFamily: "'Georgia', serif" }}>
-          Playing as <span style={{ color: charColor }}>{charName}</span>
+          {t("playing-as", { defaultValue: "Playing as" })} <span style={{ color: charColor }}>{charName}</span>
         </p>
         <div className="flex items-center justify-center gap-2 mt-2">
           <div className="w-12 h-px bg-gradient-to-r from-transparent to-amber-400/40" />
@@ -117,19 +120,19 @@ export function DreamRiftDifficultySelect() {
                     className="text-sm tracking-wider font-bold"
                     style={{ color: diff.color, fontFamily: "'Georgia', serif" }}
                   >
-                    {diff.label}
+                    {t(`difficulty-${diff.id}-label`, { defaultValue: diff.label })}
                   </div>
                   <div
                     className="text-[9px] text-zinc-600 mt-0.5 tracking-wide"
                     style={{ fontFamily: "'Georgia', serif" }}
                   >
-                    {diff.subtitle}
+                    {t(`difficulty-${diff.id}-subtitle`, { defaultValue: diff.subtitle })}
                   </div>
                 </div>
                 <div className="text-[9px] text-zinc-600 text-right" style={{ fontFamily: "'Georgia', serif" }}>
                   {diff.continues > 0
-                    ? `${diff.continues} continue${diff.continues > 1 ? 's' : ''}`
-                    : 'No mercy'}
+                    ? t("continues-count", { count: diff.continues, defaultValue: "{{count}} continue" })
+                    : t("no-mercy", { defaultValue: "No mercy" })}
                 </div>
               </div>
 
@@ -148,7 +151,7 @@ export function DreamRiftDifficultySelect() {
         className="mt-4 text-[10px] tracking-[0.2em] text-zinc-600 hover:text-amber-400/60 transition-colors"
         style={{ fontFamily: "'Georgia', serif" }}
       >
-        ◂ Back
+        {t("back", { defaultValue: "◂ Back" })}
       </button>
     </div>
   );

@@ -12,6 +12,7 @@ import { useFeedStore } from '@/stores/feedStore';
 import { useFeedSSE } from '@/hooks/useFeedSSE';
 import { authClient } from '@/lib/auth-client';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 
 interface SearchUser {
   id: string;
@@ -24,6 +25,7 @@ interface SearchUser {
 }
 
 export function FeedColumn() {
+  const { t } = useTranslation('feed');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [mode, setMode] = useState<'feed' | 'friends'>('feed');
   const { open: openSidebar } = useMobileSidebar();
@@ -106,7 +108,7 @@ export function FeedColumn() {
           <button
             onClick={openSidebar}
             className="md:hidden p-2 -ml-2 rounded-lg text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
-            aria-label="Open menu"
+            aria-label={t("open-menu", { defaultValue: "Open menu" })}
           >
             <Menu className="w-5 h-5" />
           </button>
@@ -121,7 +123,7 @@ export function FeedColumn() {
                   : 'text-site-text-muted hover:text-site-text'
               }`}
             >
-              For You
+              {t("for-you", { defaultValue: "For You" })}
               {mode === 'feed' && (
                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-site-accent rounded-full" />
               )}
@@ -134,7 +136,7 @@ export function FeedColumn() {
                   : 'text-site-text-muted hover:text-site-text'
               }`}
             >
-              Following
+              {t("following", { defaultValue: "Following" })}
               {mode === 'friends' && (
                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-site-accent rounded-full" />
               )}
@@ -153,7 +155,7 @@ export function FeedColumn() {
                 ? 'text-site-accent bg-site-accent-dim'
                 : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
             }`}
-            title="Toggle feed filters"
+            title={t("toggle-feed-filters", { defaultValue: "Toggle feed filters" })}
           >
             <SlidersHorizontal className="w-5 h-5" />
           </button>
@@ -179,7 +181,7 @@ export function FeedColumn() {
               type="text"
               value={searchInput}
               onChange={(e) => handleSearchChange(e.target.value)}
-              placeholder="Search..."
+              placeholder={t("search-placeholder", { defaultValue: "Search..." })}
               className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-lg pl-9 pr-9 py-2 border border-site-border outline-none focus:border-site-accent transition-colors"
               onKeyDown={(e) => {
                 if (e.key === 'Escape') clearSearch();
@@ -201,7 +203,7 @@ export function FeedColumn() {
       {userResults.length > 0 && (
         <div className="border-b border-site-border">
           <div className="px-4 py-2">
-            <p className="text-xs font-semibold text-site-text-dim uppercase tracking-wide mb-1">People</p>
+            <p className="text-xs font-semibold text-site-text-dim uppercase tracking-wide mb-1">{t("people", { defaultValue: "People" })}</p>
           </div>
           {userResults.map((user) => (
             <Link
@@ -209,10 +211,10 @@ export function FeedColumn() {
               to={`/u/${user.handle || user.id}` as string}
               className="flex items-center gap-3 px-4 py-2.5 hover:bg-site-surface transition-colors"
             >
-              <UserAvatar src={user.image ?? undefined} alt={user.name || 'User'} size={32} fallbackName={user.name ?? undefined} />
+              <UserAvatar src={user.image ?? undefined} alt={user.name || t("user-alt", { defaultValue: "User" })} size={32} fallbackName={user.name ?? undefined} />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1">
-                  <span className="font-semibold text-sm text-site-text truncate">{user.name || 'Unknown'}</span>
+                  <span className="font-semibold text-sm text-site-text truncate">{user.name || t("unknown-user", { defaultValue: "Unknown" })}</span>
                   {user.isVerified && <BadgeCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />}
                   {user.isAdmin && <ShieldCheck className="w-3.5 h-3.5 text-site-accent shrink-0" />}
                 </div>
@@ -234,14 +236,14 @@ export function FeedColumn() {
       {/* Feed */}
       {mode === 'friends' && !session ? (
         <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-          <p className="text-lg font-medium text-site-text mb-2">Sign in to see who you follow</p>
-          <p className="text-sm text-site-text-muted mb-6">Follow people and their posts will appear here.</p>
+          <p className="text-lg font-medium text-site-text mb-2">{t("sign-in-to-see-following", { defaultValue: "Sign in to see who you follow" })}</p>
+          <p className="text-sm text-site-text-muted mb-6">{t("follow-people-hint", { defaultValue: "Follow people and their posts will appear here." })}</p>
           <Link
             to="/login"
             search={{ callbackURL: undefined }}
             className="px-5 py-2 rounded-lg bg-site-accent text-site-bg text-sm font-bold hover:bg-site-accent-hover transition-colors"
           >
-            Sign in
+            {t("sign-in", { defaultValue: "Sign in" })}
           </Link>
         </div>
       ) : (

@@ -8,6 +8,7 @@
 'use client';
 
 import { useRef, useEffect } from 'react';
+import { useTranslation } from "react-i18next";
 
 export interface GuessLogEntry {
   userId: string;
@@ -22,6 +23,7 @@ interface GuessLogProps {
 }
 
 export default function GuessLog({ entries }: GuessLogProps) {
+  const { t } = useTranslation("c-rmhbox");
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom on new entries
@@ -36,7 +38,7 @@ export default function GuessLog({ entries }: GuessLogProps) {
   return (
     <div className="w-full flex flex-col gap-1">
       <span className="text-xs font-semibold text-(--rmhbox-text-muted) uppercase tracking-wide">
-        Guess Log
+        {t("guess-log", { defaultValue: "Guess Log" })}
       </span>
       <div
         ref={scrollRef}
@@ -54,12 +56,12 @@ export default function GuessLog({ entries }: GuessLogProps) {
               {entry.isCorrect ? (
                 <>
                   <span className="font-semibold text-(--rmhbox-text)">{entry.userName}</span>
-                  {' guessed the movie!'}
+                  {t("guessed-the-movie", { defaultValue: " guessed the movie!" })}
                 </>
               ) : (
                 <>
                   <span className="font-semibold text-(--rmhbox-text)">{entry.userName}</span>
-                  {' guessed '}
+                  {t("guessed", { defaultValue: " guessed " })}
                   <span className="italic">{entry.guessText}</span>
                 </>
               )}

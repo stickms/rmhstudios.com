@@ -7,6 +7,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { analyzePdf } from '@/lib/library/pdf-client';
 
 type Status = 'idle' | 'analyzing' | 'drafting' | 'ready' | 'uploading';
@@ -22,6 +23,7 @@ function humanizeFilename(name: string): string {
 
 export function UploadModal({ onClose }: { onClose: () => void }) {
   const navigate = useNavigate();
+  const { t } = useTranslation("c-library");
   const [status, setStatus] = useState<Status>('idle');
   const [file, setFile] = useState<File | null>(null);
   const [cover, setCover] = useState<Blob | null>(null);
@@ -48,7 +50,7 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
   async function handleFile(f: File) {
     setError(null);
     if (f.type && f.type !== 'application/pdf' && !f.name.toLowerCase().endsWith('.pdf')) {
-      setError("That doesn't look like a PDF.");
+      setError(t("error-not-pdf", { defaultValue: "That doesn't look like a PDF." }));
       return;
     }
     setFile(f);
@@ -57,7 +59,7 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
     try {
       analysis = await analyzePdf(f);
     } catch {
-      setError("Couldn't read this PDF. It may be encrypted or corrupt.");
+      setError(t("error-pdf-read", { defaultValue: "Couldn't read this PDF. It may be encrypted or corrupt." }));
       setStatus('idle');
       setFile(null);
       return;
@@ -87,7 +89,7 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
   async function publish() {
     if (!file) return;
     if (!title.trim()) {
-      setError('A title is required.');
+      setError(t("error-title-required", { defaultValue: "A title is required." }));
       return;
     }
     setError(null);
@@ -103,30 +105,30 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
       const res = await fetch('/api/library/upload', { method: 'POST', body: form });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error ?? 'Upload failed, nothing was saved.');
+        setError(data.error ?? t("error-upload-failed", { defaultValue: "Upload failed, nothing was saved." }));
         setStatus('ready');
         return;
       }
       onClose();
       navigate({ to: '/library/$slug', params: { slug: data.slug } });
     } catch {
-      setError('Upload failed, nothing was saved.');
+      setError(t("error-upload-failed", { defaultValue: "Upload failed, nothing was saved." }));
       setStatus('ready');
     }
   }
 
   const busy = status === 'analyzing' || status === 'drafting' || status === 'uploading';
   const statusLabel =
-    status === 'analyzing' ? 'Reading the PDF…' :
-    status === 'drafting' ? 'Drafting a title…' :
-    status === 'uploading' ? 'Publishing…' : null;
+    status === 'analyzing' ? t("status-analyzing", { defaultValue: "Reading the PDF…" }) :
+    status === 'drafting' ? t("status-drafting", { defaultValue: "Drafting a title…" }) :
+    status === 'uploading' ? t("status-uploading", { defaultValue: "Publishing…" }) : null;
 
   return (
-    <div className="lib-upload__overlay" role="dialog" aria-modal="true" aria-label="Upload a PDF" onMouseDown={onClose}>
+    <div className="lib-upload__overlay" role="dialog" aria-modal="true" aria-label={t("dialog-label", { defaultValue: "Upload a PDF" })} onMouseDown={onClose}>
       <div className="lib-upload" onMouseDown={(e) => e.stopPropagation()}>
         <div className="lib-upload__head">
-          <h2 className="lib-upload__title">Upload a PDF</h2>
-          <button type="button" className="lib-upload__close" onClick={onClose} aria-label="Close">×</button>
+          <h2 className="lib-upload__title">{t("dialog-label", { defaultValue: "Upload a PDF" })}</h2>
+          <button type="button" className="lib-upload__close" onClick={onClose} aria-label={t("close", { defaultValue: "Close" })}>×</button>
         </div>
 
         {status === 'idle' && !file ? (
@@ -141,7 +143,7 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
               if (f) handleFile(f);
             }}
           >
-            Drop a PDF here, or click to choose one.
+            {t("drop-prompt", { defaultValue: "Drop a PDF here, or click to choose one." })}
           </button>
         ) : (
           <div className="lib-upload__body">
@@ -151,23 +153,23 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
             </div>
             <div className="lib-upload__fields">
               <label className="lib-upload__label">
-                Title
+                {t("label-title", { defaultValue: "Title" })}
                 <input
                   className="lib-upload__input"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   maxLength={200}
-                  placeholder="Book title"
+                  placeholder={t("placeholder-title", { defaultValue: "Book title" })}
                 />
               </label>
               <label className="lib-upload__label">
-                Description
+                {t("label-description", { defaultValue: "Description" })}
                 <textarea
                   className="lib-upload__input lib-upload__textarea"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   maxLength={1000}
-                  placeholder="One-sentence description"
+                  placeholder={t("placeholder-description", { defaultValue: "One-sentence description" })}
                 />
               </label>
             </div>
@@ -190,7 +192,7 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
 
         <div className="lib-upload__actions">
           <button type="button" className="lib-upload__btn" onClick={onClose} disabled={status === 'uploading'}>
-            Cancel
+            {t("cancel", { defaultValue: "Cancel" })}
           </button>
           <button
             type="button"
@@ -198,7 +200,7 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
             onClick={publish}
             disabled={!file || busy || !title.trim()}
           >
-            {status === 'uploading' ? 'Publishing…' : 'Publish'}
+            {status === 'uploading' ? t("status-uploading", { defaultValue: "Publishing…" }) : t("publish", { defaultValue: "Publish" })}
           </button>
         </div>
       </div>

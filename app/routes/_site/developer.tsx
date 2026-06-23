@@ -5,6 +5,7 @@ import { DeveloperColumn } from '@/components/feed/DeveloperColumn';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
+import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute('/_site/developer')({
   head: () => ({ meta: [{ title: 'Developer API | RMH Studios' }] }),
@@ -12,6 +13,7 @@ export const Route = createFileRoute('/_site/developer')({
 });
 
 function DeveloperPage() {
+  const { t } = useTranslation("site");
   const { data: session, isPending } = useSession();
   return (
     <>
@@ -25,9 +27,9 @@ function DeveloperPage() {
           </div>
         ) : !session ? (
           <div className="flex flex-col items-center gap-3 px-6 py-24 text-center">
-            <p className="font-medium text-site-text">Sign in to manage developer keys</p>
+            <p className="font-medium text-site-text">{t("sign-in-to-manage-developer-keys", { defaultValue: "Sign in to manage developer keys" })}</p>
             <Link to="/login" search={{ callbackURL: '/developer' }}>
-              <Button variant="accent">Sign in</Button>
+              <Button variant="accent">{t("sign-in", { defaultValue: "Sign in" })}</Button>
             </Link>
           </div>
         ) : (

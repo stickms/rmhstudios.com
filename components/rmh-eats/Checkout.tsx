@@ -20,6 +20,7 @@ import {
     Heart,
     X,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useEatsStore } from '@/lib/store/useEatsStore';
 import { mockRestaurants } from '@/lib/rmh-eats/mockData';
 import { toast } from 'sonner';
@@ -48,6 +49,7 @@ function getTimeSlots(): string[] {
 }
 
 export default function Checkout() {
+    const { t } = useTranslation("c-rmh-eats");
     const { cart, cartRestaurantId, addresses, paymentMethods, loyaltyPoints, cartTotal, placeOrder, clearCart, setView } =
         useEatsStore();
 
@@ -131,55 +133,55 @@ export default function Checkout() {
         const code = promoInput.trim().toUpperCase();
         const promo = PROMO_CODES[code];
         if (!promo) {
-            toast.error('Invalid promo code');
+            toast.error(t("invalid-promo-code", { defaultValue: "Invalid promo code" }));
             return;
         }
         setAppliedPromo({ code, ...promo });
         setPromoInput('');
-        toast.success(`${code} applied — ${promo.label}!`, { icon: '🎉' });
+        toast.success(t("promo-applied", { defaultValue: "{{code}} applied — {{label}}!", code, label: promo.label }), { icon: '🎉' });
     }
 
     function handleRemovePromo() {
         setAppliedPromo(null);
-        toast.success('Promo code removed');
+        toast.success(t("promo-removed", { defaultValue: "Promo code removed" }));
     }
 
     const handleSaveAddress = () => {
         if (!newAddr.street || !newAddr.city || !newAddr.state || !newAddr.zip) {
-            toast.error('Please fill in all address fields');
+            toast.error(t("fill-address-fields", { defaultValue: "Please fill in all address fields" }));
             return;
         }
         addAddress({ ...newAddr, isDefault: false });
-        toast.success('Address saved!');
+        toast.success(t("address-saved", { defaultValue: "Address saved!" }));
         setShowNewAddress(false);
         setNewAddr({ label: '', street: '', city: '', state: '', zip: '' });
     };
 
     const handleSavePayment = () => {
         if (!newCard.number || !newCard.expiry || !newCard.cvc || !newCard.name) {
-            toast.error('Please fill in all card fields');
+            toast.error(t("fill-card-fields", { defaultValue: "Please fill in all card fields" }));
             return;
         }
         const last4 = newCard.number.replace(/\s/g, '').slice(-4);
         addPaymentMethod({
             type: 'card',
-            label: `Card ending in ${last4}`,
+            label: t("card-ending-in", { defaultValue: "Card ending in {{last4}}", last4 }),
             last4,
             brand: 'Visa',
             isDefault: false,
         });
-        toast.success('Card saved!');
+        toast.success(t("card-saved", { defaultValue: "Card saved!" }));
         setShowNewPayment(false);
         setNewCard({ number: '', expiry: '', cvc: '', name: '' });
     };
 
     const handlePlaceOrder = async () => {
         if (!selectedAddress || !selectedPayment || !restaurant) {
-            toast.error('Please select an address and payment method');
+            toast.error(t("select-address-payment", { defaultValue: "Please select an address and payment method" }));
             return;
         }
         if (isScheduled && !scheduledTime) {
-            toast.error('Please select a delivery time');
+            toast.error(t("select-delivery-time", { defaultValue: "Please select a delivery time" }));
             return;
         }
         setIsPlacing(true);
@@ -233,9 +235,9 @@ export default function Checkout() {
         return (
             <div className="flex flex-col items-center gap-4 py-24">
                 <span className="text-5xl">🛒</span>
-                <p className="text-slate-400">Nothing to check out.</p>
+                <p className="text-slate-400">{t("nothing-to-checkout", { defaultValue: "Nothing to check out." })}</p>
                 <button onClick={() => setView('home')} className="text-orange-400 hover:text-orange-300 text-sm">
-                    Browse restaurants
+                    {t("browse-restaurants", { defaultValue: "Browse restaurants" })}
                 </button>
             </div>
         );
@@ -251,14 +253,14 @@ export default function Checkout() {
                     <ArrowLeft className="h-5 w-5" />
                 </button>
                 <div>
-                    <h2 className="text-xl font-bold text-white">Checkout</h2>
+                    <h2 className="text-xl font-bold text-white">{t("checkout", { defaultValue: "Checkout" })}</h2>
                     <p className="text-sm text-slate-400">{restaurant.name}</p>
                 </div>
             </div>
 
             <div className="flex flex-col gap-4">
                 {/* Order Summary */}
-                <Section title="Order Summary">
+                <Section title={t("order-summary", { defaultValue: "Order Summary" })}>
                     <div className="space-y-2">
                         {cart.map((item) => (
                             <div
@@ -284,38 +286,38 @@ export default function Checkout() {
                         ))}
                     </div>
                     <div className="mt-3 pt-3 border-t border-slate-700 space-y-1.5">
-                        <FeeRow label="Subtotal" value={`$${subtotal.toFixed(2)}`} />
+                        <FeeRow label={t("subtotal", { defaultValue: "Subtotal" })} value={`$${subtotal.toFixed(2)}`} />
                         {promoDiscount > 0 && (
-                            <FeeRow label={`Promo (${appliedPromo!.code})`} value={`−$${promoDiscount.toFixed(2)}`} green />
+                            <FeeRow label={t("promo-label", { defaultValue: "Promo ({{code}})", code: appliedPromo!.code })} value={`−$${promoDiscount.toFixed(2)}`} green />
                         )}
                         <FeeRow
-                            label="Delivery fee"
-                            value={deliveryFee === 0 ? 'Free' : `$${deliveryFee.toFixed(2)}`}
+                            label={t("delivery-fee", { defaultValue: "Delivery fee" })}
+                            value={deliveryFee === 0 ? t("free", { defaultValue: "Free" }) : `$${deliveryFee.toFixed(2)}`}
                             green={deliveryFee === 0}
                         />
-                        <FeeRow label="Service fee (8%)" value={`$${serviceFee.toFixed(2)}`} dim />
-                        <FeeRow label={`Tip (${tipPercent}%)`} value={`$${tipAmount.toFixed(2)}`} dim />
+                        <FeeRow label={t("service-fee", { defaultValue: "Service fee (8%)" })} value={`$${serviceFee.toFixed(2)}`} dim />
+                        <FeeRow label={t("tip-percent", { defaultValue: "Tip ({{tipPercent}}%)", tipPercent })} value={`$${tipAmount.toFixed(2)}`} dim />
                         {loyaltyDiscount > 0 && (
-                            <FeeRow label="Loyalty points" value={`−$${loyaltyDiscount.toFixed(2)}`} green />
+                            <FeeRow label={t("loyalty-points", { defaultValue: "Loyalty points" })} value={`−$${loyaltyDiscount.toFixed(2)}`} green />
                         )}
                         {donationAmount > 0 && (
-                            <FeeRow label="Donation 💚" value={`$${donationAmount.toFixed(2)}`} dim />
+                            <FeeRow label={t("donation", { defaultValue: "Donation 💚" })} value={`$${donationAmount.toFixed(2)}`} dim />
                         )}
                         <div className="flex justify-between font-bold text-white text-base pt-2 border-t border-slate-700/50">
-                            <span>Total</span>
+                            <span>{t("total", { defaultValue: "Total" })}</span>
                             <span className="text-orange-400">${grandTotal.toFixed(2)}</span>
                         </div>
                     </div>
                     <div className="mt-3 flex items-center gap-2 text-sm text-slate-400">
                         <Clock className="h-4 w-4 text-orange-400" />
-                        <span>Est. delivery: {isScheduled && scheduledTime ? scheduledTime : restaurant.deliveryTime}</span>
+                        <span>{t("est-delivery", { defaultValue: "Est. delivery:" })} {isScheduled && scheduledTime ? scheduledTime : restaurant.deliveryTime}</span>
                         <Bike className="h-4 w-4 text-orange-400 ml-2" />
-                        <span>To your address</span>
+                        <span>{t("to-your-address", { defaultValue: "To your address" })}</span>
                     </div>
                 </Section>
 
                 {/* Promo Code */}
-                <Section title="Promo Code" icon={<Tag className="h-4 w-4 text-orange-400" />}>
+                <Section title={t("promo-code", { defaultValue: "Promo Code" })} icon={<Tag className="h-4 w-4 text-orange-400" />}>
                     {appliedPromo ? (
                         <div className="flex items-center justify-between rounded-xl bg-green-500/10 border border-green-500/30 px-3 py-2.5">
                             <div>
@@ -332,7 +334,7 @@ export default function Checkout() {
                                 value={promoInput}
                                 onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
                                 onKeyDown={(e) => e.key === 'Enter' && handleApplyPromo()}
-                                placeholder="Enter code (try SAVE10)"
+                                placeholder={t("enter-code", { defaultValue: "Enter code (try SAVE10)" })}
                                 className="flex-1 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white placeholder:text-slate-500 outline-none focus:border-orange-500"
                             />
                             <button
@@ -340,7 +342,7 @@ export default function Checkout() {
                                 disabled={!promoInput.trim()}
                                 className="rounded-xl bg-orange-500 hover:bg-orange-400 disabled:opacity-40 px-4 py-2 text-sm font-medium text-white transition-colors"
                             >
-                                Apply
+                                {t("apply", { defaultValue: "Apply" })}
                             </button>
                         </div>
                     )}
@@ -348,15 +350,15 @@ export default function Checkout() {
 
                 {/* Loyalty Points */}
                 {loyaltyPoints > 0 && (
-                    <Section title="Loyalty Points" icon={<Trophy className="h-4 w-4 text-orange-400" />}>
+                    <Section title={t("loyalty-points-section", { defaultValue: "Loyalty Points" })} icon={<Trophy className="h-4 w-4 text-orange-400" />}>
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm text-white">
-                                    Balance: <span className="font-semibold text-orange-400">{loyaltyPoints} pts</span>
+                                    {t("balance-label", { defaultValue: "Balance:" })} <span className="font-semibold text-orange-400">{loyaltyPoints} pts</span>
                                 </p>
                                 <p className="text-xs text-slate-400 mt-0.5">
-                                    Redeem {maxPointsRedeemable} pts = ${loyaltyDiscount > 0 ? loyaltyDiscount.toFixed(2) : (maxPointsRedeemable / 100).toFixed(2)} off
-                                    {maxPointsRedeemable < loyaltyPoints && ' (max 50% of order)'}
+                                    {t("redeem-pts", { defaultValue: "Redeem {{pts}} pts = ${{amount}} off", pts: maxPointsRedeemable, amount: loyaltyDiscount > 0 ? loyaltyDiscount.toFixed(2) : (maxPointsRedeemable / 100).toFixed(2) })}
+                                    {maxPointsRedeemable < loyaltyPoints && t("max-50-pct", { defaultValue: " (max 50% of order)" })}
                                 </p>
                             </div>
                             <button
@@ -370,7 +372,7 @@ export default function Checkout() {
                 )}
 
                 {/* Tip */}
-                <Section title="Add a Tip">
+                <Section title={t("add-a-tip", { defaultValue: "Add a Tip" })}>
                     <div className="flex gap-2 flex-wrap">
                         {TIP_OPTIONS.map((pct) => (
                             <button
@@ -385,12 +387,12 @@ export default function Checkout() {
                                         : 'border-slate-700 bg-slate-800 text-slate-300 hover:border-slate-600'
                                 }`}
                             >
-                                {pct === 0 ? 'No tip' : `${pct}%`}
+                                {pct === 0 ? t("no-tip", { defaultValue: "No tip" }) : `${pct}%`}
                             </button>
                         ))}
                         <input
                             type="number"
-                            placeholder="Custom $"
+                            placeholder={t("custom-tip", { defaultValue: "Custom $" })}
                             value={customTip}
                             onChange={(e) => {
                                 setCustomTip(e.target.value);
@@ -402,7 +404,7 @@ export default function Checkout() {
                 </Section>
 
                 {/* Scheduled Delivery */}
-                <Section title="Delivery Time" icon={<Calendar className="h-4 w-4 text-orange-400" />}>
+                <Section title={t("delivery-time", { defaultValue: "Delivery Time" })} icon={<Calendar className="h-4 w-4 text-orange-400" />}>
                     <div className="flex gap-3 mb-3">
                         <button
                             onClick={() => setIsScheduled(false)}
@@ -410,7 +412,7 @@ export default function Checkout() {
                                 !isScheduled ? 'border-orange-500 bg-orange-500/10 text-orange-400' : 'border-slate-700 bg-slate-800 text-slate-400'
                             }`}
                         >
-                            ASAP
+                            {t("asap", { defaultValue: "ASAP" })}
                         </button>
                         <button
                             onClick={() => setIsScheduled(true)}
@@ -418,7 +420,7 @@ export default function Checkout() {
                                 isScheduled ? 'border-orange-500 bg-orange-500/10 text-orange-400' : 'border-slate-700 bg-slate-800 text-slate-400'
                             }`}
                         >
-                            Schedule for later
+                            {t("schedule-for-later", { defaultValue: "Schedule for later" })}
                         </button>
                     </div>
                     <AnimatePresence>
@@ -447,7 +449,7 @@ export default function Checkout() {
                                     onChange={(e) => setScheduledTime(e.target.value)}
                                     className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white outline-none focus:border-orange-500"
                                 >
-                                    <option value="">Select time...</option>
+                                    <option value="">{t("select-time", { defaultValue: "Select time..." })}</option>
                                     {timeSlots.map((t) => (
                                         <option key={t} value={t}>{t}</option>
                                     ))}
@@ -459,13 +461,13 @@ export default function Checkout() {
 
                 {/* Delivery Address */}
                 <Section
-                    title="Delivery Address"
+                    title={t("delivery-address", { defaultValue: "Delivery Address" })}
                     action={
                         <button
                             onClick={() => setView('addresses')}
                             className="text-xs text-orange-400 hover:text-orange-300 flex items-center gap-0.5"
                         >
-                            Manage <ChevronRight className="h-3 w-3" />
+                            {t("manage", { defaultValue: "Manage" })} <ChevronRight className="h-3 w-3" />
                         </button>
                     }
                 >
@@ -475,7 +477,7 @@ export default function Checkout() {
                             className="flex items-center gap-2 text-sm text-orange-400 hover:text-orange-300"
                         >
                             <Plus className="h-4 w-4" />
-                            Add an address
+                            {t("add-an-address", { defaultValue: "Add an address" })}
                         </button>
                     ) : (
                         <div className="space-y-2">
@@ -506,22 +508,22 @@ export default function Checkout() {
                                 className="flex items-center gap-2 text-sm text-orange-400 hover:text-orange-300 mt-1"
                             >
                                 <Plus className="h-4 w-4" />
-                                Add new address
+                                {t("add-new-address", { defaultValue: "Add new address" })}
                             </button>
                         </div>
                     )}
 
                     {showNewAddress && (
                         <div className="mt-3 p-3 rounded-xl bg-slate-800 border border-slate-700 space-y-2">
-                            <InputField placeholder="Label (e.g. Home, Work)" value={newAddr.label} onChange={(v) => setNewAddr((p) => ({ ...p, label: v }))} />
-                            <InputField placeholder="Street address" value={newAddr.street} onChange={(v) => setNewAddr((p) => ({ ...p, street: v }))} />
+                            <InputField placeholder={t("label-placeholder", { defaultValue: "Label (e.g. Home, Work)" })} value={newAddr.label} onChange={(v) => setNewAddr((p) => ({ ...p, label: v }))} />
+                            <InputField placeholder={t("street-address", { defaultValue: "Street address" })} value={newAddr.street} onChange={(v) => setNewAddr((p) => ({ ...p, street: v }))} />
                             <div className="grid grid-cols-3 gap-2">
-                                <InputField placeholder="City" value={newAddr.city} onChange={(v) => setNewAddr((p) => ({ ...p, city: v }))} />
-                                <InputField placeholder="State" value={newAddr.state} onChange={(v) => setNewAddr((p) => ({ ...p, state: v }))} />
-                                <InputField placeholder="ZIP" value={newAddr.zip} onChange={(v) => setNewAddr((p) => ({ ...p, zip: v }))} />
+                                <InputField placeholder={t("city", { defaultValue: "City" })} value={newAddr.city} onChange={(v) => setNewAddr((p) => ({ ...p, city: v }))} />
+                                <InputField placeholder={t("state", { defaultValue: "State" })} value={newAddr.state} onChange={(v) => setNewAddr((p) => ({ ...p, state: v }))} />
+                                <InputField placeholder={t("zip", { defaultValue: "ZIP" })} value={newAddr.zip} onChange={(v) => setNewAddr((p) => ({ ...p, zip: v }))} />
                             </div>
                             <button onClick={handleSaveAddress} className="w-full rounded-xl bg-orange-500 hover:bg-orange-400 px-4 py-2 text-sm font-medium text-white transition-colors">
-                                Save Address
+                                {t("save-address", { defaultValue: "Save Address" })}
                             </button>
                         </div>
                     )}
@@ -533,7 +535,7 @@ export default function Checkout() {
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <DoorOpen className="h-4 w-4 text-slate-400" />
-                                    <span className="text-sm text-slate-300">Leave at door</span>
+                                    <span className="text-sm text-slate-300">{t("leave-at-door", { defaultValue: "Leave at door" })}</span>
                                 </div>
                                 <button
                                     onClick={() => setLeaveAtDoor(!leaveAtDoor)}
@@ -547,12 +549,12 @@ export default function Checkout() {
                             <div>
                                 <div className="flex items-center gap-2 mb-1.5">
                                     <FileText className="h-4 w-4 text-slate-400" />
-                                    <span className="text-sm text-slate-300">Delivery instructions</span>
+                                    <span className="text-sm text-slate-300">{t("delivery-instructions", { defaultValue: "Delivery instructions" })}</span>
                                 </div>
                                 <textarea
                                     value={deliveryInstructions}
                                     onChange={(e) => setDeliveryInstructions(e.target.value)}
-                                    placeholder="e.g. Ring the doorbell, leave by the mat..."
+                                    placeholder={t("delivery-instructions-placeholder", { defaultValue: "e.g. Ring the doorbell, leave by the mat..." })}
                                     rows={2}
                                     className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white placeholder:text-slate-500 outline-none focus:border-orange-500 resize-none"
                                 />
@@ -563,7 +565,7 @@ export default function Checkout() {
                                 <div className="flex items-center justify-between mb-2">
                                     <div className="flex items-center gap-2">
                                         <Gift className="h-4 w-4 text-slate-400" />
-                                        <span className="text-sm text-slate-300">This is a gift</span>
+                                        <span className="text-sm text-slate-300">{t("this-is-a-gift", { defaultValue: "This is a gift" })}</span>
                                     </div>
                                     <button
                                         onClick={() => setIsGift(!isGift)}
@@ -581,14 +583,14 @@ export default function Checkout() {
                                             className="overflow-hidden space-y-2"
                                         >
                                             <InputField
-                                                placeholder="Recipient's name"
+                                                placeholder={t("recipient-name", { defaultValue: "Recipient's name" })}
                                                 value={giftRecipient}
                                                 onChange={setGiftRecipient}
                                             />
                                             <textarea
                                                 value={giftMessage}
                                                 onChange={(e) => setGiftMessage(e.target.value)}
-                                                placeholder="Gift message (optional)"
+                                                placeholder={t("gift-message", { defaultValue: "Gift message (optional)" })}
                                                 rows={2}
                                                 className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white placeholder:text-slate-500 outline-none focus:border-orange-500 resize-none"
                                             />
@@ -602,13 +604,13 @@ export default function Checkout() {
 
                 {/* Payment Method */}
                 <Section
-                    title="Payment Method"
+                    title={t("payment-method", { defaultValue: "Payment Method" })}
                     action={
                         <button
                             onClick={() => setView('payments')}
                             className="text-xs text-orange-400 hover:text-orange-300 flex items-center gap-0.5"
                         >
-                            Manage <ChevronRight className="h-3 w-3" />
+                            {t("manage", { defaultValue: "Manage" })} <ChevronRight className="h-3 w-3" />
                         </button>
                     }
                 >
@@ -618,7 +620,7 @@ export default function Checkout() {
                             className="flex items-center gap-2 text-sm text-orange-400 hover:text-orange-300"
                         >
                             <Plus className="h-4 w-4" />
-                            Add a payment method
+                            {t("add-payment-method", { defaultValue: "Add a payment method" })}
                         </button>
                     ) : (
                         <div className="space-y-2">
@@ -637,7 +639,7 @@ export default function Checkout() {
                                         <p className="text-sm text-white">{pm.label}</p>
                                         {pm.type === 'card' && pm.expiryMonth && (
                                             <p className="text-xs text-slate-400">
-                                                Expires {pm.expiryMonth}/{pm.expiryYear}
+                                                {t("expires", { defaultValue: "Expires" })} {pm.expiryMonth}/{pm.expiryYear}
                                             </p>
                                         )}
                                     </div>
@@ -651,22 +653,22 @@ export default function Checkout() {
                                 className="flex items-center gap-2 text-sm text-orange-400 hover:text-orange-300 mt-1"
                             >
                                 <Plus className="h-4 w-4" />
-                                Add new card
+                                {t("add-new-card", { defaultValue: "Add new card" })}
                             </button>
                         </div>
                     )}
 
                     {showNewPayment && (
                         <div className="mt-3 p-3 rounded-xl bg-slate-800 border border-slate-700 space-y-2">
-                            <InputField placeholder="Cardholder name" value={newCard.name} onChange={(v) => setNewCard((p) => ({ ...p, name: v }))} />
-                            <InputField placeholder="Card number" value={newCard.number} onChange={(v) => setNewCard((p) => ({ ...p, number: v }))} />
+                            <InputField placeholder={t("cardholder-name", { defaultValue: "Cardholder name" })} value={newCard.name} onChange={(v) => setNewCard((p) => ({ ...p, name: v }))} />
+                            <InputField placeholder={t("card-number", { defaultValue: "Card number" })} value={newCard.number} onChange={(v) => setNewCard((p) => ({ ...p, number: v }))} />
                             <div className="grid grid-cols-2 gap-2">
-                                <InputField placeholder="MM/YY" value={newCard.expiry} onChange={(v) => setNewCard((p) => ({ ...p, expiry: v }))} />
-                                <InputField placeholder="CVC" value={newCard.cvc} onChange={(v) => setNewCard((p) => ({ ...p, cvc: v }))} />
+                                <InputField placeholder={t("mm-yy", { defaultValue: "MM/YY" })} value={newCard.expiry} onChange={(v) => setNewCard((p) => ({ ...p, expiry: v }))} />
+                                <InputField placeholder={t("cvc", { defaultValue: "CVC" })} value={newCard.cvc} onChange={(v) => setNewCard((p) => ({ ...p, cvc: v }))} />
                             </div>
-                            <p className="text-xs text-slate-500">🔒 This is a mock app — no real payment info is stored.</p>
+                            <p className="text-xs text-slate-500">🔒 {t("mock-payment-note", { defaultValue: "This is a mock app — no real payment info is stored." })}</p>
                             <button onClick={handleSavePayment} className="w-full rounded-xl bg-orange-500 hover:bg-orange-400 px-4 py-2 text-sm font-medium text-white transition-colors">
-                                Save Card
+                                {t("save-card", { defaultValue: "Save Card" })}
                             </button>
                         </div>
                     )}
@@ -678,9 +680,9 @@ export default function Checkout() {
                         <div className="flex items-center gap-2 min-w-0">
                             <Heart className="h-4 w-4 text-red-400 shrink-0" />
                             <div className="min-w-0">
-                                <p className="text-sm text-white font-medium">Round up & donate</p>
+                                <p className="text-sm text-white font-medium">{t("round-up-donate", { defaultValue: "Round up & donate" })}</p>
                                 <p className="text-xs text-slate-400 truncate">
-                                    Add ${roundUpAmount.toFixed(2)} to support local food banks
+                                    {t("round-up-description", { defaultValue: "Add ${{amount}} to support local food banks", amount: roundUpAmount.toFixed(2) })}
                                 </p>
                             </div>
                         </div>
@@ -703,15 +705,15 @@ export default function Checkout() {
                     {isPlacing ? (
                         <>
                             <div className="h-5 w-5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                            Placing your order...
+                            {t("placing-order", { defaultValue: "Placing your order..." })}
                         </>
                     ) : (
-                        <>Place Order · ${grandTotal.toFixed(2)}</>
+                        <>{t("place-order", { defaultValue: "Place Order" })} · ${grandTotal.toFixed(2)}</>
                     )}
                 </motion.button>
 
                 <p className="text-center text-xs text-slate-500 pb-4">
-                    🎭 This is a mock app — no real charges will be made.
+                    🎭 {t("mock-no-charges", { defaultValue: "This is a mock app — no real charges will be made." })}
                 </p>
             </div>
         </div>

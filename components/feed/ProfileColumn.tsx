@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { MapPin, Link as LinkIcon, Calendar, Loader2, MessageCircle, BadgeCheck, ShieldCheck, Coins, Store, Gift } from 'lucide-react';
 import { TipDialog } from '@/components/economy/TipDialog';
 import { GiftSubDialog } from '@/components/economy/GiftSubDialog';
@@ -66,13 +67,14 @@ type ProfileTab = 'rmharks' | 'likes';
 const DEFAULT_AVATAR = '/images/social/default_avatar.png';
 
 function ProfileAvatar({ image, name }: { image: string | null; name: string | null }) {
+  const { t } = useTranslation('feed');
   const [imgError, setImgError] = useState(false);
   const imgSrc = imgError ? DEFAULT_AVATAR : image;
 
   return (
     <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center text-site-text font-bold text-2xl ring-4 ring-site-bg shrink-0">
       {imgSrc ? (
-        <img src={imgSrc} alt={name || 'User'} className="w-full h-full rounded-full object-cover" onError={() => setImgError(true)} />
+        <img src={imgSrc} alt={name || t('user', { defaultValue: 'User' })} className="w-full h-full rounded-full object-cover" onError={() => setImgError(true)} />
       ) : (
         (name?.[0] || 'U').toUpperCase()
       )}
@@ -119,6 +121,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
   const controllerRef = useRef<any>(null);
   const scriptLoadedRef = useRef(false);
 
+  const { t } = useTranslation('feed');
   const { data: session } = authClient.useSession();
   const navigate = useNavigate();
   const [messageSending, setMessageSending] = useState(false);
@@ -367,14 +370,14 @@ export function ProfileColumn({ userId }: { userId: string }) {
 
       if (!res.ok) {
         const data = await res.json();
-        setMessageError(data.error || 'Failed to start conversation');
+        setMessageError(data.error || t('failed-to-start-conversation', { defaultValue: 'Failed to start conversation' }));
         return;
       }
 
       const data = await res.json();
       navigate({ to: `/messages/${data.conversationId}` });
     } catch {
-      setMessageError('Failed to start conversation');
+      setMessageError(t('failed-to-start-conversation', { defaultValue: 'Failed to start conversation' }));
     } finally {
       setMessageSending(false);
     }
@@ -404,12 +407,12 @@ export function ProfileColumn({ userId }: { userId: string }) {
   if (notFound || !profile) {
     return (
       <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-        <p className="text-lg font-medium text-site-text mb-1">User not found</p>
+        <p className="text-lg font-medium text-site-text mb-1">{t('user-not-found', { defaultValue: 'User not found' })}</p>
         <p className="text-sm text-site-text-muted mb-4">
-          This user doesn&apos;t exist.
+          {t('user-not-found-desc', { defaultValue: "This user doesn't exist." })}
         </p>
         <Link to="/">
-          <Button variant="accent" size="sm">Go Home</Button>
+          <Button variant="accent" size="sm">{t('go-home', { defaultValue: 'Go Home' })}</Button>
         </Link>
       </div>
     );
@@ -430,7 +433,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
               </h1>
               {profile.isVerified && <BadgeCheck className="w-4 h-4 text-emerald-500 shrink-0" />}
               {profile.isAdmin && (
-                <span title="Admin" className="inline-flex items-center shrink-0">
+                <span title={t('admin', { defaultValue: 'Admin' })} className="inline-flex items-center shrink-0">
                   <ShieldCheck className="w-4 h-4 text-site-accent" />
                 </span>
               )}
@@ -462,8 +465,8 @@ export function ProfileColumn({ userId }: { userId: string }) {
             {profile.isOnline && (
               <span
                 className="absolute bottom-1 right-1 h-4 w-4 rounded-full border-2 border-site-bg bg-emerald-500"
-                title="Online now"
-                aria-label="Online now"
+                title={t('online-now', { defaultValue: 'Online now' })}
+                aria-label={t('online-now', { defaultValue: 'Online now' })}
               />
             )}
           </div>
@@ -506,11 +509,11 @@ export function ProfileColumn({ userId }: { userId: string }) {
                 {displayName || 'Unknown'}
               </h2>
               {profile.cosmetics?.badge?.emoji && (
-                <span className="shrink-0 text-lg" title="Equipped badge">{profile.cosmetics.badge.emoji}</span>
+                <span className="shrink-0 text-lg" title={t('equipped-badge', { defaultValue: 'Equipped badge' })}>{profile.cosmetics.badge.emoji}</span>
               )}
               {profile.isVerified && <BadgeCheck className="w-5 h-5 text-emerald-500 shrink-0" />}
               {profile.isAdmin && (
-                <span title="Admin" className="inline-flex items-center shrink-0">
+                <span title={t('admin', { defaultValue: 'Admin' })} className="inline-flex items-center shrink-0">
                   <ShieldCheck className="w-5 h-5 text-site-accent" />
                 </span>
               )}
@@ -518,7 +521,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
               <Link
                 to="/wallet"
                 className="inline-flex items-center gap-0.5 shrink-0 hover:opacity-80 transition-opacity"
-                title={`${profile.coins} RMH Coins`}
+                title={t('rmh-coins-count', { count: profile.coins, defaultValue: '{{count}} RMH Coins' })}
               >
                 <CoinIcon className="w-4 h-4" />
                 <span className="text-sm font-bold text-yellow-500">{profile.coins}</span>
@@ -529,7 +532,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
             )}
           </div>
           <div className="flex items-center gap-2">
-            <Link to={`/store/${profile.handle || profile.id}` as string} title="Storefront">
+            <Link to={`/store/${profile.handle || profile.id}` as string} title={t('storefront', { defaultValue: 'Storefront' })}>
               <Button
                 variant="outline"
                 size="sm"
@@ -545,7 +548,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
                 onClick={() => setShowEdit(true)}
                 className="rounded-lg border-site-border text-site-text hover:bg-site-surface"
               >
-                Edit Profile
+                {t('edit-profile', { defaultValue: 'Edit Profile' })}
               </Button>
             ) : session ? (
               <>
@@ -554,7 +557,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
                   size="sm"
                   onClick={() => setTipOpen(true)}
                   className="rounded-lg border-site-border text-site-text hover:bg-site-surface"
-                  title="Send a tip"
+                  title={t('send-a-tip', { defaultValue: 'Send a tip' })}
                 >
                   <Coins className="w-4 h-4 text-amber-400" />
                 </Button>
@@ -563,7 +566,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
                   size="sm"
                   onClick={() => setGiftOpen(true)}
                   className="rounded-lg border-site-border text-site-text hover:bg-site-surface"
-                  title="Gift a membership"
+                  title={t('gift-a-membership', { defaultValue: 'Gift a membership' })}
                 >
                   <Gift className="w-4 h-4 text-site-accent" />
                 </Button>
@@ -573,7 +576,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
                   onClick={handleMessage}
                   disabled={messageSending}
                   className="rounded-lg border-site-border text-site-text hover:bg-site-surface"
-                  title="Message"
+                  title={t('message', { defaultValue: 'Message' })}
                 >
                   <MessageCircle className="w-4 h-4" />
                 </Button>
@@ -583,7 +586,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
                   onClick={handleFollowToggle}
                   className={`rounded-lg ${profile.isFollowing ? 'border-site-border text-site-text hover:border-site-danger hover:text-site-danger hover:bg-site-danger/10' : ''}`}
                 >
-                  {profile.isFollowing ? 'Following' : 'Follow'}
+                  {profile.isFollowing ? t('following', { defaultValue: 'Following' }) : t('follow', { defaultValue: 'Follow' })}
                 </Button>
               </>
             ) : null}
@@ -601,7 +604,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
           <div className="mb-3 rounded-xl border border-site-border bg-site-surface p-3">
             <div className="mb-1 flex items-center justify-between text-sm">
               <span className="inline-flex items-center gap-1.5 font-medium text-site-text">
-                <CoinIcon className="h-4 w-4" /> {profile.tipGoalLabel || 'Tip goal'}
+                <CoinIcon className="h-4 w-4" /> {profile.tipGoalLabel || t('tip-goal', { defaultValue: 'Tip goal' })}
               </span>
               <span className="text-site-text-muted">
                 {(profile.tipsThisMonth ?? 0).toLocaleString()} / {profile.tipGoal.toLocaleString()}
@@ -636,7 +639,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
           )}
           <span className="flex items-center gap-1">
             <Calendar className="w-4 h-4" />
-            Joined {formatDate(profile.createdAt)}
+            {t('joined-date', { date: formatDate(profile.createdAt), defaultValue: 'Joined {{date}}' })}
           </span>
         </div>
 
@@ -646,14 +649,14 @@ export function ProfileColumn({ userId }: { userId: string }) {
             className="hover:underline text-left"
           >
             <span className="font-bold text-site-text">{profile.followingCount}</span>{' '}
-            <span className="text-site-text-dim">Following</span>
+            <span className="text-site-text-dim">{t('following-label', { defaultValue: 'Following' })}</span>
           </button>
           <button
             onClick={() => setSocialModal('followers')}
             className="hover:underline text-left"
           >
             <span className="font-bold text-site-text">{profile.followerCount}</span>{' '}
-            <span className="text-site-text-dim">Followers</span>
+            <span className="text-site-text-dim">{t('followers-label', { defaultValue: 'Followers' })}</span>
           </button>
         </div>
 
@@ -689,7 +692,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
                   : 'text-site-text-dim hover:text-site-text hover:bg-site-surface/50'
               }`}
             >
-              Likes
+              {t('likes', { defaultValue: 'Likes' })}
             </button>
           )}
         </div>
@@ -710,18 +713,18 @@ export function ProfileColumn({ userId }: { userId: string }) {
 
           {!loadingItems && items.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-              <p className="text-lg font-medium text-site-text mb-1">No RMHarks yet</p>
+              <p className="text-lg font-medium text-site-text mb-1">{t('no-rmharks-yet', { defaultValue: 'No RMHarks yet' })}</p>
               <p className="text-sm text-site-text-muted">
                 {profile.isOwnProfile
-                  ? "You haven't posted any RMHarks yet."
-                  : `@${profile.handle} hasn't posted any RMHarks yet.`}
+                  ? t('no-rmharks-own', { defaultValue: "You haven't posted any RMHarks yet." })
+                  : t('no-rmharks-other', { handle: profile.handle, defaultValue: "@{{handle}} hasn't posted any RMHarks yet." })}
               </p>
             </div>
           )}
 
           {!hasMore && items.length > 0 && (
             <div className="py-8 text-center text-sm text-site-text-dim">
-              You&apos;ve reached the end
+              {t('reached-the-end', { defaultValue: "You've reached the end" })}
             </div>
           )}
 
@@ -744,18 +747,18 @@ export function ProfileColumn({ userId }: { userId: string }) {
 
           {!loadingLiked && likedItems.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-              <p className="text-lg font-medium text-site-text mb-1">No likes yet</p>
+              <p className="text-lg font-medium text-site-text mb-1">{t('no-likes-yet', { defaultValue: 'No likes yet' })}</p>
               <p className="text-sm text-site-text-muted">
                 {profile.isOwnProfile
-                  ? "You haven't liked any posts yet."
-                  : `@${profile.handle} hasn't liked any posts yet.`}
+                  ? t('no-likes-own', { defaultValue: "You haven't liked any posts yet." })
+                  : t('no-likes-other', { handle: profile.handle, defaultValue: "@{{handle}} hasn't liked any posts yet." })}
               </p>
             </div>
           )}
 
           {!likedHasMore && likedItems.length > 0 && (
             <div className="py-8 text-center text-sm text-site-text-dim">
-              You&apos;ve reached the end
+              {t('reached-the-end', { defaultValue: "You've reached the end" })}
             </div>
           )}
 

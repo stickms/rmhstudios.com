@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useGameStore } from '@/lib/versecraft/store';
 import { CHARACTERS } from '@/lib/versecraft/characters';
@@ -18,6 +19,7 @@ export function SettingsMenu() {
   const [pronouns, setPronouns] = useState(settings.playerPronouns);
   const [presentations, setPresentations] = useState(settings.characterPresentations);
   const [spritePack, setSpritePack] = useState<SpritePack>(settings.spritePack);
+  const { t } = useTranslation("c-versecraft");
 
   const handleApply = () => {
     updateSettings({
@@ -57,12 +59,12 @@ export function SettingsMenu() {
           className="text-2xl mb-6 text-center"
           style={{ fontFamily: 'var(--font-cinzel, serif)', color: '#c4a35a' }}
         >
-          {gameStarted ? 'Your Poet' : 'Settings'}
+          {gameStarted ? t("your-poet", { defaultValue: "Your Poet" }) : t("settings", { defaultValue: "Settings" })}
         </h2>
 
         {/* Player Name */}
         <div className="mb-6">
-          <label className="block text-sm mb-2" style={{ color: '#a89888' }}>Your Name</label>
+          <label className="block text-sm mb-2" style={{ color: '#a89888' }}>{t("your-name", { defaultValue: "Your Name" })}</label>
           <input
             type="text"
             value={playerName}
@@ -81,7 +83,7 @@ export function SettingsMenu() {
 
         {/* Pronouns */}
         <div className="mb-6">
-          <label className="block text-sm mb-2" style={{ color: '#a89888' }}>Pronouns</label>
+          <label className="block text-sm mb-2" style={{ color: '#a89888' }}>{t("pronouns", { defaultValue: "Pronouns" })}</label>
           <div className="flex gap-2 flex-wrap">
             {(['he/him', 'she/her', 'they/them'] as const).map(p => (
               <button
@@ -102,7 +104,7 @@ export function SettingsMenu() {
 
         {/* Sprite Pack */}
         <div className="mb-6">
-          <label className="block text-sm mb-2" style={{ color: '#a89888' }}>Sprite Pack</label>
+          <label className="block text-sm mb-2" style={{ color: '#a89888' }}>{t("sprite-pack", { defaultValue: "Sprite Pack" })}</label>
           <div className="flex gap-2 flex-wrap">
             {SPRITE_PACKS.map(pack => (
               <button
@@ -127,16 +129,16 @@ export function SettingsMenu() {
 
         {/* Character Presentations */}
         <div className="mb-6">
-          <label className="block text-sm mb-2" style={{ color: '#a89888' }}>Character Presentation</label>
+          <label className="block text-sm mb-2" style={{ color: '#a89888' }}>{t("character-presentation", { defaultValue: "Character Presentation" })}</label>
           <div className="flex gap-2 mb-3 flex-wrap">
             <button onClick={() => applyPreset('default')} className="text-xs px-3 py-1 rounded" style={{ backgroundColor: 'rgba(26, 21, 32, 0.6)', border: '1px solid rgba(196, 163, 90, 0.2)', color: '#a89888' }}>
-              Default Mix
+              {t("default-mix", { defaultValue: "Default Mix" })}
             </button>
             <button onClick={() => applyPreset('all_fem')} className="text-xs px-3 py-1 rounded" style={{ backgroundColor: 'rgba(26, 21, 32, 0.6)', border: '1px solid rgba(196, 163, 90, 0.2)', color: '#a89888' }}>
-              All Feminine
+              {t("all-feminine", { defaultValue: "All Feminine" })}
             </button>
             <button onClick={() => applyPreset('all_masc')} className="text-xs px-3 py-1 rounded" style={{ backgroundColor: 'rgba(26, 21, 32, 0.6)', border: '1px solid rgba(196, 163, 90, 0.2)', color: '#a89888' }}>
-              All Masculine
+              {t("all-masculine", { defaultValue: "All Masculine" })}
             </button>
           </div>
 
@@ -189,7 +191,7 @@ export function SettingsMenu() {
                 color: '#a89888',
               }}
             >
-              Back
+              {t("back", { defaultValue: "Back" })}
             </button>
           )}
           <button
@@ -201,7 +203,7 @@ export function SettingsMenu() {
               color: '#c4a35a',
             }}
           >
-            {gameStarted ? 'Begin' : 'Apply'}
+            {gameStarted ? t("begin", { defaultValue: "Begin" }) : t("apply", { defaultValue: "Apply" })}
           </button>
         </div>
       </motion.div>

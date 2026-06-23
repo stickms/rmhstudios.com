@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from 'react-i18next';
 import {
   LineChart,
   Line,
@@ -115,10 +116,11 @@ const headerCell: React.CSSProperties = {
    -------------------------------------------- */
 
 export function EmergentNarrativePaper() {
+  const { t } = useTranslation("c-research");
   return (
     <>
       {/* 1. INTRODUCTION */}
-      <h2 style={h2Style}>1. Introduction</h2>
+      <h2 style={h2Style}>{t("section-introduction", { defaultValue: "1. Introduction" })}</h2>
 
       <p className="mb-4">
         Narrative generation in open-world game environments represents one of the most
@@ -193,7 +195,7 @@ export function EmergentNarrativePaper() {
       </p>
 
       {/* 2. HIERARCHICAL ARCHITECTURE */}
-      <h2 style={h2Style}>2. Hierarchical Architecture</h2>
+      <h2 style={h2Style}>{t("section-hierarchical-architecture", { defaultValue: "2. Hierarchical Architecture" })}</h2>
 
       <p className="mb-4">
         The HLMO architecture is motivated by a structural analogy to the organization of
@@ -206,7 +208,7 @@ export function EmergentNarrativePaper() {
         bottom-up (as event reports).
       </p>
 
-      <h3 style={h3Style}>2.1 World Narrator (Tier 1)</h3>
+      <h3 style={h3Style}>{t("section-world-narrator", { defaultValue: "2.1 World Narrator (Tier 1)" })}</h3>
 
       <p className="mb-4">
         The World Narrator is a language model instance responsible for maintaining the
@@ -235,7 +237,7 @@ export function EmergentNarrativePaper() {
         retains causally pivotal events while compressing routine state transitions.
       </p>
 
-      <h3 style={h3Style}>2.2 Faction Planners (Tier 2)</h3>
+      <h3 style={h3Style}>{t("section-faction-planners", { defaultValue: "2.2 Faction Planners (Tier 2)" })}</h3>
 
       <p className="mb-4">
         Each faction, guild, political entity, or organizational unit within the game world
@@ -265,7 +267,7 @@ export function EmergentNarrativePaper() {
         diplomatic or military initiatives.
       </p>
 
-      <h3 style={h3Style}>2.3 Character Actors (Tier 3)</h3>
+      <h3 style={h3Style}>{t("section-character-actors", { defaultValue: "2.3 Character Actors (Tier 3)" })}</h3>
 
       <p className="mb-4">
         At the finest granularity, each NPC is controlled by a Character Actor&mdash;a
@@ -307,7 +309,7 @@ export function EmergentNarrativePaper() {
       </p>
 
       {/* 3. COHERENCE MECHANISMS */}
-      <h2 style={h2Style}>3. Coherence Mechanisms</h2>
+      <h2 style={h2Style}>{t("section-coherence-mechanisms", { defaultValue: "3. Coherence Mechanisms" })}</h2>
 
       <p className="mb-4">
         The hierarchical decomposition described in Section 2 provides the structural
@@ -319,7 +321,7 @@ export function EmergentNarrativePaper() {
         graph, and cross-tier constraint propagation.
       </p>
 
-      <h3 style={h3Style}>3.1 Hierarchical Memory Systems</h3>
+      <h3 style={h3Style}>{t("section-hierarchical-memory", { defaultValue: "3.1 Hierarchical Memory Systems" })}</h3>
 
       <p className="mb-4">
         Each tier maintains a structured memory buffer partitioned into <em>episodic</em>,{' '}
@@ -348,7 +350,7 @@ export function EmergentNarrativePaper() {
         count by a factor of approximately 8&times;.
       </p>
 
-      <h3 style={h3Style}>3.2 Dynamic Causal Graph</h3>
+      <h3 style={h3Style}>{t("section-dynamic-causal-graph", { defaultValue: "3.2 Dynamic Causal Graph" })}</h3>
 
       <p className="mb-4">
         Central to the HLMO coherence guarantees is the maintenance of a dynamic causal
@@ -376,7 +378,7 @@ export function EmergentNarrativePaper() {
         maximum path length of approximately 450 events.
       </p>
 
-      <h3 style={h3Style}>3.3 Cross-Tier Constraint Propagation</h3>
+      <h3 style={h3Style}>{t("section-cross-tier-constraint", { defaultValue: "3.3 Cross-Tier Constraint Propagation" })}</h3>
 
       <p className="mb-4">
         Information flows between tiers through a bidirectional constraint propagation
@@ -410,7 +412,7 @@ export function EmergentNarrativePaper() {
       </p>
 
       {/* 4. EVALUATION METHODOLOGY */}
-      <h2 style={h2Style}>4. Evaluation Methodology</h2>
+      <h2 style={h2Style}>{t("section-evaluation-methodology", { defaultValue: "4. Evaluation Methodology" })}</h2>
 
       <p className="mb-4">
         Evaluating the quality of emergent narrative systems requires a multi-faceted
@@ -420,7 +422,7 @@ export function EmergentNarrativePaper() {
         evaluation, long-horizon consistency tracking, and player engagement measurement.
       </p>
 
-      <h3 style={h3Style}>4.1 Automated Coherence Metrics</h3>
+      <h3 style={h3Style}>{t("section-automated-coherence-metrics", { defaultValue: "4.1 Automated Coherence Metrics" })}</h3>
 
       <p className="mb-4">
         We define a composite coherence score <Tex math="\mathcal{S}_C" /> that aggregates
@@ -449,7 +451,7 @@ export function EmergentNarrativePaper() {
         of 200 narrative excerpts.
       </p>
 
-      <h3 style={h3Style}>4.2 Human Evaluation Protocol</h3>
+      <h3 style={h3Style}>{t("section-human-evaluation-protocol", { defaultValue: "4.2 Human Evaluation Protocol" })}</h3>
 
       <p className="mb-4">
         A panel of <Tex math="N = 48" /> human evaluators was recruited, comprising 16
@@ -478,7 +480,7 @@ export function EmergentNarrativePaper() {
         task would indicate indistinguishability.
       </p>
 
-      <h3 style={h3Style}>4.3 Player Engagement Measurement</h3>
+      <h3 style={h3Style}>{t("section-player-engagement-measurement", { defaultValue: "4.3 Player Engagement Measurement" })}</h3>
 
       <p className="mb-4">
         In addition to expert evaluation, we conducted a player engagement study with{' '}
@@ -495,9 +497,9 @@ export function EmergentNarrativePaper() {
       </p>
 
       {/* 5. RESULTS */}
-      <h2 style={h2Style}>5. Results</h2>
+      <h2 style={h2Style}>{t("section-results", { defaultValue: "5. Results" })}</h2>
 
-      <h3 style={h3Style}>5.1 Long-Range Coherence</h3>
+      <h3 style={h3Style}>{t("section-long-range-coherence", { defaultValue: "5.1 Long-Range Coherence" })}</h3>
 
       <p className="mb-4">
         Figure 1 presents the composite coherence score <Tex math="\mathcal{S}_C" /> as a
@@ -515,18 +517,18 @@ export function EmergentNarrativePaper() {
         performance.
       </p>
 
-      <PaperFigure number={1} caption="Composite narrative coherence score as a function of gameplay hours across four experimental conditions. The HLMO architecture (blue) maintains coherence above 0.82 over 120 hours, approaching hand-authored quality (green) and dramatically outperforming flat LLM generation (orange).">
+      <PaperFigure number={1} caption={t("fig1-caption", { defaultValue: "Composite narrative coherence score as a function of gameplay hours across four experimental conditions. The HLMO architecture (blue) maintains coherence above 0.82 over 120 hours, approaching hand-authored quality (green) and dramatically outperforming flat LLM generation (orange)." })}>
         <ResponsiveContainer width="100%" height={350}>
           <LineChart data={coherenceOverTimeData}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="hour" label={{ value: 'Gameplay Hours', position: 'insideBottom', offset: -5 }} />
-            <YAxis domain={[0.2, 1.0]} label={{ value: 'Coherence Score', angle: -90, position: 'insideLeft' }} />
+            <XAxis dataKey="hour" label={{ value: t("chart-gameplay-hours", { defaultValue: "Gameplay Hours" }), position: 'insideBottom', offset: -5 }} />
+            <YAxis domain={[0.2, 1.0]} label={{ value: t("chart-coherence-score", { defaultValue: "Coherence Score" }), angle: -90, position: 'insideLeft' }} />
             <Tooltip />
             <Legend />
-            <Line type="monotone" dataKey="hierarchical" stroke="#2563eb" name="HLMO (Ours)" strokeWidth={2} />
-            <Line type="monotone" dataKey="scripted" stroke="#16a34a" name="Hand-Authored" strokeWidth={2} />
-            <Line type="monotone" dataKey="flat" stroke="#ea580c" name="Flat LLM" strokeWidth={2} />
-            <Line type="monotone" dataKey="noMemory" stroke="#dc2626" name="No Memory (Ablation)" strokeWidth={2} strokeDasharray="5 5" />
+            <Line type="monotone" dataKey="hierarchical" stroke="#2563eb" name={t("legend-hlmo", { defaultValue: "HLMO (Ours)" })} strokeWidth={2} />
+            <Line type="monotone" dataKey="scripted" stroke="#16a34a" name={t("legend-hand-authored", { defaultValue: "Hand-Authored" })} strokeWidth={2} />
+            <Line type="monotone" dataKey="flat" stroke="#ea580c" name={t("legend-flat-llm", { defaultValue: "Flat LLM" })} strokeWidth={2} />
+            <Line type="monotone" dataKey="noMemory" stroke="#dc2626" name={t("legend-no-memory", { defaultValue: "No Memory (Ablation)" })} strokeWidth={2} strokeDasharray="5 5" />
           </LineChart>
         </ResponsiveContainer>
       </PaperFigure>
@@ -544,7 +546,7 @@ export function EmergentNarrativePaper() {
         HLMO and hand-authored content is the central empirical finding of this paper.
       </p>
 
-      <h3 style={h3Style}>5.2 Human Evaluation</h3>
+      <h3 style={h3Style}>{t("section-human-evaluation", { defaultValue: "5.2 Human Evaluation" })}</h3>
 
       <p className="mb-4">
         Figure 2 presents the human evaluation results across all seven rating dimensions
@@ -557,15 +559,15 @@ export function EmergentNarrativePaper() {
         within the inter-rater reliability margin.
       </p>
 
-      <PaperFigure number={2} caption="Radar chart of human evaluation scores (10-point scale) across seven narrative quality dimensions. HLMO (blue) achieves near-parity with hand-authored content (green) on coherence metrics while substantially outperforming on agency and replayability.">
+      <PaperFigure number={2} caption={t("fig2-caption", { defaultValue: "Radar chart of human evaluation scores (10-point scale) across seven narrative quality dimensions. HLMO (blue) achieves near-parity with hand-authored content (green) on coherence metrics while substantially outperforming on agency and replayability." })}>
         <ResponsiveContainer width="100%" height={400}>
           <RadarChart data={humanEvalRadarData} cx="50%" cy="50%" outerRadius="70%">
             <PolarGrid />
             <PolarAngleAxis dataKey="metric" tick={{ fontSize: 11 }} />
             <PolarRadiusAxis domain={[0, 10]} tick={{ fontSize: 10 }} />
-            <Radar name="HLMO (Ours)" dataKey="hierarchical" stroke="#2563eb" fill="#2563eb" fillOpacity={0.15} strokeWidth={2} />
-            <Radar name="Hand-Authored" dataKey="scripted" stroke="#16a34a" fill="#16a34a" fillOpacity={0.1} strokeWidth={2} />
-            <Radar name="Flat LLM" dataKey="flat" stroke="#ea580c" fill="#ea580c" fillOpacity={0.1} strokeWidth={2} />
+            <Radar name={t("legend-hlmo", { defaultValue: "HLMO (Ours)" })} dataKey="hierarchical" stroke="#2563eb" fill="#2563eb" fillOpacity={0.15} strokeWidth={2} />
+            <Radar name={t("legend-hand-authored", { defaultValue: "Hand-Authored" })} dataKey="scripted" stroke="#16a34a" fill="#16a34a" fillOpacity={0.1} strokeWidth={2} />
+            <Radar name={t("legend-flat-llm", { defaultValue: "Flat LLM" })} dataKey="flat" stroke="#ea580c" fill="#ea580c" fillOpacity={0.1} strokeWidth={2} />
             <Legend />
           </RadarChart>
         </ResponsiveContainer>
@@ -586,7 +588,7 @@ export function EmergentNarrativePaper() {
         not significant (<Tex math="U = 58, p = .18" />, Mann-Whitney U test).
       </p>
 
-      <h3 style={h3Style}>5.3 Automated Metric Comparison</h3>
+      <h3 style={h3Style}>{t("section-automated-metric-comparison", { defaultValue: "5.3 Automated Metric Comparison" })}</h3>
 
       <p className="mb-4">
         Figure 3 presents a comparison of automated coherence metrics across all four
@@ -600,7 +602,7 @@ export function EmergentNarrativePaper() {
         causal consistency scores below 0.51 and 0.28 respectively.
       </p>
 
-      <PaperFigure number={3} caption="Automated coherence metrics at the 100-hour mark across five dimensions. HLMO (blue) approaches or matches hand-authored quality (green) on all dimensions while dramatically outperforming flat LLM and ablation baselines.">
+      <PaperFigure number={3} caption={t("fig3-caption", { defaultValue: "Automated coherence metrics at the 100-hour mark across five dimensions. HLMO (blue) approaches or matches hand-authored quality (green) on all dimensions while dramatically outperforming flat LLM and ablation baselines." })}>
         <ResponsiveContainer width="100%" height={350}>
           <BarChart data={comparisonBarData} layout="vertical">
             <CartesianGrid strokeDasharray="3 3" />
@@ -608,15 +610,15 @@ export function EmergentNarrativePaper() {
             <YAxis type="category" dataKey="metric" width={130} tick={{ fontSize: 11 }} />
             <Tooltip />
             <Legend />
-            <Bar dataKey="hierarchical" fill="#2563eb" name="HLMO (Ours)" />
-            <Bar dataKey="scripted" fill="#16a34a" name="Hand-Authored" />
-            <Bar dataKey="flat" fill="#ea580c" name="Flat LLM" />
-            <Bar dataKey="baseline" fill="#dc2626" name="No Memory (Ablation)" />
+            <Bar dataKey="hierarchical" fill="#2563eb" name={t("legend-hlmo", { defaultValue: "HLMO (Ours)" })} />
+            <Bar dataKey="scripted" fill="#16a34a" name={t("legend-hand-authored", { defaultValue: "Hand-Authored" })} />
+            <Bar dataKey="flat" fill="#ea580c" name={t("legend-flat-llm", { defaultValue: "Flat LLM" })} />
+            <Bar dataKey="baseline" fill="#dc2626" name={t("legend-no-memory", { defaultValue: "No Memory (Ablation)" })} />
           </BarChart>
         </ResponsiveContainer>
       </PaperFigure>
 
-      <h3 style={h3Style}>5.4 Player Engagement</h3>
+      <h3 style={h3Style}>{t("section-player-engagement", { defaultValue: "5.4 Player Engagement" })}</h3>
 
       <p className="mb-4">
         Figure 4 presents the mean Game Engagement Questionnaire (GEQ) scores across the
@@ -631,18 +633,18 @@ export function EmergentNarrativePaper() {
         narrative systems with sufficient coherence to sustain player investment.
       </p>
 
-      <PaperFigure number={4} caption="Mean Game Engagement Questionnaire scores across 10 play sessions. HLMO (blue) shows increasing engagement over time, while all other conditions decline as players exhaust finite content or lose narrative coherence.">
+      <PaperFigure number={4} caption={t("fig4-caption", { defaultValue: "Mean Game Engagement Questionnaire scores across 10 play sessions. HLMO (blue) shows increasing engagement over time, while all other conditions decline as players exhaust finite content or lose narrative coherence." })}>
         <ResponsiveContainer width="100%" height={350}>
           <LineChart data={engagementData}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="session" label={{ value: 'Session Number', position: 'insideBottom', offset: -5 }} />
-            <YAxis domain={[1, 6]} label={{ value: 'GEQ Score', angle: -90, position: 'insideLeft' }} />
+            <XAxis dataKey="session" label={{ value: t("chart-session-number", { defaultValue: "Session Number" }), position: 'insideBottom', offset: -5 }} />
+            <YAxis domain={[1, 6]} label={{ value: t("chart-geq-score", { defaultValue: "GEQ Score" }), angle: -90, position: 'insideLeft' }} />
             <Tooltip />
             <Legend />
-            <Line type="monotone" dataKey="hierarchical" stroke="#2563eb" name="HLMO (Ours)" strokeWidth={2} />
-            <Line type="monotone" dataKey="scripted" stroke="#16a34a" name="Hand-Authored" strokeWidth={2} />
-            <Line type="monotone" dataKey="flat" stroke="#ea580c" name="Flat LLM" strokeWidth={2} />
-            <Line type="monotone" dataKey="baseline" stroke="#dc2626" name="No Memory (Ablation)" strokeWidth={2} strokeDasharray="5 5" />
+            <Line type="monotone" dataKey="hierarchical" stroke="#2563eb" name={t("legend-hlmo", { defaultValue: "HLMO (Ours)" })} strokeWidth={2} />
+            <Line type="monotone" dataKey="scripted" stroke="#16a34a" name={t("legend-hand-authored", { defaultValue: "Hand-Authored" })} strokeWidth={2} />
+            <Line type="monotone" dataKey="flat" stroke="#ea580c" name={t("legend-flat-llm", { defaultValue: "Flat LLM" })} strokeWidth={2} />
+            <Line type="monotone" dataKey="baseline" stroke="#dc2626" name={t("legend-no-memory", { defaultValue: "No Memory (Ablation)" })} strokeWidth={2} strokeDasharray="5 5" />
           </LineChart>
         </ResponsiveContainer>
       </PaperFigure>
@@ -660,7 +662,7 @@ export function EmergentNarrativePaper() {
         motivate broader exploratory behavior.
       </p>
 
-      <h3 style={h3Style}>5.5 Ablation Analysis</h3>
+      <h3 style={h3Style}>{t("section-ablation-analysis", { defaultValue: "5.5 Ablation Analysis" })}</h3>
 
       <p className="mb-4">
         To quantify the contribution of each architectural component, we conducted a
@@ -671,17 +673,17 @@ export function EmergentNarrativePaper() {
       <table className={tableStyle}>
         <thead>
           <tr>
-            <th style={headerCell}>Configuration</th>
-            <th style={headerCell}>Causal</th>
-            <th style={headerCell}>Character</th>
-            <th style={headerCell}>Temporal</th>
-            <th style={headerCell}>Thematic</th>
-            <th style={headerCell}>Composite</th>
+            <th style={headerCell}>{t("col-configuration", { defaultValue: "Configuration" })}</th>
+            <th style={headerCell}>{t("col-causal", { defaultValue: "Causal" })}</th>
+            <th style={headerCell}>{t("col-character", { defaultValue: "Character" })}</th>
+            <th style={headerCell}>{t("col-temporal", { defaultValue: "Temporal" })}</th>
+            <th style={headerCell}>{t("col-thematic", { defaultValue: "Thematic" })}</th>
+            <th style={headerCell}>{t("col-composite", { defaultValue: "Composite" })}</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td style={cellStyle}>Full HLMO</td>
+            <td style={cellStyle}>{t("row-full-hlmo", { defaultValue: "Full HLMO" })}</td>
             <td style={cellCenter}>0.87</td>
             <td style={cellCenter}>0.81</td>
             <td style={cellCenter}>0.85</td>
@@ -689,7 +691,7 @@ export function EmergentNarrativePaper() {
             <td style={cellCenter}><strong>0.83</strong></td>
           </tr>
           <tr>
-            <td style={cellStyle}>&ndash; Causal Graph</td>
+            <td style={cellStyle}>{t("row-no-causal-graph", { defaultValue: "- Causal Graph" })}</td>
             <td style={cellCenter}>0.62</td>
             <td style={cellCenter}>0.78</td>
             <td style={cellCenter}>0.71</td>
@@ -697,7 +699,7 @@ export function EmergentNarrativePaper() {
             <td style={cellCenter}>0.71</td>
           </tr>
           <tr>
-            <td style={cellStyle}>&ndash; Memory Systems</td>
+            <td style={cellStyle}>{t("row-no-memory-systems", { defaultValue: "- Memory Systems" })}</td>
             <td style={cellCenter}>0.71</td>
             <td style={cellCenter}>0.54</td>
             <td style={cellCenter}>0.63</td>
@@ -705,7 +707,7 @@ export function EmergentNarrativePaper() {
             <td style={cellCenter}>0.64</td>
           </tr>
           <tr>
-            <td style={cellStyle}>&ndash; Constraint Propagation</td>
+            <td style={cellStyle}>{t("row-no-constraint-propagation", { defaultValue: "- Constraint Propagation" })}</td>
             <td style={cellCenter}>0.79</td>
             <td style={cellCenter}>0.61</td>
             <td style={cellCenter}>0.77</td>
@@ -713,7 +715,7 @@ export function EmergentNarrativePaper() {
             <td style={cellCenter}>0.69</td>
           </tr>
           <tr>
-            <td style={cellStyle}>&ndash; Tier 2 (Faction Planners)</td>
+            <td style={cellStyle}>{t("row-no-tier2", { defaultValue: "- Tier 2 (Faction Planners)" })}</td>
             <td style={cellCenter}>0.74</td>
             <td style={cellCenter}>0.68</td>
             <td style={cellCenter}>0.72</td>
@@ -721,7 +723,7 @@ export function EmergentNarrativePaper() {
             <td style={cellCenter}>0.69</td>
           </tr>
           <tr>
-            <td style={cellStyle}>Flat LLM (all components removed)</td>
+            <td style={cellStyle}>{t("row-flat-llm", { defaultValue: "Flat LLM (all components removed)" })}</td>
             <td style={cellCenter}>0.51</td>
             <td style={cellCenter}>0.39</td>
             <td style={cellCenter}>0.46</td>
@@ -746,7 +748,7 @@ export function EmergentNarrativePaper() {
       </p>
 
       {/* 6. DISCUSSION */}
-      <h2 style={h2Style}>6. Discussion</h2>
+      <h2 style={h2Style}>{t("section-discussion", { defaultValue: "6. Discussion" })}</h2>
 
       <p className="mb-4">
         The results presented in Section 5 carry significant implications for the design
@@ -755,7 +757,7 @@ export function EmergentNarrativePaper() {
         principal findings and their broader significance.
       </p>
 
-      <h3 style={h3Style}>6.1 The Coherence Decay Problem is Solvable</h3>
+      <h3 style={h3Style}>{t("section-coherence-decay-solvable", { defaultValue: "6.1 The Coherence Decay Problem is Solvable" })}</h3>
 
       <p className="mb-4">
         Perhaps the most striking finding is that the coherence decay problem&mdash;long
@@ -773,7 +775,7 @@ export function EmergentNarrativePaper() {
         context window of its assigned tier.
       </p>
 
-      <h3 style={h3Style}>6.2 Implications for Open-World Game Design</h3>
+      <h3 style={h3Style}>{t("section-implications-open-world", { defaultValue: "6.2 Implications for Open-World Game Design" })}</h3>
 
       <p className="mb-4">
         The engagement results (Section 5.4) suggest that HLMO-style systems could
@@ -806,7 +808,7 @@ export function EmergentNarrativePaper() {
         journal management that were beyond the scope of this study.
       </p>
 
-      <h3 style={h3Style}>6.3 Theoretical Contributions</h3>
+      <h3 style={h3Style}>{t("section-theoretical-contributions", { defaultValue: "6.3 Theoretical Contributions" })}</h3>
 
       <p className="mb-4">
         From a theoretical perspective, the HLMO architecture contributes a formal framework
@@ -852,7 +854,7 @@ export function EmergentNarrativePaper() {
       </p>
 
       {/* 7. CONCLUSION */}
-      <h2 style={h2Style}>7. Conclusion</h2>
+      <h2 style={h2Style}>{t("section-conclusion", { defaultValue: "7. Conclusion" })}</h2>
 
       <p className="mb-4">
         We have presented Hierarchical Language Model Orchestration (HLMO), a three-tier
@@ -889,7 +891,7 @@ export function EmergentNarrativePaper() {
       </p>
 
       {/* REFERENCES */}
-      <h2 style={h2Style}>References</h2>
+      <h2 style={h2Style}>{t("section-references", { defaultValue: "References" })}</h2>
 
       <div className="text-sm space-y-2" style={{ fontSize: '9.5pt' }}>
         <p>

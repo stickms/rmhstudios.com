@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     ShoppingCart,
@@ -50,6 +51,8 @@ export default function RMHEatsApp() {
     const goBack = useEatsStore((s) => s.goBack);
     const loyaltyPoints = useEatsStore((s) => s.loyaltyPoints);
 
+    const { t } = useTranslation("c-rmh-eats");
+
     const [cartOpen, setCartOpen] = useState(false);
     const [toolsOpen, setToolsOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
@@ -75,10 +78,10 @@ export default function RMHEatsApp() {
     const showNav = !['checkout', 'confirmation'].includes(view);
 
     const TOOLS = [
-        { label: 'Price Compare', icon: <BarChart2 className="h-4 w-4" />, view: 'price-compare' as const },
-        { label: 'Order by Mood', icon: <Smile className="h-4 w-4" />, view: 'mood' as const },
-        { label: 'Calorie Planner', icon: <Flame className="h-4 w-4" />, view: 'calorie-planner' as const },
-        { label: 'Chatbot Support', icon: <MessageCircle className="h-4 w-4" />, view: 'chatbot' as const },
+        { label: t("price-compare", { defaultValue: "Price Compare" }), icon: <BarChart2 className="h-4 w-4" />, view: 'price-compare' as const },
+        { label: t("order-by-mood", { defaultValue: "Order by Mood" }), icon: <Smile className="h-4 w-4" />, view: 'mood' as const },
+        { label: t("calorie-planner", { defaultValue: "Calorie Planner" }), icon: <Flame className="h-4 w-4" />, view: 'calorie-planner' as const },
+        { label: t("chatbot-support", { defaultValue: "Chatbot Support" }), icon: <MessageCircle className="h-4 w-4" />, view: 'chatbot' as const },
     ];
 
     return (
@@ -104,7 +107,7 @@ export default function RMHEatsApp() {
                             <Link
                                 to="/secret"
                                 className="flex items-center justify-center h-8 w-8 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-                                title="Back to apps"
+                                title={t("back-to-apps", { defaultValue: "Back to apps" })}
                             >
                                 <ArrowLeft className="h-4 w-4" />
                             </Link>
@@ -121,7 +124,7 @@ export default function RMHEatsApp() {
                         {/* Nav actions */}
                         <div className="flex items-center gap-1">
                             {/* Home */}
-                            <NavButton onClick={goHome} active={view === 'home'} label="Home">
+                            <NavButton onClick={goHome} active={view === 'home'} label={t("nav-home", { defaultValue: "Home" })}>
                                 <Home className="h-4 w-4" />
                             </NavButton>
 
@@ -129,7 +132,7 @@ export default function RMHEatsApp() {
                             <NavButton
                                 onClick={() => setView('history')}
                                 active={['history', 'tracker', 'reviews', 'issue-report', 'split-bill'].includes(view)}
-                                label="Orders"
+                                label={t("nav-orders", { defaultValue: "Orders" })}
                                 badge={activeOrders > 0 ? activeOrders : undefined}
                             >
                                 <History className="h-4 w-4" />
@@ -139,7 +142,7 @@ export default function RMHEatsApp() {
                             <NavButton
                                 onClick={() => setView('favorites')}
                                 active={view === 'favorites'}
-                                label="Favorites"
+                                label={t("nav-favorites", { defaultValue: "Favorites" })}
                             >
                                 <Heart className="h-4 w-4" />
                             </NavButton>
@@ -148,7 +151,7 @@ export default function RMHEatsApp() {
                             <NavButton
                                 onClick={() => setView('profile')}
                                 active={view === 'profile'}
-                                label="Profile"
+                                label={t("nav-profile", { defaultValue: "Profile" })}
                                 badge={displayLoyalty > 0 ? displayLoyalty : undefined}
                                 badgeColor="bg-purple-500"
                             >
@@ -160,7 +163,7 @@ export default function RMHEatsApp() {
                                 <NavButton
                                     onClick={() => setToolsOpen((o) => !o)}
                                     active={toolsOpen || ['price-compare', 'mood', 'calorie-planner', 'chatbot'].includes(view)}
-                                    label="Tools"
+                                    label={t("nav-tools", { defaultValue: "Tools" })}
                                 >
                                     <Sparkles className="h-4 w-4" />
                                 </NavButton>
@@ -197,7 +200,7 @@ export default function RMHEatsApp() {
                                 className="relative flex items-center gap-1.5 rounded-xl bg-orange-500 hover:bg-orange-400 px-3 py-2 text-sm font-medium text-white transition-colors shadow-md shadow-orange-500/20 ml-1 shrink-0"
                             >
                                 <ShoppingCart className="h-4 w-4" />
-                                <span className="hidden sm:block">Cart</span>
+                                <span className="hidden sm:block">{t("cart", { defaultValue: "Cart" })}</span>
                                 {itemCount > 0 && (
                                     <motion.span
                                         key={itemCount}
@@ -255,7 +258,7 @@ export default function RMHEatsApp() {
                 <button
                     onClick={openChatbot}
                     className="fixed bottom-14 right-4 z-20 flex items-center justify-center h-12 w-12 rounded-full bg-linear-to-br from-purple-500 to-purple-600 hover:from-purple-400 hover:to-purple-500 shadow-lg shadow-purple-500/30 transition-all hover:scale-110"
-                    aria-label="Open chatbot support"
+                    aria-label={t("open-chatbot-support", { defaultValue: "Open chatbot support" })}
                 >
                     <MessageCircle className="h-5 w-5 text-white" />
                 </button>

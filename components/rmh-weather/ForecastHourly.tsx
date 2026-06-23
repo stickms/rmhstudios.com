@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { GlassCard } from './GlassCard';
 import { WeatherData } from '@/lib/weather';
 import { Droplets } from 'lucide-react';
@@ -11,13 +12,14 @@ interface ForecastHourlyProps {
 }
 
 export const ForecastHourly = ({ data, units }: ForecastHourlyProps) => {
+  const { t } = useTranslation("c-rmh-weather");
   const tempUnit = units === 'metric' ? '°C' : '°F';
 
   return (
     <GlassCard className="p-0 overflow-hidden">
       <div className="px-6 py-4 border-b border-weather bg-weather-glass">
         <h3 className="text-lg font-semibold text-weather flex items-center gap-2">
-          48-Hour Forecast
+          {t("48-hour-forecast", { defaultValue: "48-Hour Forecast" })}
         </h3>
       </div>
       <div className="flex overflow-x-auto p-6 gap-6 scrollbar-hide select-none">
@@ -28,7 +30,7 @@ export const ForecastHourly = ({ data, units }: ForecastHourlyProps) => {
           return (
             <div key={hour.time} className="flex flex-col items-center min-w-[80px] space-y-4">
               <span className={`text-sm ${isNow ? 'text-blue-500 font-extrabold' : 'text-weather-muted'}`}>
-                {isNow ? 'Now' : time}
+                {isNow ? t("now", { defaultValue: "Now" }) : time}
               </span>
               
               <div className="text-2xl font-bold text-weather">

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import type { FeedItemUser } from '@/lib/feed-types';
 
 const DEFAULT_AVATAR = '/images/social/default_avatar.png';
@@ -26,6 +27,7 @@ function userProfileHref(user: FeedItemUser): string {
 }
 
 export function UserAvatar({ user, size = 'md', linkToProfile = true }: UserAvatarProps) {
+  const { t } = useTranslation('feed');
   const [imgError, setImgError] = useState(false);
 
   if (!user) return null;
@@ -39,7 +41,7 @@ export function UserAvatar({ user, size = 'md', linkToProfile = true }: UserAvat
       {showImg ? (
         <img
           src={imgSrc}
-          alt={user.name || 'User'}
+          alt={user.name || t('user-avatar-alt', { defaultValue: 'User' })}
           loading="lazy"
           width={sizePx[size]}
           height={sizePx[size]}

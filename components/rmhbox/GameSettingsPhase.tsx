@@ -13,6 +13,7 @@
 'use client';
 
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Play, Settings } from 'lucide-react';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { emit } from '@/lib/rmhbox/socket';
@@ -20,6 +21,7 @@ import { C2S } from '@/lib/rmhbox/events';
 import GameSettingsForm from './GameSettingsForm';
 
 export default function GameSettingsPhase() {
+  const { t } = useTranslation('c-rmhbox');
   const lobby = useRMHboxStore((s) => s.lobby);
   const settingsState = useRMHboxStore((s) => s.gameSettingsState);
   const timerInfo = useRMHboxStore((s) => s.timerInfo);
@@ -50,7 +52,7 @@ export default function GameSettingsPhase() {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <div className="text-xl mb-3 text-(--rmhbox-text)">Loading settings…</div>
+          <div className="text-xl mb-3 text-(--rmhbox-text)">{t("loading-settings", { defaultValue: "Loading settings…" })}</div>
           <div
             className="animate-spin w-8 h-8 border-2 border-t-transparent rounded-full mx-auto"
             style={{ borderColor: 'var(--rmhbox-accent)', borderTopColor: 'transparent' }}
@@ -75,8 +77,8 @@ export default function GameSettingsPhase() {
         </h1>
         <p className="mt-2 text-sm text-(--rmhbox-text-muted)">
           {isHost
-            ? 'Adjust settings before the game starts.'
-            : 'The host is configuring game settings.'}
+            ? t("host-adjust-settings", { defaultValue: "Adjust settings before the game starts." })
+            : t("guest-host-configuring", { defaultValue: "The host is configuring game settings." })}
         </p>
       </div>
 
@@ -90,7 +92,7 @@ export default function GameSettingsPhase() {
             border: '1px solid var(--rmhbox-border)',
           }}
         >
-          Starting in {remaining}s
+          {t("starting-in", { remaining, defaultValue: "Starting in {{remaining}}s" })}
         </div>
       )}
 
@@ -112,7 +114,7 @@ export default function GameSettingsPhase() {
           className="flex items-center gap-2 rounded-lg bg-(--rmhbox-accent) px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-(--rmhbox-accent-hover)"
         >
           <Play className="h-4 w-4" />
-          Confirm &amp; Start
+          {t("confirm-and-start", { defaultValue: "Confirm & Start" })}
         </button>
       )}
     </div>

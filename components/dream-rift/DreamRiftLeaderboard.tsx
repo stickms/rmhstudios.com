@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useDreamRiftStore } from '@/lib/dream-rift/store';
 import { authClient } from '@/lib/auth-client';
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '@/lib/dream-rift/constants';
@@ -34,6 +35,7 @@ interface LeaderboardEntry {
 }
 
 export function DreamRiftLeaderboard() {
+  const { t } = useTranslation("c-dream-rift");
   const storeDifficulty = useDreamRiftStore((s) => s.difficulty);
   const totalScore = useDreamRiftStore((s) => s.totalScore);
   const character = useDreamRiftStore((s) => s.character);
@@ -63,7 +65,7 @@ export function DreamRiftLeaderboard() {
       const data: LeaderboardEntry[] = await res.json();
       setEntries(data);
     } catch {
-      setError('Failed to load leaderboard.');
+      setError(t("failed-to-load-leaderboard", { defaultValue: "Failed to load leaderboard." }));
       setEntries([]);
     } finally {
       setLoading(false);
@@ -136,7 +138,7 @@ export function DreamRiftLeaderboard() {
               className="text-lg tracking-[0.25em] text-amber-300/80"
               style={{ fontFamily: "'Georgia', serif" }}
             >
-              LEADERBOARD
+              {t("leaderboard", { defaultValue: "LEADERBOARD" })}
             </h2>
             <TouhouDivider />
           </div>
@@ -164,9 +166,9 @@ export function DreamRiftLeaderboard() {
           <div className="border border-amber-400/15 bg-white/[0.01]">
             {/* Table header */}
             <div className="grid grid-cols-[2.5rem_1fr_5rem] gap-1 px-2 py-1 text-[8px] tracking-[0.2em] text-amber-400/40 uppercase border-b border-amber-400/10">
-              <span>Rank</span>
-              <span>Player</span>
-              <span className="text-right">Score</span>
+              <span>{t("rank", { defaultValue: "Rank" })}</span>
+              <span>{t("player", { defaultValue: "Player" })}</span>
+              <span className="text-right">{t("score", { defaultValue: "Score" })}</span>
             </div>
 
             {/* Table body */}
@@ -174,7 +176,7 @@ export function DreamRiftLeaderboard() {
               {loading ? (
                 <div className="flex items-center justify-center py-6">
                   <span className="text-[10px] text-zinc-600 animate-pulse" style={{ fontFamily: "'Georgia', serif" }}>
-                    Loading...
+                    {t("loading", { defaultValue: "Loading..." })}
                   </span>
                 </div>
               ) : error ? (
@@ -185,13 +187,13 @@ export function DreamRiftLeaderboard() {
                     className="text-[9px] text-amber-400/40 hover:text-amber-400/70 tracking-wider"
                     style={{ fontFamily: "'Georgia', serif" }}
                   >
-                    Retry
+                    {t("retry", { defaultValue: "Retry" })}
                   </button>
                 </div>
               ) : entries.length === 0 ? (
                 <div className="flex items-center justify-center py-6">
                   <span className="text-[10px] text-zinc-600" style={{ fontFamily: "'Georgia', serif" }}>
-                    No scores recorded yet.
+                    {t("no-scores-recorded", { defaultValue: "No scores recorded yet." })}
                   </span>
                 </div>
               ) : (
@@ -237,7 +239,7 @@ export function DreamRiftLeaderboard() {
                 className="px-4 py-1.5 text-[11px] tracking-wider border border-amber-400/30 text-amber-300/80 hover:bg-amber-400/10 hover:text-amber-200 disabled:opacity-40 transition-all"
                 style={{ fontFamily: "'Georgia', serif" }}
               >
-                {submitting ? 'Submitting...' : 'Submit Score'}
+                {submitting ? t("submitting", { defaultValue: "Submitting..." }) : t("submit-score", { defaultValue: "Submit Score" })}
               </button>
               {submitError && (
                 <p className="text-[9px] text-red-400/60 mt-1">{submitError}</p>
@@ -247,13 +249,13 @@ export function DreamRiftLeaderboard() {
 
           {submitted && (
             <p className="text-center text-[10px] text-emerald-400/70 mt-2" style={{ fontFamily: "'Georgia', serif" }}>
-              Score recorded.
+              {t("score-recorded", { defaultValue: "Score recorded." })}
             </p>
           )}
 
           {hasFinishedGame && !isAuthenticated && (
             <p className="text-center text-[9px] text-zinc-600 mt-2" style={{ fontFamily: "'Georgia', serif" }}>
-              Sign in to submit your score
+              {t("sign-in-to-submit", { defaultValue: "Sign in to submit your score" })}
             </p>
           )}
 
@@ -261,7 +263,7 @@ export function DreamRiftLeaderboard() {
 
           {/* Back */}
           <TouhouMenuButton onClick={() => setScreen('title')}>
-            Back to Title
+            {t("back-to-title", { defaultValue: "Back to Title" })}
           </TouhouMenuButton>
         </div>
       </TouhouFrame>

@@ -6,6 +6,7 @@ import { X, Plus, Minus, ShoppingCart, Flame, Leaf, Wheat, TriangleAlert, Chevro
 import { useEatsStore } from '@/lib/store/useEatsStore';
 import { toast } from 'sonner';
 import type { MenuItem } from '@/lib/rmh-eats/types';
+import { useTranslation } from 'react-i18next';
 
 interface MenuItemModalProps {
     item: MenuItem;
@@ -34,6 +35,7 @@ export default function MenuItemModal({
     restaurantName,
     onClose,
 }: MenuItemModalProps) {
+    const { t } = useTranslation("c-rmh-eats");
     const addToCart = useEatsStore((s) => s.addToCart);
     const [qty, setQty] = useState(1);
     const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(() => {
@@ -70,7 +72,7 @@ export default function MenuItemModal({
             (c) => c.required && !selectedOptions[c.id]
         );
         if (missingRequired) {
-            toast.error(`Please select a ${missingRequired.name}`);
+            toast.error(t("please-select", { defaultValue: "Please select a {{name}}", name: missingRequired.name }));
             return;
         }
 
@@ -82,7 +84,7 @@ export default function MenuItemModal({
             Object.keys(selectedOptions).length > 0 ? selectedOptions : undefined,
             instructions.trim() || undefined
         );
-        toast.success(`${item.name} added to cart`);
+        toast.success(t("added-to-cart", { defaultValue: "{{name}} added to cart", name: item.name }));
         onClose();
     };
 
@@ -124,19 +126,19 @@ export default function MenuItemModal({
                         <div className="flex flex-wrap gap-1.5 mb-3">
                             {item.popular && (
                                 <span className="rounded-full bg-orange-500/20 px-2.5 py-0.5 text-xs font-medium text-orange-400 border border-orange-500/30">
-                                    Popular
+                                    {t("popular", { defaultValue: "Popular" })}
                                 </span>
                             )}
                             {item.vegetarian && (
                                 <span className="flex items-center gap-1 rounded-full bg-green-500/20 px-2.5 py-0.5 text-xs font-medium text-green-400 border border-green-500/30">
                                     <Leaf className="h-3 w-3" />
-                                    {item.vegan ? 'Vegan' : 'Vegetarian'}
+                                    {item.vegan ? t("vegan", { defaultValue: "Vegan" }) : t("vegetarian", { defaultValue: "Vegetarian" })}
                                 </span>
                             )}
                             {item.spicy && (
                                 <span className="flex items-center gap-1 rounded-full bg-red-500/20 px-2.5 py-0.5 text-xs font-medium text-red-400 border border-red-500/30">
                                     <Flame className="h-3 w-3" />
-                                    Spicy
+                                    {t("spicy", { defaultValue: "Spicy" })}
                                 </span>
                             )}
                         </div>
@@ -160,7 +162,7 @@ export default function MenuItemModal({
                             onClick={() => setShowNutrition(!showNutrition)}
                             className="flex items-center gap-1 text-xs text-orange-400 hover:text-orange-300 mb-4 transition-colors"
                         >
-                            Nutrition Info
+                            {t("nutrition-info", { defaultValue: "Nutrition Info" })}
                             {showNutrition ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                         </button>
 
@@ -175,11 +177,11 @@ export default function MenuItemModal({
                                     <div className="rounded-xl bg-slate-800/60 border border-slate-700/50 p-3">
                                         <div className="grid grid-cols-5 gap-2 text-center">
                                             {[
-                                                { label: 'Calories', value: item.calories, unit: '' },
-                                                { label: 'Protein', value: protein, unit: 'g' },
-                                                { label: 'Carbs', value: carbs, unit: 'g' },
-                                                { label: 'Fat', value: fat, unit: 'g' },
-                                                { label: 'Sodium', value: sodium, unit: 'mg' },
+                                                { label: t("calories", { defaultValue: "Calories" }), value: item.calories, unit: '' },
+                                                { label: t("protein", { defaultValue: "Protein" }), value: protein, unit: 'g' },
+                                                { label: t("carbs", { defaultValue: "Carbs" }), value: carbs, unit: 'g' },
+                                                { label: t("fat", { defaultValue: "Fat" }), value: fat, unit: 'g' },
+                                                { label: t("sodium", { defaultValue: "Sodium" }), value: sodium, unit: 'mg' },
                                             ].map(({ label, value, unit }) => (
                                                 <div key={label} className="flex flex-col gap-0.5">
                                                     <span className="text-sm font-semibold text-white">{value}{unit}</span>
@@ -187,7 +189,7 @@ export default function MenuItemModal({
                                                 </div>
                                             ))}
                                         </div>
-                                        <p className="text-xs text-slate-600 mt-2 text-center">* Approximate values</p>
+                                        <p className="text-xs text-slate-600 mt-2 text-center">{t("approximate-values", { defaultValue: "* Approximate values" })}</p>
                                     </div>
                                 </motion.div>
                             )}
@@ -199,7 +201,7 @@ export default function MenuItemModal({
                                 <div className="flex items-center gap-1.5 mb-2">
                                     <TriangleAlert className="h-4 w-4 text-yellow-400" />
                                     <p className="text-xs font-medium text-yellow-400 uppercase tracking-wide">
-                                        Contains Allergens
+                                        {t("contains-allergens", { defaultValue: "Contains Allergens" })}
                                     </p>
                                 </div>
                                 <div className="flex flex-wrap gap-1.5">
@@ -224,7 +226,7 @@ export default function MenuItemModal({
                                     </p>
                                     {customization.required && (
                                         <span className="text-xs text-orange-400 bg-orange-500/10 rounded-full px-2 py-0.5">
-                                            Required
+                                            {t("required", { defaultValue: "Required" })}
                                         </span>
                                     )}
                                 </div>
@@ -259,12 +261,12 @@ export default function MenuItemModal({
                         {/* Special Instructions */}
                         <div className="mb-4">
                             <label className="block text-sm font-medium text-slate-300 mb-2">
-                                Special Instructions
+                                {t("special-instructions", { defaultValue: "Special Instructions" })}
                             </label>
                             <textarea
                                 value={instructions}
                                 onChange={(e) => setInstructions(e.target.value)}
-                                placeholder="Any allergies, special requests, or notes for the kitchen..."
+                                placeholder={t("instructions-placeholder", { defaultValue: "Any allergies, special requests, or notes for the kitchen..." })}
                                 rows={2}
                                 className="w-full rounded-xl bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500 outline-none focus:border-orange-500 resize-none"
                             />
@@ -297,7 +299,7 @@ export default function MenuItemModal({
                         >
                             <div className="flex items-center gap-2">
                                 <ShoppingCart className="h-4 w-4" />
-                                <span>Add to Cart</span>
+                                <span>{t("add-to-cart", { defaultValue: "Add to Cart" })}</span>
                             </div>
                             <span>${total.toFixed(2)}</span>
                         </button>

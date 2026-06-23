@@ -13,8 +13,10 @@ import { toast } from '@/lib/rmhtype/toast-store';
 import RmhTypeHeader from '@/components/rmhtype/RmhTypeHeader';
 import type { Difficulty, PassageLength, PublicRoomInfo } from '@/lib/rmhtype/types';
 import { useRouter } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 
 export default function RmhTypeMultiplayer() {
+  const { t } = useTranslation("c-rmhtype");
   const router = useRouter();
   const connectionStatus = useRmhTypeStore((s) => s.connectionStatus);
 
@@ -49,7 +51,7 @@ export default function RmhTypeMultiplayer() {
 
         emit(C2S.ROOM_BROWSE, {});
       } catch (err) {
-        if (mounted) toast.error(err instanceof Error ? err.message : 'Connection failed');
+        if (mounted) toast.error(err instanceof Error ? err.message : t("connection-failed", { defaultValue: "Connection failed" }));
       }
     }
 
@@ -76,20 +78,20 @@ export default function RmhTypeMultiplayer() {
       settings: { difficulty: roomDifficulty, passageLength: roomLength, rounds: roomRounds },
     });
     if (!sent) {
-      toast.error('Not connected to server. Try refreshing the page.');
+      toast.error(t("not-connected", { defaultValue: "Not connected to server. Try refreshing the page." }));
     }
-  }, [roomDifficulty, roomLength, roomRounds]);
+  }, [roomDifficulty, roomLength, roomRounds, t]);
 
   const handleJoinRoom = useCallback(() => {
     const code = joinCode.trim().toUpperCase();
     if (code.length !== 6) {
-      toast.warning('Room code must be 6 characters');
+      toast.warning(t("room-code-length", { defaultValue: "Room code must be 6 characters" }));
       return;
     }
     if (!emit(C2S.ROOM_JOIN, { roomCode: code })) {
-      toast.error('Not connected to server. Try refreshing the page.');
+      toast.error(t("not-connected", { defaultValue: "Not connected to server. Try refreshing the page." }));
     }
-  }, [joinCode]);
+  }, [joinCode, t]);
 
   return (
     <div className="flex h-screen flex-col">
@@ -101,11 +103,11 @@ export default function RmhTypeMultiplayer() {
           <div className="grid md:grid-cols-2 gap-6">
             {/* Create Room */}
             <div className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-6">
-              <h2 className="text-xl font-semibold mb-4">Create Room</h2>
+              <h2 className="text-xl font-semibold mb-4">{t("create-room", { defaultValue: "Create Room" })}</h2>
 
               <div className="space-y-3 mb-4">
                 <div>
-                  <label className="block text-xs font-medium mb-1 text-(--rmhtype-text-muted)">Difficulty</label>
+                  <label className="block text-xs font-medium mb-1 text-(--rmhtype-text-muted)">{t("difficulty", { defaultValue: "Difficulty" })}</label>
                   <div className="flex gap-1">
                     {(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => (
                       <button
@@ -124,7 +126,7 @@ export default function RmhTypeMultiplayer() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium mb-1 text-(--rmhtype-text-muted)">Length</label>
+                  <label className="block text-xs font-medium mb-1 text-(--rmhtype-text-muted)">{t("length", { defaultValue: "Length" })}</label>
                   <div className="flex gap-1">
                     {(['short', 'medium', 'long'] as PassageLength[]).map((l) => (
                       <button
@@ -143,7 +145,7 @@ export default function RmhTypeMultiplayer() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium mb-1 text-(--rmhtype-text-muted)">Rounds: {roomRounds}</label>
+                  <label className="block text-xs font-medium mb-1 text-(--rmhtype-text-muted)">{t("rounds-label", { defaultValue: "Rounds: {{count}}", count: roomRounds })}</label>
                   <input
                     type="range"
                     min={1}
@@ -160,15 +162,15 @@ export default function RmhTypeMultiplayer() {
                 disabled={connectionStatus !== 'connected'}
                 className="w-full py-3 rounded-lg font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--rmhtype-accent) hover:bg-(--rmhtype-accent-hover)"
               >
-                Create Room
+                {t("create-room", { defaultValue: "Create Room" })}
               </button>
             </div>
 
             {/* Join Room */}
             <div className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-6">
-              <h2 className="text-xl font-semibold mb-4">Join Room</h2>
+              <h2 className="text-xl font-semibold mb-4">{t("join-room", { defaultValue: "Join Room" })}</h2>
               <p className="text-sm mb-4 text-(--rmhtype-text-muted)">
-                Enter a 6-character room code to join a friend.
+                {t("join-room-desc", { defaultValue: "Enter a 6-character room code to join a friend." })}
               </p>
               <form onSubmit={(e) => { e.preventDefault(); handleJoinRoom(); }} className="flex gap-2">
                 <input
@@ -184,18 +186,18 @@ export default function RmhTypeMultiplayer() {
                   disabled={connectionStatus !== 'connected' || joinCode.trim().length !== 6}
                   className="px-6 py-3 rounded-lg font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--rmhtype-accent) hover:bg-(--rmhtype-accent-hover)"
                 >
-                  Join
+                  {t("join", { defaultValue: "Join" })}
                 </button>
               </form>
 
               <div className="mt-6 p-4 rounded-lg bg-(--rmhtype-bg) border border-(--rmhtype-border)">
-                <h3 className="text-sm font-semibold mb-2">How it works</h3>
+                <h3 className="text-sm font-semibold mb-2">{t("how-it-works", { defaultValue: "How it works" })}</h3>
                 <ul className="text-xs space-y-1 text-(--rmhtype-text-muted)">
-                  <li>1. Create a room or join with a code</li>
-                  <li>2. Wait for players and ready up</li>
-                  <li>3. Everyone types the same passage</li>
-                  <li>4. Race to finish first with the best accuracy</li>
-                  <li>5. Compete across multiple rounds</li>
+                  <li>{t("how-step-1", { defaultValue: "1. Create a room or join with a code" })}</li>
+                  <li>{t("how-step-2", { defaultValue: "2. Wait for players and ready up" })}</li>
+                  <li>{t("how-step-3", { defaultValue: "3. Everyone types the same passage" })}</li>
+                  <li>{t("how-step-4", { defaultValue: "4. Race to finish first with the best accuracy" })}</li>
+                  <li>{t("how-step-5", { defaultValue: "5. Compete across multiple rounds" })}</li>
                 </ul>
               </div>
             </div>
@@ -206,19 +208,19 @@ export default function RmhTypeMultiplayer() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold flex items-center gap-2">
                 <Globe className="h-5 w-5 text-(--rmhtype-accent)" />
-                Public Rooms
+                {t("public-rooms", { defaultValue: "Public Rooms" })}
               </h2>
               <button
                 onClick={() => emit(C2S.ROOM_BROWSE, {})}
                 className="p-1.5 rounded-lg text-(--rmhtype-text-muted) hover:text-(--rmhtype-text) hover:bg-(--rmhtype-surface-hover) transition-colors"
-                title="Refresh"
+                title={t("refresh", { defaultValue: "Refresh" })}
               >
                 <RefreshCw className="h-4 w-4" />
               </button>
             </div>
             {publicRooms.length === 0 ? (
               <p className="text-sm text-(--rmhtype-text-muted) text-center py-4">
-                No public rooms available. Create one!
+                {t("no-public-rooms", { defaultValue: "No public rooms available. Create one!" })}
               </p>
             ) : (
               <div className="space-y-2">
@@ -235,7 +237,7 @@ export default function RmhTypeMultiplayer() {
                         {' · '}
                         <span className="capitalize">{r.passageLength}</span>
                         {' · '}
-                        {r.rounds} {r.rounds === 1 ? 'round' : 'rounds'}
+                        {r.rounds} {r.rounds === 1 ? t("round", { defaultValue: "round" }) : t("rounds", { defaultValue: "rounds" })}
                       </div>
                     </div>
                     <div className="text-xs font-mono text-(--rmhtype-text-muted)">

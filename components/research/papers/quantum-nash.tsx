@@ -14,6 +14,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
+import { useTranslation } from 'react-i18next';
 import { PaperFigure } from '../PaperFigure';
 import { Tex, TexBlock } from '../Latex';
 
@@ -78,12 +79,13 @@ const h3Style: React.CSSProperties = {
 };
 
 export function QuantumNashPaper() {
+  const { t } = useTranslation("c-research");
   return (
     <>
       {/* --------------------------------------------------------------------
           1. INTRODUCTION
          -------------------------------------------------------------------- */}
-      <h2 style={h2Style}>1. Introduction</h2>
+      <h2 style={h2Style}>{t("section-1-introduction", { defaultValue: "1. Introduction" })}</h2>
 
       <p className="mb-4">
         The computation of Nash equilibria stands as one of the most fundamental problems in
@@ -148,9 +150,9 @@ export function QuantumNashPaper() {
       {/* --------------------------------------------------------------------
           2. THEORETICAL FRAMEWORK
          -------------------------------------------------------------------- */}
-      <h2 style={h2Style}>2. Theoretical Framework</h2>
+      <h2 style={h2Style}>{t("section-2-theoretical-framework", { defaultValue: "2. Theoretical Framework" })}</h2>
 
-      <h3 style={h3Style}>2.1 Quantum Representation of Mixed Strategies</h3>
+      <h3 style={h3Style}>{t("section-21-quantum-rep", { defaultValue: "2.1 Quantum Representation of Mixed Strategies" })}</h3>
 
       <p className="mb-4">
         Consider an <Tex math="n" />-player strategic-form game{' '}
@@ -199,7 +201,7 @@ export function QuantumNashPaper() {
         algorithm has found a product state corresponding to an independent Nash equilibrium.
       </p>
 
-      <h3 style={h3Style}>2.2 Entanglement&ndash;Correlation Duality</h3>
+      <h3 style={h3Style}>{t("section-22-entanglement-duality", { defaultValue: "2.2 Entanglement–Correlation Duality" })}</h3>
 
       <p className="mb-4">
         We formalize the relationship between quantum entanglement and classical correlations in
@@ -258,7 +260,7 @@ export function QuantumNashPaper() {
         making the problem equivalent to quantum ground-state preparation.
       </p>
 
-      <h3 style={h3Style}>2.3 Grover-Assisted Support Identification</h3>
+      <h3 style={h3Style}>{t("section-23-grover-support", { defaultValue: "2.3 Grover-Assisted Support Identification" })}</h3>
 
       <p className="mb-4">
         A well-known result in game theory states that every Nash equilibrium can be characterized
@@ -287,9 +289,9 @@ export function QuantumNashPaper() {
       {/* --------------------------------------------------------------------
           3. VARIATIONAL QUANTUM NASH SOLVER (VQNS)
          -------------------------------------------------------------------- */}
-      <h2 style={h2Style}>3. Variational Quantum Nash Solver (VQNS)</h2>
+      <h2 style={h2Style}>{t("section-3-vqns", { defaultValue: "3. Variational Quantum Nash Solver (VQNS)" })}</h2>
 
-      <h3 style={h3Style}>3.1 Circuit Architecture</h3>
+      <h3 style={h3Style}>{t("section-31-circuit-arch", { defaultValue: "3.1 Circuit Architecture" })}</h3>
 
       <p className="mb-4">
         The VQNS variational ansatz is a parameterized quantum circuit{' '}
@@ -327,7 +329,7 @@ export function QuantumNashPaper() {
         equilibrium).
       </p>
 
-      <h3 style={h3Style}>3.2 Cost Function and Optimization</h3>
+      <h3 style={h3Style}>{t("section-32-cost-function", { defaultValue: "3.2 Cost Function and Optimization" })}</h3>
 
       <p className="mb-4">
         The VQNS cost function combines the quantum Nash gap with an entanglement regularization
@@ -377,7 +379,7 @@ export function QuantumNashPaper() {
         overhead.
       </p>
 
-      <h3 style={h3Style}>3.3 Convergence Guarantees</h3>
+      <h3 style={h3Style}>{t("section-33-convergence", { defaultValue: "3.3 Convergence Guarantees" })}</h3>
 
       <p className="mb-4">
         We establish the following convergence result for the VQNS algorithm under mild conditions
@@ -406,9 +408,9 @@ export function QuantumNashPaper() {
       {/* --------------------------------------------------------------------
           4. EXPERIMENTAL RESULTS
          -------------------------------------------------------------------- */}
-      <h2 style={h2Style}>4. Experimental Results</h2>
+      <h2 style={h2Style}>{t("section-4-experimental-results", { defaultValue: "4. Experimental Results" })}</h2>
 
-      <h3 style={h3Style}>4.1 Experimental Setup</h3>
+      <h3 style={h3Style}>{t("section-41-experimental-setup", { defaultValue: "4.1 Experimental Setup" })}</h3>
 
       <p className="mb-4">
         We evaluated the VQNS algorithm through extensive numerical simulations using a
@@ -437,7 +439,7 @@ export function QuantumNashPaper() {
         near-term superconducting quantum processors (IBM, 2023).
       </p>
 
-      <h3 style={h3Style}>4.2 Scaling Analysis</h3>
+      <h3 style={h3Style}>{t("section-42-scaling-analysis", { defaultValue: "4.2 Scaling Analysis" })}</h3>
 
       <p className="mb-4">
         Figure 1 presents the computational time required to find an{' '}
@@ -454,24 +456,24 @@ export function QuantumNashPaper() {
         <Tex math="n" />.
       </p>
 
-      <PaperFigure number={1} caption="Computation time (seconds, log scale) for finding an epsilon-Nash equilibrium as a function of the number of players. VQNS (blue) demonstrates polynomial scaling compared to the exponential growth of classical methods (red). Each point represents the mean over 50 random game instances with k=4 strategies per player.">
+      <PaperFigure number={1} caption={t("fig1-caption", { defaultValue: "Computation time (seconds, log scale) for finding an epsilon-Nash equilibrium as a function of the number of players. VQNS (blue) demonstrates polynomial scaling compared to the exponential growth of classical methods (red). Each point represents the mean over 50 random game instances with k=4 strategies per player." })}>
         <ResponsiveContainer width="100%" height={320}>
           <LineChart data={scalingData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis
               dataKey="players"
-              label={{ value: 'Number of Players', position: 'insideBottom', offset: -5 }}
+              label={{ value: t("chart-number-of-players", { defaultValue: "Number of Players" }), position: 'insideBottom', offset: -5 }}
             />
             <YAxis
               scale="log"
               domain={['auto', 'auto']}
-              label={{ value: 'Time (seconds, log)', angle: -90, position: 'insideLeft' }}
+              label={{ value: t("chart-time-seconds-log", { defaultValue: "Time (seconds, log)" }), angle: -90, position: 'insideLeft' }}
             />
             <Tooltip
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               formatter={(v: any, name: any) => [
                 Number(v).toFixed(3),
-                name === 'classical' ? 'Classical (Best)' : 'VQNS (Ours)',
+                name === 'classical' ? t("chart-label-classical-best", { defaultValue: "Classical (Best)" }) : t("chart-label-vqns-ours", { defaultValue: "VQNS (Ours)" }),
               ]}
             />
             <Legend />
@@ -480,7 +482,7 @@ export function QuantumNashPaper() {
               dataKey="classical"
               stroke="#ef4444"
               strokeWidth={2}
-              name="Classical (Best)"
+              name={t("chart-label-classical-best", { defaultValue: "Classical (Best)" })}
               dot={{ r: 4 }}
             />
             <Line
@@ -488,14 +490,14 @@ export function QuantumNashPaper() {
               dataKey="vqns"
               stroke="#3b82f6"
               strokeWidth={2}
-              name="VQNS (Ours)"
+              name={t("chart-label-vqns-ours", { defaultValue: "VQNS (Ours)" })}
               dot={{ r: 4 }}
             />
           </LineChart>
         </ResponsiveContainer>
       </PaperFigure>
 
-      <h3 style={h3Style}>4.3 Convergence Behavior</h3>
+      <h3 style={h3Style}>{t("section-43-convergence-behavior", { defaultValue: "4.3 Convergence Behavior" })}</h3>
 
       <p className="mb-4">
         Figure 2 shows the convergence of the Nash gap as a function of optimization iteration
@@ -512,27 +514,27 @@ export function QuantumNashPaper() {
         individual mixed strategies.
       </p>
 
-      <PaperFigure number={2} caption="Convergence of the Nash gap (log scale) as a function of optimization iteration for a 16-player, 4-strategy game. VQNS converges orders of magnitude faster than classical methods, reaching a Nash gap below 0.001 within 500 iterations.">
+      <PaperFigure number={2} caption={t("fig2-caption", { defaultValue: "Convergence of the Nash gap (log scale) as a function of optimization iteration for a 16-player, 4-strategy game. VQNS converges orders of magnitude faster than classical methods, reaching a Nash gap below 0.001 within 500 iterations." })}>
         <ResponsiveContainer width="100%" height={320}>
           <LineChart data={convergenceData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis
               dataKey="iteration"
-              label={{ value: 'Optimization Iteration', position: 'insideBottom', offset: -5 }}
+              label={{ value: t("chart-optimization-iteration", { defaultValue: "Optimization Iteration" }), position: 'insideBottom', offset: -5 }}
             />
             <YAxis
               scale="log"
               domain={['auto', 'auto']}
-              label={{ value: 'Nash Gap (log)', angle: -90, position: 'insideLeft' }}
+              label={{ value: t("chart-nash-gap-log", { defaultValue: "Nash Gap (log)" }), angle: -90, position: 'insideLeft' }}
             />
             <Tooltip
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               formatter={(v: any, name: any) => {
                 const labels: Record<string, string> = {
-                  vqns: 'VQNS (Ours)',
-                  supportEnum: 'Support Enumeration',
-                  lemkeHowson: 'Lemke-Howson',
-                  replicator: 'Replicator Dynamics',
+                  vqns: t("chart-label-vqns-ours", { defaultValue: "VQNS (Ours)" }),
+                  supportEnum: t("chart-label-support-enumeration", { defaultValue: "Support Enumeration" }),
+                  lemkeHowson: t("chart-label-lemke-howson", { defaultValue: "Lemke-Howson" }),
+                  replicator: t("chart-label-replicator-dynamics", { defaultValue: "Replicator Dynamics" }),
                 };
                 return [Number(v).toFixed(4), labels[name] ?? name];
               }}
@@ -543,7 +545,7 @@ export function QuantumNashPaper() {
               dataKey="vqns"
               stroke="#3b82f6"
               strokeWidth={2}
-              name="VQNS (Ours)"
+              name={t("chart-label-vqns-ours", { defaultValue: "VQNS (Ours)" })}
               dot={false}
             />
             <Line
@@ -552,7 +554,7 @@ export function QuantumNashPaper() {
               stroke="#ef4444"
               strokeWidth={1.5}
               strokeDasharray="5 5"
-              name="Support Enum."
+              name={t("chart-label-support-enum", { defaultValue: "Support Enum." })}
               dot={false}
             />
             <Line
@@ -561,7 +563,7 @@ export function QuantumNashPaper() {
               stroke="#f59e0b"
               strokeWidth={1.5}
               strokeDasharray="5 5"
-              name="Lemke-Howson"
+              name={t("chart-label-lemke-howson", { defaultValue: "Lemke-Howson" })}
               dot={false}
             />
             <Line
@@ -570,7 +572,7 @@ export function QuantumNashPaper() {
               stroke="#10b981"
               strokeWidth={1.5}
               strokeDasharray="5 5"
-              name="Replicator Dyn."
+              name={t("chart-label-replicator-dyn", { defaultValue: "Replicator Dyn." })}
               dot={false}
             />
           </LineChart>
@@ -591,7 +593,7 @@ export function QuantumNashPaper() {
         all tested game sizes.
       </p>
 
-      <h3 style={h3Style}>4.4 Solution Quality and Fidelity</h3>
+      <h3 style={h3Style}>{t("section-44-solution-quality", { defaultValue: "4.4 Solution Quality and Fidelity" })}</h3>
 
       <p className="mb-4">
         Figure 3 reports the state fidelity and entanglement entropy of the VQNS output state
@@ -607,7 +609,7 @@ export function QuantumNashPaper() {
         corresponding to independent Nash equilibria.
       </p>
 
-      <PaperFigure number={3} caption="State fidelity (blue, left axis) and total entanglement entropy (green, right axis) of the VQNS output as a function of qubit count. Fidelity remains above 0.74 even at 64 qubits, while entanglement entropy stays near zero, confirming convergence to product states.">
+      <PaperFigure number={3} caption={t("fig3-caption", { defaultValue: "State fidelity (blue, left axis) and total entanglement entropy (green, right axis) of the VQNS output as a function of qubit count. Fidelity remains above 0.74 even at 64 qubits, while entanglement entropy stays near zero, confirming convergence to product states." })}>
         <ResponsiveContainer width="100%" height={320}>
           <ScatterChart>
             <CartesianGrid strokeDasharray="3 3" />
@@ -615,24 +617,24 @@ export function QuantumNashPaper() {
               dataKey="qubits"
               type="number"
               name="Qubits"
-              label={{ value: 'Number of Qubits', position: 'insideBottom', offset: -5 }}
+              label={{ value: t("chart-number-of-qubits", { defaultValue: "Number of Qubits" }), position: 'insideBottom', offset: -5 }}
             />
             <YAxis
               yAxisId="left"
               domain={[0.7, 1.0]}
-              label={{ value: 'Fidelity', angle: -90, position: 'insideLeft' }}
+              label={{ value: t("chart-fidelity", { defaultValue: "Fidelity" }), angle: -90, position: 'insideLeft' }}
             />
             <YAxis
               yAxisId="right"
               orientation="right"
               domain={[0, 1.0]}
-              label={{ value: 'Entanglement Entropy', angle: 90, position: 'insideRight' }}
+              label={{ value: t("chart-entanglement-entropy", { defaultValue: "Entanglement Entropy" }), angle: 90, position: 'insideRight' }}
             />
             <Tooltip
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               formatter={(v: any, name: any) => [
                 Number(v).toFixed(3),
-                name === 'fidelity' ? 'Fidelity' : 'Entanglement',
+                name === 'fidelity' ? t("chart-fidelity", { defaultValue: "Fidelity" }) : t("chart-label-entanglement", { defaultValue: "Entanglement" }),
               ]}
             />
             <Legend />
@@ -640,14 +642,14 @@ export function QuantumNashPaper() {
               yAxisId="left"
               data={fidelityData}
               dataKey="fidelity"
-              name="Fidelity"
+              name={t("chart-fidelity", { defaultValue: "Fidelity" })}
               fill="#3b82f6"
             />
             <Scatter
               yAxisId="right"
               data={fidelityData}
               dataKey="entanglement"
-              name="Entanglement"
+              name={t("chart-label-entanglement", { defaultValue: "Entanglement" })}
               fill="#10b981"
             />
           </ScatterChart>
@@ -665,25 +667,25 @@ export function QuantumNashPaper() {
         instances.
       </p>
 
-      <PaperFigure number={4} caption="Mean Nash gap achieved by each method on 50 random 16-player game instances with 4 strategies per player. Error bars indicate standard error. VQNS achieves a significantly lower Nash gap than all classical baselines.">
+      <PaperFigure number={4} caption={t("fig4-caption", { defaultValue: "Mean Nash gap achieved by each method on 50 random 16-player game instances with 4 strategies per player. Error bars indicate standard error. VQNS achieves a significantly lower Nash gap than all classical baselines." })}>
         <ResponsiveContainer width="100%" height={320}>
           <BarChart data={nashGapData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="method" />
             <YAxis
-              label={{ value: 'Nash Gap', angle: -90, position: 'insideLeft' }}
+              label={{ value: t("chart-nash-gap", { defaultValue: "Nash Gap" }), angle: -90, position: 'insideLeft' }}
               domain={[0, 0.12]}
             />
             <Tooltip
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              formatter={(v: any) => [Number(v).toFixed(4), 'Nash Gap']}
+              formatter={(v: any) => [Number(v).toFixed(4), t("chart-nash-gap", { defaultValue: "Nash Gap" })]}
             />
-            <Bar dataKey="gap" fill="#3b82f6" name="Nash Gap" />
+            <Bar dataKey="gap" fill="#3b82f6" name={t("chart-nash-gap", { defaultValue: "Nash Gap" })} />
           </BarChart>
         </ResponsiveContainer>
       </PaperFigure>
 
-      <h3 style={h3Style}>4.5 Ablation Studies</h3>
+      <h3 style={h3Style}>{t("section-45-ablation-studies", { defaultValue: "4.5 Ablation Studies" })}</h3>
 
       <p className="mb-4">
         To isolate the contributions of individual components of the VQNS framework, we conducted
@@ -715,9 +717,9 @@ export function QuantumNashPaper() {
       {/* --------------------------------------------------------------------
           5. DISCUSSION
          -------------------------------------------------------------------- */}
-      <h2 style={h2Style}>5. Discussion</h2>
+      <h2 style={h2Style}>{t("section-5-discussion", { defaultValue: "5. Discussion" })}</h2>
 
-      <h3 style={h3Style}>5.1 Quantum Advantage for Game Theory</h3>
+      <h3 style={h3Style}>{t("section-51-quantum-advantage", { defaultValue: "5.1 Quantum Advantage for Game Theory" })}</h3>
 
       <p className="mb-4">
         The results presented in this paper establish, to our knowledge, the first demonstration
@@ -751,7 +753,7 @@ export function QuantumNashPaper() {
         equilibrium computation is entirely infeasible.
       </p>
 
-      <h3 style={h3Style}>5.2 Relationship to Quantum Game Theory</h3>
+      <h3 style={h3Style}>{t("section-52-quantum-game-theory", { defaultValue: "5.2 Relationship to Quantum Game Theory" })}</h3>
 
       <p className="mb-4">
         It is important to distinguish the present work from the extensive literature on quantum
@@ -777,7 +779,7 @@ export function QuantumNashPaper() {
         in mechanism design and multi-agent learning (Papadimitriou &amp; Roughgarden, 2008).
       </p>
 
-      <h3 style={h3Style}>5.3 Limitations and Future Directions</h3>
+      <h3 style={h3Style}>{t("section-53-limitations", { defaultValue: "5.3 Limitations and Future Directions" })}</h3>
 
       <p className="mb-4">
         Several limitations of the present study should be acknowledged. First, our scaling
@@ -822,7 +824,7 @@ export function QuantumNashPaper() {
       {/* --------------------------------------------------------------------
           6. CONCLUSION
          -------------------------------------------------------------------- */}
-      <h2 style={h2Style}>6. Conclusion</h2>
+      <h2 style={h2Style}>{t("section-6-conclusion", { defaultValue: "6. Conclusion" })}</h2>
 
       <p className="mb-4">
         We have introduced the Variational Quantum Nash Solver (VQNS), a hybrid
@@ -862,7 +864,7 @@ export function QuantumNashPaper() {
       {/* --------------------------------------------------------------------
           REFERENCES
          -------------------------------------------------------------------- */}
-      <h2 style={h2Style}>References</h2>
+      <h2 style={h2Style}>{t("section-references", { defaultValue: "References" })}</h2>
 
       <ol
         style={{

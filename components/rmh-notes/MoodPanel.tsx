@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNotesDataStore } from '@/lib/store/useNotesDataStore';
 import { MOOD_OPTIONS } from './types';
 import { toast } from 'sonner';
 
 export default function MoodPanel() {
+  const { t } = useTranslation("c-rmh-notes");
   const logMood = useNotesDataStore((s) => s.logMood);
   const getMoods = useNotesDataStore((s) => s.getMoods);
 
@@ -26,18 +28,18 @@ export default function MoodPanel() {
   const saveMood = () => {
     if (!selectedMood) return;
     logMood(selectedMood.emoji, selectedMood.color, moodNote || null);
-    toast.success('Mood logged! 🌈');
+    toast.success(t("mood-logged", { defaultValue: "Mood logged! 🌈" }));
   };
 
   const todayLabel = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
 
   return (
     <div className="flex-1 overflow-y-auto p-6" style={{ background: 'var(--notes-surface)' }}>
-      <h2 className="text-xl font-bold mb-6" style={{ color: 'var(--notes-text)' }}>🌈 Mood Journal</h2>
+      <h2 className="text-xl font-bold mb-6" style={{ color: 'var(--notes-text)' }}>🌈 {t("mood-journal", { defaultValue: "Mood Journal" })}</h2>
 
       {/* Today's check-in */}
       <div className="rounded-2xl p-5 mb-8" style={{ background: 'var(--notes-surface-2)', border: '1px solid var(--notes-border)' }}>
-        <h3 className="font-semibold text-sm mb-1" style={{ color: 'var(--notes-text)' }}>How are you feeling today?</h3>
+        <h3 className="font-semibold text-sm mb-1" style={{ color: 'var(--notes-text)' }}>{t("how-feeling-today", { defaultValue: "How are you feeling today?" })}</h3>
         <p className="text-xs mb-4" style={{ color: 'var(--notes-text-subtle)' }}>{todayLabel}</p>
 
         <div className="flex gap-3 flex-wrap mb-4">
@@ -63,7 +65,7 @@ export default function MoodPanel() {
             <textarea
               value={moodNote}
               onChange={(e) => setMoodNote(e.target.value)}
-              placeholder="What's on your mind? (optional)"
+              placeholder={t("whats-on-your-mind", { defaultValue: "What's on your mind? (optional)" })}
               rows={2}
               className="w-full px-3 py-2 rounded-xl text-sm outline-none resize-none mb-3"
               style={{ background: 'var(--notes-surface)', border: '1px solid var(--notes-border)', color: 'var(--notes-text)' }}
@@ -73,7 +75,7 @@ export default function MoodPanel() {
               className="px-4 py-2 rounded-lg text-sm font-semibold"
               style={{ background: selectedMood.color, color: '#fff' }}
             >
-              {todayMood ? '✓ Update mood' : '✓ Log mood'}
+              {todayMood ? t("update-mood", { defaultValue: "✓ Update mood" }) : t("log-mood", { defaultValue: "✓ Log mood" })}
             </button>
           </>
         )}
@@ -82,7 +84,7 @@ export default function MoodPanel() {
       {/* Mood history */}
       {moods.length > 0 && (
         <div>
-          <h3 className="font-semibold text-sm mb-3" style={{ color: 'var(--notes-text-muted)' }}>Recent moods</h3>
+          <h3 className="font-semibold text-sm mb-3" style={{ color: 'var(--notes-text-muted)' }}>{t("recent-moods", { defaultValue: "Recent moods" })}</h3>
           <div className="flex gap-2 flex-wrap">
             {moods.slice(0, 30).map((m) => (
               <div
@@ -104,7 +106,7 @@ export default function MoodPanel() {
       {moods.length === 0 && (
         <div className="text-center py-8">
           <p className="text-4xl mb-3">🌱</p>
-          <p className="text-sm" style={{ color: 'var(--notes-text-muted)' }}>Start tracking your mood daily</p>
+          <p className="text-sm" style={{ color: 'var(--notes-text-muted)' }}>{t("start-tracking-mood", { defaultValue: "Start tracking your mood daily" })}</p>
         </div>
       )}
     </div>

@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft, ZoomIn, ZoomOut, Printer } from 'lucide-react';
 import type { ResearchArticle } from '@/lib/research';
 import { PaperContent } from './PaperContent';
 
 export function PaperViewer({ article }: { article: ResearchArticle }) {
+  const { t } = useTranslation("c-research");
   const [zoom, setZoom] = useState(100);
   const containerRef = useRef<HTMLDivElement>(null);
   const zoomRef = useRef(zoom);
@@ -126,7 +128,7 @@ export function PaperViewer({ article }: { article: ResearchArticle }) {
               className="flex items-center gap-1.5 text-gray-300 hover:text-white transition-colors shrink-0"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span className="text-sm hidden sm:inline">Back</span>
+              <span className="text-sm hidden sm:inline">{t("back", { defaultValue: "Back" })}</span>
             </Link>
             <span className="text-gray-500">|</span>
             <span className="text-sm text-gray-300 truncate">
@@ -139,21 +141,21 @@ export function PaperViewer({ article }: { article: ResearchArticle }) {
             <button
               onClick={zoomOut}
               className="p-1.5 text-gray-400 hover:text-white rounded transition-colors"
-              aria-label="Zoom out"
+              aria-label={t("zoom-out", { defaultValue: "Zoom out" })}
             >
               <ZoomOut className="w-4 h-4" />
             </button>
             <button
               onClick={fitToWidth}
               className="text-xs text-gray-400 hover:text-white w-10 text-center tabular-nums transition-colors"
-              aria-label="Fit to width"
+              aria-label={t("fit-to-width", { defaultValue: "Fit to width" })}
             >
               {zoom}%
             </button>
             <button
               onClick={zoomIn}
               className="p-1.5 text-gray-400 hover:text-white rounded transition-colors"
-              aria-label="Zoom in"
+              aria-label={t("zoom-in", { defaultValue: "Zoom in" })}
             >
               <ZoomIn className="w-4 h-4" />
             </button>
@@ -161,7 +163,7 @@ export function PaperViewer({ article }: { article: ResearchArticle }) {
             <button
               onClick={handlePrint}
               className="p-1.5 text-gray-400 hover:text-white rounded transition-colors"
-              aria-label="Print / Download PDF"
+              aria-label={t("print-download-pdf", { defaultValue: "Print / Download PDF" })}
             >
               <Printer className="w-4 h-4" />
             </button>

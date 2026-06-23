@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useTempleStore } from "@/lib/temple-of-joy/store";
 
 const MAX_POINTS = 60;
@@ -12,6 +13,7 @@ interface DataPoint {
 }
 
 export default function HedoTreadmillGraph() {
+  const { t } = useTranslation("c-temple-of-joy");
   const happiness = useTempleStore((s) => s.happiness);
   const baselineHappiness = useTempleStore((s) => s.baselineHappiness);
 
@@ -40,7 +42,7 @@ export default function HedoTreadmillGraph() {
   if (points.length < 2) {
     return (
       <div className="flex items-center justify-center h-20 text-temple-muted text-xs italic">
-        Gathering data…
+        {t("gathering-data", { defaultValue: "Gathering data…" })}
       </div>
     );
   }
@@ -86,12 +88,12 @@ export default function HedoTreadmillGraph() {
   return (
     <div className="w-full select-none">
       <p className="text-[10px] font-semibold uppercase tracking-widest mb-1 text-temple-muted">
-        Hedonic Treadmill
+        {t("hedonic-treadmill", { defaultValue: "Hedonic Treadmill" })}
       </p>
       <svg
         viewBox={`0 0 ${W} ${H}`}
         width="100%"
-        aria-label="Happiness vs baseline over time"
+        aria-label={t("graph-aria-label", { defaultValue: "Happiness vs baseline over time" })}
         className="overflow-visible"
         style={{ maxHeight: 96 }}
       >
@@ -151,7 +153,7 @@ export default function HedoTreadmillGraph() {
           fill="var(--temple-text-muted)"
           opacity="0.7"
         >
-          60s ago
+          {t("sixty-seconds-ago", { defaultValue: "60s ago" })}
         </text>
         <text
           x={PAD.left + gW}
@@ -161,7 +163,7 @@ export default function HedoTreadmillGraph() {
           fill="var(--temple-text-muted)"
           opacity="0.7"
         >
-          now
+          {t("now", { defaultValue: "now" })}
         </text>
       </svg>
 
@@ -171,7 +173,7 @@ export default function HedoTreadmillGraph() {
           <svg width="16" height="4">
             <line x1="0" y1="2" x2="16" y2="2" stroke="var(--temple-accent-bright)" strokeWidth="1.5" />
           </svg>
-          Happiness
+          {t("happiness", { defaultValue: "Happiness" })}
         </span>
         <span className="flex items-center gap-1 text-[9px] text-temple-muted">
           <svg width="16" height="4">
@@ -183,7 +185,7 @@ export default function HedoTreadmillGraph() {
               opacity="0.7"
             />
           </svg>
-          Baseline
+          {t("baseline", { defaultValue: "Baseline" })}
         </span>
       </div>
     </div>

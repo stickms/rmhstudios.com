@@ -7,6 +7,7 @@
  */
 
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Crown, Copy, Play, Pause, SkipForward, RotateCcw, Plus, Check, Trash2, Circle, UserX, Ban, Globe, GlobeLock, MessageCircle, Users, Timer, Settings, Info, X, Layers } from 'lucide-react';
 import { connectToRmhStudy, emit, getSocket } from '@/lib/rmhstudy/socket';
 import { useRmhStudyStore } from '@/lib/rmhstudy/store';
@@ -27,12 +28,12 @@ function formatTime(ms: number): string {
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
-function phaseLabel(phase: TimerPhase): string {
+function phaseLabel(phase: TimerPhase, t: (key: string, opts: { defaultValue: string }) => string): string {
   switch (phase) {
-    case 'idle': return 'Ready';
-    case 'working': return 'Focus Time';
-    case 'short_break': return 'Short Break';
-    case 'long_break': return 'Long Break';
+    case 'idle': return t('phase-ready', { defaultValue: 'Ready' });
+    case 'working': return t('phase-focus-time', { defaultValue: 'Focus Time' });
+    case 'short_break': return t('phase-short-break', { defaultValue: 'Short Break' });
+    case 'long_break': return t('phase-long-break', { defaultValue: 'Long Break' });
     default: return phase;
   }
 }
@@ -49,6 +50,7 @@ function phaseColor(phase: TimerPhase): string {
 type MobileTab = 'session' | 'flashcards' | 'members' | 'chat';
 
 export default function RmhStudyRoom() {
+  const { t } = useTranslation("c-rmhstudy");
   const { roomId } = useParams({ from: '/rmhstudy/$roomId' });
   const router = useRouter();
   const roomCode = roomId?.toUpperCase();
@@ -77,7 +79,7 @@ export default function RmhStudyRoom() {
       try {
         await connectToRmhStudy(roomCode);
       } catch (err) {
-        if (mounted) toast.error(err instanceof Error ? err.message : 'Connection failed');
+        if (mounted) toast.error(err instanceof Error ? err.message : t('connection-failed', { defaultValue: 'Connection failed' }));
       }
     }
     if (roomCode) init();
@@ -125,7 +127,7 @@ export default function RmhStudyRoom() {
   const handleCopyCode = useCallback(() => {
     const url = `${window.location.origin}/rmhstudy/${roomCode}`;
     navigator.clipboard.writeText(url);
-    toast.info('Invite link copied!');
+    toast.info(t('invite-link-copied', { defaultValue: 'Invite link copied!' }));
   }, [roomCode]);
 
   const handleSendChat = useCallback((message: string) => {
@@ -167,10 +169,10 @@ export default function RmhStudyRoom() {
   if (!room) {
     return (
       <div className="flex h-screen flex-col">
-        <RmhStudyHeader backLabel="Back" backHref="/rmhstudy" />
+        <RmhStudyHeader backLabel={t('back', { defaultValue: 'Back' })} backHref="/rmhstudy" />
         <div className="flex-1 flex items-center justify-center">
           <div className="animate-pulse text-(--rmhstudy-text-muted)">
-            {connectionStatus === 'connecting' ? 'Connecting...' : 'Joining room...'}
+            {connectionStatus === 'connecting' ? t('connecting', { defaultValue: 'Connecting...' }) : t('joining-room', { defaultValue: 'Joining room...' })}
           </div>
         </div>
       </div>
@@ -187,7 +189,7 @@ export default function RmhStudyRoom() {
       {/* Timer */}
       <div className="rounded-xl border border-(--rmhstudy-border) bg-(--rmhstudy-surface) p-8 text-center">
         <div className={`text-sm font-medium uppercase tracking-wider mb-2 ${phaseColor(timer.phase)}`}>
-          {phaseLabel(timer.phase)}
+          {phaseLabel(timer.phase, t)}
         </div>
 
         <div className={`text-7xl font-bold font-mono tracking-tight ${phaseColor(timer.phase)}`}>
@@ -195,7 +197,7 @@ export default function RmhStudyRoom() {
         </div>
 
         <div className="text-sm mt-2 text-(--rmhstudy-text-muted)">
-          Session {timer.sessionNumber} of {timer.totalSessions}
+          {t('session-counter', { defaultValue: 'Session {{sessionNumber}} of {{totalSessions}}', sessionNumber: timer.sessionNumber, totalSessions: timer.totalSessions })}
         </div>
 
         {/* Progress ring */}
@@ -224,7 +226,7 @@ export default function RmhStudyRoom() {
                 className="flex items-center gap-2 px-6 py-2.5 rounded-lg font-semibold text-white transition-colors bg-(--rmhstudy-accent) hover:bg-(--rmhstudy-accent-hover)"
               >
                 <Play className="h-4 w-4" />
-                Start
+                {t('start', { defaultValue: 'Start' })}
               </button>
             )}
             {timer.phase !== 'idle' && !timer.isPaused && (
@@ -233,7 +235,7 @@ export default function RmhStudyRoom() {
                 className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors bg-(--rmhstudy-surface-hover) text-(--rmhstudy-text) hover:bg-(--rmhstudy-surface-active)"
               >
                 <Pause className="h-4 w-4" />
-                Pause
+                {t('pause', { defaultValue: 'Pause' })}
               </button>
             )}
             {timer.isPaused && (
@@ -242,7 +244,7 @@ export default function RmhStudyRoom() {
                 className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-white transition-colors bg-(--rmhstudy-accent) hover:bg-(--rmhstudy-accent-hover)"
               >
                 <Play className="h-4 w-4" />
-                Resume
+                {t('resume', { defaultValue: 'Resume' })}
               </button>
             )}
             {timer.phase !== 'idle' && (
@@ -252,14 +254,14 @@ export default function RmhStudyRoom() {
                   className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors bg-(--rmhstudy-surface-hover) text-(--rmhstudy-text) hover:bg-(--rmhstudy-surface-active)"
                 >
                   <SkipForward className="h-4 w-4" />
-                  Skip
+                  {t('skip', { defaultValue: 'Skip' })}
                 </button>
                 <button
                   onClick={() => emit(C2S.TIMER_RESET, { roomCode })}
                   className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors bg-(--rmhstudy-danger-dim) text-(--rmhstudy-danger) hover:bg-(--rmhstudy-danger) hover:text-white"
                 >
                   <RotateCcw className="h-4 w-4" />
-                  Reset
+                  {t('reset', { defaultValue: 'Reset' })}
                 </button>
               </>
             )}
@@ -269,14 +271,14 @@ export default function RmhStudyRoom() {
 
       {/* Tasks */}
       <div className="rounded-xl border border-(--rmhstudy-border) bg-(--rmhstudy-surface) p-4">
-        <h3 className="text-sm font-semibold mb-3">My Tasks</h3>
+        <h3 className="text-sm font-semibold mb-3">{t('my-tasks', { defaultValue: 'My Tasks' })}</h3>
         <form onSubmit={handleAddTask} className="flex gap-2 mb-3">
           <input
             type="text"
             value={newTask}
             onChange={(e) => setNewTask(e.target.value)}
             maxLength={200}
-            placeholder="Add a task..."
+            placeholder={t('add-task-placeholder', { defaultValue: 'Add a task...' })}
             className="flex-1 px-3 py-2 rounded-lg text-sm border border-(--rmhstudy-border) bg-(--rmhstudy-bg) text-(--rmhstudy-text) placeholder:text-(--rmhstudy-text-dim) outline-none focus:ring-1 focus:ring-(--rmhstudy-accent)"
           />
           <button type="submit" className="p-2 rounded-lg bg-(--rmhstudy-accent) text-white hover:bg-(--rmhstudy-accent-hover)">
@@ -284,7 +286,7 @@ export default function RmhStudyRoom() {
           </button>
         </form>
         {tasks.length === 0 ? (
-          <p className="text-xs text-(--rmhstudy-text-dim) text-center py-2">No tasks yet</p>
+          <p className="text-xs text-(--rmhstudy-text-dim) text-center py-2">{t('no-tasks-yet', { defaultValue: 'No tasks yet' })}</p>
         ) : (
           <div className="space-y-1">
             {tasks.map((task) => (
@@ -320,7 +322,7 @@ export default function RmhStudyRoom() {
     <div className="p-4">
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-(--rmhstudy-text-muted)">
-          Members ({room.members.length})
+          {t('members-count', { defaultValue: 'Members ({{count}})', count: room.members.length })}
         </h3>
         <div className="flex items-center gap-1.5">
           {isHost && (
@@ -329,7 +331,7 @@ export default function RmhStudyRoom() {
               className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg transition-colors bg-(--rmhstudy-bg) text-(--rmhstudy-text-muted) hover:text-(--rmhstudy-text)"
             >
               {room.isPublic ? <Globe className="h-3 w-3" /> : <GlobeLock className="h-3 w-3" />}
-              {room.isPublic ? 'Public' : 'Private'}
+              {room.isPublic ? t('public', { defaultValue: 'Public' }) : t('private', { defaultValue: 'Private' })}
             </button>
           )}
           <button
@@ -362,14 +364,14 @@ export default function RmhStudyRoom() {
                 <button
                   onClick={() => handleKick(m.userId)}
                   className="rounded p-0.5 text-(--rmhstudy-text-dim) hover:text-(--rmhstudy-danger) transition-colors"
-                  title="Kick"
+                  title={t('kick', { defaultValue: 'Kick' })}
                 >
                   <UserX className="h-3 w-3" />
                 </button>
                 <button
                   onClick={() => setBanTarget({ userId: m.userId, userName: m.userName })}
                   className="rounded p-0.5 text-(--rmhstudy-text-dim) hover:text-(--rmhstudy-danger) transition-colors"
-                  title="Ban"
+                  title={t('ban', { defaultValue: 'Ban' })}
                 >
                   <Ban className="h-3 w-3" />
                 </button>
@@ -387,7 +389,7 @@ export default function RmhStudyRoom() {
             className="flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg transition-colors bg-(--rmhstudy-bg) text-(--rmhstudy-text-muted) hover:text-(--rmhstudy-text)"
           >
             <Ban className="h-3 w-3" />
-            {room.bannedUsers.length} banned
+            {t('banned-count', { defaultValue: '{{count}} banned', count: room.bannedUsers.length })}
           </button>
         </div>
       )}
@@ -397,7 +399,7 @@ export default function RmhStudyRoom() {
   return (
     <div className="flex h-screen flex-col">
       <RmhStudyHeader
-        backLabel="Leave"
+        backLabel={t('leave', { defaultValue: 'Leave' })}
         onBack={handleLeave}
         roomCode={roomCode}
         onCopyCode={handleCopyCode}
@@ -405,7 +407,7 @@ export default function RmhStudyRoom() {
           <button
             onClick={() => setShowSettings(true)}
             className="p-1.5 rounded-lg transition-colors text-(--rmhstudy-text-muted) hover:text-(--rmhstudy-text) hover:bg-(--rmhstudy-surface-hover)"
-            title={isHost ? 'Room Settings' : 'Room Info'}
+            title={isHost ? t('room-settings', { defaultValue: 'Room Settings' }) : t('room-info', { defaultValue: 'Room Info' })}
           >
             {isHost ? <Settings className="h-4 w-4" /> : <Info className="h-4 w-4" />}
           </button>
@@ -429,7 +431,7 @@ export default function RmhStudyRoom() {
                   }`}
                 >
                   {v === 'session' ? <Timer className="h-4 w-4" /> : <Layers className="h-4 w-4" />}
-                  {v === 'session' ? 'Session' : 'Flashcards'}
+                  {v === 'session' ? t('tab-session', { defaultValue: 'Session' }) : t('tab-flashcards', { defaultValue: 'Flashcards' })}
                 </button>
               ))}
             </div>
@@ -491,7 +493,7 @@ export default function RmhStudyRoom() {
             }`}
           >
             <Timer className="h-4 w-4" />
-            Session
+            {t('tab-session', { defaultValue: 'Session' })}
           </button>
           <button
             onClick={() => setMobileTab('flashcards')}
@@ -500,7 +502,7 @@ export default function RmhStudyRoom() {
             }`}
           >
             <Layers className="h-4 w-4" />
-            Cards
+            {t('tab-cards', { defaultValue: 'Cards' })}
           </button>
           <button
             onClick={() => setMobileTab('members')}
@@ -509,7 +511,7 @@ export default function RmhStudyRoom() {
             }`}
           >
             <Users className="h-4 w-4" />
-            Members
+            {t('tab-members', { defaultValue: 'Members' })}
           </button>
           <button
             onClick={() => { setMobileTab('chat'); setUnreadChat(0); }}
@@ -518,7 +520,7 @@ export default function RmhStudyRoom() {
             }`}
           >
             <MessageCircle className="h-4 w-4" />
-            Chat
+            {t('tab-chat', { defaultValue: 'Chat' })}
             {unreadChat > 0 && (
               <span className="absolute top-1.5 right-1/4 h-4 min-w-4 px-1 flex items-center justify-center rounded-full bg-(--rmhstudy-accent) text-white text-[10px] font-bold">
                 {unreadChat > 9 ? '9+' : unreadChat}
@@ -536,7 +538,7 @@ export default function RmhStudyRoom() {
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 {isHost ? <Settings className="h-5 w-5 text-(--rmhstudy-accent)" /> : <Info className="h-5 w-5 text-(--rmhstudy-accent)" />}
-                {isHost ? 'Room Settings' : 'Room Info'}
+                {isHost ? t('room-settings', { defaultValue: 'Room Settings' }) : t('room-info', { defaultValue: 'Room Info' })}
               </h3>
               <button
                 onClick={() => setShowSettings(false)}
@@ -548,7 +550,7 @@ export default function RmhStudyRoom() {
 
             {isHost && timer.phase !== 'idle' && (
               <p className="text-xs text-(--rmhstudy-warning) mb-4">
-                Settings can only be changed while the timer is idle.
+                {t('settings-idle-only', { defaultValue: 'Settings can only be changed while the timer is idle.' })}
               </p>
             )}
 
@@ -556,7 +558,7 @@ export default function RmhStudyRoom() {
               {/* Work Duration */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium text-(--rmhstudy-text-muted)">Focus Duration</label>
+                  <label className="text-sm font-medium text-(--rmhstudy-text-muted)">{t('focus-duration', { defaultValue: 'Focus Duration' })}</label>
                   <span className="text-sm font-mono font-bold text-(--rmhstudy-text)">{Math.round(room.settings.workDurationMs / 60000)} min</span>
                 </div>
                 {isHost && timer.phase === 'idle' ? (
@@ -577,7 +579,7 @@ export default function RmhStudyRoom() {
                   </div>
                 ) : (
                   <div className="h-8 flex items-center px-3 rounded-lg bg-(--rmhstudy-bg) text-sm text-(--rmhstudy-text-muted)">
-                    {Math.round(room.settings.workDurationMs / 60000)} minutes
+                    {t('n-minutes', { defaultValue: '{{count}} minutes', count: Math.round(room.settings.workDurationMs / 60000) })}
                   </div>
                 )}
               </div>
@@ -585,7 +587,7 @@ export default function RmhStudyRoom() {
               {/* Short Break */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium text-(--rmhstudy-text-muted)">Short Break</label>
+                  <label className="text-sm font-medium text-(--rmhstudy-text-muted)">{t('short-break', { defaultValue: 'Short Break' })}</label>
                   <span className="text-sm font-mono font-bold text-(--rmhstudy-text)">{Math.round(room.settings.shortBreakMs / 60000)} min</span>
                 </div>
                 {isHost && timer.phase === 'idle' ? (
@@ -606,7 +608,7 @@ export default function RmhStudyRoom() {
                   </div>
                 ) : (
                   <div className="h-8 flex items-center px-3 rounded-lg bg-(--rmhstudy-bg) text-sm text-(--rmhstudy-text-muted)">
-                    {Math.round(room.settings.shortBreakMs / 60000)} minutes
+                    {t('n-minutes', { defaultValue: '{{count}} minutes', count: Math.round(room.settings.shortBreakMs / 60000) })}
                   </div>
                 )}
               </div>
@@ -614,7 +616,7 @@ export default function RmhStudyRoom() {
               {/* Long Break */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium text-(--rmhstudy-text-muted)">Long Break</label>
+                  <label className="text-sm font-medium text-(--rmhstudy-text-muted)">{t('long-break', { defaultValue: 'Long Break' })}</label>
                   <span className="text-sm font-mono font-bold text-(--rmhstudy-text)">{Math.round(room.settings.longBreakMs / 60000)} min</span>
                 </div>
                 {isHost && timer.phase === 'idle' ? (
@@ -635,7 +637,7 @@ export default function RmhStudyRoom() {
                   </div>
                 ) : (
                   <div className="h-8 flex items-center px-3 rounded-lg bg-(--rmhstudy-bg) text-sm text-(--rmhstudy-text-muted)">
-                    {Math.round(room.settings.longBreakMs / 60000)} minutes
+                    {t('n-minutes', { defaultValue: '{{count}} minutes', count: Math.round(room.settings.longBreakMs / 60000) })}
                   </div>
                 )}
               </div>
@@ -643,7 +645,7 @@ export default function RmhStudyRoom() {
               {/* Sessions before long break */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium text-(--rmhstudy-text-muted)">Sessions before long break</label>
+                  <label className="text-sm font-medium text-(--rmhstudy-text-muted)">{t('sessions-before-long-break', { defaultValue: 'Sessions before long break' })}</label>
                   <span className="text-sm font-mono font-bold text-(--rmhstudy-text)">{room.settings.sessionsBeforeLongBreak}</span>
                 </div>
                 {isHost && timer.phase === 'idle' ? (
@@ -657,7 +659,7 @@ export default function RmhStudyRoom() {
                   />
                 ) : (
                   <div className="h-8 flex items-center px-3 rounded-lg bg-(--rmhstudy-bg) text-sm text-(--rmhstudy-text-muted)">
-                    {room.settings.sessionsBeforeLongBreak} sessions
+                    {t('n-sessions', { defaultValue: '{{count}} sessions', count: room.settings.sessionsBeforeLongBreak })}
                   </div>
                 )}
               </div>
@@ -665,7 +667,7 @@ export default function RmhStudyRoom() {
               {/* Auto-start toggles */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium text-(--rmhstudy-text-muted)">Auto-start breaks</label>
+                  <label className="text-sm font-medium text-(--rmhstudy-text-muted)">{t('auto-start-breaks', { defaultValue: 'Auto-start breaks' })}</label>
                   {isHost && timer.phase === 'idle' ? (
                     <button
                       onClick={() => handleUpdateSetting('autoStartBreaks', !room.settings.autoStartBreaks)}
@@ -678,11 +680,11 @@ export default function RmhStudyRoom() {
                       }`} />
                     </button>
                   ) : (
-                    <span className="text-sm text-(--rmhstudy-text)">{room.settings.autoStartBreaks ? 'On' : 'Off'}</span>
+                    <span className="text-sm text-(--rmhstudy-text)">{room.settings.autoStartBreaks ? t('on', { defaultValue: 'On' }) : t('off', { defaultValue: 'Off' })}</span>
                   )}
                 </div>
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium text-(--rmhstudy-text-muted)">Auto-start work sessions</label>
+                  <label className="text-sm font-medium text-(--rmhstudy-text-muted)">{t('auto-start-work-sessions', { defaultValue: 'Auto-start work sessions' })}</label>
                   {isHost && timer.phase === 'idle' ? (
                     <button
                       onClick={() => handleUpdateSetting('autoStartWork', !room.settings.autoStartWork)}
@@ -695,7 +697,7 @@ export default function RmhStudyRoom() {
                       }`} />
                     </button>
                   ) : (
-                    <span className="text-sm text-(--rmhstudy-text)">{room.settings.autoStartWork ? 'On' : 'Off'}</span>
+                    <span className="text-sm text-(--rmhstudy-text)">{room.settings.autoStartWork ? t('on', { defaultValue: 'On' }) : t('off', { defaultValue: 'Off' })}</span>
                   )}
                 </div>
               </div>
@@ -709,15 +711,15 @@ export default function RmhStudyRoom() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60" onClick={() => { setBanTarget(null); setBanReason(''); }} />
           <div className="relative w-full max-w-sm rounded-xl border border-(--rmhstudy-border) bg-(--rmhstudy-surface) p-6 shadow-xl">
-            <h3 className="text-lg font-semibold mb-2">Ban {banTarget.userName}?</h3>
+            <h3 className="text-lg font-semibold mb-2">{t('ban-confirm-title', { defaultValue: 'Ban {{userName}}?', userName: banTarget.userName })}</h3>
             <p className="text-sm text-(--rmhstudy-text-muted) mb-4">
-              This member will be removed and cannot rejoin this room.
+              {t('ban-confirm-desc', { defaultValue: 'This member will be removed and cannot rejoin this room.' })}
             </p>
             <input
               type="text"
               value={banReason}
               onChange={(e) => setBanReason(e.target.value)}
-              placeholder="Reason (optional)"
+              placeholder={t('ban-reason-placeholder', { defaultValue: 'Reason (optional)' })}
               maxLength={200}
               className="w-full px-3 py-2 rounded-lg text-sm border border-(--rmhstudy-border) bg-(--rmhstudy-bg) text-(--rmhstudy-text) placeholder:text-(--rmhstudy-text-dim) outline-none focus:ring-1 focus:ring-(--rmhstudy-accent) mb-4"
             />
@@ -726,13 +728,13 @@ export default function RmhStudyRoom() {
                 onClick={() => { setBanTarget(null); setBanReason(''); }}
                 className="flex-1 py-2 rounded-lg font-medium text-sm transition-colors bg-(--rmhstudy-bg) text-(--rmhstudy-text-muted) hover:text-(--rmhstudy-text)"
               >
-                Cancel
+                {t('cancel', { defaultValue: 'Cancel' })}
               </button>
               <button
                 onClick={handleBanConfirm}
                 className="flex-1 py-2 rounded-lg font-medium text-sm text-white transition-colors bg-(--rmhstudy-danger) hover:opacity-90"
               >
-                Ban
+                {t('ban', { defaultValue: 'Ban' })}
               </button>
             </div>
           </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { DialogueLine } from '@/lib/dream-rift/types';
 
 const TYPEWRITER_MS = 30;
@@ -35,6 +36,7 @@ interface DreamRiftDialogueProps {
 }
 
 export function DreamRiftDialogue({ line, onAdvance, onSkip }: DreamRiftDialogueProps) {
+  const { t } = useTranslation('c-dream-rift');
   const [displayedText, setDisplayedText] = useState('');
   const [isTyping, setIsTyping] = useState(true);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -188,7 +190,7 @@ export function DreamRiftDialogue({ line, onAdvance, onSkip }: DreamRiftDialogue
               className="flex-shrink-0 text-amber-400/30 hover:text-amber-400/70 text-[9px] px-1.5 py-0.5 border border-amber-400/20 tracking-[0.2em] transition-colors uppercase"
               style={{ fontFamily: "'Georgia', serif" }}
             >
-              Skip
+              {t("skip", { defaultValue: "Skip" })}
             </button>
           </div>
         </div>

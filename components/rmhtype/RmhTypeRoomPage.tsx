@@ -16,8 +16,10 @@ import ChatPanel from '@/components/shared/ChatPanel';
 import type { ChatPanelMessage } from '@/components/shared/ChatPanel';
 import type { Difficulty, PassageLength } from '@/lib/rmhtype/types';
 import { useParams, useRouter } from '@tanstack/react-router';
+import { useTranslation } from "react-i18next";
 
 export default function RmhTypeRoom() {
+  const { t } = useTranslation("c-rmhtype");
   const { roomId } = useParams({ from: '/rmhtype/$roomId' });
   const router = useRouter();
   const roomCode = roomId?.toUpperCase();
@@ -59,7 +61,7 @@ export default function RmhTypeRoom() {
       try {
         await connectToRmhType(roomCode);
       } catch (err) {
-        if (mounted) toast.error(err instanceof Error ? err.message : 'Connection failed');
+        if (mounted) toast.error(err instanceof Error ? err.message : t("connection-failed", { defaultValue: "Connection failed" }));
       }
     }
     if (roomCode) init();
@@ -125,7 +127,7 @@ export default function RmhTypeRoom() {
   const handleCopyCode = useCallback(() => {
     const url = `${window.location.origin}/rmhtype/${roomCode}`;
     navigator.clipboard.writeText(url);
-    toast.info('Invite link copied!');
+    toast.info(t("invite-link-copied", { defaultValue: "Invite link copied!" }));
   }, [roomCode]);
 
   const handleReady = useCallback(() => {
@@ -174,11 +176,11 @@ export default function RmhTypeRoom() {
   if (!room) {
     return (
       <div className="flex h-screen flex-col">
-        <RmhTypeHeader backLabel="Back" backHref="/rmhtype" />
+        <RmhTypeHeader backLabel={t("back", { defaultValue: "Back" })} backHref="/rmhtype" />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-pulse text-(--rmhtype-text-muted)">
-              {connectionStatus === 'connecting' ? 'Connecting...' : 'Joining room...'}
+              {connectionStatus === 'connecting' ? t("connecting", { defaultValue: "Connecting..." }) : t("joining-room", { defaultValue: "Joining room..." })}
             </div>
           </div>
         </div>
@@ -195,7 +197,7 @@ export default function RmhTypeRoom() {
   return (
     <div className={`flex h-screen flex-col ${isTyping ? 'rmhtype-typing-view' : ''}`}>
       <RmhTypeHeader
-        backLabel="Leave"
+        backLabel={t("leave", { defaultValue: "Leave" })}
         onBack={handleLeave}
         roomCode={roomCode}
         onCopyCode={handleCopyCode}
@@ -209,7 +211,7 @@ export default function RmhTypeRoom() {
             <>
               <div className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold">Players ({room.players.length}/8)</h2>
+                  <h2 className="text-lg font-semibold">{t("players-count", { defaultValue: "Players ({{count}}/8)", count: room.players.length })}</h2>
                   <div className="flex items-center gap-2">
                     {isHost && (
                       <button
@@ -217,7 +219,7 @@ export default function RmhTypeRoom() {
                         className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg transition-colors bg-(--rmhtype-bg) text-(--rmhtype-text-muted) hover:text-(--rmhtype-text)"
                       >
                         {room.isPublic ? <Globe className="h-3.5 w-3.5" /> : <GlobeLock className="h-3.5 w-3.5" />}
-                        {room.isPublic ? 'Public' : 'Private'}
+                        {room.isPublic ? t("public", { defaultValue: "Public" }) : t("private", { defaultValue: "Private" })}
                       </button>
                     )}
                     <button
@@ -235,7 +237,7 @@ export default function RmhTypeRoom() {
                       <div className="flex items-center gap-2">
                         {p.isHost && <Crown className="h-4 w-4 text-(--rmhtype-accent)" />}
                         <span className="font-medium">{p.userName}</span>
-                        {p.userId === room.myUserId && <span className="text-xs text-(--rmhtype-text-dim)">(you)</span>}
+                        {p.userId === room.myUserId && <span className="text-xs text-(--rmhtype-text-dim)">{t("you", { defaultValue: "(you)" })}</span>}
                       </div>
                       <div className="flex items-center gap-2">
                         {p.isReady && <Check className="h-4 w-4 text-(--rmhtype-success)" />}
@@ -244,14 +246,14 @@ export default function RmhTypeRoom() {
                             <button
                               onClick={() => handleKick(p.userId)}
                               className="rounded p-1 text-(--rmhtype-text-dim) hover:text-(--rmhtype-danger) transition-colors"
-                              title="Kick"
+                              title={t("kick", { defaultValue: "Kick" })}
                             >
                               <UserX className="h-3.5 w-3.5" />
                             </button>
                             <button
                               onClick={() => setBanTarget({ userId: p.userId, userName: p.userName })}
                               className="rounded p-1 text-(--rmhtype-text-dim) hover:text-(--rmhtype-danger) transition-colors"
-                              title="Ban"
+                              title={t("ban", { defaultValue: "Ban" })}
                             >
                               <Ban className="h-3.5 w-3.5" />
                             </button>
@@ -272,7 +274,7 @@ export default function RmhTypeRoom() {
                           : 'bg-(--rmhtype-surface-hover) text-(--rmhtype-text) hover:bg-(--rmhtype-accent) hover:text-white'
                       }`}
                     >
-                      {myPlayer?.isReady ? 'Ready!' : 'Ready Up'}
+                      {myPlayer?.isReady ? t("ready-done", { defaultValue: "Ready!" }) : t("ready-up", { defaultValue: "Ready Up" })}
                     </button>
                   )}
                   {isHost && (
@@ -281,7 +283,7 @@ export default function RmhTypeRoom() {
                       disabled={!allReady}
                       className="flex-1 py-2.5 rounded-lg font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--rmhtype-accent) hover:bg-(--rmhtype-accent-hover)"
                     >
-                      Start Game
+                      {t("start-game", { defaultValue: "Start Game" })}
                     </button>
                   )}
                 </div>
@@ -290,7 +292,7 @@ export default function RmhTypeRoom() {
                   {isHost ? (
                     <div className="space-y-3">
                       <div>
-                        <div className="text-xs uppercase tracking-wide mb-1">Difficulty</div>
+                        <div className="text-xs uppercase tracking-wide mb-1">{t("difficulty", { defaultValue: "Difficulty" })}</div>
                         <div className="flex gap-1">
                           {(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => (
                             <button
@@ -308,7 +310,7 @@ export default function RmhTypeRoom() {
                         </div>
                       </div>
                       <div>
-                        <div className="text-xs uppercase tracking-wide mb-1">Length</div>
+                        <div className="text-xs uppercase tracking-wide mb-1">{t("length", { defaultValue: "Length" })}</div>
                         <div className="flex gap-1">
                           {(['short', 'medium', 'long'] as PassageLength[]).map((l) => (
                             <button
@@ -326,7 +328,7 @@ export default function RmhTypeRoom() {
                         </div>
                       </div>
                       <div>
-                        <div className="text-xs uppercase tracking-wide mb-1">Rounds: {room.totalRounds}</div>
+                        <div className="text-xs uppercase tracking-wide mb-1">{t("rounds-count", { defaultValue: "Rounds: {{count}}", count: room.totalRounds })}</div>
                         <input
                           type="range"
                           min={1}
@@ -340,15 +342,15 @@ export default function RmhTypeRoom() {
                   ) : (
                     <div className="grid grid-cols-3 gap-2 text-center">
                       <div>
-                        <div className="text-xs uppercase tracking-wide">Difficulty</div>
+                        <div className="text-xs uppercase tracking-wide">{t("difficulty", { defaultValue: "Difficulty" })}</div>
                         <div className="font-medium text-(--rmhtype-text) capitalize">{room.settings.difficulty}</div>
                       </div>
                       <div>
-                        <div className="text-xs uppercase tracking-wide">Length</div>
+                        <div className="text-xs uppercase tracking-wide">{t("length", { defaultValue: "Length" })}</div>
                         <div className="font-medium text-(--rmhtype-text) capitalize">{room.settings.passageLength}</div>
                       </div>
                       <div>
-                        <div className="text-xs uppercase tracking-wide">Rounds</div>
+                        <div className="text-xs uppercase tracking-wide">{t("rounds", { defaultValue: "Rounds" })}</div>
                         <div className="font-medium text-(--rmhtype-text)">{room.totalRounds}</div>
                       </div>
                     </div>
@@ -363,7 +365,7 @@ export default function RmhTypeRoom() {
                       className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors bg-(--rmhtype-bg) text-(--rmhtype-text-muted) hover:text-(--rmhtype-text)"
                     >
                       <Ban className="h-3.5 w-3.5" />
-                      {room.bannedUsers.length} banned
+                      {t("banned-count", { defaultValue: "{{count}} banned", count: room.bannedUsers.length })}
                     </button>
                   </div>
                 )}
@@ -378,7 +380,7 @@ export default function RmhTypeRoom() {
                   themePrefix="rmhtype"
                   showReactions={false}
                   showMediaEmbeds
-                  placeholder="Type a message..."
+                  placeholder={t("chat-placeholder", { defaultValue: "Type a message..." })}
                   className="h-full"
                 />
               </div>
@@ -392,9 +394,9 @@ export default function RmhTypeRoom() {
                 <div className="text-8xl font-bold text-(--rmhtype-accent) animate-pulse">
                   {room.countdownSeconds ?? '...'}
                 </div>
-                <p className="mt-4 text-(--rmhtype-text-muted)">Get ready to type!</p>
+                <p className="mt-4 text-(--rmhtype-text-muted)">{t("get-ready", { defaultValue: "Get ready to type!" })}</p>
                 <p className="text-sm text-(--rmhtype-text-dim)">
-                  Round {room.currentRound} of {room.totalRounds}
+                  {t("round-of", { defaultValue: "Round {{current}} of {{total}}", current: room.currentRound, total: room.totalRounds })}
                 </p>
               </div>
             </div>
@@ -404,7 +406,7 @@ export default function RmhTypeRoom() {
           {room.status === 'TYPING' && room.passage && (
             <>
               <div className="shrink-0 text-sm text-(--rmhtype-text-muted) text-center rmhtype-round-info">
-                Round {room.currentRound} of {room.totalRounds}
+                {t("round-of", { defaultValue: "Round {{current}} of {{total}}", current: room.currentRound, total: room.totalRounds })}
               </div>
 
               {/* Passage display — fills remaining space, scrolls internally */}
@@ -437,7 +439,7 @@ export default function RmhTypeRoom() {
                 disabled={finished}
                 className="shrink-0 w-full px-4 py-3 rounded-lg font-mono border border-(--rmhtype-border) bg-(--rmhtype-bg) text-(--rmhtype-text) outline-none focus:ring-1 focus:ring-(--rmhtype-accent) rmhtype-typing-input"
                 autoFocus
-                placeholder={finished ? 'Waiting for others...' : 'Start typing...'}
+                placeholder={finished ? t("waiting-for-others", { defaultValue: "Waiting for others..." }) : t("start-typing", { defaultValue: "Start typing..." })}
               />
 
               {/* Progress bars — hidden on short viewports via CSS */}
@@ -465,7 +467,7 @@ export default function RmhTypeRoom() {
           {room.status === 'ROUND_RESULTS' && room.roundResults && (
             <div className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-6">
               <h2 className="text-xl font-semibold mb-4 text-center">
-                Round {room.roundResults.round} Results
+                {t("round-results", { defaultValue: "Round {{round}} Results", round: room.roundResults.round })}
               </h2>
               <div className="space-y-2">
                 {room.roundResults.rankings.map((r, i) => (
@@ -486,7 +488,7 @@ export default function RmhTypeRoom() {
               </div>
               {!room.roundResults.isLastRound && (
                 <p className="text-center text-sm mt-4 text-(--rmhtype-text-muted)">
-                  Next round starting in <span className="font-bold text-(--rmhtype-accent)">{nextRoundCountdown ?? '...'}</span>...
+                  {t("next-round-starting", { defaultValue: "Next round starting in" })} <span className="font-bold text-(--rmhtype-accent)">{nextRoundCountdown ?? '...'}</span>...
                 </p>
               )}
             </div>
@@ -495,7 +497,7 @@ export default function RmhTypeRoom() {
           {/* FINAL_RESULTS */}
           {room.status === 'FINAL_RESULTS' && room.finalResults && (
             <div className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-6">
-              <h2 className="text-2xl font-bold mb-6 text-center">Final Results</h2>
+              <h2 className="text-2xl font-bold mb-6 text-center">{t("final-results", { defaultValue: "Final Results" })}</h2>
               <div className="space-y-2">
                 {room.finalResults.rankings.map((r, i) => (
                   <div key={r.userId} className={`flex items-center justify-between p-4 rounded-lg ${
@@ -507,7 +509,7 @@ export default function RmhTypeRoom() {
                     </div>
                     <div className="text-right">
                       <div className="text-2xl font-bold text-(--rmhtype-accent)">{r.totalScore}</div>
-                      <div className="text-xs text-(--rmhtype-text-muted)">Total Score</div>
+                      <div className="text-xs text-(--rmhtype-text-muted)">{t("total-score", { defaultValue: "Total Score" })}</div>
                     </div>
                   </div>
                 ))}
@@ -517,7 +519,7 @@ export default function RmhTypeRoom() {
                   onClick={handleStart}
                   className="w-full mt-6 py-3 rounded-lg font-semibold text-white transition-colors bg-(--rmhtype-accent) hover:bg-(--rmhtype-accent-hover)"
                 >
-                  Play Again
+                  {t("play-again", { defaultValue: "Play Again" })}
                 </button>
               )}
             </div>
@@ -531,15 +533,15 @@ export default function RmhTypeRoom() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60" onClick={() => { setBanTarget(null); setBanReason(''); }} />
           <div className="relative w-full max-w-sm rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-6 shadow-xl">
-            <h3 className="text-lg font-semibold mb-2">Ban {banTarget.userName}?</h3>
+            <h3 className="text-lg font-semibold mb-2">{t("ban-confirm-title", { defaultValue: "Ban {{name}}?", name: banTarget.userName })}</h3>
             <p className="text-sm text-(--rmhtype-text-muted) mb-4">
-              This player will be removed and cannot rejoin this room.
+              {t("ban-confirm-body", { defaultValue: "This player will be removed and cannot rejoin this room." })}
             </p>
             <input
               type="text"
               value={banReason}
               onChange={(e) => setBanReason(e.target.value)}
-              placeholder="Reason (optional)"
+              placeholder={t("ban-reason-placeholder", { defaultValue: "Reason (optional)" })}
               maxLength={200}
               className="w-full px-3 py-2 rounded-lg text-sm border border-(--rmhtype-border) bg-(--rmhtype-bg) text-(--rmhtype-text) placeholder:text-(--rmhtype-text-dim) outline-none focus:ring-1 focus:ring-(--rmhtype-accent) mb-4"
             />
@@ -548,13 +550,13 @@ export default function RmhTypeRoom() {
                 onClick={() => { setBanTarget(null); setBanReason(''); }}
                 className="flex-1 py-2 rounded-lg font-medium text-sm transition-colors bg-(--rmhtype-bg) text-(--rmhtype-text-muted) hover:text-(--rmhtype-text)"
               >
-                Cancel
+                {t("cancel", { defaultValue: "Cancel" })}
               </button>
               <button
                 onClick={handleBanConfirm}
                 className="flex-1 py-2 rounded-lg font-medium text-sm text-white transition-colors bg-(--rmhtype-danger) hover:opacity-90"
               >
-                Ban
+                {t("ban", { defaultValue: "Ban" })}
               </button>
             </div>
           </div>

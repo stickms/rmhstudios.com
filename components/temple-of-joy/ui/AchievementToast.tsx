@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { ACHIEVEMENTS } from '@/lib/temple-of-joy/data/achievements';
 import { templeAudio } from '@/lib/temple-of-joy/audio';
@@ -16,6 +17,7 @@ export default function AchievementToast() {
   const achievements     = useTempleStore(s => s.achievements);
   const gameInitialized  = useTempleStore(s => s.gameInitialized);
   const theme            = useTempleStore(s => s.theme);
+  const { t } = useTranslation("c-temple-of-joy");
   const prevRef          = useRef<Set<string> | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
 
@@ -53,7 +55,7 @@ export default function AchievementToast() {
     <div
       className="fixed top-16 right-3 z-60 flex flex-col gap-2 pointer-events-none"
       aria-live="polite"
-      aria-label="Achievement notifications"
+      aria-label={t("achievement-notifications", { defaultValue: "Achievement notifications" })}
     >
       {toasts.map(toast => {
         const def = ACHIEVEMENTS.find(a => a.id === toast.achievementId);
@@ -81,7 +83,7 @@ export default function AchievementToast() {
                 className="text-[11px] font-semibold uppercase tracking-widest leading-none mb-0.5"
                 style={{ color: dark ? '#d4a847' : '#8b6914' }}
               >
-                Achievement Unlocked
+                {t("achievement-unlocked", { defaultValue: "Achievement Unlocked" })}
               </p>
               <p
                 className="text-sm font-semibold leading-tight"

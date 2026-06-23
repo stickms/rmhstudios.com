@@ -7,6 +7,7 @@
 'use client';
 
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, UserX, Undo2 } from 'lucide-react';
 import { emit } from '@/lib/rmhtype/socket';
 import { C2S } from '@/lib/rmhtype/events';
@@ -18,6 +19,7 @@ interface BanListModalProps {
 }
 
 export default function BanListModal({ onClose }: BanListModalProps) {
+  const { t } = useTranslation("c-rmhtype");
   const room = useRmhTypeStore((s) => s.room);
 
   const handleUnban = useCallback((userId: string) => {
@@ -33,7 +35,7 @@ export default function BanListModal({ onClose }: BanListModalProps) {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <UserX className="h-5 w-5 text-(--rmhtype-danger)" />
-            <h3 className="text-lg font-semibold text-(--rmhtype-text)">Banned Users</h3>
+            <h3 className="text-lg font-semibold text-(--rmhtype-text)">{t("banned-users", { defaultValue: "Banned Users" })}</h3>
           </div>
           <button
             onClick={onClose}
@@ -45,7 +47,7 @@ export default function BanListModal({ onClose }: BanListModalProps) {
 
         {room.bannedUsers.length === 0 ? (
           <p className="text-sm text-center py-6 text-(--rmhtype-text-dim)">
-            No banned users
+            {t("no-banned-users", { defaultValue: "No banned users" })}
           </p>
         ) : (
           <div className="space-y-2 max-h-72 overflow-y-auto">
@@ -59,17 +61,17 @@ export default function BanListModal({ onClose }: BanListModalProps) {
                     {ban.userName}
                   </p>
                   <p className="text-xs text-(--rmhtype-text-dim)">
-                    Banned {formatRelativeTime(ban.bannedAt)}
+                    {t("banned-time", { defaultValue: "Banned {{time}}", time: formatRelativeTime(ban.bannedAt) })}
                     {ban.reason && ` · ${ban.reason}`}
                   </p>
                 </div>
                 <button
                   onClick={() => handleUnban(ban.userId)}
                   className="shrink-0 ml-2 flex items-center gap-1 rounded-md px-2 py-1 text-xs transition-colors bg-(--rmhtype-surface-hover) text-(--rmhtype-text-muted) hover:text-(--rmhtype-success) hover:bg-(--rmhtype-success-dim)"
-                  title="Unban user"
+                  title={t("unban-user", { defaultValue: "Unban user" })}
                 >
                   <Undo2 className="h-3 w-3" />
-                  Unban
+                  {t("unban", { defaultValue: "Unban" })}
                 </button>
               </div>
             ))}

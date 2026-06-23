@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslation } from "react-i18next";
 import { useHouseAlwaysWinsStore } from "@/lib/store/houseAlwaysWinsStore";
 
 interface HUDProps {
@@ -8,6 +9,7 @@ interface HUDProps {
 }
 
 export function HUD({ areaLabel, prompt }: HUDProps) {
+  const { t } = useTranslation("c-house-always-wins");
   const debt = useHouseAlwaysWinsStore((s) => s.debt);
 
   return (
@@ -19,7 +21,7 @@ export function HUD({ areaLabel, prompt }: HUDProps) {
         </div>
         <div className="flex items-center gap-2">
           <span className="text-[#8b6914] text-xs font-mono tracking-widest">
-            DEBT
+            {t("debt", { defaultValue: "DEBT" })}
           </span>
           <span
             className={`font-mono text-sm font-bold tabular-nums ${

@@ -3,6 +3,7 @@ import { GlassCard } from './GlassCard';
 import { WeatherData, getWeatherCondition } from '@/lib/weather';
 import { motion } from 'framer-motion';
 import { useWeatherStore } from '@/lib/store/useWeatherStore';
+import { useTranslation } from "react-i18next";
 
 interface CurrentWeatherProps {
   data: WeatherData['current'];
@@ -14,6 +15,7 @@ interface CurrentWeatherProps {
 }
 
 export const CurrentWeather = ({ data, units, locationName, lat, lon, hourly }: CurrentWeatherProps) => {
+  const { t } = useTranslation("c-rmh-weather");
   const { favorites, addFavorite, removeFavorite } = useWeatherStore();
   const isFavorite = favorites.some(f => f.name === locationName);
 
@@ -33,23 +35,23 @@ export const CurrentWeather = ({ data, units, locationName, lat, lon, hourly }: 
   if (windUnit === 'mph' && units === 'metric') windSpeed = Math.round(data.windSpeed * 0.621371);
 
   const stats = [
-    { label: 'Feels Like', value: `${Math.round(data.feelsLike)}${tempUnit}`, icon: Thermometer, color: 'text-orange-400' },
-    { label: 'Humidity', value: `${data.humidity}%`, icon: Droplets, color: 'text-blue-400' },
-    { label: 'Wind Speed', value: `${windSpeed} ${speedUnit}`, icon: Wind, color: 'text-cyan-400' },
-    { label: 'UV Index', value: data.uvIndex, icon: Sun, color: 'text-yellow-400' },
-    { label: 'Visibility', value: `${(data.visibility / 1000).toFixed(1)} km`, icon: Eye, color: 'text-indigo-400' },
+    { label: t("feels-like", { defaultValue: "Feels Like" }), value: `${Math.round(data.feelsLike)}${tempUnit}`, icon: Thermometer, color: 'text-orange-400' },
+    { label: t("humidity", { defaultValue: "Humidity" }), value: `${data.humidity}%`, icon: Droplets, color: 'text-blue-400' },
+    { label: t("wind-speed", { defaultValue: "Wind Speed" }), value: `${windSpeed} ${speedUnit}`, icon: Wind, color: 'text-cyan-400' },
+    { label: t("uv-index", { defaultValue: "UV Index" }), value: data.uvIndex, icon: Sun, color: 'text-yellow-400' },
+    { label: t("visibility", { defaultValue: "Visibility" }), value: `${(data.visibility / 1000).toFixed(1)} km`, icon: Eye, color: 'text-indigo-400' },
   ];
 
     // Clothing suggestion logic
     function getClothingSuggestion(temp: number, conditionCode: number): string {
-      if (temp <= 0) return 'Wear a heavy coat, gloves, and a hat.';
-      if (temp <= 10) return 'Wear a warm jacket and layers.';
-      if (temp <= 20) return 'A light jacket or sweater is recommended.';
-      if (temp <= 28) return 'Dress comfortably, maybe a t-shirt and jeans.';
-      if (temp > 28) return 'Wear shorts and a t-shirt, stay hydrated.';
-      if ([51,53,55,61,63,65,80,81,82].includes(conditionCode)) return 'Bring an umbrella or raincoat.';
-      if ([71,73,75,77,85,86].includes(conditionCode)) return 'Wear warm clothes and boots.';
-      return 'Dress for comfort.';
+      if (temp <= 0) return t("clothing-heavy-coat", { defaultValue: "Wear a heavy coat, gloves, and a hat." });
+      if (temp <= 10) return t("clothing-warm-jacket", { defaultValue: "Wear a warm jacket and layers." });
+      if (temp <= 20) return t("clothing-light-jacket", { defaultValue: "A light jacket or sweater is recommended." });
+      if (temp <= 28) return t("clothing-comfortable", { defaultValue: "Dress comfortably, maybe a t-shirt and jeans." });
+      if (temp > 28) return t("clothing-shorts", { defaultValue: "Wear shorts and a t-shirt, stay hydrated." });
+      if ([51,53,55,61,63,65,80,81,82].includes(conditionCode)) return t("clothing-umbrella", { defaultValue: "Bring an umbrella or raincoat." });
+      if ([71,73,75,77,85,86].includes(conditionCode)) return t("clothing-warm-boots", { defaultValue: "Wear warm clothes and boots." });
+      return t("clothing-comfort", { defaultValue: "Dress for comfort." });
     }
 
     const clothingSuggestion = getClothingSuggestion(data.feelsLike, data.conditionCode);
@@ -70,7 +72,7 @@ export const CurrentWeather = ({ data, units, locationName, lat, lon, hourly }: 
             </div>
           {showUmbrellaReminder && (
             <div className="text-sm text-blue-500 font-bold pb-2">
-              ☔ Rain expected soon — bring an umbrella!
+              {t("rain-reminder", { defaultValue: "☔ Rain expected soon — bring an umbrella!" })}
             </div>
           )}
           <div className="flex items-center gap-6">

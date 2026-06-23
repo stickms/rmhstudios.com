@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useStudioStore } from '@/lib/studio/store';
 import { NOTE_NAMES, MIN_MIDI_NOTE, MAX_MIDI_NOTE, NOTE_HEIGHT, PIANO_KEY_WIDTH } from '@/lib/studio/constants';
 import { getPixelsPerBeat, snapToGrid, pixelToBeat } from '@/lib/studio/utils/grid';
@@ -8,6 +9,7 @@ const TOTAL_NOTES = MAX_MIDI_NOTE - MIN_MIDI_NOTE + 1;
 const VELOCITY_LANE_HEIGHT = 48;
 
 export function PianoRollView() {
+  const { t } = useTranslation("c-studio");
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const velocityRef = useRef<HTMLCanvasElement>(null);
@@ -189,8 +191,8 @@ export function PianoRollView() {
     return (
       <div className="flex h-full items-center justify-center text-[var(--site-muted)]">
         <div className="text-center">
-          <p className="text-sm">Select a MIDI clip to edit</p>
-          <p className="mt-1 text-xs opacity-50">Double-click a clip in the arrangement</p>
+          <p className="text-sm">{t("select-midi-clip", { defaultValue: "Select a MIDI clip to edit" })}</p>
+          <p className="mt-1 text-xs opacity-50">{t("double-click-clip-hint", { defaultValue: "Double-click a clip in the arrangement" })}</p>
         </div>
       </div>
     );
@@ -201,7 +203,7 @@ export function PianoRollView() {
       {/* Header */}
       <div className="flex h-6 shrink-0 items-center gap-2 border-b border-[var(--site-border)] bg-[var(--site-surface)] px-3">
         <span className="text-xs font-medium text-[var(--site-text)]">{clip.name}</span>
-        <span className="text-[10px] text-[var(--site-muted)]">{clip.notes.length} notes</span>
+        <span className="text-[10px] text-[var(--site-muted)]">{t("note-count", { defaultValue: "{{count}} notes", count: clip.notes.length })}</span>
       </div>
 
       {/* Main area — single scroll container with sticky keyboard */}
@@ -245,7 +247,7 @@ export function PianoRollView() {
       {/* Velocity lane */}
       <div className="flex shrink-0 border-t border-[var(--site-border)]">
         <div className="flex shrink-0 items-center justify-center bg-[var(--site-surface)] text-[9px] text-[var(--site-muted)]" style={{ width: PIANO_KEY_WIDTH }}>
-          Vel
+          {t("velocity-abbr", { defaultValue: "Vel" })}
         </div>
         <canvas ref={velocityRef} />
       </div>

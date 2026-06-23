@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Loader2,
   Zap,
@@ -79,6 +80,7 @@ interface BattlePassPayload {
 }
 
 export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } = {}) {
+  const { t } = useTranslation('feed');
   const [data, setData] = useState<ProgressPayload | null>(null);
   const [pass, setPass] = useState<BattlePassPayload | null>(null);
   const [loading, setLoading] = useState(true);
@@ -157,7 +159,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
     );
   }
   if (!data) {
-    return <p className="px-4 py-16 text-center text-sm text-site-text-muted">Could not load progress.</p>;
+    return <p className="px-4 py-16 text-center text-sm text-site-text-muted">{t('could-not-load-progress', { defaultValue: 'Could not load progress.' })}</p>;
   }
 
   const lvl = data.level;
@@ -171,7 +173,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
         <header className="sticky top-0 z-10 border-b border-site-border bg-site-bg/80 px-4 py-3 backdrop-blur">
           <div className="flex items-center gap-2">
             <Zap className="h-5 w-5 text-site-accent" />
-            <h1 className="text-lg font-bold text-site-text">Progress</h1>
+            <h1 className="text-lg font-bold text-site-text">{t('progress-heading', { defaultValue: 'Progress' })}</h1>
           </div>
         </header>
       )}
@@ -185,8 +187,8 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
                 <span className="text-lg font-extrabold">{lvl.level}</span>
               </div>
               <div>
-                <p className="text-sm font-semibold text-site-text">Level {lvl.level}</p>
-                <p className="text-xs text-site-text-muted">{lvl.xp.toLocaleString()} total XP</p>
+                <p className="text-sm font-semibold text-site-text">{t('level-number', { level: lvl.level, defaultValue: 'Level {{level}}' })}</p>
+                <p className="text-xs text-site-text-muted">{t('total-xp', { xp: lvl.xp.toLocaleString(), defaultValue: '{{xp}} total XP' })}</p>
               </div>
             </div>
             <div className="inline-flex items-center gap-1.5 rounded-lg bg-site-bg px-2.5 py-1.5 text-sm font-semibold text-site-text">
@@ -199,7 +201,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
               <div className="h-full rounded-full bg-site-accent transition-all" style={{ width: `${lvlPct}%` }} />
             </div>
             <p className="mt-1 text-[11px] text-site-text-dim">
-              {lvl.xpIntoLevel.toLocaleString()} / {lvl.xpForNextLevel.toLocaleString()} XP to level {lvl.level + 1}
+              {t('xp-to-next-level', { xpIntoLevel: lvl.xpIntoLevel.toLocaleString(), xpForNextLevel: lvl.xpForNextLevel.toLocaleString(), nextLevel: lvl.level + 1, defaultValue: '{{xpIntoLevel}} / {{xpForNextLevel}} XP to level {{nextLevel}}' })}
             </p>
           </div>
         </section>
@@ -212,14 +214,14 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
 
         {/* Quests */}
         <QuestSection
-          title="Daily quests"
+          title={t('daily-quests', { defaultValue: 'Daily quests' })}
           icon={CalendarDays}
           quests={daily}
           busy={busy}
           onClaim={claimQuest}
         />
         <QuestSection
-          title="Weekly quests"
+          title={t('weekly-quests', { defaultValue: 'Weekly quests' })}
           icon={CalendarRange}
           quests={weekly}
           busy={busy}
@@ -236,7 +238,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
               </div>
               {pass.premium ? (
                 <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/15 px-2.5 py-1 text-[11px] font-semibold text-amber-400">
-                  <Crown className="h-3.5 w-3.5" /> Premium unlocked
+                  <Crown className="h-3.5 w-3.5" /> {t('premium-unlocked', { defaultValue: 'Premium unlocked' })}
                 </span>
               ) : (
                 <Button
@@ -251,7 +253,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
                   ) : (
                     <Crown className="h-3.5 w-3.5" />
                   )}
-                  Unlock premium
+                  {t('unlock-premium', { defaultValue: 'Unlock premium' })}
                   <span className="inline-flex items-center gap-0.5">
                     <CoinIcon className="h-3.5 w-3.5" />
                     {pass.season.premiumPrice.toLocaleString()}
@@ -260,8 +262,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
               )}
             </div>
             <p className="mb-3 text-xs text-site-text-muted">
-              Tier <strong className="text-site-text">{pass.currentTier}</strong> / {pass.tiers.length} ·{' '}
-              {pass.seasonXp.toLocaleString()} season XP
+              {t('tier-progress', { currentTier: pass.currentTier, totalTiers: pass.tiers.length, seasonXp: pass.seasonXp.toLocaleString(), defaultValue: 'Tier {{currentTier}} / {{totalTiers}} · {{seasonXp}} season XP' })}
             </p>
 
             <div className="space-y-2">
@@ -298,6 +299,7 @@ function QuestSection({
   busy: string | null;
   onClaim: (id: string) => void;
 }) {
+  const { t } = useTranslation('feed');
   if (quests.length === 0) return null;
   return (
     <section>
@@ -339,7 +341,7 @@ function QuestSection({
               <div className="shrink-0 self-center">
                 {q.claimed ? (
                   <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-site-text-dim">
-                    <Check className="h-3.5 w-3.5" /> Claimed
+                    <Check className="h-3.5 w-3.5" /> {t('claimed', { defaultValue: 'Claimed' })}
                   </span>
                 ) : (
                   <Button
@@ -354,7 +356,7 @@ function QuestSection({
                     ) : (
                       <Gift className="h-3.5 w-3.5" />
                     )}
-                    Claim
+                    {t('claim', { defaultValue: 'Claim' })}
                   </Button>
                 )}
               </div>
@@ -396,6 +398,7 @@ function TierRow({
   busy: string | null;
   onClaim: (tier: number, track: 'free' | 'paid') => void;
 }) {
+  const { t } = useTranslation('feed');
   return (
     <div
       className={`grid grid-cols-[auto_1fr_1fr] items-center gap-3 rounded-xl border p-3 ${
@@ -412,7 +415,7 @@ function TierRow({
 
       {/* Free track */}
       <TierCell
-        label="Free"
+        label={t('free-track', { defaultValue: 'Free' })}
         reward={tier.free}
         reached={reached}
         claimed={claimedFree}
@@ -424,7 +427,7 @@ function TierRow({
 
       {/* Premium track */}
       <TierCell
-        label="Premium"
+        label={t('premium-track', { defaultValue: 'Premium' })}
         reward={tier.premium}
         reached={reached}
         claimed={claimedPaid}
@@ -459,6 +462,7 @@ function TierCell({
   onClaim: () => void;
   premium?: boolean;
 }) {
+  const { t } = useTranslation('feed');
   const canClaim = reached && !claimed && !locked && !!reward;
   return (
     <div className="min-w-0">
@@ -486,7 +490,7 @@ function TierCell({
               className="h-7 gap-1 px-2 text-xs"
             >
               {busy === busyKey ? <Loader2 className="h-3 w-3 animate-spin" /> : <Gift className="h-3 w-3" />}
-              Claim
+              {t('claim', { defaultValue: 'Claim' })}
             </Button>
           ) : null)}
       </div>

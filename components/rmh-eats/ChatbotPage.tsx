@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Send, Bot } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useEatsStore } from '@/lib/store/useEatsStore';
 import { faqDatabase } from '@/lib/rmh-eats/mockData';
 import type { ChatMessage } from '@/lib/rmh-eats/types';
@@ -29,6 +30,7 @@ const GREETING: ChatMessage = {
 };
 
 export default function ChatbotPage() {
+    const { t } = useTranslation("c-rmh-eats");
     const { previousView, setView } = useEatsStore();
     const [messages, setMessages] = useState<ChatMessage[]>([GREETING]);
     const [input, setInput] = useState('');
@@ -81,9 +83,9 @@ export default function ChatbotPage() {
     }
 
     const QUICK_QUESTIONS = [
-        'How do I get a refund?',
-        'Any promo codes?',
-        'How do loyalty points work?',
+        t("quick-refund", { defaultValue: "How do I get a refund?" }),
+        t("quick-promo", { defaultValue: "Any promo codes?" }),
+        t("quick-loyalty", { defaultValue: "How do loyalty points work?" }),
     ];
 
     return (
@@ -101,8 +103,8 @@ export default function ChatbotPage() {
                         <Bot className="h-5 w-5 text-orange-400" />
                     </div>
                     <div>
-                        <h2 className="font-bold text-white text-sm">RMH Eats Support</h2>
-                        <p className="text-xs text-green-400">Online · Instant replies</p>
+                        <h2 className="font-bold text-white text-sm">{t("support-title", { defaultValue: "RMH Eats Support" })}</h2>
+                        <p className="text-xs text-green-400">{t("support-status", { defaultValue: "Online · Instant replies" })}</p>
                     </div>
                 </div>
             </div>
@@ -184,7 +186,7 @@ export default function ChatbotPage() {
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Type a message..."
+                    placeholder={t("input-placeholder", { defaultValue: "Type a message..." })}
                     className="flex-1 rounded-2xl bg-slate-800 border border-slate-700 px-4 py-3 text-sm text-slate-200 placeholder:text-slate-500 outline-none focus:border-orange-500 transition-colors"
                 />
                 <button

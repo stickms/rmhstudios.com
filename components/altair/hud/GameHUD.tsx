@@ -12,6 +12,7 @@ import { CATALYSTS } from '@/lib/altair/data/catalysts';
 import SpriteIcon from '@/components/altair/hud/SpriteIcon';
 import { WEAPON_ICON_SRC, PASSIVE_ICON_SRC, CATALYST_ICON_SRC } from '@/lib/altair/engine/sprites/sprite-defs';
 import { useState, useCallback, useEffect, useRef, useLayoutEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -65,6 +66,7 @@ export default function GameHUD() {
   const passives = useAltairGameStore((s) => s.passives);
   const catalysts = useAltairGameStore((s) => s.catalysts);
 
+  const { t } = useTranslation("c-altair");
   const [tooltip, setTooltip] = useState<TooltipInfo>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const barRef = useRef<HTMLDivElement>(null);
@@ -170,12 +172,12 @@ export default function GameHUD() {
 
         {/* Kills */}
         <div className="text-xs font-mono text-white/60">
-          <span className="text-white/90 font-bold">{kills}</span> kills
+          <span className="text-white/90 font-bold">{kills}</span> {t("kills", { defaultValue: "kills" })}
         </div>
 
         {/* Coins */}
         <div className="text-xs font-mono text-(--altair-warning)">
-          {coins} <span className="text-white/40">coins</span>
+          {coins} <span className="text-white/40">{t("coins", { defaultValue: "coins" })}</span>
         </div>
       </div>
 

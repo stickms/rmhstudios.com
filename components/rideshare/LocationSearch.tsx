@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Loader2, MapPin, X, Star, LocateFixed } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 import type { RidePlace } from '@/lib/rideshare/geo';
 
 interface GeocodeResult {
@@ -38,6 +39,7 @@ export function LocationSearch({
   savedPlaces,
   allowCurrentLocation,
 }: LocationSearchProps) {
+  const { t } = useTranslation('c-rideshare');
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<GeocodeResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -48,7 +50,7 @@ export function LocationSearch({
 
   function useCurrentLocation() {
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
-      toast.error('Location services aren’t available on this device.');
+      toast.error(t('location-services-unavailable', { defaultValue: "Location services aren't available on this device." }));
       return;
     }
     setLocating(true);
@@ -61,12 +63,12 @@ export function LocationSearch({
           if (!res.ok) {
             // Still usable: drop a pin even without a nice label.
             onSelect({ label: data.label ?? `Current location (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`, lat: latitude, lng: longitude });
-            if (!data.label) toast.message('Using your current location.');
+            if (!data.label) toast.message(t('using-current-location', { defaultValue: 'Using your current location.' }));
           } else {
             onSelect({ label: data.label, lat: latitude, lng: longitude });
           }
         } catch {
-          toast.error('Could not look up your location.');
+          toast.error(t('location-lookup-failed', { defaultValue: 'Could not look up your location.' }));
         } finally {
           setLocating(false);
         }
@@ -75,8 +77,8 @@ export function LocationSearch({
         setLocating(false);
         toast.error(
           err.code === err.PERMISSION_DENIED
-            ? 'Location permission denied. Enable it in your browser to use this.'
-            : 'Could not get your location.',
+            ? t('location-permission-denied', { defaultValue: 'Location permission denied. Enable it in your browser to use this.' })
+            : t('location-get-failed', { defaultValue: 'Could not get your location.' }),
         );
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 },
@@ -94,27 +96,27 @@ export function LocationSearch({
     let cancelled = false;
     setLoading(true);
     setError(null);
-    const t = setTimeout(async () => {
+    const timer = setTimeout(async () => {
       try {
         const res = await fetch(`/api/rideshare/geocode?q=${encodeURIComponent(q)}`);
         const data = await res.json();
         if (cancelled) return;
         if (!res.ok) {
-          setError(data.error || 'Search failed');
+          setError(data.error || t('search-failed', { defaultValue: 'Search failed' }));
           setResults([]);
         } else {
           setResults(data.results ?? []);
           setOpen(true);
         }
       } catch {
-        if (!cancelled) setError('Search failed');
+        if (!cancelled) setError(t('search-failed', { defaultValue: 'Search failed' }));
       } finally {
         if (!cancelled) setLoading(false);
       }
     }, 450);
     return () => {
       cancelled = true;
-      clearTimeout(t);
+      clearTimeout(timer);
     };
   }, [query, value]);
 
@@ -154,7 +156,7 @@ export function LocationSearch({
             type="button"
             onClick={clear}
             className="shrink-0 rounded-md p-1.5 text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text"
-            aria-label={`Clear ${label}`}
+            aria-label={t('clear-label', { defaultValue: 'Clear {{label}}', label })}
           >
             <X className="h-4 w-4" />
           </button>
@@ -168,7 +170,7 @@ export function LocationSearch({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onFocus={() => results.length && setOpen(true)}
-              placeholder={placeholder ?? 'Search for an address or place'}
+              placeholder={placeholder ?? t('search-placeholder', { defaultValue: 'Search for an address or place' })}
               className="w-full rounded-lg border border-site-border bg-site-surface py-2.5 pl-8 pr-9 text-base text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60 sm:py-2 sm:text-sm"
               autoComplete="off"
             />
@@ -188,7 +190,7 @@ export function LocationSearch({
                   className="inline-flex items-center gap-1 rounded-full border border-site-accent/40 bg-site-accent/10 px-3 py-1.5 text-xs font-medium text-site-accent transition-colors hover:bg-site-accent/20 disabled:opacity-60"
                 >
                   {locating ? <Loader2 className="h-3 w-3 animate-spin" /> : <LocateFixed className="h-3 w-3" />}
-                  Current location
+                  {t('current-location', { defaultValue: 'Current location' })}
                 </button>
               )}
               {savedPlaces?.map((p) => (

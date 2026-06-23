@@ -5,6 +5,7 @@ import { JourneyColumn } from '@/components/feed/JourneyColumn';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export const Route = createFileRoute('/_site/achievements')({
   head: () => ({ meta: [{ title: 'Achievements | RMH Studios' }] }),
@@ -12,6 +13,7 @@ export const Route = createFileRoute('/_site/achievements')({
 });
 
 function AchievementsPage() {
+  const { t } = useTranslation("site");
   const { data: session, isPending } = useSession();
 
   return (
@@ -26,9 +28,9 @@ function AchievementsPage() {
           </div>
         ) : !session ? (
           <div className="flex flex-col items-center gap-3 px-6 py-24 text-center">
-            <p className="font-medium text-site-text">Sign in to track achievements</p>
+            <p className="font-medium text-site-text">{t("sign-in-to-track-achievements", { defaultValue: "Sign in to track achievements" })}</p>
             <Link to="/login" search={{ callbackURL: '/achievements' }}>
-              <Button variant="accent">Sign in</Button>
+              <Button variant="accent">{t("sign-in", { defaultValue: "Sign in" })}</Button>
             </Link>
           </div>
         ) : (
