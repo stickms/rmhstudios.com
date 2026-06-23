@@ -36,7 +36,7 @@ export function PostImageGrid({ urls, className = '' }: PostImageGridProps) {
               loading="lazy"
               className={
                 single
-                  ? 'mx-auto max-h-150 max-w-full rounded-lg object-contain'
+                  ? 'mx-auto max-h-[80vh] max-w-full rounded-lg object-contain'
                   : 'h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]'
               }
             />
