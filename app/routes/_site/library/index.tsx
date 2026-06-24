@@ -26,6 +26,7 @@ import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { useSession } from '@/components/Providers';
 import { UploadModal } from '@/components/library/UploadModal';
 import { LibraryEditBar, LibraryEditModal } from '@/components/library/LibraryEditControls';
+import { LibraryCollections } from '@/components/library/LibraryCollections';
 import '@/components/library/library.css';
 
 const fetchBooks = createServerFn({ method: 'GET' }).handler(async () => ({
@@ -48,7 +49,9 @@ function Library() {
   const { open: openSidebar } = useMobileSidebar();
   const { books: initialBooks } = Route.useLoaderData();
   const session = useSession();
-  const isAdmin = Boolean((session.data?.user as { isAdmin?: boolean } | undefined)?.isAdmin);
+  const sessionUser = session.data?.user as { isAdmin?: boolean; handle?: string | null } | undefined;
+  const isAdmin = Boolean(sessionUser?.isAdmin);
+  const myHandle = sessionUser?.handle ?? null;
   const [books, setBooks] = useState<LibraryBook[]>(initialBooks);
   const [query, setQuery] = useState('');
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -229,6 +232,13 @@ function Library() {
             </button>
           </div>
         )}
+
+        <LibraryCollections
+          books={books}
+          isAdmin={isAdmin}
+          myHandle={myHandle}
+          canCreate={Boolean(session.data)}
+        />
 
         {filtered.length === 0 ? (
           <p className="vibe-hint lib__empty">{t('no-results', { defaultValue: 'No books match that search.' })}</p>

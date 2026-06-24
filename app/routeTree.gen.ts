@@ -269,6 +269,7 @@ import { Route as ApiMessagesReadAllRouteImport } from './routes/api/messages/re
 import { Route as ApiMessagesConversationIdRouteImport } from './routes/api/messages/$conversationId'
 import { Route as ApiLibraryUploadRouteImport } from './routes/api/library/upload'
 import { Route as ApiLibraryDraftRouteImport } from './routes/api/library/draft'
+import { Route as ApiLibraryCollectionsRouteImport } from './routes/api/library/collections'
 import { Route as ApiLibrarySlugRouteImport } from './routes/api/library/$slug'
 import { Route as ApiLaundrySortScoreRouteImport } from './routes/api/laundry-sort/score'
 import { Route as ApiLaundrySortLeaderboardRouteImport } from './routes/api/laundry-sort/leaderboard'
@@ -397,6 +398,7 @@ import { Route as ApiMessagesConversationIdTypingRouteImport } from './routes/ap
 import { Route as ApiMessagesConversationIdReadRouteImport } from './routes/api/messages/$conversationId/read'
 import { Route as ApiLibraryFileIdRouteImport } from './routes/api/library/file/$id'
 import { Route as ApiLibraryCoverIdRouteImport } from './routes/api/library/cover/$id'
+import { Route as ApiLibraryCollectionIdRouteImport } from './routes/api/library/collection/$id'
 import { Route as ApiGroupChatsIdStreamRouteImport } from './routes/api/group-chats/$id/stream'
 import { Route as ApiGroupChatsIdMessagesRouteImport } from './routes/api/group-chats/$id/messages'
 import { Route as ApiGroupChatsIdLeaveRouteImport } from './routes/api/group-chats/$id/leave'
@@ -449,6 +451,7 @@ import { Route as ApiRmharksIdCommentCommentIdRouteImport } from './routes/api/r
 import { Route as ApiRideshareRidesIdSyncRouteImport } from './routes/api/rideshare/rides/$id/sync'
 import { Route as ApiRideshareRidesIdRateRouteImport } from './routes/api/rideshare/rides/$id/rate'
 import { Route as ApiRideshareRidesIdMessagesRouteImport } from './routes/api/rideshare/rides/$id/messages'
+import { Route as ApiLibraryCollectionIdItemsRouteImport } from './routes/api/library/collection/$id/items'
 import { Route as ApiAdminUsersIdStrikeRouteImport } from './routes/api/admin/users/$id/strike'
 import { Route as ApiAdminUsersIdSetCoinsRouteImport } from './routes/api/admin/users/$id/set-coins'
 import { Route as ApiAdminUsersIdGrantMembershipRouteImport } from './routes/api/admin/users/$id/grant-membership'
@@ -1774,6 +1777,11 @@ const ApiLibraryDraftRoute = ApiLibraryDraftRouteImport.update({
   path: '/api/library/draft',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiLibraryCollectionsRoute = ApiLibraryCollectionsRouteImport.update({
+  id: '/api/library/collections',
+  path: '/api/library/collections',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiLibrarySlugRoute = ApiLibrarySlugRouteImport.update({
   id: '/api/library/$slug',
   path: '/api/library/$slug',
@@ -2432,6 +2440,11 @@ const ApiLibraryCoverIdRoute = ApiLibraryCoverIdRouteImport.update({
   path: '/api/library/cover/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiLibraryCollectionIdRoute = ApiLibraryCollectionIdRouteImport.update({
+  id: '/api/library/collection/$id',
+  path: '/api/library/collection/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiGroupChatsIdStreamRoute = ApiGroupChatsIdStreamRouteImport.update({
   id: '/api/group-chats/$id/stream',
   path: '/api/group-chats/$id/stream',
@@ -2716,6 +2729,12 @@ const ApiRideshareRidesIdMessagesRoute =
     path: '/messages',
     getParentRoute: () => ApiRideshareRidesIdRoute,
   } as any)
+const ApiLibraryCollectionIdItemsRoute =
+  ApiLibraryCollectionIdItemsRouteImport.update({
+    id: '/items',
+    path: '/items',
+    getParentRoute: () => ApiLibraryCollectionIdRoute,
+  } as any)
 const ApiAdminUsersIdStrikeRoute = ApiAdminUsersIdStrikeRouteImport.update({
   id: '/$id/strike',
   path: '/$id/strike',
@@ -2996,6 +3015,7 @@ export interface FileRoutesByFullPath {
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
   '/api/laundry-sort/score': typeof ApiLaundrySortScoreRoute
   '/api/library/$slug': typeof ApiLibrarySlugRoute
+  '/api/library/collections': typeof ApiLibraryCollectionsRoute
   '/api/library/draft': typeof ApiLibraryDraftRoute
   '/api/library/upload': typeof ApiLibraryUploadRoute
   '/api/messages/$conversationId': typeof ApiMessagesConversationIdRouteWithChildren
@@ -3150,6 +3170,7 @@ export interface FileRoutesByFullPath {
   '/api/group-chats/$id/leave': typeof ApiGroupChatsIdLeaveRoute
   '/api/group-chats/$id/messages': typeof ApiGroupChatsIdMessagesRoute
   '/api/group-chats/$id/stream': typeof ApiGroupChatsIdStreamRoute
+  '/api/library/collection/$id': typeof ApiLibraryCollectionIdRouteWithChildren
   '/api/library/cover/$id': typeof ApiLibraryCoverIdRoute
   '/api/library/file/$id': typeof ApiLibraryFileIdRoute
   '/api/messages/$conversationId/read': typeof ApiMessagesConversationIdReadRoute
@@ -3223,6 +3244,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/users/$id/grant-membership': typeof ApiAdminUsersIdGrantMembershipRoute
   '/api/admin/users/$id/set-coins': typeof ApiAdminUsersIdSetCoinsRoute
   '/api/admin/users/$id/strike': typeof ApiAdminUsersIdStrikeRoute
+  '/api/library/collection/$id/items': typeof ApiLibraryCollectionIdItemsRoute
   '/api/rideshare/rides/$id/messages': typeof ApiRideshareRidesIdMessagesRoute
   '/api/rideshare/rides/$id/rate': typeof ApiRideshareRidesIdRateRoute
   '/api/rideshare/rides/$id/sync': typeof ApiRideshareRidesIdSyncRoute
@@ -3426,6 +3448,7 @@ export interface FileRoutesByTo {
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
   '/api/laundry-sort/score': typeof ApiLaundrySortScoreRoute
   '/api/library/$slug': typeof ApiLibrarySlugRoute
+  '/api/library/collections': typeof ApiLibraryCollectionsRoute
   '/api/library/draft': typeof ApiLibraryDraftRoute
   '/api/library/upload': typeof ApiLibraryUploadRoute
   '/api/messages/$conversationId': typeof ApiMessagesConversationIdRouteWithChildren
@@ -3580,6 +3603,7 @@ export interface FileRoutesByTo {
   '/api/group-chats/$id/leave': typeof ApiGroupChatsIdLeaveRoute
   '/api/group-chats/$id/messages': typeof ApiGroupChatsIdMessagesRoute
   '/api/group-chats/$id/stream': typeof ApiGroupChatsIdStreamRoute
+  '/api/library/collection/$id': typeof ApiLibraryCollectionIdRouteWithChildren
   '/api/library/cover/$id': typeof ApiLibraryCoverIdRoute
   '/api/library/file/$id': typeof ApiLibraryFileIdRoute
   '/api/messages/$conversationId/read': typeof ApiMessagesConversationIdReadRoute
@@ -3653,6 +3677,7 @@ export interface FileRoutesByTo {
   '/api/admin/users/$id/grant-membership': typeof ApiAdminUsersIdGrantMembershipRoute
   '/api/admin/users/$id/set-coins': typeof ApiAdminUsersIdSetCoinsRoute
   '/api/admin/users/$id/strike': typeof ApiAdminUsersIdStrikeRoute
+  '/api/library/collection/$id/items': typeof ApiLibraryCollectionIdItemsRoute
   '/api/rideshare/rides/$id/messages': typeof ApiRideshareRidesIdMessagesRoute
   '/api/rideshare/rides/$id/rate': typeof ApiRideshareRidesIdRateRoute
   '/api/rideshare/rides/$id/sync': typeof ApiRideshareRidesIdSyncRoute
@@ -3882,6 +3907,7 @@ export interface FileRoutesById {
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
   '/api/laundry-sort/score': typeof ApiLaundrySortScoreRoute
   '/api/library/$slug': typeof ApiLibrarySlugRoute
+  '/api/library/collections': typeof ApiLibraryCollectionsRoute
   '/api/library/draft': typeof ApiLibraryDraftRoute
   '/api/library/upload': typeof ApiLibraryUploadRoute
   '/api/messages/$conversationId': typeof ApiMessagesConversationIdRouteWithChildren
@@ -4036,6 +4062,7 @@ export interface FileRoutesById {
   '/api/group-chats/$id/leave': typeof ApiGroupChatsIdLeaveRoute
   '/api/group-chats/$id/messages': typeof ApiGroupChatsIdMessagesRoute
   '/api/group-chats/$id/stream': typeof ApiGroupChatsIdStreamRoute
+  '/api/library/collection/$id': typeof ApiLibraryCollectionIdRouteWithChildren
   '/api/library/cover/$id': typeof ApiLibraryCoverIdRoute
   '/api/library/file/$id': typeof ApiLibraryFileIdRoute
   '/api/messages/$conversationId/read': typeof ApiMessagesConversationIdReadRoute
@@ -4109,6 +4136,7 @@ export interface FileRoutesById {
   '/api/admin/users/$id/grant-membership': typeof ApiAdminUsersIdGrantMembershipRoute
   '/api/admin/users/$id/set-coins': typeof ApiAdminUsersIdSetCoinsRoute
   '/api/admin/users/$id/strike': typeof ApiAdminUsersIdStrikeRoute
+  '/api/library/collection/$id/items': typeof ApiLibraryCollectionIdItemsRoute
   '/api/rideshare/rides/$id/messages': typeof ApiRideshareRidesIdMessagesRoute
   '/api/rideshare/rides/$id/rate': typeof ApiRideshareRidesIdRateRoute
   '/api/rideshare/rides/$id/sync': typeof ApiRideshareRidesIdSyncRoute
@@ -4338,6 +4366,7 @@ export interface FileRouteTypes {
     | '/api/laundry-sort/leaderboard'
     | '/api/laundry-sort/score'
     | '/api/library/$slug'
+    | '/api/library/collections'
     | '/api/library/draft'
     | '/api/library/upload'
     | '/api/messages/$conversationId'
@@ -4492,6 +4521,7 @@ export interface FileRouteTypes {
     | '/api/group-chats/$id/leave'
     | '/api/group-chats/$id/messages'
     | '/api/group-chats/$id/stream'
+    | '/api/library/collection/$id'
     | '/api/library/cover/$id'
     | '/api/library/file/$id'
     | '/api/messages/$conversationId/read'
@@ -4565,6 +4595,7 @@ export interface FileRouteTypes {
     | '/api/admin/users/$id/grant-membership'
     | '/api/admin/users/$id/set-coins'
     | '/api/admin/users/$id/strike'
+    | '/api/library/collection/$id/items'
     | '/api/rideshare/rides/$id/messages'
     | '/api/rideshare/rides/$id/rate'
     | '/api/rideshare/rides/$id/sync'
@@ -4768,6 +4799,7 @@ export interface FileRouteTypes {
     | '/api/laundry-sort/leaderboard'
     | '/api/laundry-sort/score'
     | '/api/library/$slug'
+    | '/api/library/collections'
     | '/api/library/draft'
     | '/api/library/upload'
     | '/api/messages/$conversationId'
@@ -4922,6 +4954,7 @@ export interface FileRouteTypes {
     | '/api/group-chats/$id/leave'
     | '/api/group-chats/$id/messages'
     | '/api/group-chats/$id/stream'
+    | '/api/library/collection/$id'
     | '/api/library/cover/$id'
     | '/api/library/file/$id'
     | '/api/messages/$conversationId/read'
@@ -4995,6 +5028,7 @@ export interface FileRouteTypes {
     | '/api/admin/users/$id/grant-membership'
     | '/api/admin/users/$id/set-coins'
     | '/api/admin/users/$id/strike'
+    | '/api/library/collection/$id/items'
     | '/api/rideshare/rides/$id/messages'
     | '/api/rideshare/rides/$id/rate'
     | '/api/rideshare/rides/$id/sync'
@@ -5223,6 +5257,7 @@ export interface FileRouteTypes {
     | '/api/laundry-sort/leaderboard'
     | '/api/laundry-sort/score'
     | '/api/library/$slug'
+    | '/api/library/collections'
     | '/api/library/draft'
     | '/api/library/upload'
     | '/api/messages/$conversationId'
@@ -5377,6 +5412,7 @@ export interface FileRouteTypes {
     | '/api/group-chats/$id/leave'
     | '/api/group-chats/$id/messages'
     | '/api/group-chats/$id/stream'
+    | '/api/library/collection/$id'
     | '/api/library/cover/$id'
     | '/api/library/file/$id'
     | '/api/messages/$conversationId/read'
@@ -5450,6 +5486,7 @@ export interface FileRouteTypes {
     | '/api/admin/users/$id/grant-membership'
     | '/api/admin/users/$id/set-coins'
     | '/api/admin/users/$id/strike'
+    | '/api/library/collection/$id/items'
     | '/api/rideshare/rides/$id/messages'
     | '/api/rideshare/rides/$id/rate'
     | '/api/rideshare/rides/$id/sync'
@@ -5578,6 +5615,7 @@ export interface RootRouteChildren {
   ApiLaundrySortLeaderboardRoute: typeof ApiLaundrySortLeaderboardRoute
   ApiLaundrySortScoreRoute: typeof ApiLaundrySortScoreRoute
   ApiLibrarySlugRoute: typeof ApiLibrarySlugRoute
+  ApiLibraryCollectionsRoute: typeof ApiLibraryCollectionsRoute
   ApiLibraryDraftRoute: typeof ApiLibraryDraftRoute
   ApiLibraryUploadRoute: typeof ApiLibraryUploadRoute
   ApiModerationBlockRoute: typeof ApiModerationBlockRoute
@@ -5680,6 +5718,7 @@ export interface RootRouteChildren {
   ApiGroupChatsIdLeaveRoute: typeof ApiGroupChatsIdLeaveRoute
   ApiGroupChatsIdMessagesRoute: typeof ApiGroupChatsIdMessagesRoute
   ApiGroupChatsIdStreamRoute: typeof ApiGroupChatsIdStreamRoute
+  ApiLibraryCollectionIdRoute: typeof ApiLibraryCollectionIdRouteWithChildren
   ApiLibraryCoverIdRoute: typeof ApiLibraryCoverIdRoute
   ApiLibraryFileIdRoute: typeof ApiLibraryFileIdRoute
   ApiOgPostIdRoute: typeof ApiOgPostIdRoute
@@ -7542,6 +7581,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiLibraryDraftRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/library/collections': {
+      id: '/api/library/collections'
+      path: '/api/library/collections'
+      fullPath: '/api/library/collections'
+      preLoaderRoute: typeof ApiLibraryCollectionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/library/$slug': {
       id: '/api/library/$slug'
       path: '/api/library/$slug'
@@ -8438,6 +8484,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiLibraryCoverIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/library/collection/$id': {
+      id: '/api/library/collection/$id'
+      path: '/api/library/collection/$id'
+      fullPath: '/api/library/collection/$id'
+      preLoaderRoute: typeof ApiLibraryCollectionIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/group-chats/$id/stream': {
       id: '/api/group-chats/$id/stream'
       path: '/api/group-chats/$id/stream'
@@ -8801,6 +8854,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/rideshare/rides/$id/messages'
       preLoaderRoute: typeof ApiRideshareRidesIdMessagesRouteImport
       parentRoute: typeof ApiRideshareRidesIdRoute
+    }
+    '/api/library/collection/$id/items': {
+      id: '/api/library/collection/$id/items'
+      path: '/items'
+      fullPath: '/api/library/collection/$id/items'
+      preLoaderRoute: typeof ApiLibraryCollectionIdItemsRouteImport
+      parentRoute: typeof ApiLibraryCollectionIdRoute
     }
     '/api/admin/users/$id/strike': {
       id: '/api/admin/users/$id/strike'
@@ -9791,6 +9851,20 @@ const ApiAdminCuratedBuildsImageRouteWithChildren =
     ApiAdminCuratedBuildsImageRouteChildren,
   )
 
+interface ApiLibraryCollectionIdRouteChildren {
+  ApiLibraryCollectionIdItemsRoute: typeof ApiLibraryCollectionIdItemsRoute
+}
+
+const ApiLibraryCollectionIdRouteChildren: ApiLibraryCollectionIdRouteChildren =
+  {
+    ApiLibraryCollectionIdItemsRoute: ApiLibraryCollectionIdItemsRoute,
+  }
+
+const ApiLibraryCollectionIdRouteWithChildren =
+  ApiLibraryCollectionIdRoute._addFileChildren(
+    ApiLibraryCollectionIdRouteChildren,
+  )
+
 const rootRouteChildren: RootRouteChildren = {
   SiteRoute: SiteRouteWithChildren,
   AdaptiveIntelligenceRoute: AdaptiveIntelligenceRoute,
@@ -9897,6 +9971,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiLaundrySortLeaderboardRoute: ApiLaundrySortLeaderboardRoute,
   ApiLaundrySortScoreRoute: ApiLaundrySortScoreRoute,
   ApiLibrarySlugRoute: ApiLibrarySlugRoute,
+  ApiLibraryCollectionsRoute: ApiLibraryCollectionsRoute,
   ApiLibraryDraftRoute: ApiLibraryDraftRoute,
   ApiLibraryUploadRoute: ApiLibraryUploadRoute,
   ApiModerationBlockRoute: ApiModerationBlockRoute,
@@ -9999,6 +10074,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGroupChatsIdLeaveRoute: ApiGroupChatsIdLeaveRoute,
   ApiGroupChatsIdMessagesRoute: ApiGroupChatsIdMessagesRoute,
   ApiGroupChatsIdStreamRoute: ApiGroupChatsIdStreamRoute,
+  ApiLibraryCollectionIdRoute: ApiLibraryCollectionIdRouteWithChildren,
   ApiLibraryCoverIdRoute: ApiLibraryCoverIdRoute,
   ApiLibraryFileIdRoute: ApiLibraryFileIdRoute,
   ApiOgPostIdRoute: ApiOgPostIdRoute,
