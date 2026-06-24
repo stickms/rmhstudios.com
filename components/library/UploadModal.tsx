@@ -8,6 +8,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { Loader2 } from 'lucide-react';
 import { analyzePdf } from '@/lib/library/pdf-client';
 import { libraryPdfMaxBytes } from '@/lib/library/upload-validation';
 
@@ -134,10 +135,12 @@ export function UploadModal({
   }
 
   const busy = status === 'analyzing' || status === 'drafting' || status === 'uploading';
-  const statusLabel =
-    status === 'analyzing' ? t("status-analyzing", { defaultValue: "Reading the PDF…" }) :
-    status === 'drafting' ? t("status-drafting", { defaultValue: "Drafting a title…" }) :
-    status === 'uploading' ? t("status-uploading", { defaultValue: "Publishing…" }) : null;
+  // While reading the PDF or drafting metadata, the title/description are being
+  // produced for the user — lock them so an inline edit isn't clobbered.
+  const generating = status === 'analyzing' || status === 'drafting';
+  const statusLabel = status === 'uploading'
+    ? t("status-uploading", { defaultValue: "Publishing…" })
+    : null;
 
   return (
     <div className="lib-upload__overlay" role="dialog" aria-modal="true" aria-label={t("dialog-label", { defaultValue: "Upload a PDF" })} onMouseDown={onClose}>
@@ -168,7 +171,17 @@ export function UploadModal({
               {coverUrl ? <img src={coverUrl} alt="" /> : <div className="lib-upload__cover--blank" />}
               <span className="lib-upload__pages">{pages ? `${pages} pages` : ''}</span>
             </div>
-            <div className="lib-upload__fields">
+            <div className={`lib-upload__fields ${generating ? 'is-generating' : ''}`}>
+              {generating && (
+                <div className="lib-upload__generating" role="status" aria-live="polite">
+                  <Loader2 size={16} className="lib-upload__spin" aria-hidden="true" />
+                  <span>
+                    {status === 'analyzing'
+                      ? t("status-analyzing", { defaultValue: "Reading the PDF…" })
+                      : t("status-drafting", { defaultValue: "Generating title & description…" })}
+                  </span>
+                </div>
+              )}
               <label className="lib-upload__label">
                 {t("label-title", { defaultValue: "Title" })}
                 <input
@@ -176,6 +189,7 @@ export function UploadModal({
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   maxLength={200}
+                  disabled={generating}
                   placeholder={t("placeholder-title", { defaultValue: "Book title" })}
                 />
               </label>
@@ -186,6 +200,7 @@ export function UploadModal({
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   maxLength={1000}
+                  disabled={generating}
                   placeholder={t("placeholder-description", { defaultValue: "One-sentence description" })}
                 />
               </label>

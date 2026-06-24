@@ -89,29 +89,57 @@ function Library() {
     );
   }, [books, query]);
 
-  const curated = useMemo(() => filtered.filter((b) => b.curated), [filtered]);
-  const community = useMemo(() => filtered.filter((b) => !b.curated), [filtered]);
+  // Sections render in manual order (position), title as a stable tiebreak — so
+  // admin reordering (arrows + drag) actually takes effect.
+  const byOrder = (a: LibraryBook, b: LibraryBook) =>
+    (a.position ?? 0) - (b.position ?? 0) || a.title.localeCompare(b.title);
+  const curated = useMemo(() => filtered.filter((b) => b.curated).sort(byOrder), [filtered]);
+  const community = useMemo(() => filtered.filter((b) => !b.curated).sort(byOrder), [filtered]);
 
-  // Reorder within a section: send every DB-backed id in display order (curated
-  // first, then community) so positions stay consistent across both shelves.
-  async function move(section: LibraryBook[], book: LibraryBook, dir: -1 | 1) {
-    const managed = section.filter((b) => b.id);
-    const idx = managed.findIndex((b) => b.id === book.id);
-    const swapWith = idx + dir;
-    if (idx < 0 || swapWith < 0 || swapWith >= managed.length) return;
-    const reordered = [...managed];
-    [reordered[idx], reordered[swapWith]] = [reordered[swapWith], reordered[idx]];
-
-    const curatedOrder = (section === curated ? reordered : curated).filter((b) => b.id).map((b) => b.id!);
-    const communityOrder = (section === community ? reordered : community).filter((b) => b.id).map((b) => b.id!);
-    const orderedIds = [...curatedOrder, ...communityOrder];
-
+  // Persist a new order: positions become each managed id's index across both
+  // sections (curated first). Applied optimistically so the move feels instant.
+  async function applyOrder(orderedIds: string[]) {
+    const pos = new Map(orderedIds.map((id, i) => [id, i]));
+    setBooks((prev) =>
+      prev.map((b) => (b.id && pos.has(b.id) ? { ...b, position: pos.get(b.id) } : b)),
+    );
     const res = await fetch('/api/admin/library/reorder', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ids: orderedIds }),
     }).catch(() => null);
-    if (res?.ok) void refresh();
+    if (!res?.ok) void refresh(); // resync on failure
+  }
+
+  // Build the combined id order after replacing `section` with `nextManaged`.
+  function commitOrder(section: LibraryBook[], nextManaged: LibraryBook[]) {
+    const isCurated = section === curated;
+    const curatedIds = (isCurated ? nextManaged : curated).filter((b) => b.id).map((b) => b.id!);
+    const communityIds = (isCurated ? community : nextManaged).filter((b) => b.id).map((b) => b.id!);
+    void applyOrder([...curatedIds, ...communityIds]);
+  }
+
+  // Arrow reorder (keyboard-accessible).
+  function move(section: LibraryBook[], book: LibraryBook, dir: -1 | 1) {
+    const managed = section.filter((b) => b.id);
+    const idx = managed.findIndex((b) => b.id === book.id);
+    const swapWith = idx + dir;
+    if (idx < 0 || swapWith < 0 || swapWith >= managed.length) return;
+    const next = [...managed];
+    [next[idx], next[swapWith]] = [next[swapWith], next[idx]];
+    commitOrder(section, next);
+  }
+
+  // Drag-and-drop reorder: move `draggedId` to where `targetId` sits.
+  function reorderWithin(section: LibraryBook[], draggedId: string, targetId: string) {
+    const managed = section.filter((b) => b.id);
+    const from = managed.findIndex((b) => b.id === draggedId);
+    const to = managed.findIndex((b) => b.id === targetId);
+    if (from < 0 || to < 0 || from === to) return;
+    const next = [...managed];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    commitOrder(section, next);
   }
 
   async function runMigration() {
@@ -121,14 +149,16 @@ function Library() {
     if (res?.ok) {
       const summary = await res.json().catch(() => null);
       if (summary) {
-        window.alert(
-          t('migrate-done', {
-            migrated: summary.migrated,
-            skipped: summary.skipped,
-            failed: summary.failed,
-            defaultValue: 'Migrated {{migrated}}, skipped {{skipped}}, failed {{failed}}.',
-          }),
-        );
+        const base = t('migrate-done', {
+          migrated: summary.migrated,
+          skipped: summary.skipped,
+          failed: summary.failed,
+          defaultValue: 'Migrated {{migrated}}, skipped {{skipped}}, failed {{failed}}.',
+        });
+        const reasons = Array.isArray(summary.errors) && summary.errors.length
+          ? `\n\n${summary.errors.join('\n')}`
+          : '';
+        window.alert(base + reasons);
       }
       void refresh();
     }
@@ -210,6 +240,7 @@ function Library() {
               editMode={editMode && isAdmin}
               onEdit={setEditing}
               onMove={(book, dir) => move(curated, book, dir)}
+              onReorder={(draggedId, targetId) => reorderWithin(curated, draggedId, targetId)}
               onChanged={refresh}
             />
             <Section
@@ -218,6 +249,7 @@ function Library() {
               editMode={editMode && isAdmin}
               onEdit={setEditing}
               onMove={(book, dir) => move(community, book, dir)}
+              onReorder={(draggedId, targetId) => reorderWithin(community, draggedId, targetId)}
               onChanged={refresh}
               showAttribution
             />
@@ -231,12 +263,25 @@ function Library() {
   );
 }
 
+type BookDnd = {
+  draggable: boolean;
+  dragging: boolean;
+  dragOver: boolean;
+  onDragStart: () => void;
+  onDragEnter: () => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDragLeave: () => void;
+  onDrop: (e: React.DragEvent) => void;
+  onDragEnd: () => void;
+};
+
 function Section({
   title,
   books,
   editMode,
   onEdit,
   onMove,
+  onReorder,
   onChanged,
   showAttribution,
 }: {
@@ -245,11 +290,39 @@ function Section({
   editMode: boolean;
   onEdit: (book: LibraryBook) => void;
   onMove: (book: LibraryBook, dir: -1 | 1) => void;
+  onReorder: (draggedId: string, targetId: string) => void;
   onChanged: () => void;
   showAttribution?: boolean;
 }) {
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
+
   if (books.length === 0) return null;
   const managed = books.filter((b) => b.id);
+
+  const dndFor = (book: LibraryBook): BookDnd | undefined =>
+    editMode && book.id
+      ? {
+          draggable: true,
+          dragging: dragId === book.id,
+          dragOver: overId === book.id && dragId !== book.id,
+          onDragStart: () => setDragId(book.id!),
+          onDragEnter: () => setOverId(book.id!),
+          onDragOver: (e) => e.preventDefault(), // allow drop
+          onDragLeave: () => setOverId((prev) => (prev === book.id ? null : prev)),
+          onDrop: (e) => {
+            e.preventDefault();
+            if (dragId && dragId !== book.id) onReorder(dragId, book.id!);
+            setDragId(null);
+            setOverId(null);
+          },
+          onDragEnd: () => {
+            setDragId(null);
+            setOverId(null);
+          },
+        }
+      : undefined;
+
   return (
     <section className="lib__section">
       <h2 className="lib__section-title">{title}</h2>
@@ -268,6 +341,7 @@ function Section({
               onMove={(dir) => onMove(book, dir)}
               onEdit={() => onEdit(book)}
               onChanged={onChanged}
+              dnd={dndFor(book)}
             />
           );
         })}
@@ -286,6 +360,7 @@ function BookSpine({
   onMove,
   onEdit,
   onChanged,
+  dnd,
 }: {
   book: LibraryBook;
   index: number;
@@ -296,6 +371,7 @@ function BookSpine({
   onMove: (dir: -1 | 1) => void;
   onEdit: () => void;
   onChanged: () => void;
+  dnd?: BookDnd;
 }) {
   const { t } = useTranslation('library');
   const style = {
@@ -308,13 +384,34 @@ function BookSpine({
     : book.uploadedBy?.name ?? null;
   const date = book.createdAt ? new Date(book.createdAt).toLocaleDateString() : null;
 
+  const wrapClass = [
+    'lib-book__wrap',
+    book.hidden ? 'is-hidden-book' : '',
+    dnd?.draggable ? 'is-draggable' : '',
+    dnd?.dragging ? 'is-dragging' : '',
+    dnd?.dragOver ? 'is-drag-over' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
-    <div className={`lib-book__wrap ${book.hidden ? 'is-hidden-book' : ''}`} role="listitem">
+    <div
+      className={wrapClass}
+      role="listitem"
+      draggable={dnd?.draggable}
+      onDragStart={dnd?.onDragStart}
+      onDragEnter={dnd?.onDragEnter}
+      onDragOver={dnd?.onDragOver}
+      onDragLeave={dnd?.onDragLeave}
+      onDrop={dnd?.onDrop}
+      onDragEnd={dnd?.onDragEnd}
+    >
       <Link
         to="/library/$slug"
         params={{ slug: book.slug }}
         className="lib-book"
         style={style}
+        draggable={dnd?.draggable ? false : undefined}
         aria-label={t('open-book', { title: book.title, defaultValue: 'Open {{title}}' })}
       >
         <div className="lib-book__3d">

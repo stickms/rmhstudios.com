@@ -834,3 +834,39 @@
   font-size: 12px;
   color: rgba(255, 255, 255, 0.45);
 }
+
+/* ─── Upload: AI metadata generation state ──────────────────────────────────── */
+.lib-upload__fields { position: relative; }
+.lib-upload__generating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.75);
+}
+.lib-upload__spin { animation: lib-spin 0.8s linear infinite; }
+@keyframes lib-spin { to { transform: rotate(360deg); } }
+.lib-upload__input:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* ─── Drag-and-drop reordering (admin edit mode) ────────────────────────────── */
+.lib-book__wrap.is-draggable { cursor: grab; }
+.lib-book__wrap.is-draggable:active { cursor: grabbing; }
+.lib-book__wrap.is-dragging { opacity: 0.4; }
+/* Drop-target cue: a vertical insertion bar + subtle lift on the hovered book. */
+.lib-book__wrap.is-drag-over::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  bottom: 24px;
+  left: -8px;
+  width: 3px;
+  border-radius: 2px;
+  background: #f5f5f7;
+  box-shadow: 0 0 8px rgba(245, 245, 247, 0.6);
+  z-index: 5;
+}
+.lib-book__wrap.is-drag-over .lib-book { transform: translateY(-4px); transition: transform 120ms ease; }

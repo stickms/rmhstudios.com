@@ -39,7 +39,11 @@ async function migratedFilenames(): Promise<Set<string>> {
     where: { originFilename: { not: null } },
     select: { originFilename: true },
   });
-  return new Set(rows.map((r) => r.originFilename).filter((f): f is string => Boolean(f)));
+  return new Set(
+    rows
+      .map((r: { originFilename: string | null }) => r.originFilename)
+      .filter((f: string | null): f is string => Boolean(f))
+  );
 }
 
 /** Static catalog (minus migrated books) plus the given uploaded books. */
@@ -64,7 +68,7 @@ export async function listAllBooks(): Promise<LibraryBook[]> {
     }),
     migratedFilenames(),
   ]);
-  const uploads = docs.map((d) => mapDocToBook(d as LibraryDocRow));
+  const uploads = docs.map((d: LibraryDocRow) => mapDocToBook(d));
   return withStatic(uploads, migrated).sort((a, b) => a.title.localeCompare(b.title));
 }
 
@@ -81,7 +85,7 @@ export async function listAllBooksForAdmin(): Promise<LibraryBook[]> {
     }),
     migratedFilenames(),
   ]);
-  const uploads = docs.map((d) => mapDocToBook(d as LibraryDocRow));
+  const uploads = docs.map((d: LibraryDocRow) => mapDocToBook(d));
   return withStatic(uploads, migrated).sort((a, b) => a.title.localeCompare(b.title));
 }
 
