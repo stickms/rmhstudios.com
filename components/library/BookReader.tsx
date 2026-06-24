@@ -473,7 +473,7 @@ function PageJump({
 
 /** A reusable dropdown shell: a toolbar icon button that toggles a popover menu and
  *  closes on outside-click / Escape. */
-function Dropdown({
+export function Dropdown({
   icon,
   label,
   on,
@@ -528,7 +528,7 @@ function Dropdown({
 }
 
 /** Bookmarks + personal notes panel. Lets a reader jump to, add, and remove both. */
-function MarksMenu({
+export function MarksMenu({
   bookmarks,
   notes,
   curPage,
@@ -676,7 +676,7 @@ function QualityMenu({ quality, onChange }: { quality: PageQuality; onChange: (q
 }
 
 /** Dropdown listing the parsed TOC; jumps to a chapter's page on select. */
-function ChapterMenu({
+export function ChapterMenu({
   chapters,
   curPage,
   onJump,

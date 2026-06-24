@@ -731,6 +731,83 @@
   color: #ffcc4d;
 }
 
+/* ─── EPUB reader ────────────────────────────────────────────────────────────── */
+/* The EPUB reader fills the stage with a reflow iframe — no 3D book padding. */
+.lib-epub__stage {
+  padding: 0;
+  perspective: none;
+}
+.lib-epub__frame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+  background: transparent;
+}
+
+/* Font-size + theme controls. */
+.lib-epub__settings {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 200px;
+  padding: 2px;
+}
+.lib-epub__set-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.lib-epub__steppers {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lib-epub__step {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 0.5px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: #f5f5f7;
+  cursor: pointer;
+  transition: background 130ms ease;
+}
+.lib-epub__step:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+.lib-epub__set-val {
+  min-width: 3em;
+  text-align: center;
+  font-size: 0.8rem;
+  color: #f5f5f7;
+  font-variant-numeric: tabular-nums;
+}
+.lib-epub__themes {
+  display: flex;
+  gap: 8px;
+}
+.lib-epub__theme {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  transition: transform 120ms ease, border-color 120ms ease;
+}
+.lib-epub__theme:hover {
+  transform: scale(1.08);
+}
+.lib-epub__theme.is-active {
+  border-color: #ffcc4d;
+}
+.lib-epub__theme--light { background: #f7f6f3; }
+.lib-epub__theme--sepia { background: #f4ecd8; }
+.lib-epub__theme--dark { background: #16161a; }
+
 .lib-reader__stage {
   position: relative;
   flex: 1;

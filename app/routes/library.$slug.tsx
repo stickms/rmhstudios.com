@@ -10,6 +10,7 @@ import { createFileRoute, notFound } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getBook } from '@/lib/library/library.server';
 import { BookReader } from '@/components/library/BookReader';
+import { EpubReader } from '@/components/library/EpubReader';
 import '@/components/library/library.css';
 
 const fetchBook = createServerFn({ method: 'GET' })
@@ -43,5 +44,5 @@ export const Route = createFileRoute('/library/$slug')({
 
 function Reader() {
   const { book } = Route.useLoaderData();
-  return <BookReader book={book} />;
+  return book.format === 'epub' ? <EpubReader book={book} /> : <BookReader book={book} />;
 }

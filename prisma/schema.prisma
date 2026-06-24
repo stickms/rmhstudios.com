@@ -52,6 +52,7 @@ model User {
   rmhboxProfile       RMHboxProfile?
   rmhtypeProfiles     RmhTypeProfile[]
   libraryUploads      LibraryDocument[] @relation("LibraryUploader")
+  libraryCollections  LibraryCollection[] @relation("LibraryCollectionOwner")
   rmhstudyProfile     RmhStudyProfile?
   voidBreakerProfile  VoidBreakerPlayer?
   dailyPuzzleScores   DailyPuzzleScore[]
@@ -3243,6 +3244,9 @@ model LibraryDocument {
   title            String
   description      String   @default("")
   pages            Int      @default(0)
+  /// Document format: "pdf" (default) or "epub". Drives which reader renders it
+  /// and the content-type / extension used to store and serve the file.
+  format           String   @default("pdf")
   pdfKey           String
   coverKey         String?
   sizeBytes        Int      @default(0)
@@ -3267,4 +3271,46 @@ model LibraryDocument {
   @@index([uploadedByUserId])
   @@index([official])
   @@map("library_document")
+}
+
+/// A reader-made grouping of books (a "series" / "collection") shown as its own
+/// shelf on the library page. A user owns their collections and may only add books
+/// they uploaded; admins own "official" collections and may add any book. Members
+/// are referenced by book slug (stable for both static-catalog and uploaded books),
+/// so a collection can span both without a hard foreign key to LibraryDocument.
+model LibraryCollection {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  description String   @default("")
+  ownerUserId String?
+  owner       User?    @relation("LibraryCollectionOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
+  /// Curated/official collection (admin-made) — surfaced above community series.
+  official    Boolean  @default(false)
+  hidden      Boolean  @default(false)
+  /// Manual sort order across collections (lower first).
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  items LibraryCollectionItem[]
+
+  @@index([ownerUserId])
+  @@index([official])
+  @@map("library_collection")
+}
+
+model LibraryCollectionItem {
+  id           String   @id @default(cuid())
+  collectionId String
+  collection   LibraryCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  /// The member book's slug (resolved to a LibraryBook at read time).
+  bookSlug     String
+  /// Order within the collection (lower first).
+  position     Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  @@unique([collectionId, bookSlug])
+  @@index([collectionId])
+  @@map("library_collection_item")
 }

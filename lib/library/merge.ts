@@ -15,6 +15,7 @@ export type LibraryDocRow = {
   title: string;
   description: string;
   pages: number;
+  format?: string | null;
   coverKey: string | null;
   uploadedBy?: { handle: string | null; name: string | null } | null;
   official?: boolean;
@@ -53,13 +54,15 @@ export function mapDocToBook(row: LibraryDocRow): LibraryBook {
       : typeof row.createdAt === 'string'
         ? row.createdAt
         : null;
+  const format: 'pdf' | 'epub' = row.format === 'epub' ? 'epub' : 'pdf';
   return {
     slug: row.slug,
-    filename: `${row.id}.pdf`,
+    filename: `${row.id}.${format}`,
     url: libraryPdfUrl(row.id),
     title: row.title,
     description: row.description ?? '',
     pages: row.pages ?? 0,
+    format,
     coverUrl: row.coverKey ? libraryCoverUrl(row.id) : null,
     hue: hueFromString(row.id),
     toc: normalizeToc(row.toc),

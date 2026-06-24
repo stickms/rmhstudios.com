@@ -23,6 +23,7 @@ const DOC_SELECT = {
   title: true,
   description: true,
   pages: true,
+  format: true,
   coverKey: true,
   official: true,
   position: true,

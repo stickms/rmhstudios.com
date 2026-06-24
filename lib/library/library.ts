@@ -38,8 +38,10 @@ export type LibraryBook = {
   title: string;
   /** One-sentence description (DeepSeek-generated; may be empty). */
   description: string;
-  /** Total page count. */
+  /** Total page count (for EPUBs, the number of spine documents/sections). */
   pages: number;
+  /** Document format: PDFs render in the 3D book reader, EPUBs in the EPUB reader. */
+  format: 'pdf' | 'epub';
   /** Public URL of the rendered first-page cover image, or null if none. */
   coverUrl: string | null;
   /** Deterministic accent hue (0–360) used for the spine tint / cover fallback. */
@@ -113,6 +115,7 @@ function buildBooks(): LibraryBook[] {
       title: meta.title || humanize(filename),
       description: meta.description || '',
       pages: meta.pages || 0,
+      format: 'pdf',
       coverUrl: meta.cover ? `/library/covers/${encodeURIComponent(meta.cover)}` : null,
       hue: hueFromString(filename),
       toc: meta.toc ?? [],

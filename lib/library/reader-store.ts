@@ -37,6 +37,11 @@ export type BookState = {
   slug: string;
   /** 1-based page last viewed. 0 = never opened (so we don't "resume" to page 0). */
   page: number;
+  /**
+   * Optional fine-grained location string the reader interprets (EPUB uses
+   * "chapter:pageInChapter" for exact resume; PDFs leave it unset and use `page`).
+   */
+  loc?: string;
   bookmarks: Bookmark[];
   notes: Note[];
   updatedAt: number;
@@ -157,6 +162,16 @@ export function useBookState(slug: string) {
     [commit],
   );
 
+  // EPUB position: a fine location string plus the chapter-level `page` for display,
+  // bookmarks and the scrubber. Both persist together (debounced).
+  const setLoc = useCallback(
+    (loc: string, page: number) => {
+      if (ref.current.loc === loc && ref.current.page === page) return;
+      commit({ ...ref.current, loc, page: Math.max(1, page) }, true);
+    },
+    [commit],
+  );
+
   const toggleBookmark = useCallback(
     (page: number, label: string) => {
       const cur = ref.current.bookmarks;
@@ -202,5 +217,5 @@ export function useBookState(slug: string) {
     [commit],
   );
 
-  return { state, ready, setPage, toggleBookmark, removeBookmark, addNote, updateNote, removeNote };
+  return { state, ready, setPage, setLoc, toggleBookmark, removeBookmark, addNote, updateNote, removeNote };
 }
