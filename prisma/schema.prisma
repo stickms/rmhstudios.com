@@ -3250,9 +3250,21 @@ model LibraryDocument {
   uploadedBy       User?    @relation("LibraryUploader", fields: [uploadedByUserId], references: [id], onDelete: SetNull)
   reported         Boolean  @default(false)
   hidden           Boolean  @default(false)
+  /// Curated/official entry (admin upload or migrated static catalog) — shown in
+  /// the "Curated" section above community uploads.
+  official         Boolean  @default(false)
+  /// Manual sort order within a section (lower first); ties broken by recency.
+  position         Int      @default(0)
+  /// Original public/library filename when this row was migrated from the bundled
+  /// static catalog. Unique so the migration is idempotent and the static list can
+  /// dedupe against already-migrated books.
+  originFilename   String?  @unique
+  /// Preserved table of contents (chapter → page) for migrated/edited books.
+  toc              Json?
   createdAt        DateTime @default(now())
 
   @@index([createdAt])
   @@index([uploadedByUserId])
+  @@index([official])
   @@map("library_document")
 }

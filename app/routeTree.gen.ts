@@ -344,6 +344,7 @@ import { Route as ApiDoctrineIncidentsIndexRouteImport } from './routes/api/doct
 import { Route as ApiDeveloperKeysIndexRouteImport } from './routes/api/developer/keys/index'
 import { Route as ApiCommunitiesSlugIndexRouteImport } from './routes/api/communities/$slug/index'
 import { Route as ApiAdminPredictionsIndexRouteImport } from './routes/api/admin/predictions/index'
+import { Route as ApiAdminLibraryIndexRouteImport } from './routes/api/admin/library/index'
 import { Route as SiteUUseridIndexRouteImport } from './routes/_site/u/$userid/index'
 import { Route as SiteAdminBlogIndexRouteImport } from './routes/_site/admin/blog/index'
 import { Route as SecretJobsAssessmentIdRouteImport } from './routes/secret/jobs/assessment/$id'
@@ -425,6 +426,9 @@ import { Route as ApiAnnouncementsIdVoteRouteImport } from './routes/api/announc
 import { Route as ApiAdminRideshareRidesRouteImport } from './routes/api/admin/rideshare/rides'
 import { Route as ApiAdminRideshareApplicationsRouteImport } from './routes/api/admin/rideshare/applications'
 import { Route as ApiAdminReportsIdRouteImport } from './routes/api/admin/reports/$id'
+import { Route as ApiAdminLibraryReorderRouteImport } from './routes/api/admin/library/reorder'
+import { Route as ApiAdminLibraryMigrateRouteImport } from './routes/api/admin/library/migrate'
+import { Route as ApiAdminLibraryIdRouteImport } from './routes/api/admin/library/$id'
 import { Route as ApiAdminCuratedBuildsImageRouteImport } from './routes/api/admin/curated-builds/image'
 import { Route as ApiAdminAnnouncementsIdRouteImport } from './routes/api/admin/announcements/$id'
 import { Route as SiteAdminBlogNewRouteImport } from './routes/_site/admin/blog/new'
@@ -2154,6 +2158,11 @@ const ApiAdminPredictionsIndexRoute =
     path: '/api/admin/predictions/',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiAdminLibraryIndexRoute = ApiAdminLibraryIndexRouteImport.update({
+  id: '/api/admin/library/',
+  path: '/api/admin/library/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SiteUUseridIndexRoute = SiteUUseridIndexRouteImport.update({
   id: '/u/$userid/',
   path: '/u/$userid/',
@@ -2582,6 +2591,21 @@ const ApiAdminReportsIdRoute = ApiAdminReportsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => ApiAdminReportsRoute,
+} as any)
+const ApiAdminLibraryReorderRoute = ApiAdminLibraryReorderRouteImport.update({
+  id: '/api/admin/library/reorder',
+  path: '/api/admin/library/reorder',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminLibraryMigrateRoute = ApiAdminLibraryMigrateRouteImport.update({
+  id: '/api/admin/library/migrate',
+  path: '/api/admin/library/migrate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminLibraryIdRoute = ApiAdminLibraryIdRouteImport.update({
+  id: '/api/admin/library/$id',
+  path: '/api/admin/library/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAdminCuratedBuildsImageRoute =
   ApiAdminCuratedBuildsImageRouteImport.update({
@@ -3094,6 +3118,9 @@ export interface FileRoutesByFullPath {
   '/admin/blog/new': typeof SiteAdminBlogNewRoute
   '/api/admin/announcements/$id': typeof ApiAdminAnnouncementsIdRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
+  '/api/admin/library/$id': typeof ApiAdminLibraryIdRoute
+  '/api/admin/library/migrate': typeof ApiAdminLibraryMigrateRoute
+  '/api/admin/library/reorder': typeof ApiAdminLibraryReorderRoute
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
   '/api/admin/rideshare/applications': typeof ApiAdminRideshareApplicationsRoute
   '/api/admin/rideshare/rides': typeof ApiAdminRideshareRidesRoute
@@ -3175,6 +3202,7 @@ export interface FileRoutesByFullPath {
   '/secret/jobs/assessment/$id': typeof SecretJobsAssessmentIdRoute
   '/admin/blog/': typeof SiteAdminBlogIndexRoute
   '/u/$userid/': typeof SiteUUseridIndexRoute
+  '/api/admin/library/': typeof ApiAdminLibraryIndexRoute
   '/api/admin/predictions/': typeof ApiAdminPredictionsIndexRoute
   '/api/communities/$slug/': typeof ApiCommunitiesSlugIndexRoute
   '/api/developer/keys/': typeof ApiDeveloperKeysIndexRoute
@@ -3520,6 +3548,9 @@ export interface FileRoutesByTo {
   '/admin/blog/new': typeof SiteAdminBlogNewRoute
   '/api/admin/announcements/$id': typeof ApiAdminAnnouncementsIdRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
+  '/api/admin/library/$id': typeof ApiAdminLibraryIdRoute
+  '/api/admin/library/migrate': typeof ApiAdminLibraryMigrateRoute
+  '/api/admin/library/reorder': typeof ApiAdminLibraryReorderRoute
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
   '/api/admin/rideshare/applications': typeof ApiAdminRideshareApplicationsRoute
   '/api/admin/rideshare/rides': typeof ApiAdminRideshareRidesRoute
@@ -3601,6 +3632,7 @@ export interface FileRoutesByTo {
   '/secret/jobs/assessment/$id': typeof SecretJobsAssessmentIdRoute
   '/admin/blog': typeof SiteAdminBlogIndexRoute
   '/u/$userid': typeof SiteUUseridIndexRoute
+  '/api/admin/library': typeof ApiAdminLibraryIndexRoute
   '/api/admin/predictions': typeof ApiAdminPredictionsIndexRoute
   '/api/communities/$slug': typeof ApiCommunitiesSlugIndexRoute
   '/api/developer/keys': typeof ApiDeveloperKeysIndexRoute
@@ -3972,6 +4004,9 @@ export interface FileRoutesById {
   '/_site/admin/blog/new': typeof SiteAdminBlogNewRoute
   '/api/admin/announcements/$id': typeof ApiAdminAnnouncementsIdRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
+  '/api/admin/library/$id': typeof ApiAdminLibraryIdRoute
+  '/api/admin/library/migrate': typeof ApiAdminLibraryMigrateRoute
+  '/api/admin/library/reorder': typeof ApiAdminLibraryReorderRoute
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
   '/api/admin/rideshare/applications': typeof ApiAdminRideshareApplicationsRoute
   '/api/admin/rideshare/rides': typeof ApiAdminRideshareRidesRoute
@@ -4053,6 +4088,7 @@ export interface FileRoutesById {
   '/secret/jobs/assessment/$id': typeof SecretJobsAssessmentIdRoute
   '/_site/admin/blog/': typeof SiteAdminBlogIndexRoute
   '/_site/u/$userid/': typeof SiteUUseridIndexRoute
+  '/api/admin/library/': typeof ApiAdminLibraryIndexRoute
   '/api/admin/predictions/': typeof ApiAdminPredictionsIndexRoute
   '/api/communities/$slug/': typeof ApiCommunitiesSlugIndexRoute
   '/api/developer/keys/': typeof ApiDeveloperKeysIndexRoute
@@ -4424,6 +4460,9 @@ export interface FileRouteTypes {
     | '/admin/blog/new'
     | '/api/admin/announcements/$id'
     | '/api/admin/curated-builds/image'
+    | '/api/admin/library/$id'
+    | '/api/admin/library/migrate'
+    | '/api/admin/library/reorder'
     | '/api/admin/reports/$id'
     | '/api/admin/rideshare/applications'
     | '/api/admin/rideshare/rides'
@@ -4505,6 +4544,7 @@ export interface FileRouteTypes {
     | '/secret/jobs/assessment/$id'
     | '/admin/blog/'
     | '/u/$userid/'
+    | '/api/admin/library/'
     | '/api/admin/predictions/'
     | '/api/communities/$slug/'
     | '/api/developer/keys/'
@@ -4850,6 +4890,9 @@ export interface FileRouteTypes {
     | '/admin/blog/new'
     | '/api/admin/announcements/$id'
     | '/api/admin/curated-builds/image'
+    | '/api/admin/library/$id'
+    | '/api/admin/library/migrate'
+    | '/api/admin/library/reorder'
     | '/api/admin/reports/$id'
     | '/api/admin/rideshare/applications'
     | '/api/admin/rideshare/rides'
@@ -4931,6 +4974,7 @@ export interface FileRouteTypes {
     | '/secret/jobs/assessment/$id'
     | '/admin/blog'
     | '/u/$userid'
+    | '/api/admin/library'
     | '/api/admin/predictions'
     | '/api/communities/$slug'
     | '/api/developer/keys'
@@ -5301,6 +5345,9 @@ export interface FileRouteTypes {
     | '/_site/admin/blog/new'
     | '/api/admin/announcements/$id'
     | '/api/admin/curated-builds/image'
+    | '/api/admin/library/$id'
+    | '/api/admin/library/migrate'
+    | '/api/admin/library/reorder'
     | '/api/admin/reports/$id'
     | '/api/admin/rideshare/applications'
     | '/api/admin/rideshare/rides'
@@ -5382,6 +5429,7 @@ export interface FileRouteTypes {
     | '/secret/jobs/assessment/$id'
     | '/_site/admin/blog/'
     | '/_site/u/$userid/'
+    | '/api/admin/library/'
     | '/api/admin/predictions/'
     | '/api/communities/$slug/'
     | '/api/developer/keys/'
@@ -5602,6 +5650,9 @@ export interface RootRouteChildren {
   ApiStakingIndexRoute: typeof ApiStakingIndexRoute
   ApiWheelIndexRoute: typeof ApiWheelIndexRoute
   ApiAdminCuratedBuildsImageRoute: typeof ApiAdminCuratedBuildsImageRouteWithChildren
+  ApiAdminLibraryIdRoute: typeof ApiAdminLibraryIdRoute
+  ApiAdminLibraryMigrateRoute: typeof ApiAdminLibraryMigrateRoute
+  ApiAdminLibraryReorderRoute: typeof ApiAdminLibraryReorderRoute
   ApiAdminRideshareApplicationsRoute: typeof ApiAdminRideshareApplicationsRoute
   ApiAdminRideshareRidesRoute: typeof ApiAdminRideshareRidesRoute
   ApiCommentsCommentIdTranslateRoute: typeof ApiCommentsCommentIdTranslateRoute
@@ -5647,6 +5698,7 @@ export interface RootRouteChildren {
   ApiStorefrontCreatorUseridRoute: typeof ApiStorefrontCreatorUseridRoute
   ApiVibePkgFileRoute: typeof ApiVibePkgFileRoute
   ApiVibeThumbSlugRoute: typeof ApiVibeThumbSlugRoute
+  ApiAdminLibraryIndexRoute: typeof ApiAdminLibraryIndexRoute
   ApiAdminPredictionsIndexRoute: typeof ApiAdminPredictionsIndexRoute
   ApiCommunitiesSlugIndexRoute: typeof ApiCommunitiesSlugIndexRoute
   ApiDeveloperKeysIndexRoute: typeof ApiDeveloperKeysIndexRoute
@@ -8015,6 +8067,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminPredictionsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/library/': {
+      id: '/api/admin/library/'
+      path: '/api/admin/library'
+      fullPath: '/api/admin/library/'
+      preLoaderRoute: typeof ApiAdminLibraryIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_site/u/$userid/': {
       id: '/_site/u/$userid/'
       path: '/u/$userid'
@@ -8581,6 +8640,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/admin/reports/$id'
       preLoaderRoute: typeof ApiAdminReportsIdRouteImport
       parentRoute: typeof ApiAdminReportsRoute
+    }
+    '/api/admin/library/reorder': {
+      id: '/api/admin/library/reorder'
+      path: '/api/admin/library/reorder'
+      fullPath: '/api/admin/library/reorder'
+      preLoaderRoute: typeof ApiAdminLibraryReorderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/library/migrate': {
+      id: '/api/admin/library/migrate'
+      path: '/api/admin/library/migrate'
+      fullPath: '/api/admin/library/migrate'
+      preLoaderRoute: typeof ApiAdminLibraryMigrateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/library/$id': {
+      id: '/api/admin/library/$id'
+      path: '/api/admin/library/$id'
+      fullPath: '/api/admin/library/$id'
+      preLoaderRoute: typeof ApiAdminLibraryIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/admin/curated-builds/image': {
       id: '/api/admin/curated-builds/image'
@@ -9889,6 +9969,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiStakingIndexRoute: ApiStakingIndexRoute,
   ApiWheelIndexRoute: ApiWheelIndexRoute,
   ApiAdminCuratedBuildsImageRoute: ApiAdminCuratedBuildsImageRouteWithChildren,
+  ApiAdminLibraryIdRoute: ApiAdminLibraryIdRoute,
+  ApiAdminLibraryMigrateRoute: ApiAdminLibraryMigrateRoute,
+  ApiAdminLibraryReorderRoute: ApiAdminLibraryReorderRoute,
   ApiAdminRideshareApplicationsRoute: ApiAdminRideshareApplicationsRoute,
   ApiAdminRideshareRidesRoute: ApiAdminRideshareRidesRoute,
   ApiCommentsCommentIdTranslateRoute: ApiCommentsCommentIdTranslateRoute,
@@ -9934,6 +10017,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiStorefrontCreatorUseridRoute: ApiStorefrontCreatorUseridRoute,
   ApiVibePkgFileRoute: ApiVibePkgFileRoute,
   ApiVibeThumbSlugRoute: ApiVibeThumbSlugRoute,
+  ApiAdminLibraryIndexRoute: ApiAdminLibraryIndexRoute,
   ApiAdminPredictionsIndexRoute: ApiAdminPredictionsIndexRoute,
   ApiCommunitiesSlugIndexRoute: ApiCommunitiesSlugIndexRoute,
   ApiDeveloperKeysIndexRoute: ApiDeveloperKeysIndexRoute,

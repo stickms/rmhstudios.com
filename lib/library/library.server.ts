@@ -2,13 +2,20 @@
  * RMH Studios — Library data layer (server-only).
  *
  * Merges the bundled static catalog (lib/library/library.ts) with user-uploaded
- * books stored in the LibraryDocument table. Loaders for the bookshelf and the
- * reader call these instead of the static-only helpers so uploads show up
- * everywhere without changing the reader.
+ * and curated books stored in the LibraryDocument table. Loaders for the
+ * bookshelf and the reader call these instead of the static-only helpers so
+ * uploads show up everywhere without changing the reader.
+ *
+ * As static books are migrated into object storage (see migrate.server.ts) they
+ * become LibraryDocument rows tagged with `originFilename`. We dedupe the static
+ * catalog against those so a migrated book is served from S3 (not the bundled
+ * file) and never appears twice — letting the on-disk public/library files be
+ * dropped later without changing the catalog the user sees.
  */
 import { prisma } from '@/lib/prisma.server';
 import { listLibraryBooks, getLibraryBook, type LibraryBook } from './library';
-import { mapDocToBook } from './merge';
+import { mapDocToBook, type LibraryDocRow } from './merge';
+import { ensureLibraryMigrated } from './migrate.server';
 
 const DOC_SELECT = {
   id: true,
@@ -17,29 +24,78 @@ const DOC_SELECT = {
   description: true,
   pages: true,
   coverKey: true,
+  official: true,
+  position: true,
+  hidden: true,
+  reported: true,
+  createdAt: true,
+  toc: true,
   uploadedBy: { select: { handle: true, name: true } },
 } as const;
 
-/** Static catalog ∪ uploaded books (excluding hidden), alphabetised by title. */
-export async function listAllBooks(): Promise<LibraryBook[]> {
-  const docs = await prisma.libraryDocument.findMany({
-    where: { hidden: false },
-    select: DOC_SELECT,
-    orderBy: { createdAt: 'desc' },
+/** Set of static filenames already migrated into the LibraryDocument table. */
+async function migratedFilenames(): Promise<Set<string>> {
+  const rows = await prisma.libraryDocument.findMany({
+    where: { originFilename: { not: null } },
+    select: { originFilename: true },
   });
-  const uploads = docs.map(mapDocToBook);
-  return [...listLibraryBooks(), ...uploads].sort((a, b) => a.title.localeCompare(b.title));
+  return new Set(rows.map((r) => r.originFilename).filter((f): f is string => Boolean(f)));
 }
 
-/** Resolve a book by slug — static catalog first, then uploaded books. */
+/** Static catalog (minus migrated books) plus the given uploaded books. */
+function withStatic(uploads: LibraryBook[], migrated: Set<string>): LibraryBook[] {
+  const staticBooks = listLibraryBooks().filter((b) => !migrated.has(b.filename));
+  return [...staticBooks, ...uploads];
+}
+
+/**
+ * Static catalog ∪ visible uploaded books. Ordering is left to the page, which
+ * splits curated from community; we sort by title as a stable default.
+ */
+export async function listAllBooks(): Promise<LibraryBook[]> {
+  // Lazily move the bundled static catalog into object storage (once per process,
+  // in the background — never blocks this load).
+  ensureLibraryMigrated();
+  const [docs, migrated] = await Promise.all([
+    prisma.libraryDocument.findMany({
+      where: { hidden: false },
+      select: DOC_SELECT,
+      orderBy: [{ position: 'asc' }, { createdAt: 'desc' }],
+    }),
+    migratedFilenames(),
+  ]);
+  const uploads = docs.map((d) => mapDocToBook(d as LibraryDocRow));
+  return withStatic(uploads, migrated).sort((a, b) => a.title.localeCompare(b.title));
+}
+
+/**
+ * Everything, including hidden rows, for the admin edit manager. Hidden books are
+ * never returned by {@link listAllBooks}, so this must only be called behind an
+ * admin check.
+ */
+export async function listAllBooksForAdmin(): Promise<LibraryBook[]> {
+  const [docs, migrated] = await Promise.all([
+    prisma.libraryDocument.findMany({
+      select: DOC_SELECT,
+      orderBy: [{ position: 'asc' }, { createdAt: 'desc' }],
+    }),
+    migratedFilenames(),
+  ]);
+  const uploads = docs.map((d) => mapDocToBook(d as LibraryDocRow));
+  return withStatic(uploads, migrated).sort((a, b) => a.title.localeCompare(b.title));
+}
+
+/**
+ * Resolve a book by slug. Prefer a LibraryDocument row (covers uploads and
+ * migrated static books served from S3); fall back to the bundled static catalog
+ * only when no row owns the slug. A hidden row resolves to nothing — without this
+ * check, hiding a *migrated* static book would let the still-bundled file leak
+ * back through the fallback.
+ */
 export async function getBook(slug: string): Promise<LibraryBook | undefined> {
-  const staticBook = getLibraryBook(slug);
-  if (staticBook) return staticBook;
-  const doc = await prisma.libraryDocument.findFirst({
-    where: { slug, hidden: false },
-    select: DOC_SELECT,
-  });
-  return doc ? mapDocToBook(doc) : undefined;
+  const doc = await prisma.libraryDocument.findUnique({ where: { slug }, select: DOC_SELECT });
+  if (doc) return doc.hidden ? undefined : mapDocToBook(doc as LibraryDocRow);
+  return getLibraryBook(slug);
 }
 
 /** Whether a slug is already taken by an uploaded book (used during upload). */

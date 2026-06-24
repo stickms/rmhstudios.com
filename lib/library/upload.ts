@@ -9,7 +9,7 @@
 import {
   validatePdfBuffer,
   validateBookFields,
-  LIBRARY_PDF_MAX_BYTES,
+  libraryPdfMaxBytes,
   LIBRARY_USER_QUOTA,
 } from './upload-validation';
 import { libraryPdfKey, libraryCoverKey, slugifyTitle } from './keys';
@@ -24,6 +24,8 @@ export type CreateDocInput = {
   coverKey: string | null;
   sizeBytes: number;
   uploadedByUserId: string;
+  /** Curated/official entry — admin uploads land in the curated section. */
+  official: boolean;
 };
 
 export type UploadDeps = {
@@ -32,6 +34,8 @@ export type UploadDeps = {
   countUserDocs: (userId: string) => Promise<number>;
   slugExists: (slug: string) => Promise<boolean>;
   newId: () => string;
+  /** Compress the PDF for at-rest storage (gzip when smaller). */
+  compress: (pdf: Buffer) => Buffer;
 };
 
 export type UploadInput = {
@@ -41,6 +45,8 @@ export type UploadInput = {
   title: string;
   description: string;
   pages: number;
+  /** Whether the uploader is an admin (raises the size ceiling, marks curated). */
+  isAdmin: boolean;
 };
 
 export type UploadResult =
@@ -73,11 +79,12 @@ export async function processLibraryUpload(
   const pdfCheck = validatePdfBuffer(input.pdf);
   if (!pdfCheck.ok) return { ok: false, status: 415, error: pdfCheck.error };
 
-  if (input.pdf.length > LIBRARY_PDF_MAX_BYTES) {
+  const maxBytes = libraryPdfMaxBytes(input.isAdmin);
+  if (input.pdf.length > maxBytes) {
     return {
       ok: false,
       status: 413,
-      error: `PDF too large. Maximum size is ${LIBRARY_PDF_MAX_BYTES / 1024 / 1024} MB.`,
+      error: `PDF too large. Maximum size is ${maxBytes / 1024 / 1024} MB.`,
     };
   }
 
@@ -93,7 +100,8 @@ export async function processLibraryUpload(
   const pdfKey = libraryPdfKey(id);
   const coverKey = input.cover ? libraryCoverKey(id) : null;
 
-  await deps.putObject(pdfKey, input.pdf, 'application/pdf');
+  // Compress the PDF before storage (served back with Content-Encoding: gzip).
+  await deps.putObject(pdfKey, deps.compress(input.pdf), 'application/pdf');
   if (input.cover && coverKey) {
     await deps.putObject(coverKey, input.cover, 'image/jpeg');
   }
@@ -108,6 +116,7 @@ export async function processLibraryUpload(
     coverKey,
     sizeBytes: input.pdf.length,
     uploadedByUserId: input.userId,
+    official: input.isAdmin,
   });
 
   return { ok: true, slug };

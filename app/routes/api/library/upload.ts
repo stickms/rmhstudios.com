@@ -7,6 +7,7 @@ import { validateImageBuffer } from '@/lib/slice-it/upload-validation';
 import { processLibraryUpload, type UploadDeps } from '@/lib/library/upload';
 import { uploadSlugExists } from '@/lib/library/library.server';
 import { libraryPdfKey, libraryCoverKey, libraryPdfUrl } from '@/lib/library/keys';
+import { compressPdfForStorage } from '@/lib/library/compress.server';
 
 const COVER_MAX_BYTES = 2 * 1024 * 1024; // 2 MB
 
@@ -20,6 +21,7 @@ export const Route = createFileRoute('/api/library/upload')({
             return Response.json({ error: 'You must be signed in to upload.' }, { status: 401 });
           }
           const userId = session.user.id;
+          const isAdmin = Boolean((session.user as { isAdmin?: boolean }).isAdmin);
 
           const ip = getClientIp(request);
           const { allowed, retryAfter } = rateLimit(ip, {
@@ -70,6 +72,7 @@ export const Route = createFileRoute('/api/library/upload')({
                   coverKey: data.coverKey,
                   sizeBytes: data.sizeBytes,
                   uploadedByUserId: data.uploadedByUserId,
+                  official: data.official,
                 },
               });
               return { slug: data.slug };
@@ -77,6 +80,7 @@ export const Route = createFileRoute('/api/library/upload')({
             countUserDocs: (uid) => prisma.libraryDocument.count({ where: { uploadedByUserId: uid } }),
             slugExists: uploadSlugExists,
             newId: () => id,
+            compress: compressPdfForStorage,
           };
 
           let result;
@@ -88,6 +92,7 @@ export const Route = createFileRoute('/api/library/upload')({
               title,
               description,
               pages,
+              isAdmin,
             });
           } catch (err) {
             // Persistence failed after objects may have been written — clean up.

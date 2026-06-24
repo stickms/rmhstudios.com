@@ -48,10 +48,23 @@ export type LibraryBook = {
   toc: TocEntry[];
   /** Where the book comes from: the bundled static catalog or a user upload. */
   source?: 'static' | 'upload';
-  /** LibraryDocument id for uploaded books (used for delete/report). */
+  /** LibraryDocument id for uploaded books (used for delete/report/edit). */
   id?: string;
   /** Uploader attribution, for user-uploaded books. */
   uploadedBy?: { handle: string | null; name: string | null } | null;
+  /**
+   * Curated/official entry — bundled static books and admin uploads. Curated
+   * books fill the top section of the shelf; community uploads sit below.
+   */
+  curated?: boolean;
+  /** Manual sort order within a section (lower first); only set for DB rows. */
+  position?: number;
+  /** ISO upload date, for community attribution ("Uploaded … · {date}"). */
+  createdAt?: string | null;
+  /** Hidden from non-admins (only ever surfaced to admins in edit mode). */
+  hidden?: boolean;
+  /** Reported by a user — surfaced to admins in edit mode. */
+  reported?: boolean;
 };
 
 /** "everything_platform_minute_vol1.pdf" → "Everything Platform Minute Vol1". */
@@ -103,6 +116,8 @@ function buildBooks(): LibraryBook[] {
       coverUrl: meta.cover ? `/library/covers/${encodeURIComponent(meta.cover)}` : null,
       hue: hueFromString(filename),
       toc: meta.toc ?? [],
+      source: 'static',
+      curated: true,
     } satisfies LibraryBook;
   });
 
