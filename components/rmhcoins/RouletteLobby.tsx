@@ -68,12 +68,12 @@ export function RouletteLobby() {
           value={joinCodeInput}
           onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
           maxLength={5}
-          className="flex-1 bg-site-surface border border-site-border rounded-lg px-3 py-2 text-site-text text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+          className="flex-1 bg-site-surface border border-site-border rounded-lg px-3 py-2 text-site-text text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-site-accent/40"
         />
         <Button
           onClick={handleJoinByCode}
           disabled={!joinCodeInput.trim()}
-          className="bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-lg text-sm"
+          className="bg-site-accent hover:bg-site-accent-hover text-site-accent-fg font-bold rounded-lg text-sm"
         >
           {t("join", { defaultValue: "Join" })}
         </Button>
@@ -88,7 +88,7 @@ export function RouletteLobby() {
             value={roomName}
             onChange={(e) => setRoomName(e.target.value)}
             maxLength={30}
-            className="w-full bg-site-bg border border-site-border rounded-lg px-3 py-2 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/50"
+            className="w-full bg-site-bg border border-site-border rounded-lg px-3 py-2 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-site-accent/40"
           />
           <div className="grid grid-cols-2 gap-2">
             <div className="flex flex-col gap-1">
@@ -116,7 +116,7 @@ export function RouletteLobby() {
           <div className="flex gap-2">
             <Button
               onClick={handleCreate}
-              className="flex-1 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-lg text-sm"
+              className="flex-1 bg-site-accent hover:bg-site-accent-hover text-site-accent-fg font-bold rounded-lg text-sm"
             >
               {t("create", { defaultValue: "Create" })}
             </Button>
@@ -133,7 +133,7 @@ export function RouletteLobby() {
         <div className="flex gap-2">
           <Button
             onClick={() => setShowCreate(true)}
-            className="flex-1 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-lg text-sm"
+            className="flex-1 bg-site-accent hover:bg-site-accent-hover text-site-accent-fg font-bold rounded-lg text-sm"
           >
             <Plus className="w-4 h-4 mr-1" />
             {t("create-room", { defaultValue: "Create Room" })}
@@ -166,7 +166,7 @@ export function RouletteLobby() {
                 <span className="text-xs text-site-text-dim">
                   {t("hosted-by", { defaultValue: "hosted by {{ownerName}}", ownerName: room.ownerName })}
                   {room.inProgress && (
-                    <span className="ml-1.5 text-violet-400">{t("in-progress", { defaultValue: "In progress" })}</span>
+                    <span className="ml-1.5 text-site-accent">{t("in-progress", { defaultValue: "In progress" })}</span>
                   )}
                 </span>
               </div>

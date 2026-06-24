@@ -24,9 +24,9 @@ const NUMBER_BG: Record<string, string> = {
 };
 
 const NUMBER_BG_WIN: Record<string, string> = {
-  red: 'bg-red-500 ring-2 ring-yellow-400',
-  black: 'bg-gray-700 ring-2 ring-yellow-400',
-  green: 'bg-emerald-600 ring-2 ring-yellow-400',
+  red: 'bg-red-500 ring-2 ring-site-accent',
+  black: 'bg-gray-700 ring-2 ring-site-accent',
+  green: 'bg-emerald-600 ring-2 ring-site-accent',
 };
 
 const CELL_W = 64;
@@ -79,10 +79,10 @@ function SpinningWheel({ result }: { result: number | null }) {
       <div className="w-0 h-0" style={{
         borderLeft: '10px solid transparent',
         borderRight: '10px solid transparent',
-        borderTop: '14px solid #8b5cf6',
+        borderTop: '14px solid var(--site-accent)',
       }} />
       <div
-        className="relative overflow-hidden rounded-xl border-2 border-violet-500/60"
+        className="relative overflow-hidden rounded-xl border-2 border-site-accent/60"
         style={{ width: '100%', maxWidth: 420, height: 72 }}
       >
         <div ref={stripRef} className="flex absolute top-0 left-0 h-full" style={{ willChange: 'transform' }}>
@@ -96,8 +96,8 @@ function SpinningWheel({ result }: { result: number | null }) {
                   width: CELL_W,
                   height: '100%',
                   backgroundColor: getCellBg(n),
-                  boxShadow: isHighlight ? 'inset 0 0 20px rgba(250, 204, 21, 0.6)' : undefined,
-                  outline: isHighlight ? '3px solid #facc15' : undefined,
+                  boxShadow: isHighlight ? 'inset 0 0 22px rgba(155, 122, 216, 0.65)' : undefined,
+                  outline: isHighlight ? '3px solid var(--site-accent)' : undefined,
                   transition: isHighlight ? 'box-shadow 0.3s, outline 0.3s' : undefined,
                 }}
               >
@@ -110,7 +110,7 @@ function SpinningWheel({ result }: { result: number | null }) {
       <div className="w-0 h-0" style={{
         borderLeft: '10px solid transparent',
         borderRight: '10px solid transparent',
-        borderBottom: '14px solid #8b5cf6',
+        borderBottom: '14px solid var(--site-accent)',
       }} />
     </div>
   );
@@ -132,7 +132,7 @@ function WinningNumberDisplay({ number: num }: { number: number }) {
           width: 70,
           height: 70,
           backgroundColor: bg,
-          boxShadow: `0 0 30px ${color === 'red' ? 'rgba(220,38,38,0.5)' : color === 'green' ? 'rgba(5,150,105,0.5)' : 'rgba(31,41,55,0.5)'}, 0 0 0 4px rgba(250,204,21,0.4)`,
+          boxShadow: `0 0 30px ${color === 'red' ? 'rgba(220,38,38,0.5)' : color === 'green' ? 'rgba(5,150,105,0.5)' : 'rgba(31,41,55,0.5)'}, 0 0 0 4px rgba(155,122,216,0.5)`,
         }}
       >
         {numberLabel(num)}
@@ -144,7 +144,7 @@ function WinningNumberDisplay({ number: num }: { number: number }) {
 // ── Bet dot styles ──────────────────────────────────────────────
 
 const DOT_BASE = 'absolute z-20 rounded-full transition-all opacity-0 hover:opacity-100 hover:scale-125';
-const DOT_IDLE = `${DOT_BASE} bg-yellow-400/70 border border-yellow-300/80 shadow-sm`;
+const DOT_IDLE = `${DOT_BASE} bg-site-accent/70 border border-site-accent shadow-sm`;
 const DOT_SIZE = 'w-5 h-5 sm:w-4 sm:h-4';
 
 // ── Main Table ──────────────────────────────────────────────────
@@ -213,7 +213,7 @@ export function RouletteTable({ coins }: Props) {
     const amount = getChipAmount(type, numbers);
     if (amount <= 0) return null;
     return (
-      <div className="absolute -top-1 -right-1 z-30 flex items-center gap-0.5 bg-violet-600 text-white text-[8px] font-bold rounded-full px-1 py-0.5 shadow-lg border border-violet-400">
+      <div className="absolute -top-1 -right-1 z-30 flex items-center gap-0.5 bg-site-accent text-site-accent-fg text-[8px] font-bold rounded-full px-1 py-0.5 shadow-lg border border-site-accent/60">
         <CoinIcon className="w-2 h-2" />
         {amount}
       </div>
@@ -226,7 +226,7 @@ export function RouletteTable({ coins }: Props) {
     if (amount <= 0) return null;
     return (
       <div
-        className="absolute z-30 flex items-center justify-center bg-violet-600 text-white text-[7px] font-bold rounded-full shadow-lg border border-violet-400"
+        className="absolute z-30 flex items-center justify-center bg-site-accent text-site-accent-fg text-[7px] font-bold rounded-full shadow-lg border border-site-accent/60"
         style={{ width: 18, height: 18, ...style }}
       >
         {amount}
@@ -477,21 +477,21 @@ export function RouletteTable({ coins }: Props) {
                     {player.avatarUrl ? (
                       <img src={player.avatarUrl} alt="" className="w-4 h-4 rounded-full" />
                     ) : null}
-                    <span className={`text-xs font-bold truncate max-w-15 ${isMe ? 'text-violet-400' : 'text-site-text'}`}>
+                    <span className={`text-xs font-bold truncate max-w-15 ${isMe ? 'text-site-accent' : 'text-site-text'}`}>
                       {isMe ? t("you", { defaultValue: "You" }) : player.userName}
                     </span>
                   </div>
                   {player.totalBetThisRound > 0 && (
                     <div className="flex items-center gap-0.5">
                       <CoinIcon className="w-3 h-3" />
-                      <span className="text-[10px] text-violet-400 font-bold">{player.totalBetThisRound}</span>
+                      <span className="text-[10px] text-yellow-500 font-bold">{player.totalBetThisRound}</span>
                     </div>
                   )}
                   {tablePhase === 'results' && myPayout && myPayout.netGain > 0 && (
-                    <span className="text-[10px] text-emerald-400 font-bold animate-bounce">+{myPayout.payout}</span>
+                    <span className="text-[10px] text-site-success font-bold animate-bounce">+{myPayout.payout}</span>
                   )}
                   {tablePhase === 'results' && myPayout && myPayout.netGain < 0 && (
-                    <span className="text-[10px] text-red-400 font-bold">{myPayout.netGain}</span>
+                    <span className="text-[10px] text-site-danger font-bold">{myPayout.netGain}</span>
                   )}
                 </div>
               );

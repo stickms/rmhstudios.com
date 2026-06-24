@@ -9,7 +9,7 @@ import type { PlayerSeatClient } from '@/lib/holdem/types';
 import { CoinIcon } from './CoinIcon';
 
 const SUIT_SYMBOLS: Record<string, string> = { H: '\u2665', D: '\u2666', C: '\u2663', S: '\u2660' };
-const SUIT_COLORS: Record<string, string> = { H: 'text-red-500', D: 'text-red-500', C: 'text-white', S: 'text-white' };
+const SUIT_COLORS: Record<string, string> = { H: 'text-red-600', D: 'text-red-600', C: 'text-gray-900', S: 'text-gray-900' };
 
 function CardFace({ card, small, delay }: { card: Card; small?: boolean; delay?: number }) {
   const [flipped, setFlipped] = useState(false);
@@ -25,7 +25,7 @@ function CardFace({ card, small, delay }: { card: Card; small?: boolean; delay?:
   return (
     <div className={`${w} perspective-500 shrink-0`}>
       <div className={`relative w-full h-full transition-transform duration-700 ease-out transform-3d ${flipped ? 'rotate-y-180' : ''}`}>
-        <div className="absolute inset-0 backface-hidden rounded-md border border-blue-500/30 bg-linear-to-br from-blue-800 to-blue-950" />
+        <div className="absolute inset-0 backface-hidden rounded-md border border-site-accent/40 bg-linear-to-br from-site-accent to-site-accent-hover" />
         <div className="absolute inset-0 backface-hidden rotate-y-180 rounded-md border border-gray-300 flex flex-col items-center justify-center bg-white">
           <span className={`${textSize} font-bold text-black`}>{card.rank}</span>
           <span className={`${textSize} ${SUIT_COLORS[card.suit]}`}>{SUIT_SYMBOLS[card.suit]}</span>
@@ -38,7 +38,7 @@ function CardFace({ card, small, delay }: { card: Card; small?: boolean; delay?:
 function CardBack({ small }: { small?: boolean }) {
   const w = small ? 'w-7 h-10 sm:w-8 sm:h-11' : 'w-9 h-13 sm:w-10 sm:h-14';
   return (
-    <div className={`${w} rounded-md border border-blue-500/30 bg-linear-to-br from-blue-800 to-blue-950 shrink-0`} />
+    <div className={`${w} rounded-md border border-site-accent/40 bg-linear-to-br from-site-accent to-site-accent-hover shrink-0`} />
   );
 }
 
@@ -71,26 +71,26 @@ function PlayerSeatView({ player, isCurrentTurn, isMe, turnSeconds }: {
     fold: { label: t("action-fold", { defaultValue: "Fold" }), color: 'text-gray-500' },
     check: { label: t("action-check", { defaultValue: "Check" }), color: 'text-blue-400' },
     call: { label: t("action-call", { defaultValue: "Call" }), color: 'text-emerald-400' },
-    raise: { label: t("action-raise", { defaultValue: "Raise" }), color: 'text-yellow-400' },
+    raise: { label: t("action-raise", { defaultValue: "Raise" }), color: 'text-site-accent' },
     all_in: { label: t("action-all-in", { defaultValue: "ALL IN" }), color: 'text-red-400' },
   };
 
   return (
     <div className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all shrink-0 min-w-0 ${
-      isCurrentTurn ? 'ring-2 ring-emerald-500 bg-emerald-500/5 animate-pulse' : ''
+      isCurrentTurn ? 'ring-2 ring-site-accent bg-site-accent-dim animate-pulse' : ''
     } ${player.folded || player.sittingOut ? 'opacity-40' : ''} ${isMe ? 'bg-site-surface/50' : ''}`}>
       {/* Name + position badges */}
       <div className="flex items-center gap-1 flex-wrap justify-center">
         {player.avatarUrl && <img src={player.avatarUrl} alt="" className="w-4 h-4 rounded-full shrink-0" />}
-        <span className={`text-xs font-bold truncate max-w-14 sm:max-w-20 ${isMe ? 'text-emerald-400' : 'text-site-text'}`}>
+        <span className={`text-xs font-bold truncate max-w-14 sm:max-w-20 ${isMe ? 'text-site-accent' : 'text-site-text'}`}>
           {isMe ? t("you", { defaultValue: "You" }) : player.userName}
         </span>
-        {player.isDealer && <span className="text-[8px] sm:text-[9px] font-bold bg-yellow-500/30 text-yellow-400 px-1 rounded">D</span>}
+        {player.isDealer && <span className="text-[8px] sm:text-[9px] font-bold bg-site-accent-dim text-site-accent px-1 rounded">D</span>}
         {player.isSmallBlind && <span className="text-[8px] sm:text-[9px] font-bold bg-blue-500/30 text-blue-400 px-1 rounded">SB</span>}
         {player.isBigBlind && <span className="text-[8px] sm:text-[9px] font-bold bg-purple-500/30 text-purple-400 px-1 rounded">BB</span>}
         {isCurrentTurn && turnSeconds != null && (
           <span className={`text-[8px] sm:text-[9px] font-bold tabular-nums px-1 rounded ${
-            turnSeconds <= 5 ? 'bg-red-500/30 text-red-400 animate-pulse' : 'bg-emerald-500/20 text-emerald-400'
+            turnSeconds <= 5 ? 'bg-site-danger/30 text-site-danger animate-pulse' : 'bg-site-accent-dim text-site-accent'
           }`}>
             {turnSeconds}s
           </span>
@@ -162,14 +162,14 @@ export function HoldemTable() {
     <div className="flex flex-col items-center gap-3 sm:gap-4">
       {/* Pot */}
       {pot > 0 && (
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-900/40 border border-emerald-700/30">
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-site-bg-subtle border border-site-border">
           <CoinIcon className="w-4 h-4" />
-          <span className="text-sm font-bold text-emerald-400">{pot}</span>
+          <span className="text-sm font-bold text-yellow-500">{pot}</span>
         </div>
       )}
 
       {/* Community cards — responsive sizing */}
-      <div className={`flex items-center gap-1 sm:gap-1.5 p-2.5 sm:p-3 rounded-xl bg-emerald-900/30 border border-emerald-700/20 min-h-18 sm:min-h-20`}>
+      <div className={`flex items-center gap-1 sm:gap-1.5 p-2.5 sm:p-3 rounded-xl bg-site-bg-subtle border border-site-border min-h-18 sm:min-h-20`}>
         {communityCards.length > 0 ? (
           communityCards.map((card, i) => (
             <CardFace key={`${card.rank}${card.suit}${i}`} card={card} delay={i * 500} />
@@ -191,13 +191,13 @@ export function HoldemTable() {
             if (net === 0 && !r.payout) return null;
             return (
               <div key={r.userId} className="text-xs">
-                <span className={`font-bold ${net > 0 ? 'text-emerald-400' : net < 0 ? 'text-red-400' : 'text-site-text'}`}>
+                <span className={`font-bold ${net > 0 ? 'text-site-success' : net < 0 ? 'text-site-danger' : 'text-site-text'}`}>
                   {name}
                 </span>
                 {net > 0 ? (
-                  <span className="font-bold text-emerald-400"> +{net}</span>
+                  <span className="font-bold text-site-success"> +{net}</span>
                 ) : net < 0 ? (
-                  <span className="font-bold text-red-400"> {net}</span>
+                  <span className="font-bold text-site-danger"> {net}</span>
                 ) : (
                   <span className="text-site-text-dim"> {t("broke-even", { defaultValue: "broke even" })}</span>
                 )}

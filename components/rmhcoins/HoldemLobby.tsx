@@ -75,12 +75,12 @@ export function HoldemLobby({ coins }: Props) {
           value={joinCodeInput}
           onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
           maxLength={5}
-          className="flex-1 bg-site-surface border border-site-border rounded-lg px-3 py-2 text-site-text text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+          className="flex-1 bg-site-surface border border-site-border rounded-lg px-3 py-2 text-site-text text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-site-accent/40"
         />
         <Button
           onClick={handleJoinByCode}
           disabled={!joinCodeInput.trim()}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-sm"
+          className="bg-site-accent hover:bg-site-accent-hover text-site-accent-fg font-bold rounded-lg text-sm"
         >
           {t("join", { defaultValue: "Join" })}
         </Button>
@@ -94,7 +94,7 @@ export function HoldemLobby({ coins }: Props) {
             value={roomName}
             onChange={(e) => setRoomName(e.target.value)}
             maxLength={30}
-            className="w-full bg-site-bg border border-site-border rounded-lg px-3 py-2 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+            className="w-full bg-site-bg border border-site-border rounded-lg px-3 py-2 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-site-accent/40"
           />
           <div className="grid grid-cols-2 gap-2">
             <div className="flex flex-col gap-1">
@@ -127,7 +127,7 @@ export function HoldemLobby({ coins }: Props) {
           )}
           <div className="flex gap-2">
             <Button onClick={handleCreate} disabled={coins < buyIn}
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-sm">
+              className="flex-1 bg-site-accent hover:bg-site-accent-hover text-site-accent-fg font-bold rounded-lg text-sm">
               {t("create-table", { defaultValue: "Create Table" })}
             </Button>
             <Button onClick={() => setShowCreate(false)} variant="outline" className="flex-1 rounded-lg text-sm">
@@ -138,7 +138,7 @@ export function HoldemLobby({ coins }: Props) {
       ) : (
         <div className="flex gap-2">
           <Button onClick={() => setShowCreate(true)}
-            className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-sm">
+            className="flex-1 bg-site-accent hover:bg-site-accent-hover text-site-accent-fg font-bold rounded-lg text-sm">
             <Plus className="w-4 h-4 mr-1" /> {t("create-table", { defaultValue: "Create Table" })}
           </Button>
           <button onClick={handleRefresh}
@@ -162,7 +162,7 @@ export function HoldemLobby({ coins }: Props) {
                 <span className="text-sm font-bold text-site-text">{room.name}</span>
                 <span className="text-xs text-site-text-dim">
                   {t("blinds", { defaultValue: "Blinds" })}: {room.smallBlind}/{room.bigBlind}
-                  {room.inProgress && <span className="ml-1.5 text-emerald-500">{t("in-progress", { defaultValue: "In progress" })}</span>}
+                  {room.inProgress && <span className="ml-1.5 text-site-accent">{t("in-progress", { defaultValue: "In progress" })}</span>}
                 </span>
               </div>
               <div className="flex items-center gap-1.5">

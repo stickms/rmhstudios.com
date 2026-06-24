@@ -130,7 +130,7 @@ export function BaccaratControls({ coins }: Props) {
         {countdown !== null && (
           <div className="text-center">
             <span className="text-sm text-site-text-dim">{t("betting-closes-in", { defaultValue: "Betting closes in " })}</span>
-            <span className={`font-bold text-lg tabular-nums ${isLow ? 'text-red-500 animate-pulse' : 'text-red-400'}`}>
+            <span className={`font-bold text-lg tabular-nums ${isLow ? 'text-site-danger animate-pulse' : 'text-site-accent'}`}>
               {countdown}s
             </span>
           </div>
@@ -180,7 +180,7 @@ export function BaccaratControls({ coins }: Props) {
                 onClick={() => setChipAmount(amt)}
                 className={`flex-1 min-h-10 text-xs font-bold rounded-xl border transition-colors active:scale-95 ${
                   chipAmount === amt
-                    ? 'bg-red-600 border-red-500 text-white'
+                    ? 'bg-site-accent border-site-accent text-site-accent-fg'
                     : 'bg-site-surface border-site-border text-site-text-dim hover:text-site-text hover:bg-site-surface-hover'
                 }`}
               >
@@ -197,7 +197,7 @@ export function BaccaratControls({ coins }: Props) {
               <span className="text-xs text-site-text-dim">{t("your-bets-this-round", { defaultValue: "Your bets this round:" })}</span>
               <div className="flex items-center gap-1">
                 <CoinIcon className="w-3.5 h-3.5" />
-                <span className="text-sm font-bold text-red-400">{totalBet}</span>
+                <span className="text-sm font-bold text-yellow-500">{totalBet}</span>
               </div>
             </div>
             <div className="flex flex-wrap gap-1.5">
@@ -206,7 +206,7 @@ export function BaccaratControls({ coins }: Props) {
                 .map(([type, amount]) => (
                   <span
                     key={type}
-                    className="text-[11px] font-bold px-2 py-1 rounded-full bg-red-500/20 text-red-400"
+                    className="text-[11px] font-bold px-2 py-1 rounded-full bg-site-accent-dim text-site-accent"
                   >
                     {type}: {amount}
                   </span>
@@ -253,7 +253,7 @@ export function BaccaratControls({ coins }: Props) {
       <div className="text-center py-4">
         {r && <p className={`text-lg font-bold ${r.color}`}>{r.label}</p>}
         {lastResult?.isNatural && (
-          <p className="text-xs text-red-400 mt-0.5">{t("natural", { defaultValue: "Natural!" })}</p>
+          <p className="text-xs text-site-accent mt-0.5">{t("natural", { defaultValue: "Natural!" })}</p>
         )}
         {payout > 0 && (
           <p className="text-sm text-site-text-dim mt-1 animate-bounce">

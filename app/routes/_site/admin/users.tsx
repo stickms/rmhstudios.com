@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { ArrowLeft, Loader2, Search, CheckCircle, Shield, AlertCircle, Pencil, Check, X, Crown } from 'lucide-react';
+import { ArrowLeft, Loader2, Search, CheckCircle, Shield, AlertCircle, Pencil, Check, X, Crown, Coins } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 
 interface User {
@@ -19,6 +19,7 @@ interface User {
   isAdmin: boolean;
   isVerified: boolean;
   createdAt: string;
+  profile: { coins: number } | null;
   _count: { userBuilds: number; rmharks: number };
 }
 
@@ -116,6 +117,32 @@ function AdminUsersPage() {
     } catch { alert(t("alert-connect-failed", { defaultValue: "Failed to connect to server." })); } finally { setUpdating(null); }
   };
 
+  const setCoins = async (user: User) => {
+    const current = user.profile?.coins ?? 0;
+    const input = prompt(t("prompt-set-coins", { defaultValue: "Set RMH coin balance for this user:" }), String(current));
+    if (input === null) return;
+    const coins = parseInt(input.trim(), 10);
+    if (!Number.isFinite(coins) || coins < 0) {
+      alert(t("alert-invalid-coins", { defaultValue: "Enter a whole number of 0 or more." }));
+      return;
+    }
+    setUpdating(user.id);
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}/set-coins`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ coins }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUsers(prev => prev.map(u => u.id === user.id ? { ...u, profile: { coins: data.coins } } : u));
+      } else {
+        const d = await res.json().catch(() => ({}));
+        alert(t("alert-set-coins-failed", { error: d.error || 'error', defaultValue: 'Failed: {{error}}' }));
+      }
+    } catch { alert(t("alert-connect-failed", { defaultValue: "Failed to connect to server." })); } finally { setUpdating(null); }
+  };
+
   const startEditHandle = (user: User) => { setEditingHandle(user.id); setHandleInput(user.handle || ''); setHandleError(null); };
   const cancelEditHandle = () => { setEditingHandle(null); setHandleInput(''); setHandleError(null); };
 
@@ -155,7 +182,7 @@ function AdminUsersPage() {
             <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 text-xs font-semibold text-site-text-dim uppercase tracking-wider">
               <div>{t("col-user", { defaultValue: "User" })}</div>
               <div className="w-20 text-center">{t("col-verified", { defaultValue: "Verified" })}</div>
-              <div className="w-20 text-center">{t("col-admin", { defaultValue: "Admin" })}</div>
+              <div className="w-28 text-center">{t("col-actions", { defaultValue: "Actions" })}</div>
               <div className="w-24 text-right">{t("col-activity", { defaultValue: "Activity" })}</div>
             </div>
           </div>
@@ -225,7 +252,10 @@ function AdminUsersPage() {
                       <CheckCircle className="w-4 h-4" />
                     </button>
                   </div>
-                  <div className="w-20 flex-shrink-0 flex justify-center gap-1">
+                  <div className="w-28 flex-shrink-0 flex justify-center gap-1">
+                    <button onClick={() => setCoins(user)} disabled={updating === user.id} className={`p-1.5 rounded-lg transition-colors border bg-transparent text-site-text-dim border-site-border hover:border-yellow-500/40 hover:text-yellow-400 ${updating === user.id ? 'opacity-50 cursor-not-allowed' : ''}`} title={t("title-set-coins", { coins: user.profile?.coins ?? 0, defaultValue: "Set RMH coins (currently {{coins}})" })}>
+                      <Coins className="w-4 h-4" />
+                    </button>
                     <button onClick={() => grantMembership(user.id)} disabled={updating === user.id} className={`p-1.5 rounded-lg transition-colors border bg-transparent text-site-text-dim border-site-border hover:border-amber-500/40 hover:text-amber-400 ${updating === user.id ? 'opacity-50 cursor-not-allowed' : ''}`} title={t("title-grant-revoke-membership", { defaultValue: "Grant / revoke membership" })}>
                       <Crown className="w-4 h-4" />
                     </button>
@@ -236,6 +266,7 @@ function AdminUsersPage() {
                   <div className="w-24 flex-shrink-0 flex flex-col items-end text-xs text-site-text-dim">
                     <span>{t("user-builds", { count: user._count.userBuilds, defaultValue: "{{count}} builds" })}</span>
                     <span>{t("user-posts", { count: user._count.rmharks, defaultValue: "{{count}} posts" })}</span>
+                    <span className="flex items-center gap-1 text-yellow-500/80"><Coins className="w-3 h-3" />{(user.profile?.coins ?? 0).toLocaleString()}</span>
                   </div>
                 </div>
               )

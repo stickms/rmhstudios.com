@@ -48,7 +48,7 @@ export function HoldemSessionStats() {
                 const net = p.totalChips - p.sessionStats.totalBuyIn;
                 const isMe = p.userId === myUserId;
                 return (
-                  <tr key={p.userId} className={isMe ? 'text-emerald-400' : 'text-site-text'}>
+                  <tr key={p.userId} className={isMe ? 'text-site-accent' : 'text-site-text'}>
                     <td className="py-1 font-bold truncate max-w-20">
                       {isMe ? t("you", { defaultValue: "You" }) : p.userName}
                       {p.sittingOut && <span className="text-orange-400 ml-1 text-[9px]">{t("sitting-out", { defaultValue: "(out)" })}</span>}
@@ -65,7 +65,7 @@ export function HoldemSessionStats() {
                         <CoinIcon className="w-2.5 h-2.5" />
                       </span>
                     </td>
-                    <td className={`text-right py-1 font-bold ${net > 0 ? 'text-emerald-400' : net < 0 ? 'text-red-400' : ''}`}>
+                    <td className={`text-right py-1 font-bold ${net > 0 ? 'text-site-success' : net < 0 ? 'text-site-danger' : ''}`}>
                       {net > 0 ? '+' : ''}{net}
                     </td>
                     <td className="text-right py-1 text-site-text-dim">
