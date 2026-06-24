@@ -11,7 +11,7 @@ export const Route = createFileRoute('/api/coins/bet')({
   POST: async ({ request }) => {
   const ip = getClientIp(request);
   const { allowed, retryAfter } = rateLimit(ip, {
-    limit: 10,
+    limit: 300,
     windowMs: 60_000,
     prefix: "coins-bet",
   });

@@ -56,6 +56,7 @@ export const Route = createFileRoute('/api/admin/users')({
                 isAdmin: true,
                 isVerified: true,
                 createdAt: true,
+                profile: { select: { coins: true } },
                 _count: {
                     select: {
                         userBuilds: true,

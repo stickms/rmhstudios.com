@@ -39,12 +39,12 @@ function CardFace({ card }: { card: Card }) {
       >
         {/* Back */}
         <div
-          className="rounded-lg border border-red-500/30"
+          className="rounded-lg border border-site-accent/40"
           style={{
             position: 'absolute',
             inset: 0,
             backfaceVisibility: 'hidden',
-            background: 'linear-gradient(135deg, #7f1d1d, #450a0a)',
+            background: 'linear-gradient(135deg, var(--site-accent), var(--site-accent-hover))',
           }}
         />
         {/* Front */}
@@ -68,9 +68,9 @@ function CardFace({ card }: { card: Card }) {
 function CardBack() {
   return (
     <div
-      className="shrink-0 w-11 h-15 sm:w-13 sm:h-18 rounded-lg border border-red-500/30"
+      className="shrink-0 w-11 h-15 sm:w-13 sm:h-18 rounded-lg border border-site-accent/40"
       style={{
-        background: 'linear-gradient(135deg, #7f1d1d, #450a0a)',
+        background: 'linear-gradient(135deg, var(--site-accent), var(--site-accent-hover))',
       }}
     />
   );
@@ -123,7 +123,7 @@ function HandDisplay({ cards, label, value, natural, showValue }: {
         <div className="flex flex-col items-center gap-0.5">
           <span className="text-xl sm:text-2xl font-bold text-site-text font-mono">{value}</span>
           {natural && (
-            <span className="text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 uppercase tracking-wider">
+            <span className="text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full bg-site-accent-dim text-site-accent uppercase tracking-wider">
               {t("natural", { defaultValue: "Natural" })}
             </span>
           )}
@@ -251,15 +251,15 @@ export function BaccaratTable() {
       {/* Dealing indicator */}
       {(tablePhase === 'dealing' || tablePhase === 'drawing') && (
         <div className="text-center">
-          <span className="text-sm text-red-400 font-bold animate-pulse">
+          <span className="text-sm text-site-accent font-bold animate-pulse">
             {tablePhase === 'dealing' ? t("dealing", { defaultValue: "Dealing..." }) : t("drawing-third-card", { defaultValue: "Drawing third card..." })}
           </span>
         </div>
       )}
 
       {/* Hands — responsive gap and padding */}
-      <div className={`flex items-start justify-center gap-4 sm:gap-10 p-3 sm:p-5 rounded-xl bg-red-900/20 border border-red-700/20 min-h-28 sm:min-h-32 w-full transition-all ${
-        tablePhase === 'dealing' || tablePhase === 'drawing' ? 'ring-1 ring-red-500/30' : ''
+      <div className={`flex items-start justify-center gap-4 sm:gap-10 p-3 sm:p-5 rounded-xl bg-site-bg-subtle border border-site-border min-h-28 sm:min-h-32 w-full transition-all ${
+        tablePhase === 'dealing' || tablePhase === 'drawing' ? 'ring-1 ring-site-accent/40' : ''
       }`}>
         <HandDisplay
           cards={playerHand}
@@ -270,9 +270,9 @@ export function BaccaratTable() {
         />
 
         <div className="flex flex-col items-center justify-center py-3 sm:py-4">
-          <div className="w-px h-8 sm:h-12 bg-red-700/30" />
+          <div className="w-px h-8 sm:h-12 bg-site-border" />
           <span className="text-[10px] text-site-text-dim font-bold my-1">{t("vs", { defaultValue: "VS" })}</span>
-          <div className="w-px h-8 sm:h-12 bg-red-700/30" />
+          <div className="w-px h-8 sm:h-12 bg-site-border" />
         </div>
 
         <HandDisplay
@@ -296,17 +296,17 @@ export function BaccaratTable() {
                 <div
                   key={p.userId}
                   className={`flex flex-col gap-1 p-2 rounded-lg border ${
-                    isMe ? 'bg-red-500/5 border-red-500/20' : 'bg-site-surface/50 border-site-border/50'
+                    isMe ? 'bg-site-accent-dim border-site-accent/30' : 'bg-site-surface/50 border-site-border/50'
                   }`}
                 >
                   <div className="flex items-center gap-1.5">
                     {p.avatarUrl && <img src={p.avatarUrl} alt="" className="w-4 h-4 rounded-full" />}
-                    <span className={`text-xs font-bold truncate max-w-20 ${isMe ? 'text-red-400' : 'text-site-text'}`}>
+                    <span className={`text-xs font-bold truncate max-w-20 ${isMe ? 'text-site-accent' : 'text-site-text'}`}>
                       {isMe ? t("you", { defaultValue: "You" }) : p.userName}
                     </span>
                     <div className="flex items-center gap-0.5 ml-auto">
                       <CoinIcon className="w-3 h-3" />
-                      <span className="text-[10px] font-bold text-red-400">{p.totalBetThisRound}</span>
+                      <span className="text-[10px] font-bold text-yellow-500">{p.totalBetThisRound}</span>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-1">

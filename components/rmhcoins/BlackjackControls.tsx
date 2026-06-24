@@ -114,7 +114,7 @@ export function BlackjackControls({ coins }: Props) {
         {countdown !== null && (
           <div className="text-center">
             <span className="text-sm text-site-text-dim">{t("betting-closes-in", { defaultValue: "Betting closes in " })}</span>
-            <span className={`font-bold text-lg tabular-nums ${isLow ? 'text-yellow-500 animate-pulse' : 'text-yellow-400'}`}>
+            <span className={`font-bold text-lg tabular-nums ${isLow ? 'text-site-danger animate-pulse' : 'text-site-accent'}`}>
               {countdown}s
             </span>
           </div>
@@ -122,7 +122,7 @@ export function BlackjackControls({ coins }: Props) {
 
         {hasBet ? (
           <div className="text-center py-2">
-            <p className="text-sm text-emerald-400 font-bold">
+            <p className="text-sm text-site-success font-bold">
               {t("bet-placed", { defaultValue: "Bet placed: {{coins}} coins", coins: myPlayer?.bet })}
             </p>
             <p className="text-xs text-site-text-dim mt-1">{t("waiting-other-players", { defaultValue: "Waiting for other players..." })}</p>
@@ -138,7 +138,7 @@ export function BlackjackControls({ coins }: Props) {
                   max={coins}
                   value={betInput}
                   onChange={(e) => setBetInput(e.target.value)}
-                  className="w-full bg-site-surface border border-site-border rounded-xl px-3 py-2.5 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500/50"
+                  className="w-full bg-site-surface border border-site-border rounded-xl px-3 py-2.5 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-site-accent/40"
                 />
                 <CoinIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" />
               </div>
@@ -157,7 +157,8 @@ export function BlackjackControls({ coins }: Props) {
             <Button
               onClick={handlePlaceBet}
               disabled={coins < 1}
-              className="w-full min-h-11 bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-xl"
+              variant="accent"
+              className="w-full min-h-11 font-bold rounded-xl text-base"
             >
               {t("place-bet", { defaultValue: "Place Bet" })}
             </Button>
@@ -184,7 +185,7 @@ export function BlackjackControls({ coins }: Props) {
         <div className="text-center text-site-text-dim py-4">
           <p className="text-sm">{t("dealer-ace-insurance-others", { defaultValue: "Dealer showing Ace — Insurance offered to other players..." })}</p>
           {insCountdown !== null && (
-            <span className="text-xs text-yellow-500">{insCountdown}s</span>
+            <span className="text-xs text-site-accent">{insCountdown}s</span>
           )}
         </div>
       );
@@ -193,7 +194,7 @@ export function BlackjackControls({ coins }: Props) {
     return (
       <div className="flex flex-col gap-3">
         <div className="text-center">
-          <p className="text-sm font-bold text-yellow-500">{t("insurance-question", { defaultValue: "Insurance?" })}</p>
+          <p className="text-sm font-bold text-site-accent">{t("insurance-question", { defaultValue: "Insurance?" })}</p>
           <p className="text-xs text-site-text-dim mt-1">
             {t("insurance-description", { defaultValue: "Dealer showing Ace. Insurance costs {{cost}} coins (half your bet). Pays 2:1 if dealer has blackjack.", cost: insuranceCost })}
           </p>
@@ -203,19 +204,20 @@ export function BlackjackControls({ coins }: Props) {
         </div>
 
         {alreadyDecided ? (
-          <p className="text-sm text-emerald-400 text-center font-bold">{t("insurance-taken", { defaultValue: "Insurance taken!" })}</p>
+          <p className="text-sm text-site-success text-center font-bold">{t("insurance-taken", { defaultValue: "Insurance taken!" })}</p>
         ) : (
           <div className="grid grid-cols-2 gap-2">
             <Button
               onClick={() => emit(C2S.TAKE_INSURANCE)}
               disabled={!canAffordInsurance}
-              className="min-h-11 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl"
+              variant="accent"
+              className="min-h-11 font-bold rounded-xl"
             >
               {t("take-insurance", { defaultValue: "Take ({{cost}})", cost: insuranceCost })}
             </Button>
             <Button
               onClick={() => emit(C2S.DECLINE_INSURANCE)}
-              className="min-h-11 bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-xl"
+              className="min-h-11 bg-site-surface-active hover:bg-site-surface-hover text-site-text border border-site-border font-bold rounded-xl"
             >
               {t("no-thanks", { defaultValue: "No Thanks" })}
             </Button>
@@ -234,7 +236,7 @@ export function BlackjackControls({ coins }: Props) {
 
     return (
       <div className="flex flex-col gap-3">
-        <p className="text-sm text-center text-yellow-500 font-bold animate-pulse">{t("your-turn", { defaultValue: "Your turn!" })}</p>
+        <p className="text-sm text-center text-site-accent font-bold animate-pulse">{t("your-turn", { defaultValue: "Your turn!" })}</p>
         <div className={`grid ${gridCols} gap-2`}>
           <Button
             onClick={() => emit(C2S.HIT)}
@@ -251,7 +253,7 @@ export function BlackjackControls({ coins }: Props) {
           {canDoubleDown && (
             <Button
               onClick={() => emit(C2S.DOUBLE_DOWN)}
-              className="min-h-12 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-sm"
+              className="min-h-12 bg-site-accent hover:bg-site-accent-hover text-site-accent-fg font-bold rounded-xl text-sm"
             >
               {t("double", { defaultValue: "Double" })}
             </Button>
@@ -303,10 +305,10 @@ export function BlackjackControls({ coins }: Props) {
     }
 
     const resultText: Record<string, { label: string; color: string }> = {
-      blackjack: { label: t("result-blackjack", { defaultValue: "Blackjack! (3:2)" }), color: 'text-yellow-400' },
-      win: { label: t("result-win", { defaultValue: "You win!" }), color: 'text-emerald-400' },
+      blackjack: { label: t("result-blackjack", { defaultValue: "Blackjack! (3:2)" }), color: 'text-site-accent' },
+      win: { label: t("result-win", { defaultValue: "You win!" }), color: 'text-site-success' },
       push: { label: t("result-push", { defaultValue: "Push" }), color: 'text-blue-400' },
-      lose: { label: t("result-lose", { defaultValue: "You lose" }), color: 'text-red-400' },
+      lose: { label: t("result-lose", { defaultValue: "You lose" }), color: 'text-site-danger' },
     };
 
     const r = resultText[myResult.result] ?? { label: '', color: '' };

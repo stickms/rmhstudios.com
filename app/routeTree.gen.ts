@@ -446,6 +446,7 @@ import { Route as ApiRideshareRidesIdSyncRouteImport } from './routes/api/ridesh
 import { Route as ApiRideshareRidesIdRateRouteImport } from './routes/api/rideshare/rides/$id/rate'
 import { Route as ApiRideshareRidesIdMessagesRouteImport } from './routes/api/rideshare/rides/$id/messages'
 import { Route as ApiAdminUsersIdStrikeRouteImport } from './routes/api/admin/users/$id/strike'
+import { Route as ApiAdminUsersIdSetCoinsRouteImport } from './routes/api/admin/users/$id/set-coins'
 import { Route as ApiAdminUsersIdGrantMembershipRouteImport } from './routes/api/admin/users/$id/grant-membership'
 import { Route as ApiAdminUsersIdBanRouteImport } from './routes/api/admin/users/$id/ban'
 import { Route as ApiAdminPredictionsIdResolveRouteImport } from './routes/api/admin/predictions/$id/resolve'
@@ -2696,6 +2697,11 @@ const ApiAdminUsersIdStrikeRoute = ApiAdminUsersIdStrikeRouteImport.update({
   path: '/$id/strike',
   getParentRoute: () => ApiAdminUsersRoute,
 } as any)
+const ApiAdminUsersIdSetCoinsRoute = ApiAdminUsersIdSetCoinsRouteImport.update({
+  id: '/$id/set-coins',
+  path: '/$id/set-coins',
+  getParentRoute: () => ApiAdminUsersRoute,
+} as any)
 const ApiAdminUsersIdGrantMembershipRoute =
   ApiAdminUsersIdGrantMembershipRouteImport.update({
     id: '/$id/grant-membership',
@@ -3187,6 +3193,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/predictions/$id/resolve': typeof ApiAdminPredictionsIdResolveRoute
   '/api/admin/users/$id/ban': typeof ApiAdminUsersIdBanRoute
   '/api/admin/users/$id/grant-membership': typeof ApiAdminUsersIdGrantMembershipRoute
+  '/api/admin/users/$id/set-coins': typeof ApiAdminUsersIdSetCoinsRoute
   '/api/admin/users/$id/strike': typeof ApiAdminUsersIdStrikeRoute
   '/api/rideshare/rides/$id/messages': typeof ApiRideshareRidesIdMessagesRoute
   '/api/rideshare/rides/$id/rate': typeof ApiRideshareRidesIdRateRoute
@@ -3612,6 +3619,7 @@ export interface FileRoutesByTo {
   '/api/admin/predictions/$id/resolve': typeof ApiAdminPredictionsIdResolveRoute
   '/api/admin/users/$id/ban': typeof ApiAdminUsersIdBanRoute
   '/api/admin/users/$id/grant-membership': typeof ApiAdminUsersIdGrantMembershipRoute
+  '/api/admin/users/$id/set-coins': typeof ApiAdminUsersIdSetCoinsRoute
   '/api/admin/users/$id/strike': typeof ApiAdminUsersIdStrikeRoute
   '/api/rideshare/rides/$id/messages': typeof ApiRideshareRidesIdMessagesRoute
   '/api/rideshare/rides/$id/rate': typeof ApiRideshareRidesIdRateRoute
@@ -4063,6 +4071,7 @@ export interface FileRoutesById {
   '/api/admin/predictions/$id/resolve': typeof ApiAdminPredictionsIdResolveRoute
   '/api/admin/users/$id/ban': typeof ApiAdminUsersIdBanRoute
   '/api/admin/users/$id/grant-membership': typeof ApiAdminUsersIdGrantMembershipRoute
+  '/api/admin/users/$id/set-coins': typeof ApiAdminUsersIdSetCoinsRoute
   '/api/admin/users/$id/strike': typeof ApiAdminUsersIdStrikeRoute
   '/api/rideshare/rides/$id/messages': typeof ApiRideshareRidesIdMessagesRoute
   '/api/rideshare/rides/$id/rate': typeof ApiRideshareRidesIdRateRoute
@@ -4514,6 +4523,7 @@ export interface FileRouteTypes {
     | '/api/admin/predictions/$id/resolve'
     | '/api/admin/users/$id/ban'
     | '/api/admin/users/$id/grant-membership'
+    | '/api/admin/users/$id/set-coins'
     | '/api/admin/users/$id/strike'
     | '/api/rideshare/rides/$id/messages'
     | '/api/rideshare/rides/$id/rate'
@@ -4939,6 +4949,7 @@ export interface FileRouteTypes {
     | '/api/admin/predictions/$id/resolve'
     | '/api/admin/users/$id/ban'
     | '/api/admin/users/$id/grant-membership'
+    | '/api/admin/users/$id/set-coins'
     | '/api/admin/users/$id/strike'
     | '/api/rideshare/rides/$id/messages'
     | '/api/rideshare/rides/$id/rate'
@@ -5389,6 +5400,7 @@ export interface FileRouteTypes {
     | '/api/admin/predictions/$id/resolve'
     | '/api/admin/users/$id/ban'
     | '/api/admin/users/$id/grant-membership'
+    | '/api/admin/users/$id/set-coins'
     | '/api/admin/users/$id/strike'
     | '/api/rideshare/rides/$id/messages'
     | '/api/rideshare/rides/$id/rate'
@@ -8717,6 +8729,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminUsersIdStrikeRouteImport
       parentRoute: typeof ApiAdminUsersRoute
     }
+    '/api/admin/users/$id/set-coins': {
+      id: '/api/admin/users/$id/set-coins'
+      path: '/$id/set-coins'
+      fullPath: '/api/admin/users/$id/set-coins'
+      preLoaderRoute: typeof ApiAdminUsersIdSetCoinsRouteImport
+      parentRoute: typeof ApiAdminUsersRoute
+    }
     '/api/admin/users/$id/grant-membership': {
       id: '/api/admin/users/$id/grant-membership'
       path: '/$id/grant-membership'
@@ -9565,12 +9584,14 @@ const ApiAdminReportsRouteWithChildren = ApiAdminReportsRoute._addFileChildren(
 interface ApiAdminUsersRouteChildren {
   ApiAdminUsersIdBanRoute: typeof ApiAdminUsersIdBanRoute
   ApiAdminUsersIdGrantMembershipRoute: typeof ApiAdminUsersIdGrantMembershipRoute
+  ApiAdminUsersIdSetCoinsRoute: typeof ApiAdminUsersIdSetCoinsRoute
   ApiAdminUsersIdStrikeRoute: typeof ApiAdminUsersIdStrikeRoute
 }
 
 const ApiAdminUsersRouteChildren: ApiAdminUsersRouteChildren = {
   ApiAdminUsersIdBanRoute: ApiAdminUsersIdBanRoute,
   ApiAdminUsersIdGrantMembershipRoute: ApiAdminUsersIdGrantMembershipRoute,
+  ApiAdminUsersIdSetCoinsRoute: ApiAdminUsersIdSetCoinsRoute,
   ApiAdminUsersIdStrikeRoute: ApiAdminUsersIdStrikeRoute,
 }
 

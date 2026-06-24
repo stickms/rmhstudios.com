@@ -18,7 +18,7 @@ export const Route = createFileRoute('/api/predictions/$id/trade')({
 
           const ip = getClientIp(request);
           const { allowed, retryAfter } = rateLimit(`${userId}:${ip}`, {
-            limit: 20,
+            limit: 300,
             windowMs: 60_000,
             prefix: 'prediction-trade',
           });

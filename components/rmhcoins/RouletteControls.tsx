@@ -20,8 +20,8 @@ const CHIP_VALUES = [1, 5, 25, 100, 500];
 const QUICK_BETS: { type: BetType; label: string; color: string }[] = [
   { type: 'red', label: 'Red', color: 'bg-red-600 hover:bg-red-500 text-white' },
   { type: 'black', label: 'Black', color: 'bg-gray-800 hover:bg-gray-700 text-white' },
-  { type: 'odd', label: 'Odd', color: 'bg-violet-700 hover:bg-violet-600 text-white' },
-  { type: 'even', label: 'Even', color: 'bg-violet-700 hover:bg-violet-600 text-white' },
+  { type: 'odd', label: 'Odd', color: 'bg-site-accent hover:bg-site-accent-hover text-site-accent-fg' },
+  { type: 'even', label: 'Even', color: 'bg-site-accent hover:bg-site-accent-hover text-site-accent-fg' },
   { type: 'low', label: '1-18', color: 'bg-site-surface hover:bg-site-surface-hover text-site-text border border-site-border' },
   { type: 'high', label: '19-36', color: 'bg-site-surface hover:bg-site-surface-hover text-site-text border border-site-border' },
 ];
@@ -109,7 +109,7 @@ export function RouletteControls({ coins }: Props) {
         {countdown !== null && (
           <div className="text-center">
             <span className="text-sm text-site-text-dim">{t("betting-closes-in", { defaultValue: "Betting closes in " })}</span>
-            <span className={`font-bold text-lg tabular-nums ${isLow ? 'text-violet-300 animate-pulse' : 'text-violet-400'}`}>
+            <span className={`font-bold text-lg tabular-nums ${isLow ? 'text-site-danger animate-pulse' : 'text-site-accent'}`}>
               {countdown}s
             </span>
           </div>
@@ -126,8 +126,8 @@ export function RouletteControls({ coins }: Props) {
                 disabled={val > coins}
                 className={`relative w-10 h-10 sm:w-11 sm:h-11 rounded-full font-bold text-xs shrink-0 transition-all active:scale-90 ${
                   selectedChip === val
-                    ? 'bg-violet-600 text-white ring-2 ring-violet-400 ring-offset-1 ring-offset-site-bg'
-                    : 'bg-site-surface border-2 border-site-border text-site-text hover:border-violet-500/50'
+                    ? 'bg-site-accent text-site-accent-fg ring-2 ring-site-accent ring-offset-1 ring-offset-site-bg'
+                    : 'bg-site-surface border-2 border-site-border text-site-text hover:border-site-accent/50'
                 } disabled:opacity-30 disabled:cursor-not-allowed`}
               >
                 {val}
@@ -161,7 +161,7 @@ export function RouletteControls({ coins }: Props) {
               <span className="text-xs text-site-text-dim">{t("your-bets", { defaultValue: "Your bets" })}</span>
               <div className="flex items-center gap-1">
                 <CoinIcon className="w-3.5 h-3.5" />
-                <span className="text-sm font-bold text-violet-400">{totalBet}</span>
+                <span className="text-sm font-bold text-yellow-500">{totalBet}</span>
               </div>
             </div>
             {stagedBets.length > 0 && (
@@ -169,7 +169,7 @@ export function RouletteControls({ coins }: Props) {
                 {stagedBets.map((bet, i) => (
                   <span
                     key={i}
-                    className="inline-flex items-center gap-0.5 text-[10px] bg-violet-600/20 text-violet-300 rounded-full px-1.5 py-0.5"
+                    className="inline-flex items-center gap-0.5 text-[10px] bg-site-accent-dim text-site-accent rounded-full px-1.5 py-0.5"
                   >
                     {bet.type === 'straight' ? `#${numberLabel(bet.numbers[0])}` : bet.type}: {bet.amount}
                   </span>
@@ -197,7 +197,7 @@ export function RouletteControls({ coins }: Props) {
   if (tablePhase === 'spinning') {
     return (
       <div className="text-center text-site-text-dim py-4">
-        <p className="text-sm font-bold text-violet-400 animate-pulse">
+        <p className="text-sm font-bold text-site-accent animate-pulse">
           {t("no-more-bets-spinning", { defaultValue: "No more bets! Spinning..." })}
         </p>
       </div>
@@ -232,7 +232,7 @@ export function RouletteControls({ coins }: Props) {
           <div className="text-center">
             {myPayout.netGain > 0 ? (
               <>
-                <p className="text-lg font-bold text-emerald-400">{t("you-win", { defaultValue: "You win!" })}</p>
+                <p className="text-lg font-bold text-site-success">{t("you-win", { defaultValue: "You win!" })}</p>
                 <div className="flex items-center justify-center gap-1 mt-1">
                   <CoinIcon className="w-4 h-4" />
                   <span className="text-sm text-site-text-dim">+{myPayout.payout} {t("coins", { defaultValue: "coins" })}</span>
@@ -241,11 +241,11 @@ export function RouletteControls({ coins }: Props) {
             ) : myPayout.netGain === 0 ? (
               <p className="text-lg font-bold text-blue-400">{t("push", { defaultValue: "Push" })}</p>
             ) : (
-              <p className="text-lg font-bold text-red-400">{t("better-luck-next-time", { defaultValue: "Better luck next time" })}</p>
+              <p className="text-lg font-bold text-site-danger">{t("better-luck-next-time", { defaultValue: "Better luck next time" })}</p>
             )}
           </div>
         ) : totalBet > 0 ? (
-          <p className="text-sm text-red-400">{t("no-wins-this-round", { defaultValue: "No wins this round" })}</p>
+          <p className="text-sm text-site-danger">{t("no-wins-this-round", { defaultValue: "No wins this round" })}</p>
         ) : null}
 
         <p className="text-xs text-site-text-dim">{t("next-round-starting-soon", { defaultValue: "Next round starting soon..." })}</p>

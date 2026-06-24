@@ -114,7 +114,7 @@ export function BlackjackGame({ coins, setCoins }: Props) {
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {roomInfo.joinCode && (
             <span className="text-[10px] sm:text-xs text-site-text-dim hidden sm:inline">
-              {t("code-label", { defaultValue: "Code:" })} <span className="font-mono font-bold text-yellow-400">{roomInfo.joinCode}</span>
+              {t("code-label", { defaultValue: "Code:" })} <span className="font-mono font-bold text-site-accent">{roomInfo.joinCode}</span>
             </span>
           )}
           <span className="text-[10px] sm:text-xs text-site-text-dim">
@@ -124,10 +124,16 @@ export function BlackjackGame({ coins, setCoins }: Props) {
         </div>
       </div>
 
-      <div className="max-w-125 mx-auto w-full flex flex-col gap-4">
-        <BlackjackTable />
-        <BlackjackControls coins={coins} />
-        <BlackjackSessionStats />
+      <div className="w-full flex flex-col lg:flex-row lg:items-start gap-4">
+        <div className="flex-1 min-w-0 rounded-xl border border-site-border bg-site-surface/30 p-3 sm:p-5">
+          <BlackjackTable />
+        </div>
+        <div className="w-full lg:w-80 shrink-0 flex flex-col gap-3">
+          <div className="rounded-xl border border-site-border bg-site-surface/30 p-3 sm:p-4">
+            <BlackjackControls coins={coins} />
+          </div>
+          <BlackjackSessionStats />
+        </div>
       </div>
     </div>
   );
