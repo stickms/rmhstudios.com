@@ -19,7 +19,10 @@ export const Route = createFileRoute('/api/admin/library/migrate')({
       POST: async ({ request }) => {
         const session = await requireAdmin(request);
         if (!session) return Response.json({ error: 'Forbidden' }, { status: 403 });
-        const summary = await migrateStaticLibraryToS3();
+        // Fetch the bundled assets from the same origin that served this request
+        // (in prod the files live on the CDN, not the app container's disk).
+        const baseUrl = new URL(request.url).origin;
+        const summary = await migrateStaticLibraryToS3({ baseUrl });
         await logAdminAction(session.user.id, 'library.migrate', {
           targetType: 'LibraryDocument',
           detail: `migrated ${summary.migrated}, skipped ${summary.skipped}, failed ${summary.failed}`,
