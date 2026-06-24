@@ -196,5 +196,11 @@
     "description": "The flagship scientific manifesto and research agenda of RMH Deeplink — a frontier AI lab doing foundational research toward artificial general intelligence, in service of science and humanity.",
     "pages": 136,
     "cover": "rmh-deeplink-thesis.jpg"
+  },
+  "rmh-rideshare-thesis.pdf": {
+    "title": "The Rideshare Thesis",
+    "description": "A 255-page multidisciplinary investigation into RMH Studios Rideshare Trip RS-19000-Δ2 — 19,000 kilometres in two seconds, one passenger, five stars — examined across seven independent lenses (physical, neurological, biological, political, economic, legal, and theological) and found impossible in every one of them. The peak acceleration is about 1.94 million g; the kinetic energy, some 81 megatons. The passenger's sole logged review reads, in full, \"fine.\"",
+    "pages": 255,
+    "cover": "rmh-rideshare-thesis.jpg"
   }
 }
