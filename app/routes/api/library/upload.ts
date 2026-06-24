@@ -8,6 +8,7 @@ import { processLibraryUpload, type UploadDeps } from '@/lib/library/upload';
 import { uploadSlugExists } from '@/lib/library/library.server';
 import { libraryFileKey, libraryCoverKey, libraryPdfUrl } from '@/lib/library/keys';
 import { compressPdfForStorage } from '@/lib/library/compress.server';
+import { logAdminAction } from '@/lib/admin-audit.server';
 
 const COVER_MAX_BYTES = 2 * 1024 * 1024; // 2 MB
 
@@ -107,6 +108,14 @@ export const Route = createFileRoute('/api/library/upload')({
 
           if (!result.ok) {
             return Response.json({ error: result.error }, { status: result.status });
+          }
+          // Admin uploads land in the curated section — record them in the audit log.
+          if (isAdmin) {
+            await logAdminAction(userId, 'library.upload', {
+              targetType: 'LibraryDocument',
+              targetId: id,
+              detail: title.trim().slice(0, 120),
+            });
           }
           return Response.json({ slug: result.slug, url: libraryPdfUrl(id) }, { status: 201 });
         } catch (error) {

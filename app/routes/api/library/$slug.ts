@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { deleteObject } from '@/lib/storage/s3.server';
+import { logAdminAction } from '@/lib/admin-audit.server';
 
 /**
  * DELETE /api/library/$slug — remove an uploaded book (owner or admin only).
@@ -30,6 +31,14 @@ export const Route = createFileRoute('/api/library/$slug')({
         await deleteObject(doc.pdfKey).catch(() => {});
         if (doc.coverKey) await deleteObject(doc.coverKey).catch(() => {});
         await prisma.libraryDocument.delete({ where: { id: doc.id } });
+        // Record admin moderation (deleting a book the admin didn't upload).
+        if (isAdmin && !isOwner) {
+          await logAdminAction(session.user.id, 'library.delete', {
+            targetType: 'LibraryDocument',
+            targetId: doc.id,
+            detail: doc.title.slice(0, 120),
+          });
+        }
         return Response.json({ ok: true });
       },
 

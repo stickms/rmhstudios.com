@@ -5,6 +5,7 @@ import path from "path";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { validateImageBuffer, resolvePathUnder } from "@/lib/slice-it/upload-validation";
 import { optimizeImage } from "@/lib/image-optimize";
+import { logAdminAction } from "@/lib/admin-audit.server";
 
 const BUILD_IMAGE_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 // Build thumbnails render at card size — cap the long edge and store as WebP.
@@ -87,6 +88,11 @@ export const Route = createFileRoute('/api/admin/curated-builds/image')({
     }
 
     const imageUrl = `/api/admin/curated-builds/image/${fileName}`;
+
+    await logAdminAction((session.user as { id: string }).id, 'curated-build.image-upload', {
+      targetType: 'CuratedBuildImage',
+      targetId: fileName,
+    });
 
     return Response.json({ image: imageUrl });
   } catch (error) {

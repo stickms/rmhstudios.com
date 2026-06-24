@@ -14,6 +14,7 @@ import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { updateBuildSchema, adminUpdateBuildSchema } from '@/lib/user-builds-schema';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { getAuthenticatedUser } from '@/lib/rmhcode-auth';
+import { logAdminAction } from '@/lib/admin-audit.server';
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -240,6 +241,15 @@ export const Route = createFileRoute('/api/user-builds/$id')({
       return result;
     });
 
+    // Record admin moderation (editing a build the admin doesn't own).
+    if (isAdmin && build.userId !== userId) {
+      await logAdminAction(userId, 'user-build.edit', {
+        targetType: 'UserBuild',
+        targetId: build.id,
+        detail: `author:${build.userId}`,
+      });
+    }
+
     // Fetch updated tags
     const buildTags = await prisma.buildTag.findMany({
       where: { buildId: build.id },
@@ -295,12 +305,22 @@ export const Route = createFileRoute('/api/user-builds/$id')({
     }
 
     // Check ownership
-    if (build.userId !== userId && !(session?.user as any)?.isAdmin) {
+    const isAdmin = !!(session?.user as any)?.isAdmin;
+    if (build.userId !== userId && !isAdmin) {
       return Response.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
     // Delete build (cascade deletes tags, likes, comments, views)
     await prisma.userBuild.delete({ where: { id: build.id } });
+
+    // Record admin moderation (deleting a build the admin doesn't own).
+    if (isAdmin && build.userId !== userId) {
+      await logAdminAction(userId, 'user-build.delete', {
+        targetType: 'UserBuild',
+        targetId: build.id,
+        detail: `author:${build.userId}`,
+      });
+    }
 
     return Response.json({ success: true });
   } catch (error) {

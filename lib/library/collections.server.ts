@@ -7,6 +7,7 @@
  * collection (their own are "official") and may add any book.
  */
 import { prisma } from '@/lib/prisma.server';
+import { logAdminAction } from '@/lib/admin-audit.server';
 import { getLibraryBook, type LibraryBook } from './library';
 import { mapDocToBook, type LibraryDocRow } from './merge';
 import { slugifyTitle } from './keys';
@@ -20,6 +21,13 @@ import {
 export type Viewer = { id: string; isAdmin: boolean } | null;
 
 export type CollectionResult<T> = { ok: true; value: T } | { ok: false; status: number; error: string };
+
+/** Record collection mutations performed by an admin (best-effort). */
+function auditIfAdmin(viewer: Viewer, action: string, targetId: string, detail?: string): void {
+  if (viewer?.isAdmin) {
+    void logAdminAction(viewer.id, action, { targetType: 'LibraryCollection', targetId, detail });
+  }
+}
 
 const DOC_SELECT = {
   id: true,
@@ -105,16 +113,14 @@ export async function listCollectionsView(viewer: Viewer): Promise<CollectionVie
 
 async function uniqueCollectionSlug(base: string): Promise<string> {
   const root = base || 'series';
-  if (!(await prisma.libraryCollection.findUnique({ where: { slug: root }, select: { id: true } }))) return root;
-  let n = 2;
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
+  const taken = async (slug: string) =>
+    Boolean(await prisma.libraryCollection.findUnique({ where: { slug }, select: { id: true } }));
+  if (!(await taken(root))) return root;
+  for (let n = 2; n < 10000; n++) {
     const candidate = `${root}-${n}`;
-    if (!(await prisma.libraryCollection.findUnique({ where: { slug: candidate }, select: { id: true } }))) {
-      return candidate;
-    }
-    n++;
+    if (!(await taken(candidate))) return candidate;
   }
+  return `${root}-${Date.now()}`;
 }
 
 /** Create a collection owned by the viewer (admins' are "official"). */
@@ -146,6 +152,7 @@ export async function createCollection(
     },
     select: { id: true, slug: true },
   });
+  auditIfAdmin(viewer, 'library.collection.create', created.id, fields.title);
   return { ok: true, value: created };
 }
 
@@ -187,6 +194,7 @@ export async function updateCollection(
   }
   if (Object.keys(data).length === 0) return { ok: false, status: 400, error: 'Nothing to update.' };
   const updated = await prisma.libraryCollection.update({ where: { id }, data, select: { slug: true } });
+  auditIfAdmin(viewer, 'library.collection.update', id, Object.keys(data).join(','));
   return { ok: true, value: updated };
 }
 
@@ -194,6 +202,7 @@ export async function deleteCollection(viewer: Viewer, id: string): Promise<Coll
   const access = await requireManageable(viewer, id);
   if (!access.ok) return access;
   await prisma.libraryCollection.delete({ where: { id } });
+  auditIfAdmin(viewer, 'library.collection.delete', id);
   return { ok: true, value: true };
 }
 
@@ -232,6 +241,7 @@ export async function addItem(viewer: Viewer, id: string, bookSlug: string): Pro
     create: { collectionId: id, bookSlug, position: (max._max.position ?? 0) + 1 },
     update: {},
   });
+  auditIfAdmin(viewer, 'library.collection.add-item', id, bookSlug);
   return { ok: true, value: true };
 }
 
@@ -241,6 +251,7 @@ export async function removeItem(viewer: Viewer, id: string, bookSlug: string): 
   await prisma.libraryCollectionItem
     .delete({ where: { collectionId_bookSlug: { collectionId: id, bookSlug } } })
     .catch(() => {});
+  auditIfAdmin(viewer, 'library.collection.remove-item', id, bookSlug);
   return { ok: true, value: true };
 }
 
@@ -256,5 +267,6 @@ export async function reorderItems(viewer: Viewer, id: string, slugs: string[]):
       }),
     ),
   );
+  auditIfAdmin(viewer, 'library.collection.reorder', id, `${slugs.length} books`);
   return { ok: true, value: true };
 }
