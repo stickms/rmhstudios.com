@@ -196,12 +196,22 @@ services:
     env_file: ${ENV_FILE:-.env.production}
     environment:
       - STATUS_PORT=${PORT_STATUS:-7008}
-      # Public origin the website probe hits (DNS → Apache → active container).
+      # Public origin every user-facing probe goes through (DNS → Cloudflare →
+      # Apache → service), so the dashboard reflects real reachability rather than
+      # internal container health. The website row hits "/" here; the realtime
+      # hubs are probed at <origin>/socket/health, /rmhbox-ws/health and
+      # /rmhtube-ws/health — Apache rewrites those to each service's /health (see
+      # deploy/apache/rmhstudios.conf). cmd/status derives the origin from
+      # STATUS_WEBSITE_URL, so this one value configures them all (e.g. point it
+      # at the staging host on the staging stack).
       - STATUS_WEBSITE_URL=${STATUS_WEBSITE_URL:-https://rmhstudios.com/}
-      - PORT_SOCKET=${PORT_SOCKET:-7001}
-      - PORT_RMHBOX=${PORT_RMHBOX:-7676}
-      - PORT_RMHTUBE=${PORT_RMHTUBE:-7003}
-      - PORT_RECAP=${PORT_RECAP:-7004}
+      # The Go assets origin runs under compose (service `assets` below) but sits
+      # behind the public CDN, so it has no public path — probe it on internal
+      # compose DNS. Keep the port in sync with the assets service.
+      - ASSETS_PORT=${PORT_ASSETS:-7007}
+      # Gateway and RMHmusic are k3s-only (not run under compose), so their
+      # STATUS_*_URL is intentionally left unset — cmd/status omits those rows
+      # rather than probing a service that isn't here.
       # Uptime history persists to the shared db/ volume (mounted at /app/db).
       - STATUS_DATA_DIR=/app/db
     command: ["/app/bin/status"]

@@ -8,25 +8,52 @@ import (
 	"github.com/rmhstudios/rmh-go/internal/status"
 )
 
-// default*URL mirror the corresponding env defaults in main().
+// default*URL mirror the corresponding env defaults in main(): the user-facing
+// realtime hubs are probed through the PUBLIC origin (each hub's health under
+// its WS prefix), while the internal-only services use Service/compose DNS.
 const (
-	defaultSocketURL     = "http://socket:7001/health"
-	defaultRMHBoxURL     = "http://rmhbox:7676/health"
-	defaultRMHTubeURL    = "http://rmhtube:7003/health"
+	publicOrigin         = "https://rmhstudios.com"
+	defaultGatewayURL    = publicOrigin + "/health"
+	defaultSocketURL     = publicOrigin + "/socket/health"
+	defaultRMHMusicURL   = publicOrigin + "/rmhmusic-ws/health"
+	defaultRMHBoxURL     = publicOrigin + "/rmhbox-ws/health"
+	defaultRMHTubeURL    = publicOrigin + "/rmhtube-ws/health"
+	defaultAssetsURL     = "http://assets:7007/health"
 	defaultSupervisorURL = "http://supervisor:9090/health"
 )
 
+// defaultURLs returns the default URL set used by main(), so each test starts
+// from the same baseline and overrides only what it exercises.
+func defaultURLs() probeURLs {
+	return probeURLs{
+		Website:    publicOrigin + "/",
+		Gateway:    defaultGatewayURL,
+		Socket:     defaultSocketURL,
+		RMHMusic:   defaultRMHMusicURL,
+		RMHBox:     defaultRMHBoxURL,
+		RMHTube:    defaultRMHTubeURL,
+		Assets:     defaultAssetsURL,
+		Supervisor: defaultSupervisorURL,
+	}
+}
+
+// httpTargetNames are every HTTP (non-Database) target buildTargets emits.
+var httpTargetNames = []string{
+	"Website", "Gateway", "Realtime / Games", "RMHmusic",
+	"RMHbox", "RMHtube", "Assets", "Background workers",
+}
+
 // TestBuildTargetsOmitsDatabaseWithoutDSN asserts that with DATABASE_URL unset
-// the Database probe target is omitted, and the five HTTP targets are present.
+// the Database probe target is omitted, and the HTTP targets are all present.
 func TestBuildTargetsOmitsDatabaseWithoutDSN(t *testing.T) {
 	t.Setenv("DATABASE_URL", "")
 
-	targets := buildTargets("https://rmhstudios.com/", defaultSocketURL, defaultRMHBoxURL, defaultRMHTubeURL, defaultSupervisorURL, 4*time.Second)
+	targets := buildTargets(defaultURLs(), 4*time.Second)
 
-	if len(targets) != 5 {
-		t.Fatalf("expected 5 targets without DATABASE_URL, got %d", len(targets))
+	if len(targets) != len(httpTargetNames) {
+		t.Fatalf("expected %d targets without DATABASE_URL, got %d", len(httpTargetNames), len(targets))
 	}
-	for _, name := range []string{"Website", "Realtime / Games", "RMHbox", "RMHtube", "Background workers"} {
+	for _, name := range httpTargetNames {
 		if findTarget(targets, name) == nil {
 			t.Fatalf("missing expected target %q", name)
 		}
@@ -42,10 +69,10 @@ func TestBuildTargetsOmitsDatabaseWithoutDSN(t *testing.T) {
 func TestBuildTargetsIncludesDatabaseWithDSN(t *testing.T) {
 	t.Setenv("DATABASE_URL", "postgres://user:pass@localhost:5432/db")
 
-	targets := buildTargets("https://rmhstudios.com/", defaultSocketURL, defaultRMHBoxURL, defaultRMHTubeURL, defaultSupervisorURL, 4*time.Second)
+	targets := buildTargets(defaultURLs(), 4*time.Second)
 
-	if len(targets) != 6 {
-		t.Fatalf("expected 6 targets with DATABASE_URL, got %d", len(targets))
+	if len(targets) != len(httpTargetNames)+1 {
+		t.Fatalf("expected %d targets with DATABASE_URL, got %d", len(httpTargetNames)+1, len(targets))
 	}
 
 	db := findTarget(targets, "Database")
@@ -59,7 +86,7 @@ func TestBuildTargetsIncludesDatabaseWithDSN(t *testing.T) {
 		t.Fatalf("Database description mismatch: %q", db.Description)
 	}
 	// HTTP targets must not have a Probe func.
-	for _, name := range []string{"Website", "Realtime / Games", "RMHbox", "RMHtube", "Background workers"} {
+	for _, name := range httpTargetNames {
 		if tg := findTarget(targets, name); tg != nil && tg.Probe != nil {
 			t.Fatalf("HTTP target %q unexpectedly has a Probe func", name)
 		}
@@ -72,7 +99,7 @@ func TestBuildTargetsIncludesDatabaseWithDSN(t *testing.T) {
 func TestBuildTargetsProbesSupervisorNotRecap(t *testing.T) {
 	t.Setenv("DATABASE_URL", "")
 
-	targets := buildTargets("https://rmhstudios.com/", defaultSocketURL, defaultRMHBoxURL, defaultRMHTubeURL, defaultSupervisorURL, 4*time.Second)
+	targets := buildTargets(defaultURLs(), 4*time.Second)
 
 	bg := findTarget(targets, "Background workers")
 	if bg == nil {
@@ -101,7 +128,9 @@ func TestBuildTargetsSupervisorURLOverride(t *testing.T) {
 	t.Setenv("DATABASE_URL", "")
 
 	const custom = "http://localhost:19090/health"
-	targets := buildTargets("https://rmhstudios.com/", defaultSocketURL, defaultRMHBoxURL, defaultRMHTubeURL, custom, 4*time.Second)
+	urls := defaultURLs()
+	urls.Supervisor = custom
+	targets := buildTargets(urls, 4*time.Second)
 
 	bg := findTarget(targets, "Background workers")
 	if bg == nil || bg.URL != custom {
@@ -109,18 +138,21 @@ func TestBuildTargetsSupervisorURLOverride(t *testing.T) {
 	}
 }
 
-// TestBuildTargetsWSHubURLs asserts the WS-hub targets carry the resolved URLs
-// passed in (compose DNS default → STATUS_<svc>_URL override), so the same
-// binary probes the right hosts under both compose and k3s.
-func TestBuildTargetsWSHubURLs(t *testing.T) {
+// TestBuildTargetsGoServiceURLs asserts every Go-service target carries the
+// resolved URL passed in (compose DNS default → STATUS_<svc>_URL override), so
+// the same binary probes the right hosts under both compose and k3s.
+func TestBuildTargetsGoServiceURLs(t *testing.T) {
 	t.Setenv("DATABASE_URL", "")
 
 	// Defaults (compose DNS) flow through unchanged.
-	targets := buildTargets("https://rmhstudios.com/", defaultSocketURL, defaultRMHBoxURL, defaultRMHTubeURL, defaultSupervisorURL, 4*time.Second)
+	targets := buildTargets(defaultURLs(), 4*time.Second)
 	for _, c := range []struct{ name, want string }{
+		{"Gateway", defaultGatewayURL},
 		{"Realtime / Games", defaultSocketURL},
+		{"RMHmusic", defaultRMHMusicURL},
 		{"RMHbox", defaultRMHBoxURL},
 		{"RMHtube", defaultRMHTubeURL},
+		{"Assets", defaultAssetsURL},
 	} {
 		if tg := findTarget(targets, c.name); tg == nil || tg.URL != c.want {
 			t.Fatalf("%q URL = %+v, want %q", c.name, tg, c.want)
@@ -128,19 +160,69 @@ func TestBuildTargetsWSHubURLs(t *testing.T) {
 	}
 
 	// Overrides (k3s service names) flow through unchanged.
-	const (
-		k8sSocket  = "http://rmhstudios-go-gamehub:7001/health"
-		k8sRMHBox  = "http://rmhstudios-go-rmhbox:7676/health"
-		k8sRMHTube = "http://rmhstudios-go-rmhtube:7003/health"
-	)
-	overridden := buildTargets("https://rmhstudios.com/", k8sSocket, k8sRMHBox, k8sRMHTube, defaultSupervisorURL, 4*time.Second)
+	overridden := buildTargets(probeURLs{
+		Website:    "https://rmhstudios.com/",
+		Gateway:    "http://rmhstudios-go-gateway:7005/health",
+		Socket:     "http://rmhstudios-go-gamehub:7001/health",
+		RMHMusic:   "http://rmhstudios-go-rmhmusic:7002/health",
+		RMHBox:     "http://rmhstudios-go-rmhbox:7676/health",
+		RMHTube:    "http://rmhstudios-go-rmhtube:7003/health",
+		Assets:     "http://rmhstudios-go-assets:7007/health",
+		Supervisor: defaultSupervisorURL,
+	}, 4*time.Second)
 	for _, c := range []struct{ name, want string }{
-		{"Realtime / Games", k8sSocket},
-		{"RMHbox", k8sRMHBox},
-		{"RMHtube", k8sRMHTube},
+		{"Gateway", "http://rmhstudios-go-gateway:7005/health"},
+		{"Realtime / Games", "http://rmhstudios-go-gamehub:7001/health"},
+		{"RMHmusic", "http://rmhstudios-go-rmhmusic:7002/health"},
+		{"RMHbox", "http://rmhstudios-go-rmhbox:7676/health"},
+		{"RMHtube", "http://rmhstudios-go-rmhtube:7003/health"},
+		{"Assets", "http://rmhstudios-go-assets:7007/health"},
 	} {
 		if tg := findTarget(overridden, c.name); tg == nil || tg.URL != c.want {
 			t.Fatalf("override %q URL = %+v, want %q", c.name, tg, c.want)
+		}
+	}
+}
+
+// TestBuildTargetsOmitsK3sOnlyServicesWhenUnset asserts that Gateway and
+// RMHmusic — the k3s-only services that don't run under docker-compose — are
+// omitted when their URL is empty, so compose never shows a false "down".
+func TestBuildTargetsOmitsK3sOnlyServicesWhenUnset(t *testing.T) {
+	t.Setenv("DATABASE_URL", "")
+
+	urls := defaultURLs()
+	urls.Gateway = ""
+	urls.RMHMusic = ""
+	targets := buildTargets(urls, 4*time.Second)
+
+	if findTarget(targets, "Gateway") != nil {
+		t.Fatal("Gateway target must be omitted when STATUS_GATEWAY_URL is unset")
+	}
+	if findTarget(targets, "RMHmusic") != nil {
+		t.Fatal("RMHmusic target must be omitted when STATUS_RMHMUSIC_URL is unset")
+	}
+	// The always-on core services remain.
+	for _, name := range []string{"Website", "Realtime / Games", "RMHbox", "RMHtube", "Assets", "Background workers"} {
+		if findTarget(targets, name) == nil {
+			t.Fatalf("always-on target %q must remain present", name)
+		}
+	}
+}
+
+// TestOriginOf asserts the public-origin derivation used to build the public
+// probe URLs from STATUS_WEBSITE_URL: scheme://host with any path/slash dropped.
+func TestOriginOf(t *testing.T) {
+	cases := []struct{ in, want string }{
+		{"https://rmhstudios.com/", "https://rmhstudios.com"},
+		{"https://rmhstudios.com", "https://rmhstudios.com"},
+		{"https://staging.rmhstudios.com/some/path", "https://staging.rmhstudios.com"},
+		{"http://localhost:7005/", "http://localhost:7005"},
+		// Not a parseable scheme+host → trimmed as-is.
+		{"rmhstudios.com/", "rmhstudios.com"},
+	}
+	for _, c := range cases {
+		if got := originOf(c.in); got != c.want {
+			t.Errorf("originOf(%q) = %q, want %q", c.in, got, c.want)
 		}
 	}
 }

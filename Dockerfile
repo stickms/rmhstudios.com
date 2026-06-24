@@ -150,12 +150,13 @@ ENV DATABASE_URL=${DATABASE_URL} \
     VITE_CDN_BASE_URL=${VITE_CDN_BASE_URL} \
     DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
 
-# Auto-generate library book covers + metadata for any PDF in public/library that
-# doesn't already have them. Idempotent: existing covers (committed under
-# public/library/covers) and data/library-metadata.json are reused, so this only
-# renders what's new. Must run BEFORE `vite build` so the fresh metadata JSON is
-# bundled and the rendered covers are picked up into the public output.
-RUN pnpm run library:metadata
+# NOTE: library cover/metadata generation is NOT run here. The library PDFs are
+# excluded from the build context (.dockerignore), so this stage can't render new
+# covers anyway — it would only ever be a no-op. The deploy generates them on the
+# host before the build (deploy.sh Step 1e), bind-mounting public/ + data/ and
+# committing the fresh data/library-metadata.json into the context that this stage
+# copies. Dropping the duplicate in-image run saves a Node + pdfjs/canvas startup
+# every build.
 
 # Build with cache mounts for faster incremental builds.
 # .vinxi cache is preserved between builds for Vite's module graph cache.
@@ -239,7 +240,9 @@ FROM node:24-alpine AS runner
 
 # curl: container healthchecks (compose) + the deploy's port probes.
 # ca-certificates: outbound TLS (R2 sync, DeepSeek, Discord, etc.).
-RUN apk add --no-cache curl ca-certificates
+# ffmpeg: slice-it transcodes uploaded audio to compressed AAC/.m4a
+# (app/routes/api/slice-it/songs/upload.ts → lib/audio/transcode.server.ts).
+RUN apk add --no-cache curl ca-certificates ffmpeg
 
 WORKDIR /app
 

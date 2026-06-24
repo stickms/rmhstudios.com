@@ -1,16 +1,31 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma.server";
-import { writeFile, mkdir, unlink } from "fs/promises";
-import path from "path";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
-import {
-  validateImageBuffer,
-  resolvePathUnder,
-} from "@/lib/slice-it/upload-validation";
+import { validateImageBuffer } from "@/lib/slice-it/upload-validation";
+import { optimizeImage } from "@/lib/image-optimize";
+import { putObject, deleteObject, s3Configured } from "@/lib/storage/s3.server";
+import { userAvatarKey, userAvatarUrl, userAvatarFilename } from "@/lib/storage/keys";
+import { purgeFromCdn } from "@/lib/storage/cdn.server";
 
 const AVATAR_MAX_BYTES = 5 * 1024 * 1024; // 5 MB per image
 const TOTAL_AVATAR_STORAGE_LIMIT_BYTES = 10 * 1024 * 1024 * 1024; // 10 GB
+// Square avatar, matching the persona-avatar pipeline (lib/personas/avatar.server.ts).
+const AVATAR_SIZE = 512;
+
+/** Best-effort removal of an avatar object from storage + CDN edge, by stored URL. */
+async function removeStoredAvatar(url: string | null | undefined): Promise<void> {
+  if (!url) return;
+  const filename = userAvatarFilename(url);
+  if (!filename) return;
+  const key = userAvatarKey(filename);
+  try {
+    await deleteObject(key);
+  } catch {
+    // Object may already be gone — non-fatal.
+  }
+  await purgeFromCdn(key);
+}
 
 export const Route = createFileRoute('/api/profile/avatar')({
   server: {
@@ -50,13 +65,35 @@ export const Route = createFileRoute('/api/profile/avatar')({
       );
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const validation = validateImageBuffer(buffer);
+    const rawBuffer = Buffer.from(await file.arrayBuffer());
+    const validation = validateImageBuffer(rawBuffer);
     if (!validation.ok) {
       return Response.json({ error: validation.error }, { status: 400 });
     }
 
-    // Enforce 10 GB total avatar storage cap
+    // Avatars are served from object storage (R2) behind cdn.rmhstudios.com — never
+    // local disk. In production, refuse rather than silently fall back to the
+    // local-filesystem backend (which would re-create the disk-bloat problem this
+    // migration removes). Dev without S3 still works via the local fallback.
+    if (process.env.NODE_ENV === "production" && !s3Configured()) {
+      console.error("Avatar upload blocked: object storage (S3_*) is not configured.");
+      return Response.json(
+        { error: "Avatar storage is not configured. Please try again later." },
+        { status: 500 }
+      );
+    }
+
+    // Compress every upload to a square WebP regardless of source format — shrinks
+    // storage/bandwidth and normalizes content type (matches persona avatars).
+    const { buffer, contentType } = await optimizeImage(rawBuffer, {
+      width: AVATAR_SIZE,
+      height: AVATAR_SIZE,
+      format: "webp",
+      quality: 82,
+      autoOrient: true,
+    });
+
+    // Enforce total avatar storage cap against the COMPRESSED size we'll store.
     const { _sum } = await prisma.userProfile.aggregate({
       _sum: { customImageSizeBytes: true },
     });
@@ -68,40 +105,19 @@ export const Route = createFileRoute('/api/profile/avatar')({
       );
     }
 
-    // Delete old avatar file if one exists
+    // Remove the previous avatar object (if any) so storage doesn't accumulate.
     const existingProfile = await prisma.userProfile.findUnique({
       where: { userId: session.user.id },
       select: { customImage: true },
     });
-    if (existingProfile?.customImage?.startsWith("/api/profile/avatar/")) {
-      const oldFilename = existingProfile.customImage.replace(
-        "/api/profile/avatar/",
-        ""
-      );
-      const avatarDir = path.join(process.cwd(), "db", "avatars");
-      const oldPath = resolvePathUnder(avatarDir, oldFilename);
-      if (oldPath) {
-        try {
-          await unlink(oldPath);
-        } catch {
-          // Old file may already be gone
-        }
-      }
-    }
+    await removeStoredAvatar(existingProfile?.customImage);
 
-    // Write new file
-    const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-    const uniqueSuffix =
-      Date.now() + "-" + Math.round(Math.random() * 1e9);
-    const fileName = `${session.user.id}-${uniqueSuffix}-${safeName}`;
-
-    const avatarDir = path.join(process.cwd(), "db", "avatars");
-    await mkdir(avatarDir, { recursive: true });
-    const filePath = path.join(avatarDir, fileName);
-    await writeFile(filePath, buffer);
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    const fileName = `${session.user.id}-${uniqueSuffix}.webp`;
+    await putObject(userAvatarKey(fileName), buffer, contentType);
+    const imageUrl = userAvatarUrl(fileName);
 
     // Upsert UserProfile with custom image
-    const imageUrl = `/api/profile/avatar/${fileName}`;
     await prisma.userProfile.upsert({
       where: { userId: session.user.id },
       create: {
@@ -140,19 +156,8 @@ export const Route = createFileRoute('/api/profile/avatar')({
       return Response.json({ image: null });
     }
 
-    // Delete file from disk
-    if (profile.customImage.startsWith("/api/profile/avatar/")) {
-      const filename = profile.customImage.replace("/api/profile/avatar/", "");
-      const avatarDir = path.join(process.cwd(), "db", "avatars");
-      const filePath = resolvePathUnder(avatarDir, filename);
-      if (filePath) {
-        try {
-          await unlink(filePath);
-        } catch {
-          // File may already be gone
-        }
-      }
-    }
+    // Delete the avatar object from storage + purge the CDN edge.
+    await removeStoredAvatar(profile.customImage);
 
     // Clear custom image in DB
     await prisma.userProfile.update({
@@ -166,7 +171,7 @@ export const Route = createFileRoute('/api/profile/avatar')({
       where: { id: session.user.id },
       select: { image: true },
     });
-    if (user?.image?.startsWith("/api/profile/avatar/")) {
+    if (user?.image && userAvatarFilename(user.image) !== null) {
       await prisma.user.update({
         where: { id: session.user.id },
         data: { image: null },

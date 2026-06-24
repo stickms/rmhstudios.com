@@ -76,3 +76,6 @@ MODULE.bazel.lock
 
 # Local filesystem storage fallback (when S3 is not configured)
 .uploads/
+
+# deploy.sh content-addressed build-skip hashes (host-local)
+.deploy/

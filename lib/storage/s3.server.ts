@@ -26,7 +26,7 @@ function getBucket(): string {
  * filesystem so features that store files (avatars, feed images, rideshare
  * licences, …) still work. In production, set the S3_* vars to use S3.
  */
-function s3Configured(): boolean {
+export function s3Configured(): boolean {
   return Boolean(
     process.env.S3_BUCKET &&
       process.env.S3_ENDPOINT &&

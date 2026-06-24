@@ -1,8 +1,9 @@
 // Command vibe-worker is a long-lived background worker that renders gallery
 // thumbnails for AI-generated vibe pages. It ports server/vibe-worker/index.ts:
 // it polls "vibe_page" rows flagged thumbnailStale, renders each page's HTML in
-// headless Chromium, downscales it, writes the PNG to the shared db/vibe-thumbs
-// volume, and clears the stale flag with optimistic concurrency.
+// headless Chromium, captures a downscaled WebP, uploads it to object storage
+// (vibe-thumbs/<slug>.webp, served via CDN/proxy), and clears the stale flag
+// with optimistic concurrency.
 //
 // There is no client HTTP surface — only /health and /metrics on cfg.MetricsAddr.
 //

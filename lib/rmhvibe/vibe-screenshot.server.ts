@@ -12,11 +12,10 @@
  * clearing the `thumbnailStale` flag) is the caller's job.
  */
 
-import path from 'path';
-import { mkdir, writeFile } from 'fs/promises';
 import type { Browser } from 'playwright';
 import sharp from 'sharp';
-import { THUMB_DIR } from '@/lib/rmhvibe/vibe-thumbs';
+import { putObject } from '@/lib/storage/s3.server';
+import { vibeThumbKey, vibeThumbUrl } from '@/lib/storage/keys';
 
 // Card capture viewport — 16:10 reads well in the grid. The saved PNG is
 // downscaled from this so the served thumbnail stays small.
@@ -133,13 +132,12 @@ export async function captureVibeThumbnail(slug: string, html: string): Promise<
     const raw = await page.screenshot({ type: 'png', clip: { x: 0, y: 0, ...VIEWPORT } });
     const thumb = await sharp(raw)
       .resize({ width: THUMB_WIDTH, withoutEnlargement: true })
-      .png({ compressionLevel: 9 })
+      .webp({ quality: 82 })
       .toBuffer();
 
-    await mkdir(THUMB_DIR, { recursive: true });
-    await writeFile(path.join(THUMB_DIR, `${slug}.png`), thumb);
+    await putObject(vibeThumbKey(slug), thumb, 'image/webp');
 
-    return `/api/vibe/thumb/${slug}?v=${Date.now()}`;
+    return vibeThumbUrl(slug, Date.now());
   } catch {
     return null;
   } finally {
