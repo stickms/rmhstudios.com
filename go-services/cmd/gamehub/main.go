@@ -66,6 +66,13 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/health", httpx.Health("gamehub", nil))
+	// Same health check exposed under the public WS prefix. The edge (Apache
+	// ProxyPass /socket/ → here; the Go gateway by longest-prefix) already routes
+	// /socket/* to this service, so /socket/health is reachable through the real
+	// public path — letting the status page probe user-facing reachability (DNS
+	// → CDN → proxy → service) rather than just internal container health. The
+	// exact "/socket/health" pattern wins over the "/socket/" subtree in ServeMux.
+	mux.HandleFunc("/socket/health", httpx.Health("gamehub", nil))
 	mux.Handle("/metrics", metrics.Handler())
 	mux.HandleFunc("/socket/", hub.ServeWS)
 

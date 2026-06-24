@@ -276,6 +276,16 @@ free_disk_gb() {
     df -BG --output=avail "$root" 2>/dev/null | tail -1 | tr -dc '0-9' || echo 0
 }
 
+# ── Helper: total size (whole GB) of the filesystem backing Docker's data dir ─
+# Used to self-calibrate the build-cache caps to the actual disk so they never
+# exceed available space (the headroom guarantee). Falls back to / .
+total_disk_gb() {
+    local root
+    root=$("$DOCKER_BIN" info --format '{{.DockerRootDir}}' 2>/dev/null)
+    [ -d "$root" ] || root="/"
+    df -BG --output=size "$root" 2>/dev/null | tail -1 | tr -dc '0-9' || echo 0
+}
+
 # ── Helper: total BuildKit build-cache size in whole GB ──────────────────────
 # Reads the real on-disk size from `docker system df` (includes the pnpm-store
 # and vinxi cache MOUNTS, which `builder prune --keep-storage` can't trim
@@ -295,6 +305,46 @@ build_cache_gb() {
             printf("%d", g); found=1
         }
         END { if (!found) print 0 }'
+}
+
+# ── Helper: dynamic build-cache keep target (whole GB) ───────────────────────
+# Self-calibrates to the actual disk: keep as much warm cache as fits while still
+# leaving room for the SHA-tagged images plus the deploy headroom. Floored so a
+# small disk still keeps a little cache for incremental builds. All inputs are
+# env-overridable. This replaces the old hardcoded BUILD_CACHE_KEEP_GB=20, which
+# could exceed total free space on a small disk and let the cache fill it.
+cache_keep_gb() {
+    local total reserve floor headroom keep
+    total=$(total_disk_gb)
+    reserve=${DEPLOY_IMAGE_RESERVE_GB:-12}   # room for current + rollback images
+    floor=${BUILD_CACHE_MIN_KEEP_GB:-3}
+    headroom=${DEPLOY_HEADROOM_GB:-2}
+    keep=$(( total - reserve - headroom ))
+    [ "$keep" -lt "$floor" ] && keep=$floor
+    echo "$keep"
+}
+
+# ── Helper: content hash of everything that affects the Docker image build ────
+# Combines the git tree SHAs of the build-relevant paths, the env-specific build
+# args (ENV_FILE → DATABASE_URL / VITE_* etc.), and the working-tree dirty state.
+# If this is unchanged since the last successful build AND both images still
+# exist, the produced images are byte-identical, so the build can be skipped and
+# the SHA re-tagged instead — turning a no-op / config-only / docs-only redeploy
+# from a full `vite build` into an instant retag. Over-inclusive on purpose
+# (a go-only change rebuilds web too, but BuildKit caches that): never a wrong skip.
+build_inputs_hash() {
+    local p
+    local paths=(app components lib public prisma server go-services scripts \
+        package.json pnpm-lock.yaml vite.config.ts tsconfig.json \
+        tsconfig.server.json Dockerfile docker-compose.yml)
+    {
+        for p in "${paths[@]}"; do
+            git -C "$REPO_DIR" rev-parse "HEAD:$p" 2>/dev/null || echo "missing:$p"
+        done
+        sha256sum "$ENV_FILE" 2>/dev/null | awk '{print $1}'
+        # Any uncommitted change → unique hash, so a dirty-tree deploy never skips.
+        git -C "$REPO_DIR" status --porcelain 2>/dev/null | sha256sum | awk '{print $1}'
+    } | sha256sum | awk '{print $1}'
 }
 
 cleanup() {
@@ -441,18 +491,39 @@ prune_rollback_images
 # warm .vinxi is the difference between an incremental build and a cold one — so
 # the higher the disk headroom we can keep, the more often the build stays fast.
 #
-# These thresholds are env-overridable: on a larger disk, lower DEPLOY_MIN_FREE_GB
-# (wipe less often) to keep the cache warm across more deploys — trading storage
-# for build speed. Defaults assume a generous disk.
-DEPLOY_MIN_FREE_GB="${DEPLOY_MIN_FREE_GB:-6}"
+# Thresholds self-calibrate to the disk (env-overridable):
+#   DEPLOY_HEADROOM_GB      — free space the deploy must always leave (default 2)
+#   DEPLOY_BUILD_RESERVE_GB — transient space a full rebuild needs to materialize
+#                             the new node_modules + .output layers (default 8)
+# We need (headroom + reserve) free to build safely. Below that, escalate:
+# LRU-trim the cache → prune images → full cache wipe → and, if STILL under the
+# headroom, FAIL the deploy rather than fill the disk (the old code would wipe and
+# build anyway, risking an out-of-space mid-build on a small disk).
+DEPLOY_HEADROOM_GB="${DEPLOY_HEADROOM_GB:-2}"
+DEPLOY_BUILD_RESERVE_GB="${DEPLOY_BUILD_RESERVE_GB:-8}"
+DISK_TOTAL_GB=$(total_disk_gb)
+NEED_FREE_GB=$(( DEPLOY_HEADROOM_GB + DEPLOY_BUILD_RESERVE_GB ))
 DISK_FREE_GB=$(free_disk_gb)
-if [ "${DISK_FREE_GB:-0}" -lt "$DEPLOY_MIN_FREE_GB" ]; then
-    log "Low disk: ${DISK_FREE_GB}G free (< ${DEPLOY_MIN_FREE_GB}G) — wiping all build cache and unused images."
-    "$DOCKER_BIN" builder prune -af > /dev/null 2>&1 || true
+log "Disk: ${DISK_FREE_GB}G free of ${DISK_TOTAL_GB}G (need ≥ ${NEED_FREE_GB}G to build and keep ${DEPLOY_HEADROOM_GB}G headroom)."
+if [ "${DISK_FREE_GB:-0}" -lt "$NEED_FREE_GB" ]; then
+    log "Low disk — LRU-trimming build cache (keep ≤ $(cache_keep_gb)G) and pruning unused images."
+    "$DOCKER_BIN" builder prune --keep-storage "$(cache_keep_gb)g" -f > /dev/null 2>&1 || true
     "$DOCKER_BIN" image prune -af > /dev/null 2>&1 || true
-    log "After aggressive prune: $(free_disk_gb)G free."
+    prune_rollback_images
+    DISK_FREE_GB=$(free_disk_gb)
+    if [ "${DISK_FREE_GB:-0}" -lt "$NEED_FREE_GB" ]; then
+        log "Still low (${DISK_FREE_GB}G free) — wiping ALL build cache."
+        "$DOCKER_BIN" builder prune -af > /dev/null 2>&1 || true
+        DISK_FREE_GB=$(free_disk_gb)
+    fi
+    if [ "${DISK_FREE_GB:-0}" -lt "$DEPLOY_HEADROOM_GB" ]; then
+        log "ERROR: only ${DISK_FREE_GB}G free after pruning — refusing to build (would breach the ${DEPLOY_HEADROOM_GB}G headroom)."
+        update_deploy_status fail "insufficient disk to build safely"
+        exit 1
+    fi
+    log "After prune: ${DISK_FREE_GB}G free."
 else
-    log "Disk healthy: ${DISK_FREE_GB}G free (≥ ${DEPLOY_MIN_FREE_GB}G) — keeping build cache warm for a fast incremental build."
+    log "Disk healthy — keeping build cache warm for a fast incremental build."
 fi
 step_done
 
@@ -496,14 +567,40 @@ fi
 # node_modules layer in runner comes from deps stage (lockfile-keyed),
 # not from the builder, so it caches independently of source/env changes.
 step_start "Building Docker images (slim web + full supervisor/status)..."
-# Build BOTH targets: `web` → runner (slim), `supervisor` → runner-full.
-# They share the entire build graph (deps/prisma/server/vite/go), so the second
-# target is just the extra Chromium+git+Go-binary layers on top of the slim
-# image — near-zero added build time on a warm cache.
-if ! dc build web supervisor; then
-    log "ERROR: Docker build failed."
-    update_deploy_status fail "docker build failed"
-    exit 1
+
+# Content-addressed build skip: if nothing that affects the image build has
+# changed since the last successful build AND both images still exist, the
+# rebuild would be a no-op — skip it and just re-tag the SHA. This turns a
+# redeploy of the same commit (or a docs/config-only change) into an instant
+# operation instead of a full `vite build`. Env-keyed so prod/staging don't share
+# a hash. Set DEPLOY_FORCE_BUILD=1 to bypass.
+BUILD_HASH=$(build_inputs_hash)
+HASH_DIR="${REPO_DIR}/.deploy"
+HASH_FILE="${HASH_DIR}/${ENVIRONMENT}-build.hash"
+mkdir -p "$HASH_DIR"
+SKIP_BUILD=0
+if [ "${DEPLOY_FORCE_BUILD:-0}" != "1" ] && [ -n "$BUILD_HASH" ] && [ -f "$HASH_FILE" ] && \
+   [ "$(cat "$HASH_FILE" 2>/dev/null)" = "$BUILD_HASH" ] && \
+   "$DOCKER_BIN" image inspect "${IMAGE_NAME}:latest" >/dev/null 2>&1 && \
+   "$DOCKER_BIN" image inspect "${FULL_IMAGE_NAME}:latest" >/dev/null 2>&1; then
+    SKIP_BUILD=1
+fi
+
+if [ "$SKIP_BUILD" -eq 1 ]; then
+    log "No build-relevant changes since last build (${BUILD_HASH:0:12}) — skipping rebuild, re-tagging existing images."
+else
+    # Build BOTH targets: `web` → runner (slim), `supervisor` → runner-full.
+    # They share the entire build graph (deps/prisma/server/vite/go), so the second
+    # target is just the extra Chromium+git+Go-binary layers on top of the slim
+    # image — near-zero added build time on a warm cache.
+    if ! dc build web supervisor; then
+        log "ERROR: Docker build failed."
+        update_deploy_status fail "docker build failed"
+        exit 1
+    fi
+    # Record the hash only after a SUCCESSFUL build, so a failed build never lets
+    # the next deploy wrongly skip.
+    printf '%s\n' "$BUILD_HASH" > "$HASH_FILE"
 fi
 
 # Tag both images with the git SHA for instant rollback (docker compose up with
@@ -536,6 +633,39 @@ if grep -qE '^VITE_CDN_BASE_URL=.+' "$ENV_FILE" 2>/dev/null; then
     step_done
 else
     log "VITE_CDN_BASE_URL not set — skipping R2 static asset sync (assets served from origin/public)."
+fi
+
+# ── Step 2a.2: Backfill existing avatars to R2 (idempotent) ──────────────────
+# New avatar uploads already go straight to R2 (the built app inlines the CDN
+# base). This migrates any PRE-EXISTING avatars still on the local db/ volume into
+# R2 (user-avatars/<file>) and rewrites UserProfile.customImage to the CDN URL, so
+# db/avatars can later be reclaimed (scripts/reclaim-db.sh). Runs INSIDE the fresh
+# image (node + prod deps + the self-contained script) with the host db/ volume
+# bind-mounted. Idempotent: a no-op once everything is migrated (one DB query).
+# Best-effort + CDN-gated, exactly like the R2 asset sync above.
+if grep -qE '^VITE_CDN_BASE_URL=.+' "$ENV_FILE" 2>/dev/null; then
+    # Resolve the host db/ volume the same way docker-compose does
+    # (${STORAGE_PATH:-./db}, relative paths against the repo dir).
+    STORAGE_PATH_HOST=$(grep -E '^STORAGE_PATH=' "$ENV_FILE" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '"'"'"'')
+    [ -z "$STORAGE_PATH_HOST" ] && STORAGE_PATH_HOST="${REPO_DIR}/db"
+    case "$STORAGE_PATH_HOST" in
+        /*) ;;
+        *) STORAGE_PATH_HOST="${REPO_DIR}/${STORAGE_PATH_HOST#./}" ;;
+    esac
+    if [ -d "$STORAGE_PATH_HOST/avatars" ]; then
+        step_start "Backfilling existing avatars to R2 (idempotent)..."
+        "$DOCKER_BIN" run --rm \
+            --env-file "$ENV_FILE" \
+            -e STORAGE_PATH=/app/db \
+            -v "${STORAGE_PATH_HOST}:/app/db:ro" \
+            --entrypoint node \
+            "${IMAGE_NAME}:latest" \
+            scripts/migrate-avatars-to-r2.ts \
+            || log "WARNING: avatar R2 backfill failed — existing avatars stay on the proxy path until the next run."
+        step_done
+    else
+        log "No ${STORAGE_PATH_HOST}/avatars dir — skipping avatar backfill (nothing local to migrate)."
+    fi
 fi
 
 # ── Step 2b (staging only): Connect DBLab clone to compose network ───────────
@@ -699,48 +829,48 @@ step_done
 # NOTE: web is intentionally NOT checked here — the hotswap in Step 4b already
 # proved the new web container serves traffic before flipping Apache to it, and
 # web now listens on the blue/green port, not the fixed $PORT_WEB.
-step_start "Running health checks..."
-ok=0
-pids=()
+# The supervisor /health gate (the five Go background workers) can take up to
+# ~120s (it covers the DB WaitForReachable before the metrics server binds). It
+# used to run AFTER the port checks, serializing the two waits. Run it as one
+# more background job in the same wave so its long poll OVERLAPS the port checks —
+# total health time becomes max(port, supervisor), not their sum.
+# discord-bot / recap / doctrine-worker / vibe-worker / bot-worker run as
+# goroutines inside the single `supervisor` process; it serves a MERGED
+# /health + /metrics on METRICS_ADDR (:9090), NOT host-published, so we probe it
+# from INSIDE the container with `dc exec`.
+SUPERVISOR_METRICS_PORT="${PORT_SUPERVISOR_METRICS:-9090}"
+check_supervisor() {
+    for _ in $(seq 1 24); do
+        if dc exec -T supervisor curl -fsS "http://localhost:${SUPERVISOR_METRICS_PORT}/health" >/dev/null 2>&1; then
+            return 0
+        fi
+        sleep 5
+    done
+    return 1
+}
 
-check_port "$PORT_SOCKET" &
-pids+=($!)
-check_port "$PORT_RMHBOX" &
-pids+=($!)
-check_port "$PORT_RMHTUBE" &
-pids+=($!)
-check_port "$PORT_STATUS" &
-pids+=($!)
+step_start "Running health checks (ports + supervisor, parallel)..."
+port_ok=0
+sup_ok=0
 
-for pid in "${pids[@]}"; do
-    wait "$pid" || ok=1
+check_port "$PORT_SOCKET"  & p_socket=$!
+check_port "$PORT_RMHBOX"  & p_rmhbox=$!
+check_port "$PORT_RMHTUBE" & p_rmhtube=$!
+check_port "$PORT_STATUS"  & p_status=$!
+check_supervisor           & p_sup=$!
+
+for pid in "$p_socket" "$p_rmhbox" "$p_rmhtube" "$p_status"; do
+    wait "$pid" || port_ok=1
 done
+wait "$p_sup" || sup_ok=1
 
-if [ $ok -ne 0 ]; then
+if [ $port_ok -ne 0 ]; then
     log "--- Container logs ---"
     dc logs --tail=50 2>&1 || true
     update_deploy_status fail "port health check failed"
     exit 1
 fi
-
-# ── Supervisor health gate (the five Go background workers) ──────────────────
-# discord-bot / recap / doctrine-worker / vibe-worker / bot-worker now run as
-# goroutines inside the single `supervisor` process (they were five Node
-# containers — see the FALLBACK blocks in docker-compose.yml). The supervisor
-# serves a MERGED /health + /metrics for all five on METRICS_ADDR (:9090), which
-# is NOT host-published, so we probe it from INSIDE the container with `dc exec`.
-# A failed /health means the whole background tier is down — treat it like the
-# port checks above and fail the deploy. start_period covers the DB wait
-# (WaitForReachable: up to 10×5s) before the metrics server binds, so poll ~120s.
-SUPERVISOR_METRICS_PORT="${PORT_SUPERVISOR_METRICS:-9090}"
-SUP_OK=false
-for i in $(seq 1 24); do
-    if dc exec -T supervisor curl -fsS "http://localhost:${SUPERVISOR_METRICS_PORT}/health" >/dev/null 2>&1; then
-        SUP_OK=true; break
-    fi
-    sleep 5
-done
-if [ "$SUP_OK" = false ]; then
+if [ $sup_ok -ne 0 ]; then
     log "ERROR: supervisor /health did not come up on :${SUPERVISOR_METRICS_PORT} after 120s."
     dc logs --tail=50 supervisor 2>&1 || true
     update_deploy_status fail "supervisor health check failed"
@@ -766,27 +896,24 @@ log "Pruning dangling images..."
 # Keep at most 2 SHA-tagged images per environment for rollback.
 prune_rollback_images
 
-# Cap BuildKit build cache. First do the cheap LRU trim toward the keep-storage
-# target — this keeps the pnpm store, Vinxi, and layer cache mounts around for
-# fast rebuilds. A LARGER target keeps more of the warm cache (notably .vinxi,
-# which is what makes the per-deploy `vite build` incremental rather than cold),
-# trading disk for build speed. Env-overridable for bigger disks.
-BUILD_CACHE_KEEP_GB="${BUILD_CACHE_KEEP_GB:-20}"
+# Cap BuildKit build cache. The keep target self-calibrates to the disk
+# (cache_keep_gb: total − image reserve − headroom) so it can never exceed
+# available space — the old fixed BUILD_CACHE_KEEP_GB=20 was larger than total
+# free on a small disk, so it never trimmed and the cache could fill the disk.
+# The LRU trim keeps the pnpm store + .vinxi warm (incremental `vite build`)
+# while staying under the cap. Still env-overridable via BUILD_CACHE_KEEP_GB.
+BUILD_CACHE_KEEP_GB="${BUILD_CACHE_KEEP_GB:-$(cache_keep_gb)}"
 log "Pruning build cache (LRU trim toward ≤${BUILD_CACHE_KEEP_GB} GB)..."
 "$DOCKER_BIN" builder prune --keep-storage "${BUILD_CACHE_KEEP_GB}g" -f > /dev/null 2>&1 || true
 
-# Hard ceiling to stop slow creep: `--keep-storage` can't trim WITHIN the
-# long-lived pnpm-store / vinxi cache mounts (old package versions and stale
-# module-graph entries pile up inside a single record it won't evict), so the
-# LRU trim above can report "done" while real usage keeps drifting up deploy
-# after deploy. Measure actual size and, if it's still over the ceiling, do a
-# full reset. Costs one cold rebuild next time but guarantees a fixed cap.
-# Set generously (env-overridable) so the warm cache survives across many
-# deploys; only a runaway cache triggers the reset.
-BUILD_CACHE_CEILING_GB="${BUILD_CACHE_CEILING_GB:-30}"
-CACHE_GB=$(build_cache_gb)
-if [ "${CACHE_GB:-0}" -gt "$BUILD_CACHE_CEILING_GB" ]; then
-    log "Build cache ${CACHE_GB}G over ${BUILD_CACHE_CEILING_GB}G ceiling after LRU trim — full reset to stop creep."
+# Headroom enforcement: `--keep-storage` can't trim WITHIN the long-lived
+# pnpm-store / vinxi cache mounts, so real free space can still drift below the
+# headroom deploy after deploy. Measure actual free space and, if it's under the
+# headroom, escalate to a full cache reset (costs one cold rebuild next time but
+# guarantees the disk is never left dangerously full). Replaces the old fixed
+# 30 GB ceiling, which was unreachable on a small disk.
+if [ "$(free_disk_gb)" -lt "$DEPLOY_HEADROOM_GB" ]; then
+    log "Only $(free_disk_gb)G free (< ${DEPLOY_HEADROOM_GB}G headroom) after LRU trim — full cache reset."
     "$DOCKER_BIN" builder prune -af > /dev/null 2>&1 || true
     log "After full reset: $(build_cache_gb)G build cache, $(free_disk_gb)G disk free."
 fi

@@ -53,6 +53,63 @@ export function personaAvatarUrl(filename: string): string {
     : `/api/personas/avatar/${filename}`;
 }
 
+// User-uploaded profile avatars. Migrated off local disk (db/avatars) to object
+// storage so the VPS disk can be reclaimed; served from the CDN in prod.
+export const USER_AVATAR_PREFIX = "user-avatars/";
+
+export function userAvatarKey(filename: string): string {
+  return `${USER_AVATAR_PREFIX}${filename}`;
+}
+
+export function userAvatarUrl(filename: string): string {
+  // Same CDN-vs-proxy split as feed images / persona avatars. The proxy route
+  // (app/routes/api/profile/avatar/$filename.ts) streams from object storage in
+  // dev / no-CDN; prod points straight at cdn.rmhstudios.com.
+  return CDN_BASE
+    ? `${CDN_BASE}/${userAvatarKey(filename)}`
+    : `/api/profile/avatar/${filename}`;
+}
+
+// Vibe-page gallery thumbnails. Rendered by the vibe-worker (Go) / the Node
+// screenshot fallback, stored as WebP in object storage so the db/ volume can be
+// reclaimed; served from the CDN in prod.
+export const VIBE_THUMB_PREFIX = "vibe-thumbs/";
+
+export function vibeThumbKey(slug: string): string {
+  return `${VIBE_THUMB_PREFIX}${slug}.webp`;
+}
+
+export function vibeThumbUrl(slug: string, version: number | string): string {
+  // CDN-vs-proxy split. The `?v=` cache-buster lets us serve immutably while a
+  // re-render still busts the edge/browser cache.
+  return CDN_BASE
+    ? `${CDN_BASE}/${vibeThumbKey(slug)}?v=${version}`
+    : `/api/vibe/thumb/${slug}?v=${version}`;
+}
+
+/**
+ * Extract the safe filename from a stored avatar URL, or null. Accepts every
+ * form the app has produced over time:
+ *  - the Node proxy path `/api/profile/avatar/<filename>` (dev / no CDN, and the
+ *    legacy local-disk form), and
+ *  - the public CDN URL `<CDN_BASE>/user-avatars/<filename>` (R2 + CDN).
+ */
+export function userAvatarFilename(url: string): string | null {
+  const localPrefix = "/api/profile/avatar/";
+  if (url.startsWith(localPrefix)) {
+    const f = url.slice(localPrefix.length);
+    return isSafeFilename(f) ? f : null;
+  }
+  if (CDN_BASE) {
+    const cdnPrefix = `${CDN_BASE}/${USER_AVATAR_PREFIX}`;
+    if (url.startsWith(cdnPrefix)) {
+      const f = url.slice(cdnPrefix.length);
+      return isSafeFilename(f) ? f : null;
+    }
+  }
+  return null;
+}
+
 /**
  * Extract the safe filename from a stored feed-image URL, or null if it isn't
  * one. Accepts both forms the app produces:

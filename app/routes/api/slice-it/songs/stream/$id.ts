@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { readFile, stat } from "fs/promises";
 import { createReadStream } from "fs";
 import { resolvePathUnder } from "@/lib/slice-it/upload-validation";
+import { audioContentTypeForFilename } from "@/lib/audio/transcode.server";
 import path from "path";
 
 export const Route = createFileRoute('/api/slice-it/songs/stream/$id')({
@@ -47,6 +48,7 @@ export const Route = createFileRoute('/api/slice-it/songs/stream/$id')({
     // Implementing basic range handling for audio seeking support is good practice
     const stats = await stat(filePath);
     const fileSize = stats.size;
+    const contentType = audioContentTypeForFilename(song.audioUrl);
     const range = request.headers.get("range");
 
     if (range) {
@@ -79,7 +81,7 @@ export const Route = createFileRoute('/api/slice-it/songs/stream/$id')({
           "Content-Range": `bytes ${start}-${end}/${fileSize}`,
           "Accept-Ranges": "bytes",
           "Content-Length": chunksize.toString(),
-          "Content-Type": "audio/mpeg", // Or detect type
+          "Content-Type": contentType,
         },
       });
     } else {
@@ -87,7 +89,7 @@ export const Route = createFileRoute('/api/slice-it/songs/stream/$id')({
         return new Response(fileBuffer, {
             headers: {
                 "Content-Length": fileSize.toString(),
-                "Content-Type": "audio/mpeg",
+                "Content-Type": contentType,
             }
         });
     }

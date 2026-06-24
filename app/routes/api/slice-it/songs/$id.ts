@@ -5,7 +5,11 @@ import { prisma } from "@/lib/prisma.server";
 import { unlink, writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { resolvePathUnder, validateImageBuffer } from "@/lib/slice-it/upload-validation";
+import { optimizeImage } from "@/lib/image-optimize";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+
+// Match the upload route: covers are stored as 1024px square WebP.
+const COVER_SIZE = 1024;
 
 export const Route = createFileRoute('/api/slice-it/songs/$id')({
   server: {
@@ -66,13 +70,19 @@ export const Route = createFileRoute('/api/slice-it/songs/$id')({
                     { status: 400 }
                 );
             }
-            const safeCoverName = coverFile.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+            const { buffer: coverWebp } = await optimizeImage(coverBuffer, {
+                width: COVER_SIZE,
+                height: COVER_SIZE,
+                format: "webp",
+                quality: 82,
+                autoOrient: true,
+            });
             const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-            const coverFileName = `${uniqueSuffix}-cover-${safeCoverName}`;
+            const coverFileName = `${uniqueSuffix}-cover.webp`;
             const coverDir = path.join(process.cwd(), "db", "music", "covers");
             await mkdir(coverDir, { recursive: true });
             const coverPath = path.join(coverDir, coverFileName);
-            await writeFile(coverPath, coverBuffer);
+            await writeFile(coverPath, coverWebp);
             coverUrl = `/api/slice-it/songs/cover/${coverFileName}`;
         }
 

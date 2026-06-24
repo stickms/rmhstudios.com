@@ -5,7 +5,13 @@ import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { validateAudioBuffer, validateImageBuffer } from "@/lib/slice-it/upload-validation";
+import { optimizeImage } from "@/lib/image-optimize";
+import { transcodeAudioToAac } from "@/lib/audio/transcode.server";
 import decode from "audio-decode";
+
+// Album covers are display-only — a 1024px square WebP is plenty and a fraction
+// of the size of a raw PNG/JPEG upload.
+const COVER_SIZE = 1024;
 import { BeatDetector } from "@/lib/audio/BeatDetector";
 
 const TOTAL_STORAGE_LIMIT_BYTES = 10 * 1024 * 1024 * 1024; // 10 GB
@@ -87,26 +93,42 @@ export const Route = createFileRoute('/api/slice-it/songs/upload')({
         const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
         const uniqueSuffix =
             Date.now() + "-" + Math.round(Math.random() * 1e9);
-        const fileName = `${uniqueSuffix}-${safeName}`;
+
+        // Transcode to compressed AAC/.m4a (much smaller than raw WAV/FLAC, and
+        // re-compresses bloated MP3s). If ffmpeg is unavailable (local dev), fall
+        // back to storing the original bytes so uploads still work.
+        let storedBuffer: Buffer = buffer;
+        let storedExt = path.extname(safeName) || ".bin";
+        try {
+            const transcoded = await transcodeAudioToAac(buffer);
+            storedBuffer = transcoded.buffer;
+            storedExt = transcoded.ext;
+        } catch (e) {
+            console.warn("Audio transcode failed — storing original upload:", e);
+        }
+        const fileName = `${uniqueSuffix}${storedExt}`;
 
         const uploadDir = path.join(process.cwd(), "db", "music");
         await mkdir(uploadDir, { recursive: true });
         const filePath = path.join(uploadDir, fileName);
-        await writeFile(filePath, buffer);
+        await writeFile(filePath, storedBuffer);
 
         const duration = parseFloat(formData.get("duration") as string) || 0;
 
         let coverUrl: string | null = null;
         if (coverBuffer) {
-            const safeCoverName = (coverFile as File).name.replace(
-                /[^a-zA-Z0-9.-]/g,
-                "_"
-            );
-            const coverFileName = `${uniqueSuffix}-cover-${safeCoverName}`;
+            const { buffer: coverWebp } = await optimizeImage(coverBuffer, {
+                width: COVER_SIZE,
+                height: COVER_SIZE,
+                format: "webp",
+                quality: 82,
+                autoOrient: true,
+            });
+            const coverFileName = `${uniqueSuffix}-cover.webp`;
             const coverDir = path.join(process.cwd(), "db", "music", "covers");
             await mkdir(coverDir, { recursive: true });
             const coverPath = path.join(coverDir, coverFileName);
-            await writeFile(coverPath, coverBuffer);
+            await writeFile(coverPath, coverWebp);
             coverUrl = `/api/slice-it/songs/cover/${coverFileName}`;
         }
 
@@ -143,7 +165,7 @@ export const Route = createFileRoute('/api/slice-it/songs/upload')({
                 bpm: finalBpm,
                 audioUrl: fileName,
                 coverUrl,
-                fileSizeBytes: buffer.length,
+                fileSizeBytes: storedBuffer.length,
                 analysisData,
                 uploadedBy: session.user.id,
                 isPublic: true,

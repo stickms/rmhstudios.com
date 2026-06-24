@@ -22,6 +22,12 @@ concurrency:
 jobs:
   build-test:
     runs-on: ubuntu-latest
+    env:
+      # Opt-in remote action cache shared across runners (and dev machines). Set
+      # the BAZEL_REMOTE_CACHE repo secret to a gRPC/HTTP cache URL (BuildBuddy,
+      # NativeLink, a GCS bucket, …) to enable it; inert (local disk cache only)
+      # when the secret is unset, so this never breaks a fork/PR without secrets.
+      BAZEL_REMOTE_CACHE: ${{ secrets.BAZEL_REMOTE_CACHE }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/cache@v4
@@ -31,6 +37,9 @@ jobs:
           restore-keys: bazel-disk-${{ runner.os }}-
       - name: bootstrap toolchain (guard mode — installs bazelisk, no privileged installs)
         run: ./scripts/preflight.sh --guard
+      - name: configure remote cache (opt-in)
+        if: env.BAZEL_REMOTE_CACHE != ''
+        run: echo "build --remote_cache=${BAZEL_REMOTE_CACHE}" >> .bazelrc
       - name: build + test (bazel)
         run: bazelisk test --build_tests_only //go-services/...
 

@@ -245,7 +245,7 @@ func renderHTML(snap Snapshot, p *Prober) string {
 		cards.WriteString(fmt.Sprintf(`
         <li class="service">
           <div class="service-head">
-            <span class="dot" style="background:%s"></span>
+            <span class="dot" style="background:%s;color:%s"></span>
             <span class="info">
               <span class="name">%s</span>
               %s
@@ -262,7 +262,7 @@ func renderHTML(snap Snapshot, p *Prober) string {
             <span>now</span>
           </div>
         </li>`,
-			m.color,
+			m.color, m.color,
 			html.EscapeString(ss.Name),
 			descHTML,
 			html.EscapeString(ss.Detail),
@@ -286,20 +286,23 @@ func renderHTML(snap Snapshot, p *Prober) string {
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet" />
   <style>
     :root {
+      /* Darker-black palette aligned with the official rmhstudios.com shell:
+         pure-black page, near-black raised surfaces, low-contrast hairline
+         borders, and the site's purple accent. */
       --site-bg: #000;
-      --site-bg-subtle: #0b0b0c;
-      --site-surface: #27282c;
-      --site-surface-hover: #313238;
-      --site-border: #3a3b42;
-      --site-border-bright: #4a4b54;
+      --site-bg-subtle: #060607;
+      --site-surface: #0c0c0e;
+      --site-surface-hover: #131316;
+      --site-border: #1c1c20;
+      --site-border-bright: #2c2c33;
       --site-text: #e8e8ec;
       --site-text-muted: #9a9ba4;
-      --site-text-dim: #6a6b74;
+      --site-text-dim: #62636b;
       --site-accent: #9b7ad8;
       --site-success: #7bc88a;
       --site-warning: #d9c36e;
       --site-danger: #d98a8a;
-      --site-radius: 12px;
+      --site-radius: 14px;
       --site-radius-sm: 8px;
       --font-title: "Playfair Display", Georgia, "Times New Roman", serif;
       --font-body: "Inter", "Segoe UI", system-ui, sans-serif;
@@ -308,26 +311,27 @@ func renderHTML(snap Snapshot, p *Prober) string {
     body {
       margin: 0; font-family: var(--font-body);
       background:
-        radial-gradient(1200px 600px at 50%% -10%%, rgba(155,122,216,0.10), transparent 60%%),
+        radial-gradient(1000px 520px at 50%% -12%%, rgba(155,122,216,0.08), transparent 62%%),
         var(--site-bg);
       color: var(--site-text); line-height: 1.5; min-height: 100vh;
       display: flex; justify-content: center; padding: 56px 16px;
       letter-spacing: -0.01em;
+      -webkit-font-smoothing: antialiased;
     }
     .wrap { width: 100%%; max-width: 760px; }
     header { display: flex; align-items: center; gap: 16px; margin-bottom: 28px; }
-    .banner { width: 16px; height: 16px; border-radius: 50%%; flex: none; box-shadow: 0 0 0 5px rgba(255,255,255,.05); }
+    .banner { width: 14px; height: 14px; border-radius: 50%%; flex: none; box-shadow: 0 0 0 4px rgba(255,255,255,.04), 0 0 16px currentColor; }
     h1 { font-family: var(--font-title); font-size: 1.95rem; margin: 0; font-weight: 700; letter-spacing: 0; line-height: 1.15; }
     .sub { color: var(--site-text-muted); font-size: .9rem; margin-top: 4px; }
-    ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+    ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
     .service {
       background: var(--site-surface); border: 1px solid var(--site-border);
       border-radius: var(--site-radius); padding: 16px 18px;
-      transition: border-color .2s ease, transform .2s ease;
+      transition: border-color .2s ease, background-color .2s ease;
     }
-    .service:hover { border-color: var(--site-border-bright); }
+    .service:hover { border-color: var(--site-border-bright); background: var(--site-surface-hover); }
     .service-head { display: flex; align-items: center; gap: 14px; }
-    .dot { width: 10px; height: 10px; border-radius: 50%%; flex: none; }
+    .dot { width: 9px; height: 9px; border-radius: 50%%; flex: none; box-shadow: 0 0 10px currentColor; }
     .info { display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; }
     .name { font-weight: 600; }
     .desc { color: var(--site-text-muted); font-size: .82rem; }
@@ -339,7 +343,7 @@ func renderHTML(snap Snapshot, p *Prober) string {
     .bar-up { background: var(--site-success); }
     .bar-degraded { background: var(--site-warning); }
     .bar-down { background: var(--site-danger); }
-    .bar-unknown, .bar-empty { background: #2f3036; }
+    .bar-unknown, .bar-empty { background: #18181c; }
     .bar:hover { filter: brightness(1.25); }
     .bars-legend {
       display: flex; justify-content: space-between; align-items: center;
@@ -371,7 +375,7 @@ func renderHTML(snap Snapshot, p *Prober) string {
 <body>
   <div class="wrap">
     <header>
-      <span class="banner" style="background:%s"></span>
+      <span class="banner" style="background:%s;color:%s"></span>
       <div>
         <h1>%s</h1>
         <div class="sub">RMH Studios system status</div>
@@ -385,7 +389,7 @@ func renderHTML(snap Snapshot, p *Prober) string {
   </div>
 </body>
 </html>`,
-		meta.color,
+		meta.color, meta.color,
 		headline,
 		cards.String(),
 		html.EscapeString(checkedAt),

@@ -14,10 +14,9 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"os"
-	"path/filepath"
 	"time"
 
+	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
 )
 
@@ -28,6 +27,9 @@ const (
 	viewportHeight = 750
 	// thumbWidth is the downscaled width of the served thumbnail.
 	thumbWidth = 640
+	// thumbQuality is the WebP quality for the captured thumbnail (matches the
+	// Node sharp fallback's webp quality in vibe-screenshot.server.ts).
+	thumbQuality = 82
 	// settleDelay lets esm.sh modules load + first React paint + intro
 	// animations settle after the network goes idle.
 	settleDelay = 1500 * time.Millisecond
@@ -43,8 +45,9 @@ const (
 // it is retried on a later tick. Keeping this behind an interface lets the poll
 // loop be tested with a fake (see worker_test.go).
 type Capturer interface {
-	// Capture renders html for slug, writes <thumbDir>/<slug>.png, and returns
-	// the public URL (e.g. "/api/vibe/thumb/<slug>?v=<ts>").
+	// Capture renders html for slug, uploads vibe-thumbs/<slug>.webp to object
+	// storage, and returns the public URL (CDN in prod, the Node proxy route
+	// "/api/vibe/thumb/<slug>?v=<ts>" in dev).
 	Capture(ctx context.Context, slug, html string) (string, error)
 	// Close releases any shared browser resources so the process can exit.
 	Close()
@@ -63,17 +66,16 @@ type Capturer interface {
 // faithful intent (a small gallery PNG) achieved with chromedp's own scaling
 // rather than sharp.
 type ChromedpCapturer struct {
-	thumbDir string
 	execPath string // optional explicit Chromium binary path
 }
 
-// NewChromedpCapturer builds the production capturer. thumbDir is the directory
-// PNGs are written to (the shared db/vibe-thumbs volume). If execPath is
-// non-empty it is passed to Chromium as the executable path
-// (PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH in prod; empty locally so chromedp uses a
-// discovered Chrome/Chromium). Chromium MUST be present at runtime.
-func NewChromedpCapturer(thumbDir, execPath string) *ChromedpCapturer {
-	return &ChromedpCapturer{thumbDir: thumbDir, execPath: execPath}
+// NewChromedpCapturer builds the production capturer. Thumbnails are uploaded to
+// object storage (R2 in prod, .uploads locally) rather than written to the
+// shared db/ volume. If execPath is non-empty it is passed to Chromium as the
+// executable path (PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH in prod; empty locally so
+// chromedp uses a discovered Chrome/Chromium). Chromium MUST be present at runtime.
+func NewChromedpCapturer(execPath string) *ChromedpCapturer {
+	return &ChromedpCapturer{execPath: execPath}
 }
 
 // thumbDeviceScale is the fractional device scale factor that makes Chromium
@@ -118,29 +120,39 @@ func (c *ChromedpCapturer) Capture(ctx context.Context, slug, html string) (stri
 	// URL opaque so Chromium decodes the exact bytes.
 	dataURL := "data:text/html;charset=utf-8;base64," + base64.StdEncoding.EncodeToString([]byte(html))
 
-	var png []byte
+	// Ask Chromium to rasterize straight to WebP (no Go-side image library
+	// needed) — much smaller than PNG for these gallery thumbnails.
+	var webp []byte
 	err := chromedp.Run(runCtx,
 		chromedp.EmulateViewport(viewportWidth, viewportHeight, chromedp.EmulateScale(thumbDeviceScale)),
 		chromedp.Navigate(dataURL),
 		// networkidle can never fire on animation-heavy pages, so we don't block
 		// on it; the settle sleep below gives modules + first paint time instead.
 		chromedp.Sleep(settleDelay),
-		chromedp.CaptureScreenshot(&png),
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			buf, capErr := page.CaptureScreenshot().
+				WithFormat(page.CaptureScreenshotFormatWebp).
+				WithQuality(thumbQuality).
+				Do(ctx)
+			if capErr != nil {
+				return capErr
+			}
+			webp = buf
+			return nil
+		}),
 	)
 	if err != nil {
 		return "", fmt.Errorf("vibeworker: capture %s: %w", slug, err)
 	}
 
-	if err := os.MkdirAll(c.thumbDir, 0o755); err != nil {
-		return "", fmt.Errorf("vibeworker: mkdir thumb dir: %w", err)
-	}
-	dest := filepath.Join(c.thumbDir, slug+".png")
-	if err := os.WriteFile(dest, png, 0o644); err != nil {
-		return "", fmt.Errorf("vibeworker: write %s: %w", dest, err)
+	// Upload to object storage (R2 in prod, .uploads locally) under the same key
+	// the web app serves from. No more local db/ volume write.
+	if err := putObject(vibeThumbKey(slug), webp, "image/webp"); err != nil {
+		return "", fmt.Errorf("vibeworker: store thumb %s: %w", slug, err)
 	}
 
-	// Cache-busted public URL the web app serves at /api/vibe/thumb/{slug}.
-	return fmt.Sprintf("/api/vibe/thumb/%s?v=%d", slug, time.Now().UnixMilli()), nil
+	// Cache-busted public URL — CDN in prod, the Node proxy route in dev.
+	return vibeThumbURL(slug, time.Now().UnixMilli()), nil
 }
 
 // Close is a no-op: ChromedpCapturer allocates a fresh browser per capture and

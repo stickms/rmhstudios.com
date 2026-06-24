@@ -67,6 +67,10 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/health", httpx.Health("rmhmusic", nil))
+	// Health also exposed under the public WS prefix so the status page can probe
+	// the real user-facing path (the edge already routes /rmhmusic-ws/* here). The
+	// exact "/rmhmusic-ws/health" pattern wins over the "/rmhmusic-ws/" subtree.
+	mux.HandleFunc("/rmhmusic-ws/health", httpx.Health("rmhmusic", nil))
 	mux.Handle("/metrics", metrics.Handler())
 	mux.HandleFunc("/rmhmusic-ws/", hub.ServeWS)
 
