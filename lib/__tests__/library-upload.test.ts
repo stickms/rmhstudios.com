@@ -11,6 +11,7 @@ function makeDeps(over: Partial<UploadDeps> = {}): UploadDeps {
     countUserDocs: vi.fn(async () => 0),
     slugExists: vi.fn(async () => false),
     newId: () => 'id1',
+    compress: vi.fn((b: Buffer) => b),
     ...over,
   };
 }
@@ -22,6 +23,7 @@ const input = {
   title: 'Field Manual',
   description: 'A manual.',
   pages: 5,
+  isAdmin: false,
 };
 
 describe('processLibraryUpload', () => {
@@ -41,8 +43,17 @@ describe('processLibraryUpload', () => {
         pdfKey: 'library/id1.pdf',
         coverKey: 'library/covers/id1.jpg',
         uploadedByUserId: 'u1',
+        official: false,
       })
     );
+  });
+
+  test('compresses the pdf before storing it', async () => {
+    const compressed = Buffer.from('GZIPPED');
+    const deps = makeDeps({ compress: vi.fn(() => compressed) });
+    await processLibraryUpload(deps, input);
+    expect(deps.compress).toHaveBeenCalledWith(PDF);
+    expect(deps.putObject).toHaveBeenCalledWith('library/id1.pdf', compressed, 'application/pdf');
   });
 
   test('resolves a unique slug when the base is taken', async () => {
@@ -57,6 +68,12 @@ describe('processLibraryUpload', () => {
     await processLibraryUpload(deps, { ...input, cover: null });
     expect(deps.putObject).toHaveBeenCalledTimes(1);
     expect(deps.createDoc).toHaveBeenCalledWith(expect.objectContaining({ coverKey: null }));
+  });
+
+  test('marks admin uploads as curated (official)', async () => {
+    const deps = makeDeps();
+    await processLibraryUpload(deps, { ...input, isAdmin: true });
+    expect(deps.createDoc).toHaveBeenCalledWith(expect.objectContaining({ official: true }));
   });
 
   test('rejects over quota with 429 and stores nothing', async () => {
@@ -79,10 +96,25 @@ describe('processLibraryUpload', () => {
     expect(res).toMatchObject({ ok: false, status: 422 });
   });
 
-  test('rejects an oversize pdf with 413', async () => {
+  test('rejects a pdf over the 10 MB non-admin cap with 413', async () => {
+    const deps = makeDeps();
+    const big = Buffer.concat([Buffer.from('%PDF-1.7'), Buffer.alloc(11 * 1024 * 1024)]);
+    const res = await processLibraryUpload(deps, { ...input, pdf: big, isAdmin: false });
+    expect(res).toMatchObject({ ok: false, status: 413 });
+    expect(deps.putObject).not.toHaveBeenCalled();
+  });
+
+  test('allows the same pdf for an admin (64 MB cap)', async () => {
+    const deps = makeDeps();
+    const big = Buffer.concat([Buffer.from('%PDF-1.7'), Buffer.alloc(11 * 1024 * 1024)]);
+    const res = await processLibraryUpload(deps, { ...input, pdf: big, isAdmin: true });
+    expect(res).toMatchObject({ ok: true });
+  });
+
+  test('rejects an oversize pdf beyond the admin cap with 413', async () => {
     const deps = makeDeps();
     const big = Buffer.concat([Buffer.from('%PDF-1.7'), Buffer.alloc(65 * 1024 * 1024)]);
-    const res = await processLibraryUpload(deps, { ...input, pdf: big });
+    const res = await processLibraryUpload(deps, { ...input, pdf: big, isAdmin: true });
     expect(res).toMatchObject({ ok: false, status: 413 });
     expect(deps.putObject).not.toHaveBeenCalled();
   });

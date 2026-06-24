@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { analyzePdf } from '@/lib/library/pdf-client';
+import { libraryPdfMaxBytes } from '@/lib/library/upload-validation';
 
 type Status = 'idle' | 'analyzing' | 'drafting' | 'ready' | 'uploading';
 
@@ -21,9 +22,19 @@ function humanizeFilename(name: string): string {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-export function UploadModal({ onClose }: { onClose: () => void }) {
+export function UploadModal({
+  onClose,
+  isAdmin = false,
+  onUploaded,
+}: {
+  onClose: () => void;
+  isAdmin?: boolean;
+  onUploaded?: () => void;
+}) {
   const navigate = useNavigate();
   const { t } = useTranslation("c-library");
+  const maxBytes = libraryPdfMaxBytes(isAdmin);
+  const maxMb = Math.round(maxBytes / 1024 / 1024);
   const [status, setStatus] = useState<Status>('idle');
   const [file, setFile] = useState<File | null>(null);
   const [cover, setCover] = useState<Blob | null>(null);
@@ -51,6 +62,10 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
     setError(null);
     if (f.type && f.type !== 'application/pdf' && !f.name.toLowerCase().endsWith('.pdf')) {
       setError(t("error-not-pdf", { defaultValue: "That doesn't look like a PDF." }));
+      return;
+    }
+    if (f.size > maxBytes) {
+      setError(t("error-too-large", { maxMb, defaultValue: "PDF too large. Maximum size is {{maxMb}} MB." }));
       return;
     }
     setFile(f);
@@ -109,6 +124,7 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
         setStatus('ready');
         return;
       }
+      onUploaded?.();
       onClose();
       navigate({ to: '/library/$slug', params: { slug: data.slug } });
     } catch {
@@ -143,7 +159,8 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
               if (f) handleFile(f);
             }}
           >
-            {t("drop-prompt", { defaultValue: "Drop a PDF here, or click to choose one." })}
+            <span>{t("drop-prompt", { defaultValue: "Drop a PDF here, or click to choose one." })}</span>
+            <span className="lib-upload__limit">{t("size-limit", { maxMb, defaultValue: "Up to {{maxMb}} MB." })}</span>
           </button>
         ) : (
           <div className="lib-upload__body">

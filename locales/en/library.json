@@ -1,10 +1,20 @@
 {
+  "edit-button": "Edit",
+  "edit-done": "Done",
+  "edit-label": "Toggle edit mode",
   "library-heading": "Library",
+  "migrate-button": "Migrate to S3",
+  "migrate-done": "Migrated {{migrated}}, skipped {{skipped}}, failed {{failed}}.",
+  "migrate-prompt": "Some books are still bundled on disk. Move them to object storage to manage them.",
+  "migrate-running": "Migrating…",
   "no-results": "No books match that search.",
   "open-book": "Open {{title}}",
   "open-menu": "Open menu",
+  "reported": "Reported",
   "search-label": "Search the library",
   "search-placeholder": "Search the library...",
+  "section-community": "Community uploads",
+  "section-curated": "Curated",
   "upload-button": "Upload",
   "upload-label": "Upload a PDF"
 }

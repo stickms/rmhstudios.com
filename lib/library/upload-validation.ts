@@ -5,8 +5,22 @@
  * checked by magic bytes rather than trusting the client-declared content type.
  */
 
-/** Maximum accepted PDF size for a single upload (64 MB). */
-export const LIBRARY_PDF_MAX_BYTES = 64 * 1024 * 1024;
+/** Maximum accepted PDF size for a regular (non-admin) upload (10 MB). */
+export const LIBRARY_PDF_MAX_BYTES_USER = 10 * 1024 * 1024;
+
+/** Maximum accepted PDF size for an admin upload (64 MB). */
+export const LIBRARY_PDF_MAX_BYTES_ADMIN = 64 * 1024 * 1024;
+
+/**
+ * Backwards-compatible default (admin ceiling). Prefer {@link libraryPdfMaxBytes}
+ * so the limit reflects the uploader's role.
+ */
+export const LIBRARY_PDF_MAX_BYTES = LIBRARY_PDF_MAX_BYTES_ADMIN;
+
+/** The PDF size ceiling for an uploader, based on whether they're an admin. */
+export function libraryPdfMaxBytes(isAdmin: boolean): number {
+  return isAdmin ? LIBRARY_PDF_MAX_BYTES_ADMIN : LIBRARY_PDF_MAX_BYTES_USER;
+}
 
 /** Maximum number of books a single user may have uploaded. */
 export const LIBRARY_USER_QUOTA = 20;
