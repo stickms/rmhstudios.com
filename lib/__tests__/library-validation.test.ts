@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { validatePdfBuffer, validateBookFields } from '@/lib/library/upload-validation';
+import { validatePdfBuffer, validateBookFields, sanitizePages } from '@/lib/library/upload-validation';
 
 describe('validatePdfBuffer', () => {
   test('accepts a buffer with a %PDF header', () => {
@@ -33,15 +33,23 @@ describe('validateBookFields', () => {
     expect(validateBookFields({ title: 'x'.repeat(201), pages: 12 }).ok).toBe(false);
   });
 
-  test('rejects a non-positive page count', () => {
-    expect(validateBookFields({ title: 'ok', pages: 0 }).ok).toBe(false);
-  });
-
-  test('rejects a non-integer page count', () => {
-    expect(validateBookFields({ title: 'ok', pages: 3.5 }).ok).toBe(false);
+  test('accepts an unknown (zero) page count — it is cosmetic', () => {
+    expect(validateBookFields({ title: 'ok', pages: 0 }).ok).toBe(true);
   });
 
   test('rejects an absurd page count', () => {
     expect(validateBookFields({ title: 'ok', pages: 1_000_000 }).ok).toBe(false);
+  });
+});
+
+describe('sanitizePages', () => {
+  test('floors, clamps, and zeroes out unknown values', () => {
+    expect(sanitizePages(12)).toBe(12);
+    expect(sanitizePages(3.5)).toBe(3);
+    expect(sanitizePages(0)).toBe(0);
+    expect(sanitizePages(-4)).toBe(0);
+    expect(sanitizePages(NaN)).toBe(0);
+    expect(sanitizePages('17')).toBe(17);
+    expect(sanitizePages(1_000_000)).toBe(100_000);
   });
 });

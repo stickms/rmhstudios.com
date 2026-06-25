@@ -35,6 +35,22 @@ type UploadItem = {
 };
 
 const MAX_BATCH = 25;
+// Bounded concurrency: process many at once without melting the browser (pdf.js +
+// canvas are heavy) or firing 25 large POSTs simultaneously.
+const ANALYZE_CONCURRENCY = 4;
+const UPLOAD_CONCURRENCY = 4;
+
+/** Run `worker` over `ids` with at most `concurrency` in flight at once. */
+async function runPool<T>(ids: T[], concurrency: number, worker: (id: T) => Promise<void>): Promise<void> {
+  let cursor = 0;
+  const lanes = Array.from({ length: Math.min(concurrency, ids.length) }, async () => {
+    while (cursor < ids.length) {
+      const i = cursor++;
+      await worker(ids[i]);
+    }
+  });
+  await Promise.all(lanes);
+}
 
 function humanizeFilename(name: string): string {
   return name
@@ -88,56 +104,61 @@ export function UploadModal({
     setItems((prev) => prev.map((it) => (it.id === id ? { ...it, ...next } : it)));
   }, []);
 
-  // Analyse + AI-draft each queued item, one at a time (pdf.js is heavy).
+  // Analyse + AI-draft one queued item (cover, page count, title, description).
+  const analyzeOne = useCallback(
+    async (item: UploadItem) => {
+      patch(item.id, { status: 'analyzing' });
+      let analysis;
+      try {
+        analysis = await analyzeBook(item.file);
+      } catch {
+        patch(item.id, { status: 'error', error: t('error-book-read', { defaultValue: "Couldn't read this file. It may be encrypted or corrupt." }) });
+        return;
+      }
+      const coverUrl = analysis.cover ? URL.createObjectURL(analysis.cover) : null;
+      patch(item.id, {
+        format: analysis.format,
+        pages: analysis.pages,
+        cover: analysis.cover,
+        coverUrl,
+        title: humanizeFilename(item.file.name),
+        status: 'drafting',
+      });
+      try {
+        const res = await fetch('/api/library/draft', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: analysis.text }),
+        });
+        if (res.ok) {
+          const draft = await res.json();
+          patch(item.id, { title: draft.title || humanizeFilename(item.file.name), description: draft.description || '' });
+        }
+      } catch {
+        /* keep the filename-derived title */
+      }
+      patch(item.id, { status: 'ready' });
+    },
+    [patch, t],
+  );
+
+  // Drain the queue with bounded concurrency — all titles/descriptions/covers
+  // generate at once (up to ANALYZE_CONCURRENCY in flight), not one at a time.
   const processQueue = useCallback(async () => {
     if (processingRef.current) return;
     processingRef.current = true;
     try {
-      for (;;) {
-        const next = itemsRef.current.find((i) => i.status === 'queued' && !startedRef.current.has(i.id));
-        if (!next) break;
-        startedRef.current.add(next.id);
-        patch(next.id, { status: 'analyzing' });
-
-        let analysis;
-        try {
-          analysis = await analyzeBook(next.file);
-        } catch {
-          patch(next.id, { status: 'error', error: t('error-book-read', { defaultValue: "Couldn't read this file. It may be encrypted or corrupt." }) });
-          continue;
-        }
-        const coverUrl = analysis.cover ? URL.createObjectURL(analysis.cover) : null;
-        patch(next.id, {
-          format: analysis.format,
-          pages: analysis.pages,
-          cover: analysis.cover,
-          coverUrl,
-          title: humanizeFilename(next.file.name),
-          status: 'drafting',
-        });
-
-        try {
-          const res = await fetch('/api/library/draft', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: analysis.text }),
-          });
-          if (res.ok) {
-            const draft = await res.json();
-            patch(next.id, {
-              title: draft.title || humanizeFilename(next.file.name),
-              description: draft.description || '',
-            });
-          }
-        } catch {
-          /* keep the filename-derived title */
-        }
-        patch(next.id, { status: 'ready' });
+      let pending: UploadItem[];
+      while (
+        (pending = itemsRef.current.filter((i) => i.status === 'queued' && !startedRef.current.has(i.id))).length
+      ) {
+        for (const it of pending) startedRef.current.add(it.id);
+        await runPool(pending, ANALYZE_CONCURRENCY, analyzeOne);
       }
     } finally {
       processingRef.current = false;
     }
-  }, [patch, t]);
+  }, [analyzeOne]);
 
   // Validate + enqueue freshly picked files, then kick the analysis loop.
   const addFiles = useCallback(
@@ -203,16 +224,15 @@ export function UploadModal({
     const ready = items.filter((i) => i.status === 'ready');
     if (!ready.length) return;
     // Every row we're about to publish needs a title.
-    const untitled = ready.find((i) => !i.title.trim());
-    if (untitled) {
+    if (ready.some((i) => !i.title.trim())) {
       setError(t('error-title-required', { defaultValue: 'A title is required.' }));
       return;
     }
     setError(null);
     setPublishing(true);
-    let lastSlug: string | null = null;
-    let okCount = 0;
-    for (const it of ready) {
+
+    const results: { slug: string | null; ok: boolean }[] = [];
+    const uploadOne = async (it: UploadItem) => {
       patch(it.id, { status: 'uploading' });
       const form = new FormData();
       form.set('file', it.file);
@@ -225,22 +245,27 @@ export function UploadModal({
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
           patch(it.id, { status: 'error', error: data.error ?? t('error-upload-failed', { defaultValue: 'Upload failed, nothing was saved.' }) });
-          continue;
+          results.push({ slug: null, ok: false });
+          return;
         }
         patch(it.id, { status: 'done', slug: data.slug });
-        lastSlug = data.slug;
-        okCount++;
+        results.push({ slug: data.slug ?? null, ok: true });
       } catch {
         patch(it.id, { status: 'error', error: t('error-upload-failed', { defaultValue: 'Upload failed, nothing was saved.' }) });
+        results.push({ slug: null, ok: false });
       }
-    }
+    };
+
+    // Upload concurrently (bounded) instead of one at a time.
+    await runPool(ready, UPLOAD_CONCURRENCY, uploadOne);
     setPublishing(false);
-    if (okCount > 0) onUploaded?.();
+
+    const ok = results.filter((r) => r.ok);
+    if (ok.length > 0) onUploaded?.();
     // Single-file flow: jump straight into the book, preserving the old UX.
-    const leftover = itemsRef.current.filter((i) => i.status !== 'done');
-    if (lastSlug && okCount === 1 && ready.length === 1 && leftover.length === 0) {
+    if (ready.length === 1 && ok.length === 1 && ok[0].slug) {
       onClose();
-      navigate({ to: '/library/$slug', params: { slug: lastSlug } });
+      navigate({ to: '/library/$slug', params: { slug: ok[0].slug } });
     }
   }
 
