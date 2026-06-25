@@ -12,11 +12,26 @@
  * Dependency-free (Node's built-in zlib) so it works in the Bazel/pnpm build
  * without pulling in a native PDF toolchain.
  */
-import { gzipSync } from 'node:zlib';
+import { gzipSync, gunzipSync } from 'node:zlib';
 
 /** Gzip magic bytes — `1f 8b`. A stored object starting with these is gzipped. */
 export function isGzipped(buf: Buffer): boolean {
   return buf.length >= 2 && buf[0] === 0x1f && buf[1] === 0x8b;
+}
+
+/**
+ * Inflate a stored object back to its original bytes if it was gzipped, else
+ * return it unchanged. Lets the serve route hand the browser identity bytes
+ * instead of relying on `Content-Encoding: gzip` passthrough — which a CDN or
+ * proxy can strip or double-apply, leaving pdf.js with bytes it can't parse.
+ */
+export function decompressStored(buf: Buffer): Buffer {
+  if (!isGzipped(buf)) return buf;
+  try {
+    return gunzipSync(buf);
+  } catch {
+    return buf; // false-positive magic bytes / corrupt gzip — serve as-is
+  }
 }
 
 /**
