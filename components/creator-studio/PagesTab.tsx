@@ -123,7 +123,7 @@ export function PagesTab({
       {/* Prompt hero: generate a new page. */}
       <section className="vibe-gallery__hero">
         <p className="vibe-rise vibe-presents mb-3">RMH Studios presents</p>
-        <h2 className="vibe-rise-2 vibe-title">{t('hero-headline', { defaultValue: 'The anything platform.' })}</h2>
+        <h2 className="vibe-rise-2 vibe-title">{t('hero-headline', { defaultValue: 'The everything platform.' })}</h2>
         <div className="mt-8 flex w-full justify-center">
           <div className="vibe-dock vibe-dock--area vibe-rise-soft">
             <textarea
