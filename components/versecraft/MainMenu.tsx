@@ -48,7 +48,6 @@ function FloatingWord({ word, index }: { word: string; index: number }) {
 
 export function MainMenu() {
   const { t } = useTranslation("c-versecraft");
-  const startNewGame = useGameStore(s => s.startNewGame);
   const continueGame = useGameStore(s => s.continueGame);
   const setScreen = useGameStore(s => s.setScreen);
   const isLoggedIn = useGameStore(s => s.isLoggedIn);
@@ -82,7 +81,7 @@ export function MainMenu() {
   }, [isLoggedIn]);
 
   const menuItems = [
-    { label: t("new-game", { defaultValue: "New Game" }), action: startNewGame, always: true },
+    { label: t("new-game", { defaultValue: "New Game" }), action: () => setScreen('world_setup'), always: true },
     { label: t("continue", { defaultValue: "Continue" }), action: () => continueGame(), always: false },
     { label: t("load-save", { defaultValue: "Load Save" }), action: () => setScreen('load'), always: false },
     { label: t("progress", { defaultValue: "Progress" }), action: () => setScreen('progress'), always: false },

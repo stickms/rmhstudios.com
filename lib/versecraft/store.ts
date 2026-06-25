@@ -9,6 +9,9 @@ import type {
 import { CHARACTERS, getAffinityLevel } from './characters';
 import { autoSave, loadGame, saveGame as persistSave, dbSave, dbLoad } from './persistence';
 import { getChapterEntry, getNextChapterId } from './chapters/registry';
+import { fallbackWorld, fallbackChapter } from './gen/fallback';
+import { makeSeedCode, normalizeSeed } from './gen/rng';
+import type { GeneratedWorld, GenChapter, GenChoice } from './gen/world-types';
 
 function createInitialAffinity(): Record<string, CharacterAffinity> {
   const affinity: Record<string, CharacterAffinity> = {};
@@ -63,7 +66,26 @@ export function createInitialState(): GameState {
     playtime: 0,
     gameStarted: false,
     totalPoemsWritten: 0,
+    mode: 'generated',
+    seed: '',
+    mcPrompt: '',
+    world: null,
+    generatedChapters: {},
+    currentChapterIndex: 0,
   };
+}
+
+/** Build a fresh affinity map for a generated cast. */
+function affinityForWorld(world: GeneratedWorld): Record<string, CharacterAffinity> {
+  const affinity: Record<string, CharacterAffinity> = {};
+  for (const c of world.characters) {
+    affinity[c.id] = {
+      affinity: 0, romance: 0, level: 0, romanceLevel: 0,
+      poemsShared: 0, poemsLoved: 0, poemsHated: 0,
+      routeStarted: true, routeCompleted: false,
+    };
+  }
+  return affinity;
 }
 
 // Debounce helper for DB saves
@@ -87,6 +109,12 @@ interface GameActions {
   startNewGame: () => void;
   continueGame: () => void;
   updateSettings: (settings: Partial<PlayerSettings>) => void;
+
+  // Generated (seed-driven) flow
+  startGeneratedGame: (opts: { seed?: string; prompt?: string; playerName?: string }) => void;
+  ensureGeneratedChapter: (index: number) => GenChapter;
+  genApplyChoice: (choice: GenChoice) => void;
+  advanceGeneratedChapter: () => boolean;
 
   // Dialogue
   advanceDialogue: () => void;
@@ -176,6 +204,100 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
   updateSettings: (newSettings) => set(s => ({
     settings: { ...s.settings, ...newSettings },
   })),
+
+  // ─── Generated (seed-driven) flow ──────────────────────────────────────────
+  startGeneratedGame: ({ seed, prompt, playerName }) => {
+    const cleanSeed = seed && seed.trim()
+      ? normalizeSeed(seed)
+      : makeSeedCode(`${Date.now()}-${Math.random()}`);
+    const name = playerName || get().settings.playerName || 'You';
+    const pronouns = get().settings.playerPronouns;
+    const world = fallbackWorld(cleanSeed, prompt ?? '', name, pronouns);
+    const ch0 = fallbackChapter(world, 0);
+    set({
+      ...createInitialState(),
+      mode: 'generated',
+      seed: cleanSeed,
+      mcPrompt: prompt ?? '',
+      world,
+      generatedChapters: { 0: ch0 },
+      currentChapterIndex: 0,
+      currentSceneIndex: 0,
+      currentDialogueIndex: 0,
+      affinity: affinityForWorld(world),
+      gameStarted: true,
+      screen: 'dialogue',
+      isLoggedIn: get().isLoggedIn,
+    });
+    const s = get();
+    autoSave(s);
+    debouncedDbSave(get);
+  },
+
+  ensureGeneratedChapter: (index) => {
+    const state = get();
+    const cached = state.generatedChapters[index];
+    if (cached) return cached;
+    const world = state.world;
+    if (!world) throw new Error('ensureGeneratedChapter: no world');
+    const ch = fallbackChapter(world, index);
+    set({ generatedChapters: { ...state.generatedChapters, [index]: ch } });
+    return ch;
+  },
+
+  genApplyChoice: (choice) => {
+    set(s => {
+      const newAffinity = { ...s.affinity };
+      if (choice.affinity) {
+        for (const [charId, change] of Object.entries(choice.affinity)) {
+          const curr = newAffinity[charId] ?? {
+            affinity: 0, romance: 0, level: 0, romanceLevel: 0,
+            poemsShared: 0, poemsLoved: 0, poemsHated: 0,
+            routeStarted: true, routeCompleted: false,
+          };
+          const newPoints = Math.max(0, curr.affinity + change);
+          newAffinity[charId] = { ...curr, affinity: newPoints, level: getAffinityLevel(newPoints) };
+        }
+      }
+      const newFlags = { ...s.storyFlags };
+      if (choice.flags) for (const [k, v] of Object.entries(choice.flags)) newFlags[k] = v;
+      return {
+        affinity: newAffinity,
+        storyFlags: newFlags,
+        currentDialogueIndex: s.currentDialogueIndex + 1,
+      };
+    });
+    debouncedDbSave(get);
+  },
+
+  advanceGeneratedChapter: () => {
+    const state = get();
+    const world = state.world;
+    if (!world) return false;
+    const nextIndex = state.currentChapterIndex + 1;
+    if (nextIndex >= world.routePlan.totalChapters) {
+      // Route complete — mark the cast's routes done and return to menu.
+      const completed = { ...state.affinity };
+      for (const id of Object.keys(completed)) completed[id] = { ...completed[id], routeCompleted: true };
+      set({ affinity: completed, screen: 'menu', storyFlags: { ...state.storyFlags, route_complete: true } });
+      const s = get();
+      autoSave(s);
+      if (s.isLoggedIn) dbSave(s);
+      return false;
+    }
+    const ch = state.generatedChapters[nextIndex] ?? fallbackChapter(world, nextIndex);
+    set({
+      generatedChapters: { ...state.generatedChapters, [nextIndex]: ch },
+      currentChapterIndex: nextIndex,
+      currentSceneIndex: 0,
+      currentDialogueIndex: 0,
+      screen: 'dialogue',
+    });
+    const s = get();
+    autoSave(s);
+    debouncedDbSave(get);
+    return true;
+  },
 
   // Dialogue
   advanceDialogue: () => set(s => ({

@@ -7,7 +7,9 @@ import { useGameStore } from '@/lib/versecraft/store';
 import { loadGame } from '@/lib/versecraft/persistence';
 import { MainMenu } from './MainMenu';
 import { SettingsMenu } from './SettingsMenu';
+import { WorldSetup } from './WorldSetup';
 import { DialogueScreen } from './DialogueScreen';
+import { GeneratedDialogueScreen } from './GeneratedDialogueScreen';
 import { WordSelectPuzzle } from './WordSelectPuzzle';
 import { LineArrangePuzzle } from './LineArrangePuzzle';
 import { PoemPresentation } from './PoemPresentation';
@@ -25,6 +27,7 @@ const RESTORABLE_SCREENS = new Set<GameScreen>([
 export function VersecraftGame({ isLoggedIn }: { isLoggedIn: boolean }) {
   const { t } = useTranslation("c-versecraft");
   const screen = useGameStore(s => s.screen);
+  const mode = useGameStore(s => s.mode);
   const gameStarted = useGameStore(s => s.gameStarted);
   const incrementPlaytime = useGameStore(s => s.incrementPlaytime);
   const setLoggedIn = useGameStore(s => s.setLoggedIn);
@@ -107,8 +110,10 @@ export function VersecraftGame({ isLoggedIn }: { isLoggedIn: boolean }) {
         return <MainMenu />;
       case 'settings':
         return <SettingsMenu />;
+      case 'world_setup':
+        return <WorldSetup />;
       case 'dialogue':
-        return <DialogueScreen />;
+        return mode === 'generated' ? <GeneratedDialogueScreen /> : <DialogueScreen />;
       case 'puzzle_word_select':
         return <WordSelectPuzzle />;
       case 'puzzle_line_arrange':
@@ -127,7 +132,7 @@ export function VersecraftGame({ isLoggedIn }: { isLoggedIn: boolean }) {
       default:
         return <MainMenu />;
     }
-  }, [screen]);
+  }, [screen, mode]);
 
   return (
     <div
