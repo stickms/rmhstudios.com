@@ -56,6 +56,8 @@ export type UploadInput = {
   pages: number;
   /** Whether the uploader is an admin (raises the size ceiling, marks curated). */
   isAdmin: boolean;
+  /** Effective per-account book cap for this user (defaults to LIBRARY_USER_QUOTA). */
+  quota?: number;
 };
 
 export type UploadResult =
@@ -76,13 +78,17 @@ export async function processLibraryUpload(
   deps: UploadDeps,
   input: UploadInput
 ): Promise<UploadResult> {
-  const count = await deps.countUserDocs(input.userId);
-  if (count >= LIBRARY_USER_QUOTA) {
-    return {
-      ok: false,
-      status: 429,
-      error: `You've reached the upload limit of ${LIBRARY_USER_QUOTA} books.`,
-    };
+  // Admins are uncapped; regular users have a per-account book quota.
+  if (!input.isAdmin) {
+    const quota = input.quota ?? LIBRARY_USER_QUOTA;
+    const count = await deps.countUserDocs(input.userId);
+    if (count >= quota) {
+      return {
+        ok: false,
+        status: 429,
+        error: `You've reached your upload limit of ${quota} books. Delete one or request more.`,
+      };
+    }
   }
 
   const bookCheck = validateBookBuffer(input.file);

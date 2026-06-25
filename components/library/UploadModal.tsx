@@ -14,7 +14,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { Check, Loader2, Plus, X } from 'lucide-react';
+import { Check, Loader2, Plus, Trash2, X } from 'lucide-react';
 import { analyzeBook, isEpubFile } from '@/lib/library/pdf-client';
 import { libraryPdfMaxBytes } from '@/lib/library/upload-validation';
 
@@ -34,7 +34,9 @@ type UploadItem = {
   slug?: string;
 };
 
-const MAX_BATCH = 25;
+// Generous per-batch ceiling for admins (just a browser-sanity guard, not an
+// account limit). The concurrency pool keeps a big batch from overwhelming things.
+const MAX_BATCH = 1000;
 // Bounded concurrency: process many at once without melting the browser (pdf.js +
 // canvas are heavy) or firing 25 large POSTs simultaneously.
 const ANALYZE_CONCURRENCY = 4;
@@ -78,7 +80,52 @@ export function UploadModal({
   const [items, setItems] = useState<UploadItem[]>([]);
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [quota, setQuota] = useState<QuotaInfo | null>(null);
+  const [gateBusy, setGateBusy] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const fetchQuota = useCallback(async () => {
+    const res = await fetch('/api/library/quota').catch(() => null);
+    if (res?.ok) {
+      const data = (await res.json().catch(() => null)) as QuotaInfo | null;
+      if (data) setQuota(data);
+    }
+  }, []);
+  useEffect(() => {
+    void fetchQuota();
+  }, [fetchQuota]);
+
+  const deleteMine = useCallback(
+    async (slug: string) => {
+      if (!window.confirm(t('confirm-delete-upload', { defaultValue: 'Delete this upload? This cannot be undone.' }))) return;
+      setGateBusy(slug);
+      const res = await fetch(`/api/library/${slug}`, { method: 'DELETE' }).catch(() => null);
+      setGateBusy(null);
+      if (res?.ok) {
+        onUploaded?.();
+        await fetchQuota();
+      }
+    },
+    [fetchQuota, onUploaded, t],
+  );
+
+  const appeal = useCallback(
+    async (requestedTotal: number, reason: string): Promise<boolean> => {
+      const res = await fetch('/api/library/quota', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requestedTotal, reason }),
+      }).catch(() => null);
+      if (res?.ok) {
+        await fetchQuota();
+        return true;
+      }
+      const err = await res?.json().catch(() => null);
+      setError(err?.error ?? t('error-generic', { defaultValue: 'Something went wrong.' }));
+      return false;
+    },
+    [fetchQuota, t],
+  );
 
   // Live mirror so the sequential analysis loop reads fresh state across awaits.
   const itemsRef = useRef<UploadItem[]>(items);
@@ -273,6 +320,8 @@ export function UploadModal({
   const readyCount = items.filter((i) => i.status === 'ready').length;
   const allDone = items.length > 0 && items.every((i) => i.status === 'done' || i.status === 'error');
   const hasItems = items.length > 0;
+  // Block the picker when a regular user is at their cap until they free space.
+  const gated = !!quota && !quota.isAdmin && quota.used >= quota.quota && !hasItems;
 
   return (
     <div
@@ -294,7 +343,9 @@ export function UploadModal({
           </button>
         </div>
 
-        {!hasItems ? (
+        {gated ? (
+          <QuotaGate quota={quota!} busy={gateBusy} onDelete={deleteMine} onAppeal={appeal} t={t} />
+        ) : !hasItems ? (
           <button
             type="button"
             className="lib-upload__drop"
@@ -355,6 +406,7 @@ export function UploadModal({
             type="button"
             className="lib-upload__btn lib-upload__btn--primary"
             onClick={publishAll}
+            hidden={gated}
             disabled={publishing || readyCount === 0}
           >
             {publishing
@@ -367,6 +419,118 @@ export function UploadModal({
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+type QuotaInfo = {
+  used: number;
+  quota: number;
+  isAdmin: boolean;
+  pending: boolean;
+  mine: { slug: string; title: string; coverUrl: string | null }[];
+};
+
+/** Shown when a regular user is at their cap: delete an upload, or appeal. */
+function QuotaGate({
+  quota,
+  busy,
+  onDelete,
+  onAppeal,
+  t,
+}: {
+  quota: QuotaInfo;
+  busy: string | null;
+  onDelete: (slug: string) => void;
+  onAppeal: (requestedTotal: number, reason: string) => Promise<boolean>;
+  t: TFunction;
+}) {
+  const [showAppeal, setShowAppeal] = useState(false);
+  const [requested, setRequested] = useState(String(quota.quota + 10));
+  const [reason, setReason] = useState('');
+  const [sending, setSending] = useState(false);
+
+  async function submit() {
+    setSending(true);
+    const ok = await onAppeal(Math.floor(Number(requested) || 0), reason.trim());
+    setSending(false);
+    if (ok) setShowAppeal(false);
+  }
+
+  return (
+    <div className="lib-upload__gate">
+      <p className="lib-upload__gate-head">
+        {t('quota-reached', {
+          used: quota.used,
+          quota: quota.quota,
+          defaultValue: `You've used all {{quota}} of your upload slots ({{used}}/{{quota}}).`,
+        })}
+      </p>
+      <p className="lib-upload__gate-sub">
+        {t('quota-help', { defaultValue: 'Delete an upload to make room, or request a higher limit.' })}
+      </p>
+
+      <ul className="lib-upload__gate-list">
+        {quota.mine.map((b) => (
+          <li key={b.slug} className="lib-upload__gate-row">
+            <div className="lib-upload__cover lib-upload__row-cover">
+              {b.coverUrl ? <img src={b.coverUrl} alt="" /> : <div className="lib-upload__cover--blank" />}
+            </div>
+            <span className="lib-upload__gate-title">{b.title}</span>
+            <button
+              type="button"
+              className="lib-upload__row-remove"
+              onClick={() => onDelete(b.slug)}
+              disabled={busy === b.slug}
+              aria-label={t('delete', { defaultValue: 'Delete' })}
+              title={t('delete', { defaultValue: 'Delete' })}
+            >
+              {busy === b.slug ? <Loader2 size={15} className="lib-upload__spin" /> : <Trash2 size={15} />}
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      {quota.pending ? (
+        <p className="lib-upload__gate-pending">
+          {t('quota-pending', { defaultValue: 'Your request for more uploads is awaiting admin review.' })}
+        </p>
+      ) : showAppeal ? (
+        <div className="lib-upload__gate-appeal">
+          <label className="lib-upload__label">
+            {t('quota-requested-label', { defaultValue: 'Requested total upload limit' })}
+            <input
+              className="lib-upload__input"
+              type="number"
+              min={quota.quota + 1}
+              value={requested}
+              onChange={(e) => setRequested(e.target.value)}
+            />
+          </label>
+          <label className="lib-upload__label">
+            {t('quota-reason-label', { defaultValue: 'Reason (optional)' })}
+            <textarea
+              className="lib-upload__input lib-upload__textarea"
+              value={reason}
+              maxLength={1000}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder={t('quota-reason-placeholder', { defaultValue: 'Why do you need more space?' })}
+            />
+          </label>
+          <div className="lib-upload__actions">
+            <button type="button" className="lib-upload__btn" onClick={() => setShowAppeal(false)} disabled={sending}>
+              {t('cancel', { defaultValue: 'Cancel' })}
+            </button>
+            <button type="button" className="lib-upload__btn lib-upload__btn--primary" onClick={submit} disabled={sending}>
+              {sending ? t('sending', { defaultValue: 'Sending…' }) : t('quota-send', { defaultValue: 'Send request' })}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button type="button" className="lib-upload__btn lib-upload__btn--primary lib-upload__gate-appeal-btn" onClick={() => setShowAppeal(true)}>
+          {t('quota-request-more', { defaultValue: 'Request more uploads' })}
+        </button>
+      )}
     </div>
   );
 }

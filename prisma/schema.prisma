@@ -53,6 +53,10 @@ model User {
   rmhtypeProfiles     RmhTypeProfile[]
   libraryUploads      LibraryDocument[] @relation("LibraryUploader")
   libraryCollections  LibraryCollection[] @relation("LibraryCollectionOwner")
+  /// Per-user library upload quota override (null → the default cap). Raised by
+  /// an admin when approving a quota appeal.
+  libraryUploadQuota  Int?
+  libraryQuotaRequests LibraryQuotaRequest[] @relation("LibraryQuotaRequests")
   rmhstudyProfile     RmhStudyProfile?
   voidBreakerProfile  VoidBreakerPlayer?
   dailyPuzzleScores   DailyPuzzleScore[]
@@ -3316,4 +3320,24 @@ model LibraryCollectionItem {
   @@unique([collectionId, bookSlug])
   @@index([collectionId])
   @@map("library_collection_item")
+}
+
+/// A regular user's appeal to raise their library upload quota, reviewed by an
+/// admin in the admin panel. Approving sets the user's libraryUploadQuota.
+model LibraryQuotaRequest {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation("LibraryQuotaRequests", fields: [userId], references: [id], onDelete: Cascade)
+  /// The new total cap the user is asking for.
+  requestedTotal  Int
+  reason          String    @default("") @db.Text
+  /// pending | approved | denied
+  status          String    @default("pending")
+  decidedByUserId String?
+  createdAt       DateTime  @default(now())
+  decidedAt       DateTime?
+
+  @@index([status])
+  @@index([userId])
+  @@map("library_quota_request")
 }

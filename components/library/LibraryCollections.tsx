@@ -105,6 +105,28 @@ export function LibraryCollections({
 
   if (visible.length === 0 && !canCreate) return null;
 
+  // Show official/curated series first, then user-made ones below.
+  const official = visible.filter((c) => c.official);
+  const userMade = visible.filter((c) => !c.official);
+
+  const renderGroup = (group: CollectionView[]) => (
+    <div className="lib__shelf" role="list">
+      {group.map((c) => (
+        <CollectionTile
+          key={c.id}
+          collection={c}
+          manage={manage && c.canEdit}
+          generating={generating === c.id}
+          onOpen={() => setOpened(c)}
+          onAdd={() => setAddingTo(c)}
+          onRename={() => renameCollection(c)}
+          onDelete={() => removeCollection(c)}
+          onCover={() => generateCover(c)}
+        />
+      ))}
+    </div>
+  );
+
   // Live versions of the collections referenced by open modals (so edits reflect).
   const addingLive = addingTo ? collections.find((c) => c.id === addingTo.id) ?? addingTo : null;
   const openedLive = opened ? collections.find((c) => c.id === opened.id) ?? opened : null;
@@ -141,21 +163,22 @@ export function LibraryCollections({
           {t('no-collections', { defaultValue: 'No collections yet — create one to group books into a series.' })}
         </p>
       ) : (
-        <div className="lib__shelf" role="list">
-          {visible.map((c) => (
-            <CollectionTile
-              key={c.id}
-              collection={c}
-              manage={manage && c.canEdit}
-              generating={generating === c.id}
-              onOpen={() => setOpened(c)}
-              onAdd={() => setAddingTo(c)}
-              onRename={() => renameCollection(c)}
-              onDelete={() => removeCollection(c)}
-              onCover={() => generateCover(c)}
-            />
-          ))}
-        </div>
+        <>
+          {official.length > 0 && (
+            <div className="lib-collections__group-wrap">
+              {userMade.length > 0 && (
+                <h3 className="lib-collections__subhead">{t('collections-official', { defaultValue: 'Curated series' })}</h3>
+              )}
+              {renderGroup(official)}
+            </div>
+          )}
+          {userMade.length > 0 && (
+            <div className="lib-collections__group-wrap">
+              <h3 className="lib-collections__subhead">{t('collections-community', { defaultValue: 'Reader collections' })}</h3>
+              {renderGroup(userMade)}
+            </div>
+          )}
+        </>
       )}
 
       {creating && <CreateModal onClose={() => setCreating(false)} onCreate={createCollection} />}

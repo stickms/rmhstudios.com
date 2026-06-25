@@ -6,6 +6,7 @@ import { putObject, deleteObject, objectExists, s3Configured } from '@/lib/stora
 import { validateImageBuffer } from '@/lib/slice-it/upload-validation';
 import { processLibraryUpload, type UploadDeps } from '@/lib/library/upload';
 import { uploadSlugExists } from '@/lib/library/library.server';
+import { effectiveQuota } from '@/lib/library/quota.server';
 import { libraryFileKey, libraryCoverKey, libraryPdfUrl } from '@/lib/library/keys';
 import { compressPdfForStorage } from '@/lib/library/compress.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
@@ -37,19 +38,20 @@ export const Route = createFileRoute('/api/library/upload')({
             );
           }
 
-          // Admins do trusted bulk uploads — give them a very high ceiling; regular
-          // users keep a modest per-IP limit.
-          const ip = getClientIp(request);
-          const { allowed, retryAfter } = rateLimit(ip, {
-            limit: isAdmin ? 500 : 30,
-            windowMs: 10 * 60_000,
-            prefix: isAdmin ? 'library-upload-admin' : 'library-upload',
-          });
-          if (!allowed) {
-            return Response.json(
-              { error: "You've hit the upload limit. Try again later." },
-              { status: 429, headers: { 'Retry-After': String(retryAfter) } }
-            );
+          // Admins are unlimited; regular users have a modest per-IP rate limit.
+          if (!isAdmin) {
+            const ip = getClientIp(request);
+            const { allowed, retryAfter } = rateLimit(ip, {
+              limit: 30,
+              windowMs: 10 * 60_000,
+              prefix: 'library-upload',
+            });
+            if (!allowed) {
+              return Response.json(
+                { error: "You've hit the upload limit. Try again later." },
+                { status: 429, headers: { 'Retry-After': String(retryAfter) } }
+              );
+            }
           }
 
           const form = await request.formData();
@@ -101,6 +103,9 @@ export const Route = createFileRoute('/api/library/upload')({
             compress: compressPdfForStorage,
           };
 
+          // Effective per-account cap (admins are uncapped and skip this).
+          const quota = isAdmin ? undefined : await effectiveQuota(userId);
+
           let result;
           try {
             result = await processLibraryUpload(deps, {
@@ -111,6 +116,7 @@ export const Route = createFileRoute('/api/library/upload')({
               description,
               pages,
               isAdmin,
+              quota,
             });
           } catch (err) {
             // Persistence failed after objects may have been written — clean up both
