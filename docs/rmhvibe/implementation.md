@@ -14,7 +14,7 @@ Replace the `ComingSoonGate` with a clean, minimal landing page.
 
 - Full-viewport centered column, no sidebar chrome needed (the `_site` layout wraps it so the sidebar is still present on desktop)
 - **Title**: `RMH Studios` — large, bold, sparse
-- **Tagline**: `The anything platform.`
+- **Tagline**: `The everything platform.`
 - **Prompt input**: a single wide text input with placeholder `"Where do you want to go?"` and a Submit button (or Enter key)
 - On submit → navigate to `/v/new?prompt=<encoded>` which triggers generation
 

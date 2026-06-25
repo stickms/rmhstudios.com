@@ -343,6 +343,15 @@ export function UploadModal({
           </button>
         </div>
 
+        {quota && !quota.storageDurable && (
+          <p className="lib-upload__warn" role="alert">
+            {t('storage-not-durable', {
+              defaultValue:
+                'Object storage is not configured on the server, so uploads will not persist (they 404 after a while). Set the S3_* / R2 environment variables.',
+            })}
+          </p>
+        )}
+
         {gated ? (
           <QuotaGate quota={quota!} busy={gateBusy} onDelete={deleteMine} onAppeal={appeal} t={t} />
         ) : !hasItems ? (
@@ -428,6 +437,7 @@ type QuotaInfo = {
   quota: number;
   isAdmin: boolean;
   pending: boolean;
+  storageDurable: boolean;
   mine: { slug: string; title: string; coverUrl: string | null }[];
 };
 

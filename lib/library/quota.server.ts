@@ -9,6 +9,7 @@
  */
 import { prisma } from '@/lib/prisma.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
+import { s3Configured } from '@/lib/storage/s3.server';
 import { LIBRARY_USER_QUOTA } from './upload-validation';
 
 const QUOTA_MAX = 100_000;
@@ -22,6 +23,8 @@ export type QuotaStatus = {
   isAdmin: boolean;
   /** Whether the user already has a pending appeal. */
   pending: boolean;
+  /** False when object storage isn't configured — uploads would not persist. */
+  storageDurable: boolean;
   /** The user's own uploads, so they can delete one to free space. */
   mine: { slug: string; title: string; coverUrl: string | null }[];
 };
@@ -48,7 +51,8 @@ export async function getQuotaStatus(userId: string, isAdmin: boolean): Promise<
     quota: user?.libraryUploadQuota ?? LIBRARY_USER_QUOTA,
     isAdmin,
     pending: pending > 0,
-    mine: docs.map((d) => ({
+    storageDurable: s3Configured(),
+    mine: docs.map((d: { id: string; slug: string; title: string; coverKey: string | null }) => ({
       slug: d.slug,
       title: d.title,
       coverUrl: d.coverKey ? `/api/library/cover/${d.id}` : null,
@@ -106,7 +110,20 @@ export async function listPendingQuotaRequests(): Promise<QuotaRequestView[]> {
       },
     },
   });
-  return rows.map((r) => ({
+  type Row = {
+    id: string;
+    requestedTotal: number;
+    reason: string;
+    createdAt: Date;
+    user: {
+      id: string;
+      handle: string | null;
+      name: string | null;
+      libraryUploadQuota: number | null;
+      _count: { libraryUploads: number };
+    };
+  };
+  return (rows as Row[]).map((r) => ({
     id: r.id,
     requestedTotal: r.requestedTotal,
     reason: r.reason,
