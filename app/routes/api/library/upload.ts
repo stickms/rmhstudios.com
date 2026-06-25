@@ -37,11 +37,13 @@ export const Route = createFileRoute('/api/library/upload')({
             );
           }
 
+          // Admins do trusted bulk uploads — give them a very high ceiling; regular
+          // users keep a modest per-IP limit.
           const ip = getClientIp(request);
           const { allowed, retryAfter } = rateLimit(ip, {
-            limit: 5,
+            limit: isAdmin ? 500 : 30,
             windowMs: 10 * 60_000,
-            prefix: 'library-upload',
+            prefix: isAdmin ? 'library-upload-admin' : 'library-upload',
           });
           if (!allowed) {
             return Response.json(

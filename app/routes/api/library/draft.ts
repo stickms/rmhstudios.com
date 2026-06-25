@@ -16,11 +16,13 @@ export const Route = createFileRoute('/api/library/draft')({
         if (!session) {
           return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
+        // Admins draft metadata for whole batches at once — give them headroom.
+        const isAdmin = Boolean((session.user as { isAdmin?: boolean }).isAdmin);
         const ip = getClientIp(request);
         const { allowed, retryAfter } = rateLimit(ip, {
-          limit: 15,
+          limit: isAdmin ? 400 : 30,
           windowMs: 10 * 60_000,
-          prefix: 'library-draft',
+          prefix: isAdmin ? 'library-draft-admin' : 'library-draft',
         });
         if (!allowed) {
           return Response.json(

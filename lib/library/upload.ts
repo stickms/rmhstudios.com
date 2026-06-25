@@ -10,6 +10,7 @@ import {
   validateBookBuffer,
   validateBookFields,
   libraryPdfMaxBytes,
+  sanitizePages,
   LIBRARY_USER_QUOTA,
 } from './upload-validation';
 import { libraryFileKey, libraryCoverKey, libraryContentType, slugifyTitle, type LibraryFormat } from './keys';
@@ -127,7 +128,7 @@ export async function processLibraryUpload(
     slug,
     title: input.title.trim(),
     description: input.description ?? '',
-    pages: input.pages,
+    pages: sanitizePages(input.pages),
     format,
     pdfKey: fileKey,
     coverKey,
