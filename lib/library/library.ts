@@ -1,16 +1,15 @@
 /**
- * RMH Studios — Library data layer.
+ * RMH Studios — Library data layer (legacy static catalog).
  *
- * The library is the set of PDFs in `public/library`. Their human-readable titles
- * and descriptions are generated once via DeepSeek (see
- * scripts/generate-library-metadata.ts) and cached in data/library-metadata.json,
- * which we import here as the source of truth. Each entry is turned into a
- * `LibraryBook` with a stable slug, a public PDF URL, and a deterministic accent
- * hue so the bookshelf and reader can render rich, consistent cards without any
- * runtime PDF parsing or LLM calls.
+ * Historically the library was the set of bundled PDFs in `public/library`, keyed
+ * by data/library-metadata.json. Those books have since been migrated into object
+ * storage as LibraryDocument rows, the bundled files were removed from the repo,
+ * and the catalog JSON is now empty — so `listLibraryBooks()` returns nothing and
+ * the database (see library.server.ts) is the single source of truth.
  *
- * Pure/static (no fs, no secrets) so it's safe to import from both the server
- * loader and the client.
+ * The types and helpers remain because the rest of the library imports the
+ * `LibraryBook` shape and a few of these functions still resolve (now always to
+ * empty) as a harmless fallback. Pure/static (no fs, no secrets).
  */
 
 import metadata from '@/data/library-metadata.json';
