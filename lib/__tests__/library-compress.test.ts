@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest';
 import { gunzipSync } from 'node:zlib';
-import { compressPdfForStorage, isGzipped } from '@/lib/library/compress.server';
+import { compressPdfForStorage, isGzipped, decompressStored } from '@/lib/library/compress.server';
 
 describe('compressPdfForStorage', () => {
   test('gzips a compressible PDF and round-trips back to the original', () => {
@@ -18,6 +18,20 @@ describe('compressPdfForStorage', () => {
     const stored = compressPdfForStorage(pdf);
     expect(stored.equals(pdf)).toBe(true);
     expect(isGzipped(stored)).toBe(false);
+  });
+});
+
+describe('decompressStored', () => {
+  test('inflates a gzipped object back to the original bytes', () => {
+    const pdf = Buffer.concat([Buffer.from('%PDF-1.7\n'), Buffer.alloc(64 * 1024, 0x41)]);
+    const stored = compressPdfForStorage(pdf);
+    expect(isGzipped(stored)).toBe(true);
+    expect(decompressStored(stored).equals(pdf)).toBe(true);
+  });
+
+  test('returns non-gzipped bytes untouched', () => {
+    const raw = Buffer.from('%PDF-1.7 stored raw');
+    expect(decompressStored(raw).equals(raw)).toBe(true);
   });
 });
 

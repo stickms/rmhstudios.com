@@ -871,6 +871,79 @@
 .lib-collections__shelf {
   margin-top: 12px;
 }
+
+/* ── Collection tiles (a collection shown as a single book-like cover) ──────── */
+.lib-coll-tile__btn {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  width: 100%;
+  cursor: pointer;
+  text-align: inherit;
+}
+/* Stacked-pages hint behind the cover so a collection reads as a set of books. */
+.lib-coll-tile__stack {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 78%;
+  height: 92%;
+  transform: translateX(-50%) rotate(-4deg);
+  transform-origin: bottom center;
+  border-radius: 3px 6px 6px 3px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(0, 0, 0, 0.28));
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+  z-index: 0;
+}
+.lib-coll-tile .lib-book__cover {
+  position: relative;
+  z-index: 1;
+}
+/* Member-count badge. */
+.lib-coll-tile__badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(10, 10, 10, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+/* Cover-generation spinner overlay. */
+.lib-coll-tile__gen {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  background: rgba(8, 8, 8, 0.55);
+  color: #fff;
+  border-radius: inherit;
+}
+/* Manage action row, centered under the tile. */
+.lib-coll-tile__actions {
+  justify-content: center;
+  margin-top: 8px;
+}
+
+/* Collection view modal — wider so the book shelf breathes. */
+.lib-coll-modal {
+  max-width: min(920px, 94vw);
+}
+.lib-coll-modal .lib-collections__shelf {
+  max-height: 64vh;
+  overflow-y: auto;
+}
 /* Remove-from-collection badge on a book while managing. */
 .lib-collections__remove {
   position: absolute;

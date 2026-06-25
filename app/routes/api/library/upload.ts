@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { prisma } from '@/lib/prisma.server';
-import { putObject, deleteObject } from '@/lib/storage/s3.server';
+import { putObject, deleteObject, objectExists, s3Configured } from '@/lib/storage/s3.server';
 import { validateImageBuffer } from '@/lib/slice-it/upload-validation';
 import { processLibraryUpload, type UploadDeps } from '@/lib/library/upload';
 import { uploadSlugExists } from '@/lib/library/library.server';
@@ -23,6 +23,19 @@ export const Route = createFileRoute('/api/library/upload')({
           }
           const userId = session.user.id;
           const isAdmin = Boolean((session.user as { isAdmin?: boolean }).isAdmin);
+
+          // Library files MUST go to durable, shared object storage. Without S3 the
+          // storage layer silently falls back to the local filesystem — fine for a
+          // single dev box, but in a multi-instance / ephemeral deploy the bytes land
+          // on one container's disk and every later read from another instance 404s.
+          // Refuse rather than accept an upload we can't reliably serve back.
+          if (!s3Configured() && process.env.NODE_ENV === 'production') {
+            console.error('Library upload refused: object storage (S3_*) is not configured.');
+            return Response.json(
+              { error: 'Uploads are temporarily unavailable. Please try again later.' },
+              { status: 503 },
+            );
+          }
 
           const ip = getClientIp(request);
           const { allowed, retryAfter } = rateLimit(ip, {
@@ -109,6 +122,23 @@ export const Route = createFileRoute('/api/library/upload')({
           if (!result.ok) {
             return Response.json({ error: result.error }, { status: result.status });
           }
+
+          // Confirm the stored file is actually retrievable before telling the client
+          // it worked. A silent storage miss here becomes an honest error now, instead
+          // of a 404 the next time someone opens the book.
+          const stored =
+            (await objectExists(libraryFileKey(id, 'pdf')).catch(() => false)) ||
+            (await objectExists(libraryFileKey(id, 'epub')).catch(() => false));
+          if (!stored) {
+            console.error(`Library upload ${id}: stored object not found after write — rolling back.`);
+            await prisma.libraryDocument.delete({ where: { id } }).catch(() => {});
+            await deleteObject(libraryCoverKey(id)).catch(() => {});
+            return Response.json(
+              { error: 'The file could not be stored. Please try again.' },
+              { status: 502 },
+            );
+          }
+
           // Admin uploads land in the curated section — record them in the audit log.
           if (isAdmin) {
             await logAdminAction(userId, 'library.upload', {

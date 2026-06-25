@@ -27,6 +27,7 @@ import { useSession } from '@/components/Providers';
 import { UploadModal } from '@/components/library/UploadModal';
 import { LibraryEditBar, LibraryEditModal } from '@/components/library/LibraryEditControls';
 import { LibraryCollections } from '@/components/library/LibraryCollections';
+import type { CollectionView } from '@/lib/library/collections';
 import '@/components/library/library.css';
 
 const fetchBooks = createServerFn({ method: 'GET' }).handler(async () => ({
@@ -53,6 +54,7 @@ function Library() {
   const isAdmin = Boolean(sessionUser?.isAdmin);
   const myHandle = sessionUser?.handle ?? null;
   const [books, setBooks] = useState<LibraryBook[]>(initialBooks);
+  const [collections, setCollections] = useState<CollectionView[]>([]);
   const [query, setQuery] = useState('');
   const [uploadOpen, setUploadOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -84,13 +86,35 @@ function Library() {
     if (!editMode) setBooks(initialBooks);
   }, [editMode, isAdmin, refresh, initialBooks]);
 
+  // Collections are owned here (not inside LibraryCollections) so the main shelf
+  // can hide books that already live in a collection, and stay in sync after edits.
+  const refreshCollections = useMemo(
+    () => async () => {
+      const res = await fetch('/api/library/collections').catch(() => null);
+      if (!res?.ok) return;
+      const data = await res.json().catch(() => null);
+      if (data?.collections) setCollections(data.collections as CollectionView[]);
+    },
+    [],
+  );
+  useEffect(() => {
+    void refreshCollections();
+  }, [refreshCollections]);
+
+  // Slugs already shown inside a collection — don't repeat them in the main list.
+  const collectedSlugs = useMemo(
+    () => new Set(collections.flatMap((c) => c.books.map((b) => b.slug))),
+    [collections],
+  );
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return books;
-    return books.filter(
-      (b) => b.title.toLowerCase().includes(q) || b.description.toLowerCase().includes(q),
-    );
-  }, [books, query]);
+    return books.filter((b) => {
+      if (collectedSlugs.has(b.slug)) return false;
+      if (!q) return true;
+      return b.title.toLowerCase().includes(q) || b.description.toLowerCase().includes(q);
+    });
+  }, [books, query, collectedSlugs]);
 
   // Sections render in manual order (position), title as a stable tiebreak — so
   // admin reordering (arrows + drag) actually takes effect.
@@ -235,6 +259,8 @@ function Library() {
 
         <LibraryCollections
           books={books}
+          collections={collections}
+          onChanged={refreshCollections}
           isAdmin={isAdmin}
           myHandle={myHandle}
           canCreate={Boolean(session.data)}

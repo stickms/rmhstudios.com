@@ -296,24 +296,51 @@ export function BookCanvas({ aspect, single, numPages, getTex, ensurePage, onPag
     return () => window.removeEventListener('keydown', onKey);
   }, [beginTurn]);
 
-  // Press-and-hold an on-screen arrow to flip continuously; each completed turn kicks
-  // the next so a held button rips through pages without manual repeat-clicking.
+  // Press-and-hold an on-screen arrow to flip continuously. A click turns exactly
+  // one page; only after holding past a short cooldown does it auto-repeat so you
+  // can rip through pages without machine-gunning the button.
+  const HOLD_DELAY = 500; // ms held before auto-repeat begins
+  const HOLD_EVERY = 320; // ms between auto-repeated turns
   const holdTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const holdDelay = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const holdFired = useRef(false);
   const stopHold = useCallback(() => {
     if (holdTimer.current) {
       clearInterval(holdTimer.current);
       holdTimer.current = null;
     }
+    if (holdDelay.current) {
+      clearTimeout(holdDelay.current);
+      holdDelay.current = null;
+    }
   }, []);
+  // pointerdown only *arms* the repeat — the first turn comes from onClick, so a
+  // tap never double-fires. The cooldown gives a deliberate pause before speed-up.
   const startHold = useCallback(
     (dir: Dir) => {
-      beginTurn(dir, false);
       stopHold();
-      holdTimer.current = setInterval(() => {
-        if (!beginTurn(dir, false)) stopHold();
-      }, 260);
+      holdFired.current = false;
+      holdDelay.current = setTimeout(() => {
+        holdFired.current = true;
+        beginTurn(dir, false);
+        holdTimer.current = setInterval(() => {
+          if (!beginTurn(dir, false)) stopHold();
+        }, HOLD_EVERY);
+      }, HOLD_DELAY);
     },
     [beginTurn, stopHold],
+  );
+  // A click turns one page — unless a hold already auto-repeated, in which case the
+  // trailing click that fires on release is swallowed so the page count stays right.
+  const navClick = useCallback(
+    (dir: Dir) => {
+      if (holdFired.current) {
+        holdFired.current = false;
+        return;
+      }
+      beginTurn(dir, false);
+    },
+    [beginTurn],
   );
   useEffect(() => stopHold, [stopHold]);
 
@@ -367,7 +394,7 @@ export function BookCanvas({ aspect, single, numPages, getTex, ensurePage, onPag
       <button
         type="button"
         className="lib-reader__nav lib-reader__nav--prev"
-        onClick={() => beginTurn('prev', false)}
+        onClick={() => navClick('prev')}
         onPointerDown={(e) => {
           e.preventDefault();
           startHold('prev');
@@ -383,7 +410,7 @@ export function BookCanvas({ aspect, single, numPages, getTex, ensurePage, onPag
       <button
         type="button"
         className="lib-reader__nav lib-reader__nav--next"
-        onClick={() => beginTurn('next', false)}
+        onClick={() => navClick('next')}
         onPointerDown={(e) => {
           e.preventDefault();
           startHold('next');
@@ -543,7 +570,9 @@ function Leaf({
   useFrame((_, delta) => {
     const a = anim.current!;
     if (a.active) {
-      const next = THREE.MathUtils.damp(progress.current!, a.target, 15, delta);
+      // λ≈11 makes the turn settle a touch slower than before, so a tapped/keyed
+      // flip reads as a smooth sweep rather than a snap.
+      const next = THREE.MathUtils.damp(progress.current!, a.target, 11, delta);
       progress.current = next;
       // Ease the vertical lean back to neutral as the turn settles.
       tilt.current = THREE.MathUtils.damp(tilt.current!, 0, 9, delta);

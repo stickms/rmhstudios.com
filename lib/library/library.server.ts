@@ -15,7 +15,6 @@
 import { prisma } from '@/lib/prisma.server';
 import { listLibraryBooks, getLibraryBook, type LibraryBook } from './library';
 import { mapDocToBook, type LibraryDocRow } from './merge';
-import { ensureLibraryMigrated } from './migrate.server';
 
 const DOC_SELECT = {
   id: true,
@@ -58,9 +57,6 @@ function withStatic(uploads: LibraryBook[], migrated: Set<string>): LibraryBook[
  * splits curated from community; we sort by title as a stable default.
  */
 export async function listAllBooks(): Promise<LibraryBook[]> {
-  // Lazily move the bundled static catalog into object storage (once per process,
-  // in the background — never blocks this load).
-  ensureLibraryMigrated();
   const [docs, migrated] = await Promise.all([
     prisma.libraryDocument.findMany({
       where: { hidden: false },
