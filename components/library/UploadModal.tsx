@@ -34,7 +34,9 @@ type UploadItem = {
   slug?: string;
 };
 
-const MAX_BATCH = 25;
+// Generous per-batch ceiling for admins (just a browser-sanity guard, not an
+// account limit). The concurrency pool keeps a big batch from overwhelming things.
+const MAX_BATCH = 1000;
 // Bounded concurrency: process many at once without melting the browser (pdf.js +
 // canvas are heavy) or firing 25 large POSTs simultaneously.
 const ANALYZE_CONCURRENCY = 4;

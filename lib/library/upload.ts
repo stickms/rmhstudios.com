@@ -76,13 +76,16 @@ export async function processLibraryUpload(
   deps: UploadDeps,
   input: UploadInput
 ): Promise<UploadResult> {
-  const count = await deps.countUserDocs(input.userId);
-  if (count >= LIBRARY_USER_QUOTA) {
-    return {
-      ok: false,
-      status: 429,
-      error: `You've reached the upload limit of ${LIBRARY_USER_QUOTA} books.`,
-    };
+  // Admins are uncapped; regular users have a per-account book quota.
+  if (!input.isAdmin) {
+    const count = await deps.countUserDocs(input.userId);
+    if (count >= LIBRARY_USER_QUOTA) {
+      return {
+        ok: false,
+        status: 429,
+        error: `You've reached the upload limit of ${LIBRARY_USER_QUOTA} books.`,
+      };
+    }
   }
 
   const bookCheck = validateBookBuffer(input.file);

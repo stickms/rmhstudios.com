@@ -85,6 +85,14 @@ describe('processLibraryUpload', () => {
     expect(deps.putObject).not.toHaveBeenCalled();
   });
 
+  test('admins are exempt from the quota', async () => {
+    const countUserDocs = vi.fn(async () => 999);
+    const deps = makeDeps({ countUserDocs });
+    const res = await processLibraryUpload(deps, { ...input, isAdmin: true });
+    expect(res).toMatchObject({ ok: true });
+    expect(countUserDocs).not.toHaveBeenCalled();
+  });
+
   test('rejects a non-PDF with 415', async () => {
     const deps = makeDeps();
     const res = await processLibraryUpload(deps, { ...input, file: Buffer.from('nope') });

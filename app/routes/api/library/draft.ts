@@ -16,19 +16,21 @@ export const Route = createFileRoute('/api/library/draft')({
         if (!session) {
           return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
-        // Admins draft metadata for whole batches at once — give them headroom.
+        // Admins are unlimited (bulk drafting); regular users are rate-limited.
         const isAdmin = Boolean((session.user as { isAdmin?: boolean }).isAdmin);
-        const ip = getClientIp(request);
-        const { allowed, retryAfter } = rateLimit(ip, {
-          limit: isAdmin ? 400 : 30,
-          windowMs: 10 * 60_000,
-          prefix: isAdmin ? 'library-draft-admin' : 'library-draft',
-        });
-        if (!allowed) {
-          return Response.json(
-            { error: 'Too many requests.' },
-            { status: 429, headers: { 'Retry-After': String(retryAfter) } }
-          );
+        if (!isAdmin) {
+          const ip = getClientIp(request);
+          const { allowed, retryAfter } = rateLimit(ip, {
+            limit: 30,
+            windowMs: 10 * 60_000,
+            prefix: 'library-draft',
+          });
+          if (!allowed) {
+            return Response.json(
+              { error: 'Too many requests.' },
+              { status: 429, headers: { 'Retry-After': String(retryAfter) } }
+            );
+          }
         }
         if (!isAITextConfigured()) {
           return Response.json({ title: '', description: '' });

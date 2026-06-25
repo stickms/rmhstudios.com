@@ -37,19 +37,20 @@ export const Route = createFileRoute('/api/library/upload')({
             );
           }
 
-          // Admins do trusted bulk uploads — give them a very high ceiling; regular
-          // users keep a modest per-IP limit.
-          const ip = getClientIp(request);
-          const { allowed, retryAfter } = rateLimit(ip, {
-            limit: isAdmin ? 500 : 30,
-            windowMs: 10 * 60_000,
-            prefix: isAdmin ? 'library-upload-admin' : 'library-upload',
-          });
-          if (!allowed) {
-            return Response.json(
-              { error: "You've hit the upload limit. Try again later." },
-              { status: 429, headers: { 'Retry-After': String(retryAfter) } }
-            );
+          // Admins are unlimited; regular users have a modest per-IP rate limit.
+          if (!isAdmin) {
+            const ip = getClientIp(request);
+            const { allowed, retryAfter } = rateLimit(ip, {
+              limit: 30,
+              windowMs: 10 * 60_000,
+              prefix: 'library-upload',
+            });
+            if (!allowed) {
+              return Response.json(
+                { error: "You've hit the upload limit. Try again later." },
+                { status: 429, headers: { 'Retry-After': String(retryAfter) } }
+              );
+            }
           }
 
           const form = await request.formData();
