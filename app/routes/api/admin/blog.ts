@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma.server";
+import { logAdminAction } from "@/lib/admin-audit.server";
 
 export const Route = createFileRoute('/api/admin/blog')({
   server: {
@@ -64,6 +65,12 @@ export const Route = createFileRoute('/api/admin/blog')({
             }
         });
 
+        await logAdminAction(user.id, isEdit ? 'blog.edit' : 'blog.create', {
+            targetType: 'BlogPost',
+            targetId: slug,
+            detail: title,
+        });
+
         return Response.json({ success: true, slug });
 
     } catch (error: any) {
@@ -95,6 +102,8 @@ export const Route = createFileRoute('/api/admin/blog')({
             }
             throw e;
         }
+
+        await logAdminAction(user.id, 'blog.delete', { targetType: 'BlogPost', targetId: slug });
 
         return Response.json({ success: true });
 

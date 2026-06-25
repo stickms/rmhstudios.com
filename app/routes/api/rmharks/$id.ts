@@ -6,6 +6,7 @@ import { feedEventBus } from "@/lib/feed-sse";
 import { MAX_RMHARK_LENGTH } from "@/lib/rmhark-schema";
 import { canViewPost } from "@/lib/feed/audience.server";
 import { isLocked } from "@/lib/feed/map-feed-item.server";
+import { logAdminAction } from "@/lib/admin-audit.server";
 
 export const Route = createFileRoute('/api/rmharks/$id')({
   server: {
@@ -160,6 +161,15 @@ export const Route = createFileRoute('/api/rmharks/$id')({
       where: { id },
       data: { deletedAt, deletedByAdmin },
     });
+
+    // Record admin moderation (deleting another user's post).
+    if (deletedByAdmin) {
+      await logAdminAction(session.user.id, 'rmhark.delete', {
+        targetType: 'RMHark',
+        targetId: id,
+        detail: `author:${rmhark.userId}`,
+      });
+    }
 
     // Broadcast deletion via SSE
     const deletedMessage = deletedByAdmin

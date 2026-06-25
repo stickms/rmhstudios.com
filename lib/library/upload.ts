@@ -7,12 +7,12 @@
  * route stay a thin adapter.
  */
 import {
-  validatePdfBuffer,
+  validateBookBuffer,
   validateBookFields,
   libraryPdfMaxBytes,
   LIBRARY_USER_QUOTA,
 } from './upload-validation';
-import { libraryPdfKey, libraryCoverKey, slugifyTitle } from './keys';
+import { libraryFileKey, libraryCoverKey, libraryContentType, slugifyTitle, type LibraryFormat } from './keys';
 import { isGzipped } from './compress.server';
 
 export type CreateDocInput = {
@@ -21,6 +21,7 @@ export type CreateDocInput = {
   title: string;
   description: string;
   pages: number;
+  format: LibraryFormat;
   pdfKey: string;
   coverKey: string | null;
   sizeBytes: number;
@@ -40,13 +41,14 @@ export type UploadDeps = {
   countUserDocs: (userId: string) => Promise<number>;
   slugExists: (slug: string) => Promise<boolean>;
   newId: () => string;
-  /** Compress the PDF for at-rest storage (gzip when smaller). */
-  compress: (pdf: Buffer) => Buffer;
+  /** Compress the file for at-rest storage (gzip when smaller). */
+  compress: (file: Buffer) => Buffer;
 };
 
 export type UploadInput = {
   userId: string;
-  pdf: Buffer;
+  /** The uploaded book bytes (PDF or EPUB; the format is detected by magic bytes). */
+  file: Buffer;
   cover: Buffer | null;
   title: string;
   description: string;
@@ -82,15 +84,16 @@ export async function processLibraryUpload(
     };
   }
 
-  const pdfCheck = validatePdfBuffer(input.pdf);
-  if (!pdfCheck.ok) return { ok: false, status: 415, error: pdfCheck.error };
+  const bookCheck = validateBookBuffer(input.file);
+  if (!bookCheck.ok) return { ok: false, status: 415, error: bookCheck.error };
+  const format = bookCheck.format!;
 
   const maxBytes = libraryPdfMaxBytes(input.isAdmin);
-  if (input.pdf.length > maxBytes) {
+  if (input.file.length > maxBytes) {
     return {
       ok: false,
       status: 413,
-      error: `PDF too large. Maximum size is ${maxBytes / 1024 / 1024} MB.`,
+      error: `File too large. Maximum size is ${maxBytes / 1024 / 1024} MB.`,
     };
   }
 
@@ -103,17 +106,17 @@ export async function processLibraryUpload(
 
   const id = deps.newId();
   const slug = await resolveUniqueSlug(slugifyTitle(input.title), deps.slugExists);
-  const pdfKey = libraryPdfKey(id);
+  const fileKey = libraryFileKey(id, format);
   const coverKey = input.cover ? libraryCoverKey(id) : null;
 
-  // Compress the PDF before storage; record Content-Encoding so the serve route
-  // (and any CDN in front of it) doesn't have to sniff the bytes to know.
-  const storedPdf = deps.compress(input.pdf);
+  // Compress before storage; record Content-Encoding so the serve route (and any
+  // CDN in front of it) doesn't have to sniff the bytes to know it's gzipped.
+  const stored = deps.compress(input.file);
   await deps.putObject(
-    pdfKey,
-    storedPdf,
-    'application/pdf',
-    isGzipped(storedPdf) ? 'gzip' : undefined
+    fileKey,
+    stored,
+    libraryContentType(format),
+    isGzipped(stored) ? 'gzip' : undefined,
   );
   if (input.cover && coverKey) {
     await deps.putObject(coverKey, input.cover, 'image/jpeg');
@@ -125,9 +128,10 @@ export async function processLibraryUpload(
     title: input.title.trim(),
     description: input.description ?? '',
     pages: input.pages,
-    pdfKey,
+    format,
+    pdfKey: fileKey,
     coverKey,
-    sizeBytes: input.pdf.length,
+    sizeBytes: input.file.length,
     uploadedByUserId: input.userId,
     official: input.isAdmin,
   });

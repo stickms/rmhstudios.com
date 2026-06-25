@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
+import { logAdminAction } from '@/lib/admin-audit.server';
 import { z } from 'zod';
 
 /**
@@ -31,12 +32,21 @@ export const Route = createFileRoute('/api/admin/announcements/$id')({
           where: { id: params.id },
           data: parsed.data,
         });
+        await logAdminAction(session.user.id, 'announcement.update', {
+          targetType: 'FeedAnnouncement',
+          targetId: params.id,
+          detail: JSON.stringify(parsed.data),
+        });
         return Response.json({ success: true });
       },
       DELETE: async ({ request, params }) => {
         const session = await requireAdmin(request);
         if (!session) return Response.json({ error: 'Forbidden' }, { status: 403 });
         await prisma.feedAnnouncement.delete({ where: { id: params.id } }).catch(() => {});
+        await logAdminAction(session.user.id, 'announcement.delete', {
+          targetType: 'FeedAnnouncement',
+          targetId: params.id,
+        });
         return Response.json({ success: true });
       },
     },

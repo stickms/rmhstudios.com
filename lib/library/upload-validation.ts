@@ -1,9 +1,12 @@
 /**
  * RMH Studios — Library upload validation (server-safe, dependency-free).
  *
- * Validates uploaded PDFs and the book fields that accompany them. Buffers are
- * checked by magic bytes rather than trusting the client-declared content type.
+ * Validates uploaded books (PDF or EPUB) and the fields that accompany them.
+ * Buffers are checked by magic bytes rather than trusting the client-declared
+ * content type.
  */
+
+import type { LibraryFormat } from './keys';
 
 /** Maximum accepted PDF size for a regular (non-admin) upload (10 MB). */
 export const LIBRARY_PDF_MAX_BYTES_USER = 10 * 1024 * 1024;
@@ -39,6 +42,31 @@ export function validatePdfBuffer(buffer: Buffer): ValidationResult {
     return { ok: false, error: "That doesn't look like a PDF." };
   }
   return { ok: true };
+}
+
+/**
+ * Detect a buffer's library format by magic bytes, or null if it's neither.
+ * EPUBs are ZIP archives (`PK\x03\x04`) whose first entry is an uncompressed
+ * `mimetype` file reading `application/epub+zip`; we check both for confidence.
+ */
+export function detectLibraryFormat(buffer: Buffer): LibraryFormat | null {
+  if (buffer.length < 4) return null;
+  const head = buffer.subarray(0, 1024).toString('latin1');
+  if (head.includes('%PDF')) return 'pdf';
+  const isZip = buffer[0] === 0x50 && buffer[1] === 0x4b && buffer[2] === 0x03 && buffer[3] === 0x04;
+  if (isZip && head.includes('application/epub+zip')) return 'epub';
+  // Some EPUBs put the mimetype past our window or compress it; accept a ZIP that
+  // also contains the OEBPS/container hint as a softer signal.
+  if (isZip && (head.includes('META-INF') || head.includes('mimetype'))) return 'epub';
+  return null;
+}
+
+/** Validate an uploaded book buffer for a known format and non-emptiness. */
+export function validateBookBuffer(buffer: Buffer): ValidationResult & { format?: LibraryFormat } {
+  if (buffer.length === 0) return { ok: false, error: 'The file is empty.' };
+  const format = detectLibraryFormat(buffer);
+  if (!format) return { ok: false, error: "That doesn't look like a PDF or EPUB." };
+  return { ok: true, format };
 }
 
 /** Validate the title, page count, and optional description for a book. */

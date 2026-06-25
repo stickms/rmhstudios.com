@@ -8,9 +8,22 @@
  * where a CDN fronts R2.
  */
 
+/** A library document's file format. */
+export type LibraryFormat = 'pdf' | 'epub';
+
 /** R2 object key for an uploaded book's PDF. */
 export function libraryPdfKey(id: string): string {
   return `library/${id}.pdf`;
+}
+
+/** R2 object key for an uploaded book's file, by format (pdf → .pdf, epub → .epub). */
+export function libraryFileKey(id: string, format: LibraryFormat): string {
+  return format === 'epub' ? `library/${id}.epub` : libraryPdfKey(id);
+}
+
+/** The stored content type for a format. */
+export function libraryContentType(format: LibraryFormat): string {
+  return format === 'epub' ? 'application/epub+zip' : 'application/pdf';
 }
 
 /** R2 object key for an uploaded book's cover image. */

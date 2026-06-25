@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma.server";
+import { logAdminAction } from "@/lib/admin-audit.server";
 
 export const Route = createFileRoute('/api/rmharks/$id/comment/$commentId')({
   server: {
@@ -28,13 +29,22 @@ export const Route = createFileRoute('/api/rmharks/$id/comment/$commentId')({
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    const deletedByAdmin = isAdmin && comment.userId !== session.user.id;
     await prisma.rMHarkComment.update({
       where: { id: commentId },
       data: {
         deletedAt: new Date(),
-        deletedByAdmin: isAdmin && comment.userId !== session.user.id,
+        deletedByAdmin,
       },
     });
+
+    if (deletedByAdmin) {
+      await logAdminAction(session.user.id, 'rmhark.comment.delete', {
+        targetType: 'RMHarkComment',
+        targetId: commentId,
+        detail: `author:${comment.userId}`,
+      });
+    }
 
     return Response.json({ success: true });
   } catch (error) {

@@ -18,7 +18,7 @@ function makeDeps(over: Partial<UploadDeps> = {}): UploadDeps {
 
 const input = {
   userId: 'u1',
-  pdf: PDF,
+  file: PDF,
   cover: COVER,
   title: 'Field Manual',
   description: 'A manual.',
@@ -87,7 +87,7 @@ describe('processLibraryUpload', () => {
 
   test('rejects a non-PDF with 415', async () => {
     const deps = makeDeps();
-    const res = await processLibraryUpload(deps, { ...input, pdf: Buffer.from('nope') });
+    const res = await processLibraryUpload(deps, { ...input, file: Buffer.from('nope') });
     expect(res).toMatchObject({ ok: false, status: 415 });
     expect(deps.putObject).not.toHaveBeenCalled();
   });
@@ -101,7 +101,7 @@ describe('processLibraryUpload', () => {
   test('rejects a pdf over the 10 MB non-admin cap with 413', async () => {
     const deps = makeDeps();
     const big = Buffer.concat([Buffer.from('%PDF-1.7'), Buffer.alloc(11 * 1024 * 1024)]);
-    const res = await processLibraryUpload(deps, { ...input, pdf: big, isAdmin: false });
+    const res = await processLibraryUpload(deps, { ...input, file: big, isAdmin: false });
     expect(res).toMatchObject({ ok: false, status: 413 });
     expect(deps.putObject).not.toHaveBeenCalled();
   });
@@ -109,14 +109,14 @@ describe('processLibraryUpload', () => {
   test('allows the same pdf for an admin (64 MB cap)', async () => {
     const deps = makeDeps();
     const big = Buffer.concat([Buffer.from('%PDF-1.7'), Buffer.alloc(11 * 1024 * 1024)]);
-    const res = await processLibraryUpload(deps, { ...input, pdf: big, isAdmin: true });
+    const res = await processLibraryUpload(deps, { ...input, file: big, isAdmin: true });
     expect(res).toMatchObject({ ok: true });
   });
 
   test('rejects an oversize pdf beyond the admin cap with 413', async () => {
     const deps = makeDeps();
     const big = Buffer.concat([Buffer.from('%PDF-1.7'), Buffer.alloc(65 * 1024 * 1024)]);
-    const res = await processLibraryUpload(deps, { ...input, pdf: big, isAdmin: true });
+    const res = await processLibraryUpload(deps, { ...input, file: big, isAdmin: true });
     expect(res).toMatchObject({ ok: false, status: 413 });
     expect(deps.putObject).not.toHaveBeenCalled();
   });

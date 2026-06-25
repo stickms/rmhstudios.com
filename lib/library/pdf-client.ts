@@ -24,6 +24,9 @@ export type PdfAnalysis = {
   text: string;
 };
 
+/** Analysis of an uploaded book, of either supported format. */
+export type BookAnalysis = PdfAnalysis & { format: 'pdf' | 'epub' };
+
 async function renderCover(doc: any, targetWidth: number): Promise<Blob | null> {
   try {
     const page = await doc.getPage(1);
@@ -75,4 +78,37 @@ export async function analyzePdf(
   } finally {
     await doc.destroy?.();
   }
+}
+
+/** Read an EPUB File into a section count, its declared cover, and an opening-text snippet. */
+async function analyzeEpub(file: File, maxChars: number): Promise<PdfAnalysis> {
+  const { EpubBook } = await import('./epub');
+  const book = await EpubBook.open(await file.arrayBuffer());
+  try {
+    const cover = await book.coverBlob().catch(() => null);
+    const text = await book.text(maxChars).catch(() => '');
+    return { pages: Math.max(1, book.spineLength), cover, text };
+  } finally {
+    book.revoke();
+  }
+}
+
+/** True when a file looks like an EPUB (by extension or MIME), not a PDF. */
+export function isEpubFile(file: File): boolean {
+  return file.name.toLowerCase().endsWith('.epub') || file.type === 'application/epub+zip';
+}
+
+/**
+ * Analyse an uploaded book of either format, returning the detected `format`
+ * alongside the page/section count, cover and text snippet.
+ */
+export async function analyzeBook(
+  file: File,
+  opts: { coverWidth?: number; textPages?: number; maxChars?: number } = {}
+): Promise<BookAnalysis> {
+  const maxChars = opts.maxChars ?? 6000;
+  if (isEpubFile(file)) {
+    return { ...(await analyzeEpub(file, maxChars)), format: 'epub' };
+  }
+  return { ...(await analyzePdf(file, opts)), format: 'pdf' };
 }

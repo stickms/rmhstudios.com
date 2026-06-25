@@ -429,8 +429,9 @@
   z-index: 20;
   margin: 0;
   padding: 6px;
-  list-style: none;
-  width: min(78vw, 320px);
+  width: max-content;
+  min-width: 180px;
+  max-width: min(78vw, 340px);
   max-height: min(60vh, 460px);
   overflow-y: auto;
   border-radius: 12px;
@@ -439,6 +440,13 @@
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.6);
   backdrop-filter: saturate(180%) blur(24px);
   -webkit-backdrop-filter: saturate(180%) blur(24px);
+}
+/* Lists inside the popover shell reset their native styling. */
+.lib-reader__chapters-list,
+.lib-reader__quality-menu {
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 .lib-reader__chapter {
   display: flex;
@@ -476,13 +484,471 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Quality picker reuses the chapter dropdown styling but needs far less width. */
-.lib-reader__quality-menu {
-  width: max-content;
-  min-width: 132px;
-}
 .lib-reader__quality-menu .lib-reader__chapter-page {
   color: #6cc070;
+}
+
+/* ─── Bookmarks & notes panel ────────────────────────────────────────────────── */
+.lib-reader__marks-menu {
+  width: min(86vw, 360px);
+  max-width: min(86vw, 360px);
+}
+.lib-marks {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.lib-marks__section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.lib-marks__head {
+  margin: 0;
+  padding: 2px 6px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(245, 245, 247, 0.5);
+}
+.lib-marks__empty {
+  margin: 0;
+  padding: 0 6px 4px;
+  font-size: 0.78rem;
+  color: rgba(245, 245, 247, 0.4);
+}
+.lib-marks__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.lib-marks__item {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  border-radius: 8px;
+}
+.lib-marks__item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+.lib-marks__jump {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 0;
+  background: none;
+  color: #d4d4d8;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 8px;
+}
+.lib-marks__jump:hover {
+  color: #f5f5f7;
+}
+.lib-marks__item-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lib-marks__item-page {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  color: #8a8a8f;
+  font-variant-numeric: tabular-nums;
+}
+.lib-marks__item--note .lib-marks__jump {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+.lib-marks__note-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: normal;
+}
+.lib-marks__del {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: rgba(245, 245, 247, 0.4);
+  cursor: pointer;
+  transition: background 130ms ease, color 130ms ease;
+}
+.lib-marks__del:hover {
+  background: rgba(255, 90, 90, 0.2);
+  color: #ff8585;
+}
+.lib-marks__compose {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 4px;
+}
+.lib-marks__textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 44px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 0.5px solid rgba(255, 255, 255, 0.16);
+  color: #f5f5f7;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  font-family: inherit;
+  outline: none;
+}
+.lib-marks__textarea:focus {
+  border-color: rgba(255, 255, 255, 0.42);
+}
+.lib-marks__add {
+  align-self: flex-end;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 0.5px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: #f5f5f7;
+  font-size: 0.76rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 130ms ease;
+}
+.lib-marks__add:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.16);
+}
+.lib-marks__add:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* ─── Scrubber (fast page travel) ────────────────────────────────────────────── */
+.lib-reader__scrub {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(10px, 2.4vw, 22px);
+  transform: translateX(-50%);
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(620px, 84vw);
+  padding: 9px 16px;
+  border-radius: 9999px;
+  background: rgba(20, 20, 22, 0.66);
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: saturate(180%) blur(18px);
+  -webkit-backdrop-filter: saturate(180%) blur(18px);
+  opacity: 0.4;
+  transition: opacity 180ms ease;
+}
+.lib-reader__stage:hover .lib-reader__scrub,
+.lib-reader__scrub:hover,
+.lib-reader__scrub:focus-within {
+  opacity: 1;
+}
+.lib-reader__scrub-num {
+  font-size: 0.7rem;
+  color: rgba(245, 245, 247, 0.7);
+  font-variant-numeric: tabular-nums;
+  min-width: 1.5em;
+  text-align: center;
+}
+.lib-reader__scrub-track {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+.lib-reader__scrub-tick {
+  position: absolute;
+  top: 50%;
+  width: 3px;
+  height: 9px;
+  margin-top: -4.5px;
+  margin-left: -1.5px;
+  border-radius: 1px;
+  background: #ffcc4d;
+  pointer-events: none;
+  z-index: 1;
+}
+.lib-reader__scrub-input {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.18);
+  outline: none;
+  cursor: pointer;
+}
+.lib-reader__scrub-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #f5f5f7;
+  border: 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  cursor: grab;
+}
+.lib-reader__scrub-input::-webkit-slider-thumb:active {
+  cursor: grabbing;
+}
+.lib-reader__scrub-input::-moz-range-thumb {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #f5f5f7;
+  border: 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  cursor: grab;
+}
+
+/* The bookmark toggle / marks button lit state in the toolbar. */
+.lib-reader__bar .vibe-toolbar__icon.is-on {
+  color: #ffcc4d;
+}
+
+/* ─── EPUB reader ────────────────────────────────────────────────────────────── */
+/* The EPUB reader fills the stage with a reflow iframe — no 3D book padding. */
+.lib-epub__stage {
+  padding: 0;
+  perspective: none;
+}
+.lib-epub__frame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+  background: transparent;
+}
+
+/* Font-size + theme controls. */
+.lib-epub__settings {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 200px;
+  padding: 2px;
+}
+.lib-epub__set-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.lib-epub__steppers {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lib-epub__step {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 0.5px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: #f5f5f7;
+  cursor: pointer;
+  transition: background 130ms ease;
+}
+.lib-epub__step:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+.lib-epub__set-val {
+  min-width: 3em;
+  text-align: center;
+  font-size: 0.8rem;
+  color: #f5f5f7;
+  font-variant-numeric: tabular-nums;
+}
+.lib-epub__themes {
+  display: flex;
+  gap: 8px;
+}
+.lib-epub__theme {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  transition: transform 120ms ease, border-color 120ms ease;
+}
+.lib-epub__theme:hover {
+  transform: scale(1.08);
+}
+.lib-epub__theme.is-active {
+  border-color: #ffcc4d;
+}
+.lib-epub__theme--light { background: #f7f6f3; }
+.lib-epub__theme--sepia { background: #f4ecd8; }
+.lib-epub__theme--dark { background: #16161a; }
+
+/* ─── Collections / series ───────────────────────────────────────────────────── */
+.lib-collections {
+  margin-top: 8px;
+}
+.lib-collections__head {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 clamp(16px, 4vw, 44px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.lib-collections__head .lib__section-title {
+  padding: 0;
+  margin: 0;
+}
+.lib-collections__head-actions {
+  display: flex;
+  gap: 8px;
+}
+.lib-collections__empty {
+  max-width: 1320px;
+  margin: 8px auto 0;
+  padding: 0 clamp(16px, 4vw, 44px);
+}
+.lib-collections__group {
+  margin-top: 18px;
+}
+.lib-collections__group-head {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 clamp(16px, 4vw, 44px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.lib-collections__group-titles {
+  min-width: 0;
+}
+.lib-collections__group-title {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #f5f5f7;
+}
+.lib-collections__group-desc {
+  margin: 3px 0 0;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: rgba(245, 245, 247, 0.6);
+  max-width: 64ch;
+}
+.lib-collections__group-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.lib-collections__shelf {
+  margin-top: 12px;
+}
+/* Remove-from-collection badge on a book while managing. */
+.lib-collections__remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(10, 10, 10, 0.82);
+  color: #ff8585;
+  cursor: pointer;
+  transition: background 140ms ease;
+}
+.lib-collections__remove:hover {
+  background: rgba(255, 90, 90, 0.3);
+}
+
+/* Add-books picker list (inside the modal). */
+.lib-collections__picker {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  max-height: 50vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.lib-collections__picker-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 10px;
+  border-radius: 8px;
+}
+.lib-collections__picker-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+.lib-collections__picker-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.88rem;
+  color: #e7e7ea;
+}
+.lib-collections__picker-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background 140ms ease;
+}
+.lib-collections__picker-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+.lib-collections__picker-btn.is-added {
+  background: rgba(108, 192, 112, 0.18);
+  border-color: rgba(108, 192, 112, 0.5);
+  color: #9be39f;
+}
+.lib-collections__picker-empty {
+  padding: 18px 6px;
+  font-size: 0.85rem;
+  color: rgba(245, 245, 247, 0.5);
+  text-align: center;
 }
 
 .lib-reader__stage {

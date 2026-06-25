@@ -9,14 +9,14 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { Loader2 } from 'lucide-react';
-import { analyzePdf } from '@/lib/library/pdf-client';
+import { analyzeBook, isEpubFile } from '@/lib/library/pdf-client';
 import { libraryPdfMaxBytes } from '@/lib/library/upload-validation';
 
 type Status = 'idle' | 'analyzing' | 'drafting' | 'ready' | 'uploading';
 
 function humanizeFilename(name: string): string {
   return name
-    .replace(/\.pdf$/i, '')
+    .replace(/\.(pdf|epub)$/i, '')
     .replace(/[-_]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
@@ -41,6 +41,7 @@ export function UploadModal({
   const [cover, setCover] = useState<Blob | null>(null);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const [pages, setPages] = useState(0);
+  const [format, setFormat] = useState<'pdf' | 'epub'>('pdf');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -61,25 +62,32 @@ export function UploadModal({
 
   async function handleFile(f: File) {
     setError(null);
-    if (f.type && f.type !== 'application/pdf' && !f.name.toLowerCase().endsWith('.pdf')) {
-      setError(t("error-not-pdf", { defaultValue: "That doesn't look like a PDF." }));
+    const name = f.name.toLowerCase();
+    const looksValid =
+      isEpubFile(f) ||
+      f.type === 'application/pdf' ||
+      name.endsWith('.pdf') ||
+      (!f.type && name.endsWith('.epub'));
+    if (!looksValid) {
+      setError(t("error-not-book", { defaultValue: "That doesn't look like a PDF or EPUB." }));
       return;
     }
     if (f.size > maxBytes) {
-      setError(t("error-too-large", { maxMb, defaultValue: "PDF too large. Maximum size is {{maxMb}} MB." }));
+      setError(t("error-too-large", { maxMb, defaultValue: "File too large. Maximum size is {{maxMb}} MB." }));
       return;
     }
     setFile(f);
     setStatus('analyzing');
     let analysis;
     try {
-      analysis = await analyzePdf(f);
+      analysis = await analyzeBook(f);
     } catch {
-      setError(t("error-pdf-read", { defaultValue: "Couldn't read this PDF. It may be encrypted or corrupt." }));
+      setError(t("error-book-read", { defaultValue: "Couldn't read this file. It may be encrypted or corrupt." }));
       setStatus('idle');
       setFile(null);
       return;
     }
+    setFormat(analysis.format);
     setPages(analysis.pages);
     setCover(analysis.cover);
     setTitle(humanizeFilename(f.name));
@@ -111,7 +119,7 @@ export function UploadModal({
     setError(null);
     setStatus('uploading');
     const form = new FormData();
-    form.set('pdf', file);
+    form.set('file', file);
     if (cover) form.set('cover', new File([cover], 'cover.jpg', { type: 'image/jpeg' }));
     form.set('title', title.trim());
     form.set('description', description.trim());
@@ -146,7 +154,7 @@ export function UploadModal({
     <div className="lib-upload__overlay" role="dialog" aria-modal="true" aria-label={t("dialog-label", { defaultValue: "Upload a PDF" })} onMouseDown={onClose}>
       <div className="lib-upload" onMouseDown={(e) => e.stopPropagation()}>
         <div className="lib-upload__head">
-          <h2 className="lib-upload__title">{t("dialog-label", { defaultValue: "Upload a PDF" })}</h2>
+          <h2 className="lib-upload__title">{t("dialog-label", { defaultValue: "Upload a book" })}</h2>
           <button type="button" className="lib-upload__close" onClick={onClose} aria-label={t("close", { defaultValue: "Close" })}>×</button>
         </div>
 
@@ -162,14 +170,16 @@ export function UploadModal({
               if (f) handleFile(f);
             }}
           >
-            <span>{t("drop-prompt", { defaultValue: "Drop a PDF here, or click to choose one." })}</span>
+            <span>{t("drop-prompt-book", { defaultValue: "Drop a PDF or EPUB here, or click to choose one." })}</span>
             <span className="lib-upload__limit">{t("size-limit", { maxMb, defaultValue: "Up to {{maxMb}} MB." })}</span>
           </button>
         ) : (
           <div className="lib-upload__body">
             <div className="lib-upload__cover">
               {coverUrl ? <img src={coverUrl} alt="" /> : <div className="lib-upload__cover--blank" />}
-              <span className="lib-upload__pages">{pages ? `${pages} pages` : ''}</span>
+              <span className="lib-upload__pages">
+                {pages ? (format === 'epub' ? t('n-sections', { count: pages, defaultValue: `${pages} sections` }) : `${pages} pages`) : ''}
+              </span>
             </div>
             <div className={`lib-upload__fields ${generating ? 'is-generating' : ''}`}>
               {generating && (
@@ -211,7 +221,7 @@ export function UploadModal({
         <input
           ref={inputRef}
           type="file"
-          accept="application/pdf,.pdf"
+          accept="application/pdf,.pdf,application/epub+zip,.epub"
           hidden
           onChange={(e) => {
             const f = e.target.files?.[0];

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma.server';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { setUserTier } from '@/lib/doctrine/tiers';
+import { logAdminAction } from '@/lib/admin-audit.server';
 import type { TierId } from '@/lib/doctrine/types';
 
 const VALID_TIERS: TierId[] = ['PUBLIC', 'INSIDER', 'OPERATOR'];
@@ -43,6 +44,11 @@ export const Route = createFileRoute('/api/doctrine/admin/tiers')({
           }
 
           const result = await setUserTier(userId, tier);
+          await logAdminAction(session.user.id, 'doctrine.tier.set', {
+            targetType: 'User',
+            targetId: userId,
+            detail: tier,
+          });
           return Response.json({ success: true, ...result });
         } catch (e) {
           console.error('Doctrine admin tier change failed:', e);
