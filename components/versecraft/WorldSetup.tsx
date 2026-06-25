@@ -21,15 +21,22 @@ export function WorldSetup() {
   const [pronouns, setPronouns] = useState<typeof settings.playerPronouns>(settings.playerPronouns);
   const [prompt, setPrompt] = useState('');
   const [seedInput, setSeedInput] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  const begin = (opts: { random?: boolean; seed?: string }) => {
+  const begin = async (opts: { random?: boolean; seed?: string }) => {
+    if (submitting) return;
     const playerName = name.trim() || 'You';
     updateSettings({ playerName, playerPronouns: pronouns });
-    startGeneratedGame({
-      seed: opts.seed,
-      prompt: opts.random ? '' : prompt.trim(),
-      playerName,
-    });
+    setSubmitting(true);
+    try {
+      await startGeneratedGame({
+        seed: opts.seed,
+        prompt: opts.random ? '' : prompt.trim(),
+        playerName,
+      });
+    } catch {
+      setSubmitting(false);
+    }
   };
 
   const field = 'w-full px-3 py-2 rounded text-sm';
@@ -39,6 +46,21 @@ export function WorldSetup() {
     color: '#e8e0d0',
   } as const;
   const label = { color: '#c4a35a', fontFamily: 'var(--font-playfair, serif)' } as const;
+
+  if (submitting) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <motion.div
+          className="text-2xl tracking-wide"
+          style={{ fontFamily: 'var(--font-cinzel, serif)', color: '#e8e0d0' }}
+          animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.8, repeat: Infinity }}
+        >
+          Composing your world…
+        </motion.div>
+        <p className="text-sm italic" style={{ color: '#a89888' }}>summoning a cast, a setting, and a story that&apos;s only yours</p>
+      </div>
+    );
+  }
 
   return (
     <div className="relative flex flex-col items-center min-h-screen overflow-y-auto py-12 px-4">

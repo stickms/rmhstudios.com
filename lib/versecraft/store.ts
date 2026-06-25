@@ -10,6 +10,7 @@ import { CHARACTERS, getAffinityLevel } from './characters';
 import { autoSave, loadGame, saveGame as persistSave, dbSave, dbLoad } from './persistence';
 import { getChapterEntry, getNextChapterId } from './chapters/registry';
 import { fallbackWorld, fallbackChapter } from './gen/fallback';
+import { fetchOrCreateWorld, fetchChapter } from './gen/client';
 import { makeSeedCode, normalizeSeed } from './gen/rng';
 import type { GeneratedWorld, GenChapter, GenChoice } from './gen/world-types';
 
@@ -111,10 +112,11 @@ interface GameActions {
   updateSettings: (settings: Partial<PlayerSettings>) => void;
 
   // Generated (seed-driven) flow
-  startGeneratedGame: (opts: { seed?: string; prompt?: string; playerName?: string }) => void;
-  ensureGeneratedChapter: (index: number) => GenChapter;
+  genLoading: boolean;
+  startGeneratedGame: (opts: { seed?: string; prompt?: string; playerName?: string }) => Promise<void>;
+  ensureGeneratedChapter: (index: number) => Promise<GenChapter>;
   genApplyChoice: (choice: GenChoice) => void;
-  advanceGeneratedChapter: () => boolean;
+  advanceGeneratedChapter: () => Promise<boolean>;
 
   // Dialogue
   advanceDialogue: () => void;
@@ -206,14 +208,25 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
   })),
 
   // ─── Generated (seed-driven) flow ──────────────────────────────────────────
-  startGeneratedGame: ({ seed, prompt, playerName }) => {
+  genLoading: false,
+
+  startGeneratedGame: async ({ seed, prompt, playerName }) => {
     const cleanSeed = seed && seed.trim()
       ? normalizeSeed(seed)
       : makeSeedCode(`${Date.now()}-${Math.random()}`);
     const name = playerName || get().settings.playerName || 'You';
     const pronouns = get().settings.playerPronouns;
-    const world = fallbackWorld(cleanSeed, prompt ?? '', name, pronouns);
-    const ch0 = fallbackChapter(world, 0);
+    set({ genLoading: true });
+
+    // Server-first (DeepSeek + persisted, shareable); deterministic local fallback.
+    const remote = await fetchOrCreateWorld(cleanSeed, prompt ?? '', pronouns);
+    const base = remote ?? fallbackWorld(cleanSeed, prompt ?? '', name, pronouns);
+    // Show the player's own name regardless of how the canonical world was made.
+    const world: GeneratedWorld = { ...base, seed: cleanSeed, mc: { ...base.mc, name } };
+
+    const remoteCh0 = await fetchChapter(cleanSeed, 0);
+    const ch0 = remoteCh0 ?? fallbackChapter(world, 0);
+
     set({
       ...createInitialState(),
       mode: 'generated',
@@ -226,6 +239,7 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
       currentDialogueIndex: 0,
       affinity: affinityForWorld(world),
       gameStarted: true,
+      genLoading: false,
       screen: 'dialogue',
       isLoggedIn: get().isLoggedIn,
     });
@@ -234,14 +248,15 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
     debouncedDbSave(get);
   },
 
-  ensureGeneratedChapter: (index) => {
+  ensureGeneratedChapter: async (index) => {
     const state = get();
     const cached = state.generatedChapters[index];
     if (cached) return cached;
     const world = state.world;
     if (!world) throw new Error('ensureGeneratedChapter: no world');
-    const ch = fallbackChapter(world, index);
-    set({ generatedChapters: { ...state.generatedChapters, [index]: ch } });
+    const remote = await fetchChapter(state.seed, index);
+    const ch = remote ?? fallbackChapter(world, index);
+    set({ generatedChapters: { ...get().generatedChapters, [index]: ch } });
     return ch;
   },
 
@@ -270,7 +285,7 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
     debouncedDbSave(get);
   },
 
-  advanceGeneratedChapter: () => {
+  advanceGeneratedChapter: async () => {
     const state = get();
     const world = state.world;
     if (!world) return false;
@@ -285,12 +300,15 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
       if (s.isLoggedIn) dbSave(s);
       return false;
     }
-    const ch = state.generatedChapters[nextIndex] ?? fallbackChapter(world, nextIndex);
+    set({ genLoading: true });
+    const cached = state.generatedChapters[nextIndex];
+    const ch = cached ?? (await fetchChapter(state.seed, nextIndex)) ?? fallbackChapter(world, nextIndex);
     set({
-      generatedChapters: { ...state.generatedChapters, [nextIndex]: ch },
+      generatedChapters: { ...get().generatedChapters, [nextIndex]: ch },
       currentChapterIndex: nextIndex,
       currentSceneIndex: 0,
       currentDialogueIndex: 0,
+      genLoading: false,
       screen: 'dialogue',
     });
     const s = get();

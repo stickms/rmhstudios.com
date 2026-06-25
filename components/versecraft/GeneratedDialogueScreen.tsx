@@ -52,6 +52,7 @@ export function GeneratedDialogueScreen() {
   const setSceneIndex = useGameStore(s => s.setSceneIndex);
   const genApplyChoice = useGameStore(s => s.genApplyChoice);
   const advanceGeneratedChapter = useGameStore(s => s.advanceGeneratedChapter);
+  const genLoading = useGameStore(s => s.genLoading);
   const setScreen = useGameStore(s => s.setScreen);
 
   const [textComplete, setTextComplete] = useState(false);
@@ -92,7 +93,7 @@ export function GeneratedDialogueScreen() {
       setSceneIndex(sceneIndex + 1);
       setTextComplete(false);
     } else {
-      advanceGeneratedChapter();
+      void advanceGeneratedChapter();
       setTextComplete(false);
     }
   }, [scene, node, dialogueIndex, sceneIndex, chapter, textComplete, advanceDialogue, setSceneIndex, advanceGeneratedChapter]);
@@ -120,6 +121,23 @@ export function GeneratedDialogueScreen() {
 
   return (
     <div className="relative w-full min-h-screen overflow-hidden cursor-pointer" onClick={handleClick}>
+      {/* Chapter-transition overlay */}
+      <AnimatePresence>
+        {genLoading && (
+          <motion.div
+            className="absolute inset-0 z-40 flex items-center justify-center"
+            style={{ backgroundColor: 'rgba(19,16,26,0.85)', backdropFilter: 'blur(4px)' }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          >
+            <motion.span
+              className="text-xl tracking-wide" style={{ fontFamily: 'var(--font-cinzel, serif)', color: '#e8e0d0' }}
+              animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.6, repeat: Infinity }}
+            >
+              Turning the page…
+            </motion.span>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* Background */}
       <div className="absolute inset-0 z-0 transition-all duration-1000" style={{ backgroundColor: '#1a1520', filter }}>
         <img
