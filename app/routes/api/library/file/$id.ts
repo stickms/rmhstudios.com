@@ -11,7 +11,10 @@ import { isGzipped } from '@/lib/library/compress.server';
  * works where a CDN fronts R2). The row's `format` decides the stored key and
  * content type. Returns the full body; pdf.js falls back from range to a single
  * fetch when the response isn't 206. Files are stored gzip-compressed when that
- * saves space; when so, we set Content-Encoding so the browser inflates them.
+ * saves space; Content-Encoding is taken from the object's recorded encoding,
+ * falling back to sniffing the gzip magic bytes for objects stored before that
+ * metadata existed (and for the metadata-less local FS backend), so the browser
+ * inflates them.
  */
 export const Route = createFileRoute('/api/library/file/$id')({
   server: {
@@ -29,7 +32,7 @@ export const Route = createFileRoute('/api/library/file/$id')({
           const key = doc?.pdfKey ?? libraryFileKey(id, format);
           const object = await getObject(key);
           if (!object) return new Response('Not Found', { status: 404 });
-          const gz = isGzipped(object.body);
+          const gz = object.contentEncoding === 'gzip' || isGzipped(object.body);
           const headers: Record<string, string> = {
             'Content-Type': libraryContentType(format),
             'Content-Length': String(object.body.length),

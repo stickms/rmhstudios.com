@@ -92,6 +92,13 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if obj.ContentType != "" {
 		hdr.Set("Content-Type", obj.ContentType)
 	}
+	// Library PDFs are stored gzip-compressed with Content-Encoding: gzip metadata;
+	// relay it so the client inflates them. (S3 still honours Range on the stored
+	// bytes, but the library's own /api/library/file route is the canonical,
+	// range-free path for these objects.)
+	if obj.ContentEncoding != "" {
+		hdr.Set("Content-Encoding", obj.ContentEncoding)
+	}
 	hdr.Set("Cache-Control", cacheControl)
 	hdr.Set("Accept-Ranges", "bytes")
 	if obj.ETag != "" {

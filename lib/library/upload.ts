@@ -13,6 +13,7 @@ import {
   LIBRARY_USER_QUOTA,
 } from './upload-validation';
 import { libraryFileKey, libraryCoverKey, libraryContentType, slugifyTitle, type LibraryFormat } from './keys';
+import { isGzipped } from './compress.server';
 
 export type CreateDocInput = {
   id: string;
@@ -30,7 +31,12 @@ export type CreateDocInput = {
 };
 
 export type UploadDeps = {
-  putObject: (key: string, body: Buffer, contentType: string) => Promise<void>;
+  putObject: (
+    key: string,
+    body: Buffer,
+    contentType: string,
+    contentEncoding?: string
+  ) => Promise<void>;
   createDoc: (data: CreateDocInput) => Promise<{ slug: string }>;
   countUserDocs: (userId: string) => Promise<number>;
   slugExists: (slug: string) => Promise<boolean>;
@@ -103,8 +109,15 @@ export async function processLibraryUpload(
   const fileKey = libraryFileKey(id, format);
   const coverKey = input.cover ? libraryCoverKey(id) : null;
 
-  // Compress before storage (served back with Content-Encoding: gzip when smaller).
-  await deps.putObject(fileKey, deps.compress(input.file), libraryContentType(format));
+  // Compress before storage; record Content-Encoding so the serve route (and any
+  // CDN in front of it) doesn't have to sniff the bytes to know it's gzipped.
+  const stored = deps.compress(input.file);
+  await deps.putObject(
+    fileKey,
+    stored,
+    libraryContentType(format),
+    isGzipped(stored) ? 'gzip' : undefined,
+  );
   if (input.cover && coverKey) {
     await deps.putObject(coverKey, input.cover, 'image/jpeg');
   }

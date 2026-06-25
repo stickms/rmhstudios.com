@@ -129,8 +129,10 @@ function getClient(): S3Client {
 export async function putObject(
   key: string,
   body: Buffer,
-  contentType: string
+  contentType: string,
+  contentEncoding?: string
 ): Promise<void> {
+  // The local FS backend can't persist metadata; readers fall back to sniffing.
   if (!s3Configured()) return localPut(key, body);
   await getClient().send(
     new PutObjectCommand({
@@ -138,13 +140,14 @@ export async function putObject(
       Key: key,
       Body: body,
       ContentType: contentType,
+      ...(contentEncoding ? { ContentEncoding: contentEncoding } : {}),
     })
   );
 }
 
 export async function getObject(
   key: string
-): Promise<{ body: Buffer; contentType: string } | null> {
+): Promise<{ body: Buffer; contentType: string; contentEncoding?: string } | null> {
   if (!s3Configured()) return localGet(key);
   try {
     const res = await getClient().send(
@@ -156,6 +159,7 @@ export async function getObject(
     return {
       body: Buffer.from(bytes),
       contentType: res.ContentType || "application/octet-stream",
+      contentEncoding: res.ContentEncoding,
     };
   } catch (err) {
     if (err instanceof NoSuchKey || (err as { name?: string })?.name === "NoSuchKey") {
