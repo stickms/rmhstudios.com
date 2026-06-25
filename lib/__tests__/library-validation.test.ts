@@ -33,23 +33,20 @@ describe('validateBookFields', () => {
     expect(validateBookFields({ title: 'x'.repeat(201), pages: 12 }).ok).toBe(false);
   });
 
-  test('accepts an unknown (zero) page count — it is cosmetic', () => {
+  test('accepts any page count — it is cosmetic and uncapped', () => {
     expect(validateBookFields({ title: 'ok', pages: 0 }).ok).toBe(true);
-  });
-
-  test('rejects an absurd page count', () => {
-    expect(validateBookFields({ title: 'ok', pages: 1_000_000 }).ok).toBe(false);
+    expect(validateBookFields({ title: 'ok', pages: 1_000_000 }).ok).toBe(true);
   });
 });
 
 describe('sanitizePages', () => {
-  test('floors, clamps, and zeroes out unknown values', () => {
+  test('floors and zeroes out unknown values, with no upper bound', () => {
     expect(sanitizePages(12)).toBe(12);
     expect(sanitizePages(3.5)).toBe(3);
     expect(sanitizePages(0)).toBe(0);
     expect(sanitizePages(-4)).toBe(0);
     expect(sanitizePages(NaN)).toBe(0);
     expect(sanitizePages('17')).toBe(17);
-    expect(sanitizePages(1_000_000)).toBe(100_000);
+    expect(sanitizePages(1_000_000)).toBe(1_000_000);
   });
 });

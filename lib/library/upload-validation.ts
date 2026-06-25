@@ -30,7 +30,6 @@ export const LIBRARY_USER_QUOTA = 20;
 
 const TITLE_MAX = 200;
 const DESCRIPTION_MAX = 1000;
-const PAGES_MAX = 100_000;
 
 export type ValidationResult = { ok: true } | { ok: false; error: string };
 
@@ -71,16 +70,18 @@ export function validateBookBuffer(buffer: Buffer): ValidationResult & { format?
 
 /**
  * Normalise a page count to a safe stored value. Page count is cosmetic (a card
- * badge); the reader derives the real count from the file at read time. So an
- * unknown/zero/garbage value becomes 0 ("unknown") rather than a hard failure.
+ * badge); the reader derives the real count from the file at read time. An
+ * unknown/zero/garbage value becomes 0 ("unknown"); otherwise it is floored.
+ * There is no upper bound — some books are genuinely huge.
  */
 export function sanitizePages(pages: unknown): number {
   const n = Number(pages);
   if (!Number.isFinite(n) || n <= 0) return 0;
-  return Math.min(PAGES_MAX, Math.floor(n));
+  return Math.floor(n);
 }
 
-/** Validate the title, page count, and optional description for a book. */
+/** Validate the title and optional description for a book. (Page count is not
+ * validated — it is cosmetic and best-effort; see sanitizePages.) */
 export function validateBookFields(input: {
   title: string;
   pages: number;
@@ -93,11 +94,6 @@ export function validateBookFields(input: {
   }
   if ((input.description?.length ?? 0) > DESCRIPTION_MAX) {
     return { ok: false, error: `Description must be ${DESCRIPTION_MAX} characters or fewer.` };
-  }
-  // Page count is cosmetic and best-effort — only an absurd value is rejected;
-  // unknown/zero is fine and stored as 0 (see sanitizePages).
-  if (Number.isFinite(input.pages) && input.pages > PAGES_MAX) {
-    return { ok: false, error: `Page count must be ${PAGES_MAX.toLocaleString()} or fewer.` };
   }
   return { ok: true };
 }
