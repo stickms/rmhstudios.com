@@ -6,6 +6,7 @@ import { putObject, deleteObject, objectExists, s3Configured } from '@/lib/stora
 import { validateImageBuffer } from '@/lib/slice-it/upload-validation';
 import { processLibraryUpload, type UploadDeps } from '@/lib/library/upload';
 import { uploadSlugExists } from '@/lib/library/library.server';
+import { effectiveQuota } from '@/lib/library/quota.server';
 import { libraryFileKey, libraryCoverKey, libraryPdfUrl } from '@/lib/library/keys';
 import { compressPdfForStorage } from '@/lib/library/compress.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
@@ -102,6 +103,9 @@ export const Route = createFileRoute('/api/library/upload')({
             compress: compressPdfForStorage,
           };
 
+          // Effective per-account cap (admins are uncapped and skip this).
+          const quota = isAdmin ? undefined : await effectiveQuota(userId);
+
           let result;
           try {
             result = await processLibraryUpload(deps, {
@@ -112,6 +116,7 @@ export const Route = createFileRoute('/api/library/upload')({
               description,
               pages,
               isAdmin,
+              quota,
             });
           } catch (err) {
             // Persistence failed after objects may have been written — clean up both

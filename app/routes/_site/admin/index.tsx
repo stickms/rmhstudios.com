@@ -78,6 +78,16 @@ function AdminDashboardPage() {
           </Link>
 
           <Link
+            to="/admin/library-quota"
+            className="block p-6 rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
+          >
+            <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("library-quota-title", { defaultValue: "Library Upload Appeals" })}</h2>
+            <p className="text-site-text-muted text-sm mt-2">
+              {t("library-quota-description", { defaultValue: "Review users' requests to raise their library upload limit. Approve to grant a higher cap, or deny." })}
+            </p>
+          </Link>
+
+          <Link
             to="/admin/announcements"
             className="block p-6 rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
           >
