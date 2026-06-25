@@ -28,13 +28,14 @@ var ErrRangeNotSatisfiable = errors.New("objectstore: range not satisfiable")
 
 // Object is a streamable object plus the metadata needed to relay it to a client.
 type Object struct {
-	Body          io.ReadCloser
-	ContentType   string
-	ContentLength int64
-	ContentRange  string // set on a 206 partial response
-	ETag          string
-	LastModified  string
-	Status        int // 200 or 206
+	Body            io.ReadCloser
+	ContentType     string
+	ContentEncoding string // e.g. "gzip" — library PDFs are stored gzip-compressed
+	ContentLength   int64
+	ContentRange    string // set on a 206 partial response
+	ETag            string
+	LastModified    string
+	Status          int // 200 or 206
 }
 
 type config struct {
@@ -126,6 +127,9 @@ func (s *S3) Get(ctx context.Context, key, rangeHeader string) (*Object, error) 
 	}
 	if out.ContentType != nil {
 		obj.ContentType = *out.ContentType
+	}
+	if out.ContentEncoding != nil {
+		obj.ContentEncoding = *out.ContentEncoding
 	}
 	if out.ContentLength != nil {
 		obj.ContentLength = *out.ContentLength

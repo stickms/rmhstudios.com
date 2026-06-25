@@ -50,14 +50,29 @@ describe("s3 wrapper", () => {
     });
   });
 
-  it("getObject returns body+contentType from the stream", async () => {
+  it("putObject forwards ContentEncoding when given, and omits it otherwise", async () => {
+    sendMock.mockResolvedValue({});
+    const { putObject } = await import("@/lib/storage/s3.server");
+    await putObject("library/a.pdf", Buffer.from("x"), "application/pdf", "gzip");
+    expect(sendMock.mock.calls[0][0].input).toMatchObject({
+      Key: "library/a.pdf",
+      ContentType: "application/pdf",
+      ContentEncoding: "gzip",
+    });
+    await putObject("rmharks/a.png", Buffer.from("x"), "image/png");
+    expect(sendMock.mock.calls[1][0].input).not.toHaveProperty("ContentEncoding");
+  });
+
+  it("getObject returns body+contentType+contentEncoding from the stream", async () => {
     sendMock.mockResolvedValue({
-      ContentType: "image/png",
+      ContentType: "application/pdf",
+      ContentEncoding: "gzip",
       Body: { transformToByteArray: async () => new Uint8Array([1, 2, 3]) },
     });
     const { getObject } = await import("@/lib/storage/s3.server");
-    const result = await getObject("rmharks/a.png");
-    expect(result?.contentType).toBe("image/png");
+    const result = await getObject("library/a.pdf");
+    expect(result?.contentType).toBe("application/pdf");
+    expect(result?.contentEncoding).toBe("gzip");
     expect(Array.from(result!.body)).toEqual([1, 2, 3]);
   });
 

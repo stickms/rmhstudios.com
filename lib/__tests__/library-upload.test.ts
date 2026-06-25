@@ -32,7 +32,8 @@ describe('processLibraryUpload', () => {
     const res = await processLibraryUpload(deps, input);
 
     expect(res).toEqual({ ok: true, slug: 'field-manual' });
-    expect(deps.putObject).toHaveBeenCalledWith('library/id1.pdf', PDF, 'application/pdf');
+    // Uncompressed PDF (compress mock is identity) → no Content-Encoding.
+    expect(deps.putObject).toHaveBeenCalledWith('library/id1.pdf', PDF, 'application/pdf', undefined);
     expect(deps.putObject).toHaveBeenCalledWith('library/covers/id1.jpg', COVER, 'image/jpeg');
     expect(deps.createDoc).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -48,12 +49,13 @@ describe('processLibraryUpload', () => {
     );
   });
 
-  test('compresses the pdf before storing it', async () => {
-    const compressed = Buffer.from('GZIPPED');
+  test('compresses the pdf and records Content-Encoding: gzip when it shrank', async () => {
+    // Real gzip magic bytes (1f 8b) so isGzipped() recognises the stored buffer.
+    const compressed = Buffer.from([0x1f, 0x8b, 0x08, 0x00, 1, 2, 3]);
     const deps = makeDeps({ compress: vi.fn(() => compressed) });
     await processLibraryUpload(deps, input);
     expect(deps.compress).toHaveBeenCalledWith(PDF);
-    expect(deps.putObject).toHaveBeenCalledWith('library/id1.pdf', compressed, 'application/pdf');
+    expect(deps.putObject).toHaveBeenCalledWith('library/id1.pdf', compressed, 'application/pdf', 'gzip');
   });
 
   test('resolves a unique slug when the base is taken', async () => {

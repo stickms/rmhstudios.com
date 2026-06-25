@@ -58,6 +58,23 @@ func TestServesObjectWithCacheHeaders(t *testing.T) {
 	if w.Body.String() != "PDFDATA" {
 		t.Errorf("body = %q", w.Body.String())
 	}
+	if got := w.Header().Get("Content-Encoding"); got != "" {
+		t.Errorf("Content-Encoding = %q, want empty for an unencoded object", got)
+	}
+}
+
+func TestRelaysContentEncoding(t *testing.T) {
+	fs := &fakeStore{obj: &objectstore.Object{
+		Body: body("\x1f\x8bGZIP"), ContentType: "application/pdf",
+		ContentEncoding: "gzip", Status: http.StatusOK,
+	}}
+	h := NewHandler(fs, log.New("assets", "error"))
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, newReq("GET", "/library/book.pdf", ""))
+
+	if got := w.Header().Get("Content-Encoding"); got != "gzip" {
+		t.Errorf("Content-Encoding = %q, want gzip", got)
+	}
 }
 
 func TestForwardsRangeAndReturns206(t *testing.T) {
