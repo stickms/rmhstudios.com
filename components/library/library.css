@@ -1304,6 +1304,18 @@
 .lib-upload__addmore:hover:not(:disabled) { background: rgba(255, 255, 255, 0.04); }
 .lib-upload__addmore:disabled { opacity: 0.4; cursor: default; }
 
+/* Storage-misconfigured warning (uploads won't persist). */
+.lib-upload__warn {
+  font-size: 13px;
+  line-height: 1.4;
+  color: #ffb4b4;
+  padding: 9px 11px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(255, 110, 110, 0.4);
+  border-radius: 7px;
+  background: rgba(255, 90, 90, 0.1);
+}
+
 /* ── Quota gate (regular user at their upload cap) ────────────────────────── */
 .lib-upload__gate { display: flex; flex-direction: column; gap: 8px; }
 .lib-upload__gate-head { font-size: 15px; font-weight: 600; color: #fff; }

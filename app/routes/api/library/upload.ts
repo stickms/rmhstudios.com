@@ -28,12 +28,16 @@ export const Route = createFileRoute('/api/library/upload')({
           // Library files MUST go to durable, shared object storage. Without S3 the
           // storage layer silently falls back to the local filesystem — fine for a
           // single dev box, but in a multi-instance / ephemeral deploy the bytes land
-          // on one container's disk and every later read from another instance 404s.
-          // Refuse rather than accept an upload we can't reliably serve back.
-          if (!s3Configured() && process.env.NODE_ENV === 'production') {
-            console.error('Library upload refused: object storage (S3_*) is not configured.');
+          // on one container's disk and 404 once that container recycles or another
+          // instance serves the read. Refuse rather than accept an upload we can't
+          // reliably serve back. A dev can opt into local storage explicitly.
+          if (!s3Configured() && process.env.LIBRARY_ALLOW_LOCAL_STORAGE !== 'true') {
+            console.error('Library upload refused: object storage (S3_*) is not configured — uploads would not persist.');
             return Response.json(
-              { error: 'Uploads are temporarily unavailable. Please try again later.' },
+              {
+                error:
+                  'Uploads are disabled: durable object storage is not configured on the server. Set the S3_* environment variables (Cloudflare R2).',
+              },
               { status: 503 },
             );
           }
