@@ -83,6 +83,14 @@ const MATURE_EMO: Record<Emotion, string> = {
   confident: 'smirk2', tired: 'sleepy', hurt: 'sad',
 };
 
+/** Mature Woman packs (mw01..mw06): 16 expressions, older face family. */
+const MW_EMO: Record<Emotion, string> = {
+  neutral: 'normal', happy: 'smile', joyful: 'delighted', sad: 'sad', crying: 'crying',
+  angry: 'angry_1', annoyed: 'annoyed', surprised: 'shocked', afraid: 'o',
+  nervous: 'sleepy_2', blush: 'delighted_2', smirk: 'smug', thoughtful: 'sleepy',
+  confident: 'smug_2', tired: 'sleepy_2', hurt: 'sad',
+};
+
 /** Hoshiko uniform set: 6 expressions. */
 const HOSHIKO_EMO: Record<Emotion, string> = {
   neutral: 'smile', happy: 'smile', joyful: 'smile', sad: 'sad', crying: 'sad',
@@ -116,8 +124,28 @@ function hfPack(s: HfSeed): SpritePack {
   };
 }
 
+interface MwSeed { id: string; color: string; style: string; }
+const MW_SEEDS: MwSeed[] = [
+  { id: 'mw01', color: 'silver', style: 'hime' },
+  { id: 'mw02', color: 'brown',  style: 'curl' },
+  { id: 'mw03', color: 'black',  style: 'short' },
+  { id: 'mw04', color: 'blonde', style: 'mid_part' },
+  { id: 'mw05', color: 'pink',   style: 'side_curl' },
+  { id: 'mw06', color: 'silver', style: 'long_curl' },
+];
+
+function mwPack(s: MwSeed): SpritePack {
+  return {
+    id: s.id, name: `Mature ${s.color} ${s.style}`, dir: `packs/${s.id}`,
+    face: 'mw_mature', presentation: 'feminine', age: 'mature',
+    hairColor: s.color, hairStyle: s.style, accent: HAIR_HEX[s.color] ?? '#a08458',
+    emotions: MW_EMO,
+  };
+}
+
 export const SPRITE_PACKS: SpritePack[] = [
   ...HF_SEEDS.map(hfPack),
+  ...MW_SEEDS.map(mwPack),
   // Legacy full-body female sets — same face, distinct hair/outfit.
   { id: 'luna', name: 'Luna (gothic)', dir: 'luna', face: 'fb_female', presentation: 'feminine', age: 'young', hairColor: 'black', hairStyle: 'hime', accent: '#4A3B6B', emotions: FBF_EMO },
   { id: 'kai', name: 'Kai (bob)', dir: 'kai', face: 'fb_female', presentation: 'neutral', age: 'young', hairColor: 'pink', hairStyle: 'bob', accent: '#FF4D4D', emotions: FBF_EMO },
