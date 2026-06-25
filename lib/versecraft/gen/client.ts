@@ -17,7 +17,10 @@ export async function fetchOrCreateWorld(
     });
     if (!res.ok) return null;
     const data = await res.json() as { world: GeneratedWorld | null };
-    return data.world ?? null;
+    const w = data.world;
+    // Guard against malformed payloads so the caller falls back cleanly.
+    if (!w || !Array.isArray(w.characters) || w.characters.length === 0 || !w.routePlan) return null;
+    return w;
   } catch {
     return null;
   }
@@ -34,7 +37,10 @@ export async function fetchChapter(
     });
     if (!res.ok) return null;
     const data = await res.json() as { chapter: GenChapter | null };
-    return data.chapter ?? null;
+    const c = data.chapter;
+    if (!c || !Array.isArray(c.scenes) || c.scenes.length === 0
+      || !c.scenes.some(s => Array.isArray(s.nodes) && s.nodes.length > 0)) return null;
+    return c;
   } catch {
     return null;
   }

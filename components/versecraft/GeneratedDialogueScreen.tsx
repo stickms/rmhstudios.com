@@ -52,6 +52,8 @@ export function GeneratedDialogueScreen() {
   const setSceneIndex = useGameStore(s => s.setSceneIndex);
   const genApplyChoice = useGameStore(s => s.genApplyChoice);
   const advanceGeneratedChapter = useGameStore(s => s.advanceGeneratedChapter);
+  const shouldRunPoem = useGameStore(s => s.shouldRunPoem);
+  const openGenPoem = useGameStore(s => s.openGenPoem);
   const genLoading = useGameStore(s => s.genLoading);
   const setScreen = useGameStore(s => s.setScreen);
 
@@ -74,6 +76,21 @@ export function GeneratedDialogueScreen() {
   const scene = chapter?.scenes[sceneIndex] as GenScene | undefined;
   const node = scene?.nodes[dialogueIndex] as GenNode | undefined;
 
+  // Recovery: if we land on an invalid position (empty scene/node from a bad
+  // generation), skip forward instead of soft-locking on "Composing…".
+  useEffect(() => {
+    if (!chapter) return;
+    if (!scene) {
+      // scene index past the end → advance chapter
+      if (sceneIndex >= chapter.scenes.length) void advanceGeneratedChapter();
+      return;
+    }
+    if (!node) {
+      if (sceneIndex + 1 < chapter.scenes.length) setSceneIndex(sceneIndex + 1);
+      else void advanceGeneratedChapter();
+    }
+  }, [chapter, scene, node, sceneIndex, advanceGeneratedChapter, setSceneIndex]);
+
   const charById = useCallback((id: string | null) =>
     id ? world?.characters.find(c => c.id === id) ?? null : null, [world]);
 
@@ -92,11 +109,14 @@ export function GeneratedDialogueScreen() {
     } else if (sceneIndex + 1 < (chapter?.scenes.length ?? 0)) {
       setSceneIndex(sceneIndex + 1);
       setTextComplete(false);
+    } else if (shouldRunPoem()) {
+      openGenPoem();
+      setTextComplete(false);
     } else {
       void advanceGeneratedChapter();
       setTextComplete(false);
     }
-  }, [scene, node, dialogueIndex, sceneIndex, chapter, textComplete, advanceDialogue, setSceneIndex, advanceGeneratedChapter]);
+  }, [scene, node, dialogueIndex, sceneIndex, chapter, textComplete, advanceDialogue, setSceneIndex, advanceGeneratedChapter, shouldRunPoem, openGenPoem]);
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {

@@ -10,6 +10,7 @@ import { SettingsMenu } from './SettingsMenu';
 import { WorldSetup } from './WorldSetup';
 import { DialogueScreen } from './DialogueScreen';
 import { GeneratedDialogueScreen } from './GeneratedDialogueScreen';
+import { GeneratedPoemMoment } from './GeneratedPoemMoment';
 import { WordSelectPuzzle } from './WordSelectPuzzle';
 import { LineArrangePuzzle } from './LineArrangePuzzle';
 import { PoemPresentation } from './PoemPresentation';
@@ -114,6 +115,8 @@ export function VersecraftGame({ isLoggedIn }: { isLoggedIn: boolean }) {
         return <WorldSetup />;
       case 'dialogue':
         return mode === 'generated' ? <GeneratedDialogueScreen /> : <DialogueScreen />;
+      case 'gen_poem':
+        return <GeneratedPoemMoment />;
       case 'puzzle_word_select':
         return <WordSelectPuzzle />;
       case 'puzzle_line_arrange':

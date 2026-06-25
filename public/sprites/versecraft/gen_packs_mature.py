@@ -11,7 +11,7 @@ from PIL import Image
 BASE = os.path.dirname(os.path.abspath(__file__))
 PSD = os.path.join(BASE, "Anime Mature Woman Free.psd")
 OUT = os.path.join(BASE, "packs")
-TARGET_W = 600
+TARGET_W = 480
 
 # (packId, behindStyleIdx, frontStyleIdx, colorIdx, costume, accessory|None)
 # colorIdx: 0 blonde, 1 silver, 2 pink, 3 brown, 4 dark
@@ -106,7 +106,7 @@ def main():
             paste(canvas, top(g_exp, e))
             if accl is not None:
                 paste(canvas, accl)
-            canvas.crop(bbox).resize(osz, Image.LANCZOS).save(os.path.join(out_dir, f"{slug(e)}.png"), optimize=True)
+            canvas.crop(bbox).resize(osz, Image.LANCZOS).save(os.path.join(out_dir, f"{slug(e)}.webp"), "WEBP", quality=78, method=6)
         print(f"    -> {len(EXPR)} expressions @ {osz[0]}x{osz[1]}")
     print("done.")
 

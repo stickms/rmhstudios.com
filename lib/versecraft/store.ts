@@ -12,7 +12,29 @@ import { getChapterEntry, getNextChapterId } from './chapters/registry';
 import { fallbackWorld, fallbackChapter } from './gen/fallback';
 import { fetchOrCreateWorld, fetchChapter } from './gen/client';
 import { makeSeedCode, normalizeSeed } from './gen/rng';
+import { getWordPool } from './words';
 import type { GeneratedWorld, GenChapter, GenChoice } from './gen/world-types';
+import type { Word } from './types';
+
+export interface GenPoemState {
+  prompt: string;
+  characterId: string;
+  characterName: string;
+  words: Word[];
+}
+
+/** Map a world's tone/motifs onto word-pool categories for poem moments. */
+function poemCategoriesFor(world: GeneratedWorld): string[] {
+  const text = (world.toneTags.join(' ') + ' ' + world.motifs.join(' ')).toLowerCase();
+  const cats = new Set<string>();
+  const add = (...c: string[]) => c.forEach(x => cats.add(x));
+  if (/dark|grief|sorrow|loss|night|tense|ache/.test(text)) add('night', 'sorrow', 'solitude');
+  if (/hope|warm|bright|joy|tender/.test(text)) add('light', 'warmth', 'flowers');
+  if (/restless|electric|city|loud/.test(text)) add('urban', 'fire', 'rhythm');
+  if (/dream|surreal|fleet|wistful/.test(text)) add('dreams', 'moonlight', 'ocean');
+  if (cats.size === 0) add('night', 'light', 'solitude', 'warmth');
+  return [...cats];
+}
 
 function createInitialAffinity(): Record<string, CharacterAffinity> {
   const affinity: Record<string, CharacterAffinity> = {};
@@ -73,7 +95,34 @@ export function createInitialState(): GameState {
     world: null,
     generatedChapters: {},
     currentChapterIndex: 0,
+    genChoiceLog: [],
   };
+}
+
+/** Build a compact "story so far" summary fed to the chapter generator so the
+ *  AI keeps continuity: premise, beats played, the player's choice pattern, and
+ *  who they've grown closest to. */
+function buildContextSummary(state: GameState & GameActions): string {
+  const world = state.world;
+  if (!world) return '';
+  const past = Object.values(state.generatedChapters)
+    .filter(c => c.index < state.currentChapterIndex)
+    .sort((a, b) => a.index - b.index)
+    .map(c => `Ch${c.index + 1} "${c.title}" (${c.emotionalGoal})`)
+    .slice(-6)
+    .join('; ');
+  const choices = state.genChoiceLog.slice(-6).map(c => c.tone).join(', ');
+  const leaders = Object.entries(state.affinity)
+    .sort((a, b) => b[1].affinity - a[1].affinity)
+    .slice(0, 2)
+    .map(([id]) => world.characters.find(c => c.id === id)?.name)
+    .filter(Boolean)
+    .join(' & ');
+  return [
+    past && `Chapters played: ${past}.`,
+    choices && `Player has been answering: ${choices}.`,
+    leaders && `Player is closest to: ${leaders}.`,
+  ].filter(Boolean).join(' ');
 }
 
 /** Build a fresh affinity map for a generated cast. */
@@ -113,10 +162,15 @@ interface GameActions {
 
   // Generated (seed-driven) flow
   genLoading: boolean;
+  currentGenPoem: GenPoemState | null;
   startGeneratedGame: (opts: { seed?: string; prompt?: string; playerName?: string }) => Promise<void>;
   ensureGeneratedChapter: (index: number) => Promise<GenChapter>;
   genApplyChoice: (choice: GenChoice) => void;
   advanceGeneratedChapter: () => Promise<boolean>;
+  /** True if this chapter should pause for a poem moment (and it hasn't run). */
+  shouldRunPoem: () => boolean;
+  openGenPoem: () => void;
+  finishGenPoem: (selectedWordIds: string[]) => { score: number; reaction: string };
 
   // Dialogue
   advanceDialogue: () => void;
@@ -209,6 +263,7 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
 
   // ─── Generated (seed-driven) flow ──────────────────────────────────────────
   genLoading: false,
+  currentGenPoem: null,
 
   startGeneratedGame: async ({ seed, prompt, playerName }) => {
     const cleanSeed = seed && seed.trim()
@@ -219,13 +274,24 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
     set({ genLoading: true });
 
     // Server-first (DeepSeek + persisted, shareable); deterministic local fallback.
-    const remote = await fetchOrCreateWorld(cleanSeed, prompt ?? '', pronouns);
-    const base = remote ?? fallbackWorld(cleanSeed, prompt ?? '', name, pronouns);
+    // Anything that goes wrong degrades to the pure local generator — never a crash.
+    let base: GeneratedWorld;
+    try {
+      base = (await fetchOrCreateWorld(cleanSeed, prompt ?? '', pronouns))
+        ?? fallbackWorld(cleanSeed, prompt ?? '', name, pronouns);
+    } catch {
+      base = fallbackWorld(cleanSeed, prompt ?? '', name, pronouns);
+    }
     // Show the player's own name regardless of how the canonical world was made.
     const world: GeneratedWorld = { ...base, seed: cleanSeed, mc: { ...base.mc, name } };
 
-    const remoteCh0 = await fetchChapter(cleanSeed, 0);
-    const ch0 = remoteCh0 ?? fallbackChapter(world, 0);
+    let ch0: GenChapter;
+    try {
+      ch0 = (await fetchChapter(cleanSeed, 0)) ?? fallbackChapter(world, 0);
+    } catch {
+      ch0 = fallbackChapter(world, 0);
+    }
+    if (!ch0.scenes?.length) ch0 = fallbackChapter(world, 0);
 
     set({
       ...createInitialState(),
@@ -254,8 +320,13 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
     if (cached) return cached;
     const world = state.world;
     if (!world) throw new Error('ensureGeneratedChapter: no world');
-    const remote = await fetchChapter(state.seed, index);
-    const ch = remote ?? fallbackChapter(world, index);
+    let ch: GenChapter;
+    try {
+      ch = (await fetchChapter(state.seed, index, buildContextSummary(state))) ?? fallbackChapter(world, index);
+    } catch {
+      ch = fallbackChapter(world, index);
+    }
+    if (!ch.scenes?.length) ch = fallbackChapter(world, index);
     set({ generatedChapters: { ...get().generatedChapters, [index]: ch } });
     return ch;
   },
@@ -279,6 +350,7 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
       return {
         affinity: newAffinity,
         storyFlags: newFlags,
+        genChoiceLog: [...s.genChoiceLog, { chapter: s.currentChapterIndex, tone: choice.tone, text: choice.text }],
         currentDialogueIndex: s.currentDialogueIndex + 1,
       };
     });
@@ -302,19 +374,92 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
     }
     set({ genLoading: true });
     const cached = state.generatedChapters[nextIndex];
-    const ch = cached ?? (await fetchChapter(state.seed, nextIndex)) ?? fallbackChapter(world, nextIndex);
+    let ch: GenChapter;
+    try {
+      ch = cached ?? (await fetchChapter(state.seed, nextIndex, buildContextSummary(state))) ?? fallbackChapter(world, nextIndex);
+    } catch {
+      ch = fallbackChapter(world, nextIndex);
+    }
+    if (!ch.scenes?.length) ch = fallbackChapter(world, nextIndex);
     set({
       generatedChapters: { ...get().generatedChapters, [nextIndex]: ch },
       currentChapterIndex: nextIndex,
       currentSceneIndex: 0,
       currentDialogueIndex: 0,
       genLoading: false,
+      currentGenPoem: null,
       screen: 'dialogue',
     });
     const s = get();
     autoSave(s);
     debouncedDbSave(get);
     return true;
+  },
+
+  // ─── Poem moments ──────────────────────────────────────────────────────────
+  shouldRunPoem: () => {
+    const s = get();
+    if (!s.world || s.mode !== 'generated') return false;
+    // A poem moment caps every odd chapter, once.
+    return s.currentChapterIndex % 2 === 1 && !s.storyFlags[`poem_${s.currentChapterIndex}`];
+  },
+
+  openGenPoem: () => {
+    const s = get();
+    const world = s.world;
+    if (!world) return;
+    const chapter = s.generatedChapters[s.currentChapterIndex];
+    // The character the poem is for: closest one present this chapter, else lead.
+    const present = chapter?.scenes.flatMap(sc => sc.charactersPresent) ?? [];
+    const ranked = [...new Set(present)].sort((a, b) => (s.affinity[b]?.affinity ?? 0) - (s.affinity[a]?.affinity ?? 0));
+    const charId = ranked[0] ?? world.characters[0]?.id;
+    const char = world.characters.find(c => c.id === charId) ?? world.characters[0];
+    if (!char) return;
+    const motif = world.motifs[s.currentChapterIndex % world.motifs.length] ?? 'what remains';
+    set({
+      currentGenPoem: {
+        prompt: `Compose a few lines for ${char.name} — about ${motif}.`,
+        characterId: char.id,
+        characterName: char.name,
+        words: getWordPool(24, poemCategoriesFor(world)),
+      },
+      screen: 'gen_poem',
+    });
+  },
+
+  finishGenPoem: (selectedWordIds) => {
+    const s = get();
+    const poem = s.currentGenPoem;
+    if (!poem) return { score: 0, reaction: '' };
+    const chosen = poem.words.filter(w => selectedWordIds.includes(w.id));
+    const count = chosen.length;
+    let score = 50;
+    score += Math.max(0, 18 - Math.abs(count - 5) * 6);
+    score += new Set(chosen.map(w => w.syllables)).size * 4;
+    score += Math.min(16, new Set(chosen.flatMap(w => w.categories)).size * 3);
+    score = Math.max(45, Math.min(100, Math.round(score)));
+    const gain = Math.round(score / 12);
+
+    const reaction = score >= 85
+      ? `${poem.characterName} goes still, then reads it again. "You… how did you know to say it like that?"`
+      : score >= 68
+        ? `${poem.characterName} smiles, something loosening in them. "That's good. That's really good."`
+        : `${poem.characterName} reads it twice. "It's honest. That counts for more than you think."`;
+
+    set(st => {
+      const curr = st.affinity[poem.characterId];
+      const newAffinity = curr ? {
+        ...st.affinity,
+        [poem.characterId]: { ...curr, affinity: Math.max(0, curr.affinity + gain), level: getAffinityLevel(curr.affinity + gain), poemsShared: curr.poemsShared + 1, poemsLoved: score >= 80 ? curr.poemsLoved + 1 : curr.poemsLoved },
+      } : st.affinity;
+      return {
+        affinity: newAffinity,
+        totalPoemsWritten: st.totalPoemsWritten + 1,
+        storyFlags: { ...st.storyFlags, [`poem_${st.currentChapterIndex}`]: true },
+      };
+    });
+    debouncedDbSave(get);
+    return { score, reaction };
   },
 
   // Dialogue

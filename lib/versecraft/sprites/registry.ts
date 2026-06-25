@@ -32,6 +32,8 @@ export interface SpritePack {
   hairStyle: string;
   /** UI accent hex derived from hair/outfit. */
   accent: string;
+  /** File extension for this pack's images (webp for composited packs). */
+  ext?: 'png' | 'webp';
   /** Canonical Emotion → sprite filename (no extension). */
   emotions: Record<Emotion, string>;
 }
@@ -120,7 +122,7 @@ function hfPack(s: HfSeed): SpritePack {
     id: s.id, name: `Halfbody ${s.color} ${s.style}`, dir: `packs/${s.id}`,
     face: 'hf_female', presentation: s.pres, age: 'young',
     hairColor: s.color, hairStyle: s.style, accent: HAIR_HEX[s.color] ?? '#c4a35a',
-    emotions: HF_EMO,
+    ext: 'webp', emotions: HF_EMO,
   };
 }
 
@@ -139,7 +141,7 @@ function mwPack(s: MwSeed): SpritePack {
     id: s.id, name: `Mature ${s.color} ${s.style}`, dir: `packs/${s.id}`,
     face: 'mw_mature', presentation: 'feminine', age: 'mature',
     hairColor: s.color, hairStyle: s.style, accent: HAIR_HEX[s.color] ?? '#a08458',
-    emotions: MW_EMO,
+    ext: 'webp', emotions: MW_EMO,
   };
 }
 
@@ -169,5 +171,5 @@ export function spriteUrl(packId: string, emotion: Emotion = 'neutral'): string 
   const pack = PACK_BY_ID.get(packId);
   if (!pack) return null;
   const file = pack.emotions[emotion] ?? pack.emotions.neutral;
-  return `${BASE}/${pack.dir}/${file}.png`;
+  return `${BASE}/${pack.dir}/${file}.${pack.ext ?? 'png'}`;
 }

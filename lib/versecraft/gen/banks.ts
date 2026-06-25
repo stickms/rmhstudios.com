@@ -106,8 +106,12 @@ export const SECRETS = [
   'has been lying about why they really joined',
   'is carrying a diagnosis they haven\'t said out loud',
   'is here to escape a home they can\'t go back to',
-  'already gave up once, and is terrified of doing it again',
-  'is finishing the work of someone they lost',
+  'already gave up once — the dangerous kind of gave up — and is terrified of doing it again',
+  'is finishing the work of someone they lost to suicide',
+  'is barely holding on after the death of the person who raised them',
+  'is the family member nobody talks about — the one who was institutionalized',
+  'is using the group to outrun an addiction that is winning',
+  'survived something they\'ve never told a living soul, and it lives in everything they make',
 ];
 
 export const FEARS = [
@@ -117,6 +121,9 @@ export const FEARS = [
   'silence — the kind that means no one\'s coming back',
   'becoming the person who hurt them',
   'that they\'re only ever a supporting character in someone else\'s story',
+  'that the darkness they keep at bay will win the next time it comes',
+  'that they are fundamentally, unlovably broken',
+  'waking up one day having become their parent',
 ];
 
 export const DREAMS = [

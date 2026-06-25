@@ -21,7 +21,7 @@ from PIL import Image
 BASE = os.path.dirname(os.path.abspath(__file__))
 PSD_PATH = os.path.join(BASE, "Halfbody Female by Sutemo.psd")
 OUT_ROOT = os.path.join(BASE, "packs")
-TARGET_W = 600  # downscale width; keeps files web-friendly
+TARGET_W = 480  # downscale width; keeps files web-friendly
 
 # ─── Distinct characters: (packId, hairStyleNum, hairColor, costume, accessory) ──
 # hairStyleNum pairs Hair Behind "Style N" with Hair Front "Style N" (N = 1..4).
@@ -129,14 +129,14 @@ def main():
             canvas = build_base()
             paste_layer(canvas, psd, f"Expresssions>>{expr}")
             cropped = canvas.crop(bbox).resize(out_size, Image.LANCZOS)
-            cropped.save(os.path.join(out_dir, f"{slug(expr)}.png"), optimize=True)
+            cropped.save(os.path.join(out_dir, f"{slug(expr)}.webp"), "WEBP", quality=78, method=6)
 
         # A blush variant (Smile 3 + Blush1) for shy/embarrassed beats.
         canvas = build_base()
         paste_layer(canvas, psd, "Blush>>Blush1")
         paste_layer(canvas, psd, "Expresssions>>Smile 3")
         canvas.crop(bbox).resize(out_size, Image.LANCZOS).save(
-            os.path.join(out_dir, "blush.png"), optimize=True)
+            os.path.join(out_dir, "blush.webp"), "WEBP", quality=78, method=6)
 
         print(f"    -> {len(EXPRESSIONS)+1} expressions @ {out_size[0]}x{out_size[1]}")
 

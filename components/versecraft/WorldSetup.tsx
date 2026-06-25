@@ -22,6 +22,7 @@ export function WorldSetup() {
   const [prompt, setPrompt] = useState('');
   const [seedInput, setSeedInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [intense, setIntense] = useState(true);
 
   const begin = async (opts: { random?: boolean; seed?: string }) => {
     if (submitting) return;
@@ -29,9 +30,14 @@ export function WorldSetup() {
     updateSettings({ playerName, playerPronouns: pronouns });
     setSubmitting(true);
     try {
+      const base = opts.random ? '' : prompt.trim();
+      // Tone hint is baked into the prompt so it's part of the shareable seed.
+      const toned = opts.seed
+        ? undefined // shared seeds keep their original tone
+        : (intense ? base : `${base} [Tone: keep it lighter and ultimately hopeful; avoid graphic darkness.]`.trim());
       await startGeneratedGame({
         seed: opts.seed,
-        prompt: opts.random ? '' : prompt.trim(),
+        prompt: toned,
         playerName,
       });
     } catch {
@@ -123,6 +129,23 @@ export function WorldSetup() {
               ))}
             </div>
           </div>
+
+          <button
+            onClick={() => setIntense(v => !v)}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded text-left transition-all"
+            style={{ backgroundColor: 'rgba(42, 34, 53, 0.5)', border: '1px solid rgba(196, 163, 90, 0.15)' }}
+          >
+            <span
+              className="flex-shrink-0 w-5 h-5 rounded flex items-center justify-center text-xs"
+              style={{ backgroundColor: intense ? 'rgba(196,163,90,0.3)' : 'transparent', border: '1px solid rgba(196,163,90,0.5)', color: '#e8e0d0' }}
+            >
+              {intense ? '✓' : ''}
+            </span>
+            <span className="text-sm" style={{ color: '#e8e0d0' }}>
+              Allow mature &amp; dark themes
+              <span className="block text-xs" style={{ color: '#888' }}>grief, mental health, loss, desire — handled with care. For adult players.</span>
+            </span>
+          </button>
 
           <div className="flex gap-3 pt-1">
             <motion.button

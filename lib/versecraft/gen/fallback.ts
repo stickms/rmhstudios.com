@@ -169,38 +169,73 @@ function moodEmotion(goal: string, rng: Rng): Emotion {
 
 function characterLine(c: GeneratedCharacter, mood: Emotion, mc: string, motif: string, rng: Rng): string {
   const lines: Record<string, string[]> = {
-    happy: [`"You actually came back. I— that means more than it should."`, `"Stay. The light's good and you're here. That's enough for one day."`],
-    joyful: [`"Okay okay — watch this. I've been saving it for someone who'd get it. For you, ${mc}."`, `"This is the best it's been in months and I refuse to pretend otherwise."`],
-    confident: [`"I know what we are. I knew the second you walked in. The rest of them are still catching up."`, `"Don't flinch now. We're just getting to the part that matters."`],
-    nervous: [`"Don't— don't look at me like that. I'm not used to anyone actually listening."`, `"I rehearsed this. I had a whole— never mind. Hi."`],
-    blush: [`"I wrote about ${motif}. About you, if I'm honest. Which I'm apparently being now."`, `"Stop. You can't just say things like that and watch my face do this."`],
-    thoughtful: [`"Funny how ${motif} keeps coming back. Maybe some things just want to be noticed."`, `"I've been trying to figure you out. I don't usually bother."`],
-    annoyed: [`"You think it's that simple? You've been here five minutes and you've got us all figured out?"`, `"Don't. Don't do the understanding thing right now. I can't take it from you today."`],
-    angry: [`"You knew. You knew and you let me keep going like an idiot. Say something true for once."`, `"I'm not yelling about ${motif}. You know that's not what this is."`],
-    sad: [`"It was supposed to last longer than this. All of it. You. Me. ${motif}."`, `"I keep almost telling you. Then I look at you and I lose my nerve."`],
-    crying: [`"I'm sorry. I'm so— I didn't want you to see me like this. Not you."`, `"Please don't go yet. If you go I'll have to admit it's real."`],
-    hurt: [`"I trusted you with the one thing I never say. And now you're looking at me like that."`, `"It's fine. It's fine. People leave. I just thought— it doesn't matter what I thought."`],
-    surprised: [`"Wait— you remembered that? I said it once. Months ago. To you."`, `"You're serious. You're actually serious."`],
-    neutral: [`"You're early. Nobody's ever early for this."`, `"Sit anywhere. We don't really do assigned seats here."`],
-    smirk: [`"Oh, you're trouble. I can already tell. Good. We're short on trouble."`, `"Careful, ${mc}. Keep showing up like this and people might think you care."`],
-    afraid: [`"Something's wrong. I can feel it. Tell me I'm imagining it. Lie to me if you have to."`],
-    tired: [`"I'm running on nothing. But you showed up, so. Here I am, running on nothing, for you."`],
+    happy: [`"You actually came back. That— means more than it should."`, `"Stay. The light's good and you're here. That's enough for one day."`, `"I forget, sometimes, that it can feel like this. Thank you."`],
+    joyful: [`"Watch this. I've been saving it for someone who'd get it. For you, ${mc}."`, `"This is the best it's been in months and I refuse to pretend otherwise."`, `"God, I missed laughing. When did I stop?"`],
+    confident: [`"I knew what we'd be the second you walked in. The rest of them are still catching up."`, `"Don't flinch now. We're getting to the part that matters."`, `"I'm done apologizing for wanting more than this. Aren't you?"`],
+    nervous: [`"Don't— don't look at me like that. I'm not used to anyone actually listening."`, `"I rehearsed this. I had a whole— never mind. Hi."`, `"If I say it out loud it becomes real, and then I have to do something about it."`],
+    blush: [`"I wrote about ${motif}. About you, if I'm honest. Which I apparently am now."`, `"Stop. You can't just say things like that and watch my face do this."`, `"This is the part where I'd normally make a joke. I've got nothing."`],
+    thoughtful: [`"Funny how ${motif} keeps coming back. Maybe some things just want to be noticed."`, `"I've been trying to figure you out. I don't usually bother."`, `"Do you ever feel like you're the only one who sees the cracks in all of this?"`],
+    annoyed: [`"You've been here five minutes and you think you've got us figured out?"`, `"Don't do the understanding thing right now. I can't take it from you today."`, `"I'm fine. I said I'm fine. Why does everyone keep— "`],
+    angry: [`"You knew. You knew and you let me keep going like an idiot. Say something true for once."`, `"This isn't about ${motif} and you know it."`, `"I am so tired of being the one who holds it together while the rest of you fall apart."`],
+    sad: [`"It was supposed to last longer than this. All of it. You. Me. ${motif}."`, `"I keep almost telling you. Then I look at you and I lose my nerve."`, `"Some days I'm not sure I want to be here at all. Here, I mean. In any of it."`, `"I'm not okay. I haven't been for a long time. I just got good at the costume."`],
+    crying: [`"I'm sorry. I didn't want you to see me like this. Not you."`, `"Please don't go yet. If you go I'll have to admit it's real."`, `"It hurts in a place I can't point to. Does that make sense? Tell me that makes sense."`],
+    hurt: [`"I trusted you with the one thing I never say. And now you're looking at me like that."`, `"People leave. I just— I let myself think you wouldn't."`, `"You don't get to be gentle with me right after. That's worse."`],
+    surprised: [`"Wait— you remembered that? I said it once. Months ago. To you."`, `"You're serious. You're actually serious."`, `"Nobody's ever— okay. Okay, give me a second."`],
+    neutral: [`"You're early. Nobody's ever early for this."`, `"Sit anywhere. We don't really do assigned seats."`, `"So. You stayed. Most people don't."`],
+    smirk: [`"Oh, you're trouble. I can tell. Good — we're short on trouble."`, `"Careful, ${mc}. Keep showing up like this and people might think you care."`, `"You want the real version or the one I tell everyone else?"`],
+    afraid: [`"Something's wrong. Tell me I'm imagining it. Lie to me if you have to."`, `"If this falls apart, I don't— I don't know who I am after."`, `"Don't make me say what I'm scared of. Saying it invites it in."`],
+    tired: [`"I'm running on nothing. But you showed up, so. Here I am, running on nothing, for you."`, `"I can't keep doing this. I just don't know how to stop."`],
   };
+  void c;
   const pool = lines[mood] ?? lines.neutral;
   return rng.pick(pool);
 }
 
+/** Narration of a character DOING something tied to their wound — keeps the
+ *  story character-action-driven rather than just talking heads. */
+function actionBeat(c: GeneratedCharacter, mc: string, rng: Rng): string {
+  return rng.pick([
+    `${c.name} won't quite meet your eyes — ${c.fear.toLowerCase().replace(/^afraid of /, 'the fear of ')} is written all over the way they hold themselves.`,
+    `${c.name} starts to say something, stops, and does the small brave thing instead: they stay.`,
+    `You catch ${c.name} mid-gesture, caught between the person everyone sees and the one ${c.dream.toLowerCase().replace(/^dreams /, 'dreams ')}.`,
+    `Something shifts in ${c.name}. For a second the mask slips, and you see exactly how much it costs them to be here.`,
+    `${c.name} reaches for the easy joke, the easy exit — and, looking at you, chooses neither.`,
+  ]);
+}
+
 function narration(env: Environment, mood: Emotion, motif: string, world: GeneratedWorld, rng: Rng): string {
   const place = env.replaceAll('_', ' ');
+  const M = motif[0].toUpperCase() + motif.slice(1);
   const weather: Record<string, string[]> = {
-    happy: [`The ${place} feels, for once, like it belongs to all of you.`, `Light pools across the ${place} and nobody is in a hurry to leave.`],
-    sad: [`The ${place} is quieter than it should be. ${motif[0].toUpperCase() + motif.slice(1)} sits between you like a third person.`, `Something has thinned in the air of the ${place}, the way it does before a goodbye.`],
-    angry: [`The ${place} goes taut. The kind of silence that's louder than shouting.`, `Whatever was holding the ${place} together has started, audibly, to give.`],
-    neutral: [`Afternoon settles over the ${place}. ${world.title} is exactly as you left it, and somehow not.`, `You find the ${place} half-full and entirely familiar now.`],
+    happy: [`The ${place} feels, for once, like it belongs to all of you.`, `Light pools across the ${place} and nobody's in a hurry to leave.`],
+    joyful: [`For a little while the ${place} is loud with the good kind of noise.`, `Whatever's coming, the ${place} holds this one bright hour first.`],
+    sad: [`The ${place} is quieter than it should be. ${M} sits between you like a third person.`, `Something has thinned in the air of the ${place}, the way it does before a goodbye.`],
+    crying: [`The ${place} blurs at the edges. ${M} again — always ${motif}.`, `Nobody in the ${place} knows what to say, so nobody says anything.`],
+    angry: [`The ${place} goes taut — the kind of silence louder than shouting.`, `Whatever was holding the ${place} together has started, audibly, to give.`],
+    afraid: [`The ${place} feels wrong in a way you can't name yet.`, `Dread moves through the ${place} like a draft under a door.`],
+    neutral: [`${world.title} is exactly as you left it, and somehow not.`, `You find the ${place} half-full and entirely familiar now.`],
     nervous: [`The ${place} holds its breath with you.`, `Everyone in the ${place} is pretending not to wait for something.`],
   };
   const pool = weather[mood] ?? weather.neutral;
   return rng.pick(pool);
+}
+
+function makeChoice(speaker: GeneratedCharacter, mood: Emotion) {
+  const heavy = mood === 'sad' || mood === 'crying' || mood === 'hurt' || mood === 'afraid' || mood === 'angry';
+  return {
+    id: '',
+    speaker: null as string | null,
+    text: `${speaker.name} waits. Whatever you say next will matter more than usual.`,
+    choices: heavy ? [
+      { text: `Stay in it with ${speaker.name}. Don't fix, just be there.`, tone: 'kind' as const, affinity: { [speaker.id]: 5 }, flags: { last_tone: 'kind' } },
+      { text: 'Name the hard truth, gently.', tone: 'honest' as const, affinity: { [speaker.id]: 6 }, flags: { last_tone: 'honest' } },
+      { text: 'Pull back. You\'re not sure you can hold this.', tone: 'guarded' as const, affinity: { [speaker.id]: 1 }, flags: { last_tone: 'guarded' } },
+    ] : [
+      { text: `Meet ${speaker.name} where they are.`, tone: 'kind' as const, affinity: { [speaker.id]: 4 }, flags: { last_tone: 'kind' } },
+      { text: 'Push, just a little. See what\'s underneath.', tone: 'bold' as const, affinity: { [speaker.id]: 5 }, flags: { last_tone: 'bold' } },
+      { text: 'Tease them. Keep it light.', tone: 'playful' as const, affinity: { [speaker.id]: 3 }, flags: { last_tone: 'playful' } },
+    ],
+  };
 }
 
 export function fallbackChapter(world: GeneratedWorld, index: number): GenChapter {
@@ -213,59 +248,62 @@ export function fallbackChapter(world: GeneratedWorld, index: number): GenChapte
   const second = focusChars[1] ?? world.characters[1 % world.characters.length];
   const mc = world.mc.name;
   const motif = rng.pick(world.motifs);
-  const sceneCount = rng.int(2, 3);
+  const sceneCount = rng.int(3, 4);
+  // Two choice points across the chapter (first and a later scene).
+  const choiceScenes = new Set<number>([0, Math.min(sceneCount - 1, 2)]);
 
   const scenes: GenScene[] = [];
   let nodeSeq = 0;
   const nid = () => `ch${index}_n${nodeSeq++}`;
 
   for (let s = 0; s < sceneCount; s++) {
-    const env = rng.pick(world.environments);
+    const env = world.environments[(index + s) % world.environments.length];
     const timeOfDay = TIMES[(index + s) % TIMES.length];
-    const present = rng.shuffle([lead.id, second.id]).slice(0, rng.int(1, 2));
-    const mood = moodEmotion(beat.emotionalGoal, rng);
-    const nodes: GenNode[] = [];
-
-    nodes.push({ id: nid(), speaker: null, text: narration(env, mood, motif, world, rng) });
-
+    const pair = rng.shuffle([lead.id, second.id]);
+    const present = s === 1 ? [pair[0]] : pair.slice(0, rng.int(1, 2));
     const speaker = charById(world, present[0]) ?? lead;
-    nodes.push({ id: nid(), speaker: speaker.id, text: characterLine(speaker, mood, mc, motif, rng), emotion: mood });
+    const other = present[1] ? charById(world, present[1]) : null;
+    const mood = moodEmotion(beat.emotionalGoal, rng.fork(`m${s}`));
+    const nodes: GenNode[] = [];
+    const push = (speakerId: string | null, text: string, emotion?: Emotion) =>
+      nodes.push({ id: nid(), speaker: speakerId, text, emotion });
 
-    // A choice that nudges affinity toward the focus characters.
-    if (s === 0) {
-      nodes.push({
-        id: nid(), speaker: null, text: `${speaker.name} waits. Whatever you say next will matter more than usual.`,
-        choices: [
-          { text: `Meet ${speaker.name} where they are.`, tone: 'kind', affinity: { [speaker.id]: 4 }, flags: { last_tone: 'kind' } },
-          { text: 'Say the harder, truer thing.', tone: 'honest', affinity: { [speaker.id]: 6 }, flags: { last_tone: 'honest' } },
-          { text: 'Deflect. It\'s safer.', tone: 'guarded', affinity: { [speaker.id]: 1 }, flags: { last_tone: 'guarded' } },
-        ],
-      });
-      nodes.push({ id: nid(), speaker: speaker.id, text: characterLine(speaker, mood, mc, motif, rng.fork('react')), emotion: mood });
+    push(null, narration(env, mood, motif, world, rng));
+    push(null, actionBeat(speaker, mc, rng.fork(`a${s}`)));
+    push(speaker.id, characterLine(speaker, mood, mc, motif, rng.fork(`l${s}a`)), mood);
+    if (other) push(other.id, characterLine(other, moodEmotion(beat.emotionalGoal, rng.fork(`o${s}`)), mc, motif, rng.fork(`o${s}l`)), moodEmotion(beat.emotionalGoal, rng.fork(`o${s}e`)));
+    push(speaker.id, characterLine(speaker, mood, mc, motif, rng.fork(`l${s}b`)), mood);
+
+    if (choiceScenes.has(s)) {
+      const ch = makeChoice(speaker, mood);
+      nodes.push({ id: nid(), speaker: ch.speaker, text: ch.text, choices: ch.choices });
+      push(speaker.id, characterLine(speaker, mood, mc, motif, rng.fork(`l${s}r`)), mood);
     }
 
-    // Second character reacts if present.
-    if (present.length > 1) {
-      const other = charById(world, present[1]) ?? second;
-      const om = moodEmotion(beat.emotionalGoal, rng.fork('o'));
-      nodes.push({ id: nid(), speaker: other.id, text: characterLine(other, om, mc, motif, rng.fork('ol')), emotion: om });
-    }
+    // a turn / escalation
+    push(null, rng.pick([
+      `The conversation tips somewhere neither of you planned.`,
+      `${speaker.name}'s ${beat.emotionalGoal.split(' ')[0]} fills the room.`,
+      `You feel the chapter of this turning under your hands.`,
+    ]));
+    push(speaker.id, characterLine(speaker, moodEmotion(beat.emotionalGoal, rng.fork(`c${s}`)), mc, motif, rng.fork(`l${s}c`)), moodEmotion(beat.emotionalGoal, rng.fork(`c${s}e`)));
+    if (other) push(other.id, characterLine(other, mood, mc, motif, rng.fork(`o${s}2`)), mood);
 
-    nodes.push({ id: nid(), speaker: null, text: rng.pick([
+    push(null, rng.pick([
       `You let the moment land. Some things you only get to feel once.`,
       `Later you'll replay this. You already know it.`,
       `The ${beat.title} of it all settles into your chest and stays.`,
-    ]) });
+      `Whatever happens next, this is now part of the story you share.`,
+    ]));
 
     scenes.push({ id: `ch${index}_s${s}`, environment: env, timeOfDay, charactersPresent: present, nodes });
   }
 
-  const act = beat.act;
   return {
     index,
-    act,
+    act: beat.act,
     title: titleCase(beat.title),
-    subtitle: `Act ${act} — ${world.title}`,
+    subtitle: `Act ${beat.act} — ${world.title}`,
     emotionalGoal: beat.emotionalGoal,
     scenes,
     source: 'fallback',

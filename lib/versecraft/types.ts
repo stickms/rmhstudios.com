@@ -225,6 +225,7 @@ export type GameScreen =
   | 'settings'
   | 'world_setup'
   | 'dialogue'
+  | 'gen_poem'
   | 'puzzle_word_select'
   | 'puzzle_line_arrange'
   | 'presentation'
@@ -291,6 +292,8 @@ export interface GameState {
   generatedChapters: Record<number, GenChapterData>;
   /** Current chapter index within the generated route. */
   currentChapterIndex: number;
+  /** Log of player choices for story continuity (fed back into generation). */
+  genChoiceLog: { chapter: number; tone: string; text: string }[];
 }
 
 // ─── Save File ──────────────────────────────────────────────────────────────

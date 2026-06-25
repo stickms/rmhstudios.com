@@ -77,10 +77,13 @@ export async function generateWorld(
     const castSpec = shell.characters.map((c, i) =>
       `#${i} pronouns=${c.pronouns} archetype="${c.archetype}" age=${c.age}`).join('\n');
     const system =
-      'You are the lead writer for VerseCraft, an emotional anime visual novel. You design a unique, ' +
+      'You are the lead writer for VerseCraft, an emotional anime visual novel for ADULT players. You design a unique, ' +
       'character-driven cast for one playthrough. The story must be emotional but propelled by what the ' +
       'CHARACTERS choose to do, not by external plot. Avoid clichés and melodrama; aim for specific, ' +
-      'aching, human detail. Respond ONLY with a JSON object.';
+      'aching, human detail. Mature, dark, and disturbing themes are welcome where they serve the story — ' +
+      'grief, mortality, mental illness, self-harm ideation, estrangement, addiction, the aftermath of abuse, ' +
+      'identity and desire — written with honesty, weight, and care, never gratuitously or as shock value. ' +
+      'Respond ONLY with a JSON object.';
     const user =
       `Player character: ${playerName} (${playerPronouns}). Player's prompt for the kind of experience they want: ` +
       `"${mcPrompt || '(none — surprise me; usually a college student)'}".\n\n` +
@@ -165,23 +168,35 @@ export async function generateChapter(
     const cast = world.characters.map((c) =>
       `${c.id}: ${c.name} (${c.pronouns}) — ${c.archetype}, ${c.role}. ${c.personality} Speech: ${c.speechStyle}. Secret: ${c.secret}`).join('\n');
     const system =
-      'You write one chapter of VerseCraft, an emotional, character-driven anime visual novel. ' +
-      'The drama must come from the characters\' own choices and feelings. Every spoken line MUST include an ' +
-      `"emotion" from this exact set: ${EMOTIONS.join(', ')}. Match the emotion to the line and to the moment. ` +
-      'Narration lines have speaker=null and no emotion. Keep characters perfectly in their established voice. ' +
+      'You are the lead writer of VerseCraft, an emotional, character-driven anime visual novel in the vein of ' +
+      'the best romance/drama VNs. Write ONE full chapter (15–20 minutes of reading). The drama must come from the ' +
+      'CHARACTERS\' own choices, desires, and wounds — never from contrived external events. Show feelings through ' +
+      'action, subtext, and specific sensory detail; avoid melodrama, clichés, and on-the-nose exposition. ' +
+      'Plant and pay off the story\'s motifs. Keep every character flawlessly in their established voice and let ' +
+      'their secret/fear/dream quietly shape what they do. ' +
+      'This is for ADULT players: mature, dark, and disturbing subject matter (grief, mortality, mental illness, ' +
+      'self-harm ideation, addiction, abuse aftermath, desire) is allowed and encouraged where the story earns it — ' +
+      'handled with truth and care, not gratuitously. ' +
+      `Every spoken line MUST include an "emotion" from this EXACT set: ${EMOTIONS.join(', ')} — chosen to match the ` +
+      'line and the beat (a character can shift emotion line to line). Narration lines have speaker=null and no emotion. ' +
       'Respond ONLY with a JSON object.';
     const user =
       `STORY: "${world.title}". ${world.premise}\nSETTING: ${world.setting}\nTONE: ${world.toneTags.join(', ')}. MOTIFS: ${world.motifs.join(', ')}.\n` +
-      `PLAYER: ${world.mc.name} (${world.mc.pronouns}).\nCAST:\n${cast}\n` +
+      `PLAYER: ${world.mc.name} (${world.mc.pronouns}) — ${world.mc.premise}\nCAST:\n${cast}\n` +
       `ALLOWED environments: ${world.environments.join(', ')}.\n` +
-      (contextSummary ? `STORY SO FAR: ${contextSummary}\n` : '') +
-      `\nWrite CHAPTER ${index + 1} (Act ${beat.act}). Emotional goal: "${beat.emotionalGoal}". Focus characters: ${beat.focus.join(', ')}.\n` +
-      `Produce 2–3 scenes. Each scene: an environment from the allowed list, charactersPresent (their ids), and 8–14 nodes. ` +
-      `Include exactly ONE node with a "choices" array (2–3 options) where the player responds; each choice may set "affinity" ` +
-      `(map of character id → small +integer) and a "tone" from: ${TONES.join(', ')}.\n` +
+      (contextSummary ? `STORY SO FAR (honor this continuity): ${contextSummary}\n` : '') +
+      `\nWrite CHAPTER ${index + 1} (Act ${beat.act}). Emotional goal of this chapter: "${beat.emotionalGoal}". ` +
+      `Center it on these characters: ${beat.focus.join(', ')} (others may appear).\n` +
+      `Requirements:\n` +
+      `- 3–4 scenes. Each scene: one environment from the allowed list, charactersPresent (ids), and 12–18 nodes.\n` +
+      `- Build a clear emotional arc across the chapter (setup → complication → turn → resolution that lands the goal).\n` +
+      `- Rich, specific dialogue and evocative narration; vary line length; let characters DO things, not just talk.\n` +
+      `- Include 2 "choices" nodes total across the chapter where ${world.mc.name} responds; each option has a "tone" from ` +
+      `(${TONES.join(', ')}) and may set "affinity" (map of character id → small +integer 1–6) reflecting how that ` +
+      `character would feel about the response.\n` +
       `Return JSON: {"title","scenes":[{"environment","timeOfDay","charactersPresent":[ids],"nodes":[{"speaker":id|null,"text","emotion","choices?":[{"text","tone","affinity"}]}]}]}.`;
 
-    const parsed = ChapterSchema.parse(await chatJson(system, user, 4000));
+    const parsed = ChapterSchema.parse(await chatJson(system, user, 7000));
     let seq = 0;
     const nid = () => `ch${index}_n${seq++}`;
     const scenes: GenScene[] = parsed.scenes.map((sc, si) => {
