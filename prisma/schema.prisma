@@ -3287,6 +3287,9 @@ model LibraryCollection {
   owner       User?    @relation("LibraryCollectionOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
   /// Curated/official collection (admin-made) — surfaced above community series.
   official    Boolean  @default(false)
+  /// R2 key of the collection's (AI-generated) cover image, served via
+  /// /api/library/cover/<collectionId>. Null until a cover is generated.
+  coverKey    String?
   hidden      Boolean  @default(false)
   /// Manual sort order across collections (lower first).
   position    Int      @default(0)

@@ -23,6 +23,8 @@ export type CollectionView = {
   official: boolean;
   ownerUserId: string | null;
   owner: { handle: string | null; name: string | null } | null;
+  /** Same-origin URL of the (AI-generated) collection cover, or null if none. */
+  coverUrl: string | null;
   /** Ordered, resolved member books (unresolvable slugs are dropped). */
   books: LibraryBook[];
   /** Whether the current viewer may rename/delete/add to this collection. */

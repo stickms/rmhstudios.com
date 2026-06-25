@@ -452,6 +452,7 @@ import { Route as ApiRideshareRidesIdSyncRouteImport } from './routes/api/ridesh
 import { Route as ApiRideshareRidesIdRateRouteImport } from './routes/api/rideshare/rides/$id/rate'
 import { Route as ApiRideshareRidesIdMessagesRouteImport } from './routes/api/rideshare/rides/$id/messages'
 import { Route as ApiLibraryCollectionIdItemsRouteImport } from './routes/api/library/collection/$id/items'
+import { Route as ApiLibraryCollectionIdCoverRouteImport } from './routes/api/library/collection/$id/cover'
 import { Route as ApiAdminUsersIdStrikeRouteImport } from './routes/api/admin/users/$id/strike'
 import { Route as ApiAdminUsersIdSetCoinsRouteImport } from './routes/api/admin/users/$id/set-coins'
 import { Route as ApiAdminUsersIdGrantMembershipRouteImport } from './routes/api/admin/users/$id/grant-membership'
@@ -2735,6 +2736,12 @@ const ApiLibraryCollectionIdItemsRoute =
     path: '/items',
     getParentRoute: () => ApiLibraryCollectionIdRoute,
   } as any)
+const ApiLibraryCollectionIdCoverRoute =
+  ApiLibraryCollectionIdCoverRouteImport.update({
+    id: '/cover',
+    path: '/cover',
+    getParentRoute: () => ApiLibraryCollectionIdRoute,
+  } as any)
 const ApiAdminUsersIdStrikeRoute = ApiAdminUsersIdStrikeRouteImport.update({
   id: '/$id/strike',
   path: '/$id/strike',
@@ -3244,6 +3251,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/users/$id/grant-membership': typeof ApiAdminUsersIdGrantMembershipRoute
   '/api/admin/users/$id/set-coins': typeof ApiAdminUsersIdSetCoinsRoute
   '/api/admin/users/$id/strike': typeof ApiAdminUsersIdStrikeRoute
+  '/api/library/collection/$id/cover': typeof ApiLibraryCollectionIdCoverRoute
   '/api/library/collection/$id/items': typeof ApiLibraryCollectionIdItemsRoute
   '/api/rideshare/rides/$id/messages': typeof ApiRideshareRidesIdMessagesRoute
   '/api/rideshare/rides/$id/rate': typeof ApiRideshareRidesIdRateRoute
@@ -3677,6 +3685,7 @@ export interface FileRoutesByTo {
   '/api/admin/users/$id/grant-membership': typeof ApiAdminUsersIdGrantMembershipRoute
   '/api/admin/users/$id/set-coins': typeof ApiAdminUsersIdSetCoinsRoute
   '/api/admin/users/$id/strike': typeof ApiAdminUsersIdStrikeRoute
+  '/api/library/collection/$id/cover': typeof ApiLibraryCollectionIdCoverRoute
   '/api/library/collection/$id/items': typeof ApiLibraryCollectionIdItemsRoute
   '/api/rideshare/rides/$id/messages': typeof ApiRideshareRidesIdMessagesRoute
   '/api/rideshare/rides/$id/rate': typeof ApiRideshareRidesIdRateRoute
@@ -4136,6 +4145,7 @@ export interface FileRoutesById {
   '/api/admin/users/$id/grant-membership': typeof ApiAdminUsersIdGrantMembershipRoute
   '/api/admin/users/$id/set-coins': typeof ApiAdminUsersIdSetCoinsRoute
   '/api/admin/users/$id/strike': typeof ApiAdminUsersIdStrikeRoute
+  '/api/library/collection/$id/cover': typeof ApiLibraryCollectionIdCoverRoute
   '/api/library/collection/$id/items': typeof ApiLibraryCollectionIdItemsRoute
   '/api/rideshare/rides/$id/messages': typeof ApiRideshareRidesIdMessagesRoute
   '/api/rideshare/rides/$id/rate': typeof ApiRideshareRidesIdRateRoute
@@ -4595,6 +4605,7 @@ export interface FileRouteTypes {
     | '/api/admin/users/$id/grant-membership'
     | '/api/admin/users/$id/set-coins'
     | '/api/admin/users/$id/strike'
+    | '/api/library/collection/$id/cover'
     | '/api/library/collection/$id/items'
     | '/api/rideshare/rides/$id/messages'
     | '/api/rideshare/rides/$id/rate'
@@ -5028,6 +5039,7 @@ export interface FileRouteTypes {
     | '/api/admin/users/$id/grant-membership'
     | '/api/admin/users/$id/set-coins'
     | '/api/admin/users/$id/strike'
+    | '/api/library/collection/$id/cover'
     | '/api/library/collection/$id/items'
     | '/api/rideshare/rides/$id/messages'
     | '/api/rideshare/rides/$id/rate'
@@ -5486,6 +5498,7 @@ export interface FileRouteTypes {
     | '/api/admin/users/$id/grant-membership'
     | '/api/admin/users/$id/set-coins'
     | '/api/admin/users/$id/strike'
+    | '/api/library/collection/$id/cover'
     | '/api/library/collection/$id/items'
     | '/api/rideshare/rides/$id/messages'
     | '/api/rideshare/rides/$id/rate'
@@ -8862,6 +8875,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiLibraryCollectionIdItemsRouteImport
       parentRoute: typeof ApiLibraryCollectionIdRoute
     }
+    '/api/library/collection/$id/cover': {
+      id: '/api/library/collection/$id/cover'
+      path: '/cover'
+      fullPath: '/api/library/collection/$id/cover'
+      preLoaderRoute: typeof ApiLibraryCollectionIdCoverRouteImport
+      parentRoute: typeof ApiLibraryCollectionIdRoute
+    }
     '/api/admin/users/$id/strike': {
       id: '/api/admin/users/$id/strike'
       path: '/$id/strike'
@@ -9852,11 +9872,13 @@ const ApiAdminCuratedBuildsImageRouteWithChildren =
   )
 
 interface ApiLibraryCollectionIdRouteChildren {
+  ApiLibraryCollectionIdCoverRoute: typeof ApiLibraryCollectionIdCoverRoute
   ApiLibraryCollectionIdItemsRoute: typeof ApiLibraryCollectionIdItemsRoute
 }
 
 const ApiLibraryCollectionIdRouteChildren: ApiLibraryCollectionIdRouteChildren =
   {
+    ApiLibraryCollectionIdCoverRoute: ApiLibraryCollectionIdCoverRoute,
     ApiLibraryCollectionIdItemsRoute: ApiLibraryCollectionIdItemsRoute,
   }
 

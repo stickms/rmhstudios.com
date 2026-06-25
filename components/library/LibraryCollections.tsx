@@ -1,50 +1,45 @@
 /**
  * LibraryCollections — the "series / collections" area on the library page.
  *
- * Renders every visible collection as its own shelf of books and lets a signed-in
- * reader build their own: create a series, add books they uploaded (admins: any
- * book), reorder/remove, rename or delete. All mutations go through
- * /api/library/collection(s)* which enforce ownership; this component is a thin,
- * optimistic-ish client that re-fetches after each change.
+ * Each collection is shown as a single book-like tile (with an AI-generated cover,
+ * or a titled placeholder) rather than a full inline shelf — clicking a tile opens
+ * a modal that reveals its member books. A signed-in reader can build their own:
+ * create a series, add books they uploaded (admins: any book), reorder/remove,
+ * rename, delete, and generate a cover. All mutations go through
+ * /api/library/collection(s)* which enforce ownership; this component is controlled
+ * by the page (which owns the collection list so the main shelf can hide books that
+ * already live in a collection) and calls `onChanged` after each change.
  */
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { Check, FolderPlus, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { Check, FolderPlus, ImagePlus, Layers, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
 import type { LibraryBook } from '@/lib/library/library';
 import type { CollectionView } from '@/lib/library/collections';
 
 export function LibraryCollections({
   books,
+  collections,
+  onChanged,
   isAdmin,
   myHandle,
   canCreate,
 }: {
   books: LibraryBook[];
+  collections: CollectionView[];
+  onChanged: () => void | Promise<void>;
   isAdmin: boolean;
   myHandle: string | null;
   canCreate: boolean;
 }) {
   const { t } = useTranslation('library');
-  const [collections, setCollections] = useState<CollectionView[]>([]);
   const [creating, setCreating] = useState(false);
   const [manage, setManage] = useState(false);
   const [addingTo, setAddingTo] = useState<CollectionView | null>(null);
-
-  const refresh = useCallback(async () => {
-    const res = await fetch('/api/library/collections').catch(() => null);
-    if (res?.ok) {
-      const data = await res.json().catch(() => null);
-      if (data?.collections) setCollections(data.collections as CollectionView[]);
-    }
-  }, []);
-
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
+  const [opened, setOpened] = useState<CollectionView | null>(null);
+  const [generating, setGenerating] = useState<string | null>(null);
 
   const hasEditable = collections.some((c) => c.canEdit);
-
   // Hide empty collections from people who can't edit them; owners still see theirs.
   const visible = collections.filter((c) => c.books.length > 0 || c.canEdit);
 
@@ -57,14 +52,14 @@ export function LibraryCollections({
     setCreating(false);
     if (res?.ok) {
       setManage(true);
-      await refresh();
+      await onChanged();
     }
   }
 
   async function removeCollection(c: CollectionView) {
     if (!window.confirm(t('collection-delete-confirm', { defaultValue: 'Delete this collection? The books are not deleted.' }))) return;
     const res = await fetch(`/api/library/collection/${c.id}`, { method: 'DELETE' }).catch(() => null);
-    if (res?.ok) await refresh();
+    if (res?.ok) await onChanged();
   }
 
   async function renameCollection(c: CollectionView) {
@@ -75,7 +70,7 @@ export function LibraryCollections({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title }),
     }).catch(() => null);
-    if (res?.ok) await refresh();
+    if (res?.ok) await onChanged();
   }
 
   async function addBook(c: CollectionView, slug: string) {
@@ -84,7 +79,7 @@ export function LibraryCollections({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ bookSlug: slug }),
     }).catch(() => null);
-    if (res?.ok) await refresh();
+    if (res?.ok) await onChanged();
   }
 
   async function removeBook(c: CollectionView, slug: string) {
@@ -93,13 +88,26 @@ export function LibraryCollections({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ bookSlug: slug }),
     }).catch(() => null);
-    if (res?.ok) await refresh();
+    if (res?.ok) await onChanged();
+  }
+
+  async function generateCover(c: CollectionView) {
+    setGenerating(c.id);
+    const res = await fetch(`/api/library/collection/${c.id}/cover`, { method: 'POST' }).catch(() => null);
+    setGenerating(null);
+    if (res?.ok) {
+      await onChanged();
+    } else {
+      const err = await res?.json().catch(() => null);
+      window.alert(err?.error ?? t('cover-failed', { defaultValue: 'Could not generate a cover.' }));
+    }
   }
 
   if (visible.length === 0 && !canCreate) return null;
 
-  // The live version of the collection being managed in the add-books modal.
+  // Live versions of the collections referenced by open modals (so edits reflect).
   const addingLive = addingTo ? collections.find((c) => c.id === addingTo.id) ?? addingTo : null;
+  const openedLive = opened ? collections.find((c) => c.id === opened.id) ?? opened : null;
 
   return (
     <section className="lib__section lib-collections">
@@ -133,69 +141,25 @@ export function LibraryCollections({
           {t('no-collections', { defaultValue: 'No collections yet — create one to group books into a series.' })}
         </p>
       ) : (
-        visible.map((c) => {
-          const editing = manage && c.canEdit;
-          return (
-            <div className="lib-collections__group" key={c.id}>
-              <div className="lib-collections__group-head">
-                <div className="lib-collections__group-titles">
-                  <h3 className="lib-collections__group-title">{c.title}</h3>
-                  {c.description && <p className="lib-collections__group-desc">{c.description}</p>}
-                  {c.owner && (c.owner.handle || c.owner.name) && !c.official && (
-                    <p className="lib-book__by">
-                      {t('collection-by', {
-                        who: c.owner.handle ? `@${c.owner.handle}` : c.owner.name,
-                        defaultValue: 'by {{who}}',
-                      })}
-                    </p>
-                  )}
-                </div>
-                {editing && (
-                  <div className="lib-collections__group-actions">
-                    <button type="button" className="lib-edit__btn" onClick={() => setAddingTo(c)} title={t('add-books', { defaultValue: 'Add books' })}>
-                      <Plus size={15} />
-                    </button>
-                    <button type="button" className="lib-edit__btn" onClick={() => renameCollection(c)} title={t('rename', { defaultValue: 'Rename' })}>
-                      <Pencil size={15} />
-                    </button>
-                    <button type="button" className="lib-edit__btn lib-edit__btn--danger" onClick={() => removeCollection(c)} title={t('delete', { defaultValue: 'Delete' })}>
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {c.books.length === 0 ? (
-                <p className="vibe-hint lib-collections__empty">
-                  {t('collection-empty', { defaultValue: 'No books yet. Use + to add some.' })}
-                </p>
-              ) : (
-                <div className="lib__shelf lib-collections__shelf" role="list">
-                  {c.books.map((b) => (
-                    <div className="lib-book__wrap" role="listitem" key={`${c.id}-${b.slug}`}>
-                      <BookCard book={b} />
-                      {editing && (
-                        <button
-                          type="button"
-                          className="lib-collections__remove"
-                          onClick={() => removeBook(c, b.slug)}
-                          aria-label={t('remove-from-collection', { defaultValue: 'Remove from collection' })}
-                        >
-                          <X size={14} />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        })
+        <div className="lib__shelf" role="list">
+          {visible.map((c) => (
+            <CollectionTile
+              key={c.id}
+              collection={c}
+              manage={manage && c.canEdit}
+              generating={generating === c.id}
+              onOpen={() => setOpened(c)}
+              onAdd={() => setAddingTo(c)}
+              onRename={() => renameCollection(c)}
+              onDelete={() => removeCollection(c)}
+              onCover={() => generateCover(c)}
+            />
+          ))}
+        </div>
       )}
 
-      {creating && (
-        <CreateModal onClose={() => setCreating(false)} onCreate={createCollection} />
-      )}
+      {creating && <CreateModal onClose={() => setCreating(false)} onCreate={createCollection} />}
+      {openedLive && <ViewModal collection={openedLive} onClose={() => setOpened(null)} />}
       {addingLive && (
         <AddBooksModal
           collection={addingLive}
@@ -211,8 +175,138 @@ export function LibraryCollections({
   );
 }
 
+/** A single collection rendered as a book-like tile that opens to reveal its books. */
+function CollectionTile({
+  collection: c,
+  manage,
+  generating,
+  onOpen,
+  onAdd,
+  onRename,
+  onDelete,
+  onCover,
+}: {
+  collection: CollectionView;
+  manage: boolean;
+  generating: boolean;
+  onOpen: () => void;
+  onAdd: () => void;
+  onRename: () => void;
+  onDelete: () => void;
+  onCover: () => void;
+}) {
+  const { t } = useTranslation('library');
+  const count = c.books.length;
+  const countLabel = t('book-count', { count, defaultValue: '{{count}} books' });
+  // Stop a manage-button click from also opening the collection.
+  const stop = (fn: () => void) => (e: React.MouseEvent) => {
+    e.stopPropagation();
+    fn();
+  };
+
+  return (
+    <div className="lib-book__wrap lib-coll-tile" role="listitem">
+      <button
+        type="button"
+        className="lib-book lib-coll-tile__btn"
+        onClick={onOpen}
+        aria-label={t('open-collection', { title: c.title, defaultValue: 'Open {{title}}' })}
+      >
+        <div className="lib-book__3d">
+          <span className="lib-coll-tile__stack" aria-hidden="true" />
+          <div className={`lib-book__cover ${c.coverUrl ? 'has-cover' : ''}`}>
+            <span className="lib-book__edge" aria-hidden="true" />
+            {c.coverUrl ? (
+              <img className="lib-book__img" src={c.coverUrl} alt={c.title} loading="lazy" decoding="async" />
+            ) : (
+              <span className="lib-book__title">{c.title}</span>
+            )}
+            <span className="lib-coll-tile__badge">
+              <Layers size={12} aria-hidden="true" /> {count}
+            </span>
+            {!c.coverUrl && <span className="lib-book__mark">RMH</span>}
+            {generating && (
+              <span className="lib-coll-tile__gen" aria-hidden="true">
+                <Loader2 className="lib-spin" size={22} />
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="lib-book__meta">
+          <p className="lib-book__name">{c.title}</p>
+          <p className="lib-book__by">{countLabel}</p>
+        </div>
+      </button>
+
+      {manage && (
+        <div className="lib-collections__group-actions lib-coll-tile__actions">
+          <button type="button" className="lib-edit__btn" onClick={stop(onAdd)} title={t('add-books', { defaultValue: 'Add books' })}>
+            <Plus size={15} />
+          </button>
+          <button
+            type="button"
+            className="lib-edit__btn"
+            onClick={stop(onCover)}
+            disabled={generating}
+            title={c.coverUrl ? t('regenerate-cover', { defaultValue: 'Regenerate cover' }) : t('generate-cover', { defaultValue: 'Generate cover' })}
+          >
+            <ImagePlus size={15} />
+          </button>
+          <button type="button" className="lib-edit__btn" onClick={stop(onRename)} title={t('rename', { defaultValue: 'Rename' })}>
+            <Pencil size={15} />
+          </button>
+          <button type="button" className="lib-edit__btn lib-edit__btn--danger" onClick={stop(onDelete)} title={t('delete', { defaultValue: 'Delete' })}>
+            <Trash2 size={15} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Modal that reveals a collection's member books. */
+function ViewModal({ collection: c, onClose }: { collection: CollectionView; onClose: () => void }) {
+  const { t } = useTranslation('library');
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  const by =
+    c.owner && (c.owner.handle || c.owner.name) && !c.official
+      ? t('collection-by', { who: c.owner.handle ? `@${c.owner.handle}` : c.owner.name, defaultValue: 'by {{who}}' })
+      : null;
+
+  return (
+    <div className="lib-upload__overlay" role="dialog" aria-modal="true" onMouseDown={onClose}>
+      <div className="lib-upload lib-coll-modal" onMouseDown={(e) => e.stopPropagation()}>
+        <div className="lib-upload__head">
+          <div className="lib-collections__group-titles">
+            <h2 className="lib-upload__title">{c.title}</h2>
+            {c.description && <p className="lib-collections__group-desc">{c.description}</p>}
+            {by && <p className="lib-book__by">{by}</p>}
+          </div>
+          <button type="button" className="lib-upload__close" onClick={onClose} aria-label={t('close', { defaultValue: 'Close' })}>×</button>
+        </div>
+        {c.books.length === 0 ? (
+          <p className="vibe-hint lib-collections__empty">{t('collection-empty', { defaultValue: 'No books yet.' })}</p>
+        ) : (
+          <div className="lib__shelf lib-collections__shelf" role="list">
+            {c.books.map((b) => (
+              <div className="lib-book__wrap" role="listitem" key={`${c.id}-${b.slug}`}>
+                <BookCard book={b} onNavigate={onClose} />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /** A compact, non-editable book card (link to the reader). */
-function BookCard({ book }: { book: LibraryBook }) {
+function BookCard({ book, onNavigate }: { book: LibraryBook; onNavigate?: () => void }) {
   const { t } = useTranslation('library');
   const style = { '--book-hue': String(book.hue) } as React.CSSProperties;
   return (
@@ -221,6 +315,7 @@ function BookCard({ book }: { book: LibraryBook }) {
       params={{ slug: book.slug }}
       className="lib-book"
       style={style}
+      onClick={onNavigate}
       aria-label={t('open-book', { title: book.title, defaultValue: 'Open {{title}}' })}
     >
       <div className="lib-book__3d">

@@ -6,11 +6,14 @@
  * their own collections and may add only books they uploaded; admins manage any
  * collection (their own are "official") and may add any book.
  */
+import OpenAI from 'openai';
 import { prisma } from '@/lib/prisma.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
 import { getLibraryBook, type LibraryBook } from './library';
 import { mapDocToBook, type LibraryDocRow } from './merge';
-import { slugifyTitle } from './keys';
+import { slugifyTitle, libraryCoverKey, libraryCoverUrl } from './keys';
+import { putObject } from '@/lib/storage/s3.server';
+import { validateImageBuffer, detectImageExt } from '@/lib/slice-it/upload-validation';
 import {
   validateCollectionFields,
   COLLECTION_USER_QUOTA,
@@ -46,6 +49,15 @@ const DOC_SELECT = {
   uploadedBy: { select: { handle: true, name: true } },
 } as const;
 
+// xAI is OpenAI-SDK compatible; point the base URL at their endpoint.
+const xai = new OpenAI({ apiKey: process.env.XAI_API_KEY || '', baseURL: 'https://api.x.ai/v1', maxRetries: 1 });
+const XAI_IMAGE_MODEL = process.env.XAI_IMAGE_MODEL || 'grok-imagine-image';
+
+/** True when an xAI key is set and image generation isn't disabled. */
+export function isCollectionCoverConfigured(): boolean {
+  return Boolean(process.env.XAI_API_KEY) && process.env.XAI_IMAGE_ENABLED !== 'false';
+}
+
 /** Resolve a set of book slugs into LibraryBooks (uploads/migrated first, then static). */
 async function resolveBooksBySlugs(slugs: string[]): Promise<Map<string, LibraryBook>> {
   const out = new Map<string, LibraryBook>();
@@ -69,6 +81,7 @@ type CollectionRow = {
   title: string;
   description: string;
   official: boolean;
+  coverKey: string | null;
   ownerUserId: string | null;
   owner: { handle: string | null; name: string | null } | null;
   items: { bookSlug: string; position: number }[];
@@ -82,6 +95,7 @@ function toView(row: CollectionRow, books: Map<string, LibraryBook>, viewer: Vie
     title: row.title,
     description: row.description,
     official: row.official,
+    coverUrl: row.coverKey ? libraryCoverUrl(row.id) : null,
     ownerUserId: row.ownerUserId,
     owner: row.owner,
     books: ordered.map((i) => books.get(i.bookSlug)).filter((b): b is LibraryBook => Boolean(b)),
@@ -100,6 +114,7 @@ export async function listCollectionsView(viewer: Viewer): Promise<CollectionVie
       title: true,
       description: true,
       official: true,
+      coverKey: true,
       ownerUserId: true,
       owner: { select: { handle: true, name: true } },
       items: { select: { bookSlug: true, position: true } },
@@ -269,4 +284,58 @@ export async function reorderItems(viewer: Viewer, id: string, slugs: string[]):
   );
   auditIfAdmin(viewer, 'library.collection.reorder', id, `${slugs.length} books`);
   return { ok: true, value: true };
+}
+
+/** Build the image prompt for a collection cover from its title + description. */
+function coverPrompt(title: string, description: string): string {
+  const extra = description.trim() ? ` The collection is about: ${description.trim()}.` : '';
+  return (
+    `Cover artwork for a curated book series titled "${title}".${extra} ` +
+    `A single cohesive, atmospheric illustration evoking a shelf of related books — ` +
+    `rich painterly lighting, elegant and professional, portrait orientation. ` +
+    `Absolutely no text, no letters, no words, no titles anywhere in the image.`
+  );
+}
+
+/**
+ * Generate an AI cover for a collection via xAI (Grok image API), store it at the
+ * collection's cover key and record it on the row. Owner-or-admin only. Returns
+ * the served cover URL. Best-effort: any generation failure is a clean error, the
+ * collection simply keeps its placeholder cover.
+ */
+export async function generateCollectionCover(
+  viewer: Viewer,
+  id: string,
+): Promise<CollectionResult<{ coverUrl: string }>> {
+  const access = await requireManageable(viewer, id);
+  if (!access.ok) return access;
+  if (!isCollectionCoverConfigured()) {
+    return { ok: false, status: 503, error: 'Cover generation is not configured.' };
+  }
+  const row = await prisma.libraryCollection.findUnique({
+    where: { id },
+    select: { title: true, description: true },
+  });
+  if (!row) return { ok: false, status: 404, error: 'Collection not found.' };
+
+  try {
+    const res = await xai.images.generate({ model: XAI_IMAGE_MODEL, prompt: coverPrompt(row.title, row.description), n: 1 });
+    const url = res.data?.[0]?.url;
+    if (!url) return { ok: false, status: 502, error: 'Image generation returned nothing.' };
+    const fetched = await fetch(url);
+    if (!fetched.ok) return { ok: false, status: 502, error: 'Could not download the generated image.' };
+    const buffer = Buffer.from(await fetched.arrayBuffer());
+    if (!validateImageBuffer(buffer).ok) return { ok: false, status: 502, error: 'Generated image was invalid.' };
+
+    const ext = detectImageExt(buffer);
+    const contentType = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
+    const key = libraryCoverKey(id);
+    await putObject(key, buffer, contentType);
+    await prisma.libraryCollection.update({ where: { id }, data: { coverKey: key } });
+    auditIfAdmin(viewer, 'library.collection.cover', id);
+    return { ok: true, value: { coverUrl: libraryCoverUrl(id) } };
+  } catch (err) {
+    console.error('generateCollectionCover failed:', err);
+    return { ok: false, status: 502, error: 'Image generation failed. Try again.' };
+  }
 }
