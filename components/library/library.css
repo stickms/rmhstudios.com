@@ -1214,6 +1214,82 @@
   background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
 }
 .lib-upload__fields { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+
+/* ── Multi-file upload queue (admins) ─────────────────────────────────────── */
+.lib-upload--multi { max-width: 720px; }
+.lib-upload__queue {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+.lib-upload__row {
+  display: flex;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+}
+.lib-upload__row.is-done { opacity: 0.7; }
+.lib-upload__row.is-error { border-color: rgba(255, 110, 110, 0.4); }
+.lib-upload__row-cover {
+  flex: 0 0 70px;
+  aspect-ratio: 3 / 4;
+}
+.lib-upload__row-fields {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: center;
+}
+.lib-upload__row-fields .lib-upload__textarea { min-height: 48px; }
+.lib-upload__row-ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #67d18b;
+}
+.lib-upload__row-err { font-size: 12px; color: #ff8585; }
+.lib-upload__row-remove {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+}
+.lib-upload__row-remove:hover:not(:disabled) { background: rgba(255, 90, 90, 0.18); color: #ff8585; }
+.lib-upload__row-remove:disabled { opacity: 0.4; cursor: default; }
+.lib-upload__addmore {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  justify-content: center;
+  padding: 9px;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 13px;
+  cursor: pointer;
+}
+.lib-upload__addmore:hover:not(:disabled) { background: rgba(255, 255, 255, 0.04); }
+.lib-upload__addmore:disabled { opacity: 0.4; cursor: default; }
 .lib-upload__label {
   display: flex;
   flex-direction: column;
