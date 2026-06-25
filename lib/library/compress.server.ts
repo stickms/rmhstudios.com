@@ -5,8 +5,9 @@
  * storage, then served back with `Content-Encoding: gzip` so the browser (and
  * pdf.js) inflate it transparently. PDFs already deflate their internal streams,
  * so we only keep the gzipped copy when it is genuinely smaller — otherwise the
- * original bytes are stored as-is and storage never grows. Storage backend is
- * agnostic to which we chose: the serve route detects the gzip magic bytes.
+ * original bytes are stored as-is and storage never grows. When we do gzip, the
+ * write records `Content-Encoding: gzip` on the object; the serve route reads
+ * that back (and falls back to sniffing the gzip magic bytes for older objects).
  *
  * Dependency-free (Node's built-in zlib) so it works in the Bazel/pnpm build
  * without pulling in a native PDF toolchain.

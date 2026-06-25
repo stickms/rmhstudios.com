@@ -25,7 +25,7 @@ import { putObject, deleteObject } from '@/lib/storage/s3.server';
 import { CDN_BASE } from '@/lib/storage/asset';
 import { listLibraryBooks } from './library';
 import { libraryPdfKey, libraryCoverKey } from './keys';
-import { compressPdfForStorage } from './compress.server';
+import { compressPdfForStorage, isGzipped } from './compress.server';
 
 export type MigrationSummary = {
   migrated: number;
@@ -88,7 +88,8 @@ async function migrateBook(
   const pdfKey = libraryPdfKey(id);
   let coverKey: string | null = null;
 
-  await putObject(pdfKey, compressPdfForStorage(raw), 'application/pdf');
+  const storedPdf = compressPdfForStorage(raw);
+  await putObject(pdfKey, storedPdf, 'application/pdf', isGzipped(storedPdf) ? 'gzip' : undefined);
 
   // Cover: coverUrl is a relative public path (e.g. /library/covers/foo.jpg).
   if (book.coverUrl) {
