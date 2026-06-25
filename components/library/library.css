@@ -872,6 +872,19 @@
   margin-top: 12px;
 }
 
+/* Sub-groups within Collections: curated series vs reader collections. */
+.lib-collections__group-wrap + .lib-collections__group-wrap {
+  margin-top: 18px;
+}
+.lib-collections__subhead {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0 0 10px;
+}
+
 /* ── Collection tiles (a collection shown as a single book-like cover) ──────── */
 .lib-coll-tile__btn {
   appearance: none;
