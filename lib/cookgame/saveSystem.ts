@@ -65,6 +65,12 @@ export function parseSave(raw: string | null): SaveV2 | null {
     if (p.version !== CURRENT_VERSION) return null;
     if (typeof p.cash !== 'number' || typeof p.heat !== 'number') return null;
     if (!p.inventory || !Array.isArray(p.discoveredRecipes)) return null;
+    const inv = p.inventory;
+    if (!Array.isArray(inv.baseStock)) return null;
+    if (!Array.isArray(inv.plots)) return null;
+    if (!Array.isArray(inv.dryingRack)) return null;
+    if (typeof inv.inputs !== 'object' || inv.inputs === null || Array.isArray(inv.inputs)) return null;
+    if (typeof inv.additives !== 'object' || inv.additives === null) return null;
     return p as SaveV2;
   } catch {
     return null;

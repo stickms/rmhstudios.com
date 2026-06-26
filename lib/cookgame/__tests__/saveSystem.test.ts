@@ -26,6 +26,79 @@ describe('save v2', () => {
   });
 });
 
+describe('v2 inventory shape validation', () => {
+  function baseValidV2() {
+    return {
+      version: 2,
+      cash: 100,
+      heat: 0,
+      inventory: {
+        additives: {},
+        inputs: {},
+        baseStock: [],
+        plots: [],
+        dryingRack: [],
+        workProduct: null,
+        packaged: [],
+      },
+      discoveredRecipes: [],
+    };
+  }
+
+  it('accepts a complete valid v2 save (createNewSave round-trip already covered; also test baseValidV2)', () => {
+    expect(parseSave(JSON.stringify(baseValidV2()))).not.toBeNull();
+  });
+
+  it('rejects v2 when plots is missing (undefined)', () => {
+    const p = baseValidV2();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (p.inventory as any).plots;
+    expect(parseSave(JSON.stringify(p))).toBeNull();
+  });
+
+  it('rejects v2 when plots is not an array', () => {
+    const p = baseValidV2();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (p.inventory as any).plots = 'not-an-array';
+    expect(parseSave(JSON.stringify(p))).toBeNull();
+  });
+
+  it('rejects v2 when baseStock is missing (undefined)', () => {
+    const p = baseValidV2();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (p.inventory as any).baseStock;
+    expect(parseSave(JSON.stringify(p))).toBeNull();
+  });
+
+  it('rejects v2 when baseStock is not an array', () => {
+    const p = baseValidV2();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (p.inventory as any).baseStock = 42;
+    expect(parseSave(JSON.stringify(p))).toBeNull();
+  });
+
+  it('rejects v2 when inputs is not an object', () => {
+    const p = baseValidV2();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (p.inventory as any).inputs = [1, 2, 3];
+    expect(parseSave(JSON.stringify(p))).toBeNull();
+  });
+
+  it('rejects v2 when inputs is null', () => {
+    const p = baseValidV2();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (p.inventory as any).inputs = null;
+    expect(parseSave(JSON.stringify(p))).toBeNull();
+  });
+
+  it('rejects v2 when dryingRack is not an array', () => {
+    const p = baseValidV2();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (p.inventory as any).dryingRack = {};
+    expect(parseSave(JSON.stringify(p))).toBeNull();
+  });
+});
+
 describe('v1 -> v2 migration', () => {
   it('upgrades a valid v1 save: rawBases -> baseStock, adds plots/rack/inputs', () => {
     const v1 = JSON.stringify({
