@@ -15,7 +15,7 @@
 import OpenAI from 'openai';
 import sharp from 'sharp';
 import { validateImageBuffer } from '@/lib/slice-it/upload-validation';
-import { putObject, objectExists } from '@/lib/storage/s3.server';
+import { putObject, objectExists, s3Configured } from '@/lib/storage/s3.server';
 import { buildCoverKey, buildCoverUrl } from '@/lib/storage/keys';
 import { type BuildCoverRatio } from '@/lib/builds/cover-manifest';
 
@@ -109,4 +109,68 @@ export async function generateBuildCover(opts: {
     console.error(`generateBuildCover failed for ${opts.build.id} (${ratio}):`, err);
     return null;
   }
+}
+
+// Process-local memo of covers known to exist (id:ratio → public URL) and the
+// set of generations currently in flight, so repeat loads don't re-HEAD or
+// double-fire. Survives for the life of the server process.
+const coverUrlCache = new Map<string, string>();
+const coverInFlight = new Set<string>();
+
+/**
+ * Resolve wide covers for a set of builds on demand. Returns a map of
+ * buildId → public cover URL for covers that already exist; for builds that
+ * don't have one yet it fires generation in the background (bounded per call)
+ * and omits them — the storefront falls back to the thumbnail until the next
+ * load. Idempotent (generates each build/ratio at most once) and a no-op when
+ * xAI or object storage isn't configured, so it adds zero overhead by default.
+ */
+export async function resolveBuildCovers(
+  builds: BuildCoverInput[],
+  opts: { ratio?: BuildCoverRatio; maxGeneratePerCall?: number } = {},
+): Promise<Record<string, string>> {
+  const ratio: BuildCoverRatio = opts.ratio ?? 'wide';
+  const result: Record<string, string> = {};
+  if (!isBuildCoverConfigured() || !s3Configured()) return result;
+
+  // Fill from cache; collect the rest to existence-check in one parallel pass.
+  const unknown: BuildCoverInput[] = [];
+  for (const b of builds) {
+    const cached = coverUrlCache.get(`${b.id}:${ratio}`);
+    if (cached) result[b.id] = cached;
+    else unknown.push(b);
+  }
+
+  const checked = await Promise.all(
+    unknown.map(async (b) => {
+      try {
+        return { b, exists: await objectExists(buildCoverKey(b.id, ratio)) };
+      } catch {
+        return { b, exists: false };
+      }
+    }),
+  );
+
+  let budget = opts.maxGeneratePerCall ?? 4;
+  for (const { b, exists } of checked) {
+    const ck = `${b.id}:${ratio}`;
+    if (exists) {
+      const url = buildCoverUrl(b.id, ratio);
+      coverUrlCache.set(ck, url);
+      result[b.id] = url;
+      continue;
+    }
+    // Missing → generate once, in the background, bounded per call.
+    if (budget > 0 && !coverInFlight.has(ck)) {
+      budget--;
+      coverInFlight.add(ck);
+      void generateBuildCover({ build: b, ratio })
+        .then((url) => {
+          if (url) coverUrlCache.set(ck, url);
+        })
+        .catch(() => {})
+        .finally(() => coverInFlight.delete(ck));
+    }
+  }
+  return result;
 }
