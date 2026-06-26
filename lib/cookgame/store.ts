@@ -1,10 +1,14 @@
 // lib/cookgame/store.ts
 import { create } from 'zustand';
-import type { AdditiveId, BaseId, BuyerId, InventoryState, Product, BaseStockEntry } from './types';
-import { ADDITIVES, BUYERS } from './content';
+import type { AdditiveId, BaseId, BuyerId, InputId, InventoryState, Product, BaseStockEntry } from './types';
+import { ADDITIVES, BUYERS, INPUTS, GROWABLE } from './content';
 import { mix, effectSetKey } from './effects';
 import { buyerOffer, applyHeatOnSale, decayHeat, packageProduct } from './economy';
 import { SaveState, CURRENT_VERSION, createNewSave, saveGame, loadGame } from './saveSystem';
+import {
+  plantPlot as cPlant, canTend, tendPlot as cTend,
+  harvestPlot as cHarvest, canCollect, collectDried as cCollect,
+} from './cultivation';
 
 function sameStock(a: BaseStockEntry, b: BaseStockEntry): boolean {
   return a.baseId === b.baseId && a.qualityMult === b.qualityMult &&
@@ -40,6 +44,11 @@ interface CookgameState {
   saveNow: () => void;
   loadOrNew: () => void;
   resetGame: () => void;
+  buyInput: (id: InputId) => boolean;
+  plantPlot: (plotIndex: number, strainKey: string, now: number) => boolean;
+  tendPlot: (plotIndex: number, now: number) => boolean;
+  harvestPlot: (plotIndex: number, now: number) => boolean;
+  collectDried: (batchIndex: number, now: number) => boolean;
 }
 
 const fromSave = (s: SaveState) => ({
@@ -145,4 +154,61 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
   },
   loadOrNew: () => set(fromSave(loadGame() ?? createNewSave())),
   resetGame: () => set({ ...fromSave(createNewSave()), nearbyInteractable: null, activeOverlay: null }),
+
+  buyInput: (id) => {
+    const { cash, inventory } = get();
+    const cost = INPUTS[id].cost;
+    if (cash < cost) return false;
+    set({
+      cash: cash - cost,
+      inventory: { ...inventory, inputs: { ...inventory.inputs, [id]: (inventory.inputs[id] ?? 0) + 1 } },
+    });
+    return true;
+  },
+
+  plantPlot: (plotIndex, strainKey, now) => {
+    const { inventory } = get();
+    const g = GROWABLE[strainKey];
+    const plot = inventory.plots[plotIndex];
+    if (!g || !plot || plot.stage !== 'empty') return false;
+    if ((inventory.inputs[g.seedId] ?? 0) <= 0 || (inventory.inputs.nutrient ?? 0) <= 0) return false;
+    const plots = inventory.plots.map((p, i) => (i === plotIndex ? cPlant(p, g.baseId, now) : p));
+    set({
+      inventory: {
+        ...inventory, plots,
+        inputs: { ...inventory.inputs, [g.seedId]: inventory.inputs[g.seedId] - 1, nutrient: inventory.inputs.nutrient - 1 },
+      },
+    });
+    return true;
+  },
+
+  tendPlot: (plotIndex, now) => {
+    const { inventory } = get();
+    const plot = inventory.plots[plotIndex];
+    if (!plot || !canTend(plot, now)) return false;
+    const plots = inventory.plots.map((p, i) => (i === plotIndex ? cTend(p, now) : p));
+    set({ inventory: { ...inventory, plots } });
+    return true;
+  },
+
+  harvestPlot: (plotIndex, now) => {
+    const { inventory } = get();
+    const plot = inventory.plots[plotIndex];
+    if (!plot) return false;
+    const res = cHarvest(plot, now);
+    if (!res) return false;
+    const plots = inventory.plots.map((p, i) => (i === plotIndex ? res.plot : p));
+    set({ inventory: { ...inventory, plots, dryingRack: [...inventory.dryingRack, res.wet] } });
+    return true;
+  },
+
+  collectDried: (batchIndex, now) => {
+    const { inventory } = get();
+    const batch = inventory.dryingRack[batchIndex];
+    if (!batch || !canCollect(batch, now)) return false;
+    const entry = cCollect(batch);
+    const dryingRack = inventory.dryingRack.filter((_, i) => i !== batchIndex);
+    set({ inventory: { ...inventory, dryingRack, baseStock: mergeStock(inventory.baseStock, entry) } });
+    return true;
+  },
 }));

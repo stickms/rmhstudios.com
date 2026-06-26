@@ -77,3 +77,54 @@ describe('cookgame store — baseStock core', () => {
     expect(useCookgameStore.getState().heat).toBe(8);
   });
 });
+
+import { TEND_COOLDOWN_MS, DRY_COOLDOWN_MS } from '../cultivation';
+
+describe('cookgame store — grow flow', () => {
+  beforeEach(reset);
+
+  const stockInputs = () => {
+    useCookgameStore.setState((s) => ({
+      inventory: { ...s.inventory, inputs: { seed_couchlock: 1, nutrient: 1 } },
+    }));
+  };
+
+  it('buyInput deducts cost and adds an input', () => {
+    expect(useCookgameStore.getState().buyInput('nutrient')).toBe(true);
+    const s = useCookgameStore.getState();
+    expect(s.cash).toBe(147); // 150 - 3
+    expect(s.inventory.inputs.nutrient).toBe(1);
+  });
+
+  it('plant requires seed + nutrient and consumes them', () => {
+    const st = useCookgameStore.getState();
+    expect(st.plantPlot(0, 'couchlock', 1000)).toBe(false); // no inputs yet
+    stockInputs();
+    expect(useCookgameStore.getState().plantPlot(0, 'couchlock', 1000)).toBe(true);
+    const s = useCookgameStore.getState();
+    expect(s.inventory.plots[0].stage).toBe('seedling');
+    expect(s.inventory.inputs.seed_couchlock ?? 0).toBe(0);
+    expect(s.inventory.inputs.nutrient ?? 0).toBe(0);
+  });
+
+  it('full grow: plant -> tend x2 -> harvest -> dry -> collect into baseStock', () => {
+    stockInputs();
+    const st = useCookgameStore.getState();
+    st.plantPlot(0, 'couchlock', 0);
+    expect(st.tendPlot(0, 1)).toBe(false); // too soon
+    st.tendPlot(0, TEND_COOLDOWN_MS);
+    st.tendPlot(0, 2 * TEND_COOLDOWN_MS);
+    expect(useCookgameStore.getState().inventory.plots[0].stage).toBe('flowering');
+    expect(st.harvestPlot(0, 3 * TEND_COOLDOWN_MS)).toBe(true);
+    let s = useCookgameStore.getState();
+    expect(s.inventory.plots[0].stage).toBe('empty');
+    expect(s.inventory.dryingRack).toHaveLength(1);
+    const dryAt = 3 * TEND_COOLDOWN_MS;
+    expect(st.collectDried(0, dryAt + DRY_COOLDOWN_MS - 1)).toBe(false);
+    expect(st.collectDried(0, dryAt + DRY_COOLDOWN_MS)).toBe(true);
+    s = useCookgameStore.getState();
+    expect(s.inventory.dryingRack).toHaveLength(0);
+    expect(s.inventory.baseStock[0].baseId).toBe('couchlock');
+    expect(s.inventory.baseStock[0].units).toBeGreaterThan(0);
+  });
+});
