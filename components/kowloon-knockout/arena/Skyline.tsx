@@ -2,13 +2,59 @@
 
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three/webgpu';
+import { useFrame } from '@react-three/fiber';
 import { useRenderTier } from './RenderTierContext';
 import { generateSkyline } from '@/lib/kowloon-knockout/render/skyline';
 import { NEON_PALETTE } from './materials';
+import { signAnim } from '@/lib/kowloon-knockout/render/signage';
 
 const NEON = NEON_PALETTE;
 
 const TIER_LAYERS: Record<string, number> = { ultra: 3, high: 2, medium: 1, low: 0 };
+
+/** Per-sign animated neon strip — Path B (useFrame + Math.sin).
+ *  TSL path skipped to avoid runtime crashes; cheap CPU-side color update. */
+function NeonSign({ pos, h, color, index }: {
+    pos: [number, number, number];
+    h: number;
+    color: string;
+    index: number;
+}) {
+    const matRef = useRef<THREE.MeshBasicMaterial>(null);
+    const anim = useMemo(() => signAnim(index), [index]);
+    const baseColor = useMemo(() => new THREE.Color(color), [color]);
+
+    useFrame(({ clock }) => {
+        const mat = matRef.current;
+        if (!mat) return;
+        const t = clock.elapsedTime;
+        const raw = Math.sin(t * anim.speed + anim.phase) * 0.5 + 0.5; // 0..1
+        let intensity: number;
+        if (anim.pattern === 'dropout') {
+            // occasional dead-sign: snap to near-dark when trough is deep
+            intensity = raw < 0.15 ? 0.04 : raw;
+        } else if (anim.pattern === 'scroll') {
+            // stays relatively bright, narrower oscillation
+            intensity = 0.4 + raw * 0.6;
+        } else {
+            // pulse: full 0..1 range
+            intensity = raw;
+        }
+        mat.color.setRGB(
+            baseColor.r * intensity,
+            baseColor.g * intensity,
+            baseColor.b * intensity,
+        );
+    });
+
+    return (
+        <mesh position={pos}>
+            <boxGeometry args={[0.4, h, 0.1]} />
+            <meshBasicMaterial ref={matRef} color={color} toneMapped={false} />
+        </mesh>
+    );
+}
+
 const SKYLINE_SEED = 1337;
 
 function SkylineLayer({ instances }: { instances: ReturnType<typeof generateSkyline>[number] }) {
@@ -87,10 +133,7 @@ export default function Skyline() {
             <group>
                 {layers.map((inst, i) => <SkylineLayer key={i} instances={inst} />)}
                 {signs.map((s, i) => (
-                    <mesh key={`s${i}`} position={s.pos}>
-                        <boxGeometry args={[0.4, s.h, 0.1]} />
-                        <meshBasicMaterial color={s.color} toneMapped={false} />
-                    </mesh>
+                    <NeonSign key={`s${i}`} pos={s.pos} h={s.h} color={s.color} index={i} />
                 ))}
             </group>
         );
@@ -106,10 +149,7 @@ export default function Skyline() {
                 </mesh>
             ))}
             {signs.map((s, i) => (
-                <mesh key={`s${i}`} position={s.pos}>
-                    <boxGeometry args={[0.4, s.h, 0.1]} />
-                    <meshBasicMaterial color={s.color} toneMapped={false} />
-                </mesh>
+                <NeonSign key={`s${i}`} pos={s.pos} h={s.h} color={s.color} index={i} />
             ))}
         </group>
     );
