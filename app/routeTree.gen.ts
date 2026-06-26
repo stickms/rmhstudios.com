@@ -333,6 +333,7 @@ import { Route as SiteAdminUserBuildsRouteImport } from './routes/_site/admin/us
 import { Route as SiteAdminRideshareRouteImport } from './routes/_site/admin/rideshare'
 import { Route as SiteAdminReportsRouteImport } from './routes/_site/admin/reports'
 import { Route as SiteAdminPredictionsRouteImport } from './routes/_site/admin/predictions'
+import { Route as SiteAdminLibraryStorageRouteImport } from './routes/_site/admin/library-storage'
 import { Route as SiteAdminLibraryQuotaRouteImport } from './routes/_site/admin/library-quota'
 import { Route as SiteAdminAuditRouteImport } from './routes/_site/admin/audit'
 import { Route as SiteAdminAnnouncementsRouteImport } from './routes/_site/admin/announcements'
@@ -430,6 +431,7 @@ import { Route as ApiAnnouncementsIdVoteRouteImport } from './routes/api/announc
 import { Route as ApiAdminRideshareRidesRouteImport } from './routes/api/admin/rideshare/rides'
 import { Route as ApiAdminRideshareApplicationsRouteImport } from './routes/api/admin/rideshare/applications'
 import { Route as ApiAdminReportsIdRouteImport } from './routes/api/admin/reports/$id'
+import { Route as ApiAdminLibraryStorageHealthRouteImport } from './routes/api/admin/library/storage-health'
 import { Route as ApiAdminLibraryReorderRouteImport } from './routes/api/admin/library/reorder'
 import { Route as ApiAdminLibraryQuotaRequestsRouteImport } from './routes/api/admin/library/quota-requests'
 import { Route as ApiAdminLibraryMigrateRouteImport } from './routes/api/admin/library/migrate'
@@ -2106,6 +2108,11 @@ const SiteAdminPredictionsRoute = SiteAdminPredictionsRouteImport.update({
   path: '/predictions',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
+const SiteAdminLibraryStorageRoute = SiteAdminLibraryStorageRouteImport.update({
+  id: '/library-storage',
+  path: '/library-storage',
+  getParentRoute: () => SiteAdminRouteRoute,
+} as any)
 const SiteAdminLibraryQuotaRoute = SiteAdminLibraryQuotaRouteImport.update({
   id: '/library-quota',
   path: '/library-quota',
@@ -2619,6 +2626,12 @@ const ApiAdminReportsIdRoute = ApiAdminReportsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ApiAdminReportsRoute,
 } as any)
+const ApiAdminLibraryStorageHealthRoute =
+  ApiAdminLibraryStorageHealthRouteImport.update({
+    id: '/api/admin/library/storage-health',
+    path: '/api/admin/library/storage-health',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminLibraryReorderRoute = ApiAdminLibraryReorderRouteImport.update({
   id: '/api/admin/library/reorder',
   path: '/api/admin/library/reorder',
@@ -2980,6 +2993,7 @@ export interface FileRoutesByFullPath {
   '/admin/announcements': typeof SiteAdminAnnouncementsRoute
   '/admin/audit': typeof SiteAdminAuditRoute
   '/admin/library-quota': typeof SiteAdminLibraryQuotaRoute
+  '/admin/library-storage': typeof SiteAdminLibraryStorageRoute
   '/admin/predictions': typeof SiteAdminPredictionsRoute
   '/admin/reports': typeof SiteAdminReportsRoute
   '/admin/rideshare': typeof SiteAdminRideshareRoute
@@ -3170,6 +3184,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/library/migrate': typeof ApiAdminLibraryMigrateRoute
   '/api/admin/library/quota-requests': typeof ApiAdminLibraryQuotaRequestsRoute
   '/api/admin/library/reorder': typeof ApiAdminLibraryReorderRoute
+  '/api/admin/library/storage-health': typeof ApiAdminLibraryStorageHealthRoute
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
   '/api/admin/rideshare/applications': typeof ApiAdminRideshareApplicationsRoute
   '/api/admin/rideshare/rides': typeof ApiAdminRideshareRidesRoute
@@ -3417,6 +3432,7 @@ export interface FileRoutesByTo {
   '/admin/announcements': typeof SiteAdminAnnouncementsRoute
   '/admin/audit': typeof SiteAdminAuditRoute
   '/admin/library-quota': typeof SiteAdminLibraryQuotaRoute
+  '/admin/library-storage': typeof SiteAdminLibraryStorageRoute
   '/admin/predictions': typeof SiteAdminPredictionsRoute
   '/admin/reports': typeof SiteAdminReportsRoute
   '/admin/rideshare': typeof SiteAdminRideshareRoute
@@ -3607,6 +3623,7 @@ export interface FileRoutesByTo {
   '/api/admin/library/migrate': typeof ApiAdminLibraryMigrateRoute
   '/api/admin/library/quota-requests': typeof ApiAdminLibraryQuotaRequestsRoute
   '/api/admin/library/reorder': typeof ApiAdminLibraryReorderRoute
+  '/api/admin/library/storage-health': typeof ApiAdminLibraryStorageHealthRoute
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
   '/api/admin/rideshare/applications': typeof ApiAdminRideshareApplicationsRoute
   '/api/admin/rideshare/rides': typeof ApiAdminRideshareRidesRoute
@@ -3880,6 +3897,7 @@ export interface FileRoutesById {
   '/_site/admin/announcements': typeof SiteAdminAnnouncementsRoute
   '/_site/admin/audit': typeof SiteAdminAuditRoute
   '/_site/admin/library-quota': typeof SiteAdminLibraryQuotaRoute
+  '/_site/admin/library-storage': typeof SiteAdminLibraryStorageRoute
   '/_site/admin/predictions': typeof SiteAdminPredictionsRoute
   '/_site/admin/reports': typeof SiteAdminReportsRoute
   '/_site/admin/rideshare': typeof SiteAdminRideshareRoute
@@ -4070,6 +4088,7 @@ export interface FileRoutesById {
   '/api/admin/library/migrate': typeof ApiAdminLibraryMigrateRoute
   '/api/admin/library/quota-requests': typeof ApiAdminLibraryQuotaRequestsRoute
   '/api/admin/library/reorder': typeof ApiAdminLibraryReorderRoute
+  '/api/admin/library/storage-health': typeof ApiAdminLibraryStorageHealthRoute
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
   '/api/admin/rideshare/applications': typeof ApiAdminRideshareApplicationsRoute
   '/api/admin/rideshare/rides': typeof ApiAdminRideshareRidesRoute
@@ -4343,6 +4362,7 @@ export interface FileRouteTypes {
     | '/admin/announcements'
     | '/admin/audit'
     | '/admin/library-quota'
+    | '/admin/library-storage'
     | '/admin/predictions'
     | '/admin/reports'
     | '/admin/rideshare'
@@ -4533,6 +4553,7 @@ export interface FileRouteTypes {
     | '/api/admin/library/migrate'
     | '/api/admin/library/quota-requests'
     | '/api/admin/library/reorder'
+    | '/api/admin/library/storage-health'
     | '/api/admin/reports/$id'
     | '/api/admin/rideshare/applications'
     | '/api/admin/rideshare/rides'
@@ -4780,6 +4801,7 @@ export interface FileRouteTypes {
     | '/admin/announcements'
     | '/admin/audit'
     | '/admin/library-quota'
+    | '/admin/library-storage'
     | '/admin/predictions'
     | '/admin/reports'
     | '/admin/rideshare'
@@ -4970,6 +4992,7 @@ export interface FileRouteTypes {
     | '/api/admin/library/migrate'
     | '/api/admin/library/quota-requests'
     | '/api/admin/library/reorder'
+    | '/api/admin/library/storage-health'
     | '/api/admin/reports/$id'
     | '/api/admin/rideshare/applications'
     | '/api/admin/rideshare/rides'
@@ -5242,6 +5265,7 @@ export interface FileRouteTypes {
     | '/_site/admin/announcements'
     | '/_site/admin/audit'
     | '/_site/admin/library-quota'
+    | '/_site/admin/library-storage'
     | '/_site/admin/predictions'
     | '/_site/admin/reports'
     | '/_site/admin/rideshare'
@@ -5432,6 +5456,7 @@ export interface FileRouteTypes {
     | '/api/admin/library/migrate'
     | '/api/admin/library/quota-requests'
     | '/api/admin/library/reorder'
+    | '/api/admin/library/storage-health'
     | '/api/admin/reports/$id'
     | '/api/admin/rideshare/applications'
     | '/api/admin/rideshare/rides'
@@ -5743,6 +5768,7 @@ export interface RootRouteChildren {
   ApiAdminLibraryMigrateRoute: typeof ApiAdminLibraryMigrateRoute
   ApiAdminLibraryQuotaRequestsRoute: typeof ApiAdminLibraryQuotaRequestsRoute
   ApiAdminLibraryReorderRoute: typeof ApiAdminLibraryReorderRoute
+  ApiAdminLibraryStorageHealthRoute: typeof ApiAdminLibraryStorageHealthRoute
   ApiAdminRideshareApplicationsRoute: typeof ApiAdminRideshareApplicationsRoute
   ApiAdminRideshareRidesRoute: typeof ApiAdminRideshareRidesRoute
   ApiCommentsCommentIdTranslateRoute: typeof ApiCommentsCommentIdTranslateRoute
@@ -8081,6 +8107,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteAdminPredictionsRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
+    '/_site/admin/library-storage': {
+      id: '/_site/admin/library-storage'
+      path: '/library-storage'
+      fullPath: '/admin/library-storage'
+      preLoaderRoute: typeof SiteAdminLibraryStorageRouteImport
+      parentRoute: typeof SiteAdminRouteRoute
+    }
     '/_site/admin/library-quota': {
       id: '/_site/admin/library-quota'
       path: '/library-quota'
@@ -8760,6 +8793,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminReportsIdRouteImport
       parentRoute: typeof ApiAdminReportsRoute
     }
+    '/api/admin/library/storage-health': {
+      id: '/api/admin/library/storage-health'
+      path: '/api/admin/library/storage-health'
+      fullPath: '/api/admin/library/storage-health'
+      preLoaderRoute: typeof ApiAdminLibraryStorageHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/library/reorder': {
       id: '/api/admin/library/reorder'
       path: '/api/admin/library/reorder'
@@ -9041,6 +9081,7 @@ interface SiteAdminRouteRouteChildren {
   SiteAdminAnnouncementsRoute: typeof SiteAdminAnnouncementsRoute
   SiteAdminAuditRoute: typeof SiteAdminAuditRoute
   SiteAdminLibraryQuotaRoute: typeof SiteAdminLibraryQuotaRoute
+  SiteAdminLibraryStorageRoute: typeof SiteAdminLibraryStorageRoute
   SiteAdminPredictionsRoute: typeof SiteAdminPredictionsRoute
   SiteAdminReportsRoute: typeof SiteAdminReportsRoute
   SiteAdminRideshareRoute: typeof SiteAdminRideshareRoute
@@ -9057,6 +9098,7 @@ const SiteAdminRouteRouteChildren: SiteAdminRouteRouteChildren = {
   SiteAdminAnnouncementsRoute: SiteAdminAnnouncementsRoute,
   SiteAdminAuditRoute: SiteAdminAuditRoute,
   SiteAdminLibraryQuotaRoute: SiteAdminLibraryQuotaRoute,
+  SiteAdminLibraryStorageRoute: SiteAdminLibraryStorageRoute,
   SiteAdminPredictionsRoute: SiteAdminPredictionsRoute,
   SiteAdminReportsRoute: SiteAdminReportsRoute,
   SiteAdminRideshareRoute: SiteAdminRideshareRoute,
@@ -10133,6 +10175,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminLibraryMigrateRoute: ApiAdminLibraryMigrateRoute,
   ApiAdminLibraryQuotaRequestsRoute: ApiAdminLibraryQuotaRequestsRoute,
   ApiAdminLibraryReorderRoute: ApiAdminLibraryReorderRoute,
+  ApiAdminLibraryStorageHealthRoute: ApiAdminLibraryStorageHealthRoute,
   ApiAdminRideshareApplicationsRoute: ApiAdminRideshareApplicationsRoute,
   ApiAdminRideshareRidesRoute: ApiAdminRideshareRidesRoute,
   ApiCommentsCommentIdTranslateRoute: ApiCommentsCommentIdTranslateRoute,
