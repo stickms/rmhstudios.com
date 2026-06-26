@@ -137,7 +137,7 @@ export default function Character({
       </group>
 
       {/* ─── Body group: torso + head + arms (bobs with animation) ─── */}
-      <group ref={body} position={[0, 0.82, 0]}>
+      <group ref={body} position={[0, 0, 0]}>
         {/* Hoodie/jacket torso — slightly flared at waist */}
         <mesh position={[0, 0.24, 0]} castShadow>
           <cylinderGeometry args={[0.135, 0.19, 0.58, 7]} />

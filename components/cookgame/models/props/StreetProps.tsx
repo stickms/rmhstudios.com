@@ -38,7 +38,7 @@ export function StreetProps() {
   return (
     <group>
       {/* Hedge perimeter — foliage instanced, one draw call */}
-      <Instances limit={64}>
+      <Instances limit={64} castShadow receiveShadow>
         <boxGeometry args={[2.5, 1.2, 0.5]} />
         <meshStandardMaterial {...matteMaterialProps(PALETTE.foliage)} />
         {hedgesNS.map((pos, i) => (

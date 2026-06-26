@@ -8,7 +8,7 @@ interface Props {
 
 // Accent with slight translucency for glassware — still uses palette color.
 function glasswareProps() {
-  return { color: PALETTE.accent, roughness: 0.2, metalness: 0.1, transparent: true, opacity: 0.72 };
+  return { ...matteMaterialProps(PALETTE.accent), roughness: 0.2, metalness: 0.1, transparent: true, opacity: 0.72 };
 }
 
 export function ChemStationModel({ position = [0, 0, 0], rotation = [0, 0, 0] }: Props) {
