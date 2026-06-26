@@ -70,7 +70,7 @@ export function parseSave(raw: string | null): SaveV2 | null {
     if (!Array.isArray(inv.plots)) return null;
     if (!Array.isArray(inv.dryingRack)) return null;
     if (typeof inv.inputs !== 'object' || inv.inputs === null || Array.isArray(inv.inputs)) return null;
-    if (typeof inv.additives !== 'object' || inv.additives === null) return null;
+    if (typeof inv.additives !== 'object' || inv.additives === null || Array.isArray(inv.additives)) return null;
     return p as SaveV2;
   } catch {
     return null;

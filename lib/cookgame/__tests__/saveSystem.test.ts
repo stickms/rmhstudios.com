@@ -91,6 +91,13 @@ describe('v2 inventory shape validation', () => {
     expect(parseSave(JSON.stringify(p))).toBeNull();
   });
 
+  it('rejects v2 when additives is not an object (array)', () => {
+    const p = baseValidV2();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (p.inventory as any).additives = [1, 2, 3];
+    expect(parseSave(JSON.stringify(p))).toBeNull();
+  });
+
   it('rejects v2 when dryingRack is not an array', () => {
     const p = baseValidV2();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
