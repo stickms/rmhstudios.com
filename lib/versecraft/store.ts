@@ -99,6 +99,10 @@ export function createInitialState(): GameState {
   };
 }
 
+// Dedupe in-flight chapter generations (prefetch + on-demand) by seed:index so
+// we never fire two DeepSeek calls for the same chapter.
+const chapterInFlight = new Set<string>();
+
 /** Build a compact "story so far" summary fed to the chapter generator so the
  *  AI keeps continuity: premise, beats played, the player's choice pattern, and
  *  who they've grown closest to. */
@@ -165,6 +169,9 @@ interface GameActions {
   currentGenPoem: GenPoemState | null;
   startGeneratedGame: (opts: { seed?: string; prompt?: string; playerName?: string }) => Promise<void>;
   ensureGeneratedChapter: (index: number) => Promise<GenChapter>;
+  /** Generate + cache a chapter in the background (no UI block) so it's ready
+   *  by the time the player reaches it. */
+  prefetchChapter: (index: number) => void;
   genApplyChoice: (choice: GenChoice) => void;
   advanceGeneratedChapter: () => Promise<boolean>;
   /** True if this chapter should pause for a poem moment (and it hasn't run). */
@@ -312,6 +319,8 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
     const s = get();
     autoSave(s);
     debouncedDbSave(get);
+    // Warm the next chapter in the background so advancing feels instant.
+    get().prefetchChapter(1);
   },
 
   ensureGeneratedChapter: async (index) => {
@@ -329,6 +338,31 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
     if (!ch.scenes?.length) ch = fallbackChapter(world, index);
     set({ generatedChapters: { ...get().generatedChapters, [index]: ch } });
     return ch;
+  },
+
+  prefetchChapter: (index) => {
+    const s = get();
+    const world = s.world;
+    if (!world || index < 0 || index >= world.routePlan.totalChapters) return;
+    if (s.generatedChapters[index]) return;        // already have it
+    const key = `${s.seed}:${index}`;
+    if (chapterInFlight.has(key)) return;          // already generating
+    chapterInFlight.add(key);
+    // Fire and forget — no genLoading, never blocks the UI.
+    (async () => {
+      try {
+        const remote = await fetchChapter(s.seed, index, buildContextSummary(get()));
+        const ch = (remote && remote.scenes?.length) ? remote : fallbackChapter(world, index);
+        // Only store if the player hasn't already raced ahead and cached it.
+        if (!get().generatedChapters[index]) {
+          set({ generatedChapters: { ...get().generatedChapters, [index]: ch } });
+        }
+      } catch {
+        /* leave it; it'll generate on demand when reached */
+      } finally {
+        chapterInFlight.delete(key);
+      }
+    })();
   },
 
   genApplyChoice: (choice) => {
@@ -393,6 +427,8 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
     const s = get();
     autoSave(s);
     debouncedDbSave(get);
+    // Warm the chapter after this one while the player reads.
+    get().prefetchChapter(nextIndex + 1);
     return true;
   },
 

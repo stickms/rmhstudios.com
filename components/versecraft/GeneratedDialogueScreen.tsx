@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/lib/versecraft/store';
 import { Sprite } from './Sprite';
 import { ShareSeed } from './ShareSeed';
+import { GeneratingState } from './GeneratingState';
 import { asset } from '@/lib/storage/asset';
 import type { GenNode, GenScene, Emotion } from '@/lib/versecraft/gen/world-types';
 
@@ -53,6 +54,7 @@ export function GeneratedDialogueScreen() {
   const setSceneIndex = useGameStore(s => s.setSceneIndex);
   const genApplyChoice = useGameStore(s => s.genApplyChoice);
   const advanceGeneratedChapter = useGameStore(s => s.advanceGeneratedChapter);
+  const prefetchChapter = useGameStore(s => s.prefetchChapter);
   const shouldRunPoem = useGameStore(s => s.shouldRunPoem);
   const openGenPoem = useGameStore(s => s.openGenPoem);
   const genLoading = useGameStore(s => s.genLoading);
@@ -76,6 +78,12 @@ export function GeneratedDialogueScreen() {
   const chapter = chapters[chapterIndex];
   const scene = chapter?.scenes[sceneIndex] as GenScene | undefined;
   const node = scene?.nodes[dialogueIndex] as GenNode | undefined;
+
+  // Warm the next chapter in the background as the player reads this one, so
+  // advancing is instant (covers resuming a save mid-route too).
+  useEffect(() => {
+    if (chapter) prefetchChapter(chapterIndex + 1);
+  }, [chapter, chapterIndex, prefetchChapter]);
 
   // Recovery: if we land on an invalid position (empty scene/node from a bad
   // generation), skip forward instead of soft-locking on "Composing…".
@@ -132,9 +140,11 @@ export function GeneratedDialogueScreen() {
 
   if (!world || !chapter || !scene || !node) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p style={{ color: '#a89888' }}>Composing your story…</p>
-      </div>
+      <GeneratingState
+        title="Composing your story…"
+        note="Setting the stage for your opening scene."
+        steps={['Opening the first page…', 'Bringing the cast into the room…', 'Setting the scene…']}
+      />
     );
   }
 
@@ -153,16 +163,21 @@ export function GeneratedDialogueScreen() {
       <AnimatePresence>
         {genLoading && (
           <motion.div
-            className="absolute inset-0 z-40 flex items-center justify-center"
-            style={{ backgroundColor: 'rgba(19,16,26,0.85)', backdropFilter: 'blur(4px)' }}
+            className="absolute inset-0 z-40"
+            style={{ backgroundColor: 'rgba(19,16,26,0.88)', backdropFilter: 'blur(4px)' }}
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           >
-            <motion.span
-              className="text-xl tracking-wide" style={{ fontFamily: 'var(--font-cinzel, serif)', color: '#e8e0d0' }}
-              animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.6, repeat: Infinity }}
-            >
-              Turning the page…
-            </motion.span>
+            <GeneratingState
+              fill={false}
+              title="Turning the page…"
+              note="Writing what happens next, shaped by your choices."
+              steps={[
+                'Picking up where you left off…',
+                'Letting the characters react to you…',
+                'Setting the next scene…',
+                'Finding the right words…',
+              ]}
+            />
           </motion.div>
         )}
       </AnimatePresence>

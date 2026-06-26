@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useGameStore } from '@/lib/versecraft/store';
+import { GeneratingState } from './GeneratingState';
 
 const EXAMPLE_PROMPTS = [
   'a burnt-out comp-sci senior who secretly writes poetry at 3am',
@@ -56,16 +57,19 @@ export function WorldSetup() {
 
   if (submitting) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[100dvh] gap-4 px-6 text-center">
-        <motion.div
-          className="text-2xl tracking-wide"
-          style={{ fontFamily: 'var(--font-cinzel, serif)', color: '#e8e0d0' }}
-          animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 1.8, repeat: Infinity }}
-        >
-          Composing your world…
-        </motion.div>
-        <p className="text-sm italic" style={{ color: '#a89888' }}>summoning a cast, a setting, and a story that&apos;s only yours</p>
-      </div>
+      <GeneratingState
+        title="Composing your world…"
+        note="The story is being written just for you — this can take a few seconds."
+        steps={[
+          'Summoning a cast of characters…',
+          'Giving each of them a secret, a fear, a dream…',
+          'Imagining the setting and its mood…',
+          'Casting their faces and looks…',
+          'Plotting the emotional arc of your route…',
+          'Writing the opening scene…',
+          'Almost there…',
+        ]}
+      />
     );
   }
 

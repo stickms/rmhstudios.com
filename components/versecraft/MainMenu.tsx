@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/lib/versecraft/store';
 import { loadGame } from '@/lib/versecraft/persistence';
 import { ShareSeed } from './ShareSeed';
+import { GeneratingState } from './GeneratingState';
 
 const FLOATING_WORDS = [
   'whisper', 'shadow', 'bloom', 'echo', 'ember', 'drift', 'moonlight', 'silence',
@@ -38,6 +39,7 @@ export function MainMenu() {
   const chapterIndex = useGameStore(s => s.currentChapterIndex);
   const [hasSave, setHasSave] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [continuing, setContinuing] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -57,6 +59,16 @@ export function MainMenu() {
   const btn = 'w-full px-6 rounded-md transition-all duration-200 border flex items-center justify-center gap-2';
   const primaryStyle = { minHeight: 52, backgroundColor: 'rgba(196,163,90,0.2)', borderColor: 'rgba(196,163,90,0.5)', color: '#e8e0d0', fontFamily: 'var(--font-playfair, serif)' } as const;
   const ghostStyle = { minHeight: 48, backgroundColor: 'rgba(42,34,53,0.6)', borderColor: 'transparent', color: '#e8e0d0', fontFamily: 'var(--font-playfair, serif)' } as const;
+
+  if (continuing) {
+    return (
+      <GeneratingState
+        title="Loading your story…"
+        note="Restoring your cast and where you left off."
+        steps={['Finding your save…', 'Waking the cast…', 'Returning to the scene…']}
+      />
+    );
+  }
 
   return (
     <div className="relative flex flex-col items-center justify-center min-h-[100dvh] overflow-hidden px-5 py-10">
@@ -81,7 +93,7 @@ export function MainMenu() {
         </button>
 
         {(hasSave || world) && (
-          <button className={btn} style={ghostStyle} onClick={() => void continueGame()}>
+          <button className={btn} style={ghostStyle} onClick={async () => { setContinuing(true); try { await continueGame(); } finally { setContinuing(false); } }}>
             <span style={{ color: '#c4a35a' }}>▸</span> {t('continue', { defaultValue: 'Continue' })}
           </button>
         )}
