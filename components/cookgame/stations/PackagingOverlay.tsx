@@ -47,7 +47,7 @@ export function PackagingOverlay() {
             <EffectChips effects={workProduct.effects} />
             <button
               onClick={() => packageBench()}
-              className="px-3 py-1.5 rounded bg-lime-600 hover:bg-lime-500 disabled:opacity-40 disabled:cursor-not-allowed text-sm font-medium"
+              className="px-3 py-1.5 rounded bg-lime-600 hover:bg-lime-500 text-sm font-medium"
             >
               Package (×5 units)
             </button>

@@ -269,7 +269,7 @@ export const games: GameInfo[] = [
         color: 'from-lime-500/20 to-emerald-700/20 hover:border-lime-500/50',
         tags: ['Simulation', 'Tycoon', 'Crime'],
         imagePath: '/images/games/cookgame.webp',
-        authGate: true,
+        authGate: false,
     },
 ];
 

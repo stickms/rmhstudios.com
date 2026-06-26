@@ -113,8 +113,7 @@ export function MixingStationOverlay() {
 
           <button
             onClick={() => packageBench()}
-            disabled={!workProduct}
-            className="w-full px-3 py-1.5 rounded bg-lime-600 hover:bg-lime-500 disabled:opacity-40 disabled:cursor-not-allowed text-sm font-medium"
+            className="w-full px-3 py-1.5 rounded bg-lime-600 hover:bg-lime-500 text-sm font-medium"
           >
             Package this batch (×5)
           </button>

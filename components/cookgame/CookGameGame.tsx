@@ -58,9 +58,9 @@ export function CookGameGame() {
           <HeatTicker />
 
           {/* station interactables */}
-          <Interactable id="supplier" label="Supplier" position={STATION_POSITIONS.supplier} />
-          <Interactable id="mixing" label="Mixing Bench" position={STATION_POSITIONS.mixing} />
-          <Interactable id="packaging" label="Packaging" position={STATION_POSITIONS.packaging} />
+          <Interactable id="supplier" position={STATION_POSITIONS.supplier} />
+          <Interactable id="mixing" position={STATION_POSITIONS.mixing} />
+          <Interactable id="packaging" position={STATION_POSITIONS.packaging} />
 
           {/* buyer NPCs */}
           <BuyerNPC buyerId="doug" position={BUYER_POSITIONS.doug} />

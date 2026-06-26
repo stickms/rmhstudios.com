@@ -29,7 +29,7 @@ export function BuyerNPC({
         <meshStandardMaterial color={color} />
       </mesh>
       {/* proximity marker reads world-space player position vs this absolute position */}
-      <Interactable id={buyerId} label={buyer.name} position={position} />
+      <Interactable id={buyerId} position={position} />
     </group>
   );
 }

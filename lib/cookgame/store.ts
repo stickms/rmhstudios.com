@@ -114,7 +114,11 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
     return offer;
   },
 
-  tickHeat: (dt) => set({ heat: decayHeat(get().heat, dt) }),
+  tickHeat: (dt) => {
+    const heat = get().heat;
+    if (heat === 0) return; // avoid per-frame state churn (and autosave) on an idle tab
+    set({ heat: decayHeat(heat, dt) });
+  },
   setNearbyInteractable: (id) => set({ nearbyInteractable: id }),
   setActiveOverlay: (id) => set({ activeOverlay: id }),
   setPlayerPosition: (p) => set({ playerPosition: p }),

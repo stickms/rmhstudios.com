@@ -9,7 +9,6 @@ export function Interactable({
   radius = 2.5,
 }: {
   id: string;
-  label?: string;
   position: [number, number, number];
   radius?: number;
 }) {
