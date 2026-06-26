@@ -12,6 +12,8 @@ import { SellOverlay } from './npc/SellOverlay';
 import { SupplierShopOverlay } from './stations/SupplierShopOverlay';
 import { MixingStationOverlay } from './stations/MixingStationOverlay';
 import { PackagingOverlay } from './stations/PackagingOverlay';
+import { GrowPlotOverlay } from './stations/GrowPlotOverlay';
+import { DryingRackOverlay } from './stations/DryingRackOverlay';
 import { HUD } from './ui/HUD';
 import { RecipeJournal } from './ui/RecipeJournal';
 import { MenuOverlay } from './ui/MenuOverlay';
@@ -83,6 +85,8 @@ export function CookGameGame() {
       <MixingStationOverlay />
       <PackagingOverlay />
       <SellOverlay />
+      <GrowPlotOverlay />
+      <DryingRackOverlay />
       <RecipeJournal />
       <MenuOverlay />
     </div>
