@@ -1,6 +1,7 @@
 // lib/cookgame/__tests__/store.test.ts
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useCookgameStore } from '../store';
+import { TEND_COOLDOWN_MS, DRY_COOLDOWN_MS } from '../cultivation';
 
 const reset = () => useCookgameStore.getState().resetGame();
 
@@ -77,8 +78,6 @@ describe('cookgame store — baseStock core', () => {
     expect(useCookgameStore.getState().heat).toBe(8);
   });
 });
-
-import { TEND_COOLDOWN_MS, DRY_COOLDOWN_MS } from '../cultivation';
 
 describe('cookgame store — grow flow', () => {
   beforeEach(reset);

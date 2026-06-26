@@ -32,6 +32,7 @@ export function serializeSave(save: SaveV2): string {
   return JSON.stringify(save);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function migrateV1(p: any): SaveV2 | null {
   if (typeof p.cash !== 'number' || typeof p.heat !== 'number') return null;
   if (!p.inventory || !Array.isArray(p.discoveredRecipes)) return null;
