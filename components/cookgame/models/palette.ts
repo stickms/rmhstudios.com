@@ -13,6 +13,8 @@ export const PALETTE = {
   soil: '#4a3727',
   skyTop: '#9ec7e8',
   skyBottom: '#dce9f2',
+  lamp: '#ddd8c0',
+  roadMark: '#e8e0c0',
 } as const;
 
 export function matteMaterialProps(color: string) {

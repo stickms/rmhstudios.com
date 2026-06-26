@@ -61,7 +61,7 @@ export function StreetProps() {
       {/* Streetlight heads — cream box at top of each post */}
       <Instances limit={8} castShadow>
         <boxGeometry args={[0.7, 0.2, 0.35]} />
-        <meshStandardMaterial color="#ddd8c0" roughness={0.5} metalness={0.15} />
+        <meshStandardMaterial {...matteMaterialProps(PALETTE.lamp)} />
         {lampPositions.map((pos, i) => (
           <Instance key={`lh${i}`} position={[pos[0], 3.45, pos[2]]} />
         ))}

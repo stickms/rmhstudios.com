@@ -80,7 +80,7 @@ export function TownScene() {
       {([-12, -9, -6, -3, 0, 3, 6, 9, 12] as number[]).map((x) => (
         <mesh key={x} position={[x, 0.02, 4]}>
           <boxGeometry args={[1.8, 0.01, 0.12]} />
-          <meshStandardMaterial color="#e8e0c0" roughness={0.6} metalness={0.0} />
+          <meshStandardMaterial {...matteMaterialProps(PALETTE.roadMark)} />
         </mesh>
       ))}
 
