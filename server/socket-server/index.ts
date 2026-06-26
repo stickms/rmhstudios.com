@@ -23,6 +23,7 @@ import { registerRmhTypeHandlers, handleRmhTypeDisconnect } from './handlers/rmh
 import { registerRmhStudyHandlers, handleRmhStudyDisconnect } from './handlers/rmhstudy';
 import { registerAltairHandlers, handleAltairDisconnect } from './handlers/altair';
 import { registerKowloonKnockoutHandlers, handleKowloonKnockoutDisconnect } from './handlers/kowloon-knockout';
+import { registerRochesterOffensiveHandlers, handleRochesterOffensiveDisconnect } from './handlers/rochester-offensive';
 import { registerRmhMusicHandlers, handleRmhMusicDisconnect } from './handlers/rmhmusic';
 import { registerBlackjackHandlers, handleBlackjackDisconnect, initializeBlackjackPublicTable } from './handlers/blackjack';
 import { registerHoldemHandlers, handleHoldemDisconnect, initializeHoldem } from './handlers/holdem';
@@ -150,6 +151,7 @@ io.on('connection', (socket) => {
   registerRmhStudyHandlers(io, socket);
   registerAltairHandlers(io, socket);
   registerKowloonKnockoutHandlers(io, socket);
+  registerRochesterOffensiveHandlers(io, socket);
   registerRmhMusicHandlers(io, socket);
   registerBlackjackHandlers(io, socket);
   registerHoldemHandlers(io, socket);
@@ -170,6 +172,7 @@ io.on('connection', (socket) => {
     handleRmhStudyDisconnect(io, socket);
     handleAltairDisconnect(io, socket);
     handleKowloonKnockoutDisconnect(io, socket);
+    handleRochesterOffensiveDisconnect(io, socket);
     handleRmhMusicDisconnect(io, socket);
     handleBlackjackDisconnect(io, socket);
     handleHoldemDisconnect(io, socket);
