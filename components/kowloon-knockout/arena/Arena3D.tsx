@@ -4,9 +4,12 @@ import { useRef, type MutableRefObject } from 'react';
 import { useFrame } from '@react-three/fiber';
 import type { GameSession, RenderFighter } from '@/lib/kowloon-knockout/net/session';
 import Environment from './Environment';
+import Lighting from './Lighting';
 import StickFighter from './StickFighter';
 import CameraRig from './CameraRig';
 import Fx from './Fx';
+import PostFx from './PostFx';
+import { RenderTierProvider } from './RenderTierContext';
 
 type FramesRef = MutableRefObject<RenderFighter[]>;
 
@@ -26,26 +29,11 @@ export default function Arena3D({ session, seatIds }: { session: GameSession; se
     const shakeRef = useRef(0);
 
     return (
-        <>
+        <RenderTierProvider>
             <color attach="background" args={['#070010']} />
-            <fog attach="fog" args={['#0a0118', 18, 60]} />
+            <fog attach="fog" args={['#0a0118', 16, 55]} />
 
-            <ambientLight intensity={0.55} color="#5a4a7a" />
-            <hemisphereLight args={['#ff5588', '#1a0a2a', 0.5]} />
-            <directionalLight
-                position={[6, 14, 8]}
-                intensity={1.1}
-                color="#ffe0c0"
-                castShadow
-                shadow-mapSize-width={1024}
-                shadow-mapSize-height={1024}
-                shadow-camera-left={-12}
-                shadow-camera-right={12}
-                shadow-camera-top={12}
-                shadow-camera-bottom={-12}
-            />
-            <pointLight position={[-8, 6, -4]} intensity={60} color="#33ccff" distance={40} />
-            <pointLight position={[8, 6, 4]} intensity={60} color="#ff3366" distance={40} />
+            <Lighting />
 
             <FrameSync session={session} framesRef={framesRef} shakeRef={shakeRef} />
             <CameraRig framesRef={framesRef} shakeRef={shakeRef} />
@@ -57,6 +45,7 @@ export default function Arena3D({ session, seatIds }: { session: GameSession; se
             ))}
 
             <Fx session={session} />
-        </>
+            <PostFx />
+        </RenderTierProvider>
     );
 }

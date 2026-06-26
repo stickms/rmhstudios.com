@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
+import { createKowloonRenderer, extendKowloonThree } from '@/lib/kowloon-knockout/render/webgpu';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/lib/kowloon-knockout/store';
 import { useIsMobile } from '@/lib/studio/hooks/useIsMobile';
@@ -14,9 +15,9 @@ import Arena3D from './Arena3D';
 import HUD from '@/components/kowloon-knockout/HUD';
 import MobileControls from '@/components/kowloon-knockout/MobileControls';
 
-// Internal render resolution multiplier — low + nearest-neighbour upscale keeps
-// the retro pixel-art aesthetic in full 3D.
-const PIXEL_DPR = 0.5;
+// Register the three/webgpu material/object catalogue with R3F before any
+// arena JSX mounts.
+extendKowloonThree();
 
 export default function GameView() {
     const { t } = useTranslation('c-kowloon-knockout');
@@ -90,8 +91,8 @@ export default function GameView() {
         <div className="kk-arena" style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
             <Canvas
                 shadows
-                dpr={PIXEL_DPR}
-                gl={{ antialias: false, powerPreference: 'high-performance' }}
+                dpr={[1, 2]}
+                gl={createKowloonRenderer}
                 camera={{ position: [0, 9, 15], fov: 50, near: 0.1, far: 120 }}
             >
                 {session && <Arena3D session={session} seatIds={seatIds} />}
