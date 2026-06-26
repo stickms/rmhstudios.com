@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { Loader2, ArrowLeft, Send } from 'lucide-react';
+import { Loader2, ArrowLeft, Send, Image as ImageIcon } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession, useResolvedUser } from '@/components/Providers';
@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { GhostTextArea } from './GhostTextArea';
 import { useMessageSuggestion } from '@/lib/useMessageSuggestion';
 import { useTranslation } from "react-i18next";
+import ChatMediaEmbed, { stripEmbedUrls, extractMediaEmbeds } from '@/components/shared/ChatMediaEmbed';
+import { GifPicker } from '@/components/feed/GifPicker';
 
 interface Message {
   id: string;
@@ -37,6 +39,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [otherTyping, setOtherTyping] = useState(false);
+  const [showGifPicker, setShowGifPicker] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -503,7 +506,10 @@ export function ConversationView({ conversationId }: { conversationId: string })
                           : 'bg-site-surface text-site-text'
                       }`}
                     >
-                      <p className="whitespace-pre-wrap">{msg.content}</p>
+                      <p className="whitespace-pre-wrap">{stripEmbedUrls(msg.content)}</p>
+                      {extractMediaEmbeds(msg.content).length > 0 && (
+                        <ChatMediaEmbed content={msg.content} themePrefix="site" />
+                      )}
                       <p className={`text-[10px] mt-1 ${isSelf ? 'text-site-bg/60' : 'text-site-text-dim'}`}>
                         {formatTime(msg.createdAt)}
                       </p>
@@ -545,6 +551,17 @@ export function ConversationView({ conversationId }: { conversationId: string })
 
       {/* Input */}
       <div className="shrink-0 border-t border-site-border bg-site-bg px-4 py-3">
+        {showGifPicker && (
+          <GifPicker
+            className="mx-2 mb-2"
+            onClose={() => setShowGifPicker(false)}
+            onSelect={(u) => {
+              setInput((m) => (m ? `${m} ${u}` : u));
+              setShowGifPicker(false);
+              setTimeout(() => inputRef.current?.focus(), 0);
+            }}
+          />
+        )}
         <div className="flex items-end gap-2">
           <GhostTextArea
             ref={inputRef}
@@ -567,6 +584,14 @@ export function ConversationView({ conversationId }: { conversationId: string })
             className="bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-xl px-4 py-2.5 border border-site-border outline-none focus:border-site-accent transition-colors resize-none max-h-32 overflow-y-auto"
             style={{ minHeight: '42px' }}
           />
+          <button
+            type="button"
+            aria-label={t("insert-gif", { defaultValue: "Insert GIF" })}
+            onClick={() => setShowGifPicker((v) => !v)}
+            className="shrink-0 rounded-xl h-[42px] px-3 text-site-text-dim hover:text-site-accent hover:bg-site-surface transition-colors"
+          >
+            <ImageIcon className="w-4 h-4" />
+          </button>
           <Button
             variant="accent"
             size="sm"
