@@ -29,6 +29,12 @@ const CSS = `
 .nd-speed { bottom:14px; right:14px; text-align:right; }
 .nd-speed .v { font-size:34px; color:#eafcff; line-height:0.9; }
 .nd-speed .u { font-size:13px; color:#6f86a6; letter-spacing:2px; }
+.nd-weapon { bottom:62px; right:14px; width:128px; text-align:right; padding:4px 8px; }
+.nd-weapon .lbl { font-size:13px; color:#9fb6d6; letter-spacing:1px; }
+.nd-weapon.over .lbl { color:#ff5a72; }
+.nd-wbar { height:6px; margin-top:3px; background:rgba(255,255,255,0.12); border-radius:3px; overflow:hidden; }
+.nd-wbar > i { display:block; height:100%; width:0; background:linear-gradient(90deg,#39ff14,#ffd23f,#ff3b5c); transition:width 0.08s linear; }
+.nd-wbar.over > i { background:#ff3b5c; }
 .nd-pursuit { bottom:64px; left:50%; transform:translateX(-50%); text-align:center; min-width:260px;
   border-color:rgba(255,40,60,0.6); }
 .nd-pursuit .ttl { font-size:18px; color:#ff5a72; letter-spacing:2px; }
@@ -44,6 +50,23 @@ const CSS = `
 .nd-toast.good { color:#7dffae; border-color:rgba(57,255,20,0.5); text-shadow:0 0 8px rgba(57,255,20,0.4); }
 .nd-toast.bad  { color:#ff8095; border-color:rgba(255,40,60,0.55); text-shadow:0 0 8px rgba(255,40,60,0.4); }
 .nd-toast.info { color:#7dd6ff; }
+
+@media (max-width:600px) {
+  .nd-obj { min-width:0; max-width:58vw; }
+  .nd-obj .lbl { font-size:14px; }
+  .nd-obj .row { gap:6px; }
+  .nd-obj .arrow, .nd-obj .dist { font-size:20px; }
+  .nd-credits { min-width:0; padding:4px 8px; }
+  .nd-credits .amt { font-size:22px; }
+  .nd-credits .best { font-size:12px; }
+  .nd-credits .wanted { font-size:16px; }
+  .nd-speed .v { font-size:26px; }
+  .nd-weapon { width:104px; bottom:54px; }
+  .nd-toasts { top:96px; width:94vw; }
+  .nd-toast { font-size:15px; padding:5px 10px; }
+  .nd-pursuit { min-width:0; max-width:80vw; bottom:118px; }
+  .nd-pursuit .ttl { font-size:14px; }
+}
 `;
 
 export class GameHud {
@@ -67,6 +90,10 @@ export class GameHud {
           <div class="nd-panel nd-speed">
             <span class="v">0</span><span class="u"> KM/H</span>
           </div>
+          <div class="nd-panel nd-weapon" style="display:none">
+            <div class="lbl">LASER</div>
+            <div class="nd-wbar"><i></i></div>
+          </div>
           <div class="nd-panel nd-pursuit" style="display:none">
             <div class="ttl">⚠ POLICE PURSUIT</div>
             <div class="nd-pbar"><i></i></div>
@@ -86,6 +113,10 @@ export class GameHud {
             best: root.querySelector('.nd-credits .best'),
             wanted: root.querySelector('.nd-credits .wanted'),
             speed: root.querySelector('.nd-speed .v'),
+            weapon: root.querySelector('.nd-weapon'),
+            weaponBar: root.querySelector('.nd-weapon .nd-wbar'),
+            weaponFill: root.querySelector('.nd-weapon .nd-wbar > i'),
+            weaponLbl: root.querySelector('.nd-weapon .lbl'),
             pursuit: root.querySelector('.nd-pursuit'),
             pursuitTtl: root.querySelector('.nd-pursuit .ttl'),
             pbar: root.querySelector('.nd-pursuit .nd-pbar'),
@@ -98,8 +129,20 @@ export class GameHud {
     show() { this._root.style.display = 'block'; }
     hide() { this._root.style.display = 'none'; }
 
-    update(state) {
+    update(state, weapon) {
         const e = this._el;
+
+        // Weapon heat gauge
+        if (weapon) {
+            e.weapon.style.display = 'block';
+            const over = !!weapon.overheated;
+            e.weapon.classList.toggle('over', over);
+            e.weaponBar.classList.toggle('over', over);
+            e.weaponLbl.textContent = over ? 'OVERHEAT' : 'LASER';
+            e.weaponFill.style.width = `${Math.min(1, weapon.heat) * 100}%`;
+        } else {
+            e.weapon.style.display = 'none';
+        }
 
         // Objective + pointer
         e.objLbl.textContent = state.objective;

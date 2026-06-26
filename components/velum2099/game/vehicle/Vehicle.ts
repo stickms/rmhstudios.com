@@ -75,6 +75,7 @@ export class Vehicle {
             throttle: 0,
             brake: 0,
             handbrake: false,
+            fire: false,
         };
 
         this._buildMesh();

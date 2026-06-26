@@ -29,8 +29,11 @@ const CSS = `
 .nd-mc .drift { right:24px; bottom:32px; width:104px; height:104px; font-size:22px;
   border-color:rgba(255,210,63,0.6); color:#ffd23f; }
 .nd-mc .drift:active, .nd-mc .drift.on { background:rgba(255,210,63,0.22); }
-.nd-mc .gas { right:40px; bottom:150px; width:80px; height:80px;
+.nd-mc .gas { right:150px; bottom:40px; width:78px; height:78px;
   border-color:rgba(57,255,20,0.55); color:#7dffae; }
+.nd-mc .fire { right:44px; bottom:150px; width:84px; height:84px; font-size:20px;
+  border-color:rgba(255,60,90,0.7); color:#ff6b86; }
+.nd-mc .fire:active, .nd-mc .fire.on { background:rgba(255,60,90,0.28); }
 .nd-mc .exit { top:12px; right:12px; width:54px; height:54px; font-size:15px;
   border-color:rgba(255,90,114,0.6); color:#ff8095; }
 .nd-mc .hint { position:absolute; bottom:8px; left:50%; transform:translateX(-50%);
@@ -60,8 +63,9 @@ export class MobileControls {
           <div class="base"><div class="knob"></div></div>
           <button class="btn drift" type="button">DRIFT</button>
           <button class="btn gas" type="button">GAS</button>
+          <button class="btn fire" type="button">FIRE</button>
           <button class="btn exit" type="button">EXIT</button>
-          <div class="hint">左摇杆转向/油门 · DRIFT 漂移 · GAS 自动加速</div>
+          <div class="hint">左摇杆转向/油门 · GAS 加速 · DRIFT 漂移 · FIRE 开火</div>
         `;
         container.appendChild(root);
         this._root = root;
@@ -70,6 +74,7 @@ export class MobileControls {
         this._knob = root.querySelector('.knob');
         this._driftBtn = root.querySelector('.drift');
         this._gasBtn = root.querySelector('.gas');
+        this._fireBtn = root.querySelector('.fire');
         this._exitBtn = root.querySelector('.exit');
 
         this._bind();
@@ -148,6 +153,14 @@ export class MobileControls {
         this._gasBtn.addEventListener('pointercancel', this._onGasUp);
         this._gasBtn.addEventListener('pointerleave', this._onGasUp);
 
+        // ── FIRE button (hold = fire laser) ──
+        this._onFireDown = (e) => { e.preventDefault(); this.vehicle.mobileInput.fire = true; this._fireBtn.classList.add('on'); };
+        this._onFireUp = (e) => { e.preventDefault(); this.vehicle.mobileInput.fire = false; this._fireBtn.classList.remove('on'); };
+        this._fireBtn.addEventListener('pointerdown', this._onFireDown);
+        this._fireBtn.addEventListener('pointerup', this._onFireUp);
+        this._fireBtn.addEventListener('pointercancel', this._onFireUp);
+        this._fireBtn.addEventListener('pointerleave', this._onFireUp);
+
         // ── EXIT button ──
         this._onExit = (e) => { e.preventDefault(); this.onExit(); };
         this._exitBtn.addEventListener('pointerup', this._onExit);
@@ -161,7 +174,7 @@ export class MobileControls {
 
     _resetInput() {
         const mi = this.vehicle.mobileInput;
-        mi.steer = 0; mi.throttle = 0; mi.brake = 0; mi.handbrake = false;
+        mi.steer = 0; mi.throttle = 0; mi.brake = 0; mi.handbrake = false; mi.fire = false;
         this._gasHeld = false;
         this._joyId = null;
         if (this._base) this._base.style.display = 'none';

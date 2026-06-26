@@ -14,7 +14,7 @@
 
 import {
     Group, Mesh, MeshBasicMaterial, MeshStandardMaterial,
-    CylinderGeometry, RingGeometry, BoxGeometry, Box3, Vector3,
+    CylinderGeometry, RingGeometry, BoxGeometry, SphereGeometry, Box3, Vector3,
     DoubleSide, AdditiveBlending,
 } from 'three';
 
@@ -36,6 +36,9 @@ const ESCAPE_RADIUS = 78;        // all cops beyond this for ESCAPE_TIME ⇒ esc
 const ESCAPE_TIME = 6;
 const POLICE_SPAWN_DIST = 46;
 const HEAT_COLLISION_COOLDOWN = 1.2;
+const POLICE_HP = 3;
+const SPAWN_INTERVAL = 2.6;      // min seconds between reinforcements
+const COP_BOUNTY = 90;           // credits per cop destroyed
 
 export class MissionManager {
     constructor(scene, vehicle, opts = {}) {
@@ -64,11 +67,13 @@ export class MissionManager {
         this._beaconT = 0;
 
         // Pursuit state
-        this.heat = 0;
+        this.heat = 0;               // wanted level, 0..5 stars
         this.police = [];
+        this.copsBusted = 0;
         this._bustTimer = 0;
         this._escapeTimer = 0;
         this._collisionCd = 0;
+        this._spawnCd = 0;
         this._lightT = 0;
         this._lastEvent = null;      // 'busted' | 'escaped' (one-shot for HUD flash)
 
@@ -76,6 +81,9 @@ export class MissionManager {
         this._policeBoxPool = [];
         this._policeSize = new Vector3(1.9, 1.4, 3.9);
         this._nearStatic = [];
+
+        // Explosion FX
+        this._explosions = [];
     }
 
     /* ── lifecycle ── */
@@ -187,23 +195,26 @@ export class MissionManager {
         const before = this.heat;
         this.heat = Math.min(HEAT_MAX, this.heat + amount);
         if (this.heat > before) {
-            if (msg && before === 0) this.onToast(msg, 'bad');
-            else if (this.heat > before) this.onToast(`通缉等级 ★${this.heat}  ·  WANTED`, 'bad');
+            if (before === 0) {
+                this._spawnCd = 0.4; // first cruiser shows up quickly
+                if (msg) this.onToast(msg, 'bad');
+                else this.onToast(`通缉等级 ★${this.heat}  ·  WANTED`, 'bad');
+            } else {
+                this.onToast(`通缉等级 ★${this.heat}  ·  WANTED`, 'bad');
+            }
             this._escapeTimer = 0;
         }
     }
 
-    _spawnPoliceUpTo(n) {
-        while (this.police.length < n) {
-            const car = this._makePoliceCar();
-            const p = this.vehicle.position;
-            const ang = Math.random() * Math.PI * 2;
-            const x = p.x + Math.cos(ang) * POLICE_SPAWN_DIST;
-            const z = p.z + Math.sin(ang) * POLICE_SPAWN_DIST;
-            car.position.set(x, this.scene.getGroundHeight(x, z), z);
-            this.scene.scene.add(car);
-            this.police.push({ mesh: car, speed: 0, rot: ang });
-        }
+    _spawnOnePolice() {
+        const car = this._makePoliceCar();
+        const p = this.vehicle.position;
+        const ang = Math.random() * Math.PI * 2;
+        const x = p.x + Math.cos(ang) * POLICE_SPAWN_DIST;
+        const z = p.z + Math.sin(ang) * POLICE_SPAWN_DIST;
+        car.position.set(x, this.scene.getGroundHeight(x, z), z);
+        this.scene.scene.add(car);
+        this.police.push({ mesh: car, speed: 0, rot: ang, hp: POLICE_HP });
     }
 
     _clearPolice() {
@@ -214,15 +225,32 @@ export class MissionManager {
         this.police.length = 0;
         this._bustTimer = 0;
         this._escapeTimer = 0;
+        this._spawnCd = 0;
+        // Clear any lingering explosions
+        for (const e of this._explosions) {
+            this.scene.scene.remove(e.mesh);
+            this._disposeGroup(e.mesh);
+        }
+        this._explosions.length = 0;
     }
 
     _updatePursuit(dt) {
-        // Spawn cops to match heat
-        if (this.heat > 0) this._spawnPoliceUpTo(this.heat);
+        // Reinforcements arrive gradually up to the wanted level (GTA-style:
+        // more stars ⇒ more cars). Throttled so taking cops out buys breathing room.
+        if (this.heat > 0) {
+            this._spawnCd -= dt;
+            if (this.police.length < this.heat && this._spawnCd <= 0) {
+                this._spawnOnePolice();
+                this._spawnCd = SPAWN_INTERVAL;
+            }
+        }
 
         const vp = this.vehicle.position;
-        const chaseSpeed = (this.vehicle.maxSpeed || 55) * 0.9;
+        // Higher wanted ⇒ faster, more aggressive pursuit
+        const chaseSpeed = (this.vehicle.maxSpeed || 55) * (0.82 + 0.035 * this.heat);
         let minDist = Infinity;
+
+        this._updateExplosions(dt);
 
         this._lightT += dt;
         const flash = Math.sin(this._lightT * 12) > 0;
@@ -326,6 +354,68 @@ export class MissionManager {
             out.push({ box, mesh: p.mesh, type: 'police' });
         }
         return out;
+    }
+
+    /** Apply weapon damage to a cop; destroy it (with bounty + escalation) at 0 HP. */
+    damagePolice(p, amount, hitPos) {
+        if (p._dead) return;
+        p.hp -= amount;
+        if (p.hp > 0) {
+            // brief hit flash on the body
+            if (p.mesh.children[0] && p.mesh.children[0].material) {
+                p.mesh.children[0].material.emissive && p.mesh.children[0].material.emissive.setHex(0xff4444);
+            }
+            return;
+        }
+        // Destroyed
+        p._dead = true;
+        this._spawnExplosion(p.mesh.position);
+        this.scene.scene.remove(p.mesh);
+        this._disposeGroup(p.mesh);
+        const idx = this.police.indexOf(p);
+        if (idx >= 0) this.police.splice(idx, 1);
+
+        this.copsBusted++;
+        const bounty = COP_BOUNTY + this.heat * 20;
+        this.credits += bounty;
+        this._saveBest();
+        this.onToast(`击毁警车  +¥${bounty}  ·  COP DOWN`, 'good');
+
+        // Shooting cops escalates the wanted level (GTA-style)
+        this._raiseHeat(1, null);
+        this._escapeTimer = 0;
+    }
+
+    _spawnExplosion(pos) {
+        const g = new Group();
+        const flash = new Mesh(
+            new SphereGeometry(1.4, 10, 8),
+            new MeshBasicMaterial({ color: 0xffaa33, transparent: true, opacity: 0.9, blending: AdditiveBlending, depthWrite: false }),
+        );
+        const ring = new Mesh(
+            new SphereGeometry(2.0, 10, 8),
+            new MeshBasicMaterial({ color: 0xff4422, transparent: true, opacity: 0.5, blending: AdditiveBlending, depthWrite: false }),
+        );
+        g.add(flash); g.add(ring);
+        g.position.set(pos.x, (pos.y || 0) + 0.8, pos.z);
+        this.scene.scene.add(g);
+        this._explosions.push({ mesh: g, life: 0.5, maxLife: 0.5 });
+    }
+
+    _updateExplosions(dt) {
+        for (let i = this._explosions.length - 1; i >= 0; i--) {
+            const e = this._explosions[i];
+            e.life -= dt;
+            const t = 1 - e.life / e.maxLife; // 0..1
+            const s = 1 + t * 2.5;
+            e.mesh.scale.set(s, s, s);
+            e.mesh.traverse(o => { if (o.material) o.material.opacity = Math.max(0, (1 - t)) * 0.9; });
+            if (e.life <= 0) {
+                this.scene.scene.remove(e.mesh);
+                this._disposeGroup(e.mesh);
+                this._explosions.splice(i, 1);
+            }
+        }
     }
 
     _busted() {
