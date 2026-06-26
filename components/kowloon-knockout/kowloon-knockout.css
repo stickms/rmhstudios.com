@@ -972,10 +972,6 @@
   background: #050010;
 }
 
-/* Nearest-neighbour upscale of the low-res 3D buffer → retro pixel look */
-.kk-arena canvas {
-}
-
 .kk-controls-hint {
   position: absolute;
   bottom: 12px;
