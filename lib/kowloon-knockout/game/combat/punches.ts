@@ -59,17 +59,6 @@ export function calculateDamage(
     return Math.max(1, Math.floor(rawDamage * blockReduction * defenseReduction));
 }
 
-/**
- * Calculate actual punch speed (in frames) given fighter stats.
- * Both punchSpeed and moveSpeed contribute — faster fighters strike faster.
- */
-export function calculatePunchSpeed(punch: PunchDef, punchSpeedStat: number, moveSpeed?: number): number {
-    // moveSpeed contributes a 20% bonus to strike speed (baseline moveSpeed ~2.0)
-    const moveSpeedBonus = moveSpeed ? 1 + (moveSpeed - 2.0) * 0.2 : 1;
-    const effectiveSpeed = punchSpeedStat * moveSpeedBonus;
-    return Math.max(4, Math.floor(punch.speed / effectiveSpeed));
-}
-
 /** Stale move decay — repeated same punch type does diminishing damage */
 const STALE_MOVE_DECAY = [1.0, 0.85, 0.72, 0.60];
 

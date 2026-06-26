@@ -191,11 +191,13 @@ export function applyHit(
         target.stateFrame = 0;
         target.knockoutTimer = 600;
         target.alive = false;
+        target.bufferedPunch = null;
         return { damage, blocked: false, ko: true };
     }
 
     target.state = 'hit';
     target.stateFrame = 0;
+    target.bufferedPunch = null;
     return { damage, blocked: false, ko: false };
 }
 
