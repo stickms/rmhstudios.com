@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useEffect, Component } from 'react';
+import { useMemo, useEffect, useRef, Component } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import * as THREE from 'three/webgpu';
 import {
@@ -19,6 +19,11 @@ const FOG_COLOR = new THREE.Color('#3a2f5a'); // dim violet haze
 /** GPU compute fog motes (ultra/high + WebGPU only). A TSL kernel advects each
  *  mote along a curl-ish mx_noise_vec3 flow field each frame; positionNode
  *  reads the storage buffer directly so no CPU round-trip is needed.
+ *
+ *  The class boundary (FogGPUBoundary) catches construction-phase (useMemo)
+ *  errors and renders null. The async .catch below handles dispatch-phase
+ *  failures (e.g. device lost) — stops re-dispatching; static sprites remain
+ *  visible until unmount. Fog has no CPU fallback by design.
  *
  *  SPIKE: SpriteNodeMaterial + positionNode = positions.toAttribute() + Sprite.count
  *  for instanced-sprite draw, and mx_noise_vec3 advection, are browser-only
@@ -57,7 +62,14 @@ function FogGPU({ count }: { count: number }) {
         return { mesh, update, positions };
     }, [count]);
 
-    useFrame(() => { void gl.computeAsync(update); });
+    const failedRef = useRef(false);
+    useFrame(() => {
+        if (failedRef.current) return;
+        gl.computeAsync(update).catch((e) => {
+            failedRef.current = true;
+            console.warn('[Fog] compute dispatch failed, stopping fog:', e);
+        });
+    });
 
     useEffect(() => {
         return () => {
@@ -70,8 +82,9 @@ function FogGPU({ count }: { count: number }) {
     return <primitive object={mesh} />;
 }
 
-/** Error boundary wrapping FogGPU. On any render-phase error it logs a warning
- *  and renders null — fog has no CPU fallback by design. */
+/** Error boundary wrapping FogGPU. Construction-phase (useMemo) errors are
+ *  caught here and render null — fog has no CPU fallback by design. Async
+ *  dispatch failures are handled inside FogGPU via the .catch handler. */
 class FogGPUBoundary extends Component<{ count: number }, { error: boolean }> {
     state = { error: false };
     static getDerivedStateFromError() { return { error: true }; }

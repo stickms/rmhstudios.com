@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useEffect, useRef, Component, type ReactNode } from 'react';
+import { useMemo, useEffect, useRef, useState, Component, type ReactNode } from 'react';
 import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as WEBGPU from 'three/webgpu';
@@ -11,6 +11,7 @@ import { seedRain, type ParticleBounds } from '@/lib/kowloon-knockout/render/par
 
 export const RAIN_BOUNDS: ParticleBounds = { radius: 16, floor: 0, ceiling: 18 };
 const RAIN_COLOR = new THREE.Color('#7fd4ff'); // cool neon drizzle
+const RAIN_SEED = 5150;
 
 // ── GPU subcomponent ──────────────────────────────────────────────────────────
 
@@ -19,13 +20,18 @@ const RAIN_COLOR = new THREE.Color('#7fd4ff'); // cool neon drizzle
  *  wraps drops at the floor each frame; positionNode reads the storage buffer
  *  directly so no CPU round-trip is needed.
  *
+ *  The class boundary (RainGPUBoundary) catches construction-phase (useMemo)
+ *  errors and renders the CPU fallback. The async .catch below handles
+ *  dispatch-phase failures (e.g. device lost, shader compile error) — stops
+ *  re-dispatching and escalates to the CPU path via onComputeError.
+ *
  *  SPIKE: the positionNode / toAttribute() instance-offset wiring and
  *  gl.computeAsync dispatch are browser-only verifiable. */
-function RainGPU({ count }: { count: number }) {
+function RainGPU({ count, onComputeError }: { count: number; onComputeError?: () => void }) {
     const gl = useThree((s) => s.gl) as unknown as WEBGPU.WebGPURenderer;
 
     const { mesh, update, positions, velocities } = useMemo(() => {
-        const seeded = seedRain(count, RAIN_BOUNDS, 5150);
+        const seeded = seedRain(count, RAIN_BOUNDS, RAIN_SEED);
         const positions = instancedArray(seeded.positions, 'vec3');
         const velocities = instancedArray(seeded.velocities, 'vec3');
 
@@ -55,7 +61,15 @@ function RainGPU({ count }: { count: number }) {
         return { mesh, update, positions, velocities };
     }, [count]);
 
-    useFrame(() => { void gl.computeAsync(update); });
+    const failedRef = useRef(false);
+    useFrame(() => {
+        if (failedRef.current) return;
+        gl.computeAsync(update).catch((e) => {
+            failedRef.current = true;
+            console.warn('[Rain] compute dispatch failed, falling back to CPU rain:', e);
+            onComputeError?.();
+        });
+    });
 
     useEffect(() => {
         return () => {
@@ -69,10 +83,12 @@ function RainGPU({ count }: { count: number }) {
     return <primitive object={mesh} />;
 }
 
-/** Error boundary wrapping RainGPU. On any render-phase error it logs a warning
- *  and renders the CPU fallback, keeping the canvas stable. */
+/** Error boundary wrapping RainGPU. Construction-phase (useMemo) errors are
+ *  caught here and render the CPU fallback immediately. Async dispatch failures
+ *  are handled inside RainGPU via the .catch handler, which calls onComputeError
+ *  to trigger CPU escalation from the parent Rain() component. */
 class RainGPUBoundary extends Component<
-    { count: number; fallback: ReactNode },
+    { count: number; fallback: ReactNode; onComputeError?: () => void },
     { error: boolean }
 > {
     state = { error: false };
@@ -83,7 +99,7 @@ class RainGPUBoundary extends Component<
     render() {
         return this.state.error
             ? this.props.fallback
-            : <RainGPU count={this.props.count} />;
+            : <RainGPU count={this.props.count} onComputeError={this.props.onComputeError} />;
     }
 }
 
@@ -94,18 +110,22 @@ class RainGPUBoundary extends Component<
  *  the ceiling at the floor.
  *
  *  On ultra/high with a WebGPU backend the GPU compute path is attempted via
- *  RainGPUBoundary; on error the boundary renders the CPU mesh instead. */
+ *  RainGPUBoundary. Construction-phase failures are caught by the class boundary
+ *  and render the CPU mesh immediately. Async dispatch failures (device lost, etc.)
+ *  are caught inside RainGPU and escalate via gpuFailed state, causing Rain() to
+ *  re-render into the CPU mesh path. */
 export default function Rain() {
     const { tier, flags } = useRenderTier();
     const gl = useThree((s) => s.gl) as unknown as { backend?: { isWebGPUBackend?: boolean } };
     const isWebGPU = !!gl.backend?.isWebGPUBackend;
     const count = particleBudget(tier).rain;
-    const useGPU = flags.gpuParticles && isWebGPU && count > 0;
+    const [gpuFailed, setGpuFailed] = useState(false);
+    const useGPU = flags.gpuParticles && isWebGPU && count > 0 && !gpuFailed;
 
     // ── CPU-path hooks — declared unconditionally so hook order is stable ──────
     const meshRef = useRef<THREE.InstancedMesh>(null);
     const dummy = useMemo(() => new THREE.Object3D(), []);
-    const field = useMemo(() => (count > 0 ? seedRain(count, RAIN_BOUNDS, 5150) : null), [count]);
+    const field = useMemo(() => (count > 0 ? seedRain(count, RAIN_BOUNDS, RAIN_SEED) : null), [count]);
 
     // CPU integration: no-ops naturally when meshRef.current is null (i.e. when
     // the GPU path has the instancedMesh unmounted) or when field is null.
@@ -139,6 +159,6 @@ export default function Rain() {
         </instancedMesh>
     );
 
-    if (useGPU) return <RainGPUBoundary count={count} fallback={cpuMesh} />;
+    if (useGPU) return <RainGPUBoundary count={count} fallback={cpuMesh} onComputeError={() => setGpuFailed(true)} />;
     return cpuMesh;
 }

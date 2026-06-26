@@ -21,5 +21,5 @@ const BUDGETS: Record<RenderTier, ParticleBudget> = {
 };
 
 export function particleBudget(tier: RenderTier): ParticleBudget {
-    return BUDGETS[tier];
+    return { ...BUDGETS[tier] };
 }
