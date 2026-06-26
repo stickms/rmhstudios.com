@@ -213,6 +213,11 @@
   transform: translateX(2px);
 }
 
+.store-hero__link:active .store-hero__cta {
+  transform: scale(0.97);
+  transition-duration: 80ms;
+}
+
 @media (min-width: 720px) {
   .store-hero__link,
   .store-hero__body {
@@ -264,13 +269,19 @@
   color: inherit;
   background: rgba(28, 28, 30, 0.7);
   border: 0.5px solid rgba(255, 255, 255, 0.1);
-  transition: border-color 220ms ease, box-shadow 220ms ease, transform 220ms ease;
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .store-spot__link:hover {
   border-color: rgba(255, 255, 255, 0.26);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
   transform: translateY(-3px);
+}
+
+/* Press cue — snaps in fast, no layout shift. */
+.store-spot__link:active {
+  transform: translateY(-1px) scale(0.985);
+  transition-duration: 80ms;
 }
 
 .store-spot__art {
@@ -381,13 +392,19 @@
   color: inherit;
   background: rgba(24, 24, 27, 0.7);
   border: 0.5px solid rgba(255, 255, 255, 0.1);
-  transition: border-color 220ms ease, box-shadow 220ms ease, transform 220ms ease;
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .store-card__link:hover {
   border-color: rgba(255, 255, 255, 0.26);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
   transform: translateY(-3px);
+}
+
+/* Press cue — snaps in fast, no layout shift. */
+.store-card__link:active {
+  transform: translateY(-1px) scale(0.985);
+  transition-duration: 80ms;
 }
 
 .store-card__art {
