@@ -278,6 +278,39 @@ describe('cookgame store — progression', () => {
   });
 });
 
+describe('cookgame store — stash cap + income', () => {
+  beforeEach(reset);
+
+  it('buyBase refuses when it would exceed the stash cap', () => {
+    const cap = propertyEffects(0).stashCap; // 60 at tier 0
+    // fill baseStock to the cap
+    useCookgameStore.setState((s) => ({
+      cash: 99999,
+      inventory: { ...s.inventory, baseStock: [{ baseId: 'greenstart', qualityMult: 1, bonusEffects: [], units: cap }] },
+    }));
+    expect(useCookgameStore.getState().buyBase('greenstart', 10)).toBe(false);
+    expect(useCookgameStore.getState().inventory.baseStock[0].units).toBe(cap);
+  });
+
+  it('a higher property tier raises the cap so the same buy succeeds', () => {
+    const cap = propertyEffects(0).stashCap;
+    useCookgameStore.setState((s) => ({
+      cash: 99999, ownedPropertyTier: 1, // cap 150
+      inventory: { ...s.inventory, baseStock: [{ baseId: 'greenstart', qualityMult: 1, bonusEffects: [], units: cap }] },
+    }));
+    expect(useCookgameStore.getState().buyBase('greenstart', 10)).toBe(true);
+  });
+
+  it('tickPassiveIncome adds cash only when the tier has income', () => {
+    const st = useCookgameStore.getState();
+    st.tickPassiveIncome(10);
+    expect(useCookgameStore.getState().cash).toBe(150); // tier 0: no income
+    useCookgameStore.setState({ ownedPropertyTier: 1, cash: 0 }); // 0.5/s
+    useCookgameStore.getState().tickPassiveIncome(10);
+    expect(useCookgameStore.getState().cash).toBe(5); // 0.5 * 10
+  });
+});
+
 describe('cookgame store — property', () => {
   beforeEach(reset);
 
