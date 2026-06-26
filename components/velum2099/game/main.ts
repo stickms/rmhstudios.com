@@ -9,6 +9,7 @@ import { Terminal } from './terminal/Terminal';
 import { GameSettings } from './settings/GameSettings';
 import { GameHud } from './ui/GameHud';
 import { MobileControls } from './ui/MobileControls';
+import { Minimap } from './ui/Minimap';
 
 // Heavy simulation modules — lazy-loaded on first simulation start
 let CyberpunkScene, Vehicle, Segmenter, DataCollector, Exporter, TextureManager, LiveStreamClient, LofiRadio, EngineSound, MissionManager;
@@ -304,6 +305,12 @@ export class App {
         }
         this._mission.startSession();
 
+        // ── GTA-style minimap ──
+        if (!this._minimap) {
+            this._minimap = new Minimap(this._container, this.scene, this.vehicle, this._mission);
+        }
+        this._minimap.show();
+
         // ── Mobile touch controls (joystick) — only on touch devices ──
         if (MobileControls.isTouch()) {
             if (!this._mobileControls) {
@@ -337,8 +344,9 @@ export class App {
         this.vehicle.groundY = this.scene.getGroundHeight(this.vehicle.position.x, this.vehicle.position.z);
         this.vehicle.update(dt);
 
-        // Collision detection
+        // Collision detection — include solid cop cars so they can block/ram
         const collidables = this.scene.getCollidables(this.vehicle.position, 30);
+        if (this._mission) this._mission.getPoliceCollidables(collidables);
         const collisions = this.vehicle.checkCollisions(collidables, dt);
 
         // Update scene (camera, rain, neon flicker, post-processing render)
@@ -352,6 +360,7 @@ export class App {
                 this._gameHud.update(this._mission.getState());
                 this._gameHud.tickToasts(dt);
             }
+            if (this._minimap) this._minimap.update(dt);
         }
 
         // Segmentation + data collection — the OpenCV pass is expensive, so only
@@ -456,6 +465,7 @@ export class App {
         // Gameplay HUD + mobile controls + pursuit cleanup
         if (this._mission) this._mission.suspend();
         if (this._gameHud) this._gameHud.hide();
+        if (this._minimap) this._minimap.hide();
         if (this._mobileControls) this._mobileControls.hide();
 
         // Hide canvas, VHS overlay, and FPS counter, show terminal
@@ -573,6 +583,7 @@ export class App {
 
         // Hide gameplay HUD/controls while the console is open
         if (this._gameHud) this._gameHud.hide();
+        if (this._minimap) this._minimap.hide();
         if (this._mobileControls) this._mobileControls.hide();
 
         // Show terminal as overlay (canvas stays visible behind)
@@ -596,6 +607,7 @@ export class App {
 
         // Restore gameplay HUD/controls
         if (this._gameHud) this._gameHud.show();
+        if (this._minimap) this._minimap.show();
         if (this._mobileControls) this._mobileControls.show();
 
         // Rebind simulation keys
@@ -643,6 +655,7 @@ export class App {
         // Clean up gameplay systems
         if (this._mission) { this._mission.dispose(); this._mission = null; }
         if (this._gameHud) { this._gameHud.dispose(); this._gameHud = null; }
+        if (this._minimap) { this._minimap.dispose(); this._minimap = null; }
         if (this._mobileControls) { this._mobileControls.dispose(); this._mobileControls = null; }
 
         // Dispose Three.js resources

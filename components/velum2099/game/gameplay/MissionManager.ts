@@ -14,7 +14,7 @@
 
 import {
     Group, Mesh, MeshBasicMaterial, MeshStandardMaterial,
-    CylinderGeometry, RingGeometry, BoxGeometry,
+    CylinderGeometry, RingGeometry, BoxGeometry, Box3, Vector3,
     DoubleSide, AdditiveBlending,
 } from 'three';
 
@@ -49,6 +49,9 @@ export class MissionManager {
 
         // Mission state
         this.phase = 'idle';         // 'idle' | 'pickup' | 'deliver'
+        this.missionType = 'courier';// 'courier' | 'drug'
+        this.isDrug = false;
+        this.targetColor = 0x00ffd5; // current beacon colour (for the minimap)
         this.target = null;          // { x, z }
         this.timeLeft = null;
         this.timeMax = null;
@@ -68,6 +71,11 @@ export class MissionManager {
         this._collisionCd = 0;
         this._lightT = 0;
         this._lastEvent = null;      // 'busted' | 'escaped' (one-shot for HUD flash)
+
+        // Cop collision scratch (pooled to avoid per-frame allocation)
+        this._policeBoxPool = [];
+        this._policeSize = new Vector3(1.9, 1.4, 3.9);
+        this._nearStatic = [];
     }
 
     /* ── lifecycle ── */
@@ -99,12 +107,17 @@ export class MissionManager {
         const t = this.scene.findRoadTarget(p.x, p.z, PICKUP_MIN, PICKUP_MAX)
             || this.scene.findRoadTarget(p.x, p.z, 40, PICKUP_MAX + 120);
         if (!t) { this._nextDelay = 2; return; } // retry shortly
+
+        // ~40% of runs are illicit "drug runs" — pay more but blow your cover.
+        this.isDrug = Math.random() < 0.4;
+        this.missionType = this.isDrug ? 'drug' : 'courier';
         this.phase = 'pickup';
         this.target = t;
         this.timeLeft = null;
         this.timeMax = null;
-        this._showBeacon(t, 0x00ffd5);
-        if (!immediate) this.onToast('新订单 — 前往取货点  ·  NEW FARE', 'info');
+        this._showBeacon(t, this.isDrug ? 0x39ff14 : 0x00ffd5);
+        if (this.isDrug) this.onToast('违禁品订单 — 高额报酬  ·  DRUG RUN', 'info');
+        else if (!immediate) this.onToast('新订单 — 前往取货点  ·  NEW FARE', 'info');
     }
 
     _beginDropoff() {
@@ -116,17 +129,24 @@ export class MissionManager {
         this.target = t;
         this.timeMax = dist / DELIVER_SPEED + DELIVER_BUFFER;
         this.timeLeft = this.timeMax;
-        this._showBeacon(t, 0xff2bd0);
-        this.onToast('已取货 — 限时送达！·  CARGO SECURED', 'good');
+        this._showBeacon(t, this.isDrug ? 0xaaff00 : 0xff2bd0);
+        if (this.isDrug) {
+            this.onToast('毒品到手 — 警方已盯上你！·  DEAL MADE — HEAT UP', 'bad');
+            this._raiseHeat(1, '毒品交易暴露 — 警方追缉！·  NARCS ON YOU');
+        } else {
+            this.onToast('已取货 — 限时送达！·  CARGO SECURED', 'good');
+        }
     }
 
     _completeDelivery() {
         const distBonus = this.timeMax ? Math.round((this.timeMax - (this.timeLeft || 0)) * 4) : 0;
         const timeBonus = Math.max(0, Math.round((this.timeLeft || 0) * 10));
-        const base = 250;
-        const reward = Math.round((base + timeBonus + distBonus) * this.combo);
+        const base = this.isDrug ? 450 : 250;
+        const mult = this.isDrug ? 1.8 : 1.0;
+        const reward = Math.round((base + timeBonus + distBonus) * mult * this.combo);
         this.credits += reward;
-        this.onToast(`送达完成  +¥${reward}  (x${this.combo.toFixed(1)})  ·  DELIVERED`, 'good');
+        const tag = this.isDrug ? 'DEAL DONE' : 'DELIVERED';
+        this.onToast(`送达完成  +¥${reward}  (x${this.combo.toFixed(1)})  ·  ${tag}`, 'good');
         this.combo = Math.min(4, this.combo + 0.5);
         this._saveBest();
         this._endDelivery(2.2);
@@ -230,6 +250,11 @@ export class MissionManager {
             const fz = -Math.cos(p.rot);
             p.mesh.position.x += fx * p.speed * dt;
             p.mesh.position.z += fz * p.speed * dt;
+
+            // Solid collision vs nearby buildings/poles so cops don't phase
+            // through the city. Resolve the cruiser as a circle out of each box.
+            this._resolveCarVsStatic(p);
+
             const gy = this.scene.getGroundHeight(p.mesh.position.x, p.mesh.position.z);
             p.mesh.position.y += (gy - p.mesh.position.y) * Math.min(1, 8 * dt);
 
@@ -256,6 +281,51 @@ export class MissionManager {
         } else {
             this._escapeTimer = Math.max(0, this._escapeTimer - dt * 0.4);
         }
+    }
+
+    /** Push a chase car (treated as a circle) out of nearby static AABBs. */
+    _resolveCarVsStatic(p) {
+        const R = 1.7;
+        const px = p.mesh.position.x, pz = p.mesh.position.z;
+        const list = this.scene.getNearbyStatic(px, pz, 8, this._nearStatic);
+        for (const c of list) {
+            const b = c.box;
+            // Closest point on the box (XZ) to the car centre
+            const cx = Math.max(b.min.x, Math.min(px, b.max.x));
+            const cz = Math.max(b.min.z, Math.min(pz, b.max.z));
+            let dx = px - cx, dz = pz - cz;
+            let d2 = dx * dx + dz * dz;
+            if (d2 < R * R) {
+                if (d2 > 1e-6) {
+                    const d = Math.sqrt(d2);
+                    const push = (R - d);
+                    p.mesh.position.x += (dx / d) * push;
+                    p.mesh.position.z += (dz / d) * push;
+                } else {
+                    // Centre inside the box — eject along the shallowest axis
+                    const ox = Math.min(px - b.min.x, b.max.x - px);
+                    const oz = Math.min(pz - b.min.z, b.max.z - pz);
+                    if (ox < oz) p.mesh.position.x += (px - (b.min.x + b.max.x) * 0.5 < 0 ? -1 : 1) * (ox + R);
+                    else p.mesh.position.z += (pz - (b.min.z + b.max.z) * 0.5 < 0 ? -1 : 1) * (oz + R);
+                }
+                p.speed *= 0.85;
+            }
+        }
+    }
+
+    /**
+     * Return solid cop-car collidables for the player's collision pass, reusing
+     * pooled Box3s. Appended to the scene collidables by the main loop.
+     */
+    getPoliceCollidables(out) {
+        for (let i = 0; i < this.police.length; i++) {
+            const p = this.police[i];
+            let box = this._policeBoxPool[i];
+            if (!box) { box = new Box3(); this._policeBoxPool[i] = box; }
+            box.setFromCenterAndSize(p.mesh.position, this._policeSize);
+            out.push({ box, mesh: p.mesh, type: 'police' });
+        }
+        return out;
     }
 
     _busted() {
@@ -330,8 +400,9 @@ export class MissionManager {
         }
 
         let objective = '空闲 · STANDBY';
-        if (this.phase === 'pickup') objective = '取货 · PICK UP';
-        else if (this.phase === 'deliver') objective = '送达 · DELIVER';
+        const tag = this.isDrug ? ' [DRUG]' : '';
+        if (this.phase === 'pickup') objective = `取货 · PICK UP${tag}`;
+        else if (this.phase === 'deliver') objective = `送达 · DELIVER${tag}`;
 
         const event = this._lastEvent;
         this._lastEvent = null;
@@ -342,6 +413,9 @@ export class MissionManager {
             combo: this.combo,
             heat: this.heat,
             phase: this.phase,
+            missionType: this.missionType,
+            isDrug: this.isDrug,
+            targetColor: this.targetColor,
             objective,
             distance,
             bearing,
@@ -372,6 +446,7 @@ export class MissionManager {
     /* ── visuals ── */
 
     _showBeacon(t, color) {
+        this.targetColor = color;
         this._beacon.position.set(t.x, this.scene.getGroundHeight(t.x, t.z), t.z);
         this._beacon.traverse(o => {
             if (o.material && o.material.color) o.material.color.setHex(color);
