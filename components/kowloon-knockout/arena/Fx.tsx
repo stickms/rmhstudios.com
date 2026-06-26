@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useMemo } from 'react';
+import { useRef, useMemo, useLayoutEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { GameSession } from '@/lib/kowloon-knockout/net/session';
@@ -20,6 +20,9 @@ export default function Fx({ session }: { session: GameSession }) {
 
     const meshRef = useRef<THREE.InstancedMesh>(null);
     const dummy = useMemo(() => new THREE.Object3D(), []);
+    // Live particle count, so idle frames (no bursts on screen) can skip the
+    // whole integrate + per-instance write + buffer upload.
+    const activeRef = useRef(0);
     const pool = useMemo<(BurstParticle & { color: THREE.Color })[]>(
         () => Array.from({ length: MAX }, () => ({
             x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, life: 0, maxLife: 1,
@@ -47,7 +50,7 @@ export default function Fx({ session }: { session: GameSession }) {
                 : kind === 'debris' ? 0.6 + Math.random() * 0.5
                 : 0.35 + Math.random() * 0.3;
             p.life = p.maxLife;
-            p.size = kind === 'smoke' ? 0.3 + Math.random() * 0.3
+            p.size = kind === 'smoke' ? 0.22 + Math.random() * 0.16
                 : kind === 'debris' ? 0.1 + Math.random() * 0.12
                 : 0.12 + Math.random() * 0.12;
             p.color.copy(color);
@@ -55,29 +58,56 @@ export default function Fx({ session }: { session: GameSession }) {
         }
     };
 
+    // Zero every instance once on mount (and on cap change) so slots we never
+    // touch while idle-skipping don't render at the identity transform (origin,
+    // unit scale). After this, the frame loop only needs to run when alive.
+    useLayoutEffect(() => {
+        const mesh = meshRef.current;
+        if (!mesh) return;
+        dummy.scale.setScalar(0);
+        dummy.updateMatrix();
+        for (let i = 0; i < MAX; i++) mesh.setMatrixAt(i, dummy.matrix);
+        mesh.instanceMatrix.needsUpdate = true;
+        mesh.visible = false;   // hidden until a burst spawns — skips the idle draw
+        activeRef.current = 0;
+    }, [MAX, dummy]);
+
     useFrame((_, deltaRaw) => {
         const mesh = meshRef.current;
         if (!mesh) return;
         const delta = Math.min(0.05, deltaRaw);
 
+        let spawned = false;
         for (const e of session.drainFx()) {
+            spawned = true;
             if (e.kind === 'hit') {
                 const c = new THREE.Color(e.color);
                 spawn(Math.min(22, 8 + Math.round(e.power)), 'spark', e.x, e.y, e.z, c, 3.5);
                 spawn(Math.min(8, 3 + Math.round(e.power * 0.5)), 'debris', e.x, e.y, e.z, c, 2.5);
-                spawn(3, 'smoke', e.x, e.y, e.z, new THREE.Color('#888a96'), 0.8);
+                // One dim, subtle puff per hit — additive grey, so punches read
+                // as a flash and a wisp, not a cloud.
+                spawn(1, 'smoke', e.x, e.y, e.z, new THREE.Color('#3a3a44'), 0.8);
             } else if (e.kind === 'block') {
                 spawn(8, 'spark', e.x, e.y, e.z, new THREE.Color('#cfe8ff'), 2);
             } else if (e.kind === 'ko') {
                 spawn(40, 'spark', e.x, 1.1, e.z, new THREE.Color('#ffcc00'), 5);
                 spawn(28, 'debris', e.x, 1.1, e.z, new THREE.Color('#ffcc00'), 4);
-                spawn(14, 'smoke', e.x, 1.1, e.z, new THREE.Color('#9a9ca8'), 1.2);
+                // KO keeps a real smoke burst — the climactic moment — but dim
+                // and restrained.
+                spawn(8, 'smoke', e.x, 1.1, e.z, new THREE.Color('#5a5a66'), 1.2);
             }
         }
 
+        // Idle skip: nothing alive and no new event this frame → instances are
+        // already zeroed (last live frame or the mount init), so there is no
+        // work and no buffer upload to do.
+        if (activeRef.current === 0 && !spawned) return;
+
+        let active = 0;
         for (let i = 0; i < MAX; i++) {
             const p = pool[i];
             if (p.active) stepParticle(p, delta);
+            if (p.active) active++;
             const frac = p.active ? p.life / p.maxLife : 0;
             // smoke grows as it fades; spark/debris shrink with life.
             const s = p.kind === 'smoke' ? p.size : p.size * frac;
@@ -87,6 +117,8 @@ export default function Fx({ session }: { session: GameSession }) {
             mesh.setMatrixAt(i, dummy.matrix);
             mesh.setColorAt(i, p.active ? p.color : BLACK);
         }
+        activeRef.current = active;
+        mesh.visible = active > 0;   // hide the mesh when the last burst dies
         mesh.instanceMatrix.needsUpdate = true;
         if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     });

@@ -3,7 +3,7 @@ import { particleBudget } from '../budget';
 
 describe('particleBudget', () => {
     it('gives ultra the full counts', () => {
-        expect(particleBudget('ultra')).toEqual({ rain: 8000, fog: 4000, burstCap: 1500 });
+        expect(particleBudget('ultra')).toEqual({ rain: 5000, fog: 2400, burstCap: 1500 });
     });
     it('gives high reduced counts with fog', () => {
         const b = particleBudget('high');
