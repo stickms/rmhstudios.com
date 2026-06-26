@@ -39,7 +39,7 @@ function Wall({ pos, size }: { pos: [number, number, number]; size: [number, num
     <RigidBody type="fixed" colliders="cuboid" position={pos}>
       <mesh castShadow receiveShadow>
         <boxGeometry args={size} />
-        <meshStandardMaterial color="#374151" />
+        <meshStandardMaterial {...matteMaterialProps(PALETTE.wall)} />
       </mesh>
     </RigidBody>
   );
