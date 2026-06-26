@@ -356,6 +356,7 @@ export function ComposeModal({ open, onClose, quoteItem }: ComposeModalProps) {
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-semibold text-site-text-dim uppercase tracking-wide">{t("gif-heading", { defaultValue: "GIF" })}</span>
                     <button
+                      type="button"
                       onClick={() => {
                         setAttachment(null);
                         setGifUrl('');

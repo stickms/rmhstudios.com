@@ -391,6 +391,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
                     if (e.key === 'Escape') {
                       setReplyOpen(false);
                       setReplyContent('');
+                      setShowGifPicker(false);
                     }
                   }}
                 />
@@ -400,7 +401,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
                       {remaining}
                     </span>
                     <button
-                      onClick={() => { setReplyOpen(false); setReplyContent(''); }}
+                      onClick={() => { setReplyOpen(false); setReplyContent(''); setShowGifPicker(false); }}
                       className="text-[10px] text-site-text-dim hover:text-site-text transition-colors"
                     >
                       {t('cancel', { defaultValue: 'Cancel' })}

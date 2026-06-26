@@ -17,11 +17,12 @@ export function GifPicker({ onSelect, onClose, className = '' }: GifPickerProps)
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<TenorGif[]>([]);
   const [next, setNext] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<'unavailable' | 'failed' | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   // Fetch a page. pos === null starts a fresh result set.
+  // Stable: reads no outer state; only calls setState setters (stable identities).
   const fetchPage = useCallback(async (q: string, pos: string | null) => {
     setLoading(true);
     if (pos === null) setError(null);
@@ -99,7 +100,7 @@ export function GifPicker({ onSelect, onClose, className = '' }: GifPickerProps)
               onClick={() => { onSelect(g.url); onClose?.(); }}
               className="block rounded-lg overflow-hidden border border-site-border hover:border-site-accent transition-colors"
             >
-              <img src={g.preview} alt={g.description || 'GIF'} loading="lazy" className="w-full h-auto" />
+              <img src={g.preview} alt={g.description || t('gif-alt', { defaultValue: 'GIF' })} loading="lazy" className="w-full h-auto" />
             </button>
           ))}
         </div>
