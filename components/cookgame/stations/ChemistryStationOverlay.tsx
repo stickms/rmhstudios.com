@@ -91,14 +91,16 @@ export function ChemistryStationOverlay() {
 
           {/* Three ratio dials */}
           <div className="space-y-3">
-            {cookSession.dials.map((val, i) => (
+            {(() => {
+              const total = cookSession.dials.reduce((a, b) => a + b, 0);
+              return cookSession.dials.map((val, i) => (
               <div key={i} className="space-y-1">
                 <div className="flex items-center justify-between">
                   <label className="font-mono text-xs text-neutral-400">
                     Dial {i + 1}
                   </label>
                   <span className="font-mono text-xs text-neutral-300">
-                    {Math.round(val * 100)}
+                    {total > 0 ? Math.round(val / total * 100) : 0}% share
                   </span>
                 </div>
                 <input
@@ -111,7 +113,8 @@ export function ChemistryStationOverlay() {
                   className="w-full accent-lime-500"
                 />
               </div>
-            ))}
+            ));
+            })()}
           </div>
 
           {/* Cook button + transient result */}

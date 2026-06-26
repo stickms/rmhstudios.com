@@ -13,6 +13,10 @@ describe('cookQuality', () => {
     const far = cookQuality([0.5, 0.5, 0.5], [0.9, 0.5, 0.5]);
     expect(near).toBeGreaterThan(far);
   });
+  it('is ratio-invariant: scaling a dial vector does not change quality', () => {
+    // [1,0,0] and [0.5,0,0] both normalize to [1,0,0] — should be a perfect match
+    expect(cookQuality([1, 0, 0], [0.5, 0, 0])).toBeCloseTo(1, 5);
+  });
 });
 
 describe('feedbackBand', () => {
@@ -21,10 +25,11 @@ describe('feedbackBand', () => {
     expect(feedbackBand([0, 0, 0], [1, 1, 1])).toBe('cold');
   });
   it('returns warm for a dial/target pair with cookQuality in [0.6, 0.85)', () => {
-    // dials=[0.5,0.5,0.5], target=[0.9,0.5,0.5]
-    // euclidean = 0.4, MAXDIST = sqrt(3) ≈ 1.7321
-    // q = 1 - 0.4/sqrt(3) ≈ 0.7691  →  in [0.6, 0.85)  →  warm
-    expect(feedbackBand([0.5, 0.5, 0.5], [0.9, 0.5, 0.5])).toBe('warm');
+    // dials=[0.6,0.2,0.2] (already sums to 1), target=[1/3,1/3,1/3]
+    // euclidean(dn, tn) = sqrt((0.6-1/3)^2 + 2*(0.2-1/3)^2) ≈ 0.3266
+    // MAXDIST = sqrt(2) ≈ 1.4142
+    // q = 1 - 0.3266/sqrt(2) ≈ 0.769  →  in [0.6, 0.85)  →  warm
+    expect(feedbackBand([0.6, 0.2, 0.2], [1 / 3, 1 / 3, 1 / 3])).toBe('warm');
   });
 });
 

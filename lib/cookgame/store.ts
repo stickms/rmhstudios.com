@@ -70,7 +70,9 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
   startCook: (baseId) => {
     const { inventory } = get();
     if ((inventory.inputs.reagent ?? 0) <= 0) return false;
-    const target = Array.from({ length: DIAL_COUNT }, () => Math.random());
+    const raw = Array.from({ length: DIAL_COUNT }, () => Math.random());
+    const rawSum = raw.reduce((a, b) => a + b, 0) || 1;
+    const target = raw.map((v) => v / rawSum);
     set({
       inventory: { ...inventory, inputs: { ...inventory.inputs, reagent: inventory.inputs.reagent - 1 } },
       cookSession: { baseId, target, dials: Array.from({ length: DIAL_COUNT }, () => 0) },
