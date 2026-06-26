@@ -7,6 +7,7 @@ import Environment from './Environment';
 import StickFighter from './StickFighter';
 import CameraRig from './CameraRig';
 import Fx from './Fx';
+import { RenderTierProvider } from './RenderTierContext';
 
 type FramesRef = MutableRefObject<RenderFighter[]>;
 
@@ -26,7 +27,7 @@ export default function Arena3D({ session, seatIds }: { session: GameSession; se
     const shakeRef = useRef(0);
 
     return (
-        <>
+        <RenderTierProvider>
             <color attach="background" args={['#070010']} />
             <fog attach="fog" args={['#0a0118', 18, 60]} />
 
@@ -57,6 +58,6 @@ export default function Arena3D({ session, seatIds }: { session: GameSession; se
             ))}
 
             <Fx session={session} />
-        </>
+        </RenderTierProvider>
     );
 }
