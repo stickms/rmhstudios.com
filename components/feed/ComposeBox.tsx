@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Plus, BarChart3, Image, X, ImagePlus, Globe, Users, Lock, Unlock, EyeOff, FileText, CalendarClock, Check } from 'lucide-react';
+import { Plus, BarChart3, ImagePlay, X, ImagePlus, Globe, Users, Lock, Unlock, EyeOff, FileText, CalendarClock, Check } from 'lucide-react';
 import { GifEmbed } from './GifEmbed';
 import { GifPicker } from './GifPicker';
 import { AIGenerateButton } from './AIGenerateButton';
@@ -592,8 +592,8 @@ export function ComposeBox({
                       }}
                       className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
                     >
-                      <Image className="w-4 h-4 text-site-text-dim" />
-                      {t("menu-add-image", { defaultValue: "Add Image" })}
+                      <ImagePlay className="w-4 h-4 text-site-text-dim" />
+                      {t("menu-add-gif", { defaultValue: "Add GIF" })}
                     </button>
                     <div className="my-1 border-t border-site-border" />
                     <button
