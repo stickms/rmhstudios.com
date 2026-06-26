@@ -84,6 +84,16 @@ export const createRMHarkSchema = z
     { message: "Post must have text, a poll, an image/GIF, or be a quote" }
   );
 
+export const editRMHarkSchema = z.object({
+  content: z
+    .string()
+    .max(MAX_RMHARK_LENGTH, `RMHark must be at most ${MAX_RMHARK_LENGTH} characters`)
+    .optional()
+    .default(""),
+  // null clears an existing GIF; undefined leaves it unchanged.
+  gifUrl: gifUrlSchema.nullish(),
+});
+
 export const createCommentSchema = z.object({
   content: z
     .string()
