@@ -69,7 +69,7 @@ export default function MainMenu() {
                 >
                     <motion.button
                         className="neon-button neon-button-fight"
-                        onClick={() => setPhase('select')}
+                        onClick={() => { setMultiplayer(false); setPhase('select'); }}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                     >

@@ -9,78 +9,77 @@ import (
 
 // Kowloon Knockout event/payload contract (from internal/gamehub/kk.go):
 //
-//   C2S kk:create_room  { "fighterClass": "<class>" }   (optional; default "stone_tiger")
-//   S2C kk:room_created { "code": "<ROOMCODE>" }
+//   C2S kk:create_room  { "mode": "ffa"|"teams", "fighterClass": "<class>" }
+//   S2C kk:room_created { "code": "<ROOMCODE>", "seat": 0 }
+//   S2C kk:lobby_update { "you": <seat>, "seats": [...], "mode", "arenaSize", ... }
 //   C2S kk:join_room    { "code": "<ROOMCODE>", "fighterClass": "<class>" }
-//   S2C kk:room_joined  { "hostClass": "...", "guestClass": "...", "isHost": <bool> }
-//   C2S/S2C kk:input      <opaque payload, guest -> host relay>
-//   C2S/S2C kk:game_state <opaque payload, host -> guest relay>
-//   S2C kk:opponent_disconnected {}
+//   C2S kk:start        {}                         (host only)
+//   S2C kk:match_start  { "you": <seat>, "seats": [...], "mode", "maxRounds" }
+//   C2S/S2C kk:input     { "seat": <guest>, "input": <opaque> } (guest -> host)
+//   C2S/S2C kk:snapshot  <opaque> (host -> guests)
+//   S2C kk:player_left   { "seat": <seat> }
 //
 // gamehub runs with RequireAuth=false (soft-auth), so no token is needed.
 
-// TestKKRelayFlow exercises the full host-authoritative relay: create, join,
-// input (guest->host), game_state (host->guest), and disconnect notification.
+// TestKKRelayFlow exercises the lobby + host-authoritative relay: create, join,
+// start, input (guest->host), snapshot (host->guest), and disconnect handling.
 func TestKKRelayFlow(t *testing.T) {
 	url := gamehubURL()
 
 	// ── Host (client A) creates a room ──
 	a := dial(t, url, "")
-	a.send("kk:create_room", map[string]any{"fighterClass": "stone_tiger"})
+	a.send("kk:create_room", map[string]any{"mode": "ffa", "fighterClass": "stone_tiger"})
 	created := a.readUntil("kk:room_created", defaultReadTimeout)
 	code := str(t, created, "code")
 	if code == "" {
 		t.Fatalf("kk:room_created returned empty code")
 	}
+	a.readUntil("kk:lobby_update", defaultReadTimeout)
 	t.Logf("room created: code=%s", code)
 
-	// ── Guest (client B) joins the room ──
+	// ── Guest (client B) joins ──
 	b := dial(t, url, "")
-	b.send("kk:join_room", map[string]any{"code": code, "fighterClass": "iron_crane"})
-
-	// Both A (host) and B (guest) must receive kk:room_joined.
-	aJoined := a.readUntil("kk:room_joined", defaultReadTimeout)
-	bJoined := b.readUntil("kk:room_joined", defaultReadTimeout)
-
-	if host, ok := aJoined["isHost"].(bool); !ok || !host {
-		t.Fatalf("host A: expected isHost=true, got %v", aJoined["isHost"])
-	}
-	if host, ok := bJoined["isHost"].(bool); !ok || host {
-		t.Fatalf("guest B: expected isHost=false, got %v", bJoined["isHost"])
-	}
-	// The fighter classes seen by both seats must agree.
-	if str(t, aJoined, "hostClass") != "stone_tiger" {
-		t.Fatalf("host A: expected hostClass=stone_tiger, got %v", aJoined["hostClass"])
-	}
-	if str(t, aJoined, "guestClass") != "iron_crane" {
-		t.Fatalf("host A: expected guestClass=iron_crane, got %v", aJoined["guestClass"])
-	}
-	if str(t, bJoined, "guestClass") != "iron_crane" {
-		t.Fatalf("guest B: expected guestClass=iron_crane, got %v", bJoined["guestClass"])
+	b.send("kk:join_room", map[string]any{"code": code, "fighterClass": "iron_bull"})
+	bLobby := b.readUntil("kk:lobby_update", defaultReadTimeout)
+	if got := numField(bLobby, "you"); got != 1 {
+		t.Fatalf("guest B: expected seat 1, got %v", got)
 	}
 
-	// ── Guest -> Host: kk:input is relayed to the host only ──
-	b.send("kk:input", map[string]any{"frame": 1, "buttons": []string{"punch"}})
+	// ── Host starts the match: both seats get kk:match_start ──
+	a.send("kk:start", map[string]any{})
+	aStart := a.readUntil("kk:match_start", defaultReadTimeout)
+	bStart := b.readUntil("kk:match_start", defaultReadTimeout)
+	if numField(aStart, "you") != 0 {
+		t.Fatalf("host A: expected match_start you=0, got %v", aStart["you"])
+	}
+	if numField(bStart, "you") != 1 {
+		t.Fatalf("guest B: expected match_start you=1, got %v", bStart["you"])
+	}
+
+	// ── Guest -> Host: kk:input is relayed to the host, stamped with the seat ──
+	b.send("kk:input", map[string]any{"input": []any{1, 0, 0, 2}})
 	input := a.readUntil("kk:input", defaultReadTimeout)
-	if got, want := numField(input, "frame"), 1.0; got != want {
-		t.Fatalf("host A: expected relayed input frame=%v, got %v (payload %v)", want, got, input)
+	if got := numField(input, "seat"); got != 1 {
+		t.Fatalf("host A: expected relayed input seat=1, got %v (payload %v)", got, input)
 	}
 
-	// ── Host -> Guest: kk:game_state is relayed to the guest only ──
-	a.send("kk:game_state", map[string]any{"tick": 42, "p1hp": 100})
-	state := b.readUntil("kk:game_state", defaultReadTimeout)
-	if got, want := numField(state, "tick"), 42.0; got != want {
-		t.Fatalf("guest B: expected relayed game_state tick=%v, got %v (payload %v)", want, got, state)
+	// ── Host -> Guest: kk:snapshot is broadcast to guests ──
+	a.send("kk:snapshot", map[string]any{"f": 42})
+	snap := b.readUntil("kk:snapshot", defaultReadTimeout)
+	if got := numField(snap, "f"); got != 42 {
+		t.Fatalf("guest B: expected relayed snapshot f=42, got %v (payload %v)", got, snap)
 	}
 
-	// ── Guest disconnects: host receives kk:opponent_disconnected ──
+	// ── Guest disconnects: host is notified the seat left ──
 	b.close()
-	a.readUntil("kk:opponent_disconnected", defaultReadTimeout)
+	left := a.readUntil("kk:player_left", defaultReadTimeout)
+	if got := numField(left, "seat"); got != 1 {
+		t.Fatalf("host A: expected player_left seat=1, got %v", got)
+	}
 }
 
 // numField reads a numeric field from a JSON-decoded payload (numbers decode to
-// float64). Returns NaN-ish -1 sentinel via test failure if missing/non-numeric
-// is not handled here; callers compare directly.
+// float64).
 func numField(m map[string]any, key string) float64 {
 	if v, ok := m[key].(float64); ok {
 		return v
@@ -89,7 +88,7 @@ func numField(m map[string]any, key string) float64 {
 }
 
 // TestKKJoinUnknownRoom verifies the error path: joining a non-existent room
-// yields kk:error rather than kk:room_joined.
+// yields kk:error rather than kk:lobby_update.
 func TestKKJoinUnknownRoom(t *testing.T) {
 	url := gamehubURL()
 	c := dial(t, url, "")
@@ -98,6 +97,5 @@ func TestKKJoinUnknownRoom(t *testing.T) {
 	if str(t, errp, "message") == "" {
 		t.Fatalf("expected non-empty error message, got %v", errp)
 	}
-	// And it must NOT have produced a room_joined.
-	c.expectNoEvent("kk:room_joined", 500*time.Millisecond)
+	c.expectNoEvent("kk:lobby_update", 500*time.Millisecond)
 }
