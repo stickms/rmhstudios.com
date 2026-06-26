@@ -142,7 +142,7 @@ export function EpubReader({ book }: { book: LibraryBook }) {
   return (
     <main className="vibe-screen lib-reader">
       <header className="lib-reader__bar">
-        <Link to="/library" aria-label={t('back-to-library', { defaultValue: 'Back to library' })} className="vibe-toolbar__icon">
+        <Link to="/library" aria-label={t('back-to-library', { defaultValue: 'Back to library' })} className="vibe-toolbar__icon transition-transform duration-150 active:scale-90">
           <ArrowLeft size={17} />
         </Link>
         <span className="lib-reader__title" title={book.title}>
@@ -158,7 +158,7 @@ export function EpubReader({ book }: { book: LibraryBook }) {
           {status === 'ready' && (
             <button
               type="button"
-              className={`vibe-toolbar__icon${bookmarked ? ' is-on' : ''}`}
+              className={`vibe-toolbar__icon transition-transform duration-150 active:scale-90${bookmarked ? ' is-on' : ''}`}
               onClick={toggleBookmark}
               aria-pressed={bookmarked}
               title={bookmarked ? t('remove-bookmark', { defaultValue: 'Remove bookmark' }) : t('add-bookmark', { defaultValue: 'Bookmark this page' })}
@@ -179,7 +179,7 @@ export function EpubReader({ book }: { book: LibraryBook }) {
             />
           )}
           {status === 'ready' && <ThemeMenu theme={theme} onChange={changeTheme} />}
-          <a href={book.url} download className="vibe-toolbar__icon" aria-label={t('download-book', { defaultValue: 'Download book' })}>
+          <a href={book.url} download className="vibe-toolbar__icon transition-transform duration-150 active:scale-90" aria-label={t('download-book', { defaultValue: 'Download book' })}>
             <Download size={16} />
           </a>
         </div>

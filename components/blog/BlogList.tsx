@@ -181,7 +181,8 @@ export function BlogList({ initialPosts, filtersOpen = false }: BlogListProps) {
             </div>
             <button
               onClick={() => setSelectedTag(null)}
-              className={`px-2.5 py-1 rounded-full text-xs font-bold transition-all ${!selectedTag ? "bg-site-accent text-site-accent-fg" : "bg-site-bg text-site-text-muted hover:bg-site-surface-hover"}`}
+              aria-pressed={!selectedTag}
+              className={`px-2.5 py-1 rounded-full text-xs font-bold transition-[transform,background-color,color] duration-150 active:scale-95 ${!selectedTag ? "bg-site-accent text-site-accent-fg" : "bg-site-bg text-site-text-muted hover:bg-site-surface-hover"}`}
             >
               {t("tag-all", { defaultValue: "All" })}
             </button>
@@ -189,7 +190,8 @@ export function BlogList({ initialPosts, filtersOpen = false }: BlogListProps) {
               <button
                 key={tag}
                 onClick={() => setSelectedTag(tag === selectedTag ? null : tag)}
-                className={`px-2.5 py-1 rounded-full text-xs font-bold transition-all ${selectedTag === tag ? "bg-site-accent text-site-accent-fg" : "bg-site-bg text-site-text-muted hover:bg-site-surface-hover"}`}
+                aria-pressed={selectedTag === tag}
+                className={`px-2.5 py-1 rounded-full text-xs font-bold transition-[transform,background-color,color] duration-150 active:scale-95 ${selectedTag === tag ? "bg-site-accent text-site-accent-fg" : "bg-site-bg text-site-text-muted hover:bg-site-surface-hover"}`}
               >
                 {tag}
               </button>
@@ -261,7 +263,7 @@ export function BlogList({ initialPosts, filtersOpen = false }: BlogListProps) {
               exit={{ opacity: 0, scale: 0.9 }}
               transition={{ duration: 0.3 }}
             >
-               <div data-slot="card" className="bg-site-surface border border-site-border overflow-hidden hover:border-site-accent/50 transition-colors h-full flex flex-col group relative" style={{ borderRadius: "var(--site-radius)", borderWidth: "var(--site-border-width)", transitionDuration: "var(--site-transition-speed)" }}>
+               <div data-slot="card" className="bg-site-surface border border-site-border overflow-hidden hover:border-site-accent/50 hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.98] transition-[transform,border-color,box-shadow] duration-200 h-full flex flex-col group relative" style={{ borderRadius: "var(--site-radius)", borderWidth: "var(--site-border-width)" }}>
                   <Link to={`/blog/${post.slug}` as string} className="absolute inset-0 z-0" />
 
                   {/* Share Button */}
@@ -337,7 +339,7 @@ export function BlogList({ initialPosts, filtersOpen = false }: BlogListProps) {
             <button
               onClick={() => goToPage(1)}
               disabled={safePage === 1}
-              className="p-2 rounded-lg text-site-text-dim hover:text-site-text hover:bg-site-surface disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+              className="p-2 rounded-lg text-site-text-dim hover:text-site-text hover:bg-site-surface disabled:opacity-20 disabled:cursor-not-allowed transition-[transform,color,background-color] duration-150 active:scale-95 disabled:active:scale-100"
               aria-label={t("first-page", { defaultValue: "First page" })}
             >
               <ChevronsLeft className="w-4 h-4" />
@@ -346,7 +348,7 @@ export function BlogList({ initialPosts, filtersOpen = false }: BlogListProps) {
             <button
               onClick={() => goToPage(safePage - 1)}
               disabled={safePage === 1}
-              className="p-2 rounded-lg text-site-text-dim hover:text-site-text hover:bg-site-surface disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+              className="p-2 rounded-lg text-site-text-dim hover:text-site-text hover:bg-site-surface disabled:opacity-20 disabled:cursor-not-allowed transition-[transform,color,background-color] duration-150 active:scale-95 disabled:active:scale-100"
               aria-label={t("prev-page", { defaultValue: "Previous page" })}
             >
               <ChevronLeft className="w-4 h-4" />
@@ -359,7 +361,8 @@ export function BlogList({ initialPosts, filtersOpen = false }: BlogListProps) {
                 <button
                   key={page}
                   onClick={() => goToPage(page as number)}
-                  className={`w-9 h-9 rounded-lg text-sm font-bold transition-all ${
+                  aria-current={safePage === page ? "page" : undefined}
+                  className={`w-9 h-9 rounded-lg text-sm font-bold transition-[transform,color,background-color] duration-150 active:scale-95 ${
                     safePage === page
                       ? "bg-site-accent text-site-accent-fg"
                       : "text-site-text-dim hover:text-site-text hover:bg-site-surface"
@@ -373,7 +376,7 @@ export function BlogList({ initialPosts, filtersOpen = false }: BlogListProps) {
             <button
               onClick={() => goToPage(safePage + 1)}
               disabled={safePage === totalPages}
-              className="p-2 rounded-lg text-site-text-dim hover:text-site-text hover:bg-site-surface disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+              className="p-2 rounded-lg text-site-text-dim hover:text-site-text hover:bg-site-surface disabled:opacity-20 disabled:cursor-not-allowed transition-[transform,color,background-color] duration-150 active:scale-95 disabled:active:scale-100"
               aria-label={t("next-page", { defaultValue: "Next page" })}
             >
               <ChevronRight className="w-4 h-4" />
@@ -382,7 +385,7 @@ export function BlogList({ initialPosts, filtersOpen = false }: BlogListProps) {
             <button
               onClick={() => goToPage(totalPages)}
               disabled={safePage === totalPages}
-              className="p-2 rounded-lg text-site-text-dim hover:text-site-text hover:bg-site-surface disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+              className="p-2 rounded-lg text-site-text-dim hover:text-site-text hover:bg-site-surface disabled:opacity-20 disabled:cursor-not-allowed transition-[transform,color,background-color] duration-150 active:scale-95 disabled:active:scale-100"
               aria-label={t("last-page", { defaultValue: "Last page" })}
             >
               <ChevronsRight className="w-4 h-4" />

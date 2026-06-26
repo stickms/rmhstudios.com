@@ -257,7 +257,7 @@ export function BookReader({ book }: { book: LibraryBook }) {
   return (
     <main className="vibe-screen lib-reader">
       <header className="lib-reader__bar">
-        <Link to="/library" aria-label={t("back-to-library", { defaultValue: "Back to library" })} className="vibe-toolbar__icon">
+        <Link to="/library" aria-label={t("back-to-library", { defaultValue: "Back to library" })} className="vibe-toolbar__icon transition-transform duration-150 active:scale-90">
           <ArrowLeft size={17} />
         </Link>
         <span className="lib-reader__title" title={book.title}>
@@ -294,7 +294,7 @@ export function BookReader({ book }: { book: LibraryBook }) {
           {status === 'ready' && (
             <button
               type="button"
-              className={`vibe-toolbar__icon${bookmarked ? ' is-on' : ''}`}
+              className={`vibe-toolbar__icon transition-transform duration-150 active:scale-90${bookmarked ? ' is-on' : ''}`}
               onClick={toggleBookmark}
               aria-pressed={bookmarked}
               title={bookmarked ? t('remove-bookmark', { defaultValue: 'Remove bookmark' }) : t('add-bookmark', { defaultValue: 'Bookmark this page' })}
@@ -315,7 +315,7 @@ export function BookReader({ book }: { book: LibraryBook }) {
             />
           )}
           {status === 'ready' && <QualityMenu quality={quality} onChange={setQuality} />}
-          <a href={book.url} download className="vibe-toolbar__icon" aria-label={t("download-pdf", { defaultValue: "Download PDF" })}>
+          <a href={book.url} download className="vibe-toolbar__icon transition-transform duration-150 active:scale-90" aria-label={t("download-pdf", { defaultValue: "Download PDF" })}>
             <Download size={16} />
           </a>
         </div>
@@ -509,7 +509,7 @@ export function Dropdown({
     <div className="lib-reader__chapters" ref={ref}>
       <button
         type="button"
-        className={`vibe-toolbar__icon${on ? ' is-on' : ''}`}
+        className={`vibe-toolbar__icon transition-transform duration-150 active:scale-90${on ? ' is-on' : ''}`}
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="menu"
         aria-expanded={open}

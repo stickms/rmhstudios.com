@@ -335,7 +335,8 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
             <h2 className="font-bold text-site-text">{t("edit-profile", { defaultValue: "Edit Profile" })}</h2>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
+              aria-label={t("close", { defaultValue: "Close" })}
+              className="p-1.5 rounded-lg text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors active:scale-95"
             >
               <X className="w-5 h-5" />
             </button>
@@ -348,7 +349,8 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="relative group w-20 h-20 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-site-bg font-bold text-2xl ring-4 ring-site-bg shrink-0 overflow-hidden cursor-pointer"
+                aria-label={t("avatar-change-hint", { maxMb: MAX_AVATAR_MB, defaultValue: "Click to change avatar (max {{maxMb}} MB)" })}
+                className="relative group w-20 h-20 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-site-bg font-bold text-2xl ring-4 ring-site-bg shrink-0 overflow-hidden cursor-pointer transition-transform active:scale-95"
               >
                 {avatarPreview ? (
                   <img src={avatarPreview} alt={t("avatar-alt", { defaultValue: "Avatar" })} className="w-full h-full rounded-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }} />
@@ -371,7 +373,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
                 <button
                   type="button"
                   onClick={() => setShowResetConfirm(true)}
-                  className="flex items-center gap-1 text-xs text-site-text-dim hover:text-site-danger transition-colors"
+                  className="flex items-center gap-1 text-xs text-site-text-dim hover:text-site-danger transition-colors active:scale-95"
                   title={t("reset-avatar-title", { defaultValue: "Reset to default avatar" })}
                 >
                   <RotateCcw className="w-3 h-3" />
@@ -519,12 +521,15 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
               <button
                 type="button"
                 onClick={() => setShowLikes(!showLikes)}
-                className={`relative w-10 h-5 rounded-full transition-colors ${
+                role="switch"
+                aria-checked={showLikes}
+                aria-label={t("show-liked-posts", { defaultValue: "Show liked posts" })}
+                className={`relative w-10 h-5 rounded-full transition-colors duration-150 ${
                   showLikes ? 'bg-site-accent' : 'bg-site-surface border border-site-border'
                 }`}
               >
                 <span
-                  className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
+                  className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform duration-150 ${
                     showLikes ? 'translate-x-5' : ''
                   }`}
                 />
@@ -541,12 +546,15 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
                 <button
                   type="button"
                   onClick={() => setShowProfilePet(!showProfilePet)}
-                  className={`relative w-10 h-5 rounded-full transition-colors ${
+                  role="switch"
+                  aria-checked={showProfilePet}
+                  aria-label={t("profile-pet", { defaultValue: "Profile Pet" })}
+                  className={`relative w-10 h-5 rounded-full transition-colors duration-150 ${
                     showProfilePet ? 'bg-site-accent' : 'bg-site-surface border border-site-border'
                   }`}
                 >
                   <span
-                    className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
+                    className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform duration-150 ${
                       showProfilePet ? 'translate-x-5' : ''
                     }`}
                   />

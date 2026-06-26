@@ -532,11 +532,11 @@ export function ProfileColumn({ userId }: { userId: string }) {
             )}
           </div>
           <div className="flex items-center gap-2">
-            <Link to={`/store/${profile.handle || profile.id}` as string} title={t('storefront', { defaultValue: 'Storefront' })}>
+            <Link to={`/store/${profile.handle || profile.id}` as string} title={t('storefront', { defaultValue: 'Storefront' })} aria-label={t('storefront', { defaultValue: 'Storefront' })}>
               <Button
                 variant="outline"
                 size="sm"
-                className="rounded-lg border-site-border text-site-text hover:bg-site-surface"
+                className="rounded-lg border-site-border text-site-text hover:bg-site-surface active:scale-95"
               >
                 <Store className="w-4 h-4" />
               </Button>
@@ -546,7 +546,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
                 variant="outline"
                 size="sm"
                 onClick={() => setShowEdit(true)}
-                className="rounded-lg border-site-border text-site-text hover:bg-site-surface"
+                className="rounded-lg border-site-border text-site-text hover:bg-site-surface active:scale-95"
               >
                 {t('edit-profile', { defaultValue: 'Edit Profile' })}
               </Button>
@@ -556,8 +556,9 @@ export function ProfileColumn({ userId }: { userId: string }) {
                   variant="outline"
                   size="sm"
                   onClick={() => setTipOpen(true)}
-                  className="rounded-lg border-site-border text-site-text hover:bg-site-surface"
+                  className="rounded-lg border-site-border text-site-text hover:bg-site-surface active:scale-95"
                   title={t('send-a-tip', { defaultValue: 'Send a tip' })}
+                  aria-label={t('send-a-tip', { defaultValue: 'Send a tip' })}
                 >
                   <Coins className="w-4 h-4 text-amber-400" />
                 </Button>
@@ -565,8 +566,9 @@ export function ProfileColumn({ userId }: { userId: string }) {
                   variant="outline"
                   size="sm"
                   onClick={() => setGiftOpen(true)}
-                  className="rounded-lg border-site-border text-site-text hover:bg-site-surface"
+                  className="rounded-lg border-site-border text-site-text hover:bg-site-surface active:scale-95"
                   title={t('gift-a-membership', { defaultValue: 'Gift a membership' })}
+                  aria-label={t('gift-a-membership', { defaultValue: 'Gift a membership' })}
                 >
                   <Gift className="w-4 h-4 text-site-accent" />
                 </Button>
@@ -575,8 +577,9 @@ export function ProfileColumn({ userId }: { userId: string }) {
                   size="sm"
                   onClick={handleMessage}
                   disabled={messageSending}
-                  className="rounded-lg border-site-border text-site-text hover:bg-site-surface"
+                  className="rounded-lg border-site-border text-site-text hover:bg-site-surface active:scale-95"
                   title={t('message', { defaultValue: 'Message' })}
+                  aria-label={t('message', { defaultValue: 'Message' })}
                 >
                   <MessageCircle className="w-4 h-4" />
                 </Button>
@@ -584,7 +587,8 @@ export function ProfileColumn({ userId }: { userId: string }) {
                   variant={profile.isFollowing ? 'outline' : 'accent'}
                   size="sm"
                   onClick={handleFollowToggle}
-                  className={`rounded-lg ${profile.isFollowing ? 'border-site-border text-site-text hover:border-site-danger hover:text-site-danger hover:bg-site-danger/10' : ''}`}
+                  aria-pressed={profile.isFollowing}
+                  className={`rounded-lg active:scale-95 ${profile.isFollowing ? 'border-site-border text-site-text hover:border-site-danger hover:text-site-danger hover:bg-site-danger/10' : ''}`}
                 >
                   {profile.isFollowing ? t('following', { defaultValue: 'Following' }) : t('follow', { defaultValue: 'Follow' })}
                 </Button>
@@ -646,14 +650,14 @@ export function ProfileColumn({ userId }: { userId: string }) {
         <div className="flex items-center gap-4 text-sm">
           <button
             onClick={() => setSocialModal('following')}
-            className="hover:underline text-left"
+            className="hover:underline text-left transition-transform active:scale-95"
           >
             <span className="font-bold text-site-text">{profile.followingCount}</span>{' '}
             <span className="text-site-text-dim">{t('following-label', { defaultValue: 'Following' })}</span>
           </button>
           <button
             onClick={() => setSocialModal('followers')}
-            className="hover:underline text-left"
+            className="hover:underline text-left transition-transform active:scale-95"
           >
             <span className="font-bold text-site-text">{profile.followerCount}</span>{' '}
             <span className="text-site-text-dim">{t('followers-label', { defaultValue: 'Followers' })}</span>
@@ -675,24 +679,38 @@ export function ProfileColumn({ userId }: { userId: string }) {
         <div className="flex">
           <button
             onClick={() => handleTabChange('rmharks')}
-            className={`flex-1 py-3 text-center text-sm font-bold transition-colors ${
+            aria-pressed={tab === 'rmharks'}
+            className={`relative flex-1 py-3 text-center text-sm font-bold transition-colors duration-150 ${
               tab === 'rmharks'
-                ? 'text-site-accent border-b-2 border-site-accent'
+                ? 'text-site-accent'
                 : 'text-site-text-dim hover:text-site-text hover:bg-site-surface/50'
             }`}
           >
             RMHarks
+            <span
+              aria-hidden
+              className={`pointer-events-none absolute inset-x-0 bottom-0 h-0.5 origin-center bg-site-accent transition-transform duration-150 ${
+                tab === 'rmharks' ? 'scale-x-100' : 'scale-x-0'
+              }`}
+            />
           </button>
           {showLikesTab && (
             <button
               onClick={() => handleTabChange('likes')}
-              className={`flex-1 py-3 text-center text-sm font-bold transition-colors ${
+              aria-pressed={tab === 'likes'}
+              className={`relative flex-1 py-3 text-center text-sm font-bold transition-colors duration-150 ${
                 tab === 'likes'
-                  ? 'text-site-accent border-b-2 border-site-accent'
+                  ? 'text-site-accent'
                   : 'text-site-text-dim hover:text-site-text hover:bg-site-surface/50'
               }`}
             >
               {t('likes', { defaultValue: 'Likes' })}
+              <span
+                aria-hidden
+                className={`pointer-events-none absolute inset-x-0 bottom-0 h-0.5 origin-center bg-site-accent transition-transform duration-150 ${
+                  tab === 'likes' ? 'scale-x-100' : 'scale-x-0'
+                }`}
+              />
             </button>
           )}
         </div>

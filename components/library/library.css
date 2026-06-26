@@ -234,6 +234,13 @@
     0 4px 10px rgba(0, 0, 0, 0.5);
 }
 
+/* Tactile press feedback: a clicked book/collection tile settles back slightly. */
+.lib-book:active .lib-book__cover,
+.lib-coll-tile__btn:active .lib-book__cover {
+  transform: translateY(-4px) rotateY(-22deg) scale(0.985);
+  transition-duration: 120ms;
+}
+
 /* Cover image (rendered first page). Fills the cover, clipped to its rounded
    shape; the spine band + page badge sit on top. */
 .lib-book__cover.has-cover {
@@ -383,12 +390,13 @@
   padding: 4px 8px;
   border-radius: 7px;
   cursor: pointer;
-  transition: background 140ms ease, color 140ms ease;
+  transition: background 140ms ease, color 140ms ease, transform 140ms ease;
 }
 .lib-reader__count--btn:hover {
   color: #f5f5f7;
   background: rgba(255, 255, 255, 0.08);
 }
+.lib-reader__count--btn:active { transform: scale(0.95); }
 
 /* Inline page-number editor (replaces the counter while jumping). */
 .lib-reader__jump {
@@ -590,12 +598,13 @@
   background: none;
   color: rgba(245, 245, 247, 0.4);
   cursor: pointer;
-  transition: background 130ms ease, color 130ms ease;
+  transition: background 130ms ease, color 130ms ease, transform 130ms ease;
 }
 .lib-marks__del:hover {
   background: rgba(255, 90, 90, 0.2);
   color: #ff8585;
 }
+.lib-marks__del:active { transform: scale(0.9); }
 .lib-marks__compose {
   display: flex;
   flex-direction: column;
@@ -632,11 +641,12 @@
   font-size: 0.76rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background 130ms ease;
+  transition: background 130ms ease, transform 130ms ease;
 }
 .lib-marks__add:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.16);
 }
+.lib-marks__add:active:not(:disabled) { transform: scale(0.95); }
 .lib-marks__add:disabled {
   opacity: 0.4;
   cursor: default;
@@ -800,6 +810,9 @@
 }
 .lib-epub__theme:hover {
   transform: scale(1.08);
+}
+.lib-epub__theme:active {
+  transform: scale(0.92);
 }
 .lib-epub__theme.is-active {
   border-color: #ffcc4d;
@@ -1020,11 +1033,12 @@
   color: #fff;
   font-size: 0.78rem;
   cursor: pointer;
-  transition: background 140ms ease;
+  transition: background 140ms ease, transform 140ms ease;
 }
 .lib-collections__picker-btn:hover {
   background: rgba(255, 255, 255, 0.16);
 }
+.lib-collections__picker-btn:active { transform: scale(0.95); }
 .lib-collections__picker-btn.is-added {
   background: rgba(108, 192, 112, 0.18);
   border-color: rgba(108, 192, 112, 0.5);
@@ -1106,6 +1120,9 @@
 .lib-reader__nav:hover:not(:disabled) {
   background: rgba(44, 44, 48, 0.92);
 }
+.lib-reader__nav:active:not(:disabled) {
+  transform: translateY(-50%) scale(0.9);
+}
 .lib-reader__nav:disabled {
   opacity: 0;
   pointer-events: none;
@@ -1128,6 +1145,24 @@
   .lib-book:focus-visible .lib-book__cover {
     transform: translateY(-6px);
   }
+  /* Drop the tactile press-scale feedback when reduced motion is requested. */
+  .lib-book:active .lib-book__cover,
+  .lib-coll-tile__btn:active .lib-book__cover,
+  .lib-edit__btn:active:not(:disabled),
+  .lib-upload__btn:active:not(:disabled),
+  .lib-upload__open:active,
+  .lib-upload__close:active,
+  .lib-upload__row-remove:active:not(:disabled),
+  .lib-upload__addmore:active:not(:disabled),
+  .lib-collections__picker-btn:active,
+  .lib-marks__del:active,
+  .lib-marks__add:active:not(:disabled),
+  .lib-epub__theme:active {
+    transform: none;
+  }
+  .lib-reader__nav:active:not(:disabled) {
+    transform: translateY(-50%);
+  }
 }
 
 /* ── Upload: header button + modal ─────────────────────────────────────── */
@@ -1143,13 +1178,14 @@
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 999px;
   cursor: pointer;
-  transition: background 0.18s, border-color 0.18s;
+  transition: background 0.18s, border-color 0.18s, transform 0.15s ease;
   white-space: nowrap;
 }
 .lib-upload__open:hover {
   background: rgba(255, 255, 255, 0.12);
   border-color: rgba(255, 255, 255, 0.35);
 }
+.lib-upload__open:active { transform: scale(0.95); }
 @media (max-width: 520px) {
   .lib-upload__open-label { display: none; }
 }
@@ -1189,8 +1225,10 @@
   font-size: 22px;
   line-height: 1;
   cursor: pointer;
+  transition: color 140ms ease, transform 140ms ease;
 }
 .lib-upload__close:hover { color: #fff; }
+.lib-upload__close:active { transform: scale(0.9); }
 .lib-upload__drop {
   width: 100%;
   padding: 40px 20px;
@@ -1283,9 +1321,10 @@
   background: transparent;
   color: rgba(255, 255, 255, 0.6);
   cursor: pointer;
-  transition: background 140ms ease, color 140ms ease;
+  transition: background 140ms ease, color 140ms ease, transform 140ms ease;
 }
 .lib-upload__row-remove:hover:not(:disabled) { background: rgba(255, 90, 90, 0.18); color: #ff8585; }
+.lib-upload__row-remove:active:not(:disabled) { transform: scale(0.9); }
 .lib-upload__row-remove:disabled { opacity: 0.4; cursor: default; }
 .lib-upload__addmore {
   display: inline-flex;
@@ -1300,8 +1339,10 @@
   color: rgba(255, 255, 255, 0.75);
   font-size: 13px;
   cursor: pointer;
+  transition: background 140ms ease, transform 140ms ease;
 }
 .lib-upload__addmore:hover:not(:disabled) { background: rgba(255, 255, 255, 0.04); }
+.lib-upload__addmore:active:not(:disabled) { transform: scale(0.98); }
 .lib-upload__addmore:disabled { opacity: 0.4; cursor: default; }
 
 /* Storage-misconfigured warning (uploads won't persist). */
@@ -1385,8 +1426,10 @@
   background: transparent;
   color: #fff;
   cursor: pointer;
+  transition: background 140ms ease, color 140ms ease, transform 140ms ease;
 }
 .lib-upload__btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.08); }
+.lib-upload__btn:active:not(:disabled) { transform: scale(0.96); }
 .lib-upload__btn--primary { background: #fff; color: #000; border-color: #fff; }
 .lib-upload__btn--primary:hover:not(:disabled) { background: rgba(255, 255, 255, 0.85); }
 .lib-upload__btn:disabled { opacity: 0.5; cursor: default; }
@@ -1484,9 +1527,10 @@
   background: transparent;
   color: #f5f5f7;
   cursor: pointer;
-  transition: background 140ms ease, color 140ms ease;
+  transition: background 140ms ease, color 140ms ease, transform 140ms ease;
 }
 .lib-edit__btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.14); }
+.lib-edit__btn:active:not(:disabled) { transform: scale(0.92); }
 .lib-edit__btn:disabled { opacity: 0.35; cursor: default; }
 .lib-edit__btn.is-on { color: #ffcc4d; }
 .lib-edit__btn--danger:hover:not(:disabled) { background: rgba(255, 90, 90, 0.25); color: #ff8585; }

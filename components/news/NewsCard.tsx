@@ -26,12 +26,11 @@ export function NewsCard({ article, index }: NewsCardProps) {
         >
             <div
                 data-slot="card"
-                className="h-full bg-(--site-surface) border overflow-hidden hover:border-(--site-accent)/50 transition-all group relative flex flex-col"
+                className="h-full bg-(--site-surface) border overflow-hidden hover:border-(--site-accent)/50 hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.98] transition-[transform,border-color,box-shadow] duration-200 group relative flex flex-col"
                 style={{
                     borderRadius: 'var(--site-radius)',
                     borderWidth: 'var(--site-border-width)',
                     borderColor: 'var(--site-border)',
-                    transitionDuration: 'var(--site-transition-speed)',
                 }}
             >
                 <Link to={`/news/${article.slug}` as string} className="absolute inset-0 z-0" />
