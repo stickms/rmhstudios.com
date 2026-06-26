@@ -1,10 +1,22 @@
 // lib/cookgame/store.ts
 import { create } from 'zustand';
-import type { AdditiveId, BaseId, BuyerId, InventoryState, Product } from './types';
+import type { AdditiveId, BaseId, BuyerId, InventoryState, Product, BaseStockEntry } from './types';
 import { ADDITIVES, BUYERS } from './content';
 import { mix, effectSetKey } from './effects';
 import { buyerOffer, applyHeatOnSale, decayHeat, packageProduct } from './economy';
-import { SaveV1, CURRENT_VERSION, createNewSave, saveGame, loadGame } from './saveSystem';
+import { SaveState, CURRENT_VERSION, createNewSave, saveGame, loadGame } from './saveSystem';
+
+function sameStock(a: BaseStockEntry, b: BaseStockEntry): boolean {
+  return a.baseId === b.baseId && a.qualityMult === b.qualityMult &&
+    a.bonusEffects.length === b.bonusEffects.length &&
+    a.bonusEffects.every((e, i) => e === b.bonusEffects[i]);
+}
+
+function mergeStock(stock: BaseStockEntry[], entry: BaseStockEntry): BaseStockEntry[] {
+  const i = stock.findIndex((s) => sameStock(s, entry));
+  if (i === -1) return [...stock, entry];
+  return stock.map((s, idx) => (idx === i ? { ...s, units: s.units + entry.units } : s));
+}
 
 interface CookgameState {
   cash: number;
@@ -17,7 +29,7 @@ interface CookgameState {
 
   buyAdditive: (id: AdditiveId) => boolean;
   buyBase: (id: BaseId, price: number) => boolean;
-  loadBaseToBench: (id: BaseId) => boolean;
+  loadBaseToBench: (stockIndex: number) => boolean;
   mixIn: (additiveId: AdditiveId) => boolean;
   packageBench: () => boolean;
   sellUnit: (buyerId: BuyerId, packagedIndex: number, variance: number) => number;
@@ -30,7 +42,7 @@ interface CookgameState {
   resetGame: () => void;
 }
 
-const fromSave = (s: SaveV1) => ({
+const fromSave = (s: SaveState) => ({
   cash: s.cash, heat: s.heat, inventory: s.inventory, discoveredRecipes: s.discoveredRecipes,
 });
 
@@ -56,20 +68,24 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
     if (cash < price) return false;
     set({
       cash: cash - price,
-      inventory: { ...inventory, rawBases: { ...inventory.rawBases, [id]: (inventory.rawBases[id] ?? 0) + 1 } },
+      inventory: { ...inventory, baseStock: mergeStock(inventory.baseStock, { baseId: id, qualityMult: 1, bonusEffects: [], units: 1 }) },
     });
     return true;
   },
 
-  loadBaseToBench: (id) => {
+  loadBaseToBench: (stockIndex) => {
     const { inventory } = get();
     if (inventory.workProduct) return false;
-    if ((inventory.rawBases[id] ?? 0) <= 0) return false;
+    const entry = inventory.baseStock[stockIndex];
+    if (!entry || entry.units <= 0) return false;
+    const baseStock = inventory.baseStock
+      .map((s, i) => (i === stockIndex ? { ...s, units: s.units - 1 } : s))
+      .filter((s) => s.units > 0);
     set({
       inventory: {
         ...inventory,
-        rawBases: { ...inventory.rawBases, [id]: inventory.rawBases[id] - 1 },
-        workProduct: { baseId: id, effects: [] },
+        baseStock,
+        workProduct: { baseId: entry.baseId, effects: [...entry.bonusEffects], qualityMult: entry.qualityMult },
       },
     });
     return true;
