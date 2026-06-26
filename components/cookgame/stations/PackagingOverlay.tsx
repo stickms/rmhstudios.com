@@ -42,7 +42,14 @@ export function PackagingOverlay() {
               <span className="font-mono text-xs uppercase tracking-widest text-neutral-400">
                 On the bench
               </span>
-              <span className="font-mono text-lg text-lime-400">${productValue(workProduct)}</span>
+              <div className="flex items-center gap-2">
+                {workProduct.qualityMult !== undefined && workProduct.qualityMult !== 1 && (
+                  <span className="font-mono text-xs text-lime-400">
+                    Q {Math.round(workProduct.qualityMult * 100)}%
+                  </span>
+                )}
+                <span className="font-mono text-lg text-lime-400">${productValue(workProduct)}</span>
+              </div>
             </div>
             <EffectChips effects={workProduct.effects} />
             <button
@@ -74,6 +81,11 @@ export function PackagingOverlay() {
               >
                 <EffectChips effects={stack.product.effects} />
                 <div className="flex shrink-0 items-center gap-3">
+                  {stack.product.qualityMult !== undefined && stack.product.qualityMult !== 1 && (
+                    <span className="font-mono text-xs text-lime-400">
+                      Q {Math.round(stack.product.qualityMult * 100)}%
+                    </span>
+                  )}
                   <span className="font-mono text-sm text-lime-400">
                     ${productValue(stack.product)}
                   </span>

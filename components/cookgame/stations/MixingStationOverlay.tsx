@@ -1,7 +1,7 @@
 "use client";
 import { OverlayFrame } from '@/components/cookgame/ui/OverlayFrame';
 import { useCookgameStore } from '@/lib/cookgame/store';
-import { ADDITIVES, EFFECTS } from '@/lib/cookgame/content';
+import { ADDITIVES, BASES, EFFECTS } from '@/lib/cookgame/content';
 import { mix, productValue } from '@/lib/cookgame/effects';
 import type { AdditiveId, EffectId, Product } from '@/lib/cookgame/types';
 
@@ -28,7 +28,7 @@ export function MixingStationOverlay() {
   const activeOverlay = useCookgameStore((s) => s.activeOverlay);
   const workProduct = useCookgameStore((s) => s.inventory.workProduct);
   const additives = useCookgameStore((s) => s.inventory.additives);
-  const rawBases = useCookgameStore((s) => s.inventory.rawBases);
+  const baseStock = useCookgameStore((s) => s.inventory.baseStock);
 
   if (activeOverlay !== 'mixing') return null;
 
@@ -39,21 +39,47 @@ export function MixingStationOverlay() {
   const ownedAdditives = (Object.entries(additives) as [AdditiveId, number][]).filter(
     ([, count]) => count > 0,
   );
-  const greenStartOwned = rawBases['greenstart'] ?? 0;
 
   return (
     <OverlayFrame title="Mixing Bench">
       {!workProduct ? (
         <div className="space-y-3">
-          <button
-            onClick={() => loadBaseToBench('greenstart')}
-            disabled={greenStartOwned <= 0}
-            className="px-3 py-1.5 rounded bg-lime-600 hover:bg-lime-500 disabled:opacity-40 disabled:cursor-not-allowed text-sm font-medium"
-          >
-            Load Green Start
-          </button>
-          {greenStartOwned <= 0 && (
-            <p className="font-mono text-xs text-neutral-500">Buy a base at the Supplier first</p>
+          {baseStock.length === 0 ? (
+            <p className="font-mono text-xs text-neutral-500">
+              No base stock — buy Green Start at the Supplier or grow/cook your own.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {baseStock.map((entry, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between gap-3 rounded bg-neutral-800 px-3 py-2"
+                >
+                  <div className="flex flex-wrap items-center gap-2 min-w-0">
+                    <span className="text-sm font-medium">{BASES[entry.baseId].name}</span>
+                    <span className="font-mono text-xs text-neutral-500">×{entry.units}</span>
+                    <span className="font-mono text-xs text-lime-400">
+                      Q {Math.round(entry.qualityMult * 100)}%
+                    </span>
+                    {entry.bonusEffects.map((e) => (
+                      <span
+                        key={e}
+                        className="rounded-full px-2 py-0.5 font-mono text-xs text-black"
+                        style={{ backgroundColor: EFFECTS[e].color }}
+                      >
+                        {EFFECTS[e].name}
+                      </span>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => loadBaseToBench(index)}
+                    className="shrink-0 px-3 py-1.5 rounded bg-lime-600 hover:bg-lime-500 text-sm font-medium"
+                  >
+                    Load
+                  </button>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       ) : (
