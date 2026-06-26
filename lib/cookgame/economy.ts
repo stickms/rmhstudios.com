@@ -14,14 +14,14 @@ export function heatPenaltyFactor(heat: number): number {
   return 1 - 0.5 * (over / span); // 1 → 0.5 across the band
 }
 
-export function buyerOffer(product: Product, buyer: Buyer, heat: number, variance: number): number {
+export function buyerOffer(product: Product, buyer: Buyer, heat: number, variance: number, priceMult = 1): number {
   const base = productValue(product);
   const pref = product.effects.includes(buyer.preferredEffect) ? 1 + buyer.preferenceBonus : 1;
-  return Math.round(base * buyer.basePriceFactor * pref * heatPenaltyFactor(heat) * variance);
+  return Math.round(base * buyer.basePriceFactor * pref * heatPenaltyFactor(heat) * variance * priceMult);
 }
 
-export function applyHeatOnSale(heat: number): number {
-  return Math.min(MAX_HEAT, heat + HEAT_PER_SALE);
+export function applyHeatOnSale(heat: number, heatMult = 1): number {
+  return Math.min(MAX_HEAT, heat + HEAT_PER_SALE * heatMult);
 }
 
 export function decayHeat(heat: number, dtSeconds: number): number {

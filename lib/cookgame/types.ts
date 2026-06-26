@@ -33,6 +33,8 @@ export interface WetBatch { baseId: BaseId; quality: number; dryStartedAt: numbe
 export interface BaseStockEntry { baseId: BaseId; qualityMult: number; bonusEffects: EffectId[]; units: number; }
 export interface CookSession { baseId: BaseId; target: number[]; dials: number[]; }
 
+export interface RecipeMeta { name?: string; favorite?: boolean; bestValue?: number }
+
 export interface InventoryState {
   additives: Record<string, number>;
   inputs: Record<string, number>;

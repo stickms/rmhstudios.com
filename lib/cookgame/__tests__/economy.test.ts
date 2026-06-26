@@ -76,3 +76,19 @@ describe('packageProduct qualityMult', () => {
     expect(packageProduct(p).product.qualityMult).toBe(1.25);
   });
 });
+
+describe('perk hooks', () => {
+  const doug = BUYERS.find((b) => b.id === 'doug')!;
+  const p: Product = { baseId: 'greenstart', effects: ['energizing'] };
+  it('buyerOffer scales with priceMult (default 1 unchanged)', () => {
+    const base = buyerOffer(p, doug, 0, 1.0);
+    // priceMult and variance both sit inside the single Math.round, so they're interchangeable:
+    expect(buyerOffer(p, doug, 0, 1.0, 1.2)).toBe(buyerOffer(p, doug, 0, 1.2));
+    expect(buyerOffer(p, doug, 0, 1.0, 1.2)).toBeGreaterThan(base); // perk raises the offer
+    expect(buyerOffer(p, doug, 0, 1.0)).toBe(base);                 // default neutral
+  });
+  it('applyHeatOnSale scales the heat increment with heatMult', () => {
+    expect(applyHeatOnSale(0)).toBe(HEAT_PER_SALE);             // default neutral
+    expect(applyHeatOnSale(0, 0.5)).toBe(HEAT_PER_SALE * 0.5);
+  });
+});
