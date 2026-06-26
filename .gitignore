@@ -34,11 +34,22 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
+# NOTE: .env.production / .env.staging are now GENERATED at deploy time by
+# scripts/materialize-env.sh from deploy/config/public.env + the SOPS-encrypted
+# deploy/secrets/<env>.enc.env. They stay ignored — only the encrypted source
+# belongs in git.
 .env
 .env.local
 .env.development
 .env.production
 .env.staging
+
+# age / SOPS private keys — NEVER commit. The encrypted *.enc.env files in
+# deploy/secrets/ are safe to commit; the decryption key is not.
+*.agekey
+*.age.key
+keys.txt
+age-key*.txt
 
 # vercel
 .vercel

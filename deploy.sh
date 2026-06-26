@@ -455,6 +455,23 @@ if [ "$PRE_PULL_HASH" != "$POST_PULL_HASH" ] && [ -z "${DEPLOY_SELF_RESTARTED:-}
     exec bash "$DEPLOY_SCRIPT_PATH" "$ENVIRONMENT"
 fi
 
+# ── Step 1a: Materialize $ENV_FILE from git-managed secrets ──────────────────
+# Rebuild "$ENV_FILE" from version-controlled sources (plaintext public config +
+# SOPS-encrypted secrets) so the value consumed by every `--env-file` call below
+# is the one reviewed/merged in git — not a file hand-edited on the box.
+# No-op (leaves any existing "$ENV_FILE" untouched) if no encrypted file is
+# committed yet, so this is safe to ship ahead of the first `secrets.sh import`.
+# Requires SOPS_AGE_KEY_FILE in the deploy environment; see deploy/SECRETS.md.
+if [ -f "${REPO_DIR}/deploy/secrets/${ENVIRONMENT}.enc.env" ]; then
+    step_start "Materializing $ENV_FILE from git-managed secrets (SOPS)..."
+    if ! bash "${REPO_DIR}/scripts/materialize-env.sh" "$ENVIRONMENT"; then
+        log "ERROR: failed to materialize $ENV_FILE from secrets."
+        update_deploy_status fail "materialize-env failed"
+        exit 1
+    fi
+    step_done
+fi
+
 # ── Step 1c: (removed) Apache CDN asset permissions ──────────────────────────
 # Heavy static assets (/library, /music, /models, /sprites) used to be served
 # off disk by Apache, which needed world-read perms re-asserted every deploy.

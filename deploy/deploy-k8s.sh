@@ -45,7 +45,12 @@ cd "$REPO_DIR" || { echo "FATAL: cannot cd to $REPO_DIR"; exit 1; }
 exec 200>>"$LOCKFILE"
 flock -n 200 || { log "Another deploy is running. Exiting."; exit 0; }
 
-[ -f "$ENV_FILE" ] || { log "FATAL: $ENV_FILE missing"; exit 1; }
+# $ENV_FILE is either hand-maintained (legacy) or generated post-pull from the
+# committed SOPS secrets (Step 1a). Require at least one of the two to exist.
+if [ ! -f "$ENV_FILE" ] && [ ! -f "deploy/secrets/${ENVIRONMENT}.enc.env" ]; then
+    log "FATAL: neither $ENV_FILE nor deploy/secrets/${ENVIRONMENT}.enc.env present"
+    exit 1
+fi
 
 # ── Step 1: Pull latest ──────────────────────────────────────────────────────
 log "Fetching latest code..."
@@ -54,6 +59,17 @@ git checkout main 2>/dev/null || git checkout -b main origin/main
 git reset --hard origin/main
 GIT_SHA="$(git rev-parse --short HEAD)"
 log "Deploying $GIT_SHA"
+
+# ── Step 1a: Materialize $ENV_FILE from git-managed secrets ──────────────────
+# Rebuild $ENV_FILE from the just-pulled sources (plaintext public config + SOPS
+# secrets) before it feeds the build args (Step 2) and the cluster Secret (Step
+# 4). No-op if no encrypted file is committed yet (legacy hand-maintained file
+# is used). Requires SOPS_AGE_KEY_FILE in the deploy environment — see
+# deploy/SECRETS.md.
+if [ -f "deploy/secrets/${ENVIRONMENT}.enc.env" ]; then
+    log "Materializing $ENV_FILE from git-managed secrets (SOPS)..."
+    bash "${REPO_DIR}/scripts/materialize-env.sh" "$ENVIRONMENT"
+fi
 
 # ── Step 2: Build image via Compose (unchanged caching/build-args) ───────────
 log "Building image (docker compose build)..."

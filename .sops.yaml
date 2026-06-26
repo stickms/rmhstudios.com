@@ -1,0 +1,21 @@
+# SOPS configuration — how secrets in this repo are encrypted.
+# Docs: deploy/SECRETS.md
+#
+# `creation_rules` matches files by path. Anything under deploy/secrets/ ending
+# in `.enc.env` is encrypted as a dotenv file: KEYS stay readable, only VALUES
+# are encrypted — so a PR that adds/changes a secret shows a reviewable diff
+# (which key changed) without ever leaking the value.
+#
+# `age:` lists the PUBLIC keys that may decrypt. Add a recipient (CI, a second
+# operator, a new dev) by appending its public key and running:
+#   sops updatekeys deploy/secrets/production.enc.env
+#
+# ⚠ The key below is a THROWAWAY DEMO key shipped with the prototype. Replace it
+#   with your own (see deploy/SECRETS.md → "First-time setup") before storing
+#   any real secret.
+creation_rules:
+  - path_regex: deploy/secrets/.*\.enc\.env$
+    input_type: dotenv
+    output_type: dotenv
+    age: >-
+      age1l2ures3snweas07tpc3lecj7h8rgmlfq3kyx2dey8uljv8tua3as4r6nvh
