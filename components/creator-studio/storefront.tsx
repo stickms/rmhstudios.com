@@ -31,6 +31,9 @@ export type StoreItem = {
   description?: string;
   /** Cover/thumbnail. When absent we render a tinted gradient placeholder. */
   coverUrl?: string | null;
+  /** Optional wide (16:9) cover used for the hero, spotlight rail, and wide
+   *  mosaic tiles. Falls back to `coverUrl` then the placeholder if missing. */
+  wideCoverUrl?: string | null;
   /** Deterministic accent hue (0–359) for the gradient placeholder + glow. */
   hue?: number;
   /** Small pill in the art corner (status / category / like count node). */
@@ -148,20 +151,40 @@ function PrimaryWrapper({
   );
 }
 
-function Art({ item, eager = false }: { item: StoreItem; eager?: boolean }) {
-  // Cover thumbnails (vibe screenshots, build art) can 404 — e.g. a vibe page
-  // whose worker hasn't rendered its screenshot yet. Fall back to the tinted
-  // gradient placeholder instead of showing a broken image.
-  const [broken, setBroken] = useState(false);
-  const showImg = item.coverUrl && !broken;
-  return showImg ? (
+/** Pick the cover source for a context: landscape areas (hero, spotlight, wide
+ *  tiles) prefer the wide cover and fall back to the normal thumbnail. */
+function coverFor(item: StoreItem, landscape: boolean): { src?: string; fallbackSrc?: string } {
+  const wide = item.wideCoverUrl || undefined;
+  const normal = item.coverUrl || undefined;
+  if (landscape && wide) return { src: wide, fallbackSrc: normal };
+  return { src: normal };
+}
+
+function Art({
+  item,
+  src,
+  fallbackSrc,
+  eager = false,
+}: {
+  item: StoreItem;
+  src?: string;
+  fallbackSrc?: string;
+  eager?: boolean;
+}) {
+  // Covers can 404 — a vibe screenshot the worker hasn't rendered, or a wide
+  // build cover that hasn't been generated yet. Walk src → fallbackSrc → the
+  // tinted gradient placeholder instead of ever showing a broken image.
+  const candidates = [src, fallbackSrc].filter(Boolean) as string[];
+  const [idx, setIdx] = useState(0);
+  const current = idx < candidates.length ? candidates[idx] : null;
+  return current ? (
     <img
       className="store-art__img"
-      src={item.coverUrl ?? undefined}
+      src={current}
       alt=""
       loading={eager ? 'eager' : 'lazy'}
       decoding="async"
-      onError={() => setBroken(true)}
+      onError={() => setIdx((i) => i + 1)}
     />
   ) : (
     <div className="store-art__placeholder" style={{ backgroundImage: hueGradient(item.hue) }} aria-hidden="true">
@@ -189,7 +212,7 @@ function HeroCard({ item }: { item: StoreItem }) {
     <div className="store-hero" style={{ '--card-hue': String(item.hue ?? 220) } as React.CSSProperties}>
       <PrimaryWrapper item={item} className="store-hero__link" ariaLabel={item.title}>
         <div className="store-hero__art">
-          <Art item={item} eager />
+          <Art item={item} {...coverFor(item, true)} eager />
           <span className="store-hero__scrim" aria-hidden="true" />
         </div>
         <div className="store-hero__body">
@@ -215,7 +238,7 @@ function SpotlightCard({ item }: { item: StoreItem }) {
     <div className="store-spot">
       <PrimaryWrapper item={item} className="store-spot__link" ariaLabel={item.title}>
         <div className="store-art store-spot__art">
-          <Art item={item} />
+          <Art item={item} {...coverFor(item, true)} />
           {item.badge && <span className="store-art__badge">{item.badge}</span>}
           <span className="store-spot__glow" aria-hidden="true" />
         </div>
@@ -238,7 +261,7 @@ function MosaicCard({ item, wide, index }: { item: StoreItem; wide: boolean; ind
     >
       <PrimaryWrapper item={item} className="store-card__link" ariaLabel={item.title}>
         <div className="store-art store-card__art">
-          <Art item={item} />
+          <Art item={item} {...coverFor(item, wide)} />
           {item.badge && <span className="store-art__badge">{item.badge}</span>}
           <span className="store-card__glow" aria-hidden="true" />
           {item.description && <p className="store-card__hoverdesc">{item.description}</p>}

@@ -11,6 +11,7 @@
 
 import { games } from '@/lib/games';
 import { apps } from '@/lib/apps';
+import { getBuildCoverUrl } from '@/lib/builds/cover-manifest';
 
 export type CuratedKind = 'game' | 'app';
 
@@ -23,6 +24,9 @@ export type CuratedBuild = {
   longDescription: string;
   /** Thumbnail image path, or null. */
   thumbnailUrl: string | null;
+  /** Wide (16:9) AI-generated promotional cover for hero/landscape cards, or
+   *  null until generated (see scripts/generate-build-covers.ts). */
+  wideCoverUrl: string | null;
   /** Where the build actually lives (the playable/usable page). */
   href: string;
   cta: string;
@@ -54,6 +58,7 @@ export function listCuratedBuilds(): CuratedBuild[] {
       description: g.description,
       longDescription: g.longDescription,
       thumbnailUrl: g.imagePath ?? null,
+      wideCoverUrl: getBuildCoverUrl(g.id) ?? null,
       href: g.href,
       cta: g.cta,
       tags: g.tags,
@@ -71,6 +76,7 @@ export function listCuratedBuilds(): CuratedBuild[] {
       description: a.description,
       longDescription: a.longDescription,
       thumbnailUrl: a.imagePath ?? null,
+      wideCoverUrl: getBuildCoverUrl(a.id) ?? null,
       href: a.href,
       cta: a.cta,
       tags: a.tags,
