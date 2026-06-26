@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 
 /** Uniformly scale `obj` so its world-space bounding-box height becomes
- *  `targetHeight`. Robust to whatever units the Mixamo FBX→GLB conversion
- *  produced. Returns the scale applied (1 if the box has no height). */
+ *  `targetHeight`. Robust to whatever units the Mixamo FBX export uses
+ *  (~100×). Returns the scale applied (1 if the box has no height). */
 export function autoScaleToHeight(obj: THREE.Object3D, targetHeight: number): number {
     const box = new THREE.Box3().setFromObject(obj);
     const height = box.max.y - box.min.y;

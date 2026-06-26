@@ -130,6 +130,7 @@ export default function SkeletalFighter({ seat, framesRef, showNameplate = true 
     const dancing = useRef(false);
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
+            if (e.repeat) return;   // ignore OS key-repeat so holding G doesn't flicker
             if (e.key.toLowerCase() !== 'g') return;
             if (!framesRef.current.find((f) => f.seat === seat)?.isLocal) return;
             dancing.current = !dancing.current;

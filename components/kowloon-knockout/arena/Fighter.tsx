@@ -9,7 +9,7 @@ import SkeletalFighter from './SkeletalFighter';
 type FramesRef = MutableRefObject<RenderFighter[]>;
 
 /** Renders `fallback` if anything under it throws (e.g. a missing/failed
- *  fighter GLB) — keeps the match alive on the procedural StickFighter. */
+ *  fighter FBX) — keeps the match alive on the procedural StickFighter. */
 class FighterBoundary extends Component<{ fallback: ReactNode; children: ReactNode }, { error: boolean }> {
     state = { error: false };
     static getDerivedStateFromError() { return { error: true }; }
