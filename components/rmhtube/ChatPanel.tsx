@@ -6,7 +6,8 @@
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Send, Reply, Pin, X, SmilePlus, AtSign } from 'lucide-react';
+import { Send, Reply, Pin, X, SmilePlus, AtSign, Image as ImageIcon } from 'lucide-react';
+import { GifPicker } from '@/components/feed/GifPicker';
 import { emit } from '@/lib/rmhtube/socket';
 import { C2S } from '@/lib/rmhtube/events';
 import { useRmhTubeStore, getChatEntries } from '@/lib/rmhtube/store';
@@ -80,6 +81,7 @@ export default function ChatPanel() {
   const settings = store.settings;
 
   const [message, setMessage] = useState('');
+  const [showGifPicker, setShowGifPicker] = useState(false);
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [showMentionDropdown, setShowMentionDropdown] = useState(false);
   const [mentionFilter, setMentionFilter] = useState('');
@@ -543,6 +545,20 @@ export default function ChatPanel() {
         </div>
       )}
 
+      {/* GIF Picker */}
+      {showGifPicker && (
+        <div className="px-1.5 pb-2">
+          <GifPicker
+            onClose={() => setShowGifPicker(false)}
+            onSelect={(u) => {
+              setMessage((m) => (m ? `${m} ${u}` : u));
+              setShowGifPicker(false);
+              setTimeout(() => inputRef.current?.focus(), 0);
+            }}
+          />
+        </div>
+      )}
+
       {/* Input */}
       <form
         onSubmit={handleSend}
@@ -557,6 +573,14 @@ export default function ChatPanel() {
           placeholder={replyTo ? t("reply-to-placeholder", { defaultValue: "Reply to {{userName}}...", userName: replyTo.userName }) : t("type-a-message", { defaultValue: "Type a message..." })}
           className="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm border border-(--rmhtube-border) bg-(--rmhtube-bg) text-(--rmhtube-text) placeholder:text-(--rmhtube-text-dim) outline-none focus:ring-1 focus:ring-(--rmhtube-accent)"
         />
+        <button
+          type="button"
+          onClick={() => setShowGifPicker((v) => !v)}
+          aria-label={t("add-gif-aria", { defaultValue: "Add a GIF" })}
+          className="shrink-0 rounded-lg px-2 py-2 text-(--rmhtube-text-dim) hover:text-(--rmhtube-accent) transition-colors"
+        >
+          <ImageIcon className="h-4 w-4" />
+        </button>
         <button
           type="submit"
           disabled={!message.trim()}
