@@ -2,6 +2,7 @@
 
 import { useRef, useMemo, type MutableRefObject } from 'react';
 import { useFrame } from '@react-three/fiber';
+import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import type { RenderFighter } from '@/lib/kowloon-knockout/net/session';
 
@@ -23,7 +24,7 @@ function dampAngle(current: number, target: number, t: number): number {
  * so four fighters stay cheap. Local model space: +Z is "forward" (where the
  * fighter punches), +Y is up.
  */
-export default function StickFighter({ seat, framesRef }: { seat: number; framesRef: FramesRef }) {
+export default function StickFighter({ seat, framesRef, showNameplate = true }: { seat: number; framesRef: FramesRef; showNameplate?: boolean }) {
     const root = useRef<THREE.Group>(null);
     const body = useRef<THREE.Group>(null);
     const lArm = useRef<THREE.Group>(null);
@@ -39,6 +40,8 @@ export default function StickFighter({ seat, framesRef }: { seat: number; frames
     const colorHex = initial?.color ?? '#cccccc';
     const accentHex = initial?.accent ?? '#ffffff';
     const baseColor = useMemo(() => new THREE.Color(colorHex), [colorHex]);
+    const plateColor = initial?.isLocal ? '#ffcc00' : accentHex;
+    const plateLabel = `P${seat + 1}`;
 
     useFrame((state) => {
         const rf = framesRef.current.find((f) => f.seat === seat);
@@ -150,6 +153,16 @@ export default function StickFighter({ seat, framesRef }: { seat: number; frames
 
     return (
         <group ref={root}>
+            {/* Floating player nameplate (▼ + P-number) so everyone knows who's who */}
+            {showNameplate && (
+                <Html position={[0, 2.5, 0]} center distanceFactor={9} occlude={false} zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
+                    <div className="kk-nameplate" style={{ color: plateColor }}>
+                        <div className="kk-nameplate-tag">{plateLabel}</div>
+                        <div className="kk-nameplate-tri">▼</div>
+                    </div>
+                </Html>
+            )}
+
             {/* Blob shadow */}
             <mesh ref={shadow} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
                 <circleGeometry args={[0.42, 16]} />

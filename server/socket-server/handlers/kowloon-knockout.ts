@@ -17,6 +17,8 @@ const C2S = {
     JOIN_ROOM: 'kk:join_room',
     SET_FIGHTER: 'kk:set_fighter',
     SET_CONFIG: 'kk:set_config',
+    LIST_LOBBIES: 'kk:list_lobbies',
+    RETURN_LOBBY: 'kk:return_lobby',
     START: 'kk:start',
     INPUT: 'kk:input',
     SNAPSHOT: 'kk:snapshot',
@@ -26,6 +28,7 @@ const C2S = {
 const S2C = {
     ROOM_CREATED: 'kk:room_created',
     LOBBY_UPDATE: 'kk:lobby_update',
+    LOBBY_LIST: 'kk:lobby_list',
     MATCH_START: 'kk:match_start',
     INPUT: 'kk:input',
     SNAPSHOT: 'kk:snapshot',
@@ -51,6 +54,7 @@ interface KKRoom {
     arenaSize: number;     // 2..4 number of fighters
     maxRounds: number;
     state: 'lobby' | 'playing';
+    isPublic: boolean;     // listed on the versus page when true
     slots: (Slot | null)[]; // length MAX_SEATS, index = seat
 }
 
@@ -104,6 +108,10 @@ function clampArena(room: KKRoom, requested: number): number {
     return Math.max(lo, Math.min(MAX_SEATS, requested));
 }
 
+function occupiedCount(room: KKRoom): number {
+    return room.slots.filter((s): s is Slot => s !== null).length;
+}
+
 function emitLobby(room: KKRoom): void {
     const seats = roster(room);
     for (let i = 0; i < MAX_SEATS; i++) {
@@ -111,7 +119,8 @@ function emitLobby(room: KKRoom): void {
         if (!slot) continue;
         const sock = ioRef.sockets.sockets.get(slot.socketId);
         sock?.emit(S2C.LOBBY_UPDATE, {
-            you: i, hostSeat: 0, mode: room.mode, arenaSize: room.arenaSize, maxRounds: room.maxRounds, seats,
+            you: i, hostSeat: 0, code: room.code, isPublic: room.isPublic,
+            mode: room.mode, arenaSize: room.arenaSize, maxRounds: room.maxRounds, seats,
         });
     }
 }
@@ -156,6 +165,7 @@ function onCreateRoom(socket: Socket, payload: any): void {
         arenaSize: 2,
         maxRounds: 3,
         state: 'lobby',
+        isPublic: payload?.isPublic !== false, // public by default
         slots: [{ socketId: socket.id, className: payload?.fighterClass || DEFAULT_FIGHTER }, null, null, null],
     };
     rooms.set(code, room);
@@ -202,7 +212,33 @@ function onSetConfig(socket: Socket, payload: any): void {
     if (payload?.mode === 'ffa' || payload?.mode === 'teams') room.mode = payload.mode;
     if (typeof payload?.arenaSize === 'number') room.arenaSize = clampArena(room, payload.arenaSize);
     if (typeof payload?.maxRounds === 'number') room.maxRounds = Math.max(1, Math.min(5, payload.maxRounds));
+    if (typeof payload?.isPublic === 'boolean') room.isPublic = payload.isPublic;
     if (room.mode === 'teams' && room.arenaSize % 2 !== 0) room.mode = 'ffa';
+    emitLobby(room);
+}
+
+/** Send the caller the list of joinable public lobbies. */
+function onListLobbies(socket: Socket): void {
+    const lobbies = [];
+    for (const room of rooms.values()) {
+        if (room.state !== 'lobby' || !room.isPublic) continue;
+        const players = occupiedCount(room);
+        if (players >= MAX_SEATS) continue; // no free human slot
+        lobbies.push({
+            code: room.code, mode: room.mode, arenaSize: room.arenaSize,
+            players, host: room.slots[0]?.className ?? DEFAULT_FIGHTER,
+        });
+    }
+    socket.emit(S2C.LOBBY_LIST, { lobbies });
+}
+
+/** Return the whole room to the lobby after a match (any seated player can). */
+function onReturnLobby(socket: Socket): void {
+    const code = socketToRoom.get(socket.id);
+    if (!code) return;
+    const room = rooms.get(code);
+    if (!room || seatOf(room, socket.id) === -1) return;
+    room.state = 'lobby';
     emitLobby(room);
 }
 
@@ -263,6 +299,8 @@ export function registerKowloonKnockoutHandlers(io: Server, socket: Socket): voi
     socket.on(C2S.JOIN_ROOM, (p) => onJoinRoom(socket, p));
     socket.on(C2S.SET_FIGHTER, (p) => onSetFighter(socket, p));
     socket.on(C2S.SET_CONFIG, (p) => onSetConfig(socket, p));
+    socket.on(C2S.LIST_LOBBIES, () => onListLobbies(socket));
+    socket.on(C2S.RETURN_LOBBY, () => onReturnLobby(socket));
     socket.on(C2S.START, () => onStart(socket));
     socket.on(C2S.INPUT, (p) => onInput(socket, p));
     socket.on(C2S.SNAPSHOT, (p) => onSnapshot(socket, p));

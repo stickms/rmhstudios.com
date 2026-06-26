@@ -87,7 +87,7 @@ func codeFromCreate(t *testing.T, cap *capture) string {
 
 func TestKKCreateAndLobby(t *testing.T) {
 	m, hostID, hostCap, _, _ := newKKHarness(t)
-	m.CreateRoom(hostID, "ffa", "iron_bull")
+	m.CreateRoom(hostID, "ffa", "iron_bull", true)
 
 	created, _ := hostCap.last(kkRoomCreated)
 	if payloadField(t, created, "seat") != float64(0) {
@@ -116,7 +116,7 @@ func TestKKCreateAndLobby(t *testing.T) {
 
 func TestKKJoinAssignsSeat(t *testing.T) {
 	m, hostID, hostCap, guestID, guestCap := newKKHarness(t)
-	m.CreateRoom(hostID, "ffa", "stone_tiger")
+	m.CreateRoom(hostID, "ffa", "stone_tiger", true)
 	code := codeFromCreate(t, hostCap)
 	m.JoinRoom(guestID, code, "silver_viper")
 
@@ -141,7 +141,7 @@ func TestKKJoinErrors(t *testing.T) {
 		t.Fatalf("expected 'Room not found', got %+v ok=%v", e, ok)
 	}
 
-	m.CreateRoom(hostID, "ffa", "")
+	m.CreateRoom(hostID, "ffa", "", true)
 	code := codeFromCreate(t, hostCap)
 	// Fill seats 1..3, then a 5th connection must be rejected.
 	for i, id := range []string{guestID, "g2", "g3"} {
@@ -162,12 +162,12 @@ func TestKKJoinErrors(t *testing.T) {
 
 func TestKKSetConfig(t *testing.T) {
 	m, hostID, hostCap, guestID, _ := newKKHarness(t)
-	m.CreateRoom(hostID, "ffa", "")
+	m.CreateRoom(hostID, "ffa", "", true)
 	code := codeFromCreate(t, hostCap)
 	m.JoinRoom(guestID, code, "")
 
 	size := 4
-	m.SetConfig(hostID, nil, &size, nil)
+	m.SetConfig(hostID, nil, &size, nil, nil)
 	lobby, _ := hostCap.last(kkLobbyUpdate)
 	if len(seatsOf(t, lobby)) != 4 {
 		t.Fatalf("arena size should be 4 after SetConfig, got %d", len(seatsOf(t, lobby)))
@@ -176,7 +176,7 @@ func TestKKSetConfig(t *testing.T) {
 	// Guest cannot change config.
 	before := hostCap.count(kkLobbyUpdate)
 	two := 2
-	m.SetConfig(guestID, nil, &two, nil)
+	m.SetConfig(guestID, nil, &two, nil, nil)
 	if hostCap.count(kkLobbyUpdate) != before {
 		t.Error("non-host SetConfig should be a no-op")
 	}
@@ -184,7 +184,7 @@ func TestKKSetConfig(t *testing.T) {
 	// Teams with an odd arena size is coerced back to FFA.
 	teams := "teams"
 	three := 3
-	m.SetConfig(hostID, &teams, &three, nil)
+	m.SetConfig(hostID, &teams, &three, nil, nil)
 	lobby2, _ := hostCap.last(kkLobbyUpdate)
 	if payloadField(t, lobby2, "mode") != "ffa" {
 		t.Errorf("teams with odd size should fall back to ffa, got %v", payloadField(t, lobby2, "mode"))
@@ -193,7 +193,7 @@ func TestKKSetConfig(t *testing.T) {
 
 func TestKKStart(t *testing.T) {
 	m, hostID, hostCap, guestID, guestCap := newKKHarness(t)
-	m.CreateRoom(hostID, "ffa", "iron_bull")
+	m.CreateRoom(hostID, "ffa", "iron_bull", true)
 	code := codeFromCreate(t, hostCap)
 	m.JoinRoom(guestID, code, "silver_viper")
 
@@ -224,7 +224,7 @@ func TestKKStart(t *testing.T) {
 
 func TestKKInputRelay(t *testing.T) {
 	m, hostID, hostCap, guestID, _ := newKKHarness(t)
-	m.CreateRoom(hostID, "ffa", "")
+	m.CreateRoom(hostID, "ffa", "", true)
 	code := codeFromCreate(t, hostCap)
 	m.JoinRoom(guestID, code, "")
 
@@ -244,7 +244,7 @@ func TestKKInputRelay(t *testing.T) {
 
 func TestKKSnapshotRelay(t *testing.T) {
 	m, hostID, hostCap, guestID, guestCap := newKKHarness(t)
-	m.CreateRoom(hostID, "ffa", "")
+	m.CreateRoom(hostID, "ffa", "", true)
 	code := codeFromCreate(t, hostCap)
 	m.JoinRoom(guestID, code, "")
 
@@ -263,7 +263,7 @@ func TestKKSnapshotRelay(t *testing.T) {
 
 func TestKKHostLeaveDisbands(t *testing.T) {
 	m, hostID, hostCap, guestID, guestCap := newKKHarness(t)
-	m.CreateRoom(hostID, "ffa", "")
+	m.CreateRoom(hostID, "ffa", "", true)
 	code := codeFromCreate(t, hostCap)
 	m.JoinRoom(guestID, code, "")
 
@@ -281,7 +281,7 @@ func TestKKHostLeaveDisbands(t *testing.T) {
 
 func TestKKGuestLeaveFreesSeat(t *testing.T) {
 	m, hostID, hostCap, guestID, _ := newKKHarness(t)
-	m.CreateRoom(hostID, "ffa", "")
+	m.CreateRoom(hostID, "ffa", "", true)
 	code := codeFromCreate(t, hostCap)
 	m.JoinRoom(guestID, code, "")
 
@@ -301,5 +301,82 @@ func TestKKGuestLeaveFreesSeat(t *testing.T) {
 	m.Input(guestID, json.RawMessage(`[0,0,0,0]`))
 	if hostCap.count(kkInput) != before {
 		t.Error("stale guest input should not relay")
+	}
+}
+
+func TestKKLobbyUpdateHasCodeAndVisibility(t *testing.T) {
+	m, hostID, hostCap, _, _ := newKKHarness(t)
+	m.CreateRoom(hostID, "ffa", "", false) // private
+	lobby, ok := hostCap.last(kkLobbyUpdate)
+	if !ok {
+		t.Fatal("host did not receive kk:lobby_update")
+	}
+	if payloadField(t, lobby, "code") == "" {
+		t.Error("lobby_update should carry the room code")
+	}
+	if payloadField(t, lobby, "isPublic") != false {
+		t.Errorf("room should be private, got isPublic=%v", payloadField(t, lobby, "isPublic"))
+	}
+}
+
+func TestKKListLobbies(t *testing.T) {
+	m, hostID, hostCap, _, guestID2Cap := newKKHarness(t)
+	m.CreateRoom(hostID, "ffa", "iron_bull", true)
+	code := codeFromCreate(t, hostCap)
+
+	// A private room must not appear in the public list.
+	priv := &capture{}
+	m.reg.add("priv-host", priv.send)
+	m.CreateRoom("priv-host", "ffa", "", false)
+
+	lister := "lister"
+	m.reg.add(lister, guestID2Cap.send)
+	m.ListLobbies(lister)
+	list, ok := guestID2Cap.last(kkLobbyList)
+	if !ok {
+		t.Fatal("lister did not receive kk:lobby_list")
+	}
+	lobbies, _ := payloadField(t, list, "lobbies").([]any)
+	if len(lobbies) != 1 {
+		t.Fatalf("expected exactly 1 public lobby, got %d", len(lobbies))
+	}
+	l0 := lobbies[0].(map[string]any)
+	if l0["code"] != code || l0["host"] != "iron_bull" {
+		t.Errorf("unexpected lobby entry: %v", l0)
+	}
+
+	// Once the public room starts, it drops off the list.
+	m.Start(hostID)
+	m.ListLobbies(lister)
+	list2, _ := guestID2Cap.last(kkLobbyList)
+	lobbies2, _ := payloadField(t, list2, "lobbies").([]any)
+	if len(lobbies2) != 0 {
+		t.Fatalf("expected 0 listed lobbies after start, got %d", len(lobbies2))
+	}
+}
+
+func TestKKReturnLobby(t *testing.T) {
+	m, hostID, hostCap, guestID, guestCap := newKKHarness(t)
+	m.CreateRoom(hostID, "ffa", "", true)
+	code := codeFromCreate(t, hostCap)
+	m.JoinRoom(guestID, code, "")
+	m.Start(hostID)
+
+	// A guest returns the whole room to the lobby.
+	before := hostCap.count(kkLobbyUpdate)
+	m.ReturnLobby(guestID)
+	if hostCap.count(kkLobbyUpdate) <= before {
+		t.Error("host should receive a fresh lobby_update on return")
+	}
+	if _, ok := guestCap.last(kkLobbyUpdate); !ok {
+		t.Error("guest should receive a lobby_update on return")
+	}
+
+	// Room is joinable again.
+	lateCap := &capture{}
+	m.reg.add("late", lateCap.send)
+	m.JoinRoom("late", code, "")
+	if _, ok := lateCap.last(kkLobbyUpdate); !ok {
+		t.Error("room should be joinable again after returning to the lobby")
 	}
 }
