@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - **three stays at `^0.183.2`.** Verified available: drei `useGLTF`/`useAnimations`; `SkeletonUtils.clone` from `three/examples/jsm/utils/SkeletonUtils.js`; three `AnimationClip`/`VectorKeyframeTrack` instantiate and expose `.tracks[i].values` in node (so the pure helpers are node-testable).
-- **Asset contract (user-supplied, separate GLBs):** `public/kowloon/fighter/` holds `ybot.glb` + `idle.glb walk.glb jab.glb cross.glb hook.glb uppercut.glb block.glb hit.glb stunned.glb ko.glb`. Until present, every fighter must fall back to `StickFighter` (no regression). Mixamo `mixamorig:` skeleton; clips downloaded "Without Skin"; bone names may appear as `mixamorig:Hips` or `mixamorigHips` depending on conversion — match tolerantly.
+- **Asset contract (user-supplied, separate FBX — already present):** `public/kowloon/fighter/` holds `ybot.fbx` + `idle.fbx walk.fbx jab.fbx cross.fbx hook.fbx uppercut.fbx block.fbx hit.fbx stunned.fbx ko.fbx dance.fbx`. Loaded via `FBXLoader` (not GLTF). If any are missing, every fighter must fall back to `StickFighter` (no regression). Mixamo `mixamorig:` skeleton; bone names may appear as `mixamorig:Hips` or `mixamorigHips` — match tolerantly. `dance` is a render-only local emote (key G), never a sim state.
 - **Out of scope — do not edit:** `lib/kowloon-knockout/game/**`, `net/**`, `game/input.ts`, HUD, lobby, `PostFx.tsx`, and the Phase 2/3 arena files except `Arena3D.tsx` (the seat-map mount) and `StickFighter.tsx` (only to factor its nameplate/shadow into `FighterTrappings`).
 - **No React state in the per-frame fighter path** — drive transforms/mixer imperatively from `framesRef.current`, matching `StickFighter`.
 - **Naming:** new arena components use `'use client'` + named-default-export; pure modules live under `lib/kowloon-knockout/render/fighter/`.
@@ -498,7 +498,7 @@ git commit -m "refactor(kowloon): extract shared FighterTrappings (nameplate + s
 - Create: `components/kowloon-knockout/arena/SkeletalFighter.tsx`
 
 **Interfaces:**
-- Consumes: `CLIPS`, `CLIP_KEYS`, `FIGHTER_ASSET_DIR`, `RIG_FILE`, `ClipKey` (Task 1); `resolveClip` (Task 2); `stripRootMotionXZ` (Task 3); `autoScaleToHeight`, `findBone` (Task 4); `FighterTrappings` (Task 5); `useGLTF` (drei); `SkeletonUtils.clone`. Reads `RenderFighter` via `framesRef`. (Tier selection is the dispatcher's job — this component does not read the tier.)
+- Consumes: `CLIPS`, `CLIP_KEYS`, `FIGHTER_ASSET_DIR`, `RIG_FILE`, `ClipKey` (Task 1, now `.fbx` files + a `dance` clip); `resolveClip` (Task 2); `stripRootMotionXZ` (Task 3); `autoScaleToHeight`, `findBone` (Task 4); `FighterTrappings` (Task 5); `useLoader` (`@react-three/fiber`) + `FBXLoader` (`three/examples/jsm/loaders/FBXLoader.js`); `SkeletonUtils.clone`. Reads `RenderFighter` via `framesRef`. (Tier selection is the dispatcher's job — this component does not read the tier.) The assets already exist at `public/kowloon/fighter/*.fbx`.
 - Produces: `<SkeletalFighter seat framesRef showNameplate? />` — same prop shape as `StickFighter`.
 
 - [ ] **Step 1: Implement the skeletal renderer**
@@ -508,10 +508,10 @@ Create `components/kowloon-knockout/arena/SkeletalFighter.tsx`. The structure mi
 ```tsx
 'use client';
 
-import { useMemo, useRef, type MutableRefObject } from 'react';
-import { useFrame } from '@react-three/fiber';
-import { useGLTF } from '@react-three/drei';
+import { useMemo, useRef, useEffect, type MutableRefObject } from 'react';
+import { useFrame, useLoader } from '@react-three/fiber';
 import * as THREE from 'three';
+import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import type { RenderFighter } from '@/lib/kowloon-knockout/net/session';
 import { CLIPS, CLIP_KEYS, FIGHTER_ASSET_DIR, RIG_FILE, type ClipKey } from '@/lib/kowloon-knockout/render/fighter/clips';
@@ -540,10 +540,10 @@ function dampAngle(current: number, target: number, t: number): number {
 }
 
 export default function SkeletalFighter({ seat, framesRef, showNameplate = true }: { seat: number; framesRef: FramesRef; showNameplate?: boolean }) {
-    // Shared, cached loads. useGLTF suspends; a missing file throws → the
-    // Fighter dispatcher's ErrorBoundary falls back to StickFighter.
-    const rig = useGLTF(RIG_URL);
-    const clipGltfs = useGLTF(CLIP_URLS); // array, one per CLIP_URLS entry
+    // Shared, cached loads via FBXLoader. useLoader suspends; a missing file
+    // throws → the Fighter dispatcher's ErrorBoundary falls back to StickFighter.
+    const rig = useLoader(FBXLoader, RIG_URL);           // skinned Group
+    const clipScenes = useLoader(FBXLoader, CLIP_URLS);  // Group[], one per CLIP_URLS entry
 
     const initial = framesRef.current.find((f) => f.seat === seat);
     const colorHex = initial?.color ?? '#cccccc';
@@ -556,7 +556,7 @@ export default function SkeletalFighter({ seat, framesRef, showNameplate = true 
 
     // Per-seat clone of the rig + its own mixer + actions, built once.
     const { model, mixer, actions, bodyMats } = useMemo(() => {
-        const model = cloneSkeleton(rig.scene) as THREE.Group;
+        const model = cloneSkeleton(rig) as THREE.Group;
         autoScaleToHeight(model, TARGET_HEIGHT);
 
         // Identity: tint every skinned-mesh material (cloned so seats differ).
@@ -596,7 +596,7 @@ export default function SkeletalFighter({ seat, framesRef, showNameplate = true 
         const mixer = new THREE.AnimationMixer(model);
         const actions = {} as Record<ClipKey, THREE.AnimationAction>;
         CLIP_KEYS.forEach((key, i) => {
-            const clip = clipGltfs[i].animations[0];
+            const clip = clipScenes[i].animations[0];
             if (!clip) return;
             stripRootMotionXZ(clip);
             const action = mixer.clipAction(clip);
@@ -607,9 +607,21 @@ export default function SkeletalFighter({ seat, framesRef, showNameplate = true 
             actions[key] = action;
         });
         return { model, mixer, actions, bodyMats };
-    }, [rig.scene, clipGltfs, colorHex, accentHex]);
+    }, [rig, clipScenes, colorHex, accentHex]);
 
     const currentClip = useRef<ClipKey | null>(null);
+
+    // Local-only dance emote: pressing G toggles dancing. Applied only to the
+    // local fighter and only while idle (any real action overrides it). Purely
+    // cosmetic / client-side — it is NOT synced to other players.
+    const dancing = useRef(false);
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key.toLowerCase() === 'g') dancing.current = !dancing.current;
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, []);
 
     useFrame((state, deltaRaw) => {
         const rf = framesRef.current.find((f) => f.seat === seat);
@@ -623,8 +635,9 @@ export default function SkeletalFighter({ seat, framesRef, showNameplate = true 
         const faceY = Math.atan2(Math.cos(rf.yaw), Math.sin(rf.yaw));
         r.rotation.y = dampAngle(r.rotation.y, faceY, 0.4);
 
-        // Clip selection + crossfade.
-        const { clip } = resolveClip(rf);
+        // Clip selection (+ local dance-emote override) and crossfade.
+        let clip = resolveClip(rf).clip;
+        if (rf.isLocal && dancing.current && clip === 'idle') clip = 'dance';
         const next = actions[clip];
         if (next && currentClip.current !== clip) {
             const prev = currentClip.current ? actions[currentClip.current] : undefined;
@@ -657,27 +670,27 @@ export default function SkeletalFighter({ seat, framesRef, showNameplate = true 
 }
 ```
 
-> **Spike notes (browser-only verifiable; can't test until the user adds the GLBs):**
-> - `useGLTF(CLIP_URLS)` with an array returns an array of gltf results — confirm shape in-browser; if drei returns a single object for arrays in this version, switch to mapping individual `useGLTF` calls (one per clip) at the top level (fixed-length `CLIP_URLS`, so hook order is stable).
+> **Spike notes (browser-only verifiable):** The assets exist (`public/kowloon/fighter/*.fbx`), so this CAN be browser-verified, but not headlessly.
+> - `useLoader(FBXLoader, CLIP_URLS)` with an array path returns an array (one Group per url); each Mixamo FBX exposes its clip at `.animations[0]`. The rig (`ybot.fbx`) is itself the skinned `Group` (clone it directly — no `.scene`).
+> - Mixamo FBX loads at ~100× scale; `autoScaleToHeight` measures the bbox and normalizes to `TARGET_HEIGHT`, so it self-corrects. Tune `MODEL_YAW_OFFSET` if the model faces away from `+Z`.
 > - `SkeletonUtils.clone` is the documented way to clone a skinned mesh with an independent skeleton — verify each of the (≤4) fighters animates independently.
-> - `MODEL_YAW_OFFSET` and `TARGET_HEIGHT` are tuning constants — adjust during sign-off if the model faces the wrong way or is the wrong size.
-> - Mixamo clips export the mesh too when not "Without Skin"; we only read `animations[0]`, so extra meshes in a clip GLB are ignored.
-> - Do NOT preload via `useGLTF.preload` here — preloading a missing asset would throw outside the ErrorBoundary.
+> - Mixamo bone names may be `mixamorigHips` or `mixamorig:Hips` depending on the FBX; `findBone`/`stripRootMotionXZ` already match both.
+> - The `dance` clip (Gangnam Style) is loaded like any other; it is never returned by `resolveClip` — only the local G-toggle override plays it. Confirm pressing G makes only YOUR fighter dance, and that moving/punching cancels it.
 
 - [ ] **Step 2: Lint**
 
 Run: `node_modules/.bin/eslint components/kowloon-knockout/arena/SkeletalFighter.tsx`
-Expected: clean. (If TS complains `clipGltfs` could be non-array, narrow with `const gltfs = Array.isArray(clipGltfs) ? clipGltfs : [clipGltfs];` and map over that.)
+Expected: clean. (If TS infers `clipScenes` as a non-array union, narrow with `const scenes = Array.isArray(clipScenes) ? clipScenes : [clipScenes];` and map over `scenes`. `FBXLoader` may need a `// @ts-expect-error` only if the examples typing is missing — prefer importing the type cleanly first.)
 
-- [ ] **Step 3: [SMOKE] (RUN-OBSERVE, deferred to user — needs assets)**
+- [ ] **Step 3: [SMOKE] (RUN-OBSERVE, deferred to user)**
 
-After the user adds `public/kowloon/fighter/*.glb`: `pnpm dev` → match on a WebGPU desktop. Expected: Y-Bot fighters at the right size/facing, idling, walking, throwing the four punches, blocking, reacting to hits, and toppling on KO, each animating independently with neon tint + accessories. Mark deferred to user.
+The assets are already present (`public/kowloon/fighter/*.fbx`). `pnpm dev` → match on a WebGPU desktop. Expected: Y-Bot fighters at the right size/facing, idling, walking, throwing the four punches, blocking, reacting to hits, toppling on KO, each animating independently with neon tint + accessories; **pressing G makes your own fighter do the dance (and moving/punching cancels it)**. Mark deferred to user.
 
 - [ ] **Step 4: Commit**
 
 ```bash
 git add components/kowloon-knockout/arena/SkeletalFighter.tsx
-git commit -m "feat(kowloon): Y-Bot skeletal fighter renderer"
+git commit -m "feat(kowloon): Y-Bot skeletal fighter renderer (FBX) + local dance emote"
 ```
 
 ---
