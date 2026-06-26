@@ -7,7 +7,7 @@ import Environment from './Environment';
 import Skyline from './Skyline';
 import Atmosphere from './Atmosphere';
 import Lighting from './Lighting';
-import StickFighter from './StickFighter';
+import Fighter from './Fighter';
 import CameraRig from './CameraRig';
 import Fx from './Fx';
 import PostFx from './PostFx';
@@ -49,7 +49,7 @@ export default function Arena3D({ session, seatIds }: { session: GameSession; se
             <Fog />
 
             {seatIds.map((seat) => (
-                <StickFighter key={seat} seat={seat} framesRef={framesRef} />
+                <Fighter key={seat} seat={seat} framesRef={framesRef} />
             ))}
 
             <Fx session={session} />
