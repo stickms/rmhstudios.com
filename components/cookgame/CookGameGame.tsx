@@ -14,6 +14,7 @@ import { MixingStationOverlay } from './stations/MixingStationOverlay';
 import { PackagingOverlay } from './stations/PackagingOverlay';
 import { GrowPlotOverlay } from './stations/GrowPlotOverlay';
 import { DryingRackOverlay } from './stations/DryingRackOverlay';
+import { ChemistryStationOverlay } from './stations/ChemistryStationOverlay';
 import { HUD } from './ui/HUD';
 import { RecipeJournal } from './ui/RecipeJournal';
 import { MenuOverlay } from './ui/MenuOverlay';
@@ -87,6 +88,7 @@ export function CookGameGame() {
       <SellOverlay />
       <GrowPlotOverlay />
       <DryingRackOverlay />
+      <ChemistryStationOverlay />
       <RecipeJournal />
       <MenuOverlay />
     </div>
