@@ -1,3 +1,5 @@
+import type { GeneratedWorld as GenWorld, GenChapter as GenChapterData } from './gen/world-types';
+
 // ─── Word System ────────────────────────────────────────────────────────────
 
 export type PartOfSpeech = 'noun' | 'verb' | 'adjective' | 'adverb' | 'preposition' | 'conjunction' | 'pronoun' | 'interjection';
@@ -221,7 +223,11 @@ export interface CharacterAffinity {
 export type GameScreen =
   | 'menu'
   | 'settings'
+  | 'world_setup'
   | 'dialogue'
+  | 'gen_poem'
+  | 'cast'
+  | 'complete'
   | 'puzzle_word_select'
   | 'puzzle_line_arrange'
   | 'presentation'
@@ -274,6 +280,22 @@ export interface GameState {
   playtime: number;
   gameStarted: boolean;
   totalPoemsWritten: number;
+
+  // ─── Generated (seed-driven personalized) mode ─────────────────────────────
+  /** 'generated' = procedural seed-driven story; 'legacy' = the authored VN. */
+  mode: 'legacy' | 'generated';
+  /** Shareable seed code for the current generated world. */
+  seed: string;
+  /** The player's setup prompt (or '' for random). */
+  mcPrompt: string;
+  /** The generated world (cast, setting, route plan). Null in legacy mode. */
+  world: GenWorld | null;
+  /** Cache of generated chapters by index for the current world. */
+  generatedChapters: Record<number, GenChapterData>;
+  /** Current chapter index within the generated route. */
+  currentChapterIndex: number;
+  /** Log of player choices for story continuity (fed back into generation). */
+  genChoiceLog: { chapter: number; tone: string; text: string }[];
 }
 
 // ─── Save File ──────────────────────────────────────────────────────────────

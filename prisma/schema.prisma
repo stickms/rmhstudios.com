@@ -1004,6 +1004,41 @@ model VersecraftProgress {
   @@map("versecraft_progress")
 }
 
+// A generated, shareable "version" — one seed deterministically maps to one
+// world (cast, setting, route). Persisted so anyone with the seed replays the
+// exact same world, and so the (paid) DeepSeek generation is done once.
+model VersecraftWorld {
+  id        String   @id @default(cuid())
+  seed      String   @unique
+  mcPrompt  String   @default("")
+  source    String   @default("fallback") // 'ai' | 'fallback'
+  world     Json
+  createdBy String?
+  plays     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  chapters VersecraftGenChapter[]
+
+  @@index([createdAt(sort: Desc)])
+  @@map("versecraft_world")
+}
+
+// A generated chapter cached per (seed, index) so a version is fully replayable
+// and the DeepSeek call for each chapter happens at most once.
+model VersecraftGenChapter {
+  id      String @id @default(cuid())
+  seed    String
+  index   Int
+  source  String @default("fallback")
+  content Json
+
+  world VersecraftWorld @relation(fields: [seed], references: [seed], onDelete: Cascade)
+
+  @@unique([seed, index])
+  @@map("versecraft_gen_chapter")
+}
+
 // ─── Forest Explorer (Story Mode) ──────────────────────────────────
 
 model ForestExplorerSave {
