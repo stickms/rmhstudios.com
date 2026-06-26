@@ -85,13 +85,20 @@ function SkylineLayer({ instances }: { instances: ReturnType<typeof generateSkyl
     );
 }
 
-/** Neon-Kowloon backdrop: skyline towers + floating sign strips.
- *  Extracted from Environment so the arena stage and the backdrop evolve
- *  independently (Phase 2). Currently a verbatim move — parity with the
- *  previous in-Environment rendering. */
+/** Neon-Kowloon backdrop: skyline towers + animated sign strips.
+ *  ultra/high/medium render a tier-scaled instanced multi-layer skyline
+ *  (generateSkyline). low keeps the original static 46-tower layout below so it
+ *  stays pixel-parity with pre-Phase-2 `main` (the extraction's merge gate).
+ *  Signs animate per-index via NeonSign on every tier. */
 export default function Skyline() {
+    const { tier } = useRenderTier();
+    const layerCount = TIER_LAYERS[tier] ?? 0;
+
+    // Legacy static towers feed only the low branch; skip the work on tiers that
+    // render the instanced skyline instead (hook stays unconditional).
     const towers = useMemo(() => {
         const arr: { pos: [number, number, number]; size: [number, number, number]; color: string }[] = [];
+        if (layerCount > 0) return arr;
         const count = 46;
         for (let i = 0; i < count; i++) {
             const a = (i / count) * Math.PI * 2 + Math.random() * 0.1;
@@ -105,7 +112,7 @@ export default function Skyline() {
             });
         }
         return arr;
-    }, []);
+    }, [layerCount]);
 
     const signs = useMemo(() => {
         const arr: { pos: [number, number, number]; h: number; color: string }[] = [];
@@ -121,13 +128,11 @@ export default function Skyline() {
         return arr;
     }, []);
 
-    const { tier } = useRenderTier();
-    const layerCount = TIER_LAYERS[tier] ?? 0;
     const layers = useMemo(() => generateSkyline(SKYLINE_SEED, layerCount), [layerCount]);
 
-    // Higher tiers: instanced multi-layer skyline. The `signs` group from Task 2
-    // is rendered alongside it (signs are kept as individual meshes for Task 6's
-    // per-sign animation). Hooks above run every render regardless of branch.
+    // Higher tiers: instanced multi-layer skyline, with the animated signs
+    // rendered alongside (signs stay individual meshes for the per-sign flicker).
+    // All hooks above run every render regardless of which branch returns.
     if (layerCount > 0) {
         return (
             <group>

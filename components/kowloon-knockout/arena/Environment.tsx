@@ -30,10 +30,9 @@ export default function Environment() {
         if (!mesh || !reflection) return;
         const mat = mesh.material as THREE.MeshStandardNodeMaterial;
         // Blend the live reflection over the dark base albedo for a damp (not
-        // mirror) look; drop roughness so the neon reads as a wet glint.
+        // mirror) look. roughness/metalness are set via JSX props off the same
+        // flag so a re-render can't revert them out from under this node.
         mat.colorNode = mix(color(FLOOR_BASE), reflection, float(REFLECTION_STRENGTH));
-        mat.roughness = 0.08;
-        mat.metalness = 0.9;
         mat.needsUpdate = true;
         // The reflector's target orients the reflection plane; parenting it to
         // the (horizontal) floor mesh makes the plane track the floor.
@@ -58,7 +57,12 @@ export default function Environment() {
             {/* Arena floor */}
             <mesh ref={floorRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
                 <circleGeometry args={[ARENA_RADIUS, 48]} />
-                <meshStandardMaterial color={FLOOR_BASE} roughness={0.25} metalness={0.6} envMapIntensity={1.4} />
+                <meshStandardMaterial
+                    color={FLOOR_BASE}
+                    roughness={flags.reflection ? 0.08 : 0.25}
+                    metalness={flags.reflection ? 0.9 : 0.6}
+                    envMapIntensity={1.4}
+                />
             </mesh>
             {/* Inner glowing court line */}
             <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>

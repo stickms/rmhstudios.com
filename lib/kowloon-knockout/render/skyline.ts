@@ -16,6 +16,10 @@ function rng(seed: number): () => number {
     };
 }
 
+// Normalized-RGB mirror of NEON_PALETTE in arena/materials.ts (the palette's
+// single source of truth). Re-encoded here as plain tuples so this generator
+// stays free of a `three` import for headless unit testing — keep in sync if
+// the palette is retuned.
 const NEON: [number, number, number][] = [
     [1.0, 0.2, 0.4], [0.2, 0.8, 1.0], [1.0, 0.8, 0.0],
     [0.2, 1.0, 0.6], [0.8, 0.2, 1.0], [1.0, 0.4, 0.2],

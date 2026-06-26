@@ -16,8 +16,10 @@ function hash01(n: number): number {
     return ((t ^ (t >>> 16)) >>> 0) / 4294967296;
 }
 
-/** Per-sign animation parameters, stable per index so the TSL material graph
- *  in Skyline.tsx can desync each sign without storing per-frame state. */
+/** Per-sign animation parameters, stable per index so each sign in Skyline.tsx
+ *  desyncs from the others without storing per-frame state. Consumed CPU-side
+ *  in NeonSign's useFrame (phase/speed drive a Math.sin; pattern selects the
+ *  brightness curve). */
 export function signAnim(index: number): SignAnim {
     const a = hash01(index * 2 + 1);
     const b = hash01(index * 2 + 7);

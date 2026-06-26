@@ -15,13 +15,8 @@ interface Shaft {
 }
 
 /** Atmosphere layer (ultra/high only): additive neon light shafts leaning in
- *  from the ring, opacity flickered per-shaft in useFrame.
- *
- *  The shafts are plain additive cone meshes — no uncertain shader API — so the
- *  mood lands deterministically. Ground haze (a time-scrolled TSL soft-noise
- *  alpha plane) is a deliberate follow-up: it is browser-only verifiable and
- *  the one genuinely-novel TSL bit, so it is omitted here rather than shipped
- *  unverified (same headless-safe stance as the Skyline signage path). */
+ *  from the ring, opacity flickered per-shaft in useFrame. Plain additive cone
+ *  meshes — no shader. Ground haze (scrolling TSL noise alpha) is a follow-up. */
 export default function Atmosphere() {
     const { flags } = useRenderTier();
     const groupRef = useRef<THREE.Group>(null);
