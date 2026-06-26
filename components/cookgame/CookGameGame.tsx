@@ -9,7 +9,7 @@ import { Interactable } from './world/Interactable';
 import { InteractionPrompt } from './world/InteractionPrompt';
 import { BuyerNPC } from './npc/BuyerNPC';
 import { SellOverlay } from './npc/SellOverlay';
-import { SupplierShopOverlay } from './stations/SupplierShopOverlay';
+import { ShopOverlay } from './stations/ShopOverlay';
 import { MixingStationOverlay } from './stations/MixingStationOverlay';
 import { PackagingOverlay } from './stations/PackagingOverlay';
 import { GrowPlotOverlay } from './stations/GrowPlotOverlay';
@@ -82,7 +82,7 @@ export function CookGameGame() {
       {/* DOM overlays (outside the canvas) */}
       <HUD />
       <InteractionPrompt />
-      <SupplierShopOverlay />
+      <ShopOverlay />
       <MixingStationOverlay />
       <PackagingOverlay />
       <SellOverlay />
