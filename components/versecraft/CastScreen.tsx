@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { useGameStore } from '@/lib/versecraft/store';
 import { spriteUrl } from '@/lib/versecraft/sprites/registry';
+import { makePersonalizer } from '@/lib/versecraft/gen/personalize';
 import { ShareSeed } from './ShareSeed';
 
 const REL_LABELS = [
@@ -14,8 +15,10 @@ const REL_MAX = 1800;
 export function CastScreen() {
   const world = useGameStore(s => s.world);
   const affinity = useGameStore(s => s.affinity);
+  const settings = useGameStore(s => s.settings);
   const goBack = useGameStore(s => s.goBack);
   const setScreen = useGameStore(s => s.setScreen);
+  const personalize = makePersonalizer(settings.playerName, settings.playerPronouns, settings.customPronouns);
 
   if (!world) {
     return (
@@ -39,7 +42,7 @@ export function CastScreen() {
         <h1 className="text-2xl md:text-3xl text-center mb-1" style={{ fontFamily: 'var(--font-cinzel, serif)', color: '#e8e0d0' }}>
           {world.title}
         </h1>
-        <p className="text-center text-sm italic mb-6 px-2" style={{ color: '#a89888' }}>{world.premise}</p>
+        <p className="text-center text-sm italic mb-6 px-2" style={{ color: '#a89888' }}>{personalize(world.premise)}</p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
           {world.characters.map((c, i) => {

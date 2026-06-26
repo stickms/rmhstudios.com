@@ -62,6 +62,8 @@ function createDefaultSettings(): PlayerSettings {
   return {
     playerName: 'Ash',
     playerPronouns: 'they/them',
+    customPronouns: '',
+    attraction: 'everyone',
     characterPresentations: presentations,
     spritePack: 'default' as const,
     textSpeed: 'normal' as const,
@@ -111,23 +113,42 @@ const chapterInFlight = new Set<string>();
 function buildContextSummary(state: GameState & GameActions): string {
   const world = state.world;
   if (!world) return '';
+  const nameOf = (id: string) => world.characters.find(c => c.id === id)?.name ?? id;
+
   const past = Object.values(state.generatedChapters)
     .filter(c => c.index < state.currentChapterIndex)
     .sort((a, b) => a.index - b.index)
     .map(c => `Ch${c.index + 1} "${c.title}" (${c.emotionalGoal})`)
-    .slice(-6)
+    .slice(-8)
     .join('; ');
-  const choices = state.genChoiceLog.slice(-6).map(c => c.tone).join(', ');
-  const leaders = Object.entries(state.affinity)
+
+  // The most recent choices, with their narrative direction, so the next chapter
+  // actually follows the path the player set rather than just a tone average.
+  const recentChoices = state.genChoiceLog.slice(-4)
+    .map(c => c.direction ? `chose to ${c.direction}` : `answered ${c.tone}`)
+    .join('; ');
+
+  // Relationship standing per character (drives who leans in / pulls back).
+  const bonds = Object.entries(state.affinity)
+    .filter(([, a]) => a.affinity > 0)
     .sort((a, b) => b[1].affinity - a[1].affinity)
-    .slice(0, 2)
-    .map(([id]) => world.characters.find(c => c.id === id)?.name)
-    .filter(Boolean)
-    .join(' & ');
+    .slice(0, 3)
+    .map(([id, a]) => `${nameOf(id)} (closeness ${a.affinity})`)
+    .join(', ');
+
+  // Notable story flags the player set (e.g. last_move), excluding bookkeeping.
+  const flags = Object.entries(state.storyFlags)
+    .filter(([k]) => !k.startsWith('poem_') && k !== 'route_complete')
+    .slice(-5)
+    .map(([k, v]) => `${k}=${v}`)
+    .join(', ');
+
   return [
-    past && `Chapters played: ${past}.`,
-    choices && `Player has been answering: ${choices}.`,
-    leaders && `Player is closest to: ${leaders}.`,
+    `This is "${world.title}". ${world.premise}`,
+    past && `Chapters so far: ${past}.`,
+    recentChoices && `Recently the player ${recentChoices}.`,
+    bonds && `Closest bonds: ${bonds}.`,
+    flags && `Active flags: ${flags}.`,
   ].filter(Boolean).join(' ');
 }
 
@@ -282,6 +303,7 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
       : makeSeedCode(`${Date.now()}-${Math.random()}`);
     const name = playerName || get().settings.playerName || 'You';
     const pronouns = get().settings.playerPronouns;
+    const attraction = get().settings.attraction ?? 'everyone';
     set({ genLoading: true });
 
     // One round trip: world + opening scene together (server-first, persisted,
@@ -291,7 +313,7 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
     let openingChapter: GenChapter | null = null;
     let streamRest = false;
     try {
-      const res = await createWorldWithOpening(cleanSeed, prompt ?? '', pronouns);
+      const res = await createWorldWithOpening(cleanSeed, prompt ?? '', pronouns, attraction);
       if (res) {
         base = res.world;
         if (res.opening) { openingChapter = res.opening.chapter; streamRest = res.opening.partial; }
@@ -299,7 +321,7 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
     } catch { /* keep local fallback world */ }
 
     // Show the player's own name regardless of how the canonical world was made.
-    const world: GeneratedWorld = { ...base, seed: cleanSeed, mc: { ...base.mc, name } };
+    const world: GeneratedWorld = { ...base, seed: cleanSeed, mc: { ...base.mc, name, attraction: base.mc.attraction ?? attraction } };
     let ch0: GenChapter = openingChapter ?? fallbackChapter(world, 0);
     if (!ch0.scenes?.length) { ch0 = fallbackChapter(world, 0); streamRest = false; }
 
@@ -416,7 +438,7 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
       return {
         affinity: newAffinity,
         storyFlags: newFlags,
-        genChoiceLog: [...s.genChoiceLog, { chapter: s.currentChapterIndex, tone: choice.tone, text: choice.text }],
+        genChoiceLog: [...s.genChoiceLog, { chapter: s.currentChapterIndex, tone: choice.tone, text: choice.text, direction: choice.direction }],
         currentDialogueIndex: s.currentDialogueIndex + 1,
       };
     });

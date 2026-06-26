@@ -75,6 +75,28 @@ export const SETTINGS: SettingTemplate[] = [
     motifs: ['a missed cue', 'the ghost light', 'opening night', 'a torn script', 'the dark before the curtain'],
     toneTags: ['dramatic', 'raw', 'bittersweet'],
   },
+  {
+    id: 'late_night_radio',
+    keywords: ['radio', 'podcast', 'broadcast', 'dj', 'station', 'night', 'voice'],
+    title: 'Dead Air',
+    premise: '{mc} stumbles onto the college station\'s graveyard shift and joins the misfits who only feel real after midnight, talking to a city that may or may not be listening.',
+    setting: 'A barely-funded college radio station broadcasting from a cramped booth at 2am, where a handful of insomniacs say the things they can\'t say in daylight.',
+    environments: ['club_room', 'city', 'cafe', 'personal_room', 'school_hallway', 'school_stairs'],
+    roles: ['the host', 'the one who never sleeps', 'the engineer', 'the caller who keeps calling back', 'the new voice'],
+    motifs: ['the on-air light', 'a dedicated song', 'static between stations', 'a voice in the dark', 'the last hour before dawn'],
+    toneTags: ['nocturnal', 'intimate', 'wistful'],
+  },
+  {
+    id: 'film_society',
+    keywords: ['film', 'movie', 'camera', 'photo', 'cinema', 'director', 'shoot'],
+    title: 'The Long Take',
+    premise: '{mc} joins a college film society shooting a no-budget feature over one chaotic year, learning that the camera sees the things people try hardest to hide.',
+    setting: 'A scrappy college film society pouring everything into a movie that probably won\'t get finished, where the people behind the lens are the realest footage of all.',
+    environments: ['city', 'club_room', 'cafe', 'park', 'personal_room', 'forest', 'beach'],
+    roles: ['the director', 'the cinematographer', 'the lead nobody wanted to cast', 'the producer holding it together', 'the new crew member'],
+    motifs: ['the final cut', 'a rolling camera', 'the scene reshot too many times', 'a reel left undeveloped', 'golden hour'],
+    toneTags: ['restless', 'tender', 'aching'],
+  },
 ];
 
 export const NAMES: Record<'feminine' | 'masculine' | 'neutral', string[]> = {
@@ -97,6 +119,12 @@ export const ARCHETYPES = [
   { name: 'The Dreamer', personality: 'drifting and luminous, half-living in a world only they can see', emotionalDefault: 'joyful' },
   { name: 'The Loyal One', personality: 'steady and warm, the one who stays — until staying costs too much', emotionalDefault: 'happy' },
   { name: 'The Runaway', personality: 'restless and guarded, always halfway out the door', emotionalDefault: 'nervous' },
+  { name: 'The Caretaker', personality: 'endlessly responsible for everyone but themselves, running on fumes and refusing to admit it', emotionalDefault: 'tired' },
+  { name: 'The Firebrand', personality: 'fierce and uncompromising, principled to the point of self-destruction', emotionalDefault: 'confident' },
+  { name: 'The Golden One', personality: 'effortlessly admired, privately certain it is all a misunderstanding waiting to collapse', emotionalDefault: 'happy' },
+  { name: 'The Ghost', personality: 'present but unreachable, here in body while most of them is somewhere they will not name', emotionalDefault: 'thoughtful' },
+  { name: 'The Devotee', personality: 'intense and all-in, loving things harder than is safe and unable to do it any other way', emotionalDefault: 'blush' },
+  { name: 'The Cynic', personality: 'world-weary and dry, braced for disappointment so it can never land a clean hit', emotionalDefault: 'annoyed' },
 ] as const;
 
 export const SECRETS = [
@@ -112,17 +140,22 @@ export const SECRETS = [
   'is the family member nobody talks about — the one who was institutionalized',
   'is using the group to outrun an addiction that is winning',
   'survived something they\'ve never told a living soul, and it lives in everything they make',
+  'is secretly the one who caused the rift everyone else is still grieving',
+  'has been pretending to be someone they\'re not since the day they arrived',
+  'is running out of money, or time, or both, and telling no one',
+  'is in contact with the person everyone warned them to cut off',
+  'made a promise to someone now gone, and is bending their whole life to keep it',
 ];
 
 export const FEARS = [
   'being truly seen and found ordinary',
   'being left behind when everyone moves on',
-  'that they peaked already',
+  'having already peaked, with the best of them behind them',
   'silence — the kind that means no one\'s coming back',
   'becoming the person who hurt them',
-  'that they\'re only ever a supporting character in someone else\'s story',
-  'that the darkness they keep at bay will win the next time it comes',
-  'that they are fundamentally, unlovably broken',
+  'being only ever a supporting character in someone else\'s story',
+  'the darkness they keep at bay winning the next time it comes',
+  'being fundamentally, unlovably broken',
   'waking up one day having become their parent',
 ];
 
@@ -142,4 +175,9 @@ export const SPEECH_STYLES = [
   'speaks in warm, looping tangents that always circle back to you',
   'is formal and precise, betraying feeling only in pauses',
   'half-mumbles, trailing off, letting you fill in the rest',
+  'answers questions with questions, never quite landing on the truth',
+  'over-explains when nervous, then hates that they did',
+  'speaks in quotes, lyrics, and references, hiding behind other people\'s words',
+  'is gentle and slow, leaving long silences that dare you to fill them',
+  'swears affectionately and means the opposite of what they say',
 ];

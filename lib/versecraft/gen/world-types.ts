@@ -127,10 +127,14 @@ export const ENVIRONMENTS = [
 ] as const;
 export type Environment = (typeof ENVIRONMENTS)[number];
 
+export type Attraction = 'men' | 'women' | 'everyone' | 'none';
+
 export interface MCProfile {
   /** The player-character. Usually a college student unless the prompt says otherwise. */
   name: string;
   pronouns: Pronouns;
+  /** Who the MC is drawn to — shapes which characters carry romantic tension. */
+  attraction?: Attraction;
   premise: string;     // who the MC is in this world
   situation: string;   // why they're here / the inciting setup
 }
@@ -176,15 +180,25 @@ export type ChoiceTone = 'kind' | 'flirt' | 'guarded' | 'bold' | 'honest' | 'pla
 export interface GenChoice {
   text: string;
   tone: ChoiceTone;
+  /** A short, distinct narrative DIRECTION this option steers the story toward
+   *  ("open up about your own loss", "deflect with a joke", "walk away"). Logged
+   *  and fed back into generation so choices actually diverge the route. */
+  direction?: string;
   /** Affinity deltas keyed by character id. */
   affinity?: Record<string, number>;
   /** Story flags this choice sets. */
   flags?: Record<string, string | number | boolean>;
 }
 
+/** Sentinel speaker id for the player character speaking ALOUD (distinct from
+ *  narration/inner-thought, which is speaker=null). The renderer styles MC speech
+ *  in the player's own voice. */
+export const MC_SPEAKER = '__mc__';
+
 export interface GenNode {
   id: string;
-  /** Character id, or null for narration. */
+  /** A cast character id, MC_SPEAKER for the player talking, or null for
+   *  narration / the player's inner thoughts. */
   speaker: string | null;
   text: string;
   emotion?: Emotion;

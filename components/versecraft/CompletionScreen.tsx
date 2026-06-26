@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useGameStore } from '@/lib/versecraft/store';
 import { spriteUrl } from '@/lib/versecraft/sprites/registry';
+import { makePersonalizer } from '@/lib/versecraft/gen/personalize';
 import { ShareSeed } from './ShareSeed';
 
 const REL_LABELS = ['Stranger', 'Acquaintance', 'Familiar', 'Friendly', 'Close', 'Trusted', 'Confidant', 'Bonded', 'Devoted', 'Intimate', 'Soulbound'];
@@ -12,8 +13,10 @@ export function CompletionScreen() {
   const world = useGameStore(s => s.world);
   const affinity = useGameStore(s => s.affinity);
   const totalPoems = useGameStore(s => s.totalPoemsWritten);
+  const settings = useGameStore(s => s.settings);
   const startGeneratedGame = useGameStore(s => s.startGeneratedGame);
   const setScreen = useGameStore(s => s.setScreen);
+  const personalize = makePersonalizer(settings.playerName, settings.playerPronouns, settings.customPronouns);
 
   useEffect(() => { if (!world) setScreen('menu'); }, [world, setScreen]);
   if (!world) return null;
@@ -28,7 +31,7 @@ export function CompletionScreen() {
       <motion.div className="w-full max-w-lg text-center" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
         <div className="text-xs tracking-[0.4em] uppercase mb-3" style={{ color: '#c4a35a' }}>Your story ends</div>
         <h1 className="text-3xl md:text-4xl mb-2" style={{ fontFamily: 'var(--font-cinzel, serif)', color: '#e8e0d0' }}>{world.title}</h1>
-        <p className="text-sm italic mb-6" style={{ color: '#a89888' }}>{world.tagline}</p>
+        <p className="text-sm italic mb-6" style={{ color: '#a89888' }}>{personalize(world.tagline)}</p>
 
         {closest && (
           <div className="flex flex-col items-center mb-6">

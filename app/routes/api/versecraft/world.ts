@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { generateWorld, generateChapterOpening } from '@/lib/versecraft/gen/generate.server';
 import { normalizeSeed } from '@/lib/versecraft/gen/rng';
-import type { GeneratedWorld, GenChapter, Pronouns } from '@/lib/versecraft/gen/world-types';
+import type { GeneratedWorld, GenChapter, Pronouns, Attraction } from '@/lib/versecraft/gen/world-types';
 
 /** Build the opening payload for a world: prefer a cached full chapter 0,
  *  else a fast partial opening scene. Lets the client start in one round trip. */
@@ -40,7 +40,7 @@ export const Route = createFileRoute('/api/versecraft/world')({
           return Response.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(retryAfter) } });
         }
 
-        let body: { seed?: string; prompt?: string; playerName?: string; pronouns?: Pronouns; withOpening?: boolean };
+        let body: { seed?: string; prompt?: string; playerName?: string; pronouns?: Pronouns; attraction?: Attraction; withOpening?: boolean };
         try { body = await request.json(); } catch { return Response.json({ error: 'Invalid JSON' }, { status: 400 }); }
 
         const seed = normalizeSeed(body.seed ?? '');
@@ -66,7 +66,7 @@ export const Route = createFileRoute('/api/versecraft/world')({
 
         // Canonical worlds are name-agnostic ("You"); the client shows the
         // player's own name. Story stays identical for everyone on this seed.
-        const world: GeneratedWorld = await generateWorld(seed, prompt, 'You', body.pronouns ?? 'they/them');
+        const world: GeneratedWorld = await generateWorld(seed, prompt, 'You', body.pronouns ?? 'they/them', body.attraction ?? 'everyone');
 
         await prisma.versecraftWorld.upsert({
           where: { seed },

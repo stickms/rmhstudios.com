@@ -21,9 +21,14 @@ function preloadPack(packId: string) {
   }
 }
 import { asset } from '@/lib/storage/asset';
-import type { GenNode, GenScene, Emotion } from '@/lib/versecraft/gen/world-types';
+import { makePersonalizer } from '@/lib/versecraft/gen/personalize';
+import { MC_SPEAKER, type GenNode, type GenScene, type Emotion } from '@/lib/versecraft/gen/world-types';
 
 const BG_BASE = asset('/sprites/versecraft/backgrounds');
+
+// The player's own voice gets a cool, distinct accent so "you talking" never
+// reads like a cast member or like the italic inner-thought narration.
+const PLAYER_COLOR = '#8fb8de';
 
 const TIME_FILTERS: Record<string, string> = {
   morning: 'brightness(1.08) saturate(0.95)',
@@ -141,6 +146,13 @@ export function GeneratedDialogueScreen() {
   const charById = useCallback((id: string | null) =>
     id ? world?.characters.find(c => c.id === id) ?? null : null, [world]);
 
+  // Replace {mc}/{they}/… tokens with THIS player's name and pronouns at render,
+  // so shared/cached worlds still address everyone personally.
+  const personalize = useMemo(
+    () => makePersonalizer(settings.playerName, settings.playerPronouns, settings.customPronouns),
+    [settings.playerName, settings.playerPronouns, settings.customPronouns],
+  );
+
   const textSpeed = settings.textSpeed === 'instant' ? 0
     : settings.textSpeed === 'fast' ? 12
     : settings.textSpeed === 'slow' ? 48 : 26;
@@ -193,7 +205,11 @@ export function GeneratedDialogueScreen() {
   }, [handleClick]);
 
   const speaker = charById(node?.speaker ?? null);
-  const speakerColor = speaker?.color ?? '#c4a35a';
+  const isMC = node?.speaker === MC_SPEAKER;
+  const speakerColor = isMC ? PLAYER_COLOR : (speaker?.color ?? '#c4a35a');
+  // Someone is speaking ALOUD (cast member or the player) vs. narration/thought.
+  const isSpeech = isMC || !!speaker;
+  const chipName = isMC ? personalize('{mc}') : speaker?.name;
 
   if (!world || !chapter || !scene || !node) {
     return (
@@ -295,11 +311,11 @@ export function GeneratedDialogueScreen() {
           }}
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} key={node.id}
         >
-          {speaker && (
+          {isSpeech && chipName && (
             <div
-              className="inline-block px-3 py-1 rounded text-sm font-semibold mb-2"
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded text-sm font-semibold mb-2"
               style={{
-                backgroundColor: 'rgba(12,10,18,0.85)',
+                backgroundColor: isMC ? 'rgba(20,28,40,0.9)' : 'rgba(12,10,18,0.85)',
                 borderLeft: `3px solid ${speakerColor}`,
                 border: `1px solid ${speakerColor}`,
                 color: lighten(speakerColor),
@@ -307,19 +323,23 @@ export function GeneratedDialogueScreen() {
                 textShadow: '0 1px 3px rgba(0,0,0,0.7)',
               }}
             >
-              {speaker.name}
+              {isMC && <span className="text-[10px] uppercase tracking-wider opacity-70">you</span>}
+              {chipName}
             </div>
           )}
           <div
-            className="text-base md:text-lg leading-relaxed min-h-[3em]"
+            className={`text-base md:text-lg leading-relaxed min-h-[3em] ${isMC ? 'pl-3' : ''}`}
             style={{
-              fontFamily: speaker ? 'var(--font-nunito, sans-serif)' : 'var(--font-eb-garamond, serif)',
-              color: speaker ? '#f1ebdd' : '#c2b6a4',
-              fontStyle: speaker ? 'normal' : 'italic',
+              // Speech (cast or player) is upright sans-serif; narration / inner
+              // thought is italic serif — so "talking" never looks like "thinking".
+              fontFamily: isSpeech ? 'var(--font-nunito, sans-serif)' : 'var(--font-eb-garamond, serif)',
+              color: isMC ? '#dfe9f5' : speaker ? '#f1ebdd' : '#c2b6a4',
+              fontStyle: isSpeech ? 'normal' : 'italic',
+              borderLeft: isMC ? `2px solid ${PLAYER_COLOR}66` : undefined,
               textShadow: '0 1px 3px rgba(0,0,0,0.6)',
             }}
           >
-            <Typewriter text={node.text} speed={textSpeed} onDone={() => setTextComplete(true)} skipRef={skipRef} />
+            <Typewriter text={personalize(node.text)} speed={textSpeed} onDone={() => setTextComplete(true)} skipRef={skipRef} />
           </div>
 
           <AnimatePresence>
@@ -336,7 +356,7 @@ export function GeneratedDialogueScreen() {
                   >
                     {choice.tone === 'flirt' && <span className="mr-2 text-pink-400">♥</span>}
                     <span className="mr-2" style={{ color: '#c4a35a' }}>▸</span>
-                    {choice.text}
+                    {personalize(choice.text)}
                   </motion.button>
                 ))}
               </motion.div>
