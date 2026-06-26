@@ -1,21 +1,21 @@
 /**
  * Creator Studio · Builds surfaces.
  *
- * A grid of slightly-rounded cards (with the Library's staggered rise + a 3D
- * tilt-on-hover). Curated/Official builds (the RMH-made games + apps,
- * code-defined) are split into their own Games and Apps tabs via
- * `CuratedBuildsTab`; community submissions (from the DB) live in their own tab
- * via `UserBuildsTab` (with sorting, search, and lazy infinite-scroll
- * pagination). Ported from the former standalone /builds route. Each card links
- * to its detail page at /builds/$slug.
+ * Curated/Official builds (the RMH-made games + apps, code-defined) and the
+ * community submissions are both rendered through the shared Steam-style
+ * `Storefront`: a rotating hero, a featured spotlight rail, and a varied catalog
+ * mosaic. Curated builds are split into Games and Apps tabs via
+ * `CuratedBuildsTab`; community submissions live in their own tab via
+ * `UserBuildsTab` (with sorting, search, and lazy infinite-scroll pagination).
+ * Each card links to the playable page or the detail page at /builds/$slug.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
-import { Search, Plus, Heart, Info } from 'lucide-react';
+import { Search, Plus, Heart } from 'lucide-react';
 import type { CuratedBuild } from '@/lib/builds/curated';
-import { shelfRiseDelay } from '@/components/library/shelf';
+import { Storefront, type StoreItem } from '@/components/creator-studio/storefront';
 
 type UserSort = 'recent' | 'popular' | 'views';
 type CuratedSort = 'featured' | 'name';
@@ -40,121 +40,17 @@ function hueFor(s: string): number {
 }
 
 /**
- * Pointer-driven 3D tilt + a shared cursor highlight across the build cards.
- * Only on-screen cards are updated each frame; skipped for touch / reduced-motion.
- */
-function usePointerCards(gridRef: React.RefObject<HTMLDivElement | null>) {
-  useEffect(() => {
-    const grid = gridRef.current;
-    if (!grid) return;
-    if (
-      window.matchMedia('(hover: none)').matches ||
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    )
-      return;
-
-    const TILT = 16;
-    const GLOW_RADIUS = 540;
-    let px = 0;
-    let py = 0;
-    let raf = 0;
-
-    const reset = (inner: HTMLElement) => {
-      inner.style.removeProperty('--rx');
-      inner.style.removeProperty('--ry');
-      inner.style.removeProperty('--lift');
-      inner.style.setProperty('--glow', '0');
-    };
-
-    const visible = new Set<HTMLElement>();
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          const el = e.target as HTMLElement;
-          if (e.isIntersecting) {
-            visible.add(el);
-          } else {
-            visible.delete(el);
-            reset(el);
-          }
-        }
-      },
-      { rootMargin: '120px' },
-    );
-
-    const observed = new WeakSet<Element>();
-    const observeAll = () => {
-      grid.querySelectorAll<HTMLElement>('.builds-card__inner').forEach((el) => {
-        if (!observed.has(el)) {
-          observed.add(el);
-          io.observe(el);
-        }
-      });
-    };
-    observeAll();
-    const mo = new MutationObserver(observeAll);
-    mo.observe(grid, { childList: true, subtree: true });
-
-    const frame = () => {
-      raf = 0;
-      visible.forEach((inner) => {
-        const r = inner.getBoundingClientRect();
-        inner.style.setProperty('--mx', `${((px - r.left) / r.width) * 100}%`);
-        inner.style.setProperty('--my', `${((py - r.top) / r.height) * 100}%`);
-
-        const cx = r.left + r.width / 2;
-        const cy = r.top + r.height / 2;
-        const glow = Math.max(0, 1 - Math.hypot(px - cx, py - cy) / GLOW_RADIUS);
-        inner.style.setProperty('--glow', glow.toFixed(3));
-
-        const inside = px >= r.left && px <= r.right && py >= r.top && py <= r.bottom;
-        if (inside) {
-          const dx = (px - r.left) / r.width - 0.5;
-          const dy = (py - r.top) / r.height - 0.5;
-          inner.style.setProperty('--ry', `${dx * TILT}deg`);
-          inner.style.setProperty('--rx', `${-dy * TILT}deg`);
-          inner.style.setProperty('--lift', '1');
-        } else {
-          inner.style.setProperty('--rx', '0deg');
-          inner.style.setProperty('--ry', '0deg');
-          inner.style.setProperty('--lift', '0');
-        }
-      });
-    };
-
-    const onMove = (e: PointerEvent) => {
-      px = e.clientX;
-      py = e.clientY;
-      if (!raf) raf = requestAnimationFrame(frame);
-    };
-    const onLeave = () => {
-      if (raf) cancelAnimationFrame(raf);
-      raf = 0;
-      visible.forEach(reset);
-    };
-
-    grid.addEventListener('pointermove', onMove, { passive: true });
-    grid.addEventListener('pointerleave', onLeave);
-    return () => {
-      grid.removeEventListener('pointermove', onMove);
-      grid.removeEventListener('pointerleave', onLeave);
-      if (raf) cancelAnimationFrame(raf);
-      io.disconnect();
-      mo.disconnect();
-    };
-  }, [gridRef]);
-}
-
-/**
  * Curated (official) builds for a single kind — used by both the Games and the
  * Apps tab. Handles its own search + sort over the pre-filtered list.
  */
 export function CuratedBuildsTab({
   curated,
+  seed,
   searchPlaceholder,
   emptyLabel,
 }: {
   curated: CuratedBuild[];
+  seed: number;
   searchPlaceholder?: string;
   emptyLabel?: string;
 }) {
@@ -177,50 +73,57 @@ export function CuratedBuildsTab({
     return list;
   }, [curated, query, sort]);
 
-  const gridRef = useRef<HTMLDivElement>(null);
-  usePointerCards(gridRef);
+  const items: StoreItem[] = useMemo(
+    () =>
+      view.map((b) => ({
+        id: b.id,
+        title: b.title,
+        description: b.description,
+        coverUrl: b.thumbnailUrl,
+        hue: b.hue,
+        tags: b.tags,
+        cta: b.cta,
+        badge: b.status || (b.kind === 'game' ? t('badge-game', { defaultValue: 'Game' }) : t('badge-app', { defaultValue: 'App' })),
+        href: b.href,
+        detailsTo: `/builds/${b.slug}`,
+        detailsLabel: t('build-details', { defaultValue: 'Build details' }),
+      })),
+    [view, t],
+  );
+
+  const toolbar = (
+    <div className="builds-toolbar">
+      <div className="builds-toolbar__right">
+        <div className="vibe-search">
+          <Search size={16} className="vibe-search__icon" aria-hidden="true" />
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={searchPlaceholder ?? t('search-builds-placeholder', { defaultValue: 'Search builds...' })}
+            aria-label={t('search-builds-label', { defaultValue: 'Search builds' })}
+            className="vibe-search__input"
+          />
+        </div>
+        <label className="builds-sort">
+          <span className="builds-sort__label">{t('sort-label', { defaultValue: 'Sort' })}</span>
+          <select value={sort} onChange={(e) => setSort(e.target.value as CuratedSort)} className="builds-sort__select">
+            <option value="featured">{t('sort-featured', { defaultValue: 'Featured' })}</option>
+            <option value="name">{t('sort-name-az', { defaultValue: 'Name (A–Z)' })}</option>
+          </select>
+        </label>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="lib">
-      <div className="builds-toolbar">
-        <div className="builds-toolbar__right">
-          <div className="vibe-search">
-            <Search size={16} className="vibe-search__icon" aria-hidden="true" />
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={searchPlaceholder ?? t('search-builds-placeholder', { defaultValue: 'Search builds...' })}
-              aria-label={t('search-builds-label', { defaultValue: 'Search builds' })}
-              className="vibe-search__input"
-            />
-          </div>
-          <label className="builds-sort">
-            <span className="builds-sort__label">{t('sort-label', { defaultValue: 'Sort' })}</span>
-            <select
-              value={sort}
-              onChange={(e) => setSort(e.target.value as CuratedSort)}
-              className="builds-sort__select"
-            >
-              <option value="featured">{t('sort-featured', { defaultValue: 'Featured' })}</option>
-              <option value="name">{t('sort-name-az', { defaultValue: 'Name (A–Z)' })}</option>
-            </select>
-          </label>
-        </div>
-      </div>
-
-      {view.length === 0 ? (
-        <p className="vibe-hint lib__empty">
-          {emptyLabel ?? t('empty-curated', { defaultValue: 'No builds match that search.' })}
-        </p>
-      ) : (
-        <div ref={gridRef} className="builds-grid" role="list">
-          {view.map((b, i) => (
-            <CuratedCard key={b.id} build={b} index={i} />
-          ))}
-        </div>
-      )}
-    </div>
+    <Storefront
+      items={items}
+      seed={seed}
+      featured={!query.trim() && sort === 'featured'}
+      toolbar={toolbar}
+      emptyLabel={emptyLabel ?? t('empty-curated', { defaultValue: 'No builds match that search.' })}
+    />
   );
 }
 
@@ -229,7 +132,7 @@ export function CuratedBuildsTab({
  * now promoted to its own Creator Studio tab. Fetches from /api/user-builds
  * with search, sort, and lazy infinite-scroll pagination.
  */
-export function UserBuildsTab() {
+export function UserBuildsTab({ seed }: { seed: number }) {
   const { t } = useTranslation('builds');
   const [query, setQuery] = useState('');
   const [userSort, setUserSort] = useState<UserSort>('recent');
@@ -277,9 +180,6 @@ export function UserBuildsTab() {
     }
   }, [loading, cursor, userSort, query]);
 
-  const gridRef = useRef<HTMLDivElement>(null);
-  usePointerCards(gridRef);
-
   const sentinelRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = sentinelRef.current;
@@ -294,150 +194,82 @@ export function UserBuildsTab() {
     return () => obs.disconnect();
   }, [cursor, loadMore]);
 
-  const isEmpty = loadedOnce && userItems.length === 0 && !loading;
-
-  return (
-    <div className="lib">
-      <div className="builds-toolbar">
-        <div className="builds-toolbar__right">
-          <div className="vibe-search">
-            <Search size={16} className="vibe-search__icon" aria-hidden="true" />
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={t('search-user-builds-placeholder', { defaultValue: 'Search user builds...' })}
-              aria-label={t('search-builds-label', { defaultValue: 'Search builds' })}
-              className="vibe-search__input"
-            />
-          </div>
-          <Link to="/user-builds/submit" className="builds-submit">
-            <Plus size={15} />
-            <span>{t('submit', { defaultValue: 'Submit' })}</span>
-          </Link>
-          <label className="builds-sort">
-            <span className="builds-sort__label">{t('sort-label', { defaultValue: 'Sort' })}</span>
-            <select
-              value={userSort}
-              onChange={(e) => setUserSort(e.target.value as UserSort)}
-              className="builds-sort__select"
-            >
-              <option value="recent">{t('sort-recent', { defaultValue: 'Recent' })}</option>
-              <option value="popular">{t('sort-most-liked', { defaultValue: 'Most liked' })}</option>
-              <option value="views">{t('sort-most-viewed', { defaultValue: 'Most viewed' })}</option>
-            </select>
-          </label>
-        </div>
-      </div>
-
-      {isEmpty ? (
-        <p className="vibe-hint lib__empty">
-          {query.trim()
-            ? t('empty-user-search', { defaultValue: 'No user builds match that search.' })
-            : t('empty-user-no-builds', { defaultValue: 'No user builds yet — be the first to submit one.' })}
-        </p>
-      ) : (
-        <div ref={gridRef} className="builds-grid" role="list">
-          {userItems.map((b, i) => (
-            <UserCard key={b.id} build={b} index={i} />
-          ))}
-        </div>
-      )}
-
-      <div ref={sentinelRef} aria-hidden="true" className="h-px w-full" />
-      {loading && <p className="vibe-hint vibe-gallery__loading">{t('loading', { defaultValue: 'Loading…' })}</p>}
-    </div>
-  );
-}
-
-function CardFace({
-  title,
-  description,
-  coverUrl,
-  badge,
-}: {
-  title: string;
-  description: string;
-  coverUrl: string | null;
-  badge?: React.ReactNode;
-}) {
-  return (
-    <>
-      <div className="builds-card__media">
-        <div className={`builds-card__inner ${coverUrl ? 'has-cover' : ''}`}>
-          {coverUrl ? (
-            <img className="builds-card__img" src={coverUrl} alt={title} loading="lazy" decoding="async" />
-          ) : (
-            <>
-              <span className="builds-card__placeholder">{title}</span>
-              <span className="builds-card__mark">RMH</span>
-            </>
-          )}
-          {badge && <span className="builds-card__badge">{badge}</span>}
-          {description && <span className="builds-card__desc">{description}</span>}
-        </div>
-      </div>
-      <div className="builds-card__meta">
-        <p className="builds-card__name">{title}</p>
-      </div>
-    </>
-  );
-}
-
-function CuratedCard({ build, index }: { build: CuratedBuild; index: number }) {
-  const { t } = useTranslation('builds');
-  return (
-    <div
-      className="builds-card"
-      role="listitem"
-      style={{ '--card-hue': String(build.hue), animationDelay: shelfRiseDelay(index) } as React.CSSProperties}
-    >
-      <a className="builds-card__primary" href={build.href} aria-label={t('open-build', { title: build.title, defaultValue: 'Open {{title}}' })}>
-        <CardFace
-          title={build.title}
-          description={build.description}
-          coverUrl={build.thumbnailUrl}
-          badge={build.status || (build.kind === 'game' ? t('badge-game', { defaultValue: 'Game' }) : t('badge-app', { defaultValue: 'App' }))}
-        />
-      </a>
-      <Link
-        to="/builds/$slug"
-        params={{ slug: build.slug }}
-        className="builds-card__details"
-        aria-label={t('details-for', { title: build.title, defaultValue: 'Details for {{title}}' })}
-        title={t('build-details', { defaultValue: 'Build details' })}
-      >
-        <Info size={15} />
-      </Link>
-    </div>
-  );
-}
-
-function UserCard({ build, index }: { build: UserBuildItem; index: number }) {
-  const { t } = useTranslation('builds');
-  return (
-    <Link
-      to="/builds/$slug"
-      params={{ slug: build.slug }}
-      className="builds-card"
-      role="listitem"
-      style={{ '--card-hue': String(hueFor(build.id)), animationDelay: shelfRiseDelay(index) } as React.CSSProperties}
-      aria-label={t('open-build', { title: build.title, defaultValue: 'Open {{title}}' })}
-    >
-      <CardFace
-        title={build.title}
-        description={build.description}
-        coverUrl={build.thumbnailUrl}
-        badge={
-          build.likeCount > 0 ? (
+  const items: StoreItem[] = useMemo(
+    () =>
+      userItems.map((b) => ({
+        id: b.id,
+        title: b.title,
+        description: b.description,
+        coverUrl: b.thumbnailUrl,
+        hue: hueFor(b.id),
+        tags: b.tags?.length ? b.tags : b.technologies,
+        cta: t('open', { defaultValue: 'Open' }),
+        to: `/builds/${b.slug}`,
+        badge:
+          b.likeCount > 0 ? (
             <span className="builds-likes">
-              <Heart size={10} className="builds-likes__icon" /> {build.likeCount}
+              <Heart size={10} className="builds-likes__icon" /> {b.likeCount}
             </span>
           ) : (
-            build.category?.name
-          )
+            b.category?.name
+          ),
+        meta:
+          b.viewCount > 0
+            ? t('views-count', { count: b.viewCount, defaultValue: '{{count}} views' })
+            : undefined,
+      })),
+    [userItems, t],
+  );
+
+  const isEmpty = loadedOnce && userItems.length === 0 && !loading;
+
+  const toolbar = (
+    <div className="builds-toolbar">
+      <div className="builds-toolbar__right">
+        <div className="vibe-search">
+          <Search size={16} className="vibe-search__icon" aria-hidden="true" />
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t('search-user-builds-placeholder', { defaultValue: 'Search user builds...' })}
+            aria-label={t('search-builds-label', { defaultValue: 'Search builds' })}
+            className="vibe-search__input"
+          />
+        </div>
+        <Link to="/user-builds/submit" className="builds-submit">
+          <Plus size={15} />
+          <span>{t('submit', { defaultValue: 'Submit' })}</span>
+        </Link>
+        <label className="builds-sort">
+          <span className="builds-sort__label">{t('sort-label', { defaultValue: 'Sort' })}</span>
+          <select value={userSort} onChange={(e) => setUserSort(e.target.value as UserSort)} className="builds-sort__select">
+            <option value="recent">{t('sort-recent', { defaultValue: 'Recent' })}</option>
+            <option value="popular">{t('sort-most-liked', { defaultValue: 'Most liked' })}</option>
+            <option value="views">{t('sort-most-viewed', { defaultValue: 'Most viewed' })}</option>
+          </select>
+        </label>
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      <Storefront
+        items={items}
+        seed={seed}
+        featured={!query.trim() && userSort === 'recent'}
+        toolbar={toolbar}
+        emptyLabel={
+          isEmpty
+            ? query.trim()
+              ? t('empty-user-search', { defaultValue: 'No user builds match that search.' })
+              : t('empty-user-no-builds', { defaultValue: 'No user builds yet — be the first to submit one.' })
+            : t('loading', { defaultValue: 'Loading…' })
         }
       />
-    </Link>
+      <div ref={sentinelRef} aria-hidden="true" className="h-px w-full" />
+      {loading && userItems.length > 0 && <p className="vibe-hint vibe-gallery__loading">{t('loading', { defaultValue: 'Loading…' })}</p>}
+    </>
   );
 }

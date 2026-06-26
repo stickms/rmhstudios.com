@@ -24,11 +24,12 @@ import { listVibePages } from '@/lib/rmhvibe/vibe.server';
 import { PagesTab, type VibeGallery } from '@/components/creator-studio/PagesTab';
 import { CuratedBuildsTab, UserBuildsTab } from '@/components/creator-studio/BuildsTab';
 import { RankedSummary } from '@/components/creator-studio/RankedSummary';
-import { PersonasColumn } from '@/components/feed/PersonasColumn';
+import { PersonasTab } from '@/components/creator-studio/PersonasTab';
 import '@/components/rmhvibe/vibe.css';
 import '@/components/library/library.css';
 import '@/components/builds/builds.css';
 import '@/components/creator-studio/creator-studio.css';
+import '@/components/creator-studio/storefront.css';
 
 const STUDIO_TABS = ['pages', 'games', 'apps', 'user-builds', 'personas'] as const;
 type StudioTab = (typeof STUDIO_TABS)[number];
@@ -54,13 +55,16 @@ export const Route = createFileRoute('/_site/create/')({
   loader: async () => ({
     gallery: await fetchGallery({ data: {} }),
     curated: listCuratedBuilds(),
+    // Fresh per load → each refresh re-advertises a different featured mix while
+    // staying deterministic between server render and client hydration.
+    seed: Math.floor(Math.random() * 1_000_000) + 1,
   }),
   component: CreatorStudio,
 });
 
 function CreatorStudio() {
   const { t } = useTranslation('feed');
-  const { gallery, curated } = Route.useLoaderData();
+  const { gallery, curated, seed } = Route.useLoaderData();
   const { tab = 'pages' } = Route.useSearch();
   const navigate = useNavigate();
 
@@ -127,7 +131,7 @@ function CreatorStudio() {
 
         {tab === 'pages' && (
           <div className="cstudio-body cstudio-body--pages">
-            <PagesTab initial={gallery} fetchGallery={fetchGallery} />
+            <PagesTab initial={gallery} seed={seed} fetchGallery={fetchGallery} />
           </div>
         )}
         {tab === 'games' && (
@@ -135,6 +139,7 @@ function CreatorStudio() {
             <RankedSummary />
             <CuratedBuildsTab
               curated={games}
+              seed={seed + 1}
               searchPlaceholder={t('search-games-placeholder', { defaultValue: 'Search games...' })}
               emptyLabel={t('empty-games', { defaultValue: 'No games match that search.' })}
             />
@@ -144,6 +149,7 @@ function CreatorStudio() {
           <div className="cstudio-body">
             <CuratedBuildsTab
               curated={apps}
+              seed={seed + 2}
               searchPlaceholder={t('search-apps-placeholder', { defaultValue: 'Search apps...' })}
               emptyLabel={t('empty-apps', { defaultValue: 'No apps match that search.' })}
             />
@@ -151,12 +157,12 @@ function CreatorStudio() {
         )}
         {tab === 'user-builds' && (
           <div className="cstudio-body">
-            <UserBuildsTab />
+            <UserBuildsTab seed={seed + 3} />
           </div>
         )}
         {tab === 'personas' && (
           <div className="cstudio-body">
-            <PersonasColumn hideHeader />
+            <PersonasTab seed={seed + 4} />
           </div>
         )}
       </AnimatedMain>
