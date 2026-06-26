@@ -22,6 +22,7 @@ export const RANKS: Rank[] = [
 
 export function rankForXp(xp: number): Rank {
   let result = RANKS[0];
+  // RANKS is sorted ascending by xpThreshold (asserted in tests); break on first miss.
   for (const r of RANKS) {
     if (xp >= r.xpThreshold) result = r;
     else break;

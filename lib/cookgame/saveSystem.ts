@@ -1,4 +1,4 @@
-import type { InventoryState, BaseStockEntry } from './types';
+import type { InventoryState, BaseStockEntry, RecipeMeta } from './types';
 import { emptyPlot } from './cultivation';
 
 export const STORAGE_KEY = 'cookgame-save-v1'; // storage key unchanged; payload self-describes version
@@ -14,7 +14,7 @@ export interface SaveV3 {
   keys: string[];
   clock: number;
   discoveredEffects: string[];
-  recipeMeta: Record<string, { name?: string; favorite?: boolean; bestValue?: number }>;
+  recipeMeta: Record<string, RecipeMeta>;
   currentDistrict: string;
   inventory: InventoryState;
   discoveredRecipes: string[];
@@ -24,7 +24,7 @@ export type SaveState = SaveV3;
 const PHASE3_DEFAULTS = () => ({
   xp: 0, ownedPropertyTier: 0, keys: [] as string[], clock: 0,
   discoveredEffects: [] as string[],
-  recipeMeta: {} as Record<string, { name?: string; favorite?: boolean; bestValue?: number }>,
+  recipeMeta: {} as Record<string, RecipeMeta>,
   currentDistrict: 'suburbs',
 });
 

@@ -1,6 +1,6 @@
 // lib/cookgame/store.ts
 import { create } from 'zustand';
-import type { AdditiveId, BaseId, BuyerId, InputId, InventoryState, Product, BaseStockEntry, CookSession } from './types';
+import type { AdditiveId, BaseId, BuyerId, InputId, InventoryState, Product, BaseStockEntry, CookSession, RecipeMeta } from './types';
 import { cookQuality, cookOutput, DIAL_COUNT } from './chemistry';
 import { ADDITIVES, BUYERS, INPUTS, GROWABLE } from './content';
 import { mix, effectSetKey } from './effects';
@@ -34,7 +34,7 @@ interface CookgameState {
   keys: string[];
   clock: number;
   discoveredEffects: string[];
-  recipeMeta: Record<string, { name?: string; favorite?: boolean; bestValue?: number }>;
+  recipeMeta: Record<string, RecipeMeta>;
   currentDistrict: string;
   nearbyInteractable: string | null;
   activeOverlay: string | null;
@@ -262,6 +262,7 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
   },
 
   collectDried: (batchIndex, now) => {
+    // XP for production is intentionally awarded at harvest (not here) to avoid double-counting one grow cycle.
     const { inventory } = get();
     const batch = inventory.dryingRack[batchIndex];
     if (!batch || !canCollect(batch, now)) return false;

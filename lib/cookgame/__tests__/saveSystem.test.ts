@@ -36,6 +36,25 @@ describe('save v3', () => {
   });
 });
 
+describe('v2 -> v3 migration rejects bad v2 shape', () => {
+  it('rejects when inventory.plots is not an array', () => {
+    const bad = { ...validV2(), inventory: { ...validV2().inventory, plots: 'x' } };
+    expect(parseSave(JSON.stringify(bad))).toBeNull();
+  });
+  it('rejects when inventory.baseStock is not an array', () => {
+    const bad = { ...validV2(), inventory: { ...validV2().inventory, baseStock: 'x' } };
+    expect(parseSave(JSON.stringify(bad))).toBeNull();
+  });
+  it('rejects when inventory.dryingRack is not an array', () => {
+    const bad = { ...validV2(), inventory: { ...validV2().inventory, dryingRack: 'x' } };
+    expect(parseSave(JSON.stringify(bad))).toBeNull();
+  });
+  it('rejects when inventory.inputs is null', () => {
+    const bad = { ...validV2(), inventory: { ...validV2().inventory, inputs: null } };
+    expect(parseSave(JSON.stringify(bad))).toBeNull();
+  });
+});
+
 describe('v2 -> v3 migration', () => {
   it('upgrades a valid v2 save, defaulting the new fields and preserving the rest', () => {
     const v2 = { ...validV2(), cash: 999, discoveredRecipes: ['energizing'] };
