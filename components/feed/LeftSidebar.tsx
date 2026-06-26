@@ -143,13 +143,13 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
     // full page load, so they render a plain anchor rather than a router Link.
     if (link.external) {
       return (
-        <a key={link.href} href={link.href} className={leafClass} title={link.label}>
+        <a key={link.href} href={link.href} className={leafClass} title={link.label} aria-current={isActive ? 'page' : undefined}>
           {leafInner}
         </a>
       );
     }
     return (
-      <Link key={link.href} to={link.href} className={leafClass} title={link.label}>
+      <Link key={link.href} to={link.href} className={leafClass} title={link.label} aria-current={isActive ? 'page' : undefined}>
         {leafInner}
       </Link>
     );
