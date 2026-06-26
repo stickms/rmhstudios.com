@@ -2,6 +2,9 @@
 import { RigidBody, CuboidCollider } from '@react-three/rapier';
 import { Building } from '../models/Building';
 import { PALETTE, matteMaterialProps } from '../models/palette';
+import { SupplierStallModel } from '../models/stations/SupplierStallModel';
+import { MixingBenchModel } from '../models/stations/MixingBenchModel';
+import { PackagingModel } from '../models/stations/PackagingModel';
 import { StreetProps } from '../models/props/StreetProps';
 
 // Anchor positions consumed by Interactables (Tasks 8/10) and station meshes.
@@ -84,19 +87,10 @@ export function TownScene() {
         </mesh>
       ))}
 
-      {/* station markers */}
-      <mesh position={[STATION_POSITIONS.supplier[0], 0.5, STATION_POSITIONS.supplier[2]]} castShadow>
-        <boxGeometry args={[1.2, 1, 1.2]} />
-        <meshStandardMaterial color="#22c55e" />
-      </mesh>
-      <mesh position={[STATION_POSITIONS.mixing[0], 0.5, STATION_POSITIONS.mixing[2]]} castShadow>
-        <boxGeometry args={[1.2, 1, 1.2]} />
-        <meshStandardMaterial color="#e879f9" />
-      </mesh>
-      <mesh position={[STATION_POSITIONS.packaging[0], 0.5, STATION_POSITIONS.packaging[2]]} castShadow>
-        <boxGeometry args={[1.2, 1, 1.2]} />
-        <meshStandardMaterial color="#f59e0b" />
-      </mesh>
+      {/* station models */}
+      <SupplierStallModel position={STATION_POSITIONS.supplier} />
+      <MixingBenchModel position={STATION_POSITIONS.mixing} />
+      <PackagingModel position={STATION_POSITIONS.packaging} />
 
       {/* grow plot markers */}
       {PLOT_POSITIONS.map((pos, i) => (
