@@ -573,7 +573,8 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
           onOpenChange={setEditOpen}
           postId={actualId}
           initialContent={item.content ?? ''}
-          onSaved={(content) => updateItem(item.id, { content, edited: true })}
+          initialGifUrl={item.gifUrl ?? ''}
+          onSaved={(content, gifUrl) => updateItem(item.id, { content, gifUrl: gifUrl ?? undefined, edited: true })}
         />
       )}
 

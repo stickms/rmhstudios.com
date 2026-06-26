@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createRMHarkSchema } from "@/lib/rmhark-schema";
+import { createRMHarkSchema, editRMHarkSchema } from "@/lib/rmhark-schema";
 
 describe("createRMHarkSchema imageUrls", () => {
   it("accepts a post with only images (no text/poll/gif)", () => {
@@ -32,6 +32,21 @@ describe("createRMHarkSchema imageUrls", () => {
 
   it("still rejects a fully empty post", () => {
     const r = createRMHarkSchema.safeParse({ imageUrls: [] });
+    expect(r.success).toBe(false);
+  });
+});
+
+describe("editRMHarkSchema", () => {
+  it("accepts content with a tenor gifUrl", () => {
+    const r = editRMHarkSchema.safeParse({ content: "hi", gifUrl: "https://media.tenor.com/x/full.gif" });
+    expect(r.success).toBe(true);
+  });
+  it("accepts null gifUrl (removing a gif)", () => {
+    const r = editRMHarkSchema.safeParse({ content: "hi", gifUrl: null });
+    expect(r.success).toBe(true);
+  });
+  it("rejects a non-media gifUrl", () => {
+    const r = editRMHarkSchema.safeParse({ content: "hi", gifUrl: "https://evil.example/page" });
     expect(r.success).toBe(false);
   });
 });

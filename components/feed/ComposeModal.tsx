@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Plus, BarChart3, Image, ImagePlus } from 'lucide-react';
 import { GifEmbed } from './GifEmbed';
+import { GifPicker } from './GifPicker';
 import { AIGenerateButton } from './AIGenerateButton';
 import { MentionTextarea } from './MentionTextarea';
 import { authClient } from '@/lib/auth-client';
@@ -28,18 +29,6 @@ interface PollDraft {
   multiSelect: boolean;
 }
 
-const IMAGE_EXT_REGEX = /\.(gif|png|jpe?g|webp|avif)(\?[^\s]*)?$/i;
-
-function isValidMediaUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url);
-    if (parsed.hostname.endsWith('tenor.com') || parsed.hostname.endsWith('giphy.com')) return true;
-    if (IMAGE_EXT_REGEX.test(parsed.pathname)) return true;
-    return false;
-  } catch {
-    return false;
-  }
-}
 
 interface ComposeModalProps {
   open: boolean;
@@ -84,7 +73,7 @@ export function ComposeModal({ open, onClose, quoteItem }: ComposeModalProps) {
 
   const hasPoll = attachment === 'poll' && poll.question.trim() &&
     poll.options.filter((o) => o.trim()).length >= MIN_POLL_OPTIONS;
-  const hasGif = attachment === 'gif' && gifUrl.trim() && isValidMediaUrl(gifUrl.trim());
+  const hasGif = attachment === 'gif' && gifUrl.trim().length > 0;
   const hasImages = imageUrls.length > 0;
   const hasContent = content.trim().length > 0;
   const canSubmit = (hasContent || hasPoll || hasGif || hasImages || !!quoteItem) && remaining >= 0 && !submitting;
@@ -361,12 +350,13 @@ export function ComposeModal({ open, onClose, quoteItem }: ComposeModalProps) {
                 </div>
               )}
 
-              {/* GIF input */}
+              {/* GIF picker */}
               {attachment === 'gif' && (
                 <div className="mt-2 border border-site-border rounded-xl p-3 bg-site-surface/20">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold text-site-text-dim uppercase tracking-wide">Image</span>
+                    <span className="text-xs font-semibold text-site-text-dim uppercase tracking-wide">{t("gif-heading", { defaultValue: "GIF" })}</span>
                     <button
+                      type="button"
                       onClick={() => {
                         setAttachment(null);
                         setGifUrl('');
@@ -377,20 +367,20 @@ export function ComposeModal({ open, onClose, quoteItem }: ComposeModalProps) {
                     </button>
                   </div>
 
-                  <input
-                    type="url"
-                    value={gifUrl}
-                    onChange={(e) => setGifUrl(e.target.value)}
-                    placeholder={t("gif-url-placeholder", { defaultValue: "Paste an image URL or Tenor/Giphy link..." })}
-                    className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-lg p-2 border border-site-border outline-none focus:border-site-accent transition-colors"
-                  />
-
-                  {gifUrl.trim() && isValidMediaUrl(gifUrl.trim()) && (
-                    <GifEmbed url={gifUrl.trim()} className="mt-2" />
-                  )}
-
-                  {gifUrl.trim() && !isValidMediaUrl(gifUrl.trim()) && (
-                    <p className="text-xs text-site-danger mt-1">{t("invalid-image-url", { defaultValue: "Must be a direct image URL or Tenor/Giphy link" })}</p>
+                  {gifUrl.trim() ? (
+                    <div className="relative">
+                      <GifEmbed url={gifUrl.trim()} />
+                      <button
+                        type="button"
+                        onClick={() => setGifUrl('')}
+                        aria-label={t("remove-gif-aria", { defaultValue: "Remove GIF" })}
+                        className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <GifPicker onSelect={(u) => setGifUrl(u)} />
                   )}
                 </div>
               )}

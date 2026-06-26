@@ -279,6 +279,7 @@ import { Route as ApiLaundrySortLeaderboardRouteImport } from './routes/api/laun
 import { Route as ApiInternalNotifyTypingRouteImport } from './routes/api/internal/notify-typing'
 import { Route as ApiInternalNotifyMessageRouteImport } from './routes/api/internal/notify-message'
 import { Route as ApiHandleCheckRouteImport } from './routes/api/handle/check'
+import { Route as ApiGifSearchRouteImport } from './routes/api/gif/search'
 import { Route as ApiForestExplorerSaveRouteImport } from './routes/api/forest-explorer/save'
 import { Route as ApiFeedStreamRouteImport } from './routes/api/feed/stream'
 import { Route as ApiFeedMentionSearchRouteImport } from './routes/api/feed/mention-search'
@@ -1837,6 +1838,11 @@ const ApiHandleCheckRoute = ApiHandleCheckRouteImport.update({
   path: '/api/handle/check',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGifSearchRoute = ApiGifSearchRouteImport.update({
+  id: '/api/gif/search',
+  path: '/api/gif/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiForestExplorerSaveRoute = ApiForestExplorerSaveRouteImport.update({
   id: '/api/forest-explorer/save',
   path: '/api/forest-explorer/save',
@@ -3062,6 +3068,7 @@ export interface FileRoutesByFullPath {
   '/api/feed/mention-search': typeof ApiFeedMentionSearchRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
+  '/api/gif/search': typeof ApiGifSearchRoute
   '/api/handle/check': typeof ApiHandleCheckRoute
   '/api/internal/notify-message': typeof ApiInternalNotifyMessageRoute
   '/api/internal/notify-typing': typeof ApiInternalNotifyTypingRoute
@@ -3503,6 +3510,7 @@ export interface FileRoutesByTo {
   '/api/feed/mention-search': typeof ApiFeedMentionSearchRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
+  '/api/gif/search': typeof ApiGifSearchRoute
   '/api/handle/check': typeof ApiHandleCheckRoute
   '/api/internal/notify-message': typeof ApiInternalNotifyMessageRoute
   '/api/internal/notify-typing': typeof ApiInternalNotifyTypingRoute
@@ -3970,6 +3978,7 @@ export interface FileRoutesById {
   '/api/feed/mention-search': typeof ApiFeedMentionSearchRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
+  '/api/gif/search': typeof ApiGifSearchRoute
   '/api/handle/check': typeof ApiHandleCheckRoute
   '/api/internal/notify-message': typeof ApiInternalNotifyMessageRoute
   '/api/internal/notify-typing': typeof ApiInternalNotifyTypingRoute
@@ -4437,6 +4446,7 @@ export interface FileRouteTypes {
     | '/api/feed/mention-search'
     | '/api/feed/stream'
     | '/api/forest-explorer/save'
+    | '/api/gif/search'
     | '/api/handle/check'
     | '/api/internal/notify-message'
     | '/api/internal/notify-typing'
@@ -4878,6 +4888,7 @@ export interface FileRouteTypes {
     | '/api/feed/mention-search'
     | '/api/feed/stream'
     | '/api/forest-explorer/save'
+    | '/api/gif/search'
     | '/api/handle/check'
     | '/api/internal/notify-message'
     | '/api/internal/notify-typing'
@@ -5344,6 +5355,7 @@ export interface FileRouteTypes {
     | '/api/feed/mention-search'
     | '/api/feed/stream'
     | '/api/forest-explorer/save'
+    | '/api/gif/search'
     | '/api/handle/check'
     | '/api/internal/notify-message'
     | '/api/internal/notify-typing'
@@ -5708,6 +5720,7 @@ export interface RootRouteChildren {
   ApiFeedMentionSearchRoute: typeof ApiFeedMentionSearchRoute
   ApiFeedStreamRoute: typeof ApiFeedStreamRoute
   ApiForestExplorerSaveRoute: typeof ApiForestExplorerSaveRoute
+  ApiGifSearchRoute: typeof ApiGifSearchRoute
   ApiHandleCheckRoute: typeof ApiHandleCheckRoute
   ApiInternalNotifyMessageRoute: typeof ApiInternalNotifyMessageRoute
   ApiInternalNotifyTypingRoute: typeof ApiInternalNotifyTypingRoute
@@ -7753,6 +7766,13 @@ declare module '@tanstack/react-router' {
       path: '/api/handle/check'
       fullPath: '/api/handle/check'
       preLoaderRoute: typeof ApiHandleCheckRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/gif/search': {
+      id: '/api/gif/search'
+      path: '/api/gif/search'
+      fullPath: '/api/gif/search'
+      preLoaderRoute: typeof ApiGifSearchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/forest-explorer/save': {
@@ -10131,6 +10151,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiFeedMentionSearchRoute: ApiFeedMentionSearchRoute,
   ApiFeedStreamRoute: ApiFeedStreamRoute,
   ApiForestExplorerSaveRoute: ApiForestExplorerSaveRoute,
+  ApiGifSearchRoute: ApiGifSearchRoute,
   ApiHandleCheckRoute: ApiHandleCheckRoute,
   ApiInternalNotifyMessageRoute: ApiInternalNotifyMessageRoute,
   ApiInternalNotifyTypingRoute: ApiInternalNotifyTypingRoute,

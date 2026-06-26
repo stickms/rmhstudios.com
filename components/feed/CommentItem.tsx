@@ -2,10 +2,12 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Link } from '@tanstack/react-router';
-import { MessageCircle, Repeat2, Heart, Eye, Trash2, MoreHorizontal, Repeat, BadgeCheck, ShieldCheck, Languages } from 'lucide-react';
+import { MessageCircle, Repeat2, Heart, Eye, Trash2, MoreHorizontal, Repeat, BadgeCheck, ShieldCheck, Languages, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MAX_COMMENT_LENGTH } from '@/lib/rmhark-schema';
 import { RMHarkContent } from './RMHarkContent';
+import ChatMediaEmbed, { stripEmbedUrls, extractMediaEmbeds } from '@/components/shared/ChatMediaEmbed';
+import { GifPicker } from '@/components/feed/GifPicker';
 import { EngagementListModal } from './EngagementListModal';
 import { UserAvatar } from './UserAvatar';
 import { AIGenerateButton } from './AIGenerateButton';
@@ -70,6 +72,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
   const freshCommentUser = useFreshUser(comment.user) ?? comment.user;
   const [replyOpen, setReplyOpen] = useState(false);
   const [replyContent, setReplyContent] = useState('');
+  const [showGifPicker, setShowGifPicker] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const remaining = MAX_COMMENT_LENGTH - replyContent.length;
 
@@ -299,7 +302,10 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
           </div>
 
           {/* Content */}
-          <RMHarkContent text={comment.content} className="text-sm text-site-text mt-0.5 whitespace-pre-wrap break-words" />
+          <RMHarkContent text={stripEmbedUrls(comment.content)} className="text-sm text-site-text mt-0.5 whitespace-pre-wrap break-words" />
+          {extractMediaEmbeds(comment.content).length > 0 && (
+            <ChatMediaEmbed content={comment.content} themePrefix="site" />
+          )}
           {showTranslated && translatedText && (
             <p className="mt-1 whitespace-pre-wrap break-words rounded-lg bg-site-surface/50 p-2 text-sm text-site-text">
               {translatedText}
@@ -385,6 +391,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
                     if (e.key === 'Escape') {
                       setReplyOpen(false);
                       setReplyContent('');
+                      setShowGifPicker(false);
                     }
                   }}
                 />
@@ -394,7 +401,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
                       {remaining}
                     </span>
                     <button
-                      onClick={() => { setReplyOpen(false); setReplyContent(''); }}
+                      onClick={() => { setReplyOpen(false); setReplyContent(''); setShowGifPicker(false); }}
                       className="text-[10px] text-site-text-dim hover:text-site-text transition-colors"
                     >
                       {t('cancel', { defaultValue: 'Cancel' })}
@@ -407,6 +414,14 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
                       size="sm"
                       title="Generate a reply with AI"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowGifPicker((v) => !v)}
+                      aria-label={t('add-gif-aria', { defaultValue: 'Add a GIF' })}
+                      className="p-1.5 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent/10 transition-colors"
+                    >
+                      <ImageIcon className="w-4 h-4" />
+                    </button>
                     <Button
                       variant="accent"
                       size="sm"
@@ -418,6 +433,16 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
                     </Button>
                   </div>
                 </div>
+                {showGifPicker && (
+                  <GifPicker
+                    className="mt-2"
+                    onClose={() => setShowGifPicker(false)}
+                    onSelect={(u) => {
+                      setReplyContent((c) => (c ? `${c} ${u}` : u));
+                      setShowGifPicker(false);
+                    }}
+                  />
+                )}
               </div>
             </div>
           )}
