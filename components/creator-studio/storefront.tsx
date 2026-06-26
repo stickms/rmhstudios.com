@@ -20,7 +20,7 @@
  * common `StoreItem` shape and hand it a `seed`.
  */
 
-import { type PointerEvent as ReactPointerEvent, type ReactNode, useMemo } from 'react';
+import { type PointerEvent as ReactPointerEvent, type ReactNode, useMemo, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { ArrowRight, Info } from 'lucide-react';
 
@@ -149,13 +149,19 @@ function PrimaryWrapper({
 }
 
 function Art({ item, eager = false }: { item: StoreItem; eager?: boolean }) {
-  return item.coverUrl ? (
+  // Cover thumbnails (vibe screenshots, build art) can 404 — e.g. a vibe page
+  // whose worker hasn't rendered its screenshot yet. Fall back to the tinted
+  // gradient placeholder instead of showing a broken image.
+  const [broken, setBroken] = useState(false);
+  const showImg = item.coverUrl && !broken;
+  return showImg ? (
     <img
       className="store-art__img"
-      src={item.coverUrl}
+      src={item.coverUrl ?? undefined}
       alt=""
       loading={eager ? 'eager' : 'lazy'}
       decoding="async"
+      onError={() => setBroken(true)}
     />
   ) : (
     <div className="store-art__placeholder" style={{ backgroundImage: hueGradient(item.hue) }} aria-hidden="true">
