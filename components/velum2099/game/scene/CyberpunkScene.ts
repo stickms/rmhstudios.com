@@ -2034,8 +2034,14 @@ export class CyberpunkScene {
         }
 
         // Traffic vehicles (dynamic — recompute boxes from current position).
-        // Reuse a pooled set of Box3 objects to avoid per-frame allocation.
+        // Reuse pooled Box3/OBB objects to avoid per-frame allocation. The broad-
+        // phase box is the rotation-aware AABB envelope of the car so it correctly
+        // encloses cars driving east-west (the precise test is the OBB below).
         if (!this._trafficBoxPool) this._trafficBoxPool = [];
+        if (!this._trafficObbPool) this._trafficObbPool = [];
+        const tHW = this._trafficSize.x * 0.5;
+        const tHD = this._trafficSize.z * 0.5;
+        const tHY = this._trafficSize.y * 0.5;
         let boxIdx = 0;
         for (const tv of this.trafficVehicles) {
             const pos = tv.mesh.position;
@@ -2045,9 +2051,18 @@ export class CyberpunkScene {
 
             let box = this._trafficBoxPool[boxIdx];
             if (!box) { box = new Box3(); this._trafficBoxPool[boxIdx] = box; }
-            box.setFromCenterAndSize(pos, this._trafficSize);
+            let obb = this._trafficObbPool[boxIdx];
+            if (!obb) { obb = { angle: 0, hw: tHW, hd: tHD }; this._trafficObbPool[boxIdx] = obb; }
+
+            const a = tv.mesh.rotation.y;
+            const ca = Math.abs(Math.cos(a)), sa = Math.abs(Math.sin(a));
+            const extX = tHW * ca + tHD * sa;
+            const extZ = tHW * sa + tHD * ca;
+            box.min.set(pos.x - extX, pos.y - tHY, pos.z - extZ);
+            box.max.set(pos.x + extX, pos.y + tHY, pos.z + extZ);
+            obb.angle = a; obb.hw = tHW; obb.hd = tHD;
             boxIdx++;
-            result.push({ box, mesh: tv.mesh, type: 'traffic' });
+            result.push({ box, mesh: tv.mesh, type: 'traffic', obb });
         }
 
         return result;

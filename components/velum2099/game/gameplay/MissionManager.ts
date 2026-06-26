@@ -346,12 +346,28 @@ export class MissionManager {
      * pooled Box3s. Appended to the scene collidables by the main loop.
      */
     getPoliceCollidables(out) {
+        if (!this._policeObbPool) this._policeObbPool = [];
+        const hw = this._policeSize.x * 0.5;
+        const hd = this._policeSize.z * 0.5;
+        const hy = this._policeSize.y * 0.5;
         for (let i = 0; i < this.police.length; i++) {
             const p = this.police[i];
             let box = this._policeBoxPool[i];
             if (!box) { box = new Box3(); this._policeBoxPool[i] = box; }
-            box.setFromCenterAndSize(p.mesh.position, this._policeSize);
-            out.push({ box, mesh: p.mesh, type: 'police' });
+            let obb = this._policeObbPool[i];
+            if (!obb) { obb = { angle: 0, hw, hd }; this._policeObbPool[i] = obb; }
+
+            // Rotation-aware AABB envelope so the broad phase encloses the cruiser
+            // at any heading; the OBB gives the precise oriented hitbox.
+            const pos = p.mesh.position;
+            const a = p.rot;
+            const ca = Math.abs(Math.cos(a)), sa = Math.abs(Math.sin(a));
+            const extX = hw * ca + hd * sa;
+            const extZ = hw * sa + hd * ca;
+            box.min.set(pos.x - extX, pos.y - hy, pos.z - extZ);
+            box.max.set(pos.x + extX, pos.y + hy, pos.z + extZ);
+            obb.angle = a; obb.hw = hw; obb.hd = hd;
+            out.push({ box, mesh: p.mesh, type: 'police', obb });
         }
         return out;
     }

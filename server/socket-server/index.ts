@@ -30,6 +30,7 @@ import { registerBaccaratHandlers, handleBaccaratDisconnect, initializeBaccarat 
 import { registerRouletteHandlers, handleRouletteDisconnect, initializeRoulette } from './handlers/roulette';
 import { registerLightsOutHandlers, handleLightsOutDisconnect } from './handlers/lights-out';
 import { registerDoctrineHandlers, handleDoctrineDisconnect } from './handlers/doctrine';
+import { registerVelumHandlers, handleVelumDisconnect } from './handlers/velum';
 
 // ─── Startup validation ─────────────────────────────────────────
 
@@ -156,6 +157,7 @@ io.on('connection', (socket) => {
   registerRouletteHandlers(io, socket);
   registerLightsOutHandlers(io, socket);
   registerDoctrineHandlers(io, socket);
+  registerVelumHandlers(io, socket);
 
   // Disconnect cleanup
   socket.on('disconnect', (reason) => {
@@ -175,6 +177,7 @@ io.on('connection', (socket) => {
     handleRouletteDisconnect(io, socket);
     handleLightsOutDisconnect(io, socket);
     handleDoctrineDisconnect(io, socket);
+    handleVelumDisconnect(io, socket);
 
     cleanupRateLimits(socket.id);
   });

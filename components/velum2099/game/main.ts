@@ -180,6 +180,9 @@ export class App {
             case 'start':
                 this._startSimulation();
                 break;
+            case 'multiplayer':
+                this._openLobby();
+                break;
             case 'export':
                 this._exportData();
                 break;
@@ -189,7 +192,36 @@ export class App {
         }
     }
 
-    async _startSimulation() {
+    /** Open the multiplayer lobby overlay (create / join a shared cruise). */
+    async _openLobby() {
+        const [{ LobbyUI }, { VelumMultiplayerClient }] = await Promise.all([
+            import('./multiplayer/LobbyUI'),
+            import('@/lib/velum2099/multiplayer'),
+        ]);
+        if (this._destroyed) return;
+
+        this.terminal.hide();
+        this._lobby = new LobbyUI(this._container, {
+            onStart: (roomId, selfInfo) => {
+                this._mpRoomId = roomId;
+                this._mpSelfColor = (selfInfo && selfInfo.colorIndex) || 0;
+                if (this._lobby) { this._lobby.dispose(); this._lobby = null; }
+                this._startSimulation({ multiplayer: true, roomId });
+            },
+            onExit: () => {
+                if (this._lobby) { this._lobby.dispose(); this._lobby = null; }
+                VelumMultiplayerClient.getInstance().disconnect();
+                this.terminal.show();
+            },
+        });
+        this._lobby.show();
+    }
+
+    async _startSimulation(opts = {}) {
+        const multiplayer = !!opts.multiplayer;
+        this._multiplayer = multiplayer;
+        this._mpRoomId = opts.roomId || this._mpRoomId || null;
+
         // Ensure simulation modules are loaded
         await loadSimModules();
         if (this._destroyed) return;
@@ -343,6 +375,12 @@ export class App {
             this._gameHud.toast('WASD 驾驶 · SPACE 漂移 · F 开火 · ESC 返回菜单', 'info');
         }
 
+        // ── Multiplayer: remote players + driving-state sync ──
+        if (multiplayer) {
+            await this._setupMultiplayer();
+            if (this._destroyed) return;
+        }
+
         // Start game loop
         this.running = true;
         this._lastTime = performance.now();
@@ -350,6 +388,64 @@ export class App {
 
         // Seatbelt chime
         this._playSeatbeltChime();
+    }
+
+    /** Wire up the shared-cruise networking once the scene/vehicle exist. */
+    async _setupMultiplayer() {
+        const [{ RemotePlayers }, { VelumMultiplayerClient }] = await Promise.all([
+            import('./multiplayer/RemotePlayers'),
+            import('@/lib/velum2099/multiplayer'),
+        ]);
+        if (this._destroyed) return;
+
+        this._mpClient = VelumMultiplayerClient.getInstance();
+        this._mpClient.connect();
+        this._remotePlayers = new RemotePlayers(this.scene.scene);
+        this._mpSendTimer = 0;
+        this._mpSendInterval = 1 / 15; // ~15 Hz state broadcast
+
+        // Spread players out around the spawn so they don't stack on launch.
+        const slot = this._mpSelfColor || 0;
+        const offsetX = (slot - 3.5) * 3.6;
+        this.vehicle.position.set(offsetX, 0, 0);
+        this.vehicle.rotation.set(0, 0, 0);
+        this.vehicle.velocity = 0;
+        this.vehicle.lateralVelocity = 0;
+        this.vehicle.group.position.copy(this.vehicle.position);
+
+        // Inbound handlers
+        this._mpHandlers = {
+            state: (s) => { if (this._remotePlayers && s && s.id !== this._mpClient.getSocketId()) this._remotePlayers.upsert(s); },
+            left: (d) => { if (this._remotePlayers && d) this._remotePlayers.remove(d.id); },
+            chat: (m) => {
+                if (m && m.id !== this._mpClient.getSocketId() && this._gameHud) {
+                    this._gameHud.toast(`💬 ${m.name}: ${m.text}`, 'info');
+                }
+            },
+        };
+        this._mpClient.on('velum:playerState', this._mpHandlers.state);
+        this._mpClient.on('velum:playerLeft', this._mpHandlers.left);
+        this._mpClient.on('velum:chat', this._mpHandlers.chat);
+
+        if (this._gameHud) this._gameHud.toast('多人巡航已连接 · MULTIPLAYER LIVE', 'good');
+    }
+
+    /** Tear down all multiplayer state (handlers, ghosts, lobby membership). */
+    _teardownMultiplayer() {
+        if (this._mpClient && this._mpHandlers) {
+            this._mpClient.off('velum:playerState', this._mpHandlers.state);
+            this._mpClient.off('velum:playerLeft', this._mpHandlers.left);
+            this._mpClient.off('velum:chat', this._mpHandlers.chat);
+        }
+        if (this._mpClient && this._mpRoomId) {
+            this._mpClient.leaveLobby(this._mpRoomId);
+            this._mpClient.disconnect();
+        }
+        if (this._remotePlayers) { this._remotePlayers.dispose(); this._remotePlayers = null; }
+        this._mpHandlers = null;
+        this._mpClient = null;
+        this._mpRoomId = null;
+        this._multiplayer = false;
     }
 
     _gameLoop() {
@@ -389,6 +485,23 @@ export class App {
                 this._gameHud.tickToasts(dt);
             }
             if (this._minimap) this._minimap.update(dt);
+        }
+
+        // ── Multiplayer: broadcast our state (≈15 Hz) + interpolate ghosts ──
+        if (this._multiplayer && this._mpClient) {
+            this._mpSendTimer += dt;
+            if (this._mpSendTimer >= this._mpSendInterval && this._mpRoomId) {
+                this._mpSendTimer = 0;
+                this._mpClient.sendPlayerState(this._mpRoomId, {
+                    x: this.vehicle.position.x,
+                    y: this.vehicle.position.y,
+                    z: this.vehicle.position.z,
+                    ry: this.vehicle.rotation.y,
+                    speed: this.vehicle.velocity,
+                    drifting: !!this.vehicle.drifting,
+                });
+            }
+            if (this._remotePlayers) this._remotePlayers.update(dt);
         }
 
         // Segmentation + data collection — the OpenCV pass is expensive, so only
@@ -494,6 +607,9 @@ export class App {
         if (this._engine) { this._engine.dispose(); this._engine = null; }
         this._updateRadioHud(false);
         if (this._hexHud) this._hexHud.hide();
+
+        // Multiplayer cleanup (leave lobby, drop ghosts, unsubscribe)
+        if (this._multiplayer) this._teardownMultiplayer();
 
         // Gameplay HUD + mobile controls + pursuit cleanup
         if (this._mission) this._mission.suspend();
@@ -695,6 +811,10 @@ export class App {
         // Clean up dynamic DOM elements
         if (this._fpsEl) { this._fpsEl.remove(); this._fpsEl = null; }
         if (this._radioHud) { this._radioHud.remove(); this._radioHud = null; }
+
+        // Clean up multiplayer (lobby overlay + networking + ghosts)
+        if (this._lobby) { this._lobby.dispose(); this._lobby = null; }
+        if (this._multiplayer || this._mpClient) this._teardownMultiplayer();
 
         // Clean up gameplay systems
         if (this._weapon) { this._weapon.dispose(); this._weapon = null; }
