@@ -23,7 +23,7 @@ export function WorldSetup() {
   const [prompt, setPrompt] = useState('');
   const [seedInput, setSeedInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [intense, setIntense] = useState(true);
+  const [intense, setIntense] = useState(settings.matureDefault);
 
   const begin = async (opts: { random?: boolean; seed?: string }) => {
     if (submitting) return;

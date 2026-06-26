@@ -67,6 +67,8 @@ function createDefaultSettings(): PlayerSettings {
     textSpeed: 'normal' as const,
     musicVolume: 0.7,
     sfxVolume: 0.8,
+    matureDefault: true,
+    reducedMotion: false,
   };
 }
 

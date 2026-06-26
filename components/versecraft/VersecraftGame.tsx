@@ -6,7 +6,7 @@ import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useGameStore } from '@/lib/versecraft/store';
 import { loadGame } from '@/lib/versecraft/persistence';
 import { MainMenu } from './MainMenu';
-import { SettingsMenu } from './SettingsMenu';
+import { GameSettings } from './GameSettings';
 import { WorldSetup } from './WorldSetup';
 import { DialogueScreen } from './DialogueScreen';
 import { GeneratedDialogueScreen } from './GeneratedDialogueScreen';
@@ -112,7 +112,7 @@ export function VersecraftGame({ isLoggedIn }: { isLoggedIn: boolean }) {
       case 'menu':
         return <MainMenu />;
       case 'settings':
-        return <SettingsMenu />;
+        return <GameSettings />;
       case 'world_setup':
         return <WorldSetup />;
       case 'dialogue':

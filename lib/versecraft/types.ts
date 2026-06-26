@@ -247,6 +247,10 @@ export interface PlayerSettings {
   textSpeed: 'slow' | 'normal' | 'fast' | 'instant';
   musicVolume: number;
   sfxVolume: number;
+  /** Allow mature/dark themes by default in new stories. */
+  matureDefault: boolean;
+  /** Reduce/disable non-essential motion (accessibility + low-power devices). */
+  reducedMotion: boolean;
 }
 
 export interface GameState {
