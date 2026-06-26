@@ -7,12 +7,14 @@
 
 import { Terminal } from './terminal/Terminal';
 import { GameSettings } from './settings/GameSettings';
+import { GameHud } from './ui/GameHud';
+import { MobileControls } from './ui/MobileControls';
 
 // Heavy simulation modules — lazy-loaded on first simulation start
-let CyberpunkScene, Vehicle, Segmenter, DataCollector, Exporter, TextureManager, LiveStreamClient, LofiRadio, EngineSound;
+let CyberpunkScene, Vehicle, Segmenter, DataCollector, Exporter, TextureManager, LiveStreamClient, LofiRadio, EngineSound, MissionManager;
 async function loadSimModules() {
     if (CyberpunkScene) return; // already loaded
-    const [scene, vehicle, seg, dc, exp, tm, lsc, radio, engine] = await Promise.all([
+    const [scene, vehicle, seg, dc, exp, tm, lsc, radio, engine, mission] = await Promise.all([
         import('./scene/CyberpunkScene'),
         import('./vehicle/Vehicle'),
         import('./segmentation/Segmenter'),
@@ -22,6 +24,7 @@ async function loadSimModules() {
         import('./textures/LiveStreamClient'),
         import('./audio/LofiRadio'),
         import('./audio/EngineSound'),
+        import('./gameplay/MissionManager'),
     ]);
     CyberpunkScene = scene.CyberpunkScene;
     Vehicle = vehicle.Vehicle;
@@ -32,6 +35,7 @@ async function loadSimModules() {
     LiveStreamClient = lsc.LiveStreamClient;
     LofiRadio = radio.LofiRadio;
     EngineSound = engine.EngineSound;
+    MissionManager = mission.MissionManager;
 }
 
 /* ── Scrolling Chinese text overlay ── */
@@ -158,14 +162,13 @@ export class App {
 
         if (this._destroyed) return;
 
-        // Pre-load simulation modules in background while user sees the terminal
+        // Pre-load simulation modules in background while user sees the terminal.
+        // The segmenter is created but NOT initialised here — OpenCV.js only loads
+        // the first time data collection actually runs (see _ensureDataPipeline).
         loadSimModules().then(() => {
             if (this._destroyed) return;
             this.segmenter = new Segmenter();
             this.collector = new DataCollector();
-            this.segmenter.init().catch(err => {
-                console.warn('[Segmenter] 初始化警告:', err);
-            });
         });
     }
 
@@ -290,6 +293,30 @@ export class App {
         }
         this._hexHud.show();
 
+        // ── Gameplay HUD + mission/pursuit system ──
+        if (!this._gameHud) this._gameHud = new GameHud(this._container);
+        this._gameHud.show();
+
+        if (!this._mission) {
+            this._mission = new MissionManager(this.scene, this.vehicle, {
+                onToast: (text, kind) => { if (this._gameHud) this._gameHud.toast(text, kind); },
+            });
+        }
+        this._mission.startSession();
+
+        // ── Mobile touch controls (joystick) — only on touch devices ──
+        if (MobileControls.isTouch()) {
+            if (!this._mobileControls) {
+                this._mobileControls = new MobileControls(this._container, this.vehicle, {
+                    onExit: () => this._stopSimulation(),
+                });
+            }
+            this._mobileControls.show();
+        } else {
+            // Desktop controls hint
+            this._gameHud.toast('WASD 驾驶 · SPACE 漂移 · ESC 返回菜单', 'info');
+        }
+
         // Start game loop
         this.running = true;
         this._lastTime = performance.now();
@@ -312,21 +339,36 @@ export class App {
 
         // Collision detection
         const collidables = this.scene.getCollidables(this.vehicle.position, 30);
-        this.vehicle.checkCollisions(collidables, dt);
+        const collisions = this.vehicle.checkCollisions(collidables, dt);
 
         // Update scene (camera, rain, neon flicker, post-processing render)
         this.scene.update(this.vehicle.position, this.vehicle.rotation, dt);
 
-        // Segmentation
-        const mask = this.segmenter.processFrame(this.canvasEl);
+        // ── Gameplay: missions + police pursuit ──
+        if (this._mission) {
+            this._mission.reportCollisions(collisions);
+            this._mission.update(dt);
+            if (this._gameHud) {
+                this._gameHud.update(this._mission.getState());
+                this._gameHud.tickToasts(dt);
+            }
+        }
 
-        // Data collection
-        this.collector.tick(
-            this.canvasEl,
-            this.vehicle,
-            mask,
-            this._captureRequested
-        );
+        // Segmentation + data collection — the OpenCV pass is expensive, so only
+        // run it when data is actually being recorded (continuous mode, or a
+        // manual capture this frame). Idle gameplay skips it entirely.
+        const needSeg = this.collector.recording &&
+            (this.collector.mode === 'continuous' || this._captureRequested);
+        if (needSeg) this._ensureDataPipeline();
+        const mask = needSeg ? this.segmenter.processFrame(this.canvasEl) : null;
+        if (needSeg) {
+            this.collector.tick(
+                this.canvasEl,
+                this.vehicle,
+                mask,
+                this._captureRequested
+            );
+        }
         this._captureRequested = false;
 
         // VHS timestamp — throttled to 1Hz
@@ -374,6 +416,15 @@ export class App {
         this._animFrameId = requestAnimationFrame(() => this._gameLoop());
     }
 
+    /** Lazily initialise the segmentation/OpenCV pipeline on first data capture. */
+    _ensureDataPipeline() {
+        if (this._segInitStarted || !this.segmenter) return;
+        this._segInitStarted = true;
+        this.segmenter.init().catch(err => {
+            console.warn('[Segmenter] 初始化警告:', err);
+        });
+    }
+
     _stopSimulation() {
         this.running = false;
         if (this._animFrameId) {
@@ -401,6 +452,11 @@ export class App {
         if (this._engine) { this._engine.dispose(); this._engine = null; }
         this._updateRadioHud(false);
         if (this._hexHud) this._hexHud.hide();
+
+        // Gameplay HUD + mobile controls + pursuit cleanup
+        if (this._mission) this._mission.suspend();
+        if (this._gameHud) this._gameHud.hide();
+        if (this._mobileControls) this._mobileControls.hide();
 
         // Hide canvas, VHS overlay, and FPS counter, show terminal
         this.canvasEl.style.display = 'none';
@@ -515,6 +571,10 @@ export class App {
             window.removeEventListener('keydown', this._captureKeyHandler);
         }
 
+        // Hide gameplay HUD/controls while the console is open
+        if (this._gameHud) this._gameHud.hide();
+        if (this._mobileControls) this._mobileControls.hide();
+
         // Show terminal as overlay (canvas stays visible behind)
         this.terminalEl.classList.add('overlay-mode');
         this.terminalEl.style.display = 'flex';
@@ -533,6 +593,10 @@ export class App {
 
         // Re-apply settings to scene/vehicle
         this._applySettings();
+
+        // Restore gameplay HUD/controls
+        if (this._gameHud) this._gameHud.show();
+        if (this._mobileControls) this._mobileControls.show();
 
         // Rebind simulation keys
         if (this._captureKeyHandler) {
@@ -575,6 +639,11 @@ export class App {
         // Clean up dynamic DOM elements
         if (this._fpsEl) { this._fpsEl.remove(); this._fpsEl = null; }
         if (this._radioHud) { this._radioHud.remove(); this._radioHud = null; }
+
+        // Clean up gameplay systems
+        if (this._mission) { this._mission.dispose(); this._mission = null; }
+        if (this._gameHud) { this._gameHud.dispose(); this._gameHud = null; }
+        if (this._mobileControls) { this._mobileControls.dispose(); this._mobileControls = null; }
 
         // Dispose Three.js resources
         if (this.scene) {

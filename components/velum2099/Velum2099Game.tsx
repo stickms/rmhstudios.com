@@ -15,13 +15,8 @@ export function Velum2099Game() {
         let destroyed = false;
 
         const init = async () => {
-            // Load OpenCV.js optionally (graceful degradation if it fails)
-            if (!(window as any).cv) {
-                const script = document.createElement('script');
-                script.src = 'https://docs.opencv.org/4.10.0/opencv.js';
-                script.async = true;
-                document.head.appendChild(script);
-            }
+            // OpenCV.js (used only by the opt-in data-collection mode) is now
+            // loaded lazily by the Segmenter on first use, not on page load.
 
             // Dynamically import the game engine (avoid SSR)
             const { App } = await import('./game/main');

@@ -119,6 +119,9 @@ export class Terminal {
     _showMainMenu() {
         this._addLine('');
         this._addLine('══════════════════════════════════════════', 'magenta');
+        this._addLine('   快递任务 · 限时送达 · 甩开警方追捕', 'cyan');
+        this._addLine('   COURIER RUNS · TIMED DROPS · POLICE CHASES', 'dim');
+        this._addLine('══════════════════════════════════════════', 'magenta');
         this._addLine('   请选择操作：', '');
         this._addLine('══════════════════════════════════════════', 'magenta');
         this._addLine('');

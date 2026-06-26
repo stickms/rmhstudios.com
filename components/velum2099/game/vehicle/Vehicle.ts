@@ -66,6 +66,17 @@ export class Vehicle {
             handbrake: false,
         };
 
+        // Analog input (mobile joystick / touch). When `active` and a control is
+        // deflected it overrides the keyboard for that axis; otherwise keyboard wins.
+        // steer: -1..1 (positive = steer left, matching keys.left)
+        this.mobileInput = {
+            active: false,
+            steer: 0,
+            throttle: 0,
+            brake: 0,
+            handbrake: false,
+        };
+
         this._buildMesh();
         this._bindInput();
     }
@@ -349,10 +360,15 @@ export class Vehicle {
     }
 
     update(dt) {
-        // Throttle / brake from keys
-        this.throttle = this.keys.forward ? 1 : 0;
-        this.brake = this.keys.backward ? 1 : 0;
-        this.handbrake = this.keys.handbrake;
+        // Resolve input source — analog (mobile joystick) overrides keyboard per-axis
+        const m = this.mobileInput;
+        const useMobileSteer = m.active && Math.abs(m.steer) > 0.02;
+        const useMobileDrive = m.active && (m.throttle > 0.02 || m.brake > 0.02);
+
+        // Throttle / brake from whichever source is active this frame
+        this.throttle = useMobileDrive ? Math.min(1, m.throttle) : (this.keys.forward ? 1 : 0);
+        this.brake = useMobileDrive ? Math.min(1, m.brake) : (this.keys.backward ? 1 : 0);
+        this.handbrake = this.keys.handbrake || (m.active && m.handbrake);
 
         const wasDrifting = this.drifting;
         this.drifting = this.handbrake && Math.abs(this.velocity) > 3;
@@ -367,7 +383,15 @@ export class Vehicle {
         const currentMaxSteer = this.drifting ? this.driftMaxSteer : this.maxSteer;
         const currentSteerSpeed = this.drifting ? this.steerSpeed * this.driftSteerMultiplier : this.steerSpeed;
 
-        if (this.keys.left) {
+        if (useMobileSteer) {
+            // Analog: ease steerAngle toward joystick target
+            const target = Math.max(-1, Math.min(1, m.steer)) * currentMaxSteer;
+            if (this.steerAngle < target) {
+                this.steerAngle = Math.min(this.steerAngle + currentSteerSpeed * dt, target);
+            } else if (this.steerAngle > target) {
+                this.steerAngle = Math.max(this.steerAngle - currentSteerSpeed * dt, target);
+            }
+        } else if (this.keys.left) {
             this.steerAngle = Math.min(this.steerAngle + currentSteerSpeed * dt, currentMaxSteer);
         } else if (this.keys.right) {
             this.steerAngle = Math.max(this.steerAngle - currentSteerSpeed * dt, -currentMaxSteer);
