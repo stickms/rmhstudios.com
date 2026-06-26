@@ -25,8 +25,18 @@ describe('detectTier', () => {
 
 describe('TIER_FLAGS', () => {
     it('enables the full stack only on ultra', () => {
-        expect(TIER_FLAGS.ultra.ssr && TIER_FLAGS.ultra.volumetrics).toBe(true);
-        expect(TIER_FLAGS.high.ssr).toBe(false);
+        expect(TIER_FLAGS.ultra.reflection && TIER_FLAGS.ultra.atmosphere).toBe(true);
+        expect(TIER_FLAGS.high.reflection).toBe(false);
+    });
+    it('enables atmosphere on high but not reflection', () => {
+        expect(TIER_FLAGS.high.atmosphere).toBe(true);
+        expect(TIER_FLAGS.high.reflection).toBe(false);
+    });
+    it('disables reflection and atmosphere on medium and low', () => {
+        expect(TIER_FLAGS.medium.reflection).toBe(false);
+        expect(TIER_FLAGS.medium.atmosphere).toBe(false);
+        expect(TIER_FLAGS.low.reflection).toBe(false);
+        expect(TIER_FLAGS.low.atmosphere).toBe(false);
     });
     it('disables all post on low', () => {
         expect(TIER_FLAGS.low.bloom).toBe(false);

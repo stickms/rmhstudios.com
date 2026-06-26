@@ -17,11 +17,11 @@ export function detectTier(caps: RenderCaps): RenderTier {
 }
 
 export const TIER_FLAGS: Record<RenderTier, {
-    bloom: boolean; gtao: boolean; ssr: boolean; volumetrics: boolean;
+    bloom: boolean; gtao: boolean; reflection: boolean; atmosphere: boolean;
     shadowMapSize: number; gpuParticles: boolean;
 }> = {
-    ultra:  { bloom: true,  gtao: true,  ssr: true,  volumetrics: true,  shadowMapSize: 4096, gpuParticles: true },
-    high:   { bloom: true,  gtao: true,  ssr: false, volumetrics: false, shadowMapSize: 2048, gpuParticles: true },
-    medium: { bloom: true,  gtao: false, ssr: false, volumetrics: false, shadowMapSize: 1024, gpuParticles: false },
-    low:    { bloom: false, gtao: false, ssr: false, volumetrics: false, shadowMapSize: 1024, gpuParticles: false },
+    ultra:  { bloom: true,  gtao: true,  reflection: true,  atmosphere: true,  shadowMapSize: 4096, gpuParticles: true },
+    high:   { bloom: true,  gtao: true,  reflection: false, atmosphere: true,  shadowMapSize: 2048, gpuParticles: true },
+    medium: { bloom: true,  gtao: false, reflection: false, atmosphere: false, shadowMapSize: 1024, gpuParticles: false },
+    low:    { bloom: false, gtao: false, reflection: false, atmosphere: false, shadowMapSize: 1024, gpuParticles: false },
 };
