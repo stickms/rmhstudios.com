@@ -1,11 +1,12 @@
 'use client';
 
+import * as THREE from 'three/webgpu';
 import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
 import { ARENA_RADIUS } from '@/lib/kowloon-knockout/game/fighters/types';
+import { NEON_PALETTE } from './materials';
 
-const NEON = ['#ff3366', '#33ccff', '#ffcc00', '#33ff99', '#cc33ff', '#ff6633'];
+const NEON = NEON_PALETTE;
 
 /** Static neon-Kowloon backdrop: ring platform, rope-light boundary, skyline. */
 export default function Environment() {
@@ -46,7 +47,9 @@ export default function Environment() {
 
     useFrame((state) => {
         if (ringRef.current) {
-            const m = ringRef.current.material as THREE.MeshStandardMaterial;
+            // MeshStandardNodeMaterial still exposes emissiveIntensity as a
+            // uniform-backed scalar, so per-frame mutation works unchanged.
+            const m = ringRef.current.material as THREE.MeshStandardNodeMaterial;
             m.emissiveIntensity = 1.6 + Math.sin(state.clock.elapsedTime * 4) * 0.4;
         }
     });
