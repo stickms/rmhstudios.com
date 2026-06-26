@@ -2105,6 +2105,30 @@ summary {
   cursor: pointer;
 }
 
+/* A gentle, consistent default transition for interactive elements so hover /
+   focus / active state changes are never janky. Lives in @layer base so any
+   component's own transition utility (e.g. transition-transform, duration-*)
+   still wins — this only fills the gap where none was set. Colour/box-shadow/
+   opacity only: never transform or layout, so nothing shifts unexpectedly.
+   The prefers-reduced-motion guard further down neutralises it. */
+@layer base {
+  a,
+  button,
+  select,
+  input,
+  textarea,
+  label,
+  summary,
+  [role="button"],
+  [role="tab"],
+  [role="menuitem"],
+  [role="switch"],
+  [role="checkbox"] {
+    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease,
+      box-shadow 0.15s ease, opacity 0.15s ease;
+  }
+}
+
 /* Minimalistic scrollbar (overridden by specific games/apps) */
 * {
   scrollbar-width: thin;
