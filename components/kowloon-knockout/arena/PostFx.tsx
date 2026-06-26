@@ -15,18 +15,35 @@ function PostFxRenderer({ post }: { post: THREE.PostProcessing }) {
     const gl = useThree((s) => s.gl) as unknown as THREE.WebGPURenderer;
     const scene = useThree((s) => s.scene);
     const camera = useThree((s) => s.camera);
-    // If the post pipeline ever rejects (driver/TSL-node incompatibility on a
-    // given GPU), fall back to a direct scene render for good. Without this, a
-    // failed renderAsync leaves R3F's auto-render suppressed (priority>0 is
-    // mounted) and the canvas stays permanently black.
-    const failed = useRef(false);
+    const warned = useRef(false);
+
+    // Render the scene directly (no post), never throwing out of the frame loop.
+    // Used as a per-frame recovery path: a failing post pass degrades to a plain
+    // render so the scene keeps animating, instead of leaving R3F's auto-render
+    // suppressed (priority>0 is mounted) and the canvas frozen on the last frame.
+    const direct = () => {
+        try {
+            const r = gl.renderAsync ? gl.renderAsync(scene, camera) : (gl.render(scene, camera), undefined);
+            if (r && typeof (r as Promise<void>).catch === 'function') (r as Promise<void>).catch(() => {});
+        } catch { /* last resort: skip this frame rather than kill the loop */ }
+    };
+
     useFrame(() => {
-        if (failed.current) { gl.render(scene, camera); return; }
-        post.renderAsync().catch((e) => {
-            if (failed.current) return;
-            failed.current = true;
-            console.warn('[PostFx] post pipeline failed; falling back to direct render:', e);
-        });
+        // Crucially NON-latching: a transient renderAsync rejection (e.g. the
+        // first bloom-heavy fight frame) must not disable post for good or freeze
+        // the canvas — recover this frame, retry post the next.
+        try {
+            const p = post.renderAsync();
+            if (p && typeof p.catch === 'function') {
+                p.catch((e: unknown) => {
+                    if (!warned.current) { warned.current = true; console.warn('[PostFx] renderAsync failed; direct-render fallback:', e); }
+                    direct();
+                });
+            }
+        } catch (e) {
+            if (!warned.current) { warned.current = true; console.warn('[PostFx] post threw; direct-render fallback:', e); }
+            direct();
+        }
     }, 1);
     return null;
 }
