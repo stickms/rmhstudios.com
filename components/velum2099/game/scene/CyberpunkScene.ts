@@ -350,21 +350,31 @@ export class CyberpunkScene {
     /** Walk outward from 0 with variable strides to decide if coord is a road line */
     _isRoadLine(coord, seed) {
         if (coord === 0) return true;
+        // Memoize — this walks from the origin so it is O(coord); the minimap
+        // queries it heavily, so cache results to keep cost flat far from origin.
+        const cache = this._roadLineCache || (this._roadLineCache = new Map());
+        const key = seed * 4194319 + coord;
+        const hit = cache.get(key);
+        if (hit !== undefined) return hit;
+
         let pos = 0;
+        let res = false;
         if (coord > 0) {
             while (pos < coord) {
                 const stride = 2 + (((hashChunk(pos, seed) >>> 0) & 3));  // 2–5
                 pos += stride;
-                if (pos === coord) return true;
+                if (pos === coord) { res = true; break; }
             }
         } else {
             while (pos > coord) {
                 const stride = 2 + (((hashChunk(pos, seed) >>> 0) & 3));  // 2–5
                 pos -= stride;
-                if (pos === coord) return true;
+                if (pos === coord) { res = true; break; }
             }
         }
-        return false;
+        if (cache.size > 40000) cache.clear();
+        cache.set(key, res);
+        return res;
     }
 
     _isNSRoadLine(cx) { return this._isRoadLine(cx, 7777); }
@@ -373,21 +383,29 @@ export class CyberpunkScene {
     /** Highway lines — much rarer, fixed stride of 10-14 chunks */
     _isHighwayLine(coord, seed) {
         if (coord === 0) return false; // no highway at origin
+        const cache = this._hwyLineCache || (this._hwyLineCache = new Map());
+        const key = seed * 4194319 + coord;
+        const hit = cache.get(key);
+        if (hit !== undefined) return hit;
+
         let pos = 0;
+        let res = false;
         if (coord > 0) {
             while (pos < coord) {
                 const stride = 10 + (((hashChunk(pos, seed) >>> 0) & 3)); // 10-13
                 pos += stride;
-                if (pos === coord) return true;
+                if (pos === coord) { res = true; break; }
             }
         } else {
             while (pos > coord) {
                 const stride = 10 + (((hashChunk(pos, seed) >>> 0) & 3));
                 pos -= stride;
-                if (pos === coord) return true;
+                if (pos === coord) { res = true; break; }
             }
         }
-        return false;
+        if (cache.size > 40000) cache.clear();
+        cache.set(key, res);
+        return res;
     }
     _isNSHighwayLine(cx) { return this._isHighwayLine(cx, 11111); }
     _isEWHighwayLine(cz) { return this._isHighwayLine(cz, 22222); }
@@ -2065,6 +2083,41 @@ export class CyberpunkScene {
         if (!pool.length) return null;
         const pick = pool[Math.floor(Math.random() * pool.length)];
         return { x: pick[0] * CHUNK_SIZE, z: pick[1] * CHUNK_SIZE };
+    }
+
+    /** World units per chunk — exposed for the minimap. */
+    getChunkSize() { return CHUNK_SIZE; }
+
+    /** True if the chunk at (cx,cz) is a drivable, ground-level road. */
+    isRoadChunk(cx, cz) {
+        const t = this._getChunkType(cx, cz);
+        return t === CHUNK_CROSS || t === CHUNK_STRAIGHT_NS || t === CHUNK_STRAIGHT_EW;
+    }
+
+    /**
+     * Collect static collidables (buildings, barriers, poles) within `radius` of
+     * an XZ point, scanning only the local 3×3 chunk neighbourhood so it stays
+     * cheap enough to call per-AI-car per-frame. Results are pushed into `out`.
+     */
+    getNearbyStatic(x, z, radius, out) {
+        out.length = 0;
+        const r2 = radius * radius;
+        const ccx = Math.round(x / CHUNK_SIZE);
+        const ccz = Math.round(z / CHUNK_SIZE);
+        for (let dx = -1; dx <= 1; dx++) {
+            for (let dz = -1; dz <= 1; dz++) {
+                const chunk = this.chunks.get(`${ccx + dx},${ccz + dz}`);
+                if (!chunk) continue;
+                for (const c of chunk.collidables) {
+                    if (c.type !== 'building' && c.type !== 'barrier' && c.type !== 'pole') continue;
+                    const mxc = (c.box.min.x + c.box.max.x) * 0.5;
+                    const mzc = (c.box.min.z + c.box.max.z) * 0.5;
+                    const ddx = mxc - x, ddz = mzc - z;
+                    if (ddx * ddx + ddz * ddz <= r2) out.push(c);
+                }
+            }
+        }
+        return out;
     }
 
     /** Get ground height at a world XZ position (for vehicle Y) */

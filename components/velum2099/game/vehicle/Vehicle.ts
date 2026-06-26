@@ -607,6 +607,19 @@ export class Vehicle {
                     }
                     break;
 
+                case 'police':
+                    // Solid cop car — shove the player out and bleed speed, and
+                    // nudge the cruiser so ramming/blocking feels physical.
+                    this.position.x += pushX;
+                    this.position.z += pushZ;
+                    pushed = true;
+                    if (isNewCollision) {
+                        this.velocity *= 0.45;
+                        col.mesh.position.x -= pushX * 0.7;
+                        col.mesh.position.z -= pushZ * 0.7;
+                    }
+                    break;
+
                 case 'cone':
                     if (isNewCollision) {
                         this.velocity *= 0.9;
