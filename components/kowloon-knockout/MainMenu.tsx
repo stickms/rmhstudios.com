@@ -5,12 +5,14 @@ import { useGameStore } from '@/lib/kowloon-knockout/store';
 import { useEffect, useState } from 'react';
 import { COMBO_DEFS } from '@/lib/kowloon-knockout/game/combat/combos';
 import { useTranslation } from 'react-i18next';
+import GraphicsSettings from './GraphicsSettings';
 
 export default function MainMenu() {
     const { t } = useTranslation("c-kowloon-knockout");
     const { setPhase, setMultiplayer } = useGameStore();
     const [showControls, setShowControls] = useState(false);
     const [showCombos, setShowCombos] = useState(false);
+    const [showGraphics, setShowGraphics] = useState(false);
     const [flickerClass, setFlickerClass] = useState('');
 
     useEffect(() => {
@@ -87,7 +89,7 @@ export default function MainMenu() {
 
                     <motion.button
                         className="neon-button neon-button-controls"
-                        onClick={() => { setShowControls(!showControls); setShowCombos(false); }}
+                        onClick={() => { setShowControls(!showControls); setShowCombos(false); setShowGraphics(false); }}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                     >
@@ -96,11 +98,20 @@ export default function MainMenu() {
 
                     <motion.button
                         className="neon-button neon-button-controls"
-                        onClick={() => { setShowCombos(!showCombos); setShowControls(false); }}
+                        onClick={() => { setShowCombos(!showCombos); setShowControls(false); setShowGraphics(false); }}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                     >
                         {t("combos", { defaultValue: "COMBOS" })}
+                    </motion.button>
+
+                    <motion.button
+                        className="neon-button neon-button-controls"
+                        onClick={() => { setShowGraphics(!showGraphics); setShowControls(false); setShowCombos(false); }}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                    >
+                        GRAPHICS
                     </motion.button>
                 </motion.div>
 
@@ -219,6 +230,8 @@ export default function MainMenu() {
                         </button>
                     </motion.div>
                 )}
+
+                {showGraphics && <GraphicsSettings />}
             </motion.div>
 
             <div className="menu-footer">
