@@ -11,6 +11,8 @@ import { WorldSetup } from './WorldSetup';
 import { DialogueScreen } from './DialogueScreen';
 import { GeneratedDialogueScreen } from './GeneratedDialogueScreen';
 import { GeneratedPoemMoment } from './GeneratedPoemMoment';
+import { CastScreen } from './CastScreen';
+import { CompletionScreen } from './CompletionScreen';
 import { WordSelectPuzzle } from './WordSelectPuzzle';
 import { LineArrangePuzzle } from './LineArrangePuzzle';
 import { PoemPresentation } from './PoemPresentation';
@@ -117,6 +119,10 @@ export function VersecraftGame({ isLoggedIn }: { isLoggedIn: boolean }) {
         return mode === 'generated' ? <GeneratedDialogueScreen /> : <DialogueScreen />;
       case 'gen_poem':
         return <GeneratedPoemMoment />;
+      case 'cast':
+        return <CastScreen />;
+      case 'complete':
+        return <CompletionScreen />;
       case 'puzzle_word_select':
         return <WordSelectPuzzle />;
       case 'puzzle_line_arrange':
@@ -139,27 +145,30 @@ export function VersecraftGame({ isLoggedIn }: { isLoggedIn: boolean }) {
 
   return (
     <div
-      className="relative w-full min-h-screen overflow-hidden select-none"
+      className="relative w-full min-h-[100dvh] overflow-hidden select-none"
       style={{
         backgroundColor: '#1a1520',
         color: '#e8e0d0',
         fontFamily: 'var(--font-nunito, var(--font-inter, sans-serif))',
       }}
     >
-      {/* Back to builds button */}
-      <Link
-        to="/builds"
-        className="absolute top-4 left-4 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded text-xs transition-all hover:brightness-125"
-        style={{
-          backgroundColor: 'rgba(26, 21, 32, 0.8)',
-          border: '1px solid rgba(196, 163, 90, 0.15)',
-          color: '#a89888',
-          backdropFilter: 'blur(4px)',
-        }}
-      >
-        <span style={{ color: '#c4a35a' }}>&larr;</span>
-        {t("back-to-builds", { defaultValue: "Back to Builds" })}
-      </Link>
+      {/* Back to builds — only on the menu, so it never collides with in-screen
+          back buttons or the dialogue HUD on mobile. */}
+      {screen === 'menu' && (
+        <Link
+          to="/builds"
+          className="absolute top-4 left-4 z-50 flex items-center gap-1.5 px-3 py-2 rounded text-xs transition-all hover:brightness-125"
+          style={{
+            backgroundColor: 'rgba(26, 21, 32, 0.8)',
+            border: '1px solid rgba(196, 163, 90, 0.15)',
+            color: '#a89888',
+            backdropFilter: 'blur(4px)',
+          }}
+        >
+          <span style={{ color: '#c4a35a' }}>&larr;</span>
+          {t("back-to-builds", { defaultValue: "Back to Builds" })}
+        </Link>
+      )}
       {renderScreen()}
     </div>
   );

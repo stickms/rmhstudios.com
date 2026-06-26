@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/lib/versecraft/store';
 import { Sprite } from './Sprite';
+import { ShareSeed } from './ShareSeed';
 import { asset } from '@/lib/storage/asset';
 import type { GenNode, GenScene, Emotion } from '@/lib/versecraft/gen/world-types';
 
@@ -140,7 +141,14 @@ export function GeneratedDialogueScreen() {
   const filter = TIME_FILTERS[scene.timeOfDay] ?? '';
 
   return (
-    <div className="relative w-full min-h-screen overflow-hidden cursor-pointer" onClick={handleClick}>
+    <div className="relative w-full min-h-[100dvh] overflow-hidden cursor-pointer" onClick={handleClick}>
+      {/* Top progress chip */}
+      <div className="absolute top-3 right-3 z-30 pointer-events-none">
+        <span className="px-2.5 py-1 rounded-full text-[11px]"
+          style={{ backgroundColor: 'rgba(26,21,32,0.7)', border: '1px solid rgba(196,163,90,0.18)', color: '#c4a35a', backdropFilter: 'blur(4px)' }}>
+          Ch.{chapterIndex + 1}/{world.routePlan.totalChapters}
+        </span>
+      </div>
       {/* Chapter-transition overlay */}
       <AnimatePresence>
         {genLoading && (
@@ -231,8 +239,8 @@ export function GeneratedDialogueScreen() {
                 {node.choices.map((choice, i) => (
                   <motion.button
                     key={i}
-                    className="w-full text-left px-4 py-2.5 rounded transition-all text-sm md:text-base"
-                    style={{ backgroundColor: 'rgba(42, 34, 53, 0.6)', border: '1px solid rgba(196, 163, 90, 0.15)', color: '#e8e0d0' }}
+                    className="w-full text-left px-4 py-3 rounded transition-all text-sm md:text-base active:scale-[0.99]"
+                    style={{ minHeight: 48, backgroundColor: 'rgba(42, 34, 53, 0.6)', border: '1px solid rgba(196, 163, 90, 0.15)', color: '#e8e0d0' }}
                     initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.25 + i * 0.08 }}
                     whileHover={{ backgroundColor: 'rgba(196, 163, 90, 0.15)', borderColor: 'rgba(196, 163, 90, 0.4)', x: 5 }}
                     onClick={(e) => { e.stopPropagation(); genApplyChoice(choice); setTextComplete(false); }}
@@ -257,23 +265,25 @@ export function GeneratedDialogueScreen() {
           )}
         </motion.div>
 
-        {/* Action bar */}
-        <div className="max-w-4xl mx-auto mt-2 flex gap-2 justify-between items-center">
-          <span className="text-xs" style={{ color: '#555' }}>
-            {world.title} · Ch.{chapterIndex + 1}/{world.routePlan.totalChapters} · seed {world.seed}
-          </span>
-          <div className="flex gap-2">
-            {(['menu', 'settings', 'progress'] as const).map(k => (
-              <button
-                key={k}
-                onClick={(e) => { e.stopPropagation(); setScreen(k); }}
-                className="text-xs px-3 py-1 rounded transition-all hover:brightness-125"
-                style={{ backgroundColor: 'rgba(26, 21, 32, 0.7)', border: '1px solid rgba(196, 163, 90, 0.1)', color: '#888' }}
-              >
-                {k}
-              </button>
-            ))}
-          </div>
+        {/* Action HUD — touch-friendly, wraps on small screens */}
+        <div className="max-w-4xl mx-auto mt-2 flex gap-2 justify-end items-center flex-wrap" onClick={(e) => e.stopPropagation()}>
+          {([
+            { k: 'menu' as const, icon: '☰', label: 'Menu' },
+            { k: 'cast' as const, icon: '♥', label: 'Cast' },
+            { k: 'settings' as const, icon: '⚙', label: 'Settings' },
+          ]).map(({ k, icon, label }) => (
+            <button
+              key={k}
+              onClick={() => setScreen(k)}
+              aria-label={label}
+              className="flex items-center gap-1.5 rounded transition-all active:scale-95"
+              style={{ minHeight: 40, padding: '6px 12px', backgroundColor: 'rgba(26,21,32,0.72)', border: '1px solid rgba(196,163,90,0.15)', color: '#cbbfae', fontSize: 12, backdropFilter: 'blur(4px)' }}
+            >
+              <span style={{ color: '#c4a35a' }}>{icon}</span>
+              <span className="hidden sm:inline">{label}</span>
+            </button>
+          ))}
+          <ShareSeed seed={world.seed} compact />
         </div>
       </div>
     </div>

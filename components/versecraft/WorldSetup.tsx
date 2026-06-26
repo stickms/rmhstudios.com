@@ -45,7 +45,8 @@ export function WorldSetup() {
     }
   };
 
-  const field = 'w-full px-3 py-2 rounded text-sm';
+  // text-base (16px) avoids iOS focus-zoom; comfortable tap height.
+  const field = 'w-full px-3 py-2.5 rounded text-base';
   const fieldStyle = {
     backgroundColor: 'rgba(42, 34, 53, 0.6)',
     border: '1px solid rgba(196, 163, 90, 0.2)',
@@ -55,7 +56,7 @@ export function WorldSetup() {
 
   if (submitting) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+      <div className="flex flex-col items-center justify-center min-h-[100dvh] gap-4 px-6 text-center">
         <motion.div
           className="text-2xl tracking-wide"
           style={{ fontFamily: 'var(--font-cinzel, serif)', color: '#e8e0d0' }}
@@ -69,7 +70,7 @@ export function WorldSetup() {
   }
 
   return (
-    <div className="relative flex flex-col items-center min-h-screen overflow-y-auto py-12 px-4">
+    <div className="relative flex flex-col items-center min-h-[100dvh] overflow-y-auto py-12 px-4">
       <motion.div
         className="relative z-10 w-full max-w-lg"
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}

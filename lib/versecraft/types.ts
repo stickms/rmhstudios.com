@@ -226,6 +226,8 @@ export type GameScreen =
   | 'world_setup'
   | 'dialogue'
   | 'gen_poem'
+  | 'cast'
+  | 'complete'
   | 'puzzle_word_select'
   | 'puzzle_line_arrange'
   | 'presentation'

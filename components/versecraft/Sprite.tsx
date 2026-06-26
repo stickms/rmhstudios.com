@@ -23,7 +23,7 @@ export function Sprite({ packId, emotion = 'neutral', position, isSpeaking, acce
   const url = spriteUrl(packId, emotion);
   if (!url) return null;
 
-  const xPos = position === 'left' ? '22%' : position === 'right' ? '78%' : '50%';
+  const xPos = position === 'left' ? '24%' : position === 'right' ? '76%' : '50%';
 
   return (
     <motion.div
@@ -48,7 +48,7 @@ export function Sprite({ packId, emotion = 'neutral', position, isSpeaking, acce
         scale: { duration: 0.3 },
       }}
     >
-      <div className="relative w-56 h-96 md:w-72 md:h-[34rem]">
+      <div className="relative w-[42vw] max-w-[16rem] h-[52vh] sm:w-56 sm:h-96 md:w-72 md:h-[34rem]">
         {/* key on url forces a crossfade when the emotion (image) changes */}
         <motion.img
           key={url}

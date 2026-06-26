@@ -366,7 +366,7 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
       // Route complete — mark the cast's routes done and return to menu.
       const completed = { ...state.affinity };
       for (const id of Object.keys(completed)) completed[id] = { ...completed[id], routeCompleted: true };
-      set({ affinity: completed, screen: 'menu', storyFlags: { ...state.storyFlags, route_complete: true } });
+      set({ affinity: completed, screen: 'complete', storyFlags: { ...state.storyFlags, route_complete: true } });
       const s = get();
       autoSave(s);
       if (s.isLoggedIn) dbSave(s);
