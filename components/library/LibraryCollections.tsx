@@ -481,6 +481,7 @@ function AddBooksModal({
                     type="button"
                     className={`lib-collections__picker-btn${added ? ' is-added' : ''}`}
                     onClick={() => (added ? onRemove(b.slug) : onAdd(b.slug))}
+                    aria-pressed={added}
                   >
                     {added ? <><Check size={14} /> {t('added', { defaultValue: 'Added' })}</> : <><Plus size={14} /> {t('add', { defaultValue: 'Add' })}</>}
                   </button>

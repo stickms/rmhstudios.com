@@ -30,9 +30,16 @@ export function MobileNav() {
   const { t } = useTranslation("feed");
 
   const tabClass = (active: boolean) =>
-    `flex items-center justify-center p-3 transition-colors ${
-      active ? 'text-site-accent' : 'text-site-text-muted'
+    `relative flex items-center justify-center p-3 transition-[color,transform] duration-150 active:scale-90 ${
+      active ? 'text-site-accent' : 'text-site-text-muted hover:text-site-text'
     }`;
+
+  // A small accent bar above the active tab — a clearer "you are here" cue than
+  // colour alone (and helps low-vision users).
+  const activeBar = (active: boolean) =>
+    active ? (
+      <span aria-hidden="true" className="absolute top-0 left-1/2 h-0.5 w-6 -translate-x-1/2 rounded-full bg-site-accent" />
+    ) : null;
 
   return (
     <>
@@ -53,19 +60,23 @@ export function MobileNav() {
           <LanguageSwitcher />
         </div>
         <div className="flex items-center justify-around h-12">
-          <Link to="/" className={tabClass(isHome)} aria-label={t("home", { defaultValue: "Home" })}>
+          <Link to="/" className={tabClass(isHome)} aria-label={t("home", { defaultValue: "Home" })} aria-current={isHome ? 'page' : undefined}>
+            {activeBar(isHome)}
             <Home className="w-6 h-6" />
           </Link>
 
-          <Link to="/search" search={{ q: '' }} className={tabClass(isExplore)} aria-label={t("explore", { defaultValue: "Explore" })}>
+          <Link to="/search" search={{ q: '' }} className={tabClass(isExplore)} aria-label={t("explore", { defaultValue: "Explore" })} aria-current={isExplore ? 'page' : undefined}>
+            {activeBar(isExplore)}
             <Compass className="w-6 h-6" />
           </Link>
 
-          <Link to="/create" className={tabClass(isStudio)} aria-label={t("creator-studio", { defaultValue: "Creator Studio" })}>
+          <Link to="/create" className={tabClass(isStudio)} aria-label={t("creator-studio", { defaultValue: "Creator Studio" })} aria-current={isStudio ? 'page' : undefined}>
+            {activeBar(isStudio)}
             <Wand2 className="w-6 h-6" />
           </Link>
 
-          <Link to="/messages" className={tabClass(isInbox)} aria-label={t("inbox", { defaultValue: "Inbox" })}>
+          <Link to="/messages" className={tabClass(isInbox)} aria-label={t("inbox", { defaultValue: "Inbox" })} aria-current={isInbox ? 'page' : undefined}>
+            {activeBar(isInbox)}
             <div className="relative">
               <Inbox className="w-6 h-6" />
               {inboxCount > 0 && (
@@ -76,7 +87,8 @@ export function MobileNav() {
             </div>
           </Link>
 
-          <Link to={profileHref} className={tabClass(isProfile)} aria-label={t("profile", { defaultValue: "Profile" })}>
+          <Link to={profileHref} className={tabClass(isProfile)} aria-label={t("profile", { defaultValue: "Profile" })} aria-current={isProfile ? 'page' : undefined}>
+            {activeBar(isProfile)}
             <User className="w-6 h-6" />
           </Link>
         </div>

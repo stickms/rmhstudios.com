@@ -98,6 +98,7 @@ export function LibraryEditBar({
         className={`lib-edit__btn ${book.curated ? 'is-on' : ''}`}
         disabled={busy}
         onClick={() => act(() => patchBook(book.id!, { official: !book.curated }))}
+        aria-pressed={Boolean(book.curated)}
         aria-label={book.curated ? t('edit-uncurate', { defaultValue: 'Move to community' }) : t('edit-curate', { defaultValue: 'Mark curated' })}
         title={book.curated ? t('edit-uncurate', { defaultValue: 'Move to community' }) : t('edit-curate', { defaultValue: 'Mark curated' })}
       >
@@ -108,6 +109,7 @@ export function LibraryEditBar({
         className="lib-edit__btn"
         disabled={busy}
         onClick={() => act(() => patchBook(book.id!, { hidden: !book.hidden }))}
+        aria-pressed={Boolean(book.hidden)}
         aria-label={book.hidden ? t('edit-show', { defaultValue: 'Show' }) : t('edit-hide', { defaultValue: 'Hide' })}
         title={book.hidden ? t('edit-show', { defaultValue: 'Show' }) : t('edit-hide', { defaultValue: 'Hide' })}
       >

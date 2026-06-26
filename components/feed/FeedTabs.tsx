@@ -25,6 +25,7 @@ export function FeedTabs({ mode, onModeChange }: FeedTabsProps) {
       <div className="flex border-b border-site-border">
         <button
           onClick={() => onModeChange('feed')}
+          aria-pressed={mode === 'feed'}
           className={`flex-1 px-4 py-2.5 text-sm font-bold transition-colors relative ${
             mode === 'feed'
               ? 'text-site-text'
@@ -38,6 +39,7 @@ export function FeedTabs({ mode, onModeChange }: FeedTabsProps) {
         </button>
         <button
           onClick={() => onModeChange('friends')}
+          aria-pressed={mode === 'friends'}
           className={`flex-1 px-4 py-2.5 text-sm font-bold transition-colors relative ${
             mode === 'friends'
               ? 'text-site-text'
@@ -58,6 +60,7 @@ export function FeedTabs({ mode, onModeChange }: FeedTabsProps) {
             <button
               key={tab.value}
               onClick={() => setFilter(tab.value)}
+              aria-pressed={filter === tab.value}
               className={`px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors relative ${
                 filter === tab.value
                   ? 'text-site-accent'

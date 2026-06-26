@@ -235,10 +235,10 @@ export function NewsList({ initialArticles, featuredArticles, filtersOpen = fals
             {totalPages > 1 && (
                 <motion.div className="mt-8 flex flex-col items-center gap-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
                     <div className="flex items-center gap-1 sm:gap-2">
-                        <button onClick={() => goToPage(1)} disabled={safePage === 1} className="p-2 rounded-lg text-(--site-text-dim) hover:text-(--site-text) hover:bg-(--site-surface) disabled:opacity-20 disabled:cursor-not-allowed transition-all" aria-label={t("first-page", { defaultValue: "First page" })}>
+                        <button onClick={() => goToPage(1)} disabled={safePage === 1} className="p-2 rounded-lg text-(--site-text-dim) hover:text-(--site-text) hover:bg-(--site-surface) disabled:opacity-20 disabled:cursor-not-allowed transition-[transform,color,background-color] duration-150 active:scale-95 disabled:active:scale-100" aria-label={t("first-page", { defaultValue: "First page" })}>
                             <ChevronsLeft className="w-4 h-4" />
                         </button>
-                        <button onClick={() => goToPage(safePage - 1)} disabled={safePage === 1} className="p-2 rounded-lg text-(--site-text-dim) hover:text-(--site-text) hover:bg-(--site-surface) disabled:opacity-20 disabled:cursor-not-allowed transition-all" aria-label={t("prev-page", { defaultValue: "Previous page" })}>
+                        <button onClick={() => goToPage(safePage - 1)} disabled={safePage === 1} className="p-2 rounded-lg text-(--site-text-dim) hover:text-(--site-text) hover:bg-(--site-surface) disabled:opacity-20 disabled:cursor-not-allowed transition-[transform,color,background-color] duration-150 active:scale-95 disabled:active:scale-100" aria-label={t("prev-page", { defaultValue: "Previous page" })}>
                             <ChevronLeft className="w-4 h-4" />
                         </button>
                         {pageNumbers.map((page, i) =>
@@ -250,16 +250,17 @@ export function NewsList({ initialArticles, featuredArticles, filtersOpen = fals
                                 <button
                                     key={page}
                                     onClick={() => goToPage(page as number)}
-                                    className={`w-9 h-9 rounded-lg text-sm font-bold transition-all ${safePage === page ? 'bg-(--site-accent) text-site-accent-fg' : 'text-(--site-text-dim) hover:text-(--site-text) hover:bg-(--site-surface)'}`}
+                                    aria-current={safePage === page ? "page" : undefined}
+                                    className={`w-9 h-9 rounded-lg text-sm font-bold transition-[transform,color,background-color] duration-150 active:scale-95 ${safePage === page ? 'bg-(--site-accent) text-site-accent-fg' : 'text-(--site-text-dim) hover:text-(--site-text) hover:bg-(--site-surface)'}`}
                                 >
                                     {page}
                                 </button>
                             ),
                         )}
-                        <button onClick={() => goToPage(safePage + 1)} disabled={safePage === totalPages} className="p-2 rounded-lg text-(--site-text-dim) hover:text-(--site-text) hover:bg-(--site-surface) disabled:opacity-20 disabled:cursor-not-allowed transition-all" aria-label={t("next-page", { defaultValue: "Next page" })}>
+                        <button onClick={() => goToPage(safePage + 1)} disabled={safePage === totalPages} className="p-2 rounded-lg text-(--site-text-dim) hover:text-(--site-text) hover:bg-(--site-surface) disabled:opacity-20 disabled:cursor-not-allowed transition-[transform,color,background-color] duration-150 active:scale-95 disabled:active:scale-100" aria-label={t("next-page", { defaultValue: "Next page" })}>
                             <ChevronRight className="w-4 h-4" />
                         </button>
-                        <button onClick={() => goToPage(totalPages)} disabled={safePage === totalPages} className="p-2 rounded-lg text-(--site-text-dim) hover:text-(--site-text) hover:bg-(--site-surface) disabled:opacity-20 disabled:cursor-not-allowed transition-all" aria-label={t("last-page", { defaultValue: "Last page" })}>
+                        <button onClick={() => goToPage(totalPages)} disabled={safePage === totalPages} className="p-2 rounded-lg text-(--site-text-dim) hover:text-(--site-text) hover:bg-(--site-surface) disabled:opacity-20 disabled:cursor-not-allowed transition-[transform,color,background-color] duration-150 active:scale-95 disabled:active:scale-100" aria-label={t("last-page", { defaultValue: "Last page" })}>
                             <ChevronsRight className="w-4 h-4" />
                         </button>
                     </div>

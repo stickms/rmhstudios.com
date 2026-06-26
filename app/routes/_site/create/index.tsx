@@ -24,11 +24,12 @@ import { listVibePages } from '@/lib/rmhvibe/vibe.server';
 import { PagesTab, type VibeGallery } from '@/components/creator-studio/PagesTab';
 import { CuratedBuildsTab, UserBuildsTab } from '@/components/creator-studio/BuildsTab';
 import { RankedSummary } from '@/components/creator-studio/RankedSummary';
-import { PersonasColumn } from '@/components/feed/PersonasColumn';
+import { PersonasTab } from '@/components/creator-studio/PersonasTab';
 import '@/components/rmhvibe/vibe.css';
 import '@/components/library/library.css';
 import '@/components/builds/builds.css';
 import '@/components/creator-studio/creator-studio.css';
+import '@/components/creator-studio/storefront.css';
 
 const STUDIO_TABS = ['pages', 'games', 'apps', 'user-builds', 'personas'] as const;
 type StudioTab = (typeof STUDIO_TABS)[number];
@@ -54,13 +55,16 @@ export const Route = createFileRoute('/_site/create/')({
   loader: async () => ({
     gallery: await fetchGallery({ data: {} }),
     curated: listCuratedBuilds(),
+    // Fresh per load → each refresh re-advertises a different featured mix while
+    // staying deterministic between server render and client hydration.
+    seed: Math.floor(Math.random() * 1_000_000) + 1,
   }),
   component: CreatorStudio,
 });
 
 function CreatorStudio() {
   const { t } = useTranslation('feed');
-  const { gallery, curated } = Route.useLoaderData();
+  const { gallery, curated, seed } = Route.useLoaderData();
   const { tab = 'pages' } = Route.useSearch();
   const navigate = useNavigate();
 
@@ -69,6 +73,25 @@ function CreatorStudio() {
       void navigate({ to: '/create', search: { tab: next }, replace: true });
     },
     [navigate],
+  );
+
+  // Roving keyboard navigation for the tablist (WAI-ARIA tabs pattern):
+  // ←/→ move between tabs, Home/End jump to the ends, and focus follows.
+  const onTabsKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      const idx = STUDIO_TABS.indexOf(tab);
+      let next = idx;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = (idx + 1) % STUDIO_TABS.length;
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = (idx - 1 + STUDIO_TABS.length) % STUDIO_TABS.length;
+      else if (e.key === 'Home') next = 0;
+      else if (e.key === 'End') next = STUDIO_TABS.length - 1;
+      else return;
+      e.preventDefault();
+      const nextId = STUDIO_TABS[next];
+      setTab(nextId);
+      requestAnimationFrame(() => document.getElementById(`cstudio-tab-${nextId}`)?.focus());
+    },
+    [tab, setTab],
   );
 
   const games = useMemo(() => curated.filter((b) => b.kind === 'game'), [curated]);
@@ -106,15 +129,23 @@ function CreatorStudio() {
           </p>
         </header>
 
-        <div className="cstudio-tabs" role="tablist" aria-label={t('creator-studio', { defaultValue: 'Creator Studio' })}>
+        <div
+          className="cstudio-tabs"
+          role="tablist"
+          aria-label={t('creator-studio', { defaultValue: 'Creator Studio' })}
+          onKeyDown={onTabsKeyDown}
+        >
           {tabs.map(({ id, label, icon: Icon }) => {
             const active = tab === id;
             return (
               <button
                 key={id}
+                id={`cstudio-tab-${id}`}
                 type="button"
                 role="tab"
                 aria-selected={active}
+                aria-controls={`cstudio-panel-${id}`}
+                tabIndex={active ? 0 : -1}
                 className={`cstudio-tab ${active ? 'is-active' : ''}`}
                 onClick={() => setTab(id)}
               >
@@ -126,37 +157,39 @@ function CreatorStudio() {
         </div>
 
         {tab === 'pages' && (
-          <div className="cstudio-body cstudio-body--pages">
-            <PagesTab initial={gallery} fetchGallery={fetchGallery} />
+          <div className="cstudio-body cstudio-body--pages" role="tabpanel" id="cstudio-panel-pages" aria-labelledby="cstudio-tab-pages">
+            <PagesTab initial={gallery} seed={seed} fetchGallery={fetchGallery} />
           </div>
         )}
         {tab === 'games' && (
-          <div className="cstudio-body">
+          <div className="cstudio-body" role="tabpanel" id="cstudio-panel-games" aria-labelledby="cstudio-tab-games">
             <RankedSummary />
             <CuratedBuildsTab
               curated={games}
+              seed={seed + 1}
               searchPlaceholder={t('search-games-placeholder', { defaultValue: 'Search games...' })}
               emptyLabel={t('empty-games', { defaultValue: 'No games match that search.' })}
             />
           </div>
         )}
         {tab === 'apps' && (
-          <div className="cstudio-body">
+          <div className="cstudio-body" role="tabpanel" id="cstudio-panel-apps" aria-labelledby="cstudio-tab-apps">
             <CuratedBuildsTab
               curated={apps}
+              seed={seed + 2}
               searchPlaceholder={t('search-apps-placeholder', { defaultValue: 'Search apps...' })}
               emptyLabel={t('empty-apps', { defaultValue: 'No apps match that search.' })}
             />
           </div>
         )}
         {tab === 'user-builds' && (
-          <div className="cstudio-body">
-            <UserBuildsTab />
+          <div className="cstudio-body" role="tabpanel" id="cstudio-panel-user-builds" aria-labelledby="cstudio-tab-user-builds">
+            <UserBuildsTab seed={seed + 3} />
           </div>
         )}
         {tab === 'personas' && (
-          <div className="cstudio-body">
-            <PersonasColumn hideHeader />
+          <div className="cstudio-body" role="tabpanel" id="cstudio-panel-personas" aria-labelledby="cstudio-tab-personas">
+            <PersonasTab seed={seed + 4} />
           </div>
         )}
       </AnimatedMain>

@@ -82,13 +82,18 @@
   background: transparent;
   border: 1px solid transparent;
   cursor: pointer;
-  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
   white-space: nowrap;
 }
 
 .cstudio-tab:hover {
   color: var(--site-text, #f5f5f7);
   background: var(--site-surface, #18181b);
+}
+
+.cstudio-tab:active {
+  transform: scale(0.95);
+  transition-duration: 80ms;
 }
 
 .cstudio-tab.is-active {
