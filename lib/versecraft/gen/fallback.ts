@@ -12,9 +12,9 @@ import {
   type SettingTemplate,
 } from './banks';
 import {
-  normalizeEmotion, WORLD_SCHEMA_VERSION,
+  normalizeEmotion, WORLD_SCHEMA_VERSION, MC_SPEAKER,
   type GeneratedWorld, type GeneratedCharacter, type GenChapter, type GenScene,
-  type GenNode, type Pronouns, type Emotion, type Environment, type TimeOfDay,
+  type GenNode, type GenChoice, type Pronouns, type Emotion, type Environment, type TimeOfDay,
   type RoutePlan, type StoryBeat,
 } from './world-types';
 
@@ -106,6 +106,9 @@ export function fallbackWorld(seed: string, mcPrompt: string, playerName = 'You'
       relationToMC: i === 0 ? 'the first to welcome you in' : rng.pick([
         'wary of you at first', 'drawn to you immediately', 'your unlikely mirror',
         'the one who challenges you', 'quietly watching from the edges',
+        'convinced you don\'t belong here yet', 'who sees something in you no one else has named',
+        'who needs something from you they won\'t ask for', 'who reminds you of someone you lost',
+        'who decided to dislike you before you said a word',
       ]),
       emotionalDefault: normalizeEmotion(arche.emotionalDefault),
       packId: pack.id,
@@ -122,7 +125,9 @@ export function fallbackWorld(seed: string, mcPrompt: string, playerName = 'You'
     source: 'fallback',
     title: setting.title,
     tagline: rng.pick(['Some doors only open once.', 'Everyone here is a poem half-written.', 'You arrived just in time to lose them.', 'Stay long enough to be changed.']),
-    premise: setting.premise.replaceAll('{mc}', playerName),
+    // Keep the {mc} token un-substituted: the canonical world is name-agnostic and
+    // the renderer fills in each player's own name (see gen/personalize).
+    premise: setting.premise,
     setting: setting.setting,
     toneTags: setting.toneTags,
     motifs: rng.shuffle(setting.motifs).slice(0, 3),
@@ -303,8 +308,8 @@ function characterLine(c: GeneratedCharacter, mood: Emotion, mc: string, motif: 
 /** Narration of a character DOING something tied to their wound — keeps the
  *  story character-action-driven rather than just talking heads. */
 function actionBeat(c: GeneratedCharacter, rng: Rng, used: Set<string>): string {
-  const fear = c.fear.toLowerCase().replace(/^afraid of /, 'the fear of ');
-  const dream = c.dream.toLowerCase().replace(/^dreams /, 'dreams ');
+  const fear = c.fear.toLowerCase().replace(/^afraid of /, 'the fear of ').replace(/[.\s]+$/, '');
+  const dream = c.dream.toLowerCase().replace(/[.\s]+$/, '');
   return pickUnique([
     `${c.name} won't quite meet your eyes — ${fear} is written all over the way they hold themselves.`,
     `${c.name} starts to say something, stops, and does the small brave thing instead: they stay.`,
@@ -333,27 +338,139 @@ function narration(env: Environment, mood: Emotion, motif: string, world: Genera
   return pickUnique(weather[mood] ?? weather.neutral, rng, used);
 }
 
-function makeChoice(speaker: GeneratedCharacter, mood: Emotion, rng: Rng, used: Set<string>) {
+/** True if a choice has no negative affinity deltas (a "safe"/kind path). */
+function isWholesome(c: GenChoice): boolean {
+  return Object.values(c.affinity ?? {}).every((v) => v >= 0);
+}
+
+// Each choice is a genuinely DIFFERENT move — different content, tone, and a
+// `direction` that gets logged and fed back into later generation so the route
+// actually diverges, rather than three rewordings of "be nice". Some options are
+// deliberately BAD — cold, cruel, self-sabotaging — and cost you the relationship
+// (negative affinity); when another character is around, you can also turn your
+// attention to THEM instead. `usedMoves` keeps the two choice points distinct.
+function makeChoice(
+  speaker: GeneratedCharacter, mood: Emotion, rng: Rng, used: Set<string>,
+  usedMoves?: Set<string>, others: GeneratedCharacter[] = [],
+) {
   const heavy = mood === 'sad' || mood === 'crying' || mood === 'hurt' || mood === 'afraid' || mood === 'angry';
   const prompt = pickUnique([
-    `${speaker.name} waits. Whatever you say next will matter more than usual.`,
-    `${speaker.name} is watching you now, really watching. The silence is yours to fill.`,
+    `${speaker.name} waits. Whatever you choose now, they'll carry it.`,
+    `${speaker.name} is watching you, really watching. The next move is yours.`,
     `There's a fork in the moment, and ${speaker.name} is leaving the choosing to you.`,
-    `You could say anything right now. ${speaker.name} would remember which thing you picked.`,
+    `You could go any direction from here. ${speaker.name} would remember which one you took.`,
   ], rng, used);
-  return {
-    speaker: null as string | null,
-    text: prompt,
-    choices: heavy ? [
-      { text: `Stay in it with ${speaker.name}. Don't fix, just be there.`, tone: 'kind' as const, affinity: { [speaker.id]: 5 }, flags: { last_tone: 'kind' } },
-      { text: 'Name the hard truth, gently.', tone: 'honest' as const, affinity: { [speaker.id]: 6 }, flags: { last_tone: 'honest' } },
-      { text: 'Pull back. You\'re not sure you can hold this.', tone: 'guarded' as const, affinity: { [speaker.id]: 1 }, flags: { last_tone: 'guarded' } },
-    ] : [
-      { text: `Meet ${speaker.name} where they are.`, tone: 'kind' as const, affinity: { [speaker.id]: 4 }, flags: { last_tone: 'kind' } },
-      { text: 'Push, just a little. See what\'s underneath.', tone: 'bold' as const, affinity: { [speaker.id]: 5 }, flags: { last_tone: 'bold' } },
-      { text: 'Tease them. Keep it light.', tone: 'playful' as const, affinity: { [speaker.id]: 3 }, flags: { last_tone: 'playful' } },
-    ],
-  };
+
+  const heavyOptions: GenChoice[] = [
+    { text: `Sit in the dark with ${speaker.name}. Say nothing — just refuse to leave.`,
+      tone: 'kind' as const, direction: 'stay silently, steadily present without trying to fix it',
+      affinity: { [speaker.id]: 5 }, flags: { last_tone: 'kind', last_move: 'presence' } },
+    { text: `Name the thing ${speaker.name} won't. Out loud, gently, no flinching.`,
+      tone: 'honest' as const, direction: 'drag the buried truth into the open',
+      affinity: { [speaker.id]: 6 }, flags: { last_tone: 'honest', last_move: 'truth' } },
+    { text: `Tell ${speaker.name} your own worst thing first, so they're not alone in the dark.`,
+      tone: 'deep' as const, direction: 'trade vulnerability — reveal a wound of your own',
+      affinity: { [speaker.id]: 5 }, flags: { last_tone: 'deep', last_move: 'confess' } },
+    { text: `Get angry on ${speaker.name}'s behalf — let them see you take their side, loudly.`,
+      tone: 'bold' as const, direction: 'take their side with force; make your loyalty undeniable',
+      affinity: { [speaker.id]: 4 }, flags: { last_tone: 'bold', last_move: 'defend' } },
+    // ── Bad / hurtful ──
+    { text: `Tell ${speaker.name} this is too much. You didn't sign up to be anyone's lifeline.`,
+      tone: 'guarded' as const, direction: 'reject them at their lowest; pull away coldly',
+      affinity: { [speaker.id]: -5 }, flags: { last_tone: 'guarded', last_move: 'reject' } },
+    { text: `Use what they just told you to win the argument. Twist the knife.`,
+      tone: 'bold' as const, direction: 'weaponize their vulnerability against them',
+      affinity: { [speaker.id]: -7 }, flags: { last_tone: 'bold', last_move: 'cruel' } },
+  ];
+  const lightOptions: GenChoice[] = [
+    { text: `Meet ${speaker.name} exactly where they are. Match their energy.`,
+      tone: 'kind' as const, direction: 'follow their lead and keep the warmth easy',
+      affinity: { [speaker.id]: 4 }, flags: { last_tone: 'kind', last_move: 'mirror' } },
+    { text: `Push, just a little. Ask the question under the question.`,
+      tone: 'bold' as const, direction: 'press past the small talk to what they really mean',
+      affinity: { [speaker.id]: 5 }, flags: { last_tone: 'bold', last_move: 'probe' } },
+    { text: `Tease ${speaker.name}. Keep it light and let them off the hook.`,
+      tone: 'playful' as const, direction: 'defuse with humor and keep things buoyant',
+      affinity: { [speaker.id]: 3 }, flags: { last_tone: 'playful', last_move: 'tease' } },
+    { text: `Flirt — openly, just to see ${speaker.name}'s face change.`,
+      tone: 'flirt' as const, direction: 'lean into the spark and let it show',
+      affinity: { [speaker.id]: 5 }, flags: { last_tone: 'flirt', last_move: 'flirt' } },
+    { text: `Open up first — tell ${speaker.name} something real about yourself, unprompted.`,
+      tone: 'deep' as const, direction: 'go first; offer a true piece of yourself',
+      affinity: { [speaker.id]: 5 }, flags: { last_tone: 'deep', last_move: 'open' } },
+    // ── Bad / dismissive ──
+    { text: `Check out. Make it obvious you've got better places to be than here with ${speaker.name}.`,
+      tone: 'guarded' as const, direction: 'dismiss them; make your disinterest plain',
+      affinity: { [speaker.id]: -4 }, flags: { last_tone: 'guarded', last_move: 'dismiss' } },
+  ];
+
+  // When someone else is around, you can chase THEM instead — at a cost to the
+  // one in front of you.
+  const other = others.find((o) => o.id !== speaker.id);
+  const chaseOptions: GenChoice[] = other ? [
+    { text: `You catch yourself thinking about ${other.name} instead — and ${speaker.name} can tell.`,
+      tone: 'flirt' as const, direction: `turn toward ${other.name}; pursue them over ${speaker.name}`,
+      affinity: { [other.id]: 5, [speaker.id]: -3 }, flags: { last_tone: 'flirt', last_move: 'chase_other', pursuing: other.id } },
+    { text: `Cut this short — you'd rather be wherever ${other.name} is.`,
+      tone: 'bold' as const, direction: `leave ${speaker.name} to seek out ${other.name}`,
+      affinity: { [other.id]: 3, [speaker.id]: -4 }, flags: { last_tone: 'bold', last_move: 'leave_for', pursuing: other.id } },
+  ] : [];
+
+  // Build the candidate set: positive moves + one spicy (bad/chase) option, kept
+  // distinct from earlier choice points. Always guarantee at least one kind path.
+  const pool = heavy ? heavyOptions : lightOptions;
+  const spicy = [...pool.filter((o) => !isWholesome(o)), ...chaseOptions];
+  const wholesome = pool.filter(isWholesome);
+  const notUsed = (o: GenChoice) => !usedMoves || !usedMoves.has(String(o.flags?.last_move));
+
+  const goodPicks = rng.sample(wholesome.filter(notUsed).length >= 2 ? wholesome.filter(notUsed) : wholesome, 2);
+  const spicyPool = spicy.filter(notUsed);
+  const spicyPick = rng.sample(spicyPool.length ? spicyPool : spicy, 1);
+  const choices = rng.shuffle([...goodPicks, ...spicyPick]);
+
+  if (usedMoves) for (const c of choices) usedMoves.add(String(c.flags?.last_move));
+  return { speaker: null as string | null, text: prompt, choices };
+}
+
+// The player's OWN spoken lines (render in the player's voice, distinct from the
+// italic inner-thought narration). Kept generic enough to fit any world.
+const MC_LINES: Record<'intro' | 'light' | 'heavy', string[]> = {
+  intro: [
+    `"Hi — I'm {mc}. I, uh… saw this place, and something made me stop."`,
+    `"I'm {mc}. Wasn't sure I'd actually walk in. But here I am."`,
+    `"{mc}. That's me. I think I'm in the right place — I hope I am."`,
+  ],
+  light: [
+    `"So this is where everyone disappears to."`,
+    `"Okay. I'm here. Show me what I'm missing."`,
+    `"I almost talked myself out of coming. Glad I lost that argument."`,
+  ],
+  heavy: [
+    `"Hey. Talk to me. I'm not scared of the hard stuff."`,
+    `"I'm not going anywhere. Whatever this is, I can sit in it with you."`,
+    `"You don't have to carry it alone. Not while I'm here."`,
+  ],
+};
+
+/** A coherent establishing sequence for the very first chapter: grounds WHERE the
+ *  player is, WHY they're here, and WHO they're meeting, before any drama. */
+function openingEstablishment(world: GeneratedWorld, lead: GeneratedCharacter, env: Environment, rng: Rng): string[] {
+  const place = env.replaceAll('_', ' ');
+  return [
+    world.setting,
+    `${world.mc.premise.replace(/\.\s*$/, '')}. ${world.mc.situation}`,
+    `Today that path leads here: the ${place}, where ${world.title} keeps its hours.`,
+    `${lead.name} — ${lead.role}, ${lead.age}, ${lead.archetype.toLowerCase()} — is the first to notice you in the doorway. ${cap(lead.personality)}.`,
+    rng.pick([
+      `${lead.name} looks up like they've been waiting for someone to fill exactly your shape.`,
+      `For a second nobody moves. Then ${lead.name} decides you're worth the risk of hello.`,
+      `${lead.name} clocks you, the new variable, and something in the room quietly recalculates.`,
+    ]),
+  ];
+}
+
+function cap(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 export function fallbackChapter(world: GeneratedWorld, index: number): GenChapter {
@@ -364,7 +481,8 @@ export function fallbackChapter(world: GeneratedWorld, index: number): GenChapte
     .filter((c): c is GeneratedCharacter => !!c);
   const lead = focusChars[0] ?? world.characters[0];
   const second = focusChars[1] ?? world.characters[1 % world.characters.length];
-  const mc = world.mc.name;
+  // {mc} is a render-time token replaced with the player's own name (personalize).
+  const mc = '{mc}';
   const motif = world.motifs[index % world.motifs.length] ?? rng.pick(world.motifs);
   const sceneCount = rng.int(3, 4);
   // Two choice points across the chapter (first and a later scene).
@@ -377,6 +495,7 @@ export function fallbackChapter(world: GeneratedWorld, index: number): GenChapte
   const usedTurn = new Set<string>();
   const usedClose = new Set<string>();
   const usedPrompt = new Set<string>();
+  const usedMoves = new Set<string>();
 
   const scenes: GenScene[] = [];
   let nodeSeq = 0;
@@ -394,9 +513,30 @@ export function fallbackChapter(world: GeneratedWorld, index: number): GenChapte
     const push = (speakerId: string | null, text: string, emotion?: Emotion) =>
       nodes.push({ id: nid(), speaker: speakerId, text, emotion });
 
-    push(null, narration(env, mood, motif, world, rng.fork(`n${s}`), usedNarr));
+    // Chapter 1, scene 1 opens with a grounded establishing sequence so the
+    // player understands the world, their place in it, and who they're meeting.
+    const firstScene = index === 0 && s === 0;
+    const heavyMood = mood === 'sad' || mood === 'crying' || mood === 'hurt' || mood === 'afraid' || mood === 'angry';
+
+    if (firstScene) {
+      for (const line of openingEstablishment(world, speaker, env, rng.fork('est'))) push(null, line);
+    } else {
+      // The establishment already grounded the opener; elsewhere lead with mood
+      // narration (avoids first-scene lines like "exactly as you left it").
+      push(null, narration(env, mood, motif, world, rng.fork(`n${s}`), usedNarr));
+    }
     push(null, actionBeat(speaker, rng.fork(`a${s}`), usedAction));
     push(speaker.id, characterLine(speaker, mood, mc, motif, rng.fork(`l${s}a`), usedLines), mood);
+
+    // The player speaks ALOUD here (MC_SPEAKER) — rendered in their own voice,
+    // visibly distinct from the italic inner-thought narration above.
+    if (s === 0) {
+      const mcText = index === 0
+        ? rng.fork('mci').pick(MC_LINES.intro)
+        : rng.fork(`mc${index}`).pick(heavyMood ? MC_LINES.heavy : MC_LINES.light);
+      push(MC_SPEAKER, mcText);
+    }
+
     if (other) {
       const om = moodEmotion(beat.emotionalGoal, rng.fork(`o${s}m`));
       push(other.id, characterLine(other, om, mc, motif, rng.fork(`o${s}l`), usedLines), om);
@@ -404,7 +544,11 @@ export function fallbackChapter(world: GeneratedWorld, index: number): GenChapte
     push(speaker.id, characterLine(speaker, mood, mc, motif, rng.fork(`l${s}b`), usedLines), mood);
 
     if (choiceScenes.has(s)) {
-      const ch = makeChoice(speaker, mood, rng.fork(`p${s}`), usedPrompt);
+      // Other characters in the room (or, failing that, the wider cast) become
+      // available to chase instead of the one in front of you.
+      const othersForChoice = [other, ...world.characters]
+        .filter((c): c is GeneratedCharacter => !!c && c.id !== speaker.id);
+      const ch = makeChoice(speaker, mood, rng.fork(`p${s}`), usedPrompt, usedMoves, othersForChoice);
       nodes.push({ id: nid(), speaker: ch.speaker, text: ch.text, choices: ch.choices });
       push(speaker.id, characterLine(speaker, mood, mc, motif, rng.fork(`l${s}r`), usedLines), mood);
     }

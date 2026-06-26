@@ -239,9 +239,16 @@ export type GameScreen =
 
 export type SpritePack = 'default' | 'hoshiko';
 
+/** Who the player can be romanced by — shapes flirt options and romance focus. */
+export type Attraction = 'men' | 'women' | 'everyone' | 'none';
+
 export interface PlayerSettings {
   playerName: string;
   playerPronouns: 'he/him' | 'she/her' | 'they/them';
+  /** Optional neopronoun override, e.g. "ze/zir/zirs". Wins over playerPronouns. */
+  customPronouns?: string;
+  /** Who the player is drawn to; gates romance/flirt framing. Default everyone. */
+  attraction: Attraction;
   characterPresentations: Record<string, GenderPresentation>;
   spritePack: SpritePack;
   textSpeed: 'slow' | 'normal' | 'fast' | 'instant';
@@ -299,7 +306,7 @@ export interface GameState {
   /** Current chapter index within the generated route. */
   currentChapterIndex: number;
   /** Log of player choices for story continuity (fed back into generation). */
-  genChoiceLog: { chapter: number; tone: string; text: string }[];
+  genChoiceLog: { chapter: number; tone: string; text: string; direction?: string }[];
 }
 
 // ─── Save File ──────────────────────────────────────────────────────────────

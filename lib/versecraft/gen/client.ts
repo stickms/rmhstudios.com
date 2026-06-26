@@ -4,7 +4,7 @@
 // caller falls back to the pure local generator on any network failure (which is
 // deterministic per seed, so fallback content stays consistent across devices).
 
-import type { GeneratedWorld, GenChapter, GenScene, Pronouns } from './world-types';
+import type { GeneratedWorld, GenChapter, GenScene, Pronouns, Attraction } from './world-types';
 
 function validWorld(w: GeneratedWorld | null | undefined): w is GeneratedWorld {
   return !!w && Array.isArray(w.characters) && w.characters.length > 0 && !!w.routePlan;
@@ -16,13 +16,13 @@ function validWorld(w: GeneratedWorld | null | undefined): w is GeneratedWorld {
  * optional opening (partial chapter) for an immediate first paint.
  */
 export async function createWorldWithOpening(
-  seed: string, prompt: string, pronouns: Pronouns,
+  seed: string, prompt: string, pronouns: Pronouns, attraction: Attraction = 'everyone',
 ): Promise<{ world: GeneratedWorld; opening: { chapter: GenChapter; partial: boolean } | null } | null> {
   try {
     const res = await fetch('/api/versecraft/world', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ seed, prompt, pronouns, withOpening: true }),
+      body: JSON.stringify({ seed, prompt, pronouns, attraction, withOpening: true }),
     });
     if (!res.ok) return null;
     const data = await res.json() as { world: GeneratedWorld | null; opening?: { chapter: GenChapter; partial: boolean } | null };

@@ -30,7 +30,7 @@ export const Route = createFileRoute('/api/versecraft/chapter')({
         const seed = normalizeSeed(body.seed ?? '');
         const index = Math.max(0, Math.min(200, Math.floor(body.index ?? 0)));
         if (!seed) return Response.json({ error: 'Missing seed' }, { status: 400 });
-        const context = (body.context ?? '').slice(0, 1500);
+        const context = (body.context ?? '').slice(0, 3000);
 
         // A cached full chapter always wins — instant replays and shared seeds.
         const cached = await prisma.versecraftGenChapter.findUnique({ where: { seed_index: { seed, index } } });

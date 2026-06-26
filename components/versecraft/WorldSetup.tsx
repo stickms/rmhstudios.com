@@ -20,6 +20,9 @@ export function WorldSetup() {
 
   const [name, setName] = useState(settings.playerName === 'Ash' ? '' : settings.playerName);
   const [pronouns, setPronouns] = useState<typeof settings.playerPronouns>(settings.playerPronouns);
+  const [customOn, setCustomOn] = useState(Boolean(settings.customPronouns));
+  const [customPronouns, setCustomPronouns] = useState(settings.customPronouns ?? '');
+  const [attraction, setAttraction] = useState<typeof settings.attraction>(settings.attraction ?? 'everyone');
   const [prompt, setPrompt] = useState('');
   const [seedInput, setSeedInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -28,7 +31,13 @@ export function WorldSetup() {
   const begin = async (opts: { random?: boolean; seed?: string }) => {
     if (submitting) return;
     const playerName = name.trim() || 'You';
-    updateSettings({ playerName, playerPronouns: pronouns });
+    const trimmedCustom = customOn ? customPronouns.trim() : '';
+    updateSettings({
+      playerName,
+      playerPronouns: pronouns,
+      customPronouns: trimmedCustom,
+      attraction,
+    });
     setSubmitting(true);
     try {
       const base = opts.random ? '' : prompt.trim();
@@ -94,22 +103,74 @@ export function WorldSetup() {
 
           <div>
             <label className="block text-sm mb-1.5" style={label}>Your pronouns</label>
-            <div className="flex gap-2">
-              {(['she/her', 'he/him', 'they/them'] as const).map(p => (
-                <button
-                  key={p}
-                  onClick={() => setPronouns(p)}
-                  className="flex-1 px-3 py-2 rounded text-sm transition-all"
-                  style={{
-                    backgroundColor: pronouns === p ? 'rgba(196, 163, 90, 0.2)' : 'rgba(42, 34, 53, 0.6)',
-                    border: `1px solid ${pronouns === p ? 'rgba(196, 163, 90, 0.5)' : 'rgba(196, 163, 90, 0.15)'}`,
-                    color: '#e8e0d0',
-                  }}
-                >
-                  {p}
-                </button>
-              ))}
+            <div className="flex gap-2 flex-wrap">
+              {(['she/her', 'he/him', 'they/them'] as const).map(p => {
+                const active = !customOn && pronouns === p;
+                return (
+                  <button
+                    key={p}
+                    onClick={() => { setCustomOn(false); setPronouns(p); }}
+                    className="flex-1 px-3 py-2 rounded text-sm transition-all"
+                    style={{
+                      backgroundColor: active ? 'rgba(196, 163, 90, 0.2)' : 'rgba(42, 34, 53, 0.6)',
+                      border: `1px solid ${active ? 'rgba(196, 163, 90, 0.5)' : 'rgba(196, 163, 90, 0.15)'}`,
+                      color: '#e8e0d0',
+                    }}
+                  >
+                    {p}
+                  </button>
+                );
+              })}
+              <button
+                onClick={() => setCustomOn(true)}
+                className="px-3 py-2 rounded text-sm transition-all"
+                style={{
+                  backgroundColor: customOn ? 'rgba(196, 163, 90, 0.2)' : 'rgba(42, 34, 53, 0.6)',
+                  border: `1px solid ${customOn ? 'rgba(196, 163, 90, 0.5)' : 'rgba(196, 163, 90, 0.15)'}`,
+                  color: '#e8e0d0',
+                }}
+              >
+                custom
+              </button>
             </div>
+            {customOn && (
+              <input
+                className={`${field} mt-2`} style={fieldStyle}
+                value={customPronouns} onChange={e => setCustomPronouns(e.target.value)}
+                placeholder="e.g. ze/zir/zirs"
+              />
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm mb-1.5" style={label}>Drawn to</label>
+            <div className="flex gap-2 flex-wrap">
+              {([
+                { v: 'women' as const, l: 'Women' },
+                { v: 'men' as const, l: 'Men' },
+                { v: 'everyone' as const, l: 'Everyone' },
+                { v: 'none' as const, l: 'No romance' },
+              ]).map(({ v, l }) => {
+                const active = attraction === v;
+                return (
+                  <button
+                    key={v}
+                    onClick={() => setAttraction(v)}
+                    className="flex-1 px-3 py-2 rounded text-sm transition-all whitespace-nowrap"
+                    style={{
+                      backgroundColor: active ? 'rgba(196, 163, 90, 0.2)' : 'rgba(42, 34, 53, 0.6)',
+                      border: `1px solid ${active ? 'rgba(196, 163, 90, 0.5)' : 'rgba(196, 163, 90, 0.15)'}`,
+                      color: '#e8e0d0',
+                    }}
+                  >
+                    {l}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-xs mt-1.5" style={{ color: '#777' }}>
+              Shapes who the story lets you fall for — or keeps it all platonic.
+            </p>
           </div>
 
           <div>
