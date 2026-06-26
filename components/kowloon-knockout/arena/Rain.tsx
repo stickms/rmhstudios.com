@@ -49,7 +49,7 @@ function RainGPU({ count, onComputeError }: { count: number; onComputeError?: ()
         material.color = RAIN_COLOR;   // base tint; no colorNode so .color applies
         material.toneMapped = false;
         material.transparent = true;
-        material.opacity = 0.5;
+        material.opacity = 0.3;
         material.blending = WEBGPU.AdditiveBlending;
         material.depthWrite = false;
         // Offset each instance's local vertices by its storage-buffer position.
@@ -154,7 +154,7 @@ export default function Rain() {
     const cpuMesh = (
         <instancedMesh ref={meshRef} args={[undefined, undefined, count]} frustumCulled={false}>
             <boxGeometry args={[1, 1, 1]} />
-            <meshBasicMaterial color={RAIN_COLOR} toneMapped={false} transparent opacity={0.5}
+            <meshBasicMaterial color={RAIN_COLOR} toneMapped={false} transparent opacity={0.3}
                 blending={THREE.AdditiveBlending} depthWrite={false} />
         </instancedMesh>
     );
