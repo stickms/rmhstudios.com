@@ -173,3 +173,12 @@ export function spriteUrl(packId: string, emotion: Emotion = 'neutral'): string 
   const file = pack.emotions[emotion] ?? pack.emotions.neutral;
   return `${BASE}/${pack.dir}/${file}.${pack.ext ?? 'png'}`;
 }
+
+/** Every distinct sprite-file URL for a pack — used to preload so expression
+ *  swaps are instant (no flicker). */
+export function packSpriteUrls(packId: string): string[] {
+  const pack = PACK_BY_ID.get(packId);
+  if (!pack) return [];
+  const files = new Set(Object.values(pack.emotions));
+  return [...files].map((f) => `${BASE}/${pack.dir}/${f}.${pack.ext ?? 'png'}`);
+}

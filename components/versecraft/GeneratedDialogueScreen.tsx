@@ -6,6 +6,20 @@ import { useGameStore } from '@/lib/versecraft/store';
 import { Sprite } from './Sprite';
 import { ShareSeed } from './ShareSeed';
 import { GeneratingState } from './GeneratingState';
+import { packSpriteUrls } from '@/lib/versecraft/sprites/registry';
+
+// Module-level cache of already-preloaded sprite URLs (survives re-renders).
+const preloadedUrls = new Set<string>();
+function preloadPack(packId: string) {
+  if (typeof window === 'undefined') return;
+  for (const url of packSpriteUrls(packId)) {
+    if (preloadedUrls.has(url)) continue;
+    preloadedUrls.add(url);
+    const img = new Image();
+    img.decoding = 'async';
+    img.src = url;
+  }
+}
 import { asset } from '@/lib/storage/asset';
 import type { GenNode, GenScene, Emotion } from '@/lib/versecraft/gen/world-types';
 
@@ -17,6 +31,15 @@ const TIME_FILTERS: Record<string, string> = {
   evening: 'brightness(0.82) saturate(0.8) sepia(0.15)',
   night: 'brightness(0.55) saturate(0.65) hue-rotate(200deg)',
 };
+
+/** Lighten a hex toward white so name chips stay legible whatever the accent. */
+function lighten(hex: string, amt = 0.45): string {
+  const h = hex.replace('#', '');
+  const n = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
+  const r = parseInt(n.slice(0, 2), 16), g = parseInt(n.slice(2, 4), 16), b = parseInt(n.slice(4, 6), 16);
+  const mix = (c: number) => Math.round(c + (255 - c) * amt).toString(16).padStart(2, '0');
+  return `#${mix(r)}${mix(g)}${mix(b)}`;
+}
 
 function bgImage(env: string, time: string): string {
   // Existing assets are named "<env>_day.png" with some evening/night variants.
@@ -85,6 +108,20 @@ export function GeneratedDialogueScreen() {
   useEffect(() => {
     if (chapter) prefetchChapter(chapterIndex + 1);
   }, [chapter, chapterIndex, prefetchChapter]);
+
+  // Preload every expression of the characters in this scene so emotion swaps
+  // are instant (no flicker). Also warm the whole cast once we have a world.
+  useEffect(() => {
+    if (!world) return;
+    scene?.charactersPresent.forEach(id => {
+      const c = world.characters.find(x => x.id === id);
+      if (c) preloadPack(c.packId);
+    });
+  }, [scene, world]);
+
+  useEffect(() => {
+    world?.characters.forEach(c => preloadPack(c.packId));
+  }, [world]);
 
   // Recovery: if we land on an invalid position (empty scene/node from a bad
   // generation), skip forward instead of soft-locking on "Composing…".
@@ -242,21 +279,33 @@ export function GeneratedDialogueScreen() {
         </AnimatePresence>
       </div>
 
+      {/* Readability scrim — guarantees the dialogue box reads on ANY background */}
+      <div className="absolute inset-x-0 bottom-0 h-2/3 z-[15] pointer-events-none"
+        style={{ background: 'linear-gradient(to top, rgba(12,10,18,0.96) 0%, rgba(12,10,18,0.8) 30%, rgba(12,10,18,0.35) 60%, transparent 100%)' }} />
+
       {/* Dialogue box */}
       <div ref={boxRef} className="absolute bottom-0 left-0 right-0 z-20 p-4 md:p-6">
         <motion.div
           className="max-w-4xl mx-auto rounded-lg p-4 md:p-6"
           style={{
-            backgroundColor: 'rgba(26, 21, 32, 0.92)',
-            border: '1px solid rgba(196, 163, 90, 0.25)',
+            backgroundColor: 'rgba(18, 14, 24, 0.95)',
+            border: '1px solid rgba(196, 163, 90, 0.35)',
+            boxShadow: '0 8px 40px rgba(0,0,0,0.55)',
             backdropFilter: 'blur(8px)',
           }}
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} key={node.id}
         >
           {speaker && (
             <div
-              className="inline-block px-3 py-1 rounded-sm text-sm font-semibold mb-2"
-              style={{ backgroundColor: `${speakerColor}25`, border: `1px solid ${speakerColor}50`, color: speakerColor, fontFamily: 'var(--font-playfair, serif)' }}
+              className="inline-block px-3 py-1 rounded text-sm font-semibold mb-2"
+              style={{
+                backgroundColor: 'rgba(12,10,18,0.85)',
+                borderLeft: `3px solid ${speakerColor}`,
+                border: `1px solid ${speakerColor}`,
+                color: lighten(speakerColor),
+                fontFamily: 'var(--font-playfair, serif)',
+                textShadow: '0 1px 3px rgba(0,0,0,0.7)',
+              }}
             >
               {speaker.name}
             </div>
@@ -265,8 +314,9 @@ export function GeneratedDialogueScreen() {
             className="text-base md:text-lg leading-relaxed min-h-[3em]"
             style={{
               fontFamily: speaker ? 'var(--font-nunito, sans-serif)' : 'var(--font-eb-garamond, serif)',
-              color: speaker ? '#e8e0d0' : '#a89888',
+              color: speaker ? '#f1ebdd' : '#c2b6a4',
               fontStyle: speaker ? 'normal' : 'italic',
+              textShadow: '0 1px 3px rgba(0,0,0,0.6)',
             }}
           >
             <Typewriter text={node.text} speed={textSpeed} onDone={() => setTextComplete(true)} skipRef={skipRef} />
