@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search, X, ImageOff } from 'lucide-react';
-import type { TenorGif } from '@/lib/tenor.server';
+import type { KlipyGif } from '@/lib/klipy.server';
 import { buildGifSearchPath } from '@/lib/gif-search';
 
 interface GifPickerProps {
@@ -15,7 +15,7 @@ interface GifPickerProps {
 export function GifPicker({ onSelect, onClose, className = '' }: GifPickerProps) {
   const { t } = useTranslation('feed');
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<TenorGif[]>([]);
+  const [results, setResults] = useState<KlipyGif[]>([]);
   const [next, setNext] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<'unavailable' | 'failed' | null>(null);
@@ -30,7 +30,7 @@ export function GifPicker({ onSelect, onClose, className = '' }: GifPickerProps)
       const res = await fetch(buildGifSearchPath(q, pos));
       if (res.status === 503) { setError('unavailable'); setResults([]); setNext(null); return; }
       if (!res.ok) { setError('failed'); return; }
-      const data: { results: TenorGif[]; next: string | null } = await res.json();
+      const data: { results: KlipyGif[]; next: string | null } = await res.json();
       setResults((prev) => (pos === null ? data.results : [...prev, ...data.results]));
       setNext(data.next);
     } catch {
@@ -68,7 +68,7 @@ export function GifPicker({ onSelect, onClose, className = '' }: GifPickerProps)
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={t('gif-search-placeholder', { defaultValue: 'Search Tenor GIFs...' })}
+            placeholder={t('gif-search-placeholder', { defaultValue: 'Search GIFs...' })}
             className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-lg pl-8 pr-2 py-2 border border-site-border outline-none focus:border-site-accent transition-colors"
           />
         </div>
@@ -114,7 +114,7 @@ export function GifPicker({ onSelect, onClose, className = '' }: GifPickerProps)
       </div>
 
       <div className="pt-1.5 text-[10px] text-site-text-dim text-right">
-        {t('powered-by-tenor', { defaultValue: 'Powered by Tenor' })}
+        {t('powered-by-klipy', { defaultValue: 'Powered by KLIPY' })}
       </div>
     </div>
   );
