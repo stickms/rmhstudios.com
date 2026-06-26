@@ -9,8 +9,9 @@ import { SaveState, CURRENT_VERSION, createNewSave, saveGame, loadGame } from '.
 import { xpForSale, xpForRecipe, xpForProduction, rankForXp, perksAtRank } from './progression';
 import {
   plantPlot as cPlant, canTend, tendPlot as cTend,
-  harvestPlot as cHarvest, canCollect, collectDried as cCollect,
+  harvestPlot as cHarvest, canCollect, collectDried as cCollect, emptyPlot,
 } from './cultivation';
+import { PROPERTY_TIERS, propertyEffects, stashCount } from './property';
 
 function sameStock(a: BaseStockEntry, b: BaseStockEntry): boolean {
   return a.baseId === b.baseId && a.qualityMult === b.qualityMult &&
@@ -63,6 +64,7 @@ interface CookgameState {
   tendPlot: (plotIndex: number, now: number) => boolean;
   harvestPlot: (plotIndex: number, now: number) => boolean;
   collectDried: (batchIndex: number, now: number) => boolean;
+  buyProperty: (tier: number) => boolean;
 }
 
 const fromSave = (s: SaveState) => ({
@@ -225,6 +227,18 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
     return true;
   },
 
+  buyProperty: (tier) => {
+    const { cash, ownedPropertyTier, inventory, xp } = get();
+    const t = PROPERTY_TIERS[tier];
+    if (!t || tier !== ownedPropertyTier + 1) return false;       // next tier only
+    if (rankForXp(xp).rank < t.rankReq) return false;
+    if (cash < t.cost) return false;
+    const plots = [...inventory.plots];
+    while (plots.length < t.plots) plots.push(emptyPlot());
+    set({ cash: cash - t.cost, ownedPropertyTier: tier, inventory: { ...inventory, plots } });
+    return true;
+  },
+
   plantPlot: (plotIndex, strainKey, now) => {
     const { inventory } = get();
     const g = GROWABLE[strainKey];
@@ -242,10 +256,11 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
   },
 
   tendPlot: (plotIndex, now) => {
-    const { inventory } = get();
+    const { inventory, xp, ownedPropertyTier } = get();
     const plot = inventory.plots[plotIndex];
-    if (!plot || !canTend(plot, now)) return false;
-    const plots = inventory.plots.map((p, i) => (i === plotIndex ? cTend(p, now) : p));
+    const cd = perksAtRank(rankForXp(xp).rank).cooldownMult * propertyEffects(ownedPropertyTier).cooldownMult;
+    if (!plot || !canTend(plot, now, cd)) return false;
+    const plots = inventory.plots.map((p, i) => (i === plotIndex ? cTend(p, now, cd) : p));
     set({ inventory: { ...inventory, plots } });
     return true;
   },
@@ -263,9 +278,10 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
 
   collectDried: (batchIndex, now) => {
     // XP for production is intentionally awarded at harvest (not here) to avoid double-counting one grow cycle.
-    const { inventory } = get();
+    const { inventory, xp, ownedPropertyTier } = get();
     const batch = inventory.dryingRack[batchIndex];
-    if (!batch || !canCollect(batch, now)) return false;
+    const cd = perksAtRank(rankForXp(xp).rank).cooldownMult * propertyEffects(ownedPropertyTier).cooldownMult;
+    if (!batch || !canCollect(batch, now, cd)) return false;
     const entry = cCollect(batch);
     const dryingRack = inventory.dryingRack.filter((_, i) => i !== batchIndex);
     set({ inventory: { ...inventory, dryingRack, baseStock: mergeStock(inventory.baseStock, entry) } });
