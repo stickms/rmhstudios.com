@@ -2,8 +2,8 @@
 
 import { useRef, useMemo, type MutableRefObject } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Html } from '@react-three/drei';
 import * as THREE from 'three';
+import FighterTrappings from './FighterTrappings';
 import type { RenderFighter } from '@/lib/kowloon-knockout/net/session';
 import { bodyMaterialProps } from './materials';
 
@@ -154,21 +154,7 @@ export default function StickFighter({ seat, framesRef, showNameplate = true }: 
 
     return (
         <group ref={root}>
-            {/* Floating player nameplate (▼ + P-number) so everyone knows who's who */}
-            {showNameplate && (
-                <Html position={[0, 2.5, 0]} center distanceFactor={9} occlude={false} zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
-                    <div className="kk-nameplate" style={{ color: plateColor }}>
-                        <div className="kk-nameplate-tag">{plateLabel}</div>
-                        <div className="kk-nameplate-tri">▼</div>
-                    </div>
-                </Html>
-            )}
-
-            {/* Blob shadow */}
-            <mesh ref={shadow} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
-                <circleGeometry args={[0.42, 16]} />
-                <meshBasicMaterial color="#000000" transparent opacity={0.35} />
-            </mesh>
+            <FighterTrappings showNameplate={showNameplate} plateColor={plateColor} plateLabel={plateLabel} shadowRef={shadow} />
 
             {/* Legs (pivot at hips) */}
             <group ref={lLeg} position={[-0.16, 0.78, 0]}>
