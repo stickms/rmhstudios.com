@@ -17,6 +17,12 @@ describe('heatPenaltyFactor', () => {
   it('is 0.5 at max heat', () => {
     expect(heatPenaltyFactor(MAX_HEAT)).toBeCloseTo(0.5, 5);
   });
+  it('is 1 exactly at the threshold', () => {
+    expect(heatPenaltyFactor(HEAT_PENALTY_THRESHOLD)).toBe(1);
+  });
+  it('clamps to 0.5 above max heat', () => {
+    expect(heatPenaltyFactor(150)).toBeCloseTo(0.5, 5);
+  });
 });
 
 describe('buyerOffer', () => {
@@ -32,10 +38,13 @@ describe('buyerOffer', () => {
     const offer = buyerOffer(calmOnly, doug, 0, 1.0);
     expect(offer).toBe(Math.round(base * 0.9 * 1.0));
   });
-  it('reduces offer under high heat', () => {
+  it('reduces offer under high heat by the heat penalty factor', () => {
     const low = buyerOffer(energizingProduct, doug, 0, 1.0);
     const high = buyerOffer(energizingProduct, doug, MAX_HEAT, 1.0);
     expect(high).toBeLessThan(low);
+    const base = productValue(energizingProduct);
+    // doug.basePriceFactor 0.9 * (1 + 0.25 preference) * heatPenaltyFactor(MAX_HEAT)=0.5
+    expect(high).toBe(Math.round(base * 0.9 * 1.25 * 0.5 * 1.0));
   });
 });
 
@@ -53,5 +62,10 @@ describe('heat helpers', () => {
 describe('packageProduct', () => {
   it('yields UNITS_PER_BATCH units', () => {
     expect(packageProduct(energizingProduct).units).toBe(UNITS_PER_BATCH);
+  });
+  it('deep-copies the effects array (no aliasing of input)', () => {
+    const result = packageProduct(energizingProduct);
+    expect(result.product.effects).not.toBe(energizingProduct.effects);
+    expect(result.product.effects).toEqual(energizingProduct.effects);
   });
 });
