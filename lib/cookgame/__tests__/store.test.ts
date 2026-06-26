@@ -128,6 +128,67 @@ describe('cookgame store — grow flow', () => {
   });
 });
 
+describe('cookgame store — guard paths', () => {
+  beforeEach(reset);
+
+  it('buyAdditive returns false and does not change cash when cash is too low', () => {
+    useCookgameStore.setState({ cash: 0 });
+    expect(useCookgameStore.getState().buyAdditive('cuke')).toBe(false); // cuke costs 2
+    expect(useCookgameStore.getState().cash).toBe(0);
+  });
+
+  it('loadBaseToBench returns false when bench already occupied', () => {
+    useCookgameStore.setState((s) => ({
+      inventory: {
+        ...s.inventory,
+        baseStock: [{ baseId: 'greenstart', qualityMult: 1, bonusEffects: [], units: 1 }],
+        workProduct: { baseId: 'couchlock', effects: [], qualityMult: 1 },
+      },
+    }));
+    expect(useCookgameStore.getState().loadBaseToBench(0)).toBe(false);
+  });
+
+  it('loadBaseToBench returns false for an out-of-range or empty stock index', () => {
+    expect(useCookgameStore.getState().loadBaseToBench(5)).toBe(false);
+  });
+
+  it('mixIn returns false when the additive is not owned', () => {
+    useCookgameStore.setState((s) => ({
+      inventory: {
+        ...s.inventory,
+        workProduct: { baseId: 'greenstart', effects: [], qualityMult: 1 },
+        additives: {},
+      },
+    }));
+    expect(useCookgameStore.getState().mixIn('cuke')).toBe(false);
+  });
+
+  it('sellUnit removes the packaged stack entirely when its last unit is sold', () => {
+    useCookgameStore.setState((s) => ({
+      cash: 200,
+      inventory: {
+        ...s.inventory,
+        packaged: [{ product: { baseId: 'greenstart', effects: [], qualityMult: 1 }, units: 1 }],
+      },
+    }));
+    useCookgameStore.getState().sellUnit('doug', 0, 1.0);
+    expect(useCookgameStore.getState().inventory.packaged).toHaveLength(0);
+  });
+
+  it('mergeStock keeps distinct-quality entries separate (findIndex === -1 push branch)', () => {
+    // Inject a high-quality couchlock entry (qualityMult: 1.3)
+    useCookgameStore.setState((s) => ({
+      inventory: {
+        ...s.inventory,
+        baseStock: [{ baseId: 'couchlock', qualityMult: 1.3, bonusEffects: [], units: 1 }],
+      },
+    }));
+    // buyBase always adds qualityMult: 1 — different from 1.3, so no merge
+    useCookgameStore.getState().buyBase('couchlock', 10);
+    expect(useCookgameStore.getState().inventory.baseStock).toHaveLength(2);
+  });
+});
+
 describe('cookgame store — cook flow', () => {
   beforeEach(reset);
 

@@ -13,9 +13,10 @@ export function GrowPlotOverlay() {
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
+    if (!activeOverlay?.match(/^plot:(\d+)$/)) return;
     const t = setInterval(() => setNow(Date.now()), 500);
     return () => clearInterval(t);
-  }, []);
+  }, [activeOverlay]);
 
   const match = activeOverlay?.match(/^plot:(\d+)$/);
   if (!match) return null;

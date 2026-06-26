@@ -12,9 +12,10 @@ export function DryingRackOverlay() {
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
+    if (activeOverlay !== 'drying') return;
     const t = setInterval(() => setNow(Date.now()), 500);
     return () => clearInterval(t);
-  }, []);
+  }, [activeOverlay]);
 
   if (activeOverlay !== 'drying') return null;
 

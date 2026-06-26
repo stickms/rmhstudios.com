@@ -19,6 +19,12 @@ describe('cookgame content (phase 1 invariants)', () => {
     for (const b of BUYERS) expect(EFFECTS[b.preferredEffect]).toBeDefined();
   });
   it('MAX_EFFECTS is 8', () => expect(MAX_EFFECTS).toBe(8));
+  it('every EFFECTS entry has id matching its key and multiplier > 0', () => {
+    for (const [key, e] of Object.entries(EFFECTS)) {
+      expect(e.id).toBe(key);
+      expect(e.multiplier).toBeGreaterThan(0);
+    }
+  });
 });
 
 describe('cookgame content (phase 2 production)', () => {

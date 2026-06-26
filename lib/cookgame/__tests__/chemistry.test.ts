@@ -20,6 +20,12 @@ describe('feedbackBand', () => {
     expect(feedbackBand([0.5, 0.3, 0.2], [0.5, 0.3, 0.2])).toBe('hot');
     expect(feedbackBand([0, 0, 0], [1, 1, 1])).toBe('cold');
   });
+  it('returns warm for a dial/target pair with cookQuality in [0.6, 0.85)', () => {
+    // dials=[0.5,0.5,0.5], target=[0.9,0.5,0.5]
+    // euclidean = 0.4, MAXDIST = sqrt(3) ≈ 1.7321
+    // q = 1 - 0.4/sqrt(3) ≈ 0.7691  →  in [0.6, 0.85)  →  warm
+    expect(feedbackBand([0.5, 0.5, 0.5], [0.9, 0.5, 0.5])).toBe('warm');
+  });
 });
 
 describe('cookOutput', () => {
