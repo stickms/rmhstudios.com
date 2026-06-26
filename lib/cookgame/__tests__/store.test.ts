@@ -56,4 +56,40 @@ describe('cookgame store', () => {
     st.tickHeat(4); // 0.5/s * 4 = 2
     expect(useCookgameStore.getState().heat).toBe(8);
   });
+
+  it('buyAdditive returns false and spends nothing when funds insufficient', () => {
+    useCookgameStore.setState({ cash: 1 }); // cuke costs 2
+    expect(useCookgameStore.getState().buyAdditive('cuke')).toBe(false);
+    expect(useCookgameStore.getState().cash).toBe(1);
+  });
+
+  it('loadBaseToBench returns false when the bench is occupied', () => {
+    const st = useCookgameStore.getState();
+    st.buyBase('greenstart', 10);
+    st.loadBaseToBench('greenstart');
+    st.buyBase('greenstart', 10);
+    expect(useCookgameStore.getState().loadBaseToBench('greenstart')).toBe(false);
+  });
+
+  it('loadBaseToBench returns false when no base is in stock', () => {
+    expect(useCookgameStore.getState().loadBaseToBench('greenstart')).toBe(false);
+  });
+
+  it('mixIn returns false when the additive is not owned', () => {
+    const st = useCookgameStore.getState();
+    st.buyBase('greenstart', 10);
+    st.loadBaseToBench('greenstart');
+    expect(useCookgameStore.getState().mixIn('cuke')).toBe(false);
+  });
+
+  it('drops a packaged stack when its last unit is sold', () => {
+    const st = useCookgameStore.getState();
+    st.buyBase('greenstart', 10);
+    st.loadBaseToBench('greenstart');
+    st.buyAdditive('cuke');
+    st.mixIn('cuke');
+    st.packageBench();
+    for (let i = 0; i < 5; i++) st.sellUnit('doug', 0, 1.0);
+    expect(useCookgameStore.getState().inventory.packaged).toHaveLength(0);
+  });
 });

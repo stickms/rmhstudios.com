@@ -1,10 +1,10 @@
 // lib/cookgame/store.ts
 import { create } from 'zustand';
 import type { AdditiveId, BaseId, BuyerId, InventoryState, Product } from './types';
-import { ADDITIVES, BASES, BUYERS } from './content';
+import { ADDITIVES, BUYERS } from './content';
 import { mix, effectSetKey } from './effects';
 import { buyerOffer, applyHeatOnSale, decayHeat, packageProduct } from './economy';
-import { SaveV1, createNewSave, saveGame, loadGame } from './saveSystem';
+import { SaveV1, CURRENT_VERSION, createNewSave, saveGame, loadGame } from './saveSystem';
 
 interface CookgameState {
   cash: number;
@@ -121,7 +121,7 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
 
   saveNow: () => {
     const { cash, heat, inventory, discoveredRecipes } = get();
-    saveGame({ version: 1, cash, heat, inventory, discoveredRecipes });
+    saveGame({ version: CURRENT_VERSION, cash, heat, inventory, discoveredRecipes });
   },
   loadOrNew: () => set(fromSave(loadGame() ?? createNewSave())),
   resetGame: () => set({ ...fromSave(createNewSave()), nearbyInteractable: null, activeOverlay: null }),
