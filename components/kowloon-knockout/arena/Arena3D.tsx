@@ -8,6 +8,7 @@ import Lighting from './Lighting';
 import StickFighter from './StickFighter';
 import CameraRig from './CameraRig';
 import Fx from './Fx';
+import PostFx from './PostFx';
 import { RenderTierProvider } from './RenderTierContext';
 
 type FramesRef = MutableRefObject<RenderFighter[]>;
@@ -44,6 +45,7 @@ export default function Arena3D({ session, seatIds }: { session: GameSession; se
             ))}
 
             <Fx session={session} />
+            <PostFx />
         </RenderTierProvider>
     );
 }
