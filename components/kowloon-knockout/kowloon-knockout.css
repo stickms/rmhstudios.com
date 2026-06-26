@@ -603,7 +603,7 @@
   min-height: 44px;
 }
 
-.kowloon-knockout .neon-button.is-active {
+.kowloon-knockout .kk-graphics-presets .neon-button.is-active {
   outline: 2px solid #33ccff;
   box-shadow: 0 0 12px #33ccff;
 }

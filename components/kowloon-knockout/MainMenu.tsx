@@ -111,7 +111,7 @@ export default function MainMenu() {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                     >
-                        GRAPHICS
+                        {t("graphics", { defaultValue: "GRAPHICS" })}
                     </motion.button>
                 </motion.div>
 
