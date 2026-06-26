@@ -1,0 +1,56 @@
+"use client";
+import { useCookgameStore } from '@/lib/cookgame/store';
+import { HEAT_PENALTY_THRESHOLD, MAX_HEAT } from '@/lib/cookgame/economy';
+
+export function HUD() {
+  const cash = useCookgameStore((s) => s.cash);
+  const heat = useCookgameStore((s) => s.heat);
+  const packaged = useCookgameStore((s) => s.inventory.packaged);
+  const setActiveOverlay = useCookgameStore((s) => s.setActiveOverlay);
+
+  const totalUnits = packaged.reduce((sum, stack) => sum + stack.units, 0);
+  const heatPct = Math.min(100, (heat / MAX_HEAT) * 100);
+  const hot = heat >= HEAT_PENALTY_THRESHOLD;
+
+  return (
+    <div className="pointer-events-none absolute inset-0 z-20 select-none text-white">
+      {/* Top-left: cash */}
+      <div className="absolute left-4 top-4 flex flex-col gap-2">
+        <div className="rounded-md border border-neutral-700 bg-neutral-900/80 px-3 py-2">
+          <div className="font-mono text-2xl font-bold text-lime-400">${cash}</div>
+          <div className="font-mono text-[11px] uppercase tracking-widest text-neutral-400">
+            {totalUnits} unit{totalUnits === 1 ? '' : 's'} packaged
+          </div>
+        </div>
+        <div className="pointer-events-auto flex gap-2">
+          <button
+            onClick={() => setActiveOverlay('journal')}
+            className="rounded border border-neutral-700 bg-neutral-800 px-2.5 py-1 font-mono text-xs text-neutral-200 hover:bg-neutral-700"
+          >
+            Journal (J)
+          </button>
+          <button
+            onClick={() => setActiveOverlay('menu')}
+            className="rounded border border-neutral-700 bg-neutral-800 px-2.5 py-1 font-mono text-xs text-neutral-200 hover:bg-neutral-700"
+          >
+            Menu (M)
+          </button>
+        </div>
+      </div>
+
+      {/* Top-right: heat meter */}
+      <div className="absolute right-4 top-4 w-44 rounded-md border border-neutral-700 bg-neutral-900/80 px-3 py-2">
+        <div className="mb-1 flex items-center justify-between font-mono text-[11px] uppercase tracking-widest text-neutral-400">
+          <span>Heat</span>
+          <span className={hot ? 'text-red-400' : 'text-neutral-300'}>{Math.round(heat)}</span>
+        </div>
+        <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-700">
+          <div
+            className={`h-full rounded-full transition-all ${hot ? 'bg-red-500' : 'bg-lime-400'}`}
+            style={{ width: `${heatPct}%` }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}

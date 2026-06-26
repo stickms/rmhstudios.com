@@ -40,6 +40,7 @@ import { Route as DeeplinkRouteImport } from './routes/deeplink'
 import { Route as DailyRouteImport } from './routes/daily'
 import { Route as CopyrightRouteImport } from './routes/copyright'
 import { Route as CookiesRouteImport } from './routes/cookies'
+import { Route as CookgameRouteImport } from './routes/cookgame'
 import { Route as AltairRouteImport } from './routes/altair'
 import { Route as AdaptiveIntelligenceRouteImport } from './routes/adaptive-intelligence'
 import { Route as SiteRouteImport } from './routes/_site'
@@ -628,6 +629,11 @@ const CopyrightRoute = CopyrightRouteImport.update({
 const CookiesRoute = CookiesRouteImport.update({
   id: '/cookies',
   path: '/cookies',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CookgameRoute = CookgameRouteImport.update({
+  id: '/cookgame',
+  path: '/cookgame',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AltairRoute = AltairRouteImport.update({
@@ -2870,6 +2876,7 @@ export interface FileRoutesByFullPath {
   '/': typeof SiteIndexRoute
   '/adaptive-intelligence': typeof AdaptiveIntelligenceRoute
   '/altair': typeof AltairRouteWithChildren
+  '/cookgame': typeof CookgameRoute
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
   '/daily': typeof DailyRouteWithChildren
@@ -3334,6 +3341,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/adaptive-intelligence': typeof AdaptiveIntelligenceRoute
+  '/cookgame': typeof CookgameRoute
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
   '/deeplink': typeof DeeplinkRouteWithChildren
@@ -3779,6 +3787,7 @@ export interface FileRoutesById {
   '/_site': typeof SiteRouteWithChildren
   '/adaptive-intelligence': typeof AdaptiveIntelligenceRoute
   '/altair': typeof AltairRouteWithChildren
+  '/cookgame': typeof CookgameRoute
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
   '/daily': typeof DailyRouteWithChildren
@@ -4248,6 +4257,7 @@ export interface FileRouteTypes {
     | '/'
     | '/adaptive-intelligence'
     | '/altair'
+    | '/cookgame'
     | '/cookies'
     | '/copyright'
     | '/daily'
@@ -4712,6 +4722,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/adaptive-intelligence'
+    | '/cookgame'
     | '/cookies'
     | '/copyright'
     | '/deeplink'
@@ -5156,6 +5167,7 @@ export interface FileRouteTypes {
     | '/_site'
     | '/adaptive-intelligence'
     | '/altair'
+    | '/cookgame'
     | '/cookies'
     | '/copyright'
     | '/daily'
@@ -5624,6 +5636,7 @@ export interface RootRouteChildren {
   SiteRoute: typeof SiteRouteWithChildren
   AdaptiveIntelligenceRoute: typeof AdaptiveIntelligenceRoute
   AltairRoute: typeof AltairRouteWithChildren
+  CookgameRoute: typeof CookgameRoute
   CookiesRoute: typeof CookiesRoute
   CopyrightRoute: typeof CopyrightRoute
   DailyRoute: typeof DailyRouteWithChildren
@@ -6093,6 +6106,13 @@ declare module '@tanstack/react-router' {
       path: '/cookies'
       fullPath: '/cookies'
       preLoaderRoute: typeof CookiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cookgame': {
+      id: '/cookgame'
+      path: '/cookgame'
+      fullPath: '/cookgame'
+      preLoaderRoute: typeof CookgameRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/altair': {
@@ -10055,6 +10075,7 @@ const rootRouteChildren: RootRouteChildren = {
   SiteRoute: SiteRouteWithChildren,
   AdaptiveIntelligenceRoute: AdaptiveIntelligenceRoute,
   AltairRoute: AltairRouteWithChildren,
+  CookgameRoute: CookgameRoute,
   CookiesRoute: CookiesRoute,
   CopyrightRoute: CopyrightRoute,
   DailyRoute: DailyRouteWithChildren,
