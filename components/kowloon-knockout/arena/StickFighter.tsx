@@ -5,6 +5,7 @@ import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import type { RenderFighter } from '@/lib/kowloon-knockout/net/session';
+import { bodyMaterialProps } from './materials';
 
 type FramesRef = MutableRefObject<RenderFighter[]>;
 
@@ -148,7 +149,7 @@ export default function StickFighter({ seat, framesRef, showNameplate = true }: 
     });
 
     const limbMat = () => (
-        <meshStandardMaterial color={colorHex} roughness={0.6} metalness={0.1} flatShading />
+        <meshStandardMaterial {...bodyMaterialProps(colorHex)} />
     );
 
     return (
@@ -188,22 +189,22 @@ export default function StickFighter({ seat, framesRef, showNameplate = true }: 
                 {/* Torso */}
                 <mesh position={[0, 0.28, 0]} castShadow>
                     <cylinderGeometry args={[0.13, 0.18, 0.62, 7]} />
-                    <meshStandardMaterial ref={bodyMat} color={colorHex} roughness={0.6} metalness={0.1} flatShading />
+                    <meshStandardMaterial ref={bodyMat} {...bodyMaterialProps(colorHex)} />
                 </mesh>
                 {/* Belt / trim */}
                 <mesh position={[0, 0.0, 0]}>
                     <cylinderGeometry args={[0.19, 0.19, 0.08, 8]} />
-                    <meshStandardMaterial color={accentHex} roughness={0.5} flatShading />
+                    <meshStandardMaterial {...bodyMaterialProps(accentHex)} />
                 </mesh>
                 {/* Head */}
                 <mesh position={[0, 0.78, 0]} castShadow>
                     <sphereGeometry args={[0.2, 10, 8]} />
-                    <meshStandardMaterial ref={headMat} color={accentHex} roughness={0.5} flatShading />
+                    <meshStandardMaterial ref={headMat} {...bodyMaterialProps(accentHex)} />
                 </mesh>
                 {/* Headband tail */}
                 <mesh position={[0, 0.82, -0.18]} rotation={[0.4, 0, 0]}>
                     <boxGeometry args={[0.06, 0.02, 0.22]} />
-                    <meshStandardMaterial color={colorHex} flatShading />
+                    <meshStandardMaterial {...bodyMaterialProps(colorHex)} />
                 </mesh>
 
                 {/* Arms (pivot at shoulders, hang toward -Y at rest) */}
@@ -214,7 +215,7 @@ export default function StickFighter({ seat, framesRef, showNameplate = true }: 
                     </mesh>
                     <mesh position={[0, -0.54, 0]}>
                         <sphereGeometry args={[0.1, 8, 6]} />
-                        <meshStandardMaterial color={accentHex} roughness={0.4} flatShading />
+                        <meshStandardMaterial {...bodyMaterialProps(accentHex)} />
                     </mesh>
                 </group>
                 <group ref={rArm} position={[0.26, 0.5, 0]}>
@@ -224,7 +225,7 @@ export default function StickFighter({ seat, framesRef, showNameplate = true }: 
                     </mesh>
                     <mesh position={[0, -0.54, 0]}>
                         <sphereGeometry args={[0.1, 8, 6]} />
-                        <meshStandardMaterial color={accentHex} roughness={0.4} flatShading />
+                        <meshStandardMaterial {...bodyMaterialProps(accentHex)} />
                     </mesh>
                 </group>
             </group>

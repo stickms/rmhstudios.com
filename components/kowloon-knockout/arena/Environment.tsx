@@ -59,7 +59,7 @@ export default function Environment() {
             {/* Arena floor */}
             <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
                 <circleGeometry args={[ARENA_RADIUS, 48]} />
-                <meshStandardMaterial color="#15101f" roughness={0.85} metalness={0.2} />
+                <meshStandardMaterial color="#0d0a16" roughness={0.25} metalness={0.6} envMapIntensity={1.4} />
             </mesh>
             {/* Inner glowing court line */}
             <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>

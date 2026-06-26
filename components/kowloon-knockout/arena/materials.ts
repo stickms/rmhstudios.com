@@ -10,3 +10,9 @@ export function emissiveMaterialProps(color: string, intensity: number) {
         toneMapped: false as const,
     };
 }
+
+/** PBR props for fighter body parts — slightly metallic, matte-ish so the neon
+ *  environment glints on edges without going chrome. */
+export function bodyMaterialProps(color: string) {
+    return { color, roughness: 0.45, metalness: 0.35 };
+}
