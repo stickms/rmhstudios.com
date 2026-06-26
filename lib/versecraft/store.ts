@@ -10,7 +10,7 @@ import { CHARACTERS, getAffinityLevel } from './characters';
 import { autoSave, loadGame, saveGame as persistSave, dbSave, dbLoad } from './persistence';
 import { getChapterEntry, getNextChapterId } from './chapters/registry';
 import { fallbackWorld, fallbackChapter } from './gen/fallback';
-import { fetchOrCreateWorld, fetchChapter, fetchOpeningChapter } from './gen/client';
+import { createWorldWithOpening, fetchChapter } from './gen/client';
 import { makeSeedCode, normalizeSeed } from './gen/rng';
 import { getWordPool } from './words';
 import type { GeneratedWorld, GenChapter, GenChoice } from './gen/world-types';
@@ -284,28 +284,23 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
     const pronouns = get().settings.playerPronouns;
     set({ genLoading: true });
 
-    // Server-first (DeepSeek + persisted, shareable); deterministic local fallback.
-    // Anything that goes wrong degrades to the pure local generator — never a crash.
-    let base: GeneratedWorld;
-    try {
-      base = (await fetchOrCreateWorld(cleanSeed, prompt ?? '', pronouns))
-        ?? fallbackWorld(cleanSeed, prompt ?? '', name, pronouns);
-    } catch {
-      base = fallbackWorld(cleanSeed, prompt ?? '', name, pronouns);
-    }
-    // Show the player's own name regardless of how the canonical world was made.
-    const world: GeneratedWorld = { ...base, seed: cleanSeed, mc: { ...base.mc, name } };
-
-    // Fast first paint: fetch just the opening scene, then stream the rest.
-    let ch0: GenChapter;
+    // One round trip: world + opening scene together (server-first, persisted,
+    // shareable). Anything that goes wrong degrades to the instant local
+    // generator — never a crash, never a long stall.
+    let base: GeneratedWorld = fallbackWorld(cleanSeed, prompt ?? '', name, pronouns);
+    let openingChapter: GenChapter | null = null;
     let streamRest = false;
     try {
-      const opening = await fetchOpeningChapter(cleanSeed, 0, '');
-      if (opening) { ch0 = opening.chapter; streamRest = opening.partial; }
-      else ch0 = fallbackChapter(world, 0);
-    } catch {
-      ch0 = fallbackChapter(world, 0);
-    }
+      const res = await createWorldWithOpening(cleanSeed, prompt ?? '', pronouns);
+      if (res) {
+        base = res.world;
+        if (res.opening) { openingChapter = res.opening.chapter; streamRest = res.opening.partial; }
+      }
+    } catch { /* keep local fallback world */ }
+
+    // Show the player's own name regardless of how the canonical world was made.
+    const world: GeneratedWorld = { ...base, seed: cleanSeed, mc: { ...base.mc, name } };
+    let ch0: GenChapter = openingChapter ?? fallbackChapter(world, 0);
     if (!ch0.scenes?.length) { ch0 = fallbackChapter(world, 0); streamRest = false; }
 
     set({
