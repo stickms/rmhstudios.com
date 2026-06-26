@@ -75,3 +75,19 @@ describe('effectSetKey', () => {
     expect(effectSetKey(['spicy', 'energizing'])).toBe(effectSetKey(['energizing', 'spicy']));
   });
 });
+
+describe('qualityMult', () => {
+  it('productValue multiplies by qualityMult when present', () => {
+    const p: Product = { baseId: 'greenstart', effects: ['energizing'], qualityMult: 1.3 };
+    const expected = Math.round(35 * EFFECTS.energizing.multiplier * 1.3);
+    expect(productValue(p)).toBe(expected);
+  });
+  it('productValue treats missing qualityMult as 1', () => {
+    const p: Product = { baseId: 'greenstart', effects: [] };
+    expect(productValue(p)).toBe(BASES.greenstart.baseValue);
+  });
+  it('mix preserves qualityMult', () => {
+    const p: Product = { baseId: 'couchlock', effects: [], qualityMult: 1.2 };
+    expect(mix(p, 'cuke').qualityMult).toBe(1.2);
+  });
+});

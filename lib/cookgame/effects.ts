@@ -28,13 +28,13 @@ export function mix(product: Product, additiveId: AdditiveId): Product {
     result.splice(dropIdx, 1);
   }
 
-  return { baseId: product.baseId, effects: result };
+  return { baseId: product.baseId, effects: result, qualityMult: product.qualityMult };
 }
 
 export function productValue(product: Product): number {
   const base = BASES[product.baseId].baseValue;
   const mult = product.effects.reduce((acc, e) => acc * EFFECTS[e].multiplier, 1);
-  return Math.round(base * mult);
+  return Math.round(base * mult * (product.qualityMult ?? 1));
 }
 
 export function effectSetKey(effects: EffectId[]): string {

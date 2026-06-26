@@ -29,5 +29,8 @@ export function decayHeat(heat: number, dtSeconds: number): number {
 }
 
 export function packageProduct(product: Product): { product: Product; units: number } {
-  return { product: { baseId: product.baseId, effects: [...product.effects] }, units: UNITS_PER_BATCH };
+  return {
+    product: { baseId: product.baseId, effects: [...product.effects], qualityMult: product.qualityMult },
+    units: UNITS_PER_BATCH,
+  };
 }

@@ -69,3 +69,10 @@ describe('packageProduct', () => {
     expect(result.product.effects).toEqual(energizingProduct.effects);
   });
 });
+
+describe('packageProduct qualityMult', () => {
+  it('preserves qualityMult on packaged product', () => {
+    const p: Product = { baseId: 'glimmerdust', effects: ['glowing'], qualityMult: 1.25 };
+    expect(packageProduct(p).product.qualityMult).toBe(1.25);
+  });
+});
