@@ -6,21 +6,31 @@
 
 import type { GeneratedWorld, GenChapter, GenScene, Pronouns } from './world-types';
 
-export async function fetchOrCreateWorld(
+function validWorld(w: GeneratedWorld | null | undefined): w is GeneratedWorld {
+  return !!w && Array.isArray(w.characters) && w.characters.length > 0 && !!w.routePlan;
+}
+
+/**
+ * Create/fetch the world AND its opening scene in a single round trip, so a new
+ * story starts after one request instead of two. Returns the world plus an
+ * optional opening (partial chapter) for an immediate first paint.
+ */
+export async function createWorldWithOpening(
   seed: string, prompt: string, pronouns: Pronouns,
-): Promise<GeneratedWorld | null> {
+): Promise<{ world: GeneratedWorld; opening: { chapter: GenChapter; partial: boolean } | null } | null> {
   try {
     const res = await fetch('/api/versecraft/world', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ seed, prompt, pronouns }),
+      body: JSON.stringify({ seed, prompt, pronouns, withOpening: true }),
     });
     if (!res.ok) return null;
-    const data = await res.json() as { world: GeneratedWorld | null };
-    const w = data.world;
-    // Guard against malformed payloads so the caller falls back cleanly.
-    if (!w || !Array.isArray(w.characters) || w.characters.length === 0 || !w.routePlan) return null;
-    return w;
+    const data = await res.json() as { world: GeneratedWorld | null; opening?: { chapter: GenChapter; partial: boolean } | null };
+    if (!validWorld(data.world)) return null;
+    const opening = data.opening && validChapter(data.opening.chapter)
+      ? { chapter: data.opening.chapter, partial: !!data.opening.partial }
+      : null;
+    return { world: data.world, opening };
   } catch {
     return null;
   }

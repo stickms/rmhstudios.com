@@ -2,9 +2,18 @@ import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
-import { generateWorld } from '@/lib/versecraft/gen/generate.server';
+import { generateWorld, generateChapterOpening } from '@/lib/versecraft/gen/generate.server';
 import { normalizeSeed } from '@/lib/versecraft/gen/rng';
-import type { GeneratedWorld, Pronouns } from '@/lib/versecraft/gen/world-types';
+import type { GeneratedWorld, GenChapter, Pronouns } from '@/lib/versecraft/gen/world-types';
+
+/** Build the opening payload for a world: prefer a cached full chapter 0,
+ *  else a fast partial opening scene. Lets the client start in one round trip. */
+async function openingFor(world: GeneratedWorld, seed: string) {
+  const cached = await prisma.versecraftGenChapter.findUnique({ where: { seed_index: { seed, index: 0 } } });
+  if (cached) return { chapter: cached.content as unknown as GenChapter, partial: false };
+  const opening = await generateChapterOpening(world, 0, '');
+  return opening ? { chapter: opening, partial: true } : null;
+}
 
 /**
  * Seed → shareable generated world. GET fetches an existing version; POST
@@ -31,7 +40,7 @@ export const Route = createFileRoute('/api/versecraft/world')({
           return Response.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(retryAfter) } });
         }
 
-        let body: { seed?: string; prompt?: string; playerName?: string; pronouns?: Pronouns };
+        let body: { seed?: string; prompt?: string; playerName?: string; pronouns?: Pronouns; withOpening?: boolean };
         try { body = await request.json(); } catch { return Response.json({ error: 'Invalid JSON' }, { status: 400 }); }
 
         const seed = normalizeSeed(body.seed ?? '');
@@ -42,7 +51,9 @@ export const Route = createFileRoute('/api/versecraft/world')({
           const existing = await prisma.versecraftWorld.findUnique({ where: { seed } });
           if (existing) {
             await prisma.versecraftWorld.update({ where: { seed }, data: { plays: { increment: 1 } } });
-            return Response.json({ world: existing.world, cached: true });
+            const ew = existing.world as unknown as GeneratedWorld;
+            const opening = body.withOpening ? await openingFor(ew, seed) : undefined;
+            return Response.json({ world: existing.world, cached: true, opening });
           }
         }
         if (!seed) return Response.json({ error: 'Missing seed' }, { status: 400 });
@@ -63,7 +74,10 @@ export const Route = createFileRoute('/api/versecraft/world')({
           update: {}, // race: another request created it first — keep theirs
         });
         const saved = await prisma.versecraftWorld.findUnique({ where: { seed } });
-        return Response.json({ world: saved?.world ?? world, cached: false });
+        const savedWorld = (saved?.world ?? world) as unknown as GeneratedWorld;
+        // Same round trip: hand back the opening scene so the client starts fast.
+        const opening = body.withOpening ? await openingFor(savedWorld, seed) : undefined;
+        return Response.json({ world: saved?.world ?? world, cached: false, opening });
       },
     },
   },

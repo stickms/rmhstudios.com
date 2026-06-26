@@ -94,7 +94,7 @@ export async function generateWorld(
       `'secret' is the hidden thing driving their arc; 'fear' and 'dream' are deeply personal. ` +
       `The cast array MUST be length ${shell.characters.length}, in the same index order.`;
 
-    const parsed = WorldEnrich.parse(await chatJson(system, user, 2200));
+    const parsed = WorldEnrich.parse(await chatJson(system, user, 1800));
     const characters = shell.characters.map((c, i) => {
       const e = parsed.characters[i];
       if (!e) return c;
@@ -240,7 +240,7 @@ export async function generateChapterOpening(world: GeneratedWorld, index: numbe
       `from (${TONES.join(', ')}) and may set "affinity" (character id → small +integer).\n` +
       `Also give the chapter a short "title".\n` +
       `Return JSON: {"title","scenes":[{"environment","timeOfDay","charactersPresent":[ids],"nodes":[{"speaker":id|null,"text","emotion","choices?":[{"text","tone","affinity"}]}]}]}.`;
-    const parsed = ChapterSchema.parse(await chatJson(chapterSystemPrompt(), user, 2600));
+    const parsed = ChapterSchema.parse(await chatJson(chapterSystemPrompt(), user, 2200));
     const raw = parsed.scenes[0];
     if (!raw) return null;
     let seq = 0;

@@ -25,7 +25,9 @@ export function GeneratingState({ title, steps, note, fill = true }: GeneratingS
 
   useEffect(() => {
     if (steps.length <= 1) return;
-    const t = setInterval(() => setI(v => (v + 1) % steps.length), 2200);
+    // Advance through the steps once and hold on the last — a forward sense of
+    // progress instead of an endless loop that reads as "stuck".
+    const t = setInterval(() => setI(v => (v < steps.length - 1 ? v + 1 : v)), 1600);
     return () => clearInterval(t);
   }, [steps.length]);
 
