@@ -101,6 +101,12 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
 
     function onTouchStart(e: TouchEvent) {
       if (window.innerWidth >= 768) return; // mobile only (md breakpoint)
+      // Multi-touch is a pinch/zoom — never a drawer drag. Leaving `active`
+      // false means onTouchMove bails and the browser handles the zoom.
+      if (e.touches.length !== 1) {
+        drag.current.active = false;
+        return;
+      }
       const t = e.touches[0];
       if (!t) return;
       drag.current = {
@@ -117,6 +123,14 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
     function onTouchMove(e: TouchEvent) {
       const d = drag.current;
       if (!d.active) return;
+      // A second finger landed mid-gesture: it's becoming a pinch/zoom. Abandon
+      // the drag and snap back to a resting position so the browser can zoom.
+      if (e.touches.length !== 1) {
+        d.active = false;
+        d.mode = 'none';
+        setDragX(null);
+        return;
+      }
       const t = e.touches[0];
       if (!t) return;
       const dx = t.clientX - d.startX;
@@ -213,7 +227,12 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
         {/* Page content — slides right to reveal the sidebar */}
         <div
           ref={panelRef}
-          className={`relative z-10 min-h-dvh bg-site-bg ${
+          // `touch-pan-y` must live on this panel too — not just the scroll
+          // container — because this is the element the touches actually land
+          // on. Without it the panel defaults to `touch-action: auto`, letting
+          // the browser claim an edge swipe as back/forward navigation before
+          // our non-passive listener can preventDefault.
+          className={`relative z-10 min-h-dvh bg-site-bg touch-pan-y ${
             dragging
               ? ''
               : 'transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none'
