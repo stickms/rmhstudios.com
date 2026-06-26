@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import * as THREE from 'three/webgpu';
-import { pass } from 'three/tsl';
+import { pass, mix, float } from 'three/tsl';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
 import { ao } from 'three/addons/tsl/display/GTAONode.js';
 import { useRenderTier } from './RenderTierContext';
@@ -12,7 +12,22 @@ import { useRenderTier } from './RenderTierContext';
  *  that on low tier (no post) no priority>0 useFrame subscriber is registered
  *  and R3F resumes its automatic scene render. */
 function PostFxRenderer({ post }: { post: THREE.PostProcessing }) {
-    useFrame(() => { void post.renderAsync(); }, 1);
+    const gl = useThree((s) => s.gl) as unknown as THREE.WebGPURenderer;
+    const scene = useThree((s) => s.scene);
+    const camera = useThree((s) => s.camera);
+    // If the post pipeline ever rejects (driver/TSL-node incompatibility on a
+    // given GPU), fall back to a direct scene render for good. Without this, a
+    // failed renderAsync leaves R3F's auto-render suppressed (priority>0 is
+    // mounted) and the canvas stays permanently black.
+    const failed = useRef(false);
+    useFrame(() => {
+        if (failed.current) { gl.render(scene, camera); return; }
+        post.renderAsync().catch((e) => {
+            if (failed.current) return;
+            failed.current = true;
+            console.warn('[PostFx] post pipeline failed; falling back to direct render:', e);
+        });
+    }, 1);
     return null;
 }
 
@@ -28,6 +43,7 @@ export default function PostFx() {
     const enabled = flags.bloom || flags.gtao;
     const BLOOM_STRENGTH = 0.9;   // emissive bleed
     const EXPOSURE = 1.05;        // overall brightness post-ACES
+    const AO_STRENGTH = 0.6;      // max scene darkening from GTAO (never to black)
 
     const post = useMemo(() => {
         if (!enabled) return null;
@@ -46,7 +62,14 @@ export default function PostFx() {
         if (flags.gtao) {
             try {
                 const aoPass = ao(scenePass.getTextureNode('depth'), null, camera);
-                color = color.mul(aoPass.getTextureNode().r);
+                // Blend the AO term toward 1 instead of multiplying by it raw.
+                // The no-MRT GTAO path reconstructs normals from depth and on some
+                // GPUs collapses to ~0 (fully occluded) — a raw multiply then
+                // drives the whole frame to black. mix(1, ao, strength) caps the
+                // darkening at `AO_STRENGTH`, so worst case the scene dims rather
+                // than disappears.
+                const aoScalar = aoPass.getTextureNode().r;
+                color = color.mul(mix(float(1), aoScalar, float(AO_STRENGTH)));
             } catch (e) {
                 console.warn('[PostFx] GTAO setup failed, skipping:', e);
             }

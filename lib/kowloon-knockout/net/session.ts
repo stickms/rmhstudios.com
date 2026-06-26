@@ -28,6 +28,14 @@ const STEP_MS = 1000 / 60;
 const INTERP_DELAY_MS = 100;
 const SNAPSHOT_EVERY = 3;          // host broadcasts every 3 sim frames (~20 Hz)
 const INPUT_KEEPALIVE_MS = 200;
+// Background resilience: requestAnimationFrame is suspended while a tab is
+// hidden, which for the authoritative host would stall the sim — freezing the
+// match for every guest. A setInterval keeps firing while hidden (throttled to
+// ~1 Hz by the browser), and the accumulator below replays the missed real time
+// so the round clock keeps advancing roughly in real time even when backgrounded.
+const MAX_CATCHUP_MS = 1000;        // bound the sim burst after a hidden-tab stall
+const MAX_STEPS_PER_ADVANCE = 60;   // ≈1s of sim per advance; spiral-of-death guard
+const BG_TICK_MS = 250;             // background-resilient driver interval
 
 export interface RenderFighter {
     seat: number;
@@ -140,6 +148,7 @@ class SimSession implements GameSession {
     private input: LocalInputSource | null = null;
     private fx = new FxState();
     private raf = 0;
+    private timer = 0;
     private last = 0;
     private acc = 0;
     private resultCb: ((w: number | null) => void) | null = null;
@@ -174,26 +183,47 @@ class SimSession implements GameSession {
     start(): void {
         if (this.isHost) networkClient.on('input', this.onInput);
         this.last = performance.now();
-        this.raf = requestAnimationFrame(this.loop);
+        // Two drivers share the accumulator: rAF for smooth foreground stepping,
+        // and an interval that keeps the sim alive while the tab is hidden (rAF is
+        // paused then). Whichever fires consumes the elapsed real time, so they
+        // never double-step.
+        this.raf = requestAnimationFrame(this.rafLoop);
+        this.timer = window.setInterval(this.bgTick, BG_TICK_MS);
     }
     stop(): void {
         cancelAnimationFrame(this.raf);
+        clearInterval(this.timer);
         if (this.isHost) networkClient.off('input', this.onInput);
     }
 
-    private loop = (now: number): void => {
+    /** Advance the sim by the real time elapsed since the last advance, stepping
+     *  in fixed increments. Bounded so a long background stall can't trigger a
+     *  spiral-of-death catch-up. Called from both the rAF and interval drivers. */
+    private advance(now: number): void {
         let dt = now - this.last;
         this.last = now;
-        if (dt > 100) dt = 100;
+        if (dt < 0) dt = 0;
+        if (dt > MAX_CATCHUP_MS) dt = MAX_CATCHUP_MS;
         this.acc += dt;
         let steps = 0;
-        while (this.acc >= STEP_MS && steps < 5) {
+        while (this.acc >= STEP_MS && steps < MAX_STEPS_PER_ADVANCE) {
             this.step();
             this.acc -= STEP_MS;
             steps++;
         }
-        this.fx.tickCombo((dt / STEP_MS));
-        this.raf = requestAnimationFrame(this.loop);
+        // Couldn't cover the backlog within the step budget — drop the residue
+        // rather than carry an ever-growing debt.
+        if (steps >= MAX_STEPS_PER_ADVANCE) this.acc = 0;
+        this.fx.tickCombo(dt / STEP_MS);
+    }
+
+    private rafLoop = (now: number): void => {
+        this.advance(now);
+        this.raf = requestAnimationFrame(this.rafLoop);
+    };
+
+    private bgTick = (): void => {
+        this.advance(performance.now());
     };
 
     private step(): void {
