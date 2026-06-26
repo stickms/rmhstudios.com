@@ -155,81 +155,142 @@ const ChapterSchema = z.object({
 const TONES: ChoiceTone[] = ['kind', 'flirt', 'guarded', 'bold', 'honest', 'playful', 'deep'];
 const TIMES: TimeOfDay[] = ['morning', 'afternoon', 'evening', 'night'];
 
+type RawScene = z.infer<typeof ChapterSchema>['scenes'][number];
+
+function beatFor(world: GeneratedWorld, index: number) {
+  const beats = world.routePlan.beats;
+  return beats[Math.min(beats.length - 1, Math.floor((index / Math.max(1, world.routePlan.totalChapters)) * beats.length))];
+}
+
+function chapterSystemPrompt(): string {
+  return (
+    'You are the lead writer of VerseCraft, an emotional, character-driven anime visual novel in the vein of ' +
+    'the best romance/drama VNs. The drama must come from the CHARACTERS\' own choices, desires, and wounds — ' +
+    'never from contrived external events. Show feelings through action, subtext, and specific sensory detail; ' +
+    'avoid melodrama, clichés, and on-the-nose exposition. Plant and pay off the story\'s motifs. Keep every ' +
+    'character flawlessly in their established voice and let their secret/fear/dream quietly shape what they do. ' +
+    'This is for ADULT players: mature, dark, and disturbing subject matter (grief, mortality, mental illness, ' +
+    'self-harm ideation, addiction, abuse aftermath, desire) is allowed and encouraged where the story earns it — ' +
+    'handled with truth and care, not gratuitously. ' +
+    `Every spoken line MUST include an "emotion" from this EXACT set: ${EMOTIONS.join(', ')} — chosen to match the ` +
+    'line and the beat (a character can shift emotion line to line). Narration lines have speaker=null and no emotion. ' +
+    'Respond ONLY with a JSON object.'
+  );
+}
+
+function worldContext(world: GeneratedWorld, contextSummary: string): string {
+  const cast = world.characters.map((c) =>
+    `${c.id}: ${c.name} (${c.pronouns}) — ${c.archetype}, ${c.role}. ${c.personality} Speech: ${c.speechStyle}. Secret: ${c.secret}`).join('\n');
+  return (
+    `STORY: "${world.title}". ${world.premise}\nSETTING: ${world.setting}\nTONE: ${world.toneTags.join(', ')}. MOTIFS: ${world.motifs.join(', ')}.\n` +
+    `PLAYER: ${world.mc.name} (${world.mc.pronouns}) — ${world.mc.premise}\nCAST:\n${cast}\n` +
+    `ALLOWED environments: ${world.environments.join(', ')}.\n` +
+    (contextSummary ? `STORY SO FAR (honor this continuity): ${contextSummary}\n` : '')
+  );
+}
+
+/** Turn one validated raw scene into a sanitized GenScene with stable ids. */
+function sanitizeScene(sc: RawScene, world: GeneratedWorld, index: number, sceneIdx: number, ids: Set<string>, nid: () => string): GenScene {
+  const environment: Environment = (ENVIRONMENTS as readonly string[]).includes(sc.environment)
+    ? (sc.environment as Environment) : world.environments[0];
+  const present = sc.charactersPresent.filter((id) => ids.has(id));
+  const nodes: GenNode[] = sc.nodes.map((n) => {
+    const speaker = n.speaker && ids.has(n.speaker) ? n.speaker : null;
+    const node: GenNode = { id: nid(), speaker, text: n.text, emotion: speaker ? normalizeEmotion(n.emotion) : undefined };
+    if (n.choices?.length) {
+      node.choices = n.choices.slice(0, 3).map((c) => ({
+        text: c.text,
+        tone: (TONES as readonly string[]).includes(c.tone ?? '') ? (c.tone as ChoiceTone) : 'honest',
+        affinity: c.affinity ? Object.fromEntries(Object.entries(c.affinity).filter(([k]) => ids.has(k))) : undefined,
+      }));
+    }
+    return node;
+  });
+  return {
+    id: `ch${index}_s${sceneIdx}`,
+    environment,
+    timeOfDay: (TIMES as readonly string[]).includes(sc.timeOfDay ?? '') ? (sc.timeOfDay as TimeOfDay) : TIMES[(index + sceneIdx) % 4],
+    charactersPresent: present.length ? present : [world.characters[0].id],
+    nodes: nodes.length ? nodes : [{ id: nid(), speaker: null, text: '...' }],
+  };
+}
+
+/** A short text digest of a scene, used to keep the streamed remainder coherent. */
+function sceneDigest(scene: GenScene): string {
+  return scene.nodes.map(n => (n.speaker ? `${n.speaker}: ` : '') + n.text).join(' ').slice(0, 700);
+}
+
+/**
+ * Generate JUST the opening scene of a chapter as a `partial` chapter — small +
+ * fast so play can begin almost immediately while the rest streams in. Returns
+ * null on failure (or when AI is unconfigured: caller should use the full
+ * fallback chapter, which is instant anyway).
+ */
+export async function generateChapterOpening(world: GeneratedWorld, index: number, contextSummary = ''): Promise<GenChapter | null> {
+  if (!isVersecraftAIConfigured()) return null;
+  const beat = beatFor(world, index);
+  const ids = new Set(world.characters.map((c) => c.id));
+  try {
+    const user = worldContext(world, contextSummary) +
+      `\nWrite ONLY the OPENING SCENE of CHAPTER ${index + 1} (Act ${beat.act}). Emotional goal of the chapter: ` +
+      `"${beat.emotionalGoal}". Open on these characters: ${beat.focus.join(', ')}.\n` +
+      `- One scene: an environment from the allowed list, charactersPresent (ids), 9–13 nodes.\n` +
+      `- Hook the player emotionally and end the scene on a small beat of tension or warmth.\n` +
+      `- Include exactly ONE "choices" node (2–3 options) where ${world.mc.name} responds; each option has a "tone" ` +
+      `from (${TONES.join(', ')}) and may set "affinity" (character id → small +integer).\n` +
+      `Also give the chapter a short "title".\n` +
+      `Return JSON: {"title","scenes":[{"environment","timeOfDay","charactersPresent":[ids],"nodes":[{"speaker":id|null,"text","emotion","choices?":[{"text","tone","affinity"}]}]}]}.`;
+    const parsed = ChapterSchema.parse(await chatJson(chapterSystemPrompt(), user, 2600));
+    const raw = parsed.scenes[0];
+    if (!raw) return null;
+    let seq = 0;
+    const scene = sanitizeScene(raw, world, index, 0, ids, () => `ch${index}_n${seq++}`);
+    return {
+      index, act: beat.act,
+      title: parsed.title || beat.title,
+      subtitle: `Act ${beat.act} — ${world.title}`,
+      emotionalGoal: beat.emotionalGoal,
+      scenes: [scene],
+      source: 'ai',
+      partial: true,
+    };
+  } catch (err) {
+    console.error('generateChapterOpening failed:', err);
+    return null;
+  }
+}
+
 export async function generateChapter(
-  world: GeneratedWorld, index: number, contextSummary = '',
+  world: GeneratedWorld, index: number, contextSummary = '', opening?: GenScene | null,
 ): Promise<GenChapter> {
   if (!isVersecraftAIConfigured()) return fallbackChapter(world, index);
 
-  const beats = world.routePlan.beats;
-  const beat = beats[Math.min(beats.length - 1, Math.floor((index / Math.max(1, world.routePlan.totalChapters)) * beats.length))];
+  const beat = beatFor(world, index);
   const ids = new Set(world.characters.map((c) => c.id));
 
   try {
-    const cast = world.characters.map((c) =>
-      `${c.id}: ${c.name} (${c.pronouns}) — ${c.archetype}, ${c.role}. ${c.personality} Speech: ${c.speechStyle}. Secret: ${c.secret}`).join('\n');
-    const system =
-      'You are the lead writer of VerseCraft, an emotional, character-driven anime visual novel in the vein of ' +
-      'the best romance/drama VNs. Write ONE full chapter (15–20 minutes of reading). The drama must come from the ' +
-      'CHARACTERS\' own choices, desires, and wounds — never from contrived external events. Show feelings through ' +
-      'action, subtext, and specific sensory detail; avoid melodrama, clichés, and on-the-nose exposition. ' +
-      'Plant and pay off the story\'s motifs. Keep every character flawlessly in their established voice and let ' +
-      'their secret/fear/dream quietly shape what they do. ' +
-      'This is for ADULT players: mature, dark, and disturbing subject matter (grief, mortality, mental illness, ' +
-      'self-harm ideation, addiction, abuse aftermath, desire) is allowed and encouraged where the story earns it — ' +
-      'handled with truth and care, not gratuitously. ' +
-      `Every spoken line MUST include an "emotion" from this EXACT set: ${EMOTIONS.join(', ')} — chosen to match the ` +
-      'line and the beat (a character can shift emotion line to line). Narration lines have speaker=null and no emotion. ' +
-      'Respond ONLY with a JSON object.';
-    const user =
-      `STORY: "${world.title}". ${world.premise}\nSETTING: ${world.setting}\nTONE: ${world.toneTags.join(', ')}. MOTIFS: ${world.motifs.join(', ')}.\n` +
-      `PLAYER: ${world.mc.name} (${world.mc.pronouns}) — ${world.mc.premise}\nCAST:\n${cast}\n` +
-      `ALLOWED environments: ${world.environments.join(', ')}.\n` +
-      (contextSummary ? `STORY SO FAR (honor this continuity): ${contextSummary}\n` : '') +
-      `\nWrite CHAPTER ${index + 1} (Act ${beat.act}). Emotional goal of this chapter: "${beat.emotionalGoal}". ` +
-      `Center it on these characters: ${beat.focus.join(', ')} (others may appear).\n` +
-      `Requirements:\n` +
-      `- 3–4 scenes. Each scene: one environment from the allowed list, charactersPresent (ids), and 12–18 nodes.\n` +
-      `- Build a clear emotional arc across the chapter (setup → complication → turn → resolution that lands the goal).\n` +
-      `- Rich, specific dialogue and evocative narration; vary line length; let characters DO things, not just talk.\n` +
-      `- Include 2 "choices" nodes total across the chapter where ${world.mc.name} responds; each option has a "tone" from ` +
-      `(${TONES.join(', ')}) and may set "affinity" (map of character id → small +integer 1–6) reflecting how that ` +
-      `character would feel about the response.\n` +
+    const continuing = !!opening;
+    const user = worldContext(world, contextSummary) +
+      (continuing
+        ? `\nThe opening scene of CHAPTER ${index + 1} (Act ${beat.act}) has already been written:\n"${sceneDigest(opening!)}"\n` +
+          `CONTINUE this chapter with 2–3 MORE scenes that carry the emotional goal "${beat.emotionalGoal}" to a ` +
+          `resolution (complication → turn → landing). Do NOT repeat the opening scene.\n` +
+          `- Each scene: an environment from the allowed list, charactersPresent (ids), 12–18 nodes.\n` +
+          `- Include exactly ONE "choices" node across these scenes.\n`
+        : `\nWrite CHAPTER ${index + 1} (Act ${beat.act}). Emotional goal: "${beat.emotionalGoal}". Center on: ${beat.focus.join(', ')}.\n` +
+          `- 3–4 scenes. Each scene: an environment from the allowed list, charactersPresent (ids), 12–18 nodes.\n` +
+          `- Clear emotional arc (setup → complication → turn → resolution that lands the goal).\n` +
+          `- Include 2 "choices" nodes total.\n`) +
+      `- Rich, specific dialogue and evocative narration; vary line length; let characters DO things.\n` +
+      `- Choice options carry a "tone" from (${TONES.join(', ')}) and may set "affinity" (character id → small +integer 1–6).\n` +
       `Return JSON: {"title","scenes":[{"environment","timeOfDay","charactersPresent":[ids],"nodes":[{"speaker":id|null,"text","emotion","choices?":[{"text","tone","affinity"}]}]}]}.`;
 
-    const parsed = ChapterSchema.parse(await chatJson(system, user, 7000));
-    let seq = 0;
+    const parsed = ChapterSchema.parse(await chatJson(chapterSystemPrompt(), user, continuing ? 5500 : 7000));
+    const startScene = continuing ? 1 : 0;
+    let seq = continuing ? (opening!.nodes.length) : 0;
     const nid = () => `ch${index}_n${seq++}`;
-    const scenes: GenScene[] = parsed.scenes.map((sc, si) => {
-      const environment: Environment = (ENVIRONMENTS as readonly string[]).includes(sc.environment)
-        ? (sc.environment as Environment) : world.environments[0];
-      const present = sc.charactersPresent.filter((id) => ids.has(id));
-      const nodes: GenNode[] = sc.nodes.map((n) => {
-        const speaker = n.speaker && ids.has(n.speaker) ? n.speaker : null;
-        const node: GenNode = {
-          id: nid(),
-          speaker,
-          text: n.text,
-          emotion: speaker ? normalizeEmotion(n.emotion) : undefined,
-        };
-        if (n.choices?.length) {
-          node.choices = n.choices.slice(0, 3).map((c) => ({
-            text: c.text,
-            tone: (TONES as readonly string[]).includes(c.tone ?? '') ? (c.tone as ChoiceTone) : 'honest',
-            affinity: c.affinity
-              ? Object.fromEntries(Object.entries(c.affinity).filter(([k]) => ids.has(k)))
-              : undefined,
-          }));
-        }
-        return node;
-      });
-      return {
-        id: `ch${index}_s${si}`,
-        environment,
-        timeOfDay: (TIMES as readonly string[]).includes(sc.timeOfDay ?? '') ? (sc.timeOfDay as TimeOfDay) : TIMES[(index + si) % 4],
-        charactersPresent: present.length ? present : [world.characters[0].id],
-        nodes: nodes.length ? nodes : [{ id: nid(), speaker: null, text: '...' }],
-      };
-    });
+    const rest = parsed.scenes.map((sc, i) => sanitizeScene(sc, world, index, startScene + i, ids, nid));
+    const scenes = continuing ? [opening!, ...rest] : rest;
 
     if (!scenes.length) return fallbackChapter(world, index);
     return {

@@ -80,19 +80,18 @@ export const games: GameInfo[] = [
     {
         id: 'versecraft',
         title: 'Versecraft',
-        description: 'A poetry puzzle visual novel. Compose poems, romance characters, and unravel literary mysteries.',
+        description: 'A visual novel that writes a brand-new emotional story every time — your cast, your bonds, your seed to share.',
         longDescription:
-            'Join the Ivory Quill Society and discover the power of words. Select words to compose poems, arrange lines for maximum impact, and watch as six unique characters react to your literary creations. A DDLC-inspired visual novel where every word matters.',
+            'Every playthrough is generated from a seed: a unique anime cast, setting, and a multi-act, character-driven story you steer through choices and poem-writing. Prompt the kind of experience you want or roll the dice, deepen bonds with the cast, and share your seed so anyone can replay your exact version.',
         href: '/versecraft',
         cta: 'Play Now',
         isSteam: false,
         gradient: 'from-amber-700 to-purple-800',
         iconName: 'Feather',
         color: 'from-amber-700/20 to-purple-800/20 hover:border-amber-500/50',
-        tags: ['Visual Novel', 'Puzzle', 'Poetry'],
+        tags: ['Visual Novel', 'AI-Generated', 'Romance', 'Poetry'],
         imagePath: '/images/games/versecraft.webp',
         authGate: false,
-        unlisted: true
     },
     {
         id: 'slice-it',

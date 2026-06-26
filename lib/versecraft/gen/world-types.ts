@@ -210,4 +210,6 @@ export interface GenChapter {
   emotionalGoal: string;
   scenes: GenScene[];
   source: 'ai' | 'fallback';
+  /** True while more scenes are still streaming in for this chapter. */
+  partial?: boolean;
 }
