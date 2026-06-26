@@ -1,26 +1,54 @@
 "use client";
 import { useCookgameStore } from '@/lib/cookgame/store';
 import { HEAT_PENALTY_THRESHOLD, MAX_HEAT } from '@/lib/cookgame/economy';
+import { rankForXp, xpToNextRank, RANKS } from '@/lib/cookgame/progression';
 
 export function HUD() {
   const cash = useCookgameStore((s) => s.cash);
   const heat = useCookgameStore((s) => s.heat);
   const packaged = useCookgameStore((s) => s.inventory.packaged);
+  const xp = useCookgameStore((s) => s.xp);
   const setActiveOverlay = useCookgameStore((s) => s.setActiveOverlay);
 
   const totalUnits = packaged.reduce((sum, stack) => sum + stack.units, 0);
   const heatPct = Math.min(100, (heat / MAX_HEAT) * 100);
   const hot = heat >= HEAT_PENALTY_THRESHOLD;
 
+  const rank = rankForXp(xp);
+  const toNext = xpToNextRank(xp);
+  const isMaxRank = toNext === 0;
+  const nextRank = RANKS[rank.rank + 1];
+  const xpBarPct = isMaxRank
+    ? 100
+    : Math.min(100, ((xp - rank.xpThreshold) / (nextRank.xpThreshold - rank.xpThreshold)) * 100);
+
   return (
     <div className="pointer-events-none absolute inset-0 z-20 select-none text-white">
-      {/* Top-left: cash */}
+      {/* Top-left: cash + rank */}
       <div className="absolute left-4 top-4 flex flex-col gap-2">
         <div className="rounded-md border border-neutral-700 bg-neutral-900/80 px-3 py-2">
           <div className="font-mono text-2xl font-bold text-lime-400">${cash}</div>
           <div className="font-mono text-[11px] uppercase tracking-widest text-neutral-400">
             {totalUnits} unit{totalUnits === 1 ? '' : 's'} packaged
           </div>
+        </div>
+        {/* Rank + XP progress */}
+        <div className="rounded-md border border-neutral-700 bg-neutral-900/80 px-3 py-2">
+          <div className="mb-1 flex items-center justify-between font-mono text-[11px] uppercase tracking-widest text-neutral-400">
+            <span>Rank</span>
+            <span className="text-lime-400">{rank.name}</span>
+          </div>
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-700">
+            <div
+              className="h-full rounded-full bg-lime-400 transition-all"
+              style={{ width: `${xpBarPct}%` }}
+            />
+          </div>
+          {!isMaxRank && (
+            <div className="mt-0.5 font-mono text-[10px] text-neutral-500">
+              {toNext} xp to {nextRank.name}
+            </div>
+          )}
         </div>
         <div className="pointer-events-auto flex gap-2">
           <button
