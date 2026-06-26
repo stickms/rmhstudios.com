@@ -72,3 +72,22 @@ describe('harvest + dry', () => {
     expect(entry.bonusEffects).toEqual(['glowing']);
   });
 });
+
+describe('cooldownMult', () => {
+  it('canTend gate scales with cooldownMult (faster when < 1)', () => {
+    const p = plantPlot(emptyPlot(), 'couchlock', T0);
+    // at 0.5x, half the base cooldown is enough
+    expect(canTend(p, T0 + TEND_COOLDOWN_MS / 2, 0.5)).toBe(true);
+    expect(canTend(p, T0 + TEND_COOLDOWN_MS / 2)).toBe(false); // default 1x not yet
+  });
+  it('tendPlot respects the scaled gate', () => {
+    const p = plantPlot(emptyPlot(), 'couchlock', T0);
+    expect(tendPlot(p, T0 + TEND_COOLDOWN_MS / 2, 0.5).stage).toBe('vegetative');
+    expect(tendPlot(p, T0 + TEND_COOLDOWN_MS / 2)).toBe(p); // default 1x: no-op
+  });
+  it('canCollect gate scales with cooldownMult', () => {
+    const wet = { baseId: 'glimmerdust' as const, quality: 1, dryStartedAt: T0 };
+    expect(canCollect(wet, T0 + DRY_COOLDOWN_MS / 2, 0.5)).toBe(true);
+    expect(canCollect(wet, T0 + DRY_COOLDOWN_MS / 2)).toBe(false);
+  });
+});

@@ -18,13 +18,13 @@ export function plantPlot(plot: PlotState, baseId: BaseId, now: number): PlotSta
 
 const isTendable = (stage: GrowStage) => stage === 'seedling' || stage === 'vegetative';
 
-export function canTend(plot: PlotState, now: number): boolean {
+export function canTend(plot: PlotState, now: number, cooldownMult = 1): boolean {
   if (!isTendable(plot.stage) || plot.lastAdvancedAt === null) return false;
-  return now - plot.lastAdvancedAt >= TEND_COOLDOWN_MS;
+  return now - plot.lastAdvancedAt >= TEND_COOLDOWN_MS * cooldownMult;
 }
 
-export function tendPlot(plot: PlotState, now: number): PlotState {
-  if (!canTend(plot, now)) return plot;
+export function tendPlot(plot: PlotState, now: number, cooldownMult = 1): PlotState {
+  if (!canTend(plot, now, cooldownMult)) return plot;
   const elapsed = now - (plot.lastAdvancedAt as number);
   const credit = elapsed <= TEND_COOLDOWN_MS + WILT_GRACE_MS ? 1 : 0.5;
   const idx = GROW_SEQUENCE.indexOf(plot.stage);
@@ -42,8 +42,8 @@ export function harvestPlot(plot: PlotState, now: number): { wet: WetBatch; plot
   return { wet, plot: emptyPlot() };
 }
 
-export function canCollect(batch: WetBatch, now: number): boolean {
-  return now - batch.dryStartedAt >= DRY_COOLDOWN_MS;
+export function canCollect(batch: WetBatch, now: number, cooldownMult = 1): boolean {
+  return now - batch.dryStartedAt >= DRY_COOLDOWN_MS * cooldownMult;
 }
 
 export function collectDried(batch: WetBatch): BaseStockEntry {

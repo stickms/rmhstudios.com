@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { useCookgameStore } from '../store';
 import { TEND_COOLDOWN_MS, DRY_COOLDOWN_MS } from '../cultivation';
 import { rankForXp, xpForRecipe } from '../progression';
+import { propertyEffects } from '../property';
 
 const reset = () => useCookgameStore.getState().resetGame();
 
@@ -274,5 +275,67 @@ describe('cookgame store — progression', () => {
     const afterRepeat0 = useCookgameStore.getState().xp;
     st.mixIn('cuke');
     expect(useCookgameStore.getState().xp).toBe(afterRepeat0);
+  });
+});
+
+describe('cookgame store — stash cap + income', () => {
+  beforeEach(reset);
+
+  it('buyBase refuses when it would exceed the stash cap', () => {
+    const cap = propertyEffects(0).stashCap; // 60 at tier 0
+    // fill baseStock to the cap
+    useCookgameStore.setState((s) => ({
+      cash: 99999,
+      inventory: { ...s.inventory, baseStock: [{ baseId: 'greenstart', qualityMult: 1, bonusEffects: [], units: cap }] },
+    }));
+    expect(useCookgameStore.getState().buyBase('greenstart', 10)).toBe(false);
+    expect(useCookgameStore.getState().inventory.baseStock[0].units).toBe(cap);
+  });
+
+  it('a higher property tier raises the cap so the same buy succeeds', () => {
+    const cap = propertyEffects(0).stashCap;
+    useCookgameStore.setState((s) => ({
+      cash: 99999, ownedPropertyTier: 1, // cap 150
+      inventory: { ...s.inventory, baseStock: [{ baseId: 'greenstart', qualityMult: 1, bonusEffects: [], units: cap }] },
+    }));
+    expect(useCookgameStore.getState().buyBase('greenstart', 10)).toBe(true);
+  });
+
+  it('tickPassiveIncome adds cash only when the tier has income', () => {
+    const st = useCookgameStore.getState();
+    st.tickPassiveIncome(10);
+    expect(useCookgameStore.getState().cash).toBe(150); // tier 0: no income
+    useCookgameStore.setState({ ownedPropertyTier: 1, cash: 0 }); // 0.5/s
+    useCookgameStore.getState().tickPassiveIncome(10);
+    expect(useCookgameStore.getState().cash).toBe(5); // 0.5 * 10
+  });
+});
+
+describe('cookgame store — property', () => {
+  beforeEach(reset);
+
+  it('buyProperty buys the next tier only, gated by rank + cash, and grows plots', () => {
+    const st = useCookgameStore.getState();
+    // tier 1 needs rank 1 (xp 100) + 500 cash
+    expect(st.buyProperty(1)).toBe(false); // rank 0, no cash
+    useCookgameStore.setState({ xp: 100, cash: 1000 });
+    expect(useCookgameStore.getState().buyProperty(2)).toBe(false); // can't skip to tier 2
+    expect(useCookgameStore.getState().buyProperty(1)).toBe(true);
+    const s = useCookgameStore.getState();
+    expect(s.ownedPropertyTier).toBe(1);
+    expect(s.cash).toBe(500);
+    expect(s.inventory.plots.length).toBe(propertyEffects(1).plots); // grew to 6
+  });
+
+  it('owning a faster-cooldown property lets a plot be tended sooner', () => {
+    useCookgameStore.setState((s) => ({ inventory: { ...s.inventory, inputs: { seed_couchlock: 1, nutrient: 1 } } }));
+    const st = useCookgameStore.getState();
+    st.plantPlot(0, 'couchlock', 0);
+    // tier 0 (cooldownMult 1): half cooldown is not enough
+    expect(st.tendPlot(0, TEND_COOLDOWN_MS / 2)).toBe(false);
+    // jump to a property tier with cooldownMult <= 0.5-ish via tier 3 (0.7) won't be enough at half;
+    // instead verify the wiring by setting tier 3 and using a smaller elapsed that 0.7x permits:
+    useCookgameStore.setState({ ownedPropertyTier: 3 }); // cooldownMult 0.7
+    expect(st.tendPlot(0, TEND_COOLDOWN_MS * 0.7)).toBe(true); // 0.7x gate met exactly
   });
 });

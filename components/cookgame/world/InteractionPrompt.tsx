@@ -13,6 +13,7 @@ const LABELS: Record<string, string> = {
   'plot:2': 'Grow Plot 3',
   drying: 'Drying Rack',
   chem: 'Chemistry Station',
+  property: 'Manage Property',
 };
 
 export function InteractionPrompt() {

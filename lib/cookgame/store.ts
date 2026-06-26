@@ -4,13 +4,18 @@ import type { AdditiveId, BaseId, BuyerId, InputId, InventoryState, Product, Bas
 import { cookQuality, cookOutput, DIAL_COUNT } from './chemistry';
 import { ADDITIVES, BUYERS, INPUTS, GROWABLE } from './content';
 import { mix, effectSetKey } from './effects';
-import { buyerOffer, applyHeatOnSale, decayHeat, packageProduct } from './economy';
+import { buyerOffer, applyHeatOnSale, decayHeat, packageProduct, UNITS_PER_BATCH } from './economy';
 import { SaveState, CURRENT_VERSION, createNewSave, saveGame, loadGame } from './saveSystem';
 import { xpForSale, xpForRecipe, xpForProduction, rankForXp, perksAtRank } from './progression';
 import {
   plantPlot as cPlant, canTend, tendPlot as cTend,
-  harvestPlot as cHarvest, canCollect, collectDried as cCollect,
+  harvestPlot as cHarvest, canCollect, collectDried as cCollect, emptyPlot,
 } from './cultivation';
+import { PROPERTY_TIERS, propertyEffects, stashCount } from './property';
+
+// Transient accumulator for sub-dollar passive income — kept outside the store
+// so it survives re-renders but is reset by resetGame (see below).
+let incomeAccum = 0;
 
 function sameStock(a: BaseStockEntry, b: BaseStockEntry): boolean {
   return a.baseId === b.baseId && a.qualityMult === b.qualityMult &&
@@ -52,6 +57,7 @@ interface CookgameState {
   packageBench: () => boolean;
   sellUnit: (buyerId: BuyerId, packagedIndex: number, variance: number) => number;
   tickHeat: (dt: number) => void;
+  tickPassiveIncome: (dtSeconds: number) => void;
   setNearbyInteractable: (id: string | null) => void;
   setActiveOverlay: (id: string | null) => void;
   setPlayerPosition: (p: [number, number, number]) => void;
@@ -63,6 +69,7 @@ interface CookgameState {
   tendPlot: (plotIndex: number, now: number) => boolean;
   harvestPlot: (plotIndex: number, now: number) => boolean;
   collectDried: (batchIndex: number, now: number) => boolean;
+  buyProperty: (tier: number) => boolean;
 }
 
 const fromSave = (s: SaveState) => ({
@@ -101,12 +108,14 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
   },
 
   submitCook: () => {
-    const { cookSession, inventory, xp } = get();
+    const { cookSession, inventory, ownedPropertyTier, xp } = get();
     if (!cookSession) return 0;
     const q = cookQuality(cookSession.dials, cookSession.target);
+    const entry = cookOutput(cookSession.baseId, q);
+    if (stashCount(inventory) + entry.units > propertyEffects(ownedPropertyTier).stashCap) return 0;
     set({
       cookSession: null,
-      inventory: { ...inventory, baseStock: mergeStock(inventory.baseStock, cookOutput(cookSession.baseId, q)) },
+      inventory: { ...inventory, baseStock: mergeStock(inventory.baseStock, entry) },
       xp: xp + xpForProduction(),
     });
     return q;
@@ -124,8 +133,9 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
   },
 
   buyBase: (id, price) => {
-    const { cash, inventory } = get();
+    const { cash, inventory, ownedPropertyTier } = get();
     if (cash < price) return false;
+    if (stashCount(inventory) + 1 > propertyEffects(ownedPropertyTier).stashCap) return false;
     set({
       cash: cash - price,
       inventory: { ...inventory, baseStock: mergeStock(inventory.baseStock, { baseId: id, qualityMult: 1, bonusEffects: [], units: 1 }) },
@@ -173,6 +183,7 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
   packageBench: () => {
     const { inventory } = get();
     if (!inventory.workProduct) return false;
+    if (stashCount(inventory) + UNITS_PER_BATCH > propertyEffects(get().ownedPropertyTier).stashCap) return false;
     set({
       inventory: { ...inventory, workProduct: null, packaged: [...inventory.packaged, packageProduct(inventory.workProduct)] },
     });
@@ -203,6 +214,15 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
     if (heat === 0) return; // avoid per-frame state churn (and autosave) on an idle tab
     set({ heat: decayHeat(heat, dt) });
   },
+  tickPassiveIncome: (dtSeconds) => {
+    const rate = propertyEffects(get().ownedPropertyTier).passiveIncomePerSec;
+    if (rate <= 0) return;
+    incomeAccum += rate * dtSeconds;
+    if (incomeAccum < 1) return;
+    const whole = Math.floor(incomeAccum);
+    incomeAccum -= whole;
+    set({ cash: get().cash + whole });
+  },
   setNearbyInteractable: (id) => set({ nearbyInteractable: id }),
   setActiveOverlay: (id) => set({ activeOverlay: id }),
   setPlayerPosition: (p) => set({ playerPosition: p }),
@@ -212,7 +232,7 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
     saveGame({ version: CURRENT_VERSION, cash, heat, inventory, discoveredRecipes, xp, ownedPropertyTier, keys, clock, discoveredEffects, recipeMeta, currentDistrict });
   },
   loadOrNew: () => set(fromSave(loadGame() ?? createNewSave())),
-  resetGame: () => set({ ...fromSave(createNewSave()), nearbyInteractable: null, activeOverlay: null, cookSession: null }),
+  resetGame: () => { incomeAccum = 0; set({ ...fromSave(createNewSave()), nearbyInteractable: null, activeOverlay: null, cookSession: null }); },
 
   buyInput: (id) => {
     const { cash, inventory } = get();
@@ -222,6 +242,18 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
       cash: cash - cost,
       inventory: { ...inventory, inputs: { ...inventory.inputs, [id]: (inventory.inputs[id] ?? 0) + 1 } },
     });
+    return true;
+  },
+
+  buyProperty: (tier) => {
+    const { cash, ownedPropertyTier, inventory, xp } = get();
+    const t = PROPERTY_TIERS[tier];
+    if (!t || tier !== ownedPropertyTier + 1) return false;       // next tier only
+    if (rankForXp(xp).rank < t.rankReq) return false;
+    if (cash < t.cost) return false;
+    const plots = [...inventory.plots];
+    while (plots.length < t.plots) plots.push(emptyPlot());
+    set({ cash: cash - t.cost, ownedPropertyTier: tier, inventory: { ...inventory, plots } });
     return true;
   },
 
@@ -242,10 +274,11 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
   },
 
   tendPlot: (plotIndex, now) => {
-    const { inventory } = get();
+    const { inventory, xp, ownedPropertyTier } = get();
     const plot = inventory.plots[plotIndex];
-    if (!plot || !canTend(plot, now)) return false;
-    const plots = inventory.plots.map((p, i) => (i === plotIndex ? cTend(p, now) : p));
+    const cd = perksAtRank(rankForXp(xp).rank).cooldownMult * propertyEffects(ownedPropertyTier).cooldownMult;
+    if (!plot || !canTend(plot, now, cd)) return false;
+    const plots = inventory.plots.map((p, i) => (i === plotIndex ? cTend(p, now, cd) : p));
     set({ inventory: { ...inventory, plots } });
     return true;
   },
@@ -263,10 +296,12 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
 
   collectDried: (batchIndex, now) => {
     // XP for production is intentionally awarded at harvest (not here) to avoid double-counting one grow cycle.
-    const { inventory } = get();
+    const { inventory, xp, ownedPropertyTier } = get();
     const batch = inventory.dryingRack[batchIndex];
-    if (!batch || !canCollect(batch, now)) return false;
+    const cd = perksAtRank(rankForXp(xp).rank).cooldownMult * propertyEffects(ownedPropertyTier).cooldownMult;
+    if (!batch || !canCollect(batch, now, cd)) return false;
     const entry = cCollect(batch);
+    if (stashCount(inventory) + entry.units > propertyEffects(ownedPropertyTier).stashCap) return false;
     const dryingRack = inventory.dryingRack.filter((_, i) => i !== batchIndex);
     set({ inventory: { ...inventory, dryingRack, baseStock: mergeStock(inventory.baseStock, entry) } });
     return true;

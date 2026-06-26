@@ -3,26 +3,30 @@ import { useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
 import { useCookgameStore } from '@/lib/cookgame/store';
-import { TownScene, STATION_POSITIONS, BUYER_POSITIONS, PLOT_POSITIONS, DRYING_POSITION, CHEM_POSITION } from './world/TownScene';
+import { TownScene, STATION_POSITIONS, BUYER_POSITIONS, PLOT_POSITIONS, DRYING_POSITION, CHEM_POSITION, PROPERTY_POSITION } from './world/TownScene';
 import { PlayerController } from './world/PlayerController';
 import { Interactable } from './world/Interactable';
 import { InteractionPrompt } from './world/InteractionPrompt';
 import { BuyerNPC } from './npc/BuyerNPC';
 import { SellOverlay } from './npc/SellOverlay';
-import { SupplierShopOverlay } from './stations/SupplierShopOverlay';
+import { ShopOverlay } from './stations/ShopOverlay';
 import { MixingStationOverlay } from './stations/MixingStationOverlay';
 import { PackagingOverlay } from './stations/PackagingOverlay';
 import { GrowPlotOverlay } from './stations/GrowPlotOverlay';
 import { DryingRackOverlay } from './stations/DryingRackOverlay';
 import { ChemistryStationOverlay } from './stations/ChemistryStationOverlay';
+import { PropertyOverlay } from './stations/PropertyOverlay';
 import { HUD } from './ui/HUD';
 import { RecipeJournal } from './ui/RecipeJournal';
 import { MenuOverlay } from './ui/MenuOverlay';
 import Lighting from './models/Lighting';
 
-// Drives heat decay each frame (lives inside <Canvas> for useFrame access).
+// Drives heat decay and passive income each frame (lives inside <Canvas> for useFrame access).
 function HeatTicker() {
-  useFrame((_, delta) => useCookgameStore.getState().tickHeat(delta));
+  useFrame((_, delta) => {
+    useCookgameStore.getState().tickHeat(delta);
+    useCookgameStore.getState().tickPassiveIncome(delta);
+  });
   return null;
 }
 
@@ -71,6 +75,7 @@ export function CookGameGame() {
           ))}
           <Interactable id="drying" position={DRYING_POSITION} />
           <Interactable id="chem" position={CHEM_POSITION} />
+          <Interactable id="property" position={PROPERTY_POSITION} />
 
           {/* buyer NPCs */}
           <BuyerNPC buyerId="doug" position={BUYER_POSITIONS.doug} />
@@ -82,13 +87,14 @@ export function CookGameGame() {
       {/* DOM overlays (outside the canvas) */}
       <HUD />
       <InteractionPrompt />
-      <SupplierShopOverlay />
+      <ShopOverlay />
       <MixingStationOverlay />
       <PackagingOverlay />
       <SellOverlay />
       <GrowPlotOverlay />
       <DryingRackOverlay />
       <ChemistryStationOverlay />
+      <PropertyOverlay />
       <RecipeJournal />
       <MenuOverlay />
     </div>

@@ -27,6 +27,7 @@ export const PLOT_POSITIONS: [number, number, number][] = [
 ];
 export const DRYING_POSITION: [number, number, number] = [-9, 0, 2];
 export const CHEM_POSITION: [number, number, number] = [12, 0, -3];
+export const PROPERTY_POSITION: [number, number, number] = [8, 0, -4];
 
 // Stage-aware plot wrapper — the single allowed world-layer store read (selector, no writes).
 function PlotVisual({ index, position }: { index: number; position: [number, number, number] }) {
