@@ -1,49 +1,47 @@
 'use client';
 
 import * as THREE from 'three/webgpu';
-import { useMemo, useRef } from 'react';
+import { useLayoutEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
+import { reflector, mix, color, float } from 'three/tsl';
 import { ARENA_RADIUS } from '@/lib/kowloon-knockout/game/fighters/types';
-import { NEON_PALETTE } from './materials';
+import { useRenderTier } from './RenderTierContext';
 
-const NEON = NEON_PALETTE;
+const FLOOR_BASE = '#0d0a16';
+const REFLECTION_STRENGTH = 0.35; // wet-sheen blend; tune in browser sign-off
 
-/** Static neon-Kowloon backdrop: ring platform, rope-light boundary, skyline. */
+/** Arena stage: ring platform, rope-light boundary, corner posts. */
 export default function Environment() {
     const ringRef = useRef<THREE.Mesh>(null);
+    const floorRef = useRef<THREE.Mesh>(null);
+    const { flags } = useRenderTier();
 
-    // Skyline: a ring of emissive tower blocks at a distance, randomised once.
-    const towers = useMemo(() => {
-        const arr: { pos: [number, number, number]; size: [number, number, number]; color: string }[] = [];
-        const count = 46;
-        for (let i = 0; i < count; i++) {
-            const a = (i / count) * Math.PI * 2 + Math.random() * 0.1;
-            const dist = 22 + Math.random() * 16;
-            const h = 8 + Math.random() * 30;
-            const w = 2.5 + Math.random() * 3.5;
-            arr.push({
-                pos: [Math.cos(a) * dist, h / 2 - 1, Math.sin(a) * dist],
-                size: [w, h, w],
-                color: NEON[Math.floor(Math.random() * NEON.length)],
-            });
-        }
-        return arr;
-    }, []);
+    // Ultra only: a planar reflector turns the floor into a wet rooftop that
+    // mirrors the neon emitters/fighters. Lower tiers keep the IBL metalness
+    // fake below (material untouched). `reflector()` allocates an internal
+    // render target, so it is memoized and disposed on tier change/unmount.
+    const reflection = useMemo(
+        () => (flags.reflection ? reflector() : null),
+        [flags.reflection],
+    );
 
-    // Floating vertical neon sign strips.
-    const signs = useMemo(() => {
-        const arr: { pos: [number, number, number]; h: number; color: string }[] = [];
-        for (let i = 0; i < 14; i++) {
-            const a = (i / 14) * Math.PI * 2;
-            const dist = 14 + Math.random() * 6;
-            arr.push({
-                pos: [Math.cos(a) * dist, 3 + Math.random() * 9, Math.sin(a) * dist],
-                h: 2 + Math.random() * 4,
-                color: NEON[Math.floor(Math.random() * NEON.length)],
-            });
-        }
-        return arr;
-    }, []);
+    useLayoutEffect(() => {
+        const mesh = floorRef.current;
+        if (!mesh || !reflection) return;
+        const mat = mesh.material as THREE.MeshStandardNodeMaterial;
+        // Blend the live reflection over the dark base albedo for a damp (not
+        // mirror) look. roughness/metalness are set via JSX props off the same
+        // flag so a re-render can't revert them out from under this node.
+        mat.colorNode = mix(color(FLOOR_BASE), reflection, float(REFLECTION_STRENGTH));
+        mat.needsUpdate = true;
+        // The reflector's target orients the reflection plane; parenting it to
+        // the (horizontal) floor mesh makes the plane track the floor.
+        mesh.add(reflection.target);
+        return () => {
+            mesh.remove(reflection.target);
+            reflection.dispose?.();
+        };
+    }, [reflection]);
 
     useFrame((state) => {
         if (ringRef.current) {
@@ -57,9 +55,14 @@ export default function Environment() {
     return (
         <group>
             {/* Arena floor */}
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
+            <mesh ref={floorRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
                 <circleGeometry args={[ARENA_RADIUS, 48]} />
-                <meshStandardMaterial color="#0d0a16" roughness={0.25} metalness={0.6} envMapIntensity={1.4} />
+                <meshStandardMaterial
+                    color={FLOOR_BASE}
+                    roughness={flags.reflection ? 0.08 : 0.25}
+                    metalness={flags.reflection ? 0.9 : 0.6}
+                    envMapIntensity={1.4}
+                />
             </mesh>
             {/* Inner glowing court line */}
             <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
@@ -88,21 +91,6 @@ export default function Environment() {
                 );
             })}
 
-            {/* Skyline towers */}
-            {towers.map((t, i) => (
-                <mesh key={`t${i}`} position={t.pos}>
-                    <boxGeometry args={t.size} />
-                    <meshStandardMaterial color="#0a0a14" emissive={t.color} emissiveIntensity={0.5} flatShading toneMapped={false} />
-                </mesh>
-            ))}
-
-            {/* Floating neon sign strips */}
-            {signs.map((s, i) => (
-                <mesh key={`s${i}`} position={s.pos}>
-                    <boxGeometry args={[0.4, s.h, 0.1]} />
-                    <meshBasicMaterial color={s.color} toneMapped={false} />
-                </mesh>
-            ))}
         </group>
     );
 }
