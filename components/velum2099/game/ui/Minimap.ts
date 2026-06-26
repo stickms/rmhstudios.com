@@ -8,12 +8,19 @@
    ═══════════════════════════════════════════ */
 
 const STYLE_ID = 'neurodrive-minimap-style';
+const POS_KEY = 'neurodrive_minimap_pos';
 const CSS = `
-.nd-map { position:fixed; left:14px; bottom:14px; z-index:300; pointer-events:none;
+.nd-map { position:fixed; left:14px; top:48px; z-index:300; pointer-events:none;
   border:2px solid rgba(0,255,213,0.45); border-radius:10px; overflow:hidden;
   box-shadow:0 0 16px rgba(0,255,213,0.25), inset 0 0 22px rgba(0,0,0,0.6);
   background:rgba(4,8,18,0.55); }
 .nd-map canvas { display:block; }
+.nd-map .nd-map-grip { pointer-events:auto; cursor:move; touch-action:none;
+  height:18px; display:flex; align-items:center; justify-content:center; gap:6px;
+  background:rgba(0,255,213,0.12); border-bottom:1px solid rgba(0,255,213,0.3);
+  font-family:'VT323',monospace; font-size:12px; letter-spacing:2px; color:#7dd6ff;
+  user-select:none; }
+.nd-map .nd-map-grip:active { background:rgba(0,255,213,0.22); }
 `;
 
 const SIZE = 176;            // px
@@ -31,16 +38,22 @@ export class Minimap {
 
         const wrap = document.createElement('div');
         wrap.className = 'nd-map';
+        const grip = document.createElement('div');
+        grip.className = 'nd-map-grip';
+        grip.textContent = '⠿ MAP ⠿';
         const canvas = document.createElement('canvas');
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
         canvas.width = SIZE * dpr;
         canvas.height = SIZE * dpr;
         canvas.style.width = `${SIZE}px`;
         canvas.style.height = `${SIZE}px`;
+        wrap.appendChild(grip);
         wrap.appendChild(canvas);
         container.appendChild(wrap);
 
         this._wrap = wrap;
+        this._grip = grip;
+        this._h = SIZE + 18;       // total height incl. grip
         this._ctx = canvas.getContext('2d');
         this._ctx.scale(dpr, dpr);
         this._scale = (SIZE / 2 - 6) / VIEW_RANGE;
@@ -48,10 +61,70 @@ export class Minimap {
         this._path = [];           // route as [{x,z}, ...] world centres
         this._pathT = PATH_REFRESH;
         this._drawT = 0;
+
+        this._applyPosition(this._loadPosition());
+        this._bindDrag();
+        this._onResize = () => this._applyPosition({ x: this._pos.x, y: this._pos.y });
+        window.addEventListener('resize', this._onResize);
     }
 
     show() { if (this._wrap) this._wrap.style.display = 'block'; }
     hide() { if (this._wrap) this._wrap.style.display = 'none'; }
+
+    /* ── draggable / customizable placement ── */
+    _defaultPosition() {
+        const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints || 0) > 0;
+        // Touch: top-left (keeps the bottom-left joystick area clear).
+        // Desktop: classic bottom-left.
+        if (isTouch) return { x: 14, y: 48 };
+        return { x: 14, y: window.innerHeight - this._h - 14 };
+    }
+
+    _loadPosition() {
+        try {
+            const raw = localStorage.getItem(POS_KEY);
+            if (raw) { const p = JSON.parse(raw); if (typeof p.x === 'number') return p; }
+        } catch { /* ignore */ }
+        return this._defaultPosition();
+    }
+
+    _applyPosition(p) {
+        const maxX = Math.max(0, window.innerWidth - SIZE - 4);
+        const maxY = Math.max(0, window.innerHeight - this._h - 4);
+        const x = Math.max(4, Math.min(p.x, maxX));
+        const y = Math.max(4, Math.min(p.y, maxY));
+        this._pos = { x, y };
+        this._wrap.style.left = `${x}px`;
+        this._wrap.style.top = `${y}px`;
+        this._wrap.style.right = 'auto';
+        this._wrap.style.bottom = 'auto';
+    }
+
+    _bindDrag() {
+        let active = false, ox = 0, oy = 0;
+        this._onGripDown = (e) => {
+            active = true;
+            ox = e.clientX - this._pos.x;
+            oy = e.clientY - this._pos.y;
+            try { this._grip.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+            e.preventDefault();
+        };
+        this._onGripMove = (e) => {
+            if (!active) return;
+            this._applyPosition({ x: e.clientX - ox, y: e.clientY - oy });
+            e.preventDefault();
+        };
+        this._onGripUp = (e) => {
+            if (!active) return;
+            active = false;
+            try { localStorage.setItem(POS_KEY, JSON.stringify(this._pos)); } catch { /* ignore */ }
+            try { this._grip.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+        };
+        this._grip.addEventListener('pointerdown', this._onGripDown);
+        this._grip.addEventListener('pointermove', this._onGripMove);
+        this._grip.addEventListener('pointerup', this._onGripUp);
+        this._grip.addEventListener('pointercancel', this._onGripUp);
+    }
 
     update(dt) {
         // Recompute the road route periodically (not every frame)
@@ -279,6 +352,7 @@ export class Minimap {
     }
 
     dispose() {
+        if (this._onResize) window.removeEventListener('resize', this._onResize);
         if (this._wrap) this._wrap.remove();
         this._wrap = null;
     }

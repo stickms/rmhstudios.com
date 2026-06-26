@@ -284,3 +284,45 @@
     opacity: 0.12;
     pointer-events: none;
 }
+
+/* ═══════════════════════════════════════════
+   Mobile / touch responsiveness
+   ═══════════════════════════════════════════ */
+@media (max-width: 768px) {
+    .velum2099-root #terminal-screen {
+        padding: 22px 16px;
+        font-size: 15px;
+    }
+    .velum2099-root .term-line {
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+    .velum2099-root .ascii-art {
+        font-size: 9px;
+        line-height: 1.15;
+        white-space: pre;
+    }
+}
+
+@media (max-width: 430px) {
+    .velum2099-root #terminal-screen {
+        padding: 16px 10px;
+        font-size: 13px;
+    }
+    .velum2099-root .ascii-art {
+        font-size: 7px;
+        letter-spacing: -0.5px;
+    }
+}
+
+/* Bigger tap targets for the boot menu on touch devices */
+@media (pointer: coarse) {
+    .velum2099-root .menu-item {
+        padding: 12px 6px;
+        font-size: 1.12em;
+    }
+    .velum2099-root .menu-item.selected,
+    .velum2099-root .menu-item:hover {
+        padding-left: 12px;
+    }
+}

@@ -12,10 +12,10 @@ import { MobileControls } from './ui/MobileControls';
 import { Minimap } from './ui/Minimap';
 
 // Heavy simulation modules — lazy-loaded on first simulation start
-let CyberpunkScene, Vehicle, Segmenter, DataCollector, Exporter, TextureManager, LiveStreamClient, LofiRadio, EngineSound, MissionManager;
+let CyberpunkScene, Vehicle, Segmenter, DataCollector, Exporter, TextureManager, LiveStreamClient, LofiRadio, EngineSound, MissionManager, Weapon;
 async function loadSimModules() {
     if (CyberpunkScene) return; // already loaded
-    const [scene, vehicle, seg, dc, exp, tm, lsc, radio, engine, mission] = await Promise.all([
+    const [scene, vehicle, seg, dc, exp, tm, lsc, radio, engine, mission, weapon] = await Promise.all([
         import('./scene/CyberpunkScene'),
         import('./vehicle/Vehicle'),
         import('./segmentation/Segmenter'),
@@ -26,6 +26,7 @@ async function loadSimModules() {
         import('./audio/LofiRadio'),
         import('./audio/EngineSound'),
         import('./gameplay/MissionManager'),
+        import('./gameplay/Weapon'),
     ]);
     CyberpunkScene = scene.CyberpunkScene;
     Vehicle = vehicle.Vehicle;
@@ -37,6 +38,7 @@ async function loadSimModules() {
     LofiRadio = radio.LofiRadio;
     EngineSound = engine.EngineSound;
     MissionManager = mission.MissionManager;
+    Weapon = weapon.Weapon;
 }
 
 /* ── Scrolling Chinese text overlay ── */
@@ -264,8 +266,18 @@ export class App {
                 const mode = this._radio.toggle();
                 this._updateRadioHud(mode);
             }
+            // Fire laser with F (or Ctrl) — hold to keep firing
+            if (e.code === 'KeyF' || e.code === 'ControlLeft' || e.code === 'ControlRight') {
+                this._fireHeld = true;
+            }
+        };
+        this._captureKeyUpHandler = (e) => {
+            if (e.code === 'KeyF' || e.code === 'ControlLeft' || e.code === 'ControlRight') {
+                this._fireHeld = false;
+            }
         };
         window.addEventListener('keydown', this._captureKeyHandler);
+        window.addEventListener('keyup', this._captureKeyUpHandler);
 
         // Show VHS timestamp
         if (this._vhsEl) this._vhsEl.style.display = 'block';
@@ -305,6 +317,13 @@ export class App {
         }
         this._mission.startSession();
 
+        // ── Laser cannon ──
+        if (!this._weapon) {
+            this._weapon = new Weapon(this.scene, this.vehicle, this._mission, {
+                onToast: (text, kind) => { if (this._gameHud) this._gameHud.toast(text, kind); },
+            });
+        }
+
         // ── GTA-style minimap ──
         if (!this._minimap) {
             this._minimap = new Minimap(this._container, this.scene, this.vehicle, this._mission);
@@ -321,7 +340,7 @@ export class App {
             this._mobileControls.show();
         } else {
             // Desktop controls hint
-            this._gameHud.toast('WASD 驾驶 · SPACE 漂移 · ESC 返回菜单', 'info');
+            this._gameHud.toast('WASD 驾驶 · SPACE 漂移 · F 开火 · ESC 返回菜单', 'info');
         }
 
         // Start game loop
@@ -356,8 +375,17 @@ export class App {
         if (this._mission) {
             this._mission.reportCollisions(collisions);
             this._mission.update(dt);
+
+            // Laser cannon — fire while held (respects cooldown/overheat)
+            if (this._weapon) {
+                const firing = this._fireHeld ||
+                    (this.vehicle.mobileInput && this.vehicle.mobileInput.fire);
+                if (firing) this._weapon.fire();
+                this._weapon.update(dt);
+            }
+
             if (this._gameHud) {
-                this._gameHud.update(this._mission.getState());
+                this._gameHud.update(this._mission.getState(), this._weapon ? this._weapon.getState() : null);
                 this._gameHud.tickToasts(dt);
             }
             if (this._minimap) this._minimap.update(dt);
@@ -446,6 +474,11 @@ export class App {
             window.removeEventListener('keydown', this._captureKeyHandler);
             this._captureKeyHandler = null;
         }
+        if (this._captureKeyUpHandler) {
+            window.removeEventListener('keyup', this._captureKeyUpHandler);
+            this._captureKeyUpHandler = null;
+        }
+        this._fireHeld = false;
 
         // Disconnect live stream if active
         if (this._liveClient) {
@@ -580,6 +613,10 @@ export class App {
         if (this._captureKeyHandler) {
             window.removeEventListener('keydown', this._captureKeyHandler);
         }
+        if (this._captureKeyUpHandler) {
+            window.removeEventListener('keyup', this._captureKeyUpHandler);
+        }
+        this._fireHeld = false;
 
         // Hide gameplay HUD/controls while the console is open
         if (this._gameHud) this._gameHud.hide();
@@ -614,6 +651,9 @@ export class App {
         if (this._captureKeyHandler) {
             window.addEventListener('keydown', this._captureKeyHandler);
         }
+        if (this._captureKeyUpHandler) {
+            window.addEventListener('keyup', this._captureKeyUpHandler);
+        }
 
         // Resume game loop
         this.running = true;
@@ -636,6 +676,10 @@ export class App {
             window.removeEventListener('keydown', this._captureKeyHandler);
             this._captureKeyHandler = null;
         }
+        if (this._captureKeyUpHandler) {
+            window.removeEventListener('keyup', this._captureKeyUpHandler);
+            this._captureKeyUpHandler = null;
+        }
 
         // Stop audio
         if (this._radio) { this._radio.dispose(); this._radio = null; }
@@ -653,6 +697,7 @@ export class App {
         if (this._radioHud) { this._radioHud.remove(); this._radioHud = null; }
 
         // Clean up gameplay systems
+        if (this._weapon) { this._weapon.dispose(); this._weapon = null; }
         if (this._mission) { this._mission.dispose(); this._mission = null; }
         if (this._gameHud) { this._gameHud.dispose(); this._gameHud = null; }
         if (this._minimap) { this._minimap.dispose(); this._minimap = null; }
