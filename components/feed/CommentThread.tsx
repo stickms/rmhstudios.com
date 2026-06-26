@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Loader2 } from 'lucide-react';
+import { X, Loader2, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { authClient } from '@/lib/auth-client';
 import { CommentItem } from './CommentItem';
 import { AIGenerateButton } from './AIGenerateButton';
+import { GifPicker } from '@/components/feed/GifPicker';
 import { MentionTextarea } from './MentionTextarea';
 import type { Comment } from './CommentItem';
 import { MAX_COMMENT_LENGTH } from '@/lib/rmhark-schema';
@@ -22,6 +23,7 @@ export function CommentThread({ rmharkId, open, onClose, onCommentAdded }: Comme
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [content, setContent] = useState('');
+  const [showGifPicker, setShowGifPicker] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const { t } = useTranslation('feed');
   const { data: session } = authClient.useSession();
@@ -129,15 +131,35 @@ export function CommentThread({ rmharkId, open, onClose, onCommentAdded }: Comme
                   title={t("generate-reply-ai", { defaultValue: "Generate a reply with AI" })}
                 />
               </div>
-              <Button
-                variant="accent"
-                size="sm"
-                disabled={!content.trim() || remaining < 0 || submitting}
-                onClick={handleSubmit}
-              >
-                {submitting ? t("posting", { defaultValue: "Posting..." }) : t("comment-button", { defaultValue: "Comment" })}
-              </Button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowGifPicker((v) => !v)}
+                  aria-label={t('add-gif-aria', { defaultValue: 'Add a GIF' })}
+                  className="p-1.5 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent/10 transition-colors"
+                >
+                  <ImageIcon className="w-4 h-4" />
+                </button>
+                <Button
+                  variant="accent"
+                  size="sm"
+                  disabled={!content.trim() || remaining < 0 || submitting}
+                  onClick={handleSubmit}
+                >
+                  {submitting ? t("posting", { defaultValue: "Posting..." }) : t("comment-button", { defaultValue: "Comment" })}
+                </Button>
+              </div>
             </div>
+            {showGifPicker && (
+              <GifPicker
+                className="mt-2"
+                onClose={() => setShowGifPicker(false)}
+                onSelect={(u) => {
+                  setContent((c) => (c ? `${c} ${u}` : u));
+                  setShowGifPicker(false);
+                }}
+              />
+            )}
           </div>
         ) : (
           <div className="border-t border-site-border px-4 py-3 text-center text-sm text-site-text-dim">
