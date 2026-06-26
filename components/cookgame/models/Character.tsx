@@ -18,6 +18,12 @@ interface CharacterProps {
   moving?: boolean;
   /** Yaw (radians) the body turns toward; consumer passes movement heading. Default 0. */
   facing?: number;
+  /**
+   * Optional refs for imperative per-frame updates (avoids React state in tight animation loops).
+   * When provided, these override the `moving` / `facing` props inside useFrame.
+   */
+  movingRef?: { readonly current: boolean };
+  facingRef?: { readonly current: number };
 }
 
 /**
@@ -29,7 +35,13 @@ interface CharacterProps {
  * Feet sit at local y=0; total standing height ≈ 1.7 units.
  * All animation is imperative (refs + useFrame) — no React state.
  */
-export default function Character({ lookId, moving = false, facing = 0 }: CharacterProps) {
+export default function Character({
+  lookId,
+  moving = false,
+  facing = 0,
+  movingRef,
+  facingRef,
+}: CharacterProps) {
   const look = useMemo(() => getCharacterLook(lookId), [lookId]);
 
   const root = useRef<THREE.Group>(null);
@@ -54,14 +66,18 @@ export default function Character({ lookId, moving = false, facing = 0 }: Charac
     const ll = lLeg.current;
     const rl = rLeg.current;
 
+    // Refs take precedence over props for imperative per-frame driving.
+    const isMoving = movingRef ? movingRef.current : moving;
+    const headingFacing = facingRef ? facingRef.current : facing;
+
     // Smoothly yaw toward the current heading.
-    r.rotation.y = dampAngle(r.rotation.y, facing, 0.15);
+    r.rotation.y = dampAngle(r.rotation.y, headingFacing, 0.15);
 
     let bodyY = 0;
     let llX = 0, rlX = 0;
     let laX = 0, raX = 0;
 
-    if (moving) {
+    if (isMoving) {
       // Walking: swing legs, counter-swing arms, subtle body bob.
       const ph = t * 9;
       llX =  Math.sin(ph) * 0.5;
