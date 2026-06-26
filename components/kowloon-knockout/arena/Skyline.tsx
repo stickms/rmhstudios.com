@@ -21,6 +21,7 @@ function SkylineLayer({ instances }: { instances: ReturnType<typeof generateSkyl
         if (!mesh) return;
         instances.forEach((t, i) => {
             tmp.position.set(...t.position);
+            tmp.rotation.set(0, 0, 0);
             tmp.scale.set(...t.scale);
             tmp.updateMatrix();
             mesh.setMatrixAt(i, tmp.matrix);
@@ -33,7 +34,7 @@ function SkylineLayer({ instances }: { instances: ReturnType<typeof generateSkyl
     return (
         <instancedMesh ref={ref} args={[undefined, undefined, instances.length]}>
             <boxGeometry args={[1, 1, 1]} />
-            <meshStandardMaterial vertexColors emissiveIntensity={0.5} flatShading toneMapped={false} />
+            <meshBasicMaterial vertexColors toneMapped={false} />
         </instancedMesh>
     );
 }
