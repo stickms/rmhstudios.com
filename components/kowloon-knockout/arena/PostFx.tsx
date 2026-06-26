@@ -8,6 +8,14 @@ import { bloom } from 'three/addons/tsl/display/BloomNode.js';
 import { ao } from 'three/addons/tsl/display/GTAONode.js';
 import { useRenderTier } from './RenderTierContext';
 
+/** Drives the priority-1 render takeover. Only mounted when `post` exists so
+ *  that on low tier (no post) no priority>0 useFrame subscriber is registered
+ *  and R3F resumes its automatic scene render. */
+function PostFxRenderer({ post }: { post: THREE.PostProcessing }) {
+    useFrame(() => { void post.renderAsync(); }, 1);
+    return null;
+}
+
 /** WebGPU TSL post pipeline: GTAO → scene → bloom on emissives → ACES tonemap.
  *  When the tier disables all post, renders nothing and lets R3F render
  *  normally. Takes over the render loop (useFrame priority 1) when active. */
@@ -32,8 +40,12 @@ export default function PostFx() {
         // screen, disable by setting flags.gtao = false in tier.ts (ultra/high)
         // or commenting this block — bloom + tonemap below are unaffected.
         if (flags.gtao) {
-            const aoPass = ao(scenePass.getTextureNode('depth'), scenePass.getTextureNode('normal'), camera);
-            color = color.mul(aoPass);
+            try {
+                const aoPass = ao(scenePass.getTextureNode('depth'), scenePass.getTextureNode('normal'), camera);
+                color = color.mul(aoPass);
+            } catch (e) {
+                console.warn('[PostFx] GTAO setup failed, skipping:', e);
+            }
         }
         // ── End GTAO ─────────────────────────────────────────────────────────
 
@@ -54,10 +66,11 @@ export default function PostFx() {
         if (post) post.setSize(size.width, size.height);
     }, [post, size.width, size.height]);
 
-    // Priority > 0 disables R3F's automatic render; we drive it.
-    useFrame(() => {
-        if (post) post.renderAsync();
-    }, 1);
+    // Dispose the previous PostProcessing instance when flags/tier change or on
+    // unmount, so swapping pipelines doesn't leak GPU resources.
+    useEffect(() => () => { post?.dispose?.(); }, [post]);
 
-    return null;
+    // Only mount the render takeover when post exists; otherwise no priority>0
+    // useFrame subscriber is registered and R3F keeps its automatic render.
+    return post ? <PostFxRenderer post={post} /> : null;
 }
