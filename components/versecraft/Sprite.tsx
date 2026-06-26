@@ -49,16 +49,16 @@ export function Sprite({ packId, emotion = 'neutral', position, isSpeaking, acce
       }}
     >
       <div className="relative w-[42vw] max-w-[16rem] h-[52vh] sm:w-56 sm:h-96 md:w-72 md:h-[34rem]">
-        {/* key on url forces a crossfade when the emotion (image) changes */}
-        <motion.img
-          key={url}
+        {/* Plain <img> with a stable element (no key) so changing the emotion
+            just swaps the src of an already-preloaded image — instant, no
+            flicker. The gentle bob/scale lives on the wrapper above. */}
+        <img
           src={url}
           alt=""
           className="absolute inset-0 w-full h-full object-contain object-bottom"
           loading="eager"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.18 }}
+          decoding="async"
+          draggable={false}
         />
         <div
           className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3/4 h-8 rounded-full blur-xl"
