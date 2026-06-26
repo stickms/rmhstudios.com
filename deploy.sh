@@ -254,15 +254,19 @@ dc() {
 # `docker image prune` never touches them because they're tagged. Keep the 2
 # newest (current + one rollback target), remove the rest — the older SHAs are
 # almost never used and are the single biggest avoidable disk cost.
+# Optional arg: how many newest SHA tags to keep (default 2). Under disk
+# pressure we call it with 1 to reclaim a rollback image's GBs BEFORE resorting
+# to a full build-cache wipe that would evict the warm pnpm-store/.vinxi mounts.
 prune_rollback_images() {
+    local keep="${1:-2}"
     # Both the slim (${IMAGE_NAME}) and full (${FULL_IMAGE_NAME}) images are
-    # SHA-tagged each deploy; trim each repo to its 2 newest tags. They share
+    # SHA-tagged each deploy; trim each repo to its N newest tags. They share
     # most layers on disk, so this is mostly about untagging — but untagged old
     # SHAs are what let `image prune` reclaim the unique layers underneath.
     local img
     for img in "${IMAGE_NAME}" "${FULL_IMAGE_NAME:-${IMAGE_NAME}-full}"; do
         "$DOCKER_BIN" images "${img}" --format '{{.Tag}} {{.CreatedAt}}' 2>/dev/null | \
-            grep -v 'latest' | sort -k2 -r | tail -n +3 | awk -v img="$img" '{print img ":" $1}' | \
+            grep -v 'latest' | sort -k2 -r | tail -n +$((keep + 1)) | awk -v img="$img" '{print img ":" $1}' | \
             xargs -r "$DOCKER_BIN" rmi 2>/dev/null || true
     done
 }
@@ -512,7 +516,18 @@ if [ "${DISK_FREE_GB:-0}" -lt "$NEED_FREE_GB" ]; then
     prune_rollback_images
     DISK_FREE_GB=$(free_disk_gb)
     if [ "${DISK_FREE_GB:-0}" -lt "$NEED_FREE_GB" ]; then
-        log "Still low (${DISK_FREE_GB}G free) — wiping ALL build cache."
+        # Before the destructive full wipe (which also evicts the pnpm-store and
+        # .vinxi cache MOUNTS, forcing a cold `vite build` next deploy), reclaim
+        # the SHA-tagged rollback images down to the single newest — they're
+        # multiple GB each and trivially recreatable, so spending them to KEEP a
+        # warm Vite cache is the right trade. Only wipe the cache if still low.
+        log "Still low (${DISK_FREE_GB}G free) — trimming rollback images to 1 to spare the warm build cache."
+        prune_rollback_images 1
+        "$DOCKER_BIN" image prune -af > /dev/null 2>&1 || true
+        DISK_FREE_GB=$(free_disk_gb)
+    fi
+    if [ "${DISK_FREE_GB:-0}" -lt "$NEED_FREE_GB" ]; then
+        log "Still low (${DISK_FREE_GB}G free) — wiping ALL build cache (cold rebuild next deploy)."
         "$DOCKER_BIN" builder prune -af > /dev/null 2>&1 || true
         DISK_FREE_GB=$(free_disk_gb)
     fi
@@ -620,17 +635,27 @@ step_done
 # Best-effort: a sync hiccup must never block shipping the app (a short
 # Cache-Control TTL + the next deploy are the safety net). Skips itself when
 # VITE_CDN_BASE_URL isn't set (assets then served from the local origin).
+# Launched in the BACKGROUND so the (potentially long) upload overlaps the
+# avatar backfill, DB migrations, container bring-up, hotswap and health checks
+# below instead of serializing the deploy behind it. It is best-effort and
+# touches only R2 (read-only public/ mount, no DB or containers), so nothing
+# downstream depends on it — we join the job at the very end (Step 6) before
+# reporting success. BG_R2_PID stays empty when the sync is skipped.
+BG_R2_PID=""
 if grep -qE '^VITE_CDN_BASE_URL=.+' "$ENV_FILE" 2>/dev/null; then
-    step_start "Syncing static assets to R2 (incremental)..."
-    "$DOCKER_BIN" run --rm \
-        --env-file "$ENV_FILE" \
-        -e PUBLIC_DIR=/app/public \
-        -v "${REPO_DIR}/public:/app/public:ro" \
-        --entrypoint node \
-        "${IMAGE_NAME}:latest" \
-        scripts/sync-static-assets-to-r2.mjs \
-        || log "WARNING: R2 static asset sync failed — assets may be stale until the next deploy."
-    step_done
+    log "Syncing static assets to R2 (incremental, in background)..."
+    (
+        "$DOCKER_BIN" run --rm \
+            --env-file "$ENV_FILE" \
+            -e PUBLIC_DIR=/app/public \
+            -v "${REPO_DIR}/public:/app/public:ro" \
+            --entrypoint node \
+            "${IMAGE_NAME}:latest" \
+            scripts/sync-static-assets-to-r2.mjs \
+            && log "R2 static asset sync complete." \
+            || log "WARNING: R2 static asset sync failed — assets may be stale until the next deploy."
+    ) &
+    BG_R2_PID=$!
 else
     log "VITE_CDN_BASE_URL not set — skipping R2 static asset sync (assets served from origin/public)."
 fi
@@ -913,9 +938,26 @@ log "Pruning build cache (LRU trim toward ≤${BUILD_CACHE_KEEP_GB} GB)..."
 # guarantees the disk is never left dangerously full). Replaces the old fixed
 # 30 GB ceiling, which was unreachable on a small disk.
 if [ "$(free_disk_gb)" -lt "$DEPLOY_HEADROOM_GB" ]; then
-    log "Only $(free_disk_gb)G free (< ${DEPLOY_HEADROOM_GB}G headroom) after LRU trim — full cache reset."
-    "$DOCKER_BIN" builder prune -af > /dev/null 2>&1 || true
-    log "After full reset: $(build_cache_gb)G build cache, $(free_disk_gb)G disk free."
+    # Reclaim rollback images (GBs each, recreatable) BEFORE the cache reset, so
+    # a warm pnpm-store/.vinxi can survive into the next deploy's `vite build`.
+    log "Only $(free_disk_gb)G free (< ${DEPLOY_HEADROOM_GB}G headroom) after LRU trim — trimming rollback images to 1 first."
+    prune_rollback_images 1
+    "$DOCKER_BIN" image prune -af > /dev/null 2>&1 || true
+    if [ "$(free_disk_gb)" -lt "$DEPLOY_HEADROOM_GB" ]; then
+        log "Still under headroom — full build-cache reset (cold rebuild next deploy)."
+        "$DOCKER_BIN" builder prune -af > /dev/null 2>&1 || true
+    fi
+    log "After reclaim: $(build_cache_gb)G build cache, $(free_disk_gb)G disk free."
+fi
+
+# ── Join background best-effort jobs ─────────────────────────────────────────
+# The R2 asset sync (Step 2a) runs in the background, overlapping migrations +
+# bring-up + hotswap + health. Join it here so its log lines land before the
+# completion banner. It's best-effort — any failure was already logged inside
+# the job and must not fail the deploy.
+if [ -n "${BG_R2_PID:-}" ]; then
+    log "Waiting for background R2 asset sync to finish (if still running)..."
+    wait "$BG_R2_PID" 2>/dev/null || true
 fi
 
 # ── Done ─────────────────────────────────────────────────────────────────────
