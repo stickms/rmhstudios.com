@@ -9,9 +9,11 @@ import type { GeneratedWorld, GenChapter, Pronouns, Attraction } from '@/lib/ver
 /** Build the opening payload for a world: prefer a cached full chapter 0,
  *  else a fast partial opening scene. Lets the client start in one round trip. */
 async function openingFor(world: GeneratedWorld, seed: string) {
-  const cached = await prisma.versecraftGenChapter.findUnique({ where: { seed_index: { seed, index: 0 } } });
+  const cached = await prisma.versecraftGenChapter.findUnique({
+    where: { seed_index_choicePathHash: { seed, index: 0, choicePathHash: '' } },
+  });
   if (cached) return { chapter: cached.content as unknown as GenChapter, partial: false };
-  const opening = await generateChapterOpening(world, 0, '');
+  const opening = await generateChapterOpening(world, 0, {});
   return opening ? { chapter: opening, partial: true } : null;
 }
 

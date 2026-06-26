@@ -1,4 +1,5 @@
 import type { GeneratedWorld as GenWorld, GenChapter as GenChapterData } from './gen/world-types';
+import type { LedgerEntry, ArcOutline, ChoiceTone } from './gen/world-types';
 
 // ─── Word System ────────────────────────────────────────────────────────────
 
@@ -305,8 +306,14 @@ export interface GameState {
   generatedChapters: Record<number, GenChapterData>;
   /** Current chapter index within the generated route. */
   currentChapterIndex: number;
-  /** Log of player choices for story continuity (fed back into generation). */
-  genChoiceLog: { chapter: number; tone: string; text: string; direction?: string }[];
+  /** Log of player choices for story continuity (fed back into generation) and
+   *  hashed into the per-player chapter cache key. `direction` is the narrative
+   *  direction the chosen option steers toward. */
+  genChoiceLog: { chapter: number; tone: ChoiceTone; text: string; direction?: string }[];
+  /** Accumulated per-chapter ledger entries (continuity memory). */
+  ledger: LedgerEntry[];
+  /** Detailed arc outline (skeleton synchronously, Tier-2 enriched in background). */
+  outline: ArcOutline | null;
 }
 
 // ─── Save File ──────────────────────────────────────────────────────────────

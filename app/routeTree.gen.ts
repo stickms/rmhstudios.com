@@ -204,6 +204,7 @@ import { Route as ApiVibeAiRouteImport } from './routes/api/vibe/ai'
 import { Route as ApiVersecraftWorldRouteImport } from './routes/api/versecraft/world'
 import { Route as ApiVersecraftSaveRouteImport } from './routes/api/versecraft/save'
 import { Route as ApiVersecraftProgressRouteImport } from './routes/api/versecraft/progress'
+import { Route as ApiVersecraftOutlineRouteImport } from './routes/api/versecraft/outline'
 import { Route as ApiVersecraftChapterRouteImport } from './routes/api/versecraft/chapter'
 import { Route as ApiVegaScoreRouteImport } from './routes/api/vega/score'
 import { Route as ApiVegaLeaderboardRouteImport } from './routes/api/vega/leaderboard'
@@ -1456,6 +1457,11 @@ const ApiVersecraftSaveRoute = ApiVersecraftSaveRouteImport.update({
 const ApiVersecraftProgressRoute = ApiVersecraftProgressRouteImport.update({
   id: '/api/versecraft/progress',
   path: '/api/versecraft/progress',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiVersecraftOutlineRoute = ApiVersecraftOutlineRouteImport.update({
+  id: '/api/versecraft/outline',
+  path: '/api/versecraft/outline',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiVersecraftChapterRoute = ApiVersecraftChapterRouteImport.update({
@@ -3150,6 +3156,7 @@ export interface FileRoutesByFullPath {
   '/api/vega/leaderboard': typeof ApiVegaLeaderboardRoute
   '/api/vega/score': typeof ApiVegaScoreRoute
   '/api/versecraft/chapter': typeof ApiVersecraftChapterRoute
+  '/api/versecraft/outline': typeof ApiVersecraftOutlineRoute
   '/api/versecraft/progress': typeof ApiVersecraftProgressRoute
   '/api/versecraft/save': typeof ApiVersecraftSaveRoute
   '/api/versecraft/world': typeof ApiVersecraftWorldRoute
@@ -3593,6 +3600,7 @@ export interface FileRoutesByTo {
   '/api/vega/leaderboard': typeof ApiVegaLeaderboardRoute
   '/api/vega/score': typeof ApiVegaScoreRoute
   '/api/versecraft/chapter': typeof ApiVersecraftChapterRoute
+  '/api/versecraft/outline': typeof ApiVersecraftOutlineRoute
   '/api/versecraft/progress': typeof ApiVersecraftProgressRoute
   '/api/versecraft/save': typeof ApiVersecraftSaveRoute
   '/api/versecraft/world': typeof ApiVersecraftWorldRoute
@@ -4062,6 +4070,7 @@ export interface FileRoutesById {
   '/api/vega/leaderboard': typeof ApiVegaLeaderboardRoute
   '/api/vega/score': typeof ApiVegaScoreRoute
   '/api/versecraft/chapter': typeof ApiVersecraftChapterRoute
+  '/api/versecraft/outline': typeof ApiVersecraftOutlineRoute
   '/api/versecraft/progress': typeof ApiVersecraftProgressRoute
   '/api/versecraft/save': typeof ApiVersecraftSaveRoute
   '/api/versecraft/world': typeof ApiVersecraftWorldRoute
@@ -4531,6 +4540,7 @@ export interface FileRouteTypes {
     | '/api/vega/leaderboard'
     | '/api/vega/score'
     | '/api/versecraft/chapter'
+    | '/api/versecraft/outline'
     | '/api/versecraft/progress'
     | '/api/versecraft/save'
     | '/api/versecraft/world'
@@ -4974,6 +4984,7 @@ export interface FileRouteTypes {
     | '/api/vega/leaderboard'
     | '/api/vega/score'
     | '/api/versecraft/chapter'
+    | '/api/versecraft/outline'
     | '/api/versecraft/progress'
     | '/api/versecraft/save'
     | '/api/versecraft/world'
@@ -5442,6 +5453,7 @@ export interface FileRouteTypes {
     | '/api/vega/leaderboard'
     | '/api/vega/score'
     | '/api/versecraft/chapter'
+    | '/api/versecraft/outline'
     | '/api/versecraft/progress'
     | '/api/versecraft/save'
     | '/api/versecraft/world'
@@ -5793,6 +5805,7 @@ export interface RootRouteChildren {
   ApiVegaLeaderboardRoute: typeof ApiVegaLeaderboardRoute
   ApiVegaScoreRoute: typeof ApiVegaScoreRoute
   ApiVersecraftChapterRoute: typeof ApiVersecraftChapterRoute
+  ApiVersecraftOutlineRoute: typeof ApiVersecraftOutlineRoute
   ApiVersecraftProgressRoute: typeof ApiVersecraftProgressRoute
   ApiVersecraftSaveRoute: typeof ApiVersecraftSaveRoute
   ApiVersecraftWorldRoute: typeof ApiVersecraftWorldRoute
@@ -7254,6 +7267,13 @@ declare module '@tanstack/react-router' {
       path: '/api/versecraft/progress'
       fullPath: '/api/versecraft/progress'
       preLoaderRoute: typeof ApiVersecraftProgressRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/versecraft/outline': {
+      id: '/api/versecraft/outline'
+      path: '/api/versecraft/outline'
+      fullPath: '/api/versecraft/outline'
+      preLoaderRoute: typeof ApiVersecraftOutlineRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/versecraft/chapter': {
@@ -10232,6 +10252,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiVegaLeaderboardRoute: ApiVegaLeaderboardRoute,
   ApiVegaScoreRoute: ApiVegaScoreRoute,
   ApiVersecraftChapterRoute: ApiVersecraftChapterRoute,
+  ApiVersecraftOutlineRoute: ApiVersecraftOutlineRoute,
   ApiVersecraftProgressRoute: ApiVersecraftProgressRoute,
   ApiVersecraftSaveRoute: ApiVersecraftSaveRoute,
   ApiVersecraftWorldRoute: ApiVersecraftWorldRoute,

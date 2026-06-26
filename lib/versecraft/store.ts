@@ -10,10 +10,12 @@ import { CHARACTERS, getAffinityLevel } from './characters';
 import { autoSave, loadGame, saveGame as persistSave, dbSave, dbLoad } from './persistence';
 import { getChapterEntry, getNextChapterId } from './chapters/registry';
 import { fallbackWorld, fallbackChapter } from './gen/fallback';
-import { createWorldWithOpening, fetchChapter } from './gen/client';
+import { createWorldWithOpening, fetchChapter, fetchOutline } from './gen/client';
 import { makeSeedCode, normalizeSeed } from './gen/rng';
+import { choicePathHash } from './gen/choice-path';
+import { buildSkeletonOutline, beatForChapter } from './gen/outline';
 import { getWordPool } from './words';
-import type { GeneratedWorld, GenChapter, GenChoice } from './gen/world-types';
+import type { GeneratedWorld, GenChapter, GenChoice, LedgerEntry } from './gen/world-types';
 import type { Word } from './types';
 
 export interface GenPoemState {
@@ -100,6 +102,8 @@ export function createInitialState(): GameState {
     generatedChapters: {},
     currentChapterIndex: 0,
     genChoiceLog: [],
+    ledger: [],
+    outline: null,
   };
 }
 
@@ -107,28 +111,34 @@ export function createInitialState(): GameState {
 // we never fire two DeepSeek calls for the same chapter.
 const chapterInFlight = new Set<string>();
 
-/** Build a compact "story so far" summary fed to the chapter generator so the
- *  AI keeps continuity: premise, beats played, the player's choice pattern, and
- *  who they've grown closest to. */
-function buildContextSummary(state: GameState & GameActions): string {
+/** The outline beat for the current chapter, from the player's outline (skeleton
+ *  if Tier-2 hasn't enriched yet). */
+function beatFor(state: GameState & GameActions, index: number) {
+  const outline = state.outline ?? (state.world ? buildSkeletonOutline(state.world) : null);
+  return outline ? beatForChapter(outline, index) : undefined;
+}
+
+/** The cache-key hash of the player's committed choices, derived from the choice
+ *  log so there is no second array to keep in sync. */
+function pathHash(state: GameState & GameActions): string {
+  return choicePathHash(state.genChoiceLog.map(c => ({
+    chapter: c.chapter, tone: c.tone, label: c.direction ?? c.text,
+  })));
+}
+
+/** A compact "live player signal" fed alongside the ledger: the direction of the
+ *  player's recent choices, who they've grown closest to, and notable flags. The
+ *  ledger says what HAPPENED; this says what the player has been DOING and wanting,
+ *  so the next chapter follows the path they set (not just a tone average). */
+function buildChoiceContext(state: GameState & GameActions): string {
   const world = state.world;
   if (!world) return '';
   const nameOf = (id: string) => world.characters.find(c => c.id === id)?.name ?? id;
 
-  const past = Object.values(state.generatedChapters)
-    .filter(c => c.index < state.currentChapterIndex)
-    .sort((a, b) => a.index - b.index)
-    .map(c => `Ch${c.index + 1} "${c.title}" (${c.emotionalGoal})`)
-    .slice(-8)
-    .join('; ');
-
-  // The most recent choices, with their narrative direction, so the next chapter
-  // actually follows the path the player set rather than just a tone average.
   const recentChoices = state.genChoiceLog.slice(-4)
     .map(c => c.direction ? `chose to ${c.direction}` : `answered ${c.tone}`)
     .join('; ');
 
-  // Relationship standing per character (drives who leans in / pulls back).
   const bonds = Object.entries(state.affinity)
     .filter(([, a]) => a.affinity > 0)
     .sort((a, b) => b[1].affinity - a[1].affinity)
@@ -136,7 +146,6 @@ function buildContextSummary(state: GameState & GameActions): string {
     .map(([id, a]) => `${nameOf(id)} (closeness ${a.affinity})`)
     .join(', ');
 
-  // Notable story flags the player set (e.g. last_move), excluding bookkeeping.
   const flags = Object.entries(state.storyFlags)
     .filter(([k]) => !k.startsWith('poem_') && k !== 'route_complete')
     .slice(-5)
@@ -144,8 +153,6 @@ function buildContextSummary(state: GameState & GameActions): string {
     .join(', ');
 
   return [
-    `This is "${world.title}". ${world.premise}`,
-    past && `Chapters so far: ${past}.`,
     recentChoices && `Recently the player ${recentChoices}.`,
     bonds && `Closest bonds: ${bonds}.`,
     flags && `Active flags: ${flags}.`,
@@ -177,6 +184,72 @@ function debouncedDbSave(getState: () => GameState & GameActions, delayMs = 2000
   }, delayMs);
 }
 
+/** Fill the cohesion-harness fields for saves written before they existed, so
+ *  loading an old generated save never yields undefined ledger/outline. */
+function genLoadDefaults(s: Partial<GameState>): Pick<GameState, 'ledger' | 'outline'> {
+  return {
+    ledger: s.ledger ?? [],
+    outline: s.outline ?? null,
+  };
+}
+
+/** Merge a chapter's ledger entry into state (replacing any prior entry for that
+ *  index so re-streams don't duplicate). */
+function absorbLedger(
+  get: () => GameState & GameActions,
+  set: (partial: Partial<GameState & GameActions>) => void,
+  entry: LedgerEntry,
+): void {
+  const ledger = get().ledger.filter((e) => e.index !== entry.index);
+  ledger.push(entry);
+  ledger.sort((a, b) => a.index - b.index);
+  set({ ledger });
+}
+
+// Dedupe concurrent generation of the same (seed, index, choicePathHash) across
+// prefetch + advance, so DeepSeek runs at most once and the client slot and the
+// persisted row hold the same prose (a chapter ending on a choice node fires both
+// the prefetch effect and the auto-advance in one commit).
+const chapterPromises = new Map<string, Promise<GenChapter | null>>();
+
+/** Generate + cache chapter `index` under the current choice path, sharing one
+ *  in-flight request across all callers. Stores the result in `generatedChapters`
+ *  and absorbs its ledger entry. Returns the stored chapter (or null on failure). */
+function loadChapterOnce(
+  get: () => GameState & GameActions,
+  set: (partial: Partial<GameState & GameActions>) => void,
+  index: number,
+): Promise<GenChapter | null> {
+  const s = get();
+  const world = s.world;
+  if (!world) return Promise.resolve(null);
+  const key = `${s.seed}:${index}:${pathHash(s)}`;
+  const inFlight = chapterPromises.get(key);
+  if (inFlight) return inFlight;
+  const p = (async (): Promise<GenChapter | null> => {
+    try {
+      const res = await fetchChapter(s.seed, index, {
+        choicePathHash: pathHash(get()),
+        beat: beatFor(get(), index),
+        ledger: get().ledger,
+        context: buildChoiceContext(get()),
+      });
+      const ch = (res?.chapter && res.chapter.scenes?.length) ? res.chapter : fallbackChapter(world, index);
+      if (res?.ledgerEntry) absorbLedger(get, set, res.ledgerEntry);
+      if (!get().generatedChapters[index]) {
+        set({ generatedChapters: { ...get().generatedChapters, [index]: ch } });
+      }
+      return get().generatedChapters[index] ?? ch;
+    } catch {
+      return null;
+    } finally {
+      chapterPromises.delete(key);
+    }
+  })();
+  chapterPromises.set(key, p);
+  return p;
+}
+
 interface GameActions {
   // Navigation
   setScreen: (screen: GameScreen) => void;
@@ -191,7 +264,6 @@ interface GameActions {
   genLoading: boolean;
   currentGenPoem: GenPoemState | null;
   startGeneratedGame: (opts: { seed?: string; prompt?: string; playerName?: string }) => Promise<void>;
-  ensureGeneratedChapter: (index: number) => Promise<GenChapter>;
   /** Generate + cache a chapter in the background (no UI block) so it's ready
    *  by the time the player reaches it. */
   prefetchChapter: (index: number) => void;
@@ -269,6 +341,7 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
         const savedState = data.saveData as GameState;
         set({
           ...savedState,
+          ...genLoadDefaults(savedState),
           screen: 'dialogue',
           previousScreen: null,
           currentPoemScore: null,
@@ -282,6 +355,7 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
     if (save) {
       set({
         ...save.state,
+        ...genLoadDefaults(save.state),
         screen: 'dialogue',
         previousScreen: null,
         currentPoemScore: null,
@@ -325,12 +399,14 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
     let ch0: GenChapter = openingChapter ?? fallbackChapter(world, 0);
     if (!ch0.scenes?.length) { ch0 = fallbackChapter(world, 0); streamRest = false; }
 
+    const skeleton = buildSkeletonOutline(world);
     set({
       ...createInitialState(),
       mode: 'generated',
       seed: cleanSeed,
       mcPrompt: prompt ?? '',
       world,
+      outline: skeleton,
       generatedChapters: { 0: ch0 },
       currentChapterIndex: 0,
       currentSceneIndex: 0,
@@ -346,8 +422,14 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
     debouncedDbSave(get);
     // Stream in the rest of the opening chapter while the player reads scene 1.
     if (streamRest) get().streamChapterRest(0);
-    // Warm the next chapter in the background so advancing feels instant.
-    get().prefetchChapter(1);
+    // NOTE: the next chapter is intentionally NOT warmed here — it's warmed only
+    // once the player reaches chapter 0's final scene (so the choices that re-key
+    // it are committed first). See GeneratedDialogueScreen's final-scene prefetch.
+    // Enrich the outline (Tier-2) in the background; ready before chapter 1.
+    (async () => {
+      const detailed = await fetchOutline(cleanSeed, [], 1);
+      if (detailed) set({ outline: detailed });
+    })();
   },
 
   streamChapterRest: (index) => {
@@ -361,9 +443,17 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
     const opening = ch.scenes[0];
     (async () => {
       try {
-        const full = await fetchChapter(s.seed, index, buildContextSummary(get()), opening);
+        const res = await fetchChapter(s.seed, index, {
+          choicePathHash: pathHash(get()),
+          beat: beatFor(get(), index),
+          ledger: get().ledger,
+          context: buildChoiceContext(get()),
+          opening,
+        });
+        const full = res?.chapter;
         const merged = (full && full.scenes?.length) ? full : { ...ch, partial: false };
         set({ generatedChapters: { ...get().generatedChapters, [index]: { ...merged, partial: false } } });
+        if (res?.ledgerEntry) absorbLedger(get, set, res.ledgerEntry);
         const st = get();
         autoSave(st);
         debouncedDbSave(get);
@@ -377,46 +467,13 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
     })();
   },
 
-  ensureGeneratedChapter: async (index) => {
-    const state = get();
-    const cached = state.generatedChapters[index];
-    if (cached) return cached;
-    const world = state.world;
-    if (!world) throw new Error('ensureGeneratedChapter: no world');
-    let ch: GenChapter;
-    try {
-      ch = (await fetchChapter(state.seed, index, buildContextSummary(state))) ?? fallbackChapter(world, index);
-    } catch {
-      ch = fallbackChapter(world, index);
-    }
-    if (!ch.scenes?.length) ch = fallbackChapter(world, index);
-    set({ generatedChapters: { ...get().generatedChapters, [index]: ch } });
-    return ch;
-  },
-
   prefetchChapter: (index) => {
     const s = get();
     const world = s.world;
     if (!world || index < 0 || index >= world.routePlan.totalChapters) return;
     if (s.generatedChapters[index]) return;        // already have it
-    const key = `${s.seed}:${index}`;
-    if (chapterInFlight.has(key)) return;          // already generating
-    chapterInFlight.add(key);
-    // Fire and forget — no genLoading, never blocks the UI.
-    (async () => {
-      try {
-        const remote = await fetchChapter(s.seed, index, buildContextSummary(get()));
-        const ch = (remote && remote.scenes?.length) ? remote : fallbackChapter(world, index);
-        // Only store if the player hasn't already raced ahead and cached it.
-        if (!get().generatedChapters[index]) {
-          set({ generatedChapters: { ...get().generatedChapters, [index]: ch } });
-        }
-      } catch {
-        /* leave it; it'll generate on demand when reached */
-      } finally {
-        chapterInFlight.delete(key);
-      }
-    })();
+    // Fire and forget — loadChapterOnce dedups against a concurrent advance.
+    void loadChapterOnce(get, set, index);
   },
 
   genApplyChoice: (choice) => {
@@ -464,7 +521,9 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
     const cached = state.generatedChapters[nextIndex];
     let ch: GenChapter;
     try {
-      ch = cached ?? (await fetchChapter(state.seed, nextIndex, buildContextSummary(state))) ?? fallbackChapter(world, nextIndex);
+      // Shares one in-flight request with any prefetch already warming this
+      // chapter under the same path, so we never double-generate it.
+      ch = cached ?? (await loadChapterOnce(get, set, nextIndex)) ?? fallbackChapter(world, nextIndex);
     } catch {
       ch = fallbackChapter(world, nextIndex);
     }
@@ -481,8 +540,17 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
     const s = get();
     autoSave(s);
     debouncedDbSave(get);
-    // Warm the chapter after this one while the player reads.
-    get().prefetchChapter(nextIndex + 1);
+    // The chapter after this one is warmed by the final-scene prefetch once the
+    // player reaches the end of THIS chapter (so its choices are committed first).
+    // Crossed into a new act → revise the remaining outline from the path so far.
+    const prevAct = state.outline ? beatForChapter(state.outline, state.currentChapterIndex).act : 1;
+    const nextAct = get().outline ? beatForChapter(get().outline!, nextIndex).act : 1;
+    if (nextAct > prevAct) {
+      (async () => {
+        const revised = await fetchOutline(get().seed, get().ledger, nextAct);
+        if (revised) set({ outline: revised });
+      })();
+    }
     return true;
   },
 
@@ -743,6 +811,7 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
     if (!save) return false;
     set({
       ...save.state,
+      ...genLoadDefaults(save.state),
       screen: 'dialogue',
       previousScreen: null,
       currentPoemScore: null,

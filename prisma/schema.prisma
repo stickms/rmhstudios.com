@@ -1024,18 +1024,22 @@ model VersecraftWorld {
   @@map("versecraft_world")
 }
 
-// A generated chapter cached per (seed, index) so a version is fully replayable
-// and the DeepSeek call for each chapter happens at most once.
+// A generated chapter cached per (seed, index, choicePathHash) so each player's
+// choice-divergent prose is reproducible, and the DeepSeek call for a given
+// (seed, index, path) happens at most once. `ledger` holds the scribe's
+// distillation of this chapter, persisted alongside the prose.
 model VersecraftGenChapter {
-  id      String @id @default(cuid())
-  seed    String
-  index   Int
-  source  String @default("fallback")
-  content Json
+  id            String @id @default(cuid())
+  seed          String
+  index         Int
+  choicePathHash String @default("")
+  source        String @default("fallback")
+  content       Json
+  ledger        Json?
 
   world VersecraftWorld @relation(fields: [seed], references: [seed], onDelete: Cascade)
 
-  @@unique([seed, index])
+  @@unique([seed, index, choicePathHash])
   @@map("versecraft_gen_chapter")
 }
 

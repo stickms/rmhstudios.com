@@ -11,10 +11,15 @@
 import OpenAI from 'openai';
 import { z } from 'zod';
 import { fallbackWorld, fallbackChapter } from './fallback';
+import { renderBible } from './bible';
+import { CRAFT_SYSTEM, craftDirectives } from './craft';
+import { renderLedger, fallbackLedgerEntry } from './ledger';
+import { buildDetailedOutline } from './outline';
 import {
   EMOTIONS, ENVIRONMENTS, normalizeEmotion, WORLD_SCHEMA_VERSION, MC_SPEAKER,
   type GeneratedWorld, type GenChapter, type GenNode, type GenScene,
   type Pronouns, type Environment, type TimeOfDay, type ChoiceTone, type Attraction,
+  type ArcOutline, type ChapterBeat, type LedgerEntry,
 } from './world-types';
 
 /** Speaker tokens that mean "the player is talking aloud". */
@@ -219,23 +224,28 @@ function chapterSystemPrompt(): string {
     'handled with truth and care, not gratuitously. ' +
     `Every spoken line MUST include an "emotion" from this EXACT set: ${EMOTIONS.join(', ')} — chosen to match the ` +
     'line and the beat (a character can shift emotion line to line). Narration lines have speaker=null and no emotion. ' +
+    CRAFT_SYSTEM + '\n' +
     'Respond ONLY with a JSON object.'
   );
 }
 
-function worldContext(world: GeneratedWorld, contextSummary: string): string {
-  const cast = world.characters.map((c) =>
-    `${c.id}: ${c.name} (${c.pronouns}, ${c.age}) — ${c.archetype}, ${c.role}. ${c.personality} ` +
-    `Speech: ${c.speechStyle}. First regards you as: ${c.relationToMC}. Secret: ${c.secret} Fear: ${c.fear} Dream: ${c.dream}`
-  ).join('\n');
-  return (
-    `STORY: "${world.title}" — ${world.tagline}\nPREMISE: ${world.premise}\nSETTING: ${world.setting}\n` +
-    `TONE: ${world.toneTags.join(', ')}. MOTIFS (return to these): ${world.motifs.join(', ')}.\n` +
-    `PLAYER (second person, address by name as {mc}): ${world.mc.premise} ${world.mc.situation} ${attractionNote(world.mc.attraction)}\n` +
-    `CAST (keep each voice distinct):\n${cast}\n` +
-    `ALLOWED environments (use ONLY these): ${world.environments.join(', ')}.\n` +
-    (contextSummary ? `STORY SO FAR — honor this continuity, do NOT repeat it:\n${contextSummary}\n` : '')
-  );
+/** The full context block for a chapter prompt: bible (hard constraints) + who
+ *  the player can fall for + this chapter's outline beat + the running ledger +
+ *  the live choice signal (what the player has recently chosen / who they're
+ *  closest to). The ledger is what HAPPENED; `choiceContext` is what the player
+ *  has been DOING, so the next chapter follows the path they set. */
+function buildChapterContext(
+  world: GeneratedWorld, beat: ChapterBeat | undefined, ledger: LedgerEntry[], choiceContext = '',
+): string {
+  const beatBlock = beat
+    ? `THIS CHAPTER'S BEAT (act ${beat.act}): ${beat.intent}\n` +
+      `Dramatic question: ${beat.dramaticQuestion}\n` +
+      (beat.plant.length ? `PLANT (set up, pay off later): ${beat.plant.join('; ')}\n` : '') +
+      (beat.payoff.length ? `PAY OFF NOW (callbacks): ${beat.payoff.join('; ')}\n` : '')
+    : '';
+  const ledgerBlock = renderLedger(ledger);
+  const choiceBlock = choiceContext ? `THE PLAYER SO FAR (honor this — let it echo): ${choiceContext}\n` : '';
+  return `${renderBible(world)}\n${attractionNote(world.mc.attraction)}\n${beatBlock}${ledgerBlock ? ledgerBlock + '\n' : ''}${choiceBlock}`;
 }
 
 /** Turn one validated raw scene into a sanitized GenScene with stable ids. */
@@ -284,21 +294,25 @@ function sceneDigest(scene: GenScene): string {
  * null on failure (or when AI is unconfigured: caller should use the full
  * fallback chapter, which is instant anyway).
  */
-export async function generateChapterOpening(world: GeneratedWorld, index: number, contextSummary = ''): Promise<GenChapter | null> {
+export async function generateChapterOpening(
+  world: GeneratedWorld, index: number,
+  opts: { beat?: ChapterBeat; ledger?: LedgerEntry[]; context?: string } = {},
+): Promise<GenChapter | null> {
   if (!isVersecraftAIConfigured()) return null;
-  const beat = beatFor(world, index);
+  const routeBeat = beatFor(world, index);
   const ids = new Set(world.characters.map((c) => c.id));
   const isFirst = index === 0;
   try {
     const openingGuidance = isFirst
       ? `This is the VERY FIRST scene of the whole story — ESTABLISH before you escalate. In the first few nodes, ` +
         `ground the player: where they are and its atmosphere, WHY they're here (their situation), and a clear, ` +
-        `unhurried introduction to ${beat.focus.join(' and ')} (name, who they are here, a telling first impression). ` +
+        `unhurried introduction to ${routeBeat.focus.join(' and ')} (name, who they are here, a telling first impression). ` +
         `Let the player feel oriented and welcomed before any tension. THEN tip into the emotional hook.\n`
       : `Open mid-momentum, assuming the player knows the world and cast; reconnect to where things left off.\n`;
-    const user = worldContext(world, contextSummary) +
-      `\nWrite ONLY the OPENING SCENE of CHAPTER ${index + 1} (Act ${beat.act}). Emotional goal of the chapter: ` +
-      `"${beat.emotionalGoal}". Open on these characters: ${beat.focus.join(', ')}.\n` +
+    const user = buildChapterContext(world, opts.beat, opts.ledger ?? [], opts.context ?? '') +
+      `\n${craftDirectives()}\n` +
+      `\nWrite ONLY the OPENING SCENE of CHAPTER ${index + 1} (Act ${routeBeat.act}). Emotional goal of the chapter: ` +
+      `"${routeBeat.emotionalGoal}". Open on these characters: ${routeBeat.focus.join(', ')}.\n` +
       openingGuidance +
       `- One scene: an environment from the allowed list, charactersPresent (ids), ${isFirst ? '12–16' : '9–13'} nodes.\n` +
       `- End the scene on a small beat of tension or warmth that makes the player want to continue.\n` +
@@ -316,10 +330,10 @@ export async function generateChapterOpening(world: GeneratedWorld, index: numbe
     let seq = 0;
     const scene = sanitizeScene(raw, world, index, 0, ids, () => `ch${index}_n${seq++}`);
     return {
-      index, act: beat.act,
-      title: parsed.title || beat.title,
-      subtitle: `Act ${beat.act} — ${world.title}`,
-      emotionalGoal: beat.emotionalGoal,
+      index, act: routeBeat.act,
+      title: parsed.title || routeBeat.title,
+      subtitle: `Act ${routeBeat.act} — ${world.title}`,
+      emotionalGoal: routeBeat.emotionalGoal,
       scenes: [scene],
       source: 'ai',
       partial: true,
@@ -331,12 +345,14 @@ export async function generateChapterOpening(world: GeneratedWorld, index: numbe
 }
 
 export async function generateChapter(
-  world: GeneratedWorld, index: number, contextSummary = '', opening?: GenScene | null,
+  world: GeneratedWorld, index: number,
+  opts: { beat?: ChapterBeat; ledger?: LedgerEntry[]; context?: string; opening?: GenScene | null } = {},
 ): Promise<GenChapter> {
   if (!isVersecraftAIConfigured()) return fallbackChapter(world, index);
 
-  const beat = beatFor(world, index);
+  const routeBeat = beatFor(world, index);
   const ids = new Set(world.characters.map((c) => c.id));
+  const opening = opts.opening ?? null;
 
   try {
     const continuing = !!opening;
@@ -344,14 +360,15 @@ export async function generateChapter(
       ? `- This is the opening chapter: spend the first scene grounding the player in the world, their reason for ` +
         `being here, and the cast, before the emotional goal takes over.\n`
       : '';
-    const user = worldContext(world, contextSummary) +
+    const user = buildChapterContext(world, opts.beat, opts.ledger ?? [], opts.context ?? '') +
+      `\n${craftDirectives()}\n` +
       (continuing
-        ? `\nThe opening scene of CHAPTER ${index + 1} (Act ${beat.act}) has already been written:\n"${sceneDigest(opening!)}"\n` +
-          `CONTINUE this chapter with 2–3 MORE scenes that carry the emotional goal "${beat.emotionalGoal}" to a ` +
-          `resolution (complication → turn → landing). Do NOT repeat the opening scene or anything in STORY SO FAR.\n` +
+        ? `\nThe opening scene of CHAPTER ${index + 1} (Act ${routeBeat.act}) has already been written:\n"${sceneDigest(opening!)}"\n` +
+          `CONTINUE this chapter with 2–3 MORE scenes that carry the emotional goal "${routeBeat.emotionalGoal}" to a ` +
+          `resolution (complication → turn → landing). Do NOT repeat the opening scene or anything in the story so far.\n` +
           `- Each scene: an environment from the allowed list, charactersPresent (ids), 12–18 nodes.\n` +
           `- Include exactly ONE "choices" node across these scenes.\n`
-        : `\nWrite CHAPTER ${index + 1} (Act ${beat.act}). Emotional goal: "${beat.emotionalGoal}". Center on: ${beat.focus.join(', ')}.\n` +
+        : `\nWrite CHAPTER ${index + 1} (Act ${routeBeat.act}). Emotional goal: "${routeBeat.emotionalGoal}". Center on: ${routeBeat.focus.join(', ')}.\n` +
           establish +
           `- 3–4 scenes. Each scene: an environment from the allowed list, charactersPresent (ids), 12–18 nodes.\n` +
           `- Clear emotional arc (setup → complication → turn → resolution that lands the goal).\n` +
@@ -376,15 +393,108 @@ export async function generateChapter(
 
     if (!scenes.length) return fallbackChapter(world, index);
     return {
-      index, act: beat.act,
-      title: parsed.title || beat.title,
-      subtitle: parsed.subtitle || `Act ${beat.act} — ${world.title}`,
-      emotionalGoal: beat.emotionalGoal,
+      index, act: routeBeat.act,
+      title: parsed.title || routeBeat.title,
+      subtitle: parsed.subtitle || `Act ${routeBeat.act} — ${world.title}`,
+      emotionalGoal: routeBeat.emotionalGoal,
       scenes,
       source: 'ai',
     };
   } catch (err) {
     console.error('generateChapter AI failed, using fallback:', err);
     return fallbackChapter(world, index);
+  }
+}
+
+// ─── Outline (showrunner) ─────────────────────────────────────────────────────
+
+const OutlineSchema = z.object({
+  chapters: z.array(z.object({
+    index: z.number(),
+    dramaticQuestion: z.string().default(''),
+    plant: z.array(z.string()).default([]),
+    payoff: z.array(z.string()).default([]),
+    intent: z.string().default(''),
+  })).default([]),
+});
+
+/** Generate (or, with fromAct, revise) the detailed Tier-2 outline. Falls back
+ *  to the deterministic detailed outline when AI is unavailable or fails. */
+export async function generateOutline(
+  world: GeneratedWorld, ledger: LedgerEntry[] = [], fromAct = 1,
+): Promise<ArcOutline> {
+  const base = buildDetailedOutline(world);
+  if (!isVersecraftAIConfigured()) return base;
+  try {
+    const acts = base.acts.map((a) => `Act ${a.act}: goal=${a.goal}; endpoint=${a.endpoint}; focus=${a.focusArc}`).join('\n');
+    const toPlan = base.chapters.filter((c) => c.act >= fromAct);
+    const system =
+      'You are the showrunner for an emotional anime visual novel. You design a tight dramatic arc with setups ' +
+      'planted early and paid off later, one beat per chapter. Respond ONLY with a JSON object.';
+    const user = `${renderBible(world)}\nACT PLAN:\n${acts}\n` +
+      (ledger.length ? `${renderLedger(ledger)}\n` : '') +
+      `Plan chapters ${toPlan[0]?.index ?? 0}..${toPlan[toPlan.length - 1]?.index ?? 0} (0-based). ` +
+      `Honor the act endpoints and any open threads above. For each chapter give a dramaticQuestion, ` +
+      `plant (setups), payoff (callbacks to earlier setups), and a one-line intent.\n` +
+      `Return JSON: {"chapters":[{"index","dramaticQuestion","plant":[],"payoff":[],"intent"}]}.`;
+    const parsed = OutlineSchema.parse(await chatJson(system, user, 3000));
+    const byIndex = new Map(parsed.chapters.map((c) => [c.index, c]));
+    const chapters = base.chapters.map((c) => {
+      const ai = byIndex.get(c.index);
+      if (!ai || c.act < fromAct) return c;
+      return {
+        ...c,
+        dramaticQuestion: ai.dramaticQuestion || c.dramaticQuestion,
+        plant: ai.plant.length ? ai.plant : c.plant,
+        payoff: ai.payoff.length ? ai.payoff : c.payoff,
+        intent: ai.intent || c.intent,
+      };
+    });
+    return { acts: base.acts, chapters, source: 'ai' };
+  } catch (err) {
+    console.error('generateOutline AI failed, using deterministic detail:', err);
+    return base;
+  }
+}
+
+// ─── Scribe (ledger distillation) ─────────────────────────────────────────────
+
+const ScribeSchema = z.object({
+  summary: z.string().default(''),
+  revealed: z.array(z.string()).default([]),
+  threadsOpened: z.array(z.string()).default([]),
+  threadsClosed: z.array(z.string()).default([]),
+  relationshipShifts: z.array(z.string()).default([]),
+  facts: z.array(z.string()).default([]),
+});
+
+/** Distill a finished chapter into a ledger entry. Falls back to the
+ *  deterministic entry when AI is unavailable or fails. */
+export async function scribeChapter(world: GeneratedWorld, chapter: GenChapter): Promise<LedgerEntry> {
+  const base = fallbackLedgerEntry(world, chapter);
+  if (!isVersecraftAIConfigured()) return base;
+  try {
+    const prose = chapter.scenes
+      .flatMap((s) => s.nodes.map((n) => (n.speaker ? `${n.speaker}: ` : '') + n.text))
+      .join('\n').slice(0, 6000);
+    const system =
+      'You are a story continuity editor. Read a finished chapter and distill ONLY what actually happened, ' +
+      'so later chapters stay consistent. Be concise and factual. Respond ONLY with a JSON object.';
+    const user = `${renderBible(world)}\nCHAPTER ${chapter.index + 1} TEXT:\n${prose}\n` +
+      `Return JSON: {"summary","revealed":[],"threadsOpened":[],"threadsClosed":[],"relationshipShifts":[],"facts":[]}. ` +
+      `summary = one paragraph; the arrays = short bullet phrases (use character names from the bible).`;
+    const parsed = ScribeSchema.parse(await chatJson(system, user, 700));
+    return {
+      index: chapter.index,
+      summary: parsed.summary || base.summary,
+      revealed: parsed.revealed,
+      threadsOpened: parsed.threadsOpened,
+      threadsClosed: parsed.threadsClosed,
+      relationshipShifts: parsed.relationshipShifts.length ? parsed.relationshipShifts : base.relationshipShifts,
+      facts: parsed.facts.length ? parsed.facts : base.facts,
+    };
+  } catch (err) {
+    console.error('scribeChapter AI failed, using fallback entry:', err);
+    return base;
   }
 }

@@ -4,7 +4,7 @@
 // caller falls back to the pure local generator on any network failure (which is
 // deterministic per seed, so fallback content stays consistent across devices).
 
-import type { GeneratedWorld, GenChapter, GenScene, Pronouns, Attraction } from './world-types';
+import type { GeneratedWorld, GenChapter, GenScene, Pronouns, Attraction, ChapterBeat, LedgerEntry, ArcOutline } from './world-types';
 
 function validWorld(w: GeneratedWorld | null | undefined): w is GeneratedWorld {
   return !!w && Array.isArray(w.characters) && w.characters.length > 0 && !!w.routePlan;
@@ -41,39 +41,46 @@ function validChapter(c: GenChapter | null | undefined): c is GenChapter {
     && c.scenes.some(s => Array.isArray(s.nodes) && s.nodes.length > 0);
 }
 
-/** Fetch the full chapter (optionally continuing from a streamed opening scene). */
+/** Fetch the full chapter for a specific choice path (optionally continuing from
+ *  a streamed opening scene). Returns the chapter plus its ledger entry. */
 export async function fetchChapter(
-  seed: string, index: number, context = '', opening?: GenScene,
-): Promise<GenChapter | null> {
+  seed: string, index: number,
+  opts: { choicePathHash: string; beat?: ChapterBeat; ledger?: LedgerEntry[]; context?: string; opening?: GenScene },
+): Promise<{ chapter: GenChapter; ledgerEntry: LedgerEntry | null } | null> {
   try {
     const res = await fetch('/api/versecraft/chapter', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ seed, index, context, opening }),
+      body: JSON.stringify({
+        seed, index,
+        choicePathHash: opts.choicePathHash,
+        beat: opts.beat,
+        ledger: opts.ledger ?? [],
+        context: opts.context ?? '',
+        opening: opts.opening,
+      }),
     });
     if (!res.ok) return null;
-    const data = await res.json() as { chapter: GenChapter | null };
-    return validChapter(data.chapter) ? data.chapter : null;
+    const data = await res.json() as { chapter: GenChapter | null; ledgerEntry?: LedgerEntry | null };
+    return validChapter(data.chapter) ? { chapter: data.chapter, ledgerEntry: data.ledgerEntry ?? null } : null;
   } catch {
     return null;
   }
 }
 
-/** Fetch only the opening scene as a `partial` chapter for a fast first paint.
- *  Returns `partial: false` when the server returned a full (e.g. cached or
- *  fallback) chapter, so the caller knows not to stream the remainder. */
-export async function fetchOpeningChapter(
-  seed: string, index: number, context = '',
-): Promise<{ chapter: GenChapter; partial: boolean } | null> {
+/** Fetch the detailed Arc Outline (Tier-2 enrich, or act-boundary revision). */
+export async function fetchOutline(
+  seed: string, ledger: LedgerEntry[] = [], fromAct = 1,
+): Promise<ArcOutline | null> {
   try {
-    const res = await fetch('/api/versecraft/chapter', {
+    const res = await fetch('/api/versecraft/outline', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ seed, index, context, part: 'opening' }),
+      body: JSON.stringify({ seed, ledger, fromAct }),
     });
     if (!res.ok) return null;
-    const data = await res.json() as { chapter: GenChapter | null; partial?: boolean };
-    return validChapter(data.chapter) ? { chapter: data.chapter, partial: !!data.partial } : null;
+    const data = await res.json() as { outline: ArcOutline | null };
+    return data.outline && Array.isArray(data.outline.chapters) ? data.outline : null;
   } catch {
     return null;
   }
