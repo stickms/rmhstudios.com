@@ -12,17 +12,18 @@ export default function ResultScreen() {
 
     const handleFightAgain = () => {
         if (isMultiplayer && networkClient.connected) {
-            useGameStore.setState({ matchResult: null });
-            setPhase('lobby');
+            // Ask the server to return the WHOLE room to the lobby; the shared
+            // lobby_update broadcast pulls every player back together.
+            networkClient.returnToLobby();
         } else {
-            if (isMultiplayer) { networkClient.disconnect(); networkClient.clearHandlers(); }
+            if (isMultiplayer) networkClient.disconnect();
             resetGame();
             setPhase('select');
         }
     };
 
     const handleMainMenu = () => {
-        if (isMultiplayer) { networkClient.disconnect(); networkClient.clearHandlers(); }
+        if (isMultiplayer) networkClient.disconnect();
         resetGame();
         setPhase('menu');
     };

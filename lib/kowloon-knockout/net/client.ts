@@ -27,9 +27,18 @@ export interface MatchSeat {
     name: string;
 }
 
+export interface LobbyListing {
+    code: string;
+    mode: MatchMode;
+    arenaSize: number;
+    players: number;
+    host: FighterClass;
+}
+
 export type ServerMessage =
     | { type: 'room_created'; code: string; seat: number }
-    | { type: 'lobby_update'; you: number; hostSeat: number; mode: MatchMode; arenaSize: number; maxRounds: number; seats: LobbySeat[] }
+    | { type: 'lobby_update'; you: number; hostSeat: number; code: string; isPublic: boolean; mode: MatchMode; arenaSize: number; maxRounds: number; seats: LobbySeat[] }
+    | { type: 'lobby_list'; lobbies: LobbyListing[] }
     | { type: 'match_start'; you: number; mode: MatchMode; maxRounds: number; aiDifficulty: number; seats: MatchSeat[] }
     | { type: 'input'; seat: number; input: WireInput }
     | { type: 'snapshot'; data: Snapshot }
@@ -56,6 +65,7 @@ class NetworkClient {
 
             this.socket.on('kk:room_created', (d) => { this._seat = d.seat; this.dispatch({ type: 'room_created', code: d.code, seat: d.seat }); });
             this.socket.on('kk:lobby_update', (d) => { this._seat = d.you; this.dispatch({ type: 'lobby_update', ...d }); });
+            this.socket.on('kk:lobby_list', (d) => this.dispatch({ type: 'lobby_list', lobbies: d.lobbies }));
             this.socket.on('kk:match_start', (d) => { this._seat = d.you; this.dispatch({ type: 'match_start', ...d }); });
             this.socket.on('kk:input', (d) => this.dispatch({ type: 'input', seat: d.seat, input: d.input }));
             this.socket.on('kk:snapshot', (d) => this.dispatch({ type: 'snapshot', data: d }));
@@ -90,8 +100,8 @@ class NetworkClient {
     clearHandlers(): void { this.handlers.clear(); }
 
     // ── Lobby ──
-    createRoom(mode: MatchMode, fighterClass: FighterClass): void {
-        this.socket?.emit('kk:create_room', { mode, fighterClass });
+    createRoom(mode: MatchMode, fighterClass: FighterClass, isPublic: boolean): void {
+        this.socket?.emit('kk:create_room', { mode, fighterClass, isPublic });
     }
     joinRoom(code: string, fighterClass: FighterClass): void {
         this.socket?.emit('kk:join_room', { code, fighterClass });
@@ -99,8 +109,14 @@ class NetworkClient {
     setFighter(fighterClass: FighterClass, team: number): void {
         this.socket?.emit('kk:set_fighter', { fighterClass, team });
     }
-    setConfig(cfg: { mode: MatchMode; arenaSize: number; maxRounds: number }): void {
+    setConfig(cfg: { mode?: MatchMode; arenaSize?: number; maxRounds?: number; isPublic?: boolean }): void {
         this.socket?.emit('kk:set_config', cfg);
+    }
+    listLobbies(): void {
+        this.socket?.emit('kk:list_lobbies', {});
+    }
+    returnToLobby(): void {
+        this.socket?.emit('kk:return_lobby', {});
     }
     start(): void {
         this.socket?.emit('kk:start', {});

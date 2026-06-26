@@ -3,6 +3,7 @@
 import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/lib/kowloon-knockout/store';
+import { useMultiplayerSync } from '@/lib/kowloon-knockout/useMultiplayerSync';
 import MainMenu from '@/components/kowloon-knockout/MainMenu';
 import CharacterSelect from '@/components/kowloon-knockout/CharacterSelect';
 import MultiplayerLobby from '@/components/kowloon-knockout/MultiplayerLobby';
@@ -15,6 +16,7 @@ const GameView = lazy(() => import('@/components/kowloon-knockout/arena/GameView
 export default function KowloonKnockout() {
   const { t } = useTranslation("c-kowloon-knockout");
   const { phase } = useGameStore();
+  useMultiplayerSync();
 
   return (
     <div className="kowloon-knockout">

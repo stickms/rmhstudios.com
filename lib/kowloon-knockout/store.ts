@@ -44,19 +44,24 @@ interface GameStore {
     isMultiplayer: boolean;
     isHost: boolean;
     roomCode: string | null;
+    isPublic: boolean;
     connectionStatus: ConnectionStatus;
     localSeat: number;
     lobbySeats: LobbySeat[];
     setMultiplayer: (v: boolean) => void;
     setRoomCode: (c: string | null) => void;
     setConnectionStatus: (s: ConnectionStatus) => void;
-    setLobby: (info: { you: number; seats: LobbySeat[]; mode: MatchMode; arenaSize: number; maxRounds: number; isHost: boolean }) => void;
+    setLobby: (info: { you: number; seats: LobbySeat[]; mode: MatchMode; arenaSize: number; maxRounds: number; isHost: boolean; code: string; isPublic: boolean }) => void;
     resetMultiplayer: () => void;
 
     // Active runtime
     runtime: Runtime | null;
     matchResult: MatchResult | null;
     setMatchResult: (r: MatchResult | null) => void;
+
+    mpError: string | null;
+    setMpError: (e: string | null) => void;
+    clearLobbyRoom: () => void;
 
     startLocalMatch: () => void;
     startHostMatch: (seats: MatchSeat[], mode: MatchMode, maxRounds: number, aiDifficulty: number, localSeat: number) => void;
@@ -126,6 +131,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     isMultiplayer: false,
     isHost: false,
     roomCode: null,
+    isPublic: true,
     connectionStatus: 'disconnected',
     localSeat: 0,
     lobbySeats: [],
@@ -135,15 +141,20 @@ export const useGameStore = create<GameStore>((set, get) => ({
     setLobby: (info) => set({
         localSeat: info.you, lobbySeats: info.seats, mode: info.mode,
         playerCount: info.arenaSize, maxRounds: info.maxRounds, isHost: info.isHost,
+        roomCode: info.code, isPublic: info.isPublic, isMultiplayer: true,
     }),
     resetMultiplayer: () => set({
-        isMultiplayer: false, isHost: false, roomCode: null,
-        connectionStatus: 'disconnected', localSeat: 0, lobbySeats: [],
+        isMultiplayer: false, isHost: false, roomCode: null, isPublic: true,
+        connectionStatus: 'disconnected', localSeat: 0, lobbySeats: [], mpError: null,
     }),
 
     runtime: null,
     matchResult: null,
     setMatchResult: (matchResult) => set({ matchResult }),
+
+    mpError: null,
+    setMpError: (mpError) => set({ mpError }),
+    clearLobbyRoom: () => set({ lobbySeats: [], roomCode: null }),
 
     startLocalMatch: () => {
         const { selectedClass, playerCount, mode, aiDifficulty, maxRounds } = get();
@@ -159,7 +170,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     },
 
     resetGame: () => set({
-        phase: 'menu', runtime: null, matchResult: null,
+        phase: 'menu', runtime: null, matchResult: null, mpError: null,
         isMultiplayer: false, isHost: false, roomCode: null,
         connectionStatus: 'disconnected', localSeat: 0, lobbySeats: [],
     }),

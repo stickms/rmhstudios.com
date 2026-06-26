@@ -27,7 +27,7 @@ function Spinner({ className }: { className: FighterClass }) {
     useFrame((_, delta) => { framesRef.current[0].yaw += delta * 0.7; });
     return (
         <group position={[0, -0.7, 0]}>
-            <StickFighter seat={0} framesRef={framesRef} />
+            <StickFighter seat={0} framesRef={framesRef} showNameplate={false} />
         </group>
     );
 }

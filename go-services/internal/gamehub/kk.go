@@ -23,17 +23,20 @@ import (
 
 // Event constants — kept 1:1 with the TS C2S/S2C maps.
 const (
-	kkCreateRoom = "kk:create_room"
-	kkJoinRoom   = "kk:join_room"
-	kkSetFighter = "kk:set_fighter"
-	kkSetConfig  = "kk:set_config"
-	kkStart      = "kk:start"
-	kkInput      = "kk:input"
-	kkSnapshot   = "kk:snapshot"
-	kkLeave      = "kk:leave"
+	kkCreateRoom  = "kk:create_room"
+	kkJoinRoom    = "kk:join_room"
+	kkSetFighter  = "kk:set_fighter"
+	kkSetConfig   = "kk:set_config"
+	kkListLobbies = "kk:list_lobbies"
+	kkReturnLobby = "kk:return_lobby"
+	kkStart       = "kk:start"
+	kkInput       = "kk:input"
+	kkSnapshot    = "kk:snapshot"
+	kkLeave       = "kk:leave"
 
 	kkRoomCreated = "kk:room_created"
 	kkLobbyUpdate = "kk:lobby_update"
+	kkLobbyList   = "kk:lobby_list"
 	kkMatchStart  = "kk:match_start"
 	kkPlayerLeft  = "kk:player_left"
 	kkError       = "kk:error"
@@ -61,6 +64,7 @@ type KKRoom struct {
 	ArenaSize int    // 2..4 number of fighters
 	MaxRounds int
 	State     string // "lobby" | "playing"
+	IsPublic  bool   // listed on the versus page when true
 	Slots     [kkMaxSeats]*kkSlot
 }
 
@@ -91,9 +95,11 @@ func (m *KKManager) Register(hub *realtime.Hub) {
 		var p struct {
 			Mode         string `json:"mode"`
 			FighterClass string `json:"fighterClass"`
+			IsPublic     *bool  `json:"isPublic"`
 		}
 		_ = e.Bind(&p)
-		m.CreateRoom(c.ID, p.Mode, p.FighterClass)
+		isPublic := p.IsPublic == nil || *p.IsPublic // public by default
+		m.CreateRoom(c.ID, p.Mode, p.FighterClass, isPublic)
 	})
 	hub.On(kkJoinRoom, func(c *realtime.Conn, e realtime.Envelope) {
 		var p struct {
@@ -115,9 +121,16 @@ func (m *KKManager) Register(hub *realtime.Hub) {
 			Mode      *string `json:"mode"`
 			ArenaSize *int    `json:"arenaSize"`
 			MaxRounds *int    `json:"maxRounds"`
+			IsPublic  *bool   `json:"isPublic"`
 		}
 		_ = e.Bind(&p)
-		m.SetConfig(c.ID, p.Mode, p.ArenaSize, p.MaxRounds)
+		m.SetConfig(c.ID, p.Mode, p.ArenaSize, p.MaxRounds, p.IsPublic)
+	})
+	hub.On(kkListLobbies, func(c *realtime.Conn, _ realtime.Envelope) {
+		m.ListLobbies(c.ID)
+	})
+	hub.On(kkReturnLobby, func(c *realtime.Conn, _ realtime.Envelope) {
+		m.ReturnLobby(c.ID)
 	})
 	hub.On(kkStart, func(c *realtime.Conn, _ realtime.Envelope) {
 		m.Start(c.ID)
@@ -212,6 +225,16 @@ func (r *KKRoom) roster() []map[string]any {
 	return out
 }
 
+func (r *KKRoom) occupied() int {
+	n := 0
+	for _, s := range r.Slots {
+		if s != nil {
+			n++
+		}
+	}
+	return n
+}
+
 func (m *KKManager) emitLobby(room *KKRoom) {
 	seats := room.roster()
 	for i := 0; i < kkMaxSeats; i++ {
@@ -220,7 +243,7 @@ func (m *KKManager) emitLobby(room *KKRoom) {
 			continue
 		}
 		m.reg.send(slot.ConnID, realtime.MustEnvelope(kkLobbyUpdate, map[string]any{
-			"you": i, "hostSeat": 0, "mode": room.Mode,
+			"you": i, "hostSeat": 0, "code": room.Code, "isPublic": room.IsPublic, "mode": room.Mode,
 			"arenaSize": room.ArenaSize, "maxRounds": room.MaxRounds, "seats": seats,
 		}))
 	}
@@ -229,7 +252,7 @@ func (m *KKManager) emitLobby(room *KKRoom) {
 // ── Public API (also exercised directly by unit tests) ──────────────
 
 // CreateRoom seats the caller as host (seat 0) of a fresh lobby.
-func (m *KKManager) CreateRoom(connID, mode, fighterClass string) {
+func (m *KKManager) CreateRoom(connID, mode, fighterClass string, isPublic bool) {
 	m.Cleanup(connID)
 	if fighterClass == "" {
 		fighterClass = kkDefaultFighter
@@ -245,7 +268,7 @@ func (m *KKManager) CreateRoom(connID, mode, fighterClass string) {
 	})
 
 	m.mu.Lock()
-	room := &KKRoom{Code: code, Mode: mode, ArenaSize: 2, MaxRounds: 3, State: "lobby"}
+	room := &KKRoom{Code: code, Mode: mode, ArenaSize: 2, MaxRounds: 3, State: "lobby", IsPublic: isPublic}
 	room.Slots[0] = &kkSlot{ConnID: connID, ClassName: fighterClass}
 	m.rooms[code] = room
 	m.connToRoom[connID] = code
@@ -319,8 +342,8 @@ func (m *KKManager) SetFighter(connID, fighterClass string) {
 	m.emitLobby(room)
 }
 
-// SetConfig lets the host change mode / arena size / rounds while in the lobby.
-func (m *KKManager) SetConfig(connID string, mode *string, arenaSize *int, maxRounds *int) {
+// SetConfig lets the host change mode / arena size / rounds / visibility.
+func (m *KKManager) SetConfig(connID string, mode *string, arenaSize *int, maxRounds *int, isPublic *bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	room := m.roomOf(connID)
@@ -343,9 +366,50 @@ func (m *KKManager) SetConfig(connID string, mode *string, arenaSize *int, maxRo
 		}
 		room.MaxRounds = v
 	}
+	if isPublic != nil {
+		room.IsPublic = *isPublic
+	}
 	if room.Mode == "teams" && room.ArenaSize%2 != 0 {
 		room.Mode = "ffa"
 	}
+	m.emitLobby(room)
+}
+
+// ListLobbies sends the caller the set of joinable public lobbies.
+func (m *KKManager) ListLobbies(connID string) {
+	m.mu.Lock()
+	lobbies := make([]map[string]any, 0, len(m.rooms))
+	for _, room := range m.rooms {
+		if room.State != "lobby" || !room.IsPublic {
+			continue
+		}
+		players := room.occupied()
+		if players >= kkMaxSeats {
+			continue // no free human slot
+		}
+		host := kkDefaultFighter
+		if room.Slots[0] != nil {
+			host = room.Slots[0].ClassName
+		}
+		lobbies = append(lobbies, map[string]any{
+			"code": room.Code, "mode": room.Mode, "arenaSize": room.ArenaSize,
+			"players": players, "host": host,
+		})
+	}
+	m.mu.Unlock()
+	m.reg.send(connID, realtime.MustEnvelope(kkLobbyList, map[string]any{"lobbies": lobbies}))
+}
+
+// ReturnLobby returns the whole room to the lobby after a match (any seated
+// player can trigger it); the broadcast pulls every player back together.
+func (m *KKManager) ReturnLobby(connID string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	room := m.roomOf(connID)
+	if room == nil || room.seatOf(connID) == -1 {
+		return
+	}
+	room.State = "lobby"
 	m.emitLobby(room)
 }
 

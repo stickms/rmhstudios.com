@@ -1112,3 +1112,97 @@
   min-width: 16px;
   text-align: center;
 }
+
+/* ── Public lobby browser ── */
+.kowloon-knockout .lobby-list {
+  width: 100%;
+  max-width: 460px;
+  border: 1px solid #33ccff40;
+  border-radius: 6px;
+  background: rgba(10, 10, 24, 0.55);
+  overflow: hidden;
+}
+
+.kowloon-knockout .lobby-list-head {
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--neon-blue);
+  padding: 8px 12px;
+  border-bottom: 1px solid #33ccff30;
+  text-shadow: 0 0 6px var(--neon-blue);
+}
+
+.kowloon-knockout .lobby-list-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #ffffff0d;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.kowloon-knockout .lobby-list-row:hover {
+  background: #33ccff18;
+}
+
+.kowloon-knockout .lobby-list-join {
+  color: #1a1000;
+  background: var(--neon-yellow);
+  padding: 4px 8px;
+  border-radius: 3px;
+  box-shadow: 0 0 8px var(--neon-yellow);
+}
+
+.kowloon-knockout .lobby-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 8px;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.kowloon-knockout .lobby-toggle input { accent-color: var(--neon-green); width: 14px; height: 14px; }
+
+.kowloon-knockout .lobby-visibility {
+  font-size: 8px;
+  letter-spacing: 1px;
+}
+
+/* ── Floating player nameplates (above each 3D fighter) ── */
+.kk-nameplate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: "Press Start 2P", monospace;
+  pointer-events: none;
+  user-select: none;
+  transform: translateY(-100%);
+  white-space: nowrap;
+}
+
+.kk-nameplate-tag {
+  font-size: 11px;
+  line-height: 1;
+  padding: 2px 1px;
+  text-shadow: 0 0 6px currentColor, 0 0 2px #000;
+}
+
+.kk-nameplate-tri {
+  font-size: 12px;
+  line-height: 0.7;
+  text-shadow: 0 0 6px currentColor;
+  animation: nameplateBob 0.9s ease-in-out infinite;
+}
+
+@keyframes nameplateBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(3px); }
+}
