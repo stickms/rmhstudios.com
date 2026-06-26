@@ -1,6 +1,8 @@
 "use client";
 import { RigidBody, CuboidCollider } from '@react-three/rapier';
 import { Building } from '../models/Building';
+import { PALETTE, matteMaterialProps } from '../models/palette';
+import { StreetProps } from '../models/props/StreetProps';
 
 // Anchor positions consumed by Interactables (Tasks 8/10) and station meshes.
 export const STATION_POSITIONS = {
@@ -34,11 +36,11 @@ function Wall({ pos, size }: { pos: [number, number, number]; size: [number, num
 export function TownScene() {
   return (
     <group>
-      {/* ground */}
+      {/* ground — grass, keep RigidBody collider */}
       <RigidBody type="fixed" colliders="cuboid">
         <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow position={[0, 0, 0]}>
           <planeGeometry args={[40, 40]} />
-          <meshStandardMaterial color="#1f2937" />
+          <meshStandardMaterial {...matteMaterialProps(PALETTE.grass)} />
         </mesh>
       </RigidBody>
 
@@ -59,11 +61,28 @@ export function TownScene() {
         </group>
       </RigidBody>
 
-      {/* decorative street strip */}
-      <mesh position={[0, 0.01, 4]} rotation={[-Math.PI / 2, 0, 0]}>
+      {/* asphalt road — visual only, no collider */}
+      <mesh position={[0, 0.01, 4]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[30, 6]} />
-        <meshStandardMaterial color="#111827" />
+        <meshStandardMaterial {...matteMaterialProps(PALETTE.asphalt)} />
       </mesh>
+      {/* sidewalk north edge */}
+      <mesh position={[0, 0.015, 0.5]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[32, 1]} />
+        <meshStandardMaterial {...matteMaterialProps(PALETTE.sidewalk)} />
+      </mesh>
+      {/* sidewalk south edge */}
+      <mesh position={[0, 0.015, 7.5]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[32, 1]} />
+        <meshStandardMaterial {...matteMaterialProps(PALETTE.sidewalk)} />
+      </mesh>
+      {/* road centre-line dashes */}
+      {([-12, -9, -6, -3, 0, 3, 6, 9, 12] as number[]).map((x) => (
+        <mesh key={x} position={[x, 0.02, 4]}>
+          <boxGeometry args={[1.8, 0.01, 0.12]} />
+          <meshStandardMaterial color="#e8e0c0" roughness={0.6} metalness={0.0} />
+        </mesh>
+      ))}
 
       {/* station markers */}
       <mesh position={[STATION_POSITIONS.supplier[0], 0.5, STATION_POSITIONS.supplier[2]]} castShadow>
@@ -104,6 +123,9 @@ export function TownScene() {
       <Wall pos={[0, 2, 20]} size={[40, 4, 0.5]} />
       <Wall pos={[-20, 2, 0]} size={[0.5, 4, 40]} />
       <Wall pos={[20, 2, 0]} size={[0.5, 4, 40]} />
+
+      {/* instanced street set dressing */}
+      <StreetProps />
     </group>
   );
 }
