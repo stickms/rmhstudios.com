@@ -31,7 +31,7 @@ export default function Arena3D({ session, seatIds }: { session: GameSession; se
     return (
         <RenderTierProvider>
             <color attach="background" args={['#070010']} />
-            <fog attach="fog" args={['#0a0118', 18, 60]} />
+            <fog attach="fog" args={['#0a0118', 16, 55]} />
 
             <Lighting />
 

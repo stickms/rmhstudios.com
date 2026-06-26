@@ -27,6 +27,8 @@ export default function PostFx() {
     const size = useThree((s) => s.size);
 
     const enabled = flags.bloom || flags.gtao;
+    const BLOOM_STRENGTH = 0.9;   // emissive bleed
+    const EXPOSURE = 1.05;        // overall brightness post-ACES
 
     const post = useMemo(() => {
         if (!enabled) return null;
@@ -50,7 +52,7 @@ export default function PostFx() {
         // ── End GTAO ─────────────────────────────────────────────────────────
 
         if (flags.bloom) {
-            color = color.add(bloom(color, 0.9, 0.4, 0.85));
+            color = color.add(bloom(color, BLOOM_STRENGTH, 0.4, 0.85));
         }
         pp.outputNode = color;
         return pp;
@@ -59,7 +61,7 @@ export default function PostFx() {
     // ACES tonemapping on the renderer for the noir contrast curve.
     useEffect(() => {
         gl.toneMapping = THREE.ACESFilmicToneMapping;
-        gl.toneMappingExposure = 1.1;
+        gl.toneMappingExposure = EXPOSURE;
     }, [gl]);
 
     useEffect(() => {
