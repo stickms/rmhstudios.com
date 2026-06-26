@@ -103,17 +103,37 @@ export default function SkeletalFighter({ seat, framesRef, showNameplate = true 
 
     const currentClip = useRef<ClipKey | null>(null);
 
+    // Dispose GPU resources when mixer/model rebuild or on unmount.
+    // Also resets currentClip so the rebuilt mixer's actions restart correctly
+    // instead of being skipped because currentClip still equals the old key.
+    useEffect(() => {
+        currentClip.current = null;
+        return () => {
+            mixer.stopAllAction();
+            mixer.uncacheRoot(model);
+            model.traverse((o) => {
+                const m = o as THREE.Mesh;
+                m.geometry?.dispose?.();
+                const mat = m.material as THREE.Material | THREE.Material[] | undefined;
+                if (Array.isArray(mat)) mat.forEach((x) => x?.dispose?.());
+                else mat?.dispose?.();
+            });
+        };
+    }, [mixer, model]);
+
     // Local-only dance emote: pressing G toggles dancing. Applied only to the
     // local fighter and only while idle (any real action overrides it). Purely
     // cosmetic / client-side — it is NOT synced to other players.
     const dancing = useRef(false);
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
-            if (e.key.toLowerCase() === 'g') dancing.current = !dancing.current;
+            if (e.key.toLowerCase() !== 'g') return;
+            if (!framesRef.current.find((f) => f.seat === seat)?.isLocal) return;
+            dancing.current = !dancing.current;
         };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
-    }, []);
+    }, [framesRef, seat]);
 
     useFrame((state, deltaRaw) => {
         const rf = framesRef.current.find((f) => f.seat === seat);
