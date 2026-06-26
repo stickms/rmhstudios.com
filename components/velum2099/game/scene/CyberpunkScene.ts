@@ -2015,18 +2015,56 @@ export class CyberpunkScene {
             }
         }
 
-        // Traffic vehicles (dynamic — recompute boxes from current position)
+        // Traffic vehicles (dynamic — recompute boxes from current position).
+        // Reuse a pooled set of Box3 objects to avoid per-frame allocation.
+        if (!this._trafficBoxPool) this._trafficBoxPool = [];
+        let boxIdx = 0;
         for (const tv of this.trafficVehicles) {
             const pos = tv.mesh.position;
             const dx = vehiclePos.x - pos.x;
             const dz = vehiclePos.z - pos.z;
             if (dx * dx + dz * dz > rSq) continue;
 
-            const box = new Box3().setFromCenterAndSize(pos, this._trafficSize);
+            let box = this._trafficBoxPool[boxIdx];
+            if (!box) { box = new Box3(); this._trafficBoxPool[boxIdx] = box; }
+            box.setFromCenterAndSize(pos, this._trafficSize);
+            boxIdx++;
             result.push({ box, mesh: tv.mesh, type: 'traffic' });
         }
 
         return result;
+    }
+
+    /**
+     * Find a drivable, ground-level road position within [minDist, maxDist] of an
+     * origin. Used to place mission markers somewhere the player can actually reach.
+     * Deterministic chunk types mean this works for far-off, not-yet-generated chunks.
+     * Returns {x, z} world coordinates (chunk centre) or null if none found.
+     */
+    findRoadTarget(originX, originZ, minDist, maxDist) {
+        const ocx = Math.round(originX / CHUNK_SIZE);
+        const ocz = Math.round(originZ / CHUNK_SIZE);
+        const minC = Math.max(1, Math.floor(minDist / CHUNK_SIZE));
+        const maxC = Math.max(minC + 1, Math.ceil(maxDist / CHUNK_SIZE));
+
+        const crosses = [];
+        const roads = [];
+        for (let dx = -maxC; dx <= maxC; dx++) {
+            for (let dz = -maxC; dz <= maxC; dz++) {
+                const d = Math.sqrt(dx * dx + dz * dz);
+                if (d < minC || d > maxC) continue;
+                const cx = ocx + dx;
+                const cz = ocz + dz;
+                const t = this._getChunkType(cx, cz);
+                if (t === CHUNK_CROSS) crosses.push([cx, cz]);
+                else if (t === CHUNK_STRAIGHT_NS || t === CHUNK_STRAIGHT_EW) roads.push([cx, cz]);
+            }
+        }
+        // Prefer intersections (open, easy to spot); fall back to straight roads.
+        const pool = crosses.length ? crosses : roads;
+        if (!pool.length) return null;
+        const pick = pool[Math.floor(Math.random() * pool.length)];
+        return { x: pick[0] * CHUNK_SIZE, z: pick[1] * CHUNK_SIZE };
     }
 
     /** Get ground height at a world XZ position (for vehicle Y) */

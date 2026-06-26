@@ -21,6 +21,19 @@
     - Other:     everything else     → label color #000000 (black)
 */
 
+/** Inject the OpenCV.js script once, lazily (only when data collection runs). */
+let _opencvLoading = false;
+function loadOpenCV() {
+    if (_opencvLoading || typeof document === 'undefined') return;
+    if (document.querySelector('script[data-opencv]')) { _opencvLoading = true; return; }
+    _opencvLoading = true;
+    const script = document.createElement('script');
+    script.src = 'https://docs.opencv.org/4.10.0/opencv.js';
+    script.async = true;
+    script.setAttribute('data-opencv', '1');
+    document.head.appendChild(script);
+}
+
 export class Segmenter {
     constructor() {
         this.ready = false;
@@ -39,7 +52,11 @@ export class Segmenter {
     }
 
     async init() {
-        // OpenCV.js is loaded via CDN in index.html
+        // OpenCV.js is heavy (~8MB) and only needed for data-collection mode, so
+        // it is loaded on demand the first time the segmenter is initialised
+        // rather than eagerly on every page visit.
+        if (typeof cv === 'undefined') loadOpenCV();
+
         // Wait for it to be ready
         if (typeof cv !== 'undefined' && cv.Mat) {
             this.ready = true;
