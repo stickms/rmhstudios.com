@@ -17,8 +17,7 @@ export function heatPenaltyFactor(heat: number): number {
 export function buyerOffer(product: Product, buyer: Buyer, heat: number, variance: number, priceMult = 1): number {
   const base = productValue(product);
   const pref = product.effects.includes(buyer.preferredEffect) ? 1 + buyer.preferenceBonus : 1;
-  const offer = Math.round(base * buyer.basePriceFactor * pref * heatPenaltyFactor(heat) * variance);
-  return Math.round(offer * priceMult);
+  return Math.round(base * buyer.basePriceFactor * pref * heatPenaltyFactor(heat) * variance * priceMult);
 }
 
 export function applyHeatOnSale(heat: number, heatMult = 1): number {
