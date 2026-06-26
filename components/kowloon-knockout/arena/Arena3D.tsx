@@ -12,6 +12,7 @@ import CameraRig from './CameraRig';
 import Fx from './Fx';
 import PostFx from './PostFx';
 import Rain from './Rain';
+import Fog from './Fog';
 import { RenderTierProvider } from './RenderTierContext';
 
 type FramesRef = MutableRefObject<RenderFighter[]>;
@@ -45,6 +46,7 @@ export default function Arena3D({ session, seatIds }: { session: GameSession; se
             <Skyline />
             <Atmosphere />
             <Rain />
+            <Fog />
 
             {seatIds.map((seat) => (
                 <StickFighter key={seat} seat={seat} framesRef={framesRef} />
