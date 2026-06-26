@@ -11,6 +11,36 @@
   max-width: 1400px;
   margin: 0 auto;
   padding: 0 clamp(2px, 1vw, 8px);
+  /* Never let the storefront push the page wider than its column. */
+  min-width: 0;
+  width: 100%;
+}
+
+/* ── Overflow safety ─────────────────────────────────────────────────────────
+   Grid/flex children default to min-width:auto, which lets unbreakable content
+   (e.g. a long vibe-page title that's one giant word) force horizontal overflow
+   past the viewport. Pin everything to min-width:0 and let long titles wrap. */
+.store-rail,
+.store-mosaic,
+.store-card,
+.store-spot,
+.store-hero {
+  min-width: 0;
+}
+.store-rail__track {
+  max-width: 100%;
+}
+.store-hero__title,
+.store-spot__title,
+.store-card__title,
+.store-hero__desc,
+.store-spot__desc,
+.store-card__desc {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.store-hero__body {
+  max-width: min(560px, 100%);
 }
 
 .store__empty {

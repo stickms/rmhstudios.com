@@ -27,7 +27,6 @@ import { Route as RmhmusicRouteImport } from './routes/rmhmusic'
 import { Route as RmhcodeRouteImport } from './routes/rmhcode'
 import { Route as RmhboxRouteImport } from './routes/rmhbox'
 import { Route as RmhPmcRouteImport } from './routes/rmh-pmc'
-import { Route as RmhCodingSimulatorRouteImport } from './routes/rmh-coding-simulator'
 import { Route as RmhCapitalRouteImport } from './routes/rmh-capital'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as NeonDriftwayRouteImport } from './routes/neon-driftway'
@@ -564,11 +563,6 @@ const RmhboxRoute = RmhboxRouteImport.update({
 const RmhPmcRoute = RmhPmcRouteImport.update({
   id: '/rmh-pmc',
   path: '/rmh-pmc',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RmhCodingSimulatorRoute = RmhCodingSimulatorRouteImport.update({
-  id: '/rmh-coding-simulator',
-  path: '/rmh-coding-simulator',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RmhCapitalRoute = RmhCapitalRouteImport.update({
@@ -2889,7 +2883,6 @@ export interface FileRoutesByFullPath {
   '/neon-driftway': typeof NeonDriftwayRoute
   '/privacy': typeof PrivacyRoute
   '/rmh-capital': typeof RmhCapitalRouteWithChildren
-  '/rmh-coding-simulator': typeof RmhCodingSimulatorRoute
   '/rmh-pmc': typeof RmhPmcRouteWithChildren
   '/rmhbox': typeof RmhboxRouteWithChildren
   '/rmhcode': typeof RmhcodeRouteWithChildren
@@ -3350,7 +3343,6 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/neon-driftway': typeof NeonDriftwayRoute
   '/privacy': typeof PrivacyRoute
-  '/rmh-coding-simulator': typeof RmhCodingSimulatorRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/synapse-storm': typeof SynapseStormRoute
   '/terms': typeof TermsRoute
@@ -3800,7 +3792,6 @@ export interface FileRoutesById {
   '/neon-driftway': typeof NeonDriftwayRoute
   '/privacy': typeof PrivacyRoute
   '/rmh-capital': typeof RmhCapitalRouteWithChildren
-  '/rmh-coding-simulator': typeof RmhCodingSimulatorRoute
   '/rmh-pmc': typeof RmhPmcRouteWithChildren
   '/rmhbox': typeof RmhboxRouteWithChildren
   '/rmhcode': typeof RmhcodeRouteWithChildren
@@ -4270,7 +4261,6 @@ export interface FileRouteTypes {
     | '/neon-driftway'
     | '/privacy'
     | '/rmh-capital'
-    | '/rmh-coding-simulator'
     | '/rmh-pmc'
     | '/rmhbox'
     | '/rmhcode'
@@ -4731,7 +4721,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/neon-driftway'
     | '/privacy'
-    | '/rmh-coding-simulator'
     | '/sitemap.xml'
     | '/synapse-storm'
     | '/terms'
@@ -5180,7 +5169,6 @@ export interface FileRouteTypes {
     | '/neon-driftway'
     | '/privacy'
     | '/rmh-capital'
-    | '/rmh-coding-simulator'
     | '/rmh-pmc'
     | '/rmhbox'
     | '/rmhcode'
@@ -5649,7 +5637,6 @@ export interface RootRouteChildren {
   NeonDriftwayRoute: typeof NeonDriftwayRoute
   PrivacyRoute: typeof PrivacyRoute
   RmhCapitalRoute: typeof RmhCapitalRouteWithChildren
-  RmhCodingSimulatorRoute: typeof RmhCodingSimulatorRoute
   RmhPmcRoute: typeof RmhPmcRouteWithChildren
   RmhboxRoute: typeof RmhboxRouteWithChildren
   RmhcodeRoute: typeof RmhcodeRouteWithChildren
@@ -6015,13 +6002,6 @@ declare module '@tanstack/react-router' {
       path: '/rmh-pmc'
       fullPath: '/rmh-pmc'
       preLoaderRoute: typeof RmhPmcRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/rmh-coding-simulator': {
-      id: '/rmh-coding-simulator'
-      path: '/rmh-coding-simulator'
-      fullPath: '/rmh-coding-simulator'
-      preLoaderRoute: typeof RmhCodingSimulatorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rmh-capital': {
@@ -10088,7 +10068,6 @@ const rootRouteChildren: RootRouteChildren = {
   NeonDriftwayRoute: NeonDriftwayRoute,
   PrivacyRoute: PrivacyRoute,
   RmhCapitalRoute: RmhCapitalRouteWithChildren,
-  RmhCodingSimulatorRoute: RmhCodingSimulatorRoute,
   RmhPmcRoute: RmhPmcRouteWithChildren,
   RmhboxRoute: RmhboxRouteWithChildren,
   RmhcodeRoute: RmhcodeRouteWithChildren,
