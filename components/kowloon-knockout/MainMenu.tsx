@@ -231,7 +231,7 @@ export default function MainMenu() {
                     </motion.div>
                 )}
 
-                {showGraphics && <GraphicsSettings />}
+                {showGraphics && <GraphicsSettings onClose={() => setShowGraphics(false)} />}
             </motion.div>
 
             <div className="menu-footer">

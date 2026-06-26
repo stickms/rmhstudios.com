@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useMemo, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, useCallback, type ReactNode } from 'react';
 import { useThree } from '@react-three/fiber';
 import { useIsMobile } from '@/lib/studio/hooks/useIsMobile';
 import { detectTier, TIER_FLAGS, type RenderTier } from '@/lib/kowloon-knockout/render/tier';
@@ -46,6 +46,8 @@ export function RenderTierProvider({ children }: { children: ReactNode }) {
     // The governor lowers this while in Auto. Resets to detected on remount.
     const [governorTier, setGovernorTier] = useState<RenderTier>(detectedTier);
     const downscale = useCallback(() => setGovernorTier((t) => nextLowerTier(t)), []);
+    // Keep governor in sync if detection changes (e.g. viewport crosses mobile breakpoint).
+    useEffect(() => { setGovernorTier(detectedTier); }, [detectedTier]);
 
     const value = useMemo<TierValue>(() => {
         const tier = preference === 'auto' ? governorTier : preference;

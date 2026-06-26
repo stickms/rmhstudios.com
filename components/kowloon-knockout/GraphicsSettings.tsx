@@ -15,7 +15,7 @@ const PRESETS: { value: TierPreference; tKey: string; defaultLabel: string }[] =
 /** Main-menu graphics settings: quality preset + recent-match FPS readout.
  *  'Auto' enables the adaptive downscale governor; a specific tier locks it.
  *  FPS reflects the most recent gameplay (updated in-match by the Governor). */
-export default function GraphicsSettings() {
+export default function GraphicsSettings({ onClose }: { onClose?: () => void }) {
     const { t } = useTranslation("c-kowloon-knockout");
     const preference = useGraphicsStore((s) => s.preference);
     const setPreference = useGraphicsStore((s) => s.setPreference);
@@ -46,6 +46,12 @@ export default function GraphicsSettings() {
             <p className="kk-graphics-hint">
                 {t("graphics-hint", { defaultValue: "Auto adapts quality to keep the frame rate smooth. Pick a level to lock it." })}
             </p>
+            <button
+                className="neon-button neon-button-close"
+                onClick={onClose}
+            >
+                {t("close", { defaultValue: "CLOSE" })}
+            </button>
         </motion.div>
     );
 }
