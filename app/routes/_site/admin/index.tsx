@@ -88,6 +88,16 @@ function AdminDashboardPage() {
           </Link>
 
           <Link
+            to="/admin/library-storage"
+            className="block p-6 rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
+          >
+            <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("library-storage-title", { defaultValue: "Library Storage Health" })}</h2>
+            <p className="text-site-text-muted text-sm mt-2">
+              {t("library-storage-description", { defaultValue: "Check whether library uploads use durable object storage, and list any books whose file is missing." })}
+            </p>
+          </Link>
+
+          <Link
             to="/admin/announcements"
             className="block p-6 rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
           >
