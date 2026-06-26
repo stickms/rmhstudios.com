@@ -3,9 +3,10 @@
  * bucket that fronts cdn.rmhstudios.com — using the AWS SDK (already a project
  * dependency), so it runs inside the app image with no rclone / host tooling.
  *
- * These assets (book PDFs, game music, 3D models, sprite sheets) used to be
- * served straight off disk by Apache. They now live in R2; the app references
- * them via lib/storage/asset.ts → ${VITE_CDN_BASE_URL}/<path>.
+ * These assets (game music, 3D models, sprite sheets) used to be served straight
+ * off disk by Apache. They now live in R2; the app references them via
+ * lib/storage/asset.ts → ${VITE_CDN_BASE_URL}/<path>. (Library books are NOT
+ * synced here — they're app-managed uploads under library/; see ASSET_DIRS.)
  *
  * Incremental, like `rclone sync`: lists what's already in the bucket, uploads
  * only NEW or CHANGED files (compared by size + MD5/ETag), and deletes objects
@@ -66,7 +67,14 @@ if (!S3_ENDPOINT || !S3_ACCESS_KEY_ID || !S3_SECRET_ACCESS_KEY || !S3_BUCKET) {
 const PUBLIC_DIR = path.resolve(process.env.PUBLIC_DIR || "public");
 
 // Dirs that moved off the Apache self-hosted CDN into R2.
-const ASSET_DIRS = ["library", "music", "models", "sprites"];
+//
+// NOTE: "library" is deliberately EXCLUDED. The library is no longer a set of
+// bundled disk files — books are user/admin uploads written straight to R2 by the
+// app at library/<id>.pdf (+ library/covers/<id>.jpg). This sync deletes any
+// object under a managed prefix that isn't on local disk, so including "library"
+// would wipe every uploaded book on each deploy. The library/ prefix is owned by
+// the app, not mirrored from public/.
+const ASSET_DIRS = ["music", "models", "sprites"];
 
 // Long-lived, content-addressed media: cache hard at the edge. Matches the
 // Cache-Control the old Apache vhost set for public/.
