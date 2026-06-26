@@ -35,14 +35,15 @@ export default function PostFx() {
         const scenePass = pass(scene, camera);
         let color = scenePass.getTextureNode('output');
 
-        // ── GTAO (runtime-risky path) ────────────────────────────────────────
-        // Requires the scene pass to expose a normal buffer via MRT.
-        // If this block throws ("normal" buffer missing) or produces a black
-        // screen, disable by setting flags.gtao = false in tier.ts (ultra/high)
-        // or commenting this block — bloom + tonemap below are unaffected.
+        // ── GTAO ─────────────────────────────────────────────────────────────
+        // Pass `null` for the normal node: the default `pass()` does NOT write a
+        // normal MRT buffer, so `getTextureNode('normal')` would sample an empty
+        // (black) texture and multiply the whole scene to black. With null,
+        // GTAONode reconstructs normals from the depth buffer in-shader
+        // (GTAONode.js: `getNormalFromDepth`), which is the supported no-MRT path.
         if (flags.gtao) {
             try {
-                const aoPass = ao(scenePass.getTextureNode('depth'), scenePass.getTextureNode('normal'), camera);
+                const aoPass = ao(scenePass.getTextureNode('depth'), null, camera);
                 color = color.mul(aoPass);
             } catch (e) {
                 console.warn('[PostFx] GTAO setup failed, skipping:', e);
