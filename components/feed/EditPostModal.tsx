@@ -16,7 +16,7 @@ interface EditPostModalProps {
   postId: string;
   initialContent: string;
   initialGifUrl?: string | null;
-  onSaved: (content: string) => void;
+  onSaved: (content: string, gifUrl: string | null) => void;
 }
 
 /** Edit your own post's text. Prior versions are preserved server-side. */
@@ -30,7 +30,7 @@ export function EditPostModal({ open, onOpenChange, postId, initialContent, init
 
   const save = async () => {
     const trimmed = content.trim();
-    if (!trimmed || trimmed.length > MAX_RMHARK_LENGTH) return;
+    if ((!trimmed && !gifUrl.trim()) || trimmed.length > MAX_RMHARK_LENGTH) return;
     setSaving(true);
     try {
       const res = await fetch(`/api/rmharks/${postId}`, {
@@ -41,7 +41,7 @@ export function EditPostModal({ open, onOpenChange, postId, initialContent, init
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        onSaved(trimmed);
+        onSaved(trimmed, gifUrl.trim() || null);
         onOpenChange(false);
         toast.success(t("post-updated", { defaultValue: "Post updated" }));
       } else {
@@ -112,7 +112,7 @@ export function EditPostModal({ open, onOpenChange, postId, initialContent, init
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={saving}>{t("cancel", { defaultValue: "Cancel" })}</Button>
-          <Button variant="accent" onClick={save} disabled={saving || !content.trim() || remaining < 0}>
+          <Button variant="accent" onClick={save} disabled={saving || (!content.trim() && !gifUrl.trim()) || remaining < 0}>
             {saving ? t("saving", { defaultValue: "Saving…" }) : t("save", { defaultValue: "Save" })}
           </Button>
         </DialogFooter>
