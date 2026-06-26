@@ -1,5 +1,11 @@
 // ============================================================
-// Kowloon Knockout — Type Definitions
+// Kowloon Knockout — Type Definitions (3D arena rewrite)
+//
+// The combat sim now runs on a 2D ground plane (x, z) inside a
+// circular neon arena, supports up to 4 fighters (mix of local
+// human / AI / remote), and feeds a Three.js renderer. The legacy
+// combat tuning modules (punches / combos / counterstrike / stats)
+// are reused verbatim — the fighter fields they read are preserved.
 // ============================================================
 
 export type FighterClass =
@@ -10,13 +16,14 @@ export type PunchType = 'jab' | 'cross' | 'hook' | 'uppercut';
 export type FighterState = 'idle' | 'walking' | 'punching' | 'blocking' | 'hit' | 'stunned' | 'knockedOut';
 export type GamePhase = 'menu' | 'select' | 'lobby' | 'fight' | 'countdown' | 'roundEnd' | 'result';
 export type FightResult = 'ko' | 'tko' | 'decision' | null;
+export type MatchMode = 'ffa' | 'teams';
 
 export interface FighterStats {
   maxHealth: number;
   power: number;       // damage multiplier
   punchSpeed: number;  // animation speed multiplier (higher = faster)
   defense: number;     // damage reduction multiplier
-  moveSpeed: number;   // movement speed in pixels/frame
+  moveSpeed: number;   // movement speed stat (mapped to world units/frame)
   stamina: number;     // max stamina
   staminaRegen: number;// stamina regen per frame
 }
@@ -25,25 +32,36 @@ export interface PunchDef {
   type: PunchType;
   baseDamage: number;
   speed: number;       // frames to complete the punch
-  range: number;       // hit range in pixels
+  range: number;       // hit range in legacy px (mapped to world units)
   staminaCost: number;
-  knockback: number;   // pushback on hit
+  knockback: number;   // pushback on hit (legacy px, mapped to world units)
   stunFrames: number;  // how long target is stunned
 }
 
 export interface ComboDef {
   name: string;
   sequence: PunchType[];
-  bonusDamageMultiplier: number; // multiplied on last hit
-  bonusStun: number;             // extra stun frames
-  displayName: string;           // shown on screen
-  classRestriction?: FighterClass; // if set, only this class can trigger this combo
+  bonusDamageMultiplier: number;
+  bonusStun: number;
+  displayName: string;
+  classRestriction?: FighterClass;
 }
 
+/** A fighter occupying the arena. Positions are world units on the (x,z) plane. */
 export interface Fighter {
+  seat: number;              // 0..3 — stable identity across the match
+  team: number;              // FFA: equals seat. Teams: 0 or 1.
+  isAI: boolean;
+  isLocal: boolean;          // controlled by this client (host or guest)
+
+  // Transform on the ground plane
   x: number;
-  y: number;
-  facingRight: boolean;
+  z: number;
+  yaw: number;               // facing angle in radians (atan2(dz, dx) toward target)
+  vx: number;                // current planar velocity (units/frame) — drives walk anim
+  vz: number;
+
+  // Combat
   state: FighterState;
   stateFrame: number;
   health: number;
@@ -55,53 +73,68 @@ export interface Fighter {
   hitCooldown: number;
   blockHeld: boolean;
   comboHistory: { type: PunchType; time: number }[];
-  punchConnected: boolean; // whether current punch connected (hit or blocked)
+  punchConnected: boolean;
   knockoutTimer: number;
+  hitFlash: number;          // counts down — drives red flash on the model
+
+  // Presentation
   displayName: string;
   spriteColor: string;       // main body color
-  spriteAccentColor: string; // accent/trim color
+  spriteAccentColor: string; // accent / trim color
+
+  // Match bookkeeping
+  alive: boolean;            // false once KO'd in the current round
+  roundWins: number;
 }
 
-export interface GameState {
-  player: Fighter;
-  opponent: Fighter;
+/** One tick of intent for a single fighter (analog move + edge-triggered punch). */
+export interface InputCommand {
+  moveX: number;             // -1..1
+  moveZ: number;             // -1..1
+  block: boolean;
+  punch: PunchType | null;   // set only on the frame a punch is requested
+}
+
+/** Transient per-tick events consumed by the renderer / HUD (never persisted). */
+export type GameEvent =
+  | { kind: 'hit'; seat: number; targetSeat: number; x: number; y: number; z: number; color: string; power: number }
+  | { kind: 'block'; seat: number; x: number; y: number; z: number }
+  | { kind: 'ko'; seat: number; x: number; z: number }
+  | { kind: 'combo'; seat: number; text: string };
+
+/** The authoritative world state advanced by the deterministic simulation. */
+export interface WorldState {
+  fighters: Fighter[];
+  mode: MatchMode;
   round: number;
   maxRounds: number;
-  roundTime: number;       // remaining time in frames (60fps)
+  roundTime: number;         // remaining time in frames (60fps)
   maxRoundTime: number;
-  playerScore: number;
-  opponentScore: number;
-  phase: GamePhase;
-  result: FightResult;
-  comboText: string;
-  comboTextTimer: number;
-  screenShake: number;
-  isPaused: boolean;
+  phase: GamePhase;          // 'countdown' | 'fight' | 'roundEnd' | 'result'
+  phaseFrame: number;        // frames elapsed in the current phase
   countdownValue: number;
   roundEndTimer: number;
   roundEndText: string;
+  result: FightResult;
+  winnerSeat: number | null; // FFA: winning seat. Teams: winning team id.
+  events: GameEvent[];
+  frame: number;
+  screenShake: number;
+  aiDifficulty: number;      // 0..1, scales CPU reaction / aggression
 }
 
-export interface InputState {
-  left: boolean;
-  right: boolean;
-  block: boolean;
-  jab: boolean;
-  cross: boolean;
-  hook: boolean;
-  uppercut: boolean;
-  jabPressed: boolean;
-  crossPressed: boolean;
-  hookPressed: boolean;
-  uppercutPressed: boolean;
+export function emptyInput(): InputCommand {
+  return { moveX: 0, moveZ: 0, block: false, punch: null };
 }
 
-// Canvas constants
-export const CANVAS_WIDTH = 480;
-export const CANVAS_HEIGHT = 270;
-export const SCALE = 3; // render at 480x270, display at 1440x810
-export const GROUND_Y = 210; // y position of the ground
-export const FIGHTER_WIDTH = 40;
-export const FIGHTER_HEIGHT = 64;
-export const RING_LEFT = 40;
-export const RING_RIGHT = 440;
+// ── Arena constants (world units) ────────────────────────────────────
+export const ARENA_RADIUS = 7.2;       // circular ring the fighters are bound to
+export const FIGHTER_RADIUS = 0.5;      // collision radius
+export const GROUND_Y = 0;
+
+// Legacy-stat → world-unit conversion factors. Tuned so the proven combat
+// numbers (px ranges, knockback, move speeds) translate to a comfortable feel.
+export const MOVE_SPEED_SCALE = 0.045;  // moveSpeed stat → units/frame
+export const RANGE_SCALE = 0.032;       // punch.range px → world units
+export const KNOCKBACK_SCALE = 0.05;    // punch.knockback px → world units
+export const HIT_ARC_COS = 0.4;         // frontal cone for landing a hit (~66°)

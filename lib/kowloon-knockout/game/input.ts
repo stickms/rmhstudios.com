@@ -1,81 +1,94 @@
 // ============================================================
-// Input Handler — Keyboard mapping for boxing controls
+// Local Input — keyboard + virtual (mobile) → InputCommand
+//
+// Movement is analog on the ground plane (WASD / arrows or an
+// on-screen joystick). Punches are edge-triggered (J/K/L/U or the
+// on-screen buttons). Block is held (Space / Shift or the block pad).
 // ============================================================
 
-import { InputState } from './fighters/types';
+import type { InputCommand, PunchType } from './fighters/types';
 
-export function createInputState(): InputState {
-    return {
-        left: false,
-        right: false,
-        block: false,
-        jab: false,
-        cross: false,
-        hook: false,
-        uppercut: false,
-        jabPressed: false,
-        crossPressed: false,
-        hookPressed: false,
-        uppercutPressed: false,
-    };
-}
-
-const KEY_MAP: Record<string, keyof InputState> = {
-    'a': 'left',
-    'arrowleft': 'left',
-    'd': 'right',
-    'arrowright': 'right',
-    's': 'block',
-    'arrowdown': 'block',
-    'j': 'jab',
-    'k': 'cross',
-    'l': 'hook',
-    'u': 'uppercut',
+const MOVE_KEYS: Record<string, [number, number]> = {
+    w: [0, -1], arrowup: [0, -1],
+    s: [0, 1], arrowdown: [0, 1],
+    a: [-1, 0], arrowleft: [-1, 0],
+    d: [1, 0], arrowright: [1, 0],
 };
 
-/**
- * Attach keyboard listeners. Returns cleanup function.
- */
-export function attachInputListeners(state: InputState): () => void {
-    const onKeyDown = (e: KeyboardEvent) => {
-        const key = e.key.toLowerCase();
-        const mapped = KEY_MAP[key];
-        if (mapped) {
-            e.preventDefault();
-            // For punches, track "just pressed" this frame
-            if (mapped === 'jab' && !state.jab) state.jabPressed = true;
-            if (mapped === 'cross' && !state.cross) state.crossPressed = true;
-            if (mapped === 'hook' && !state.hook) state.hookPressed = true;
-            if (mapped === 'uppercut' && !state.uppercut) state.uppercutPressed = true;
+const PUNCH_KEYS: Record<string, PunchType> = {
+    j: 'jab',
+    k: 'cross',
+    l: 'hook',
+    u: 'uppercut',
+};
 
-            (state as unknown as Record<string, boolean>)[mapped] = true;
+const BLOCK_KEYS = new Set([' ', 'shift', 'control']);
+
+export class LocalInputSource {
+    private held = new Set<string>();
+    private queuedPunch: PunchType | null = null;
+
+    // Virtual (mobile) state, written by the on-screen controls.
+    private vMoveX = 0;
+    private vMoveZ = 0;
+    private vBlock = false;
+    private detachFn: (() => void) | null = null;
+
+    attach(): void {
+        const onKeyDown = (e: KeyboardEvent) => {
+            const key = e.key.toLowerCase();
+            if (key in MOVE_KEYS || key in PUNCH_KEYS || BLOCK_KEYS.has(key)) {
+                e.preventDefault();
+            }
+            if (key in PUNCH_KEYS && !this.held.has(key)) {
+                this.queuedPunch = PUNCH_KEYS[key];
+            }
+            this.held.add(key);
+        };
+        const onKeyUp = (e: KeyboardEvent) => {
+            this.held.delete(e.key.toLowerCase());
+        };
+        const onBlur = () => this.held.clear();
+
+        window.addEventListener('keydown', onKeyDown);
+        window.addEventListener('keyup', onKeyUp);
+        window.addEventListener('blur', onBlur);
+        this.detachFn = () => {
+            window.removeEventListener('keydown', onKeyDown);
+            window.removeEventListener('keyup', onKeyUp);
+            window.removeEventListener('blur', onBlur);
+        };
+    }
+
+    detach(): void {
+        this.detachFn?.();
+        this.detachFn = null;
+        this.held.clear();
+    }
+
+    // ── Virtual control surface (mobile) ──
+    setVirtualMove(x: number, z: number): void { this.vMoveX = x; this.vMoveZ = z; }
+    setVirtualBlock(b: boolean): void { this.vBlock = b; }
+    pressVirtualPunch(type: PunchType): void { this.queuedPunch = type; }
+
+    /** Build this frame's command and consume the edge-triggered punch. */
+    consume(): InputCommand {
+        let mx = this.vMoveX;
+        let mz = this.vMoveZ;
+        for (const key of this.held) {
+            const m = MOVE_KEYS[key];
+            if (m) { mx += m[0]; mz += m[1]; }
         }
-    };
+        const mag = Math.hypot(mx, mz);
+        if (mag > 1) { mx /= mag; mz /= mag; }
 
-    const onKeyUp = (e: KeyboardEvent) => {
-        const key = e.key.toLowerCase();
-        const mapped = KEY_MAP[key];
-        if (mapped) {
-            e.preventDefault();
-            (state as unknown as Record<string, boolean>)[mapped] = false;
+        let block = this.vBlock;
+        for (const key of this.held) {
+            if (BLOCK_KEYS.has(key)) { block = true; break; }
         }
-    };
 
-    window.addEventListener('keydown', onKeyDown);
-    window.addEventListener('keyup', onKeyUp);
-
-    return () => {
-        window.removeEventListener('keydown', onKeyDown);
-        window.removeEventListener('keyup', onKeyUp);
-    };
-}
-
-/**
- * Clear "just pressed" flags — call at end of each frame
- */
-export function clearPressedFlags(state: InputState): void {
-    state.jabPressed = false;
-    state.crossPressed = false;
-    state.hookPressed = false;
-    state.uppercutPressed = false;
+        const punch = this.queuedPunch;
+        this.queuedPunch = null;
+        return { moveX: mx, moveZ: mz, block, punch };
+    }
 }

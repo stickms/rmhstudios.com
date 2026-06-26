@@ -961,3 +961,154 @@
 .kowloon-knockout .lobby-match-player {
   text-transform: uppercase;
 }
+
+/* ============================================================
+   3D Arena — pixelated render filter + in-fight overlays
+   ============================================================ */
+
+.kowloon-knockout .kk-arena {
+  width: 100%;
+  height: 100%;
+  background: #050010;
+}
+
+/* Nearest-neighbour upscale of the low-res 3D buffer → retro pixel look */
+.kk-arena canvas {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.kk-controls-hint {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 18px;
+  padding: 6px 14px;
+  background: rgba(5, 0, 16, 0.6);
+  border: 1px solid #ffcc0030;
+  border-radius: 4px;
+  font-size: 8px;
+  color: var(--text-dim);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.kk-controls-hint kbd {
+  color: var(--neon-yellow);
+  border: 1px solid var(--neon-yellow);
+  border-radius: 3px;
+  padding: 1px 4px;
+  margin-right: 4px;
+  font-size: 8px;
+}
+
+/* ── Match option chips (character select + lobby) ── */
+.kowloon-knockout .match-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 14px 0;
+  width: 100%;
+  max-width: 460px;
+}
+
+.kowloon-knockout .option-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.kowloon-knockout .option-label {
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+  min-width: 78px;
+  text-align: left;
+}
+
+.kowloon-knockout .option-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.kowloon-knockout .option-chip {
+  font-family: inherit;
+  font-size: 8px;
+  padding: 7px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid #444;
+  color: var(--text-dim);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 1px;
+}
+
+.kowloon-knockout .option-chip:hover:not(:disabled) {
+  border-color: var(--neon-blue);
+  color: var(--neon-blue);
+}
+
+.kowloon-knockout .option-chip-active {
+  background: var(--neon-yellow);
+  border-color: var(--neon-yellow);
+  color: #1a1000;
+  box-shadow: 0 0 12px var(--neon-yellow);
+}
+
+/* ── Lobby seats ── */
+.kowloon-knockout .lobby-seats {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.kowloon-knockout .lobby-seat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 96px;
+  height: 92px;
+  border: 2px solid #444;
+  border-radius: 6px;
+  background: rgba(10, 10, 20, 0.6);
+  text-align: center;
+  padding: 6px;
+}
+
+.kowloon-knockout .lobby-seat-you {
+  box-shadow: 0 0 16px currentColor;
+}
+
+/* ── Result scoreboard ── */
+.kowloon-knockout .result-scoreboard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  max-width: 420px;
+  margin: 16px 0;
+}
+
+.kowloon-knockout .result-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid #333;
+  border-radius: 4px;
+  background: rgba(10, 10, 20, 0.5);
+  font-size: 9px;
+}
+
+.kowloon-knockout .result-rank {
+  color: var(--neon-yellow);
+  min-width: 16px;
+  text-align: center;
+}
