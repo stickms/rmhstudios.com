@@ -24,7 +24,6 @@ export default function PostFx() {
     const gl = useThree((s) => s.gl) as unknown as THREE.WebGPURenderer;
     const scene = useThree((s) => s.scene);
     const camera = useThree((s) => s.camera);
-    const size = useThree((s) => s.size);
 
     const enabled = flags.bloom || flags.gtao;
     const BLOOM_STRENGTH = 0.9;   // emissive bleed
@@ -64,9 +63,8 @@ export default function PostFx() {
         gl.toneMappingExposure = EXPOSURE;
     }, [gl]);
 
-    useEffect(() => {
-        if (post) post.setSize(size.width, size.height);
-    }, [post, size.width, size.height]);
+    // three's WebGPU PostProcessing tracks the renderer's drawing-buffer size
+    // automatically each frame — it has no setSize(); calling one crashes.
 
     // Dispose the previous PostProcessing instance when flags/tier change or on
     // unmount, so swapping pipelines doesn't leak GPU resources.
