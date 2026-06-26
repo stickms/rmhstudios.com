@@ -1,4 +1,3 @@
-// components/cookgame/CookGameGame.tsx
 "use client";
 import { Canvas } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';

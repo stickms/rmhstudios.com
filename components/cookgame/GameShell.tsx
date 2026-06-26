@@ -1,4 +1,3 @@
-// components/cookgame/GameShell.tsx
 "use client";
 import React, { Suspense } from 'react';
 import { Link } from '@tanstack/react-router';
