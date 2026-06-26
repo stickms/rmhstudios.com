@@ -89,3 +89,17 @@ export function getStaleMoveMultiplier(
     const idx = Math.min(count, STALE_MOVE_DECAY.length - 1);
     return STALE_MOVE_DECAY[idx];
 }
+
+/** Total frames a fighter is committed to a punch (locked out of new actions)
+ *  at the sim's 60Hz step. The animation plays across this whole window, so the
+ *  fighter reads as committed and can't spam. Tunable; preserves the
+ *  jab<cross<hook<uppercut speed ordering. */
+export const PUNCH_COMMIT_FRAMES: Record<PunchType, number> = {
+    jab: 28, cross: 31, hook: 34, uppercut: 37,
+};
+
+/** The single frame a punch becomes active (connects). Kept early in the commit
+ *  window so hits stay snappy — only the recovery/lock is extended. */
+export function punchHitFrame(punch: PunchType): number {
+    return Math.floor(PUNCH_COMMIT_FRAMES[punch] * 0.25);
+}
