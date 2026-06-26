@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, Component } from 'react';
+import { useMemo, useEffect, Component } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import * as THREE from 'three/webgpu';
 import {
@@ -27,7 +27,7 @@ const FOG_COLOR = new THREE.Color('#3a2f5a'); // dim violet haze
 function FogGPU({ count }: { count: number }) {
     const gl = useThree((s) => s.gl) as unknown as THREE.WebGPURenderer;
 
-    const { mesh, update } = useMemo(() => {
+    const { mesh, update, positions } = useMemo(() => {
         const seeded = seedFog(count, FOG_BOUNDS, 909);
         const positions = instancedArray(seeded.positions, 'vec3');
 
@@ -54,10 +54,18 @@ function FogGPU({ count }: { count: number }) {
         const mesh = new THREE.Sprite(material);
         mesh.count = count;                                    // instanced sprite draw
         mesh.frustumCulled = false;
-        return { mesh, update };
+        return { mesh, update, positions };
     }, [count]);
 
     useFrame(() => { void gl.computeAsync(update); });
+
+    useEffect(() => {
+        return () => {
+            mesh.geometry?.dispose?.();
+            mesh.material?.dispose?.();
+            positions?.dispose?.();
+        };
+    }, [mesh, positions]);
 
     return <primitive object={mesh} />;
 }
@@ -67,8 +75,8 @@ function FogGPU({ count }: { count: number }) {
 class FogGPUBoundary extends Component<{ count: number }, { error: boolean }> {
     state = { error: false };
     static getDerivedStateFromError() { return { error: true }; }
-    componentDidCatch(e: unknown) {
-        console.warn('[Fog] compute path failed, skipping fog:', e);
+    componentDidCatch(error: unknown, info: { componentStack?: string }) {
+        console.warn('[Fog] compute path failed, skipping fog:', error, info?.componentStack);
     }
     render() {
         if (this.state.error) return null;

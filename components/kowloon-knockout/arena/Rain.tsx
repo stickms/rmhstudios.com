@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, Component, type ReactNode } from 'react';
+import { useMemo, useEffect, useRef, Component, type ReactNode } from 'react';
 import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as WEBGPU from 'three/webgpu';
@@ -24,7 +24,7 @@ const RAIN_COLOR = new THREE.Color('#7fd4ff'); // cool neon drizzle
 function RainGPU({ count }: { count: number }) {
     const gl = useThree((s) => s.gl) as unknown as WEBGPU.WebGPURenderer;
 
-    const { mesh, update } = useMemo(() => {
+    const { mesh, update, positions, velocities } = useMemo(() => {
         const seeded = seedRain(count, RAIN_BOUNDS, 5150);
         const positions = instancedArray(seeded.positions, 'vec3');
         const velocities = instancedArray(seeded.velocities, 'vec3');
@@ -52,10 +52,19 @@ function RainGPU({ count }: { count: number }) {
         const geometry = new WEBGPU.BoxGeometry(1, 1, 1);
         const mesh = new WEBGPU.InstancedMesh(geometry, material, count);
         mesh.frustumCulled = false;
-        return { mesh, update };
+        return { mesh, update, positions, velocities };
     }, [count]);
 
     useFrame(() => { void gl.computeAsync(update); });
+
+    useEffect(() => {
+        return () => {
+            mesh.geometry?.dispose?.();
+            mesh.material?.dispose?.();
+            positions?.dispose?.();
+            velocities?.dispose?.();
+        };
+    }, [mesh, positions, velocities]);
 
     return <primitive object={mesh} />;
 }
@@ -68,8 +77,8 @@ class RainGPUBoundary extends Component<
 > {
     state = { error: false };
     static getDerivedStateFromError() { return { error: true }; }
-    componentDidCatch(e: unknown) {
-        console.warn('[Rain] compute path failed, using CPU rain:', e);
+    componentDidCatch(error: unknown, info: { componentStack?: string }) {
+        console.warn('[Rain] compute path failed, using CPU rain:', error, info?.componentStack);
     }
     render() {
         return this.state.error
