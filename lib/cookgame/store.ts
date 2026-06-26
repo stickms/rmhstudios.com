@@ -1,6 +1,7 @@
 // lib/cookgame/store.ts
 import { create } from 'zustand';
-import type { AdditiveId, BaseId, BuyerId, InputId, InventoryState, Product, BaseStockEntry } from './types';
+import type { AdditiveId, BaseId, BuyerId, InputId, InventoryState, Product, BaseStockEntry, CookSession } from './types';
+import { cookQuality, cookOutput, DIAL_COUNT } from './chemistry';
 import { ADDITIVES, BUYERS, INPUTS, GROWABLE } from './content';
 import { mix, effectSetKey } from './effects';
 import { buyerOffer, applyHeatOnSale, decayHeat, packageProduct } from './economy';
@@ -31,6 +32,10 @@ interface CookgameState {
   activeOverlay: string | null;
   playerPosition: [number, number, number];
 
+  cookSession: CookSession | null;
+  startCook: (baseId: BaseId) => boolean;
+  setDial: (i: number, value: number) => void;
+  submitCook: () => number;
   buyAdditive: (id: AdditiveId) => boolean;
   buyBase: (id: BaseId, price: number) => boolean;
   loadBaseToBench: (stockIndex: number) => boolean;
@@ -60,6 +65,36 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
   nearbyInteractable: null,
   activeOverlay: null,
   playerPosition: [0, 1, 0],
+  cookSession: null,
+
+  startCook: (baseId) => {
+    const { inventory } = get();
+    if ((inventory.inputs.reagent ?? 0) <= 0) return false;
+    const target = Array.from({ length: DIAL_COUNT }, () => Math.random());
+    set({
+      inventory: { ...inventory, inputs: { ...inventory.inputs, reagent: inventory.inputs.reagent - 1 } },
+      cookSession: { baseId, target, dials: Array.from({ length: DIAL_COUNT }, () => 0) },
+    });
+    return true;
+  },
+
+  setDial: (i, value) => {
+    const { cookSession } = get();
+    if (!cookSession) return;
+    const v = Math.max(0, Math.min(1, value));
+    set({ cookSession: { ...cookSession, dials: cookSession.dials.map((d, idx) => (idx === i ? v : d)) } });
+  },
+
+  submitCook: () => {
+    const { cookSession, inventory } = get();
+    if (!cookSession) return 0;
+    const q = cookQuality(cookSession.dials, cookSession.target);
+    set({
+      cookSession: null,
+      inventory: { ...inventory, baseStock: mergeStock(inventory.baseStock, cookOutput(cookSession.baseId, q)) },
+    });
+    return q;
+  },
 
   buyAdditive: (id) => {
     const { cash, inventory } = get();
@@ -153,7 +188,7 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
     saveGame({ version: CURRENT_VERSION, cash, heat, inventory, discoveredRecipes });
   },
   loadOrNew: () => set(fromSave(loadGame() ?? createNewSave())),
-  resetGame: () => set({ ...fromSave(createNewSave()), nearbyInteractable: null, activeOverlay: null }),
+  resetGame: () => set({ ...fromSave(createNewSave()), nearbyInteractable: null, activeOverlay: null, cookSession: null }),
 
   buyInput: (id) => {
     const { cash, inventory } = get();

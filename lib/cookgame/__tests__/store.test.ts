@@ -128,3 +128,42 @@ describe('cookgame store — grow flow', () => {
     expect(s.inventory.baseStock[0].units).toBeGreaterThan(0);
   });
 });
+
+describe('cookgame store — cook flow', () => {
+  beforeEach(reset);
+
+  it('startCook requires a reagent and opens a session', () => {
+    const st = useCookgameStore.getState();
+    expect(st.startCook('glimmerdust')).toBe(false); // no reagent
+    useCookgameStore.setState((s) => ({ inventory: { ...s.inventory, inputs: { reagent: 1 } } }));
+    expect(useCookgameStore.getState().startCook('glimmerdust')).toBe(true);
+    const s = useCookgameStore.getState();
+    expect(s.cookSession?.baseId).toBe('glimmerdust');
+    expect(s.cookSession?.dials).toHaveLength(3);
+    expect(s.inventory.inputs.reagent).toBe(0);
+  });
+
+  it('a perfectly matched submit yields a max-quality cooked stock entry', () => {
+    useCookgameStore.setState((s) => ({ inventory: { ...s.inventory, inputs: { reagent: 1 } } }));
+    const st = useCookgameStore.getState();
+    st.startCook('glimmerdust');
+    const target = useCookgameStore.getState().cookSession!.target;
+    target.forEach((v, i) => st.setDial(i, v)); // dial exactly onto target
+    const q = st.submitCook();
+    expect(q).toBeCloseTo(1, 5);
+    const s = useCookgameStore.getState();
+    expect(s.cookSession).toBeNull();
+    expect(s.inventory.baseStock[0].baseId).toBe('glimmerdust');
+    expect(s.inventory.baseStock[0].bonusEffects).toEqual(['glowing']);
+  });
+
+  it('setDial clamps to [0,1]', () => {
+    useCookgameStore.setState((s) => ({ inventory: { ...s.inventory, inputs: { reagent: 1 } } }));
+    const st = useCookgameStore.getState();
+    st.startCook('glimmerdust');
+    st.setDial(0, 5); st.setDial(1, -3);
+    const d = useCookgameStore.getState().cookSession!.dials;
+    expect(d[0]).toBe(1);
+    expect(d[1]).toBe(0);
+  });
+});
