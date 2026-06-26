@@ -160,22 +160,6 @@ export const apps: AppInfo[] = [
         authGate: true,
     },
     {
-        id: 'personas',
-        title: 'AI Personas',
-        description: 'Create and chat with custom AI personas — or talk to ones the community built.',
-        longDescription:
-            'AI Personas lets you craft custom AI characters with their own personality, greeting, and system prompt, then chat with them in real time. Browse public personas made by the community, spin up your own, and share them for others to talk to.',
-        href: '/personas',
-        status: 'Beta',
-        cta: 'Open Personas',
-        isSteam: false,
-        gradient: 'from-fuchsia-500 via-purple-500 to-indigo-600',
-        iconName: 'Bot',
-        color: 'from-fuchsia-500/20 to-indigo-600/20 hover:border-fuchsia-500/50',
-        tags: ['AI', 'Chat', 'Personas', 'Beta'],
-        authGate: false,
-    },
-    {
         id: 'rmh-strategies',
         title: 'RMH Strategies',
         description: 'The coalition command center. Daily puzzles, tiered safehouse, reputation system, and Sahur Mode.',
