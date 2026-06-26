@@ -13,6 +13,10 @@ import {
 } from './cultivation';
 import { PROPERTY_TIERS, propertyEffects, stashCount } from './property';
 
+// Transient accumulator for sub-dollar passive income — kept outside the store
+// so it survives re-renders but is reset by resetGame (see below).
+let incomeAccum = 0;
+
 function sameStock(a: BaseStockEntry, b: BaseStockEntry): boolean {
   return a.baseId === b.baseId && a.qualityMult === b.qualityMult &&
     a.bonusEffects.length === b.bonusEffects.length &&
@@ -213,7 +217,11 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
   tickPassiveIncome: (dtSeconds) => {
     const rate = propertyEffects(get().ownedPropertyTier).passiveIncomePerSec;
     if (rate <= 0) return;
-    set({ cash: get().cash + rate * dtSeconds });
+    incomeAccum += rate * dtSeconds;
+    if (incomeAccum < 1) return;
+    const whole = Math.floor(incomeAccum);
+    incomeAccum -= whole;
+    set({ cash: get().cash + whole });
   },
   setNearbyInteractable: (id) => set({ nearbyInteractable: id }),
   setActiveOverlay: (id) => set({ activeOverlay: id }),
@@ -224,7 +232,7 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
     saveGame({ version: CURRENT_VERSION, cash, heat, inventory, discoveredRecipes, xp, ownedPropertyTier, keys, clock, discoveredEffects, recipeMeta, currentDistrict });
   },
   loadOrNew: () => set(fromSave(loadGame() ?? createNewSave())),
-  resetGame: () => set({ ...fromSave(createNewSave()), nearbyInteractable: null, activeOverlay: null, cookSession: null }),
+  resetGame: () => { incomeAccum = 0; set({ ...fromSave(createNewSave()), nearbyInteractable: null, activeOverlay: null, cookSession: null }); },
 
   buyInput: (id) => {
     const { cash, inventory } = get();
