@@ -974,8 +974,6 @@
 
 /* Nearest-neighbour upscale of the low-res 3D buffer → retro pixel look */
 .kk-arena canvas {
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
 }
 
 .kk-controls-hint {

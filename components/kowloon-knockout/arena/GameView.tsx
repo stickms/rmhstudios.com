@@ -91,6 +91,7 @@ export default function GameView() {
         <div className="kk-arena" style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
             <Canvas
                 shadows
+                dpr={[1, 2]}
                 gl={createKowloonRenderer}
                 camera={{ position: [0, 9, 15], fov: 50, near: 0.1, far: 120 }}
             >
