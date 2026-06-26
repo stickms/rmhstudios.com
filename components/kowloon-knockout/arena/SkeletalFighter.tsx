@@ -113,7 +113,10 @@ export default function SkeletalFighter({ seat, framesRef, showNameplate = true 
             mixer.uncacheRoot(model);
             model.traverse((o) => {
                 const m = o as THREE.Mesh;
-                m.geometry?.dispose?.();
+                if (!m.isMesh) return;
+                // Skinned-mesh geometry is SHARED across seats by SkeletonUtils.clone — do
+                // not dispose it. Accessory (non-skinned) geometry is created per seat.
+                if (!(m as THREE.SkinnedMesh).isSkinnedMesh) m.geometry?.dispose?.();
                 const mat = m.material as THREE.Material | THREE.Material[] | undefined;
                 if (Array.isArray(mat)) mat.forEach((x) => x?.dispose?.());
                 else mat?.dispose?.();
