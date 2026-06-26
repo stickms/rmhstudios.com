@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Plus, BarChart3, Image, X, ImagePlus, Globe, Users, Lock, Unlock, EyeOff, FileText, CalendarClock, Check } from 'lucide-react';
+import { Plus, BarChart3, X, ImagePlus, Globe, Users, Lock, Unlock, EyeOff, FileText, CalendarClock, Check } from 'lucide-react';
 import { GifEmbed } from './GifEmbed';
 import { GifPicker } from './GifPicker';
 import { AIGenerateButton } from './AIGenerateButton';
@@ -562,6 +562,24 @@ export function ComposeBox({
                 <ImagePlus className="w-4.5 h-4.5" />
               </button>
 
+              {/* GIF button */}
+              <button
+                type="button"
+                onClick={() => {
+                  setAttachment((a) => (a === 'gif' ? null : 'gif'));
+                  setPoll({ question: '', options: ['', ''], multiSelect: false });
+                }}
+                aria-pressed={attachment === 'gif'}
+                title={t("attach-gif-title", { defaultValue: "Add a GIF" })}
+                className={`px-1.5 py-1 rounded-full text-[11px] font-bold leading-none border transition-colors ${
+                  attachment === 'gif'
+                    ? 'border-site-accent text-site-accent bg-site-accent/10'
+                    : 'border-site-border text-site-text-dim hover:text-site-accent hover:bg-site-accent/10'
+                }`}
+              >
+                {t("gif-heading", { defaultValue: "GIF" })}
+              </button>
+
               {/* Plus button */}
               <div className="relative" ref={menuRef}>
                 <button
@@ -583,17 +601,6 @@ export function ComposeBox({
                     >
                       <BarChart3 className="w-4 h-4 text-site-text-dim" />
                       {t("menu-create-poll", { defaultValue: "Create Poll" })}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setAttachment('gif');
-                        setPoll({ question: '', options: ['', ''], multiSelect: false });
-                        setMenuOpen(false);
-                      }}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
-                    >
-                      <Image className="w-4 h-4 text-site-text-dim" />
-                      {t("menu-add-image", { defaultValue: "Add Image" })}
                     </button>
                     <div className="my-1 border-t border-site-border" />
                     <button
