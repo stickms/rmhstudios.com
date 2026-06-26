@@ -1,12 +1,21 @@
 'use client';
 
-import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, useCallback, type ReactNode } from 'react';
 import { useThree } from '@react-three/fiber';
 import { useIsMobile } from '@/lib/studio/hooks/useIsMobile';
 import { detectTier, TIER_FLAGS, type RenderTier } from '@/lib/kowloon-knockout/render/tier';
 import { gpuTierFromRendererString } from '@/lib/kowloon-knockout/render/probe';
+import { nextLowerTier } from '@/lib/kowloon-knockout/render/governor';
+import { useGraphicsStore, type TierPreference } from '@/lib/kowloon-knockout/render/graphicsStore';
 
-interface TierValue { tier: RenderTier; flags: (typeof TIER_FLAGS)[RenderTier]; }
+interface TierValue {
+    tier: RenderTier;
+    flags: (typeof TIER_FLAGS)[RenderTier];
+    detectedTier: RenderTier;
+    preference: TierPreference;
+    /** Governor: lower the auto tier by one step (downscale-only). */
+    downscale: () => void;
+}
 const Ctx = createContext<TierValue | null>(null);
 
 export function RenderTierProvider({ children }: { children: ReactNode }) {
@@ -15,8 +24,9 @@ export function RenderTierProvider({ children }: { children: ReactNode }) {
         getContext?: () => WebGL2RenderingContext;
     };
     const isMobile = useIsMobile();
+    const preference = useGraphicsStore((s) => s.preference);
 
-    const value = useMemo<TierValue>(() => {
+    const detectedTier = useMemo<RenderTier>(() => {
         const backend: 'WebGPU' | 'WebGL2' = gl.backend?.isWebGPUBackend ? 'WebGPU' : 'WebGL2';
         let rendererString = '';
         try {
@@ -29,9 +39,20 @@ export function RenderTierProvider({ children }: { children: ReactNode }) {
         const gpuTier = rendererString ? gpuTierFromRendererString(rendererString) : (backend === 'WebGPU' ? 3 : 1);
         const tier = detectTier({ backend, gpuTier, isMobile });
         // eslint-disable-next-line no-console
-        console.info(`[kowloon] render tier: ${tier} (backend=${backend}, gpu=${gpuTier})`);
-        return { tier, flags: TIER_FLAGS[tier] };
+        console.info(`[kowloon] detected render tier: ${tier} (backend=${backend}, gpu=${gpuTier})`);
+        return tier;
     }, [gl, isMobile]);
+
+    // The governor lowers this while in Auto. Resets to detected on remount.
+    const [governorTier, setGovernorTier] = useState<RenderTier>(detectedTier);
+    const downscale = useCallback(() => setGovernorTier((t) => nextLowerTier(t)), []);
+    // Keep governor in sync if detection changes (e.g. viewport crosses mobile breakpoint).
+    useEffect(() => { setGovernorTier(detectedTier); }, [detectedTier]);
+
+    const value = useMemo<TierValue>(() => {
+        const tier = preference === 'auto' ? governorTier : preference;
+        return { tier, flags: TIER_FLAGS[tier], detectedTier, preference, downscale };
+    }, [preference, governorTier, detectedTier, downscale]);
 
     return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

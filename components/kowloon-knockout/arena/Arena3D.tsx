@@ -14,6 +14,7 @@ import PostFx from './PostFx';
 import Rain from './Rain';
 import Fog from './Fog';
 import { RenderTierProvider } from './RenderTierContext';
+import Governor from './Governor';
 
 type FramesRef = MutableRefObject<RenderFighter[]>;
 
@@ -38,6 +39,7 @@ export default function Arena3D({ session, seatIds }: { session: GameSession; se
             <fog attach="fog" args={['#0a0118', 16, 55]} />
 
             <Lighting />
+            <Governor />
 
             <FrameSync session={session} framesRef={framesRef} shakeRef={shakeRef} />
             <CameraRig framesRef={framesRef} shakeRef={shakeRef} />
