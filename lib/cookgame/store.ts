@@ -6,6 +6,7 @@ import { ADDITIVES, BUYERS, INPUTS, GROWABLE } from './content';
 import { mix, effectSetKey } from './effects';
 import { buyerOffer, applyHeatOnSale, decayHeat, packageProduct } from './economy';
 import { SaveState, CURRENT_VERSION, createNewSave, saveGame, loadGame } from './saveSystem';
+import { xpForSale, xpForRecipe, xpForProduction, rankForXp, perksAtRank } from './progression';
 import {
   plantPlot as cPlant, canTend, tendPlot as cTend,
   harvestPlot as cHarvest, canCollect, collectDried as cCollect,
@@ -28,10 +29,18 @@ interface CookgameState {
   heat: number;
   inventory: InventoryState;
   discoveredRecipes: string[];
+  xp: number;
+  ownedPropertyTier: number;
+  keys: string[];
+  clock: number;
+  discoveredEffects: string[];
+  recipeMeta: Record<string, { name?: string; favorite?: boolean; bestValue?: number }>;
+  currentDistrict: string;
   nearbyInteractable: string | null;
   activeOverlay: string | null;
   playerPosition: [number, number, number];
 
+  gainXp: (amount: number) => void;
   cookSession: CookSession | null;
   startCook: (baseId: BaseId) => boolean;
   setDial: (i: number, value: number) => void;
@@ -58,6 +67,8 @@ interface CookgameState {
 
 const fromSave = (s: SaveState) => ({
   cash: s.cash, heat: s.heat, inventory: s.inventory, discoveredRecipes: s.discoveredRecipes,
+  xp: s.xp, ownedPropertyTier: s.ownedPropertyTier, keys: s.keys, clock: s.clock,
+  discoveredEffects: s.discoveredEffects, recipeMeta: s.recipeMeta, currentDistrict: s.currentDistrict,
 });
 
 export const useCookgameStore = create<CookgameState>((set, get) => ({
@@ -66,6 +77,8 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
   activeOverlay: null,
   playerPosition: [0, 1, 0],
   cookSession: null,
+
+  gainXp: (amount) => set({ xp: get().xp + amount }),
 
   startCook: (baseId) => {
     const { inventory } = get();
@@ -88,12 +101,13 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
   },
 
   submitCook: () => {
-    const { cookSession, inventory } = get();
+    const { cookSession, inventory, xp } = get();
     if (!cookSession) return 0;
     const q = cookQuality(cookSession.dials, cookSession.target);
     set({
       cookSession: null,
       inventory: { ...inventory, baseStock: mergeStock(inventory.baseStock, cookOutput(cookSession.baseId, q)) },
+      xp: xp + xpForProduction(),
     });
     return q;
   },
@@ -138,18 +152,20 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
   },
 
   mixIn: (additiveId) => {
-    const { inventory, discoveredRecipes } = get();
+    const { inventory, discoveredRecipes, xp } = get();
     if (!inventory.workProduct) return false;
     if ((inventory.additives[additiveId] ?? 0) <= 0) return false;
     const next: Product = mix(inventory.workProduct, additiveId);
     const key = effectSetKey(next.effects);
+    const isNew = !discoveredRecipes.includes(key);
     set({
       inventory: {
         ...inventory,
         additives: { ...inventory.additives, [additiveId]: inventory.additives[additiveId] - 1 },
         workProduct: next,
       },
-      discoveredRecipes: discoveredRecipes.includes(key) ? discoveredRecipes : [...discoveredRecipes, key],
+      discoveredRecipes: isNew ? [...discoveredRecipes, key] : discoveredRecipes,
+      xp: xp + (isNew ? xpForRecipe() : 0),
     });
     return true;
   },
@@ -164,15 +180,21 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
   },
 
   sellUnit: (buyerId, packagedIndex, variance) => {
-    const { inventory, cash, heat } = get();
+    const { inventory, cash, heat, xp } = get();
     const stack = inventory.packaged[packagedIndex];
     const buyer = BUYERS.find((b) => b.id === buyerId);
     if (!stack || stack.units <= 0 || !buyer) return 0;
-    const offer = buyerOffer(stack.product, buyer, heat, variance);
+    const perk = perksAtRank(rankForXp(xp).rank);
+    const offer = buyerOffer(stack.product, buyer, heat, variance, perk.priceMult);
     const packaged = inventory.packaged
       .map((s, i) => (i === packagedIndex ? { ...s, units: s.units - 1 } : s))
       .filter((s) => s.units > 0);
-    set({ cash: cash + offer, heat: applyHeatOnSale(heat), inventory: { ...inventory, packaged } });
+    set({
+      cash: cash + offer,
+      heat: applyHeatOnSale(heat, perk.heatMult),
+      inventory: { ...inventory, packaged },
+      xp: xp + xpForSale(offer),
+    });
     return offer;
   },
 
@@ -186,8 +208,8 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
   setPlayerPosition: (p) => set({ playerPosition: p }),
 
   saveNow: () => {
-    const { cash, heat, inventory, discoveredRecipes } = get();
-    saveGame({ version: CURRENT_VERSION, cash, heat, inventory, discoveredRecipes });
+    const { cash, heat, inventory, discoveredRecipes, xp, ownedPropertyTier, keys, clock, discoveredEffects, recipeMeta, currentDistrict } = get();
+    saveGame({ version: CURRENT_VERSION, cash, heat, inventory, discoveredRecipes, xp, ownedPropertyTier, keys, clock, discoveredEffects, recipeMeta, currentDistrict });
   },
   loadOrNew: () => set(fromSave(loadGame() ?? createNewSave())),
   resetGame: () => set({ ...fromSave(createNewSave()), nearbyInteractable: null, activeOverlay: null, cookSession: null }),
@@ -229,13 +251,13 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
   },
 
   harvestPlot: (plotIndex, now) => {
-    const { inventory } = get();
+    const { inventory, xp } = get();
     const plot = inventory.plots[plotIndex];
     if (!plot) return false;
     const res = cHarvest(plot, now);
     if (!res) return false;
     const plots = inventory.plots.map((p, i) => (i === plotIndex ? res.plot : p));
-    set({ inventory: { ...inventory, plots, dryingRack: [...inventory.dryingRack, res.wet] } });
+    set({ inventory: { ...inventory, plots, dryingRack: [...inventory.dryingRack, res.wet] }, xp: xp + xpForProduction() });
     return true;
   },
 

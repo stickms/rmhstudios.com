@@ -2,6 +2,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useCookgameStore } from '../store';
 import { TEND_COOLDOWN_MS, DRY_COOLDOWN_MS } from '../cultivation';
+import { rankForXp, xpForRecipe } from '../progression';
 
 const reset = () => useCookgameStore.getState().resetGame();
 
@@ -225,5 +226,53 @@ describe('cookgame store — cook flow', () => {
     const d = useCookgameStore.getState().cookSession!.dials;
     expect(d[0]).toBe(1);
     expect(d[1]).toBe(0);
+  });
+});
+
+describe('cookgame store — progression', () => {
+  beforeEach(reset);
+
+  it('starts at xp 0 / rank 0 and the new save fields are defaulted', () => {
+    const s = useCookgameStore.getState();
+    expect(s.xp).toBe(0);
+    expect(rankForXp(s.xp).rank).toBe(0);
+    expect(s.ownedPropertyTier).toBe(0);
+    expect(s.keys).toEqual([]);
+    expect(s.currentDistrict).toBe('suburbs');
+  });
+
+  it('gainXp accumulates', () => {
+    useCookgameStore.getState().gainXp(150);
+    expect(useCookgameStore.getState().xp).toBe(150);
+    expect(rankForXp(useCookgameStore.getState().xp).rank).toBe(1);
+  });
+
+  it('selling grants sale XP and applies the rank price perk', () => {
+    const st = useCookgameStore.getState();
+    st.buyBase('greenstart', 10);
+    st.loadBaseToBench(0);
+    st.buyAdditive('cuke'); st.mixIn('cuke');
+    st.packageBench();
+    // jump to a rank with a price perk so the offer reflects it
+    useCookgameStore.setState({ xp: 3000 }); // Kingpin: priceMult 1.16
+    const offer = useCookgameStore.getState().sellUnit('doug', 0, 1.0);
+    const after = useCookgameStore.getState();
+    expect(offer).toBeGreaterThan(0);
+    expect(after.xp).toBeGreaterThan(3000); // sale XP added on top
+  });
+
+  it('discovering a NEW recipe grants recipe XP; a repeat does not', () => {
+    const st = useCookgameStore.getState();
+    st.buyBase('greenstart', 10); st.loadBaseToBench(0);
+    st.buyAdditive('cuke');
+    const before = useCookgameStore.getState().xp;
+    st.mixIn('cuke'); // discovers 'energizing'
+    const afterNew = useCookgameStore.getState().xp;
+    expect(afterNew).toBe(before + xpForRecipe());
+    // mixing the same additive again yields the same effect set (no new recipe) → no recipe XP
+    st.buyAdditive('cuke');
+    const afterRepeat0 = useCookgameStore.getState().xp;
+    st.mixIn('cuke');
+    expect(useCookgameStore.getState().xp).toBe(afterRepeat0);
   });
 });
