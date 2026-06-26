@@ -8,6 +8,11 @@ const LABELS: Record<string, string> = {
   doug: 'Doug',
   kim: 'Kim',
   pablo: 'Pablo',
+  'plot:0': 'Grow Plot 1',
+  'plot:1': 'Grow Plot 2',
+  'plot:2': 'Grow Plot 3',
+  drying: 'Drying Rack',
+  chem: 'Chemistry Station',
 };
 
 export function InteractionPrompt() {

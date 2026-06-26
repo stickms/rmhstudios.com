@@ -12,6 +12,11 @@ export const BUYER_POSITIONS = {
   kim: [0, 0, 10] as [number, number, number],
   pablo: [7, 0, 8] as [number, number, number],
 };
+export const PLOT_POSITIONS: [number, number, number][] = [
+  [-4, 0, -8], [0, 0, -8], [4, 0, -8],
+];
+export const DRYING_POSITION: [number, number, number] = [-9, 0, 2];
+export const CHEM_POSITION: [number, number, number] = [12, 0, -3];
 
 function Wall({ pos, size }: { pos: [number, number, number]; size: [number, number, number] }) {
   return (
@@ -68,6 +73,26 @@ export function TownScene() {
       <mesh position={[STATION_POSITIONS.packaging[0], 0.5, STATION_POSITIONS.packaging[2]]} castShadow>
         <boxGeometry args={[1.2, 1, 1.2]} />
         <meshStandardMaterial color="#f59e0b" />
+      </mesh>
+
+      {/* grow plot markers */}
+      {PLOT_POSITIONS.map((pos, i) => (
+        <mesh key={i} position={[pos[0], 0.3, pos[2]]} castShadow>
+          <boxGeometry args={[1.2, 0.6, 1.2]} />
+          <meshStandardMaterial color="#7c4a2d" />
+        </mesh>
+      ))}
+
+      {/* drying rack marker */}
+      <mesh position={[DRYING_POSITION[0], 0.5, DRYING_POSITION[2]]} castShadow>
+        <boxGeometry args={[1.8, 1, 0.2]} />
+        <meshStandardMaterial color="#9ca3af" />
+      </mesh>
+
+      {/* chemistry station marker */}
+      <mesh position={[CHEM_POSITION[0], 0.5, CHEM_POSITION[2]]} castShadow>
+        <boxGeometry args={[1.2, 1, 1.2]} />
+        <meshStandardMaterial color="#22d3ee" />
       </mesh>
 
       {/* boundary walls */}

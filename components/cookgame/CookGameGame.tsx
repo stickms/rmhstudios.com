@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
 import { useCookgameStore } from '@/lib/cookgame/store';
-import { TownScene, STATION_POSITIONS, BUYER_POSITIONS } from './world/TownScene';
+import { TownScene, STATION_POSITIONS, BUYER_POSITIONS, PLOT_POSITIONS, DRYING_POSITION, CHEM_POSITION } from './world/TownScene';
 import { PlayerController } from './world/PlayerController';
 import { Interactable } from './world/Interactable';
 import { InteractionPrompt } from './world/InteractionPrompt';
@@ -61,6 +61,13 @@ export function CookGameGame() {
           <Interactable id="supplier" position={STATION_POSITIONS.supplier} />
           <Interactable id="mixing" position={STATION_POSITIONS.mixing} />
           <Interactable id="packaging" position={STATION_POSITIONS.packaging} />
+
+          {/* grow plot interactables */}
+          {PLOT_POSITIONS.map((pos, i) => (
+            <Interactable key={`plot:${i}`} id={`plot:${i}`} position={pos} />
+          ))}
+          <Interactable id="drying" position={DRYING_POSITION} />
+          <Interactable id="chem" position={CHEM_POSITION} />
 
           {/* buyer NPCs */}
           <BuyerNPC buyerId="doug" position={BUYER_POSITIONS.doug} />
