@@ -25,7 +25,8 @@
  */
 
 import { build, transform } from 'esbuild';
-import { mkdir, rm, readFile, writeFile } from 'node:fs/promises';
+import { cp, mkdir, readdir, rm, readFile, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -175,7 +176,71 @@ async function mapPool<T>(items: T[], limit: number, worker: (item: T) => Promis
   await Promise.all(runners);
 }
 
+/**
+ * Hash everything that determines the built output: this script's own source
+ * (so logic changes rebuild), the hosted-package registry, and the resolved
+ * version of every hosted package (so a dependency bump rebuilds). When this is
+ * unchanged the bundles are byte-identical, so the whole esbuild pass can be
+ * skipped and the previous output restored from cache.
+ */
+async function computeInputsHash(): Promise<string> {
+  const h = createHash('sha256');
+  h.update(await readFile(fileURLToPath(import.meta.url)));
+  try {
+    h.update(await readFile(path.join(ROOT, 'lib', 'rmhvibe', 'vibe-packages.ts')));
+  } catch {
+    /* registry path moved — fall through; the version list below still varies the hash */
+  }
+  const names = hostedPackages()
+    .map((p) => p.name)
+    .sort();
+  for (const name of names) h.update(`${name}@${await versionOf(name)}\n`);
+  return h.digest('hex');
+}
+
+/**
+ * Restore previously-built bundles from the cache dir when the inputs hash
+ * matches and the cached output is non-empty. Returns true on a cache hit.
+ */
+async function restoreFromCache(cacheDir: string, hash: string): Promise<boolean> {
+  try {
+    const manifest = (await readFile(path.join(cacheDir, 'manifest.txt'), 'utf8')).trim();
+    if (manifest !== hash) return false;
+    const cachedOut = path.join(cacheDir, 'out');
+    if ((await readdir(cachedOut)).length === 0) return false;
+    await rm(OUT_DIR, { recursive: true, force: true });
+    await mkdir(path.dirname(OUT_DIR), { recursive: true });
+    await cp(cachedOut, OUT_DIR, { recursive: true });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Persist the freshly built bundles + their inputs hash for the next build. */
+async function saveToCache(cacheDir: string, hash: string): Promise<void> {
+  try {
+    const cachedOut = path.join(cacheDir, 'out');
+    await rm(cachedOut, { recursive: true, force: true });
+    await mkdir(cacheDir, { recursive: true });
+    await cp(OUT_DIR, cachedOut, { recursive: true });
+    await writeFile(path.join(cacheDir, 'manifest.txt'), hash, 'utf8');
+  } catch (err) {
+    console.warn(`  (vibe-package cache save skipped: ${(err as Error).message})`);
+  }
+}
+
 async function main() {
+  // Content-addressed skip: when nothing that affects the bundles has changed,
+  // restore them from the cache mount instead of re-running esbuild on every
+  // deploy. Gated on VIBE_PKG_CACHE_DIR so local `pnpm build` always rebuilds.
+  const cacheDir = process.env.VIBE_PKG_CACHE_DIR;
+  const inputsHash = cacheDir ? await computeInputsHash() : '';
+  if (cacheDir && (await restoreFromCache(cacheDir, inputsHash))) {
+    console.log('Vibe packages unchanged — restored from cache (skipped esbuild).');
+    return;
+  }
+
   await rm(OUT_DIR, { recursive: true, force: true });
   await mkdir(OUT_DIR, { recursive: true });
 
@@ -205,7 +270,13 @@ async function main() {
   });
 
   console.log(`\nDone: ${ok} built${failed ? `, ${failed} failed` : ''}.`);
-  if (failed) process.exitCode = 1;
+  if (failed) {
+    process.exitCode = 1;
+    return;
+  }
+  // Only cache a fully successful build, so a partial failure never poisons the
+  // skip path on the next deploy.
+  if (cacheDir) await saveToCache(cacheDir, inputsHash);
 }
 
 main().catch((err) => {

@@ -48,7 +48,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 # Skip postinstall (prisma generate) — prisma schema isn't here yet.
 # It runs in the prisma-generate stage below where the schema is available.
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store,sharing=locked \
-    pnpm install --frozen-lockfile --ignore-scripts
+    pnpm install --frozen-lockfile --ignore-scripts --prefer-offline
 
 # ── Stage 1b: Generate Prisma client ──────────────────────────────────────
 # Separated from deps so that schema changes only re-run `prisma generate`
@@ -68,7 +68,7 @@ RUN pnpm exec prisma generate
 FROM prisma-generate AS prod-deps
 
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store,sharing=locked \
-    pnpm install --frozen-lockfile --prod --ignore-scripts
+    pnpm install --frozen-lockfile --prod --ignore-scripts --prefer-offline
 
 # ── Stage 2: Server bundles (env-agnostic, decoupled from app source) ─────
 # esbuild runs in <3s and produces CJS bundles for socket/rmhbox/rmhtube.
@@ -164,8 +164,9 @@ ENV DATABASE_URL=${DATABASE_URL} \
 # that may arise from the cache, so it's safe to keep .vinxi across builds.
 # NODE_OPTIONS prevents OOM on large bundles (three.js, monaco, tiptap, etc.)
 RUN --mount=type=cache,id=vinxi-cache-${COMPOSE_PROJECT_NAME},target=/app/.vinxi,sharing=locked \
+    --mount=type=cache,id=vibe-pkgs-${COMPOSE_PROJECT_NAME},target=/app/.cache/vibe-packages,sharing=locked \
     rm -rf .output \
-    && pnpm run build-vibe-packages \
+    && VIBE_PKG_CACHE_DIR=/app/.cache/vibe-packages pnpm run build-vibe-packages \
     && NODE_OPTIONS='--max-old-space-size=8192' pnpm exec vite build \
     && node scripts/fix-ssr-css-hash.mjs \
     && cp -a .output /app/build-output
