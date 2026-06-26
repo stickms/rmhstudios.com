@@ -57,7 +57,14 @@ export default function PostFx() {
     const scene = useThree((s) => s.scene);
     const camera = useThree((s) => s.camera);
 
-    const enabled = flags.bloom || flags.gtao;
+    // The TSL post pipeline (PostProcessing/bloom/GTAO) is a WebGPU feature.
+    // WebGPURenderer falls back to a WebGL2 backend when WebGPU is unavailable
+    // (e.g. Firefox without WebGPU, or hardware acceleration disabled), and the
+    // TSL→GLSL post path there can stall the render loop. Skip post on that
+    // backend and let R3F render the scene directly — still lit and ACES-toned,
+    // just without bloom/AO bleed.
+    const isWebGPU = !!(gl as unknown as { backend?: { isWebGPUBackend?: boolean } }).backend?.isWebGPUBackend;
+    const enabled = (flags.bloom || flags.gtao) && isWebGPU;
     const BLOOM_STRENGTH = 0.9;   // emissive bleed
     const EXPOSURE = 1.05;        // overall brightness post-ACES
     const AO_STRENGTH = 0.6;      // max scene darkening from GTAO (never to black)
