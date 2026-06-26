@@ -1,5 +1,6 @@
 "use client";
 import { RigidBody } from '@react-three/rapier';
+import { Building } from '../models/Building';
 
 // Anchor positions consumed by Interactables (Tasks 8/10) and station meshes.
 export const STATION_POSITIONS = {
@@ -29,16 +30,6 @@ function Wall({ pos, size }: { pos: [number, number, number]; size: [number, num
   );
 }
 
-function Building({ pos, size, color }: { pos: [number, number, number]; size: [number, number, number]; color: string }) {
-  return (
-    <RigidBody type="fixed" colliders="cuboid" position={pos}>
-      <mesh castShadow receiveShadow>
-        <boxGeometry args={size} />
-        <meshStandardMaterial color={color} />
-      </mesh>
-    </RigidBody>
-  );
-}
 
 export function TownScene() {
   return (
@@ -51,9 +42,20 @@ export function TownScene() {
         </mesh>
       </RigidBody>
 
-      {/* lab building (player property) + supplier shop */}
-      <Building pos={[8, 1.5, -6]} size={[6, 3, 4]} color="#4b5563" />
-      <Building pos={[-8, 1.5, -6]} size={[5, 3, 4]} color="#6b7280" />
+      {/* lab building (player property) — house variant, collider [6,3,4] centred at y=1.5 */}
+      <RigidBody type="fixed" colliders="cuboid" position={[8, 1.5, -6]}>
+        {/* shift Building down by h/2 so its base (y=0) aligns with collider bottom (world y=0) */}
+        <group position={[0, -1.5, 0]}>
+          <Building variant="house" size={[6, 3, 4]} />
+        </group>
+      </RigidBody>
+
+      {/* supplier shop — shop variant, collider [5,3,4] centred at y=1.5 */}
+      <RigidBody type="fixed" colliders="cuboid" position={[-8, 1.5, -6]}>
+        <group position={[0, -1.5, 0]}>
+          <Building variant="shop" size={[5, 3, 4]} />
+        </group>
+      </RigidBody>
 
       {/* decorative street strip */}
       <mesh position={[0, 0.01, 4]} rotation={[-Math.PI / 2, 0, 0]}>
