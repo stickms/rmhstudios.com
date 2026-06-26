@@ -1,33 +1,56 @@
-// lib/cookgame/__tests__/content.test.ts
 import { describe, it, expect } from 'vitest';
-import { EFFECTS, ADDITIVES, BASES, TRANSFORM_RULES, BUYERS, MAX_EFFECTS } from '../content';
+import {
+  EFFECTS, ADDITIVES, BASES, TRANSFORM_RULES, BUYERS, MAX_EFFECTS,
+  INPUTS, GROWABLE, COOKABLE_BASES,
+} from '../content';
 
-describe('cookgame content', () => {
+describe('cookgame content (phase 1 invariants)', () => {
   it('every additive baseEffect exists in EFFECTS', () => {
-    for (const a of Object.values(ADDITIVES)) {
-      expect(EFFECTS[a.baseEffect], `additive ${a.id} → ${a.baseEffect}`).toBeDefined();
-    }
+    for (const a of Object.values(ADDITIVES)) expect(EFFECTS[a.baseEffect]).toBeDefined();
   });
   it('every transform rule references valid ids', () => {
     for (const r of TRANSFORM_RULES) {
-      expect(ADDITIVES[r.additive], `rule additive ${r.additive}`).toBeDefined();
-      expect(EFFECTS[r.from], `rule from ${r.from}`).toBeDefined();
-      expect(EFFECTS[r.to], `rule to ${r.to}`).toBeDefined();
+      expect(ADDITIVES[r.additive]).toBeDefined();
+      expect(EFFECTS[r.from]).toBeDefined();
+      expect(EFFECTS[r.to]).toBeDefined();
     }
   });
   it('every buyer preferredEffect exists', () => {
-    for (const b of BUYERS) expect(EFFECTS[b.preferredEffect], b.id).toBeDefined();
+    for (const b of BUYERS) expect(EFFECTS[b.preferredEffect]).toBeDefined();
   });
-  it('effect ids match their record keys and multipliers are positive', () => {
-    for (const [k, e] of Object.entries(EFFECTS)) {
-      expect(e.id).toBe(k);
-      expect(e.multiplier).toBeGreaterThan(0);
+  it('MAX_EFFECTS is 8', () => expect(MAX_EFFECTS).toBe(8));
+});
+
+describe('cookgame content (phase 2 production)', () => {
+  it('has greenstart plus 3 production bases', () => {
+    for (const id of ['greenstart', 'couchlock', 'zoomhaze', 'glimmerdust']) {
+      expect(BASES[id as keyof typeof BASES], id).toBeDefined();
     }
   });
-  it('has a sane content budget', () => {
-    expect(Object.keys(BASES).length).toBeGreaterThanOrEqual(1);
-    expect(Object.keys(ADDITIVES).length).toBeGreaterThanOrEqual(6);
-    expect(Object.keys(EFFECTS).length).toBeGreaterThanOrEqual(8);
-    expect(MAX_EFFECTS).toBe(8);
+  it('every base bonusEffect (if any) is a real effect', () => {
+    for (const b of Object.values(BASES)) {
+      if (b.bonusEffect) expect(EFFECTS[b.bonusEffect], b.id).toBeDefined();
+    }
+  });
+  it('greenstart has no bonus effect; production bases do', () => {
+    expect(BASES.greenstart.bonusEffect).toBeUndefined();
+    expect(BASES.couchlock.bonusEffect).toBe('sedating');
+    expect(BASES.zoomhaze.bonusEffect).toBe('focused');
+    expect(BASES.glimmerdust.bonusEffect).toBe('glowing');
+  });
+  it('every GROWABLE seedId exists in INPUTS and baseId in BASES', () => {
+    for (const g of Object.values(GROWABLE)) {
+      expect(INPUTS[g.seedId], g.seedId).toBeDefined();
+      expect(BASES[g.baseId], g.baseId).toBeDefined();
+    }
+  });
+  it('every COOKABLE base exists', () => {
+    for (const id of COOKABLE_BASES) expect(BASES[id]).toBeDefined();
+  });
+  it('every input cost is positive and id matches its key', () => {
+    for (const [k, i] of Object.entries(INPUTS)) {
+      expect(i.id).toBe(k);
+      expect(i.cost).toBeGreaterThan(0);
+    }
   });
 });

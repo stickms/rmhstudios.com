@@ -1,4 +1,4 @@
-import type { Effect, Additive, Base, TransformRule, Buyer, EffectId, AdditiveId, BaseId } from './types';
+import type { Effect, Additive, Base, Input, TransformRule, Buyer, EffectId, AdditiveId, BaseId, InputId } from './types';
 
 export const MAX_EFFECTS = 8 as const;
 
@@ -27,8 +27,26 @@ export const ADDITIVES: Record<AdditiveId, Additive> = {
 };
 
 export const BASES: Record<BaseId, Base> = {
-  greenstart: { id: 'greenstart', name: 'Green Start', baseValue: 35 },
+  greenstart:  { id: 'greenstart',  name: 'Green Start',  baseValue: 35 },
+  couchlock:   { id: 'couchlock',   name: 'Couch-Lock',   baseValue: 55, bonusEffect: 'sedating' },
+  zoomhaze:    { id: 'zoomhaze',    name: 'Zoom Haze',    baseValue: 60, bonusEffect: 'focused' },
+  glimmerdust: { id: 'glimmerdust', name: 'Glimmer Dust', baseValue: 95, bonusEffect: 'glowing' },
 };
+
+export const INPUTS: Record<InputId, Input> = {
+  seed_couchlock: { id: 'seed_couchlock', name: 'Couch-Lock Seeds', cost: 6 },
+  seed_zoomhaze:  { id: 'seed_zoomhaze',  name: 'Zoom Haze Seeds',  cost: 6 },
+  nutrient:       { id: 'nutrient',       name: 'Nutrient Mix',     cost: 3 },
+  reagent:        { id: 'reagent',        name: 'Reagent Pack',     cost: 15 },
+};
+
+// growable strains keyed by their base id
+export const GROWABLE: Record<string, { baseId: BaseId; seedId: InputId }> = {
+  couchlock: { baseId: 'couchlock', seedId: 'seed_couchlock' },
+  zoomhaze:  { baseId: 'zoomhaze',  seedId: 'seed_zoomhaze' },
+};
+
+export const COOKABLE_BASES: BaseId[] = ['glimmerdust'];
 
 // Mixing `additive` into a product carrying `from` flips it to `to`.
 export const TRANSFORM_RULES: TransformRule[] = [
@@ -55,3 +73,4 @@ export const BUYERS: Buyer[] = [
 export const getEffect = (id: EffectId): Effect => EFFECTS[id];
 export const getAdditive = (id: AdditiveId): Additive => ADDITIVES[id];
 export const getBase = (id: BaseId): Base => BASES[id];
+export const getInput = (id: InputId): Input => INPUTS[id];
