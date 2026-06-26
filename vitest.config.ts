@@ -9,6 +9,7 @@ export default defineConfig({
     include: [
       'testing/**/*.test.ts',
       'lib/cookgame/__tests__/**/*.test.ts',
+      'components/cookgame/models/__tests__/**/*.test.ts',
       'lib/dream-rift/__tests__/**/*.test.ts',
       'lib/rmhark-ai/__tests__/**/*.test.ts',
       'lib/personas/__tests__/**/*.test.ts',

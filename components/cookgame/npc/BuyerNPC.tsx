@@ -1,6 +1,7 @@
 "use client";
-import { BUYERS, EFFECTS } from '@/lib/cookgame/content';
+import { BUYERS } from '@/lib/cookgame/content';
 import { Interactable } from '@/components/cookgame/world/Interactable';
+import Character from '@/components/cookgame/models/Character';
 import type { BuyerId } from '@/lib/cookgame/types';
 
 export function BuyerNPC({
@@ -13,21 +14,12 @@ export function BuyerNPC({
   const buyer = BUYERS.find((b) => b.id === buyerId);
   if (!buyer) return null;
 
-  const color = EFFECTS[buyer.preferredEffect].color;
-  const [x, y, z] = position;
-
   return (
     <group>
-      {/* capsule body */}
-      <mesh position={[x, y + 1, z]} castShadow>
-        <capsuleGeometry args={[0.4, 1, 8, 16]} />
-        <meshStandardMaterial color={color} />
-      </mesh>
-      {/* sphere head */}
-      <mesh position={[x, y + 2, z]} castShadow>
-        <sphereGeometry args={[0.3, 12, 12]} />
-        <meshStandardMaterial color={color} />
-      </mesh>
+      {/* Character feet at local y=0; group placed at world position so feet rest on the ground. */}
+      <group position={position}>
+        <Character lookId={buyerId} moving={false} facing={Math.PI} />
+      </group>
       {/* proximity marker reads world-space player position vs this absolute position */}
       <Interactable id={buyerId} position={position} />
     </group>

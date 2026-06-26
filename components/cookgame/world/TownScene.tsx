@@ -1,5 +1,15 @@
 "use client";
-import { RigidBody } from '@react-three/rapier';
+import { RigidBody, CuboidCollider } from '@react-three/rapier';
+import { Building } from '../models/Building';
+import { PALETTE, matteMaterialProps } from '../models/palette';
+import { SupplierStallModel } from '../models/stations/SupplierStallModel';
+import { MixingBenchModel } from '../models/stations/MixingBenchModel';
+import { PackagingModel } from '../models/stations/PackagingModel';
+import { GrowPlotModel } from '../models/stations/GrowPlotModel';
+import { DryingRackModel } from '../models/stations/DryingRackModel';
+import { ChemStationModel } from '../models/stations/ChemStationModel';
+import { StreetProps } from '../models/props/StreetProps';
+import { useCookgameStore } from '@/lib/cookgame/store';
 
 // Anchor positions consumed by Interactables (Tasks 8/10) and station meshes.
 export const STATION_POSITIONS = {
@@ -18,88 +28,99 @@ export const PLOT_POSITIONS: [number, number, number][] = [
 export const DRYING_POSITION: [number, number, number] = [-9, 0, 2];
 export const CHEM_POSITION: [number, number, number] = [12, 0, -3];
 
+// Stage-aware plot wrapper — the single allowed world-layer store read (selector, no writes).
+function PlotVisual({ index, position }: { index: number; position: [number, number, number] }) {
+  const stage = useCookgameStore((s) => s.inventory.plots[index]?.stage ?? 'empty');
+  return <GrowPlotModel stage={stage} position={position} />;
+}
+
 function Wall({ pos, size }: { pos: [number, number, number]; size: [number, number, number] }) {
   return (
     <RigidBody type="fixed" colliders="cuboid" position={pos}>
       <mesh castShadow receiveShadow>
         <boxGeometry args={size} />
-        <meshStandardMaterial color="#374151" />
+        <meshStandardMaterial {...matteMaterialProps(PALETTE.wall)} />
       </mesh>
     </RigidBody>
   );
 }
 
-function Building({ pos, size, color }: { pos: [number, number, number]; size: [number, number, number]; color: string }) {
-  return (
-    <RigidBody type="fixed" colliders="cuboid" position={pos}>
-      <mesh castShadow receiveShadow>
-        <boxGeometry args={size} />
-        <meshStandardMaterial color={color} />
-      </mesh>
-    </RigidBody>
-  );
-}
 
 export function TownScene() {
   return (
     <group>
-      {/* ground */}
+      {/* ground — grass, keep RigidBody collider */}
       <RigidBody type="fixed" colliders="cuboid">
         <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow position={[0, 0, 0]}>
           <planeGeometry args={[40, 40]} />
-          <meshStandardMaterial color="#1f2937" />
+          <meshStandardMaterial {...matteMaterialProps(PALETTE.grass)} />
         </mesh>
       </RigidBody>
 
-      {/* lab building (player property) + supplier shop */}
-      <Building pos={[8, 1.5, -6]} size={[6, 3, 4]} color="#4b5563" />
-      <Building pos={[-8, 1.5, -6]} size={[5, 3, 4]} color="#6b7280" />
+      {/* lab building (player property) — house variant, collider [6,3,4] centred at y=1.5 */}
+      <RigidBody type="fixed" colliders={false} position={[8, 1.5, -6]}>
+        <CuboidCollider args={[3, 1.5, 2]} />
+        {/* shift Building down by h/2 so its base (y=0) aligns with collider bottom (world y=0) */}
+        <group position={[0, -1.5, 0]}>
+          <Building variant="house" size={[6, 3, 4]} />
+        </group>
+      </RigidBody>
 
-      {/* decorative street strip */}
-      <mesh position={[0, 0.01, 4]} rotation={[-Math.PI / 2, 0, 0]}>
+      {/* supplier shop — shop variant, collider [5,3,4] centred at y=1.5 */}
+      <RigidBody type="fixed" colliders={false} position={[-8, 1.5, -6]}>
+        <CuboidCollider args={[2.5, 1.5, 2]} />
+        <group position={[0, -1.5, 0]}>
+          <Building variant="shop" size={[5, 3, 4]} />
+        </group>
+      </RigidBody>
+
+      {/* asphalt road — visual only, no collider */}
+      <mesh position={[0, 0.01, 4]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[30, 6]} />
-        <meshStandardMaterial color="#111827" />
+        <meshStandardMaterial {...matteMaterialProps(PALETTE.asphalt)} />
       </mesh>
-
-      {/* station markers */}
-      <mesh position={[STATION_POSITIONS.supplier[0], 0.5, STATION_POSITIONS.supplier[2]]} castShadow>
-        <boxGeometry args={[1.2, 1, 1.2]} />
-        <meshStandardMaterial color="#22c55e" />
+      {/* sidewalk north edge */}
+      <mesh position={[0, 0.015, 0.5]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[32, 1]} />
+        <meshStandardMaterial {...matteMaterialProps(PALETTE.sidewalk)} />
       </mesh>
-      <mesh position={[STATION_POSITIONS.mixing[0], 0.5, STATION_POSITIONS.mixing[2]]} castShadow>
-        <boxGeometry args={[1.2, 1, 1.2]} />
-        <meshStandardMaterial color="#e879f9" />
+      {/* sidewalk south edge */}
+      <mesh position={[0, 0.015, 7.5]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[32, 1]} />
+        <meshStandardMaterial {...matteMaterialProps(PALETTE.sidewalk)} />
       </mesh>
-      <mesh position={[STATION_POSITIONS.packaging[0], 0.5, STATION_POSITIONS.packaging[2]]} castShadow>
-        <boxGeometry args={[1.2, 1, 1.2]} />
-        <meshStandardMaterial color="#f59e0b" />
-      </mesh>
-
-      {/* grow plot markers */}
-      {PLOT_POSITIONS.map((pos, i) => (
-        <mesh key={i} position={[pos[0], 0.3, pos[2]]} castShadow>
-          <boxGeometry args={[1.2, 0.6, 1.2]} />
-          <meshStandardMaterial color="#7c4a2d" />
+      {/* road centre-line dashes */}
+      {([-12, -9, -6, -3, 0, 3, 6, 9, 12] as number[]).map((x) => (
+        <mesh key={x} position={[x, 0.02, 4]}>
+          <boxGeometry args={[1.8, 0.01, 0.12]} />
+          <meshStandardMaterial {...matteMaterialProps(PALETTE.roadMark)} />
         </mesh>
       ))}
 
-      {/* drying rack marker */}
-      <mesh position={[DRYING_POSITION[0], 0.5, DRYING_POSITION[2]]} castShadow>
-        <boxGeometry args={[1.8, 1, 0.2]} />
-        <meshStandardMaterial color="#9ca3af" />
-      </mesh>
+      {/* station models */}
+      <SupplierStallModel position={STATION_POSITIONS.supplier} />
+      <MixingBenchModel position={STATION_POSITIONS.mixing} />
+      <PackagingModel position={STATION_POSITIONS.packaging} />
 
-      {/* chemistry station marker */}
-      <mesh position={[CHEM_POSITION[0], 0.5, CHEM_POSITION[2]]} castShadow>
-        <boxGeometry args={[1.2, 1, 1.2]} />
-        <meshStandardMaterial color="#22d3ee" />
-      </mesh>
+      {/* grow plots — stage-aware via PlotVisual store selector */}
+      {PLOT_POSITIONS.map((p, i) => (
+        <PlotVisual key={i} index={i} position={p} />
+      ))}
+
+      {/* drying rack */}
+      <DryingRackModel position={DRYING_POSITION} />
+
+      {/* chemistry station */}
+      <ChemStationModel position={CHEM_POSITION} />
 
       {/* boundary walls */}
       <Wall pos={[0, 2, -20]} size={[40, 4, 0.5]} />
       <Wall pos={[0, 2, 20]} size={[40, 4, 0.5]} />
       <Wall pos={[-20, 2, 0]} size={[0.5, 4, 40]} />
       <Wall pos={[20, 2, 0]} size={[0.5, 4, 40]} />
+
+      {/* instanced street set dressing */}
+      <StreetProps />
     </group>
   );
 }
