@@ -263,10 +263,16 @@
 .store-rail__track {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: minmax(240px, 1fr);
+  /* One card plus a deliberate peek of the next (signals "scroll for more"),
+     capped so it never gets huge. `1fr` here produced arbitrary fractional
+     slices at the edge that read as a clipped card. */
+  grid-auto-columns: min(80%, 16.5rem);
   gap: 14px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
+  /* Snapped cards align to the row's start edge, so a card is never left
+     half-cut as the resting state. */
+  scroll-padding-inline: 1px;
   scrollbar-width: none;
   padding-bottom: 4px;
   -webkit-overflow-scrolling: touch;
@@ -383,6 +389,10 @@
   grid-template-columns: repeat(2, 1fr);
   grid-auto-flow: dense;
   gap: clamp(12px, 1.8vw, 20px);
+  /* Cards keep their natural height (portrait narrow vs 16:9 wide). Without
+     this the grid stretches shorter cards to the row height, leaving an
+     awkward empty band under their caption. */
+  align-items: start;
 }
 
 @media (min-width: 640px) {
