@@ -77,8 +77,6 @@ export async function generateBuildCover(opts: {
   if (!isBuildCoverConfigured()) return null;
 
   const publicUrl = buildCoverUrl(opts.build.id, ratio);
-  if (!publicUrl) return null; // no CDN configured
-
   const key = buildCoverKey(opts.build.id, ratio);
 
   try {

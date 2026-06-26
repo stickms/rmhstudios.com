@@ -430,6 +430,7 @@ import { Route as ApiDeveloperKeysIdRouteImport } from './routes/api/developer/k
 import { Route as ApiCommunitiesSlugJoinRouteImport } from './routes/api/communities/$slug/join'
 import { Route as ApiCommunitiesSlugFeedRouteImport } from './routes/api/communities/$slug/feed'
 import { Route as ApiCommentsCommentIdTranslateRouteImport } from './routes/api/comments/$commentId/translate'
+import { Route as ApiBuildsCoverFileRouteImport } from './routes/api/builds/cover/$file'
 import { Route as ApiAnnouncementsIdVoteRouteImport } from './routes/api/announcements/$id/vote'
 import { Route as ApiAdminRideshareRidesRouteImport } from './routes/api/admin/rideshare/rides'
 import { Route as ApiAdminRideshareApplicationsRouteImport } from './routes/api/admin/rideshare/applications'
@@ -2623,6 +2624,11 @@ const ApiCommentsCommentIdTranslateRoute =
     path: '/api/comments/$commentId/translate',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiBuildsCoverFileRoute = ApiBuildsCoverFileRouteImport.update({
+  id: '/api/builds/cover/$file',
+  path: '/api/builds/cover/$file',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAnnouncementsIdVoteRoute = ApiAnnouncementsIdVoteRouteImport.update({
   id: '/$id/vote',
   path: '/$id/vote',
@@ -3210,6 +3216,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/rideshare/applications': typeof ApiAdminRideshareApplicationsRoute
   '/api/admin/rideshare/rides': typeof ApiAdminRideshareRidesRoute
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
+  '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
   '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
   '/api/communities/$slug/feed': typeof ApiCommunitiesSlugFeedRoute
   '/api/communities/$slug/join': typeof ApiCommunitiesSlugJoinRoute
@@ -3652,6 +3659,7 @@ export interface FileRoutesByTo {
   '/api/admin/rideshare/applications': typeof ApiAdminRideshareApplicationsRoute
   '/api/admin/rideshare/rides': typeof ApiAdminRideshareRidesRoute
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
+  '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
   '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
   '/api/communities/$slug/feed': typeof ApiCommunitiesSlugFeedRoute
   '/api/communities/$slug/join': typeof ApiCommunitiesSlugJoinRoute
@@ -4120,6 +4128,7 @@ export interface FileRoutesById {
   '/api/admin/rideshare/applications': typeof ApiAdminRideshareApplicationsRoute
   '/api/admin/rideshare/rides': typeof ApiAdminRideshareRidesRoute
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
+  '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
   '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
   '/api/communities/$slug/feed': typeof ApiCommunitiesSlugFeedRoute
   '/api/communities/$slug/join': typeof ApiCommunitiesSlugJoinRoute
@@ -4588,6 +4597,7 @@ export interface FileRouteTypes {
     | '/api/admin/rideshare/applications'
     | '/api/admin/rideshare/rides'
     | '/api/announcements/$id/vote'
+    | '/api/builds/cover/$file'
     | '/api/comments/$commentId/translate'
     | '/api/communities/$slug/feed'
     | '/api/communities/$slug/join'
@@ -5030,6 +5040,7 @@ export interface FileRouteTypes {
     | '/api/admin/rideshare/applications'
     | '/api/admin/rideshare/rides'
     | '/api/announcements/$id/vote'
+    | '/api/builds/cover/$file'
     | '/api/comments/$commentId/translate'
     | '/api/communities/$slug/feed'
     | '/api/communities/$slug/join'
@@ -5497,6 +5508,7 @@ export interface FileRouteTypes {
     | '/api/admin/rideshare/applications'
     | '/api/admin/rideshare/rides'
     | '/api/announcements/$id/vote'
+    | '/api/builds/cover/$file'
     | '/api/comments/$commentId/translate'
     | '/api/communities/$slug/feed'
     | '/api/communities/$slug/join'
@@ -5810,6 +5822,7 @@ export interface RootRouteChildren {
   ApiAdminLibraryStorageHealthRoute: typeof ApiAdminLibraryStorageHealthRoute
   ApiAdminRideshareApplicationsRoute: typeof ApiAdminRideshareApplicationsRoute
   ApiAdminRideshareRidesRoute: typeof ApiAdminRideshareRidesRoute
+  ApiBuildsCoverFileRoute: typeof ApiBuildsCoverFileRoute
   ApiCommentsCommentIdTranslateRoute: typeof ApiCommentsCommentIdTranslateRoute
   ApiCommunitiesSlugFeedRoute: typeof ApiCommunitiesSlugFeedRoute
   ApiCommunitiesSlugJoinRoute: typeof ApiCommunitiesSlugJoinRoute
@@ -8825,6 +8838,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCommentsCommentIdTranslateRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/builds/cover/$file': {
+      id: '/api/builds/cover/$file'
+      path: '/api/builds/cover/$file'
+      fullPath: '/api/builds/cover/$file'
+      preLoaderRoute: typeof ApiBuildsCoverFileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/announcements/$id/vote': {
       id: '/api/announcements/$id/vote'
       path: '/$id/vote'
@@ -10241,6 +10261,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminLibraryStorageHealthRoute: ApiAdminLibraryStorageHealthRoute,
   ApiAdminRideshareApplicationsRoute: ApiAdminRideshareApplicationsRoute,
   ApiAdminRideshareRidesRoute: ApiAdminRideshareRidesRoute,
+  ApiBuildsCoverFileRoute: ApiBuildsCoverFileRoute,
   ApiCommentsCommentIdTranslateRoute: ApiCommentsCommentIdTranslateRoute,
   ApiCommunitiesSlugFeedRoute: ApiCommunitiesSlugFeedRoute,
   ApiCommunitiesSlugJoinRoute: ApiCommunitiesSlugJoinRoute,

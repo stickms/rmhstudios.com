@@ -97,9 +97,15 @@ export function buildCoverKey(id: string, ratio: string): string {
   return `${BUILD_COVER_PREFIX}${id}-${ratio}.webp`;
 }
 
-/** Public CDN URL for a build cover, or null when no CDN origin is configured. */
-export function buildCoverUrl(id: string, ratio: string): string | null {
-  return CDN_BASE ? `${CDN_BASE}/${buildCoverKey(id, ratio)}` : null;
+/**
+ * Public URL for a build cover. Served straight from the CDN in prod; falls
+ * back to the Node proxy route (which streams the object out of storage) when
+ * no CDN origin is configured — so covers work on plain S3/R2 too.
+ */
+export function buildCoverUrl(id: string, ratio: string): string {
+  return CDN_BASE
+    ? `${CDN_BASE}/${buildCoverKey(id, ratio)}`
+    : `/api/builds/cover/${id}-${ratio}.webp`;
 }
 
 /**

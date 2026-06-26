@@ -25,6 +25,7 @@ import path from 'node:path';
 import { listCuratedBuilds } from '@/lib/builds/curated';
 import { generateBuildCover, isBuildCoverConfigured } from '@/lib/builds/cover.server';
 import { BUILD_COVER_RATIOS, type BuildCoverRatio } from '@/lib/builds/cover-manifest';
+import { s3Configured } from '@/lib/storage/s3.server';
 import { CDN_BASE } from '@/lib/storage/asset';
 
 const MANIFEST_PATH = path.resolve(fileURLToPath(import.meta.url), '../../data/build-covers.json');
@@ -56,10 +57,13 @@ async function main() {
     process.exitCode = 1;
     return;
   }
-  if (!CDN_BASE) {
-    console.error('VITE_CDN_BASE_URL is not set — there is nowhere to serve covers from. Aborting.');
+  if (!s3Configured()) {
+    console.error('Object storage (S3_*) is not configured — nowhere to store covers. Aborting.');
     process.exitCode = 1;
     return;
+  }
+  if (!CDN_BASE) {
+    console.warn('VITE_CDN_BASE_URL is not set — covers will be served via the /api/builds/cover proxy.');
   }
 
   const { force, ratios, ids } = parseArgs();
