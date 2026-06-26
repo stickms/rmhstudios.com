@@ -149,8 +149,14 @@ function runFight(world: WorldState, inputs: Map<number, InputCommand>): void {
 
         integrateMovement(f, cmd);
         setBlocking(f, cmd.block);
-        if (cmd.punch && (f.state === 'idle' || f.state === 'walking' || f.state === 'blocking')) {
-            startPunch(f, cmd.punch);
+        if (cmd.punch) {
+            if (f.state === 'idle' || f.state === 'walking' || f.state === 'blocking') {
+                startPunch(f, cmd.punch);
+            } else if (f.state === 'punching') {
+                // Locked into the current punch — buffer this one (latest wins);
+                // updateFighter fires it on the frame the window ends.
+                f.bufferedPunch = cmd.punch;
+            }
         }
     }
 

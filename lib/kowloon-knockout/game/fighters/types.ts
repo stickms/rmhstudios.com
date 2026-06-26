@@ -70,6 +70,9 @@ export interface Fighter {
   className: FighterClass;
   currentPunch: PunchDef | null;
   punchFrame: number;
+  /** A punch pressed during the current punch's commit window, fired on the
+   *  frame the fighter returns to idle (one-slot input buffer). */
+  bufferedPunch: PunchType | null;
   hitCooldown: number;
   blockHeld: boolean;
   comboHistory: { type: PunchType; time: number }[];

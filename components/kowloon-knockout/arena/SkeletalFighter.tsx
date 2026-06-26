@@ -158,9 +158,24 @@ export default function SkeletalFighter({ seat, framesRef, showNameplate = true 
         if (next && currentClip.current !== clip) {
             const prev = currentClip.current ? actions[currentClip.current] : undefined;
             if (!CLIPS[clip].loop) next.reset();
-            next.fadeIn(CLIPS[clip].fade).play();
-            if (prev) prev.fadeOut(CLIPS[clip].fade);
+            next.enabled = true;
+            next.play();
+            if (prev && prev !== next) {
+                next.crossFadeFrom(prev, CLIPS[clip].fade, false); // prev→next weight ramp, no gap
+            } else {
+                next.setEffectiveWeight(1);
+            }
             currentClip.current = clip;
+        }
+
+        // One-shot clips (punch/hit/ko) are positioned by sim progress so they
+        // always play fully across the action window regardless of its length.
+        const active = actions[clip];
+        if (active && !CLIPS[clip].loop) {
+            active.paused = true;                 // we set time manually
+            active.time = rf.actionProgress * active.getClip().duration;
+        } else if (active) {
+            active.paused = false;                // looping clips advance with the mixer
         }
         mixer.update(delta);
 

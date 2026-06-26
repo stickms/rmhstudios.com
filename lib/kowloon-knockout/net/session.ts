@@ -17,6 +17,7 @@ import { CLASS_DISPLAY, CLASS_STATS } from '@/lib/kowloon-knockout/game/fighters
 import { createWorld, stepWorld } from '@/lib/kowloon-knockout/game/world';
 import type { MatchConfig } from '@/lib/kowloon-knockout/game/config';
 import { LocalInputSource } from '@/lib/kowloon-knockout/game/input';
+import { actionProgress } from '@/lib/kowloon-knockout/game/combat/actionProgress';
 import { networkClient, type ServerMessage, type MatchSeat } from './client';
 import {
     encodeSnapshot, decodeSnapshot, encodeInput, decodeInput, heldChanged,
@@ -41,6 +42,7 @@ export interface RenderFighter {
     punch: PunchType | null;
     punchFrame: number;
     stateFrame: number;
+    actionProgress: number;
     hitFlash: number;
     health: number; maxHealth: number;
     stamina: number; maxStamina: number;
@@ -234,12 +236,16 @@ class SimSession implements GameSession {
     getRenderFighters(): RenderFighter[] {
         return this.world.fighters.map((f) => {
             const info = this.seats.get(f.seat)!;
+            const state = f.state;
+            const punch = f.currentPunch?.type ?? null;
+            const punchFrame = f.punchFrame;
+            const stateFrame = f.stateFrame;
             return {
                 seat: f.seat, team: f.team, className: f.className, displayName: f.displayName,
                 color: info.color, accent: info.accent, isLocal: f.seat === this.localSeat,
                 x: f.x, z: f.z, yaw: f.yaw,
-                state: f.state, punch: f.currentPunch?.type ?? null,
-                punchFrame: f.punchFrame, stateFrame: f.stateFrame, hitFlash: f.hitFlash,
+                state, punch,
+                punchFrame, stateFrame, actionProgress: actionProgress({ state, punch, punchFrame, stateFrame }), hitFlash: f.hitFlash,
                 health: f.health, maxHealth: f.stats.maxHealth,
                 stamina: f.stamina, maxStamina: f.stats.stamina, alive: f.alive,
             };
@@ -413,11 +419,15 @@ class GuestSession implements GameSession {
             if (nf.seat === this.localSeat && this.predReady && nf.alive && this.localMovable(nf.state)) {
                 x = this.predX; z = this.predZ;
             }
+            const state = nf.state;
+            const punch = nf.punch;
+            const punchFrame = nf.punchFrame;
+            const stateFrame = nf.stateFrame;
             return {
                 seat: nf.seat, team: info.team, className: info.className, displayName: info.name,
                 color: info.color, accent: info.accent, isLocal: nf.seat === this.localSeat,
-                x, z, yaw, state: nf.state, punch: nf.punch,
-                punchFrame: nf.punchFrame, stateFrame: nf.stateFrame, hitFlash: nf.hitFlash,
+                x, z, yaw, state, punch,
+                punchFrame, stateFrame, actionProgress: actionProgress({ state, punch, punchFrame, stateFrame }), hitFlash: nf.hitFlash,
                 health: nf.health, maxHealth: info.maxHealth,
                 stamina: nf.stamina, maxStamina: info.maxStamina, alive: nf.alive,
             };

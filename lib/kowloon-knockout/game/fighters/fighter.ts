@@ -8,7 +8,7 @@ import {
     MOVE_SPEED_SCALE, KNOCKBACK_SCALE,
 } from './types';
 import { CLASS_STATS, CLASS_DISPLAY } from './stats';
-import { PUNCH_DEFS, calculateDamage, calculatePunchSpeed } from '../combat/punches';
+import { PUNCH_DEFS, calculateDamage, PUNCH_COMMIT_FRAMES, punchHitFrame } from '../combat/punches';
 import { COMBO_WINDOW_MS } from '../combat/combos';
 
 /** Create a new fighter instance on the ground plane. */
@@ -43,6 +43,7 @@ export function createFighter(opts: {
         className: opts.className,
         currentPunch: null,
         punchFrame: 0,
+        bufferedPunch: null,
         hitCooldown: 0,
         blockHeld: false,
         comboHistory: [],
@@ -190,11 +191,13 @@ export function applyHit(
         target.stateFrame = 0;
         target.knockoutTimer = 600;
         target.alive = false;
+        target.bufferedPunch = null;
         return { damage, blocked: false, ko: true };
     }
 
     target.state = 'hit';
     target.stateFrame = 0;
+    target.bufferedPunch = null;
     return { damage, blocked: false, ko: false };
 }
 
@@ -214,7 +217,7 @@ export function updateFighter(fighter: Fighter): void {
     switch (fighter.state) {
         case 'punching': {
             if (!fighter.currentPunch) { fighter.state = 'idle'; break; }
-            const dur = calculatePunchSpeed(fighter.currentPunch, fighter.stats.punchSpeed, fighter.stats.moveSpeed);
+            const dur = PUNCH_COMMIT_FRAMES[fighter.currentPunch.type];
             fighter.punchFrame++;
             if (fighter.punchFrame >= dur) {
                 if (!fighter.punchConnected) fighter.comboHistory = [];
@@ -223,6 +226,12 @@ export function updateFighter(fighter: Fighter): void {
                 fighter.punchFrame = 0;
                 fighter.stateFrame = 0;
                 fighter.punchConnected = false;
+                // Fire a buffered punch immediately so it feels responsive.
+                if (fighter.bufferedPunch) {
+                    const queued = fighter.bufferedPunch;
+                    fighter.bufferedPunch = null;
+                    startPunch(fighter, queued);
+                }
             }
             break;
         }
@@ -258,9 +267,7 @@ export function setBlocking(fighter: Fighter, blocking: boolean): void {
 /** True on the single frame a punch reaches its active hit window. */
 export function isHitFrame(attacker: Fighter): boolean {
     if (attacker.state !== 'punching' || !attacker.currentPunch) return false;
-    const dur = calculatePunchSpeed(attacker.currentPunch, attacker.stats.punchSpeed, attacker.stats.moveSpeed);
-    const hitWindowStart = Math.floor(dur * 0.35);
-    return attacker.punchFrame === hitWindowStart;
+    return attacker.punchFrame === punchHitFrame(attacker.currentPunch.type);
 }
 
 /** Reset a fighter to a fresh round at the given spawn position. */
@@ -276,6 +283,7 @@ export function resetFighter(fighter: Fighter, x: number, z: number): void {
     fighter.stateFrame = 0;
     fighter.currentPunch = null;
     fighter.punchFrame = 0;
+    fighter.bufferedPunch = null;
     fighter.hitCooldown = 0;
     fighter.hitFlash = 0;
     fighter.blockHeld = false;

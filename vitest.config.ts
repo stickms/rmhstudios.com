@@ -17,6 +17,7 @@ export default defineConfig({
       'lib/__tests__/**/*.test.ts',
       'lib/kowloon-knockout/render/__tests__/**/*.test.ts',
       'lib/kowloon-knockout/render/**/__tests__/**/*.test.ts',
+      'lib/kowloon-knockout/game/**/__tests__/**/*.test.ts',
     ],
     environment: 'node',
     globals: true,
