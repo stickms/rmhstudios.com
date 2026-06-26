@@ -10,7 +10,7 @@ import { CHARACTERS, getAffinityLevel } from './characters';
 import { autoSave, loadGame, saveGame as persistSave, dbSave, dbLoad } from './persistence';
 import { getChapterEntry, getNextChapterId } from './chapters/registry';
 import { fallbackWorld, fallbackChapter } from './gen/fallback';
-import { fetchOrCreateWorld, fetchChapter } from './gen/client';
+import { fetchOrCreateWorld, fetchChapter, fetchOpeningChapter } from './gen/client';
 import { makeSeedCode, normalizeSeed } from './gen/rng';
 import { getWordPool } from './words';
 import type { GeneratedWorld, GenChapter, GenChoice } from './gen/world-types';
@@ -172,6 +172,8 @@ interface GameActions {
   /** Generate + cache a chapter in the background (no UI block) so it's ready
    *  by the time the player reaches it. */
   prefetchChapter: (index: number) => void;
+  /** Stream the remaining scenes of a partial chapter in the background. */
+  streamChapterRest: (index: number) => void;
   genApplyChoice: (choice: GenChoice) => void;
   advanceGeneratedChapter: () => Promise<boolean>;
   /** True if this chapter should pause for a poem moment (and it hasn't run). */
@@ -292,13 +294,17 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
     // Show the player's own name regardless of how the canonical world was made.
     const world: GeneratedWorld = { ...base, seed: cleanSeed, mc: { ...base.mc, name } };
 
+    // Fast first paint: fetch just the opening scene, then stream the rest.
     let ch0: GenChapter;
+    let streamRest = false;
     try {
-      ch0 = (await fetchChapter(cleanSeed, 0)) ?? fallbackChapter(world, 0);
+      const opening = await fetchOpeningChapter(cleanSeed, 0, '');
+      if (opening) { ch0 = opening.chapter; streamRest = opening.partial; }
+      else ch0 = fallbackChapter(world, 0);
     } catch {
       ch0 = fallbackChapter(world, 0);
     }
-    if (!ch0.scenes?.length) ch0 = fallbackChapter(world, 0);
+    if (!ch0.scenes?.length) { ch0 = fallbackChapter(world, 0); streamRest = false; }
 
     set({
       ...createInitialState(),
@@ -319,8 +325,37 @@ export const useGameStore = create<GameState & GameActions>()((set, get) => ({
     const s = get();
     autoSave(s);
     debouncedDbSave(get);
+    // Stream in the rest of the opening chapter while the player reads scene 1.
+    if (streamRest) get().streamChapterRest(0);
     // Warm the next chapter in the background so advancing feels instant.
     get().prefetchChapter(1);
+  },
+
+  streamChapterRest: (index) => {
+    const s = get();
+    const world = s.world;
+    const ch = s.generatedChapters[index];
+    if (!world || !ch || !ch.partial) return;
+    const key = `stream:${s.seed}:${index}`;
+    if (chapterInFlight.has(key)) return;
+    chapterInFlight.add(key);
+    const opening = ch.scenes[0];
+    (async () => {
+      try {
+        const full = await fetchChapter(s.seed, index, buildContextSummary(get()), opening);
+        const merged = (full && full.scenes?.length) ? full : { ...ch, partial: false };
+        set({ generatedChapters: { ...get().generatedChapters, [index]: { ...merged, partial: false } } });
+        const st = get();
+        autoSave(st);
+        debouncedDbSave(get);
+      } catch {
+        // Leave the opening playable; mark complete so the player isn't stuck.
+        const cur = get().generatedChapters[index];
+        if (cur) set({ generatedChapters: { ...get().generatedChapters, [index]: { ...cur, partial: false } } });
+      } finally {
+        chapterInFlight.delete(key);
+      }
+    })();
   },
 
   ensureGeneratedChapter: async (index) => {

@@ -61,6 +61,7 @@ export function GeneratedDialogueScreen() {
   const setScreen = useGameStore(s => s.setScreen);
 
   const [textComplete, setTextComplete] = useState(false);
+  const [waitingScene, setWaitingScene] = useState(false);
   const skipRef = useRef<(() => boolean) | null>(null);
   const boxRef = useRef<HTMLDivElement>(null);
   const [boxH, setBoxH] = useState(0);
@@ -118,6 +119,9 @@ export function GeneratedDialogueScreen() {
     } else if (sceneIndex + 1 < (chapter?.scenes.length ?? 0)) {
       setSceneIndex(sceneIndex + 1);
       setTextComplete(false);
+    } else if (chapter?.partial) {
+      // The rest of this chapter is still streaming in — wait for it.
+      setWaitingScene(true);
     } else if (shouldRunPoem()) {
       openGenPoem();
       setTextComplete(false);
@@ -126,6 +130,22 @@ export function GeneratedDialogueScreen() {
       setTextComplete(false);
     }
   }, [scene, node, dialogueIndex, sceneIndex, chapter, textComplete, advanceDialogue, setSceneIndex, advanceGeneratedChapter, shouldRunPoem, openGenPoem]);
+
+  // When the streamed remainder of a partial chapter arrives, continue.
+  useEffect(() => {
+    if (!waitingScene || !chapter) return;
+    if (sceneIndex + 1 < chapter.scenes.length) {
+      setWaitingScene(false);
+      setSceneIndex(sceneIndex + 1);
+      setTextComplete(false);
+    } else if (!chapter.partial) {
+      // No further scenes — treat as chapter end.
+      setWaitingScene(false);
+      setTextComplete(false);
+      if (shouldRunPoem()) openGenPoem();
+      else void advanceGeneratedChapter();
+    }
+  }, [waitingScene, chapter, sceneIndex, setSceneIndex, shouldRunPoem, openGenPoem, advanceGeneratedChapter]);
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
@@ -161,7 +181,7 @@ export function GeneratedDialogueScreen() {
       </div>
       {/* Chapter-transition overlay */}
       <AnimatePresence>
-        {genLoading && (
+        {(genLoading || waitingScene) && (
           <motion.div
             className="absolute inset-0 z-40"
             style={{ backgroundColor: 'rgba(19,16,26,0.88)', backdropFilter: 'blur(4px)' }}
@@ -169,9 +189,13 @@ export function GeneratedDialogueScreen() {
           >
             <GeneratingState
               fill={false}
-              title="Turning the page…"
-              note="Writing what happens next, shaped by your choices."
-              steps={[
+              title={waitingScene ? 'Writing the next scene…' : 'Turning the page…'}
+              note="Shaped by your choices — just a moment."
+              steps={waitingScene ? [
+                'Following the thread of the scene…',
+                'Letting it breathe…',
+                'Almost ready…',
+              ] : [
                 'Picking up where you left off…',
                 'Letting the characters react to you…',
                 'Setting the next scene…',
