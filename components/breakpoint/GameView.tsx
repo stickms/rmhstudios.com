@@ -3,10 +3,11 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { World, freshInput, type LocalInput } from '@/lib/breakpoint/engine/world';
-import type { MatchSnapshot } from '@/lib/breakpoint/types';
+import type { MatchSnapshot, NetEvent } from '@/lib/breakpoint/types';
 import { useBreakpointStore } from '@/lib/breakpoint/store';
 import { useIsMobile } from '@/lib/studio/hooks/useIsMobile';
-import { PIXEL_SCALE_DESKTOP, PIXEL_SCALE_MOBILE, PALETTE } from '@/lib/breakpoint/constants';
+import { roomClient } from '@/lib/breakpoint/net/room';
+import { PIXEL_SCALE_DESKTOP, PIXEL_SCALE_MOBILE, PALETTE, NET_PLAYER_HZ, NET_MATCH_HZ } from '@/lib/breakpoint/constants';
 import { GameScene } from './arena/GameScene';
 import { HUD } from './HUD';
 import { BuyMenu } from './BuyMenu';
@@ -27,14 +28,54 @@ export function GameView() {
   const [locked, setLocked] = useState(false);
   const [showScore, setShowScore] = useState(false);
   const [showBuy, setShowBuy] = useState(false);
+  const [netError, setNetError] = useState<string | null>(null);
   const canvasWrap = useRef<HTMLDivElement>(null);
 
-  // Build the world once for this match.
   if (!worldRef.current && matchConfig) {
     const w = new World(matchConfig);
     w.input = inputRef.current;
     worldRef.current = w;
   }
+
+  // ── Multiplayer net wiring ──
+  useEffect(() => {
+    const world = worldRef.current;
+    if (!world || !matchConfig || matchConfig.netMode === 'solo') return;
+    const me = matchConfig.localId;
+    const isHost = matchConfig.netMode === 'host';
+
+    const unsubs = [
+      roomClient.on('player', (d) => { const { id, state } = d as { id: string; state: unknown }; if (id !== me) world.applyRemotePlayer(id, state as never); }),
+      roomClient.on('match', (d) => { if (!isHost) world.applyMatchState((d as { state: never }).state); }),
+      roomClient.on('hit', (d) => { const h = d as { from: string; dmg: number; head: boolean; weapon: string }; world.applyIncomingHit(h.from, h.dmg, h.head, h.weapon); }),
+      roomClient.on('death', (d) => { const x = d as { id: string; killer: string; weapon: string; head: boolean }; world.applyRemoteDeath(x.id, x.killer, x.weapon, x.head); }),
+      roomClient.on('bhit', (d) => { const x = d as { from: string; target: string; dmg: number; head: boolean; weapon: string }; world.applyBotHit(x.from, x.target, x.dmg, x.head, x.weapon); }),
+      roomClient.on('fx', (d) => { world.applyRemoteFx((d as { fx: never }).fx); }),
+      roomClient.on('spike', (d) => { const x = d as { playerId: string; type: 'plant' | 'defuse'; active: boolean; pos: never }; world.applySpikeIntent(x.playerId, x.type, x.active, x.pos); }),
+      roomClient.on('playerLeft', (d) => { world.removeActor((d as { id: string }).id); }),
+      roomClient.on('error', (d) => { setNetError((d as { message: string }).message || 'Connection error'); }),
+    ];
+
+    let raf = 0; let lastPlayer = 0; let lastMatch = 0;
+    const playerIv = 1000 / NET_PLAYER_HZ;
+    const matchIv = 1000 / NET_MATCH_HZ;
+    const loop = (t: number) => {
+      // drain per-frame combat events
+      const evs: NetEvent[] = world.drainEvents();
+      for (const e of evs) {
+        if (e.kind === 'hit') roomClient.sendHit(e.target, e.dmg, e.head, e.weapon);
+        else if (e.kind === 'bhit') roomClient.sendBhit(e.target, e.dmg, e.head, e.weapon);
+        else if (e.kind === 'death') roomClient.sendDeath(e.killer, e.weapon, e.head);
+        else if (e.kind === 'fx') roomClient.sendFx(e.fx);
+        else if (e.kind === 'spike') roomClient.sendSpike(e.type, e.active, e.pos);
+      }
+      if (t - lastPlayer > playerIv) { lastPlayer = t; const ps = world.getPlayerState(); if (ps) roomClient.sendPlayer(ps); }
+      if (isHost && t - lastMatch > matchIv) { lastMatch = t; roomClient.sendMatch(world.getMatchState()); }
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => { raf && cancelAnimationFrame(raf); unsubs.forEach((u) => u()); };
+  }, [matchConfig]);
 
   const prevPhase = useRef<string>('');
   const endedRef = useRef(false);
@@ -46,13 +87,12 @@ export function GameView() {
         last = t;
         const s = worldRef.current.getSnapshot();
         setSnap(s);
-        // auto-open the buy menu when a buy phase begins; auto-close when it ends
         if (s.phase === 'buy' && prevPhase.current !== 'buy') setShowBuy(true);
         if (s.phase !== 'buy' && prevPhase.current === 'buy') setShowBuy(false);
         prevPhase.current = s.phase;
         if (s.over && s.winner && !endedRef.current) {
           endedRef.current = true;
-          setResult(s.winner, s.scoreAttackers, s.scoreDefenders);
+          setResult(s.winner, s.scoreAttackers, s.scoreDefenders, s.mode, s.wave);
           window.setTimeout(() => setPhase('result'), 2600);
         }
       }
@@ -62,29 +102,22 @@ export function GameView() {
     return () => cancelAnimationFrame(raf);
   }, [setPhase, setResult]);
 
-  // Free the cursor while the buy menu is open so the player can click items.
-  useEffect(() => {
-    if (showBuy && document.pointerLockElement) document.exitPointerLock();
-  }, [showBuy]);
+  useEffect(() => { if (showBuy && document.pointerLockElement) document.exitPointerLock(); }, [showBuy]);
 
   // ── Desktop input ──
   useEffect(() => {
     if (isMobile) return;
     const inp = inputRef.current;
     const keys = new Set<string>();
-
     const recompute = () => {
       inp.moveZ = (keys.has('w') ? 1 : 0) - (keys.has('s') ? 1 : 0);
       inp.moveX = (keys.has('d') ? 1 : 0) - (keys.has('a') ? 1 : 0);
-      inp.run = !keys.has('shift'); // walk while holding shift (Valorant-style)
+      inp.run = !keys.has('shift');
       inp.crouch = keys.has('control');
     };
-
     const onKeyDown = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase();
-      if (['w', 'a', 's', 'd', ' ', 'shift', 'control', 'tab', 'r', 'e', 'q', 'f', 'x', '1', '2', '3'].includes(k) || k === 'control') {
-        e.preventDefault();
-      }
+      if (['w', 'a', 's', 'd', ' ', 'shift', 'control', 'tab', 'r', 'e', 'q', 'f', 'x', '1', '2', '3'].includes(k)) e.preventDefault();
       if (k === 'tab') { setShowScore(true); return; }
       if (k === 'b') { setShowBuy((v) => !v); return; }
       keys.add(k === ' ' ? 'space' : k);
@@ -116,25 +149,17 @@ export function GameView() {
       inp.pitch -= e.movementY * LOOK_SENS;
       inp.pitch = Math.max(-1.45, Math.min(1.45, inp.pitch));
     };
-    const onMouseDown = (e: MouseEvent) => {
-      if (document.pointerLockElement == null) return;
-      if (e.button === 0) inp.firing = true;
-      if (e.button === 2) inp.ads = true;
-    };
-    const onMouseUp = (e: MouseEvent) => {
-      if (e.button === 0) inp.firing = false;
-      if (e.button === 2) inp.ads = false;
-    };
+    const onMouseDown = (e: MouseEvent) => { if (document.pointerLockElement == null) return; if (e.button === 0) inp.firing = true; if (e.button === 2) inp.ads = true; };
+    const onMouseUp = (e: MouseEvent) => { if (e.button === 0) inp.firing = false; if (e.button === 2) inp.ads = false; };
     const onContext = (e: Event) => e.preventDefault();
-    const onPointerLockChange = () => setLocked(document.pointerLockElement != null);
-
+    const onPlc = () => setLocked(document.pointerLockElement != null);
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mousedown', onMouseDown);
     window.addEventListener('mouseup', onMouseUp);
     window.addEventListener('contextmenu', onContext);
-    document.addEventListener('pointerlockchange', onPointerLockChange);
+    document.addEventListener('pointerlockchange', onPlc);
     return () => {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
@@ -142,14 +167,11 @@ export function GameView() {
       window.removeEventListener('mousedown', onMouseDown);
       window.removeEventListener('mouseup', onMouseUp);
       window.removeEventListener('contextmenu', onContext);
-      document.removeEventListener('pointerlockchange', onPointerLockChange);
+      document.removeEventListener('pointerlockchange', onPlc);
     };
   }, [isMobile]);
 
-  const requestLock = useCallback(() => {
-    if (isMobile) return;
-    canvasWrap.current?.requestPointerLock?.();
-  }, [isMobile]);
+  const requestLock = useCallback(() => { if (!isMobile) canvasWrap.current?.requestPointerLock?.(); }, [isMobile]);
 
   if (!matchConfig || !worldRef.current) return null;
   const world = worldRef.current;
@@ -157,14 +179,9 @@ export function GameView() {
 
   return (
     <div className="bp-match" style={{ position: 'absolute', inset: 0, background: PALETTE.bg, overflow: 'hidden' }}>
-      <div
-        ref={canvasWrap}
-        onClick={requestLock}
-        style={{ position: 'absolute', inset: 0, cursor: locked ? 'none' : 'pointer' }}
-      >
+      <div ref={canvasWrap} onClick={requestLock} style={{ position: 'absolute', inset: 0, cursor: locked ? 'none' : 'pointer' }}>
         <Canvas
-          shadows
-          dpr={dpr}
+          shadows dpr={dpr}
           gl={{ antialias: false, powerPreference: 'high-performance' }}
           camera={{ fov: 78, near: 0.05, far: 100, position: [0, 1.6, 0] }}
           style={{ imageRendering: 'pixelated', width: '100%', height: '100%' }}
@@ -174,12 +191,16 @@ export function GameView() {
       </div>
 
       {snap && <HUD snap={snap} />}
-      {snap && showBuy && snap.phase === 'buy' && (
-        <BuyMenu world={world} onClose={() => setShowBuy(false)} />
-      )}
+      {snap && showBuy && snap.phase === 'buy' && <BuyMenu world={world} onClose={() => setShowBuy(false)} />}
       {snap && showScore && <Scoreboard snap={snap} />}
 
-      {/* Click-to-play prompt (desktop) */}
+      {netError && (
+        <div className="bp-neterror">
+          <div>{netError}</div>
+          <button className="bp-cta bp-cta-sm" onClick={() => setPhase('lobby')}>BACK TO LOBBY</button>
+        </div>
+      )}
+
       {!isMobile && !locked && !showBuy && (
         <div className="bp-lockprompt" onClick={requestLock}>
           <div className="bp-lockprompt-inner">

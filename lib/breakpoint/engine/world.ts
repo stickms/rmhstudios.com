@@ -1,18 +1,29 @@
 // ============================================================
-// BREAKPOINT — World engine
-// Authoritative-ish local simulation: movement, combat, abilities,
-// round/MR13 state machine, economy, spike. Bots fill both teams.
-// Designed to be ticked once per animation frame with a clamped dt.
+// BREAKPOINT — World engine (modes + netcode)
+//
+// netMode:
+//   solo  — simulate everything locally (vs bots / zombies).
+//   host  — simulate local player + bots/zombies; act as MATCH DIRECTOR
+//           (phase/score/spike/waves). Remote players arrive over the net.
+//   guest — simulate ONLY the local player; everyone else (players + bots/
+//           zombies) is a remote actor updated from the host's broadcasts.
+//
+// Combat is self-authoritative: a client applies damage to its own avatar
+// (from relayed hit events) and the director owns bot/zombie HP + scoring.
+// The engine produces `outEvents` that GameView drains and sends over the
+// socket, and exposes apply*() methods for inbound messages.
 // ============================================================
 import type {
   Actor, Vec3, Team, RoundPhase, MatchSnapshot, WorldFx, Tracer,
-  KillFeedEntry, SpikeState, RoundResult, LoadoutState,
+  KillFeedEntry, RoundResult, MatchMode, NetMode, NetEvent,
+  NetPlayerState, NetMatchState, NetBotState, AbilityKind,
 } from '../types';
 import type { MatchConfig } from '../store';
-import { getAgent } from '../agents';
+import { BOT_NAMES } from '../store';
+import { getAgent, AGENTS } from '../agents';
 import { getWeapon } from '../weapons';
 import {
-  ATTACKER_SPAWNS, DEFENDER_SPAWNS, SITES, SITE_LIST,
+  ATTACKER_SPAWNS, DEFENDER_SPAWNS, SITES, SITE_LIST, ARENA, type Box,
 } from '../map';
 import {
   resolveHorizontal, groundHeightAt, raycastBoxes, rayCapsule, raySphere,
@@ -25,23 +36,20 @@ import {
   BUY_TIME, ROUND_TIME, SPIKE_TIME, PLANT_TIME, DEFUSE_TIME, ROUND_END_TIME,
   ROUNDS_TO_WIN, HALF_ROUNDS, START_CREDITS, MAX_CREDITS, KILL_REWARD, WIN_REWARD,
   PLANT_REWARD, LOSS_BONUS,
+  ZOMBIE_WAVES, ZOMBIE_BASE_COUNT, ZOMBIE_PER_WAVE, ZOMBIE_MAX_ALIVE, ZOMBIE_HP,
+  ZOMBIE_HP_PER_WAVE, ZOMBIE_SPEED, ZOMBIE_SPEED_PER_WAVE, ZOMBIE_DAMAGE,
+  ZOMBIE_ATTACK_RANGE, ZOMBIE_ATTACK_CD, ZOMBIE_KILL_REWARD, ZOMBIE_WAVE_REWARD, ZOMBIE_BUY_TIME,
 } from '../constants';
 
 export interface LocalInput {
-  moveX: number;   // -1..1 strafe (right +)
-  moveZ: number;   // -1..1 forward (+ forward)
-  jump: boolean;
-  crouch: boolean;
-  run: boolean;
-  yaw: number;     // absolute look (set by mouse/touch)
-  pitch: number;
-  firing: boolean;
-  ads: boolean;
+  moveX: number; moveZ: number;
+  jump: boolean; crouch: boolean; run: boolean;
+  yaw: number; pitch: number;
+  firing: boolean; ads: boolean;
   reloadEdge: boolean;
   abilityEdge: 'C' | 'Q' | 'E' | 'X' | null;
   switchEdge: 'primary' | 'sidearm' | 'knife' | null;
-  plant: boolean;
-  defuse: boolean;
+  plant: boolean; defuse: boolean;
 }
 
 export function freshInput(): LocalInput {
@@ -57,9 +65,15 @@ let FX_ID = 1;
 let KF_ID = 1;
 
 function v(x = 0, y = 0, z = 0): Vec3 { return { x, y, z }; }
+const SURVIVOR_TEAM: Team = 'attackers';
+const ZOMBIE_TEAM: Team = 'zombies';
 
 export class World {
   config: MatchConfig;
+  mode: MatchMode;
+  netMode: NetMode;
+  localId: string;
+
   actors: Actor[] = [];
   fx: WorldFx[] = [];
   tracers: Tracer[] = [];
@@ -67,59 +81,87 @@ export class World {
 
   phase: RoundPhase = 'buy';
   round = 1;
+  wave = 0;
+  zombiesLeft = 0;
   scoreAttackers = 0;
   scoreDefenders = 0;
-  /** which team is attacking THIS round (sides swap at the half). */
   attackersTeam: Team = 'attackers';
   phaseEndsAt = 0;
-  spike: SpikeState = { carrierId: null, planted: false, pos: null, plantedAt: 0, defusing: false, planting: false, progress: 0 };
+  spike = { carrierId: null as string | null, planted: false, pos: null as Vec3 | null, plantedAt: 0, defusing: false, planting: false, progress: 0 };
   lastResult: RoundResult | null = null;
   over = false;
   winner: Team | null = null;
-  lossStreak: Record<Team, number> = { attackers: 0, defenders: 0 };
+  lossStreak: Record<string, number> = { attackers: 0, defenders: 0 };
+  localTeam: Team;
 
   input: LocalInput = freshInput();
   now = 0;
 
-  // notifications for UI sounds/popups
+  /** Net events to send (drained by GameView each frame). */
+  outEvents: NetEvent[] = [];
+
   onKill?: (e: KillFeedEntry) => void;
   onRoundEnd?: (r: RoundResult) => void;
   onMatchEnd?: (winner: Team) => void;
 
-  private dynamicWalls: { box: import('../map').Box; endsAt: number }[] = [];
+  private dynamicWalls: { id: string; box: Box; endsAt: number }[] = [];
+  private _lastDt = TICK_DT;
+  private zombieCounter = 0;
+  private spawnQueue = 0; // zombies still to spawn this wave
+  private remoteSpike: { type: 'plant' | 'defuse'; pos: Vec3 | null; until: number } | null = null;
 
   constructor(config: MatchConfig) {
     this.config = config;
-    this.localTeam = config.localTeam;
-    this.attackersTeam = config.localTeam; // round 1 local team attacks
+    this.mode = config.mode;
+    this.netMode = config.netMode;
+    this.localId = config.localId;
+    this.localTeam = config.mode === 'zombies' ? SURVIVOR_TEAM : config.localTeam;
+    this.attackersTeam = config.mode === 'zombies' ? SURVIVOR_TEAM : 'attackers';
     this.spawnActors();
-    this.startBuyPhase();
+    if (this.isDirector) {
+      if (this.mode === 'zombies') this.startWavePrep();
+      else this.startBuyPhase();
+    } else {
+      this.phase = 'buy';
+      this.phaseEndsAt = this.now + BUY_TIME * 1000;
+    }
   }
 
-  localTeam: Team;
-
+  get isDirector(): boolean { return this.netMode !== 'guest'; }
   get local(): Actor | undefined { return this.actors.find((a) => a.isLocal); }
-
-  /** Live deployable-wall boxes (for the renderer). */
-  get wallBoxes(): import('../map').Box[] { return this.dynamicWalls.map((d) => d.box); }
+  get wallBoxes(): Box[] { return this.dynamicWalls.map((d) => d.box); }
 
   // ── Setup ─────────────────────────────────────────────────
   private spawnActors() {
     const { config } = this;
-    const localTeam = config.localTeam;
-    const enemyTeam: Team = localTeam === 'attackers' ? 'defenders' : 'attackers';
-
     this.actors = [];
-    // local player
-    this.actors.push(this.makeActor('local', config.allies.length ? 'You' : 'You', 'human', localTeam, config.localAgentId, true));
-    // allies
-    config.allies.forEach((al, i) => {
-      this.actors.push(this.makeActor(`ally${i}`, al.name, 'bot', localTeam, al.agentId, false));
-    });
-    // enemies
-    config.enemies.forEach((en, i) => {
-      this.actors.push(this.makeActor(`enemy${i}`, en.name, 'bot', enemyTeam, en.agentId, false));
-    });
+    for (const h of config.humans) {
+      const isLocal = h.id === config.localId;
+      const a = this.makeActor(h.id, h.name, 'human', h.team, h.agentId, isLocal);
+      a.remote = !isLocal && this.netMode !== 'solo';
+      this.actors.push(a);
+    }
+    // Director fills bots (standard) — zombies spawn per wave.
+    if (this.isDirector && this.mode === 'standard') {
+      this.fillBots('attackers');
+      this.fillBots('defenders');
+    }
+  }
+
+  private fillBots(team: Team) {
+    const humans = this.actors.filter((a) => a.team === team && a.kind === 'human').length;
+    const need = Math.max(0, this.config.fillToPerSide - humans);
+    const usedNames = new Set(this.actors.map((a) => a.name));
+    const usedAgents = new Set(this.actors.filter((a) => a.team === team).map((a) => a.agentId));
+    for (let i = 0; i < need; i++) {
+      let name = `BOT-${team[0].toUpperCase()}${i}`;
+      const pool = BOT_NAMES.filter((n) => !usedNames.has(n));
+      if (pool.length) { name = pool[Math.floor(Math.random() * pool.length)]; usedNames.add(name); }
+      const apool = AGENTS.filter((ag) => !usedAgents.has(ag.id));
+      const agentId = (apool.length ? apool : AGENTS)[Math.floor(Math.random() * (apool.length || AGENTS.length))].id;
+      usedAgents.add(agentId);
+      this.actors.push(this.makeActor(`bot_${team}_${i}`, name, 'bot', team, agentId, false));
+    }
   }
 
   private makeActor(id: string, name: string, kind: 'human' | 'bot', team: Team, agentId: string, isLocal: boolean): Actor {
@@ -141,126 +183,129 @@ export class World {
     };
   }
 
-  // ── Round lifecycle ───────────────────────────────────────
+  // ── Standard round lifecycle (director) ───────────────────
   private startBuyPhase() {
     this.phase = 'buy';
     this.phaseEndsAt = this.now + BUY_TIME * 1000;
     this.spike = { carrierId: null, planted: false, pos: null, plantedAt: 0, defusing: false, planting: false, progress: 0 };
-    this.fx = [];
-    this.dynamicWalls = [];
-    setDynamicBoxes([]);
-    setSmokes([]);
+    this.clearWorld();
 
-    // reset combat state, respawn at spawn points
-    const att = this.actors.filter((a) => a.team === this.attackersTeam);
-    const def = this.actors.filter((a) => a.team !== this.attackersTeam);
-    att.forEach((a, i) => this.respawn(a, ATTACKER_SPAWNS[i % ATTACKER_SPAWNS.length], false));
-    def.forEach((a, i) => this.respawn(a, DEFENDER_SPAWNS[i % DEFENDER_SPAWNS.length], true));
+    const attackers = this.actors.filter((a) => a.team === this.attackersTeam);
+    const defenders = this.actors.filter((a) => a.team !== this.attackersTeam);
+    attackers.forEach((a, i) => this.respawn(a, ATTACKER_SPAWNS[i % ATTACKER_SPAWNS.length]));
+    defenders.forEach((a, i) => this.respawn(a, DEFENDER_SPAWNS[i % DEFENDER_SPAWNS.length]));
 
-    // give the spike to one attacker
-    const carrier = att.find((a) => a.isLocal) ?? att[0];
+    const carrier = attackers.find((a) => a.isLocal) ?? attackers[0];
     if (carrier) { carrier.hasSpike = true; this.spike.carrierId = carrier.id; }
 
-    // bots auto-buy
     for (const a of this.actors) if (a.kind === 'bot') this.botBuy(a);
   }
 
-  private respawn(a: Actor, spawn: Vec3, facePos: boolean) {
-    a.pos = v(spawn.x, 0, spawn.z);
-    a.vel = v();
-    a.alive = true;
-    a.crouch = false;
-    a.hp = a.maxHp;
-    a.shieldHp = 0;
-    a.armor = a.loadout.armor;
-    a.blindUntil = 0; a.healUntil = 0; a.revealedUntil = 0; a.speedBoostUntil = 0;
-    a.reloading = false; a.recoil = 0;
-    // face toward map centre
-    a.yaw = Math.atan2(-a.pos.x, a.pos.z) + (facePos ? 0 : 0);
-    a.pitch = 0;
-    // equip best weapon from loadout
-    this.equip(a, a.loadout.primary ?? a.loadout.sidearm);
-    // restore ability charges from loadout
-    a.abilityCharges = { ...a.loadout.abilities };
-    a.anim.deathTime = 0;
-    a.hasSpike = false;
+  private clearWorld() {
+    this.fx = []; this.dynamicWalls = [];
+    setDynamicBoxes([]); setSmokes([]);
   }
 
-  private startAction() {
+  private respawn(a: Actor, spawn: Vec3) {
+    a.pos = v(spawn.x, 0, spawn.z);
+    a.vel = v();
+    a.alive = true; a.crouch = false;
+    a.hp = a.maxHp; a.shieldHp = 0; a.armor = a.loadout.armor;
+    a.blindUntil = 0; a.healUntil = 0; a.revealedUntil = 0; a.speedBoostUntil = 0;
+    a.reloading = false; a.recoil = 0;
+    a.yaw = Math.atan2(-a.pos.x, a.pos.z); a.pitch = 0;
+    this.equip(a, a.loadout.primary ?? a.loadout.sidearm);
+    a.abilityCharges = { ...a.loadout.abilities };
+    a.anim.deathTime = 0; a.hasSpike = false;
+  }
+
+  private startAction() { this.phase = 'action'; this.phaseEndsAt = this.now + ROUND_TIME * 1000; }
+
+  // ── Zombies lifecycle (director) ──────────────────────────
+  private startWavePrep() {
+    this.phase = 'buy';
+    this.wave += 1;
+    this.phaseEndsAt = this.now + (this.wave === 1 ? 8 : ZOMBIE_BUY_TIME) * 1000;
+    this.clearWorld();
+    // remove dead zombies, respawn survivors at attacker spawns
+    this.actors = this.actors.filter((a) => !a.isZombie);
+    const survivors = this.actors.filter((a) => a.team === SURVIVOR_TEAM);
+    survivors.forEach((a, i) => this.respawn(a, ATTACKER_SPAWNS[i % ATTACKER_SPAWNS.length]));
+    for (const a of survivors) if (a.kind === 'bot') this.botBuy(a);
+    this.spawnQueue = 0;
+    this.zombiesLeft = 0;
+  }
+
+  private startWave() {
     this.phase = 'action';
-    this.phaseEndsAt = this.now + ROUND_TIME * 1000;
+    this.phaseEndsAt = this.now + 9_000_000; // effectively until cleared
+    const count = Math.min(40, ZOMBIE_BASE_COUNT + (this.wave - 1) * ZOMBIE_PER_WAVE);
+    this.spawnQueue = count;
+    this.zombiesLeft = count;
+  }
+
+  private zombieEdgeSpawn(): Vec3 {
+    const side = Math.floor(Math.random() * 4);
+    const m = ARENA.maxX - 2;
+    const r = (Math.random() * 2 - 1) * m;
+    if (side === 0) return v(r, 0, ARENA.minZ + 2);
+    if (side === 1) return v(r, 0, ARENA.maxZ - 2);
+    if (side === 2) return v(ARENA.minX + 2, 0, r);
+    return v(ARENA.maxX - 2, 0, r);
+  }
+
+  private spawnZombie() {
+    const id = `zomb_${this.zombieCounter++}`;
+    const z = this.makeActor(id, 'Zombie', 'bot', ZOMBIE_TEAM, 'blaze', false);
+    z.isZombie = true;
+    z.maxHp = z.hp = ZOMBIE_HP + (this.wave - 1) * ZOMBIE_HP_PER_WAVE;
+    z.currentWeapon = 'knife';
+    z.attackReady = 0;
+    const sp = this.zombieEdgeSpawn();
+    z.pos = v(sp.x, 0, sp.z);
+    this.actors.push(z);
   }
 
   // ── Buying ────────────────────────────────────────────────
   canBuy(): boolean { return this.phase === 'buy'; }
-
   buyWeapon(a: Actor, weaponId: string): boolean {
     if (!this.canBuy() || !a.alive) return false;
     const w = getWeapon(weaponId);
     if (a.credits < w.cost) return false;
-    // refund nothing; replace primary
     a.credits -= w.cost;
-    if (w.class === 'sidearm') { a.loadout.sidearm = weaponId; }
-    else { a.loadout.primary = weaponId; }
+    if (w.class === 'sidearm') a.loadout.sidearm = weaponId; else a.loadout.primary = weaponId;
     this.equip(a, weaponId);
     return true;
   }
-
   buyArmor(a: Actor, value: number, cost: number): boolean {
-    if (!this.canBuy() || !a.alive || a.loadout.armor >= value) return false;
-    if (a.credits < cost) return false;
-    a.credits -= cost;
-    a.loadout.armor = value;
-    a.armor = value;
-    return true;
+    if (!this.canBuy() || !a.alive || a.loadout.armor >= value || a.credits < cost) return false;
+    a.credits -= cost; a.loadout.armor = value; a.armor = value; return true;
   }
-
   buyAbility(a: Actor, abilityId: string, cost: number, max: number): boolean {
     if (!this.canBuy() || !a.alive) return false;
     const have = a.loadout.abilities[abilityId] ?? 0;
-    if (have >= max) return false;
-    if (a.credits < cost) return false;
+    if (have >= max || a.credits < cost) return false;
     a.credits -= cost;
     a.loadout.abilities[abilityId] = have + 1;
     a.abilityCharges[abilityId] = (a.abilityCharges[abilityId] ?? 0) + 1;
     return true;
   }
-
   private botBuy(a: Actor) {
     const agent = getAgent(a.agentId);
-    // simple economy: full buy if affordable, else eco
-    const wishRifle = a.credits >= 3900;
-    if (wishRifle) {
-      const rifle = Math.random() < 0.5 ? 'vandal' : 'phantom';
-      this.buyWeapon(a, rifle);
-      this.buyArmor(a, 50, 1000);
-    } else if (a.credits >= 2000) {
-      this.buyWeapon(a, 'spectre');
-      this.buyArmor(a, 50, 1000);
-    } else if (a.credits >= 900) {
-      this.buyWeapon(a, 'sheriff');
-      this.buyArmor(a, 25, 400);
-    }
-    // buy a couple abilities
-    for (const ab of agent.abilities) {
-      if (ab.slot === 'X' || ab.cost === 0) continue;
-      this.buyAbility(a, ab.id, ab.cost, ab.charges);
-    }
+    if (a.credits >= 3900) { this.buyWeapon(a, Math.random() < 0.5 ? 'vandal' : 'phantom'); this.buyArmor(a, 50, 1000); }
+    else if (a.credits >= 2000) { this.buyWeapon(a, 'spectre'); this.buyArmor(a, 50, 1000); }
+    else if (a.credits >= 900) { this.buyWeapon(a, 'sheriff'); this.buyArmor(a, 25, 400); }
+    for (const ab of agent.abilities) { if (ab.slot === 'X' || ab.cost === 0) continue; this.buyAbility(a, ab.id, ab.cost, ab.charges); }
   }
-
   equip(a: Actor, weaponId: string) {
     const w = getWeapon(weaponId);
-    a.currentWeapon = weaponId;
-    a.ammo = w.magazine;
-    a.reserve = w.reserve;
-    a.reloading = false;
+    a.currentWeapon = weaponId; a.ammo = w.magazine; a.reserve = w.reserve; a.reloading = false;
   }
-
   switchTo(a: Actor, slot: 'primary' | 'sidearm' | 'knife') {
     if (!a.alive) return;
-    if (slot === 'knife') { this.equip(a, 'knife'); return; }
-    if (slot === 'primary' && a.loadout.primary) { this.equip(a, a.loadout.primary); return; }
-    if (slot === 'sidearm') { this.equip(a, a.loadout.sidearm); }
+    if (slot === 'knife') return this.equip(a, 'knife');
+    if (slot === 'primary' && a.loadout.primary) return this.equip(a, a.loadout.primary);
+    if (slot === 'sidearm') this.equip(a, a.loadout.sidearm);
   }
 
   // ── Main tick ─────────────────────────────────────────────
@@ -269,7 +314,6 @@ export class World {
     this._lastDt = dt;
     this.now += dtMs;
 
-    // expire dynamic walls / fx
     this.dynamicWalls = this.dynamicWalls.filter((d) => d.endsAt > this.now);
     setDynamicBoxes(this.dynamicWalls.map((d) => d.box));
     this.fx = this.fx.filter((f) => f.endsAt > this.now);
@@ -277,72 +321,88 @@ export class World {
     this.tracers = this.tracers.filter((t) => this.now - t.bornAt < 90);
     this.killFeed = this.killFeed.filter((k) => this.now - k.at < 6000);
 
-    // phase timers
-    this.tickPhase(dt);
+    if (this.isDirector) this.tickDirector(dt);
 
-    // ability damage zones (mollies)
     this.tickHazards(dt);
 
-    // local player
     const local = this.local;
-    if (local && local.alive && this.phase !== 'roundEnd') {
-      this.applyLocalInput(local, dt);
-    } else if (local) {
-      // dead/freeze — settle physics only
-      this.integrate(local, dt, 0, 0, false, false, false);
-    }
+    const freeze = this.phase === 'roundEnd';
+    if (local && local.alive && !freeze) this.applyLocalInput(local, dt);
+    else if (local) this.integrate(local, dt, 0, 0, false, false, false);
 
-    // bots
     for (const a of this.actors) {
       if (a === local) continue;
-      this.tickBot(a, dt);
+      if (a.remote) { this.interpRemote(a, dt); continue; }
+      // locally-simulated bot / zombie (director only)
+      if (a.isZombie) this.tickZombie(a, dt);
+      else this.tickBot(a, dt);
     }
 
-    // regen heals
     for (const a of this.actors) {
-      if (a.alive && a.healUntil > this.now && a.hp < a.maxHp) {
-        a.hp = Math.min(a.maxHp, a.hp + 12 * dt);
-      }
+      if (a.alive && !a.remote && a.healUntil > this.now && a.hp < a.maxHp) a.hp = Math.min(a.maxHp, a.hp + 12 * dt);
     }
   }
 
-  private tickPhase(dt: number) {
+  private tickDirector(dt: number) {
     void dt;
     if (this.over) return;
-    if (this.phase === 'buy') {
-      if (this.now >= this.phaseEndsAt) this.startAction();
-    } else if (this.phase === 'action') {
+    if (this.mode === 'zombies') return this.tickZombieDirector();
+    // standard
+    if (this.phase === 'buy') { if (this.now >= this.phaseEndsAt) this.startAction(); }
+    else if (this.phase === 'action') {
       this.tickSpikeInteractions();
-      if (this.now >= this.phaseEndsAt) {
-        // time expired: defenders win (attackers failed to plant)
-        this.endRound(this.attackersTeam === 'attackers' ? 'defenders' : 'attackers', 'time');
-        return;
-      }
+      if (this.now >= this.phaseEndsAt) return this.endRound(this.defendersTeam(), 'time');
       this.checkElimination();
     } else if (this.phase === 'planted') {
       this.tickSpikeInteractions();
-      if (this.spike.planted && this.now >= this.spike.plantedAt + SPIKE_TIME * 1000) {
-        // spike detonates → attackers win
-        this.endRound(this.attackersTeam, 'spike');
-        return;
-      }
+      if (this.spike.planted && this.now >= this.spike.plantedAt + SPIKE_TIME * 1000) return this.endRound(this.attackersTeam, 'spike');
       this.checkElimination();
     } else if (this.phase === 'roundEnd') {
       if (this.now >= this.phaseEndsAt) this.nextRound();
     }
   }
 
+  private tickZombieDirector() {
+    if (this.phase === 'buy') {
+      if (this.now >= this.phaseEndsAt) this.startWave();
+      return;
+    }
+    if (this.phase === 'action') {
+      // trickle-spawn up to the concurrent cap
+      const aliveZ = this.actors.filter((a) => a.isZombie && a.alive).length;
+      if (this.spawnQueue > 0 && aliveZ < ZOMBIE_MAX_ALIVE && Math.random() < 0.06) {
+        this.spawnZombie(); this.spawnQueue--;
+      }
+      // lose check
+      const survivorsAlive = this.actors.some((a) => a.team === SURVIVOR_TEAM && a.alive);
+      if (!survivorsAlive) { this.endZombies(false); return; }
+      // wave clear
+      if (this.spawnQueue === 0 && aliveZ === 0) {
+        for (const a of this.actors) if (a.team === SURVIVOR_TEAM) a.credits = Math.min(MAX_CREDITS, a.credits + ZOMBIE_WAVE_REWARD);
+        if (this.wave >= ZOMBIE_WAVES) { this.endZombies(true); return; }
+        this.phase = 'roundEnd';
+        this.lastResult = { round: this.wave, winner: SURVIVOR_TEAM, reason: 'elimination' };
+        this.phaseEndsAt = this.now + 3000;
+      }
+      return;
+    }
+    if (this.phase === 'roundEnd') {
+      if (this.now >= this.phaseEndsAt) this.startWavePrep();
+    }
+  }
+
+  private endZombies(won: boolean) {
+    this.over = true;
+    this.winner = won ? SURVIVOR_TEAM : ZOMBIE_TEAM;
+    this.phase = 'roundEnd';
+    this.onMatchEnd?.(this.winner);
+  }
+
   private checkElimination() {
     const attAlive = this.actors.some((a) => a.team === this.attackersTeam && a.alive);
-    const defAlive = this.actors.some((a) => a.team !== this.attackersTeam && a.alive);
-    if (!defAlive && this.phase !== 'planted') {
-      this.endRound(this.attackersTeam, 'elimination'); return;
-    }
-    if (!attAlive) {
-      // attackers dead — if spike planted, it still ticks to detonation, defenders must defuse
-      if (this.spike.planted) return;
-      this.endRound(this.attackersTeam === 'attackers' ? 'defenders' : 'attackers', 'elimination');
-    }
+    const defAlive = this.actors.some((a) => a.team !== this.attackersTeam && a.team !== ZOMBIE_TEAM && a.alive);
+    if (!defAlive && this.phase !== 'planted') return this.endRound(this.attackersTeam, 'elimination');
+    if (!attAlive) { if (this.spike.planted) return; this.endRound(this.defendersTeam(), 'elimination'); }
   }
 
   private defendersTeam(): Team { return this.attackersTeam === 'attackers' ? 'defenders' : 'attackers'; }
@@ -351,26 +411,18 @@ export class World {
     if (this.phase === 'roundEnd' || this.over) return;
     this.phase = 'roundEnd';
     this.phaseEndsAt = this.now + ROUND_END_TIME * 1000;
-    const result: RoundResult = { round: this.round, winner, reason };
-    this.lastResult = result;
-
+    this.lastResult = { round: this.round, winner, reason };
     if (winner === 'attackers') this.scoreAttackers++; else this.scoreDefenders++;
-
-    // economy
     const loser = winner === 'attackers' ? 'defenders' : 'attackers';
     this.lossStreak[winner] = 0;
     this.lossStreak[loser] = Math.min(2, this.lossStreak[loser] + 1);
     for (const a of this.actors) {
-      if (!a) continue;
+      if (a.team === ZOMBIE_TEAM) continue;
       if (a.team === winner) a.credits = Math.min(MAX_CREDITS, a.credits + WIN_REWARD);
       else a.credits = Math.min(MAX_CREDITS, a.credits + LOSS_BONUS[this.lossStreak[loser]]);
-      // plant reward to attackers regardless
       if (a.team === this.attackersTeam && this.spike.planted) a.credits = Math.min(MAX_CREDITS, a.credits + PLANT_REWARD);
     }
-
-    this.onRoundEnd?.(result);
-
-    // match end?
+    this.onRoundEnd?.(this.lastResult);
     if (this.scoreAttackers >= ROUNDS_TO_WIN || this.scoreDefenders >= ROUNDS_TO_WIN) {
       this.over = true;
       this.winner = this.scoreAttackers >= ROUNDS_TO_WIN ? 'attackers' : 'defenders';
@@ -380,40 +432,34 @@ export class World {
 
   private nextRound() {
     this.round++;
-    // swap sides at the half
-    if (this.round === HALF_ROUNDS + 1) {
-      this.attackersTeam = this.attackersTeam === 'attackers' ? 'defenders' : 'attackers';
-    }
+    if (this.round === HALF_ROUNDS + 1) this.attackersTeam = this.attackersTeam === 'attackers' ? 'defenders' : 'attackers';
     this.startBuyPhase();
   }
 
-  // ── Local input → movement / actions ──────────────────────
+  // ── Local input ───────────────────────────────────────────
   private applyLocalInput(a: Actor, dt: number) {
     const inp = this.input;
     a.yaw = inp.yaw;
     a.pitch = Math.max(-1.45, Math.min(1.45, inp.pitch));
     a.crouch = inp.crouch;
-
-    // movement vector in world space from local frame
     const move = this.localToWorld(a.yaw, inp.moveX, inp.moveZ);
     this.integrate(a, dt, move.x, move.z, inp.jump, inp.crouch, inp.run);
-
-    // weapon switching
     if (inp.switchEdge) { this.switchTo(a, inp.switchEdge); inp.switchEdge = null; }
-
-    // reload
     if (inp.reloadEdge) { this.beginReload(a); inp.reloadEdge = false; }
     this.tickReload(a);
-
-    // ability
     if (inp.abilityEdge) { this.castAbility(a, inp.abilityEdge); inp.abilityEdge = null; }
-
-    // fire
     if (inp.firing && this.phase !== 'buy') this.tryFire(a);
+    // spike intent (guest sends; director handles in tickSpikeInteractions)
+    if (this.mode === 'standard' && !this.isDirector) {
+      if (a.team === this.attackersTeam && a.hasSpike && inp.plant && this.onSite(a)) {
+        this.outEvents.push({ kind: 'spike', type: 'plant', active: true, pos: v(a.pos.x, 0, a.pos.z) });
+      } else if (a.team !== this.attackersTeam && this.spike.planted && inp.defuse && this.spike.pos && dist2D(a.pos, this.spike.pos) < 2) {
+        this.outEvents.push({ kind: 'spike', type: 'defuse', active: true, pos: null });
+      }
+    }
   }
 
   private localToWorld(yaw: number, strafe: number, forward: number): Vec3 {
-    // forward (+) = look direction on XZ; yaw 0 faces -Z
     const fx = Math.sin(yaw), fz = -Math.cos(yaw);
     const sx = Math.cos(yaw), sz = Math.sin(yaw);
     return { x: fx * forward + sx * strafe, y: 0, z: fz * forward + sz * strafe };
@@ -423,89 +469,91 @@ export class World {
     const agent = getAgent(a.agentId);
     let max = crouch ? CROUCH_SPEED : (run ? RUN_SPEED : WALK_SPEED);
     max *= agent.passive?.moveMul ?? 1;
+    if (a.isZombie) max = (ZOMBIE_SPEED + (this.wave - 1) * ZOMBIE_SPEED_PER_WAVE);
     if (a.speedBoostUntil > this.now) max *= 1.35;
     if (a.hasSpike) max *= 0.97;
-
     const wishLen = Math.hypot(wishX, wishZ);
     let wx = 0, wz = 0;
     if (wishLen > 0.001) { wx = wishX / wishLen; wz = wishZ / wishLen; }
-
-    // horizontal accel toward wish
-    const targetVx = wx * max, targetVz = wz * max;
     if (wishLen > 0.001) {
-      a.vel.x += (targetVx - a.vel.x) * Math.min(1, ACCEL * dt / Math.max(1, max));
-      a.vel.z += (targetVz - a.vel.z) * Math.min(1, ACCEL * dt / Math.max(1, max));
+      a.vel.x += (wx * max - a.vel.x) * Math.min(1, ACCEL * dt / Math.max(1, max));
+      a.vel.z += (wz * max - a.vel.z) * Math.min(1, ACCEL * dt / Math.max(1, max));
     } else {
       const fr = Math.max(0, 1 - FRICTION * dt / Math.max(1, max));
       a.vel.x *= fr; a.vel.z *= fr;
     }
-
-    // gravity + jump
     if (a.onGround && jump) { a.vel.y = JUMP_VELOCITY; a.onGround = false; }
     a.vel.y -= GRAVITY * dt;
-
-    // integrate
-    a.pos.x += a.vel.x * dt;
-    a.pos.z += a.vel.z * dt;
-    a.pos.y += a.vel.y * dt;
-
+    a.pos.x += a.vel.x * dt; a.pos.z += a.vel.z * dt; a.pos.y += a.vel.y * dt;
     resolveHorizontal(a.pos, PLAYER_RADIUS);
-
-    // vertical: rest on ground/box tops
     const floor = groundHeightAt(a.pos.x, a.pos.z, PLAYER_RADIUS);
-    if (a.pos.y <= floor + 0.001) {
-      a.pos.y = floor;
-      if (a.vel.y < 0) a.vel.y = 0;
-      a.onGround = true;
-    } else {
-      a.onGround = false;
-    }
-
-    // anim hint
-    const speed = Math.hypot(a.vel.x, a.vel.z);
-    a.anim.moveSpeed = Math.min(1, speed / RUN_SPEED);
-    // recoil recovery
+    if (a.pos.y <= floor + 0.001) { a.pos.y = floor; if (a.vel.y < 0) a.vel.y = 0; a.onGround = true; }
+    else a.onGround = false;
+    a.anim.moveSpeed = Math.min(1, Math.hypot(a.vel.x, a.vel.z) / RUN_SPEED);
     a.recoil = Math.max(0, a.recoil - dt * 6);
   }
 
-  // ── Bots ──────────────────────────────────────────────────
+  // ── Remote actor interpolation ────────────────────────────
+  private interpRemote(a: Actor, dt: number) {
+    const n = a.net;
+    if (!n) return;
+    const k = Math.min(1, dt * 16);
+    a.pos.x += (n.px - a.pos.x) * k;
+    a.pos.y += (n.py - a.pos.y) * k;
+    a.pos.z += (n.pz - a.pos.z) * k;
+    let dy = ((n.yaw - a.yaw + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+    a.yaw += dy * k;
+    a.pitch += (n.pitch - a.pitch) * k;
+    a.anim.moveSpeed = n.moveSpeed;
+    a.crouch = n.crouch;
+    if (n.firing > a.anim.firing) a.anim.firing = n.firing;
+  }
+
+  // ── Bots / zombies (director) ─────────────────────────────
   private tickBot(a: Actor, dt: number) {
     if (!a.alive) { this.integrate(a, dt, 0, 0, false, false, false); return; }
-    if (this.phase === 'roundEnd') { this.integrate(a, dt, 0, 0, false, false, false); return; }
-    if (this.phase === 'buy') {
-      // hold in spawn during buy; tiny idle settle
-      this.integrate(a, dt, 0, 0, false, false, false);
-      return;
-    }
+    if (this.phase === 'roundEnd' || this.phase === 'buy') { this.integrate(a, dt, 0, 0, false, false, false); return; }
     const bw: BotWorld = {
-      now: this.now,
-      actors: this.actors,
-      spikePlanted: this.spike.planted,
-      spikePos: this.spike.pos,
-      localTeamAttacking: this.attackersTeam === this.localTeam,
-      attackersTeam: this.attackersTeam,
+      now: this.now, actors: this.actors, spikePlanted: this.spike.planted, spikePos: this.spike.pos,
+      localTeamAttacking: this.attackersTeam === this.localTeam, attackersTeam: this.attackersTeam,
     };
     const intent = botThink(a, bw, this.config.botDifficulty);
     a.yaw += this.angleLerp(a.yaw, intent.wantYaw, dt * (4 + this.config.botDifficulty * 6));
     a.pitch += (intent.wantPitch - a.pitch) * Math.min(1, dt * 8);
     a.crouch = intent.crouch;
     this.integrate(a, dt, intent.moveX, intent.moveZ, false, intent.crouch, true);
-
     this.tickReload(a);
     if (a.ammo === 0 && !a.reloading) this.beginReload(a);
-
     if (intent.fire) this.tryFire(a);
-
-    // bots use abilities occasionally during action
     if (this.phase === 'action' && Math.random() < 0.002) this.botUseAbility(a);
-
-    // plant / defuse
     if (intent.wantPlant) this.handlePlant(a, dt);
     if (intent.wantDefuse) this.handleDefuse(a, dt);
   }
 
+  private tickZombie(a: Actor, dt: number) {
+    if (!a.alive) { this.integrate(a, dt, 0, 0, false, false, false); return; }
+    // nearest living survivor
+    let target: Actor | null = null; let best = Infinity;
+    for (const s of this.actors) {
+      if (s.team !== SURVIVOR_TEAM || !s.alive) continue;
+      const d = dist2D(a.pos, s.pos);
+      if (d < best) { best = d; target = s; }
+    }
+    if (!target) { this.integrate(a, dt, 0, 0, false, false, false); return; }
+    const dx = target.pos.x - a.pos.x, dz = target.pos.z - a.pos.z;
+    a.yaw += this.angleLerp(a.yaw, Math.atan2(dx, -dz), dt * 6);
+    const reach = best > ZOMBIE_ATTACK_RANGE;
+    this.integrate(a, dt, reach ? Math.sin(a.yaw) : 0, reach ? -Math.cos(a.yaw) : 0, false, false, true);
+    a.anim.moveSpeed = reach ? 1 : 0;
+    if (best <= ZOMBIE_ATTACK_RANGE && (a.attackReady ?? 0) <= this.now) {
+      a.attackReady = this.now + ZOMBIE_ATTACK_CD * 1000;
+      a.anim.firing = this.now;
+      this.dealDamage(target, a, ZOMBIE_DAMAGE, false, 'Zombie');
+    }
+  }
+
   private angleLerp(from: number, to: number, t: number): number {
-    let diff = ((to - from + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+    const diff = ((to - from + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
     return diff * Math.min(1, t);
   }
 
@@ -513,17 +561,14 @@ export class World {
   beginReload(a: Actor) {
     const w = getWeapon(a.currentWeapon);
     if (a.reloading || a.ammo >= w.magazine || a.reserve <= 0 || w.class === 'melee') return;
-    a.reloading = true;
-    a.reloadEnd = this.now + w.reloadTime * 1000;
+    a.reloading = true; a.reloadEnd = this.now + w.reloadTime * 1000;
   }
   private tickReload(a: Actor) {
     if (!a.reloading) return;
     if (this.now >= a.reloadEnd) {
       const w = getWeapon(a.currentWeapon);
-      const need = w.magazine - a.ammo;
-      const take = Math.min(need, a.reserve);
-      a.ammo += take; a.reserve -= take;
-      a.reloading = false;
+      const take = Math.min(w.magazine - a.ammo, a.reserve);
+      a.ammo += take; a.reserve -= take; a.reloading = false;
     }
   }
 
@@ -534,101 +579,81 @@ export class World {
     const interval = 1000 / w.fireRate;
     if (this.now - a.lastShot < interval) return false;
     if (w.class !== 'melee' && a.ammo <= 0) { this.beginReload(a); return false; }
-
     a.lastShot = this.now;
     if (w.class !== 'melee') a.ammo--;
     a.anim.firing = this.now;
     a.recoil = Math.min(1.4, a.recoil + (w.class === 'sniper' ? 0.9 : 0.18));
-
     const moving = Math.hypot(a.vel.x, a.vel.z) > 0.6;
     const adsBonus = (a.isLocal && this.input.ads) ? 0.35 : 1;
     let spread = (w.spread + (moving ? w.spreadMoving : 0) + a.recoil * 0.02) * adsBonus;
     if (a.crouch) spread *= 0.6;
-
     const pellets = w.pellets ?? 1;
-    for (let p = 0; p < pellets; p++) {
-      this.fireRay(a, w, spread);
-    }
+    for (let p = 0; p < pellets; p++) this.fireRay(a, w, spread);
     return true;
   }
 
   private fireRay(a: Actor, w: ReturnType<typeof getWeapon>, spread: number) {
     const origin = v(a.pos.x, a.pos.y + (a.crouch ? CROUCH_EYE_HEIGHT : EYE_HEIGHT), a.pos.z);
-    // direction from yaw/pitch + spread
     const yaw = a.yaw + (Math.random() - 0.5) * spread * 2;
     const pitch = a.pitch + (Math.random() - 0.5) * spread * 2;
-    const dir = v(
-      Math.sin(yaw) * Math.cos(pitch),
-      Math.sin(pitch),
-      -Math.cos(yaw) * Math.cos(pitch),
-    );
+    const dir = v(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), -Math.cos(yaw) * Math.cos(pitch));
     const maxT = w.range;
-
     const wallHit = raycastBoxes(origin, dir, maxT);
-    const wallT = wallHit ? wallHit.t : maxT;
-
-    // find nearest enemy hit before wall
-    let bestT = wallT;
-    let victim: Actor | null = null;
-    let headshot = false;
+    let bestT = wallHit ? wallHit.t : maxT;
+    let victim: Actor | null = null; let headshot = false;
     for (const t of this.actors) {
-      if (!t.alive || t.team === a.team || t === a) continue;
+      if (!t.alive || t === a) continue;
+      if (t.team === a.team) continue;
       const base = v(t.pos.x, t.pos.y, t.pos.z);
-      // head sphere
       const headC = v(t.pos.x, t.pos.y + (t.crouch ? HEAD_HEIGHT - 0.55 : HEAD_HEIGHT), t.pos.z);
       const th = raySphere(origin, dir, headC, HEAD_RADIUS, bestT);
       if (th !== null && th < bestT) { bestT = th; victim = t; headshot = true; }
-      // body capsule
       const bh = rayCapsule(origin, dir, base, t.crouch ? PLAYER_HEIGHT * 0.62 : PLAYER_HEIGHT, PLAYER_RADIUS, bestT);
       if (bh !== null && bh < bestT) { bestT = bh; victim = t; headshot = false; }
     }
-
     const end = v(origin.x + dir.x * bestT, origin.y + dir.y * bestT, origin.z + dir.z * bestT);
     this.tracers.push({ id: TRACER_ID++, from: origin, to: end, bornAt: this.now, team: a.team, hit: !!victim });
-
     if (victim) {
-      let dmg = headshot ? w.damageHead : w.damageBody;
-      // simple legshot chance from low pitch hits handled as body; melee always body
-      this.applyDamage(victim, a, dmg, headshot, w.name);
+      const dmg = headshot ? w.damageHead : w.damageBody;
+      // zombies take reduced headshot multiplier? keep full for satisfying kills
+      this.dealDamage(victim, a, dmg, headshot, w.name);
     }
   }
 
-  private applyDamage(victim: Actor, attacker: Actor, dmg: number, headshot: boolean, weapon: string) {
+  /** Route damage: remote actors get a relay event; local-sim actors apply now. */
+  private dealDamage(victim: Actor, attacker: Actor, dmg: number, head: boolean, weapon: string) {
+    if (!victim.alive) return;
+    if (victim.remote) {
+      this.outEvents.push(victim.kind === 'human'
+        ? { kind: 'hit', target: victim.id, dmg, head, weapon }
+        : { kind: 'bhit', target: victim.id, dmg, head, weapon });
+      return;
+    }
+    this.applyDamage(victim, attacker, dmg, head, weapon);
+  }
+
+  private applyDamage(victim: Actor, attacker: Actor | null, dmg: number, headshot: boolean, weapon: string) {
     if (!victim.alive) return;
     victim.anim.hitFlash = this.now;
-    // armor absorbs a portion
-    if (victim.shieldHp > 0) {
-      const a = Math.min(victim.shieldHp, dmg * 0.5);
-      victim.shieldHp -= a; dmg -= a;
-    }
-    if (victim.armor > 0 && dmg > 0) {
-      const absorbed = Math.min(victim.armor, dmg * 0.5);
-      victim.armor -= absorbed;
-      dmg -= absorbed;
-    }
+    if (attacker) victim.lastHitBy = attacker.id;
+    if (victim.shieldHp > 0) { const a = Math.min(victim.shieldHp, dmg * 0.5); victim.shieldHp -= a; dmg -= a; }
+    if (victim.armor > 0 && dmg > 0) { const ab = Math.min(victim.armor, dmg * 0.5); victim.armor -= ab; dmg -= ab; }
     victim.hp -= dmg;
-    if (victim.hp <= 0) {
-      victim.hp = 0;
-      this.kill(victim, attacker, headshot, weapon);
-    }
+    if (victim.hp <= 0) { victim.hp = 0; this.kill(victim, attacker, headshot, weapon); }
   }
 
-  private kill(victim: Actor, killer: Actor, headshot: boolean, weapon: string) {
-    victim.alive = false;
-    victim.deaths++;
-    victim.anim.deathTime = this.now;
-    victim.vel = v();
-    // drop spike
+  private kill(victim: Actor, killer: Actor | null, headshot: boolean, weapon: string) {
+    victim.alive = false; victim.deaths++; victim.anim.deathTime = this.now; victim.vel = v();
     if (victim.hasSpike) {
       victim.hasSpike = false;
-      // nearest attacker picks up implicitly via carrier reassignment
       const carrier = this.actors.find((x) => x.alive && x.team === this.attackersTeam);
       if (carrier && !this.spike.planted) { carrier.hasSpike = true; this.spike.carrierId = carrier.id; }
     }
     if (killer && killer !== victim && killer.team !== victim.team) {
       killer.kills++;
       killer.score += headshot ? 250 : 200;
-      killer.credits = Math.min(MAX_CREDITS, killer.credits + KILL_REWARD);
+      const reward = victim.isZombie ? ZOMBIE_KILL_REWARD : KILL_REWARD;
+      killer.credits = Math.min(MAX_CREDITS, killer.credits + reward);
       killer.ultPoints = Math.min(10, killer.ultPoints + 1);
     }
     const entry: KillFeedEntry = {
@@ -639,60 +664,49 @@ export class World {
     this.onKill?.(entry);
   }
 
-  // ── Spike ─────────────────────────────────────────────────
+  // ── Spike (director) ──────────────────────────────────────
+  private onSite(a: Actor): boolean { return SITE_LIST.some((s) => dist2D(a.pos, s) < s.r); }
+
   private tickSpikeInteractions() {
     const local = this.local;
-    if (!local || !local.alive) { if (this.local) { this.spike.planting = false; this.spike.defusing = false; } return; }
-    const attacking = local.team === this.attackersTeam;
-    if (attacking && !this.spike.planted && local.hasSpike && this.input.plant && this.onSite(local)) {
-      this.handlePlant(local, this.lastDt());
-    } else if (!attacking && this.spike.planted && this.input.defuse && this.spike.pos && dist2D(local.pos, this.spike.pos) < 2) {
-      this.handleDefuse(local, this.lastDt());
-    } else {
-      // decay local progress if not actively planting/defusing
-      if (this.spike.planting || this.spike.defusing) {
-        this.spike.progress = Math.max(0, this.spike.progress - this.lastDt() * 0.5);
-        if (this.spike.progress <= 0) { this.spike.planting = false; this.spike.defusing = false; }
-      }
+    let acted = false;
+    // host-local player intent
+    if (local && local.alive) {
+      if (local.team === this.attackersTeam && !this.spike.planted && local.hasSpike && this.input.plant && this.onSite(local)) { this.handlePlant(local, this._lastDt); acted = true; }
+      else if (local.team !== this.attackersTeam && this.spike.planted && this.input.defuse && this.spike.pos && dist2D(local.pos, this.spike.pos) < 2) { this.handleDefuse(local, this._lastDt); acted = true; }
+    }
+    // remote player intent
+    if (!acted && this.remoteSpike && this.remoteSpike.until > this.now) {
+      const rs = this.remoteSpike;
+      if (rs.type === 'plant' && !this.spike.planted && rs.pos) {
+        const fake: Actor = { pos: rs.pos, hasSpike: true } as Actor;
+        if (this.onSite(fake)) { this.handlePlant(this.actors.find((a) => a.hasSpike) ?? local!, this._lastDt, rs.pos); acted = true; }
+      } else if (rs.type === 'defuse' && this.spike.planted) { this.handleDefuse(local ?? this.actors[0], this._lastDt); acted = true; }
+    }
+    if (!acted && (this.spike.planting || this.spike.defusing)) {
+      this.spike.progress = Math.max(0, this.spike.progress - this._lastDt * 0.5);
+      if (this.spike.progress <= 0) { this.spike.planting = false; this.spike.defusing = false; }
     }
   }
 
-  private _lastDt = TICK_DT;
-  private lastDt() { return this._lastDt; }
-
-  private onSite(a: Actor): boolean {
-    return SITE_LIST.some((s) => dist2D(a.pos, s) < s.r);
-  }
-
-  private handlePlant(a: Actor, dt: number) {
-    if (this.spike.planted || !a.hasSpike) return;
-    if (!this.onSite(a)) return;
-    this._lastDt = dt;
+  private handlePlant(a: Actor, dt: number, posOverride?: Vec3) {
+    if (this.spike.planted) return;
+    const pos = posOverride ?? a.pos;
     this.spike.planting = true; this.spike.defusing = false;
     this.spike.progress = Math.min(1, this.spike.progress + dt / PLANT_TIME);
     if (this.spike.progress >= 1) {
-      this.spike.planted = true;
-      this.spike.planting = false;
-      this.spike.pos = v(a.pos.x, 0, a.pos.z);
-      this.spike.plantedAt = this.now;
-      this.spike.progress = 0;
-      a.hasSpike = false;
-      a.ultPoints = Math.min(10, a.ultPoints + 1);
-      this.phase = 'planted';
-      this.phaseEndsAt = this.now + SPIKE_TIME * 1000;
+      this.spike.planted = true; this.spike.planting = false;
+      this.spike.pos = v(pos.x, 0, pos.z); this.spike.plantedAt = this.now; this.spike.progress = 0;
+      if (a) { a.hasSpike = false; a.ultPoints = Math.min(10, a.ultPoints + 1); }
+      this.phase = 'planted'; this.phaseEndsAt = this.now + SPIKE_TIME * 1000;
     }
   }
-
   private handleDefuse(a: Actor, dt: number) {
     if (!this.spike.planted || !this.spike.pos) return;
-    if (dist2D(a.pos, this.spike.pos) > 2) return;
-    this._lastDt = dt;
     this.spike.defusing = true; this.spike.planting = false;
     this.spike.progress = Math.min(1, this.spike.progress + dt / DEFUSE_TIME);
-    if (this.spike.progress >= 1) {
-      this.spike.defusing = false;
-      this.endRound(this.defendersTeam(), 'defuse');
-    }
+    if (this.spike.progress >= 1) { this.spike.defusing = false; this.endRound(this.defendersTeam(), 'defuse'); }
+    void a;
   }
 
   // ── Abilities ─────────────────────────────────────────────
@@ -701,18 +715,11 @@ export class World {
     const agent = getAgent(a.agentId);
     const ab = agent.abilities.find((x) => x.slot === slot);
     if (!ab) return;
-    if (slot === 'X') {
-      if (a.ultPoints < (ab.ultPoints ?? 8)) return;
-      a.ultPoints = 0;
-    } else {
-      const have = a.abilityCharges[ab.id] ?? 0;
-      if (have <= 0) return;
-      a.abilityCharges[ab.id] = have - 1;
-    }
+    if (slot === 'X') { if (a.ultPoints < (ab.ultPoints ?? 8)) return; a.ultPoints = 0; }
+    else { const have = a.abilityCharges[ab.id] ?? 0; if (have <= 0) return; a.abilityCharges[ab.id] = have - 1; }
     a.anim.casting = this.now;
-    this.executeAbility(a, ab.kind, ab.id, slot === 'X');
+    this.executeAbility(a, ab.kind, slot === 'X');
   }
-
   private botUseAbility(a: Actor) {
     const agent = getAgent(a.agentId);
     for (const ab of agent.abilities) {
@@ -720,115 +727,203 @@ export class World {
       if ((a.abilityCharges[ab.id] ?? 0) > 0) { this.castAbility(a, ab.slot); return; }
     }
   }
+  private forward(a: Actor, dist: number): Vec3 { return v(a.pos.x + Math.sin(a.yaw) * dist, a.pos.y, a.pos.z - Math.cos(a.yaw) * dist); }
 
-  private forward(a: Actor, dist: number): Vec3 {
-    return v(a.pos.x + Math.sin(a.yaw) * dist, a.pos.y, a.pos.z - Math.cos(a.yaw) * dist);
-  }
-
-  private executeAbility(a: Actor, kind: import('../types').AbilityKind, id: string, ult: boolean) {
+  private executeAbility(a: Actor, kind: AbilityKind, ult: boolean) {
     const now = this.now;
     switch (kind) {
-      case 'dash': {
-        const power = ult ? 11 : 9;
-        a.vel.x = Math.sin(a.yaw) * power;
-        a.vel.z = -Math.cos(a.yaw) * power;
-        a.vel.y = 2.4;
-        a.onGround = false;
-        break;
-      }
-      case 'heal': {
-        a.healUntil = now + (ult ? 3000 : 4000);
-        if (ult) { a.hp = a.maxHp; a.shieldHp = 50; }
-        break;
-      }
-      case 'shield': {
-        a.shieldHp = Math.max(a.shieldHp, ult ? 75 : 50);
-        if (ult) a.speedBoostUntil = now + 6000;
-        break;
-      }
-      case 'smoke': {
-        const p = this.forward(a, 8);
-        const floor = groundHeightAt(p.x, p.z);
-        this.fx.push({ id: `fx${FX_ID++}`, kind: 'smoke', team: a.team, pos: v(p.x, floor, p.z), radius: 4, endsAt: now + 12000, ownerId: a.id });
-        break;
-      }
-      case 'wall': {
-        const p = this.forward(a, 4);
-        const box = { cx: p.x, cy: 1.2, cz: p.z, hx: Math.abs(Math.cos(a.yaw)) * 3 + 0.4, hy: 1.2, hz: Math.abs(Math.sin(a.yaw)) * 3 + 0.4, color: a.team === 'attackers' ? '#ff4655' : '#16e0a3', solid: true };
-        this.dynamicWalls.push({ box, endsAt: now + 12000 });
-        this.fx.push({ id: `fx${FX_ID++}`, kind: 'wall', team: a.team, pos: v(p.x, 0, p.z), radius: 3, endsAt: now + 12000, ownerId: a.id });
-        break;
-      }
-      case 'flash': {
-        const p = this.forward(a, ult ? 6 : 10);
-        this.fx.push({ id: `fx${FX_ID++}`, kind: 'flash', team: a.team, pos: v(p.x, 1.4, p.z), radius: ult ? 40 : 16, endsAt: now + 400, ownerId: a.id });
-        // blind enemies (and ult blinds wider) who can see the flash point
-        for (const t of this.actors) {
-          if (!t.alive) continue;
-          if (t.team === a.team && !ult) continue;
-          if (ult && t.team === a.team) continue;
-          const d = dist2D(t.pos, p);
-          if (d > (ult ? 40 : 18)) continue;
-          const eye = v(t.pos.x, t.pos.y + 1.5, t.pos.z);
-          if (!hasLineOfSight(eye, v(p.x, p.y, p.z))) continue;
-          // facing toward flash?
-          const ang = Math.atan2(p.x - t.pos.x, -(p.z - t.pos.z));
-          const diff = Math.abs(((ang - t.yaw + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
-          const dur = diff < 1.0 ? 1800 : diff < 1.8 ? 900 : 300;
-          t.blindUntil = Math.max(t.blindUntil, now + dur);
-        }
-        break;
-      }
-      case 'recon': {
-        const radius = ult ? 999 : 18;
-        const p = ult ? a.pos : this.forward(a, 10);
-        if (!ult) this.fx.push({ id: `fx${FX_ID++}`, kind: 'recon', team: a.team, pos: v(p.x, 1, p.z), radius: 18, endsAt: now + 4000, ownerId: a.id });
-        for (const t of this.actors) {
-          if (!t.alive || t.team === a.team) continue;
-          if (dist2D(t.pos, p) <= radius) t.revealedUntil = now + (ult ? 4000 : 3000);
-        }
-        break;
-      }
-      case 'molly': {
-        const p = this.forward(a, ult ? 0 : 9);
-        const floor = groundHeightAt(p.x, p.z);
-        this.fx.push({ id: `fx${FX_ID++}`, kind: 'molly', team: a.team, pos: v(p.x, floor, p.z), radius: ult ? 9 : 3.5, endsAt: now + (ult ? 3000 : 5000), ownerId: a.id });
-        break;
-      }
+      case 'dash': { const p = ult ? 11 : 9; a.vel.x = Math.sin(a.yaw) * p; a.vel.z = -Math.cos(a.yaw) * p; a.vel.y = 2.4; a.onGround = false; break; }
+      case 'heal': { a.healUntil = now + (ult ? 3000 : 4000); if (ult) { a.hp = a.maxHp; a.shieldHp = 50; } break; }
+      case 'shield': { a.shieldHp = Math.max(a.shieldHp, ult ? 75 : 50); if (ult) a.speedBoostUntil = now + 6000; break; }
+      case 'smoke': { const p = this.forward(a, 8); const f = groundHeightAt(p.x, p.z); this.spawnFx({ id: `fx${FX_ID++}`, kind: 'smoke', team: a.team, pos: v(p.x, f, p.z), radius: 4, endsAt: now + 12000, ownerId: a.id }, true); break; }
+      case 'wall': { const p = this.forward(a, 4); this.spawnFx({ id: `fx${FX_ID++}`, kind: 'wall', team: a.team, pos: v(p.x, 0, p.z), radius: 3, endsAt: now + 12000, ownerId: a.id }, true, a.yaw); break; }
+      case 'flash': { const p = this.forward(a, ult ? 6 : 10); this.spawnFx({ id: `fx${FX_ID++}`, kind: 'flash', team: a.team, pos: v(p.x, 1.4, p.z), radius: ult ? 40 : 16, endsAt: now + 400, ownerId: a.id }, true); break; }
+      case 'recon': { const ar = ult ? 999 : 18; const p = ult ? a.pos : this.forward(a, 10); this.spawnFx({ id: `fx${FX_ID++}`, kind: 'recon', team: a.team, pos: v(p.x, 1, p.z), radius: ar, endsAt: now + 4000, ownerId: a.id }, true); break; }
+      case 'molly': { const p = this.forward(a, ult ? 0 : 9); const f = groundHeightAt(p.x, p.z); this.spawnFx({ id: `fx${FX_ID++}`, kind: 'molly', team: a.team, pos: v(p.x, f, p.z), radius: ult ? 9 : 3.5, endsAt: now + (ult ? 3000 : 5000), ownerId: a.id }, true); break; }
     }
+  }
+
+  /** Spawn a world fx locally and (if it was cast here) queue it for the network. */
+  private spawnFx(fx: WorldFx, localCast: boolean, yaw = 0) {
+    if (fx.kind === 'wall') {
+      const box: Box = { cx: fx.pos.x, cy: 1.2, cz: fx.pos.z, hx: Math.abs(Math.cos(yaw)) * 3 + 0.4, hy: 1.2, hz: Math.abs(Math.sin(yaw)) * 3 + 0.4, color: fx.team === 'attackers' ? '#ff4655' : '#16e0a3', solid: true };
+      this.dynamicWalls.push({ id: fx.id, box, endsAt: fx.endsAt });
+    }
+    this.fx.push(fx);
+    if (fx.kind === 'flash') {
+      for (const t of this.actors) {
+        if (!t.alive || t.remote) continue;            // only blind locally-simulated actors
+        if (t.team === fx.team) continue;
+        const d = dist2D(t.pos, fx.pos);
+        if (d > fx.radius + 2) continue;
+        const eye = v(t.pos.x, t.pos.y + 1.5, t.pos.z);
+        if (!hasLineOfSight(eye, fx.pos)) continue;
+        const ang = Math.atan2(fx.pos.x - t.pos.x, -(fx.pos.z - t.pos.z));
+        const diff = Math.abs(((ang - t.yaw + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
+        const dur = diff < 1.0 ? 1800 : diff < 1.8 ? 900 : 300;
+        t.blindUntil = Math.max(t.blindUntil, this.now + dur);
+      }
+    } else if (fx.kind === 'recon') {
+      for (const t of this.actors) { if (t.alive && t.team !== fx.team && t.team !== ZOMBIE_TEAM) { if (dist2D(t.pos, fx.pos) <= fx.radius) t.revealedUntil = this.now + 3500; } }
+    }
+    if (localCast && this.netMode !== 'solo') this.outEvents.push({ kind: 'fx', fx });
   }
 
   private tickHazards(dt: number) {
-    this._lastDt = dt;
     for (const f of this.fx) {
       if (f.kind !== 'molly') continue;
       for (const t of this.actors) {
-        if (!t.alive || t.team === f.team) continue;
+        if (!t.alive || t.remote || t.team === f.team) continue; // self-authoritative: only damage local-sim actors
         if (dist2D(t.pos, f.pos) <= f.radius && Math.abs(t.pos.y - f.pos.y) < 2.5) {
-          this.applyDamage(t, this.actors.find((x) => x.id === f.ownerId)!, 30 * dt, false, 'Hazard');
+          this.applyDamage(t, this.actors.find((x) => x.id === f.ownerId) ?? null, 30 * dt, false, 'Hazard');
         }
       }
-      // also damage local if applicable handled above (team check)
     }
+  }
+
+  // ── Networking: outbound state ────────────────────────────
+  getPlayerState(): NetPlayerState | null {
+    const a = this.local; if (!a) return null;
+    return {
+      px: a.pos.x, py: a.pos.y, pz: a.pos.z, yaw: a.yaw, pitch: a.pitch,
+      hp: a.hp, armor: a.armor, shieldHp: a.shieldHp, alive: a.alive, crouch: a.crouch,
+      weapon: a.currentWeapon, agentId: a.agentId, team: a.team,
+      moveSpeed: a.anim.moveSpeed, firing: a.anim.firing, name: a.name, hasSpike: a.hasSpike,
+    };
+  }
+
+  getMatchState(): NetMatchState {
+    const bots: NetBotState[] = this.actors.filter((a) => a.kind === 'bot').map((b) => ({
+      id: b.id, name: b.name, team: b.team, agentId: b.agentId,
+      px: b.pos.x, py: b.pos.y, pz: b.pos.z, yaw: b.yaw, pitch: b.pitch,
+      hp: b.hp, alive: b.alive, isZombie: !!b.isZombie, moveSpeed: b.anim.moveSpeed, firing: b.anim.firing, crouch: b.crouch,
+    }));
+    return {
+      now: this.now, mode: this.mode, phase: this.phase, round: this.round, wave: this.wave, zombiesLeft: this.zombiesLeft,
+      scoreAttackers: this.scoreAttackers, scoreDefenders: this.scoreDefenders, attackersTeam: this.attackersTeam,
+      phaseEndsAt: this.phaseEndsAt, spike: this.spike, over: this.over, winner: this.winner, bots,
+    };
+  }
+
+  drainEvents(): NetEvent[] { if (!this.outEvents.length) return []; const e = this.outEvents; this.outEvents = []; return e; }
+
+  /** A networked player disconnected — drop their actor. */
+  removeActor(id: string) { this.actors = this.actors.filter((a) => a.id !== id || a.isLocal); }
+
+  // ── Networking: inbound apply ─────────────────────────────
+  applyRemotePlayer(id: string, st: NetPlayerState) {
+    let a = this.actors.find((x) => x.id === id);
+    if (!a) {
+      a = this.makeActor(id, st.name, 'human', st.team, st.agentId, false);
+      a.remote = true; this.actors.push(a);
+    }
+    a.remote = true;
+    a.team = st.team; a.agentId = st.agentId; a.currentWeapon = st.weapon; a.name = st.name;
+    a.hp = st.hp; a.armor = st.armor; a.shieldHp = st.shieldHp; a.alive = st.alive; a.hasSpike = st.hasSpike;
+    if (!a.alive && a.anim.deathTime === 0) a.anim.deathTime = this.now;
+    if (a.alive) a.anim.deathTime = 0;
+    a.net = { px: st.px, py: st.py, pz: st.pz, yaw: st.yaw, pitch: st.pitch, t: this.now, moveSpeed: st.moveSpeed, firing: st.firing, crouch: st.crouch };
+  }
+
+  applyMatchState(st: NetMatchState) {
+    if (this.isDirector) return;
+    this.now = st.now;
+    this.mode = st.mode; this.phase = st.phase; this.round = st.round; this.wave = st.wave; this.zombiesLeft = st.zombiesLeft;
+    this.scoreAttackers = st.scoreAttackers; this.scoreDefenders = st.scoreDefenders; this.attackersTeam = st.attackersTeam;
+    this.phaseEndsAt = st.phaseEndsAt; this.spike = st.spike; this.over = st.over; this.winner = st.winner;
+    this.reconcileBots(st.bots);
+  }
+
+  private reconcileBots(list: NetBotState[]) {
+    const seen = new Set<string>();
+    for (const b of list) {
+      seen.add(b.id);
+      let a = this.actors.find((x) => x.id === b.id);
+      if (!a) { a = this.makeActor(b.id, b.name, 'bot', b.team, b.agentId, false); a.remote = true; a.isZombie = b.isZombie; this.actors.push(a); }
+      a.remote = true; a.isZombie = b.isZombie; a.team = b.team; a.hp = b.hp; a.alive = b.alive;
+      if (!a.alive && a.anim.deathTime === 0) a.anim.deathTime = this.now;
+      if (a.alive) a.anim.deathTime = 0;
+      a.net = { px: b.px, py: b.py, pz: b.pz, yaw: b.yaw, pitch: b.pitch, t: this.now, moveSpeed: b.moveSpeed, firing: b.firing, crouch: b.crouch };
+    }
+    // drop bots no longer present
+    this.actors = this.actors.filter((a) => a.kind !== 'bot' || seen.has(a.id) || !a.remote);
+  }
+
+  /** Inbound damage to our own avatar (from a relayed hit). */
+  applyIncomingHit(fromId: string, dmg: number, head: boolean, weapon: string) {
+    const v0 = this.local; if (!v0 || !v0.alive) return;
+    v0.anim.hitFlash = this.now; v0.lastHitBy = fromId;
+    if (v0.shieldHp > 0) { const s = Math.min(v0.shieldHp, dmg * 0.5); v0.shieldHp -= s; dmg -= s; }
+    if (v0.armor > 0 && dmg > 0) { const ab = Math.min(v0.armor, dmg * 0.5); v0.armor -= ab; dmg -= ab; }
+    v0.hp -= dmg;
+    if (v0.hp <= 0) { v0.hp = 0; this.handleLocalDeath(fromId, weapon, head); }
+  }
+
+  private handleLocalDeath(killerId: string, weapon: string, head: boolean) {
+    const a = this.local; if (!a) return;
+    a.alive = false; a.deaths++; a.anim.deathTime = this.now; a.vel = v();
+    if (a.hasSpike) a.hasSpike = false;
+    this.outEvents.push({ kind: 'death', killer: killerId, weapon, head });
+    if (this.isDirector) this.tallyKill(a.id, killerId, weapon, head);
+  }
+
+  /** Host: a guest reported its death — update scores / round. */
+  applyRemoteDeath(victimId: string, killerId: string, weapon: string, head: boolean) {
+    const v0 = this.actors.find((x) => x.id === victimId);
+    if (v0) { v0.alive = false; if (v0.anim.deathTime === 0) v0.anim.deathTime = this.now; }
+    if (this.isDirector) this.tallyKill(victimId, killerId, weapon, head);
+    else {
+      // guest: killfeed only
+      const killer = this.actors.find((x) => x.id === killerId);
+      this.pushFeed(killer?.name ?? '—', v0?.name ?? '—', weapon, head, killer?.team ?? 'attackers', v0?.team ?? 'defenders');
+    }
+  }
+
+  private tallyKill(victimId: string, killerId: string, weapon: string, head: boolean) {
+    const victim = this.actors.find((x) => x.id === victimId);
+    const killer = this.actors.find((x) => x.id === killerId);
+    if (victim) { victim.alive = false; victim.deaths = Math.max(victim.deaths, victim.deaths); }
+    if (killer && killer.id !== victimId && killer.team !== victim?.team) {
+      killer.kills++; killer.score += head ? 250 : 200;
+      killer.credits = Math.min(MAX_CREDITS, killer.credits + KILL_REWARD);
+      killer.ultPoints = Math.min(10, killer.ultPoints + 1);
+    }
+    this.pushFeed(killer?.name ?? '—', victim?.name ?? '—', weapon, head, killer?.team ?? 'attackers', victim?.team ?? 'defenders');
+    if (this.mode === 'standard') this.checkElimination();
+  }
+
+  private pushFeed(killer: string, victim: string, weapon: string, head: boolean, kt: Team, vt: Team) {
+    this.killFeed.unshift({ id: KF_ID++, killer, victim, weapon, headshot: head, killerTeam: kt, victimTeam: vt, at: this.now });
+    this.onKill?.(this.killFeed[0]);
+  }
+
+  /** Host: a guest shot one of our bots/zombies. */
+  applyBotHit(fromId: string, targetId: string, dmg: number, head: boolean, weapon: string) {
+    if (!this.isDirector) return;
+    const bot = this.actors.find((x) => x.id === targetId && x.kind === 'bot');
+    if (!bot || !bot.alive) return;
+    const attacker = this.actors.find((x) => x.id === fromId) ?? null;
+    this.applyDamage(bot, attacker, dmg, head, weapon);
+  }
+
+  /** Any client: spawn a relayed fx (not re-broadcast). */
+  applyRemoteFx(fx: WorldFx) { this.spawnFx(fx, false, 0); }
+
+  /** Host: a remote player's plant/defuse intent. */
+  applySpikeIntent(_playerId: string, type: 'plant' | 'defuse', active: boolean, pos: Vec3 | null) {
+    if (!this.isDirector || this.mode !== 'standard') return;
+    if (!active) { this.remoteSpike = null; return; }
+    this.remoteSpike = { type, pos, until: this.now + 300 };
   }
 
   // ── Snapshot ──────────────────────────────────────────────
   getSnapshot(): MatchSnapshot {
     return {
-      now: this.now,
-      phase: this.phase,
-      round: this.round,
-      scoreAttackers: this.scoreAttackers,
-      scoreDefenders: this.scoreDefenders,
-      localTeam: this.localTeam,
-      phaseEndsAt: this.phaseEndsAt,
-      spike: this.spike,
-      actors: this.actors,
-      fx: this.fx,
-      killFeed: this.killFeed,
-      lastResult: this.lastResult,
-      over: this.over,
-      winner: this.winner,
+      now: this.now, mode: this.mode, wave: this.wave, zombiesLeft: this.zombiesLeft,
+      phase: this.phase, round: this.round, scoreAttackers: this.scoreAttackers, scoreDefenders: this.scoreDefenders,
+      localTeam: this.localTeam, phaseEndsAt: this.phaseEndsAt, spike: this.spike,
+      actors: this.actors, fx: this.fx, killFeed: this.killFeed,
+      lastResult: this.lastResult, over: this.over, winner: this.winner,
     };
   }
 }

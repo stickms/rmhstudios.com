@@ -28,7 +28,9 @@ export function Character({ actor, getNow }: { actor: Actor; getNow?: () => numb
   const phase = useRef(0);
 
   const agent = getAgent(actor.agentId);
-  const teamColor = actor.team === 'attackers' ? PALETTE.attacker : PALETTE.defender;
+  const isZombie = !!actor.isZombie;
+  const teamColor = isZombie ? '#6f9b2e' : actor.team === 'attackers' ? PALETTE.attacker : PALETTE.defender;
+  const bodyColor = isZombie ? '#3f5a25' : agent.color;
 
   useFrame((_, dt) => {
     const g = group.current; const b = body.current;
@@ -98,7 +100,7 @@ export function Character({ actor, getNow }: { actor: Actor; getNow?: () => numb
         {/* torso */}
         <mesh castShadow position={[0, 0.55, 0]}>
           <boxGeometry args={[0.55, 0.7, 0.34]} />
-          <meshLambertMaterial ref={torsoMat} color={agent.color} transparent />
+          <meshLambertMaterial ref={torsoMat} color={bodyColor} transparent />
         </mesh>
         {/* team chest stripe */}
         <mesh position={[0, 0.55, 0.18]}>
@@ -119,7 +121,7 @@ export function Character({ actor, getNow }: { actor: Actor; getNow?: () => numb
         <group ref={armR} position={[0.34, 0.78, 0]}>
           <mesh castShadow position={[0, -0.22, 0.18]}>
             <boxGeometry args={[0.16, 0.5, 0.16]} />
-            <meshLambertMaterial color={agent.color} />
+            <meshLambertMaterial color={bodyColor} />
           </mesh>
           {/* gun stub in right hand */}
           {actor.alive && (
@@ -132,7 +134,7 @@ export function Character({ actor, getNow }: { actor: Actor; getNow?: () => numb
         <group ref={armL} position={[-0.34, 0.78, 0]}>
           <mesh castShadow position={[0, -0.22, 0.18]}>
             <boxGeometry args={[0.16, 0.5, 0.16]} />
-            <meshLambertMaterial color={agent.color} />
+            <meshLambertMaterial color={bodyColor} />
           </mesh>
         </group>
         {/* legs */}

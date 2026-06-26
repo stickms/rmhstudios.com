@@ -301,9 +301,53 @@
 .bp-result-actions { display: flex; gap: 12px; justify-content: center; }
 .bp-result-actions .bp-cta { width: auto; }
 
+/* ── Menu extras ── */
+.bp-text { width: 100%; background: var(--panel-2); border: 1px solid var(--line); color: #fff; padding: 9px 12px; font-family: var(--mono); font-size: 14px; }
+.bp-text:focus { outline: none; border-color: var(--att); }
+.bp-agent-pick { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; background: var(--panel-2); border: 1px solid var(--line); border-left: 3px solid var(--c); color: #cfd5e0; padding: 10px 12px; cursor: pointer; text-align: left; }
+.bp-agent-pick:hover { border-color: var(--c); }
+.bp-agent-pick-l { font-size: 11px; letter-spacing: 2px; color: var(--muted); }
+.bp-agent-pick-name { font-family: var(--disp); font-size: 22px; letter-spacing: 1px; }
+.bp-agent-pick-role { font-size: 10px; letter-spacing: 1px; color: var(--muted); }
+.bp-divider { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 10px; letter-spacing: 2px; }
+.bp-divider::before, .bp-divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+/* ── Lobby (team select) ── */
+.bp-lobby-modebar { display: flex; align-items: center; gap: 14px; justify-content: center; padding: 8px; }
+.bp-lobby-modebar > span { font-size: 11px; letter-spacing: 3px; color: var(--muted); }
+.bp-lobby-modebar .bp-pillrow { width: auto; }
+.bp-lobby-modebar .bp-pillrow button { padding: 6px 18px; font-size: 16px; }
+.bp-lobby-teams { flex: 1; display: flex; align-items: stretch; justify-content: center; gap: 20px; padding: 16px 24px; overflow: hidden; }
+.bp-team-col { flex: 1; max-width: 460px; display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line); border-top: 3px solid var(--c); }
+.bp-team-head { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; font-family: var(--disp); font-size: 24px; letter-spacing: 3px; color: var(--c); border-bottom: 1px solid var(--line); }
+.bp-team-count { font-size: 16px; color: var(--muted); }
+.bp-team-slots { display: flex; flex-direction: column; gap: 8px; padding: 12px; overflow-y: auto; }
+.bp-slot { display: flex; align-items: center; gap: 10px; height: 56px; padding: 0 12px; border: 1px solid var(--line); background: var(--panel-2); }
+.bp-slot.empty { justify-content: center; color: var(--muted); font-family: var(--disp); letter-spacing: 2px; font-size: 16px; cursor: default; }
+.bp-slot.joinable { cursor: pointer; border-style: dashed; color: var(--c); }
+.bp-slot.joinable:hover { background: color-mix(in srgb, var(--c) 14%, transparent); }
+.bp-slot.filled.me { border-color: var(--gold); }
+.bp-slot-fig { width: 30px; height: 38px; border-radius: 30% 30% 8% 8%; flex: none; opacity: .9; clip-path: polygon(28% 0, 72% 0, 86% 42%, 80% 100%, 20% 100%, 14% 42%); }
+.bp-slot-info { flex: 1; min-width: 0; }
+.bp-slot-name { font-size: 14px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bp-slot-agent { font-size: 10px; letter-spacing: 1px; }
+.bp-slot-ready { font-family: var(--disp); letter-spacing: 1px; font-size: 13px; color: var(--muted); }
+.bp-slot-ready.on { color: var(--def); }
+.bp-team-vs { align-self: center; font-family: var(--disp); font-size: 30px; color: var(--muted); letter-spacing: 2px; }
+.bp-lobby-waiting { font-family: var(--disp); letter-spacing: 3px; color: var(--gold); font-size: 22px; padding: 10px 40px; }
+.bp-lobby-hint { text-align: center; font-size: 11px; color: var(--muted); padding-bottom: 12px; }
+.bp-lobby-btn.ready-on { background: var(--def); color: #04120c; border-color: var(--def); }
+
+.bp-neterror { position: absolute; inset: 0; display: grid; place-content: center; gap: 16px; justify-items: center; background: rgba(6,8,12,.9); z-index: 50; color: #ff5566; font-family: var(--disp); font-size: 24px; letter-spacing: 2px; text-align: center; }
+
 /* Clear the floating "RMH Studios" exit button (top-left) on wider screens */
 @media (min-width: 769px) {
   .bp-as-top, .bp-lobby-nav { padding-left: 150px; }
+}
+
+@media (max-width: 768px) {
+  .bp-lobby-teams { flex-direction: column; gap: 10px; padding: 10px; overflow-y: auto; }
+  .bp-team-vs { padding: 4px; }
 }
 
 /* ── Responsive ── */

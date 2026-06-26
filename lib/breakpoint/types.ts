@@ -2,7 +2,10 @@
 // BREAKPOINT — shared types
 // ============================================================
 
-export type Team = 'attackers' | 'defenders';
+export type Team = 'attackers' | 'defenders' | 'zombies';
+
+export type MatchMode = 'standard' | 'zombies';
+export type NetMode = 'solo' | 'host' | 'guest';
 
 export type GamePhase =
   | 'menu'
@@ -137,6 +140,13 @@ export interface Actor {
   // bot brain
   brain?: BotBrain;
 
+  // networking / mode
+  remote?: boolean;       // state arrives over the network (don't simulate)
+  isZombie?: boolean;     // PvE zombie actor
+  attackReady?: number;   // ms — next melee attack allowed (zombies)
+  lastHitBy?: string;     // id of last attacker (for kill attribution)
+  net?: { px: number; py: number; pz: number; yaw: number; pitch: number; t: number; moveSpeed: number; firing: number; crouch: boolean }; // interp target
+
   // stats
   kills: number;
   deaths: number;
@@ -214,6 +224,9 @@ export interface RoundResult {
 
 export interface MatchSnapshot {
   now: number;              // engine clock (ms)
+  mode: MatchMode;
+  wave: number;             // zombies: current wave
+  zombiesLeft: number;      // zombies: remaining this wave
   phase: RoundPhase;
   round: number;            // 1-indexed
   scoreAttackers: number;
@@ -234,8 +247,48 @@ export interface LobbyMember {
   id: string;
   name: string;
   agentId: string | null;
+  team: Team;
   ready: boolean;
   isHost: boolean;
   isBot: boolean;
   rank: number; // cosmetic rating number
+}
+
+// ── Networking events (drained from the engine, sent over the socket) ──
+export type NetEvent =
+  | { kind: 'hit'; target: string; dmg: number; head: boolean; weapon: string }
+  | { kind: 'bhit'; target: string; dmg: number; head: boolean; weapon: string }
+  | { kind: 'death'; killer: string; weapon: string; head: boolean }
+  | { kind: 'fx'; fx: WorldFx }
+  | { kind: 'spike'; type: 'plant' | 'defuse'; active: boolean; pos: Vec3 | null };
+
+/** Compact per-player state broadcast ~20Hz by every client for its own avatar. */
+export interface NetPlayerState {
+  px: number; py: number; pz: number;
+  yaw: number; pitch: number;
+  hp: number; armor: number; shieldHp: number;
+  alive: boolean; crouch: boolean;
+  weapon: string; agentId: string; team: Team;
+  moveSpeed: number; firing: number; name: string;
+  hasSpike: boolean;
+}
+
+/** Match-director state broadcast by the host. */
+export interface NetMatchState {
+  now: number;
+  mode: MatchMode;
+  phase: RoundPhase;
+  round: number; wave: number; zombiesLeft: number;
+  scoreAttackers: number; scoreDefenders: number;
+  attackersTeam: Team;
+  phaseEndsAt: number;
+  spike: SpikeState;
+  over: boolean; winner: Team | null;
+  bots: NetBotState[];
+}
+
+export interface NetBotState {
+  id: string; name: string; team: Team; agentId: string;
+  px: number; py: number; pz: number; yaw: number; pitch: number;
+  hp: number; alive: boolean; isZombie: boolean; moveSpeed: number; firing: number; crouch: boolean;
 }

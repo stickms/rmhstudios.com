@@ -66,5 +66,26 @@ export const SPIKE_PICKUP_BONUS = 300;
 
 export const MOBILE_BREAKPOINT = 768;
 
+// ── Zombies mode ─────────────────────────────────────────────
+export const ZOMBIE_WAVES = 10;          // survive this many to win
+export const ZOMBIE_BASE_COUNT = 6;      // wave 1 size
+export const ZOMBIE_PER_WAVE = 3;        // +N per wave
+export const ZOMBIE_MAX_ALIVE = 14;      // concurrent cap (perf)
+export const ZOMBIE_HP = 130;
+export const ZOMBIE_HP_PER_WAVE = 18;
+export const ZOMBIE_SPEED = 3.4;
+export const ZOMBIE_SPEED_PER_WAVE = 0.12;
+export const ZOMBIE_DAMAGE = 22;
+export const ZOMBIE_ATTACK_RANGE = 2.0;
+export const ZOMBIE_ATTACK_CD = 0.9;     // seconds between hits
+export const ZOMBIE_KILL_REWARD = 70;
+export const ZOMBIE_WAVE_REWARD = 600;
+export const ZOMBIE_BUY_TIME = 18;       // between-wave prep
+
+// ── Networking ───────────────────────────────────────────────
+export const NET_PLAYER_HZ = 20;         // own-avatar broadcast rate
+export const NET_MATCH_HZ = 12;          // host match-state broadcast rate
+export const NET_INTERP_MS = 110;        // remote interpolation delay buffer
+
 // ── Map bounds (a compact symmetric two-site map: "Foundry") ──
 export const MAP_HALF = 26; // world spans roughly -26..26 on x/z

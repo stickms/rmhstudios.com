@@ -32,6 +32,7 @@ export function AgentSelect() {
   const selected = useBreakpointStore((s) => s.selectedAgent);
   const setSelected = useBreakpointStore((s) => s.setSelectedAgent);
   const setPhase = useBreakpointStore((s) => s.setPhase);
+  const agentReturn = useBreakpointStore((s) => s.agentReturn);
   const actorRef = useRef<Actor>(previewActor(selected));
   // keep preview actor in sync with selection
   actorRef.current.agentId = selected;
@@ -40,9 +41,9 @@ export function AgentSelect() {
   return (
     <div className="bp-agentselect">
       <div className="bp-as-top">
-        <button className="bp-back" onClick={() => setPhase('menu')}>← BACK</button>
+        <button className="bp-back" onClick={() => setPhase(agentReturn)}>← BACK</button>
         <div className="bp-as-heading">SELECT YOUR AGENT</div>
-        <button className="bp-cta bp-cta-sm" onClick={() => setPhase('lobby')}>LOCK IN →</button>
+        <button className="bp-cta bp-cta-sm" onClick={() => setPhase(agentReturn)}>LOCK IN →</button>
       </div>
 
       <div className="bp-as-body">

@@ -7,6 +7,18 @@ import { getAgent } from '@/lib/breakpoint/agents';
 export function Scoreboard({ snap }: { snap: MatchSnapshot }) {
   const att = snap.actors.filter((a) => a.team === 'attackers').sort((a, b) => b.kills - a.kills);
   const def = snap.actors.filter((a) => a.team === 'defenders').sort((a, b) => b.kills - a.kills);
+  const isZombies = snap.mode === 'zombies';
+
+  if (isZombies) {
+    return (
+      <motion.div className="bp-scoreboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+        <div className="bp-sb-header">
+          <span className="bp-sb-vs">ROCHESTER OFFENSIVE · ZOMBIES · WAVE {snap.wave}/10</span>
+        </div>
+        <TeamTable title="SURVIVORS" team="attackers" actors={att} localTeam={snap.localTeam} />
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div className="bp-scoreboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>

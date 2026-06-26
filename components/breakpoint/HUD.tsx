@@ -29,25 +29,38 @@ export function HUD({ snap }: { snap: MatchSnapshot }) {
   return (
     <div className="bp-hud">
       {/* ── Top bar: score + timer ── */}
-      <div className="bp-topbar">
-        <div className="bp-score-side bp-score-att" style={{ borderColor: attColor }}>
-          <span className="bp-score-num" style={{ color: attColor }}>{snap.scoreAttackers}</span>
-        </div>
-        <div className="bp-timer-block">
-          <div className={`bp-timer ${snap.phase === 'planted' ? 'bp-timer-spike' : ''}`}>
-            {snap.phase === 'planted' ? 'SPIKE' : fmtTime(timeLeft)}
+      {snap.mode === 'zombies' ? (
+        <div className="bp-topbar">
+          <div className="bp-timer-block" style={{ minWidth: 280 }}>
+            <div className={`bp-timer ${snap.phase === 'buy' ? '' : 'bp-timer-spike'}`}>
+              {snap.phase === 'buy' ? `PREP ${fmtTime(timeLeft)}` : `WAVE ${snap.wave}`}
+            </div>
+            <div className="bp-round-label">
+              {snap.phase === 'buy' ? `WAVE ${snap.wave} / ${10} INCOMING` : `${snap.zombiesLeft} ZOMBIES LEFT · WAVE ${snap.wave}/10`}
+            </div>
           </div>
-          <div className="bp-roundpips">
-            {Array.from({ length: ROUNDS_TO_WIN }).map((_, i) => (
-              <span key={`a${i}`} className="bp-pip" style={{ background: i < snap.scoreAttackers ? attColor : 'transparent', borderColor: attColor }} />
-            ))}
+        </div>
+      ) : (
+        <div className="bp-topbar">
+          <div className="bp-score-side bp-score-att" style={{ borderColor: attColor }}>
+            <span className="bp-score-num" style={{ color: attColor }}>{snap.scoreAttackers}</span>
           </div>
-          <div className="bp-round-label">ROUND {snap.round}</div>
+          <div className="bp-timer-block">
+            <div className={`bp-timer ${snap.phase === 'planted' ? 'bp-timer-spike' : ''}`}>
+              {snap.phase === 'planted' ? 'SPIKE' : fmtTime(timeLeft)}
+            </div>
+            <div className="bp-roundpips">
+              {Array.from({ length: ROUNDS_TO_WIN }).map((_, i) => (
+                <span key={`a${i}`} className="bp-pip" style={{ background: i < snap.scoreAttackers ? attColor : 'transparent', borderColor: attColor }} />
+              ))}
+            </div>
+            <div className="bp-round-label">ROUND {snap.round}</div>
+          </div>
+          <div className="bp-score-side bp-score-def" style={{ borderColor: defColor }}>
+            <span className="bp-score-num" style={{ color: defColor }}>{snap.scoreDefenders}</span>
+          </div>
         </div>
-        <div className="bp-score-side bp-score-def" style={{ borderColor: defColor }}>
-          <span className="bp-score-num" style={{ color: defColor }}>{snap.scoreDefenders}</span>
-        </div>
-      </div>
+      )}
 
       {/* ── Minimap ── */}
       <div className="bp-minimap-wrap">
@@ -152,9 +165,9 @@ export function HUD({ snap }: { snap: MatchSnapshot }) {
             style={{ borderColor: snap.lastResult.winner === 'attackers' ? attColor : defColor }}
           >
             <div className="bp-rb-result" style={{ color: snap.lastResult.winner === snap.localTeam ? '#fff' : '#ff5566' }}>
-              {snap.lastResult.winner === snap.localTeam ? 'ROUND WON' : 'ROUND LOST'}
+              {snap.mode === 'zombies' ? `WAVE ${snap.lastResult.round} CLEARED` : snap.lastResult.winner === snap.localTeam ? 'ROUND WON' : 'ROUND LOST'}
             </div>
-            <div className="bp-rb-reason">{reasonText(snap.lastResult.reason)}</div>
+            <div className="bp-rb-reason">{snap.mode === 'zombies' ? 'Prepare for the next wave' : reasonText(snap.lastResult.reason)}</div>
           </motion.div>
         )}
       </AnimatePresence>

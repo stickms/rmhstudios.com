@@ -57,9 +57,10 @@ export function Minimap({ snap }: { snap: MatchSnapshot }) {
     for (const a of snap.actors) {
       if (!a.alive) continue;
       const isAlly = local && a.team === local.team;
-      if (!isAlly && a.revealedUntil <= snap.now) continue; // enemies only when revealed
+      const isZombie = a.team === 'zombies';
+      if (!isAlly && !isZombie && a.revealedUntil <= snap.now) continue; // enemies only when revealed
       const px = toX(a.pos.x), py = toY(a.pos.z);
-      ctx.fillStyle = a.team === 'attackers' ? '#ff4655' : '#16e0a3';
+      ctx.fillStyle = isZombie ? '#cc4a3a' : a.team === 'attackers' ? '#ff4655' : '#16e0a3';
       if (a.isLocal) {
         // arrow pointing in yaw direction
         ctx.save();
@@ -74,7 +75,7 @@ export function Minimap({ snap }: { snap: MatchSnapshot }) {
         ctx.beginPath();
         ctx.arc(px, py, 3.2, 0, Math.PI * 2);
         ctx.fill();
-        if (!isAlly) { // revealed enemy ring
+        if (!isAlly && !isZombie) { // revealed enemy ring
           ctx.strokeStyle = '#ffd35a'; ctx.lineWidth = 1.2; ctx.stroke();
         }
       }
