@@ -36,13 +36,26 @@ describe('mix', () => {
     expect(out.effects).not.toContain('jittery');
   });
   it('caps effects at MAX_EFFECTS dropping lowest tier first', () => {
-    // Fill with 8 effects then add one more via an additive; tier-1 should be dropped.
+    // 8 distinct effects, excluding energizing (cuke's base effect) and sedating
+    // (cuke's only transform source) so NO transforms fire and appending energizing
+    // would make 9 effects — forcing the cap to drop a lowest-tier (tier-1) effect.
     const eight: Product = {
       baseId: 'greenstart',
-      effects: ['energizing','calming','gingeritis','sneaky','spicy','euphoric','focused','sedating'],
+      effects: ['calming', 'gingeritis', 'jittery', 'sneaky', 'spicy', 'euphoric', 'focused', 'glowing'],
     };
-    const out = mix(eight, 'battery'); // adds euphoric(dupe) — actually transforms; use a tier-3 add
-    expect(out.effects.length).toBeLessThanOrEqual(8);
+    const out = mix(eight, 'cuke');
+    // Cap fired: result is held at 8, not 9.
+    expect(out.effects).toHaveLength(8);
+    // The tier-3 effect and every tier-2 effect survive; only a tier-1 was dropped.
+    expect(out.effects).toContain('glowing'); // tier 3
+    for (const e of ['sneaky', 'spicy', 'euphoric', 'focused'] as const) {
+      expect(out.effects).toContain(e); // all tier-2 survive
+    }
+    // Started with 3 tier-1 effects; adding a 4th tier-1 then capping leaves 3.
+    const tier1 = out.effects.filter((e) =>
+      ['energizing', 'calming', 'gingeritis', 'jittery'].includes(e),
+    );
+    expect(tier1).toHaveLength(3);
   });
 });
 
