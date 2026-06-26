@@ -14,9 +14,9 @@ export interface ParticleBudget {
  *  rain/fog>0 only matters on compute tiers (ultra/high) except medium, which
  *  runs `rain` on the CPU path. */
 const BUDGETS: Record<RenderTier, ParticleBudget> = {
-    ultra:  { rain: 8000, fog: 4000, burstCap: 1500 },
-    high:   { rain: 5000, fog: 2500, burstCap: 1000 },
-    medium: { rain: 2000, fog: 0,    burstCap: 600 },
+    ultra:  { rain: 5000, fog: 2400, burstCap: 1500 },
+    high:   { rain: 3500, fog: 1500, burstCap: 1000 },
+    medium: { rain: 1500, fog: 0,    burstCap: 600 },
     low:    { rain: 0,    fog: 0,    burstCap: 300 },
 };
 

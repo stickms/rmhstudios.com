@@ -25,7 +25,7 @@ export function stepParticle(p: BurstParticle, dt: number): void {
         p.vy += 1.2 * dt;                 // buoyancy
         const drag = Math.pow(0.92, dt * 60);
         p.vx *= drag; p.vy *= drag; p.vz *= drag;
-        p.size += 0.6 * dt;               // billow
+        p.size += 0.3 * dt;               // gentle billow
     } else {
         const g = p.kind === 'debris' ? GRAVITY : GRAVITY * 0.5;
         p.vy -= g * dt;
