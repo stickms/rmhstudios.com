@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Plus, BarChart3, X, ImagePlus, Globe, Users, Lock, Unlock, EyeOff, FileText, CalendarClock, Check } from 'lucide-react';
+import { Plus, BarChart3, ImagePlay, X, ImagePlus, Globe, Users, Lock, Unlock, EyeOff, FileText, CalendarClock, Check } from 'lucide-react';
 import { GifEmbed } from './GifEmbed';
 import { GifPicker } from './GifPicker';
 import { AIGenerateButton } from './AIGenerateButton';
@@ -551,39 +551,11 @@ export function ComposeBox({
                 }
               />
 
-              {/* Image upload button */}
-              <button
-                type="button"
-                disabled={imageUrls.length >= MAX_IMAGES}
-                onClick={() => imageInputRef.current?.click()}
-                title={imageUrls.length >= MAX_IMAGES ? t("max-images-title", { defaultValue: "Maximum 4 images" }) : t("attach-images-title", { defaultValue: "Attach images" })}
-                className="p-1.5 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <ImagePlus className="w-4.5 h-4.5" />
-              </button>
-
-              {/* GIF button */}
-              <button
-                type="button"
-                onClick={() => {
-                  setAttachment((a) => (a === 'gif' ? null : 'gif'));
-                  setPoll({ question: '', options: ['', ''], multiSelect: false });
-                }}
-                aria-pressed={attachment === 'gif'}
-                title={t("attach-gif-title", { defaultValue: "Add a GIF" })}
-                className={`px-1.5 py-1 rounded-full text-[11px] font-bold leading-none border transition-colors ${
-                  attachment === 'gif'
-                    ? 'border-site-accent text-site-accent bg-site-accent/10'
-                    : 'border-site-border text-site-text-dim hover:text-site-accent hover:bg-site-accent/10'
-                }`}
-              >
-                {t("gif-heading", { defaultValue: "GIF" })}
-              </button>
-
-              {/* Plus button */}
+              {/* Plus button — image upload, GIF, poll, draft, schedule */}
               <div className="relative" ref={menuRef}>
                 <button
                   onClick={() => setMenuOpen((v) => !v)}
+                  aria-label={t("add-to-post-aria", { defaultValue: "Add to post" })}
                   className="p-1.5 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent/10 transition-colors"
                 >
                   <Plus className="w-4.5 h-4.5" />
@@ -591,6 +563,31 @@ export function ComposeBox({
 
                 {menuOpen && (
                   <div className="absolute bottom-full right-0 mb-1 w-40 bg-site-bg border border-site-border rounded-xl shadow-xl py-1 z-30">
+                    <button
+                      type="button"
+                      disabled={imageUrls.length >= MAX_IMAGES}
+                      onClick={() => {
+                        imageInputRef.current?.click();
+                        setMenuOpen(false);
+                      }}
+                      title={imageUrls.length >= MAX_IMAGES ? t("max-images-title", { defaultValue: "Maximum 4 images" }) : undefined}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      <ImagePlus className="w-4 h-4 text-site-text-dim" />
+                      {t("menu-add-image", { defaultValue: "Add Image" })}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setAttachment((a) => (a === 'gif' ? null : 'gif'));
+                        setPoll({ question: '', options: ['', ''], multiSelect: false });
+                        setMenuOpen(false);
+                      }}
+                      aria-pressed={attachment === 'gif'}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+                    >
+                      <ImagePlay className="w-4 h-4 text-site-text-dim" />
+                      {t("menu-add-gif", { defaultValue: "Add GIF" })}
+                    </button>
                     <button
                       onClick={() => {
                         setAttachment('poll');
