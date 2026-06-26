@@ -4,6 +4,7 @@ import { useRef, type MutableRefObject } from 'react';
 import { useFrame } from '@react-three/fiber';
 import type { GameSession, RenderFighter } from '@/lib/kowloon-knockout/net/session';
 import Environment from './Environment';
+import Skyline from './Skyline';
 import Lighting from './Lighting';
 import StickFighter from './StickFighter';
 import CameraRig from './CameraRig';
@@ -39,6 +40,7 @@ export default function Arena3D({ session, seatIds }: { session: GameSession; se
             <CameraRig framesRef={framesRef} shakeRef={shakeRef} />
 
             <Environment />
+            <Skyline />
 
             {seatIds.map((seat) => (
                 <StickFighter key={seat} seat={seat} framesRef={framesRef} />
