@@ -1,5 +1,5 @@
 "use client";
-import { RigidBody } from '@react-three/rapier';
+import { RigidBody, CuboidCollider } from '@react-three/rapier';
 import { Building } from '../models/Building';
 
 // Anchor positions consumed by Interactables (Tasks 8/10) and station meshes.
@@ -43,7 +43,8 @@ export function TownScene() {
       </RigidBody>
 
       {/* lab building (player property) — house variant, collider [6,3,4] centred at y=1.5 */}
-      <RigidBody type="fixed" colliders="cuboid" position={[8, 1.5, -6]}>
+      <RigidBody type="fixed" colliders={false} position={[8, 1.5, -6]}>
+        <CuboidCollider args={[3, 1.5, 2]} />
         {/* shift Building down by h/2 so its base (y=0) aligns with collider bottom (world y=0) */}
         <group position={[0, -1.5, 0]}>
           <Building variant="house" size={[6, 3, 4]} />
@@ -51,7 +52,8 @@ export function TownScene() {
       </RigidBody>
 
       {/* supplier shop — shop variant, collider [5,3,4] centred at y=1.5 */}
-      <RigidBody type="fixed" colliders="cuboid" position={[-8, 1.5, -6]}>
+      <RigidBody type="fixed" colliders={false} position={[-8, 1.5, -6]}>
+        <CuboidCollider args={[2.5, 1.5, 2]} />
         <group position={[0, -1.5, 0]}>
           <Building variant="shop" size={[5, 3, 4]} />
         </group>

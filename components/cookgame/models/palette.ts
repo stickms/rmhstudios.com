@@ -7,6 +7,7 @@ export const PALETTE = {
   sidingB: '#b0a48f',
   roof: '#5c4633',
   wood: '#7a5a3a',
+  accent: '#e05a2b',
   metal: '#8d9499',
   foliage: '#4d7a43',
   soil: '#4a3727',

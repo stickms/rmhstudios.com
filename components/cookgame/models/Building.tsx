@@ -127,10 +127,10 @@ function ShopBuilding({ w, h, d }: { w: number; h: number; d: number }) {
         <meshStandardMaterial {...matteMaterialProps(PALETTE.sidingB)} />
       </mesh>
 
-      {/* ── Sign band (front face, warm wood) ── */}
+      {/* ── Sign band (front face, pop-colour accent) ── */}
       <mesh position={[0, signY, frontZ]} castShadow>
         <boxGeometry args={[w + 0.04, signH, 0.14]} />
-        <meshStandardMaterial {...matteMaterialProps(PALETTE.wood)} />
+        <meshStandardMaterial {...matteMaterialProps(PALETTE.accent)} />
       </mesh>
 
       {/* ── Storefront window (front, centered) ── */}
