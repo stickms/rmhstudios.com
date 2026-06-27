@@ -20,7 +20,7 @@
  * common `StoreItem` shape and hand it a `seed`.
  */
 
-import { type PointerEvent as ReactPointerEvent, type ReactNode, useMemo, useState } from 'react';
+import { type PointerEvent as ReactPointerEvent, type ReactNode, useMemo, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { ArrowRight, Info } from 'lucide-react';
 
@@ -294,17 +294,54 @@ export function Storefront({
   toolbar?: ReactNode;
   emptyLabel?: ReactNode;
 }) {
-  const { hero, spotlight, mosaic } = useMemo(() => {
-    if (!featured || items.length < 5) {
-      return { hero: null as StoreItem | null, spotlight: [] as StoreItem[], mosaic: items };
+  // Stable display order. The seeded arrangement (hero/spotlight pick + mosaic
+  // shuffle) is computed ONCE per item-set and then only APPENDED to as lazy
+  // loading pulls in more items — so scrolling never re-shuffles or re-animates
+  // the cards already on screen. We re-arrange from scratch only when the set is
+  // genuinely replaced (a new search, or a fresh `seed` from a page refresh),
+  // detected by the incoming `items` no longer starting with the same prefix.
+  const orderRef = useRef<{ seed: number; featured: boolean; srcIds: string[]; displayIds: string[] }>({
+    seed: NaN,
+    featured,
+    srcIds: [],
+    displayIds: [],
+  });
+  const orderedItems = useMemo(() => {
+    const byId = new Map(items.map((it) => [it.id, it]));
+    const srcIds = items.map((it) => it.id);
+    const prev = orderRef.current;
+    // A pure append: same arrangement basis (seed + featured) and the current
+    // list still begins with exactly the previous list. Anything else — a filter,
+    // a search, a reordering, a new seed — falls through to a fresh arrangement.
+    const isAppend =
+      prev.seed === seed &&
+      prev.featured === featured &&
+      prev.srcIds.length > 0 &&
+      srcIds.length >= prev.srcIds.length &&
+      prev.srcIds.every((id, i) => srcIds[i] === id);
+
+    let displayIds: string[];
+    if (isAppend) {
+      const known = new Set(prev.srcIds);
+      const appended = srcIds.filter((id) => !known.has(id));
+      displayIds = [...prev.displayIds, ...appended];
+    } else {
+      displayIds = (featured ? seededShuffle(items, seed) : items).map((it) => it.id);
     }
-    const shuffled = seededShuffle(items, seed);
+    orderRef.current = { seed, featured, srcIds, displayIds };
+    return displayIds.map((id) => byId.get(id)).filter(Boolean) as StoreItem[];
+  }, [items, seed, featured]);
+
+  const { hero, spotlight, mosaic } = useMemo(() => {
+    if (!featured || orderedItems.length < 5) {
+      return { hero: null as StoreItem | null, spotlight: [] as StoreItem[], mosaic: orderedItems };
+    }
     return {
-      hero: shuffled[0],
-      spotlight: shuffled.slice(1, 1 + spotlightCount),
-      mosaic: shuffled.slice(1 + spotlightCount),
+      hero: orderedItems[0],
+      spotlight: orderedItems.slice(1, 1 + spotlightCount),
+      mosaic: orderedItems.slice(1 + spotlightCount),
     };
-  }, [items, seed, featured, spotlightCount]);
+  }, [orderedItems, featured, spotlightCount]);
 
   const flags = useMemo(() => wideFlags(mosaic.length, seed), [mosaic.length, seed]);
 
