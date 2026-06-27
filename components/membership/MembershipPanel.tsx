@@ -13,7 +13,7 @@
  */
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, Loader2, ArrowUpRight, Sparkles, X } from 'lucide-react';
+import { Check, Loader2, ArrowUpRight, X } from 'lucide-react';
 import type { Tier } from '@/lib/entitlements';
 import { authClient } from '@/lib/auth-client';
 
@@ -162,12 +162,6 @@ export function MembershipPanel({
 
         {/* ── Header ─────────────────────────────────────────── */}
         <header className="pricing-fade max-w-2xl">
-          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-site-border bg-site-surface/50 px-3.5 py-1.5">
-            <Sparkles className="h-3.5 w-3.5 text-site-accent" />
-            <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-site-text-muted">
-              {t('membership-label', { defaultValue: 'Membership' })}
-            </span>
-          </div>
           <h1 className="pricing-display text-5xl leading-[0.95] text-site-text sm:text-6xl">
             {t('hero-heading-line1', { defaultValue: 'Choose your' })}
             <br />

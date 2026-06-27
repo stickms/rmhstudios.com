@@ -5,7 +5,12 @@ import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Search, Loader2, Package, BookOpen } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
-import { ExploreRecommendations } from './ExploreRecommendations';
+import {
+  ExploreRecommendations,
+  type DiscoveryOfficialBuild,
+  type DiscoveryUserBuild,
+  type DiscoveryBlogPost,
+} from './ExploreRecommendations';
 
 interface SearchUser {
   id: string;
@@ -31,14 +36,36 @@ const TABS: { id: Tab; label: string }[] = [
 
 const EMPTY: SearchResults = { people: [], posts: [], builds: [], blog: [] };
 
-export function SearchColumn({ initialQuery = '' }: { initialQuery?: string }) {
+export function SearchColumn({
+  initialQuery = '',
+  initialTab = 'top',
+  officialBuilds = [],
+  userBuilds = [],
+  blogPosts = [],
+}: {
+  initialQuery?: string;
+  initialTab?: Tab;
+  officialBuilds?: DiscoveryOfficialBuild[];
+  userBuilds?: DiscoveryUserBuild[];
+  blogPosts?: DiscoveryBlogPost[];
+}) {
   const { t } = useTranslation('feed');
   const navigate = useNavigate();
   const [query, setQuery] = useState(initialQuery);
-  const [tab, setTab] = useState<Tab>('top');
+  const [tab, setTabState] = useState<Tab>(initialTab);
   const [results, setResults] = useState<SearchResults>(EMPTY);
   const [loading, setLoading] = useState(false);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Persist the active tab to the URL (alongside any query) so the selection
+  // survives refresh and is shareable, matching the rest of the app's tabs.
+  const setTab = useCallback(
+    (next: Tab) => {
+      setTabState(next);
+      void navigate({ to: '/search', search: (prev) => ({ ...prev, tab: next }), replace: true });
+    },
+    [navigate],
+  );
 
   const run = useCallback(async (q: string, type: Tab) => {
     if (q.trim().length < 2) {
@@ -106,7 +133,12 @@ export function SearchColumn({ initialQuery = '' }: { initialQuery?: string }) {
       </header>
 
       {query.trim().length < 2 ? (
-        <ExploreRecommendations />
+        <ExploreRecommendations
+          tab={tab}
+          officialBuilds={officialBuilds}
+          userBuilds={userBuilds}
+          blogPosts={blogPosts}
+        />
       ) : !hasResults && !loading ? (
         <p className="px-4 py-16 text-center text-sm text-site-text-muted">
           {t('no-results', { query, defaultValue: 'No results for "{{query}}".' })}

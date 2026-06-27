@@ -80,7 +80,6 @@ export function CuratedBuildsTab({
         title: b.title,
         description: b.description,
         coverUrl: b.thumbnailUrl,
-        wideCoverUrl: b.wideCoverUrl,
         hue: b.hue,
         tags: b.tags,
         cta: b.cta,
