@@ -1,9 +1,10 @@
 /**
  * Offline preview renderer for Dream Rift art direction.
  *
- * Renders a representative danmaku gameplay frame per stage theme to a PNG so
- * the Touhou-style sprites / bullets / background can be reviewed without
- * booting the full game. Run: pnpm exec tsx scripts/dream-rift-preview.ts
+ * Renders representative danmaku gameplay frames per stage, a character-select
+ * roster (all four playable chibis + portraits) and an animation contact sheet
+ * to PNGs so the Touhou-style art can be reviewed without booting the game.
+ * Run: pnpm exec tsx scripts/dream-rift-preview.ts [outDir]
  */
 
 import { createCanvas } from '@napi-rs/canvas';
@@ -11,7 +12,7 @@ import { writeFileSync, mkdirSync } from 'node:fs';
 import { setCanvasFactory } from '../lib/dream-rift/render/surface';
 import { BulletAtlas, type BulletShape } from '../lib/dream-rift/render/bullets';
 import { Background } from '../lib/dream-rift/render/background';
-import { playerSprites, buildBoss, buildFairy } from '../lib/dream-rift/render/sprites';
+import { playerSprites, buildBoss, buildFairy, CHARACTERS, PLAYER_IDS } from '../lib/dream-rift/render/sprites';
 import { STAGE_THEMES, BULLET_COLORS, type BulletColorName, type StageTheme } from '../lib/dream-rift/render/palette';
 
 setCanvasFactory((w, h) => {
@@ -38,14 +39,13 @@ interface B {
 
 function drawBullet(ctx: any, b: B): void {
     const info = atlas.get(b.shape, b.color);
-    const surf = info.surface;
     const SS = 3;
     const f = b.r / info.designRadius;
-    const drawW = (surf.width / SS) * f;
+    const drawW = (info.surface.width / SS) * f;
     ctx.save();
     ctx.translate(b.x, b.y);
     if (info.directional) ctx.rotate(b.a);
-    ctx.drawImage(surf.canvas as any, -drawW / 2, -drawW / 2, drawW, drawW);
+    ctx.drawImage(info.surface.canvas as any, -drawW / 2, -drawW / 2, drawW, drawW);
     ctx.restore();
 }
 
@@ -57,103 +57,41 @@ function buildScene(theme: StageTheme): B[] {
     const playerX = PF_W / 2 + 6;
     const playerY = 360;
 
-    // Spiral arms of orbs
     for (let arm = 0; arm < 4; arm++) {
         for (let i = 0; i < 22; i++) {
             const a = arm * (Math.PI / 2) + i * 0.42 + 0.3;
             const rad = 24 + i * 13;
-            bullets.push({
-                x: bossX + Math.cos(a) * rad,
-                y: bossY + Math.sin(a) * rad * 0.95,
-                a,
-                r: 6,
-                shape: 'orb',
-                color: cols[(arm + i) % cols.length],
-            });
+            bullets.push({ x: bossX + Math.cos(a) * rad, y: bossY + Math.sin(a) * rad * 0.95, a, r: 6, shape: 'orb', color: cols[(arm + i) % cols.length] });
         }
     }
-
-    // Radial ring of rice
     for (let i = 0; i < 40; i++) {
         const a = (i / 40) * Math.PI * 2;
-        const rad = 130;
-        bullets.push({
-            x: bossX + Math.cos(a) * rad,
-            y: bossY + Math.sin(a) * rad,
-            a,
-            r: 4,
-            shape: 'rice',
-            color: cols[1 % cols.length],
-        });
+        bullets.push({ x: bossX + Math.cos(a) * 130, y: bossY + Math.sin(a) * 130, a, r: 4, shape: 'rice', color: cols[1 % cols.length] });
     }
-
-    // Aimed kunai streams toward the player
     for (let s = 0; s < 5; s++) {
         const baseA = Math.atan2(playerY - bossY, playerX - bossX) + (s - 2) * 0.16;
         for (let i = 0; i < 7; i++) {
             const dist = 60 + i * 34;
-            bullets.push({
-                x: bossX + Math.cos(baseA) * dist,
-                y: bossY + Math.sin(baseA) * dist,
-                a: baseA,
-                r: 6,
-                shape: 'kunai',
-                color: cols[2 % cols.length],
-            });
+            bullets.push({ x: bossX + Math.cos(baseA) * dist, y: bossY + Math.sin(baseA) * dist, a: baseA, r: 6, shape: 'kunai', color: cols[2 % cols.length] });
         }
     }
-
-    // Big bubble bullets drifting
-    for (let i = 0; i < 6; i++) {
-        bullets.push({
-            x: 50 + i * 58,
-            y: 180 + (i % 2) * 40,
-            a: 0,
-            r: 13,
-            shape: 'bubble',
-            color: cols[(i + 3) % cols.length],
-        });
-    }
-
-    // Stars scattered mid-field
-    for (let i = 0; i < 14; i++) {
-        bullets.push({
-            x: 30 + ((i * 53) % (PF_W - 40)),
-            y: 230 + ((i * 71) % 140),
-            a: 0,
-            r: 7,
-            shape: 'star',
-            color: cols[(i + 1) % cols.length],
-        });
-    }
-
-    // Side fairy pellet fans
+    for (let i = 0; i < 6; i++) bullets.push({ x: 50 + i * 58, y: 180 + (i % 2) * 40, a: 0, r: 13, shape: 'bubble', color: cols[(i + 3) % cols.length] });
+    for (let i = 0; i < 14; i++) bullets.push({ x: 30 + ((i * 53) % (PF_W - 40)), y: 230 + ((i * 71) % 140), a: 0, r: 7, shape: 'star', color: cols[(i + 1) % cols.length] });
     for (const fx of [70, PF_W - 70]) {
         for (let i = 0; i < 9; i++) {
             const a = Math.PI / 2 + (i - 4) * 0.2;
-            bullets.push({
-                x: fx + Math.cos(a) * 36,
-                y: 150 + Math.sin(a) * 36,
-                a,
-                r: 3,
-                shape: 'pellet',
-                color: cols[0],
-            });
+            bullets.push({ x: fx + Math.cos(a) * 36, y: 150 + Math.sin(a) * 36, a, r: 3, shape: 'pellet', color: cols[0] });
         }
     }
-
     return bullets;
 }
 
 function drawHud(ctx: any, theme: StageTheme, idx: number): void {
-    // panel
     const grd = ctx.createLinearGradient(PF_W, 0, W, 0);
     grd.addColorStop(0, '#0a0614');
     grd.addColorStop(1, '#140c24');
     ctx.fillStyle = grd;
     ctx.fillRect(PF_W, 0, BAR_W, H);
-
-    // ornate divider
     ctx.fillStyle = theme.glow;
     ctx.fillRect(PF_W, 0, 2, H);
     ctx.globalAlpha = 0.4;
@@ -162,13 +100,11 @@ function drawHud(ctx: any, theme: StageTheme, idx: number): void {
 
     const x = PF_W + 16;
     ctx.textBaseline = 'alphabetic';
-
     ctx.fillStyle = '#fff';
     ctx.font = 'bold 22px sans-serif';
     ctx.fillText('Dream', x, 44);
     ctx.fillStyle = theme.glow;
     ctx.fillText('Rift', x, 68);
-
     ctx.font = '11px sans-serif';
     ctx.fillStyle = 'rgba(255,255,255,0.55)';
     ctx.fillText(`STAGE ${idx + 1} — ${theme.name.toUpperCase()}`, x, 92);
@@ -185,19 +121,15 @@ function drawHud(ctx: any, theme: StageTheme, idx: number): void {
     };
     label('HiScore', '012,480,990');
     label('Score', '004,127,360');
-
-    // lives as stars
     ctx.fillStyle = 'rgba(255,255,255,0.5)';
     ctx.font = '11px sans-serif';
     ctx.fillText('Player', x, y);
-    drawIcons(ctx, x + 4, y + 6, 3, '#ffd34d', 'star');
+    drawStars(ctx, x + 4, y + 6, 3, '#ffd34d');
     y += 32;
     ctx.fillStyle = 'rgba(255,255,255,0.5)';
     ctx.fillText('Bomb', x, y);
-    drawIcons(ctx, x + 4, y + 6, 2, '#7fdcff', 'star');
+    drawStars(ctx, x + 4, y + 6, 2, '#7fdcff');
     y += 36;
-
-    // power gauge
     ctx.fillStyle = 'rgba(255,255,255,0.5)';
     ctx.fillText('Power', x, y);
     ctx.fillStyle = 'rgba(255,255,255,0.12)';
@@ -215,7 +147,7 @@ function drawHud(ctx: any, theme: StageTheme, idx: number): void {
     ctx.fillText('1,284', x + 4, y + 20);
 }
 
-function drawIcons(ctx: any, x: number, y: number, n: number, color: string, _shape: string): void {
+function drawStars(ctx: any, x: number, y: number, n: number, color: string): void {
     ctx.fillStyle = color;
     for (let i = 0; i < n; i++) {
         const cx = x + i * 18 + 6;
@@ -234,63 +166,37 @@ function drawIcons(ctx: any, x: number, y: number, n: number, color: string, _sh
     }
 }
 
-function render(theme: StageTheme, idx: number): Buffer {
+function renderGameplay(theme: StageTheme, idx: number): Buffer {
     const canvas = createCanvas(W, H);
     const ctx = canvas.getContext('2d') as any;
-
-    // playfield clip
     ctx.save();
     ctx.beginPath();
     ctx.rect(0, 0, PF_W, PF_H);
     ctx.clip();
 
-    const bg = new Background(theme, PF_W, PF_H, idx + 1);
-    bg.draw(ctx, 600, 1200);
+    new Background(theme, PF_W, PF_H, idx + 1).draw(ctx, 600, 1200);
 
-    // spell-card radial flash behind boss
     const fg = ctx.createRadialGradient(PF_W / 2, 96, 10, PF_W / 2, 96, 220);
     fg.addColorStop(0, hexA(theme.glow, 0.22));
     fg.addColorStop(1, hexA(theme.glow, 0));
     ctx.fillStyle = fg;
     ctx.fillRect(0, 0, PF_W, PF_H);
 
-    // boss
-    const bossColors: any = [
-        { hair: '#3a2233', outfit: '#d33a55', outfitShade: '#9c2440', accent: '#ffd34d' },
-        { hair: '#1f5e7a', outfit: '#2a86b0', outfitShade: '#185a78', accent: '#9ff0ff' },
-        { hair: '#3a2a66', outfit: '#7d4bd6', outfitShade: '#532f95', accent: '#e0b3ff' },
-    ];
-    const boss = buildBoss(bossColors[idx % 3]);
-    const bossScale = 1.6;
+    const boss = buildBoss(idx % 3);
+    const bossScale = 1.7;
     ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(
-        boss.surface.canvas as any,
-        PF_W / 2 - (boss.nativeW * bossScale) / 2,
-        96 - (boss.nativeH * bossScale) / 2,
-        boss.nativeW * bossScale,
-        boss.nativeH * bossScale,
-    );
+    ctx.drawImage(boss.frames[1].canvas as any, PF_W / 2 - (boss.nativeW * bossScale) / 2, 96 - (boss.nativeH * bossScale) / 2, boss.nativeW * bossScale, boss.nativeH * bossScale);
 
-    // fairies
-    const fairy = buildFairy(BULLET_COLORS[theme.bulletColors[0]].h ? hexFromHsl(theme.bulletColors[0]) : '#fff', '#3a2030');
-    for (const fx of [70, PF_W - 70]) {
-        ctx.drawImage(fairy.canvas as any, fx - 24, 150 - 24, 48, 48);
-    }
+    const fairy = buildFairy('sprite', hexFromHsl(theme.bulletColors[0]), '#3a2030', theme.glow);
+    for (const fx of [70, PF_W - 70]) ctx.drawImage(fairy[0].canvas as any, fx - 28, 150 - 28, 56, 56);
     ctx.imageSmoothingEnabled = true;
 
-    // bullets
-    const bullets = buildScene(theme);
-    for (const b of bullets) drawBullet(ctx, b);
+    for (const b of buildScene(theme)) drawBullet(ctx, b);
 
-    // player
-    const ps = playerSprites(idx % 2 === 0 ? 'reika' : 'mira');
-    const pf = ps.frames[1];
-    const pScale = 1.5;
-    ctx.imageSmoothingEnabled = false;
+    const ps = playerSprites(PLAYER_IDS[idx % PLAYER_IDS.length]);
+    const pScale = 1.4;
     const px = PF_W / 2 + 6;
     const py = 360;
-    // option orbs
-    ctx.imageSmoothingEnabled = true;
     for (const ox of [-14, 14]) {
         const og = ctx.createRadialGradient(px + ox, py - 4, 0, px + ox, py - 4, 6);
         og.addColorStop(0, '#fff');
@@ -301,9 +207,8 @@ function render(theme: StageTheme, idx: number): Buffer {
         ctx.fill();
     }
     ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(pf.canvas as any, px - (ps.nativeW * pScale) / 2, py - (ps.nativeH * pScale) / 2, ps.nativeW * pScale, ps.nativeH * pScale);
+    ctx.drawImage(ps.idle[1].canvas as any, px - (ps.nativeW * pScale) / 2, py - (ps.nativeH * pScale) / 2, ps.nativeW * pScale, ps.nativeH * pScale);
     ctx.imageSmoothingEnabled = true;
-    // focus hitbox indicator
     ctx.fillStyle = '#fff';
     ctx.beginPath();
     ctx.arc(px, py + 4, 2.4, 0, Math.PI * 2);
@@ -314,7 +219,6 @@ function render(theme: StageTheme, idx: number): Buffer {
     ctx.arc(px, py + 4, 7, 0, Math.PI * 2);
     ctx.stroke();
 
-    // playfield vignette + border
     const vg = ctx.createRadialGradient(PF_W / 2, PF_H / 2, PF_H * 0.3, PF_W / 2, PF_H / 2, PF_H * 0.75);
     vg.addColorStop(0, 'rgba(0,0,0,0)');
     vg.addColorStop(1, 'rgba(0,0,0,0.45)');
@@ -323,8 +227,111 @@ function render(theme: StageTheme, idx: number): Buffer {
     ctx.restore();
 
     drawHud(ctx, theme, idx);
-
     return canvas.toBuffer('image/png');
+}
+
+function renderRoster(): Buffer {
+    const cardW = 200;
+    const cardH = 300;
+    const cols = 4;
+    const pad = 16;
+    const rw = cols * cardW + (cols + 1) * pad;
+    const rh = cardH + pad * 2 + 50;
+    const canvas = createCanvas(rw, rh);
+    const ctx = canvas.getContext('2d') as any;
+    const bg = ctx.createLinearGradient(0, 0, 0, rh);
+    bg.addColorStop(0, '#0a0618');
+    bg.addColorStop(1, '#1a0f2e');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, rw, rh);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 24px sans-serif';
+    ctx.fillText('Dream Rift — Choose Your Dreamer  (up to 4 players)', pad, 36);
+
+    PLAYER_IDS.forEach((id, i) => {
+        const c = CHARACTERS[id];
+        const x = pad + i * (cardW + pad);
+        const y = 56;
+        ctx.fillStyle = 'rgba(255,255,255,0.04)';
+        roundRect(ctx, x, y, cardW, cardH, 12);
+        ctx.fill();
+        ctx.strokeStyle = c.accent;
+        ctx.lineWidth = 2;
+        roundRect(ctx, x, y, cardW, cardH, 12);
+        ctx.stroke();
+        const ps = playerSprites(id);
+        ctx.imageSmoothingEnabled = false;
+        const pw = ps.portrait.width * 1.4;
+        ctx.drawImage(ps.portrait.canvas as any, x + cardW / 2 - pw / 2, y + 16, pw, ps.portrait.height * 1.4);
+        ctx.imageSmoothingEnabled = true;
+        ctx.fillStyle = c.accent;
+        ctx.font = 'bold 22px sans-serif';
+        ctx.fillText(c.name, x + 16, y + 222);
+        ctx.fillStyle = 'rgba(255,255,255,0.6)';
+        ctx.font = '11px sans-serif';
+        ctx.fillText(c.title, x + 16, y + 240);
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.font = '11px sans-serif';
+        wrap(ctx, c.shotType, x + 16, y + 262, cardW - 32, 14);
+    });
+    return canvas.toBuffer('image/png');
+}
+
+function renderAnimSheet(): Buffer {
+    const cell = 80;
+    const cols = 8; // 4 idle + 2 left + 2 right
+    const rows = PLAYER_IDS.length;
+    const labelW = 90;
+    const aw = labelW + cols * cell;
+    const ah = 40 + rows * cell;
+    const canvas = createCanvas(aw, ah);
+    const ctx = canvas.getContext('2d') as any;
+    ctx.fillStyle = '#120a22';
+    ctx.fillRect(0, 0, aw, ah);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 18px sans-serif';
+    ctx.fillText('Animation frames — idle (×4) · bank-left (×2) · bank-right (×2)', 12, 26);
+    PLAYER_IDS.forEach((id, r) => {
+        const ps = playerSprites(id);
+        const frames = [...ps.idle, ...ps.left, ...ps.right];
+        const y = 40 + r * cell;
+        ctx.fillStyle = CHARACTERS[id].accent;
+        ctx.font = 'bold 14px sans-serif';
+        ctx.fillText(CHARACTERS[id].name, 12, y + cell / 2);
+        ctx.imageSmoothingEnabled = false;
+        frames.forEach((f, ci) => {
+            const x = labelW + ci * cell;
+            ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+            ctx.strokeRect(x, y, cell, cell);
+            const sc = 1.5;
+            ctx.drawImage(f.canvas as any, x + cell / 2 - (ps.nativeW * sc) / 2, y + cell / 2 - (ps.nativeH * sc) / 2, ps.nativeW * sc, ps.nativeH * sc);
+        });
+        ctx.imageSmoothingEnabled = true;
+    });
+    return canvas.toBuffer('image/png');
+}
+
+function roundRect(ctx: any, x: number, y: number, w: number, h: number, r: number): void {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+}
+function wrap(ctx: any, text: string, x: number, y: number, maxW: number, lh: number): void {
+    const words = text.split(' ');
+    let line = '';
+    for (const w of words) {
+        const test = line ? `${line} ${w}` : w;
+        if (ctx.measureText(test).width > maxW && line) {
+            ctx.fillText(line, x, y);
+            line = w;
+            y += lh;
+        } else line = test;
+    }
+    if (line) ctx.fillText(line, x, y);
 }
 
 function hexA(hex: string, a: number): string {
@@ -333,7 +340,6 @@ function hexA(hex: string, a: number): string {
 }
 function hexFromHsl(name: BulletColorName): string {
     const { h, s, l } = BULLET_COLORS[name];
-    // quick hsl->hex
     const a = (s / 100) * Math.min(l / 100, 1 - l / 100);
     const f = (n: number) => {
         const k = (n + h / 30) % 12;
@@ -346,9 +352,11 @@ function hexFromHsl(name: BulletColorName): string {
 const outDir = process.argv[2] || '/tmp/dream-rift-preview';
 mkdirSync(outDir, { recursive: true });
 STAGE_THEMES.forEach((theme, idx) => {
-    const buf = render(theme, idx);
-    const file = `${outDir}/stage-${idx + 1}-${theme.id}.png`;
-    writeFileSync(file, buf);
-    console.log('wrote', file);
+    writeFileSync(`${outDir}/stage-${idx + 1}-${theme.id}.png`, renderGameplay(theme, idx));
+    console.log('wrote gameplay', idx + 1);
 });
+writeFileSync(`${outDir}/roster.png`, renderRoster());
+console.log('wrote roster');
+writeFileSync(`${outDir}/animations.png`, renderAnimSheet());
+console.log('wrote animations');
 console.log('done');
