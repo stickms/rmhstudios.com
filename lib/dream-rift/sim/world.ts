@@ -86,27 +86,27 @@ const TAU = Math.PI * 2;
 
 function mkBullet(): Bullet {
     return {
-        active: false, x: 0, y: 0, speed: 0, angle: 0, accel: 0, angularVel: 0,
+        active: false, x: 0, y: 0, prevX: 0, prevY: 0, speed: 0, angle: 0, accel: 0, angularVel: 0,
         minSpeed: 0, maxSpeed: 99, radius: 3, drawRadius: 6, shape: 'orb', color: 'red',
         age: 0, ttl: -1, grazedMask: 0, spin: 0, dying: 0,
     };
 }
 function mkShot(): Shot {
-    return { active: false, x: 0, y: 0, vx: 0, vy: 0, damage: 0, radius: 4, ownerSlot: 0, kind: 'amulet', color: 'red', homing: false, targetId: -1, age: 0, pierce: 0 };
+    return { active: false, x: 0, y: 0, prevX: 0, prevY: 0, vx: 0, vy: 0, damage: 0, radius: 4, ownerSlot: 0, kind: 'amulet', color: 'red', homing: false, targetId: -1, age: 0, pierce: 0 };
 }
 function mkItem(): Item {
-    return { active: false, x: 0, y: 0, vx: 0, vy: 0, kind: 'power', age: 0, attracted: false, value: 0 };
+    return { active: false, x: 0, y: 0, prevX: 0, prevY: 0, vx: 0, vy: 0, kind: 'power', age: 0, attracted: false, value: 0 };
 }
 function mkEnemy(): Enemy {
     return {
-        active: false, id: 0, x: 0, y: 0, hp: 10, maxHp: 10, radius: 12, variant: 'sprite', color: 'red',
+        active: false, id: 0, x: 0, y: 0, prevX: 0, prevY: 0, hp: 10, maxHp: 10, radius: 12, variant: 'sprite', color: 'red',
         age: 0, lifetime: 600, enterX: 0, enterY: 0, holdFrames: 120, exitDir: -Math.PI / 2, speed: 1.2,
         fireTimer: 0, fireInterval: 40, patternId: 'none', burstCount: 0,
         drops: { power: 0, point: 0, life: 0, bomb: 0 }, dead: false, hitFlash: 0,
     };
 }
 function mkEffect(): Effect {
-    return { active: false, x: 0, y: 0, vx: 0, vy: 0, age: 0, ttl: 30, kind: 'spark', color: '#fff', size: 4 };
+    return { active: false, x: 0, y: 0, prevX: 0, prevY: 0, vx: 0, vy: 0, age: 0, ttl: 30, kind: 'spark', color: '#fff', size: 4 };
 }
 
 export class World {
@@ -161,19 +161,21 @@ export class World {
         b.age = 0;
         b.grazedMask = 0;
         b.dying = 0;
+        b.prevX = b.x;
+        b.prevY = b.y;
         return b;
     }
 
     spawnEffect(kind: Effect['kind'], x: number, y: number, color: string, size = 5, ttl = 26, vx = 0, vy = 0): void {
         const e = this.effects.acquire();
         if (!e) return;
-        e.kind = kind; e.x = x; e.y = y; e.color = color; e.size = size; e.ttl = ttl; e.age = 0; e.vx = vx; e.vy = vy;
+        e.kind = kind; e.x = x; e.y = y; e.prevX = x; e.prevY = y; e.color = color; e.size = size; e.ttl = ttl; e.age = 0; e.vx = vx; e.vy = vy;
     }
 
     spawnItem(kind: ItemKind, x: number, y: number): void {
         const it = this.items.acquire();
         if (!it) return;
-        it.kind = kind; it.x = x; it.y = y; it.vx = (this.rng.next() * 2 - 1) * 0.6; it.vy = -1.8; it.age = 0; it.attracted = false;
+        it.kind = kind; it.x = x; it.y = y; it.prevX = x; it.prevY = y; it.vx = (this.rng.next() * 2 - 1) * 0.6; it.vy = -1.8; it.age = 0; it.attracted = false;
         it.value = kind === 'point' ? POINT_ITEM_BASE : 1;
     }
 
@@ -183,6 +185,8 @@ export class World {
         Object.assign(e, def);
         e.age = 0; e.dead = false; e.hitFlash = 0; e.fireTimer = 0;
         e.maxHp = e.hp;
+        e.prevX = e.x;
+        e.prevY = e.y;
         return e;
     }
 
@@ -235,6 +239,12 @@ export class World {
         let localDied = false;
         let localBombed = false;
 
+        // Snapshot last-frame positions so the renderer can interpolate between
+        // the previous and current sim frame — this lets the display run at any
+        // refresh rate (well above 60fps) while the sim stays locked at a fixed
+        // deterministic 60Hz, so multiplayer peers never desync regardless of FPS.
+        this.snapshotPrev();
+
         this.updateBullets();
         this.updatePlayers(events, (d) => (localDied = localDied || d), () => (localBombed = true));
         localBossDamage = this.updateShots(events);
@@ -245,6 +255,21 @@ export class World {
 
         void isHost;
         return { events, localBossDamage, localDied, localBombed };
+    }
+
+    /** Copy every active entity's current position into its prev* fields. */
+    private snapshotPrev(): void {
+        this.bullets.forEach((b) => { b.prevX = b.x; b.prevY = b.y; });
+        this.shots.forEach((s) => { s.prevX = s.x; s.prevY = s.y; });
+        this.items.forEach((it) => { it.prevX = it.x; it.prevY = it.y; });
+        this.enemies.forEach((e) => { e.prevX = e.x; e.prevY = e.y; });
+        this.effects.forEach((e) => { e.prevX = e.x; e.prevY = e.y; });
+        for (const p of this.players) {
+            p.prevRenderX = p.renderX;
+            p.prevRenderY = p.renderY;
+        }
+        const b = this.boss;
+        if (b) { b.prevX = b.x; b.prevY = b.y; }
     }
 
     private updateBullets(): void {
@@ -321,6 +346,9 @@ export class World {
             if (inp.up) dy -= 1;
             if (inp.down) dy += 1;
         }
+        // Normalise diagonals: moving on both axes would otherwise travel at
+        // |(1,1)| = √2 ≈ 1.41× the cardinal speed. Scaling by 1/√2 makes the
+        // movement vector unit-length so diagonal speed equals straight speed.
         if (dx && dy) {
             const inv = Math.SQRT1_2;
             dx *= inv; dy *= inv;

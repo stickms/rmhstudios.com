@@ -30,6 +30,30 @@ export function ResultScreen({ onRetry, onMenu, onLeaderboard }: { onRetry: () =
         if (result.score > prev && typeof localStorage !== 'undefined') localStorage.setItem(key, String(result.score));
     }, [result]);
 
+    // The host of a co-op run submits the squad's combined-score / time-survived
+    // record to the co-op leaderboard once, automatically (no username needed).
+    const [coopSubmitted, setCoopSubmitted] = useState(false);
+    useEffect(() => {
+        if (!result || coopSubmitted) return;
+        if (result.playerCount < 2 || !result.isHost || !session.data?.user) return;
+        setCoopSubmitted(true);
+        fetch('/api/dream-rift/coop', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                difficulty: result.difficulty,
+                combinedScore: Math.min(result.combinedScore, 40_000_000),
+                timeSurvived: result.timeSurvived,
+                stageReached: result.stageReached,
+                cleared: result.cleared,
+                players: result.perPlayer,
+            }),
+        }).catch(() => {
+            /* best-effort; a failed co-op submit shouldn't disrupt the results screen */
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [result, session.data?.user]);
+
     if (!result) return null;
     const coop = result.perPlayer.length > 1;
 
@@ -75,6 +99,8 @@ export function ResultScreen({ onRetry, onMenu, onLeaderboard }: { onRetry: () =
                 <Row label="Difficulty" value={result.difficulty} />
                 <Row label="Stage Reached" value={`${result.stageReached} / 3`} />
                 <Row label="Score" value={result.score.toLocaleString()} highlight />
+                {coop && <Row label="Combined Score" value={result.combinedScore.toLocaleString()} highlight />}
+                <Row label="Time Survived" value={formatTime(result.timeSurvived)} />
                 <Row label="Graze" value={result.graze.toLocaleString()} />
                 <Row label="Spell Cards" value={String(result.spellsCaptured)} />
                 <Row label="Deaths" value={String(result.deaths)} />
@@ -134,6 +160,13 @@ export function ResultScreen({ onRetry, onMenu, onLeaderboard }: { onRetry: () =
             </div>
         </div>
     );
+}
+
+function formatTime(seconds: number): string {
+    const s = Math.max(0, Math.floor(seconds));
+    const m = Math.floor(s / 60);
+    const rem = s % 60;
+    return `${m}:${String(rem).padStart(2, '0')}`;
 }
 
 function Row({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {

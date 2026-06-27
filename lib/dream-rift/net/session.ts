@@ -80,6 +80,8 @@ export class GameSession {
     private running = false;
     private netTick = 0;
     private destroyed = false;
+    /** Sim frames the run has been active for (drives the "time survived" stat). */
+    private runFrames = 0;
 
     constructor(opts: SessionOpts) {
         this.transport = opts.transport;
@@ -123,17 +125,23 @@ export class GameSession {
         this.acc += dt;
         const step = 1000 / FPS;
         let frames = 0;
+        // The sim always advances in whole fixed 60Hz steps (deterministic, MP-safe).
         while (this.acc >= step && frames < MAX_CATCHUP_FRAMES) {
             this.acc -= step;
             frames++;
             this.tick();
         }
-        this.render();
+        // Render as often as the display allows. `alpha` is how far we are into the
+        // next sim frame; the renderer lerps positions by it for smooth >60fps
+        // motion, and `dt` (real elapsed ms) keeps render-only animation at normal
+        // speed no matter the refresh rate.
+        const alpha = step > 0 ? Math.min(1, Math.max(0, this.acc / step)) : 1;
+        this.render(alpha, dt);
     };
 
-    private render(): void {
+    private render(alpha = 1, dtMs = 1000 / FPS): void {
         const hud = this.buildHud();
-        this.renderer.render(this.world, hud, this.localSlot);
+        this.renderer.render(this.world, hud, this.localSlot, alpha, dtMs);
     }
 
     destroy(): void {
@@ -174,6 +182,7 @@ export class GameSession {
 
         const result = this.world.step(this.isHost);
         this.phaseFrame++;
+        this.runFrames++;
 
         // sfx for local events
         for (const ev of result.events) {
@@ -359,6 +368,8 @@ export class GameSession {
             active: true,
             x: PLAYFIELD_W / 2,
             y: -40,
+            prevX: PLAYFIELD_W / 2,
+            prevY: -40,
             targetX: PLAYFIELD_W / 2,
             targetY: 110,
             hp: hp0,
@@ -538,6 +549,7 @@ export class GameSession {
         this.running = false;
         cancelAnimationFrame(this.raf);
         const lp = this.world.players[this.localSlot] ?? this.world.players[0];
+        const joined = this.world.players.filter((p) => p.joined);
         const result: RunResult = {
             cleared,
             stageReached: this.stageIndex + 1,
@@ -547,7 +559,12 @@ export class GameSession {
             deaths: lp?.deaths ?? 0,
             character: lp?.charId ?? 'bllm',
             difficulty: this.difficulty,
-            perPlayer: this.world.players.filter((p) => p.joined).map((p) => ({ name: p.name, score: Math.floor(p.score), charId: p.charId })),
+            perPlayer: joined.map((p) => ({ name: p.name, score: Math.floor(p.score), charId: p.charId })),
+            // Co-op leaderboard metrics (combined squad score + how long they lasted).
+            combinedScore: joined.reduce((sum, p) => sum + Math.floor(p.score), 0),
+            timeSurvived: Math.round(this.runFrames / FPS),
+            playerCount: joined.length,
+            isHost: this.isHost,
         };
         useDreamRift.getState().setResult(result);
         useDreamRift.getState().setScreen(cleared ? 'victory' : 'game-over');
@@ -761,6 +778,8 @@ function makePlayer(r: RosterEntry, localSlot: number): PlayerShip {
         isLocal: r.slot === localSlot,
         renderX: x,
         renderY: y,
+        prevRenderX: x,
+        prevRenderY: y,
         moveDir: 0,
         deaths: 0,
         spellsCaptured: 0,

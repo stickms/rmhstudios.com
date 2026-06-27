@@ -29,13 +29,14 @@ const player: PlayerShip = {
     x: PLAYFIELD_W / 2, y: PLAYFIELD_H - 84, lives: 3, bombs: 2, power: 96, graze: 0, score: 0, pointItems: 0,
     hitboxR: CHAR_STATS.aoi.hitboxR, invuln: 999, deathbombWindow: 0, bombActive: 0, dead: false, respawnTimer: 0,
     focus: true, firing: true, shotCd: 0, spellMeter: 0, isLocal: true, renderX: PLAYFIELD_W / 2, renderY: PLAYFIELD_H - 84,
+    prevRenderX: PLAYFIELD_W / 2, prevRenderY: PLAYFIELD_H - 84,
     moveDir: 0, deaths: 0, spellsCaptured: 0, animTime: 30,
 };
 world.players = [player];
 world.themeColors = stageTheme(stageIdx).bulletColors as BulletColorName[];
 const def = STAGES[stageIdx].boss;
 const boss: BossState = {
-    active: true, x: PLAYFIELD_W / 2, y: 100, targetX: PLAYFIELD_W / 2, targetY: 104, hp: 9999, phaseMaxHp: 9999,
+    active: true, x: PLAYFIELD_W / 2, y: 100, prevX: PLAYFIELD_W / 2, prevY: 100, targetX: PLAYFIELD_W / 2, targetY: 104, hp: 9999, phaseMaxHp: 9999,
     phaseIndex: 1, phaseStartFrame: 0, timeLeftFrames: 1800, themeIndex: def.themeIndex, cards: def.cards,
     defeated: false, introFrames: 0, moveTimer: 999, fireTimer: 0, subTimer: 0, hitFlash: 0, name: def.name,
 };

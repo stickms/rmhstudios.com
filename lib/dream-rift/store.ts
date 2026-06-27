@@ -39,6 +39,14 @@ export interface RunResult {
     character: PlayerId;
     difficulty: Difficulty;
     perPlayer: { name: string; score: number; charId: PlayerId }[];
+    /** Sum of every joined player's score (co-op combined-score leaderboard). */
+    combinedScore: number;
+    /** Seconds the squad stayed in the run (time-survived leaderboard). */
+    timeSurvived: number;
+    /** Number of players in the run (1 = solo). */
+    playerCount: number;
+    /** Whether the local client hosted the run (only the host submits co-op runs). */
+    isHost: boolean;
 }
 
 export interface DreamRiftState {

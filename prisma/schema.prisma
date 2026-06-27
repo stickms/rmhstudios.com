@@ -64,6 +64,7 @@ model User {
   versecraftProgress  VersecraftProgress?
   forestExplorerSave  ForestExplorerSave?
   dreamRiftProfile    DreamRiftPlayer?
+  dreamRiftCoopRuns   DreamRiftCoopRun[]
 
   // Slice-It Library Relations
   uploadedSongs Song[]            @relation("SongUploader")
@@ -2059,6 +2060,26 @@ model DreamRiftPlayer {
 
   @@index([highScoreNormal(sort: Desc)], map: "idx_dream_rift_high_score")
   @@index([bestStage(sort: Desc)], map: "idx_dream_rift_best_stage")
+}
+
+// A single completed multiplayer (co-op) Dream Rift run. Powers the co-op
+// leaderboards: highest combined squad score and longest time survived.
+model DreamRiftCoopRun {
+  id            String   @id @default(uuid())
+  difficulty    String   @default("normal")
+  combinedScore Int      @default(0)
+  timeSurvived  Int      @default(0) // seconds the squad stayed alive
+  stageReached  Int      @default(1)
+  cleared       Boolean  @default(false)
+  playerCount   Int      @default(2)
+  // [{ name, charId, score }] for each squad member (host-submitted snapshot).
+  players       Json
+  hostUserId    String?
+  hostUser      User?    @relation(fields: [hostUserId], references: [id], onDelete: SetNull)
+  createdAt     DateTime @default(now())
+
+  @@index([difficulty, combinedScore(sort: Desc)], map: "idx_dream_rift_coop_score")
+  @@index([difficulty, timeSurvived(sort: Desc)], map: "idx_dream_rift_coop_time")
 }
 
 // Tracks which Discord channel was last used for an activity per guild.

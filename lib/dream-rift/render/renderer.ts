@@ -61,6 +61,10 @@ export class Renderer {
     private commentLane = 0;
     private scroll = 0;
     private time = 0;
+    /** Render-interpolation factor for the current frame (set each render()). */
+    private alpha = 1;
+    /** Frames elapsed since the last render, relative to a 60fps baseline. */
+    private frameScale = 1;
     private cssW = CANVAS_W;
     private cssH = CANVAS_H;
     private flash = 0;
@@ -76,7 +80,13 @@ export class Renderer {
         canvas: HTMLCanvasElement,
         stageIndex = 0,
     ) {
-        const ctx = canvas.getContext('2d', { alpha: false });
+        // `desynchronized` opts into the browser's low-latency / hardware-accelerated
+        // presentation path (skips an extra compositing copy); `alpha: false` lets the
+        // compositor skip per-pixel blending. Both are silently ignored where
+        // unsupported, so this degrades gracefully.
+        const ctx =
+            (canvas.getContext('2d', { alpha: false, desynchronized: true }) as CanvasRenderingContext2D | null) ??
+            canvas.getContext('2d', { alpha: false });
         if (!ctx) throw new Error('2d context unavailable');
         this.ctx = ctx;
         this.theme = stageTheme(stageIndex);
@@ -157,10 +167,27 @@ export class Renderer {
         return f;
     }
 
-    render(world: World, hud: HudView, localSlot: number): void {
+    /**
+     * Draw one frame.
+     *
+     * @param alpha  Interpolation factor in [0,1] — how far the display is into
+     *               the next fixed sim frame. Entity positions are lerped from
+     *               their previous to current sim position by this, so the game
+     *               looks smooth at any refresh rate above 60fps while the sim
+     *               itself stays locked to a deterministic 60Hz.
+     * @param dtMs   Real elapsed milliseconds since the previous render. All
+     *               render-only animation (scroll, sprite cycling, comments,
+     *               flashes) is scaled by this so it runs at normal speed
+     *               regardless of how fast the display refreshes.
+     */
+    render(world: World, hud: HudView, localSlot: number, alpha = 1, dtMs = 1000 / 60): void {
         const ctx = this.ctx;
-        this.time += 16;
-        this.scroll += 1.4;
+        this.alpha = alpha < 0 ? 0 : alpha > 1 ? 1 : alpha;
+        // frames-elapsed relative to a 60fps baseline, clamped so a long stall
+        // (e.g. a backgrounded tab) can't fast-forward animations on resume.
+        this.frameScale = Math.min(5, Math.max(0, dtMs / (1000 / 60)));
+        this.time += dtMs;
+        this.scroll += 1.4 * this.frameScale;
 
         const dpr = this.dpr;
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -202,7 +229,9 @@ export class Renderer {
 
         if (world.boss?.active && world.boss.introFrames <= 0) {
             const b = world.boss;
-            const g = ctx.createRadialGradient(b.x, b.y, 8, b.x, b.y, 240);
+            const bx = this.lerp(b.prevX, b.x);
+            const by = this.lerp(b.prevY, b.y);
+            const g = ctx.createRadialGradient(bx, by, 8, bx, by, 240);
             g.addColorStop(0, hexA(this.theme.glow, 0.18));
             g.addColorStop(1, hexA(this.theme.glow, 0));
             ctx.fillStyle = g;
@@ -231,10 +260,15 @@ export class Renderer {
         if (this.flash > 0) {
             ctx.fillStyle = hexA(this.flashColor, this.flash * 0.5);
             ctx.fillRect(0, 0, PLAYFIELD_W, PLAYFIELD_H);
-            this.flash *= 0.86;
+            this.flash *= Math.pow(0.86, this.frameScale);
             if (this.flash < 0.02) this.flash = 0;
         }
         ctx.restore();
+    }
+
+    /** Interpolate a coordinate between its previous and current sim-frame value. */
+    private lerp(prev: number, cur: number): number {
+        return prev + (cur - prev) * this.alpha;
     }
 
     private drawBullets(world: World): void {
@@ -245,19 +279,22 @@ export class Renderer {
         // the transform path. Keeps thousands of bullets well under frame budget.
         world.bullets.forEach((b: Bullet) => {
             const info = this.atlas.get(b.shape, b.color);
+            // Interpolate toward the current sim position for smooth >60fps motion.
+            const ix = this.lerp(b.prevX, b.x);
+            const iy = this.lerp(b.prevY, b.y);
             const drawW = info.surface.width * INV_SS * (b.drawRadius / info.designRadius);
             const half = drawW * 0.5;
             const canvas = info.surface.canvas as CanvasImageSource;
             if (info.directional || b.spin || b.dying > 0) {
                 ctx.save();
                 if (b.dying > 0) ctx.globalAlpha = b.dying >= 10 ? 0 : 1 - b.dying / 10;
-                ctx.translate(b.x, b.y);
+                ctx.translate(ix, iy);
                 if (info.directional) ctx.rotate(b.angle);
                 else if (b.spin) ctx.rotate(b.spin * 0.04);
                 ctx.drawImage(canvas, -half, -half, drawW, drawW);
                 ctx.restore();
             } else {
-                ctx.drawImage(canvas, b.x - half, b.y - half, drawW, drawW);
+                ctx.drawImage(canvas, ix - half, iy - half, drawW, drawW);
             }
         });
     }
@@ -270,7 +307,7 @@ export class Renderer {
             const angle = Math.atan2(s.vy, s.vx);
             ctx.save();
             ctx.globalAlpha = 0.8;
-            ctx.translate(s.x, s.y);
+            ctx.translate(this.lerp(s.prevX, s.x), this.lerp(s.prevY, s.y));
             ctx.rotate(angle);
             // long thin piercing arrow vs. shorter dart
             const len = s.kind === 'lance' ? 16 : s.kind === 'star' ? 11 : 12;
@@ -284,6 +321,8 @@ export class Renderer {
     private drawItems(world: World): void {
         const ctx = this.ctx;
         world.items.forEach((it) => {
+            const ix = this.lerp(it.prevX, it.x);
+            const iy = this.lerp(it.prevY, it.y);
             const c =
                 it.kind === 'power' ? '#ff4d6d' :
                 it.kind === 'point' ? '#5fd0ff' :
@@ -293,14 +332,14 @@ export class Renderer {
             ctx.strokeStyle = '#fff';
             ctx.lineWidth = 1;
             ctx.beginPath();
-            ctx.rect(it.x - 5, it.y - 5, 10, 10);
+            ctx.rect(ix - 5, iy - 5, 10, 10);
             ctx.fill();
             ctx.stroke();
             ctx.fillStyle = '#1a1024';
             ctx.font = '7px monospace';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText(it.kind === 'power' ? 'P' : it.kind === 'point' ? 'pt' : it.kind === 'life' ? '1↑' : it.kind === 'bomb' ? 'B' : '★', it.x, it.y + 0.5);
+            ctx.fillText(it.kind === 'power' ? 'P' : it.kind === 'point' ? 'pt' : it.kind === 'life' ? '1↑' : it.kind === 'bomb' ? 'B' : '★', ix, iy + 0.5);
         });
         ctx.textAlign = 'left';
         ctx.textBaseline = 'alphabetic';
@@ -310,6 +349,8 @@ export class Renderer {
         const ctx = this.ctx;
         ctx.imageSmoothingEnabled = false;
         world.enemies.forEach((e: Enemy) => {
+            const ex = this.lerp(e.prevX, e.x);
+            const ey = this.lerp(e.prevY, e.y);
             const frames = this.fairy(e.variant, e.color);
             const fr = frames[Math.floor(this.time / 140) % frames.length];
             const sc = e.variant === 'sentinel' ? 1.5 : 1.2;
@@ -317,7 +358,7 @@ export class Renderer {
             if (e.hitFlash > 0) {
                 ctx.globalCompositeOperation = 'lighter';
             }
-            ctx.drawImage(fr.canvas as CanvasImageSource, e.x - (fr.width * sc) / 2, e.y - (fr.height * sc) / 2, fr.width * sc, fr.height * sc);
+            ctx.drawImage(fr.canvas as CanvasImageSource, ex - (fr.width * sc) / 2, ey - (fr.height * sc) / 2, fr.width * sc, fr.height * sc);
             ctx.restore();
         });
         ctx.imageSmoothingEnabled = true;
@@ -327,6 +368,8 @@ export class Renderer {
         const b = world.boss;
         if (!b || !b.active) return;
         const ctx = this.ctx;
+        const bx = this.lerp(b.prevX, b.x);
+        const by = this.lerp(b.prevY, b.y);
         const sheet = this.currentBossSheet ? this.spriteAssets?.bosses[this.currentBossSheet] : undefined;
         ctx.save();
         if (b.introFrames > 0) ctx.globalAlpha = Math.min(1, (180 - b.introFrames) / 60);
@@ -334,12 +377,12 @@ export class Renderer {
         if (sheet && sheet.def.frames.length) {
             const idx = sheet.def.frames[Math.floor(this.time / 130) % sheet.def.frames.length];
             // boss cells carry transparent padding, so scale generously
-            this.drawSheet(sheet, idx, b.x, b.y, 210);
+            this.drawSheet(sheet, idx, bx, by, 210);
         } else {
             ctx.imageSmoothingEnabled = false;
             const frame = this.bossSprites.frames[Math.floor(this.time / 130) % this.bossSprites.frames.length];
             const sc = 1.7;
-            ctx.drawImage(frame.canvas as CanvasImageSource, b.x - (this.bossSprites.nativeW * sc) / 2, b.y - (this.bossSprites.nativeH * sc) / 2, this.bossSprites.nativeW * sc, this.bossSprites.nativeH * sc);
+            ctx.drawImage(frame.canvas as CanvasImageSource, bx - (this.bossSprites.nativeW * sc) / 2, by - (this.bossSprites.nativeH * sc) / 2, this.bossSprites.nativeW * sc, this.bossSprites.nativeH * sc);
             ctx.imageSmoothingEnabled = true;
         }
         ctx.restore();
@@ -349,8 +392,8 @@ export class Renderer {
         const ctx = this.ctx;
         for (const p of world.players) {
             if (!p.joined) continue;
-            const x = p.isLocal ? p.x : p.renderX;
-            const y = p.isLocal ? p.y : p.renderY;
+            const x = this.lerp(p.prevRenderX, p.renderX);
+            const y = this.lerp(p.prevRenderY, p.renderY);
             if (p.dead) {
                 // respawn ghost
                 continue;
@@ -440,6 +483,8 @@ export class Renderer {
     private drawEffects(world: World): void {
         const ctx = this.ctx;
         world.effects.forEach((e) => {
+            const ex = this.lerp(e.prevX, e.x);
+            const ey = this.lerp(e.prevY, e.y);
             const t = e.age / e.ttl;
             const a = 1 - t;
             ctx.save();
@@ -448,12 +493,12 @@ export class Renderer {
                 ctx.strokeStyle = hexA(e.color, a);
                 ctx.lineWidth = e.kind === 'spell' ? 4 : 2;
                 ctx.beginPath();
-                ctx.arc(e.x, e.y, e.size * (0.4 + t), 0, Math.PI * 2);
+                ctx.arc(ex, ey, e.size * (0.4 + t), 0, Math.PI * 2);
                 ctx.stroke();
             } else {
                 ctx.fillStyle = hexA(e.color, a);
                 ctx.beginPath();
-                ctx.arc(e.x, e.y, e.size * (1 - t * 0.5), 0, Math.PI * 2);
+                ctx.arc(ex, ey, e.size * (1 - t * 0.5), 0, Math.PI * 2);
                 ctx.fill();
             }
             ctx.restore();
@@ -467,7 +512,7 @@ export class Renderer {
         ctx.textBaseline = 'middle';
         for (let i = this.comments.length - 1; i >= 0; i--) {
             const c = this.comments[i];
-            c.x -= c.speed;
+            c.x -= c.speed * this.frameScale;
             ctx.font = `bold ${c.size}px "Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif`;
             const w = ctx.measureText(c.text).width;
             // outline for readability over danmaku
