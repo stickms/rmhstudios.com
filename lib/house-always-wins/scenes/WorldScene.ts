@@ -21,6 +21,7 @@ import { Player } from "../entities/Player";
 import { Particles } from "../sprites/effects";
 import { ROOMS } from "../world/rooms";
 import { getNpcDialogue, dealerHintLine } from "../dialogues";
+import { SfxManager } from "../sfx";
 import {
   drawBackdrop,
   drawTiles,
@@ -104,6 +105,9 @@ export class WorldScene implements Scene {
 
   // prompts / interaction target
   private prompt: string | null = null;
+  // Brief lock after a dialogue/choice closes so the same keypress that
+  // confirmed it can't immediately re-open the NPC/door (the infinite-loop bug).
+  private interactLock = 0;
 
   // local fade for room transitions / death
   private fade = 0;
@@ -244,6 +248,7 @@ export class WorldScene implements Scene {
   update(dt: number): SceneSwitch | null {
     this.time += dt;
     this.particles.update(dt);
+    if (this.interactLock > 0) this.interactLock -= dt;
     for (const n of this.npcs) n.t += dt;
 
     // fade handling (room change / death)
@@ -325,6 +330,7 @@ export class WorldScene implements Scene {
     if (this.dialogueNpc === "dealer") this.engine.store.setFlag("talkedDealer", true);
     this.activeDialogue = null;
     this.dialogueNpc = null;
+    this.interactLock = 0.3;
     this.engine.onHudChange();
   }
 
@@ -444,6 +450,7 @@ export class WorldScene implements Scene {
         this.engine.store.addChips(CHIP_VALUE);
         this.particles.burst(e.rect.x + 8, e.rect.y + 8, 8, COLORS.chip, { gravity: 120, life: 0.5 });
         this.engine.toast(`+${CHIP_VALUE} chips`, COLORS.chip);
+        SfxManager.play("chip");
         this.engine.onHudChange();
       } else if (e.spec.kind === "key" && !this.isCaged(e) && rectIntersect(pr, this.padRect(e.rect, 4))) {
         e.taken = true;
@@ -451,6 +458,7 @@ export class WorldScene implements Scene {
         this.engine.store.addKey();
         this.particles.burst(e.rect.x + 8, e.rect.y + 8, 20, COLORS.goldBright, { speed: 130, gravity: 80, life: 0.7 });
         this.engine.toast("Vault Key recovered!", COLORS.goldBright);
+        SfxManager.play("key");
         this.engine.onHudChange();
       } else if (e.spec.kind === "ability" && e.spec.ability && rectIntersect(pr, this.padRect(e.rect, 5))) {
         e.taken = true;
@@ -461,6 +469,7 @@ export class WorldScene implements Scene {
           this.particles.burst(e.rect.x + 8, e.rect.y + 8, 16, COLORS.goldBright, { speed: 90 + i * 40, gravity: 0, life: 0.8 });
         const label = ab === "doubleJump" ? "Lucky Coin — Double Jump!" : ab === "dash" ? "All-In Dash unlocked!" : "Card Grip — Wall Climb!";
         this.engine.toast(label, COLORS.neonGold);
+        SfxManager.play("ability");
         this.player.invuln = 0.4;
         this.engine.onHudChange();
       }
@@ -536,6 +545,7 @@ export class WorldScene implements Scene {
       this.engine.toast(msg, COLORS.neonRed);
     }
     this.particles.burst(this.player.x + 5, this.player.y + 7, 24, COLORS.neonRed, { speed: 140, gravity: 120, life: 0.7 });
+    SfxManager.play("bust");
     this.player.frozen = true;
     this.startFade(() => {
       this.player.reset(this.entrySpawn.x, this.entrySpawn.y, this.entrySpawn.facing);
@@ -592,6 +602,7 @@ export class WorldScene implements Scene {
     // free the caged key visually (particles at it)
     const key = this.ents.find((e) => e.spec.kind === "key" && e.spec.group === group);
     if (key) this.particles.burst(key.rect.x + 8, key.rect.y + 8, 18, COLORS.goldBright, { speed: 120 });
+    SfxManager.play("win");
     this.engine.onHudChange();
   }
 
@@ -599,6 +610,7 @@ export class WorldScene implements Scene {
     e.on = !e.on;
     this.engine.store.setFlag(`lever:${this.roomId}:${e.spec.id}`, e.on);
     this.particles.burst(e.rect.x + 8, e.rect.y + 4, 6, e.on ? COLORS.neonGreen : COLORS.neonRed, { gravity: 40 });
+    SfxManager.play("lever");
     // slot reels: lever group "reelN" advances the reel of the same id
     const group = e.spec.group;
     if (group && group.startsWith("reel")) {
@@ -618,6 +630,7 @@ export class WorldScene implements Scene {
         this.engine.toast("Three bells! The cage drops.", COLORS.goldBright);
         const key = this.ents.find((e) => e.spec.id === "key2");
         if (key) this.particles.burst(key.rect.x + 8, key.rect.y + 8, 20, COLORS.goldBright, { speed: 120 });
+        SfxManager.play("win");
         this.engine.onHudChange();
       }
     }
@@ -628,7 +641,9 @@ export class WorldScene implements Scene {
     const pr = this.player.rect;
     const reach = this.padRect(pr, 10);
     this.prompt = null;
-    let acted = false;
+    // While locked (just left a dialogue), still show prompts but swallow the
+    // stale keypress so we don't immediately re-open what we just closed.
+    let acted = this.interactLock > 0;
 
     // NPCs
     for (const n of this.npcs) {
@@ -681,6 +696,7 @@ export class WorldScene implements Scene {
             this.engine.store.setCheckpoint(this.roomId, e.spec.id);
             this.entrySpawn = this.findSpawn(e.spec.id);
             this.particles.burst(e.rect.x + 8, e.rect.y + 8, 14, COLORS.save, { speed: 80 });
+            SfxManager.play("save");
             this.engine.toast("Progress saved.", COLORS.save);
           }
         } else if (e.spec.kind === "sign" && rectIntersect(reach, this.padRect(e.rect, 4))) {
@@ -717,6 +733,7 @@ export class WorldScene implements Scene {
   }
 
   private startFadeToRoom(to: RoomId, toDoor: string) {
+    SfxManager.play("door");
     this.player.frozen = true;
     this.startFade(() => {
       this.gotoRoom(to, toDoor);
@@ -737,6 +754,8 @@ export class WorldScene implements Scene {
     this.activeDialogue = d;
     this.dialogueLine = 0;
     this.dialogueNpc = npc;
+    this.interactLock = 0.3;
+    SfxManager.play("ui");
     Input.clearHeld();
   }
 
@@ -748,6 +767,7 @@ export class WorldScene implements Scene {
   handleDialogueChoice(action: string) {
     const store = this.engine.store;
     const [verb, arg] = action.split(":");
+    this.interactLock = 0.3;
 
     if (action === "close") {
       this.endDialogueChain();

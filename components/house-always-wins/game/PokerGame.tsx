@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useHouseAlwaysWinsStore } from "@/lib/store/houseAlwaysWinsStore";
+import { SfxManager } from "@/lib/house-always-wins/sfx";
 import {
   makeDeck,
   aiHold,
@@ -104,10 +105,12 @@ export function PokerGame({ onClose }: { onClose: () => void }) {
     setResult(null);
     setSettleMsg("");
     setPhase("draw");
+    SfxManager.play("deal");
   }, []);
 
   const settle = useCallback((outcome: Showdown["outcome"], s: number) => {
     const st = useHouseAlwaysWinsStore.getState();
+    SfxManager.play(outcome === "win" ? "win" : outcome === "lose" ? "lose" : "ui");
     if (outcome === "win") {
       const toDebt = Math.min(s, st.debt);
       if (toDebt > 0) st.addDebt(-toDebt);

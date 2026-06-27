@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { MusicManager } from "@/lib/house-always-wins/music";
+import { SfxManager } from "@/lib/house-always-wins/sfx";
 import { useHouseAlwaysWinsStore } from "@/lib/store/houseAlwaysWinsStore";
 import { OBJECTIVES } from "@/lib/house-always-wins/quests";
-import { Check } from "lucide-react";
+import { Check, Volume2, VolumeX, Music, Music2 } from "lucide-react";
 
 interface MenuOverlayProps {
   open: boolean;
@@ -12,7 +13,10 @@ interface MenuOverlayProps {
 }
 
 export function MenuOverlay({ open, onClose }: MenuOverlayProps) {
-  const [volume, setVolume] = useState(() => MusicManager.getVolume());
+  const [musicVol, setMusicVol] = useState(() => MusicManager.getVolume());
+  const [musicMuted, setMusicMuted] = useState(() => MusicManager.isMuted());
+  const [sfxVol, setSfxVol] = useState(() => SfxManager.getVolume());
+  const [sfxMuted, setSfxMuted] = useState(() => SfxManager.isMuted());
   const debt = useHouseAlwaysWinsStore((s) => s.debt);
   const chips = useHouseAlwaysWinsStore((s) => s.chips);
   const keys = useHouseAlwaysWinsStore((s) => s.keys);
@@ -22,10 +26,35 @@ export function MenuOverlay({ open, onClose }: MenuOverlayProps) {
 
   const qs = { debt, chips, keys, abilities, flags };
 
-  const handleVolumeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMusicVol = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const v = parseFloat(e.target.value);
-    setVolume(v);
+    setMusicVol(v);
     MusicManager.setVolume(v);
+    if (v > 0 && MusicManager.isMuted()) {
+      MusicManager.setMuted(false);
+      setMusicMuted(false);
+    }
+  }, []);
+  const toggleMusicMute = useCallback(() => {
+    const m = !MusicManager.isMuted();
+    MusicManager.setMuted(m);
+    setMusicMuted(m);
+  }, []);
+  const handleSfxVol = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = parseFloat(e.target.value);
+    setSfxVol(v);
+    SfxManager.setVolume(v);
+    if (SfxManager.isMuted() && v > 0) {
+      SfxManager.setMuted(false);
+      setSfxMuted(false);
+    }
+    SfxManager.play("ui");
+  }, []);
+  const toggleSfxMute = useCallback(() => {
+    const m = !SfxManager.isMuted();
+    SfxManager.setMuted(m);
+    setSfxMuted(m);
+    if (!m) SfxManager.play("ui");
   }, []);
 
   useEffect(() => {
@@ -88,23 +117,61 @@ export function MenuOverlay({ open, onClose }: MenuOverlayProps) {
           </ul>
         </div>
 
-        {/* Volume */}
+        {/* Settings — audio */}
         <div className="mb-4">
-          <label className="mb-2 block font-mono text-[10px] tracking-widest text-[#6b6155] uppercase">
-            Music
-          </label>
-          <div className="flex items-center gap-3">
+          <div className="mb-2 font-mono text-[10px] tracking-widest text-[#8b6914] uppercase">
+            Settings
+          </div>
+
+          {/* Music */}
+          <div className="mb-2.5 flex items-center gap-3">
+            <button
+              onClick={toggleMusicMute}
+              title={musicMuted ? "Unmute music" : "Mute music"}
+              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded ${
+                musicMuted ? "text-[#6b6155]" : "text-[#d4a054]"
+              } hover:bg-white/5`}
+            >
+              {musicMuted ? <Music2 className="h-4 w-4" /> : <Music className="h-4 w-4" />}
+            </button>
+            <span className="w-12 font-mono text-[11px] text-[#cabba0]">Music</span>
             <input
               type="range"
               min={0}
               max={1}
               step={0.05}
-              value={volume}
-              onChange={handleVolumeChange}
+              value={musicMuted ? 0 : musicVol}
+              onChange={handleMusicVol}
               className="h-1 flex-1 cursor-pointer appearance-none rounded-lg bg-neutral-700 accent-[#d4a054]"
             />
-            <span className="w-8 text-right font-mono text-xs text-[#6b6155]">
-              {Math.round(volume * 100)}
+            <span className="w-7 text-right font-mono text-xs text-[#6b6155]">
+              {musicMuted ? "—" : Math.round(musicVol * 100)}
+            </span>
+          </div>
+
+          {/* SFX */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={toggleSfxMute}
+              title={sfxMuted ? "Unmute sound effects" : "Mute sound effects"}
+              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded ${
+                sfxMuted ? "text-[#6b6155]" : "text-[#5fd2a0]"
+              } hover:bg-white/5`}
+            >
+              {sfxMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+            </button>
+            <span className="w-12 font-mono text-[11px] text-[#cabba0]">Sound FX</span>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.05}
+              value={sfxMuted ? 0 : sfxVol}
+              onChange={handleSfxVol}
+              className="h-1 flex-1 cursor-pointer appearance-none rounded-lg bg-neutral-700 accent-[#5fd2a0]"
+            />
+            <span className="w-7 text-right font-mono text-xs text-[#6b6155]">
+              {sfxMuted ? "—" : Math.round(sfxVol * 100)}
             </span>
           </div>
         </div>
