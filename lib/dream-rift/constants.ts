@@ -61,10 +61,10 @@ export const MAX_EFFECTS = 512;
 
 // ── Difficulty ──
 export const DIFFICULTY: Record<Difficulty, DifficultyMul> = {
-    easy: { bulletCount: 0.55, bulletSpeed: 0.78, bossHp: 0.7, enemyHp: 0.7, enemyDensity: 0.7, grazeRadius: 22, itemPower: 1.3 },
-    normal: { bulletCount: 1.0, bulletSpeed: 1.0, bossHp: 1.0, enemyHp: 1.0, enemyDensity: 1.0, grazeRadius: 16, itemPower: 1.0 },
-    hard: { bulletCount: 1.4, bulletSpeed: 1.18, bossHp: 1.35, enemyHp: 1.3, enemyDensity: 1.35, grazeRadius: 12, itemPower: 0.85 },
-    lunatic: { bulletCount: 1.9, bulletSpeed: 1.4, bossHp: 1.8, enemyHp: 1.7, enemyDensity: 1.9, grazeRadius: 9, itemPower: 0.7 },
+    easy: { bulletCount: 0.55, bulletSpeed: 0.8, bossHp: 0.7, enemyHp: 0.7, enemyDensity: 0.7, grazeRadius: 22, itemPower: 1.3, fireRate: 0.7, aimError: 0.16 },
+    normal: { bulletCount: 1.0, bulletSpeed: 1.0, bossHp: 1.0, enemyHp: 1.0, enemyDensity: 1.0, grazeRadius: 16, itemPower: 1.0, fireRate: 1.0, aimError: 0.06 },
+    hard: { bulletCount: 1.35, bulletSpeed: 1.16, bossHp: 1.35, enemyHp: 1.3, enemyDensity: 1.35, grazeRadius: 12, itemPower: 0.85, fireRate: 1.25, aimError: 0.025 },
+    lunatic: { bulletCount: 1.75, bulletSpeed: 1.34, bossHp: 1.8, enemyHp: 1.7, enemyDensity: 1.9, grazeRadius: 9, itemPower: 0.7, fireRate: 1.55, aimError: 0 },
 };
 
 export const DIFFICULTIES: Difficulty[] = ['easy', 'normal', 'hard', 'lunatic'];

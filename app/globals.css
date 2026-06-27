@@ -2480,3 +2480,26 @@ input[type='number'] {
 [dir="rtl"] body { text-align: right; }
 /* Flip directional chevron/arrow icons that imply forward/back. */
 [dir="rtl"] .rtl-flip { transform: scaleX(-1); }
+
+/* ─── Dream Rift menu animations ─────────────────────────────────────────
+ * Staggered entrance for menu items and a gentle title float. Respects the
+ * user's reduced-motion preference. */
+@keyframes dr-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes dr-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+@keyframes dr-title-glow {
+  0%, 100% { filter: drop-shadow(0 0 26px rgba(176,107,255,0.45)); }
+  50%      { filter: drop-shadow(0 0 40px rgba(127,220,255,0.6)); }
+}
+.dr-rise { opacity: 0; animation: dr-rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) forwards; }
+.dr-float { animation: dr-float 4.5s ease-in-out infinite; }
+.dr-title-glow { animation: dr-title-glow 5s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .dr-rise { opacity: 1; animation: none; }
+  .dr-float, .dr-title-glow { animation: none; }
+}

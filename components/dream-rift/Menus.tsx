@@ -26,6 +26,7 @@ import {
     startLobby,
 } from '@/lib/dream-rift/net/connection';
 import { SheetPortrait } from './SheetPortrait';
+import { MenuBackdrop } from './MenuBackdrop';
 import { useRuntime } from './runtime';
 
 const DIFF_COLOR: Record<Difficulty, string> = {
@@ -36,11 +37,11 @@ const DIFF_COLOR: Record<Difficulty, string> = {
 };
 
 function Btn({ children, onClick, variant = 'primary', disabled, className }: { children: React.ReactNode; onClick?: () => void; variant?: 'primary' | 'ghost'; disabled?: boolean; className?: string }) {
-    const base = 'rounded-xl px-5 py-3 font-bold tracking-wide transition disabled:opacity-40 disabled:cursor-not-allowed';
+    const base = 'rounded-xl px-5 py-3 font-bold tracking-wide transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0';
     const styles =
         variant === 'primary'
-            ? 'bg-gradient-to-r from-fuchsia-500 to-violet-500 text-white shadow-lg shadow-fuchsia-500/20 hover:brightness-110'
-            : 'border border-white/15 text-white/80 hover:bg-white/10';
+            ? 'bg-gradient-to-r from-fuchsia-500 to-violet-500 text-white shadow-lg shadow-fuchsia-500/25 hover:shadow-fuchsia-500/40 hover:brightness-110'
+            : 'border border-white/15 text-white/80 hover:border-white/30 hover:bg-white/10';
     return (
         <button type="button" onClick={onClick} disabled={disabled} className={`${base} ${styles} ${className ?? ''}`}>
             {children}
@@ -77,7 +78,7 @@ function CharCard({ id, selected, onClick }: { id: PlayerId; selected: boolean; 
         <button
             type="button"
             onClick={onClick}
-            className="group relative flex flex-col items-center rounded-2xl border p-3 transition"
+            className="group relative flex flex-col items-center rounded-2xl border p-3 transition-all duration-150 hover:-translate-y-0.5"
             style={{ borderColor: selected ? c.accent : 'rgba(255,255,255,0.1)', background: selected ? `${c.accent}1a` : 'rgba(255,255,255,0.03)' }}
         >
             <SheetPortrait url={c.sheet} frame={1} size={104} className="rounded-lg" />
@@ -111,26 +112,40 @@ export function TitleScreen({ onSingle, onMulti, onLeaderboard, onSettings }: { 
         };
     }, [music, sfx]);
 
+    const stagger = (i: number): React.CSSProperties => ({ animationDelay: `${0.12 + i * 0.08}s` });
+
     return (
         <div className="relative flex min-h-full flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-[#0a0118] via-[#1a0f33] to-[#06010f] px-6 py-12 text-center">
-            <div className="pointer-events-none absolute inset-0 opacity-40" style={{ background: 'radial-gradient(circle at 50% 30%, rgba(176,107,255,0.3), transparent 60%)' }} />
+            {/* animated danmaku backdrop + soft vignette */}
+            <MenuBackdrop className="opacity-70" />
+            <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(circle at 50% 28%, rgba(176,107,255,0.28), transparent 58%)' }} />
+            <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(120% 80% at 50% 50%, transparent 55%, rgba(2,0,8,0.7) 100%)' }} />
+
             <div className="relative">
-                <h1 className="bg-gradient-to-b from-white to-violet-300 bg-clip-text text-6xl font-black tracking-tight text-transparent drop-shadow-[0_0_30px_rgba(176,107,255,0.5)] md:text-8xl">
+                <h1 className="dr-float dr-title-glow bg-gradient-to-b from-white via-violet-200 to-violet-400 bg-clip-text text-6xl font-black tracking-tight text-transparent md:text-8xl">
                     Dream Rift
                 </h1>
-                <div className="mt-1 text-xl tracking-[0.4em] text-violet-200/70 md:text-3xl">ドリームリフト</div>
-                <p className="mt-4 text-sm text-white/50">A Touhou-style danmaki bullet hell · solo or up to 4 co-op</p>
+                <div className="dr-rise mt-1 text-xl tracking-[0.4em] text-violet-200/70 md:text-3xl" style={stagger(0)}>ドリームリフト</div>
+                <p className="dr-rise mt-4 text-sm text-white/55" style={stagger(1)}>A danmaku bullet hell · solo or up to 4-player co-op</p>
             </div>
+
             <div className="relative mt-10 flex w-full max-w-xs flex-col gap-3">
-                <Btn onClick={() => { sfx.play('menuSelect'); onSingle(); }}>Single Player</Btn>
-                <Btn onClick={() => { sfx.play('menuSelect'); onMulti(); }}>Multiplayer Lobbies</Btn>
-                <Btn variant="ghost" onClick={() => { sfx.play('menuMove'); onLeaderboard(); }}>Leaderboard</Btn>
-                <div className="flex gap-3">
+                <div className="dr-rise" style={stagger(2)}>
+                    <Btn onClick={() => { sfx.play('menuSelect'); onSingle(); }} className="w-full">Single Player</Btn>
+                </div>
+                <div className="dr-rise" style={stagger(3)}>
+                    <Btn onClick={() => { sfx.play('menuSelect'); onMulti(); }} className="w-full">Multiplayer Lobbies</Btn>
+                </div>
+                <div className="dr-rise" style={stagger(4)}>
+                    <Btn variant="ghost" onClick={() => { sfx.play('menuMove'); onLeaderboard(); }} className="w-full">Leaderboard</Btn>
+                </div>
+                <div className="dr-rise flex gap-3" style={stagger(5)}>
                     <Btn variant="ghost" onClick={() => { sfx.play('menuMove'); onSettings(); }} className="flex-1">Settings</Btn>
-                    <Btn variant="ghost" onClick={() => setShowHelp(true)} className="flex-1">How to Play</Btn>
+                    <Btn variant="ghost" onClick={() => { sfx.play('menuMove'); setShowHelp(true); }} className="flex-1">How to Play</Btn>
                 </div>
             </div>
-            <p className="relative mt-10 text-[11px] text-white/30">Move: Arrows/WASD · Shoot: Z · Bomb: X · Focus: Shift · Pause: Esc</p>
+
+            <p className="dr-rise relative mt-10 text-[11px] text-white/30" style={stagger(6)}>Move: Arrows/WASD · Shoot: Z · Bomb: X · Focus: Shift · Pause: Esc · or play by touch</p>
 
             {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
         </div>
@@ -168,10 +183,11 @@ export function CharacterSelect({ onStart, onBack }: { onStart: (char: PlayerId,
     const { sfx } = useRuntime();
 
     return (
-        <div className="flex min-h-full flex-col bg-gradient-to-b from-[#0a0118] to-[#120a22] p-6">
-            <h2 className="mb-1 text-2xl font-black text-white">Choose Your Dreamer</h2>
-            <p className="mb-5 text-sm text-white/50">Pick a character and a difficulty, then dive into the rift.</p>
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <div className="relative flex min-h-full flex-col overflow-hidden bg-gradient-to-b from-[#0a0118] to-[#120a22] p-6">
+            <MenuBackdrop className="opacity-40" />
+            <h2 className="dr-rise relative mb-1 text-2xl font-black text-white">Choose Your Dreamer</h2>
+            <p className="dr-rise relative mb-5 text-sm text-white/50" style={{ animationDelay: '0.06s' }}>Pick a character and a difficulty, then dive into the rift.</p>
+            <div className="relative grid grid-cols-2 gap-3 md:grid-cols-4">
                 {PLAYER_IDS.map((id) => (
                     <CharCard key={id} id={id} selected={selectedChar === id} onClick={() => { sfx.play('menuMove'); setSelectedChar(id); }} />
                 ))}

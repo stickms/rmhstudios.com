@@ -47,9 +47,10 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
                 <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
                     <h3 className="mb-3 text-sm font-bold uppercase tracking-wider text-white/60">Audio</h3>
                     <Toggle label="Music" checked={musicOn} onChange={(v) => { setMusicOn(v); if (v) void music.resume(); }} />
-                    <input type="range" min={0} max={1} step={0.05} value={musicVol} onChange={(e) => setMusicVol(Number(e.target.value))} className="mb-3 w-full" />
+                    <VolumeSlider value={musicVol} onChange={setMusicVol} disabled={!musicOn} />
+                    <div className="h-3" />
                     <Toggle label="Sound Effects" checked={sfxOn} onChange={setSfxOn} />
-                    <input type="range" min={0} max={1} step={0.05} value={sfxVol} onChange={(e) => setSfxVol(Number(e.target.value))} className="w-full" />
+                    <VolumeSlider value={sfxVol} onChange={(v) => { setSfxVol(v); }} onCommit={() => sfx.play('menuMove')} disabled={!sfxOn} />
                 </section>
 
                 {/* Gameplay */}
@@ -104,6 +105,27 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
             <button type="button" onClick={onBack} className="mx-auto mt-6 w-full max-w-md rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-500 py-3 font-bold text-white">
                 Back
             </button>
+        </div>
+    );
+}
+
+/** Fine-grained volume slider (1% steps) with a live percentage readout. */
+function VolumeSlider({ value, onChange, onCommit, disabled }: { value: number; onChange: (v: number) => void; onCommit?: () => void; disabled?: boolean }) {
+    return (
+        <div className={`flex items-center gap-3 ${disabled ? 'opacity-40' : ''}`}>
+            <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.01}
+                value={value}
+                disabled={disabled}
+                onChange={(e) => onChange(Number(e.target.value))}
+                onPointerUp={() => onCommit?.()}
+                onKeyUp={() => onCommit?.()}
+                className="h-2 flex-1 accent-fuchsia-500"
+            />
+            <span className="w-10 text-right font-mono text-xs tabular-nums text-white/60">{Math.round(value * 100)}%</span>
         </div>
     );
 }

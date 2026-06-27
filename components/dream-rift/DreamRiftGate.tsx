@@ -107,7 +107,7 @@ function ScreenRouter() {
 
     const fullExit = () => {
         disconnectDreamRift();
-        window.location.href = '/games';
+        window.location.href = '/create?tab=games';
     };
 
     let body: React.ReactNode;

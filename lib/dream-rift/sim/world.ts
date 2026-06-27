@@ -257,6 +257,17 @@ export class World {
         return { events, localBossDamage, localDied, localBombed };
     }
 
+    /**
+     * Advance only cosmetic particle effects, leaving the rest of the field
+     * frozen. Used by the end-of-run death/clear animation so the explosion
+     * keeps animating (with interpolation) while bullets, enemies and ships
+     * hold still for a dramatic beat before the results screen.
+     */
+    cosmeticTick(): void {
+        this.effects.forEach((e) => { e.prevX = e.x; e.prevY = e.y; });
+        this.updateEffects();
+    }
+
     /** Copy every active entity's current position into its prev* fields. */
     private snapshotPrev(): void {
         this.bullets.forEach((b) => { b.prevX = b.x; b.prevY = b.y; });
