@@ -11,6 +11,7 @@ import { ChemStationModel } from '../models/stations/ChemStationModel';
 import { StreetProps } from '../models/props/StreetProps';
 import { useCookgameStore } from '@/lib/cookgame/store';
 import { DistrictScene } from './districts/DistrictScene';
+import { Gate } from './Gate';
 
 // ─── Suburbs anchors (consumed by Tasks 8/10) ────────────────────────────────
 
@@ -193,6 +194,14 @@ export function TownScene() {
       {/* Downtown ↔ Warehouse  (N-S corridor, buffer z∈[-60,-58]) */}
       <Wall pos={[-4, 2, -59]} size={[0.5, 4, 2]} />
       <Wall pos={[4, 2, -59]} size={[0.5, 4, 2]} />
+
+      {/* ── District gates — block corridors until rank/key condition met ────── */}
+      {/* Suburbs ↔ Downtown  corridor gate (x∈[-4,4] z=-21) */}
+      <Gate districtId="downtown"   position={[0,  2, -21]} size={[8, 4, 0.6]} />
+      {/* Suburbs ↔ Docks    corridor gate (z∈[-4,4] x=-21) */}
+      <Gate districtId="docks"      position={[-21, 2,  0]} size={[0.6, 4, 8]} />
+      {/* Downtown ↔ Warehouse corridor gate (x∈[-4,4] z=-59) */}
+      <Gate districtId="warehouse"  position={[0,  2, -59]} size={[8, 4, 0.6]} />
 
       {/* instanced street dressing (suburbs) */}
       <StreetProps />
