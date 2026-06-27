@@ -90,6 +90,10 @@ export const config = {
     'holdem:sit_out':         { max: 60,  windowMs: 60_000 },
     'holdem:rebuy':           { max: 60,  windowMs: 60_000 },
     'holdem:show_cards':      { max: 100, windowMs: 60_000 },
+    'dr:create':              { max: 10,  windowMs: 60_000 },
+    'dr:join':                { max: 30,  windowMs: 60_000 },
+    'dr:quickplay':           { max: 20,  windowMs: 60_000 },
+    'dr:browse':              { max: 30,  windowMs: 60_000 },
   } as Record<string, { max: number; windowMs: number }>,
 
   // ─── Shutdown ───

@@ -1,83 +1,94 @@
-import type { InputState } from './types';
+/**
+ * Input manager for Dream Rift — merges keyboard and on-screen (touch) input
+ * into a single per-frame InputFrame plus pause/advance edges.
+ *
+ * Controls: arrows/WASD move, Z (or J / on-screen A) shoot, X (or K / on-screen
+ * B) bomb, Shift (or on-screen focus) for focus mode, Esc/P pause, Z/Enter to
+ * advance dialogue.
+ */
 
-const KEY_MAP: Record<string, keyof InputState> = {
-  ArrowUp: 'up',
-  ArrowDown: 'down',
-  ArrowLeft: 'left',
-  ArrowRight: 'right',
-  x: 'shot',
-  X: 'shot',
-  z: 'melee',
-  Z: 'melee',
-  c: 'special',
-  C: 'special',
-  a: 'dash',
-  A: 'dash',
-  s: 'bomb',
-  S: 'bomb',
-  Shift: 'focus',
-  Escape: 'pause',
-};
+import type { InputFrame } from './types';
 
-function createEmptyState(): InputState {
-  return {
-    up: false,
-    down: false,
-    left: false,
-    right: false,
-    shot: false,
-    melee: false,
-    special: false,
-    dash: false,
-    bomb: false,
-    focus: false,
-    pause: false,
-  };
+export interface PollResult {
+    frame: InputFrame;
+    pausePressed: boolean;
+    advancePressed: boolean;
+}
+
+interface Virtual {
+    mx: number; // -1..1
+    my: number;
+    shot: boolean;
+    bomb: boolean;
+    focus: boolean;
+    pause: boolean;
 }
 
 export class InputManager {
-  private current: InputState;
-  private previous: InputState;
+    private keys = new Set<string>();
+    private virtual: Virtual = { mx: 0, my: 0, shot: false, bomb: false, focus: false, pause: false };
+    private prevPause = false;
+    private bound = false;
 
-  constructor() {
-    this.current = createEmptyState();
-    this.previous = createEmptyState();
-  }
-
-  getState(): Readonly<InputState> {
-    return this.current;
-  }
-
-  justPressed(key: keyof InputState): boolean {
-    return this.current[key] && !this.previous[key];
-  }
-
-  update(): void {
-    this.previous = { ...this.current };
-  }
-
-  handleKeyDown(e: KeyboardEvent): void {
-    const action = KEY_MAP[e.key];
-    if (action) {
-      this.current[action] = true;
-    }
-  }
-
-  handleKeyUp(e: KeyboardEvent): void {
-    const action = KEY_MAP[e.key];
-    if (action) {
-      this.current[action] = false;
-    }
-  }
-
-  bind(element: HTMLElement | Window): () => void {
-    const onKeyDown = (e: Event) => this.handleKeyDown(e as KeyboardEvent);
-    const onKeyUp = (e: Event) => this.handleKeyUp(e as KeyboardEvent);
-    element.addEventListener('keydown', onKeyDown);
-    element.addEventListener('keyup', onKeyUp);
-    return () => {
-      element.removeEventListener('keydown', onKeyDown);
-      element.removeEventListener('keyup', onKeyUp);
+    private onKeyDown = (e: KeyboardEvent): void => {
+        const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+        this.keys.add(k);
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'z', 'x'].includes(k)) e.preventDefault();
     };
-  }
+    private onKeyUp = (e: KeyboardEvent): void => {
+        const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+        this.keys.delete(k);
+    };
+    private onBlur = (): void => this.keys.clear();
+
+    bind(): void {
+        if (this.bound || typeof window === 'undefined') return;
+        window.addEventListener('keydown', this.onKeyDown);
+        window.addEventListener('keyup', this.onKeyUp);
+        window.addEventListener('blur', this.onBlur);
+        this.bound = true;
+    }
+
+    unbind(): void {
+        if (!this.bound || typeof window === 'undefined') return;
+        window.removeEventListener('keydown', this.onKeyDown);
+        window.removeEventListener('keyup', this.onKeyUp);
+        window.removeEventListener('blur', this.onBlur);
+        this.bound = false;
+    }
+
+    /** Set the on-screen joystick vector (normalised -1..1). */
+    setStick(mx: number, my: number): void {
+        this.virtual.mx = mx;
+        this.virtual.my = my;
+    }
+    setButton(btn: 'shot' | 'bomb' | 'focus' | 'pause', down: boolean): void {
+        this.virtual[btn] = down;
+    }
+    clearVirtual(): void {
+        this.virtual = { mx: 0, my: 0, shot: false, bomb: false, focus: false, pause: false };
+    }
+
+    private has(...k: string[]): boolean {
+        return k.some((key) => this.keys.has(key));
+    }
+
+    poll(): PollResult {
+        const v = this.virtual;
+        const dead = 0.28;
+        const frame: InputFrame = {
+            up: this.has('ArrowUp', 'w') || v.my < -dead,
+            down: this.has('ArrowDown', 's') || v.my > dead,
+            left: this.has('ArrowLeft', 'a') || v.mx < -dead,
+            right: this.has('ArrowRight', 'd') || v.mx > dead,
+            shot: this.has('z', 'j', ' ') || v.shot,
+            bomb: this.has('x', 'k') || v.bomb,
+            focus: this.has('Shift', 'shift') || v.focus,
+        };
+        const pauseNow = this.has('Escape', 'p') || v.pause;
+        const pausePressed = pauseNow && !this.prevPause;
+        this.prevPause = pauseNow;
+        const advancePressed = this.has('z', 'Enter', ' ', 'j') || v.shot;
+        return { frame, pausePressed, advancePressed };
+    }
 }

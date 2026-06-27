@@ -37,6 +37,7 @@ import { Route as LaundrySortRouteImport } from './routes/laundry-sort'
 import { Route as KowloonKnockoutRouteImport } from './routes/kowloon-knockout'
 import { Route as HouseAlwaysWinsRouteImport } from './routes/house-always-wins'
 import { Route as ForestExplorerRouteImport } from './routes/forest-explorer'
+import { Route as DreamRiftRouteImport } from './routes/dream-rift'
 import { Route as DeeplinkRouteImport } from './routes/deeplink'
 import { Route as DailyRouteImport } from './routes/daily'
 import { Route as CopyrightRouteImport } from './routes/copyright'
@@ -75,7 +76,6 @@ import { Route as SecretSignalForgeRouteImport } from './routes/secret/signal-fo
 import { Route as SecretNotesRouteImport } from './routes/secret/notes'
 import { Route as SecretJobsRouteImport } from './routes/secret/jobs'
 import { Route as SecretEatsRouteImport } from './routes/secret/eats'
-import { Route as SecretDreamRiftRouteImport } from './routes/secret/dream-rift'
 import { Route as SecretCursedLogicRouteImport } from './routes/secret/cursed-logic'
 import { Route as RmhtypeSoloRouteImport } from './routes/rmhtype/solo'
 import { Route as RmhtypeMultiplayerRouteImport } from './routes/rmhtype/multiplayer'
@@ -619,6 +619,11 @@ const ForestExplorerRoute = ForestExplorerRouteImport.update({
   path: '/forest-explorer',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DreamRiftRoute = DreamRiftRouteImport.update({
+  id: '/dream-rift',
+  path: '/dream-rift',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DeeplinkRoute = DeeplinkRouteImport.update({
   id: '/deeplink',
   path: '/deeplink',
@@ -806,11 +811,6 @@ const SecretJobsRoute = SecretJobsRouteImport.update({
 const SecretEatsRoute = SecretEatsRouteImport.update({
   id: '/eats',
   path: '/eats',
-  getParentRoute: () => SecretRoute,
-} as any)
-const SecretDreamRiftRoute = SecretDreamRiftRouteImport.update({
-  id: '/dream-rift',
-  path: '/dream-rift',
   getParentRoute: () => SecretRoute,
 } as any)
 const SecretCursedLogicRoute = SecretCursedLogicRouteImport.update({
@@ -2900,6 +2900,7 @@ export interface FileRoutesByFullPath {
   '/copyright': typeof CopyrightRoute
   '/daily': typeof DailyRouteWithChildren
   '/deeplink': typeof DeeplinkRouteWithChildren
+  '/dream-rift': typeof DreamRiftRoute
   '/forest-explorer': typeof ForestExplorerRouteWithChildren
   '/house-always-wins': typeof HouseAlwaysWinsRoute
   '/kowloon-knockout': typeof KowloonKnockoutRouteWithChildren
@@ -3003,7 +3004,6 @@ export interface FileRoutesByFullPath {
   '/rmhtype/multiplayer': typeof RmhtypeMultiplayerRoute
   '/rmhtype/solo': typeof RmhtypeSoloRoute
   '/secret/cursed-logic': typeof SecretCursedLogicRouteWithChildren
-  '/secret/dream-rift': typeof SecretDreamRiftRoute
   '/secret/eats': typeof SecretEatsRoute
   '/secret/jobs': typeof SecretJobsRouteWithChildren
   '/secret/notes': typeof SecretNotesRouteWithChildren
@@ -3367,6 +3367,7 @@ export interface FileRoutesByTo {
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
   '/deeplink': typeof DeeplinkRouteWithChildren
+  '/dream-rift': typeof DreamRiftRoute
   '/house-always-wins': typeof HouseAlwaysWinsRoute
   '/laundry-sort': typeof LaundrySortRoute
   '/lights-out': typeof LightsOutRoute
@@ -3451,7 +3452,6 @@ export interface FileRoutesByTo {
   '/rmhtype/$roomId': typeof RmhtypeRoomIdRoute
   '/rmhtype/multiplayer': typeof RmhtypeMultiplayerRoute
   '/rmhtype/solo': typeof RmhtypeSoloRoute
-  '/secret/dream-rift': typeof SecretDreamRiftRoute
   '/secret/eats': typeof SecretEatsRoute
   '/secret/signal-forge': typeof SecretSignalForgeRoute
   '/secret/vega': typeof SecretVegaRoute
@@ -3817,6 +3817,7 @@ export interface FileRoutesById {
   '/copyright': typeof CopyrightRoute
   '/daily': typeof DailyRouteWithChildren
   '/deeplink': typeof DeeplinkRouteWithChildren
+  '/dream-rift': typeof DreamRiftRoute
   '/forest-explorer': typeof ForestExplorerRouteWithChildren
   '/house-always-wins': typeof HouseAlwaysWinsRoute
   '/kowloon-knockout': typeof KowloonKnockoutRouteWithChildren
@@ -3920,7 +3921,6 @@ export interface FileRoutesById {
   '/rmhtype/multiplayer': typeof RmhtypeMultiplayerRoute
   '/rmhtype/solo': typeof RmhtypeSoloRoute
   '/secret/cursed-logic': typeof SecretCursedLogicRouteWithChildren
-  '/secret/dream-rift': typeof SecretDreamRiftRoute
   '/secret/eats': typeof SecretEatsRoute
   '/secret/jobs': typeof SecretJobsRouteWithChildren
   '/secret/notes': typeof SecretNotesRouteWithChildren
@@ -4290,6 +4290,7 @@ export interface FileRouteTypes {
     | '/copyright'
     | '/daily'
     | '/deeplink'
+    | '/dream-rift'
     | '/forest-explorer'
     | '/house-always-wins'
     | '/kowloon-knockout'
@@ -4393,7 +4394,6 @@ export interface FileRouteTypes {
     | '/rmhtype/multiplayer'
     | '/rmhtype/solo'
     | '/secret/cursed-logic'
-    | '/secret/dream-rift'
     | '/secret/eats'
     | '/secret/jobs'
     | '/secret/notes'
@@ -4757,6 +4757,7 @@ export interface FileRouteTypes {
     | '/cookies'
     | '/copyright'
     | '/deeplink'
+    | '/dream-rift'
     | '/house-always-wins'
     | '/laundry-sort'
     | '/lights-out'
@@ -4841,7 +4842,6 @@ export interface FileRouteTypes {
     | '/rmhtype/$roomId'
     | '/rmhtype/multiplayer'
     | '/rmhtype/solo'
-    | '/secret/dream-rift'
     | '/secret/eats'
     | '/secret/signal-forge'
     | '/secret/vega'
@@ -5206,6 +5206,7 @@ export interface FileRouteTypes {
     | '/copyright'
     | '/daily'
     | '/deeplink'
+    | '/dream-rift'
     | '/forest-explorer'
     | '/house-always-wins'
     | '/kowloon-knockout'
@@ -5309,7 +5310,6 @@ export interface FileRouteTypes {
     | '/rmhtype/multiplayer'
     | '/rmhtype/solo'
     | '/secret/cursed-logic'
-    | '/secret/dream-rift'
     | '/secret/eats'
     | '/secret/jobs'
     | '/secret/notes'
@@ -5678,6 +5678,7 @@ export interface RootRouteChildren {
   CopyrightRoute: typeof CopyrightRoute
   DailyRoute: typeof DailyRouteWithChildren
   DeeplinkRoute: typeof DeeplinkRouteWithChildren
+  DreamRiftRoute: typeof DreamRiftRoute
   ForestExplorerRoute: typeof ForestExplorerRouteWithChildren
   HouseAlwaysWinsRoute: typeof HouseAlwaysWinsRoute
   KowloonKnockoutRoute: typeof KowloonKnockoutRouteWithChildren
@@ -6128,6 +6129,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ForestExplorerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dream-rift': {
+      id: '/dream-rift'
+      path: '/dream-rift'
+      fullPath: '/dream-rift'
+      preLoaderRoute: typeof DreamRiftRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/deeplink': {
       id: '/deeplink'
       path: '/deeplink'
@@ -6392,13 +6400,6 @@ declare module '@tanstack/react-router' {
       path: '/eats'
       fullPath: '/secret/eats'
       preLoaderRoute: typeof SecretEatsRouteImport
-      parentRoute: typeof SecretRoute
-    }
-    '/secret/dream-rift': {
-      id: '/secret/dream-rift'
-      path: '/dream-rift'
-      fullPath: '/secret/dream-rift'
-      preLoaderRoute: typeof SecretDreamRiftRouteImport
       parentRoute: typeof SecretRoute
     }
     '/secret/cursed-logic': {
@@ -9640,7 +9641,6 @@ const SecretWeatherRouteWithChildren = SecretWeatherRoute._addFileChildren(
 
 interface SecretRouteChildren {
   SecretCursedLogicRoute: typeof SecretCursedLogicRouteWithChildren
-  SecretDreamRiftRoute: typeof SecretDreamRiftRoute
   SecretEatsRoute: typeof SecretEatsRoute
   SecretJobsRoute: typeof SecretJobsRouteWithChildren
   SecretNotesRoute: typeof SecretNotesRouteWithChildren
@@ -9652,7 +9652,6 @@ interface SecretRouteChildren {
 
 const SecretRouteChildren: SecretRouteChildren = {
   SecretCursedLogicRoute: SecretCursedLogicRouteWithChildren,
-  SecretDreamRiftRoute: SecretDreamRiftRoute,
   SecretEatsRoute: SecretEatsRoute,
   SecretJobsRoute: SecretJobsRouteWithChildren,
   SecretNotesRoute: SecretNotesRouteWithChildren,
@@ -10140,6 +10139,7 @@ const rootRouteChildren: RootRouteChildren = {
   CopyrightRoute: CopyrightRoute,
   DailyRoute: DailyRouteWithChildren,
   DeeplinkRoute: DeeplinkRouteWithChildren,
+  DreamRiftRoute: DreamRiftRoute,
   ForestExplorerRoute: ForestExplorerRouteWithChildren,
   HouseAlwaysWinsRoute: HouseAlwaysWinsRoute,
   KowloonKnockoutRoute: KowloonKnockoutRouteWithChildren,
@@ -10394,12 +10394,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
