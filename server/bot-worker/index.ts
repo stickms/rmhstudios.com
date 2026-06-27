@@ -10,7 +10,7 @@
  *      voice) that defines how they post.
  *   2. Throughout the day, randomly posts from those users in their own voice,
  *      paced per-bot by how active their persona is — text, the occasional
- *      AI-generated image, or an on-theme poll.
+ *      AI-generated image, a KLIPY reaction GIF, or an on-theme poll.
  *   3. Reacts in-character to replies, @-mentions, and direct messages.
  *
  * Bots never announce that they are bots and are instructed never to reveal it.
@@ -31,6 +31,7 @@ import {
   generateBotProfile,
   generatePost,
   generatePoll,
+  generateGifQuery,
   generateReply,
   generateDirectMessageReply,
   generateDirectMessageOpener,
@@ -41,6 +42,7 @@ import {
   generatePostImage,
 } from '@/lib/rmhark-ai/image.server';
 import { generateBotAvatar } from '@/lib/rmhark-ai/bot-avatar.server';
+import { isBotGifConfigured, pickBotGif } from '@/lib/rmhark-ai/gif.server';
 import {
   canBotMessage,
   decideInitiation,
@@ -80,6 +82,9 @@ const MAX_POSTS_PER_TICK = intEnv('BOT_MAX_POSTS_PER_TICK', 5);
 const BOT_IMAGE_PROBABILITY = probEnv('BOT_IMAGE_PROBABILITY', 0.05);
 // Chance a given bot post is a poll instead of a plain text post (0..1).
 const BOT_POLL_PROBABILITY = probEnv('BOT_POLL_PROBABILITY', 0.08);
+// Chance a given bot post attaches a KLIPY GIF (0..1). Skipped if the post is
+// already a poll or AI image.
+const BOT_GIF_PROBABILITY = probEnv('BOT_GIF_PROBABILITY', 0.06);
 // Generate a unique xAI (Grok) avatar for each new bot, stored as webp. Falls
 // back to the deterministic DiceBear avatar when off / unconfigured / on failure.
 const BOT_AVATAR_GEN = (process.env.BOT_AVATAR_GEN ?? 'true') !== 'false';
@@ -313,8 +318,34 @@ async function postTick(): Promise<void> {
         }
       }
 
+      // Or attach a reaction GIF (only when there's no poll/image). A short
+      // query is derived from the post; empty falls back to trending. Never
+      // blocks the post.
+      let gifUrl: string | undefined;
+      if (
+        !poll &&
+        !imageUrls.length &&
+        isBotGifConfigured() &&
+        Math.random() < BOT_GIF_PROBABILITY
+      ) {
+        try {
+          // generateGifQuery returns '' if DeepSeek is unconfigured/fails;
+          // pickBotGif('') falls back to trending GIFs.
+          const query = await generateGifQuery({ text: content });
+          const url = await pickBotGif({ query });
+          if (url) gifUrl = url;
+        } catch (e) {
+          errlog('bot gif pick failed:', e);
+        }
+      }
+
       const created = await prisma.rMHark.create({
-        data: { userId: bot.id, content, ...(imageUrls.length ? { imageUrls } : {}) },
+        data: {
+          userId: bot.id,
+          content,
+          ...(imageUrls.length ? { imageUrls } : {}),
+          ...(gifUrl ? { gifUrl } : {}),
+        },
       });
       if (poll) {
         try {
@@ -334,7 +365,8 @@ async function postTick(): Promise<void> {
         where: { id: bot.id },
         data: { botLastPostAt: new Date() },
       });
-      log(`posted as ${bot.id}${poll ? ' [poll]' : ''}: ${content.slice(0, 60).replace(/\n/g, ' ')}…`);
+      const kind = poll ? ' [poll]' : imageUrls.length ? ' [image]' : gifUrl ? ' [gif]' : '';
+      log(`posted as ${bot.id}${kind}: ${content.slice(0, 60).replace(/\n/g, ' ')}…`);
     } catch (e) {
       errlog('post failed:', e);
     }

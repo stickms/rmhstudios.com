@@ -200,6 +200,43 @@ export async function generatePoll(opts: {
 }
 
 /* ------------------------------------------------------------------ */
+/*  GIF search queries                                                 */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Turn a post into a short reaction-GIF search query (1-3 plain words) for the
+ * KLIPY picker (lib/rmhark-ai/gif.server.ts). Returns a lowercase phrase, or ''
+ * if it can't produce one — the caller then falls back to trending GIFs.
+ */
+export async function generateGifQuery(opts: { text: string }): Promise<string> {
+  const system = [
+    'You pick a short search query for a reaction-GIF library based on a social post.',
+    'Output ONLY 1-3 plain words — a mood, action, or reaction. Lowercase, no punctuation, no quotes, no emoji.',
+    'Examples: excited · facepalm · monday mood · celebration · so tired · mind blown',
+  ].join('\n');
+
+  try {
+    const raw = await chat(
+      [
+        { role: 'system', content: system },
+        { role: 'user', content: `Post:\n"""${opts.text.trim().slice(0, 280)}"""\n\nGive the GIF search query.` },
+      ],
+      { maxTokens: 16, temperature: 0.8 },
+    );
+    return raw
+      .toLowerCase()
+      .replace(/[^a-z0-9 ]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .split(' ')
+      .slice(0, 3)
+      .join(' ');
+  } catch {
+    return '';
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /*  Image prompts                                                      */
 /* ------------------------------------------------------------------ */
 
