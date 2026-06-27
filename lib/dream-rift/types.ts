@@ -46,6 +46,9 @@ export interface Bullet {
     active: boolean;
     x: number;
     y: number;
+    /** Position at the end of the previous sim frame (render interpolation). */
+    prevX: number;
+    prevY: number;
     speed: number;
     angle: number;
     accel: number;
@@ -73,6 +76,8 @@ export interface Shot {
     active: boolean;
     x: number;
     y: number;
+    prevX: number;
+    prevY: number;
     vx: number;
     vy: number;
     damage: number;
@@ -94,6 +99,8 @@ export interface Item {
     active: boolean;
     x: number;
     y: number;
+    prevX: number;
+    prevY: number;
     vx: number;
     vy: number;
     kind: ItemKind;
@@ -109,6 +116,8 @@ export interface Enemy {
     id: number;
     x: number;
     y: number;
+    prevX: number;
+    prevY: number;
     hp: number;
     maxHp: number;
     radius: number;
@@ -154,6 +163,8 @@ export interface BossState {
     active: boolean;
     x: number;
     y: number;
+    prevX: number;
+    prevY: number;
     targetX: number;
     targetY: number;
     hp: number;
@@ -207,6 +218,9 @@ export interface PlayerShip {
     // smoothing for remote ships
     renderX: number;
     renderY: number;
+    /** Render position at the end of the previous sim frame (interpolation). */
+    prevRenderX: number;
+    prevRenderY: number;
     moveDir: number; // -1 left, 0, 1 right (for sprite banking)
     deaths: number;
     spellsCaptured: number;
@@ -231,6 +245,8 @@ export interface Effect {
     active: boolean;
     x: number;
     y: number;
+    prevX: number;
+    prevY: number;
     vx: number;
     vy: number;
     age: number;

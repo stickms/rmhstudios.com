@@ -47,6 +47,7 @@ function makePlayer(charId: PlayerId, x: number): PlayerShip {
         x, y: PLAYFIELD_H - 70, lives: 3, bombs: 2, power: 96, graze: 1284, score: 4127360, pointItems: 30,
         hitboxR: CHAR_STATS[charId].hitboxR, invuln: 999, deathbombWindow: 0, bombActive: 0, dead: false, respawnTimer: 0,
         focus: true, firing: true, shotCd: 0, spellMeter: 0, isLocal: true, renderX: x, renderY: PLAYFIELD_H - 70,
+        prevRenderX: x, prevRenderY: PLAYFIELD_H - 70,
         moveDir: 0, deaths: 1, spellsCaptured: 2, animTime: 30,
     };
 }
@@ -56,7 +57,7 @@ function makeBoss(stageIdx: number): BossState {
     const card = def.cards[Math.min(1, def.cards.length - 1)];
     const hp = def.baseHp * card.hp;
     return {
-        active: true, x: PLAYFIELD_W / 2, y: 104, targetX: PLAYFIELD_W / 2 + 30, targetY: 110, hp: hp * 0.62, phaseMaxHp: hp,
+        active: true, x: PLAYFIELD_W / 2, y: 104, prevX: PLAYFIELD_W / 2, prevY: 104, targetX: PLAYFIELD_W / 2 + 30, targetY: 110, hp: hp * 0.62, phaseMaxHp: hp,
         phaseIndex: Math.min(1, def.cards.length - 1), phaseStartFrame: 0, timeLeftFrames: 28 * FPS, themeIndex: def.themeIndex,
         cards: def.cards, defeated: false, introFrames: 0, moveTimer: 200, fireTimer: 0, subTimer: 0, hitFlash: 0, name: def.name,
     };

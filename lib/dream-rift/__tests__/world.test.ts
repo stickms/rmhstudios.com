@@ -9,13 +9,14 @@ function makePlayer(slot: number, isLocal: boolean): PlayerShip {
         x: PLAYFIELD_W / 2, y: PLAYFIELD_H - 56, lives: 3, bombs: 2, power: 0, graze: 0, score: 0, pointItems: 0,
         hitboxR: CHAR_STATS.bllm.hitboxR, invuln: 0, deathbombWindow: 0, bombActive: 0, dead: false, respawnTimer: 0,
         focus: false, firing: false, shotCd: 0, spellMeter: 0, isLocal, renderX: PLAYFIELD_W / 2, renderY: PLAYFIELD_H - 56,
+        prevRenderX: PLAYFIELD_W / 2, prevRenderY: PLAYFIELD_H - 56,
         moveDir: 0, deaths: 0, spellsCaptured: 0, animTime: 0,
     };
 }
 
 function makeBoss(pattern: string): BossState {
     return {
-        active: true, x: PLAYFIELD_W / 2, y: 100, targetX: PLAYFIELD_W / 2, targetY: 110, hp: 100000, phaseMaxHp: 100000,
+        active: true, x: PLAYFIELD_W / 2, y: 100, prevX: PLAYFIELD_W / 2, prevY: 100, targetX: PLAYFIELD_W / 2, targetY: 110, hp: 100000, phaseMaxHp: 100000,
         phaseIndex: 0, phaseStartFrame: 0, timeLeftFrames: 3600, themeIndex: 0,
         cards: [{ name: 'Test', hp: 1, timeLimit: 60, pattern, isSpell: true, bonus: 0 }],
         defeated: false, introFrames: 0, moveTimer: 120, fireTimer: 0, subTimer: 0, hitFlash: 0, name: 'Tester',

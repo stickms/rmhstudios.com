@@ -86,7 +86,14 @@ export function GameStage({ start, onExit }: { start: StartInfo; onExit: () => v
 
     return (
         <div ref={wrapRef} className="relative h-full w-full overflow-hidden bg-black">
-            <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" style={{ touchAction: 'none' }} />
+            <canvas
+                ref={canvasRef}
+                className="absolute inset-0 h-full w-full"
+                // `translateZ(0)` + `will-change` promote the canvas to its own GPU
+                // compositor layer so blits are hardware-accelerated and stay smooth
+                // at high refresh rates.
+                style={{ touchAction: 'none', transform: 'translateZ(0)', willChange: 'transform' }}
+            />
             <StageBanner />
             <DialogueOverlay />
             {paused && <PauseOverlay onResume={() => useDreamRift.getState().setPaused(false)} onQuit={onExit} />}
