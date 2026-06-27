@@ -284,17 +284,19 @@ function buildSprite(shape: BulletShape, color: BulletColorName): BulletSpriteIn
 }
 
 export class BulletAtlas {
-    private cache = new Map<string, BulletSpriteInfo>();
-    /** Half-extent (in world px) the sprite occupies, for scale math. */
-    private halfExtent = new Map<string, number>();
+    // Nested maps avoid a per-bullet string-key allocation on the render hot path.
+    private cache = new Map<BulletShape, Map<BulletColorName, BulletSpriteInfo>>();
 
     get(shape: BulletShape, color: BulletColorName): BulletSpriteInfo {
-        const key = `${shape}:${color}`;
-        let info = this.cache.get(key);
+        let byColor = this.cache.get(shape);
+        if (!byColor) {
+            byColor = new Map();
+            this.cache.set(shape, byColor);
+        }
+        let info = byColor.get(color);
         if (!info) {
             info = buildSprite(shape, color);
-            this.cache.set(key, info);
-            this.halfExtent.set(key, info.surface.width / (2 * SS));
+            byColor.set(color, info);
         }
         return info;
     }

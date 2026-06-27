@@ -82,8 +82,8 @@ export function MobileControls({ input }: { input: InputManager }) {
             {/* stick */}
             <div
                 ref={stickRef}
-                className="pointer-events-auto absolute bottom-6 left-6 h-32 w-32 touch-none rounded-full border border-white/20 bg-white/5"
-                style={{ touchAction: 'none' }}
+                className="pointer-events-auto absolute left-6 h-32 w-32 touch-none rounded-full border border-white/20 bg-white/5"
+                style={{ touchAction: 'none', bottom: 86 }}
             >
                 <div
                     className="absolute left-1/2 top-1/2 h-14 w-14 rounded-full bg-white/25 shadow-lg"
@@ -91,7 +91,7 @@ export function MobileControls({ input }: { input: InputManager }) {
                 />
             </div>
             {/* buttons */}
-            <div className="pointer-events-auto absolute bottom-6 right-5 flex flex-col items-end gap-3">
+            <div className="pointer-events-auto absolute right-5 flex flex-col items-end gap-3" style={{ bottom: 86 }}>
                 <div className="flex items-end gap-3">
                     {btn('FOCUS', 'focus', 'h-14 w-14 text-[10px] bg-fuchsia-500/30 border border-fuchsia-300/40')}
                     {btn('BOMB', 'bomb', 'h-16 w-16 text-xs bg-sky-500/30 border border-sky-300/40')}

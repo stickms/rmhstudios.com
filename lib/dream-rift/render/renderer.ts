@@ -22,6 +22,9 @@ import type { Surface } from './surface';
 import type { BossSheetDef, LoadedSheet, LoadedSpriteAssets, SpriteSheetDef } from '../assets';
 
 const SS = 3;
+const INV_SS = 1 / SS;
+/** Height (css px) of the condensed stats strip in the mobile stacked layout. */
+const STACKED_STATS_H = 74;
 
 interface Comment {
     text: string;
@@ -118,8 +121,17 @@ export class Renderer {
         canvas.width = Math.round(cssW * dpr);
         canvas.height = Math.round(cssH * dpr);
         this.dpr = dpr;
+        // Portrait → stacked layout (playfield on top, condensed stats at bottom).
+        this.layout = cssH > cssW * 1.05 ? 'stacked' : 'sidebar';
     }
     private dpr = 1;
+    private layout: 'sidebar' | 'stacked' = 'sidebar';
+
+    /** The current layout, so the touch controls can position above the stats strip. */
+    getLayout(): 'sidebar' | 'stacked' {
+        return this.layout;
+    }
+    static readonly STATS_STRIP_H = STACKED_STATS_H;
 
     addComment(text: string, color = '#ffffff'): void {
         const lanes = 7;
@@ -155,13 +167,32 @@ export class Renderer {
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, this.cssW, this.cssH);
 
-        // letterbox transform
-        const scale = Math.min(this.cssW / CANVAS_W, this.cssH / CANVAS_H);
-        const ox = (this.cssW - CANVAS_W * scale) / 2;
-        const oy = (this.cssH - CANVAS_H * scale) / 2;
-        ctx.setTransform(scale * dpr, 0, 0, scale * dpr, ox * dpr, oy * dpr);
+        if (this.layout === 'stacked') {
+            // playfield fills the top; condensed stats strip pinned to the bottom
+            const statsH = STACKED_STATS_H;
+            const availH = Math.max(120, this.cssH - statsH);
+            const s = Math.min(this.cssW / PLAYFIELD_W, availH / PLAYFIELD_H);
+            const pw = PLAYFIELD_W * s;
+            const ph = PLAYFIELD_H * s;
+            const ox = (this.cssW - pw) / 2;
+            ctx.setTransform(s * dpr, 0, 0, s * dpr, ox * dpr, 0);
+            this.drawPlayfield(world, hud, localSlot);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            this.drawHudCondensed(world, hud, localSlot, this.cssH - statsH, statsH);
+            void ph;
+        } else {
+            const scale = Math.min(this.cssW / CANVAS_W, this.cssH / CANVAS_H);
+            const ox = (this.cssW - CANVAS_W * scale) / 2;
+            const oy = (this.cssH - CANVAS_H * scale) / 2;
+            ctx.setTransform(scale * dpr, 0, 0, scale * dpr, ox * dpr, oy * dpr);
+            this.drawPlayfield(world, hud, localSlot);
+            this.drawHud(world, hud, localSlot);
+        }
+    }
 
-        // ── playfield ──
+    /** Draws the clipped playfield (background, entities, comments, boss bar). */
+    private drawPlayfield(world: World, hud: HudView, localSlot: number): void {
+        const ctx = this.ctx;
         ctx.save();
         ctx.beginPath();
         ctx.rect(0, 0, PLAYFIELD_W, PLAYFIELD_H);
@@ -169,7 +200,6 @@ export class Renderer {
 
         this.bg.draw(ctx, this.scroll, this.time);
 
-        // boss spell backdrop glow
         if (world.boss?.active && world.boss.introFrames <= 0) {
             const b = world.boss;
             const g = ctx.createRadialGradient(b.x, b.y, 8, b.x, b.y, 240);
@@ -188,14 +218,12 @@ export class Renderer {
         this.drawEffects(world);
         this.drawComments();
 
-        // vignette
         const vg = ctx.createRadialGradient(PLAYFIELD_W / 2, PLAYFIELD_H / 2, PLAYFIELD_H * 0.3, PLAYFIELD_W / 2, PLAYFIELD_H / 2, PLAYFIELD_H * 0.78);
         vg.addColorStop(0, 'rgba(0,0,0,0)');
         vg.addColorStop(1, 'rgba(0,0,0,0.42)');
         ctx.fillStyle = vg;
         ctx.fillRect(0, 0, PLAYFIELD_W, PLAYFIELD_H);
 
-        // boss hp bar across the top
         if (world.boss?.active && world.boss.introFrames <= 0 && hud.bossMaxHp > 0) {
             this.drawBossBar(hud);
         }
@@ -207,26 +235,31 @@ export class Renderer {
             if (this.flash < 0.02) this.flash = 0;
         }
         ctx.restore();
-
-        this.drawHud(world, hud, localSlot);
     }
 
     private drawBullets(world: World): void {
         const ctx = this.ctx;
         ctx.imageSmoothingEnabled = true;
+        // Hot path: most bullets are round/non-rotating — blit them with no
+        // save/restore/rotate. Only directional, spinning or fading bullets take
+        // the transform path. Keeps thousands of bullets well under frame budget.
         world.bullets.forEach((b: Bullet) => {
             const info = this.atlas.get(b.shape, b.color);
-            const f = b.drawRadius / info.designRadius;
-            const drawW = (info.surface.width / SS) * f;
-            ctx.save();
-            ctx.globalAlpha = b.dying > 0 ? Math.max(0, 1 - b.dying / 10) : 1;
-            ctx.translate(b.x, b.y);
-            if (info.directional) ctx.rotate(b.angle);
-            else if (b.spin) ctx.rotate(b.spin * 0.04);
-            ctx.drawImage(info.surface.canvas as CanvasImageSource, -drawW / 2, -drawW / 2, drawW, drawW);
-            ctx.restore();
+            const drawW = info.surface.width * INV_SS * (b.drawRadius / info.designRadius);
+            const half = drawW * 0.5;
+            const canvas = info.surface.canvas as CanvasImageSource;
+            if (info.directional || b.spin || b.dying > 0) {
+                ctx.save();
+                if (b.dying > 0) ctx.globalAlpha = b.dying >= 10 ? 0 : 1 - b.dying / 10;
+                ctx.translate(b.x, b.y);
+                if (info.directional) ctx.rotate(b.angle);
+                else if (b.spin) ctx.rotate(b.spin * 0.04);
+                ctx.drawImage(canvas, -half, -half, drawW, drawW);
+                ctx.restore();
+            } else {
+                ctx.drawImage(canvas, b.x - half, b.y - half, drawW, drawW);
+            }
         });
-        ctx.globalAlpha = 1;
     }
 
     private drawShots(world: World): void {
@@ -487,6 +520,68 @@ export class Renderer {
         ctx.textAlign = 'center';
         ctx.fillText(hud.bossName, PLAYFIELD_W / 2, 28);
         ctx.textAlign = 'left';
+    }
+
+    /** Compact horizontal stats strip for the mobile stacked layout. */
+    private drawHudCondensed(world: World, hud: HudView, localSlot: number, topY: number, height: number): void {
+        const ctx = this.ctx;
+        const w = this.cssW;
+        const g = ctx.createLinearGradient(0, topY, 0, topY + height);
+        g.addColorStop(0, '#0c0718');
+        g.addColorStop(1, '#160d28');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, topY, w, height);
+        ctx.fillStyle = this.theme.glow;
+        ctx.fillRect(0, topY, w, 2);
+
+        const local = world.players[localSlot] ?? world.players.find((p) => p.isLocal) ?? world.players[0];
+        ctx.textBaseline = 'alphabetic';
+
+        // score (left)
+        ctx.textAlign = 'left';
+        ctx.fillStyle = 'rgba(255,255,255,0.45)';
+        ctx.font = '9px sans-serif';
+        ctx.fillText('SCORE', 12, topY + 16);
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 16px monospace';
+        ctx.fillText(pad9(local?.score ?? 0), 12, topY + 36);
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.font = '9px monospace';
+        ctx.fillText('HI ' + pad9(hud.hiScore), 12, topY + 52);
+
+        // lives / bombs (centre, icon + count)
+        const midX = Math.round(w * 0.45);
+        ctx.fillStyle = '#ffd34d';
+        star(ctx, midX, topY + 22, 6, 2.6, 5);
+        ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 15px monospace';
+        ctx.fillText('×' + (local?.lives ?? 0), midX + 11, topY + 27);
+        ctx.fillStyle = '#7fdcff';
+        star(ctx, midX, topY + 46, 6, 2.6, 5);
+        ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.fillText('×' + (local?.bombs ?? 0), midX + 11, topY + 51);
+
+        // power + graze (right)
+        const px = Math.round(w * 0.63);
+        const pw = w - px - 14;
+        ctx.fillStyle = 'rgba(255,255,255,0.45)';
+        ctx.font = '9px sans-serif';
+        ctx.fillText('POWER', px, topY + 16);
+        ctx.fillStyle = 'rgba(255,255,255,0.12)';
+        ctx.fillRect(px, topY + 22, pw, 7);
+        const pg = ctx.createLinearGradient(px, 0, px + pw, 0);
+        pg.addColorStop(0, this.theme.glow);
+        pg.addColorStop(1, '#fff');
+        ctx.fillStyle = pg;
+        ctx.fillRect(px, topY + 22, pw * Math.min(1, (local?.power ?? 0) / POWER_MAX), 7);
+        ctx.fillStyle = 'rgba(255,255,255,0.55)';
+        ctx.font = '9px sans-serif';
+        ctx.fillText('GRAZE', px, topY + 46);
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 13px monospace';
+        ctx.fillText(String(local?.graze ?? 0), px + 40, topY + 47);
     }
 
     private drawHud(world: World, hud: HudView, localSlot: number): void {
