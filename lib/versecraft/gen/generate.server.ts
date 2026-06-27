@@ -12,7 +12,11 @@ import OpenAI from 'openai';
 import { z } from 'zod';
 import { fallbackWorld, fallbackChapter } from './fallback';
 import { renderBible } from './bible';
-import { CRAFT_SYSTEM, craftDirectives } from './craft';
+import {
+  CRAFT_SYSTEM, craftDirectives,
+  VN_FORMAT, PROSE_CRAFT, SETTING_CRAFT, CHOICE_CRAFT, ANTI_REPETITION,
+} from './craft';
+import { dropDuplicateNodes } from './dedupe';
 import { renderLedger, fallbackLedgerEntry } from './ledger';
 import { buildDetailedOutline } from './outline';
 import {
@@ -115,7 +119,9 @@ export async function generateWorld(
       'is theirs alone. Make the cast genuinely DIFFERENT from each other in voice, wound, and want. Mature, dark, ' +
       'and disturbing themes are welcome where they serve the story (grief, mortality, mental illness, self-harm ' +
       'ideation, estrangement, addiction, the aftermath of abuse, identity, desire) — written with honesty, weight, ' +
-      'and care, never gratuitously or as shock value. Respond ONLY with a JSON object.';
+      'and care, never gratuitously or as shock value. ' +
+      SETTING_CRAFT + '\n' + PROSE_CRAFT + '\n' +
+      'Respond ONLY with a JSON object.';
     const user =
       `The PLAYER is the protagonist, written in second person ("you"). Their setup prompt: ` +
       `"${mcPrompt || '(none — surprise me; default to a college student adrift, looking for somewhere that feels like theirs)'}".\n` +
@@ -224,7 +230,11 @@ function chapterSystemPrompt(): string {
     'handled with truth and care, not gratuitously. ' +
     `Every spoken line MUST include an "emotion" from this EXACT set: ${EMOTIONS.join(', ')} — chosen to match the ` +
     'line and the beat (a character can shift emotion line to line). Narration lines have speaker=null and no emotion. ' +
+    VN_FORMAT + '\n' +
     CRAFT_SYSTEM + '\n' +
+    PROSE_CRAFT + '\n' +
+    CHOICE_CRAFT + '\n' +
+    ANTI_REPETITION + '\n' +
     'Respond ONLY with a JSON object.'
   );
 }
@@ -390,14 +400,15 @@ export async function generateChapter(
     const nid = () => `ch${index}_n${seq++}`;
     const rest = parsed.scenes.map((sc, i) => sanitizeScene(sc, world, index, startScene + i, ids, nid));
     const scenes = continuing ? [opening!, ...rest] : rest;
+    const deduped = dropDuplicateNodes(scenes);
 
-    if (!scenes.length) return fallbackChapter(world, index);
+    if (!deduped.length) return fallbackChapter(world, index);
     return {
       index, act: routeBeat.act,
       title: parsed.title || routeBeat.title,
       subtitle: parsed.subtitle || `Act ${routeBeat.act} — ${world.title}`,
       emotionalGoal: routeBeat.emotionalGoal,
-      scenes,
+      scenes: deduped,
       source: 'ai',
     };
   } catch (err) {
@@ -430,7 +441,8 @@ export async function generateOutline(
     const toPlan = base.chapters.filter((c) => c.act >= fromAct);
     const system =
       'You are the showrunner for an emotional anime visual novel. You design a tight dramatic arc with setups ' +
-      'planted early and paid off later, one beat per chapter. Respond ONLY with a JSON object.';
+      'planted early and paid off later, one beat per chapter. Build rising tension across the five acts, and make ' +
+      'each chapter a DISTINCT beat that does not echo another. Respond ONLY with a JSON object.';
     const user = `${renderBible(world)}\nACT PLAN:\n${acts}\n` +
       (ledger.length ? `${renderLedger(ledger)}\n` : '') +
       `Plan chapters ${toPlan[0]?.index ?? 0}..${toPlan[toPlan.length - 1]?.index ?? 0} (0-based). ` +
