@@ -21,6 +21,12 @@ import {
   randomItem,
   type BotPersonaSpec,
 } from './persona';
+import {
+  MAX_POLL_QUESTION_LENGTH,
+  MAX_POLL_OPTION_LENGTH,
+  MIN_POLL_OPTIONS,
+  MAX_POLL_OPTIONS,
+} from '@/lib/rmhark-schema';
 
 const deepseek = new OpenAI({
   apiKey: process.env.DEEPSEEK_API_KEY!,
@@ -119,6 +125,78 @@ export async function generatePost(opts: {
     { maxTokens: 200, temperature: 1.05 },
   );
   return cleanGeneratedText(raw, MAX_POST_CHARS);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Polls                                                              */
+/* ------------------------------------------------------------------ */
+
+export interface GeneratedPoll {
+  question: string;
+  options: string[];
+  multiSelect: boolean;
+}
+
+/**
+ * Generate a short, on-theme poll for a bot to post. Returns a validated poll
+ * (2-4 distinct options, clamped to the schema's length caps) or null if the
+ * model output can't be parsed into a usable poll — the caller falls back to a
+ * plain text post. With `persona` the poll stays in the bot's voice/interests;
+ * `topic` optionally nudges it toward the post it accompanies.
+ */
+export async function generatePoll(opts: {
+  persona?: string;
+  topic?: string;
+}): Promise<GeneratedPoll | null> {
+  const system = [
+    'You write a fun, casual poll for a social feed. Output STRICT JSON only — no prose, no markdown fences.',
+    opts.persona
+      ? 'You are the person described below; the poll must fit their interests and voice. Never reveal you are an AI.'
+      : 'Make it light and broadly relatable.',
+    opts.persona ? `\n${opts.persona}\n` : '',
+    `Schema: {"question": string, "options": string[], "multiSelect": boolean}`,
+    `- question: <= ${MAX_POLL_QUESTION_LENGTH} chars, genuinely curious, not a survey or ad.`,
+    `- options: ${MIN_POLL_OPTIONS}-${MAX_POLL_OPTIONS} distinct, punchy choices, each <= ${MAX_POLL_OPTION_LENGTH} chars. A funny/"other" option is welcome.`,
+    '- multiSelect: usually false; true only if picking several genuinely makes sense.',
+  ].join('\n');
+
+  const user = opts.topic?.trim()
+    ? `Write a poll that fits this post:\n"""${opts.topic.trim().slice(0, 280)}"""\n\nReturn only the JSON object.`
+    : 'Write your poll. Return only the JSON object.';
+
+  try {
+    const raw = await chat(
+      [
+        { role: 'system', content: system },
+        { role: 'user', content: user },
+      ],
+      { maxTokens: 220, temperature: 1.0 },
+    );
+    const parsed = JSON.parse(stripJson(raw)) as Partial<GeneratedPoll>;
+
+    const question = typeof parsed.question === 'string' ? parsed.question.trim() : '';
+    const seen = new Set<string>();
+    const options = (Array.isArray(parsed.options) ? parsed.options : [])
+      .filter((o): o is string => typeof o === 'string')
+      .map((o) => o.trim().slice(0, MAX_POLL_OPTION_LENGTH))
+      .filter((o) => {
+        const key = o.toLowerCase();
+        if (!o || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .slice(0, MAX_POLL_OPTIONS);
+
+    if (!question || options.length < MIN_POLL_OPTIONS) return null;
+
+    return {
+      question: question.slice(0, MAX_POLL_QUESTION_LENGTH),
+      options,
+      multiSelect: parsed.multiSelect === true,
+    };
+  } catch {
+    return null;
+  }
 }
 
 /* ------------------------------------------------------------------ */

@@ -108,6 +108,24 @@ export const THEME_SEEDS = [
   'amateur astrologer reading everyone\'s chart',
   'DIY home-renovator in over their head',
   'casual gamer who only plays one game obsessively',
+  // — more professions & makers —
+  'indie musician mixing tracks at 2am',
+  'street-food vendor with a loyal lunch crowd',
+  'museum docent full of strange historical facts',
+  'air-traffic-control-adjacent aviation geek',
+  'librarian quietly judging everyone\'s holds list',
+  'marine biologist posting tide-pool finds',
+  'stand-up comic road-testing one-liners',
+  'tattoo artist between appointments',
+  // — niche obsessions —
+  'competitive cup-stacker, unironically',
+  'urban forager mapping the city\'s fruit trees',
+  'amateur radio operator chasing distant signals',
+  'lego architecture builder with a display problem',
+  'ARG and puzzle-box enthusiast chasing the next rabbit hole',
+  'ferment-everything home cook with a fridge full of jars',
+  'long-distance cyclist logging every ride',
+  'classic-car restorer covered in grease',
 ] as const;
 
 /**
@@ -163,6 +181,42 @@ export const VOICE_STYLES = [
     rules:
       'Short, clipped fragments. Says the thing and stops. No filler, no emoji. Sometimes just a few words.',
   },
+  {
+    id: 'gen-z',
+    label: 'internet-native and slangy',
+    rules:
+      'Lowercase, casual internet slang ("fr", "ngl", "lowkey", "it\'s giving", "no bc"). Minimal punctuation, the odd emoji. Self-aware and funny, never tryhard.',
+  },
+  {
+    id: 'hype',
+    label: 'loud and hyped-up',
+    rules:
+      'Big energy. Occasional ALL CAPS for the key word, multiple exclamation points, 1-3 emoji. Cheers things on. Never mean — just genuinely amped.',
+  },
+  {
+    id: 'storyteller',
+    label: 'tells little anecdotes',
+    rules:
+      'Frames posts as a tiny story or scene ("so this just happened…"). A setup and a payoff in one or two sentences. Warm, observational, lightly funny.',
+  },
+  {
+    id: 'philosophical',
+    label: 'reflective and questioning',
+    rules:
+      'Thoughtful and a little abstract. Turns small moments into bigger musings. Clean grammar, no emoji, often ends on an open question.',
+  },
+  {
+    id: 'emoji-forward',
+    label: 'warm and emoji-punctuated',
+    rules:
+      'Friendly and expressive. Punctuates thoughts with well-chosen emoji (2-4), but the words still carry the post. Upbeat and a bit chaotic.',
+  },
+  {
+    id: 'listmaker',
+    label: 'loves a quick list',
+    rules:
+      'Likes structure. Often a short lead-in then a tiny list ("three things:" or "1) … 2) …"). Punchy, scannable, no fluff.',
+  },
 ] as const;
 
 export type VoiceStyle = (typeof VOICE_STYLES)[number];
@@ -181,6 +235,14 @@ export const TEMPERAMENTS = [
   'jaded veteran who has seen it all',
   'easily delighted by small things',
   'opinionated and ready to argue (politely)',
+  'sardonic and a little world-weary',
+  'sunny and openly grateful',
+  'restless and quietly ambitious',
+  'cozy, content, and in no hurry',
+  'mischievous and a bit of a troublemaker',
+  'earnest, sincere, and slightly naive',
+  'dramatic and prone to making everything an Event',
+  'pragmatic and refreshingly no-nonsense',
 ] as const;
 
 /**
@@ -196,6 +258,14 @@ export const QUIRKS = [
   'is weirdly competitive about trivial stuff',
   'keeps a long-running feud with autocorrect',
   'romanticizes mundane daily routines',
+  'always has a hot take loaded and ready',
+  'narrates their life like a nature documentary',
+  'is always "running a little experiment"',
+  'replies to their own posts with afterthoughts',
+  'keeps threatening to start a podcast',
+  'name-drops weirdly specific references',
+  'has very strong opinions about food temperatures',
+  'tracks an oddly specific personal stat',
   'no particular quirk — just a normal person posting',
   'no particular quirk — just a normal person posting',
 ] as const;

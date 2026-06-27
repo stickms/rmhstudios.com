@@ -5,10 +5,13 @@
  * on the RMHark feed:
  *
  *   1. Maintains a pool of AI-generated "bot" users — each with a DeepSeek-
- *      invented name, handle, and bio, an online-sourced avatar, and a private
- *      persona (theme + temperament + voice) that defines how they post.
+ *      invented name, handle, and bio, a unique xAI (Grok) avatar generated as
+ *      webp (DiceBear fallback), and a private persona (theme + temperament +
+ *      voice) that defines how they post.
  *   2. Throughout the day, randomly posts from those users in their own voice,
- *      paced per-bot by how active their persona is.
+ *      paced per-bot by how active their persona is — text, the occasional
+ *      AI-generated image, or an on-theme poll.
+ *   3. Reacts in-character to replies, @-mentions, and direct messages.
  *
  * Bots never announce that they are bots and are instructed never to reveal it.
  * Runs as a separate Docker service / dev process. Idles harmlessly if no
@@ -27,6 +30,7 @@ import {
 import {
   generateBotProfile,
   generatePost,
+  generatePoll,
   generateReply,
   generateDirectMessageReply,
   generateDirectMessageOpener,
@@ -36,6 +40,7 @@ import {
   isImageGenConfigured,
   generatePostImage,
 } from '@/lib/rmhark-ai/image.server';
+import { generateBotAvatar } from '@/lib/rmhark-ai/bot-avatar.server';
 import {
   canBotMessage,
   decideInitiation,
@@ -73,6 +78,11 @@ const POST_TICK_MS = intEnv('BOT_POST_TICK_MS', 5 * 60 * 1000);
 const MAX_POSTS_PER_TICK = intEnv('BOT_MAX_POSTS_PER_TICK', 5);
 // Chance a given bot post also gets an AI-generated image (0..1).
 const BOT_IMAGE_PROBABILITY = probEnv('BOT_IMAGE_PROBABILITY', 0.05);
+// Chance a given bot post is a poll instead of a plain text post (0..1).
+const BOT_POLL_PROBABILITY = probEnv('BOT_POLL_PROBABILITY', 0.08);
+// Generate a unique xAI (Grok) avatar for each new bot, stored as webp. Falls
+// back to the deterministic DiceBear avatar when off / unconfigured / on failure.
+const BOT_AVATAR_GEN = (process.env.BOT_AVATAR_GEN ?? 'true') !== 'false';
 
 // ─── Reply behaviour ────────────────────────────────────────────
 // How often bots check for replies to answer (default = same as posting).
@@ -185,9 +195,11 @@ async function createBot(): Promise<void> {
   const profile = await generateBotProfile(spec);
   const handle = await uniqueHandle(profile.handle);
   const persona = composePersona(spec);
+  // Deterministic DiceBear avatar as an immediate fallback so the bot always has
+  // a picture; upgraded to a unique generated portrait below when enabled.
   const avatar = buildAvatarUrl(handle, spec.avatarStyle);
 
-  await prisma.user.create({
+  const created = await prisma.user.create({
     data: {
       name: profile.name,
       handle,
@@ -200,8 +212,25 @@ async function createBot(): Promise<void> {
         },
       },
     },
+    select: { id: true },
   });
-  log(`created bot @${handle} (${profile.name}) — ${spec.theme} / ${spec.voice.id}`);
+
+  // Give the bot a custom xAI (Grok) avatar, stored as webp. Never throws (it
+  // returns null on any failure), so a missing/over-budget/disabled image just
+  // leaves the DiceBear fallback in place.
+  let generatedAvatar = false;
+  if (BOT_AVATAR_GEN) {
+    const url = await generateBotAvatar(created.id, {
+      name: profile.name,
+      bio: profile.bio,
+      persona,
+    });
+    generatedAvatar = Boolean(url);
+  }
+  log(
+    `created bot @${handle} (${profile.name}) — ${spec.theme} / ${spec.voice.id}` +
+      (generatedAvatar ? ' [grok avatar]' : ''),
+  );
 }
 
 async function maintainBotPool(): Promise<void> {
@@ -259,10 +288,23 @@ async function postTick(): Promise<void> {
       const content = await generatePost({ persona: bot.botPersona ?? undefined });
       if (!content.trim()) continue;
 
-      // Occasionally attach an AI-generated image. Never let image failure
-      // block the post — fall back to text-only.
+      // Sometimes the post is a poll instead — adds an interactive, on-theme
+      // post type to the feed. Generated to fit the post text; null on any
+      // failure (we then just post the text).
+      let poll: Awaited<ReturnType<typeof generatePoll>> = null;
+      if (isRmharkAIConfigured() && Math.random() < BOT_POLL_PROBABILITY) {
+        try {
+          poll = await generatePoll({ persona: bot.botPersona ?? undefined, topic: content });
+        } catch (e) {
+          errlog('bot poll gen failed:', e);
+        }
+      }
+
+      // Otherwise, occasionally attach an AI-generated image (skipped when the
+      // post is a poll, to keep it clean). Never let image failure block the
+      // post — fall back to text-only.
       let imageUrls: string[] = [];
-      if (isImageGenConfigured() && Math.random() < BOT_IMAGE_PROBABILITY) {
+      if (!poll && isImageGenConfigured() && Math.random() < BOT_IMAGE_PROBABILITY) {
         try {
           const imageUrl = await generatePostImage({ text: content, userId: bot.id });
           if (imageUrl) imageUrls = [imageUrl];
@@ -271,14 +313,28 @@ async function postTick(): Promise<void> {
         }
       }
 
-      await prisma.rMHark.create({
+      const created = await prisma.rMHark.create({
         data: { userId: bot.id, content, ...(imageUrls.length ? { imageUrls } : {}) },
       });
+      if (poll) {
+        try {
+          await prisma.rMHarkPoll.create({
+            data: {
+              rmheetId: created.id,
+              question: poll.question,
+              multiSelect: poll.multiSelect,
+              options: { create: poll.options.map((text, i) => ({ text, position: i })) },
+            },
+          });
+        } catch (e) {
+          errlog('bot poll create failed:', e);
+        }
+      }
       await prisma.user.update({
         where: { id: bot.id },
         data: { botLastPostAt: new Date() },
       });
-      log(`posted as ${bot.id}: ${content.slice(0, 60).replace(/\n/g, ' ')}…`);
+      log(`posted as ${bot.id}${poll ? ' [poll]' : ''}: ${content.slice(0, 60).replace(/\n/g, ' ')}…`);
     } catch (e) {
       errlog('post failed:', e);
     }
