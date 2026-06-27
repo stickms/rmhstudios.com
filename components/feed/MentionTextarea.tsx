@@ -192,6 +192,11 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
     return (
       <div className="relative">
         <textarea
+          // We surface our own @/# typing indicators, so suppress the browser's
+          // native autocomplete/suggestion "select box" that would overlap them.
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
           {...props}
           ref={innerRef}
           value={value}

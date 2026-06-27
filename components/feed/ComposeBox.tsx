@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Plus, BarChart3, ImagePlay, X, ImagePlus, Globe, Users, Lock, Unlock, EyeOff, FileText, CalendarClock, Check } from 'lucide-react';
+import { Plus, BarChart3, ImagePlay, X, ImagePlus, Globe, Users, Lock, Coins, Type, FileText, CalendarClock, Check } from 'lucide-react';
 import { GifEmbed } from './GifEmbed';
 import { GifPicker } from './GifPicker';
 import { AIGenerateButton } from './AIGenerateButton';
@@ -54,30 +54,12 @@ export function ComposeBox({
   const [showSchedule, setShowSchedule] = useState(false);
   const [scheduleAt, setScheduleAt] = useState(''); // datetime-local value
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
+  const [showPriceModal, setShowPriceModal] = useState(false); // unlock-price popover
+  const [showCheatSheet, setShowCheatSheet] = useState(false); // markdown cheat sheet
   const imageInputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { prependItem } = useFeedStore();
-
-  // Wrap the current selection (or insert a placeholder) in spoiler markers.
-  function insertSpoiler() {
-    const el = textareaRef.current;
-    if (!el) {
-      setContent((c) => `${c}||spoiler||`);
-      return;
-    }
-    const start = el.selectionStart ?? content.length;
-    const end = el.selectionEnd ?? content.length;
-    const selected = content.slice(start, end) || 'spoiler';
-    const next = `${content.slice(0, start)}||${selected}||${content.slice(end)}`;
-    setContent(next);
-    // Restore focus + place the cursor just inside the spoiler markers.
-    requestAnimationFrame(() => {
-      el.focus();
-      const pos = start + 2 + selected.length;
-      el.setSelectionRange(pos, pos);
-    });
-  }
 
   const { t } = useTranslation('feed');
   const { data: session } = useSession();
@@ -158,6 +140,8 @@ export function ComposeBox({
     setImageError(null);
     setShowSchedule(false);
     setScheduleAt('');
+    setShowPriceModal(false);
+    setShowCheatSheet(false);
   };
 
   const handleSubmit = async () => {
@@ -289,28 +273,17 @@ export function ComposeBox({
                 </button>
               ))}
             </div>
-            <div className="inline-flex items-center gap-1 rounded-full border border-site-border bg-site-surface px-3 py-1">
-              <Unlock className="h-3.5 w-3.5 text-site-text-muted" />
-              <span className="text-xs text-site-text-muted">{t("unlock-price-label", { defaultValue: "Unlock price" })}</span>
-              <input
-                type="number"
-                min={0}
-                value={unlockPrice}
-                onChange={(e) => setUnlockPrice(e.target.value)}
-                placeholder={t("unlock-price-placeholder", { defaultValue: "free" })}
-                aria-label={t("unlock-price-aria", { defaultValue: "Coins required to unlock this post" })}
-                className="w-16 bg-transparent text-xs text-site-text placeholder:text-site-text-dim focus:outline-none"
-              />
-            </div>
-            <button
-              type="button"
-              onClick={insertSpoiler}
-              title={t("spoiler-title", { defaultValue: "Mark selection as a spoiler" })}
-              className="inline-flex items-center gap-1 rounded-full border border-site-border bg-site-surface px-3 py-1 text-xs font-medium text-site-text-muted transition-colors hover:text-site-text"
-            >
-              <EyeOff className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">{t("spoiler-label", { defaultValue: "Spoiler" })}</span>
-            </button>
+            {parseInt(unlockPrice, 10) > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowPriceModal(true)}
+                title={t("edit-unlock-price-title", { defaultValue: "Edit unlock price" })}
+                className="inline-flex items-center gap-1 rounded-full border border-site-accent/40 bg-site-accent/10 px-3 py-1 text-xs font-medium text-site-accent transition-colors hover:bg-site-accent/20"
+              >
+                <Lock className="h-3.5 w-3.5" />
+                <span>{t("unlock-price-pill", { price: parseInt(unlockPrice, 10), defaultValue: "Locked · {{price}} coins" })}</span>
+              </button>
+            )}
           </div>
 
           {/* Poll creator */}
@@ -599,6 +572,28 @@ export function ComposeBox({
                       <BarChart3 className="w-4 h-4 text-site-text-dim" />
                       {t("menu-create-poll", { defaultValue: "Create Poll" })}
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowPriceModal(true);
+                        setMenuOpen(false);
+                      }}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+                    >
+                      <Coins className="w-4 h-4 text-site-text-dim" />
+                      {t("menu-set-unlock-price", { defaultValue: "Set unlock price" })}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowCheatSheet(true);
+                        setMenuOpen(false);
+                      }}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+                    >
+                      <Type className="w-4 h-4 text-site-text-dim" />
+                      {t("menu-markdown-cheatsheet", { defaultValue: "Formatting help" })}
+                    </button>
                     <div className="my-1 border-t border-site-border" />
                     <button
                       onClick={() => {
@@ -646,6 +641,104 @@ export function ComposeBox({
           </div>
         </div>
       </div>
+
+      {/* Unlock-price popover — opened from the (+) menu */}
+      {showPriceModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowPriceModal(false)} />
+          <div className="relative w-full max-w-xs rounded-2xl border border-site-border bg-site-bg p-4 shadow-xl animate-in zoom-in-95 fade-in duration-150">
+            <div className="mb-2 flex items-center justify-between">
+              <h3 className="flex items-center gap-1.5 text-sm font-semibold text-site-text">
+                <Lock className="h-4 w-4 text-site-text-muted" />
+                {t("unlock-price-label", { defaultValue: "Unlock price" })}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowPriceModal(false)}
+                aria-label={t("close", { defaultValue: "Close" })}
+                className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <p className="mb-3 text-xs text-site-text-muted">
+              {t("unlock-price-help", { defaultValue: "Charge coins to unlock this post. Leave empty to keep it free." })}
+            </p>
+            <div className="flex items-center gap-2 rounded-xl border border-site-border bg-site-surface px-3 py-2">
+              <Coins className="h-4 w-4 text-site-text-muted" />
+              <input
+                type="number"
+                min={0}
+                autoFocus
+                value={unlockPrice}
+                onChange={(e) => setUnlockPrice(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') setShowPriceModal(false); }}
+                placeholder={t("unlock-price-placeholder", { defaultValue: "free" })}
+                aria-label={t("unlock-price-aria", { defaultValue: "Coins required to unlock this post" })}
+                className="w-full bg-transparent text-sm text-site-text placeholder:text-site-text-dim focus:outline-none"
+              />
+            </div>
+            <div className="mt-3 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => { setUnlockPrice(''); setShowPriceModal(false); }}
+                className="rounded-full px-3 py-1.5 text-xs font-medium text-site-text-muted hover:text-site-text transition-colors"
+              >
+                {t("unlock-price-clear", { defaultValue: "Make free" })}
+              </button>
+              <Button variant="accent" size="sm" onClick={() => setShowPriceModal(false)}>
+                {t("done", { defaultValue: "Done" })}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Markdown cheat sheet — opened from the (+) menu */}
+      {showCheatSheet && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowCheatSheet(false)} />
+          <div className="relative w-full max-w-sm rounded-2xl border border-site-border bg-site-bg p-4 shadow-xl animate-in zoom-in-95 fade-in duration-150">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="flex items-center gap-1.5 text-sm font-semibold text-site-text">
+                <Type className="h-4 w-4 text-site-text-muted" />
+                {t("cheatsheet-title", { defaultValue: "Formatting cheat sheet" })}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowCheatSheet(false)}
+                aria-label={t("close", { defaultValue: "Close" })}
+                className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="text-xs uppercase tracking-wide text-site-text-dim">
+                  <th className="pb-2 font-medium">{t("cheatsheet-col-type", { defaultValue: "Type this" })}</th>
+                  <th className="pb-2 font-medium">{t("cheatsheet-col-result", { defaultValue: "Result" })}</th>
+                </tr>
+              </thead>
+              <tbody className="align-top">
+                {([
+                  { code: '**bold**', node: <strong className="font-bold">{t("cheatsheet-bold", { defaultValue: "bold" })}</strong> },
+                  { code: '*italic*', node: <em className="italic">{t("cheatsheet-italic", { defaultValue: "italic" })}</em> },
+                  { code: '~~strike~~', node: <del>{t("cheatsheet-strike", { defaultValue: "strike" })}</del> },
+                  { code: '||spoiler||', node: <span className="rounded bg-site-text/15 px-1 text-transparent [filter:blur(3px)]">{t("cheatsheet-spoiler", { defaultValue: "spoiler" })}</span> },
+                ]).map((row) => (
+                  <tr key={row.code} className="border-t border-site-border">
+                    <td className="py-2 pr-3">
+                      <code className="rounded bg-site-surface px-1.5 py-0.5 text-xs text-site-text">{row.code}</code>
+                    </td>
+                    <td className="py-2 text-site-text">{row.node}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

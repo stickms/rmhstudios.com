@@ -70,12 +70,8 @@ import { Route as VSlugRouteImport } from './routes/v.$slug'
 import { Route as UserBuildsSlugRouteImport } from './routes/user-builds.$slug'
 import { Route as StrategiesSahurRouteImport } from './routes/strategies/sahur'
 import { Route as StrategiesIncidentsRouteImport } from './routes/strategies/incidents'
-import { Route as SecretWeatherRouteImport } from './routes/secret/weather'
 import { Route as SecretVegaRouteImport } from './routes/secret/vega'
 import { Route as SecretSignalForgeRouteImport } from './routes/secret/signal-forge'
-import { Route as SecretNotesRouteImport } from './routes/secret/notes'
-import { Route as SecretJobsRouteImport } from './routes/secret/jobs'
-import { Route as SecretEatsRouteImport } from './routes/secret/eats'
 import { Route as SecretCursedLogicRouteImport } from './routes/secret/cursed-logic'
 import { Route as RmhtypeSoloRouteImport } from './routes/rmhtype/solo'
 import { Route as RmhtypeMultiplayerRouteImport } from './routes/rmhtype/multiplayer'
@@ -96,7 +92,6 @@ import { Route as RmhCapitalFirmRouteImport } from './routes/rmh-capital/firm'
 import { Route as RmhCapitalContactRouteImport } from './routes/rmh-capital/contact'
 import { Route as RmhCapitalCareersRouteImport } from './routes/rmh-capital/careers'
 import { Route as RmhCapitalBusinessesRouteImport } from './routes/rmh-capital/businesses'
-import { Route as ResearchSlugRouteImport } from './routes/research.$slug'
 import { Route as NewsSlugRouteImport } from './routes/news.$slug'
 import { Route as LibrarySlugRouteImport } from './routes/library.$slug'
 import { Route as ForestExplorerStoryRouteImport } from './routes/forest-explorer/story'
@@ -113,8 +108,6 @@ import { Route as DailyAlibiRouteImport } from './routes/daily/alibi'
 import { Route as BuildsSlugRouteImport } from './routes/builds_.$slug'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as ApiWrappedRouteImport } from './routes/api/wrapped'
-import { Route as ApiWeatherWebhookRouteImport } from './routes/api/weather-webhook'
-import { Route as ApiWeatherDataRouteImport } from './routes/api/weather-data'
 import { Route as ApiUserBuildsRouteImport } from './routes/api/user-builds'
 import { Route as ApiStreakRouteImport } from './routes/api/streak'
 import { Route as ApiSearchRouteImport } from './routes/api/search'
@@ -154,9 +147,6 @@ import { Route as SiteAdminRouteRouteImport } from './routes/_site/admin/route'
 import { Route as StrategiesSafehouseIndexRouteImport } from './routes/strategies/safehouse/index'
 import { Route as StrategiesPuzzlesIndexRouteImport } from './routes/strategies/puzzles/index'
 import { Route as StrategiesProfileIndexRouteImport } from './routes/strategies/profile/index'
-import { Route as SecretWeatherIndexRouteImport } from './routes/secret/weather/index'
-import { Route as SecretNotesIndexRouteImport } from './routes/secret/notes/index'
-import { Route as SecretJobsIndexRouteImport } from './routes/secret/jobs/index'
 import { Route as SecretCursedLogicIndexRouteImport } from './routes/secret/cursed-logic/index'
 import { Route as RmhboxMinigamesIndexRouteImport } from './routes/rmhbox/minigames/index'
 import { Route as ApiWheelIndexRouteImport } from './routes/api/wheel/index'
@@ -177,7 +167,6 @@ import { Route as SiteUserBuildsIndexRouteImport } from './routes/_site/user-bui
 import { Route as SiteStudyIndexRouteImport } from './routes/_site/study/index'
 import { Route as SiteStoreIndexRouteImport } from './routes/_site/store/index'
 import { Route as SiteRideshareIndexRouteImport } from './routes/_site/rideshare/index'
-import { Route as SiteResearchIndexRouteImport } from './routes/_site/research/index'
 import { Route as SitePersonasIndexRouteImport } from './routes/_site/personas/index'
 import { Route as SiteNewsIndexRouteImport } from './routes/_site/news/index'
 import { Route as SiteMessagesIndexRouteImport } from './routes/_site/messages/index'
@@ -194,8 +183,6 @@ import { Route as StrategiesPuzzlesArchiveRouteImport } from './routes/strategie
 import { Route as StrategiesPuzzlesModeRouteImport } from './routes/strategies/puzzles/$mode'
 import { Route as StrategiesProfileSettingsRouteImport } from './routes/strategies/profile/settings'
 import { Route as StrategiesProfileReputationRouteImport } from './routes/strategies/profile/reputation'
-import { Route as SecretJobsApplicationsRouteImport } from './routes/secret/jobs/applications'
-import { Route as SecretJobsIdRouteImport } from './routes/secret/jobs/$id'
 import { Route as EmbedPostIdRouteImport } from './routes/embed.post.$id'
 import { Route as ApiWheelSpinRouteImport } from './routes/api/wheel/spin'
 import { Route as ApiVoidBreakerScoreRouteImport } from './routes/api/void-breaker/score'
@@ -327,7 +314,6 @@ import { Route as SiteStudyDeckIdRouteImport } from './routes/_site/study/$deckI
 import { Route as SiteStoreUseridRouteImport } from './routes/_site/store/$userid'
 import { Route as SiteRideshareRideRouteImport } from './routes/_site/rideshare/ride'
 import { Route as SiteRideshareDriveRouteImport } from './routes/_site/rideshare/drive'
-import { Route as SiteResearchCallRouteImport } from './routes/_site/research/call'
 import { Route as SiteProfileIdRouteImport } from './routes/_site/profile/$id'
 import { Route as SitePersonasIdRouteImport } from './routes/_site/personas/$id'
 import { Route as SiteMessagesConversationIdRouteImport } from './routes/_site/messages/$conversationId'
@@ -356,7 +342,6 @@ import { Route as ApiAdminPredictionsIndexRouteImport } from './routes/api/admin
 import { Route as ApiAdminLibraryIndexRouteImport } from './routes/api/admin/library/index'
 import { Route as SiteUUseridIndexRouteImport } from './routes/_site/u/$userid/index'
 import { Route as SiteAdminBlogIndexRouteImport } from './routes/_site/admin/blog/index'
-import { Route as SecretJobsAssessmentIdRouteImport } from './routes/secret/jobs/assessment/$id'
 import { Route as RmhboxMinigamesMinigameIdHistoryRouteImport } from './routes/rmhbox/minigames/$minigameId/history'
 import { Route as ApiVibeThumbSlugRouteImport } from './routes/api/vibe/thumb/$slug'
 import { Route as ApiVibePkgFileRouteImport } from './routes/api/vibe/pkg/$file'
@@ -783,11 +768,6 @@ const StrategiesIncidentsRoute = StrategiesIncidentsRouteImport.update({
   path: '/incidents',
   getParentRoute: () => StrategiesRoute,
 } as any)
-const SecretWeatherRoute = SecretWeatherRouteImport.update({
-  id: '/weather',
-  path: '/weather',
-  getParentRoute: () => SecretRoute,
-} as any)
 const SecretVegaRoute = SecretVegaRouteImport.update({
   id: '/vega',
   path: '/vega',
@@ -796,21 +776,6 @@ const SecretVegaRoute = SecretVegaRouteImport.update({
 const SecretSignalForgeRoute = SecretSignalForgeRouteImport.update({
   id: '/signal-forge',
   path: '/signal-forge',
-  getParentRoute: () => SecretRoute,
-} as any)
-const SecretNotesRoute = SecretNotesRouteImport.update({
-  id: '/notes',
-  path: '/notes',
-  getParentRoute: () => SecretRoute,
-} as any)
-const SecretJobsRoute = SecretJobsRouteImport.update({
-  id: '/jobs',
-  path: '/jobs',
-  getParentRoute: () => SecretRoute,
-} as any)
-const SecretEatsRoute = SecretEatsRouteImport.update({
-  id: '/eats',
-  path: '/eats',
   getParentRoute: () => SecretRoute,
 } as any)
 const SecretCursedLogicRoute = SecretCursedLogicRouteImport.update({
@@ -913,11 +878,6 @@ const RmhCapitalBusinessesRoute = RmhCapitalBusinessesRouteImport.update({
   path: '/businesses',
   getParentRoute: () => RmhCapitalRoute,
 } as any)
-const ResearchSlugRoute = ResearchSlugRouteImport.update({
-  id: '/research/$slug',
-  path: '/research/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const NewsSlugRoute = NewsSlugRouteImport.update({
   id: '/news/$slug',
   path: '/news/$slug',
@@ -996,16 +956,6 @@ const BlogSlugRoute = BlogSlugRouteImport.update({
 const ApiWrappedRoute = ApiWrappedRouteImport.update({
   id: '/api/wrapped',
   path: '/api/wrapped',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiWeatherWebhookRoute = ApiWeatherWebhookRouteImport.update({
-  id: '/api/weather-webhook',
-  path: '/api/weather-webhook',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiWeatherDataRoute = ApiWeatherDataRouteImport.update({
-  id: '/api/weather-data',
-  path: '/api/weather-data',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiUserBuildsRoute = ApiUserBuildsRouteImport.update({
@@ -1204,21 +1154,6 @@ const StrategiesProfileIndexRoute = StrategiesProfileIndexRouteImport.update({
   path: '/profile/',
   getParentRoute: () => StrategiesRoute,
 } as any)
-const SecretWeatherIndexRoute = SecretWeatherIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => SecretWeatherRoute,
-} as any)
-const SecretNotesIndexRoute = SecretNotesIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => SecretNotesRoute,
-} as any)
-const SecretJobsIndexRoute = SecretJobsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => SecretJobsRoute,
-} as any)
 const SecretCursedLogicIndexRoute = SecretCursedLogicIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -1319,11 +1254,6 @@ const SiteRideshareIndexRoute = SiteRideshareIndexRouteImport.update({
   path: '/rideshare/',
   getParentRoute: () => SiteRoute,
 } as any)
-const SiteResearchIndexRoute = SiteResearchIndexRouteImport.update({
-  id: '/research/',
-  path: '/research/',
-  getParentRoute: () => SiteRoute,
-} as any)
 const SitePersonasIndexRoute = SitePersonasIndexRouteImport.update({
   id: '/personas/',
   path: '/personas/',
@@ -1410,16 +1340,6 @@ const StrategiesProfileReputationRoute =
     path: '/profile/reputation',
     getParentRoute: () => StrategiesRoute,
   } as any)
-const SecretJobsApplicationsRoute = SecretJobsApplicationsRouteImport.update({
-  id: '/applications',
-  path: '/applications',
-  getParentRoute: () => SecretJobsRoute,
-} as any)
-const SecretJobsIdRoute = SecretJobsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => SecretJobsRoute,
-} as any)
 const EmbedPostIdRoute = EmbedPostIdRouteImport.update({
   id: '/embed/post/$id',
   path: '/embed/post/$id',
@@ -2084,11 +2004,6 @@ const SiteRideshareDriveRoute = SiteRideshareDriveRouteImport.update({
   path: '/rideshare/drive',
   getParentRoute: () => SiteRoute,
 } as any)
-const SiteResearchCallRoute = SiteResearchCallRouteImport.update({
-  id: '/research/call',
-  path: '/research/call',
-  getParentRoute: () => SiteRoute,
-} as any)
 const SiteProfileIdRoute = SiteProfileIdRouteImport.update({
   id: '/profile/$id',
   path: '/profile/$id',
@@ -2233,11 +2148,6 @@ const SiteAdminBlogIndexRoute = SiteAdminBlogIndexRouteImport.update({
   id: '/blog/',
   path: '/blog/',
   getParentRoute: () => SiteAdminRouteRoute,
-} as any)
-const SecretJobsAssessmentIdRoute = SecretJobsAssessmentIdRouteImport.update({
-  id: '/assessment/$id',
-  path: '/assessment/$id',
-  getParentRoute: () => SecretJobsRoute,
 } as any)
 const RmhboxMinigamesMinigameIdHistoryRoute =
   RmhboxMinigamesMinigameIdHistoryRouteImport.update({
@@ -2965,8 +2875,6 @@ export interface FileRoutesByFullPath {
   '/api/search': typeof ApiSearchRoute
   '/api/streak': typeof ApiStreakRoute
   '/api/user-builds': typeof ApiUserBuildsRouteWithChildren
-  '/api/weather-data': typeof ApiWeatherDataRoute
-  '/api/weather-webhook': typeof ApiWeatherWebhookRoute
   '/api/wrapped': typeof ApiWrappedRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/builds/$slug': typeof BuildsSlugRoute
@@ -2983,7 +2891,6 @@ export interface FileRoutesByFullPath {
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
   '/library/$slug': typeof LibrarySlugRoute
   '/news/$slug': typeof NewsSlugRoute
-  '/research/$slug': typeof ResearchSlugRoute
   '/rmh-capital/businesses': typeof RmhCapitalBusinessesRoute
   '/rmh-capital/careers': typeof RmhCapitalCareersRoute
   '/rmh-capital/contact': typeof RmhCapitalContactRoute
@@ -3004,12 +2911,8 @@ export interface FileRoutesByFullPath {
   '/rmhtype/multiplayer': typeof RmhtypeMultiplayerRoute
   '/rmhtype/solo': typeof RmhtypeSoloRoute
   '/secret/cursed-logic': typeof SecretCursedLogicRouteWithChildren
-  '/secret/eats': typeof SecretEatsRoute
-  '/secret/jobs': typeof SecretJobsRouteWithChildren
-  '/secret/notes': typeof SecretNotesRouteWithChildren
   '/secret/signal-forge': typeof SecretSignalForgeRoute
   '/secret/vega': typeof SecretVegaRoute
-  '/secret/weather': typeof SecretWeatherRouteWithChildren
   '/strategies/incidents': typeof StrategiesIncidentsRoute
   '/strategies/sahur': typeof StrategiesSahurRoute
   '/user-builds/$slug': typeof UserBuildsSlugRoute
@@ -3048,7 +2951,6 @@ export interface FileRoutesByFullPath {
   '/messages/$conversationId': typeof SiteMessagesConversationIdRoute
   '/personas/$id': typeof SitePersonasIdRoute
   '/profile/$id': typeof SiteProfileIdRoute
-  '/research/call': typeof SiteResearchCallRoute
   '/rideshare/drive': typeof SiteRideshareDriveRoute
   '/rideshare/ride': typeof SiteRideshareRideRoute
   '/store/$userid': typeof SiteStoreUseridRoute
@@ -3180,8 +3082,6 @@ export interface FileRoutesByFullPath {
   '/api/void-breaker/score': typeof ApiVoidBreakerScoreRoute
   '/api/wheel/spin': typeof ApiWheelSpinRoute
   '/embed/post/$id': typeof EmbedPostIdRoute
-  '/secret/jobs/$id': typeof SecretJobsIdRoute
-  '/secret/jobs/applications': typeof SecretJobsApplicationsRoute
   '/strategies/profile/reputation': typeof StrategiesProfileReputationRoute
   '/strategies/profile/settings': typeof StrategiesProfileSettingsRoute
   '/strategies/puzzles/$mode': typeof StrategiesPuzzlesModeRoute
@@ -3198,7 +3098,6 @@ export interface FileRoutesByFullPath {
   '/messages/': typeof SiteMessagesIndexRoute
   '/news/': typeof SiteNewsIndexRoute
   '/personas/': typeof SitePersonasIndexRoute
-  '/research/': typeof SiteResearchIndexRoute
   '/rideshare/': typeof SiteRideshareIndexRoute
   '/store/': typeof SiteStoreIndexRoute
   '/study/': typeof SiteStudyIndexRoute
@@ -3219,9 +3118,6 @@ export interface FileRoutesByFullPath {
   '/api/wheel/': typeof ApiWheelIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic/': typeof SecretCursedLogicIndexRoute
-  '/secret/jobs/': typeof SecretJobsIndexRoute
-  '/secret/notes/': typeof SecretNotesIndexRoute
-  '/secret/weather/': typeof SecretWeatherIndexRoute
   '/strategies/profile/': typeof StrategiesProfileIndexRoute
   '/strategies/puzzles/': typeof StrategiesPuzzlesIndexRoute
   '/strategies/safehouse/': typeof StrategiesSafehouseIndexRoute
@@ -3314,7 +3210,6 @@ export interface FileRoutesByFullPath {
   '/api/vibe/pkg/$file': typeof ApiVibePkgFileRoute
   '/api/vibe/thumb/$slug': typeof ApiVibeThumbSlugRoute
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
-  '/secret/jobs/assessment/$id': typeof SecretJobsAssessmentIdRoute
   '/admin/blog/': typeof SiteAdminBlogIndexRoute
   '/u/$userid/': typeof SiteUUseridIndexRoute
   '/api/admin/library/': typeof ApiAdminLibraryIndexRoute
@@ -3414,8 +3309,6 @@ export interface FileRoutesByTo {
   '/api/search': typeof ApiSearchRoute
   '/api/streak': typeof ApiStreakRoute
   '/api/user-builds': typeof ApiUserBuildsRouteWithChildren
-  '/api/weather-data': typeof ApiWeatherDataRoute
-  '/api/weather-webhook': typeof ApiWeatherWebhookRoute
   '/api/wrapped': typeof ApiWrappedRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/builds/$slug': typeof BuildsSlugRoute
@@ -3432,7 +3325,6 @@ export interface FileRoutesByTo {
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
   '/library/$slug': typeof LibrarySlugRoute
   '/news/$slug': typeof NewsSlugRoute
-  '/research/$slug': typeof ResearchSlugRoute
   '/rmh-capital/businesses': typeof RmhCapitalBusinessesRoute
   '/rmh-capital/careers': typeof RmhCapitalCareersRoute
   '/rmh-capital/contact': typeof RmhCapitalContactRoute
@@ -3452,7 +3344,6 @@ export interface FileRoutesByTo {
   '/rmhtype/$roomId': typeof RmhtypeRoomIdRoute
   '/rmhtype/multiplayer': typeof RmhtypeMultiplayerRoute
   '/rmhtype/solo': typeof RmhtypeSoloRoute
-  '/secret/eats': typeof SecretEatsRoute
   '/secret/signal-forge': typeof SecretSignalForgeRoute
   '/secret/vega': typeof SecretVegaRoute
   '/strategies/incidents': typeof StrategiesIncidentsRoute
@@ -3494,7 +3385,6 @@ export interface FileRoutesByTo {
   '/messages/$conversationId': typeof SiteMessagesConversationIdRoute
   '/personas/$id': typeof SitePersonasIdRoute
   '/profile/$id': typeof SiteProfileIdRoute
-  '/research/call': typeof SiteResearchCallRoute
   '/rideshare/drive': typeof SiteRideshareDriveRoute
   '/rideshare/ride': typeof SiteRideshareRideRoute
   '/store/$userid': typeof SiteStoreUseridRoute
@@ -3626,8 +3516,6 @@ export interface FileRoutesByTo {
   '/api/void-breaker/score': typeof ApiVoidBreakerScoreRoute
   '/api/wheel/spin': typeof ApiWheelSpinRoute
   '/embed/post/$id': typeof EmbedPostIdRoute
-  '/secret/jobs/$id': typeof SecretJobsIdRoute
-  '/secret/jobs/applications': typeof SecretJobsApplicationsRoute
   '/strategies/profile/reputation': typeof StrategiesProfileReputationRoute
   '/strategies/profile/settings': typeof StrategiesProfileSettingsRoute
   '/strategies/puzzles/$mode': typeof StrategiesPuzzlesModeRoute
@@ -3644,7 +3532,6 @@ export interface FileRoutesByTo {
   '/messages': typeof SiteMessagesIndexRoute
   '/news': typeof SiteNewsIndexRoute
   '/personas': typeof SitePersonasIndexRoute
-  '/research': typeof SiteResearchIndexRoute
   '/rideshare': typeof SiteRideshareIndexRoute
   '/store': typeof SiteStoreIndexRoute
   '/study': typeof SiteStudyIndexRoute
@@ -3665,9 +3552,6 @@ export interface FileRoutesByTo {
   '/api/wheel': typeof ApiWheelIndexRoute
   '/rmhbox/minigames': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic': typeof SecretCursedLogicIndexRoute
-  '/secret/jobs': typeof SecretJobsIndexRoute
-  '/secret/notes': typeof SecretNotesIndexRoute
-  '/secret/weather': typeof SecretWeatherIndexRoute
   '/strategies/profile': typeof StrategiesProfileIndexRoute
   '/strategies/puzzles': typeof StrategiesPuzzlesIndexRoute
   '/strategies/safehouse': typeof StrategiesSafehouseIndexRoute
@@ -3760,7 +3644,6 @@ export interface FileRoutesByTo {
   '/api/vibe/pkg/$file': typeof ApiVibePkgFileRoute
   '/api/vibe/thumb/$slug': typeof ApiVibeThumbSlugRoute
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
-  '/secret/jobs/assessment/$id': typeof SecretJobsAssessmentIdRoute
   '/admin/blog': typeof SiteAdminBlogIndexRoute
   '/u/$userid': typeof SiteUUseridIndexRoute
   '/api/admin/library': typeof ApiAdminLibraryIndexRoute
@@ -3882,8 +3765,6 @@ export interface FileRoutesById {
   '/api/search': typeof ApiSearchRoute
   '/api/streak': typeof ApiStreakRoute
   '/api/user-builds': typeof ApiUserBuildsRouteWithChildren
-  '/api/weather-data': typeof ApiWeatherDataRoute
-  '/api/weather-webhook': typeof ApiWeatherWebhookRoute
   '/api/wrapped': typeof ApiWrappedRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/builds_/$slug': typeof BuildsSlugRoute
@@ -3900,7 +3781,6 @@ export interface FileRoutesById {
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
   '/library/$slug': typeof LibrarySlugRoute
   '/news/$slug': typeof NewsSlugRoute
-  '/research/$slug': typeof ResearchSlugRoute
   '/rmh-capital/businesses': typeof RmhCapitalBusinessesRoute
   '/rmh-capital/careers': typeof RmhCapitalCareersRoute
   '/rmh-capital/contact': typeof RmhCapitalContactRoute
@@ -3921,12 +3801,8 @@ export interface FileRoutesById {
   '/rmhtype/multiplayer': typeof RmhtypeMultiplayerRoute
   '/rmhtype/solo': typeof RmhtypeSoloRoute
   '/secret/cursed-logic': typeof SecretCursedLogicRouteWithChildren
-  '/secret/eats': typeof SecretEatsRoute
-  '/secret/jobs': typeof SecretJobsRouteWithChildren
-  '/secret/notes': typeof SecretNotesRouteWithChildren
   '/secret/signal-forge': typeof SecretSignalForgeRoute
   '/secret/vega': typeof SecretVegaRoute
-  '/secret/weather': typeof SecretWeatherRouteWithChildren
   '/strategies/incidents': typeof StrategiesIncidentsRoute
   '/strategies/sahur': typeof StrategiesSahurRoute
   '/user-builds/$slug': typeof UserBuildsSlugRoute
@@ -3966,7 +3842,6 @@ export interface FileRoutesById {
   '/_site/messages/$conversationId': typeof SiteMessagesConversationIdRoute
   '/_site/personas/$id': typeof SitePersonasIdRoute
   '/_site/profile/$id': typeof SiteProfileIdRoute
-  '/_site/research/call': typeof SiteResearchCallRoute
   '/_site/rideshare/drive': typeof SiteRideshareDriveRoute
   '/_site/rideshare/ride': typeof SiteRideshareRideRoute
   '/_site/store/$userid': typeof SiteStoreUseridRoute
@@ -4098,8 +3973,6 @@ export interface FileRoutesById {
   '/api/void-breaker/score': typeof ApiVoidBreakerScoreRoute
   '/api/wheel/spin': typeof ApiWheelSpinRoute
   '/embed/post/$id': typeof EmbedPostIdRoute
-  '/secret/jobs/$id': typeof SecretJobsIdRoute
-  '/secret/jobs/applications': typeof SecretJobsApplicationsRoute
   '/strategies/profile/reputation': typeof StrategiesProfileReputationRoute
   '/strategies/profile/settings': typeof StrategiesProfileSettingsRoute
   '/strategies/puzzles/$mode': typeof StrategiesPuzzlesModeRoute
@@ -4116,7 +3989,6 @@ export interface FileRoutesById {
   '/_site/messages/': typeof SiteMessagesIndexRoute
   '/_site/news/': typeof SiteNewsIndexRoute
   '/_site/personas/': typeof SitePersonasIndexRoute
-  '/_site/research/': typeof SiteResearchIndexRoute
   '/_site/rideshare/': typeof SiteRideshareIndexRoute
   '/_site/store/': typeof SiteStoreIndexRoute
   '/_site/study/': typeof SiteStudyIndexRoute
@@ -4137,9 +4009,6 @@ export interface FileRoutesById {
   '/api/wheel/': typeof ApiWheelIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic/': typeof SecretCursedLogicIndexRoute
-  '/secret/jobs/': typeof SecretJobsIndexRoute
-  '/secret/notes/': typeof SecretNotesIndexRoute
-  '/secret/weather/': typeof SecretWeatherIndexRoute
   '/strategies/profile/': typeof StrategiesProfileIndexRoute
   '/strategies/puzzles/': typeof StrategiesPuzzlesIndexRoute
   '/strategies/safehouse/': typeof StrategiesSafehouseIndexRoute
@@ -4232,7 +4101,6 @@ export interface FileRoutesById {
   '/api/vibe/pkg/$file': typeof ApiVibePkgFileRoute
   '/api/vibe/thumb/$slug': typeof ApiVibeThumbSlugRoute
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
-  '/secret/jobs/assessment/$id': typeof SecretJobsAssessmentIdRoute
   '/_site/admin/blog/': typeof SiteAdminBlogIndexRoute
   '/_site/u/$userid/': typeof SiteUUseridIndexRoute
   '/api/admin/library/': typeof ApiAdminLibraryIndexRoute
@@ -4355,8 +4223,6 @@ export interface FileRouteTypes {
     | '/api/search'
     | '/api/streak'
     | '/api/user-builds'
-    | '/api/weather-data'
-    | '/api/weather-webhook'
     | '/api/wrapped'
     | '/blog/$slug'
     | '/builds/$slug'
@@ -4373,7 +4239,6 @@ export interface FileRouteTypes {
     | '/forest-explorer/story'
     | '/library/$slug'
     | '/news/$slug'
-    | '/research/$slug'
     | '/rmh-capital/businesses'
     | '/rmh-capital/careers'
     | '/rmh-capital/contact'
@@ -4394,12 +4259,8 @@ export interface FileRouteTypes {
     | '/rmhtype/multiplayer'
     | '/rmhtype/solo'
     | '/secret/cursed-logic'
-    | '/secret/eats'
-    | '/secret/jobs'
-    | '/secret/notes'
     | '/secret/signal-forge'
     | '/secret/vega'
-    | '/secret/weather'
     | '/strategies/incidents'
     | '/strategies/sahur'
     | '/user-builds/$slug'
@@ -4438,7 +4299,6 @@ export interface FileRouteTypes {
     | '/messages/$conversationId'
     | '/personas/$id'
     | '/profile/$id'
-    | '/research/call'
     | '/rideshare/drive'
     | '/rideshare/ride'
     | '/store/$userid'
@@ -4570,8 +4430,6 @@ export interface FileRouteTypes {
     | '/api/void-breaker/score'
     | '/api/wheel/spin'
     | '/embed/post/$id'
-    | '/secret/jobs/$id'
-    | '/secret/jobs/applications'
     | '/strategies/profile/reputation'
     | '/strategies/profile/settings'
     | '/strategies/puzzles/$mode'
@@ -4588,7 +4446,6 @@ export interface FileRouteTypes {
     | '/messages/'
     | '/news/'
     | '/personas/'
-    | '/research/'
     | '/rideshare/'
     | '/store/'
     | '/study/'
@@ -4609,9 +4466,6 @@ export interface FileRouteTypes {
     | '/api/wheel/'
     | '/rmhbox/minigames/'
     | '/secret/cursed-logic/'
-    | '/secret/jobs/'
-    | '/secret/notes/'
-    | '/secret/weather/'
     | '/strategies/profile/'
     | '/strategies/puzzles/'
     | '/strategies/safehouse/'
@@ -4704,7 +4558,6 @@ export interface FileRouteTypes {
     | '/api/vibe/pkg/$file'
     | '/api/vibe/thumb/$slug'
     | '/rmhbox/minigames/$minigameId/history'
-    | '/secret/jobs/assessment/$id'
     | '/admin/blog/'
     | '/u/$userid/'
     | '/api/admin/library/'
@@ -4804,8 +4657,6 @@ export interface FileRouteTypes {
     | '/api/search'
     | '/api/streak'
     | '/api/user-builds'
-    | '/api/weather-data'
-    | '/api/weather-webhook'
     | '/api/wrapped'
     | '/blog/$slug'
     | '/builds/$slug'
@@ -4822,7 +4673,6 @@ export interface FileRouteTypes {
     | '/forest-explorer/story'
     | '/library/$slug'
     | '/news/$slug'
-    | '/research/$slug'
     | '/rmh-capital/businesses'
     | '/rmh-capital/careers'
     | '/rmh-capital/contact'
@@ -4842,7 +4692,6 @@ export interface FileRouteTypes {
     | '/rmhtype/$roomId'
     | '/rmhtype/multiplayer'
     | '/rmhtype/solo'
-    | '/secret/eats'
     | '/secret/signal-forge'
     | '/secret/vega'
     | '/strategies/incidents'
@@ -4884,7 +4733,6 @@ export interface FileRouteTypes {
     | '/messages/$conversationId'
     | '/personas/$id'
     | '/profile/$id'
-    | '/research/call'
     | '/rideshare/drive'
     | '/rideshare/ride'
     | '/store/$userid'
@@ -5016,8 +4864,6 @@ export interface FileRouteTypes {
     | '/api/void-breaker/score'
     | '/api/wheel/spin'
     | '/embed/post/$id'
-    | '/secret/jobs/$id'
-    | '/secret/jobs/applications'
     | '/strategies/profile/reputation'
     | '/strategies/profile/settings'
     | '/strategies/puzzles/$mode'
@@ -5034,7 +4880,6 @@ export interface FileRouteTypes {
     | '/messages'
     | '/news'
     | '/personas'
-    | '/research'
     | '/rideshare'
     | '/store'
     | '/study'
@@ -5055,9 +4900,6 @@ export interface FileRouteTypes {
     | '/api/wheel'
     | '/rmhbox/minigames'
     | '/secret/cursed-logic'
-    | '/secret/jobs'
-    | '/secret/notes'
-    | '/secret/weather'
     | '/strategies/profile'
     | '/strategies/puzzles'
     | '/strategies/safehouse'
@@ -5150,7 +4992,6 @@ export interface FileRouteTypes {
     | '/api/vibe/pkg/$file'
     | '/api/vibe/thumb/$slug'
     | '/rmhbox/minigames/$minigameId/history'
-    | '/secret/jobs/assessment/$id'
     | '/admin/blog'
     | '/u/$userid'
     | '/api/admin/library'
@@ -5271,8 +5112,6 @@ export interface FileRouteTypes {
     | '/api/search'
     | '/api/streak'
     | '/api/user-builds'
-    | '/api/weather-data'
-    | '/api/weather-webhook'
     | '/api/wrapped'
     | '/blog/$slug'
     | '/builds_/$slug'
@@ -5289,7 +5128,6 @@ export interface FileRouteTypes {
     | '/forest-explorer/story'
     | '/library/$slug'
     | '/news/$slug'
-    | '/research/$slug'
     | '/rmh-capital/businesses'
     | '/rmh-capital/careers'
     | '/rmh-capital/contact'
@@ -5310,12 +5148,8 @@ export interface FileRouteTypes {
     | '/rmhtype/multiplayer'
     | '/rmhtype/solo'
     | '/secret/cursed-logic'
-    | '/secret/eats'
-    | '/secret/jobs'
-    | '/secret/notes'
     | '/secret/signal-forge'
     | '/secret/vega'
-    | '/secret/weather'
     | '/strategies/incidents'
     | '/strategies/sahur'
     | '/user-builds/$slug'
@@ -5355,7 +5189,6 @@ export interface FileRouteTypes {
     | '/_site/messages/$conversationId'
     | '/_site/personas/$id'
     | '/_site/profile/$id'
-    | '/_site/research/call'
     | '/_site/rideshare/drive'
     | '/_site/rideshare/ride'
     | '/_site/store/$userid'
@@ -5487,8 +5320,6 @@ export interface FileRouteTypes {
     | '/api/void-breaker/score'
     | '/api/wheel/spin'
     | '/embed/post/$id'
-    | '/secret/jobs/$id'
-    | '/secret/jobs/applications'
     | '/strategies/profile/reputation'
     | '/strategies/profile/settings'
     | '/strategies/puzzles/$mode'
@@ -5505,7 +5336,6 @@ export interface FileRouteTypes {
     | '/_site/messages/'
     | '/_site/news/'
     | '/_site/personas/'
-    | '/_site/research/'
     | '/_site/rideshare/'
     | '/_site/store/'
     | '/_site/study/'
@@ -5526,9 +5356,6 @@ export interface FileRouteTypes {
     | '/api/wheel/'
     | '/rmhbox/minigames/'
     | '/secret/cursed-logic/'
-    | '/secret/jobs/'
-    | '/secret/notes/'
-    | '/secret/weather/'
     | '/strategies/profile/'
     | '/strategies/puzzles/'
     | '/strategies/safehouse/'
@@ -5621,7 +5448,6 @@ export interface FileRouteTypes {
     | '/api/vibe/pkg/$file'
     | '/api/vibe/thumb/$slug'
     | '/rmhbox/minigames/$minigameId/history'
-    | '/secret/jobs/assessment/$id'
     | '/_site/admin/blog/'
     | '/_site/u/$userid/'
     | '/api/admin/library/'
@@ -5722,8 +5548,6 @@ export interface RootRouteChildren {
   ApiSearchRoute: typeof ApiSearchRoute
   ApiStreakRoute: typeof ApiStreakRoute
   ApiUserBuildsRoute: typeof ApiUserBuildsRouteWithChildren
-  ApiWeatherDataRoute: typeof ApiWeatherDataRoute
-  ApiWeatherWebhookRoute: typeof ApiWeatherWebhookRoute
   ApiWrappedRoute: typeof ApiWrappedRoute
   BlogSlugRoute: typeof BlogSlugRoute
   BuildsSlugRoute: typeof BuildsSlugRoute
@@ -5731,7 +5555,6 @@ export interface RootRouteChildren {
   DiscordRmhboxRoute: typeof DiscordRmhboxRoute
   LibrarySlugRoute: typeof LibrarySlugRoute
   NewsSlugRoute: typeof NewsSlugRoute
-  ResearchSlugRoute: typeof ResearchSlugRoute
   UserBuildsSlugRoute: typeof UserBuildsSlugRoute
   VSlugRoute: typeof VSlugRoute
   VNewRoute: typeof VNewRoute
@@ -6360,13 +6183,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StrategiesIncidentsRouteImport
       parentRoute: typeof StrategiesRoute
     }
-    '/secret/weather': {
-      id: '/secret/weather'
-      path: '/weather'
-      fullPath: '/secret/weather'
-      preLoaderRoute: typeof SecretWeatherRouteImport
-      parentRoute: typeof SecretRoute
-    }
     '/secret/vega': {
       id: '/secret/vega'
       path: '/vega'
@@ -6379,27 +6195,6 @@ declare module '@tanstack/react-router' {
       path: '/signal-forge'
       fullPath: '/secret/signal-forge'
       preLoaderRoute: typeof SecretSignalForgeRouteImport
-      parentRoute: typeof SecretRoute
-    }
-    '/secret/notes': {
-      id: '/secret/notes'
-      path: '/notes'
-      fullPath: '/secret/notes'
-      preLoaderRoute: typeof SecretNotesRouteImport
-      parentRoute: typeof SecretRoute
-    }
-    '/secret/jobs': {
-      id: '/secret/jobs'
-      path: '/jobs'
-      fullPath: '/secret/jobs'
-      preLoaderRoute: typeof SecretJobsRouteImport
-      parentRoute: typeof SecretRoute
-    }
-    '/secret/eats': {
-      id: '/secret/eats'
-      path: '/eats'
-      fullPath: '/secret/eats'
-      preLoaderRoute: typeof SecretEatsRouteImport
       parentRoute: typeof SecretRoute
     }
     '/secret/cursed-logic': {
@@ -6542,13 +6337,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RmhCapitalBusinessesRouteImport
       parentRoute: typeof RmhCapitalRoute
     }
-    '/research/$slug': {
-      id: '/research/$slug'
-      path: '/research/$slug'
-      fullPath: '/research/$slug'
-      preLoaderRoute: typeof ResearchSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/news/$slug': {
       id: '/news/$slug'
       path: '/news/$slug'
@@ -6659,20 +6447,6 @@ declare module '@tanstack/react-router' {
       path: '/api/wrapped'
       fullPath: '/api/wrapped'
       preLoaderRoute: typeof ApiWrappedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/weather-webhook': {
-      id: '/api/weather-webhook'
-      path: '/api/weather-webhook'
-      fullPath: '/api/weather-webhook'
-      preLoaderRoute: typeof ApiWeatherWebhookRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/weather-data': {
-      id: '/api/weather-data'
-      path: '/api/weather-data'
-      fullPath: '/api/weather-data'
-      preLoaderRoute: typeof ApiWeatherDataRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/user-builds': {
@@ -6948,27 +6722,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StrategiesProfileIndexRouteImport
       parentRoute: typeof StrategiesRoute
     }
-    '/secret/weather/': {
-      id: '/secret/weather/'
-      path: '/'
-      fullPath: '/secret/weather/'
-      preLoaderRoute: typeof SecretWeatherIndexRouteImport
-      parentRoute: typeof SecretWeatherRoute
-    }
-    '/secret/notes/': {
-      id: '/secret/notes/'
-      path: '/'
-      fullPath: '/secret/notes/'
-      preLoaderRoute: typeof SecretNotesIndexRouteImport
-      parentRoute: typeof SecretNotesRoute
-    }
-    '/secret/jobs/': {
-      id: '/secret/jobs/'
-      path: '/'
-      fullPath: '/secret/jobs/'
-      preLoaderRoute: typeof SecretJobsIndexRouteImport
-      parentRoute: typeof SecretJobsRoute
-    }
     '/secret/cursed-logic/': {
       id: '/secret/cursed-logic/'
       path: '/'
@@ -7109,13 +6862,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteRideshareIndexRouteImport
       parentRoute: typeof SiteRoute
     }
-    '/_site/research/': {
-      id: '/_site/research/'
-      path: '/research'
-      fullPath: '/research/'
-      preLoaderRoute: typeof SiteResearchIndexRouteImport
-      parentRoute: typeof SiteRoute
-    }
     '/_site/personas/': {
       id: '/_site/personas/'
       path: '/personas'
@@ -7227,20 +6973,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/strategies/profile/reputation'
       preLoaderRoute: typeof StrategiesProfileReputationRouteImport
       parentRoute: typeof StrategiesRoute
-    }
-    '/secret/jobs/applications': {
-      id: '/secret/jobs/applications'
-      path: '/applications'
-      fullPath: '/secret/jobs/applications'
-      preLoaderRoute: typeof SecretJobsApplicationsRouteImport
-      parentRoute: typeof SecretJobsRoute
-    }
-    '/secret/jobs/$id': {
-      id: '/secret/jobs/$id'
-      path: '/$id'
-      fullPath: '/secret/jobs/$id'
-      preLoaderRoute: typeof SecretJobsIdRouteImport
-      parentRoute: typeof SecretJobsRoute
     }
     '/embed/post/$id': {
       id: '/embed/post/$id'
@@ -8159,13 +7891,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteRideshareDriveRouteImport
       parentRoute: typeof SiteRoute
     }
-    '/_site/research/call': {
-      id: '/_site/research/call'
-      path: '/research/call'
-      fullPath: '/research/call'
-      preLoaderRoute: typeof SiteResearchCallRouteImport
-      parentRoute: typeof SiteRoute
-    }
     '/_site/profile/$id': {
       id: '/_site/profile/$id'
       path: '/profile/$id'
@@ -8361,13 +8086,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/blog/'
       preLoaderRoute: typeof SiteAdminBlogIndexRouteImport
       parentRoute: typeof SiteAdminRouteRoute
-    }
-    '/secret/jobs/assessment/$id': {
-      id: '/secret/jobs/assessment/$id'
-      path: '/assessment/$id'
-      fullPath: '/secret/jobs/assessment/$id'
-      preLoaderRoute: typeof SecretJobsAssessmentIdRouteImport
-      parentRoute: typeof SecretJobsRoute
     }
     '/rmhbox/minigames/$minigameId/history': {
       id: '/rmhbox/minigames/$minigameId/history'
@@ -9284,7 +9002,6 @@ interface SiteRouteChildren {
   SiteMessagesConversationIdRoute: typeof SiteMessagesConversationIdRoute
   SitePersonasIdRoute: typeof SitePersonasIdRoute
   SiteProfileIdRoute: typeof SiteProfileIdRoute
-  SiteResearchCallRoute: typeof SiteResearchCallRoute
   SiteRideshareDriveRoute: typeof SiteRideshareDriveRoute
   SiteRideshareRideRoute: typeof SiteRideshareRideRoute
   SiteStoreUseridRoute: typeof SiteStoreUseridRoute
@@ -9300,7 +9017,6 @@ interface SiteRouteChildren {
   SiteMessagesIndexRoute: typeof SiteMessagesIndexRoute
   SiteNewsIndexRoute: typeof SiteNewsIndexRoute
   SitePersonasIndexRoute: typeof SitePersonasIndexRoute
-  SiteResearchIndexRoute: typeof SiteResearchIndexRoute
   SiteRideshareIndexRoute: typeof SiteRideshareIndexRoute
   SiteStoreIndexRoute: typeof SiteStoreIndexRoute
   SiteStudyIndexRoute: typeof SiteStudyIndexRoute
@@ -9337,7 +9053,6 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteMessagesConversationIdRoute: SiteMessagesConversationIdRoute,
   SitePersonasIdRoute: SitePersonasIdRoute,
   SiteProfileIdRoute: SiteProfileIdRoute,
-  SiteResearchCallRoute: SiteResearchCallRoute,
   SiteRideshareDriveRoute: SiteRideshareDriveRoute,
   SiteRideshareRideRoute: SiteRideshareRideRoute,
   SiteStoreUseridRoute: SiteStoreUseridRoute,
@@ -9353,7 +9068,6 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteMessagesIndexRoute: SiteMessagesIndexRoute,
   SiteNewsIndexRoute: SiteNewsIndexRoute,
   SitePersonasIndexRoute: SitePersonasIndexRoute,
-  SiteResearchIndexRoute: SiteResearchIndexRoute,
   SiteRideshareIndexRoute: SiteRideshareIndexRoute,
   SiteStoreIndexRoute: SiteStoreIndexRoute,
   SiteStudyIndexRoute: SiteStudyIndexRoute,
@@ -9597,67 +9311,17 @@ const SecretCursedLogicRouteChildren: SecretCursedLogicRouteChildren = {
 const SecretCursedLogicRouteWithChildren =
   SecretCursedLogicRoute._addFileChildren(SecretCursedLogicRouteChildren)
 
-interface SecretJobsRouteChildren {
-  SecretJobsIdRoute: typeof SecretJobsIdRoute
-  SecretJobsApplicationsRoute: typeof SecretJobsApplicationsRoute
-  SecretJobsIndexRoute: typeof SecretJobsIndexRoute
-  SecretJobsAssessmentIdRoute: typeof SecretJobsAssessmentIdRoute
-}
-
-const SecretJobsRouteChildren: SecretJobsRouteChildren = {
-  SecretJobsIdRoute: SecretJobsIdRoute,
-  SecretJobsApplicationsRoute: SecretJobsApplicationsRoute,
-  SecretJobsIndexRoute: SecretJobsIndexRoute,
-  SecretJobsAssessmentIdRoute: SecretJobsAssessmentIdRoute,
-}
-
-const SecretJobsRouteWithChildren = SecretJobsRoute._addFileChildren(
-  SecretJobsRouteChildren,
-)
-
-interface SecretNotesRouteChildren {
-  SecretNotesIndexRoute: typeof SecretNotesIndexRoute
-}
-
-const SecretNotesRouteChildren: SecretNotesRouteChildren = {
-  SecretNotesIndexRoute: SecretNotesIndexRoute,
-}
-
-const SecretNotesRouteWithChildren = SecretNotesRoute._addFileChildren(
-  SecretNotesRouteChildren,
-)
-
-interface SecretWeatherRouteChildren {
-  SecretWeatherIndexRoute: typeof SecretWeatherIndexRoute
-}
-
-const SecretWeatherRouteChildren: SecretWeatherRouteChildren = {
-  SecretWeatherIndexRoute: SecretWeatherIndexRoute,
-}
-
-const SecretWeatherRouteWithChildren = SecretWeatherRoute._addFileChildren(
-  SecretWeatherRouteChildren,
-)
-
 interface SecretRouteChildren {
   SecretCursedLogicRoute: typeof SecretCursedLogicRouteWithChildren
-  SecretEatsRoute: typeof SecretEatsRoute
-  SecretJobsRoute: typeof SecretJobsRouteWithChildren
-  SecretNotesRoute: typeof SecretNotesRouteWithChildren
   SecretSignalForgeRoute: typeof SecretSignalForgeRoute
   SecretVegaRoute: typeof SecretVegaRoute
-  SecretWeatherRoute: typeof SecretWeatherRouteWithChildren
   SecretIndexRoute: typeof SecretIndexRoute
 }
 
 const SecretRouteChildren: SecretRouteChildren = {
   SecretCursedLogicRoute: SecretCursedLogicRouteWithChildren,
-  SecretEatsRoute: SecretEatsRoute,
-  SecretJobsRoute: SecretJobsRouteWithChildren,
-  SecretNotesRoute: SecretNotesRouteWithChildren,
   SecretSignalForgeRoute: SecretSignalForgeRoute,
   SecretVegaRoute: SecretVegaRoute,
-  SecretWeatherRoute: SecretWeatherRouteWithChildren,
   SecretIndexRoute: SecretIndexRoute,
 }
 
@@ -10183,8 +9847,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSearchRoute: ApiSearchRoute,
   ApiStreakRoute: ApiStreakRoute,
   ApiUserBuildsRoute: ApiUserBuildsRouteWithChildren,
-  ApiWeatherDataRoute: ApiWeatherDataRoute,
-  ApiWeatherWebhookRoute: ApiWeatherWebhookRoute,
   ApiWrappedRoute: ApiWrappedRoute,
   BlogSlugRoute: BlogSlugRoute,
   BuildsSlugRoute: BuildsSlugRoute,
@@ -10192,7 +9854,6 @@ const rootRouteChildren: RootRouteChildren = {
   DiscordRmhboxRoute: DiscordRmhboxRoute,
   LibrarySlugRoute: LibrarySlugRoute,
   NewsSlugRoute: NewsSlugRoute,
-  ResearchSlugRoute: ResearchSlugRoute,
   UserBuildsSlugRoute: UserBuildsSlugRoute,
   VSlugRoute: VSlugRoute,
   VNewRoute: VNewRoute,
