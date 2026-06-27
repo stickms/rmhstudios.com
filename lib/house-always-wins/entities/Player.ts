@@ -31,6 +31,7 @@ import { approach } from "../math";
 import { Input } from "../input";
 import type { Rect, AbilityId } from "../types";
 import { drawPlayer, type PlayerVisual, type PlayerAnim } from "../sprites/player";
+import { SfxManager } from "../sfx";
 import type { Particles } from "../sprites/effects";
 
 export interface PlayerCtx {
@@ -149,6 +150,7 @@ export class Player {
         gravity: 0,
         life: 0.25,
       });
+      SfxManager.play("dash");
     }
 
     if (this.dashTimer > 0) {
@@ -223,6 +225,7 @@ export class Player {
           life: 0.25,
           size: 1,
         });
+        SfxManager.play("jump");
       } else if (wallSliding && canGrip) {
         this.vy = WALL_JUMP_VY;
         this.vx = -this.wallDir * WALL_JUMP_VX;
@@ -230,6 +233,7 @@ export class Player {
         this.wallJumpLock = 0.12;
         this.wallStick = 0;
         this.jumpBuffer = 0;
+        SfxManager.play("jump");
         ctx.particles.burst(
           this.x + (this.wallDir > 0 ? this.w : 0),
           this.y + this.h / 2,
@@ -247,6 +251,7 @@ export class Player {
           gravity: 120,
           life: 0.4,
         });
+        SfxManager.play("doublejump");
       }
     }
 
@@ -269,10 +274,15 @@ export class Player {
     if (rx.vx === 0 && this.dashTimer <= 0) this.vx = 0;
 
     const dy = this.vy * dt;
+    const fallSpeed = this.vy;
+    const wasAirborne = !this.grounded;
     const ry = resolveCollisionY(grid, { ...this.rect, x: this.x }, dy, dropThrough);
     this.y = ry.y;
     if (ry.vy === 0) this.vy = 0;
     this.grounded = ry.grounded;
+
+    // landing thud after a real fall
+    if (wasAirborne && this.grounded && fallSpeed > 150) SfxManager.play("land");
 
     this.updateAnim(dt, moveDir, wallSliding);
   }

@@ -284,6 +284,7 @@ export const games: GameInfo[] = [
         iconName: 'Crown',
         color: 'from-amber-700/20 to-neutral-900/40 hover:border-amber-500/50',
         tags: ['Metroidvania', 'Platformer', 'Narrative', 'Pixel Art'],
+        imagePath: '/images/games/house_always_wins.webp',
         authGate: true,
     },
 ];
