@@ -108,11 +108,25 @@ export function GeneratedDialogueScreen() {
   const scene = chapter?.scenes[sceneIndex] as GenScene | undefined;
   const node = scene?.nodes[dialogueIndex] as GenNode | undefined;
 
-  // Warm the next chapter in the background as the player reads this one, so
-  // advancing is instant (covers resuming a save mid-route too).
+  // True once the player has passed the last choice node of this chapter — i.e.
+  // no node at or after the current position still offers choices. At that point
+  // the choice path that re-keys the next chapter is fully committed.
+  const choicesCommitted = useMemo(() => {
+    if (!chapter || chapter.partial) return false;
+    for (let si = sceneIndex; si < chapter.scenes.length; si++) {
+      const from = si === sceneIndex ? dialogueIndex : 0;
+      for (let ni = from; ni < chapter.scenes[si].nodes.length; ni++) {
+        if (chapter.scenes[si].nodes[ni].choices?.length) return false;
+      }
+    }
+    return true;
+  }, [chapter, sceneIndex, dialogueIndex]);
+
+  // Warm the next chapter only after this chapter's choices are committed, so it
+  // is generated and cached under the full, correct choice path.
   useEffect(() => {
-    if (chapter) prefetchChapter(chapterIndex + 1);
-  }, [chapter, chapterIndex, prefetchChapter]);
+    if (chapter && choicesCommitted) prefetchChapter(chapterIndex + 1);
+  }, [chapter, chapterIndex, choicesCommitted, prefetchChapter]);
 
   // Preload every expression of the characters in this scene so emotion swaps
   // are instant (no flicker). Also warm the whole cast once we have a world.

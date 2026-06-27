@@ -227,3 +227,58 @@ export interface GenChapter {
   /** True while more scenes are still streaming in for this chapter. */
   partial?: boolean;
 }
+
+// ─── Arc Outline & Ledger (cohesion harness) ──────────────────────────────────
+// The showrunner layer. The skeleton (acts) is deterministic from the route plan
+// and shareable; per-chapter detail (plant/payoff/intent) is enriched by AI and
+// revised at act boundaries based on the player's path, so it is per-player.
+
+export interface ActPlan {
+  /** 1-based act number. */
+  act: number;
+  /** The dramatic goal the act pursues. */
+  goal: string;
+  /** The emotional endpoint the act must land on. */
+  endpoint: string;
+  /** Which character arc this act advances (character id, or a short label). */
+  focusArc: string;
+}
+
+export interface ChapterBeat {
+  /** 0-based chapter index. */
+  index: number;
+  act: number;
+  /** The question this chapter raises or answers. */
+  dramaticQuestion: string;
+  /** Setups to plant in this chapter (paid off later). */
+  plant: string[];
+  /** Earlier setups this chapter pays off / calls back to. */
+  payoff: string[];
+  /** A one-line statement of what this chapter is for. */
+  intent: string;
+}
+
+export interface ArcOutline {
+  acts: ActPlan[];
+  chapters: ChapterBeat[];
+  source: 'ai' | 'fallback';
+}
+
+/** One distilled record of what actually happened in a chapter, fed forward to
+ *  keep later chapters continuous. Per-player (depends on the choice path). */
+export interface LedgerEntry {
+  /** 0-based chapter index this entry summarizes. */
+  index: number;
+  /** One-paragraph recap of what happened. */
+  summary: string;
+  /** Facts/secrets revealed. */
+  revealed: string[];
+  /** Story threads opened. */
+  threadsOpened: string[];
+  /** Story threads resolved. */
+  threadsClosed: string[];
+  /** Relationship shifts ("MC grew closer to <name>"). */
+  relationshipShifts: string[];
+  /** New established facts that must stay true. */
+  facts: string[];
+}

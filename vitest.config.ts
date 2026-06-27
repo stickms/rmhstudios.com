@@ -15,6 +15,7 @@ export default defineConfig({
       'lib/personas/__tests__/**/*.test.ts',
       'lib/predictions/__tests__/**/*.test.ts',
       'lib/__tests__/**/*.test.ts',
+      'lib/versecraft/gen/__tests__/**/*.test.ts',
       'lib/kowloon-knockout/render/__tests__/**/*.test.ts',
       'lib/kowloon-knockout/render/**/__tests__/**/*.test.ts',
       'lib/kowloon-knockout/game/**/__tests__/**/*.test.ts',
