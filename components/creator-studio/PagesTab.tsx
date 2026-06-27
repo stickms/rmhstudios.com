@@ -10,8 +10,9 @@
 
 import { type KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { ArrowRight, Search } from 'lucide-react';
+import { ArrowRight, CloudUpload, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useSession } from '@/components/Providers';
 import { ModelSelect } from '@/components/rmhvibe/ModelSelect';
 import { DEFAULT_VIBE_MODEL, type VibeModel } from '@/lib/rmhvibe/vibe-types';
 import type { VibeCard } from '@/lib/rmhvibe/vibe.server';
@@ -57,6 +58,31 @@ export function PagesTab({
 }) {
   const { t } = useTranslation('v');
   const navigate = useNavigate();
+
+  // Admins get a one-click "backfill all thumbnails" control next to the search.
+  const session = useSession();
+  const isAdmin = Boolean((session.data?.user as { isAdmin?: boolean } | undefined)?.isAdmin);
+  const [backfilling, setBackfilling] = useState(false);
+
+  const backfillThumbs = useCallback(async () => {
+    if (backfilling) return;
+    setBackfilling(true);
+    try {
+      const res = await fetch('/api/admin/vibe/backfill-thumbs', { method: 'POST' });
+      const data = (await res.json().catch(() => ({}))) as { count?: number; error?: string };
+      if (!res.ok) throw new Error(data.error || 'Request failed');
+      window.alert(
+        t('backfill-thumbs-done', {
+          defaultValue: 'Queued {{count}} page(s) for thumbnail re-render. They will refresh as the worker processes them.',
+          count: data.count ?? 0,
+        }),
+      );
+    } catch {
+      window.alert(t('backfill-thumbs-failed', { defaultValue: 'Failed to queue thumbnail backfill. Try again.' }));
+    } finally {
+      setBackfilling(false);
+    }
+  }, [backfilling, t]);
 
   // Prompt dock: type a prompt and stream a new page at /v/new.
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -160,6 +186,19 @@ export function PagesTab({
           className="vibe-search__input"
         />
       </div>
+      {isAdmin && (
+        <button
+          type="button"
+          onClick={backfillThumbs}
+          disabled={backfilling}
+          aria-busy={backfilling}
+          className="vibe-backfill"
+          title={t('backfill-thumbs', { defaultValue: 'Backfill all page thumbnails' })}
+          aria-label={t('backfill-thumbs', { defaultValue: 'Backfill all page thumbnails' })}
+        >
+          <CloudUpload size={18} aria-hidden="true" />
+        </button>
+      )}
     </header>
   );
 
