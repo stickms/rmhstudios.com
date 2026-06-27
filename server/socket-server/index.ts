@@ -32,6 +32,7 @@ import { registerRouletteHandlers, handleRouletteDisconnect, initializeRoulette 
 import { registerLightsOutHandlers, handleLightsOutDisconnect } from './handlers/lights-out';
 import { registerDoctrineHandlers, handleDoctrineDisconnect } from './handlers/doctrine';
 import { registerVelumHandlers, handleVelumDisconnect } from './handlers/velum';
+import { registerLaundrySortHandlers, handleLaundrySortDisconnect } from './handlers/laundry-sort';
 
 // ─── Startup validation ─────────────────────────────────────────
 
@@ -160,6 +161,7 @@ io.on('connection', (socket) => {
   registerLightsOutHandlers(io, socket);
   registerDoctrineHandlers(io, socket);
   registerVelumHandlers(io, socket);
+  registerLaundrySortHandlers(io, socket);
 
   // Disconnect cleanup
   socket.on('disconnect', (reason) => {
@@ -181,6 +183,7 @@ io.on('connection', (socket) => {
     handleLightsOutDisconnect(io, socket);
     handleDoctrineDisconnect(io, socket);
     handleVelumDisconnect(io, socket);
+    handleLaundrySortDisconnect(io, socket);
 
     cleanupRateLimits(socket.id);
   });

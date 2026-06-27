@@ -177,19 +177,18 @@ export const games: GameInfo[] = [
     {
         id: 'laundry-sort',
         title: 'Laundry Sort',
-        description: 'A frantic physics-based arcade game where gravity and color matching are your only tools.',
+        description: 'A cozy pixel-3D laundromat where you drag tumbling clothes into matching hampers — with live multiplayer rooms and flaming streaks.',
         longDescription:
-            'Sort falling laundry into color-coded bins using ragdoll physics. Watch clothes tumble and bounce through complex dividers as you chase high scores in a race against the clock. Simple controls, chaotic physics.',
+            'Sort falling laundry into color-matched hampers in a warm, pixelated-3D laundromat rendered with Three.js. Chain sorts to ignite osu!-style combo streaks and flames, then take it online: create or join a room, sort the exact same clothes as your friends on a shared seed, and compare scores when the round timer ends. Four modes (Time Attack, Endless, Daily Challenge, Ranked Multiplayer), daily/weekly/all-time leaderboards, and full touch support for mobile.',
         href: '/laundry-sort',
-        status: 'Playable Demo',
         cta: 'Play Now',
         isSteam: false,
         gradient: 'from-[#ff6b6b] to-[#ee5a6f]',
         iconName: 'Zap',
         color: 'from-yellow-500/20 to-orange-600/20 hover:border-yellow-500/50',
-        tags: ['Casual', 'Physics', 'Puzzle'],
+        tags: ['Casual', '3D', 'Multiplayer', 'Leaderboards'],
         imagePath: '/images/games/laundry_sort.webp',
-        authGate: true,
+        authGate: false,
     },
     {
         id: 'forest-explorer',

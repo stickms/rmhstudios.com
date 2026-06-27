@@ -340,6 +340,12 @@ model LaundryPlayer {
   username    String   @unique
   highScore   Int      @default(0)
   gamesPlayed Int      @default(1)
+  // Extended career stats for the player profile / stats panel.
+  bestStreak   Int @default(0)
+  totalSorted  Int @default(0)
+  totalMissed  Int @default(0)
+  rankedWins   Int @default(0)
+  rankedPlayed Int @default(0)
   updatedAt   DateTime @default(now()) @updatedAt
 
   // Link to Auth User
@@ -347,6 +353,94 @@ model LaundryPlayer {
   user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([highScore(sort: Desc)], map: "idx_laundry_high_score")
+  @@index([bestStreak(sort: Desc)], map: "idx_laundry_best_streak")
+}
+
+// Time-boxed leaderboard rows (all-time stays on LaundryPlayer.highScore).
+// One row per user per (mode, period-key); upserted to the best score.
+model LaundryScore {
+  id        String   @id @default(cuid())
+  userId    String
+  username  String
+  mode      String // time-attack | endless | daily | ranked
+  // Period bucket keys: dateKey = YYYY-MM-DD, weekKey = YYYY-Www.
+  dateKey   String
+  weekKey   String
+  score     Int      @default(0)
+  bestStreak Int     @default(0)
+  sorted    Int      @default(0)
+  accuracy  Float    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@unique([userId, mode, dateKey])
+  @@index([mode, dateKey, score(sort: Desc)])
+  @@index([mode, weekKey, score(sort: Desc)])
+  @@map("laundry_score")
+}
+
+// ─── Laundry Sort Multiplayer ───
+
+enum LSLobbyStatus {
+  WAITING
+  IN_MATCH
+  CLOSED
+}
+
+enum LSMatchStatus {
+  RUNNING
+  FINISHED
+}
+
+model LSLobby {
+  id         String        @id @default(cuid())
+  code       String        @unique
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  status     LSLobbyStatus @default(WAITING)
+  hostUserId String
+
+  matches LSMatch[]
+
+  @@map("ls_lobby")
+}
+
+model LSMatch {
+  id        String        @id @default(cuid())
+  lobbyId   String
+  seed      Int
+  startAt   DateTime
+  endAt     DateTime?
+  status    LSMatchStatus @default(RUNNING)
+  createdAt DateTime      @default(now())
+
+  lobby   LSLobby         @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  players LSPlayerMatch[]
+
+  @@index([lobbyId])
+  @@map("ls_match")
+}
+
+model LSPlayerMatch {
+  id           String    @id @default(cuid())
+  matchId      String
+  lobbyId      String
+  userId       String
+  displayName  String
+  score        Int       @default(0)
+  bestStreak   Int       @default(0)
+  sorted       Int       @default(0)
+  missed       Int       @default(0)
+  accuracy     Float     @default(0)
+  finishedAt   DateTime?
+  lastUpdateAt DateTime  @default(now())
+
+  match LSMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@unique([matchId, userId])
+  @@index([matchId])
+  @@index([lobbyId])
+  @@map("ls_player_match")
 }
 
 // Daily Puzzle Score — generic leaderboard for all daily puzzles including lights-out
