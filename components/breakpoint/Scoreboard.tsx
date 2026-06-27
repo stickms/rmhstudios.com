@@ -34,7 +34,7 @@ export function Scoreboard({ snap }: { snap: MatchSnapshot }) {
 }
 
 function TeamTable({ title, team, actors, localTeam }: { title: string; team: Team; actors: Actor[]; localTeam: Team }) {
-  const color = team === 'attackers' ? '#ff4655' : '#16e0a3';
+  const color = team === 'attackers' ? '#ff4655' : '#3b6fe0';
   return (
     <div className="bp-sb-team">
       <div className="bp-sb-teamtitle" style={{ color }}>{title} {team === localTeam ? '(YOU)' : ''}</div>

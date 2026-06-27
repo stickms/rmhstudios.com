@@ -15,10 +15,11 @@ export interface RoomPlayer {
   id: string; name: string; agentId: string | null; team: Team; ready: boolean; isHost: boolean;
 }
 export interface RoomState {
-  id: string; mode: MatchMode; state: 'lobby' | 'playing'; hostId: string; players: RoomPlayer[];
+  id: string; name: string; mode: MatchMode; state: 'lobby' | 'playing'; hostId: string;
+  isPublic: boolean; cpuPerSide: number; players: RoomPlayer[];
 }
 export interface StartPayload {
-  mode: MatchMode; hostId: string;
+  mode: MatchMode; hostId: string; cpuPerSide: number;
   players: { id: string; name: string; agentId: string; team: Team; isHost: boolean }[];
 }
 
@@ -38,7 +39,7 @@ class RoomClient {
     if (this.socket?.connected) { this.connected = true; return Promise.resolve(); }
     return new Promise((resolve, reject) => {
       this.socket = io(SOCKET_URL, { path: '/socket/', transports: ['websocket'], reconnectionAttempts: 4 });
-      const events = ['ro:lobby', 'ro:start', 'ro:player', 'ro:match', 'ro:hit', 'ro:death', 'ro:bhit', 'ro:fx', 'ro:spike', 'ro:playerLeft', 'ro:error', 'ro:returnLobby'];
+      const events = ['ro:roomList', 'ro:lobby', 'ro:start', 'ro:player', 'ro:match', 'ro:hit', 'ro:death', 'ro:bhit', 'ro:fx', 'ro:spike', 'ro:buy', 'ro:ability', 'ro:playerLeft', 'ro:error', 'ro:returnLobby'];
       for (const ev of events) {
         this.socket.on(ev, (data: unknown) => this.emitLocal(ev, data));
       }
@@ -84,6 +85,15 @@ class RoomClient {
   sendDeath(killer: string, weapon: string, head: boolean) { this.socket?.emit('ro:death', { killer, weapon, head }); }
   sendFx(fx: WorldFx) { this.socket?.emit('ro:fx', { fx }); }
   sendSpike(type: 'plant' | 'defuse', active: boolean, pos: Vec3 | null) { this.socket?.emit('ro:spike', { type, active, pos }); }
+  sendBuy(buyKind: string, id: string, value: number, cost: number, max: number) { this.socket?.emit('ro:buy', { buyKind, id, value, cost, max }); }
+  sendAbility(slot: string) { this.socket?.emit('ro:ability', { slot }); }
+
+  // ── room browser ──
+  listRooms() { this.socket?.emit('ro:listRooms'); }
+  quickJoin(name: string, agentId: string) { this.socket?.emit('ro:quickJoin', { name, agentId }); }
+  createRoom(opts: { name: string; agentId: string; roomName: string; isPublic: boolean; password: string | null; mode: MatchMode }) { this.socket?.emit('ro:createRoom', opts); }
+  joinRoom(id: string, name: string, agentId: string, password: string | null) { this.socket?.emit('ro:joinRoom', { id, name, agentId, password }); }
+  setCpu(count: number) { this.socket?.emit('ro:setCpu', { count }); }
 }
 
 export const roomClient = RoomClient.get();

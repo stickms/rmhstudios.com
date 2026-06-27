@@ -60,7 +60,7 @@ export function Minimap({ snap }: { snap: MatchSnapshot }) {
       const isZombie = a.team === 'zombies';
       if (!isAlly && !isZombie && a.revealedUntil <= snap.now) continue; // enemies only when revealed
       const px = toX(a.pos.x), py = toY(a.pos.z);
-      ctx.fillStyle = isZombie ? '#cc4a3a' : a.team === 'attackers' ? '#ff4655' : '#16e0a3';
+      ctx.fillStyle = isZombie ? '#7fae3a' : a.team === 'attackers' ? '#ff4655' : '#3b6fe0';
       if (a.isLocal) {
         // arrow pointing in yaw direction
         ctx.save();
