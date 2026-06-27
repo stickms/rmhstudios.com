@@ -31,6 +31,8 @@ import {
   generateBotProfile,
   generatePost,
   generatePoll,
+  generateQuote,
+  generateCommunity,
   generateGifQuery,
   generateReply,
   generateDirectMessageReply,
@@ -88,6 +90,21 @@ const BOT_GIF_PROBABILITY = probEnv('BOT_GIF_PROBABILITY', 0.06);
 // Generate a unique xAI (Grok) avatar for each new bot, stored as webp. Falls
 // back to the deterministic DiceBear avatar when off / unconfigured / on failure.
 const BOT_AVATAR_GEN = (process.env.BOT_AVATAR_GEN ?? 'true') !== 'false';
+// Chance a given bot "post" is instead a quote-repost of a recent post (0..1).
+const BOT_QUOTE_PROBABILITY = probEnv('BOT_QUOTE_PROBABILITY', 0.08);
+// Only quote posts newer than this (default 24h).
+const QUOTE_LOOKBACK_MS = intEnv('BOT_QUOTE_LOOKBACK_MS', 24 * 60 * 60 * 1000);
+// Chance a (non-quote) bot post is published into a community the bot belongs to.
+const BOT_COMMUNITY_POST_PROBABILITY = probEnv('BOT_COMMUNITY_POST_PROBABILITY', 0.25);
+
+// ─── Communities ────────────────────────────────────────────────
+// How often bots tend the community pool — create one if below target, and a
+// few bots join existing ones (default 3h).
+const COMMUNITY_TICK_MS = intEnv('BOT_COMMUNITY_TICK_MS', 3 * 60 * 60 * 1000);
+// Keep at least this many communities in existence (bots create up to it).
+const BOT_COMMUNITY_TARGET = intEnv('BOT_COMMUNITY_TARGET', 8);
+// How many bot→community joins to perform per community tick.
+const BOT_COMMUNITY_JOINS_PER_TICK = intEnv('BOT_COMMUNITY_JOINS_PER_TICK', 4);
 
 // ─── Reply behaviour ────────────────────────────────────────────
 // How often bots check for replies to answer (default = same as posting).
@@ -253,12 +270,163 @@ async function maintainBotPool(): Promise<void> {
   }
 }
 
+// ─── Communities ────────────────────────────────────────────────
+
+/** URL-safe slug from a community name (mirrors app/routes/api/communities). */
+function slugify(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40);
+}
+
+/** Pull the THEME line out of a composed persona, for seeding generation. */
+function personaTheme(persona: string | null): string | undefined {
+  const line = (persona ?? '').split('\n').find((l) => l.startsWith('THEME:'));
+  return line ? line.replace('THEME:', '').trim().replace(/\.$/, '') : undefined;
+}
+
+/** A bot invents and founds a new public community (becomes its ADMIN). */
+async function createBotCommunity(): Promise<void> {
+  const bots = await prisma.user.findMany({
+    where: { isBot: true },
+    select: { id: true, botPersona: true },
+    take: 50,
+  });
+  if (!bots.length) return;
+  const creator = randomItem(bots);
+
+  const community = await generateCommunity({ seed: personaTheme(creator.botPersona) });
+  if (!community) return;
+
+  let slug = slugify(community.name);
+  if (!slug) return;
+  if (await prisma.community.findUnique({ where: { slug }, select: { id: true } })) {
+    slug = `${slug}-${Math.random().toString(36).slice(2, 6)}`;
+  }
+
+  await prisma.community.create({
+    data: {
+      slug,
+      name: community.name,
+      description: community.description || null,
+      icon: community.icon || null,
+      isPrivate: false,
+      memberCount: 1,
+      createdById: creator.id,
+      members: { create: { userId: creator.id, role: 'ADMIN' } },
+    },
+  });
+  log(`bot ${creator.id} founded community c/${slug} (${community.name})`);
+}
+
+/** Keep a small pool of communities alive and drift bots into them. */
+async function communityTick(): Promise<void> {
+  // 1) Top up the pool — one new community per tick until we hit the target.
+  try {
+    const count = await prisma.community.count();
+    if (count < BOT_COMMUNITY_TARGET) await createBotCommunity();
+  } catch (e) {
+    errlog('createBotCommunity failed:', e);
+  }
+
+  // 2) A few bots join public communities they're not already in.
+  const communities = await prisma.community.findMany({
+    where: { isPrivate: false },
+    select: { id: true },
+    take: 50,
+  });
+  if (!communities.length) return;
+
+  const bots = shuffle(
+    await prisma.user.findMany({ where: { isBot: true }, select: { id: true }, take: 100 }),
+  );
+  let joins = 0;
+  for (const bot of bots) {
+    if (joins >= BOT_COMMUNITY_JOINS_PER_TICK) break;
+    const target = randomItem(communities);
+    try {
+      const existing = await prisma.communityMember.findUnique({
+        where: { communityId_userId: { communityId: target.id, userId: bot.id } },
+        select: { id: true },
+      });
+      if (existing) continue;
+      await prisma.$transaction([
+        prisma.communityMember.create({
+          data: { communityId: target.id, userId: bot.id, role: 'MEMBER' },
+        }),
+        prisma.community.update({
+          where: { id: target.id },
+          data: { memberCount: { increment: 1 } },
+        }),
+      ]);
+      joins++;
+    } catch (e) {
+      errlog('bot community join failed:', e);
+    }
+  }
+  if (joins) log(`bots joined ${joins} community(ies)`);
+}
+
 // ─── Posting ────────────────────────────────────────────────────
 
 interface BotRow {
   id: string;
   botPersona: string | null;
   botLastPostAt: Date | null;
+}
+
+/**
+ * Try to quote-repost a recent post in the bot's voice. Returns true if it
+ * posted (so the caller skips the normal post), false if there was nothing good
+ * to quote.
+ */
+async function tryBotQuoteRepost(bot: BotRow): Promise<boolean> {
+  const since = new Date(Date.now() - QUOTE_LOOKBACK_MS);
+  const candidates = await prisma.rMHark.findMany({
+    where: {
+      deletedAt: null,
+      createdAt: { gte: since },
+      userId: { not: bot.id },
+      content: { not: '' },
+      communityId: null, // quote main-feed posts so they stay broadly visible
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 40,
+    select: { id: true, content: true, originalId: true },
+  });
+  if (!candidates.length) return false;
+
+  const target = randomItem(candidates);
+  // Quote the root, never a quote-of-a-quote.
+  const rootId = target.originalId ?? target.id;
+  const root = await prisma.rMHark.findUnique({
+    where: { id: rootId },
+    select: { id: true, content: true, deletedAt: true },
+  });
+  if (!root || root.deletedAt || !root.content.trim()) return false;
+
+  const content = await generateQuote({ persona: bot.botPersona ?? undefined, quoted: root.content });
+  if (!content.trim()) return false;
+
+  await prisma.$transaction([
+    prisma.rMHark.create({ data: { userId: bot.id, content, originalId: root.id } }),
+    prisma.rMHark.update({ where: { id: root.id }, data: { repostCount: { increment: 1 } } }),
+  ]);
+  await prisma.user.update({ where: { id: bot.id }, data: { botLastPostAt: new Date() } });
+  log(`bot ${bot.id} quote-reposted ${root.id}`);
+  return true;
+}
+
+/** Pick a community the bot belongs to, to post into — or undefined. */
+async function pickBotCommunity(botId: string): Promise<string | undefined> {
+  const mems = await prisma.communityMember.findMany({
+    where: { userId: botId },
+    select: { communityId: true },
+    take: 20,
+  });
+  return mems.length ? randomItem(mems).communityId : undefined;
 }
 
 /** Decide whether a given bot should post this tick. */
@@ -290,6 +458,16 @@ async function postTick(): Promise<void> {
   const due = shuffle(bots.filter(shouldPost)).slice(0, MAX_POSTS_PER_TICK);
   for (const bot of due) {
     try {
+      // Sometimes quote-repost a recent post instead of posting something new.
+      // If there's nothing good to quote, fall through to a normal post.
+      if (Math.random() < BOT_QUOTE_PROBABILITY) {
+        try {
+          if (await tryBotQuoteRepost(bot)) continue;
+        } catch (e) {
+          errlog('bot quote-repost failed:', e);
+        }
+      }
+
       const content = await generatePost({ persona: bot.botPersona ?? undefined });
       if (!content.trim()) continue;
 
@@ -339,12 +517,24 @@ async function postTick(): Promise<void> {
         }
       }
 
+      // Sometimes publish into a community the bot belongs to instead of the
+      // main feed (taking advantage of communities they've joined).
+      let communityId: string | undefined;
+      if (Math.random() < BOT_COMMUNITY_POST_PROBABILITY) {
+        try {
+          communityId = await pickBotCommunity(bot.id);
+        } catch (e) {
+          errlog('bot community pick failed:', e);
+        }
+      }
+
       const created = await prisma.rMHark.create({
         data: {
           userId: bot.id,
           content,
           ...(imageUrls.length ? { imageUrls } : {}),
           ...(gifUrl ? { gifUrl } : {}),
+          ...(communityId ? { communityId } : {}),
         },
       });
       if (poll) {
@@ -366,7 +556,8 @@ async function postTick(): Promise<void> {
         data: { botLastPostAt: new Date() },
       });
       const kind = poll ? ' [poll]' : imageUrls.length ? ' [image]' : gifUrl ? ' [gif]' : '';
-      log(`posted as ${bot.id}${kind}: ${content.slice(0, 60).replace(/\n/g, ' ')}…`);
+      const where = communityId ? ' →community' : '';
+      log(`posted as ${bot.id}${kind}${where}: ${content.slice(0, 60).replace(/\n/g, ' ')}…`);
     } catch (e) {
       errlog('post failed:', e);
     }
@@ -1009,6 +1200,7 @@ let mentionTimer: NodeJS.Timeout | undefined;
 let predictionSeedTimer: NodeJS.Timeout | undefined;
 let predictionNoiseTimer: NodeJS.Timeout | undefined;
 let predictionResolveTimer: NodeJS.Timeout | undefined;
+let communityTimer: NodeJS.Timeout | undefined;
 let maintaining = false;
 let posting = false;
 let replying = false;
@@ -1017,6 +1209,7 @@ let mentionRunning = false;
 let predictionSeeding = false;
 let predictionNoising = false;
 let predictionResolving = false;
+let communityRunning = false;
 
 async function safeMaintain() {
   if (maintaining) return;
@@ -1119,6 +1312,18 @@ async function safePredictionResolveTick() {
   }
 }
 
+async function safeCommunityTick() {
+  if (communityRunning) return;
+  communityRunning = true;
+  try {
+    await communityTick();
+  } catch (e) {
+    errlog('community tick failed:', e);
+  } finally {
+    communityRunning = false;
+  }
+}
+
 async function startup() {
   log('Starting…');
   if (!isRmharkAIConfigured()) {
@@ -1139,8 +1344,11 @@ async function startup() {
   predictionSeedTimer = setInterval(() => void safePredictionSeedTick(), PREDICTION_SEED_MS);
   predictionNoiseTimer = setInterval(() => void safePredictionNoiseTick(), PREDICTION_NOISE_MS);
   predictionResolveTimer = setInterval(() => void safePredictionResolveTick(), PREDICTION_RESOLVE_MS);
+  communityTimer = setInterval(() => void safeCommunityTick(), COMMUNITY_TICK_MS);
   // Kick off an initial seed so a fresh deploy has markets to trade.
   void safePredictionSeedTick();
+  // And an initial community pass so a fresh deploy has communities to join.
+  void safeCommunityTick();
   log('Scheduled.');
 }
 
@@ -1157,6 +1365,7 @@ async function shutdown(signal: string) {
   if (predictionSeedTimer) clearInterval(predictionSeedTimer);
   if (predictionNoiseTimer) clearInterval(predictionNoiseTimer);
   if (predictionResolveTimer) clearInterval(predictionResolveTimer);
+  if (communityTimer) clearInterval(communityTimer);
   await prisma.$disconnect();
   process.exit(0);
 }

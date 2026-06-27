@@ -200,6 +200,97 @@ export async function generatePoll(opts: {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Quote-reposts                                                      */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Generate a short quote-repost comment — the bot's own take placed above a
+ * post it is quoting. Stays in character with `persona`. Never repeats the
+ * quoted text; returns a body clamped to the post limit.
+ */
+export async function generateQuote(opts: {
+  persona?: string;
+  quoted: string;
+}): Promise<string> {
+  const system = [
+    opts.persona
+      ? [
+          'You are roleplaying as a specific person quote-reposting someone else\'s post. Stay completely in character.',
+          'Never reveal or hint that you are an AI. Follow the VOICE rules exactly:',
+          '',
+          opts.persona,
+          '',
+        ].join('\n')
+      : 'You help draft a short quote-repost comment.',
+    `You are adding YOUR brief take above the quoted post — react, agree, riff, or gently push back, and add something. Hard limit ${MAX_POST_CHARS} characters; usually one sentence.`,
+    'Do NOT repeat or quote the original text. Do NOT use markdown, quotes, or a label. Output ONLY your comment.',
+  ].join('\n');
+
+  const raw = await chat(
+    [
+      { role: 'system', content: system },
+      { role: 'user', content: `The post you are quoting:\n"""${opts.quoted.slice(0, 280)}"""\n\nWrite your quote-repost comment.` },
+    ],
+    { maxTokens: 160, temperature: 1.05 },
+  );
+  return cleanGeneratedText(raw, MAX_POST_CHARS);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Communities                                                        */
+/* ------------------------------------------------------------------ */
+
+export interface GeneratedCommunity {
+  name: string;
+  description: string;
+  icon: string;
+}
+
+/**
+ * Invent a small, believable community (name + description + emoji icon),
+ * optionally anchored to a `seed` theme. Returns null if the output can't be
+ * parsed into a usable community. Fields are clamped to the Community schema's
+ * caps (name 60, description 500, icon 8).
+ */
+export async function generateCommunity(opts: { seed?: string } = {}): Promise<GeneratedCommunity | null> {
+  const system = [
+    'You invent a small online community / sub-forum people would actually join. Output STRICT JSON only — no prose, no markdown fences.',
+    'Schema: {"name": string, "description": string, "icon": string}',
+    '- name: 2-40 chars, catchy, no leading "#" or "c/". No "official", no "AI", no "bot".',
+    '- description: <= 160 chars, what it is about and who it is for, inviting.',
+    '- icon: exactly one emoji that fits the topic.',
+  ].join('\n');
+
+  const user = opts.seed
+    ? `Base it loosely on this interest: ${opts.seed}\nReturn only the JSON object.`
+    : 'Invent one around any popular interest. Return only the JSON object.';
+
+  try {
+    const raw = await chat(
+      [
+        { role: 'system', content: system },
+        { role: 'user', content: user },
+      ],
+      { maxTokens: 160, temperature: 1.15 },
+    );
+    const parsed = JSON.parse(stripJson(raw)) as Partial<GeneratedCommunity>;
+    const name = typeof parsed.name === 'string' ? parsed.name.trim().replace(/^#+|^c\//i, '').trim().slice(0, 60) : '';
+    if (name.length < 2) return null;
+    const description = typeof parsed.description === 'string' ? parsed.description.trim().slice(0, 500) : '';
+    // Keep whole code points within the icon column's 8-unit cap (no split
+    // surrogate pairs), falling back to a default emoji.
+    let icon = '';
+    for (const ch of Array.from(typeof parsed.icon === 'string' ? parsed.icon.trim() : '')) {
+      if ((icon + ch).length <= 8) icon += ch;
+      else break;
+    }
+    return { name, description, icon: icon || '💬' };
+  } catch {
+    return null;
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /*  GIF search queries                                                 */
 /* ------------------------------------------------------------------ */
 
