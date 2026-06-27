@@ -2,12 +2,13 @@
  * Input manager for Dream Rift — merges keyboard and on-screen (touch) input
  * into a single per-frame InputFrame plus pause/advance edges.
  *
- * Controls: arrows/WASD move, Z (or J / on-screen A) shoot, X (or K / on-screen
- * B) bomb, Shift (or on-screen focus) for focus mode, Esc/P pause, Z/Enter to
- * advance dialogue.
+ * Keyboard controls are fully rebindable: actions map to keys via a `Bindings`
+ * table (see keybinds.ts) that players can change in Settings. Touch input from
+ * the on-screen controls is merged in on top.
  */
 
 import type { InputFrame } from './types';
+import { DEFAULT_BINDINGS, normalizeKey, type BindAction, type Bindings } from './keybinds';
 
 export interface PollResult {
     frame: InputFrame;
@@ -29,15 +30,25 @@ export class InputManager {
     private virtual: Virtual = { mx: 0, my: 0, shot: false, bomb: false, focus: false, pause: false };
     private prevPause = false;
     private bound = false;
+    private bindings: Bindings = DEFAULT_BINDINGS;
+    private boundKeys = new Set<string>(flattenBindings(DEFAULT_BINDINGS));
+
+    /** Suspend gameplay key capture (e.g. while rebinding in a menu). */
+    captureSuspended = false;
+
+    setBindings(b: Bindings): void {
+        this.bindings = b;
+        this.boundKeys = new Set(flattenBindings(b));
+    }
 
     private onKeyDown = (e: KeyboardEvent): void => {
-        const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+        if (this.captureSuspended) return;
+        const k = normalizeKey(e);
         this.keys.add(k);
-        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'z', 'x'].includes(k)) e.preventDefault();
+        if (this.boundKeys.has(k) || k === ' ' || k.startsWith('Arrow')) e.preventDefault();
     };
     private onKeyUp = (e: KeyboardEvent): void => {
-        const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
-        this.keys.delete(k);
+        this.keys.delete(normalizeKey(e));
     };
     private onBlur = (): void => this.keys.clear();
 
@@ -69,26 +80,32 @@ export class InputManager {
         this.virtual = { mx: 0, my: 0, shot: false, bomb: false, focus: false, pause: false };
     }
 
-    private has(...k: string[]): boolean {
-        return k.some((key) => this.keys.has(key));
+    private action(a: BindAction): boolean {
+        const list = this.bindings[a];
+        for (let i = 0; i < list.length; i++) if (this.keys.has(list[i])) return true;
+        return false;
     }
 
     poll(): PollResult {
         const v = this.virtual;
         const dead = 0.28;
         const frame: InputFrame = {
-            up: this.has('ArrowUp', 'w') || v.my < -dead,
-            down: this.has('ArrowDown', 's') || v.my > dead,
-            left: this.has('ArrowLeft', 'a') || v.mx < -dead,
-            right: this.has('ArrowRight', 'd') || v.mx > dead,
-            shot: this.has('z', 'j', ' ') || v.shot,
-            bomb: this.has('x', 'k') || v.bomb,
-            focus: this.has('Shift', 'shift') || v.focus,
+            up: this.action('up') || v.my < -dead,
+            down: this.action('down') || v.my > dead,
+            left: this.action('left') || v.mx < -dead,
+            right: this.action('right') || v.mx > dead,
+            shot: this.action('shot') || v.shot,
+            bomb: this.action('bomb') || v.bomb,
+            focus: this.action('focus') || v.focus,
         };
-        const pauseNow = this.has('Escape', 'p') || v.pause;
+        const pauseNow = this.action('pause') || v.pause;
         const pausePressed = pauseNow && !this.prevPause;
         this.prevPause = pauseNow;
-        const advancePressed = this.has('z', 'Enter', ' ', 'j') || v.shot;
+        const advancePressed = this.action('shot') || this.keys.has('Enter') || v.shot;
         return { frame, pausePressed, advancePressed };
     }
+}
+
+function flattenBindings(b: Bindings): string[] {
+    return Object.values(b).flat();
 }

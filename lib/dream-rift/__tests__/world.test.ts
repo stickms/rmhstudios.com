@@ -5,9 +5,9 @@ import type { BossState, PlayerShip, InputFrame } from '../types';
 
 function makePlayer(slot: number, isLocal: boolean): PlayerShip {
     return {
-        slot, userId: 'u' + slot, name: 'P' + slot, charId: 'reika', present: true, joined: true,
+        slot, userId: 'u' + slot, name: 'P' + slot, charId: 'bllm', present: true, joined: true,
         x: PLAYFIELD_W / 2, y: PLAYFIELD_H - 56, lives: 3, bombs: 2, power: 0, graze: 0, score: 0, pointItems: 0,
-        hitboxR: CHAR_STATS.reika.hitboxR, invuln: 0, deathbombWindow: 0, bombActive: 0, dead: false, respawnTimer: 0,
+        hitboxR: CHAR_STATS.bllm.hitboxR, invuln: 0, deathbombWindow: 0, bombActive: 0, dead: false, respawnTimer: 0,
         focus: false, firing: false, shotCd: 0, spellMeter: 0, isLocal, renderX: PLAYFIELD_W / 2, renderY: PLAYFIELD_H - 56,
         moveDir: 0, deaths: 0, spellsCaptured: 0, animTime: 0,
     };

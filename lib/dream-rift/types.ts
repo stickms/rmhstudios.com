@@ -22,7 +22,8 @@ export type Screen =
     | 'stage-clear'
     | 'game-over'
     | 'victory'
-    | 'leaderboard';
+    | 'leaderboard'
+    | 'settings';
 
 /** Phases within a single stage. */
 export type StagePhase = 'intro' | 'waves' | 'midboss' | 'bridge' | 'boss' | 'clear';

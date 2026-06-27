@@ -1,21 +1,24 @@
 'use client';
 
 /**
- * Shared client runtime for Dream Rift — a single Music, Sfx and InputManager
- * instance provided to every screen via context, so menu music, SFX and input
- * survive screen changes and are reused by the game session.
+ * Shared client runtime for Dream Rift — a single MusicController, Sfx and
+ * InputManager provided to every screen via context, plus the loaded external
+ * sprite assets (from public/dream-rift/manifest.json). Menu music, SFX, input
+ * and loaded art survive screen changes and are reused by the game session.
  */
 
-import { createContext, useContext, useEffect, useRef, type ReactNode } from 'react';
-import { Music } from '@/lib/dream-rift/sound/music';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { MusicController } from '@/lib/dream-rift/sound/musicController';
 import { Sfx } from '@/lib/dream-rift/sound/sfx';
 import { InputManager } from '@/lib/dream-rift/input';
+import { loadManifest, loadSpriteAssets, type LoadedSpriteAssets } from '@/lib/dream-rift/assets';
 import { useDreamRift } from '@/lib/dream-rift/store';
 
 export interface DreamRiftRuntime {
-    music: Music;
+    music: MusicController;
     sfx: Sfx;
     input: InputManager;
+    assets: LoadedSpriteAssets | null;
 }
 
 const RuntimeContext = createContext<DreamRiftRuntime | null>(null);
@@ -27,34 +30,53 @@ export function useRuntime(): DreamRiftRuntime {
 }
 
 export function DreamRiftRuntimeProvider({ children }: { children: ReactNode }) {
-    const ref = useRef<DreamRiftRuntime | null>(null);
+    const ref = useRef<{ music: MusicController; sfx: Sfx; input: InputManager } | null>(null);
     if (!ref.current) {
-        ref.current = { music: new Music(), sfx: new Sfx(), input: new InputManager() };
+        ref.current = { music: new MusicController(), sfx: new Sfx(), input: new InputManager() };
     }
-    const runtime = ref.current;
+    const base = ref.current;
+    const [assets, setAssets] = useState<LoadedSpriteAssets | null>(null);
 
     const musicOn = useDreamRift((s) => s.musicOn);
     const sfxOn = useDreamRift((s) => s.sfxOn);
     const musicVol = useDreamRift((s) => s.musicVol);
     const sfxVol = useDreamRift((s) => s.sfxVol);
+    const bindings = useDreamRift((s) => s.bindings);
+
+    // load external assets + music manifest once
+    useEffect(() => {
+        let alive = true;
+        loadManifest().then(async (manifest) => {
+            if (!alive) return;
+            base.music.setTracks(manifest?.music);
+            const loaded = await loadSpriteAssets(manifest);
+            if (alive) setAssets(loaded);
+        });
+        return () => {
+            alive = false;
+        };
+    }, [base]);
 
     useEffect(() => {
-        runtime.music.setEnabled(musicOn);
-        runtime.music.setVolume(musicVol);
-    }, [runtime, musicOn, musicVol]);
+        base.music.setEnabled(musicOn);
+        base.music.setVolume(musicVol);
+    }, [base, musicOn, musicVol]);
     useEffect(() => {
-        runtime.sfx.setEnabled(sfxOn);
-        runtime.sfx.setVolume(sfxVol);
-    }, [runtime, sfxOn, sfxVol]);
+        base.sfx.setEnabled(sfxOn);
+        base.sfx.setVolume(sfxVol);
+    }, [base, sfxOn, sfxVol]);
+    useEffect(() => {
+        base.input.setBindings(bindings);
+    }, [base, bindings]);
 
     useEffect(() => {
-        const r = runtime;
+        const r = base;
         return () => {
             r.music.dispose();
             r.sfx.dispose();
             r.input.unbind();
         };
-    }, [runtime]);
+    }, [base]);
 
-    return <RuntimeContext.Provider value={runtime}>{children}</RuntimeContext.Provider>;
+    return <RuntimeContext.Provider value={{ ...base, assets }}>{children}</RuntimeContext.Provider>;
 }

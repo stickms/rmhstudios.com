@@ -11,6 +11,8 @@
 import { create } from 'zustand';
 import type { Difficulty, PlayerId, Screen } from './types';
 import type { LobbySnapshot, PublicLobbyInfo } from './net/events';
+import { loadBindings, saveBindings, type Bindings } from './keybinds';
+import { PLAYER_IDS } from './render/sprites';
 
 export type ConnectionState = 'idle' | 'connecting' | 'connected' | 'error';
 export type GameMode = 'single' | 'multi';
@@ -20,6 +22,7 @@ export interface DialogueView {
     speakerName: string;
     speakerChar: PlayerId | null; // null → boss portrait
     bossThemeIndex: number;
+    bossSprite: string;
     text: string;
     index: number;
     total: number;
@@ -60,6 +63,9 @@ export interface DreamRiftState {
     musicVol: number;
     sfxVol: number;
 
+    showHitbox: boolean;
+    bindings: Bindings;
+
     // setters
     setScreen: (s: Screen) => void;
     setMode: (m: GameMode) => void;
@@ -78,6 +84,8 @@ export interface DreamRiftState {
     setSfxOn: (v: boolean) => void;
     setMusicVol: (v: number) => void;
     setSfxVol: (v: number) => void;
+    setShowHitbox: (v: boolean) => void;
+    setBindings: (b: Bindings) => void;
     reset: () => void;
 }
 
@@ -90,6 +98,9 @@ function loadBool(key: string, fallback: boolean): boolean {
     if (typeof localStorage === 'undefined') return fallback;
     const v = localStorage.getItem(key);
     return v == null ? fallback : v === '1';
+}
+function validChar(raw: string | null): PlayerId {
+    return raw && (PLAYER_IDS as string[]).includes(raw) ? (raw as PlayerId) : 'bllm';
 }
 function savePref(key: string, v: number | boolean): void {
     if (typeof localStorage === 'undefined') return;
@@ -106,7 +117,7 @@ export const useDreamRift = create<DreamRiftState>((set) => ({
     errorMsg: null,
 
     difficulty: (typeof localStorage !== 'undefined' && (localStorage.getItem('dr.difficulty') as Difficulty)) || 'normal',
-    selectedChar: (typeof localStorage !== 'undefined' && (localStorage.getItem('dr.char') as PlayerId)) || 'reika',
+    selectedChar: validChar(typeof localStorage !== 'undefined' ? localStorage.getItem('dr.char') : null),
 
     dialogue: null,
     stageBanner: null,
@@ -117,6 +128,9 @@ export const useDreamRift = create<DreamRiftState>((set) => ({
     sfxOn: loadBool('dr.sfxOn', true),
     musicVol: loadPref('dr.musicVol', 0.6),
     sfxVol: loadPref('dr.sfxVol', 0.7),
+
+    showHitbox: loadBool('dr.showHitbox', false),
+    bindings: loadBindings(),
 
     setScreen: (screen) => set({ screen }),
     setMode: (mode) => set({ mode }),
@@ -153,6 +167,14 @@ export const useDreamRift = create<DreamRiftState>((set) => ({
     setSfxVol: (v) => {
         savePref('dr.sfxVol', v);
         set({ sfxVol: v });
+    },
+    setShowHitbox: (v) => {
+        savePref('dr.showHitbox', v);
+        set({ showHitbox: v });
+    },
+    setBindings: (b) => {
+        saveBindings(b);
+        set({ bindings: b });
     },
     reset: () =>
         set({

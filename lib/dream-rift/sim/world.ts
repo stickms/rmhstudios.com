@@ -39,6 +39,7 @@ import {
 import { Pool } from '../pool';
 import { Rng } from '../rng';
 import { runPattern, type PatternCtx } from './patterns';
+import { CHARACTERS } from '../render/sprites';
 import type {
     Bullet,
     BulletColorName,
@@ -648,30 +649,32 @@ function spawnPlayerShots(w: World, p: PlayerShip, dmg: number, tier: number): v
     const sx = p.x;
     const sy = p.y - 12;
     const focus = p.focus;
-    switch (p.charId) {
-        case 'reika': {
+    const cfg = CHARACTERS[p.charId];
+    const color = cfg.shotColor as BulletColorName;
+    switch (cfg.archetype) {
+        case 'homing': {
             // homing amulets — wider with power
             const n = 1 + tier;
             for (let i = 0; i < n; i++) {
                 const off = (i - (n - 1) / 2) * (focus ? 4 : 9);
                 const sh = w.shots.acquire();
                 if (!sh) break;
-                Object.assign(sh, { x: sx + off, y: sy, vx: focus ? 0 : (i - (n - 1) / 2) * 0.6, vy: -9, damage: dmg, radius: 6, ownerSlot: p.slot, kind: 'amulet', color: 'red', homing: !focus, targetId: w.nearestEnemyId(sx, sy), age: 0, pierce: 0 });
+                Object.assign(sh, { x: sx + off, y: sy, vx: focus ? 0 : (i - (n - 1) / 2) * 0.6, vy: -9, damage: dmg, radius: 6, ownerSlot: p.slot, kind: 'amulet', color, homing: !focus, targetId: w.nearestEnemyId(sx, sy), age: 0, pierce: 0 });
             }
             break;
         }
-        case 'mira': {
+        case 'focused': {
             // focused star laser — concentrated forward, high damage
             const n = focus ? 1 : 1 + tier;
             for (let i = 0; i < n; i++) {
                 const off = (i - (n - 1) / 2) * 7;
                 const sh = w.shots.acquire();
                 if (!sh) break;
-                Object.assign(sh, { x: sx + off, y: sy, vx: 0, vy: -11, damage: dmg * (focus ? 1.6 : 1), radius: 7, ownerSlot: p.slot, kind: 'star', color: 'yellow', homing: false, targetId: -1, age: 0, pierce: focus ? 2 : 0 });
+                Object.assign(sh, { x: sx + off, y: sy, vx: 0, vy: -11, damage: dmg * (focus ? 1.6 : 1), radius: 7, ownerSlot: p.slot, kind: 'star', color, homing: false, targetId: -1, age: 0, pierce: focus ? 2 : 0 });
             }
             break;
         }
-        case 'aoi': {
+        case 'spread': {
             // wide tide spread
             const n = 2 + tier * 2;
             const spread = focus ? 0.12 : 0.5;
@@ -679,18 +682,18 @@ function spawnPlayerShots(w: World, p: PlayerShip, dmg: number, tier: number): v
                 const a = -Math.PI / 2 + (n > 1 ? (-spread / 2 + (spread * i) / (n - 1)) : 0);
                 const sh = w.shots.acquire();
                 if (!sh) break;
-                Object.assign(sh, { x: sx, y: sy, vx: Math.cos(a) * 10, vy: Math.sin(a) * 10, damage: dmg * 0.8, radius: 5, ownerSlot: p.slot, kind: 'wave', color: 'cyan', homing: false, targetId: -1, age: 0, pierce: 0 });
+                Object.assign(sh, { x: sx, y: sy, vx: Math.cos(a) * 10, vy: Math.sin(a) * 10, damage: dmg * 0.8, radius: 5, ownerSlot: p.slot, kind: 'wave', color, homing: false, targetId: -1, age: 0, pierce: 0 });
             }
             break;
         }
-        case 'nyx': {
-            // piercing void lances
+        case 'piercing': {
+            // piercing lances
             const n = 1 + tier;
             for (let i = 0; i < n; i++) {
                 const off = (i - (n - 1) / 2) * (focus ? 5 : 11);
                 const sh = w.shots.acquire();
                 if (!sh) break;
-                Object.assign(sh, { x: sx + off, y: sy, vx: 0, vy: -10, damage: dmg, radius: 6, ownerSlot: p.slot, kind: 'lance', color: 'purple', homing: false, targetId: -1, age: 0, pierce: 1 + tier });
+                Object.assign(sh, { x: sx + off, y: sy, vx: 0, vy: -10, damage: dmg, radius: 6, ownerSlot: p.slot, kind: 'lance', color, homing: false, targetId: -1, age: 0, pierce: 1 + tier });
             }
             break;
         }

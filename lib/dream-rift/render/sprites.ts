@@ -18,7 +18,10 @@
 
 import { createSurface, type Surface } from './surface';
 
-export type PlayerId = 'reika' | 'mira' | 'aoi' | 'nyx';
+export type PlayerId = 'bllm' | 'mls' | 'qln' | 'dyj' | 'lmy';
+
+/** Shot behaviour archetype (decoupled from the specific character). */
+export type ShotArchetype = 'homing' | 'focused' | 'spread' | 'piercing';
 
 type HairStyle = 'long' | 'twintail' | 'ponytail' | 'short';
 type Headpiece = 'bow' | 'hat' | 'tiara' | 'circlet';
@@ -27,6 +30,18 @@ export interface CharConfig {
     id: PlayerId;
     name: string;
     title: string;
+    /** Shot behaviour. */
+    archetype: ShotArchetype;
+    /** Bullet colour name used for this character's own shots. */
+    shotColor: string;
+    /** One-line shot-type flavour shown in select. */
+    shotType: string;
+    accent: string;
+    /** External sprite-sheet for CSS portraits + in-game rendering. */
+    sheet: string;
+    frameW: number;
+    frameH: number;
+    // procedural-fallback palette (used only if the sheet fails to load)
     hair: string;
     hairShade: string;
     hairLight: string;
@@ -37,95 +52,48 @@ export interface CharConfig {
     outfitShade: string;
     outfitLight: string;
     trim: string;
-    accent: string;
     hairStyle: HairStyle;
     headpiece: Headpiece;
-    /** Bullet colour name used for this character's own shots. */
-    shotColor: string;
-    /** One-line shot-type flavour shown in select. */
-    shotType: string;
 }
 
+const SKIN = '#ffe0cf';
+const SKIN_SHADE = '#e8b6a0';
+
 export const CHARACTERS: Record<PlayerId, CharConfig> = {
-    reika: {
-        id: 'reika',
-        name: 'Reika',
-        title: 'Shrine Maiden of the Rift',
-        hair: '#4a2436',
-        hairShade: '#2f1623',
-        hairLight: '#6b3450',
-        skin: '#ffe0cf',
-        skinShade: '#e8b6a0',
-        eyes: '#d23a5a',
-        outfit: '#d8364f',
-        outfitShade: '#a0233b',
-        outfitLight: '#ff6f86',
-        trim: '#fefefe',
-        accent: '#ffd34d',
-        hairStyle: 'long',
-        headpiece: 'bow',
-        shotColor: 'red',
-        shotType: 'Homing amulets — forgiving, seeks enemies',
+    bllm: {
+        id: 'bllm', name: 'Reika', title: 'Shrine Maiden of the Rift',
+        archetype: 'homing', shotColor: 'red', shotType: 'Homing amulets — forgiving, seeks enemies',
+        accent: '#ff5c7a', sheet: '/dream-rift/sprites/players/bllm.png', frameW: 64, frameH: 64,
+        hair: '#4a2436', hairShade: '#2f1623', hairLight: '#6b3450', skin: SKIN, skinShade: SKIN_SHADE, eyes: '#d23a5a',
+        outfit: '#d8364f', outfitShade: '#a0233b', outfitLight: '#ff6f86', trim: '#fefefe', hairStyle: 'long', headpiece: 'bow',
     },
-    mira: {
-        id: 'mira',
-        name: 'Mira',
-        title: 'Star-Thief Witch',
-        hair: '#ffe27a',
-        hairShade: '#cda945',
-        hairLight: '#fff0b0',
-        skin: '#ffe0cf',
-        skinShade: '#e8b6a0',
-        eyes: '#7a52e0',
-        outfit: '#27203a',
-        outfitShade: '#150f24',
-        outfitLight: '#4a3d70',
-        trim: '#e7e0ff',
-        accent: '#9a6bff',
-        hairStyle: 'long',
-        headpiece: 'hat',
-        shotColor: 'yellow',
-        shotType: 'Focused star laser — high damage, narrow',
+    mls: {
+        id: 'mls', name: 'Mira', title: 'Star-Thief Witch',
+        archetype: 'focused', shotColor: 'yellow', shotType: 'Focused star laser — high damage, narrow',
+        accent: '#ffd34d', sheet: '/dream-rift/sprites/players/mls.png', frameW: 64, frameH: 64,
+        hair: '#ffe27a', hairShade: '#cda945', hairLight: '#fff0b0', skin: SKIN, skinShade: SKIN_SHADE, eyes: '#7a52e0',
+        outfit: '#27203a', outfitShade: '#150f24', outfitLight: '#4a3d70', trim: '#e7e0ff', hairStyle: 'long', headpiece: 'hat',
     },
-    aoi: {
-        id: 'aoi',
-        name: 'Aoi',
-        title: 'Tideglass Diviner',
-        hair: '#7fd6ff',
-        hairShade: '#3f9fd0',
-        hairLight: '#c7f1ff',
-        skin: '#ffe6d6',
-        skinShade: '#e6bca6',
-        eyes: '#1f9ad0',
-        outfit: '#1f8fb8',
-        outfitShade: '#13627f',
-        outfitLight: '#5fd0ee',
-        trim: '#f2fbff',
-        accent: '#9ff0ff',
-        hairStyle: 'twintail',
-        headpiece: 'tiara',
-        shotColor: 'cyan',
-        shotType: 'Wide tide spread — covers the screen',
+    qln: {
+        id: 'qln', name: 'Aoi', title: 'Frostlace Sprite',
+        archetype: 'spread', shotColor: 'cyan', shotType: 'Wide tide spread — covers the screen',
+        accent: '#5fd0ff', sheet: '/dream-rift/sprites/players/qln.png', frameW: 64, frameH: 64,
+        hair: '#7fd6ff', hairShade: '#3f9fd0', hairLight: '#c7f1ff', skin: '#ffe6d6', skinShade: '#e6bca6', eyes: '#1f9ad0',
+        outfit: '#1f8fb8', outfitShade: '#13627f', outfitLight: '#5fd0ee', trim: '#f2fbff', hairStyle: 'twintail', headpiece: 'tiara',
     },
-    nyx: {
-        id: 'nyx',
-        name: 'Nyx',
-        title: 'Void Between Dreams',
-        hair: '#3a2a66',
-        hairShade: '#231741',
-        hairLight: '#6b54a8',
-        skin: '#f0dce6',
-        skinShade: '#cfa8bf',
-        eyes: '#c77bff',
-        outfit: '#5a2e9e',
-        outfitShade: '#371a66',
-        outfitLight: '#9a64e0',
-        trim: '#e7d6ff',
-        accent: '#d7a0ff',
-        hairStyle: 'ponytail',
-        headpiece: 'circlet',
-        shotColor: 'purple',
-        shotType: 'Piercing void lances — punches through ranks',
+    dyj: {
+        id: 'dyj', name: 'Midori', title: 'Verdant Daydreamer',
+        archetype: 'piercing', shotColor: 'green', shotType: 'Piercing leaf lances — punches through ranks',
+        accent: '#7cfc8a', sheet: '/dream-rift/sprites/players/dyj.png', frameW: 64, frameH: 64,
+        hair: '#5fd06a', hairShade: '#2f7a3a', hairLight: '#aef0b0', skin: SKIN, skinShade: SKIN_SHADE, eyes: '#2f9a4a',
+        outfit: '#2f9a55', outfitShade: '#1c6638', outfitLight: '#6fe08a', trim: '#f0fff2', hairStyle: 'short', headpiece: 'tiara',
+    },
+    lmy: {
+        id: 'lmy', name: 'Hikari', title: 'Lantern of the Drifting Dream',
+        archetype: 'homing', shotColor: 'orange', shotType: 'Seeking embers — steady and reliable',
+        accent: '#ffc24d', sheet: '/dream-rift/sprites/players/lmy.png', frameW: 64, frameH: 64,
+        hair: '#ffe27a', hairShade: '#cda945', hairLight: '#fff0b0', skin: SKIN, skinShade: SKIN_SHADE, eyes: '#e08a2a',
+        outfit: '#e0922a', outfitShade: '#a3661a', outfitLight: '#ffc06a', trim: '#fffaf0', hairStyle: 'ponytail', headpiece: 'circlet',
     },
 };
 

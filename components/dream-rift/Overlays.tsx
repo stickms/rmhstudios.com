@@ -5,34 +5,20 @@
  * procedurally-drawn portraits), the pause menu and the end-of-run results.
  */
 
-import { useEffect, useRef } from 'react';
 import { useDreamRift } from '@/lib/dream-rift/store';
-import { playerSprites, buildBoss, CHARACTERS } from '@/lib/dream-rift/render/sprites';
-import type { Surface } from '@/lib/dream-rift/render/surface';
+import { CHARACTERS } from '@/lib/dream-rift/render/sprites';
 import type { PlayerId } from '@/lib/dream-rift/types';
 import { useRuntime } from './runtime';
-
-export function PortraitView({ surface, className }: { surface: Surface; className?: string }) {
-    const ref = useRef<HTMLCanvasElement>(null);
-    useEffect(() => {
-        const c = ref.current;
-        if (!c) return;
-        c.width = surface.width;
-        c.height = surface.height;
-        const ctx = c.getContext('2d');
-        ctx?.drawImage(surface.canvas as CanvasImageSource, 0, 0);
-    }, [surface]);
-    return <canvas ref={ref} className={className} style={{ imageRendering: 'auto' }} />;
-}
+import { SheetPortrait } from './SheetPortrait';
 
 export function DialogueOverlay() {
     const dialogue = useDreamRift((s) => s.dialogue);
     const { input } = useRuntime();
     if (!dialogue) return null;
 
-    const portrait: Surface = dialogue.speakerChar
-        ? playerSprites(dialogue.speakerChar as PlayerId).portrait
-        : buildBoss(dialogue.bossThemeIndex).portrait;
+    const portraitUrl = dialogue.speakerChar
+        ? CHARACTERS[dialogue.speakerChar as PlayerId].sheet
+        : `/dream-rift/sprites/bosses/${dialogue.bossSprite}.png`;
     const accent = dialogue.speakerChar ? CHARACTERS[dialogue.speakerChar as PlayerId].accent : '#d7a0ff';
 
     const advance = () => {
@@ -48,11 +34,11 @@ export function DialogueOverlay() {
         >
             <div className="pointer-events-none flex items-end justify-between px-2 md:px-8">
                 {dialogue.speakerSide === 'left' && (
-                    <PortraitView surface={portrait} className="h-40 w-auto drop-shadow-[0_0_18px_rgba(0,0,0,0.7)] md:h-64" />
+                    <SheetPortrait url={portraitUrl} frame={1} size={170} className="drop-shadow-[0_0_18px_rgba(0,0,0,0.7)]" />
                 )}
                 <div className="flex-1" />
                 {dialogue.speakerSide === 'right' && (
-                    <PortraitView surface={portrait} className="h-40 w-auto -scale-x-100 drop-shadow-[0_0_18px_rgba(0,0,0,0.7)] md:h-64" />
+                    <SheetPortrait url={portraitUrl} frame={1} size={170} className="-scale-x-100 drop-shadow-[0_0_18px_rgba(0,0,0,0.7)]" />
                 )}
             </div>
             <div className="m-2 mb-6 rounded-xl border border-white/15 bg-black/80 p-4 backdrop-blur md:mx-16">
@@ -87,7 +73,7 @@ export function StageBanner() {
 }
 
 export function PauseOverlay({ onResume, onQuit }: { onResume: () => void; onQuit: () => void }) {
-    const { musicOn, sfxOn, setMusicOn, setSfxOn, musicVol, sfxVol, setMusicVol, setSfxVol } = useDreamRift();
+    const { musicOn, sfxOn, setMusicOn, setSfxOn, musicVol, sfxVol, setMusicVol, setSfxVol, showHitbox, setShowHitbox } = useDreamRift();
     return (
         <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-sm">
             <div className="w-72 rounded-2xl border border-fuchsia-400/30 bg-[#120a22]/95 p-6 shadow-2xl">
@@ -103,6 +89,10 @@ export function PauseOverlay({ onResume, onQuit }: { onResume: () => void; onQui
                         <input type="checkbox" checked={sfxOn} onChange={(e) => setSfxOn(e.target.checked)} />
                     </label>
                     <input type="range" min={0} max={1} step={0.05} value={sfxVol} onChange={(e) => setSfxVol(Number(e.target.value))} className="w-full" />
+                    <label className="flex items-center justify-between text-white/80">
+                        Always show hitbox
+                        <input type="checkbox" checked={showHitbox} onChange={(e) => setShowHitbox(e.target.checked)} />
+                    </label>
                 </div>
                 <div className="mt-5 flex flex-col gap-2">
                     <button type="button" onClick={onResume} className="rounded-lg bg-fuchsia-500/80 py-2 font-bold text-white hover:bg-fuchsia-500">

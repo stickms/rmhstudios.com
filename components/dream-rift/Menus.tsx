@@ -9,7 +9,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useDreamRift } from '@/lib/dream-rift/store';
-import { CHARACTERS, PLAYER_IDS, playerSprites } from '@/lib/dream-rift/render/sprites';
+import { CHARACTERS, PLAYER_IDS } from '@/lib/dream-rift/render/sprites';
 import { DIFFICULTIES } from '@/lib/dream-rift/constants';
 import type { Difficulty, PlayerId } from '@/lib/dream-rift/types';
 import {
@@ -25,7 +25,7 @@ import {
     setLobbySettings,
     startLobby,
 } from '@/lib/dream-rift/net/connection';
-import { PortraitView } from './Overlays';
+import { SheetPortrait } from './SheetPortrait';
 import { useRuntime } from './runtime';
 
 const DIFF_COLOR: Record<Difficulty, string> = {
@@ -80,7 +80,7 @@ function CharCard({ id, selected, onClick }: { id: PlayerId; selected: boolean; 
             className="group relative flex flex-col items-center rounded-2xl border p-3 transition"
             style={{ borderColor: selected ? c.accent : 'rgba(255,255,255,0.1)', background: selected ? `${c.accent}1a` : 'rgba(255,255,255,0.03)' }}
         >
-            <PortraitView surface={playerSprites(id).portrait} className="h-28 w-auto" />
+            <SheetPortrait url={c.sheet} frame={1} size={104} className="rounded-lg" />
             <div className="mt-1 text-sm font-black" style={{ color: c.accent }}>
                 {c.name}
             </div>
@@ -92,7 +92,7 @@ function CharCard({ id, selected, onClick }: { id: PlayerId; selected: boolean; 
 
 // ─── Title ───
 
-export function TitleScreen({ onSingle, onMulti, onLeaderboard }: { onSingle: () => void; onMulti: () => void; onLeaderboard: () => void }) {
+export function TitleScreen({ onSingle, onMulti, onLeaderboard, onSettings }: { onSingle: () => void; onMulti: () => void; onLeaderboard: () => void; onSettings: () => void }) {
     const { music, sfx } = useRuntime();
     const [showHelp, setShowHelp] = useState(false);
     useEffect(() => {
@@ -125,7 +125,10 @@ export function TitleScreen({ onSingle, onMulti, onLeaderboard }: { onSingle: ()
                 <Btn onClick={() => { sfx.play('menuSelect'); onSingle(); }}>Single Player</Btn>
                 <Btn onClick={() => { sfx.play('menuSelect'); onMulti(); }}>Multiplayer Lobbies</Btn>
                 <Btn variant="ghost" onClick={() => { sfx.play('menuMove'); onLeaderboard(); }}>Leaderboard</Btn>
-                <Btn variant="ghost" onClick={() => setShowHelp(true)}>How to Play</Btn>
+                <div className="flex gap-3">
+                    <Btn variant="ghost" onClick={() => { sfx.play('menuMove'); onSettings(); }} className="flex-1">Settings</Btn>
+                    <Btn variant="ghost" onClick={() => setShowHelp(true)} className="flex-1">How to Play</Btn>
+                </div>
             </div>
             <p className="relative mt-10 text-[11px] text-white/30">Move: Arrows/WASD · Shoot: Z · Bomb: X · Focus: Shift · Pause: Esc</p>
 
@@ -337,7 +340,7 @@ export function LobbyRoom({ onLeave }: { onLeave: () => void }) {
                         );
                     return (
                         <div key={slot} className="relative flex flex-col items-center rounded-2xl border p-2" style={{ borderColor: p.ready || p.isHost ? '#5fe0b0' : 'rgba(255,255,255,0.12)' }}>
-                            <PortraitView surface={playerSprites(p.charId).portrait} className="h-24 w-auto" />
+                            <SheetPortrait url={CHARACTERS[p.charId].sheet} frame={1} size={88} className="rounded-lg" />
                             <div className="text-sm font-bold text-white">{p.name}</div>
                             <div className="text-[10px]" style={{ color: CHARACTERS[p.charId].accent }}>
                                 {CHARACTERS[p.charId].name}

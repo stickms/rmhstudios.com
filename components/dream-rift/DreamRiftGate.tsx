@@ -22,6 +22,7 @@ import { GameStage, type StartInfo } from './GameStage';
 import { TitleScreen, CharacterSelect, LobbyBrowser, LobbyRoom } from './Menus';
 import { ResultScreen } from './Results';
 import { Leaderboard } from './Leaderboard';
+import { SettingsScreen } from './SettingsScreen';
 
 function randomSeed(): number {
     return Math.floor(Math.random() * 0x7fffffff) || 1;
@@ -130,12 +131,16 @@ function ScreenRouter() {
         case 'leaderboard':
             body = <Leaderboard onBack={() => setScreen(mode === 'multi' ? 'lobby-browser' : 'title')} />;
             break;
+        case 'settings':
+            body = <SettingsScreen onBack={() => setScreen('title')} />;
+            break;
         default:
             body = (
                 <TitleScreen
                     onSingle={() => setScreen('char-select')}
                     onMulti={() => { setMode('multi'); setScreen('lobby-browser'); }}
                     onLeaderboard={() => setScreen('leaderboard')}
+                    onSettings={() => setScreen('settings')}
                 />
             );
     }

@@ -24,7 +24,7 @@ export interface StartInfo {
 }
 
 export function GameStage({ start, onExit }: { start: StartInfo; onExit: () => void }) {
-    const { music, sfx, input } = useRuntime();
+    const { music, sfx, input, assets } = useRuntime();
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const wrapRef = useRef<HTMLDivElement>(null);
     const sessionRef = useRef<GameSession | null>(null);
@@ -51,6 +51,7 @@ export function GameStage({ start, onExit }: { start: StartInfo; onExit: () => v
             sfx,
             input,
             hiScore,
+            spriteAssets: assets,
         });
         sessionRef.current = session;
 
@@ -78,6 +79,10 @@ export function GameStage({ start, onExit }: { start: StartInfo; onExit: () => v
     }, []);
 
     const paused = useDreamRift((s) => s.paused);
+    const showHitbox = useDreamRift((s) => s.showHitbox);
+    useEffect(() => {
+        sessionRef.current?.setShowHitbox(showHitbox);
+    }, [showHitbox]);
 
     return (
         <div ref={wrapRef} className="relative h-full w-full overflow-hidden bg-black">
