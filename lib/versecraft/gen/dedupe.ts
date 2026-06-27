@@ -21,6 +21,9 @@ export function dropDuplicateNodes(scenes: GenScene[]): GenScene[] {
       if (node.choices?.length) return true;   // never drop a choice node
       const key = normalize(node.text);
       if (!key) return true;                   // keep empties / punctuation-only ("...")
+      // Short reactive lines ("Yes.", "Why?", "I know.") recur naturally and may
+      // be different speakers/beats — only dedupe substantive repeated lines.
+      if (key.split(' ').length <= 2) return true;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;

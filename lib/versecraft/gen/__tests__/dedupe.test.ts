@@ -29,25 +29,32 @@ describe('dropDuplicateNodes', () => {
 
   it('dedupes across scenes', () => {
     const out = dropDuplicateNodes([
-      scene('s0', [{ text: 'A line.' }]),
-      scene('s1', [{ text: 'a line' }, { text: 'New.' }]),
+      scene('s0', [{ text: 'A whole line here.' }]),
+      scene('s1', [{ text: 'a whole line here' }, { text: 'Something genuinely new.' }]),
     ]);
-    expect(out[1].nodes.map(n => n.text)).toEqual(['New.']);
+    expect(out[1].nodes.map(n => n.text)).toEqual(['Something genuinely new.']);
   });
 
   it('never drops a choice node even if its text repeats', () => {
     const out = dropDuplicateNodes([scene('s0', [
-      { text: 'Pick one.' }, { text: 'pick one', choices: [{ text: 'a' }] },
+      { text: 'Make your choice now.' }, { text: 'make your choice now', choices: [{ text: 'a' }] },
     ])]);
     expect(out[0].nodes).toHaveLength(2);
   });
 
+  it('keeps repeated short reactive lines (<=3 words)', () => {
+    const out = dropDuplicateNodes([scene('s0', [
+      { text: 'I know.' }, { text: 'She looked away.' }, { text: 'I know.' },
+    ])]);
+    expect(out[0].nodes).toHaveLength(3);
+  });
+
   it('keeps the first node when a scene would otherwise go empty', () => {
     const out = dropDuplicateNodes([
-      scene('s0', [{ text: 'Hi.' }]),
-      scene('s1', [{ text: 'hi' }]),
+      scene('s0', [{ text: 'The same long line.' }]),
+      scene('s1', [{ text: 'the same long line' }]),
     ]);
     expect(out[1].nodes).toHaveLength(1);
-    expect(out[1].nodes[0].text).toBe('hi');
+    expect(out[1].nodes[0].text).toBe('the same long line');
   });
 });
