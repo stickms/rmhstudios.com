@@ -13,6 +13,10 @@ const TOKEN_REGEX = /(@\w+|#\w+|https?:\/\/[^\s<>"']+)/gi;
 const URL_REGEX = /^https?:\/\//i;
 // Spoilers are wrapped in double pipes, Discord-style: ||hidden text||
 const SPOILER_REGEX = /\|\|([\s\S]+?)\|\|/g;
+// Basic inline markdown: **bold**, ~~strikethrough~~, *italic* / _italic_.
+// `**` is matched before `*` so bold wins over italic.
+const MARKDOWN_REGEX =
+  /(\*\*([^*]+?)\*\*|~~([^~]+?)~~|\*([^*\s][^*]*?)\*|_([^_\s][^_]*?)_)/;
 
 export function extractFirstUrl(text: string): string | null {
   const match = text.match(/https?:\/\/[^\s<>"']+/i);
@@ -68,6 +72,40 @@ function renderTokens(text: string, keyPrefix: string): React.ReactNode {
   });
 }
 
+/**
+ * Render text with basic inline markdown (bold, italic, strikethrough) applied,
+ * recursing into the emphasised span and linkifying the remaining plain runs via
+ * {@link renderTokens}.
+ */
+function renderInline(text: string, keyPrefix: string): React.ReactNode {
+  const nodes: React.ReactNode[] = [];
+  let rest = text;
+  let i = 0;
+  while (rest.length > 0) {
+    const m = MARKDOWN_REGEX.exec(rest);
+    if (!m) {
+      nodes.push(<span key={`${keyPrefix}-p${i}`}>{renderTokens(rest, `${keyPrefix}-p${i}`)}</span>);
+      break;
+    }
+    if (m.index > 0) {
+      const before = rest.slice(0, m.index);
+      nodes.push(<span key={`${keyPrefix}-p${i}`}>{renderTokens(before, `${keyPrefix}-p${i}`)}</span>);
+      i++;
+    }
+    const key = `${keyPrefix}-m${i}`;
+    if (m[2] !== undefined) {
+      nodes.push(<strong key={key} className="font-bold">{renderInline(m[2], key)}</strong>);
+    } else if (m[3] !== undefined) {
+      nodes.push(<del key={key}>{renderInline(m[3], key)}</del>);
+    } else {
+      nodes.push(<em key={key} className="italic">{renderInline(m[4] ?? m[5] ?? '', key)}</em>);
+    }
+    i++;
+    rest = rest.slice(m.index + m[0].length);
+  }
+  return nodes;
+}
+
 /** Click-to-reveal blurred span for spoiler-tagged text. */
 function Spoiler({ children }: { children: React.ReactNode }) {
   const [revealed, setRevealed] = useState(false);
@@ -109,15 +147,15 @@ export function RMHarkContent({ text, className }: RMHarkContentProps) {
   SPOILER_REGEX.lastIndex = 0;
   while ((m = SPOILER_REGEX.exec(text)) !== null) {
     if (m.index > last) {
-      segments.push(<span key={`t-${segIdx}`}>{renderTokens(text.slice(last, m.index), `t-${segIdx}`)}</span>);
+      segments.push(<span key={`t-${segIdx}`}>{renderInline(text.slice(last, m.index), `t-${segIdx}`)}</span>);
       segIdx++;
     }
-    segments.push(<Spoiler key={`s-${segIdx}`}>{renderTokens(m[1], `s-${segIdx}`)}</Spoiler>);
+    segments.push(<Spoiler key={`s-${segIdx}`}>{renderInline(m[1], `s-${segIdx}`)}</Spoiler>);
     segIdx++;
     last = m.index + m[0].length;
   }
   if (last < text.length) {
-    segments.push(<span key={`t-${segIdx}`}>{renderTokens(text.slice(last), `t-${segIdx}`)}</span>);
+    segments.push(<span key={`t-${segIdx}`}>{renderInline(text.slice(last), `t-${segIdx}`)}</span>);
   }
 
   return <p className={className}>{segments.length > 0 ? segments : text}</p>;

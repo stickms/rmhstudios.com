@@ -5,7 +5,6 @@ import enBuilds from "@/locales/en/builds.json";
 import enFeed from "@/locales/en/feed.json";
 import enGroups from "@/locales/en/groups.json";
 import enLibrary from "@/locales/en/library.json";
-import enResearch from "@/locales/en/research.json";
 import enRideshare from "@/locales/en/rideshare.json";
 import enShared from "@/locales/en/shared.json";
 import enSite from "@/locales/en/site.json";
@@ -31,14 +30,9 @@ import enCLockdown from "@/locales/en/c-lockdown.json";
 import enCModeration from "@/locales/en/c-moderation.json";
 import enCNeonDriftway from "@/locales/en/c-neon-driftway.json";
 import enCNews from "@/locales/en/c-news.json";
-import enCResearch from "@/locales/en/c-research.json";
 import enCRideshare from "@/locales/en/c-rideshare.json";
 import enCRmhCapital from "@/locales/en/c-rmh-capital.json";
-import enCRmhEats from "@/locales/en/c-rmh-eats.json";
-import enCRmhJobs from "@/locales/en/c-rmh-jobs.json";
-import enCRmhNotes from "@/locales/en/c-rmh-notes.json";
 import enCRmhPmc from "@/locales/en/c-rmh-pmc.json";
-import enCRmhWeather from "@/locales/en/c-rmh-weather.json";
 import enCRmhbox from "@/locales/en/c-rmhbox.json";
 import enCRmhcode from "@/locales/en/c-rmhcode.json";
 import enCRmhcoins from "@/locales/en/c-rmhcoins.json";
@@ -77,7 +71,6 @@ import zhBuilds from "@/locales/zh/builds.json";
 import zhFeed from "@/locales/zh/feed.json";
 import zhGroups from "@/locales/zh/groups.json";
 import zhLibrary from "@/locales/zh/library.json";
-import zhResearch from "@/locales/zh/research.json";
 import zhRideshare from "@/locales/zh/rideshare.json";
 import zhShared from "@/locales/zh/shared.json";
 import zhSite from "@/locales/zh/site.json";
@@ -103,14 +96,9 @@ import zhCLockdown from "@/locales/zh/c-lockdown.json";
 import zhCModeration from "@/locales/zh/c-moderation.json";
 import zhCNeonDriftway from "@/locales/zh/c-neon-driftway.json";
 import zhCNews from "@/locales/zh/c-news.json";
-import zhCResearch from "@/locales/zh/c-research.json";
 import zhCRideshare from "@/locales/zh/c-rideshare.json";
 import zhCRmhCapital from "@/locales/zh/c-rmh-capital.json";
-import zhCRmhEats from "@/locales/zh/c-rmh-eats.json";
-import zhCRmhJobs from "@/locales/zh/c-rmh-jobs.json";
-import zhCRmhNotes from "@/locales/zh/c-rmh-notes.json";
 import zhCRmhPmc from "@/locales/zh/c-rmh-pmc.json";
-import zhCRmhWeather from "@/locales/zh/c-rmh-weather.json";
 import zhCRmhbox from "@/locales/zh/c-rmhbox.json";
 import zhCRmhcode from "@/locales/zh/c-rmhcode.json";
 import zhCRmhcoins from "@/locales/zh/c-rmhcoins.json";
@@ -149,7 +137,6 @@ import arBuilds from "@/locales/ar/builds.json";
 import arFeed from "@/locales/ar/feed.json";
 import arGroups from "@/locales/ar/groups.json";
 import arLibrary from "@/locales/ar/library.json";
-import arResearch from "@/locales/ar/research.json";
 import arRideshare from "@/locales/ar/rideshare.json";
 import arShared from "@/locales/ar/shared.json";
 import arSite from "@/locales/ar/site.json";
@@ -175,14 +162,9 @@ import arCLockdown from "@/locales/ar/c-lockdown.json";
 import arCModeration from "@/locales/ar/c-moderation.json";
 import arCNeonDriftway from "@/locales/ar/c-neon-driftway.json";
 import arCNews from "@/locales/ar/c-news.json";
-import arCResearch from "@/locales/ar/c-research.json";
 import arCRideshare from "@/locales/ar/c-rideshare.json";
 import arCRmhCapital from "@/locales/ar/c-rmh-capital.json";
-import arCRmhEats from "@/locales/ar/c-rmh-eats.json";
-import arCRmhJobs from "@/locales/ar/c-rmh-jobs.json";
-import arCRmhNotes from "@/locales/ar/c-rmh-notes.json";
 import arCRmhPmc from "@/locales/ar/c-rmh-pmc.json";
-import arCRmhWeather from "@/locales/ar/c-rmh-weather.json";
 import arCRmhbox from "@/locales/ar/c-rmhbox.json";
 import arCRmhcode from "@/locales/ar/c-rmhcode.json";
 import arCRmhcoins from "@/locales/ar/c-rmhcoins.json";
@@ -216,7 +198,7 @@ import arRStrategies from "@/locales/ar/r-strategies.json";
 import arRStudio from "@/locales/ar/r-studio.json";
 
 export const RESOURCES = {
-  en: { "common": enCommon, "nav": enNav, "admin": enAdmin, "builds": enBuilds, "feed": enFeed, "groups": enGroups, "library": enLibrary, "research": enResearch, "rideshare": enRideshare, "shared": enShared, "site": enSite, "user-builds": enUserBuilds, "v": enV, "c-admin": enCAdmin, "c-altair": enCAltair, "c-blog": enCBlog, "c-builds": enCBuilds, "c-cursed-logic": enCCursedLogic, "c-daily-puzzles": enCDailyPuzzles, "c-doctrine": enCDoctrine, "c-dream-rift": enCDreamRift, "c-economy": enCEconomy, "c-forest-explorer": enCForestExplorer, "c-game": enCGame, "c-house-always-wins": enCHouseAlwaysWins, "c-kowloon-knockout": enCKowloonKnockout, "c-laundry-sort": enCLaundrySort, "c-library": enCLibrary, "c-lights-out": enCLightsOut, "c-lockdown": enCLockdown, "c-moderation": enCModeration, "c-neon-driftway": enCNeonDriftway, "c-news": enCNews, "c-research": enCResearch, "c-rideshare": enCRideshare, "c-rmh-capital": enCRmhCapital, "c-rmh-eats": enCRmhEats, "c-rmh-jobs": enCRmhJobs, "c-rmh-notes": enCRmhNotes, "c-rmh-pmc": enCRmhPmc, "c-rmh-weather": enCRmhWeather, "c-rmhbox": enCRmhbox, "c-rmhcode": enCRmhcode, "c-rmhcoins": enCRmhcoins, "c-rmhmusic": enCRmhmusic, "c-rmhstudy": enCRmhstudy, "c-rmhtech": enCRmhtech, "c-rmhtube": enCRmhtube, "c-rmhtype": enCRmhtype, "c-rmhvibe": enCRmhvibe, "c-roadmap": enCRoadmap, "c-signal-forge": enCSignalForge, "c-studio": enCStudio, "c-synapse-storm": enCSynapseStorm, "c-temple-of-joy": enCTempleOfJoy, "c-ui": enCUi, "c-user-builds": enCUserBuilds, "c-vega": enCVega, "c-velum2099": enCVelum2099, "c-versecraft": enCVersecraft, "c-void-breaker": enCVoidBreaker, "pages": enPages, "r-altair": enRAltair, "r-discord": enRDiscord, "r-forest-explorer": enRForestExplorer, "r-kowloon-knockout": enRKowloonKnockout, "r-rmhbox": enRRmhbox, "r-rmhcode": enRRmhcode, "r-secret": enRSecret, "r-slice-it": enRSliceIt, "r-strategies": enRStrategies, "r-studio": enRStudio },
-  zh: { "common": zhCommon, "nav": zhNav, "admin": zhAdmin, "builds": zhBuilds, "feed": zhFeed, "groups": zhGroups, "library": zhLibrary, "research": zhResearch, "rideshare": zhRideshare, "shared": zhShared, "site": zhSite, "user-builds": zhUserBuilds, "v": zhV, "c-admin": zhCAdmin, "c-altair": zhCAltair, "c-blog": zhCBlog, "c-builds": zhCBuilds, "c-cursed-logic": zhCCursedLogic, "c-daily-puzzles": zhCDailyPuzzles, "c-doctrine": zhCDoctrine, "c-dream-rift": zhCDreamRift, "c-economy": zhCEconomy, "c-forest-explorer": zhCForestExplorer, "c-game": zhCGame, "c-house-always-wins": zhCHouseAlwaysWins, "c-kowloon-knockout": zhCKowloonKnockout, "c-laundry-sort": zhCLaundrySort, "c-library": zhCLibrary, "c-lights-out": zhCLightsOut, "c-lockdown": zhCLockdown, "c-moderation": zhCModeration, "c-neon-driftway": zhCNeonDriftway, "c-news": zhCNews, "c-research": zhCResearch, "c-rideshare": zhCRideshare, "c-rmh-capital": zhCRmhCapital, "c-rmh-eats": zhCRmhEats, "c-rmh-jobs": zhCRmhJobs, "c-rmh-notes": zhCRmhNotes, "c-rmh-pmc": zhCRmhPmc, "c-rmh-weather": zhCRmhWeather, "c-rmhbox": zhCRmhbox, "c-rmhcode": zhCRmhcode, "c-rmhcoins": zhCRmhcoins, "c-rmhmusic": zhCRmhmusic, "c-rmhstudy": zhCRmhstudy, "c-rmhtech": zhCRmhtech, "c-rmhtube": zhCRmhtube, "c-rmhtype": zhCRmhtype, "c-rmhvibe": zhCRmhvibe, "c-roadmap": zhCRoadmap, "c-signal-forge": zhCSignalForge, "c-studio": zhCStudio, "c-synapse-storm": zhCSynapseStorm, "c-temple-of-joy": zhCTempleOfJoy, "c-ui": zhCUi, "c-user-builds": zhCUserBuilds, "c-vega": zhCVega, "c-velum2099": zhCVelum2099, "c-versecraft": zhCVersecraft, "c-void-breaker": zhCVoidBreaker, "pages": zhPages, "r-altair": zhRAltair, "r-discord": zhRDiscord, "r-forest-explorer": zhRForestExplorer, "r-kowloon-knockout": zhRKowloonKnockout, "r-rmhbox": zhRRmhbox, "r-rmhcode": zhRRmhcode, "r-secret": zhRSecret, "r-slice-it": zhRSliceIt, "r-strategies": zhRStrategies, "r-studio": zhRStudio },
-  ar: { "common": arCommon, "nav": arNav, "admin": arAdmin, "builds": arBuilds, "feed": arFeed, "groups": arGroups, "library": arLibrary, "research": arResearch, "rideshare": arRideshare, "shared": arShared, "site": arSite, "user-builds": arUserBuilds, "v": arV, "c-admin": arCAdmin, "c-altair": arCAltair, "c-blog": arCBlog, "c-builds": arCBuilds, "c-cursed-logic": arCCursedLogic, "c-daily-puzzles": arCDailyPuzzles, "c-doctrine": arCDoctrine, "c-dream-rift": arCDreamRift, "c-economy": arCEconomy, "c-forest-explorer": arCForestExplorer, "c-game": arCGame, "c-house-always-wins": arCHouseAlwaysWins, "c-kowloon-knockout": arCKowloonKnockout, "c-laundry-sort": arCLaundrySort, "c-library": arCLibrary, "c-lights-out": arCLightsOut, "c-lockdown": arCLockdown, "c-moderation": arCModeration, "c-neon-driftway": arCNeonDriftway, "c-news": arCNews, "c-research": arCResearch, "c-rideshare": arCRideshare, "c-rmh-capital": arCRmhCapital, "c-rmh-eats": arCRmhEats, "c-rmh-jobs": arCRmhJobs, "c-rmh-notes": arCRmhNotes, "c-rmh-pmc": arCRmhPmc, "c-rmh-weather": arCRmhWeather, "c-rmhbox": arCRmhbox, "c-rmhcode": arCRmhcode, "c-rmhcoins": arCRmhcoins, "c-rmhmusic": arCRmhmusic, "c-rmhstudy": arCRmhstudy, "c-rmhtech": arCRmhtech, "c-rmhtube": arCRmhtube, "c-rmhtype": arCRmhtype, "c-rmhvibe": arCRmhvibe, "c-roadmap": arCRoadmap, "c-signal-forge": arCSignalForge, "c-studio": arCStudio, "c-synapse-storm": arCSynapseStorm, "c-temple-of-joy": arCTempleOfJoy, "c-ui": arCUi, "c-user-builds": arCUserBuilds, "c-vega": arCVega, "c-velum2099": arCVelum2099, "c-versecraft": arCVersecraft, "c-void-breaker": arCVoidBreaker, "pages": arPages, "r-altair": arRAltair, "r-discord": arRDiscord, "r-forest-explorer": arRForestExplorer, "r-kowloon-knockout": arRKowloonKnockout, "r-rmhbox": arRRmhbox, "r-rmhcode": arRRmhcode, "r-secret": arRSecret, "r-slice-it": arRSliceIt, "r-strategies": arRStrategies, "r-studio": arRStudio },
+  en: { "common": enCommon, "nav": enNav, "admin": enAdmin, "builds": enBuilds, "feed": enFeed, "groups": enGroups, "library": enLibrary, "rideshare": enRideshare, "shared": enShared, "site": enSite, "user-builds": enUserBuilds, "v": enV, "c-admin": enCAdmin, "c-altair": enCAltair, "c-blog": enCBlog, "c-builds": enCBuilds, "c-cursed-logic": enCCursedLogic, "c-daily-puzzles": enCDailyPuzzles, "c-doctrine": enCDoctrine, "c-dream-rift": enCDreamRift, "c-economy": enCEconomy, "c-forest-explorer": enCForestExplorer, "c-game": enCGame, "c-house-always-wins": enCHouseAlwaysWins, "c-kowloon-knockout": enCKowloonKnockout, "c-laundry-sort": enCLaundrySort, "c-library": enCLibrary, "c-lights-out": enCLightsOut, "c-lockdown": enCLockdown, "c-moderation": enCModeration, "c-neon-driftway": enCNeonDriftway, "c-news": enCNews, "c-rideshare": enCRideshare, "c-rmh-capital": enCRmhCapital, "c-rmh-pmc": enCRmhPmc, "c-rmhbox": enCRmhbox, "c-rmhcode": enCRmhcode, "c-rmhcoins": enCRmhcoins, "c-rmhmusic": enCRmhmusic, "c-rmhstudy": enCRmhstudy, "c-rmhtech": enCRmhtech, "c-rmhtube": enCRmhtube, "c-rmhtype": enCRmhtype, "c-rmhvibe": enCRmhvibe, "c-roadmap": enCRoadmap, "c-signal-forge": enCSignalForge, "c-studio": enCStudio, "c-synapse-storm": enCSynapseStorm, "c-temple-of-joy": enCTempleOfJoy, "c-ui": enCUi, "c-user-builds": enCUserBuilds, "c-vega": enCVega, "c-velum2099": enCVelum2099, "c-versecraft": enCVersecraft, "c-void-breaker": enCVoidBreaker, "pages": enPages, "r-altair": enRAltair, "r-discord": enRDiscord, "r-forest-explorer": enRForestExplorer, "r-kowloon-knockout": enRKowloonKnockout, "r-rmhbox": enRRmhbox, "r-rmhcode": enRRmhcode, "r-secret": enRSecret, "r-slice-it": enRSliceIt, "r-strategies": enRStrategies, "r-studio": enRStudio },
+  zh: { "common": zhCommon, "nav": zhNav, "admin": zhAdmin, "builds": zhBuilds, "feed": zhFeed, "groups": zhGroups, "library": zhLibrary, "rideshare": zhRideshare, "shared": zhShared, "site": zhSite, "user-builds": zhUserBuilds, "v": zhV, "c-admin": zhCAdmin, "c-altair": zhCAltair, "c-blog": zhCBlog, "c-builds": zhCBuilds, "c-cursed-logic": zhCCursedLogic, "c-daily-puzzles": zhCDailyPuzzles, "c-doctrine": zhCDoctrine, "c-dream-rift": zhCDreamRift, "c-economy": zhCEconomy, "c-forest-explorer": zhCForestExplorer, "c-game": zhCGame, "c-house-always-wins": zhCHouseAlwaysWins, "c-kowloon-knockout": zhCKowloonKnockout, "c-laundry-sort": zhCLaundrySort, "c-library": zhCLibrary, "c-lights-out": zhCLightsOut, "c-lockdown": zhCLockdown, "c-moderation": zhCModeration, "c-neon-driftway": zhCNeonDriftway, "c-news": zhCNews, "c-rideshare": zhCRideshare, "c-rmh-capital": zhCRmhCapital, "c-rmh-pmc": zhCRmhPmc, "c-rmhbox": zhCRmhbox, "c-rmhcode": zhCRmhcode, "c-rmhcoins": zhCRmhcoins, "c-rmhmusic": zhCRmhmusic, "c-rmhstudy": zhCRmhstudy, "c-rmhtech": zhCRmhtech, "c-rmhtube": zhCRmhtube, "c-rmhtype": zhCRmhtype, "c-rmhvibe": zhCRmhvibe, "c-roadmap": zhCRoadmap, "c-signal-forge": zhCSignalForge, "c-studio": zhCStudio, "c-synapse-storm": zhCSynapseStorm, "c-temple-of-joy": zhCTempleOfJoy, "c-ui": zhCUi, "c-user-builds": zhCUserBuilds, "c-vega": zhCVega, "c-velum2099": zhCVelum2099, "c-versecraft": zhCVersecraft, "c-void-breaker": zhCVoidBreaker, "pages": zhPages, "r-altair": zhRAltair, "r-discord": zhRDiscord, "r-forest-explorer": zhRForestExplorer, "r-kowloon-knockout": zhRKowloonKnockout, "r-rmhbox": zhRRmhbox, "r-rmhcode": zhRRmhcode, "r-secret": zhRSecret, "r-slice-it": zhRSliceIt, "r-strategies": zhRStrategies, "r-studio": zhRStudio },
+  ar: { "common": arCommon, "nav": arNav, "admin": arAdmin, "builds": arBuilds, "feed": arFeed, "groups": arGroups, "library": arLibrary, "rideshare": arRideshare, "shared": arShared, "site": arSite, "user-builds": arUserBuilds, "v": arV, "c-admin": arCAdmin, "c-altair": arCAltair, "c-blog": arCBlog, "c-builds": arCBuilds, "c-cursed-logic": arCCursedLogic, "c-daily-puzzles": arCDailyPuzzles, "c-doctrine": arCDoctrine, "c-dream-rift": arCDreamRift, "c-economy": arCEconomy, "c-forest-explorer": arCForestExplorer, "c-game": arCGame, "c-house-always-wins": arCHouseAlwaysWins, "c-kowloon-knockout": arCKowloonKnockout, "c-laundry-sort": arCLaundrySort, "c-library": arCLibrary, "c-lights-out": arCLightsOut, "c-lockdown": arCLockdown, "c-moderation": arCModeration, "c-neon-driftway": arCNeonDriftway, "c-news": arCNews, "c-rideshare": arCRideshare, "c-rmh-capital": arCRmhCapital, "c-rmh-pmc": arCRmhPmc, "c-rmhbox": arCRmhbox, "c-rmhcode": arCRmhcode, "c-rmhcoins": arCRmhcoins, "c-rmhmusic": arCRmhmusic, "c-rmhstudy": arCRmhstudy, "c-rmhtech": arCRmhtech, "c-rmhtube": arCRmhtube, "c-rmhtype": arCRmhtype, "c-rmhvibe": arCRmhvibe, "c-roadmap": arCRoadmap, "c-signal-forge": arCSignalForge, "c-studio": arCStudio, "c-synapse-storm": arCSynapseStorm, "c-temple-of-joy": arCTempleOfJoy, "c-ui": arCUi, "c-user-builds": arCUserBuilds, "c-vega": arCVega, "c-velum2099": arCVelum2099, "c-versecraft": arCVersecraft, "c-void-breaker": arCVoidBreaker, "pages": arPages, "r-altair": arRAltair, "r-discord": arRDiscord, "r-forest-explorer": arRForestExplorer, "r-kowloon-knockout": arRKowloonKnockout, "r-rmhbox": arRRmhbox, "r-rmhcode": arRRmhcode, "r-secret": arRSecret, "r-slice-it": arRSliceIt, "r-strategies": arRStrategies, "r-studio": arRStudio },
 } as const;

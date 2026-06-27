@@ -68,6 +68,11 @@ export const GhostTextArea = forwardRef<HTMLTextAreaElement, GhostTextAreaProps>
           {suggestion && <span className="text-site-text-dim">{suggestion}</span>}
         </div>
         <textarea
+          // We render our own inline ghost-text suggestion, so suppress the
+          // browser's native autocomplete/suggestion "select box" overlapping it.
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
           {...props}
           ref={setRefs}
           value={value}

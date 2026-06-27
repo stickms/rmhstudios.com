@@ -103,7 +103,6 @@ export function MessagesRightSidebar() {
         <div className="flex flex-wrap gap-x-2 gap-y-0.5">
           <Link to="/blog" className="hover:text-site-text transition-colors">{t("nav-blog", { defaultValue: "Blog" })}</Link>
           <Link to="/roadmap" className="hover:text-site-text transition-colors">{t("nav-roadmap", { defaultValue: "Roadmap" })}</Link>
-          <Link to="/research" className="hover:text-site-text transition-colors">{t("nav-research", { defaultValue: "Research" })}</Link>
         </div>
       </div>
     </div>

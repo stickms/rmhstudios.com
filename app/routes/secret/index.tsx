@@ -5,16 +5,12 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import {
-  Briefcase,
   BookOpen,
-  Cloud,
-  UtensilsCrossed,
   ArrowLeft,
   Swords,
   BrainCircuit,
   Zap,
   Newspaper,
-  FlaskConical,
   Map,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -41,15 +37,7 @@ const secretGames: SecretItem[] = [
 
 const secretPages: SecretItem[] = [
   { id: 'news', name: 'News', desc: 'Latest announcements & updates', icon: Newspaper, accent: '#3b82f6', href: '/news' },
-  { id: 'research', name: 'Research', desc: 'Peer-reviewed papers & studies', icon: FlaskConical, accent: '#8b5cf6', href: '/research' },
   { id: 'roadmap', name: 'Roadmap', desc: "What's next for RMH Studios", icon: Map, accent: '#10b981', href: '/roadmap' },
-];
-
-const secretApps: SecretItem[] = [
-  { id: 'jobs', name: 'RMH Jobs', desc: 'Job search platform (rejection guaranteed)', icon: Briefcase, accent: '#00ff88', href: '/secret/jobs' },
-  { id: 'notes', name: 'RMH Notes', desc: 'Cozy notes & reminders', icon: BookOpen, accent: '#C17F3A', href: '/secret/notes' },
-  { id: 'weather', name: 'RMH Weather', desc: 'Premium weather dashboard', icon: Cloud, accent: '#64748b', href: '/secret/weather' },
-  { id: 'eats', name: 'RMH Eats', desc: 'Food delivery simulator', icon: UtensilsCrossed, accent: '#ef4444', href: '/secret/eats' },
 ];
 
 function ItemCard({ item }: { item: SecretItem }) {
@@ -104,19 +92,10 @@ function SecretPage() {
           </div>
         </section>
 
-        <section className="mb-12">
+        <section>
           <h2 className="mb-4 text-lg font-semibold text-white/60">{t("section-pages", { defaultValue: "Pages" })}</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {secretPages.map((item) => (
-              <ItemCard key={item.id} item={item} />
-            ))}
-          </div>
-        </section>
-
-        <section>
-          <h2 className="mb-4 text-lg font-semibold text-white/60">{t("section-apps", { defaultValue: "Apps" })}</h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {secretApps.map((item) => (
               <ItemCard key={item.id} item={item} />
             ))}
           </div>
