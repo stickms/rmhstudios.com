@@ -1,0 +1,9 @@
+{
+  "title": "Indonesia: A Comprehensive History",
+  "footer": "Indonesia: A Comprehensive History",
+  "headerRight": "Indonesia — A Comprehensive History",
+  "cover": "00-cover.html",
+  "sections": [
+    { "id": "preface", "label": "Front Matter", "part": "Front Matter", "title": "Preface: How to Use This Book", "file": "00-preface.html" }
+  ]
+}
