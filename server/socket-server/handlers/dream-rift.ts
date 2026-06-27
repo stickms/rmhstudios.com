@@ -34,9 +34,9 @@ import type {
 
 // ─── Constants ──────────────────────────────────────────────────────
 
-const VALID_CHARS: readonly DrPlayerId[] = ['reika', 'mira', 'aoi', 'nyx'];
+const VALID_CHARS: readonly DrPlayerId[] = ['bllm', 'mls', 'qln', 'dyj', 'lmy'];
 const VALID_DIFFICULTIES: readonly DrDifficulty[] = ['easy', 'normal', 'hard', 'lunatic'];
-const DEFAULT_CHAR: DrPlayerId = 'reika';
+const DEFAULT_CHAR: DrPlayerId = 'bllm';
 const MAX_LOBBIES = 2000;
 const BROWSE_CAP = 30;
 const GC_INTERVAL_MS = 60_000;

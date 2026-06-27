@@ -7,7 +7,7 @@
  * any browser/canvas imports so it can be bundled into the Node server.
  */
 
-export type DrPlayerId = 'reika' | 'mira' | 'aoi' | 'nyx';
+export type DrPlayerId = 'bllm' | 'mls' | 'qln' | 'dyj' | 'lmy';
 export type DrDifficulty = 'easy' | 'normal' | 'hard' | 'lunatic';
 export type DrLobbyState = 'waiting' | 'playing';
 

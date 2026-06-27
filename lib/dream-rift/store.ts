@@ -12,6 +12,7 @@ import { create } from 'zustand';
 import type { Difficulty, PlayerId, Screen } from './types';
 import type { LobbySnapshot, PublicLobbyInfo } from './net/events';
 import { loadBindings, saveBindings, type Bindings } from './keybinds';
+import { PLAYER_IDS } from './render/sprites';
 
 export type ConnectionState = 'idle' | 'connecting' | 'connected' | 'error';
 export type GameMode = 'single' | 'multi';
@@ -21,6 +22,7 @@ export interface DialogueView {
     speakerName: string;
     speakerChar: PlayerId | null; // null → boss portrait
     bossThemeIndex: number;
+    bossSprite: string;
     text: string;
     index: number;
     total: number;
@@ -97,6 +99,9 @@ function loadBool(key: string, fallback: boolean): boolean {
     const v = localStorage.getItem(key);
     return v == null ? fallback : v === '1';
 }
+function validChar(raw: string | null): PlayerId {
+    return raw && (PLAYER_IDS as string[]).includes(raw) ? (raw as PlayerId) : 'bllm';
+}
 function savePref(key: string, v: number | boolean): void {
     if (typeof localStorage === 'undefined') return;
     localStorage.setItem(key, typeof v === 'boolean' ? (v ? '1' : '0') : String(v));
@@ -112,7 +117,7 @@ export const useDreamRift = create<DreamRiftState>((set) => ({
     errorMsg: null,
 
     difficulty: (typeof localStorage !== 'undefined' && (localStorage.getItem('dr.difficulty') as Difficulty)) || 'normal',
-    selectedChar: (typeof localStorage !== 'undefined' && (localStorage.getItem('dr.char') as PlayerId)) || 'reika',
+    selectedChar: validChar(typeof localStorage !== 'undefined' ? localStorage.getItem('dr.char') : null),
 
     dialogue: null,
     stageBanner: null,

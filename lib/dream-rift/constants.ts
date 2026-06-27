@@ -81,10 +81,11 @@ export interface CharStat {
 }
 
 export const CHAR_STATS: Record<PlayerId, CharStat> = {
-    reika: { speed: 4.2, focusSpeed: 1.8, hitboxR: 2.4, damageLow: 6, damageHigh: 13, shotCooldown: 6 },
-    mira: { speed: 4.0, focusSpeed: 1.6, hitboxR: 2.6, damageLow: 8, damageHigh: 20, shotCooldown: 7 },
-    aoi: { speed: 4.6, focusSpeed: 2.0, hitboxR: 2.8, damageLow: 5, damageHigh: 11, shotCooldown: 5 },
-    nyx: { speed: 4.3, focusSpeed: 1.9, hitboxR: 2.5, damageLow: 7, damageHigh: 15, shotCooldown: 6 },
+    bllm: { speed: 4.2, focusSpeed: 1.8, hitboxR: 2.4, damageLow: 6, damageHigh: 13, shotCooldown: 6 },
+    mls: { speed: 4.0, focusSpeed: 1.6, hitboxR: 2.6, damageLow: 8, damageHigh: 20, shotCooldown: 7 },
+    qln: { speed: 4.6, focusSpeed: 2.0, hitboxR: 2.8, damageLow: 5, damageHigh: 11, shotCooldown: 5 },
+    dyj: { speed: 4.3, focusSpeed: 1.9, hitboxR: 2.5, damageLow: 7, damageHigh: 15, shotCooldown: 6 },
+    lmy: { speed: 4.2, focusSpeed: 1.85, hitboxR: 2.5, damageLow: 6, damageHigh: 13, shotCooldown: 6 },
 };
 
 // ── Misc ──

@@ -19,6 +19,7 @@ import { Background } from './background';
 import { stageTheme, type StageTheme } from './palette';
 import { playerSprites, buildBoss, buildFairy, CHARACTERS, type BossSprite, type CharacterSprites, type FairyVariant } from './sprites';
 import type { Surface } from './surface';
+import type { BossSheetDef, LoadedSheet, LoadedSpriteAssets, SpriteSheetDef } from '../assets';
 
 const SS = 3;
 
@@ -63,6 +64,10 @@ export class Renderer {
     private flashColor = '#ffffff';
     /** When true, always draw a thin hitbox box on the local player (setting). */
     showHitboxAlways = false;
+    /** Optional external sprite sheets; when present they replace procedural art. */
+    private spriteAssets: LoadedSpriteAssets | null = null;
+    /** Sprite-sheet key for the boss currently on screen. */
+    private currentBossSheet: string | null = null;
 
     constructor(
         canvas: HTMLCanvasElement,
@@ -75,6 +80,29 @@ export class Renderer {
         this.bg = new Background(this.theme, PLAYFIELD_W, PLAYFIELD_H, stageIndex + 1);
         this.bossSprites = buildBoss(stageIndex);
         this.atlas.preload();
+    }
+
+    setSpriteAssets(a: LoadedSpriteAssets | null): void {
+        this.spriteAssets = a;
+    }
+
+    setBossSheet(key: string | null): void {
+        this.currentBossSheet = key;
+    }
+
+    /** Draw one frame from an external sheet, centred at (cx,cy), scaled to targetH. */
+    private drawSheet(sheet: LoadedSheet<SpriteSheetDef | BossSheetDef>, frameIdx: number, cx: number, cy: number, targetH: number): void {
+        const { image, def } = sheet;
+        const cols = Math.max(1, Math.floor(image.width / def.frameW));
+        const fx = (frameIdx % cols) * def.frameW;
+        const fy = Math.floor(frameIdx / cols) * def.frameH;
+        const scale = targetH / def.frameH;
+        const w = def.frameW * scale;
+        const h = def.frameH * scale;
+        const ctx = this.ctx;
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(image as CanvasImageSource, fx, fy, def.frameW, def.frameH, cx - w / 2, cy - h / 2, w, h);
+        ctx.imageSmoothingEnabled = true;
     }
 
     setStage(stageIndex: number, bossThemeIndex: number): void {
@@ -280,15 +308,22 @@ export class Renderer {
         const b = world.boss;
         if (!b || !b.active) return;
         const ctx = this.ctx;
-        ctx.imageSmoothingEnabled = false;
-        const frame = this.bossSprites.frames[Math.floor(this.time / 130) % this.bossSprites.frames.length];
-        const sc = 1.7;
+        const sheet = this.currentBossSheet ? this.spriteAssets?.bosses[this.currentBossSheet] : undefined;
         ctx.save();
         if (b.introFrames > 0) ctx.globalAlpha = Math.min(1, (180 - b.introFrames) / 60);
         if (b.hitFlash > 0) ctx.globalCompositeOperation = 'lighter';
-        ctx.drawImage(frame.canvas as CanvasImageSource, b.x - (this.bossSprites.nativeW * sc) / 2, b.y - (this.bossSprites.nativeH * sc) / 2, this.bossSprites.nativeW * sc, this.bossSprites.nativeH * sc);
+        if (sheet && sheet.def.frames.length) {
+            const idx = sheet.def.frames[Math.floor(this.time / 130) % sheet.def.frames.length];
+            // boss cells carry transparent padding, so scale generously
+            this.drawSheet(sheet, idx, b.x, b.y, 210);
+        } else {
+            ctx.imageSmoothingEnabled = false;
+            const frame = this.bossSprites.frames[Math.floor(this.time / 130) % this.bossSprites.frames.length];
+            const sc = 1.7;
+            ctx.drawImage(frame.canvas as CanvasImageSource, b.x - (this.bossSprites.nativeW * sc) / 2, b.y - (this.bossSprites.nativeH * sc) / 2, this.bossSprites.nativeW * sc, this.bossSprites.nativeH * sc);
+            ctx.imageSmoothingEnabled = true;
+        }
         ctx.restore();
-        ctx.imageSmoothingEnabled = true;
     }
 
     private drawPlayers(world: World, localSlot: number): void {
@@ -302,12 +337,7 @@ export class Renderer {
                 continue;
             }
             const blink = p.invuln > 0 && Math.floor(p.invuln / 4) % 2 === 0;
-            const sprites: CharacterSprites = playerSprites(p.charId);
-            let frameSet = sprites.idle;
-            if (p.moveDir < 0) frameSet = sprites.left;
-            else if (p.moveDir > 0) frameSet = sprites.right;
-            const fr = frameSet[Math.floor(p.animTime / 7) % frameSet.length];
-            const sc = 1.2;
+            const sheet = this.spriteAssets?.players[p.charId];
 
             // option orbs
             const tier = p.power >= 64 ? 2 : p.power >= 32 ? 1 : 0;
@@ -323,11 +353,23 @@ export class Renderer {
             }
 
             ctx.save();
-            ctx.imageSmoothingEnabled = false;
             ctx.globalAlpha = blink ? 0.4 : p.isLocal ? 1 : 0.92;
-            ctx.drawImage(fr.canvas as CanvasImageSource, x - (sprites.nativeW * sc) / 2, y - (sprites.nativeH * sc) / 2 + 2, sprites.nativeW * sc, sprites.nativeH * sc);
+            if (sheet) {
+                const frames = p.moveDir < 0 ? sheet.def.left : p.moveDir > 0 ? sheet.def.right : sheet.def.idle;
+                const idx = frames[Math.floor(p.animTime / 9) % frames.length];
+                this.drawSheet(sheet, idx, x, y - 2, 58);
+            } else {
+                const sprites: CharacterSprites = playerSprites(p.charId);
+                let frameSet = sprites.idle;
+                if (p.moveDir < 0) frameSet = sprites.left;
+                else if (p.moveDir > 0) frameSet = sprites.right;
+                const fr = frameSet[Math.floor(p.animTime / 7) % frameSet.length];
+                const sc = 1.2;
+                ctx.imageSmoothingEnabled = false;
+                ctx.drawImage(fr.canvas as CanvasImageSource, x - (sprites.nativeW * sc) / 2, y - (sprites.nativeH * sc) / 2 + 2, sprites.nativeW * sc, sprites.nativeH * sc);
+                ctx.imageSmoothingEnabled = true;
+            }
             ctx.restore();
-            ctx.imageSmoothingEnabled = true;
 
             // name tag for co-op peers
             if (!p.isLocal) {

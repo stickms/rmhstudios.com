@@ -17,7 +17,9 @@ import { CHARACTERS } from '../render/sprites';
 import { stageTheme } from '../render/palette';
 import { Renderer, type HudView } from '../render/renderer';
 import type { Music } from '../sound/music';
+import type { MusicLike } from '../sound/musicController';
 import type { Sfx } from '../sound/sfx';
+import type { LoadedSpriteAssets } from '../assets';
 import type { InputManager } from '../input';
 import { useDreamRift, type RunResult } from '../store';
 import type { Transport } from './transport';
@@ -41,17 +43,18 @@ export interface SessionOpts {
     seed: number;
     roster: RosterEntry[];
     canvas: HTMLCanvasElement;
-    music: Music;
+    music: MusicLike;
     sfx: Sfx;
     input: InputManager;
     hiScore: number;
+    spriteAssets?: LoadedSpriteAssets | null;
 }
 
 export class GameSession {
     private world: World;
     private renderer: Renderer;
     private transport: Transport;
-    private music: Music;
+    private music: MusicLike;
     private sfx: Sfx;
     private input: InputManager;
     private difficulty: Difficulty;
@@ -96,6 +99,7 @@ export class GameSession {
         this.world.players = opts.roster.map((r) => makePlayer(r, this.localSlot));
         this.renderer = new Renderer(opts.canvas, 0);
         this.renderer.showHitboxAlways = useDreamRift.getState().showHitbox;
+        this.renderer.setSpriteAssets(opts.spriteAssets ?? null);
         opts.input.setBindings(useDreamRift.getState().bindings);
 
         this.transport.start((msg) => this.onRelay(msg));
@@ -375,6 +379,7 @@ export class GameSession {
         this.world.spawnBoss(boss);
         this.world.themeColors = stageTheme(this.stageIndex).bulletColors as BulletColorName[];
         this.renderer.setStage(this.stageIndex, def.themeIndex);
+        this.renderer.setBossSheet(def.bossSprite);
         this.music.play((isMainBoss ? STAGES[this.stageIndex].music.boss : STAGES[this.stageIndex].music.boss) as Parameters<Music['play']>[0]);
         if (this.phaseFrame < 4) this.maybeComment('bossStart');
     }
@@ -460,7 +465,7 @@ export class GameSession {
             useDreamRift.getState().setDialogue(null);
             return;
         }
-        const leadChar = this.world.players[this.localSlot]?.charId ?? 'reika';
+        const leadChar = this.world.players[this.localSlot]?.charId ?? 'bllm';
         const story = STORY[this.stageIndex];
         const bossName = this.dialogueBeat === 'pre' ? story.pre.bossName : story.post.bossName;
         useDreamRift.getState().setDialogue({
@@ -468,6 +473,7 @@ export class GameSession {
             speakerName: line.speaker === 'player' ? CHARACTERS[leadChar].name : line.name ?? bossName,
             speakerChar: line.speaker === 'player' ? leadChar : null,
             bossThemeIndex: STAGES[this.stageIndex].boss.themeIndex,
+            bossSprite: STAGES[this.stageIndex].boss.bossSprite,
             text: line.text,
             index: this.dialogueIndex,
             total: this.dialogueLines.length,
@@ -539,7 +545,7 @@ export class GameSession {
             graze: lp?.graze ?? 0,
             spellsCaptured: lp?.spellsCaptured ?? 0,
             deaths: lp?.deaths ?? 0,
-            character: lp?.charId ?? 'reika',
+            character: lp?.charId ?? 'bllm',
             difficulty: this.difficulty,
             perPlayer: this.world.players.filter((p) => p.joined).map((p) => ({ name: p.name, score: Math.floor(p.score), charId: p.charId })),
         };

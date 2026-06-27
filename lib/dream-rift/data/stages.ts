@@ -38,6 +38,8 @@ export interface WaveDef {
 export interface BossDef {
     name: string;
     themeIndex: number;
+    /** Sprite-sheet key in the asset manifest (falls back to procedural art). */
+    bossSprite: string;
     /** Base HP per spell card is `cards[i].hp * baseHp`. */
     baseHp: number;
     cards: SpellCard[];
@@ -126,6 +128,7 @@ const STAGE_1: StageDef = {
     ],
     midboss: {
         name: 'Suzuran',
+        bossSprite: 'hml',
         themeIndex: 0,
         baseHp: 1400,
         cards: [card('Twilight Fan', 1.0, 26, 'nonspell-petals', false)],
@@ -138,6 +141,7 @@ const STAGE_1: StageDef = {
     bridgeDuration: 60 * 14,
     boss: {
         name: 'Reimei, the Dawnkeeper',
+        bossSprite: 'pql',
         themeIndex: 0,
         baseHp: 2200,
         cards: [
@@ -169,6 +173,7 @@ const STAGE_2: StageDef = {
     ],
     midboss: {
         name: 'Nagisa',
+        bossSprite: 'xem',
         themeIndex: 1,
         baseHp: 1700,
         cards: [card('Tideturn', 1.0, 28, 'nonspell-tide', false)],
@@ -181,6 +186,7 @@ const STAGE_2: StageDef = {
     bridgeDuration: 60 * 15,
     boss: {
         name: 'Mizuki of the Glasstide',
+        bossSprite: 'lmly',
         themeIndex: 1,
         baseHp: 2800,
         cards: [
@@ -212,6 +218,7 @@ const STAGE_3: StageDef = {
     ],
     midboss: {
         name: 'Yoi',
+        bossSprite: 'xy',
         themeIndex: 2,
         baseHp: 2000,
         cards: [card('Starfall', 1.0, 30, 'nonspell-starfall', false)],
@@ -224,6 +231,7 @@ const STAGE_3: StageDef = {
     bridgeDuration: 60 * 15,
     boss: {
         name: 'Yumesaki, the Rift Sovereign',
+        bossSprite: 'fldl',
         themeIndex: 2,
         baseHp: 3600,
         cards: [
