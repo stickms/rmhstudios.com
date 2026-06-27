@@ -195,6 +195,37 @@ export function TownScene() {
       <Wall pos={[-4, 2, -59]} size={[0.5, 4, 2]} />
       <Wall pos={[4, 2, -59]} size={[0.5, 4, 2]} />
 
+      {/* ── Corridor floor strips — fill the ~2-unit gap between district grounds ─
+          Each strip overlaps both adjacent district grounds by ~1 unit so there
+          is continuous floor under the player in every corridor.
+          Suburbs ground covers z[-20,20]; Downtown ground covers z[-58,-22];
+          Docks ground covers x[-58,-22]; Warehouse ground covers z[-94,-60].
+          ──────────────────────────────────────────────────────────────────────── */}
+
+      {/* Suburbs ↔ Downtown  — x∈[-4,4] z∈[-23,-19] (overlaps both grounds) */}
+      <RigidBody type="fixed" colliders="cuboid">
+        <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow position={[0, 0, -21]}>
+          <planeGeometry args={[8, 4]} />
+          <meshStandardMaterial {...matteMaterialProps(PALETTE.asphalt)} />
+        </mesh>
+      </RigidBody>
+
+      {/* Suburbs ↔ Docks  — z∈[-4,4] x∈[-23,-19] (overlaps both grounds) */}
+      <RigidBody type="fixed" colliders="cuboid">
+        <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow position={[-21, 0, 0]}>
+          <planeGeometry args={[4, 8]} />
+          <meshStandardMaterial {...matteMaterialProps(PALETTE.asphalt)} />
+        </mesh>
+      </RigidBody>
+
+      {/* Downtown ↔ Warehouse  — x∈[-4,4] z∈[-61,-57] (overlaps both grounds) */}
+      <RigidBody type="fixed" colliders="cuboid">
+        <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow position={[0, 0, -59]}>
+          <planeGeometry args={[8, 4]} />
+          <meshStandardMaterial {...matteMaterialProps(PALETTE.asphalt)} />
+        </mesh>
+      </RigidBody>
+
       {/* ── District gates — block corridors until rank/key condition met ────── */}
       {/* Suburbs ↔ Downtown  corridor gate (x∈[-4,4] z=-21) */}
       <Gate districtId="downtown"   position={[0,  2, -21]} size={[8, 4, 0.6]} />
