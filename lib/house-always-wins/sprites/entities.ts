@@ -315,6 +315,48 @@ export function drawDoor(
   }
 }
 
+export function drawPokerTable(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  t: number
+) {
+  // sits on the floor; (x,y) is top-left of a ~3w x 2h footprint
+  const w = TILE_SIZE * 3;
+  // legs
+  px(ctx, x + 4, y + 18, 3, 12, "#2a1c12");
+  px(ctx, x + w - 7, y + 18, 3, 12, "#2a1c12");
+  // felt top (oval)
+  ctx.fillStyle = "#0e2a1f";
+  ctx.beginPath();
+  ctx.ellipse(x + w / 2, y + 16, w / 2, 9, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = COLORS.felt;
+  ctx.beginPath();
+  ctx.ellipse(x + w / 2, y + 15, w / 2 - 2, 7, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // gold rim
+  ctx.strokeStyle = COLORS.gold;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.ellipse(x + w / 2, y + 15, w / 2 - 2, 7, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  // two cards fanned on the felt
+  px(ctx, x + w / 2 - 6, y + 12, 5, 7, "#e8e2d0");
+  px(ctx, x + w / 2 - 6, y + 12, 5, 1, "#fff");
+  px(ctx, x + w / 2 + 1, y + 12, 5, 7, "#e8e2d0");
+  px(ctx, x + w / 2 + 2, y + 14, 2, 2, COLORS.neonRed);
+  px(ctx, x + w / 2 - 5, y + 14, 2, 2, "#1a1a1a");
+  // a little chip stack glinting
+  const gl = (Math.sin(t * 3) + 1) / 2;
+  px(ctx, x + w - 12, y + 11, 4, 1, COLORS.neonRed);
+  px(ctx, x + w - 12, y + 12, 4, 1, COLORS.chip);
+  px(ctx, x + w - 12, y + 13, 4, 1, COLORS.neonCyan);
+  ctx.globalAlpha = 0.2 + gl * 0.2;
+  px(ctx, x + w - 13, y + 10, 6, 5, COLORS.gold);
+  ctx.globalAlpha = 1;
+}
+
 export function drawVaultCore(
   ctx: CanvasRenderingContext2D,
   x: number,

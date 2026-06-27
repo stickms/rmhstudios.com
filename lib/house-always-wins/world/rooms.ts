@@ -213,6 +213,8 @@ export const ROOMS: Record<RoomId, RoomData> = {
     npcs: [{ id: "janitor", col: 36, row: 18, facing: "left" }],
     entities: [
       { kind: "sign", id: "pokerSign", col: 33, row: 18, text: "pokerSign" },
+      // Heads-up five-card draw vs the house — gamble your tab down (or deeper).
+      { kind: "pokerTable", id: "pokerTable", col: 16, row: 19 },
       // The Lucky Coin — double jump, reachable with base jumps.
       { kind: "ability", id: "abDouble", ability: "doubleJump", col: 20, row: 8 },
       // Pressure-plate sequence puzzle (top) → opens key cage.

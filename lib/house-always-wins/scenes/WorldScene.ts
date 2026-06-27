@@ -38,6 +38,7 @@ import {
   drawSlotReel,
   drawDoor,
   drawVaultCore,
+  drawPokerTable,
   slotSymbolCount,
 } from "../sprites/entities";
 import { drawNpc } from "../sprites/npcs";
@@ -688,6 +689,12 @@ export class WorldScene implements Scene {
             acted = true;
             this.openSign(e.spec.text ?? "");
           }
+        } else if (e.spec.kind === "pokerTable" && rectIntersect(reach, this.padRect(e.rect, 14))) {
+          this.prompt = "Press E — sit down for five-card draw";
+          if (Input.interact() && !acted) {
+            acted = true;
+            this.engine.openPoker();
+          }
         }
       }
   }
@@ -956,6 +963,9 @@ export class WorldScene implements Scene {
           break;
         case "vaultCore":
           drawVaultCore(ctx, sx, sy, this.time, this.engine.store.getKeys(), 3, this.engine.store.getKeys() >= 3);
+          break;
+        case "pokerTable":
+          drawPokerTable(ctx, sx, sy, this.time);
           break;
       }
     }

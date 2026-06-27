@@ -13,6 +13,7 @@ import { DialogBox } from "./DialogBox";
 import { MenuOverlay } from "./MenuOverlay";
 import { Toasts, type ToastItem } from "./Toasts";
 import { EndingOverlay } from "./EndingOverlay";
+import { PokerGame } from "./PokerGame";
 
 export function HouseAlwaysWinsGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -23,6 +24,7 @@ export function HouseAlwaysWinsGame() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [ending, setEnding] = useState<string | null>(null);
+  const [pokerOpen, setPokerOpen] = useState(false);
   const toastId = useRef(0);
   const menuOpenRef = useRef(false);
 
@@ -34,21 +36,30 @@ export function HouseAlwaysWinsGame() {
 
   const handleAdvance = useCallback(() => {}, []);
 
-  // M toggles the pause menu (not while a dialogue or ending is up).
+  // M toggles the pause menu (not while a dialogue, poker hand or ending is up).
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.code === "KeyM" && !dialogue && !ending) {
+      if (e.code === "KeyM" && !dialogue && !ending && !pokerOpen) {
         e.preventDefault();
         setMenuOpen((p) => !p);
       }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [dialogue, ending]);
+  }, [dialogue, ending, pokerOpen]);
 
   useEffect(() => {
     menuOpenRef.current = menuOpen;
   }, [menuOpen]);
+
+  // Pause the platformer whenever a React overlay owns the screen.
+  useEffect(() => {
+    engineRef.current?.setPaused(menuOpen || pokerOpen || !!ending);
+  }, [menuOpen, pokerOpen, ending]);
+
+  const closePoker = useCallback(() => {
+    setPokerOpen(false);
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -81,6 +92,7 @@ export function HouseAlwaysWinsGame() {
     engine.onAreaLabelChange = setAreaLabel;
     engine.onMusicChange = (key) => MusicManager.play(key);
     engine.onEnding = (id) => setEnding(id);
+    engine.onOpenPoker = () => setPokerOpen(true);
     engine.onToast = ({ text, color }) => {
       const id = ++toastId.current;
       setToasts((prev) => [...prev.slice(-3), { id, text, color }]);
@@ -128,6 +140,8 @@ export function HouseAlwaysWinsGame() {
         )}
 
         <MenuOverlay open={menuOpen} onClose={() => setMenuOpen(false)} />
+
+        {pokerOpen && <PokerGame onClose={closePoker} />}
 
         {ending && <EndingOverlay endingId={ending} />}
       </div>

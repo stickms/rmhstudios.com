@@ -53,6 +53,9 @@ export class GameEngine {
   onToast: (t: Toast) => void = () => {};
   onHudChange: () => void = () => {};
   onEnding: (id: string) => void = () => {};
+  onOpenPoker: () => void = () => {};
+
+  private paused = false;
 
   constructor(canvas: HTMLCanvasElement, store: StoreAccess) {
     this.canvas = canvas;
@@ -77,6 +80,17 @@ export class GameEngine {
 
   toast(text: string, color?: string) {
     this.onToast({ text, color });
+  }
+
+  setPaused(v: boolean) {
+    this.paused = v;
+    if (v) Input.clearHeld();
+  }
+  isPaused() {
+    return this.paused;
+  }
+  openPoker() {
+    this.onOpenPoker();
   }
 
   private switchScene(name: string) {
@@ -124,6 +138,8 @@ export class GameEngine {
   };
 
   private update(dt: number) {
+    if (this.paused) return; // a React overlay (poker/menu) owns the screen
+
     if (this.fading) {
       this.fadeTimer += dt;
       const t = clamp(this.fadeTimer / this.fadeDuration, 0, 1);

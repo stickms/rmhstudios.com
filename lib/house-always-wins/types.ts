@@ -86,7 +86,8 @@ export type EntityKind =
   | "save"
   | "sign"
   | "slotReel"
-  | "vaultCore";
+  | "vaultCore"
+  | "pokerTable";
 
 export interface EntitySpec {
   kind: EntityKind;

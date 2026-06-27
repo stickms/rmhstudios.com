@@ -94,13 +94,14 @@ function janitor(s: QuestState): DialogueData {
           text: "Left first. Then far right. Then dead center. Step the plates in that order and the cage opens.",
           choices: [{ text: "Left, right, center. Got it.", action: "close" }],
         },
+        { speaker: "Marlow, the Janitor", text: "And if your tab's bleeding you — my table's still warm. Five-card draw. Sometimes the cards give back what the House took.", choices: [CLOSE] },
       ],
     };
   }
   return {
     id: "janitor_done",
     lines: [
-      { speaker: "Marlow, the Janitor", text: "You got it. Good. Now get out before this place keeps you like it kept me.", choices: [CLOSE] },
+      { speaker: "Marlow, the Janitor", text: "Still got my table going, you want to win your tab down. Cards don't care who's desperate.", choices: [CLOSE] },
     ],
   };
 }
