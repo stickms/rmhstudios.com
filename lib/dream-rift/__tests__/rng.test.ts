@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { Rng, mulberry32, hash2 } from '../rng';
 
 describe('Rng', () => {

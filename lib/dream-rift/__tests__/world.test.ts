@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { World } from '../sim/world';
 import { DIFFICULTY, CHAR_STATS, PLAYFIELD_W, PLAYFIELD_H } from '../constants';
 import type { BossState, PlayerShip, InputFrame } from '../types';

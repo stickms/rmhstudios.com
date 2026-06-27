@@ -183,6 +183,19 @@ export class GameSession {
         }
         if (this.world.players[this.localSlot]?.firing && this.world.frame % 6 === 0) this.sfx.play('shot');
 
+        // personal streak / milestone danmaku comments (local — each player sees their own)
+        const lp0 = this.world.players[this.localSlot];
+        if (lp0) {
+            if (lp0.graze >= this.nextGrazeMilestone) {
+                this.nextGrazeMilestone += 500;
+                this.localComment('grazeStreak');
+            }
+            if (lp0.score >= this.nextScoreMilestone) {
+                this.nextScoreMilestone = this.nextScoreMilestone < 1_000_000 ? 1_000_000 : this.nextScoreMilestone * 2;
+                this.localComment('milestone');
+            }
+        }
+
         // host accumulates boss damage; clients report theirs
         if (result.localBossDamage > 0) {
             if (this.isHost) this.pendingPeerDamage += result.localBossDamage;
@@ -642,6 +655,16 @@ export class GameSession {
     }
 
     // ── comments ──
+
+    private nextGrazeMilestone = 500;
+    private nextScoreMilestone = 1_000_000;
+
+    /** A comment only the local player sees (personal streaks/milestones). */
+    private localComment(event: CommentEvent): void {
+        this.commentSalt = (this.commentSalt * 1103515245 + 12345) & 0x7fffffff;
+        this.renderer.addComment(pickCommentBySalt(event, this.commentSalt), stageTheme(this.stageIndex).glow);
+        this.sfx.play('comment');
+    }
 
     private commentSalt = 1;
     private maybeComment(event: CommentEvent): void {

@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { runPattern, patternExists, type PatternCtx } from '../sim/patterns';
 import { DIFFICULTY } from '../constants';
 import { Rng } from '../rng';
