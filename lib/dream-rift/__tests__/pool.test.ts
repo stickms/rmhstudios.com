@@ -1,52 +1,80 @@
-// lib/dream-rift/__tests__/pool.test.ts
 import { describe, it, expect } from 'vitest';
-import { ObjectPool } from '../pool';
+import { Pool } from '../pool';
 
-interface TestObj { id: number; active: boolean; value: number; }
+interface Dummy {
+    active: boolean;
+    v: number;
+}
 
-describe('ObjectPool', () => {
-  it('creates a pool of the specified size', () => {
-    const pool = new ObjectPool<TestObj>(100, (i) => ({ id: i, active: false, value: 0 }));
-    expect(pool.capacity).toBe(100);
-    expect(pool.activeCount).toBe(0);
-  });
+function makePool(cap = 8) {
+    return new Pool<Dummy>(
+        cap,
+        () => ({ active: false, v: 0 }),
+        (o) => {
+            o.v = 0;
+        },
+    );
+}
 
-  it('acquires an inactive object and marks it active', () => {
-    const pool = new ObjectPool<TestObj>(10, (i) => ({ id: i, active: false, value: 0 }));
-    const obj = pool.acquire();
-    expect(obj).not.toBeNull();
-    expect(obj!.active).toBe(true);
-    expect(pool.activeCount).toBe(1);
-  });
+describe('Pool', () => {
+    it('acquires up to capacity then returns null', () => {
+        const p = makePool(3);
+        expect(p.acquire()).not.toBeNull();
+        expect(p.acquire()).not.toBeNull();
+        expect(p.acquire()).not.toBeNull();
+        expect(p.acquire()).toBeNull();
+        expect(p.activeCount).toBe(3);
+    });
 
-  it('returns null when pool is exhausted', () => {
-    const pool = new ObjectPool<TestObj>(2, (i) => ({ id: i, active: false, value: 0 }));
-    pool.acquire();
-    pool.acquire();
-    expect(pool.acquire()).toBeNull();
-  });
+    it('resets objects on acquire', () => {
+        const p = makePool(2);
+        const a = p.acquire()!;
+        a.v = 99;
+        p.release(a);
+        const b = p.acquire()!;
+        expect(b.v).toBe(0);
+    });
 
-  it('releases objects back to pool', () => {
-    const pool = new ObjectPool<TestObj>(2, (i) => ({ id: i, active: false, value: 0 }));
-    const obj = pool.acquire()!;
-    pool.release(obj);
-    expect(obj.active).toBe(false);
-    expect(pool.activeCount).toBe(0);
-  });
+    it('release frees a slot for reuse', () => {
+        const p = makePool(1);
+        const a = p.acquire()!;
+        expect(p.acquire()).toBeNull();
+        p.release(a);
+        expect(p.acquire()).not.toBeNull();
+        expect(p.activeCount).toBe(1);
+    });
 
-  it('iterates only over active objects', () => {
-    const pool = new ObjectPool<TestObj>(5, (i) => ({ id: i, active: false, value: 0 }));
-    pool.acquire()!.value = 10;
-    pool.acquire()!.value = 20;
-    const values: number[] = [];
-    pool.forEachActive((obj) => values.push(obj.value));
-    expect(values).toEqual([10, 20]);
-  });
+    it('forEach visits all active and tolerates release during iteration', () => {
+        const p = makePool(10);
+        for (let i = 0; i < 10; i++) p.acquire()!.v = i;
+        let count = 0;
+        p.forEach((o) => {
+            count++;
+            if (o.v % 2 === 0) p.release(o);
+        });
+        expect(count).toBe(10);
+        expect(p.activeCount).toBe(5); // odds remain
+    });
 
-  it('releaseAll deactivates everything', () => {
-    const pool = new ObjectPool<TestObj>(5, (i) => ({ id: i, active: false, value: 0 }));
-    pool.acquire(); pool.acquire(); pool.acquire();
-    pool.releaseAll();
-    expect(pool.activeCount).toBe(0);
-  });
+    it('clear releases everything', () => {
+        const p = makePool(5);
+        p.acquire();
+        p.acquire();
+        p.clear();
+        expect(p.activeCount).toBe(0);
+        // full capacity available again
+        for (let i = 0; i < 5; i++) expect(p.acquire()).not.toBeNull();
+    });
+
+    it('handles interleaved acquire/release without leaking slots', () => {
+        const p = makePool(4);
+        const a = p.acquire()!;
+        const b = p.acquire()!;
+        p.release(a);
+        const c = p.acquire()!;
+        p.release(b);
+        p.release(c);
+        expect(p.activeCount).toBe(0);
+        for (let i = 0; i < 4; i++) expect(p.acquire()).not.toBeNull();
+    });
 });

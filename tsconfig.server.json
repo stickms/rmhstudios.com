@@ -23,6 +23,7 @@
         "server/discord-bot/**/*.tsx",
         "lib/rmhbox/**/*.ts",
         "lib/blackjack/logic.ts",
-        "lib/lights-out/**/*.ts"
+        "lib/lights-out/**/*.ts",
+        "lib/dream-rift/net/**/*.ts"
     ]
 }

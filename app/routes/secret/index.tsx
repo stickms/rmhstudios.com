@@ -12,7 +12,6 @@ import {
   ArrowLeft,
   Swords,
   BrainCircuit,
-  Sparkles,
   Zap,
   Newspaper,
   FlaskConical,
@@ -38,7 +37,6 @@ const secretGames: SecretItem[] = [
   { id: 'vega', name: 'Project Vega', desc: 'Clinical horror tower defense', icon: BrainCircuit, accent: '#16a34a', href: '/secret/vega' },
   { id: 'cursed-logic', name: 'Cursed Logic', desc: 'Psychological duel vs. rogue AI', icon: Swords, accent: '#ca8a04', href: '/secret/cursed-logic' },
   { id: 'signal-forge', name: 'Signal Forge', desc: 'Rhythmic roguelike deckbuilder', icon: Zap, accent: '#06b6d4', href: '/secret/signal-forge' },
-  { id: 'dream-rift', name: 'Dream Rift', desc: 'Touhou-style bullet hell', icon: Sparkles, accent: '#8b5cf6', href: '/secret/dream-rift' },
 ];
 
 const secretPages: SecretItem[] = [
