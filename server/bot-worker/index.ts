@@ -157,6 +157,8 @@ const MAX_DM_OPENERS_PER_TICK = intEnv('BOT_MAX_DM_OPENERS_PER_TICK', 1);
 const DM_FOLLOWUP_SILENCE_MS = intEnv('BOT_DM_FOLLOWUP_SILENCE_MS', 3 * 24 * 60 * 60 * 1000);
 // Window defining "recently-active" candidate humans for openers (default 7 days).
 const DM_ACTIVE_HUMAN_LOOKBACK_MS = intEnv('BOT_DM_ACTIVE_HUMAN_LOOKBACK_MS', 7 * 24 * 60 * 60 * 1000);
+// Chance a bot DM (reply or opener) attaches a reaction GIF (0..1).
+const BOT_DM_GIF_PROBABILITY = probEnv('BOT_DM_GIF_PROBABILITY', 0.08);
 
 const TICKS_PER_DAY = (24 * 60 * 60 * 1000) / POST_TICK_MS;
 
@@ -682,9 +684,12 @@ async function sendBotDm(
   botId: string,
   humanId: string,
   content: string,
+  gifUrl?: string | null,
 ): Promise<void> {
   const [message] = await prisma.$transaction([
-    prisma.directMessage.create({ data: { conversationId, senderId: botId, content } }),
+    prisma.directMessage.create({
+      data: { conversationId, senderId: botId, content, ...(gifUrl ? { gifUrl } : {}) },
+    }),
     prisma.conversation.update({ where: { id: conversationId }, data: { lastMessageAt: new Date() } }),
   ]);
   const payload: MessagePayload = {
@@ -694,8 +699,21 @@ async function sendBotDm(
     senderId: message.senderId,
     read: message.read,
     createdAt: message.createdAt.toISOString(),
+    gifUrl: message.gifUrl,
+    imageUrls: message.imageUrls,
   };
   await notifyMessageDelivered(humanId, payload);
+}
+
+/** Occasionally pick a reaction GIF for a bot DM (null when off / no match). */
+async function maybeBotDmGif(text: string): Promise<string | null> {
+  if (!isBotGifConfigured() || Math.random() >= BOT_DM_GIF_PROBABILITY) return null;
+  try {
+    const query = await generateGifQuery({ text });
+    return await pickBotGif({ query });
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -766,9 +784,10 @@ async function answerDirectMessages(): Promise<number> {
       }
       if (!content.trim()) continue;
 
-      await sendBotDm(cand.conversationId, cand.botId, cand.humanId, content);
+      const gif = await maybeBotDmGif(content);
+      await sendBotDm(cand.conversationId, cand.botId, cand.humanId, content, gif);
       made++;
-      log(`bot ${cand.botId} answered DM from ${cand.humanId}`);
+      log(`bot ${cand.botId} answered DM from ${cand.humanId}${gif ? ' [gif]' : ''}`);
     } catch (e) {
       errlog('reactive DM failed:', e);
     }
@@ -862,9 +881,10 @@ async function initiateDirectMessages(): Promise<void> {
         select: { id: true },
       });
 
-      await sendBotDm(conversation.id, bot.id, humanId, content);
+      const gif = await maybeBotDmGif(content);
+      await sendBotDm(conversation.id, bot.id, humanId, content, gif);
       opened++;
-      log(`bot ${bot.id} ${decision === 'followup' ? 'followed up with' : 'opened DM to'} ${humanId}`);
+      log(`bot ${bot.id} ${decision === 'followup' ? 'followed up with' : 'opened DM to'} ${humanId}${gif ? ' [gif]' : ''}`);
     } catch (e) {
       errlog('DM initiation failed:', e);
     }
