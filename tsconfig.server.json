@@ -24,6 +24,6 @@
         "lib/rmhbox/**/*.ts",
         "lib/blackjack/logic.ts",
         "lib/lights-out/**/*.ts",
-        "lib/dream-rift/net/**/*.ts"
+        "lib/dream-rift/net/events.ts"
     ]
 }
