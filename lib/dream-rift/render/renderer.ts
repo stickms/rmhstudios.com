@@ -231,32 +231,18 @@ export class Renderer {
 
     private drawShots(world: World): void {
         const ctx = this.ctx;
+        // Player shots read as slim, slightly translucent arrows facing travel.
         world.shots.forEach((s: Shot) => {
-            ctx.save();
-            ctx.globalAlpha = 0.92;
-            ctx.translate(s.x, s.y);
             const col = colorHex(s.color);
-            if (s.kind === 'star') {
-                ctx.fillStyle = col;
-                star(ctx, 0, 0, 7, 3, 5);
-                ctx.fill();
-            } else if (s.kind === 'lance') {
-                ctx.fillStyle = col;
-                ctx.fillRect(-2, -8, 4, 16);
-                ctx.fillStyle = '#fff';
-                ctx.fillRect(-1, -8, 2, 6);
-            } else if (s.kind === 'wave') {
-                ctx.fillStyle = col;
-                ctx.beginPath();
-                ctx.ellipse(0, 0, 3, 6, Math.atan2(s.vy, s.vx) + Math.PI / 2, 0, Math.PI * 2);
-                ctx.fill();
-            } else {
-                // amulet / spark
-                ctx.fillStyle = hexA(col, 0.85);
-                ctx.fillRect(-3, -6, 6, 12);
-                ctx.fillStyle = '#fff';
-                ctx.fillRect(-1, -6, 2, 12);
-            }
+            const angle = Math.atan2(s.vy, s.vx);
+            ctx.save();
+            ctx.globalAlpha = 0.8;
+            ctx.translate(s.x, s.y);
+            ctx.rotate(angle);
+            // long thin piercing arrow vs. shorter dart
+            const len = s.kind === 'lance' ? 16 : s.kind === 'star' ? 11 : 12;
+            const w = s.kind === 'wave' ? 2.4 : 3;
+            arrow(ctx, len, w, col);
             ctx.restore();
         });
         ctx.globalAlpha = 1;
@@ -614,6 +600,39 @@ function drawIcons(ctx: CanvasRenderingContext2D, x: number, y: number, n: numbe
         star(ctx, x + i * 16 + 6, y + 6, 5, 2.2, 5);
         ctx.fill();
     }
+}
+
+/** Slim arrow/dart pointing +X, centred at the origin, with a bright tip. */
+function arrow(ctx: CanvasRenderingContext2D, len: number, w: number, col: string): void {
+    const tip = len / 2;
+    const tail = -len / 2;
+    const headBack = tip - len * 0.42;
+    // soft glow
+    ctx.strokeStyle = hexA(col, 0.35);
+    ctx.lineWidth = w * 2.1;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(tail, 0);
+    ctx.lineTo(headBack, 0);
+    ctx.stroke();
+    // body
+    ctx.beginPath();
+    ctx.moveTo(tip, 0);
+    ctx.lineTo(headBack, -w);
+    ctx.lineTo(tail, -w * 0.5);
+    ctx.lineTo(tail - 1.5, 0);
+    ctx.lineTo(tail, w * 0.5);
+    ctx.lineTo(headBack, w);
+    ctx.closePath();
+    const g = ctx.createLinearGradient(tail, 0, tip, 0);
+    g.addColorStop(0, hexA(col, 0.85));
+    g.addColorStop(0.7, col);
+    g.addColorStop(1, '#ffffff');
+    ctx.fillStyle = g;
+    ctx.fill();
+    // bright core
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.fillRect(headBack - 1, -0.7, len * 0.3, 1.4);
 }
 
 function star(ctx: CanvasRenderingContext2D, cx: number, cy: number, outer: number, inner: number, spikes: number): void {
