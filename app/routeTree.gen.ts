@@ -441,6 +441,7 @@ import { Route as ApiAdminLibraryStorageHealthRouteImport } from './routes/api/a
 import { Route as ApiAdminLibraryReorderRouteImport } from './routes/api/admin/library/reorder'
 import { Route as ApiAdminLibraryQuotaRequestsRouteImport } from './routes/api/admin/library/quota-requests'
 import { Route as ApiAdminLibraryMigrateRouteImport } from './routes/api/admin/library/migrate'
+import { Route as ApiAdminVibeBackfillThumbsRouteImport } from './routes/api/admin/vibe/backfill-thumbs'
 import { Route as ApiAdminLibraryIdRouteImport } from './routes/api/admin/library/$id'
 import { Route as ApiAdminCuratedBuildsImageRouteImport } from './routes/api/admin/curated-builds/image'
 import { Route as ApiAdminAnnouncementsIdRouteImport } from './routes/api/admin/announcements/$id'
@@ -2684,6 +2685,12 @@ const ApiAdminLibraryMigrateRoute = ApiAdminLibraryMigrateRouteImport.update({
   path: '/api/admin/library/migrate',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminVibeBackfillThumbsRoute =
+  ApiAdminVibeBackfillThumbsRouteImport.update({
+    id: '/api/admin/vibe/backfill-thumbs',
+    path: '/api/admin/vibe/backfill-thumbs',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminLibraryIdRoute = ApiAdminLibraryIdRouteImport.update({
   id: '/api/admin/library/$id',
   path: '/api/admin/library/$id',
@@ -3223,6 +3230,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
   '/api/admin/library/$id': typeof ApiAdminLibraryIdRoute
   '/api/admin/library/migrate': typeof ApiAdminLibraryMigrateRoute
+  '/api/admin/vibe/backfill-thumbs': typeof ApiAdminVibeBackfillThumbsRoute
   '/api/admin/library/quota-requests': typeof ApiAdminLibraryQuotaRequestsRoute
   '/api/admin/library/reorder': typeof ApiAdminLibraryReorderRoute
   '/api/admin/library/storage-health': typeof ApiAdminLibraryStorageHealthRoute
@@ -3668,6 +3676,7 @@ export interface FileRoutesByTo {
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
   '/api/admin/library/$id': typeof ApiAdminLibraryIdRoute
   '/api/admin/library/migrate': typeof ApiAdminLibraryMigrateRoute
+  '/api/admin/vibe/backfill-thumbs': typeof ApiAdminVibeBackfillThumbsRoute
   '/api/admin/library/quota-requests': typeof ApiAdminLibraryQuotaRequestsRoute
   '/api/admin/library/reorder': typeof ApiAdminLibraryReorderRoute
   '/api/admin/library/storage-health': typeof ApiAdminLibraryStorageHealthRoute
@@ -4139,6 +4148,7 @@ export interface FileRoutesById {
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
   '/api/admin/library/$id': typeof ApiAdminLibraryIdRoute
   '/api/admin/library/migrate': typeof ApiAdminLibraryMigrateRoute
+  '/api/admin/vibe/backfill-thumbs': typeof ApiAdminVibeBackfillThumbsRoute
   '/api/admin/library/quota-requests': typeof ApiAdminLibraryQuotaRequestsRoute
   '/api/admin/library/reorder': typeof ApiAdminLibraryReorderRoute
   '/api/admin/library/storage-health': typeof ApiAdminLibraryStorageHealthRoute
@@ -4610,6 +4620,7 @@ export interface FileRouteTypes {
     | '/api/admin/curated-builds/image'
     | '/api/admin/library/$id'
     | '/api/admin/library/migrate'
+    | '/api/admin/vibe/backfill-thumbs'
     | '/api/admin/library/quota-requests'
     | '/api/admin/library/reorder'
     | '/api/admin/library/storage-health'
@@ -5055,6 +5066,7 @@ export interface FileRouteTypes {
     | '/api/admin/curated-builds/image'
     | '/api/admin/library/$id'
     | '/api/admin/library/migrate'
+    | '/api/admin/vibe/backfill-thumbs'
     | '/api/admin/library/quota-requests'
     | '/api/admin/library/reorder'
     | '/api/admin/library/storage-health'
@@ -5525,6 +5537,7 @@ export interface FileRouteTypes {
     | '/api/admin/curated-builds/image'
     | '/api/admin/library/$id'
     | '/api/admin/library/migrate'
+    | '/api/admin/vibe/backfill-thumbs'
     | '/api/admin/library/quota-requests'
     | '/api/admin/library/reorder'
     | '/api/admin/library/storage-health'
@@ -5843,6 +5856,7 @@ export interface RootRouteChildren {
   ApiAdminCuratedBuildsImageRoute: typeof ApiAdminCuratedBuildsImageRouteWithChildren
   ApiAdminLibraryIdRoute: typeof ApiAdminLibraryIdRoute
   ApiAdminLibraryMigrateRoute: typeof ApiAdminLibraryMigrateRoute
+  ApiAdminVibeBackfillThumbsRoute: typeof ApiAdminVibeBackfillThumbsRoute
   ApiAdminLibraryQuotaRequestsRoute: typeof ApiAdminLibraryQuotaRequestsRoute
   ApiAdminLibraryReorderRoute: typeof ApiAdminLibraryReorderRoute
   ApiAdminLibraryStorageHealthRoute: typeof ApiAdminLibraryStorageHealthRoute
@@ -8941,6 +8955,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminLibraryMigrateRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/vibe/backfill-thumbs': {
+      id: '/api/admin/vibe/backfill-thumbs'
+      path: '/api/admin/vibe/backfill-thumbs'
+      fullPath: '/api/admin/vibe/backfill-thumbs'
+      preLoaderRoute: typeof ApiAdminVibeBackfillThumbsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/library/$id': {
       id: '/api/admin/library/$id'
       path: '/api/admin/library/$id'
@@ -10298,6 +10319,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminCuratedBuildsImageRoute: ApiAdminCuratedBuildsImageRouteWithChildren,
   ApiAdminLibraryIdRoute: ApiAdminLibraryIdRoute,
   ApiAdminLibraryMigrateRoute: ApiAdminLibraryMigrateRoute,
+  ApiAdminVibeBackfillThumbsRoute: ApiAdminVibeBackfillThumbsRoute,
   ApiAdminLibraryQuotaRequestsRoute: ApiAdminLibraryQuotaRequestsRoute,
   ApiAdminLibraryReorderRoute: ApiAdminLibraryReorderRoute,
   ApiAdminLibraryStorageHealthRoute: ApiAdminLibraryStorageHealthRoute,
