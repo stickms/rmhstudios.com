@@ -12,6 +12,8 @@ const bodySchema = z.object({
     senderId: z.string(),
     read: z.boolean(),
     createdAt: z.string(),
+    gifUrl: z.string().nullish(),
+    imageUrls: z.array(z.string()).optional(),
   }),
 });
 

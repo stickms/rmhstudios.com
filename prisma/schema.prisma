@@ -1700,6 +1700,11 @@ model DirectMessage {
   conversationId String
   senderId       String
   content        String   @db.VarChar(2000)
+  // Optional rich media — mirrors RMHark posts. A message can be text, media,
+  // or both. gifUrl is a single GIF (KLIPY/Tenor/Giphy/direct); imageUrls are
+  // up to 4 feed-image URLs owned by the sender.
+  gifUrl         String?  @db.Text
+  imageUrls      String[] @default([])
   read           Boolean  @default(false)
   createdAt      DateTime @default(now())
 

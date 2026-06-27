@@ -4,7 +4,7 @@ import { isFeedImageUrl } from "@/lib/storage/keys";
 export const MAX_RMHARK_LENGTH = 280;
 export const MAX_RMHARK_IMAGES = 4;
 // Accepts the local proxy path or the public CDN URL (see isFeedImageUrl).
-const feedImageUrlSchema = z
+export const feedImageUrlSchema = z
   .string()
   .refine(isFeedImageUrl, "Invalid image reference");
 export const MAX_COMMENT_LENGTH = 500;
@@ -15,7 +15,7 @@ export const MAX_POLL_OPTIONS = 4;
 
 const IMAGE_EXT_REGEX = /\.(gif|png|jpe?g|webp|avif)(\?[^\s]*)?$/i;
 
-const gifUrlSchema = z
+export const gifUrlSchema = z
   .string()
   .url("Must be a valid URL")
   .refine(

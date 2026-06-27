@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { Loader2, ArrowLeft, Send, Image as ImageIcon } from 'lucide-react';
+import { Loader2, ArrowLeft, Send, Image as ImageIcon, ImagePlus, X } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { GhostTextArea } from './GhostTextArea';
+import { PostImageGrid } from './PostImageGrid';
 import { useMessageSuggestion } from '@/lib/useMessageSuggestion';
 import { useTranslation } from "react-i18next";
 import ChatMediaEmbed, { stripEmbedUrls, extractMediaEmbeds } from '@/components/shared/ChatMediaEmbed';
@@ -18,7 +19,11 @@ interface Message {
   senderId: string;
   read: boolean;
   createdAt: string;
+  gifUrl?: string | null;
+  imageUrls?: string[];
 }
+
+const MAX_DM_IMAGES = 4;
 
 interface OtherUser {
   id: string;
@@ -40,10 +45,15 @@ export function ConversationView({ conversationId }: { conversationId: string })
   const [notFound, setNotFound] = useState(false);
   const [otherTyping, setOtherTyping] = useState(false);
   const [showGifPicker, setShowGifPicker] = useState(false);
+  // Pending rich media to attach to the next message.
+  const [gifUrl, setGifUrl] = useState<string | null>(null);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const initialFetched = useRef(false);
   // Typing-indicator bookkeeping
   const typingActiveRef = useRef(false);
@@ -229,6 +239,8 @@ export function ConversationView({ conversationId }: { conversationId: string })
               senderId: msg.senderId,
               read: msg.read,
               createdAt: msg.createdAt,
+              gifUrl: msg.gifUrl,
+              imageUrls: msg.imageUrls,
             });
           }
           retryCount = 0;
@@ -290,9 +302,38 @@ export function ConversationView({ conversationId }: { conversationId: string })
     fetchMessages(false);
   };
 
+  const handleImageFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const remaining = MAX_DM_IMAGES - imageUrls.length;
+    if (remaining <= 0) return;
+    setUploading(true);
+    setError(null);
+    try {
+      const form = new FormData();
+      Array.from(files).slice(0, remaining).forEach((f) => form.append('images', f));
+      const res = await fetch('/api/rmharks/image', { method: 'POST', body: form });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || t('failed-to-upload-image', { defaultValue: 'Failed to upload image' }));
+        return;
+      }
+      const data = await res.json();
+      if (Array.isArray(data.urls)) {
+        setImageUrls((prev) => [...prev, ...data.urls].slice(0, MAX_DM_IMAGES));
+      }
+    } catch {
+      setError(t('failed-to-upload-image', { defaultValue: 'Failed to upload image' }));
+    } finally {
+      setUploading(false);
+      if (imageInputRef.current) imageInputRef.current.value = '';
+    }
+  };
+
   const handleSend = async () => {
     const content = input.trim();
-    if (!content || sending) return;
+    const pendingGif = gifUrl;
+    const pendingImages = imageUrls;
+    if ((!content && !pendingGif && pendingImages.length === 0) || sending) return;
 
     setSending(true);
     setError(null);
@@ -305,9 +346,13 @@ export function ConversationView({ conversationId }: { conversationId: string })
       senderId: session!.user.id,
       read: false,
       createdAt: new Date().toISOString(),
+      gifUrl: pendingGif,
+      imageUrls: pendingImages,
     };
     setMessages((prev) => [...prev, optimisticMsg]);
     setInput('');
+    setGifUrl(null);
+    setImageUrls([]);
     clearSuggestion();
     stopTyping();
     setTimeout(scrollToBottom, 50);
@@ -316,15 +361,21 @@ export function ConversationView({ conversationId }: { conversationId: string })
       const res = await fetch(`/api/messages/${encodeURIComponent(conversationId)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({
+          content,
+          ...(pendingGif ? { gifUrl: pendingGif } : {}),
+          ...(pendingImages.length ? { imageUrls: pendingImages } : {}),
+        }),
       });
 
       if (!res.ok) {
         const data = await res.json();
         setError(data.error || t("failed-to-send-message", { defaultValue: "Failed to send message" }));
-        // Remove optimistic message
+        // Remove optimistic message and restore the draft + media.
         setMessages((prev) => prev.filter((m) => m.id !== tempId));
         setInput(content);
+        setGifUrl(pendingGif);
+        setImageUrls(pendingImages);
         return;
       }
 
@@ -337,6 +388,8 @@ export function ConversationView({ conversationId }: { conversationId: string })
       setError(t("failed-to-send-message", { defaultValue: "Failed to send message" }));
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
       setInput(content);
+      setGifUrl(pendingGif);
+      setImageUrls(pendingImages);
     } finally {
       setSending(false);
       inputRef.current?.focus();
@@ -506,9 +559,24 @@ export function ConversationView({ conversationId }: { conversationId: string })
                           : 'bg-site-surface text-site-text'
                       }`}
                     >
-                      <p className="whitespace-pre-wrap">{stripEmbedUrls(msg.content)}</p>
+                      {stripEmbedUrls(msg.content).trim() && (
+                        <p className="whitespace-pre-wrap">{stripEmbedUrls(msg.content)}</p>
+                      )}
+                      {/* Legacy: media embedded as URLs inside the text. */}
                       {extractMediaEmbeds(msg.content).length > 0 && (
                         <ChatMediaEmbed content={msg.content} themePrefix="site" />
+                      )}
+                      {/* Structured rich media. */}
+                      {msg.imageUrls && msg.imageUrls.length > 0 && (
+                        <PostImageGrid urls={msg.imageUrls} className="mt-1.5 rounded-lg overflow-hidden" />
+                      )}
+                      {msg.gifUrl && (
+                        <img
+                          src={msg.gifUrl}
+                          alt=""
+                          className="mt-1.5 max-h-60 w-auto rounded-lg"
+                          loading="lazy"
+                        />
                       )}
                       <p className={`text-[10px] mt-1 ${isSelf ? 'text-site-bg/60' : 'text-site-text-dim'}`}>
                         {formatTime(msg.createdAt)}
@@ -556,12 +624,53 @@ export function ConversationView({ conversationId }: { conversationId: string })
             className="mx-2 mb-2"
             onClose={() => setShowGifPicker(false)}
             onSelect={(u) => {
-              setInput((m) => (m ? `${m} ${u}` : u));
+              setGifUrl(u);
               setShowGifPicker(false);
               setTimeout(() => inputRef.current?.focus(), 0);
             }}
           />
         )}
+
+        {/* Pending media preview */}
+        {(imageUrls.length > 0 || gifUrl) && (
+          <div className="mb-2 flex flex-wrap gap-2">
+            {imageUrls.map((url) => (
+              <div key={url} className="relative">
+                <img src={url} alt="" className="h-20 w-20 rounded-lg object-cover" />
+                <button
+                  type="button"
+                  aria-label={t('remove-image', { defaultValue: 'Remove image' })}
+                  onClick={() => setImageUrls((prev) => prev.filter((u) => u !== url))}
+                  className="absolute -right-1.5 -top-1.5 rounded-full bg-black/70 p-0.5 text-white hover:bg-black"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+            {gifUrl && (
+              <div className="relative">
+                <img src={gifUrl} alt="" className="h-20 w-auto rounded-lg" />
+                <button
+                  type="button"
+                  aria-label={t('remove-gif', { defaultValue: 'Remove GIF' })}
+                  onClick={() => setGifUrl(null)}
+                  className="absolute -right-1.5 -top-1.5 rounded-full bg-black/70 p-0.5 text-white hover:bg-black"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        <input
+          ref={imageInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={(e) => handleImageFiles(e.currentTarget.files)}
+        />
         <div className="flex items-end gap-2">
           <GhostTextArea
             ref={inputRef}
@@ -586,6 +695,15 @@ export function ConversationView({ conversationId }: { conversationId: string })
           />
           <button
             type="button"
+            aria-label={t("attach-image", { defaultValue: "Attach image" })}
+            onClick={() => imageInputRef.current?.click()}
+            disabled={uploading || imageUrls.length >= MAX_DM_IMAGES}
+            className="shrink-0 rounded-xl h-[42px] px-3 text-site-text-dim hover:text-site-accent hover:bg-site-surface transition-colors disabled:opacity-50"
+          >
+            {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImagePlus className="w-4 h-4" />}
+          </button>
+          <button
+            type="button"
             aria-label={t("insert-gif", { defaultValue: "Insert GIF" })}
             onClick={() => setShowGifPicker((v) => !v)}
             className="shrink-0 rounded-xl h-[42px] px-3 text-site-text-dim hover:text-site-accent hover:bg-site-surface transition-colors"
@@ -595,7 +713,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
           <Button
             variant="accent"
             size="sm"
-            disabled={!input.trim() || sending}
+            disabled={(!input.trim() && !gifUrl && imageUrls.length === 0) || sending}
             onClick={handleSend}
             className="rounded-xl h-[42px] px-3"
           >

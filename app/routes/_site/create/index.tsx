@@ -38,29 +38,6 @@ const fetchGallery = createServerFn({ method: 'GET' })
   .validator((data: { q?: string; cursor?: string }) => data)
   .handler(({ data }): Promise<VibeGallery> => Promise.resolve(listVibePages(data)));
 
-// Resolve wide game/app covers on demand: returns the URLs of covers that
-// already exist and lazily generates any missing ones in the background
-// (idempotent — each build is generated at most once; a no-op without an xAI
-// key). Dynamically imported so sharp/S3 never reach the client bundle.
-const fetchCovers = createServerFn({ method: 'GET' }).handler(async (): Promise<Record<string, string>> => {
-  const { resolveBuildCovers } = await import('@/lib/builds/cover.server');
-  const builds = listCuratedBuilds().map((b) => ({
-    id: b.id,
-    title: b.title,
-    description: b.longDescription || b.description,
-    tags: b.tags,
-  }));
-  return resolveBuildCovers(builds);
-});
-
-// Curated builds enriched with a wide cover: a committed manifest entry wins,
-// otherwise an on-demand-resolved cover (generated lazily when missing).
-async function attachCovers() {
-  const curated = listCuratedBuilds();
-  const covers = await fetchCovers();
-  return curated.map((b) => ({ ...b, wideCoverUrl: b.wideCoverUrl ?? covers[b.id] ?? null }));
-}
-
 export const Route = createFileRoute('/_site/create/')({
   head: () => ({
     meta: [
@@ -77,7 +54,7 @@ export const Route = createFileRoute('/_site/create/')({
   },
   loader: async () => ({
     gallery: await fetchGallery({ data: {} }),
-    curated: await attachCovers(),
+    curated: listCuratedBuilds(),
     // Fresh per load → each refresh re-advertises a different featured mix while
     // staying deterministic between server render and client hydration.
     seed: Math.floor(Math.random() * 1_000_000) + 1,
@@ -137,10 +114,6 @@ function CreatorStudio() {
         <MobileTopBar title={t('creator-studio', { defaultValue: 'Creator Studio' })} />
 
         <header className="cstudio-head">
-          <span className="cstudio-eyebrow">
-            <span className="cstudio-eyebrow__dot" aria-hidden="true" />
-            {t('creator-studio', { defaultValue: 'Creator Studio' })}
-          </span>
           <h1 className="cstudio-title">
             {t('studio-headline', { defaultValue: 'Make anything.' })}
           </h1>

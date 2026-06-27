@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { Hash, Loader2, TrendingUp, Users } from 'lucide-react';
+import { Hash, Loader2, TrendingUp, Users, Package, BookOpen } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { RMHarkCard } from './RMHarkCard';
 import { UserAvatar } from '@/components/ui/UserAvatar';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import type { FeedItem } from '@/lib/feed-types';
 
 interface Community {
@@ -25,14 +26,58 @@ interface ExploreData {
   communities: Community[];
 }
 
+export interface DiscoveryOfficialBuild {
+  id: string;
+  title: string;
+  thumbnailUrl: string | null;
+  href: string;
+  status?: string;
+}
+
+export interface DiscoveryUserBuild {
+  id: string;
+  slug: string;
+  title: string;
+  thumbnailUrl: string | null;
+}
+
+export interface DiscoveryBlogPost {
+  slug: string;
+  title: string;
+  date: string;
+}
+
+export type ExploreTab = 'top' | 'people' | 'posts' | 'builds' | 'blog';
+
+interface ExploreRecommendationsProps {
+  /** Active search tab — discovery content is filtered to match it. */
+  tab?: ExploreTab;
+  officialBuilds?: DiscoveryOfficialBuild[];
+  userBuilds?: DiscoveryUserBuild[];
+  blogPosts?: DiscoveryBlogPost[];
+}
+
 /**
- * Discovery content shown on the Explore/Search page when no query is active:
- * trending tags, people and communities to discover, and hot posts.
+ * Discovery content shown on the Explore/Search page when no query is active.
+ * The active tab filters which sections appear, so the tab bar stays functional
+ * even before the user types: People → who to follow + communities, Posts →
+ * trending tags + hot posts, Builds → builds to try, Blog → recent writing, and
+ * Top shows the social discovery mix.
  */
-export function ExploreRecommendations() {
+export function ExploreRecommendations({
+  tab = 'top',
+  officialBuilds = [],
+  userBuilds = [],
+  blogPosts = [],
+}: ExploreRecommendationsProps) {
   const { t } = useTranslation('feed');
   const [data, setData] = useState<ExploreData | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // The social discovery sections (trending/people/communities/hot) come from
+  // /api/explore; the Builds and Blog tabs render from props, so they don't need
+  // to wait on that request.
+  const needsExploreData = tab === 'top' || tab === 'people' || tab === 'posts';
 
   useEffect(() => {
     let active = true;
@@ -45,7 +90,14 @@ export function ExploreRecommendations() {
     };
   }, []);
 
-  if (loading) {
+  const showTrending = tab === 'top' || tab === 'posts';
+  const showPeople = tab === 'top' || tab === 'people';
+  const showCommunities = tab === 'top' || tab === 'people';
+  const showHot = tab === 'top' || tab === 'posts';
+  const showBuilds = tab === 'builds';
+  const showBlog = tab === 'blog';
+
+  if (needsExploreData && loading) {
     return (
       <div className="flex justify-center py-20">
         <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
@@ -53,32 +105,26 @@ export function ExploreRecommendations() {
     );
   }
 
-  if (!data) {
-    return (
-      <p className="px-4 py-16 text-center text-sm text-site-text-muted">
-        {t('explore-empty-hint', { defaultValue: 'Start typing to search across people, posts, builds, and the blog.' })}
-      </p>
-    );
-  }
+  const builds = [...officialBuilds, ...userBuilds];
 
   return (
     <div>
       {/* Trending tags */}
-      {data.trendingTags.length > 0 && (
+      {showTrending && data && data.trendingTags.length > 0 && (
         <section className="border-b border-site-border p-4">
           <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
             <TrendingUp className="h-3.5 w-3.5" /> {t('trending-heading', { defaultValue: 'Trending' })}
           </h2>
           <div className="flex flex-wrap gap-2">
-            {data.trendingTags.map((t) => (
+            {data.trendingTags.map((tag) => (
               <Link
-                key={t.tag}
-                to={`/tag/${t.tag}` as string}
+                key={tag.tag}
+                to={`/tag/${tag.tag}` as string}
                 className="inline-flex items-center gap-1 rounded-full border border-site-border bg-site-surface px-3 py-1 text-sm text-site-text hover:border-site-accent/50"
               >
                 <Hash className="h-3 w-3 text-site-accent" />
-                {t.tag}
-                <span className="text-xs text-site-text-dim">{t.count}</span>
+                {tag.tag}
+                <span className="text-xs text-site-text-dim">{tag.count}</span>
               </Link>
             ))}
           </div>
@@ -86,7 +132,7 @@ export function ExploreRecommendations() {
       )}
 
       {/* Who to follow */}
-      {data.suggestedUsers.length > 0 && (
+      {showPeople && data && data.suggestedUsers.length > 0 && (
         <section className="border-b border-site-border p-4">
           <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('who-to-follow', { defaultValue: 'Who to follow' })}</h2>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -108,7 +154,7 @@ export function ExploreRecommendations() {
       )}
 
       {/* Communities to discover */}
-      {data.communities.length > 0 && (
+      {showCommunities && data && data.communities.length > 0 && (
         <section className="border-b border-site-border p-4">
           <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
             <Users className="h-3.5 w-3.5" /> {t('communities-heading', { defaultValue: 'Communities' })}
@@ -139,8 +185,79 @@ export function ExploreRecommendations() {
         </section>
       )}
 
+      {/* Builds to try */}
+      {showBuilds && (
+        builds.length > 0 ? (
+          <section className="p-4">
+            <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+              <Package className="h-3.5 w-3.5" /> {t('builds-heading', { defaultValue: 'Builds to try' })}
+            </h2>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {officialBuilds.map((b) => (
+                <a
+                  key={b.id}
+                  href={b.href}
+                  className="flex items-center gap-3 rounded-xl border border-site-border bg-site-surface p-2.5 hover:border-site-accent/50"
+                >
+                  <BuildThumb src={b.thumbnailUrl} title={b.title} />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-site-text">{b.title}</p>
+                    <p className="truncate text-xs text-site-text-muted">{b.status || t('official-build', { defaultValue: 'Official build' })}</p>
+                  </div>
+                </a>
+              ))}
+              {userBuilds.map((b) => (
+                <Link
+                  key={b.id}
+                  to={`/user-builds/${b.slug}` as string}
+                  className="flex items-center gap-3 rounded-xl border border-site-border bg-site-surface p-2.5 hover:border-site-accent/50"
+                >
+                  <BuildThumb src={b.thumbnailUrl} title={b.title} />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-site-text">{b.title}</p>
+                    <p className="truncate text-xs text-site-text-muted">{t('community-build', { defaultValue: 'Community build' })}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : (
+          <p className="px-4 py-16 text-center text-sm text-site-text-muted">
+            {t('search-builds-hint', { defaultValue: 'Type to search games, apps, and community builds.' })}
+          </p>
+        )
+      )}
+
+      {/* Blog to read */}
+      {showBlog && (
+        blogPosts.length > 0 ? (
+          <section className="py-2">
+            <h2 className="flex items-center gap-1.5 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+              <BookOpen className="h-3.5 w-3.5" /> {t('blog-heading', { defaultValue: 'From the blog' })}
+            </h2>
+            {blogPosts.map((p) => (
+              <Link
+                key={p.slug}
+                to={`/blog/${p.slug}` as string}
+                className="flex items-start gap-3 px-4 py-2.5 transition-colors hover:bg-site-surface-hover"
+              >
+                <BookOpen className="mt-0.5 h-4 w-4 shrink-0 text-site-accent" />
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-site-text">{p.title}</p>
+                  <p className="truncate text-xs text-site-text-muted">{new Date(p.date).toLocaleDateString()}</p>
+                </div>
+              </Link>
+            ))}
+          </section>
+        ) : (
+          <p className="px-4 py-16 text-center text-sm text-site-text-muted">
+            {t('search-blog-hint', { defaultValue: 'Type to search the blog.' })}
+          </p>
+        )
+      )}
+
       {/* Hot posts */}
-      {data.hotPosts.length > 0 && (
+      {showHot && data && data.hotPosts.length > 0 && (
         <section>
           <h2 className="px-4 pt-4 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('hot-this-week', { defaultValue: 'Hot this week' })}</h2>
           <div className="divide-y divide-site-border">
@@ -150,6 +267,28 @@ export function ExploreRecommendations() {
           </div>
         </section>
       )}
+
+      {/* Nothing to show for the social tabs (no data yet). */}
+      {needsExploreData && !data && (
+        <p className="px-4 py-16 text-center text-sm text-site-text-muted">
+          {t('explore-empty-hint', { defaultValue: 'Start typing to search across people, posts, builds, and the blog.' })}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function BuildThumb({ src, title }: { src: string | null; title: string }) {
+  if (!src) {
+    return (
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-site-surface-hover text-sm font-bold text-site-text/70">
+        {title.slice(0, 1).toUpperCase()}
+      </div>
+    );
+  }
+  return (
+    <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl bg-site-bg">
+      <OptimizedImage src={src} alt={title} width={40} height={40} className="h-full w-full object-cover" />
     </div>
   );
 }

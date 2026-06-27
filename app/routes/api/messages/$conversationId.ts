@@ -3,11 +3,20 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma.server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { notifyUser } from "@/lib/message-events";
+import { ownsFeedImageUrl } from "@/lib/storage/keys";
+import { gifUrlSchema, feedImageUrlSchema } from "@/lib/rmhark-schema";
 import { z } from "zod";
 
-const sendSchema = z.object({
-  content: z.string().min(1).max(2000),
-});
+const sendSchema = z
+  .object({
+    content: z.string().max(2000).optional().default(""),
+    gifUrl: gifUrlSchema.optional(),
+    imageUrls: z.array(feedImageUrlSchema).max(4).optional(),
+  })
+  .refine(
+    (d) => d.content.trim().length > 0 || !!d.gifUrl || (d.imageUrls?.length ?? 0) > 0,
+    { message: "Message must have text, an image, or a GIF" },
+  );
 
 /** GET /api/messages/[conversationId] — get messages in a conversation */
 
@@ -61,6 +70,8 @@ export const Route = createFileRoute('/api/messages/$conversationId')({
         senderId: true,
         read: true,
         createdAt: true,
+        gifUrl: true,
+        imageUrls: true,
       },
     });
 
@@ -85,6 +96,8 @@ export const Route = createFileRoute('/api/messages/$conversationId')({
         senderId: m.senderId,
         read: m.read,
         createdAt: m.createdAt.toISOString(),
+        gifUrl: m.gifUrl,
+        imageUrls: m.imageUrls,
       })),
       nextCursor: hasMore ? items[items.length - 1].id : null,
       hasMore,
@@ -149,6 +162,11 @@ export const Route = createFileRoute('/api/messages/$conversationId')({
       );
     }
 
+    // Images must belong to the sender (filename is prefixed with their id).
+    if (parsed.data.imageUrls?.some((u) => !ownsFeedImageUrl(u, userId))) {
+      return Response.json({ error: "Invalid image reference" }, { status: 400 });
+    }
+
     // Re-check DM privacy of recipient
     const recipientId =
       conversation.participantOneId === userId
@@ -195,6 +213,8 @@ export const Route = createFileRoute('/api/messages/$conversationId')({
           conversationId,
           senderId: userId,
           content: parsed.data.content,
+          gifUrl: parsed.data.gifUrl ?? null,
+          imageUrls: parsed.data.imageUrls ?? [],
         },
       }),
       prisma.conversation.update({
@@ -210,6 +230,8 @@ export const Route = createFileRoute('/api/messages/$conversationId')({
       senderId: message.senderId,
       read: message.read,
       createdAt: message.createdAt.toISOString(),
+      gifUrl: message.gifUrl,
+      imageUrls: message.imageUrls,
     };
 
     // Notify recipient via SSE with message payload

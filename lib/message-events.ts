@@ -14,6 +14,9 @@ export type MessagePayload = {
   senderId: string;
   read: boolean;
   createdAt: string;
+  /** Optional rich media (mirrors RMHark posts). */
+  gifUrl?: string | null;
+  imageUrls?: string[];
 };
 
 export type TypingPayload = {

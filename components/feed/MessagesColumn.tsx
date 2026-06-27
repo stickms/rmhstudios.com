@@ -24,6 +24,8 @@ interface ConversationItem {
     senderId: string;
     read: boolean;
     createdAt: string;
+    gifUrl?: string | null;
+    imageUrls?: string[];
   } | null;
   unreadCount: number;
   lastMessageAt: string;
@@ -126,6 +128,8 @@ export function MessagesColumn({ embedded = false }: { embedded?: boolean } = {}
               senderId: msg.senderId,
               read: msg.read,
               createdAt: msg.createdAt,
+              gifUrl: msg.gifUrl,
+              imageUrls: msg.imageUrls,
             };
             conv.lastMessageAt = msg.createdAt;
             // Increment unread if the message is from the other user
@@ -315,7 +319,13 @@ export function MessagesColumn({ embedded = false }: { embedded?: boolean } = {}
                 {conv.lastMessage && (
                   <p className={`text-sm truncate mt-0.5 ${conv.unreadCount > 0 ? 'text-site-text' : 'text-site-text-muted'}`}>
                     {conv.lastMessage.senderId === session.user.id ? t("you-prefix", { defaultValue: "You: " }) : ''}
-                    {conv.lastMessage.content}
+                    {conv.lastMessage.content?.trim()
+                      ? conv.lastMessage.content
+                      : conv.lastMessage.gifUrl
+                        ? t("sent-a-gif", { defaultValue: "GIF" })
+                        : conv.lastMessage.imageUrls && conv.lastMessage.imageUrls.length > 0
+                          ? t("sent-a-photo", { defaultValue: "Photo" })
+                          : ''}
                   </p>
                 )}
               </div>
