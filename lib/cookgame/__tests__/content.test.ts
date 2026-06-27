@@ -60,3 +60,13 @@ describe('cookgame content (phase 2 production)', () => {
     }
   });
 });
+
+describe('phase 3 district buyers', () => {
+  it('adds marcus, vera, silas with valid preferred effects', () => {
+    for (const id of ['marcus', 'vera', 'silas']) {
+      const b = BUYERS.find((x) => x.id === id);
+      expect(b, id).toBeDefined();
+      expect(EFFECTS[b!.preferredEffect]).toBeDefined();
+    }
+  });
+});

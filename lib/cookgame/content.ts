@@ -68,6 +68,9 @@ export const BUYERS: Buyer[] = [
   { id: 'doug',  name: 'Doug',  preferredEffect: 'energizing', preferenceBonus: 0.25, basePriceFactor: 0.9 },
   { id: 'kim',   name: 'Kim',   preferredEffect: 'euphoric',   preferenceBonus: 0.3,  basePriceFactor: 1.0 },
   { id: 'pablo', name: 'Pablo', preferredEffect: 'glowing',    preferenceBonus: 0.4,  basePriceFactor: 1.1 },
+  { id: 'marcus', name: 'Marcus', preferredEffect: 'focused',  preferenceBonus: 0.35, basePriceFactor: 1.2 },
+  { id: 'vera',   name: 'Vera',   preferredEffect: 'glowing',  preferenceBonus: 0.4,  basePriceFactor: 1.3 },
+  { id: 'silas',  name: 'Silas',  preferredEffect: 'euphoric', preferenceBonus: 0.45, basePriceFactor: 1.45 },
 ];
 
 export const getEffect = (id: EffectId): Effect => EFFECTS[id];

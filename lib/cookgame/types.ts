@@ -6,7 +6,7 @@ export type AdditiveId =
   | 'battery' | 'donut' | 'energydrink';
 export type BaseId = 'greenstart' | 'couchlock' | 'zoomhaze' | 'glimmerdust';
 export type InputId = 'seed_couchlock' | 'seed_zoomhaze' | 'nutrient' | 'reagent';
-export type BuyerId = 'doug' | 'kim' | 'pablo';
+export type BuyerId = 'doug' | 'kim' | 'pablo' | 'marcus' | 'vera' | 'silas';
 export type GrowStage = 'empty' | 'seedling' | 'vegetative' | 'flowering';
 
 export interface Effect { id: EffectId; name: string; multiplier: number; tier: 1 | 2 | 3; color: string; }

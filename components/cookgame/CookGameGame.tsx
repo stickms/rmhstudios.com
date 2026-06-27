@@ -1,9 +1,9 @@
 "use client";
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Physics } from '@react-three/rapier';
 import { useCookgameStore } from '@/lib/cookgame/store';
-import { TownScene, STATION_POSITIONS, BUYER_POSITIONS, PLOT_POSITIONS, DRYING_POSITION, CHEM_POSITION, PROPERTY_POSITION } from './world/TownScene';
+import { TownScene, STATION_POSITIONS, BUYER_POSITIONS, PLOT_POSITIONS, DRYING_POSITION, CHEM_POSITION, PROPERTY_POSITION, HARDWARE_POSITION, AFTERHOURS_POSITION, MARCUS_POSITION, VERA_POSITION, SILAS_POSITION } from './world/TownScene';
 import { PlayerController } from './world/PlayerController';
 import { Interactable } from './world/Interactable';
 import { InteractionPrompt } from './world/InteractionPrompt';
@@ -19,7 +19,26 @@ import { PropertyOverlay } from './stations/PropertyOverlay';
 import { HUD } from './ui/HUD';
 import { RecipeJournal } from './ui/RecipeJournal';
 import { MenuOverlay } from './ui/MenuOverlay';
+import { DistrictMap } from './ui/DistrictMap';
 import Lighting from './models/Lighting';
+
+// Throttled district detector — reads playerPosition every 10 frames and calls setCurrentDistrict
+// only when the district changes, to avoid per-frame store writes.
+function RegionDetector() {
+  const frameRef = useRef(0);
+  useFrame(() => {
+    frameRef.current = (frameRef.current + 1) % 10;
+    if (frameRef.current !== 0) return;
+    const state = useCookgameStore.getState();
+    const [x, , z] = state.playerPosition;
+    let next = 'suburbs';
+    if (x >= -16 && x <= 16 && z >= -58 && z <= -22) next = 'downtown';
+    else if (x >= -58 && x <= -22 && z >= -16 && z <= 16) next = 'docks';
+    else if (x >= -14 && x <= 14 && z >= -94 && z <= -60) next = 'warehouse';
+    if (next !== state.currentDistrict) state.setCurrentDistrict(next);
+  });
+  return null;
+}
 
 // Drives heat decay and passive income each frame (lives inside <Canvas> for useFrame access).
 function HeatTicker() {
@@ -63,6 +82,7 @@ export function CookGameGame() {
           <TownScene />
           <PlayerController />
           <HeatTicker />
+          <RegionDetector />
 
           {/* station interactables */}
           <Interactable id="supplier" position={STATION_POSITIONS.supplier} />
@@ -77,10 +97,19 @@ export function CookGameGame() {
           <Interactable id="chem" position={CHEM_POSITION} />
           <Interactable id="property" position={PROPERTY_POSITION} />
 
-          {/* buyer NPCs */}
+          {/* buyer NPCs — suburbs */}
           <BuyerNPC buyerId="doug" position={BUYER_POSITIONS.doug} />
           <BuyerNPC buyerId="kim" position={BUYER_POSITIONS.kim} />
           <BuyerNPC buyerId="pablo" position={BUYER_POSITIONS.pablo} />
+
+          {/* district shop interactables */}
+          <Interactable id="hardware" position={HARDWARE_POSITION} />
+          <Interactable id="afterhours" position={AFTERHOURS_POSITION} />
+
+          {/* district buyer NPCs */}
+          <BuyerNPC buyerId="marcus" position={MARCUS_POSITION} />
+          <BuyerNPC buyerId="vera" position={VERA_POSITION} />
+          <BuyerNPC buyerId="silas" position={SILAS_POSITION} />
         </Physics>
       </Canvas>
 
@@ -97,6 +126,7 @@ export function CookGameGame() {
       <PropertyOverlay />
       <RecipeJournal />
       <MenuOverlay />
+      <DistrictMap />
     </div>
   );
 }

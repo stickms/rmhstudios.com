@@ -3,7 +3,8 @@ import { ADDITIVES, INPUTS } from './content';
 
 export const BASE_PRICE = 10;
 
-export type ShopItemKind = 'additive' | 'base' | 'input';
+export type ShopItemKind = 'additive' | 'base' | 'input' | 'key';
+export const KEY_PRICES: Record<string, number> = { docks_key: 250 };
 export interface ShopItem { kind: ShopItemKind; refId: string; rankReq: number; }
 export interface Shop { id: string; name: string; items: ShopItem[]; }
 
@@ -26,10 +27,28 @@ export const SHOPS: Record<string, Shop> = {
       { kind: 'input', refId: 'reagent', rankReq: 3 },
     ],
   },
+  hardware: {
+    id: 'hardware', name: 'Hardware Store',
+    items: [
+      { kind: 'key', refId: 'docks_key', rankReq: 2 },
+      { kind: 'input', refId: 'reagent', rankReq: 2 },
+      { kind: 'input', refId: 'nutrient', rankReq: 2 },
+      { kind: 'input', refId: 'seed_zoomhaze', rankReq: 2 },
+    ],
+  },
+  afterhours: {
+    id: 'afterhours', name: 'After-Hours Stall',
+    items: [
+      { kind: 'additive', refId: 'battery', rankReq: 3 },
+      { kind: 'additive', refId: 'energydrink', rankReq: 3 },
+      { kind: 'additive', refId: 'donut', rankReq: 4 },
+    ],
+  },
 };
 
 export function shopItemPrice(item: ShopItem): number {
   if (item.kind === 'base') return BASE_PRICE;
+  if (item.kind === 'key') return KEY_PRICES[item.refId] ?? 0;
   if (item.kind === 'additive') return ADDITIVES[item.refId as AdditiveId].cost;
   return INPUTS[item.refId as InputId].cost;
 }
