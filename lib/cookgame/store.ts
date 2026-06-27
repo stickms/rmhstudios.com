@@ -12,6 +12,7 @@ import {
   harvestPlot as cHarvest, canCollect, collectDried as cCollect, emptyPlot,
 } from './cultivation';
 import { PROPERTY_TIERS, propertyEffects, stashCount } from './property';
+import { KEY_PRICES } from './shops';
 
 // Transient accumulator for sub-dollar passive income — kept outside the store
 // so it survives re-renders but is reset by resetGame (see below).
@@ -70,6 +71,8 @@ interface CookgameState {
   harvestPlot: (plotIndex: number, now: number) => boolean;
   collectDried: (batchIndex: number, now: number) => boolean;
   buyProperty: (tier: number) => boolean;
+  buyKey: (keyId: string) => boolean;
+  setCurrentDistrict: (id: string) => void;
 }
 
 const fromSave = (s: SaveState) => ({
@@ -306,4 +309,14 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
     set({ inventory: { ...inventory, dryingRack, baseStock: mergeStock(inventory.baseStock, entry) } });
     return true;
   },
+
+  buyKey: (keyId) => {
+    const { cash, keys } = get();
+    const price = KEY_PRICES[keyId];
+    if (price === undefined || keys.includes(keyId) || cash < price) return false;
+    set({ cash: cash - price, keys: [...keys, keyId] });
+    return true;
+  },
+
+  setCurrentDistrict: (id) => set({ currentDistrict: id }),
 }));

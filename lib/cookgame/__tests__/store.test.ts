@@ -339,3 +339,27 @@ describe('cookgame store — property', () => {
     expect(st.tendPlot(0, TEND_COOLDOWN_MS * 0.7)).toBe(true); // 0.7x gate met exactly
   });
 });
+
+import { KEY_PRICES } from '../shops';
+
+describe('cookgame store — keys + district', () => {
+  beforeEach(reset);
+  it('buyKey deducts cash and adds the key once', () => {
+    useCookgameStore.setState({ cash: 1000 });
+    const st = useCookgameStore.getState();
+    expect(st.buyKey('docks_key')).toBe(true);
+    let s = useCookgameStore.getState();
+    expect(s.keys).toContain('docks_key');
+    expect(s.cash).toBe(1000 - KEY_PRICES.docks_key);
+    expect(st.buyKey('docks_key')).toBe(false); // already owned
+  });
+  it('buyKey refuses when broke or unknown', () => {
+    expect(useCookgameStore.getState().buyKey('docks_key')).toBe(false); // 150 < 250
+    useCookgameStore.setState({ cash: 9999 });
+    expect(useCookgameStore.getState().buyKey('nope')).toBe(false);
+  });
+  it('setCurrentDistrict updates the field', () => {
+    useCookgameStore.getState().setCurrentDistrict('downtown');
+    expect(useCookgameStore.getState().currentDistrict).toBe('downtown');
+  });
+});
