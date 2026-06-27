@@ -176,6 +176,24 @@ export function TownScene() {
       {/* east wall (solid) */}
       <Wall pos={[20, 2, 0]} size={[0.5, 4, 40]} />
 
+      {/* ── Corridor jamb walls — seal all three inter-district buffers ────────
+          Each pair encloses a 2-unit buffer strip so the player cannot stray
+          sideways out of a corridor opening into the open buffer shoulders.
+          The passage centre (x∈[-4,4] or z∈[-4,4]) remains fully unobstructed.
+          ─────────────────────────────────────────────────────────────────── */}
+
+      {/* Suburbs ↔ Downtown  (N-S corridor, buffer z∈[-22,-20]) */}
+      <Wall pos={[-4, 2, -21]} size={[0.5, 4, 2]} />
+      <Wall pos={[4, 2, -21]} size={[0.5, 4, 2]} />
+
+      {/* Suburbs ↔ Docks  (E-W corridor, buffer x∈[-22,-20]) */}
+      <Wall pos={[-21, 2, -4]} size={[2, 4, 0.5]} />
+      <Wall pos={[-21, 2, 4]} size={[2, 4, 0.5]} />
+
+      {/* Downtown ↔ Warehouse  (N-S corridor, buffer z∈[-60,-58]) */}
+      <Wall pos={[-4, 2, -59]} size={[0.5, 4, 2]} />
+      <Wall pos={[4, 2, -59]} size={[0.5, 4, 2]} />
+
       {/* instanced street dressing (suburbs) */}
       <StreetProps />
 
