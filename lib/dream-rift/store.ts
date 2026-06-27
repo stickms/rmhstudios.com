@@ -11,6 +11,7 @@
 import { create } from 'zustand';
 import type { Difficulty, PlayerId, Screen } from './types';
 import type { LobbySnapshot, PublicLobbyInfo } from './net/events';
+import { loadBindings, saveBindings, type Bindings } from './keybinds';
 
 export type ConnectionState = 'idle' | 'connecting' | 'connected' | 'error';
 export type GameMode = 'single' | 'multi';
@@ -60,6 +61,9 @@ export interface DreamRiftState {
     musicVol: number;
     sfxVol: number;
 
+    showHitbox: boolean;
+    bindings: Bindings;
+
     // setters
     setScreen: (s: Screen) => void;
     setMode: (m: GameMode) => void;
@@ -78,6 +82,8 @@ export interface DreamRiftState {
     setSfxOn: (v: boolean) => void;
     setMusicVol: (v: number) => void;
     setSfxVol: (v: number) => void;
+    setShowHitbox: (v: boolean) => void;
+    setBindings: (b: Bindings) => void;
     reset: () => void;
 }
 
@@ -118,6 +124,9 @@ export const useDreamRift = create<DreamRiftState>((set) => ({
     musicVol: loadPref('dr.musicVol', 0.6),
     sfxVol: loadPref('dr.sfxVol', 0.7),
 
+    showHitbox: loadBool('dr.showHitbox', false),
+    bindings: loadBindings(),
+
     setScreen: (screen) => set({ screen }),
     setMode: (mode) => set({ mode }),
     setConnection: (connection) => set({ connection }),
@@ -153,6 +162,14 @@ export const useDreamRift = create<DreamRiftState>((set) => ({
     setSfxVol: (v) => {
         savePref('dr.sfxVol', v);
         set({ sfxVol: v });
+    },
+    setShowHitbox: (v) => {
+        savePref('dr.showHitbox', v);
+        set({ showHitbox: v });
+    },
+    setBindings: (b) => {
+        saveBindings(b);
+        set({ bindings: b });
     },
     reset: () =>
         set({

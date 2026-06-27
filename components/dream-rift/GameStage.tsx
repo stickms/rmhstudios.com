@@ -78,6 +78,10 @@ export function GameStage({ start, onExit }: { start: StartInfo; onExit: () => v
     }, []);
 
     const paused = useDreamRift((s) => s.paused);
+    const showHitbox = useDreamRift((s) => s.showHitbox);
+    useEffect(() => {
+        sessionRef.current?.setShowHitbox(showHitbox);
+    }, [showHitbox]);
 
     return (
         <div ref={wrapRef} className="relative h-full w-full overflow-hidden bg-black">

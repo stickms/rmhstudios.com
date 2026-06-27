@@ -87,7 +87,7 @@ export function StageBanner() {
 }
 
 export function PauseOverlay({ onResume, onQuit }: { onResume: () => void; onQuit: () => void }) {
-    const { musicOn, sfxOn, setMusicOn, setSfxOn, musicVol, sfxVol, setMusicVol, setSfxVol } = useDreamRift();
+    const { musicOn, sfxOn, setMusicOn, setSfxOn, musicVol, sfxVol, setMusicVol, setSfxVol, showHitbox, setShowHitbox } = useDreamRift();
     return (
         <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-sm">
             <div className="w-72 rounded-2xl border border-fuchsia-400/30 bg-[#120a22]/95 p-6 shadow-2xl">
@@ -103,6 +103,10 @@ export function PauseOverlay({ onResume, onQuit }: { onResume: () => void; onQui
                         <input type="checkbox" checked={sfxOn} onChange={(e) => setSfxOn(e.target.checked)} />
                     </label>
                     <input type="range" min={0} max={1} step={0.05} value={sfxVol} onChange={(e) => setSfxVol(Number(e.target.value))} className="w-full" />
+                    <label className="flex items-center justify-between text-white/80">
+                        Always show hitbox
+                        <input type="checkbox" checked={showHitbox} onChange={(e) => setShowHitbox(e.target.checked)} />
+                    </label>
                 </div>
                 <div className="mt-5 flex flex-col gap-2">
                     <button type="button" onClick={onResume} className="rounded-lg bg-fuchsia-500/80 py-2 font-bold text-white hover:bg-fuchsia-500">

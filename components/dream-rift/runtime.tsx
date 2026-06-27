@@ -37,6 +37,11 @@ export function DreamRiftRuntimeProvider({ children }: { children: ReactNode }) 
     const sfxOn = useDreamRift((s) => s.sfxOn);
     const musicVol = useDreamRift((s) => s.musicVol);
     const sfxVol = useDreamRift((s) => s.sfxVol);
+    const bindings = useDreamRift((s) => s.bindings);
+
+    useEffect(() => {
+        runtime.input.setBindings(bindings);
+    }, [runtime, bindings]);
 
     useEffect(() => {
         runtime.music.setEnabled(musicOn);

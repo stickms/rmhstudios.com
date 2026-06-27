@@ -61,6 +61,8 @@ export class Renderer {
     private cssH = CANVAS_H;
     private flash = 0;
     private flashColor = '#ffffff';
+    /** When true, always draw a thin hitbox box on the local player (setting). */
+    showHitboxAlways = false;
 
     constructor(
         canvas: HTMLCanvasElement,
@@ -336,23 +338,34 @@ export class Renderer {
                 ctx.textAlign = 'left';
             }
 
-            // hitbox for local player when focused
-            if (p.isLocal && p.focus) {
-                ctx.save();
-                ctx.translate(x, y);
-                ctx.rotate(this.time * 0.004);
-                ctx.strokeStyle = '#ff5577';
-                ctx.lineWidth = 1.4;
-                ctx.beginPath();
-                for (let i = 0; i < 8; i++) {
-                    const a = (Math.PI / 4) * i;
-                    const r = 8;
-                    if (i === 0) ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r);
-                    else ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+            // hitbox indicator for the local player
+            if (p.isLocal && (p.focus || this.showHitboxAlways)) {
+                if (p.focus) {
+                    // rotating focus reticle
+                    ctx.save();
+                    ctx.translate(x, y);
+                    ctx.rotate(this.time * 0.004);
+                    ctx.strokeStyle = '#ff5577';
+                    ctx.lineWidth = 1.4;
+                    ctx.beginPath();
+                    for (let i = 0; i < 8; i++) {
+                        const a = (Math.PI / 4) * i;
+                        const r = 8;
+                        if (i === 0) ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+                        else ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+                    }
+                    ctx.closePath();
+                    ctx.stroke();
+                    ctx.restore();
                 }
-                ctx.closePath();
-                ctx.stroke();
-                ctx.restore();
+                if (this.showHitboxAlways) {
+                    // thin square box outlining the true hitbox (always visible)
+                    const r = p.hitboxR + 1.4;
+                    ctx.strokeStyle = '#ff3b6b';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(Math.round(x - r) + 0.5, Math.round(y - r) + 0.5, Math.round(r * 2), Math.round(r * 2));
+                }
+                // bright core dot
                 ctx.fillStyle = '#fff';
                 ctx.beginPath();
                 ctx.arc(x, y, p.hitboxR + 0.6, 0, Math.PI * 2);

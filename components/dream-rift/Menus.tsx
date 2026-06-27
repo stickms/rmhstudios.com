@@ -92,7 +92,7 @@ function CharCard({ id, selected, onClick }: { id: PlayerId; selected: boolean; 
 
 // ─── Title ───
 
-export function TitleScreen({ onSingle, onMulti, onLeaderboard }: { onSingle: () => void; onMulti: () => void; onLeaderboard: () => void }) {
+export function TitleScreen({ onSingle, onMulti, onLeaderboard, onSettings }: { onSingle: () => void; onMulti: () => void; onLeaderboard: () => void; onSettings: () => void }) {
     const { music, sfx } = useRuntime();
     const [showHelp, setShowHelp] = useState(false);
     useEffect(() => {
@@ -125,7 +125,10 @@ export function TitleScreen({ onSingle, onMulti, onLeaderboard }: { onSingle: ()
                 <Btn onClick={() => { sfx.play('menuSelect'); onSingle(); }}>Single Player</Btn>
                 <Btn onClick={() => { sfx.play('menuSelect'); onMulti(); }}>Multiplayer Lobbies</Btn>
                 <Btn variant="ghost" onClick={() => { sfx.play('menuMove'); onLeaderboard(); }}>Leaderboard</Btn>
-                <Btn variant="ghost" onClick={() => setShowHelp(true)}>How to Play</Btn>
+                <div className="flex gap-3">
+                    <Btn variant="ghost" onClick={() => { sfx.play('menuMove'); onSettings(); }} className="flex-1">Settings</Btn>
+                    <Btn variant="ghost" onClick={() => setShowHelp(true)} className="flex-1">How to Play</Btn>
+                </div>
             </div>
             <p className="relative mt-10 text-[11px] text-white/30">Move: Arrows/WASD · Shoot: Z · Bomb: X · Focus: Shift · Pause: Esc</p>
 

@@ -95,6 +95,8 @@ export class GameSession {
         this.world.isHostBoss = this.isHost;
         this.world.players = opts.roster.map((r) => makePlayer(r, this.localSlot));
         this.renderer = new Renderer(opts.canvas, 0);
+        this.renderer.showHitboxAlways = useDreamRift.getState().showHitbox;
+        opts.input.setBindings(useDreamRift.getState().bindings);
 
         this.transport.start((msg) => this.onRelay(msg));
     }
@@ -712,6 +714,10 @@ export class GameSession {
 
     resize(w: number, h: number, dpr: number): void {
         this.renderer.resize(w, h, dpr);
+    }
+
+    setShowHitbox(v: boolean): void {
+        this.renderer.showHitboxAlways = v;
     }
 }
 
