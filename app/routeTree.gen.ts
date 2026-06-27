@@ -35,6 +35,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as LightsOutRouteImport } from './routes/lights-out'
 import { Route as LaundrySortRouteImport } from './routes/laundry-sort'
 import { Route as KowloonKnockoutRouteImport } from './routes/kowloon-knockout'
+import { Route as HouseAlwaysWinsRouteImport } from './routes/house-always-wins'
 import { Route as ForestExplorerRouteImport } from './routes/forest-explorer'
 import { Route as DeeplinkRouteImport } from './routes/deeplink'
 import { Route as DailyRouteImport } from './routes/daily'
@@ -73,7 +74,6 @@ import { Route as SecretVegaRouteImport } from './routes/secret/vega'
 import { Route as SecretSignalForgeRouteImport } from './routes/secret/signal-forge'
 import { Route as SecretNotesRouteImport } from './routes/secret/notes'
 import { Route as SecretJobsRouteImport } from './routes/secret/jobs'
-import { Route as SecretHouseAlwaysWinsRouteImport } from './routes/secret/house-always-wins'
 import { Route as SecretEatsRouteImport } from './routes/secret/eats'
 import { Route as SecretDreamRiftRouteImport } from './routes/secret/dream-rift'
 import { Route as SecretCursedLogicRouteImport } from './routes/secret/cursed-logic'
@@ -608,6 +608,11 @@ const KowloonKnockoutRoute = KowloonKnockoutRouteImport.update({
   path: '/kowloon-knockout',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HouseAlwaysWinsRoute = HouseAlwaysWinsRouteImport.update({
+  id: '/house-always-wins',
+  path: '/house-always-wins',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ForestExplorerRoute = ForestExplorerRouteImport.update({
   id: '/forest-explorer',
   path: '/forest-explorer',
@@ -795,11 +800,6 @@ const SecretNotesRoute = SecretNotesRouteImport.update({
 const SecretJobsRoute = SecretJobsRouteImport.update({
   id: '/jobs',
   path: '/jobs',
-  getParentRoute: () => SecretRoute,
-} as any)
-const SecretHouseAlwaysWinsRoute = SecretHouseAlwaysWinsRouteImport.update({
-  id: '/house-always-wins',
-  path: '/house-always-wins',
   getParentRoute: () => SecretRoute,
 } as any)
 const SecretEatsRoute = SecretEatsRouteImport.update({
@@ -2894,6 +2894,7 @@ export interface FileRoutesByFullPath {
   '/daily': typeof DailyRouteWithChildren
   '/deeplink': typeof DeeplinkRouteWithChildren
   '/forest-explorer': typeof ForestExplorerRouteWithChildren
+  '/house-always-wins': typeof HouseAlwaysWinsRoute
   '/kowloon-knockout': typeof KowloonKnockoutRouteWithChildren
   '/laundry-sort': typeof LaundrySortRoute
   '/lights-out': typeof LightsOutRoute
@@ -2997,7 +2998,6 @@ export interface FileRoutesByFullPath {
   '/secret/cursed-logic': typeof SecretCursedLogicRouteWithChildren
   '/secret/dream-rift': typeof SecretDreamRiftRoute
   '/secret/eats': typeof SecretEatsRoute
-  '/secret/house-always-wins': typeof SecretHouseAlwaysWinsRoute
   '/secret/jobs': typeof SecretJobsRouteWithChildren
   '/secret/notes': typeof SecretNotesRouteWithChildren
   '/secret/signal-forge': typeof SecretSignalForgeRoute
@@ -3359,6 +3359,7 @@ export interface FileRoutesByTo {
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
   '/deeplink': typeof DeeplinkRouteWithChildren
+  '/house-always-wins': typeof HouseAlwaysWinsRoute
   '/laundry-sort': typeof LaundrySortRoute
   '/lights-out': typeof LightsOutRoute
   '/login': typeof LoginRoute
@@ -3444,7 +3445,6 @@ export interface FileRoutesByTo {
   '/rmhtype/solo': typeof RmhtypeSoloRoute
   '/secret/dream-rift': typeof SecretDreamRiftRoute
   '/secret/eats': typeof SecretEatsRoute
-  '/secret/house-always-wins': typeof SecretHouseAlwaysWinsRoute
   '/secret/signal-forge': typeof SecretSignalForgeRoute
   '/secret/vega': typeof SecretVegaRoute
   '/strategies/incidents': typeof StrategiesIncidentsRoute
@@ -3809,6 +3809,7 @@ export interface FileRoutesById {
   '/daily': typeof DailyRouteWithChildren
   '/deeplink': typeof DeeplinkRouteWithChildren
   '/forest-explorer': typeof ForestExplorerRouteWithChildren
+  '/house-always-wins': typeof HouseAlwaysWinsRoute
   '/kowloon-knockout': typeof KowloonKnockoutRouteWithChildren
   '/laundry-sort': typeof LaundrySortRoute
   '/lights-out': typeof LightsOutRoute
@@ -3912,7 +3913,6 @@ export interface FileRoutesById {
   '/secret/cursed-logic': typeof SecretCursedLogicRouteWithChildren
   '/secret/dream-rift': typeof SecretDreamRiftRoute
   '/secret/eats': typeof SecretEatsRoute
-  '/secret/house-always-wins': typeof SecretHouseAlwaysWinsRoute
   '/secret/jobs': typeof SecretJobsRouteWithChildren
   '/secret/notes': typeof SecretNotesRouteWithChildren
   '/secret/signal-forge': typeof SecretSignalForgeRoute
@@ -4281,6 +4281,7 @@ export interface FileRouteTypes {
     | '/daily'
     | '/deeplink'
     | '/forest-explorer'
+    | '/house-always-wins'
     | '/kowloon-knockout'
     | '/laundry-sort'
     | '/lights-out'
@@ -4384,7 +4385,6 @@ export interface FileRouteTypes {
     | '/secret/cursed-logic'
     | '/secret/dream-rift'
     | '/secret/eats'
-    | '/secret/house-always-wins'
     | '/secret/jobs'
     | '/secret/notes'
     | '/secret/signal-forge'
@@ -4746,6 +4746,7 @@ export interface FileRouteTypes {
     | '/cookies'
     | '/copyright'
     | '/deeplink'
+    | '/house-always-wins'
     | '/laundry-sort'
     | '/lights-out'
     | '/login'
@@ -4831,7 +4832,6 @@ export interface FileRouteTypes {
     | '/rmhtype/solo'
     | '/secret/dream-rift'
     | '/secret/eats'
-    | '/secret/house-always-wins'
     | '/secret/signal-forge'
     | '/secret/vega'
     | '/strategies/incidents'
@@ -5195,6 +5195,7 @@ export interface FileRouteTypes {
     | '/daily'
     | '/deeplink'
     | '/forest-explorer'
+    | '/house-always-wins'
     | '/kowloon-knockout'
     | '/laundry-sort'
     | '/lights-out'
@@ -5298,7 +5299,6 @@ export interface FileRouteTypes {
     | '/secret/cursed-logic'
     | '/secret/dream-rift'
     | '/secret/eats'
-    | '/secret/house-always-wins'
     | '/secret/jobs'
     | '/secret/notes'
     | '/secret/signal-forge'
@@ -5666,6 +5666,7 @@ export interface RootRouteChildren {
   DailyRoute: typeof DailyRouteWithChildren
   DeeplinkRoute: typeof DeeplinkRouteWithChildren
   ForestExplorerRoute: typeof ForestExplorerRouteWithChildren
+  HouseAlwaysWinsRoute: typeof HouseAlwaysWinsRoute
   KowloonKnockoutRoute: typeof KowloonKnockoutRouteWithChildren
   LaundrySortRoute: typeof LaundrySortRoute
   LightsOutRoute: typeof LightsOutRoute
@@ -6099,6 +6100,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof KowloonKnockoutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/house-always-wins': {
+      id: '/house-always-wins'
+      path: '/house-always-wins'
+      fullPath: '/house-always-wins'
+      preLoaderRoute: typeof HouseAlwaysWinsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/forest-explorer': {
       id: '/forest-explorer'
       path: '/forest-explorer'
@@ -6363,13 +6371,6 @@ declare module '@tanstack/react-router' {
       path: '/jobs'
       fullPath: '/secret/jobs'
       preLoaderRoute: typeof SecretJobsRouteImport
-      parentRoute: typeof SecretRoute
-    }
-    '/secret/house-always-wins': {
-      id: '/secret/house-always-wins'
-      path: '/house-always-wins'
-      fullPath: '/secret/house-always-wins'
-      preLoaderRoute: typeof SecretHouseAlwaysWinsRouteImport
       parentRoute: typeof SecretRoute
     }
     '/secret/eats': {
@@ -9620,7 +9621,6 @@ interface SecretRouteChildren {
   SecretCursedLogicRoute: typeof SecretCursedLogicRouteWithChildren
   SecretDreamRiftRoute: typeof SecretDreamRiftRoute
   SecretEatsRoute: typeof SecretEatsRoute
-  SecretHouseAlwaysWinsRoute: typeof SecretHouseAlwaysWinsRoute
   SecretJobsRoute: typeof SecretJobsRouteWithChildren
   SecretNotesRoute: typeof SecretNotesRouteWithChildren
   SecretSignalForgeRoute: typeof SecretSignalForgeRoute
@@ -9633,7 +9633,6 @@ const SecretRouteChildren: SecretRouteChildren = {
   SecretCursedLogicRoute: SecretCursedLogicRouteWithChildren,
   SecretDreamRiftRoute: SecretDreamRiftRoute,
   SecretEatsRoute: SecretEatsRoute,
-  SecretHouseAlwaysWinsRoute: SecretHouseAlwaysWinsRoute,
   SecretJobsRoute: SecretJobsRouteWithChildren,
   SecretNotesRoute: SecretNotesRouteWithChildren,
   SecretSignalForgeRoute: SecretSignalForgeRoute,
@@ -10121,6 +10120,7 @@ const rootRouteChildren: RootRouteChildren = {
   DailyRoute: DailyRouteWithChildren,
   DeeplinkRoute: DeeplinkRouteWithChildren,
   ForestExplorerRoute: ForestExplorerRouteWithChildren,
+  HouseAlwaysWinsRoute: HouseAlwaysWinsRoute,
   KowloonKnockoutRoute: KowloonKnockoutRouteWithChildren,
   LaundrySortRoute: LaundrySortRoute,
   LightsOutRoute: LightsOutRoute,
