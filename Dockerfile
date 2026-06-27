@@ -87,6 +87,9 @@ COPY lib/blackjack ./lib/blackjack/
 COPY lib/holdem ./lib/holdem/
 COPY lib/baccarat ./lib/baccarat/
 COPY lib/roulette ./lib/roulette/
+# Dream Rift's socket relay handler only needs the shared, import-free netcode
+# protocol — copy just that file (the rest of lib/dream-rift is browser code).
+COPY lib/dream-rift/net/events.ts ./lib/dream-rift/net/events.ts
 # lights-out, doctrine, rmhvibe, rmhark-ai, media and storage were only imported
 # by the Node workers now running in the Go supervisor — no longer copied here so
 # changes to them don't bust this stage's cache.
