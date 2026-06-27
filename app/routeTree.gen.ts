@@ -434,6 +434,7 @@ import { Route as ApiCommunitiesSlugFeedRouteImport } from './routes/api/communi
 import { Route as ApiCommentsCommentIdTranslateRouteImport } from './routes/api/comments/$commentId/translate'
 import { Route as ApiBuildsCoverFileRouteImport } from './routes/api/builds/cover/$file'
 import { Route as ApiAnnouncementsIdVoteRouteImport } from './routes/api/announcements/$id/vote'
+import { Route as ApiAdminVibeBackfillThumbsRouteImport } from './routes/api/admin/vibe/backfill-thumbs'
 import { Route as ApiAdminRideshareRidesRouteImport } from './routes/api/admin/rideshare/rides'
 import { Route as ApiAdminRideshareApplicationsRouteImport } from './routes/api/admin/rideshare/applications'
 import { Route as ApiAdminReportsIdRouteImport } from './routes/api/admin/reports/$id'
@@ -441,7 +442,6 @@ import { Route as ApiAdminLibraryStorageHealthRouteImport } from './routes/api/a
 import { Route as ApiAdminLibraryReorderRouteImport } from './routes/api/admin/library/reorder'
 import { Route as ApiAdminLibraryQuotaRequestsRouteImport } from './routes/api/admin/library/quota-requests'
 import { Route as ApiAdminLibraryMigrateRouteImport } from './routes/api/admin/library/migrate'
-import { Route as ApiAdminVibeBackfillThumbsRouteImport } from './routes/api/admin/vibe/backfill-thumbs'
 import { Route as ApiAdminLibraryIdRouteImport } from './routes/api/admin/library/$id'
 import { Route as ApiAdminCuratedBuildsImageRouteImport } from './routes/api/admin/curated-builds/image'
 import { Route as ApiAdminAnnouncementsIdRouteImport } from './routes/api/admin/announcements/$id'
@@ -2647,6 +2647,12 @@ const ApiAnnouncementsIdVoteRoute = ApiAnnouncementsIdVoteRouteImport.update({
   path: '/$id/vote',
   getParentRoute: () => ApiAnnouncementsRoute,
 } as any)
+const ApiAdminVibeBackfillThumbsRoute =
+  ApiAdminVibeBackfillThumbsRouteImport.update({
+    id: '/api/admin/vibe/backfill-thumbs',
+    path: '/api/admin/vibe/backfill-thumbs',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminRideshareRidesRoute = ApiAdminRideshareRidesRouteImport.update({
   id: '/api/admin/rideshare/rides',
   path: '/api/admin/rideshare/rides',
@@ -2685,12 +2691,6 @@ const ApiAdminLibraryMigrateRoute = ApiAdminLibraryMigrateRouteImport.update({
   path: '/api/admin/library/migrate',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiAdminVibeBackfillThumbsRoute =
-  ApiAdminVibeBackfillThumbsRouteImport.update({
-    id: '/api/admin/vibe/backfill-thumbs',
-    path: '/api/admin/vibe/backfill-thumbs',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiAdminLibraryIdRoute = ApiAdminLibraryIdRouteImport.update({
   id: '/api/admin/library/$id',
   path: '/api/admin/library/$id',
@@ -3230,13 +3230,13 @@ export interface FileRoutesByFullPath {
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
   '/api/admin/library/$id': typeof ApiAdminLibraryIdRoute
   '/api/admin/library/migrate': typeof ApiAdminLibraryMigrateRoute
-  '/api/admin/vibe/backfill-thumbs': typeof ApiAdminVibeBackfillThumbsRoute
   '/api/admin/library/quota-requests': typeof ApiAdminLibraryQuotaRequestsRoute
   '/api/admin/library/reorder': typeof ApiAdminLibraryReorderRoute
   '/api/admin/library/storage-health': typeof ApiAdminLibraryStorageHealthRoute
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
   '/api/admin/rideshare/applications': typeof ApiAdminRideshareApplicationsRoute
   '/api/admin/rideshare/rides': typeof ApiAdminRideshareRidesRoute
+  '/api/admin/vibe/backfill-thumbs': typeof ApiAdminVibeBackfillThumbsRoute
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
   '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
@@ -3676,13 +3676,13 @@ export interface FileRoutesByTo {
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
   '/api/admin/library/$id': typeof ApiAdminLibraryIdRoute
   '/api/admin/library/migrate': typeof ApiAdminLibraryMigrateRoute
-  '/api/admin/vibe/backfill-thumbs': typeof ApiAdminVibeBackfillThumbsRoute
   '/api/admin/library/quota-requests': typeof ApiAdminLibraryQuotaRequestsRoute
   '/api/admin/library/reorder': typeof ApiAdminLibraryReorderRoute
   '/api/admin/library/storage-health': typeof ApiAdminLibraryStorageHealthRoute
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
   '/api/admin/rideshare/applications': typeof ApiAdminRideshareApplicationsRoute
   '/api/admin/rideshare/rides': typeof ApiAdminRideshareRidesRoute
+  '/api/admin/vibe/backfill-thumbs': typeof ApiAdminVibeBackfillThumbsRoute
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
   '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
@@ -4148,13 +4148,13 @@ export interface FileRoutesById {
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
   '/api/admin/library/$id': typeof ApiAdminLibraryIdRoute
   '/api/admin/library/migrate': typeof ApiAdminLibraryMigrateRoute
-  '/api/admin/vibe/backfill-thumbs': typeof ApiAdminVibeBackfillThumbsRoute
   '/api/admin/library/quota-requests': typeof ApiAdminLibraryQuotaRequestsRoute
   '/api/admin/library/reorder': typeof ApiAdminLibraryReorderRoute
   '/api/admin/library/storage-health': typeof ApiAdminLibraryStorageHealthRoute
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
   '/api/admin/rideshare/applications': typeof ApiAdminRideshareApplicationsRoute
   '/api/admin/rideshare/rides': typeof ApiAdminRideshareRidesRoute
+  '/api/admin/vibe/backfill-thumbs': typeof ApiAdminVibeBackfillThumbsRoute
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
   '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
@@ -4620,13 +4620,13 @@ export interface FileRouteTypes {
     | '/api/admin/curated-builds/image'
     | '/api/admin/library/$id'
     | '/api/admin/library/migrate'
-    | '/api/admin/vibe/backfill-thumbs'
     | '/api/admin/library/quota-requests'
     | '/api/admin/library/reorder'
     | '/api/admin/library/storage-health'
     | '/api/admin/reports/$id'
     | '/api/admin/rideshare/applications'
     | '/api/admin/rideshare/rides'
+    | '/api/admin/vibe/backfill-thumbs'
     | '/api/announcements/$id/vote'
     | '/api/builds/cover/$file'
     | '/api/comments/$commentId/translate'
@@ -5066,13 +5066,13 @@ export interface FileRouteTypes {
     | '/api/admin/curated-builds/image'
     | '/api/admin/library/$id'
     | '/api/admin/library/migrate'
-    | '/api/admin/vibe/backfill-thumbs'
     | '/api/admin/library/quota-requests'
     | '/api/admin/library/reorder'
     | '/api/admin/library/storage-health'
     | '/api/admin/reports/$id'
     | '/api/admin/rideshare/applications'
     | '/api/admin/rideshare/rides'
+    | '/api/admin/vibe/backfill-thumbs'
     | '/api/announcements/$id/vote'
     | '/api/builds/cover/$file'
     | '/api/comments/$commentId/translate'
@@ -5537,13 +5537,13 @@ export interface FileRouteTypes {
     | '/api/admin/curated-builds/image'
     | '/api/admin/library/$id'
     | '/api/admin/library/migrate'
-    | '/api/admin/vibe/backfill-thumbs'
     | '/api/admin/library/quota-requests'
     | '/api/admin/library/reorder'
     | '/api/admin/library/storage-health'
     | '/api/admin/reports/$id'
     | '/api/admin/rideshare/applications'
     | '/api/admin/rideshare/rides'
+    | '/api/admin/vibe/backfill-thumbs'
     | '/api/announcements/$id/vote'
     | '/api/builds/cover/$file'
     | '/api/comments/$commentId/translate'
@@ -5857,12 +5857,12 @@ export interface RootRouteChildren {
   ApiAdminCuratedBuildsImageRoute: typeof ApiAdminCuratedBuildsImageRouteWithChildren
   ApiAdminLibraryIdRoute: typeof ApiAdminLibraryIdRoute
   ApiAdminLibraryMigrateRoute: typeof ApiAdminLibraryMigrateRoute
-  ApiAdminVibeBackfillThumbsRoute: typeof ApiAdminVibeBackfillThumbsRoute
   ApiAdminLibraryQuotaRequestsRoute: typeof ApiAdminLibraryQuotaRequestsRoute
   ApiAdminLibraryReorderRoute: typeof ApiAdminLibraryReorderRoute
   ApiAdminLibraryStorageHealthRoute: typeof ApiAdminLibraryStorageHealthRoute
   ApiAdminRideshareApplicationsRoute: typeof ApiAdminRideshareApplicationsRoute
   ApiAdminRideshareRidesRoute: typeof ApiAdminRideshareRidesRoute
+  ApiAdminVibeBackfillThumbsRoute: typeof ApiAdminVibeBackfillThumbsRoute
   ApiBuildsCoverFileRoute: typeof ApiBuildsCoverFileRoute
   ApiCommentsCommentIdTranslateRoute: typeof ApiCommentsCommentIdTranslateRoute
   ApiCommunitiesSlugFeedRoute: typeof ApiCommunitiesSlugFeedRoute
@@ -8907,6 +8907,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAnnouncementsIdVoteRouteImport
       parentRoute: typeof ApiAnnouncementsRoute
     }
+    '/api/admin/vibe/backfill-thumbs': {
+      id: '/api/admin/vibe/backfill-thumbs'
+      path: '/api/admin/vibe/backfill-thumbs'
+      fullPath: '/api/admin/vibe/backfill-thumbs'
+      preLoaderRoute: typeof ApiAdminVibeBackfillThumbsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/rideshare/rides': {
       id: '/api/admin/rideshare/rides'
       path: '/api/admin/rideshare/rides'
@@ -8954,13 +8961,6 @@ declare module '@tanstack/react-router' {
       path: '/api/admin/library/migrate'
       fullPath: '/api/admin/library/migrate'
       preLoaderRoute: typeof ApiAdminLibraryMigrateRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/admin/vibe/backfill-thumbs': {
-      id: '/api/admin/vibe/backfill-thumbs'
-      path: '/api/admin/vibe/backfill-thumbs'
-      fullPath: '/api/admin/vibe/backfill-thumbs'
-      preLoaderRoute: typeof ApiAdminVibeBackfillThumbsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/admin/library/$id': {
@@ -10319,12 +10319,12 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminCuratedBuildsImageRoute: ApiAdminCuratedBuildsImageRouteWithChildren,
   ApiAdminLibraryIdRoute: ApiAdminLibraryIdRoute,
   ApiAdminLibraryMigrateRoute: ApiAdminLibraryMigrateRoute,
-  ApiAdminVibeBackfillThumbsRoute: ApiAdminVibeBackfillThumbsRoute,
   ApiAdminLibraryQuotaRequestsRoute: ApiAdminLibraryQuotaRequestsRoute,
   ApiAdminLibraryReorderRoute: ApiAdminLibraryReorderRoute,
   ApiAdminLibraryStorageHealthRoute: ApiAdminLibraryStorageHealthRoute,
   ApiAdminRideshareApplicationsRoute: ApiAdminRideshareApplicationsRoute,
   ApiAdminRideshareRidesRoute: ApiAdminRideshareRidesRoute,
+  ApiAdminVibeBackfillThumbsRoute: ApiAdminVibeBackfillThumbsRoute,
   ApiBuildsCoverFileRoute: ApiBuildsCoverFileRoute,
   ApiCommentsCommentIdTranslateRoute: ApiCommentsCommentIdTranslateRoute,
   ApiCommunitiesSlugFeedRoute: ApiCommunitiesSlugFeedRoute,
