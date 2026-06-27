@@ -1,9 +1,10 @@
 import { asset } from "@/lib/storage/asset";
 
 const TRACKS: Record<string, string> = {
+  intro: asset("/music/HAW/loginscreen.mp3"),
   lobby: asset("/music/HAW/lobby.mp3"),
-  dealerEvent: asset("/music/HAW/haw_ost2.mp3"),
-  securityEvent: asset("/music/HAW/haw_ost2.mp3"),
+  tense: asset("/music/HAW/haw_ost2.mp3"),
+  vault: asset("/music/HAW/haw_ost2.mp3"),
 };
 
 let audio: HTMLAudioElement | null = null;

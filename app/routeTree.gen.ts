@@ -35,6 +35,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as LightsOutRouteImport } from './routes/lights-out'
 import { Route as LaundrySortRouteImport } from './routes/laundry-sort'
 import { Route as KowloonKnockoutRouteImport } from './routes/kowloon-knockout'
+import { Route as HouseAlwaysWinsRouteImport } from './routes/house-always-wins'
 import { Route as ForestExplorerRouteImport } from './routes/forest-explorer'
 import { Route as DeeplinkRouteImport } from './routes/deeplink'
 import { Route as DailyRouteImport } from './routes/daily'
@@ -73,7 +74,6 @@ import { Route as SecretVegaRouteImport } from './routes/secret/vega'
 import { Route as SecretSignalForgeRouteImport } from './routes/secret/signal-forge'
 import { Route as SecretNotesRouteImport } from './routes/secret/notes'
 import { Route as SecretJobsRouteImport } from './routes/secret/jobs'
-import { Route as SecretHouseAlwaysWinsRouteImport } from './routes/secret/house-always-wins'
 import { Route as SecretEatsRouteImport } from './routes/secret/eats'
 import { Route as SecretDreamRiftRouteImport } from './routes/secret/dream-rift'
 import { Route as SecretCursedLogicRouteImport } from './routes/secret/cursed-logic'
@@ -434,6 +434,7 @@ import { Route as ApiCommunitiesSlugFeedRouteImport } from './routes/api/communi
 import { Route as ApiCommentsCommentIdTranslateRouteImport } from './routes/api/comments/$commentId/translate'
 import { Route as ApiBuildsCoverFileRouteImport } from './routes/api/builds/cover/$file'
 import { Route as ApiAnnouncementsIdVoteRouteImport } from './routes/api/announcements/$id/vote'
+import { Route as ApiAdminVibeBackfillThumbsRouteImport } from './routes/api/admin/vibe/backfill-thumbs'
 import { Route as ApiAdminRideshareRidesRouteImport } from './routes/api/admin/rideshare/rides'
 import { Route as ApiAdminRideshareApplicationsRouteImport } from './routes/api/admin/rideshare/applications'
 import { Route as ApiAdminReportsIdRouteImport } from './routes/api/admin/reports/$id'
@@ -441,7 +442,6 @@ import { Route as ApiAdminLibraryStorageHealthRouteImport } from './routes/api/a
 import { Route as ApiAdminLibraryReorderRouteImport } from './routes/api/admin/library/reorder'
 import { Route as ApiAdminLibraryQuotaRequestsRouteImport } from './routes/api/admin/library/quota-requests'
 import { Route as ApiAdminLibraryMigrateRouteImport } from './routes/api/admin/library/migrate'
-import { Route as ApiAdminVibeBackfillThumbsRouteImport } from './routes/api/admin/vibe/backfill-thumbs'
 import { Route as ApiAdminLibraryIdRouteImport } from './routes/api/admin/library/$id'
 import { Route as ApiAdminCuratedBuildsImageRouteImport } from './routes/api/admin/curated-builds/image'
 import { Route as ApiAdminAnnouncementsIdRouteImport } from './routes/api/admin/announcements/$id'
@@ -607,6 +607,11 @@ const LaundrySortRoute = LaundrySortRouteImport.update({
 const KowloonKnockoutRoute = KowloonKnockoutRouteImport.update({
   id: '/kowloon-knockout',
   path: '/kowloon-knockout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HouseAlwaysWinsRoute = HouseAlwaysWinsRouteImport.update({
+  id: '/house-always-wins',
+  path: '/house-always-wins',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForestExplorerRoute = ForestExplorerRouteImport.update({
@@ -796,11 +801,6 @@ const SecretNotesRoute = SecretNotesRouteImport.update({
 const SecretJobsRoute = SecretJobsRouteImport.update({
   id: '/jobs',
   path: '/jobs',
-  getParentRoute: () => SecretRoute,
-} as any)
-const SecretHouseAlwaysWinsRoute = SecretHouseAlwaysWinsRouteImport.update({
-  id: '/house-always-wins',
-  path: '/house-always-wins',
   getParentRoute: () => SecretRoute,
 } as any)
 const SecretEatsRoute = SecretEatsRouteImport.update({
@@ -2647,6 +2647,12 @@ const ApiAnnouncementsIdVoteRoute = ApiAnnouncementsIdVoteRouteImport.update({
   path: '/$id/vote',
   getParentRoute: () => ApiAnnouncementsRoute,
 } as any)
+const ApiAdminVibeBackfillThumbsRoute =
+  ApiAdminVibeBackfillThumbsRouteImport.update({
+    id: '/api/admin/vibe/backfill-thumbs',
+    path: '/api/admin/vibe/backfill-thumbs',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminRideshareRidesRoute = ApiAdminRideshareRidesRouteImport.update({
   id: '/api/admin/rideshare/rides',
   path: '/api/admin/rideshare/rides',
@@ -2685,12 +2691,6 @@ const ApiAdminLibraryMigrateRoute = ApiAdminLibraryMigrateRouteImport.update({
   path: '/api/admin/library/migrate',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiAdminVibeBackfillThumbsRoute =
-  ApiAdminVibeBackfillThumbsRouteImport.update({
-    id: '/api/admin/vibe/backfill-thumbs',
-    path: '/api/admin/vibe/backfill-thumbs',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiAdminLibraryIdRoute = ApiAdminLibraryIdRouteImport.update({
   id: '/api/admin/library/$id',
   path: '/api/admin/library/$id',
@@ -2901,6 +2901,7 @@ export interface FileRoutesByFullPath {
   '/daily': typeof DailyRouteWithChildren
   '/deeplink': typeof DeeplinkRouteWithChildren
   '/forest-explorer': typeof ForestExplorerRouteWithChildren
+  '/house-always-wins': typeof HouseAlwaysWinsRoute
   '/kowloon-knockout': typeof KowloonKnockoutRouteWithChildren
   '/laundry-sort': typeof LaundrySortRoute
   '/lights-out': typeof LightsOutRoute
@@ -3004,7 +3005,6 @@ export interface FileRoutesByFullPath {
   '/secret/cursed-logic': typeof SecretCursedLogicRouteWithChildren
   '/secret/dream-rift': typeof SecretDreamRiftRoute
   '/secret/eats': typeof SecretEatsRoute
-  '/secret/house-always-wins': typeof SecretHouseAlwaysWinsRoute
   '/secret/jobs': typeof SecretJobsRouteWithChildren
   '/secret/notes': typeof SecretNotesRouteWithChildren
   '/secret/signal-forge': typeof SecretSignalForgeRoute
@@ -3230,13 +3230,13 @@ export interface FileRoutesByFullPath {
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
   '/api/admin/library/$id': typeof ApiAdminLibraryIdRoute
   '/api/admin/library/migrate': typeof ApiAdminLibraryMigrateRoute
-  '/api/admin/vibe/backfill-thumbs': typeof ApiAdminVibeBackfillThumbsRoute
   '/api/admin/library/quota-requests': typeof ApiAdminLibraryQuotaRequestsRoute
   '/api/admin/library/reorder': typeof ApiAdminLibraryReorderRoute
   '/api/admin/library/storage-health': typeof ApiAdminLibraryStorageHealthRoute
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
   '/api/admin/rideshare/applications': typeof ApiAdminRideshareApplicationsRoute
   '/api/admin/rideshare/rides': typeof ApiAdminRideshareRidesRoute
+  '/api/admin/vibe/backfill-thumbs': typeof ApiAdminVibeBackfillThumbsRoute
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
   '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
@@ -3367,6 +3367,7 @@ export interface FileRoutesByTo {
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
   '/deeplink': typeof DeeplinkRouteWithChildren
+  '/house-always-wins': typeof HouseAlwaysWinsRoute
   '/laundry-sort': typeof LaundrySortRoute
   '/lights-out': typeof LightsOutRoute
   '/login': typeof LoginRoute
@@ -3452,7 +3453,6 @@ export interface FileRoutesByTo {
   '/rmhtype/solo': typeof RmhtypeSoloRoute
   '/secret/dream-rift': typeof SecretDreamRiftRoute
   '/secret/eats': typeof SecretEatsRoute
-  '/secret/house-always-wins': typeof SecretHouseAlwaysWinsRoute
   '/secret/signal-forge': typeof SecretSignalForgeRoute
   '/secret/vega': typeof SecretVegaRoute
   '/strategies/incidents': typeof StrategiesIncidentsRoute
@@ -3676,13 +3676,13 @@ export interface FileRoutesByTo {
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
   '/api/admin/library/$id': typeof ApiAdminLibraryIdRoute
   '/api/admin/library/migrate': typeof ApiAdminLibraryMigrateRoute
-  '/api/admin/vibe/backfill-thumbs': typeof ApiAdminVibeBackfillThumbsRoute
   '/api/admin/library/quota-requests': typeof ApiAdminLibraryQuotaRequestsRoute
   '/api/admin/library/reorder': typeof ApiAdminLibraryReorderRoute
   '/api/admin/library/storage-health': typeof ApiAdminLibraryStorageHealthRoute
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
   '/api/admin/rideshare/applications': typeof ApiAdminRideshareApplicationsRoute
   '/api/admin/rideshare/rides': typeof ApiAdminRideshareRidesRoute
+  '/api/admin/vibe/backfill-thumbs': typeof ApiAdminVibeBackfillThumbsRoute
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
   '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
@@ -3818,6 +3818,7 @@ export interface FileRoutesById {
   '/daily': typeof DailyRouteWithChildren
   '/deeplink': typeof DeeplinkRouteWithChildren
   '/forest-explorer': typeof ForestExplorerRouteWithChildren
+  '/house-always-wins': typeof HouseAlwaysWinsRoute
   '/kowloon-knockout': typeof KowloonKnockoutRouteWithChildren
   '/laundry-sort': typeof LaundrySortRoute
   '/lights-out': typeof LightsOutRoute
@@ -3921,7 +3922,6 @@ export interface FileRoutesById {
   '/secret/cursed-logic': typeof SecretCursedLogicRouteWithChildren
   '/secret/dream-rift': typeof SecretDreamRiftRoute
   '/secret/eats': typeof SecretEatsRoute
-  '/secret/house-always-wins': typeof SecretHouseAlwaysWinsRoute
   '/secret/jobs': typeof SecretJobsRouteWithChildren
   '/secret/notes': typeof SecretNotesRouteWithChildren
   '/secret/signal-forge': typeof SecretSignalForgeRoute
@@ -4148,13 +4148,13 @@ export interface FileRoutesById {
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
   '/api/admin/library/$id': typeof ApiAdminLibraryIdRoute
   '/api/admin/library/migrate': typeof ApiAdminLibraryMigrateRoute
-  '/api/admin/vibe/backfill-thumbs': typeof ApiAdminVibeBackfillThumbsRoute
   '/api/admin/library/quota-requests': typeof ApiAdminLibraryQuotaRequestsRoute
   '/api/admin/library/reorder': typeof ApiAdminLibraryReorderRoute
   '/api/admin/library/storage-health': typeof ApiAdminLibraryStorageHealthRoute
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
   '/api/admin/rideshare/applications': typeof ApiAdminRideshareApplicationsRoute
   '/api/admin/rideshare/rides': typeof ApiAdminRideshareRidesRoute
+  '/api/admin/vibe/backfill-thumbs': typeof ApiAdminVibeBackfillThumbsRoute
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
   '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
@@ -4291,6 +4291,7 @@ export interface FileRouteTypes {
     | '/daily'
     | '/deeplink'
     | '/forest-explorer'
+    | '/house-always-wins'
     | '/kowloon-knockout'
     | '/laundry-sort'
     | '/lights-out'
@@ -4394,7 +4395,6 @@ export interface FileRouteTypes {
     | '/secret/cursed-logic'
     | '/secret/dream-rift'
     | '/secret/eats'
-    | '/secret/house-always-wins'
     | '/secret/jobs'
     | '/secret/notes'
     | '/secret/signal-forge'
@@ -4620,13 +4620,13 @@ export interface FileRouteTypes {
     | '/api/admin/curated-builds/image'
     | '/api/admin/library/$id'
     | '/api/admin/library/migrate'
-    | '/api/admin/vibe/backfill-thumbs'
     | '/api/admin/library/quota-requests'
     | '/api/admin/library/reorder'
     | '/api/admin/library/storage-health'
     | '/api/admin/reports/$id'
     | '/api/admin/rideshare/applications'
     | '/api/admin/rideshare/rides'
+    | '/api/admin/vibe/backfill-thumbs'
     | '/api/announcements/$id/vote'
     | '/api/builds/cover/$file'
     | '/api/comments/$commentId/translate'
@@ -4757,6 +4757,7 @@ export interface FileRouteTypes {
     | '/cookies'
     | '/copyright'
     | '/deeplink'
+    | '/house-always-wins'
     | '/laundry-sort'
     | '/lights-out'
     | '/login'
@@ -4842,7 +4843,6 @@ export interface FileRouteTypes {
     | '/rmhtype/solo'
     | '/secret/dream-rift'
     | '/secret/eats'
-    | '/secret/house-always-wins'
     | '/secret/signal-forge'
     | '/secret/vega'
     | '/strategies/incidents'
@@ -5066,13 +5066,13 @@ export interface FileRouteTypes {
     | '/api/admin/curated-builds/image'
     | '/api/admin/library/$id'
     | '/api/admin/library/migrate'
-    | '/api/admin/vibe/backfill-thumbs'
     | '/api/admin/library/quota-requests'
     | '/api/admin/library/reorder'
     | '/api/admin/library/storage-health'
     | '/api/admin/reports/$id'
     | '/api/admin/rideshare/applications'
     | '/api/admin/rideshare/rides'
+    | '/api/admin/vibe/backfill-thumbs'
     | '/api/announcements/$id/vote'
     | '/api/builds/cover/$file'
     | '/api/comments/$commentId/translate'
@@ -5207,6 +5207,7 @@ export interface FileRouteTypes {
     | '/daily'
     | '/deeplink'
     | '/forest-explorer'
+    | '/house-always-wins'
     | '/kowloon-knockout'
     | '/laundry-sort'
     | '/lights-out'
@@ -5310,7 +5311,6 @@ export interface FileRouteTypes {
     | '/secret/cursed-logic'
     | '/secret/dream-rift'
     | '/secret/eats'
-    | '/secret/house-always-wins'
     | '/secret/jobs'
     | '/secret/notes'
     | '/secret/signal-forge'
@@ -5537,13 +5537,13 @@ export interface FileRouteTypes {
     | '/api/admin/curated-builds/image'
     | '/api/admin/library/$id'
     | '/api/admin/library/migrate'
-    | '/api/admin/vibe/backfill-thumbs'
     | '/api/admin/library/quota-requests'
     | '/api/admin/library/reorder'
     | '/api/admin/library/storage-health'
     | '/api/admin/reports/$id'
     | '/api/admin/rideshare/applications'
     | '/api/admin/rideshare/rides'
+    | '/api/admin/vibe/backfill-thumbs'
     | '/api/announcements/$id/vote'
     | '/api/builds/cover/$file'
     | '/api/comments/$commentId/translate'
@@ -5679,6 +5679,7 @@ export interface RootRouteChildren {
   DailyRoute: typeof DailyRouteWithChildren
   DeeplinkRoute: typeof DeeplinkRouteWithChildren
   ForestExplorerRoute: typeof ForestExplorerRouteWithChildren
+  HouseAlwaysWinsRoute: typeof HouseAlwaysWinsRoute
   KowloonKnockoutRoute: typeof KowloonKnockoutRouteWithChildren
   LaundrySortRoute: typeof LaundrySortRoute
   LightsOutRoute: typeof LightsOutRoute
@@ -5856,12 +5857,12 @@ export interface RootRouteChildren {
   ApiAdminCuratedBuildsImageRoute: typeof ApiAdminCuratedBuildsImageRouteWithChildren
   ApiAdminLibraryIdRoute: typeof ApiAdminLibraryIdRoute
   ApiAdminLibraryMigrateRoute: typeof ApiAdminLibraryMigrateRoute
-  ApiAdminVibeBackfillThumbsRoute: typeof ApiAdminVibeBackfillThumbsRoute
   ApiAdminLibraryQuotaRequestsRoute: typeof ApiAdminLibraryQuotaRequestsRoute
   ApiAdminLibraryReorderRoute: typeof ApiAdminLibraryReorderRoute
   ApiAdminLibraryStorageHealthRoute: typeof ApiAdminLibraryStorageHealthRoute
   ApiAdminRideshareApplicationsRoute: typeof ApiAdminRideshareApplicationsRoute
   ApiAdminRideshareRidesRoute: typeof ApiAdminRideshareRidesRoute
+  ApiAdminVibeBackfillThumbsRoute: typeof ApiAdminVibeBackfillThumbsRoute
   ApiBuildsCoverFileRoute: typeof ApiBuildsCoverFileRoute
   ApiCommentsCommentIdTranslateRoute: typeof ApiCommentsCommentIdTranslateRoute
   ApiCommunitiesSlugFeedRoute: typeof ApiCommunitiesSlugFeedRoute
@@ -6111,6 +6112,13 @@ declare module '@tanstack/react-router' {
       path: '/kowloon-knockout'
       fullPath: '/kowloon-knockout'
       preLoaderRoute: typeof KowloonKnockoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/house-always-wins': {
+      id: '/house-always-wins'
+      path: '/house-always-wins'
+      fullPath: '/house-always-wins'
+      preLoaderRoute: typeof HouseAlwaysWinsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forest-explorer': {
@@ -6377,13 +6385,6 @@ declare module '@tanstack/react-router' {
       path: '/jobs'
       fullPath: '/secret/jobs'
       preLoaderRoute: typeof SecretJobsRouteImport
-      parentRoute: typeof SecretRoute
-    }
-    '/secret/house-always-wins': {
-      id: '/secret/house-always-wins'
-      path: '/house-always-wins'
-      fullPath: '/secret/house-always-wins'
-      preLoaderRoute: typeof SecretHouseAlwaysWinsRouteImport
       parentRoute: typeof SecretRoute
     }
     '/secret/eats': {
@@ -8906,6 +8907,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAnnouncementsIdVoteRouteImport
       parentRoute: typeof ApiAnnouncementsRoute
     }
+    '/api/admin/vibe/backfill-thumbs': {
+      id: '/api/admin/vibe/backfill-thumbs'
+      path: '/api/admin/vibe/backfill-thumbs'
+      fullPath: '/api/admin/vibe/backfill-thumbs'
+      preLoaderRoute: typeof ApiAdminVibeBackfillThumbsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/rideshare/rides': {
       id: '/api/admin/rideshare/rides'
       path: '/api/admin/rideshare/rides'
@@ -8953,13 +8961,6 @@ declare module '@tanstack/react-router' {
       path: '/api/admin/library/migrate'
       fullPath: '/api/admin/library/migrate'
       preLoaderRoute: typeof ApiAdminLibraryMigrateRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/admin/vibe/backfill-thumbs': {
-      id: '/api/admin/vibe/backfill-thumbs'
-      path: '/api/admin/vibe/backfill-thumbs'
-      fullPath: '/api/admin/vibe/backfill-thumbs'
-      preLoaderRoute: typeof ApiAdminVibeBackfillThumbsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/admin/library/$id': {
@@ -9641,7 +9642,6 @@ interface SecretRouteChildren {
   SecretCursedLogicRoute: typeof SecretCursedLogicRouteWithChildren
   SecretDreamRiftRoute: typeof SecretDreamRiftRoute
   SecretEatsRoute: typeof SecretEatsRoute
-  SecretHouseAlwaysWinsRoute: typeof SecretHouseAlwaysWinsRoute
   SecretJobsRoute: typeof SecretJobsRouteWithChildren
   SecretNotesRoute: typeof SecretNotesRouteWithChildren
   SecretSignalForgeRoute: typeof SecretSignalForgeRoute
@@ -9654,7 +9654,6 @@ const SecretRouteChildren: SecretRouteChildren = {
   SecretCursedLogicRoute: SecretCursedLogicRouteWithChildren,
   SecretDreamRiftRoute: SecretDreamRiftRoute,
   SecretEatsRoute: SecretEatsRoute,
-  SecretHouseAlwaysWinsRoute: SecretHouseAlwaysWinsRoute,
   SecretJobsRoute: SecretJobsRouteWithChildren,
   SecretNotesRoute: SecretNotesRouteWithChildren,
   SecretSignalForgeRoute: SecretSignalForgeRoute,
@@ -10142,6 +10141,7 @@ const rootRouteChildren: RootRouteChildren = {
   DailyRoute: DailyRouteWithChildren,
   DeeplinkRoute: DeeplinkRouteWithChildren,
   ForestExplorerRoute: ForestExplorerRouteWithChildren,
+  HouseAlwaysWinsRoute: HouseAlwaysWinsRoute,
   KowloonKnockoutRoute: KowloonKnockoutRouteWithChildren,
   LaundrySortRoute: LaundrySortRoute,
   LightsOutRoute: LightsOutRoute,
@@ -10319,12 +10319,12 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminCuratedBuildsImageRoute: ApiAdminCuratedBuildsImageRouteWithChildren,
   ApiAdminLibraryIdRoute: ApiAdminLibraryIdRoute,
   ApiAdminLibraryMigrateRoute: ApiAdminLibraryMigrateRoute,
-  ApiAdminVibeBackfillThumbsRoute: ApiAdminVibeBackfillThumbsRoute,
   ApiAdminLibraryQuotaRequestsRoute: ApiAdminLibraryQuotaRequestsRoute,
   ApiAdminLibraryReorderRoute: ApiAdminLibraryReorderRoute,
   ApiAdminLibraryStorageHealthRoute: ApiAdminLibraryStorageHealthRoute,
   ApiAdminRideshareApplicationsRoute: ApiAdminRideshareApplicationsRoute,
   ApiAdminRideshareRidesRoute: ApiAdminRideshareRidesRoute,
+  ApiAdminVibeBackfillThumbsRoute: ApiAdminVibeBackfillThumbsRoute,
   ApiBuildsCoverFileRoute: ApiBuildsCoverFileRoute,
   ApiCommentsCommentIdTranslateRoute: ApiCommentsCommentIdTranslateRoute,
   ApiCommunitiesSlugFeedRoute: ApiCommunitiesSlugFeedRoute,

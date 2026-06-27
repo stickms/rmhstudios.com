@@ -12,7 +12,6 @@ import {
   ArrowLeft,
   Swords,
   BrainCircuit,
-  Crown,
   Sparkles,
   Zap,
   Newspaper,
@@ -35,7 +34,6 @@ interface SecretItem {
 }
 
 const secretGames: SecretItem[] = [
-  { id: 'house-always-wins', name: 'House Always Wins', desc: 'A dark casino Metroidvania', icon: Crown, accent: '#d97706', href: '/secret/house-always-wins' },
   { id: 'satans-library', name: "Satan's Library", desc: 'Survival horror — lock in or lose', icon: BookOpen, accent: '#dc2626', href: '#' },
   { id: 'vega', name: 'Project Vega', desc: 'Clinical horror tower defense', icon: BrainCircuit, accent: '#16a34a', href: '/secret/vega' },
   { id: 'cursed-logic', name: 'Cursed Logic', desc: 'Psychological duel vs. rogue AI', icon: Swords, accent: '#ca8a04', href: '/secret/cursed-logic' },

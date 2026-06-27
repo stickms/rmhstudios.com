@@ -22,7 +22,7 @@ export function GameShell({ userName }: GameShellProps) {
       {/* Top bar */}
       <div className="shrink-0 flex items-center justify-between px-4 py-2 border-b border-neutral-800/50 z-20">
         <Link
-          to="/secret"
+          to="/"
           className="flex items-center gap-2 text-neutral-500 hover:text-neutral-300 transition-colors text-sm"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -31,7 +31,7 @@ export function GameShell({ userName }: GameShellProps) {
 
         <div className="flex items-center gap-4">
           <span className="text-neutral-600 text-[10px] font-mono tracking-wide hidden sm:block">
-            {t("controls-hint", { defaultValue: "WASD/Arrows • Space Jump • E Interact • M Menu" })}
+            {t("controls-hint", { defaultValue: "WASD/← → Move • Space Jump • Shift Dash • E Interact • M Menu" })}
           </span>
           {userName && (
             <span className="text-neutral-600 text-xs font-mono">
