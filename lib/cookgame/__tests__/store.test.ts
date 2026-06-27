@@ -4,6 +4,7 @@ import { useCookgameStore } from '../store';
 import { TEND_COOLDOWN_MS, DRY_COOLDOWN_MS } from '../cultivation';
 import { rankForXp, xpForRecipe } from '../progression';
 import { propertyEffects } from '../property';
+import { KEY_PRICES } from '../shops';
 
 const reset = () => useCookgameStore.getState().resetGame();
 
@@ -340,15 +341,13 @@ describe('cookgame store — property', () => {
   });
 });
 
-import { KEY_PRICES } from '../shops';
-
 describe('cookgame store — keys + district', () => {
   beforeEach(reset);
   it('buyKey deducts cash and adds the key once', () => {
     useCookgameStore.setState({ cash: 1000 });
     const st = useCookgameStore.getState();
     expect(st.buyKey('docks_key')).toBe(true);
-    let s = useCookgameStore.getState();
+    const s = useCookgameStore.getState();
     expect(s.keys).toContain('docks_key');
     expect(s.cash).toBe(1000 - KEY_PRICES.docks_key);
     expect(st.buyKey('docks_key')).toBe(false); // already owned
