@@ -14,6 +14,11 @@ const LABELS: Record<string, string> = {
   drying: 'Drying Rack',
   chem: 'Chemistry Station',
   property: 'Manage Property',
+  hardware: 'Hardware Store',
+  afterhours: 'After-Hours Stall',
+  marcus: 'Marcus',
+  vera: 'Vera',
+  silas: 'Silas',
 };
 
 export function InteractionPrompt() {

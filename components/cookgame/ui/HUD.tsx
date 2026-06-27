@@ -2,6 +2,7 @@
 import { useCookgameStore } from '@/lib/cookgame/store';
 import { HEAT_PENALTY_THRESHOLD, MAX_HEAT } from '@/lib/cookgame/economy';
 import { rankForXp, xpToNextRank, RANKS } from '@/lib/cookgame/progression';
+import { DISTRICTS } from '@/lib/cookgame/districts';
 
 export function HUD() {
   const cash = useCookgameStore((s) => s.cash);
@@ -9,6 +10,7 @@ export function HUD() {
   const packaged = useCookgameStore((s) => s.inventory.packaged);
   const xp = useCookgameStore((s) => s.xp);
   const setActiveOverlay = useCookgameStore((s) => s.setActiveOverlay);
+  const currentDistrict = useCookgameStore((s) => s.currentDistrict);
 
   const totalUnits = packaged.reduce((sum, stack) => sum + stack.units, 0);
   const heatPct = Math.min(100, (heat / MAX_HEAT) * 100);
@@ -50,6 +52,13 @@ export function HUD() {
             </div>
           )}
         </div>
+        {/* Current district readout */}
+        {DISTRICTS[currentDistrict] && (
+          <div className="rounded-md border border-neutral-700 bg-neutral-900/80 px-3 py-2">
+            <div className="font-mono text-[11px] uppercase tracking-widest text-neutral-400">District</div>
+            <div className="font-mono text-sm text-lime-300">{DISTRICTS[currentDistrict].name}</div>
+          </div>
+        )}
         <div className="pointer-events-auto flex gap-2">
           <button
             onClick={() => setActiveOverlay('journal')}
@@ -62,6 +71,12 @@ export function HUD() {
             className="rounded border border-neutral-700 bg-neutral-800 px-2.5 py-1 font-mono text-xs text-neutral-200 hover:bg-neutral-700"
           >
             Menu (M)
+          </button>
+          <button
+            onClick={() => setActiveOverlay('map')}
+            className="rounded border border-neutral-700 bg-neutral-800 px-2.5 py-1 font-mono text-xs text-neutral-200 hover:bg-neutral-700"
+          >
+            Map (N)
           </button>
         </div>
       </div>
