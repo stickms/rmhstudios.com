@@ -16,7 +16,7 @@
 import type {
   Actor, Vec3, Team, RoundPhase, MatchSnapshot, WorldFx, Tracer,
   KillFeedEntry, RoundResult, MatchMode, NetMode, NetEvent,
-  NetPlayerState, NetMatchState, NetBotState, AbilityKind,
+  NetPlayerState, NetMatchState, NetBotState, AbilityKind, NetPlayerStat,
 } from '../types';
 import type { MatchConfig } from '../store';
 import { BOT_NAMES } from '../store';
@@ -39,6 +39,7 @@ import {
   ZOMBIE_WAVES, ZOMBIE_BASE_COUNT, ZOMBIE_PER_WAVE, ZOMBIE_MAX_ALIVE, ZOMBIE_HP,
   ZOMBIE_HP_PER_WAVE, ZOMBIE_SPEED, ZOMBIE_SPEED_PER_WAVE, ZOMBIE_DAMAGE,
   ZOMBIE_ATTACK_RANGE, ZOMBIE_ATTACK_CD, ZOMBIE_KILL_REWARD, ZOMBIE_WAVE_REWARD, ZOMBIE_BUY_TIME,
+  ZOMBIE_TYPES,
 } from '../constants';
 
 export interface LocalInput {
@@ -208,6 +209,8 @@ export class World {
 
   private respawn(a: Actor, spawn: Vec3) {
     a.pos = v(spawn.x, 0, spawn.z);
+    a.spawnX = spawn.x; a.spawnZ = spawn.z;
+    a.respawnSeq = (a.respawnSeq ?? 0) + 1;
     a.vel = v();
     a.alive = true; a.crouch = false;
     a.hp = a.maxHp; a.shieldHp = 0; a.armor = a.loadout.armor;
@@ -254,11 +257,24 @@ export class World {
     return v(ARENA.maxX - 2, 0, r);
   }
 
+  private pickZombieType(): import('../constants').ZombieType {
+    const pool = Object.values(ZOMBIE_TYPES).filter((t) => t.minWave <= this.wave);
+    const total = pool.reduce((s, t) => s + t.weight, 0);
+    let r = Math.random() * total;
+    for (const t of pool) { r -= t.weight; if (r <= 0) return t; }
+    return ZOMBIE_TYPES.walker;
+  }
+
   private spawnZombie() {
     const id = `zomb_${this.zombieCounter++}`;
-    const z = this.makeActor(id, 'Zombie', 'bot', ZOMBIE_TEAM, 'blaze', false);
+    const type = this.pickZombieType();
+    const z = this.makeActor(id, type.name, 'bot', ZOMBIE_TEAM, 'blaze', false);
     z.isZombie = true;
-    z.maxHp = z.hp = ZOMBIE_HP + (this.wave - 1) * ZOMBIE_HP_PER_WAVE;
+    z.zombieType = type.id;
+    const baseHp = ZOMBIE_HP + (this.wave - 1) * ZOMBIE_HP_PER_WAVE;
+    z.maxHp = z.hp = Math.round(baseHp * type.hpMul);
+    z.zSpeed = (ZOMBIE_SPEED + (this.wave - 1) * ZOMBIE_SPEED_PER_WAVE) * type.speedMul;
+    z.zDamage = ZOMBIE_DAMAGE * type.dmgMul;
     z.currentWeapon = 'knife';
     z.attackReady = 0;
     const sp = this.zombieEdgeSpawn();
@@ -275,11 +291,14 @@ export class World {
     a.credits -= w.cost;
     if (w.class === 'sidearm') a.loadout.sidearm = weaponId; else a.loadout.primary = weaponId;
     this.equip(a, weaponId);
+    if (a.isLocal && this.netMode === 'guest') this.outEvents.push({ kind: 'buy', buyKind: 'weapon', id: weaponId, value: 0, cost: w.cost, max: 0 });
     return true;
   }
   buyArmor(a: Actor, value: number, cost: number): boolean {
     if (!this.canBuy() || !a.alive || a.loadout.armor >= value || a.credits < cost) return false;
-    a.credits -= cost; a.loadout.armor = value; a.armor = value; return true;
+    a.credits -= cost; a.loadout.armor = value; a.armor = value;
+    if (a.isLocal && this.netMode === 'guest') this.outEvents.push({ kind: 'buy', buyKind: 'armor', id: '', value, cost, max: 0 });
+    return true;
   }
   buyAbility(a: Actor, abilityId: string, cost: number, max: number): boolean {
     if (!this.canBuy() || !a.alive) return false;
@@ -288,7 +307,25 @@ export class World {
     a.credits -= cost;
     a.loadout.abilities[abilityId] = have + 1;
     a.abilityCharges[abilityId] = (a.abilityCharges[abilityId] ?? 0) + 1;
+    if (a.isLocal && this.netMode === 'guest') this.outEvents.push({ kind: 'buy', buyKind: 'ability', id: abilityId, value: 0, cost, max });
     return true;
+  }
+
+  /** Host: replay a guest's purchase on the authoritative copy. */
+  applyBuy(fromId: string, e: { buyKind: 'weapon' | 'armor' | 'ability'; id: string; value: number; cost: number; max: number }) {
+    if (!this.isDirector) return;
+    const a = this.actors.find((x) => x.id === fromId && x.kind === 'human');
+    if (!a) return;
+    if (e.buyKind === 'weapon') this.buyWeapon(a, e.id);
+    else if (e.buyKind === 'armor') this.buyArmor(a, e.value, e.cost);
+    else this.buyAbility(a, e.id, e.cost, e.max);
+  }
+
+  /** Host: account for a guest spending its ultimate. */
+  applyAbilityIntent(fromId: string, slot: 'C' | 'Q' | 'E' | 'X') {
+    if (!this.isDirector || slot !== 'X') return;
+    const a = this.actors.find((x) => x.id === fromId && x.kind === 'human');
+    if (a) a.ultPoints = 0;
   }
   private botBuy(a: Actor) {
     const agent = getAgent(a.agentId);
@@ -469,7 +506,7 @@ export class World {
     const agent = getAgent(a.agentId);
     let max = crouch ? CROUCH_SPEED : (run ? RUN_SPEED : WALK_SPEED);
     max *= agent.passive?.moveMul ?? 1;
-    if (a.isZombie) max = (ZOMBIE_SPEED + (this.wave - 1) * ZOMBIE_SPEED_PER_WAVE);
+    if (a.isZombie) max = a.zSpeed ?? (ZOMBIE_SPEED + (this.wave - 1) * ZOMBIE_SPEED_PER_WAVE);
     if (a.speedBoostUntil > this.now) max *= 1.35;
     if (a.hasSpike) max *= 0.97;
     const wishLen = Math.hypot(wishX, wishZ);
@@ -542,13 +579,14 @@ export class World {
     if (!target) { this.integrate(a, dt, 0, 0, false, false, false); return; }
     const dx = target.pos.x - a.pos.x, dz = target.pos.z - a.pos.z;
     a.yaw += this.angleLerp(a.yaw, Math.atan2(dx, -dz), dt * 6);
-    const reach = best > ZOMBIE_ATTACK_RANGE;
+    const range = a.zombieType === 'spitter' ? ZOMBIE_ATTACK_RANGE + 1.4 : ZOMBIE_ATTACK_RANGE;
+    const reach = best > range;
     this.integrate(a, dt, reach ? Math.sin(a.yaw) : 0, reach ? -Math.cos(a.yaw) : 0, false, false, true);
     a.anim.moveSpeed = reach ? 1 : 0;
-    if (best <= ZOMBIE_ATTACK_RANGE && (a.attackReady ?? 0) <= this.now) {
+    if (best <= range && (a.attackReady ?? 0) <= this.now) {
       a.attackReady = this.now + ZOMBIE_ATTACK_CD * 1000;
       a.anim.firing = this.now;
-      this.dealDamage(target, a, ZOMBIE_DAMAGE, false, 'Zombie');
+      this.dealDamage(target, a, a.zDamage ?? ZOMBIE_DAMAGE, false, 'Zombie');
     }
   }
 
@@ -719,6 +757,7 @@ export class World {
     else { const have = a.abilityCharges[ab.id] ?? 0; if (have <= 0) return; a.abilityCharges[ab.id] = have - 1; }
     a.anim.casting = this.now;
     this.executeAbility(a, ab.kind, slot === 'X');
+    if (a.isLocal && this.netMode === 'guest' && slot === 'X') this.outEvents.push({ kind: 'ability', slot });
   }
   private botUseAbility(a: Actor) {
     const agent = getAgent(a.agentId);
@@ -796,12 +835,17 @@ export class World {
     const bots: NetBotState[] = this.actors.filter((a) => a.kind === 'bot').map((b) => ({
       id: b.id, name: b.name, team: b.team, agentId: b.agentId,
       px: b.pos.x, py: b.pos.y, pz: b.pos.z, yaw: b.yaw, pitch: b.pitch,
-      hp: b.hp, alive: b.alive, isZombie: !!b.isZombie, moveSpeed: b.anim.moveSpeed, firing: b.anim.firing, crouch: b.crouch,
+      hp: b.hp, alive: b.alive, isZombie: !!b.isZombie, zombieType: b.zombieType, moveSpeed: b.anim.moveSpeed, firing: b.anim.firing, crouch: b.crouch,
+    }));
+    const players: NetPlayerStat[] = this.actors.filter((a) => a.kind === 'human').map((p) => ({
+      id: p.id, credits: p.credits, kills: p.kills, deaths: p.deaths, score: p.score, ult: p.ultPoints,
+      alive: p.alive, hasSpike: p.hasSpike, respawnSeq: p.respawnSeq ?? 0, spawnX: p.spawnX ?? p.pos.x, spawnZ: p.spawnZ ?? p.pos.z,
+      weapon: p.loadout.primary ?? p.loadout.sidearm, armor: p.loadout.armor,
     }));
     return {
       now: this.now, mode: this.mode, phase: this.phase, round: this.round, wave: this.wave, zombiesLeft: this.zombiesLeft,
       scoreAttackers: this.scoreAttackers, scoreDefenders: this.scoreDefenders, attackersTeam: this.attackersTeam,
-      phaseEndsAt: this.phaseEndsAt, spike: this.spike, over: this.over, winner: this.winner, bots,
+      phaseEndsAt: this.phaseEndsAt, spike: this.spike, over: this.over, winner: this.winner, bots, players,
     };
   }
 
@@ -831,8 +875,32 @@ export class World {
     this.mode = st.mode; this.phase = st.phase; this.round = st.round; this.wave = st.wave; this.zombiesLeft = st.zombiesLeft;
     this.scoreAttackers = st.scoreAttackers; this.scoreDefenders = st.scoreDefenders; this.attackersTeam = st.attackersTeam;
     this.phaseEndsAt = st.phaseEndsAt; this.spike = st.spike; this.over = st.over; this.winner = st.winner;
+    this.lastNetAt = st.now;
+    if (st.players) for (const ps of st.players) this.applyPlayerStat(ps);
     this.reconcileBots(st.bots);
   }
+
+  /** Adopt host-authoritative economy/scoreboard + handle round-start respawn. */
+  private applyPlayerStat(ps: NetPlayerStat) {
+    const a = this.actors.find((x) => x.id === ps.id && x.kind === 'human');
+    if (!a) return;
+    a.credits = ps.credits; a.kills = ps.kills; a.deaths = ps.deaths; a.score = ps.score; a.ultPoints = ps.ult; a.hasSpike = ps.hasSpike;
+    const respawned = ps.respawnSeq > (a.respawnSeq ?? 0);
+    a.respawnSeq = ps.respawnSeq;
+    if (respawned) {
+      // round/wave reset — teleport + restore
+      a.alive = true;
+      a.hp = a.maxHp; a.shieldHp = 0; a.armor = ps.armor; a.loadout.armor = ps.armor;
+      a.blindUntil = 0; a.recoil = 0; a.reloading = false; a.healUntil = 0; a.speedBoostUntil = 0;
+      this.equip(a, ps.weapon);
+      if (a.isLocal) { a.pos = v(ps.spawnX, 0, ps.spawnZ); a.vel = v(); a.anim.deathTime = 0; }
+      else { a.net = { px: ps.spawnX, py: 0, pz: ps.spawnZ, yaw: a.yaw, pitch: 0, t: this.now, moveSpeed: 0, firing: 0, crouch: false }; a.pos = v(ps.spawnX, 0, ps.spawnZ); a.anim.deathTime = 0; }
+    } else if (!ps.alive && a.alive) {
+      a.alive = false; if (a.anim.deathTime === 0) a.anim.deathTime = this.now;
+    }
+  }
+
+  lastNetAt = 0;
 
   private reconcileBots(list: NetBotState[]) {
     const seen = new Set<string>();
@@ -840,7 +908,7 @@ export class World {
       seen.add(b.id);
       let a = this.actors.find((x) => x.id === b.id);
       if (!a) { a = this.makeActor(b.id, b.name, 'bot', b.team, b.agentId, false); a.remote = true; a.isZombie = b.isZombie; this.actors.push(a); }
-      a.remote = true; a.isZombie = b.isZombie; a.team = b.team; a.hp = b.hp; a.alive = b.alive;
+      a.remote = true; a.isZombie = b.isZombie; a.zombieType = b.zombieType; a.team = b.team; a.hp = b.hp; a.alive = b.alive;
       if (!a.alive && a.anim.deathTime === 0) a.anim.deathTime = this.now;
       if (a.alive) a.anim.deathTime = 0;
       a.net = { px: b.px, py: b.py, pz: b.pz, yaw: b.yaw, pitch: b.pitch, t: this.now, moveSpeed: b.moveSpeed, firing: b.firing, crouch: b.crouch };

@@ -109,7 +109,7 @@
 
 /* ── Tab body ────────────────────────────────────────────────────────────── */
 .cstudio-body {
-  padding: clamp(16px, 3vw, 28px) var(--studio-gutter) 0;
+  padding: clamp(16px, 3vw, 28px) var(--studio-gutter) clamp(56px, 9vw, 112px);
 }
 
 /* The Pages tab brings its own hero, so it shouldn't double up the top padding. */

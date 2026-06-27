@@ -17,8 +17,8 @@ export const PALETTE = {
   wallDark: '#373b47',
   cover: '#6b5d4f',
   coverDark: '#4f463b',
-  attacker: '#ff4655', // Valorant red
-  defender: '#16e0a3', // teal/green
+  attacker: '#ff4655', // attackers = red
+  defender: '#3b6fe0', // defenders = blue
   spike: '#ff4655',
   sky: '#10141d',
   accentGold: '#ece8d8',
@@ -65,6 +65,27 @@ export const LOSS_BONUS = [1900, 2400, 2900]; // escalating loss streak
 export const SPIKE_PICKUP_BONUS = 300;
 
 export const MOBILE_BREAKPOINT = 768;
+
+// ── Team identity (everyone sees red attackers / blue defenders) ──
+export const TEAM_COLORS: Record<string, string> = {
+  attackers: '#ff4655',
+  defenders: '#3b6fe0',
+  zombies: '#5f8a2e',
+};
+
+// ── Zombie variants ──────────────────────────────────────────
+export interface ZombieType {
+  id: string; name: string;
+  color: string; limb: string; scale: number;
+  hpMul: number; speedMul: number; dmgMul: number;
+  minWave: number; weight: number;
+}
+export const ZOMBIE_TYPES: Record<string, ZombieType> = {
+  walker: { id: 'walker', name: 'Walker', color: '#5f8a2e', limb: '#7a4a3a', scale: 1.0, hpMul: 1, speedMul: 1, dmgMul: 1, minWave: 1, weight: 5 },
+  runner: { id: 'runner', name: 'Runner', color: '#a7c83a', limb: '#6a8a2a', scale: 0.82, hpMul: 0.5, speedMul: 1.75, dmgMul: 0.7, minWave: 2, weight: 3 },
+  brute: { id: 'brute', name: 'Brute', color: '#3f6b2a', limb: '#2f2618', scale: 1.55, hpMul: 3.2, speedMul: 0.62, dmgMul: 2.3, minWave: 3, weight: 1.4 },
+  spitter: { id: 'spitter', name: 'Spitter', color: '#7ab36a', limb: '#3a5a2a', scale: 0.95, hpMul: 0.8, speedMul: 1.1, dmgMul: 1.4, minWave: 4, weight: 1.6 },
+};
 
 // ── Zombies mode ─────────────────────────────────────────────
 export const ZOMBIE_WAVES = 10;          // survive this many to win

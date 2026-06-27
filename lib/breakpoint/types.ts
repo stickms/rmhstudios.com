@@ -143,6 +143,11 @@ export interface Actor {
   // networking / mode
   remote?: boolean;       // state arrives over the network (don't simulate)
   isZombie?: boolean;     // PvE zombie actor
+  zombieType?: string;    // walker | runner | brute | spitter
+  zSpeed?: number;        // zombie move speed
+  zDamage?: number;       // zombie melee damage
+  respawnSeq?: number;    // bumped each (re)spawn — drives guest teleport/reset
+  spawnX?: number; spawnZ?: number; // last spawn point (host → guests)
   attackReady?: number;   // ms — next melee attack allowed (zombies)
   lastHitBy?: string;     // id of last attacker (for kill attribution)
   net?: { px: number; py: number; pz: number; yaw: number; pitch: number; t: number; moveSpeed: number; firing: number; crouch: boolean }; // interp target
@@ -260,7 +265,17 @@ export type NetEvent =
   | { kind: 'bhit'; target: string; dmg: number; head: boolean; weapon: string }
   | { kind: 'death'; killer: string; weapon: string; head: boolean }
   | { kind: 'fx'; fx: WorldFx }
-  | { kind: 'spike'; type: 'plant' | 'defuse'; active: boolean; pos: Vec3 | null };
+  | { kind: 'spike'; type: 'plant' | 'defuse'; active: boolean; pos: Vec3 | null }
+  | { kind: 'buy'; buyKind: 'weapon' | 'armor' | 'ability'; id: string; value: number; cost: number; max: number }
+  | { kind: 'ability'; slot: 'C' | 'Q' | 'E' | 'X' };
+
+/** Host-authoritative per-player stats (economy + scoreboard + respawn). */
+export interface NetPlayerStat {
+  id: string;
+  credits: number; kills: number; deaths: number; score: number; ult: number;
+  alive: boolean; hasSpike: boolean;
+  respawnSeq: number; spawnX: number; spawnZ: number; weapon: string; armor: number;
+}
 
 /** Compact per-player state broadcast ~20Hz by every client for its own avatar. */
 export interface NetPlayerState {
@@ -285,10 +300,11 @@ export interface NetMatchState {
   spike: SpikeState;
   over: boolean; winner: Team | null;
   bots: NetBotState[];
+  players: NetPlayerStat[];
 }
 
 export interface NetBotState {
   id: string; name: string; team: Team; agentId: string;
   px: number; py: number; pz: number; yaw: number; pitch: number;
-  hp: number; alive: boolean; isZombie: boolean; moveSpeed: number; firing: number; crouch: boolean;
+  hp: number; alive: boolean; isZombie: boolean; zombieType?: string; moveSpeed: number; firing: number; crouch: boolean;
 }

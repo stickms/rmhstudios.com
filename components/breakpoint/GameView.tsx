@@ -15,6 +15,7 @@ import { Scoreboard } from './Scoreboard';
 import { MobileControls } from './MobileControls';
 
 const LOOK_SENS = 0.0024;
+const nowMs = () => performance.now();
 
 export function GameView() {
   const matchConfig = useBreakpointStore((s) => s.matchConfig);
@@ -29,6 +30,7 @@ export function GameView() {
   const [showScore, setShowScore] = useState(false);
   const [showBuy, setShowBuy] = useState(false);
   const [netError, setNetError] = useState<string | null>(null);
+  const [connLost, setConnLost] = useState(false);
   const canvasWrap = useRef<HTMLDivElement>(null);
 
   if (!worldRef.current && matchConfig) {
@@ -37,44 +39,56 @@ export function GameView() {
     worldRef.current = w;
   }
 
-  // ── Multiplayer net wiring ──
+  // ── Simulation + net loop (setInterval so it survives backgrounded tabs) ──
   useEffect(() => {
     const world = worldRef.current;
-    if (!world || !matchConfig || matchConfig.netMode === 'solo') return;
+    if (!world || !matchConfig) return;
+    const mp = matchConfig.netMode !== 'solo';
     const me = matchConfig.localId;
     const isHost = matchConfig.netMode === 'host';
+    const lastNetWall = { t: nowMs() };
 
-    const unsubs = [
-      roomClient.on('player', (d) => { const { id, state } = d as { id: string; state: unknown }; if (id !== me) world.applyRemotePlayer(id, state as never); }),
-      roomClient.on('match', (d) => { if (!isHost) world.applyMatchState((d as { state: never }).state); }),
-      roomClient.on('hit', (d) => { const h = d as { from: string; dmg: number; head: boolean; weapon: string }; world.applyIncomingHit(h.from, h.dmg, h.head, h.weapon); }),
-      roomClient.on('death', (d) => { const x = d as { id: string; killer: string; weapon: string; head: boolean }; world.applyRemoteDeath(x.id, x.killer, x.weapon, x.head); }),
-      roomClient.on('bhit', (d) => { const x = d as { from: string; target: string; dmg: number; head: boolean; weapon: string }; world.applyBotHit(x.from, x.target, x.dmg, x.head, x.weapon); }),
-      roomClient.on('fx', (d) => { world.applyRemoteFx((d as { fx: never }).fx); }),
-      roomClient.on('spike', (d) => { const x = d as { playerId: string; type: 'plant' | 'defuse'; active: boolean; pos: never }; world.applySpikeIntent(x.playerId, x.type, x.active, x.pos); }),
-      roomClient.on('playerLeft', (d) => { world.removeActor((d as { id: string }).id); }),
-      roomClient.on('error', (d) => { setNetError((d as { message: string }).message || 'Connection error'); }),
-    ];
+    const unsubs: (() => void)[] = [];
+    if (mp) {
+      unsubs.push(
+        roomClient.on('player', (d) => { const { id, state } = d as { id: string; state: unknown }; if (id !== me) world.applyRemotePlayer(id, state as never); }),
+        roomClient.on('match', (d) => { if (!isHost) { world.applyMatchState((d as { state: never }).state); lastNetWall.t = nowMs(); setConnLost(false); } }),
+        roomClient.on('hit', (d) => { const h = d as { from: string; dmg: number; head: boolean; weapon: string }; world.applyIncomingHit(h.from, h.dmg, h.head, h.weapon); }),
+        roomClient.on('death', (d) => { const x = d as { id: string; killer: string; weapon: string; head: boolean }; world.applyRemoteDeath(x.id, x.killer, x.weapon, x.head); }),
+        roomClient.on('bhit', (d) => { const x = d as { from: string; target: string; dmg: number; head: boolean; weapon: string }; world.applyBotHit(x.from, x.target, x.dmg, x.head, x.weapon); }),
+        roomClient.on('fx', (d) => { world.applyRemoteFx((d as { fx: never }).fx); }),
+        roomClient.on('spike', (d) => { const x = d as { playerId: string; type: 'plant' | 'defuse'; active: boolean; pos: never }; world.applySpikeIntent(x.playerId, x.type, x.active, x.pos); }),
+        roomClient.on('buy', (d) => { const x = d as { from: string; buyKind: 'weapon' | 'armor' | 'ability'; id: string; value: number; cost: number; max: number }; world.applyBuy(x.from, x); }),
+        roomClient.on('ability', (d) => { const x = d as { from: string; slot: 'C' | 'Q' | 'E' | 'X' }; world.applyAbilityIntent(x.from, x.slot); }),
+        roomClient.on('playerLeft', (d) => { world.removeActor((d as { id: string }).id); }),
+        roomClient.on('error', (d) => { setNetError((d as { message: string }).message || 'Disconnected'); }),
+      );
+    }
 
-    let raf = 0; let lastPlayer = 0; let lastMatch = 0;
+    let prev = nowMs(); let lastPlayer = 0; let lastMatch = 0;
     const playerIv = 1000 / NET_PLAYER_HZ;
     const matchIv = 1000 / NET_MATCH_HZ;
-    const loop = (t: number) => {
-      // drain per-frame combat events
-      const evs: NetEvent[] = world.drainEvents();
-      for (const e of evs) {
-        if (e.kind === 'hit') roomClient.sendHit(e.target, e.dmg, e.head, e.weapon);
-        else if (e.kind === 'bhit') roomClient.sendBhit(e.target, e.dmg, e.head, e.weapon);
-        else if (e.kind === 'death') roomClient.sendDeath(e.killer, e.weapon, e.head);
-        else if (e.kind === 'fx') roomClient.sendFx(e.fx);
-        else if (e.kind === 'spike') roomClient.sendSpike(e.type, e.active, e.pos);
+    const id = window.setInterval(() => {
+      const t = nowMs();
+      const dt = Math.min(120, t - prev); prev = t;
+      world.update(dt);
+      if (mp) {
+        for (const e of world.drainEvents() as NetEvent[]) {
+          if (e.kind === 'hit') roomClient.sendHit(e.target, e.dmg, e.head, e.weapon);
+          else if (e.kind === 'bhit') roomClient.sendBhit(e.target, e.dmg, e.head, e.weapon);
+          else if (e.kind === 'death') roomClient.sendDeath(e.killer, e.weapon, e.head);
+          else if (e.kind === 'fx') roomClient.sendFx(e.fx);
+          else if (e.kind === 'spike') roomClient.sendSpike(e.type, e.active, e.pos);
+          else if (e.kind === 'buy') roomClient.sendBuy(e.buyKind, e.id, e.value, e.cost, e.max);
+          else if (e.kind === 'ability') roomClient.sendAbility(e.slot);
+        }
+        if (t - lastPlayer > playerIv) { lastPlayer = t; const ps = world.getPlayerState(); if (ps) roomClient.sendPlayer(ps); }
+        if (isHost && t - lastMatch > matchIv) { lastMatch = t; roomClient.sendMatch(world.getMatchState()); }
+        if (!isHost && t - lastNetWall.t > 6000) setConnLost(true);
       }
-      if (t - lastPlayer > playerIv) { lastPlayer = t; const ps = world.getPlayerState(); if (ps) roomClient.sendPlayer(ps); }
-      if (isHost && t - lastMatch > matchIv) { lastMatch = t; roomClient.sendMatch(world.getMatchState()); }
-      raf = requestAnimationFrame(loop);
-    };
-    raf = requestAnimationFrame(loop);
-    return () => { raf && cancelAnimationFrame(raf); unsubs.forEach((u) => u()); };
+    }, 1000 / 60);
+
+    return () => { window.clearInterval(id); unsubs.forEach((u) => u()); };
   }, [matchConfig]);
 
   const prevPhase = useRef<string>('');
@@ -198,6 +212,13 @@ export function GameView() {
         <div className="bp-neterror">
           <div>{netError}</div>
           <button className="bp-cta bp-cta-sm" onClick={() => setPhase('lobby')}>BACK TO LOBBY</button>
+        </div>
+      )}
+
+      {connLost && !netError && (
+        <div className="bp-neterror">
+          <div style={{ color: '#ffce4f' }}>RECONNECTING TO HOST…</div>
+          <button className="bp-cta bp-cta-sm" onClick={() => setPhase('lobby')}>LEAVE MATCH</button>
         </div>
       )}
 

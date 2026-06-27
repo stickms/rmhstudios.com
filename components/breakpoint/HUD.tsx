@@ -21,7 +21,7 @@ export function HUD({ snap }: { snap: MatchSnapshot }) {
   const agent = getAgent(local.agentId);
   const wpn = getWeapon(local.currentWeapon);
   const attColor = '#ff4655';
-  const defColor = '#16e0a3';
+  const defColor = '#3b6fe0';
   const localIsAtt = snap.localTeam === 'attackers';
 
   const timeLeft = snap.phaseEndsAt - snap.now;
