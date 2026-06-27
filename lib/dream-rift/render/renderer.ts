@@ -33,6 +33,7 @@ interface Comment {
     speed: number;
     color: string;
     size: number;
+    age: number;
 }
 
 export interface HudView {
@@ -144,11 +145,12 @@ export class Renderer {
     static readonly STATS_STRIP_H = STACKED_STATS_H;
 
     addComment(text: string, color = '#ffffff'): void {
-        const lanes = 7;
+        const lanes = 9;
         this.commentLane = (this.commentLane + 1) % lanes;
-        const y = 28 + this.commentLane * ((PLAYFIELD_H - 80) / lanes);
-        this.comments.push({ text, x: PLAYFIELD_W + 10, y, speed: 1.6 + Math.random() * 0.8, color, size: 13 + Math.floor(Math.random() * 3) });
-        if (this.comments.length > 40) this.comments.shift();
+        const y = 24 + this.commentLane * ((PLAYFIELD_H - 72) / lanes);
+        this.comments.push({ text, x: PLAYFIELD_W + 10, y, speed: 1.6 + Math.random() * 0.9, color, size: 13 + Math.floor(Math.random() * 3), age: 0 });
+        // Higher cap so dense crowd chatter on hard/lunatic can pile up and obscure.
+        if (this.comments.length > 64) this.comments.shift();
     }
 
     flashScreen(color: string, amount = 0.5): void {
@@ -513,16 +515,22 @@ export class Renderer {
         for (let i = this.comments.length - 1; i >= 0; i--) {
             const c = this.comments[i];
             c.x -= c.speed * this.frameScale;
+            c.age += this.frameScale;
+            // brief pop-in: fade + slide as the comment streams in from the right
+            const fade = Math.min(1, c.age / 8);
+            const slide = (1 - fade) * 8;
+            ctx.globalAlpha = fade;
             ctx.font = `bold ${c.size}px "Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif`;
             const w = ctx.measureText(c.text).width;
             // outline for readability over danmaku
             ctx.lineWidth = 3;
             ctx.strokeStyle = 'rgba(0,0,0,0.7)';
-            ctx.strokeText(c.text, c.x, c.y);
+            ctx.strokeText(c.text, c.x + slide, c.y);
             ctx.fillStyle = c.color;
-            ctx.fillText(c.text, c.x, c.y);
+            ctx.fillText(c.text, c.x + slide, c.y);
             if (c.x + w < -10) this.comments.splice(i, 1);
         }
+        ctx.globalAlpha = 1;
         ctx.restore();
         ctx.textBaseline = 'alphabetic';
     }

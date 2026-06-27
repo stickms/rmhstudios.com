@@ -237,6 +237,10 @@ export interface DifficultyMul {
     enemyDensity: number;
     grazeRadius: number;
     itemPower: number;
+    /** Firing cadence multiplier: >1 fires more often, <1 less often. */
+    fireRate: number;
+    /** Radians of random aim scatter — higher = more forgiving aimed fire. */
+    aimError: number;
 }
 
 // ─── Visual-only effects (never networked, never affect sim outcome) ───

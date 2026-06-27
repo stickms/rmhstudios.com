@@ -38,7 +38,7 @@ export interface RunResult {
     deaths: number;
     character: PlayerId;
     difficulty: Difficulty;
-    perPlayer: { name: string; score: number; charId: PlayerId }[];
+    perPlayer: { name: string; score: number; charId: PlayerId; userId: string }[];
     /** Sum of every joined player's score (co-op combined-score leaderboard). */
     combinedScore: number;
     /** Seconds the squad stayed in the run (time-survived leaderboard). */

@@ -82,6 +82,8 @@ export class GameSession {
     private destroyed = false;
     /** Sim frames the run has been active for (drives the "time survived" stat). */
     private runFrames = 0;
+    /** Active end-of-run animation (player bursts into particles before results). */
+    private ending: { cleared: boolean; frames: number } | null = null;
 
     constructor(opts: SessionOpts) {
         this.transport = opts.transport;
@@ -159,6 +161,22 @@ export class GameSession {
     // ── per-frame tick ──
 
     private tick(): void {
+        // End-of-run death/clear animation: freeze the field and let the particle
+        // burst play out, then drop into the results screen. Runs on every client
+        // (each shows its own ship bursting), so it stays multiplayer-friendly.
+        if (this.ending) {
+            this.world.cosmeticTick();
+            const e = this.ending;
+            if (e.frames > 36 && e.frames % 5 === 0) this.emitDeathSparks(e.cleared);
+            e.frames--;
+            if (e.frames <= 0) {
+                const cleared = e.cleared;
+                this.ending = null;
+                this.finishRun(cleared);
+            }
+            return;
+        }
+
         const poll = this.input.poll();
         if (poll.pausePressed && this.phase !== 'done') {
             const paused = !useDreamRift.getState().paused;
@@ -218,6 +236,9 @@ export class GameSession {
         }
         if (result.localDied) this.transport.send({ k: 'death', slot: this.localSlot });
         if (result.localBombed) this.transport.send({ k: 'bomb', slot: this.localSlot });
+
+        // ambient crowd chatter (host-driven, broadcast → all clients see the same)
+        this.tickAmbientComments();
 
         // director
         this.director();
@@ -535,14 +556,55 @@ export class GameSession {
         this.phase = 'done';
         this.music.play('victory');
         this.maybeComment('victory');
-        this.finishRun(true);
+        this.beginEnding(true);
     }
 
     private onGameOver(): void {
         this.phase = 'done';
         this.music.play('gameover');
         this.maybeComment('gameOver');
-        this.finishRun(false);
+        this.beginEnding(false);
+    }
+
+    /**
+     * Kick off the end-of-run animation: the local ship erupts into a particle
+     * burst over a frozen field for a beat before the results screen appears.
+     * Effects are purely cosmetic (never networked), so each client animating
+     * its own burst keeps multiplayer in sync.
+     */
+    private beginEnding(cleared: boolean): void {
+        if (this.ending) return;
+        const lp = this.world.players[this.localSlot] ?? this.world.players.find((p) => p.isLocal);
+        const x = lp?.renderX ?? PLAYFIELD_W / 2;
+        const y = lp?.renderY ?? PLAYFIELD_H - 56;
+        // Clear the danmaku so the death read is clean, then erupt.
+        this.world.clearAllBullets(false);
+        const gold = cleared;
+        const main = gold ? '#ffe9a0' : '#ff6b8a';
+        this.world.spawnEffect('death', x, y, main, 64, 48);
+        this.world.spawnEffect('spell', x, y, '#ffffff', 78, 42);
+        this.world.spawnEffect('pop', x, y, main, 30, 26);
+        for (let i = 0; i < 52; i++) {
+            const a = (Math.PI * 2 * i) / 52 + Math.random() * 0.25;
+            const sp = 1.4 + Math.random() * 3.6;
+            this.world.spawnEffect('spark', x, y, i % 3 === 0 ? '#ffffff' : main, 2.5 + Math.random() * 3, 28 + Math.random() * 26, Math.cos(a) * sp, Math.sin(a) * sp);
+        }
+        this.renderer.flashScreen(gold ? '#ffffff' : '#ff5577', gold ? 0.8 : 0.95);
+        this.sfx.play(gold ? 'bossDown' : 'death');
+        this.ending = { cleared, frames: gold ? 78 : 96 };
+    }
+
+    /** Secondary spark puffs sustained through the death animation. */
+    private emitDeathSparks(cleared: boolean): void {
+        const lp = this.world.players[this.localSlot] ?? this.world.players.find((p) => p.isLocal);
+        const x = lp?.renderX ?? PLAYFIELD_W / 2;
+        const y = lp?.renderY ?? PLAYFIELD_H - 56;
+        const main = cleared ? '#ffe9a0' : '#ff6b8a';
+        for (let i = 0; i < 6; i++) {
+            const a = Math.random() * Math.PI * 2;
+            const sp = 1 + Math.random() * 2.4;
+            this.world.spawnEffect('spark', x + (Math.random() * 2 - 1) * 14, y + (Math.random() * 2 - 1) * 14, i % 2 ? '#ffffff' : main, 2 + Math.random() * 2.5, 22 + Math.random() * 16, Math.cos(a) * sp, Math.sin(a) * sp);
+        }
     }
 
     private finishRun(cleared: boolean): void {
@@ -559,7 +621,7 @@ export class GameSession {
             deaths: lp?.deaths ?? 0,
             character: lp?.charId ?? 'bllm',
             difficulty: this.difficulty,
-            perPlayer: joined.map((p) => ({ name: p.name, score: Math.floor(p.score), charId: p.charId })),
+            perPlayer: joined.map((p) => ({ name: p.name, score: Math.floor(p.score), charId: p.charId, userId: p.userId })),
             // Co-op leaderboard metrics (combined squad score + how long they lasted).
             combinedScore: joined.reduce((sum, p) => sum + Math.floor(p.score), 0),
             timeSurvived: Math.round(this.runFrames / FPS),
@@ -692,15 +754,37 @@ export class GameSession {
     }
 
     private commentSalt = 1;
-    private maybeComment(event: CommentEvent): void {
+    private maybeComment(event: CommentEvent, opts?: { silent?: boolean; color?: string }): void {
         // host (or SP) decides and broadcasts so everyone sees the same text
         if (!this.isHost) return;
         this.commentSalt = (this.commentSalt * 1103515245 + 12345) & 0x7fffffff;
         const text = pickCommentBySalt(event, this.commentSalt);
-        const color = stageTheme(this.stageIndex).star;
+        const color = opts?.color ?? stageTheme(this.stageIndex).star;
         this.renderer.addComment(text, color);
-        this.sfx.play('comment');
+        if (!opts?.silent) this.sfx.play('comment');
         this.transport.send({ k: 'comment', d: { text, color } });
+    }
+
+    // ── ambient nico-nico chatter (denser on higher difficulty) ──
+    private ambientTimer = 0;
+    /** Frames between ambient-chatter bursts — far more frequent on Lunatic. */
+    private get ambientInterval(): number {
+        switch (this.difficulty) {
+            case 'easy': return 60 * 6;
+            case 'hard': return 60 * 2.2;
+            case 'lunatic': return 60 * 1.3;
+            default: return 60 * 3.8;
+        }
+    }
+    /** Crowd chatter streamed throughout play; more (and more obscuring) the harder it gets. */
+    private tickAmbientComments(): void {
+        if (!this.isHost) return;
+        this.ambientTimer++;
+        if (this.ambientTimer < this.ambientInterval) return;
+        this.ambientTimer = 0;
+        const burst = this.difficulty === 'lunatic' ? 3 : this.difficulty === 'hard' ? 2 : 1;
+        const crowd = 'rgba(255,255,255,0.82)';
+        for (let i = 0; i < burst; i++) this.maybeComment('ambient', { silent: true, color: crowd });
     }
 
     /** Public hook so the HUD/score systems can fire milestone/streak comments. */

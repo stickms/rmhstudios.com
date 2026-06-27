@@ -19,6 +19,8 @@ interface CoopPlayer {
   name: string;
   charId: string;
   score: number;
+  // Linked RMH account snapshot (null for guests / local players).
+  account: { id: string; handle: string | null; name: string | null; image: string | null } | null;
 }
 
 export const Route = createFileRoute('/api/dream-rift/coop')({
@@ -96,14 +98,29 @@ export const Route = createFileRoute('/api/dream-rift/coop')({
             return Response.json({ error: 'Co-op runs require 2-4 players' }, { status: 400 });
           }
 
-          const cleanPlayers: CoopPlayer[] = players.slice(0, 4).map((p: unknown) => {
+          const rawPlayers = players.slice(0, 4).map((p: unknown) => {
             const obj = (p ?? {}) as Record<string, unknown>;
             return {
               name: String(obj.name ?? 'Dreamer').slice(0, 24),
               charId: String(obj.charId ?? 'bllm').slice(0, 16),
               score: typeof obj.score === 'number' && obj.score >= 0 ? Math.round(Math.min(obj.score, 10_000_000)) : 0,
+              userId: typeof obj.userId === 'string' && obj.userId.length > 0 && obj.userId !== 'local' ? obj.userId : null,
             };
           });
+
+          // Resolve linked RMH accounts (avatar + profile link) for any real userIds.
+          const ids = [...new Set(rawPlayers.map((p) => p.userId).filter((v): v is string => !!v))];
+          const accounts = ids.length
+            ? await prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, handle: true, name: true, image: true } })
+            : [];
+          const accountById = new Map(accounts.map((a) => [a.id, a]));
+
+          const cleanPlayers: CoopPlayer[] = rawPlayers.map((p) => ({
+            name: p.name,
+            charId: p.charId,
+            score: p.score,
+            account: p.userId && accountById.has(p.userId) ? accountById.get(p.userId)! : null,
+          }));
 
           const safeStage = typeof stageReached === 'number' && stageReached >= 1 ? Math.round(stageReached) : 1;
 

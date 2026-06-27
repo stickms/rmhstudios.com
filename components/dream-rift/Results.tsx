@@ -46,7 +46,7 @@ export function ResultScreen({ onRetry, onMenu, onLeaderboard }: { onRetry: () =
                 timeSurvived: result.timeSurvived,
                 stageReached: result.stageReached,
                 cleared: result.cleared,
-                players: result.perPlayer,
+                players: result.perPlayer.map((p) => ({ name: p.name, charId: p.charId, score: p.score, userId: p.userId })),
             }),
         }).catch(() => {
             /* best-effort; a failed co-op submit shouldn't disrupt the results screen */

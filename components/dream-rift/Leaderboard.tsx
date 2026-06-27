@@ -15,18 +15,27 @@ import type { Difficulty } from '@/lib/dream-rift/types';
 import { CHARACTERS } from '@/lib/dream-rift/render/sprites';
 import type { PlayerId } from '@/lib/dream-rift/types';
 
+interface Account {
+    id: string;
+    handle: string | null;
+    name: string | null;
+    image: string | null;
+}
+
 interface SoloEntry {
     username: string;
     bestStage: number;
     character: string;
     spellsCaptured: number;
-    [key: string]: number | string;
+    account: Account | null;
+    [key: string]: number | string | Account | null;
 }
 
 interface CoopPlayer {
     name: string;
     charId: string;
     score: number;
+    account: Account | null;
 }
 interface CoopEntry {
     combinedScore: number;
@@ -60,6 +69,56 @@ function charName(id: string): string {
 }
 function charAccent(id: string): string {
     return CHARACTERS[id as PlayerId]?.accent ?? '#fff';
+}
+
+function profileHref(a: Account): string {
+    return `/u/${a.handle || a.id}`;
+}
+
+/** Small round avatar; falls back to a letter monogram when no image is set. */
+function Avatar({ account, name, size = 22 }: { account: Account | null; name: string; size?: number }) {
+    const letter = (account?.name || account?.handle || name || '?').trim().charAt(0).toUpperCase();
+    if (account?.image) {
+        return <img src={account.image} alt="" width={size} height={size} className="shrink-0 rounded-full object-cover ring-1 ring-white/15" style={{ width: size, height: size }} />;
+    }
+    return (
+        <span
+            className="flex shrink-0 items-center justify-center rounded-full bg-white/10 text-[10px] font-bold text-white/70 ring-1 ring-white/15"
+            style={{ width: size, height: size }}
+        >
+            {letter}
+        </span>
+    );
+}
+
+/**
+ * Render a player's name with avatar. If linked to an RMH account it becomes a
+ * clickable profile link (opens in a new tab so the game/session is preserved);
+ * guests render as plain text.
+ */
+function PlayerTag({ account, name, color }: { account: Account | null; name: string; color?: string }) {
+    const inner = (
+        <>
+            <Avatar account={account} name={name} />
+            <span className="truncate font-semibold" style={color ? { color } : undefined}>
+                {name}
+            </span>
+        </>
+    );
+    if (account) {
+        return (
+            <a
+                href={profileHref(account)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex min-w-0 items-center gap-2 hover:underline"
+                title={`View ${account.name || account.handle || name}'s profile`}
+            >
+                {inner}
+            </a>
+        );
+    }
+    return <span className="flex min-w-0 items-center gap-2 text-white">{inner}</span>;
 }
 
 export function Leaderboard({ onBack }: { onBack: () => void }) {
@@ -179,7 +238,9 @@ export function Leaderboard({ onBack }: { onBack: () => void }) {
                                 {solo.map((e, i) => (
                                     <tr key={i} className="border-t border-white/5">
                                         <td className="px-3 py-2 font-mono text-white/50">{i + 1}</td>
-                                        <td className="px-3 py-2 font-bold text-white">{e.username}</td>
+                                        <td className="px-3 py-2 font-bold text-white">
+                                            <PlayerTag account={e.account} name={e.username} />
+                                        </td>
                                         <td className="px-3 py-2" style={{ color: charAccent(e.character) }}>
                                             {charName(e.character)}
                                         </td>
@@ -208,15 +269,12 @@ export function Leaderboard({ onBack }: { onBack: () => void }) {
                                 <tr key={i} className="border-t border-white/5">
                                     <td className="px-3 py-2 font-mono text-white/50">{i + 1}</td>
                                     <td className="px-3 py-2">
-                                        <div className="flex flex-wrap gap-x-2 gap-y-0.5">
+                                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                                             {e.players.map((p, j) => (
-                                                <span key={j} className="font-semibold" style={{ color: charAccent(p.charId) }}>
-                                                    {p.name}
-                                                    {j < e.players.length - 1 ? ',' : ''}
-                                                </span>
+                                                <PlayerTag key={j} account={p.account} name={p.name} color={charAccent(p.charId)} />
                                             ))}
                                         </div>
-                                        <div className="text-[10px] text-white/35">
+                                        <div className="mt-0.5 text-[10px] text-white/35">
                                             {e.playerCount}P{e.cleared ? ' · cleared' : ''}
                                         </div>
                                     </td>
