@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { SHOPS, shopItemPrice, visibleItems, BASE_PRICE } from '../shops';
+import { SHOPS, shopItemPrice, visibleItems, BASE_PRICE, KEY_PRICES } from '../shops';
 import { ADDITIVES, INPUTS, BASES } from '../content';
 
 describe('SHOPS catalog', () => {
@@ -11,6 +11,7 @@ describe('SHOPS catalog', () => {
       if (item.kind === 'base') expect(BASES[item.refId as keyof typeof BASES]).toBeDefined();
       if (item.kind === 'additive') expect(ADDITIVES[item.refId as keyof typeof ADDITIVES]).toBeDefined();
       if (item.kind === 'input') expect(INPUTS[item.refId as keyof typeof INPUTS]).toBeDefined();
+      if (item.kind === 'key') expect(KEY_PRICES[item.refId]).toBeDefined();
     }
   });
   it('has at least one rank-gated (rankReq > 0) item to drive progression', () => {
@@ -34,5 +35,16 @@ describe('visibleItems', () => {
     ] };
     expect(visibleItems(shop, 0).map((i) => i.refId)).toEqual(['cuke']);
     expect(visibleItems(shop, 2).map((i) => i.refId)).toEqual(['cuke', 'battery']);
+  });
+});
+
+describe('district shops + keys', () => {
+  it('hardware sells the docks key; afterhours exists', () => {
+    expect(SHOPS.hardware).toBeDefined();
+    expect(SHOPS.afterhours).toBeDefined();
+    expect(SHOPS.hardware.items.some((i) => i.kind === 'key' && i.refId === 'docks_key')).toBe(true);
+  });
+  it('shopItemPrice resolves a key via KEY_PRICES', () => {
+    expect(shopItemPrice({ kind: 'key', refId: 'docks_key', rankReq: 2 })).toBe(KEY_PRICES.docks_key);
   });
 });
