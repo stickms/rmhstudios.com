@@ -63,7 +63,7 @@ function BlogPost() {
   return (
     <article className="min-h-screen pt-20 pb-20 px-4 bg-site-bg relative overflow-hidden">
       <div className="container mx-auto max-w-3xl relative z-10">
-        <Link to="/blog" className="inline-flex items-center gap-2 text-site-text-dim hover:text-site-text mb-8 transition-colors animate-in fade-in slide-in-from-left-4 duration-700">
+        <Link to="/library" className="inline-flex items-center gap-2 text-site-text-dim hover:text-site-text mb-8 transition-colors animate-in fade-in slide-in-from-left-4 duration-700">
           <ArrowLeft className="w-4 h-4" /> {t("back-to-logs", { defaultValue: "Back to Logs" })}
         </Link>
 

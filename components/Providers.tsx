@@ -125,7 +125,11 @@ const STYLE_CLASSES = SITE_STYLES.map((s) => `style-${s.id}`);
 /** Background colors for each theme — used to update theme-color meta + body bg
  *  synchronously instead of waiting for CSS to resolve via getComputedStyle. */
 const THEME_BG: Record<SiteStyle, string> = {
-  default: "#1a1b1e",
+  // Pure black — matches the inline themeScript (__root.tsx), the :root
+  // `--site-bg` token, and the `.vibe-app`/`.vibe-screen` shells. A grey value
+  // here made the document background flip to grey after hydration/navigation
+  // while the app chrome stayed black.
+  default: "#000",
   light: "#f5f5f7",
   gamer: "#0a0a0a",
   anime: "#fff5f9",
