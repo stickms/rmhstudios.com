@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { asset } from '@/lib/storage/asset';
 import { VoidBreakerEngine } from '@/lib/void-breaker/game';
 import { VoidBreakerRenderer } from '@/lib/void-breaker/renderer';
+import { VoidBreakerRenderer3D, type VBRenderer } from '@/lib/void-breaker/renderer3d';
 import { VoidBreakerAudio } from '@/lib/void-breaker/audio';
 import { CANVAS_WIDTH, CANVAS_HEIGHT, MAX_SHARDS, DET_MIN_SHARDS, DASH_COOLDOWN, FOCUS_COOLDOWN } from '@/lib/void-breaker/constants';
 import type { InputState, RunStats, GameState, HUDState } from '@/lib/void-breaker/types';
@@ -43,7 +44,7 @@ export function VoidBreakerGame() {
   const { t } = useTranslation('c-void-breaker');
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gameRef = useRef<VoidBreakerEngine | null>(null);
-  const rendererRef = useRef<VoidBreakerRenderer | null>(null);
+  const rendererRef = useRef<VBRenderer | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   /** Procedural SFX engine (separate from the music <audio> element). */
   const sfxRef = useRef<VoidBreakerAudio | null>(null);
@@ -241,7 +242,16 @@ export function VoidBreakerGame() {
     if (!canvas) return;
 
     if (!gameRef.current) gameRef.current = new VoidBreakerEngine();
-    if (!rendererRef.current) rendererRef.current = new VoidBreakerRenderer(canvas);
+    if (!rendererRef.current) {
+      // Prefer the 3D (WebGL) renderer; fall back to the 2D canvas renderer if
+      // WebGL is unavailable or initialization fails.
+      try {
+        rendererRef.current = new VoidBreakerRenderer3D(canvas);
+      } catch (err) {
+        console.warn('[VoidBreaker] 3D renderer unavailable, using 2D fallback:', err);
+        rendererRef.current = new VoidBreakerRenderer(canvas);
+      }
+    }
 
     let lastT = 0;
     let raf: number;
