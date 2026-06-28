@@ -89,13 +89,14 @@ export function ResultScreen({ onRetry, onMenu, onLeaderboard }: { onRetry: () =
     const coop = result.perPlayer.length > 1;
 
     return (
-        <div className="flex min-h-full flex-col items-center justify-center bg-gradient-to-b from-[#0a0118] to-[#120a22] p-6 text-center">
-            <h1 className={`text-5xl font-black tracking-widest ${result.cleared ? 'text-amber-300' : 'text-rose-300'}`}>
+        <div className="flex min-h-full flex-col items-center justify-center bg-gradient-to-b from-[#0a0612] to-[#120a20] p-6 text-center">
+            <h1 className="dr-serif dr-title-glow text-5xl font-semibold tracking-[0.16em]" style={{ color: result.cleared ? 'var(--dr-gold)' : 'var(--dr-crimson)' }}>
                 {result.cleared ? 'ALL CLEAR' : 'GAME OVER'}
             </h1>
-            <div className="mt-1 text-lg tracking-[0.3em] text-white/50">{result.cleared ? '夢、閉じた' : 'ゲームオーバー'}</div>
+            <div className="mx-auto mt-2 h-px w-44 dr-rule" />
+            <div className="dr-serif-body mt-2 text-lg italic tracking-[0.28em] text-[color:var(--dr-cream-dim)]">{result.cleared ? '夢、閉じた' : 'ゲームオーバー'}</div>
 
-            <div className="mt-6 w-full max-w-sm rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-left text-sm">
+            <div className="dr-frame mt-6 w-full max-w-sm rounded-sm p-5 text-left text-sm">
                 <Row label="Character" value={CHARACTERS[result.character].name} />
                 <Row label="Difficulty" value={result.difficulty} />
                 <Row label="Stage Reached" value={`${result.stageReached} / 3`} />
@@ -108,8 +109,8 @@ export function ResultScreen({ onRetry, onMenu, onLeaderboard }: { onRetry: () =
             </div>
 
             {coop && (
-                <div className="mt-4 w-full max-w-sm rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left">
-                    <div className="mb-2 text-xs uppercase tracking-wider text-white/50">Co-op Squad</div>
+                <div className="dr-frame mt-4 w-full max-w-sm rounded-sm p-4 text-left">
+                    <div className="dr-serif mb-2 text-xs uppercase tracking-[0.2em] text-[color:var(--dr-gold-soft)]">Co-op Squad</div>
                     {result.perPlayer
                         .slice()
                         .sort((a, b) => b.score - a.score)
@@ -119,7 +120,7 @@ export function ResultScreen({ onRetry, onMenu, onLeaderboard }: { onRetry: () =
                                     {i === 0 ? '👑 ' : ''}
                                     {p.name}
                                 </span>
-                                <span className="font-mono text-white/80">{p.score.toLocaleString()}</span>
+                                <span className="font-mono text-[color:var(--dr-cream)]">{p.score.toLocaleString()}</span>
                             </div>
                         ))}
                 </div>
@@ -132,21 +133,21 @@ export function ResultScreen({ onRetry, onMenu, onLeaderboard }: { onRetry: () =
                     ) : submitState === 'error' ? (
                         <div className="rounded-lg border border-rose-400/40 bg-rose-500/10 py-2 text-sm text-rose-200">{submitMsg}</div>
                     ) : (
-                        <div className="rounded-lg border border-white/10 bg-white/[0.03] py-2 text-sm text-white/50">Saving your score…</div>
+                        <div className="dr-inset rounded-sm py-2 text-sm text-[color:var(--dr-cream-dim)]">Saving your score…</div>
                     )
                 ) : (
-                    <p className="text-xs text-white/40">Sign in to save your high score to the leaderboard.</p>
+                    <p className="text-xs text-[color:var(--dr-cream-faint)]">Sign in to save your high score to the leaderboard.</p>
                 )}
             </div>
 
             <div className="mt-6 flex w-full max-w-sm gap-3">
-                <button type="button" onClick={onMenu} className="flex-1 rounded-xl border border-white/15 py-3 text-white/80 hover:bg-white/10">
+                <button type="button" onClick={onMenu} className="dr-plaque flex-1 rounded-sm py-3 text-sm font-semibold">
                     Menu
                 </button>
-                <button type="button" onClick={onLeaderboard} className="flex-1 rounded-xl border border-white/15 py-3 text-white/80 hover:bg-white/10">
+                <button type="button" onClick={onLeaderboard} className="dr-plaque flex-1 rounded-sm py-3 text-sm font-semibold">
                     Leaderboard
                 </button>
-                <button type="button" onClick={onRetry} className="flex-1 rounded-xl bg-gradient-to-r from-fuchsia-500 to-violet-500 py-3 font-bold text-white">
+                <button type="button" onClick={onRetry} className="dr-plaque dr-plaque-primary flex-1 rounded-sm py-3 text-sm font-semibold">
                     Retry
                 </button>
             </div>
@@ -163,9 +164,9 @@ function formatTime(seconds: number): string {
 
 function Row({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
     return (
-        <div className="flex items-center justify-between border-b border-white/5 py-1.5 last:border-0">
-            <span className="text-white/50">{label}</span>
-            <span className={highlight ? 'font-mono text-base font-bold text-fuchsia-300' : 'font-mono text-white/90'}>{value}</span>
+        <div className="flex items-center justify-between border-b border-[rgba(231,205,140,0.1)] py-1.5 last:border-0">
+            <span className="text-[color:var(--dr-cream-dim)]">{label}</span>
+            <span className={highlight ? 'font-mono text-base font-bold text-[color:var(--dr-gold)]' : 'font-mono text-[color:var(--dr-cream)]'}>{value}</span>
         </div>
     );
 }

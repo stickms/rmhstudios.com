@@ -11,7 +11,8 @@
 
 import { useEffect, useRef } from 'react';
 
-const PALETTE = ['#b06bff', '#7fdcff', '#ff5ccd', '#ffd34d', '#5fe0b0'];
+// Shrine-crimson + brass danmaku, the Touhou menu curtain.
+const PALETTE = ['#d4405a', '#e7cd8c', '#f0c668', '#c5364e', '#b8607a'];
 
 interface Bullet {
     x: number;

@@ -151,7 +151,7 @@ function ScreenRouter() {
         <div className="fixed inset-0 h-[100dvh] w-screen overflow-hidden bg-black text-white">
             <div className="h-full w-full overflow-auto">{body}</div>
             {showExit && (
-                <button type="button" onClick={fullExit} className="absolute right-3 top-3 z-50 rounded-lg border border-white/15 bg-black/40 px-3 py-1.5 text-xs text-white/60 backdrop-blur hover:bg-white/10">
+                <button type="button" onClick={fullExit} className="dr-serif absolute right-3 top-3 z-50 rounded-sm border border-[rgba(231,205,140,0.3)] bg-black/40 px-3 py-1.5 text-xs tracking-wider text-[color:var(--dr-cream-dim)] backdrop-blur transition hover:border-[rgba(231,205,140,0.6)] hover:text-[color:var(--dr-cream)]">
                     ✕ Exit
                 </button>
             )}
@@ -162,7 +162,7 @@ function ScreenRouter() {
 function Loading() {
     return (
         <div className="flex min-h-full items-center justify-center bg-black">
-            <div className="animate-pulse font-mono text-sm tracking-widest text-white/50">ENTERING THE RIFT…</div>
+            <div className="dr-serif animate-pulse text-sm tracking-[0.3em] text-[color:var(--dr-gold-soft)]">ENTERING THE RIFT…</div>
         </div>
     );
 }

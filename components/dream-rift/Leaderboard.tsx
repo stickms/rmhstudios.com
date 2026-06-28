@@ -83,7 +83,7 @@ function Avatar({ account, name, size = 22 }: { account: Account | null; name: s
     }
     return (
         <span
-            className="flex shrink-0 items-center justify-center rounded-full bg-white/10 text-[10px] font-bold text-white/70 ring-1 ring-white/15"
+            className="flex shrink-0 items-center justify-center rounded-full bg-[rgba(231,205,140,0.12)] text-[10px] font-bold text-[color:var(--dr-cream-dim)] ring-1 ring-[rgba(231,205,140,0.2)]"
             style={{ width: size, height: size }}
         >
             {letter}
@@ -118,7 +118,7 @@ function PlayerTag({ account, name, color }: { account: Account | null; name: st
             </a>
         );
     }
-    return <span className="flex min-w-0 items-center gap-2 text-white">{inner}</span>;
+    return <span className="flex min-w-0 items-center gap-2 text-[color:var(--dr-cream)]">{inner}</span>;
 }
 
 export function Leaderboard({ onBack }: { onBack: () => void }) {
@@ -157,8 +157,8 @@ export function Leaderboard({ onBack }: { onBack: () => void }) {
     const field = FIELD[difficulty];
 
     return (
-        <div className="flex min-h-full flex-col bg-gradient-to-b from-[#0a0118] to-[#120a22] p-6">
-            <h2 className="mb-4 text-2xl font-black text-white">Leaderboard</h2>
+        <div className="flex min-h-full flex-col bg-gradient-to-b from-[#0a0612] to-[#120a20] p-6">
+            <h2 className="dr-serif mb-4 text-2xl font-semibold tracking-[0.1em] text-[color:var(--dr-gold)]">Leaderboard</h2>
 
             {/* Solo / Co-op toggle */}
             <div className="mb-3 flex gap-2">
@@ -167,11 +167,11 @@ export function Leaderboard({ onBack }: { onBack: () => void }) {
                         key={m}
                         type="button"
                         onClick={() => setMode(m)}
-                        className="flex-1 rounded-lg border px-2 py-2 text-xs font-bold uppercase tracking-wider"
+                        className="dr-serif flex-1 rounded-sm border px-2 py-2 text-xs font-semibold uppercase tracking-[0.18em]"
                         style={{
-                            borderColor: mode === m ? '#c98bff' : 'rgba(255,255,255,0.12)',
-                            color: mode === m ? '#e6c6ff' : 'rgba(255,255,255,0.6)',
-                            background: mode === m ? 'rgba(201,139,255,0.12)' : 'transparent',
+                            borderColor: mode === m ? 'var(--dr-crimson)' : 'rgba(231,205,140,0.22)',
+                            color: mode === m ? 'var(--dr-cream)' : 'var(--dr-cream-dim)',
+                            background: mode === m ? 'rgba(212,64,90,0.15)' : 'transparent',
                         }}
                     >
                         {m === 'solo' ? 'Solo' : 'Co-op'}
@@ -185,8 +185,8 @@ export function Leaderboard({ onBack }: { onBack: () => void }) {
                         key={d}
                         type="button"
                         onClick={() => setDifficulty(d)}
-                        className="flex-1 rounded-lg border px-2 py-2 text-xs font-bold uppercase tracking-wider"
-                        style={{ borderColor: difficulty === d ? DIFF_COLOR[d] : 'rgba(255,255,255,0.12)', color: difficulty === d ? DIFF_COLOR[d] : 'rgba(255,255,255,0.6)', background: difficulty === d ? `${DIFF_COLOR[d]}1a` : 'transparent' }}
+                        className="dr-serif flex-1 rounded-sm border px-2 py-2 text-xs font-semibold uppercase tracking-[0.18em]"
+                        style={{ borderColor: difficulty === d ? DIFF_COLOR[d] : 'rgba(231,205,140,0.22)', color: difficulty === d ? DIFF_COLOR[d] : 'var(--dr-cream-dim)', background: difficulty === d ? `${DIFF_COLOR[d]}1a` : 'transparent' }}
                     >
                         {d}
                     </button>
@@ -204,11 +204,11 @@ export function Leaderboard({ onBack }: { onBack: () => void }) {
                             key={m}
                             type="button"
                             onClick={() => setMetric(m)}
-                            className="flex-1 rounded-lg border px-2 py-2 text-[11px] font-bold uppercase tracking-wider"
+                            className="dr-serif flex-1 rounded-sm border px-2 py-2 text-[11px] font-semibold uppercase tracking-[0.16em]"
                             style={{
-                                borderColor: metric === m ? '#7fdcff' : 'rgba(255,255,255,0.12)',
-                                color: metric === m ? '#7fdcff' : 'rgba(255,255,255,0.6)',
-                                background: metric === m ? 'rgba(127,220,255,0.1)' : 'transparent',
+                                borderColor: metric === m ? 'var(--dr-gold)' : 'rgba(231,205,140,0.22)',
+                                color: metric === m ? 'var(--dr-gold)' : 'var(--dr-cream-dim)',
+                                background: metric === m ? 'rgba(231,205,140,0.1)' : 'transparent',
                             }}
                         >
                             {label}
@@ -217,15 +217,15 @@ export function Leaderboard({ onBack }: { onBack: () => void }) {
                 </div>
             )}
 
-            <div className="flex-1 overflow-auto rounded-2xl border border-white/10 bg-white/[0.02]">
+            <div className="dr-frame flex-1 overflow-auto rounded-sm">
                 {loading ? (
-                    <div className="p-8 text-center text-sm text-white/40">Loading…</div>
+                    <div className="p-8 text-center text-sm text-[color:var(--dr-cream-faint)]">Loading…</div>
                 ) : mode === 'solo' ? (
                     solo.length === 0 ? (
-                        <div className="p-8 text-center text-sm text-white/40">No scores yet — be the first!</div>
+                        <div className="p-8 text-center text-sm text-[color:var(--dr-cream-faint)]">No scores yet — be the first!</div>
                     ) : (
                         <table className="w-full text-left text-sm">
-                            <thead className="text-[11px] uppercase tracking-wider text-white/40">
+                            <thead className="dr-serif text-[11px] uppercase tracking-[0.16em] text-[color:var(--dr-gold-soft)]">
                                 <tr>
                                     <th className="px-3 py-2">#</th>
                                     <th className="px-3 py-2">Player</th>
@@ -236,26 +236,26 @@ export function Leaderboard({ onBack }: { onBack: () => void }) {
                             </thead>
                             <tbody>
                                 {solo.map((e, i) => (
-                                    <tr key={i} className="border-t border-white/5">
-                                        <td className="px-3 py-2 font-mono text-white/50">{i + 1}</td>
-                                        <td className="px-3 py-2 font-bold text-white">
+                                    <tr key={i} className="border-t border-[rgba(231,205,140,0.1)]">
+                                        <td className="px-3 py-2 font-mono text-[color:var(--dr-cream-dim)]">{i + 1}</td>
+                                        <td className="px-3 py-2 font-bold text-[color:var(--dr-cream)]">
                                             <PlayerTag account={e.account} name={e.username} />
                                         </td>
                                         <td className="px-3 py-2" style={{ color: charAccent(e.character) }}>
                                             {charName(e.character)}
                                         </td>
-                                        <td className="px-3 py-2 text-right font-mono text-fuchsia-300">{Number(e[field] ?? 0).toLocaleString()}</td>
-                                        <td className="px-3 py-2 text-right font-mono text-white/60">{e.bestStage}</td>
+                                        <td className="px-3 py-2 text-right font-mono text-[color:var(--dr-gold)]">{Number(e[field] ?? 0).toLocaleString()}</td>
+                                        <td className="px-3 py-2 text-right font-mono text-[color:var(--dr-cream-dim)]">{e.bestStage}</td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
                     )
                 ) : coop.length === 0 ? (
-                    <div className="p-8 text-center text-sm text-white/40">No co-op runs yet — squad up!</div>
+                    <div className="p-8 text-center text-sm text-[color:var(--dr-cream-faint)]">No co-op runs yet — squad up!</div>
                 ) : (
                     <table className="w-full text-left text-sm">
-                        <thead className="text-[11px] uppercase tracking-wider text-white/40">
+                        <thead className="dr-serif text-[11px] uppercase tracking-[0.16em] text-[color:var(--dr-gold-soft)]">
                             <tr>
                                 <th className="px-3 py-2">#</th>
                                 <th className="px-3 py-2">Squad</th>
@@ -266,25 +266,25 @@ export function Leaderboard({ onBack }: { onBack: () => void }) {
                         </thead>
                         <tbody>
                             {coop.map((e, i) => (
-                                <tr key={i} className="border-t border-white/5">
-                                    <td className="px-3 py-2 font-mono text-white/50">{i + 1}</td>
+                                <tr key={i} className="border-t border-[rgba(231,205,140,0.1)]">
+                                    <td className="px-3 py-2 font-mono text-[color:var(--dr-cream-dim)]">{i + 1}</td>
                                     <td className="px-3 py-2">
                                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                                             {e.players.map((p, j) => (
                                                 <PlayerTag key={j} account={p.account} name={p.name} color={charAccent(p.charId)} />
                                             ))}
                                         </div>
-                                        <div className="mt-0.5 text-[10px] text-white/35">
+                                        <div className="mt-0.5 text-[10px] text-[color:var(--dr-cream-faint)]">
                                             {e.playerCount}P{e.cleared ? ' · cleared' : ''}
                                         </div>
                                     </td>
-                                    <td className="px-3 py-2 text-right font-mono text-fuchsia-300">
+                                    <td className="px-3 py-2 text-right font-mono text-[color:var(--dr-gold)]">
                                         {metric === 'combined' ? e.combinedScore.toLocaleString() : formatTime(e.timeSurvived)}
                                     </td>
-                                    <td className="px-3 py-2 text-right font-mono text-white/60">
+                                    <td className="px-3 py-2 text-right font-mono text-[color:var(--dr-cream-dim)]">
                                         {metric === 'combined' ? formatTime(e.timeSurvived) : e.combinedScore.toLocaleString()}
                                     </td>
-                                    <td className="px-3 py-2 text-right font-mono text-white/60">{e.stageReached}</td>
+                                    <td className="px-3 py-2 text-right font-mono text-[color:var(--dr-cream-dim)]">{e.stageReached}</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -292,7 +292,7 @@ export function Leaderboard({ onBack }: { onBack: () => void }) {
                 )}
             </div>
 
-            <button type="button" onClick={onBack} className="mt-4 self-start rounded-xl border border-white/15 px-5 py-3 text-white/80 hover:bg-white/10">
+            <button type="button" onClick={onBack} className="dr-plaque mt-4 self-start rounded-sm px-5 py-3 text-sm font-semibold">
                 Back
             </button>
         </div>

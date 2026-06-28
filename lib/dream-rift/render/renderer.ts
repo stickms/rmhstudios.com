@@ -26,6 +26,23 @@ const INV_SS = 1 / SS;
 /** Height (css px) of the condensed stats strip in the mobile stacked layout. */
 const STACKED_STATS_H = 74;
 
+/**
+ * HUD chrome — a fixed Touhou STG palette (deep indigo grounds, brass frames,
+ * shrine-crimson and cream lettering) so the score panel reads identically on
+ * every stage. The per-stage `theme.glow` still tints the enemies and the
+ * background dreamscape, but the HUD chrome (frame, title, labels and meters)
+ * stays constant brass-and-cream regardless of stage.
+ */
+const HUD_INK_TOP = '#0a0714';
+const HUD_INK_BOT = '#160d24';
+const HUD_GOLD = '#e7cd8c';
+const HUD_GOLD_DEEP = '#a3823f';
+const HUD_CREAM = '#f3ead2';
+const HUD_CREAM_DIM = 'rgba(243,234,210,0.56)';
+const HUD_CREAM_FAINT = 'rgba(243,234,210,0.34)';
+const HUD_CRIMSON = '#d4405a';
+const HUD_SERIF = '"Cinzel", Georgia, "Times New Roman", serif';
+
 interface Comment {
     text: string;
     x: number;
@@ -544,36 +561,38 @@ export class Renderer {
         const pad = 24;
         const w = PLAYFIELD_W - pad * 2;
         const frac = Math.max(0, Math.min(1, hud.bossHp / hud.bossMaxHp));
-        // card pips
-        ctx.fillStyle = 'rgba(0,0,0,0.4)';
+        // HP rail — smoked ground with a brass frame, crimson→gold fill.
+        ctx.fillStyle = 'rgba(8,5,14,0.6)';
         ctx.fillRect(pad, 8, w, 5);
         const g = ctx.createLinearGradient(pad, 0, pad + w, 0);
-        g.addColorStop(0, this.theme.glow);
-        g.addColorStop(1, '#ffffff');
+        g.addColorStop(0, HUD_CRIMSON);
+        g.addColorStop(1, HUD_GOLD);
         ctx.fillStyle = g;
         ctx.fillRect(pad, 8, w * frac, 5);
-        // card count pips
+        ctx.strokeStyle = 'rgba(231,205,140,0.4)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(pad - 0.5, 7.5, w + 1, 6);
+        // spell-card pips — lit brass for remaining cards, faint for spent.
         for (let i = 0; i < hud.bossCards; i++) {
-            ctx.fillStyle = i <= hud.bossCardIndex ? '#fff' : 'rgba(255,255,255,0.3)';
-            ctx.beginPath();
-            ctx.arc(pad + 4 + (i * (w - 8)) / Math.max(1, hud.bossCards - 1), 5, 2, 0, Math.PI * 2);
+            ctx.fillStyle = i <= hud.bossCardIndex ? HUD_GOLD : 'rgba(231,205,140,0.28)';
+            star(ctx, pad + 4 + (i * (w - 8)) / Math.max(1, hud.bossCards - 1), 5, 3.4, 1.5, 5);
             ctx.fill();
         }
         // spell name + timer
         if (hud.spellName) {
-            ctx.fillStyle = 'rgba(255,255,255,0.9)';
-            ctx.font = 'italic 11px serif';
+            ctx.fillStyle = HUD_CREAM;
+            ctx.font = 'italic 12px "Playfair Display", Georgia, serif';
             ctx.textAlign = 'right';
             ctx.fillText(hud.spellName, PLAYFIELD_W - pad, 28);
             ctx.textAlign = 'left';
         }
         if (hud.spellTimeLeft >= 0) {
-            ctx.fillStyle = hud.spellTimeLeft < 6 ? '#ff5577' : '#fff';
+            ctx.fillStyle = hud.spellTimeLeft < 6 ? HUD_CRIMSON : HUD_GOLD;
             ctx.font = 'bold 13px monospace';
             ctx.fillText(hud.spellTimeLeft.toFixed(1), pad, 28);
         }
-        ctx.fillStyle = 'rgba(255,255,255,0.8)';
-        ctx.font = '10px sans-serif';
+        ctx.fillStyle = HUD_CREAM;
+        ctx.font = `600 11px ${HUD_SERIF}`;
         ctx.textAlign = 'center';
         ctx.fillText(hud.bossName, PLAYFIELD_W / 2, 28);
         ctx.textAlign = 'left';
@@ -584,59 +603,65 @@ export class Renderer {
         const ctx = this.ctx;
         const w = this.cssW;
         const g = ctx.createLinearGradient(0, topY, 0, topY + height);
-        g.addColorStop(0, '#0c0718');
-        g.addColorStop(1, '#160d28');
+        g.addColorStop(0, HUD_INK_TOP);
+        g.addColorStop(1, HUD_INK_BOT);
         ctx.fillStyle = g;
         ctx.fillRect(0, topY, w, height);
-        ctx.fillStyle = this.theme.glow;
+        // Brass edge along the top of the strip.
+        ctx.fillStyle = HUD_GOLD_DEEP;
         ctx.fillRect(0, topY, w, 2);
+        ctx.fillStyle = HUD_GOLD;
+        ctx.fillRect(0, topY + 2, w, 1);
 
         const local = world.players[localSlot] ?? world.players.find((p) => p.isLocal) ?? world.players[0];
         ctx.textBaseline = 'alphabetic';
 
         // score (left)
         ctx.textAlign = 'left';
-        ctx.fillStyle = 'rgba(255,255,255,0.45)';
-        ctx.font = '9px sans-serif';
+        ctx.fillStyle = HUD_GOLD_DEEP;
+        ctx.font = `600 9px ${HUD_SERIF}`;
         ctx.fillText('SCORE', 12, topY + 16);
-        ctx.fillStyle = '#fff';
+        ctx.fillStyle = HUD_CREAM;
         ctx.font = 'bold 16px monospace';
         ctx.fillText(pad9(local?.score ?? 0), 12, topY + 36);
-        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.fillStyle = HUD_CREAM_FAINT;
         ctx.font = '9px monospace';
         ctx.fillText('HI ' + pad9(hud.hiScore), 12, topY + 52);
 
         // lives / bombs (centre, icon + count)
         const midX = Math.round(w * 0.45);
-        ctx.fillStyle = '#ffd34d';
+        ctx.fillStyle = HUD_GOLD;
         star(ctx, midX, topY + 22, 6, 2.6, 5);
         ctx.fill();
-        ctx.fillStyle = '#fff';
+        ctx.fillStyle = HUD_CREAM;
         ctx.font = 'bold 15px monospace';
         ctx.fillText('×' + (local?.lives ?? 0), midX + 11, topY + 27);
-        ctx.fillStyle = '#7fdcff';
+        ctx.fillStyle = HUD_CRIMSON;
         star(ctx, midX, topY + 46, 6, 2.6, 5);
         ctx.fill();
-        ctx.fillStyle = '#fff';
+        ctx.fillStyle = HUD_CREAM;
         ctx.fillText('×' + (local?.bombs ?? 0), midX + 11, topY + 51);
 
         // power + graze (right)
         const px = Math.round(w * 0.63);
         const pw = w - px - 14;
-        ctx.fillStyle = 'rgba(255,255,255,0.45)';
-        ctx.font = '9px sans-serif';
+        ctx.fillStyle = HUD_GOLD_DEEP;
+        ctx.font = `600 9px ${HUD_SERIF}`;
         ctx.fillText('POWER', px, topY + 16);
-        ctx.fillStyle = 'rgba(255,255,255,0.12)';
+        ctx.fillStyle = 'rgba(11,7,18,0.7)';
         ctx.fillRect(px, topY + 22, pw, 7);
+        ctx.strokeStyle = 'rgba(231,205,140,0.3)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(px + 0.5, topY + 22.5, pw - 1, 6);
         const pg = ctx.createLinearGradient(px, 0, px + pw, 0);
-        pg.addColorStop(0, this.theme.glow);
-        pg.addColorStop(1, '#fff');
+        pg.addColorStop(0, HUD_GOLD_DEEP);
+        pg.addColorStop(1, HUD_GOLD);
         ctx.fillStyle = pg;
         ctx.fillRect(px, topY + 22, pw * Math.min(1, (local?.power ?? 0) / POWER_MAX), 7);
-        ctx.fillStyle = 'rgba(255,255,255,0.55)';
-        ctx.font = '9px sans-serif';
+        ctx.fillStyle = HUD_GOLD_DEEP;
+        ctx.font = `600 9px ${HUD_SERIF}`;
         ctx.fillText('GRAZE', px, topY + 46);
-        ctx.fillStyle = '#fff';
+        ctx.fillStyle = HUD_CREAM;
         ctx.font = 'bold 13px monospace';
         ctx.fillText(String(local?.graze ?? 0), px + 40, topY + 47);
     }
@@ -645,98 +670,126 @@ export class Renderer {
         const ctx = this.ctx;
         const x0 = PLAYFIELD_W;
         const g = ctx.createLinearGradient(x0, 0, CANVAS_W, 0);
-        g.addColorStop(0, '#0a0614');
-        g.addColorStop(1, '#140c24');
+        g.addColorStop(0, HUD_INK_TOP);
+        g.addColorStop(1, HUD_INK_BOT);
         ctx.fillStyle = g;
         ctx.fillRect(x0, 0, SIDEBAR_W, CANVAS_H);
-        ctx.fillStyle = this.theme.glow;
-        ctx.fillRect(x0, 0, 2, CANVAS_H);
+        // Brass framing edge: a deep-gold band with a bright inner hairline.
+        ctx.fillStyle = HUD_GOLD_DEEP;
+        ctx.fillRect(x0, 0, 3, CANVAS_H);
+        ctx.fillStyle = HUD_GOLD;
+        ctx.fillRect(x0 + 3, 0, 1, CANVAS_H);
+        ctx.globalAlpha = 0.4;
+        ctx.fillStyle = HUD_GOLD_DEEP;
+        ctx.fillRect(CANVAS_W - 1, 0, 1, CANVAS_H);
+        ctx.globalAlpha = 1;
 
-        const x = x0 + 14;
+        const x = x0 + 16;
         ctx.textBaseline = 'alphabetic';
         ctx.textAlign = 'left';
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 20px sans-serif';
-        ctx.fillText('Dream', x, 36);
-        ctx.fillStyle = this.theme.glow;
-        ctx.fillText('Rift', x, 58);
-        ctx.fillStyle = 'rgba(255,255,255,0.5)';
-        ctx.font = '10px sans-serif';
-        ctx.fillText(`STAGE ${hud.stageIndex + 1} · ${hud.stageName}`, x, 76);
+        // Title — serif caps, cream over brass with a kana flourish.
+        ctx.fillStyle = HUD_CREAM;
+        ctx.font = `600 19px ${HUD_SERIF}`;
+        ctx.fillText('DREAM', x, 34);
+        ctx.fillStyle = HUD_GOLD;
+        ctx.fillText('RIFT', x, 56);
+        ctx.fillStyle = HUD_CRIMSON;
+        ctx.font = '10px "Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif';
+        ctx.fillText('夢の裂け目', x + 64, 56);
+        hudRule(ctx, x, 66, SIDEBAR_W - 32);
+        ctx.fillStyle = HUD_CREAM_DIM;
+        ctx.font = '9px sans-serif';
+        ctx.fillText(`STAGE ${hud.stageIndex + 1} · ${hud.stageName.toUpperCase()}`, x, 80);
 
         const local = world.players[localSlot] ?? world.players.find((p) => p.isLocal) ?? world.players[0];
-        let y = 104;
-        const stat = (label: string, value: string) => {
-            ctx.fillStyle = 'rgba(255,255,255,0.5)';
-            ctx.font = '10px sans-serif';
-            ctx.fillText(label, x, y);
-            ctx.fillStyle = '#fff';
+        let y = 106;
+        const stat = (label: string, value: string, accent = HUD_CREAM) => {
+            ctx.fillStyle = HUD_GOLD_DEEP;
+            ctx.font = `600 9px ${HUD_SERIF}`;
+            ctx.fillText(label.toUpperCase(), x, y);
+            ctx.fillStyle = accent;
             ctx.font = 'bold 15px monospace';
-            ctx.fillText(value, x + 2, y + 17);
+            ctx.fillText(value, x + 2, y + 18);
             y += 40;
         };
-        stat('HiScore', pad9(hud.hiScore));
+        stat('HiScore', pad9(hud.hiScore), HUD_GOLD);
         stat('Score', pad9(local?.score ?? 0));
 
-        // lives / bombs
-        ctx.fillStyle = 'rgba(255,255,255,0.5)';
-        ctx.font = '10px sans-serif';
-        ctx.fillText('Player', x, y);
-        drawIcons(ctx, x + 2, y + 4, local?.lives ?? 0, '#ffd34d');
+        // lives / bombs — gold stars for lives, shrine-crimson for bombs.
+        ctx.fillStyle = HUD_GOLD_DEEP;
+        ctx.font = `600 9px ${HUD_SERIF}`;
+        ctx.fillText('PLAYER', x, y);
+        drawIcons(ctx, x + 2, y + 4, local?.lives ?? 0, HUD_GOLD);
         y += 26;
-        ctx.fillStyle = 'rgba(255,255,255,0.5)';
-        ctx.fillText('Bomb', x, y);
-        drawIcons(ctx, x + 2, y + 4, local?.bombs ?? 0, '#7fdcff');
+        ctx.fillStyle = HUD_GOLD_DEEP;
+        ctx.font = `600 9px ${HUD_SERIF}`;
+        ctx.fillText('BOMB', x, y);
+        drawIcons(ctx, x + 2, y + 4, local?.bombs ?? 0, HUD_CRIMSON);
         y += 30;
 
         // power
-        ctx.fillStyle = 'rgba(255,255,255,0.5)';
-        ctx.fillText('Power', x, y);
+        ctx.fillStyle = HUD_GOLD_DEEP;
+        ctx.font = `600 9px ${HUD_SERIF}`;
+        ctx.fillText('POWER', x, y);
         const pw = SIDEBAR_W - 34;
-        ctx.fillStyle = 'rgba(255,255,255,0.12)';
+        ctx.fillStyle = 'rgba(11,7,18,0.7)';
         ctx.fillRect(x, y + 6, pw, 7);
+        ctx.strokeStyle = 'rgba(231,205,140,0.3)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x + 0.5, y + 6.5, pw - 1, 6);
         const pg = ctx.createLinearGradient(x, 0, x + pw, 0);
-        pg.addColorStop(0, this.theme.glow);
-        pg.addColorStop(1, '#fff');
+        pg.addColorStop(0, HUD_GOLD_DEEP);
+        pg.addColorStop(1, HUD_GOLD);
         ctx.fillStyle = pg;
         ctx.fillRect(x, y + 6, pw * Math.min(1, (local?.power ?? 0) / POWER_MAX), 7);
-        ctx.fillStyle = '#fff';
+        ctx.fillStyle = HUD_CREAM;
         ctx.font = '9px monospace';
         ctx.fillText(`${local?.power ?? 0}/${POWER_MAX}`, x + pw - 38, y + 4);
         y += 34;
 
-        ctx.fillStyle = 'rgba(255,255,255,0.5)';
-        ctx.font = '10px sans-serif';
-        ctx.fillText('Graze', x, y);
-        ctx.fillStyle = '#fff';
+        ctx.fillStyle = HUD_GOLD_DEEP;
+        ctx.font = `600 9px ${HUD_SERIF}`;
+        ctx.fillText('GRAZE', x, y);
+        ctx.fillStyle = HUD_CREAM;
         ctx.font = 'bold 14px monospace';
         ctx.fillText(String(local?.graze ?? 0), x + 2, y + 16);
-        y += 36;
+        y += 34;
 
         // co-op roster
         if (hud.coop) {
-            ctx.fillStyle = 'rgba(255,255,255,0.5)';
-            ctx.font = '10px sans-serif';
-            ctx.fillText('Dreamers', x, y);
+            hudRule(ctx, x, y - 8, SIDEBAR_W - 32);
+            ctx.fillStyle = HUD_GOLD_DEEP;
+            ctx.font = `600 9px ${HUD_SERIF}`;
+            ctx.fillText('DREAMERS', x, y + 6);
             y += 14;
             for (const p of world.players) {
                 if (!p.joined) continue;
                 ctx.fillStyle = CHARACTERS[p.charId].accent;
                 ctx.beginPath();
-                ctx.arc(x + 4, y + 4, 4, 0, Math.PI * 2);
+                ctx.arc(x + 4, y + 6, 4, 0, Math.PI * 2);
                 ctx.fill();
-                ctx.fillStyle = p.dead ? 'rgba(255,120,140,0.8)' : '#fff';
+                ctx.fillStyle = p.dead ? 'rgba(212,64,90,0.85)' : HUD_CREAM;
                 ctx.font = p.isLocal ? 'bold 11px sans-serif' : '11px sans-serif';
-                ctx.fillText(`${p.name.slice(0, 9)}`, x + 14, y + 8);
-                ctx.fillStyle = 'rgba(255,255,255,0.6)';
+                ctx.fillText(`${p.name.slice(0, 9)}`, x + 14, y + 10);
+                ctx.fillStyle = HUD_CRIMSON;
                 ctx.font = '9px monospace';
                 ctx.textAlign = 'right';
-                ctx.fillText(`♥${p.lives}`, CANVAS_W - 12, y + 8);
+                ctx.fillText(`♥${p.lives}`, CANVAS_W - 12, y + 10);
                 ctx.textAlign = 'left';
                 y += 18;
             }
         }
     }
+}
+
+/** A thin brass rule used to separate HUD panels. */
+function hudRule(ctx: CanvasRenderingContext2D, x: number, y: number, w: number): void {
+    const g = ctx.createLinearGradient(x, 0, x + w, 0);
+    g.addColorStop(0, 'rgba(231,205,140,0)');
+    g.addColorStop(0.5, 'rgba(231,205,140,0.55)');
+    g.addColorStop(1, 'rgba(231,205,140,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(x, y, w, 1);
 }
 
 // ── helpers ──
