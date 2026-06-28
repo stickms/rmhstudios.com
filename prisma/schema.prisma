@@ -65,6 +65,7 @@ model User {
   forestExplorerSave  ForestExplorerSave?
   dreamRiftProfile    DreamRiftPlayer?
   dreamRiftCoopRuns   DreamRiftCoopRun[]
+  farmingSimFarm      FarmingSimFarm?
 
   // Slice-It Library Relations
   uploadedSongs Song[]            @relation("SongUploader")
@@ -2080,6 +2081,25 @@ model DreamRiftCoopRun {
 
   @@index([difficulty, combinedScore(sort: Desc)], map: "idx_dream_rift_coop_score")
   @@index([difficulty, timeSurvived(sort: Desc)], map: "idx_dream_rift_coop_time")
+}
+
+// RMH Farming Simulator — one persistent farm per user. The full live world
+// (tiles, money, day/season/weather, inventory, seeds, tool levels, members,
+// shipped value) is stored as a JSON blob; `code` is the shareable join code
+// other players use to request access.
+model FarmingSimFarm {
+  id        String   @id @default(cuid())
+  ownerId   String   @unique
+  code      String   @unique
+  name      String
+  saveData  Json
+  shippedValue Int    @default(0) // surfaced column for future leaderboards
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  user User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@map("farming_sim_farm")
 }
 
 // Tracks which Discord channel was last used for an activity per guild.

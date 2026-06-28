@@ -33,6 +33,7 @@ import { registerLightsOutHandlers, handleLightsOutDisconnect } from './handlers
 import { registerDoctrineHandlers, handleDoctrineDisconnect } from './handlers/doctrine';
 import { registerVelumHandlers, handleVelumDisconnect } from './handlers/velum';
 import { registerDreamRiftHandlers, handleDreamRiftDisconnect } from './handlers/dream-rift';
+import { registerRmhFarmingSimHandlers, handleRmhFarmingSimDisconnect } from './handlers/rmh-farming-sim';
 
 // ─── Startup validation ─────────────────────────────────────────
 
@@ -162,6 +163,7 @@ io.on('connection', (socket) => {
   registerDoctrineHandlers(io, socket);
   registerVelumHandlers(io, socket);
   registerDreamRiftHandlers(io, socket);
+  registerRmhFarmingSimHandlers(io, socket);
 
   // Disconnect cleanup
   socket.on('disconnect', (reason) => {
@@ -184,6 +186,7 @@ io.on('connection', (socket) => {
     handleDoctrineDisconnect(io, socket);
     handleVelumDisconnect(io, socket);
     handleDreamRiftDisconnect(io, socket);
+    handleRmhFarmingSimDisconnect(io, socket);
 
     cleanupRateLimits(socket.id);
   });

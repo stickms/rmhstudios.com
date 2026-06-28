@@ -28,6 +28,7 @@ import { Route as RmhmusicRouteImport } from './routes/rmhmusic'
 import { Route as RmhcodeRouteImport } from './routes/rmhcode'
 import { Route as RmhboxRouteImport } from './routes/rmhbox'
 import { Route as RmhPmcRouteImport } from './routes/rmh-pmc'
+import { Route as RmhFarmingSimRouteImport } from './routes/rmh-farming-sim'
 import { Route as RmhCapitalRouteImport } from './routes/rmh-capital'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as NeonDriftwayRouteImport } from './routes/neon-driftway'
@@ -59,6 +60,7 @@ import { Route as RmhmusicIndexRouteImport } from './routes/rmhmusic/index'
 import { Route as RmhcodeIndexRouteImport } from './routes/rmhcode/index'
 import { Route as RmhboxIndexRouteImport } from './routes/rmhbox/index'
 import { Route as RmhPmcIndexRouteImport } from './routes/rmh-pmc/index'
+import { Route as RmhFarmingSimIndexRouteImport } from './routes/rmh-farming-sim/index'
 import { Route as RmhCapitalIndexRouteImport } from './routes/rmh-capital/index'
 import { Route as KowloonKnockoutIndexRouteImport } from './routes/kowloon-knockout/index'
 import { Route as ForestExplorerIndexRouteImport } from './routes/forest-explorer/index'
@@ -275,6 +277,7 @@ import { Route as ApiFeedMentionSearchRouteImport } from './routes/api/feed/ment
 import { Route as ApiFeedHashtagSearchRouteImport } from './routes/api/feed/hashtag-search'
 import { Route as ApiDreamRiftScoreRouteImport } from './routes/api/dream-rift/score'
 import { Route as ApiDreamRiftLeaderboardRouteImport } from './routes/api/dream-rift/leaderboard'
+import { Route as ApiDreamRiftCoopRouteImport } from './routes/api/dream-rift/coop'
 import { Route as ApiDoctrineReactionsRouteImport } from './routes/api/doctrine/reactions'
 import { Route as ApiDiscordTokenRouteImport } from './routes/api/discord/token'
 import { Route as ApiDiscordSyncScoreRouteImport } from './routes/api/discord/sync-score'
@@ -559,6 +562,11 @@ const RmhPmcRoute = RmhPmcRouteImport.update({
   path: '/rmh-pmc',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RmhFarmingSimRoute = RmhFarmingSimRouteImport.update({
+  id: '/rmh-farming-sim',
+  path: '/rmh-farming-sim',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RmhCapitalRoute = RmhCapitalRouteImport.update({
   id: '/rmh-capital',
   path: '/rmh-capital',
@@ -712,6 +720,11 @@ const RmhPmcIndexRoute = RmhPmcIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => RmhPmcRoute,
+} as any)
+const RmhFarmingSimIndexRoute = RmhFarmingSimIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => RmhFarmingSimRoute,
 } as any)
 const RmhCapitalIndexRoute = RmhCapitalIndexRouteImport.update({
   id: '/',
@@ -1807,6 +1820,11 @@ const ApiDreamRiftLeaderboardRoute = ApiDreamRiftLeaderboardRouteImport.update({
   path: '/api/dream-rift/leaderboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiDreamRiftCoopRoute = ApiDreamRiftCoopRouteImport.update({
+  id: '/api/dream-rift/coop',
+  path: '/api/dream-rift/coop',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiDoctrineReactionsRoute = ApiDoctrineReactionsRouteImport.update({
   id: '/api/doctrine/reactions',
   path: '/api/doctrine/reactions',
@@ -2820,6 +2838,7 @@ export interface FileRoutesByFullPath {
   '/neon-driftway': typeof NeonDriftwayRoute
   '/privacy': typeof PrivacyRoute
   '/rmh-capital': typeof RmhCapitalRouteWithChildren
+  '/rmh-farming-sim': typeof RmhFarmingSimRouteWithChildren
   '/rmh-pmc': typeof RmhPmcRouteWithChildren
   '/rmhbox': typeof RmhboxRouteWithChildren
   '/rmhcode': typeof RmhcodeRouteWithChildren
@@ -2923,6 +2942,7 @@ export interface FileRoutesByFullPath {
   '/forest-explorer/': typeof ForestExplorerIndexRoute
   '/kowloon-knockout/': typeof KowloonKnockoutIndexRoute
   '/rmh-capital/': typeof RmhCapitalIndexRoute
+  '/rmh-farming-sim/': typeof RmhFarmingSimIndexRoute
   '/rmh-pmc/': typeof RmhPmcIndexRoute
   '/rmhbox/': typeof RmhboxIndexRoute
   '/rmhcode/': typeof RmhcodeIndexRoute
@@ -2990,6 +3010,7 @@ export interface FileRoutesByFullPath {
   '/api/discord/sync-score': typeof ApiDiscordSyncScoreRoute
   '/api/discord/token': typeof ApiDiscordTokenRoute
   '/api/doctrine/reactions': typeof ApiDoctrineReactionsRoute
+  '/api/dream-rift/coop': typeof ApiDreamRiftCoopRoute
   '/api/dream-rift/leaderboard': typeof ApiDreamRiftLeaderboardRoute
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
   '/api/feed/hashtag-search': typeof ApiFeedHashtagSearchRoute
@@ -3357,6 +3378,7 @@ export interface FileRoutesByTo {
   '/forest-explorer': typeof ForestExplorerIndexRoute
   '/kowloon-knockout': typeof KowloonKnockoutIndexRoute
   '/rmh-capital': typeof RmhCapitalIndexRoute
+  '/rmh-farming-sim': typeof RmhFarmingSimIndexRoute
   '/rmh-pmc': typeof RmhPmcIndexRoute
   '/rmhbox': typeof RmhboxIndexRoute
   '/rmhcode': typeof RmhcodeIndexRoute
@@ -3424,6 +3446,7 @@ export interface FileRoutesByTo {
   '/api/discord/sync-score': typeof ApiDiscordSyncScoreRoute
   '/api/discord/token': typeof ApiDiscordTokenRoute
   '/api/doctrine/reactions': typeof ApiDoctrineReactionsRoute
+  '/api/dream-rift/coop': typeof ApiDreamRiftCoopRoute
   '/api/dream-rift/leaderboard': typeof ApiDreamRiftLeaderboardRoute
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
   '/api/feed/hashtag-search': typeof ApiFeedHashtagSearchRoute
@@ -3710,6 +3733,7 @@ export interface FileRoutesById {
   '/neon-driftway': typeof NeonDriftwayRoute
   '/privacy': typeof PrivacyRoute
   '/rmh-capital': typeof RmhCapitalRouteWithChildren
+  '/rmh-farming-sim': typeof RmhFarmingSimRouteWithChildren
   '/rmh-pmc': typeof RmhPmcRouteWithChildren
   '/rmhbox': typeof RmhboxRouteWithChildren
   '/rmhcode': typeof RmhcodeRouteWithChildren
@@ -3814,6 +3838,7 @@ export interface FileRoutesById {
   '/forest-explorer/': typeof ForestExplorerIndexRoute
   '/kowloon-knockout/': typeof KowloonKnockoutIndexRoute
   '/rmh-capital/': typeof RmhCapitalIndexRoute
+  '/rmh-farming-sim/': typeof RmhFarmingSimIndexRoute
   '/rmh-pmc/': typeof RmhPmcIndexRoute
   '/rmhbox/': typeof RmhboxIndexRoute
   '/rmhcode/': typeof RmhcodeIndexRoute
@@ -3881,6 +3906,7 @@ export interface FileRoutesById {
   '/api/discord/sync-score': typeof ApiDiscordSyncScoreRoute
   '/api/discord/token': typeof ApiDiscordTokenRoute
   '/api/doctrine/reactions': typeof ApiDoctrineReactionsRoute
+  '/api/dream-rift/coop': typeof ApiDreamRiftCoopRoute
   '/api/dream-rift/leaderboard': typeof ApiDreamRiftLeaderboardRoute
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
   '/api/feed/hashtag-search': typeof ApiFeedHashtagSearchRoute
@@ -4168,6 +4194,7 @@ export interface FileRouteTypes {
     | '/neon-driftway'
     | '/privacy'
     | '/rmh-capital'
+    | '/rmh-farming-sim'
     | '/rmh-pmc'
     | '/rmhbox'
     | '/rmhcode'
@@ -4271,6 +4298,7 @@ export interface FileRouteTypes {
     | '/forest-explorer/'
     | '/kowloon-knockout/'
     | '/rmh-capital/'
+    | '/rmh-farming-sim/'
     | '/rmh-pmc/'
     | '/rmhbox/'
     | '/rmhcode/'
@@ -4338,6 +4366,7 @@ export interface FileRouteTypes {
     | '/api/discord/sync-score'
     | '/api/discord/token'
     | '/api/doctrine/reactions'
+    | '/api/dream-rift/coop'
     | '/api/dream-rift/leaderboard'
     | '/api/dream-rift/score'
     | '/api/feed/hashtag-search'
@@ -4705,6 +4734,7 @@ export interface FileRouteTypes {
     | '/forest-explorer'
     | '/kowloon-knockout'
     | '/rmh-capital'
+    | '/rmh-farming-sim'
     | '/rmh-pmc'
     | '/rmhbox'
     | '/rmhcode'
@@ -4772,6 +4802,7 @@ export interface FileRouteTypes {
     | '/api/discord/sync-score'
     | '/api/discord/token'
     | '/api/doctrine/reactions'
+    | '/api/dream-rift/coop'
     | '/api/dream-rift/leaderboard'
     | '/api/dream-rift/score'
     | '/api/feed/hashtag-search'
@@ -5057,6 +5088,7 @@ export interface FileRouteTypes {
     | '/neon-driftway'
     | '/privacy'
     | '/rmh-capital'
+    | '/rmh-farming-sim'
     | '/rmh-pmc'
     | '/rmhbox'
     | '/rmhcode'
@@ -5161,6 +5193,7 @@ export interface FileRouteTypes {
     | '/forest-explorer/'
     | '/kowloon-knockout/'
     | '/rmh-capital/'
+    | '/rmh-farming-sim/'
     | '/rmh-pmc/'
     | '/rmhbox/'
     | '/rmhcode/'
@@ -5228,6 +5261,7 @@ export interface FileRouteTypes {
     | '/api/discord/sync-score'
     | '/api/discord/token'
     | '/api/doctrine/reactions'
+    | '/api/dream-rift/coop'
     | '/api/dream-rift/leaderboard'
     | '/api/dream-rift/score'
     | '/api/feed/hashtag-search'
@@ -5514,6 +5548,7 @@ export interface RootRouteChildren {
   NeonDriftwayRoute: typeof NeonDriftwayRoute
   PrivacyRoute: typeof PrivacyRoute
   RmhCapitalRoute: typeof RmhCapitalRouteWithChildren
+  RmhFarmingSimRoute: typeof RmhFarmingSimRouteWithChildren
   RmhPmcRoute: typeof RmhPmcRouteWithChildren
   RmhboxRoute: typeof RmhboxRouteWithChildren
   RmhcodeRoute: typeof RmhcodeRouteWithChildren
@@ -5589,6 +5624,7 @@ export interface RootRouteChildren {
   ApiDiscordSyncScoreRoute: typeof ApiDiscordSyncScoreRoute
   ApiDiscordTokenRoute: typeof ApiDiscordTokenRoute
   ApiDoctrineReactionsRoute: typeof ApiDoctrineReactionsRoute
+  ApiDreamRiftCoopRoute: typeof ApiDreamRiftCoopRoute
   ApiDreamRiftLeaderboardRoute: typeof ApiDreamRiftLeaderboardRoute
   ApiDreamRiftScoreRoute: typeof ApiDreamRiftScoreRoute
   ApiFeedHashtagSearchRoute: typeof ApiFeedHashtagSearchRoute
@@ -5889,6 +5925,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RmhPmcRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/rmh-farming-sim': {
+      id: '/rmh-farming-sim'
+      path: '/rmh-farming-sim'
+      fullPath: '/rmh-farming-sim'
+      preLoaderRoute: typeof RmhFarmingSimRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/rmh-capital': {
       id: '/rmh-capital'
       path: '/rmh-capital'
@@ -6105,6 +6148,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/rmh-pmc/'
       preLoaderRoute: typeof RmhPmcIndexRouteImport
       parentRoute: typeof RmhPmcRoute
+    }
+    '/rmh-farming-sim/': {
+      id: '/rmh-farming-sim/'
+      path: '/'
+      fullPath: '/rmh-farming-sim/'
+      preLoaderRoute: typeof RmhFarmingSimIndexRouteImport
+      parentRoute: typeof RmhFarmingSimRoute
     }
     '/rmh-capital/': {
       id: '/rmh-capital/'
@@ -7616,6 +7666,13 @@ declare module '@tanstack/react-router' {
       path: '/api/dream-rift/leaderboard'
       fullPath: '/api/dream-rift/leaderboard'
       preLoaderRoute: typeof ApiDreamRiftLeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/dream-rift/coop': {
+      id: '/api/dream-rift/coop'
+      path: '/api/dream-rift/coop'
+      fullPath: '/api/dream-rift/coop'
+      preLoaderRoute: typeof ApiDreamRiftCoopRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/doctrine/reactions': {
@@ -9189,6 +9246,18 @@ const RmhCapitalRouteWithChildren = RmhCapitalRoute._addFileChildren(
   RmhCapitalRouteChildren,
 )
 
+interface RmhFarmingSimRouteChildren {
+  RmhFarmingSimIndexRoute: typeof RmhFarmingSimIndexRoute
+}
+
+const RmhFarmingSimRouteChildren: RmhFarmingSimRouteChildren = {
+  RmhFarmingSimIndexRoute: RmhFarmingSimIndexRoute,
+}
+
+const RmhFarmingSimRouteWithChildren = RmhFarmingSimRoute._addFileChildren(
+  RmhFarmingSimRouteChildren,
+)
+
 interface RmhPmcRouteChildren {
   RmhPmcCapabilitiesRoute: typeof RmhPmcCapabilitiesRoute
   RmhPmcCommandRoute: typeof RmhPmcCommandRoute
@@ -9813,6 +9882,7 @@ const rootRouteChildren: RootRouteChildren = {
   NeonDriftwayRoute: NeonDriftwayRoute,
   PrivacyRoute: PrivacyRoute,
   RmhCapitalRoute: RmhCapitalRouteWithChildren,
+  RmhFarmingSimRoute: RmhFarmingSimRouteWithChildren,
   RmhPmcRoute: RmhPmcRouteWithChildren,
   RmhboxRoute: RmhboxRouteWithChildren,
   RmhcodeRoute: RmhcodeRouteWithChildren,
@@ -9888,6 +9958,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDiscordSyncScoreRoute: ApiDiscordSyncScoreRoute,
   ApiDiscordTokenRoute: ApiDiscordTokenRoute,
   ApiDoctrineReactionsRoute: ApiDoctrineReactionsRoute,
+  ApiDreamRiftCoopRoute: ApiDreamRiftCoopRoute,
   ApiDreamRiftLeaderboardRoute: ApiDreamRiftLeaderboardRoute,
   ApiDreamRiftScoreRoute: ApiDreamRiftScoreRoute,
   ApiFeedHashtagSearchRoute: ApiFeedHashtagSearchRoute,
@@ -10055,12 +10126,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
