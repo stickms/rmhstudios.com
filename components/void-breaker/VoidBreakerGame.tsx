@@ -61,6 +61,7 @@ export function VoidBreakerGame() {
   const [hud, setHud] = useState<HUDState>(EMPTY_HUD);
   const [muted, setMuted] = useState(false);
   const [musicVolume, setMusicVolume] = useState(70);
+  const [sfxVolume, setSfxVolume] = useState(85);
   const [saveInfo, setSaveInfo] = useState<{ wave: number; savedAt: Date } | null>(null);
   // Pause menu: 'ingame' pause vs menu
   const [showPauseMenu, setShowPauseMenu] = useState(false);
@@ -75,6 +76,11 @@ export function VoidBreakerGame() {
       const v = parseInt(storedVol, 10);
       if (!isNaN(v) && v >= 0 && v <= 100) setMusicVolume(v);
     }
+    const storedSfx = localStorage.getItem('vb-sfx-volume');
+    if (storedSfx !== null) {
+      const v = parseInt(storedSfx, 10);
+      if (!isNaN(v) && v >= 0 && v <= 100) setSfxVolume(v);
+    }
     setSaveInfo(getSaveInfo());
   }, []);
 
@@ -86,10 +92,9 @@ export function VoidBreakerGame() {
       audio.volume = vol;
       audio.muted = muted;
     }
-    // SFX share the same master slider so one control governs overall loudness.
-    sfxRef.current?.setVolume((musicVolume / 100) * MASTER_VOLUME);
+    sfxRef.current?.setVolume((sfxVolume / 100) * MASTER_VOLUME);
     sfxRef.current?.setMuted(muted);
-  }, [muted, musicVolume]);
+  }, [muted, musicVolume, sfxVolume]);
 
   // ── AudioManager: fade in/out helpers ─────────────────────────────────────
   const fadeMusic = useCallback((fadeIn: boolean) => {
@@ -442,6 +447,15 @@ export function VoidBreakerGame() {
   const setVolume = useCallback((v: number) => {
     setMusicVolume(v);
     localStorage.setItem('vb-music-volume', String(v));
+  }, []);
+
+  const setSfx = useCallback((v: number) => {
+    setSfxVolume(v);
+    localStorage.setItem('vb-sfx-volume', String(v));
+    // Play a sample blip so the player hears the new level as they drag.
+    sfxRef.current?.unlock();
+    sfxRef.current?.setVolume((v / 100) * MASTER_VOLUME);
+    sfxRef.current?.play('uiClick');
   }, []);
 
   /** Load saved game and resume play. */
@@ -911,6 +925,8 @@ export function VoidBreakerGame() {
         onToggleMute={toggleMute}
         musicVolume={musicVolume}
         onMusicVolumeChange={setVolume}
+        sfxVolume={sfxVolume}
+        onSfxVolumeChange={setSfx}
         saveInfo={saveInfo}
         onClearSave={() => { deleteSave(); setSaveInfo(null); }}
         onContinueGame={saveInfo ? handleContinue : undefined}
