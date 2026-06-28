@@ -173,6 +173,8 @@ export interface RunStats {
 export interface HUDState {
   score: number;
   multiplier: number;
+  /** Active post-detonation surge multiplier (1 = none). */
+  surge: number;
   wave: number;
   hp: number;
   maxHp: number;

@@ -14,7 +14,7 @@ import {
   SHARD_ORBIT_BASE, SHARD_ORBIT_PER,
   MAX_SHARDS, SHARD_MULT_PER, SHARD_POINTS,
   DET_MIN_SHARDS, DET_BASE_RADIUS, DET_RADIUS_PER_SHARD,
-  DET_COOLDOWN, DET_DAMAGE,
+  DET_COOLDOWN, DET_DAMAGE, DET_DMG_PER_SHARD, SURGE_DURATION,
   COMBO_WINDOW, COMBO_MULT_PER, COMBO_MAX_MULT,
   WAVE_BONUS_PER, WAVE_BREAK_S, COUNTDOWN_S,
   MAX_ENEMIES, MAX_PROJECTILES, MAX_SHARDS_POOL, MAX_PARTICLES,
@@ -90,6 +90,10 @@ export class VoidBreakerEngine {
   comboCount = 0;
   comboTimer = 0;
   comboMultiplier = 1;
+  /** Decaying post-detonation score bonus (1 = none). */
+  surgeMultiplier = 1;
+  private surgePeak = 1;
+  private surgeTimer = 0;
   maxMultiplier = 1;
   maxCombo = 0;
   enemiesKilled = 0;
@@ -222,6 +226,9 @@ export class VoidBreakerEngine {
     this.comboCount = 0;
     this.comboTimer = 0;
     this.comboMultiplier = 1;
+    this.surgeMultiplier = 1;
+    this.surgePeak = 1;
+    this.surgeTimer = 0;
     this.maxMultiplier = 1;
     this.maxCombo = 0;
     this.enemiesKilled = 0;
@@ -272,7 +279,7 @@ export class VoidBreakerEngine {
   }
 
   get totalMultiplier(): number {
-    return this.shardMultiplier * this.comboMultiplier;
+    return this.shardMultiplier * this.comboMultiplier * this.surgeMultiplier;
   }
 
   getRunStats(): RunStats {
@@ -336,6 +343,7 @@ export class VoidBreakerEngine {
       this.checkEnemyProjHits();
       this.checkContact();
       this.updateCombo(dt);
+      this.updateSurge(dt);
       this.updateHeartPickups(worldDt);
       this.updateParticles(dt);
       this.updatePopups(dt);
@@ -597,6 +605,15 @@ export class VoidBreakerEngine {
   }
 
   // ── Combo ──
+
+  private updateSurge(dt: number): void {
+    if (this.surgeTimer > 0) {
+      this.surgeTimer -= dt;
+      const f = Math.max(0, this.surgeTimer / SURGE_DURATION);
+      this.surgeMultiplier = 1 + (this.surgePeak - 1) * f;
+      if (this.surgeTimer <= 0) { this.surgeMultiplier = 1; this.surgePeak = 1; }
+    }
+  }
 
   private updateCombo(dt: number): void {
     if (this.comboCount > 0) {
@@ -1523,8 +1540,10 @@ export class VoidBreakerEngine {
 
   private detonateShield(): void {
     const p = this.player;
-    const blast = (DET_BASE_RADIUS + p.shards * DET_RADIUS_PER_SHARD) * this.stats.detonateRadiusMult;
-    const detDamage = DET_DAMAGE + this.stats.detonateDamageBonus;
+    const shardsBefore = p.shards;
+    const blast = (DET_BASE_RADIUS + shardsBefore * DET_RADIUS_PER_SHARD) * this.stats.detonateRadiusMult;
+    // Damage scales with the shards you spend — a full ring is devastating.
+    const detDamage = DET_DAMAGE + this.stats.detonateDamageBonus + Math.floor(shardsBefore * DET_DMG_PER_SHARD);
     for (const e of this.enemies) {
       if (!e.active) continue;
       if (e.isBoss && e.bossSpecialActive) continue; // void form is intangible
@@ -1556,13 +1575,20 @@ export class VoidBreakerEngine {
     }
     p.shards = 0; p.detonateCooldown = DET_COOLDOWN;
     this.detonations++;
-    this.shardMultiplier = 1; this.comboCount = 0; this.comboMultiplier = 1;
+    // Surge: bank the shard multiplier you just spent into a decaying bonus, so
+    // detonating is a power spike (keep scoring while you recollect) — not a reset.
+    // Combo is intentionally NOT reset: detonation kills feed the combo chain.
+    const peak = Math.max(this.surgeMultiplier, this.shardMultiplier);
+    this.surgePeak = peak;
+    this.surgeMultiplier = peak;
+    this.surgeTimer = SURGE_DURATION;
     this.emitSfx('detonate', { gain: Math.min(1.3, 0.7 + blast / 300) });
     this.requestHitStop(90);
     this.triggerShake(12, 450);
     this.popups.push({
-      text: 'VOID BURST!', x: p.x, y: p.y - 30,
-      life: 1, maxLife: 1, color: '#ff6644',
+      text: peak > 1.5 ? `VOID BURST! ${peak.toFixed(1)}× SURGE` : 'VOID BURST!',
+      x: p.x, y: p.y - 30,
+      life: 1.2, maxLife: 1.2, color: '#ff6644',
     });
   }
 

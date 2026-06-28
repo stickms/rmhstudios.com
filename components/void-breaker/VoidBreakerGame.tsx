@@ -21,7 +21,7 @@ const MUSIC_SRC = asset('/music/VoidBreaker/cold coffee - lofi rap beat (FREE FO
 const MASTER_VOLUME = 0.75;
 
 const EMPTY_HUD: HUDState = {
-  score: 0, multiplier: 1, wave: 0, hp: 3, maxHp: 3,
+  score: 0, multiplier: 1, surge: 1, wave: 0, hp: 3, maxHp: 3,
   shards: 0, combo: 0, bossHp: 0, bossMaxHp: 0,
   bossActive: false, bossPhase: 1, bossName: '', dashReady: true, dashCooldownFraction: 0,
   waveBreak: false, paused: false, countdown: 3, wingLevel: 0,
@@ -286,6 +286,7 @@ export function VoidBreakerGame() {
           setHud({
             score: Math.round(game.score),
             multiplier: Math.round(game.totalMultiplier * 10) / 10,
+            surge: game.surgeMultiplier,
             wave: game.wave,
             hp: game.player.hp,
             maxHp: game.player.maxHp,
@@ -501,6 +502,11 @@ export function VoidBreakerGame() {
                 {hud.multiplier.toFixed(1)}x
                 {hud.combo > 1 && <span className="text-[#ff00cc] ml-1">{t('combo', { defaultValue: 'COMBO {{combo}}', combo: hud.combo })}</span>}
               </div>
+              {hud.surge > 1.05 && (
+                <div className="font-mono text-[10px] font-bold text-[#ff6644] animate-pulse drop-shadow-[0_0_6px_rgba(255,102,68,0.8)]">
+                  {t('surge', { defaultValue: '⚡ SURGE {{surge}}×', surge: hud.surge.toFixed(1) })}
+                </div>
+              )}
             </div>
 
             {/* Wave */}

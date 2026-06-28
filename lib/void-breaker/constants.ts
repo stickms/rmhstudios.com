@@ -46,6 +46,13 @@ export const DET_BASE_RADIUS = 120;
 export const DET_RADIUS_PER_SHARD = 6;
 export const DET_COOLDOWN = 0.5;
 export const DET_DAMAGE = 3;
+/** Bonus detonate damage per shard spent (a 40-shard burst hits much harder). */
+export const DET_DMG_PER_SHARD = 0.2;
+/**
+ * Surge: detonating banks the score multiplier you spent into a temporary
+ * decaying bonus, so blowing your shard ring is a power spike — not a reset.
+ */
+export const SURGE_DURATION = 6;
 
 // Combo
 export const COMBO_WINDOW = 2.0;
