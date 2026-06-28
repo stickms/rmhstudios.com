@@ -18,6 +18,8 @@
 
 import type { Server, Socket } from 'socket.io';
 import { generateRoomCode } from '../utils';
+import { getPrismaClient } from '../prisma-client';
+import { logger } from '../logger';
 
 // ── Event constants ────────────────────────────────────────────────
 const C2S = {
@@ -163,10 +165,11 @@ interface Farm {
     shippedValue: number;              // lifetime earnings (leaderboard-ish)
 }
 
-// ── Indices ────────────────────────────────────────────────────────
-const farms = new Map<string, Farm>();       // farmId -> Farm
-const codeToFarm = new Map<string, string>(); // code -> farmId
+// ── Indices (in-memory cache over the DB) ──────────────────────────
+const farms = new Map<string, Farm>();       // farmId -> live Farm (cache)
+const codeToFarm = new Map<string, string>(); // code -> farmId (cache)
 const socketState = new Map<string, { userId: string; name: string; farmId: string }>();
+const dirty = new Set<string>();             // farmIds with unsaved changes
 let ioRef: Server;
 
 // ── Helpers ────────────────────────────────────────────────────────
@@ -186,13 +189,10 @@ function freshTiles(): Tile[] {
     return tiles;
 }
 
-function ensureFarm(userId: string, userName: string): Farm {
-    let farm = farms.get(userId);
-    if (farm) return farm;
-    const code = uniqueCode();
-    farm = {
+function newFarmObject(userId: string, userName: string): Farm {
+    return {
         id: userId,
-        code,
+        code: uniqueCode(),
         name: `${userName}'s Farm`,
         ownerUserId: userId,
         ownerName: userName,
@@ -209,9 +209,135 @@ function ensureFarm(userId: string, userName: string): Farm {
         presence: new Map(),
         shippedValue: 0,
     };
-    farms.set(userId, farm);
-    codeToFarm.set(code, userId);
+}
+
+function cacheFarm(farm: Farm): Farm {
+    farms.set(farm.id, farm);
+    codeToFarm.set(farm.code, farm.id);
     return farm;
+}
+
+// ── Persistence ────────────────────────────────────────────────────
+// The full live world is stored as a JSON `saveData` blob keyed by ownerId,
+// with the join `code` as an indexed column for cross-owner lookups.
+function serializeSave(farm: Farm) {
+    return {
+        tiles: farm.tiles,
+        money: farm.money,
+        day: farm.day,
+        seasonIndex: farm.seasonIndex,
+        weather: farm.weather,
+        inventory: farm.inventory,
+        seeds: farm.seeds,
+        tools: farm.tools,
+        members: farm.members,
+        shippedValue: farm.shippedValue,
+    };
+}
+
+function hydrateFarm(row: { ownerId: string; code: string; name: string; saveData: any }): Farm {
+    const s = row.saveData ?? {};
+    const tiles: Tile[] = Array.isArray(s.tiles) && s.tiles.length === TILE_COUNT ? s.tiles : freshTiles();
+    return {
+        id: row.ownerId,
+        code: row.code,
+        name: row.name,
+        ownerUserId: row.ownerId,
+        ownerName: (s.members?.[0]?.name as string) || 'Farmer',
+        tiles,
+        money: typeof s.money === 'number' ? s.money : STARTING_MONEY,
+        day: typeof s.day === 'number' ? s.day : 1,
+        seasonIndex: typeof s.seasonIndex === 'number' ? s.seasonIndex : 0,
+        weather: s.weather === 'rain' ? 'rain' : 'sunny',
+        inventory: s.inventory && typeof s.inventory === 'object' ? s.inventory : {},
+        seeds: s.seeds && typeof s.seeds === 'object' ? s.seeds : {},
+        tools: s.tools && typeof s.tools === 'object' ? s.tools : { hoe: 1, can: 1, scythe: 1 },
+        members: Array.isArray(s.members) && s.members.length ? s.members : [{ userId: row.ownerId, name: 'Farmer' }],
+        joinRequests: [],
+        presence: new Map(),
+        shippedValue: typeof s.shippedValue === 'number' ? s.shippedValue : 0,
+    };
+}
+
+function markDirty(farm: Farm): void {
+    dirty.add(farm.id);
+}
+
+async function persistFarm(farm: Farm): Promise<void> {
+    const db = getPrismaClient() as any;
+    try {
+        await db.farmingSimFarm.upsert({
+            where: { ownerId: farm.id },
+            create: {
+                ownerId: farm.id,
+                code: farm.code,
+                name: farm.name,
+                saveData: serializeSave(farm),
+                shippedValue: farm.shippedValue,
+            },
+            update: {
+                code: farm.code,
+                name: farm.name,
+                saveData: serializeSave(farm),
+                shippedValue: farm.shippedValue,
+            },
+        });
+    } catch (e) {
+        logger.warn({ event: 'rfs_persist_error', farmId: farm.id, error: String(e) });
+    }
+}
+
+/** Load (or create + persist) the caller's own farm, using the cache first. */
+async function loadOrCreateFarm(userId: string, userName: string): Promise<Farm> {
+    const cached = farms.get(userId);
+    if (cached) return cached;
+
+    const db = getPrismaClient() as any;
+    try {
+        const row = await db.farmingSimFarm.findUnique({ where: { ownerId: userId } });
+        if (row) return cacheFarm(hydrateFarm(row));
+    } catch (e) {
+        logger.warn({ event: 'rfs_load_error', userId, error: String(e) });
+    }
+
+    // none on record → make a fresh homestead and persist it
+    const farm = cacheFarm(newFarmObject(userId, userName));
+    await persistFarm(farm);
+    return farm;
+}
+
+/** Load a farm by its join code (may belong to an offline owner). */
+async function loadFarmByCode(code: string): Promise<Farm | null> {
+    const cachedId = codeToFarm.get(code);
+    if (cachedId) {
+        const f = farms.get(cachedId);
+        if (f) return f;
+    }
+    const db = getPrismaClient() as any;
+    try {
+        const row = await db.farmingSimFarm.findUnique({ where: { code } });
+        if (row) return cacheFarm(hydrateFarm(row));
+    } catch (e) {
+        logger.warn({ event: 'rfs_load_code_error', code, error: String(e) });
+    }
+    return null;
+}
+
+// Flush dirty farms to the DB on an interval so frequent tile edits don't
+// hammer Postgres. Significant economic actions also flush immediately.
+let saveTimer: NodeJS.Timeout | null = null;
+function startSaveLoop(): void {
+    if (saveTimer) return;
+    saveTimer = setInterval(() => {
+        if (dirty.size === 0) return;
+        const ids = Array.from(dirty);
+        dirty.clear();
+        for (const id of ids) {
+            const farm = farms.get(id);
+            if (farm) void persistFarm(farm);
+        }
+    }, 5000);
+    if (saveTimer.unref) saveTimer.unref();
 }
 
 function isMember(farm: Farm, userId: string): boolean {
@@ -359,17 +485,23 @@ function removeFromCurrentFarm(socket: Socket, opts: { notifyKick?: boolean } = 
 }
 
 // ── Handlers ───────────────────────────────────────────────────────
-function onHello(socket: Socket): void {
+async function onHello(socket: Socket): Promise<void> {
     const userId = socket.data.userId as string | undefined;
     const name = (socket.data.userName as string) || 'Farmer';
     if (!userId) {
         err(socket, 'Please sign in to play RMH Farming Simulator.');
         return;
     }
-    const farm = ensureFarm(userId, name);
-    // keep displayed owner name fresh
+    const farm = await loadOrCreateFarm(userId, name);
+    if (socket.disconnected) return;
+    // keep displayed owner + member name fresh
     if (farm.ownerUserId === userId && farm.ownerName !== name) {
         farm.ownerName = name;
+        const owner = farm.members.find((m) => m.userId === userId);
+        if (owner && owner.name !== name) {
+            owner.name = name;
+            markDirty(farm);
+        }
     }
     socketState.set(socket.id, { userId, name, farmId: farm.id });
 
@@ -450,6 +582,7 @@ function onTill(socket: Socket, payload: any): void {
         if (t.terrain === 0 && !t.crop) { t.terrain = 1; changed.push(i); }
     }
     broadcastTiles(farm, changed);
+    if (changed.length) markDirty(farm);
 }
 
 function onClear(socket: Socket, payload: any): void {
@@ -464,6 +597,7 @@ function onClear(socket: Socket, payload: any): void {
         t.terrain = 0;
         t.crop = null;
         broadcastTiles(farm, [idx(tx, tz)]);
+        markDirty(farm);
     }
 }
 
@@ -489,6 +623,7 @@ function onPlant(socket: Socket, payload: any): void {
     t.crop = { cropId, stage: 0, watered: false, wateredCount: 0, regrowTimer: 0 };
     broadcastTiles(farm, [idx(tx, tz)]);
     broadcastFarmInventory(farm);
+    markDirty(farm);
 }
 
 function onWater(socket: Socket, payload: any): void {
@@ -506,6 +641,7 @@ function onWater(socket: Socket, payload: any): void {
         if (t.crop && !t.crop.watered) { t.crop.watered = true; changed.push(i); }
     }
     broadcastTiles(farm, changed);
+    if (changed.length) markDirty(farm);
 }
 
 function qualityMultiplier(crop: CropInstance, def: CropDef): { mult: number; label: string } {
@@ -554,6 +690,7 @@ function onHarvest(socket: Socket, payload: any): void {
         broadcastTiles(farm, changed);
         broadcastFarmInventory(farm);
         socket.emit(S2C.STATS, serializeStats(farm, p));
+        markDirty(farm);
         toast(socket, `Harvested ${harvested} crop${harvested > 1 ? 's' : ''}.`, 'success');
     } else if (exhausted) {
         toast(socket, 'Too exhausted — sleep to restore energy.', 'error');
@@ -576,6 +713,7 @@ function onBuy(socket: Socket, payload: any): void {
     farm.seeds[itemId] = (farm.seeds[itemId] ?? 0) + qty;
     broadcastFarmInventory(farm);
     broadcastStats(farm);
+    markDirty(farm);
     toast(socket, `Bought ${qty} ${def.name} seed${qty > 1 ? 's' : ''}.`, 'success');
 }
 
@@ -605,6 +743,7 @@ function onSell(socket: Socket, payload: any): void {
     farm.shippedValue += total;
     broadcastFarmInventory(farm);
     broadcastStats(farm);
+    markDirty(farm);
     toast(socket, `Sold ${qty}× ${info.name} for ${total}g.`, 'success');
 }
 
@@ -623,6 +762,7 @@ function onUpgradeTool(socket: Socket, payload: any): void {
     farm.tools[tool] = next.level;
     broadcastFarmInventory(farm);
     broadcastStats(farm);
+    markDirty(farm);
     toast(socket, `${TOOL_DEFS[tool].name} upgraded to ${next.label}!`, 'success');
 }
 
@@ -643,6 +783,9 @@ function onSleep(socket: Socket): void {
     for (const s of socketsInFarm(farm)) {
         s.emit(S2C.TOAST, { message: `Day ${farm.day} — ${season(farm)}, ${farm.weather}.`, kind: 'info' });
     }
+    // a new day is a natural checkpoint — persist immediately
+    dirty.delete(farm.id);
+    void persistFarm(farm);
 }
 
 // Deterministic-ish weather without Math.random dependence concerns: simple LCG seeded by day.
@@ -698,14 +841,14 @@ function onChat(socket: Socket, payload: any): void {
 }
 
 // ── Multiplayer: joining other farms ───────────────────────────────
-function onJoinFarm(socket: Socket, payload: any): void {
+async function onJoinFarm(socket: Socket, payload: any): Promise<void> {
     const st = socketState.get(socket.id);
     if (!st) { err(socket, 'Not initialized.'); return; }
     const code = String(payload?.code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     if (!code) { err(socket, 'Enter a farm code.'); return; }
-    const farmId = codeToFarm.get(code);
-    const farm = farmId ? farms.get(farmId) : undefined;
+    const farm = await loadFarmByCode(code);
     if (!farm) { err(socket, 'No farm found with that code.'); return; }
+    if (socket.disconnected) return;
 
     if (farm.ownerUserId === st.userId) {
         toast(socket, 'That is your own farm.', 'info');
@@ -744,7 +887,10 @@ function onApproveJoin(socket: Socket, payload: any): void {
     const reqIdx = farm.joinRequests.findIndex((r) => r.userId === targetId);
     if (reqIdx === -1) return;
     const req = farm.joinRequests.splice(reqIdx, 1)[0];
-    if (!isMember(farm, req.userId)) farm.members.push({ userId: req.userId, name: req.name });
+    if (!isMember(farm, req.userId)) {
+        farm.members.push({ userId: req.userId, name: req.name });
+        markDirty(farm); // membership persists across restarts
+    }
     broadcastMembers(farm);
 
     // if the requester is online (anywhere), pull them into the farm
@@ -768,7 +914,7 @@ function onDenyJoin(socket: Socket, payload: any): void {
     if (targetSocket) toast(targetSocket, `Your request to join ${farm.name} was declined.`, 'error');
 }
 
-function onKick(socket: Socket, payload: any): void {
+async function onKick(socket: Socket, payload: any): Promise<void> {
     const ctx = currentFarm(socket);
     if (!ctx) return;
     const { farm, userId } = ctx;
@@ -777,6 +923,7 @@ function onKick(socket: Socket, payload: any): void {
     if (targetId === farm.ownerUserId) return; // can't kick the host
     farm.members = farm.members.filter((m) => m.userId !== targetId);
     farm.joinRequests = farm.joinRequests.filter((r) => r.userId !== targetId);
+    markDirty(farm);
 
     const targetSocket = findUserSocket(targetId);
     if (targetSocket && farm.presence.get(targetId)?.socketId === targetSocket.id) {
@@ -785,8 +932,8 @@ function onKick(socket: Socket, payload: any): void {
         targetSocket.emit(S2C.KICKED, { reason: 'kicked', farmName: farm.name });
         const tState = socketState.get(targetSocket.id);
         if (tState) {
-            const home = ensureFarm(tState.userId, tState.name);
-            placeInFarm(targetSocket, home, tState.userId, tState.name);
+            const home = await loadOrCreateFarm(tState.userId, tState.name);
+            if (!targetSocket.disconnected) placeInFarm(targetSocket, home, tState.userId, tState.name);
         }
     } else {
         farm.presence.delete(targetId);
@@ -796,7 +943,7 @@ function onKick(socket: Socket, payload: any): void {
     toast(socket, 'Player removed.', 'info');
 }
 
-function onLeaveFarm(socket: Socket): void {
+async function onLeaveFarm(socket: Socket): Promise<void> {
     const st = socketState.get(socket.id);
     if (!st) return;
     const cur = farms.get(st.farmId);
@@ -805,8 +952,8 @@ function onLeaveFarm(socket: Socket): void {
         broadcastPresence(cur);
         broadcastMembers(cur);
     }
-    const home = ensureFarm(st.userId, st.name);
-    placeInFarm(socket, home, st.userId, st.name);
+    const home = await loadOrCreateFarm(st.userId, st.name);
+    if (!socket.disconnected) placeInFarm(socket, home, st.userId, st.name);
     toast(socket, 'Returned to your farm.', 'info');
 }
 
@@ -820,6 +967,7 @@ function onRenameFarm(socket: Socket, payload: any): void {
     farm.name = name;
     broadcastFarmInventory(farm);
     broadcastMembers(farm);
+    markDirty(farm);
 }
 
 function findUserSocket(userId: string): Socket | null {
@@ -848,7 +996,8 @@ function startPresenceLoop(): void {
 export function registerRmhFarmingSimHandlers(io: Server, socket: Socket): void {
     ioRef = io;
     startPresenceLoop();
-    socket.on(C2S.HELLO, () => onHello(socket));
+    startSaveLoop();
+    socket.on(C2S.HELLO, () => { void onHello(socket); });
     socket.on(C2S.MOVE, (p) => onMove(socket, p));
     socket.on(C2S.TILL, (p) => onTill(socket, p));
     socket.on(C2S.CLEAR, (p) => onClear(socket, p));
@@ -860,11 +1009,11 @@ export function registerRmhFarmingSimHandlers(io: Server, socket: Socket): void 
     socket.on(C2S.UPGRADE_TOOL, (p) => onUpgradeTool(socket, p));
     socket.on(C2S.SLEEP, () => onSleep(socket));
     socket.on(C2S.CHAT, (p) => onChat(socket, p));
-    socket.on(C2S.JOIN_FARM, (p) => onJoinFarm(socket, p));
+    socket.on(C2S.JOIN_FARM, (p) => { void onJoinFarm(socket, p); });
     socket.on(C2S.APPROVE_JOIN, (p) => onApproveJoin(socket, p));
     socket.on(C2S.DENY_JOIN, (p) => onDenyJoin(socket, p));
-    socket.on(C2S.KICK, (p) => onKick(socket, p));
-    socket.on(C2S.LEAVE_FARM, () => onLeaveFarm(socket));
+    socket.on(C2S.KICK, (p) => { void onKick(socket, p); });
+    socket.on(C2S.LEAVE_FARM, () => { void onLeaveFarm(socket); });
     socket.on(C2S.RENAME_FARM, (p) => onRenameFarm(socket, p));
 }
 
@@ -876,6 +1025,11 @@ export function handleRmhFarmingSimDisconnect(_io: Server, socket: Socket): void
             farm.presence.delete(st.userId);
             broadcastPresence(farm);
             broadcastMembers(farm);
+            // flush this farm's pending changes so progress survives a disconnect
+            if (dirty.has(farm.id)) {
+                dirty.delete(farm.id);
+                void persistFarm(farm);
+            }
         }
     }
     socketState.delete(socket.id);
