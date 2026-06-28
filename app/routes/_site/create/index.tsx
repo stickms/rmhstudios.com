@@ -125,31 +125,33 @@ function CreatorStudio() {
           </p>
         </header>
 
-        <div
-          className="cstudio-tabs"
-          role="tablist"
-          aria-label={t('creator-studio', { defaultValue: 'Creator Studio' })}
-          onKeyDown={onTabsKeyDown}
-        >
-          {tabs.map(({ id, label, icon: Icon }) => {
-            const active = tab === id;
-            return (
-              <button
-                key={id}
-                id={`cstudio-tab-${id}`}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                aria-controls={`cstudio-panel-${id}`}
-                tabIndex={active ? 0 : -1}
-                className={`cstudio-tab ${active ? 'is-active' : ''}`}
-                onClick={() => setTab(id)}
-              >
-                <Icon className="cstudio-tab__icon" aria-hidden="true" />
-                {label}
-              </button>
-            );
-          })}
+        <div className="cstudio-tabs">
+          <div
+            className="cstudio-tabs__scroll"
+            role="tablist"
+            aria-label={t('creator-studio', { defaultValue: 'Creator Studio' })}
+            onKeyDown={onTabsKeyDown}
+          >
+            {tabs.map(({ id, label, icon: Icon }) => {
+              const active = tab === id;
+              return (
+                <button
+                  key={id}
+                  id={`cstudio-tab-${id}`}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  aria-controls={`cstudio-panel-${id}`}
+                  tabIndex={active ? 0 : -1}
+                  className={`cstudio-tab ${active ? 'is-active' : ''}`}
+                  onClick={() => setTab(id)}
+                >
+                  <Icon className="cstudio-tab__icon" aria-hidden="true" />
+                  {label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {tab === 'pages' && (

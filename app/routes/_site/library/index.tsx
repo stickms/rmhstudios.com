@@ -346,7 +346,6 @@ function Section({
   onChanged: () => void;
   showAttribution?: boolean;
 }) {
-  const { t } = useTranslation('library');
   const [dragId, setDragId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
 
@@ -380,9 +379,6 @@ function Section({
     <section className="lib__section">
       <div className="lib__section-head">
         <h2 className="lib__section-title">{title}</h2>
-        {isAdmin && managed.length > 0 && (
-          <span className="lib__manage-hint">{t('right-click-manage', { defaultValue: 'Right-click to manage' })}</span>
-        )}
       </div>
       <div className="lib__shelf" role="list">
         {books.map((book) => {

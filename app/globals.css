@@ -2,12 +2,6 @@
 
 /* Theme stylesheets moved to their respective route files for code splitting */
 
-/* Profile Pet sprite animations */
-@keyframes dog-walk-frames {
-  from { background-position: 0 0; }
-  to { background-position: -128px 0; }
-}
-
 /* ── Font family variables (loaded via Google Fonts CSS link) ── */
 :root {
   --font-nunito: "Nunito", sans-serif;

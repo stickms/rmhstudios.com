@@ -18,7 +18,6 @@ import { Link } from '@tanstack/react-router';
 import type { FeedItem, FeedItemUser } from '@/lib/feed-types';
 import { useUserDisplayStore } from '@/stores/userDisplayStore';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
-import { ProfilePet } from '@/components/rmhcoins/ProfilePet';
 
 interface ProfileData {
   id: string;
@@ -47,8 +46,6 @@ interface ProfileData {
   handleCooldownMs?: number;
   hasCustomAvatar?: boolean;
   coins: number;
-  hasProfilePet: boolean;
-  showProfilePet: boolean;
   isOnline?: boolean;
   tipGoal?: number | null;
   tipGoalLabel?: string | null;
@@ -59,6 +56,7 @@ interface ProfileData {
     badge?: { emoji?: string };
     banner?: { gradient?: string };
     pet?: { emoji?: string };
+    theme?: { id: string; accent?: string; accentHover?: string; accentFg?: string; accentDim?: string; gradient?: string };
   };
 }
 
@@ -420,8 +418,22 @@ export function ProfileColumn({ userId }: { userId: string }) {
 
   const showLikesTab = profile.isOwnProfile || profile.showLikes;
 
+  // An equipped premium theme recolors this profile by overriding the accent CSS
+  // variables for the column's subtree (follow button, links, name, tab indicator,
+  // badges). Its gradient also backs the profile header when no banner is equipped.
+  const theme = profile.cosmetics?.theme;
+  const themeStyle = theme
+    ? ({
+        ...(theme.accent ? { '--site-accent': theme.accent } : {}),
+        ...(theme.accentHover ? { '--site-accent-hover': theme.accentHover } : {}),
+        ...(theme.accentFg ? { '--site-accent-fg': theme.accentFg } : {}),
+        ...(theme.accentDim ? { '--site-accent-dim': theme.accentDim } : {}),
+      } as React.CSSProperties)
+    : undefined;
+  const headerBackdrop = profile.cosmetics?.banner?.gradient ?? theme?.gradient;
+
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col" style={themeStyle}>
       {/* Header bar */}
       <div className="sticky top-0 z-10 bg-site-bg/85 backdrop-blur-md border-b border-site-border">
         <div className="flex items-center gap-3 px-4 py-3">
@@ -443,50 +455,50 @@ export function ProfileColumn({ userId }: { userId: string }) {
         </div>
       </div>
 
-      {/* Equipped profile banner (cosmetic) */}
-      {profile.cosmetics?.banner?.gradient && (
-        <div className="h-24 w-full" style={{ background: profile.cosmetics.banner.gradient }} aria-hidden />
-      )}
-
       {/* Profile header */}
       <div className="px-4 pt-6 pb-4 border-b border-site-border">
-        <div className="flex items-start justify-between mb-4">
-          <div className="relative shrink-0">
-            {profile.cosmetics?.avatarFrame ? (
-              <div
-                className="rounded-full p-[3px]"
-                style={{ background: profile.cosmetics.avatarFrame.gradient ?? profile.cosmetics.avatarFrame.color }}
-              >
+        {/* The equipped banner sits behind the avatar + song row and spans the
+            full profile width (full-bleed past the header padding) — filling the
+            area the old profile pet used to occupy. */}
+        <div className="relative mb-4">
+          {headerBackdrop && (
+            <div
+              className="absolute inset-x-[-16px] top-[-24px] bottom-[-16px]"
+              style={{ background: headerBackdrop }}
+              aria-hidden
+            />
+          )}
+          <div className="relative flex items-start justify-between">
+            <div className="relative shrink-0">
+              {profile.cosmetics?.avatarFrame ? (
+                <div
+                  className="rounded-full p-[3px]"
+                  style={{ background: profile.cosmetics.avatarFrame.gradient ?? profile.cosmetics.avatarFrame.color }}
+                >
+                  <ProfileAvatar image={displayImage ?? null} name={displayName ?? null} />
+                </div>
+              ) : (
                 <ProfileAvatar image={displayImage ?? null} name={displayName ?? null} />
-              </div>
-            ) : (
-              <ProfileAvatar image={displayImage ?? null} name={displayName ?? null} />
-            )}
-            {profile.isOnline && (
-              <span
-                className="absolute bottom-1 right-1 h-4 w-4 rounded-full border-2 border-site-bg bg-emerald-500"
-                title={t('online-now', { defaultValue: 'Online now' })}
-                aria-label={t('online-now', { defaultValue: 'Online now' })}
+              )}
+              {profile.isOnline && (
+                <span
+                  className="absolute bottom-1 right-1 h-4 w-4 rounded-full border-2 border-site-bg bg-emerald-500"
+                  title={t('online-now', { defaultValue: 'Online now' })}
+                  aria-label={t('online-now', { defaultValue: 'Online now' })}
+                />
+              )}
+            </div>
+
+            {profile.profileSongSpotifyId && profile.profileSongAlbumArt && (
+              <VinylRecord
+                albumArt={profile.profileSongAlbumArt}
+                title={profile.profileSongTitle ?? 'Unknown'}
+                artist={profile.profileSongArtist ?? 'Unknown'}
+                isPlaying={isPlaying}
+                onToggle={handleTogglePlay}
               />
             )}
           </div>
-
-          {/* Profile Pet banner between avatar and vinyl */}
-          {profile.hasProfilePet && profile.showProfilePet && (
-            <div className="flex-1 mx-3 self-stretch">
-              <ProfilePet />
-            </div>
-          )}
-
-          {profile.profileSongSpotifyId && profile.profileSongAlbumArt && (
-            <VinylRecord
-              albumArt={profile.profileSongAlbumArt}
-              title={profile.profileSongTitle ?? 'Unknown'}
-              artist={profile.profileSongArtist ?? 'Unknown'}
-              isPlaying={isPlaying}
-              onToggle={handleTogglePlay}
-            />
-          )}
         </div>
 
         {messageError && (
@@ -822,8 +834,6 @@ export function ProfileColumn({ userId }: { userId: string }) {
             website: profile.website,
             showLikes: profile.showLikes,
             dmPrivacy: profile.dmPrivacy,
-            hasProfilePet: profile.hasProfilePet,
-            showProfilePet: profile.showProfilePet,
             tipGoal: profile.tipGoal,
             tipGoalLabel: profile.tipGoalLabel,
             profileSongSpotifyId: profile.profileSongSpotifyId,
@@ -840,7 +850,6 @@ export function ProfileColumn({ userId }: { userId: string }) {
                 ...(data.displayName !== undefined ? { name: data.displayName } : {}),
                 ...(data.image !== undefined ? { image: data.image, hasCustomAvatar: !!data.image?.startsWith('/api/profile/avatar/') } : {}),
                 ...(data.handle !== undefined ? { handle: data.handle } : {}),
-                ...(data.showProfilePet !== undefined ? { showProfilePet: data.showProfilePet } : {}),
                 bio: data.bio,
                 location: data.location,
                 website: data.website,

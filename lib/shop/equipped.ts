@@ -7,6 +7,7 @@
  */
 
 import { getShopItem, type ShopItem } from '@/lib/shop/catalog';
+import { getPremiumTheme } from '@/lib/shop/themes';
 
 export interface EquippedCosmetics {
   nameColor?: { color?: string; gradient?: string };
@@ -15,6 +16,7 @@ export interface EquippedCosmetics {
   banner?: { gradient?: string };
   postFlair?: { className?: string; color?: string; gradient?: string };
   pet?: { emoji?: string };
+  theme?: { id: string; accent?: string; accentHover?: string; accentFg?: string; accentDim?: string; gradient?: string };
 }
 
 export function applyItem(out: EquippedCosmetics, item: ShopItem) {
@@ -37,6 +39,18 @@ export function applyItem(out: EquippedCosmetics, item: ShopItem) {
     case 'PET':
       out.pet = { emoji: item.data.emoji };
       break;
+    case 'THEME': {
+      const themeId = item.data.themeId;
+      if (themeId) {
+        const palette = getPremiumTheme(themeId);
+        // Known themes carry a full palette; unknown ids still get their preview
+        // gradient so the theme at least changes the profile backdrop.
+        out.theme = palette
+          ? { id: themeId, ...palette }
+          : { id: themeId, gradient: item.data.gradient };
+      }
+      break;
+    }
     default:
       break;
   }

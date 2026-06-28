@@ -50,21 +50,30 @@
 }
 
 /* ── Tab bar ─────────────────────────────────────────────────────────────── */
+/* Outer wrapper owns the sticky positioning + chrome. Keeping the horizontal
+   scroll on a separate inner element matters: an element that is BOTH
+   `position: sticky` and an `overflow-x: auto` scroll container doesn't reliably
+   accept horizontal touch scrolling on mobile Safari, so the tabs would clip
+   off-screen with no way to reach them. Decoupling fixes that. */
 .cstudio-tabs {
   position: sticky;
   top: 0;
   z-index: 20;
-  display: flex;
-  gap: 4px;
   margin-top: clamp(20px, 4vw, 32px);
-  padding: 8px var(--studio-gutter);
   background: color-mix(in srgb, var(--site-bg, #0c0c0d) 82%, transparent);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--site-border, #232328);
+}
+.cstudio-tabs__scroll {
+  display: flex;
+  gap: 4px;
+  padding: 8px var(--studio-gutter);
   overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
 }
-.cstudio-tabs::-webkit-scrollbar {
+.cstudio-tabs__scroll::-webkit-scrollbar {
   display: none;
 }
 
