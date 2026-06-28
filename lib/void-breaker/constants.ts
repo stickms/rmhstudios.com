@@ -124,4 +124,15 @@ export const ENEMY_CONFIGS: Record<string, EnemyConfig> = {
   tank: { hp: 5, radius: 20, speed: 40, value: 50, color: '#aa2233', shardCount: 3, waveCost: 5, minWave: 8 },
   splitter: { hp: 2, radius: 14, speed: 70, value: 25, color: '#66aa44', shardCount: 2, waveCost: 3, minWave: 10 },
   mini_drifter: { hp: 1, radius: 7, speed: 100, value: 5, color: '#88cc88', shardCount: 1, waveCost: 0, minWave: 999 },
+  // Ranged marksman — keeps its distance, telegraphs a line, fires a fast precise shot.
+  sniper: { hp: 2, radius: 11, speed: 50, value: 35, color: '#ff5544', shardCount: 2, waveCost: 3, minWave: 6 },
+  // Support — drifts at the back and heals nearby wounded enemies. Priority target.
+  healer: { hp: 4, radius: 13, speed: 55, value: 45, color: '#33ff99', shardCount: 3, waveCost: 4, minWave: 14 },
+  // Armored — a directional shield blocks frontal shots; must be flanked.
+  shielded: { hp: 4, radius: 16, speed: 48, value: 50, color: '#5577ff', shardCount: 3, waveCost: 4, minWave: 12 },
 };
+
+// Shielded enemy: half-arc (radians) of its frontal shield that blocks shots.
+export const SHIELD_HALF_ARC = 1.25;
+// Max angular speed (rad/s) the shield can track the player — flank it by out-circling.
+export const SHIELD_TURN_RATE = 2.2;

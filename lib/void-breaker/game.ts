@@ -27,6 +27,7 @@ import {
   MAP_DOOR_X_FRAC, MAP_TRANSITION_DURATION,
   DROP_HEART_CHANCE, HEART_PICKUP_LIFETIME, HEART_HEAL_AMOUNT,
   MAX_HEART_PICKUPS, HEART_MAGNET_RANGE, HEART_PULL_SPEED,
+  SHIELD_HALF_ARC, SHIELD_TURN_RATE,
 } from './constants';
 import { preloadAll } from './SpriteLoader';
 import { getAllSpriteUrls } from './sprites';
@@ -58,6 +59,13 @@ function clamp(v: number, lo: number, hi: number): number {
 function norm(x: number, y: number): [number, number] {
   const len = Math.sqrt(x * x + y * y);
   return len === 0 ? [0, 0] : [x / len, y / len];
+}
+/** Smallest signed difference between two angles, in (-π, π]. */
+function angleDiff(a: number, b: number): number {
+  let d = a - b;
+  while (d > Math.PI) d -= Math.PI * 2;
+  while (d < -Math.PI) d += Math.PI * 2;
+  return d;
 }
 
 export class VoidBreakerEngine {
@@ -792,6 +800,15 @@ export class VoidBreakerEngine {
     slot.bossSpecialTimer = 0;
     slot.bossSpecialActive = false;
     slot.bossSpecialAngle = 0;
+
+    // Type-specific spawn state.
+    if (type === 'sniper' || type === 'healer') {
+      slot.bossSpecialTimer = 1 + Math.random() * 1.5; // stagger first action
+    } else if (type === 'shielded') {
+      slot.bossSpecialAngle = Math.atan2(this.player.y - slot.y, this.player.x - slot.x);
+    }
+    // Stagger elites' first burst so they don't all fire on spawn.
+    if (isElite) slot.tentacleTimer = 2 + Math.random() * 2;
   }
 
   // ── Enemy AI ──
@@ -809,6 +826,20 @@ export class VoidBreakerEngine {
             this.aiDasher(e, dt, px, py); break;
           case 'orbiter':
             this.aiOrbiter(e, dt, px, py); break;
+          case 'sniper':
+            this.aiSniper(e, dt, px, py); break;
+          case 'healer':
+            this.aiHealer(e, dt, px, py); break;
+          case 'shielded':
+            this.aiShielded(e, dt, px, py); break;
+        }
+        // Elites periodically loose a radial burst — a real threat, not just stats.
+        if (e.isElite) {
+          e.tentacleTimer -= dt;
+          if (e.tentacleTimer <= 0) {
+            e.tentacleTimer = 3.5 + Math.random() * 1.5;
+            this.eliteBurst(e);
+          }
         }
       }
       // Resolve obstacle collisions for all enemies after AI movement
@@ -880,6 +911,82 @@ export class VoidBreakerEngine {
       e.orbitFireTimer = 2.5 + Math.random();
       this.fireEnemyProj(e, 1);
     }
+  }
+
+  /** Sniper: hold range, telegraph a line, then fire one fast precise shot. */
+  private aiSniper(e: Enemy, dt: number, px: number, py: number): void {
+    const d = dist(e.x, e.y, px, py);
+    const [tx, ty] = norm(px - e.x, py - e.y);
+    const desired = 340;
+    if (d < desired - 50) { e.x -= tx * e.speed * dt; e.y -= ty * e.speed * dt; }
+    else if (d > desired + 70) { e.x += tx * e.speed * dt; e.y += ty * e.speed * dt; }
+    else { e.x += -ty * e.speed * 0.6 * dt; e.y += tx * e.speed * 0.6 * dt; } // strafe
+
+    if (e.bossSpecialActive) {
+      // Charging — the locked angle won't track, so the player can dodge by moving.
+      e.telegraphTimer -= dt;
+      if (e.telegraphTimer <= 0) {
+        const speed = getScaledProjSpeed(420, this.wave);
+        this.fireBossBullet(e, e.bossSpecialAngle, speed);
+        this.emitSfx('enemyShoot', { pitch: 1.4 });
+        e.bossSpecialActive = false;
+        e.bossSpecialTimer = 2.2 + Math.random();
+      }
+    } else {
+      e.bossSpecialTimer -= dt;
+      if (e.bossSpecialTimer <= 0 && d < 620) {
+        e.bossSpecialActive = true;
+        e.bossSpecialAngle = Math.atan2(py - e.y, px - e.x);
+        e.telegraphTimer = 0.85;
+      }
+    }
+  }
+
+  /** Healer: hangs back and periodically heals nearby wounded enemies. */
+  private aiHealer(e: Enemy, dt: number, px: number, py: number): void {
+    const d = dist(e.x, e.y, px, py);
+    const [tx, ty] = norm(px - e.x, py - e.y);
+    if (d < 300) { e.x -= tx * e.speed * dt; e.y -= ty * e.speed * dt; }
+    else { e.x += -ty * e.speed * 0.5 * dt; e.y += tx * e.speed * 0.5 * dt; }
+
+    e.bossSpecialTimer -= dt;
+    if (e.bossSpecialTimer <= 0) {
+      e.bossSpecialTimer = 2.5;
+      let healed = false;
+      for (const o of this.enemies) {
+        if (!o.active || o === e || o.isBoss) continue;
+        if (o.hp < o.maxHp && dist(o.x, o.y, e.x, e.y) < 220) {
+          o.hp = Math.min(o.maxHp, o.hp + 1);
+          this.spawnParticles(o.x, o.y, '#33ff99', 4, 60);
+          healed = true;
+        }
+      }
+      if (healed) {
+        this.spawnParticles(e.x, e.y, '#33ff99', 8, 90);
+        this.emitSfx('heal', { gain: 0.6 });
+      }
+    }
+  }
+
+  /** Shielded: advances like a drifter behind a frontal shield that slowly tracks. */
+  private aiShielded(e: Enemy, dt: number, px: number, py: number): void {
+    this.aiDrifter(e, dt, px, py);
+    // Shield facing (bossSpecialAngle) lerps toward the player at a capped rate.
+    const want = Math.atan2(py - e.y, px - e.x);
+    const diff = angleDiff(want, e.bossSpecialAngle);
+    const maxStep = SHIELD_TURN_RATE * dt;
+    e.bossSpecialAngle += clamp(diff, -maxStep, maxStep);
+  }
+
+  /** Elite signature: a telegraphed 6-shot radial burst. */
+  private eliteBurst(e: Enemy): void {
+    const speed = getScaledProjSpeed(190, this.wave);
+    for (let i = 0; i < 6; i++) {
+      this.fireBossBullet(e, e.angle + (Math.PI * 2 * i) / 6, speed);
+    }
+    e.angle += 0.3;
+    this.spawnParticles(e.x, e.y, '#ff44aa', 8, 120);
+    this.emitSfx('enemyShoot');
   }
 
   private aiBoss(e: Enemy, dt: number, px: number, py: number): void {
@@ -1200,6 +1307,16 @@ export class VoidBreakerEngine {
         if (!e.active || p.lastHitId === e.id) continue;
         if (e.isBoss && e.bossSpecialActive) continue; // void form is intangible
         if (dist(p.x, p.y, e.x, e.y) < p.radius + e.radius) {
+          // Shielded enemy: shots into its frontal arc are deflected — flank it.
+          if (e.type === 'shielded') {
+            const hitAngle = Math.atan2(p.y - e.y, p.x - e.x);
+            if (Math.abs(angleDiff(hitAngle, e.bossSpecialAngle)) < SHIELD_HALF_ARC) {
+              p.active = false;
+              this.spawnParticles(p.x, p.y, '#88aaff', 4, 90);
+              this.emitSfx('shardBlock');
+              break;
+            }
+          }
           const isCrit = s.critChance > 0 && Math.random() < s.critChance;
           const dmg = isCrit ? Math.max(1, Math.round(p.damage * s.critMult)) : p.damage;
           e.hp -= dmg;

@@ -5,7 +5,9 @@ export type GameState = 'menu' | 'countdown' | 'playing' | 'waveBreak' | 'paused
 /** Boss multi-phase: phase 1 = standard, 2 = arena shift (50% HP), 3 = tentacle rage (25% HP) */
 export type BossPhase = 1 | 2 | 3;
 
-export type EnemyType = 'drifter' | 'dasher' | 'orbiter' | 'tank' | 'splitter' | 'mini_drifter';
+export type EnemyType =
+  | 'drifter' | 'dasher' | 'orbiter' | 'tank' | 'splitter' | 'mini_drifter'
+  | 'sniper' | 'healer' | 'shielded';
 
 export interface Player {
   x: number;

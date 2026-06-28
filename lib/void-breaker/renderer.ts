@@ -8,7 +8,7 @@ import type { VoidBreakerEngine } from './game';
 import {
   CANVAS_WIDTH, CANVAS_HEIGHT,
   ARENA_W, ARENA_H, ARENA_HW, ARENA_HH,
-  MAX_SHARDS, BOSS_WAVE_INTERVAL,
+  MAX_SHARDS, BOSS_WAVE_INTERVAL, SHIELD_HALF_ARC,
 } from './constants';
 import { drawSprite, drawPickupSprite } from './drawSprite';
 import { PLAYER_SPRITE, ENEMY_SPRITES, BOSS_SPRITES, HEART_PICKUP_SPRITE } from './sprites';
@@ -443,6 +443,32 @@ export class VoidBreakerRenderer {
             ctx.beginPath();
             ctx.arc(pos.x, pos.y, 120 * scale, 0, Math.PI * 2);
             ctx.stroke();
+          }
+          // Sniper aim-line telegraph — brightens as the shot charges.
+          if (e.type === 'sniper' && e.bossSpecialActive && e.telegraphTimer > 0) {
+            const a = e.bossSpecialAngle;
+            const len = 720 * scale;
+            const alpha = 0.25 + 0.55 * (1 - e.telegraphTimer / 0.85);
+            ctx.strokeStyle = `rgba(255, 80, 60, ${alpha})`;
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([6, 6]);
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+            ctx.lineTo(pos.x + Math.cos(a) * len, pos.y + Math.sin(a) * len);
+            ctx.stroke();
+            ctx.setLineDash([]);
+          }
+          // Shielded enemy's frontal shield arc (where shots are deflected).
+          if (e.type === 'shielded') {
+            const a = e.bossSpecialAngle;
+            ctx.strokeStyle = 'rgba(130, 165, 255, 0.9)';
+            ctx.lineWidth = 3 * scale;
+            ctx.shadowColor = '#5577ff';
+            ctx.shadowBlur = 8;
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, r + 5 * scale, a - SHIELD_HALF_ARC, a + SHIELD_HALF_ARC);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
           }
           if (e.isBoss && e.bossPhase > 1) {
             ctx.strokeStyle = (e.bossPhase === 3 ? '#ff0033' : '#ff6622') + '60';
