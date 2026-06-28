@@ -3,7 +3,8 @@ import { create } from 'zustand';
 import type { AdditiveId, BaseId, BuyerId, InputId, InventoryState, Product, BaseStockEntry, CookSession, RecipeMeta } from './types';
 import { cookQuality, cookOutput, DIAL_COUNT } from './chemistry';
 import { ADDITIVES, BUYERS, INPUTS, GROWABLE } from './content';
-import { mix, effectSetKey } from './effects';
+import { mix, effectSetKey, productValue } from './effects';
+import { discoverEffects, mergeBestValue } from './journal';
 import { buyerOffer, applyHeatOnSale, decayHeat, packageProduct, UNITS_PER_BATCH } from './economy';
 import { SaveState, CURRENT_VERSION, createNewSave, saveGame, loadGame } from './saveSystem';
 import { xpForSale, xpForRecipe, xpForProduction, rankForXp, perksAtRank } from './progression';
@@ -162,12 +163,13 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
         baseStock,
         workProduct: { baseId: entry.baseId, effects: [...entry.bonusEffects], qualityMult: entry.qualityMult },
       },
+      discoveredEffects: discoverEffects(get().discoveredEffects, entry.bonusEffects),
     });
     return true;
   },
 
   mixIn: (additiveId) => {
-    const { inventory, discoveredRecipes, xp } = get();
+    const { inventory, discoveredRecipes, xp, discoveredEffects, recipeMeta } = get();
     if (!inventory.workProduct) return false;
     if ((inventory.additives[additiveId] ?? 0) <= 0) return false;
     const next: Product = mix(inventory.workProduct, additiveId);
@@ -181,6 +183,8 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
       },
       discoveredRecipes: isNew ? [...discoveredRecipes, key] : discoveredRecipes,
       xp: xp + (isNew ? xpForRecipe() : 0),
+      discoveredEffects: discoverEffects(discoveredEffects, next.effects),
+      recipeMeta: mergeBestValue(recipeMeta, key, productValue(next)),
     });
     return true;
   },

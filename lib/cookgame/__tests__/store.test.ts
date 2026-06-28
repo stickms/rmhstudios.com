@@ -413,3 +413,35 @@ describe('Vera night-only selling', () => {
     expect(proceeds).toBeGreaterThan(0);
   });
 });
+
+describe('journal tracking', () => {
+  beforeEach(reset);
+
+  it('mixIn records discovered effects and best value', () => {
+    const store = useCookgameStore.getState();
+    // Stock a base and an additive, load to bench, mix.
+    store.buyBase('greenstart', 10);
+    useCookgameStore.setState((s) => ({
+      inventory: { ...s.inventory, additives: { ...s.inventory.additives, cuke: 1 } },
+    }));
+    useCookgameStore.getState().loadBaseToBench(0);
+    useCookgameStore.getState().mixIn('cuke'); // cuke => 'energizing'
+
+    const s = useCookgameStore.getState();
+    expect(s.discoveredEffects).toContain('energizing');
+    const key = s.discoveredRecipes[0];
+    expect(s.recipeMeta[key]?.bestValue).toBeGreaterThan(0);
+  });
+
+  it('loadBaseToBench discovers a base bonus effect without mixing', () => {
+    // couchlock carries the 'sedating' bonus effect.
+    useCookgameStore.setState((s) => ({
+      inventory: {
+        ...s.inventory,
+        baseStock: [{ baseId: 'couchlock', qualityMult: 1, bonusEffects: ['sedating'], units: 1 }],
+      },
+    }));
+    useCookgameStore.getState().loadBaseToBench(0);
+    expect(useCookgameStore.getState().discoveredEffects).toContain('sedating');
+  });
+});
