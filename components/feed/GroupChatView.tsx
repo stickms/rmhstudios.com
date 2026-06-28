@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from '@tanstack/react-router';
-import { Loader2, ArrowLeft, Send, Users, LogOut, ImagePlus, X, BarChart3, Plus } from 'lucide-react';
+import { Loader2, ArrowLeft, Send, Users, LogOut, ImagePlus, ImagePlay, X, BarChart3, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from './UserAvatar';
 import { MentionTextarea } from './MentionTextarea';
@@ -55,9 +55,21 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
   const [uploading, setUploading] = useState(false);
   const [showGifPicker, setShowGifPicker] = useState(false);
   const [pollDraft, setPollDraft] = useState<{ question: string; options: string[] } | null>(null);
+  const [attachOpen, setAttachOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const attachRef = useRef<HTMLDivElement>(null);
   const lastAtRef = useRef<string | null>(null);
+
+  // Close the attach (+) menu on outside click.
+  useEffect(() => {
+    if (!attachOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (attachRef.current && !attachRef.current.contains(e.target as Node)) setAttachOpen(false);
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [attachOpen]);
 
   const setMsgs = useCallback((msgs: Msg[]) => {
     setMessages(msgs);
@@ -410,31 +422,45 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
             className="hidden"
             onChange={(e) => handleImageFiles(e.target.files)}
           />
-          <button
-            type="button"
-            onClick={() => imageInputRef.current?.click()}
-            disabled={uploading || imageUrls.length >= MAX_IMAGES}
-            className="flex h-9 w-9 items-center justify-center rounded-full text-site-text-dim hover:bg-site-surface hover:text-site-text disabled:opacity-40"
-            title={t('add-image', { defaultValue: 'Add image' })}
-          >
-            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowGifPicker((v) => !v)}
-            className="flex h-9 items-center justify-center rounded-full px-2 text-xs font-bold text-site-text-dim hover:bg-site-surface hover:text-site-text"
-            title={t('add-gif', { defaultValue: 'Add GIF' })}
-          >
-            GIF
-          </button>
-          <button
-            type="button"
-            onClick={() => setPollDraft((p) => (p ? null : { question: '', options: ['', ''] }))}
-            className={`flex h-9 w-9 items-center justify-center rounded-full hover:bg-site-surface hover:text-site-text ${pollDraft ? 'text-site-accent' : 'text-site-text-dim'}`}
-            title={t('add-poll', { defaultValue: 'Add poll' })}
-          >
-            <BarChart3 className="h-4 w-4" />
-          </button>
+          {/* Attach (+) menu — image, GIF, poll. Mirrors the rmhark composer. */}
+          <div className="relative" ref={attachRef}>
+            <button
+              type="button"
+              onClick={() => setAttachOpen((v) => !v)}
+              aria-label={t('add-to-message', { defaultValue: 'Add to message' })}
+              aria-expanded={attachOpen}
+              className="flex h-9 w-9 items-center justify-center rounded-full text-site-text-dim hover:bg-site-accent/10 hover:text-site-accent disabled:opacity-40"
+              disabled={uploading}
+            >
+              {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-5 w-5" />}
+            </button>
+            {attachOpen && (
+              <div className="absolute bottom-full left-0 z-30 mb-1 w-40 rounded-xl border border-site-border bg-site-bg py-1 shadow-xl">
+                <button
+                  type="button"
+                  disabled={imageUrls.length >= MAX_IMAGES}
+                  onClick={() => { setAttachOpen(false); imageInputRef.current?.click(); }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-site-text hover:bg-site-surface disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <ImagePlus className="h-4 w-4 text-site-text-dim" /> {t('menu-add-image', { defaultValue: 'Add Image' })}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setAttachOpen(false); setShowGifPicker((v) => !v); }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-site-text hover:bg-site-surface"
+                >
+                  <ImagePlay className="h-4 w-4 text-site-text-dim" /> {t('menu-add-gif', { defaultValue: 'Add GIF' })}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setAttachOpen(false); setPollDraft((p) => (p ? null : { question: '', options: ['', ''] })); }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-site-text hover:bg-site-surface"
+                >
+                  <BarChart3 className="h-4 w-4 text-site-text-dim" /> {t('menu-create-poll', { defaultValue: 'Create Poll' })}
+                </button>
+              </div>
+            )}
+          </div>
           <MentionTextarea
             value={input}
             onChange={setInput}
