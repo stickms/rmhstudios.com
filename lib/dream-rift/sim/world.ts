@@ -86,7 +86,7 @@ const TAU = Math.PI * 2;
 
 function mkBullet(): Bullet {
     return {
-        active: false, x: 0, y: 0, prevX: 0, prevY: 0, speed: 0, angle: 0, accel: 0, angularVel: 0,
+        active: false, x: 0, y: 0, prevX: 0, prevY: 0, vx: 0, vy: 0, speed: 0, angle: 0, accel: 0, angularVel: 0,
         minSpeed: 0, maxSpeed: 99, radius: 3, drawRadius: 6, shape: 'orb', color: 'red',
         age: 0, ttl: -1, grazedMask: 0, spin: 0, dying: 0,
     };
@@ -163,6 +163,10 @@ export class World {
         b.dying = 0;
         b.prevX = b.x;
         b.prevY = b.y;
+        if (b.speed < b.minSpeed) b.speed = b.minSpeed;
+        else if (b.speed > b.maxSpeed) b.speed = b.maxSpeed;
+        b.vx = Math.cos(b.angle) * b.speed;
+        b.vy = Math.sin(b.angle) * b.speed;
         return b;
     }
 
@@ -291,12 +295,19 @@ export class World {
                 if (b.dying > 10) this.bullets.release(b);
                 return;
             }
-            b.angle += b.angularVel;
-            b.speed += b.accel;
-            if (b.speed < b.minSpeed) b.speed = b.minSpeed;
-            if (b.speed > b.maxSpeed) b.speed = b.maxSpeed;
-            b.x += Math.cos(b.angle) * b.speed;
-            b.y += Math.sin(b.angle) * b.speed;
+            // Only curving (angularVel) or accelerating (accel) bullets need fresh
+            // trig each frame; the overwhelming majority fly straight and reuse the
+            // velocity cached at spawn — no cos/sin in the hot loop for those.
+            if (b.angularVel !== 0 || b.accel !== 0) {
+                b.angle += b.angularVel;
+                b.speed += b.accel;
+                if (b.speed < b.minSpeed) b.speed = b.minSpeed;
+                else if (b.speed > b.maxSpeed) b.speed = b.maxSpeed;
+                b.vx = Math.cos(b.angle) * b.speed;
+                b.vy = Math.sin(b.angle) * b.speed;
+            }
+            b.x += b.vx;
+            b.y += b.vy;
             b.spin += 0.15;
             const m = 24;
             if (b.x < -m || b.x > PLAYFIELD_W + m || b.y < -m || b.y > PLAYFIELD_H + m || (b.ttl > 0 && b.age > b.ttl)) {
@@ -402,6 +413,10 @@ export class World {
             if (b.dying > 0) return;
             const dx = b.x - p.x;
             const dy = b.y - p.y;
+            const grR = b.radius + p.hitboxR + gr;
+            // Cheap AABB broad-phase: skip the squared-distance maths for the vast
+            // majority of bullets that are nowhere near the player.
+            if (dx > grR || dx < -grR || dy > grR || dy < -grR) return;
             const d2 = dx * dx + dy * dy;
             const hit = b.radius + p.hitboxR;
             if (!invuln && d2 <= hit * hit) {
@@ -413,7 +428,6 @@ export class World {
                 this.killLocalPlayer(p, events, onDeath);
                 return;
             }
-            const grR = b.radius + p.hitboxR + gr;
             if (d2 <= grR * grR && !(b.grazedMask & (1 << p.slot))) {
                 b.grazedMask |= 1 << p.slot;
                 p.graze++;
