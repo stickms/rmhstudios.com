@@ -460,10 +460,10 @@ export function ProfileColumn({ userId }: { userId: string }) {
         {/* The equipped banner sits behind the avatar + song row and spans the
             full profile width (full-bleed past the header padding) — filling the
             area the old profile pet used to occupy. */}
-        <div className="relative mb-6">
+        <div className="relative mb-12">
           {headerBackdrop && (
             <div
-              className="absolute inset-x-[-16px] top-[-24px] bottom-0"
+              className="absolute inset-x-[-16px] top-[-24px] bottom-[-24px]"
               style={{ background: headerBackdrop }}
               aria-hidden
             />

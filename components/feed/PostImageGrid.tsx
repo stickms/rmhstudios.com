@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { BlurImage } from '@/components/ui/BlurImage';
 
 interface PostImageGridProps {
   urls: string[];
@@ -32,16 +33,27 @@ export function PostImageGrid({ urls, className = '' }: PostImageGridProps) {
             className={`group relative block overflow-hidden rounded-lg ${single ? '' : 'aspect-square'}`}
             aria-label={t('open-image', { defaultValue: 'Open image' })}
           >
-            <img
-              src={url}
-              alt=""
-              loading="lazy"
-              className={
-                single
-                  ? 'mx-auto max-h-[80vh] max-w-full rounded-lg object-contain'
-                  : 'h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]'
-              }
-            />
+            {single ? (
+              <BlurImage
+                src={url}
+                alt=""
+                fit="contain"
+                width={1024}
+                sizes="(max-width: 640px) 100vw, 600px"
+                className="mx-auto block w-fit max-w-full rounded-lg"
+                imgClassName="max-h-[80vh] max-w-full"
+              />
+            ) : (
+              <BlurImage
+                src={url}
+                alt=""
+                fit="cover"
+                width={640}
+                sizes="(max-width: 640px) 50vw, 300px"
+                className="h-full w-full"
+                imgClassName="h-full w-full transition-transform duration-200 group-hover:scale-[1.02]"
+              />
+            )}
           </button>
         ))}
       </div>
@@ -137,10 +149,17 @@ function Lightbox({ urls, index, onIndexChange, onClose }: LightboxProps) {
         </>
       )}
 
-      <img
+      <BlurImage
+        key={urls[index]}
         src={urls[index]}
         alt=""
-        className="max-h-full max-w-full rounded-lg object-contain"
+        fit="contain"
+        width={1600}
+        quality={85}
+        sizes="100vw"
+        loading="eager"
+        className="max-h-full max-w-full rounded-lg"
+        imgClassName="max-h-[90vh] max-w-full"
         onClick={(e) => e.stopPropagation()}
       />
 

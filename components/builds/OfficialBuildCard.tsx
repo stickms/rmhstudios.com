@@ -1,7 +1,7 @@
 import { Heart, MessageCircle, Eye, ArrowRight } from 'lucide-react';
 import { Link, useRouter } from '@tanstack/react-router';
 import { useTranslation } from "react-i18next";
-import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { BlurImage } from '@/components/ui/BlurImage';
 import { useCardSheen } from '@/hooks/useCardSheen';
 import { formatCount } from '@/lib/utils';
 
@@ -80,12 +80,14 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
                 {/* Thumbnail */}
                 {build.thumbnailUrl ? (
                     <div className="absolute inset-0 w-full h-full overflow-hidden bg-site-bg">
-                        <OptimizedImage
+                        <BlurImage
                             src={build.thumbnailUrl}
                             alt={t("screenshot-of", { defaultValue: "Screenshot of {{title}}", title: build.title })}
-                            layout="fullWidth"
-                            height={400}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            fit="cover"
+                            width={400}
+                            sizes="(max-width: 640px) 50vw, 300px"
+                            className="w-full h-full"
+                            imgClassName="w-full h-full group-hover:scale-105 transition-transform duration-300"
                         />
                         <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/40 to-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     </div>

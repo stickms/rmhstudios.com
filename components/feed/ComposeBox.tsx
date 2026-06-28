@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Plus, BarChart3, ImagePlay, X, ImagePlus, Globe, Users, Lock, Coins, Type, FileText, CalendarClock, Check } from 'lucide-react';
+import { Plus, BarChart3, ImagePlay, X, ImagePlus, Globe, Users, Lock, Coins, Type, FileText, CalendarClock, Check, ChevronDown } from 'lucide-react';
 import { GifEmbed } from './GifEmbed';
 import { GifPicker } from './GifPicker';
 import { AIGenerateButton } from './AIGenerateButton';
@@ -43,6 +43,7 @@ export function ComposeBox({
   const [submitting, setSubmitting] = useState(false);
   const [attachment, setAttachment] = useState<Attachment>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [audienceOpen, setAudienceOpen] = useState(false);
   const [poll, setPoll] = useState<PollDraft>({
     question: '',
     options: ['', ''],
@@ -58,6 +59,7 @@ export function ComposeBox({
   const [showCheatSheet, setShowCheatSheet] = useState(false); // markdown cheat sheet
   const imageInputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const audienceRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { prependItem } = useFeedStore();
 
@@ -81,6 +83,18 @@ export function ComposeBox({
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [menuOpen]);
+
+  // Close audience dropdown on outside click
+  useEffect(() => {
+    if (!audienceOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (audienceRef.current && !audienceRef.current.contains(e.target as Node)) {
+        setAudienceOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [audienceOpen]);
 
   const hasPoll = attachment === 'poll' && poll.question.trim() &&
     poll.options.filter((o) => o.trim()).length >= MIN_POLL_OPTIONS;
@@ -214,6 +228,14 @@ export function ComposeBox({
     );
   }
 
+  const audienceOptions = [
+    { value: 'PUBLIC', label: t("audience-everyone", { defaultValue: "Everyone" }), icon: Globe },
+    { value: 'FOLLOWERS', label: t("audience-followers", { defaultValue: "Followers" }), icon: Users },
+    { value: 'PRIVATE', label: t("audience-only-me", { defaultValue: "Only me" }), icon: Lock },
+  ] as const;
+  const currentAudience = audienceOptions.find((o) => o.value === audience) ?? audienceOptions[0];
+  const CurrentAudienceIcon = currentAudience.icon;
+
   return (
     <div className="px-4 py-3 border-b border-site-border">
       <div className="flex gap-3">
@@ -251,29 +273,8 @@ export function ComposeBox({
 
           <ComposeAssist value={content} onChange={setContent} />
 
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <div className="inline-flex items-center gap-1 rounded-full border border-site-border bg-site-surface p-0.5" role="group" aria-label={t("audience-group-label", { defaultValue: "Who can see this post" })}>
-              {([
-                { value: 'PUBLIC', label: t("audience-everyone", { defaultValue: "Everyone" }), icon: Globe },
-                { value: 'FOLLOWERS', label: t("audience-followers", { defaultValue: "Followers" }), icon: Users },
-                { value: 'PRIVATE', label: t("audience-only-me", { defaultValue: "Only me" }), icon: Lock },
-              ] as const).map(({ value, label, icon: Icon }) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setAudience(value)}
-                  aria-pressed={audience === value}
-                  title={label}
-                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
-                    audience === value ? 'bg-site-accent text-(--site-accent-fg)' : 'text-site-text-muted hover:text-site-text'
-                  }`}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">{label}</span>
-                </button>
-              ))}
-            </div>
-            {parseInt(unlockPrice, 10) > 0 && (
+          {parseInt(unlockPrice, 10) > 0 && (
+            <div className="mt-2 flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={() => setShowPriceModal(true)}
@@ -283,8 +284,8 @@ export function ComposeBox({
                 <Lock className="h-3.5 w-3.5" />
                 <span>{t("unlock-price-pill", { price: parseInt(unlockPrice, 10), defaultValue: "Locked · {{price}} coins" })}</span>
               </button>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Poll creator */}
           {attachment === 'poll' && (
@@ -493,18 +494,60 @@ export function ComposeBox({
           )}
 
           <div className="flex items-center justify-between mt-2">
-            {/* Character counter */}
-            <span
-              className={`text-xs font-mono ${
-                remaining <= 0
-                  ? 'text-site-danger'
-                  : remaining <= 20
-                    ? 'text-site-warning'
-                    : 'text-site-text-dim'
-              }`}
-            >
-              {remaining}
-            </span>
+            <div className="flex items-center gap-2">
+              {/* Audience (visibility) dropdown */}
+              <div className="relative" ref={audienceRef}>
+                <button
+                  type="button"
+                  onClick={() => setAudienceOpen((v) => !v)}
+                  aria-haspopup="listbox"
+                  aria-expanded={audienceOpen}
+                  title={t("audience-group-label", { defaultValue: "Who can see this post" })}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-site-border bg-site-surface px-2.5 py-1 text-xs font-medium text-site-text-muted transition-colors hover:text-site-text hover:border-site-accent/50"
+                >
+                  <CurrentAudienceIcon className="h-3.5 w-3.5" />
+                  <span>{currentAudience.label}</span>
+                  <ChevronDown className={`h-3.5 w-3.5 transition-transform ${audienceOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {audienceOpen && (
+                  <div role="listbox" className="absolute bottom-full left-0 mb-1 w-40 bg-site-bg border border-site-border rounded-xl shadow-xl py-1 z-30 animate-in fade-in slide-in-from-bottom-1 duration-150">
+                    {audienceOptions.map(({ value, label, icon: Icon }) => (
+                      <button
+                        key={value}
+                        type="button"
+                        role="option"
+                        aria-selected={audience === value}
+                        onClick={() => {
+                          setAudience(value);
+                          setAudienceOpen(false);
+                        }}
+                        className={`flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors hover:bg-site-surface ${
+                          audience === value ? 'text-site-accent' : 'text-site-text'
+                        }`}
+                      >
+                        <Icon className="w-4 h-4 text-site-text-dim" />
+                        <span className="flex-1 text-left">{label}</span>
+                        {audience === value && <Check className="w-4 h-4" />}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Character counter */}
+              <span
+                className={`text-xs font-mono ${
+                  remaining <= 0
+                    ? 'text-site-danger'
+                    : remaining <= 20
+                      ? 'text-site-warning'
+                      : 'text-site-text-dim'
+                }`}
+              >
+                {remaining}
+              </span>
+            </div>
 
             <div className="flex items-center gap-1.5">
               {/* AI draft button */}

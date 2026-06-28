@@ -15,8 +15,13 @@ import type { Locale } from "@/lib/i18n/config";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60_000, // 1 minute
+      staleTime: 60_000, // 1 minute — serve cached data before refetching
+      gcTime: 10 * 60_000, // keep unused data 10 min so back-nav doesn't refetch
       retry: 1,
+      // Slow-WiFi friendly: don't re-hit the network just because the user
+      // tab-switched. Reconnects still revalidate stale data.
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
     },
   },
 });

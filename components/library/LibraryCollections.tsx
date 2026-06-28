@@ -18,6 +18,11 @@ import type { LibraryBook } from '@/lib/library/library';
 import type { CollectionView } from '@/lib/library/collections';
 import { useReveal } from './LibraryReveal';
 import { LibraryContextMenu, useContextMenu, type MenuItem } from './LibraryContextMenu';
+import { BlurImage } from '@/components/ui/BlurImage';
+
+/** Cover image styled to fill the 3D book cover (absolute inset-0), with blur-up. */
+const COVER_WRAP = 'absolute inset-0 z-0 h-full w-full rounded-[3px_6px_6px_3px]';
+const COVER_IMG = 'h-full w-full object-top';
 
 export function LibraryCollections({
   books,
@@ -243,7 +248,7 @@ function CollectionTile({
           <div className={`lib-book__cover ${c.coverUrl ? 'has-cover' : ''}`}>
             <span className="lib-book__edge" aria-hidden="true" />
             {c.coverUrl ? (
-              <img className="lib-book__img" src={c.coverUrl} alt={c.title} loading="lazy" decoding="async" />
+              <BlurImage src={c.coverUrl} alt={c.title} fit="cover" width={150} sizes="150px" className={COVER_WRAP} imgClassName={COVER_IMG} />
             ) : (
               <span className="lib-book__title">{c.title}</span>
             )}
@@ -334,7 +339,7 @@ function BookCard({ book, onNavigate }: { book: LibraryBook; onNavigate?: () => 
         <div className={`lib-book__cover ${book.coverUrl ? 'has-cover' : ''}`}>
           <span className="lib-book__edge" aria-hidden="true" />
           {book.coverUrl ? (
-            <img className="lib-book__img" src={book.coverUrl} alt={book.title} loading="lazy" decoding="async" />
+            <BlurImage src={book.coverUrl} alt={book.title} fit="cover" width={150} sizes="150px" className={COVER_WRAP} imgClassName={COVER_IMG} />
           ) : (
             <span className="lib-book__title">{book.title}</span>
           )}
