@@ -48,4 +48,8 @@ describe('mergeBestValue', () => {
     const meta: Record<string, RecipeMeta> = { 'a+b': { bestValue: 200 } };
     expect(mergeBestValue(meta, 'a+b', 150)).toBe(meta);
   });
+  it('returns the same reference when entry exists without a bestValue and value is 0', () => {
+    const meta: Record<string, RecipeMeta> = { 'a+b': { name: 'Foo' } };
+    expect(mergeBestValue(meta, 'a+b', 0)).toBe(meta);
+  });
 });

@@ -101,6 +101,7 @@ export function RecipeJournal() {
               >
                 <div className="flex items-center gap-2">
                   <button
+                    type="button"
                     onClick={() => useCookgameStore.getState().toggleRecipeFavorite(key)}
                     className={`shrink-0 text-base leading-none ${meta.favorite ? 'text-amber-400' : 'text-neutral-600 hover:text-neutral-400'}`}
                     title={meta.favorite ? 'Unfavorite' : 'Favorite'}
@@ -111,6 +112,7 @@ export function RecipeJournal() {
                   <input
                     defaultValue={meta.name ?? ''}
                     placeholder="Name this recipe…"
+                    aria-label="Recipe name"
                     onBlur={(e) => useCookgameStore.getState().setRecipeName(key, e.target.value)}
                     className="min-w-0 flex-1 rounded bg-neutral-900 px-2 py-1 font-mono text-xs text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:ring-1 focus:ring-lime-500"
                   />
