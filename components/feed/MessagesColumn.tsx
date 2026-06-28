@@ -277,41 +277,18 @@ export function MessagesColumn({ embedded = false }: { embedded?: boolean } = {}
     <div className="flex flex-col">
       {/* Header */}
       <div className={embedded ? 'border-b border-site-border' : 'sticky top-0 z-10 bg-site-bg/85 backdrop-blur-md border-b border-site-border'}>
-        <div className={`flex items-center gap-3 px-4 py-3 ${embedded ? 'justify-end' : 'justify-between'}`}>
-          {!embedded && (
-            <div className="flex items-center gap-3 min-w-0">
-              <MobileMenuButton />
-              <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 min-w-0">
-                <MobileBrandPrefix />
-                {t("messages-heading", { defaultValue: "Messages" })}
-              </h1>
-            </div>
-          )}
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => setNewChatOpen(true)}
-              className="flex items-center gap-1.5 rounded-full bg-site-accent px-3 py-1.5 text-xs font-semibold text-site-bg transition-opacity hover:opacity-90"
-              title={t("new-chat-title", { defaultValue: "Start a new chat" })}
-            >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">{t("new-chat", { defaultValue: "New chat" })}</span>
-            </button>
-            <button
-              type="button"
-              onClick={markAllAsRead}
-              disabled={!hasUnread || markingAll}
-              className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-site-accent transition-colors hover:bg-site-accent-dim disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
-              title={t("mark-all-as-read-title", { defaultValue: "Mark all conversations as read" })}
-            >
-              {markingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCheck className="w-4 h-4" />}
-              <span className="hidden sm:inline">{t("mark-all-as-read", { defaultValue: "Mark all as read" })}</span>
-            </button>
+        {!embedded && (
+          <div className="flex items-center gap-3 px-4 pt-3">
+            <MobileMenuButton />
+            <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 min-w-0">
+              <MobileBrandPrefix />
+              {t("messages-heading", { defaultValue: "Messages" })}
+            </h1>
           </div>
-        </div>
-        {/* Search conversations + message content */}
-        <div className="px-4 pb-3">
-          <div className="relative">
+        )}
+        {/* Search + actions share a single row; the actions are icon-only. */}
+        <div className="flex items-center gap-2 px-4 py-3">
+          <div className="relative flex-1 min-w-0">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-site-text-dim" />
             <input
               type="search"
@@ -332,6 +309,25 @@ export function MessagesColumn({ embedded = false }: { embedded?: boolean } = {}
               </button>
             )}
           </div>
+          <button
+            type="button"
+            onClick={() => setNewChatOpen(true)}
+            className="flex shrink-0 items-center justify-center rounded-full bg-site-accent p-2 text-site-bg transition-opacity hover:opacity-90"
+            title={t("new-chat-title", { defaultValue: "Start a new chat" })}
+            aria-label={t("new-chat", { defaultValue: "New chat" })}
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={markAllAsRead}
+            disabled={!hasUnread || markingAll}
+            className="flex shrink-0 items-center justify-center rounded-full p-2 text-site-accent transition-colors hover:bg-site-accent-dim disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+            title={t("mark-all-as-read-title", { defaultValue: "Mark all conversations as read" })}
+            aria-label={t("mark-all-as-read", { defaultValue: "Mark all as read" })}
+          >
+            {markingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCheck className="w-4 h-4" />}
+          </button>
         </div>
       </div>
 

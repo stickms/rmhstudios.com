@@ -207,7 +207,14 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
         // browser never treats a sideways swipe as a back/forward navigation, while
         // still allowing native vertical scrolling. `overscroll-contain` keeps any
         // scroll from chaining out to the document.
-        className={`md:hidden min-w-0 w-full flex-1 overflow-x-hidden touch-pan-y overscroll-contain ${
+        //
+        // `h-dvh` (not `flex-1`) is important: this element is the page's scroll
+        // container, but its parent only sets `min-h-dvh`, so `flex-1` would leave
+        // it unbounded — it would grow to fit its content and never become
+        // scrollable, and because `overscroll-contain` stops scroll from chaining
+        // to the document, vertical scrolling would be dead until a reflow. A
+        // fixed viewport height makes it a real scroller.
+        className={`md:hidden min-w-0 w-full h-dvh min-h-0 overflow-x-hidden touch-pan-y overscroll-contain ${
           isOpen ? 'overflow-y-hidden' : 'overflow-y-auto'
         }`}
       >

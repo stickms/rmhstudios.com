@@ -466,21 +466,23 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
               </div>
             )}
           </div>
-          <MentionTextarea
-            value={input}
-            onChange={setInput}
-            priorityUsers={memberSuggestions}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                send();
-              }
-            }}
-            placeholder={t("message-placeholder", { defaultValue: "Message…" })}
-            rows={1}
-            maxLength={2000}
-            className="max-h-32 w-full resize-none rounded-xl border border-site-border bg-site-surface px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
-          />
+          <div className="flex-1 min-w-0">
+            <MentionTextarea
+              value={input}
+              onChange={setInput}
+              priorityUsers={memberSuggestions}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  send();
+                }
+              }}
+              placeholder={t("message-placeholder", { name: group.name, defaultValue: "Message…" })}
+              rows={1}
+              maxLength={2000}
+              className="max-h-32 w-full resize-none rounded-xl border border-site-border bg-site-surface px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+            />
+          </div>
           <Button variant="accent" size="sm" disabled={!canSend} onClick={send} className="h-9">
             <Send className="h-4 w-4" />
           </Button>

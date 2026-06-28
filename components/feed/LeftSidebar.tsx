@@ -323,9 +323,9 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         </>
       )}
 
-      {/* Breathing room below the last item (Post / Sign In) so it isn't flush
-          against the bottom of the scroll area. */}
-      <div className="h-4 shrink-0" aria-hidden="true" />
+      {/* Small breathing room below the last item (Post / Sign In) so it isn't
+          flush against the bottom of the scroll area. */}
+      <div className="h-1 shrink-0" aria-hidden="true" />
     </div>
   );
 }
