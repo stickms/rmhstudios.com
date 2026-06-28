@@ -568,7 +568,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
                       className={`max-w-[75%] ${bubbleRounding} px-4 py-2.5 text-sm break-words ${
                         isSelf
                           ? 'bg-site-accent text-site-bg'
-                          : 'bg-site-surface text-site-text'
+                          : 'bg-site-text text-site-bg'
                       }`}
                     >
                       {stripEmbedUrls(msg.content).trim() && (
@@ -590,7 +590,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
                           loading="lazy"
                         />
                       )}
-                      <p className={`text-[10px] mt-1 ${isSelf ? 'text-site-bg/60' : 'text-site-text-dim'}`}>
+                      <p className={`text-[10px] mt-1 ${isSelf ? 'text-site-bg/60' : 'text-site-bg/55'}`}>
                         {formatTime(msg.createdAt)}
                       </p>
                     </div>
@@ -607,11 +607,11 @@ export function ConversationView({ conversationId }: { conversationId: string })
                   size={28}
                   fallbackName={otherUser?.name ?? undefined}
                 />
-                <div className="bg-site-surface text-site-text rounded-tl-md rounded-tr-2xl rounded-br-2xl rounded-bl-md px-4 py-3">
+                <div className="bg-site-text text-site-bg rounded-tl-md rounded-tr-2xl rounded-br-2xl rounded-bl-md px-4 py-3">
                   <div className="flex items-center gap-1" aria-label={t("user-is-typing", { name: otherUser?.name || t("user-fallback", { defaultValue: "User" }), defaultValue: "{{name}} is typing" })}>
-                    <span className="w-1.5 h-1.5 rounded-full bg-site-text-dim animate-bounce [animation-delay:-0.3s]" />
-                    <span className="w-1.5 h-1.5 rounded-full bg-site-text-dim animate-bounce [animation-delay:-0.15s]" />
-                    <span className="w-1.5 h-1.5 rounded-full bg-site-text-dim animate-bounce" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-site-bg/50 animate-bounce [animation-delay:-0.3s]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-site-bg/50 animate-bounce [animation-delay:-0.15s]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-site-bg/50 animate-bounce" />
                   </div>
                 </div>
               </div>
