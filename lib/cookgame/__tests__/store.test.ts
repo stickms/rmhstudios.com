@@ -5,6 +5,7 @@ import { TEND_COOLDOWN_MS, DRY_COOLDOWN_MS } from '../cultivation';
 import { rankForXp, xpForRecipe } from '../progression';
 import { propertyEffects } from '../property';
 import { KEY_PRICES } from '../shops';
+import { DAY_LENGTH_MS } from '../timeOfDay';
 
 const reset = () => useCookgameStore.getState().resetGame();
 
@@ -360,5 +361,20 @@ describe('cookgame store — keys + district', () => {
   it('setCurrentDistrict updates the field', () => {
     useCookgameStore.getState().setCurrentDistrict('downtown');
     expect(useCookgameStore.getState().currentDistrict).toBe('downtown');
+  });
+});
+
+describe('tickClock', () => {
+  beforeEach(() => useCookgameStore.getState().resetGame());
+
+  it('advances the clock by dtMs', () => {
+    useCookgameStore.getState().tickClock(1500);
+    expect(useCookgameStore.getState().clock).toBe(1500);
+  });
+
+  it('wraps at the end of the day', () => {
+    useCookgameStore.setState({ clock: DAY_LENGTH_MS - 200 });
+    useCookgameStore.getState().tickClock(500);
+    expect(useCookgameStore.getState().clock).toBe(300);
   });
 });

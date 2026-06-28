@@ -13,6 +13,7 @@ import {
 } from './cultivation';
 import { PROPERTY_TIERS, propertyEffects, stashCount } from './property';
 import { KEY_PRICES } from './shops';
+import { advanceClock } from './timeOfDay';
 
 // Transient accumulator for sub-dollar passive income — kept outside the store
 // so it survives re-renders but is reset by resetGame (see below).
@@ -59,6 +60,7 @@ interface CookgameState {
   sellUnit: (buyerId: BuyerId, packagedIndex: number, variance: number) => number;
   tickHeat: (dt: number) => void;
   tickPassiveIncome: (dtSeconds: number) => void;
+  tickClock: (dtMs: number) => void;
   setNearbyInteractable: (id: string | null) => void;
   setActiveOverlay: (id: string | null) => void;
   setPlayerPosition: (p: [number, number, number]) => void;
@@ -226,6 +228,7 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
     incomeAccum -= whole;
     set({ cash: get().cash + whole });
   },
+  tickClock: (dtMs) => set({ clock: advanceClock(get().clock, dtMs) }),
   setNearbyInteractable: (id) => set({ nearbyInteractable: id }),
   setActiveOverlay: (id) => set({ activeOverlay: id }),
   setPlayerPosition: (p) => set({ playerPosition: p }),
