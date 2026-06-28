@@ -40,11 +40,14 @@ function RegionDetector() {
   return null;
 }
 
-// Drives heat decay and passive income each frame (lives inside <Canvas> for useFrame access).
-function HeatTicker() {
+// Drives heat decay, passive income, and the day clock each frame
+// (lives inside <Canvas> for useFrame access).
+function WorldTicker() {
   useFrame((_, delta) => {
-    useCookgameStore.getState().tickHeat(delta);
-    useCookgameStore.getState().tickPassiveIncome(delta);
+    const s = useCookgameStore.getState();
+    s.tickHeat(delta);
+    s.tickPassiveIncome(delta);
+    s.tickClock(delta * 1000); // delta is seconds; clock is ms
   });
   return null;
 }
@@ -81,7 +84,7 @@ export function CookGameGame() {
         <Physics>
           <TownScene />
           <PlayerController />
-          <HeatTicker />
+          <WorldTicker />
           <RegionDetector />
 
           {/* station interactables */}
