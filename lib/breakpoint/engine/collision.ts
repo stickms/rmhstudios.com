@@ -3,7 +3,7 @@
 // ============================================================
 import type { Vec3 } from '../types';
 import { SOLID_BOXES as MAP_SOLID, type Box, ARENA } from '../map';
-import { PLAYER_RADIUS } from '../constants';
+import { PLAYER_RADIUS, STEP_HEIGHT } from '../constants';
 
 /** Temporary solid boxes (deployable walls). The engine maintains expiry and
  *  swaps the array; collision/raycast read it live. */
@@ -52,14 +52,20 @@ export function resolveHorizontal(pos: Vec3, radius = PLAYER_RADIUS): Vec3 {
   return pos;
 }
 
-/** Top surface height of any box directly under (x,z), else 0 (ground). */
-export function groundHeightAt(x: number, z: number, radius = PLAYER_RADIUS): number {
+/** Top surface height of any box you can stand on at (x,z), else 0 (ground).
+ *  `fromY` is the actor's current feet height: a box only counts as ground if
+ *  its top is at most STEP_HEIGHT above the feet, so geometry overhead (a
+ *  bridge/header) or tall cover no longer snaps the actor up onto it. Callers
+ *  that just want the highest surface (FX placement) can omit `fromY`. */
+export function groundHeightAt(x: number, z: number, radius = PLAYER_RADIUS, fromY = Infinity): number {
   let h = 0;
+  const reach = fromY + STEP_HEIGHT;
   for (const b of allSolids()) {
-    if (b.hy * 2 >= ARENA.wallH) continue; // skip tall walls (can't stand on)
+    const top = b.cy + b.hy;
+    if (top > reach) continue; // too high to step onto (overhead / tall wall)
     if (x > b.cx - b.hx - radius && x < b.cx + b.hx + radius &&
         z > b.cz - b.hz - radius && z < b.cz + b.hz + radius) {
-      h = Math.max(h, b.cy + b.hy);
+      h = Math.max(h, top);
     }
   }
   return h;

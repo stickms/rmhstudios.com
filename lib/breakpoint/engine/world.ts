@@ -523,7 +523,7 @@ export class World {
     a.vel.y -= GRAVITY * dt;
     a.pos.x += a.vel.x * dt; a.pos.z += a.vel.z * dt; a.pos.y += a.vel.y * dt;
     resolveHorizontal(a.pos, PLAYER_RADIUS);
-    const floor = groundHeightAt(a.pos.x, a.pos.z, PLAYER_RADIUS);
+    const floor = groundHeightAt(a.pos.x, a.pos.z, PLAYER_RADIUS, a.pos.y);
     if (a.pos.y <= floor + 0.001) { a.pos.y = floor; if (a.vel.y < 0) a.vel.y = 0; a.onGround = true; }
     else a.onGround = false;
     a.anim.moveSpeed = Math.min(1, Math.hypot(a.vel.x, a.vel.z) / RUN_SPEED);

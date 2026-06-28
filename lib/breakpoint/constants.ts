@@ -40,6 +40,10 @@ export const RUN_SPEED = 6.2;
 export const CROUCH_SPEED = 2.4;
 export const JUMP_VELOCITY = 5.4;
 export const GRAVITY = 16;
+/** Max height a box top may be above the feet to count as standable ground.
+ *  Lets players walk up small steps but NOT get snapped onto cover/overhead
+ *  geometry (e.g. running *under* a header/bridge no longer teleports you up). */
+export const STEP_HEIGHT = 0.6;
 export const ACCEL = 60;
 export const FRICTION = 50;
 
@@ -108,5 +112,5 @@ export const NET_PLAYER_HZ = 20;         // own-avatar broadcast rate
 export const NET_MATCH_HZ = 12;          // host match-state broadcast rate
 export const NET_INTERP_MS = 110;        // remote interpolation delay buffer
 
-// ── Map bounds (a compact symmetric two-site map: "Foundry") ──
-export const MAP_HALF = 26; // world spans roughly -26..26 on x/z
+// ── Map bounds (a stylised de_dust2 two-site map) ──
+export const MAP_HALF = 32; // world spans roughly -32..32 on x/z
