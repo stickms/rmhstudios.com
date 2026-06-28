@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { DAY_LENGTH_MS, advanceClock, dayFraction, phaseOfDay } from '../timeOfDay';
+import { DAY_LENGTH_MS, advanceClock, dayFraction, phaseOfDay, sunDirection, isOpenAt } from '../timeOfDay';
+import type { TimeWindow } from '../timeOfDay';
 
 describe('advanceClock', () => {
   it('advances within the day', () => {
@@ -42,9 +43,6 @@ describe('phaseOfDay', () => {
     expect(at(0.80)).toBe('night');
   });
 });
-
-import { sunDirection, isOpenAt } from '../timeOfDay';
-import type { TimeWindow } from '../timeOfDay';
 
 describe('sunDirection', () => {
   const at = (f: number) => sunDirection(f * DAY_LENGTH_MS);
