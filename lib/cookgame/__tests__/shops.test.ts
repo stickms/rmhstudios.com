@@ -48,3 +48,31 @@ describe('district shops + keys', () => {
     expect(shopItemPrice({ kind: 'key', refId: 'docks_key', rankReq: 2 })).toBe(KEY_PRICES.docks_key);
   });
 });
+
+import { NIGHT_WINDOW } from '../shops';
+import { DAY_LENGTH_MS } from '../timeOfDay';
+
+describe('after-hours time gating', () => {
+  const NOON = 0.5 * DAY_LENGTH_MS;
+  const NIGHT = 0.9 * DAY_LENGTH_MS;
+
+  it('after-hours items are night-windowed', () => {
+    expect(SHOPS.afterhours.items.every((i) => i.timeWindow === NIGHT_WINDOW)).toBe(true);
+  });
+
+  it('hides after-hours items at noon (rank high enough)', () => {
+    expect(visibleItems(SHOPS.afterhours, 9, NOON)).toHaveLength(0);
+  });
+
+  it('shows after-hours items at night (rank high enough)', () => {
+    expect(visibleItems(SHOPS.afterhours, 9, NIGHT).length).toBeGreaterThan(0);
+  });
+
+  it('without a clock, time gating is ignored (backward compatible)', () => {
+    expect(visibleItems(SHOPS.afterhours, 9).length).toBeGreaterThan(0);
+  });
+
+  it('still respects rank within the open window', () => {
+    expect(visibleItems(SHOPS.afterhours, 0, NIGHT)).toHaveLength(0);
+  });
+});
