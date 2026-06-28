@@ -1,9 +1,13 @@
-export type GameState = 'menu' | 'countdown' | 'playing' | 'waveBreak' | 'paused' | 'gameOver' | 'mapTransition';
+import type { UpgradeChoice } from './upgrades';
+
+export type GameState = 'menu' | 'countdown' | 'playing' | 'waveBreak' | 'paused' | 'gameOver' | 'mapTransition' | 'upgrade';
 
 /** Boss multi-phase: phase 1 = standard, 2 = arena shift (50% HP), 3 = tentacle rage (25% HP) */
 export type BossPhase = 1 | 2 | 3;
 
-export type EnemyType = 'drifter' | 'dasher' | 'orbiter' | 'tank' | 'splitter' | 'mini_drifter';
+export type EnemyType =
+  | 'drifter' | 'dasher' | 'orbiter' | 'tank' | 'splitter' | 'mini_drifter'
+  | 'sniper' | 'healer' | 'shielded';
 
 export interface Player {
   x: number;
@@ -94,6 +98,10 @@ export interface Projectile {
   damage: number;
   isPlayer: boolean;
   life: number;
+  /** Remaining enemies this bullet can pass through (0 = stops on first hit). */
+  pierce: number;
+  /** Last enemy id hit — prevents re-hitting the same enemy while overlapping. */
+  lastHitId: number;
 }
 
 export interface Shard {
@@ -117,6 +125,19 @@ export interface Particle {
   maxLife: number;
   color: string;
   size: number;
+}
+
+/** Expanding ring effect for detonations, pulses, and boss deaths. */
+export interface Shockwave {
+  x: number;
+  y: number;
+  /** Current radius (grows from 0 to maxRadius). */
+  radius: number;
+  maxRadius: number;
+  life: number;
+  maxLife: number;
+  color: string;
+  width: number;
 }
 
 export interface Popup {
@@ -160,11 +181,15 @@ export interface RunStats {
   bossesKilled: number;
   maxCombo: number;
   focusUsed: number;
+  /** Upgrades acquired this run, for the game-over build summary. */
+  upgrades: { name: string; icon: string; color: string; count: number }[];
 }
 
 export interface HUDState {
   score: number;
   multiplier: number;
+  /** Active post-detonation surge multiplier (1 = none). */
+  surge: number;
   wave: number;
   hp: number;
   maxHp: number;
@@ -174,6 +199,8 @@ export interface HUDState {
   bossMaxHp: number;
   bossActive: boolean;
   bossPhase: number;
+  /** Display title of the active boss. */
+  bossName: string;
   dashReady: boolean;
   /** 0.0 (ready) → 1.0 (full cooldown) */
   dashCooldownFraction: number;
@@ -216,6 +243,10 @@ export interface HUDState {
   allySynergyCooldownFraction: number;
   /** Unlock toast — null when no pending unlock */
   pendingUnlock: { name: string; description: string; keybind: string } | null;
+  /** Roguelite upgrade cards awaiting a pick (empty when none). */
+  pendingUpgrades: UpgradeChoice[];
+  /** Whether the current upgrade offer is a boss reward (richer styling). */
+  upgradeIsBossReward: boolean;
 }
 
 export interface DialogueSnapshot {

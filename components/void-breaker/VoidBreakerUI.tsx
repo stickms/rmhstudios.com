@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Play, RotateCcw, Trophy, Volume2, VolumeX, BookOpen, ArrowLeft, Settings } from 'lucide-react';
+import { Play, RotateCcw, Trophy, Volume2, VolumeX, BookOpen, ArrowLeft, Settings, Gamepad2 } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
 import { useNavigate } from '@tanstack/react-router';
 import type { RunStats } from '@/lib/void-breaker/types';
@@ -13,7 +13,8 @@ type LBEntry = { username: string; highScore: number };
 
 export function VoidBreakerUI({
   uiState, runStats, onStartGame, onGoToMenu, muted, onToggleMute,
-  musicVolume, onMusicVolumeChange, saveInfo, onClearSave, onContinueGame,
+  musicVolume, onMusicVolumeChange, sfxVolume, onSfxVolumeChange,
+  saveInfo, onClearSave, onContinueGame,
 }: {
   uiState: 'menu' | 'playing' | 'gameOver';
   runStats: RunStats | null;
@@ -23,6 +24,8 @@ export function VoidBreakerUI({
   onToggleMute: () => void;
   musicVolume: number;
   onMusicVolumeChange: (v: number) => void;
+  sfxVolume: number;
+  onSfxVolumeChange: (v: number) => void;
   saveInfo: { wave: number; savedAt: Date; score?: number } | null;
   onClearSave: () => void;
   onContinueGame?: () => void;
@@ -32,6 +35,7 @@ export function VoidBreakerUI({
   const [submitted, setSubmitted] = useState(false);
   const [showLore, setShowLore] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const session = authClient.useSession();
   const navigate = useNavigate();
 
@@ -48,6 +52,7 @@ export function VoidBreakerUI({
     if (uiState === 'menu' || uiState === 'gameOver') fetchLb();
     if (uiState === 'menu') setShowLore(false);
     if (uiState === 'menu') setShowSettings(false);
+    if (uiState === 'menu') setShowHelp(false);
   }, [uiState, fetchLb]);
 
   useEffect(() => {
@@ -105,9 +110,84 @@ export function VoidBreakerUI({
                 className="w-full"
               />
             </div>
+
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <label className="text-sm text-zinc-400">{t("sfx-volume", { defaultValue: "Sound Effects" })}</label>
+                <span className="text-xs text-[#d4af37] font-mono tabular-nums">{sfxVolume}%</span>
+              </div>
+              <Slider
+                value={[sfxVolume]}
+                onValueChange={([v]) => onSfxVolumeChange(v)}
+                min={0}
+                max={100}
+                step={5}
+                className="w-full"
+              />
+            </div>
           </div>
 
           <Button onClick={() => setShowSettings(false)}
+            className="w-full bg-[#1a1a24] hover:bg-[#252530] text-[#d4af37] border border-[#c9a227]/40">
+            {t("done", { defaultValue: "Done" })}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── How to Play ──
+  if (showHelp) {
+    const controls: [string, string][] = [
+      ['WASD / Arrows', t('hp-move', { defaultValue: 'Move' })],
+      ['Mouse', t('hp-aim', { defaultValue: 'Aim (you auto-fire)' })],
+      ['Shift', t('hp-dash', { defaultValue: 'Dash — brief invincibility' })],
+      ['F', t('hp-focus', { defaultValue: 'Focus — slow time, bonus shards' })],
+      ['Space', t('hp-detonate', { defaultValue: 'Void Burst (needs 5+ shards)' })],
+      ['Q / E / R / T', t('hp-abilities', { defaultValue: 'Abilities — unlock as you progress' })],
+      ['Esc', t('hp-pause', { defaultValue: 'Pause' })],
+    ];
+    const tips: [string, string][] = [
+      [t('hp-shards-title', { defaultValue: 'Shards' }), t('hp-shards', { defaultValue: 'Collected shards orbit you as a shield AND raise your score multiplier. Hoard them — but spend them.' })],
+      [t('hp-burst-title', { defaultValue: 'Void Burst + Surge' }), t('hp-burst', { defaultValue: 'Detonating deals more damage the more shards you hold, and banks your multiplier as a decaying Surge — so blowing your ring is a power spike, not a reset.' })],
+      [t('hp-upgrades-title', { defaultValue: 'Upgrades' }), t('hp-upgrades', { defaultValue: 'Clear a wave, pick 1 of 3 upgrade cards. They stack — build your run.' })],
+      [t('hp-enemies-title', { defaultValue: 'Read the enemies' }), t('hp-enemies', { defaultValue: 'Dodge a sniper’s aim-line by moving. Flank a shielded foe (its arc blocks frontal shots) or hit it with a burst. Kill healers first.' })],
+      [t('hp-bosses-title', { defaultValue: 'Bosses' }), t('hp-bosses', { defaultValue: 'Every 5th wave. Each has its own tricks — rotating beams, collapsing walls, inverted controls, and worse.' })],
+    ];
+    return (
+      <div className="absolute inset-0 z-40 pointer-events-auto overflow-y-auto bg-[#0d0d14]">
+        <div className="max-w-lg mx-auto px-6 py-10 space-y-6">
+          <button onClick={() => setShowHelp(false)}
+            className="flex items-center gap-1.5 text-zinc-500 hover:text-[#d4af37] text-sm transition-colors mb-2">
+            <ArrowLeft className="w-4 h-4" /> {t("back", { defaultValue: "Back" })}
+          </button>
+
+          <h2 className="text-xl font-bold text-[#d4af37] flex items-center gap-2">
+            <Gamepad2 className="w-5 h-5" /> {t("how-to-play", { defaultValue: "How to Play" })}
+          </h2>
+
+          <div className="bg-[#1a1a24] border border-[#c9a227]/20 rounded-lg p-4">
+            <div className="text-[10px] text-[#c9a227]/80 font-bold uppercase tracking-[0.15em] mb-3">{t("controls", { defaultValue: "Controls" })}</div>
+            <div className="space-y-1.5">
+              {controls.map(([key, desc]) => (
+                <div key={key} className="flex justify-between items-baseline gap-3 text-sm">
+                  <span className="font-mono text-[#00f5ff] text-xs shrink-0">{key}</span>
+                  <span className="text-zinc-400 text-right">{desc}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {tips.map(([title, body]) => (
+              <div key={title} className="bg-[#0a0a18] border border-[#c9a227]/15 rounded-lg p-3">
+                <div className="text-[#d4af37]/90 font-bold text-xs uppercase tracking-widest mb-1">{title}</div>
+                <p className="text-zinc-400 text-sm leading-relaxed font-light">{body}</p>
+              </div>
+            ))}
+          </div>
+
+          <Button onClick={() => setShowHelp(false)}
             className="w-full bg-[#1a1a24] hover:bg-[#252530] text-[#d4af37] border border-[#c9a227]/40">
             {t("done", { defaultValue: "Done" })}
           </Button>
@@ -186,8 +266,8 @@ export function VoidBreakerUI({
               </p>
               <p>
                 When the shards reach critical mass, you can detonate them &mdash; a Void Burst that shatters
-                reality in a sphere around you. It kills everything nearby. It also resets your power to zero.
-                The question is always the same: hold for the multiplier, or burn it all to survive.
+                reality in a sphere around you. The more shards you spend, the deadlier the blast &mdash; and the
+                power you release lingers as a Surge before it fades. Hold for the shield, or burn it all to survive.
               </p>
             </div>
 
@@ -301,9 +381,9 @@ export function VoidBreakerUI({
               </Button>
             )}
             <div className="flex gap-2">
-              <Button onClick={() => setShowSettings(true)} variant="outline"
+              <Button onClick={() => setShowHelp(true)} variant="outline"
                 className="flex-1 py-2 border-[#2a2a3a] text-zinc-500 hover:text-[#d4af37] hover:border-[#c9a227]/40">
-                <Settings className="w-4 h-4 mr-2" /> {t("settings", { defaultValue: "Settings" })}
+                <Gamepad2 className="w-4 h-4 mr-2" /> {t("how-to-play", { defaultValue: "How to Play" })}
               </Button>
               <Button onClick={() => setShowLore(true)} variant="outline"
                 className="flex-1 py-2 border-[#2a2a3a] text-zinc-500 hover:text-[#d4af37] hover:border-[#c9a227]/40">
@@ -371,6 +451,23 @@ export function VoidBreakerUI({
               ))}
             </div>
           </div>
+
+          {runStats.upgrades.length > 0 && (
+            <div className="bg-[#1a1a24] border border-[#c9a227]/20 rounded-lg p-3">
+              <div className="text-[10px] text-[#c9a227]/80 font-bold uppercase tracking-[0.15em] mb-2">
+                {t("your-build", { defaultValue: "Your Build" })}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {runStats.upgrades.map((u) => (
+                  <span key={u.name}
+                    className="inline-flex items-center gap-1 text-[11px] font-mono px-1.5 py-0.5 rounded border"
+                    style={{ color: u.color, borderColor: u.color + '40', background: u.color + '10' }}>
+                    <span>{u.icon}</span>{u.name}{u.count > 1 && <span className="opacity-70">×{u.count}</span>}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           {!session.data ? (
             <Button onClick={() => navigate({ to: '/login', search: { callbackURL: undefined } })}

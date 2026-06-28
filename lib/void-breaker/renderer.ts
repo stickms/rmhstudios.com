@@ -8,20 +8,15 @@ import type { VoidBreakerEngine } from './game';
 import {
   CANVAS_WIDTH, CANVAS_HEIGHT,
   ARENA_W, ARENA_H, ARENA_HW, ARENA_HH,
-  MAX_SHARDS, BOSS_WAVE_INTERVAL,
+  MAX_SHARDS, BOSS_WAVE_INTERVAL, SHIELD_HALF_ARC,
 } from './constants';
 import { drawSprite, drawPickupSprite } from './drawSprite';
 import { PLAYER_SPRITE, ENEMY_SPRITES, BOSS_SPRITES, HEART_PICKUP_SPRITE } from './sprites';
 
 // ── Neon Palette ──────────────────────────────────────────────────────────────
-const BG_DEEP = '#050508';
-const FLOOR_DARK = '#0a0a12';
-const GRID_COLOR = '#1a1a2a';
 const NEON_CYAN = '#00f5ff';
 const NEON_MAGENTA = '#ff00cc';
-const NEON_ORANGE = '#ff6820';
 const NEON_GOLD = '#d4af37';
-const NEON_GREEN = '#39ff14';
 const PLAYER_GLOW = '#44ddff';
 const BOSS_RED = '#ff2244';
 
@@ -432,6 +427,10 @@ export class VoidBreakerRenderer {
           const pos = toScreen(e.x, e.y);
           const r = e.radius * scale;
           const baseColor = e.isElite ? NEON_MAGENTA : (e.color || '#cc4466');
+          // Void form: boss is phased-out / intangible — render as a faint apparition.
+          const voidPhased = e.isBoss && e.bossSpecialActive;
+          const prevAlpha = ctx.globalAlpha;
+          if (voidPhased) ctx.globalAlpha = prevAlpha * 0.16;
           if (e.isBoss && e.telegraphTimer > 0) {
             const telegraphAlpha = Math.min(1, e.telegraphTimer * 2);
             ctx.strokeStyle = `rgba(255, 0, 80, ${telegraphAlpha})`;
@@ -439,6 +438,32 @@ export class VoidBreakerRenderer {
             ctx.beginPath();
             ctx.arc(pos.x, pos.y, 120 * scale, 0, Math.PI * 2);
             ctx.stroke();
+          }
+          // Sniper aim-line telegraph — brightens as the shot charges.
+          if (e.type === 'sniper' && e.bossSpecialActive && e.telegraphTimer > 0) {
+            const a = e.bossSpecialAngle;
+            const len = 720 * scale;
+            const alpha = 0.25 + 0.55 * (1 - e.telegraphTimer / 0.85);
+            ctx.strokeStyle = `rgba(255, 80, 60, ${alpha})`;
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([6, 6]);
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+            ctx.lineTo(pos.x + Math.cos(a) * len, pos.y + Math.sin(a) * len);
+            ctx.stroke();
+            ctx.setLineDash([]);
+          }
+          // Shielded enemy's frontal shield arc (where shots are deflected).
+          if (e.type === 'shielded') {
+            const a = e.bossSpecialAngle;
+            ctx.strokeStyle = 'rgba(130, 165, 255, 0.9)';
+            ctx.lineWidth = 3 * scale;
+            ctx.shadowColor = '#5577ff';
+            ctx.shadowBlur = 8;
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, r + 5 * scale, a - SHIELD_HALF_ARC, a + SHIELD_HALF_ARC);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
           }
           if (e.isBoss && e.bossPhase > 1) {
             ctx.strokeStyle = (e.bossPhase === 3 ? '#ff0033' : '#ff6622') + '60';
@@ -456,10 +481,52 @@ export class VoidBreakerRenderer {
             aimAngle: Math.atan2(game.player.y - e.y, game.player.x - e.x),
           }, game.elapsedMs, 1) : false;
           if (!spriteDrawn) {
+            // Distinct procedural silhouettes for the spriteless enemy archetypes
+            // so they read as intentional, not placeholder circles.
+            const faceAngle = Math.atan2(game.player.y - e.y, game.player.x - e.x);
             ctx.fillStyle = baseColor;
-            ctx.beginPath();
-            ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.shadowColor = baseColor;
+            ctx.shadowBlur = 8;
+            if (e.type === 'sniper') {
+              // Forward-pointing dart aimed at the player.
+              ctx.save();
+              ctx.translate(pos.x, pos.y);
+              ctx.rotate(faceAngle);
+              ctx.beginPath();
+              ctx.moveTo(r * 1.4, 0);
+              ctx.lineTo(-r * 0.8, r * 0.85);
+              ctx.lineTo(-r * 0.35, 0);
+              ctx.lineTo(-r * 0.8, -r * 0.85);
+              ctx.closePath();
+              ctx.fill();
+              ctx.restore();
+            } else if (e.type === 'shielded') {
+              // Heavy hexagon (the shield arc is drawn separately, facing the player).
+              ctx.beginPath();
+              for (let i = 0; i < 6; i++) {
+                const a = faceAngle + (i * Math.PI) / 3;
+                const X = pos.x + Math.cos(a) * r;
+                const Y = pos.y + Math.sin(a) * r;
+                if (i === 0) ctx.moveTo(X, Y); else ctx.lineTo(X, Y);
+              }
+              ctx.closePath();
+              ctx.fill();
+            } else if (e.type === 'healer') {
+              // Round body with a bright medic cross.
+              ctx.beginPath();
+              ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.shadowBlur = 0;
+              ctx.fillStyle = '#eafff4';
+              const cw = r * 0.32, cl = r * 0.9;
+              ctx.fillRect(pos.x - cw / 2, pos.y - cl, cw, cl * 2);
+              ctx.fillRect(pos.x - cl, pos.y - cw / 2, cl * 2, cw);
+            } else {
+              ctx.beginPath();
+              ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
+              ctx.fill();
+            }
+            ctx.shadowBlur = 0;
           }
           if (e.isBoss) {
             ctx.strokeStyle = NEON_GOLD + 'aa';
@@ -494,6 +561,7 @@ export class VoidBreakerRenderer {
             ctx.fillStyle = e.isElite ? NEON_MAGENTA : NEON_CYAN;
             ctx.fillRect(bx, by, barW * (e.hp / e.maxHp), barH);
           }
+          if (voidPhased) ctx.globalAlpha = prevAlpha;
         },
       });
     }
@@ -619,6 +687,20 @@ export class VoidBreakerRenderer {
       ctx.beginPath();
       ctx.arc(pos.x, pos.y, pt.size * scale, 0, Math.PI * 2);
       ctx.fill();
+    }
+
+    // ── Post-sort: Shockwaves (expanding rings) ──────────────────────────────
+    for (const sw of game.shockwaves) {
+      const pos = toScreen(sw.x, sw.y);
+      const alpha = sw.life / sw.maxLife;
+      ctx.strokeStyle = sw.color + Math.floor(alpha * 200).toString(16).padStart(2, '0');
+      ctx.lineWidth = Math.max(1, sw.width * scale * (0.4 + alpha * 0.6));
+      ctx.shadowColor = sw.color;
+      ctx.shadowBlur = 14 * alpha;
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, Math.max(1, sw.radius * scale), 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
     }
 
     // ── Post-sort: Player HP Bar (always on top) ─────────────────────────────
