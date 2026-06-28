@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
@@ -16,6 +17,10 @@ export const Route = createFileRoute('/api/users/search')({
     return Response.json({ users: [] });
   }
 
+  // Exclude the viewer themselves — you can't message/mention yourself.
+  const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+  const selfId = session?.user?.id ?? null;
+
   const users = await prisma.user.findMany({
     where: {
       OR: [
@@ -23,6 +28,7 @@ export const Route = createFileRoute('/api/users/search')({
         { username: { contains: q, mode: 'insensitive' } },
         { handle: { contains: q, mode: 'insensitive' } },
       ],
+      ...(selfId ? { id: { not: selfId } } : {}),
     },
     select: userDisplaySelect,
     take: 5,

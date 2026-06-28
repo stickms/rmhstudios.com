@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { Loader2, ArrowLeft, Send, Image as ImageIcon, ImagePlus, X } from 'lucide-react';
+import { Loader2, ArrowLeft, Send, ImagePlus, ImagePlay, X, Plus } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession, useResolvedUser } from '@/components/Providers';
@@ -45,6 +45,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
   const [notFound, setNotFound] = useState(false);
   const [otherTyping, setOtherTyping] = useState(false);
   const [showGifPicker, setShowGifPicker] = useState(false);
+  const [attachOpen, setAttachOpen] = useState(false);
   // Pending rich media to attach to the next message.
   const [gifUrl, setGifUrl] = useState<string | null>(null);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
@@ -53,6 +54,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const attachRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const initialFetched = useRef(false);
   // Typing-indicator bookkeeping
@@ -63,6 +65,16 @@ export function ConversationView({ conversationId }: { conversationId: string })
   const { t } = useTranslation("feed");
   const { data: session } = useSession();
   const { resolved: resolvedUser } = useResolvedUser();
+
+  // Close the attach (+) menu on outside click.
+  useEffect(() => {
+    if (!attachOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (attachRef.current && !attachRef.current.contains(e.target as Node)) setAttachOpen(false);
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [attachOpen]);
 
   // AI inline autocomplete, grounded in the recent DM conversation.
   const { suggestion, clear: clearSuggestion } = useMessageSuggestion({
@@ -693,23 +705,38 @@ export function ConversationView({ conversationId }: { conversationId: string })
             className="bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-xl px-4 py-2.5 border border-site-border outline-none focus:border-site-accent transition-colors resize-none max-h-32 overflow-y-auto"
             style={{ minHeight: '42px' }}
           />
-          <button
-            type="button"
-            aria-label={t("attach-image", { defaultValue: "Attach image" })}
-            onClick={() => imageInputRef.current?.click()}
-            disabled={uploading || imageUrls.length >= MAX_DM_IMAGES}
-            className="shrink-0 rounded-xl h-[42px] px-3 text-site-text-dim hover:text-site-accent hover:bg-site-surface transition-colors disabled:opacity-50"
-          >
-            {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImagePlus className="w-4 h-4" />}
-          </button>
-          <button
-            type="button"
-            aria-label={t("insert-gif", { defaultValue: "Insert GIF" })}
-            onClick={() => setShowGifPicker((v) => !v)}
-            className="shrink-0 rounded-xl h-[42px] px-3 text-site-text-dim hover:text-site-accent hover:bg-site-surface transition-colors"
-          >
-            <ImageIcon className="w-4 h-4" />
-          </button>
+          {/* Attach (+) menu — image, GIF. Mirrors the rmhark composer. */}
+          <div className="relative shrink-0" ref={attachRef}>
+            <button
+              type="button"
+              aria-label={t("add-to-message", { defaultValue: "Add to message" })}
+              aria-expanded={attachOpen}
+              onClick={() => setAttachOpen((v) => !v)}
+              disabled={uploading}
+              className="h-[42px] rounded-xl px-3 text-site-text-dim transition-colors hover:bg-site-surface hover:text-site-accent disabled:opacity-50"
+            >
+              {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-5 w-5" />}
+            </button>
+            {attachOpen && (
+              <div className="absolute bottom-full right-0 z-30 mb-1 w-40 rounded-xl border border-site-border bg-site-bg py-1 shadow-xl">
+                <button
+                  type="button"
+                  disabled={imageUrls.length >= MAX_DM_IMAGES}
+                  onClick={() => { setAttachOpen(false); imageInputRef.current?.click(); }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-site-text hover:bg-site-surface disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <ImagePlus className="h-4 w-4 text-site-text-dim" /> {t("menu-add-image", { defaultValue: "Add Image" })}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setAttachOpen(false); setShowGifPicker((v) => !v); }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-site-text hover:bg-site-surface"
+                >
+                  <ImagePlay className="h-4 w-4 text-site-text-dim" /> {t("menu-add-gif", { defaultValue: "Add GIF" })}
+                </button>
+              </div>
+            )}
+          </div>
           <Button
             variant="accent"
             size="sm"

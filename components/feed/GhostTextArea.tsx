@@ -63,6 +63,11 @@ export const GhostTextArea = forwardRef<HTMLTextAreaElement, GhostTextAreaProps>
         <div
           aria-hidden
           className={`${className} pointer-events-none absolute inset-0 w-full overflow-hidden whitespace-pre-wrap wrap-break-word text-transparent`}
+          // The mirror shares the textarea's box classes (incl. `border`) for
+          // pixel-perfect alignment, but the visible border must be drawn only
+          // once — by the textarea on top. Keep the border width here (so the
+          // metrics match) while hiding its color, avoiding a doubled border.
+          style={{ borderColor: 'transparent' }}
         >
           {value}
           {suggestion && <span className="text-site-text-dim">{suggestion}</span>}
