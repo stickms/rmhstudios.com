@@ -23,7 +23,7 @@ const MASTER_VOLUME = 0.75;
 const EMPTY_HUD: HUDState = {
   score: 0, multiplier: 1, wave: 0, hp: 3, maxHp: 3,
   shards: 0, combo: 0, bossHp: 0, bossMaxHp: 0,
-  bossActive: false, bossPhase: 1, dashReady: true, dashCooldownFraction: 0,
+  bossActive: false, bossPhase: 1, bossName: '', dashReady: true, dashCooldownFraction: 0,
   waveBreak: false, paused: false, countdown: 3, wingLevel: 0,
   focusReady: true, focusActive: false, focusCooldownFraction: 0,
   detonateReady: false, dialogue: null,
@@ -295,6 +295,7 @@ export function VoidBreakerGame() {
             bossMaxHp: boss ? boss.maxHp : 0,
             bossActive: !!boss,
             bossPhase: boss ? boss.bossPhase : 1,
+            bossName: game.currentBossName,
             dashReady: game.player.dashCooldown <= 0 && !game.player.dashActive,
             dashCooldownFraction: Math.max(0, game.player.dashCooldown / DASH_COOLDOWN),
             waveBreak: game.state === 'waveBreak',
@@ -533,7 +534,7 @@ export function VoidBreakerGame() {
             <div className="mx-auto w-52 sm:w-72">
               <div className="flex justify-between items-center mb-0.5">
                 <div className="text-center text-[10px] text-[#ff2244] font-mono font-bold tracking-widest drop-shadow-[0_0_6px_rgba(255,34,68,0.8)]">
-                  堕落天使 {hud.bossPhase > 1 ? `— PHASE ${hud.bossPhase}` : ''}
+                  {hud.bossName || '堕落天使'} {hud.bossPhase > 1 ? `— PHASE ${hud.bossPhase}` : ''}
                 </div>
               </div>
               <div className="h-2.5 bg-zinc-900/80 rounded-full overflow-hidden border border-red-900/50">

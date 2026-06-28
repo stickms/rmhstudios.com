@@ -59,7 +59,8 @@ export const COUNTDOWN_S = 3;
 
 // Pools (bigger for larger map)
 export const MAX_ENEMIES = 80;
-export const MAX_PROJECTILES = 120;
+// Large enough that dense boss bullet-hell patterns never starve player fire.
+export const MAX_PROJECTILES = 200;
 export const MAX_SHARDS_POOL = 80;
 export const MAX_PARTICLES = 300;
 

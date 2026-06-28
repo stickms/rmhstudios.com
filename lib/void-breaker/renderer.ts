@@ -432,6 +432,10 @@ export class VoidBreakerRenderer {
           const pos = toScreen(e.x, e.y);
           const r = e.radius * scale;
           const baseColor = e.isElite ? NEON_MAGENTA : (e.color || '#cc4466');
+          // Void form: boss is phased-out / intangible — render as a faint apparition.
+          const voidPhased = e.isBoss && e.bossSpecialActive;
+          const prevAlpha = ctx.globalAlpha;
+          if (voidPhased) ctx.globalAlpha = prevAlpha * 0.16;
           if (e.isBoss && e.telegraphTimer > 0) {
             const telegraphAlpha = Math.min(1, e.telegraphTimer * 2);
             ctx.strokeStyle = `rgba(255, 0, 80, ${telegraphAlpha})`;
@@ -494,6 +498,7 @@ export class VoidBreakerRenderer {
             ctx.fillStyle = e.isElite ? NEON_MAGENTA : NEON_CYAN;
             ctx.fillRect(bx, by, barW * (e.hp / e.maxHp), barH);
           }
+          if (voidPhased) ctx.globalAlpha = prevAlpha;
         },
       });
     }

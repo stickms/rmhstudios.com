@@ -43,6 +43,7 @@ import {
 } from './mapSystem';
 import type { Obstacle, MapConfig } from './mapSystem';
 import { getBossPatternForTier } from './bossPatterns';
+import type { BossSpecialMechanic } from './bossPatterns';
 import {
   makePlayerStats, rollUpgradeChoices, getUpgradeDef,
 } from './upgrades';
@@ -130,6 +131,8 @@ export class VoidBreakerEngine {
   /** Boss 30: time remaining for control inversion */
   invertTimer = 0;
   invertCooldown = 0;
+  /** Display title of the active boss (Chinese title from its pattern). */
+  currentBossName = '';
 
   private shakeDur = 0;
   private shakeT = 0;
@@ -247,6 +250,7 @@ export class VoidBreakerEngine {
     this.controlsInverted = false;
     this.invertTimer = 0;
     this.invertCooldown = 0;
+    this.currentBossName = '';
 
     this.countdownTimer = COUNTDOWN_S;
     this.state = 'countdown';
@@ -493,6 +497,8 @@ export class VoidBreakerEngine {
       if (input.down) my += 1;
       if (input.left) mx -= 1;
       if (input.right) mx += 1;
+      // Reality Breacher: movement controls are inverted while reality is fractured.
+      if (this.controlsInverted) { mx = -mx; my = -my; }
       if (mx !== 0 || my !== 0) {
         const [nx, ny] = norm(mx, my);
         const spd = p.speed * this.stats.moveSpeedMult;
@@ -733,9 +739,11 @@ export class VoidBreakerEngine {
     slot.tentacleTimer = 0;
     slot.telegraphTimer = 0;
     slot.isElite = false;
-    slot.bossSpecialTimer = 0;
+    // Void form waits ~5s before its first vanish; others start at 0.
+    slot.bossSpecialTimer = pattern.special === 'void_form' ? 5 : 0;
     slot.bossSpecialActive = false;
-    slot.bossSpecialAngle = 0;
+    slot.bossSpecialAngle = Math.random() * Math.PI * 2;
+    this.currentBossName = pattern.title;
 
     this.waveEnemiesAlive = 1;
     this.waveEnemiesStartCount = 1;
@@ -876,7 +884,14 @@ export class VoidBreakerEngine {
 
   private aiBoss(e: Enemy, dt: number, px: number, py: number): void {
     const tier = Math.floor(this.wave / BOSS_WAVE_INTERVAL);
+    const pattern = getBossPatternForTier(tier);
     const hpFrac = e.hp / e.maxHp;
+
+    // ── Void form: while phased-out the boss is intangible — no attacks/movement. ──
+    if (e.bossSpecialActive) {
+      this.runBossSpecial(e, pattern.special, dt, px, py, hpFrac);
+      return;
+    }
 
     // ── Phase transitions (tier >= 2 = wave 10+) ──
     if (tier >= 2) {
@@ -955,7 +970,137 @@ export class VoidBreakerEngine {
       }
       // Sweeping tentacle arc
       e.tentacleAngle += dt * 1.2;
-      this.fireTentacleSweep(e);
+      this.fireTentacleSweep(e, dt);
+    }
+
+    // ── Signature special layered on top of the base danmaku ──
+    this.runBossSpecial(e, pattern.special, dt, px, py, hpFrac);
+  }
+
+  /** Per-boss signature mechanic, dispatched by pattern.special. */
+  private runBossSpecial(
+    e: Enemy, special: BossSpecialMechanic, dt: number,
+    px: number, py: number, hpFrac: number,
+  ): void {
+    switch (special) {
+      case 'laser_beams':
+        // Rotating spiral arms — sweeping curtains the player weaves through.
+        this.bossSpiral(e, dt, e.bossPhase >= 2 ? 4 : 3, 1.6);
+        break;
+      case 'enhanced':
+        // The Architect: lighter spiral layered over the standard rings.
+        this.bossSpiral(e, dt, 3, 1.15);
+        break;
+      case 'arena_shrink':
+        this.bossConverge(e, dt);
+        break;
+      case 'reality_warp':
+        this.bossRealityWarp(e);
+        break;
+      case 'void_form':
+        this.bossVoidForm(e, dt, px, py, hpFrac);
+        break;
+      default:
+        break; // standard / multi_phase use the base attack only
+    }
+  }
+
+  /** Fire one boss bullet along an absolute angle. */
+  private fireBossBullet(e: Enemy, angle: number, speed: number): void {
+    const slot = this.projectiles.find(pr => !pr.active);
+    if (!slot) return;
+    slot.active = true;
+    slot.x = e.x; slot.y = e.y;
+    slot.vx = Math.cos(angle) * speed; slot.vy = Math.sin(angle) * speed;
+    slot.radius = 4; slot.damage = getScaledEnemyDamage(1, this.wave);
+    slot.isPlayer = false; slot.life = 4;
+    slot.pierce = 0; slot.lastHitId = -1;
+  }
+
+  /** Continuous rotating spiral of bullets (tiers 3 & 7). */
+  private bossSpiral(e: Enemy, dt: number, arms: number, rotSpeed: number): void {
+    e.bossSpecialAngle += dt * rotSpeed;
+    e.bossSpecialTimer -= dt;
+    if (e.bossSpecialTimer > 0) return;
+    e.bossSpecialTimer = 0.08;
+    const speed = getScaledProjSpeed(BOSS_PROJ_SPEED, this.wave) * 0.95;
+    for (let i = 0; i < arms; i++) {
+      this.fireBossBullet(e, e.bossSpecialAngle + (Math.PI * 2 * i) / arms, speed);
+    }
+  }
+
+  /** Collapsing domain — walls of bullets sweep inward from the arena edges. */
+  private bossConverge(e: Enemy, dt: number): void {
+    e.bossSpecialTimer -= dt;
+    if (e.bossSpecialTimer > 0) return;
+    e.bossSpecialTimer = 2.6;
+    const speed = getScaledProjSpeed(BOSS_PROJ_SPEED, this.wave) * 0.7;
+    const gap = 80;
+    const vertical = Math.random() < 0.5;
+    if (vertical) {
+      // Left + right walls closing horizontally; leave one safe lane.
+      const safeY = 80 + Math.random() * (ARENA_H - 160);
+      for (let y = 60; y < ARENA_H - 60; y += gap) {
+        if (Math.abs(y - safeY) < 90) continue;
+        this.fireWallBullet(4, y, speed, 0);
+        this.fireWallBullet(ARENA_W - 4, y, -speed, 0);
+      }
+    } else {
+      const safeX = 80 + Math.random() * (ARENA_W - 160);
+      for (let x = 60; x < ARENA_W - 60; x += gap) {
+        if (Math.abs(x - safeX) < 90) continue;
+        this.fireWallBullet(x, 4, 0, speed);
+        this.fireWallBullet(x, ARENA_H - 4, 0, -speed);
+      }
+    }
+    this.popups.push({ text: 'DOMAIN COLLAPSE', x: e.x, y: e.y - 44, life: 0.9, maxLife: 0.9, color: '#cc00ff' });
+    this.emitSfx('bossRing');
+  }
+
+  /** Spawn a single edge wall bullet with an explicit velocity. */
+  private fireWallBullet(x: number, y: number, vx: number, vy: number): void {
+    const slot = this.projectiles.find(pr => !pr.active);
+    if (!slot) return;
+    slot.active = true;
+    slot.x = x; slot.y = y; slot.vx = vx; slot.vy = vy;
+    slot.radius = 4; slot.damage = getScaledEnemyDamage(1, this.wave);
+    slot.isPlayer = false; slot.life = 8;
+    slot.pierce = 0; slot.lastHitId = -1;
+  }
+
+  /** Reality warp — periodically invert the player's movement controls. */
+  private bossRealityWarp(e: Enemy): void {
+    if (this.controlsInverted || this.invertCooldown > 0) return;
+    this.controlsInverted = true;
+    this.invertTimer = 3.5;
+    this.popups.push({ text: '⚠ REALITY FRACTURED ⚠', x: this.player.x, y: this.player.y - 50, life: 1.5, maxLife: 1.5, color: '#0066ff' });
+    this.emitSfx('voidPulse');
+    this.triggerShake(8, 400);
+    void e;
+  }
+
+  /** Void form — the boss phases out (intangible), then reappears beside the player. */
+  private bossVoidForm(e: Enemy, dt: number, px: number, py: number, hpFrac: number): void {
+    e.bossSpecialTimer -= dt;
+    if (e.bossSpecialActive) {
+      // Currently phased-out: reappear when the timer expires.
+      if (e.bossSpecialTimer <= 0) {
+        e.bossSpecialActive = false;
+        e.bossSpecialTimer = 4 + Math.random() * 2;
+        const a = Math.random() * Math.PI * 2;
+        e.x = clamp(px + Math.cos(a) * 280, 60, ARENA_W - 60);
+        e.y = clamp(py + Math.sin(a) * 280, 60, ARENA_H - 60);
+        this.fireBossRing(e, hpFrac < 0.5 ? 24 : 16);
+        this.spawnParticles(e.x, e.y, '#ffffff', 24, 220);
+        this.emitSfx('bossPhase');
+        this.triggerShake(8, 300);
+      }
+    } else if (e.bossSpecialTimer <= 0) {
+      // Vanish.
+      e.bossSpecialActive = true;
+      e.bossSpecialTimer = 1.6;
+      this.spawnParticles(e.x, e.y, '#88aaff', 16, 180);
+      this.emitSfx('phaseShift');
     }
   }
 
@@ -978,12 +1123,15 @@ export class VoidBreakerEngine {
     void tier;
   }
 
-  /** Fire brief tentacle arc shots (wide spread in a direction). */
-  private fireTentacleSweep(e: Enemy): void {
-    // Only fire every ~0.4 seconds
-    if (!e.orbitFireTimer) e.orbitFireTimer = 0.4;
-    // Tentacle sweep uses orbitFireTimer as a sub-timer to limit fire rate
-    // (already decremented in aiOrbiter pattern; here we re-use field)
+  /** Fire a small fan of bullets along the sweeping tentacle angle (phase 3). */
+  private fireTentacleSweep(e: Enemy, dt: number): void {
+    e.orbitFireTimer -= dt;
+    if (e.orbitFireTimer > 0) return;
+    e.orbitFireTimer = 0.18;
+    const speed = getScaledProjSpeed(BOSS_PROJ_SPEED, this.wave) * 0.8;
+    for (let i = -1; i <= 1; i++) {
+      this.fireBossBullet(e, e.tentacleAngle + i * 0.18, speed);
+    }
   }
 
   private fireEnemyProj(e: Enemy, count: number): void {
@@ -1050,6 +1198,7 @@ export class VoidBreakerEngine {
       if (!p.active || !p.isPlayer) continue;
       for (const e of this.enemies) {
         if (!e.active || p.lastHitId === e.id) continue;
+        if (e.isBoss && e.bossSpecialActive) continue; // void form is intangible
         if (dist(p.x, p.y, e.x, e.y) < p.radius + e.radius) {
           const isCrit = s.critChance > 0 && Math.random() < s.critChance;
           const dmg = isCrit ? Math.max(1, Math.round(p.damage * s.critMult)) : p.damage;
@@ -1101,6 +1250,7 @@ export class VoidBreakerEngine {
     if (this.elapsedMs < pl.invincibleUntil) return;
     for (const e of this.enemies) {
       if (!e.active) continue;
+      if (e.isBoss && e.bossSpecialActive) continue; // void form is intangible
       if (dist(e.x, e.y, pl.x, pl.y) < e.radius + pl.radius) {
         this.damagePlayer(1);
         const [nx, ny] = norm(e.x - pl.x, e.y - pl.y);
@@ -1138,6 +1288,12 @@ export class VoidBreakerEngine {
       this.emitSfx('bossKill');
       this.requestHitStop(220);
       this.triggerShake(16, 700);
+      // Clear any lingering boss-special state so it can't outlive the boss.
+      this.controlsInverted = false;
+      this.invertTimer = 0;
+      this.invertCooldown = 0;
+      this.arenaShrinkFraction = 0;
+      this.currentBossName = '';
     } else if (e.isElite) {
       this.emitSfx('eliteKill');
       this.requestHitStop(50);
@@ -1254,6 +1410,7 @@ export class VoidBreakerEngine {
     const detDamage = DET_DAMAGE + this.stats.detonateDamageBonus;
     for (const e of this.enemies) {
       if (!e.active) continue;
+      if (e.isBoss && e.bossSpecialActive) continue; // void form is intangible
       if (dist(e.x, e.y, p.x, p.y) < blast) {
         e.hp -= detDamage;
         this.spawnParticles(e.x, e.y, '#ff6644', 6, 100);
@@ -1406,6 +1563,7 @@ export class VoidBreakerEngine {
     // Damage all enemies in radius
     for (const e of this.enemies) {
       if (!e.active) continue;
+      if (e.isBoss && e.bossSpecialActive) continue; // void form is intangible
       const d = Math.hypot(e.x - p.x, e.y - p.y);
       if (d < VOID_PULSE_RADIUS) {
         e.hp -= VOID_PULSE_DAMAGE;

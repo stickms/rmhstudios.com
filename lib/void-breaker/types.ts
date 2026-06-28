@@ -180,6 +180,8 @@ export interface HUDState {
   bossMaxHp: number;
   bossActive: boolean;
   bossPhase: number;
+  /** Display title of the active boss. */
+  bossName: string;
   dashReady: boolean;
   /** 0.0 (ready) → 1.0 (full cooldown) */
   dashCooldownFraction: number;
