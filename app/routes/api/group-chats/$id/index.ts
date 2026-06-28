@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
+import { groupMessageSelect, serializeGroupMessages } from '@/lib/group-chat/serialize.server';
 
 /** GET /api/group-chats/$id — group detail + messages (members only). */
 export const Route = createFileRoute('/api/group-chats/$id/')({
@@ -29,7 +30,7 @@ export const Route = createFileRoute('/api/group-chats/$id/')({
               messages: {
                 orderBy: { createdAt: 'asc' },
                 take: 200,
-                select: { id: true, content: true, createdAt: true, sender: { select: userDisplaySelect } },
+                select: groupMessageSelect,
               },
             },
           });
@@ -47,12 +48,7 @@ export const Route = createFileRoute('/api/group-chats/$id/')({
               name: group.name,
               isOwner: group.ownerId === userId,
               members: group.members.map((m) => resolveUser(m.user)),
-              messages: group.messages.map((msg) => ({
-                id: msg.id,
-                content: msg.content,
-                createdAt: msg.createdAt,
-                sender: resolveUser(msg.sender),
-              })),
+              messages: await serializeGroupMessages(group.messages, userId),
             },
           });
         } catch (error) {

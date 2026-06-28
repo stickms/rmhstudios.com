@@ -471,6 +471,7 @@ import { Route as SiteAdminBlogSlugEditRouteImport } from './routes/_site/admin/
 import { Route as ApiRmharksIdCommentCommentIdViewRouteImport } from './routes/api/rmharks/$id/comment/$commentId/view'
 import { Route as ApiRmharksIdCommentCommentIdRepostRouteImport } from './routes/api/rmharks/$id/comment/$commentId/repost'
 import { Route as ApiRmharksIdCommentCommentIdLikeRouteImport } from './routes/api/rmharks/$id/comment/$commentId/like'
+import { Route as ApiGroupChatsIdMessagesMessageIdVoteRouteImport } from './routes/api/group-chats/$id/messages/$messageId/vote'
 
 const VoidBreakerRoute = VoidBreakerRouteImport.update({
   id: '/void-breaker',
@@ -2852,6 +2853,12 @@ const ApiRmharksIdCommentCommentIdLikeRoute =
     path: '/like',
     getParentRoute: () => ApiRmharksIdCommentCommentIdRoute,
   } as any)
+const ApiGroupChatsIdMessagesMessageIdVoteRoute =
+  ApiGroupChatsIdMessagesMessageIdVoteRouteImport.update({
+    id: '/$messageId/vote',
+    path: '/$messageId/vote',
+    getParentRoute: () => ApiGroupChatsIdMessagesRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof SiteIndexRoute
@@ -3216,7 +3223,7 @@ export interface FileRoutesByFullPath {
   '/api/games/synapse-storm/save': typeof ApiGamesSynapseStormSaveRoute
   '/api/games/synapse-storm/score': typeof ApiGamesSynapseStormScoreRoute
   '/api/group-chats/$id/leave': typeof ApiGroupChatsIdLeaveRoute
-  '/api/group-chats/$id/messages': typeof ApiGroupChatsIdMessagesRoute
+  '/api/group-chats/$id/messages': typeof ApiGroupChatsIdMessagesRouteWithChildren
   '/api/group-chats/$id/stream': typeof ApiGroupChatsIdStreamRoute
   '/api/library/collection/$id': typeof ApiLibraryCollectionIdRouteWithChildren
   '/api/library/cover/$id': typeof ApiLibraryCoverIdRoute
@@ -3312,6 +3319,7 @@ export interface FileRoutesByFullPath {
   '/api/rmhmusic/guess/$id/': typeof ApiRmhmusicGuessIdIndexRoute
   '/api/storefront/products/$id/': typeof ApiStorefrontProductsIdIndexRoute
   '/api/study/decks/$id/': typeof ApiStudyDecksIdIndexRoute
+  '/api/group-chats/$id/messages/$messageId/vote': typeof ApiGroupChatsIdMessagesMessageIdVoteRoute
   '/api/rmharks/$id/comment/$commentId/like': typeof ApiRmharksIdCommentCommentIdLikeRoute
   '/api/rmharks/$id/comment/$commentId/repost': typeof ApiRmharksIdCommentCommentIdRepostRoute
   '/api/rmharks/$id/comment/$commentId/view': typeof ApiRmharksIdCommentCommentIdViewRoute
@@ -3657,7 +3665,7 @@ export interface FileRoutesByTo {
   '/api/games/synapse-storm/save': typeof ApiGamesSynapseStormSaveRoute
   '/api/games/synapse-storm/score': typeof ApiGamesSynapseStormScoreRoute
   '/api/group-chats/$id/leave': typeof ApiGroupChatsIdLeaveRoute
-  '/api/group-chats/$id/messages': typeof ApiGroupChatsIdMessagesRoute
+  '/api/group-chats/$id/messages': typeof ApiGroupChatsIdMessagesRouteWithChildren
   '/api/group-chats/$id/stream': typeof ApiGroupChatsIdStreamRoute
   '/api/library/collection/$id': typeof ApiLibraryCollectionIdRouteWithChildren
   '/api/library/cover/$id': typeof ApiLibraryCoverIdRoute
@@ -3753,6 +3761,7 @@ export interface FileRoutesByTo {
   '/api/rmhmusic/guess/$id': typeof ApiRmhmusicGuessIdIndexRoute
   '/api/storefront/products/$id': typeof ApiStorefrontProductsIdIndexRoute
   '/api/study/decks/$id': typeof ApiStudyDecksIdIndexRoute
+  '/api/group-chats/$id/messages/$messageId/vote': typeof ApiGroupChatsIdMessagesMessageIdVoteRoute
   '/api/rmharks/$id/comment/$commentId/like': typeof ApiRmharksIdCommentCommentIdLikeRoute
   '/api/rmharks/$id/comment/$commentId/repost': typeof ApiRmharksIdCommentCommentIdRepostRoute
   '/api/rmharks/$id/comment/$commentId/view': typeof ApiRmharksIdCommentCommentIdViewRoute
@@ -4122,7 +4131,7 @@ export interface FileRoutesById {
   '/api/games/synapse-storm/save': typeof ApiGamesSynapseStormSaveRoute
   '/api/games/synapse-storm/score': typeof ApiGamesSynapseStormScoreRoute
   '/api/group-chats/$id/leave': typeof ApiGroupChatsIdLeaveRoute
-  '/api/group-chats/$id/messages': typeof ApiGroupChatsIdMessagesRoute
+  '/api/group-chats/$id/messages': typeof ApiGroupChatsIdMessagesRouteWithChildren
   '/api/group-chats/$id/stream': typeof ApiGroupChatsIdStreamRoute
   '/api/library/collection/$id': typeof ApiLibraryCollectionIdRouteWithChildren
   '/api/library/cover/$id': typeof ApiLibraryCoverIdRoute
@@ -4218,6 +4227,7 @@ export interface FileRoutesById {
   '/api/rmhmusic/guess/$id/': typeof ApiRmhmusicGuessIdIndexRoute
   '/api/storefront/products/$id/': typeof ApiStorefrontProductsIdIndexRoute
   '/api/study/decks/$id/': typeof ApiStudyDecksIdIndexRoute
+  '/api/group-chats/$id/messages/$messageId/vote': typeof ApiGroupChatsIdMessagesMessageIdVoteRoute
   '/api/rmharks/$id/comment/$commentId/like': typeof ApiRmharksIdCommentCommentIdLikeRoute
   '/api/rmharks/$id/comment/$commentId/repost': typeof ApiRmharksIdCommentCommentIdRepostRoute
   '/api/rmharks/$id/comment/$commentId/view': typeof ApiRmharksIdCommentCommentIdViewRoute
@@ -4683,6 +4693,7 @@ export interface FileRouteTypes {
     | '/api/rmhmusic/guess/$id/'
     | '/api/storefront/products/$id/'
     | '/api/study/decks/$id/'
+    | '/api/group-chats/$id/messages/$messageId/vote'
     | '/api/rmharks/$id/comment/$commentId/like'
     | '/api/rmharks/$id/comment/$commentId/repost'
     | '/api/rmharks/$id/comment/$commentId/view'
@@ -5124,6 +5135,7 @@ export interface FileRouteTypes {
     | '/api/rmhmusic/guess/$id'
     | '/api/storefront/products/$id'
     | '/api/study/decks/$id'
+    | '/api/group-chats/$id/messages/$messageId/vote'
     | '/api/rmharks/$id/comment/$commentId/like'
     | '/api/rmharks/$id/comment/$commentId/repost'
     | '/api/rmharks/$id/comment/$commentId/view'
@@ -5588,6 +5600,7 @@ export interface FileRouteTypes {
     | '/api/rmhmusic/guess/$id/'
     | '/api/storefront/products/$id/'
     | '/api/study/decks/$id/'
+    | '/api/group-chats/$id/messages/$messageId/vote'
     | '/api/rmharks/$id/comment/$commentId/like'
     | '/api/rmharks/$id/comment/$commentId/repost'
     | '/api/rmharks/$id/comment/$commentId/view'
@@ -5813,7 +5826,7 @@ export interface RootRouteChildren {
   ApiGamesSynapseStormSaveRoute: typeof ApiGamesSynapseStormSaveRoute
   ApiGamesSynapseStormScoreRoute: typeof ApiGamesSynapseStormScoreRoute
   ApiGroupChatsIdLeaveRoute: typeof ApiGroupChatsIdLeaveRoute
-  ApiGroupChatsIdMessagesRoute: typeof ApiGroupChatsIdMessagesRoute
+  ApiGroupChatsIdMessagesRoute: typeof ApiGroupChatsIdMessagesRouteWithChildren
   ApiGroupChatsIdStreamRoute: typeof ApiGroupChatsIdStreamRoute
   ApiLibraryCollectionIdRoute: typeof ApiLibraryCollectionIdRouteWithChildren
   ApiLibraryCoverIdRoute: typeof ApiLibraryCoverIdRoute
@@ -9092,6 +9105,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRmharksIdCommentCommentIdLikeRouteImport
       parentRoute: typeof ApiRmharksIdCommentCommentIdRoute
     }
+    '/api/group-chats/$id/messages/$messageId/vote': {
+      id: '/api/group-chats/$id/messages/$messageId/vote'
+      path: '/$messageId/vote'
+      fullPath: '/api/group-chats/$id/messages/$messageId/vote'
+      preLoaderRoute: typeof ApiGroupChatsIdMessagesMessageIdVoteRouteImport
+      parentRoute: typeof ApiGroupChatsIdMessagesRoute
+    }
   }
 }
 
@@ -9979,6 +9999,21 @@ const ApiCommunitiesSlugMembersRouteWithChildren =
     ApiCommunitiesSlugMembersRouteChildren,
   )
 
+interface ApiGroupChatsIdMessagesRouteChildren {
+  ApiGroupChatsIdMessagesMessageIdVoteRoute: typeof ApiGroupChatsIdMessagesMessageIdVoteRoute
+}
+
+const ApiGroupChatsIdMessagesRouteChildren: ApiGroupChatsIdMessagesRouteChildren =
+  {
+    ApiGroupChatsIdMessagesMessageIdVoteRoute:
+      ApiGroupChatsIdMessagesMessageIdVoteRoute,
+  }
+
+const ApiGroupChatsIdMessagesRouteWithChildren =
+  ApiGroupChatsIdMessagesRoute._addFileChildren(
+    ApiGroupChatsIdMessagesRouteChildren,
+  )
+
 interface ApiLibraryCollectionIdRouteChildren {
   ApiLibraryCollectionIdCoverRoute: typeof ApiLibraryCollectionIdCoverRoute
   ApiLibraryCollectionIdItemsRoute: typeof ApiLibraryCollectionIdItemsRoute
@@ -10216,7 +10251,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGamesSynapseStormSaveRoute: ApiGamesSynapseStormSaveRoute,
   ApiGamesSynapseStormScoreRoute: ApiGamesSynapseStormScoreRoute,
   ApiGroupChatsIdLeaveRoute: ApiGroupChatsIdLeaveRoute,
-  ApiGroupChatsIdMessagesRoute: ApiGroupChatsIdMessagesRoute,
+  ApiGroupChatsIdMessagesRoute: ApiGroupChatsIdMessagesRouteWithChildren,
   ApiGroupChatsIdStreamRoute: ApiGroupChatsIdStreamRoute,
   ApiLibraryCollectionIdRoute: ApiLibraryCollectionIdRouteWithChildren,
   ApiLibraryCoverIdRoute: ApiLibraryCoverIdRoute,

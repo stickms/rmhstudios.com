@@ -161,6 +161,7 @@ model User {
   groupChatsOwned   GroupChat[]       @relation("GroupOwner")
   groupMemberships  GroupChatMember[]
   groupMessages     GroupMessage[]
+  groupPollVotes    GroupPollVote[]
 
   // RMHStudy flashcards
   flashcardDecks   FlashcardDeck[]
@@ -1892,13 +1893,35 @@ model GroupMessage {
   groupId   String
   senderId  String
   content   String   @db.VarChar(2000)
+  // Optional rich media (mirrors DMs): a single GIF and/or up to 4 images.
+  gifUrl    String?  @db.Text
+  imageUrls String[] @default([])
+  // Optional inline poll: a question + 2–6 option labels (votes in GroupPollVote).
+  pollQuestion String?  @db.VarChar(300)
+  pollOptions  String[] @default([])
   createdAt DateTime @default(now())
 
-  group  GroupChat @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  sender User      @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  group     GroupChat       @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  sender    User            @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  pollVotes GroupPollVote[]
 
   @@index([groupId, createdAt])
   @@map("group_message")
+}
+
+model GroupPollVote {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  optionIdx Int
+  createdAt DateTime @default(now())
+
+  message GroupMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([messageId])
+  @@map("group_poll_vote")
 }
 
 /// RMHStudy flashcard deck (#31). Decks are personal but can be shared publicly.
