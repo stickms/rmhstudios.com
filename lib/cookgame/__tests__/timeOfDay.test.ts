@@ -42,3 +42,41 @@ describe('phaseOfDay', () => {
     expect(at(0.80)).toBe('night');
   });
 });
+
+import { sunDirection, isOpenAt } from '../timeOfDay';
+import type { TimeWindow } from '../timeOfDay';
+
+describe('sunDirection', () => {
+  const at = (f: number) => sunDirection(f * DAY_LENGTH_MS);
+  it('is a unit vector', () => {
+    const [x, y, z] = at(0.5);
+    expect(Math.hypot(x, y, z)).toBeCloseTo(1, 6);
+  });
+  it('is high at noon and below the horizon at midnight', () => {
+    expect(at(0.5)[1]).toBeGreaterThan(0.8);   // noon: well above horizon
+    expect(at(0.0)[1]).toBeLessThan(0);         // midnight: below horizon
+  });
+  it('swings east to west across the day', () => {
+    expect(at(0.25)[0]).toBeGreaterThan(0.5);   // dawn: eastern sky (+x)
+    expect(at(0.75)[0]).toBeLessThan(-0.5);     // dusk: western sky (-x)
+    expect(Math.abs(at(0.25)[1])).toBeLessThan(0.2); // dawn near horizon
+  });
+});
+
+describe('isOpenAt', () => {
+  const DAY: TimeWindow = { from: 0.30, to: 0.75 };
+  const NIGHT: TimeWindow = { from: 0.80, to: 0.20 }; // wraps midnight
+  it('same-day window', () => {
+    expect(isOpenAt(DAY, 0.5 * DAY_LENGTH_MS)).toBe(true);
+    expect(isOpenAt(DAY, 0.9 * DAY_LENGTH_MS)).toBe(false);
+    expect(isOpenAt(DAY, 0.30 * DAY_LENGTH_MS)).toBe(true);  // inclusive from
+    expect(isOpenAt(DAY, 0.75 * DAY_LENGTH_MS)).toBe(false); // exclusive to
+  });
+  it('wrap-around (night) window', () => {
+    expect(isOpenAt(NIGHT, 0.9 * DAY_LENGTH_MS)).toBe(true);  // late night
+    expect(isOpenAt(NIGHT, 0.1 * DAY_LENGTH_MS)).toBe(true);  // early morning
+    expect(isOpenAt(NIGHT, 0.5 * DAY_LENGTH_MS)).toBe(false); // midday closed
+    expect(isOpenAt(NIGHT, 0.80 * DAY_LENGTH_MS)).toBe(true); // inclusive from
+    expect(isOpenAt(NIGHT, 0.20 * DAY_LENGTH_MS)).toBe(false);// exclusive to
+  });
+});
