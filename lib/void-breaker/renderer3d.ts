@@ -16,6 +16,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import type { VoidBreakerEngine } from './game';
+import { ENEMY_SPRITES } from './sprites';
 import {
   CANVAS_WIDTH, CANVAS_HEIGHT, ARENA_W, ARENA_H, ARENA_HW, ARENA_HH,
   MAX_ENEMIES, MAX_PROJECTILES, MAX_SHARDS_POOL, MAX_PARTICLES, MAX_HEART_PICKUPS,
@@ -57,6 +58,9 @@ export class VoidBreakerRenderer3D implements VBRenderer {
   private boss!: THREE.Group;
   private bossCore!: THREE.Mesh;
   private enemyMesh!: THREE.InstancedMesh;
+  /** Old enemy sprite art, laid flat on the ground for types that have it. */
+  private readonly enemyTextures = new Map<string, THREE.Texture>();
+  private spritePool: THREE.Mesh[] = [];
   private projMesh!: THREE.InstancedMesh;
   private shardMesh!: THREE.InstancedMesh;
   private obstacleMesh!: THREE.InstancedMesh;
@@ -226,6 +230,27 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     this.enemyMesh.frustumCulled = false;
     this.scene.add(this.enemyMesh);
 
+    // Old enemy sprite art → textures (additive blending makes the black bg
+    // vanish and the art glow), plus a pool of flat ground planes to show them.
+    const texLoader = new THREE.TextureLoader();
+    for (const [type, cfg] of Object.entries(ENEMY_SPRITES)) {
+      const tex = texLoader.load(cfg.url);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      this.enemyTextures.set(type, tex);
+    }
+    const planeGeo = new THREE.PlaneGeometry(1, 1);
+    planeGeo.rotateX(-Math.PI / 2); // lie flat on the ground, facing up
+    for (let i = 0; i < MAX_ENEMIES; i++) {
+      const mat = new THREE.MeshBasicMaterial({
+        transparent: true, blending: THREE.AdditiveBlending, depthWrite: false,
+      });
+      const plane = new THREE.Mesh(planeGeo, mat);
+      plane.visible = false;
+      plane.frustumCulled = false;
+      this.scene.add(plane);
+      this.spritePool.push(plane);
+    }
+
     // Projectiles — pure bright spheres (unlit; bloom carries the glow).
     const projMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
     this.projMesh = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 8, 8), projMat, MAX_PROJECTILES);
@@ -356,11 +381,28 @@ export class VoidBreakerRenderer3D implements VBRenderer {
 
   private syncEnemies(game: VoidBreakerEngine): void {
     const m = this.enemyMesh;
+    let spriteIdx = 0;
     for (let i = 0; i < MAX_ENEMIES; i++) {
       const e = game.enemies[i];
       // Bosses render via the dedicated boss group, not the instanced octahedra.
-      if (!e || !e.active || e.isBoss) { tmpObj.scale.setScalar(0); tmpObj.position.set(0, -9999, 0); }
-      else {
+      const active = !!e && e.active && !e.isBoss;
+      const tex = active ? this.enemyTextures.get(e.type) : undefined;
+
+      if (active && tex) {
+        // Old model: flat ground sprite (additive glow). Hide the octahedron slot.
+        const plane = this.spritePool[spriteIdx++];
+        const mat = plane.material as THREE.MeshBasicMaterial;
+        if (mat.map !== tex) { mat.map = tex; mat.needsUpdate = true; }
+        const sz = e.radius * 3.4 * (e.isElite ? 1.3 : 1);
+        plane.visible = true;
+        plane.position.set(e.x, 7, e.y);
+        plane.scale.set(sz, sz, sz);
+        if (game.elapsedMs < e.hitFlashUntil) mat.color.setRGB(2.2, 2.2, 2.2);
+        else if (e.isElite) mat.color.setRGB(1.4, 0.7, 1.1);
+        else mat.color.setRGB(1, 1, 1);
+        tmpObj.scale.setScalar(0); tmpObj.position.set(0, -9999, 0);
+      } else if (active) {
+        // New enemy types (sniper/healer/shielded) keep a 3D crystal.
         const r = e.radius * 1.15;
         tmpObj.position.set(e.x, r, e.y);
         tmpObj.rotation.set(this.time * 0.8 + i, this.time * 1.1 + i, 0);
@@ -368,12 +410,16 @@ export class VoidBreakerRenderer3D implements VBRenderer {
         const hot = game.elapsedMs < e.hitFlashUntil;
         tmpColor.set(hot ? '#ffffff' : (e.color || '#cc4466'));
         m.setColorAt(i, tmpColor);
+      } else {
+        tmpObj.scale.setScalar(0); tmpObj.position.set(0, -9999, 0);
       }
       tmpObj.updateMatrix();
       m.setMatrixAt(i, tmpObj.matrix);
     }
     m.instanceMatrix.needsUpdate = true;
     if (m.instanceColor) m.instanceColor.needsUpdate = true;
+    // Hide any sprite planes not used this frame.
+    for (let s = spriteIdx; s < this.spritePool.length; s++) this.spritePool[s].visible = false;
   }
 
   private syncProjectiles(game: VoidBreakerEngine): void {
