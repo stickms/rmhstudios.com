@@ -6,6 +6,11 @@ import { createMediaFromUpload } from "@/lib/media/upload.server";
 import { MEDIA_MAX_BYTES } from "@/lib/media/policy";
 import { hasApiImageUpload } from "@/lib/entitlements";
 import { keyedLimit, checkDailyUploadQuota } from "@/lib/media/quota.server";
+import { optimizeImage } from "@/lib/image-optimize";
+import { detectImageExt } from "@/lib/slice-it/upload-validation";
+
+const MAX_DIMENSION = 2048;
+const WEBP_QUALITY = 82;
 
 /**
  * POST /api/v1/images — upload one image, get an opaque media_id back.
@@ -55,7 +60,26 @@ export const Route = createFileRoute("/api/v1/images")({
             return apiError("invalid_request", `Image too large. Maximum size is ${MEDIA_MAX_BYTES / 1024 / 1024} MB.`, 400);
           }
 
-          const buffer = Buffer.from(await file.arrayBuffer());
+          const rawBuffer = Buffer.from(await file.arrayBuffer());
+          // Compress to WebP before storing (consistent with the rest of the
+          // platform). validateUpload downstream re-detects the format, so the
+          // stored object gets a .webp key + content type. Fall back to the
+          // original bytes if conversion fails so a valid upload never breaks.
+          let buffer = rawBuffer;
+          try {
+            const isGif = detectImageExt(rawBuffer) === ".gif";
+            const optimized = await optimizeImage(rawBuffer, {
+              width: MAX_DIMENSION,
+              height: MAX_DIMENSION,
+              quality: WEBP_QUALITY,
+              format: "webp",
+              animated: isGif,
+              autoOrient: !isGif,
+            });
+            buffer = optimized.buffer;
+          } catch (err) {
+            console.warn("[v1/images] webp conversion failed, storing original:", err);
+          }
           try {
             const { id, expiresAt } = await createMediaFromUpload({ prisma, putObject }, { userId, buffer });
             return apiJson({ id, type: "image", expires_at: expiresAt.toISOString() }, 201);
