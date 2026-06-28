@@ -18,7 +18,7 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import type { VoidBreakerEngine } from './game';
 import {
   CANVAS_WIDTH, CANVAS_HEIGHT, ARENA_W, ARENA_H, ARENA_HW, ARENA_HH,
-  MAX_ENEMIES, MAX_PROJECTILES, MAX_SHARDS_POOL,
+  MAX_ENEMIES, MAX_PROJECTILES, MAX_SHARDS_POOL, MAX_PARTICLES, MAX_HEART_PICKUPS,
 } from './constants';
 
 // ── Camera framing ───────────────────────────────────────────────────────────
@@ -29,6 +29,7 @@ const CAM_BACK = 150;   // how far "south" the camera sits (slight tilt for dept
 // Entity heights above the ground plane.
 const PROJ_Y = 14;
 const SHARD_Y = 20;
+const SHOCKWAVE_POOL = 24;
 
 const tmpObj = new THREE.Object3D();
 const tmpColor = new THREE.Color();
@@ -53,10 +54,15 @@ export class VoidBreakerRenderer3D implements VBRenderer {
 
   // Scene objects
   private player!: THREE.Group;
+  private boss!: THREE.Group;
+  private bossCore!: THREE.Mesh;
   private enemyMesh!: THREE.InstancedMesh;
   private projMesh!: THREE.InstancedMesh;
   private shardMesh!: THREE.InstancedMesh;
   private obstacleMesh!: THREE.InstancedMesh;
+  private heartMesh!: THREE.InstancedMesh;
+  private particles!: THREE.Points;
+  private shockwaves: THREE.Mesh[] = [];
   private floor!: THREE.Mesh;
   private grid!: THREE.LineSegments;
   private border!: THREE.LineSegments;
@@ -186,6 +192,23 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     this.player.add(nose);
     this.scene.add(this.player);
 
+    // Boss — a dramatic floating construct: faceted core + two orbiting rings.
+    this.boss = new THREE.Group();
+    this.bossCore = new THREE.Mesh(
+      new THREE.DodecahedronGeometry(1, 0),
+      new THREE.MeshStandardMaterial({ color: 0x331016, emissive: 0xff2244, emissiveIntensity: 2, roughness: 0.3, metalness: 0.6 }),
+    );
+    this.boss.add(this.bossCore);
+    const bossRingMat = new THREE.MeshBasicMaterial({ color: 0xff5577, transparent: true, opacity: 0.7 });
+    for (let i = 0; i < 2; i++) {
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(1.5 + i * 0.4, 0.06, 8, 40), bossRingMat);
+      ring.rotation.x = Math.PI / 2 + i * 0.5;
+      ring.userData.spin = 0.6 + i * 0.5;
+      this.boss.add(ring);
+    }
+    this.boss.visible = false;
+    this.scene.add(this.boss);
+
     // Enemies — lit octahedra that also glow with their per-instance color.
     // (InstancedMesh can't set per-instance emissive directly, so we inject the
     // instance color into emissive radiance via onBeforeCompile.)
@@ -227,6 +250,40 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     this.obstacleMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.obstacleMesh.frustumCulled = false;
     this.scene.add(this.obstacleMesh);
+
+    // Heart pickups — glowing pink octahedra.
+    const heartMat = new THREE.MeshBasicMaterial({ color: 0xff3bd0 });
+    this.heartMesh = new THREE.InstancedMesh(new THREE.OctahedronGeometry(8, 0), heartMat, MAX_HEART_PICKUPS);
+    this.heartMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.heartMesh.frustumCulled = false;
+    this.scene.add(this.heartMesh);
+
+    // Particles — additive points cloud, colored per-particle, fading via brightness.
+    const pGeo = new THREE.BufferGeometry();
+    pGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(MAX_PARTICLES * 3), 3));
+    pGeo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(MAX_PARTICLES * 3), 3));
+    const pMat = new THREE.PointsMaterial({
+      size: 10, vertexColors: true, transparent: true,
+      blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true,
+    });
+    this.particles = new THREE.Points(pGeo, pMat);
+    this.particles.frustumCulled = false;
+    this.scene.add(this.particles);
+
+    // Shockwave rings — flat additive rings scaled to their radius.
+    const swGeo = new THREE.RingGeometry(0.86, 1.0, 48);
+    swGeo.rotateX(-Math.PI / 2);
+    for (let i = 0; i < SHOCKWAVE_POOL; i++) {
+      const mat = new THREE.MeshBasicMaterial({
+        color: 0xffffff, transparent: true, opacity: 0,
+        side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false,
+      });
+      const m = new THREE.Mesh(swGeo, mat);
+      m.position.y = 3;
+      m.visible = false;
+      this.scene.add(m);
+      this.shockwaves.push(m);
+    }
   }
 
   private setupComposer(): void {
@@ -245,6 +302,7 @@ export class VoidBreakerRenderer3D implements VBRenderer {
   // ── Aim ──────────────────────────────────────────────────────────────────────
 
   getAimPoint(canvasX: number, canvasY: number, _game: VoidBreakerEngine): { x: number; y: number } {
+    this.camera.updateMatrixWorld();
     const ndcX = (canvasX / CANVAS_WIDTH) * 2 - 1;
     const ndcY = -((canvasY / CANVAS_HEIGHT) * 2 - 1);
     this.raycaster.setFromCamera(new THREE.Vector2(ndcX, ndcY), this.camera);
@@ -276,9 +334,13 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     pmat.emissiveIntensity = p.focusActive ? 2.6 : p.dashActive ? 3.2 : 1.4;
 
     this.syncEnemies(game);
+    this.syncBoss(game);
     this.syncProjectiles(game);
     this.syncShards(game);
     this.syncObstacles(game);
+    this.syncHearts(game);
+    this.syncParticles(game);
+    this.syncShockwaves(game);
 
     // Rift animation.
     this.rift.rotation.y = this.time * 0.6;
@@ -296,9 +358,10 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     const m = this.enemyMesh;
     for (let i = 0; i < MAX_ENEMIES; i++) {
       const e = game.enemies[i];
-      if (!e || !e.active) { tmpObj.scale.setScalar(0); tmpObj.position.set(0, -9999, 0); }
+      // Bosses render via the dedicated boss group, not the instanced octahedra.
+      if (!e || !e.active || e.isBoss) { tmpObj.scale.setScalar(0); tmpObj.position.set(0, -9999, 0); }
       else {
-        const r = e.radius * (e.isBoss ? 1.0 : 1.15);
+        const r = e.radius * 1.15;
         tmpObj.position.set(e.x, r, e.y);
         tmpObj.rotation.set(this.time * 0.8 + i, this.time * 1.1 + i, 0);
         tmpObj.scale.setScalar(r);
@@ -346,6 +409,74 @@ export class VoidBreakerRenderer3D implements VBRenderer {
       m.setMatrixAt(i, tmpObj.matrix);
     }
     m.instanceMatrix.needsUpdate = true;
+  }
+
+  private syncBoss(game: VoidBreakerEngine): void {
+    const b = game.enemies.find(e => e.active && e.isBoss);
+    if (!b) { this.boss.visible = false; return; }
+    this.boss.visible = true;
+    const r = b.radius;
+    const float = r + 18 + Math.sin(this.time * 1.5) * 4;
+    this.boss.position.set(b.x, float, b.y);
+    // Void form: fade out while intangible.
+    const phased = b.bossSpecialActive;
+    const coreMat = this.bossCore.material as THREE.MeshStandardMaterial;
+    coreMat.emissiveIntensity = phased ? 0.4 : (game.elapsedMs < b.hitFlashUntil ? 4 : 2);
+    this.bossCore.scale.setScalar(r);
+    this.bossCore.rotation.set(this.time * 0.5, this.time * 0.7, 0);
+    // Orbiting rings.
+    for (let i = 1; i < this.boss.children.length; i++) {
+      const ring = this.boss.children[i] as THREE.Mesh;
+      ring.scale.setScalar(r);
+      ring.rotation.z = this.time * (ring.userData.spin as number);
+      (ring.material as THREE.MeshBasicMaterial).opacity = phased ? 0.15 : 0.7;
+    }
+  }
+
+  private syncHearts(game: VoidBreakerEngine): void {
+    const m = this.heartMesh;
+    for (let i = 0; i < MAX_HEART_PICKUPS; i++) {
+      const h = game.heartPickups[i];
+      if (!h || !h.active) { tmpObj.scale.setScalar(0); tmpObj.position.set(0, -9999, 0); }
+      else {
+        const bob = 16 + Math.sin(this.time * 4 + i) * 3;
+        tmpObj.position.set(h.x, bob, h.y);
+        tmpObj.rotation.set(0, this.time * 2, Math.PI / 4);
+        tmpObj.scale.setScalar(1);
+      }
+      tmpObj.updateMatrix();
+      m.setMatrixAt(i, tmpObj.matrix);
+    }
+    m.instanceMatrix.needsUpdate = true;
+  }
+
+  private syncParticles(game: VoidBreakerEngine): void {
+    const pos = this.particles.geometry.attributes.position as THREE.BufferAttribute;
+    const col = this.particles.geometry.attributes.color as THREE.BufferAttribute;
+    for (let i = 0; i < MAX_PARTICLES; i++) {
+      const pt = game.particles[i];
+      if (!pt || !pt.active) { pos.setXYZ(i, 0, -9999, 0); continue; }
+      pos.setXYZ(i, pt.x, 13, pt.y);
+      const a = Math.max(0, pt.life / pt.maxLife);
+      tmpColor.set(pt.color || '#ffffff');
+      col.setXYZ(i, tmpColor.r * a, tmpColor.g * a, tmpColor.b * a);
+    }
+    pos.needsUpdate = true;
+    col.needsUpdate = true;
+  }
+
+  private syncShockwaves(game: VoidBreakerEngine): void {
+    for (let i = 0; i < this.shockwaves.length; i++) {
+      const m = this.shockwaves[i];
+      const sw = game.shockwaves[i];
+      if (!sw) { m.visible = false; continue; }
+      m.visible = true;
+      m.position.set(sw.x, 3, sw.y);
+      m.scale.set(Math.max(0.001, sw.radius), 1, Math.max(0.001, sw.radius));
+      const mat = m.material as THREE.MeshBasicMaterial;
+      mat.color.set(sw.color || '#ffffff');
+      mat.opacity = Math.max(0, sw.life / sw.maxLife) * 0.85;
+    }
   }
 
   private syncObstacles(game: VoidBreakerEngine): void {
