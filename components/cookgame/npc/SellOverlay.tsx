@@ -4,6 +4,7 @@ import { BUYERS, EFFECTS } from '@/lib/cookgame/content';
 import { buyerOffer } from '@/lib/cookgame/economy';
 import { OverlayFrame } from '@/components/cookgame/ui/OverlayFrame';
 import type { EffectId } from '@/lib/cookgame/types';
+import { isOpenAt } from '@/lib/cookgame/timeOfDay';
 
 function EffectChips({ effects }: { effects: EffectId[] }) {
   return (
@@ -25,9 +26,12 @@ export function SellOverlay() {
   const activeOverlay = useCookgameStore((s) => s.activeOverlay);
   const packaged = useCookgameStore((s) => s.inventory.packaged);
   const heat = useCookgameStore((s) => s.heat);
+  const clock = useCookgameStore((s) => s.clock);
 
   const buyer = BUYERS.find((b) => b.id === activeOverlay);
   if (!buyer) return null;
+
+  const closed = buyer.timeWindow ? !isOpenAt(buyer.timeWindow, clock) : false;
 
   const prefEffect = EFFECTS[buyer.preferredEffect];
 
@@ -43,7 +47,9 @@ export function SellOverlay() {
         </span>
       </div>
 
-      {packaged.length === 0 ? (
+      {closed ? (
+        <p className="text-sm text-indigo-300">Vera only deals after dark. Come back at night.</p>
+      ) : packaged.length === 0 ? (
         <p className="text-sm text-neutral-400">Nothing packaged to sell.</p>
       ) : (
         <div className="space-y-2">

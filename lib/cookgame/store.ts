@@ -13,7 +13,7 @@ import {
 } from './cultivation';
 import { PROPERTY_TIERS, propertyEffects, stashCount } from './property';
 import { KEY_PRICES } from './shops';
-import { advanceClock } from './timeOfDay';
+import { advanceClock, isOpenAt } from './timeOfDay';
 
 // Transient accumulator for sub-dollar passive income — kept outside the store
 // so it survives re-renders but is reset by resetGame (see below).
@@ -200,6 +200,7 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
     const stack = inventory.packaged[packagedIndex];
     const buyer = BUYERS.find((b) => b.id === buyerId);
     if (!stack || stack.units <= 0 || !buyer) return 0;
+    if (buyer.timeWindow && !isOpenAt(buyer.timeWindow, get().clock)) return 0;
     const perk = perksAtRank(rankForXp(xp).rank);
     const offer = buyerOffer(stack.product, buyer, heat, variance, perk.priceMult);
     const packaged = inventory.packaged
