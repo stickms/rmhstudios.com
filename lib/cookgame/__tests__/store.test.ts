@@ -468,4 +468,9 @@ describe('recipe meta actions', () => {
     useCookgameStore.getState().toggleRecipeFavorite('a+b');
     expect(useCookgameStore.getState().recipeMeta['a+b'].favorite).toBe(false);
   });
+
+  it('setRecipeName on an unknown key with an empty name creates no ghost entry', () => {
+    useCookgameStore.getState().setRecipeName('a+b', '   ');
+    expect(useCookgameStore.getState().recipeMeta['a+b']).toBeUndefined();
+  });
 });

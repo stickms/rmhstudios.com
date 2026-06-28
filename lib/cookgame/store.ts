@@ -333,6 +333,8 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
   setRecipeName: (key, name) => {
     const trimmed = name.trim();
     const meta = get().recipeMeta;
+    // No-op (don't create a ghost {} entry) when clearing a name on a key with no meta yet.
+    if (!trimmed && !meta[key]) return;
     const entry = { ...meta[key] };
     if (trimmed) entry.name = trimmed;
     else delete entry.name;
