@@ -41,7 +41,11 @@ export function Character({ actor, getNow }: { actor: Actor; getNow?: () => numb
     const now = getNow ? getNow() : performance.now();
 
     g.position.set(actor.pos.x, actor.pos.y, actor.pos.z);
-    g.rotation.y = actor.yaw;
+    // `yaw` is an aim heading where forward = (sin yaw, -cos yaw) (matches the
+    // camera + movement). The model's front faces +Z, so map heading→mesh
+    // rotation with (π - yaw); otherwise bodies face backwards and appear to
+    // turn the wrong way (looked like rotations weren't networked at all).
+    g.rotation.y = Math.PI - actor.yaw;
     g.scale.setScalar(scale);
 
     const dead = !actor.alive;

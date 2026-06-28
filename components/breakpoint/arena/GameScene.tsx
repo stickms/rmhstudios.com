@@ -1,6 +1,6 @@
 'use client';
 
-import { useFrame, useThree } from '@react-three/fiber';
+import { useFrame, useThree, createPortal } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useMemo, useRef, useState } from 'react';
 import type { World, LocalInput } from '@/lib/breakpoint/engine/world';
@@ -11,26 +11,17 @@ import { Character } from './Character';
 import { Tracers, WorldEffects, DynamicWalls, SpikeMesh } from './Effects';
 import { ViewModel } from './ViewModel';
 
-/** In-canvas root: lights, environment, actors, fx, and per-frame camera +
- *  world simulation. Reads the mutable engine each frame (no React churn). */
-export function GameScene({ world, input }: { world: World; input: LocalInput }) {
+/** Drives the camera each frame from the engine. Runs at a negative render
+ *  priority so the camera is positioned BEFORE the viewmodel (which pins to it)
+ *  reads it — without this ordering the gun lags a frame behind the view. */
+function CameraRig({ world, input }: { world: World; input: LocalInput }) {
   const { camera } = useThree();
   const baseFov = useMemo(() => (camera as THREE.PerspectiveCamera).fov ?? 75, [camera]);
-  // Re-render whenever the actor roster changes (spawns / joins / removals) so
-  // dynamically-added actors (zombies, late joiners) get mounted.
-  const [, force] = useState(0);
-  const rosterSig = useRef('');
   const specIdx = useRef(0);
   const lastCycle = useRef(0);
   const tmp = useRef(new THREE.Vector3());
 
   useFrame((_, dt) => {
-    // (simulation is advanced by GameView's interval so it survives backgrounding)
-    // detect roster changes → force a React re-render to (un)mount actors
-    let sig = '';
-    for (const a of world.actors) sig += a.id + ',';
-    if (sig !== rosterSig.current) { rosterSig.current = sig; force((n) => n + 1); }
-
     const local = world.local;
     if (!local) return;
     const cam = camera as THREE.PerspectiveCamera;
@@ -66,21 +57,54 @@ export function GameScene({ world, input }: { world: World; input: LocalInput })
     const wantFov = input.ads && wpn.zoom ? baseFov * wpn.zoom : (input.ads ? baseFov * 0.82 : baseFov);
     cam.fov += (wantFov - cam.fov) * Math.min(1, dt * 12);
     cam.updateProjectionMatrix();
-  });
+  }, -2);
+
+  return null;
+}
+
+/** In-canvas root: lights, environment, actors, fx, and per-frame camera +
+ *  world simulation. Reads the mutable engine each frame (no React churn). */
+export function GameScene({ world, input }: { world: World; input: LocalInput }) {
+  // The viewmodel lives in its own scene so it is drawn as a separate overlay
+  // pass on top of the world — it never clips into walls and always tracks the
+  // (already-updated) camera, eliminating the laggy "gun trails the view" feel.
+  const viewScene = useMemo(() => new THREE.Scene(), []);
+
+  // Re-render whenever the actor roster changes (spawns / joins / removals) so
+  // dynamically-added actors (zombies, late joiners) get mounted.
+  const [, force] = useState(0);
+  const rosterSig = useRef('');
+
+  // Master render pass (priority > 0 → we own rendering). Runs after CameraRig
+  // (priority -2) and the viewmodel, so both scenes are up to date here.
+  useFrame(({ gl, scene, camera }) => {
+    // detect roster changes → force a React re-render to (un)mount actors
+    let sig = '';
+    for (const a of world.actors) sig += a.id + ',';
+    if (sig !== rosterSig.current) { rosterSig.current = sig; force((n) => n + 1); }
+
+    gl.autoClear = true;
+    gl.render(scene, camera);   // world
+    gl.autoClear = false;
+    gl.clearDepth();            // fresh depth so the gun draws over everything
+    gl.render(viewScene, camera); // viewmodel overlay
+  }, 1);
 
   return (
     <>
+      <CameraRig world={world} input={input} />
+
       <hemisphereLight args={['#8a93a8', '#1b1f29', 1.1]} />
       <directionalLight
         position={[18, 30, 12]}
         intensity={1.5}
         castShadow
         shadow-mapSize={[1024, 1024]}
-        shadow-camera-left={-34}
-        shadow-camera-right={34}
-        shadow-camera-top={34}
-        shadow-camera-bottom={-34}
-        shadow-camera-far={80}
+        shadow-camera-left={-42}
+        shadow-camera-right={42}
+        shadow-camera-top={42}
+        shadow-camera-bottom={-42}
+        shadow-camera-far={90}
       />
       <ambientLight intensity={0.35} />
       <color attach="background" args={[PALETTE.sky]} />
@@ -95,7 +119,17 @@ export function GameScene({ world, input }: { world: World; input: LocalInput })
       <WorldEffects world={world} />
       <DynamicWalls world={world} />
       <SpikeMesh world={world} />
-      <ViewModel world={world} input={input} />
+
+      {/* Viewmodel rendered into the overlay scene (own lights so it is lit
+          consistently regardless of where the player stands in the world). */}
+      {createPortal(
+        <>
+          <hemisphereLight args={['#aeb6c6', '#2b303b', 1.0]} />
+          <directionalLight position={[2, 4, 3]} intensity={1.1} />
+          <ViewModel world={world} input={input} />
+        </>,
+        viewScene,
+      )}
     </>
   );
 }

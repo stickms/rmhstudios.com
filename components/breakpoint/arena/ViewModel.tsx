@@ -93,7 +93,7 @@ export function ViewModel({ world, input }: { world: World; input: LocalInput })
     // recolor barrel by weapon
     const barrel = g.getObjectByName('barrel') as THREE.Mesh | undefined;
     if (barrel) (barrel.material as THREE.MeshLambertMaterial).color.set(wpn.color);
-  });
+  }, -1); // run after CameraRig (-2) so we pin to the freshly-updated camera
 
   return (
     <group ref={root}>
