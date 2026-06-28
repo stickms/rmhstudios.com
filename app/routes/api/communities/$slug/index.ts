@@ -25,11 +25,32 @@ export const Route = createFileRoute('/api/communities/$slug/')({
           });
           role = mem?.role ?? null;
         }
+
+        const [postCount, announcements] = await Promise.all([
+          prisma.rMHark.count({ where: { communityId: community.id, deletedAt: null } }),
+          prisma.communityAnnouncement.findMany({
+            where: { communityId: community.id },
+            orderBy: { createdAt: 'desc' },
+            take: 5,
+            select: {
+              id: true,
+              body: true,
+              createdAt: true,
+              author: { select: { name: true, handle: true, image: true } },
+            },
+          }),
+        ]);
+
         return Response.json({
           ...community,
           createdAt: community.createdAt.toISOString(),
+          postCount,
           joined: !!role,
           role,
+          announcements: announcements.map((a) => ({
+            ...a,
+            createdAt: a.createdAt.toISOString(),
+          })),
         });
       },
     },

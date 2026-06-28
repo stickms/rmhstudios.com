@@ -29,13 +29,15 @@ export const auth = betterAuth({
     rateLimit: {
         enabled: true,
         window: 60, // seconds
-        max: 100, // default per-window cap across auth routes
+        max: 200, // default per-window cap across auth routes
         storage: process.env.BETTER_AUTH_RATE_LIMIT_DB === "1" ? "database" : "memory",
+        // Kept tighter than the rest (these guard against credential brute-force),
+        // but loosened enough that legitimate retries/typos aren't blocked.
         customRules: {
-            "/sign-in/email": { window: 60, max: 5 },
-            "/sign-up/email": { window: 60, max: 5 },
-            "/forget-password": { window: 60, max: 3 },
-            "/reset-password": { window: 60, max: 5 },
+            "/sign-in/email": { window: 60, max: 10 },
+            "/sign-up/email": { window: 60, max: 10 },
+            "/forget-password": { window: 60, max: 6 },
+            "/reset-password": { window: 60, max: 10 },
         },
     },
     socialProviders: {

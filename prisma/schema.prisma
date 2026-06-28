@@ -121,6 +121,7 @@ model User {
   // Communities created + memberships
   communitiesCreated Community[]       @relation("CommunityCreator")
   communityMembers   CommunityMember[]
+  communityAnnouncements CommunityAnnouncement[] @relation("CommunityAnnouncementAuthor")
 
   // Progression: quests + battle-pass season progress
   quests         UserQuest[]
@@ -160,6 +161,7 @@ model User {
   groupChatsOwned   GroupChat[]       @relation("GroupOwner")
   groupMemberships  GroupChatMember[]
   groupMessages     GroupMessage[]
+  groupPollVotes    GroupPollVote[]
 
   // RMHStudy flashcards
   flashcardDecks   FlashcardDeck[]
@@ -1891,13 +1893,35 @@ model GroupMessage {
   groupId   String
   senderId  String
   content   String   @db.VarChar(2000)
+  // Optional rich media (mirrors DMs): a single GIF and/or up to 4 images.
+  gifUrl    String?  @db.Text
+  imageUrls String[] @default([])
+  // Optional inline poll: a question + 2–6 option labels (votes in GroupPollVote).
+  pollQuestion String?  @db.VarChar(300)
+  pollOptions  String[] @default([])
   createdAt DateTime @default(now())
 
-  group  GroupChat @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  sender User      @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  group     GroupChat       @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  sender    User            @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  pollVotes GroupPollVote[]
 
   @@index([groupId, createdAt])
   @@map("group_message")
+}
+
+model GroupPollVote {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  optionIdx Int
+  createdAt DateTime @default(now())
+
+  message GroupMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([messageId])
+  @@map("group_poll_vote")
 }
 
 /// RMHStudy flashcard deck (#31). Decks are personal but can be shared publicly.
@@ -2924,12 +2948,29 @@ model Community {
   createdById String
   createdAt   DateTime @default(now())
 
-  createdBy User              @relation("CommunityCreator", fields: [createdById], references: [id], onDelete: Cascade)
-  members   CommunityMember[]
-  posts     RMHark[]
+  createdBy     User                    @relation("CommunityCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  members       CommunityMember[]
+  posts         RMHark[]
+  announcements CommunityAnnouncement[]
 
   @@index([memberCount(sort: Desc)])
   @@map("community")
+}
+
+// Mod/admin announcements pinned to the top of a community.
+model CommunityAnnouncement {
+  id          String   @id @default(cuid())
+  communityId String
+  authorId    String
+  body        String   @db.VarChar(2000)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  author    User      @relation("CommunityAnnouncementAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([communityId, createdAt(sort: Desc)])
+  @@map("community_announcement")
 }
 
 model CommunityMember {

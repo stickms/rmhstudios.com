@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { Users, Plus, Loader2 } from 'lucide-react';
+import { Users, Plus, Loader2, MessageSquare, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useSession } from '@/components/Providers';
@@ -17,7 +17,15 @@ interface Community {
   icon: string | null;
   color: string | null;
   memberCount: number;
+  postCount: number;
   joined: boolean;
+  role: string | null;
+}
+
+function formatCount(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1).replace(/\.0$/, '')}k`;
+  return String(n);
 }
 
 export function CommunitiesColumn() {
@@ -27,24 +35,32 @@ export function CommunitiesColumn() {
   const [items, setItems] = useState<Community[]>([]);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
+  const [query, setQuery] = useState('');
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [icon, setIcon] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (q?: string) => {
     try {
-      const res = await fetch('/api/communities', { credentials: 'include' });
+      const url = q && q.trim() ? `/api/communities?q=${encodeURIComponent(q.trim())}` : '/api/communities';
+      const res = await fetch(url, { credentials: 'include' });
       if (res.ok) setItems((await res.json()).communities);
     } finally {
       setLoading(false);
     }
   }, []);
 
+  // Debounced search.
+  const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    load();
-  }, [load]);
+    if (debounce.current) clearTimeout(debounce.current);
+    debounce.current = setTimeout(() => void load(query), 250);
+    return () => {
+      if (debounce.current) clearTimeout(debounce.current);
+    };
+  }, [query, load]);
 
   const create = async () => {
     if (name.trim().length < 2) return;
@@ -86,34 +102,80 @@ export function CommunitiesColumn() {
         )}
       </header>
 
+      <div className="border-b border-site-border p-3">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-site-text-dim" />
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t('search-communities', { defaultValue: 'Search communities…' })}
+            aria-label={t('search-communities', { defaultValue: 'Search communities' })}
+            className="w-full rounded-lg border border-site-border bg-site-bg py-2 pl-9 pr-3 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
+          />
+        </div>
+      </div>
+
       {loading ? (
         <div className="flex justify-center py-20">
           <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
         </div>
       ) : items.length === 0 ? (
-        <p className="px-4 py-16 text-center text-sm text-site-text-muted">{t('no-communities', { defaultValue: 'No communities yet — create the first one!' })}</p>
+        <p className="px-4 py-16 text-center text-sm text-site-text-muted">
+          {query.trim()
+            ? t('no-communities-found', { defaultValue: 'No communities match your search.' })
+            : t('no-communities', { defaultValue: 'No communities yet — create the first one!' })}
+        </p>
       ) : (
-        <ul className="divide-y divide-site-border">
-          {items.map((c) => (
-            <li key={c.id}>
-              <Link to={`/c/${c.slug}` as string} className="flex items-center gap-3 px-4 py-3 hover:bg-site-surface-hover">
-                <div
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xl"
-                  style={{ background: (c.color || 'var(--site-accent)') + '22' }}
+        <ul className="flex flex-col gap-3 p-3">
+          {items.map((c) => {
+            const roleLabel =
+              c.role === 'ADMIN'
+                ? t('role-owner', { defaultValue: 'Owner' })
+                : c.role === 'MOD'
+                  ? t('role-mod', { defaultValue: 'Mod' })
+                  : c.joined
+                    ? t('joined-badge', { defaultValue: 'Joined' })
+                    : null;
+            return (
+              <li key={c.id}>
+                <Link
+                  to={`/c/${c.slug}` as string}
+                  className="flex items-start gap-4 rounded-2xl border border-site-border bg-site-surface p-4 transition-colors hover:border-site-accent/50 hover:bg-site-surface-hover"
                 >
-                  {c.icon || '👥'}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-site-text">{c.name}</p>
-                  <p className="truncate text-xs text-site-text-muted">
-                    {t('member-count', { count: c.memberCount, defaultValue: '{{count}} member' })}
-                    {c.description ? ` · ${c.description}` : ''}
-                  </p>
-                </div>
-                {c.joined && <span className="shrink-0 rounded-full bg-site-accent-dim px-2 py-0.5 text-xs text-site-accent">{t('joined-badge', { defaultValue: 'Joined' })}</span>}
-              </Link>
-            </li>
-          ))}
+                  <div
+                    className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-3xl"
+                    style={{ background: (c.color || 'var(--site-accent)') + '22' }}
+                  >
+                    {c.icon || '👥'}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="truncate text-base font-bold text-site-text">{c.name}</p>
+                      {roleLabel && (
+                        <span className="shrink-0 rounded-full bg-site-accent-dim px-2 py-0.5 text-xs font-medium text-site-accent">
+                          {roleLabel}
+                        </span>
+                      )}
+                    </div>
+                    {c.description && (
+                      <p className="mt-0.5 line-clamp-2 text-sm text-site-text-muted">{c.description}</p>
+                    )}
+                    <div className="mt-2 flex items-center gap-4 text-xs text-site-text-dim">
+                      <span className="inline-flex items-center gap-1">
+                        <Users className="h-3.5 w-3.5" />
+                        {t('members-stat', { count: c.memberCount, formatted: formatCount(c.memberCount), defaultValue: '{{formatted}} members' })}
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <MessageSquare className="h-3.5 w-3.5" />
+                        {t('posts-stat', { count: c.postCount, formatted: formatCount(c.postCount), defaultValue: '{{formatted}} posts' })}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       )}
 

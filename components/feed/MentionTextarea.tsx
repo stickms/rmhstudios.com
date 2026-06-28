@@ -65,10 +65,15 @@ interface MentionTextareaProps
   extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'value' | 'onChange'> {
   value: string;
   onChange: (next: string) => void;
+  /**
+   * Users to prioritize for @-mentions (e.g. members of the current chat). Local
+   * matches are shown first, ahead of (and deduped against) global results.
+   */
+  priorityUsers?: UserSuggestion[];
 }
 
 export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaProps>(
-  function MentionTextarea({ value, onChange, onKeyDown, ...props }, forwardedRef) {
+  function MentionTextarea({ value, onChange, onKeyDown, priorityUsers, ...props }, forwardedRef) {
     const { t: tl } = useTranslation('feed');
     const innerRef = useRef<HTMLTextAreaElement>(null);
     useImperativeHandle(forwardedRef, () => innerRef.current as HTMLTextAreaElement, []);
@@ -123,10 +128,25 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
           const res = await fetch(endpoint);
           if (seq !== requestSeq.current) return;
           const data = await res.json();
-          const next: Suggestion[] =
-            trigger.type === '@'
-              ? (data.users ?? []).map((user: UserSuggestion) => ({ kind: 'user', user }))
-              : (data.tags ?? []).map((tag: TagSuggestion) => ({ kind: 'tag', tag }));
+          let next: Suggestion[];
+          if (trigger.type === '@') {
+            // Surface chat members matching the query first, deduped against the
+            // global results, so you can quickly @ the people you're talking to.
+            const q = trigger.query.toLowerCase();
+            const local = (priorityUsers ?? []).filter((u) => {
+              if (!q) return true;
+              return (
+                (u.handle ?? '').toLowerCase().includes(q) ||
+                (u.username ?? '').toLowerCase().includes(q) ||
+                (u.name ?? '').toLowerCase().includes(q)
+              );
+            });
+            const seen = new Set(local.map((u) => u.id));
+            const remote = (data.users ?? []).filter((u: UserSuggestion) => !seen.has(u.id));
+            next = [...local, ...remote].slice(0, 8).map((user: UserSuggestion) => ({ kind: 'user', user }));
+          } else {
+            next = (data.tags ?? []).map((tag: TagSuggestion) => ({ kind: 'tag', tag }));
+          }
           setSuggestions(next);
           setActiveIndex(0);
         } catch {
@@ -136,7 +156,7 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
         }
       }, 120);
       return () => clearTimeout(timer);
-    }, [trigger]);
+    }, [trigger, priorityUsers]);
 
     const applySuggestion = useCallback(
       (suggestion: Suggestion) => {

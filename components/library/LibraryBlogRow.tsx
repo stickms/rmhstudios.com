@@ -10,6 +10,7 @@ import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { Calendar } from 'lucide-react';
 import type { Post } from '@/lib/blog';
+import { useReveal } from './LibraryReveal';
 
 export function LibraryBlogRow({ posts }: { posts: Partial<Post>[] }) {
   const { t } = useTranslation('library');
@@ -23,28 +24,35 @@ export function LibraryBlogRow({ posts }: { posts: Partial<Post>[] }) {
       </div>
       <div className="lib-blog__row" role="list">
         {posts.map((post) => (
-          <Link
-            key={post.slug}
-            to={`/blog/${post.slug}` as string}
-            className="lib-blog__card"
-            role="listitem"
-          >
-            {post.tags && post.tags.length > 0 && (
-              <div className="lib-blog__tags">
-                {post.tags.slice(0, 3).map((tag) => (
-                  <span key={tag} className="lib-blog__tag">{tag}</span>
-                ))}
-              </div>
-            )}
-            <h3 className="lib-blog__title">{post.title}</h3>
-            {post.description && <p className="lib-blog__desc">{post.description}</p>}
-            <div className="lib-blog__date">
-              <Calendar size={12} aria-hidden="true" />
-              <span>{post.date}</span>
-            </div>
-          </Link>
+          <BlogCard key={post.slug} post={post} />
         ))}
       </div>
     </section>
+  );
+}
+
+function BlogCard({ post }: { post: Partial<Post> }) {
+  const revealRef = useReveal();
+  return (
+    <Link
+      ref={revealRef}
+      to={`/blog/${post.slug}` as string}
+      className="lib-blog__card lib-reveal"
+      role="listitem"
+    >
+      {post.tags && post.tags.length > 0 && (
+        <div className="lib-blog__tags">
+          {post.tags.slice(0, 3).map((tag) => (
+            <span key={tag} className="lib-blog__tag">{tag}</span>
+          ))}
+        </div>
+      )}
+      <h3 className="lib-blog__title">{post.title}</h3>
+      {post.description && <p className="lib-blog__desc">{post.description}</p>}
+      <div className="lib-blog__date">
+        <Calendar size={12} aria-hidden="true" />
+        <span>{post.date}</span>
+      </div>
+    </Link>
   );
 }

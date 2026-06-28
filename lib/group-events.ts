@@ -8,11 +8,23 @@
 
 import { createBus, type RealtimeBus } from '@/lib/realtime-bus.server';
 
+export interface GroupPollPayload {
+  question: string;
+  options: { text: string; votes: number }[];
+  totalVotes: number;
+  /** The viewing member's chosen option index, or null. Per-recipient, so the
+   *  SSE fan-out value is null; clients fill it in from their own vote. */
+  myVote: number | null;
+}
+
 export interface GroupMessagePayload {
   id: string;
   content: string;
   createdAt: string;
   sender: { id: string; name: string | null; handle: string | null; image: string | null };
+  gifUrl?: string | null;
+  imageUrls?: string[];
+  poll?: GroupPollPayload | null;
 }
 
 type Listener = (message: GroupMessagePayload) => void;
