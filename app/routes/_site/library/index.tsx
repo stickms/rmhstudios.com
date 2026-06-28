@@ -14,15 +14,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
+import { getRequest } from '@tanstack/react-start/server';
 import { Menu, Search, Upload, Pencil, CloudUpload } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useMobileSidebar } from '@/components/feed/MobileSidebarShell';
 import { MobileBrandPrefix } from '@/components/feed/MobileHeader';
 import { type LibraryBook } from '@/lib/library/library';
 import { listAllBooks } from '@/lib/library/library.server';
+import { listCollectionsView, type Viewer } from '@/lib/library/collections.server';
+import { auth } from '@/lib/auth';
 import { getAllPosts, type Post } from '@/lib/blog';
 import { LibraryBlogRow } from '@/components/library/LibraryBlogRow';
-import { shelfRiseDelay } from '@/components/library/shelf';
+import { LibraryRevealProvider, useReveal } from '@/components/library/LibraryReveal';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { useSession } from '@/components/Providers';
@@ -35,6 +38,18 @@ import '@/components/library/library.css';
 const fetchBooks = createServerFn({ method: 'GET' }).handler(async () => ({
   books: await listAllBooks(),
 }));
+
+// Collections are seeded from the loader (not fetched on mount) so they're
+// present at first paint and the entrance animation can flow blog → collections
+// → books in true document order instead of popping in late.
+const fetchCollections = createServerFn({ method: 'GET' }).handler(async () => {
+  const request = getRequest();
+  const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+  const viewer: Viewer = session
+    ? { id: session.user.id, isAdmin: Boolean((session.user as { isAdmin?: boolean }).isAdmin) }
+    : null;
+  return { collections: await listCollectionsView(viewer) };
+});
 
 // Blog posts now lead the library page (the former /blog page is merged in here).
 // getAllPosts already returns newest-first, so the row reads most-recent-on-left.
@@ -52,6 +67,7 @@ export const Route = createFileRoute('/_site/library/')({
   loader: async () => ({
     ...(await fetchBooks()),
     ...(await fetchBlogPosts()),
+    ...(await fetchCollections()),
   }),
   component: Library,
 });
@@ -59,13 +75,13 @@ export const Route = createFileRoute('/_site/library/')({
 function Library() {
   const { t } = useTranslation('library');
   const { open: openSidebar } = useMobileSidebar();
-  const { books: initialBooks, posts: blogPosts } = Route.useLoaderData();
+  const { books: initialBooks, posts: blogPosts, collections: initialCollections } = Route.useLoaderData();
   const session = useSession();
   const sessionUser = session.data?.user as { isAdmin?: boolean; handle?: string | null } | undefined;
   const isAdmin = Boolean(sessionUser?.isAdmin);
   const myHandle = sessionUser?.handle ?? null;
   const [books, setBooks] = useState<LibraryBook[]>(initialBooks);
-  const [collections, setCollections] = useState<CollectionView[]>([]);
+  const [collections, setCollections] = useState<CollectionView[]>(initialCollections);
   const [query, setQuery] = useState('');
   const [uploadOpen, setUploadOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -108,9 +124,6 @@ function Library() {
     },
     [],
   );
-  useEffect(() => {
-    void refreshCollections();
-  }, [refreshCollections]);
 
   // Slugs already shown inside a collection — don't repeat them in the main list.
   const collectedSlugs = useMemo(
@@ -210,6 +223,7 @@ function Library() {
         className="vibe-screen lib min-h-screen w-full min-w-0 border-r border-site-border pb-16 md:pb-0"
         targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
       >
+        <LibraryRevealProvider>
         <header className="vibe-gallery__head">
           <span className="md:hidden">
             <button type="button" onClick={openSidebar} aria-label={t('open-menu', { defaultValue: 'Open menu' })} className="vibe-toolbar__icon">
@@ -304,6 +318,7 @@ function Library() {
             />
           </>
         )}
+        </LibraryRevealProvider>
       </AnimatedMain>
       <div className="hidden lg:block w-4 shrink-0" />
       {uploadOpen && <UploadModal isAdmin={isAdmin} onClose={() => setUploadOpen(false)} onUploaded={refresh} />}
@@ -376,13 +391,12 @@ function Section({
     <section className="lib__section">
       <h2 className="lib__section-title">{title}</h2>
       <div className="lib__shelf" role="list">
-        {books.map((book, i) => {
+        {books.map((book) => {
           const managedIdx = managed.findIndex((b) => b.id === book.id);
           return (
             <BookSpine
               key={book.id ?? book.slug}
               book={book}
-              index={i}
               editMode={editMode}
               showAttribution={showAttribution}
               canMoveUp={managedIdx > 0}
@@ -401,7 +415,6 @@ function Section({
 
 function BookSpine({
   book,
-  index,
   editMode,
   showAttribution,
   canMoveUp,
@@ -412,7 +425,6 @@ function BookSpine({
   dnd,
 }: {
   book: LibraryBook;
-  index: number;
   editMode: boolean;
   showAttribution?: boolean;
   canMoveUp: boolean;
@@ -423,9 +435,9 @@ function BookSpine({
   dnd?: BookDnd;
 }) {
   const { t } = useTranslation('library');
+  const revealRef = useReveal();
   const style = {
     '--book-hue': String(book.hue),
-    animationDelay: shelfRiseDelay(index),
   } as React.CSSProperties;
 
   const uploader = book.uploadedBy?.handle
@@ -435,6 +447,7 @@ function BookSpine({
 
   const wrapClass = [
     'lib-book__wrap',
+    'lib-reveal',
     book.hidden ? 'is-hidden-book' : '',
     dnd?.draggable ? 'is-draggable' : '',
     dnd?.dragging ? 'is-dragging' : '',
@@ -445,6 +458,7 @@ function BookSpine({
 
   return (
     <div
+      ref={revealRef}
       className={wrapClass}
       role="listitem"
       draggable={dnd?.draggable}

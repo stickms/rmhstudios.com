@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 import { Check, FolderPlus, ImagePlus, Layers, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
 import type { LibraryBook } from '@/lib/library/library';
 import type { CollectionView } from '@/lib/library/collections';
+import { useReveal } from './LibraryReveal';
 
 export function LibraryCollections({
   books,
@@ -219,6 +220,7 @@ function CollectionTile({
   onCover: () => void;
 }) {
   const { t } = useTranslation('library');
+  const revealRef = useReveal();
   const count = c.books.length;
   const countLabel = t('book-count', { count, defaultValue: '{{count}} books' });
   // Stop a manage-button click from also opening the collection.
@@ -228,7 +230,7 @@ function CollectionTile({
   };
 
   return (
-    <div className="lib-book__wrap lib-coll-tile" role="listitem">
+    <div ref={revealRef} className="lib-book__wrap lib-coll-tile lib-reveal" role="listitem">
       <button
         type="button"
         className="lib-book lib-coll-tile__btn"

@@ -65,7 +65,16 @@
   text-decoration: none;
   color: inherit;
   height: var(--row-h);
+}
+
+/* Coordinated entrance: an item is hidden until the shared reveal observer
+   (LibraryReveal.tsx) adds `.is-revealed`, so blog → collections → books always
+   cascade in document order regardless of which data loaded first. The stagger
+   delay within a revealed batch is set inline by the observer. */
+.lib-reveal {
   opacity: 0;
+}
+.lib-reveal.is-revealed {
   animation: lib-rise 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
@@ -1139,6 +1148,13 @@
   .lib-book,
   .lib-book__cover {
     transition: none;
+    animation: none;
+  }
+  /* Show items immediately instead of animating them in. */
+  .lib-reveal {
+    opacity: 1;
+  }
+  .lib-reveal.is-revealed {
     animation: none;
   }
   .lib-book:hover .lib-book__cover,
