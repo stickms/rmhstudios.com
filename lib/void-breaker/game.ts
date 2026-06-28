@@ -297,6 +297,13 @@ export class VoidBreakerEngine {
       bossesKilled: this.bossesKilled,
       maxCombo: this.maxCombo,
       focusUsed: this.focusUsed,
+      upgrades: (Object.entries(this.upgradeStacks) as [UpgradeId, number][])
+        .filter(([, n]) => n > 0)
+        .map(([id, n]) => {
+          const def = getUpgradeDef(id);
+          return { name: def?.name ?? id, icon: def?.icon ?? '◆', color: def?.color ?? '#d4af37', count: n };
+        })
+        .sort((a, b) => b.count - a.count),
     };
   }
 

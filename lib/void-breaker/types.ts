@@ -181,6 +181,8 @@ export interface RunStats {
   bossesKilled: number;
   maxCombo: number;
   focusUsed: number;
+  /** Upgrades acquired this run, for the game-over build summary. */
+  upgrades: { name: string; icon: string; color: string; count: number }[];
 }
 
 export interface HUDState {

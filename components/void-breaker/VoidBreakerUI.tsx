@@ -452,6 +452,23 @@ export function VoidBreakerUI({
             </div>
           </div>
 
+          {runStats.upgrades.length > 0 && (
+            <div className="bg-[#1a1a24] border border-[#c9a227]/20 rounded-lg p-3">
+              <div className="text-[10px] text-[#c9a227]/80 font-bold uppercase tracking-[0.15em] mb-2">
+                {t("your-build", { defaultValue: "Your Build" })}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {runStats.upgrades.map((u) => (
+                  <span key={u.name}
+                    className="inline-flex items-center gap-1 text-[11px] font-mono px-1.5 py-0.5 rounded border"
+                    style={{ color: u.color, borderColor: u.color + '40', background: u.color + '10' }}>
+                    <span>{u.icon}</span>{u.name}{u.count > 1 && <span className="opacity-70">×{u.count}</span>}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
           {!session.data ? (
             <Button onClick={() => navigate({ to: '/login', search: { callbackURL: undefined } })}
               className="w-full bg-[#1a1a24] hover:bg-[#252530] text-[#d4af37] font-bold border border-[#c9a227]/40">
