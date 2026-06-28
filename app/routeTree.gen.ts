@@ -258,6 +258,7 @@ import { Route as ApiModerationBlockRouteImport } from './routes/api/moderation/
 import { Route as ApiMessagesUnreadCountRouteImport } from './routes/api/messages/unread-count'
 import { Route as ApiMessagesStreamRouteImport } from './routes/api/messages/stream'
 import { Route as ApiMessagesSidebarRouteImport } from './routes/api/messages/sidebar'
+import { Route as ApiMessagesSearchRouteImport } from './routes/api/messages/search'
 import { Route as ApiMessagesReadAllRouteImport } from './routes/api/messages/read-all'
 import { Route as ApiMessagesConversationIdRouteImport } from './routes/api/messages/$conversationId'
 import { Route as ApiLibraryUploadRouteImport } from './routes/api/library/upload'
@@ -1726,6 +1727,11 @@ const ApiMessagesSidebarRoute = ApiMessagesSidebarRouteImport.update({
   path: '/sidebar',
   getParentRoute: () => ApiMessagesRoute,
 } as any)
+const ApiMessagesSearchRoute = ApiMessagesSearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => ApiMessagesRoute,
+} as any)
 const ApiMessagesReadAllRoute = ApiMessagesReadAllRouteImport.update({
   id: '/read-all',
   path: '/read-all',
@@ -3058,6 +3064,7 @@ export interface FileRoutesByFullPath {
   '/api/library/upload': typeof ApiLibraryUploadRoute
   '/api/messages/$conversationId': typeof ApiMessagesConversationIdRouteWithChildren
   '/api/messages/read-all': typeof ApiMessagesReadAllRoute
+  '/api/messages/search': typeof ApiMessagesSearchRoute
   '/api/messages/sidebar': typeof ApiMessagesSidebarRoute
   '/api/messages/stream': typeof ApiMessagesStreamRoute
   '/api/messages/unread-count': typeof ApiMessagesUnreadCountRoute
@@ -3498,6 +3505,7 @@ export interface FileRoutesByTo {
   '/api/library/upload': typeof ApiLibraryUploadRoute
   '/api/messages/$conversationId': typeof ApiMessagesConversationIdRouteWithChildren
   '/api/messages/read-all': typeof ApiMessagesReadAllRoute
+  '/api/messages/search': typeof ApiMessagesSearchRoute
   '/api/messages/sidebar': typeof ApiMessagesSidebarRoute
   '/api/messages/stream': typeof ApiMessagesStreamRoute
   '/api/messages/unread-count': typeof ApiMessagesUnreadCountRoute
@@ -3962,6 +3970,7 @@ export interface FileRoutesById {
   '/api/library/upload': typeof ApiLibraryUploadRoute
   '/api/messages/$conversationId': typeof ApiMessagesConversationIdRouteWithChildren
   '/api/messages/read-all': typeof ApiMessagesReadAllRoute
+  '/api/messages/search': typeof ApiMessagesSearchRoute
   '/api/messages/sidebar': typeof ApiMessagesSidebarRoute
   '/api/messages/stream': typeof ApiMessagesStreamRoute
   '/api/messages/unread-count': typeof ApiMessagesUnreadCountRoute
@@ -4426,6 +4435,7 @@ export interface FileRouteTypes {
     | '/api/library/upload'
     | '/api/messages/$conversationId'
     | '/api/messages/read-all'
+    | '/api/messages/search'
     | '/api/messages/sidebar'
     | '/api/messages/stream'
     | '/api/messages/unread-count'
@@ -4866,6 +4876,7 @@ export interface FileRouteTypes {
     | '/api/library/upload'
     | '/api/messages/$conversationId'
     | '/api/messages/read-all'
+    | '/api/messages/search'
     | '/api/messages/sidebar'
     | '/api/messages/stream'
     | '/api/messages/unread-count'
@@ -5329,6 +5340,7 @@ export interface FileRouteTypes {
     | '/api/library/upload'
     | '/api/messages/$conversationId'
     | '/api/messages/read-all'
+    | '/api/messages/search'
     | '/api/messages/sidebar'
     | '/api/messages/stream'
     | '/api/messages/unread-count'
@@ -7589,6 +7601,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMessagesSidebarRouteImport
       parentRoute: typeof ApiMessagesRoute
     }
+    '/api/messages/search': {
+      id: '/api/messages/search'
+      path: '/search'
+      fullPath: '/api/messages/search'
+      preLoaderRoute: typeof ApiMessagesSearchRouteImport
+      parentRoute: typeof ApiMessagesRoute
+    }
     '/api/messages/read-all': {
       id: '/api/messages/read-all'
       path: '/read-all'
@@ -9591,6 +9610,7 @@ const ApiMessagesConversationIdRouteWithChildren =
 interface ApiMessagesRouteChildren {
   ApiMessagesConversationIdRoute: typeof ApiMessagesConversationIdRouteWithChildren
   ApiMessagesReadAllRoute: typeof ApiMessagesReadAllRoute
+  ApiMessagesSearchRoute: typeof ApiMessagesSearchRoute
   ApiMessagesSidebarRoute: typeof ApiMessagesSidebarRoute
   ApiMessagesStreamRoute: typeof ApiMessagesStreamRoute
   ApiMessagesUnreadCountRoute: typeof ApiMessagesUnreadCountRoute
@@ -9599,6 +9619,7 @@ interface ApiMessagesRouteChildren {
 const ApiMessagesRouteChildren: ApiMessagesRouteChildren = {
   ApiMessagesConversationIdRoute: ApiMessagesConversationIdRouteWithChildren,
   ApiMessagesReadAllRoute: ApiMessagesReadAllRoute,
+  ApiMessagesSearchRoute: ApiMessagesSearchRoute,
   ApiMessagesSidebarRoute: ApiMessagesSidebarRoute,
   ApiMessagesStreamRoute: ApiMessagesStreamRoute,
   ApiMessagesUnreadCountRoute: ApiMessagesUnreadCountRoute,
