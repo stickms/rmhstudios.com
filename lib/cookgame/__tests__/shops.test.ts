@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { SHOPS, shopItemPrice, visibleItems, BASE_PRICE, KEY_PRICES } from '../shops';
+import { SHOPS, shopItemPrice, visibleItems, BASE_PRICE, KEY_PRICES, NIGHT_WINDOW } from '../shops';
 import { ADDITIVES, INPUTS, BASES } from '../content';
+import { DAY_LENGTH_MS } from '../timeOfDay';
 
 describe('SHOPS catalog', () => {
   it('has a supplier shop whose items all reference valid content + non-negative rankReq', () => {
@@ -48,9 +49,6 @@ describe('district shops + keys', () => {
     expect(shopItemPrice({ kind: 'key', refId: 'docks_key', rankReq: 2 })).toBe(KEY_PRICES.docks_key);
   });
 });
-
-import { NIGHT_WINDOW } from '../shops';
-import { DAY_LENGTH_MS } from '../timeOfDay';
 
 describe('after-hours time gating', () => {
   const NOON = 0.5 * DAY_LENGTH_MS;

@@ -134,7 +134,7 @@ export function ShopOverlay() {
         </section>
       )}
 
-      {hasLocked && (
+      {hasLocked && !timeClosed && (
         <p className="mt-4 text-xs italic text-neutral-500">
           More items unlock at higher ranks.
         </p>
