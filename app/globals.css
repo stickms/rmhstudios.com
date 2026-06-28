@@ -2493,8 +2493,8 @@ input[type='number'] {
   50%      { transform: translateY(-6px); }
 }
 @keyframes dr-title-glow {
-  0%, 100% { filter: drop-shadow(0 0 26px rgba(176,107,255,0.45)); }
-  50%      { filter: drop-shadow(0 0 40px rgba(127,220,255,0.6)); }
+  0%, 100% { filter: drop-shadow(0 0 18px rgba(212,64,90,0.5)) drop-shadow(0 0 6px rgba(231,205,140,0.55)); }
+  50%      { filter: drop-shadow(0 0 30px rgba(231,205,140,0.6)) drop-shadow(0 0 10px rgba(212,64,90,0.5)); }
 }
 .dr-rise { opacity: 0; animation: dr-rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) forwards; }
 .dr-float { animation: dr-float 4.5s ease-in-out infinite; }
@@ -2503,3 +2503,118 @@ input[type='number'] {
   .dr-rise { opacity: 1; animation: none; }
   .dr-float, .dr-title-glow { animation: none; }
 }
+
+/* ─── Dream Rift — authentic Touhou STG skin ─────────────────────────────
+ * Windows-era Touhou UI language: deep midnight-indigo grounds, ornate brass
+ * frames, shrine-crimson accents and cream serif lettering. These tokens and
+ * helpers are shared by every Dream Rift menu/overlay so the chrome stays
+ * cohesive; the in-canvas HUD mirrors the same palette in renderer.ts. */
+:root {
+  --dr-ink: #0b0712;
+  --dr-ink-panel: #150d22;
+  --dr-ink-panel-2: #1d1430;
+  --dr-gold: #e7cd8c;
+  --dr-gold-soft: #d8b768;
+  --dr-gold-deep: #a3823f;
+  --dr-cream: #f3ead2;
+  --dr-cream-dim: rgba(243, 234, 210, 0.58);
+  --dr-cream-faint: rgba(243, 234, 210, 0.34);
+  --dr-crimson: #d4405a;
+  --dr-crimson-deep: #8c2438;
+  --dr-serif: var(--font-cinzel), Georgia, 'Times New Roman', serif;
+  --dr-serif-body: var(--font-playfair), Georgia, serif;
+}
+
+/* Ornate brass double-frame on a smoked-indigo ground — the base panel. */
+.dr-frame {
+  position: relative;
+  background:
+    linear-gradient(180deg, rgba(29, 20, 48, 0.94), rgba(11, 7, 18, 0.96));
+  border: 1px solid rgba(231, 205, 140, 0.42);
+  box-shadow:
+    inset 0 0 0 1px rgba(11, 7, 18, 0.9),
+    inset 0 0 0 4px rgba(231, 205, 140, 0.1),
+    inset 0 1px 0 rgba(231, 205, 140, 0.18),
+    0 14px 48px rgba(0, 0, 0, 0.55);
+}
+/* Faint gold corner ticks reinforce the "framed scroll" read. */
+.dr-frame::before,
+.dr-frame::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 1px solid rgba(231, 205, 140, 0.55);
+  pointer-events: none;
+}
+.dr-frame::before { top: 5px; left: 5px; border-right: 0; border-bottom: 0; }
+.dr-frame::after { bottom: 5px; right: 5px; border-left: 0; border-top: 0; }
+
+/* A thinner inset panel for stat blocks / list rows inside a frame. */
+.dr-inset {
+  background: linear-gradient(180deg, rgba(11, 7, 18, 0.66), rgba(11, 7, 18, 0.4));
+  border: 1px solid rgba(231, 205, 140, 0.16);
+  box-shadow: inset 0 1px 0 rgba(231, 205, 140, 0.08);
+}
+
+/* Menu plaque — a framed command with a shrine-red selection sigil. */
+.dr-plaque {
+  position: relative;
+  font-family: var(--dr-serif);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dr-cream);
+  background: linear-gradient(180deg, rgba(29, 20, 48, 0.85), rgba(13, 8, 22, 0.9));
+  border: 1px solid rgba(231, 205, 140, 0.3);
+  box-shadow: inset 0 1px 0 rgba(231, 205, 140, 0.12);
+  transition: color 0.16s ease, border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+}
+.dr-plaque:hover:not(:disabled),
+.dr-plaque:focus-visible {
+  color: #fff7e6;
+  border-color: rgba(231, 205, 140, 0.85);
+  background: linear-gradient(180deg, rgba(140, 36, 56, 0.5), rgba(13, 8, 22, 0.92));
+  transform: translateY(-1px);
+}
+.dr-plaque:disabled { opacity: 0.4; }
+/* Crimson cursor sigil slides in on focus, the Touhou menu pointer. */
+.dr-plaque::before {
+  content: '❖';
+  position: absolute;
+  left: 0.7rem;
+  top: 50%;
+  transform: translateY(-50%) scale(0.5);
+  color: var(--dr-crimson);
+  font-size: 0.7em;
+  opacity: 0;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+.dr-plaque:hover:not(:disabled)::before,
+.dr-plaque:focus-visible::before {
+  opacity: 1;
+  transform: translateY(-50%) scale(1);
+}
+
+/* Primary plaque — the lit shrine-crimson call to action. */
+.dr-plaque-primary {
+  color: #fff4e0;
+  background: linear-gradient(180deg, #c5364e, #8c2438);
+  border-color: rgba(231, 205, 140, 0.65);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 1px 0 rgba(255, 222, 196, 0.28), 0 6px 18px rgba(140, 36, 56, 0.35);
+}
+.dr-plaque-primary:hover:not(:disabled),
+.dr-plaque-primary:focus-visible {
+  background: linear-gradient(180deg, #df4660, #a02b42);
+  border-color: var(--dr-gold);
+}
+
+/* Hairline gold rule used under section headings. */
+.dr-rule {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(231, 205, 140, 0.55), transparent);
+}
+
+/* Serif lettering helpers (Cinzel display caps + Playfair body). */
+.dr-serif { font-family: var(--dr-serif); }
+.dr-serif-body { font-family: var(--dr-serif-body); }

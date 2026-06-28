@@ -37,11 +37,8 @@ const DIFF_COLOR: Record<Difficulty, string> = {
 };
 
 function Btn({ children, onClick, variant = 'primary', disabled, className }: { children: React.ReactNode; onClick?: () => void; variant?: 'primary' | 'ghost'; disabled?: boolean; className?: string }) {
-    const base = 'rounded-xl px-5 py-3 font-bold tracking-wide transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0';
-    const styles =
-        variant === 'primary'
-            ? 'bg-gradient-to-r from-fuchsia-500 to-violet-500 text-white shadow-lg shadow-fuchsia-500/25 hover:shadow-fuchsia-500/40 hover:brightness-110'
-            : 'border border-white/15 text-white/80 hover:border-white/30 hover:bg-white/10';
+    const base = 'dr-plaque rounded-sm px-5 py-3 text-sm font-semibold active:translate-y-0 active:scale-[0.99] disabled:cursor-not-allowed';
+    const styles = variant === 'primary' ? 'dr-plaque-primary' : '';
     return (
         <button type="button" onClick={onClick} disabled={disabled} className={`${base} ${styles} ${className ?? ''}`}>
             {children}
@@ -58,11 +55,11 @@ function DiffPicker({ value, onChange, disabled }: { value: Difficulty; onChange
                     type="button"
                     disabled={disabled}
                     onClick={() => onChange(d)}
-                    className="flex-1 rounded-lg border px-2 py-2 text-xs font-bold uppercase tracking-wider transition disabled:opacity-40"
+                    className="dr-serif flex-1 rounded-sm border px-2 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition disabled:opacity-40"
                     style={{
-                        borderColor: value === d ? DIFF_COLOR[d] : 'rgba(255,255,255,0.12)',
+                        borderColor: value === d ? DIFF_COLOR[d] : 'rgba(231,205,140,0.22)',
                         background: value === d ? `${DIFF_COLOR[d]}22` : 'transparent',
-                        color: value === d ? DIFF_COLOR[d] : 'rgba(255,255,255,0.6)',
+                        color: value === d ? DIFF_COLOR[d] : 'var(--dr-cream-dim)',
                     }}
                 >
                     {d}
@@ -78,15 +75,19 @@ function CharCard({ id, selected, onClick }: { id: PlayerId; selected: boolean; 
         <button
             type="button"
             onClick={onClick}
-            className="group relative flex flex-col items-center rounded-2xl border p-3 transition-all duration-150 hover:-translate-y-0.5"
-            style={{ borderColor: selected ? c.accent : 'rgba(255,255,255,0.1)', background: selected ? `${c.accent}1a` : 'rgba(255,255,255,0.03)' }}
+            className="group relative flex flex-col items-center rounded-sm border p-3 transition-all duration-150 hover:-translate-y-0.5"
+            style={{
+                borderColor: selected ? c.accent : 'rgba(231,205,140,0.2)',
+                background: selected ? `${c.accent}1f` : 'rgba(11,7,18,0.5)',
+                boxShadow: selected ? `inset 0 0 0 1px ${c.accent}55, 0 0 22px ${c.accent}33` : 'inset 0 1px 0 rgba(231,205,140,0.08)',
+            }}
         >
-            <SheetPortrait url={c.sheet} frame={1} size={104} className="rounded-lg" />
-            <div className="mt-1 text-sm font-black" style={{ color: c.accent }}>
+            <SheetPortrait url={c.sheet} frame={1} size={104} className="rounded-sm" />
+            <div className="dr-serif mt-1 text-sm font-semibold tracking-wide" style={{ color: c.accent }}>
                 {c.name}
             </div>
-            <div className="text-[10px] text-white/50">{c.title}</div>
-            <div className="mt-1 text-[10px] leading-tight text-white/70">{c.shotType}</div>
+            <div className="dr-serif-body text-[10px] italic text-[color:var(--dr-cream-dim)]">{c.title}</div>
+            <div className="mt-1 text-[10px] leading-tight text-[color:var(--dr-cream-dim)]">{c.shotType}</div>
         </button>
     );
 }
@@ -115,18 +116,20 @@ export function TitleScreen({ onSingle, onMulti, onLeaderboard, onSettings }: { 
     const stagger = (i: number): React.CSSProperties => ({ animationDelay: `${0.12 + i * 0.08}s` });
 
     return (
-        <div className="relative flex min-h-full flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-[#0a0118] via-[#1a0f33] to-[#06010f] px-6 py-12 text-center">
+        <div className="relative flex min-h-full flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-[#0a0612] via-[#170d22] to-[#06030c] px-6 py-12 text-center">
             {/* animated danmaku backdrop + soft vignette */}
             <MenuBackdrop className="opacity-70" />
-            <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(circle at 50% 28%, rgba(176,107,255,0.28), transparent 58%)' }} />
-            <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(120% 80% at 50% 50%, transparent 55%, rgba(2,0,8,0.7) 100%)' }} />
+            <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(circle at 50% 26%, rgba(212,64,90,0.22), transparent 56%)' }} />
+            <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(circle at 50% 30%, rgba(231,205,140,0.12), transparent 48%)' }} />
+            <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(120% 80% at 50% 50%, transparent 52%, rgba(4,2,9,0.78) 100%)' }} />
 
             <div className="relative">
-                <h1 className="dr-float dr-title-glow bg-gradient-to-b from-white via-violet-200 to-violet-400 bg-clip-text text-6xl font-black tracking-tight text-transparent md:text-8xl">
+                <h1 className="dr-float dr-title-glow dr-serif bg-gradient-to-b from-[#fff6e2] via-[#e7cd8c] to-[#b78f44] bg-clip-text text-6xl font-black tracking-[0.04em] text-transparent md:text-8xl">
                     Dream Rift
                 </h1>
-                <div className="dr-rise mt-1 text-xl tracking-[0.4em] text-violet-200/70 md:text-3xl" style={stagger(0)}>ドリームリフト</div>
-                <p className="dr-rise mt-4 text-sm text-white/55" style={stagger(1)}>A danmaku bullet hell · solo or up to 4-player co-op</p>
+                <div className="dr-rise dr-serif-body mt-2 text-xl tracking-[0.42em] text-[color:var(--dr-gold)] md:text-3xl" style={stagger(0)}>ドリームリフト</div>
+                <div className="dr-rise mx-auto mt-3 h-px w-40 dr-rule" style={stagger(1)} />
+                <p className="dr-rise dr-serif-body mt-3 text-sm italic text-[color:var(--dr-cream-dim)]" style={stagger(1)}>A danmaku bullet hell · solo or up to 4-player co-op</p>
             </div>
 
             <div className="relative mt-10 flex w-full max-w-xs flex-col gap-3">
@@ -145,7 +148,7 @@ export function TitleScreen({ onSingle, onMulti, onLeaderboard, onSettings }: { 
                 </div>
             </div>
 
-            <p className="dr-rise relative mt-10 text-[11px] text-white/30" style={stagger(6)}>Move: Arrows/WASD · Shoot: Z · Bomb: X · Focus: Shift · Pause: Esc · or play by touch</p>
+            <p className="dr-rise relative mt-10 text-[11px] tracking-wide text-[color:var(--dr-cream-faint)]" style={stagger(6)}>Move: Arrows/WASD · Shoot: Z · Bomb: X · Focus: Shift · Pause: Esc · or play by touch</p>
 
             {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
         </div>
@@ -155,17 +158,18 @@ export function TitleScreen({ onSingle, onMulti, onLeaderboard, onSettings }: { 
 function HelpModal({ onClose }: { onClose: () => void }) {
     return (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 p-6" onClick={onClose}>
-            <div className="max-w-md rounded-2xl border border-white/15 bg-[#120a22] p-6 text-left text-sm text-white/80" onClick={(e) => e.stopPropagation()}>
-                <h3 className="mb-3 text-lg font-black text-white">How to Play</h3>
-                <ul className="space-y-2">
-                    <li>• Your true hitbox is the tiny dot at your center — hold <b>Focus</b> (Shift) to see it and move slowly for precise dodging.</li>
-                    <li>• <b>Graze</b> bullets (pass close without dying) for score.</li>
-                    <li>• Collect <span className="text-rose-400">P</span> power to strengthen your shots, <span className="text-sky-300">pt</span> for points.</li>
-                    <li>• <b>Bomb</b> (X) clears the screen and saves you in a pinch — you even get a brief window to bomb right after being hit.</li>
-                    <li>• Capture a boss's <b>spell card</b> by defeating it before the timer runs out.</li>
-                    <li>• In co-op you only die from hits on <b>your</b> screen — lag never kills you. The boss fight stays in sync for everyone.</li>
+            <div className="dr-frame max-w-md rounded-sm p-6 text-left text-sm text-[color:var(--dr-cream)]" onClick={(e) => e.stopPropagation()}>
+                <h3 className="dr-serif mb-1 text-lg font-semibold tracking-[0.12em] text-[color:var(--dr-gold)]">How to Play</h3>
+                <div className="dr-rule mb-4 mt-2" />
+                <ul className="space-y-2 text-[color:var(--dr-cream-dim)]">
+                    <li>• Your true hitbox is the tiny dot at your center — hold <b className="text-[color:var(--dr-cream)]">Focus</b> (Shift) to see it and move slowly for precise dodging.</li>
+                    <li>• <b className="text-[color:var(--dr-cream)]">Graze</b> bullets (pass close without dying) for score.</li>
+                    <li>• Collect <span className="text-[color:var(--dr-crimson)]">P</span> power to strengthen your shots, <span className="text-sky-300">pt</span> for points.</li>
+                    <li>• <b className="text-[color:var(--dr-cream)]">Bomb</b> (X) clears the screen and saves you in a pinch — you even get a brief window to bomb right after being hit.</li>
+                    <li>• Capture a boss's <b className="text-[color:var(--dr-cream)]">spell card</b> by defeating it before the timer runs out.</li>
+                    <li>• In co-op you only die from hits on <b className="text-[color:var(--dr-cream)]">your</b> screen — lag never kills you. The boss fight stays in sync for everyone.</li>
                 </ul>
-                <button type="button" onClick={onClose} className="mt-5 w-full rounded-lg bg-fuchsia-500/80 py-2 font-bold text-white">
+                <button type="button" onClick={onClose} className="dr-plaque dr-plaque-primary mt-5 w-full rounded-sm py-2 text-sm font-semibold">
                     Got it
                 </button>
             </div>
@@ -183,17 +187,17 @@ export function CharacterSelect({ onStart, onBack }: { onStart: (char: PlayerId,
     const { sfx } = useRuntime();
 
     return (
-        <div className="relative flex min-h-full flex-col overflow-hidden bg-gradient-to-b from-[#0a0118] to-[#120a22] p-6">
+        <div className="relative flex min-h-full flex-col overflow-hidden bg-gradient-to-b from-[#0a0612] to-[#120a20] p-6">
             <MenuBackdrop className="opacity-40" />
-            <h2 className="dr-rise relative mb-1 text-2xl font-black text-white">Choose Your Dreamer</h2>
-            <p className="dr-rise relative mb-5 text-sm text-white/50" style={{ animationDelay: '0.06s' }}>Pick a character and a difficulty, then dive into the rift.</p>
+            <h2 className="dr-rise dr-serif relative mb-1 text-2xl font-semibold tracking-[0.1em] text-[color:var(--dr-gold)]">Choose Your Dreamer</h2>
+            <p className="dr-rise dr-serif-body relative mb-5 text-sm italic text-[color:var(--dr-cream-dim)]" style={{ animationDelay: '0.06s' }}>Pick a character and a difficulty, then dive into the rift.</p>
             <div className="relative grid grid-cols-2 gap-3 md:grid-cols-4">
                 {PLAYER_IDS.map((id) => (
                     <CharCard key={id} id={id} selected={selectedChar === id} onClick={() => { sfx.play('menuMove'); setSelectedChar(id); }} />
                 ))}
             </div>
             <div className="mx-auto mt-6 w-full max-w-md">
-                <div className="mb-2 text-xs uppercase tracking-wider text-white/50">Difficulty</div>
+                <div className="dr-serif mb-2 text-xs uppercase tracking-[0.2em] text-[color:var(--dr-gold-soft)]">Difficulty</div>
                 <DiffPicker value={difficulty} onChange={setDifficulty} />
             </div>
             <div className="mx-auto mt-6 flex w-full max-w-md gap-3">
@@ -232,26 +236,26 @@ export function LobbyBrowser({ onBack }: { onBack: () => void }) {
     }, []);
 
     return (
-        <div className="flex min-h-full flex-col bg-gradient-to-b from-[#0a0118] to-[#120a22] p-6">
+        <div className="flex min-h-full flex-col bg-gradient-to-b from-[#0a0612] to-[#120a20] p-6">
             <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-2xl font-black text-white">Multiplayer Lobbies</h2>
-                <span className="text-xs text-white/40">{connection === 'connected' ? '● online' : connection}</span>
+                <h2 className="dr-serif text-2xl font-semibold tracking-[0.1em] text-[color:var(--dr-gold)]">Multiplayer Lobbies</h2>
+                <span className="text-xs text-[color:var(--dr-cream-dim)]">{connection === 'connected' ? '● online' : connection}</span>
             </div>
-            {errorMsg && <div className="mb-3 rounded-lg border border-rose-400/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">{errorMsg}</div>}
+            {errorMsg && <div className="mb-3 rounded-sm border border-rose-400/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">{errorMsg}</div>}
 
             <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                    <div className="mb-2 text-sm font-bold text-white">Quick Play</div>
-                    <p className="mb-3 text-xs text-white/50">Jump into the first open public lobby, or start a new one.</p>
+                <div className="dr-frame rounded-sm p-4">
+                    <div className="dr-serif mb-2 text-sm font-semibold tracking-wide text-[color:var(--dr-gold)]">Quick Play</div>
+                    <p className="mb-3 text-xs text-[color:var(--dr-cream-dim)]">Jump into the first open public lobby, or start a new one.</p>
                     <Btn onClick={() => quickplay()} className="w-full">
                         Quick Play
                     </Btn>
                 </div>
-                <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                    <div className="mb-2 text-sm font-bold text-white">Create Lobby</div>
+                <div className="dr-frame rounded-sm p-4">
+                    <div className="dr-serif mb-2 text-sm font-semibold tracking-wide text-[color:var(--dr-gold)]">Create Lobby</div>
                     <div className="mb-3"><DiffPicker value={difficulty} onChange={setDifficulty} /></div>
-                    <label className="mb-3 flex items-center gap-2 text-xs text-white/70">
-                        <input type="checkbox" checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} />
+                    <label className="mb-3 flex items-center gap-2 text-xs text-[color:var(--dr-cream-dim)]">
+                        <input type="checkbox" checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} className="accent-[color:var(--dr-crimson)]" />
                         Public (listed &amp; findable)
                     </label>
                     <Btn onClick={() => createLobby({ isPublic, difficulty })} className="w-full">
@@ -260,13 +264,13 @@ export function LobbyBrowser({ onBack }: { onBack: () => void }) {
                 </div>
             </div>
 
-            <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                <div className="mb-2 flex items-center gap-2">
+            <div className="dr-frame mt-4 rounded-sm p-4">
+                <div className="mb-0 flex items-center gap-2">
                     <input
                         value={code}
                         onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 6))}
                         placeholder="ENTER CODE"
-                        className="flex-1 rounded-lg border border-white/15 bg-black/40 px-3 py-2 font-mono uppercase tracking-widest text-white placeholder:text-white/30"
+                        className="flex-1 rounded-sm border border-[rgba(231,205,140,0.25)] bg-black/40 px-3 py-2 font-mono uppercase tracking-widest text-[color:var(--dr-cream)] placeholder:text-[color:var(--dr-cream-faint)]"
                     />
                     <Btn onClick={() => code && joinLobby(code)} disabled={code.length < 4}>
                         Join
@@ -275,9 +279,9 @@ export function LobbyBrowser({ onBack }: { onBack: () => void }) {
             </div>
 
             <div className="mt-4 flex-1">
-                <div className="mb-2 text-xs uppercase tracking-wider text-white/50">Public Lobbies</div>
+                <div className="dr-serif mb-2 text-xs uppercase tracking-[0.2em] text-[color:var(--dr-gold-soft)]">Public Lobbies</div>
                 {browse.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-white/10 p-6 text-center text-sm text-white/40">No open lobbies — create one!</div>
+                    <div className="rounded-sm border border-dashed border-[rgba(231,205,140,0.2)] p-6 text-center text-sm text-[color:var(--dr-cream-faint)]">No open lobbies — create one!</div>
                 ) : (
                     <div className="space-y-2">
                         {browse.map((l) => (
@@ -285,15 +289,15 @@ export function LobbyBrowser({ onBack }: { onBack: () => void }) {
                                 key={l.code}
                                 type="button"
                                 onClick={() => joinLobby(l.code)}
-                                className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-left hover:border-fuchsia-400/40 hover:bg-white/[0.06]"
+                                className="dr-inset flex w-full items-center justify-between rounded-sm px-4 py-3 text-left transition hover:border-[rgba(231,205,140,0.5)]"
                             >
                                 <div>
-                                    <div className="font-bold text-white">{l.hostName}'s rift</div>
-                                    <div className="text-xs text-white/40">
+                                    <div className="dr-serif font-semibold text-[color:var(--dr-cream)]">{l.hostName}'s rift</div>
+                                    <div className="text-xs text-[color:var(--dr-cream-faint)]">
                                         <span className="font-mono">{l.code}</span> · <span style={{ color: DIFF_COLOR[l.difficulty] }}>{l.difficulty}</span>
                                     </div>
                                 </div>
-                                <div className="text-sm text-white/70">
+                                <div className="text-sm text-[color:var(--dr-cream-dim)]">
                                     {l.playerCount}/{l.maxPlayers} 👤
                                 </div>
                             </button>
@@ -329,17 +333,17 @@ export function LobbyRoom({ onLeave }: { onLeave: () => void }) {
     if (!lobby) return null;
 
     return (
-        <div className="flex min-h-full flex-col bg-gradient-to-b from-[#0a0118] to-[#120a22] p-6">
+        <div className="flex min-h-full flex-col bg-gradient-to-b from-[#0a0612] to-[#120a20] p-6">
             <div className="mb-4 flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-black text-white">Lobby</h2>
-                    <div className="text-sm text-white/50">
-                        Code <span className="font-mono text-lg tracking-widest text-fuchsia-300">{lobby.code}</span> · {lobby.isPublic ? 'Public' : 'Private'}
+                    <h2 className="dr-serif text-2xl font-semibold tracking-[0.1em] text-[color:var(--dr-gold)]">Lobby</h2>
+                    <div className="text-sm text-[color:var(--dr-cream-dim)]">
+                        Code <span className="font-mono text-lg tracking-widest text-[color:var(--dr-crimson)]">{lobby.code}</span> · {lobby.isPublic ? 'Public' : 'Private'}
                     </div>
                 </div>
-                <div className="text-right text-xs text-white/50">
+                <div className="text-right text-xs text-[color:var(--dr-cream-dim)]">
                     Difficulty
-                    <div className="font-bold uppercase" style={{ color: DIFF_COLOR[lobby.difficulty] }}>
+                    <div className="dr-serif font-semibold uppercase tracking-[0.14em]" style={{ color: DIFF_COLOR[lobby.difficulty] }}>
                         {lobby.difficulty}
                     </div>
                 </div>
@@ -350,22 +354,22 @@ export function LobbyRoom({ onLeave }: { onLeave: () => void }) {
                     const p = lobby.players.find((pl) => pl.slot === slot);
                     if (!p)
                         return (
-                            <div key={slot} className="flex h-40 flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 text-sm text-white/30">
+                            <div key={slot} className="flex h-40 flex-col items-center justify-center rounded-sm border border-dashed border-[rgba(231,205,140,0.2)] text-sm text-[color:var(--dr-cream-faint)]">
                                 Open Slot
                             </div>
                         );
                     return (
-                        <div key={slot} className="relative flex flex-col items-center rounded-2xl border p-2" style={{ borderColor: p.ready || p.isHost ? '#5fe0b0' : 'rgba(255,255,255,0.12)' }}>
-                            <SheetPortrait url={CHARACTERS[p.charId].sheet} frame={1} size={88} className="rounded-lg" />
-                            <div className="text-sm font-bold text-white">{p.name}</div>
+                        <div key={slot} className="dr-inset relative flex flex-col items-center rounded-sm p-2" style={{ borderColor: p.ready || p.isHost ? 'var(--dr-gold)' : 'rgba(231,205,140,0.16)' }}>
+                            <SheetPortrait url={CHARACTERS[p.charId].sheet} frame={1} size={88} className="rounded-sm" />
+                            <div className="dr-serif text-sm font-semibold text-[color:var(--dr-cream)]">{p.name}</div>
                             <div className="text-[10px]" style={{ color: CHARACTERS[p.charId].accent }}>
                                 {CHARACTERS[p.charId].name}
                             </div>
                             <div className="mt-1 text-[10px] font-bold uppercase tracking-wider">
-                                {p.isHost ? <span className="text-amber-300">★ Host</span> : p.ready ? <span className="text-emerald-300">Ready</span> : <span className="text-white/40">Not ready</span>}
+                                {p.isHost ? <span className="text-[color:var(--dr-gold)]">★ Host</span> : p.ready ? <span className="text-emerald-300">Ready</span> : <span className="text-[color:var(--dr-cream-faint)]">Not ready</span>}
                             </div>
                             {isHost && !p.isHost && (
-                                <button type="button" onClick={() => kickPlayer(slot)} className="absolute right-1 top-1 text-xs text-white/40 hover:text-rose-400">
+                                <button type="button" onClick={() => kickPlayer(slot)} className="absolute right-1 top-1 text-xs text-[color:var(--dr-cream-faint)] hover:text-rose-400">
                                     ✕
                                 </button>
                             )}
@@ -374,15 +378,15 @@ export function LobbyRoom({ onLeave }: { onLeave: () => void }) {
                 })}
             </div>
 
-            <div className="mb-2 text-xs uppercase tracking-wider text-white/50">Your Character</div>
+            <div className="dr-serif mb-2 text-xs uppercase tracking-[0.2em] text-[color:var(--dr-gold-soft)]">Your Character</div>
             <div className="mb-4 grid grid-cols-4 gap-2">
                 {PLAYER_IDS.map((id) => (
                     <button
                         key={id}
                         type="button"
                         onClick={() => setLobbyChar(id)}
-                        className="rounded-xl border py-2 text-xs font-bold"
-                        style={{ borderColor: me?.charId === id ? CHARACTERS[id].accent : 'rgba(255,255,255,0.12)', color: me?.charId === id ? CHARACTERS[id].accent : 'rgba(255,255,255,0.6)' }}
+                        className="dr-serif rounded-sm border py-2 text-xs font-semibold tracking-wide"
+                        style={{ borderColor: me?.charId === id ? CHARACTERS[id].accent : 'rgba(231,205,140,0.2)', color: me?.charId === id ? CHARACTERS[id].accent : 'var(--dr-cream-dim)' }}
                     >
                         {CHARACTERS[id].name}
                     </button>
@@ -391,7 +395,7 @@ export function LobbyRoom({ onLeave }: { onLeave: () => void }) {
 
             {isHost && (
                 <div className="mb-4">
-                    <div className="mb-2 text-xs uppercase tracking-wider text-white/50">Difficulty (host)</div>
+                    <div className="dr-serif mb-2 text-xs uppercase tracking-[0.2em] text-[color:var(--dr-gold-soft)]">Difficulty (host)</div>
                     <DiffPicker value={lobby.difficulty} onChange={(d) => setLobbySettings(d)} />
                 </div>
             )}

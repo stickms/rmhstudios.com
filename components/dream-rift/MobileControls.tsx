@@ -64,7 +64,7 @@ export function MobileControls({ input }: { input: InputManager }) {
     const btn = (label: string, key: 'shot' | 'bomb' | 'focus', cls: string) => (
         <button
             type="button"
-            className={`select-none touch-none rounded-full font-bold text-white/90 backdrop-blur active:scale-95 transition-transform ${cls}`}
+            className={`dr-serif select-none touch-none rounded-full font-semibold tracking-wider text-[color:var(--dr-cream)] backdrop-blur active:scale-95 transition-transform ${cls}`}
             onPointerDown={(e) => {
                 e.preventDefault();
                 input.setButton(key, true);
@@ -82,21 +82,21 @@ export function MobileControls({ input }: { input: InputManager }) {
             {/* stick */}
             <div
                 ref={stickRef}
-                className="pointer-events-auto absolute left-6 h-32 w-32 touch-none rounded-full border border-white/20 bg-white/5"
+                className="pointer-events-auto absolute left-6 h-32 w-32 touch-none rounded-full border border-[rgba(231,205,140,0.3)] bg-[rgba(11,7,18,0.4)]"
                 style={{ touchAction: 'none', bottom: 86 }}
             >
                 <div
-                    className="absolute left-1/2 top-1/2 h-14 w-14 rounded-full bg-white/25 shadow-lg"
+                    className="absolute left-1/2 top-1/2 h-14 w-14 rounded-full bg-[rgba(231,205,140,0.28)] shadow-lg"
                     style={{ transform: `translate(calc(-50% + ${knob.x}px), calc(-50% + ${knob.y}px))` }}
                 />
             </div>
             {/* buttons */}
             <div className="pointer-events-auto absolute right-5 flex flex-col items-end gap-3" style={{ bottom: 86 }}>
                 <div className="flex items-end gap-3">
-                    {btn('FOCUS', 'focus', 'h-14 w-14 text-[10px] bg-fuchsia-500/30 border border-fuchsia-300/40')}
-                    {btn('BOMB', 'bomb', 'h-16 w-16 text-xs bg-sky-500/30 border border-sky-300/40')}
+                    {btn('FOCUS', 'focus', 'h-14 w-14 text-[10px] bg-[rgba(231,205,140,0.22)] border border-[rgba(231,205,140,0.45)]')}
+                    {btn('BOMB', 'bomb', 'h-16 w-16 text-xs bg-[rgba(155,107,255,0.22)] border border-[rgba(184,160,255,0.4)]')}
                 </div>
-                {btn('SHOT', 'shot', 'h-20 w-20 text-sm bg-rose-500/40 border border-rose-300/50')}
+                {btn('SHOT', 'shot', 'h-20 w-20 text-sm bg-[rgba(212,64,90,0.34)] border border-[rgba(231,205,140,0.5)]')}
             </div>
         </div>
     );
