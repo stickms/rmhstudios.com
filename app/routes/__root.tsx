@@ -12,6 +12,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { isDiscordActivity } from "@/lib/discord-sdk";
 import { Providers } from "@/components/Providers";
+import { TwemojiProvider } from "@/components/ui/TwemojiProvider";
 import { auth } from "@/lib/auth";
 import appCss from "@/app/globals.css?url";
 import { resolveLocale, parseLocaleCookie } from "@/lib/i18n/resolve";
@@ -188,7 +189,9 @@ function RootComponent() {
 
   return (
     <Providers initialUser={initialUser} locale={(locale ?? "en") as Locale}>
-      <Outlet />
+      <TwemojiProvider>
+        <Outlet />
+      </TwemojiProvider>
     </Providers>
   );
 }
