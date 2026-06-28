@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Heart, Eye, Github, ExternalLink, Calendar, ArrowLeft, Edit, Trash2, Loader2, Lock } from 'lucide-react';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
-import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { BlurImage } from '@/components/ui/BlurImage';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import ReactMarkdown from 'react-markdown';
 import { useTranslation } from 'react-i18next';
@@ -281,7 +281,7 @@ export function BuildDetail({ build: initialBuild, backHref = '/builds' }: Build
       {/* Thumbnail */}
       {build.thumbnailUrl && (
         <div className="builds-detail__thumb mb-8">
-          <OptimizedImage src={build.thumbnailUrl} alt={build.title} layout="fullWidth" quality={85} className="w-full" />
+          <BlurImage src={build.thumbnailUrl} alt={build.title} fit="cover" width={1280} quality={85} sizes="100vw" className="w-full" imgClassName="w-full" />
         </div>
       )}
 

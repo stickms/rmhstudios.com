@@ -4,7 +4,7 @@ import { Link } from '@tanstack/react-router';
 import { Heart, MessageCircle, Eye, ExternalLink, Github, Award } from 'lucide-react';
 import type { Build } from '@/lib/user-builds-types';
 import { TechBadges } from './TechBadges';
-import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { BlurImage } from '@/components/ui/BlurImage';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useCardSheen } from '@/hooks/useCardSheen';
 import { formatCount } from '@/lib/utils';
@@ -58,13 +58,15 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
         <div className="relative">
           {build.thumbnailUrl ? (
             <div className="aspect-video w-full overflow-hidden bg-site-bg">
-              <OptimizedImage
+              <BlurImage
                 src={build.thumbnailUrl}
                 alt={build.title}
+                fit="cover"
                 width={640}
-                height={360}
                 quality={75}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                sizes="(max-width: 640px) 100vw, 400px"
+                className="w-full h-full"
+                imgClassName="w-full h-full group-hover:scale-105 transition-transform duration-300"
               />
             </div>
           ) : (

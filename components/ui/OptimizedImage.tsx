@@ -24,6 +24,7 @@ const WIDTHS = [320, 480, 640, 800, 1024, 1280, 1600];
 const RESIZABLE_PREFIXES = [
   '/api/admin/curated-builds/image/',
   '/api/feed/image/',
+  '/api/library/cover/',
 ];
 
 /**
