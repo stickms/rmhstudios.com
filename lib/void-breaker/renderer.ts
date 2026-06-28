@@ -14,14 +14,9 @@ import { drawSprite, drawPickupSprite } from './drawSprite';
 import { PLAYER_SPRITE, ENEMY_SPRITES, BOSS_SPRITES, HEART_PICKUP_SPRITE } from './sprites';
 
 // ── Neon Palette ──────────────────────────────────────────────────────────────
-const BG_DEEP = '#050508';
-const FLOOR_DARK = '#0a0a12';
-const GRID_COLOR = '#1a1a2a';
 const NEON_CYAN = '#00f5ff';
 const NEON_MAGENTA = '#ff00cc';
-const NEON_ORANGE = '#ff6820';
 const NEON_GOLD = '#d4af37';
-const NEON_GREEN = '#39ff14';
 const PLAYER_GLOW = '#44ddff';
 const BOSS_RED = '#ff2244';
 
@@ -486,10 +481,52 @@ export class VoidBreakerRenderer {
             aimAngle: Math.atan2(game.player.y - e.y, game.player.x - e.x),
           }, game.elapsedMs, 1) : false;
           if (!spriteDrawn) {
+            // Distinct procedural silhouettes for the spriteless enemy archetypes
+            // so they read as intentional, not placeholder circles.
+            const faceAngle = Math.atan2(game.player.y - e.y, game.player.x - e.x);
             ctx.fillStyle = baseColor;
-            ctx.beginPath();
-            ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.shadowColor = baseColor;
+            ctx.shadowBlur = 8;
+            if (e.type === 'sniper') {
+              // Forward-pointing dart aimed at the player.
+              ctx.save();
+              ctx.translate(pos.x, pos.y);
+              ctx.rotate(faceAngle);
+              ctx.beginPath();
+              ctx.moveTo(r * 1.4, 0);
+              ctx.lineTo(-r * 0.8, r * 0.85);
+              ctx.lineTo(-r * 0.35, 0);
+              ctx.lineTo(-r * 0.8, -r * 0.85);
+              ctx.closePath();
+              ctx.fill();
+              ctx.restore();
+            } else if (e.type === 'shielded') {
+              // Heavy hexagon (the shield arc is drawn separately, facing the player).
+              ctx.beginPath();
+              for (let i = 0; i < 6; i++) {
+                const a = faceAngle + (i * Math.PI) / 3;
+                const X = pos.x + Math.cos(a) * r;
+                const Y = pos.y + Math.sin(a) * r;
+                if (i === 0) ctx.moveTo(X, Y); else ctx.lineTo(X, Y);
+              }
+              ctx.closePath();
+              ctx.fill();
+            } else if (e.type === 'healer') {
+              // Round body with a bright medic cross.
+              ctx.beginPath();
+              ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.shadowBlur = 0;
+              ctx.fillStyle = '#eafff4';
+              const cw = r * 0.32, cl = r * 0.9;
+              ctx.fillRect(pos.x - cw / 2, pos.y - cl, cw, cl * 2);
+              ctx.fillRect(pos.x - cl, pos.y - cw / 2, cl * 2, cw);
+            } else {
+              ctx.beginPath();
+              ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
+              ctx.fill();
+            }
+            ctx.shadowBlur = 0;
           }
           if (e.isBoss) {
             ctx.strokeStyle = NEON_GOLD + 'aa';
