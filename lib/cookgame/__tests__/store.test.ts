@@ -4,7 +4,8 @@ import { useCookgameStore } from '../store';
 import { TEND_COOLDOWN_MS, DRY_COOLDOWN_MS } from '../cultivation';
 import { rankForXp, xpForRecipe } from '../progression';
 import { propertyEffects } from '../property';
-import { KEY_PRICES } from '../shops';
+import { KEY_PRICES, NIGHT_WINDOW } from '../shops';
+import { DAY_LENGTH_MS } from '../timeOfDay';
 
 const reset = () => useCookgameStore.getState().resetGame();
 
@@ -360,5 +361,55 @@ describe('cookgame store — keys + district', () => {
   it('setCurrentDistrict updates the field', () => {
     useCookgameStore.getState().setCurrentDistrict('downtown');
     expect(useCookgameStore.getState().currentDistrict).toBe('downtown');
+  });
+});
+
+describe('tickClock', () => {
+  beforeEach(() => useCookgameStore.getState().resetGame());
+
+  it('advances the clock by dtMs', () => {
+    useCookgameStore.getState().tickClock(1500);
+    expect(useCookgameStore.getState().clock).toBe(1500);
+  });
+
+  it('wraps at the end of the day', () => {
+    useCookgameStore.setState({ clock: DAY_LENGTH_MS - 200 });
+    useCookgameStore.getState().tickClock(500);
+    expect(useCookgameStore.getState().clock).toBe(300);
+  });
+});
+
+describe('Vera night-only selling', () => {
+  beforeEach(reset); // reuse the file's existing `reset` helper
+
+  it('vera is night-windowed', async () => {
+    const { BUYERS } = await import('../content');
+    expect(BUYERS.find((b) => b.id === 'vera')?.timeWindow).toEqual(NIGHT_WINDOW);
+  });
+
+  it('refuses to sell to vera during the day', () => {
+    // Give the player a packaged unit to sell.
+    useCookgameStore.setState((s) => ({
+      clock: 0.5 * DAY_LENGTH_MS, // noon
+      inventory: {
+        ...s.inventory,
+        packaged: [{ product: { baseId: 'greenstart', effects: [] }, units: 1 }],
+      },
+    }));
+    const proceeds = useCookgameStore.getState().sellUnit('vera', 0, 1);
+    expect(proceeds).toBe(0);
+    expect(useCookgameStore.getState().inventory.packaged[0].units).toBe(1); // unchanged
+  });
+
+  it('sells to vera at night', () => {
+    useCookgameStore.setState((s) => ({
+      clock: 0.9 * DAY_LENGTH_MS, // night
+      inventory: {
+        ...s.inventory,
+        packaged: [{ product: { baseId: 'greenstart', effects: [] }, units: 1 }],
+      },
+    }));
+    const proceeds = useCookgameStore.getState().sellUnit('vera', 0, 1);
+    expect(proceeds).toBeGreaterThan(0);
   });
 });

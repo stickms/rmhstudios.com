@@ -1,3 +1,5 @@
+import type { TimeWindow } from './timeOfDay';
+
 export type EffectId =
   | 'energizing' | 'calming' | 'gingeritis' | 'sneaky' | 'spicy'
   | 'euphoric' | 'focused' | 'jittery' | 'glowing' | 'sedating';
@@ -18,6 +20,7 @@ export interface Buyer {
   id: BuyerId; name: string; preferredEffect: EffectId;
   preferenceBonus: number;   // multiplicative bonus when product has preferredEffect, e.g. 0.25 = +25%
   basePriceFactor: number;   // baseline willingness, e.g. 0.9
+  timeWindow?: TimeWindow;   // when set, this buyer only deals during the window (M4)
 }
 
 export interface Product { baseId: BaseId; effects: EffectId[]; qualityMult?: number; }

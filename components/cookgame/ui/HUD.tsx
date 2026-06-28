@@ -3,6 +3,7 @@ import { useCookgameStore } from '@/lib/cookgame/store';
 import { HEAT_PENALTY_THRESHOLD, MAX_HEAT } from '@/lib/cookgame/economy';
 import { rankForXp, xpToNextRank, RANKS } from '@/lib/cookgame/progression';
 import { DISTRICTS } from '@/lib/cookgame/districts';
+import { phaseOfDay, dayFraction } from '@/lib/cookgame/timeOfDay';
 
 export function HUD() {
   const cash = useCookgameStore((s) => s.cash);
@@ -11,6 +12,16 @@ export function HUD() {
   const xp = useCookgameStore((s) => s.xp);
   const setActiveOverlay = useCookgameStore((s) => s.setActiveOverlay);
   const currentDistrict = useCookgameStore((s) => s.currentDistrict);
+  // Quantize to whole-second granularity (HH:MM display and phase don't need
+  // sub-second precision). Matches the quantization in Lighting.tsx so this
+  // component re-renders at ~1 Hz instead of every frame.
+  const clockSec = useCookgameStore((s) => Math.floor(s.clock / 1000));
+  const clock = clockSec * 1000;
+
+  const phase = phaseOfDay(clock);
+  const minutesOfDay = Math.floor(dayFraction(clock) * 24 * 60);
+  const hh = String(Math.floor(minutesOfDay / 60)).padStart(2, '0');
+  const mm = String(minutesOfDay % 60).padStart(2, '0');
 
   const totalUnits = packaged.reduce((sum, stack) => sum + stack.units, 0);
   const heatPct = Math.min(100, (heat / MAX_HEAT) * 100);
@@ -59,6 +70,14 @@ export function HUD() {
             <div className="font-mono text-sm text-lime-300">{DISTRICTS[currentDistrict].name}</div>
           </div>
         )}
+        {/* Time of day */}
+        <div className="rounded-md border border-neutral-700 bg-neutral-900/80 px-3 py-2">
+          <div className="flex items-center justify-between font-mono text-[11px] uppercase tracking-widest text-neutral-400">
+            <span>Time</span>
+            <span className="capitalize text-lime-300">{phase}</span>
+          </div>
+          <div className="font-mono text-sm text-neutral-200">{hh}:{mm}</div>
+        </div>
         <div className="pointer-events-auto flex gap-2">
           <button
             onClick={() => setActiveOverlay('journal')}

@@ -1,4 +1,5 @@
 import type { Effect, Additive, Base, Input, TransformRule, Buyer, EffectId, AdditiveId, BaseId, InputId } from './types';
+import { NIGHT_WINDOW } from './timeOfDay';
 
 export const MAX_EFFECTS = 8 as const;
 
@@ -69,7 +70,7 @@ export const BUYERS: Buyer[] = [
   { id: 'kim',   name: 'Kim',   preferredEffect: 'euphoric',   preferenceBonus: 0.3,  basePriceFactor: 1.0 },
   { id: 'pablo', name: 'Pablo', preferredEffect: 'glowing',    preferenceBonus: 0.4,  basePriceFactor: 1.1 },
   { id: 'marcus', name: 'Marcus', preferredEffect: 'focused',  preferenceBonus: 0.35, basePriceFactor: 1.2 },
-  { id: 'vera',   name: 'Vera',   preferredEffect: 'glowing',  preferenceBonus: 0.4,  basePriceFactor: 1.3 },
+  { id: 'vera',   name: 'Vera',   preferredEffect: 'glowing',  preferenceBonus: 0.4,  basePriceFactor: 1.3, timeWindow: NIGHT_WINDOW },
   { id: 'silas',  name: 'Silas',  preferredEffect: 'euphoric', preferenceBonus: 0.45, basePriceFactor: 1.45 },
 ];
 

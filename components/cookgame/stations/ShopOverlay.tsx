@@ -14,13 +14,19 @@ export function ShopOverlay() {
   const xp = useCookgameStore((s) => s.xp);
   const additivesOwned = useCookgameStore((s) => s.inventory.additives);
   const inputsOwned = useCookgameStore((s) => s.inventory.inputs);
+  // Quantize to whole-second granularity — time-gating doesn't need sub-second
+  // precision, and this drops re-renders from every frame to ~1 Hz.
+  const clockSec = useCookgameStore((s) => Math.floor(s.clock / 1000));
+  const clock = clockSec * 1000;
 
   const shop = activeOverlay ? SHOPS[activeOverlay] : undefined;
   if (!shop) return null;
 
   const rank = rankForXp(xp).rank;
-  const items = visibleItems(shop, rank);
+  const items = visibleItems(shop, rank, clock);
+  const rankItems = visibleItems(shop, rank); // rank-eligible, ignoring time
   const hasLocked = items.length < shop.items.length;
+  const timeClosed = items.length === 0 && rankItems.length > 0; // hidden purely by time-of-day
 
   const baseItems = items.filter((i) => i.kind === 'base');
   const inputItems = items.filter((i) => i.kind === 'input');
@@ -28,6 +34,11 @@ export function ShopOverlay() {
 
   return (
     <OverlayFrame title={shop.name}>
+      {timeClosed && (
+        <p className="mb-4 rounded bg-indigo-950/60 px-3 py-2 text-sm text-indigo-200">
+          Closed for now — this stall only opens after dark.
+        </p>
+      )}
       <div className="mb-4 font-mono text-2xl text-lime-400">${cash}</div>
 
       {baseItems.length > 0 && (
@@ -126,7 +137,7 @@ export function ShopOverlay() {
         </section>
       )}
 
-      {hasLocked && (
+      {hasLocked && !timeClosed && (
         <p className="mt-4 text-xs italic text-neutral-500">
           More items unlock at higher ranks.
         </p>

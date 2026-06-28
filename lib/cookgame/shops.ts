@@ -1,11 +1,14 @@
 import type { AdditiveId, InputId } from './types';
 import { ADDITIVES, INPUTS } from './content';
+import { isOpenAt, NIGHT_WINDOW, type TimeWindow } from './timeOfDay';
+
+export { NIGHT_WINDOW };
 
 export const BASE_PRICE = 10;
 
 export type ShopItemKind = 'additive' | 'base' | 'input' | 'key';
 export const KEY_PRICES: Record<string, number> = { docks_key: 250 };
-export interface ShopItem { kind: ShopItemKind; refId: string; rankReq: number; }
+export interface ShopItem { kind: ShopItemKind; refId: string; rankReq: number; timeWindow?: TimeWindow; }
 export interface Shop { id: string; name: string; items: ShopItem[]; }
 
 export const SHOPS: Record<string, Shop> = {
@@ -39,9 +42,9 @@ export const SHOPS: Record<string, Shop> = {
   afterhours: {
     id: 'afterhours', name: 'After-Hours Stall',
     items: [
-      { kind: 'additive', refId: 'battery', rankReq: 3 },
-      { kind: 'additive', refId: 'energydrink', rankReq: 3 },
-      { kind: 'additive', refId: 'donut', rankReq: 4 },
+      { kind: 'additive', refId: 'battery', rankReq: 3, timeWindow: NIGHT_WINDOW },
+      { kind: 'additive', refId: 'energydrink', rankReq: 3, timeWindow: NIGHT_WINDOW },
+      { kind: 'additive', refId: 'donut', rankReq: 4, timeWindow: NIGHT_WINDOW },
     ],
   },
 };
@@ -53,6 +56,10 @@ export function shopItemPrice(item: ShopItem): number {
   return INPUTS[item.refId as InputId].cost;
 }
 
-export function visibleItems(shop: Shop, rank: number): ShopItem[] {
-  return shop.items.filter((i) => rank >= i.rankReq);
+export function visibleItems(shop: Shop, rank: number, clock?: number): ShopItem[] {
+  return shop.items.filter((i) => {
+    if (rank < i.rankReq) return false;
+    if (clock !== undefined && i.timeWindow && !isOpenAt(i.timeWindow, clock)) return false;
+    return true;
+  });
 }
