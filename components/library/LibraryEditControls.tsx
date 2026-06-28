@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowUp, ArrowDown, Pencil, Star, Eye, EyeOff, Trash2 } from 'lucide-react';
 import type { LibraryBook } from '@/lib/library/library';
+import { LibraryContextMenu, type MenuItem, type MenuPos } from './LibraryContextMenu';
 
 async function patchBook(id: string, body: Record<string, unknown>): Promise<string | null> {
   const res = await fetch(`/api/admin/library/${id}`, {
@@ -23,8 +24,15 @@ async function patchBook(id: string, body: Record<string, unknown>): Promise<str
   return data.error ?? 'Update failed.';
 }
 
-export function LibraryEditBar({
+/**
+ * Admin management for a single book, surfaced as a right-click context menu
+ * (replaces the old always-visible edit toolbar). Reorder, edit metadata,
+ * curate, hide, and delete — the same actions, opened on demand.
+ */
+export function BookContextMenu({
   book,
+  pos,
+  onClose,
   canMoveUp,
   canMoveDown,
   onMove,
@@ -32,6 +40,8 @@ export function LibraryEditBar({
   onChanged,
 }: {
   book: LibraryBook;
+  pos: MenuPos | null;
+  onClose: () => void;
   canMoveUp: boolean;
   canMoveDown: boolean;
   onMove: (dir: -1 | 1) => void;
@@ -39,22 +49,9 @@ export function LibraryEditBar({
   onChanged: () => void;
 }) {
   const { t } = useTranslation('c-library');
-  const [busy, setBusy] = useState(false);
-
-  // Static, not-yet-migrated books can't be managed individually.
-  if (!book.id) {
-    return (
-      <div className="lib-edit__bar lib-edit__bar--static" onClick={(e) => e.preventDefault()}>
-        <span className="lib-edit__hint">{t('edit-migrate-first', { defaultValue: 'Migrate to manage' })}</span>
-      </div>
-    );
-  }
 
   const act = async (fn: () => Promise<string | null>) => {
-    if (busy) return;
-    setBusy(true);
     const err = await fn().catch(() => 'Action failed.');
-    setBusy(false);
     if (err) {
       window.alert(err);
       return;
@@ -62,80 +59,60 @@ export function LibraryEditBar({
     onChanged();
   };
 
-  return (
-    <div className="lib-edit__bar" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
-      <button
-        type="button"
-        className="lib-edit__btn"
-        disabled={!canMoveUp || busy}
-        onClick={() => onMove(-1)}
-        aria-label={t('edit-move-up', { defaultValue: 'Move up' })}
-        title={t('edit-move-up', { defaultValue: 'Move up' })}
-      >
-        <ArrowUp size={14} />
-      </button>
-      <button
-        type="button"
-        className="lib-edit__btn"
-        disabled={!canMoveDown || busy}
-        onClick={() => onMove(1)}
-        aria-label={t('edit-move-down', { defaultValue: 'Move down' })}
-        title={t('edit-move-down', { defaultValue: 'Move down' })}
-      >
-        <ArrowDown size={14} />
-      </button>
-      <button
-        type="button"
-        className="lib-edit__btn"
-        onClick={onEdit}
-        aria-label={t('edit-metadata', { defaultValue: 'Edit metadata' })}
-        title={t('edit-metadata', { defaultValue: 'Edit metadata' })}
-      >
-        <Pencil size={14} />
-      </button>
-      <button
-        type="button"
-        className={`lib-edit__btn ${book.curated ? 'is-on' : ''}`}
-        disabled={busy}
-        onClick={() => act(() => patchBook(book.id!, { official: !book.curated }))}
-        aria-pressed={Boolean(book.curated)}
-        aria-label={book.curated ? t('edit-uncurate', { defaultValue: 'Move to community' }) : t('edit-curate', { defaultValue: 'Mark curated' })}
-        title={book.curated ? t('edit-uncurate', { defaultValue: 'Move to community' }) : t('edit-curate', { defaultValue: 'Mark curated' })}
-      >
-        <Star size={14} />
-      </button>
-      <button
-        type="button"
-        className="lib-edit__btn"
-        disabled={busy}
-        onClick={() => act(() => patchBook(book.id!, { hidden: !book.hidden }))}
-        aria-pressed={Boolean(book.hidden)}
-        aria-label={book.hidden ? t('edit-show', { defaultValue: 'Show' }) : t('edit-hide', { defaultValue: 'Hide' })}
-        title={book.hidden ? t('edit-show', { defaultValue: 'Show' }) : t('edit-hide', { defaultValue: 'Hide' })}
-      >
-        {book.hidden ? <EyeOff size={14} /> : <Eye size={14} />}
-      </button>
-      <button
-        type="button"
-        className="lib-edit__btn lib-edit__btn--danger"
-        disabled={busy}
-        onClick={() => {
-          if (window.confirm(t('edit-delete-confirm', { defaultValue: 'Delete this book permanently?' }))) {
-            act(async () => {
-              const res = await fetch(`/api/admin/library/${book.id}`, { method: 'DELETE' });
-              if (res.ok) return null;
-              const data = await res.json().catch(() => ({}));
-              return data.error ?? 'Delete failed.';
-            });
-          }
-        }}
-        aria-label={t('edit-delete', { defaultValue: 'Delete' })}
-        title={t('edit-delete', { defaultValue: 'Delete' })}
-      >
-        <Trash2 size={14} />
-      </button>
-    </div>
-  );
+  // Not-yet-migrated books (no id) can't be managed individually.
+  const items: MenuItem[] = !book.id
+    ? [{ label: t('edit-migrate-first', { defaultValue: 'Migrate to manage' }), onSelect: () => {}, disabled: true }]
+    : [
+        { type: 'label', label: book.title },
+        {
+          icon: <Pencil size={15} />,
+          label: t('edit-metadata', { defaultValue: 'Edit metadata' }),
+          onSelect: onEdit,
+        },
+        {
+          icon: <ArrowUp size={15} />,
+          label: t('edit-move-up', { defaultValue: 'Move up' }),
+          onSelect: () => onMove(-1),
+          disabled: !canMoveUp,
+        },
+        {
+          icon: <ArrowDown size={15} />,
+          label: t('edit-move-down', { defaultValue: 'Move down' }),
+          onSelect: () => onMove(1),
+          disabled: !canMoveDown,
+        },
+        {
+          icon: <Star size={15} />,
+          label: book.curated
+            ? t('edit-uncurate', { defaultValue: 'Move to community' })
+            : t('edit-curate', { defaultValue: 'Mark curated' }),
+          active: Boolean(book.curated),
+          onSelect: () => act(() => patchBook(book.id!, { official: !book.curated })),
+        },
+        {
+          icon: book.hidden ? <Eye size={15} /> : <EyeOff size={15} />,
+          label: book.hidden ? t('edit-show', { defaultValue: 'Show' }) : t('edit-hide', { defaultValue: 'Hide' }),
+          onSelect: () => act(() => patchBook(book.id!, { hidden: !book.hidden })),
+        },
+        { type: 'separator' },
+        {
+          icon: <Trash2 size={15} />,
+          label: t('edit-delete', { defaultValue: 'Delete' }),
+          danger: true,
+          onSelect: () => {
+            if (window.confirm(t('edit-delete-confirm', { defaultValue: 'Delete this book permanently?' }))) {
+              void act(async () => {
+                const res = await fetch(`/api/admin/library/${book.id}`, { method: 'DELETE' });
+                if (res.ok) return null;
+                const data = await res.json().catch(() => ({}));
+                return data.error ?? 'Delete failed.';
+              });
+            }
+          },
+        },
+      ];
+
+  return <LibraryContextMenu pos={pos} onClose={onClose} items={items} label={t('edit-metadata', { defaultValue: 'Edit metadata' })} />;
 }
 
 export function LibraryEditModal({

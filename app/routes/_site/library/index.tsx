@@ -15,7 +15,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
-import { Menu, Search, Upload, Pencil, CloudUpload } from 'lucide-react';
+import { Menu, Search, Upload, CloudUpload } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useMobileSidebar } from '@/components/feed/MobileSidebarShell';
 import { MobileBrandPrefix } from '@/components/feed/MobileHeader';
@@ -30,7 +30,8 @@ import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { useSession } from '@/components/Providers';
 import { UploadModal } from '@/components/library/UploadModal';
-import { LibraryEditBar, LibraryEditModal } from '@/components/library/LibraryEditControls';
+import { BookContextMenu, LibraryEditModal } from '@/components/library/LibraryEditControls';
+import { useContextMenu } from '@/components/library/LibraryContextMenu';
 import { LibraryCollections } from '@/components/library/LibraryCollections';
 import type { CollectionView } from '@/lib/library/collections';
 import '@/components/library/library.css';
@@ -84,15 +85,15 @@ function Library() {
   const [collections, setCollections] = useState<CollectionView[]>(initialCollections);
   const [query, setQuery] = useState('');
   const [uploadOpen, setUploadOpen] = useState(false);
-  const [editMode, setEditMode] = useState(false);
   const [editing, setEditing] = useState<LibraryBook | null>(null);
   const [migrating, setMigrating] = useState(false);
 
-  // In edit mode admins load the full list (including hidden books) so they can
-  // unhide and manage everything; otherwise mirror the public loader data.
+  // Admins load the full list (including hidden books) so they can manage
+  // everything via the per-item right-click menu; everyone else mirrors the
+  // public loader data.
   const refresh = useMemo(
     () => async () => {
-      if (isAdmin && editMode) {
+      if (isAdmin) {
         const res = await fetch('/api/admin/library').catch(() => null);
         if (res?.ok) {
           const data = await res.json().catch(() => null);
@@ -105,13 +106,14 @@ function Library() {
       const data = await fetchBooks().catch(() => null);
       if (data?.books) setBooks(data.books);
     },
-    [isAdmin, editMode],
+    [isAdmin],
   );
 
+  // Admins pull the full (incl. hidden) catalog on load so management works
+  // anywhere; non-admins keep the loader's public list.
   useEffect(() => {
-    if (editMode && isAdmin) void refresh();
-    if (!editMode) setBooks(initialBooks);
-  }, [editMode, isAdmin, refresh, initialBooks]);
+    if (isAdmin) void refresh();
+  }, [isAdmin, refresh]);
 
   // Collections are owned here (not inside LibraryCollections) so the main shelf
   // can hide books that already live in a collection, and stay in sync after edits.
@@ -245,20 +247,6 @@ function Library() {
               className="vibe-search__input"
             />
           </div>
-          {isAdmin && (
-            <button
-              type="button"
-              className={`lib-upload__open ${editMode ? 'is-active' : ''}`}
-              onClick={() => setEditMode((v) => !v)}
-              aria-pressed={editMode}
-              aria-label={t('edit-label', { defaultValue: 'Toggle edit mode' })}
-            >
-              <Pencil size={15} aria-hidden="true" />
-              <span className="lib-upload__open-label">
-                {editMode ? t('edit-done', { defaultValue: 'Done' }) : t('edit-button', { defaultValue: 'Edit' })}
-              </span>
-            </button>
-          )}
           {session.data && (
             <button
               type="button"
@@ -274,7 +262,7 @@ function Library() {
 
         <LibraryBlogRow posts={blogPosts} />
 
-        {editMode && isAdmin && hasUnmigrated && (
+        {isAdmin && hasUnmigrated && (
           <div className="lib-edit__migrate">
             <span>{t('migrate-prompt', { defaultValue: 'Some books are still bundled on disk. Move them to object storage to manage them.' })}</span>
             <button type="button" className="lib-upload__btn lib-upload__btn--primary" onClick={runMigration} disabled={migrating}>
@@ -300,7 +288,7 @@ function Library() {
             <Section
               title={t('section-curated', { defaultValue: 'Curated' })}
               books={curated}
-              editMode={editMode && isAdmin}
+              isAdmin={isAdmin}
               onEdit={setEditing}
               onMove={(book, dir) => move(curated, book, dir)}
               onReorder={(draggedId, targetId) => reorderWithin(curated, draggedId, targetId)}
@@ -309,7 +297,7 @@ function Library() {
             <Section
               title={t('section-community', { defaultValue: 'Community uploads' })}
               books={community}
-              editMode={editMode && isAdmin}
+              isAdmin={isAdmin}
               onEdit={setEditing}
               onMove={(book, dir) => move(community, book, dir)}
               onReorder={(draggedId, targetId) => reorderWithin(community, draggedId, targetId)}
@@ -342,7 +330,7 @@ type BookDnd = {
 function Section({
   title,
   books,
-  editMode,
+  isAdmin,
   onEdit,
   onMove,
   onReorder,
@@ -351,13 +339,14 @@ function Section({
 }: {
   title: string;
   books: LibraryBook[];
-  editMode: boolean;
+  isAdmin: boolean;
   onEdit: (book: LibraryBook) => void;
   onMove: (book: LibraryBook, dir: -1 | 1) => void;
   onReorder: (draggedId: string, targetId: string) => void;
   onChanged: () => void;
   showAttribution?: boolean;
 }) {
+  const { t } = useTranslation('library');
   const [dragId, setDragId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
 
@@ -365,7 +354,7 @@ function Section({
   const managed = books.filter((b) => b.id);
 
   const dndFor = (book: LibraryBook): BookDnd | undefined =>
-    editMode && book.id
+    isAdmin && book.id
       ? {
           draggable: true,
           dragging: dragId === book.id,
@@ -389,7 +378,12 @@ function Section({
 
   return (
     <section className="lib__section">
-      <h2 className="lib__section-title">{title}</h2>
+      <div className="lib__section-head">
+        <h2 className="lib__section-title">{title}</h2>
+        {isAdmin && managed.length > 0 && (
+          <span className="lib__manage-hint">{t('right-click-manage', { defaultValue: 'Right-click to manage' })}</span>
+        )}
+      </div>
       <div className="lib__shelf" role="list">
         {books.map((book) => {
           const managedIdx = managed.findIndex((b) => b.id === book.id);
@@ -397,7 +391,7 @@ function Section({
             <BookSpine
               key={book.id ?? book.slug}
               book={book}
-              editMode={editMode}
+              isAdmin={isAdmin}
               showAttribution={showAttribution}
               canMoveUp={managedIdx > 0}
               canMoveDown={managedIdx >= 0 && managedIdx < managed.length - 1}
@@ -415,7 +409,7 @@ function Section({
 
 function BookSpine({
   book,
-  editMode,
+  isAdmin,
   showAttribution,
   canMoveUp,
   canMoveDown,
@@ -425,7 +419,7 @@ function BookSpine({
   dnd,
 }: {
   book: LibraryBook;
-  editMode: boolean;
+  isAdmin: boolean;
   showAttribution?: boolean;
   canMoveUp: boolean;
   canMoveDown: boolean;
@@ -436,6 +430,7 @@ function BookSpine({
 }) {
   const { t } = useTranslation('library');
   const revealRef = useReveal();
+  const menu = useContextMenu();
   const style = {
     '--book-hue': String(book.hue),
   } as React.CSSProperties;
@@ -468,6 +463,7 @@ function BookSpine({
       onDragLeave={dnd?.onDragLeave}
       onDrop={dnd?.onDrop}
       onDragEnd={dnd?.onDragEnd}
+      onContextMenu={isAdmin ? menu.openAt : undefined}
     >
       <Link
         to="/library/$slug"
@@ -487,7 +483,7 @@ function BookSpine({
             )}
             {book.pages > 0 && <span className="lib-book__pages-badge">{book.pages.toLocaleString()} pp</span>}
             {!book.coverUrl && <span className="lib-book__mark">RMH</span>}
-            {book.reported && editMode && <span className="lib-book__reported" title={t('reported', { defaultValue: 'Reported' })}>!</span>}
+            {book.reported && isAdmin && <span className="lib-book__reported" title={t('reported', { defaultValue: 'Reported' })}>!</span>}
           </div>
           {book.description && <span className="lib-book__desc-pop">{book.description}</span>}
         </div>
@@ -502,9 +498,11 @@ function BookSpine({
           )}
         </div>
       </Link>
-      {editMode && (
-        <LibraryEditBar
+      {isAdmin && (
+        <BookContextMenu
           book={book}
+          pos={menu.pos}
+          onClose={menu.close}
           canMoveUp={canMoveUp}
           canMoveDown={canMoveDown}
           onMove={onMove}

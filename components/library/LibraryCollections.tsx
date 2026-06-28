@@ -17,6 +17,7 @@ import { Check, FolderPlus, ImagePlus, Layers, Loader2, Pencil, Plus, Trash2 } f
 import type { LibraryBook } from '@/lib/library/library';
 import type { CollectionView } from '@/lib/library/collections';
 import { useReveal } from './LibraryReveal';
+import { LibraryContextMenu, useContextMenu, type MenuItem } from './LibraryContextMenu';
 
 export function LibraryCollections({
   books,
@@ -35,12 +36,10 @@ export function LibraryCollections({
 }) {
   const { t } = useTranslation('library');
   const [creating, setCreating] = useState(false);
-  const [manage, setManage] = useState(false);
   const [addingTo, setAddingTo] = useState<CollectionView | null>(null);
   const [opened, setOpened] = useState<CollectionView | null>(null);
   const [generating, setGenerating] = useState<string | null>(null);
 
-  const hasEditable = collections.some((c) => c.canEdit);
   // Hide empty collections from people who can't edit them; owners still see theirs.
   const visible = collections.filter((c) => c.books.length > 0 || c.canEdit);
 
@@ -52,7 +51,6 @@ export function LibraryCollections({
     }).catch(() => null);
     setCreating(false);
     if (res?.ok) {
-      setManage(true);
       await onChanged();
     }
   }
@@ -116,7 +114,6 @@ export function LibraryCollections({
         <CollectionTile
           key={c.id}
           collection={c}
-          manage={manage && c.canEdit}
           generating={generating === c.id}
           onOpen={() => setOpened(c)}
           onAdd={() => setAddingTo(c)}
@@ -137,18 +134,8 @@ export function LibraryCollections({
       <div className="lib-collections__head">
         <h2 className="lib__section-title">{t('section-collections', { defaultValue: 'Collections' })}</h2>
         <div className="lib-collections__head-actions">
-          {hasEditable && (
-            <button
-              type="button"
-              className={`lib-upload__open ${manage ? 'is-active' : ''}`}
-              onClick={() => setManage((m) => !m)}
-              aria-pressed={manage}
-            >
-              <Pencil size={14} aria-hidden="true" />
-              <span className="lib-upload__open-label">
-                {manage ? t('done', { defaultValue: 'Done' }) : t('manage', { defaultValue: 'Manage' })}
-              </span>
-            </button>
+          {collections.some((c) => c.canEdit) && (
+            <span className="lib__manage-hint">{t('right-click-manage', { defaultValue: 'Right-click to manage' })}</span>
           )}
           {canCreate && (
             <button type="button" className="lib-upload__open" onClick={() => setCreating(true)}>
@@ -199,10 +186,13 @@ export function LibraryCollections({
   );
 }
 
-/** A single collection rendered as a book-like tile that opens to reveal its books. */
+/**
+ * A single collection rendered as a book-like tile that opens to reveal its
+ * books. Owners/admins right-click the tile for management actions (add books,
+ * cover, rename, delete) — the same actions the old "Manage" toolbar exposed.
+ */
 function CollectionTile({
   collection: c,
-  manage,
   generating,
   onOpen,
   onAdd,
@@ -211,7 +201,6 @@ function CollectionTile({
   onCover,
 }: {
   collection: CollectionView;
-  manage: boolean;
   generating: boolean;
   onOpen: () => void;
   onAdd: () => void;
@@ -221,16 +210,31 @@ function CollectionTile({
 }) {
   const { t } = useTranslation('library');
   const revealRef = useReveal();
+  const menu = useContextMenu();
   const count = c.books.length;
   const countLabel = t('book-count', { count, defaultValue: '{{count}} books' });
-  // Stop a manage-button click from also opening the collection.
-  const stop = (fn: () => void) => (e: React.MouseEvent) => {
-    e.stopPropagation();
-    fn();
-  };
+
+  const items: MenuItem[] = [
+    { type: 'label', label: c.title },
+    { icon: <Plus size={15} />, label: t('add-books', { defaultValue: 'Add books' }), onSelect: onAdd },
+    {
+      icon: <ImagePlus size={15} />,
+      label: c.coverUrl ? t('regenerate-cover', { defaultValue: 'Regenerate cover' }) : t('generate-cover', { defaultValue: 'Generate cover' }),
+      onSelect: onCover,
+      disabled: generating,
+    },
+    { icon: <Pencil size={15} />, label: t('rename', { defaultValue: 'Rename' }), onSelect: onRename },
+    { type: 'separator' },
+    { icon: <Trash2 size={15} />, label: t('delete', { defaultValue: 'Delete' }), danger: true, onSelect: onDelete },
+  ];
 
   return (
-    <div ref={revealRef} className="lib-book__wrap lib-coll-tile lib-reveal" role="listitem">
+    <div
+      ref={revealRef}
+      className="lib-book__wrap lib-coll-tile lib-reveal"
+      role="listitem"
+      onContextMenu={c.canEdit ? menu.openAt : undefined}
+    >
       <button
         type="button"
         className="lib-book lib-coll-tile__btn"
@@ -263,27 +267,13 @@ function CollectionTile({
         </div>
       </button>
 
-      {manage && (
-        <div className="lib-collections__group-actions lib-coll-tile__actions">
-          <button type="button" className="lib-edit__btn" onClick={stop(onAdd)} title={t('add-books', { defaultValue: 'Add books' })}>
-            <Plus size={15} />
-          </button>
-          <button
-            type="button"
-            className="lib-edit__btn"
-            onClick={stop(onCover)}
-            disabled={generating}
-            title={c.coverUrl ? t('regenerate-cover', { defaultValue: 'Regenerate cover' }) : t('generate-cover', { defaultValue: 'Generate cover' })}
-          >
-            <ImagePlus size={15} />
-          </button>
-          <button type="button" className="lib-edit__btn" onClick={stop(onRename)} title={t('rename', { defaultValue: 'Rename' })}>
-            <Pencil size={15} />
-          </button>
-          <button type="button" className="lib-edit__btn lib-edit__btn--danger" onClick={stop(onDelete)} title={t('delete', { defaultValue: 'Delete' })}>
-            <Trash2 size={15} />
-          </button>
-        </div>
+      {c.canEdit && (
+        <LibraryContextMenu
+          pos={menu.pos}
+          onClose={menu.close}
+          items={items}
+          label={t('manage', { defaultValue: 'Manage' })}
+        />
       )}
     </div>
   );
