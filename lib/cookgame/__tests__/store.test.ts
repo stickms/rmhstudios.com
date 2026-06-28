@@ -413,3 +413,64 @@ describe('Vera night-only selling', () => {
     expect(proceeds).toBeGreaterThan(0);
   });
 });
+
+describe('journal tracking', () => {
+  beforeEach(reset);
+
+  it('mixIn records discovered effects and best value', () => {
+    const store = useCookgameStore.getState();
+    // Stock a base and an additive, load to bench, mix.
+    store.buyBase('greenstart', 10);
+    useCookgameStore.setState((s) => ({
+      inventory: { ...s.inventory, additives: { ...s.inventory.additives, cuke: 1 } },
+    }));
+    useCookgameStore.getState().loadBaseToBench(0);
+    useCookgameStore.getState().mixIn('cuke'); // cuke => 'energizing'
+
+    const s = useCookgameStore.getState();
+    expect(s.discoveredEffects).toContain('energizing');
+    const key = s.discoveredRecipes[0];
+    expect(s.recipeMeta[key]?.bestValue).toBeGreaterThan(0);
+  });
+
+  it('loadBaseToBench discovers a base bonus effect without mixing', () => {
+    // couchlock carries the 'sedating' bonus effect.
+    useCookgameStore.setState((s) => ({
+      inventory: {
+        ...s.inventory,
+        baseStock: [{ baseId: 'couchlock', qualityMult: 1, bonusEffects: ['sedating'], units: 1 }],
+      },
+    }));
+    useCookgameStore.getState().loadBaseToBench(0);
+    expect(useCookgameStore.getState().discoveredEffects).toContain('sedating');
+  });
+});
+
+describe('recipe meta actions', () => {
+  beforeEach(reset);
+
+  it('setRecipeName stores a trimmed name', () => {
+    useCookgameStore.getState().setRecipeName('a+b', '  Night Fuel  ');
+    expect(useCookgameStore.getState().recipeMeta['a+b'].name).toBe('Night Fuel');
+  });
+
+  it('an empty name clears the name but keeps other meta', () => {
+    useCookgameStore.setState({ recipeMeta: { 'a+b': { name: 'X', bestValue: 50 } } });
+    useCookgameStore.getState().setRecipeName('a+b', '   ');
+    const m = useCookgameStore.getState().recipeMeta['a+b'];
+    expect(m.name).toBeUndefined();
+    expect(m.bestValue).toBe(50);
+  });
+
+  it('toggleRecipeFavorite flips the flag', () => {
+    useCookgameStore.getState().toggleRecipeFavorite('a+b');
+    expect(useCookgameStore.getState().recipeMeta['a+b'].favorite).toBe(true);
+    useCookgameStore.getState().toggleRecipeFavorite('a+b');
+    expect(useCookgameStore.getState().recipeMeta['a+b'].favorite).toBe(false);
+  });
+
+  it('setRecipeName on an unknown key with an empty name creates no ghost entry', () => {
+    useCookgameStore.getState().setRecipeName('a+b', '   ');
+    expect(useCookgameStore.getState().recipeMeta['a+b']).toBeUndefined();
+  });
+});

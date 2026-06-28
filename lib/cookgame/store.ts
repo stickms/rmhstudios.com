@@ -3,7 +3,8 @@ import { create } from 'zustand';
 import type { AdditiveId, BaseId, BuyerId, InputId, InventoryState, Product, BaseStockEntry, CookSession, RecipeMeta } from './types';
 import { cookQuality, cookOutput, DIAL_COUNT } from './chemistry';
 import { ADDITIVES, BUYERS, INPUTS, GROWABLE } from './content';
-import { mix, effectSetKey } from './effects';
+import { mix, effectSetKey, productValue } from './effects';
+import { discoverEffects, mergeBestValue } from './journal';
 import { buyerOffer, applyHeatOnSale, decayHeat, packageProduct, UNITS_PER_BATCH } from './economy';
 import { SaveState, CURRENT_VERSION, createNewSave, saveGame, loadGame } from './saveSystem';
 import { xpForSale, xpForRecipe, xpForProduction, rankForXp, perksAtRank } from './progression';
@@ -75,6 +76,8 @@ interface CookgameState {
   buyProperty: (tier: number) => boolean;
   buyKey: (keyId: string) => boolean;
   setCurrentDistrict: (id: string) => void;
+  setRecipeName: (key: string, name: string) => void;
+  toggleRecipeFavorite: (key: string) => void;
 }
 
 const fromSave = (s: SaveState) => ({
@@ -162,12 +165,13 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
         baseStock,
         workProduct: { baseId: entry.baseId, effects: [...entry.bonusEffects], qualityMult: entry.qualityMult },
       },
+      discoveredEffects: discoverEffects(get().discoveredEffects, entry.bonusEffects),
     });
     return true;
   },
 
   mixIn: (additiveId) => {
-    const { inventory, discoveredRecipes, xp } = get();
+    const { inventory, discoveredRecipes, xp, discoveredEffects, recipeMeta } = get();
     if (!inventory.workProduct) return false;
     if ((inventory.additives[additiveId] ?? 0) <= 0) return false;
     const next: Product = mix(inventory.workProduct, additiveId);
@@ -181,6 +185,8 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
       },
       discoveredRecipes: isNew ? [...discoveredRecipes, key] : discoveredRecipes,
       xp: xp + (isNew ? xpForRecipe() : 0),
+      discoveredEffects: discoverEffects(discoveredEffects, next.effects),
+      recipeMeta: mergeBestValue(recipeMeta, key, productValue(next)),
     });
     return true;
   },
@@ -323,4 +329,21 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
   },
 
   setCurrentDistrict: (id) => set({ currentDistrict: id }),
+
+  setRecipeName: (key, name) => {
+    const trimmed = name.trim();
+    const meta = get().recipeMeta;
+    // No-op (don't create a ghost {} entry) when clearing a name on a key with no meta yet.
+    if (!trimmed && !meta[key]) return;
+    const entry = { ...meta[key] };
+    if (trimmed) entry.name = trimmed;
+    else delete entry.name;
+    set({ recipeMeta: { ...meta, [key]: entry } });
+  },
+
+  toggleRecipeFavorite: (key) => {
+    const meta = get().recipeMeta;
+    const entry = meta[key] ?? {};
+    set({ recipeMeta: { ...meta, [key]: { ...entry, favorite: !entry.favorite } } });
+  },
 }));
