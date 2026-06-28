@@ -139,14 +139,18 @@ export function ShopColumn() {
         )}
       </header>
 
-      <div className="flex gap-1 overflow-x-auto border-b border-site-border px-3 py-2" role="tablist" aria-label={t("shop-categories-label", { defaultValue: "Shop categories" })}>
+      <div
+        className="flex flex-nowrap gap-1 overflow-x-auto overscroll-x-contain border-b border-site-border px-3 py-2 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        role="tablist"
+        aria-label={t("shop-categories-label", { defaultValue: "Shop categories" })}
+      >
         {KIND_ORDER.map((k) => (
           <button
             key={k}
             role="tab"
             aria-selected={tab === k}
             onClick={() => setTab(k)}
-            className={`whitespace-nowrap rounded-full px-3 py-1 text-sm font-medium transition-colors ${
+            className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-sm font-medium transition-colors ${
               tab === k ? 'bg-site-accent text-(--site-accent-fg)' : 'text-site-text-muted hover:bg-site-surface hover:text-site-text'
             }`}
           >
