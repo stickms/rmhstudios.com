@@ -12,7 +12,11 @@ export function HUD() {
   const xp = useCookgameStore((s) => s.xp);
   const setActiveOverlay = useCookgameStore((s) => s.setActiveOverlay);
   const currentDistrict = useCookgameStore((s) => s.currentDistrict);
-  const clock = useCookgameStore((s) => s.clock);
+  // Quantize to whole-second granularity (HH:MM display and phase don't need
+  // sub-second precision). Matches the quantization in Lighting.tsx so this
+  // component re-renders at ~1 Hz instead of every frame.
+  const clockSec = useCookgameStore((s) => Math.floor(s.clock / 1000));
+  const clock = clockSec * 1000;
 
   const phase = phaseOfDay(clock);
   const minutesOfDay = Math.floor(dayFraction(clock) * 24 * 60);

@@ -22,7 +22,7 @@ describe('advanceClock', () => {
 describe('dayFraction', () => {
   it('is 0 at midnight and 0.5 at noon', () => {
     expect(dayFraction(0)).toBe(0);
-    expect(dayFraction(DAY_LENGTH_MS / 2)).toBeCloseTo(0.5, 6);
+    expect(dayFraction(DAY_LENGTH_MS / 2)).toBe(0.5);
   });
 });
 

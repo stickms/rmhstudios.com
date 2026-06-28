@@ -59,9 +59,61 @@ export function CookGameGame() {
   }, []);
 
   // Debounced autosave on state changes + save on tab close.
+  // Uses a closure snapshot of the persisted non-clock fields to detect real
+  // changes. `clock` is written every frame by WorldTicker/tickClock; comparing
+  // only these fields lets us bail early on clock-only updates so an idle tab
+  // does NOT schedule a localStorage write every 3 s — preserving the same
+  // guarantee that tickHeat/tickPassiveIncome achieve by only writing when a
+  // value actually changes. `saveNow` still persists `clock` whenever a real
+  // change OR an unload occurs.
+  //
+  // NOTE: zustand v5 (this project uses ^5.0.14) requires the subscribeWithSelector
+  // middleware for the selector-subscription form. The store uses plain `create`
+  // without that middleware, so we use the plain single-arg subscribe with a
+  // manual snapshot comparison instead.
   useEffect(() => {
     let t: ReturnType<typeof setTimeout> | null = null;
+    const initState = useCookgameStore.getState();
+    let prev = {
+      cash: initState.cash,
+      heat: initState.heat,
+      inventory: initState.inventory,
+      discoveredRecipes: initState.discoveredRecipes,
+      xp: initState.xp,
+      ownedPropertyTier: initState.ownedPropertyTier,
+      keys: initState.keys,
+      discoveredEffects: initState.discoveredEffects,
+      recipeMeta: initState.recipeMeta,
+      currentDistrict: initState.currentDistrict,
+    };
     const unsub = useCookgameStore.subscribe(() => {
+      const s = useCookgameStore.getState();
+      // Bail when only clock changed (all persisted non-clock fields unchanged).
+      if (
+        s.cash === prev.cash &&
+        s.heat === prev.heat &&
+        s.inventory === prev.inventory &&
+        s.discoveredRecipes === prev.discoveredRecipes &&
+        s.xp === prev.xp &&
+        s.ownedPropertyTier === prev.ownedPropertyTier &&
+        s.keys === prev.keys &&
+        s.discoveredEffects === prev.discoveredEffects &&
+        s.recipeMeta === prev.recipeMeta &&
+        s.currentDistrict === prev.currentDistrict
+      ) return;
+      // At least one real field changed — update snapshot and schedule save.
+      prev = {
+        cash: s.cash,
+        heat: s.heat,
+        inventory: s.inventory,
+        discoveredRecipes: s.discoveredRecipes,
+        xp: s.xp,
+        ownedPropertyTier: s.ownedPropertyTier,
+        keys: s.keys,
+        discoveredEffects: s.discoveredEffects,
+        recipeMeta: s.recipeMeta,
+        currentDistrict: s.currentDistrict,
+      };
       if (t) return;
       t = setTimeout(() => {
         useCookgameStore.getState().saveNow();

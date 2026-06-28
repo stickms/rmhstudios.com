@@ -14,7 +14,10 @@ export function ShopOverlay() {
   const xp = useCookgameStore((s) => s.xp);
   const additivesOwned = useCookgameStore((s) => s.inventory.additives);
   const inputsOwned = useCookgameStore((s) => s.inventory.inputs);
-  const clock = useCookgameStore((s) => s.clock);
+  // Quantize to whole-second granularity — time-gating doesn't need sub-second
+  // precision, and this drops re-renders from every frame to ~1 Hz.
+  const clockSec = useCookgameStore((s) => Math.floor(s.clock / 1000));
+  const clock = clockSec * 1000;
 
   const shop = activeOverlay ? SHOPS[activeOverlay] : undefined;
   if (!shop) return null;

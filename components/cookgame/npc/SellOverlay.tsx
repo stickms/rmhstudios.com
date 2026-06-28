@@ -26,7 +26,10 @@ export function SellOverlay() {
   const activeOverlay = useCookgameStore((s) => s.activeOverlay);
   const packaged = useCookgameStore((s) => s.inventory.packaged);
   const heat = useCookgameStore((s) => s.heat);
-  const clock = useCookgameStore((s) => s.clock);
+  // Quantize to whole-second granularity — closed/open gate doesn't need
+  // sub-second precision, drops re-renders from every frame to ~1 Hz.
+  const clockSec = useCookgameStore((s) => Math.floor(s.clock / 1000));
+  const clock = clockSec * 1000;
 
   const buyer = BUYERS.find((b) => b.id === activeOverlay);
   if (!buyer) return null;
@@ -48,7 +51,7 @@ export function SellOverlay() {
       </div>
 
       {closed ? (
-        <p className="text-sm text-indigo-300">Vera only deals after dark. Come back at night.</p>
+        <p className="text-sm text-indigo-300">{buyer.name} only deals after dark. Come back at night.</p>
       ) : packaged.length === 0 ? (
         <p className="text-sm text-neutral-400">Nothing packaged to sell.</p>
       ) : (
