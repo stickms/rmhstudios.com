@@ -704,15 +704,24 @@ function spawnPlayerShots(w: World, p: PlayerShip, dmg: number, tier: number): v
     const focus = p.focus;
     const cfg = CHARACTERS[p.charId];
     const color = cfg.shotColor as BulletColorName;
+    // Acquire a shot and seed its interpolation prev-position to the spawn point.
+    // Without this the renderer would lerp the shot's first frame from (0,0) — a
+    // one-frame flicker streaking from the corner. Returns false if the pool is full.
+    const emit = (o: Partial<Shot>): boolean => {
+        const sh = w.shots.acquire();
+        if (!sh) return false;
+        Object.assign(sh, o);
+        sh.prevX = sh.x;
+        sh.prevY = sh.y;
+        return true;
+    };
     switch (cfg.archetype) {
         case 'homing': {
             // homing amulets — wider with power
             const n = 1 + tier;
             for (let i = 0; i < n; i++) {
                 const off = (i - (n - 1) / 2) * (focus ? 4 : 9);
-                const sh = w.shots.acquire();
-                if (!sh) break;
-                Object.assign(sh, { x: sx + off, y: sy, vx: focus ? 0 : (i - (n - 1) / 2) * 0.6, vy: -9, damage: dmg, radius: 6, ownerSlot: p.slot, kind: 'amulet', color, homing: !focus, targetId: w.nearestEnemyId(sx, sy), age: 0, pierce: 0 });
+                if (!emit({ x: sx + off, y: sy, vx: focus ? 0 : (i - (n - 1) / 2) * 0.6, vy: -9, damage: dmg, radius: 6, ownerSlot: p.slot, kind: 'amulet', color, homing: !focus, targetId: w.nearestEnemyId(sx, sy), age: 0, pierce: 0 })) break;
             }
             break;
         }
@@ -721,9 +730,7 @@ function spawnPlayerShots(w: World, p: PlayerShip, dmg: number, tier: number): v
             const n = focus ? 1 : 1 + tier;
             for (let i = 0; i < n; i++) {
                 const off = (i - (n - 1) / 2) * 7;
-                const sh = w.shots.acquire();
-                if (!sh) break;
-                Object.assign(sh, { x: sx + off, y: sy, vx: 0, vy: -11, damage: dmg * (focus ? 1.6 : 1), radius: 7, ownerSlot: p.slot, kind: 'star', color, homing: false, targetId: -1, age: 0, pierce: focus ? 2 : 0 });
+                if (!emit({ x: sx + off, y: sy, vx: 0, vy: -11, damage: dmg * (focus ? 1.6 : 1), radius: 7, ownerSlot: p.slot, kind: 'star', color, homing: false, targetId: -1, age: 0, pierce: focus ? 2 : 0 })) break;
             }
             break;
         }
@@ -733,9 +740,7 @@ function spawnPlayerShots(w: World, p: PlayerShip, dmg: number, tier: number): v
             const spread = focus ? 0.12 : 0.5;
             for (let i = 0; i < n; i++) {
                 const a = -Math.PI / 2 + (n > 1 ? (-spread / 2 + (spread * i) / (n - 1)) : 0);
-                const sh = w.shots.acquire();
-                if (!sh) break;
-                Object.assign(sh, { x: sx, y: sy, vx: Math.cos(a) * 10, vy: Math.sin(a) * 10, damage: dmg * 0.8, radius: 5, ownerSlot: p.slot, kind: 'wave', color, homing: false, targetId: -1, age: 0, pierce: 0 });
+                if (!emit({ x: sx, y: sy, vx: Math.cos(a) * 10, vy: Math.sin(a) * 10, damage: dmg * 0.8, radius: 5, ownerSlot: p.slot, kind: 'wave', color, homing: false, targetId: -1, age: 0, pierce: 0 })) break;
             }
             break;
         }
@@ -744,9 +749,7 @@ function spawnPlayerShots(w: World, p: PlayerShip, dmg: number, tier: number): v
             const n = 1 + tier;
             for (let i = 0; i < n; i++) {
                 const off = (i - (n - 1) / 2) * (focus ? 5 : 11);
-                const sh = w.shots.acquire();
-                if (!sh) break;
-                Object.assign(sh, { x: sx + off, y: sy, vx: 0, vy: -10, damage: dmg, radius: 6, ownerSlot: p.slot, kind: 'lance', color, homing: false, targetId: -1, age: 0, pierce: 1 + tier });
+                if (!emit({ x: sx + off, y: sy, vx: 0, vy: -10, damage: dmg, radius: 6, ownerSlot: p.slot, kind: 'lance', color, homing: false, targetId: -1, age: 0, pierce: 1 + tier })) break;
             }
             break;
         }
