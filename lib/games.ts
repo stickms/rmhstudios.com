@@ -316,6 +316,7 @@ export const games: GameInfo[] = [
         iconName: 'Sprout',
         color: 'from-green-500/20 to-amber-600/20 hover:border-green-500/50',
         tags: ['Simulation', 'Farming', 'Co-op', 'Multiplayer', '3D'],
+        imagePath: '/images/games/rmh-farming-sim.webp',
         authGate: true,
     },
 ];
