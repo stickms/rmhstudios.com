@@ -29,6 +29,7 @@ export function RecipeJournal() {
   const activeOverlay = useCookgameStore((s) => s.activeOverlay);
   const discoveredRecipes = useCookgameStore((s) => s.discoveredRecipes);
   const discoveredEffects = useCookgameStore((s) => s.discoveredEffects);
+  const recipeMeta = useCookgameStore((s) => s.recipeMeta);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -47,6 +48,12 @@ export function RecipeJournal() {
 
   const catalog = effectCatalog(discoveredEffects);
   const discoveredCount = catalog.filter((e) => e.discovered).length;
+
+  const sortedRecipes = [...discoveredRecipes].sort((a, b) => {
+    const ma = recipeMeta[a] ?? {}, mb = recipeMeta[b] ?? {};
+    if (!!mb.favorite !== !!ma.favorite) return mb.favorite ? 1 : -1;
+    return (mb.bestValue ?? 0) - (ma.bestValue ?? 0) || a.localeCompare(b);
+  });
 
   return (
     <OverlayFrame title="Recipe Journal">
@@ -84,16 +91,38 @@ export function RecipeJournal() {
         </p>
       ) : (
         <ul className="flex flex-col gap-2">
-          {discoveredRecipes.map((key) => {
+          {sortedRecipes.map((key) => {
             const ids = key.split('+').filter(Boolean) as EffectId[];
+            const meta = recipeMeta[key] ?? {};
             return (
               <li
                 key={key}
-                className="flex flex-wrap items-center gap-1.5 rounded border border-neutral-700 bg-neutral-800 px-3 py-2"
+                className="flex flex-col gap-1.5 rounded border border-neutral-700 bg-neutral-800 px-3 py-2"
               >
-                {ids.map((id, i) => (
-                  <EffectChip key={`${id}-${i}`} id={id} />
-                ))}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => useCookgameStore.getState().toggleRecipeFavorite(key)}
+                    className={`shrink-0 text-base leading-none ${meta.favorite ? 'text-amber-400' : 'text-neutral-600 hover:text-neutral-400'}`}
+                    title={meta.favorite ? 'Unfavorite' : 'Favorite'}
+                    aria-label={meta.favorite ? 'Unfavorite recipe' : 'Favorite recipe'}
+                  >
+                    {meta.favorite ? '★' : '☆'}
+                  </button>
+                  <input
+                    defaultValue={meta.name ?? ''}
+                    placeholder="Name this recipe…"
+                    onBlur={(e) => useCookgameStore.getState().setRecipeName(key, e.target.value)}
+                    className="min-w-0 flex-1 rounded bg-neutral-900 px-2 py-1 font-mono text-xs text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:ring-1 focus:ring-lime-500"
+                  />
+                  {meta.bestValue != null && (
+                    <span className="shrink-0 font-mono text-[11px] text-lime-400">${meta.bestValue}</span>
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {ids.map((id, i) => (
+                    <EffectChip key={`${id}-${i}`} id={id} />
+                  ))}
+                </div>
               </li>
             );
           })}
