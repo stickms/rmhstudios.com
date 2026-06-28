@@ -12,13 +12,15 @@
 
 export type AlbumImageSlide = {
   type: 'image';
-  /** Full-resolution image shown in the viewer. */
+  /** Web-optimized image shown in the viewer (and the "optimized" download). */
   src: string;
+  /** Full-resolution original (the "full file" download/share option). */
+  full: string;
   /** Lightweight thumbnail used in the nav strip + card cover. */
   thumb: string;
   /** Accessible description. */
   alt: string;
-  /** Suggested filename when downloaded. */
+  /** Suggested base filename when downloaded. */
   download: string;
 };
 
@@ -60,6 +62,7 @@ const alexWu: Album = (() => {
   const images: AlbumSlide[] = range(78).map((i) => ({
     type: 'image',
     src: `${base}/img/alexboba${i}.jpg`,
+    full: `${base}/full/alexboba${i}.jpg`,
     thumb: `${base}/thumb/alexboba${i}.jpg`,
     alt: `Alex Wu — photo ${i}`,
     download: `alex-wu-${i}.jpg`,

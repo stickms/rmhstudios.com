@@ -8,7 +8,8 @@
  *   • prev / next via arrows, keyboard (←/→), and swipe
  *   • pinch-free zoom for images (wheel, double-click, drag-to-pan)
  *   • inline video playback (autoplay, loop, controls)
- *   • share (Web Share API w/ copy-link fallback) and download per slide
+ *   • share (Web Share API w/ copy-link fallback) and download per slide, with
+ *     a full-resolution vs web-optimized choice for images
  *   • a thumbnail strip for quick jumping
  *
  * The project doesn't run the React Compiler, so hot event listeners read their
@@ -64,6 +65,8 @@ export function AlbumViewer({ album }: { album: Album }) {
   const [swipeDX, setSwipeDX] = useState(0);
   const [grabbing, setGrabbing] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  // Which toolbar action's "full vs optimized" menu is open (images only).
+  const [menu, setMenu] = useState<'download' | 'share' | null>(null);
 
   const stageRef = useRef<HTMLDivElement>(null);
   const stripRef = useRef<HTMLDivElement>(null);
@@ -83,11 +86,12 @@ export function AlbumViewer({ album }: { album: Album }) {
     setPos(0);
   }, [slides.length]);
 
-  // Reset zoom + swipe whenever the slide changes.
+  // Reset zoom + swipe (and close any open menu) whenever the slide changes.
   useEffect(() => {
     setScale(1);
     setOffset({ x: 0, y: 0 });
     setSwipeDX(0);
+    setMenu(null);
   }, [pos]);
 
   // Keep the active thumbnail in view.
@@ -102,6 +106,16 @@ export function AlbumViewer({ album }: { album: Album }) {
     const id = window.setTimeout(() => setToast(null), 1800);
     return () => window.clearTimeout(id);
   }, [toast]);
+
+  // Close the quality menu on any click outside of a menu wrapper.
+  useEffect(() => {
+    if (!menu) return;
+    const onDown = (e: PointerEvent) => {
+      if (!(e.target as Element).closest('.av__menu-wrap')) setMenu(null);
+    };
+    document.addEventListener('pointerdown', onDown);
+    return () => document.removeEventListener('pointerdown', onDown);
+  }, [menu]);
 
   function go(dir: -1 | 1) {
     setPos((p) => (p + dir + slides.length) % slides.length);
@@ -146,9 +160,25 @@ export function AlbumViewer({ album }: { album: Album }) {
 
   // Hot event listeners read the latest closures/state through this ref so they
   // can be attached once (empty-deps effects) without going stale.
-  const liveRef = useRef({ go, close, zoomBy, zoomAt, scale, isImage: slide?.type === 'image' });
+  const liveRef = useRef({
+    go,
+    close,
+    zoomBy,
+    zoomAt,
+    scale,
+    isImage: slide?.type === 'image',
+    menuOpen: menu !== null,
+  });
   useEffect(() => {
-    liveRef.current = { go, close, zoomBy, zoomAt, scale, isImage: slide?.type === 'image' };
+    liveRef.current = {
+      go,
+      close,
+      zoomBy,
+      zoomAt,
+      scale,
+      isImage: slide?.type === 'image',
+      menuOpen: menu !== null,
+    };
   });
 
   // Keyboard navigation.
@@ -157,8 +187,10 @@ export function AlbumViewer({ album }: { album: Album }) {
       const f = liveRef.current;
       if (e.key === 'ArrowLeft') f.go(-1);
       else if (e.key === 'ArrowRight') f.go(1);
-      else if (e.key === 'Escape') f.close();
-      else if (e.key === '+' || e.key === '=') f.zoomBy(1.3);
+      else if (e.key === 'Escape') {
+        if (f.menuOpen) setMenu(null);
+        else f.close();
+      } else if (e.key === '+' || e.key === '=') f.zoomBy(1.3);
       else if (e.key === '-' || e.key === '_') f.zoomBy(1 / 1.3);
     };
     window.addEventListener('keydown', onKey);
@@ -235,9 +267,31 @@ export function AlbumViewer({ album }: { album: Album }) {
     return typeof window === 'undefined' ? src : new URL(src, window.location.origin).href;
   }
 
-  async function share() {
-    if (!slide) return;
-    const url = absoluteUrl(slide.src);
+  // Insert e.g. "-optimized" before a filename's extension.
+  function withSuffix(name: string, suffix: string) {
+    const dot = name.lastIndexOf('.');
+    return dot < 0 ? `${name}${suffix}` : `${name.slice(0, dot)}${suffix}${name.slice(dot)}`;
+  }
+
+  // Resolve the asset URL + suggested filename for an image at a given quality.
+  function imageAsset(s: Extract<AlbumSlide, { type: 'image' }>, quality: 'full' | 'optimized') {
+    return quality === 'full'
+      ? { url: s.full, name: s.download }
+      : { url: s.src, name: withSuffix(s.download, '-optimized') };
+  }
+
+  function saveFile(url: string, name: string) {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  async function shareUrl(src: string) {
+    const url = absoluteUrl(src);
     try {
       if (navigator.share) {
         await navigator.share({ title: album.title, text: album.title, url });
@@ -254,15 +308,27 @@ export function AlbumViewer({ album }: { album: Album }) {
     }
   }
 
-  function download() {
+  // Videos have a single quality, so act immediately; images open a chooser.
+  function onDownloadClick() {
     if (!slide) return;
-    const a = document.createElement('a');
-    a.href = slide.src;
-    a.download = slide.download;
-    a.rel = 'noopener';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    if (slide.type === 'video') saveFile(slide.src, slide.download);
+    else setMenu((m) => (m === 'download' ? null : 'download'));
+  }
+  function onShareClick() {
+    if (!slide) return;
+    if (slide.type === 'video') void shareUrl(slide.src);
+    else setMenu((m) => (m === 'share' ? null : 'share'));
+  }
+  function chooseDownload(quality: 'full' | 'optimized') {
+    if (slide?.type !== 'image') return;
+    const { url, name } = imageAsset(slide, quality);
+    saveFile(url, name);
+    setMenu(null);
+  }
+  function chooseShare(quality: 'full' | 'optimized') {
+    if (slide?.type !== 'image') return;
+    void shareUrl(imageAsset(slide, quality).url);
+    setMenu(null);
   }
 
   if (!slide) return null;
@@ -299,12 +365,50 @@ export function AlbumViewer({ album }: { album: Album }) {
           <button type="button" className="av__btn" onClick={reshuffle} aria-label={t('album-shuffle', { defaultValue: 'Shuffle' })}>
             <Shuffle size={18} />
           </button>
-          <button type="button" className="av__btn" onClick={share} aria-label={t('album-share', { defaultValue: 'Share' })}>
-            <Share2 size={18} />
-          </button>
-          <button type="button" className="av__btn" onClick={download} aria-label={t('album-download', { defaultValue: 'Download' })}>
-            <Download size={18} />
-          </button>
+          <div className="av__menu-wrap">
+            <button
+              type="button"
+              className="av__btn"
+              onClick={onShareClick}
+              aria-haspopup={slide.type === 'image' ? 'menu' : undefined}
+              aria-expanded={slide.type === 'image' ? menu === 'share' : undefined}
+              aria-label={t('album-share', { defaultValue: 'Share' })}
+            >
+              <Share2 size={18} />
+            </button>
+            {menu === 'share' && slide.type === 'image' && (
+              <div className="av__menu" role="menu">
+                <button type="button" role="menuitem" className="av__menu-item" onClick={() => chooseShare('full')}>
+                  {t('album-quality-full', { defaultValue: 'Full resolution' })}
+                </button>
+                <button type="button" role="menuitem" className="av__menu-item" onClick={() => chooseShare('optimized')}>
+                  {t('album-quality-optimized', { defaultValue: 'Optimized (web)' })}
+                </button>
+              </div>
+            )}
+          </div>
+          <div className="av__menu-wrap">
+            <button
+              type="button"
+              className="av__btn"
+              onClick={onDownloadClick}
+              aria-haspopup={slide.type === 'image' ? 'menu' : undefined}
+              aria-expanded={slide.type === 'image' ? menu === 'download' : undefined}
+              aria-label={t('album-download', { defaultValue: 'Download' })}
+            >
+              <Download size={18} />
+            </button>
+            {menu === 'download' && slide.type === 'image' && (
+              <div className="av__menu" role="menu">
+                <button type="button" role="menuitem" className="av__menu-item" onClick={() => chooseDownload('full')}>
+                  {t('album-quality-full', { defaultValue: 'Full resolution' })}
+                </button>
+                <button type="button" role="menuitem" className="av__menu-item" onClick={() => chooseDownload('optimized')}>
+                  {t('album-quality-optimized', { defaultValue: 'Optimized (web)' })}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 

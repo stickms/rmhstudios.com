@@ -83,6 +83,45 @@
   cursor: default;
 }
 
+/* "Full vs optimized" chooser popover (Share / Download) */
+.av__menu-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.av__menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 5;
+  min-width: 170px;
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(20, 20, 22, 0.92);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(12px);
+}
+.av__menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 9px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #f5f5f7;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s ease;
+}
+.av__menu-item:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
 /* Stage: holds the current image/video */
 .av__stage {
   position: relative;
