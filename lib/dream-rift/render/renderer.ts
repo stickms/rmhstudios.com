@@ -279,13 +279,17 @@ export class Renderer {
         // Hot path: most bullets are round/non-rotating — blit them with no
         // save/restore/rotate. Only directional, spinning or fading bullets take
         // the transform path. Keeps thousands of bullets well under frame budget.
+        const a = this.alpha; // hoist: avoid a method call per bullet
         world.bullets.forEach((b: Bullet) => {
-            const info = this.atlas.get(b.shape, b.color);
             // Interpolate toward the current sim position for smooth >60fps motion.
-            const ix = this.lerp(b.prevX, b.x);
-            const iy = this.lerp(b.prevY, b.y);
+            const ix = b.prevX + (b.x - b.prevX) * a;
+            const iy = b.prevY + (b.y - b.prevY) * a;
+            const info = this.atlas.get(b.shape, b.color);
             const drawW = info.surface.width * INV_SS * (b.drawRadius / info.designRadius);
             const half = drawW * 0.5;
+            // Cull bullets fully outside the playfield — the clip would discard
+            // them anyway, so skip the draw call entirely (count is unchanged).
+            if (ix + half < 0 || ix - half > PLAYFIELD_W || iy + half < 0 || iy - half > PLAYFIELD_H) return;
             const canvas = info.surface.canvas as CanvasImageSource;
             if (info.directional || b.spin || b.dying > 0) {
                 ctx.save();
