@@ -33,6 +33,7 @@ import { UploadModal } from '@/components/library/UploadModal';
 import { BookContextMenu, LibraryEditModal } from '@/components/library/LibraryEditControls';
 import { useContextMenu } from '@/components/library/LibraryContextMenu';
 import { LibraryCollections } from '@/components/library/LibraryCollections';
+import { LibraryAlbums } from '@/components/library/LibraryAlbums';
 import { BlurImage } from '@/components/ui/BlurImage';
 import type { CollectionView } from '@/lib/library/collections';
 import '@/components/library/library.css';
@@ -281,6 +282,8 @@ function Library() {
           myHandle={myHandle}
           canCreate={Boolean(session.data)}
         />
+
+        <LibraryAlbums query={query} />
 
         {filtered.length === 0 ? (
           <p className="vibe-hint lib__empty">{t('no-results', { defaultValue: 'No books match that search.' })}</p>

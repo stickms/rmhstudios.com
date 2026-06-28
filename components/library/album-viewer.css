@@ -1,0 +1,237 @@
+/* ── Album carousel viewer (fullscreen) ─────────────────────────────────────
+ * A dark, lightbox-style fullscreen viewer used by /library/albums/$albumId.
+ * Intentionally theme-independent (always dark) so photos/videos read well.
+ */
+
+.av {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  background: #050505;
+  color: #f5f5f7;
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+/* Top toolbar */
+.av__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  z-index: 2;
+}
+.av__bar--top {
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0));
+}
+.av__title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.av__titles {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  min-width: 0;
+}
+.av__title {
+  font-weight: 600;
+  font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.av__counter {
+  font-size: 12px;
+  color: rgba(245, 245, 247, 0.6);
+  font-variant-numeric: tabular-nums;
+}
+.av__tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Round translucent buttons (toolbar + close) */
+.av__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.08);
+  color: #f5f5f7;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
+  backdrop-filter: blur(8px);
+}
+.av__btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+.av__btn:active {
+  transform: scale(0.94);
+}
+.av__btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* Stage: holds the current image/video */
+.av__stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+}
+
+.av__img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transform-origin: center center;
+  transition: transform 0.16s ease-out;
+  will-change: transform;
+  -webkit-user-drag: none;
+}
+.av__img.is-active {
+  transition: none; /* follow the pointer 1:1 while dragging/zooming */
+}
+.av__img.is-zoomed {
+  cursor: grab;
+}
+.av__img.is-grabbing {
+  cursor: grabbing;
+}
+
+.av__video {
+  max-width: 100%;
+  max-height: 100%;
+  outline: none;
+}
+
+/* Prev / next arrows */
+.av__nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.4);
+  color: #f5f5f7;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+  backdrop-filter: blur(6px);
+}
+.av__nav:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
+.av__nav--prev {
+  left: 14px;
+}
+.av__nav--next {
+  right: 14px;
+}
+
+/* Copy-link / share toast */
+.av__toast {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  font-size: 13px;
+  font-weight: 500;
+  backdrop-filter: blur(8px);
+}
+
+/* Bottom thumbnail strip */
+.av__strip {
+  display: flex;
+  gap: 8px;
+  padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
+  overflow-x: auto;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0));
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+}
+.av__strip::-webkit-scrollbar {
+  height: 6px;
+}
+.av__strip::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+}
+
+.av__thumb {
+  flex: 0 0 auto;
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid transparent;
+  background: rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+  padding: 0;
+  opacity: 0.6;
+  transition: opacity 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+.av__thumb:hover {
+  opacity: 1;
+}
+.av__thumb.is-active {
+  opacity: 1;
+  border-color: var(--site-accent, #6ea8fe);
+  transform: translateY(-2px);
+}
+.av__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.av__thumb-video {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: #f5f5f7;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+@media (max-width: 640px) {
+  .av__thumb {
+    width: 52px;
+    height: 52px;
+  }
+  .av__nav {
+    width: 40px;
+    height: 40px;
+  }
+  .av__nav--prev {
+    left: 8px;
+  }
+  .av__nav--next {
+    right: 8px;
+  }
+}

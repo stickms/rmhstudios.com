@@ -96,6 +96,7 @@ import { Route as RmhCapitalCareersRouteImport } from './routes/rmh-capital/care
 import { Route as RmhCapitalBusinessesRouteImport } from './routes/rmh-capital/businesses'
 import { Route as NewsSlugRouteImport } from './routes/news.$slug'
 import { Route as LibrarySlugRouteImport } from './routes/library.$slug'
+import { Route as LibraryAlbumsAlbumIdRouteImport } from './routes/library.albums.$albumId'
 import { Route as ForestExplorerStoryRouteImport } from './routes/forest-explorer/story'
 import { Route as ForestExplorerExploreRouteImport } from './routes/forest-explorer/explore'
 import { Route as DiscordRmhboxRouteImport } from './routes/discord/rmhbox'
@@ -905,6 +906,11 @@ const NewsSlugRoute = NewsSlugRouteImport.update({
 const LibrarySlugRoute = LibrarySlugRouteImport.update({
   id: '/library/$slug',
   path: '/library/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LibraryAlbumsAlbumIdRoute = LibraryAlbumsAlbumIdRouteImport.update({
+  id: '/library/albums/$albumId',
+  path: '/library/albums/$albumId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForestExplorerStoryRoute = ForestExplorerStoryRouteImport.update({
@@ -2950,6 +2956,7 @@ export interface FileRoutesByFullPath {
   '/forest-explorer/explore': typeof ForestExplorerExploreRoute
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
   '/library/$slug': typeof LibrarySlugRoute
+  '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
   '/news/$slug': typeof NewsSlugRoute
   '/rmh-capital/businesses': typeof RmhCapitalBusinessesRoute
   '/rmh-capital/careers': typeof RmhCapitalCareersRoute
@@ -3392,6 +3399,7 @@ export interface FileRoutesByTo {
   '/forest-explorer/explore': typeof ForestExplorerExploreRoute
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
   '/library/$slug': typeof LibrarySlugRoute
+  '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
   '/news/$slug': typeof NewsSlugRoute
   '/rmh-capital/businesses': typeof RmhCapitalBusinessesRoute
   '/rmh-capital/careers': typeof RmhCapitalCareersRoute
@@ -3857,6 +3865,7 @@ export interface FileRoutesById {
   '/forest-explorer/explore': typeof ForestExplorerExploreRoute
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
   '/library/$slug': typeof LibrarySlugRoute
+  '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
   '/news/$slug': typeof NewsSlugRoute
   '/rmh-capital/businesses': typeof RmhCapitalBusinessesRoute
   '/rmh-capital/careers': typeof RmhCapitalCareersRoute
@@ -4324,6 +4333,7 @@ export interface FileRouteTypes {
     | '/forest-explorer/explore'
     | '/forest-explorer/story'
     | '/library/$slug'
+    | '/library/albums/$albumId'
     | '/news/$slug'
     | '/rmh-capital/businesses'
     | '/rmh-capital/careers'
@@ -4766,6 +4776,7 @@ export interface FileRouteTypes {
     | '/forest-explorer/explore'
     | '/forest-explorer/story'
     | '/library/$slug'
+    | '/library/albums/$albumId'
     | '/news/$slug'
     | '/rmh-capital/businesses'
     | '/rmh-capital/careers'
@@ -5230,6 +5241,7 @@ export interface FileRouteTypes {
     | '/forest-explorer/explore'
     | '/forest-explorer/story'
     | '/library/$slug'
+    | '/library/albums/$albumId'
     | '/news/$slug'
     | '/rmh-capital/businesses'
     | '/rmh-capital/careers'
@@ -5666,6 +5678,7 @@ export interface RootRouteChildren {
   DiscordLightsOutRoute: typeof DiscordLightsOutRoute
   DiscordRmhboxRoute: typeof DiscordRmhboxRoute
   LibrarySlugRoute: typeof LibrarySlugRoute
+  LibraryAlbumsAlbumIdRoute: typeof LibraryAlbumsAlbumIdRoute
   NewsSlugRoute: typeof NewsSlugRoute
   UserBuildsSlugRoute: typeof UserBuildsSlugRoute
   VSlugRoute: typeof VSlugRoute
@@ -6478,6 +6491,13 @@ declare module '@tanstack/react-router' {
       path: '/library/$slug'
       fullPath: '/library/$slug'
       preLoaderRoute: typeof LibrarySlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/library/albums/$albumId': {
+      id: '/library/albums/$albumId'
+      path: '/library/albums/$albumId'
+      fullPath: '/library/albums/$albumId'
+      preLoaderRoute: typeof LibraryAlbumsAlbumIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forest-explorer/story': {
@@ -10090,6 +10110,7 @@ const rootRouteChildren: RootRouteChildren = {
   DiscordLightsOutRoute: DiscordLightsOutRoute,
   DiscordRmhboxRoute: DiscordRmhboxRoute,
   LibrarySlugRoute: LibrarySlugRoute,
+  LibraryAlbumsAlbumIdRoute: LibraryAlbumsAlbumIdRoute,
   NewsSlugRoute: NewsSlugRoute,
   UserBuildsSlugRoute: UserBuildsSlugRoute,
   VSlugRoute: VSlugRoute,

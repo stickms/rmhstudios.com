@@ -1774,3 +1774,115 @@
   z-index: 5;
 }
 .lib-book__wrap.is-drag-over .lib-book { transform: translateY(-4px); transition: transform 120ms ease; }
+
+/* ── Albums section ──────────────────────────────────────────────────────────
+ * A grid of album cards (links to the fullscreen carousel viewer). Sits between
+ * the collections and the book shelves on the library page.
+ */
+.lib-albums {
+  max-width: 1320px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.lib-albums__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+  padding: 14px clamp(16px, 4vw, 44px) 4px;
+}
+@media (max-width: 640px) {
+  .lib-albums__grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 14px;
+  }
+}
+
+.lib-album {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+}
+.lib-album__cover {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border-radius: var(--site-radius, 14px);
+  overflow: hidden;
+  background: var(--site-surface, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--site-border, rgba(255, 255, 255, 0.1));
+  box-shadow: var(--site-shadow, 0 6px 20px rgba(0, 0, 0, 0.25));
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+/* A subtle "stacked photos" peek behind the cover. */
+.lib-album__cover::before,
+.lib-album__cover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  z-index: -1;
+  background: var(--site-surface, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--site-border, rgba(255, 255, 255, 0.1));
+}
+.lib-album__cover::before {
+  transform: translate(6px, 6px) scale(0.97);
+  opacity: 0.7;
+}
+.lib-album__cover::after {
+  transform: translate(11px, 11px) scale(0.94);
+  opacity: 0.4;
+}
+.lib-album:hover .lib-album__cover {
+  transform: translateY(-3px);
+  border-color: var(--site-accent, #6ea8fe);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+}
+.lib-album__count {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+}
+.lib-album__badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+}
+.lib-album__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 2px;
+}
+.lib-album__name {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--site-text, #f5f5f7);
+}
+.lib-album__sub {
+  margin: 0;
+  font-size: 12px;
+  color: var(--site-text-muted, rgba(245, 245, 247, 0.55));
+}
