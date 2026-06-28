@@ -24,7 +24,7 @@ import {
   WING_LEVELS, ENEMY_CONFIGS,
   MAX_WAVE, VOID_PULSE_RADIUS, VOID_PULSE_DAMAGE,
   ALLY_PROJ_SPEED, ALLY_PROJ_DAMAGE,
-  MAP_DOOR_X_FRAC, MAP_TRANSITION_DURATION,
+  MAP_TRANSITION_DURATION,
   DROP_HEART_CHANCE, HEART_PICKUP_LIFETIME, HEART_HEAL_AMOUNT,
   MAX_HEART_PICKUPS, HEART_MAGNET_RANGE, HEART_PULL_SPEED,
   SHIELD_HALF_ARC, SHIELD_TURN_RATE,
@@ -391,13 +391,12 @@ export class VoidBreakerEngine {
       // Hazard contact (map hazard tiles damage player)
       this.checkHazardContact();
 
-      // Map transition: after completing transition wave, detect door
-      if (this.state === 'playing' && this.currentMapConfig.transitionWave === this.wave) {
-        if (this.player.x > ARENA_W * MAP_DOOR_X_FRAC) {
-          this.triggerMapTransition();
-          return;
-        }
-      }
+      // NOTE: maps advance seamlessly at wave boundaries via startNextWave's
+      // getMapForWave() (obstacles rebuild on zone change). The old "walk to the
+      // door" trigger entered a 'mapTransition' state the render loop never
+      // ticked — a hard soft-lock on waves 15/30 — and let players skip those
+      // bosses by walking right. Removed; advanceMap()/triggerMapTransition()
+      // remain unused and can be deleted in a dedicated cleanup.
 
       // Detonation
       if (input.detonate && !this.prevDet &&
@@ -1478,10 +1477,12 @@ export class VoidBreakerEngine {
         slot.dashTargetX = 0; slot.dashTargetY = 0;
         slot.orbitAngle = 0; slot.orbitFireTimer = 99;
         slot.bossAttackTimer = 0; slot.bossSummonTimer = 0;
-        // New fields
+        // New fields — reset all pooled-slot state so nothing leaks from the
+        // slot's prior occupant (e.g. a sniper mid-charge or shielded enemy).
         slot.bossPhase = 1; slot.tentacleAngle = 0;
         slot.tentacleTimer = 0; slot.telegraphTimer = 0;
         slot.isElite = false;
+        slot.bossSpecialTimer = 0; slot.bossSpecialActive = false; slot.bossSpecialAngle = 0;
         this.waveEnemiesAlive++;
       }
     }
@@ -1596,6 +1597,9 @@ export class VoidBreakerEngine {
 
   /** Roll and present upgrade cards. Falls through to the breather if all maxed. */
   private offerUpgrades(bossReward: boolean): void {
+    // Clear any pending hit-stop from the wave-clearing kill so it doesn't drain
+    // as a freeze the instant the player picks a card and returns to play.
+    this.hitStopTimer = 0;
     const choices = rollUpgradeChoices(this.upgradeStacks, 3, bossReward);
     if (choices.length === 0) {
       this.state = 'waveBreak';
