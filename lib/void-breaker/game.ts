@@ -1,7 +1,8 @@
 import type {
   GameState, Player, Enemy, Projectile, Shard, Particle,
-  Popup, InputState, RunStats, EnemyType, BossPhase, HeartPickup,
+  Popup, InputState, RunStats, EnemyType, HeartPickup,
 } from './types';
+import type { SfxEvent, SfxName } from './audio';
 import {
   ARENA_W, ARENA_H, ARENA_HW, ARENA_HH,
   PLAYER_RADIUS, PLAYER_SPEED, PLAYER_HP,
@@ -42,6 +43,10 @@ import {
 } from './mapSystem';
 import type { Obstacle, MapConfig } from './mapSystem';
 import { getBossPatternForTier } from './bossPatterns';
+import {
+  makePlayerStats, rollUpgradeChoices, getUpgradeDef,
+} from './upgrades';
+import type { PlayerStats, UpgradeId, UpgradeChoice } from './upgrades';
 
 function dist(ax: number, ay: number, bx: number, by: number): number {
   return Math.sqrt((ax - bx) ** 2 + (ay - by) ** 2);
@@ -89,6 +94,23 @@ export class VoidBreakerEngine {
   arenaPhase = 0;
   wingLevel = 0;
 
+  // ── Roguelite upgrades ──
+  /** Mutable per-run stat block driven by upgrade picks. */
+  stats: PlayerStats = makePlayerStats();
+  /** How many times each upgrade has been taken this run. */
+  upgradeStacks: Partial<Record<UpgradeId, number>> = {};
+  /** Upgrade cards currently offered (state === 'upgrade'). */
+  pendingUpgrades: UpgradeChoice[] = [];
+  /** Whether the current offer is a boss reward. */
+  upgradeIsBossReward = false;
+
+  /** Sound events emitted this frame; drained by the component each frame. */
+  sfxEvents: SfxEvent[] = [];
+  /** Freeze-frame timer (seconds). While > 0 the simulation is paused for impact. */
+  hitStopTimer = 0;
+  /** Periodic low-HP heartbeat timer (seconds). */
+  private heartbeatTimer = 0;
+
   // Narrative system
   readonly dialogue = new DialogueManager();
   waveEnemiesStartCount = 0;
@@ -111,6 +133,7 @@ export class VoidBreakerEngine {
 
   private shakeDur = 0;
   private shakeT = 0;
+  private shakeMag = 0;
   private nextId = 0;
   private prevPause = false;
   private prevDet = false;
@@ -126,6 +149,7 @@ export class VoidBreakerEngine {
     this.projectiles = Array.from({ length: MAX_PROJECTILES }, () => ({
       active: false, x: 0, y: 0, vx: 0, vy: 0,
       radius: 0, damage: 0, isPlayer: true, life: 0,
+      pierce: 0, lastHitId: -1,
     }));
     this.shards = Array.from({ length: MAX_SHARDS_POOL }, () => ({
       active: false, x: 0, y: 0, vx: 0, vy: 0,
@@ -196,7 +220,14 @@ export class VoidBreakerEngine {
     this.focusUsed = 0;
     this.nextId = 0;
     this.shakeX = 0; this.shakeY = 0;
-    this.shakeDur = 0; this.shakeT = 0;
+    this.shakeDur = 0; this.shakeT = 0; this.shakeMag = 0;
+    this.hitStopTimer = 0;
+    this.heartbeatTimer = 0;
+    this.sfxEvents.length = 0;
+    this.stats = makePlayerStats();
+    this.upgradeStacks = {};
+    this.pendingUpgrades = [];
+    this.upgradeIsBossReward = false;
     this.arenaPhase = 0;
     this.wingLevel = 0;
     this.prevPause = false;
@@ -251,6 +282,15 @@ export class VoidBreakerEngine {
 
   update(dt: number, input: InputState): void {
     dt = Math.min(dt, 0.05);
+
+    // Hit-stop: briefly freeze the simulation on big impacts for punch.
+    // Time keeps ticking (so the freeze ends) but nothing else updates.
+    if (this.hitStopTimer > 0 && (this.state === 'playing' || this.state === 'waveBreak')) {
+      this.hitStopTimer -= dt;
+      this.prevPause = input.pause;
+      return;
+    }
+
     this.arenaPhase += dt;
 
     if (this.state === 'countdown') {
@@ -294,6 +334,17 @@ export class VoidBreakerEngine {
 
       // Ability progression
       this.abilityProg.update(dt);
+
+      // Low-HP heartbeat — rising tension when on the last hit.
+      if (this.state === 'playing' && this.player.hp <= 1 && this.player.hp > 0) {
+        this.heartbeatTimer -= dt;
+        if (this.heartbeatTimer <= 0) {
+          this.heartbeatTimer = 0.95;
+          this.emitSfx('heartbeat');
+        }
+      } else {
+        this.heartbeatTimer = 0;
+      }
 
       // Controls inversion (boss 30)
       if (this.controlsInverted) {
@@ -390,16 +441,18 @@ export class VoidBreakerEngine {
         this.score += bonus;
         // Victory at MAX_WAVE
         if (this.wave >= MAX_WAVE) {
+          this.emitSfx('waveClear');
           this.state = 'gameOver';
           return;
         }
+        this.emitSfx('waveClear');
         this.popups.push({
           text: `WAVE ${this.wave} CLEAR! +${bonus}`,
           x: this.player.x, y: this.player.y - 40,
           life: 2, maxLife: 2, color: '#ff6644',
         });
-        this.state = 'waveBreak';
-        this.waveBreakTimer = WAVE_BREAK_S;
+        // Offer roguelite upgrade cards; boss waves give a richer (rare-biased) roll.
+        this.offerUpgrades(this.wave % BOSS_WAVE_INTERVAL === 0);
       }
     }
 
@@ -419,7 +472,7 @@ export class VoidBreakerEngine {
       p.focusTimer -= rawDt;
       if (p.focusTimer <= 0) {
         p.focusActive = false;
-        p.focusCooldown = FOCUS_COOLDOWN;
+        p.focusCooldown = FOCUS_COOLDOWN * this.stats.focusCooldownMult;
       }
     }
     if (p.focusCooldown > 0) p.focusCooldown -= rawDt;
@@ -432,7 +485,7 @@ export class VoidBreakerEngine {
       this.spawnParticles(p.x, p.y, '#ff8844', 2, 40);
       if (p.dashTimer <= 0) {
         p.dashActive = false;
-        p.dashCooldown = DASH_COOLDOWN;
+        p.dashCooldown = DASH_COOLDOWN * this.stats.dashCooldownMult;
       }
     } else {
       let mx = 0, my = 0;
@@ -442,8 +495,9 @@ export class VoidBreakerEngine {
       if (input.right) mx += 1;
       if (mx !== 0 || my !== 0) {
         const [nx, ny] = norm(mx, my);
-        p.x += nx * p.speed * playerDt;
-        p.y += ny * p.speed * playerDt;
+        const spd = p.speed * this.stats.moveSpeedMult;
+        p.x += nx * spd * playerDt;
+        p.y += ny * spd * playerDt;
       }
     }
 
@@ -466,7 +520,7 @@ export class VoidBreakerEngine {
     if (p.detonateCooldown > 0) p.detonateCooldown -= rawDt;
 
     if (p.fireTimer <= 0 && this.state === 'playing' && !p.dashActive) {
-      p.fireTimer = p.fireRate;
+      p.fireTimer = p.fireRate * this.stats.fireRateMult;
       this.firePlayerProj();
     }
 
@@ -482,6 +536,7 @@ export class VoidBreakerEngine {
     p.dashVx = cos * DASH_SPEED;
     p.dashVy = sin * DASH_SPEED;
     p.invincibleUntil = Math.max(p.invincibleUntil, this.elapsedMs + DASH_DURATION * 1000);
+    this.emitSfx('dash');
   }
 
   private startFocus(): void {
@@ -489,6 +544,7 @@ export class VoidBreakerEngine {
     p.focusActive = true;
     p.focusTimer = FOCUS_DURATION;
     this.focusUsed++;
+    this.emitSfx('focus');
     this.popups.push({
       text: 'F O C U S', x: p.x, y: p.y - 30,
       life: 1.0, maxLife: 1.0, color: '#44ddff',
@@ -497,18 +553,33 @@ export class VoidBreakerEngine {
 
   private firePlayerProj(): void {
     const p = this.player;
-    const slot = this.projectiles.find(pr => !pr.active);
-    if (!slot) return;
-    const cos = Math.cos(p.aimAngle), sin = Math.sin(p.aimAngle);
-    slot.active = true;
-    slot.x = p.x + cos * (p.radius + 4);
-    slot.y = p.y + sin * (p.radius + 4);
-    slot.vx = cos * PROJ_SPEED;
-    slot.vy = sin * PROJ_SPEED;
-    slot.radius = PROJ_RADIUS;
-    slot.damage = PROJ_DAMAGE;
-    slot.isPlayer = true;
-    slot.life = 2.5;
+    const s = this.stats;
+    const count = Math.max(1, s.projectileCount);
+    const speed = PROJ_SPEED * s.projSpeedMult;
+    const damage = PROJ_DAMAGE + s.damageBonus;
+    // Symmetric fan when multishot — total spread grows gently with bullet count.
+    const spreadStep = 0.12;
+    const baseAngle = p.aimAngle - (count - 1) * spreadStep * 0.5;
+    let fired = false;
+    for (let i = 0; i < count; i++) {
+      const slot = this.projectiles.find(pr => !pr.active);
+      if (!slot) break;
+      const a = baseAngle + i * spreadStep;
+      const cos = Math.cos(a), sin = Math.sin(a);
+      slot.active = true;
+      slot.x = p.x + cos * (p.radius + 4);
+      slot.y = p.y + sin * (p.radius + 4);
+      slot.vx = cos * speed;
+      slot.vy = sin * speed;
+      slot.radius = PROJ_RADIUS;
+      slot.damage = damage;
+      slot.isPlayer = true;
+      slot.life = 2.5;
+      slot.pierce = s.pierce;
+      slot.lastHitId = -1;
+      fired = true;
+    }
+    if (fired) this.emitSfx('shoot', { pitch: 0.94 + Math.random() * 0.12 });
   }
 
   // ── Combo ──
@@ -544,6 +615,7 @@ export class VoidBreakerEngine {
 
     // Check ability unlocks
     const unlocked = this.abilityProg.checkUnlocks(this.wave);
+    if (unlocked.length > 0) this.emitSfx('unlock');
     for (const cfg of unlocked) {
       this.popups.push({
         text: `ABILITY UNLOCKED: ${cfg.name} [${cfg.keybind}]`,
@@ -668,6 +740,8 @@ export class VoidBreakerEngine {
     this.waveEnemiesAlive = 1;
     this.waveEnemiesStartCount = 1;
     this.waveEnemiesKilledCount = 0;
+    this.emitSfx('bossSpawn');
+    this.triggerShake(10, 600);
     this.popups.push({
       text: pattern.arrivalText,
       x: this.player.x, y: this.player.y - 60,
@@ -813,7 +887,9 @@ export class VoidBreakerEngine {
           x: this.player.x, y: this.player.y - 60,
           life: 2, maxLife: 2, color: '#ff0066',
         });
-        this.triggerShake(12, 600);
+        this.emitSfx('bossPhase');
+        this.requestHitStop(120);
+        this.triggerShake(14, 600);
       } else if (hpFrac <= 0.5 && e.bossPhase < 2) {
         e.bossPhase = 2;
         this.popups.push({
@@ -821,7 +897,9 @@ export class VoidBreakerEngine {
           x: this.player.x, y: this.player.y - 60,
           life: 2, maxLife: 2, color: '#ff6622',
         });
-        this.triggerShake(10, 500);
+        this.emitSfx('bossPhase');
+        this.requestHitStop(120);
+        this.triggerShake(12, 500);
       }
     }
 
@@ -894,7 +972,9 @@ export class VoidBreakerEngine {
       slot.vx = Math.cos(a) * speed; slot.vy = Math.sin(a) * speed;
       slot.radius = 4; slot.damage = getScaledEnemyDamage(1, this.wave);
       slot.isPlayer = false; slot.life = 4;
+      slot.pierce = 0; slot.lastHitId = -1;
     }
+    this.emitSfx('bossRing');
     void tier;
   }
 
@@ -921,7 +1001,9 @@ export class VoidBreakerEngine {
       slot.vx = Math.cos(a) * speed; slot.vy = Math.sin(a) * speed;
       slot.radius = 4; slot.damage = dmg;
       slot.isPlayer = false; slot.life = 4;
+      slot.pierce = 0; slot.lastHitId = -1;
     }
+    this.emitSfx(e.isBoss ? 'bossRing' : 'enemyShoot');
   }
 
   private clampArena(e: Enemy): void {
@@ -963,17 +1045,27 @@ export class VoidBreakerEngine {
   // ── Collision ──
 
   private checkPlayerHits(): void {
+    const s = this.stats;
     for (const p of this.projectiles) {
       if (!p.active || !p.isPlayer) continue;
       for (const e of this.enemies) {
-        if (!e.active) continue;
+        if (!e.active || p.lastHitId === e.id) continue;
         if (dist(p.x, p.y, e.x, e.y) < p.radius + e.radius) {
-          p.active = false;
-          e.hp -= p.damage;
+          const isCrit = s.critChance > 0 && Math.random() < s.critChance;
+          const dmg = isCrit ? Math.max(1, Math.round(p.damage * s.critMult)) : p.damage;
+          e.hp -= dmg;
           e.hitFlashUntil = this.elapsedMs + 80;
-          this.spawnParticles(p.x, p.y, e.color, 4, 100);
+          p.lastHitId = e.id;
+          this.spawnParticles(p.x, p.y, isCrit ? '#ffe066' : e.color, isCrit ? 8 : 4, isCrit ? 150 : 100);
+          if (isCrit) {
+            this.popups.push({ text: 'CRIT', x: e.x, y: e.y - 18, life: 0.5, maxLife: 0.5, color: '#ffe066' });
+          }
           if (e.hp <= 0) this.killEnemy(e);
-          break;
+          else this.emitSfx(e.isBoss ? 'bossHit' : 'hit', { pitch: 0.9 + Math.random() * 0.2 });
+          // Pierce: pass through this enemy and keep flying; otherwise stop.
+          if (p.pierce > 0) p.pierce--;
+          else p.active = false;
+          break; // at most one enemy per projectile per frame
         }
       }
     }
@@ -992,6 +1084,7 @@ export class VoidBreakerEngine {
           s.active = false; s.collected = false;
           pl.shards--;
           this.spawnParticles(s.x, s.y, '#ffd700', 5, 80);
+          this.emitSfx('shardBlock');
           blocked = true; break;
         }
       }
@@ -1022,7 +1115,9 @@ export class VoidBreakerEngine {
     p.hp -= dmg;
     p.hitFlashUntil = this.elapsedMs + 80;
     p.invincibleUntil = this.elapsedMs + INVINCIBILITY_MS;
-    this.triggerShake(5, 300);
+    this.triggerShake(8, 350);
+    this.requestHitStop(70);
+    this.emitSfx('playerHurt');
     this.spawnParticles(p.x, p.y, '#ff4444', 10, 120);
     // Damage feedback popup
     this.popups.push({
@@ -1031,12 +1126,25 @@ export class VoidBreakerEngine {
       life: 1.0, maxLife: 1.0,
       color: '#ff2244',
     });
-    if (p.hp <= 0) { p.hp = 0; this.state = 'gameOver'; }
+    if (p.hp <= 0) { p.hp = 0; this.emitSfx('gameOver'); this.state = 'gameOver'; }
   }
 
   private killEnemy(e: Enemy): void {
     this.spawnParticles(e.x, e.y, e.color, 15, 150);
     this.registerKillCombo();
+
+    // Death feedback — scale juice with the kill's importance.
+    if (e.isBoss) {
+      this.emitSfx('bossKill');
+      this.requestHitStop(220);
+      this.triggerShake(16, 700);
+    } else if (e.isElite) {
+      this.emitSfx('eliteKill');
+      this.requestHitStop(50);
+      this.triggerShake(7, 250);
+    } else {
+      this.emitSfx('kill', { pitch: 0.85 + Math.random() * 0.3 });
+    }
     const points = Math.round(e.value * this.totalMultiplier);
     this.score += points;
     this.enemiesKilled++;
@@ -1049,6 +1157,14 @@ export class VoidBreakerEngine {
 
     const shardMul = this.player.focusActive ? 2 : 1;
     for (let i = 0; i < e.shardCount * shardMul; i++) this.spawnShard(e.x, e.y);
+
+    // Siphon — chance to drain 1 HP back on kill.
+    if (this.stats.lifestealChance > 0 && this.player.hp < this.player.maxHp &&
+      Math.random() < this.stats.lifestealChance) {
+      this.player.hp++;
+      this.emitSfx('heal');
+      this.popups.push({ text: '+1 HP', x: this.player.x, y: this.player.y - 25, life: 0.7, maxLife: 0.7, color: '#cc66ff' });
+    }
 
     // Heart drop (8% chance)
     if (Math.random() < DROP_HEART_CHANCE) {
@@ -1113,7 +1229,7 @@ export class VoidBreakerEngine {
         s.x = clamp(s.x, 5, ARENA_W - 5);
         s.y = clamp(s.y, 5, ARENA_H - 5);
         const pd = dist(s.x, s.y, px, py);
-        if (pd < SHARD_MAGNET_RANGE && this.player.shards < MAX_SHARDS) {
+        if (pd < SHARD_MAGNET_RANGE * this.stats.magnetMult && this.player.shards < MAX_SHARDS) {
           const [nx, ny] = norm(px - s.x, py - s.y);
           s.x += nx * SHARD_PULL_SPEED * dt;
           s.y += ny * SHARD_PULL_SPEED * dt;
@@ -1123,6 +1239,8 @@ export class VoidBreakerEngine {
           this.player.shards++;
           this.shardsCollected++;
           this.score += Math.round(SHARD_POINTS * this.totalMultiplier);
+          // Pitch climbs as the orbit fills — a satisfying rising arpeggio.
+          this.emitSfx('shardPickup', { pitch: 1 + (this.player.shards / MAX_SHARDS) * 0.9 });
         }
       }
     }
@@ -1132,11 +1250,12 @@ export class VoidBreakerEngine {
 
   private detonateShield(): void {
     const p = this.player;
-    const blast = DET_BASE_RADIUS + p.shards * DET_RADIUS_PER_SHARD;
+    const blast = (DET_BASE_RADIUS + p.shards * DET_RADIUS_PER_SHARD) * this.stats.detonateRadiusMult;
+    const detDamage = DET_DAMAGE + this.stats.detonateDamageBonus;
     for (const e of this.enemies) {
       if (!e.active) continue;
       if (dist(e.x, e.y, p.x, p.y) < blast) {
-        e.hp -= DET_DAMAGE;
+        e.hp -= detDamage;
         this.spawnParticles(e.x, e.y, '#ff6644', 6, 100);
         if (e.hp <= 0) this.killEnemy(e);
       }
@@ -1164,11 +1283,48 @@ export class VoidBreakerEngine {
     p.shards = 0; p.detonateCooldown = DET_COOLDOWN;
     this.detonations++;
     this.shardMultiplier = 1; this.comboCount = 0; this.comboMultiplier = 1;
-    this.triggerShake(8, 400);
+    this.emitSfx('detonate', { gain: Math.min(1.3, 0.7 + blast / 300) });
+    this.requestHitStop(90);
+    this.triggerShake(12, 450);
     this.popups.push({
       text: 'VOID BURST!', x: p.x, y: p.y - 30,
       life: 1, maxLife: 1, color: '#ff6644',
     });
+  }
+
+  // ── Roguelite Upgrades ──
+
+  /** Roll and present upgrade cards. Falls through to the breather if all maxed. */
+  private offerUpgrades(bossReward: boolean): void {
+    const choices = rollUpgradeChoices(this.upgradeStacks, 3, bossReward);
+    if (choices.length === 0) {
+      this.state = 'waveBreak';
+      this.waveBreakTimer = WAVE_BREAK_S;
+      return;
+    }
+    this.pendingUpgrades = choices;
+    this.upgradeIsBossReward = bossReward;
+    this.state = 'upgrade';
+  }
+
+  /** Apply the chosen upgrade and resume the run. Called by the UI. */
+  applyUpgrade(id: UpgradeId): void {
+    if (this.state !== 'upgrade') return;
+    if (!this.pendingUpgrades.some(c => c.id === id)) return;
+    const def = getUpgradeDef(id);
+    if (!def) return;
+    def.apply(this.stats);
+    this.upgradeStacks[id] = (this.upgradeStacks[id] ?? 0) + 1;
+    // Vitality grants and refills HP immediately.
+    if (id === 'vitality') {
+      this.player.maxHp = PLAYER_HP + this.stats.maxHpBonus;
+      this.player.hp = this.player.maxHp;
+    }
+    this.pendingUpgrades = [];
+    this.upgradeIsBossReward = false;
+    this.emitSfx('unlock');
+    this.state = 'waveBreak';
+    this.waveBreakTimer = WAVE_BREAK_S;
   }
 
   // ── Particles / Popups / Shake ──
@@ -1205,20 +1361,41 @@ export class VoidBreakerEngine {
   }
 
   private triggerShake(mag: number, ms: number): void {
-    this.shakeDur = ms / 1000;
-    this.shakeT = this.shakeDur;
-    void mag;
+    // Don't let a small shake stomp a bigger one already in flight.
+    const dur = ms / 1000;
+    if (this.shakeT > 0 && mag < this.shakeMag) return;
+    this.shakeDur = dur;
+    this.shakeT = dur;
+    this.shakeMag = mag;
   }
 
   private updateShake(dt: number): void {
     if (this.shakeT > 0) {
       this.shakeT -= dt;
-      const intensity = (this.shakeT / this.shakeDur) * (this.shakeDur > 0.3 ? 8 : 6);
+      // Ease-out: amplitude scales with the requested magnitude and decays over time.
+      // (renderer multiplies shakeX/Y by 4, so effective peak ≈ 2 × magnitude px.)
+      const intensity = (this.shakeT / this.shakeDur) * this.shakeMag;
       this.shakeX = (Math.random() - 0.5) * intensity;
       this.shakeY = (Math.random() - 0.5) * intensity;
     } else {
       this.shakeX = 0; this.shakeY = 0;
+      this.shakeMag = 0;
     }
+  }
+
+  // ── Sound + impact helpers ──────────────────────────────────────────────────
+
+  /** Record a sound event to be played by the component this frame. */
+  private emitSfx(name: SfxName, opts?: { pitch?: number; gain?: number }): void {
+    // Cap the queue so a pathological frame can't balloon memory.
+    if (this.sfxEvents.length > 64) return;
+    this.sfxEvents.push({ name, pitch: opts?.pitch, gain: opts?.gain });
+  }
+
+  /** Request a freeze-frame of `ms` milliseconds (takes the longest pending). */
+  private requestHitStop(ms: number): void {
+    const s = ms / 1000;
+    if (s > this.hitStopTimer) this.hitStopTimer = Math.min(s, 0.25);
   }
 
   // ── New ability methods ───────────────────────────────────────────────────
@@ -1242,7 +1419,8 @@ export class VoidBreakerEngine {
     }
     this.spawnParticles(p.x, p.y, '#00f5ff', 16, 200);
     this.popups.push({ text: 'VOID PULSE', x: p.x, y: p.y - 40, life: 1, maxLife: 1, color: '#00f5ff' });
-    this.triggerShake(4, 200);
+    this.emitSfx('voidPulse');
+    this.triggerShake(6, 250);
   }
 
   private tryPhaseShift(): void {
@@ -1251,6 +1429,7 @@ export class VoidBreakerEngine {
     this.player.invincibleUntil = this.elapsedMs + 1800;
     this.spawnParticles(this.player.x, this.player.y, '#ffffff', 12, 180);
     this.popups.push({ text: 'PHASE SHIFT', x: this.player.x, y: this.player.y - 40, life: 1.5, maxLife: 1.5, color: '#ffffff' });
+    this.emitSfx('phaseShift');
   }
 
   private tryReflectShield(): void {
@@ -1267,6 +1446,7 @@ export class VoidBreakerEngine {
     }
     this.spawnParticles(this.player.x, this.player.y, '#00ffcc', 10, 160);
     this.popups.push({ text: 'REFLECT!', x: this.player.x, y: this.player.y - 40, life: 1, maxLife: 1, color: '#00ffcc' });
+    this.emitSfx('reflect');
   }
 
   private tryAllySynergy(): void {
@@ -1285,6 +1465,7 @@ export class VoidBreakerEngine {
     proj.vy = Math.sin(angle) * ALLY_PROJ_SPEED;
     proj.radius = 4; proj.damage = damage;
     proj.isPlayer = true; proj.life = 2;
+    proj.pierce = 0; proj.lastHitId = -1;
   }
 
   /** Damage player if standing on a hazard tile */
@@ -1296,9 +1477,10 @@ export class VoidBreakerEngine {
       if (circleAABBOverlaps(p.x, p.y, p.radius, o.x, o.y, o.w, o.h)) {
         p.hp -= 1;
         p.invincibleUntil = this.elapsedMs + 2000; // 2s hazard i-frames
-        this.triggerShake(5, 300);
+        this.triggerShake(8, 350);
+        this.emitSfx('playerHurt');
         this.spawnParticles(p.x, p.y, '#ff00cc', 8, 120);
-        if (p.hp <= 0) { this.state = 'gameOver'; }
+        if (p.hp <= 0) { this.emitSfx('gameOver'); this.state = 'gameOver'; }
         break;
       }
     }
@@ -1372,6 +1554,7 @@ export class VoidBreakerEngine {
         this.spawnParticles(h.x, h.y, '#ff00cc', 8, 100);
         if (p.hp < p.maxHp) {
           p.hp = Math.min(p.hp + HEART_HEAL_AMOUNT, p.maxHp);
+          this.emitSfx('heal');
           this.popups.push({
             text: '+1 HP', x: p.x, y: p.y - 25,
             life: 0.8, maxLife: 0.8, color: '#ff00cc',
@@ -1401,6 +1584,7 @@ export class VoidBreakerEngine {
         shards: this.player.shards,
       },
       abilities: Array.from(this.abilityProg.abilities.unlockedIds),
+      upgrades: { ...this.upgradeStacks },
       score: Math.round(this.score),
       stats: {
         enemiesKilled: this.enemiesKilled,
@@ -1459,6 +1643,19 @@ export class VoidBreakerEngine {
       // Restore abilities
       for (const id of abilities) {
         this.abilityProg.abilities.unlockedIds.add(id as never);
+      }
+
+      // Restore roguelite upgrades by re-applying each stack (mults/adds commute).
+      const savedStacks = save.upgrades as Partial<Record<UpgradeId, number>> | undefined;
+      if (savedStacks) {
+        for (const [rawId, n] of Object.entries(savedStacks)) {
+          const def = getUpgradeDef(rawId as UpgradeId);
+          if (!def || !n) continue;
+          for (let i = 0; i < n; i++) def.apply(this.stats);
+          this.upgradeStacks[rawId as UpgradeId] = n;
+        }
+        this.player.maxHp = PLAYER_HP + this.stats.maxHpBonus;
+        this.player.hp = Math.min(this.player.hp, this.player.maxHp);
       }
 
       // Restore ally

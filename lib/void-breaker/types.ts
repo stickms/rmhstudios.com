@@ -1,4 +1,6 @@
-export type GameState = 'menu' | 'countdown' | 'playing' | 'waveBreak' | 'paused' | 'gameOver' | 'mapTransition';
+import type { UpgradeChoice } from './upgrades';
+
+export type GameState = 'menu' | 'countdown' | 'playing' | 'waveBreak' | 'paused' | 'gameOver' | 'mapTransition' | 'upgrade';
 
 /** Boss multi-phase: phase 1 = standard, 2 = arena shift (50% HP), 3 = tentacle rage (25% HP) */
 export type BossPhase = 1 | 2 | 3;
@@ -94,6 +96,10 @@ export interface Projectile {
   damage: number;
   isPlayer: boolean;
   life: number;
+  /** Remaining enemies this bullet can pass through (0 = stops on first hit). */
+  pierce: number;
+  /** Last enemy id hit — prevents re-hitting the same enemy while overlapping. */
+  lastHitId: number;
 }
 
 export interface Shard {
@@ -216,6 +222,10 @@ export interface HUDState {
   allySynergyCooldownFraction: number;
   /** Unlock toast — null when no pending unlock */
   pendingUnlock: { name: string; description: string; keybind: string } | null;
+  /** Roguelite upgrade cards awaiting a pick (empty when none). */
+  pendingUpgrades: UpgradeChoice[];
+  /** Whether the current upgrade offer is a boss reward (richer styling). */
+  upgradeIsBossReward: boolean;
 }
 
 export interface DialogueSnapshot {

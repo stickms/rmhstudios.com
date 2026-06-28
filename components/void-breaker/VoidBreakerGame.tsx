@@ -5,8 +5,10 @@ import { useTranslation } from 'react-i18next';
 import { asset } from '@/lib/storage/asset';
 import { VoidBreakerEngine } from '@/lib/void-breaker/game';
 import { VoidBreakerRenderer } from '@/lib/void-breaker/renderer';
+import { VoidBreakerAudio } from '@/lib/void-breaker/audio';
 import { CANVAS_WIDTH, CANVAS_HEIGHT, MAX_SHARDS, DET_MIN_SHARDS, DASH_COOLDOWN, FOCUS_COOLDOWN } from '@/lib/void-breaker/constants';
 import type { InputState, RunStats, GameState, HUDState } from '@/lib/void-breaker/types';
+import type { UpgradeId } from '@/lib/void-breaker/upgrades';
 import { VoidBreakerUI } from './VoidBreakerUI';
 import { VoidBreakerTouchControls } from './VoidBreakerTouchControls';
 import { saveGame, loadGame, deleteSave, getSaveInfo } from '@/lib/void-breaker/saveSystem';
@@ -34,6 +36,7 @@ const EMPTY_HUD: HUDState = {
   voidPulseCooldownFraction: 0, phaseShiftCooldownFraction: 0,
   reflectShieldCooldownFraction: 0, allySynergyCooldownFraction: 0,
   pendingUnlock: null,
+  pendingUpgrades: [], upgradeIsBossReward: false,
 };
 
 export function VoidBreakerGame() {
@@ -42,6 +45,9 @@ export function VoidBreakerGame() {
   const gameRef = useRef<VoidBreakerEngine | null>(null);
   const rendererRef = useRef<VoidBreakerRenderer | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  /** Procedural SFX engine (separate from the music <audio> element). */
+  const sfxRef = useRef<VoidBreakerAudio | null>(null);
+  if (!sfxRef.current) sfxRef.current = new VoidBreakerAudio();
   const inputRef = useRef<InputState>({
     up: false, down: false, left: false, right: false,
     mouseX: 800, mouseY: 500,
@@ -72,13 +78,17 @@ export function VoidBreakerGame() {
     setSaveInfo(getSaveInfo());
   }, []);
 
-  // Music volume sync
+  // Music + SFX volume sync
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio) return;
-    const vol = muted ? 0 : (musicVolume / 100) * MASTER_VOLUME;
-    audio.volume = vol;
-    audio.muted = muted;
+    if (audio) {
+      const vol = muted ? 0 : (musicVolume / 100) * MASTER_VOLUME;
+      audio.volume = vol;
+      audio.muted = muted;
+    }
+    // SFX share the same master slider so one control governs overall loudness.
+    sfxRef.current?.setVolume((musicVolume / 100) * MASTER_VOLUME);
+    sfxRef.current?.setMuted(muted);
   }, [muted, musicVolume]);
 
   // ── AudioManager: fade in/out helpers ─────────────────────────────────────
@@ -239,8 +249,16 @@ export function VoidBreakerGame() {
       const renderer = rendererRef.current!;
       const s = game.state;
 
-      if (s === 'playing' || s === 'paused' || s === 'countdown' || s === 'waveBreak') {
+      if (s === 'playing' || s === 'paused' || s === 'countdown' || s === 'waveBreak' || s === 'upgrade') {
         game.update(dt, inputRef.current);
+
+        // Drain queued sound events into the procedural SFX engine.
+        if (game.sfxEvents.length) {
+          const sfx = sfxRef.current;
+          if (sfx) for (const ev of game.sfxEvents) sfx.play(ev.name, { pitch: ev.pitch, gain: ev.gain });
+          game.sfxEvents.length = 0;
+        }
+
         renderer.draw(game, dt);
 
         // Watch for pause state change via ESC key to open pause menu
@@ -312,6 +330,8 @@ export function VoidBreakerGame() {
             reflectShieldCooldownFraction: ab.unlockedIds.has('reflect_shield') ? Math.max(0, ab.reflectShieldCooldown / ABILITY_COOLDOWNS.reflect_shield) : 0,
             allySynergyCooldownFraction: ab.unlockedIds.has('ally_synergy') ? Math.max(0, ab.allySynergyCooldown / ABILITY_COOLDOWNS.ally_synergy) : 0,
             pendingUnlock,
+            pendingUpgrades: game.pendingUpgrades,
+            upgradeIsBossReward: game.upgradeIsBossReward,
           });
         }
       }
@@ -324,7 +344,6 @@ export function VoidBreakerGame() {
       rendererRef.current?.dispose();
       rendererRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fadeMusic, pauseMusic]);
 
   // We need a ref for showPauseMenu to avoid stale closure in loop
@@ -340,6 +359,8 @@ export function VoidBreakerGame() {
 
   // ── Actions ────────────────────────────────────────────────────────────────
   const handleStart = useCallback(() => {
+    sfxRef.current?.unlock();
+    sfxRef.current?.play('uiClick');
     gameRef.current?.startGame();
     setRunStats(null);
     setUiState('playing');
@@ -367,6 +388,29 @@ export function VoidBreakerGame() {
     showPauseMenuRef.current = false;
     // playMusic called via useEffect watching showPauseMenu
   }, []);
+
+  /** Apply a chosen roguelite upgrade and dismiss the card overlay instantly. */
+  const handlePickUpgrade = useCallback((id: UpgradeId) => {
+    const g = gameRef.current;
+    if (!g || g.state !== 'upgrade') return;
+    sfxRef.current?.play('uiClick');
+    g.applyUpgrade(id);
+    setHud(h => ({ ...h, pendingUpgrades: [] }));
+  }, []);
+
+  // Number-key selection (1/2/3) for upgrade cards.
+  useEffect(() => {
+    if (hud.pendingUpgrades.length === 0) return;
+    const onKey = (e: KeyboardEvent) => {
+      const idx = e.code === 'Digit1' ? 0 : e.code === 'Digit2' ? 1 : e.code === 'Digit3' ? 2 : -1;
+      if (idx >= 0 && idx < hud.pendingUpgrades.length) {
+        e.preventDefault();
+        handlePickUpgrade(hud.pendingUpgrades[idx].id);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [hud.pendingUpgrades, handlePickUpgrade]);
 
   const handleTouchPause = useCallback(() => {
     const game = gameRef.current;
@@ -400,6 +444,7 @@ export function VoidBreakerGame() {
 
   /** Load saved game and resume play. */
   const handleContinue = useCallback(() => {
+    sfxRef.current?.unlock();
     const save = loadGame();
     if (!save || !save.stateJson) return;
     const game = gameRef.current;
@@ -729,6 +774,79 @@ export function VoidBreakerGame() {
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="text-xl font-black text-[#d4af37] opacity-60 drop-shadow-[0_0_20px_rgba(212,175,55,0.5)] tracking-widest">
             {t('wave-clear', { defaultValue: 'WAVE CLEAR' })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Roguelite Upgrade Cards ─────────────────────────────────────── */}
+      {showGame && hud.pendingUpgrades.length > 0 && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur-md z-50 pointer-events-auto px-3">
+          <div className="text-center mb-5">
+            <div className={`text-[10px] font-mono tracking-[0.3em] uppercase mb-1 ${hud.upgradeIsBossReward ? 'text-[#ffd700]' : 'text-zinc-500'}`}>
+              {hud.upgradeIsBossReward
+                ? t('boss-reward', { defaultValue: 'BOSS REWARD' })
+                : t('choose-upgrade', { defaultValue: 'CHOOSE AN UPGRADE' })}
+            </div>
+            <div className="text-3xl font-black tracking-widest text-[#00f5ff] drop-shadow-[0_0_25px_rgba(0,245,255,0.6)]">
+              {t('level-up', { defaultValue: 'LEVEL UP' })}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-3 justify-center max-w-2xl">
+            {hud.pendingUpgrades.map((u, i) => {
+              const isRare = u.rarity === 'rare';
+              return (
+                <button
+                  key={u.id}
+                  onClick={() => handlePickUpgrade(u.id)}
+                  className="group relative w-40 sm:w-44 rounded-xl border bg-black/70 px-4 pt-5 pb-4 text-center transition-all duration-150 hover:-translate-y-1 hover:bg-black/90 focus:outline-none"
+                  style={{
+                    borderColor: u.color + (isRare ? 'cc' : '66'),
+                    boxShadow: `0 0 ${isRare ? 26 : 14}px ${u.color}${isRare ? '55' : '33'}, inset 0 0 18px ${u.color}14`,
+                  }}
+                >
+                  {/* Accent bar */}
+                  <div className="absolute top-0 left-0 right-0 h-1 rounded-t-xl" style={{ background: u.color }} />
+
+                  <div className="text-3xl mb-1.5 drop-shadow-[0_0_10px] leading-none" style={{ color: u.color }}>
+                    {u.icon}
+                  </div>
+                  <div className="font-bold font-mono text-sm tracking-wide mb-1" style={{ color: u.color }}>
+                    {u.name}
+                  </div>
+                  <div className="text-[11px] text-zinc-300 leading-snug min-h-[32px]">
+                    {u.description}
+                  </div>
+
+                  <div className="flex items-center justify-center gap-2 mt-2">
+                    <span
+                      className="text-[8px] font-mono uppercase tracking-widest px-1.5 py-0.5 rounded"
+                      style={{
+                        color: isRare ? '#ffd700' : '#9ca3af',
+                        background: isRare ? 'rgba(255,215,0,0.12)' : 'rgba(255,255,255,0.05)',
+                      }}
+                    >
+                      {isRare ? t('rarity-rare', { defaultValue: 'RARE' }) : t('rarity-common', { defaultValue: 'COMMON' })}
+                    </span>
+                    {u.owned > 0 && (
+                      <span className="text-[8px] font-mono text-zinc-400 px-1.5 py-0.5 rounded bg-white/5">
+                        {t('upgrade-level', { defaultValue: 'LV {{lvl}}', lvl: u.owned + 1 })}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Key hint */}
+                  <div className="absolute -top-2 -left-2 w-6 h-6 rounded-md border bg-black flex items-center justify-center text-[11px] font-mono font-bold"
+                    style={{ borderColor: u.color + '88', color: u.color }}>
+                    {i + 1}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="text-[10px] text-zinc-600 font-mono mt-5 tracking-widest">
+            {t('pick-hint', { defaultValue: 'CLICK OR PRESS 1–3' })}
           </div>
         </div>
       )}
