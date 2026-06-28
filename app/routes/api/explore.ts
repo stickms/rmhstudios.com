@@ -86,7 +86,10 @@ export const Route = createFileRoute('/api/explore')({
 
           return Response.json(
             { trendingTags, hotPosts, suggestedUsers, communities: communityRows },
-            { headers: { 'Cache-Control': 'public, max-age=60' } }
+            // Per-viewer (suggestedUsers excludes self/followed), so cache privately —
+            // a shared public cache could serve one user's list (or a logged-out
+            // list containing them) back to another, surfacing self in "who to follow".
+            { headers: { 'Cache-Control': 'private, max-age=30' } }
           );
         } catch (error) {
           console.error('Explore error:', error);
