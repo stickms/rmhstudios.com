@@ -5,6 +5,7 @@
  * bloom, player/boss glow, telegraph rings, phase indicators.
  */
 import type { VoidBreakerEngine } from './game';
+import type { Enemy } from './types';
 import {
   CANVAS_WIDTH, CANVAS_HEIGHT,
   ARENA_W, ARENA_H, ARENA_HW, ARENA_HH,
@@ -488,29 +489,9 @@ export class VoidBreakerRenderer {
             ctx.shadowColor = baseColor;
             ctx.shadowBlur = 8;
             if (e.type === 'sniper') {
-              // Forward-pointing dart aimed at the player.
-              ctx.save();
-              ctx.translate(pos.x, pos.y);
-              ctx.rotate(faceAngle);
-              ctx.beginPath();
-              ctx.moveTo(r * 1.4, 0);
-              ctx.lineTo(-r * 0.8, r * 0.85);
-              ctx.lineTo(-r * 0.35, 0);
-              ctx.lineTo(-r * 0.8, -r * 0.85);
-              ctx.closePath();
-              ctx.fill();
-              ctx.restore();
+              this.drawSniperBody(ctx, e, pos.x, pos.y, r, faceAngle, baseColor, game.elapsedMs);
             } else if (e.type === 'shielded') {
-              // Heavy hexagon (the shield arc is drawn separately, facing the player).
-              ctx.beginPath();
-              for (let i = 0; i < 6; i++) {
-                const a = faceAngle + (i * Math.PI) / 3;
-                const X = pos.x + Math.cos(a) * r;
-                const Y = pos.y + Math.sin(a) * r;
-                if (i === 0) ctx.moveTo(X, Y); else ctx.lineTo(X, Y);
-              }
-              ctx.closePath();
-              ctx.fill();
+              this.drawShieldedBody(ctx, pos.x, pos.y, r, baseColor, game.elapsedMs);
             } else if (e.type === 'healer') {
               // Round body with a bright medic cross.
               ctx.beginPath();
@@ -753,6 +734,117 @@ export class VoidBreakerRenderer {
 
     // ── 18. Vignette ─────────────────────────────────────────────────────────
     this.drawVignette(ctx);
+  }
+
+  /**
+   * Sniper "predator drone" — swept hunter body with a spinning targeting
+   * reticle and a charging eye that flares red as it locks a shot.
+   */
+  private drawSniperBody(
+    ctx: CanvasRenderingContext2D, e: Enemy,
+    x: number, y: number, r: number, faceAngle: number, color: string, timeMs: number,
+  ): void {
+    const tt = timeMs / 1000;
+    const charging = e.bossSpecialActive;
+    const chargeFrac = charging ? 1 - Math.max(0, e.telegraphTimer) / 0.85 : 0;
+    const ringColor = charging ? '#ff3b30' : color;
+
+    // Spinning targeting reticle — contracts toward the body as the shot charges.
+    const reticleR = r * (charging ? 1.5 - chargeFrac * 0.5 : 1.55);
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(tt * 2.2);
+    ctx.strokeStyle = ringColor;
+    ctx.lineWidth = 1.4;
+    ctx.shadowColor = ringColor;
+    ctx.shadowBlur = 6;
+    for (let k = 0; k < 2; k++) {
+      ctx.beginPath();
+      ctx.arc(0, 0, reticleR, k * Math.PI - 0.55, k * Math.PI + 0.55);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // Hunter body — swept fins + forward fuselage.
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(faceAngle);
+    ctx.fillStyle = color;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.moveTo(r * 0.2, 0);
+    ctx.lineTo(-r * 0.95, r * 1.05);
+    ctx.lineTo(-r * 0.5, 0);
+    ctx.lineTo(-r * 0.95, -r * 1.05);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(r * 1.55, 0);
+    ctx.lineTo(-r * 0.35, r * 0.42);
+    ctx.lineTo(-r * 0.35, -r * 0.42);
+    ctx.closePath();
+    ctx.fill();
+    // Front lens / eye.
+    const lensPulse = charging ? 0.55 + 0.45 * Math.sin(timeMs * 0.03) : 0.45 + 0.3 * Math.sin(tt * 4);
+    ctx.shadowBlur = charging ? 18 : 10;
+    ctx.fillStyle = charging ? `rgba(255,70,50,${lensPulse})` : `rgba(255,225,150,${lensPulse})`;
+    ctx.beginPath();
+    ctx.arc(r * 1.0, 0, r * (0.26 + chargeFrac * 0.12), 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    ctx.shadowBlur = 0;
+  }
+
+  /**
+   * Shielded "bastion core" — an armored octagon with rotating plate segments
+   * and a pulsing energy heart (its frontal shield arc is drawn separately).
+   */
+  private drawShieldedBody(
+    ctx: CanvasRenderingContext2D,
+    x: number, y: number, r: number, color: string, timeMs: number,
+  ): void {
+    const tt = timeMs / 1000;
+    // Octagon core.
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.fillStyle = color;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    for (let i = 0; i < 8; i++) {
+      const a = i * (Math.PI / 4) + Math.PI / 8;
+      const X = Math.cos(a) * r * 0.72, Y = Math.sin(a) * r * 0.72;
+      if (i === 0) ctx.moveTo(X, Y); else ctx.lineTo(X, Y);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    // Rotating armor plates (thick arc segments with a bright leading edge).
+    ctx.rotate(tt * 0.6);
+    for (let k = 0; k < 4; k++) {
+      const a0 = k * (Math.PI / 2) + 0.28;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = r * 0.34;
+      ctx.beginPath();
+      ctx.arc(0, 0, r * 0.96, a0, a0 + Math.PI / 2 - 0.5);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(0, 0, r * 1.12, a0, a0 + Math.PI / 2 - 0.5);
+      ctx.stroke();
+    }
+    ctx.restore();
+    // Pulsing energy heart.
+    const corePulse = 0.4 + 0.4 * Math.sin(tt * 3);
+    ctx.fillStyle = `rgba(190,215,255,${corePulse})`;
+    ctx.shadowColor = '#9cc0ff';
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    ctx.arc(x, y, r * 0.3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
   }
 
   /** Parallax city silhouettes — all 4 sides of the canvas for full atmosphere. */
