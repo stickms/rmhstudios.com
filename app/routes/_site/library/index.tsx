@@ -33,6 +33,7 @@ import { UploadModal } from '@/components/library/UploadModal';
 import { BookContextMenu, LibraryEditModal } from '@/components/library/LibraryEditControls';
 import { useContextMenu } from '@/components/library/LibraryContextMenu';
 import { LibraryCollections } from '@/components/library/LibraryCollections';
+import { BlurImage } from '@/components/ui/BlurImage';
 import type { CollectionView } from '@/lib/library/collections';
 import '@/components/library/library.css';
 
@@ -473,7 +474,15 @@ function BookSpine({
           <div className={`lib-book__cover ${book.coverUrl ? 'has-cover' : ''}`}>
             <span className="lib-book__edge" aria-hidden="true" />
             {book.coverUrl ? (
-              <img className="lib-book__img" src={book.coverUrl} alt={book.title} loading="lazy" decoding="async" />
+              <BlurImage
+                src={book.coverUrl}
+                alt={book.title}
+                fit="cover"
+                width={150}
+                sizes="150px"
+                className="absolute inset-0 z-0 h-full w-full rounded-[3px_6px_6px_3px]"
+                imgClassName="h-full w-full object-top"
+              />
             ) : (
               <span className="lib-book__title">{book.title}</span>
             )}

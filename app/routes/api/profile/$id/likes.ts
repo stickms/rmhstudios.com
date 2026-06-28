@@ -120,8 +120,10 @@ export const Route = createFileRoute('/api/profile/$id/likes')({
         viewCount: r._count.views,
         liked: viewerId ? r.likes.length > 0 : false,
         reposted: viewerId ? r.reposts.length > 0 : false,
+        edited: !!r.editedAt,
         poll: mapPoll(r.poll),
         gifUrl: r.gifUrl ?? undefined,
+        imageUrls: r.imageUrls ?? undefined,
         original: r.original
           ? {
               id: r.original.id,

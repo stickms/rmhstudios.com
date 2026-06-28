@@ -20,14 +20,22 @@ interface OptimizedImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 
 // Breakpoints for responsive srcSet
 const WIDTHS = [320, 480, 640, 800, 1024, 1280, 1600];
 
+// Internal routes that resize/re-encode on demand via query params (w/h/q/f).
+const RESIZABLE_PREFIXES = [
+  '/api/admin/curated-builds/image/',
+  '/api/feed/image/',
+  '/api/library/cover/',
+];
+
 /**
  * Build an optimized URL for a given source.
- * - Internal curated build images: append query params to the existing URL
- * - External images: route through /api/image-proxy
+ * - Internal resizable routes (curated builds, feed images): append query params
+ * - Other local/static paths: serve as-is (no optimization available)
+ * - External / CDN https images: route through /api/image-proxy
  */
-function buildOptimizedUrl(src: string, w?: number, q?: number, f?: string): string {
-  // Curated build images — append optimization query params
-  if (src.startsWith('/api/admin/curated-builds/image/')) {
+export function buildOptimizedUrl(src: string, w?: number, q?: number, f?: string): string {
+  // Internal routes that support on-demand optimization — append query params.
+  if (RESIZABLE_PREFIXES.some((p) => src.startsWith(p))) {
     const params = new URLSearchParams();
     if (w) params.set('w', String(w));
     if (q) params.set('q', String(q));
@@ -50,7 +58,15 @@ function buildOptimizedUrl(src: string, w?: number, q?: number, f?: string): str
   return `/api/image-proxy?${params.toString()}`;
 }
 
-function generateSrcSet(src: string, quality?: number, format?: string): string {
+/** True if `src` can be resized/re-encoded by our optimizer (so a tiny blur
+ *  placeholder and a responsive srcSet are available). Static local assets
+ *  can't be, so callers fall back to serving them as-is. */
+export function isOptimizable(src: string): boolean {
+  if (RESIZABLE_PREFIXES.some((p) => src.startsWith(p))) return true;
+  return !src.startsWith('/');
+}
+
+export function generateSrcSet(src: string, quality?: number, format?: string): string {
   return WIDTHS
     .map((w) => `${buildOptimizedUrl(src, w, quality, format)} ${w}w`)
     .join(', ');
@@ -75,8 +91,7 @@ export function OptimizedImage({
   if (!src) return null;
 
   // Static local paths can't be optimized — skip srcSet
-  const isLocalStatic = src.startsWith('/') && !src.startsWith('/api/admin/curated-builds/image/');
-  const srcSet = isLocalStatic ? undefined : generateSrcSet(src, quality, format);
+  const srcSet = isOptimizable(src) ? generateSrcSet(src, quality, format) : undefined;
 
   // Default sizes attribute based on layout
   const sizes =

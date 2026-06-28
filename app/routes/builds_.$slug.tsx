@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { createServerFn } from '@tanstack/react-start';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { BuildDetail } from '@/components/user-builds';
-import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { BlurImage } from '@/components/ui/BlurImage';
 import { games } from '@/lib/games';
 import { apps } from '@/lib/apps';
 import { stripTrailingSlash } from '@/lib/url';
@@ -110,7 +110,7 @@ function BuildPage() {
 
         {build.imagePath && (
           <div className="builds-detail__thumb">
-            <OptimizedImage src={build.imagePath} alt={build.title} layout="fullWidth" quality={85} className="w-full" />
+            <BlurImage src={build.imagePath} alt={build.title} fit="cover" width={1280} quality={85} sizes="100vw" className="w-full" imgClassName="w-full" />
           </div>
         )}
       </div>
