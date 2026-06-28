@@ -45,6 +45,8 @@ export function VoidBreakerGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gameRef = useRef<VoidBreakerEngine | null>(null);
   const rendererRef = useRef<VBRenderer | null>(null);
+  /** Set once if renderer.draw throws, to avoid spamming the console each frame. */
+  const renderDrawFailedRef = useRef(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   /** Procedural SFX engine (separate from the music <audio> element). */
   const sfxRef = useRef<VoidBreakerAudio | null>(null);
@@ -274,7 +276,15 @@ export function VoidBreakerGame() {
           game.sfxEvents.length = 0;
         }
 
-        renderer.draw(game, dt);
+        // Contain renderer exceptions so a draw error can't freeze the game loop.
+        try {
+          renderer.draw(game, dt);
+        } catch (err) {
+          if (!renderDrawFailedRef.current) {
+            renderDrawFailedRef.current = true;
+            console.error('[VoidBreaker] renderer.draw failed:', err);
+          }
+        }
 
         // Watch for pause state change via ESC key to open pause menu
         if (game.state === 'paused' && !showPauseMenuRef.current) {
