@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { useDreamRift } from '@/lib/dream-rift/store';
 import { CHARACTERS } from '@/lib/dream-rift/render/sprites';
+import { saveHiScore } from '@/lib/dream-rift/highscore';
 
 export function ResultScreen({ onRetry, onMenu, onLeaderboard }: { onRetry: () => void; onMenu: () => void; onLeaderboard: () => void }) {
     const result = useDreamRift((s) => s.result);
@@ -19,9 +20,9 @@ export function ResultScreen({ onRetry, onMenu, onLeaderboard }: { onRetry: () =
 
     useEffect(() => {
         if (!result) return;
-        const key = `dr.hi.${result.difficulty}`;
-        const prev = Number((typeof localStorage !== 'undefined' && localStorage.getItem(key)) || 0);
-        if (result.score > prev && typeof localStorage !== 'undefined') localStorage.setItem(key, String(result.score));
+        // Personal best is per character AND per difficulty — a record with one
+        // character must not overwrite another's on the same difficulty.
+        saveHiScore(result.character, result.difficulty, result.score);
     }, [result]);
 
     // Auto-submit the personal score once, as soon as we have a result and a

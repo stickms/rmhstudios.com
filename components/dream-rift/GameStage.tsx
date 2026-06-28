@@ -9,6 +9,7 @@
 
 import { useEffect, useRef } from 'react';
 import { GameSession, type RosterEntry } from '@/lib/dream-rift/net/session';
+import { loadHiScore } from '@/lib/dream-rift/highscore';
 import type { Transport } from '@/lib/dream-rift/net/transport';
 import type { Difficulty } from '@/lib/dream-rift/types';
 import { useDreamRift } from '@/lib/dream-rift/store';
@@ -34,8 +35,10 @@ export function GameStage({ start, onExit }: { start: StartInfo; onExit: () => v
         const wrap = wrapRef.current;
         if (!canvas || !wrap) return;
 
-        const hiKey = `dr.hi.${start.difficulty}`;
-        const hiScore = Number((typeof localStorage !== 'undefined' && localStorage.getItem(hiKey)) || 0);
+        // Show the local player's personal best for THEIR character on this
+        // difficulty, not a difficulty-wide best shared across all characters.
+        const localChar = (start.roster.find((r) => r.isLocal) ?? start.roster[0])?.charId ?? 'bllm';
+        const hiScore = loadHiScore(localChar, start.difficulty);
 
         void music.resume();
         void sfx.resume();
