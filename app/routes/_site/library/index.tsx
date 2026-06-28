@@ -20,6 +20,8 @@ import { useMobileSidebar } from '@/components/feed/MobileSidebarShell';
 import { MobileBrandPrefix } from '@/components/feed/MobileHeader';
 import { type LibraryBook } from '@/lib/library/library';
 import { listAllBooks } from '@/lib/library/library.server';
+import { getAllPosts, type Post } from '@/lib/blog';
+import { LibraryBlogRow } from '@/components/library/LibraryBlogRow';
 import { shelfRiseDelay } from '@/components/library/shelf';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
@@ -34,6 +36,12 @@ const fetchBooks = createServerFn({ method: 'GET' }).handler(async () => ({
   books: await listAllBooks(),
 }));
 
+// Blog posts now lead the library page (the former /blog page is merged in here).
+// getAllPosts already returns newest-first, so the row reads most-recent-on-left.
+const fetchBlogPosts = createServerFn({ method: 'GET' }).handler(async () => ({
+  posts: (await getAllPosts(['title', 'date', 'slug', 'description', 'tags'])) as Partial<Post>[],
+}));
+
 export const Route = createFileRoute('/_site/library/')({
   head: () => ({
     meta: [
@@ -41,14 +49,17 @@ export const Route = createFileRoute('/_site/library/')({
       { name: 'description', content: 'Browse and read the RMH Studios library — a shelf of documents, theses, and plans.' },
     ],
   }),
-  loader: () => fetchBooks(),
+  loader: async () => ({
+    ...(await fetchBooks()),
+    ...(await fetchBlogPosts()),
+  }),
   component: Library,
 });
 
 function Library() {
   const { t } = useTranslation('library');
   const { open: openSidebar } = useMobileSidebar();
-  const { books: initialBooks } = Route.useLoaderData();
+  const { books: initialBooks, posts: blogPosts } = Route.useLoaderData();
   const session = useSession();
   const sessionUser = session.data?.user as { isAdmin?: boolean; handle?: string | null } | undefined;
   const isAdmin = Boolean(sessionUser?.isAdmin);
@@ -246,6 +257,8 @@ function Library() {
             </button>
           )}
         </header>
+
+        <LibraryBlogRow posts={blogPosts} />
 
         {editMode && isAdmin && hasUnmigrated && (
           <div className="lib-edit__migrate">

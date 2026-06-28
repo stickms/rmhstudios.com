@@ -13,7 +13,7 @@
  */
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, Loader2, ArrowUpRight, X } from 'lucide-react';
+import { Check, Loader2, ArrowUpRight, ChevronDown, X } from 'lucide-react';
 import type { Tier } from '@/lib/entitlements';
 import { authClient } from '@/lib/auth-client';
 
@@ -75,9 +75,13 @@ const PLANS: Plan[] = [
 export function MembershipPanel({
   currentTier,
   returnPath = '/pricing',
+  coinShopAnchorId,
 }: {
   currentTier: Tier;
   returnPath?: string;
+  /** When set, shows a ghost button beside the heading that smooth-scrolls to
+   *  the element with this id (the coins shop further down the /store page). */
+  coinShopAnchorId?: string;
 }) {
   const { t } = useTranslation('site');
   const [busy, setBusy] = useState<string | null>(null);
@@ -162,11 +166,27 @@ export function MembershipPanel({
 
         {/* ── Header ─────────────────────────────────────────── */}
         <header className="pricing-fade max-w-2xl">
-          <h1 className="pricing-display text-5xl leading-[0.95] text-site-text sm:text-6xl">
-            {t('hero-heading-line1', { defaultValue: 'Choose your' })}
-            <br />
-            <span className="pricing-italic text-site-accent">{t('hero-heading-line2', { defaultValue: 'altitude.' })}</span>
-          </h1>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <h1 className="pricing-display text-5xl leading-[0.95] text-site-text sm:text-6xl">
+              {t('hero-heading-line1', { defaultValue: 'Choose your' })}
+              <br />
+              <span className="pricing-italic text-site-accent">{t('hero-heading-line2', { defaultValue: 'altitude.' })}</span>
+            </h1>
+            {coinShopAnchorId && (
+              <button
+                type="button"
+                onClick={() =>
+                  document
+                    .getElementById(coinShopAnchorId)
+                    ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                }
+                className="group mt-1 inline-flex shrink-0 items-center gap-2 rounded-full border border-site-border bg-site-surface/40 px-4 py-2 text-sm font-semibold text-site-text transition-colors hover:bg-site-surface-hover"
+              >
+                {t('coins-shop-jump', { defaultValue: 'RMH Coins shop' })}
+                <ChevronDown className="h-4 w-4 transition-transform group-hover:translate-y-0.5" />
+              </button>
+            )}
+          </div>
           <p className="mt-6 max-w-md text-base leading-relaxed text-site-text-muted">
             {t('hero-subheading', { defaultValue: 'Four tiers, one studio. Unlock the full toolset, the RMH API, and a verified badge — or scale the whole thing to your company.' })}
           </p>

@@ -1,29 +1,16 @@
 /**
  * Blog Index Route
+ *
+ * The blog archive has been merged into the Library page (devlog entries now
+ * lead the library as a horizontally-scrolling row). This route redirects to
+ * /library so old links and the former nav entry land in the right place.
+ * Individual entries still live at /blog/$slug.
  */
 
-import { createFileRoute } from '@tanstack/react-router';
-import { createServerFn } from '@tanstack/react-start';
-import { getAllPosts } from '@/lib/blog';
-import { BlogPageContent } from '@/components/blog/BlogPageContent';
-
-const fetchPosts = createServerFn({ method: 'GET' }).handler(async () => {
-  return getAllPosts(['title', 'date', 'slug', 'description', 'image', 'tags']);
-});
+import { createFileRoute, redirect } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_site/blog/')({
-  head: () => ({
-    meta: [
-      { title: 'Devlog | RMH Studios' },
-      { name: 'description', content: 'Behind the scenes of our game development journey.' },
-    ],
-  }),
-  loader: () => fetchPosts(),
-  component: BlogIndexPage,
+  beforeLoad: () => {
+    throw redirect({ to: '/library' });
+  },
 });
-
-function BlogIndexPage() {
-  const posts = Route.useLoaderData();
-
-  return <BlogPageContent posts={posts} />;
-}

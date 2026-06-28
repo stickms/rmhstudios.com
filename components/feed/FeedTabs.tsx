@@ -21,8 +21,10 @@ export function FeedTabs({ mode, onModeChange }: FeedTabsProps) {
 
   return (
     <div className="border-b border-site-border">
-      {/* Feed / Friends mode selector */}
-      <div className="flex border-b border-site-border">
+      {/* Feed / Friends mode selector — hidden on md+ where FeedColumn already
+          renders the For You / Following tabs inline in the header (avoids
+          showing the same toggle twice when filters are open). */}
+      <div className="md:hidden flex border-b border-site-border">
         <button
           onClick={() => onModeChange('feed')}
           aria-pressed={mode === 'feed'}

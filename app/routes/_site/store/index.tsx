@@ -47,8 +47,8 @@ function Store() {
         targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
       >
         <MobileTopBar title={t('store-title', { defaultValue: 'Store' })} />
-        <MembershipPanel currentTier={currentTier} returnPath="/store" />
-        <div className="border-t border-site-border">
+        <MembershipPanel currentTier={currentTier} returnPath="/store" coinShopAnchorId="coins-shop" />
+        <div id="coins-shop" className="scroll-mt-4 border-t border-site-border">
           <ShopColumn />
         </div>
       </AnimatedMain>

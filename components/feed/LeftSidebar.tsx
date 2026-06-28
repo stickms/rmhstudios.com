@@ -6,7 +6,7 @@ import { authClient } from '@/lib/auth-client';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import {
-  Home, BookOpen, Library, Atom, Brain, Wand2,
+  Home, Library, Atom, Brain, Wand2,
   LogOut, PenSquare, User, ShieldCheck, MoreHorizontal, TrendingUp, Inbox, Landmark, Bookmark, ShoppingBag, Compass, Users, Zap, Shield, Terminal, ChevronDown, Car, type LucideIcon
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -41,7 +41,6 @@ const NAV: NavItem[] = [
     children: [
       { href: '/rideshare', label: 'Rideshare', icon: Car },
       { href: '/developer', label: 'Developer', icon: Terminal },
-      { href: '/blog', label: 'Blog', icon: BookOpen },
       { href: '/rmh-capital', label: 'RMH Capital', icon: Landmark },
       { href: '/rmh-pmc', label: 'RMH PMC', icon: Shield },
       { href: '/adaptive-intelligence', label: 'Adaptive Intelligence', icon: Atom },
