@@ -417,8 +417,10 @@ import { Route as ApiDoctrineAdminTiersRouteImport } from './routes/api/doctrine
 import { Route as ApiDoctrineAdminIncidentsRouteImport } from './routes/api/doctrine/admin/incidents'
 import { Route as ApiDoctrineAdminDisclosuresRouteImport } from './routes/api/doctrine/admin/disclosures'
 import { Route as ApiDeveloperKeysIdRouteImport } from './routes/api/developer/keys/$id'
+import { Route as ApiCommunitiesSlugMembersRouteImport } from './routes/api/communities/$slug/members'
 import { Route as ApiCommunitiesSlugJoinRouteImport } from './routes/api/communities/$slug/join'
 import { Route as ApiCommunitiesSlugFeedRouteImport } from './routes/api/communities/$slug/feed'
+import { Route as ApiCommunitiesSlugAnnouncementsRouteImport } from './routes/api/communities/$slug/announcements'
 import { Route as ApiCommentsCommentIdTranslateRouteImport } from './routes/api/comments/$commentId/translate'
 import { Route as ApiBuildsCoverFileRouteImport } from './routes/api/builds/cover/$file'
 import { Route as ApiAnnouncementsIdVoteRouteImport } from './routes/api/announcements/$id/vote'
@@ -453,6 +455,8 @@ import { Route as ApiRideshareRidesIdRateRouteImport } from './routes/api/ridesh
 import { Route as ApiRideshareRidesIdMessagesRouteImport } from './routes/api/rideshare/rides/$id/messages'
 import { Route as ApiLibraryCollectionIdItemsRouteImport } from './routes/api/library/collection/$id/items'
 import { Route as ApiLibraryCollectionIdCoverRouteImport } from './routes/api/library/collection/$id/cover'
+import { Route as ApiCommunitiesSlugMembersUserIdRouteImport } from './routes/api/communities/$slug/members/$userId'
+import { Route as ApiCommunitiesSlugAnnouncementsIdRouteImport } from './routes/api/communities/$slug/announcements/$id'
 import { Route as ApiAdminUsersIdStrikeRouteImport } from './routes/api/admin/users/$id/strike'
 import { Route as ApiAdminUsersIdSetCoinsRouteImport } from './routes/api/admin/users/$id/set-coins'
 import { Route as ApiAdminUsersIdGrantMembershipRouteImport } from './routes/api/admin/users/$id/grant-membership'
@@ -2549,6 +2553,12 @@ const ApiDeveloperKeysIdRoute = ApiDeveloperKeysIdRouteImport.update({
   path: '/api/developer/keys/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCommunitiesSlugMembersRoute =
+  ApiCommunitiesSlugMembersRouteImport.update({
+    id: '/api/communities/$slug/members',
+    path: '/api/communities/$slug/members',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiCommunitiesSlugJoinRoute = ApiCommunitiesSlugJoinRouteImport.update({
   id: '/api/communities/$slug/join',
   path: '/api/communities/$slug/join',
@@ -2559,6 +2569,12 @@ const ApiCommunitiesSlugFeedRoute = ApiCommunitiesSlugFeedRouteImport.update({
   path: '/api/communities/$slug/feed',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCommunitiesSlugAnnouncementsRoute =
+  ApiCommunitiesSlugAnnouncementsRouteImport.update({
+    id: '/api/communities/$slug/announcements',
+    path: '/api/communities/$slug/announcements',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiCommentsCommentIdTranslateRoute =
   ApiCommentsCommentIdTranslateRouteImport.update({
     id: '/api/comments/$commentId/translate',
@@ -2744,6 +2760,18 @@ const ApiLibraryCollectionIdCoverRoute =
     id: '/cover',
     path: '/cover',
     getParentRoute: () => ApiLibraryCollectionIdRoute,
+  } as any)
+const ApiCommunitiesSlugMembersUserIdRoute =
+  ApiCommunitiesSlugMembersUserIdRouteImport.update({
+    id: '/$userId',
+    path: '/$userId',
+    getParentRoute: () => ApiCommunitiesSlugMembersRoute,
+  } as any)
+const ApiCommunitiesSlugAnnouncementsIdRoute =
+  ApiCommunitiesSlugAnnouncementsIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => ApiCommunitiesSlugAnnouncementsRoute,
   } as any)
 const ApiAdminUsersIdStrikeRoute = ApiAdminUsersIdStrikeRouteImport.update({
   id: '/$id/strike',
@@ -3157,8 +3185,10 @@ export interface FileRoutesByFullPath {
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
   '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
+  '/api/communities/$slug/announcements': typeof ApiCommunitiesSlugAnnouncementsRouteWithChildren
   '/api/communities/$slug/feed': typeof ApiCommunitiesSlugFeedRoute
   '/api/communities/$slug/join': typeof ApiCommunitiesSlugJoinRoute
+  '/api/communities/$slug/members': typeof ApiCommunitiesSlugMembersRouteWithChildren
   '/api/developer/keys/$id': typeof ApiDeveloperKeysIdRoute
   '/api/doctrine/admin/disclosures': typeof ApiDoctrineAdminDisclosuresRoute
   '/api/doctrine/admin/incidents': typeof ApiDoctrineAdminIncidentsRoute
@@ -3254,6 +3284,8 @@ export interface FileRoutesByFullPath {
   '/api/admin/users/$id/grant-membership': typeof ApiAdminUsersIdGrantMembershipRoute
   '/api/admin/users/$id/set-coins': typeof ApiAdminUsersIdSetCoinsRoute
   '/api/admin/users/$id/strike': typeof ApiAdminUsersIdStrikeRoute
+  '/api/communities/$slug/announcements/$id': typeof ApiCommunitiesSlugAnnouncementsIdRoute
+  '/api/communities/$slug/members/$userId': typeof ApiCommunitiesSlugMembersUserIdRoute
   '/api/library/collection/$id/cover': typeof ApiLibraryCollectionIdCoverRoute
   '/api/library/collection/$id/items': typeof ApiLibraryCollectionIdItemsRoute
   '/api/rideshare/rides/$id/messages': typeof ApiRideshareRidesIdMessagesRoute
@@ -3593,8 +3625,10 @@ export interface FileRoutesByTo {
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
   '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
+  '/api/communities/$slug/announcements': typeof ApiCommunitiesSlugAnnouncementsRouteWithChildren
   '/api/communities/$slug/feed': typeof ApiCommunitiesSlugFeedRoute
   '/api/communities/$slug/join': typeof ApiCommunitiesSlugJoinRoute
+  '/api/communities/$slug/members': typeof ApiCommunitiesSlugMembersRouteWithChildren
   '/api/developer/keys/$id': typeof ApiDeveloperKeysIdRoute
   '/api/doctrine/admin/disclosures': typeof ApiDoctrineAdminDisclosuresRoute
   '/api/doctrine/admin/incidents': typeof ApiDoctrineAdminIncidentsRoute
@@ -3690,6 +3724,8 @@ export interface FileRoutesByTo {
   '/api/admin/users/$id/grant-membership': typeof ApiAdminUsersIdGrantMembershipRoute
   '/api/admin/users/$id/set-coins': typeof ApiAdminUsersIdSetCoinsRoute
   '/api/admin/users/$id/strike': typeof ApiAdminUsersIdStrikeRoute
+  '/api/communities/$slug/announcements/$id': typeof ApiCommunitiesSlugAnnouncementsIdRoute
+  '/api/communities/$slug/members/$userId': typeof ApiCommunitiesSlugMembersUserIdRoute
   '/api/library/collection/$id/cover': typeof ApiLibraryCollectionIdCoverRoute
   '/api/library/collection/$id/items': typeof ApiLibraryCollectionIdItemsRoute
   '/api/rideshare/rides/$id/messages': typeof ApiRideshareRidesIdMessagesRoute
@@ -4053,8 +4089,10 @@ export interface FileRoutesById {
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
   '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
+  '/api/communities/$slug/announcements': typeof ApiCommunitiesSlugAnnouncementsRouteWithChildren
   '/api/communities/$slug/feed': typeof ApiCommunitiesSlugFeedRoute
   '/api/communities/$slug/join': typeof ApiCommunitiesSlugJoinRoute
+  '/api/communities/$slug/members': typeof ApiCommunitiesSlugMembersRouteWithChildren
   '/api/developer/keys/$id': typeof ApiDeveloperKeysIdRoute
   '/api/doctrine/admin/disclosures': typeof ApiDoctrineAdminDisclosuresRoute
   '/api/doctrine/admin/incidents': typeof ApiDoctrineAdminIncidentsRoute
@@ -4150,6 +4188,8 @@ export interface FileRoutesById {
   '/api/admin/users/$id/grant-membership': typeof ApiAdminUsersIdGrantMembershipRoute
   '/api/admin/users/$id/set-coins': typeof ApiAdminUsersIdSetCoinsRoute
   '/api/admin/users/$id/strike': typeof ApiAdminUsersIdStrikeRoute
+  '/api/communities/$slug/announcements/$id': typeof ApiCommunitiesSlugAnnouncementsIdRoute
+  '/api/communities/$slug/members/$userId': typeof ApiCommunitiesSlugMembersUserIdRoute
   '/api/library/collection/$id/cover': typeof ApiLibraryCollectionIdCoverRoute
   '/api/library/collection/$id/items': typeof ApiLibraryCollectionIdItemsRoute
   '/api/rideshare/rides/$id/messages': typeof ApiRideshareRidesIdMessagesRoute
@@ -4513,8 +4553,10 @@ export interface FileRouteTypes {
     | '/api/announcements/$id/vote'
     | '/api/builds/cover/$file'
     | '/api/comments/$commentId/translate'
+    | '/api/communities/$slug/announcements'
     | '/api/communities/$slug/feed'
     | '/api/communities/$slug/join'
+    | '/api/communities/$slug/members'
     | '/api/developer/keys/$id'
     | '/api/doctrine/admin/disclosures'
     | '/api/doctrine/admin/incidents'
@@ -4610,6 +4652,8 @@ export interface FileRouteTypes {
     | '/api/admin/users/$id/grant-membership'
     | '/api/admin/users/$id/set-coins'
     | '/api/admin/users/$id/strike'
+    | '/api/communities/$slug/announcements/$id'
+    | '/api/communities/$slug/members/$userId'
     | '/api/library/collection/$id/cover'
     | '/api/library/collection/$id/items'
     | '/api/rideshare/rides/$id/messages'
@@ -4949,8 +4993,10 @@ export interface FileRouteTypes {
     | '/api/announcements/$id/vote'
     | '/api/builds/cover/$file'
     | '/api/comments/$commentId/translate'
+    | '/api/communities/$slug/announcements'
     | '/api/communities/$slug/feed'
     | '/api/communities/$slug/join'
+    | '/api/communities/$slug/members'
     | '/api/developer/keys/$id'
     | '/api/doctrine/admin/disclosures'
     | '/api/doctrine/admin/incidents'
@@ -5046,6 +5092,8 @@ export interface FileRouteTypes {
     | '/api/admin/users/$id/grant-membership'
     | '/api/admin/users/$id/set-coins'
     | '/api/admin/users/$id/strike'
+    | '/api/communities/$slug/announcements/$id'
+    | '/api/communities/$slug/members/$userId'
     | '/api/library/collection/$id/cover'
     | '/api/library/collection/$id/items'
     | '/api/rideshare/rides/$id/messages'
@@ -5408,8 +5456,10 @@ export interface FileRouteTypes {
     | '/api/announcements/$id/vote'
     | '/api/builds/cover/$file'
     | '/api/comments/$commentId/translate'
+    | '/api/communities/$slug/announcements'
     | '/api/communities/$slug/feed'
     | '/api/communities/$slug/join'
+    | '/api/communities/$slug/members'
     | '/api/developer/keys/$id'
     | '/api/doctrine/admin/disclosures'
     | '/api/doctrine/admin/incidents'
@@ -5505,6 +5555,8 @@ export interface FileRouteTypes {
     | '/api/admin/users/$id/grant-membership'
     | '/api/admin/users/$id/set-coins'
     | '/api/admin/users/$id/strike'
+    | '/api/communities/$slug/announcements/$id'
+    | '/api/communities/$slug/members/$userId'
     | '/api/library/collection/$id/cover'
     | '/api/library/collection/$id/items'
     | '/api/rideshare/rides/$id/messages'
@@ -5725,8 +5777,10 @@ export interface RootRouteChildren {
   ApiAdminVibeBackfillThumbsRoute: typeof ApiAdminVibeBackfillThumbsRoute
   ApiBuildsCoverFileRoute: typeof ApiBuildsCoverFileRoute
   ApiCommentsCommentIdTranslateRoute: typeof ApiCommentsCommentIdTranslateRoute
+  ApiCommunitiesSlugAnnouncementsRoute: typeof ApiCommunitiesSlugAnnouncementsRouteWithChildren
   ApiCommunitiesSlugFeedRoute: typeof ApiCommunitiesSlugFeedRoute
   ApiCommunitiesSlugJoinRoute: typeof ApiCommunitiesSlugJoinRoute
+  ApiCommunitiesSlugMembersRoute: typeof ApiCommunitiesSlugMembersRouteWithChildren
   ApiDeveloperKeysIdRoute: typeof ApiDeveloperKeysIdRoute
   ApiDoctrineAdminDisclosuresRoute: typeof ApiDoctrineAdminDisclosuresRoute
   ApiDoctrineAdminIncidentsRoute: typeof ApiDoctrineAdminIncidentsRoute
@@ -8648,6 +8702,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiDeveloperKeysIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/communities/$slug/members': {
+      id: '/api/communities/$slug/members'
+      path: '/api/communities/$slug/members'
+      fullPath: '/api/communities/$slug/members'
+      preLoaderRoute: typeof ApiCommunitiesSlugMembersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/communities/$slug/join': {
       id: '/api/communities/$slug/join'
       path: '/api/communities/$slug/join'
@@ -8660,6 +8721,13 @@ declare module '@tanstack/react-router' {
       path: '/api/communities/$slug/feed'
       fullPath: '/api/communities/$slug/feed'
       preLoaderRoute: typeof ApiCommunitiesSlugFeedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/communities/$slug/announcements': {
+      id: '/api/communities/$slug/announcements'
+      path: '/api/communities/$slug/announcements'
+      fullPath: '/api/communities/$slug/announcements'
+      preLoaderRoute: typeof ApiCommunitiesSlugAnnouncementsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/comments/$commentId/translate': {
@@ -8899,6 +8967,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/library/collection/$id/cover'
       preLoaderRoute: typeof ApiLibraryCollectionIdCoverRouteImport
       parentRoute: typeof ApiLibraryCollectionIdRoute
+    }
+    '/api/communities/$slug/members/$userId': {
+      id: '/api/communities/$slug/members/$userId'
+      path: '/$userId'
+      fullPath: '/api/communities/$slug/members/$userId'
+      preLoaderRoute: typeof ApiCommunitiesSlugMembersUserIdRouteImport
+      parentRoute: typeof ApiCommunitiesSlugMembersRoute
+    }
+    '/api/communities/$slug/announcements/$id': {
+      id: '/api/communities/$slug/announcements/$id'
+      path: '/$id'
+      fullPath: '/api/communities/$slug/announcements/$id'
+      preLoaderRoute: typeof ApiCommunitiesSlugAnnouncementsIdRouteImport
+      parentRoute: typeof ApiCommunitiesSlugAnnouncementsRoute
     }
     '/api/admin/users/$id/strike': {
       id: '/api/admin/users/$id/strike'
@@ -9847,6 +9929,35 @@ const ApiAdminCuratedBuildsImageRouteWithChildren =
     ApiAdminCuratedBuildsImageRouteChildren,
   )
 
+interface ApiCommunitiesSlugAnnouncementsRouteChildren {
+  ApiCommunitiesSlugAnnouncementsIdRoute: typeof ApiCommunitiesSlugAnnouncementsIdRoute
+}
+
+const ApiCommunitiesSlugAnnouncementsRouteChildren: ApiCommunitiesSlugAnnouncementsRouteChildren =
+  {
+    ApiCommunitiesSlugAnnouncementsIdRoute:
+      ApiCommunitiesSlugAnnouncementsIdRoute,
+  }
+
+const ApiCommunitiesSlugAnnouncementsRouteWithChildren =
+  ApiCommunitiesSlugAnnouncementsRoute._addFileChildren(
+    ApiCommunitiesSlugAnnouncementsRouteChildren,
+  )
+
+interface ApiCommunitiesSlugMembersRouteChildren {
+  ApiCommunitiesSlugMembersUserIdRoute: typeof ApiCommunitiesSlugMembersUserIdRoute
+}
+
+const ApiCommunitiesSlugMembersRouteChildren: ApiCommunitiesSlugMembersRouteChildren =
+  {
+    ApiCommunitiesSlugMembersUserIdRoute: ApiCommunitiesSlugMembersUserIdRoute,
+  }
+
+const ApiCommunitiesSlugMembersRouteWithChildren =
+  ApiCommunitiesSlugMembersRoute._addFileChildren(
+    ApiCommunitiesSlugMembersRouteChildren,
+  )
+
 interface ApiLibraryCollectionIdRouteChildren {
   ApiLibraryCollectionIdCoverRoute: typeof ApiLibraryCollectionIdCoverRoute
   ApiLibraryCollectionIdItemsRoute: typeof ApiLibraryCollectionIdItemsRoute
@@ -10059,8 +10170,11 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminVibeBackfillThumbsRoute: ApiAdminVibeBackfillThumbsRoute,
   ApiBuildsCoverFileRoute: ApiBuildsCoverFileRoute,
   ApiCommentsCommentIdTranslateRoute: ApiCommentsCommentIdTranslateRoute,
+  ApiCommunitiesSlugAnnouncementsRoute:
+    ApiCommunitiesSlugAnnouncementsRouteWithChildren,
   ApiCommunitiesSlugFeedRoute: ApiCommunitiesSlugFeedRoute,
   ApiCommunitiesSlugJoinRoute: ApiCommunitiesSlugJoinRoute,
+  ApiCommunitiesSlugMembersRoute: ApiCommunitiesSlugMembersRouteWithChildren,
   ApiDeveloperKeysIdRoute: ApiDeveloperKeysIdRoute,
   ApiDoctrineAdminDisclosuresRoute: ApiDoctrineAdminDisclosuresRoute,
   ApiDoctrineAdminIncidentsRoute: ApiDoctrineAdminIncidentsRoute,

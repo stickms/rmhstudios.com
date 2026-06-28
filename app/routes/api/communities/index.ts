@@ -36,16 +36,32 @@ export const Route = createFileRoute('/api/communities/')({
           take: 50,
           select: { id: true, slug: true, name: true, description: true, icon: true, color: true, memberCount: true },
         });
-        // Mark which the viewer belongs to.
-        let memberSlugs = new Set<string>();
+
+        // Post counts per community (one grouped query, not N).
+        const counts = await prisma.rMHark.groupBy({
+          by: ['communityId'],
+          where: { communityId: { in: communities.map((c) => c.id) }, deletedAt: null },
+          _count: { _all: true },
+        });
+        const postCounts = new Map(counts.map((c) => [c.communityId, c._count._all]));
+
+        // Mark which the viewer belongs to (and their role).
+        const roleBySlug = new Map<string, string>();
         if (session) {
           const mems = await prisma.communityMember.findMany({
             where: { userId: session.user.id, community: { slug: { in: communities.map((c) => c.slug) } } },
-            select: { community: { select: { slug: true } } },
+            select: { role: true, community: { select: { slug: true } } },
           });
-          memberSlugs = new Set(mems.map((m) => m.community.slug));
+          for (const m of mems) roleBySlug.set(m.community.slug, m.role);
         }
-        return Response.json({ communities: communities.map((c) => ({ ...c, joined: memberSlugs.has(c.slug) })) });
+        return Response.json({
+          communities: communities.map((c) => ({
+            ...c,
+            postCount: postCounts.get(c.id) ?? 0,
+            joined: roleBySlug.has(c.slug),
+            role: roleBySlug.get(c.slug) ?? null,
+          })),
+        });
       },
       POST: async ({ request }) => {
         try {
