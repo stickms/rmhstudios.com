@@ -69,6 +69,12 @@
   -webkit-backdrop-filter: saturate(180%) blur(20px);
 }
 
+/* The bottom mobile nav floats over scrolling content, so it needs a more
+   opaque backing than the standard frosted glass to stay legible. */
+.vibe-glass.vibe-mobile-nav {
+  background: rgba(12, 12, 13, 0.96);
+}
+
 /* Cards: subtle translucent surface with a hairline border that brightens on
    hover, echoing the builds/library grid. */
 .vibe-card {

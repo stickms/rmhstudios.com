@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { Loader2, Users, Plus, X } from 'lucide-react';
+import { Loader2, Users, Plus, X, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { HandleInput } from './HandleInput';
 import { useTranslation } from 'react-i18next';
@@ -27,6 +27,7 @@ export function GroupChatsColumn({ embedded = false }: { embedded?: boolean } = 
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [members, setMembers] = useState('');
+  const [query, setQuery] = useState('');
 
   const load = useCallback(async () => {
     const res = await fetch('/api/group-chats', { credentials: 'include' });
@@ -95,14 +96,45 @@ export function GroupChatsColumn({ embedded = false }: { embedded?: boolean } = 
     );
   }
 
+  const q = query.trim().toLowerCase();
+  const visibleGroups = q ? groups.filter((g) => g.name.toLowerCase().includes(q)) : groups;
+
   return (
     <div className="min-h-screen">
       <header className={`flex items-center gap-2 border-b border-site-border px-4 py-3 ${embedded ? '' : 'sticky top-0 z-10 bg-site-bg/80 backdrop-blur'}`}>
-        {!embedded && <Users className="h-5 w-5 text-site-accent" />}
-        {!embedded && <h1 className="text-lg font-bold text-site-text">{t("group-chats", { defaultValue: "Group chats" })}</h1>}
-        <Button size="sm" variant="accent" className="ml-auto gap-1" onClick={() => setShowForm((v) => !v)}>
-          <Plus className="h-3.5 w-3.5" /> {t("new-group", { defaultValue: "New group" })}
-        </Button>
+        {!embedded && <Users className="h-5 w-5 shrink-0 text-site-accent" />}
+        {!embedded && <h1 className="shrink-0 text-lg font-bold text-site-text">{t("group-chats", { defaultValue: "Group chats" })}</h1>}
+        {/* Search + new-group action share a single row; the action is icon-only. */}
+        <div className="relative flex-1 min-w-0">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-site-text-dim" />
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t("search-groups-placeholder", { defaultValue: "Search groups…" })}
+            aria-label={t("search-groups", { defaultValue: "Search groups" })}
+            className="w-full rounded-full border border-site-border bg-site-surface py-2 pl-9 pr-9 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-site-text-dim hover:text-site-text"
+              aria-label={t("clear-search", { defaultValue: "Clear search" })}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowForm((v) => !v)}
+          className="flex shrink-0 items-center justify-center rounded-full bg-site-accent p-2 text-site-bg transition-opacity hover:opacity-90"
+          title={t("new-group", { defaultValue: "New group" })}
+          aria-label={t("new-group", { defaultValue: "New group" })}
+        >
+          <Plus className="h-4 w-4" />
+        </button>
       </header>
 
       {showForm && (
@@ -140,9 +172,11 @@ export function GroupChatsColumn({ embedded = false }: { embedded?: boolean } = 
 
       {groups.length === 0 ? (
         <p className="px-4 py-16 text-center text-sm text-site-text-muted">{t("no-group-chats-yet", { defaultValue: "No group chats yet." })}</p>
+      ) : visibleGroups.length === 0 ? (
+        <p className="px-4 py-16 text-center text-sm text-site-text-muted">{t("no-groups-match", { defaultValue: "No groups match your search." })}</p>
       ) : (
         <div className="divide-y divide-site-border/60">
-          {groups.map((g) => (
+          {visibleGroups.map((g) => (
             <Link
               key={g.id}
               to={`/groups/${g.id}` as string}

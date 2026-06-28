@@ -55,7 +55,7 @@ export function MobileNav() {
       )}
 
       {/* Bottom navigation bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 vibe-glass border-t border-site-border">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 vibe-glass vibe-mobile-nav border-t border-site-border">
         <div className="flex items-center justify-end px-4 py-1 border-b border-site-border">
           <LanguageSwitcher />
         </div>
