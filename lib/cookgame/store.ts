@@ -76,6 +76,8 @@ interface CookgameState {
   buyProperty: (tier: number) => boolean;
   buyKey: (keyId: string) => boolean;
   setCurrentDistrict: (id: string) => void;
+  setRecipeName: (key: string, name: string) => void;
+  toggleRecipeFavorite: (key: string) => void;
 }
 
 const fromSave = (s: SaveState) => ({
@@ -327,4 +329,19 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
   },
 
   setCurrentDistrict: (id) => set({ currentDistrict: id }),
+
+  setRecipeName: (key, name) => {
+    const trimmed = name.trim();
+    const meta = get().recipeMeta;
+    const entry = { ...meta[key] };
+    if (trimmed) entry.name = trimmed;
+    else delete entry.name;
+    set({ recipeMeta: { ...meta, [key]: entry } });
+  },
+
+  toggleRecipeFavorite: (key) => {
+    const meta = get().recipeMeta;
+    const entry = meta[key] ?? {};
+    set({ recipeMeta: { ...meta, [key]: { ...entry, favorite: !entry.favorite } } });
+  },
 }));

@@ -445,3 +445,27 @@ describe('journal tracking', () => {
     expect(useCookgameStore.getState().discoveredEffects).toContain('sedating');
   });
 });
+
+describe('recipe meta actions', () => {
+  beforeEach(reset);
+
+  it('setRecipeName stores a trimmed name', () => {
+    useCookgameStore.getState().setRecipeName('a+b', '  Night Fuel  ');
+    expect(useCookgameStore.getState().recipeMeta['a+b'].name).toBe('Night Fuel');
+  });
+
+  it('an empty name clears the name but keeps other meta', () => {
+    useCookgameStore.setState({ recipeMeta: { 'a+b': { name: 'X', bestValue: 50 } } });
+    useCookgameStore.getState().setRecipeName('a+b', '   ');
+    const m = useCookgameStore.getState().recipeMeta['a+b'];
+    expect(m.name).toBeUndefined();
+    expect(m.bestValue).toBe(50);
+  });
+
+  it('toggleRecipeFavorite flips the flag', () => {
+    useCookgameStore.getState().toggleRecipeFavorite('a+b');
+    expect(useCookgameStore.getState().recipeMeta['a+b'].favorite).toBe(true);
+    useCookgameStore.getState().toggleRecipeFavorite('a+b');
+    expect(useCookgameStore.getState().recipeMeta['a+b'].favorite).toBe(false);
+  });
+});
