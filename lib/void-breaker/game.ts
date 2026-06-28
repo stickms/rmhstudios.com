@@ -592,7 +592,6 @@ export class VoidBreakerEngine {
     // Symmetric fan when multishot — total spread grows gently with bullet count.
     const spreadStep = 0.12;
     const baseAngle = p.aimAngle - (count - 1) * spreadStep * 0.5;
-    let fired = false;
     for (let i = 0; i < count; i++) {
       const slot = this.projectiles.find(pr => !pr.active);
       if (!slot) break;
@@ -609,9 +608,8 @@ export class VoidBreakerEngine {
       slot.life = 2.5;
       slot.pierce = s.pierce;
       slot.lastHitId = -1;
-      fired = true;
     }
-    if (fired) this.emitSfx('shoot', { pitch: 0.94 + Math.random() * 0.12 });
+    // (No auto-fire SFX — a blip every 0.2s reads as annoying. Impacts/kills carry the feedback.)
   }
 
   // ── Combo ──

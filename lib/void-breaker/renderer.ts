@@ -5,6 +5,7 @@
  * bloom, player/boss glow, telegraph rings, phase indicators.
  */
 import type { VoidBreakerEngine } from './game';
+import type { Enemy } from './types';
 import {
   CANVAS_WIDTH, CANVAS_HEIGHT,
   ARENA_W, ARENA_H, ARENA_HW, ARENA_HH,
@@ -63,6 +64,25 @@ const VOID_DUST: VoidDust[] = Array.from({ length: 30 }, (_, i) => ({
   vy: 0.15 + (Math.abs(Math.sin(i * 3.7)) % 1) * 0.25,
   alpha: 0.1 + (Math.abs(Math.sin(i * 17.3)) % 1) * 0.25,
   size: 1 + (Math.abs(Math.sin(i * 53.1)) % 1) * 2,
+}));
+
+// ── Floor puddles (world-space neon reflections) ─────────────────────────────
+const PUDDLES = Array.from({ length: 14 }, (_, i) => ({
+  x: 120 + seed(i * 31 + 10) * (ARENA_W - 240),
+  y: 120 + seed(i * 31 + 20) * (ARENA_H - 240),
+  rx: 16 + seed(i * 31 + 30) * 34,
+  ry: 7 + seed(i * 31 + 31) * 13,
+}));
+
+// ── Floating embers (screen-space ambient sparks that rise) ──────────────────
+interface Ember { x: number; y: number; vy: number; drift: number; size: number; warm: boolean; }
+const EMBERS: Ember[] = Array.from({ length: 24 }, (_, i) => ({
+  x: seed(i * 61) * CANVAS_WIDTH,
+  y: seed(i * 61 + 1) * CANVAS_HEIGHT,
+  vy: 0.25 + seed(i * 61 + 2) * 0.5,
+  drift: seed(i * 61 + 3) * 0.6 - 0.3,
+  size: 0.8 + seed(i * 61 + 4) * 1.5,
+  warm: seed(i * 61 + 5) > 0.5,
 }));
 
 export class VoidBreakerRenderer {
@@ -138,26 +158,16 @@ export class VoidBreakerRenderer {
     // ── 3. Parallax city silhouettes ───────────────────────────────────────
     this.drawCitySilhouettes(ctx, game.arenaPhase);
 
+    // ── 3b. Sky drama — sweeping searchlights + occasional lightning ────────
+    this.drawSkyDrama(ctx, t, game);
+
     // ── 4. Void dust ───────────────────────────────────────────────────────
     this.updateAndDrawVoidDust(ctx, dt);
 
-    // ── 5. Arena floor ─────────────────────────────────────────────────────
+    // ── 5+6. Arena floor — puddles, energy pulses, reflective grid ──────────
     const tl = toScreen(0, 0);
     const br = toScreen(ARENA_W, ARENA_H);
-    ctx.fillStyle = game.currentMapConfig.floorColor;
-    ctx.fillRect(tl.x, tl.y, br.x - tl.x, br.y - tl.y);
-
-    // ── 6. Grid ─────────────────────────────────────────────────────────────
-    ctx.strokeStyle = game.currentMapConfig.gridColor;
-    ctx.lineWidth = 0.8;
-    for (let x = 0; x <= ARENA_W; x += 80) {
-      const s = toScreen(x, 0), e = toScreen(x, ARENA_H);
-      ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(e.x, e.y); ctx.stroke();
-    }
-    for (let y = 0; y <= ARENA_H; y += 80) {
-      const s = toScreen(0, y), e = toScreen(ARENA_W, y);
-      ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(e.x, e.y); ctx.stroke();
-    }
+    this.drawFloor(ctx, game, toScreen, scale, t);
 
     // ── 7. Arena border — glowing neon inset shadow ──────────────────────────
     const borderColor = game.currentMapConfig.borderColor;
@@ -176,39 +186,11 @@ export class VoidBreakerRenderer {
       ctx.strokeRect(tl.x - g.offset, tl.y - g.offset, bw + g.offset * 2, bh + g.offset * 2);
     }
 
-    // ── Map transition door (right edge, wave == transitionWave) ────────────
-    if (game.currentMapConfig.transitionWave === game.wave && game.state === 'playing') {
-      const doorX = ARENA_W * 0.95;
-      const doorY = ARENA_HH;
-      const dpos = toScreen(doorX, doorY);
-      const pulse = 0.6 + Math.sin(t * 4) * 0.4;
-      ctx.fillStyle = `rgba(0, 245, 255, ${0.15 * pulse})`;
-      const dw = 24 * scale, dh = 56 * scale;
-      ctx.fillRect(dpos.x - dw / 2, dpos.y - dh / 2, dw, dh);
-      ctx.strokeStyle = NEON_CYAN;
-      ctx.lineWidth = 2;
-      ctx.strokeRect(dpos.x - dw / 2, dpos.y - dh / 2, dw, dh);
-      ctx.font = `bold ${Math.ceil(8 * scale)}px monospace`;
-      ctx.fillStyle = NEON_CYAN;
-      ctx.textAlign = 'center';
-      ctx.fillText('ADVANCE', dpos.x, dpos.y - dh / 2 - 6);
-      ctx.textAlign = 'left';
-    }
+    // ── 8. Central rift — swirling void portal ──────────────────────────────
+    this.drawRift(ctx, toScreen(ARENA_HW, ARENA_HH), scale, t);
 
-    // ── 8. Central rift ────────────────────────────────────────────────────
-    const rift = toScreen(ARENA_HW, ARENA_HH);
-    const riftPulse = 0.7 + Math.sin(t * 2.5) * 0.3;
-    const grad = ctx.createRadialGradient(rift.x, rift.y, 0, rift.x, rift.y, 50 * scale);
-    grad.addColorStop(0, `rgba(0, 200, 255, ${0.35 * riftPulse})`);
-    grad.addColorStop(0.5, `rgba(200, 0, 255, ${0.15 * riftPulse})`);
-    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.arc(rift.x, rift.y, 50 * scale, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = NEON_CYAN + '44';
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    // ── 8a. Floating embers — ambient drifting sparks ───────────────────────
+    this.drawEmbers(ctx, dt, t);
 
     // ── 8. Pre-pass: obstacle ground shadows (flat offset) ────────────────────
     for (const o of game.obstacles) {
@@ -488,29 +470,9 @@ export class VoidBreakerRenderer {
             ctx.shadowColor = baseColor;
             ctx.shadowBlur = 8;
             if (e.type === 'sniper') {
-              // Forward-pointing dart aimed at the player.
-              ctx.save();
-              ctx.translate(pos.x, pos.y);
-              ctx.rotate(faceAngle);
-              ctx.beginPath();
-              ctx.moveTo(r * 1.4, 0);
-              ctx.lineTo(-r * 0.8, r * 0.85);
-              ctx.lineTo(-r * 0.35, 0);
-              ctx.lineTo(-r * 0.8, -r * 0.85);
-              ctx.closePath();
-              ctx.fill();
-              ctx.restore();
+              this.drawSniperBody(ctx, e, pos.x, pos.y, r, faceAngle, baseColor, game.elapsedMs);
             } else if (e.type === 'shielded') {
-              // Heavy hexagon (the shield arc is drawn separately, facing the player).
-              ctx.beginPath();
-              for (let i = 0; i < 6; i++) {
-                const a = faceAngle + (i * Math.PI) / 3;
-                const X = pos.x + Math.cos(a) * r;
-                const Y = pos.y + Math.sin(a) * r;
-                if (i === 0) ctx.moveTo(X, Y); else ctx.lineTo(X, Y);
-              }
-              ctx.closePath();
-              ctx.fill();
+              this.drawShieldedBody(ctx, pos.x, pos.y, r, baseColor, game.elapsedMs);
             } else if (e.type === 'healer') {
               // Round body with a bright medic cross.
               ctx.beginPath();
@@ -752,7 +714,284 @@ export class VoidBreakerRenderer {
     this.drawScanlines(ctx);
 
     // ── 18. Vignette ─────────────────────────────────────────────────────────
-    this.drawVignette(ctx);
+    this.drawVignette(ctx, game);
+  }
+
+  /**
+   * Sniper "predator drone" — swept hunter body with a spinning targeting
+   * reticle and a charging eye that flares red as it locks a shot.
+   */
+  private drawSniperBody(
+    ctx: CanvasRenderingContext2D, e: Enemy,
+    x: number, y: number, r: number, faceAngle: number, color: string, timeMs: number,
+  ): void {
+    const tt = timeMs / 1000;
+    const charging = e.bossSpecialActive;
+    const chargeFrac = charging ? 1 - Math.max(0, e.telegraphTimer) / 0.85 : 0;
+    const ringColor = charging ? '#ff3b30' : color;
+
+    // Spinning targeting reticle — contracts toward the body as the shot charges.
+    const reticleR = r * (charging ? 1.5 - chargeFrac * 0.5 : 1.55);
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(tt * 2.2);
+    ctx.strokeStyle = ringColor;
+    ctx.lineWidth = 1.4;
+    ctx.shadowColor = ringColor;
+    ctx.shadowBlur = 6;
+    for (let k = 0; k < 2; k++) {
+      ctx.beginPath();
+      ctx.arc(0, 0, reticleR, k * Math.PI - 0.55, k * Math.PI + 0.55);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // Hunter body — swept fins + forward fuselage.
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(faceAngle);
+    ctx.fillStyle = color;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.moveTo(r * 0.2, 0);
+    ctx.lineTo(-r * 0.95, r * 1.05);
+    ctx.lineTo(-r * 0.5, 0);
+    ctx.lineTo(-r * 0.95, -r * 1.05);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(r * 1.55, 0);
+    ctx.lineTo(-r * 0.35, r * 0.42);
+    ctx.lineTo(-r * 0.35, -r * 0.42);
+    ctx.closePath();
+    ctx.fill();
+    // Front lens / eye.
+    const lensPulse = charging ? 0.55 + 0.45 * Math.sin(timeMs * 0.03) : 0.45 + 0.3 * Math.sin(tt * 4);
+    ctx.shadowBlur = charging ? 18 : 10;
+    ctx.fillStyle = charging ? `rgba(255,70,50,${lensPulse})` : `rgba(255,225,150,${lensPulse})`;
+    ctx.beginPath();
+    ctx.arc(r * 1.0, 0, r * (0.26 + chargeFrac * 0.12), 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    ctx.shadowBlur = 0;
+  }
+
+  /**
+   * Shielded "bastion core" — an armored octagon with rotating plate segments
+   * and a pulsing energy heart (its frontal shield arc is drawn separately).
+   */
+  private drawShieldedBody(
+    ctx: CanvasRenderingContext2D,
+    x: number, y: number, r: number, color: string, timeMs: number,
+  ): void {
+    const tt = timeMs / 1000;
+    // Octagon core.
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.fillStyle = color;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    for (let i = 0; i < 8; i++) {
+      const a = i * (Math.PI / 4) + Math.PI / 8;
+      const X = Math.cos(a) * r * 0.72, Y = Math.sin(a) * r * 0.72;
+      if (i === 0) ctx.moveTo(X, Y); else ctx.lineTo(X, Y);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    // Rotating armor plates (thick arc segments with a bright leading edge).
+    ctx.rotate(tt * 0.6);
+    for (let k = 0; k < 4; k++) {
+      const a0 = k * (Math.PI / 2) + 0.28;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = r * 0.34;
+      ctx.beginPath();
+      ctx.arc(0, 0, r * 0.96, a0, a0 + Math.PI / 2 - 0.5);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(0, 0, r * 1.12, a0, a0 + Math.PI / 2 - 0.5);
+      ctx.stroke();
+    }
+    ctx.restore();
+    // Pulsing energy heart.
+    const corePulse = 0.4 + 0.4 * Math.sin(tt * 3);
+    ctx.fillStyle = `rgba(190,215,255,${corePulse})`;
+    ctx.shadowColor = '#9cc0ff';
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    ctx.arc(x, y, r * 0.3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+
+  /** Animated arena floor — puddle reflections, energy pulse rings, reflective grid. */
+  private drawFloor(
+    ctx: CanvasRenderingContext2D, game: VoidBreakerEngine,
+    toScreen: (wx: number, wy: number) => { x: number; y: number },
+    scale: number, t: number,
+  ): void {
+    const tl = toScreen(0, 0);
+    const br = toScreen(ARENA_W, ARENA_H);
+    const fw = br.x - tl.x, fh = br.y - tl.y;
+    const amb = game.currentMapConfig.borderColor;
+    ctx.fillStyle = game.currentMapConfig.floorColor;
+    ctx.fillRect(tl.x, tl.y, fw, fh);
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(tl.x, tl.y, fw, fh);
+    ctx.clip();
+
+    // Puddle reflections shimmering with the ambient neon.
+    for (let i = 0; i < PUDDLES.length; i++) {
+      const pu = PUDDLES[i];
+      const c = toScreen(pu.x, pu.y);
+      const shimmer = Math.max(0, 0.05 + 0.035 * Math.sin(t * 1.5 + i * 1.3));
+      ctx.fillStyle = amb + Math.floor(shimmer * 255).toString(16).padStart(2, '0');
+      ctx.beginPath();
+      ctx.ellipse(c.x, c.y, pu.rx * scale, pu.ry * scale, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Energy pulse rings radiating from the central rift.
+    const ctr = toScreen(ARENA_HW, ARENA_HH);
+    for (let k = 0; k < 3; k++) {
+      const ph = (t * 0.22 + k / 3) % 1;
+      const rad = ph * ARENA_W * 0.62 * scale;
+      const a = (1 - ph) * 0.1;
+      ctx.strokeStyle = amb + Math.floor(a * 255).toString(16).padStart(2, '0');
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(ctr.x, ctr.y, rad, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // Grid — every 4th line is a brighter infrastructure seam.
+    const gridColor = game.currentMapConfig.gridColor;
+    for (let x = 0; x <= ARENA_W; x += 80) {
+      const s = toScreen(x, 0), e = toScreen(x, ARENA_H);
+      const major = (x / 80) % 4 === 0;
+      ctx.strokeStyle = major ? amb + '2e' : gridColor;
+      ctx.lineWidth = major ? 1.1 : 0.7;
+      ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(e.x, e.y); ctx.stroke();
+    }
+    for (let y = 0; y <= ARENA_H; y += 80) {
+      const s = toScreen(0, y), e = toScreen(ARENA_W, y);
+      const major = (y / 80) % 4 === 0;
+      ctx.strokeStyle = major ? amb + '2e' : gridColor;
+      ctx.lineWidth = major ? 1.1 : 0.7;
+      ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(e.x, e.y); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  /** Swirling void portal at arena center — rotating spiral arms + pulsing core. */
+  private drawRift(ctx: CanvasRenderingContext2D, center: { x: number; y: number }, scale: number, t: number): void {
+    const R = 55 * scale;
+    const pulse = 0.7 + Math.sin(t * 2.5) * 0.3;
+    const grad = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, R);
+    grad.addColorStop(0, `rgba(150,90,255,${0.4 * pulse})`);
+    grad.addColorStop(0.5, `rgba(0,200,255,${0.16 * pulse})`);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(center.x, center.y, R, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.save();
+    ctx.translate(center.x, center.y);
+    ctx.rotate(t * 0.6);
+    ctx.strokeStyle = `rgba(190,130,255,${0.38 * pulse})`;
+    ctx.lineWidth = 1.4;
+    for (let arm = 0; arm < 4; arm++) {
+      ctx.rotate(Math.PI / 2);
+      ctx.beginPath();
+      for (let s = 0; s <= 1.0001; s += 0.1) {
+        const ang = s * 3.2;
+        const rr = s * R * 0.92;
+        const X = Math.cos(ang) * rr, Y = Math.sin(ang) * rr;
+        if (s === 0) ctx.moveTo(X, Y); else ctx.lineTo(X, Y);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    ctx.fillStyle = `rgba(225,232,255,${0.6 * pulse})`;
+    ctx.shadowColor = '#9cc0ff';
+    ctx.shadowBlur = 20 * pulse;
+    ctx.beginPath();
+    ctx.arc(center.x, center.y, 6 * scale, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+
+  /** Sweeping searchlight cones + an occasional lightning strike (storms harder in boss fights). */
+  private drawSkyDrama(ctx: CanvasRenderingContext2D, t: number, game: VoidBreakerEngine): void {
+    const lights = [
+      { ox: CANVAS_WIDTH * 0.2, base: -0.18, sweep: 0.5, speed: 0.25, hue: 'rgba(120,200,255,' },
+      { ox: CANVAS_WIDTH * 0.8, base: 0.18, sweep: 0.5, speed: 0.19, hue: 'rgba(255,120,220,' },
+    ];
+    for (const L of lights) {
+      const ang = Math.PI / 2 + L.base + Math.sin(t * L.speed) * L.sweep;
+      const len = CANVAS_HEIGHT * 1.1;
+      const hw = 0.06;
+      const x1 = L.ox + Math.cos(ang - hw) * len, y1 = Math.sin(ang - hw) * len;
+      const x2 = L.ox + Math.cos(ang + hw) * len, y2 = Math.sin(ang + hw) * len;
+      const g = ctx.createLinearGradient(L.ox, 0, (x1 + x2) / 2, (y1 + y2) / 2);
+      g.addColorStop(0, L.hue + '0.10)');
+      g.addColorStop(1, L.hue + '0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.moveTo(L.ox, 0); ctx.lineTo(x1, y1); ctx.lineTo(x2, y2); ctx.closePath();
+      ctx.fill();
+    }
+
+    // Lightning — more frequent and brighter while a boss is alive.
+    const bossActive = game.enemies.some((e) => e.active && e.isBoss);
+    const period = bossActive ? 0.16 : 0.07; // cycles/sec
+    const cycle = (t * period) % 1;
+    if (cycle < 0.045) {
+      const flash = 1 - cycle / 0.045;
+      const intensity = bossActive ? 0.2 : 0.12;
+      ctx.fillStyle = bossActive
+        ? `rgba(255,150,170,${intensity * flash})`
+        : `rgba(170,210,255,${intensity * flash})`;
+      ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+      const strike = Math.floor(t * period);
+      const bx = seed(strike * 7) * CANVAS_WIDTH;
+      ctx.strokeStyle = `rgba(225,238,255,${0.5 * flash})`;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(bx, 0);
+      for (let s = 1; s <= 6; s++) {
+        ctx.lineTo(bx + (seed(strike * 7 + s) - 0.5) * 64, CANVAS_HEIGHT * 0.45 * (s / 6));
+      }
+      ctx.stroke();
+    }
+  }
+
+  /** Ambient embers that drift upward through the scene. */
+  private drawEmbers(ctx: CanvasRenderingContext2D, dt: number, t: number): void {
+    for (let i = 0; i < EMBERS.length; i++) {
+      const e = EMBERS[i];
+      e.y -= e.vy * dt * 60;
+      e.x += e.drift * dt * 60;
+      if (e.y < -4) e.y = CANVAS_HEIGHT + 4;
+      if (e.x < -4) e.x = CANVAS_WIDTH + 4;
+      else if (e.x > CANVAS_WIDTH + 4) e.x = -4;
+      const flick = 0.4 + 0.5 * Math.abs(Math.sin(t * 3 + i * 1.7));
+      ctx.fillStyle = e.warm ? `rgba(255,180,90,${0.5 * flick})` : `rgba(120,220,255,${0.45 * flick})`;
+      ctx.shadowColor = e.warm ? '#ffb45a' : '#78dcff';
+      ctx.shadowBlur = 4;
+      ctx.beginPath();
+      ctx.arc(e.x, e.y, e.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.shadowBlur = 0;
   }
 
   /** Parallax city silhouettes — all 4 sides of the canvas for full atmosphere. */
@@ -915,16 +1154,26 @@ export class VoidBreakerRenderer {
     // Disabled: drawing 135+ rects per frame tanks FPS
   }
 
-  /** Radial vignette to darken corners. */
-  private drawVignette(ctx: CanvasRenderingContext2D): void {
-    const vGrad = ctx.createRadialGradient(
-      CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, CANVAS_HEIGHT * 0.3,
-      CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, CANVAS_HEIGHT * 0.85
-    );
+  /** Radial vignette to darken corners, tinted by mood (red boss / cyan focus). */
+  private drawVignette(ctx: CanvasRenderingContext2D, game: VoidBreakerEngine): void {
+    const cx = CANVAS_WIDTH / 2, cy = CANVAS_HEIGHT / 2;
+    const vGrad = ctx.createRadialGradient(cx, cy, CANVAS_HEIGHT * 0.3, cx, cy, CANVAS_HEIGHT * 0.85);
     vGrad.addColorStop(0, 'rgba(0,0,0,0)');
     vGrad.addColorStop(1, 'rgba(0,0,0,0.55)');
     ctx.fillStyle = vGrad;
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+    // Mood tint creeping in from the edges.
+    const bossActive = game.enemies.some((e) => e.active && e.isBoss);
+    const tint = bossActive ? 'rgba(255,30,60,' : game.player?.focusActive ? 'rgba(0,220,255,' : null;
+    if (tint) {
+      const pulse = 0.06 + 0.04 * Math.sin(this.time * 3);
+      const tGrad = ctx.createRadialGradient(cx, cy, CANVAS_HEIGHT * 0.35, cx, cy, CANVAS_HEIGHT * 0.9);
+      tGrad.addColorStop(0, tint + '0)');
+      tGrad.addColorStop(1, tint + pulse.toFixed(3) + ')');
+      ctx.fillStyle = tGrad;
+      ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    }
   }
 
   dispose(): void {
