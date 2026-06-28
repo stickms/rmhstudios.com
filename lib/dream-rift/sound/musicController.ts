@@ -5,7 +5,7 @@
  * seamlessly (e.g. stage → boss using one looping theme).
  */
 
-import { Howl } from 'howler';
+import { Howl, Howler } from 'howler';
 import { Music, type MusicTrack } from './music';
 
 export interface MusicLike {
@@ -30,10 +30,26 @@ export class MusicController implements MusicLike {
     /** Provide the manifest's `music` map (track → file url). */
     setTracks(map?: Partial<Record<string, string>>): void {
         this.tracks = map ?? {};
+        // If a track was already requested (e.g. menu music kicked off before the
+        // manifest finished loading), (re)start it now that a real file URL exists.
+        if (this.current && this.tracks[this.current] && this.currentUrl !== this.tracks[this.current]) {
+            this.play(this.current);
+        }
     }
 
     async resume(): Promise<void> {
         await this.proc.resume();
+        // Howler creates its WebAudio context suspended under the browser autoplay
+        // policy; resume it on the same user gesture so external BGM starts
+        // immediately instead of waiting for Howler's own internal unlock.
+        try {
+            const ctx = Howler.ctx as (AudioContext | undefined);
+            if (ctx && ctx.state === 'suspended') await ctx.resume();
+        } catch {
+            /* no audio context yet — first play() will create + unlock it */
+        }
+        // If a track was requested before audio was unlocked, start it now.
+        if (this.enabled && this.howl && !this.howl.playing()) this.howl.play();
     }
 
     setEnabled(on: boolean): void {

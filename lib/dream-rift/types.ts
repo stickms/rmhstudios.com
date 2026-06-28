@@ -49,6 +49,10 @@ export interface Bullet {
     /** Position at the end of the previous sim frame (render interpolation). */
     prevX: number;
     prevY: number;
+    /** Cached per-frame velocity (cos/sin of angle×speed); only recomputed for
+     *  curving or accelerating bullets, so straight bullets skip trig entirely. */
+    vx: number;
+    vy: number;
     speed: number;
     angle: number;
     accel: number;
@@ -237,6 +241,10 @@ export interface DifficultyMul {
     enemyDensity: number;
     grazeRadius: number;
     itemPower: number;
+    /** Firing cadence multiplier: >1 fires more often, <1 less often. */
+    fireRate: number;
+    /** Radians of random aim scatter — higher = more forgiving aimed fire. */
+    aimError: number;
 }
 
 // ─── Visual-only effects (never networked, never affect sim outcome) ───

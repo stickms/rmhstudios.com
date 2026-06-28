@@ -14,14 +14,8 @@ import { CHARACTERS } from '@/lib/dream-rift/render/sprites';
 export function ResultScreen({ onRetry, onMenu, onLeaderboard }: { onRetry: () => void; onMenu: () => void; onLeaderboard: () => void }) {
     const result = useDreamRift((s) => s.result);
     const session = authClient.useSession();
-    const [username, setUsername] = useState('');
     const [submitState, setSubmitState] = useState<'idle' | 'saving' | 'done' | 'error'>('idle');
     const [submitMsg, setSubmitMsg] = useState('');
-
-    useEffect(() => {
-        if (session.data?.user?.name && !username) setUsername(session.data.user.name);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [session.data?.user?.name]);
 
     useEffect(() => {
         if (!result) return;
@@ -29,6 +23,43 @@ export function ResultScreen({ onRetry, onMenu, onLeaderboard }: { onRetry: () =
         const prev = Number((typeof localStorage !== 'undefined' && localStorage.getItem(key)) || 0);
         if (result.score > prev && typeof localStorage !== 'undefined') localStorage.setItem(key, String(result.score));
     }, [result]);
+
+    // Auto-submit the personal score once, as soon as we have a result and a
+    // signed-in user — no username prompt; the leaderboard is keyed to the
+    // account (the server derives the display name from the user's handle/name).
+    const [scoreSubmitted, setScoreSubmitted] = useState(false);
+    useEffect(() => {
+        if (!result || scoreSubmitted || !session.data?.user) return;
+        setScoreSubmitted(true);
+        setSubmitState('saving');
+        fetch('/api/dream-rift/score', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                score: Math.min(result.score, 10_000_000),
+                difficulty: result.difficulty,
+                stage: result.stageReached,
+                character: result.character,
+                graze: result.graze,
+                spellsCaptured: result.spellsCaptured,
+            }),
+        })
+            .then(async (res) => {
+                const data = await res.json().catch(() => ({}));
+                if (res.ok) {
+                    setSubmitState('done');
+                    setSubmitMsg('High score saved to the leaderboard!');
+                } else {
+                    setSubmitState('error');
+                    setSubmitMsg(data.error || 'Could not save score.');
+                }
+            })
+            .catch(() => {
+                setSubmitState('error');
+                setSubmitMsg('Network error saving score.');
+            });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [result, session.data?.user]);
 
     // The host of a co-op run submits the squad's combined-score / time-survived
     // record to the co-op leaderboard once, automatically (no username needed).
@@ -46,7 +77,7 @@ export function ResultScreen({ onRetry, onMenu, onLeaderboard }: { onRetry: () =
                 timeSurvived: result.timeSurvived,
                 stageReached: result.stageReached,
                 cleared: result.cleared,
-                players: result.perPlayer,
+                players: result.perPlayer.map((p) => ({ name: p.name, charId: p.charId, score: p.score, userId: p.userId })),
             }),
         }).catch(() => {
             /* best-effort; a failed co-op submit shouldn't disrupt the results screen */
@@ -56,36 +87,6 @@ export function ResultScreen({ onRetry, onMenu, onLeaderboard }: { onRetry: () =
 
     if (!result) return null;
     const coop = result.perPlayer.length > 1;
-
-    const submit = async () => {
-        setSubmitState('saving');
-        try {
-            const res = await fetch('/api/dream-rift/score', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    username,
-                    score: Math.min(result.score, 10_000_000),
-                    difficulty: result.difficulty,
-                    stage: result.stageReached,
-                    character: result.character,
-                    graze: result.graze,
-                    spellsCaptured: result.spellsCaptured,
-                }),
-            });
-            const data = await res.json();
-            if (res.ok) {
-                setSubmitState('done');
-                setSubmitMsg('Score submitted!');
-            } else {
-                setSubmitState('error');
-                setSubmitMsg(data.error || 'Could not submit.');
-            }
-        } catch {
-            setSubmitState('error');
-            setSubmitMsg('Network error.');
-        }
-    };
 
     return (
         <div className="flex min-h-full flex-col items-center justify-center bg-gradient-to-b from-[#0a0118] to-[#120a22] p-6 text-center">
@@ -128,23 +129,14 @@ export function ResultScreen({ onRetry, onMenu, onLeaderboard }: { onRetry: () =
                 {session.data?.user ? (
                     submitState === 'done' ? (
                         <div className="rounded-lg border border-emerald-400/40 bg-emerald-500/10 py-2 text-sm text-emerald-200">{submitMsg}</div>
+                    ) : submitState === 'error' ? (
+                        <div className="rounded-lg border border-rose-400/40 bg-rose-500/10 py-2 text-sm text-rose-200">{submitMsg}</div>
                     ) : (
-                        <div className="flex gap-2">
-                            <input
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
-                                placeholder="Leaderboard name"
-                                className="flex-1 rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-sm text-white placeholder:text-white/30"
-                            />
-                            <button type="button" onClick={submit} disabled={submitState === 'saving' || username.trim().length < 2} className="rounded-lg bg-fuchsia-500/80 px-4 py-2 text-sm font-bold text-white disabled:opacity-40">
-                                {submitState === 'saving' ? '…' : 'Submit'}
-                            </button>
-                        </div>
+                        <div className="rounded-lg border border-white/10 bg-white/[0.03] py-2 text-sm text-white/50">Saving your score…</div>
                     )
                 ) : (
-                    <p className="text-xs text-white/40">Sign in to submit your score to the leaderboard.</p>
+                    <p className="text-xs text-white/40">Sign in to save your high score to the leaderboard.</p>
                 )}
-                {submitState === 'error' && <div className="mt-1 text-xs text-rose-300">{submitMsg}</div>}
             </div>
 
             <div className="mt-6 flex w-full max-w-sm gap-3">

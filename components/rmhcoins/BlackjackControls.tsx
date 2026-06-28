@@ -30,18 +30,34 @@ export function BlackjackControls({ coins }: Props) {
 
   const { t } = useTranslation("c-rmhcoins");
 
+  const MAX_HANDS = 4;
+
   const myPlayer = players.find((p) => p.userId === myUserId);
   const isMyTurn = currentTurnUserId === myUserId;
   const hasBet = myPlayer?.status === 'betting';
-  const canDoubleDown = isMyTurn && myPlayer?.hand.length === 2 && coins >= (myPlayer?.bet ?? 0);
 
-  // Can split: 2 cards of same rank (10/J/Q/K all count as same), haven't split yet, can afford it
+  // The hand the player is currently acting on: a split hand once
+  // activeSplitIndex is 0+, otherwise the main hand. Double/Split must be
+  // evaluated against this hand, not always the main one — otherwise the
+  // buttons reflect the wrong cards while playing split hands.
+  const activeSplit = myPlayer && myPlayer.hasSplit && myPlayer.activeSplitIndex >= 0
+    ? myPlayer.splitHands[myPlayer.activeSplitIndex]
+    : null;
+  const activeCards = activeSplit ? activeSplit.hand : myPlayer?.hand;
+  const activeBet = activeSplit ? activeSplit.bet : (myPlayer?.bet ?? 0);
+  const totalHands = 1 + (myPlayer?.splitHands?.length ?? 0);
+
+  const canDoubleDown = isMyTurn && activeCards?.length === 2 && coins >= activeBet;
+
+  // Can split: an active two-card hand of matching rank (10/J/Q/K all count as
+  // the same), below the max-hands cap, that the player can afford. Re-splitting
+  // a split hand is allowed.
   const rankVal = (r: string) => (['10', 'J', 'Q', 'K'].includes(r) ? '10' : r);
-  const canSplit = isMyTurn && myPlayer?.hand.length === 2
-    && !myPlayer?.hasSplit
-    && myPlayer?.hand[0] && myPlayer?.hand[1]
-    && rankVal(myPlayer.hand[0].rank) === rankVal(myPlayer.hand[1].rank)
-    && coins >= (myPlayer?.bet ?? 0);
+  const canSplit = !!(isMyTurn && activeCards?.length === 2
+    && totalHands < MAX_HANDS
+    && activeCards[0] && activeCards[1]
+    && rankVal(activeCards[0].rank) === rankVal(activeCards[1].rank)
+    && coins >= activeBet);
 
   // Betting countdown timer
   useEffect(() => {

@@ -14,6 +14,22 @@ const DIFFICULTY_FIELDS = {
 type Difficulty = keyof typeof DIFFICULTY_FIELDS;
 type ScoreField = (typeof DIFFICULTY_FIELDS)[Difficulty];
 
+/**
+ * Pick a leaderboard display name from the user's handle/name (the `username`
+ * column is unique), guaranteeing uniqueness by falling back to a user-id
+ * suffix if the preferred name is already taken.
+ */
+async function deriveUniqueUsername(handle: string | null | undefined, name: string | null | undefined, userId: string): Promise<string> {
+  const clean = (s: string | null | undefined) => (s ?? '').trim().replace(/[^a-zA-Z0-9_\-. ]/g, '').slice(0, 24);
+  const base = clean(handle) || clean(name) || 'Dreamer';
+  const candidate = base.length >= 2 ? base : 'Dreamer';
+  const existing = await prisma.dreamRiftPlayer.findUnique({ where: { username: candidate }, select: { id: true } });
+  if (!existing) return candidate;
+  // Name taken by someone else — append a short, stable id fragment.
+  const suffix = `-${userId.slice(0, 6)}`;
+  return `${candidate.slice(0, 24 - suffix.length)}${suffix}`;
+}
+
 export const Route = createFileRoute('/api/dream-rift/score')({
   server: {
     handlers: {
@@ -28,22 +44,15 @@ export const Route = createFileRoute('/api/dream-rift/score')({
   }
 
   try {
-    const { username, score, difficulty, stage, character, graze, spellsCaptured } = await request.json();
+    const { score, difficulty, stage, character, graze, spellsCaptured } = await request.json();
 
-    if (!username || typeof username !== 'string') {
-      return Response.json({ error: 'Invalid username' }, { status: 400 });
-    }
-    const cleanUsername = username.trim().replace(/[^a-zA-Z0-9_\-. ]/g, '').slice(0, 24);
-    if (cleanUsername.length < 2) {
-      return Response.json({ error: 'Invalid username' }, { status: 400 });
-    }
     if (typeof score !== 'number' || score < 0 || score > 10_000_000) {
       return Response.json({ error: 'Invalid score' }, { status: 400 });
     }
 
+    // Scores are tied to the signed-in account — guests cannot post.
     const session = await auth.api.getSession({ headers: request.headers });
     const userId = session?.user?.id;
-
     if (!userId) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -73,24 +82,21 @@ export const Route = createFileRoute('/api/dream-rift/score')({
           totalGraze: { increment: safeGraze },
           spellsCaptured: { increment: safeSpells },
           updatedAt: new Date(),
-          username: cleanUsername,
         },
       });
       await recordGamePlay(userId);
       return Response.json({ success: true, linked: true });
     }
 
-    const usernameConflict = await prisma.dreamRiftPlayer.findUnique({
-      where: { username: cleanUsername },
-    });
-    if (usernameConflict) {
-      return Response.json({ error: 'Username already taken.' }, { status: 409 });
-    }
+    // First submission for this account: derive a unique display name from the
+    // user's handle/name (the leaderboard otherwise renders the linked account).
+    const account = await prisma.user.findUnique({ where: { id: userId }, select: { handle: true, name: true } });
+    const username = await deriveUniqueUsername(account?.handle, account?.name, userId);
 
     await prisma.dreamRiftPlayer.create({
       data: {
         userId,
-        username: cleanUsername,
+        username,
         [scoreField]: Math.round(score),
         bestStage: safeStage,
         character: safeCharacter,
