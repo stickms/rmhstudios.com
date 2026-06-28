@@ -66,6 +66,25 @@ const VOID_DUST: VoidDust[] = Array.from({ length: 30 }, (_, i) => ({
   size: 1 + (Math.abs(Math.sin(i * 53.1)) % 1) * 2,
 }));
 
+// ── Floor puddles (world-space neon reflections) ─────────────────────────────
+const PUDDLES = Array.from({ length: 14 }, (_, i) => ({
+  x: 120 + seed(i * 31 + 10) * (ARENA_W - 240),
+  y: 120 + seed(i * 31 + 20) * (ARENA_H - 240),
+  rx: 16 + seed(i * 31 + 30) * 34,
+  ry: 7 + seed(i * 31 + 31) * 13,
+}));
+
+// ── Floating embers (screen-space ambient sparks that rise) ──────────────────
+interface Ember { x: number; y: number; vy: number; drift: number; size: number; warm: boolean; }
+const EMBERS: Ember[] = Array.from({ length: 24 }, (_, i) => ({
+  x: seed(i * 61) * CANVAS_WIDTH,
+  y: seed(i * 61 + 1) * CANVAS_HEIGHT,
+  vy: 0.25 + seed(i * 61 + 2) * 0.5,
+  drift: seed(i * 61 + 3) * 0.6 - 0.3,
+  size: 0.8 + seed(i * 61 + 4) * 1.5,
+  warm: seed(i * 61 + 5) > 0.5,
+}));
+
 export class VoidBreakerRenderer {
   private ctx: CanvasRenderingContext2D;
   private canvas: HTMLCanvasElement;
@@ -139,26 +158,16 @@ export class VoidBreakerRenderer {
     // ── 3. Parallax city silhouettes ───────────────────────────────────────
     this.drawCitySilhouettes(ctx, game.arenaPhase);
 
+    // ── 3b. Sky drama — sweeping searchlights + occasional lightning ────────
+    this.drawSkyDrama(ctx, t, game);
+
     // ── 4. Void dust ───────────────────────────────────────────────────────
     this.updateAndDrawVoidDust(ctx, dt);
 
-    // ── 5. Arena floor ─────────────────────────────────────────────────────
+    // ── 5+6. Arena floor — puddles, energy pulses, reflective grid ──────────
     const tl = toScreen(0, 0);
     const br = toScreen(ARENA_W, ARENA_H);
-    ctx.fillStyle = game.currentMapConfig.floorColor;
-    ctx.fillRect(tl.x, tl.y, br.x - tl.x, br.y - tl.y);
-
-    // ── 6. Grid ─────────────────────────────────────────────────────────────
-    ctx.strokeStyle = game.currentMapConfig.gridColor;
-    ctx.lineWidth = 0.8;
-    for (let x = 0; x <= ARENA_W; x += 80) {
-      const s = toScreen(x, 0), e = toScreen(x, ARENA_H);
-      ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(e.x, e.y); ctx.stroke();
-    }
-    for (let y = 0; y <= ARENA_H; y += 80) {
-      const s = toScreen(0, y), e = toScreen(ARENA_W, y);
-      ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(e.x, e.y); ctx.stroke();
-    }
+    this.drawFloor(ctx, game, toScreen, scale, t);
 
     // ── 7. Arena border — glowing neon inset shadow ──────────────────────────
     const borderColor = game.currentMapConfig.borderColor;
@@ -177,39 +186,11 @@ export class VoidBreakerRenderer {
       ctx.strokeRect(tl.x - g.offset, tl.y - g.offset, bw + g.offset * 2, bh + g.offset * 2);
     }
 
-    // ── Map transition door (right edge, wave == transitionWave) ────────────
-    if (game.currentMapConfig.transitionWave === game.wave && game.state === 'playing') {
-      const doorX = ARENA_W * 0.95;
-      const doorY = ARENA_HH;
-      const dpos = toScreen(doorX, doorY);
-      const pulse = 0.6 + Math.sin(t * 4) * 0.4;
-      ctx.fillStyle = `rgba(0, 245, 255, ${0.15 * pulse})`;
-      const dw = 24 * scale, dh = 56 * scale;
-      ctx.fillRect(dpos.x - dw / 2, dpos.y - dh / 2, dw, dh);
-      ctx.strokeStyle = NEON_CYAN;
-      ctx.lineWidth = 2;
-      ctx.strokeRect(dpos.x - dw / 2, dpos.y - dh / 2, dw, dh);
-      ctx.font = `bold ${Math.ceil(8 * scale)}px monospace`;
-      ctx.fillStyle = NEON_CYAN;
-      ctx.textAlign = 'center';
-      ctx.fillText('ADVANCE', dpos.x, dpos.y - dh / 2 - 6);
-      ctx.textAlign = 'left';
-    }
+    // ── 8. Central rift — swirling void portal ──────────────────────────────
+    this.drawRift(ctx, toScreen(ARENA_HW, ARENA_HH), scale, t);
 
-    // ── 8. Central rift ────────────────────────────────────────────────────
-    const rift = toScreen(ARENA_HW, ARENA_HH);
-    const riftPulse = 0.7 + Math.sin(t * 2.5) * 0.3;
-    const grad = ctx.createRadialGradient(rift.x, rift.y, 0, rift.x, rift.y, 50 * scale);
-    grad.addColorStop(0, `rgba(0, 200, 255, ${0.35 * riftPulse})`);
-    grad.addColorStop(0.5, `rgba(200, 0, 255, ${0.15 * riftPulse})`);
-    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.arc(rift.x, rift.y, 50 * scale, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = NEON_CYAN + '44';
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    // ── 8a. Floating embers — ambient drifting sparks ───────────────────────
+    this.drawEmbers(ctx, dt, t);
 
     // ── 8. Pre-pass: obstacle ground shadows (flat offset) ────────────────────
     for (const o of game.obstacles) {
@@ -733,7 +714,7 @@ export class VoidBreakerRenderer {
     this.drawScanlines(ctx);
 
     // ── 18. Vignette ─────────────────────────────────────────────────────────
-    this.drawVignette(ctx);
+    this.drawVignette(ctx, game);
   }
 
   /**
@@ -844,6 +825,172 @@ export class VoidBreakerRenderer {
     ctx.beginPath();
     ctx.arc(x, y, r * 0.3, 0, Math.PI * 2);
     ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+
+  /** Animated arena floor — puddle reflections, energy pulse rings, reflective grid. */
+  private drawFloor(
+    ctx: CanvasRenderingContext2D, game: VoidBreakerEngine,
+    toScreen: (wx: number, wy: number) => { x: number; y: number },
+    scale: number, t: number,
+  ): void {
+    const tl = toScreen(0, 0);
+    const br = toScreen(ARENA_W, ARENA_H);
+    const fw = br.x - tl.x, fh = br.y - tl.y;
+    const amb = game.currentMapConfig.borderColor;
+    ctx.fillStyle = game.currentMapConfig.floorColor;
+    ctx.fillRect(tl.x, tl.y, fw, fh);
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(tl.x, tl.y, fw, fh);
+    ctx.clip();
+
+    // Puddle reflections shimmering with the ambient neon.
+    for (let i = 0; i < PUDDLES.length; i++) {
+      const pu = PUDDLES[i];
+      const c = toScreen(pu.x, pu.y);
+      const shimmer = Math.max(0, 0.05 + 0.035 * Math.sin(t * 1.5 + i * 1.3));
+      ctx.fillStyle = amb + Math.floor(shimmer * 255).toString(16).padStart(2, '0');
+      ctx.beginPath();
+      ctx.ellipse(c.x, c.y, pu.rx * scale, pu.ry * scale, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Energy pulse rings radiating from the central rift.
+    const ctr = toScreen(ARENA_HW, ARENA_HH);
+    for (let k = 0; k < 3; k++) {
+      const ph = (t * 0.22 + k / 3) % 1;
+      const rad = ph * ARENA_W * 0.62 * scale;
+      const a = (1 - ph) * 0.1;
+      ctx.strokeStyle = amb + Math.floor(a * 255).toString(16).padStart(2, '0');
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(ctr.x, ctr.y, rad, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // Grid — every 4th line is a brighter infrastructure seam.
+    const gridColor = game.currentMapConfig.gridColor;
+    for (let x = 0; x <= ARENA_W; x += 80) {
+      const s = toScreen(x, 0), e = toScreen(x, ARENA_H);
+      const major = (x / 80) % 4 === 0;
+      ctx.strokeStyle = major ? amb + '2e' : gridColor;
+      ctx.lineWidth = major ? 1.1 : 0.7;
+      ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(e.x, e.y); ctx.stroke();
+    }
+    for (let y = 0; y <= ARENA_H; y += 80) {
+      const s = toScreen(0, y), e = toScreen(ARENA_W, y);
+      const major = (y / 80) % 4 === 0;
+      ctx.strokeStyle = major ? amb + '2e' : gridColor;
+      ctx.lineWidth = major ? 1.1 : 0.7;
+      ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(e.x, e.y); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  /** Swirling void portal at arena center — rotating spiral arms + pulsing core. */
+  private drawRift(ctx: CanvasRenderingContext2D, center: { x: number; y: number }, scale: number, t: number): void {
+    const R = 55 * scale;
+    const pulse = 0.7 + Math.sin(t * 2.5) * 0.3;
+    const grad = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, R);
+    grad.addColorStop(0, `rgba(150,90,255,${0.4 * pulse})`);
+    grad.addColorStop(0.5, `rgba(0,200,255,${0.16 * pulse})`);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(center.x, center.y, R, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.save();
+    ctx.translate(center.x, center.y);
+    ctx.rotate(t * 0.6);
+    ctx.strokeStyle = `rgba(190,130,255,${0.38 * pulse})`;
+    ctx.lineWidth = 1.4;
+    for (let arm = 0; arm < 4; arm++) {
+      ctx.rotate(Math.PI / 2);
+      ctx.beginPath();
+      for (let s = 0; s <= 1.0001; s += 0.1) {
+        const ang = s * 3.2;
+        const rr = s * R * 0.92;
+        const X = Math.cos(ang) * rr, Y = Math.sin(ang) * rr;
+        if (s === 0) ctx.moveTo(X, Y); else ctx.lineTo(X, Y);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    ctx.fillStyle = `rgba(225,232,255,${0.6 * pulse})`;
+    ctx.shadowColor = '#9cc0ff';
+    ctx.shadowBlur = 20 * pulse;
+    ctx.beginPath();
+    ctx.arc(center.x, center.y, 6 * scale, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+
+  /** Sweeping searchlight cones + an occasional lightning strike (storms harder in boss fights). */
+  private drawSkyDrama(ctx: CanvasRenderingContext2D, t: number, game: VoidBreakerEngine): void {
+    const lights = [
+      { ox: CANVAS_WIDTH * 0.2, base: -0.18, sweep: 0.5, speed: 0.25, hue: 'rgba(120,200,255,' },
+      { ox: CANVAS_WIDTH * 0.8, base: 0.18, sweep: 0.5, speed: 0.19, hue: 'rgba(255,120,220,' },
+    ];
+    for (const L of lights) {
+      const ang = Math.PI / 2 + L.base + Math.sin(t * L.speed) * L.sweep;
+      const len = CANVAS_HEIGHT * 1.1;
+      const hw = 0.06;
+      const x1 = L.ox + Math.cos(ang - hw) * len, y1 = Math.sin(ang - hw) * len;
+      const x2 = L.ox + Math.cos(ang + hw) * len, y2 = Math.sin(ang + hw) * len;
+      const g = ctx.createLinearGradient(L.ox, 0, (x1 + x2) / 2, (y1 + y2) / 2);
+      g.addColorStop(0, L.hue + '0.10)');
+      g.addColorStop(1, L.hue + '0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.moveTo(L.ox, 0); ctx.lineTo(x1, y1); ctx.lineTo(x2, y2); ctx.closePath();
+      ctx.fill();
+    }
+
+    // Lightning — more frequent and brighter while a boss is alive.
+    const bossActive = game.enemies.some((e) => e.active && e.isBoss);
+    const period = bossActive ? 0.16 : 0.07; // cycles/sec
+    const cycle = (t * period) % 1;
+    if (cycle < 0.045) {
+      const flash = 1 - cycle / 0.045;
+      const intensity = bossActive ? 0.2 : 0.12;
+      ctx.fillStyle = bossActive
+        ? `rgba(255,150,170,${intensity * flash})`
+        : `rgba(170,210,255,${intensity * flash})`;
+      ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+      const strike = Math.floor(t * period);
+      const bx = seed(strike * 7) * CANVAS_WIDTH;
+      ctx.strokeStyle = `rgba(225,238,255,${0.5 * flash})`;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(bx, 0);
+      for (let s = 1; s <= 6; s++) {
+        ctx.lineTo(bx + (seed(strike * 7 + s) - 0.5) * 64, CANVAS_HEIGHT * 0.45 * (s / 6));
+      }
+      ctx.stroke();
+    }
+  }
+
+  /** Ambient embers that drift upward through the scene. */
+  private drawEmbers(ctx: CanvasRenderingContext2D, dt: number, t: number): void {
+    for (let i = 0; i < EMBERS.length; i++) {
+      const e = EMBERS[i];
+      e.y -= e.vy * dt * 60;
+      e.x += e.drift * dt * 60;
+      if (e.y < -4) e.y = CANVAS_HEIGHT + 4;
+      if (e.x < -4) e.x = CANVAS_WIDTH + 4;
+      else if (e.x > CANVAS_WIDTH + 4) e.x = -4;
+      const flick = 0.4 + 0.5 * Math.abs(Math.sin(t * 3 + i * 1.7));
+      ctx.fillStyle = e.warm ? `rgba(255,180,90,${0.5 * flick})` : `rgba(120,220,255,${0.45 * flick})`;
+      ctx.shadowColor = e.warm ? '#ffb45a' : '#78dcff';
+      ctx.shadowBlur = 4;
+      ctx.beginPath();
+      ctx.arc(e.x, e.y, e.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
     ctx.shadowBlur = 0;
   }
 
@@ -1007,16 +1154,26 @@ export class VoidBreakerRenderer {
     // Disabled: drawing 135+ rects per frame tanks FPS
   }
 
-  /** Radial vignette to darken corners. */
-  private drawVignette(ctx: CanvasRenderingContext2D): void {
-    const vGrad = ctx.createRadialGradient(
-      CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, CANVAS_HEIGHT * 0.3,
-      CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, CANVAS_HEIGHT * 0.85
-    );
+  /** Radial vignette to darken corners, tinted by mood (red boss / cyan focus). */
+  private drawVignette(ctx: CanvasRenderingContext2D, game: VoidBreakerEngine): void {
+    const cx = CANVAS_WIDTH / 2, cy = CANVAS_HEIGHT / 2;
+    const vGrad = ctx.createRadialGradient(cx, cy, CANVAS_HEIGHT * 0.3, cx, cy, CANVAS_HEIGHT * 0.85);
     vGrad.addColorStop(0, 'rgba(0,0,0,0)');
     vGrad.addColorStop(1, 'rgba(0,0,0,0.55)');
     ctx.fillStyle = vGrad;
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+    // Mood tint creeping in from the edges.
+    const bossActive = game.enemies.some((e) => e.active && e.isBoss);
+    const tint = bossActive ? 'rgba(255,30,60,' : game.player?.focusActive ? 'rgba(0,220,255,' : null;
+    if (tint) {
+      const pulse = 0.06 + 0.04 * Math.sin(this.time * 3);
+      const tGrad = ctx.createRadialGradient(cx, cy, CANVAS_HEIGHT * 0.35, cx, cy, CANVAS_HEIGHT * 0.9);
+      tGrad.addColorStop(0, tint + '0)');
+      tGrad.addColorStop(1, tint + pulse.toFixed(3) + ')');
+      ctx.fillStyle = tGrad;
+      ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    }
   }
 
   dispose(): void {
