@@ -6,7 +6,7 @@ import { Loader2, ShoppingBag, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { toast } from 'sonner';
-import { KIND_LABELS, KIND_ORDER, RARITY_COLORS, type ShopItemKind, type Rarity } from '@/lib/shop/catalog';
+import { KIND_LABELS, KIND_ORDER, RARITY_COLORS, RARITY_ORDER, type ShopItemKind, type Rarity } from '@/lib/shop/catalog';
 
 interface ShopItemView {
   id: string;
@@ -118,7 +118,12 @@ export function ShopColumn() {
     }
   };
 
-  const visible = items.filter((i) => i.kind === tab);
+  // Within a category, order by rarity (low → high) then price so the grid
+  // reads as a clear progression.
+  const visible = items
+    .filter((i) => i.kind === tab)
+    .slice()
+    .sort((a, b) => RARITY_ORDER.indexOf(a.rarity) - RARITY_ORDER.indexOf(b.rarity) || a.price - b.price);
 
   return (
     <div className="min-h-screen">
