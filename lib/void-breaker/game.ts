@@ -1,6 +1,6 @@
 import type {
   GameState, Player, Enemy, Projectile, Shard, Particle,
-  Popup, InputState, RunStats, EnemyType, HeartPickup,
+  Popup, InputState, RunStats, EnemyType, HeartPickup, Shockwave,
 } from './types';
 import type { SfxEvent, SfxName } from './audio';
 import {
@@ -78,6 +78,8 @@ export class VoidBreakerEngine {
   particles: Particle[] = [];
   popups: Popup[] = [];
   heartPickups: HeartPickup[] = [];
+  /** Expanding ring effects (detonate, void pulse, boss death). */
+  shockwaves: Shockwave[] = [];
 
   wave = 0;
   waveBreakTimer = 0;
@@ -216,6 +218,7 @@ export class VoidBreakerEngine {
     for (const p of this.particles) p.active = false;
     for (const h of this.heartPickups) h.active = false;
     this.popups = [];
+    this.shockwaves = [];
 
     this.wave = 0;
     this.waveBreakTimer = 0;
@@ -347,6 +350,7 @@ export class VoidBreakerEngine {
       this.updateHeartPickups(worldDt);
       this.updateParticles(dt);
       this.updatePopups(dt);
+      this.updateShockwaves(dt);
       this.updateShake(dt);
       // Dialogue + narrative
       this.dialogue.update(dt);
@@ -1421,6 +1425,8 @@ export class VoidBreakerEngine {
       this.emitSfx('bossKill');
       this.requestHitStop(220);
       this.triggerShake(16, 700);
+      this.spawnShockwave(e.x, e.y, 240, '#ffffff', 7);
+      this.spawnShockwave(e.x, e.y, 160, e.color || '#ff3355', 5);
       // Clear any lingering boss-special state so it can't outlive the boss.
       this.controlsInverted = false;
       this.invertTimer = 0;
@@ -1583,6 +1589,7 @@ export class VoidBreakerEngine {
     this.surgePeak = peak;
     this.surgeMultiplier = peak;
     this.surgeTimer = SURGE_DURATION;
+    this.spawnShockwave(p.x, p.y, blast, '#ff8855', 6);
     this.emitSfx('detonate', { gain: Math.min(1.3, 0.7 + blast / 300) });
     this.requestHitStop(90);
     this.triggerShake(12, 450);
@@ -1664,6 +1671,22 @@ export class VoidBreakerEngine {
     }
   }
 
+  /** Emit an expanding ring effect (rendered, no gameplay impact). */
+  private spawnShockwave(x: number, y: number, maxRadius: number, color: string, width = 4): void {
+    if (this.shockwaves.length > 24) return;
+    this.shockwaves.push({ x, y, radius: 0, maxRadius, life: 0.45, maxLife: 0.45, color, width });
+  }
+
+  private updateShockwaves(dt: number): void {
+    for (let i = this.shockwaves.length - 1; i >= 0; i--) {
+      const s = this.shockwaves[i];
+      s.life -= dt;
+      if (s.life <= 0) { this.shockwaves.splice(i, 1); continue; }
+      const t = 1 - s.life / s.maxLife;     // 0 → 1
+      s.radius = s.maxRadius * (1 - (1 - t) * (1 - t)); // ease-out
+    }
+  }
+
   private triggerShake(mag: number, ms: number): void {
     // Don't let a small shake stomp a bigger one already in flight.
     const dur = ms / 1000;
@@ -1723,6 +1746,7 @@ export class VoidBreakerEngine {
       if (Math.hypot(pr.x - p.x, pr.y - p.y) < VOID_PULSE_RADIUS) pr.active = false;
     }
     this.spawnParticles(p.x, p.y, '#00f5ff', 16, 200);
+    this.spawnShockwave(p.x, p.y, VOID_PULSE_RADIUS, '#00f5ff', 4);
     this.popups.push({ text: 'VOID PULSE', x: p.x, y: p.y - 40, life: 1, maxLife: 1, color: '#00f5ff' });
     this.emitSfx('voidPulse');
     this.triggerShake(6, 250);

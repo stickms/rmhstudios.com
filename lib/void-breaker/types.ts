@@ -127,6 +127,19 @@ export interface Particle {
   size: number;
 }
 
+/** Expanding ring effect for detonations, pulses, and boss deaths. */
+export interface Shockwave {
+  x: number;
+  y: number;
+  /** Current radius (grows from 0 to maxRadius). */
+  radius: number;
+  maxRadius: number;
+  life: number;
+  maxLife: number;
+  color: string;
+  width: number;
+}
+
 export interface Popup {
   text: string;
   x: number;

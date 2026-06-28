@@ -689,6 +689,20 @@ export class VoidBreakerRenderer {
       ctx.fill();
     }
 
+    // ── Post-sort: Shockwaves (expanding rings) ──────────────────────────────
+    for (const sw of game.shockwaves) {
+      const pos = toScreen(sw.x, sw.y);
+      const alpha = sw.life / sw.maxLife;
+      ctx.strokeStyle = sw.color + Math.floor(alpha * 200).toString(16).padStart(2, '0');
+      ctx.lineWidth = Math.max(1, sw.width * scale * (0.4 + alpha * 0.6));
+      ctx.shadowColor = sw.color;
+      ctx.shadowBlur = 14 * alpha;
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, Math.max(1, sw.radius * scale), 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+
     // ── Post-sort: Player HP Bar (always on top) ─────────────────────────────
     if (game.state === 'playing') {
       const playerPos = toScreen(p.x, p.y);
