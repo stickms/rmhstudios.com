@@ -113,14 +113,14 @@ export function SearchColumn({
           />
           {loading && <Loader2 className="h-4 w-4 animate-spin text-site-text-muted" />}
         </div>
-        <div className="mt-3 flex gap-1 overflow-x-auto" role="tablist" aria-label={t('search-categories-aria-label', { defaultValue: 'Search categories' })}>
+        <div className="mt-3 flex flex-nowrap gap-1 overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="tablist" aria-label={t('search-categories-aria-label', { defaultValue: 'Search categories' })}>
           {TABS.map((tab_item) => (
             <button
               key={tab_item.id}
               role="tab"
               aria-selected={tab === tab_item.id}
               onClick={() => setTab(tab_item.id)}
-              className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
+              className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-sm font-medium transition-colors ${
                 tab === tab_item.id
                   ? 'bg-site-accent text-site-accent-fg'
                   : 'text-site-text-muted hover:bg-site-surface hover:text-site-text'

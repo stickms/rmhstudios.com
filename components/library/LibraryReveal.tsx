@@ -13,6 +13,14 @@
  * visual order (top-to-bottom, then left-to-right), so the page always animates
  * blog → collections → books down the page — and only as each row enters the
  * viewport ("lazy"), no matter which data finished loading first.
+ *
+ * Reveal state lives in a `data-revealed` attribute (not a class) set imperatively
+ * here. React owns the `className` of these items and rewrites it whenever a class
+ * it manages changes (e.g. the `is-dragging` / `is-drag-over` classes during admin
+ * drag-and-drop reordering). If the revealed state were a class, that rewrite would
+ * silently drop it and the item would snap back to `opacity: 0` mid-drag — i.e. the
+ * book would "disappear". A data attribute is invisible to React's className
+ * reconciliation, so it survives those updates.
  */
 import {
   createContext,
@@ -56,14 +64,16 @@ export function LibraryRevealProvider({ children }: { children: ReactNode }) {
     });
     batch.forEach((el, i) => {
       el.style.animationDelay = `${Math.min(i, MAX_STEPS) * STEP_MS}ms`;
-      el.classList.add('is-revealed');
+      el.dataset.revealed = 'true';
     });
   }, []);
 
   useEffect(() => {
     if (typeof IntersectionObserver === 'undefined') {
       // No observer support: just show everything.
-      registered.current.forEach((el) => el.classList.add('is-revealed'));
+      registered.current.forEach((el) => {
+        el.dataset.revealed = 'true';
+      });
       return;
     }
     const reduce =
@@ -78,7 +88,7 @@ export function LibraryRevealProvider({ children }: { children: ReactNode }) {
           obs.unobserve(el);
           registered.current.delete(el);
           if (reduce) {
-            el.classList.add('is-revealed');
+            el.dataset.revealed = 'true';
             continue;
           }
           pending.current.push(el);

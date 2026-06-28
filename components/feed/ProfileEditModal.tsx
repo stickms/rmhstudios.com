@@ -29,7 +29,6 @@ interface ProfileEditModalProps {
     website: string | null;
     showLikes: boolean;
     dmPrivacy: string;
-    showProfilePet?: boolean;
   } & ProfileSongData) => void;
   initial: {
     handle: string | null;
@@ -42,8 +41,6 @@ interface ProfileEditModalProps {
     website: string | null;
     showLikes: boolean;
     dmPrivacy: string;
-    hasProfilePet: boolean;
-    showProfilePet: boolean;
     tipGoal?: number | null;
     tipGoalLabel?: string | null;
   } & ProfileSongData;
@@ -72,7 +69,6 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
   const [location, setLocation] = useState(initial.location ?? '');
   const [website, setWebsite] = useState(initial.website ?? '');
   const [showLikes, setShowLikes] = useState(initial.showLikes);
-  const [showProfilePet, setShowProfilePet] = useState(initial.showProfilePet);
   const [dmPrivacy, setDmPrivacy] = useState(initial.dmPrivacy ?? 'EVERYONE');
   const [tipGoal, setTipGoal] = useState<string>(initial.tipGoal ? String(initial.tipGoal) : '');
   const [tipGoalLabel, setTipGoalLabel] = useState(initial.tipGoalLabel ?? '');
@@ -216,7 +212,6 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
         website: website.trim() || null,
         showLikes,
         dmPrivacy,
-        showProfilePet,
         profileSongSpotifyId: selectedSong?.id ?? null,
         profileSongTitle: selectedSong?.title ?? null,
         profileSongArtist: selectedSong?.artist ?? null,
@@ -286,7 +281,6 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
           tipGoalLabel: tipGoalLabel.trim() || null,
           showLikes,
           dmPrivacy,
-          showProfilePet,
           profileSongSpotifyId: selectedSong?.id ?? null,
           profileSongTitle: selectedSong?.title ?? null,
           profileSongArtist: selectedSong?.artist ?? null,
@@ -535,32 +529,6 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
                 />
               </button>
             </div>
-
-            {/* Profile Pet toggle */}
-            {initial.hasProfilePet && (
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-site-text">{t("profile-pet", { defaultValue: "Profile Pet" })}</p>
-                  <p className="text-xs text-site-text-dim mt-0.5">{t("profile-pet-hint", { defaultValue: "Show your 8-bit dog on your profile" })}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowProfilePet(!showProfilePet)}
-                  role="switch"
-                  aria-checked={showProfilePet}
-                  aria-label={t("profile-pet", { defaultValue: "Profile Pet" })}
-                  className={`relative w-10 h-5 rounded-full transition-colors duration-150 ${
-                    showProfilePet ? 'bg-site-accent' : 'bg-site-surface border border-site-border'
-                  }`}
-                >
-                  <span
-                    className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform duration-150 ${
-                      showProfilePet ? 'translate-x-5' : ''
-                    }`}
-                  />
-                </button>
-              </div>
-            )}
 
             {/* DM Privacy */}
             <div>

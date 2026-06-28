@@ -134,9 +134,6 @@ export function LibraryCollections({
       <div className="lib-collections__head">
         <h2 className="lib__section-title">{t('section-collections', { defaultValue: 'Collections' })}</h2>
         <div className="lib-collections__head-actions">
-          {collections.some((c) => c.canEdit) && (
-            <span className="lib__manage-hint">{t('right-click-manage', { defaultValue: 'Right-click to manage' })}</span>
-          )}
           {canCreate && (
             <button type="button" className="lib-upload__open" onClick={() => setCreating(true)}>
               <FolderPlus size={14} aria-hidden="true" />

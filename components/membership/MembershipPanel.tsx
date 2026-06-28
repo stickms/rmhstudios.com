@@ -21,6 +21,36 @@ import { authClient } from '@/lib/auth-client';
 // pulls the prisma client into the client bundle).
 const RANK: Record<Tier, number> = { free: 0, starter: 1, pro: 2, enterprise: 3 };
 
+// Nearest scrollable ancestor of an element (the element that actually scrolls
+// when its content overflows). Used so the "jump to shop" button can target the
+// right scroller — on mobile the page lives inside a custom `overflow-y-auto`
+// container (MobileSidebarShell), not the document.
+function getScrollParent(node: HTMLElement): HTMLElement | null {
+  let el = node.parentElement;
+  while (el) {
+    const oy = getComputedStyle(el).overflowY;
+    if ((oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight) return el;
+    el = el.parentElement;
+  }
+  return null;
+}
+
+// Smooth-scroll an anchor into view. `el.scrollIntoView({ behavior: 'smooth' })`
+// is unreliable inside a nested (non-document) scroll container on mobile Safari,
+// so when the anchor lives in a custom scroller we scroll that container directly.
+function scrollToAnchor(id: string) {
+  const target = document.getElementById(id);
+  if (!target) return;
+  const scroller = getScrollParent(target);
+  if (scroller) {
+    const top =
+      target.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop;
+    scroller.scrollTo({ top, behavior: 'smooth' });
+  } else {
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
 type Plan = {
   tier: Tier;
   name: string;
@@ -175,11 +205,7 @@ export function MembershipPanel({
             {coinShopAnchorId && (
               <button
                 type="button"
-                onClick={() =>
-                  document
-                    .getElementById(coinShopAnchorId)
-                    ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                }
+                onClick={() => scrollToAnchor(coinShopAnchorId)}
                 className="group mt-1 inline-flex shrink-0 items-center gap-2 rounded-full border border-site-border bg-site-surface/40 px-4 py-2 text-sm font-semibold text-site-text transition-colors hover:bg-site-surface-hover"
               >
                 {t('coins-shop-jump', { defaultValue: 'RMH Coins shop' })}

@@ -296,7 +296,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
   async function leave() {
     if (!confirm(t("leave-group-confirm", { defaultValue: "Leave this group?" }))) return;
     const res = await fetch(`/api/group-chats/${encodeURIComponent(id)}/leave`, { method: 'POST', credentials: 'include' });
-    if (res.ok) navigate({ to: '/groups' });
+    if (res.ok) navigate({ to: '/messages', search: { tab: 'groups' } });
   }
 
   if (loading) {
@@ -310,7 +310,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
     return (
       <div className="flex flex-col items-center gap-3 px-6 py-24 text-center">
         <p className="font-medium text-site-text">{t("group-not-found", { defaultValue: "Group not found" })}</p>
-        <Link to="/groups">
+        <Link to="/messages" search={{ tab: 'groups' }}>
           <Button variant="outline">{t("back-to-groups", { defaultValue: "Back to groups" })}</Button>
         </Link>
       </div>
@@ -322,7 +322,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
   return (
     <div className="flex h-screen flex-col">
       <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-site-border bg-site-bg/80 px-4 py-3 backdrop-blur">
-        <Link to="/groups" className="text-site-text-dim hover:text-site-text">
+        <Link to="/messages" search={{ tab: 'groups' }} className="text-site-text-dim hover:text-site-text">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div className="flex h-9 w-9 items-center justify-center rounded-full bg-site-accent/12 text-site-accent">
@@ -342,11 +342,16 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
           const mine = m.sender.id === currentUserId;
           return (
             <div key={m.id} className={`flex gap-2 ${mine ? 'flex-row-reverse' : ''}`}>
-              {!mine && <UserAvatar user={m.sender} />}
+              {/* Show the sender's avatar on every message — including your own
+                  (right-aligned), matching the 1:1 chat layout. */}
+              <UserAvatar user={m.sender} />
               <div className="max-w-[78%]">
                 {!mine && <p className="mb-0.5 px-1 text-[11px] text-site-text-dim">{m.sender.name || m.sender.handle || t("member-fallback", { defaultValue: "Member" })}</p>}
                 {m.content && (
-                  <div className={`whitespace-pre-wrap break-words rounded-2xl px-3 py-2 text-sm ${mine ? 'bg-site-accent text-(--site-accent-fg)' : 'bg-site-surface text-site-text'}`}>
+                  // Received bubbles use a high-contrast light fill so they read
+                  // clearly against the black chat background; sent bubbles keep
+                  // the accent colour. (`bg-site-text` is theme-adaptive.)
+                  <div className={`whitespace-pre-wrap break-words rounded-2xl px-3 py-2 text-sm ${mine ? 'bg-site-accent text-(--site-accent-fg)' : 'bg-site-text text-site-bg'}`}>
                     {m.content}
                   </div>
                 )}

@@ -34,8 +34,6 @@ const profileSelect = {
       tipGoal: true,
       tipGoalLabel: true,
       coins: true,
-      hasProfilePet: true,
-      showProfilePet: true,
     },
   },
   _count: {
@@ -150,8 +148,6 @@ export const Route = createFileRoute('/api/profile/$id')({
       profileSongPreviewUrl: user.profile?.profileSongPreviewUrl ?? null,
       profileSongAlbumArt: user.profile?.profileSongAlbumArt ?? null,
       coins: user.profile?.coins ?? 10,
-      hasProfilePet: user.profile?.hasProfilePet ?? false,
-      showProfilePet: user.profile?.showProfilePet ?? true,
       followerCount: user._count.followers,
       followingCount: user._count.following,
       rmharkCount: user._count.rmharks,
