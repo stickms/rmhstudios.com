@@ -115,6 +115,8 @@ export class VoidBreakerEngine {
   headless = false;
   /** Screen-shake trauma accumulator, 0–1. Shake magnitude = trauma². */
   trauma = 0;
+  /** Boss-death slow-motion timer (seconds). While > 0 the world runs slowed. */
+  slowMoTimer = 0;
   arenaPhase = 0;
   wingLevel = 0;
 
@@ -227,6 +229,7 @@ export class VoidBreakerEngine {
       dashTimer: 0, dashVx: 0, dashVy: 0,
       focusCooldown: 0, focusActive: false, focusTimer: 0,
       hitFlashUntil: 0,
+      recoil: 0,
     };
 
     for (const e of this.enemies) e.active = false;
@@ -259,6 +262,7 @@ export class VoidBreakerEngine {
     this.nextId = 0;
     this.shakeX = 0; this.shakeY = 0;
     this.trauma = 0;
+    this.slowMoTimer = 0;
     this.hitStopTimer = 0;
     this.heartbeatTimer = 0;
     this.sfxEvents.length = 0;
@@ -395,9 +399,16 @@ export class VoidBreakerEngine {
 
       this.elapsedMs += dt * 1000;
 
+      // Boss-death slow-mo (presentation only; never set under headless).
+      let slowMul = 1;
+      if (this.slowMoTimer > 0) {
+        this.slowMoTimer = Math.max(0, this.slowMoTimer - dt);
+        slowMul = 0.35;
+      }
+
       // Focus time dilation
-      const worldDt = this.player.focusActive ? dt * FOCUS_WORLD_SLOW : dt;
-      const playerDt = this.player.focusActive ? dt * FOCUS_PLAYER_SLOW : dt;
+      const worldDt = (this.player.focusActive ? dt * FOCUS_WORLD_SLOW : dt) * slowMul;
+      const playerDt = (this.player.focusActive ? dt * FOCUS_PLAYER_SLOW : dt) * slowMul;
 
       this.updatePlayer(playerDt, dt, input);
       this.updateProjectiles(worldDt);
@@ -551,6 +562,9 @@ export class VoidBreakerEngine {
   private updatePlayer(playerDt: number, rawDt: number, input: InputState): void {
     const p = this.player;
 
+    // Recoil kick decays back to rest (visual only).
+    if (p.recoil > 0) p.recoil = Math.max(0, p.recoil - rawDt * 6);
+
     // Focus update
     if (p.focusActive) {
       p.focusTimer -= rawDt;
@@ -663,6 +677,8 @@ export class VoidBreakerEngine {
       slot.pierce = s.pierce;
       slot.lastHitId = -1;
     }
+    // Visual recoil kick (renderers offset the player backward along the aim).
+    this.player.recoil = 1;
     // (No auto-fire SFX — a blip every 0.2s reads as annoying. Impacts/kills carry the feedback.)
   }
 
@@ -1604,6 +1620,7 @@ export class VoidBreakerEngine {
       this.emitSfx('bossKill');
       this.requestHitStop(220);
       this.triggerShake(16, 700);
+      if (!this.headless) this.slowMoTimer = 0.6; // cinematic boss-death slow-mo
       this.spawnShockwave(e.x, e.y, 240, '#ffffff', 7);
       this.spawnShockwave(e.x, e.y, 160, e.color || '#ff3355', 5);
       // Clear any lingering boss-special state so it can't outlive the boss.

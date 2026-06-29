@@ -91,6 +91,51 @@ describe('feel layer — enemy lifecycle', () => {
   });
 });
 
+describe('feel layer — recoil', () => {
+  it('firing sets recoil that decays toward 0', () => {
+    const g = new VoidBreakerEngine();
+    g.startGame();
+    advanceToPlaying(g);
+    g.player.fireTimer = 0;
+    g.update(0.016, makeInput());            // should fire
+    expect(g.player.recoil).toBeGreaterThan(0);
+    const after = g.player.recoil;
+    for (let i = 0; i < 30; i++) g.update(0.016, makeInput());
+    expect(g.player.recoil).toBeLessThan(after);
+  });
+});
+
+describe('feel layer — boss-death slow-mo', () => {
+  function killFreshBoss(g: VoidBreakerEngine): void {
+    g.enemies.forEach(e => (e.active = false));
+    g.waveEnemiesAlive = 99;
+    const boss = g.enemies.find(e => !e.active)!;
+    boss.active = true; boss.isBoss = true; boss.type = 'tank';
+    boss.x = 800; boss.y = 500; boss.radius = 40; boss.hp = 1; boss.maxHp = 1;
+    boss.color = '#ff3355'; boss.anim = 'alive'; boss.animTimer = 0; boss.shardCount = 0;
+    boss.bossSpecialActive = false;
+    // @ts-expect-error private for test
+    g.killEnemy(boss);
+  }
+
+  it('boss death sets a slow-mo timer', () => {
+    const g = new VoidBreakerEngine();
+    g.startGame();
+    advanceToPlaying(g);
+    killFreshBoss(g);
+    expect(g.slowMoTimer).toBeGreaterThan(0);
+  });
+
+  it('slow-mo is a no-op under headless (sim is not time-distorted)', () => {
+    const h = new VoidBreakerEngine();
+    h.headless = true;
+    h.startGame();
+    advanceToPlaying(h);
+    killFreshBoss(h);
+    expect(h.slowMoTimer).toBe(0);
+  });
+});
+
 describe('feel layer — headless flag', () => {
   it('headless disables hitstop so the sim is not time-distorted', () => {
     const g = new VoidBreakerEngine();

@@ -32,6 +32,8 @@ export interface Player {
   focusTimer: number;
   /** Timestamp — draw hit flash until this time */
   hitFlashUntil: number;
+  /** Visual recoil kick, 1 on fire decaying to 0 (presentation only). */
+  recoil: number;
 }
 
 export interface Enemy {
