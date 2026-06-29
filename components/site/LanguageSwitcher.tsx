@@ -33,6 +33,11 @@ export function LanguageSwitcher() {
     const el = triggerRef.current;
     if (!el) return;
     const r = el.getBoundingClientRect();
+    // Trigger fully scrolled out of view — close rather than float the menu.
+    if (r.bottom <= 0 || r.top >= window.innerHeight) {
+      setOpen(false);
+      return;
+    }
     const width = Math.max(r.width, MENU_MIN_WIDTH);
     const spaceBelow = window.innerHeight - r.bottom - VIEWPORT_PAD;
     const spaceAbove = r.top - VIEWPORT_PAD;
@@ -53,7 +58,15 @@ export function LanguageSwitcher() {
 
   useEffect(() => {
     if (!open) return;
-    const close = () => setOpen(false);
+    let raf = 0;
+    // Keep the menu glued to the trigger while any ancestor scrolls or the
+    // viewport resizes (capture phase catches nested scrollers like the mobile
+    // sidebar drawer). rAF-throttled so rapid scroll coalesces to one measure
+    // per frame. measure() itself closes the menu if the trigger leaves view.
+    const reposition = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(measure);
+    };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setOpen(false);
@@ -65,18 +78,18 @@ export function LanguageSwitcher() {
       if (menuRef.current?.contains(target) || triggerRef.current?.contains(target)) return;
       setOpen(false);
     };
-    // Reposition is hard to keep glued through nested scroll, so just close.
-    window.addEventListener("scroll", close, true);
-    window.addEventListener("resize", close);
+    window.addEventListener("scroll", reposition, true);
+    window.addEventListener("resize", reposition);
     window.addEventListener("keydown", onKey);
     document.addEventListener("pointerdown", onPointer);
     return () => {
-      window.removeEventListener("scroll", close, true);
-      window.removeEventListener("resize", close);
+      cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", reposition, true);
+      window.removeEventListener("resize", reposition);
       window.removeEventListener("keydown", onKey);
       document.removeEventListener("pointerdown", onPointer);
     };
-  }, [open]);
+  }, [open, measure]);
 
   // Focus the active option when the menu opens, for keyboard users.
   useEffect(() => {
