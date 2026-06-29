@@ -10,6 +10,7 @@ import {
   type MetaState, type MetaNodeId,
 } from '@/lib/void-breaker/metaProgression';
 import { CHARACTERS, getCharacter, type CharacterId } from '@/lib/void-breaker/characters';
+import type { WeaponId } from '@/lib/void-breaker/weapons';
 import { MODIFIERS, combineModifiers, type ModifierId } from '@/lib/void-breaker/modifiers';
 import { authClient } from '@/lib/auth-client';
 import { useNavigate } from '@tanstack/react-router';
@@ -43,6 +44,8 @@ export function VoidBreakerUI({
   onSetReducedFx: (on: boolean) => void;
   characterId: CharacterId;
   onSelectCharacter: (id: CharacterId) => void;
+  weaponId: WeaponId;
+  onSelectWeapon: (id: WeaponId) => void;
   activeMods: ModifierId[];
   onToggleModifier: (id: ModifierId) => void;
   meta: MetaState;
