@@ -14,6 +14,7 @@ import {
   loadMeta, saveMeta, metaBonuses, buyNode, awardCores, emptyMeta,
   type MetaState, type MetaNodeId,
 } from '@/lib/void-breaker/metaProgression';
+import { getCharacter, isCharacterId, type CharacterId } from '@/lib/void-breaker/characters';
 import { VoidBreakerUI } from './VoidBreakerUI';
 import { VoidBreakerTouchControls } from './VoidBreakerTouchControls';
 import { saveGame, loadGame, deleteSave, getSaveInfo } from '@/lib/void-breaker/saveSystem';
@@ -74,6 +75,7 @@ export function VoidBreakerGame() {
   const [earnedCores, setEarnedCores] = useState(0);
   const [reducedFx, setReducedFx] = useState(false);
   const reducedFxRef = useRef(false);
+  const [characterId, setCharacterId] = useState<CharacterId>('striker');
   const [saveInfo, setSaveInfo] = useState<{ wave: number; savedAt: Date } | null>(null);
   // Pause menu: 'ingame' pause vs menu
   const [showPauseMenu, setShowPauseMenu] = useState(false);
@@ -97,6 +99,8 @@ export function VoidBreakerGame() {
     const storedFx = localStorage.getItem('vb-reduced-fx');
     const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
     setReducedFx(storedFx !== null ? storedFx === 'true' : prefersReduced);
+    const storedChar = localStorage.getItem('vb-character');
+    if (isCharacterId(storedChar)) setCharacterId(storedChar);
     setMeta(loadMeta());
     setSaveInfo(getSaveInfo());
   }, []);
@@ -408,14 +412,17 @@ export function VoidBreakerGame() {
   const handleStart = useCallback(() => {
     sfxRef.current?.unlock();
     sfxRef.current?.play('uiClick');
-    if (gameRef.current) gameRef.current.metaBonuses = metaBonuses(meta);
+    if (gameRef.current) {
+      gameRef.current.metaBonuses = metaBonuses(meta);
+      gameRef.current.character = getCharacter(characterId);
+    }
     gameRef.current?.startGame();
     setRunStats(null);
     setUiState('playing');
     setShowPauseMenu(false);
     showPauseMenuRef.current = false;
     playMusic();
-  }, [playMusic, meta]);
+  }, [playMusic, meta, characterId]);
 
   /** Save current game state and go to menu. */
   const handleSaveAndQuit = useCallback(() => {
@@ -526,6 +533,12 @@ export function VoidBreakerGame() {
     localStorage.setItem('vb-reduced-fx', on ? 'true' : 'false');
   }, []);
 
+  const handleSelectCharacter = useCallback((id: CharacterId) => {
+    sfxRef.current?.play('uiClick');
+    setCharacterId(id);
+    localStorage.setItem('vb-character', id);
+  }, []);
+
   /** Switch renderer (persisted) — reloads so the canvas gets a fresh context. */
   const handleSetRenderer = useCallback((to3D: boolean) => {
     localStorage.setItem('vb-render-3d', to3D ? 'true' : 'false');
@@ -549,6 +562,7 @@ export function VoidBreakerGame() {
     const game = gameRef.current;
     if (!game) return;
     game.metaBonuses = metaBonuses(meta);
+    game.character = getCharacter(characterId);
     const ok = game.hydrateGameState(save.stateJson as Record<string, unknown>);
     if (ok) {
       setRunStats(null);
@@ -557,7 +571,7 @@ export function VoidBreakerGame() {
       showPauseMenuRef.current = false;
       playMusic();
     }
-  }, [playMusic, meta]);
+  }, [playMusic, meta, characterId]);
 
   const showGame = uiState === 'playing';
 
@@ -1015,6 +1029,8 @@ export function VoidBreakerGame() {
         onSetRenderer={handleSetRenderer}
         reducedFx={reducedFx}
         onSetReducedFx={handleSetReducedFx}
+        characterId={characterId}
+        onSelectCharacter={handleSelectCharacter}
         meta={meta}
         onBuyNode={handleBuyNode}
         earnedCores={earnedCores}
