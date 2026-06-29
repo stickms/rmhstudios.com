@@ -4,7 +4,6 @@
 import { Html } from '@react-three/drei';
 import { useTranslation } from 'react-i18next';
 import { Button3D } from './ui3d/Button3D';
-import { PAGE_H } from './Newspaper';
 import '../desk-newsprint.css';
 
 export function DeskGameFrame({ children, onBack }: { children: React.ReactNode; onBack: () => void }) {
@@ -23,7 +22,8 @@ export function DeskGameFrame({ children, onBack }: { children: React.ReactNode;
           <div className="desk-newsprint">{children}</div>
         </Html>
       </group>
-      {/* 3D back button floating above the page's top edge (billboarded). */}
+      {/* 3D back button floating above the upper area of the page, within the
+          focused-camera frustum. Starting position — fine-tune in the manual gate. */}
       <Button3D
         label={t('back-to-front-page', { defaultValue: '← Front page' })}
         onClick={onBack}
@@ -31,7 +31,7 @@ export function DeskGameFrame({ children, onBack }: { children: React.ReactNode;
         height={0.5}
         fontSize={34}
         color="#8fb0dc"
-        position={[0, 0.4, PAGE_H / 2 + 0.6]}
+        position={[0, 1.0, -2.0]}
       />
     </group>
   );
