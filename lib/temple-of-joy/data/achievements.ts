@@ -627,6 +627,27 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     flavor: 'You have been everywhere. You are still going.',
   },
 
+  // ─── Ascension (meta-prestige) ────────────────────────────────────────────
+
+  {
+    id: 'firstAscension',
+    name: 'Ascended',
+    description: 'Ascend for the first time.',
+    flavor: 'The cycle of cycles begins. The Sun remembers you now.',
+  },
+  {
+    id: 'fiveAscension',
+    name: 'Radiant Soul',
+    description: 'Ascend 5 times.',
+    flavor: 'Light upon light upon light.',
+  },
+  {
+    id: 'tenAscension',
+    name: 'The Bright One',
+    description: 'Ascend 10 times.',
+    flavor: 'You no longer reflect the joy. You are its source.',
+  },
+
   // ─── Patch 2: Karma & Relics ──────────────────────────────────────────────
 
   {

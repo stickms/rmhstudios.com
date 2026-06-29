@@ -13,12 +13,12 @@ import { fmt } from '@/lib/temple-of-joy/numbers';
 export default function HUD() {
   const { t } = useTranslation('c-temple-of-joy');
   const numberFormat = useTempleStore((s) => s.numberFormat);
-  const [snap, setSnap] = useState({ happiness: 0, hps: 0, hpc: 0 });
+  const [snap, setSnap] = useState({ happiness: 0, hps: 0, hpc: 0, radiance: 0, lifetimeRadiance: 0 });
 
   useEffect(() => {
     const id = window.setInterval(() => {
       const s = useTempleStore.getState();
-      setSnap({ happiness: s.happiness, hps: s.getHPS(), hpc: s.getHPC() });
+      setSnap({ happiness: s.happiness, hps: s.getHPS(), hpc: s.getHPC(), radiance: s.radiance, lifetimeRadiance: s.lifetimeRadiance });
     }, 100);
     return () => window.clearInterval(id);
   }, []);
@@ -45,6 +45,12 @@ export default function HUD() {
         {fmt(snap.hps, numberFormat)}{' '}
         <span style={{ opacity: 0.6 }}>{t('happiness-per-sec', { defaultValue: 'happiness/sec' })}</span>
       </div>
+      {snap.lifetimeRadiance > 0 && (
+        <div className="mt-0.5 text-sm font-semibold tabular-nums" style={{ color: 'var(--temple-accent-bright, #f0c84a)' }}>
+          ☀️ {fmt(snap.radiance, numberFormat)}{' '}
+          <span style={{ opacity: 0.6 }}>{t('radiance', { defaultValue: 'Radiance' })}</span>
+        </div>
+      )}
     </div>
   );
 }

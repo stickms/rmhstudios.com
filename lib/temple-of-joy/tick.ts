@@ -7,6 +7,7 @@ import { computeTotalHPS, computeKarmaRate, computeSourceCost, computeMaxAfforda
 import { MILESTONES } from './data/milestones';
 import { EVENTS } from './data/events';
 import { SOURCES } from './data/sources';
+import { auditObjectives } from './data/objectives';
 
 // ACHIEVEMENTS is imported for completeness; individual IDs are hardcoded
 // in the tick for performance.
@@ -324,7 +325,7 @@ export function applyTick(state: GameState): GameState {
     newLastEventEffect = null;
   }
 
-  return {
+  return auditObjectives({
     ...state,
     lastTickTime: now,
     recentClickTimes: prunedClickTimes,
@@ -353,5 +354,5 @@ export function applyTick(state: GameState): GameState {
     milestones: newMilestones,
     achievements: newAchievements,
     autoBuyTimer: newAutoBuyTimer,
-  };
+  });
 }

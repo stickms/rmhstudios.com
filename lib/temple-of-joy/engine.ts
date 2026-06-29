@@ -7,6 +7,79 @@ import { SOURCES, SOURCE_MAP, INITIAL_SOURCES } from './data/sources';
 import { UPGRADES, UPGRADE_MAP } from './data/upgrades';
 import { SYNERGIES } from './data/synergies';
 import { MILESTONES } from './data/milestones';
+import { ASCENSION_UPGRADES } from './data/ascension';
+
+// ─── Ascension (meta-prestige) ────────────────────────────────────────────────
+
+/** Prestige count required for the player's next Ascension. */
+export function computeAscensionPrestigeReq(state: GameState): number {
+  let discount = 0;
+  for (const up of ASCENSION_UPGRADES) {
+    if (state.ascensionUpgrades.has(up.id) && up.ascensionDiscount) {
+      discount = Math.min(0.75, discount + up.ascensionDiscount);
+    }
+  }
+  const base = 15 + state.ascensionCount * 8;
+  return Math.max(5, Math.ceil(base * (1 - discount)));
+}
+
+export function computeCanAscend(state: GameState): boolean {
+  return state.prestigeCount >= computeAscensionPrestigeReq(state);
+}
+
+/** Radiance earned if the player Ascends right now. */
+export function computeRadianceGain(state: GameState): number {
+  if (!computeCanAscend(state)) return 0;
+  const fromPrestige = Math.pow(Math.max(0, state.prestigeCount) / 12, 1.4);
+  const fromLifetime = Math.max(0, Math.log10(Math.max(1, state.lifetimeHappiness)) - 13);
+  let gain = 1 + fromPrestige + fromLifetime;
+  for (const up of ASCENSION_UPGRADES) {
+    if (state.ascensionUpgrades.has(up.id) && up.radianceGainMultiplier) gain *= up.radianceGainMultiplier;
+  }
+  return Math.max(1, Math.floor(gain));
+}
+
+/** Permanent global HPS multiplier from Radiance + ascension upgrades. */
+export function computeAscensionMultiplier(state: GameState): number {
+  // Each point of Radiance is a flat +3% (linear, predictable).
+  let m = 1 + 0.03 * state.radiance;
+  for (const up of ASCENSION_UPGRADES) {
+    if (state.ascensionUpgrades.has(up.id) && up.globalHPSMultiplier) m *= up.globalHPSMultiplier;
+  }
+  return m;
+}
+
+export function computeAscensionHPCMultiplier(state: GameState): number {
+  let m = 1;
+  for (const up of ASCENSION_UPGRADES) {
+    if (state.ascensionUpgrades.has(up.id) && up.hpcMultiplier) m *= up.hpcMultiplier;
+  }
+  return m;
+}
+
+export function computeAscensionOfflineBonus(state: GameState): number {
+  let bonus = 0;
+  for (const up of ASCENSION_UPGRADES) {
+    if (state.ascensionUpgrades.has(up.id) && up.offlineEfficiencyBonus) bonus += up.offlineEfficiencyBonus;
+  }
+  return bonus;
+}
+
+export function computeAscensionBonusRelicSlots(state: GameState): number {
+  let slots = 0;
+  for (const up of ASCENSION_UPGRADES) {
+    if (state.ascensionUpgrades.has(up.id) && up.bonusRelicSlots) slots += up.bonusRelicSlots;
+  }
+  return slots;
+}
+
+export function computeAscensionStartingShards(state: GameState): number {
+  let shards = 0;
+  for (const up of ASCENSION_UPGRADES) {
+    if (state.ascensionUpgrades.has(up.id) && up.startingShards) shards = Math.max(shards, up.startingShards);
+  }
+  return shards;
+}
 
 // ─── Transcendence ────────────────────────────────────────────────────────────
 
@@ -314,6 +387,9 @@ export function computeTotalHPS(state: GameState): number {
     hps *= 1 + Math.min(0.20 * state.totalEventsResolved, 1.0);
   }
 
+  // 27. Ascension: permanent meta multiplier (Radiance + ascension upgrades)
+  hps *= computeAscensionMultiplier(state);
+
   return hps;
 }
 
@@ -411,6 +487,9 @@ export function computeGlobalHPSMultiplier(state: GameState): number {
     multiplier *= 1 + Math.min(0.20 * state.totalEventsResolved, 1.0);
   }
 
+  // Ascension: permanent meta multiplier (Radiance + ascension upgrades)
+  multiplier *= computeAscensionMultiplier(state);
+
   // Note: Hymnal of Excess and Confession Booth add flat HPS, not multiplicative
   // so we don't include them here
 
@@ -450,6 +529,9 @@ export function computeHPC(state: GameState): number {
 
   // philosophersStone relic: ×2 all multipliers (skipped if omegaRelic is active)
   if (state.activeRelics.includes('philosophersStone') && !state.activeRelics.includes('omegaRelic')) base *= 2;
+
+  // Ascension: permanent click multiplier
+  base *= computeAscensionHPCMultiplier(state);
 
   return Math.max(1, base);
 }
@@ -541,6 +623,7 @@ export function computeIsUpgradeVisible(upgradeId: string, state: GameState): bo
     if (state.prestigeCount < req) return false;
   }
   if (def.postPrestige && state.prestigeCount < 1) return false;
+  if (def.requiresAscension !== undefined && state.ascensionCount < def.requiresAscension) return false;
   if (def.requiresUpgrade && !state.upgrades.has(def.requiresUpgrade)) return false;
   if (def.requiresSource) {
     const met = (Object.entries(def.requiresSource) as [SourceId, number][]).every(
@@ -605,6 +688,11 @@ export function computeStartingHPSFromWheel(
       prestigeCount: state.prestigeCount,
       wheelPurchased: state.wheelPurchased,
       samsaraGiftStacks: 0,
+      radiance: 0,
+      lifetimeRadiance: 0,
+      ascensionCount: 0,
+      ascensionUpgrades: new Set<string>(),
+      completedObjectives: new Set<string>(),
       lastSaved: 0,
       lastTickTime: 0,
       totalPlaytime: 0,

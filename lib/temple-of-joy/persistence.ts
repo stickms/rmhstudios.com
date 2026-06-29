@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import type { GameState, SaveData } from './types';
-import { computeTotalHPS } from './engine';
+import { computeTotalHPS, computeAscensionOfflineBonus } from './engine';
 import { useTempleStore } from './store';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -31,6 +31,11 @@ export function stateToSaveData(state: GameState): SaveData {
     prestigeCount: state.prestigeCount,
     wheelPurchased: [...state.wheelPurchased],
     samsaraGiftStacks: state.samsaraGiftStacks,
+    radiance: state.radiance,
+    lifetimeRadiance: state.lifetimeRadiance,
+    ascensionCount: state.ascensionCount,
+    ascensionUpgrades: [...state.ascensionUpgrades],
+    completedObjectives: [...state.completedObjectives],
     lastSaved: Date.now(),
     totalPlaytime: state.totalPlaytime,
     runPlaytime: state.runPlaytime,
@@ -87,6 +92,11 @@ export function saveDataToState(save: SaveData, baseState: GameState): Partial<G
     prestigeCount: save.prestigeCount ?? 0,
     wheelPurchased: new Set(save.wheelPurchased ?? []),
     samsaraGiftStacks: save.samsaraGiftStacks ?? 0,
+    radiance: save.radiance ?? 0,
+    lifetimeRadiance: save.lifetimeRadiance ?? 0,
+    ascensionCount: save.ascensionCount ?? 0,
+    ascensionUpgrades: new Set(save.ascensionUpgrades ?? []),
+    completedObjectives: new Set(save.completedObjectives ?? []),
     lastSaved: save.lastSaved ?? Date.now(),
     totalPlaytime: save.totalPlaytime ?? 0,
     runPlaytime: save.runPlaytime ?? 0,
@@ -191,8 +201,10 @@ export function computeOfflineProgress(
   };
 
   const hps = computeTotalHPS(state);
-  // eternalNap relic: offline progress at 100% efficiency (as if actively playing)
-  const efficiency = state.activeRelics.includes('eternalNap') ? 1.0 : OFFLINE_EFFICIENCY;
+  // eternalNap relic: offline progress at 100% efficiency (as if actively playing).
+  // Ascension upgrades add a permanent offline-efficiency bonus on top (capped at 100%).
+  const baseEfficiency = state.activeRelics.includes('eternalNap') ? 1.0 : OFFLINE_EFFICIENCY;
+  const efficiency = Math.min(1.0, baseEfficiency + computeAscensionOfflineBonus(state));
   // theLongView wheel: uncapped offline income with diminishing returns (no linear cap)
   let happiness: number;
   if (state.wheelPurchased.has('theLongView')) {
