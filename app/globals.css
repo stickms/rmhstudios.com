@@ -2028,6 +2028,19 @@ body {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* Prevent iOS Safari from auto-zooming the page when a form control is focused.
+   Mobile Safari zooms whenever the focused field's computed font-size is < 16px,
+   which reads as a jarring jump on tap. Floor every text-entry control at 16px on
+   phones (<=640px) only, so desktop information density is untouched. This is the
+   site-wide safety net for the many fields that use Tailwind's text-sm/text-xs. */
+@media (max-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
 /* Selection styling */
 ::selection {
   background: var(--site-accent);
@@ -2444,7 +2457,9 @@ img.emoji {
   border: none;
   outline: none;
   color: #fff;
-  font-size: 0.875rem;
+  /* 16px (1rem) avoids iOS focus-zoom; this rule out-specifies the global
+     phone floor above, so it must carry the >=16px value itself. */
+  font-size: 1rem;
   width: 16rem;
 }
 

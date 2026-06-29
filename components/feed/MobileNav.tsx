@@ -47,19 +47,23 @@ export function MobileNav() {
       {session && isHome && (
         <button
           onClick={() => setComposeOpen(true)}
-          className="md:hidden fixed right-4 bottom-18 z-50 w-14 h-14 rounded-full bg-site-accent hover:bg-site-accent-hover text-site-bg shadow-lg flex items-center justify-center transition-colors active:scale-95"
+          className="md:hidden fixed right-4 z-50 w-14 h-14 rounded-full bg-site-accent hover:bg-site-accent-hover text-site-bg shadow-lg flex items-center justify-center transition-colors active:scale-95"
+          // Sit above the bottom nav AND the home-indicator safe area, so the
+          // FAB never collides with the bar or tucks under the indicator.
+          style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 72px)' }}
           aria-label={t("new-post", { defaultValue: "New post" })}
         >
           <PenSquare className="w-6 h-6" />
         </button>
       )}
 
-      {/* Bottom navigation bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 vibe-glass vibe-mobile-nav border-t border-site-border">
+      {/* Bottom navigation bar — pb-safe keeps the tab row clear of the iOS
+          home-indicator (fixed elements don't inherit the body's safe-area pad). */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 vibe-glass vibe-mobile-nav border-t border-site-border pb-safe">
         <div className="flex items-center justify-end px-4 py-1 border-b border-site-border">
           <LanguageSwitcher />
         </div>
-        <div className="flex items-center justify-around h-12">
+        <div className="flex items-center justify-around min-h-12">
           <Link to="/" className={tabClass(isHome)} aria-label={t("home", { defaultValue: "Home" })} aria-current={isHome ? 'page' : undefined}>
             {activeBar(isHome)}
             <Home className="w-6 h-6" />

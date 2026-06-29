@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary'
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback'
+import { DesktopControlsGate } from '@/components/shared/DesktopControlsGate'
 
 const ExploreGame = lazy(() => import('@/components/forest-explorer/explore/ExploreGame').then(m => ({ default: m.ExploreGame })))
 
@@ -29,9 +30,11 @@ function ForestExplorerExplorePage() {
       </div>
       <div className="grow relative overflow-hidden">
         <GameErrorBoundary gameName="Forest Explorer">
-          <Suspense fallback={<GameLoadingFallback />}>
-            <ExploreGame />
-          </Suspense>
+          <DesktopControlsGate gameName="Forest Explorer" backTo="/forest-explorer">
+            <Suspense fallback={<GameLoadingFallback />}>
+              <ExploreGame />
+            </Suspense>
+          </DesktopControlsGate>
         </GameErrorBoundary>
       </div>
     </main>

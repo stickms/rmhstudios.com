@@ -63,7 +63,7 @@ export function CreatePredictionModal({ open, onClose, onCreated }: Props) {
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-2xl border border-site-border bg-site-bg p-5 flex flex-col gap-4"
+        className="w-full max-w-md max-h-[85dvh] overflow-y-auto rounded-2xl border border-site-border bg-site-bg p-5 flex flex-col gap-4"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">

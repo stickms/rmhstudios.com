@@ -19,6 +19,31 @@ const OPEN_COMMIT = 64;
 const CLOSE_COMMIT = 64;
 const DEAD_ZONE = 8; // px of movement before we decide drag vs. scroll
 
+/**
+ * True if `el` or one of its ancestors (up to but excluding `stop`) is a
+ * horizontally-scrollable element that can still scroll in the swipe's
+ * direction. Used to yield the gesture to native horizontal scrolling
+ * (code blocks, tables, tab strips, carousels) instead of opening the drawer.
+ *
+ * `dir` is the finger delta-x: dir > 0 (finger moving right) reveals content to
+ * the left, which is only possible when the element isn't already at scrollLeft 0;
+ * dir < 0 (finger moving left) reveals content to the right, possible unless the
+ * element is scrolled fully to its end.
+ */
+function canScrollX(el: EventTarget | null, dir: number, stop: Element): boolean {
+  let n = el instanceof Element ? el : null;
+  for (; n && n !== stop; n = n.parentElement) {
+    if (!(n instanceof HTMLElement)) continue;
+    const ox = getComputedStyle(n).overflowX;
+    if ((ox === 'auto' || ox === 'scroll') && n.scrollWidth > n.clientWidth + 1) {
+      const atStart = n.scrollLeft <= 0;
+      const atEnd = n.scrollLeft >= n.scrollWidth - n.clientWidth - 1;
+      if (dir > 0 ? !atStart : !atEnd) return true;
+    }
+  }
+  return false;
+}
+
 interface MobileSidebarApi {
   isOpen: boolean;
   open: () => void;
@@ -142,8 +167,20 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
         // but while the drawer is open the page is locked, so treat it as a
         // (no-op) drag to keep the page from scrolling underneath.
         d.decided = true;
-        d.mode =
-          Math.abs(dx) > Math.abs(dy) || isOpenRef.current ? 'drag' : 'scroll';
+        const horizontal = Math.abs(dx) > Math.abs(dy);
+        if (
+          !isOpenRef.current &&
+          horizontal &&
+          panel &&
+          canScrollX(e.target, dx, panel)
+        ) {
+          // The swipe began inside a horizontally-scrollable element that can
+          // still scroll this way — let the browser scroll it instead of
+          // hijacking the gesture to open the drawer.
+          d.mode = 'scroll';
+        } else {
+          d.mode = horizontal || isOpenRef.current ? 'drag' : 'scroll';
+        }
       }
 
       if (d.mode !== 'drag') return; // let the page scroll vertically

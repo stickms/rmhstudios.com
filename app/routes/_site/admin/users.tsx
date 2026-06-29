@@ -177,7 +177,10 @@ function AdminUsersPage() {
           </div>
         </div>
 
-        <div className="bg-site-surface border border-site-border rounded-xl overflow-hidden min-h-[400px]">
+        <div className="bg-site-surface border border-site-border rounded-xl overflow-x-auto min-h-[400px]">
+          {/* min-w keeps the header and rows column-aligned; the container scrolls
+              horizontally on narrow screens instead of crushing the name column. */}
+          <div className="min-w-[600px]">
           <div className="p-4 border-b border-site-border bg-site-bg/50">
             <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 text-xs font-semibold text-site-text-dim uppercase tracking-wider">
               <div>{t("col-user", { defaultValue: "User" })}</div>
@@ -275,6 +278,7 @@ function AdminUsersPage() {
             {loadingMore && (
               <div className="p-4 flex justify-center text-site-text-dim"><Loader2 className="w-6 h-6 animate-spin" /></div>
             )}
+          </div>
           </div>
         </div>
       </div>

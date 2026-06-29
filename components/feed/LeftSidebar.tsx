@@ -230,13 +230,18 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
                   const margin = 8;
                   const menuWidth = 192; // w-48
                   const menuHeight = 240; // ~5 items + padding
+                  // Use the visual viewport (the actually-visible area) when
+                  // available so the clamp stays correct if the mobile URL bar
+                  // or on-screen keyboard has shrunk the viewport.
+                  const vw = window.visualViewport?.width ?? window.innerWidth;
+                  const vh = window.visualViewport?.height ?? window.innerHeight;
                   const right = Math.min(
-                    Math.max(window.innerWidth - rect.right, margin),
-                    window.innerWidth - menuWidth - margin
+                    Math.max(vw - rect.right, margin),
+                    vw - menuWidth - margin
                   );
                   const bottom = Math.min(
-                    Math.max(window.innerHeight - rect.top + 8, margin),
-                    window.innerHeight - menuHeight - margin
+                    Math.max(vh - rect.top + 8, margin),
+                    vh - menuHeight - margin
                   );
                   setUserMenuPos({ bottom, right });
                 }
