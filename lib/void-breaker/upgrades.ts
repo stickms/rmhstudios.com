@@ -57,6 +57,20 @@ export interface PlayerStats {
   focusCooldownMult: number;
   /** Contact damage reflected back to enemies that hit the player. */
   thornsDamage: number;
+  /** Transformer: ricochet hops per bullet (0 = none). */
+  bounceCount: number;
+  /** Transformer: chain-lightning hops added to every bullet (0 = none). */
+  chainCount: number;
+  /** Transformer: bullets explode on impact. */
+  explodeOnHit: boolean;
+  /** Explosion radius when explodeOnHit. */
+  explodeRadius: number;
+  /** Transformer: bullet homing turn rate (rad/s, 0 = none). */
+  homingTurn: number;
+  /** Transformer: number of orbiting blades around the player. */
+  orbitalCount: number;
+  /** Transformer: every Nth shot is empowered (0 = off). */
+  overchargeEvery: number;
 }
 
 export function makePlayerStats(): PlayerStats {
@@ -77,6 +91,13 @@ export function makePlayerStats(): PlayerStats {
     magnetMult: 1,
     focusCooldownMult: 1,
     thornsDamage: 0,
+    bounceCount: 0,
+    chainCount: 0,
+    explodeOnHit: false,
+    explodeRadius: 0,
+    homingTurn: 0,
+    orbitalCount: 0,
+    overchargeEvery: 0,
   };
 }
 
