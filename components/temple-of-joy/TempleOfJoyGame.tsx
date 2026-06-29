@@ -14,6 +14,8 @@ import SourcesPanel from '@/components/temple-of-joy/ui/SourcesPanel';
 import UpgradesPanel from '@/components/temple-of-joy/ui/UpgradesPanel';
 import RelicsPanel from '@/components/temple-of-joy/ui/RelicsPanel';
 import WheelOfSamsara from '@/components/temple-of-joy/ui/WheelOfSamsara';
+import AscensionPanel from '@/components/temple-of-joy/ui/AscensionPanel';
+import ObjectivesPanel from '@/components/temple-of-joy/ui/ObjectivesPanel';
 import AchievementsPanel from '@/components/temple-of-joy/ui/AchievementsPanel';
 import SettingsPanel from '@/components/temple-of-joy/ui/SettingsPanel';
 import MilestonesPanel from '@/components/temple-of-joy/ui/MilestonesPanel';
@@ -173,6 +175,8 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
     upgrades:     { title: t('tab-upgrades',     { defaultValue: 'Upgrades' }),     node: <UpgradesPanel /> },
     relics:       { title: t('tab-relics',       { defaultValue: 'Relics' }),       node: <RelicsPanel /> },
     wheel:        { title: t('tab-wheel',        { defaultValue: 'Wheel' }),        node: <WheelOfSamsara /> },
+    ascension:    { title: t('tab-ascension',    { defaultValue: 'Ascension' }),    node: <AscensionPanel /> },
+    objectives:   { title: t('tab-objectives',   { defaultValue: 'Objectives' }),   node: <ObjectivesPanel /> },
     achievements: { title: t('tab-achievements', { defaultValue: 'Achievements' }), node: <><StatsPanel /><div className="h-4" /><AchievementsPanel /><MilestonesPanel /></> },
     settings:     { title: t('tab-settings',     { defaultValue: 'Settings' }),     node: <SettingsPanel /> },
   };

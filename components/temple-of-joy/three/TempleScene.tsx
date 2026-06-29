@@ -11,6 +11,7 @@ import { GrandTemple } from './GrandTemple';
 import { SunCore } from './SunCore';
 import { SourceStructures } from './SourceStructures';
 import { UpgradeOrbs } from './UpgradeOrbs';
+import { AscensionMonument } from './AscensionMonument';
 import { AchievementStars } from './AchievementStars';
 import { ClickBurst, type ClickBurstHandle } from './ClickBurst';
 import { FloatingJoy } from './FloatingJoy';
@@ -46,6 +47,7 @@ function SceneContents() {
       <SunCore onJoy={handleJoy} />
       <SourceStructures />
       <UpgradeOrbs />
+      <AscensionMonument />
       <AmbientJoy />
       <ClickBurst ref={burst} />
       {floats.map((f) => (

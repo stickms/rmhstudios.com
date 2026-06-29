@@ -84,10 +84,58 @@ export interface UpgradeDef {
   requiresSource?: Partial<Record<SourceId, number>>;
   /** Requires prestige count >= value */
   requiresPrestige?: number;
+  /** Requires ascension count >= value (deep late-game gate) */
+  requiresAscension?: number;
   /** Requires specific upgrade purchased first */
   requiresUpgrade?: string;
   /** Only visible / purchasable after first prestige */
   postPrestige?: boolean;
+}
+
+// ─── Ascension (meta-prestige) ────────────────────────────────────────────────
+
+export interface AscensionUpgradeDef {
+  id: string;
+  name: string;
+  description: string;
+  /** Cost in Radiance */
+  cost: number;
+  /** Display/branch tier (1..N) */
+  tier: number;
+  /** Prerequisite ascension-upgrade IDs */
+  requires?: string[];
+  // ── Effects (all optional, multiplicative / additive as noted) ──
+  globalHPSMultiplier?: number;
+  hpcMultiplier?: number;
+  /** Multiplies Radiance earned on future ascensions */
+  radianceGainMultiplier?: number;
+  /** Flat extra relic slots granted at run start */
+  bonusRelicSlots?: number;
+  /** Adds to offline efficiency (e.g. 0.25 = +25%) */
+  offlineEfficiencyBonus?: number;
+  /** Fraction of prestige requirement reduced for next ascension (0..1) */
+  ascensionDiscount?: number;
+  /** Start each run with this many bliss shards */
+  startingShards?: number;
+}
+
+// ─── Objectives / Challenges ──────────────────────────────────────────────────
+
+export interface ObjectiveReward {
+  radiance?: number;
+  blissShards?: number;
+  karma?: number;
+}
+
+export interface ObjectiveDef {
+  id: string;
+  name: string;
+  description: string;
+  /** Loose category for grouping in the UI */
+  category: 'milestone' | 'mastery' | 'challenge' | 'eternal';
+  reward: ObjectiveReward;
+  /** Pure predicate — completes (and pays out once) when this returns true */
+  check: (s: GameState) => boolean;
 }
 
 export interface SynergyDef {
@@ -198,6 +246,15 @@ export interface GameState {
   /** Upgrade IDs the player has chosen to keep on next transcendence (Ember of Memory) */
   emberSelections: string[];
 
+  // ── Ascension (meta-prestige above Transcendence) ──
+  radiance: number;                // current Radiance (spendable)
+  lifetimeRadiance: number;        // all-time Radiance earned
+  ascensionCount: number;          // number of times ascended
+  ascensionUpgrades: Set<string>;  // purchased ascension-upgrade IDs
+
+  // ── Objectives / Challenges ──
+  completedObjectives: Set<string>; // objective IDs already paid out
+
   // ── Meta ──
   lastSaved: number;               // Unix ms timestamp
   lastTickTime: number;            // Unix ms timestamp of most recent tick
@@ -260,7 +317,7 @@ export interface GameState {
   autoBuyEnabled: boolean;
 
   // ── UI ──
-  activeTab: 'temple' | 'sources' | 'upgrades' | 'relics' | 'wheel' | 'achievements' | 'settings';
+  activeTab: 'temple' | 'sources' | 'upgrades' | 'relics' | 'wheel' | 'ascension' | 'objectives' | 'achievements' | 'settings';
   upgradePathFilter: UpgradePath | 'all';
   sourceBuyQty: 1 | 10 | 100 | 'max';
   showTranscendenceModal: boolean;
@@ -288,6 +345,13 @@ export interface SaveData {
   prestigeCount: number;
   wheelPurchased: string[];
   samsaraGiftStacks: number;
+  // ── Ascension ──
+  radiance: number;
+  lifetimeRadiance: number;
+  ascensionCount: number;
+  ascensionUpgrades: string[];
+  // ── Objectives ──
+  completedObjectives: string[];
   lastSaved: number;
   totalPlaytime: number;
   runPlaytime: number;

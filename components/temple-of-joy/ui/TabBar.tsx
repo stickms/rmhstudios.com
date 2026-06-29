@@ -17,6 +17,8 @@ const TABS: TabDef[] = [
   { id: 'upgrades',     icon: '⬆️'  },
   { id: 'relics',       icon: '💍'  },
   { id: 'wheel',        icon: '🔄'  },
+  { id: 'ascension',    icon: '☀️'  },
+  { id: 'objectives',   icon: '🎯'  },
   { id: 'achievements', icon: '🏆'  },
   { id: 'settings',     icon: '⚙️'  },
 ];
@@ -32,6 +34,8 @@ export default function TabBar() {
     upgrades:     t("tab-upgrades",     { defaultValue: "Upgrades" }),
     relics:       t("tab-relics",       { defaultValue: "Relics" }),
     wheel:        t("tab-wheel",        { defaultValue: "Wheel" }),
+    ascension:    t("tab-ascension",    { defaultValue: "Ascension" }),
+    objectives:   t("tab-objectives",   { defaultValue: "Objectives" }),
     achievements: t("tab-achievements", { defaultValue: "Achievements" }),
     settings:     t("tab-settings",     { defaultValue: "Settings" }),
   };

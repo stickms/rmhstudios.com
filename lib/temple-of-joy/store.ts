@@ -9,6 +9,8 @@ import {
   computeTotalHPS, computeHPC, computeCanTranscend,
   computeBlissShards, computeEffectiveSatisfaction, computeIsIdle,
   computeMaxAffordable, computeGlobalHPSMultiplier,
+  computeCanAscend, computeRadianceGain, computeAscensionPrestigeReq,
+  computeAscensionMultiplier,
 } from './engine';
 import { INITIAL_SOURCES } from './data/sources';
 
@@ -33,6 +35,11 @@ export function createInitialState(): GameState {
     wheelPurchased: new Set<string>(),
     samsaraGiftStacks: 0,
     emberSelections: [],
+    radiance: 0,
+    lifetimeRadiance: 0,
+    ascensionCount: 0,
+    ascensionUpgrades: new Set<string>(),
+    completedObjectives: new Set<string>(),
     lastSaved: now,
     lastTickTime: now,
     totalPlaytime: 0,
@@ -93,6 +100,10 @@ interface TempleStore extends GameState {
   getBlissShards: () => number;
   getEffectiveSatisfaction: () => number;
   getIsIdle: () => boolean;
+  getCanAscend: () => boolean;
+  getRadianceGain: () => number;
+  getAscensionPrestigeReq: () => number;
+  getAscensionMultiplier: () => number;
 
   // Actions
   tick: () => void;
@@ -106,6 +117,8 @@ interface TempleStore extends GameState {
   triggerPilgrimage: () => void;
   passVibeCheck: () => void;
   transcend: () => void;
+  ascend: () => void;
+  purchaseAscensionUpgrade: (id: string) => void;
   purchaseWheelUpgrade: (id: string) => void;
   resolveEvent: (eventId: string, choiceIndex: number) => void;
   makeOffering: (tier: 1 | 2 | 3) => void;
@@ -145,6 +158,10 @@ export const useTempleStore = create<TempleStore>()(
     getBlissShards: () => computeBlissShards(get()),
     getEffectiveSatisfaction: () => computeEffectiveSatisfaction(get()),
     getIsIdle: () => computeIsIdle(get()),
+    getCanAscend: () => computeCanAscend(get()),
+    getRadianceGain: () => computeRadianceGain(get()),
+    getAscensionPrestigeReq: () => computeAscensionPrestigeReq(get()),
+    getAscensionMultiplier: () => computeAscensionMultiplier(get()),
 
     // ── Actions ──
     tick: () => set(state => applyTick(state)),
@@ -158,6 +175,8 @@ export const useTempleStore = create<TempleStore>()(
     triggerPilgrimage: () => set(state => Actions.doTriggerPilgrimage(state)),
     passVibeCheck: () => set(state => Actions.doPassVibeCheck(state)),
     transcend: () => set(state => Actions.doTriggerTranscendence(state)),
+    ascend: () => set(state => Actions.doTriggerAscension(state)),
+    purchaseAscensionUpgrade: (id: string) => set(state => Actions.doPurchaseAscensionUpgrade(state, id)),
     purchaseWheelUpgrade: (id: string) => set(state => Actions.doPurchaseWheelUpgrade(state, id)),
     resolveEvent: (eventId: string, choiceIndex: number) =>
       set(state => Actions.doResolveEvent(state, eventId, choiceIndex)),
